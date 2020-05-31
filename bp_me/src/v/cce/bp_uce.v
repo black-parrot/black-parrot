@@ -36,7 +36,7 @@ module bp_uce
     , localparam cache_stat_mem_pkt_width_lp = `bp_cache_stat_mem_pkt_width(sets_p, assoc_p)
 
     // Fill size parameterisations -
-    , localparam bp_mem_msg_size_e e_mem_msg_size = (fill_width_p == 512)
+    , localparam bp_mem_msg_size_e block_msg_size_lp = (fill_width_p == 512)
                                                       ? e_mem_msg_size_64
                                                       : (fill_width_p == 256)
                                                         ? e_mem_msg_size_32
@@ -186,7 +186,7 @@ module bp_uce
   wire is_send_critical = (state_r == e_send_critical);
   wire is_writeback_evict = (state_r == e_writeback_evict); // read dirty data from cache to UCE
   wire is_writeback_read = (state_r == e_writeback_read_req); // read data from L2 to cache
-  wire is_writeback_wb   = (state_r == e_writeback_write_req); // read dirty data in UCE
+  wire is_writeback_wb   = (state_r == e_writeback_write_req); // send dirty data from UCE to L2
   wire is_write_request  = (state_r == e_write_wait);
   wire is_read_request   = (state_r == e_read_req);
 
@@ -205,100 +205,111 @@ module bp_uce
   wire miss_v_li       = miss_load_v_li | miss_store_v_li;
   wire uc_load_v_li    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
 
-  logic [fill_cnt_width_lp-1:0] fill_cnt, mem_cmd_cnt;
+  // When fill_width_p < block_width_p, multicycle fill and writeback is implemented in cache flush write,
+  // cache miss load with and without dirty data writeback.
+  // To track the progress of these multicycle opeation, two counters, fill_cnt and mem_cmd_cnt are added
+  // In addition, mem_cmd_cnt is used to generated the addr in mem_cmd_o to request data from L2 and
+  // to write back dirty data to L2 in the size of fill_width.
+  logic [fill_cnt_width_lp-1:0] mem_cmd_cnt;
   logic [block_size_in_fill_lp-1:0] fill_index_shift;
   logic [bank_offset_width_lp-1:0] bank_index;
-  if (fill_size_in_bank_lp == 1) begin
-    assign bank_index =  mem_cmd_cnt;
-    assign fill_index_shift = mem_resp_cast_i.header.addr[byte_offset_width_lp+:bank_offset_width_lp];
-  end else begin
-    assign bank_index = mem_cmd_cnt << bank_sub_offset_width_lp;
-    assign fill_index_shift = mem_resp_cast_i.header.addr[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp;
-  end
+  if (fill_size_in_bank_lp == 1)
+    begin
+      assign bank_index =  mem_cmd_cnt;
+      assign fill_index_shift = mem_resp_cast_i.header.addr[byte_offset_width_lp+:bank_offset_width_lp];
+    end
+  else
+    begin
+      assign bank_index = mem_cmd_cnt << bank_sub_offset_width_lp;
+      assign fill_index_shift = mem_resp_cast_i.header.addr[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp;
+    end
 
-  logic fill_up, fill_cnt_hit_target, mem_cmd_up, mem_cmd_cnt_hit_target;
-  if (fill_width_p == block_width_p) begin
-    assign fill_cnt = 1'b0;
-    assign mem_cmd_cnt = 1'b0;
-    assign fill_cnt_hit_target = 1'b1;
-    assign mem_cmd_cnt_hit_target = 1'b1;
-  end else begin
-    bsg_counter_clear_up #(
-      .max_val_p(block_size_in_fill_lp-1)
-      ,.init_val_p(0)
-      ,.disable_overflow_warning_p(1)
-      )
-    fill_counter
-      (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+  logic fill_up, fill_done, mem_cmd_up, mem_cmd_done;
+  if (fill_width_p == block_width_p)
+    begin
+      assign mem_cmd_cnt = 1'b0;
+      assign fill_done = 1'b1;
+      assign mem_cmd_done = 1'b1;
+    end
+  else
+    begin
+      logic [fill_cnt_width_lp-1:0] fill_cnt;
+      bsg_counter_clear_up
+       #(.max_val_p(block_size_in_fill_lp-1)
+        ,.init_val_p(0)
+        ,.disable_overflow_warning_p(1))
+      fill_counter
+        (.clk_i(clk_i)
+        ,.reset_i(reset_i)
 
-      ,.clear_i('0)
-      ,.up_i(fill_up)
+        ,.clear_i('0)
+        ,.up_i(fill_up)
 
-      ,.count_o(fill_cnt)
-      );
-    assign fill_cnt_hit_target = (fill_cnt == block_size_in_fill_lp-1);
+        ,.count_o(fill_cnt)
+        );
+      assign fill_done = (fill_cnt == block_size_in_fill_lp-1);
 
-    bsg_counter_clear_up #(
-      .max_val_p(block_size_in_fill_lp-1)
-      ,.init_val_p(0)
-      ,.disable_overflow_warning_p(1)
-      )
-    mem_cmd_counter
-      (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+      bsg_counter_clear_up
+       #(.max_val_p(block_size_in_fill_lp-1)
+        ,.init_val_p(0)
+        ,.disable_overflow_warning_p(1))
+       mem_cmd_counter
+        (.clk_i(clk_i)
+        ,.reset_i(reset_i)
 
-      ,.clear_i('0)
-      ,.up_i(mem_cmd_up)
+        ,.clear_i('0)
+        ,.up_i(mem_cmd_up)
 
-      ,.count_o(mem_cmd_cnt)
-      );
-    assign mem_cmd_cnt_hit_target = (mem_cmd_cnt == block_size_in_fill_lp-1);
-  end
+        ,.count_o(mem_cmd_cnt)
+        );
+      assign mem_cmd_done = (mem_cmd_cnt == block_size_in_fill_lp-1);
+    end
 
   logic [index_width_lp-1:0] index_cnt;
   logic index_up;
   bsg_counter_clear_up
    #(.max_val_p(sets_p-1)
-     ,.init_val_p(0)
-     ,.disable_overflow_warning_p(1)
-     )
+    ,.init_val_p(0)
+    ,.disable_overflow_warning_p(1))
    index_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    ,.reset_i(reset_i)
 
-     ,.clear_i('0)
-     ,.up_i(index_up)
+    ,.clear_i('0)
+    ,.up_i(index_up)
 
-     ,.count_o(index_cnt)
-     );
+    ,.count_o(index_cnt)
+    );
   wire index_done = (index_cnt == sets_p-1);
 
   logic [way_width_lp-1:0] way_cnt;
   logic way_up;
   bsg_counter_clear_up
    #(.max_val_p(assoc_p-1)
-     ,.init_val_p(0)
-     ,.disable_overflow_warning_p(1)
-     )
+    ,.init_val_p(0)
+    ,.disable_overflow_warning_p(1))
    way_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    ,.reset_i(reset_i)
 
-     ,.clear_i('0)
-     ,.up_i(way_up)
+    ,.clear_i('0)
+    ,.up_i(way_up)
 
-     ,.count_o(way_cnt)
-     );
+    ,.count_o(way_cnt)
+    );
   wire way_done = (way_cnt == assoc_p-1);
 
-  logic mem_cmd_done_n, mem_cmd_done_r;
-  always_ff @(posedge clk_i) begin
-      if (reset_i)
-        mem_cmd_done_r <= 0;
-      else if (mem_cmd_v_o | cache_req_complete_o | way_up)
-        mem_cmd_done_r <= mem_cmd_done_n;
-  end
+  logic mem_cmd_done_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1)
+    ,.clear_over_set_p(1)) // if 1, clear overrides set.
+   mem_cmd_done_reg
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+    ,.set_i(mem_cmd_done & mem_cmd_v_o)
+    ,.clear_i(cache_req_complete_o | way_up)
+    ,.data_o(mem_cmd_done_r)
+    );
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
@@ -325,11 +336,11 @@ module bp_uce
   assign credits_empty_o = (credit_count_lo == 0);
 
   logic [fill_width_p-1:0] writeback_data;
-  bsg_mux #(
-    .width_p(fill_width_p)
-    ,.els_p(block_size_in_fill_lp)
-    ) writeback_mux (
-    .data_i(dirty_data_r)
+  bsg_mux
+   #(.width_p(fill_width_p)
+    ,.els_p(block_size_in_fill_lp))
+   writeback_mux
+    (.data_i(dirty_data_r)
     ,.sel_i(mem_cmd_cnt)
     ,.data_o(writeback_data)
     );
@@ -345,7 +356,6 @@ module bp_uce
       way_up   = '0;
       fill_up  = '0;
       mem_cmd_up = '0;
-      mem_cmd_done_n ='0;
 
       tag_mem_pkt_cast_o  = '0;
       tag_mem_pkt_v_o     = '0;
@@ -431,16 +441,16 @@ module bp_uce
           begin
             mem_cmd_cast_o.header.msg_type = e_cce_mem_wr;
             mem_cmd_cast_o.header.addr     = {dirty_tag_r, index_cnt, bank_index, byte_offset_width_lp'(0)};
-            mem_cmd_cast_o.header.size     = e_mem_msg_size;
+            mem_cmd_cast_o.header.size     = block_msg_size_lp;
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_cast_o.data                  = writeback_data;
             mem_cmd_v_o = mem_cmd_ready_i;
             mem_cmd_up = mem_cmd_v_o;
 
-            way_up = mem_cmd_cnt_hit_target & mem_cmd_v_o;
-            index_up = way_done & mem_cmd_cnt_hit_target & mem_cmd_v_o;
+            way_up = mem_cmd_done & mem_cmd_v_o;
+            index_up = way_done & mem_cmd_done & mem_cmd_v_o;
 
-            state_n = (mem_cmd_cnt_hit_target & mem_cmd_v_o & index_done & way_done)
+            state_n = (mem_cmd_done & mem_cmd_v_o & index_done & way_done)
                       ? e_flush_fence
                       : index_up
                         ? e_flush_read
@@ -491,12 +501,11 @@ module bp_uce
             begin
               mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
               mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
-              mem_cmd_cast_o.header.size           = e_mem_msg_size;
+              mem_cmd_cast_o.header.size           = block_msg_size_lp;
               mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
               mem_cmd_up = mem_cmd_v_o;
-              mem_cmd_done_n = mem_cmd_cnt_hit_target;
               state_n = mem_cmd_v_o
                         ? cache_req_metadata_r.dirty
                           ? e_writeback_evict
@@ -557,26 +566,25 @@ module bp_uce
             // request next sub-block
             mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
             mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)};
-            mem_cmd_cast_o.header.size           = e_mem_msg_size;
+            mem_cmd_cast_o.header.size           = block_msg_size_lp;
             mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r;
             mem_cmd_up = mem_cmd_v_o;
-            mem_cmd_done_n = mem_cmd_cnt_hit_target & mem_cmd_v_o;
 
-            state_n = (fill_cnt_hit_target & mem_cmd_done_r & tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i) ? e_writeback_write_req : e_writeback_read_req;
+            state_n = (fill_done & mem_cmd_done_r & tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i) ? e_writeback_write_req : e_writeback_read_req;
           end
         e_writeback_write_req:
           begin
             mem_cmd_cast_o.header.msg_type = e_cce_mem_wr;
             mem_cmd_cast_o.header.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp], bank_index, byte_offset_width_lp'(0)};
-            mem_cmd_cast_o.header.size     = e_mem_msg_size;
+            mem_cmd_cast_o.header.size     = block_msg_size_lp;
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_cast_o.data                  = writeback_data;
             mem_cmd_v_o = mem_cmd_ready_i;
             mem_cmd_up = mem_cmd_v_o;
 
-            cache_req_complete_o = mem_cmd_cnt_hit_target & mem_cmd_v_o;
+            cache_req_complete_o = mem_cmd_done & mem_cmd_v_o;
             state_n = cache_req_complete_o ? e_ready : e_writeback_write_req;
           end
         e_read_req:
@@ -603,14 +611,13 @@ module bp_uce
             // request next sub-block
             mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
             mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)};
-            mem_cmd_cast_o.header.size           = e_mem_msg_size;
+            mem_cmd_cast_o.header.size           = block_msg_size_lp;
             mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r;
             mem_cmd_up = mem_cmd_v_o;
-            mem_cmd_done_n = mem_cmd_cnt_hit_target & mem_cmd_v_o;
 
-            cache_req_complete_o = fill_cnt_hit_target & mem_cmd_done_r & tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+            cache_req_complete_o = fill_done & mem_cmd_done_r & tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             state_n = cache_req_complete_o ? e_ready : e_read_req;
           end
         e_uc_read_wait:
