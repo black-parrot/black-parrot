@@ -414,7 +414,7 @@ module bp_pce
                                                                   : (cache_req_r.msg_type == e_amo_min)
                                                                   ? e_amo_op_min
                                                                   : (cache_req_r.msg_type == e_amo_maxu)
-                                                                  ? e_amo_maxu
+                                                                  ? e_amo_op_maxu
                                                                   : (cache_req_r.msg_type == e_amo_minu)
                                                                   ? e_amo_op_minu
                                                                   : e_amo_op_none);
