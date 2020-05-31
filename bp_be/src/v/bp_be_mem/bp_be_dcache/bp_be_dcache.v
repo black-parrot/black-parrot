@@ -286,13 +286,11 @@ module bp_be_dcache
       end
       e_dcache_opcode_amominuw, e_dcache_opcode_amominud: begin
         amominu_op = 1'b1;
-        signed_op  = 1'b0;
         load_op    = 1'b1;
         store_op  = 1'b1;
       end
       e_dcache_opcode_amomaxuw, e_dcache_opcode_amomaxud: begin
         amomaxu_op = 1'b1;
-        signed_op  = 1'b0;
         load_op    = 1'b1;
         store_op  = 1'b1;
       end
