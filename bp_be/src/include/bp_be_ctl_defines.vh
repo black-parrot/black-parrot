@@ -94,12 +94,12 @@ typedef enum logic [5:0]
   ,e_wfi        = 6'b001100
 
   // We treat FE exceptions as CSR ops
-  ,e_op_take_interrupt     = 6'b011000
-  ,e_op_instr_access_fault = 6'b011001
-  ,e_op_instr_page_fault   = 6'b011010
-  ,e_op_instr_misaligned   = 6'b011011
-  ,e_op_illegal_instr      = 6'b011111
-  ,e_itlb_fill             = 6'b011100
+  ,e_op_take_interrupt     = 6'b111000
+  ,e_op_instr_access_fault = 6'b111001
+  ,e_op_instr_page_fault   = 6'b111010
+  ,e_op_instr_misaligned   = 6'b111011
+  ,e_op_illegal_instr      = 6'b111111
+  ,e_itlb_fill             = 6'b111100
 } bp_be_csr_fu_op_e;
 
 typedef enum logic [5:0]
