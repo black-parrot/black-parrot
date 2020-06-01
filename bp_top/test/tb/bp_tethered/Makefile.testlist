@@ -433,18 +433,38 @@ MC_TESTS := \
 MC_TESTLIST := $(addprefix bp_tests@, $(MC_TESTS))
 
 RISCVDV_TESTS := \
-  riscv_arithmetic_basic_test_0     \
-  riscv_full_interrupt_test_0       \
-  riscv_illegal_instr_test_0        \
-  riscv_loop_test_0                 \
-  riscv_mmu_stress_test_0           \
-  riscv_no_fence_test_0             \
-  riscv_privileged_mode_rand_test_0 \
-  riscv_rand_instr_test_0           \
-  riscv_rand_jump_test_0            \
-  riscv_sfence_exception_test_0
+  riscv_arithmetic_basic_test     \
+  riscv_full_interrupt_test       \
+  riscv_illegal_instr_test        \
+  riscv_loop_test                 \
+  riscv_mmu_stress_test           \
+  riscv_no_fence_test             \
+  riscv_privileged_mode_rand_test \
+  riscv_rand_instr_test           \
+  riscv_rand_jump_test            \
+  riscv_sfence_exception_test
 
-RISCVDV_TESTLIST := $(addprefix riscvdv@, $(RISCVDV_TESTS))
+# TODO: Clean this up with a better generator
+RISCVDV_TESTLIST  = $(addprefix riscvdv@, $(addsuffix  _0, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix  _1, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix  _2, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix  _3, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix  _4, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix  _5, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix  _6, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix  _7, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix  _8, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix  _9, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _10, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _11, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _12, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _13, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _14, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _15, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _16, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _17, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _18, $(RISCVDV_TESTS)))
+RISCVDV_TESTLIST += $(addprefix riscvdv@, $(addsuffix _19, $(RISCVDV_TESTS)))
 
 SPEC_TESTS := \
   175.vpr \
