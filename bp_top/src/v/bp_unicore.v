@@ -1,6 +1,6 @@
 
 
-module bp_softcore
+module bp_unicore
  import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;

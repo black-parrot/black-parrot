@@ -184,7 +184,7 @@ bind bp_cce_wrapper
   bp_me_nonsynth_cce_tracer
     #(.bp_params_p(bp_params_p))
     cce_tracer
-     (.clk_i(clk_i & (wrapper.cce_trace_p == 1))
+     (.clk_i(clk_i & (testbench.cce_trace_p == 1))
       ,.reset_i(reset_i)
       ,.freeze_i(cfg_bus_cast_i.freeze)
 

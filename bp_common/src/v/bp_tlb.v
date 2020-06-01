@@ -20,101 +20,56 @@ module bp_tlb
   , input [entry_width_lp-1:0]        entry_i
     
   , output logic                      v_o
-  , output logic [entry_width_lp-1:0] entry_o
-  
   , output logic                      miss_v_o
-  , output logic [vtag_width_p-1:0]   miss_vtag_o
+  , output logic [entry_width_lp-1:0] entry_o
  );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-bp_pte_entry_leaf_s r_entry, w_entry, passthrough_entry;
 
-logic [lg_els_lp-1:0] cam_w_addr, cam_r_addr, ram_addr;
-logic                 r_v, w_v, cam_r_v;
-
-assign entry_o    = translation_en_i ? r_entry : passthrough_entry;
-assign w_entry    = entry_i;
-  
-assign r_v        = v_i & ~w_i; 
-assign w_v        = v_i & w_i & translation_en_i; 
-
-assign ram_addr   = (w_i)? cam_w_addr : cam_r_addr;
-
-assign passthrough_entry.ptag = miss_vtag_o;
-
+logic r_v_r;
 bsg_dff_reset #(.width_p(1))
   r_v_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.data_i(r_v & (cam_r_v | ~translation_en_i))
-   ,.data_o(v_o)
+   ,.data_i(v_i & ~w_i)
+   ,.data_o(r_v_r)
   );
 
-bsg_dff_reset #(.width_p(1))
-  miss_v_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.data_i(r_v & ~(cam_r_v | ~translation_en_i))
-   ,.data_o(miss_v_o)
-  );
-
+logic [vtag_width_p-1:0] vtag_r;
 bsg_dff_reset #(.width_p(vtag_width_p))
-  miss_vtag_reg
+  vtag_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.data_i(vtag_i)
-   ,.data_o(miss_vtag_o)
+   ,.data_o(vtag_r)
   );
-  
-bp_tlb_replacement #(.ways_p(dtlb_els_p))
-  plru
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i | flush_i)
-   
-   ,.v_i(cam_r_v)
-   ,.way_i(cam_r_addr)
-   
-   ,.way_o(cam_w_addr)
-  ); 
-  
-bsg_cam_1r1w 
-  #(.els_p(dtlb_els_p)
-    ,.width_p(vtag_width_p)
-    ,.multiple_entries_p(0)
-    ,.find_empty_entry_p(1)
-  )
-  vtag_cam
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i | flush_i)
-   ,.en_i(1'b1)
-   
-   ,.w_v_i(w_v)
-   ,.w_set_not_clear_i(1'b1)
-   ,.w_addr_i(cam_w_addr)
-   ,.w_data_i(vtag_i)
-  
-   ,.r_v_i(r_v)
-   ,.r_data_i(vtag_i)
-   
-   ,.r_v_o(cam_r_v)
-   ,.r_addr_o(cam_r_addr)
-   
-   ,.empty_v_o()
-   ,.empty_addr_o()
-  );
-
-bsg_mem_1rw_sync
-  #(.width_p(entry_width_lp)
-    ,.els_p(dtlb_els_p)
-  )
-  entry_ram
+ 
+bp_pte_entry_leaf_s r_entry, passthrough_entry;
+logic r_v_lo;
+bsg_cam_1r1w_sync
+ #(.els_p(tlb_els_p)
+   ,.tag_width_p(vtag_width_p)
+   ,.data_width_p(entry_width_lp)
+   )
+ cam
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.data_i(w_entry)
-   ,.addr_i(ram_addr)
-   ,.v_i(cam_r_v | w_v)
-   ,.w_i(w_v)
-   ,.data_o(r_entry)
-  );
+
+   ,.w_v_i(v_i & w_i)
+   ,.w_nuke_i(flush_i)
+   ,.w_tag_i(vtag_i)
+   ,.w_data_i(entry_i)
+
+   ,.r_v_i(v_i & ~w_i)
+   ,.r_tag_i(vtag_i)
+
+   ,.r_data_o(r_entry)
+   ,.r_v_o(r_v_lo)
+   );
+
+assign passthrough_entry = '{ptag: vtag_r, default: '0};
+assign entry_o    = translation_en_i ? r_entry : passthrough_entry;
+assign v_o        = translation_en_i ? r_v_r & r_v_lo : r_v_r;
+assign miss_v_o   = r_v_r & ~v_o;
 
 endmodule

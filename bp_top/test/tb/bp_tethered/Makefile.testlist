@@ -433,18 +433,18 @@ MC_TESTS := \
 MC_TESTLIST := $(addprefix bp_tests@, $(MC_TESTS))
 
 RISCVDV_TESTS := \
-  riscv_arithmetic_basic_test     \
-  riscv_full_interrupt_test       \
-  riscv_illegal_instr_test        \
-  riscv_loop_test                 \
-  riscv_mmu_stress_test           \
-  riscv_no_fence_test             \
-  riscv_privileged_mode_rand_test \
-  riscv_rand_instr_test           \
-  riscv_rand_jump_test            \
-  riscv_sfence_exception_test
+  riscv_arithmetic_basic_test_0     \
+  riscv_full_interrupt_test_0       \
+  riscv_illegal_instr_test_0        \
+  riscv_loop_test_0                 \
+  riscv_mmu_stress_test_0           \
+  riscv_no_fence_test_0             \
+  riscv_privileged_mode_rand_test_0 \
+  riscv_rand_instr_test_0           \
+  riscv_rand_jump_test_0            \
+  riscv_sfence_exception_test_0
 
-RISCVDV_TESTLIST := $(addprefix riscvdv_tests@, $(RISCVDV_TESTS))
+RISCVDV_TESTLIST := $(addprefix riscvdv@, $(RISCVDV_TESTS))
 
 SPEC_TESTS := \
   175.vpr \
@@ -480,14 +480,16 @@ run_test@%:
 	$(eval override TS    := $(word 3,$(subst @,  ,$*)))
 	$(MAKE) sim.$(TS) SUITE=$(SUITE) PROG=$(PROG)
 
+dromajo_dump:
+	$(DROMAJO) $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv --host \
+		--dump_period=$(SAMPLE_INSTR_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
+
 # Run an entire benchmark in parallel
 # Important parameters:
 #   SAMPLE_INSTR_P  - instructions per sample
 #   SAMPLE_WARMUP_P - instructions to run for warmup, without statistics
 #   SAMPLE_MEMSIZE  - RAM size of the sample (affects simulation startup time)
-run_psample.%:
-	$(DROMAJO) $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv --host \
-		--dump_period=$(SAMPLE_INSTR_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
+run_psample.%: dromajo_dump
 	$(eval CHECKPOINTS := $(subst .mainram,,$(subst dromajo.,,$(shell ls dromajo.*.mainram))))
 	rm dromajo.*
 	$(MAKE) $(addsuffix @$*, $(addprefix run_sample@, $(CHECKPOINTS)))

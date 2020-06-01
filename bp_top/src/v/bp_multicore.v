@@ -1,12 +1,12 @@
 /**
  *
- * bp_processor.v
+ * bp_multicore.v
  *
  */
  
 `include "bsg_noc_links.vh"
 
-module bp_processor
+module bp_multicore
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;

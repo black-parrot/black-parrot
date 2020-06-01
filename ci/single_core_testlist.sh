@@ -24,7 +24,7 @@ N=${3:-1}
 cfgs=(\
     "e_bp_single_core_ucode_cce_cfg" \
     "e_bp_single_core_cfg" \
-    "e_bp_softcore_cfg" \
+    "e_bp_unicore_cfg" \
     )
 
 let JOBS=${#cfgs[@]}

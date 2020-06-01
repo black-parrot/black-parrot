@@ -12,7 +12,7 @@ export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 export TOUCH_PATH   := $(BP_TOP_DIR)/syn/touchfiles
 
 export TB    ?= bp_tethered
-export CFG   ?= e_bp_softcore_cfg
+export CFG   ?= e_bp_unicore_cfg
 export SUITE ?= bp_tests
 export PROG  ?= hello_world
 export TAG   ?= none

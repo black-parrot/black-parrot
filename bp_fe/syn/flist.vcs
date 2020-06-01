@@ -70,7 +70,11 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_full.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_replacement.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_sync.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_tag_array.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_one_hot.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v
@@ -117,6 +121,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_mux_bitwise.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_butterfly.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_segmented.v
@@ -152,7 +157,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
 $BP_COMMON_DIR/src/v/bp_pma.v
 $BP_COMMON_DIR/src/v/bp_tlb.v
-$BP_COMMON_DIR/src/v/bp_tlb_replacement.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.v
 # Calculator
@@ -162,6 +166,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_int_alu.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fp.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctrl.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
@@ -202,7 +207,6 @@ $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v
 $BP_ME_DIR/src/v/cce/bp_cce_arbitrate.v
 $BP_ME_DIR/src/v/cce/bp_cce_branch.v
-$BP_ME_DIR/src/v/cce/bp_cce_buffered.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir_segment.v
@@ -258,8 +262,8 @@ $BP_TOP_DIR/src/v/bp_io_link_to_lce.v
 $BP_TOP_DIR/src/v/bp_io_tile.v
 $BP_TOP_DIR/src/v/bp_io_tile_node.v
 $BP_TOP_DIR/src/v/bp_mem_complex.v
-$BP_TOP_DIR/src/v/bp_processor.v
-$BP_TOP_DIR/src/v/bp_softcore.v
+$BP_TOP_DIR/src/v/bp_multicore.v
+$BP_TOP_DIR/src/v/bp_unicore.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
 

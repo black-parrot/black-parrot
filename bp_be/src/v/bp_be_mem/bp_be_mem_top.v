@@ -148,7 +148,7 @@ wire unused0 = mem_resp_ready_i;
 /* Internal connections */
 /* TLB ports */
 logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo;
-logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
+logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag;
 bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry;
 
 /* PTW ports */
@@ -313,10 +313,8 @@ bp_tlb
    ,.entry_i(dtlb_w_entry)
 
    ,.v_o(dtlb_r_v_lo)
-   ,.entry_o(dtlb_r_entry)
-
    ,.miss_v_o(dtlb_miss_v)
-   ,.miss_vtag_o(dtlb_miss_vtag)
+   ,.entry_o(dtlb_r_entry)
   );
 
 bp_pma

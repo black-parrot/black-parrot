@@ -265,7 +265,7 @@ module bp_fe_icache
   assign addr_word_offset_tv = addr_tv_r[byte_offset_width_lp+:word_offset_width_lp];
 
   logic miss_tv;
-  assign miss_tv = ~hit_tv_r & v_tv_r & ~uncached_tv_r;
+  assign miss_tv = ~hit_tv_r & v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r;
 
   // uncached request
   logic uncached_load_data_v_r;

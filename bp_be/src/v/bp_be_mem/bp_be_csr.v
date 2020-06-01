@@ -136,11 +136,7 @@ wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
 `declare_csr(mtval)
 `declare_csr(mip)
 
-`declare_csr(pmpcfg0)
-`declare_csr(pmpaddr0)
-`declare_csr(pmpaddr1)
-`declare_csr(pmpaddr2)
-`declare_csr(pmpaddr3)
+// No support for PMP currently
 
 `declare_csr(mcycle)
 `declare_csr(minstret)
@@ -332,12 +328,6 @@ always_comb
     mcause_li   = mcause_lo;
     mtval_li    = mtval_lo;
     mip_li      = mip_lo;
-
-    pmpcfg0_li  = pmpcfg0_lo;
-    pmpaddr0_li = pmpaddr0_lo;
-    pmpaddr1_li = pmpaddr1_lo;
-    pmpaddr2_li = pmpaddr2_lo;
-    pmpaddr3_li = pmpaddr3_lo;
 
     mcycle_li        = mcountinhibit_lo.cy ? mcycle_lo + dword_width_p'(1) : mcycle_lo;
     minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
@@ -531,8 +521,8 @@ always_comb
               `CSR_ADDR_MHARTID: csr_data_lo = hartid_i;
               `CSR_ADDR_MSTATUS: csr_data_lo = mstatus_lo;
               // MISA is optionally read-write, but all fields are read-only in BlackParrot
-              //   64 bit MXLEN, AISU extensions
-              `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h140101};
+              //   64 bit MXLEN, IMASU extensions
+              `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h141101};
               `CSR_ADDR_MEDELEG: csr_data_lo = medeleg_lo;
               `CSR_ADDR_MIDELEG: csr_data_lo = mideleg_lo;
               `CSR_ADDR_MIE: csr_data_lo = mie_lo;
@@ -543,11 +533,6 @@ always_comb
               `CSR_ADDR_MEPC: csr_data_lo = mepc_lo;
               `CSR_ADDR_MCAUSE: csr_data_lo = mcause_lo;
               `CSR_ADDR_MTVAL: csr_data_lo = mtval_lo;
-              `CSR_ADDR_PMPCFG0: csr_data_lo = pmpcfg0_lo;
-              `CSR_ADDR_PMPADDR0: csr_data_lo = pmpaddr0_lo;
-              `CSR_ADDR_PMPADDR1: csr_data_lo = pmpaddr1_lo;
-              `CSR_ADDR_PMPADDR2: csr_data_lo = pmpaddr2_lo;
-              `CSR_ADDR_PMPADDR3: csr_data_lo = pmpaddr3_lo;
               `CSR_ADDR_MCYCLE: csr_data_lo = mcycle_lo;
               `CSR_ADDR_MINSTRET: csr_data_lo = minstret_lo;
               `CSR_ADDR_MCOUNTINHIBIT: csr_data_lo = mcountinhibit_lo;
@@ -592,11 +577,6 @@ always_comb
               `CSR_ADDR_MEPC: mepc_li = csr_data_li;
               `CSR_ADDR_MCAUSE: mcause_li = csr_data_li;
               `CSR_ADDR_MTVAL: mtval_li = csr_data_li;
-              `CSR_ADDR_PMPCFG0: pmpcfg0_li = csr_data_li;
-              `CSR_ADDR_PMPADDR0: pmpaddr0_li = csr_data_li;
-              `CSR_ADDR_PMPADDR1: pmpaddr1_li = csr_data_li;
-              `CSR_ADDR_PMPADDR2: pmpaddr2_li = csr_data_li;
-              `CSR_ADDR_PMPADDR3: pmpaddr3_li = csr_data_li;
               `CSR_ADDR_MCYCLE: mcycle_li = csr_data_li;
               `CSR_ADDR_MINSTRET: minstret_li = csr_data_li;
               `CSR_ADDR_MCOUNTINHIBIT: mcountinhibit_li = csr_data_li;
