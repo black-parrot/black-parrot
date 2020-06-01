@@ -43,6 +43,35 @@ bsg_dff_reset #(.width_p(vtag_width_p))
    ,.data_i(vtag_i)
    ,.data_o(vtag_r)
   );
+
+// tlb bypass logic
+logic tlb_bypass;
+logic tlb_bypass_r;
+logic tlb_last_read_r;
+logic r_v_lo_bypass_r;
+bp_pte_entry_leaf_s r_entry_bypass_r;
+
+assign tlb_bypass = (vtag_i == vtag_r) & tlb_last_read_r;
+
+bsg_dff_reset #(.width_p(1))
+  tlb_bypass_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.data_i(tlb_bypass)
+   ,.data_o(tlb_bypass_r)
+  );
+
+bsg_dff_reset_set_clear 
+  #(.width_p(1)
+    ,.clear_over_set_p(1)
+    )
+  tlb_last_read_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.set_i((v_i & ~w_i))
+   ,.clear_i(~(v_i & ~w_i))
+   ,.data_o(tlb_last_read_r)
+  ); 
  
 bp_pte_entry_leaf_s r_entry, passthrough_entry;
 logic r_v_lo;
@@ -60,16 +89,34 @@ bsg_cam_1r1w_sync
    ,.w_tag_i(vtag_i)
    ,.w_data_i(entry_i)
 
-   ,.r_v_i(v_i & ~w_i)
+   ,.r_v_i(v_i & ~w_i & ~tlb_bypass)
    ,.r_tag_i(vtag_i)
 
    ,.r_data_o(r_entry)
    ,.r_v_o(r_v_lo)
    );
 
+bsg_dff_reset_en_bypass #(.width_p(entry_width_lp))
+  r_entry_bypass_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(~tlb_bypass_r)
+   ,.data_i(r_entry)
+   ,.data_o(r_entry_bypass_r)
+  );
+
+bsg_dff_reset_en_bypass #(.width_p(1))
+  r_v_lo_bypass_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(~tlb_bypass_r)
+   ,.data_i(r_v_lo)
+   ,.data_o(r_v_lo_bypass_r)
+  );  
+
 assign passthrough_entry = '{ptag: vtag_r, default: '0};
-assign entry_o    = translation_en_i ? r_entry : passthrough_entry;
-assign v_o        = translation_en_i ? r_v_r & r_v_lo : r_v_r;
+assign entry_o    = translation_en_i ? r_entry_bypass_r : passthrough_entry;
+assign v_o        = translation_en_i ? r_v_r & r_v_lo_bypass_r : r_v_r;
 assign miss_v_o   = r_v_r & ~v_o;
 
 endmodule
