@@ -448,8 +448,14 @@ module bp_fe_icache
     assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{1'b1}};
   end
 
-  // Circular left shift
-  assign data_mem_data_li = (data_mem_pkt.data << (data_mem_pkt.way_id*bank_width_lp)) | (data_mem_pkt.data >> (icache_block_width_p-data_mem_pkt.way_id*bank_width_lp));
+  wire [`BSG_SAFE_CLOG2(icache_block_width_p)-1:0] write_data_rot_li = data_mem_pkt.way_id*bank_width_lp;
+  bsg_rotate_left #(
+    .width_p(icache_block_width_p)
+  ) write_data_rotate (
+    .data_i(data_mem_pkt.data)
+    ,.rot_i(write_data_rot_li)
+    ,.o(data_mem_data_li)
+  );
 
   // tag_mem
   assign tag_mem_v_li = tl_we | tag_mem_pkt_yumi_o;
@@ -543,8 +549,14 @@ module bp_fe_icache
     end
   end
 
-  // Circular right shift
-  assign data_mem_o = {data_mem_data_lo, data_mem_data_lo} >> (data_mem_pkt_way_r*bank_width_lp);
+  wire [`BSG_SAFE_CLOG2(icache_block_width_p)-1:0] read_data_rot_li = data_mem_pkt_way_r*bank_width_lp;
+  bsg_rotate_right #(
+    .width_p(icache_block_width_p)
+  ) read_data_rotate (
+    .data_i(data_mem_data_lo)
+    ,.rot_i(read_data_rot_li)
+    ,.o(data_mem_o)
+  );
 
   assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached)
                                ? data_mem_pkt_v_i

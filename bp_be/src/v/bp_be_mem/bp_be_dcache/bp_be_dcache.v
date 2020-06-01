@@ -1005,8 +1005,14 @@ module bp_be_dcache
       : {data_mem_mask_width_lp{1'b1}};
   end
 
-  // Circular left shift
-  assign lce_data_mem_write_data = (data_mem_pkt.data << (data_mem_pkt.way_id*bank_width_lp)) | (data_mem_pkt.data >> (dcache_block_width_p-data_mem_pkt.way_id*bank_width_lp));
+  wire [`BSG_SAFE_CLOG2(dcache_block_width_p)-1:0] write_data_rot_li = data_mem_pkt.way_id*bank_width_lp;
+  bsg_rotate_left #(
+    .width_p(dcache_block_width_p)
+  ) write_data_rotate (
+    .data_i(data_mem_pkt.data)
+    ,.rot_i(write_data_rot_li)
+    ,.o(lce_data_mem_write_data)
+  );
 
   // tag_mem
   //
@@ -1142,8 +1148,14 @@ module bp_be_dcache
     end
   end
 
-  // Circular right shift
-  assign data_mem_o = {data_mem_data_lo, data_mem_data_lo} >> (data_mem_pkt_way_r*bank_width_lp);
+  wire [`BSG_SAFE_CLOG2(dcache_block_width_p)-1:0] read_data_rot_li = data_mem_pkt_way_r*bank_width_lp;
+  bsg_rotate_right #(
+    .width_p(dcache_block_width_p)
+  ) read_data_rotate (
+    .data_i(data_mem_data_lo)
+    ,.rot_i(read_data_rot_li)
+    ,.o(data_mem_o)
+  );
 
   // As an optimization, we snoop the data_mem_pkts to see if there
   // are any matching entries in the write buffer and disallow the
