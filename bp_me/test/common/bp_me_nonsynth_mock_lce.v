@@ -427,6 +427,12 @@ module bp_me_nonsynth_mock_lce
           ? e_mem_msg_size_16
           : e_mem_msg_size_8;
 
+  // uncached load data extraction
+  wire [dword_width_p-1:0] uc_load_dword = lce_cmd.data >> (8*byte_offset);
+  wire [dword_width_p-1:0] uc_load_word = uc_load_dword & dword_width_p'(64'hFFFFFFFF);
+  wire [dword_width_p-1:0] uc_load_half = uc_load_dword & dword_width_p'(64'hFFFF);
+  wire [dword_width_p-1:0] uc_load_byte = uc_load_dword & dword_width_p'(64'hFF);
+
   always_comb begin
     lce_state_n = lce_state_r;
     lce_init_n = lce_init_r;
@@ -570,7 +576,6 @@ module bp_me_nonsynth_mock_lce
       UNCACHED_SEND_TR_RESP: begin
         // send return packet to TR
         if (lce_cmd_v & lce_cmd.header.msg_type == e_lce_cmd_uc_st_done) begin
-          assert(mshr_r.store_op) else $error("LCE received UC Store Done, but not missing on store");
           // store sends back null packet when it receives lce_cmd back
           tr_pkt_v_o = 1'b1;
           tr_pkt_lo.paddr = lce_cmd.header.addr;
@@ -587,7 +592,6 @@ module bp_me_nonsynth_mock_lce
           mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
 
         end else if (lce_cmd_v & lce_cmd.header.msg_type == e_lce_cmd_uc_data) begin
-          assert(!mshr_r.store_op) else $error("LCE received UC Store Done, but not missing on store");
           // load returns the data, and must wait for lce_data_cmd to return
           tr_pkt_v_o = 1'b1;
           // Extract the desired bits from the returned 64-bit dword
@@ -595,12 +599,12 @@ module bp_me_nonsynth_mock_lce
           tr_pkt_lo.uncached = 1'b1;
           tr_pkt_lo.data =
             double_op
-              ? lce_cmd.data[0 +: 64]
+              ? uc_load_dword
               : word_op
-                ? {32'('0), lce_cmd.data[8*byte_offset +: 32]}
+                ? uc_load_word
                 : half_op
-                  ? {48'('0), lce_cmd.data[8*byte_offset +: 16]}
-                  : {56'('0), lce_cmd.data[8*byte_offset +: 8]};
+                  ? uc_load_half
+                  : uc_load_byte;
 
           lce_state_n = (tr_pkt_ready_i)
                         ? (lce_init_r)
