@@ -239,7 +239,9 @@ always_comb
 
         flush_o = 1'b1;
       end
-    else if (trap_pkt.sfence)
+    // TODO: This is compliant but suboptimal, since satp is not required to flush TLBs
+    //   Should add message to fe-be interface
+    else if (trap_pkt.sfence | trap_pkt.satp)
       begin
         fe_cmd.opcode = e_op_itlb_fence;
         fe_cmd.vaddr  = commit_pkt.npc;

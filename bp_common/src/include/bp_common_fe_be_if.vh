@@ -196,8 +196,8 @@ typedef enum logic
  * of why pc is redirected.
  * e_op_state_reset is used after the reset, which flushes all the states.
  * e_op_pc_redirection defines the changes of PC, which happens during the branches.
- * e_op_icache_fence happens when there is flush in the icache.
  * e_op_attaboy informs the frontend that the prediction is correct.
+ * e_op_icache_fence happens when there is flush in the icache.
  * e_op_itlb_fill_response happens when itlb populates translation.
  * e_op_itlb_fence issues a fence operation to itlb.
  */
@@ -205,11 +205,10 @@ typedef enum logic [2:0]
 {
   e_op_state_reset         = 0
   ,e_op_pc_redirection     = 1
-  ,e_op_interrupt          = 2
+  ,e_op_attaboy            = 2
   ,e_op_icache_fence       = 3
-  ,e_op_attaboy            = 4
-  ,e_op_itlb_fill_response = 5
-  ,e_op_itlb_fence         = 6
+  ,e_op_itlb_fill_response = 4
+  ,e_op_itlb_fence         = 5
 } bp_fe_command_queue_opcodes_e;
 
 /*
@@ -223,8 +222,7 @@ typedef enum logic [1:0]
 } bp_fe_misprediction_reason_e;
 
 /*
- * The exception code types. e_instr_addr_misaligned is when the instruction
- * addresses are not aligned. e_itlb_miss is when the instruction has a miss in
+ * The exception code types. e_itlb_miss is when the instruction has a miss in
  * the iTLB. ITLB misses can cause the instruction misaligned. Thus the frontend
  * detects the instruction miss first and then detect whether there is an ITLB
  * miss. e_instruction_access_fault is when the access control is violated.
@@ -232,10 +230,9 @@ typedef enum logic [1:0]
  */
 typedef enum logic [1:0]
 {
-  e_instr_misaligned    = 0
-  ,e_itlb_miss          = 1
-  ,e_instr_access_fault = 2
-  ,e_instr_page_fault   = 3
+   e_itlb_miss          = 0
+  ,e_instr_access_fault = 1
+  ,e_instr_page_fault   = 2
 } bp_fe_exception_code_e;
 
 /*
@@ -246,16 +243,16 @@ typedef enum logic [1:0]
  * e_subop_branch_mispredict is at-fault PC redirection.
  * e_subop_trap is at-fault PC redirection. It will changes the permission bits.
  * e_subop_context_switch is no-fault PC redirection. It redirect pc to a new address space.
+ * e_subop_translation_switch is no-fault PC redirection resulting from translation mode changes
 */
 typedef enum logic [2:0]
 {
-  e_subop_uret
-  ,e_subop_sret
-  ,e_subop_mret
+  e_subop_eret
   ,e_subop_interrupt
   ,e_subop_branch_mispredict
   ,e_subop_trap
   ,e_subop_context_switch
+  ,e_subop_translation_switch
 } bp_fe_command_queue_subopcodes_e;
 
 /* Declare width macros so that clients can use structs in ports before struct declaration */

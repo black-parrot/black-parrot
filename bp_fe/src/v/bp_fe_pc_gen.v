@@ -94,6 +94,7 @@ wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
 wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
 wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 wire br_miss_v = pc_redirect_v
                 & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
 wire br_res_taken = (attaboy_v & fe_cmd_cast_i.operands.attaboy.taken)
@@ -104,8 +105,8 @@ wire br_miss_nonbr = br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.mi
 assign fe_cmd_branch_metadata = br_miss_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
 
 logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
-wire shadow_priv_w = state_reset_v | trap_v;
-assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
+wire shadow_priv_w = state_reset_v | trap_v | translation_v;
+assign shadow_priv_n = state_reset_v ? `PRIV_MODE_M : fe_cmd_cast_i.operands.pc_redirect_operands.priv;
 bsg_dff_reset_en
  #(.width_p(rv64_priv_width_gp))
  shadow_priv_reg
@@ -134,8 +135,6 @@ bsg_dff_reset_en
 // Until we support C, must be aligned to 4 bytes
 // There's also an interesting question about physical alignment (I/O devices, etc)
 //   But let's punt that for now...
-// TODO: misaligned is actually done by the branch target, not the PC
-wire misalign_exception           = 1'b0;
 wire itlb_miss_exception          = v_if2 & (mem_resp_v_i & mem_resp_cast_i.itlb_miss);
 wire instr_access_fault_exception = v_if2 & (mem_resp_v_i & mem_resp_cast_i.instr_access_fault);
 wire instr_page_fault_exception   = v_if2 & (mem_resp_v_i & mem_resp_cast_i.instr_page_fault);
@@ -143,7 +142,7 @@ wire instr_page_fault_exception   = v_if2 & (mem_resp_v_i & mem_resp_cast_i.inst
 wire fetch_fail     = v_if2 & ~fe_queue_v_o;
 wire queue_miss     = v_if2 & ~fe_queue_ready_i;
 wire icache_miss    = v_if2 & (mem_resp_v_i & mem_resp_cast_i.icache_miss);
-wire fe_exception_v = v_if2 & (instr_page_fault_exception | instr_access_fault_exception | misalign_exception | itlb_miss_exception);
+wire fe_exception_v = v_if2 & (instr_page_fault_exception | instr_access_fault_exception | itlb_miss_exception);
 wire flush          = fe_exception_v | icache_miss | queue_miss | cmd_nonattaboy_v;
 wire fe_instr_v     = v_if2 & mem_resp_v_i & ~flush;
 
@@ -451,13 +450,11 @@ always_comb
       begin
         fe_queue_cast_o.msg_type                     = e_fe_exception;
         fe_queue_cast_o.msg.exception.vaddr          = pc_if2;
-        fe_queue_cast_o.msg.exception.exception_code = misalign_exception
-                                                       ? e_instr_misaligned
-                                                       : itlb_miss_exception
-                                                         ? e_itlb_miss
-                                                         : instr_page_fault_exception
-                                                           ? e_instr_page_fault
-                                                           : e_instr_access_fault;
+        fe_queue_cast_o.msg.exception.exception_code = itlb_miss_exception
+                                                       ? e_itlb_miss
+                                                       : instr_page_fault_exception
+                                                         ? e_instr_page_fault
+                                                         : e_instr_access_fault;
       end
     else 
       begin
