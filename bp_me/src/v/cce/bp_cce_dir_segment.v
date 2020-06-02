@@ -308,7 +308,7 @@ module bp_cce_dir_segment
         dir_ram_addr = cnt[0+:lg_rows_lp];
         dir_ram_w_mask = '1;
         dir_ram_w_data = '0;
-        cnt_clr = (cnt == (rows_lp-1));
+        cnt_clr = (cnt == counter_width_lp'(rows_lp-1));
         state_n = cnt_clr ? READY : INIT;
         cnt_inc = ~cnt_clr;
         // directory is busy and cannot accept commands
@@ -351,7 +351,7 @@ module bp_cce_dir_segment
             dir_ram_addr = set_id;
 
             // next address to read from directory
-            dir_ram_addr_n = dir_ram_addr + tag_sets_p;
+            dir_ram_addr_n = dir_ram_addr + lg_rows_lp'(tag_sets_p);
 
             // next cycle, the data coming out of the RAM will be valid
             dir_data_o_v_n =
@@ -415,18 +415,18 @@ module bp_cce_dir_segment
 
         // cnt should be shifted based on LOG2(tag_sets_per_row_lp)
         // would require tag_sets_per_row_lp to be a power of two
-        for(int i = 0; i < tag_sets_per_row_lp; i++) begin
-          sharers_hits_n[(cnt << 1) + i] = sharers_hits[i];
-          sharers_ways_n[(cnt << 1) + i] = sharers_ways[i];
-          sharers_coh_states_n[(cnt << 1) + i] = sharers_coh_states[i];
+        for(int j = 0; j < tag_sets_per_row_lp; j++) begin
+          sharers_hits_n[(cnt << 1) + j] = sharers_hits[j];
+          sharers_ways_n[(cnt << 1) + j] = sharers_ways[j];
+          sharers_coh_states_n[(cnt << 1) + j] = sharers_coh_states[j];
         end
 
         // do another read if required (num_lce_p > 2 and rows_per_set_lp >= 2)
-        if (cnt < (rows_per_set_lp-1)) begin
+        if (cnt < counter_width_lp'(rows_per_set_lp-1)) begin
           dir_ram_v = 1'b1;
           dir_ram_addr = dir_ram_addr_r;
-          dir_ram_addr_n = dir_ram_addr_r + tag_sets_p;
-          dir_data_o_v_n = (cnt == (rows_per_set_lp-2))
+          dir_ram_addr_n = dir_ram_addr_r + lg_rows_lp'(tag_sets_p);
+          dir_data_o_v_n = (cnt == counter_width_lp'(rows_per_set_lp-2))
                            ? (last_row_full_lp)
                              ? '1
                              : 2'b01

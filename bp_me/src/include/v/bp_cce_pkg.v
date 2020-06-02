@@ -45,4 +45,7 @@ package bp_cce_pkg;
     bp_coh_states_e          state;                \
   } dir_entry_s                                    \
 
+  `define bp_cce_dir_entry_width(tag_width_mp) \
+    ($bits(bp_coh_states_e)+tag_width_mp)
+
 endpackage : bp_cce_pkg

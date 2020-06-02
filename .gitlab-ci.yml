@@ -188,7 +188,6 @@ lint-vcs:
 
 me-regress-verilator:
   <<: *job_definition
-  when: manual
   stage: test-short
   tags:
     - verilator

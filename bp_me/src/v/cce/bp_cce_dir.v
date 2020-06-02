@@ -218,11 +218,15 @@ module bp_cce_dir
   localparam lg_acache_assoc_lp = `BSG_SAFE_CLOG2(acache_assoc_p);
   localparam acache_lce_id_width_lp = `BSG_SAFE_CLOG2(num_cacc_p);
   localparam lg_acache_sets_lp = `BSG_SAFE_CLOG2(acache_sets_p);
+  // local param that is set to 1 if there are 0 CACC's, so the acache_sharers vectors
+  // are sized properly when there are no accelerators. This is only used to size the vectors
+  // as 1 element vectors when there are no accelerators present.
+  localparam num_cacc_lp = (num_cacc_p == 0) ? 1 : num_cacc_p;
 
-  logic                                                 acache_sharers_v;
-  logic [num_cacc_p-1:0]                                 acache_sharers_hits;
-  logic [num_cacc_p-1:0][lg_acache_assoc_lp-1:0]         acache_sharers_ways;
-  bp_coh_states_e [num_cacc_p-1:0]                       acache_sharers_coh_states;
+  logic                                                   acache_sharers_v;
+  logic [num_cacc_lp-1:0]                                 acache_sharers_hits;
+  logic [num_cacc_lp-1:0][lg_acache_assoc_lp-1:0]         acache_sharers_ways;
+  bp_coh_states_e [num_cacc_lp-1:0]                       acache_sharers_coh_states;
 
   logic acache_busy, acache_lru_v, acache_addr_v;
   logic [paddr_width_p-1:0] acache_lru_addr_lo, acache_addr_lo;
@@ -297,17 +301,20 @@ module bp_cce_dir
   assign busy_o = icache_busy | dcache_busy | acache_busy;
   assign sharers_v_o = icache_sharers_v & dcache_sharers_v & acache_sharers_v;
   always_comb begin
+    sharers_hits_o = '0;
+    sharers_ways_o = '0;
+    sharers_coh_states_o = {((2*num_core_p)+num_cacc_p){e_COH_I}};
     for (int i = 0; i < num_core_p; i++) begin
       sharers_hits_o[(2*i)]         = icache_sharers_hits[i];
-      sharers_ways_o[(2*i)]         = {'0, icache_sharers_ways[i]};
+      sharers_ways_o[(2*i)][0+:lg_icache_assoc_lp] = icache_sharers_ways[i];
       sharers_coh_states_o[(2*i)]   = icache_sharers_coh_states[i];
       sharers_hits_o[(2*i)+1]       = dcache_sharers_hits[i];
-      sharers_ways_o[(2*i)+1]       = {'0, dcache_sharers_ways[i]};
+      sharers_ways_o[(2*i)+1][0+:lg_dcache_assoc_lp] = dcache_sharers_ways[i];
       sharers_coh_states_o[(2*i)+1] = dcache_sharers_coh_states[i];
     end
     for (int i = 0; i < num_cacc_p; i++) begin
       sharers_hits_o[i+(2*num_core_p)] = acache_sharers_hits[i];
-      sharers_ways_o[i+(2*num_core_p)] = {'0, acache_sharers_ways[i]};
+      sharers_ways_o[i+(2*num_core_p)][0+:lg_acache_assoc_lp] = acache_sharers_ways[i];
       sharers_coh_states_o[i+(2*num_core_p)] = acache_sharers_coh_states[i];
     end
   end

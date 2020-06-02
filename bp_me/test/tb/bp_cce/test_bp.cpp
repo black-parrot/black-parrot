@@ -28,7 +28,7 @@ int sc_main(int argc, char **argv)
 #if VM_TRACE
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   tb->trace(wf, 10);
-  wf->open("vcdplus.vpd");
+  wf->open("dump.vcd");
 #endif
 
   reset = 1;

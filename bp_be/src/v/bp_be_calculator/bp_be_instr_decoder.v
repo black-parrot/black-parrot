@@ -309,7 +309,6 @@ always_comb
         decode.csr_v       = 1'b1;
         decode.serial_v    = 1'b1;
         casez (fe_exc_i)
-          e_instr_misaligned  : decode.fu_op = e_op_instr_misaligned;
           e_instr_access_fault: decode.fu_op = e_op_instr_access_fault;
           e_instr_page_fault  : decode.fu_op = e_op_instr_page_fault;
           e_itlb_miss         : decode.fu_op = e_itlb_fill;

@@ -46,7 +46,7 @@
  *
  */
 
-`define declare_bp_lce_cce_if(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, data_width_mp, cce_block_width_mp) \
+`define declare_bp_lce_cce_if(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, cce_block_width_mp) \
                                                                                                          \
 /*                                                                                                       \
  * bp_lce_cce_req_s defines an LCE request sent by an LCE to a CCE on a cache miss. An LCE enters        \
@@ -59,6 +59,7 @@
  * non_exclusive indicates if the requesting cache prefers non-exclusive read-access                     \
  * addr is the cache missing address                                                                     \
  * lru_way_id indicates the way within the target set that will be used to fill the miss in to           \
+ *                                                                                                       \
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
@@ -73,7 +74,7 @@
                                                                                                          \
   typedef struct packed                                                                                  \
   {                                                                                                      \
-    logic [data_width_mp-1:0]                    data;                                                   \
+    logic [cce_block_width_mp-1:0]               data;                                                   \
     bp_lce_cce_req_header_s                      header;                                                 \
   } bp_lce_cce_req_s;                                                                                    \
                                                                                                          \
@@ -271,8 +272,8 @@ typedef enum logic [2:0]
  * Width macros for LCE-CCE Message Networks
  */
 
-`define bp_lce_cce_req_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, data_width_mp) \
-  (`bp_lce_cce_req_header_width(cce_id_width_mp,lce_id_width_mp,paddr_width_mp,lce_assoc_mp)+data_width_mp)
+`define bp_lce_cce_req_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, cce_block_width_mp) \
+  (`bp_lce_cce_req_header_width(cce_id_width_mp,lce_id_width_mp,paddr_width_mp,lce_assoc_mp)+cce_block_width_mp)
 
 `define bp_lce_cmd_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, cce_block_width_mp) \
   (`bp_lce_cmd_header_width(cce_id_width_mp,lce_id_width_mp,paddr_width_mp,lce_assoc_mp)+cce_block_width_mp)
@@ -280,8 +281,9 @@ typedef enum logic [2:0]
 `define bp_lce_cce_resp_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, cce_block_width_mp) \
   (`bp_lce_cce_resp_header_width(cce_id_width_mp,lce_id_width_mp,paddr_width_mp)+cce_block_width_mp)
 
-`define declare_bp_lce_cce_if_widths(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, data_width_mp, cce_block_width_mp)    \
-    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, data_width_mp) \
+`define declare_bp_lce_cce_if_widths(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, cce_block_width_mp)    \
+    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, cce_block_width_mp) \
+    , localparam lce_cce_block_req_width_lp=`bp_lce_cce_req_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, cce_block_width_mp) \
     , localparam lce_cmd_width_lp=`bp_lce_cmd_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, cce_block_width_mp)    \
     , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, cce_block_width_mp)
 

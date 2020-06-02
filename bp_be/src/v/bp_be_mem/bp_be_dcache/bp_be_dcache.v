@@ -11,7 +11,7 @@
  *    
  *    data_mem is divided into 8 different banks, and cache blocks are
  *    interleaved among the banks. The governing relationship is "bank_id =
- *    word_offset ^ way_id".  
+ *    word_offset + way_id" (with modular arithmetic).
  *    
  *    tag_mem contains tag and coherence state bits.
  *    
@@ -328,7 +328,7 @@ module bp_be_dcache
     tag_mem
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.v_i(~reset_i & tag_mem_v_li)
+      ,.v_i(tag_mem_v_li)
       ,.w_i(tag_mem_w_li)
       ,.addr_i(tag_mem_addr_li)
       ,.data_i(tag_mem_data_li)
@@ -353,7 +353,7 @@ module bp_be_dcache
       data_mem
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
-        ,.v_i(~reset_i & data_mem_v_li[i])
+        ,.v_i(data_mem_v_li[i])
         ,.w_i(data_mem_w_li)
         ,.addr_i(data_mem_addr_li[i])
         ,.data_i(data_mem_data_li[i])
@@ -368,16 +368,15 @@ module bp_be_dcache
   logic [dcache_assoc_p-1:0] load_hit_tl;
   logic [dcache_assoc_p-1:0] store_hit_tl;
   logic [dcache_assoc_p-1:0] invalid_tl;
-  logic load_hit_v_tl;
-  logic store_hit_v_tl;
-  logic [way_id_width_lp-1:0] load_hit_way_tv_r_tl;
-  logic [way_id_width_lp-1:0] store_hit_way_tv_r_tl;
   logic [paddr_width_p-1:0]  paddr_tl;
   logic [ptag_width_lp-1:0] addr_tag_tl;
+  logic [word_offset_width_lp-1:0] addr_word_offset_tl;
+  logic [dcache_assoc_p-1:0] addr_word_offset_dec_tl;
 
   assign paddr_tl = {ptag_i, page_offset_tl_r};
   
   assign addr_tag_tl = paddr_tl[block_offset_width_lp+index_width_lp+:ptag_width_lp];
+  assign addr_word_offset_tl = paddr_tl[byte_offset_width_lp+:word_offset_width_lp];
 
   for (genvar i = 0; i < dcache_assoc_p; i++) begin: tag_comp_tl
     assign tag_match_tl[i] = addr_tag_tl == tag_mem_data_lo[i].tag;
@@ -387,25 +386,12 @@ module bp_be_dcache
     assign invalid_tl[i] = (tag_mem_data_lo[i].coh_state == e_COH_I);
   end
 
-  bsg_priority_encode
-    #(.width_p(dcache_assoc_p)
-      ,.lo_to_hi_p(1)
-      )
-    pe_load_hit_tl
-    (.i(load_hit_tl)
-      ,.v_o(load_hit_v_tl)
-      ,.addr_o(load_hit_way_tv_r_tl)
-      );
-  
-  bsg_priority_encode
-    #(.width_p(dcache_assoc_p)
-      ,.lo_to_hi_p(1)
-      )
-    pe_store_hit_tl
-    (.i(store_hit_tl)
-      ,.v_o(store_hit_v_tl)
-      ,.addr_o(store_hit_way_tv_r_tl)
-      );
+  bsg_decode
+   #(.num_out_p(dcache_assoc_p))
+   offset_decode
+    (.i(addr_word_offset_tl)
+     ,.o(addr_word_offset_dec_tl)
+     );
 
   // TV stage
   //
@@ -429,12 +415,14 @@ module bp_be_dcache
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
   logic [ptag_width_lp-1:0] addr_tag_tv_r;
   logic [index_width_lp-1:0] addr_index_tv;
-  logic [word_offset_width_lp-1:0] addr_word_offset_tv;
-  logic load_hit_tv_r;
-  logic store_hit_tv_r;
-  logic [way_id_width_lp-1:0] load_hit_way_tv_r;
-  logic [way_id_width_lp-1:0] store_hit_way_tv_r;
+  logic [dcache_assoc_p-1:0] load_hit_tv_r;
+  logic [dcache_assoc_p-1:0] store_hit_tv_r;
   logic [dcache_assoc_p-1:0] invalid_tv_r;
+  logic [dcache_assoc_p-1:0] addr_word_offset_dec_tv_r;
+  logic [way_id_width_lp-1:0] load_hit_way_tv;
+  logic [way_id_width_lp-1:0] store_hit_way_tv;
+  logic load_hit_tv;
+  logic store_hit_tv;
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~fencei_req;
 
@@ -461,9 +449,8 @@ module bp_be_dcache
       tag_info_tv_r <= '0;
       load_hit_tv_r <= '0;
       store_hit_tv_r <= '0;
-      load_hit_way_tv_r <= '0;
-      store_hit_way_tv_r <= '0;
       invalid_tv_r <= '0;
+      addr_word_offset_dec_tv_r <= '0;
     end
     else begin
       v_tv_r <= tv_we;
@@ -483,12 +470,11 @@ module bp_be_dcache
         paddr_tv_r <= paddr_tl;
         tag_info_tv_r <= tag_mem_data_lo;
         uncached_tv_r <= uncached_i;
-        load_hit_tv_r <= load_hit_v_tl;
-        store_hit_tv_r <= store_hit_v_tl;
-        load_hit_way_tv_r <= load_hit_way_tv_r_tl;
-        store_hit_way_tv_r <= store_hit_way_tv_r_tl;
+        load_hit_tv_r <= load_hit_tl;
+        store_hit_tv_r <= store_hit_tl;
         addr_tag_tv_r <= addr_tag_tl;
-        invalid_tv_r <= invalid_tl; 
+        invalid_tv_r <= invalid_tl;
+        addr_word_offset_dec_tv_r <= addr_word_offset_dec_tl;
       end
 
       if (tv_we & load_op_tl_r) begin
@@ -502,7 +488,6 @@ module bp_be_dcache
   end
 
   assign addr_index_tv = paddr_tv_r[block_offset_width_lp+:index_width_lp];
-  assign addr_word_offset_tv = paddr_tv_r[byte_offset_width_lp+:word_offset_width_lp];
 
   // uncached req
   //
@@ -519,17 +504,37 @@ module bp_be_dcache
   logic [index_width_lp-1:0] load_reserved_index_r;
   logic load_reserved_v_r;
 
-  wire load_miss_tv = ~load_hit_tv_r & v_tv_r & load_op_tv_r & ~uncached_tv_r;
-  wire store_miss_tv = ~store_hit_tv_r & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
-  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit_tv_r;
-  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit_tv_r & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
+  bsg_encode_one_hot
+   #(.width_p(dcache_assoc_p)
+     ,.lo_to_hi_p(1)
+     )
+   store_hit_index_encoder
+    (.i(store_hit_tv_r)
+     ,.addr_o(store_hit_way_tv)
+     ,.v_o(store_hit_tv)
+     );
+
+  bsg_encode_one_hot
+   #(.width_p(dcache_assoc_p)
+     ,.lo_to_hi_p(1)
+     )
+   load_hit_index_encoder
+    (.i(load_hit_tv_r)
+     ,.addr_o(load_hit_way_tv)
+     ,.v_o(load_hit_tv)
+     );
+
+  wire load_miss_tv = ~load_hit_tv & v_tv_r & load_op_tv_r & ~uncached_tv_r;
+  wire store_miss_tv = ~store_hit_tv & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
+  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit_tv;
+  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
 
   wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | wt_miss_tv;
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
-  assign lr_hit_tv = v_tv_r & lr_op_tv_r & store_hit_tv_r;
+  assign lr_hit_tv = v_tv_r & lr_op_tv_r & store_hit_tv;
   // Succeed if the address matches and we have a store hit
-  assign sc_success  = v_tv_r & sc_op_tv_r & store_hit_tv_r & load_reserved_v_r 
+  assign sc_success  = v_tv_r & sc_op_tv_r & store_hit_tv & load_reserved_v_r 
                        & (load_reserved_tag_r == addr_tag_tv_r)
                        & (load_reserved_index_r == addr_index_tv);
   // Fail if we have a store conditional without success
@@ -596,35 +601,33 @@ module bp_be_dcache
   assign wbuf_entry_out_index = wbuf_entry_out.paddr[block_offset_width_lp+:index_width_lp];
 
   assign wbuf_entry_in.paddr = paddr_tv_r;
-  assign wbuf_entry_in.way_id = store_hit_way_tv_r;
+  assign wbuf_entry_in.way_id = store_hit_way_tv;
 
-  // TODO: Add assertion, otherwise this will just infer latches....
-  if (dword_width_p == 64) begin
-    assign wbuf_entry_in.data = double_op_tv_r
-      ? data_tv_r
-      : (word_op_tv_r
-        ? {2{data_tv_r[0+:32]}}
-        : (half_op_tv_r
-          ? {4{data_tv_r[0+:16]}}
-          : {8{data_tv_r[0+:8]}}));
+  // Hardcoded for 64-bit words
+  assign wbuf_entry_in.data = double_op_tv_r
+    ? data_tv_r
+    : (word_op_tv_r
+      ? {2{data_tv_r[0+:32]}}
+      : (half_op_tv_r
+        ? {4{data_tv_r[0+:16]}}
+        : {8{data_tv_r[0+:8]}}));
 
-    assign wbuf_entry_in.mask = double_op_tv_r
-      ? 8'b1111_1111
-      : (word_op_tv_r
-        ? {{4{paddr_tv_r[2]}}, {4{~paddr_tv_r[2]}}}
-        : (half_op_tv_r
-          ? {{2{paddr_tv_r[2] & paddr_tv_r[1]}}, {2{paddr_tv_r[2] & ~paddr_tv_r[1]}},
-             {2{~paddr_tv_r[2] & paddr_tv_r[1]}}, {2{~paddr_tv_r[2] & ~paddr_tv_r[1]}}}
-          : {(paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]), 
-             (paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
-             (paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
-             (paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0]),
-             (~paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]),
-             (~paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
-             (~paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
-             (~paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0])
-            }));
-  end
+  assign wbuf_entry_in.mask = double_op_tv_r
+    ? 8'b1111_1111
+    : (word_op_tv_r
+      ? {{4{paddr_tv_r[2]}}, {4{~paddr_tv_r[2]}}}
+      : (half_op_tv_r
+        ? {{2{paddr_tv_r[2] & paddr_tv_r[1]}}, {2{paddr_tv_r[2] & ~paddr_tv_r[1]}},
+           {2{~paddr_tv_r[2] & paddr_tv_r[1]}}, {2{~paddr_tv_r[2] & ~paddr_tv_r[1]}}}
+        : {(paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]), 
+           (paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
+           (paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
+           (paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0]),
+           (~paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]),
+           (~paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
+           (~paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
+           (~paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0])
+          }));
 
   // stat_mem {lru, dirty}
   // It has (ways_p-1) bits to form pseudo-LRU tree, and ways_p bits for dirty
@@ -645,7 +648,7 @@ module bp_be_dcache
     stat_mem
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.v_i(~reset_i & stat_mem_v_li)
+      ,.v_i(stat_mem_v_li)
       ,.w_i(stat_mem_w_li)
       ,.addr_i(stat_mem_addr_li)
       ,.data_i(stat_mem_data_li)
@@ -686,8 +689,6 @@ module bp_be_dcache
   bp_dcache_stat_mem_pkt_s stat_mem_pkt;
   assign stat_mem_pkt = stat_mem_pkt_i;
 
-  logic [dcache_assoc_p-1:0][bank_width_lp-1:0] lce_data_mem_data_li;
- 
   logic data_mem_pkt_v;
   logic tag_mem_pkt_v;
   logic stat_mem_pkt_v;
@@ -844,13 +845,22 @@ module bp_be_dcache
   logic [bank_width_lp-1:0] ld_data_way_picked;
   logic [dword_width_p-1:0] ld_data_dword_picked;
   logic [dword_width_p-1:0] bypass_data_masked;
+  logic [dcache_assoc_p-1:0] ld_data_way_select;
 
-  bsg_mux #(
+  bsg_adder_one_hot
+   #(.width_p(dcache_assoc_p))
+   select_adder
+    (.a_i(load_hit_tv_r)
+     ,.b_i(addr_word_offset_dec_tv_r)
+     ,.o(ld_data_way_select)
+     );
+
+  bsg_mux_one_hot #(
     .width_p(bank_width_lp)
     ,.els_p(dcache_assoc_p)
   ) ld_data_set_select_mux (
     .data_i(ld_data_tv_r)
-    ,.sel_i(load_hit_way_tv_r ^ addr_word_offset_tv)
+    ,.sel_one_hot_i(ld_data_way_select)
     ,.data_o(ld_data_way_picked)
   );
 
@@ -943,12 +953,14 @@ module bp_be_dcache
   // data_mem
   //
   logic [dcache_assoc_p-1:0] wbuf_data_mem_v;
+  logic [word_offset_width_lp-1:0] wbuf_data_mem_offset;
+  assign wbuf_data_mem_offset = (word_offset_width_lp'(wbuf_entry_out.way_id) + wbuf_entry_out_word_offset);
   bsg_decode #(
     .num_out_p(dcache_assoc_p)
   ) wbuf_data_mem_v_decode (
-    .i(wbuf_entry_out.way_id ^ wbuf_entry_out_word_offset)
+    .i(wbuf_data_mem_offset)
     ,.o(wbuf_data_mem_v)
-  );  
+  ); 
 
   logic lce_data_mem_v;
   assign lce_data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
@@ -977,11 +989,13 @@ module bp_be_dcache
   end
 
   for (genvar i = 0; i < dcache_assoc_p; i++) begin
+    wire [word_offset_width_lp-1:0] data_mem_pkt_offset = (word_offset_width_lp'(i) - data_mem_pkt.way_id);
+
     assign data_mem_addr_li[i] = (load_op & tl_we)
       ? {addr_index, addr_word_offset}
-      : (wbuf_yumi_li
+      : wbuf_yumi_li
         ? {wbuf_entry_out_index, wbuf_entry_out_word_offset}
-        : {data_mem_pkt.index, data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))});
+        : {data_mem_pkt.index, data_mem_pkt_offset};
     assign data_mem_data_li[i] = wbuf_yumi_li
       ? {num_dwords_per_bank_lp{wbuf_entry_out.data}}
       : lce_data_mem_write_data[i];
@@ -991,15 +1005,15 @@ module bp_be_dcache
       : {data_mem_mask_width_lp{1'b1}};
   end
 
-  bsg_mux_butterfly#(
-    .width_p(bank_width_lp)
-    ,.els_p(dcache_assoc_p)
-  ) write_mux_butterfly (
+  wire [`BSG_SAFE_CLOG2(dcache_block_width_p)-1:0] write_data_rot_li = data_mem_pkt.way_id*bank_width_lp;
+  bsg_rotate_left #(
+    .width_p(dcache_block_width_p)
+  ) write_data_rotate (
     .data_i(data_mem_pkt.data)
-    ,.sel_i(data_mem_pkt.way_id)
-    ,.data_o(lce_data_mem_write_data)
+    ,.rot_i(write_data_rot_li)
+    ,.o(lce_data_mem_write_data)
   );
- 
+
   // tag_mem
   //
   assign tag_mem_v_li = tl_we | tag_mem_pkt_yumi_o; 
@@ -1080,8 +1094,8 @@ module bp_be_dcache
 
   always_comb begin
     if (v_tv_r) begin
-      lru_decode_way_li = store_op_tv_r ? store_hit_way_tv_r : load_hit_way_tv_r;
-      dirty_mask_way_li = store_hit_way_tv_r;
+      lru_decode_way_li = store_op_tv_r ? store_hit_way_tv : load_hit_way_tv;
+      dirty_mask_way_li = store_hit_way_tv;
       dirty_mask_v_li = store_op_tv_r & (l1_writethrough_p == 0); // Blocks are never dirty in a writethrough cache
       
       stat_mem_data_li.lru = lru_decode_data_lo;
@@ -1114,10 +1128,10 @@ module bp_be_dcache
   // write buffer
   //
   if (l1_writethrough_p == 0) begin : wb_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv_r & ~sc_fail & ~uncached_tv_r;
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r;
   end
   else begin : wt_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv_r & ~sc_fail & ~uncached_tv_r & cache_req_ready_i;
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & cache_req_ready_i;
   end
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we) & ~data_mem_pkt_yumi_o;
   assign bypass_v_li = tv_we & load_op_tl_r;
@@ -1134,16 +1148,15 @@ module bp_be_dcache
     end
   end
 
-  bsg_mux_butterfly
-   #(.width_p(bank_width_lp)
-    ,.els_p(dcache_assoc_p))
-    read_mux_butterfly
-    (.data_i(data_mem_data_lo)
-    ,.sel_i(data_mem_pkt_way_r)
-    ,.data_o(lce_data_mem_data_li)
-    );
-  
-  assign data_mem_o = lce_data_mem_data_li;
+  wire [`BSG_SAFE_CLOG2(dcache_block_width_p)-1:0] read_data_rot_li = data_mem_pkt_way_r*bank_width_lp;
+  bsg_rotate_right #(
+    .width_p(dcache_block_width_p)
+  ) read_data_rotate (
+    .data_i(data_mem_data_lo)
+    ,.rot_i(read_data_rot_li)
+    ,.o(data_mem_o)
+  );
+
   // As an optimization, we snoop the data_mem_pkts to see if there
   // are any matching entries in the write buffer and disallow the
   // data_mem_pkts to allow the write buffers to drain before we can
