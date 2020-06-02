@@ -301,7 +301,7 @@ An LCE Command has the following fields:
 * Destination ID - destination LCE ID
 * Message Type - command message type (see below)
 * Data Length - Number of 64-bit data packets following header (only for custom messages)
-* Source ID - sending LCE ID
+* Source ID - sending CCE ID
 * Address - address
 * Way ID - cache way within LCE's cache set (given by address) to operate on
 * State - coherence state
