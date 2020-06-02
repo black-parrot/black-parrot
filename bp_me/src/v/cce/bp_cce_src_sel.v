@@ -30,7 +30,7 @@ module bp_cce_src_sel
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
     `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   )
   (// Select signals for src_a and src_b - from decoded instruction
@@ -78,8 +78,8 @@ module bp_cce_src_sel
 
   //synopsys translate_off
   initial begin
-    assert(`bp_cce_inst_gpr_width == dword_width_p)
-      else $error("GPR width and dword_width_p must be same in CCE");
+    assert(cce_block_width_p >= `bp_cce_inst_gpr_width)
+      else $error("CCE block width must be greater than CCE GPR width");
   end
   //synopsys translate_on
 
@@ -93,7 +93,7 @@ module bp_cce_src_sel
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
   // Message casting
   bp_lce_cce_req_s  lce_req;
@@ -176,9 +176,9 @@ module bp_cce_src_sel
           e_opd_lce_req_v:     src_a_o[0] = lce_req_v_i;
           e_opd_lce_resp_type: src_a_o[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp.header.msg_type;
           e_opd_mem_resp_type: src_a_o[0+:$bits(bp_cce_mem_cmd_type_e)] = mem_resp.header.msg_type;
-          e_opd_lce_resp_data: src_a_o = lce_resp.data[0+:dword_width_p];
-          e_opd_mem_resp_data: src_a_o = mem_resp.data[0+:dword_width_p];
-          e_opd_lce_req_data:  src_a_o = lce_req.data[0+:dword_width_p];
+          e_opd_lce_resp_data: src_a_o = lce_resp.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_mem_resp_data: src_a_o = mem_resp.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_lce_req_data:  src_a_o = lce_req.data[0+:`bp_cce_inst_gpr_width];
           default:             src_a_o = '0;
         endcase
       end
@@ -266,9 +266,9 @@ module bp_cce_src_sel
           e_opd_lce_req_v:     src_b_o[0] = lce_req_v_i;
           e_opd_lce_resp_type: src_b_o[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp.header.msg_type;
           e_opd_mem_resp_type: src_b_o[0+:$bits(bp_cce_mem_cmd_type_e)] = mem_resp.header.msg_type;
-          e_opd_lce_resp_data: src_b_o = lce_resp.data[0+:dword_width_p];
-          e_opd_mem_resp_data: src_b_o = mem_resp.data[0+:dword_width_p];
-          e_opd_lce_req_data:  src_b_o = lce_req.data[0+:dword_width_p];
+          e_opd_lce_resp_data: src_b_o = lce_resp.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_mem_resp_data: src_b_o = mem_resp.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_lce_req_data:  src_b_o = lce_req.data[0+:`bp_cce_inst_gpr_width];
           default:             src_b_o = '0;
         endcase
       end

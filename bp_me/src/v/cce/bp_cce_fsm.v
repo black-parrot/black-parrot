@@ -36,7 +36,7 @@ module bp_cce_fsm
     , localparam lg_max_tag_sets_lp        = `BSG_SAFE_CLOG2(max_tag_sets_lp)
 
     // interface widths
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
     , localparam counter_max = 256
@@ -93,7 +93,7 @@ module bp_cce_fsm
   // Define structure variables for output queues
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -657,7 +657,7 @@ module bp_cce_fsm
         lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
         lce_cmd.header.msg_type = e_lce_cmd_uc_data;
         lce_cmd.header.way_id = '0;
-        lce_cmd.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
+        lce_cmd.data = mem_resp.data;
         lce_cmd.header.addr = mem_resp.header.addr;
         lce_cmd.header.size = mem_resp.header.size;
 
@@ -734,7 +734,8 @@ module bp_cce_fsm
         // bypass the address hashing in bp_cce_dir_segment, using dir_addr_li directly as the
         // tag set number for the operation
         dir_addr_bypass_li = 1'b1;
-        dir_addr_li = {'0, cnt_0[0+:lg_max_tag_sets_lp]};
+        dir_addr_li = '0;
+        dir_addr_li[0+:lg_max_tag_sets_lp] = cnt_0[0+:lg_max_tag_sets_lp];
         dir_lce_li = cnt_1[0+:lce_id_width_p];
 
         // inner loop - LCE
@@ -790,7 +791,7 @@ module bp_cce_fsm
           // Uncached Store
           if (lce_req.header.msg_type == e_lce_req_type_uc_wr) begin
             mem_cmd.header.msg_type = e_cce_mem_uc_wr;
-            mem_cmd.data = {{(cce_block_width_p-dword_width_p){1'b0}}, lce_req.data};
+            mem_cmd.data = lce_req.data;
           // Uncached Load
           end else begin
             mem_cmd.header.msg_type = e_cce_mem_uc_rd;
@@ -809,7 +810,7 @@ module bp_cce_fsm
           lce_cmd_v_o = lce_cmd_ready_i;
 
           // LCE Cmd Common Fields
-          lce_cmd.header.dst_id = {'0, cnt_1[0+:lg_num_lce_lp]};
+          lce_cmd.header.dst_id[0+:lg_num_lce_lp] = cnt_1[0+:lg_num_lce_lp];
           lce_cmd.header.msg_type = e_lce_cmd_sync;
 
           state_n = (lce_cmd_ready_i) ? SYNC_ACK : SEND_SYNC;
@@ -820,7 +821,7 @@ module bp_cce_fsm
         if (~lce_resp_coh_ack_yumi) begin
           lce_resp_yumi_o = lce_resp_v_i;
           state_n = (lce_resp_v_i)
-                    ? (ack_cnt == num_lce_p-1)
+                    ? (ack_cnt == (num_lce_p-1))
                       ? READY
                       : SEND_SYNC
                     : SYNC_ACK;
@@ -878,7 +879,7 @@ module bp_cce_fsm
           // Uncached Store
           if (mshr_r.flags[e_opd_rqf]) begin
             mem_cmd.header.msg_type = e_cce_mem_uc_wr;
-            mem_cmd.data = {{(cce_block_width_p-dword_width_p){1'b0}}, lce_req.data};
+            mem_cmd.data = lce_req.data;
           // Uncached Load
           end else begin
             mem_cmd.header.msg_type = e_cce_mem_uc_rd;
@@ -1059,7 +1060,7 @@ module bp_cce_fsm
             lce_cmd.header.msg_type = e_lce_cmd_inv;
 
             // destination and way come from sharers information
-            lce_cmd.header.dst_id = pe_lce_id;
+            lce_cmd.header.dst_id[0+:lg_num_lce_lp] = pe_lce_id;
             lce_cmd.header.way_id = sharers_ways_r[pe_lce_id];
 
             lce_cmd.header.addr = mshr_r.paddr;
@@ -1069,7 +1070,8 @@ module bp_cce_fsm
             dir_w_v = lce_cmd_v_o;
             dir_cmd = e_wds_op;
             dir_addr_li = mshr_r.paddr;
-            dir_lce_li = {'0, pe_lce_id};
+            dir_lce_li = '0;
+            dir_lce_li[0+:lg_num_lce_lp] = pe_lce_id;
             dir_way_li = sharers_ways_r[pe_lce_id];
             dir_coh_state_li = e_COH_I;
 

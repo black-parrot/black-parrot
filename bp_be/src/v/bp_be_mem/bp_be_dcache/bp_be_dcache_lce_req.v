@@ -27,7 +27,7 @@ module bp_be_dcache_lce_req
   import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
      
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -80,7 +80,7 @@ module bp_be_dcache_lce_req
 
   // casting struct
   //
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
 
   bp_lce_cce_req_s lce_req;
@@ -232,7 +232,7 @@ module bp_be_dcache_lce_req
         else if (cache_req_cast_li.msg_type == e_uc_store) begin
           lce_req_v_o = lce_req_ready_i;
 
-          lce_req.data = cache_req_cast_li.data[dword_width_p-1:0];;
+          lce_req.data[0+:dword_width_p] = cache_req_cast_li.data[0+:dword_width_p];
           lce_req.header.size = bp_mem_msg_size_e'(cache_req_cast_li.size);
           lce_req.header.addr = cache_req_cast_li.addr;
           lce_req.header.msg_type = e_lce_req_type_uc_wr;

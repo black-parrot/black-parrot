@@ -61,6 +61,8 @@ module bp_me_wormhole_packet_encode_mem_resp
     `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*32, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_64_lp =
     `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*64, mem_noc_flit_width_p) - 1;
+  localparam mem_resp_data_len_128_lp =
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*128, mem_noc_flit_width_p) - 1;
 
   logic [len_width_p-1:0] data_resp_len_li;
 
@@ -83,6 +85,7 @@ module bp_me_wormhole_packet_encode_mem_resp
       e_mem_msg_size_16: data_resp_len_li = len_width_p'(mem_resp_data_len_16_lp);
       e_mem_msg_size_32: data_resp_len_li = len_width_p'(mem_resp_data_len_32_lp);
       e_mem_msg_size_64: data_resp_len_li = len_width_p'(mem_resp_data_len_64_lp);
+      e_mem_msg_size_128: data_resp_len_li = len_width_p'(mem_resp_data_len_128_lp);
       default: data_resp_len_li = '0;
     endcase
 

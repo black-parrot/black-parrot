@@ -32,7 +32,7 @@ module bp_be_dcache_lce_cmd
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
     , localparam block_size_in_bytes_lp = (dcache_block_width_p / 8)
     
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p) 
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
 
     , localparam stat_info_width_lp=
@@ -93,8 +93,8 @@ module bp_be_dcache_lce_cmd
   );
 
   // casting structs
- `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+  `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
   
   bp_lce_cmd_s lce_cmd_li;
