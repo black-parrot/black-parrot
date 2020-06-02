@@ -23,6 +23,7 @@ module bp_me_nonsynth_mock_lce
     , parameter skip_init_p = 0
 
     , localparam block_size_in_bytes_lp=(cce_block_width_p / 8)
+    , localparam block_idx_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p)
 
     , localparam lce_opcode_width_lp=$bits(bp_me_nonsynth_lce_opcode_e)
     , localparam tr_ring_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_p)
@@ -234,9 +235,7 @@ module bp_me_nonsynth_mock_lce
 
   // Data word (64-bit) targeted by current trace replay command
   logic [dword_width_p-1:0] load_dword;
-  assign load_dword = dword_width_p'(data_lo[mshr_r.lru_way] >> (dword_width_p*dword_offset));
-  // The following doesn't work in Verilator 4.035
-  //assign load_dword = data_lo[mshr_r.lru_way][dword_width_p*dword_offset +: dword_width_p];
+  assign load_dword = data_lo[mshr_r.lru_way][block_idx_width_lp'(dword_width_p*dword_offset) +: dword_width_p];
   logic word_sigext, half_sigext, byte_sigext;
   logic [31:0] load_word;
   logic [15:0] load_half;
@@ -428,10 +427,37 @@ module bp_me_nonsynth_mock_lce
           : e_mem_msg_size_8;
 
   // uncached load data extraction
-  wire [dword_width_p-1:0] uc_load_dword = lce_cmd.data >> (8*byte_offset);
-  wire [dword_width_p-1:0] uc_load_word = uc_load_dword & dword_width_p'(64'hFFFFFFFF);
-  wire [dword_width_p-1:0] uc_load_half = uc_load_dword & dword_width_p'(64'hFFFF);
-  wire [dword_width_p-1:0] uc_load_byte = uc_load_dword & dword_width_p'(64'hFF);
+  wire [dword_width_p-1:0] uc_load_dword = lce_cmd.data[0 +: dword_width_p];
+  logic [31:0] uc_load_word;
+  logic [15:0] uc_load_half;
+  logic [7:0] uc_load_byte;
+
+  bsg_mux #(
+    .width_p(32)
+    ,.els_p(2)
+  ) uc_word_mux (
+    .data_i(uc_load_dword)
+    ,.sel_i(byte_offset[2])
+    ,.data_o(uc_load_word)
+  );
+
+  bsg_mux #(
+    .width_p(16)
+    ,.els_p(4)
+  ) uc_half_mux (
+    .data_i(uc_load_dword)
+    ,.sel_i(byte_offset[2:1])
+    ,.data_o(uc_load_half)
+  );
+
+  bsg_mux #(
+    .width_p(8)
+    ,.els_p(8)
+  ) uc_byte_mux (
+    .data_i(uc_load_dword)
+    ,.sel_i(byte_offset[2:0])
+    ,.data_o(uc_load_byte)
+  );
 
   always_comb begin
     lce_state_n = lce_state_r;
@@ -599,12 +625,12 @@ module bp_me_nonsynth_mock_lce
           tr_pkt_lo.uncached = 1'b1;
           tr_pkt_lo.data =
             double_op
-              ? uc_load_dword
-              : word_op
-                ? uc_load_word
-                : half_op
-                  ? uc_load_half
-                  : uc_load_byte;
+            ? uc_load_dword
+            : word_op
+              ? {{32{1'b0}}, uc_load_word}
+              : half_op
+                ? {{48{1'b0}}, uc_load_half}
+                : {{56{1'b0}}, uc_load_byte};
 
           lce_state_n = (tr_pkt_ready_i)
                         ? (lce_init_r)
