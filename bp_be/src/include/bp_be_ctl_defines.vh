@@ -1,94 +1,114 @@
 `ifndef BP_BE_CTL_DEFINES_VH
 `define BP_BE_CTL_DEFINES_VH
 
-typedef enum logic [4:0]
+typedef enum logic [5:0]
 {
-  e_ctrl_op_beq       = 5'b00000
-  ,e_ctrl_op_bne      = 5'b00001
-  ,e_ctrl_op_blt      = 5'b00010
-  ,e_ctrl_op_bltu     = 5'b00011
-  ,e_ctrl_op_bge      = 5'b00100
-  ,e_ctrl_op_bgeu     = 5'b00101
-  ,e_ctrl_op_jal      = 5'b00110
-  ,e_ctrl_op_jalr     = 5'b00111
+  e_ctrl_op_beq       = 6'b000000
+  ,e_ctrl_op_bne      = 6'b000001
+  ,e_ctrl_op_blt      = 6'b000010
+  ,e_ctrl_op_bltu     = 6'b000011
+  ,e_ctrl_op_bge      = 6'b000100
+  ,e_ctrl_op_bgeu     = 6'b000101
+  ,e_ctrl_op_jal      = 6'b000110
+  ,e_ctrl_op_jalr     = 6'b000111
 } bp_be_ctrl_fu_op_e;
 
-typedef enum logic [4:0]
+typedef enum logic [5:0]
 {
-  e_int_op_add        = 5'b00000
-  ,e_int_op_sub       = 5'b01000
-  ,e_int_op_sll       = 5'b00001
-  ,e_int_op_slt       = 5'b00010
-  ,e_int_op_sge       = 5'b01010
-  ,e_int_op_sltu      = 5'b00011
-  ,e_int_op_sgeu      = 5'b01011
-  ,e_int_op_xor       = 5'b00100
-  ,e_int_op_eq        = 5'b01100
-  ,e_int_op_srl       = 5'b00101
-  ,e_int_op_sra       = 5'b01101
-  ,e_int_op_or        = 5'b00110
-  ,e_int_op_ne        = 5'b01110
-  ,e_int_op_and       = 5'b00111
-  ,e_int_op_pass_src2 = 5'b01111
+  e_int_op_add        = 6'b000000
+  ,e_int_op_sub       = 6'b001000
+  ,e_int_op_sll       = 6'b000001
+  ,e_int_op_slt       = 6'b000010
+  ,e_int_op_sge       = 6'b001010
+  ,e_int_op_sltu      = 6'b000011
+  ,e_int_op_sgeu      = 6'b001011
+  ,e_int_op_xor       = 6'b000100
+  ,e_int_op_eq        = 6'b001100
+  ,e_int_op_srl       = 6'b000101
+  ,e_int_op_sra       = 6'b001101
+  ,e_int_op_or        = 6'b000110
+  ,e_int_op_ne        = 6'b001110
+  ,e_int_op_and       = 6'b000111
+  ,e_int_op_pass_src2 = 6'b001111
 } bp_be_int_fu_op_e;
 
-typedef enum logic [4:0]
+typedef enum logic [5:0]
 {
-  e_lb     = 5'b00000
-  ,e_lh    = 5'b00001
-  ,e_lw    = 5'b00010
-  ,e_ld    = 5'b00011
-  ,e_lbu   = 5'b00100
-  ,e_lhu   = 5'b00101
-  ,e_lwu   = 5'b00110
+  e_lb        = 6'b000000
+  ,e_lh       = 6'b000001
+  ,e_lw       = 6'b000010
+  ,e_ld       = 6'b000011
+  ,e_lbu      = 6'b000100
+  ,e_lhu      = 6'b000101
+  ,e_lwu      = 6'b000110
 
-  ,e_sb    = 5'b01000
-  ,e_sh    = 5'b01001
-  ,e_sw    = 5'b01010
-  ,e_sd    = 5'b01011
+  ,e_sb       = 6'b001000
+  ,e_sh       = 6'b001001
+  ,e_sw       = 6'b001010
+  ,e_sd       = 6'b001011
 
-  ,e_lrw   = 5'b00111
-  ,e_scw   = 5'b01100
+  ,e_lrw      = 6'b000111
+  ,e_scw      = 6'b001100
 
-  ,e_lrd   = 5'b01101
-  ,e_scd   = 5'b01110
-  ,e_fencei = 5'b01111
+  ,e_lrd      = 6'b001101
+  ,e_scd      = 6'b001110
+  ,e_fencei   = 6'b001111
+
+  ,e_amoswapw = 6'b010000
+  ,e_amoaddw  = 6'b010001
+  ,e_amoxorw  = 6'b010010
+  ,e_amoandw  = 6'b010011
+  ,e_amoorw   = 6'b010100
+  ,e_amominw  = 6'b010101
+  ,e_amomaxw  = 6'b010110
+  ,e_amominuw = 6'b010111
+  ,e_amomaxuw = 6'b011000
+
+  ,e_amoswapd = 6'b011001
+  ,e_amoaddd  = 6'b011010
+  ,e_amoxord  = 6'b011011
+  ,e_amoandd  = 6'b011100
+  ,e_amoord   = 6'b011101
+  ,e_amomind  = 6'b011110
+  ,e_amomaxd  = 6'b011111
+  ,e_amominud = 6'b100000
+  ,e_amomaxud = 6'b100001
 } bp_be_mmu_fu_op_e;
 
-typedef enum logic [4:0]
+typedef enum logic [5:0]
 {
-  e_csrrw   = 5'b00001
-  ,e_csrrs  = 5'b00010
-  ,e_csrrc  = 5'b00011
-  ,e_csrrwi = 5'b00100
-  ,e_csrrsi = 5'b00101
-  ,e_csrrci = 5'b00110
+  e_csrrw   = 6'b000001
+  ,e_csrrs  = 6'b000010
+  ,e_csrrc  = 6'b000011
+  ,e_csrrwi = 6'b000100
+  ,e_csrrsi = 6'b000101
+  ,e_csrrci = 6'b000110
 
   // TODO: Separate out CSR op from exceptions based on flag
-  ,e_ecall      = 5'b00111
-  ,e_dret       = 5'b10011
-  ,e_mret       = 5'b01000
-  ,e_sret       = 5'b01001
-  ,e_ebreak     = 5'b01010
-  ,e_sfence_vma = 5'b01011
-  ,e_wfi        = 5'b01100
+  ,e_ecall      = 6'b000111
+  ,e_dret       = 6'b010011
+  ,e_mret       = 6'b001000
+  ,e_sret       = 6'b001001
+  ,e_ebreak     = 6'b001010
+  ,e_sfence_vma = 6'b001011
+  ,e_wfi        = 6'b001100
 
   // We treat FE exceptions as CSR ops
-  ,e_op_take_interrupt     = 5'b11000
-  ,e_op_instr_access_fault = 5'b11001
-  ,e_op_instr_page_fault   = 5'b11010
-  ,e_op_instr_misaligned   = 5'b11011
-  ,e_op_illegal_instr      = 5'b11111
-  ,e_itlb_fill             = 5'b11100
+  ,e_op_take_interrupt     = 6'b111000
+  ,e_op_instr_access_fault = 6'b111001
+  ,e_op_instr_page_fault   = 6'b111010
+  ,e_op_instr_misaligned   = 6'b111011
+  ,e_op_illegal_instr      = 6'b111111
+  ,e_itlb_fill             = 6'b111100
 } bp_be_csr_fu_op_e;
 
-typedef enum logic [4:0]
+typedef enum logic [5:0]
 {
-  e_mul_op_mul        = 5'b00000
-  ,e_mul_op_div       = 5'b00001
-  ,e_mul_op_divu      = 5'b00010
-  ,e_mul_op_rem       = 5'b00011
-  ,e_mul_op_remu      = 5'b00100
+  e_mul_op_mul        = 6'b000000
+  ,e_mul_op_div       = 6'b000001
+  ,e_mul_op_divu      = 6'b000010
+  ,e_mul_op_rem       = 6'b000011
+  ,e_mul_op_remu      = 6'b000100
 } bp_be_mul_fu_op_e;
 
 typedef struct packed

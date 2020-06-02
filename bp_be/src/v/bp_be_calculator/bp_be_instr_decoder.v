@@ -18,9 +18,13 @@
 module bp_be_instr_decoder 
  import bp_common_pkg::*;
  import bp_common_rv64_pkg::*;
+ import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- #(// Generated parameters
-   localparam instr_width_lp = rv64_instr_width_gp
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
+
+   // Generated parameters
+   , localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
   (input                             interrupt_v_i
@@ -282,10 +286,136 @@ always_comb
           // Note: could do a more efficent decoding here by having atomic be a flag
           //   And having the op simply taken from funct3
           unique casez (instr)
-            `RV64_LRW: decode.fu_op = e_lrw;
-            `RV64_SCW: decode.fu_op = e_scw;
-            `RV64_LRD: decode.fu_op = e_lrd;
-            `RV64_SCD: decode.fu_op = e_scd;
+            `RV64_LRW:      decode.fu_op = e_lrw;
+            `RV64_SCW:      decode.fu_op = e_scw;
+            `RV64_AMOSWAPW: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoswapw;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOADDW: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoaddw;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOXORW: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoxorw;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOANDW: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoandw;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOORW: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoorw;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOMINW: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amominw;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOMAXW: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amomaxw;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOMINUW: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amominuw;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOMAXUW: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amomaxuw;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_LRD:      decode.fu_op = e_lrd;
+            `RV64_SCD:      decode.fu_op = e_scd;
+            `RV64_AMOSWAPD: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoswapd;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOADDD: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoaddd;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOXORD: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoxord;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOANDD: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoandd;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOORD: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amoord;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOMIND: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amomind;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOMAXD: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amomaxd;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOMINUD: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amominud;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
+            `RV64_AMOMAXUD: begin
+                              if (l2_atomic_p) begin
+                                decode.fu_op = e_amomaxud;
+                              end else begin
+                                illegal_instr = 1'b1;
+                              end
+                            end
             default : illegal_instr = 1'b1;
           endcase
         end

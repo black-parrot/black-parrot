@@ -108,7 +108,7 @@ module bp_pce
       ,.data_o(cache_req_metadata_r)
       );
 
-  enum logic [2:0] {e_reset, e_clear, e_ready, e_send_req, e_uc_read_wait, e_amo_lr_wait, e_amo_sc_wait, e_read_wait} state_n, state_r;
+  enum logic [3:0] {e_reset, e_clear, e_ready, e_send_req, e_uc_read_wait, e_amo_lr_wait, e_amo_sc_wait, e_amo_op_wait, e_read_wait} state_n, state_r;
 
   wire uc_store_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
   wire wt_store_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
@@ -120,7 +120,9 @@ module bp_pce
   wire is_load_ret_nc  = (l15_pce_ret_cast_i.rtntype == e_load_ret) & l15_pce_ret_cast_i.noncacheable;
   wire is_ifill_ret    = (l15_pce_ret_cast_i.rtntype == e_ifill_ret) & ~l15_pce_ret_cast_i.noncacheable;
   wire is_load_ret     = (l15_pce_ret_cast_i.rtntype == e_load_ret) & ~l15_pce_ret_cast_i.noncacheable;
-  wire is_amo_ret      = (l15_pce_ret_cast_i.rtntype == e_atomic_ret) & l15_pce_ret_cast_i.atomic;
+  wire is_amo_lrsc_ret = (l15_pce_ret_cast_i.rtntype == e_atomic_ret) & l15_pce_ret_cast_i.atomic;
+  // Fetch + Op atomics also set the noncacheable bit as 1
+  wire is_amo_op_ret   = (l15_pce_ret_cast_i.rtntype == e_atomic_ret) & l15_pce_ret_cast_i.atomic & l15_pce_ret_cast_i.noncacheable;
 
   wire miss_load_v_li  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_li = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
@@ -128,6 +130,8 @@ module bp_pce
   wire uc_load_v_li    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire amo_lr_v_li     = cache_req_v_r & cache_req_r.msg_type inside {e_amo_lr};
   wire amo_sc_v_li     = cache_req_v_r & cache_req_r.msg_type inside {e_amo_sc};
+  wire amo_op_v_li     = cache_req_v_r & cache_req_r.msg_type inside {e_amo_swap, e_amo_add, e_amo_xor, e_amo_and, e_amo_or
+                                                                     ,e_amo_min, e_amo_max, e_amo_minu, e_amo_maxu};
 
   logic [index_width_lp-1:0] index_cnt;
   logic index_up;
@@ -211,9 +215,6 @@ module bp_pce
                           ? e_clear 
                           : e_reset;
           end
-        // TODO: One of the caches would be ready earlier than the other
-        // cache. Is that fine or is it necessary that both the caches have to
-        // be ready at the same time?
         e_clear:
           begin
             cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
@@ -240,7 +241,6 @@ module bp_pce
               pce_l15_req_cast_o.rqtype = e_store_req;
               pce_l15_req_cast_o.nc = 1'b1;
               pce_l15_req_cast_o.address = cache_req_cast_i.addr;
-              // TODO: Incorporate new size changes when pushed to byoc repo
               pce_l15_req_cast_o.size = (cache_req_cast_i.size == e_size_1B)
                                     ? e_l15_size_1B
                                     : (cache_req_cast_i.size == e_size_2B)
@@ -264,7 +264,6 @@ module bp_pce
               pce_l15_req_v_o = pce_l15_req_ready_i;
               state_n = e_ready;
             end
-            // Do we need l1rplway for wt_stores?
             else if (wt_store_v_li) begin
               pce_l15_req_cast_o.rqtype = e_store_req;
               pce_l15_req_cast_o.nc = 1'b0;
@@ -391,14 +390,65 @@ module bp_pce
                                             cache_req_r.data[32+:8], cache_req_r.data[40+:8],
                                             cache_req_r.data[48+:8], cache_req_r.data[56+:8]}};
 
+              pce_l15_req_v_o = pce_l15_req_ready_i;
+
+              state_n = pce_l15_req_v_o
+                        ? e_amo_sc_wait
+                        : e_send_req;
+            end
+            else if (amo_op_v_li & (pce_id_p == 1)) begin
+              pce_l15_req_cast_o.rqtype = e_amo_req;
+              // TODO: Can this be done in a more concise manner?
+              pce_l15_req_cast_o.amo_op = bp_pce_l15_amo_type_e'((cache_req_r.msg_type == e_amo_swap)
+                                                                  ? e_amo_op_swap
+                                                                  : (cache_req_r.msg_type == e_amo_add)
+                                                                  ? e_amo_op_add
+                                                                  : (cache_req_r.msg_type == e_amo_and)
+                                                                  ? e_amo_op_and
+                                                                  : (cache_req_r.msg_type == e_amo_or)
+                                                                  ? e_amo_op_or
+                                                                  : (cache_req_r.msg_type == e_amo_xor)
+                                                                  ? e_amo_op_xor
+                                                                  : (cache_req_r.msg_type == e_amo_max)
+                                                                  ? e_amo_op_max
+                                                                  : (cache_req_r.msg_type == e_amo_min)
+                                                                  ? e_amo_op_min
+                                                                  : (cache_req_r.msg_type == e_amo_maxu)
+                                                                  ? e_amo_op_maxu
+                                                                  : (cache_req_r.msg_type == e_amo_minu)
+                                                                  ? e_amo_op_minu
+                                                                  : e_amo_op_none);
+
+              // Fetch + Op atomics need to have the nc bit set
+              pce_l15_req_cast_o.nc = 1'b1;
+              pce_l15_req_cast_o.size = (cache_req_r.size == e_size_1B)
+                                    ? e_l15_size_1B
+                                    : (cache_req_r.size == e_size_2B)
+                                      ? e_l15_size_2B
+                                      : (cache_req_r.size == e_size_4B)
+                                        ? e_l15_size_4B
+                                        : e_l15_size_8B;
+
+              pce_l15_req_cast_o.address = cache_req_r.addr;
+              pce_l15_req_cast_o.data = (cache_req_r.size == e_size_1B)
+                                    ? {8{cache_req_r.data[0+:8]}}
+                                    : (cache_req_r.size == e_size_2B)
+                                      ? {4{{cache_req_r.data[0+:8], cache_req_r.data[8+:8]}}}
+                                      : (cache_req_r.size == e_size_4B)
+                                        ? {2{{cache_req_r.data[0+:8], cache_req_r.data[8+:8], 
+                                              cache_req_r.data[16+:8], cache_req_r.data[24+:8]}}}
+                                        : {{cache_req_r.data[0+:8], cache_req_r.data[8+:8], 
+                                            cache_req_r.data[16+:8], cache_req_r.data[24+:8],
+                                            cache_req_r.data[32+:8], cache_req_r.data[40+:8],
+                                            cache_req_r.data[48+:8], cache_req_r.data[56+:8]}};
+
               pce_l15_req_cast_o.l1rplway = (pce_id_p == 1) 
                                             ? {cache_req_r.addr[11], cache_req_metadata_r.repl_way}
                                             : cache_req_metadata_r.repl_way;
 
               pce_l15_req_v_o = pce_l15_req_ready_i;
-
               state_n = pce_l15_req_v_o
-                        ? e_amo_sc_wait
+                        ? e_amo_op_wait
                         : e_send_req;
             end
           end
@@ -460,10 +510,9 @@ module bp_pce
           begin
             // Checking for the return type here since we could be in this
             // state when we receive an invalidation
-            if (is_amo_ret) begin
+            if (is_amo_lrsc_ret) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
-              // TODO: This might need some work (especially for SD cards)
-              // based on how OP does this. 
+              // TODO: This might need some work based on how OP does this. 
               cache_data_mem_pkt_cast_o.data = (cache_req_r.addr[3] == 1'b1)
                                                ? {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
                                                   l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
@@ -491,7 +540,7 @@ module bp_pce
           begin
             // Checking for the return type here since we could be in this
             // state when we receive an invalidation
-            if (is_amo_ret) begin
+            if (is_amo_lrsc_ret) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
               // Size for an atomic operation is either 32 bits or 64 bits. SC
               // returns either a 0 or 1
@@ -513,6 +562,36 @@ module bp_pce
             end
             else begin
               state_n = e_amo_sc_wait;
+            end
+          end
+
+        e_amo_op_wait:
+          begin
+            // Checking for the return type here since we could be in this
+            // state when we receive an invalidation
+            if (is_amo_op_ret) begin
+              cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
+              // TODO: This might need some work based on how OP does this. 
+              cache_data_mem_pkt_cast_o.data = (cache_req_r.addr[3] == 1'b1)
+                                               ? {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
+                                                  l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
+                                                  l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
+                                                  l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8]}   
+                                               : {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
+                                                  l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
+                                                  l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
+                                                  l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
+              cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
+
+              l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
+              cache_req_complete_o = cache_data_mem_pkt_yumi_i;
+
+              state_n = cache_req_complete_o
+                            ? e_ready 
+                            : e_amo_op_wait;
+            end
+            else begin
+              state_n = e_amo_op_wait;
             end
           end
 
