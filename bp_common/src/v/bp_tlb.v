@@ -48,7 +48,7 @@ bsg_dff_reset #(.width_p(vtag_width_p))
 logic tlb_bypass;
 logic tlb_bypass_r;
 logic tlb_last_read_r;
-logic r_v_lo_bypass_r;
+logic r_entry_bypass_v_r;
 bp_pte_entry_leaf_s r_entry_bypass_r;
 
 assign tlb_bypass = (vtag_i == vtag_r) & tlb_last_read_r;
@@ -106,17 +106,17 @@ bsg_dff_reset_en_bypass #(.width_p(entry_width_lp))
   );
 
 bsg_dff_reset_en_bypass #(.width_p(1))
-  r_v_lo_bypass_reg
+  r_entry_bypass_v_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.en_i(~tlb_bypass_r)
    ,.data_i(r_v_lo)
-   ,.data_o(r_v_lo_bypass_r)
+   ,.data_o(r_entry_bypass_v_r)
   );  
 
 assign passthrough_entry = '{ptag: vtag_r, default: '0};
 assign entry_o    = translation_en_i ? r_entry_bypass_r : passthrough_entry;
-assign v_o        = translation_en_i ? r_v_r & r_v_lo_bypass_r : r_v_r;
+assign v_o        = translation_en_i ? r_v_r & r_entry_bypass_v_r : r_v_r;
 assign miss_v_o   = r_v_r & ~v_o;
 
 endmodule
