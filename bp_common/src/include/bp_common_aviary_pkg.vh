@@ -1888,9 +1888,9 @@ package bp_common_aviary_pkg;
 
   // Warning! Change this configuration at your own peril
   localparam bp_proc_param_s bp_piton_cfg_p =
-    '{cc_x_dim   : 1
+    '{cc_x_dim   : 2
       ,cc_y_dim  : 1
-      ,ic_y_dim  : 1
+      ,ic_y_dim  : 0
       ,mc_y_dim  : 0
       ,cac_x_dim  : 0
       ,sac_x_dim  : 0
