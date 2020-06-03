@@ -18,6 +18,8 @@ module bp_piton_top
    )
   (input                                               clk_i
    , input                                             reset_i
+   , input [7:0]                                       config_coreid_x
+   , input [7:0]                                       config_coreid_y
 
    // Transducer -> L1.5
    , output logic [4:0]                                transducer_l15_rqtype
@@ -309,7 +311,7 @@ module bp_piton_top
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i('0)
      ,.host_did_i('0)
-     ,.cord_i({coh_noc_y_cord_width_p'(1), coh_noc_x_cord_width_p'(0)})
+     ,.cord_i({coh_noc_y_cord_width_p'(config_coreid_y), coh_noc_x_cord_width_p'(config_coreid_x)})
      ,.irf_data_i(cfg_irf_data_li)
      ,.npc_data_i(cfg_npc_data_li)
      ,.csr_data_i(cfg_csr_data_li)
