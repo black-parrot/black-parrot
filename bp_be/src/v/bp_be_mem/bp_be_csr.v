@@ -367,7 +367,7 @@ always_comb
         end
       else if (csr_cmd.csr_op == e_sfence_vma)
         begin
-          if (is_s_mode & mstatus_lo.tvm)
+          if ((is_s_mode & mstatus_lo.tvm) || (priv_mode_r < `PRIV_MODE_S))
               illegal_instr_o = 1'b1;
           else
             begin

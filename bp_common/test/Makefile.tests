@@ -84,7 +84,7 @@ DROMAJO       ?= dromajo
 	$(RISCV_OBJDUMP) $*.riscv > $@
 
 %.spike: %.riscv
-	$(RISCV_ISA_SIM) $*.riscv > $@ 2>&1
+	$(RISCV_ISA_SIM) --log-commits $*.riscv > $@ 2>&1
 
 %.nbf: %.mem
 	$(PYTHON) $(MEM2NBF) $*.mem > $@
