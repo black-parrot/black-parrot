@@ -21,6 +21,10 @@ module bp_piton_top
    , input [7:0]                                       config_coreid_x
    , input [7:0]                                       config_coreid_y
 
+   , input                                             timer_irq_i
+   , input                                             software_irq_i
+   , input                                             external_irq_i
+
    // Transducer -> L1.5
    , output logic [4:0]                                transducer_l15_rqtype
    , output logic                                      transducer_l15_nc
@@ -99,8 +103,6 @@ module bp_piton_top
   logic dcache_req_complete_li, icache_req_complete_li;
 
   logic [1:0] credits_full_li, credits_empty_li;
-  // TODO: Need to connect these from CLINT
-  logic timer_irq_li, software_irq_li, external_irq_li;
 
   bp_pce_l15_req_s [1:0] pce_l15_req_lo;
   logic [1:0] pce_l15_req_v_lo, pce_l15_req_ready_li;
@@ -178,9 +180,9 @@ module bp_piton_top
      ,.credits_full_i(|credits_full_li)
      ,.credits_empty_i(&credits_empty_li)
 
-     ,.timer_irq_i('0)
-     ,.software_irq_i('0)
-     ,.external_irq_i('0)
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
      );
 
   bp_pce
