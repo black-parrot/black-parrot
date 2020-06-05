@@ -61,7 +61,7 @@ sim_sample.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PR
 sim_sample.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_DIR)/run_samplesc: $(SIM_COLLATERAL)
 	cd $(@D); \
-		$(DROMAJO) $(@D)/prog.riscv --host --maxinsn=$(SAMPLE_START_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
+		$(DROMAJO) $(@D)/prog.riscv --host --ncpus=$(SAMPLE_NCPUS) --maxinsn=$(SAMPLE_START_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
 	mv $(@D)/dromajo.*.mainram $(@D)/prog.mainram
 	mv $(@D)/dromajo.*.bootram $(@D)/prog.bootram
 	mv $(@D)/dromajo.*.bp_regs $(@D)/prog.nbf
