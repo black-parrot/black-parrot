@@ -52,6 +52,7 @@ module bp_be_mem_top
    , input [cfg_bus_width_lp-1:0]            cfg_bus_i
    , output [dword_width_p-1:0]              cfg_csr_data_o
    , output [1:0]                            cfg_priv_data_o
+   , output [7:0]                            cfg_domain_data_o
 
    , input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
    , input                                   mmu_cmd_v_i
@@ -482,12 +483,31 @@ end
 // Fault if in uncached mode but access is not for an uncached address
 wire is_uncached_mode = (cfg_bus.dcache_mode == e_lce_mode_uncached);
 wire mode_fault_v = (is_uncached_mode & ~dcache_uncached);
-  // TODO: Enable other domains by setting enabled dids with cfg_bus
-wire did_fault_v = (dcache_ptag[ptag_width_p-1-:io_noc_did_width_p] != '0) &
-                   ~((dcache_ptag[ptag_width_p-1-:io_noc_did_width_p] == 1) & sac_x_dim_p > 0);
 
-assign load_access_fault_v  = load_op_tl_lo & (mode_fault_v | did_fault_v);
-assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v);
+// Address map (40 bits)
+// | did | sac_not_cc | tile ID | remaining |
+// |  3  |      1     |  log(N) | 
+// Enabled DIDs
+logic [7:0] domain_data_r;
+bsg_dff_reset_en
+  #(.width_p(8)
+   ,.reset_val_p(8'h1)
+   )
+   domain_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(cfg_bus_cast_i.domain_w_v)
+   // We want the 0th domain to be enabled always
+   ,.data_i((cfg_bus_cast_i.domain | 8'h1)
+   ,.data_o(domain_data_r)
+   );
+
+assign cfg_domain_data_o = domain_data_r;
+wire did_fault_v = (domain_data_r[dcache_ptag[ptag_width_p-1-:io_noc_did_width_p]] != '1);
+wire sac_fault_v = ((dcache_ptag[ptag_width_p-4] == 1) & sac_x_dim_p == 0);
+
+assign load_access_fault_v  = load_op_tl_lo & (mode_fault_v | did_fault_v | sac_fault_v);
+assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v | sac_fault_v);
 
 // D-TLB connections
 assign dtlb_r_v     = dcache_cmd_v & ~fencei_cmd_v;
