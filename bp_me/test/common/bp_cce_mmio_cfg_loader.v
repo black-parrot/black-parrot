@@ -299,7 +299,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = dword_width_p'(e_lce_mode_normal);
         end
         SEND_CCE_NORMAL: begin
-          state_n = core_prog_done ? WAIT_FOR_SYNC : SEND_CCE_NORMAL;
+          state_n = core_prog_done ? SEND_DOMAIN_ACTIVATION : SEND_CCE_NORMAL;
 
           core_cnt_inc = ~core_prog_done & credits_empty_lo;
           core_cnt_clr = core_prog_done & credits_empty_lo;
@@ -307,6 +307,18 @@ module bp_cce_mmio_cfg_loader
           cfg_w_v_lo = credits_empty_lo;
           cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
           cfg_data_lo = dword_width_p'(e_cce_mode_normal);
+        end
+        SEND_DOMAIN_ACTIVATION: begin
+          state_n = core_prog_done ? WAIT_FOR_SYNC : SEND_DOMAIN_ACTIVATION;
+
+          core_cnt_inc = ~core_prog_done & credits_empty_lo;
+          core_cnt_clr = core_prog_done & credits_empty_lo;
+
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = bp_cfg_reg_domain_en_gp;
+          // Change the last 8 bits of the data below to indicate the domains
+          // to be enabled.
+          cfg_data_lo = 64'h0000000000000001;
         end
         WAIT_FOR_SYNC: begin
           state_n = sync_done ? SEND_PC : WAIT_FOR_SYNC;
