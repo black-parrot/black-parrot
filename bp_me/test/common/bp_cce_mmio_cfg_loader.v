@@ -80,6 +80,7 @@ module bp_cce_mmio_cfg_loader
     ,SEND_ICACHE_NORMAL
     ,SEND_DCACHE_NORMAL
     ,SEND_CCE_NORMAL
+    ,SEND_DOMAIN_ACTIVATION
     ,WAIT_FOR_SYNC
     ,SEND_PC
     ,SEND_IRF

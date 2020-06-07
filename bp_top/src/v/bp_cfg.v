@@ -66,8 +66,7 @@ module bp_cfg
   logic         freeze_r;
   bp_lce_mode_e icache_mode_r;
   bp_lce_mode_e dcache_mode_r;
-  bp_cce_mode_e cce_mode_r;
-  logic 
+  bp_cce_mode_e cce_mode_r; 
 
 wire                        cfg_v_li    = mem_cmd_v_lo;
 wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_cce_mem_uc_wr);
