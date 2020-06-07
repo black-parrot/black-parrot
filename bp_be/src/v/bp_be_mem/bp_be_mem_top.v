@@ -496,9 +496,9 @@ bsg_dff_reset_en
    domain_reg
    (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(cfg_bus_cast_i.domain_w_v)
+   ,.en_i(cfg_bus.domain_w_v)
    // We want the 0th domain to be enabled always
-   ,.data_i((cfg_bus_cast_i.domain | 8'h1)
+   ,.data_i((cfg_bus.domain | 8'h1))
    ,.data_o(domain_data_r)
    );
 
