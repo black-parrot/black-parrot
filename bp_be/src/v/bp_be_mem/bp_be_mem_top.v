@@ -504,7 +504,7 @@ bsg_dff_reset_en
 
 assign cfg_domain_data_o = domain_data_r;
 wire did_fault_v = (domain_data_r[dcache_ptag[ptag_width_p-1-:io_noc_did_width_p]] != '1);
-wire sac_fault_v = ((dcache_ptag[ptag_width_p-4] == 1) & sac_x_dim_p == 0);
+wire sac_fault_v = ((dcache_ptag[ptag_width_p-1-:(io_noc_did_width_p+1)] == 1) & sac_x_dim_p == 0);
 
 assign load_access_fault_v  = load_op_tl_lo & (mode_fault_v | did_fault_v | sac_fault_v);
 assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v | sac_fault_v);
