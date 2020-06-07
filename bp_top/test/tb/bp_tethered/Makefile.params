@@ -17,7 +17,8 @@ export PRELOAD_MEM_P  ?= 1
 export LOAD_NBF_P     ?= 0
 export COSIM_P        ?= 0
 
-export SAMPLE_MEMSIZE   ?= 32
+export SAMPLE_MEMSIZE   ?= 256
+export SAMPLE_NCPUS     ?= 1
 export SAMPLE_START_P   ?= 0
 export SAMPLE_WARMUP_P  ?= 0
 export SAMPLE_INSTR_P   ?= 0

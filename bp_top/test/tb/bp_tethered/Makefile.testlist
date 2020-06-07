@@ -501,13 +501,14 @@ run_test@%:
 	$(MAKE) sim.$(TS) SUITE=$(SUITE) PROG=$(PROG)
 
 dromajo_dump:
-	$(DROMAJO) $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv --host \
+	$(DROMAJO) $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv --host --ncpus=$(SAMPLE_NCPUS) \
 		--dump_period=$(SAMPLE_INSTR_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
 
 # Run an entire benchmark in parallel
 # Important parameters:
 #   SAMPLE_INSTR_P  - instructions per sample
 #   SAMPLE_WARMUP_P - instructions to run for warmup, without statistics
+#   SAMPLE_NCPUS    - number of Dromajo cores
 #   SAMPLE_MEMSIZE  - RAM size of the sample (affects simulation startup time)
 run_psample.%: dromajo_dump
 	$(eval CHECKPOINTS := $(subst .mainram,,$(subst dromajo.,,$(shell ls dromajo.*.mainram))))
