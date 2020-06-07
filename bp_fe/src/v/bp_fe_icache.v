@@ -437,25 +437,32 @@ module bp_fe_icache
   logic                      data_mem_last_read_r;
   logic                      data_mem_bypass;
   logic [icache_assoc_p-1:0] data_mem_bypass_select;
+  logic [icache_assoc_p-1:0] vaddr_offset_dec;
 
   // data mem bypass bank select logic
   bsg_dff_reset_set_clear #(
     .width_p(1)
-    ,.clear_over_set_p(1)
-  ) data_mem_last_read_reg (
-    .clk_i(clk_i)
-    ,.reset_i(reset_i)
-    ,.set_i(tl_we)
-    ,.clear_i(~tl_we)
-    ,.data_o(data_mem_last_read_r)
-  );
+    ,.clear_over_set_p(1)) 
+    data_mem_last_read_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(tl_we)
+     ,.clear_i(~tl_we)
+     ,.data_o(data_mem_last_read_r)
+    );
 
-  bsg_decode #(
-    .num_out_p(icache_assoc_p)
-  ) data_mem_bank_v_decode (
-    .i(vaddr_offset ^ hit_index_tl)
-    ,.o(data_mem_bypass_select)
-  );
+  bsg_decode #(.num_out_p(icache_assoc_p)) 
+    input_offset_decode 
+    (.i(vaddr_offset)
+     ,.o(vaddr_offset_dec)
+    );
+
+  bsg_adder_one_hot #(.width_p(icache_assoc_p))
+    data_mem_bank_select_adder
+    (.a_i(hit_v_tl)
+     ,.b_i(vaddr_offset_dec)
+     ,.o(data_mem_bypass_select)
+    );
 
   assign data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & data_mem_last_read_r;
 
