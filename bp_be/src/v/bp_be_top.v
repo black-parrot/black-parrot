@@ -221,6 +221,7 @@ bp_be_mem_top
     ,.cfg_bus_i(cfg_bus_i)
     ,.cfg_csr_data_o(cfg_csr_data_o)
     ,.cfg_priv_data_o(cfg_priv_data_o)
+    ,.cfg_domain_data_o(cfg_domain_data_o)
 
     ,.chk_poison_ex_i(flush)
 
