@@ -115,6 +115,8 @@ bsg_dff_reset
    );
 
 assign program_finish_o = finish_r;
+logic domain_id;
+assign domain_id = io_cmd_cast_i.header.addr[paddr_width_p-1-:3];
 
 always_ff @(negedge clk_i)
   begin
@@ -124,6 +126,9 @@ always_ff @(negedge clk_i)
     end
     if (getchar_data_cmd_v & io_cmd_v_i)
       pop();
+
+    if (io_cmd_v_i & (io_cmd_cast_i.header.addr[paddr_width_p-1-:3] != '0))
+      $display("Warning: Accesing domain: %0h", domain_id);
     for (integer i = 0; i < num_core_p; i++)
       begin
         // PASS when returned value in finish packet is zero
