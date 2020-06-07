@@ -115,7 +115,7 @@ bsg_dff_reset
    );
 
 assign program_finish_o = finish_r;
-logic domain_id;
+logic [2:0] domain_id;
 assign domain_id = io_cmd_cast_i.header.addr[paddr_width_p-1-:3];
 
 always_ff @(negedge clk_i)
@@ -127,7 +127,7 @@ always_ff @(negedge clk_i)
     if (getchar_data_cmd_v & io_cmd_v_i)
       pop();
 
-    if (io_cmd_v_i & (io_cmd_cast_i.header.addr[paddr_width_p-1-:3] != '0))
+    if (io_cmd_v_i & (domain_id != '0))
       $display("Warning: Accesing domain: %0h", domain_id);
     for (integer i = 0; i < num_core_p; i++)
       begin
@@ -148,7 +148,8 @@ always_ff @(negedge clk_i)
       end
   end
 
-bp_cce_mem_msg_s io_resp_lo;
+bp_cce_mem_msg_s io_resp_lo, core_io_resp_lo, domain_io_resp_lo;
+assign io_resp_lo = (domain_id != '0) ? domain_io_resp_lo : core_io_resp_lo;
 bsg_two_fifo
  #(.width_p($bits(bp_cce_mem_msg_s)))
  io_resp_buffer
@@ -164,13 +165,28 @@ bsg_two_fifo
    ,.yumi_i(io_resp_yumi_i)
    );
 
-assign io_resp_lo =
-  '{header: '{msg_type       : io_cmd_cast_i.header.msg_type
-              ,addr          : io_cmd_cast_i.header.addr
-              ,payload       : io_cmd_cast_i.header.payload
-              ,size          : io_cmd_cast_i.header.size
+assign core_io_resp_lo =
+  '{header: '{msg_type : io_cmd_cast_i.header.msg_type
+              ,addr    : io_cmd_cast_i.header.addr
+              ,payload : io_cmd_cast_i.header.payload
+              ,size    : io_cmd_cast_i.header.size
               }
     ,data : ch
+    };
+
+assign domain_io_resp_lo =
+  '{header: '{msg_type              : io_cmd_cast_i.header.msg_type
+              ,addr                 : io_cmd_cast_i.header.addr
+              ,payload: '{state        : io_cmd_cast_i.header.payload.state
+                         ,way_id       : io_cmd_cast_i.header.payload.way_id
+                         ,prefetch     : io_cmd_cast_i.header.payload.prefetch
+                         ,uncached     : io_cmd_cast_i.header.payload.uncached
+                         ,speculative  : io_cmd_cast_i.header.payload.speculative
+                         ,lce_id       : lce_id_width_p'(3)
+                         }
+              ,size                 : io_cmd_cast_i.header.size
+              }
+    ,data : '0
     };
 
 endmodule
