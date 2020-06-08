@@ -4,9 +4,9 @@
 #include "bsg_newlib_intf.h"
 
 #define HOST_DEV_BASE_ADDR ((char *)(0x00100000))
-#define HPRINT_BASE_ADDR ((char *)(HOST_DEV_BASE_ADDR+0x0000))
-#define CPRINT_BASE_ADDR ((char *)(HOST_DEV_BASE_ADDR+0x1000))
-#define FINISH_BASE_ADDR ((char *)(HOST_DEV_BASE_ADDR+0x2000))
+#define GETCHAR_BASE_ADDR  ((char *)(HOST_DEV_BASE_ADDR+0x0000))
+#define PUTCHAR_BASE_ADDR  ((char *)(HOST_DEV_BASE_ADDR+0x1000))
+#define FINISH_BASE_ADDR   ((char *)(HOST_DEV_BASE_ADDR+0x2000))
 
 
 uint64_t bp_get_hart();
