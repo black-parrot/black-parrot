@@ -25,6 +25,9 @@ module bp_be_csr
     , input                             csr_cmd_v_i
     , output logic [dword_width_p-1:0]  csr_data_o
     , output logic                      illegal_instr_o
+    , input [vaddr_width_p-1:0]         arch_pc_i
+    , input                             ptw_busy_i
+    , input                             long_busy_i
 
     // Misc interface
     , input [core_id_width_p-1:0]       hartid_i
@@ -426,43 +429,6 @@ always_comb
         begin
           instr_misaligned_o = 1'b1;
         end
-      else if (csr_cmd.csr_op == e_op_take_interrupt)
-        begin
-          if (~is_debug_mode & m_interrupt_icode_v_li)
-            begin
-              priv_mode_n          = `PRIV_MODE_M;
-
-              mstatus_li.mpp       = priv_mode_r;
-              mstatus_li.mpie      = mstatus_lo.mie;
-              mstatus_li.mie       = 1'b0;
-
-              mepc_li              = paddr_width_p'($signed(exception_pc_i));
-              mtval_li             = '0;
-              mcause_li._interrupt = 1'b1;
-              mcause_li.ecode      = m_interrupt_icode_li;
-
-              exception_v_o        = 1'b0;
-              interrupt_v_o        = 1'b1;
-              ret_v_o              = 1'b0;
-            end
-          else if (~is_debug_mode & s_interrupt_icode_v_li)
-            begin
-              priv_mode_n          = `PRIV_MODE_S;
-
-              mstatus_li.spp       = priv_mode_r;
-              mstatus_li.spie      = mstatus_lo.sie;
-              mstatus_li.sie       = 1'b0;
-
-              sepc_li              = paddr_width_p'($signed(exception_pc_i));
-              stval_li             = '0;
-              scause_li._interrupt = 1'b1;
-              scause_li.ecode      = s_interrupt_icode_li;
-
-              exception_v_o        = 1'b0;
-              interrupt_v_o        = 1'b1;
-              ret_v_o              = 1'b0;
-            end
-        end
       else if (csr_cmd.csr_op == e_wfi)
         begin
           illegal_instr_o = mstatus_lo.tw;
@@ -588,7 +554,44 @@ always_comb
     mip_li.msip = software_irq_i;
     mip_li.meip = external_irq_i;
 
-    if (~is_debug_mode & exception_v_i & exception_ecode_v_li)
+    if (~is_debug_mode & ~exception_v_i & ~ptw_busy_i & ~long_busy_i & ~cfg_bus_cast_i.freeze & accept_irq_o)
+        begin
+          if (~is_debug_mode & m_interrupt_icode_v_li)
+            begin
+              priv_mode_n          = `PRIV_MODE_M;
+
+              mstatus_li.mpp       = priv_mode_r;
+              mstatus_li.mpie      = mstatus_lo.mie;
+              mstatus_li.mie       = 1'b0;
+
+              mepc_li              = paddr_width_p'($signed(arch_pc_i));
+              mtval_li             = '0;
+              mcause_li._interrupt = 1'b1;
+              mcause_li.ecode      = m_interrupt_icode_li;
+
+              exception_v_o        = 1'b0;
+              interrupt_v_o        = 1'b1;
+              ret_v_o              = 1'b0;
+            end
+          else if (~is_debug_mode & s_interrupt_icode_v_li)
+            begin
+              priv_mode_n          = `PRIV_MODE_S;
+
+              mstatus_li.spp       = priv_mode_r;
+              mstatus_li.spie      = mstatus_lo.sie;
+              mstatus_li.sie       = 1'b0;
+
+              sepc_li              = paddr_width_p'($signed(arch_pc_i));
+              stval_li             = '0;
+              scause_li._interrupt = 1'b1;
+              scause_li.ecode      = s_interrupt_icode_li;
+
+              exception_v_o        = 1'b0;
+              interrupt_v_o        = 1'b1;
+              ret_v_o              = 1'b0;
+            end
+        end
+    else if (~is_debug_mode & exception_v_i & exception_ecode_v_li)
       if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
         begin
           priv_mode_n          = `PRIV_MODE_S;

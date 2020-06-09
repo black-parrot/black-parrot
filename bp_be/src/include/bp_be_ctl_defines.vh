@@ -74,7 +74,6 @@ typedef enum logic [4:0]
   ,e_wfi        = 5'b01100
 
   // We treat FE exceptions as CSR ops
-  ,e_op_take_interrupt     = 5'b11000
   ,e_op_instr_access_fault = 5'b11001
   ,e_op_instr_page_fault   = 5'b11010
   ,e_op_instr_misaligned   = 5'b11011
