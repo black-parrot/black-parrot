@@ -62,6 +62,7 @@ module bp_be_mem_top
    , input [csr_cmd_width_lp-1:0]            csr_cmd_i
    , input                                   csr_cmd_v_i
    , output [dword_width_p-1:0]              csr_data_o
+   , input [vaddr_width_p-1:0]               arch_pc_i
 
    , input                                   chk_poison_ex_i
 
@@ -70,6 +71,7 @@ module bp_be_mem_top
    , input                                   mem_resp_ready_i
 
    , output [ptw_pkt_width_lp-1:0]           ptw_pkt_o
+   , input                                   long_busy_i
 
    // D$-LCE Interface
    // signals to LCE
@@ -262,7 +264,10 @@ bp_be_csr
    ,.instret_i(commit_pkt.instret)
 
    ,.exception_v_i(exception_v_li)
+   ,.ptw_busy_i(~mmu_cmd_ready_o)
+   ,.long_busy_i(long_busy_i)
    ,.exception_pc_i(exception_pc_li)
+   ,.arch_pc_i(arch_pc_i)
    ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
    ,.exception_instr_i(exception_instr_li)
