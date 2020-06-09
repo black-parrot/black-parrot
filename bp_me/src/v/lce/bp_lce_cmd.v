@@ -161,24 +161,26 @@ module bp_lce_cmd
       ,.data_o(sync_done_o)
       );
 
-  // data buffer and data buffered registers
-  logic data_buffered_r, data_buffered_en, data_buffered_li;
-  bsg_dff_en
-    #(.width_p(1))
-    data_buffered_reg
-     (.clk_i(clk_i)
-      ,.en_i(data_buffered_en)
-      ,.data_i(data_buffered_li)
-      ,.data_o(data_buffered_r)
-      );
+  // data buffer and enable register
+  // the enable register is set when the data_mem_pkt is accepted and the command is a mem read,
+  // which will capture the data into the data buffer on the next cycle (when it is guaranteed to
+  // be valid on the data_mem_i port). The data will remain in the buffer until the next read
+  // command is accepted and new data is latched.
+  logic data_buf_en_r;
+  always_ff @(posedge clk_i) begin
+    if (reset_i) begin
+      data_buf_en_r <= 1'b0;
+    end else begin
+      data_buf_en_r <= data_mem_pkt_yumi_i & (data_mem_pkt.opcode == e_cache_data_mem_read);
+    end
+  end
 
-  logic data_buf_en;
   logic [cce_block_width_p-1:0] data_buf_r;
   bsg_dff_en_bypass
     #(.width_p(cce_block_width_p))
     data_buf_reg
      (.clk_i(clk_i)
-      ,.en_i(data_buf_en)
+      ,.en_i(data_buf_en_r)
       ,.data_i(data_mem_i)
       ,.data_o(data_buf_r)
       );
@@ -241,18 +243,12 @@ module bp_lce_cmd
     sync_done_en = 1'b0;
     sync_done_li = 1'b0;
 
-    data_buffered_en = 1'b0;
-    data_buffered_li = 1'b0;
-
-    data_buf_en = '0;
-
     unique case (state_r)
 
       e_reset: begin
         state_n = e_clear;
         // clear registers
         sync_done_en = 1'b1;
-        data_buffered_en = 1'b1;
       end
 
       // After reset is complete, the LCE Command module clears the tag and stat memories
@@ -465,17 +461,9 @@ module bp_lce_cmd
       end
 
       // Transfer
-      // send e_lce_cmd_data message to target LCE, buffering data from data_mem_i if needed
-      // data from data_mem is valid the first cycle e_tr is entered
+      // send e_lce_cmd_data message to target LCE
+      // data_buf_r holds valid data when this state is entered
       e_tr: begin
-
-        // buffer the data, if it isn't already buffered and if the outbound message isn't sending,
-        // and clear the buffered register when command sends
-        // lce_cmd_ready_i == 1 : en = 1, li = 0
-        // lce_cmd_ready_i == 0 : en = iff data not buffered, li = 1
-        data_buffered_en = ~data_buffered_r | lce_cmd_ready_i;
-        data_buffered_li = ~lce_cmd_ready_i;
-        data_buf_en = ~data_buffered_r;
 
         // form the outbound message
         lce_cmd_out.header.dst_id = lce_cmd.header.target;
@@ -487,7 +475,6 @@ module bp_lce_cmd
         lce_cmd_out.header.addr = lce_cmd.header.addr;
         lce_cmd_out.header.state = lce_cmd.header.state;
         lce_cmd_out.header.size = cmd_block_size_lp;
-        // data comes from the buffer, which has a bypass on enable
         lce_cmd_out.data = data_buf_r;
 
         // handshakes
@@ -548,11 +535,9 @@ module bp_lce_cmd
 
       end
 
+      // Dirty Writeback Response
+      // data_buf_r holds valid data when this state is entered
       e_wb_dirty_send: begin
-
-        // capture data from data_mem into data_buf, if not already buffered
-        // data will be valid on data_mem_i when entering this state
-        data_buf_en = ~data_buffered_r;
 
         lce_resp.data = data_buf_r;
         lce_resp.header.addr = lce_cmd.header.addr;
@@ -563,11 +548,6 @@ module bp_lce_cmd
         lce_resp_v_o = lce_resp_ready_i;
 
         lce_cmd_yumi_o = lce_resp_v_o;
-
-        // record data is being buffered on first cycle, or clear register when response sends
-        // clear data_buffered register when response sends
-        data_buffered_en = ~data_buffered_r | lce_resp_v_o;
-        data_buffered_li = ~lce_resp_v_o;
 
         state_n = lce_resp_v_o
           ? e_ready
