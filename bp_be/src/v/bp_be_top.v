@@ -126,10 +126,7 @@ logic debug_mode_lo;
 logic single_step_lo;
 logic accept_irq_lo;
 
-logic                     instret_mem3;
-logic                     pc_v_mem3;
-logic [vaddr_width_p-1:0] pc_mem3;
-logic [instr_width_p-1:0] instr_mem3;
+logic [vaddr_width_p-1:0] arch_pc_lo;
 
 bp_be_commit_pkt_s commit_pkt;
 bp_be_trap_pkt_s trap_pkt;
@@ -158,6 +155,7 @@ bp_be_checker_top
    ,.debug_mode_i(debug_mode_lo)
    ,.single_step_i(single_step_lo)
    ,.accept_irq_i(accept_irq_lo)
+   ,.arch_pc_o(arch_pc_lo)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -230,6 +228,8 @@ bp_be_mem_top
     ,.csr_cmd_i(csr_cmd)
     ,.csr_cmd_v_i(csr_cmd_v)
     ,.csr_data_o(csr_data)
+    ,.arch_pc_i(arch_pc_lo)
+    ,.long_busy_i(calc_status.long_busy)
 
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
