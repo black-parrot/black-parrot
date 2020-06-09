@@ -41,6 +41,20 @@ module bp_lce_cmd
     // width for counter used during initiliazation and for sync messages
     , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(sets_p)+1)
     , localparam cnt_max_val_lp = ((2**cnt_width_lp)-1)
+
+    // coherence request size for cached requests
+    // block size smaller than 8-bytes not supported
+    , localparam bp_mem_msg_size_e cmd_block_size_lp =
+      (block_size_in_bytes_lp == 128)
+      ? e_mem_msg_size_128
+      : (block_size_in_bytes_lp == 64)
+        ? e_mem_msg_size_64
+        : (block_size_in_bytes_lp == 32)
+          ? e_mem_msg_size_32
+          : (block_size_in_bytes_lp == 16)
+            ? e_mem_msg_size_16
+            : e_mem_msg_size_8
+
   )
   (
     input                                            clk_i
@@ -194,20 +208,6 @@ module bp_lce_cmd
       ,.up_i(cnt_inc)
       ,.count_o(cnt_r)
       );
-
-  // coherence request size for cached requests
-  // block size smaller than 8-bytes not supported
-  bp_mem_msg_size_e cmd_block_size =
-    (block_size_in_bytes_lp == 128)
-    ? e_mem_msg_size_128
-    : (block_size_in_bytes_lp == 64)
-      ? e_mem_msg_size_64
-      : (block_size_in_bytes_lp == 32)
-        ? e_mem_msg_size_32
-        : (block_size_in_bytes_lp == 16)
-          ? e_mem_msg_size_16
-          : e_mem_msg_size_8;
-
 
   always_comb begin
 
@@ -486,7 +486,7 @@ module bp_lce_cmd
         lce_cmd_out.header.way_id = lce_cmd.header.target_way_id;
         lce_cmd_out.header.addr = lce_cmd.header.addr;
         lce_cmd_out.header.state = lce_cmd.header.state;
-        lce_cmd_out.header.size = cmd_block_size;
+        lce_cmd_out.header.size = cmd_block_size_lp;
         // data comes from the buffer, which has a bypass on enable
         lce_cmd_out.data = data_buf_r;
 
@@ -559,7 +559,7 @@ module bp_lce_cmd
         lce_resp.header.msg_type = e_lce_cce_resp_wb;
         lce_resp.header.src_id = lce_id_i;
         lce_resp.header.dst_id = lce_cmd.header.src_id;
-        lce_resp.header.size = cmd_block_size;
+        lce_resp.header.size = cmd_block_size_lp;
         lce_resp_v_o = lce_resp_ready_i;
 
         lce_cmd_yumi_o = lce_resp_v_o;

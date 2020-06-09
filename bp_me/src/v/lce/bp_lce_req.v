@@ -39,6 +39,19 @@ module bp_lce_req
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
+
+    // coherence request size for cached requests
+    // block size smaller than 8-bytes not supported
+    , localparam bp_mem_msg_size_e req_block_size_lp =
+      (block_size_in_bytes_lp == 128)
+      ? e_mem_msg_size_128
+      : (block_size_in_bytes_lp == 64)
+        ? e_mem_msg_size_64
+        : (block_size_in_bytes_lp == 32)
+          ? e_mem_msg_size_32
+          : (block_size_in_bytes_lp == 16)
+            ? e_mem_msg_size_16
+            : e_mem_msg_size_8
   )
   (
     input                                            clk_i
@@ -152,19 +165,6 @@ module bp_lce_req
      ,.cce_id_o(req_cce_id_lo)
      );
 
-  // coherence request size for cached requests
-  // block size smaller than 8-bytes not supported
-  bp_mem_msg_size_e req_block_size =
-    (block_size_in_bytes_lp == 128)
-    ? e_mem_msg_size_128
-    : (block_size_in_bytes_lp == 64)
-      ? e_mem_msg_size_64
-      : (block_size_in_bytes_lp == 32)
-        ? e_mem_msg_size_32
-        : (block_size_in_bytes_lp == 16)
-          ? e_mem_msg_size_16
-          : e_mem_msg_size_8;
-
   always_comb begin
     state_n = state_r;
 
@@ -218,7 +218,7 @@ module bp_lce_req
         lce_req_v_o = lce_req_ready_i & (cache_req_metadata_v_i | cache_req_metadata_v_r);
 
         lce_req.header.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.repl_way);
-        lce_req.header.size = req_block_size;
+        lce_req.header.size = req_block_size_lp;
         lce_req.header.msg_type = (cache_req_r.msg_type == e_miss_load)
           ? e_lce_req_type_rd
           : e_lce_req_type_wr;
