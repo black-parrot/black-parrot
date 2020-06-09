@@ -55,6 +55,10 @@ module wrapper
   , input                             mem_cmd_ready_i
   );
 
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
+
   // I$-LCE Interface signals
   // Miss, Management Interfaces
   logic cache_req_ready_li;
@@ -228,13 +232,21 @@ module wrapper
     logic mem_resp_ready_lo;    
 
     // I-Cache LCE
-    bp_fe_lce
-      #(.bp_params_p(bp_params_p))
+    bp_lce
+      #(.bp_params_p(bp_params_p)
+        ,.assoc_p(icache_assoc_p)
+        ,.sets_p(icache_sets_p)
+        ,.block_width_p(icache_block_width_p)
+        ,.timeout_max_limit_p(4)
+        ,.credits_p(coh_noc_max_credits_p)
+        ,.non_excl_reads_p(1)
+        )
       icache_lce
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
       
-      ,.cfg_bus_i(cfg_bus_i)
+      ,.lce_id_i(cfg_bus_cast_i.icache_id)
+      ,.lce_mode_i(cfg_bus_cast_i.icache_mode)
 
       ,.cache_req_v_i(cache_req_v_lo)
       ,.cache_req_i(cache_req_lo)
@@ -273,7 +285,10 @@ module wrapper
 
       ,.lce_cmd_o()
       ,.lce_cmd_v_o()
-      ,.lce_cmd_ready_i()
+      ,.lce_cmd_ready_i(1'b1)
+
+      ,.credits_full_o()
+      ,.credits_empty_o()
       );  
 
     // lce cmd demanding -> demanding handshake conversion

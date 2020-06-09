@@ -39,7 +39,6 @@ module testbench
    , parameter dram_capacity_p           = 16384
 
   // I-Cache Widths
-  `declare_bp_fe_tag_widths(icache_assoc_p, icache_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
   
   // LCE-CCE Interface Widths

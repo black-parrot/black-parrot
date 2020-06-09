@@ -183,24 +183,22 @@ $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_ptw.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_csr.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce_cmd.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce_req.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_mem_top.v
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
 $BP_FE_DIR/src/v/bp_fe_btb.v
-$BP_FE_DIR/src/v/bp_fe_lce_cmd.v
 $BP_FE_DIR/src/v/bp_fe_icache.v
 $BP_FE_DIR/src/v/bp_fe_instr_scan.v
-$BP_FE_DIR/src/v/bp_fe_lce.v
-$BP_FE_DIR/src/v/bp_fe_lce_req.v
 $BP_FE_DIR/src/v/bp_fe_mem.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
 ## ME files
+# LCE
+$BP_ME_DIR/src/v/lce/bp_lce.v
+$BP_ME_DIR/src/v/lce/bp_lce_req.v
+$BP_ME_DIR/src/v/lce/bp_lce_cmd.v
 # Cache
 $BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.v
 $BP_ME_DIR/src/v/cache/bp_me_cache_slice.v

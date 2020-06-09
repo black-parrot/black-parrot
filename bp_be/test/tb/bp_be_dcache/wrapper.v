@@ -230,14 +230,21 @@ module wrapper
      
      logic mem_resp_ready_lo;
 
-     bp_be_dcache_lce
-     #(.bp_params_p(bp_params_p))
+     bp_lce
+     #(.bp_params_p(bp_params_p)
+        ,.assoc_p(dcache_assoc_p)
+        ,.sets_p(dcache_sets_p)
+        ,.block_width_p(dcache_block_width_p)
+        ,.timeout_max_limit_p(4)
+        ,.credits_p(coh_noc_max_credits_p)
+       )
      dcache_lce
      (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     
-     ,.lce_id_i('0)
 
+     ,.lce_id_i(cfg_bus_cast_i.dcache_id)
+     ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
+ 
      ,.cache_req_i(cache_req_lo)
      ,.cache_req_v_i(cache_req_v_lo)
      ,.cache_req_ready_o(cache_req_ready_lo)
@@ -275,7 +282,7 @@ module wrapper
 
      ,.lce_cmd_o()
      ,.lce_cmd_v_o()
-     ,.lce_cmd_ready_i()
+     ,.lce_cmd_ready_i(1'b1)
 
      ,.credits_full_o(credits_full_lo)
      ,.credits_empty_o(credits_empty_lo)

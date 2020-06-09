@@ -77,16 +77,17 @@ bp_cce_mem_msg_s       mem_cmd;
 logic                  mem_cmd_v, mem_cmd_ready;
 
 // LCE-CCE IF
-bp_lce_cce_req_s       lce_req_lo, lce_req_to_cce;
+bp_lce_cce_req_s       lce_req_lo, lce_req;
 logic                  lce_req_v, lce_req_v_lo, lce_req_yumi, lce_req_ready_li;
 bp_lce_cce_resp_s      lce_resp, lce_resp_lo;
 logic                  lce_resp_v, lce_resp_v_lo, lce_resp_yumi, lce_resp_ready_li;
-bp_lce_cmd_s           lce_cmd;
+bp_lce_cmd_s           lce_cmd, lce_cmd_lo;
 logic                  lce_cmd_v, lce_cmd_ready;
-bp_lce_cmd_s           lce_cmd_lo;
 logic                  lce_cmd_v_lo, lce_cmd_ready_li;
+bp_lce_cmd_s           lce_cmd_out_lo;
+logic                  lce_cmd_out_v_lo, lce_cmd_out_ready_li;
 // Single LCE setup - LCE should never send a Data Command
-assign lce_cmd_ready_li = '0;
+assign lce_cmd_out_ready_li = '0;
 
 // Trace Replay for LCE
 logic                        tr_v_li, tr_ready_lo;
@@ -146,27 +147,24 @@ bp_me_nonsynth_mock_lce #(
 
   ,.lce_cmd_i(lce_cmd)
   ,.lce_cmd_v_i(lce_cmd_v)
-  ,.lce_cmd_ready_o(lce_cmd_ready)
+  ,.lce_cmd_yumi_o(lce_cmd_yumi)
 
-  ,.lce_cmd_o(lce_cmd_lo)
-  ,.lce_cmd_v_o(lce_cmd_v_lo)
-  ,.lce_cmd_ready_i(lce_cmd_ready_li)
+  ,.lce_cmd_o(lce_cmd_out_lo)
+  ,.lce_cmd_v_o(lce_cmd_out_v_lo)
+  ,.lce_cmd_ready_i(lce_cmd_out_ready_li)
 );
 
 bind bp_me_nonsynth_mock_lce
   bp_me_nonsynth_lce_tracer
-    #(.bp_params_p(bp_params_p))
+    #(.bp_params_p(bp_params_p)
+      ,.sets_p(sets_p)
+      ,.assoc_p(assoc_p)
+      ,.block_width_p(cce_block_width_p)
+      )
     lce_tracer
      (.clk_i(clk_i & (testbench.lce_trace_p == 1))
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
       ,.lce_id_i(lce_id_i)
-      ,.tr_pkt_i(tr_pkt_i)
-      ,.tr_pkt_v_i(tr_pkt_v_i)
-      ,.tr_pkt_yumi_i(tr_pkt_yumi_o)
-      ,.tr_pkt_o_i(tr_pkt_o)
-      ,.tr_pkt_v_o_i(tr_pkt_v_o)
-      ,.tr_pkt_ready_i(tr_pkt_ready_i)
       ,.lce_req_i(lce_req_o)
       ,.lce_req_v_i(lce_req_v_o)
       ,.lce_req_ready_i(lce_req_ready_i)
@@ -175,7 +173,7 @@ bind bp_me_nonsynth_mock_lce
       ,.lce_resp_ready_i(lce_resp_ready_i)
       ,.lce_cmd_i(lce_cmd_i)
       ,.lce_cmd_v_i(lce_cmd_v_i)
-      ,.lce_cmd_ready_i(lce_cmd_ready_o)
+      ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
       ,.lce_cmd_o_i(lce_cmd_o)
       ,.lce_cmd_o_v_i(lce_cmd_v_o)
       ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
@@ -227,7 +225,7 @@ lce_req_buffer
   ,.ready_o(lce_req_ready_li)
   // to CCE
   ,.v_o(lce_req_v)
-  ,.data_o(lce_req_to_cce)
+  ,.data_o(lce_req)
   ,.yumi_i(lce_req_yumi)
   );
 
@@ -247,6 +245,22 @@ lce_resp_buffer
   ,.yumi_i(lce_resp_yumi)
   );
 
+bsg_two_fifo
+#(.width_p(lce_cmd_width_lp)
+  )
+lce_cmd_buffer
+ (.clk_i(clk_i)
+  ,.reset_i(reset_i)
+  // from CCE
+  ,.v_i(lce_cmd_v_lo)
+  ,.data_i(lce_cmd_lo)
+  ,.ready_o(lce_cmd_ready_li)
+  // to LCE
+  ,.v_o(lce_cmd_v)
+  ,.data_o(lce_cmd)
+  ,.yumi_i(lce_cmd_yumi)
+  );
+
 // CCE
 wrapper
 #(.bp_params_p(bp_params_p)
@@ -259,11 +273,11 @@ wrapper
   ,.cfg_bus_i(cfg_bus_lo)
   ,.cfg_cce_ucode_data_o()
 
-  ,.lce_cmd_o(lce_cmd)
-  ,.lce_cmd_v_o(lce_cmd_v)
-  ,.lce_cmd_ready_i(lce_cmd_ready)
+  ,.lce_cmd_o(lce_cmd_lo)
+  ,.lce_cmd_v_o(lce_cmd_v_lo)
+  ,.lce_cmd_ready_i(lce_cmd_ready_li)
 
-  ,.lce_req_i(lce_req_to_cce)
+  ,.lce_req_i(lce_req)
   ,.lce_req_v_i(lce_req_v)
   ,.lce_req_yumi_o(lce_req_yumi)
 
