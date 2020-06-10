@@ -61,6 +61,7 @@ module bp_be_calculator_top
   , output [csr_cmd_width_lp-1:0]       csr_cmd_o
   , output                              csr_cmd_v_o
   , input [dword_width_p-1:0]           csr_data_i
+  , input                               csr_exc_i
 
   , input [mem_resp_width_lp-1:0]       mem_resp_i
   , input                               mem_resp_v_i
@@ -304,6 +305,12 @@ bp_be_pipe_mul
      ,.csr_cmd_o(csr_cmd_o)
      ,.csr_cmd_v_o(csr_cmd_v_o)
      ,.csr_data_i(csr_data_i)
+     ,.csr_exc_i(csr_exc_i)
+
+     // This should actually be latched (all exceptions come from stage before)
+     // Move with 2-cycle load
+     ,.exception_i(exc_stage_n[3].exc)
+     ,.exception_pc_i(calc_stage_r[2].pc)
 
      ,.mem_resp_i(mem_resp_i)
 
@@ -479,6 +486,11 @@ always_comb
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
         // If there are new exceptions, add them to the list
+        exc_stage_n[0].exc.itlb_miss          = reservation_n.decode.itlb_miss;
+        exc_stage_n[0].exc.instr_access_fault = reservation_n.decode.instr_access_fault;
+        exc_stage_n[0].exc.instr_page_fault   = reservation_n.decode.instr_page_fault;
+        exc_stage_n[0].exc.illegal_instr      = reservation_n.decode.illegal_instr;
+
         exc_stage_n[0].roll_v          =                           pipe_mem_miss_v_lo;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | pipe_mem_miss_v_lo;
         exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | pipe_mem_miss_v_lo;
@@ -489,7 +501,15 @@ always_comb
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | flush_i;
         // We only poison on exception or cache miss, because we also flush
         // on, for instance, fence.i
-        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
+        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo
+                                          | pipe_sys_miss_v_lo | pipe_sys_exc_v_lo;
+        exc_stage_n[3].exc.dtlb_miss          = mem_resp.tlb_miss_v;
+        exc_stage_n[3].exc.load_misaligned    = mem_resp.load_misaligned;
+        exc_stage_n[3].exc.load_access_fault  = mem_resp.load_access_fault;
+        exc_stage_n[3].exc.load_page_fault    = mem_resp.load_page_fault;
+        exc_stage_n[3].exc.store_misaligned   = mem_resp.store_misaligned;
+        exc_stage_n[3].exc.store_access_fault = mem_resp.store_access_fault;
+        exc_stage_n[3].exc.store_page_fault   = mem_resp.store_page_fault;
   end
 
 assign commit_pkt.v          = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
