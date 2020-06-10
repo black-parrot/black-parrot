@@ -114,7 +114,6 @@ module bp_be_ptw
   
   assign tlb_w_v_o              = (state_r == eWriteBack);
   assign tlb_w_itlb_not_dtlb_o  = instr_ptw_r;
-  assign tlb_w_vtag_o           = vpn_r;
   assign tlb_w_entry_o          = tlb_w_entry;
   
   assign tlb_w_entry.ptag       = writeback_ppn;
