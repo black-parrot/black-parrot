@@ -65,7 +65,6 @@ module bp_be_calculator_top
 
   , input [mem_resp_width_lp-1:0]       mem_resp_i
   , input                               mem_resp_v_i
-  , output                              mem_resp_ready_o
 
   , input [ptw_pkt_width_lp-1:0]        ptw_pkt_i
   , output [commit_pkt_width_lp-1:0]    commit_pkt_o
@@ -278,7 +277,6 @@ bp_be_pipe_mul
   
      ,.mem_resp_i(mem_resp_i)
      ,.mem_resp_v_i(mem_resp_v_i)
-     ,.mem_resp_ready_o(mem_resp_ready_o)
   
      ,.exc_v_o(pipe_mem_exc_v_lo)
      ,.miss_v_o(pipe_mem_miss_v_lo)
