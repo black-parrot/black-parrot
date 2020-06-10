@@ -216,8 +216,13 @@ always_comb
     fe_cmd_v = 1'b0;
     flush_o = 1'b0;
 
+    // Do not send anything on reset
+    if (state_r == e_reset)
+      begin
+        fe_cmd_v = 1'b0;
+      end
     // Send one reset cmd on boot
-    if (state_r == e_boot) 
+    else if (state_r == e_boot)
       begin
         fe_cmd.opcode = e_op_state_reset;
         fe_cmd.vaddr  = npc_r;
