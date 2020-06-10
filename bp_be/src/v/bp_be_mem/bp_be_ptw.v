@@ -53,6 +53,7 @@ module bp_be_ptw
    , output logic                           dcache_v_o
    , output logic [dcache_pkt_width_lp-1:0] dcache_pkt_o
    , output logic [ptag_width_p-1:0]        dcache_ptag_o
+   , output logic                           dcache_ptag_v_o
    , input                                  dcache_rdy_i
    , input                                  dcache_miss_i
   );
@@ -108,6 +109,7 @@ module bp_be_ptw
   
   assign dcache_pkt_o           = dcache_pkt;
   assign dcache_ptag_o          = ppn_r;
+  assign dcache_ptag_v_o        = (state_r == eWaitLoad);
   assign dcache_data            = dcache_data_r;
   
   assign tlb_w_v_o              = (state_r == eWriteBack);
@@ -124,7 +126,7 @@ module bp_be_ptw
   assign tlb_w_entry.r          = dcache_data.r;
 
   // PMA attributes
-  assign dcache_v_o             = (state_r == eSendLoad) & dcache_rdy_i;
+  assign dcache_v_o             = dcache_rdy_i & (state_r == eSendLoad);
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;
   assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
   assign dcache_pkt.data        = '0;

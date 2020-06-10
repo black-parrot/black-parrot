@@ -152,6 +152,7 @@ bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry;
 
 /* PTW ports */
 logic [ptag_width_p-1:0]  ptw_dcache_ptag;
+logic                     ptw_dcache_ptag_v;
 logic                     ptw_dcache_v, ptw_busy;
 bp_be_dcache_pkt_s        ptw_dcache_pkt;
 logic                     ptw_tlb_w_v, ptw_itlb_not_dtlb;
@@ -356,7 +357,8 @@ bp_be_ptw
    ,.dcache_v_o(ptw_dcache_v)
    ,.dcache_pkt_o(ptw_dcache_pkt)
    ,.dcache_ptag_o(ptw_dcache_ptag)
-   ,.dcache_rdy_i(dcache_ready_lo)
+   ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
+   ,.dcache_rdy_i(dcache_ready_lo) 
    ,.dcache_miss_i(dcache_miss_lo)
   );
 
@@ -460,7 +462,7 @@ assign fencei_cmd_v    = mmu_cmd_v_i & (mmu_cmd.mem_op == e_fencei);
 
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
-assign dcache_tlb_miss = (ptw_busy)? 1'b0 : dtlb_miss_v;
+assign dcache_tlb_miss = (ptw_busy)? ~ptw_dcache_ptag_v : dtlb_miss_v;
 assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i
                                             | (load_page_fault_v | store_page_fault_v)
                                             | (load_access_fault_v | store_access_fault_v);
