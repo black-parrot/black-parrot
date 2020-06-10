@@ -46,7 +46,6 @@ module bp_be_pipe_mem
 
    , input  [mem_resp_width_lp-1:0]       mem_resp_i
    , input                                mem_resp_v_i
-   , output                               mem_resp_ready_o
 
    , output logic                              exc_v_o
    , output logic                              miss_v_o
@@ -100,7 +99,6 @@ assign exc_v_o            = mem_resp_v_i & ((mem_resp.store_page_fault | mem_res
                                             );
 
 assign miss_v_o           = mem_resp_v_i & mem_resp.miss_v;
-assign mem_resp_ready_o   = 1'b1;
 
 // Set MMU cmd signal
 assign mmu_cmd_v_o = mem1_cmd_v;

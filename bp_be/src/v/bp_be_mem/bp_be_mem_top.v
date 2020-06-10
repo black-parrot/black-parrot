@@ -67,7 +67,6 @@ module bp_be_mem_top
 
    , output [mem_resp_width_lp-1:0]          mem_resp_o
    , output                                  mem_resp_v_o
-   , input                                   mem_resp_ready_i
 
    , output [ptw_pkt_width_lp-1:0]           ptw_pkt_o
    , input                                   long_busy_i
@@ -143,9 +142,6 @@ assign mem_resp_o = mem_resp;
 assign commit_pkt = commit_pkt_i;
 assign trap_pkt_o = trap_pkt;
 assign ptw_pkt_o  = ptw_pkt;
-
-// Suppress unused signal warnings
-wire unused0 = mem_resp_ready_i;
 
 /* Internal connections */
 /* TLB ports */

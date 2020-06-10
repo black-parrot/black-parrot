@@ -202,7 +202,6 @@ bp_be_calculator_top
 
    ,.mem_resp_i(mem_resp)
    ,.mem_resp_v_i(mem_resp_v)
-   ,.mem_resp_ready_o(mem_resp_rdy)
 
    ,.ptw_pkt_i(ptw_pkt)
    ,.commit_pkt_o(commit_pkt)
@@ -233,7 +232,6 @@ bp_be_mem_top
 
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
-    ,.mem_resp_ready_i(mem_resp_rdy)
     
     ,.ptw_pkt_o(ptw_pkt)
 
