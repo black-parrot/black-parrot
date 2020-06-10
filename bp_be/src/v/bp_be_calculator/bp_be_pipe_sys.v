@@ -99,7 +99,6 @@ assign csr_cmd_v_o = (csr_cmd_v_lo & ~kill_ex3_i);
 assign data_o           = csr_data_i;
 assign exc_v_o          = 1'b0;
 assign miss_v_o         = 1'b0;
-assign mem_resp_ready_o = 1'b1;
 
 
 endmodule

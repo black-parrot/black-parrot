@@ -480,11 +480,6 @@ always_comb
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
         // If there are new exceptions, add them to the list
-        // TODO: Fix
-        exc_stage_n[0].fe_nop_v        = ~dispatch_pkt.v;
-        exc_stage_n[0].be_nop_v        = ~dispatch_pkt.v;
-        exc_stage_n[0].me_nop_v        = ~dispatch_pkt.v;
-
         exc_stage_n[0].roll_v          =                           pipe_mem_miss_v_lo;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | pipe_mem_miss_v_lo;
         exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | pipe_mem_miss_v_lo;
