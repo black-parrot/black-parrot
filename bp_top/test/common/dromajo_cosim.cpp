@@ -10,13 +10,24 @@ dromajo_cosim_state_t* dromajo_pointer;
 uint64_t d_address = 0;
 uint64_t d_count = 0;
 
-extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus) {
+extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory_size, bool checkpoint) {
 
   if(hartid == 0) {
     cout << "Running with Dromajo cosimulation" << endl;
+
     string ncpus_str = "--ncpus=" + to_string(ncpus);
-    char *argv[] = {(char*)"", cfg_f_name, (char*)(&ncpus_str[0])};
-    dromajo_pointer = dromajo_cosim_init(3, argv);
+    string memsize_str = "--memory_size=" + to_string(memory_size);
+    string mmio_str = "--mmio_range=0x20000:0x80000000";
+    char* load_str = "--load=prog";
+
+    if(checkpoint) {
+      char* argv[] = {"dromajo", (char*)(&ncpus_str[0]), (char*)(&memsize_str[0]), (char*)(&mmio_str[0]), load_str, "prog.elf"};
+      dromajo_pointer = dromajo_cosim_init(6, argv);
+    }
+    else {
+      char* argv[] = {"dromajo", (char*)(&ncpus_str[0]), (char*)(&memsize_str[0]), (char*)(&mmio_str[0]), "prog.elf"};
+      dromajo_pointer = dromajo_cosim_init(5, argv);
+    }
   }
 }
 
