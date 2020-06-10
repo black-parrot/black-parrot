@@ -112,13 +112,25 @@ wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
 wire                    ptag_v_li   = itlb_r_v_lo;
 
 logic uncached_li;
+logic [7:0] domain_data;
+logic sac_data;
+
 bp_pma
  #(.bp_params_p(bp_params_p))
  pma
-  (.ptag_v_i(ptag_v_li)
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.ptag_v_i(ptag_v_li)
    ,.ptag_i(ptag_li)
+   ,.domain_i(cfg_bus_cast_i.domain)
+   ,.domain_w_v_i(cfg_bus_cast_i.domain_w_v)
+   ,.sac_i(cfg_bus_cast_i.sac)
+   ,.sac_w_v_i(cfg_bus_cast_i.sac_w_v)
 
    ,.uncached_o(uncached_li)
+   ,.domain_data_o(domain_data)
+   ,.sac_data_o(sac_data)
    );
 
 logic [instr_width_p-1:0] icache_data_lo;
@@ -204,8 +216,7 @@ wire instr_exe_page_fault = ~itlb_r_entry.x;
 // Fault if in uncached mode but access is not for an uncached address
 wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
 wire mode_fault_v = (is_uncached_mode & ~uncached_li);
-// TODO: Enable other domains by setting enabled dids with cfg_bus
-wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p] != '0);
+wire did_fault_v = (domain_data[ptag_li[ptag_width_p-1-:io_noc_did_width_p]] != 1'b1);
 // Don't allow speculative access to local tile memory
 wire local_fault_v = (ptag_li < (dram_base_addr_gp >> page_offset_width_p));
 
