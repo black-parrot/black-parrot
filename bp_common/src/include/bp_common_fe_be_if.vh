@@ -230,9 +230,10 @@ typedef enum logic [1:0]
  */
 typedef enum logic [1:0]
 {
-   e_itlb_miss          = 0
-  ,e_instr_access_fault = 1
-  ,e_instr_page_fault   = 2
+  e_itlb_miss           = 0
+  ,e_instr_misaligned   = 1
+  ,e_instr_access_fault = 2
+  ,e_instr_page_fault   = 3
 } bp_fe_exception_code_e;
 
 /*
