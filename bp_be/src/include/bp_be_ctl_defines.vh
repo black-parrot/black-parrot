@@ -64,22 +64,13 @@ typedef enum logic [4:0]
   ,e_csrrsi = 5'b00101
   ,e_csrrci = 5'b00110
 
-  // TODO: Separate out CSR op from exceptions based on flag
-  ,e_ecall      = 5'b00111
   ,e_dret       = 5'b10011
   ,e_mret       = 5'b01000
   ,e_sret       = 5'b01001
-  ,e_ebreak     = 5'b01010
   ,e_sfence_vma = 5'b01011
   ,e_wfi        = 5'b01100
-
-  // We treat FE exceptions as CSR ops
-  ,e_op_instr_access_fault = 5'b11001
-  ,e_op_instr_page_fault   = 5'b11010
-  ,e_op_instr_misaligned   = 5'b11011
-  ,e_op_illegal_instr      = 5'b11111
-  ,e_itlb_fill             = 5'b11100
-  ,e_dtlb_fill             = 5'b11110
+  ,e_ebreak     = 5'b10100
+  ,e_ecall      = 5'b11011
 } bp_be_csr_fu_op_e;
 
 typedef enum logic [4:0]
@@ -165,6 +156,11 @@ typedef struct packed
   bp_be_baddr_e                     baddr_sel;
   bp_be_offset_e                    offset_sel;
   bp_be_result_e                    result_sel;
+
+  logic                             itlb_miss;
+  logic                             instr_access_fault;
+  logic                             instr_page_fault;
+  logic                             illegal_instr;
 }  bp_be_decode_s;
 
 typedef struct packed
@@ -201,6 +197,8 @@ typedef struct packed
   // BE exceptional conditions
   logic poison_v;
   logic roll_v;
+
+  bp_be_exception_s exc;
 }  bp_be_exc_stage_s;
 
 `define bp_be_fu_op_width                                                                          \

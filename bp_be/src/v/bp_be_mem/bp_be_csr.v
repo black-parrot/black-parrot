@@ -23,6 +23,7 @@ module bp_be_csr
     , input [csr_cmd_width_lp-1:0]      csr_cmd_i
     , input                             csr_cmd_v_i
     , output logic [dword_width_p-1:0]  csr_data_o
+    , output logic                      csr_exc_o
     , output logic                      illegal_instr_o
     , input [vaddr_width_p-1:0]         arch_pc_i
     , input                             ptw_busy_i
@@ -38,7 +39,6 @@ module bp_be_csr
     , input [vaddr_width_p-1:0]         exception_npc_i
     , input [vaddr_width_p-1:0]         exception_vaddr_i
     , input [instr_width_p-1:0]         exception_instr_i
-    , input [16-1:0]                    exception_ecode_dec_i
 
     , input                             timer_irq_i
     , input                             software_irq_i
@@ -54,12 +54,6 @@ module bp_be_csr
     , output                            translation_en_o
     , output                            mstatus_sum_o
     , output                            mstatus_mxr_o
-    
-    // FE Exceptions
-    , output logic                      instr_page_fault_o
-    , output logic                      instr_access_fault_o
-    , output logic                      instr_misaligned_o
-    , output logic                      ebreak_o
     );
 
 // Declare parameterizable structs
@@ -71,6 +65,7 @@ module bp_be_csr
 bp_cfg_bus_s cfg_bus_cast_i;
 bp_be_csr_cmd_s csr_cmd;
 bp_be_csr_cmd_s cfg_bus_csr_cmd_li;
+
 bp_be_trap_pkt_s trap_pkt_cast_o;
 
 assign cfg_bus_csr_cmd_li.csr_op   = cfg_bus_cast_i.csr_r_v ? e_csrrs : e_csrrw;
@@ -175,14 +170,34 @@ wire [15:0] interrupt_icode_dec_li =
    ,1'b0
    };
 
+wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
+rv64_exception_dec_s exception_dec_li;
+assign exception_dec_li =
+    '{instr_misaligned  : csr_cmd.exc.instr_misaligned
+      ,instr_fault      : csr_cmd.exc.instr_access_fault
+      ,illegal_instr    : csr_cmd.exc.illegal_instr | illegal_instr_o
+      ,breakpoint       : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak) & ebreak_v_li
+      ,load_misaligned  : csr_cmd.exc.load_misaligned
+      ,load_fault       : csr_cmd.exc.load_access_fault
+      ,store_misaligned : csr_cmd.exc.store_misaligned
+      ,store_fault      : csr_cmd.exc.store_access_fault
+      ,ecall_u_mode     : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_U)
+      ,ecall_s_mode     : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_S)
+      ,ecall_m_mode     : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_M)
+      ,instr_page_fault : csr_cmd.exc.instr_page_fault
+      ,load_page_fault  : csr_cmd.exc.load_page_fault
+      ,store_page_fault : csr_cmd.exc.store_page_fault
+      ,default : '0
+      };
+
 logic [3:0] exception_ecode_li;
 logic       exception_ecode_v_li;
 bsg_priority_encode 
- #(.width_p($bits(exception_ecode_dec_i))
+ #(.width_p($bits(exception_dec_li))
    ,.lo_to_hi_p(1)
    )
  mcause_exception_enc
-  (.i(exception_ecode_dec_i)
+  (.i(exception_dec_li)
    ,.addr_o(exception_ecode_li)
    ,.v_o(exception_ecode_v_li)
    );
@@ -190,21 +205,21 @@ bsg_priority_encode
 logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
 logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
 bsg_priority_encode
- #(.width_p($bits(exception_ecode_dec_i))
+ #(.width_p($bits(exception_dec_li))
    ,.lo_to_hi_p(1)
    )
  m_interrupt_enc
-  (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:$bits(exception_ecode_dec_i)] & $bits(exception_ecode_dec_i)'($signed(mgie)))
+  (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:$bits(exception_dec_li)] & $bits(exception_dec_li)'($signed(mgie)))
    ,.addr_o(m_interrupt_icode_li)
    ,.v_o(m_interrupt_icode_v_li)
    );
 
 bsg_priority_encode
- #(.width_p($bits(exception_ecode_dec_i))
+ #(.width_p($bits(exception_dec_li))
    ,.lo_to_hi_p(1)
    )
  s_interrupt_enc
-  (.i(interrupt_icode_dec_li & mideleg_lo[0+:$bits(exception_ecode_dec_i)] & $bits(exception_ecode_dec_i)'($signed(sgie)))
+  (.i(interrupt_icode_dec_li & mideleg_lo[0+:$bits(exception_dec_li)] & $bits(exception_dec_li)'($signed(sgie)))
    ,.addr_o(s_interrupt_icode_li)
    ,.v_o(s_interrupt_icode_v_li)
    );
@@ -340,24 +355,12 @@ always_comb
     csr_data_lo      = '0;
     sfence_v_o       = '0;
     
-    instr_page_fault_o    = '0;
-    instr_access_fault_o  = '0;
-    instr_misaligned_o    = '0;
-    ebreak_o              = '0;
-
-    if (~is_debug_mode & csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
+    if (~ebreak_v_li & csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
       begin
-        ebreak_o = (is_m_mode & ~dcsr_lo.ebreakm) 
-                   | (is_s_mode & ~dcsr_lo.ebreaks) 
-                   | (is_u_mode & ~dcsr_lo.ebreaku);
-
-        if (~ebreak_o)
-          begin
-            debug_mode_n   = 1'b1;
-            dpc_li         = paddr_width_p'($signed(exception_pc_i));
-            dcsr_li.cause  = 1; // Ebreak
-            dcsr_li.prv    = priv_mode_r;
-          end
+        debug_mode_n   = 1'b1;
+        dpc_li         = paddr_width_p'($signed(exception_pc_i));
+        dcsr_li.cause  = 1; // Ebreak
+        dcsr_li.prv    = priv_mode_r;
       end
     else if (csr_cmd_v_i & (csr_cmd.csr_op == e_sfence_vma))
       begin
@@ -640,6 +643,9 @@ assign mstatus_mxr_o = mstatus_lo.mxr;
 assign single_step_o = ~is_debug_mode & dcsr_lo.step;
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
+assign csr_exc_o  = |{trap_pkt_cast_o.exception
+                      ,trap_pkt_cast_o._interrupt
+                      };
 
 assign cfg_csr_data_o = csr_data_lo;
 assign cfg_priv_data_o = priv_mode_r;
