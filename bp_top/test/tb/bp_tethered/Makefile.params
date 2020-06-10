@@ -42,6 +42,7 @@ export TB_PARAMS  = \
                     -pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
                     -pvalue+load_nbf_p=$(LOAD_NBF_P) \
                     -pvalue+cosim_p=$(COSIM_P) \
+                    -pvalue+cosim_memsize_p=$(SAMPLE_MEMSIZE) \
                     -pvalue+cosim_instr_p=$(SAMPLE_INSTR_P) \
                     -pvalue+warmup_instr_p=$(SAMPLE_WARMUP_P) \
                     -pvalue+use_dramsim2_latency_p=$(USE_DRAMSIM2_LATENCY_P) \

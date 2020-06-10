@@ -38,9 +38,6 @@ $(SIM_DIR)/prog.riscv: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 	cp $^ $@
 
-$(SIM_DIR)/prog.cfg: $(BP_COMMON_DIR)/test/cfg/cosim.cfg
-	cp $^ $@
-
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
@@ -50,7 +47,6 @@ $(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.cfg)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)
 
@@ -65,7 +61,6 @@ $(SIM_DIR)/run_samplesc: $(SIM_COLLATERAL)
 	mv $(@D)/dromajo.*.mainram $(@D)/prog.mainram
 	mv $(@D)/dromajo.*.bootram $(@D)/prog.bootram
 	mv $(@D)/dromajo.*.bp_regs $(@D)/prog.nbf
-	cat $(BP_COMMON_DIR)/test/cfg/sample.cfg | envsubst > $(@D)/prog.cfg
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
 	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem

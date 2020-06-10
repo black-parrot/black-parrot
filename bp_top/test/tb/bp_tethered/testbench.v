@@ -34,6 +34,7 @@ module testbench
    , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
    , parameter cosim_p                     = 0
+   , parameter cosim_memsize_p             = 256
    , parameter cosim_cfg_file_p            = "prog.cfg"
    , parameter cosim_instr_p               = 0
    , parameter warmup_instr_p              = 0
@@ -293,14 +294,16 @@ bind bp_be_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
-     ,.en_i(testbench.cosim_p == 1)
-     ,.cosim_instr_i(testbench.cosim_instr_p)
 
+     // We want to pass these values as parameters, but cannot in Verilator 4.025
+     // Parameter-resolved constants must not use dotted references
+     ,.en_i(testbench.cosim_p == 1)
+     ,.checkpoint_i(testbench.load_nbf_p == 1)
      ,.num_core_i(testbench.num_core_p)
      ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
-     // Want to pass config file as a parameter, but cannot in Verilator 4.025
-     // Parameter-resolved constants must not use dotted references
      ,.config_file_i(testbench.cosim_cfg_file_p)
+     ,.instr_cap_i(testbench.cosim_instr_p)
+     ,.memsize_i(testbench.cosim_memsize_p)
 
      ,.decode_i(be_calculator.reservation_n.decode)
 
