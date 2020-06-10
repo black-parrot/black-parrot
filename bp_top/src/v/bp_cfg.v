@@ -36,6 +36,7 @@ module bp_cfg
    , input [1:0]                        priv_data_i
    , input [cce_instr_width_p-1:0]      cce_ucode_data_i
    , input [7:0]                        domain_data_i
+   , input                              sac_data_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -132,9 +133,13 @@ wire priv_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire priv_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire [1:0] priv_data_li = cfg_data_li[1:0];
 
-wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_domain_en_gp);
-wire domain_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_domain_en_gp);
-wire [7:0] domain_li = cfg_data_li;
+wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_domain_mask_gp);
+wire domain_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_domain_mask_gp);
+wire [7:0] domain_li = cfg_data_li[7:0];
+
+wire sac_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_sac_mask_gp);
+wire sac_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_sac_mask_gp);
+wire sac_li = cfg_data_li[0];
 
 logic [core_id_width_p-1:0] core_id_li;
 logic [cce_id_width_p-1:0]  cce_id_li;
@@ -178,6 +183,9 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
                           ,domain_w_v: domain_w_v_li
                           ,domain_r_v: domain_r_v_li
                           ,domain: domain_li
+                          ,sac_w_v: sac_w_v_li
+                          ,sac_r_v: sac_r_v_li
+                          ,sac: sac_li
                           };
 
   logic rdata_v_r;
@@ -191,21 +199,21 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
      ,.data_o(rdata_v_r)
      );
 
-  logic [8:0] read_sel_one_hot_r;
+  logic [9:0] read_sel_one_hot_r;
   bsg_dff_reset_en
-   #(.width_p(9))
+   #(.width_p(10))
    read_reg_one_hot
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(mem_cmd_v_lo)
 
-     ,.data_i({irf_r_v_li, npc_r_v_li, csr_r_v_li, priv_r_v_li, host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_r_v_li, domain_r_v_li})
+     ,.data_i({irf_r_v_li, npc_r_v_li, csr_r_v_li, priv_r_v_li, host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_r_v_li, domain_r_v_li, sac_r_v_li})
      ,.data_o(read_sel_one_hot_r)
      );
 
   logic [dword_width_p-1:0] read_data;
   bsg_mux_one_hot
-   #(.width_p(dword_width_p), .els_p(9))
+   #(.width_p(dword_width_p), .els_p(10))
    read_mux_one_hot
     (.data_i({dword_width_p'(irf_data_i)
               ,dword_width_p'(npc_data_r)
@@ -216,6 +224,7 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
               ,dword_width_p'(cord_i)
               ,dword_width_p'(cce_ucode_data_i)
               ,dword_width_p'(domain_data_i)
+              ,dword_width_p'(sac_data_i)
               })
      ,.sel_one_hot_i(read_sel_one_hot_r)
 

@@ -122,6 +122,7 @@ module bp_unicore
   logic [dword_width_p-1:0] cfg_csr_data_li;
   logic [1:0]               cfg_priv_data_li;
   logic [7:0]               cfg_domain_data_li;
+  logic                     cfg_sac_data_li;
   logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
 
   bp_core_minimal
@@ -136,6 +137,7 @@ module bp_unicore
      ,.cfg_csr_data_o(cfg_csr_data_li)
      ,.cfg_priv_data_o(cfg_priv_data_li)
      ,.cfg_domain_data_o(cfg_domain_data_li)
+     ,.cfg_sac_data_o(cfg_sac_data_li)
 
      ,.dcache_req_o(dcache_req_lo)
      ,.dcache_req_v_o(dcache_req_v_lo)
@@ -334,6 +336,7 @@ module bp_unicore
      ,.csr_data_i(cfg_csr_data_li)
      ,.priv_data_i(cfg_priv_data_li)
      ,.domain_data_i(cfg_domain_data_li)
+     ,.sac_data_i(cfg_sac_data_li)
      ,.cce_ucode_data_i('0)
      );
 
