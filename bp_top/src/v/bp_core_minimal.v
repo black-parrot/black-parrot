@@ -35,6 +35,7 @@ module bp_core_minimal
     , output [dword_width_p-1:0] cfg_csr_data_o
     , output [1:0] cfg_priv_data_o
     , output [7:0] cfg_domain_data_o
+    , output cfg_sac_data_o
 
     // BP request side - Interface to LCE
     , input credits_full_i
@@ -204,6 +205,7 @@ module bp_core_minimal
      ,.cfg_csr_data_o(cfg_csr_data_o)
      ,.cfg_priv_data_o(cfg_priv_data_o)
      ,.cfg_domain_data_o(cfg_domain_data_o)
+     ,.cfg_sac_data_o(cfg_sac_data_o)
 
      ,.fe_queue_clr_o(fe_queue_clr_li)
      ,.fe_queue_deq_o(fe_queue_deq_li)

@@ -53,6 +53,7 @@ module bp_be_mem_top
    , output [dword_width_p-1:0]              cfg_csr_data_o
    , output [1:0]                            cfg_priv_data_o
    , output [7:0]                            cfg_domain_data_o
+   , output                                  cfg_sac_data_o
 
    , input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
    , input                                   mmu_cmd_v_i
@@ -491,7 +492,7 @@ wire mode_fault_v = (is_uncached_mode & ~dcache_uncached);
 logic [7:0] domain_data_r;
 bsg_dff_reset_en
   #(.width_p(8)
-   ,.reset_val_p(8'h1)
+   ,.reset_val_p(1)
    )
    domain_reg
    (.clk_i(clk_i)
@@ -502,9 +503,24 @@ bsg_dff_reset_en
    ,.data_o(domain_data_r)
    );
 
+logic sac_data_r;
+bsg_dff_reset_en
+  #(.width_p(1)
+   ,.reset_val_p(0)
+   )
+   sac_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(cfg_bus.sac_w_v)
+   ,.data_i(cfg_bus.sac)
+   ,.data_o(sac_data_r)
+   );
+
 assign cfg_domain_data_o = domain_data_r;
-wire did_fault_v = (domain_data_r[dcache_ptag[ptag_width_p-1-:io_noc_did_width_p]] != '1);
-wire sac_fault_v = ((dcache_ptag[ptag_width_p-1-:(io_noc_did_width_p+1)] == 1) & sac_x_dim_p == 0);
+assign cfg_sac_data_o = sac_data_r;
+
+wire did_fault_v = (domain_data_r[dcache_ptag[ptag_width_p-1-:io_noc_did_width_p]] != 1'b1);
+wire sac_fault_v = ((dcache_ptag[ptag_width_p-1-:(io_noc_did_width_p+1)] == 1) & ~sac_data_r);
 
 assign load_access_fault_v  = load_op_tl_lo & (mode_fault_v | did_fault_v | sac_fault_v);
 assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v | sac_fault_v);

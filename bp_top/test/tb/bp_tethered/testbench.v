@@ -202,6 +202,7 @@ bp_cce_mmio_cfg_loader
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)
     ,.skip_ram_init_p(skip_init_p)
     ,.clear_freeze_p(!load_nbf_p)
+    ,.domain_mask_p(64'h1)
     )
   cfg_loader
   (.clk_i(clk_i)

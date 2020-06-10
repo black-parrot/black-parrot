@@ -70,6 +70,9 @@ typedef enum logic [15:0]{
     logic                                    domain_r_v;                                           \
     logic                                    domain_w_v;                                           \
     logic [7:0]                              domain;                                               \
+    logic                                    sac_r_v;                                              \
+    logic                                    sac_w_v;                                              \
+    logic                                    sac;                                                  \
   }  bp_cfg_bus_s
 
 `define bp_cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
@@ -97,6 +100,7 @@ typedef enum logic [15:0]{
    + 2                              \
    + 2                              \
    + 8                              \
+   + 3                              \
    )
 
 
