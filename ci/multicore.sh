@@ -13,7 +13,7 @@ elif [ $1 == "verilator" ]
 then
     SUFFIX=sc
 else
-  echo "Usage: $0 <verilator, vcs> <testlist> [num_cores]"
+  echo "Usage: $0 <verilator, vcs> [num_cores]"
   exit 1
 fi
 

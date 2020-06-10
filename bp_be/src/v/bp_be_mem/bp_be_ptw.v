@@ -115,7 +115,7 @@ module bp_be_ptw
   assign tlb_w_entry.r          = dcache_data.r;
 
   // PMA attributes
-  assign dcache_v_o             = (state_r == eSendLoad);
+  assign dcache_v_o             = (state_r == eSendLoad) & dcache_rdy_i;
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;
   assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
   assign dcache_pkt.data        = '0;
