@@ -38,10 +38,13 @@ module bp_be_pipe_sys
    , input                                kill_ex3_i
 
    , output logic [csr_cmd_width_lp-1:0]  csr_cmd_o
-   , output                               csr_cmd_v_o
+   , output logic                         csr_cmd_v_o
    , input logic [dword_width_p-1:0]      csr_data_i
+   , input logic                          csr_exc_i
 
    , input [mem_resp_width_lp-1:0]        mem_resp_i
+   , input [exception_width_lp-1:0]       exception_i
+   , input [vaddr_width_p-1:0]            exception_pc_i
 
    , input [ptw_pkt_width_lp-1:0]         ptw_pkt_i
 
@@ -55,14 +58,16 @@ module bp_be_pipe_sys
 
 bp_be_decode_s    decode;
 bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r, csr_cmd_lo;
-bp_be_mem_resp_s mem_resp;
 rv64_instr_s      instr;
 bp_be_ptw_pkt_s   ptw_pkt;
+bp_be_mem_resp_s  mem_resp;
+bp_be_exception_s exception_cast_i;
 
 assign decode = decode_i;
 assign instr = instr_i;
 assign ptw_pkt = ptw_pkt_i;
 assign mem_resp = mem_resp_i;
+assign exception_cast_i = exception_i;
 
 wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
 
@@ -71,8 +76,10 @@ always_comb
     csr_cmd_li.csr_op   = decode.fu_op;
     csr_cmd_li.csr_addr = instr.fields.itype.imm12;
     csr_cmd_li.data     = csr_imm_op ? imm_i : rs1_i;
+    csr_cmd_li.exc      = '0;
   end
 
+logic csr_cmd_v_lo;
 bsg_shift_reg
  #(.width_p(csr_cmd_width_lp)
    ,.stages_p(2)
@@ -91,15 +98,33 @@ bsg_shift_reg
 always_comb
   begin
     csr_cmd_lo = csr_cmd_r;
-    csr_cmd_lo.data = (csr_cmd_lo.csr_op inside {e_itlb_fill, e_dtlb_fill}) ? mem_resp.vaddr : csr_cmd_r.data;
+
+    if (ptw_pkt.instr_page_fault_v)
+      begin
+        csr_cmd_lo.exc.instr_page_fault = 1'b1;
+      end
+    else if (ptw_pkt.store_page_fault_v)
+      begin
+        csr_cmd_lo.exc.store_page_fault = 1'b1;
+      end
+    else if (ptw_pkt.load_page_fault_v)
+      begin
+        csr_cmd_lo.exc.load_page_fault = 1'b1;
+      end
+    else
+      begin
+        // Override data width vaddr for dtlb fill
+        // Kill exception on ex3
+        csr_cmd_lo.exc = kill_ex3_i ? '0 : exception_cast_i;
+        csr_cmd_lo.data = exception_cast_i.dtlb_miss ? mem_resp.vaddr : exception_cast_i.itlb_miss ? exception_pc_i : csr_cmd_lo.data;
+      end
   end
 assign csr_cmd_o = csr_cmd_lo;
 assign csr_cmd_v_o = (csr_cmd_v_lo & ~kill_ex3_i);
 
 assign data_o           = csr_data_i;
-assign exc_v_o          = 1'b0;
+assign exc_v_o          = csr_exc_i;
 assign miss_v_o         = 1'b0;
-
 
 endmodule
 

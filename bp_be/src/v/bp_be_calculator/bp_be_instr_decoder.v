@@ -294,24 +294,18 @@ always_comb
     if (fe_exc_not_instr_i)
       begin
         decode = '0;
-        decode.queue_v     = 1'b1;
-        decode.pipe_sys_v  = 1'b1;
-        decode.csr_v       = 1'b1;
-        decode.serial_v    = 1'b1;
+        decode.queue_v = 1'b1;
         casez (fe_exc_i)
-          e_instr_access_fault: decode.fu_op = e_op_instr_access_fault;
-          e_instr_page_fault  : decode.fu_op = e_op_instr_page_fault;
-          e_itlb_miss         : decode.fu_op = e_itlb_fill;
+          e_instr_access_fault: decode.instr_access_fault = 1'b1;
+          e_instr_page_fault  : decode.instr_page_fault   = 1'b1;
+          e_itlb_miss         : decode.itlb_miss          = 1'b1;
         endcase
       end
     else if (illegal_instr)
       begin
         decode = '0;
-        decode.queue_v     = 1'b1;
-        decode.pipe_sys_v  = 1'b1;
-        decode.csr_v       = 1'b1;
-        decode.serial_v    = 1'b1;
-        decode.fu_op       = e_op_illegal_instr;
+        decode.queue_v = 1'b1;
+        decode.illegal_instr = 1'b1;
       end
   end
 
