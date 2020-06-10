@@ -318,13 +318,28 @@ bp_tlb
    ,.entry_o(dtlb_r_entry)
   );
 
+logic [7:0] domain_data;
+logic sac_data;
+
+assign cfg_domain_data_o = domain_data;
+assign cfg_sac_data_o = sac_data;
+
 bp_pma
  #(.bp_params_p(bp_params_p))
  pma
-  (.ptag_v_i(dtlb_r_v_lo)
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.ptag_v_i(dtlb_r_v_lo)
    ,.ptag_i(dtlb_r_entry.ptag)
+   ,.domain_i(cfg_bus.domain)
+   ,.domain_w_v_i(cfg_bus.domain_w_v)
+   ,.sac_i(cfg_bus.sac)
+   ,.sac_w_v_i(cfg_bus.sac_w_v)
 
    ,.uncached_o(dcache_uncached)
+   ,.domain_data_o(domain_data)
+   ,.sac_data_o(sac_data)
    );
 
 bp_be_ptw
@@ -485,42 +500,8 @@ end
 wire is_uncached_mode = (cfg_bus.dcache_mode == e_lce_mode_uncached);
 wire mode_fault_v = (is_uncached_mode & ~dcache_uncached);
 
-// Address map (40 bits)
-// | did | sac_not_cc | tile ID | remaining |
-// |  3  |      1     |  log(N) | 
-// Enabled DIDs
-logic [7:0] domain_data_r;
-bsg_dff_reset_en
-  #(.width_p(8)
-   ,.reset_val_p(1)
-   )
-   domain_reg
-   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(cfg_bus.domain_w_v)
-   // We want the 0th domain to be enabled always
-   ,.data_i((cfg_bus.domain | 8'h1))
-   ,.data_o(domain_data_r)
-   );
-
-logic sac_data_r;
-bsg_dff_reset_en
-  #(.width_p(1)
-   ,.reset_val_p(0)
-   )
-   sac_reg
-   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(cfg_bus.sac_w_v)
-   ,.data_i(cfg_bus.sac)
-   ,.data_o(sac_data_r)
-   );
-
-assign cfg_domain_data_o = domain_data_r;
-assign cfg_sac_data_o = sac_data_r;
-
-wire did_fault_v = (domain_data_r[dcache_ptag[ptag_width_p-1-:io_noc_did_width_p]] != 1'b1);
-wire sac_fault_v = ((dcache_ptag[ptag_width_p-1-:(io_noc_did_width_p+1)] == 1) & ~sac_data_r);
+wire did_fault_v = (domain_data[dcache_ptag[ptag_width_p-1-:io_noc_did_width_p]] != 1'b1);
+wire sac_fault_v = ((dcache_ptag[ptag_width_p-1-:(io_noc_did_width_p+1)] == 1) & ~sac_data);
 
 assign load_access_fault_v  = load_op_tl_lo & (mode_fault_v | did_fault_v | sac_fault_v);
 assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v | sac_fault_v);
