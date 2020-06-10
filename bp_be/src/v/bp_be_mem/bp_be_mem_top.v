@@ -461,23 +461,26 @@ assign dcache_cmd_v    = mmu_cmd_v_i;
 assign fencei_cmd_v    = mmu_cmd_v_i & (mmu_cmd.mem_op == e_fencei);
 
 // D-Cache connections
-assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
-assign dcache_tlb_miss = (ptw_busy)? ~ptw_dcache_ptag_v : dtlb_miss_v;
-assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i
-                                            | (load_page_fault_v | store_page_fault_v)
-                                            | (load_access_fault_v | store_access_fault_v);
-assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : dcache_cmd_v;
-
 always_comb
   begin
     if(ptw_busy) begin
-      dcache_pkt = ptw_dcache_pkt;
+      dcache_pkt_v    = ptw_dcache_v;
+      dcache_pkt      = ptw_dcache_pkt;
+      dcache_ptag     = ptw_dcache_ptag;
+      dcache_tlb_miss = ~ptw_dcache_ptag_v;
+      dcache_poison   = 1'b0;
     end
     else begin
+      dcache_pkt_v = dcache_cmd_v;
       // We assume that mem op == dcache op
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;
+      dcache_ptag = dtlb_r_entry.ptag;
+      dcache_tlb_miss = dtlb_miss_v;
+      dcache_poison = chk_poison_ex_i
+                      | (load_page_fault_v | store_page_fault_v)
+                      | (load_access_fault_v | store_access_fault_v);
     end
 end
 
@@ -503,7 +506,7 @@ assign mem_resp.miss_v             = mmu_cmd_v_rr & ~dcache_v & ~dcache_fencei_v
 assign mem_resp.fencei_v           = dcache_fencei_v;
 assign mem_resp.store_page_fault   = store_page_fault_mem3;
 assign mem_resp.load_page_fault    = load_page_fault_mem3;
-assign mem_resp.store_access_fault = store_access_fault_v;
+assign mem_resp.store_access_fault = store_access_fault_mem3;
 assign mem_resp.store_misaligned   = 1'b0; // TODO: detect
 assign mem_resp.load_access_fault  = load_access_fault_mem3;
 assign mem_resp.load_misaligned    = 1'b0; // TODO: detect

@@ -111,7 +111,7 @@ logic csr_cmd_v;
 logic [dword_width_p-1:0] csr_data;
 
 bp_be_mem_resp_s mem_resp;
-logic mem_resp_v, mem_resp_rdy;
+logic mem_resp_v;
 
 bp_be_calc_status_s    calc_status;
 
