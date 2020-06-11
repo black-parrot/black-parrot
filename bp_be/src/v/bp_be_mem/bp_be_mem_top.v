@@ -219,7 +219,6 @@ assign ptw_exception_ecode_dec_li =
 wire ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
 wire exception_v_li = commit_pkt.v | ptw_page_fault_v;
 wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? ptw_tlb_w_pc : commit_pkt.pc;
-//wire [vaddr_width_p-1:0] exception_npc_li = commit_pkt.npc;
 wire [vaddr_width_p-1:0] exception_npc_li = ptw_page_fault_v ? '0 : commit_pkt.npc;
 wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_tlb_w_vaddr : mem_resp.vaddr;
 wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
@@ -339,7 +338,7 @@ bp_be_ptw
    ,.tlb_miss_load_v_i(dtlb_fill_cmd_v & ~is_store_rr)
    ,.tlb_miss_store_v_i(dtlb_fill_cmd_v & is_store_rr)
    ,.tlb_miss_pc_i(commit_pkt.pc)
-   ,.tlb_miss_vaddr_i(vaddr_mem3)
+   ,.tlb_miss_vaddr_i(itlb_fill_cmd_v ? commit_pkt.pc : vaddr_mem3)
 
    ,.tlb_w_v_o(ptw_tlb_w_v)
    ,.tlb_w_itlb_not_dtlb_o(ptw_itlb_not_dtlb)
