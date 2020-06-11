@@ -7,7 +7,6 @@ module bp_be_csr
     `declare_bp_proc_params(bp_params_p)
 
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
-    , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
@@ -39,7 +38,7 @@ module bp_be_csr
     , input [vaddr_width_p-1:0]         exception_npc_i
     , input [vaddr_width_p-1:0]         exception_vaddr_i
     , input [instr_width_p-1:0]         exception_instr_i
-    , input [ecode_dec_width_lp-1:0]    exception_ecode_dec_i
+    , input [16-1:0]                    exception_ecode_dec_i
 
     , input                             timer_irq_i
     , input                             software_irq_i
@@ -72,7 +71,6 @@ module bp_be_csr
 bp_cfg_bus_s cfg_bus_cast_i;
 bp_be_csr_cmd_s csr_cmd;
 bp_be_csr_cmd_s cfg_bus_csr_cmd_li;
-bp_be_ecode_dec_s exception_ecode_dec_cast_i;
 bp_be_trap_pkt_s trap_pkt_cast_o;
 
 assign cfg_bus_csr_cmd_li.csr_op   = cfg_bus_cast_i.csr_r_v ? e_csrrs : e_csrrw;
@@ -81,7 +79,6 @@ assign cfg_bus_csr_cmd_li.data     = cfg_bus_cast_i.csr_r_v ? '0 : cfg_bus_cast_
 
 assign cfg_bus_cast_i = cfg_bus_i;
 assign csr_cmd = (cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) ? cfg_bus_csr_cmd_li : csr_cmd_i;
-assign exception_ecode_dec_cast_i = exception_ecode_dec_i;
 assign trap_pkt_o = trap_pkt_cast_o;
 
 // The muxed and demuxed CSR outputs
@@ -181,7 +178,7 @@ wire [15:0] interrupt_icode_dec_li =
 logic [3:0] exception_ecode_li;
 logic       exception_ecode_v_li;
 bsg_priority_encode 
- #(.width_p($bits(exception_ecode_dec_cast_i))
+ #(.width_p($bits(exception_ecode_dec_i))
    ,.lo_to_hi_p(1)
    )
  mcause_exception_enc
@@ -193,21 +190,21 @@ bsg_priority_encode
 logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
 logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
 bsg_priority_encode
- #(.width_p($bits(exception_ecode_dec_cast_i))
+ #(.width_p($bits(exception_ecode_dec_i))
    ,.lo_to_hi_p(1)
    )
  m_interrupt_enc
-  (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:$bits(exception_ecode_dec_cast_i)] & $bits(exception_ecode_dec_cast_i)'($signed(mgie)))
+  (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:$bits(exception_ecode_dec_i)] & $bits(exception_ecode_dec_i)'($signed(mgie)))
    ,.addr_o(m_interrupt_icode_li)
    ,.v_o(m_interrupt_icode_v_li)
    );
 
 bsg_priority_encode
- #(.width_p($bits(exception_ecode_dec_cast_i))
+ #(.width_p($bits(exception_ecode_dec_i))
    ,.lo_to_hi_p(1)
    )
  s_interrupt_enc
-  (.i(interrupt_icode_dec_li & mideleg_lo[0+:$bits(exception_ecode_dec_cast_i)] & $bits(exception_ecode_dec_cast_i)'($signed(sgie)))
+  (.i(interrupt_icode_dec_li & mideleg_lo[0+:$bits(exception_ecode_dec_i)] & $bits(exception_ecode_dec_i)'($signed(sgie)))
    ,.addr_o(s_interrupt_icode_li)
    ,.v_o(s_interrupt_icode_v_li)
    );
@@ -595,7 +592,8 @@ always_comb
             mstatus_li.sie       = 1'b0;
 
             sepc_li              = paddr_width_p'($signed(exception_pc_i));
-            stval_li             = exception_ecode_dec_cast_i.illegal_instr 
+            // TODO: Replace with struct
+            stval_li             = (exception_ecode_li == 2)
                                   ? exception_instr_i 
                                   : paddr_width_p'($signed(exception_vaddr_i));
 
@@ -615,7 +613,7 @@ always_comb
             mstatus_li.mie       = 1'b0;
 
             mepc_li              = paddr_width_p'($signed(exception_pc_i));
-            mtval_li             = exception_ecode_dec_cast_i.illegal_instr 
+            mtval_li             = (exception_ecode_li == 2)
                                   ? exception_instr_i 
                                   : paddr_width_p'($signed(exception_vaddr_i));
 

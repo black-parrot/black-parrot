@@ -178,15 +178,20 @@ typedef struct packed
   logic reserved1;
   logic ecall_s_mode;
   logic ecall_u_mode;
-  logic store_fault;
+  logic store_access_fault;
   logic store_misaligned;
-  logic load_fault;
+  logic load_access_fault;
   logic load_misaligned;
   logic breakpoint;
   logic illegal_instr;
-  logic instr_fault;
+  logic instr_access_fault;
   logic instr_misaligned;
-}  bp_be_ecode_dec_s;
+
+  // BP exceptions
+  logic fencei;
+  logic dtlb_miss;
+  logic itlb_miss;
+}  bp_be_exception_s;
 
 `define bp_be_ecode_dec_width \
   ($bits(bp_be_ecode_dec_s))
@@ -196,7 +201,7 @@ typedef struct packed
   // BE exceptional conditions
   logic poison_v;
   logic roll_v;
-}  bp_be_exception_s;
+}  bp_be_exc_stage_s;
 
 `define bp_be_fu_op_width                                                                          \
   (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_mmu_fu_op_e), $bits(bp_be_csr_fu_op_e))))
@@ -206,6 +211,9 @@ typedef struct packed
 
 `define bp_be_exception_width                                                                      \
   ($bits(bp_be_exception_s))
+
+`define bp_be_exc_stage_width                                                                      \
+  ($bits(bp_be_exc_stage_s))
 
 `endif
 
