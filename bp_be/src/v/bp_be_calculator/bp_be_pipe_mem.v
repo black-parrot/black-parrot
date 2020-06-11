@@ -57,7 +57,7 @@ module bp_be_pipe_mem
 
 // Cast input and output ports 
 bp_be_decode_s    decode;
-bp_be_mmu_cmd_s   mem1_cmd, mem3_cmd_li, mem3_cmd_lo, mem3_cmd;
+bp_be_mmu_cmd_s   mem1_cmd;
 bp_be_mem_resp_s  mem_resp;
 rv64_instr_s      instr;
 
@@ -81,15 +81,11 @@ assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
 
 assign mem1_cmd_v = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_ex1_i;
 
-wire fe_exc_v = (decode.fu_op == e_op_instr_misaligned)
-                | (decode.fu_op == e_op_instr_access_fault)
-                | (decode.fu_op == e_op_instr_page_fault)
-                | (decode.fu_op == e_itlb_fill);
 always_comb 
   begin
     mem1_cmd.mem_op   = decode.fu_op;
     mem1_cmd.data     = rs2_i;
-    mem1_cmd.vaddr    = fe_exc_v ? pc_i : (rs1_i + offset);
+    mem1_cmd.vaddr    = rs1_i + offset;
   end
 
 // Output results of memory op
