@@ -206,7 +206,7 @@ bsg_dff_chain
    ,.data_o(vaddr_mem3)
    );
 
-bp_be_ecode_dec_s exception_ecode_dec_li;
+rv64_exception_dec_s exception_ecode_dec_li;
 
 wire ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
 wire exception_v_li = commit_pkt.v | ptw_page_fault_v;
@@ -259,7 +259,7 @@ bp_be_csr
    ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
    ,.exception_instr_i(exception_instr_li)
-   ,.exception_ecode_dec_i(exception_ecode_dec_li | ptw_exception_ecode_dec_li)
+   ,.exception_ecode_dec_i(exception_ecode_dec_li)
    ,.fencei_v_i(mem_resp.fencei_v)
 
    ,.timer_irq_i(timer_irq_i)
