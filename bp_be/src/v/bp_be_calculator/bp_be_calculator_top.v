@@ -27,7 +27,7 @@ module bp_be_calculator_top
    // Generated parameters
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p)
-   , localparam exception_width_lp      = `bp_be_exception_width
+   , localparam exc_stage_width_lp      = `bp_be_exc_stage_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp        = `bp_be_csr_cmd_width
    , localparam mem_resp_width_lp       = `bp_be_mem_resp_width(vaddr_width_p)
@@ -39,7 +39,6 @@ module bp_be_calculator_top
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 6
-   , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
    // From RISC-V specifications
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
@@ -102,8 +101,8 @@ logic [dword_width_p-1:0] bypass_rs1 , bypass_rs2;
 bp_be_pipe_stage_reg_s                         calc_stage_isd;
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp  :0] calc_stage_n;
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r;
-bp_be_exception_s      [pipe_stage_els_lp  :0] exc_stage_n;
-bp_be_exception_s      [pipe_stage_els_lp-1:0] exc_stage_r;
+bp_be_exc_stage_s      [pipe_stage_els_lp  :0] exc_stage_n;
+bp_be_exc_stage_s      [pipe_stage_els_lp-1:0] exc_stage_r;
 
 bp_be_comp_stage_reg_s [pipe_stage_els_lp  :0] comp_stage_n;
 bp_be_comp_stage_reg_s [pipe_stage_els_lp-1:0] comp_stage_r;
@@ -395,7 +394,7 @@ bsg_dff
 
 // Exception pipeline
 bsg_dff 
- #(.width_p(exception_width_lp*pipe_stage_els_lp)
+ #(.width_p(exc_stage_width_lp*pipe_stage_els_lp)
    ) 
  exc_stage_reg
   (.clk_i(clk_i)
