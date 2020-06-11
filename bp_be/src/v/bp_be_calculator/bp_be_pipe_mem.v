@@ -19,7 +19,6 @@ module bp_be_pipe_mem
    `declare_bp_proc_params(bp_params_p)
    // Generated parameters
    , localparam decode_width_lp        = `bp_be_decode_width
-   , localparam exception_width_lp     = `bp_be_exception_width
    , localparam mmu_cmd_width_lp       = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
 

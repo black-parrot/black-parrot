@@ -80,13 +80,13 @@ package bp_common_rv64_pkg;
     logic reserved1;
     logic ecall_s_mode;
     logic ecall_u_mode;
-    logic store_fault;
+    logic store_access_fault;
     logic store_misaligned;
-    logic load_fault;
+    logic load_access_fault;
     logic load_misaligned;
     logic breakpoint;
     logic illegal_instr;
-    logic instr_fault;
+    logic instr_access_fault;
     logic instr_misaligned;
   }  rv64_exception_dec_s;
 
