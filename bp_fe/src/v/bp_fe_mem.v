@@ -119,13 +119,10 @@ bp_pma
  pma
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.cfg_bus_i(cfg_bus_i)
 
    ,.ptag_v_i(ptag_v_li)
    ,.ptag_i(ptag_li)
-   ,.domain_i(cfg_bus_cast_i.domain)
-   ,.domain_w_v_i(cfg_bus_cast_i.domain_w_v)
-   ,.sac_i(cfg_bus_cast_i.sac)
-   ,.sac_w_v_i(cfg_bus_cast_i.sac_w_v)
 
    ,.uncached_o(uncached_li)
    ,.domain_data_o(domain_data)
