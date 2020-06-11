@@ -10,7 +10,7 @@ Currently implemented in BlackParrot is:
 * SV39 virtual memory with 40 bit physical address
 
 ## Building a Test
-BlackParrot test sources live in `bp_common/test/src` and are compiled with `make -C bp_common/test <test target>.` Test lists are defined in `bp_common/test/Makefrag`. When a test is compiled, it creates a set of files in `bp_common/test/mem` based on a set of targets defined in `bp_common/test/Makefile`. Most programs only require the .riscv target be redefined and can reuse the generic targets for everything else. The filesets generated include:
+BlackParrot test suites live in `bp_common/test/src` and are compiled with `make -C bp_common/test <test suite>.`. When a suite is compiled, it creates a set of files in `bp_common/test/mem/<suite>`. There are also a number of potential generate targets that are useful for simulation, but are generally handled automatically by the build system. The targets include:
 * .riscv (the elf file)
 * .dump (a disassembly of the test)
 * .spike (a spike commit log showing a run of the test)
@@ -18,6 +18,12 @@ BlackParrot test sources live in `bp_common/test/src` and are compiled with `mak
 * .nbf (network boot file format, used to dma a program into BlackParrot memories, for example in FPGA)
   * The file format is (size(in 2^N bytes)_address(40 bit)_data(size bits)
     * 03_0080000000_ffd1011b00090137 = 8 bytes, address 0x8000_0000, data ffd1011b00090137
+
+## Adding a Test
+Adding a new test to BlackParrot is easy. Simply add the new test C file in bp_common/test/src/demos/src/, add to the test list in bp_common/test/demos/Makefile.frag, and it should build as part of the demos suite.
+
+## Adding a New Test Suite
+To add a new test suite, add a submodule containing the suite to bp_common/test/src. This submodule should have a makefile at the toplevel to build each program in the directory with a .riscv extension. In bp_common/test/Makefile.tests, add a call to submodule_test_template and the submodule will automatically sync and build with make -C bp_common/test <suite name>. 
 
 ## Building a Checkpoint Test
 BlackParrot can use Dromajo to generate checkpoints for certain tests. It runs the test on Dromajo for a certain number of instructions and then generates a memory image and a nbf file which contains the internal architectural state of the core(PC, registers, CSRs, privilege mode, ...). To create the checkpoint simply make sure that the target test is already built in the `bp_common/test/mem` directory and run `make <test>.dromajo MAXINSN=<n>` which will generate the files under the `<test>.dromajo.<n>` name. You can also specify the memory size of the image with `MEMSIZE=<k in MB>`. Default value is 1MB which should be enough for the small tests.
