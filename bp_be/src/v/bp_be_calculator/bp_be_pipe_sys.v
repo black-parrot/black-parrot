@@ -20,8 +20,9 @@ module bp_be_pipe_sys
    , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
    // Generated parameters
    , localparam decode_width_lp      = `bp_be_decode_width
-   , localparam exception_width_lp   = `bp_be_exception_width
-   , localparam ptw_pkt_width_lp     = `bp_be_ptw_pkt_width(vaddr_width_p)
+   , localparam exception_width_lp   = $bits(rv64_exception_dec_s)
+   , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
    )
   (input                                  clk_i
    , input                                reset_i
@@ -42,11 +43,14 @@ module bp_be_pipe_sys
    , input logic [dword_width_p-1:0]      csr_data_i
    , input logic                          csr_exc_i
 
-   , input [mem_resp_width_lp-1:0]        mem_resp_i
    , input [exception_width_lp-1:0]       exception_i
+   , input                                itlb_miss_i
+   , input                                dtlb_miss_i
    , input [vaddr_width_p-1:0]            exception_pc_i
+   , input [vaddr_width_p-1:0]            exception_vaddr_i
 
-   , input [ptw_pkt_width_lp-1:0]         ptw_pkt_i
+   , output [ptw_miss_pkt_width_lp-1:0]   ptw_miss_pkt_o
+   , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
 
    , output logic                         exc_v_o
    , output logic                         miss_v_o
@@ -56,18 +60,16 @@ module bp_be_pipe_sys
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
-bp_be_decode_s    decode;
+bp_be_decode_s decode;
 bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r, csr_cmd_lo;
-rv64_instr_s      instr;
-bp_be_ptw_pkt_s   ptw_pkt;
-bp_be_mem_resp_s  mem_resp;
-bp_be_exception_s exception_cast_i;
+rv64_instr_s instr;
+bp_be_ptw_miss_pkt_s ptw_miss_pkt;
+bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
 assign decode = decode_i;
 assign instr = instr_i;
-assign ptw_pkt = ptw_pkt_i;
-assign mem_resp = mem_resp_i;
-assign exception_cast_i = exception_i;
+assign ptw_miss_pkt_o = ptw_miss_pkt;
+assign ptw_fill_pkt = ptw_fill_pkt_i;
 
 wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
 
@@ -95,19 +97,41 @@ bsg_shift_reg
    ,.data_o(csr_cmd_r)
    );
 
+// Track if an incoming tlb miss is store or load
+logic is_store_r;
+bsg_dff_chain
+ #(.width_p(1)
+   ,.num_stages_p(2)
+   )
+ store_reg
+  (.clk_i(clk_i)
+
+   ,.data_i(decode.dcache_w_v)
+   ,.data_o(is_store_r)
+   );
+
+always_comb
+  begin
+    ptw_miss_pkt.instr_miss_v = ~kill_ex3_i & itlb_miss_i;
+    ptw_miss_pkt.load_miss_v = ~kill_ex3_i & dtlb_miss_i & ~is_store_r;
+    ptw_miss_pkt.store_miss_v = ~kill_ex3_i & dtlb_miss_i & is_store_r;
+    ptw_miss_pkt.pc = exception_pc_i;
+    ptw_miss_pkt.vaddr = itlb_miss_i ? exception_pc_i : exception_vaddr_i;
+  end
+
 always_comb
   begin
     csr_cmd_lo = csr_cmd_r;
 
-    if (ptw_pkt.instr_page_fault_v)
+    if (ptw_fill_pkt.instr_page_fault_v)
       begin
         csr_cmd_lo.exc.instr_page_fault = 1'b1;
       end
-    else if (ptw_pkt.store_page_fault_v)
+    else if (ptw_fill_pkt.store_page_fault_v)
       begin
         csr_cmd_lo.exc.store_page_fault = 1'b1;
       end
-    else if (ptw_pkt.load_page_fault_v)
+    else if (ptw_fill_pkt.load_page_fault_v)
       begin
         csr_cmd_lo.exc.load_page_fault = 1'b1;
       end
@@ -115,8 +139,8 @@ always_comb
       begin
         // Override data width vaddr for dtlb fill
         // Kill exception on ex3
-        csr_cmd_lo.exc = kill_ex3_i ? '0 : exception_cast_i;
-        csr_cmd_lo.data = exception_cast_i.dtlb_miss ? mem_resp.vaddr : exception_cast_i.itlb_miss ? exception_pc_i : csr_cmd_lo.data;
+        csr_cmd_lo.exc = kill_ex3_i ? '0 : exception_i;
+        csr_cmd_lo.data = csr_cmd_lo.data;
       end
   end
 assign csr_cmd_o = csr_cmd_lo;

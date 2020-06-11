@@ -173,20 +173,20 @@ wire [15:0] interrupt_icode_dec_li =
 wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
 rv64_exception_dec_s exception_dec_li;
 assign exception_dec_li =
-    '{instr_misaligned  : csr_cmd.exc.instr_misaligned
-      ,instr_fault      : csr_cmd.exc.instr_access_fault
-      ,illegal_instr    : csr_cmd.exc.illegal_instr | illegal_instr_o
-      ,breakpoint       : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak) & ebreak_v_li
-      ,load_misaligned  : csr_cmd.exc.load_misaligned
-      ,load_fault       : csr_cmd.exc.load_access_fault
-      ,store_misaligned : csr_cmd.exc.store_misaligned
-      ,store_fault      : csr_cmd.exc.store_access_fault
-      ,ecall_u_mode     : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_U)
-      ,ecall_s_mode     : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_S)
-      ,ecall_m_mode     : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_M)
-      ,instr_page_fault : csr_cmd.exc.instr_page_fault
-      ,load_page_fault  : csr_cmd.exc.load_page_fault
-      ,store_page_fault : csr_cmd.exc.store_page_fault
+    '{instr_misaligned    : csr_cmd.exc.instr_misaligned
+      ,instr_access_fault : csr_cmd.exc.instr_access_fault
+      ,illegal_instr      : csr_cmd.exc.illegal_instr | illegal_instr_o
+      ,breakpoint         : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak) & ebreak_v_li
+      ,load_misaligned    : csr_cmd.exc.load_misaligned
+      ,load_access_fault  : csr_cmd.exc.load_access_fault
+      ,store_misaligned   : csr_cmd.exc.store_misaligned
+      ,store_access_fault : csr_cmd.exc.store_access_fault
+      ,ecall_u_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_U)
+      ,ecall_s_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_S)
+      ,ecall_m_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_M)
+      ,instr_page_fault   : csr_cmd.exc.instr_page_fault
+      ,load_page_fault    : csr_cmd.exc.load_page_fault
+      ,store_page_fault   : csr_cmd.exc.store_page_fault
       ,default : '0
       };
 

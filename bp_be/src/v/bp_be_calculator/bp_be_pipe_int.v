@@ -16,7 +16,6 @@ module bp_be_pipe_int
 
    // Generated parameters
    , localparam decode_width_lp        = `bp_be_decode_width
-   , localparam exception_width_lp   = `bp_be_exception_width
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
