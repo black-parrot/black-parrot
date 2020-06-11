@@ -128,7 +128,7 @@ always_ff @(negedge clk_i)
       pop();
 
     if (io_cmd_v_i & (domain_id != '0))
-      $display("Warning: Accesing domain: %0h", domain_id);
+      $display("Warning: Accesing illegal domain %0h. Sending loopback message!", domain_id);
     for (integer i = 0; i < num_core_p; i++)
       begin
         // PASS when returned value in finish packet is zero
@@ -177,13 +177,7 @@ assign core_io_resp_lo =
 assign domain_io_resp_lo =
   '{header: '{msg_type              : io_cmd_cast_i.header.msg_type
               ,addr                 : io_cmd_cast_i.header.addr
-              ,payload: '{state        : io_cmd_cast_i.header.payload.state
-                         ,way_id       : io_cmd_cast_i.header.payload.way_id
-                         ,prefetch     : io_cmd_cast_i.header.payload.prefetch
-                         ,uncached     : io_cmd_cast_i.header.payload.uncached
-                         ,speculative  : io_cmd_cast_i.header.payload.speculative
-                         ,lce_id       : lce_id_width_p'(3)
-                         }
+              ,payload              : io_cmd_cast_i.header.payload
               ,size                 : io_cmd_cast_i.header.size
               }
     ,data : '0
