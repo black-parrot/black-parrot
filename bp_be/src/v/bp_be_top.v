@@ -101,7 +101,8 @@ assign cfg_bus = cfg_bus_i;
 bp_be_dispatch_pkt_s dispatch_pkt;
 logic dispatch_pkt_v;
 
-bp_be_ptw_pkt_s ptw_pkt;
+bp_be_ptw_miss_pkt_s ptw_miss_pkt;
+bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
 bp_be_mmu_cmd_s mmu_cmd;
 logic mmu_cmd_v, mmu_cmd_rdy;
@@ -172,9 +173,9 @@ bp_be_checker_top
 
    ,.dispatch_pkt_o(dispatch_pkt)
 
-   ,.itlb_fill_v_i(ptw_pkt.itlb_fill_v)
-   ,.itlb_fill_vaddr_i(ptw_pkt.vaddr)
-   ,.itlb_fill_entry_i(ptw_pkt.entry[0+:tlb_entry_width_lp])
+   ,.itlb_fill_v_i(ptw_fill_pkt.itlb_fill_v)
+   ,.itlb_fill_vaddr_i(ptw_fill_pkt.vaddr)
+   ,.itlb_fill_entry_i(ptw_fill_pkt.entry[0+:tlb_entry_width_lp])
 
    ,.commit_pkt_i(commit_pkt)
    ,.trap_pkt_i(trap_pkt)
@@ -205,7 +206,8 @@ bp_be_calculator_top
    ,.mem_resp_i(mem_resp)
    ,.mem_resp_v_i(mem_resp_v)
 
-   ,.ptw_pkt_i(ptw_pkt)
+   ,.ptw_miss_pkt_o(ptw_miss_pkt)
+   ,.ptw_fill_pkt_i(ptw_fill_pkt)
    ,.commit_pkt_o(commit_pkt)
    ,.wb_pkt_o(wb_pkt)
    );
@@ -236,7 +238,8 @@ bp_be_mem_top
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
     
-    ,.ptw_pkt_o(ptw_pkt)
+    ,.ptw_miss_pkt_i(ptw_miss_pkt)
+    ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
     ,.cache_req_complete_i(cache_req_complete_i)
     ,.cache_req_critical_i(cache_req_critical_i)

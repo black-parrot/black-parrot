@@ -165,40 +165,13 @@ typedef struct packed
 
 typedef struct packed
 {
-  // RISC-V exceptions
-  logic store_page_fault;
-  logic reserved2;
-  logic load_page_fault;
-  logic instr_page_fault;
-  logic ecall_m_mode;
-  logic reserved1;
-  logic ecall_s_mode;
-  logic ecall_u_mode;
-  logic store_access_fault;
-  logic store_misaligned;
-  logic load_access_fault;
-  logic load_misaligned;
-  logic breakpoint;
-  logic illegal_instr;
-  logic instr_access_fault;
-  logic instr_misaligned;
-
-  // BP exceptions
-  logic fencei;
-  logic dtlb_miss;
-  logic itlb_miss;
-}  bp_be_exception_s;
-
-`define bp_be_ecode_dec_width \
-  ($bits(bp_be_ecode_dec_s))
-
-typedef struct packed
-{
   // BE exceptional conditions
   logic poison_v;
   logic roll_v;
+  logic dtlb_miss;
+  logic itlb_miss;
 
-  bp_be_exception_s exc;
+  rv64_exception_dec_s exc;
 }  bp_be_exc_stage_s;
 
 `define bp_be_fu_op_width                                                                          \

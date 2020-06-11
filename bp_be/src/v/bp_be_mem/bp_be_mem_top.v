@@ -37,7 +37,8 @@ module bp_be_mem_top
 
    , localparam trap_pkt_width_lp      = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p)
-   , localparam ptw_pkt_width_lp       = `bp_be_ptw_pkt_width(vaddr_width_p)
+   , localparam ptw_miss_pkt_width_lp  = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
    // MMU
    , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
@@ -69,7 +70,8 @@ module bp_be_mem_top
    , output [mem_resp_width_lp-1:0]          mem_resp_o
    , output                                  mem_resp_v_o
 
-   , output [ptw_pkt_width_lp-1:0]           ptw_pkt_o
+   , input [ptw_miss_pkt_width_lp-1:0]       ptw_miss_pkt_i
+   , output [ptw_fill_pkt_width_lp-1:0]      ptw_fill_pkt_o
    , input                                   long_busy_i
 
    // D$-LCE Interface
@@ -133,7 +135,8 @@ bp_be_mem_resp_s       mem_resp;
 bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 bp_be_commit_pkt_s     commit_pkt;
 bp_be_trap_pkt_s       trap_pkt;
-bp_be_ptw_pkt_s        ptw_pkt;
+bp_be_ptw_miss_pkt_s   ptw_miss_pkt;
+bp_be_ptw_fill_pkt_s   ptw_fill_pkt;
 
 assign cfg_bus = cfg_bus_i;
 assign mmu_cmd = mmu_cmd_i;
@@ -142,7 +145,8 @@ assign csr_cmd = csr_cmd_i;
 assign mem_resp_o = mem_resp;
 assign commit_pkt = commit_pkt_i;
 assign trap_pkt_o = trap_pkt;
-assign ptw_pkt_o  = ptw_pkt;
+assign ptw_miss_pkt = ptw_miss_pkt_i;
+assign ptw_fill_pkt_o  = ptw_fill_pkt;
 
 /* Internal connections */
 /* TLB ports */
@@ -188,9 +192,6 @@ logic itlb_not_dtlb_resp;
 logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
 logic is_store_r, is_store_rr;
 bp_be_mmu_vaddr_s vaddr_mem3;
-
-wire itlb_fill_cmd_v = csr_cmd.exc.itlb_miss;
-wire dtlb_fill_cmd_v = csr_cmd.exc.dtlb_miss;
 
 wire is_store = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd, e_scw, e_scd};
 
@@ -299,12 +300,12 @@ bp_be_ptw
    ,.mstatus_mxr_i(mstatus_mxr_lo)
    ,.busy_o(ptw_busy)
 
-   ,.tlb_miss_v_i(itlb_fill_cmd_v | dtlb_fill_cmd_v)
-   ,.tlb_miss_instr_v_i(itlb_fill_cmd_v)
-   ,.tlb_miss_load_v_i(dtlb_fill_cmd_v & ~is_store_rr)
-   ,.tlb_miss_store_v_i(dtlb_fill_cmd_v & is_store_rr)
-   ,.tlb_miss_pc_i(commit_pkt.pc)
-   ,.tlb_miss_vaddr_i(csr_cmd.data[0+:vaddr_width_p])
+   ,.tlb_miss_v_i(ptw_miss_pkt.instr_miss_v | ptw_miss_pkt.load_miss_v | ptw_miss_pkt.store_miss_v)
+   ,.tlb_miss_instr_v_i(ptw_miss_pkt.instr_miss_v)
+   ,.tlb_miss_load_v_i(ptw_miss_pkt.load_miss_v)
+   ,.tlb_miss_store_v_i(ptw_miss_pkt.store_miss_v)
+   ,.tlb_miss_pc_i(ptw_miss_pkt.pc)
+   ,.tlb_miss_vaddr_i(ptw_miss_pkt.vaddr)
 
    ,.tlb_w_v_o(ptw_tlb_w_v)
    ,.tlb_w_itlb_not_dtlb_o(ptw_itlb_not_dtlb)
@@ -326,15 +327,15 @@ bp_be_ptw
    ,.dcache_miss_i(dcache_miss_lo)
   );
 
-assign ptw_pkt = '{itlb_fill_v            : ptw_tlb_w_v & ptw_itlb_not_dtlb
-                   ,dtlb_fill_v           : ptw_tlb_w_v & ~ptw_itlb_not_dtlb
-                   ,instr_page_fault_v    : ptw_instr_page_fault_v
-                   ,load_page_fault_v     : ptw_load_page_fault_v
-                   ,store_page_fault_v    : ptw_store_page_fault_v
-                   ,pc                    : ptw_tlb_w_pc
-                   ,vaddr                 : ptw_tlb_w_vaddr
-                   ,entry                 : ptw_tlb_w_entry
-                   };
+assign ptw_fill_pkt = '{itlb_fill_v            : ptw_tlb_w_v & ptw_itlb_not_dtlb
+                        ,dtlb_fill_v           : ptw_tlb_w_v & ~ptw_itlb_not_dtlb
+                        ,instr_page_fault_v    : ptw_instr_page_fault_v
+                        ,load_page_fault_v     : ptw_load_page_fault_v
+                        ,store_page_fault_v    : ptw_store_page_fault_v
+                        ,pc                    : ptw_tlb_w_pc
+                        ,vaddr                 : ptw_tlb_w_vaddr
+                        ,entry                 : ptw_tlb_w_entry
+                        };
 
 logic load_op_tl_lo, store_op_tl_lo;
 bp_be_dcache

@@ -35,7 +35,8 @@ module bp_be_calculator_top
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
-   , localparam ptw_pkt_width_lp        = `bp_be_ptw_pkt_width(vaddr_width_p)
+   , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 6
@@ -66,7 +67,8 @@ module bp_be_calculator_top
   , input [mem_resp_width_lp-1:0]       mem_resp_i
   , input                               mem_resp_v_i
 
-  , input [ptw_pkt_width_lp-1:0]        ptw_pkt_i
+  , output [ptw_miss_pkt_width_lp-1:0]  ptw_miss_pkt_o
+  , input [ptw_fill_pkt_width_lp-1:0]   ptw_fill_pkt_i
   , output [commit_pkt_width_lp-1:0]    commit_pkt_o
   , output [wb_pkt_width_lp-1:0]        wb_pkt_o
   );
@@ -300,7 +302,8 @@ bp_be_pipe_mul
      ,.rs2_i(reservation_r.rs2)
      ,.imm_i(reservation_r.imm)
 
-     ,.ptw_pkt_i(ptw_pkt_i)
+     ,.ptw_miss_pkt_o(ptw_miss_pkt_o)
+     ,.ptw_fill_pkt_i(ptw_fill_pkt_i)
 
      ,.csr_cmd_o(csr_cmd_o)
      ,.csr_cmd_v_o(csr_cmd_v_o)
@@ -310,9 +313,10 @@ bp_be_pipe_mul
      // This should actually be latched (all exceptions come from stage before)
      // Move with 2-cycle load
      ,.exception_i(exc_stage_n[3].exc)
-     ,.exception_pc_i(calc_stage_r[2].pc)
-
-     ,.mem_resp_i(mem_resp_i)
+     ,.itlb_miss_i(exc_stage_n[3].itlb_miss)
+     ,.dtlb_miss_i(exc_stage_n[3].dtlb_miss)
+     ,.exception_pc_i(calc_stage_n[3].pc)
+     ,.exception_vaddr_i(mem_resp.vaddr)
 
      ,.exc_v_o(pipe_sys_exc_v_lo)
      ,.miss_v_o(pipe_sys_miss_v_lo)
@@ -486,7 +490,7 @@ always_comb
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
         // If there are new exceptions, add them to the list
-        exc_stage_n[0].exc.itlb_miss          = reservation_n.decode.itlb_miss;
+        exc_stage_n[0].itlb_miss              = reservation_n.decode.itlb_miss;
         exc_stage_n[0].exc.instr_access_fault = reservation_n.decode.instr_access_fault;
         exc_stage_n[0].exc.instr_page_fault   = reservation_n.decode.instr_page_fault;
         exc_stage_n[0].exc.illegal_instr      = reservation_n.decode.illegal_instr;
@@ -503,7 +507,7 @@ always_comb
         // on, for instance, fence.i
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo
                                           | pipe_sys_miss_v_lo | pipe_sys_exc_v_lo;
-        exc_stage_n[3].exc.dtlb_miss          = mem_resp.tlb_miss_v;
+        exc_stage_n[3].dtlb_miss              = mem_resp.tlb_miss_v;
         exc_stage_n[3].exc.load_misaligned    = mem_resp.load_misaligned;
         exc_stage_n[3].exc.load_access_fault  = mem_resp.load_access_fault;
         exc_stage_n[3].exc.load_page_fault    = mem_resp.load_page_fault;
