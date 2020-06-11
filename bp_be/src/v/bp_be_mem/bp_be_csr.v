@@ -407,18 +407,6 @@ always_comb
             ret_v_o          = 1'b1;
           end
       end
-    else if (csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_page_fault))
-      begin
-        instr_page_fault_o = 1'b1;
-      end
-    else if (csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_access_fault))
-      begin
-        instr_access_fault_o = 1'b1;
-      end
-    else if (csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_misaligned))
-      begin
-        instr_misaligned_o = 1'b1;
-      end
     else if (csr_cmd_v_i & (csr_cmd.csr_op == e_wfi))
       begin
         illegal_instr_o = mstatus_lo.tw;

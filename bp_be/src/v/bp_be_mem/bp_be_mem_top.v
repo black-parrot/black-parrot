@@ -216,9 +216,9 @@ wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_tlb_w_vaddr
 wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
 // TODO: exception priority is non-compliant with the spec.
 assign exception_ecode_dec_li =
-  '{instr_misaligned : instr_misaligned_lo
-    ,instr_fault     : instr_access_fault_lo
-    ,illegal_instr   : csr_cmd_v_i & ((csr_cmd.csr_op == e_op_illegal_instr) || csr_illegal_instr_lo)
+  '{instr_misaligned : (csr_cmd_v_i & (csr_cmd.csr_op == e_instr_misaligned)) & instr_misaligned_lo
+    ,instr_fault     : (csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_access_fault)) & instr_access_fault_lo
+    ,illegal_instr   : (csr_cmd_v_i & (csr_cmd.csr_op == e_op_illegal_instr)) | csr_illegal_instr_lo
     ,breakpoint      : ebreak_lo
     ,load_misaligned : 1'b0 // TODO: Need to detect this
     ,load_fault      : load_access_fault_mem3
@@ -227,7 +227,7 @@ assign exception_ecode_dec_li =
     ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_U)
     ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_S)
     ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_M)
-    ,instr_page_fault: instr_page_fault_lo | ptw_instr_page_fault_v
+    ,instr_page_fault: (csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_page_fault)) | ptw_instr_page_fault_v
     ,load_page_fault : load_page_fault_mem3 | ptw_load_page_fault_v
     ,store_page_fault: store_page_fault_mem3 | ptw_store_page_fault_v
     ,default: '0
