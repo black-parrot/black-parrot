@@ -207,14 +207,6 @@ bsg_dff_chain
    );
 
 bp_be_ecode_dec_s exception_ecode_dec_li;
-bp_be_ecode_dec_s ptw_exception_ecode_dec_li;
-
-assign ptw_exception_ecode_dec_li =
-  '{instr_page_fault : ptw_instr_page_fault_v
-    ,load_page_fault : ptw_load_page_fault_v
-    ,store_page_fault: ptw_store_page_fault_v
-    ,default: '0
-    };
 
 wire ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
 wire exception_v_li = commit_pkt.v | ptw_page_fault_v;
@@ -235,9 +227,9 @@ assign exception_ecode_dec_li =
     ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_U)
     ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_S)
     ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_M)
-    ,instr_page_fault: instr_page_fault_lo
-    ,load_page_fault : load_page_fault_mem3
-    ,store_page_fault: store_page_fault_mem3
+    ,instr_page_fault: instr_page_fault_lo | ptw_instr_page_fault_v
+    ,load_page_fault : load_page_fault_mem3 | ptw_load_page_fault_v
+    ,store_page_fault: store_page_fault_mem3 | ptw_store_page_fault_v
     ,default: '0
     };
 
