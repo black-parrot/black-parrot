@@ -34,7 +34,6 @@ module bp_be_csr
     , input                             instret_i
 
     , input                             exception_v_i
-    , input                             fencei_v_i
     , input [vaddr_width_p-1:0]         exception_pc_i
     , input [vaddr_width_p-1:0]         exception_npc_i
     , input [vaddr_width_p-1:0]         exception_vaddr_i
@@ -660,7 +659,7 @@ assign trap_pkt_cast_o.cause            = (priv_mode_n == `PRIV_MODE_S) ? scause
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
 assign trap_pkt_cast_o.translation_en_n = translation_en_n;
 // TODO: Find more solid invariant
-assign trap_pkt_cast_o.fencei           = fencei_v_i;
+assign trap_pkt_cast_o.fencei           = csr_cmd.exc.fencei_v;
 assign trap_pkt_cast_o.sfence           = sfence_v_o;
 assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;

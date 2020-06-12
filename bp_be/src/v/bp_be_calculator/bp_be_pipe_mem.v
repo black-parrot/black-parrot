@@ -48,6 +48,7 @@ module bp_be_pipe_mem
 
    , output logic                              exc_v_o
    , output logic                              miss_v_o
+   , output logic [vaddr_width_p-1:0]          vaddr_o
    , output logic [reg_data_width_lp-1:0]      data_o
    );
 
@@ -72,6 +73,8 @@ logic mem1_cmd_v;
 // Suppress unused signal warnings
 wire unused2 = mmu_cmd_ready_i;
 
+assign vaddr_o = mem_resp.vaddr;
+
 assign data_o = mem_resp.data;
 
 logic [reg_data_width_lp-1:0] offset;
@@ -89,6 +92,7 @@ always_comb
 
 // Output results of memory op
 assign exc_v_o            = 1'b0;
+// TODO: Need to miss on dcache not flushed
 assign miss_v_o           = mem_resp_v_i & (mem_resp.tlb_miss_v | mem_resp.cache_miss_v);
 
 // Set MMU cmd signal

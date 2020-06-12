@@ -20,7 +20,7 @@ module bp_be_pipe_sys
    , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
    // Generated parameters
    , localparam decode_width_lp      = `bp_be_decode_width
-   , localparam exception_width_lp   = $bits(rv64_exception_dec_s)
+   , localparam exception_width_lp   = `bp_be_exception_width
    , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
    )
@@ -44,8 +44,6 @@ module bp_be_pipe_sys
    , input logic                          csr_exc_i
 
    , input [exception_width_lp-1:0]       exception_i
-   , input                                itlb_miss_i
-   , input                                dtlb_miss_i
    , input [vaddr_width_p-1:0]            exception_pc_i
    , input [vaddr_width_p-1:0]            exception_vaddr_i
 
@@ -63,11 +61,13 @@ module bp_be_pipe_sys
 bp_be_decode_s decode;
 bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r, csr_cmd_lo;
 rv64_instr_s instr;
+bp_be_exception_s exception;
 bp_be_ptw_miss_pkt_s ptw_miss_pkt;
 bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
 assign decode = decode_i;
 assign instr = instr_i;
+assign exception = exception_i;
 assign ptw_miss_pkt_o = ptw_miss_pkt;
 assign ptw_fill_pkt = ptw_fill_pkt_i;
 
@@ -112,11 +112,11 @@ bsg_dff_chain
 
 always_comb
   begin
-    ptw_miss_pkt.instr_miss_v = ~kill_ex3_i & itlb_miss_i;
-    ptw_miss_pkt.load_miss_v = ~kill_ex3_i & dtlb_miss_i & ~is_store_r;
-    ptw_miss_pkt.store_miss_v = ~kill_ex3_i & dtlb_miss_i & is_store_r;
+    ptw_miss_pkt.instr_miss_v = ~kill_ex3_i & csr_cmd_lo.exc.itlb_miss;
+    ptw_miss_pkt.load_miss_v = ~kill_ex3_i & csr_cmd_lo.exc.dtlb_miss & ~is_store_r;
+    ptw_miss_pkt.store_miss_v = ~kill_ex3_i & csr_cmd_lo.exc.dtlb_miss & is_store_r;
     ptw_miss_pkt.pc = exception_pc_i;
-    ptw_miss_pkt.vaddr = itlb_miss_i ? exception_pc_i : exception_vaddr_i;
+    ptw_miss_pkt.vaddr = csr_cmd_lo.exc.itlb_miss ? exception_pc_i : exception_vaddr_i;
   end
 
 always_comb
