@@ -240,7 +240,6 @@ bp_be_csr
    ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
    ,.exception_instr_i(exception_instr_li)
-   ,.fencei_v_i(mem_resp.fencei_v)
 
    ,.timer_irq_i(timer_irq_i)
    ,.software_irq_i(software_irq_i)

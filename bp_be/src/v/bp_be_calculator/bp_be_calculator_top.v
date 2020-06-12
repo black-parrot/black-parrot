@@ -112,6 +112,7 @@ bp_be_comp_stage_reg_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
 logic [dword_width_p-1:0] pipe_nop_data_lo;
 logic [dword_width_p-1:0] pipe_ctrl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_sys_data_lo, pipe_fp_data_lo, pipe_long_data_lo;
+logic [vaddr_width_p-1:0] pipe_mem_vaddr_lo;
 
 logic nop_pipe_result_v;
 logic pipe_ctrl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_sys_data_lo_v, pipe_fp_data_lo_v, pipe_long_data_lo_v;
@@ -283,6 +284,7 @@ bp_be_pipe_mul
      ,.exc_v_o(pipe_mem_exc_v_lo)
      ,.miss_v_o(pipe_mem_miss_v_lo)
      ,.data_o(pipe_mem_data_lo)
+     ,.vaddr_o(pipe_mem_vaddr_lo)
      );
 
   bp_be_pipe_sys
@@ -313,10 +315,9 @@ bp_be_pipe_mul
      // This should actually be latched (all exceptions come from stage before)
      // Move with 2-cycle load
      ,.exception_i(exc_stage_n[3].exc)
-     ,.itlb_miss_i(exc_stage_n[3].itlb_miss)
-     ,.dtlb_miss_i(exc_stage_n[3].dtlb_miss)
      ,.exception_pc_i(calc_stage_n[3].pc)
-     ,.exception_vaddr_i(mem_resp.vaddr)
+     // TODO: Should be latched, somewhere when mem is moved to two cycle
+     ,.exception_vaddr_i(pipe_mem_vaddr_lo)
 
      ,.exc_v_o(pipe_sys_exc_v_lo)
      ,.miss_v_o(pipe_sys_miss_v_lo)
@@ -489,11 +490,7 @@ always_comb
         // Normally, shift down in the pipe
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
-        // If there are new exceptions, add them to the list
-        exc_stage_n[0].itlb_miss              = reservation_n.decode.itlb_miss;
-        exc_stage_n[0].exc.instr_access_fault = reservation_n.decode.instr_access_fault;
-        exc_stage_n[0].exc.instr_page_fault   = reservation_n.decode.instr_page_fault;
-        exc_stage_n[0].exc.illegal_instr      = reservation_n.decode.illegal_instr;
+        exc_stage_n[0].nop_v           = ~reservation_n.v;
 
         exc_stage_n[0].roll_v          =                           pipe_mem_miss_v_lo;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | pipe_mem_miss_v_lo;
@@ -507,7 +504,14 @@ always_comb
         // on, for instance, fence.i
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo
                                           | pipe_sys_miss_v_lo | pipe_sys_exc_v_lo;
-        exc_stage_n[3].dtlb_miss              = mem_resp.tlb_miss_v;
+
+        exc_stage_n[0].exc.itlb_miss          = reservation_n.decode.itlb_miss;
+        exc_stage_n[0].exc.instr_access_fault = reservation_n.decode.instr_access_fault;
+        exc_stage_n[0].exc.instr_page_fault   = reservation_n.decode.instr_page_fault;
+        exc_stage_n[0].exc.illegal_instr      = reservation_n.decode.illegal_instr;
+
+        exc_stage_n[3].exc.dtlb_miss          = mem_resp.tlb_miss_v;
+        exc_stage_n[3].exc.fencei_v           = mem_resp.fencei_v;
         exc_stage_n[3].exc.load_misaligned    = mem_resp.load_misaligned;
         exc_stage_n[3].exc.load_access_fault  = mem_resp.load_access_fault;
         exc_stage_n[3].exc.load_page_fault    = mem_resp.load_page_fault;
