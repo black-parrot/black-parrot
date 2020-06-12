@@ -57,6 +57,7 @@ module bp_lce_cmd
             ? e_mem_msg_size_16
             : e_mem_msg_size_8
 
+    , localparam block_size_in_fill_lp = block_width_p/fill_width_p
   )
   (
     input                                            clk_i
@@ -392,6 +393,7 @@ module bp_lce_cmd
               data_mem_pkt.index = lce_cmd_addr_index;
               data_mem_pkt.way_id = lce_cmd_way_id;
               data_mem_pkt.data = lce_cmd.data;
+              data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
               data_mem_pkt.opcode = e_cache_data_mem_write;
               data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -414,6 +416,7 @@ module bp_lce_cmd
             e_lce_cmd_uc_data: begin
               data_mem_pkt.index = lce_cmd_addr_index;
               data_mem_pkt.data = lce_cmd.data;
+              data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
               data_mem_pkt.opcode = e_cache_data_mem_uncached;
               data_mem_pkt_v_o = lce_cmd_v_i;
 
