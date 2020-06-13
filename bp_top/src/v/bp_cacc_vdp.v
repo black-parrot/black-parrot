@@ -49,9 +49,9 @@ module bp_cacc_vdp
 
 
  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dword_width_p);
- `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8);
-
-  bp_be_dcache_pkt_s        dcache_pkt;
+ `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8);
+   
+  bp_be_dcache_pkt_s        dcache_pkt;   
   logic                     dcache_ready, dcache_v;
   logic [dword_width_p-1:0] dcache_data;
   logic                     dcache_tlb_miss, dcache_poison;
@@ -235,10 +235,12 @@ bp_be_dcache_lce
   assign io_resp_cast_o = '{header         : resp_header
                             ,data          : resp_data  };
 
-
   bp_be_mmu_vaddr_s v_addr;
   assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8)
                                          : (input_a_ptr+len_a_cnt*8))
+  bp_be_mem_vaddr_s v_addr;
+  assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8) 
+                                         : (input_a_ptr+len_a_cnt*8)) 
                        : res_ptr;
 
 
