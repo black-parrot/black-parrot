@@ -34,6 +34,7 @@ module bp_be_calculator_top
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam trap_pkt_width_lp       = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
@@ -46,6 +47,10 @@ module bp_be_calculator_top
    )
  (input                                 clk_i
   , input                               reset_i
+
+  , input [cfg_bus_width_lp-1:0]        cfg_bus_i
+  , output [dword_width_p-1:0]          cfg_csr_data_o
+  , output [1:0]                        cfg_priv_data_o
    
   // Calculator - Checker interface   
   , input [dispatch_pkt_width_lp-1:0]   dispatch_pkt_i
@@ -59,18 +64,25 @@ module bp_be_calculator_top
   , output                              mem_cmd_v_o
   , input                               mem_cmd_ready_i
    
-  , output [csr_cmd_width_lp-1:0]       csr_cmd_o
-  , output                              csr_cmd_v_o
-  , input [dword_width_p-1:0]           csr_data_i
-  , input                               csr_exc_i
-
   , input [mem_resp_width_lp-1:0]       mem_resp_i
   , input                               mem_resp_v_i
 
   , output [ptw_miss_pkt_width_lp-1:0]  ptw_miss_pkt_o
   , input [ptw_fill_pkt_width_lp-1:0]   ptw_fill_pkt_i
   , output [commit_pkt_width_lp-1:0]    commit_pkt_o
+  , output [trap_pkt_width_lp-1:0]      trap_pkt_o
   , output [wb_pkt_width_lp-1:0]        wb_pkt_o
+  
+  , input                               timer_irq_i
+  , input                               software_irq_i
+  , input                               external_irq_i
+  , output                              accept_irq_o
+
+  , output [rv64_priv_width_gp-1:0]     priv_mode_o
+  , output [ptag_width_p-1:0]           satp_ppn_o
+  , output                              translation_en_o
+  , output                              mstatus_sum_o
+  , output                              mstatus_mxr_o
   );
 
 // Declare parameterizable structs
@@ -85,11 +97,13 @@ bp_be_mem_resp_s       mem_resp;
 bp_cfg_bus_s           cfg_bus;
 bp_be_wb_pkt_s         long_wb_pkt, calc_wb_pkt;
 bp_be_commit_pkt_s     commit_pkt;
+bp_be_trap_pkt_s       trap_pkt;
 
 assign dispatch_pkt = dispatch_pkt_i;
 assign mem_resp = mem_resp_i;
 assign calc_status_o = calc_status;
 assign commit_pkt_o = commit_pkt;
+assign trap_pkt_o = trap_pkt;
 
 // Declare intermediate signals
 
@@ -287,11 +301,15 @@ bp_be_pipe_mul
      ,.vaddr_o(pipe_mem_vaddr_lo)
      );
 
+  logic pipe_long_ready_lo;
   bp_be_pipe_sys
    #(.bp_params_p(bp_params_p))
    pipe_sys
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_i)
+     ,.cfg_csr_data_o(cfg_csr_data_o)
+     ,.cfg_priv_data_o(cfg_priv_data_o)
 
      ,.kill_ex1_i(exc_stage_n[1].poison_v)
      ,.kill_ex2_i(exc_stage_n[2].poison_v)
@@ -307,21 +325,31 @@ bp_be_pipe_mul
      ,.ptw_miss_pkt_o(ptw_miss_pkt_o)
      ,.ptw_fill_pkt_i(ptw_fill_pkt_i)
 
-     ,.csr_cmd_o(csr_cmd_o)
-     ,.csr_cmd_v_o(csr_cmd_v_o)
-     ,.csr_data_i(csr_data_i)
-     ,.csr_exc_i(csr_exc_i)
-
+     ,.long_busy_i(~pipe_long_ready_lo)
+     ,.ptw_busy_i(~mem_cmd_ready_i)
      // This should actually be latched (all exceptions come from stage before)
      // Move with 2-cycle load
      ,.exception_i(exc_stage_n[3].exc)
      ,.exception_pc_i(calc_stage_n[3].pc)
      // TODO: Should be latched, somewhere when mem is moved to two cycle
      ,.exception_vaddr_i(pipe_mem_vaddr_lo)
+     ,.commit_pkt_i(commit_pkt)
+     ,.trap_pkt_o(trap_pkt)
+
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
+     ,.accept_irq_o(accept_irq_o)
 
      ,.exc_v_o(pipe_sys_exc_v_lo)
      ,.miss_v_o(pipe_sys_miss_v_lo)
      ,.data_o(pipe_sys_data_lo)
+
+     ,.priv_mode_o(priv_mode_o)
+     ,.satp_ppn_o(satp_ppn_o)
+     ,.translation_en_o(translation_en_o)
+     ,.mstatus_sum_o(mstatus_sum_o)
+     ,.mstatus_mxr_o(mstatus_mxr_o)
      );
 
   // Floating point pipe: 4 cycle latency
@@ -337,7 +365,6 @@ bp_be_pipe_mul
      ,.data_o(pipe_fp_data_lo)
      );
 
-  logic pipe_long_ready_lo;
   bp_be_pipe_long
    #(.bp_params_p(bp_params_p))
    pipe_long
@@ -510,6 +537,7 @@ always_comb
         exc_stage_n[0].exc.instr_page_fault   = reservation_n.decode.instr_page_fault;
         exc_stage_n[0].exc.illegal_instr      = reservation_n.decode.illegal_instr;
 
+        exc_stage_n[3].exc.dcache_miss        = mem_resp.cache_miss_v;
         exc_stage_n[3].exc.dtlb_miss          = mem_resp.tlb_miss_v;
         exc_stage_n[3].exc.fencei_v           = mem_resp.fencei_v;
         exc_stage_n[3].exc.load_misaligned    = mem_resp.load_misaligned;

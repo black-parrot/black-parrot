@@ -39,8 +39,6 @@ module bp_be_detector
    , input                             mem_cmd_ready_i
    , input                             credits_full_i
    , input                             credits_empty_i
-   , input                             debug_mode_i
-   , input                             single_step_i
    , input                             accept_irq_i
 
    // Pipeline control signals from the checker to the calculator

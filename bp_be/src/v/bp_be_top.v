@@ -106,11 +106,6 @@ bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 bp_be_mem_cmd_s mem_cmd;
 logic mem_cmd_v, mem_cmd_rdy;
 
-bp_be_csr_cmd_s csr_cmd;
-logic csr_cmd_v;
-logic [dword_width_p-1:0] csr_data;
-logic csr_exc;
-
 bp_be_mem_resp_s mem_resp;
 logic mem_resp_v;
 
@@ -123,16 +118,18 @@ logic [vaddr_width_p-1:0] chk_epc_li;
 
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_fencei_li;
 
-logic debug_mode_lo;
-logic single_step_lo;
 logic accept_irq_lo;
-
-logic [vaddr_width_p-1:0] arch_pc_lo;
 
 bp_be_commit_pkt_s commit_pkt;
 bp_be_trap_pkt_s trap_pkt;
 bp_be_wb_pkt_s wb_pkt;
 logic wb_pkt_v;
+
+logic [rv64_priv_width_gp-1:0] priv_mode_lo;
+logic [ptag_width_p-1:0]       satp_ppn_lo;
+logic                          translation_en_lo;
+logic                          mstatus_sum_lo;
+logic                          mstatus_mxr_lo;
 
 logic flush;
 // Module instantiations
@@ -153,10 +150,7 @@ bp_be_checker_top
    ,.mem_cmd_ready_i(mem_cmd_rdy)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
-   ,.debug_mode_i(debug_mode_lo)
-   ,.single_step_i(single_step_lo)
    ,.accept_irq_i(accept_irq_lo)
-   ,.arch_pc_o(arch_pc_lo)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -187,6 +181,10 @@ bp_be_calculator_top
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
+   ,.cfg_bus_i(cfg_bus_i)
+   ,.cfg_csr_data_o(cfg_csr_data_o)
+   ,.cfg_priv_data_o(cfg_priv_data_o)
+
    ,.dispatch_pkt_i(dispatch_pkt)
 
    ,.flush_i(flush)
@@ -197,18 +195,25 @@ bp_be_calculator_top
    ,.mem_cmd_v_o(mem_cmd_v)
    ,.mem_cmd_ready_i(mem_cmd_rdy)
 
-   ,.csr_cmd_o(csr_cmd)
-   ,.csr_cmd_v_o(csr_cmd_v)
-   ,.csr_data_i(csr_data)
-   ,.csr_exc_i(csr_exc)
-
    ,.mem_resp_i(mem_resp) 
    ,.mem_resp_v_i(mem_resp_v)
 
    ,.ptw_miss_pkt_o(ptw_miss_pkt)
    ,.ptw_fill_pkt_i(ptw_fill_pkt)
    ,.commit_pkt_o(commit_pkt)
+   ,.trap_pkt_o(trap_pkt)
    ,.wb_pkt_o(wb_pkt)
+
+   ,.timer_irq_i(timer_irq_i)
+   ,.software_irq_i(software_irq_i)
+   ,.external_irq_i(external_irq_i)
+   ,.accept_irq_o(accept_irq_lo)
+
+   ,.priv_mode_o(priv_mode_lo)
+   ,.satp_ppn_o(satp_ppn_lo)
+   ,.translation_en_o(translation_en_lo)
+   ,.mstatus_sum_o(mstatus_sum_lo)
+   ,.mstatus_mxr_o(mstatus_mxr_lo)
    );
 
 bp_be_mem_top
@@ -218,21 +223,12 @@ bp_be_mem_top
     ,.reset_i(reset_i)
 
     ,.cfg_bus_i(cfg_bus_i)
-    ,.cfg_csr_data_o(cfg_csr_data_o)
-    ,.cfg_priv_data_o(cfg_priv_data_o)
 
     ,.chk_poison_ex_i(flush)
 
     ,.mem_cmd_i(mem_cmd)
     ,.mem_cmd_v_i(mem_cmd_v)
     ,.mem_cmd_ready_o(mem_cmd_rdy)
-
-    ,.csr_cmd_i(csr_cmd)
-    ,.csr_cmd_v_i(csr_cmd_v)
-    ,.csr_data_o(csr_data)
-    ,.arch_pc_i(arch_pc_lo)
-    ,.long_busy_i(calc_status.long_busy)
-    ,.csr_exc_o(csr_exc)
 
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
@@ -261,17 +257,12 @@ bp_be_mem_top
     ,.stat_mem_o(stat_mem_o)
     ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
 
-    ,.commit_pkt_i(commit_pkt)
-
-    ,.debug_mode_o(debug_mode_lo)
-    ,.single_step_o(single_step_lo)
-
-    ,.timer_irq_i(timer_irq_i)
-    ,.software_irq_i(software_irq_i)
-    ,.external_irq_i(external_irq_i)
-    ,.accept_irq_o(accept_irq_lo)
-
-    ,.trap_pkt_o(trap_pkt)
+    ,.sfence_i(trap_pkt.sfence)
+    ,.priv_mode_i(priv_mode_lo)
+    ,.satp_ppn_i(satp_ppn_lo)
+    ,.translation_en_i(translation_en_lo)
+    ,.mstatus_sum_i(mstatus_sum_lo)
+    ,.mstatus_mxr_i(mstatus_mxr_lo)
     );
 
 endmodule

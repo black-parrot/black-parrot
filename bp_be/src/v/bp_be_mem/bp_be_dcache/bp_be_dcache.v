@@ -121,9 +121,6 @@ module bp_be_dcache
     , input [ptag_width_lp-1:0] ptag_i
     , input uncached_i
 
-    , output logic load_op_tl_o
-    , output logic store_op_tl_o
-
     // ctrl
     , output dcache_miss_o // Used for mem connections (ptw and MMU resp connections)
     , input poison_i
@@ -425,9 +422,6 @@ module bp_be_dcache
   logic store_hit_tv;
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~fencei_req;
-
-  assign store_op_tl_o = v_tl_r & ~tlb_miss_i & store_op_tl_r;
-  assign load_op_tl_o  = v_tl_r & ~tlb_miss_i & load_op_tl_r;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin

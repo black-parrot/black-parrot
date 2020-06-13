@@ -23,14 +23,11 @@ module bp_be_csr
     , input [csr_cmd_width_lp-1:0]      csr_cmd_i
     , input                             csr_cmd_v_i
     , output logic [dword_width_p-1:0]  csr_data_o
-    , output logic                      csr_exc_o
     , output logic                      illegal_instr_o
-    , input [vaddr_width_p-1:0]         arch_pc_i
     , input                             ptw_busy_i
     , input                             long_busy_i
 
     // Misc interface
-    , input [core_id_width_p-1:0]       hartid_i
     , input                             instret_i
 
     , input                             exception_v_i
@@ -43,11 +40,9 @@ module bp_be_csr
     , input                             software_irq_i
     , input                             external_irq_i
     , output                            accept_irq_o
-    , output                            single_step_o
 
     , output [trap_pkt_width_lp-1:0]    trap_pkt_o
 
-    , output                            debug_mode_o
     , output [rv64_priv_width_gp-1:0]   priv_mode_o
     , output [ptag_width_p-1:0]         satp_ppn_o
     , output                            translation_en_o
@@ -239,6 +234,23 @@ always_comb
     endcase
   end
 
+logic [vaddr_width_p-1:0] apc_n, apc_r;
+bsg_dff_reset_en
+ #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
+ apc
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(instret_i | (trap_pkt_cast_o.exception | trap_pkt_cast_o._interrupt | trap_pkt_cast_o.eret))
+
+   ,.data_i(apc_n)
+   ,.data_o(apc_r)
+   );
+assign apc_n = trap_pkt_cast_o.eret
+               ? trap_pkt_cast_o.epc
+               : (trap_pkt_cast_o.exception | trap_pkt_cast_o._interrupt)
+                 ? trap_pkt_cast_o.tvec
+                 : exception_npc_i;
+
 bsg_dff_reset
  #(.width_p(1))
  debug_mode_reg
@@ -248,7 +260,6 @@ bsg_dff_reset
    ,.data_i(debug_mode_n)
    ,.data_o(debug_mode_r)
    );
-assign debug_mode_o = debug_mode_r;
 
 bsg_dff_reset
  #(.width_p(2) 
@@ -465,7 +476,7 @@ always_comb
               // 0: Tapeout 0, July 2019
               // 1: Current
               `CSR_ADDR_MIMPID: csr_data_lo = 64'd1;
-              `CSR_ADDR_MHARTID: csr_data_lo = hartid_i;
+              `CSR_ADDR_MHARTID: csr_data_lo = cfg_bus_cast_i.core_id;
               `CSR_ADDR_MSTATUS: csr_data_lo = mstatus_lo;
               // MISA is optionally read-write, but all fields are read-only in BlackParrot
               //   64 bit MXLEN, IMASU extensions
@@ -544,7 +555,7 @@ always_comb
             mstatus_li.mpie      = mstatus_lo.mie;
             mstatus_li.mie       = 1'b0;
 
-            mepc_li              = paddr_width_p'($signed(arch_pc_i));
+            mepc_li              = paddr_width_p'($signed(apc_r));
             mtval_li             = '0;
             mcause_li._interrupt = 1'b1;
             mcause_li.ecode      = m_interrupt_icode_li;
@@ -561,7 +572,7 @@ always_comb
             mstatus_li.spie      = mstatus_lo.sie;
             mstatus_li.sie       = 1'b0;
 
-            sepc_li              = paddr_width_p'($signed(arch_pc_i));
+            sepc_li              = paddr_width_p'($signed(apc_r));
             stval_li             = '0;
             scause_li._interrupt = 1'b1;
             scause_li.ecode      = s_interrupt_icode_li;
@@ -639,12 +650,7 @@ assign satp_ppn_o       = satp_r.ppn;
 assign mstatus_sum_o = mstatus_lo.sum;
 assign mstatus_mxr_o = mstatus_lo.mxr;
 
-assign single_step_o = ~is_debug_mode & dcsr_lo.step;
-
 assign csr_data_o = dword_width_p'(csr_data_lo);
-assign csr_exc_o  = |{trap_pkt_cast_o.exception
-                      ,trap_pkt_cast_o._interrupt
-                      };
 
 assign cfg_csr_data_o = csr_data_lo;
 assign cfg_priv_data_o = priv_mode_r;
@@ -665,6 +671,7 @@ assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
 assign trap_pkt_cast_o.eret             = ret_v_o;
 assign trap_pkt_cast_o.satp             = satp_v_o;
+assign trap_pkt_cast_o.rollback         = csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss;
 
 assign priv_mode_o      = priv_mode_r;
 assign translation_en_o = translation_en_r
