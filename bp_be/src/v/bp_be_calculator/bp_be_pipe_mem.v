@@ -92,7 +92,6 @@ always_comb
 
 // Output results of memory op
 assign exc_v_o            = 1'b0;
-// TODO: Need to miss on dcache not flushed
 assign miss_v_o           = mem_resp_v_i & (mem_resp.tlb_miss_v | mem_resp.cache_miss_v);
 
 // Set MMU cmd signal

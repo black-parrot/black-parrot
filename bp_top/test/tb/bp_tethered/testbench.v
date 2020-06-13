@@ -319,8 +319,8 @@ bind bp_be_top
            ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
            ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
 
-           ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
-           ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+           ,.interrupt_v_i(be_calculator.pipe_sys.trap_pkt._interrupt)
+           ,.cause_i(be_calculator.pipe_sys.trap_pkt.cause)
 
            ,.finish_o(testbench.cosim_finish_lo)
            );
@@ -563,7 +563,7 @@ bind bp_be_top
 
        ,.reservation(be.be_calculator.reservation_n)
        ,.commit_pkt(be.be_calculator.commit_pkt)
-       ,.trap_pkt(be.be_mem.csr.trap_pkt_o)
+       ,.trap_pkt(be.be_calculator.pipe_sys.csr.trap_pkt_o)
        );
 
   bind bp_core_minimal
