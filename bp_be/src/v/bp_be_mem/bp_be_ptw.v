@@ -28,22 +28,23 @@ module bp_be_ptw
    , input                                  mstatus_mxr_i
    , output                                 busy_o
    
-   , input                                  itlb_not_dtlb_i
-   , output logic                           itlb_not_dtlb_o
+   // TLB connections
+   , input                                  tlb_miss_v_i
+   , input                                  tlb_miss_instr_v_i
+   , input                                  tlb_miss_store_v_i
+   , input                                  tlb_miss_load_v_i
+   , input [vaddr_width_p-1:0]              tlb_miss_pc_i
+   , input [vaddr_width_p-1:0]              tlb_miss_vaddr_i
    
-   , input                                  store_not_load_i
-   
+   , output logic                           tlb_w_v_o
+   , output logic                           tlb_w_itlb_not_dtlb_o
+   , output logic [vaddr_width_p-1:0]       tlb_w_pc_o
+   , output logic [vaddr_width_p-1:0]       tlb_w_vaddr_o
+   , output logic [tlb_entry_width_lp-1:0]  tlb_w_entry_o
    , output logic                           instr_page_fault_o
    , output logic                           load_page_fault_o
    , output logic                           store_page_fault_o
    
-   // TLB connections
-   , input                                  tlb_miss_v_i
-   , input [vtag_width_p-1:0]               tlb_miss_vtag_i
-   
-   , output logic                           tlb_w_v_o
-   , output logic [vtag_width_p-1:0]        tlb_w_vtag_o
-   , output logic [tlb_entry_width_lp-1:0]  tlb_w_entry_o
 
    // D-Cache connections
    , input                                  dcache_v_i
@@ -52,12 +53,14 @@ module bp_be_ptw
    , output logic                           dcache_v_o
    , output logic [dcache_pkt_width_lp-1:0] dcache_pkt_o
    , output logic [ptag_width_p-1:0]        dcache_ptag_o
+   , output logic                           dcache_ptag_v_o
    , input                                  dcache_rdy_i
    , input                                  dcache_miss_i
   );
   
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, pte_width_p);
+  `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
   
   typedef enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eWriteBack, eStuck } state_e;
   
@@ -67,6 +70,8 @@ module bp_be_ptw
   
   state_e state_r, state_n;
 
+  bp_be_mem_vaddr_s tlb_miss_vaddr, tlb_w_vaddr;
+
   logic pte_is_leaf;
   logic start;
   logic [lg_page_table_depth_lp-1:0] level_cntr;
@@ -74,16 +79,20 @@ module bp_be_ptw
   logic [vtag_width_p-1:0]           vpn_r, vpn_n;
   logic [ptag_width_p-1:0]           ppn_r, ppn_n, writeback_ppn;
   logic                              ppn_en;
-  
+
   logic [page_table_depth_p-1:0] [partial_vpn_width_lp-1:0] partial_vpn;
   logic [page_table_depth_p-2:0] [partial_vpn_width_lp-1:0] partial_ppn;
   logic [page_table_depth_p-2:0] partial_pte_misaligned;
   
-  logic store_not_load_r;
+  logic instr_ptw_r, load_ptw_r, store_ptw_r;
+
   logic page_fault_v;
 
   logic [dword_width_p-1:0] dcache_data_r;
   logic dcache_v_r;
+
+  assign tlb_miss_vaddr = tlb_miss_vaddr_i;
+  assign tlb_w_vaddr_o = tlb_w_vaddr;
 
   genvar i;
   generate 
@@ -100,10 +109,11 @@ module bp_be_ptw
   
   assign dcache_pkt_o           = dcache_pkt;
   assign dcache_ptag_o          = ppn_r;
+  assign dcache_ptag_v_o        = (state_r == eWaitLoad);
   assign dcache_data            = dcache_data_r;
   
   assign tlb_w_v_o              = (state_r == eWriteBack);
-  assign tlb_w_vtag_o           = vpn_r;
+  assign tlb_w_itlb_not_dtlb_o  = instr_ptw_r;
   assign tlb_w_entry_o          = tlb_w_entry;
   
   assign tlb_w_entry.ptag       = writeback_ppn;
@@ -115,7 +125,7 @@ module bp_be_ptw
   assign tlb_w_entry.r          = dcache_data.r;
 
   // PMA attributes
-  assign dcache_v_o             = (state_r == eSendLoad);
+  assign dcache_v_o             = dcache_rdy_i & (state_r == eSendLoad);
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;
   assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
   assign dcache_pkt.data        = '0;
@@ -130,19 +140,19 @@ module bp_be_ptw
   
   assign ppn_en                 = start | (busy_o & dcache_v_r);
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn[0+:ptag_width_p];
-  assign vpn_n                  = tlb_miss_vtag_i;
+  assign vpn_n                  = tlb_miss_vaddr.tag;
   
   wire pte_invalid              = (~dcache_data.v) | (~dcache_data.r & dcache_data.w);
   wire leaf_not_found           = (level_cntr == '0) & (~pte_is_leaf);
-  wire priv_fault               = pte_is_leaf & ((dcache_data.u & (priv_mode_i == `PRIV_MODE_S) & (itlb_not_dtlb_o | ~mstatus_sum_i)) | (~dcache_data.u & (priv_mode_i == `PRIV_MODE_U)));
+  wire priv_fault               = pte_is_leaf & ((dcache_data.u & (priv_mode_i == `PRIV_MODE_S) & (instr_ptw_r | ~mstatus_sum_i)) | (~dcache_data.u & (priv_mode_i == `PRIV_MODE_U)));
   wire misaligned_superpage     = pte_is_leaf & (|partial_pte_misaligned);
-  wire ad_fault                 = pte_is_leaf & (~dcache_data.a | (~itlb_not_dtlb_o & store_not_load_r & ~dcache_data.d));
+  wire ad_fault                 = pte_is_leaf & (~dcache_data.a | (store_ptw_r & ~dcache_data.d));
   wire common_faults            = pte_invalid | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
 
-  assign instr_page_fault_o     = busy_o & dcache_v_r & itlb_not_dtlb_o & (common_faults | (pte_is_leaf & ~dcache_data.x));
-  assign load_page_fault_o      = busy_o & dcache_v_r & ~itlb_not_dtlb_o & ~store_not_load_r & (common_faults | (pte_is_leaf & ~(dcache_data.r | (dcache_data.x & mstatus_mxr_i))));
-  assign store_page_fault_o     = busy_o & dcache_v_r & ~itlb_not_dtlb_o & store_not_load_r & (common_faults | (pte_is_leaf & ~dcache_data.w));
-  assign page_fault_v           = instr_page_fault_o | load_page_fault_o | store_page_fault_o;
+  assign instr_page_fault_o = busy_o & dcache_v_r & instr_ptw_r & (common_faults | (pte_is_leaf & ~dcache_data.x));
+  assign load_page_fault_o  = busy_o & dcache_v_r & load_ptw_r & (common_faults | (pte_is_leaf & ~(dcache_data.r | (dcache_data.x & mstatus_mxr_i))));
+  assign store_page_fault_o = busy_o & dcache_v_r & store_ptw_r & (common_faults | (pte_is_leaf & ~dcache_data.w));
+  assign page_fault_v       = instr_page_fault_o | load_page_fault_o | store_page_fault_o;
   
   always_comb begin
     case(state_r)
@@ -200,6 +210,24 @@ module bp_be_ptw
      ,.data_o(vpn_r)
     );
   
+  bsg_dff_reset_en #(.width_p(vaddr_width_p))
+    miss_pc_reg
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.en_i(start)
+      ,.data_i(tlb_miss_pc_i)
+      ,.data_o(tlb_w_pc_o)
+      );
+
+  bsg_dff_reset_en #(.width_p(vaddr_width_p))
+    miss_vaddr_reg
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.en_i(start)
+      ,.data_i(tlb_miss_vaddr_i)
+      ,.data_o(tlb_w_vaddr)
+      );
+
   bsg_dff_reset_en #(.width_p(ptag_width_p))
     ppn_reg
     (.clk_i(clk_i)
@@ -208,23 +236,14 @@ module bp_be_ptw
      ,.data_i(ppn_n)
      ,.data_o(ppn_r)
     );
-    
-  bsg_dff_reset_en #(.width_p(1))
-    tlb_sel_reg
+
+  bsg_dff_reset_en #(.width_p(3))
+    walk_type_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(start)
-     ,.data_i(itlb_not_dtlb_i)
-     ,.data_o(itlb_not_dtlb_o)
-    );
-    
-  bsg_dff_reset_en #(.width_p(1))
-    cmd_sel_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(start)
-     ,.data_i(store_not_load_i)
-     ,.data_o(store_not_load_r)
-    );
+     ,.data_i({tlb_miss_store_v_i, tlb_miss_load_v_i, tlb_miss_instr_v_i})
+     ,.data_o({store_ptw_r, load_ptw_r, instr_ptw_r})
+     );
 
 endmodule

@@ -19,9 +19,7 @@ module bp_be_pipe_mem
    `declare_bp_proc_params(bp_params_p)
    // Generated parameters
    , localparam decode_width_lp        = `bp_be_decode_width
-   , localparam exception_width_lp     = `bp_be_exception_width
-   , localparam mmu_cmd_width_lp       = `bp_be_mmu_cmd_width(vaddr_width_p)
-   , localparam csr_cmd_width_lp       = `bp_be_csr_cmd_width
+   , localparam mem_cmd_width_lp       = `bp_be_mem_cmd_width(vaddr_width_p)
    , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
 
    // From RISC-V specifications
@@ -41,63 +39,43 @@ module bp_be_pipe_mem
    , input [reg_data_width_lp-1:0]        rs2_i
    , input [reg_data_width_lp-1:0]        imm_i
 
-   , output [mmu_cmd_width_lp-1:0]        mmu_cmd_o
-   , output                               mmu_cmd_v_o
-   , input                                mmu_cmd_ready_i
-
-   , output [csr_cmd_width_lp-1:0]        csr_cmd_o
-   , output                               csr_cmd_v_o
-   , input                                csr_cmd_ready_i
+   , output [mem_cmd_width_lp-1:0]        mem_cmd_o
+   , output                               mem_cmd_v_o
+   , input                                mem_cmd_ready_i
 
    , input  [mem_resp_width_lp-1:0]       mem_resp_i
    , input                                mem_resp_v_i
-   , output                               mem_resp_ready_o
 
    , output logic                              exc_v_o
    , output logic                              miss_v_o
+   , output logic [vaddr_width_p-1:0]          vaddr_o
    , output logic [reg_data_width_lp-1:0]      data_o
    );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
+`declare_bp_be_mem_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Cast input and output ports 
 bp_be_decode_s    decode;
-bp_be_mmu_cmd_s   mem1_cmd, mem3_cmd_li, mem3_cmd_lo, mem3_cmd;
-bp_be_csr_cmd_s   csr_cmd_li, csr_cmd_lo;
+bp_be_mem_cmd_s   mem1_cmd;
 bp_be_mem_resp_s  mem_resp;
 rv64_instr_s      instr;
 
 assign decode = decode_i;
 assign mem_resp = mem_resp_i;
-assign csr_cmd_o = csr_cmd_lo;
 assign instr = instr_i;
 
 // Suppress unused signal warnings
 wire unused0 = kill_ex2_i;
 
-logic csr_cmd_v_lo, mem1_cmd_v;
+logic mem1_cmd_v;
 
 // Suppress unused signal warnings
-wire unused2 = mmu_cmd_ready_i;
-wire unused3 = csr_cmd_ready_i;
+wire unused2 = mem_cmd_ready_i;
+
+assign vaddr_o = mem_resp.vaddr;
 
 assign data_o = mem_resp.data;
-
-bsg_shift_reg
- #(.width_p(csr_cmd_width_lp)
-   ,.stages_p(2)
-   )
- csr_shift_reg
-  (.clk(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.valid_i(decode.csr_v)
-   ,.data_i(csr_cmd_li)
-
-   ,.valid_o(csr_cmd_v_lo)
-   ,.data_o(csr_cmd_lo)
-   );
 
 logic [reg_data_width_lp-1:0] offset;
 
@@ -105,36 +83,21 @@ assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
 
 assign mem1_cmd_v = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_ex1_i;
 
-wire fe_exc_v = (decode.fu_op == e_op_instr_misaligned)
-                | (decode.fu_op == e_op_instr_access_fault)
-                | (decode.fu_op == e_op_instr_page_fault)
-                | (decode.fu_op == e_itlb_fill);
 always_comb 
   begin
     mem1_cmd.mem_op   = decode.fu_op;
     mem1_cmd.data     = rs2_i;
-    mem1_cmd.vaddr    = fe_exc_v ? pc_i : (rs1_i + offset);
-  end
-
-assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;
-wire csr_imm_op = (decode.fu_op == e_csrrwi) 
-                  | (decode.fu_op == e_csrrsi) 
-                  | (decode.fu_op == e_csrrci);
-always_comb
-  begin
-    csr_cmd_li.csr_op   = decode.fu_op;
-    csr_cmd_li.csr_addr = instr.fields.itype.imm12;
-    csr_cmd_li.data     = csr_imm_op ? imm_i : rs1_i;
+    mem1_cmd.vaddr    = rs1_i + offset;
   end
 
 // Output results of memory op
-assign exc_v_o            = mem_resp_v_i & mem_resp.exc_v;
-assign miss_v_o           = mem_resp_v_i & mem_resp.miss_v;
-assign mem_resp_ready_o   = 1'b1;
+assign exc_v_o            = 1'b0;
+// TODO: Need to miss on dcache not flushed
+assign miss_v_o           = mem_resp_v_i & (mem_resp.tlb_miss_v | mem_resp.cache_miss_v);
 
 // Set MMU cmd signal
-assign mmu_cmd_v_o = mem1_cmd_v;
-assign mmu_cmd_o = mem1_cmd;
+assign mem_cmd_v_o = mem1_cmd_v;
+assign mem_cmd_o = mem1_cmd;
 
 endmodule : bp_be_pipe_mem
 

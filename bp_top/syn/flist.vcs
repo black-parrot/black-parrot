@@ -173,6 +173,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctrl.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_sys.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_regfile.v
 # Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_checker_top.v
@@ -256,8 +257,6 @@ $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_core_minimal.v
-$BP_TOP_DIR/src/v/bp_clint.v
-$BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v
 $BP_TOP_DIR/src/v/bp_l2e_tile.v
 $BP_TOP_DIR/src/v/bp_l2e_tile_node.v

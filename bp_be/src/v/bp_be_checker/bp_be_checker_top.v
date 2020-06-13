@@ -65,13 +65,15 @@ module bp_be_checker_top
 
    // Dependency information
    , input [calc_status_width_lp-1:0] calc_status_i
-   , input                            mmu_cmd_ready_i
+   , input                            mem_cmd_ready_i
    , input                            credits_full_i
    , input                            credits_empty_i
 
    // Checker pipeline control information
    , output                           chk_dispatch_v_o
    , output                           flush_o
+
+   , output [vaddr_width_p-1:0]       arch_pc_o
 
    , input                            accept_irq_i
    , input                            debug_mode_i
@@ -114,6 +116,7 @@ bp_be_director
    ,.isd_status_i(isd_status)
    ,.calc_status_i(calc_status_i) 
    ,.expected_npc_o(expected_npc_lo)
+   ,.arch_pc_o(arch_pc_o)
    ,.flush_o(flush_o)
 
    ,.fe_cmd_o(fe_cmd_o)
@@ -144,11 +147,12 @@ bp_be_detector
    ,.calc_status_i(calc_status_i)
    ,.expected_npc_i(expected_npc_lo)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
-   ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
+   ,.mem_cmd_ready_i(mem_cmd_ready_i)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
    ,.debug_mode_i(debug_mode_i)
    ,.single_step_i(single_step_i)
+   ,.accept_irq_i(accept_irq_i)
 
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    );
@@ -162,7 +166,6 @@ bp_be_scheduler
    ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_irf_data_o(cfg_irf_data_o)
 
-   ,.accept_irq_i(accept_irq_i)
    ,.isd_status_o(isd_status)
    ,.expected_npc_i(expected_npc_lo)
    ,.poison_iss_i(flush_o)
