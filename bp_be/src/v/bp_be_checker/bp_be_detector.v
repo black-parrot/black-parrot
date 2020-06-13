@@ -36,7 +36,7 @@ module bp_be_detector
    , input [calc_status_width_lp-1:0]  calc_status_i
    , input [vaddr_width_p-1:0]         expected_npc_i
    , input                             fe_cmd_ready_i
-   , input                             mmu_cmd_ready_i
+   , input                             mem_cmd_ready_i
    , input                             credits_full_i
    , input                             credits_empty_i
    , input                             debug_mode_i
@@ -154,7 +154,7 @@ always_comb
     // We block on mmu not ready even on not memory instructions, because it means there's an
     //   operation being performed asynchronously (such as a page fault)
     struct_haz_v = cfg_bus_cast_i.freeze
-                   | ~mmu_cmd_ready_i
+                   | ~mem_cmd_ready_i
                    | queue_haz_v;
   end
 

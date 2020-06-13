@@ -28,7 +28,7 @@ module bp_be_calculator_top
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p)
    , localparam exc_stage_width_lp      = `bp_be_exc_stage_width
-   , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
+   , localparam mem_cmd_width_lp        = `bp_be_mem_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp        = `bp_be_csr_cmd_width
    , localparam mem_resp_width_lp       = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
@@ -55,9 +55,9 @@ module bp_be_calculator_top
   , output [calc_status_width_lp-1:0]   calc_status_o
    
   // Mem interface   
-  , output [mmu_cmd_width_lp-1:0]       mmu_cmd_o
-  , output                              mmu_cmd_v_o
-  , input                               mmu_cmd_ready_i
+  , output [mem_cmd_width_lp-1:0]       mem_cmd_o
+  , output                              mem_cmd_v_o
+  , input                               mem_cmd_ready_i
    
   , output [csr_cmd_width_lp-1:0]       csr_cmd_o
   , output                              csr_cmd_v_o
@@ -74,7 +74,7 @@ module bp_be_calculator_top
   );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p / 8)
+`declare_bp_be_mem_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p / 8)
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -274,9 +274,9 @@ bp_be_pipe_mul
      ,.rs2_i(reservation_r.rs2)
      ,.imm_i(reservation_r.imm)
   
-     ,.mmu_cmd_o(mmu_cmd_o)
-     ,.mmu_cmd_v_o(mmu_cmd_v_o)
-     ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
+     ,.mem_cmd_o(mem_cmd_o)
+     ,.mem_cmd_v_o(mem_cmd_v_o)
+     ,.mem_cmd_ready_i(mem_cmd_ready_i)
   
      ,.mem_resp_i(mem_resp_i)
      ,.mem_resp_v_i(mem_resp_v_i)

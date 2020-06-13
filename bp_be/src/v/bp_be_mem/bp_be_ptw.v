@@ -60,7 +60,7 @@ module bp_be_ptw
   
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, pte_width_p);
-  `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
+  `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
   
   typedef enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eWriteBack, eStuck } state_e;
   
@@ -70,7 +70,7 @@ module bp_be_ptw
   
   state_e state_r, state_n;
 
-  bp_be_mmu_vaddr_s tlb_miss_vaddr, tlb_w_vaddr;
+  bp_be_mem_vaddr_s tlb_miss_vaddr, tlb_w_vaddr;
 
   logic pte_is_leaf;
   logic start;
