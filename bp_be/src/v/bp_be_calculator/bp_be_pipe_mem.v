@@ -19,7 +19,7 @@ module bp_be_pipe_mem
    `declare_bp_proc_params(bp_params_p)
    // Generated parameters
    , localparam decode_width_lp        = `bp_be_decode_width
-   , localparam mmu_cmd_width_lp       = `bp_be_mmu_cmd_width(vaddr_width_p)
+   , localparam mem_cmd_width_lp       = `bp_be_mem_cmd_width(vaddr_width_p)
    , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
 
    // From RISC-V specifications
@@ -39,9 +39,9 @@ module bp_be_pipe_mem
    , input [reg_data_width_lp-1:0]        rs2_i
    , input [reg_data_width_lp-1:0]        imm_i
 
-   , output [mmu_cmd_width_lp-1:0]        mmu_cmd_o
-   , output                               mmu_cmd_v_o
-   , input                                mmu_cmd_ready_i
+   , output [mem_cmd_width_lp-1:0]        mem_cmd_o
+   , output                               mem_cmd_v_o
+   , input                                mem_cmd_ready_i
 
    , input  [mem_resp_width_lp-1:0]       mem_resp_i
    , input                                mem_resp_v_i
@@ -53,11 +53,11 @@ module bp_be_pipe_mem
    );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
+`declare_bp_be_mem_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Cast input and output ports 
 bp_be_decode_s    decode;
-bp_be_mmu_cmd_s   mem1_cmd;
+bp_be_mem_cmd_s   mem1_cmd;
 bp_be_mem_resp_s  mem_resp;
 rv64_instr_s      instr;
 
@@ -71,7 +71,7 @@ wire unused0 = kill_ex2_i;
 logic mem1_cmd_v;
 
 // Suppress unused signal warnings
-wire unused2 = mmu_cmd_ready_i;
+wire unused2 = mem_cmd_ready_i;
 
 assign vaddr_o = mem_resp.vaddr;
 
@@ -96,8 +96,8 @@ assign exc_v_o            = 1'b0;
 assign miss_v_o           = mem_resp_v_i & (mem_resp.tlb_miss_v | mem_resp.cache_miss_v);
 
 // Set MMU cmd signal
-assign mmu_cmd_v_o = mem1_cmd_v;
-assign mmu_cmd_o = mem1_cmd;
+assign mem_cmd_v_o = mem1_cmd_v;
+assign mem_cmd_o = mem1_cmd;
 
 endmodule : bp_be_pipe_mem
 

@@ -65,7 +65,7 @@ module bp_be_checker_top
 
    // Dependency information
    , input [calc_status_width_lp-1:0] calc_status_i
-   , input                            mmu_cmd_ready_i
+   , input                            mem_cmd_ready_i
    , input                            credits_full_i
    , input                            credits_empty_i
 
@@ -147,7 +147,7 @@ bp_be_detector
    ,.calc_status_i(calc_status_i)
    ,.expected_npc_i(expected_npc_lo)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
-   ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
+   ,.mem_cmd_ready_i(mem_cmd_ready_i)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
    ,.debug_mode_i(debug_mode_i)

@@ -87,7 +87,7 @@ module bp_be_top
 
 // Declare parameterized structures
 // TODO: Shouldn't the block size be in bytes and not in bits?
-`declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p)
+`declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p)
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -103,8 +103,8 @@ logic dispatch_pkt_v;
 bp_be_ptw_miss_pkt_s ptw_miss_pkt;
 bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
-bp_be_mmu_cmd_s mmu_cmd;
-logic mmu_cmd_v, mmu_cmd_rdy;
+bp_be_mem_cmd_s mem_cmd;
+logic mem_cmd_v, mem_cmd_rdy;
 
 bp_be_csr_cmd_s csr_cmd;
 logic csr_cmd_v;
@@ -150,7 +150,7 @@ bp_be_checker_top
    ,.flush_o(flush)
 
    ,.calc_status_i(calc_status)
-   ,.mmu_cmd_ready_i(mmu_cmd_rdy)
+   ,.mem_cmd_ready_i(mem_cmd_rdy)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
    ,.debug_mode_i(debug_mode_lo)
@@ -193,9 +193,9 @@ bp_be_calculator_top
 
    ,.calc_status_o(calc_status)
 
-   ,.mmu_cmd_o(mmu_cmd)
-   ,.mmu_cmd_v_o(mmu_cmd_v)
-   ,.mmu_cmd_ready_i(mmu_cmd_rdy)
+   ,.mem_cmd_o(mem_cmd)
+   ,.mem_cmd_v_o(mem_cmd_v)
+   ,.mem_cmd_ready_i(mem_cmd_rdy)
 
    ,.csr_cmd_o(csr_cmd)
    ,.csr_cmd_v_o(csr_cmd_v)
@@ -223,9 +223,9 @@ bp_be_mem_top
 
     ,.chk_poison_ex_i(flush)
 
-    ,.mmu_cmd_i(mmu_cmd)
-    ,.mmu_cmd_v_i(mmu_cmd_v)
-    ,.mmu_cmd_ready_o(mmu_cmd_rdy)
+    ,.mem_cmd_i(mem_cmd)
+    ,.mem_cmd_v_i(mem_cmd_v)
+    ,.mem_cmd_ready_o(mem_cmd_rdy)
 
     ,.csr_cmd_i(csr_cmd)
     ,.csr_cmd_v_i(csr_cmd_v)
