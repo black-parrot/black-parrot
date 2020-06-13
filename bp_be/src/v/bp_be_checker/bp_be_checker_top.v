@@ -73,11 +73,7 @@ module bp_be_checker_top
    , output                           chk_dispatch_v_o
    , output                           flush_o
 
-   , output [vaddr_width_p-1:0]       arch_pc_o
-
    , input                            accept_irq_i
-   , input                            debug_mode_i
-   , input                            single_step_i
    
    //iTLB fill interface
     , input                           itlb_fill_v_i
@@ -116,7 +112,6 @@ bp_be_director
    ,.isd_status_i(isd_status)
    ,.calc_status_i(calc_status_i) 
    ,.expected_npc_o(expected_npc_lo)
-   ,.arch_pc_o(arch_pc_o)
    ,.flush_o(flush_o)
 
    ,.fe_cmd_o(fe_cmd_o)
@@ -150,8 +145,6 @@ bp_be_detector
    ,.mem_cmd_ready_i(mem_cmd_ready_i)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
-   ,.debug_mode_i(debug_mode_i)
-   ,.single_step_i(single_step_i)
    ,.accept_irq_i(accept_irq_i)
 
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
@@ -173,7 +166,6 @@ bp_be_scheduler
    ,.dispatch_v_i(chk_dispatch_v_o)
    ,.cache_miss_v_i(commit_pkt.cache_miss | commit_pkt.tlb_miss)
    ,.cmt_v_i(commit_pkt.queue_v)
-   ,.debug_mode_i(debug_mode_i)
    ,.suppress_iss_i(suppress_iss_lo)
 
    ,.fe_queue_i(fe_queue_i)

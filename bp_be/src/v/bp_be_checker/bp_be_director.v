@@ -46,7 +46,6 @@ module bp_be_director
    , input [isd_status_width_lp-1:0]  isd_status_i
    , input [calc_status_width_lp-1:0] calc_status_i
    , output [vaddr_width_p-1:0]       expected_npc_o
-   , output [vaddr_width_p-1:0]       arch_pc_o
    , output                           poison_isd_o
    , output logic                     flush_o
 
@@ -107,7 +106,7 @@ logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
 assign npc_w_v = cfg_bus_cast_i.npc_w_v
                  | calc_status.ex1_instr_v
-                 | (commit_pkt.tlb_miss | commit_pkt.cache_miss)
+                 | trap_pkt.rollback
                  | (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
 bsg_dff_reset_en 
  #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
@@ -120,20 +119,6 @@ bsg_dff_reset_en
    ,.data_o(npc_r)
    );
 assign cfg_npc_data_o = npc_r;
-
-logic [vaddr_width_p-1:0] apc_n, apc_r;
-bsg_dff_reset_en
- #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
- apc
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(commit_pkt.instret | (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret))
-
-   ,.data_i(apc_n)
-   ,.data_o(apc_r)
-   );
-assign apc_n = (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret) ? npc_n : commit_pkt.npc;
-assign arch_pc_o = apc_r;
 
 // NPC calculation
 bsg_mux 
@@ -162,7 +147,7 @@ bsg_mux
    )
  roll_mux
   (.data_i({commit_pkt.pc, calc_status.ex1_npc})
-   ,.sel_i(commit_pkt.tlb_miss | commit_pkt.cache_miss)
+   ,.sel_i(trap_pkt.rollback)
    ,.data_o(roll_mux_o)
    );
 
@@ -313,7 +298,7 @@ always_comb
 
         flush_o = 1'b1;
       end
-    else if (commit_pkt.cache_miss | commit_pkt.tlb_miss)
+    else if (trap_pkt.rollback)
       begin
         flush_o = 1'b1;
       end

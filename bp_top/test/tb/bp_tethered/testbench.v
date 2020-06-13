@@ -485,7 +485,7 @@ bind bp_be_top
 
        ,.reservation(be.be_calculator.reservation_n)
        ,.commit_pkt(be.be_calculator.commit_pkt)
-       ,.trap_pkt(be.be_mem.csr.trap_pkt_o)
+       ,.trap_pkt(be.be_calculator.pipe_sys.csr.trap_pkt_o)
        );
 
   bind bp_core_minimal

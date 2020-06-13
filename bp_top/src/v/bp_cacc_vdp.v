@@ -235,9 +235,6 @@ bp_be_dcache_lce
   assign io_resp_cast_o = '{header         : resp_header
                             ,data          : resp_data  };
 
-  bp_be_mmu_vaddr_s v_addr;
-  assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8)
-                                         : (input_a_ptr+len_a_cnt*8))
   bp_be_mem_vaddr_s v_addr;
   assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8) 
                                          : (input_a_ptr+len_a_cnt*8)) 

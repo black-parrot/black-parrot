@@ -144,6 +144,7 @@
     logic                           fencei;                                                        \
     logic                           sfence;                                                        \
     logic                           satp;                                                          \
+    logic                           rollback;                                                      \
   }  bp_be_trap_pkt_s;                                                                             \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -226,7 +227,7 @@
    )
  
 `define bp_be_trap_pkt_width(vaddr_width_mp) \
-  (2 * vaddr_width_mp + rv64_priv_width_gp + dword_width_p + 7)
+  (2 * vaddr_width_mp + rv64_priv_width_gp + dword_width_p + 8)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (1                                                                                               \
