@@ -320,7 +320,10 @@ bind bp_be_top
            ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
 
            ,.interrupt_v_i(be_calculator.pipe_sys.trap_pkt._interrupt)
-           ,.cause_i(be_calculator.pipe_sys.trap_pkt.cause)
+           ,.cause_i((be_calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
+                     ? be_calculator.pipe_sys.csr.scause_li
+                     : be_calculator.pipe_sys.csr.mcause_li
+                     )
 
            ,.finish_o(testbench.cosim_finish_lo)
            );

@@ -156,7 +156,7 @@ bsg_mux
    ,.els_p(2)
    )
  ret_mux
-  (.data_i({trap_pkt.epc[0+:vaddr_width_p], {trap_pkt.tvec[0+:vaddr_width_p-2], 2'b00}})
+  (.data_i({trap_pkt.epc, trap_pkt.tvec})
    ,.sel_i(trap_pkt.eret)
    ,.data_o(ret_mux_o)
    );
