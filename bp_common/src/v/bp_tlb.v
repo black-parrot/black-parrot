@@ -51,7 +51,7 @@ logic tlb_last_read_r;
 logic r_entry_bypass_v_r;
 bp_pte_entry_leaf_s r_entry_bypass_r;
 
-assign tlb_bypass = (vtag_i == vtag_r) & tlb_last_read_r;
+assign tlb_bypass = (vtag_i == vtag_r) & tlb_last_read_r | ~translation_en_i;
 
 bsg_dff_reset #(.width_p(1))
   tlb_bypass_reg
