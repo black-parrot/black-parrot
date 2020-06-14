@@ -148,14 +148,10 @@ bp_be_dcache_pkt_s        dcache_pkt;
 logic [dword_width_p-1:0] dcache_data;
 logic [ptag_width_p-1:0]  dcache_ptag;
 logic                     dcache_v, dcache_fencei_v, dcache_pkt_v;
-logic                     dcache_tlb_miss, dcache_poison;
+logic                     dcache_ptag_v;
 logic                     dcache_uncached;
 logic                     dcache_ready_lo;
 logic                     dcache_miss_lo;
-
-
-/* CSR signals */
-logic                     csr_illegal_instr_lo;
 
 logic load_access_fault_v, load_access_fault_mem3, store_access_fault_v, store_access_fault_mem3;
 logic load_page_fault_v, load_page_fault_mem3, store_page_fault_v, store_page_fault_mem3;
@@ -165,10 +161,12 @@ logic dcache_cmd_v;
 logic fencei_cmd_v;
 logic itlb_not_dtlb_resp;
 logic is_store_r;
+logic is_fencei_r, is_fencei_rr;
 logic mem_cmd_v_r, mem_cmd_v_rr, dtlb_miss_r;
 bp_be_mem_vaddr_s vaddr_mem3;
 
-wire is_store = mem_cmd_v_i & mem_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd, e_scw, e_scd};
+wire is_store  = mem_cmd_v_i & mem_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd, e_scw, e_scd};
+wire is_fencei = mem_cmd_v_i & mem_cmd.mem_op inside {e_fencei};
 
 bsg_dff_chain
  #(.width_p(vaddr_width_p)
@@ -196,9 +194,9 @@ bp_tlb
    ,.vtag_i((dtlb_w_v)? dtlb_w_vtag : dtlb_r_vtag)
    ,.entry_i(dtlb_w_entry)
 
+   ,.entry_o(dtlb_r_entry)
    ,.v_o(dtlb_r_v_lo)
    ,.miss_v_o(dtlb_miss_v)
-   ,.entry_o(dtlb_r_entry)
   );
 
 bp_pma
@@ -235,7 +233,6 @@ bp_be_ptw
    ,.dcache_miss_i(dcache_miss_lo)
   );
 
-logic load_op_tl_lo, store_op_tl_lo;
 bp_be_dcache
   #(.bp_params_p(bp_params_p))
   dcache
@@ -248,15 +245,14 @@ bp_be_dcache
     ,.v_i(dcache_pkt_v)
     ,.ready_o(dcache_ready_lo)
 
-    ,.fencei_v_o(dcache_fencei_v)
     ,.v_o(dcache_v)
     ,.data_o(dcache_data)
 
-    ,.tlb_miss_i(dcache_tlb_miss)
     ,.ptag_i(dcache_ptag)
+    ,.ptag_v_i(dcache_ptag_v)
     ,.uncached_i(dcache_uncached)
 
-    ,.poison_i(dcache_poison)
+    ,.poison_i(chk_poison_ex_i)
 
     // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_lo)
@@ -289,6 +285,8 @@ always_ff @(posedge clk_i) begin
     mem_cmd_v_r  <= '0;
     mem_cmd_v_rr <= '0;
     is_store_r   <= '0;
+    is_fencei_r  <= '0;
+    is_fencei_rr <= '0;
     load_page_fault_mem3    <= '0;
     store_page_fault_mem3   <= '0;
     load_access_fault_mem3  <= '0;
@@ -299,6 +297,8 @@ always_ff @(posedge clk_i) begin
     mem_cmd_v_r  <= mem_cmd_v_i;
     mem_cmd_v_rr <= mem_cmd_v_r & ~chk_poison_ex_i;
     is_store_r   <= is_store;
+    is_fencei_r  <= is_fencei;
+    is_fencei_rr <= is_fencei_r;
     load_page_fault_mem3    <= load_page_fault_v & ~chk_poison_ex_i;
     store_page_fault_mem3   <= store_page_fault_v & ~chk_poison_ex_i;
     load_access_fault_mem3  <= load_access_fault_v & ~chk_poison_ex_i;
@@ -325,8 +325,7 @@ always_comb
       dcache_pkt_v    = ptw_dcache_v;
       dcache_pkt      = ptw_dcache_pkt;
       dcache_ptag     = ptw_dcache_ptag;
-      dcache_tlb_miss = ~ptw_dcache_ptag_v;
-      dcache_poison   = 1'b0;
+      dcache_ptag_v   = ptw_dcache_ptag_v;
     end
     else begin
       dcache_pkt_v = dcache_cmd_v;
@@ -335,10 +334,9 @@ always_comb
       dcache_pkt.page_offset = {mem_cmd.vaddr.index, mem_cmd.vaddr.offset};
       dcache_pkt.data        = mem_cmd.data;
       dcache_ptag = dtlb_r_entry.ptag;
-      dcache_tlb_miss = dtlb_miss_v;
-      dcache_poison = chk_poison_ex_i
-                      | (load_page_fault_v | store_page_fault_v)
-                      | (load_access_fault_v | store_access_fault_v);
+      dcache_ptag_v = dtlb_r_v_lo
+                      & ~(load_page_fault_v | store_page_fault_v)
+                      & ~(load_access_fault_v | store_access_fault_v);
     end
 end
 
@@ -349,8 +347,8 @@ wire mode_fault_v = (is_uncached_mode & ~dcache_uncached);
 wire did_fault_v = (dcache_ptag[ptag_width_p-1-:io_noc_did_width_p] != '0) &
                    ~((dcache_ptag[ptag_width_p-1-:io_noc_did_width_p] == 1) & sac_x_dim_p > 0);
 
-assign load_access_fault_v  = mem_cmd_v_r & ~is_store_r & (mode_fault_v | did_fault_v);
-assign store_access_fault_v = mem_cmd_v_r &  is_store_r & (mode_fault_v | did_fault_v);
+assign load_access_fault_v  = mem_cmd_v_r & dtlb_r_v_lo & ~is_store_r & (mode_fault_v | did_fault_v);
+assign store_access_fault_v = mem_cmd_v_r & dtlb_r_v_lo & is_store_r & (mode_fault_v | did_fault_v);
 
 // D-TLB connections
 assign dtlb_r_v     = dcache_cmd_v & ~fencei_cmd_v;
@@ -360,9 +358,9 @@ assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
 assign dtlb_w_entry = ptw_fill_pkt.entry;
 
 // MMU response connections
-assign mem_resp.cache_miss_v       = mem_cmd_v_rr & ~dcache_v & ~dtlb_miss_r & ~dcache_fencei_v & ~store_page_fault_mem3 & ~load_page_fault_mem3 & ~store_access_fault_mem3 & ~load_access_fault_mem3;
-assign mem_resp.tlb_miss_v         = mem_cmd_v_rr & ~dcache_v &  dtlb_miss_r & ~dcache_fencei_v & ~store_page_fault_mem3 & ~load_page_fault_mem3 & ~store_access_fault_mem3 & ~load_access_fault_mem3;
-assign mem_resp.fencei_v           = dcache_fencei_v;
+assign mem_resp.cache_miss_v       = mem_cmd_v_rr & ~dtlb_miss_r & dcache_miss_lo;
+assign mem_resp.tlb_miss_v         = mem_cmd_v_rr &  dtlb_miss_r;
+assign mem_resp.fencei_v           = mem_cmd_v_rr & dcache_v & is_fencei_rr;
 assign mem_resp.store_page_fault   = store_page_fault_mem3;
 assign mem_resp.load_page_fault    = load_page_fault_mem3;
 assign mem_resp.store_access_fault = store_access_fault_mem3;
@@ -373,7 +371,7 @@ assign mem_resp.data   = dcache_data;
 assign mem_resp.vaddr  = vaddr_mem3;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mem_cmd_v_rr;
-assign mem_cmd_ready_o = dcache_ready_lo & ~dcache_miss_lo & ~ptw_busy;
+assign mem_cmd_ready_o = dcache_ready_lo & ~ptw_busy;
 
 // synopsys translate_off
 bp_be_mem_cmd_s mem_cmd_r;
