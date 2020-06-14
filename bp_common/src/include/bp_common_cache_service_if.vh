@@ -106,13 +106,13 @@ typedef enum logic [1:0] {
     logic [`BSG_SAFE_CLOG2(sets_mp)-1:0]          index;                                    \
     logic [`BSG_SAFE_CLOG2(ways_mp)-1:0]          way_id;                                   \
     logic [fill_width_mp-1:0]                     data;                                     \
-    logic [block_data_width_mp/fill_width_mp-1:0] fill_index;                                \
+    logic [(block_data_width_mp/fill_width_mp)-1:0] fill_index;                             \
     bp_cache_data_mem_opcode_e                    opcode;                                   \
   }  bp_``cache_name_mp``_data_mem_pkt_s
 
-`define bp_cache_data_mem_pkt_width(sets_mp, ways_mp, block_data_width_mp, fill_width_mp) \
-  (`BSG_SAFE_CLOG2(sets_mp)+`BSG_SAFE_CLOG2(ways_mp)+fill_width_mp \
-   +block_data_width_mp/fill_width_mp+`bp_cache_data_mem_opcode_width)
+`define bp_cache_data_mem_pkt_width(sets_mp, ways_mp, block_data_width_mp, fill_width_mp)   \
+  (`BSG_SAFE_CLOG2(sets_mp)+`BSG_SAFE_CLOG2(ways_mp)+fill_width_mp                          \
+  +(block_data_width_mp/fill_width_mp)+`bp_cache_data_mem_opcode_width)
 
 // tag mem pkt structure
 `define declare_bp_cache_tag_mem_pkt_s(sets_mp, ways_mp, tag_width_mp, cache_name_mp) \

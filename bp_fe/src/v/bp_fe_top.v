@@ -16,14 +16,13 @@ module bp_fe_top
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
 
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-   , localparam block_size_in_words_lp=icache_assoc_p
    , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
    , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
-   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+   , localparam bank_offset_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
-   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+   , localparam block_offset_width_lp=(bank_offset_width_lp+byte_offset_width_lp)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
 
    , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)

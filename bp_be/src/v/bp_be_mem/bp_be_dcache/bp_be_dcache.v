@@ -72,6 +72,14 @@
  *    LR/SC aq/rl semantics are irrelevant for BlackParrot. Since we are in-order single issue and
  *    do not use a store buffer that allows stores before cache lines have been fetched,, all
  *     memory requests are inherently ordered within a hart.
+ *
+ *    Both I-cache and D-cache support multi-cycle fill/eviction with the UCE in unicore configuration.
+ *    The key to fill the data_mem with fill_width <= block_width is using the fill_index newly added in
+ *    data_mem_pkt to generate write mask.
+ *    Some key concepts and their relation can be summarized as:
+ *      bank_width = block_width / assoc >= dword_width
+ *      fill_width = N*bank_width <= block_width
+ *    For detailed description and supported fill width parameters, please refer to Cache Serivce Interface Doc
  */
 
 module bp_be_dcache
@@ -85,15 +93,14 @@ module bp_be_dcache
     , parameter debug_p=0
     , parameter lock_max_limit_p=8
 
-    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
+    , localparam lg_dcache_assoc_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    , localparam block_size_in_banks_lp = dcache_assoc_p
     , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
     , localparam bypass_data_mask_width_lp = (dword_width_p >> 3)
     , localparam data_mem_mask_width_lp = (bank_width_lp >> 3)
     , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(bank_width_lp>>3)
-    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(block_size_in_banks_lp)
+    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
     , localparam block_offset_width_lp=(bank_offset_width_lp+byte_offset_width_lp)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(dcache_sets_p)
     , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
@@ -422,8 +429,8 @@ module bp_be_dcache
   logic [dcache_assoc_p-1:0] store_hit_tv_r;
   logic [dcache_assoc_p-1:0] invalid_tv_r;
   logic [dcache_assoc_p-1:0] addr_bank_offset_dec_tv_r;
-  logic [way_id_width_lp-1:0] load_hit_way_tv;
-  logic [way_id_width_lp-1:0] store_hit_way_tv;
+  logic [lg_dcache_assoc_lp-1:0] load_hit_way_tv;
+  logic [lg_dcache_assoc_lp-1:0] store_hit_way_tv;
   logic load_hit_tv;
   logic store_hit_tv;
 
@@ -566,7 +573,7 @@ module bp_be_dcache
   logic [bypass_data_mask_width_lp-1:0] bypass_mask_lo;
 
   logic [index_width_lp-1:0] lce_snoop_index_li;
-  logic [way_id_width_lp-1:0] lce_snoop_way_li;
+  logic [lg_dcache_assoc_lp-1:0] lce_snoop_way_li;
   logic lce_snoop_match_lo;
 
   bp_be_dcache_wbuf
@@ -661,7 +668,7 @@ module bp_be_dcache
       ,.data_o(stat_mem_data_lo)
       );
 
-  logic [way_id_width_lp-1:0] lru_encode;
+  logic [lg_dcache_assoc_lp-1:0] lru_encode;
 
   bsg_lru_pseudo_tree_encode #(
     .ways_p(dcache_assoc_p)
@@ -671,7 +678,7 @@ module bp_be_dcache
   );
 
   logic invalid_exist;
-  logic [way_id_width_lp-1:0] invalid_way;
+  logic [lg_dcache_assoc_lp-1:0] invalid_way;
   bsg_priority_encode
     #(.width_p(dcache_assoc_p)
       ,.lo_to_hi_p(1)
@@ -683,7 +690,7 @@ module bp_be_dcache
       );
 
   // if there is invalid way, then it take prioirty over LRU way.
-  wire [way_id_width_lp-1:0] lru_way_li = invalid_exist ? invalid_way : lru_encode;
+  wire [lg_dcache_assoc_lp-1:0] lru_way_li = invalid_exist ? invalid_way : lru_encode;
 
   // LCE Packet casting
   //
@@ -986,6 +993,7 @@ module bp_be_dcache
   logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
   logic [dcache_assoc_p-1:0]                                  data_mem_write_bank_mask;
 
+  // use fill_index to generate brank write mask
   for (genvar i = 0; i < block_size_in_fill_lp; i++) begin
     assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt.fill_index[i]}};
   end
@@ -1014,9 +1022,10 @@ module bp_be_dcache
       ? {num_dwords_per_bank_lp{wbuf_entry_out.data}}
       : lce_data_mem_write_data[i];
 
+    // Expand the bank write mask to bank width
     assign data_mem_mask_li[i] = wbuf_yumi_li
       ? wbuf_mask
-      : {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}}; // use fill_index to generate write_mask
+      : {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
   end
 
   // Expand data_mem_pkt.data (fill width) to cacheline width
@@ -1093,7 +1102,7 @@ module bp_be_dcache
     ? addr_index_tv
     : stat_mem_pkt.index;
 
-  logic [way_id_width_lp-1:0] lru_decode_way_li;
+  logic [lg_dcache_assoc_lp-1:0] lru_decode_way_li;
   logic [dcache_assoc_p-2:0] lru_decode_data_lo;
   logic [dcache_assoc_p-2:0] lru_decode_mask_lo;
 
@@ -1106,7 +1115,7 @@ module bp_be_dcache
   );
 
 
-  logic [way_id_width_lp-1:0] dirty_mask_way_li;
+  logic [lg_dcache_assoc_lp-1:0] dirty_mask_way_li;
   logic dirty_mask_v_li;
   logic [dcache_assoc_p-1:0] dirty_mask_lo;
 
@@ -1167,7 +1176,7 @@ module bp_be_dcache
 
   // LCE data_mem
   //
-  logic [way_id_width_lp-1:0] data_mem_pkt_way_r;
+  logic [lg_dcache_assoc_lp-1:0] data_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
     if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_read)) begin
@@ -1242,7 +1251,7 @@ module bp_be_dcache
 
   // LCE tag_mem
 
-  logic [way_id_width_lp-1:0] tag_mem_pkt_way_r;
+  logic [lg_dcache_assoc_lp-1:0] tag_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
     if (tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
@@ -1258,7 +1267,7 @@ module bp_be_dcache
   //
   assign stat_mem_pkt_yumi_o = ~(v_tv_r & ~uncached_tv_r) & stat_mem_pkt_v;
 
-  logic [way_id_width_lp-1:0] stat_mem_pkt_way_r;
+  logic [lg_dcache_assoc_lp-1:0] stat_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
     if (stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode == e_cache_stat_mem_read)) begin

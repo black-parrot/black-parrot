@@ -12,6 +12,13 @@
  *
  * Notes:
  *
+ *    Both I-cache and D-cache support multi-cycle fill/eviction with the UCE in unicore configuration.
+ *    The key to fill the data_mem with fill_width <= block_width is using the fill_index newly added in
+ *    data_mem_pkt to generate write mask.
+ *    Some key concepts and their relation can be summarized as:
+ *      bank_width = block_width / assoc >= dword_width
+ *      fill_width = N*bank_width <= block_width
+ *    For detailed description and supported fill width parameters, please refer to Cache Serivce Interface Doc
  */
 
 
@@ -24,13 +31,12 @@ module bp_fe_icache
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
 
-    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-    , localparam block_size_in_bank_lp = icache_assoc_p
+    , localparam lg_icache_assoc_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
     , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
     , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
-    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(block_size_in_bank_lp)
+    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
     , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
     , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
@@ -107,7 +113,7 @@ module bp_fe_icache
   logic [bank_offset_width_lp-1:0]      vaddr_offset;
 
   logic [icache_assoc_p-1:0]            way_v_tv_r; // valid bits of each way
-  logic [way_id_width_lp-1:0]           way_invalid_index; // first invalid way
+  logic [lg_icache_assoc_lp-1:0]           way_invalid_index; // first invalid way
   logic                                 invalid_exist;
 
   logic uncached_req;
@@ -297,7 +303,7 @@ module bp_fe_icache
     ,.data_o(stat_mem_data_lo)
   );
 
-  logic [way_id_width_lp-1:0] lru_encode;
+  logic [lg_icache_assoc_lp-1:0] lru_encode;
 
   bsg_lru_pseudo_tree_encode #(
     .ways_p(icache_assoc_p)
@@ -456,7 +462,7 @@ module bp_fe_icache
     assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
   end
 
-  // Expand data_mem_pkt.data (fill width) to cacheline width
+  // Expand the bank write mask to bank width
   assign data_mem_pkt_data_expanded = {block_size_in_fill_lp{data_mem_pkt.data}};
 
   wire [`BSG_SAFE_CLOG2(icache_block_width_p)-1:0] write_data_rot_li = data_mem_pkt.way_id*bank_width_lp;
@@ -468,6 +474,7 @@ module bp_fe_icache
     ,.o(data_mem_data_li)
   );
 
+  // use fill_index to generate brank write mask
   for (genvar i = 0; i < block_size_in_fill_lp; i++) begin
     assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt.fill_index[i]}};
   end
@@ -535,7 +542,7 @@ module bp_fe_icache
   logic [icache_assoc_p-2:0] lru_decode_data_lo;
   logic [icache_assoc_p-2:0] lru_decode_mask_lo;
 
-  logic [way_id_width_lp-1:0] hit_index_tv;
+  logic [lg_icache_assoc_lp-1:0] hit_index_tv;
   bsg_encode_one_hot
    #(.width_p(icache_assoc_p)
      ,.lo_to_hi_p(1)
@@ -565,7 +572,7 @@ module bp_fe_icache
   end
 
   // LCE: data mem
-  logic [way_id_width_lp-1:0] data_mem_pkt_way_r;
+  logic [lg_icache_assoc_lp-1:0] data_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
     if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_read)) begin
@@ -609,7 +616,7 @@ module bp_fe_icache
 
   // LCE: tag_mem
 
-  logic [way_id_width_lp-1:0] tag_mem_pkt_way_r;
+  logic [lg_icache_assoc_lp-1:0] tag_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
     if (tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin

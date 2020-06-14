@@ -69,6 +69,10 @@ initial
     $fatal("Error: We can't maintain 64-bit dwords with a 128-bit cache block size and 4-way or 8-way cache associativity");
   if ((l1_writethrough_p == 1) && (l1_coherent_p == 1))
     $fatal("Error: Writethrough with coherent_l1 is unsupported");
+  if ((icache_fill_width_p > icache_block_width_p) || (dcache_fill_width_p > dcache_block_width_p))
+    $fatal("Error: Cache fill width should be less or equal to L1 cache block width");
+  if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0) || (dcache_fill_width_p % (dcache_block_width_p / dcache_assoc_p) != 0))
+    $fatal("Error: Cache fill width should be a multiple of cache bank width");
 
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
@@ -76,7 +80,5 @@ initial
     $warning("Warning: paddr != 40 has not been tested");
   if ((cce_block_width_p != icache_block_width_p) && (cce_block_width_p != dcache_block_width_p) && (cce_block_width_p != acache_block_width_p))
     $warning("Warning: Different cache block widths not yet supported");
-  if ((icache_fill_width_p != icache_block_width_p) || (dcache_fill_width_p != dcache_block_width_p))
-    $warning("Warning: Fill width is different from block width, partial fill is not yet supported");
 
 endmodule
