@@ -123,11 +123,10 @@ module bp_be_dcache
 
     , output logic [dword_width_p-1:0] data_o
     , output logic v_o
-    , output logic fencei_v_o
 
     // TLB interface
-    , input tlb_miss_i
     , input [ptag_width_lp-1:0] ptag_i
+    , input ptag_v_i
     , input uncached_i
 
     // ctrl
@@ -286,11 +285,10 @@ module bp_be_dcache
   logic fencei_op_tl_r;
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dword_width_p-1:0] data_tl_r;
-  logic fencei_req;
   logic gdirty_r;
 
-  assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
-
+  assign tl_we = v_i & cache_req_ready_i;
+  
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
@@ -431,7 +429,8 @@ module bp_be_dcache
   logic load_hit_tv;
   logic store_hit_tv;
 
-  assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~fencei_req;
+  // fencei does not require a ptag
+  assign tv_we = v_tl_r & ~poison_i & (ptag_v_i | fencei_op_tl_r);
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -497,6 +496,7 @@ module bp_be_dcache
   //
   logic uncached_load_req;
   logic uncached_store_req;
+  logic fencei_req;
   logic uncached_load_data_v_r;
   logic [dword_width_p-1:0] uncached_load_data_r;
 
@@ -777,15 +777,15 @@ module bp_be_dcache
      ,.data_i(cache_req_v_o)
      ,.data_o(cache_miss_r)
      );
-  assign dcache_miss_o = cache_miss_r || miss_tracker_en_li;
   assign ready_o = cache_req_ready_i & ~cache_miss_r;
+  assign dcache_miss_o = cache_miss_r || (v_tv_r & ~v_o);
 
   assign v_o = v_tv_r & ((uncached_tv_r & (load_op_tv_r & uncached_load_data_v_r))
                          | (uncached_tv_r & (store_op_tv_r & cache_req_ready_i))
                          | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
+                         // Always send fencei when coherent
+                         | (fencei_req & (~gdirty_r | (l1_coherent_p == 1)))
                          );
-  // Always send fencei when coherent
-  assign fencei_v_o = fencei_req & (~gdirty_r | (l1_coherent_p == 1));
 
   // Locking logic - Block processing of new dcache_packets
   logic cache_miss_resolved;
@@ -1236,7 +1236,7 @@ module bp_be_dcache
       else begin
         // once uncached load request is replayed, and v_o goes high,
         // cleared the valid bit.
-        if (v_o | fencei_v_o) begin
+        if (v_o) begin
           uncached_load_data_v_r <= 1'b0;
         end
       end
