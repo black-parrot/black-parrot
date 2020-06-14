@@ -152,7 +152,7 @@ always_comb
     // We block on mmu not ready even on not memory instructions, because it means there's an
     //   operation being performed asynchronously (such as a page fault)
     struct_haz_v = cfg_bus_cast_i.freeze
-                   | ~mem_cmd_ready_i
+                   | calc_status_cast_i.mem_busy
                    | queue_haz_v;
   end
 
