@@ -114,7 +114,7 @@ module bp_lce
       $error("LCE block width must be a whole number of bytes and power of two");
     assert(block_width_p <= 1024) else
       $error("LCE block width must be no greater than 128 bytes");
-    assert(fill_width_p != block_width_p) else
+    assert(fill_width_p == block_width_p) else
       $error("LCE block width must be equal to fill width. Partial fill is not supported");
     assert(`BSG_IS_POW2(assoc_p)) else
       $error("LCE assoc must be power of two");
