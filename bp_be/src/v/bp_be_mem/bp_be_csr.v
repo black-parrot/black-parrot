@@ -645,7 +645,7 @@ always_comb
 assign accept_irq_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
 // CSR slow paths
-assign satp_ppn_o       = satp_r.ppn;
+assign satp_ppn_o       = satp_lo.ppn;
 
 assign mstatus_sum_o = mstatus_lo.sum;
 assign mstatus_mxr_o = mstatus_lo.mxr;
@@ -655,13 +655,15 @@ assign csr_data_o = dword_width_p'(csr_data_lo);
 assign cfg_csr_data_o = csr_data_lo;
 assign cfg_priv_data_o = priv_mode_r;
 
+assign trap_pkt_cast_o.apc              = apc_r;
 assign trap_pkt_cast_o.epc              = (csr_cmd.csr_op == e_sret)
-                                          ? sepc_r
+                                          ? sepc_lo
                                           : (csr_cmd.csr_op == e_mret)
-                                            ? mepc_r
-                                            : dpc_r;
-assign trap_pkt_cast_o.tvec             = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
-assign trap_pkt_cast_o.cause            = (priv_mode_n == `PRIV_MODE_S) ? scause_li : mcause_li;
+                                            ? mepc_lo
+                                            : dpc_lo;
+assign trap_pkt_cast_o.tvec             = (priv_mode_n == `PRIV_MODE_S)
+                                          ? {stvec_lo.base, 2'b00}
+                                          : {mtvec_lo.base, 2'b00};
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
 assign trap_pkt_cast_o.translation_en_n = translation_en_n;
 // TODO: Find more solid invariant

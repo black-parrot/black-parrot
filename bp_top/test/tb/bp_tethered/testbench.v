@@ -231,7 +231,10 @@ bind bp_be_top
      ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
 
      ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
-     ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+     ,.cause_i((be_calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
+               ? be_calculator.pipe_sys.csr.scause_li
+               : be_calculator.pipe_sys.csr.mcause_li
+               )
      // TODO: Find a way to access the finish_o signals for each core
      ,.finish_o()
      );
