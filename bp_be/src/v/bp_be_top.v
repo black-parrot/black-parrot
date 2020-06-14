@@ -191,15 +191,8 @@ bp_be_calculator_top
 
    ,.calc_status_o(calc_status)
 
-   ,.mem_cmd_o(mem_cmd)
-   ,.mem_cmd_v_o(mem_cmd_v)
-   ,.mem_cmd_ready_i(mem_cmd_rdy)
+   ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
-   ,.mem_resp_i(mem_resp) 
-   ,.mem_resp_v_i(mem_resp_v)
-
-   ,.ptw_miss_pkt_o(ptw_miss_pkt)
-   ,.ptw_fill_pkt_i(ptw_fill_pkt)
    ,.commit_pkt_o(commit_pkt)
    ,.trap_pkt_o(trap_pkt)
    ,.wb_pkt_o(wb_pkt)
@@ -209,61 +202,28 @@ bp_be_calculator_top
    ,.external_irq_i(external_irq_i)
    ,.accept_irq_o(accept_irq_lo)
 
-   ,.priv_mode_o(priv_mode_lo)
-   ,.satp_ppn_o(satp_ppn_lo)
-   ,.translation_en_o(translation_en_lo)
-   ,.mstatus_sum_o(mstatus_sum_lo)
-   ,.mstatus_mxr_o(mstatus_mxr_lo)
+   ,.cache_req_o(cache_req_o)
+   ,.cache_req_metadata_o(cache_req_metadata_o)
+   ,.cache_req_v_o(cache_req_v_o)
+   ,.cache_req_ready_i(cache_req_ready_i)
+   ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+   ,.cache_req_complete_i(cache_req_complete_i)
+
+   ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+   ,.data_mem_pkt_i(data_mem_pkt_i)
+   ,.data_mem_o(data_mem_o)
+   ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+
+   ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+   ,.tag_mem_pkt_i(tag_mem_pkt_i)
+   ,.tag_mem_o(tag_mem_o)
+   ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+
+   ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+   ,.stat_mem_pkt_i(stat_mem_pkt_i)
+   ,.stat_mem_o(stat_mem_o)
+   ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
    );
-
-bp_be_mem_top
- #(.bp_params_p(bp_params_p))
- be_mem
-   (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-
-    ,.cfg_bus_i(cfg_bus_i)
-
-    ,.chk_poison_ex_i(flush)
-
-    ,.mem_cmd_i(mem_cmd)
-    ,.mem_cmd_v_i(mem_cmd_v)
-    ,.mem_cmd_ready_o(mem_cmd_rdy)
-
-    ,.mem_resp_o(mem_resp)
-    ,.mem_resp_v_o(mem_resp_v)
-    
-    ,.ptw_miss_pkt_i(ptw_miss_pkt)
-    ,.ptw_fill_pkt_o(ptw_fill_pkt)
-
-    ,.cache_req_complete_i(cache_req_complete_i)   
- 
-    ,.cache_req_o(cache_req_o)
-    ,.cache_req_metadata_o(cache_req_metadata_o)
-    ,.cache_req_v_o(cache_req_v_o)
-    ,.cache_req_ready_i(cache_req_ready_i)
-    ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-    
-    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-    ,.data_mem_pkt_i(data_mem_pkt_i)
-    ,.data_mem_o(data_mem_o)
-    ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-    ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-    ,.tag_mem_pkt_i(tag_mem_pkt_i)
-    ,.tag_mem_o(tag_mem_o)
-    ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
-    ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-    ,.stat_mem_pkt_i(stat_mem_pkt_i)
-    ,.stat_mem_o(stat_mem_o)
-    ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-
-    ,.sfence_i(trap_pkt.sfence)
-    ,.priv_mode_i(priv_mode_lo)
-    ,.satp_ppn_i(satp_ppn_lo)
-    ,.translation_en_i(translation_en_lo)
-    ,.mstatus_sum_i(mstatus_sum_lo)
-    ,.mstatus_mxr_i(mstatus_mxr_lo)
-    );
 
 endmodule
 

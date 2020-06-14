@@ -109,6 +109,7 @@
     logic                                    ex1_btaken;                                           \
                                                                                                    \
     logic                                    long_busy;                                            \
+    logic                                    mem_busy;                                             \
                                                                                                    \
     /*                                                                                             \
      * 5 is the number of stages in the pipeline.                                                  \
@@ -216,7 +217,7 @@
 `define bp_be_calc_status_width(vaddr_width_mp) \
   (2                                                                                               \
    + vaddr_width_p                                                                                 \
-   + 3                                                                                             \
+   + 4                                                                                             \
    + 6 * `bp_be_dep_status_width                                                                   \
    )                                                                                               
 
