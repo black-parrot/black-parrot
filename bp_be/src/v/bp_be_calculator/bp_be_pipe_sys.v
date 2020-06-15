@@ -45,8 +45,6 @@ module bp_be_pipe_sys
    , input                                kill_ex2_i
    , input                                kill_ex3_i
 
-   , input                                ptw_busy_i
-   , input                                long_busy_i
    , input [exception_width_lp-1:0]       exception_i
    , input [vaddr_width_p-1:0]            exception_pc_i
    , input [vaddr_width_p-1:0]            exception_vaddr_i
@@ -64,7 +62,8 @@ module bp_be_pipe_sys
    , input                                timer_irq_i
    , input                                software_irq_i
    , input                                external_irq_i
-   , output                               accept_irq_o
+   , output                               interrupt_ready_o
+   , input                                interrupt_v_i
 
    , output [rv64_priv_width_gp-1:0]      priv_mode_o
    , output [ptag_width_p-1:0]            satp_ppn_o
@@ -192,8 +191,6 @@ always_comb
      ,.instret_i(commit_pkt.instret)
   
      ,.exception_v_i(exception_v_li)
-     ,.ptw_busy_i(ptw_busy_i)
-     ,.long_busy_i(long_busy_i)
      ,.exception_pc_i(exception_pc_li)
      ,.exception_npc_i(exception_npc_li)
      ,.exception_vaddr_i(exception_vaddr_li)
@@ -202,7 +199,8 @@ always_comb
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
-     ,.accept_irq_o(accept_irq_o)
+     ,.interrupt_ready_o(interrupt_ready_o)
+     ,.interrupt_v_i(interrupt_v_i)
   
      ,.trap_pkt_o(trap_pkt)
 

@@ -65,7 +65,6 @@ module bp_be_checker_top
 
    // Dependency information
    , input [calc_status_width_lp-1:0] calc_status_i
-   , input                            mem_cmd_ready_i
    , input                            credits_full_i
    , input                            credits_empty_i
 
@@ -73,7 +72,8 @@ module bp_be_checker_top
    , output                           chk_dispatch_v_o
    , output                           flush_o
 
-   , input                            accept_irq_i
+   , input                            interrupt_ready_i
+   , output logic                     interrupt_v_o
    
    //iTLB fill interface
     , input                           itlb_fill_v_i
@@ -142,10 +142,10 @@ bp_be_detector
    ,.calc_status_i(calc_status_i)
    ,.expected_npc_i(expected_npc_lo)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
-   ,.mem_cmd_ready_i(mem_cmd_ready_i)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
-   ,.accept_irq_i(accept_irq_i)
+   ,.interrupt_ready_i(interrupt_ready_i)
+   ,.interrupt_v_o(interrupt_v_o)
 
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    );

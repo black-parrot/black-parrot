@@ -36,10 +36,10 @@ module bp_be_detector
    , input [calc_status_width_lp-1:0]  calc_status_i
    , input [vaddr_width_p-1:0]         expected_npc_i
    , input                             fe_cmd_ready_i
-   , input                             mem_cmd_ready_i
    , input                             credits_full_i
    , input                             credits_empty_i
-   , input                             accept_irq_i
+   , input                             interrupt_ready_i
+   , output logic                      interrupt_v_o
 
    // Pipeline control signals from the checker to the calculator
    , output                            chk_dispatch_v_o
@@ -129,7 +129,7 @@ always_comb
     mem_in_pipe_v      = dep_status_li[0].mem_v | dep_status_li[1].mem_v | dep_status_li[2].mem_v;
     fence_haz_v        = (isd_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
                          | (isd_status_cast_i.isd_mem_v & credits_full_i);
-    interrupt_haz_v    = accept_irq_i;
+    interrupt_haz_v    = interrupt_ready_i;
     queue_haz_v        = ~fe_cmd_ready_i;
 
     serial_haz_v       = dep_status_li[0].serial_v
@@ -158,6 +158,11 @@ always_comb
 
 // Generate calculator control signals
 assign chk_dispatch_v_o = ~(control_haz_v | data_haz_v | struct_haz_v);
+assign interrupt_v_o    = interrupt_ready_i 
+                          & ~cfg_bus_cast_i.freeze
+                          & ~calc_status_cast_i.mem_busy
+                          & ~calc_status_cast_i.long_busy
+                          & ~calc_status_cast_i.commit_v;
 
 endmodule
 

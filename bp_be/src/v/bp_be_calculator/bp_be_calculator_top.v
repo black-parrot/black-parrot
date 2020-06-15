@@ -66,7 +66,8 @@ module bp_be_calculator_top
   , input                               timer_irq_i
   , input                               software_irq_i
   , input                               external_irq_i
-  , output                              accept_irq_o
+  , output logic                        interrupt_ready_o
+  , input                               interrupt_v_i
 
   // D$-LCE Interface
   // signals to LCE
@@ -391,8 +392,6 @@ bp_be_pipe_mul
      ,.ptw_miss_pkt_o(ptw_miss_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
-     ,.long_busy_i(~pipe_long_ready_lo)
-     ,.ptw_busy_i(~pipe_mem_ready_lo)
      // This should actually be latched (all exceptions come from stage before)
      // Move with 2-cycle load
      ,.exception_i(exc_stage_n[3].exc)
@@ -405,7 +404,8 @@ bp_be_pipe_mul
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
-     ,.accept_irq_o(accept_irq_o)
+     ,.interrupt_ready_o(interrupt_ready_o)
+     ,.interrupt_v_i(interrupt_v_i)
 
      ,.exc_v_o(pipe_sys_exc_v_lo)
      ,.miss_v_o(pipe_sys_miss_v_lo)
@@ -537,6 +537,7 @@ always_comb
 
     calc_status.long_busy                = ~pipe_long_ready_lo;
     calc_status.mem_busy                 = ~pipe_mem_ready_lo;
+    calc_status.commit_v                 = commit_pkt.v;
 
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
