@@ -287,6 +287,7 @@ module bp_be_dcache
   logic gdirty_r;
 
   assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
+   
   always_ff @(posedge nclk) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
@@ -388,13 +389,74 @@ module bp_be_dcache
                                                 || (tag_mem_data_lo[i].coh_state == e_COH_E));
     assign invalid_tl[i] = (tag_mem_data_lo[i].coh_state == e_COH_I);
   end
-
+   
   bsg_decode
    #(.num_out_p(dcache_assoc_p))
    offset_decode
     (.i(addr_word_offset_tl)
      ,.o(addr_word_offset_dec_tl)
      );
+
+  logic [dcache_assoc_p-1:0] [63:0] ld_data_dword_picked;
+  logic [dcache_assoc_p-1:0] [31:0] data_word_selected;
+  logic [dcache_assoc_p-1:0] [15:0] data_half_selected;
+  logic [dcache_assoc_p-1:0] [7:0]  data_byte_selected;
+  logic [dcache_assoc_p-1:0]        word_sigext;
+  logic [dcache_assoc_p-1:0]        half_sigext;
+  logic [dcache_assoc_p-1:0]        byte_sigext;
+  logic [dcache_assoc_p-1:0] [dword_width_p-1:0] data_o_tl;
+  for (genvar i = 0; i < dcache_assoc_p; i++) begin: data_byte_mux
+     if (dword_width_p == 64) begin: byte_mux
+
+       bsg_mux #(
+          .width_p(dword_width_p)
+          ,.els_p(num_dwords_per_bank_lp)
+       ) dword_mux (
+          .data_i(data_mem_data_lo[i])
+          ,.sel_i(paddr_tl[3+:`BSG_CDIV(num_dwords_per_bank_lp, 2)])
+          ,.data_o(ld_data_dword_picked[i])
+       );
+    
+       bsg_mux #(
+         .width_p(32)
+         ,.els_p(2)
+       ) word_mux (
+         .data_i(ld_data_dword_picked[i])
+         ,.sel_i(paddr_tl[2])
+         ,.data_o(data_word_selected[i])
+       );
+    
+       bsg_mux #(
+         .width_p(16)
+         ,.els_p(4)
+       ) half_mux (
+         .data_i(ld_data_dword_picked[i])
+         ,.sel_i(paddr_tl[2:1])
+         ,.data_o(data_half_selected[i])
+       );
+
+       bsg_mux #(
+         .width_p(8)
+         ,.els_p(8)
+       ) byte_mux (
+         .data_i(ld_data_dword_picked[i])
+         ,.sel_i(paddr_tl[2:0])
+         ,.data_o(data_byte_selected[i])
+       );
+
+       assign word_sigext[i] = signed_op_tl_r & data_word_selected[i][31]; 
+       assign half_sigext[i] = signed_op_tl_r & data_half_selected[i][15]; 
+       assign byte_sigext[i] = signed_op_tl_r & data_byte_selected[i][7]; 
+
+       assign data_o_tl[i] = double_op_tl_r
+                             ? ld_data_dword_picked[i]
+                             : (word_op_tl_r
+                                ? {{32{word_sigext[i]}}, data_word_selected[i]}
+                                : (half_op_tl_r
+                                   ? {{48{half_sigext[i]}}, data_half_selected[i]}
+                                   : {{56{byte_sigext[i]}}, data_byte_selected[i]}));
+     end
+  end
 
   logic [dcache_assoc_p-1:0] [63:0] ld_data_dword_picked;
   logic [dcache_assoc_p-1:0] [31:0] data_word_selected;
