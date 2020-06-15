@@ -274,26 +274,26 @@ bind bp_be_top
        ,.instret_i(be_calculator.commit_pkt.instret)
        );
 
-  bind bp_be_director
-    bp_be_nonsynth_npc_tracer
-     #(.bp_params_p(bp_params_p))
-     npc_tracer
-      (.clk_i(clk_i & (testbench.npc_trace_p == 1))
-       ,.reset_i(reset_i)
-       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+  //bind bp_be_director
+  //  bp_be_nonsynth_npc_tracer
+  //   #(.bp_params_p(bp_params_p))
+  //   npc_tracer
+  //    (.clk_i(clk_i & (testbench.npc_trace_p == 1))
+  //     ,.reset_i(reset_i)
+  //     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
-       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+  //     ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
-       ,.npc_w_v(npc_w_v)
-       ,.npc_n(npc_n)
-       ,.npc_r(npc_r)
-       ,.expected_npc_o(expected_npc_o)
+  //     ,.npc_w_v(npc_w_v)
+  //     ,.npc_n(npc_n)
+  //     ,.npc_r(npc_r)
+  //     ,.expected_npc_o(expected_npc_o)
 
-       ,.fe_cmd_i(fe_cmd)
-       ,.fe_cmd_v(fe_cmd_v)
+  //     ,.fe_cmd_i(fe_cmd)
+  //     ,.fe_cmd_v(fe_cmd_v)
 
-       ,.commit_pkt_i(commit_pkt)
-       );
+  //     ,.commit_pkt_i(commit_pkt)
+  //     );
 
 //  bind bp_be_dcache
 //    bp_nonsynth_cache_tracer
@@ -506,88 +506,83 @@ bind bp_be_top
        ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
        );
 
-  bind bp_be_director
-    bp_nonsynth_branch_profiler
-     #(.bp_params_p(bp_params_p))
-     pc_profiler
-      (.clk_i(clk_i & (testbench.core_profile_p == 1))
-       ,.reset_i(reset_i)
-       ,.freeze_i(cfg_bus_cast_i.freeze)
+//  bind bp_be_director
+//    bp_nonsynth_branch_profiler
+//     #(.bp_params_p(bp_params_p))
+//     pc_profiler
+//      (.clk_i(clk_i & (testbench.core_profile_p == 1))
+//       ,.reset_i(reset_i)
+//       ,.freeze_i(cfg_bus_cast_i.freeze)
+//
+//       ,.mhartid_i(cfg_bus_cast_i.core_id)
+//
+//       ,.fe_cmd_o(fe_cmd_o)
+//       ,.fe_cmd_v_o(fe_cmd_v_o)
+//       ,.fe_cmd_ready_i(fe_cmd_ready_i)
+//
+//       ,.commit_v_i(commit_pkt.instret)
+//
+//       ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
+//       );
 
-       ,.mhartid_i(cfg_bus_cast_i.core_id)
+//  bind bp_lce
+//    bp_me_nonsynth_lce_tracer
+//      #(.bp_params_p(bp_params_p)
+//        ,.sets_p(sets_p)
+//        ,.assoc_p(assoc_p)
+//        ,.block_width_p(block_width_p)
+//        )
+//      lce_tracer
+//      (.clk_i(clk_i & (testbench.lce_trace_p == 1))
+//      ,.reset_i(reset_i)
+//      ,.lce_id_i(lce_id_i)
+//      ,.lce_req_i(lce_req_o)
+//      ,.lce_req_v_i(lce_req_v_o)
+//      ,.lce_req_ready_i(lce_req_ready_i)
+//      ,.lce_resp_i(lce_resp_o)
+//      ,.lce_resp_v_i(lce_resp_v_o)
+//      ,.lce_resp_ready_i(lce_resp_ready_i)
+//      ,.lce_cmd_i(lce_cmd_i)
+//      ,.lce_cmd_v_i(lce_cmd_v_i)
+//      ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
+//      ,.lce_cmd_o_i(lce_cmd_o)
+//      ,.lce_cmd_o_v_i(lce_cmd_v_o)
+//      ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+//      );
 
-       ,.fe_cmd_o(fe_cmd_o)
-       ,.fe_cmd_v_o(fe_cmd_v_o)
-       ,.fe_cmd_ready_i(fe_cmd_ready_i)
-
-       ,.commit_v_i(commit_pkt.instret)
-
-       ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
-       );
-
-  if (cce_trace_p) begin : cce_tracer
-  bind bp_cce_wrapper
-    bp_me_nonsynth_cce_tracer
-     #(.bp_params_p(bp_params_p))
-     cce_tracer
-      (.clk_i(clk_i & (testbench.cce_trace_p == 1))
-      ,.reset_i(reset_i)
-      ,.freeze_i(cfg_bus_cast_i.freeze)
-
-      ,.cce_id_i(cfg_bus_cast_i.cce_id)
-
-      // To CCE
-      ,.lce_req_i(lce_req_i)
-      ,.lce_req_v_i(lce_req_v_i)
-      ,.lce_req_yumi_i(lce_req_yumi_o)
-      ,.lce_resp_i(lce_resp_i)
-      ,.lce_resp_v_i(lce_resp_v_i)
-      ,.lce_resp_yumi_i(lce_resp_yumi_o)
-
-      // From CCE
-      ,.lce_cmd_i(lce_cmd_o)
-      ,.lce_cmd_v_i(lce_cmd_v_o)
-      ,.lce_cmd_ready_i(lce_cmd_ready_i)
-
-      // To CCE
-      ,.mem_resp_i(mem_resp_i)
-      ,.mem_resp_v_i(mem_resp_v_i)
-      ,.mem_resp_yumi_i(mem_resp_yumi_o)
-
-      // From CCE
-      ,.mem_cmd_i(mem_cmd_o)
-      ,.mem_cmd_v_i(mem_cmd_v_o)
-      ,.mem_cmd_ready_i(mem_cmd_ready_i)
-      );
-  end
-
-  if (lce_trace_p) begin : lce_tracer
-  bind bp_lce
-    bp_me_nonsynth_lce_tracer
-      #(.bp_params_p(bp_params_p)
-        ,.sets_p(sets_p)
-        ,.assoc_p(assoc_p)
-        ,.block_width_p(block_width_p)
-        )
-      lce_tracer
-      (.clk_i(clk_i & (testbench.lce_trace_p == 1))
-      ,.reset_i(reset_i)
-      ,.lce_id_i(lce_id_i)
-      ,.lce_req_i(lce_req_o)
-      ,.lce_req_v_i(lce_req_v_o)
-      ,.lce_req_ready_i(lce_req_ready_i)
-      ,.lce_resp_i(lce_resp_o)
-      ,.lce_resp_v_i(lce_resp_v_o)
-      ,.lce_resp_ready_i(lce_resp_ready_i)
-      ,.lce_cmd_i(lce_cmd_i)
-      ,.lce_cmd_v_i(lce_cmd_v_i)
-      ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
-      ,.lce_cmd_o_i(lce_cmd_o)
-      ,.lce_cmd_o_v_i(lce_cmd_v_o)
-      ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
-      );
-  end
-
+//  bind bp_cce_wrapper
+//    bp_me_nonsynth_cce_tracer
+//     #(.bp_params_p(bp_params_p))
+//     cce_tracer
+//      (.clk_i(clk_i & (testbench.cce_trace_p == 1))
+//      ,.reset_i(reset_i)
+//      ,.freeze_i(cfg_bus_cast_i.freeze)
+//
+//      ,.cce_id_i(cfg_bus_cast_i.cce_id)
+//
+//      // To CCE
+//      ,.lce_req_i(lce_req_i)
+//      ,.lce_req_v_i(lce_req_v_i)
+//      ,.lce_req_yumi_i(lce_req_yumi_o)
+//      ,.lce_resp_i(lce_resp_i)
+//      ,.lce_resp_v_i(lce_resp_v_i)
+//      ,.lce_resp_yumi_i(lce_resp_yumi_o)
+//
+//      // From CCE
+//      ,.lce_cmd_i(lce_cmd_o)
+//      ,.lce_cmd_v_i(lce_cmd_v_o)
+//      ,.lce_cmd_ready_i(lce_cmd_ready_i)
+//
+//      // To CCE
+//      ,.mem_resp_i(mem_resp_i)
+//      ,.mem_resp_v_i(mem_resp_v_i)
+//      ,.mem_resp_yumi_i(mem_resp_yumi_o)
+//
+//      // From CCE
+//      ,.mem_cmd_i(mem_cmd_o)
+//      ,.mem_cmd_v_i(mem_cmd_v_o)
+//      ,.mem_cmd_ready_i(mem_cmd_ready_i)
+//      );
 
 bp_nonsynth_if_verif
  #(.bp_params_p(bp_params_p))

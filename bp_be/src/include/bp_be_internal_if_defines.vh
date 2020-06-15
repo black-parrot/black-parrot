@@ -135,9 +135,7 @@
   /* TODO: make opcode */                                                                          \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [vaddr_width_p-1:0]       apc;                                                           \
-    logic [vaddr_width_p-1:0]       epc;                                                           \
-    logic [vaddr_width_p-1:0]       tvec;                                                          \
+    logic [vaddr_width_p-1:0]       npc;                                                           \
     logic [rv64_priv_width_gp-1:0]  priv_n;                                                        \
     logic                           translation_en_n;                                              \
     logic                           exception;                                                     \
@@ -229,7 +227,7 @@
    )
  
 `define bp_be_trap_pkt_width(vaddr_width_mp) \
-  (3 * vaddr_width_mp + rv64_priv_width_gp + 8)
+  (1 * vaddr_width_mp + rv64_priv_width_gp + 8)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (1                                                                                               \

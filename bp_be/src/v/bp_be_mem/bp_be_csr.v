@@ -23,7 +23,6 @@ module bp_be_csr
     , input [csr_cmd_width_lp-1:0]      csr_cmd_i
     , input                             csr_cmd_v_i
     , output logic [dword_width_p-1:0]  csr_data_o
-    , output logic                      illegal_instr_o
 
     // Misc interface
     , input                             instret_i
@@ -164,6 +163,7 @@ wire [15:0] interrupt_icode_dec_li =
    };
 
 wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
+logic illegal_instr_o;
 rv64_exception_dec_s exception_dec_li;
 assign exception_dec_li =
     '{instr_misaligned    : csr_cmd.exc.instr_misaligned
@@ -234,21 +234,22 @@ always_comb
   end
 
 logic [vaddr_width_p-1:0] apc_n, apc_r;
-bsg_dff_reset_en
+bsg_dff_reset
  #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
  apc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(instret_i | (trap_pkt_cast_o.exception | trap_pkt_cast_o._interrupt | trap_pkt_cast_o.eret))
 
    ,.data_i(apc_n)
    ,.data_o(apc_r)
    );
 assign apc_n = trap_pkt_cast_o.eret
-               ? trap_pkt_cast_o.epc
+               ? ((csr_cmd.csr_op == e_sret) ? sepc_lo : (csr_cmd.csr_op == e_mret) ? mepc_lo : dpc_lo)
                : (trap_pkt_cast_o.exception | trap_pkt_cast_o._interrupt)
-                 ? trap_pkt_cast_o.tvec
-                 : exception_npc_i;
+                 ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
+                 : instret_i
+                   ? exception_npc_i
+                   : apc_r;
 
 bsg_dff_reset
  #(.width_p(1))
@@ -654,18 +655,9 @@ assign csr_data_o = dword_width_p'(csr_data_lo);
 assign cfg_csr_data_o = csr_data_lo;
 assign cfg_priv_data_o = priv_mode_r;
 
-assign trap_pkt_cast_o.apc              = apc_r;
-assign trap_pkt_cast_o.epc              = (csr_cmd.csr_op == e_sret)
-                                          ? sepc_lo
-                                          : (csr_cmd.csr_op == e_mret)
-                                            ? mepc_lo
-                                            : dpc_lo;
-assign trap_pkt_cast_o.tvec             = (priv_mode_n == `PRIV_MODE_S)
-                                          ? {stvec_lo.base, 2'b00}
-                                          : {mtvec_lo.base, 2'b00};
+assign trap_pkt_cast_o.npc              = apc_n;
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
 assign trap_pkt_cast_o.translation_en_n = translation_en_n;
-// TODO: Find more solid invariant
 assign trap_pkt_cast_o.fencei           = csr_cmd.exc.fencei_v;
 assign trap_pkt_cast_o.sfence           = sfence_v_o;
 assign trap_pkt_cast_o.exception        = exception_v_o;

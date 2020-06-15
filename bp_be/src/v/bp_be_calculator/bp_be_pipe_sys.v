@@ -172,7 +172,6 @@ always_comb
   wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_fill_pkt.vaddr : exception_vaddr_i;
   wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
 
-  logic csr_illegal_instr_lo;
   bp_be_csr
    #(.bp_params_p(bp_params_p))
     csr
@@ -186,7 +185,6 @@ always_comb
      ,.csr_cmd_i(csr_cmd_lo)
      ,.csr_cmd_v_i(csr_cmd_v_lo & ~kill_ex3_i)
      ,.csr_data_o(data_o)
-     ,.illegal_instr_o(csr_illegal_instr_lo)
   
      ,.instret_i(commit_pkt.instret)
   
