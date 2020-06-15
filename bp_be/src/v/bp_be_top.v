@@ -103,12 +103,6 @@ logic dispatch_pkt_v;
 bp_be_ptw_miss_pkt_s ptw_miss_pkt;
 bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
-bp_be_mem_cmd_s mem_cmd;
-logic mem_cmd_v, mem_cmd_rdy;
-
-bp_be_mem_resp_s mem_resp;
-logic mem_resp_v;
-
 bp_be_calc_status_s    calc_status;
 
 logic chk_dispatch_v;
@@ -118,7 +112,7 @@ logic [vaddr_width_p-1:0] chk_epc_li;
 
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_fencei_li;
 
-logic accept_irq_lo;
+logic interrupt_ready_lo, interrupt_v_li;
 
 bp_be_commit_pkt_s commit_pkt;
 bp_be_trap_pkt_s trap_pkt;
@@ -147,10 +141,10 @@ bp_be_checker_top
    ,.flush_o(flush)
 
    ,.calc_status_i(calc_status)
-   ,.mem_cmd_ready_i(mem_cmd_rdy)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
-   ,.accept_irq_i(accept_irq_lo)
+   ,.interrupt_ready_i(interrupt_ready_lo)
+   ,.interrupt_v_o(interrupt_v_li)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -200,7 +194,8 @@ bp_be_calculator_top
    ,.timer_irq_i(timer_irq_i)
    ,.software_irq_i(software_irq_i)
    ,.external_irq_i(external_irq_i)
-   ,.accept_irq_o(accept_irq_lo)
+   ,.interrupt_ready_o(interrupt_ready_lo)
+   ,.interrupt_v_i(interrupt_v_li)
 
    ,.cache_req_o(cache_req_o)
    ,.cache_req_metadata_o(cache_req_metadata_o)

@@ -24,8 +24,6 @@ module bp_be_csr
     , input                             csr_cmd_v_i
     , output logic [dword_width_p-1:0]  csr_data_o
     , output logic                      illegal_instr_o
-    , input                             ptw_busy_i
-    , input                             long_busy_i
 
     // Misc interface
     , input                             instret_i
@@ -39,7 +37,8 @@ module bp_be_csr
     , input                             timer_irq_i
     , input                             software_irq_i
     , input                             external_irq_i
-    , output                            accept_irq_o
+    , output                            interrupt_ready_o
+    , input                             interrupt_v_i
 
     , output [trap_pkt_width_lp-1:0]    trap_pkt_o
 
@@ -545,9 +544,9 @@ always_comb
           end
       end
 
-    if (~is_debug_mode & ~exception_v_i & ~ptw_busy_i & ~long_busy_i & ~cfg_bus_cast_i.freeze & accept_irq_o)
+    if (interrupt_v_i)
       begin
-        if (~is_debug_mode & m_interrupt_icode_v_li)
+        if (m_interrupt_icode_v_li)
           begin
             priv_mode_n          = `PRIV_MODE_M;
 
@@ -564,7 +563,7 @@ always_comb
             interrupt_v_o        = 1'b1;
             ret_v_o              = 1'b0;
           end
-        else if (~is_debug_mode & s_interrupt_icode_v_li)
+        else if (s_interrupt_icode_v_li)
           begin
             priv_mode_n          = `PRIV_MODE_S;
 
@@ -642,7 +641,7 @@ always_comb
   end
 
 // Debug Mode masks all interrupts
-assign accept_irq_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
+assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
 // CSR slow paths
 assign satp_ppn_o       = satp_lo.ppn;
