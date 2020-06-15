@@ -117,7 +117,10 @@ logic interrupt_ready_lo, interrupt_v_li;
 bp_be_commit_pkt_s commit_pkt;
 bp_be_trap_pkt_s trap_pkt;
 bp_be_wb_pkt_s wb_pkt;
-logic wb_pkt_v;
+
+bp_be_isd_status_s isd_status;
+logic [vaddr_width_p-1:0] expected_npc_lo;
+logic poison_isd_lo, suppress_iss_lo;
 
 logic [rv64_priv_width_gp-1:0] priv_mode_lo;
 logic [ptag_width_p-1:0]       satp_ppn_lo;
@@ -126,30 +129,73 @@ logic                          mstatus_sum_lo;
 logic                          mstatus_mxr_lo;
 
 logic flush;
-// Module instantiations
-bp_be_checker_top 
+
+bp_be_director 
  #(.bp_params_p(bp_params_p))
- be_checker
+ director
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
    ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_npc_data_o(cfg_npc_data_o)
-   ,.cfg_irf_data_o(cfg_irf_data_o)
 
-   ,.chk_dispatch_v_o(chk_dispatch_v)
+   ,.isd_status_i(isd_status)
+   ,.calc_status_i(calc_status) 
+   ,.expected_npc_o(expected_npc_lo)
    ,.flush_o(flush)
-
-   ,.calc_status_i(calc_status)
-   ,.credits_full_i(credits_full_i)
-   ,.credits_empty_i(credits_empty_i)
-   ,.interrupt_ready_i(interrupt_ready_lo)
-   ,.interrupt_v_o(interrupt_v_li)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
    ,.fe_cmd_fence_i(fe_cmd_fence_i)
+
+   ,.suppress_iss_o(suppress_iss_lo)
+   ,.poison_isd_o(poison_isd_lo)
+
+   ,.trap_pkt_i(trap_pkt)
+
+   ,.itlb_fill_v_i(ptw_fill_pkt.itlb_fill_v)
+   ,.itlb_fill_vaddr_i(ptw_fill_pkt.vaddr)
+   ,.itlb_fill_entry_i(ptw_fill_pkt.entry[0+:tlb_entry_width_lp])
+   );
+
+bp_be_detector 
+ #(.bp_params_p(bp_params_p))
+ detector
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.cfg_bus_i(cfg_bus_i)
+
+   ,.isd_status_i(isd_status)
+   ,.calc_status_i(calc_status)
+   ,.expected_npc_i(expected_npc_lo)
+   ,.fe_cmd_ready_i(fe_cmd_ready_i)
+   ,.credits_full_i(credits_full_i)
+   ,.credits_empty_i(credits_empty_i)
+   ,.interrupt_ready_i(interrupt_ready_lo)
+   ,.interrupt_v_o(interrupt_v_li)
+
+   ,.chk_dispatch_v_o(chk_dispatch_v)
+   );
+
+bp_be_scheduler 
+ #(.bp_params_p(bp_params_p))
+ scheduler
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.cfg_bus_i(cfg_bus_i)
+   ,.cfg_irf_data_o(cfg_irf_data_o)
+
+   ,.isd_status_o(isd_status)
+   ,.expected_npc_i(expected_npc_lo)
+   ,.poison_iss_i(flush)
+   ,.poison_isd_i(poison_isd_lo)
+   ,.dispatch_v_i(chk_dispatch_v)
+   ,.cache_miss_v_i(commit_pkt.cache_miss | commit_pkt.tlb_miss)
+   ,.cmt_v_i(commit_pkt.queue_v)
+   ,.suppress_iss_i(suppress_iss_lo)
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
@@ -158,20 +204,15 @@ bp_be_checker_top
    ,.fe_queue_roll_o(fe_queue_roll_o)
    ,.fe_queue_deq_o(fe_queue_deq_o)
 
+
    ,.dispatch_pkt_o(dispatch_pkt)
-
-   ,.itlb_fill_v_i(ptw_fill_pkt.itlb_fill_v)
-   ,.itlb_fill_vaddr_i(ptw_fill_pkt.vaddr)
-   ,.itlb_fill_entry_i(ptw_fill_pkt.entry[0+:tlb_entry_width_lp])
-
-   ,.commit_pkt_i(commit_pkt)
-   ,.trap_pkt_i(trap_pkt)
+   
    ,.wb_pkt_i(wb_pkt)
    );
 
 bp_be_calculator_top 
  #(.bp_params_p(bp_params_p))
- be_calculator
+ calculator
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 

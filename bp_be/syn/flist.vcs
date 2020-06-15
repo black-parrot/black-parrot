@@ -175,7 +175,6 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_regfile.v
 # Checker
-$BP_BE_DIR/src/v/bp_be_checker/bp_be_checker_top.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
