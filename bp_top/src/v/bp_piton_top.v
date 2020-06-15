@@ -278,6 +278,8 @@ module bp_piton_top
      ,.inst_ram_els_p(num_cce_instr_ram_els_p)
      ,.skip_ram_init_p(0)
      ,.clear_freeze_p(1)
+     // Enabling all domains for parrotpiton
+     ,.domain_mask_p(64'hff)
      )
      cfg_loader
      (.clk_i(clk_i)
