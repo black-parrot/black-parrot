@@ -188,7 +188,6 @@ $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce_req.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_mem_top.v
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
 $BP_FE_DIR/src/v/bp_fe_btb.v
