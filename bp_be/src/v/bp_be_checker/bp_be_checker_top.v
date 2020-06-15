@@ -122,7 +122,6 @@ bp_be_director
    ,.suppress_iss_o(suppress_iss_lo)
    ,.poison_isd_o(poison_isd_lo)
 
-   ,.commit_pkt_i(commit_pkt_i)
    ,.trap_pkt_i(trap_pkt_i)
 
    ,.itlb_fill_v_i(itlb_fill_v_i)
