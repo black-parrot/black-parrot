@@ -193,7 +193,7 @@ bp_be_scheduler
    ,.poison_iss_i(flush)
    ,.poison_isd_i(poison_isd_lo)
    ,.dispatch_v_i(chk_dispatch_v)
-   ,.cache_miss_v_i(commit_pkt.cache_miss | commit_pkt.tlb_miss)
+   ,.cache_miss_v_i(trap_pkt.rollback)
    ,.cmt_v_i(commit_pkt.queue_v)
    ,.suppress_iss_i(suppress_iss_lo)
 
