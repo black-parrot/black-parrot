@@ -210,7 +210,7 @@ always_comb
      );
 
   assign exc_v_o          = trap_pkt.exception;
-  assign miss_v_o         = commit_pkt.cache_miss | commit_pkt.tlb_miss;
+  assign miss_v_o         = trap_pkt.rollback;
 
 endmodule
 
