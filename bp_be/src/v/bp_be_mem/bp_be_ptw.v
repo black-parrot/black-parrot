@@ -67,7 +67,7 @@ module bp_be_ptw
   
   state_e state_r, state_n;
 
-  bp_be_mem_vaddr_s tlb_miss_vaddr, tlb_w_vaddr;
+  logic [vaddr_width_p-1:0] tlb_miss_vaddr, tlb_w_vaddr;
 
   logic pte_is_leaf;
   logic start;
@@ -127,7 +127,7 @@ module bp_be_ptw
   
   assign ppn_en                 = start | (busy_o & dcache_v_r);
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn[0+:ptag_width_p];
-  assign vpn_n                  = tlb_miss_vaddr.tag;
+  assign vpn_n                  = tlb_miss_vaddr[vaddr_width_p-1-:vtag_width_p];
   
   wire pte_invalid              = (~dcache_data.v) | (~dcache_data.r & dcache_data.w);
   wire leaf_not_found           = (level_cntr == '0) & (~pte_is_leaf);
