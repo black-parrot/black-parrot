@@ -464,10 +464,10 @@ end
 wire data_priv_page_fault = ((priv_mode_lo == `PRIV_MODE_S) & ~mstatus_sum_lo & dtlb_r_entry.u)
                               | ((priv_mode_lo == `PRIV_MODE_U) & ~dtlb_r_entry.u);
 wire data_write_page_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
-wire eaddr_page_fault = (mmu_cmd.eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {25{mmu_cmd.eaddr[vaddr_width_p-1]}});
+wire eaddr_page_fault = (mmu_cmd_r.eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {25{mmu_cmd_r.eaddr[vaddr_width_p-1]}});
 
-assign load_page_fault_v  = (mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & ~is_store_r & data_priv_page_fault) | (mmu_cmd_v_r & eaddr_page_fault);
-assign store_page_fault_v = (mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_store_r & (data_priv_page_fault | data_write_page_fault)) | (mmu_cmd_v_r & eaddr_page_fault);
+assign load_page_fault_v  = (mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & ~is_store_r & data_priv_page_fault) | (translation_en_lo & mmu_cmd_v_r & eaddr_page_fault);
+assign store_page_fault_v = (mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_store_r & (data_priv_page_fault | data_write_page_fault)) | (translation_en_lo & mmu_cmd_v_r & eaddr_page_fault);
 
 // Decode cmd type
 assign dcache_cmd_v    = mmu_cmd_v_i;

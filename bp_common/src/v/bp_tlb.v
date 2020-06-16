@@ -38,7 +38,16 @@ bsg_dff_reset #(.width_p(1))
   );
 
 logic [vtag_width_p-1:0] vtag_r, vtag_li;
+logic [etag_width_lp-1:0] etag_r;
 assign vtag_li = etag_i[vtag_width_p-1:0];
+
+bsg_dff_reset #(.width_p(etag_width_lp))
+  etag_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.data_i(etag_i)
+   ,.data_o(etag_r)
+  );
 
 bsg_dff_reset #(.width_p(vtag_width_p))
   vtag_reg
@@ -71,7 +80,7 @@ bsg_cam_1r1w_sync
    ,.r_v_o(r_v_lo)
    );
 
-assign passthrough_entry = '{ptag: {etag_i[vtag_width_p], vtag_r}, default: '0};
+assign passthrough_entry = '{ptag: {etag_r[vtag_width_p], vtag_r}, default: '0};
 assign entry_o    = translation_en_i ? r_entry : passthrough_entry;
 assign v_o        = translation_en_i ? r_v_r & r_v_lo : r_v_r;
 assign miss_v_o   = r_v_r & ~v_o;
