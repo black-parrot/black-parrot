@@ -618,8 +618,6 @@ always_comb
 assign commit_pkt.v          = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
 assign commit_pkt.queue_v    = calc_stage_r[2].v & calc_stage_r[2].queue_v & ~exc_stage_r[2].roll_v;
 assign commit_pkt.instret    = calc_stage_r[2].v & calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
-assign commit_pkt.cache_miss = calc_stage_r[2].v & pipe_mem_dcache_miss_lo & ~exc_stage_r[2].poison_v;
-assign commit_pkt.tlb_miss   = calc_stage_r[2].v & pipe_mem_dtlb_miss_lo & ~exc_stage_r[2].poison_v;
 assign commit_pkt.pc         = calc_stage_r[2].pc;
 assign commit_pkt.npc        = calc_stage_r[1].pc;
 assign commit_pkt.instr      = calc_stage_r[2].instr;
