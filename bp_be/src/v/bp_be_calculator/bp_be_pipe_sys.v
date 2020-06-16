@@ -18,7 +18,6 @@ module bp_be_pipe_sys
 
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam csr_cmd_width_lp       = `bp_be_csr_cmd_width
-   , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
    // Generated parameters
    , localparam decode_width_lp       = `bp_be_decode_width
    , localparam exception_width_lp    = `bp_be_exception_width

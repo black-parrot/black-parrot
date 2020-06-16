@@ -234,7 +234,7 @@ bp_be_dcache_lce
                             ,data          : resp_data  };
 
    
-  bp_be_mem_vaddr_s v_addr;
+  logic [vaddr_width_p-1:0] v_addr;
   assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8) 
                                          : (input_a_ptr+len_a_cnt*8)) 
                        : res_ptr;
