@@ -274,80 +274,79 @@ bind bp_be_top
        ,.instret_i(calculator.commit_pkt.instret)
        );
 
-  //bind bp_be_director
-  //  bp_be_nonsynth_npc_tracer
-  //   #(.bp_params_p(bp_params_p))
-  //   npc_tracer
-  //    (.clk_i(clk_i & (testbench.npc_trace_p == 1))
-  //     ,.reset_i(reset_i)
-  //     ,.freeze_i(scheduler.int_regfile.cfg_bus.freeze)
+  bind bp_be_director
+    bp_be_nonsynth_npc_tracer
+     #(.bp_params_p(bp_params_p))
+     npc_tracer
+      (.clk_i(clk_i & (testbench.npc_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(scheduler.int_regfile.cfg_bus.freeze)
 
-  //     ,.mhartid_i(scheduler.int_regfile.cfg_bus.core_id)
+       ,.mhartid_i(scheduler.int_regfile.cfg_bus.core_id)
 
-  //     ,.npc_w_v(npc_w_v)
-  //     ,.npc_n(npc_n)
-  //     ,.npc_r(npc_r)
-  //     ,.expected_npc_o(expected_npc_o)
+       ,.npc_w_v(npc_w_v)
+       ,.npc_n(npc_n)
+       ,.npc_r(npc_r)
+       ,.expected_npc_o(expected_npc_o)
 
-  //     ,.fe_cmd_i(fe_cmd)
-  //     ,.fe_cmd_v(fe_cmd_v)
+       ,.fe_cmd_i(fe_cmd)
+       ,.fe_cmd_v(fe_cmd_v)
 
-  //     ,.commit_pkt_i(commit_pkt)
-  //     );
+       ,.trap_pkt_i(trap_pkt)
+       );
 
-//  bind bp_be_dcache
-//    bp_nonsynth_cache_tracer
-//     #(.bp_params_p(bp_params_p)
-//      ,.assoc_p(dcache_assoc_p)
-//      ,.sets_p(dcache_sets_p)
-//      ,.block_width_p(dcache_block_width_p)
-//      ,.fill_width_p(dcache_fill_width_p)
-//      ,.trace_file_p("dcache"))
-//     dcache_tracer
-//      (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
-//       ,.reset_i(reset_i)
-//       ,.freeze_i(cfg_bus_cast_i.freeze)
-//
-//       ,.mhartid_i(cfg_bus_cast_i.core_id)
-//
-//       ,.v_tl_r(v_tl_r)
-//
-//       ,.v_tv_r(v_tv_r)
-//       ,.addr_tv_r(paddr_tv_r)
-//       ,.lr_miss_tv(lr_miss_tv)
-//       ,.sc_op_tv_r(sc_op_tv_r)
-//       ,.sc_success(sc_success)
-//
-//       ,.cache_req_v_o(cache_req_v_o)
-//       ,.cache_req_o(cache_req_o)
-//
-//       ,.cache_req_metadata_o(cache_req_metadata_o)
-//       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-//
-//       ,.cache_req_complete_i(cache_req_complete_i)
-//
-//       ,.v_o(v_o)
-//       ,.load_data(data_o)
-//       ,.cache_miss_o(dcache_miss_o)
-//       ,.wt_req(wt_req)
-//       ,.store_data(data_tv_r)
-//
-//       ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-//       ,.data_mem_pkt_i(data_mem_pkt_i)
-//       ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-//
-//       ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-//       ,.tag_mem_pkt_i(tag_mem_pkt_i)
-//       ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
-//
-//       ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-//       ,.stat_mem_pkt_i(stat_mem_pkt_i)
-//       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-//
-//       ,.tag_mem_v_i(tag_mem_v_li)
-//       ,.data_mem_v_i(data_mem_v_li)
-//       ,.program_finish_i(testbench.program_finish_lo)
-//       );
+  bind bp_be_dcache
+    bp_nonsynth_cache_tracer
+     #(.bp_params_p(bp_params_p)
+      ,.assoc_p(dcache_assoc_p)
+      ,.sets_p(dcache_sets_p)
+      ,.block_width_p(dcache_block_width_p)
+      ,.trace_file_p("dcache"))
+     dcache_tracer
+      (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(cfg_bus_cast_i.freeze)
+
+       ,.mhartid_i(cfg_bus_cast_i.core_id)
+
+       ,.v_tl_r(v_tl_r)
+       
+       ,.v_tv_r(v_tv_r)
+       ,.addr_tv_r(paddr_tv_r)
+       ,.lr_miss_tv(lr_miss_tv)
+       ,.sc_op_tv_r(sc_op_tv_r)
+       ,.sc_success(sc_success)
+        
+       ,.cache_req_v_o(cache_req_v_o)
+       ,.cache_req_o(cache_req_o)
+
+       ,.cache_req_metadata_o(cache_req_metadata_o)
+       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+        
+       ,.cache_req_complete_i(cache_req_complete_i)
+
+       ,.v_o(v_o)
+       ,.load_data(data_o)
+       ,.cache_miss_o(dcache_miss_o)
+       ,.wt_req(wt_req)
+       ,.store_data(data_tv_r)
+
+       ,.data_mem_v_i(data_mem_v_li)
+       ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+       ,.data_mem_pkt_i(data_mem_pkt_i)
+       ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+       
+       ,.tag_mem_v_i(tag_mem_v_li)
+       ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+       ,.tag_mem_pkt_i(tag_mem_pkt_i)
+       ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+
+       ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+       ,.stat_mem_pkt_i(stat_mem_pkt_i)
+       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+       ,.program_finish_i(testbench.program_finish_lo)
+       );
 
   bind bp_fe_icache
     bp_nonsynth_cache_tracer
@@ -403,30 +402,30 @@ bind bp_be_top
        ,.program_finish_i(testbench.program_finish_lo)
        );
 
-  //bind bp_core_minimal
-  //  bp_be_nonsynth_vm_tracer
-  //  #(.bp_params_p(bp_params_p))
-  //  vm_tracer
-  //    (.clk_i(clk_i & (testbench.vm_trace_p == 1))
-  //     ,.reset_i(reset_i)
-  //     ,.freeze_i(be.scheduler.int_regfile.cfg_bus.freeze)
+  bind bp_core_minimal
+    bp_be_nonsynth_vm_tracer
+    #(.bp_params_p(bp_params_p))
+    vm_tracer
+      (.clk_i(clk_i & (testbench.vm_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(be.scheduler.int_regfile.cfg_bus.freeze)
 
-  //     ,.mhartid_i(be.scheduler.int_regfile.cfg_bus.core_id)
+       ,.mhartid_i(be.scheduler.int_regfile.cfg_bus.core_id)
 
-  //     ,.itlb_clear_i(fe.mem.itlb.flush_i)
-  //     ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)
-  //     ,.itlb_vtag_i(fe.mem.itlb.vtag_i)
-  //     ,.itlb_entry_i(fe.mem.itlb.entry_i)
-  //     ,.itlb_cam_r_v_i(fe.mem.itlb.cam.r_v_i)
+       ,.itlb_clear_i(fe.mem.itlb.flush_i)
+       ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)
+       ,.itlb_vtag_i(fe.mem.itlb.vtag_i)
+       ,.itlb_entry_i(fe.mem.itlb.entry_i)
+       ,.itlb_cam_r_v_i(fe.mem.itlb.cam.r_v_i)
 
-  //     ,.dtlb_clear_i(be.be_mem.dtlb.flush_i)
-  //     ,.dtlb_fill_v_i(be.be_mem.dtlb.v_i & be.be_mem.dtlb.w_i)
-  //     ,.dtlb_vtag_i(be.be_mem.dtlb.vtag_i)
-  //     ,.dtlb_entry_i(be.be_mem.dtlb.entry_i)
-  //     ,.dtlb_cam_r_v_i(be.be_mem.dtlb.cam.r_v_i)
-  //
-  //     ,.program_finish_i(testbench.program_finish_lo)
-  //     );
+       ,.dtlb_clear_i(calculator.pipe_mem.dtlb.flush_i)
+       ,.dtlb_fill_v_i(calculator.pipe_mem.dtlb.v_i & be.be_mem.dtlb.w_i)
+       ,.dtlb_vtag_i(calculator.pipe_mem.dtlb.vtag_i)
+       ,.dtlb_entry_i(calculator.pipe_mem.dtlb.entry_i)
+       ,.dtlb_cam_r_v_i(calculator.pipe_mem.dtlb.cam.r_v_i)
+  
+       ,.program_finish_i(testbench.program_finish_lo)
+       );
 
   bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))
@@ -506,83 +505,92 @@ bind bp_be_top
        ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
        );
 
-//  bind bp_be_director
-//    bp_nonsynth_branch_profiler
-//     #(.bp_params_p(bp_params_p))
-//     pc_profiler
-//      (.clk_i(clk_i & (testbench.core_profile_p == 1))
-//       ,.reset_i(reset_i)
-//       ,.freeze_i(cfg_bus_cast_i.freeze)
-//
-//       ,.mhartid_i(cfg_bus_cast_i.core_id)
-//
-//       ,.fe_cmd_o(fe_cmd_o)
-//       ,.fe_cmd_v_o(fe_cmd_v_o)
-//       ,.fe_cmd_ready_i(fe_cmd_ready_i)
-//
-//       ,.commit_v_i(commit_pkt.instret)
-//
-//       ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
-//       );
+  bind bp_be_top
+    bp_nonsynth_branch_profiler
+     #(.bp_params_p(bp_params_p))
+     pc_profiler
+      (.clk_i(clk_i & (testbench.core_profile_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(detector.cfg_bus_cast_i.freeze)
 
-//  bind bp_lce
-//    bp_me_nonsynth_lce_tracer
-//      #(.bp_params_p(bp_params_p)
-//        ,.sets_p(sets_p)
-//        ,.assoc_p(assoc_p)
-//        ,.block_width_p(block_width_p)
-//        )
-//      lce_tracer
-//      (.clk_i(clk_i & (testbench.lce_trace_p == 1))
-//      ,.reset_i(reset_i)
-//      ,.lce_id_i(lce_id_i)
-//      ,.lce_req_i(lce_req_o)
-//      ,.lce_req_v_i(lce_req_v_o)
-//      ,.lce_req_ready_i(lce_req_ready_i)
-//      ,.lce_resp_i(lce_resp_o)
-//      ,.lce_resp_v_i(lce_resp_v_o)
-//      ,.lce_resp_ready_i(lce_resp_ready_i)
-//      ,.lce_cmd_i(lce_cmd_i)
-//      ,.lce_cmd_v_i(lce_cmd_v_i)
-//      ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
-//      ,.lce_cmd_o_i(lce_cmd_o)
-//      ,.lce_cmd_o_v_i(lce_cmd_v_o)
-//      ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
-//      );
+       ,.mhartid_i(detector.cfg_bus_cast_i.core_id)
 
-//  bind bp_cce_wrapper
-//    bp_me_nonsynth_cce_tracer
-//     #(.bp_params_p(bp_params_p))
-//     cce_tracer
-//      (.clk_i(clk_i & (testbench.cce_trace_p == 1))
-//      ,.reset_i(reset_i)
-//      ,.freeze_i(cfg_bus_cast_i.freeze)
-//
-//      ,.cce_id_i(cfg_bus_cast_i.cce_id)
-//
-//      // To CCE
-//      ,.lce_req_i(lce_req_i)
-//      ,.lce_req_v_i(lce_req_v_i)
-//      ,.lce_req_yumi_i(lce_req_yumi_o)
-//      ,.lce_resp_i(lce_resp_i)
-//      ,.lce_resp_v_i(lce_resp_v_i)
-//      ,.lce_resp_yumi_i(lce_resp_yumi_o)
-//
-//      // From CCE
-//      ,.lce_cmd_i(lce_cmd_o)
-//      ,.lce_cmd_v_i(lce_cmd_v_o)
-//      ,.lce_cmd_ready_i(lce_cmd_ready_i)
-//
-//      // To CCE
-//      ,.mem_resp_i(mem_resp_i)
-//      ,.mem_resp_v_i(mem_resp_v_i)
-//      ,.mem_resp_yumi_i(mem_resp_yumi_o)
-//
-//      // From CCE
-//      ,.mem_cmd_i(mem_cmd_o)
-//      ,.mem_cmd_v_i(mem_cmd_v_o)
-//      ,.mem_cmd_ready_i(mem_cmd_ready_i)
-//      );
+       ,.fe_cmd_o(director.fe_cmd_o)
+       ,.fe_cmd_v_o(director.fe_cmd_v_o)
+       ,.fe_cmd_ready_i(director.fe_cmd_ready_i)
+
+       ,.commit_v_i(calculator.commit_pkt.instret)
+
+       ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
+       );
+
+  // TODO: There should be a param about whether to instantiate the uncore, rather than a list of
+  //   unicore configs
+  if (!((bp_params_p == e_bp_unicore_cfg)
+        || (bp_params_p == e_bp_unicore_no_l2_cfg)
+        || (bp_params_p == e_bp_unicore_l1_small_cfg)
+        || (bp_params_p == e_bp_unicore_l1_medium_cfg)
+        ))
+    begin
+      bind bp_cce_wrapper
+        bp_me_nonsynth_cce_tracer
+         #(.bp_params_p(bp_params_p))
+         cce_tracer
+          (.clk_i(clk_i & (testbench.cce_trace_p == 1))
+          ,.reset_i(reset_i)
+          ,.freeze_i(cfg_bus_cast_i.freeze)
+
+          ,.cce_id_i(cfg_bus_cast_i.cce_id)
+
+          // To CCE
+          ,.lce_req_i(lce_req_i)
+          ,.lce_req_v_i(lce_req_v_i)
+          ,.lce_req_yumi_i(lce_req_yumi_o)
+          ,.lce_resp_i(lce_resp_i)
+          ,.lce_resp_v_i(lce_resp_v_i)
+          ,.lce_resp_yumi_i(lce_resp_yumi_o)
+
+          // From CCE
+          ,.lce_cmd_i(lce_cmd_o)
+          ,.lce_cmd_v_i(lce_cmd_v_o)
+          ,.lce_cmd_ready_i(lce_cmd_ready_i)
+
+          // To CCE
+          ,.mem_resp_i(mem_resp_i)
+          ,.mem_resp_v_i(mem_resp_v_i)
+          ,.mem_resp_yumi_i(mem_resp_yumi_o)
+
+          // From CCE
+          ,.mem_cmd_i(mem_cmd_o)
+          ,.mem_cmd_v_i(mem_cmd_v_o)
+          ,.mem_cmd_ready_i(mem_cmd_ready_i)
+          );
+
+      bind bp_lce
+        bp_me_nonsynth_lce_tracer
+          #(.bp_params_p(bp_params_p)
+            ,.sets_p(sets_p)
+            ,.assoc_p(assoc_p)
+            ,.block_width_p(block_width_p)
+            )
+          lce_tracer
+          (.clk_i(clk_i & (testbench.lce_trace_p == 1))
+          ,.reset_i(reset_i)
+          ,.lce_id_i(lce_id_i)
+          ,.lce_req_i(lce_req_o)
+          ,.lce_req_v_i(lce_req_v_o)
+          ,.lce_req_ready_i(lce_req_ready_i)
+          ,.lce_resp_i(lce_resp_o)
+          ,.lce_resp_v_i(lce_resp_v_o)
+          ,.lce_resp_ready_i(lce_resp_ready_i)
+          ,.lce_cmd_i(lce_cmd_i)
+          ,.lce_cmd_v_i(lce_cmd_v_i)
+          ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
+          ,.lce_cmd_o_i(lce_cmd_o)
+          ,.lce_cmd_o_v_i(lce_cmd_v_o)
+          ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+          );
+    end
 
 bp_nonsynth_if_verif
  #(.bp_params_p(bp_params_p))
