@@ -11,6 +11,7 @@ module bp_be_csr
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
     , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
+    , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
     )
    (input                               clk_i
     , input                             reset_i
@@ -41,11 +42,7 @@ module bp_be_csr
 
     , output [trap_pkt_width_lp-1:0]    trap_pkt_o
 
-    , output [rv64_priv_width_gp-1:0]   priv_mode_o
-    , output [ptag_width_p-1:0]         satp_ppn_o
-    , output                            translation_en_o
-    , output                            mstatus_sum_o
-    , output                            mstatus_mxr_o
+    , output [trans_info_width_lp-1:0]  trans_info_o
     );
 
 // Declare parameterizable structs
@@ -59,6 +56,7 @@ bp_be_csr_cmd_s csr_cmd;
 bp_be_csr_cmd_s cfg_bus_csr_cmd_li;
 
 bp_be_trap_pkt_s trap_pkt_cast_o;
+bp_be_trans_info_s trans_info_cast_o;
 
 assign cfg_bus_csr_cmd_li.csr_op   = cfg_bus_cast_i.csr_r_v ? e_csrrs : e_csrrw;
 assign cfg_bus_csr_cmd_li.csr_addr = cfg_bus_cast_i.csr_addr;
@@ -67,6 +65,7 @@ assign cfg_bus_csr_cmd_li.data     = cfg_bus_cast_i.csr_r_v ? '0 : cfg_bus_cast_
 assign cfg_bus_cast_i = cfg_bus_i;
 assign csr_cmd = (cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) ? cfg_bus_csr_cmd_li : csr_cmd_i;
 assign trap_pkt_o = trap_pkt_cast_o;
+assign trans_info_o = trans_info_cast_o;
 
 // The muxed and demuxed CSR outputs
 logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
@@ -174,9 +173,9 @@ assign exception_dec_li =
       ,load_access_fault  : csr_cmd.exc.load_access_fault
       ,store_misaligned   : csr_cmd.exc.store_misaligned
       ,store_access_fault : csr_cmd.exc.store_access_fault
-      ,ecall_u_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_U)
-      ,ecall_s_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_S)
-      ,ecall_m_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_M)
+      ,ecall_u_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_r == `PRIV_MODE_U)
+      ,ecall_s_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_r == `PRIV_MODE_S)
+      ,ecall_m_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_r == `PRIV_MODE_M)
       ,instr_page_fault   : csr_cmd.exc.instr_page_fault
       ,load_page_fault    : csr_cmd.exc.load_page_fault
       ,store_page_fault   : csr_cmd.exc.store_page_fault
@@ -644,12 +643,6 @@ always_comb
 // Debug Mode masks all interrupts
 assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
-// CSR slow paths
-assign satp_ppn_o       = satp_lo.ppn;
-
-assign mstatus_sum_o = mstatus_lo.sum;
-assign mstatus_mxr_o = mstatus_lo.mxr;
-
 assign csr_data_o = dword_width_p'(csr_data_lo);
 
 assign cfg_csr_data_o = csr_data_lo;
@@ -666,9 +659,12 @@ assign trap_pkt_cast_o.eret             = ret_v_o;
 assign trap_pkt_cast_o.satp             = satp_v_o;
 assign trap_pkt_cast_o.rollback         = csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss;
 
-assign priv_mode_o      = priv_mode_r;
-assign translation_en_o = translation_en_r
-                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
+assign trans_info_cast_o.priv_mode = priv_mode_r;
+assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
+assign trans_info_cast_o.translation_en = translation_en_r
+    | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
+assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
+assign trans_info_cast_o.mstatus_mxr = mstatus_lo.mxr;
 
 endmodule
 

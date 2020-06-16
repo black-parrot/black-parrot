@@ -24,6 +24,7 @@ module bp_be_pipe_mem
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam ptw_miss_pkt_width_lp  = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
+   , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
 
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -63,11 +64,7 @@ module bp_be_pipe_mem
    , output logic [vaddr_width_p-1:0]     vaddr_o
    , output logic [reg_data_width_lp-1:0] data_o
 
-   , input [rv64_priv_width_gp-1:0]       priv_mode_i
-   , input [ptag_width_p-1:0]             satp_ppn_i
-   , input                                translation_en_i
-   , input                                mstatus_sum_i
-   , input                                mstatus_mxr_i
+   , input [trans_info_width_lp-1:0]      trans_info_i
 
    // D$-LCE Interface
    // signals to LCE
@@ -115,12 +112,14 @@ bp_be_decode_s         decode;
 bp_cfg_bus_s           cfg_bus;
 bp_be_ptw_miss_pkt_s   ptw_miss_pkt;
 bp_be_ptw_fill_pkt_s   ptw_fill_pkt;
+bp_be_trans_info_s     trans_info;
 
 assign decode = decode_i;
 assign cfg_bus = cfg_bus_i;
 
 assign ptw_miss_pkt = ptw_miss_pkt_i;
 assign ptw_fill_pkt_o = ptw_fill_pkt;
+assign trans_info = trans_info_i;
 
 /* Internal connections */
 /* TLB ports */
@@ -187,7 +186,7 @@ bp_tlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(sfence_i)
-   ,.translation_en_i(translation_en_i)
+   ,.translation_en_i(trans_info.translation_en)
 
    ,.v_i(dtlb_r_v | dtlb_w_v)
    ,.w_i(dtlb_w_v)
@@ -213,10 +212,10 @@ bp_be_ptw
   ptw
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.base_ppn_i(satp_ppn_i)
-   ,.priv_mode_i(priv_mode_i)
-   ,.mstatus_sum_i(mstatus_sum_i)
-   ,.mstatus_mxr_i(mstatus_mxr_i)
+   ,.base_ppn_i(trans_info.satp_ppn)
+   ,.priv_mode_i(trans_info.priv_mode)
+   ,.mstatus_sum_i(trans_info.mstatus_sum)
+   ,.mstatus_mxr_i(trans_info.mstatus_mxr)
    ,.busy_o(ptw_busy)
 
    ,.ptw_miss_pkt_i(ptw_miss_pkt)
@@ -306,12 +305,12 @@ always_ff @(posedge clk_i) begin
 end
 
 // Check instruction accesses
-wire data_priv_page_fault = ((priv_mode_i == `PRIV_MODE_S) & ~mstatus_sum_i & dtlb_r_entry.u)
-                              | ((priv_mode_i == `PRIV_MODE_U) & ~dtlb_r_entry.u);
+wire data_priv_page_fault = ((trans_info.priv_mode == `PRIV_MODE_S) & ~trans_info.mstatus_sum & dtlb_r_entry.u)
+                              | ((trans_info.priv_mode == `PRIV_MODE_U) & ~dtlb_r_entry.u);
 wire data_write_page_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
 
-assign load_page_fault_v  = dtlb_r_v_lo & translation_en_i & ~is_store_r & data_priv_page_fault;
-assign store_page_fault_v = dtlb_r_v_lo & translation_en_i & is_store_r & (data_priv_page_fault | data_write_page_fault);
+assign load_page_fault_v  = dtlb_r_v_lo & trans_info.translation_en & ~is_store_r & data_priv_page_fault;
+assign store_page_fault_v = dtlb_r_v_lo & trans_info.translation_en & is_store_r & (data_priv_page_fault | data_write_page_fault);
 assign load_misaligned_v = 1'b0; // TODO: detect
 assign store_misaligned_v = 1'b0; // TODO: detect
 
