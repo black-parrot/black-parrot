@@ -85,7 +85,6 @@ module bp_be_top
    );
 
 // Declare parameterized structures
-// TODO: Shouldn't the block size be in bytes and not in bits?
 `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p)
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -151,10 +150,7 @@ bp_be_director
    ,.poison_isd_o(poison_isd_lo)
 
    ,.trap_pkt_i(trap_pkt)
-
-   ,.itlb_fill_v_i(ptw_fill_pkt.itlb_fill_v)
-   ,.itlb_fill_vaddr_i(ptw_fill_pkt.vaddr)
-   ,.itlb_fill_entry_i(ptw_fill_pkt.entry[0+:tlb_entry_width_lp])
+   ,.ptw_fill_pkt_i(ptw_fill_pkt)
    );
 
 bp_be_detector 
