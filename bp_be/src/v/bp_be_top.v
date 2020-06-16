@@ -24,29 +24,29 @@ module bp_be_top
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
   )
-  (input                                     clk_i
-   , input                                   reset_i
+  (input                                             clk_i
+   , input                                           reset_i
 
    // Processor configuration
-   , input [cfg_bus_width_lp-1:0]            cfg_bus_i
-   , output [dword_width_p-1:0]              cfg_irf_data_o
-   , output [vaddr_width_p-1:0]              cfg_npc_data_o
-   , output [dword_width_p-1:0]              cfg_csr_data_o
-   , output [1:0]                            cfg_priv_data_o
+   , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
+   , output [dword_width_p-1:0]                      cfg_irf_data_o
+   , output [vaddr_width_p-1:0]                      cfg_npc_data_o
+   , output [dword_width_p-1:0]                      cfg_csr_data_o
+   , output [1:0]                                    cfg_priv_data_o
 
    // FE queue interface
-   , input [fe_queue_width_lp-1:0]           fe_queue_i
-   , input                                   fe_queue_v_i
-   , output                                  fe_queue_yumi_o
-   , output                                  fe_queue_clr_o
-   , output                                  fe_queue_deq_o
-   , output                                  fe_queue_roll_o
+   , input [fe_queue_width_lp-1:0]                   fe_queue_i
+   , input                                           fe_queue_v_i
+   , output                                          fe_queue_yumi_o
+   , output                                          fe_queue_clr_o
+   , output                                          fe_queue_deq_o
+   , output                                          fe_queue_roll_o
 
    // FE cmd interface
-   , output [fe_cmd_width_lp-1:0]            fe_cmd_o
-   , output                                  fe_cmd_v_o
-   , input                                   fe_cmd_ready_i
-   , input                                   fe_cmd_fence_i
+   , output [fe_cmd_width_lp-1:0]                    fe_cmd_o
+   , output                                          fe_cmd_v_o
+   , input                                           fe_cmd_ready_i
+   , input                                           fe_cmd_fence_i
 
    // D$-LCE Interface
    // signals to LCE
@@ -59,40 +59,34 @@ module bp_be_top
    , input                                           cache_req_complete_i
 
    // data_mem
-   , input data_mem_pkt_v_i
-   , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-   , output logic [dcache_block_width_p-1:0] data_mem_o
-   , output logic data_mem_pkt_yumi_o
+   , input                                           data_mem_pkt_v_i
+   , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
+   , output logic [dcache_block_width_p-1:0]         data_mem_o
+   , output logic                                    data_mem_pkt_yumi_o
 
    // tag_mem
-   , input tag_mem_pkt_v_i
-   , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-   , output logic [ptag_width_p-1:0] tag_mem_o
-   , output logic tag_mem_pkt_yumi_o
+   , input                                           tag_mem_pkt_v_i
+   , input [dcache_tag_mem_pkt_width_lp-1:0]         tag_mem_pkt_i
+   , output logic [ptag_width_p-1:0]                 tag_mem_o
+   , output logic                                    tag_mem_pkt_yumi_o
 
    // stat_mem
-   , input stat_mem_pkt_v_i
-   , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-   , output logic [dcache_stat_info_width_lp-1:0] stat_mem_o
-   , output logic  stat_mem_pkt_yumi_o
+   , input                                           stat_mem_pkt_v_i
+   , input [dcache_stat_mem_pkt_width_lp-1:0]        stat_mem_pkt_i
+   , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
+   , output logic                                    stat_mem_pkt_yumi_o
 
-   , input                                   credits_full_i
-   , input                                   credits_empty_i
+   , input                                           credits_full_i
+   , input                                           credits_empty_i
 
-   , input                                   timer_irq_i
-   , input                                   software_irq_i
-   , input                                   external_irq_i
+   , input                                           timer_irq_i
+   , input                                           software_irq_i
+   , input                                           external_irq_i
    );
 
 // Declare parameterized structures
 `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p)
-`declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-
-// Casting
-bp_cfg_bus_s cfg_bus;
-
-assign cfg_bus = cfg_bus_i;
 
 // Top-level interface connections
 bp_be_dispatch_pkt_s dispatch_pkt;
@@ -101,15 +95,9 @@ logic dispatch_pkt_v;
 bp_be_ptw_miss_pkt_s ptw_miss_pkt;
 bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
-bp_be_calc_status_s    calc_status;
+bp_be_calc_status_s calc_status;
 
 logic chk_dispatch_v;
-
-logic [vaddr_width_p-1:0] chk_tvec_li;
-logic [vaddr_width_p-1:0] chk_epc_li;
-
-logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_fencei_li;
-
 logic interrupt_ready_lo, interrupt_v_li;
 
 bp_be_commit_pkt_s commit_pkt;
