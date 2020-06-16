@@ -409,7 +409,6 @@ module bp_lce_cmd
             // when data sends and command is dequeued
             e_lce_cmd_uc_data: begin
               data_mem_pkt.index = lce_cmd_addr_index;
-              data_mem_pkt.way_id = lce_cmd_way_id;
               data_mem_pkt.data = lce_cmd.data;
               data_mem_pkt.opcode = e_cache_data_mem_uncached;
               data_mem_pkt_v_o = lce_cmd_v_i;

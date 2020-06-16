@@ -111,10 +111,10 @@ module bp_me_nonsynth_lce_tracer
       // command to LCE
       if (lce_cmd_v_i & lce_cmd_yumi_i) begin
         assert(lce_cmd.header.dst_id == lce_id_i) else $error("Bad LCE Command - destination mismatch");
-        $fdisplay(file, "[%t]: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
+        $fdisplay(file, "[%t]: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
                   , $time, lce_cmd.header.dst_id, lce_cmd.header.addr, lce_cmd.header.src_id, lce_cmd.header.msg_type
-                  , lce_cmd.header.way_id, lce_cmd.header.state, lce_cmd.header.target, lce_cmd.header.target_way_id
-                  , lce_cmd.header.size, lce_cmd.data
+                  , lce_cmd.header.addr[block_offset_bits_lp+:lg_sets_lp], lce_cmd.header.way_id, lce_cmd.header.state, lce_cmd.header.target
+                  , lce_cmd.header.target_way_id, lce_cmd.header.size, lce_cmd.data
                   );
       end
 
