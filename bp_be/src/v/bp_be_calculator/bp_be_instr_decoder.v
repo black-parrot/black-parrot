@@ -225,10 +225,7 @@ always_comb
       `RV64_MISC_MEM_OP : 
         begin
           unique casez (instr)
-            `RV64_FENCE   : 
-              begin
-                //decode.pipe_mem_v = 1'b1;
-              end
+            `RV64_FENCE   : begin end
             `RV64_FENCE_I : 
               begin 
                 decode.pipe_mem_v  = 1'b1;
