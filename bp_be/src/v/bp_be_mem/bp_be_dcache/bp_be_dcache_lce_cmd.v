@@ -35,9 +35,6 @@ module bp_be_dcache_lce_cmd
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p) 
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
 
-    , localparam stat_info_width_lp=
-      `bp_cache_stat_info_width(dcache_assoc_p)
-
     // width for counter used during initiliazation and for sync messages
     , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(dcache_sets_p)+1)
     , localparam cnt_max_val_lp = ((2**cnt_width_lp)-1)
@@ -89,7 +86,7 @@ module bp_be_dcache_lce_cmd
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , input stat_mem_pkt_yumi_i
-    , input [stat_info_width_lp-1:0] stat_mem_i
+    , input [dcache_stat_info_width_lp-1:0] stat_mem_i
   );
 
   // casting structs

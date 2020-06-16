@@ -11,6 +11,7 @@ module bp_be_csr
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
     , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
+    , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
     )
    (input                               clk_i
     , input                             reset_i
@@ -23,14 +24,8 @@ module bp_be_csr
     , input [csr_cmd_width_lp-1:0]      csr_cmd_i
     , input                             csr_cmd_v_i
     , output logic [dword_width_p-1:0]  csr_data_o
-    , output logic                      csr_exc_o
-    , output logic                      illegal_instr_o
-    , input [vaddr_width_p-1:0]         arch_pc_i
-    , input                             ptw_busy_i
-    , input                             long_busy_i
 
     // Misc interface
-    , input [core_id_width_p-1:0]       hartid_i
     , input                             instret_i
 
     , input                             exception_v_i
@@ -42,17 +37,12 @@ module bp_be_csr
     , input                             timer_irq_i
     , input                             software_irq_i
     , input                             external_irq_i
-    , output                            accept_irq_o
-    , output                            single_step_o
+    , output                            interrupt_ready_o
+    , input                             interrupt_v_i
 
     , output [trap_pkt_width_lp-1:0]    trap_pkt_o
 
-    , output                            debug_mode_o
-    , output [rv64_priv_width_gp-1:0]   priv_mode_o
-    , output [ptag_width_p-1:0]         satp_ppn_o
-    , output                            translation_en_o
-    , output                            mstatus_sum_o
-    , output                            mstatus_mxr_o
+    , output [trans_info_width_lp-1:0]  trans_info_o
     );
 
 // Declare parameterizable structs
@@ -66,6 +56,7 @@ bp_be_csr_cmd_s csr_cmd;
 bp_be_csr_cmd_s cfg_bus_csr_cmd_li;
 
 bp_be_trap_pkt_s trap_pkt_cast_o;
+bp_be_trans_info_s trans_info_cast_o;
 
 assign cfg_bus_csr_cmd_li.csr_op   = cfg_bus_cast_i.csr_r_v ? e_csrrs : e_csrrw;
 assign cfg_bus_csr_cmd_li.csr_addr = cfg_bus_cast_i.csr_addr;
@@ -74,6 +65,7 @@ assign cfg_bus_csr_cmd_li.data     = cfg_bus_cast_i.csr_r_v ? '0 : cfg_bus_cast_
 assign cfg_bus_cast_i = cfg_bus_i;
 assign csr_cmd = (cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) ? cfg_bus_csr_cmd_li : csr_cmd_i;
 assign trap_pkt_o = trap_pkt_cast_o;
+assign trans_info_o = trans_info_cast_o;
 
 // The muxed and demuxed CSR outputs
 logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
@@ -170,6 +162,7 @@ wire [15:0] interrupt_icode_dec_li =
    };
 
 wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
+logic illegal_instr_o;
 rv64_exception_dec_s exception_dec_li;
 assign exception_dec_li =
     '{instr_misaligned    : csr_cmd.exc.instr_misaligned
@@ -180,9 +173,9 @@ assign exception_dec_li =
       ,load_access_fault  : csr_cmd.exc.load_access_fault
       ,store_misaligned   : csr_cmd.exc.store_misaligned
       ,store_access_fault : csr_cmd.exc.store_access_fault
-      ,ecall_u_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_U)
-      ,ecall_s_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_S)
-      ,ecall_m_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_M)
+      ,ecall_u_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_r == `PRIV_MODE_U)
+      ,ecall_s_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_r == `PRIV_MODE_S)
+      ,ecall_m_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_r == `PRIV_MODE_M)
       ,instr_page_fault   : csr_cmd.exc.instr_page_fault
       ,load_page_fault    : csr_cmd.exc.load_page_fault
       ,store_page_fault   : csr_cmd.exc.store_page_fault
@@ -239,6 +232,24 @@ always_comb
     endcase
   end
 
+logic [vaddr_width_p-1:0] apc_n, apc_r;
+bsg_dff_reset
+ #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
+ apc
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(apc_n)
+   ,.data_o(apc_r)
+   );
+assign apc_n = trap_pkt_cast_o.eret
+               ? ((csr_cmd.csr_op == e_sret) ? sepc_lo : (csr_cmd.csr_op == e_mret) ? mepc_lo : dpc_lo)
+               : (trap_pkt_cast_o.exception | trap_pkt_cast_o._interrupt)
+                 ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
+                 : instret_i
+                   ? exception_npc_i
+                   : apc_r;
+
 bsg_dff_reset
  #(.width_p(1))
  debug_mode_reg
@@ -248,7 +259,6 @@ bsg_dff_reset
    ,.data_i(debug_mode_n)
    ,.data_o(debug_mode_r)
    );
-assign debug_mode_o = debug_mode_r;
 
 bsg_dff_reset
  #(.width_p(2) 
@@ -465,7 +475,7 @@ always_comb
               // 0: Tapeout 0, July 2019
               // 1: Current
               `CSR_ADDR_MIMPID: csr_data_lo = 64'd1;
-              `CSR_ADDR_MHARTID: csr_data_lo = hartid_i;
+              `CSR_ADDR_MHARTID: csr_data_lo = cfg_bus_cast_i.core_id;
               `CSR_ADDR_MSTATUS: csr_data_lo = mstatus_lo;
               // MISA is optionally read-write, but all fields are read-only in BlackParrot
               //   64 bit MXLEN, IMASU extensions
@@ -534,9 +544,9 @@ always_comb
           end
       end
 
-    if (~is_debug_mode & ~exception_v_i & ~ptw_busy_i & ~long_busy_i & ~cfg_bus_cast_i.freeze & accept_irq_o)
+    if (interrupt_v_i)
       begin
-        if (~is_debug_mode & m_interrupt_icode_v_li)
+        if (m_interrupt_icode_v_li)
           begin
             priv_mode_n          = `PRIV_MODE_M;
 
@@ -544,7 +554,7 @@ always_comb
             mstatus_li.mpie      = mstatus_lo.mie;
             mstatus_li.mie       = 1'b0;
 
-            mepc_li              = paddr_width_p'($signed(arch_pc_i));
+            mepc_li              = paddr_width_p'($signed(apc_r));
             mtval_li             = '0;
             mcause_li._interrupt = 1'b1;
             mcause_li.ecode      = m_interrupt_icode_li;
@@ -553,7 +563,7 @@ always_comb
             interrupt_v_o        = 1'b1;
             ret_v_o              = 1'b0;
           end
-        else if (~is_debug_mode & s_interrupt_icode_v_li)
+        else if (s_interrupt_icode_v_li)
           begin
             priv_mode_n          = `PRIV_MODE_S;
 
@@ -561,7 +571,7 @@ always_comb
             mstatus_li.spie      = mstatus_lo.sie;
             mstatus_li.sie       = 1'b0;
 
-            sepc_li              = paddr_width_p'($signed(arch_pc_i));
+            sepc_li              = paddr_width_p'($signed(apc_r));
             stval_li             = '0;
             scause_li._interrupt = 1'b1;
             scause_li.ecode      = s_interrupt_icode_li;
@@ -631,44 +641,30 @@ always_comb
   end
 
 // Debug Mode masks all interrupts
-assign accept_irq_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
-
-// CSR slow paths
-assign satp_ppn_o       = satp_r.ppn;
-
-assign mstatus_sum_o = mstatus_lo.sum;
-assign mstatus_mxr_o = mstatus_lo.mxr;
-
-assign single_step_o = ~is_debug_mode & dcsr_lo.step;
+assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
-assign csr_exc_o  = |{trap_pkt_cast_o.exception
-                      ,trap_pkt_cast_o._interrupt
-                      };
 
 assign cfg_csr_data_o = csr_data_lo;
 assign cfg_priv_data_o = priv_mode_r;
 
-assign trap_pkt_cast_o.epc              = (csr_cmd.csr_op == e_sret)
-                                          ? sepc_r
-                                          : (csr_cmd.csr_op == e_mret)
-                                            ? mepc_r
-                                            : dpc_r;
-assign trap_pkt_cast_o.tvec             = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
-assign trap_pkt_cast_o.cause            = (priv_mode_n == `PRIV_MODE_S) ? scause_li : mcause_li;
+assign trap_pkt_cast_o.npc              = apc_n;
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
 assign trap_pkt_cast_o.translation_en_n = translation_en_n;
-// TODO: Find more solid invariant
 assign trap_pkt_cast_o.fencei           = csr_cmd.exc.fencei_v;
 assign trap_pkt_cast_o.sfence           = sfence_v_o;
 assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
 assign trap_pkt_cast_o.eret             = ret_v_o;
 assign trap_pkt_cast_o.satp             = satp_v_o;
+assign trap_pkt_cast_o.rollback         = csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss;
 
-assign priv_mode_o      = priv_mode_r;
-assign translation_en_o = translation_en_r
-                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
+assign trans_info_cast_o.priv_mode = priv_mode_r;
+assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
+assign trans_info_cast_o.translation_en = translation_en_r
+    | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
+assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
+assign trans_info_cast_o.mstatus_mxr = mstatus_lo.mxr;
 
 endmodule
 

@@ -30,9 +30,8 @@ module bp_be_director
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p)
-   , localparam tlb_entry_width_lp   = `bp_pte_entry_leaf_width(paddr_width_p)
-   , localparam commit_pkt_width_lp  = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp    = `bp_be_trap_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
    , localparam debug_lp = 0
    )
@@ -46,7 +45,6 @@ module bp_be_director
    , input [isd_status_width_lp-1:0]  isd_status_i
    , input [calc_status_width_lp-1:0] calc_status_i
    , output [vaddr_width_p-1:0]       expected_npc_o
-   , output [vaddr_width_p-1:0]       arch_pc_o
    , output                           poison_isd_o
    , output logic                     flush_o
 
@@ -58,13 +56,9 @@ module bp_be_director
 
    , output                           suppress_iss_o
 
-   , input [commit_pkt_width_lp-1:0]  commit_pkt_i
    , input [trap_pkt_width_lp-1:0]    trap_pkt_i
-   
-   //iTLB fill interface
-   , input                            itlb_fill_v_i
-   , input [vaddr_width_p-1:0]        itlb_fill_vaddr_i
-   , input [tlb_entry_width_lp-1:0]   itlb_fill_entry_i
+
+   , input [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_i
   );
 
 // Declare parameterized structures
@@ -79,16 +73,16 @@ bp_be_calc_status_s              calc_status;
 bp_fe_cmd_s                      fe_cmd;
 logic                            fe_cmd_v;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
-bp_be_commit_pkt_s               commit_pkt;
 bp_be_trap_pkt_s                 trap_pkt;
+bp_be_ptw_fill_pkt_s             ptw_fill_pkt;
 
 assign cfg_bus_cast_i = cfg_bus_i;
 assign isd_status = isd_status_i;
 assign calc_status = calc_status_i;
 assign fe_cmd_o    = fe_cmd;
 assign fe_cmd_v_o  = fe_cmd_v;
-assign commit_pkt  = commit_pkt_i;
 assign trap_pkt    = trap_pkt_i;
+assign ptw_fill_pkt = ptw_fill_pkt_i;
 
 // Declare intermediate signals
 logic [vaddr_width_p-1:0]               npc_plus4;
@@ -101,14 +95,13 @@ enum logic [1:0] {e_reset, e_boot, e_run, e_fence} state_n, state_r;
 // Control signals
 logic npc_w_v, btaken_pending, attaboy_pending;
 
-logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
+logic [vaddr_width_p-1:0] roll_mux_o, trap_mux_o;
 
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
 assign npc_w_v = cfg_bus_cast_i.npc_w_v
                  | calc_status.ex1_instr_v
-                 | (commit_pkt.tlb_miss | commit_pkt.cache_miss)
-                 | (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
+                 | (trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
 bsg_dff_reset_en 
  #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
  npc
@@ -121,59 +114,25 @@ bsg_dff_reset_en
    );
 assign cfg_npc_data_o = npc_r;
 
-logic [vaddr_width_p-1:0] apc_n, apc_r;
-bsg_dff_reset_en
- #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
- apc
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(commit_pkt.instret | (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret))
-
-   ,.data_i(apc_n)
-   ,.data_o(apc_r)
-   );
-assign apc_n = (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret) ? npc_n : commit_pkt.npc;
-assign arch_pc_o = apc_r;
-
 // NPC calculation
 bsg_mux 
  #(.width_p(vaddr_width_p)
    ,.els_p(2)   
    )
  init_mux
-  (.data_i({cfg_bus_cast_i.npc, exc_mux_o})
+  (.data_i({cfg_bus_cast_i.npc, trap_mux_o})
    ,.sel_i(cfg_bus_cast_i.npc_w_v)
    ,.data_o(npc_n)
    );
 
-bsg_mux 
- #(.width_p(vaddr_width_p)
-   ,.els_p(2)   
-   )
- exception_mux
-  (.data_i({ret_mux_o, roll_mux_o})
-   ,.sel_i(trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret)
-   ,.data_o(exc_mux_o)
-   );
-
-bsg_mux 
+bsg_mux
  #(.width_p(vaddr_width_p)
    ,.els_p(2)
    )
- roll_mux
-  (.data_i({commit_pkt.pc, calc_status.ex1_npc})
-   ,.sel_i(commit_pkt.tlb_miss | commit_pkt.cache_miss)
-   ,.data_o(roll_mux_o)
-   );
-
-bsg_mux 
- #(.width_p(vaddr_width_p)
-   ,.els_p(2)
-   )
- ret_mux
-  (.data_i({trap_pkt.epc[0+:vaddr_width_p], {trap_pkt.tvec[0+:vaddr_width_p-2], 2'b00}})
-   ,.sel_i(trap_pkt.eret)
-   ,.data_o(ret_mux_o)
+ trap_mux
+  (.data_i({trap_pkt.npc, calc_status.ex1_npc})
+   ,.sel_i(trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret)
+   ,.data_o(trap_mux_o)
    );
 
 assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
@@ -244,11 +203,11 @@ always_comb
 
         fe_cmd_v = fe_cmd_ready_i;
       end
-    else if (itlb_fill_v_i)
+    else if (ptw_fill_pkt.itlb_fill_v)
       begin
         fe_cmd.opcode                                     = e_op_itlb_fill_response;
-        fe_cmd.vaddr                                      = itlb_fill_vaddr_i;
-        fe_cmd.operands.itlb_fill_response.pte_entry_leaf = itlb_fill_entry_i;
+        fe_cmd.vaddr                                      = ptw_fill_pkt.vaddr;
+        fe_cmd.operands.itlb_fill_response.pte_entry_leaf = ptw_fill_pkt.entry;
       
         fe_cmd_v = fe_cmd_ready_i;
 
@@ -259,7 +218,7 @@ always_comb
     else if (trap_pkt.sfence | trap_pkt.satp)
       begin
         fe_cmd.opcode = e_op_itlb_fence;
-        fe_cmd.vaddr  = commit_pkt.npc;
+        fe_cmd.vaddr  = trap_pkt.npc;
         
         fe_cmd_pc_redirect_operands = '0;
         fe_cmd_pc_redirect_operands.translation_enabled = trap_pkt.translation_en_n;
@@ -272,7 +231,7 @@ always_comb
     else if (trap_pkt.fencei)
       begin
         fe_cmd.opcode = e_op_icache_fence;
-        fe_cmd.vaddr  = commit_pkt.npc;
+        fe_cmd.vaddr  = trap_pkt.npc;
 
         fe_cmd_v = fe_cmd_ready_i;
 
@@ -298,7 +257,7 @@ always_comb
 
         flush_o = 1'b1;
       end
-    else if (commit_pkt.cache_miss | commit_pkt.tlb_miss)
+    else if (trap_pkt.rollback)
       begin
         flush_o = 1'b1;
       end

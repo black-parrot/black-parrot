@@ -13,7 +13,6 @@ module bp_cacc_vdp
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, cache)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    , localparam stat_info_width_lp = `bp_cache_stat_info_width(acache_assoc_p)
     )
    (
     input                                     clk_i
@@ -57,7 +56,6 @@ module bp_cacc_vdp
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_uncached;
   logic                     dcache_miss_v;
-  logic                     load_op_tl_lo, store_op_tl_lo;
   logic                     dcache_pkt_v;
   logic                     credits_full_o, credits_empty_o;
    
@@ -83,7 +81,7 @@ module bp_cacc_vdp
   bp_cache_tag_mem_pkt_s tag_mem_pkt_i;
   logic [ptag_width_p-1:0] tag_mem_o;
   bp_cache_stat_mem_pkt_s stat_mem_pkt_i;
-  logic [stat_info_width_lp-1:0] stat_mem_o;
+  logic [cache_stat_info_width_lp-1:0] stat_mem_o;
   bp_cache_req_metadata_s cache_req_metadata_o; 
    
 bp_pma
@@ -109,14 +107,11 @@ bp_be_dcache
 
     ,.v_o(dcache_v)
     ,.data_o(dcache_data)
-    ,.fencei_v_o()
 
-    ,.tlb_miss_i(dcache_tlb_miss)
+    ,.ptag_v_i(~dcache_tlb_miss)
     ,.ptag_i(dcache_ptag)
     ,.uncached_i(dcache_uncached)
 
-    ,.load_op_tl_o(load_op_tl_lo)
-    ,.store_op_tl_o(store_op_tl_lo)
     ,.poison_i(dcache_poison)
 
     // D$-LCE Interface
@@ -235,7 +230,7 @@ bp_be_dcache_lce
                             ,data          : resp_data  };
 
    
-  bp_be_mem_vaddr_s v_addr;
+  logic [vaddr_width_p-1:0] v_addr;
   assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8) 
                                          : (input_a_ptr+len_a_cnt*8)) 
                        : res_ptr;
@@ -357,10 +352,10 @@ bp_be_dcache_lce
       end
       FETCH: begin
         state_n = WAIT_DCACHE_C1;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
+        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
         dcache_pkt.data = load ? '0 : dot_product_res; 
-        dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
         res_status = '0;
         dcache_pkt_v = '1;
         done = 0;
@@ -368,9 +363,9 @@ bp_be_dcache_lce
       WAIT_DCACHE_C1: begin
         state_n = WAIT_DCACHE_C2;
         res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
+        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
-        dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt_v = '0;
         done = 0;
@@ -382,30 +377,30 @@ bp_be_dcache_lce
                   (dcache_v ? (load ? (second_operand ? CHECK_VEC2_LEN : CHECK_VEC1_LEN) : DONE)
                             : WAIT_FETCH);
         res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
+        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
         dcache_pkt_v = '0;
         done = 0;
       end
       CHECK_VEC1_LEN: begin
         state_n = (len_a_cnt == input_len) ? FETCH_VEC2 : WAIT_FETCH;
         res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
+        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
         dcache_pkt_v = '0;
         done = 0;
       end
       FETCH_VEC2: begin
         state_n = WAIT_FETCH;
         res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
+        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
         dcache_pkt_v = '0;
         second_operand= 1;
         done = 0;
@@ -413,10 +408,10 @@ bp_be_dcache_lce
       CHECK_VEC2_LEN: begin
         state_n= (len_b_cnt == input_len) ? WB_RESULT : WAIT_FETCH;
         res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
+        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
         dcache_pkt_v = '0;
         second_operand= 1;
         done = 0;

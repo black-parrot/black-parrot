@@ -43,7 +43,6 @@ module bp_be_scheduler
   , input                              dispatch_v_i
   , input                              cache_miss_v_i
   , input                              cmt_v_i
-  , input                              debug_mode_i
   , input                              suppress_iss_i
 
   // Fetch interface
@@ -110,7 +109,7 @@ bsg_dff_reset_en
 
 always_comb
   begin
-    if (debug_mode_i || (fe_queue_cast_i.msg_type == e_fe_fetch))
+    if (fe_queue_cast_i.msg_type == e_fe_fetch)
       begin
         // Populate the issue packet with a valid pc/instruction pair.
         issue_pkt = '0;
@@ -180,12 +179,12 @@ always_comb
   end
 
 // Interface handshakes
-assign fe_queue_yumi_o = ~debug_mode_i & ~suppress_iss_i & fe_queue_v_i & (dispatch_v_i | ~issue_pkt_v_r);
+assign fe_queue_yumi_o = ~suppress_iss_i & fe_queue_v_i & (dispatch_v_i | ~issue_pkt_v_r);
 
 // Queue control signals
-assign fe_queue_clr_o  = ~debug_mode_i & suppress_iss_i;
-assign fe_queue_roll_o = ~debug_mode_i & cache_miss_v_i;
-assign fe_queue_deq_o  = ~debug_mode_i & ~cache_miss_v_i & cmt_v_i;
+assign fe_queue_clr_o  = suppress_iss_i;
+assign fe_queue_roll_o = cache_miss_v_i;
+assign fe_queue_deq_o  = ~cache_miss_v_i & cmt_v_i;
 
 logic [dword_width_p-1:0] irf_rs1;
 logic [dword_width_p-1:0] irf_rs2;
