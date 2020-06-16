@@ -67,8 +67,6 @@ module bp_be_ptw
   
   state_e state_r, state_n;
 
-  logic [vaddr_width_p-1:0] tlb_miss_vaddr, tlb_w_vaddr;
-
   logic pte_is_leaf;
   logic start;
   logic [lg_page_table_depth_lp-1:0] level_cntr;
@@ -90,21 +88,15 @@ module bp_be_ptw
   logic [dword_width_p-1:0] dcache_data_r;
   logic dcache_v_r;
 
-  assign tlb_miss_vaddr = ptw_miss_pkt.vaddr;
-  assign tlb_w_vaddr_o = tlb_w_vaddr;
-
-  genvar i;
-  generate 
-    for(i=0; i<page_table_depth_p; i++) begin
+   for(genvar i=0; i<page_table_depth_p; i++) begin : vpn
       assign partial_vpn[i] = vpn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
     end
-   for(i=0; i<page_table_depth_p-1; i++) begin
+   for(genvar i=0; i<page_table_depth_p-1; i++) begin : ppn
       assign partial_ppn[i] = ppn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
       assign partial_pte_misaligned[i] = (level_cntr > i)? |dcache_data.ppn[partial_vpn_width_lp*i +: partial_vpn_width_lp] : 1'b0;
       assign writeback_ppn[partial_vpn_width_lp*i +: partial_vpn_width_lp] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
     end
     assign writeback_ppn[ptag_width_p-1 : (page_table_depth_p-1)*partial_vpn_width_lp] = ppn_r[ptag_width_p-1 : (page_table_depth_p-1)*partial_vpn_width_lp];
-  endgenerate
   
   assign dcache_pkt_o           = dcache_pkt;
   assign dcache_ptag_o          = ppn_r;
@@ -127,7 +119,7 @@ module bp_be_ptw
   
   assign ppn_en                 = start | (busy_o & dcache_v_r);
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn[0+:ptag_width_p];
-  assign vpn_n                  = tlb_miss_vaddr[vaddr_width_p-1-:vtag_width_p];
+  assign vpn_n                  = ptw_miss_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   
   wire pte_invalid              = (~dcache_data.v) | (~dcache_data.r & dcache_data.w);
   wire leaf_not_found           = (level_cntr == '0) & (~pte_is_leaf);
