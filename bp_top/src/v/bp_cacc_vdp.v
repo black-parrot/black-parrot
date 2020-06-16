@@ -13,7 +13,6 @@ module bp_cacc_vdp
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, cache)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    , localparam stat_info_width_lp = `bp_cache_stat_info_width(acache_assoc_p)
     )
    (
     input                                     clk_i
@@ -83,7 +82,7 @@ module bp_cacc_vdp
   bp_cache_tag_mem_pkt_s tag_mem_pkt_i;
   logic [ptag_width_p-1:0] tag_mem_o;
   bp_cache_stat_mem_pkt_s stat_mem_pkt_i;
-  logic [stat_info_width_lp-1:0] stat_mem_o;
+  logic [cache_stat_info_width_lp-1:0] stat_mem_o;
   bp_cache_req_metadata_s cache_req_metadata_o; 
    
 bp_pma

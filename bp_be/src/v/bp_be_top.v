@@ -23,7 +23,6 @@ module bp_be_top
    
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
-   , localparam stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)
   )
   (input                                     clk_i
    , input                                   reset_i
@@ -74,7 +73,7 @@ module bp_be_top
    // stat_mem
    , input stat_mem_pkt_v_i
    , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-   , output logic [stat_info_width_lp-1:0] stat_mem_o
+   , output logic [dcache_stat_info_width_lp-1:0] stat_mem_o
    , output logic  stat_mem_pkt_yumi_o
 
    , input                                   credits_full_i
