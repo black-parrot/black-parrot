@@ -136,6 +136,7 @@ bp_be_comp_stage_reg_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
 bp_be_ptw_miss_pkt_s ptw_miss_pkt;
 bp_be_ptw_fill_pkt_s ptw_fill_pkt;
+bp_be_trans_info_s   trans_info_lo;
 assign ptw_fill_pkt_o = ptw_fill_pkt;
 
 logic pipe_mem_dtlb_miss_lo;
@@ -360,11 +361,7 @@ bp_be_pipe_mul
      ,.data_o(pipe_mem_data_lo)
      ,.vaddr_o(pipe_mem_vaddr_lo)
 
-     ,.priv_mode_i(priv_mode_lo)
-     ,.satp_ppn_i(satp_ppn_lo)
-     ,.translation_en_i(translation_en_lo)
-     ,.mstatus_sum_i(mstatus_sum_lo)
-     ,.mstatus_mxr_i(mstatus_mxr_lo)
+     ,.trans_info_i(trans_info_lo)
      );
 
   logic pipe_long_ready_lo;
@@ -410,11 +407,7 @@ bp_be_pipe_mul
      ,.miss_v_o(pipe_sys_miss_v_lo)
      ,.data_o(pipe_sys_data_lo)
 
-     ,.priv_mode_o(priv_mode_lo)
-     ,.satp_ppn_o(satp_ppn_lo)
-     ,.translation_en_o(translation_en_lo)
-     ,.mstatus_sum_o(mstatus_sum_lo)
-     ,.mstatus_mxr_o(mstatus_mxr_lo)
+     ,.trans_info_o(trans_info_lo)
      );
 
   // Floating point pipe: 4 cycle latency

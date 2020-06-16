@@ -25,6 +25,7 @@ module bp_be_pipe_sys
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp     = `bp_be_trap_pkt_width(vaddr_width_p)
+   , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
    )
   (input                                  clk_i
    , input                                reset_i
@@ -58,17 +59,13 @@ module bp_be_pipe_sys
    , input [commit_pkt_width_lp-1:0]      commit_pkt_i
    , output [trap_pkt_width_lp-1:0]       trap_pkt_o
 
+   , input                                interrupt_v_i
+   , output                               interrupt_ready_o
    , input                                timer_irq_i
    , input                                software_irq_i
    , input                                external_irq_i
-   , output                               interrupt_ready_o
-   , input                                interrupt_v_i
 
-   , output [rv64_priv_width_gp-1:0]      priv_mode_o
-   , output [ptag_width_p-1:0]            satp_ppn_o
-   , output                               translation_en_o
-   , output                               mstatus_sum_o
-   , output                               mstatus_mxr_o
+   , output [trans_info_width_lp-1:0]     trans_info_o
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -82,6 +79,7 @@ bp_be_ptw_miss_pkt_s ptw_miss_pkt;
 bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 bp_be_commit_pkt_s commit_pkt;
 bp_be_trap_pkt_s trap_pkt;
+bp_be_trans_info_s trans_info;
 
 assign decode = decode_i;
 assign instr = instr_i;
@@ -90,6 +88,7 @@ assign ptw_miss_pkt_o = ptw_miss_pkt;
 assign ptw_fill_pkt = ptw_fill_pkt_i;
 assign commit_pkt = commit_pkt_i;
 assign trap_pkt_o = trap_pkt;
+assign trans_info_o = trans_info;
 
 wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
 
@@ -200,12 +199,7 @@ always_comb
      ,.interrupt_v_i(interrupt_v_i)
   
      ,.trap_pkt_o(trap_pkt)
-
-     ,.priv_mode_o(priv_mode_o)
-     ,.satp_ppn_o(satp_ppn_o)
-     ,.translation_en_o(translation_en_o)
-     ,.mstatus_sum_o(mstatus_sum_o)
-     ,.mstatus_mxr_o(mstatus_mxr_o)
+     ,.trans_info_o(trans_info)
      );
 
   assign exc_v_o          = trap_pkt.exception;
