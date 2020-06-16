@@ -128,7 +128,7 @@ always_ff @(negedge clk_i)
       pop();
 
     if (io_cmd_v_i & (domain_id != '0))
-      $display("Warning: Accesing illegal domain %0h. Sending loopback message!", domain_id);
+      $display("%t Warning: Accesing illegal domain %0h. Sending loopback message!", $time, domain_id);
     for (integer i = 0; i < num_core_p; i++)
       begin
         // PASS when returned value in finish packet is zero
