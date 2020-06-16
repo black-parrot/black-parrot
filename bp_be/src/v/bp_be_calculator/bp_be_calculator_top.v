@@ -21,7 +21,6 @@ module bp_be_calculator_top
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
-    , localparam stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)
 
    // Default parameters
    , parameter fp_en_p                  = 0
@@ -95,7 +94,7 @@ module bp_be_calculator_top
   , input stat_mem_pkt_v_i
   , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
   , output logic stat_mem_pkt_yumi_o
-  , output logic [stat_info_width_lp-1:0] stat_mem_o
+  , output logic [dcache_stat_info_width_lp-1:0] stat_mem_o
   );
 
 // Declare parameterizable structs

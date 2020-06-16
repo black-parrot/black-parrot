@@ -21,9 +21,6 @@ module bp_core_minimal
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-
-    , localparam dcache_stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)
-    , localparam icache_stat_info_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
     )
    (
     input          clk_i

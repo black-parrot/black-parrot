@@ -157,6 +157,7 @@ typedef enum logic [1:0] {
   , localparam ``cache_name_mp``_req_metadata_width_lp = `bp_cache_req_metadata_width(ways_mp)                           \
   , localparam ``cache_name_mp``_data_mem_pkt_width_lp=`bp_cache_data_mem_pkt_width(sets_mp,ways_mp,block_data_width_mp) \
   , localparam ``cache_name_mp``_tag_mem_pkt_width_lp=`bp_cache_tag_mem_pkt_width(sets_mp,ways_mp,tag_width_mp)          \
-  , localparam ``cache_name_mp``_stat_mem_pkt_width_lp=`bp_cache_stat_mem_pkt_width(sets_mp,ways_mp)
+  , localparam ``cache_name_mp``_stat_mem_pkt_width_lp=`bp_cache_stat_mem_pkt_width(sets_mp,ways_mp)                     \
+  , localparam ``cache_name_mp``_stat_info_width_lp=`bp_cache_stat_info_width(ways_mp)
 
 `endif

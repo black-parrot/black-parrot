@@ -62,9 +62,6 @@ module bp_be_dcache_lce
     , localparam index_width_lp = `BSG_SAFE_CLOG2(dcache_sets_p)
     , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
-
-    , localparam stat_info_width_lp=
-      `bp_cache_stat_info_width(dcache_assoc_p)
   )
   (
     input clk_i
@@ -96,7 +93,7 @@ module bp_be_dcache_lce
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , input stat_mem_pkt_yumi_i
-    , input [stat_info_width_lp-1:0] stat_mem_i
+    , input [dcache_stat_info_width_lp-1:0] stat_mem_i
 
     // LCE-CCE interface
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
