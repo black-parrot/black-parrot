@@ -109,7 +109,6 @@ module bp_be_dcache
 
     , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dword_width_p)
     , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
-    , localparam stat_info_width_lp=`bp_cache_stat_info_width(dcache_assoc_p)
   )
   (
     input clk_i
@@ -160,7 +159,7 @@ module bp_be_dcache
     , input stat_mem_pkt_v_i
     , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
     , output logic stat_mem_pkt_yumi_o
-    , output logic [stat_info_width_lp-1:0] stat_mem_o
+    , output logic [dcache_stat_info_width_lp-1:0] stat_mem_o
 
   );
 
@@ -638,8 +637,6 @@ module bp_be_dcache
   // stat_mem {lru, dirty}
   // It has (ways_p-1) bits to form pseudo-LRU tree, and ways_p bits for dirty
   // bit for each block in set.
-  `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
-
   logic stat_mem_v_li;
   logic stat_mem_w_li;
   logic [index_width_lp-1:0] stat_mem_addr_li;
@@ -648,7 +645,7 @@ module bp_be_dcache
   bp_dcache_stat_info_s stat_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit
-    #(.width_p(stat_info_width_lp)
+    #(.width_p(dcache_stat_info_width_lp)
       ,.els_p(dcache_sets_p)
       )
     stat_mem
@@ -1137,17 +1134,17 @@ module bp_be_dcache
       dirty_mask_v_li = 1'b1;
       case (stat_mem_pkt.opcode)
         e_cache_stat_mem_set_clear: begin
-          stat_mem_data_li = {(stat_info_width_lp){1'b0}};
-          stat_mem_mask_li = {(stat_info_width_lp){1'b1}};
+          stat_mem_data_li = {(dcache_stat_info_width_lp){1'b0}};
+          stat_mem_mask_li = {(dcache_stat_info_width_lp){1'b1}};
         end
         e_cache_stat_mem_clear_dirty: begin
-          stat_mem_data_li = {(stat_info_width_lp){1'b0}};
+          stat_mem_data_li = {(dcache_stat_info_width_lp){1'b0}};
           stat_mem_mask_li.lru = {(dcache_assoc_p-1){1'b0}};
           stat_mem_mask_li.dirty = dirty_mask_lo;
         end
         default: begin
-          stat_mem_data_li = {(stat_info_width_lp){1'b0}};
-          stat_mem_mask_li = {(stat_info_width_lp){1'b0}};
+          stat_mem_data_li = {(dcache_stat_info_width_lp){1'b0}};
+          stat_mem_mask_li = {(dcache_stat_info_width_lp){1'b0}};
         end
       endcase
     end

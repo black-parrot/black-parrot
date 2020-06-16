@@ -39,7 +39,6 @@ module wrapper
 
    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dword_width_p)
    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
-   , localparam stat_info_width_lp=`bp_cache_stat_info_width(dcache_assoc_p)
    )
    ( input                                             clk_i
    , input                                             reset_i
@@ -92,7 +91,7 @@ module wrapper
    logic [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_lo;
    logic [dcache_block_width_p-1:0] data_mem_lo;
    logic [ptag_width_lp-1:0] tag_mem_lo;
-   logic [stat_info_width_lp-1:0] stat_mem_lo;
+   logic [dcache_stat_info_width_lp-1:0] stat_mem_lo;
 
    // Credits
    logic credits_full_lo, credits_empty_lo;

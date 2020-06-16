@@ -13,8 +13,7 @@ module bp_uce
 
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
-
-    , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     , localparam bank_width_lp = block_width_p / assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
@@ -28,12 +27,6 @@ module bp_uce
     , localparam fill_size_in_bank_lp = fill_width_p / bank_width_lp
     , localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp)
     , localparam bank_sub_offset_width_lp = `BSG_SAFE_CLOG2(fill_size_in_bank_lp)
-
-    , localparam cache_req_width_lp = `bp_cache_req_width(dword_width_p, paddr_width_p)
-    , localparam cache_req_metadata_width_lp = `bp_cache_req_metadata_width(assoc_p)
-    , localparam cache_tag_mem_pkt_width_lp = `bp_cache_tag_mem_pkt_width(sets_p, assoc_p, ptag_width_p)
-    , localparam cache_data_mem_pkt_width_lp = `bp_cache_data_mem_pkt_width(sets_p, assoc_p, block_width_p, fill_width_p)
-    , localparam cache_stat_mem_pkt_width_lp = `bp_cache_stat_mem_pkt_width(sets_p, assoc_p)
 
     // Fill size parameterisations -
     , localparam bp_mem_msg_size_e block_msg_size_lp = (fill_width_p == 512)
@@ -72,7 +65,7 @@ module bp_uce
     , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , output logic                                   stat_mem_pkt_v_o
     , input                                          stat_mem_pkt_yumi_i
-    , input [stat_info_width_lp-1:0]                 stat_mem_i
+    , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
     , output logic                                   credits_full_o
     , output logic                                   credits_empty_o
@@ -88,7 +81,6 @@ module bp_uce
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
-  `declare_bp_cache_stat_info_s(assoc_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_o(bp_cache_tag_mem_pkt_s, tag_mem_pkt);

@@ -23,7 +23,6 @@ module bp_be_top
 
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
-   , localparam stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)
   )
   (input                                     clk_i
    , input                                   reset_i
@@ -51,14 +50,13 @@ module bp_be_top
 
    // D$-LCE Interface
    // signals to LCE
-   , output logic [dcache_req_width_lp-1:0]      cache_req_o
-   , output logic                                cache_req_v_o
-   , input                                       cache_req_ready_i
+   , output logic [dcache_req_width_lp-1:0]          cache_req_o
+   , output logic                                    cache_req_v_o
+   , input                                           cache_req_ready_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
-   , output logic                                cache_req_metadata_v_o
-
-   , input cache_req_complete_i
-   , input cache_req_critical_i
+   , output logic                                    cache_req_metadata_v_o
+   , input                                           cache_req_critical_i
+   , input                                           cache_req_complete_i
 
    // data_mem
    , input data_mem_pkt_v_i
@@ -75,7 +73,7 @@ module bp_be_top
    // stat_mem
    , input stat_mem_pkt_v_i
    , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-   , output logic [stat_info_width_lp-1:0] stat_mem_o
+   , output logic [dcache_stat_info_width_lp-1:0] stat_mem_o
    , output logic  stat_mem_pkt_yumi_o
 
    , input                                   credits_full_i
@@ -243,6 +241,7 @@ bp_be_calculator_top
    ,.cache_req_v_o(cache_req_v_o)
    ,.cache_req_ready_i(cache_req_ready_i)
    ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+   ,.cache_req_critical_i(cache_req_critical_i)
    ,.cache_req_complete_i(cache_req_complete_i)
 
    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

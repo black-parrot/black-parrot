@@ -22,9 +22,6 @@ module bp_core
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
-
-    , localparam icache_stat_info_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
-    , localparam dcache_stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)
    )
    (
     input                                          clk_i

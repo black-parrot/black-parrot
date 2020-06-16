@@ -38,8 +38,6 @@ module bp_lce_cmd
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
-    , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
-
     // width for counter used during initiliazation and for sync messages
     , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(sets_p)+1)
     , localparam cnt_max_val_lp = ((2**cnt_width_lp)-1)
@@ -87,7 +85,7 @@ module bp_lce_cmd
     , output logic                                   stat_mem_pkt_v_o
     , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , input                                          stat_mem_pkt_yumi_i
-    , input [stat_info_width_lp-1:0]                 stat_mem_i
+    , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
@@ -120,7 +118,6 @@ module bp_lce_cmd
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
-  `declare_bp_cache_stat_info_s(assoc_p, cache);
 
   // FSM states
   typedef enum logic [3:0] {
