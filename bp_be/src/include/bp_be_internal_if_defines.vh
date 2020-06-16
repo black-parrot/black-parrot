@@ -171,7 +171,17 @@
     logic [vaddr_width_mp-1:0] pc;                                                                 \
     logic [vaddr_width_mp-1:0] vaddr;                                                              \
     logic [dword_width_p-1:0]  entry;                                                              \
-  }  bp_be_ptw_fill_pkt_s;
+  }  bp_be_ptw_fill_pkt_s;                                                                         \
+                                                                                                   \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic [rv64_priv_width_gp-1:0] priv_mode;                                                      \
+    logic [ptag_width_p-1:0]       satp_ppn;                                                       \
+    logic                          translation_en;                                                 \
+    logic                          mstatus_sum;                                                    \
+    logic                          mstatus_mxr;                                                    \
+  }  bp_be_trans_info_s;
+
 
 /* Declare width macros so that clients can use structs in ports before struct declaration
  * Each of these macros needs to be kept in sync with the struct definition. The computation
@@ -241,6 +251,9 @@
    + 2*vaddr_width_mp                                                                              \
    + dword_width_p                                                                                 \
    )
+
+`define bp_be_trans_info_width(ptag_width_mp) \
+  (rv64_priv_width_gp+ptag_width_mp+3)
 
 `endif
 
