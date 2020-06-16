@@ -90,6 +90,9 @@ wire fencei_v     = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_ic
 
 bp_fe_tlb_entry_s itlb_r_entry;
 logic itlb_r_v_lo;
+logic [24:0] fill_vtag_sigext, fetch_vtag_sigext;
+assign fill_vtag_sigext = {25{mem_cmd_cast_i.operands.fill.vtag[26]}};
+assign fetch_vtag_sigext = {25{mem_cmd_cast_i.operands.fetch.vaddr.tag[26]}};
 bp_tlb
  #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
  itlb
@@ -100,7 +103,7 @@ bp_tlb
          
    ,.v_i(fetch_v | itlb_fill_v)
    ,.w_i(itlb_fill_v)
-   ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr.tag)
+   ,.etag_i(itlb_fill_v ? {fill_vtag_sigext, mem_cmd_cast_i.operands.fill.vtag} : {fetch_vtag_sigext, mem_cmd_cast_i.operands.fetch.vaddr.tag})
    ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
      
    ,.v_o(itlb_r_v_lo)

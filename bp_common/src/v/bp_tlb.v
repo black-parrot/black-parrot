@@ -2,6 +2,7 @@
 module bp_tlb
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
+  import bp_common_rv64_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    ,parameter tlb_els_p       = "inv"
@@ -70,7 +71,7 @@ bsg_cam_1r1w_sync
    ,.r_v_o(r_v_lo)
    );
 
-assign passthrough_entry = '{ptag: {etag[vtag_width_p], vtag_r}, default: '0};
+assign passthrough_entry = '{ptag: {etag_i[vtag_width_p], vtag_r}, default: '0};
 assign entry_o    = translation_en_i ? r_entry : passthrough_entry;
 assign v_o        = translation_en_i ? r_v_r & r_v_lo : r_v_r;
 assign miss_v_o   = r_v_r & ~v_o;

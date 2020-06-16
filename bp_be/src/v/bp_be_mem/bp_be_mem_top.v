@@ -30,7 +30,7 @@ module bp_be_mem_top
    , localparam word_offset_width_lp   = `BSG_SAFE_CLOG2(block_size_in_words_lp)
    , localparam block_offset_width_lp  = (word_offset_width_lp + byte_offset_width_lp)
    , localparam index_width_lp         = `BSG_SAFE_CLOG2(dcache_sets_p)
-   , localparam page_offset_width_lp   = (block_offset_width_lp + index_width_lp)
+   , localparam page_offset_width_lp   = bp_page_offset_width_gp
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
    
    , localparam stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)   
@@ -41,9 +41,10 @@ module bp_be_mem_top
    , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p)
 
    // MMU
-   , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
+   , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width
    , localparam csr_cmd_width_lp  = `bp_be_csr_cmd_width
    , localparam mem_resp_width_lp = `bp_be_mem_resp_width(vaddr_width_p)
+   , localparam etag_width_lp     =  rv64_eaddr_width_gp - bp_page_offset_width_gp
 
    // VM
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
@@ -120,7 +121,7 @@ module bp_be_mem_top
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 // Not sure if this is right.
-`declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
+`declare_bp_be_mmu_structs
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
   bp_dcache_req_s cache_req_cast_o;
@@ -132,7 +133,6 @@ bp_cfg_bus_s           cfg_bus;
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_csr_cmd_s        csr_cmd;
 bp_be_mem_resp_s       mem_resp;
-bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 bp_be_commit_pkt_s     commit_pkt;
 bp_be_trap_pkt_s       trap_pkt;
 
@@ -149,9 +149,9 @@ wire unused0 = mem_resp_ready_i;
 
 /* Internal connections */
 /* TLB ports */
-logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo;
-logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag;
-bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry;
+logic                     dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo;
+logic [etag_width_lp-1:0] dtlb_r_etag, dtlb_w_etag;
+bp_pte_entry_leaf_s       dtlb_r_entry, dtlb_w_entry;
 
 /* PTW ports */
 logic [ptag_width_p-1:0]  ptw_dcache_ptag;
@@ -193,7 +193,7 @@ logic fencei_v_r, fencei_v_rr;
 logic itlb_not_dtlb_resp;
 logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
 logic is_store_r, is_store_rr;
-bp_be_mmu_vaddr_s vaddr_mem3, fault_vaddr;
+logic [vaddr_width_p-1:0] vaddr_mem3, fault_vaddr;
 logic [vaddr_width_p-1:0] fault_pc;
 
 wire itlb_fill_cmd_v = itlb_fill_lo;
@@ -218,7 +218,7 @@ bsg_dff_chain
  vaddr_pipe
   (.clk_i(clk_i)
 
-   ,.data_i(mmu_cmd.vaddr)
+   ,.data_i(mmu_cmd.eaddr[0+:vaddr_width_p])
    ,.data_o(vaddr_mem3)
    );
 
@@ -311,7 +311,7 @@ bp_tlb
 
    ,.v_i(dtlb_r_v | dtlb_w_v)
    ,.w_i(dtlb_w_v)
-   ,.vtag_i((dtlb_w_v)? dtlb_w_vtag : dtlb_r_vtag)
+   ,.etag_i((dtlb_w_v)? dtlb_w_etag : dtlb_r_etag)
    ,.entry_i(dtlb_w_entry)
 
    ,.v_o(dtlb_r_v_lo)
@@ -464,9 +464,10 @@ end
 wire data_priv_page_fault = ((priv_mode_lo == `PRIV_MODE_S) & ~mstatus_sum_lo & dtlb_r_entry.u)
                               | ((priv_mode_lo == `PRIV_MODE_U) & ~dtlb_r_entry.u);
 wire data_write_page_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
+wire eaddr_page_fault = (mmu_cmd.eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {25{mmu_cmd.eaddr[vaddr_width_p-1]}});
 
-assign load_page_fault_v  = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & ~is_store_r & data_priv_page_fault;
-assign store_page_fault_v = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_store_r & (data_priv_page_fault | data_write_page_fault);
+assign load_page_fault_v  = (mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & ~is_store_r & data_priv_page_fault) | (mmu_cmd_v_r & eaddr_page_fault);
+assign store_page_fault_v = (mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_store_r & (data_priv_page_fault | data_write_page_fault)) | (mmu_cmd_v_r & eaddr_page_fault);
 
 // Decode cmd type
 assign dcache_cmd_v    = mmu_cmd_v_i;
@@ -488,7 +489,7 @@ always_comb
     else begin
       // We assume that mem op == dcache op
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
-      dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
+      dcache_pkt.page_offset = mmu_cmd.eaddr[bp_page_offset_width_gp-1:0];
       dcache_pkt.data        = mmu_cmd.data;
     end
 end
@@ -504,15 +505,17 @@ assign load_access_fault_v  = load_op_tl_lo & (mode_fault_v | did_fault_v | sac_
 assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v | sac_fault_v);
 
 // D-TLB connections
+// We use the tag generated from the effective address for reads.
+// For writes, we zero extend the vtag generated from the PTW
 assign dtlb_r_v     = dcache_cmd_v & ~fencei_cmd_v;
-assign dtlb_r_vtag  = mmu_cmd.vaddr.tag;
+assign dtlb_r_etag  = mmu_cmd.eaddr[rv64_eaddr_width_gp-1:bp_page_offset_width_gp];
 assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_not_dtlb_resp;
-assign dtlb_w_vtag  = ptw_tlb_w_vtag;
+assign dtlb_w_etag  = {25'h0, ptw_tlb_w_vtag};
 assign dtlb_w_entry = ptw_tlb_w_entry;
 
 // PTW connections
 assign ptw_tlb_miss_v    = itlb_fill_cmd_v | dtlb_fill_cmd_v;
-assign ptw_tlb_miss_vtag = vaddr_mem3.tag;
+assign ptw_tlb_miss_vtag = vaddr_mem3[vaddr_width_p-1:bp_page_offset_width_gp];
 assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
 assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_rr;
 

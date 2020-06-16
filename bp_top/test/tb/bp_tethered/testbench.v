@@ -495,12 +495,12 @@ bind bp_be_top
 
        ,.itlb_clear_i(fe.mem.itlb.flush_i)
        ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)
-       ,.itlb_vtag_i(fe.mem.itlb.vtag_i)
+       ,.itlb_vtag_i(fe.mem.itlb.etag_i[0+:vtag_width_p])
        ,.itlb_entry_i(fe.mem.itlb.entry_i)
 
        ,.dtlb_clear_i(be.be_mem.dtlb.flush_i)
        ,.dtlb_fill_v_i(be.be_mem.dtlb.v_i & be.be_mem.dtlb.w_i)
-       ,.dtlb_vtag_i(be.be_mem.dtlb.vtag_i)
+       ,.dtlb_vtag_i(be.be_mem.dtlb.etag_i[0+:vtag_width_p])
        ,.dtlb_entry_i(be.be_mem.dtlb.entry_i)
        );
 
