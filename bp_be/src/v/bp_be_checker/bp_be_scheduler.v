@@ -189,25 +189,22 @@ assign fe_queue_deq_o  = ~cache_miss_v_i & cmt_v_i;
 logic [dword_width_p-1:0] irf_rs1;
 logic [dword_width_p-1:0] irf_rs2;
 bp_be_regfile
-#(.bp_params_p(bp_params_p))
+#(.bp_params_p(bp_params_p), .read_ports_p(2))
  int_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-
-   ,.cfg_bus_i(cfg_bus_i)
-   ,.cfg_data_o(cfg_irf_data_o)
 
    ,.rd_w_v_i(wb_pkt.rd_w_v)
    ,.rd_addr_i(wb_pkt.rd_addr)
    ,.rd_data_i(wb_pkt.rd_data)
 
-   ,.rs1_r_v_i(issue_v & issue_pkt.irs1_v)
-   ,.rs1_addr_i(issue_pkt.instr.t.rtype.rs1_addr)
-   ,.rs1_data_o(irf_rs1)
-
-   ,.rs2_r_v_i(issue_v & issue_pkt.irs2_v)
-   ,.rs2_addr_i(issue_pkt.instr.t.rtype.rs2_addr)
-   ,.rs2_data_o(irf_rs2)
+   ,.rs_r_v_i({issue_v & issue_pkt.irs2_v
+               ,issue_v & issue_pkt.irs1_v
+               })
+   ,.rs_addr_i({issue_pkt.instr.t.rtype.rs2_addr
+                ,issue_pkt.instr.t.rtype.rs1_addr
+                })
+   ,.rs_data_o({irf_rs2, irf_rs1})
    );
 
 // Decode the dispatched instruction
