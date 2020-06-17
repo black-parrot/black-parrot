@@ -288,7 +288,7 @@ module bp_be_dcache
 
   assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
    
-  always_ff @(posedge nclk) begin
+  always_ff @(negedge clk_i) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
     end
@@ -404,7 +404,7 @@ module bp_be_dcache
   logic [dcache_assoc_p-1:0]        word_sigext;
   logic [dcache_assoc_p-1:0]        half_sigext;
   logic [dcache_assoc_p-1:0]        byte_sigext;
-  logic [dcache_assoc_p-1:0] [dword_width_p-1:0] data_o_tl;
+  logic [dcache_assoc_p-1:0] [bank_width_lp-1:0] data_o_tl;
   for (genvar i = 0; i < dcache_assoc_p; i++) begin: data_byte_mux
      if (dword_width_p == 64) begin: byte_mux
 
@@ -490,14 +490,13 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] store_hit_way_tv;
   logic load_hit_tv;
   logic store_hit_tv;
-  logic [dcache_assoc_p-1:0] [dword_width_p-1:0] data_o_tv_r;
   
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~fencei_req;
 
   assign store_op_tl_o = v_tl_r & ~tlb_miss_i & store_op_tl_r;
   assign load_op_tl_o  = v_tl_r & ~tlb_miss_i & load_op_tl_r;
 
-  always_ff @(posedge nclk) begin
+  always_ff @(negedge clk_i) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
       tag_mem_data_r <= '0;
@@ -522,7 +521,6 @@ module bp_be_dcache
       store_hit_tv_r <= '0;
       invalid_tv_r <= '0;
       addr_word_offset_dec_tv_r <= '0;
-      data_o_tv_r <= '0;
     end
     else begin
       v_tv_r <= tv_we;
@@ -549,11 +547,10 @@ module bp_be_dcache
         addr_tag_tv_r <= addr_tag_tl;
         invalid_tv_r <= invalid_tl;
         addr_word_offset_dec_tv_r <= addr_word_offset_dec_tl;
-	data_o_tv_r <= data_o_tl;
       end
 
       if (tv_we & load_op_tl_r) begin
-        ld_data_tv_r <= data_mem_data_lo;
+        ld_data_tv_r <= data_o_tl;
       end
 
       if (tv_we & store_op_tl_r) begin
@@ -938,12 +935,58 @@ module bp_be_dcache
     ,.data_o(ld_data_way_picked)
   );
 
+  logic [31:0] w_data_word_selected;
+  logic [15:0] w_data_half_selected;
+  logic [7:0]  w_data_byte_selected;
+  logic        w_word_sigext;
+  logic        w_half_sigext;
+  logic        w_byte_sigext;
+  logic [dword_width_p-1:0] w_data_o;
+  bsg_mux #(
+         .width_p(32)
+         ,.els_p(2)
+       ) wword_mux (
+         .data_i(bypass_data_lo)
+         ,.sel_i(paddr_tv_r[2])
+         ,.data_o(w_data_word_selected)
+       );
+    
+  bsg_mux #(
+         .width_p(16)
+         ,.els_p(4)
+       ) whalf_mux (
+         .data_i(bypass_data_lo)
+         ,.sel_i(paddr_tv_r[2:1])
+         ,.data_o(w_data_half_selected)
+       );
+
+  bsg_mux #(
+         .width_p(8)
+         ,.els_p(8)
+       ) wbyte_mux (
+         .data_i(bypass_data_lo)
+         ,.sel_i(paddr_tv_r[2:0])
+         ,.data_o(w_data_byte_selected)
+       );
+
+  assign w_word_sigext = signed_op_tv_r & w_data_word_selected[31]; 
+  assign w_half_sigext = signed_op_tv_r & w_data_half_selected[15]; 
+  assign w_byte_sigext = signed_op_tv_r & w_data_byte_selected[7]; 
+
+  assign w_data_o = double_op_tv_r
+                    ? bypass_data_lo
+                    : (word_op_tv_r
+                       ? {{32{u_word_sigext}}, w_data_word_selected}
+                       : (half_op_tv_r
+                          ? {{48{u_half_sigext}}, w_data_half_selected}
+                          : {{56{u_byte_sigext}}, w_data_byte_selected}));
+
   bsg_mux_segmented #(
     .segments_p(bypass_data_mask_width_lp)
     ,.segment_width_p(8)
   ) bypass_mux_segmented (
     .data0_i(ld_data_way_picked)
-    ,.data1_i(bypass_data_lo)
+    ,.data1_i(w_data_o)
     ,.sel_i(bypass_mask_lo)
     ,.data_o(bypass_data_masked)
   );
@@ -958,7 +1001,7 @@ module bp_be_dcache
   bsg_mux #(
          .width_p(32)
          ,.els_p(2)
-       ) word_mux (
+       ) uword_mux (
          .data_i(uncached_load_data_r)
          ,.sel_i(paddr_tv_r[2])
          ,.data_o(u_data_word_selected)
@@ -967,7 +1010,7 @@ module bp_be_dcache
   bsg_mux #(
          .width_p(16)
          ,.els_p(4)
-       ) half_mux (
+       ) uhalf_mux (
          .data_i(uncached_load_data_r)
          ,.sel_i(paddr_tv_r[2:1])
          ,.data_o(u_data_half_selected)
@@ -976,7 +1019,7 @@ module bp_be_dcache
   bsg_mux #(
          .width_p(8)
          ,.els_p(8)
-       ) byte_mux (
+       ) ubyte_mux (
          .data_i(uncached_load_data_r)
          ,.sel_i(paddr_tv_r[2:0])
          ,.data_o(u_data_byte_selected)
