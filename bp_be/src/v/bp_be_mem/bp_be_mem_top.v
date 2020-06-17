@@ -184,6 +184,7 @@ logic load_access_fault_v, load_access_fault_mem3, store_access_fault_v, store_a
 logic load_page_fault_v, load_page_fault_mem3, store_page_fault_v, store_page_fault_mem3;
 
 /* Control signals */
+logic nclk;
 logic dcache_cmd_v;
 logic fencei_cmd_v;
 logic fencei_v_r, fencei_v_rr;
@@ -195,6 +196,9 @@ logic [vaddr_width_p-1:0] fault_pc;
 
 wire itlb_fill_cmd_v = itlb_fill_lo;
 wire dtlb_fill_cmd_v = dtlb_miss_r;
+
+assign nclk = ~clk_i;
+   
 
 bsg_dff_en
  #(.width_p(2*vaddr_width_p))
@@ -301,7 +305,7 @@ bp_tlb
     ,.tlb_els_p(dtlb_els_p)
   )
   dtlb
-  (.clk_i(clk_i)
+  (.clk_i(nclk)
    ,.reset_i(reset_i)
    ,.flush_i(trap_pkt.sfence)
    ,.translation_en_i(translation_en_lo)
@@ -414,8 +418,50 @@ bp_be_dcache
     ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
     );
 
+   logic ndtlb_miss_r;
+   logic nmmu_cmd_v_r;
+   logic nmmu_cmd_v_rr;
+   logic nis_store_r;
+   logic nis_store_rr;
+   logic nfencei_v_r;
+   logic nfencei_v_rr;
+   logic nload_page_fault_mem3;
+   logic nstore_page_fault_mem3;
+   logic nload_access_fault_mem3;
+   logic nstore_access_fault_mem3;
+   
+
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
 // We latch the dcache miss signal
+always_ff @(posedge nclk) begin
+  if(reset_i) begin
+    ndtlb_miss_r  <= '0;
+    nmmu_cmd_v_r  <= '0;
+    nmmu_cmd_v_rr <= '0;
+    nis_store_r   <= '0;
+    nis_store_rr  <= '0;
+    nfencei_v_r   <= '0;
+    nfencei_v_rr  <= '0;
+    nload_page_fault_mem3    <= '0;
+    nstore_page_fault_mem3   <= '0;
+    nload_access_fault_mem3  <= '0;
+    nstore_access_fault_mem3 <= '0;
+  end
+  else begin
+    ndtlb_miss_r  <= dtlb_miss_v & ~chk_poison_ex_i;
+    nmmu_cmd_v_r  <= mmu_cmd_v_i;
+    nmmu_cmd_v_rr <= mmu_cmd_v_r & ~chk_poison_ex_i;
+    nis_store_r   <= is_store;
+    nis_store_rr  <= is_store_r & ~chk_poison_ex_i;
+    nfencei_v_r   <= fencei_cmd_v;
+    nfencei_v_rr  <= fencei_v_r & ~chk_poison_ex_i;
+    nload_page_fault_mem3    <= load_page_fault_v & ~chk_poison_ex_i;
+    nstore_page_fault_mem3   <= store_page_fault_v & ~chk_poison_ex_i;
+    nload_access_fault_mem3  <= load_access_fault_v & ~chk_poison_ex_i;
+    nstore_access_fault_mem3 <= store_access_fault_v & ~chk_poison_ex_i;
+  end
+end // always_ff @
+
 always_ff @(posedge clk_i) begin
   if(reset_i) begin
     dtlb_miss_r  <= '0;
@@ -431,17 +477,17 @@ always_ff @(posedge clk_i) begin
     store_access_fault_mem3 <= '0;
   end
   else begin
-    dtlb_miss_r  <= dtlb_miss_v & ~chk_poison_ex_i;
-    mmu_cmd_v_r  <= mmu_cmd_v_i;
-    mmu_cmd_v_rr <= mmu_cmd_v_r & ~chk_poison_ex_i;
-    is_store_r   <= is_store;
-    is_store_rr  <= is_store_r & ~chk_poison_ex_i;
-    fencei_v_r   <= fencei_cmd_v;
-    fencei_v_rr  <= fencei_v_r & ~chk_poison_ex_i;
-    load_page_fault_mem3    <= load_page_fault_v & ~chk_poison_ex_i;
-    store_page_fault_mem3   <= store_page_fault_v & ~chk_poison_ex_i;
-    load_access_fault_mem3  <= load_access_fault_v & ~chk_poison_ex_i;
-    store_access_fault_mem3 <= store_access_fault_v & ~chk_poison_ex_i;
+    dtlb_miss_r  <= ndtlb_miss_r & ~chk_poison_ex_i;
+    mmu_cmd_v_r  <= nmmu_cmd_v_r;
+    mmu_cmd_v_rr <= nmmu_cmd_v_rr & ~chk_poison_ex_i;
+    is_store_r   <= nis_store_r;
+    is_store_rr  <= nis_store_rr & ~chk_poison_ex_i;
+    fencei_v_r   <= nfencei_v_r;
+    fencei_v_rr  <= nfencei_v_rr & ~chk_poison_ex_i;
+    load_page_fault_mem3    <= nload_page_fault_mem3 & ~chk_poison_ex_i;
+    store_page_fault_mem3   <= nstore_page_fault_mem3 & ~chk_poison_ex_i;
+    load_access_fault_mem3  <= nload_access_fault_mem3 & ~chk_poison_ex_i;
+    store_access_fault_mem3 <= nstore_access_fault_mem3 & ~chk_poison_ex_i;
   end
 end
 
