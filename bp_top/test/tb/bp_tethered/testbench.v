@@ -3,7 +3,7 @@
   * testbench.v
   *
   */
-  
+
 `include "bsg_noc_links.vh"
 
 module testbench
@@ -139,12 +139,12 @@ bp_mem
    ,.mem_zero_p(mem_zero_p)
    ,.mem_file_p(mem_file_p)
    ,.mem_offset_p(mem_offset_p)
- 
+
    ,.use_max_latency_p(use_max_latency_p)
    ,.use_random_latency_p(use_random_latency_p)
    ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
    ,.max_latency_p(max_latency_p)
- 
+
    ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
    ,.dram_cfg_p(dram_cfg_p)
    ,.dram_sys_cfg_p(dram_sys_cfg_p)
@@ -153,11 +153,11 @@ bp_mem
  mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
- 
+
    ,.mem_cmd_i(proc_mem_cmd_lo)
    ,.mem_cmd_v_i(proc_mem_cmd_ready_li & proc_mem_cmd_v_lo)
    ,.mem_cmd_ready_o(proc_mem_cmd_ready_li)
- 
+
    ,.mem_resp_o(proc_mem_resp_li)
    ,.mem_resp_v_o(proc_mem_resp_v_li)
    ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
@@ -171,17 +171,17 @@ if (load_nbf_p)
      nbf_loader
       (.clk_i(clk_i)
        ,.reset_i(reset_i | ~cfg_done_lo)
-    
+
        ,.lce_id_i(lce_id_width_p'('b10))
-    
+
        ,.io_cmd_o(nbf_cmd_lo)
        ,.io_cmd_v_o(nbf_cmd_v_lo)
        ,.io_cmd_yumi_i(nbf_cmd_yumi_li)
-    
+
        ,.io_resp_i(nbf_resp_li)
        ,.io_resp_v_i(nbf_resp_v_li)
        ,.io_resp_ready_o(nbf_resp_ready_lo)
-    
+
        ,.done_o(nbf_done_lo)
        );
   end
@@ -208,7 +208,7 @@ bp_cce_mmio_cfg_loader
    ,.reset_i(reset_i)
 
    ,.lce_id_i(lce_id_width_p'('b10))
-    
+
    ,.io_cmd_o(cfg_cmd_lo)
    ,.io_cmd_v_o(cfg_cmd_v_lo)
    ,.io_cmd_yumi_i(cfg_cmd_yumi_li)
@@ -227,7 +227,7 @@ always_comb
       load_cmd_lo = cfg_cmd_lo;
       load_cmd_v_lo = cfg_cmd_v_lo;
 
-      nbf_cmd_yumi_li = '0; 
+      nbf_cmd_yumi_li = '0;
       cfg_cmd_yumi_li = load_cmd_yumi_li;
 
       load_resp_ready_lo = cfg_resp_ready_lo;
@@ -243,7 +243,7 @@ always_comb
       load_cmd_lo = nbf_cmd_lo;
       load_cmd_v_lo = nbf_cmd_v_lo;
 
-      nbf_cmd_yumi_li = load_cmd_yumi_li; 
+      nbf_cmd_yumi_li = load_cmd_yumi_li;
       cfg_cmd_yumi_li = '0;
 
       load_resp_ready_lo = nbf_resp_ready_lo;
@@ -391,6 +391,7 @@ bind bp_be_top
       ,.assoc_p(dcache_assoc_p)
       ,.sets_p(dcache_sets_p)
       ,.block_width_p(dcache_block_width_p)
+      ,.fill_width_p(dcache_fill_width_p)
       ,.trace_file_p("dcache"))
      dcache_tracer
       (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
@@ -400,19 +401,19 @@ bind bp_be_top
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
        ,.v_tl_r(v_tl_r)
-       
+
        ,.v_tv_r(v_tv_r)
        ,.addr_tv_r(paddr_tv_r)
        ,.lr_miss_tv(lr_miss_tv)
        ,.sc_op_tv_r(sc_op_tv_r)
        ,.sc_success(sc_success)
-        
+
        ,.cache_req_v_o(cache_req_v_o)
        ,.cache_req_o(cache_req_o)
 
        ,.cache_req_metadata_o(cache_req_metadata_o)
        ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-        
+
        ,.cache_req_complete_i(cache_req_complete_i)
 
        ,.v_o(v_o)
@@ -424,7 +425,7 @@ bind bp_be_top
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
        ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-       
+
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)
        ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
@@ -440,28 +441,29 @@ bind bp_be_top
       ,.assoc_p(icache_assoc_p)
       ,.sets_p(icache_sets_p)
       ,.block_width_p(icache_block_width_p)
+      ,.fill_width_p(icache_fill_width_p)
       ,.trace_file_p("icache"))
      icache_tracer
       (.clk_i(clk_i & (testbench.icache_trace_p == 1))
        ,.reset_i(reset_i)
-       
+
        ,.freeze_i(cfg_bus_cast_i.freeze)
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
        ,.v_tl_r(v_tl_r)
-       
+
        ,.v_tv_r(v_tv_r)
        ,.addr_tv_r(addr_tv_r)
        ,.lr_miss_tv(1'b0)
        ,.sc_op_tv_r(1'b0)
        ,.sc_success(1'b0)
-        
+
        ,.cache_req_v_o(cache_req_v_o)
        ,.cache_req_o(cache_req_o)
 
        ,.cache_req_metadata_o(cache_req_metadata_o)
        ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-        
+
        ,.cache_req_complete_i(cache_req_complete_i)
 
        ,.v_o(data_v_o)
@@ -473,7 +475,7 @@ bind bp_be_top
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
        ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-       
+
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)
        ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
@@ -671,4 +673,3 @@ bp_nonsynth_if_verif
   ();
 
 endmodule
-

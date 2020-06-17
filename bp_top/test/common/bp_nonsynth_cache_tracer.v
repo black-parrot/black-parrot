@@ -7,10 +7,11 @@ module bp_nonsynth_cache_tracer
  #( parameter bp_params_e bp_params_p = e_bp_inv_cfg
   , parameter assoc_p = 8
   , parameter sets_p = 64
-  , parameter block_width_p = 512 
+  , parameter block_width_p = 512
+  , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
@@ -25,17 +26,17 @@ module bp_nonsynth_cache_tracer
    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
-  
+
    )
   (  input                                                 clk_i
    , input                                                 reset_i
-   
+
    , input                                                 freeze_i
    , input [mhartid_width_lp-1:0]                          mhartid_i
-      
+
    // Tag lookup
    , input                                                 v_tl_r
-   
+
    // Tag Verify
    , input                                                 v_tv_r
    , input [paddr_width_p-1:0]                             addr_tv_r
@@ -48,10 +49,11 @@ module bp_nonsynth_cache_tracer
    , input [cache_req_width_lp-1:0]                        cache_req_o
 
    // Cache Metadata
-   , input [cache_req_metadata_width_lp-1:0]               cache_req_metadata_o 
+   , input [cache_req_metadata_width_lp-1:0]               cache_req_metadata_o
    , input                                                 cache_req_metadata_v_o
 
    , input                                                 cache_req_complete_i
+   // , input                                                 cache_req_critical_i
 
    // Cache data
    , input                                                 v_o
@@ -74,9 +76,9 @@ module bp_nonsynth_cache_tracer
    , input                                                 stat_mem_pkt_yumi_o
    );
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
 
-  // Input Casting  
+  // Input Casting
   bp_cache_req_s cache_req_cast_o;
   bp_cache_req_metadata_s cache_req_metadata_cast_o;
   assign cache_req_cast_o = cache_req_o;
@@ -85,13 +87,13 @@ module bp_nonsynth_cache_tracer
   bp_cache_data_mem_pkt_s data_mem_pkt_cast_i;
   bp_cache_tag_mem_pkt_s tag_mem_pkt_cast_i;
   bp_cache_stat_mem_pkt_s stat_mem_pkt_cast_i;
-  assign data_mem_pkt_cast_i = data_mem_pkt_i; 
+  assign data_mem_pkt_cast_i = data_mem_pkt_i;
   assign tag_mem_pkt_cast_i = tag_mem_pkt_i;
   assign stat_mem_pkt_cast_i = stat_mem_pkt_i;
 
   integer file;
   string file_name;
-  
+
   wire delay_li = reset_i | freeze_i;
   always_ff @(negedge delay_li)
    begin
@@ -134,7 +136,7 @@ module bp_nonsynth_cache_tracer
       data_op = "[write]";
     else
       data_op = "[null]";
-    
+
     if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_set_clear)
       tag_op = "[set clear]";
     else if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_set_tag)
@@ -145,7 +147,7 @@ module bp_nonsynth_cache_tracer
       tag_op = "[read]";
     else
       tag_op = "[null]";
-    
+
     if (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read)
       stat_op = "[read]";
     else if (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_set_clear)
@@ -157,20 +159,21 @@ module bp_nonsynth_cache_tracer
   end
 
   always_ff @(posedge clk_i) begin
- 
-      if(v_tl_r) 
+
+      if(v_tl_r)
         $fwrite(file, "[%t] tag_lookup: %x \n", $time, v_tl_r);
-      
+
       if(v_tv_r) begin
         $fwrite(file, "[%t] tag_verify: %x \n", $time, v_tv_r);
         $fwrite(file, "[%t] addr: %x \n", $time, addr_tv_r);
       end
-      
+
       if(sc_success)
         $fwrite(file, "SC SUCCESS! \n");
-      
+
       if(wt_req)
         $fwrite(file, "[%t] Writethrough incoming\n", $time);
+
 
       if (cache_req_v_o) begin
         $fwrite(file, "[%t] valid cache_req: %x \n", $time, cache_req_v_o);
@@ -179,7 +182,7 @@ module bp_nonsynth_cache_tracer
 
       if (cache_req_metadata_v_o)
         $fwrite(file, "[%t] lru_way: %x dirty: %x \n", $time, cache_req_metadata_cast_o.repl_way, cache_req_metadata_cast_o.dirty);
-      
+
       if (cache_req_complete_i)
         $fwrite(file, "[%t] Cache request completed \n", $time);
 

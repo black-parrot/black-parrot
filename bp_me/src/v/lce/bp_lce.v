@@ -18,6 +18,7 @@ module bp_lce
     , parameter assoc_p = "inv"
     , parameter sets_p = "inv"
     , parameter block_width_p = "inv"
+    , parameter fill_width_p = block_width_p
 
     , parameter timeout_max_limit_p=4
 
@@ -34,7 +35,7 @@ module bp_lce
 
    `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, cache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
   )
@@ -79,6 +80,7 @@ module bp_lce
     , output logic                                   credits_empty_o
 
     , output logic                                   cache_req_complete_o
+    , output logic                                   cache_req_critical_o
 
     // LCE-CCE interface
     // Req: ready->valid
@@ -112,6 +114,8 @@ module bp_lce
       $error("LCE block width must be a whole number of bytes and power of two");
     assert(block_width_p <= 1024) else
       $error("LCE block width must be no greater than 128 bytes");
+    assert(fill_width_p == block_width_p) else
+      $error("LCE block width must be equal to fill width. Partial fill is not supported");
     assert(`BSG_IS_POW2(assoc_p)) else
       $error("LCE assoc must be power of two");
   end
@@ -126,6 +130,7 @@ module bp_lce
       ,.assoc_p(assoc_p)
       ,.sets_p(sets_p)
       ,.block_width_p(block_width_p)
+      ,.fill_width_p(fill_width_p)
       ,.credits_p(credits_p)
       ,.non_excl_reads_p(non_excl_reads_p)
       )
@@ -161,6 +166,7 @@ module bp_lce
       ,.assoc_p(assoc_p)
       ,.sets_p(sets_p)
       ,.block_width_p(block_width_p)
+      ,.fill_width_p(fill_width_p)
       )
     command
       (.clk_i(clk_i)
@@ -172,6 +178,7 @@ module bp_lce
       ,.ready_o(cmd_ready_lo)
       ,.sync_done_o(cmd_sync_done_lo)
       ,.cache_req_complete_o(cache_req_complete_o)
+      ,.cache_req_critical_o(cache_req_critical_o)
       ,.uc_store_req_complete_o(uc_store_req_complete_lo)
 
       ,.data_mem_pkt_o(data_mem_pkt_o)
@@ -238,4 +245,3 @@ module bp_lce
   assign cache_req_ready_o = lce_req_cache_req_ready_lo & ~timeout & cmd_ready_lo;
 
 endmodule
-
