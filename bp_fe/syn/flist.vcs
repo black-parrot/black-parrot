@@ -111,6 +111,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_chain.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_set_clear.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_edge_detect.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_encode_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
@@ -241,7 +242,7 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.v
-# $BP_TOP_DIR/src/v/bp_cacc_vdp.v
+$BP_TOP_DIR/src/v/bp_cacc_vdp.v
 $BP_TOP_DIR/src/v/bp_cacc_tile.v
 $BP_TOP_DIR/src/v/bp_cacc_tile_node.v
 $BP_TOP_DIR/src/v/bp_cacc_complex.v
