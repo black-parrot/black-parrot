@@ -555,6 +555,7 @@ module bp_be_dcache
   logic wbuf_yumi_li;
   
   logic wbuf_empty_lo;
+  logic wbuf_full_lo;
   
   logic bypass_v_li;
   logic bypass_addr_li;
@@ -583,6 +584,7 @@ module bp_be_dcache
       ,.wbuf_entry_o(wbuf_entry_out)
 
       ,.empty_o(wbuf_empty_lo)
+      ,.full_o(wbuf_full_lo)
     
       ,.bypass_v_i(bypass_v_li)
       ,.bypass_addr_i({ptag_i, page_offset_tl_r})
@@ -1164,7 +1166,7 @@ module bp_be_dcache
   // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
   assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached) 
                                ? data_mem_pkt_v 
-                               : ~(load_op & tl_we) & ~lce_snoop_match_lo & data_mem_pkt_v;
+                               : ~(load_op & tl_we) & ~lce_snoop_match_lo & data_mem_pkt_v & ~wbuf_full_lo;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin
