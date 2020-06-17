@@ -487,8 +487,9 @@ for (genvar i = 0; i < 2; i++)
   assign clint_mem_cmd_li     = cce_mem_cmd_lo;
   assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == clint_dev_gp);
 
-  assign cache_mem_cmd_li     = cce_mem_cmd_lo;
-  assign cache_mem_cmd_v_li   = cce_mem_cmd_v_lo & (~local_cmd_li | (local_cmd_li & (device_li == cache_dev_gp)));
+  // Cache commands are always to the same domain
+  assign cache_mem_cmd_li      = cce_mem_cmd_lo;
+  assign cache_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~cfg_mem_cmd_v_li & ~clint_mem_cmd_v_li & (cce_mem_cmd_lo.header.addr[paddr_width_p-1-:io_noc_did_width_p] == 0);
 
   assign loopback_mem_cmd_li   = cce_mem_cmd_lo;
   assign loopback_mem_cmd_v_li = cce_mem_cmd_v_lo & (local_cmd_li & ~cfg_mem_cmd_v_li & ~clint_mem_cmd_v_li & ~cache_mem_cmd_v_li);
