@@ -6,14 +6,17 @@ module bp_uce
   import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
-   ,parameter assoc_p = 8
-   ,parameter sets_p = 64
-   ,parameter block_width_p = 512
-   ,parameter fill_width_p = 512
-
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+    , parameter assoc_p = 8
+    , parameter sets_p = 64
+    , parameter block_width_p = 512
+    , parameter fill_width_p = 512
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+
+    , parameter tag_mem_negedge_p  = 0
+    , parameter data_mem_negedge_p = 0
+    , parameter stat_mem_negedge_p = 0
 
     , localparam bank_width_lp = block_width_p / assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
@@ -139,10 +142,11 @@ module bp_uce
 
   logic dirty_data_read_en;
   wire dirty_data_read = data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
+  wire data_mem_clk = (data_mem_negedge_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    dirty_data_read_en_reg
-    (.clk_i(clk_i)
+    (.clk_i(data_mem_clk)
 
      ,.data_i(dirty_data_read)
      ,.data_o(dirty_data_read_en)
@@ -152,7 +156,7 @@ module bp_uce
   bsg_dff_reset_set_clear
    #(.width_p(1))
    dirty_data_v_reg
-    (.clk_i(clk_i)
+    (.clk_i(data_mem_clk)
      ,.reset_i(reset_i)
 
      ,.set_i(dirty_data_read_en)
@@ -164,19 +168,19 @@ module bp_uce
   bsg_dff_en
    #(.width_p(block_width_p))
    dirty_data_reg
-    (.clk_i(clk_i)
-
-    ,.en_i(dirty_data_read_en)
-    ,.data_i(data_mem_i)
-    ,.data_o(dirty_data_r)
-    );
+    (.clk_i(data_mem_clk)
+     ,.en_i(dirty_data_read_en)
+     ,.data_i(data_mem_i)
+     ,.data_o(dirty_data_r)
+     );
 
   logic dirty_tag_read_en;
   wire dirty_tag_read = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
+  wire tag_mem_clk = (tag_mem_negedge_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    dirty_tag_read_en_reg
-    (.clk_i(clk_i)
+    (.clk_i(tag_mem_clk)
 
      ,.data_i(dirty_tag_read)
      ,.data_o(dirty_tag_read_en)
@@ -186,7 +190,7 @@ module bp_uce
   bsg_dff_reset_set_clear
    #(.width_p(1))
    dirty_tag_v_reg
-    (.clk_i(clk_i)
+    (.clk_i(tag_mem_clk)
      ,.reset_i(reset_i)
 
      ,.set_i(dirty_tag_read_en)
@@ -198,7 +202,7 @@ module bp_uce
   bsg_dff_en
    #(.width_p(ptag_width_p))
    dirty_tag_reg
-    (.clk_i(clk_i)
+    (.clk_i(tag_mem_clk)
 
     ,.en_i(dirty_tag_read_en)
     ,.data_i(tag_mem_i)
@@ -207,10 +211,11 @@ module bp_uce
 
   logic dirty_stat_read_en;
   wire dirty_stat_read = stat_mem_pkt_yumi_i & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
+  wire stat_mem_clk = (stat_mem_negedge_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    dirty_stat_read_en_reg
-    (.clk_i(clk_i)
+    (.clk_i(stat_mem_clk)
 
      ,.data_i(dirty_stat_read)
      ,.data_o(dirty_stat_read_en)
@@ -220,7 +225,7 @@ module bp_uce
   bsg_dff_reset_set_clear
    #(.width_p(1))
    dirty_stat_v_reg
-    (.clk_i(clk_i)
+    (.clk_i(stat_mem_clk)
      ,.reset_i(reset_i)
 
      ,.set_i(dirty_stat_read_en)
@@ -232,7 +237,7 @@ module bp_uce
   bsg_dff_en
    #(.width_p($bits(bp_cache_stat_info_s)))
    dirty_stat_reg
-    (.clk_i(clk_i)
+    (.clk_i(stat_mem_clk)
 
      ,.en_i(dirty_stat_read_en)
      ,.data_i(stat_mem_i)

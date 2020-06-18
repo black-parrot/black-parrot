@@ -257,6 +257,8 @@ module bp_core
       ,.fill_width_p(dcache_fill_width_p)
       ,.timeout_max_limit_p(4)
       ,.credits_p(coh_noc_max_credits_p)
+      ,.data_mem_negedge_p(1)
+      ,.tag_mem_negedge_p(1)
       )
   be_lce
     (.clk_i(clk_i)

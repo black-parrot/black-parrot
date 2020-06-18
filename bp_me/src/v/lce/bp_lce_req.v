@@ -23,7 +23,6 @@ module bp_lce_req
     , parameter block_width_p = "inv"
     , parameter fill_width_p = block_width_p
 
-
     // maximum number of outstanding transactions
     , parameter credits_p = coh_noc_max_credits_p
 
@@ -63,7 +62,7 @@ module bp_lce_req
     , input [lce_id_width_p-1:0]                     lce_id_i
     , input bp_lce_mode_e                            lce_mode_i
 
-    // LCE Req is able to sink any requests
+    // LCE Req is able to sink any requests this cycle
     , output logic                                   ready_o
 
     // Cache-LCE Interface
@@ -107,11 +106,22 @@ module bp_lce_req
   } lce_req_state_e;
   lce_req_state_e state_n, state_r;
 
+  bp_cache_req_s cache_req;
+  assign cache_req = cache_req_i;
+
   bp_lce_cce_req_s lce_req;
   assign lce_req_o = lce_req;
 
-  bp_cache_req_s cache_req;
-  assign cache_req = cache_req_i;
+  logic cache_req_v_r;
+  bsg_dff_reset
+   #(.width_p(1))
+   req_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(cache_req_v_i)
+     ,.data_o(cache_req_v_r)
+     );
 
   bp_cache_req_s cache_req_r;
   bsg_dff_en
@@ -226,6 +236,7 @@ module bp_lce_req
         lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
 
         lce_req.header.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.repl_way);
+        lce_req.header.addr = cache_req_r.addr;
         lce_req.header.size = req_block_size_lp;
         lce_req.header.addr = cache_req_r.addr;
         lce_req.header.msg_type = (cache_req_r.msg_type == e_miss_load)

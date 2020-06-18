@@ -34,8 +34,6 @@ module bp_be_pipe_mem
 
    , input [cfg_bus_width_lp-1:0]         cfg_bus_i
    , input                                kill_ex1_i
-   , input                                kill_ex2_i
-   , input                                kill_ex3_i
    , input                                flush_i
    , input                                sfence_i
 
@@ -143,33 +141,27 @@ logic                     dcache_uncached;
 logic                     dcache_ready_lo;
 logic                     dcache_miss_lo;
 
-logic load_access_fault_v, load_access_fault_mem3, store_access_fault_v, store_access_fault_mem3;
-logic load_page_fault_v, load_page_fault_mem3, store_page_fault_v, store_page_fault_mem3;
-logic load_misaligned_v, load_misaligned_mem3, store_misaligned_v, store_misaligned_mem3;
+logic load_access_fault_v, store_access_fault_v;
+logic load_page_fault_v, store_page_fault_v;
+logic load_misaligned_v, store_misaligned_v; 
+
+logic load_access_fault_mem2, store_access_fault_mem2;
+logic load_page_fault_mem2, store_page_fault_mem2;
+logic load_misaligned_mem2, store_misaligned_mem2; 
 
 /* Control signals */
-logic is_store_r;
-logic dtlb_miss_r;
-logic [vaddr_width_p-1:0] vaddr_mem3;
-logic is_req_mem3, is_store_mem3, is_fencei_mem3;
+logic is_req_mem1, is_req_mem2;
+logic is_store_mem1;
+logic is_fencei_mem1, is_fencei_mem2;
+logic [vaddr_width_p-1:0] vaddr_mem1, vaddr_mem2;
 
+wire is_req    = decode.pipe_mem_v;
 wire is_store  = decode.pipe_mem_v & decode.fu_op inside {e_sb, e_sh, e_sw, e_sd, e_scw, e_scd};
 wire is_fencei = decode.pipe_mem_v & decode.fu_op inside {e_fencei};
 
 // Calculate cache access vaddr
 wire [vaddr_width_p-1:0] offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
 wire [vaddr_width_p-1:0] vaddr = rs1_i + offset;
-
-bsg_dff_chain
- #(.width_p(3+vaddr_width_p)
-   ,.num_stages_p(2)
-   )
- request_pipe
-  (.clk_i(clk_i)
-
-   ,.data_i({decode.pipe_mem_v, is_store, is_fencei, vaddr})
-   ,.data_o({is_req_mem3, is_store_mem3, is_fencei_mem3, vaddr_mem3})
-   );
 
 // D-TLB connections
 assign dtlb_r_v     = decode.pipe_mem_v & ~is_fencei;
@@ -183,7 +175,7 @@ bp_tlb
    ,.tlb_els_p(dtlb_els_p)
    )
  dtlb
-  (.clk_i(clk_i)
+  (.clk_i(~clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(sfence_i)
    ,.translation_en_i(trans_info.translation_en)
@@ -280,37 +272,46 @@ bp_be_dcache
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
 // We latch the dcache miss signal
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    dtlb_miss_r  <= '0;
-    is_store_r   <= '0;
-    load_page_fault_mem3    <= '0;
-    store_page_fault_mem3   <= '0;
-    load_access_fault_mem3  <= '0;
-    store_access_fault_mem3 <= '0;
-    load_misaligned_mem3    <= '0;
-    store_misaligned_mem3   <= '0;
+always_ff @(negedge clk_i) begin
+  if (reset_i) begin
+    is_req_mem1 <= '0;
+    is_req_mem2 <= is_req_mem1;
+    is_store_mem1 <= '0;
+    vaddr_mem1 <= '0;
+    vaddr_mem2 <= '0;
+    is_fencei_mem1 <= '0;
+    is_fencei_mem2 <= '0;
+    load_access_fault_mem2 <= '0;
+    store_access_fault_mem2 <= '0;
+    load_page_fault_mem2 <= '0;
+    store_page_fault_mem2 <= '0;
+    load_misaligned_mem2 <= '0;
+    store_misaligned_mem2 <= '0;
   end
   else begin
-    // TODO: Get rid of flush
-    dtlb_miss_r  <= dtlb_miss_v & ~flush_i;
-    is_store_r   <= is_store;
-    load_page_fault_mem3    <= load_page_fault_v & ~flush_i;
-    store_page_fault_mem3   <= store_page_fault_v & ~flush_i;
-    load_access_fault_mem3  <= load_access_fault_v & ~flush_i;
-    store_access_fault_mem3 <= store_access_fault_v & ~flush_i;
-    load_misaligned_mem3    <= load_misaligned_v & ~flush_i;
-    store_misaligned_mem3   <= store_misaligned_v & ~flush_i;
+    is_req_mem1 <= is_req;
+    is_req_mem2 <= is_req_mem1;
+    is_store_mem1 <= is_store;
+    vaddr_mem1 <= vaddr;
+    vaddr_mem2 <= vaddr_mem1;
+    is_fencei_mem1 <= is_fencei;
+    is_fencei_mem2 <= is_fencei_mem1;
+    load_access_fault_mem2 <= load_access_fault_v & ~flush_i;
+    store_access_fault_mem2 <= store_access_fault_v & ~flush_i;
+    load_page_fault_mem2 <= load_page_fault_v & ~flush_i;
+    store_page_fault_mem2 <= store_page_fault_v & ~flush_i;
+    load_misaligned_mem2 <= load_misaligned_v & ~flush_i;
+    store_misaligned_mem2 <= store_misaligned_v & ~flush_i;
   end
 end
 
 // Check instruction accesses
 wire data_priv_page_fault = ((trans_info.priv_mode == `PRIV_MODE_S) & ~trans_info.mstatus_sum & dtlb_r_entry.u)
                               | ((trans_info.priv_mode == `PRIV_MODE_U) & ~dtlb_r_entry.u);
-wire data_write_page_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
+wire data_write_page_fault = is_store_mem1 & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
 
-assign load_page_fault_v  = dtlb_r_v_lo & trans_info.translation_en & ~is_store_r & data_priv_page_fault;
-assign store_page_fault_v = dtlb_r_v_lo & trans_info.translation_en & is_store_r & (data_priv_page_fault | data_write_page_fault);
+assign load_page_fault_v  = dtlb_r_v_lo & trans_info.translation_en & ~is_store_mem1 & data_priv_page_fault;
+assign store_page_fault_v = dtlb_r_v_lo & trans_info.translation_en & is_store_mem1 & (data_priv_page_fault | data_write_page_fault);
 assign load_misaligned_v = 1'b0; // TODO: detect
 assign store_misaligned_v = 1'b0; // TODO: detect
 
@@ -324,7 +325,7 @@ always_comb
       dcache_ptag_v   = ptw_dcache_ptag_v;
     end
     else begin
-      dcache_pkt_v = ~kill_ex1_i & decode.pipe_mem_v;
+      dcache_pkt_v = decode.pipe_mem_v & ~kill_ex1_i;
       // TODO: Use dcache opcode directly
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(decode.fu_op);
       dcache_pkt.page_offset = vaddr[0+:page_offset_width_p];
@@ -344,22 +345,22 @@ wire mode_fault_v = (is_uncached_mode & ~dcache_uncached);
 wire did_fault_v = (dcache_ptag[ptag_width_p-1-:io_noc_did_width_p] != '0) &
                    ~((dcache_ptag[ptag_width_p-1-:io_noc_did_width_p] == 1) & sac_x_dim_p > 0);
 
-assign load_access_fault_v  = dtlb_r_v_lo & ~is_store_r & (mode_fault_v | did_fault_v);
-assign store_access_fault_v = dtlb_r_v_lo & is_store_r & (mode_fault_v | did_fault_v);
+assign load_access_fault_v  = dtlb_r_v_lo & ~is_store_mem1 & (mode_fault_v | did_fault_v);
+assign store_access_fault_v = dtlb_r_v_lo & is_store_mem1 & (mode_fault_v | did_fault_v);
 
 
-assign tlb_miss_v_o           = is_req_mem3    &  dtlb_miss_r;
-assign cache_miss_v_o         = is_req_mem3    & ~dtlb_miss_r & ~dcache_v;
-assign fencei_v_o             = is_fencei_mem3 &  dcache_v;
-assign store_page_fault_v_o   = store_page_fault_mem3;
-assign load_page_fault_v_o    = load_page_fault_mem3;
-assign store_access_fault_v_o = store_access_fault_mem3;
-assign load_access_fault_v_o  = load_access_fault_mem3;
-assign store_misaligned_v_o   = store_misaligned_mem3;
-assign load_misaligned_v_o    = load_misaligned_mem3;
+assign tlb_miss_v_o           = dtlb_miss_v;
+assign cache_miss_v_o         = is_req_mem2 & ~dcache_v;
+assign fencei_v_o             = is_fencei_mem2 & dcache_v;
+assign store_page_fault_v_o   = store_page_fault_mem2;
+assign load_page_fault_v_o    = load_page_fault_mem2;
+assign store_access_fault_v_o = store_access_fault_mem2;
+assign load_access_fault_v_o  = load_access_fault_mem2;
+assign store_misaligned_v_o   = store_misaligned_mem2;
+assign load_misaligned_v_o    = load_misaligned_mem2;
 
 assign ready_o                = dcache_ready_lo & ~ptw_busy;
-assign vaddr_o                = vaddr_mem3;
+assign vaddr_o                = vaddr_mem2;
 assign data_o                 = dcache_data;
 
 //// synopsys translate_off
