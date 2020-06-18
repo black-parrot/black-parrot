@@ -43,6 +43,7 @@ module bp_be_mem_top
    , localparam csr_cmd_width_lp  = `bp_be_csr_cmd_width
    , localparam mem_resp_width_lp = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam etag_width_lp     =  rv64_eaddr_width_gp - bp_page_offset_width_gp
+   , localparam eaddr_pad_lp      =  rv64_eaddr_width_gp - vaddr_width_p
 
    // VM
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
@@ -464,7 +465,7 @@ end
 wire data_priv_page_fault = ((priv_mode_lo == `PRIV_MODE_S) & ~mstatus_sum_lo & dtlb_r_entry.u)
                               | ((priv_mode_lo == `PRIV_MODE_U) & ~dtlb_r_entry.u);
 wire data_write_page_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
-wire eaddr_page_fault = (mmu_cmd_v_r & (mmu_cmd_r.eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {25{mmu_cmd_r.eaddr[vaddr_width_p-1]}}));
+wire eaddr_page_fault = (mmu_cmd_v_r & (mmu_cmd_r.eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {eaddr_pad_lp{mmu_cmd_r.eaddr[vaddr_width_p-1]}}));
 
 // This DFF is required to prevent an eaddr_page_fault from performing a page
 // table walk
@@ -504,7 +505,7 @@ always_comb
     else begin
       // We assume that mem op == dcache op
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
-      dcache_pkt.page_offset = mmu_cmd.eaddr[bp_page_offset_width_gp-1:0];
+      dcache_pkt.page_offset = mmu_cmd.eaddr[0+:bp_page_offset_width_gp];
       dcache_pkt.data        = mmu_cmd.data;
     end
 end
@@ -525,7 +526,7 @@ assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v | sac
 assign dtlb_r_v     = dcache_cmd_v & ~fencei_cmd_v;
 assign dtlb_r_etag  = mmu_cmd.eaddr[rv64_eaddr_width_gp-1:bp_page_offset_width_gp];
 assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_not_dtlb_resp;
-assign dtlb_w_etag  = {25'h0, ptw_tlb_w_vtag};
+assign dtlb_w_etag  = {eaddr_pad_lp'(0), ptw_tlb_w_vtag};
 assign dtlb_w_entry = ptw_tlb_w_entry;
 
 // PTW connections
