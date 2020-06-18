@@ -179,7 +179,7 @@ module wrapper
    ,.cfg_bus_i(cfg_bus_i)
 
    ,.dcache_pkt_i(rolly_dcache_pkt_lo)
-   ,.v_i(rolly_v_lo)
+   ,.v_i(dcache_ready_lo & rolly_v_lo)
    ,.ready_o(dcache_ready_lo)
 
    ,.data_o(data_o)
@@ -226,6 +226,10 @@ module wrapper
      logic [lce_cce_resp_width_lp-1:0] lce_resp_lo;
 
      logic mem_resp_ready_lo;
+
+     `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+     bp_cfg_bus_s cfg_bus_cast_i;
+     assign cfg_bus_cast_i = cfg_bus_i;
 
      bp_lce
      #(.bp_params_p(bp_params_p)
