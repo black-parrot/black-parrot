@@ -17,8 +17,8 @@ module bp_core
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
@@ -60,8 +60,8 @@ module bp_core
     );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
 
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
@@ -77,6 +77,7 @@ module bp_core
   logic dcache_req_metadata_v_lo;
 
   logic icache_req_complete_lo, dcache_req_complete_lo;
+  logic icache_req_critical_lo, dcache_req_critical_lo;
   logic dcache_credits_full_lo, dcache_credits_empty_lo;
 
   logic [1:0] lr_hit_lo;
@@ -138,6 +139,7 @@ module bp_core
      ,.dcache_req_metadata_v_o(dcache_req_metadata_v_lo)
 
      ,.dcache_req_complete_i(dcache_req_complete_lo)
+     ,.dcache_req_critical_i(dcache_req_critical_lo)
 
      ,.icache_req_o(icache_req_cast_lo)
      ,.icache_req_v_o(icache_req_v_lo)
@@ -146,7 +148,7 @@ module bp_core
      ,.icache_req_metadata_v_o(icache_req_metadata_v_lo)
 
      ,.icache_req_complete_i(icache_req_complete_lo)
-
+     ,.icache_req_critical_i(icache_req_critical_lo)
      // response side - Interface from D$ LCE
      ,.dcache_data_mem_pkt_i(dcache_data_mem_pkt_li)
      ,.dcache_data_mem_pkt_v_i(dcache_data_mem_pkt_v_li)
@@ -192,6 +194,7 @@ module bp_core
       ,.assoc_p(icache_assoc_p)
       ,.sets_p(icache_sets_p)
       ,.block_width_p(icache_block_width_p)
+      ,.fill_width_p(icache_fill_width_p)
       ,.timeout_max_limit_p(4)
       ,.credits_p(coh_noc_max_credits_p)
       ,.non_excl_reads_p(1)
@@ -210,6 +213,7 @@ module bp_core
      ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
 
      ,.cache_req_complete_o(icache_req_complete_lo)
+     ,.cache_req_critical_o(icache_req_critical_lo)
 
      ,.data_mem_pkt_o(icache_data_mem_pkt_li)
      ,.data_mem_pkt_v_o(icache_data_mem_pkt_v_li)
@@ -253,6 +257,7 @@ module bp_core
       ,.assoc_p(dcache_assoc_p)
       ,.sets_p(dcache_sets_p)
       ,.block_width_p(dcache_block_width_p)
+      ,.fill_width_p(dcache_fill_width_p)
       ,.timeout_max_limit_p(4)
       ,.credits_p(coh_noc_max_credits_p)
       )
@@ -270,6 +275,7 @@ module bp_core
      ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
 
      ,.cache_req_complete_o(dcache_req_complete_lo)
+     ,.cache_req_critical_o(dcache_req_critical_lo)
 
      ,.data_mem_pkt_o(dcache_data_mem_pkt_li)
      ,.data_mem_pkt_v_o(dcache_data_mem_pkt_v_li)
@@ -307,4 +313,3 @@ module bp_core
      );
 
 endmodule
-

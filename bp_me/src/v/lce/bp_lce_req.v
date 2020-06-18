@@ -21,6 +21,8 @@ module bp_lce_req
     , parameter assoc_p = "inv"
     , parameter sets_p = "inv"
     , parameter block_width_p = "inv"
+    , parameter fill_width_p = block_width_p
+
 
     // maximum number of outstanding transactions
     , parameter credits_p = coh_noc_max_credits_p
@@ -36,7 +38,7 @@ module bp_lce_req
 
    `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, cache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
 
@@ -92,7 +94,7 @@ module bp_lce_req
   );
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, cache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
 
   // FSM states
   typedef enum logic [2:0] {
