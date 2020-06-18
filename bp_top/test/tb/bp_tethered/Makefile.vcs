@@ -7,10 +7,23 @@ $(LINT_DIR)/flist.vcs:
 	@echo wrapper.v                              >> $@ 
 	@echo testbench.v                            >> $@ 
 	@echo test_bp.v                              >> $@ 
+	@echo bp_bootrom.v							 >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
-LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
+$(LINT_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
+	cp $^ $@
+
+XXD ?= xxd
+AWK ?= awk
+$(LINT_DIR)/bootrom.txt: $(LINT_DIR)/bootrom.bin
+	$(XXD) -b -c 4 $< | $(AWK) '{print $$2$$3$$4$$5}' > $@
+
+$(LINT_DIR)/bp_bootrom.v: $(LINT_DIR)/bootrom.txt
+	$(PYTHON) $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bp_bootrom > $@
+
+LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
+LINT_COLLATERAL += $(addprefix $(LINT_DIR)/, bootrom.riscv bootrom.bin bootrom.dump bp_bootrom.v)
 
 $(BUILD_DIR)/testbench.v $(BUILD_DIR)/wrapper.v $(BUILD_DIR)/test_bp.v:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
@@ -20,11 +33,24 @@ $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@ 
 	@echo wrapper.v                              >> $@ 
 	@echo testbench.v                            >> $@ 
-	@echo test_bp.v                              >> $@ 
+	@echo test_bp.v                              >> $@
+	@echo bp_bootrom.v							 >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
-BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
+$(BUILD_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
+	cp $^ $@
+
+XXD ?= xxd
+AWK ?= awk
+$(BUILD_DIR)/bootrom.txt: $(BUILD_DIR)/bootrom.bin
+	$(XXD) -b -c 4 $< | $(AWK) '{print $$2$$3$$4$$5}' > $@
+
+$(BUILD_DIR)/bp_bootrom.v: $(BUILD_DIR)/bootrom.txt
+	$(PYTHON) $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bp_bootrom > $@
+
+BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
+BUILD_COLLATERAL += $(addprefix $(BUILD_DIR)/, bootrom.riscv bootrom.bin bootrom.dump bp_bootrom.v)
 
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
 	@ln -nsf $(<D)/$(@F) $@

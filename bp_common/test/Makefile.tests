@@ -4,6 +4,7 @@ include $(TOP)/Makefile.common
 include $(BP_TEST_DIR)/Makefile.linux
 
 perch_dir       := $(BP_TEST_SRC_DIR)/perch
+bootrom_dir     := $(BP_TEST_SRC_DIR)/bootrom
 bp_tests_dir    := $(BP_TEST_SRC_DIR)/bp_tests
 riscv_tests_dir := $(BP_TEST_SRC_DIR)/riscv-tests
 beebs_dir       := $(BP_TEST_SRC_DIR)/beebs
@@ -62,6 +63,11 @@ $(BP_TEST_DIR)/lib/libperch.a:
 	cp $(BP_TEST_DIR)/src/perch/libperch.a $(BP_TEST_DIR)/lib
 	cp $(BP_TEST_DIR)/src/perch/*.h $(BP_TEST_DIR)/include
 
+bootrom: $(BP_TEST_DIR)/mem/bootrom.riscv
+$(BP_TEST_DIR)/mem/bootrom.riscv:
+	$(MAKE) -C $(bootrom_dir)
+	cp $(BP_TEST_DIR)/src/bootrom/bootrom.riscv $(BP_TEST_MEM_DIR)/bootrom.riscv
+
 demos:
 	$(MAKE) -C $(demos_dir)
 	mkdir -p $(BP_TEST_MEM_DIR)/demos
@@ -83,7 +89,7 @@ DROMAJO       ?= dromajo
 	$(RISCV_OBJCOPY) -O verilog $*.riscv $@
 
 %.bin: %.riscv
-	$(RISCV_OBJCOPY) -O binary $*.riscv $@
+	$(RISCV_OBJCOPY) -O binary --reverse-bytes=4 $*.riscv $@
 
 %.dump: %.riscv
 	$(RISCV_OBJDUMP) $*.riscv > $@
