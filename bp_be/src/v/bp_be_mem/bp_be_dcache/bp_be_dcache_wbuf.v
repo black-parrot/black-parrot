@@ -1,6 +1,3 @@
-//                              -*- Mode: Verilog -*-
-// Filename        : bp_be_dcache_wbuf.v
-// Description     : 
 /**
  *  Name:
  *    bp_be_dcache_wbuf.v

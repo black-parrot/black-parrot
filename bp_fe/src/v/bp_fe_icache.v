@@ -231,6 +231,8 @@ module bp_fe_icache
   logic [index_width_lp-1:0]                                 addr_index_tv;
   logic                                                      fencei_op_tv_r;
   logic [icache_assoc_p-1:0]                                 hit_v_tv_r;
+
+  // Flush ops are non-speculative and so cannot be poisoned
   assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
 
   always_ff @ (posedge clk_i) begin
