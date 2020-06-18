@@ -464,10 +464,25 @@ end
 wire data_priv_page_fault = ((priv_mode_lo == `PRIV_MODE_S) & ~mstatus_sum_lo & dtlb_r_entry.u)
                               | ((priv_mode_lo == `PRIV_MODE_U) & ~dtlb_r_entry.u);
 wire data_write_page_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
-wire eaddr_page_fault = (mmu_cmd_r.eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {25{mmu_cmd_r.eaddr[vaddr_width_p-1]}});
+wire eaddr_page_fault = (mmu_cmd_v_r & (mmu_cmd_r.eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {25{mmu_cmd_r.eaddr[vaddr_width_p-1]}}));
 
-assign load_page_fault_v  = (mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & ~is_store_r & data_priv_page_fault) | (translation_en_lo & mmu_cmd_v_r & eaddr_page_fault);
-assign store_page_fault_v = (mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_store_r & (data_priv_page_fault | data_write_page_fault)) | (translation_en_lo & mmu_cmd_v_r & eaddr_page_fault);
+// This DFF is required to prevent an eaddr_page_fault from performing a page
+// table walk
+logic eaddr_page_fault_r;
+bsg_dff_reset
+#(.width_p(1)
+ ,.reset_val_p(0)
+ )
+ eaddr_fault_reg
+ (.clk_i(clk_i)
+ ,.reset_i(reset_i)
+
+ ,.data_i(eaddr_page_fault)
+ ,.data_o(eaddr_page_fault_r)
+ );
+
+assign load_page_fault_v  = (mmu_cmd_v_r & translation_en_lo & ~is_store_r) & ((dtlb_r_v_lo & data_priv_page_fault) | eaddr_page_fault);
+assign store_page_fault_v = (mmu_cmd_v_r & translation_en_lo & is_store_r) & ((dtlb_r_v_lo & (data_priv_page_fault | data_write_page_fault)) | eaddr_page_fault);
 
 // Decode cmd type
 assign dcache_cmd_v    = mmu_cmd_v_i;
@@ -514,7 +529,7 @@ assign dtlb_w_etag  = {25'h0, ptw_tlb_w_vtag};
 assign dtlb_w_entry = ptw_tlb_w_entry;
 
 // PTW connections
-assign ptw_tlb_miss_v    = itlb_fill_cmd_v | dtlb_fill_cmd_v;
+assign ptw_tlb_miss_v    = (itlb_fill_cmd_v | dtlb_fill_cmd_v) & ~eaddr_page_fault_r;
 assign ptw_tlb_miss_vtag = vaddr_mem3[vaddr_width_p-1:bp_page_offset_width_gp];
 assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
 assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_rr;
