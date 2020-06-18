@@ -548,7 +548,7 @@ bind bp_be_top
        ,.mispredict(be.director.npc_mismatch_v)
        ,.target(be.director.isd_status.isd_pc)
 
-       ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_r)
+       ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)
        ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
        ,.long_haz(be.detector.long_haz_v)
        ,.exception(be.director.trap_pkt.exception)

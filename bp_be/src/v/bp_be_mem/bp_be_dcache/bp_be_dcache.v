@@ -286,9 +286,9 @@ module bp_be_dcache
   logic [dword_width_p-1:0] data_tl_r;
   logic gdirty_r;
 
-  assign tl_we = v_i & cache_req_ready_i;
+  assign tl_we = v_i & ~poison_i;
   
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
     end
@@ -330,7 +330,7 @@ module bp_be_dcache
       ,.els_p(dcache_sets_p)
     )
     tag_mem
-      (.clk_i(clk_i)
+      (.clk_i(~clk_i)
       ,.reset_i(reset_i)
       ,.v_i(tag_mem_v_li)
       ,.w_i(tag_mem_w_li)
@@ -355,7 +355,7 @@ module bp_be_dcache
         ,.els_p(dcache_sets_p*dcache_assoc_p)
         )
       data_mem
-        (.clk_i(clk_i)
+        (.clk_i(~clk_i)
         ,.reset_i(reset_i)
         ,.v_i(data_mem_v_li[i])
         ,.w_i(data_mem_w_li)
@@ -431,7 +431,7 @@ module bp_be_dcache
   // fencei does not require a ptag
   assign tv_we = v_tl_r & ~poison_i & (ptag_v_i | fencei_op_tl_r);
 
-  always_ff @ (posedge clk_i) begin
+  always_ff @(negedge clk_i) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
 
@@ -720,23 +720,23 @@ module bp_be_dcache
 
     if(load_miss_tv) begin
       cache_req_cast_o.msg_type = e_miss_load;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = cache_req_ready_i & ~poison_i;
     end
     else if(store_miss_tv | lr_miss_tv) begin
       cache_req_cast_o.msg_type = e_miss_store;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = cache_req_ready_i & ~poison_i;
     end
     else if(wt_req) begin
       cache_req_cast_o.msg_type = e_wt_store;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = cache_req_ready_i & ~poison_i;
     end
     else if(uncached_load_req) begin
       cache_req_cast_o.msg_type = e_uc_load;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = cache_req_ready_i & ~poison_i;
     end
     else if(uncached_store_req) begin
       cache_req_cast_o.msg_type = e_uc_store;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = cache_req_ready_i & ~poison_i;
     end
     else if(fencei_req) begin
       // Don't flush on fencei when coherent
@@ -765,15 +765,15 @@ module bp_be_dcache
   // output stage
   // Cache Miss Tracking logic
   logic cache_miss_r;
-  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~wt_req;
-  bsg_dff_reset_en
-   #(.width_p(1))
+  bsg_dff_reset_set_clear
+   #(.width_p(1), .clear_over_set_p(1))
    cache_miss_tracker
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.en_i(miss_tracker_en_li | cache_req_complete_i)
-     ,.data_i(cache_req_v_o)
+     // We don't wait for ack on uncached stores or writethrough requests
+     ,.set_i(cache_req_v_o & ~uncached_store_req & ~wt_req)
+     ,.clear_i(cache_req_complete_i)
      ,.data_o(cache_miss_r)
      );
   assign ready_o = cache_req_ready_i & ~cache_miss_r;
@@ -833,7 +833,7 @@ module bp_be_dcache
      ,.disable_overflow_warning_p(1)
      )
    lock_counter
-    (.clk_i(clk_i)
+    (.clk_i(~clk_i)
      ,.reset_i(reset_i)
 
      ,.clear_i(lock_clr)
@@ -1087,7 +1087,7 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r) | stat_mem_pkt_yumi_o;
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r & ~poison_i) | stat_mem_pkt_yumi_o;
   assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
     ? ~(load_miss_tv | store_miss_tv | lr_miss_tv)
     : stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
@@ -1156,10 +1156,10 @@ module bp_be_dcache
   // write buffer
   //
   if (l1_writethrough_p == 0) begin : wb_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r;
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~poison_i;
   end
   else begin : wt_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & cache_req_ready_i;
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & cache_req_ready_i & ~poison_i;;
   end
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we) & ~data_mem_pkt_yumi_o;
 
@@ -1171,7 +1171,7 @@ module bp_be_dcache
   //
   logic [lg_dcache_assoc_lp-1:0] data_mem_pkt_way_r;
 
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_read)) begin
       data_mem_pkt_way_r <= data_mem_pkt.way_id;
     end
@@ -1186,14 +1186,15 @@ module bp_be_dcache
     ,.o(data_mem_o)
   );
 
-  // As an optimization, we snoop the data_mem_pkts to see if there
-  // are any matching entries in the write buffer and disallow the
-  // data_mem_pkts to allow the write buffers to drain before we can
-  // accept the pkt in case of a match.
+  // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
+  // As an optimization, we could snoop the data_mem_pkt to see if there are any matching entries
+  //   in the write buffer, so that the write buffer will only drain if it is full, or if there is
+  //   a snoop match. However, this is a critical path, so we simply drain the write buffer on
+  //   invalidations.
   // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
   assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached)
                                ? data_mem_pkt_v
-                               : ~(load_op & tl_we) & ~lce_snoop_match_lo & data_mem_pkt_v & ~wbuf_full_lo;
+                               : data_mem_pkt_v & ~(load_op & tl_we) & ~wbuf_v_lo;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin
@@ -1246,7 +1247,7 @@ module bp_be_dcache
 
   logic [lg_dcache_assoc_lp-1:0] tag_mem_pkt_way_r;
 
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
       tag_mem_pkt_way_r <= tag_mem_pkt.way_id;
     end
@@ -1289,7 +1290,7 @@ module bp_be_dcache
         );
   end
 
-  always_ff @ (negedge clk_i) begin
+  always_ff @ (posedge clk_i) begin
     if (v_tv_r) begin
       assert($countones(load_hit_tl) <= 1)
         else $error("multiple load hit: %b. id = %0d. addr = %H", load_hit_tl, cfg_bus_cast_i.dcache_id, addr_tag_tl);

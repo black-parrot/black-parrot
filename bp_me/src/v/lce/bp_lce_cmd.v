@@ -25,6 +25,9 @@ module bp_lce_cmd
     , parameter sets_p = "inv"
     , parameter block_width_p = "inv"
     , parameter fill_width_p = block_width_p
+    , parameter data_mem_negedge_p = 0
+    , parameter tag_mem_negedge_p = 0
+    , parameter stat_mem_negedge_p = 0
 
     , parameter timeout_max_limit_p=4
 
@@ -169,10 +172,11 @@ module bp_lce_cmd
   // command is accepted and new data is latched.
   logic data_buf_read_en;
   wire data_buf_read = data_mem_pkt_yumi_i & (data_mem_pkt.opcode == e_cache_data_mem_read);
+  wire data_mem_clk = (data_mem_negedge_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    data_buf_read_en_reg
-    (.clk_i(clk_i)
+    (.clk_i(data_mem_clk)
 
      ,.data_i(data_buf_read)
      ,.data_o(data_buf_read_en)
@@ -182,7 +186,7 @@ module bp_lce_cmd
   bsg_dff_reset_set_clear
    #(.width_p(1))
    data_buf_v_reg
-    (.clk_i(clk_i)
+    (.clk_i(data_mem_clk)
      ,.reset_i(reset_i)
 
      ,.set_i(data_buf_read_en)
@@ -194,7 +198,7 @@ module bp_lce_cmd
   bsg_dff_en
     #(.width_p(cce_block_width_p))
     data_buf_reg
-     (.clk_i(clk_i)
+     (.clk_i(data_mem_clk)
       ,.en_i(data_buf_read_en)
       ,.data_i(data_mem_i)
       ,.data_o(data_buf_r)
@@ -202,10 +206,11 @@ module bp_lce_cmd
 
   logic stat_buf_read_en;
   wire stat_buf_read = stat_mem_pkt_yumi_i & (stat_mem_pkt.opcode == e_cache_stat_mem_read);
+  wire stat_mem_clk = (stat_mem_negedge_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    stat_buf_read_en_reg
-    (.clk_i(clk_i)
+    (.clk_i(stat_mem_clk)
 
      ,.data_i(stat_buf_read)
      ,.data_o(stat_buf_read_en)
@@ -215,7 +220,7 @@ module bp_lce_cmd
   bsg_dff_reset_set_clear
    #(.width_p(1))
    stat_buf_v_reg
-    (.clk_i(clk_i)
+    (.clk_i(stat_mem_clk)
      ,.reset_i(reset_i)
 
      ,.set_i(stat_buf_read_en)
@@ -227,7 +232,7 @@ module bp_lce_cmd
   bsg_dff_en
     #(.width_p($bits(bp_cache_stat_info_s)))
     stat_buf_reg
-     (.clk_i(clk_i)
+     (.clk_i(stat_mem_clk)
       ,.en_i(stat_buf_read_en)
       ,.data_i(stat_mem_i)
       ,.data_o(stat_buf_r)
@@ -263,9 +268,10 @@ module bp_lce_cmd
 
     state_n = state_r;
 
+    uc_store_req_complete_o = 1'b0;
+
     cache_req_complete_o = 1'b0;
     cache_req_critical_o = 1'b0;  //TODO partial fill is not supported now
-    uc_store_req_complete_o = 1'b0;
 
     // LCE-CCE Interface signals
     lce_cmd_yumi_o = 1'b0;
@@ -428,8 +434,8 @@ module bp_lce_cmd
             e_lce_cmd_uc_st_done: begin
               // dequeue message and assert request complete signal for a cycle
               lce_cmd_yumi_o = lce_cmd_v_i;
-              uc_store_req_complete_o = lce_cmd_v_i;
 
+              uc_store_req_complete_o = lce_cmd_yumi_o;
             end
 
             // Data and Tag - completes cache miss
@@ -565,7 +571,6 @@ module bp_lce_cmd
       // Writeback dirty block - read from data memory, write to stat memory to clear dirty bit
       e_wb_dirty_rd: begin
 
-        /* TODO: NEED TO NOT USE STAT_PKT CAST DIRECTLY */
         // read from data memory, if data read wasn't already accepted in a previous cycle
         data_mem_pkt.index = lce_cmd_addr_index;
         data_mem_pkt.way_id = lce_cmd_way_id;

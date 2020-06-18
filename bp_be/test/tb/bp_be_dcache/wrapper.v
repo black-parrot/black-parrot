@@ -238,6 +238,8 @@ module wrapper
         ,.block_width_p(dcache_block_width_p)
         ,.timeout_max_limit_p(4)
         ,.credits_p(coh_noc_max_credits_p)
+        ,.data_mem_negedge_p(1)
+        ,.tag_mem_negedge_p(1)
        )
      dcache_lce
      (.clk_i(clk_i)
@@ -351,6 +353,8 @@ module wrapper
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
+     ,.data_mem_negedge_p(1)
+     ,.tag_mem_negedge_p(1)
      )
      dcache_uce
      (.clk_i(clk_i)

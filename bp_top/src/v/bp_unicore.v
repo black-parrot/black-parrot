@@ -198,7 +198,10 @@ module bp_unicore
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
-     ,.fill_width_p(dcache_fill_width_p))
+     ,.fill_width_p(dcache_fill_width_p)
+     ,.data_mem_negedge_p(1)
+     ,.tag_mem_negedge_p(1)
+     )
     dcache_uce
     (.clk_i(clk_i)
     ,.reset_i(reset_i)

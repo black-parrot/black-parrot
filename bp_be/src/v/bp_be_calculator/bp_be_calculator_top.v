@@ -311,8 +311,6 @@ bp_be_pipe_mul
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.kill_ex1_i(exc_stage_n[1].poison_v)
-     ,.kill_ex2_i(exc_stage_n[2].poison_v)
-     ,.kill_ex3_i(exc_stage_r[2].poison_v) 
      ,.flush_i(flush_i)
      ,.sfence_i(trap_pkt.sfence)
   
@@ -365,6 +363,15 @@ bp_be_pipe_mul
      ,.trans_info_i(trans_info_lo)
      );
 
+  logic [vaddr_width_p-1:0] pipe_mem_vaddr_r;
+  bsg_dff
+   #(.width_p(vaddr_width_p))
+   pipe_mem_vaddr_reg
+    (.clk_i(clk_i)
+     ,.data_i(pipe_mem_vaddr_lo)
+     ,.data_o(pipe_mem_vaddr_r)
+     );
+
   logic pipe_long_ready_lo;
   bp_be_pipe_sys
    #(.bp_params_p(bp_params_p))
@@ -394,7 +401,7 @@ bp_be_pipe_mul
      ,.exception_i(exc_stage_n[3].exc)
      ,.exception_pc_i(calc_stage_n[3].pc)
      // TODO: Should be latched, somewhere when mem is moved to two cycle
-     ,.exception_vaddr_i(pipe_mem_vaddr_lo)
+     ,.exception_vaddr_i(pipe_mem_vaddr_r)
      ,.commit_pkt_i(commit_pkt)
      ,.trap_pkt_o(trap_pkt)
 
@@ -459,8 +466,8 @@ bsg_dff
 //   static latencies, we cannot have two pipelines complete at the same time.
 assign pipe_fp_data_lo_v  = calc_stage_r[4].pipe_fp_v;
 assign pipe_mul_data_lo_v = calc_stage_r[3].pipe_mul_v;
-assign pipe_mem_data_lo_v = calc_stage_r[2].pipe_mem_v;
 assign pipe_sys_data_lo_v = calc_stage_r[2].pipe_sys_v;
+assign pipe_mem_data_lo_v = calc_stage_r[1].pipe_mem_v;
 assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
 assign pipe_ctrl_data_lo_v = calc_stage_r[0].pipe_ctrl_v;
 
@@ -470,12 +477,8 @@ always_comb
     // TODO: Add fflags
     comp_stage_n[0] = '0;
     comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo} : pipe_ctrl_data_lo;
-    comp_stage_n[2] = comp_stage_r[1];
-    comp_stage_n[3] = pipe_sys_data_lo_v 
-                      ? '{data: pipe_sys_data_lo}
-                      : pipe_mem_data_lo_v 
-                        ? '{data: pipe_mem_data_lo}
-                        : comp_stage_r[2];
+    comp_stage_n[2] = pipe_mem_data_lo_v ? '{data: pipe_mem_data_lo} : comp_stage_r[1];
+    comp_stage_n[3] = pipe_sys_data_lo_v ? '{data: pipe_sys_data_lo} : comp_stage_r[2];
     comp_stage_n[4] = pipe_mul_data_lo_v ? '{data: pipe_mul_data_lo} : comp_stage_r[3];
     comp_stage_n[5] = pipe_fp_data_lo_v  ? '{data: pipe_fp_data_lo } : comp_stage_r[4];
     comp_stage_n[6] = comp_stage_r[5];
@@ -597,15 +600,16 @@ always_comb
         exc_stage_n[0].exc.instr_page_fault   = reservation_n.decode.instr_page_fault;
         exc_stage_n[0].exc.illegal_instr      = reservation_n.decode.illegal_instr;
 
-        exc_stage_n[3].exc.dcache_miss        = pipe_mem_dcache_miss_lo;
-        exc_stage_n[3].exc.dtlb_miss          = pipe_mem_dtlb_miss_lo;
-        exc_stage_n[3].exc.fencei_v           = pipe_mem_fencei_lo;
-        exc_stage_n[3].exc.load_misaligned    = pipe_mem_load_misaligned_lo;
-        exc_stage_n[3].exc.load_access_fault  = pipe_mem_load_access_fault_lo;
-        exc_stage_n[3].exc.load_page_fault    = pipe_mem_load_page_fault_lo;
-        exc_stage_n[3].exc.store_misaligned   = pipe_mem_store_misaligned_lo;
-        exc_stage_n[3].exc.store_access_fault = pipe_mem_store_access_fault_lo;
-        exc_stage_n[3].exc.store_page_fault   = pipe_mem_store_page_fault_lo;
+        exc_stage_n[1].exc.dtlb_miss          = pipe_mem_dtlb_miss_lo;
+
+        exc_stage_n[2].exc.dcache_miss        = pipe_mem_dcache_miss_lo;
+        exc_stage_n[2].exc.fencei_v           = pipe_mem_fencei_lo;
+        exc_stage_n[2].exc.load_misaligned    = pipe_mem_load_misaligned_lo;
+        exc_stage_n[2].exc.load_access_fault  = pipe_mem_load_access_fault_lo;
+        exc_stage_n[2].exc.load_page_fault    = pipe_mem_load_page_fault_lo;
+        exc_stage_n[2].exc.store_misaligned   = pipe_mem_store_misaligned_lo;
+        exc_stage_n[2].exc.store_access_fault = pipe_mem_store_access_fault_lo;
+        exc_stage_n[2].exc.store_page_fault   = pipe_mem_store_page_fault_lo;
   end
 
 assign commit_pkt.v          = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
