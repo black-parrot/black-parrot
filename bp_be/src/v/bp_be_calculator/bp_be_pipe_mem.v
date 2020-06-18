@@ -23,6 +23,7 @@ module bp_be_pipe_mem
    , localparam mmu_cmd_width_lp       = `bp_be_mmu_cmd_width
    , localparam csr_cmd_width_lp       = `bp_be_csr_cmd_width
    , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
+   , localparam eaddr_pad_lp           = rv64_eaddr_width_gp - vaddr_width_p
 
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -110,12 +111,12 @@ wire fe_exc_v = (decode.fu_op == e_op_instr_misaligned)
                 | (decode.fu_op == e_op_instr_page_fault)
                 | (decode.fu_op == e_itlb_fill);
 
-wire pc_sigext = pc_i[38];
+wire pc_sigext = pc_i[vaddr_width_p-1];
 always_comb 
   begin
     mem1_cmd.mem_op   = decode.fu_op;
     mem1_cmd.data     = rs2_i;
-    mem1_cmd.eaddr    = fe_exc_v ? {{25{pc_sigext}}, pc_i} : (rs1_i + offset);
+    mem1_cmd.eaddr    = fe_exc_v ? {{eaddr_pad_lp{pc_sigext}}, pc_i} : (rs1_i + offset);
   end
 
 assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;
