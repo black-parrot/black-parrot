@@ -2,7 +2,7 @@
  *
  *  Name:
  *    bp_be_top.v
- * 
+ *
  */
 
 
@@ -16,11 +16,11 @@ module bp_be_top
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
-   // Default parameters 
+   // Default parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-   
+
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
   )
@@ -55,6 +55,7 @@ module bp_be_top
    , input                                           cache_req_ready_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
+   , input                                           cache_req_critical_i
    , input                                           cache_req_complete_i
    
    // data_mem
@@ -114,7 +115,6 @@ logic                          mstatus_sum_lo;
 logic                          mstatus_mxr_lo;
 
 logic flush;
-
 bp_be_director 
  #(.bp_params_p(bp_params_p))
  director
@@ -192,7 +192,7 @@ bp_be_scheduler
    ,.wb_pkt_i(wb_pkt)
    );
 
-bp_be_calculator_top 
+bp_be_calculator_top
  #(.bp_params_p(bp_params_p))
  calculator
   (.clk_i(clk_i)
@@ -225,6 +225,7 @@ bp_be_calculator_top
    ,.cache_req_v_o(cache_req_v_o)
    ,.cache_req_ready_i(cache_req_ready_i)
    ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+   ,.cache_req_critical_i(cache_req_critical_i)
    ,.cache_req_complete_i(cache_req_complete_i)
 
    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
@@ -244,4 +245,3 @@ bp_be_calculator_top
    );
 
 endmodule
-

@@ -18,7 +18,7 @@ module bp_be_pipe_mem
  import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_block_width_p, dcache)
    // Generated parameters
    , localparam decode_width_lp        = `bp_be_decode_width
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -73,6 +73,7 @@ module bp_be_pipe_mem
    , input                                           cache_req_ready_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
+   , input                                           cache_req_critical_i
    , input                                           cache_req_complete_i
 
    // data_mem
@@ -101,7 +102,7 @@ module bp_be_pipe_mem
 // Not sure if this is right.
 `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
 `declare_bp_be_dcache_pkt_s(page_offset_width_p, dword_width_p);
-`declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
+`declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_block_width_p, dcache);
   bp_dcache_req_s cache_req_cast_o;
 
   assign cache_req_o = cache_req_cast_o;
@@ -253,14 +254,15 @@ bp_be_dcache
 
     ,.poison_i(flush_i)
 
-    // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_lo)
-    ,.cache_req_complete_i(cache_req_complete_i)
+    // D$-LCE Interface
     ,.cache_req_o(cache_req_cast_o)
     ,.cache_req_v_o(cache_req_v_o)
     ,.cache_req_ready_i(cache_req_ready_i)
     ,.cache_req_metadata_o(cache_req_metadata_o)
     ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+    ,.cache_req_critical_i(cache_req_critical_i)
+    ,.cache_req_complete_i(cache_req_complete_i)
 
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)

@@ -75,7 +75,7 @@ module bp_me_nonsynth_mock_lce
 
     ,input [lce_cmd_width_lp-1:0]                           lce_cmd_i
     ,input                                                  lce_cmd_v_i
-    ,output logic                                           lce_cmd_ready_o
+    ,output logic                                           lce_cmd_yumi_o
 
     ,output logic [lce_cmd_width_lp-1:0]                    lce_cmd_o
     ,output logic                                           lce_cmd_v_o
@@ -106,24 +106,12 @@ module bp_me_nonsynth_mock_lce
   assign lce_resp_o = lce_resp;
   assign lce_cmd_o = lce_cmd_lo;
 
-  // FIFO to buffer LCE commands from ME
-  logic lce_cmd_v, lce_cmd_yumi;
-  bp_lce_cmd_s lce_cmd, lce_cmd_r, lce_cmd_n;
+  // Structs for input messages
+  bp_lce_cmd_s lce_cmd;
+  assign lce_cmd = lce_cmd_i;
 
-  bsg_two_fifo
-    #(.width_p(lce_cmd_width_lp))
-  lce_cmd_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     // command from ME
-     ,.ready_o(lce_cmd_ready_o)
-     ,.data_i(lce_cmd_i)
-     ,.v_i(lce_cmd_v_i)
-     // command to mock LCE
-     ,.v_o(lce_cmd_v)
-     ,.data_o(lce_cmd)
-     ,.yumi_i(lce_cmd_yumi)
-    );
+  // LCE command register
+  bp_lce_cmd_s lce_cmd_r, lce_cmd_n;
 
   // Tags
   dir_entry_s [assoc_p-1:0] tag_data_li, tag_w_mask_li, tag_data_lo;
@@ -485,7 +473,7 @@ module bp_me_nonsynth_mock_lce
 
     // inbound queues
     lce_cmd_n = lce_cmd_r;
-    lce_cmd_yumi = '0;
+    lce_cmd_yumi_o = '0;
 
     // miss handling
     mshr_n = mshr_r;
@@ -543,7 +531,7 @@ module bp_me_nonsynth_mock_lce
       end
       // Until all syncs occur, all requests will be uncached
       UNCACHED_ONLY: begin
-        if (freeze_i & lce_cmd_v & lce_cmd.header.msg_type == e_lce_cmd_sync) begin
+        if (freeze_i & lce_cmd_v_i & lce_cmd.header.msg_type == e_lce_cmd_sync) begin
           // CCE will be used in normal mode, wait for all syncs, then transition to normal mode.
           lce_state_n = INIT;
         end else if (~freeze_i & tr_pkt_v_i & ~mshr_r.miss) begin
@@ -601,7 +589,7 @@ module bp_me_nonsynth_mock_lce
       end
       UNCACHED_SEND_TR_RESP: begin
         // send return packet to TR
-        if (lce_cmd_v & lce_cmd.header.msg_type == e_lce_cmd_uc_st_done) begin
+        if (lce_cmd_v_i & lce_cmd.header.msg_type == e_lce_cmd_uc_st_done) begin
           // store sends back null packet when it receives lce_cmd back
           tr_pkt_v_o = 1'b1;
           tr_pkt_lo.paddr = lce_cmd.header.addr;
@@ -612,12 +600,12 @@ module bp_me_nonsynth_mock_lce
                           : UNCACHED_ONLY
                         : UNCACHED_SEND_TR_RESP;
 
-          lce_cmd_yumi = lce_cmd_v & tr_pkt_ready_i;
+          lce_cmd_yumi_o = lce_cmd_v_i & tr_pkt_ready_i;
 
           // clear miss handling state
           mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
 
-        end else if (lce_cmd_v & lce_cmd.header.msg_type == e_lce_cmd_uc_data) begin
+        end else if (lce_cmd_v_i & lce_cmd.header.msg_type == e_lce_cmd_uc_data) begin
           // load returns the data, and must wait for lce_data_cmd to return
           tr_pkt_v_o = 1'b1;
           // Extract the desired bits from the returned 64-bit dword
@@ -639,7 +627,7 @@ module bp_me_nonsynth_mock_lce
                         : UNCACHED_SEND_TR_RESP;
 
           // dequeue data cmd if TR accepts the outbound packet
-          lce_cmd_yumi = lce_cmd_v & tr_pkt_ready_i;
+          lce_cmd_yumi_o = lce_cmd_v_i & tr_pkt_ready_i;
 
           // clear miss handling state
           mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
@@ -654,9 +642,9 @@ module bp_me_nonsynth_mock_lce
         // register that LCE is initialized after sending all sync acks
         lce_init_n = (cnt == counter_width_p'(num_cce_p)) ? 1'b1 : 1'b0;
 
-        if (lce_cmd_v & lce_cmd.header.msg_type == e_lce_cmd_sync) begin
+        if (lce_cmd_v_i & lce_cmd.header.msg_type == e_lce_cmd_sync) begin
           // dequeue the command, go to SEND_SYNC
-          lce_cmd_yumi = lce_cmd_v;
+          lce_cmd_yumi_o = lce_cmd_v_i;
           lce_cmd_n = lce_cmd;
           lce_state_n = SEND_SYNC;
           cnt_inc = 1'b1;
@@ -678,9 +666,9 @@ module bp_me_nonsynth_mock_lce
       READY: begin
         lce_state_n = READY;
 
-        if (lce_cmd_v) begin
+        if (lce_cmd_v_i) begin
           // dequeue the command and save
-          lce_cmd_yumi = lce_cmd_v;
+          lce_cmd_yumi_o = lce_cmd_v_i;
           lce_cmd_n = lce_cmd;
 
           assert(lce_cmd.header.dst_id == lce_id_i) else $error("[%0d]: command delivered to wrong LCE", lce_id_i);

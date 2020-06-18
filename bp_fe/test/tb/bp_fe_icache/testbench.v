@@ -30,24 +30,23 @@ module testbench
    , parameter use_max_latency_p      = 0
    , parameter use_random_latency_p   = 1
    , parameter use_dramsim2_latency_p = 0
-   
+
    , parameter max_latency_p = 15
-   
+
    , parameter dram_clock_period_in_ps_p = 1000
    , parameter dram_cfg_p                = "dram_ch.ini"
    , parameter dram_sys_cfg_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384
 
   // I-Cache Widths
-  `declare_bp_fe_tag_widths(icache_assoc_p, icache_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
-  `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
-  
+  `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+
   // LCE-CCE Interface Widths
   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-  
+
   // CCE-MEM Interface Widths
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
-  
+
   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   , localparam page_offset_width_lp = bp_page_offset_width_gp
   , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
@@ -71,7 +70,7 @@ module testbench
   logic mem_cmd_v_lo, mem_resp_v_lo;
   logic mem_cmd_ready_lo, mem_resp_yumi_li;
   logic [cce_mem_msg_width_lp-1:0] mem_cmd_lo, mem_resp_lo;
- 
+
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
   logic trace_v_lo;
   logic dut_ready_lo;
@@ -98,7 +97,7 @@ module testbench
     cfg_bus_cast_li.icache_mode = e_lce_mode_normal;
     cfg_bus_cast_li.cce_mode = e_cce_mode_normal;
   end
- 
+
   assign ptag_li = trace_data_lo[0+:(ptag_width_lp)];
   assign vaddr_li = trace_data_lo[ptag_width_lp+:vaddr_width_p];
   assign uncached_li = trace_data_lo[(ptag_width_lp+vaddr_width_p)+:1];
@@ -169,11 +168,11 @@ module testbench
 
   // This fifo has 16 elements since maximum number of streaming hits is 16
   // Probably a side effect of the testing strategy.  Open for debate
-  bsg_fifo_1r1w_small 
+  bsg_fifo_1r1w_small
     #(.width_p(instr_width_p)
      ,.els_p(16)
     )
-    output_fifo 
+    output_fifo
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
@@ -198,11 +197,11 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.cfg_bus_i(cfg_bus_li)
-     
+
      ,.vaddr_i(vaddr_li)
      ,.vaddr_v_i(trace_v_lo)
      ,.vaddr_ready_o(dut_ready_lo)
-     
+
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(trace_v_lo)
 
@@ -227,12 +226,12 @@ module testbench
      ,.mem_zero_p(mem_zero_p)
      ,.mem_file_p(mem_file_p)
      ,.mem_offset_p(mem_offset_p)
-   
+
      ,.use_max_latency_p(use_max_latency_p)
      ,.use_random_latency_p(use_random_latency_p)
      ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
      ,.max_latency_p(max_latency_p)
-   
+
      ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
      ,.dram_cfg_p(dram_cfg_p)
      ,.dram_sys_cfg_p(dram_sys_cfg_p)
@@ -241,11 +240,11 @@ module testbench
     mem
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
- 
+
     ,.mem_cmd_i(mem_cmd_lo)
     ,.mem_cmd_v_i(mem_cmd_v_lo)
     ,.mem_cmd_ready_o(mem_cmd_ready_lo)
- 
+
     ,.mem_resp_o(mem_resp_lo)
     ,.mem_resp_v_o(mem_resp_v_lo)
     ,.mem_resp_yumi_i(mem_resp_yumi_li)
@@ -258,14 +257,15 @@ module testbench
      ,.assoc_p(icache_assoc_p)
      ,.sets_p(icache_sets_p)
      ,.block_width_p(icache_block_width_p)
+     ,.fill_width_p(icache_fill_width_p)
      ,.trace_file_p("icache"))
     icache_tracer
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      
+
       ,.freeze_i(cfg_bus_cast_i.freeze)
       ,.mhartid_i(cfg_bus_cast_i.core_id)
-      
+
       ,.v_tl_r(v_tl_r)
 
       ,.v_tv_r(v_tv_r)
@@ -281,7 +281,7 @@ module testbench
       ,.cache_req_complete_i(cache_req_complete_i)
 
       ,.wt_req()
-      
+
       ,.v_o(data_v_o)
       ,.load_data(dword_width_p'(data_o))
       ,.store_data(dword_width_p'(0))

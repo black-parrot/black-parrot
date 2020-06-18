@@ -13,6 +13,8 @@ $BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.v
 $BP_ME_DIR/test/common/dramsim2_wrapper.cpp
 $BP_ME_DIR/test/common/bp_mem_utils.cpp
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.v
+$BP_ME_DIR/test/common/bp_me_nonsynth_pkg.vh
+$BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.v
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.v
 # top files
 $BP_TOP_DIR/test/common/bp_nonsynth_watchdog.v

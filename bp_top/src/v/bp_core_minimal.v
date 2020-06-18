@@ -17,13 +17,12 @@ module bp_core_minimal
   #(parameter bp_params_e bp_params_p = e_bp_single_core_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     )
-   (
-    input          clk_i
+    ( input          clk_i
     , input        reset_i
 
     // Config info
@@ -44,6 +43,7 @@ module bp_core_minimal
     , output logic  dcache_req_metadata_v_o
 
     , input dcache_req_complete_i
+    , input dcache_req_critical_i
 
     , output logic [icache_req_width_lp-1:0] icache_req_o
     , output logic icache_req_v_o
@@ -52,12 +52,13 @@ module bp_core_minimal
     , output logic  icache_req_metadata_v_o
 
     , input icache_req_complete_i
+    , input icache_req_critical_i
 
     // D$ response interface
     , input [dcache_data_mem_pkt_width_lp-1:0] dcache_data_mem_pkt_i
     , input dcache_data_mem_pkt_v_i
     , output logic dcache_data_mem_pkt_yumi_o
-    , output logic [dcache_block_width_p-1:0] dcache_data_mem_o 
+    , output logic [dcache_block_width_p-1:0] dcache_data_mem_o
 
     , input [dcache_tag_mem_pkt_width_lp-1:0] dcache_tag_mem_pkt_i
     , input dcache_tag_mem_pkt_v_i
@@ -73,7 +74,7 @@ module bp_core_minimal
     , input [icache_data_mem_pkt_width_lp-1:0] icache_data_mem_pkt_i
     , input icache_data_mem_pkt_v_i
     , output logic icache_data_mem_pkt_yumi_o
-    , output logic [icache_block_width_p-1:0] icache_data_mem_o 
+    , output logic [icache_block_width_p-1:0] icache_data_mem_o
 
     , input [icache_tag_mem_pkt_width_lp-1:0] icache_tag_mem_pkt_i
     , input icache_tag_mem_pkt_v_i
@@ -124,6 +125,7 @@ module bp_core_minimal
      ,.cache_req_metadata_o(icache_req_metadata_o)
      ,.cache_req_metadata_v_o(icache_req_metadata_v_o)
      ,.cache_req_complete_i(icache_req_complete_i)
+     ,.cache_req_critical_i(icache_req_critical_i)
 
      ,.data_mem_pkt_i(icache_data_mem_pkt_i)
      ,.data_mem_pkt_v_i(icache_data_mem_pkt_v_i)
@@ -158,7 +160,7 @@ module bp_core_minimal
      ,.v_o(fe_cmd_v_lo)
      ,.yumi_i(fe_cmd_yumi_li)
      );
- 
+
   wire fe_cmd_empty_lo = ~fe_cmd_v_lo;
   wire fe_cmd_full_lo  = ~fe_cmd_ready_lo;
   wire fe_cmd_fence_li = fe_cmd_v_lo;
@@ -218,6 +220,7 @@ module bp_core_minimal
      ,.cache_req_metadata_v_o(dcache_req_metadata_v_o)
 
      ,.cache_req_complete_i(dcache_req_complete_i)
+     ,.cache_req_critical_i(dcache_req_critical_i)
 
      ,.data_mem_pkt_i(dcache_data_mem_pkt_i)
      ,.data_mem_pkt_v_i(dcache_data_mem_pkt_v_i)
@@ -243,4 +246,3 @@ module bp_core_minimal
      );
 
 endmodule
-

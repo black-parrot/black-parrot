@@ -20,7 +20,7 @@ module bp_be_calculator_top
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_block_width_p, dcache)
 
    // Default parameters
    , parameter fp_en_p                  = 0
@@ -70,31 +70,31 @@ module bp_be_calculator_top
 
   // D$-LCE Interface
   // signals to LCE
-  , output logic [dcache_req_width_lp-1:0]         cache_req_o
-  , output logic                                   cache_req_v_o
-  , input                                          cache_req_ready_i
-  , output logic [dcache_req_metadata_width_lp-1:0]cache_req_metadata_o
-  , output logic                                   cache_req_metadata_v_o
-
-  , input cache_req_complete_i
+  , output logic [dcache_req_width_lp-1:0]          cache_req_o
+  , output logic                                    cache_req_v_o
+  , input                                           cache_req_ready_i
+  , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
+  , output logic                                    cache_req_metadata_v_o
+  , input                                           cache_req_critical_i
+  , input                                           cache_req_complete_i
 
   // data_mem
-  , input data_mem_pkt_v_i
-  , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-  , output logic data_mem_pkt_yumi_o
-  , output logic [dcache_block_width_p-1:0] data_mem_o
+  , input                                           data_mem_pkt_v_i
+  , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
+  , output logic                                    data_mem_pkt_yumi_o
+  , output logic [dcache_block_width_p-1:0]         data_mem_o
 
   // tag_mem
-  , input tag_mem_pkt_v_i
-  , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-  , output logic tag_mem_pkt_yumi_o
-  , output logic [ptag_width_p-1:0] tag_mem_o
+  , input                                           tag_mem_pkt_v_i
+  , input [dcache_tag_mem_pkt_width_lp-1:0]         tag_mem_pkt_i
+  , output logic                                    tag_mem_pkt_yumi_o
+  , output logic [ptag_width_p-1:0]                 tag_mem_o
 
   // stat_mem
-  , input stat_mem_pkt_v_i
-  , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-  , output logic stat_mem_pkt_yumi_o
-  , output logic [dcache_stat_info_width_lp-1:0] stat_mem_o
+  , input                                           stat_mem_pkt_v_i
+  , input [dcache_stat_mem_pkt_width_lp-1:0]        stat_mem_pkt_i
+  , output logic                                    stat_mem_pkt_yumi_o
+  , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
   );
 
 // Declare parameterizable structs
@@ -332,6 +332,7 @@ bp_be_pipe_mul
      ,.cache_req_ready_i(cache_req_ready_i)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+     ,.cache_req_critical_i(cache_req_critical_i)
      ,.cache_req_complete_i(cache_req_complete_i)
 
      ,.data_mem_pkt_i(data_mem_pkt_i)
