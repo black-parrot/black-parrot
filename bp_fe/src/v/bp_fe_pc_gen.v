@@ -436,7 +436,7 @@ always_comb
       end
   end
 
-assign mem_poison_o         = ~pc_gen_stage_n[1].v;
+assign mem_poison_o         = flush | ovr_taken | ovr_ret;
 assign mem_priv_o           = shadow_priv_w ? shadow_priv_n : shadow_priv_r;
 assign mem_translation_en_o = shadow_translation_en_w ? shadow_translation_en_n : shadow_translation_en_r;
 
