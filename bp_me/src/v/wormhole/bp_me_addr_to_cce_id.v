@@ -64,7 +64,7 @@ always_comb begin
     cce_id_o[0+:lg_num_cce_lp] = cce_dst_id_lo;
   else
     cce_id_o = (num_sacc_p > 1)
-               ? max_cac_cce_lp + paddr_i[paddr_width_p-io_noc_did_width_p-1-:`BSG_SAFE_CLOG2(num_sacc_p)]
+               ? max_cac_cce_lp + paddr_i[paddr_width_p-io_noc_did_width_p-1-: (num_sacc_p > 1 ? `BSG_SAFE_CLOG2(num_sacc_p) : 1)]
                : max_cac_cce_lp;
      
    
