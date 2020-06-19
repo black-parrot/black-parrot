@@ -541,7 +541,7 @@ assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_rr;
 // MMU response connections
 assign mem_resp.exc_v  = |exception_ecode_dec_li;
 assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~dcache_fencei_v & ~|exception_ecode_dec_li;
-assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
+assign mem_resp.data   = dcache_v_lo ? dcache_data : csr_data_lo;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
 assign mmu_cmd_ready_o = dcache_ready_lo & ~dcache_miss_lo & ~ptw_busy;
