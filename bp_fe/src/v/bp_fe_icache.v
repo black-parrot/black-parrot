@@ -276,7 +276,7 @@ module bp_fe_icache
 
   // uncached request
   logic uncached_load_data_v_r;
-  logic [dword_width_p-1:0] uncached_load_data_r;
+  logic [instr_width_p-1:0] uncached_load_data_r;
 
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign fencei_req = v_tv_r & fencei_op_tv_r;
@@ -418,22 +418,17 @@ module bp_fe_icache
      ,.data_o(ld_data_dword_picked)
      );
 
-  logic [dword_width_p-1:0] final_data;
+  logic [instr_width_p-1:0] final_data;
   bsg_mux #(
-    .width_p(dword_width_p)
+    .width_p(instr_width_p)
     ,.els_p(2)
   ) final_data_mux (
-    .data_i({uncached_load_data_r, ld_data_dword_picked})
-    ,.sel_i(uncached_tv_r)
+    .data_i(ld_data_dword_picked)
+    ,.sel_i(addr_tv_r[2])
     ,.data_o(final_data)
   );
 
-  logic lower_upper_sel;
-
-  assign lower_upper_sel             = addr_tv_r[2]; // Select upper/lower 32 bits
-  assign data_o = lower_upper_sel
-    ? final_data[instr_width_p+:instr_width_p]
-    : final_data[instr_width_p-1:0];
+  assign data_o = uncached_tv_r ? uncached_load_data_r : final_data;
 
   // data mem
   logic                                                       data_mem_v;
@@ -601,7 +596,7 @@ module bp_fe_icache
     end
     else begin
       if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
-        uncached_load_data_r <= data_mem_pkt.data[0+:dword_width_p];
+        uncached_load_data_r <= data_mem_pkt.data[0+:instr_width_p];
         uncached_load_data_v_r <= 1'b1;
       end
       else if (poison_i)

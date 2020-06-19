@@ -857,6 +857,7 @@ module bp_be_dcache
 
   logic [bank_width_lp-1:0] ld_data_way_picked;
   logic [dword_width_p-1:0] ld_data_dword_picked;
+  logic [dword_width_p-1:0] ld_data_final;
   logic [dword_width_p-1:0] bypass_data_masked;
   logic [dcache_assoc_p-1:0] ld_data_way_select;
 
@@ -877,33 +878,32 @@ module bp_be_dcache
     ,.data_o(ld_data_way_picked)
   );
 
-  bsg_mux
-    #(.width_p(dword_width_p)
+  bsg_mux #(
+    .width_p(dword_width_p)
     ,.els_p(num_dwords_per_bank_lp)
-    )
-    dword_mux
-    (.data_i(ld_data_way_picked)
+  ) dword_mux (
+    .data_i(ld_data_way_picked)
     ,.sel_i(paddr_tv_r[3+:`BSG_CDIV(num_dwords_per_bank_lp, 2)])
     ,.data_o(ld_data_dword_picked)
     );
 
+  bsg_mux #(
+     .width_p(dword_width_p)
+     ,.els_p(2)
+   ) uncached_mux (
+     .data_i({uncached_load_data_r, ld_data_dword_picked})
+     ,.sel_i(uncached_tv_r)
+     ,.data_o(ld_data_final)
+   );
+
+  logic [dword_width_p-1:0] final_data;
   bsg_mux_segmented #(
     .segments_p(bypass_data_mask_width_lp)
     ,.segment_width_p(8)
   ) bypass_mux_segmented (
-    .data0_i(ld_data_dword_picked)
+    .data0_i(ld_data_final)
     ,.data1_i(bypass_data_lo)
     ,.sel_i(bypass_mask_lo)
-    ,.data_o(bypass_data_masked)
-  );
-
-  logic [dword_width_p-1:0] final_data;
-  bsg_mux #(
-    .width_p(dword_width_p)
-    ,.els_p(2)
-  ) final_data_mux (
-    .data_i({uncached_load_data_r, bypass_data_masked})
-    ,.sel_i(uncached_tv_r)
     ,.data_o(final_data)
   );
 
