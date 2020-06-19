@@ -369,7 +369,7 @@ bp_be_ptw
    ,.dcache_miss_i(dcache_miss_lo)
   );
 
-logic load_op_tl_lo, store_op_tl_lo;
+logic load_op_tl_lo, store_op_tl_lo, dcache_v_lo, dcache_fencei_v_lo;
 bp_be_dcache
   #(.bp_params_p(bp_params_p))
   dcache
@@ -382,8 +382,8 @@ bp_be_dcache
     ,.v_i(dcache_pkt_v)
     ,.ready_o(dcache_ready_lo)
 
-    ,.fencei_v_o(dcache_fencei_v)
-    ,.v_o(dcache_v)
+    ,.fencei_v_o(dcache_fencei_v_lo)
+    ,.v_o(dcache_v_lo)
     ,.data_o(dcache_data)
 
     ,.tlb_miss_i(dcache_tlb_miss)
@@ -451,6 +451,8 @@ end // always_ff @
 
 always_ff @(posedge clk_i) begin
   if(reset_i) begin
+    dcache_v     <= '0;
+    dcache_fencei_v     <= '0;
     dtlb_miss_r  <= '0;
     mmu_cmd_v_r  <= '0;
     mmu_cmd_v_rr <= '0;
@@ -464,6 +466,8 @@ always_ff @(posedge clk_i) begin
     store_access_fault_mem3 <= '0;
   end
   else begin
+    dcache_v     <= dcache_v_lo;
+    dcache_fencei_v     <= dcache_fencei_v_lo;
     dtlb_miss_r  <= ndtlb_miss_r & ~chk_poison_ex_i;
     mmu_cmd_v_r  <= nmmu_cmd_v_r;
     mmu_cmd_v_rr <= nmmu_cmd_v_rr & ~chk_poison_ex_i;
