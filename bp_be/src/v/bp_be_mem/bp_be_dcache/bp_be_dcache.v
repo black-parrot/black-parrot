@@ -1138,7 +1138,7 @@ module bp_be_dcache
   //
   logic [way_id_width_lp-1:0] data_mem_pkt_way_r;
 
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_read)) begin
       data_mem_pkt_way_r <= data_mem_pkt.way_id;
     end
@@ -1148,7 +1148,7 @@ module bp_be_dcache
   bsg_rotate_right #(
     .width_p(dcache_block_width_p)
   ) read_data_rotate (
-    .data_i(data_mem_data_r)
+    .data_i(data_mem_data_lo)
     ,.rot_i(read_data_rot_li)
     ,.o(data_mem_o)
   );
@@ -1163,7 +1163,7 @@ module bp_be_dcache
                                : ~(load_op & tl_we) & ~lce_snoop_match_lo & data_mem_pkt_v;
 
   // load reservation logic
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (reset_i) begin
       load_reserved_v_r <= 1'b0;
     end
@@ -1213,14 +1213,14 @@ module bp_be_dcache
   
   logic [way_id_width_lp-1:0] tag_mem_pkt_way_r;
 
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
       tag_mem_pkt_way_r <= tag_mem_pkt.way_id;
     end
   end
 
   // Creates a half cycle read (negedge -> posedge) 
-  assign tag_mem_o =  tag_mem_data_r[tag_mem_pkt_way_r].tag;
+  assign tag_mem_o =  tag_mem_data_lo[tag_mem_pkt_way_r].tag;
 
   assign tag_mem_pkt_yumi_o = ~tl_we & tag_mem_pkt_v;
   

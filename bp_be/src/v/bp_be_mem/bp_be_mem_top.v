@@ -439,13 +439,13 @@ always_ff @(negedge clk_i) begin
     nfencei_v_rr  <= '0;
   end
   else begin
-    ndtlb_miss_r  <= dtlb_miss_v & ~chk_poison_ex_i;
+    ndtlb_miss_r  <= dtlb_miss_v /*& ~chk_poison_ex_i*/;
     nmmu_cmd_v_r  <= mmu_cmd_v_i;
-    nmmu_cmd_v_rr <= mmu_cmd_v_r & ~chk_poison_ex_i;
+    nmmu_cmd_v_rr <= mmu_cmd_v_r /*& ~chk_poison_ex_i*/;
     nis_store_r   <= is_store;
-    nis_store_rr  <= is_store_r & ~chk_poison_ex_i;
+    nis_store_rr  <= is_store_r /*& ~chk_poison_ex_i*/;
     nfencei_v_r   <= fencei_cmd_v;
-    nfencei_v_rr  <= fencei_v_r & ~chk_poison_ex_i;
+    nfencei_v_rr  <= fencei_v_r /*& ~chk_poison_ex_i*/;
   end
 end // always_ff @
 

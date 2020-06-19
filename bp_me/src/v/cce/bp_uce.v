@@ -9,6 +9,7 @@ module bp_uce
    ,parameter assoc_p = 8
    ,parameter sets_p = 64
    ,parameter block_width_p = 512
+   ,parameter dcache_negedge_p = 0
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
@@ -89,8 +90,6 @@ module bp_uce
   always_ff @(posedge clk_i)
     begin
       cache_req_v_r <= cache_req_v_i;
-      dirty_data_v_r <= data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
-      dirty_tag_v_r <= tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
       dirty_stat_v_r <= stat_mem_pkt_yumi_i & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
     end
 
@@ -128,27 +127,69 @@ module bp_uce
      ,.data_o(cache_req_metadata_v_r)
      );
 
+  logic nclk;
+  assign nclk = ~clk_i;
+  
   logic [block_width_p-1:0] dirty_data_r;
-  bsg_dff_en_bypass
-   #(.width_p(block_width_p))
-   dirty_data_reg
-    (.clk_i(clk_i)
-
-    ,.en_i(dirty_data_v_r)
-    ,.data_i(data_mem_i)
-    ,.data_o(dirty_data_r)
-    );
-
   logic [ptag_width_p-1:0] dirty_tag_r;
-  bsg_dff_en_bypass
-   #(.width_p(ptag_width_p))
-   dirty_tag_reg
-    (.clk_i(clk_i)
+  if (dcache_negedge_p == 1) begin
+     bsg_dff_en_bypass
+      #(.width_p(block_width_p))
+      dirty_data_reg
+       (.clk_i(nclk)
 
-    ,.en_i(dirty_tag_v_r)
-    ,.data_i(tag_mem_i)
-    ,.data_o(dirty_tag_r)
-    );
+       ,.en_i(dirty_data_v_r)
+       ,.data_i(data_mem_i)
+       ,.data_o(dirty_data_r)
+       );
+  end
+  else begin
+     bsg_dff_en_bypass
+      #(.width_p(block_width_p))
+      dirty_data_reg
+       (.clk_i(clk_i)
+
+       ,.en_i(dirty_data_v_r)
+       ,.data_i(data_mem_i)
+       ,.data_o(dirty_data_r)
+       );
+  end // else: !if(dcache_negedge_p == 1)
+
+  if (dcache_negedge_p == 1) begin
+     bsg_dff_en_bypass
+      #(.width_p(ptag_width_p))
+      dirty_tag_reg
+       (.clk_i(nclk)
+
+       ,.en_i(dirty_tag_v_r)
+       ,.data_i(tag_mem_i)
+       ,.data_o(dirty_tag_r)
+       );
+  end
+  else begin
+     bsg_dff_en_bypass
+      #(.width_p(ptag_width_p))
+      dirty_tag_reg
+       (.clk_i(clk_i)
+
+       ,.en_i(dirty_tag_v_r)
+       ,.data_i(tag_mem_i)
+       ,.data_o(dirty_tag_r)
+       );
+  end // else: !if(dcache_negedge_p == 1)
+
+  if (dcache_negedge_p == 1) begin
+     always_ff @(negedge clk_i) begin
+	dirty_data_v_r <= data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
+        dirty_tag_v_r <= tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
+     end
+  end
+  else begin
+     always_ff @(posedge clk_i) begin
+	dirty_data_v_r <= data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
+        dirty_tag_v_r <= tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
+     end
+  end
 
   bp_cache_stat_info_s dirty_stat_r;
   bsg_dff_en_bypass
