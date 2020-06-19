@@ -15,7 +15,7 @@ export VM_TRACE_P     ?= 0
 export CORE_PROFILE_P ?= 0
 export PRELOAD_MEM_P  ?= 1
 export LOAD_NBF_P     ?= 0
-export COSIM_P        ?= 0
+export COSIM_P        ?= 1
 
 export SAMPLE_MEMSIZE   ?= 32
 export SAMPLE_START_P   ?= 0
