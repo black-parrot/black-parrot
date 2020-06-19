@@ -439,15 +439,12 @@ module bp_fe_icache
   logic [icache_assoc_p-1:0] data_mem_bypass_select;
   logic [icache_assoc_p-1:0] vaddr_offset_dec;
 
-  // data mem bypass bank select logic
-  bsg_dff_reset_set_clear #(
-    .width_p(1)
-    ,.clear_over_set_p(1)) 
+  // during a data mem bypass, only the necessary bank of data memory will be valid
+  bsg_dff_reset #(.width_p(1))
     data_mem_last_read_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(tl_we)
-     ,.clear_i(~tl_we)
+     ,.data_i(tl_we)
      ,.data_o(data_mem_last_read_r)
     );
 
@@ -464,6 +461,7 @@ module bp_fe_icache
      ,.o(data_mem_bypass_select)
     );
 
+  // the following bypass logic assumes that vtag->ptag mapping will not change during bypass
   assign data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & data_mem_last_read_r;
 
   assign data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
@@ -501,7 +499,7 @@ module bp_fe_icache
   logic tag_mem_bypass;
   logic tag_mem_last_read_r;
 
-  // tag_mem bypass logic
+  // tag mem is bypassed if the index is the same on consecutive reads
   bsg_dff_reset_set_clear #(
     .width_p(1)
     ,.clear_over_set_p(1)

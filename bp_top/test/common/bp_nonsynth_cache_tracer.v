@@ -72,6 +72,11 @@ module bp_nonsynth_cache_tracer
    , input                                                 stat_mem_pkt_v_i
    , input [cache_stat_mem_pkt_width_lp-1:0]               stat_mem_pkt_i
    , input                                                 stat_mem_pkt_yumi_o
+   
+   // tag and data mem read counter
+   , input                                                 tag_mem_v_i
+   , input [icache_assoc_p-1:0]                            data_mem_v_i
+   , input                                                 program_finish_i
    );
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache);
@@ -101,6 +106,29 @@ module bp_nonsynth_cache_tracer
    end
 
   string op, data_op, tag_op, stat_op;
+
+  // the following counters express how often tag mem and data mem are valid
+  integer dmem_bank;
+  integer i;
+  logic [63:0] tag_mem_v_count_r;
+  logic [icache_assoc_p-1:0][63:0] data_mem_v_count_r;
+
+  always_ff @(posedge clk_i)
+    begin
+      if (reset_i)
+        begin
+          tag_mem_v_count_r <= '0;
+          data_mem_v_count_r <= '0;
+        end
+      else
+        begin
+          tag_mem_v_count_r <= tag_mem_v_count_r + tag_mem_v_i;
+          for (dmem_bank = 0; dmem_bank < icache_assoc_p; dmem_bank++)
+            begin
+              data_mem_v_count_r[dmem_bank] <= data_mem_v_count_r[dmem_bank] + data_mem_v_i[dmem_bank];
+            end
+        end
+    end
 
   always_comb begin
     if (lr_miss_tv & cache_req_v_o)
@@ -197,6 +225,15 @@ module bp_nonsynth_cache_tracer
 
       if (cache_req_v_o & (cache_req_cast_o.msg_type == e_miss_store || cache_req_cast_o.msg_type == e_uc_store))
         $fwrite(file, "[%t] store data: %x \n", $time, store_data);
+
+      if (program_finish_i)
+        begin
+          $fwrite(file,"[%t] Tag Mem valid count: %0d \n", $time, tag_mem_v_count_r);
+         for (i = 0; i < icache_assoc_p; i++)
+           begin
+             $fwrite(file,"[%t] Data Mem%0d valid count: %0d \n", $time, i, data_mem_v_count_r[i]);
+           end
+        end
     end
 
 endmodule

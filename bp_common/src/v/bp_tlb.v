@@ -44,7 +44,8 @@ bsg_dff_reset #(.width_p(vtag_width_p))
    ,.data_o(vtag_r)
   );
 
-// tlb bypass logic
+// Tlb bypass logic bypasses tlb reads if translation is disabled 
+// or if the input vtags on consecutive reads are the same
 logic tlb_bypass;
 logic tlb_bypass_r;
 logic tlb_last_read_r;
@@ -61,18 +62,14 @@ bsg_dff_reset #(.width_p(1))
    ,.data_o(tlb_bypass_r)
   );
 
-bsg_dff_reset_set_clear 
-  #(.width_p(1)
-    ,.clear_over_set_p(1)
-    )
+bsg_dff_reset #(.width_p(1))
   tlb_last_read_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.set_i((v_i & ~w_i))
-   ,.clear_i(~(v_i & ~w_i))
+   ,.data_i(v_i & ~w_i)
    ,.data_o(tlb_last_read_r)
-  ); 
- 
+  );
+
 bp_pte_entry_leaf_s r_entry, passthrough_entry;
 logic r_v_lo;
 bsg_cam_1r1w_sync
@@ -96,6 +93,8 @@ bsg_cam_1r1w_sync
    ,.r_v_o(r_v_lo)
    );
 
+// If the tlb is bypassed, r_entry_bypass_r is same as the previous
+// r_entry. Else, r_entry_bypass_r is from CAM's r_data_o
 bsg_dff_reset_en_bypass #(.width_p(entry_width_lp))
   r_entry_bypass_reg
   (.clk_i(clk_i)

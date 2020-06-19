@@ -431,6 +431,10 @@ bind bp_be_top
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+       ,.tag_mem_v_i(tag_mem_v_li)
+       ,.data_mem_v_i(data_mem_v_li)
+       ,.program_finish_i(testbench.program_finish_lo)
        );
 
   bind bp_fe_icache
@@ -480,6 +484,10 @@ bind bp_be_top
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+       ,.tag_mem_v_i(tag_mem_v_li)
+       ,.data_mem_v_i(data_mem_v_li)
+       ,.program_finish_i(testbench.program_finish_lo)
        );
 
   bind bp_core_minimal
@@ -496,11 +504,15 @@ bind bp_be_top
        ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)
        ,.itlb_vtag_i(fe.mem.itlb.vtag_i)
        ,.itlb_entry_i(fe.mem.itlb.entry_i)
+       ,.itlb_cam_r_v_i(fe.mem.itlb.cam.r_v_i)
 
        ,.dtlb_clear_i(be.be_mem.dtlb.flush_i)
        ,.dtlb_fill_v_i(be.be_mem.dtlb.v_i & be.be_mem.dtlb.w_i)
        ,.dtlb_vtag_i(be.be_mem.dtlb.vtag_i)
        ,.dtlb_entry_i(be.be_mem.dtlb.entry_i)
+       ,.dtlb_cam_r_v_i(be.be_mem.dtlb.cam.r_v_i)
+
+       ,.program_finish_i(testbench.program_finish_lo)
        );
 
   bp_mem_nonsynth_tracer
