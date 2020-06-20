@@ -439,13 +439,13 @@ always_ff @(negedge clk_i) begin
     nfencei_v_rr  <= '0;
   end
   else begin
-    ndtlb_miss_r  <= dtlb_miss_v /*& ~chk_poison_ex_i*/;
+    ndtlb_miss_r  <= dtlb_miss_v & ~chk_poison_ex_i;
     nmmu_cmd_v_r  <= mmu_cmd_v_i;
-    nmmu_cmd_v_rr <= mmu_cmd_v_r /*& ~chk_poison_ex_i*/;
+    nmmu_cmd_v_rr <= mmu_cmd_v_r & ~chk_poison_ex_i;
     nis_store_r   <= is_store;
-    nis_store_rr  <= is_store_r /*& ~chk_poison_ex_i*/;
+    nis_store_rr  <= is_store_r & ~chk_poison_ex_i;
     nfencei_v_r   <= fencei_cmd_v;
-    nfencei_v_rr  <= fencei_v_r /*& ~chk_poison_ex_i*/;
+    nfencei_v_rr  <= fencei_v_r & ~chk_poison_ex_i;
   end
 end // always_ff @
 
@@ -540,7 +540,7 @@ assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_rr;
 
 // MMU response connections
 assign mem_resp.exc_v  = |exception_ecode_dec_li;
-assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~dcache_fencei_v & ~|exception_ecode_dec_li;
+assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v_lo & ~dcache_fencei_v_lo & ~|exception_ecode_dec_li;
 assign mem_resp.data   = dcache_v_lo ? dcache_data : csr_data_lo;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;

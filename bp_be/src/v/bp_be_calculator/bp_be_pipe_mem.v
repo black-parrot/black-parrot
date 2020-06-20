@@ -69,10 +69,22 @@ bp_be_mem_resp_s  mem_resp;
 rv64_instr_s      instr;
 
 assign decode = decode_i;
-assign mem_resp = mem_resp_i;
 assign csr_cmd_o = csr_cmd_lo;
 assign instr = instr_i;
-
+logic mem_resp_v;
+   
+// Here I latch the incoming data to keep the regfile updates inline with the rest of the processor.
+always_ff @(posedge clk_i) begin
+   if(reset_i) begin
+      mem_resp_v <= '0;
+      mem_resp <= '0;
+   end
+   else begin
+      mem_resp <= mem_resp_i;
+      mem_resp_v <= mem_resp_v_i;
+   end
+end
+   
 // Suppress unused signal warnings
 wire unused0 = kill_ex2_i;
 
@@ -128,8 +140,8 @@ always_comb
   end
 
 // Output results of memory op
-assign exc_v_o            = mem_resp_v_i & mem_resp.exc_v;
-assign miss_v_o           = mem_resp_v_i & mem_resp.miss_v;
+assign exc_v_o            = mem_resp_v & mem_resp.exc_v;
+assign miss_v_o           = mem_resp_v & mem_resp.miss_v;
 assign mem_resp_ready_o   = 1'b1;
 
 // Set MMU cmd signal
