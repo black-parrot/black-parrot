@@ -8,11 +8,12 @@ module bp_pce
   import bp_pce_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    ,parameter block_width_p = 128
+   ,parameter fill_width_p = 128
    ,parameter assoc_p = 2
    ,parameter sets_p = 256
    ,parameter pce_id_p = 1 // 0 = I$, 1 = D$
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
    `declare_bp_pce_l15_if_widths(paddr_width_p, dword_width_p)
 
    // Cache parameters
@@ -63,7 +64,7 @@ module bp_pce
   , output logic                                   credits_empty_o
   );
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
   `declare_bp_pce_l15_if(paddr_width_p, dword_width_p);
 
   bp_cache_req_s cache_req_cast_i;

@@ -65,8 +65,8 @@ module bp_piton_top
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_pce_l15_if(paddr_width_p, dword_width_p);
   `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
   `declare_bp_cache_stat_info_s(icache_assoc_p, icache);
@@ -190,6 +190,7 @@ module bp_piton_top
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
+     ,.fill_width_p(dcache_fill_width_p)
      ,.pce_id_p(1)
      )
     dcache_pce
@@ -232,6 +233,7 @@ module bp_piton_top
      ,.assoc_p(icache_assoc_p)
      ,.sets_p(icache_sets_p)
      ,.block_width_p(icache_block_width_p)
+     ,.fill_width_p(icache_fill_width_p)
      ,.pce_id_p(0)
      )
     icache_pce

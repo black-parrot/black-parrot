@@ -2000,12 +2000,15 @@ package bp_common_aviary_pkg;
       ,dcache_sets          : 256
       ,dcache_assoc         : 2
       ,dcache_block_width   : 128
+      ,dcache_fill_width    : 128
       ,icache_sets          : 128
       ,icache_assoc         : 4
       ,icache_block_width   : 256
+      ,icache_fill_width    : 256
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 256
+      ,acache_fill_width    : 256
 
       ,cce_pc_width         : 8
       ,ucode_cce            : 0
