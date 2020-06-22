@@ -349,7 +349,7 @@ assign store_access_fault_v = dtlb_r_v_lo & is_store_r & (mode_fault_v | did_fau
 
 
 assign tlb_miss_v_o           = is_req_mem3    &  dtlb_miss_r;
-assign cache_miss_v_o         = is_req_mem3    & ~dtlb_miss_r & dcache_miss_lo;
+assign cache_miss_v_o         = is_req_mem3    & ~dtlb_miss_r & ~dcache_v;
 assign fencei_v_o             = is_fencei_mem3 &  dcache_v;
 assign store_page_fault_v_o   = store_page_fault_mem3;
 assign load_page_fault_v_o    = load_page_fault_mem3;
