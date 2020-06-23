@@ -90,14 +90,17 @@ module bp_uce
   `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
   `bp_cast_i(bp_cce_mem_msg_s, mem_resp);
 
-  logic cache_req_v_r, dirty_data_v_r, dirty_tag_v_r, dirty_stat_v_r;
-  always_ff @(posedge clk_i)
-    begin
-      cache_req_v_r <= cache_req_v_i;
-      dirty_data_v_r <= data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
-      dirty_tag_v_r <= tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
-      dirty_stat_v_r <= stat_mem_pkt_yumi_i & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
-    end
+  logic cache_req_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   cache_req_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i(cache_req_v_i)
+     ,.clear_i(cache_req_complete_o)
+     ,.data_o(cache_req_v_r)
+     );
 
   bp_cache_req_s cache_req_r;
   bsg_dff_reset_en
@@ -111,8 +114,20 @@ module bp_uce
      ,.data_o(cache_req_r)
      );
 
+  logic cache_req_metadata_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   metadata_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i(cache_req_metadata_v_i)
+     ,.clear_i(cache_req_v_i)
+     ,.data_o(cache_req_metadata_v_r)
+     );
+
   bp_cache_req_metadata_s cache_req_metadata_r;
-  bsg_dff_en_bypass
+  bsg_dff_en
    #(.width_p($bits(bp_cache_req_metadata_s)))
    metadata_reg
     (.clk_i(clk_i)
@@ -122,46 +137,104 @@ module bp_uce
      ,.data_o(cache_req_metadata_r)
      );
 
-  logic cache_req_metadata_v_r;
-  bsg_dff_en_bypass
+  logic dirty_data_read_en;
+  wire dirty_data_read = data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
+  bsg_dff
    #(.width_p(1))
-   metadata_v_reg
+   dirty_data_read_en_reg
     (.clk_i(clk_i)
 
-     ,.en_i(cache_req_v_i | cache_req_metadata_v_i)
-     ,.data_i(cache_req_metadata_v_i)
-     ,.data_o(cache_req_metadata_v_r)
+     ,.data_i(dirty_data_read)
+     ,.data_o(dirty_data_read_en)
+     );
+
+  logic dirty_data_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   dirty_data_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i(dirty_data_read_en)
+     ,.clear_i(dirty_data_read)
+     ,.data_o(dirty_data_v_r)
      );
 
   logic [block_width_p-1:0] dirty_data_r;
-  bsg_dff_en_bypass
+  bsg_dff_en
    #(.width_p(block_width_p))
    dirty_data_reg
     (.clk_i(clk_i)
 
-    ,.en_i(dirty_data_v_r)
+    ,.en_i(dirty_data_read_en)
     ,.data_i(data_mem_i)
     ,.data_o(dirty_data_r)
     );
 
+  logic dirty_tag_read_en;
+  wire dirty_tag_read = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
+  bsg_dff
+   #(.width_p(1))
+   dirty_tag_read_en_reg
+    (.clk_i(clk_i)
+
+     ,.data_i(dirty_tag_read)
+     ,.data_o(dirty_tag_read_en)
+     );
+
+  logic dirty_tag_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   dirty_tag_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i(dirty_tag_read_en)
+     ,.clear_i(dirty_tag_read)
+     ,.data_o(dirty_tag_v_r)
+     );
+
   logic [ptag_width_p-1:0] dirty_tag_r;
-  bsg_dff_en_bypass
+  bsg_dff_en
    #(.width_p(ptag_width_p))
    dirty_tag_reg
     (.clk_i(clk_i)
 
-    ,.en_i(dirty_tag_v_r)
+    ,.en_i(dirty_tag_read_en)
     ,.data_i(tag_mem_i)
     ,.data_o(dirty_tag_r)
     );
 
+  logic dirty_stat_read_en;
+  wire dirty_stat_read = stat_mem_pkt_yumi_i & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
+  bsg_dff
+   #(.width_p(1))
+   dirty_stat_read_en_reg
+    (.clk_i(clk_i)
+
+     ,.data_i(dirty_stat_read)
+     ,.data_o(dirty_stat_read_en)
+     );
+
+  logic dirty_stat_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   dirty_stat_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i(dirty_stat_read_en)
+     ,.clear_i(dirty_stat_read)
+     ,.data_o(dirty_stat_v_r)
+     );
+
   bp_cache_stat_info_s dirty_stat_r;
-  bsg_dff_en_bypass
+  bsg_dff_en
    #(.width_p($bits(bp_cache_stat_info_s)))
    dirty_stat_reg
     (.clk_i(clk_i)
 
-     ,.en_i(dirty_stat_v_r)
+     ,.en_i(dirty_stat_read_en)
      ,.data_i(stat_mem_i)
      ,.data_o(dirty_stat_r)
      );
@@ -186,7 +259,6 @@ module bp_uce
   wire flush_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
   wire clear_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clear};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
-
   wire wt_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
 
   wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
@@ -396,38 +468,41 @@ module bp_uce
           end
         e_flush_scan:
           begin
-            // Could check if |dirty_stat_r to skip index entirely
-            if (dirty_stat_r[way_cnt])
+            if (dirty_stat_v_r)
               begin
-                data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
-                data_mem_pkt_cast_o.index  = index_cnt;
-                data_mem_pkt_cast_o.way_id = way_cnt;
-                data_mem_pkt_v_o = 1'b1;
-                data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
+                // Could check if |dirty_stat_r to skip index entirely
+                if (dirty_stat_r[way_cnt])
+                  begin
+                    data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
+                    data_mem_pkt_cast_o.index  = index_cnt;
+                    data_mem_pkt_cast_o.way_id = way_cnt;
+                    data_mem_pkt_v_o = 1'b1;
+                    data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
 
-                tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_read;
-                tag_mem_pkt_cast_o.index  = index_cnt;
-                tag_mem_pkt_cast_o.way_id = way_cnt;
-                tag_mem_pkt_v_o = 1'b1;
+                    tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_read;
+                    tag_mem_pkt_cast_o.index  = index_cnt;
+                    tag_mem_pkt_cast_o.way_id = way_cnt;
+                    tag_mem_pkt_v_o = 1'b1;
 
-                stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
-                stat_mem_pkt_cast_o.index  = index_cnt;
-                stat_mem_pkt_cast_o.way_id = way_cnt;
-                stat_mem_pkt_v_o = 1'b1;
+                    stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
+                    stat_mem_pkt_cast_o.index  = index_cnt;
+                    stat_mem_pkt_cast_o.way_id = way_cnt;
+                    stat_mem_pkt_v_o = 1'b1;
 
-                state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_flush_write : e_flush_scan;
-              end
-            else
-              begin
-                way_up   = 1'b1;
-                index_up = way_done;
+                    state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_flush_write : e_flush_scan;
+                  end
+                else
+                  begin
+                    way_up   = 1'b1;
+                    index_up = way_done;
 
-                state_n = (index_done & way_done)
-                          ? e_flush_fence
-                          : way_done
-                            ? e_flush_read
-                            : e_flush_scan;
-              end
+                    state_n = (index_done & way_done)
+                              ? e_flush_fence
+                              : way_done
+                                ? e_flush_read
+                                : e_flush_scan;
+                  end
+            end
           end
         e_flush_write:
           begin
@@ -436,7 +511,7 @@ module bp_uce
             mem_cmd_cast_o.header.size     = block_msg_size_lp;
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_cast_o.data                  = writeback_data;
-            mem_cmd_v_o = mem_cmd_ready_i;
+            mem_cmd_v_o = mem_cmd_ready_i & dirty_data_v_r & dirty_tag_v_r;
             mem_cmd_up = mem_cmd_v_o;
 
             way_up = mem_cmd_done & mem_cmd_v_o;
@@ -496,7 +571,7 @@ module bp_uce
               mem_cmd_cast_o.header.size           = block_msg_size_lp;
               mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
-              mem_cmd_v_o = mem_cmd_ready_i;
+              mem_cmd_v_o = mem_cmd_ready_i & cache_req_metadata_v_r;
               mem_cmd_up = mem_cmd_v_o;
               state_n = mem_cmd_v_o
                         ? cache_req_metadata_r.dirty
@@ -573,7 +648,7 @@ module bp_uce
             mem_cmd_cast_o.header.size     = block_msg_size_lp;
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_cast_o.data                  = writeback_data;
-            mem_cmd_v_o = mem_cmd_ready_i;
+            mem_cmd_v_o = mem_cmd_ready_i & dirty_data_v_r & dirty_tag_v_r;
             mem_cmd_up = mem_cmd_v_o;
 
             cache_req_complete_o = mem_cmd_done & mem_cmd_v_o;
