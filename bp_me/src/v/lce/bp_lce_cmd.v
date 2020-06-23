@@ -565,6 +565,7 @@ module bp_lce_cmd
       // Writeback dirty block - read from data memory, write to stat memory to clear dirty bit
       e_wb_dirty_rd: begin
 
+        /* TODO: NEED TO NOT USE STAT_PKT CAST DIRECTLY */
         // read from data memory, if data read wasn't already accepted in a previous cycle
         data_mem_pkt.index = lce_cmd_addr_index;
         data_mem_pkt.way_id = lce_cmd_way_id;
