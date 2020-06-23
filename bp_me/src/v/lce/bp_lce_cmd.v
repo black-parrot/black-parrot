@@ -131,7 +131,6 @@ module bp_lce_cmd
     ,e_wb
     ,e_wb_dirty_rd
     ,e_wb_dirty_send
-    ,e_null_wb
     ,e_coh_ack
   } lce_cmd_state_e;
   lce_cmd_state_e state_r, state_n;
@@ -147,12 +146,10 @@ module bp_lce_cmd
   bp_cache_data_mem_pkt_s data_mem_pkt;
   bp_cache_tag_mem_pkt_s tag_mem_pkt;
   bp_cache_stat_mem_pkt_s stat_mem_pkt;
-  bp_cache_stat_info_s stat_mem_cast_i;
 
   assign data_mem_pkt_o = data_mem_pkt;
   assign tag_mem_pkt_o = tag_mem_pkt;
   assign stat_mem_pkt_o = stat_mem_pkt;
-  assign stat_mem_cast_i = stat_mem_i;
 
   // sync done register - goes high when all sync command/acks complete
   logic sync_done_en, sync_done_li;
@@ -170,23 +167,70 @@ module bp_lce_cmd
   // which will capture the data into the data buffer on the next cycle (when it is guaranteed to
   // be valid on the data_mem_i port). The data will remain in the buffer until the next read
   // command is accepted and new data is latched.
-  logic data_buf_en_r;
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      data_buf_en_r <= 1'b0;
-    end else begin
-      data_buf_en_r <= data_mem_pkt_yumi_i & (data_mem_pkt.opcode == e_cache_data_mem_read);
-    end
-  end
+  logic data_buf_read_en;
+  wire data_buf_read = data_mem_pkt_yumi_i & (data_mem_pkt.opcode == e_cache_data_mem_read);
+  bsg_dff
+   #(.width_p(1))
+   data_buf_read_en_reg
+    (.clk_i(clk_i)
+
+     ,.data_i(data_buf_read)
+     ,.data_o(data_buf_read_en)
+     );
+
+  logic data_buf_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   data_buf_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i(data_buf_read_en)
+     ,.clear_i(data_buf_read)
+     ,.data_o(data_buf_v_r)
+     );
 
   logic [cce_block_width_p-1:0] data_buf_r;
-  bsg_dff_en_bypass
+  bsg_dff_en
     #(.width_p(cce_block_width_p))
     data_buf_reg
      (.clk_i(clk_i)
-      ,.en_i(data_buf_en_r)
+      ,.en_i(data_buf_read_en)
       ,.data_i(data_mem_i)
       ,.data_o(data_buf_r)
+      );
+
+  logic stat_buf_read_en;
+  wire stat_buf_read = stat_mem_pkt_yumi_i & (stat_mem_pkt.opcode == e_cache_stat_mem_read);
+  bsg_dff
+   #(.width_p(1))
+   stat_buf_read_en_reg
+    (.clk_i(clk_i)
+
+     ,.data_i(stat_buf_read)
+     ,.data_o(stat_buf_read_en)
+     );
+
+  logic stat_buf_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   stat_buf_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i(stat_buf_read_en)
+     ,.clear_i(stat_buf_read)
+     ,.data_o(stat_buf_v_r)
+     );
+
+  bp_cache_stat_info_s stat_buf_r;
+  bsg_dff_en
+    #(.width_p($bits(bp_cache_stat_info_s)))
+    stat_buf_reg
+     (.clk_i(clk_i)
+      ,.en_i(stat_buf_read_en)
+      ,.data_i(stat_mem_i)
+      ,.data_o(stat_buf_r)
       );
 
   // common fields from LCE Command used in many states for responses or pkt fields
@@ -486,10 +530,10 @@ module bp_lce_cmd
         // handshakes
         // outbound command is ready->valid
         // inbound is valid->yumi, but only dequeue when outbound sends
-        lce_cmd_v_o = lce_cmd_ready_i;
-        lce_cmd_yumi_o = lce_cmd_ready_i & lce_cmd_v_i;
+        lce_cmd_v_o = lce_cmd_ready_i & lce_cmd_v_i & data_buf_v_r;
+        lce_cmd_yumi_o = lce_cmd_v_o;
 
-        state_n = lce_cmd_ready_i
+        state_n = lce_cmd_yumi_o
           ? e_ready
           : e_tr;
 
@@ -501,22 +545,21 @@ module bp_lce_cmd
       // Determine if the block is dirty or not.
       e_wb: begin
 
-        // try to send null writeback this cycle if not dirty, but if it doesn't send
-        // go to e_null_wb state to try again
+        // Send a null writeback if not dirty, else move to writeback
         lce_resp.data = '0;
         lce_resp.header.addr = lce_cmd.header.addr;
         lce_resp.header.msg_type = e_lce_cce_resp_null_wb;
         lce_resp.header.src_id = lce_id_i;
         lce_resp.header.dst_id = lce_cmd.header.src_id;
-        lce_resp_v_o = lce_resp_ready_i & ~stat_mem_cast_i.dirty[lce_cmd_way_id];
+        lce_resp_v_o = lce_resp_ready_i & stat_buf_v_r & ~stat_buf_r.dirty[lce_cmd_way_id];
         lce_cmd_yumi_o = lce_resp_v_o;
 
-        state_n = stat_mem_cast_i.dirty[lce_cmd_way_id]
-          ? e_wb_dirty_rd
-          : lce_resp_v_o
-            ? e_ready
-            : e_null_wb;
-
+        state_n = stat_buf_v_r & stat_buf_r.dirty[lce_cmd_way_id]
+                  ? e_wb_dirty_rd
+                  : stat_buf_v_r & lce_resp_v_o
+                    ? e_ready
+                    : e_wb;
+          
       end
 
       // Writeback dirty block - read from data memory, write to stat memory to clear dirty bit
@@ -551,30 +594,13 @@ module bp_lce_cmd
         lce_resp.header.src_id = lce_id_i;
         lce_resp.header.dst_id = lce_cmd.header.src_id;
         lce_resp.header.size = cmd_block_size_lp;
-        lce_resp_v_o = lce_resp_ready_i;
+        lce_resp_v_o = lce_resp_ready_i & data_buf_v_r;
 
         lce_cmd_yumi_o = lce_resp_v_o;
 
         state_n = lce_resp_v_o
           ? e_ready
           : e_wb_dirty_send;
-
-      end
-
-      // Null Writeback Response
-      e_null_wb: begin
-        lce_resp.data = '0;
-        lce_resp.header.addr = lce_cmd.header.addr;
-        lce_resp.header.msg_type = e_lce_cce_resp_null_wb;
-        lce_resp.header.src_id = lce_id_i;
-        lce_resp.header.dst_id = lce_cmd.header.src_id;
-        lce_resp_v_o = lce_resp_ready_i;
-
-        lce_cmd_yumi_o = lce_resp_v_o;
-
-        state_n = lce_resp_v_o
-          ? e_ready
-          : e_null_wb;
 
       end
 
