@@ -122,7 +122,7 @@ module bp_lce
   //synopsys translate_on
 
   // LCE Request Module
-  logic lce_req_cache_req_ready_lo;
+  logic req_ready_lo;
   logic uc_store_req_complete_lo;
 
   bp_lce_req
@@ -141,9 +141,10 @@ module bp_lce
       ,.lce_id_i(lce_id_i)
       ,.lce_mode_i(lce_mode_i)
 
+      ,.ready_o(req_ready_lo)
+
       ,.cache_req_i(cache_req_i)
       ,.cache_req_v_i(cache_req_v_i)
-      ,.cache_req_ready_o(lce_req_cache_req_ready_lo)
       ,.cache_req_metadata_i(cache_req_metadata_i)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
 
@@ -242,6 +243,6 @@ module bp_lce
   // - LCE Request module is ready (raised when in ready state and free credits exist)
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
   // - LCE Command module is ready to process commands (raised after initialization complete)
-  assign cache_req_ready_o = lce_req_cache_req_ready_lo & ~timeout & cmd_ready_lo;
+  assign cache_req_ready_o = req_ready_lo & cmd_ready_lo & ~timeout;
 
 endmodule
