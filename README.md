@@ -76,8 +76,9 @@ BlackParrot is Linux-capable, so it is possible to run all programs which run on
 BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow, latency-insensitive interfaces. The interfaces are designed to allow implementations of the various system components to change independently of one another, without worrying about cascading functional or timing effects. Read more about BlackParrot's standardized interfaces here: [Interface Specification](docs/interface_specification.md)
 
 ## BedRock Coherence System Guide
-Coming soon!
-[BedRock Guide](docs/bedrock_guide.md)
+The BedRock coherence system maintains cache coherence between the BlackParrot processor cores and attached
+coherent accelerators in a BlackParrot multicore system. Please see the [BedRock Guide](docs/bedrock_guide.md)
+for more details on the coherence protocol and system.
 
 ## Microarchitecture Guide
 Coming soon!
