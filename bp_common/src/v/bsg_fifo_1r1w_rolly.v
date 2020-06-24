@@ -53,7 +53,9 @@ module bsg_fifo_1r1w_rolly
   wire full = (cptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp]) 
               & (cptr_r[ptr_width_lp] != wptr_r[ptr_width_lp]);
 
-  assign ready_o = ~clr & ~full;
+  // The entry will get "lost" on a clear, but this is fine
+  //   and eliminates a critical path through the queue on flush
+  assign ready_o = ~full;
   assign v_o     = ~roll & ~empty;
 
   bsg_circular_ptr 

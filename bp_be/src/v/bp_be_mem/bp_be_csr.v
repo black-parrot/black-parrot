@@ -670,7 +670,7 @@ assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrup
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
 
-assign trap_pkt_cast_o.v                = |{csr_cmd.exc.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss};
+assign trap_pkt_cast_o.v                = |{csr_cmd.exc.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, csr_cmd.exc.icache_miss, csr_cmd.exc.dcache_miss, csr_cmd.exc.dtlb_miss};
 assign trap_pkt_cast_o.npc              = apc_n;
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
 assign trap_pkt_cast_o.translation_en_n = translation_en_n;
@@ -680,6 +680,7 @@ assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
 assign trap_pkt_cast_o.eret             = ret_v_o;
 assign trap_pkt_cast_o.satp             = satp_v_o;
+assign trap_pkt_cast_o.icache_miss      = csr_cmd.exc.icache_miss;
 assign trap_pkt_cast_o.rollback         = csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss;
 
 assign trans_info_cast_o.priv_mode = priv_mode_r;

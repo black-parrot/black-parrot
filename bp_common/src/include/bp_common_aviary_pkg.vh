@@ -29,7 +29,7 @@ package bp_common_aviary_pkg;
       ,boot_pc       : bootrom_base_addr_gp
       ,boot_in_debug : 1
 
-      ,branch_metadata_fwd_width: 35
+      ,branch_metadata_fwd_width: 36
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9

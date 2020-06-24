@@ -191,7 +191,6 @@ module bp_be_pipe_mem
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
      ,.flush_i(sfence_i)
-     ,.translation_en_i(trans_info.translation_en)
 
      ,.v_i(dtlb_r_v | dtlb_w_v)
      ,.w_i(dtlb_w_v)

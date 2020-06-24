@@ -41,7 +41,7 @@ module bp_fe_icache
     , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
     , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
     , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
-    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p, icache_assoc_p)
+    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
@@ -53,16 +53,20 @@ module bp_fe_icache
 
     , input [icache_pkt_width_lp-1:0]                  icache_pkt_i
     , input                                            v_i
-    , output                                           ready_o
+    , output logic                                     yumi_o
 
     , input [ptag_width_p-1:0]                         ptag_i
     , input                                            ptag_v_i
     , input                                            uncached_i
 
+    // Used to keep I$ and pc_gen in sync
+    , output logic                                     tl_we_o
+    , output logic                                     tv_we_o
+
     , output [instr_width_p-1:0]                       data_o
     , output [vaddr_width_p-1:0]                       vaddr_o
-    , output                                           miss_not_data_o
-    , output                                           data_v_o
+    , output logic                                     miss_not_data_o
+    , output logic                                     data_v_o
     , input                                            data_yumi_i
 
     // LCE Interface
@@ -71,7 +75,7 @@ module bp_fe_icache
     , output logic                                     cache_req_v_o
     , input                                            cache_req_ready_i
     , output [icache_req_metadata_width_lp-1:0]        cache_req_metadata_o
-    , output                                           cache_req_metadata_v_o
+    , output logic                                     cache_req_metadata_v_o
 
     , input                                            cache_req_complete_i
     , input                                            cache_req_critical_i
@@ -105,15 +109,14 @@ module bp_fe_icache
   assign cache_req_o = cache_req_cast_lo;
   assign cache_req_metadata_o = cache_req_metadata_cast_lo;
 
-  `declare_bp_fe_icache_pkt_s(vaddr_width_p, icache_assoc_p);
+  `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = icache_pkt_i;
 
-  enum logic [1:0] {e_ready, e_miss, e_recover, e_restart} state_n, state_r;
+  enum logic [1:0] {e_ready, e_miss, e_recover} state_n, state_r;
   wire is_ready   = (state_r == e_ready);
   wire is_miss    = (state_r == e_miss);
   wire is_recover = (state_r == e_recover);
-  wire is_restart = (state_r == e_restart);
 
   wire [vtag_width_p-1:0]           vaddr_vtag = icache_pkt.vaddr[block_offset_width_lp+index_width_lp+:vtag_width_p];
   wire [index_width_lp-1:0]        vaddr_index = icache_pkt.vaddr[block_offset_width_lp+:index_width_lp];
@@ -126,17 +129,21 @@ module bp_fe_icache
   logic [vaddr_width_p-1:0] vaddr_tl_r;
   logic fetch_op_tl_r, fencei_op_tl_r, fill_op_tl_r;
 
-  wire is_fetch  = (icache_pkt.op == e_icache_fetch);
-  wire is_fencei = (icache_pkt.op == e_icache_fencei);
-  wire is_fill   = (icache_pkt.op == e_icache_fill);
+  wire is_fetch  = v_i & (icache_pkt.op inside {e_icache_fetch, e_icache_redir});
+  wire is_fencei = v_i & (icache_pkt.op == e_icache_fencei);
+  wire is_fill   = v_i & (icache_pkt.op == e_icache_fill);
+  wire is_redir  = v_i & (icache_pkt.op == e_icache_redir);
 
-  assign tl_we = ready_o & v_i;
+  assign tl_we = yumi_o;
+  assign tl_we_o = tl_we;
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tl_r       <= 1'b0;
     end else begin
-      if (ready_o) begin
-        v_tl_r           <= v_i;
+      if (tl_we | tv_we) begin
+        v_tl_r           <= tl_we;
+      end
+      if (tl_we) begin
         vaddr_tl_r       <= icache_pkt.vaddr;
         fetch_op_tl_r    <= is_fetch;
         fencei_op_tl_r   <= is_fencei;
@@ -189,6 +196,7 @@ module bp_fe_icache
     bsg_mem_1rw_sync_mask_write_byte #(
       .data_width_p(bank_width_lp)
       ,.els_p(icache_sets_p*icache_assoc_p)
+      ,.latch_last_read_p(1)
     ) data_mem (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -271,20 +279,21 @@ module bp_fe_icache
   logic [lg_icache_assoc_lp-1:0] way_invalid_index;
   logic                          invalid_exist;
 
-  assign tv_we = v_tl_r & (~v_tv_r | data_yumi_i | is_restart);
+  assign tv_we = ~v_tv_r | data_yumi_i | is_redir;
+  assign tv_we_o = tv_we;
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r       <= 1'b0;
     end
     else begin
       if (tv_we) begin
-        v_tv_r         <= v_tl_r;
+        v_tv_r         <= v_tl_r & ~is_redir;
         addr_tv_r      <= addr_tl;
         vaddr_tv_r     <= vaddr_tl_r;
         tag_tv_r       <= tag_tl;
         state_tv_r     <= state_tl;
-        cached_tv_r    <= fetch_op_tl_r & ~uncached_i;
-        uncached_tv_r  <= fetch_op_tl_r &  uncached_i;
+        cached_tv_r    <= (fetch_op_tl_r | fill_op_tl_r) & ~uncached_i;
+        uncached_tv_r  <= (fetch_op_tl_r | fill_op_tl_r) &  uncached_i;
         fencei_op_tv_r <= fencei_op_tl_r;
         fill_op_tv_r   <= fill_op_tl_r;
         addr_tag_tv_r  <= addr_tag_tl;
@@ -296,7 +305,7 @@ module bp_fe_icache
       end
       if (tv_we) begin
         hit_v_tv_r    <= hit_v_tl;
-        complete_tv_r <= ~uncached_i & ~fencei_op_tl_r & ~(fill_op_tl_r & ~|hit_v_tl);
+        complete_tv_r <= ~fencei_op_tl_r & ~(fill_op_tl_r & (~|hit_v_tl | uncached_i));
       end else if (cache_req_complete_i) begin
         // We make a hit so that an arbitrary data word is selected from the
         //   snooped line, which has replicated versions of the word
@@ -313,8 +322,7 @@ module bp_fe_icache
       case (state_r)
         e_ready  : state_n = cache_req_v_o ? e_miss : e_ready;
         e_miss   : state_n = (cache_req_complete_i & v_tl_r) ? e_recover : e_miss;
-        e_recover: state_n = e_restart;
-        e_restart: state_n = e_ready;
+        e_recover: state_n = e_ready;
         default: state_n = e_ready;
       endcase
     end
@@ -325,9 +333,9 @@ module bp_fe_icache
     else
       state_r <= state_n;
 
-  wire uncached_req = is_ready & v_tv_r & uncached_tv_r;
+  wire uncached_req = is_ready & v_tv_r & fill_op_tv_r & uncached_tv_r & ~complete_tv_r;
   wire fencei_req   = is_ready & v_tv_r & fencei_op_tv_r;
-  wire fill_req     = is_ready & v_tv_r & fill_op_tv_r & ~complete_tv_r;
+  wire cached_req   = is_ready & v_tv_r & fill_op_tv_r & ~uncached_tv_r & ~complete_tv_r;
 
   // stat memory
   logic                          stat_mem_v_li;
@@ -340,6 +348,7 @@ module bp_fe_icache
   bsg_mem_1rw_sync_mask_write_bit #(
     .width_p(icache_assoc_p-1)
     ,.els_p(icache_sets_p)
+    ,.latch_last_read_p(1)
   ) stat_mem (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -381,7 +390,7 @@ module bp_fe_icache
     cache_req_cast_lo = '0;
     cache_req_v_o = '0;
 
-    if (fill_req) begin
+    if (cached_req) begin
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_miss_load;
       cache_req_cast_lo.size = e_size_64B;
@@ -415,9 +424,17 @@ module bp_fe_icache
   assign cache_req_metadata_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
   assign cache_req_metadata_cast_lo.dirty = '0;
 
-  assign ready_o = cache_req_ready_i & (is_ready | is_restart) & (~v_tl_r | tv_we);
+  always_comb
+    case (icache_pkt.op)
+      e_icache_fetch, e_icache_fill, e_icache_fencei:
+        yumi_o = cache_req_ready_i & is_ready & (~v_tl_r | tv_we) & v_i;
+      e_icache_redir:
+        yumi_o = cache_req_ready_i & is_ready & v_i;
+      default:
+        yumi_o = '0;
+    endcase
 
-  assign data_v_o        = v_tv_r & complete_tv_r;
+  assign data_v_o        = v_tv_r & complete_tv_r & ~is_redir;
   assign miss_not_data_o = v_tv_r & complete_tv_r & ~hit_v_tv_r;
 
   logic [bank_width_lp-1:0]   ld_data_way_picked;

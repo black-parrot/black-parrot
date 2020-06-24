@@ -83,21 +83,17 @@ module wrapper
   logic [stat_width_lp-1:0] stat_mem_lo;
 
   // Rolly fifo signals
-  logic [ptag_width_p-1:0] rolly_ptag_lo;
-  logic [vaddr_width_p-1:0] rolly_vaddr_lo;
-  logic rolly_uncached_lo;
-  logic rolly_v_lo;
-  logic rolly_yumi_li;
-  logic icache_ready_lo;
-  assign rolly_yumi_li = rolly_v_lo & icache_ready_lo;
-
-  logic rollback_li, rolly_yumi_rr;
+  logic [ptag_width_p-1:0] fifo_ptag_lo;
+  logic [vaddr_width_p-1:0] fifo_vaddr_lo;
+  logic fifo_uncached_lo;
+  logic fifo_v_lo;
+  logic fifo_yumi_li;
 
   bsg_fifo_1r1w_small
    #(.width_p(vaddr_width_p+ptag_width_p+1)
     ,.els_p(8)
     )
-    rolly_icache (
+    fifo_icache (
      .clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -105,14 +101,12 @@ module wrapper
      ,.v_i(vaddr_v_i)
      ,.ready_o(vaddr_ready_o)
 
-     ,.data_o({rolly_uncached_lo, rolly_vaddr_lo, rolly_ptag_lo})
-     ,.v_o(rolly_v_lo)
-     ,.yumi_i(rolly_yumi_li)
+     ,.data_o({fifo_uncached_lo, fifo_vaddr_lo, fifo_ptag_lo})
+     ,.v_o(fifo_v_lo)
+     ,.yumi_i(fifo_yumi_li)
     );
 
-  assign rollback_li = rolly_yumi_rr & ~data_v_o;
-
-  logic [ptag_width_p-1:0] rolly_ptag_r;
+  logic [ptag_width_p-1:0] fifo_ptag_r;
   logic ptag_v_r, uncached_r;
   bsg_dff_reset
     #(.width_p(ptag_width_p+2)
@@ -122,13 +116,13 @@ module wrapper
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.data_i({rolly_uncached_lo, rolly_v_lo, rolly_ptag_lo})
-    ,.data_o({uncached_r, ptag_v_r, rolly_ptag_r})
+    ,.data_i({fifo_uncached_lo, fifo_v_lo, fifo_ptag_lo})
+    ,.data_o({uncached_r, ptag_v_r, fifo_ptag_r})
     );
 
-  `declare_bp_fe_icache_pkt_s(vaddr_width_p, icache_assoc_p);
+  `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
-  assign icache_pkt = '{vaddr: rolly_vaddr_lo, op: e_icache_fill, default: '0};
+  assign icache_pkt = '{vaddr: fifo_vaddr_lo, op: e_icache_fill, default: '0};
 
   // I-Cache
   bp_fe_icache
@@ -140,12 +134,14 @@ module wrapper
     ,.cfg_bus_i(cfg_bus_i)
 
     ,.icache_pkt_i(icache_pkt)
-    ,.v_i(rolly_yumi_li)
-    ,.ready_o(icache_ready_lo)
+    ,.v_i(fifo_v_lo)
+    ,.yumi_o(fifo_yumi_li)
 
-    ,.ptag_i(rolly_ptag_r)
+    ,.ptag_i(fifo_ptag_r)
     ,.ptag_v_i(ptag_v_r)
     ,.uncached_i(uncached_r)
+    ,.tl_we_o()
+    ,.tv_we_o()
 
     ,.vaddr_o(vaddr_o)
     ,.data_o(data_o)
