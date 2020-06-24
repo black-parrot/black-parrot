@@ -28,6 +28,12 @@ typedef enum logic
   ,e_cce_mode_normal
 } bp_cce_mode_e;
 
+// Place of atomic operation
+typedef enum logic [1:0] {
+  e_none
+  , e_l1
+  , e_l2
+} bp_atomic_op_e;
 
 typedef enum logic [15:0]{
   e_sacc_vdp
@@ -123,6 +129,11 @@ typedef struct packed
 
   integer itlb_els;
   integer dtlb_els;
+
+  integer lr_sc;
+  integer amo_swap;
+  integer amo_fetch_logic;
+  integer amo_fetch_arithmetic;
 
   integer l1_writethrough;
   integer l1_coherent;
@@ -231,6 +242,11 @@ typedef struct packed
                                                                                                    \
   , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
   , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
+                                                                                                   \
+  , localparam lr_sc_p                    = proc_param_lp.lr_sc                                    \
+  , localparam amo_swap_p                 = proc_param_lp.amo_swap                                 \
+  , localparam amo_fetch_logic_p          = proc_param_lp.amo_fetch_logic                          \
+  , localparam amo_fetch_arithmetic_p     = proc_param_lp.amo_fetch_arithmetic                     \
                                                                                                    \
   , localparam l1_coherent_p              = proc_param_lp.l1_coherent                              \
   , localparam l1_writethrough_p          = proc_param_lp.l1_writethrough                          \
