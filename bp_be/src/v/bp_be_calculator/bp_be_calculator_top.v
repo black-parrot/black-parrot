@@ -310,7 +310,7 @@ bp_be_pipe_mul
   
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.kill_ex1_i(exc_stage_n[1].poison_v)
+     ,.kill_ex1_i(exc_stage_r[0].poison_v)
      ,.flush_i(flush_i)
      ,.sfence_i(trap_pkt.sfence)
   
