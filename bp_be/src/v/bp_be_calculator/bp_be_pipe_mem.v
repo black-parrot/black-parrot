@@ -275,7 +275,7 @@ bp_be_dcache
 always_ff @(negedge clk_i) begin
   if (reset_i) begin
     is_req_mem1 <= '0;
-    is_req_mem2 <= is_req_mem1;
+    is_req_mem2 <= '0;
     is_store_mem1 <= '0;
     vaddr_mem1 <= '0;
     vaddr_mem2 <= '0;
@@ -296,12 +296,12 @@ always_ff @(negedge clk_i) begin
     vaddr_mem2 <= vaddr_mem1;
     is_fencei_mem1 <= is_fencei;
     is_fencei_mem2 <= is_fencei_mem1;
-    load_access_fault_mem2 <= load_access_fault_v & ~flush_i;
-    store_access_fault_mem2 <= store_access_fault_v & ~flush_i;
-    load_page_fault_mem2 <= load_page_fault_v & ~flush_i;
-    store_page_fault_mem2 <= store_page_fault_v & ~flush_i;
-    load_misaligned_mem2 <= load_misaligned_v & ~flush_i;
-    store_misaligned_mem2 <= store_misaligned_v & ~flush_i;
+    load_access_fault_mem2 <= load_access_fault_v;
+    store_access_fault_mem2 <= store_access_fault_v;
+    load_page_fault_mem2 <= load_page_fault_v;
+    store_page_fault_mem2 <= store_page_fault_v;
+    load_misaligned_mem2 <= load_misaligned_v;
+    store_misaligned_mem2 <= store_misaligned_v;
   end
 end
 

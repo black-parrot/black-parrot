@@ -396,11 +396,8 @@ bp_be_pipe_mul
      ,.ptw_miss_pkt_o(ptw_miss_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
-     // This should actually be latched (all exceptions come from stage before)
-     // Move with 2-cycle load
-     ,.exception_i(exc_stage_n[3].exc)
-     ,.exception_pc_i(calc_stage_n[3].pc)
-     // TODO: Should be latched, somewhere when mem is moved to two cycle
+     ,.exception_i(exc_stage_r[3].exc)
+     ,.exception_pc_i(calc_stage_r[3].pc)
      ,.exception_vaddr_i(pipe_mem_vaddr_r)
      ,.commit_pkt_i(commit_pkt)
      ,.trap_pkt_o(trap_pkt)
