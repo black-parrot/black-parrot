@@ -28,6 +28,12 @@ typedef enum logic
   ,e_cce_mode_normal
 } bp_cce_mode_e;
 
+// Place of atomic operation
+typedef enum logic [1:0] {
+  e_none
+  , e_l1
+  , e_l2
+} bp_atomic_op_e;
 
 typedef enum logic [15:0]{
   e_sacc_vdp
@@ -129,6 +135,10 @@ typedef struct packed
   integer itlb_els;
   integer dtlb_els;
 
+  integer lr_sc;
+  integer amo_fetch_logic;
+  integer amo_fetch_arithmetic;
+
   integer l1_writethrough;
   integer l1_coherent;
   integer dcache_sets;
@@ -150,7 +160,6 @@ typedef struct packed
   integer l2_sets;
   integer l2_assoc;
   integer l2_outstanding_reqs;
-  integer l2_atomic;
 
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
@@ -238,6 +247,10 @@ typedef struct packed
   , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
   , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
                                                                                                    \
+  , localparam lr_sc_p                    = proc_param_lp.lr_sc                                    \
+  , localparam amo_fetch_logic_p          = proc_param_lp.amo_fetch_logic                          \
+  , localparam amo_fetch_arithmetic_p     = proc_param_lp.amo_fetch_arithmetic                     \
+                                                                                                   \
   , localparam l1_coherent_p              = proc_param_lp.l1_coherent                              \
   , localparam l1_writethrough_p          = proc_param_lp.l1_writethrough                          \
   , localparam dcache_sets_p              = proc_param_lp.dcache_sets                              \
@@ -274,7 +287,6 @@ typedef struct packed
   , localparam l2_sets_p  = proc_param_lp.l2_sets                                                  \
   , localparam l2_assoc_p = proc_param_lp.l2_assoc                                                 \
   , localparam l2_outstanding_reqs_p = proc_param_lp.l2_outstanding_reqs                           \
-  , localparam l2_atomic_p = proc_param_lp.l2_atomic                                               \
                                                                                                    \
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
