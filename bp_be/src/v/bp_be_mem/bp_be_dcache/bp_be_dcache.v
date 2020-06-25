@@ -888,68 +888,46 @@ module bp_be_dcache
     ,.data_o(bypass_data_masked)
   );
 
-  logic [dword_width_p-1:0] final_data;
+  logic [dword_width_p-1:0] result_data;
   bsg_mux #(
     .width_p(dword_width_p)
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, bypass_data_masked})
     ,.sel_i(uncached_tv_r)
-    ,.data_o(final_data)
+    ,.data_o(result_data)
   );
 
-  if (dword_width_p == 64) begin: output64
-    logic [31:0] data_word_selected;
-    logic [15:0] data_half_selected;
-    logic [7:0] data_byte_selected;
-    logic word_sigext;
-    logic half_sigext;
-    logic byte_sigext;
+  logic [3:0][dword_width_p-1:0] final_data;
+  for (genvar i = 0; i < 4; i++)
+    begin : alignment
+      localparam slice_width_lp = 8*(2**i);
 
-    bsg_mux #(
-      .width_p(32)
-      ,.els_p(2)
-    ) word_mux (
-      .data_i(final_data)
-      ,.sel_i(paddr_tv_r[2])
-      ,.data_o(data_word_selected)
-    );
+      logic [slice_width_lp-1:0] slice_data;
+      bsg_mux #(
+        .width_p(slice_width_lp)
+        ,.els_p(dword_width_p/slice_width_lp)
+      ) align_mux (
+        .data_i(result_data)
+        ,.sel_i(paddr_tv_r[i+:`BSG_MAX(1, 3-i)])
+        ,.data_o(slice_data)
+      );
 
-    bsg_mux #(
-      .width_p(16)
-      ,.els_p(4)
-    ) half_mux (
-      .data_i(final_data)
-      ,.sel_i(paddr_tv_r[2:1])
-      ,.data_o(data_half_selected)
-    );
+      wire sigext = signed_op_tv_r & slice_data[slice_width_lp-1];
+      assign final_data[i] = {{(dword_width_p-slice_width_lp){sigext}}, slice_data};
+    end
 
-    bsg_mux #(
-      .width_p(8)
-      ,.els_p(8)
-    ) byte_mux (
-      .data_i(final_data)
-      ,.sel_i(paddr_tv_r[2:0])
-      ,.data_o(data_byte_selected)
-    );
+  logic [dword_width_p-1:0] load_data;
+  bsg_mux_one_hot #(
+    .width_p(dword_width_p)
+    ,.els_p(4)
+  ) byte_mux (
+    .data_i(final_data)
+    ,.sel_one_hot_i({double_op_tv_r, word_op_tv_r, half_op_tv_r, byte_op_tv_r})
+    ,.data_o(load_data)
+  );
 
-    assign word_sigext = signed_op_tv_r & data_word_selected[31];
-    assign half_sigext = signed_op_tv_r & data_half_selected[15];
-    assign byte_sigext = signed_op_tv_r & data_byte_selected[7];
-
-    assign data_o = load_op_tv_r
-      ? (double_op_tv_r
-        ? final_data
-        : (word_op_tv_r
-          ? {{32{word_sigext}}, data_word_selected}
-          : (half_op_tv_r
-            ? {{48{half_sigext}}, data_half_selected}
-            : {{56{byte_sigext}}, data_byte_selected})))
-      : (sc_op_tv_r & ~sc_success
-         ? 64'b1
-         : 64'b0);
-
-  end
+  assign data_o = sc_op_tv_r ? !sc_success : load_data;
 
   // ctrl logic
   //
