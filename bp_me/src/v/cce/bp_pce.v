@@ -620,6 +620,7 @@ module bp_pce
                                                 l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
                                                 l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
                                                 l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
+              cache_data_mem_pkt_cast_o.fill_index = 1'b1;
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
@@ -648,6 +649,7 @@ module bp_pce
                                                 l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
                                                 l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
                                                 l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};
+              cache_data_mem_pkt_cast_o.fill_index = 1'b1;
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
