@@ -246,16 +246,26 @@ always_comb
       end
     // TODO: This is compliant but suboptimal, since satp is not required to flush TLBs
     //   Should add message to fe-be interface
-    else if (trap_pkt.sfence | trap_pkt.satp)
+    else if (trap_pkt.sfence)
       begin
         fe_cmd.opcode = e_op_itlb_fence;
         fe_cmd.vaddr  = commit_pkt.npc;
-        
-        fe_cmd_pc_redirect_operands = '0;
-        fe_cmd_pc_redirect_operands.translation_enabled = trap_pkt.translation_en_n;
-        fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
-        
+
         fe_cmd_v      = fe_cmd_ready_i;
+
+        flush_o = 1'b1;
+      end
+    else if (trap_pkt.satp)
+      begin
+        fe_cmd_pc_redirect_operands = '0;
+
+        fe_cmd.opcode                                    = e_op_pc_redirection;
+        fe_cmd.vaddr                                     = commit_pkt.npc;
+        fe_cmd_pc_redirect_operands.subopcode            = e_subop_translation_switch;
+        fe_cmd_pc_redirect_operands.translation_enabled  = trap_pkt.translation_en_n;
+        fe_cmd.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
+
+        fe_cmd_v = fe_cmd_ready_i;
 
         flush_o = 1'b1;
       end
