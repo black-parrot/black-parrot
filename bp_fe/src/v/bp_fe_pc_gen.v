@@ -94,6 +94,7 @@ wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
 wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
 wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 wire br_miss_v = pc_redirect_v
                 & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
 wire br_res_taken = (attaboy_v & fe_cmd_cast_i.operands.attaboy.taken)
@@ -101,7 +102,11 @@ wire br_res_taken = (attaboy_v & fe_cmd_cast_i.operands.attaboy.taken)
 wire br_res_ntaken = (attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken)
                      | (br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_pred_ntaken));
 wire br_miss_nonbr = br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
-assign fe_cmd_branch_metadata = br_miss_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
+assign fe_cmd_branch_metadata = br_miss_v
+                                ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd
+                                : attaboy_v
+                                  ? fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd
+                                  : '0;
 
 logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
 wire shadow_priv_w = state_reset_v | trap_v;
@@ -118,7 +123,7 @@ bsg_dff_reset_en
    );
 
 logic shadow_translation_en_n, shadow_translation_en_r;
-wire shadow_translation_en_w = state_reset_v | trap_v | itlb_fence_v;
+wire shadow_translation_en_w = state_reset_v | trap_v | translation_v;
 assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_enabled;
 bsg_dff_reset_en
  #(.width_p(1))
