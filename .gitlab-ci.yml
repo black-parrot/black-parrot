@@ -16,6 +16,7 @@ stages:
   - test-short
   - test-medium
   - test-long
+  - test-ultralong
  
 clean_all:
   when: manual
@@ -305,4 +306,23 @@ top-beebs-vcs:
     - vcs
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs BEEBS_TESTLIST $CI_CORES
+
+top-linux-verilator:
+  <<: *job_definition
+  when: manual
+  stage: test-ultralong
+  tags:
+    - verilator
+  script:
+    $CI_PROJECT_DIR/ci/linux.sh verilator $CI_CORES
+
+
+top-linux-vcs:
+  <<: *job_definition
+  when: manual
+  stage: test-ultralong
+  tags:
+    - vcs
+  script:
+    $CI_PROJECT_DIR/ci/linux.sh vcs $CI_CORES
 
