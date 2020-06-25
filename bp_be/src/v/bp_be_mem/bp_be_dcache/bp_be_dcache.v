@@ -286,14 +286,14 @@ module bp_be_dcache
   logic [dword_width_p-1:0] data_tl_r;
   logic gdirty_r;
 
-  assign tl_we = v_i & ~poison_i;
+  assign tl_we = v_i;
   
   always_ff @ (negedge clk_i) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
     end
     else begin
-      v_tl_r <= tl_we;
+      v_tl_r <= tl_we & ~poison_i;
       if (tl_we) begin
         lr_op_tl_r <= lr_op;
         sc_op_tl_r <= sc_op;
@@ -429,7 +429,7 @@ module bp_be_dcache
   logic store_hit_tv;
 
   // fencei does not require a ptag
-  assign tv_we = v_tl_r & ~poison_i & (ptag_v_i | fencei_op_tl_r);
+  assign tv_we = v_tl_r & (ptag_v_i | fencei_op_tl_r);
 
   always_ff @(negedge clk_i) begin
     if (reset_i) begin
@@ -455,7 +455,7 @@ module bp_be_dcache
       addr_bank_offset_dec_tv_r <= '0;
     end
     else begin
-      v_tv_r <= tv_we;
+      v_tv_r <= tv_we & ~poison_i;
 
       if (tv_we) begin
         lr_op_tv_r <= lr_op_tl_r;
@@ -1023,7 +1023,7 @@ module bp_be_dcache
   // tag_mem
   //
   assign tag_mem_v_li = tl_we | tag_mem_pkt_yumi_o;
-  assign tag_mem_w_li = ~tl_we & tag_mem_pkt_v_i & (tag_mem_pkt.opcode != e_cache_tag_mem_read);
+  assign tag_mem_w_li = ~tl_we & tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode != e_cache_tag_mem_read);
   assign tag_mem_addr_li = tl_we
     ? addr_index
     : tag_mem_pkt.index;
