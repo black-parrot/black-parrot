@@ -32,6 +32,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+
       ,l1_writethrough      : 0
       ,l1_coherent          : 0
       ,dcache_sets          : 64
@@ -101,6 +105,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 0
       ,dcache_sets          : 64
@@ -170,6 +178,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 1
       ,l1_coherent          : 0
       ,dcache_sets          : 64
@@ -239,6 +251,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 0
       ,dcache_sets          : 64
@@ -308,6 +324,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 0
       ,dcache_sets          : 64
@@ -377,6 +397,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 0
       ,dcache_sets          : 64
@@ -446,6 +470,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -515,6 +543,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -584,6 +616,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -653,6 +689,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -723,6 +763,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -792,6 +836,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -861,6 +909,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -930,6 +982,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -999,6 +1055,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1068,6 +1128,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1137,6 +1201,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1206,6 +1274,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
 
@@ -1276,6 +1348,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1345,6 +1421,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1414,6 +1494,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1483,6 +1567,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1552,6 +1640,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1621,6 +1713,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1690,6 +1786,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1759,6 +1859,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1828,6 +1932,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1897,6 +2005,10 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
+      ,lr_sc                : e_l1
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+      
       ,l1_writethrough      : 0
       ,l1_coherent          : 1
       ,dcache_sets          : 64
@@ -1943,6 +2055,79 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
+  // Warning! Change this configuration at your own peril
+  localparam bp_proc_param_s bp_piton_cfg_p =
+    '{cc_x_dim   : 1
+      ,cc_y_dim  : 1
+      ,ic_y_dim  : 0
+      ,mc_y_dim  : 0
+      ,cac_x_dim  : 0
+      ,sac_x_dim  : 0
+      ,cacc_type : e_cacc_vdp
+      ,sacc_type : e_sacc_vdp
+
+      ,vaddr_width: 39
+      ,paddr_width: 40
+      ,asid_width : 1
+
+      ,branch_metadata_fwd_width: 36
+      ,btb_tag_width            : 10
+      ,btb_idx_width            : 6
+      ,bht_idx_width            : 9
+      ,ghist_width              : 2
+
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
+
+      ,lr_sc                : e_l2
+      ,amo_fetch_logic      : e_l2
+      ,amo_fetch_arithmetic : e_l2
+      
+      ,l1_writethrough      : 1
+      ,l1_coherent          : 1
+      ,dcache_sets          : 256
+      ,dcache_assoc         : 2
+      ,dcache_block_width   : 128
+      ,dcache_fill_width    : 128
+      ,icache_sets          : 128
+      ,icache_assoc         : 4
+      ,icache_block_width   : 256
+      ,icache_fill_width    : 256
+      ,acache_sets          : 64
+      ,acache_assoc         : 8
+      ,acache_block_width   : 256
+      ,acache_fill_width    : 256
+
+      ,cce_pc_width         : 8
+      ,ucode_cce            : 0
+
+      ,l2_en   : 0
+      ,l2_sets : 128
+      ,l2_assoc: 8
+      ,l2_outstanding_reqs: 2
+
+      ,fe_queue_fifo_els: 8
+      ,fe_cmd_fifo_els  : 4
+
+      ,async_coh_clk       : 0
+      ,coh_noc_max_credits : 8
+      ,coh_noc_flit_width  : 128
+      ,coh_noc_cid_width   : 2
+      ,coh_noc_len_width   : 3
+
+      ,async_mem_clk         : 1
+      ,mem_noc_max_credits   : 8
+      ,mem_noc_flit_width    : 64
+      ,mem_noc_cid_width     : 2
+      ,mem_noc_len_width     : 4
+
+      ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
+      ,io_noc_max_credits   : 16
+      ,io_noc_flit_width    : 64
+      ,io_noc_cid_width     : 2
+      ,io_noc_len_width     : 4
+      };
 
   typedef enum bit [lg_max_cfgs-1:0]
   {
