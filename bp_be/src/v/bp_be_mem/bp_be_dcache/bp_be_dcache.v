@@ -392,7 +392,7 @@ module bp_be_dcache
   logic amo_req;
   assign lr_req = v_tv_r & dcache_tv_r.lr_op & (lr_sc_p == e_l2);
   assign sc_req = v_tv_r & dcache_tv_r.sc_op & (lr_sc_p == e_l2);
-  assign amoswap_req = v_tv_r & dcache_tv_r.amo_fetch_arithmetic.swap_op & (amo_fetch_arithmetic_p == e_l2);
+  assign amoswap_req = v_tv_r & dcache_tv_r.swap_op & (amo_swap_p == e_l2);
   assign amoadd_req = v_tv_r & dcache_tv_r.amo_fetch_arithmetic.add_op & (amo_fetch_arithmetic_p == e_l2);
   assign amoxor_req = v_tv_r & dcache_tv_r.amo_fetch_logic.xor_op & (amo_fetch_logic_p == e_l2);
   assign amoand_req = v_tv_r & dcache_tv_r.amo_fetch_logic.and_op & (amo_fetch_logic_p == e_l2);
@@ -643,6 +643,50 @@ module bp_be_dcache
     else if(wt_req) begin
       cache_req_cast_o.msg_type = e_wt_store;
       cache_req_v_o = cache_req_ready_i & ~poison_i;
+    end
+    else if(lr_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_lr;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(sc_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_sc;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoswap_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_swap;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoadd_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_add;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoxor_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_xor;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoand_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_and;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoor_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_or;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amomin_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_min;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amomax_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_max;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amominu_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_minu;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amomaxu_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_maxu;
+      cache_req_v_o = cache_req_ready_i;
     end
     else if(uncached_load_req) begin
       cache_req_cast_o.msg_type = e_uc_load;
