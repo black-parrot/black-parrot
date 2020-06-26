@@ -33,6 +33,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
 
@@ -106,6 +107,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -179,6 +181,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -252,6 +255,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -325,6 +329,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -398,6 +403,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -471,6 +477,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -544,6 +551,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -617,6 +625,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -690,6 +699,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -764,6 +774,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -837,6 +848,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -910,6 +922,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -983,6 +996,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1056,6 +1070,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1129,6 +1144,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1202,6 +1218,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1275,6 +1292,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1349,6 +1367,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1422,6 +1441,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1495,6 +1515,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1568,6 +1589,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1641,6 +1663,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1714,6 +1737,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1787,6 +1811,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1860,6 +1885,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -1933,6 +1959,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -2006,6 +2033,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l1
+      ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
       
@@ -2080,6 +2108,7 @@ package bp_common_aviary_pkg;
       ,dtlb_els             : 8
 
       ,lr_sc                : e_l2
+      ,amo_swap             : e_l2
       ,amo_fetch_logic      : e_l2
       ,amo_fetch_arithmetic : e_l2
       

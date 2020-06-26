@@ -297,7 +297,7 @@ always_comb
                               end
                             end
             `RV64_AMOSWAPW: begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
+                              if (amo_swap_p != e_none) begin
                                 decode.fu_op = e_amoswapw;
                               end else begin
                                 illegal_instr = 1'b1;
@@ -374,7 +374,7 @@ always_comb
                               end
                             end
             `RV64_AMOSWAPD: begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
+                              if (amo_swap_p != e_none) begin
                                 decode.fu_op = e_amoswapd;
                               end else begin
                                 illegal_instr = 1'b1;

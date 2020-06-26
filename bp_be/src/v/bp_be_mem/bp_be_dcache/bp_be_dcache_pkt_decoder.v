@@ -50,7 +50,7 @@ module bp_be_dcache_pkt_decoder
       e_dcache_opcode_amoswapw, e_dcache_opcode_amoswapd: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.amo_fetch_arithmetic.swap_op  = 1'b1;
+        dcache_pkt_decoded_cast_o.swap_op                       = 1'b1;
       end
       e_dcache_opcode_amoaddw, e_dcache_opcode_amoaddd: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;

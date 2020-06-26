@@ -11,7 +11,6 @@
 
 `define declare_bp_amo_fetch_arithmetic_op_s                                            \
   typedef struct packed {                                                          \
-    logic swap_op;                                                              \
     logic add_op;                                                               \
     logic min_op;                                                               \
     logic max_op;                                                               \
@@ -20,7 +19,7 @@
   } bp_amo_fetch_arithmetic_op_s;
 
 `define bp_amo_fetch_arithmetic_op_width \
-  (1 + 1 + 1 + 1 + 1 + 1)
+  (1 + 1 + 1 + 1 + 1)
 
 `define declare_bp_amo_fetch_logic_op_s                                       \
   typedef struct packed {                                                          \
@@ -50,6 +49,7 @@
     logic signed_op;                                                               \
     logic lr_op;                                                                   \
     logic sc_op;                                                                   \
+    logic swap_op;                                                              \
     bp_amo_fetch_logic_op_s amo_fetch_logic;                                       \
     bp_amo_fetch_arithmetic_op_s amo_fetch_arithmetic;                             \
     bp_be_dcache_size_op_s size;                                                   \
@@ -63,7 +63,7 @@
   `declare_bp_be_dcache_pipeline_struct_s
 
 `define bp_be_dcache_pipeline_struct_width \
-  (2 + 1 + 2 + `bp_amo_fetch_logic_op_width + `bp_amo_fetch_arithmetic_op_width \
+  (2 + 1 + 3 + `bp_amo_fetch_logic_op_width + `bp_amo_fetch_arithmetic_op_width \
    + `bp_be_dcache_size_op_width + 1)
 
 `endif
