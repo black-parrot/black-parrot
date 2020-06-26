@@ -18,9 +18,13 @@
 module bp_be_instr_decoder 
  import bp_common_pkg::*;
  import bp_common_rv64_pkg::*;
+ import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- #(// Generated parameters
-   localparam instr_width_lp = rv64_instr_width_gp
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
+   
+   // Generated parameters
+   , localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
   (input                             fe_exc_not_instr_i

@@ -213,6 +213,7 @@ bp_fe_exception_code_e fe_exc_isd;
 // Decode the dispatched instruction
 bp_be_decode_s          decoded;
 bp_be_instr_decoder
+ #(.bp_params_p(bp_params_p))
  instr_decoder
    (.fe_exc_not_instr_i(issue_pkt_r.fe_exception_not_instr)
    ,.fe_exc_i(issue_pkt_r.fe_exception_code)
