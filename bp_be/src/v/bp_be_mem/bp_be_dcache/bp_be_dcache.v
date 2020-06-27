@@ -874,7 +874,7 @@ module bp_be_dcache
         ,.data_o(slice_data)
       );
 
-      wire sigext = signed_op_tv_r & slice_data[slice_width_lp-1];
+      wire sigext = dcache_tv_r.signed_op & slice_data[slice_width_lp-1];
       assign final_data[i] = {{(dword_width_p-slice_width_lp){sigext}}, slice_data};
     end
 
@@ -884,7 +884,7 @@ module bp_be_dcache
     ,.els_p(4)
   ) byte_mux (
     .data_i(final_data)
-    ,.sel_one_hot_i({double_op_tv_r, word_op_tv_r, half_op_tv_r, byte_op_tv_r})
+    ,.sel_one_hot_i({dcache_tv_r.size.double_op, dcache_tv_r.size.word_op, dcache_tv_r.size.half_op, dcache_tv_r.size.byte_op})
     ,.data_o(load_data)
   );
 
@@ -894,7 +894,7 @@ module bp_be_dcache
                     ? uncached_load_data_v_r
                       ? uncached_load_data_r
                       : 64'b0
-                    : (dcache_tv_r.sc_op & ~sc_success))
+                    : (dcache_tv_r.sc_op & ~sc_success));
 
   // ctrl logic
   //
@@ -1102,7 +1102,7 @@ module bp_be_dcache
     assign wbuf_v_li = v_tv_r & dcache_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~amo_req & ~poison_i;
   end
   else begin : wt_wbuf
-    assign wbuf_v_li = v_tv_r & dcache_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~amo_req & cache_req_ready_i ~poison_i;
+    assign wbuf_v_li = v_tv_r & dcache_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~amo_req & cache_req_ready_i & ~poison_i;
   end
   assign wbuf_yumi_li = wbuf_v_lo & ~(dcache_pkt_decoded_lo.load_op & tl_we) & ~data_mem_pkt_yumi_o;
 
@@ -1228,8 +1228,8 @@ module bp_be_dcache
         ,.addr_i(paddr_tv_r)
         ,.load_data_i(data_o)
         ,.store_data_i(data_tv_r)
-        ,.load_i(load_op_tv_r)
-        ,.store_i(store_op_tv_r)
+        ,.load_i(dcache_tv_r.load_op)
+        ,.store_i(dcache_tv_r.store_op)
         );
   end
 
