@@ -156,8 +156,8 @@ typedef enum logic [3:0] {
 //,e_sfz_op                              = 4'b0000   // Move imm[0] = 0 to flag
   ,e_andf_op                             = 4'b0001   // Logical AND two flags to GPR
   ,e_orf_op                              = 4'b0010   // Logical OR two flags to GPR
-  ,e_nandf_op                            = 4'b0011   // Logical AND two flags to GPR
-  ,e_norf_op                             = 4'b0100   // Logical OR two flags to GPR
+  ,e_nandf_op                            = 4'b0011   // Logical NAND two flags to GPR
+  ,e_norf_op                             = 4'b0100   // Logical NOR two flags to GPR
   ,e_notf_op                             = 4'b0101   // Logical not of flag
 
   ,e_bf_op                               = 4'b1000   // Branch if (MSHR.Flags & mask) == mask
