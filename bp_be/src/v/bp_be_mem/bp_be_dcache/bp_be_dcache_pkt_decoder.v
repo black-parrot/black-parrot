@@ -19,7 +19,7 @@ module bp_be_dcache_pkt_decoder
   assign dcache_pkt = dcache_pkt_i;
 
   `declare_bp_be_dcache_pipeline_structs
-  bp_be_dcache_pipeline_struct_s dcache_pkt_decoded_cast_o;
+  bp_be_dcache_pipeline_s dcache_pkt_decoded_cast_o;
   assign dcache_pkt_decoded_o = dcache_pkt_decoded_cast_o;
 
   always_comb begin
@@ -28,10 +28,17 @@ module bp_be_dcache_pkt_decoder
     dcache_pkt_decoded_cast_o.signed_op = 1'b1;
     dcache_pkt_decoded_cast_o.lr_op = 1'b0;
     dcache_pkt_decoded_cast_o.sc_op = 1'b0;
-    dcache_pkt_decoded_cast_o.amo_fetch_logic = '0;
-    dcache_pkt_decoded_cast_o.amo_fetch_arithmetic = '0;
+    dcache_pkt_decoded_cast_o.amoswap_op = 1'b0;
+    dcache_pkt_decoded_cast_o.amoadd_op = 1'b0;
+    dcache_pkt_decoded_cast_o.amoxor_op = 1'b0;
+    dcache_pkt_decoded_cast_o.amoand_op = 1'b0;
+    dcache_pkt_decoded_cast_o.amoor_op = 1'b0;
+    dcache_pkt_decoded_cast_o.amomin_op = 1'b0;
+    dcache_pkt_decoded_cast_o.amomax_op = 1'b0;
+    dcache_pkt_decoded_cast_o.amominu_op = 1'b0;
+    dcache_pkt_decoded_cast_o.amomaxu_op = 1'b0;
     dcache_pkt_decoded_cast_o.size = '0;
-    dcache_pkt_decoded_cast_o.fencei_op = '0;
+    dcache_pkt_decoded_cast_o.fencei_op = 1'b0;
 
     // Op type decoding
     unique case (dcache_pkt.opcode)
@@ -50,47 +57,47 @@ module bp_be_dcache_pkt_decoder
       e_dcache_opcode_amoswapw, e_dcache_opcode_amoswapd: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.swap_op                       = 1'b1;
+        dcache_pkt_decoded_cast_o.amoswap_op                    = 1'b1;
       end
       e_dcache_opcode_amoaddw, e_dcache_opcode_amoaddd: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.amo_fetch_arithmetic.add_op   = 1'b1;
+        dcache_pkt_decoded_cast_o.amoadd_op                     = 1'b1;
       end
       e_dcache_opcode_amoxorw, e_dcache_opcode_amoxord: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.amo_fetch_logic.xor_op        = 1'b1;
+        dcache_pkt_decoded_cast_o.amoxor_op                     = 1'b1;
       end
       e_dcache_opcode_amoandw, e_dcache_opcode_amoandd: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.amo_fetch_logic.and_op        = 1'b1;
+        dcache_pkt_decoded_cast_o.amoand_op                     = 1'b1;
       end
       e_dcache_opcode_amoorw, e_dcache_opcode_amoord: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.amo_fetch_logic.or_op         = 1'b1;
+        dcache_pkt_decoded_cast_o.amoor_op                      = 1'b1;
       end
       e_dcache_opcode_amominw, e_dcache_opcode_amomind: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.amo_fetch_arithmetic.min_op   = 1'b1;
+        dcache_pkt_decoded_cast_o.amomin_op                     = 1'b1;
       end
       e_dcache_opcode_amomaxw, e_dcache_opcode_amomaxd: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.amo_fetch_arithmetic.max_op   = 1'b1;
+        dcache_pkt_decoded_cast_o.amomax_op                     = 1'b1;
       end
       e_dcache_opcode_amominuw, e_dcache_opcode_amominud: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.amo_fetch_arithmetic.minu_op  = 1'b1;
+        dcache_pkt_decoded_cast_o.amominu_op                    = 1'b1;
       end
       e_dcache_opcode_amomaxuw, e_dcache_opcode_amomaxud: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;
         dcache_pkt_decoded_cast_o.store_op                      = 1'b1;
-        dcache_pkt_decoded_cast_o.amo_fetch_arithmetic.maxu_op  = 1'b1;
+        dcache_pkt_decoded_cast_o.amomaxu_op                    = 1'b1;
       end
       e_dcache_opcode_ld, e_dcache_opcode_lw, e_dcache_opcode_lh, e_dcache_opcode_lb: begin
         dcache_pkt_decoded_cast_o.load_op                       = 1'b1;

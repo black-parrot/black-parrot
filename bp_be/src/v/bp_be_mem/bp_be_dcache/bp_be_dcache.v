@@ -180,7 +180,7 @@ module bp_be_dcache
   assign dcache_pkt = dcache_pkt_i;
 
   `declare_bp_be_dcache_pipeline_structs
-  bp_be_dcache_pipeline_struct_s dcache_pkt_decoded_lo, dcache_tl_r, dcache_tv_r;
+  bp_be_dcache_pipeline_s dcache_pkt_decoded_lo, dcache_tl_r, dcache_tv_r;
   logic [index_width_lp-1:0] addr_index;
   logic [bank_offset_width_lp-1:0] addr_bank_offset;
 
@@ -378,30 +378,18 @@ module bp_be_dcache
   logic fencei_req;
 
   // For L2 atomics
-  logic lr_req;
-  logic sc_req;
-  logic amoswap_req;
-  logic amoadd_req;
-  logic amoxor_req;
-  logic amoand_req;
-  logic amoor_req;
-  logic amomin_req;
-  logic amomax_req;
-  logic amominu_req;
-  logic amomaxu_req;
-  logic amo_req;
-  assign lr_req = v_tv_r & dcache_tv_r.lr_op & (lr_sc_p == e_l2);
-  assign sc_req = v_tv_r & dcache_tv_r.sc_op & (lr_sc_p == e_l2);
-  assign amoswap_req = v_tv_r & dcache_tv_r.swap_op & (amo_swap_p == e_l2);
-  assign amoadd_req = v_tv_r & dcache_tv_r.amo_fetch_arithmetic.add_op & (amo_fetch_arithmetic_p == e_l2);
-  assign amoxor_req = v_tv_r & dcache_tv_r.amo_fetch_logic.xor_op & (amo_fetch_logic_p == e_l2);
-  assign amoand_req = v_tv_r & dcache_tv_r.amo_fetch_logic.and_op & (amo_fetch_logic_p == e_l2);
-  assign amoor_req = v_tv_r & dcache_tv_r.amo_fetch_logic.or_op & (amo_fetch_logic_p == e_l2);
-  assign amomin_req = v_tv_r & dcache_tv_r.amo_fetch_arithmetic.min_op & (amo_fetch_arithmetic_p == e_l2);
-  assign amomax_req = v_tv_r & dcache_tv_r.amo_fetch_arithmetic.max_op & (amo_fetch_arithmetic_p == e_l2);
-  assign amominu_req = v_tv_r & dcache_tv_r.amo_fetch_arithmetic.minu_op & (amo_fetch_arithmetic_p == e_l2);
-  assign amomaxu_req = v_tv_r & dcache_tv_r.amo_fetch_arithmetic.maxu_op & (amo_fetch_arithmetic_p == e_l2);
-  assign amo_req = lr_req | sc_req | amoswap_req | amoadd_req | amoxor_req
+  wire lr_req = v_tv_r & dcache_tv_r.lr_op & (lr_sc_p == e_l2);
+  wire sc_req = v_tv_r & dcache_tv_r.sc_op & (lr_sc_p == e_l2);
+  wire amoswap_req = v_tv_r & dcache_tv_r.amoswap_op & (amo_swap_p == e_l2);
+  wire amoadd_req = v_tv_r & dcache_tv_r.amoadd_op & (amo_fetch_arithmetic_p == e_l2);
+  wire amoxor_req = v_tv_r & dcache_tv_r.amoxor_op & (amo_fetch_logic_p == e_l2);
+  wire amoand_req = v_tv_r & dcache_tv_r.amoand_op & (amo_fetch_logic_p == e_l2);
+  wire amoor_req = v_tv_r & dcache_tv_r.amoor_op & (amo_fetch_logic_p == e_l2);
+  wire amomin_req = v_tv_r & dcache_tv_r.amomin_op & (amo_fetch_arithmetic_p == e_l2);
+  wire amomax_req = v_tv_r & dcache_tv_r.amomax_op & (amo_fetch_arithmetic_p == e_l2);
+  wire amominu_req = v_tv_r & dcache_tv_r.amominu_op & (amo_fetch_arithmetic_p == e_l2);
+  wire amomaxu_req = v_tv_r & dcache_tv_r.amomaxu_op & (amo_fetch_arithmetic_p == e_l2);
+  wire amo_req = lr_req | sc_req | amoswap_req | amoadd_req | amoxor_req
                    | amoand_req | amoor_req | amomin_req | amomax_req
                    | amominu_req | amomaxu_req;
 
@@ -884,7 +872,7 @@ module bp_be_dcache
     ,.els_p(4)
   ) byte_mux (
     .data_i(final_data)
-    ,.sel_one_hot_i({dcache_tv_r.size.double_op, dcache_tv_r.size.word_op, dcache_tv_r.size.half_op, dcache_tv_r.size.byte_op})
+    ,.sel_one_hot_i(dcache_tv_r.size)
     ,.data_o(load_data)
   );
 
@@ -1146,18 +1134,24 @@ module bp_be_dcache
     end
     else begin
       // The LR has successfully completed, without a cache miss or upgrade request
-      if (dcache_tv_r.lr_op & v_o & ~lr_miss_tv & (lr_sc_p == e_l1)) begin
-        load_reserved_v_r     <= 1'b1;
-        load_reserved_tag_r   <= paddr_tv_r[block_offset_width_lp+index_width_lp+:ptag_width_lp];
-        load_reserved_index_r <= paddr_tv_r[block_offset_width_lp+:index_width_lp];
-      // All SCs clear the reservation (regardless of success)
-      end else if (dcache_tv_r.sc_op & (lr_sc_p == e_l1)) begin
+      if (lr_sc_p == e_l1) begin
+        if (dcache_tv_r.lr_op & v_o & ~lr_miss_tv) begin
+          load_reserved_v_r     <= 1'b1;
+          load_reserved_tag_r   <= paddr_tv_r[block_offset_width_lp+index_width_lp+:ptag_width_lp];
+          load_reserved_index_r <= paddr_tv_r[block_offset_width_lp+:index_width_lp];
+        // All SCs clear the reservation (regardless of success)
+        end else if (dcache_tv_r.sc_op & (lr_sc_p == e_l1)) begin
+          load_reserved_v_r <= 1'b0;
+        // Invalidates from other harts which match the reservation address clear the reservation
+        end else if (tag_mem_pkt_v & (tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
+                    & (tag_mem_pkt.tag == load_reserved_tag_r) 
+                    & (tag_mem_pkt.index == load_reserved_index_r) & (lr_sc_p == e_l1)) begin
+          load_reserved_v_r <= 1'b0;
+        end
+      end else begin
         load_reserved_v_r <= 1'b0;
-      // Invalidates from other harts which match the reservation address clear the reservation
-      end else if (tag_mem_pkt_v & (tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
-                  & (tag_mem_pkt.tag == load_reserved_tag_r) 
-                  & (tag_mem_pkt.index == load_reserved_index_r) & (lr_sc_p == e_l1)) begin
-        load_reserved_v_r <= 1'b0;
+        load_reserved_tag_r <= '0;
+        load_reserved_index_r <= '0;
       end
     end
   end
