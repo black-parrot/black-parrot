@@ -19,9 +19,9 @@ module bp_lce
     , parameter sets_p = "inv"
     , parameter block_width_p = "inv"
     , parameter fill_width_p = block_width_p
-    , parameter data_mem_negedge_p = 0
-    , parameter tag_mem_negedge_p = 0
-    , parameter stat_mem_negedge_p = 0
+    , parameter data_mem_invert_clk_p = 0
+    , parameter tag_mem_invert_clk_p = 0
+    , parameter stat_mem_invert_clk_p = 0
 
     , parameter timeout_max_limit_p=4
 
@@ -170,9 +170,9 @@ module bp_lce
       ,.sets_p(sets_p)
       ,.block_width_p(block_width_p)
       ,.fill_width_p(fill_width_p)
-      ,.data_mem_negedge_p(data_mem_negedge_p)
-      ,.tag_mem_negedge_p(tag_mem_negedge_p)
-      ,.stat_mem_negedge_p(stat_mem_negedge_p)
+      ,.data_mem_invert_clk_p(data_mem_invert_clk_p)
+      ,.tag_mem_invert_clk_p(tag_mem_invert_clk_p)
+      ,.stat_mem_invert_clk_p(stat_mem_invert_clk_p)
       )
     command
       (.clk_i(clk_i)

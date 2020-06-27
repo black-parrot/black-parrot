@@ -14,9 +14,9 @@ module bp_uce
     , parameter fill_width_p = 512
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
-    , parameter tag_mem_negedge_p  = 0
-    , parameter data_mem_negedge_p = 0
-    , parameter stat_mem_negedge_p = 0
+    , parameter tag_mem_invert_clk_p  = 0
+    , parameter data_mem_invert_clk_p = 0
+    , parameter stat_mem_invert_clk_p = 0
 
     , localparam bank_width_lp = block_width_p / assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
@@ -142,7 +142,7 @@ module bp_uce
 
   logic dirty_data_read_en;
   wire dirty_data_read = data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
-  wire data_mem_clk = (data_mem_negedge_p ? ~clk_i : clk_i);
+  wire data_mem_clk = (data_mem_invert_clk_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    dirty_data_read_en_reg
@@ -176,7 +176,7 @@ module bp_uce
 
   logic dirty_tag_read_en;
   wire dirty_tag_read = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
-  wire tag_mem_clk = (tag_mem_negedge_p ? ~clk_i : clk_i);
+  wire tag_mem_clk = (tag_mem_invert_clk_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    dirty_tag_read_en_reg
@@ -211,7 +211,7 @@ module bp_uce
 
   logic dirty_stat_read_en;
   wire dirty_stat_read = stat_mem_pkt_yumi_i & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
-  wire stat_mem_clk = (stat_mem_negedge_p ? ~clk_i : clk_i);
+  wire stat_mem_clk = (stat_mem_invert_clk_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    dirty_stat_read_en_reg

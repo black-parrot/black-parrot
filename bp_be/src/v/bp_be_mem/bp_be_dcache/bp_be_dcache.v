@@ -4,12 +4,12 @@
  *
  *  Description:
  *    L1 data cache. It receives load or store instruction from the mmu. This
- *    is virtually-indexed and physically-tagged cache. It is 8-way
+ *    is virtually-indexed and physically-tagged cache. It is 2-8-way
  *    set-associative.
  *
  *    There are three different 1rw memory blocks: data_mem, tag_mem, stat_mem.
  *
- *    data_mem is divided into 8 different banks, and cache blocks are
+ *    data_mem is divided into 1 bank per way, and cache blocks are
  *    interleaved among the banks. The governing relationship is "bank_id =
  *    word_offset + way_id" (with modular arithmetic).
  *
@@ -73,13 +73,15 @@
  *    do not use a store buffer that allows stores before cache lines have been fetched,, all
  *     memory requests are inherently ordered within a hart.
  *
- *    Both I-cache and D-cache support multi-cycle fill/eviction with the UCE in unicore configuration.
- *    The key to fill the data_mem with fill_width <= block_width is using the fill_index newly added in
- *    data_mem_pkt to generate write mask.
+ *    The dcache supports multi-cycle fill/eviction with the UCE in unicore configuration.
  *    Some key concepts and their relation can be summarized as:
  *      bank_width = block_width / assoc >= dword_width
  *      fill_width = N*bank_width <= block_width
  *    For detailed description and supported fill width parameters, please refer to Cache Serivce Interface Doc
+ *
+ *    The dcache rearranges its large memory accesses in order to enable a two-cycle load-use
+ *    latency. The data mem and tag mem accesses are performed on the negative edge, so that address
+ *    calculation is done in half a cycle and data muxing is done in half a cycle.
  */
 
 module bp_be_dcache
@@ -293,6 +295,9 @@ module bp_be_dcache
       v_tl_r <= 1'b0;
     end
     else begin
+      // We poison the valid of the stage rather than tl_we, to relieve critical paths on the
+      //   large memory enables. The tradeoff is an additional toggle whenever there is a flush
+      //   during an incoming dcache request
       v_tl_r <= tl_we & ~poison_i;
       if (tl_we) begin
         lr_op_tl_r <= lr_op;
@@ -455,6 +460,9 @@ module bp_be_dcache
       addr_bank_offset_dec_tv_r <= '0;
     end
     else begin
+      // We poison the valid of the stage rather than tl_we, to relieve critical paths on the
+      //   large memory enables. The tradeoff is an additional toggle whenever there is a flush
+      //   during an incoming dcache request
       v_tv_r <= tv_we & ~poison_i;
 
       if (tv_we) begin
