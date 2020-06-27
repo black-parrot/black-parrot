@@ -25,9 +25,9 @@ module bp_lce_cmd
     , parameter sets_p = "inv"
     , parameter block_width_p = "inv"
     , parameter fill_width_p = block_width_p
-    , parameter data_mem_negedge_p = 0
-    , parameter tag_mem_negedge_p = 0
-    , parameter stat_mem_negedge_p = 0
+    , parameter data_mem_invert_clk_p = 0
+    , parameter tag_mem_invert_clk_p = 0
+    , parameter stat_mem_invert_clk_p = 0
 
     , parameter timeout_max_limit_p=4
 
@@ -172,7 +172,7 @@ module bp_lce_cmd
   // command is accepted and new data is latched.
   logic data_buf_read_en;
   wire data_buf_read = data_mem_pkt_yumi_i & (data_mem_pkt.opcode == e_cache_data_mem_read);
-  wire data_mem_clk = (data_mem_negedge_p ? ~clk_i : clk_i);
+  wire data_mem_clk = (data_mem_invert_clk_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    data_buf_read_en_reg
@@ -206,7 +206,7 @@ module bp_lce_cmd
 
   logic stat_buf_read_en;
   wire stat_buf_read = stat_mem_pkt_yumi_i & (stat_mem_pkt.opcode == e_cache_stat_mem_read);
-  wire stat_mem_clk = (stat_mem_negedge_p ? ~clk_i : clk_i);
+  wire stat_mem_clk = (stat_mem_invert_clk_p ? ~clk_i : clk_i);
   bsg_dff
    #(.width_p(1))
    stat_buf_read_en_reg
