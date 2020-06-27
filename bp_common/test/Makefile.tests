@@ -1,6 +1,7 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
+include $(BP_TEST_DIR)/Makefile.linux
 
 perch_dir       := $(BP_TEST_SRC_DIR)/perch
 bp_tests_dir    := $(BP_TEST_SRC_DIR)/bp_tests
@@ -50,6 +51,9 @@ spec_build:
 riscvdv_build:
 	$(MAKE) -C $(riscvdv_dir)
 
+linux_build: $(fw_payload)
+	cp $< $(BP_TEST_MEM_DIR)/linux/linux.riscv
+
 perch: $(BP_TEST_DIR)/lib/libperch.a
 $(BP_TEST_DIR)/lib/libperch.a:
 	$(MAKE) -C $(perch_dir)
@@ -70,7 +74,6 @@ $(eval $(call submodule_test_template,coremark,$(coremark_dir)))
 $(eval $(call submodule_test_template,spec,$(spec_dir)))
 $(eval $(call submodule_test_template,riscvdv,$(riscvdv_dir)))
 
-RISCV_ISA_SIM ?= spike
 RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -d
 RISCV_OBJCOPY ?= $(CROSS_COMPILE)objcopy
 MEM2NBF       ?= $(BP_COMMON_DIR)/software/py/nbf.py
@@ -84,10 +87,4 @@ DROMAJO       ?= dromajo
 
 %.dump: %.riscv
 	$(RISCV_OBJDUMP) $*.riscv > $@
-
-%.spike: %.riscv
-	$(RISCV_ISA_SIM) $*.riscv > $@ 2>&1
-
-%.nbf: %.mem
-	$(PYTHON) $(MEM2NBF) $*.mem > $@
 
