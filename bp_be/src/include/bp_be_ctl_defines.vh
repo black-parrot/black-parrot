@@ -34,46 +34,46 @@ typedef enum logic [5:0]
 
 typedef enum logic [5:0]
 {
-  e_lb        = 6'b000000
-  ,e_lh       = 6'b000001
-  ,e_lw       = 6'b000010
-  ,e_ld       = 6'b000011
-  ,e_lbu      = 6'b000100
-  ,e_lhu      = 6'b000101
-  ,e_lwu      = 6'b000110
+  e_dcache_opcode_lb        = 6'b000000
+  ,e_dcache_opcode_lh       = 6'b000001
+  ,e_dcache_opcode_lw       = 6'b000010
+  ,e_dcache_opcode_ld       = 6'b000011
+  ,e_dcache_opcode_lbu      = 6'b000100
+  ,e_dcache_opcode_lhu      = 6'b000101
+  ,e_dcache_opcode_lwu      = 6'b000110
 
-  ,e_sb       = 6'b001000
-  ,e_sh       = 6'b001001
-  ,e_sw       = 6'b001010
-  ,e_sd       = 6'b001011
+  ,e_dcache_opcode_sb       = 6'b001000
+  ,e_dcache_opcode_sh       = 6'b001001
+  ,e_dcache_opcode_sw       = 6'b001010
+  ,e_dcache_opcode_sd       = 6'b001011
 
-  ,e_lrw      = 6'b000111
-  ,e_scw      = 6'b001100
+  ,e_dcache_opcode_lrw      = 6'b000111
+  ,e_dcache_opcode_scw      = 6'b001100
 
-  ,e_lrd      = 6'b001101
-  ,e_scd      = 6'b001110
-  ,e_fencei   = 6'b001111
+  ,e_dcache_opcode_lrd      = 6'b001101
+  ,e_dcache_opcode_scd      = 6'b001110
+  ,e_dcache_opcode_fencei   = 6'b001111
 
-  ,e_amoswapw = 6'b010000
-  ,e_amoaddw  = 6'b010001
-  ,e_amoxorw  = 6'b010010
-  ,e_amoandw  = 6'b010011
-  ,e_amoorw   = 6'b010100
-  ,e_amominw  = 6'b010101
-  ,e_amomaxw  = 6'b010110
-  ,e_amominuw = 6'b010111
-  ,e_amomaxuw = 6'b011000
+  ,e_dcache_opcode_amoswapw = 6'b010000
+  ,e_dcache_opcode_amoaddw  = 6'b010001
+  ,e_dcache_opcode_amoxorw  = 6'b010010
+  ,e_dcache_opcode_amoandw  = 6'b010011
+  ,e_dcache_opcode_amoorw   = 6'b010100
+  ,e_dcache_opcode_amominw  = 6'b010101
+  ,e_dcache_opcode_amomaxw  = 6'b010110
+  ,e_dcache_opcode_amominuw = 6'b010111
+  ,e_dcache_opcode_amomaxuw = 6'b011000
 
-  ,e_amoswapd = 6'b011001
-  ,e_amoaddd  = 6'b011010
-  ,e_amoxord  = 6'b011011
-  ,e_amoandd  = 6'b011100
-  ,e_amoord   = 6'b011101
-  ,e_amomind  = 6'b011110
-  ,e_amomaxd  = 6'b011111
-  ,e_amominud = 6'b100000
-  ,e_amomaxud = 6'b100001
-} bp_be_mmu_fu_op_e;
+  ,e_dcache_opcode_amoswapd = 6'b011001
+  ,e_dcache_opcode_amoaddd  = 6'b011010
+  ,e_dcache_opcode_amoxord  = 6'b011011
+  ,e_dcache_opcode_amoandd  = 6'b011100
+  ,e_dcache_opcode_amoord   = 6'b011101
+  ,e_dcache_opcode_amomind  = 6'b011110
+  ,e_dcache_opcode_amomaxd  = 6'b011111
+  ,e_dcache_opcode_amominud = 6'b100000
+  ,e_dcache_opcode_amomaxud = 6'b100001
+} bp_be_dcache_opcode_e;
 
 typedef enum logic [5:0]
 {
@@ -115,11 +115,11 @@ typedef struct packed
 {
   union packed
   {
-    bp_be_ctrl_fu_op_e ctrl_fu_op;
-    bp_be_int_fu_op_e  int_fu_op;
-    bp_be_mmu_fu_op_e  mmu_fu_op;
-    bp_be_csr_fu_op_e  csr_fu_op;
-    bp_be_mul_fu_op_e  mul_fu_op;
+    bp_be_ctrl_fu_op_e     ctrl_fu_op;
+    bp_be_int_fu_op_e      int_fu_op;
+    bp_be_dcache_opcode_e  dcache_op;
+    bp_be_csr_fu_op_e      csr_fu_op;
+    bp_be_mul_fu_op_e      mul_fu_op;
   }  fu_op;
 }  bp_be_fu_op_s;
 
@@ -224,7 +224,7 @@ typedef struct packed
 }  bp_be_exc_stage_s;
 
 `define bp_be_fu_op_width                                                                          \
-  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_mmu_fu_op_e), $bits(bp_be_csr_fu_op_e))))
+  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_dcache_opcode_e), $bits(bp_be_csr_fu_op_e))))
 
 `define bp_be_decode_width                                                                         \
   ($bits(bp_be_decode_s))

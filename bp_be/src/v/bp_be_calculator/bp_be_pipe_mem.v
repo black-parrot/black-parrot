@@ -157,8 +157,8 @@ logic is_fencei_mem1, is_fencei_mem2;
 logic [rv64_eaddr_width_gp-1:0] eaddr_mem1, eaddr_mem2;
 
 wire is_req    = decode.pipe_mem_v;
-wire is_store  = decode.pipe_mem_v & decode.fu_op inside {e_sb, e_sh, e_sw, e_sd, e_scw, e_scd};
-wire is_fencei = decode.pipe_mem_v & decode.fu_op inside {e_fencei};
+wire is_store  = decode.pipe_mem_v & decode.fu_op inside {e_dcache_opcode_sb, e_dcache_opcode_sh, e_dcache_opcode_sw, e_dcache_opcode_sd, e_dcache_opcode_scw, e_dcache_opcode_scd};
+wire is_fencei = decode.pipe_mem_v & decode.fu_op inside {e_dcache_opcode_fencei};
 
 // Calculate cache access eaddr
 wire [rv64_reg_data_width_gp-1:0] offset = decode.offset_sel ? '0 : imm_i;
