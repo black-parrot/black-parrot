@@ -214,6 +214,12 @@ assign passthrough_v_lo = is_req_mem1;
 assign dtlb_r_entry = trans_info.translation_en ? entry_lo : passthrough_entry;
 assign dtlb_r_v_lo = trans_info.translation_en ? dtlb_v_lo : passthrough_v_lo;
 
+logic [7:0] domain_data;
+logic sac_data;
+
+assign cfg_domain_data_o = domain_data;
+assign cfg_sac_data_o = sac_data;
+
 bp_pma
  #(.bp_params_p(bp_params_p))
  pma
@@ -406,10 +412,3 @@ assign data_o                 = dcache_data;
 //// synopsys translate_on
 
 endmodule
-
-
-logic [7:0] domain_data;
-logic sac_data;
-
-assign cfg_domain_data_o = domain_data;
-assign cfg_sac_data_o = sac_data;
