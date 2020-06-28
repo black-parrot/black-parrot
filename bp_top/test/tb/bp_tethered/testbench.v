@@ -189,7 +189,7 @@ bind bp_be_top
      ,.reset_i(reset_i)
      ,.freeze_i(scheduler.int_regfile.cfg_bus.freeze)
 
-     ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+     ,.mhartid_i(scheduler.int_regfile.cfg_bus.core_id)
 
      ,.decode_i(calculator.reservation_n.decode)
 
@@ -230,7 +230,7 @@ bind bp_be_top
      ,.rd_addr_i(scheduler.wb_pkt.rd_addr)
      ,.rd_data_i(scheduler.wb_pkt.rd_data)
 
-     ,.interrupt_v_i(calculator.pipe_sys.csr.trap_pkt._interrupt)
+     ,.interrupt_v_i(calculator.pipe_sys.csr.trap_pkt_cast_o._interrupt)
      ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
                ? calculator.pipe_sys.csr.scause_li
                : calculator.pipe_sys.csr.mcause_li
@@ -385,10 +385,12 @@ bind bp_be_top
        ,.wt_req()
        ,.store_data(dword_width_p'(0))
 
+       ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
        ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
 
+       ,.tag_mem_v_i(tag_mem_v_li)
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)
        ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
@@ -416,11 +418,11 @@ bind bp_be_top
        ,.itlb_entry_i(fe.mem.itlb.entry_i)
        ,.itlb_cam_r_v_i(fe.mem.itlb.cam.r_v_i)
 
-       ,.dtlb_clear_i(calculator.pipe_mem.dtlb.flush_i)
-       ,.dtlb_fill_v_i(calculator.pipe_mem.dtlb.v_i & be.be_mem.dtlb.w_i)
-       ,.dtlb_vtag_i(calculator.pipe_mem.dtlb.vtag_i)
-       ,.dtlb_entry_i(calculator.pipe_mem.dtlb.entry_i)
-       ,.dtlb_cam_r_v_i(calculator.pipe_mem.dtlb.cam.r_v_i)
+       ,.dtlb_clear_i(be.calculator.pipe_mem.dtlb.flush_i)
+       ,.dtlb_fill_v_i(be.calculator.pipe_mem.dtlb.v_i & be.calculator.pipe_mem.dtlb.w_i)
+       ,.dtlb_vtag_i(be.calculator.pipe_mem.dtlb.vtag_i)
+       ,.dtlb_entry_i(be.calculator.pipe_mem.dtlb.entry_i)
+       ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dtlb.cam.r_v_i)
   
        ,.program_finish_i(testbench.program_finish_lo)
        );

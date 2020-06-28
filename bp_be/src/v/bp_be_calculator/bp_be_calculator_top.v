@@ -396,8 +396,8 @@ bp_be_pipe_mul
      ,.ptw_miss_pkt_o(ptw_miss_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
-     ,.exception_i(exc_stage_r[3].exc)
-     ,.exception_pc_i(calc_stage_r[3].pc)
+     ,.exception_i(exc_stage_r[2].exc)
+     ,.exception_pc_i(calc_stage_r[2].pc)
      ,.exception_vaddr_i(pipe_mem_vaddr_r)
      ,.commit_pkt_i(commit_pkt)
      ,.trap_pkt_o(trap_pkt)

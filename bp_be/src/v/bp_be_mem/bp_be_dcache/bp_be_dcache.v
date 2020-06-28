@@ -1178,7 +1178,7 @@ module bp_be_dcache
   // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
   assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached)
                                ? data_mem_pkt_v
-                               : data_mem_pkt_v & ~(load_op & tl_we) & ~wbuf_v_lo;
+                               : data_mem_pkt_v & ~(load_op & tl_we) & wbuf_empty_lo;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin

@@ -238,7 +238,7 @@ always_comb
         fe_cmd_pc_redirect_operands = '0;
 
         fe_cmd.opcode                                    = e_op_pc_redirection;
-        fe_cmd.vaddr                                     = commit_pkt.npc;
+        fe_cmd.vaddr                                     = trap_pkt.npc;
         fe_cmd_pc_redirect_operands.subopcode            = e_subop_translation_switch;
         fe_cmd_pc_redirect_operands.translation_enabled  = trap_pkt.translation_en_n;
         fe_cmd.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
