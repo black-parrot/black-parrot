@@ -28,6 +28,7 @@ module bp_be_pipe_mem
 
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
+   , localparam eaddr_pad_lp = rv64_eaddr_width_gp - vaddr_width_p
    )
   (input                                  clk_i
    , input                                reset_i
@@ -156,19 +157,34 @@ logic load_misaligned_mem2, store_misaligned_mem2;
 logic is_req_mem1, is_req_mem2;
 logic is_store_mem1;
 logic is_fencei_mem1, is_fencei_mem2;
-logic [vaddr_width_p-1:0] vaddr_mem1, vaddr_mem2;
+logic [rv64_eaddr_width_gp-1:0] eaddr_mem1, eaddr_mem2;
 
 wire is_req    = decode.pipe_mem_v;
 wire is_store  = decode.pipe_mem_v & decode.fu_op inside {e_sb, e_sh, e_sw, e_sd, e_scw, e_scd};
 wire is_fencei = decode.pipe_mem_v & decode.fu_op inside {e_fencei};
 
-// Calculate cache access vaddr
-wire [vaddr_width_p-1:0] offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
-wire [vaddr_width_p-1:0] vaddr = rs1_i + offset;
+// Calculate cache access eaddr
+wire [rv64_reg_data_width_gp-1:0] offset = decode.offset_sel ? '0 : imm_i;
+wire [rv64_eaddr_width_gp-1:0] eaddr = rs1_i + offset;
+
+logic eaddr_fault, eaddr_fault_r;
+assign eaddr_fault = (eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {eaddr_pad_lp{eaddr[vaddr_width_p-1]}});
+
+bsg_dff_reset
+#(.width_p(1)
+ ,.reset_val_p(0)
+)
+  eaddr_fault_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(decode.pipe_mem_v & eaddr_fault)
+   ,.data_o(eaddr_fault_r)
+   );
 
 // D-TLB connections
-assign dtlb_r_v     = decode.pipe_mem_v & ~is_fencei;
-assign dtlb_r_vtag  = vaddr[vaddr_width_p-1-:vtag_width_p];
+assign dtlb_r_v     = decode.pipe_mem_v & trans_info.translation_en & ~eaddr_fault & ~is_fencei;
+assign dtlb_r_vtag  = eaddr[bp_page_offset_width_gp+:vtag_width_p];
 assign dtlb_w_v     = ptw_fill_pkt.dtlb_fill_v;
 assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
 assign dtlb_w_entry = ptw_fill_pkt.entry;
@@ -286,8 +302,8 @@ always_ff @(negedge clk_i) begin
     is_req_mem1 <= '0;
     is_req_mem2 <= '0;
     is_store_mem1 <= '0;
-    vaddr_mem1 <= '0;
-    vaddr_mem2 <= '0;
+    eaddr_mem1 <= '0;
+    eaddr_mem2 <= '0;
     is_fencei_mem1 <= '0;
     is_fencei_mem2 <= '0;
     load_access_fault_mem2 <= '0;
@@ -301,8 +317,8 @@ always_ff @(negedge clk_i) begin
     is_req_mem1 <= is_req;
     is_req_mem2 <= is_req_mem1;
     is_store_mem1 <= is_store;
-    vaddr_mem1 <= vaddr;
-    vaddr_mem2 <= vaddr_mem1;
+    eaddr_mem1 <= eaddr;
+    eaddr_mem2 <= eaddr_mem1;
     is_fencei_mem1 <= is_fencei;
     is_fencei_mem2 <= is_fencei_mem1;
     load_access_fault_mem2 <= load_access_fault_v;
@@ -319,8 +335,8 @@ wire data_priv_page_fault = ((trans_info.priv_mode == `PRIV_MODE_S) & ~trans_inf
                               | ((trans_info.priv_mode == `PRIV_MODE_U) & ~dtlb_r_entry.u);
 wire data_write_page_fault = is_store_mem1 & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
 
-assign load_page_fault_v  = dtlb_r_v_lo & trans_info.translation_en & ~is_store_mem1 & data_priv_page_fault;
-assign store_page_fault_v = dtlb_r_v_lo & trans_info.translation_en & is_store_mem1 & (data_priv_page_fault | data_write_page_fault);
+assign load_page_fault_v  = ((trans_info.translation_en & ~is_store_mem1) & ((dtlb_r_v_lo & data_priv_page_fault) | eaddr_fault_r));
+assign store_page_fault_v = ((trans_info.translation_en & is_store_mem1) & ((dtlb_r_v_lo & (data_priv_page_fault | data_write_page_fault)) | eaddr_fault_r));
 assign load_misaligned_v = 1'b0; // TODO: detect
 assign store_misaligned_v = 1'b0; // TODO: detect
 
@@ -337,7 +353,7 @@ always_comb
       dcache_pkt_v = decode.pipe_mem_v & ~kill_ex1_i;
       // TODO: Use dcache opcode directly
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(decode.fu_op);
-      dcache_pkt.page_offset = vaddr[0+:page_offset_width_p];
+      dcache_pkt.page_offset = eaddr[0+:page_offset_width_p];
       dcache_pkt.data        = rs2_i;
       dcache_ptag = dtlb_r_entry.ptag;
       dcache_ptag_v = dtlb_r_v_lo
@@ -368,7 +384,7 @@ assign store_misaligned_v_o   = store_misaligned_mem2;
 assign load_misaligned_v_o    = load_misaligned_mem2;
 
 assign ready_o                = dcache_ready_lo & ~ptw_busy;
-assign vaddr_o                = vaddr_mem2;
+assign vaddr_o                = eaddr_mem2[0+:vaddr_width_p];
 assign data_o                 = dcache_data;
 
 //// synopsys translate_off
