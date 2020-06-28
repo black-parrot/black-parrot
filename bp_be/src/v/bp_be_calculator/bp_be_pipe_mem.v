@@ -125,9 +125,9 @@ assign trans_info = trans_info_i;
 
 /* Internal connections */
 /* TLB ports */
-logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo;
+logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo, dtlb_v_lo;
 logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag;
-bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry;
+bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry, passthrough_entry, entry_lo;
 
 /* PTW ports */
 logic [ptag_width_p-1:0]  ptw_dcache_ptag;
@@ -204,10 +204,15 @@ bp_tlb
    ,.vtag_i((dtlb_w_v)? dtlb_w_vtag : dtlb_r_vtag)
    ,.entry_i(dtlb_w_entry)
 
-   ,.entry_o(dtlb_r_entry)
-   ,.v_o(dtlb_r_v_lo)
+   ,.entry_o(entry_lo)
+   ,.v_o(dtlb_v_lo)
    ,.miss_v_o(dtlb_miss_v)
    );
+
+assign passthrough_entry = '{ptag: eaddr_mem1[bp_page_offset_width_gp+:ptag_width_p], default: '0};
+assign passthrough_v_lo = is_req_mem1;
+assign dtlb_r_entry = trans_info.translation_en ? entry_lo : passthrough_entry;
+assign dtlb_r_v_lo = trans_info.translation_en ? dtlb_v_lo : passthrough_v_lo;
 
 bp_pma
  #(.bp_params_p(bp_params_p))

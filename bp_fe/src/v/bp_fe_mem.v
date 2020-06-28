@@ -87,8 +87,9 @@ wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
 wire fetch_v      = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
 wire fencei_v     = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_icache_fence);
 
-bp_fe_tlb_entry_s itlb_r_entry;
-logic itlb_r_v_lo;
+logic fetch_v_r, fetch_v_rr;
+bp_fe_tlb_entry_s itlb_r_entry, entry_lo, passthrough_entry;
+logic itlb_r_v_lo, itlb_v_lo, passthrough_v_lo;
 bp_tlb
  #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
  itlb
@@ -97,16 +98,32 @@ bp_tlb
    ,.flush_i(itlb_fence_v)
    ,.translation_en_i(mem_translation_en_i)
 
-   ,.v_i(fetch_v | itlb_fill_v)
-         
+   ,.v_i((fetch_v | itlb_fill_v) & mem_translation_en_i)
    ,.w_i(itlb_fill_v)
    ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr.tag)
    ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
 
-   ,.v_o(itlb_r_v_lo)
+   ,.v_o(itlb_v_lo)
    ,.miss_v_o(itlb_miss_lo)
-   ,.entry_o(itlb_r_entry)
+   ,.entry_o(entry_lo)
    );
+
+logic [vtag_width_p-1:0] vtag_r;
+bsg_dff_reset_en
+ #(.width_p(vtag_width_p))
+ vtag_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(fetch_v)
+
+   ,.data_i(mem_cmd_cast_i.operands.fetch.vaddr.tag)
+   ,.data_o(vtag_r)
+  );
+
+assign passthrough_entry = '{ptag: vtag_r, default: '0};
+assign passthrough_v_lo  = fetch_v_r;
+assign itlb_r_entry      = mem_translation_en_i ? entry_lo : passthrough_entry;
+assign itlb_r_v_lo       = mem_translation_en_i ? itlb_v_lo : passthrough_v_lo;
 
 wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
 wire                    ptag_v_li   = itlb_r_v_lo;
@@ -183,7 +200,6 @@ bp_fe_icache
    ,.stat_mem_o(stat_mem_o)
    );
 
-logic fetch_v_r, fetch_v_rr;
 logic itlb_miss_r;
 logic instr_access_fault_r, instr_page_fault_r;
 always_ff @(posedge clk_i)
