@@ -49,6 +49,8 @@ module bp_be_calculator_top
   , input [cfg_bus_width_lp-1:0]        cfg_bus_i
   , output [dword_width_p-1:0]          cfg_csr_data_o
   , output [1:0]                        cfg_priv_data_o
+  , output [7:0]                        cfg_domain_data_o
+  , output                              cfg_sac_data_o
    
   // Calculator - Checker interface   
   , input [dispatch_pkt_width_lp-1:0]   dispatch_pkt_i
@@ -361,6 +363,8 @@ bp_be_pipe_mul
      ,.vaddr_o(pipe_mem_vaddr_lo)
 
      ,.trans_info_i(trans_info_lo)
+     ,.cfg_domain_data_o(cfg_domain_data_o)
+     ,.cfg_sac_data_o(cfg_sac_data_o)
      );
 
   logic [vaddr_width_p-1:0] pipe_mem_vaddr_r;

@@ -203,6 +203,8 @@ bp_be_calculator_top
    ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_csr_data_o(cfg_csr_data_o)
    ,.cfg_priv_data_o(cfg_priv_data_o)
+   ,.cfg_domain_data_o(cfg_domain_data_o)
+   ,.cfg_sac_data_o(cfg_sac_data_o)
 
    ,.dispatch_pkt_i(dispatch_pkt)
 
