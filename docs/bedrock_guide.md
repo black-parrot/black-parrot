@@ -32,7 +32,7 @@ The Request network carries coherence requests from the cache controllers (LCE) 
 (CCE). A request may be a Read or Write request.
 
 The Command network carries coherence commands to the cache controllers (LCE). Most commands are
-issued by the directory (CCE), expect for cache to cache transfers that occur when a CCE commands
+issued by the directory (CCE), except for cache to cache transfers that occur when a CCE commands
 an LCE to send a cache block to another LCE.
 
 The Response network carries coherence responses from the cache controllers (LCE) to the coherence

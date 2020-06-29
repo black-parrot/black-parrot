@@ -47,8 +47,5 @@ export PYTHON    ?= python
 
 ## Add external tools and libraries to environment
 #  SystemC paths are needed for verilator-driven builds
-export SYSTEMC_INCLUDE := $(BP_EXTERNAL_DIR)/include
-export SYSTEMC_LIBDIR  := $(BP_EXTERNAL_DIR)/lib-linux64
-export LD_LIBRARY_PATH := $(SYSTEMC_LIBDIR):$(LD_LIBRARY_PATH)
 export PATH            := $(BP_EXTERNAL_DIR)/bin:$(PATH)
 

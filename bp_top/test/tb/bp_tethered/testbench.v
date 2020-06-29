@@ -32,9 +32,9 @@ module testbench
    , parameter vm_trace_p                  = 0
    , parameter core_profile_p              = 0
    , parameter preload_mem_p               = 0
-   , parameter load_nbf_p                  = 0
-   , parameter skip_init_p                 = 0
+   , parameter checkpoint_p                = 0
    , parameter cosim_p                     = 0
+   , parameter cosim_memsize_p             = 256
    , parameter cosim_cfg_file_p            = "prog.cfg"
    , parameter cosim_instr_p               = 0
    , parameter warmup_instr_p              = 0
@@ -62,14 +62,8 @@ module testbench
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-initial begin
-  if (num_core_p > 1) begin
-    assert (cosim_p == 0) else $error("cosim_p not supported for num_core_p > 1");
-  end
-end
-
 logic [num_core_p-1:0] program_finish_lo;
-logic cosim_finish_lo;
+logic [num_core_p-1:0] cosim_finish_lo;
 
 bp_cce_mem_msg_s proc_mem_cmd_lo;
 logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;
@@ -85,16 +79,6 @@ bp_cce_mem_msg_s io_cmd_lo;
 logic io_cmd_v_lo, io_cmd_ready_li;
 bp_cce_mem_msg_s io_resp_li;
 logic io_resp_v_li, io_resp_yumi_lo;
-
-bp_cce_mem_msg_s nbf_cmd_lo;
-logic nbf_cmd_v_lo, nbf_cmd_yumi_li;
-bp_cce_mem_msg_s nbf_resp_li;
-logic nbf_resp_v_li, nbf_resp_ready_lo;
-
-bp_cce_mem_msg_s cfg_cmd_lo;
-logic cfg_cmd_v_lo, cfg_cmd_yumi_li;
-bp_cce_mem_msg_s cfg_resp_li;
-logic cfg_resp_v_li, cfg_resp_ready_lo;
 
 bp_cce_mem_msg_s load_cmd_lo;
 logic load_cmd_v_lo, load_cmd_yumi_li;
@@ -163,97 +147,22 @@ bp_mem
    ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
    );
 
-logic nbf_done_lo, cfg_done_lo;
-if (load_nbf_p)
-  begin : nbf
-    bp_nonsynth_nbf_loader
-     #(.bp_params_p(bp_params_p))
-     nbf_loader
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i | ~cfg_done_lo)
-
-       ,.lce_id_i(lce_id_width_p'('b10))
-
-       ,.io_cmd_o(nbf_cmd_lo)
-       ,.io_cmd_v_o(nbf_cmd_v_lo)
-       ,.io_cmd_yumi_i(nbf_cmd_yumi_li)
-
-       ,.io_resp_i(nbf_resp_li)
-       ,.io_resp_v_i(nbf_resp_v_li)
-       ,.io_resp_ready_o(nbf_resp_ready_lo)
-
-       ,.done_o(nbf_done_lo)
-       );
-  end
-else
-  begin : no_nbf
-    assign nbf_resp_ready_lo = 1'b1;
-    assign nbf_cmd_v_lo = '0;
-    assign nbf_cmd_lo = '0;
-
-    assign nbf_done_lo = 1'b1;
-  end
-
-localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
-bp_cce_mmio_cfg_loader
-  #(.bp_params_p(bp_params_p)
-    ,.inst_width_p($bits(bp_cce_inst_s))
-    ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
-    ,.inst_ram_els_p(num_cce_instr_ram_els_p)
-    ,.skip_ram_init_p(skip_init_p)
-    ,.clear_freeze_p(!load_nbf_p)
-    )
-  cfg_loader
+bp_nonsynth_nbf_loader
+ #(.bp_params_p(bp_params_p))
+ nbf_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
    ,.lce_id_i(lce_id_width_p'('b10))
+    
+   ,.io_cmd_o(load_cmd_lo)
+   ,.io_cmd_v_o(load_cmd_v_lo)
+   ,.io_cmd_yumi_i(load_cmd_yumi_li)
 
-   ,.io_cmd_o(cfg_cmd_lo)
-   ,.io_cmd_v_o(cfg_cmd_v_lo)
-   ,.io_cmd_yumi_i(cfg_cmd_yumi_li)
-
-   ,.io_resp_i(cfg_resp_li)
-   ,.io_resp_v_i(cfg_resp_v_li)
-   ,.io_resp_ready_o(cfg_resp_ready_lo)
-
-   ,.done_o(cfg_done_lo)
-  );
-
-// CFG and NBF are mutex, so we can just use fixed arbitration here
-always_comb
-  if (~cfg_done_lo)
-    begin
-      load_cmd_lo = cfg_cmd_lo;
-      load_cmd_v_lo = cfg_cmd_v_lo;
-
-      nbf_cmd_yumi_li = '0;
-      cfg_cmd_yumi_li = load_cmd_yumi_li;
-
-      load_resp_ready_lo = cfg_resp_ready_lo;
-
-      nbf_resp_li = '0;
-      nbf_resp_v_li = '0;
-
-      cfg_resp_li = load_resp_li;
-      cfg_resp_v_li = load_resp_v_li;
-    end
-  else
-    begin
-      load_cmd_lo = nbf_cmd_lo;
-      load_cmd_v_lo = nbf_cmd_v_lo;
-
-      nbf_cmd_yumi_li = load_cmd_yumi_li;
-      cfg_cmd_yumi_li = '0;
-
-      load_resp_ready_lo = nbf_resp_ready_lo;
-
-      nbf_resp_li = load_resp_li;
-      nbf_resp_v_li = load_resp_v_li;
-
-      cfg_resp_li = '0;
-      cfg_resp_v_li = '0;
-    end
+   ,.io_resp_i(load_resp_li)
+   ,.io_resp_v_i(load_resp_v_li)
+   ,.io_resp_ready_o(load_resp_ready_lo)
+   );
 
 bp_nonsynth_host
  #(.bp_params_p(bp_params_p))
@@ -280,7 +189,7 @@ bind bp_be_top
      ,.reset_i(reset_i)
      ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
-     ,.mhartid_i(cfg_bus.core_id)
+     ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
      ,.decode_i(be_calculator.reservation_n.decode)
 
@@ -293,43 +202,41 @@ bind bp_be_top
      ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
      );
 
-  if (num_core_p == 1)
-    begin : cosim
-      bind bp_be_top
-        bp_nonsynth_cosim
-         #(.bp_params_p(bp_params_p))
-          cosim
-          (.clk_i(clk_i)
-           ,.reset_i(reset_i)
-           ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
-           ,.en_i(testbench.cosim_p == 1)
-           ,.cosim_instr_i(testbench.cosim_instr_p)
+bind bp_be_top
+  bp_nonsynth_cosim
+   #(.bp_params_p(bp_params_p))
+   cosim
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
-           ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
-           // Want to pass config file as a parameter, but cannot in Verilator 4.025
-           // Parameter-resolved constants must not use dotted references
-           ,.config_file_i(testbench.cosim_cfg_file_p)
+     // We want to pass these values as parameters, but cannot in Verilator 4.025
+     // Parameter-resolved constants must not use dotted references
+     ,.en_i(testbench.cosim_p == 1)
+     ,.checkpoint_i(testbench.checkpoint_p == 1)
+     ,.num_core_i(testbench.num_core_p)
+     ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+     ,.config_file_i(testbench.cosim_cfg_file_p)
+     ,.instr_cap_i(testbench.cosim_instr_p)
+     ,.memsize_i(testbench.cosim_memsize_p)
 
-           ,.decode_i(be_calculator.reservation_n.decode)
+     ,.decode_i(be_calculator.reservation_n.decode)
 
-           ,.commit_v_i(be_calculator.commit_pkt.instret)
-           ,.commit_pc_i(be_calculator.commit_pkt.pc)
-           ,.commit_instr_i(be_calculator.commit_pkt.instr)
+     ,.commit_v_i(be_calculator.commit_pkt.instret)
+     ,.commit_pc_i(be_calculator.commit_pkt.pc)
+     ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-           ,.rd_w_v_i(be_checker.scheduler.wb_pkt.rd_w_v)
-           ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
-           ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
+     ,.rd_w_v_i(be_checker.scheduler.wb_pkt.rd_w_v)
+     ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
+     ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
 
-           ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
-           ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+     ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
+     ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+     // TODO: Find a way to access the finish_o signals for each core
+     ,.finish_o()
+     );
 
-           ,.finish_o(testbench.cosim_finish_lo)
-           );
-    end
-  else
-    begin : no_cosim
-      assign cosim_finish_lo = '0;
-    end
+assign cosim_finish_lo = '0;
 
 bind bp_be_top
   bp_be_nonsynth_perf
@@ -433,6 +340,10 @@ bind bp_be_top
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+       ,.tag_mem_v_i(tag_mem_v_li)
+       ,.data_mem_v_i(data_mem_v_li)
+       ,.program_finish_i(testbench.program_finish_lo)
        );
 
   bind bp_fe_icache
@@ -483,6 +394,10 @@ bind bp_be_top
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+       ,.tag_mem_v_i(tag_mem_v_li)
+       ,.data_mem_v_i(data_mem_v_li)
+       ,.program_finish_i(testbench.program_finish_lo)
        );
 
   bind bp_core_minimal
@@ -499,11 +414,15 @@ bind bp_be_top
        ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)
        ,.itlb_vtag_i(fe.mem.itlb.vtag_i)
        ,.itlb_entry_i(fe.mem.itlb.entry_i)
+       ,.itlb_cam_r_v_i(fe.mem.itlb.cam.r_v_i)
 
        ,.dtlb_clear_i(be.be_mem.dtlb.flush_i)
        ,.dtlb_fill_v_i(be.be_mem.dtlb.v_i & be.be_mem.dtlb.w_i)
        ,.dtlb_vtag_i(be.be_mem.dtlb.vtag_i)
        ,.dtlb_entry_i(be.be_mem.dtlb.entry_i)
+       ,.dtlb_cam_r_v_i(be.be_mem.dtlb.cam.r_v_i)
+
+       ,.program_finish_i(testbench.program_finish_lo)
        );
 
   bp_mem_nonsynth_tracer

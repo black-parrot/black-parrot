@@ -102,11 +102,15 @@ wire br_res_taken = (attaboy_v & fe_cmd_cast_i.operands.attaboy.taken)
 wire br_res_ntaken = (attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken)
                      | (br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_pred_ntaken));
 wire br_miss_nonbr = br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
-assign fe_cmd_branch_metadata = br_miss_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
+assign fe_cmd_branch_metadata = br_miss_v
+                                ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd
+                                : attaboy_v
+                                  ? fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd
+                                  : '0;
 
 logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
-wire shadow_priv_w = state_reset_v | trap_v | translation_v;
-assign shadow_priv_n = state_reset_v ? `PRIV_MODE_M : fe_cmd_cast_i.operands.pc_redirect_operands.priv;
+wire shadow_priv_w = state_reset_v | trap_v;
+assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
 bsg_dff_reset_en
  #(.width_p(rv64_priv_width_gp))
  shadow_priv_reg
@@ -119,7 +123,7 @@ bsg_dff_reset_en
    );
 
 logic shadow_translation_en_n, shadow_translation_en_r;
-wire shadow_translation_en_w = state_reset_v | trap_v | itlb_fence_v;
+wire shadow_translation_en_w = state_reset_v | trap_v | translation_v;
 assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_enabled;
 bsg_dff_reset_en
  #(.width_p(1))

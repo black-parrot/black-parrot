@@ -46,15 +46,13 @@ void bp_finish(uint8_t code) {
 }
 
 void bp_hprint(uint8_t hex) {
-  uint64_t core_id;
 
-  *(HPRINT_BASE_ADDR) = hex;
+  *(PUTCHAR_BASE_ADDR) = ('0' + hex);
 }
 
 void bp_cprint(uint8_t ch) {
-  uint64_t core_id;
 
-  *(CPRINT_BASE_ADDR) = ch;
+  *(PUTCHAR_BASE_ADDR) = ch;
 }
 
 
