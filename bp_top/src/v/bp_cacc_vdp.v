@@ -57,7 +57,6 @@ module bp_cacc_vdp
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_uncached;
   logic                     dcache_miss_v;
-  logic                     load_op_tl_lo, store_op_tl_lo;
   logic                     dcache_pkt_v;
   logic                     credits_full_o, credits_empty_o;
 
@@ -65,9 +64,6 @@ module bp_cacc_vdp
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
 
-
-  assign dcache_poison = '0;
-  assign dcache_tlb_miss = '0;
 
   logic cache_req_v_o, cache_req_ready_i, cache_req_metadata_v_o,
   data_mem_pkt_v_i, data_mem_pkt_yumi_o,
@@ -109,15 +105,12 @@ bp_be_dcache
 
     ,.v_o(dcache_v)
     ,.data_o(dcache_data)
-    ,.fencei_v_o()
 
-    ,.tlb_miss_i(dcache_tlb_miss)
+    ,.ptag_v_i(1'b1)
     ,.ptag_i(dcache_ptag)
     ,.uncached_i(dcache_uncached)
 
-    ,.load_op_tl_o(load_op_tl_lo)
-    ,.store_op_tl_o(store_op_tl_lo)
-    ,.poison_i(dcache_poison)
+    ,.poison_i(1'b0)
 
     // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_v)
