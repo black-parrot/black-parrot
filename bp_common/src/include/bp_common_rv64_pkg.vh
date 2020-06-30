@@ -69,5 +69,26 @@ package bp_common_rv64_pkg;
     logic [rv64_opcode_width_gp-1:0]   opcode;
   }  rv64_instr_s;
 
+  typedef struct packed
+  {
+    // RISC-V exceptions
+    logic store_page_fault;
+    logic reserved2;
+    logic load_page_fault;
+    logic instr_page_fault;
+    logic ecall_m_mode;
+    logic reserved1;
+    logic ecall_s_mode;
+    logic ecall_u_mode;
+    logic store_access_fault;
+    logic store_misaligned;
+    logic load_access_fault;
+    logic load_misaligned;
+    logic breakpoint;
+    logic illegal_instr;
+    logic instr_access_fault;
+    logic instr_misaligned;
+  }  rv64_exception_dec_s;
+
 endpackage
 

@@ -225,7 +225,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3].dcache_miss       |= dcache_miss;
       stall_stage_n[3].exception         |= exception;
       stall_stage_n[3].eret              |= eret;
-      stall_stage_n[3]._interrupt         |= _interrupt;
+      stall_stage_n[3]._interrupt        |= _interrupt;
 
       // EX1
       stall_stage_n[4].mispredict        |= mispredict;
@@ -234,7 +234,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[4].long_haz          |= long_haz;
       stall_stage_n[4].exception         |= exception;
       stall_stage_n[4].eret              |= eret;
-      stall_stage_n[4]._interrupt         |= _interrupt;
+      stall_stage_n[4]._interrupt        |= _interrupt;
       stall_stage_n[4].control_haz       |= control_haz;
       stall_stage_n[4].load_dep          |= load_dep;
       stall_stage_n[4].mul_dep           |= mul_dep;

@@ -385,7 +385,7 @@ module bp_fe_icache
      ,.data_i(cache_req_v_o)
      ,.data_o(cache_miss)
      );
-  assign miss_o = cache_miss;
+  assign miss_o = cache_miss || (v_tv_r & ~data_v_o);
 
   assign vaddr_ready_o = cache_req_ready_i & ~cache_miss & ~cache_req_v_o;
 
@@ -648,6 +648,7 @@ module bp_fe_icache
                                : data_mem_pkt_v_i & ~tl_we;
 
   // uncached load data logic
+  //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       uncached_load_data_v_r <= 1'b0;
