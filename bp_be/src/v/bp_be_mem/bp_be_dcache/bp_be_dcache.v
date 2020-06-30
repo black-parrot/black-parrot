@@ -754,14 +754,14 @@ module bp_be_dcache
     cache_req_cast_o.data = data_tv_r;
   end
 
-  // The cache pipeline is designed to always send metadata a cycle after the request
+  // Cache metadata is valid after the request goes out
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(cache_req_v_o)
+     ,.data_i(stat_mem_v_li & ~stat_mem_w_li)
      ,.data_o(cache_req_metadata_v_o)
      );
 
@@ -839,7 +839,7 @@ module bp_be_dcache
      ,.disable_overflow_warning_p(1)
      )
    lock_counter
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.clear_i(lock_clr)
@@ -952,16 +952,14 @@ module bp_be_dcache
     ,.o(wbuf_data_mem_v)
   );
 
-  logic lce_data_mem_v;
-  assign lce_data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
-    & data_mem_pkt_yumi_o;
+  wire lce_data_mem_v = data_mem_pkt_yumi_o & (data_mem_pkt.opcode != e_cache_data_mem_uncached);
 
-  assign data_mem_v_li = (load_op & tl_we)
-    ? {dcache_assoc_p{1'b1}}
-    : (wbuf_yumi_li
+  assign data_mem_v_li = lce_data_mem_v 
+    ? {dcache_assoc_p{lce_data_mem_v}}
+    : wbuf_yumi_li
       ? wbuf_data_mem_v
-      : {dcache_assoc_p{lce_data_mem_v}});
-
+      : {dcache_assoc_p{load_op & tl_we}};
+ 
   assign data_mem_w_li = wbuf_yumi_li
     | (data_mem_pkt_yumi_o & data_mem_pkt.opcode == e_cache_data_mem_write);
 
@@ -1029,10 +1027,10 @@ module bp_be_dcache
   // tag_mem
   //
   assign tag_mem_v_li = tl_we | tag_mem_pkt_yumi_o;
-  assign tag_mem_w_li = ~tl_we & tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode != e_cache_tag_mem_read);
-  assign tag_mem_addr_li = tl_we
-    ? addr_index
-    : tag_mem_pkt.index;
+  assign tag_mem_w_li = tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode != e_cache_tag_mem_read);
+  assign tag_mem_addr_li = tag_mem_pkt_yumi_o
+    ? tag_mem_pkt.index
+    : addr_index;
 
   logic [dcache_assoc_p-1:0] lce_tag_mem_way_one_hot;
   bsg_decode
@@ -1072,12 +1070,12 @@ module bp_be_dcache
   // stat_mem
   //
   assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r & ~poison_i) | stat_mem_pkt_yumi_o;
-  assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
-    ? ~(load_miss_tv | store_miss_tv | lr_miss_tv)
-    : stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
-  assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
-    ? addr_index_tv
-    : stat_mem_pkt.index;
+  assign stat_mem_w_li = stat_mem_pkt_yumi_o
+    ? (stat_mem_pkt.opcode != e_cache_stat_mem_read)
+    : ~miss_tv;
+  assign stat_mem_addr_li = stat_mem_pkt_yumi_o
+    ? stat_mem_pkt.index
+    : addr_index_tv;
 
   logic [lg_dcache_assoc_lp-1:0] lru_decode_way_li;
   logic [dcache_assoc_p-2:0] lru_decode_data_lo;

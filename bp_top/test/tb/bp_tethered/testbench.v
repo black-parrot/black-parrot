@@ -345,7 +345,7 @@ bind bp_be_top
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
 
-       ,.program_finish_i(testbench.program_finish_lo)
+       ,.program_finish_i(&testbench.program_finish_lo)
        );
 
   bind bp_fe_icache
@@ -399,7 +399,7 @@ bind bp_be_top
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
 
-       ,.program_finish_i(testbench.program_finish_lo)
+       ,.program_finish_i(&testbench.program_finish_lo)
        );
 
   bind bp_core_minimal
