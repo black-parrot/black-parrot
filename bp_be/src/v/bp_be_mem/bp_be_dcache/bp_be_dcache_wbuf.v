@@ -68,13 +68,13 @@ module bp_be_dcache_wbuf
   always_comb begin
     unique case (num_els_r)
       2'd0: begin
-        v_o = v_i;
-        empty_o = 1'b1;
+        v_o = 1'b0;
+        empty_o = ~v_i;
         full_o = 1'b0;
         el0_valid = 1'b0;
         el1_valid = 1'b0;
         el0_enable = 1'b0;
-        el1_enable = v_i & ~yumi_i;
+        el1_enable = v_i;
         mux0_sel = 1'b0;
         mux1_sel = 1'b0;
       end
@@ -201,7 +201,7 @@ module bp_be_dcache_wbuf
     ,.data_o(bypass_data_n)
   );
 
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (reset_i) begin
       bypass_mask_o <= '0;
       bypass_data_o <= '0;

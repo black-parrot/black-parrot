@@ -36,7 +36,6 @@ module bp_be_scheduler
   , input [cfg_bus_width_lp-1:0]       cfg_bus_i
   , output [dword_width_p-1:0]         cfg_irf_data_o
 
-  , input                              accept_irq_i
   , output [isd_status_width_lp-1:0]   isd_status_o
   , input [vaddr_width_p-1:0]          expected_npc_i
   , input                              poison_iss_i
@@ -44,7 +43,6 @@ module bp_be_scheduler
   , input                              dispatch_v_i
   , input                              cache_miss_v_i
   , input                              cmt_v_i
-  , input                              debug_mode_i
   , input                              suppress_iss_i
 
   // Fetch interface
@@ -92,7 +90,7 @@ bsg_dff_reset_en
  issue_pkt_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i | cache_miss_v_i)
-   ,.en_i(issue_v | (dispatch_v_i & ~accept_irq_i))
+   ,.en_i(issue_v | dispatch_v_i)
    
    ,.data_i({issue_v, issue_pkt})
    ,.data_o({issue_pkt_v_r, issue_pkt_r})
@@ -103,7 +101,7 @@ bsg_dff_reset_en
  issue_status_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(issue_v | (dispatch_v_i & ~accept_irq_i) | poison_iss_i | poison_isd_i)
+   ,.en_i(issue_v | dispatch_v_i | poison_iss_i | poison_isd_i)
 
    ,.data_i(poison_iss_i | poison_isd_i)
    ,.data_o(poison_iss_r)
@@ -111,7 +109,7 @@ bsg_dff_reset_en
 
 always_comb
   begin
-    if (debug_mode_i || (fe_queue_cast_i.msg_type == e_fe_fetch))
+    if (fe_queue_cast_i.msg_type == e_fe_fetch)
       begin
         // Populate the issue packet with a valid pc/instruction pair.
         issue_pkt = '0;
@@ -181,12 +179,12 @@ always_comb
   end
 
 // Interface handshakes
-assign fe_queue_yumi_o = ~debug_mode_i & ~suppress_iss_i & fe_queue_v_i & ((dispatch_v_i & ~accept_irq_i) | ~issue_pkt_v_r);
+assign fe_queue_yumi_o = ~suppress_iss_i & fe_queue_v_i & (dispatch_v_i | ~issue_pkt_v_r);
 
 // Queue control signals
-assign fe_queue_clr_o  = ~debug_mode_i & suppress_iss_i;
-assign fe_queue_roll_o = ~debug_mode_i & cache_miss_v_i;
-assign fe_queue_deq_o  = ~debug_mode_i & ~cache_miss_v_i & cmt_v_i;
+assign fe_queue_clr_o  = suppress_iss_i;
+assign fe_queue_roll_o = cache_miss_v_i;
+assign fe_queue_deq_o  = ~cache_miss_v_i & cmt_v_i;
 
 logic [dword_width_p-1:0] irf_rs1;
 logic [dword_width_p-1:0] irf_rs2;
@@ -219,8 +217,7 @@ bp_fe_exception_code_e fe_exc_isd;
 bp_be_decode_s          decoded;
 bp_be_instr_decoder
  instr_decoder
-  (.interrupt_v_i(accept_irq_i)
-   ,.fe_exc_not_instr_i(issue_pkt_r.fe_exception_not_instr)
+   (.fe_exc_not_instr_i(issue_pkt_r.fe_exception_not_instr)
    ,.fe_exc_i(issue_pkt_r.fe_exception_code)
    ,.instr_i(issue_pkt_r.instr)
 
@@ -232,11 +229,9 @@ always_comb
   begin
     // Calculator status ISD stage
     isd_status.isd_v        = (issue_pkt_v_r & dispatch_v_i)
-                              & ~(poison_iss_r | poison_iss_i)
-                              & ~(accept_irq_i & dispatch_v_i);
+                              & ~(poison_iss_r | poison_iss_i);
     isd_status.isd_pc       = issue_pkt_r.pc;
     isd_status.isd_branch_metadata_fwd = issue_pkt_r.branch_metadata_fwd;
-    isd_status.isd_irq_v    = accept_irq_i;
     isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
     isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
     isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
@@ -247,9 +242,8 @@ always_comb
     isd_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
 
     // Form dispatch packet
-    dispatch_pkt.v      = (issue_pkt_v_r | accept_irq_i) & dispatch_v_i;
-    dispatch_pkt.poison = (poison_iss_r | poison_isd_i | ~dispatch_pkt.v)
-                          & ~(accept_irq_i & dispatch_v_i);
+    dispatch_pkt.v      = issue_pkt_v_r & dispatch_v_i;
+    dispatch_pkt.poison = (poison_iss_r | poison_isd_i | ~dispatch_pkt.v);
     dispatch_pkt.pc     = expected_npc_i;
     dispatch_pkt.instr  = issue_pkt_r.instr;
     dispatch_pkt.rs1    = irf_rs1; // TODO: Add float forwarding

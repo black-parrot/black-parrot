@@ -52,6 +52,7 @@
     logic                              pipe_ctrl_v;                                                \
     logic                              pipe_int_v;                                                 \
     logic                              pipe_mem_v;                                                 \
+    logic                              pipe_sys_v;                                                 \
     logic                              pipe_mul_v;                                                 \
     logic                              pipe_fp_v;                                                  \
     logic                              pipe_long_v;                                                \
@@ -89,7 +90,6 @@
     logic                                    isd_v;                                                \
     logic [vaddr_width_mp-1:0]               isd_pc;                                               \
     logic [branch_metadata_fwd_width_mp-1:0] isd_branch_metadata_fwd;                              \
-    logic                                    isd_irq_v;                                            \
     logic                                    isd_fence_v;                                          \
     logic                                    isd_mem_v;                                            \
     logic                                    isd_irs1_v;                                           \
@@ -109,6 +109,8 @@
     logic                                    ex1_btaken;                                           \
                                                                                                    \
     logic                                    long_busy;                                            \
+    logic                                    mem_busy;                                             \
+    logic                                    commit_v;                                             \
                                                                                                    \
     /*                                                                                             \
      * 5 is the number of stages in the pipeline.                                                  \
@@ -123,8 +125,6 @@
     logic                        v;                                                                \
     logic                        queue_v;                                                          \
     logic                        instret;                                                          \
-    logic                        cache_miss;                                                       \
-    logic                        tlb_miss;                                                         \
     logic [vaddr_width_p-1:0]    pc;                                                               \
     logic [vaddr_width_p-1:0]    npc;                                                              \
     logic [instr_width_p-1:0]    instr;                                                            \
@@ -133,9 +133,7 @@
   /* TODO: make opcode */                                                                          \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [dword_width_p-1:0]       cause;                                                         \
-    logic [vaddr_width_p-1:0]       epc;                                                           \
-    logic [vaddr_width_p-1:0]       tvec;                                                          \
+    logic [vaddr_width_p-1:0]       npc;                                                           \
     logic [rv64_priv_width_gp-1:0]  priv_n;                                                        \
     logic                           translation_en_n;                                              \
     logic                           exception;                                                     \
@@ -144,6 +142,7 @@
     logic                           fencei;                                                        \
     logic                           sfence;                                                        \
     logic                           satp;                                                          \
+    logic                           rollback;                                                      \
   }  bp_be_trap_pkt_s;                                                                             \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -151,7 +150,38 @@
     logic                        rd_w_v;                                                           \
     logic [reg_addr_width_p-1:0] rd_addr;                                                          \
     logic [dword_width_p-1:0]    rd_data;                                                          \
-  }  bp_be_wb_pkt_s;
+  }  bp_be_wb_pkt_s;                                                                               \
+                                                                                                   \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic instr_miss_v;                                                                            \
+    logic load_miss_v;                                                                             \
+    logic store_miss_v;                                                                            \
+    logic [vaddr_width_mp-1:0] pc;                                                                 \
+    logic [vaddr_width_mp-1:0] vaddr;                                                              \
+  }  bp_be_ptw_miss_pkt_s;                                                                         \
+                                                                                                   \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic itlb_fill_v;                                                                             \
+    logic dtlb_fill_v;                                                                             \
+    logic instr_page_fault_v;                                                                      \
+    logic load_page_fault_v;                                                                       \
+    logic store_page_fault_v;                                                                      \
+    logic [vaddr_width_mp-1:0] pc;                                                                 \
+    logic [vaddr_width_mp-1:0] vaddr;                                                              \
+    logic [dword_width_p-1:0]  entry;                                                              \
+  }  bp_be_ptw_fill_pkt_s;                                                                         \
+                                                                                                   \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic [rv64_priv_width_gp-1:0] priv_mode;                                                      \
+    logic [ptag_width_p-1:0]       satp_ppn;                                                       \
+    logic                          translation_en;                                                 \
+    logic                          mstatus_sum;                                                    \
+    logic                          mstatus_mxr;                                                    \
+  }  bp_be_trans_info_s;
+
 
 /* Declare width macros so that clients can use structs in ports before struct declaration
  * Each of these macros needs to be kept in sync with the struct definition. The computation
@@ -179,14 +209,14 @@
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
    + rv64_instr_width_gp                                                                           \
-   + 14                                                                                            \
+   + 15                                                                                            \
    )
 
 `define bp_be_comp_stage_reg_width \
   (dword_width_p)
 
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 5 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
+  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 4 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
 
 `define bp_be_dep_status_width \
   (9 + rv64_reg_addr_width_gp)
@@ -194,18 +224,18 @@
 `define bp_be_calc_status_width(vaddr_width_mp) \
   (2                                                                                               \
    + vaddr_width_p                                                                                 \
-   + 3                                                                                             \
+   + 5                                                                                             \
    + 6 * `bp_be_dep_status_width                                                                   \
    )                                                                                               
 
 `define bp_be_commit_pkt_width(vaddr_width_mp) \
-  (5                                                                                               \
+  (3                                                                                               \
    + 2 * vaddr_width_mp                                                                            \
    + instr_width_p                                                                                 \
    )
  
 `define bp_be_trap_pkt_width(vaddr_width_mp) \
-  (2 * vaddr_width_mp + rv64_priv_width_gp + dword_width_p + 7)
+  (1 * vaddr_width_mp + rv64_priv_width_gp + 8)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (1                                                                                               \
@@ -213,7 +243,17 @@
    + dword_width_p                                                                                 \
    )
 
+`define bp_be_ptw_miss_pkt_width(vaddr_width_mp) \
+  (3 + 2*vaddr_width_mp)
 
+`define bp_be_ptw_fill_pkt_width(vaddr_width_mp) \
+  (5                                                                                               \
+   + 2*vaddr_width_mp                                                                              \
+   + dword_width_p                                                                                 \
+   )
+
+`define bp_be_trans_info_width(ptag_width_mp) \
+  (rv64_priv_width_gp+ptag_width_mp+3)
 
 `endif
 

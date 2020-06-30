@@ -39,7 +39,6 @@ module wrapper
 
    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dword_width_p)
    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
-   , localparam stat_info_width_lp=`bp_cache_stat_info_width(dcache_assoc_p)
    )
    ( input                                             clk_i
    , input                                             reset_i
@@ -92,7 +91,7 @@ module wrapper
    logic [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_lo;
    logic [dcache_block_width_p-1:0] data_mem_lo;
    logic [ptag_width_lp-1:0] tag_mem_lo;
-   logic [stat_info_width_lp-1:0] stat_mem_lo;
+   logic [dcache_stat_info_width_lp-1:0] stat_mem_lo;
 
    // Credits
    logic credits_full_lo, credits_empty_lo;
@@ -179,7 +178,7 @@ module wrapper
    ,.cfg_bus_i(cfg_bus_i)
 
    ,.dcache_pkt_i(rolly_dcache_pkt_lo)
-   ,.v_i(rolly_v_lo)
+   ,.v_i(dcache_ready_lo & rolly_v_lo)
    ,.ready_o(dcache_ready_lo)
 
    ,.data_o(data_o)
@@ -231,6 +230,10 @@ module wrapper
 
      logic mem_resp_ready_lo;
 
+     `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+     bp_cfg_bus_s cfg_bus_cast_i;
+     assign cfg_bus_cast_i = cfg_bus_i;
+
      bp_lce
      #(.bp_params_p(bp_params_p)
         ,.assoc_p(dcache_assoc_p)
@@ -238,6 +241,8 @@ module wrapper
         ,.block_width_p(dcache_block_width_p)
         ,.timeout_max_limit_p(4)
         ,.credits_p(coh_noc_max_credits_p)
+        ,.data_mem_negedge_p(1)
+        ,.tag_mem_negedge_p(1)
        )
      dcache_lce
      (.clk_i(clk_i)
@@ -351,6 +356,8 @@ module wrapper
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
+     ,.data_mem_negedge_p(1)
+     ,.tag_mem_negedge_p(1)
      )
      dcache_uce
      (.clk_i(clk_i)

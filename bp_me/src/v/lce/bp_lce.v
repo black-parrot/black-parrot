@@ -19,6 +19,9 @@ module bp_lce
     , parameter sets_p = "inv"
     , parameter block_width_p = "inv"
     , parameter fill_width_p = block_width_p
+    , parameter data_mem_invert_clk_p = 0
+    , parameter tag_mem_invert_clk_p = 0
+    , parameter stat_mem_invert_clk_p = 0
 
     , parameter timeout_max_limit_p=4
 
@@ -122,9 +125,8 @@ module bp_lce
   //synopsys translate_on
 
   // LCE Request Module
-  logic lce_req_cache_req_ready_lo;
+  logic req_ready_lo;
   logic uc_store_req_complete_lo;
-
   bp_lce_req
     #(.bp_params_p(bp_params_p)
       ,.assoc_p(assoc_p)
@@ -141,17 +143,18 @@ module bp_lce
       ,.lce_id_i(lce_id_i)
       ,.lce_mode_i(lce_mode_i)
 
+      ,.ready_o(req_ready_lo)
+
       ,.cache_req_i(cache_req_i)
       ,.cache_req_v_i(cache_req_v_i)
-      ,.cache_req_ready_o(lce_req_cache_req_ready_lo)
       ,.cache_req_metadata_i(cache_req_metadata_i)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
-
       ,.cache_req_complete_i(cache_req_complete_o)
-      ,.uc_store_req_complete_i(uc_store_req_complete_lo)
 
       ,.credits_full_o(credits_full_o)
       ,.credits_empty_o(credits_empty_o)
+
+      ,.uc_store_req_complete_i(uc_store_req_complete_lo)
 
       ,.lce_req_o(lce_req_o)
       ,.lce_req_v_o(lce_req_v_o)
@@ -167,6 +170,9 @@ module bp_lce
       ,.sets_p(sets_p)
       ,.block_width_p(block_width_p)
       ,.fill_width_p(fill_width_p)
+      ,.data_mem_invert_clk_p(data_mem_invert_clk_p)
+      ,.tag_mem_invert_clk_p(tag_mem_invert_clk_p)
+      ,.stat_mem_invert_clk_p(stat_mem_invert_clk_p)
       )
     command
       (.clk_i(clk_i)
@@ -242,6 +248,6 @@ module bp_lce
   // - LCE Request module is ready (raised when in ready state and free credits exist)
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
   // - LCE Command module is ready to process commands (raised after initialization complete)
-  assign cache_req_ready_o = lce_req_cache_req_ready_lo & ~timeout & cmd_ready_lo;
+  assign cache_req_ready_o = req_ready_lo & cmd_ready_lo & ~timeout;
 
 endmodule
