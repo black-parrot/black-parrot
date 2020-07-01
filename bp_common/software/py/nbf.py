@@ -166,7 +166,7 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
     # Write PC to the DRAM base
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x80000000)
+    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
 
     # Write checkpoint
     if self.checkpoint_file:

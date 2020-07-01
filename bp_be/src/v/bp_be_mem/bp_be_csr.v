@@ -250,13 +250,16 @@ assign apc_n = trap_pkt_cast_o.eret
                    ? exception_npc_i
                    : apc_r;
 
-bsg_dff_reset
+logic enter_debug, exit_debug;
+bsg_dff_reset_set_clear
  #(.width_p(1))
  debug_mode_reg
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i('0)
+   // TODO: Should explicitly set freeze
+   ,.set_i(cfg_bus_cast_i.freeze | enter_debug)
+   ,.clear_i(exit_debug)
 
-   ,.data_i(debug_mode_n)
    ,.data_o(debug_mode_r)
    );
 
@@ -323,7 +326,6 @@ logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
 // CSR data
 always_comb
   begin
-    debug_mode_n = debug_mode_r;
     priv_mode_n  = priv_mode_r;
 
     stvec_li      = stvec_lo;
@@ -353,8 +355,10 @@ always_comb
     minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
     mcountinhibit_li = mcountinhibit_lo;
 
-    dcsr_li = dcsr_lo;
-    dpc_li  = dpc_lo;
+    enter_debug = '0;
+    exit_debug  = '0;
+    dcsr_li     = dcsr_lo;
+    dpc_li      = dpc_lo;
 
     exception_v_o    = '0;
     interrupt_v_o    = '0;
@@ -366,7 +370,7 @@ always_comb
     
     if (~ebreak_v_li & csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
       begin
-        debug_mode_n   = 1'b1;
+        enter_debug    = 1'b1;
         dpc_li         = paddr_width_p'($signed(exception_pc_i));
         dcsr_li.cause  = 1; // Ebreak
         dcsr_li.prv    = priv_mode_r;
@@ -382,6 +386,7 @@ always_comb
       end
     else if (csr_cmd_v_i & (csr_cmd.csr_op == e_dret))
       begin
+        exit_debug       = 1'b1;
         priv_mode_n      = dcsr_lo.prv;
 
         illegal_instr_o  = ~is_debug_mode;
@@ -629,7 +634,7 @@ always_comb
     // Always break in single step mode
     if (~is_debug_mode & exception_v_i & dcsr_lo.step)
       begin
-        debug_mode_n = 1'b1;
+        enter_debug   = 1'b1;
         dpc_li        = paddr_width_p'($signed(exception_npc_i));
         dcsr_li.cause = 4;
         dcsr_li.prv   = priv_mode_r;

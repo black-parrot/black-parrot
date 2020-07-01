@@ -186,7 +186,7 @@ always_ff @(negedge clk_i)
 
   assign io_resp_cast_o =
     '{header: io_cmd_lo.header
-      ,data : bootrom_data_cmd_v ? bootrom_data_lo : ch
+      ,data : bootrom_data_cmd_v ? {bootrom_data_lo, bootrom_data_lo} : ch
       };
 
 endmodule
