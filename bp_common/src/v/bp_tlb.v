@@ -89,7 +89,7 @@ bsg_cam_1r1w_sync
    ,.r_v_i(v_i & ~w_i & ~tlb_bypass)
    ,.r_tag_i(vtag_i)
 
-   ,.r_data_o(entry_o)
+   ,.r_data_o(r_entry)
    ,.r_v_o(r_v_lo)
    );
 

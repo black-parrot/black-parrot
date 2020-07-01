@@ -65,9 +65,6 @@ module bp_be_pipe_mem
 
    , input [trans_info_width_lp-1:0]      trans_info_i
 
-   , output [7:0]                         cfg_domain_data_o
-   , output                               cfg_sac_data_o
-
    // D$-LCE Interface
    // signals to LCE
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
@@ -168,7 +165,6 @@ wire [rv64_reg_data_width_gp-1:0] offset = decode.offset_sel ? '0 : imm_i;
 wire [rv64_eaddr_width_gp-1:0] eaddr = rs1_i + offset;
 
 logic eaddr_fault, eaddr_fault_r;
-assign eaddr_fault = (eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {eaddr_pad_lp{eaddr[vaddr_width_p-1]}});
 
 bsg_dff_reset
 #(.width_p(1)
@@ -214,25 +210,16 @@ assign passthrough_v_lo = is_req_mem1;
 assign dtlb_r_entry = trans_info.translation_en ? entry_lo : passthrough_entry;
 assign dtlb_r_v_lo = trans_info.translation_en ? dtlb_v_lo : passthrough_v_lo;
 
-logic [7:0] domain_data;
-logic sac_data;
-
-assign cfg_domain_data_o = domain_data;
-assign cfg_sac_data_o = sac_data;
-
 bp_pma
  #(.bp_params_p(bp_params_p))
  pma
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.cfg_bus_i(cfg_bus_i)
 
    ,.ptag_v_i(dtlb_r_v_lo)
    ,.ptag_i(dtlb_r_entry.ptag)
 
    ,.uncached_o(dcache_uncached)
-   ,.domain_data_o(domain_data)
-   ,.sac_data_o(sac_data)
    );
 
 bp_be_ptw
@@ -346,6 +333,7 @@ wire data_priv_page_fault = ((trans_info.priv_mode == `PRIV_MODE_S) & ~trans_inf
                               | ((trans_info.priv_mode == `PRIV_MODE_U) & ~dtlb_r_entry.u);
 wire data_write_page_fault = is_store_mem1 & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
 
+assign eaddr_fault = (eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {eaddr_pad_lp{eaddr[vaddr_width_p-1]}});
 assign load_page_fault_v  = ((trans_info.translation_en & ~is_store_mem1) & ((dtlb_r_v_lo & data_priv_page_fault) | eaddr_fault_r));
 assign store_page_fault_v = ((trans_info.translation_en & is_store_mem1) & ((dtlb_r_v_lo & (data_priv_page_fault | data_write_page_fault)) | eaddr_fault_r));
 assign load_misaligned_v = 1'b0; // TODO: detect
@@ -378,8 +366,8 @@ end
 wire is_uncached_mode = (cfg_bus.dcache_mode == e_lce_mode_uncached);
 wire mode_fault_v = (is_uncached_mode & ~dcache_uncached);
 
-wire did_fault_v = (domain_data[dcache_ptag[ptag_width_p-1-:io_noc_did_width_p]] != 1'b1);
-wire sac_fault_v = ((dcache_ptag[ptag_width_p-1-:(io_noc_did_width_p+1)] == 1) & ~sac_data);
+wire did_fault_v = (cfg_bus.domain[dcache_ptag[ptag_width_p-1-:io_noc_did_width_p]] != 1'b1);
+wire sac_fault_v = ((dcache_ptag[ptag_width_p-1-:(io_noc_did_width_p+1)] == 1) & ~cfg_bus.sac);
 
 assign load_access_fault_v  = dtlb_r_v_lo & ~is_store_mem1 & (mode_fault_v | did_fault_v | sac_fault_v);
 assign store_access_fault_v = dtlb_r_v_lo & is_store_mem1 & (mode_fault_v | did_fault_v | sac_fault_v);

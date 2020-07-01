@@ -32,8 +32,6 @@ module bp_core
     , output [dword_width_p-1:0]                   cfg_irf_data_o
     , output [dword_width_p-1:0]                   cfg_csr_data_o
     , output [1:0]                                 cfg_priv_data_o
-    , output [7:0]                                 cfg_domain_data_o
-    , output                                       cfg_sac_data_o
 
     // LCE-CCE interface
     , output [1:0][lce_cce_req_width_lp-1:0]       lce_req_o
@@ -126,8 +124,6 @@ module bp_core
      ,.cfg_irf_data_o(cfg_irf_data_o)
      ,.cfg_csr_data_o(cfg_csr_data_o)
      ,.cfg_priv_data_o(cfg_priv_data_o)
-     ,.cfg_domain_data_o(cfg_domain_data_o)
-     ,.cfg_sac_data_o(cfg_sac_data_o)
 
      // BP request side - Interface to LCE
      ,.credits_full_i(dcache_credits_full_lo)

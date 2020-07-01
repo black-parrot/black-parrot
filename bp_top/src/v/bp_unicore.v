@@ -136,8 +136,6 @@ module bp_unicore
      ,.cfg_irf_data_o(cfg_irf_data_li)
      ,.cfg_csr_data_o(cfg_csr_data_li)
      ,.cfg_priv_data_o(cfg_priv_data_li)
-     ,.cfg_domain_data_o(cfg_domain_data_li)
-     ,.cfg_sac_data_o(cfg_sac_data_li)
 
      ,.dcache_req_o(dcache_req_lo)
      ,.dcache_req_v_o(dcache_req_v_lo)
@@ -335,8 +333,6 @@ module bp_unicore
      ,.npc_data_i(cfg_npc_data_li)
      ,.csr_data_i(cfg_csr_data_li)
      ,.priv_data_i(cfg_priv_data_li)
-     ,.domain_data_i(cfg_domain_data_li)
-     ,.sac_data_i(cfg_sac_data_li)
      ,.cce_ucode_data_i('0)
      );
 
