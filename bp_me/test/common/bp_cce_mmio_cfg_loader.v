@@ -26,7 +26,7 @@ module bp_cce_mmio_cfg_loader
     , parameter skip_ram_init_p       = 0
     , parameter clear_freeze_p        = 0
 
-    , localparam bp_pc_entry_point_gp=39'h00_8000_0000
+    , localparam bp_pc_entry_point_gp=39'h10_3000
     )
   (input                                             clk_i
    , input                                           reset_i

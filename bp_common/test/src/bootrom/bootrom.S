@@ -36,6 +36,8 @@ _start:
     li x31, 0
     
     li x31, 0x80000000
-    jr x31
+    csrw dpc, x31
+    csrwi dcsr, 0x3
+    dret
 halt:
     j halt
