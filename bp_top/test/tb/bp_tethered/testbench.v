@@ -60,6 +60,8 @@ module testbench
    , input reset_i
    );
 
+import "DPI-C" context function bit get_finish(int hartid);
+
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
 logic [num_core_p-1:0] program_finish_lo;
@@ -232,11 +234,13 @@ bind bp_be_top
 
      ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
      ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
-     // TODO: Find a way to access the finish_o signals for each core
-     ,.finish_o()
      );
 
-assign cosim_finish_lo = '0;
+always_ff @(posedge clk_i) begin
+  for (integer i = 0; i < num_core_p; i++) begin
+    cosim_finish_lo[i] <= get_finish(i);
+  end
+end
 
 bind bp_be_top
   bp_be_nonsynth_perf
