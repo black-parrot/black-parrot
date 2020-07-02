@@ -1,5 +1,6 @@
 # bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.v
 # be files
 $BP_BE_DIR/test/common/bp_be_nonsynth_perf.v
 $BP_BE_DIR/test/common/bp_be_nonsynth_npc_tracer.v

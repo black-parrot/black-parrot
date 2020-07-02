@@ -170,14 +170,16 @@ always_ff @(negedge clk_i)
       end
   end
 
-  parameter bootrom_els_p  = 64;
-  parameter bootrom_addr_width_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
-  logic [bootrom_addr_width_lp-1:0] bootrom_addr_li;
+  localparam bootrom_els_p = 64;
+  localparam lg_bootrom_els_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
+  logic [lg_bootrom_els_lp-1:0] bootrom_addr_li;
   logic [instr_width_p-1:0] bootrom_data_lo;
-  assign bootrom_addr_li = io_cmd_lo.header.addr[2+:bootrom_addr_width_lp];
-  bp_bootrom
-   #(.addr_width_p(bootrom_addr_width_lp)
-     ,.width_p(instr_width_p)
+  assign bootrom_addr_li = io_cmd_lo.header.addr[2+:lg_bootrom_els_lp];
+  bsg_nonsynth_test_rom
+   #(.filename_p("bootrom.mem")
+     ,.data_width_p(instr_width_p)
+     ,.addr_width_p(lg_bootrom_els_lp)
+     ,.hex_not_bin_p(1)
      )
    bootrom
     (.addr_i(bootrom_addr_li)
