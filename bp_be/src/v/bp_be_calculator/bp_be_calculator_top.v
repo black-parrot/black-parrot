@@ -47,8 +47,6 @@ module bp_be_calculator_top
   , input                               reset_i
 
   , input [cfg_bus_width_lp-1:0]        cfg_bus_i
-  , output [dword_width_p-1:0]          cfg_csr_data_o
-  , output [1:0]                        cfg_priv_data_o
    
   // Calculator - Checker interface   
   , input [dispatch_pkt_width_lp-1:0]   dispatch_pkt_i
@@ -379,8 +377,6 @@ bp_be_pipe_mul
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.cfg_bus_i(cfg_bus_i)
-     ,.cfg_csr_data_o(cfg_csr_data_o)
-     ,.cfg_priv_data_o(cfg_priv_data_o)
 
      ,.kill_ex1_i(exc_stage_n[1].poison_v)
      ,.kill_ex2_i(exc_stage_n[2].poison_v)

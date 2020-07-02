@@ -17,8 +17,6 @@ module bp_be_csr
     , input                             reset_i
 
     , input [cfg_bus_width_lp-1:0]      cfg_bus_i
-    , output [dword_width_p-1:0]        cfg_csr_data_o
-    , output [1:0]                      cfg_priv_data_o
 
     // CSR instruction interface
     , input [csr_cmd_width_lp-1:0]      csr_cmd_i
@@ -53,17 +51,12 @@ module bp_be_csr
 // Casting input and output ports
 bp_cfg_bus_s cfg_bus_cast_i;
 bp_be_csr_cmd_s csr_cmd;
-bp_be_csr_cmd_s cfg_bus_csr_cmd_li;
 
 bp_be_trap_pkt_s trap_pkt_cast_o;
 bp_be_trans_info_s trans_info_cast_o;
 
-assign cfg_bus_csr_cmd_li.csr_op   = cfg_bus_cast_i.csr_r_v ? e_csrrs : e_csrrw;
-assign cfg_bus_csr_cmd_li.csr_addr = cfg_bus_cast_i.csr_addr;
-assign cfg_bus_csr_cmd_li.data     = cfg_bus_cast_i.csr_r_v ? '0 : cfg_bus_cast_i.csr_data;
-
 assign cfg_bus_cast_i = cfg_bus_i;
-assign csr_cmd = (cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) ? cfg_bus_csr_cmd_li : csr_cmd_i;
+assign csr_cmd = csr_cmd_i;
 assign trap_pkt_o = trap_pkt_cast_o;
 assign trans_info_o = trans_info_cast_o;
 
@@ -271,10 +264,9 @@ bsg_dff_reset
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.data_i(cfg_bus_cast_i.priv_w_v ? cfg_bus_cast_i.priv_data : priv_mode_n)
+   ,.data_i(priv_mode_n)
    ,.data_o(priv_mode_r)
    );
-assign cfg_priv_data_o = priv_mode_r;
 
 assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
 bsg_dff_reset
@@ -433,8 +425,7 @@ always_comb
         // ECALL is implemented as part of the exception cause vector
         // EBreak is implemented below
       end
-    else if ((csr_cmd_v_i | cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v)
-             & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
+    else if (csr_cmd_v_i & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
       begin
         // Check for access violations
         if (is_s_mode & mstatus_lo.tvm & (csr_cmd.csr_addr == `CSR_ADDR_SATP))
@@ -649,9 +640,6 @@ always_comb
 assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
-
-assign cfg_csr_data_o = csr_data_lo;
-assign cfg_priv_data_o = priv_mode_r;
 
 assign trap_pkt_cast_o.npc              = apc_n;
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;

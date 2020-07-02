@@ -31,8 +31,6 @@ module bp_be_pipe_sys
    , input                                reset_i
 
    , input [cfg_bus_width_lp-1:0]         cfg_bus_i
-   , output [dword_width_p-1:0]           cfg_csr_data_o
-   , output [1:0]                         cfg_priv_data_o
 
    , input [decode_width_lp-1:0]          decode_i
    , input [vaddr_width_p-1:0]            pc_i
@@ -177,8 +175,6 @@ always_comb
      ,.reset_i(reset_i)
   
      ,.cfg_bus_i(cfg_bus_i)
-     ,.cfg_csr_data_o(cfg_csr_data_o)
-     ,.cfg_priv_data_o(cfg_priv_data_o)
   
      ,.csr_cmd_i(csr_cmd_lo)
      ,.csr_cmd_v_i(csr_cmd_v_lo & ~kill_ex3_i)
