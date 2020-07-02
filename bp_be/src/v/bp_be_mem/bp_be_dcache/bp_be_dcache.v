@@ -937,7 +937,7 @@ module bp_be_dcache
     ,.data_o(load_data)
   );
 
-  assign data_o = load_op_tv_r ? load_data : (sc_op_tv_r & sc_success);
+  assign data_o = load_op_tv_r ? load_data : (sc_op_tv_r & ~sc_success);
 
   // ctrl logic
   //
