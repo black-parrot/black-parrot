@@ -283,181 +283,181 @@ always_comb
           //   And having the op simply taken from funct3
           unique casez (instr)
             `RV64_LRW:      
-                            begin
-                              if (lr_sc_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_lrw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (lr_sc_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_lrw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_SCW:      
-                            begin
-                              if (lr_sc_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_scw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (lr_sc_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_scw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOSWAPW: 
-                            begin
-                              if (amo_swap_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoswapw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_swap_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoswapw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOADDW: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoaddw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoaddw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOXORW: 
-                            begin
-                              if (amo_fetch_logic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoxorw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_logic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoxorw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOANDW: 
-                            begin
-                              if (amo_fetch_logic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoandw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_logic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoandw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOORW: 
-                            begin
-                              if (amo_fetch_logic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoorw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_logic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoorw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOMINW: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amominw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amominw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOMAXW: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amomaxw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amomaxw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOMINUW: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amominuw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amominuw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOMAXUW: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amomaxuw;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amomaxuw;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_LRD:      
-                            begin
-                              if (lr_sc_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_lrd;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (lr_sc_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_lrd;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_SCD:      
-                            begin
-                              if (lr_sc_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_scd;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (lr_sc_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_scd;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOSWAPD: 
-                            begin
-                              if (amo_swap_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoswapd;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_swap_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoswapd;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOADDD: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoaddd;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoaddd;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOXORD: 
-                            begin
-                              if (amo_fetch_logic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoxord;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_logic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoxord;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOANDD: 
-                            begin
-                              if (amo_fetch_logic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoandd;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_logic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoandd;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOORD: 
-                            begin
-                              if (amo_fetch_logic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amoord;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_logic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amoord;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOMIND: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amomind;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amomind;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOMAXD: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amomaxd;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amomaxd;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOMINUD: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amominud;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amominud;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             `RV64_AMOMAXUD: 
-                            begin
-                              if (amo_fetch_arithmetic_p != e_none) begin
-                                decode.fu_op = e_dcache_opcode_amomaxud;
-                              end else begin
-                                illegal_instr = 1'b1;
-                              end
-                            end
+              begin
+                if (amo_fetch_arithmetic_p != e_none) begin
+                  decode.fu_op = e_dcache_opcode_amomaxud;
+                end else begin
+                  illegal_instr = 1'b1;
+                end
+              end
             default : illegal_instr = 1'b1;
           endcase
         end

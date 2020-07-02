@@ -351,7 +351,7 @@ always_comb
     else begin
       dcache_pkt_v = decode.pipe_mem_v & ~kill_ex1_i;
       // TODO: Use dcache opcode directly
-      dcache_pkt.opcode      = bp_be_dcache_opcode_e'(decode.fu_op);
+      dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
       dcache_pkt.page_offset = eaddr[0+:page_offset_width_p];
       dcache_pkt.data        = rs2_i;
       dcache_ptag = dtlb_r_entry.ptag;

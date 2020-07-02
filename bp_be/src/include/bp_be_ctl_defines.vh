@@ -73,7 +73,7 @@ typedef enum logic [5:0]
   ,e_dcache_opcode_amomaxd  = 6'b011111
   ,e_dcache_opcode_amominud = 6'b100000
   ,e_dcache_opcode_amomaxud = 6'b100001
-} bp_be_dcache_opcode_e;
+} bp_be_dcache_fu_op_e;
 
 typedef enum logic [5:0]
 {
@@ -117,7 +117,7 @@ typedef struct packed
   {
     bp_be_ctrl_fu_op_e     ctrl_fu_op;
     bp_be_int_fu_op_e      int_fu_op;
-    bp_be_dcache_opcode_e  dcache_op;
+    bp_be_dcache_fu_op_e   dcache_op;
     bp_be_csr_fu_op_e      csr_fu_op;
     bp_be_mul_fu_op_e      mul_fu_op;
   }  fu_op;
@@ -224,7 +224,7 @@ typedef struct packed
 }  bp_be_exc_stage_s;
 
 `define bp_be_fu_op_width                                                                          \
-  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_dcache_opcode_e), $bits(bp_be_csr_fu_op_e))))
+  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_dcache_fu_op_e), $bits(bp_be_csr_fu_op_e))))
 
 `define bp_be_decode_width                                                                         \
   ($bits(bp_be_decode_s))
