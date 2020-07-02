@@ -39,7 +39,6 @@ module bp_be_director
    , input                            reset_i
 
    , input [cfg_bus_width_lp-1:0]     cfg_bus_i
-   , output [vaddr_width_p-1:0]       cfg_npc_data_o
 
    // Dependency information
    , input [isd_status_width_lp-1:0]  isd_status_i
@@ -99,8 +98,7 @@ logic [vaddr_width_p-1:0] roll_mux_o;
 
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-assign npc_w_v = cfg_bus_cast_i.npc_w_v
-                 | calc_status.ex1_instr_v
+assign npc_w_v = calc_status.ex1_instr_v
                  | (trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
 bsg_dff_reset_en 
  #(.width_p(vaddr_width_p), .reset_val_p(32'h0010_3000))
@@ -112,7 +110,6 @@ bsg_dff_reset_en
    ,.data_i(npc_n)
    ,.data_o(npc_r)
    );
-assign cfg_npc_data_o = npc_r;
 
 bsg_mux
  #(.width_p(vaddr_width_p)

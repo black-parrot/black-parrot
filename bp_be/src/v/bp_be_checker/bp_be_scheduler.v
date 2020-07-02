@@ -34,7 +34,6 @@ module bp_be_scheduler
 
   // Slow inputs
   , input [cfg_bus_width_lp-1:0]       cfg_bus_i
-  , output [dword_width_p-1:0]         cfg_irf_data_o
 
   , output [isd_status_width_lp-1:0]   isd_status_o
   , input [vaddr_width_p-1:0]          expected_npc_i
@@ -193,9 +192,6 @@ bp_be_regfile
  int_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-
-   ,.cfg_bus_i(cfg_bus_i)
-   ,.cfg_data_o(cfg_irf_data_o)
 
    ,.rd_w_v_i(wb_pkt.rd_w_v)
    ,.rd_addr_i(wb_pkt.rd_addr)

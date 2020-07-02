@@ -29,10 +29,6 @@ module bp_be_top
 
    // Processor configuration
    , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
-   , output [dword_width_p-1:0]                      cfg_irf_data_o
-   , output [vaddr_width_p-1:0]                      cfg_npc_data_o
-   , output [dword_width_p-1:0]                      cfg_csr_data_o
-   , output [1:0]                                    cfg_priv_data_o
 
    // FE queue interface
    , input [fe_queue_width_lp-1:0]                   fe_queue_i
@@ -122,7 +118,6 @@ bp_be_director
    ,.reset_i(reset_i)
 
    ,.cfg_bus_i(cfg_bus_i)
-   ,.cfg_npc_data_o(cfg_npc_data_o)
 
    ,.isd_status_i(isd_status)
    ,.calc_status_i(calc_status) 
@@ -168,7 +163,6 @@ bp_be_scheduler
    ,.reset_i(reset_i)
 
    ,.cfg_bus_i(cfg_bus_i)
-   ,.cfg_irf_data_o(cfg_irf_data_o)
 
    ,.isd_status_o(isd_status)
    ,.expected_npc_i(expected_npc_lo)
@@ -199,8 +193,6 @@ bp_be_calculator_top
    ,.reset_i(reset_i)
 
    ,.cfg_bus_i(cfg_bus_i)
-   ,.cfg_csr_data_o(cfg_csr_data_o)
-   ,.cfg_priv_data_o(cfg_priv_data_o)
 
    ,.dispatch_pkt_i(dispatch_pkt)
 

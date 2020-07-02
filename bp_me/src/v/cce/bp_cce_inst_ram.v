@@ -30,6 +30,13 @@ module bp_cce_inst_ram
    // Configuration Interface
    , input [cfg_bus_width_lp-1:0]                cfg_bus_i
 
+   // ucode programming interface, synchronous read, direct connection to RAM
+   , input                                       ucode_v_i
+   , input                                       ucode_w_i
+   , input [cce_pc_width_p-1:0]                  ucode_addr_i
+   , input [cce_instr_width_p-1:0]               ucode_data_i
+   , output [cce_instr_width_p-1:0]              ucode_data_o
+
    , input [cce_pc_width_p-1:0]                  predicted_fetch_pc_i
    , input [cce_pc_width_p-1:0]                  branch_resolution_pc_i
 
@@ -69,12 +76,16 @@ module bp_cce_inst_ram
     inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.v_i((cfg_bus_cast_i.cce_ucode_w_v | cfg_bus_cast_i.cce_ucode_r_v) | ram_v_li)
-      ,.data_i(cfg_bus_cast_i.cce_ucode_data[0+:cce_instr_width_p])
-      ,.addr_i((cfg_bus_cast_i.cce_ucode_w_v | cfg_bus_cast_i.cce_ucode_r_v) ? cfg_bus_cast_i.cce_ucode_addr : fetch_pc_n)
-      ,.w_i(cfg_bus_cast_i.cce_ucode_w_v)
+      ,.v_i(ucode_v_i | ram_v_li)
+      ,.data_i(ucode_data_i)
+      ,.addr_i(ucode_v_i ? ucode_addr_i : fetch_pc_n)
+      ,.w_i(ucode_w_i)
       ,.data_o(inst_o)
       );
+
+  // Configuration Bus Microcode Data output
+  assign ucode_data_o = inst_o;
+
 
   typedef enum logic [1:0] {
     RESET
