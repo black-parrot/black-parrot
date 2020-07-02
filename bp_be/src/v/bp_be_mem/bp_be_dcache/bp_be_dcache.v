@@ -379,17 +379,17 @@ module bp_be_dcache
   logic fencei_req;
 
   // For L2 atomics
-  wire lr_req = v_tv_r & decode_tv_r.lr_op & (lr_sc_p == e_l2);
-  wire sc_req = v_tv_r & decode_tv_r.sc_op & (lr_sc_p == e_l2);
-  wire amoswap_req = v_tv_r & decode_tv_r.amoswap_op & (amo_swap_p == e_l2);
-  wire amoadd_req = v_tv_r & decode_tv_r.amoadd_op & (amo_fetch_arithmetic_p == e_l2);
-  wire amoxor_req = v_tv_r & decode_tv_r.amoxor_op & (amo_fetch_logic_p == e_l2);
-  wire amoand_req = v_tv_r & decode_tv_r.amoand_op & (amo_fetch_logic_p == e_l2);
-  wire amoor_req = v_tv_r & decode_tv_r.amoor_op & (amo_fetch_logic_p == e_l2);
-  wire amomin_req = v_tv_r & decode_tv_r.amomin_op & (amo_fetch_arithmetic_p == e_l2);
-  wire amomax_req = v_tv_r & decode_tv_r.amomax_op & (amo_fetch_arithmetic_p == e_l2);
-  wire amominu_req = v_tv_r & decode_tv_r.amominu_op & (amo_fetch_arithmetic_p == e_l2);
-  wire amomaxu_req = v_tv_r & decode_tv_r.amomaxu_op & (amo_fetch_arithmetic_p == e_l2);
+  wire lr_req = v_tv_r & decode_tv_r.lr_op & decode_tv_r.l2_op;
+  wire sc_req = v_tv_r & decode_tv_r.sc_op & decode_tv_r.l2_op;
+  wire amoswap_req = v_tv_r & decode_tv_r.amoswap_op & decode_tv_r.l2_op;
+  wire amoadd_req = v_tv_r & decode_tv_r.amoadd_op & decode_tv_r.l2_op;
+  wire amoxor_req = v_tv_r & decode_tv_r.amoxor_op & decode_tv_r.l2_op;
+  wire amoand_req = v_tv_r & decode_tv_r.amoand_op & decode_tv_r.l2_op;
+  wire amoor_req = v_tv_r & decode_tv_r.amoor_op & decode_tv_r.l2_op;
+  wire amomin_req = v_tv_r & decode_tv_r.amomin_op & decode_tv_r.l2_op;
+  wire amomax_req = v_tv_r & decode_tv_r.amomax_op & decode_tv_r.l2_op;
+  wire amominu_req = v_tv_r & decode_tv_r.amominu_op & decode_tv_r.l2_op;
+  wire amomaxu_req = v_tv_r & decode_tv_r.amomaxu_op & decode_tv_r.l2_op;
   wire amo_req = lr_req | sc_req | amoswap_req | amoadd_req | amoxor_req
                    | amoand_req | amoor_req | amomin_req | amomax_req
                    | amominu_req | amomaxu_req;
