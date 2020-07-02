@@ -877,13 +877,15 @@ module bp_be_dcache
     ,.data_o(load_data)
   );
 
-  assign data_o = decode_tv_r.load_op 
-                  ? load_data 
-                  : (((lr_sc_p == e_l2) | (amo_fetch_logic_p == e_l2) | (amo_fetch_arithmetic_p == e_l2))
-                    ? uncached_load_data_v_r
-                      ? uncached_load_data_r
-                      : 64'b0
-                    : (decode_tv_r.sc_op & ~sc_success));
+  assign data_o = decode_tv_r.load_op
+                  ? load_data
+                  : ((decode_tv_r.sc_op && (lr_sc_p == e_l1))
+                    ? decode_tv_r.sc_op & ~sc_success
+                    : ((decode_tv_r.sc_op && decode_tv_r.l2_op) | amo_req)
+                      ? uncached_load_data_v_r
+                        ? uncached_load_data_r
+                        : 64'b0
+                      : decode_tv_r.sc_op && ~sc_success);
 
   // ctrl logic
   //
