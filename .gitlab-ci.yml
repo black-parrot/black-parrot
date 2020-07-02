@@ -224,7 +224,7 @@ dcache-vcs:
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/dcache_regress.sh $CI_CORES
+    - $CI_PROJECT_DIR/ci/dcache_regress.sh vcs $CI_CORES
 
 icache-vcs:
   <<: *job_definition
@@ -232,7 +232,7 @@ icache-vcs:
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/icache_regress.sh $CI_CORES
+    - $CI_PROJECT_DIR/ci/icache_regress.sh vcs $CI_CORES
 
 top-mc-verilator:
   <<: *job_definition

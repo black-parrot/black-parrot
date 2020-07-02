@@ -92,6 +92,8 @@ module bp_be_dcache
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
+    , parameter writethrough_p=l1_writethrough_p
+
     , parameter debug_p=0
     , parameter lock_max_limit_p=8
 
@@ -538,7 +540,7 @@ module bp_be_dcache
   wire load_miss_tv = ~load_hit_tv & v_tv_r & load_op_tv_r & ~uncached_tv_r;
   wire store_miss_tv = ~store_hit_tv & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
   wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit_tv;
-  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
+  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (writethrough_p == 1);
 
   wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | wt_miss_tv;
 
@@ -704,7 +706,7 @@ module bp_be_dcache
   logic tag_mem_pkt_v;
   logic stat_mem_pkt_v;
 
-  wire wt_req = (wbuf_v_li & (l1_writethrough_p == 1));
+  wire wt_req = (wbuf_v_li & (writethrough_p == 1));
 
   // Assigning message types
   always_comb begin
@@ -812,7 +814,7 @@ module bp_be_dcache
   //        The CSR unit is now responsible for sending the clear request to the I$.
   wire flush_req = cache_req_v_o & (cache_req_cast_o.msg_type == e_cache_flush);
 
-  if(l1_writethrough_p == 1) begin : wt
+  if(writethrough_p == 1) begin : wt
     assign gdirty_r = '0;
   end
   else begin : wb
@@ -935,7 +937,7 @@ module bp_be_dcache
     ,.data_o(load_data)
   );
 
-  assign data_o = sc_op_tv_r ? !sc_success : load_data;
+  assign data_o = load_op_tv_r ? load_data : (sc_op_tv_r & sc_success);
 
   // ctrl logic
   //
@@ -1106,7 +1108,7 @@ module bp_be_dcache
     if (v_tv_r) begin
       lru_decode_way_li = store_op_tv_r ? store_hit_way_tv : load_hit_way_tv;
       dirty_mask_way_li = store_hit_way_tv;
-      dirty_mask_v_li = store_op_tv_r & (l1_writethrough_p == 0); // Blocks are never dirty in a writethrough cache
+      dirty_mask_v_li = store_op_tv_r & (writethrough_p == 0); // Blocks are never dirty in a writethrough cache
 
       stat_mem_data_li.lru = lru_decode_data_lo;
       stat_mem_data_li.dirty = {dcache_assoc_p{1'b1}};
@@ -1137,7 +1139,7 @@ module bp_be_dcache
 
   // write buffer
   //
-  if (l1_writethrough_p == 0) begin : wb_wbuf
+  if (writethrough_p == 0) begin : wb_wbuf
     assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~poison_i;
   end
   else begin : wt_wbuf

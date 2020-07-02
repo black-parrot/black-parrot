@@ -287,10 +287,12 @@ module testbench
       ,.store_data(dword_width_p'(0))
       ,.cache_miss_o(miss_o)
 
+      ,.data_mem_v_i(data_mem_v_li)
       ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
       ,.data_mem_pkt_i(data_mem_pkt_i)
       ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
 
+      ,.tag_mem_v_i(tag_mem_v_li)
       ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
       ,.tag_mem_pkt_i(tag_mem_pkt_i)
       ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
@@ -298,6 +300,8 @@ module testbench
       ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
       ,.stat_mem_pkt_i(stat_mem_pkt_i)
       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+      ,.program_finish_i('0)
       );
 
   // CCE tracer
