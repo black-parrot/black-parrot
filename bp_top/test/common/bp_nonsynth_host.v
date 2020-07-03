@@ -10,7 +10,7 @@ module bp_nonsynth_host
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    , parameter host_max_outstanding_p = 32
    )
@@ -41,7 +41,7 @@ always_ff @(posedge clk_i) begin
   ch = scan();
 end
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
 
 // HOST I/O mappings
 //localparam host_dev_base_addr_gp     = 32'h03??_????;

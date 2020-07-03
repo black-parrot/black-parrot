@@ -16,7 +16,7 @@ module bp_me_cce_to_cache_dma
   
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
   
   ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
   ,localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
@@ -58,7 +58,7 @@ module bp_me_cce_to_cache_dma
   `declare_bsg_cache_dma_pkt_s(paddr_width_p);
   
   // cce
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   
   
   /********************* Resp queue fifo *********************/

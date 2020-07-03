@@ -10,7 +10,7 @@ module bp_clint_slice
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_mem_if_data_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    // TODO: Should I be a global param?
    , localparam clint_max_outstanding_p = 2
@@ -32,7 +32,7 @@ module bp_clint_slice
    , output                                             external_irq_o
    );
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+`declare_bp_me_if(paddr_width_p, cce_mem_if_data_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
 
 bp_cce_mem_msg_s mem_cmd_li, mem_cmd_lo;
 assign mem_cmd_li = mem_cmd_i;
@@ -97,7 +97,7 @@ bsg_strobe
    ,.init_val_r_i(ds_ratio_li)
    ,.strobe_r_o(mtime_inc_li)
    );
-assign mtime_val_li = mem_cmd_lo.data[0+:dword_width_p];
+assign mtime_val_li = mem_cmd_li.data[0+:dword_width_p];
 wire mtime_w_v_li = wr_not_rd & mtime_cmd_v;
 bsg_counter_set_en
  #(.lg_max_val_lp(dword_width_p)
@@ -171,7 +171,7 @@ assign mem_resp_lo =
     ,payload       : mem_cmd_lo.header.payload
     ,size          : mem_cmd_lo.header.size
     }
-    ,data          : cce_block_width_p'(rdata_lo)
+    ,data          : cce_mem_if_data_width_p'(rdata_lo)
     };
 assign mem_resp_o = mem_resp_lo;
 assign mem_resp_v_o = small_fifo_v_lo;

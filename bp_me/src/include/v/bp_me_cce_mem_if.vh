@@ -61,7 +61,7 @@ typedef enum logic [3:0]
  * speculative is set if the request was issued speculatively by the CCE
  */
 
-`define declare_bp_cce_mem_msg_payload_s(lce_id_width_mp, lce_assoc_mp) \
+`define declare_bp_cce_mem_msg_payload_s(lce_id_width_mp, lce_assoc_mp, name_mp) \
   typedef struct packed                                       \
   {                                                           \
     bp_coh_states_e                              state;       \
@@ -70,7 +70,7 @@ typedef enum logic [3:0]
     logic                                        prefetch;    \
     logic                                        uncached;    \
     logic                                        speculative; \
-  } bp_cce_mem_msg_payload_s;
+  } bp_``name_mp``_msg_payload_s;
 
 
 /*
@@ -81,20 +81,20 @@ typedef enum logic [3:0]
  * size is the size in bytes of the access, with data in the low-order size bits of the data field
  * payload is an opaque field sent to mem and returned to the CCE unmodified
  */
-`define declare_bp_cce_mem_msg_s(addr_width_mp, data_width_mp)  \
+`define declare_bp_cce_mem_msg_s(addr_width_mp, data_width_mp, name_mp)  \
   typedef struct packed                                         \
   {                                                             \
     bp_cce_mem_msg_payload_s                     payload;       \
     bp_mem_msg_size_e                            size;          \
     logic [addr_width_mp-1:0]                    addr;          \
     bp_cce_mem_cmd_type_e                        msg_type;      \
-  } bp_cce_mem_msg_header_s;                                    \
+  } bp_``name_mp``_msg_header_s;                                    \
                                                                 \
   typedef struct packed                                         \
   {                                                             \
     logic [data_width_mp-1:0]                    data;          \
     bp_cce_mem_msg_header_s                      header;        \
-  } bp_cce_mem_msg_s;
+  } bp_``name_mp``_msg_s;
 
 /*
  * Width Macros
@@ -120,14 +120,14 @@ typedef enum logic [3:0]
  *
  */
 
-`define declare_bp_me_if(paddr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp) \
-  `declare_bp_cce_mem_msg_payload_s(lce_id_width_mp, lce_assoc_mp);                    \
-  `declare_bp_cce_mem_msg_s(paddr_width_mp, data_width_mp);
+`define declare_bp_me_if(paddr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
+  `declare_bp_cce_mem_msg_payload_s(lce_id_width_mp, lce_assoc_mp, name_mp);                    \
+  `declare_bp_cce_mem_msg_s(paddr_width_mp, data_width_mp, name_mp);
 
-`define declare_bp_me_if_widths(paddr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp) \
-  , localparam cce_mem_msg_payload_width_lp=`bp_cce_mem_msg_payload_width(lce_id_width_mp, lce_assoc_mp) \
-  , localparam cce_mem_msg_header_width_lp=`bp_cce_mem_msg_header_width(paddr_width_mp, lce_id_width_mp, lce_assoc_mp) \
-  , localparam cce_mem_msg_width_lp=`bp_cce_mem_msg_width(paddr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp)
+`define declare_bp_me_if_widths(paddr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
+  , localparam ``name_mp``_msg_payload_width_lp = `bp_cce_mem_msg_payload_width(lce_id_width_mp, lce_assoc_mp) \
+  , localparam ``name_mp``_msg_header_width_lp  = `bp_cce_mem_msg_header_width(paddr_width_mp, lce_id_width_mp, lce_assoc_mp) \
+  , localparam ``name_mp``_msg_width_lp         = `bp_cce_mem_msg_width(paddr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp)
 
 
 `endif
