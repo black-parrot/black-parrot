@@ -27,11 +27,13 @@ cfg_core_offset = 24
 class NBF:
 
   # constructor
-  def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file, skip_zeros):
+  def __init__(self, ncpus, ucode_file, domains, sac, mem_file, checkpoint_file, skip_zeros):
 
     # input parameters
     self.ncpus = ncpus
     self.ucode_file = ucode_file
+    self.domains = domains
+    self.sac = sac
     self.mem_file = mem_file
     self.checkpoint_file = checkpoint_file
     self.skip_zeros = skip_zeros
@@ -173,6 +175,16 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
 
+    enabled_domains = 1
+    for i in range(6, 0, -1):
+      if (self.domains[i] == '1'):
+        enabled_domains += (2**(7-i))
+
+    #enabled_domains += self.domains
+
+    self.print_nbf_allcores(3, cfg_base_addr + cfg_domain_mask, enabled_domains)
+    self.print_nbf_allcores(3, cfg_base_addr + cfg_sac_mask, self.sac)
+
     # Write PC to the DRAM base
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
 
@@ -197,13 +209,15 @@ class NBF:
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser()
-  parser.add_argument('--ncpus', type=int, default=1, help='number of BlackParrot cores')
+  parser.add_argument('--ncpus', type=int, help='number of BlackParrot cores')
   parser.add_argument('--ucode', dest='ucode_file', metavar='ucode.mem', help='CCE ucode file')
-  parser.add_argument('--mem', dest='mem_file', metavar='prog.mem', help='DRAM verilog file')
-  parser.add_argument('--checkpoint', dest='checkpoint_file', metavar='sample.nbf', help='checkpoint nbf file')
+  parser.add_argument('--domains', dest='domain', type=str, help='domains to be enabled')
+  parser.add_argument('--sac', dest='sac', type=int, help='sac enabled? (0 or 1)')
+  parser.add_argument("--mem", dest='mem_file', metavar='prog.mem', help="DRAM verilog file")
+  parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help="checkpoint nbf file")
   parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
 
   args = parser.parse_args()
 
-  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file, args.skip_zeros)
+  converter = NBF(args.ncpus, args.ucode_file, args.domains, args.sac, args.mem_file, args.checkpoint_file, args.skip_zeros)
   converter.dump()
