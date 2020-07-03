@@ -224,7 +224,8 @@ wire instr_exe_page_fault = ~itlb_r_entry.x;
 // Fault if in uncached mode but access is not for an uncached address
 wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
 wire mode_fault_v = (is_uncached_mode & ~uncached_li);
-wire did_fault_v = (cfg_bus_cast_i.domain[ptag_li[ptag_width_p-1-:io_noc_did_width_p]] != 1'b1);
+// Fault if domain is not zero (top <io_noc_did_width_p> bits) and SAC bit is not zero (next bit)
+wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p+1] != '0);
 // Don't allow speculative access to local tile memory
 wire local_fault_v = (ptag_li < (dram_base_addr_gp >> page_offset_width_p));
 
