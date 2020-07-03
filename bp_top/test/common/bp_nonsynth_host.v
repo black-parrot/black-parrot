@@ -49,10 +49,10 @@ end
 // Host I/O mappings (arbitrarily decided for now)
 //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
 
+localparam bootrom_base_addr_gp = paddr_width_p'(64'h0001_????);
 localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
 localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
 localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
-localparam bootrom_base_addr_gp = paddr_width_p'(64'h0010_3???);
 
 bp_cce_mem_msg_s io_cmd_li, io_cmd_lo;
 bp_cce_mem_msg_s io_resp_cast_o;

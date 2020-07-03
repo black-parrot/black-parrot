@@ -46,7 +46,7 @@ $(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
 	cp $^ $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
-	$(RISCV_OBJCOPY) -I binary $< -O verilog --verilog-data-width=4 $@
+	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=4 --verilog-data-width=4 $@
 
 NBF_INPUTS = $(NCPUS)
 NBF_INPUTS += cce_ucode.mem
