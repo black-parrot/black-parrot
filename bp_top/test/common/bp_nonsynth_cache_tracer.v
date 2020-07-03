@@ -169,8 +169,8 @@ module bp_nonsynth_cache_tracer
       tag_op = "[set clear]";
     else if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_set_tag)
       tag_op = "[set tag]";
-    else if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_invalidate)
-      tag_op = "[invalidate]";
+    else if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_set_state)
+      tag_op = "[set state]";
     else if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read)
       tag_op = "[read]";
     else
