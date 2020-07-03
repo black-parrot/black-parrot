@@ -104,6 +104,7 @@ $(SIM_DIR)/run_samplesc: $(SIM_COLLATERAL)
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
 	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
+	$(RISCV_OBJCOPY) -I binary -O verilog --verilog-data-width=4 $(@D)/prog.bootram $(@D)/bootrom.mem
 	cd $(@D); \
 		python $(MEM2NBF) $(NBF_INPUTS) --checkpoint=prog.bp_regs > prog.nbf
 	cd $(@D); \

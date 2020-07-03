@@ -42,17 +42,17 @@ $(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
 	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(@D)/dram_ch.ini
 	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(@D)/dram_sys.ini
 
-NBF_INPUTS = $(NCPUS)
-NBF_INPUTS += cce_ucode.mem
-ifeq ($(PRELOAD_MEM_P), 0)
-	NBF_INPUTS += --mem=prog.mem
-endif
-
 $(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
 	cp $^ $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
 	$(RISCV_OBJCOPY) -I binary $< -O verilog --verilog-data-width=4 $@
+
+NBF_INPUTS = $(NCPUS)
+NBF_INPUTS += cce_ucode.mem
+ifeq ($(PRELOAD_MEM_P), 0)
+NBF_INPUTS += --mem=prog.mem
+endif
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
@@ -82,6 +82,7 @@ $(SIM_DIR)/run_samplev: $(SAMPLE_COLLATERAL)
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
 	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
+	$(RISCV_OBJCOPY) -I binary -O verilog --verilog-data-width=4 $(@D)/prog.bootram $(@D)/bootrom.mem
 	cd $(@D); \
 		python $(MEM2NBF) $(NBF_INPUTS) --checkpoint=prog.bp_regs > prog.nbf
 	cd $(@D); \

@@ -323,6 +323,11 @@ module bp_unicore
      ,.did_i('0)
      ,.host_did_i('0)
      ,.cord_i({coh_noc_y_cord_width_p'(1), coh_noc_x_cord_width_p'(0)})
+
+     ,.cce_ucode_v_o()
+     ,.cce_ucode_w_o()
+     ,.cce_ucode_addr_o()
+     ,.cce_ucode_data_o()
      ,.cce_ucode_data_i('0)
      );
 
