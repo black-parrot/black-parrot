@@ -561,6 +561,7 @@ module bp_be_dcache
   `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, dword_width_p, dcache_assoc_p);
 
   bp_be_dcache_wbuf_entry_s wbuf_entry_in;
+  logic wbuf_success;
   logic wbuf_v_li;
 
   bp_be_dcache_wbuf_entry_s wbuf_entry_out;
@@ -1148,12 +1149,17 @@ module bp_be_dcache
 
   // write buffer
   //
+  // We break out wbuf_sucess from wbuf_v_li to break a critical path from
+  //   flush to the data mem address lines. We pessimistically consider the
+  //   wbuf to have an incoming entry if there's something going into the
+  //   write buffer, regardless of if it's poisoned or not
   if (writethrough_p == 0) begin : wb_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~poison_i;
+    assign wbuf_success = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r;
   end
   else begin : wt_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & cache_req_ready_i & ~poison_i;;
+    assign wbuf_success = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & cache_req_ready_i;
   end
+  assign wbuf_v_li = wbuf_success & ~poison_i;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we) & ~data_mem_pkt_yumi_o;
 
   assign bypass_v_li = tv_we & load_op_tl_r;
@@ -1187,7 +1193,7 @@ module bp_be_dcache
   // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
   assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached)
                                ? data_mem_pkt_v
-                               : data_mem_pkt_v & ~(load_op & tl_we) & wbuf_empty_lo;
+                               : data_mem_pkt_v & ~(load_op & tl_we) & wbuf_empty_lo & ~wbuf_success;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin

@@ -325,8 +325,8 @@ module bp_cce_mmio_cfg_loader
           core_cnt_clr = core_prog_done;
 
           cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_npc_gp);
-          cfg_data_lo = bp_pc_entry_point_gp;
+          cfg_addr_lo = '0; //cfg_addr_width_p'(bp_cfg_reg_npc_gp);
+          cfg_data_lo = '0; //bp_pc_entry_point_gp;
         end
         // Skip these, just for demonstration
         SEND_IRF: begin
@@ -336,8 +336,8 @@ module bp_cce_mmio_cfg_loader
           irf_cnt_clr = irf_done;
 
           cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
-          cfg_data_lo = dword_width_p'(irf_cnt_r);
+          cfg_addr_lo = '0; //cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
+          cfg_data_lo = '0; //dword_width_p'(irf_cnt_r);
         end
         RECV_IRF: begin
           state_n = irf_done ? BP_FREEZE_CLR : RECV_IRF;
@@ -346,7 +346,7 @@ module bp_cce_mmio_cfg_loader
           irf_cnt_clr = irf_done;
 
           cfg_r_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
+          cfg_addr_lo = '0; //cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
           cfg_data_lo = '0;
         end
         BP_FREEZE_CLR: begin

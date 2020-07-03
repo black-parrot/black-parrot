@@ -319,7 +319,6 @@ module wrapper
      ,.reset_i(reset_i)
 
      ,.cfg_bus_i(cfg_bus_i)
-     ,.cfg_cce_ucode_data_o()
 
      ,.lce_req_i(lce_req_lo)
      ,.lce_req_v_i(lce_req_v_lo)

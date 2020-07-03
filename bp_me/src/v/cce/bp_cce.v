@@ -243,6 +243,8 @@ module bp_cce
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
+      ,.cfg_bus_i(cfg_bus_i)
+
       ,.ucode_v_i(ucode_v_i)
       ,.ucode_w_i(ucode_w_i)
       ,.ucode_addr_i(ucode_addr_i)

@@ -282,7 +282,7 @@ module bp_fe_icache
 
   // uncached request
   logic uncached_load_data_v_r;
-  logic [instr_width_p-1:0] uncached_load_data_r;
+  logic [dword_width_p-1:0] uncached_load_data_r;
 
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign fencei_req = v_tv_r & fencei_op_tv_r;
@@ -348,7 +348,7 @@ module bp_fe_icache
     else if (uncached_req) begin
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_uc_load;
-      cache_req_cast_lo.size = e_size_4B;
+      cache_req_cast_lo.size = e_size_8B;
       cache_req_v_o = cache_req_ready_i;
     end
     else if (fencei_req) begin
@@ -424,17 +424,27 @@ module bp_fe_icache
      ,.data_o(ld_data_dword_picked)
      );
 
+  logic [dword_width_p-1:0] ld_data_final;
+  bsg_mux #(
+    .width_p(dword_width_p)
+    ,.els_p(2)
+  ) uncached_mux (
+    .data_i({uncached_load_data_r, ld_data_dword_picked})
+    ,.sel_i(uncached_tv_r)
+    ,.data_o(ld_data_final)
+  );
+
   logic [instr_width_p-1:0] final_data;
   bsg_mux #(
     .width_p(instr_width_p)
     ,.els_p(2)
   ) final_data_mux (
-    .data_i(ld_data_dword_picked)
+    .data_i(ld_data_final)
     ,.sel_i(addr_tv_r[2])
     ,.data_o(final_data)
   );
 
-  assign data_o = uncached_tv_r ? uncached_load_data_r : final_data;
+  assign data_o = final_data;
 
   // data mem
   logic                                                       data_mem_v;
@@ -650,7 +660,7 @@ module bp_fe_icache
     end
     else begin
       if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
-        uncached_load_data_r <= data_mem_pkt.data[0+:instr_width_p];
+        uncached_load_data_r <= data_mem_pkt.data[0+:dword_width_p];
         uncached_load_data_v_r <= 1'b1;
       end
       else if (poison_i)
