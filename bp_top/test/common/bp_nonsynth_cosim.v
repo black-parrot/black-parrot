@@ -39,7 +39,7 @@ module bp_nonsynth_cosim
     );
 
 import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
-import "DPI-C" context function bit  dromajo_step(int      hart_id,
+import "DPI-C" context function bit  dromajo_step(int hart_id,
                                                   longint pc,
                                                   int insn,
                                                   longint wdata);

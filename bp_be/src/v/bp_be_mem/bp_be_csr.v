@@ -227,7 +227,7 @@ always_comb
 
 logic [vaddr_width_p-1:0] apc_n, apc_r;
 bsg_dff_reset
- #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
+ #(.width_p(vaddr_width_p), .reset_val_p(bootrom_base_addr_gp))
  apc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

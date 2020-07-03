@@ -89,7 +89,7 @@ DROMAJO       ?= dromajo
 	$(RISCV_OBJCOPY) -O verilog $*.riscv $@
 
 %.bin: %.riscv
-	$(RISCV_OBJCOPY) -O binary --reverse-bytes=4 $*.riscv $@
+	$(RISCV_OBJCOPY) -O binary $*.riscv $@
 
 %.dump: %.riscv
 	$(RISCV_OBJDUMP) $*.riscv > $@
