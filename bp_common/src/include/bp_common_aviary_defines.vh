@@ -67,9 +67,7 @@ typedef enum logic [15:0]{
     logic                                    priv_w_v;                                             \
     logic                                    priv_r_v;                                             \
     logic [1:0]                              priv_data;                                            \
-    logic                                    domain_w_v;                                           \
     logic [7:0]                              domain;                                               \
-    logic                                    sac_w_v;                                              \
     logic                                    sac;                                                  \
   }  bp_cfg_bus_s
 
@@ -96,9 +94,8 @@ typedef enum logic [15:0]{
    + dword_width_p                  \
    + 2                              \
    + 2                              \
-   + 1                              \
    + 8                              \
-   + 2                              \
+   + 1                              \
    )
 
 

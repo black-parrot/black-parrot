@@ -207,9 +207,7 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
                           ,priv_w_v: priv_w_v_li
                           ,priv_r_v: priv_r_v_li
                           ,priv_data: priv_data_li
-                          ,domain_w_v: domain_w_v_li
                           ,domain: domain_data_r
-                          ,sac_w_v: sac_w_v_li
                           ,sac: sac_data_r
                           };
 
