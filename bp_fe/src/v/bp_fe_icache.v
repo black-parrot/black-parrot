@@ -577,6 +577,12 @@ module bp_fe_icache
           tag_mem_w_mask_li[i] = {($bits(bp_coh_states_e)+ptag_width_lp){tag_mem_way_one_hot[i]}};
         end
       end
+      e_cache_tag_mem_set_state: begin
+        for (integer i = 0; i < icache_assoc_p; i++) begin
+          tag_mem_data_li[i]   = {tag_mem_pkt.state, '0};
+          tag_mem_w_mask_li[i] = {{$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, {ptag_width_lp{1'b0}}};
+        end
+      end
       default: begin
         tag_mem_data_li   = '0;
         tag_mem_w_mask_li = '0;

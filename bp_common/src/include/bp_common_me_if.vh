@@ -220,7 +220,7 @@ typedef enum logic [3:0]
   ,e_lce_cmd_tr              = 4'b1000 // transfer block
   ,e_lce_cmd_st_tr           = 4'b1001 // set state and transfer block
   ,e_lce_cmd_st_tr_wb        = 4'b1010 // set state, transfer, and writeback block
-  ,e_lce_cmd_uc_data         = 4'b1011 // unached data to LCE, i.e, up to 64-bits data
+  ,e_lce_cmd_uc_data         = 4'b1011 // unached data to LCE
   ,e_lce_cmd_uc_st_done      = 4'b1100 // uncached store complete
   // 4'b1101 - 4'b1111 reserved / custom
 } bp_lce_cmd_type_e;

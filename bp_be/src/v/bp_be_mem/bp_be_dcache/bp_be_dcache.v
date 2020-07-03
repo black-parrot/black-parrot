@@ -1060,6 +1060,13 @@ module bp_be_dcache
           tag_mem_mask_li[i].tag = {ptag_width_lp{lce_tag_mem_way_one_hot[i]}};
         end
       end
+      e_cache_tag_mem_set_state: begin
+        tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
+        for (integer i = 0; i < dcache_assoc_p; i++) begin
+          tag_mem_mask_li[i].coh_state = {$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].tag = {ptag_width_lp{1'b0}};
+        end
+      end
       default: begin
         tag_mem_data_li = {(tag_info_width_lp*dcache_assoc_p){1'b0}};
         tag_mem_mask_li = {(tag_info_width_lp*dcache_assoc_p){1'b0}};
