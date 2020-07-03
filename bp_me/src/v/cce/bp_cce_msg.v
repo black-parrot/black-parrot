@@ -609,7 +609,7 @@ module bp_cce_msg
             // Requesting LCE and the owner LCE (if present) are excluded
             // Thus, only LCE's with the block in Shared (S) state are invalidated
             pe_sharers_n = sharers_hits_i & ~req_lce_id_one_hot;
-            pe_sharers_n = mshr.flags[e_opd_cof]
+            pe_sharers_n = (mshr.flags[e_opd_cof] | mshr.flags[e_opd_cff])
                            ? pe_sharers_n & ~owner_lce_id_one_hot
                            : pe_sharers_n;
             sharers_ways_n = sharers_ways_i;
@@ -762,6 +762,8 @@ module bp_cce_msg
                    | ~decoded_inst_i.pending_w_v)) begin
 
               lce_cmd_v_o = lce_cmd_ready_i;
+              // all commands set src, dst, message type and address
+              // defaults provided here, but may be overridden below
               lce_cmd.header.dst_id = lce_i;
               lce_cmd.header.msg_type = decoded_inst_i.lce_cmd;
               lce_cmd.header.src_id = cfg_bus_cast.cce_id;
@@ -771,14 +773,34 @@ module bp_cce_msg
                 lce_cmd.header.size = decoded_inst_i.msg_size;
                 lce_cmd.data[0+:`bp_cce_inst_gpr_width] = src_a_i;
               end else begin
+                // all commands set the way_id field
                 lce_cmd.header.way_id = way_i;
+
+                // commands including a set state operation set the state field
                 if ((decoded_inst_i.lce_cmd == e_lce_cmd_st)
-                    | (decoded_inst_i.lce_cmd == e_lce_cmd_st_wakeup)) begin
+                    | (decoded_inst_i.lce_cmd == e_lce_cmd_st_wakeup)
+                    | (decoded_inst_i.lce_cmd == e_lce_cmd_st_wb)) begin
+                  // decoder sets coh_state_i to mshr.next_coh_state so any ST_X command
+                  // that doesn't include a transfer needs to set mshr.next_coh_state
+                  // to the correct value before sending the command (pushq)
                   lce_cmd.header.state = coh_state_i;
                 end
-                // Transfer commands set target and target way fields
-                if (decoded_inst_i.lce_cmd == e_lce_cmd_tr) begin
-                  lce_cmd.header.state = coh_state_i;
+
+                if ((decoded_inst_i.lce_cmd == e_lce_cmd_st_tr)
+                    | (decoded_inst_i.lce_cmd == e_lce_cmd_st_tr_wb)) begin
+                  // when doing a set state + transfer, the state field indicates the
+                  // next state for the owner LCE, and target_state (set below) will provide
+                  // the state for the LCE receiving the transfer
+                  lce_cmd.header.state = mshr.owner_coh_state;
+                end
+
+                // Transfer commands set target, target way, and target state fields
+                // target is the requesting LCE in MSHR, and target_way is its LRU way
+                // target_state comes from coh_state_i, which is set to mshr.next_coh_state
+                if ((decoded_inst_i.lce_cmd == e_lce_cmd_tr)
+                    | (decoded_inst_i.lce_cmd == e_lce_cmd_st_tr)
+                    | (decoded_inst_i.lce_cmd == e_lce_cmd_st_tr_wb)) begin
+                  lce_cmd.header.target_state = coh_state_i;
                   lce_cmd.header.target = mshr.lce_id;
                   lce_cmd.header.target_way_id = mshr.lru_way_id;
                 end

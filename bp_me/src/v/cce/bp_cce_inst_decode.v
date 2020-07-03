@@ -375,8 +375,12 @@ module bp_cce_inst_decode
             if (op_type_u.itype.dst.special == e_opd_lru_coh_state) begin
               decoded_inst_o.lru_coh_state_w_v = 1'b1;
             end
+            if (op_type_u.itype.dst.special == e_opd_owner_coh_state) begin
+              decoded_inst_o.owner_coh_state_w_v = 1'b1;
+            end
             if (op_type_u.itype.dst.special == e_opd_flags) begin
               decoded_inst_o.flag_w_v = '1;
+              decoded_inst_o.imm = '1;
             end
             if (op_type_u.itype.dst.special == e_opd_msg_size) begin
               decoded_inst_o.msg_size_w_v = 1'b1;
@@ -457,7 +461,7 @@ module bp_cce_inst_decode
               decoded_inst_o.branch_op = e_branch_eq;
               decoded_inst_o.branch_target = op_type_u.bftype.target;
               decoded_inst_o.src_a_sel = e_src_sel_special;
-              decoded_inst_o.src_a.special = e_opd_flags_and_mask;
+              decoded_inst_o.src_a.special = e_opd_flags;
               decoded_inst_o.src_b_sel = e_src_sel_imm;
               decoded_inst_o.imm[0+:`bp_cce_inst_imm16_width] = op_type_u.bftype.imm;
             end
@@ -465,7 +469,7 @@ module bp_cce_inst_decode
               decoded_inst_o.branch_op = e_branch_eq;
               decoded_inst_o.branch_target = op_type_u.bftype.target;
               decoded_inst_o.src_a_sel = e_src_sel_special;
-              decoded_inst_o.src_a.special = e_opd_flags_and_mask;
+              decoded_inst_o.src_a.special = e_opd_flags;
               decoded_inst_o.src_b_sel = e_src_sel_zero;
               decoded_inst_o.imm[0+:`bp_cce_inst_imm16_width] = op_type_u.bftype.imm;
             end
@@ -473,7 +477,7 @@ module bp_cce_inst_decode
               decoded_inst_o.branch_op = e_branch_neq;
               decoded_inst_o.branch_target = op_type_u.bftype.target;
               decoded_inst_o.src_a_sel = e_src_sel_special;
-              decoded_inst_o.src_a.special = e_opd_flags_and_mask;
+              decoded_inst_o.src_a.special = e_opd_flags;
               decoded_inst_o.src_b_sel = e_src_sel_zero;
               decoded_inst_o.imm[0+:`bp_cce_inst_imm16_width] = op_type_u.bftype.imm;
             end
@@ -481,7 +485,7 @@ module bp_cce_inst_decode
               decoded_inst_o.branch_op = e_branch_neq;
               decoded_inst_o.branch_target = op_type_u.bftype.target;
               decoded_inst_o.src_a_sel = e_src_sel_special;
-              decoded_inst_o.src_a.special = e_opd_flags_and_mask;
+              decoded_inst_o.src_a.special = e_opd_flags;
               decoded_inst_o.src_b_sel = e_src_sel_imm;
               decoded_inst_o.imm[0+:`bp_cce_inst_imm16_width] = op_type_u.bftype.imm;
             end
@@ -559,6 +563,7 @@ module bp_cce_inst_decode
               decoded_inst_o.way_w_v = 1'b1;
               decoded_inst_o.owner_lce_w_v = 1'b1;
               decoded_inst_o.owner_way_w_v = 1'b1;
+              decoded_inst_o.owner_coh_state_w_v = 1'b1;
               decoded_inst_o.flag_w_v[e_opd_rf] = 1'b1;
               decoded_inst_o.flag_w_v[e_opd_uf] = 1'b1;
               decoded_inst_o.flag_w_v[e_opd_csf] = 1'b1;

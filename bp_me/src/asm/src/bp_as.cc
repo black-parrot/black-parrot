@@ -256,9 +256,8 @@ Assembler::parseOpd(string &s) {
     return e_opd_msg_size;
   } else if (!s.compare("lrucohst")) {
     return e_opd_lru_coh_state;
-
-  } else if (!s.compare("flagsandmask")) {
-    return e_opd_flags_and_mask;
+  } else if (!s.compare("ownercohst")) {
+    return e_opd_owner_coh_state;
 
   } else if (!s.compare("shhit")) {
     return e_opd_sharers_hit;
@@ -528,6 +527,8 @@ Assembler::parseCohStateSel(string &s) {
   } else if (!s.compare("shcoh")) {
     // note: requires source A
     return e_mux_sel_sharer_state;
+  } else if (!s.compare("ownercohst")) {
+    return e_mux_sel_coh_owner_coh_state;
   } else if (!s.compare("imm")) {
     return e_mux_sel_coh_inst_imm;
   } else {
