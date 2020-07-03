@@ -183,6 +183,7 @@ module bp_cce
   logic [lce_assoc_width_p-1:0]        gad_req_addr_way_lo;
   logic [lce_id_width_p-1:0]           gad_owner_lce_lo;
   logic [lce_assoc_width_p-1:0]        gad_owner_way_lo;
+  bp_coh_states_e                      gad_owner_coh_state_lo;
   logic                                gad_replacement_flag_lo;
   logic                                gad_upgrade_flag_lo;
   logic                                gad_cached_shared_flag_lo;
@@ -473,6 +474,7 @@ module bp_cce
       ,.req_addr_way_o(gad_req_addr_way_lo)
       ,.owner_lce_o(gad_owner_lce_lo)
       ,.owner_way_o(gad_owner_way_lo)
+      ,.owner_coh_state_o(gad_owner_coh_state_lo)
       ,.replacement_flag_o(gad_replacement_flag_lo)
       ,.upgrade_flag_o(gad_upgrade_flag_lo)
       ,.cached_shared_flag_o(gad_cached_shared_flag_lo)
@@ -514,6 +516,7 @@ module bp_cce
       ,.gad_req_addr_way_i(gad_req_addr_way_lo)
       ,.gad_owner_lce_i(gad_owner_lce_lo)
       ,.gad_owner_way_i(gad_owner_way_lo)
+      ,.gad_owner_coh_state_i(gad_owner_coh_state_lo)
       ,.gad_replacement_flag_i(gad_replacement_flag_lo)
       ,.gad_upgrade_flag_i(gad_upgrade_flag_lo)
       ,.gad_cached_shared_flag_i(gad_cached_shared_flag_lo)

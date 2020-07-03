@@ -40,7 +40,8 @@ set_entry: wde addr=req lce=req way=lru state=nextCohSt
 replace_check: bfz transfer_check rf
 
 # Replacement Routine
-replace: pushq lceCmd WB addr=lru lce=req way=lru
+replace: movis COH_I nextCohSt
+pushq lceCmd ST_WB addr=lru lce=req way=lru
 # wait for writeback response
 replacement_poph: poph lceResp r0
 beqi r0 COH_ACK replacement_poph
@@ -53,12 +54,10 @@ transfer_check: bfz read_l2 cef cmf cof cff pt
 
 # Transfer routine - other cache has block in E/M
 # state for lceCmd will always come from nextCohSt
-transfer: movis COH_I nextCohSt
-pushq lceCmd ST addr=req lce=owner way=owner
-wds addr=req lce=owner way=owner state=nextCohSt
+transfer: movis COH_I ownerCohSt
 movis COH_E nextCohSt
-pushq lceCmd TR addr=req lce=owner way=owner
-pushq lceCmd WB addr=req lce=owner way=owner
+pushq lceCmd ST_TR_WB addr=req lce=owner way=owner
+wds addr=req lce=owner way=owner state=ownerCohSt
 # wait for transfer WB response
 transfer_poph: poph lceResp r0
 beqi r0 COH_ACK transfer_poph

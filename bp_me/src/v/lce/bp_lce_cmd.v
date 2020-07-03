@@ -129,6 +129,7 @@ module bp_lce_cmd
     ,e_ready
     ,e_tr
     ,e_wb
+    ,e_wb_stat_rd
     ,e_wb_dirty_rd
     ,e_wb_dirty_send
     ,e_coh_ack
@@ -268,7 +269,8 @@ module bp_lce_cmd
     uc_store_req_complete_o = 1'b0;
 
     cache_req_complete_o = 1'b0;
-    cache_req_critical_o = 1'b0;  //TODO partial fill is not supported now
+    //TODO: support partial fill, currently not supported
+    cache_req_critical_o = 1'b0;
 
     // LCE-CCE Interface signals
     lce_cmd_yumi_o = 1'b0;
@@ -348,64 +350,17 @@ module bp_lce_cmd
 
             end
 
-            // Transfer
-            e_lce_cmd_tr: begin
+            // Set Clear - invalidate entire set specified by command
+            e_lce_cmd_set_clear: begin
+              tag_mem_pkt.index = lce_cmd_addr_index;
+              tag_mem_pkt.opcode = e_cache_tag_mem_set_clear;
+              tag_mem_pkt_v_o = lce_cmd_v_i;
 
-              // read block from data mem
-              // data will be available in the first cycle of e_tr state
-              data_mem_pkt.index = lce_cmd_addr_index;
-              data_mem_pkt.way_id = lce_cmd_way_id;
-              data_mem_pkt.opcode = e_cache_data_mem_read;
-              data_mem_pkt_v_o = lce_cmd_v_i;
-
-              state_n = data_mem_pkt_yumi_i
-                ? e_tr
-                : e_ready;
-
-            end
-
-            // Writeback
-            e_lce_cmd_wb: begin
-
-              // read stat mem to determine if line is dirty
               stat_mem_pkt.index = lce_cmd_addr_index;
-              stat_mem_pkt.way_id = lce_cmd_way_id;
-              stat_mem_pkt.opcode = e_cache_stat_mem_read;
+              stat_mem_pkt.opcode = e_cache_stat_mem_set_clear;
               stat_mem_pkt_v_o = lce_cmd_v_i;
 
-              state_n = stat_mem_pkt_yumi_i
-                ? e_wb
-                : e_ready;
-
-            end
-
-            // Set Tag
-            // Write the tag and state as commanded, no response sent
-            e_lce_cmd_st: begin
-              tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_way_id;
-              tag_mem_pkt.state = lce_cmd.header.state;
-              tag_mem_pkt.tag = lce_cmd_addr_tag;
-              tag_mem_pkt.opcode = e_cache_tag_mem_set_tag;
-              tag_mem_pkt_v_o = lce_cmd_v_i;
-
-              lce_cmd_yumi_o = tag_mem_pkt_yumi_i;
-
-            end
-
-            // Set Tag and Wakeup
-            // Write the tag and state as commanded, send coherence ack, and complete request
-            e_lce_cmd_st_wakeup: begin
-              tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_way_id;
-              tag_mem_pkt.state = lce_cmd.header.state;
-              tag_mem_pkt.tag = lce_cmd_addr_tag;
-              tag_mem_pkt.opcode = e_cache_tag_mem_set_tag;
-              tag_mem_pkt_v_o = lce_cmd_v_i;
-
-              state_n = tag_mem_pkt_yumi_i
-                        ? e_coh_ack
-                        : e_ready;
+              lce_cmd_yumi_o = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
             end
 
@@ -427,15 +382,22 @@ module bp_lce_cmd
 
             end
 
-            //  Uncached Store Done - store has committed to memory
-            e_lce_cmd_uc_st_done: begin
-              // dequeue message and assert request complete signal for a cycle
-              lce_cmd_yumi_o = lce_cmd_v_i;
+            // Set State
+            // Write the state as commanded, no response sent
+            e_lce_cmd_st: begin
+              tag_mem_pkt.index = lce_cmd_addr_index;
+              tag_mem_pkt.way_id = lce_cmd_way_id;
+              tag_mem_pkt.state = lce_cmd.header.state;
+              tag_mem_pkt.tag = '0;
+              tag_mem_pkt.opcode = e_cache_tag_mem_set_state;
+              tag_mem_pkt_v_o = lce_cmd_v_i;
 
-              uc_store_req_complete_o = lce_cmd_yumi_o;
+              lce_cmd_yumi_o = tag_mem_pkt_yumi_i;
+
             end
 
             // Data and Tag - completes cache miss
+            // Set Tag and State, write Data
             e_lce_cmd_data: begin
               data_mem_pkt.index = lce_cmd_addr_index;
               data_mem_pkt.way_id = lce_cmd_way_id;
@@ -458,6 +420,118 @@ module bp_lce_cmd
 
             end
 
+            // Set State and Wakeup
+            // Write the state as commanded, send coherence ack, and complete request
+            e_lce_cmd_st_wakeup: begin
+              tag_mem_pkt.index = lce_cmd_addr_index;
+              tag_mem_pkt.way_id = lce_cmd_way_id;
+              tag_mem_pkt.state = lce_cmd.header.state;
+              tag_mem_pkt.tag = lce_cmd_addr_tag;
+              tag_mem_pkt.opcode = e_cache_tag_mem_set_state;
+              tag_mem_pkt_v_o = lce_cmd_v_i;
+
+              state_n = tag_mem_pkt_yumi_i
+                        ? e_coh_ack
+                        : e_ready;
+
+            end
+
+            // Writeback
+            e_lce_cmd_wb: begin
+
+              // read stat mem to determine if line is dirty
+              stat_mem_pkt.index = lce_cmd_addr_index;
+              stat_mem_pkt.way_id = lce_cmd_way_id;
+              stat_mem_pkt.opcode = e_cache_stat_mem_read;
+              stat_mem_pkt_v_o = lce_cmd_v_i;
+
+              state_n = stat_mem_pkt_yumi_i
+                ? e_wb
+                : e_ready;
+
+            end
+
+            // Set State and Writeback
+            e_lce_cmd_st_wb: begin
+              // update state
+              tag_mem_pkt.index = lce_cmd_addr_index;
+              tag_mem_pkt.way_id = lce_cmd_way_id;
+              tag_mem_pkt.state = lce_cmd.header.state;
+              tag_mem_pkt.tag = lce_cmd_addr_tag;
+              tag_mem_pkt.opcode = e_cache_tag_mem_set_state;
+              tag_mem_pkt_v_o = lce_cmd_v_i;
+
+              // read stat mem to determine if line is dirty
+              stat_mem_pkt.index = lce_cmd_addr_index;
+              stat_mem_pkt.way_id = lce_cmd_way_id;
+              stat_mem_pkt.opcode = e_cache_stat_mem_read;
+              stat_mem_pkt_v_o = lce_cmd_v_i;
+
+              state_n = stat_mem_pkt_yumi_i & tag_mem_pkt_yumi_i
+                ? e_wb
+                : e_ready;
+
+            end
+
+            // Transfer
+            e_lce_cmd_tr: begin
+
+              // read block from data mem
+              // data will be available in the first cycle of e_tr state
+              data_mem_pkt.index = lce_cmd_addr_index;
+              data_mem_pkt.way_id = lce_cmd_way_id;
+              data_mem_pkt.opcode = e_cache_data_mem_read;
+              data_mem_pkt_v_o = lce_cmd_v_i;
+
+              state_n = data_mem_pkt_yumi_i
+                ? e_tr
+                : e_ready;
+
+            end
+
+            // Set State and Transfer
+            // Set State, Transfer, and Writeback
+            e_lce_cmd_st_tr
+            , e_lce_cmd_st_tr_wb: begin
+              // update state
+              tag_mem_pkt.index = lce_cmd_addr_index;
+              tag_mem_pkt.way_id = lce_cmd_way_id;
+              tag_mem_pkt.state = lce_cmd.header.state;
+              tag_mem_pkt.tag = lce_cmd_addr_tag;
+              tag_mem_pkt.opcode = e_cache_tag_mem_set_state;
+              tag_mem_pkt_v_o = lce_cmd_v_i;
+
+              // read block from data mem
+              // data will be available in the first cycle of e_tr state
+              data_mem_pkt.index = lce_cmd_addr_index;
+              data_mem_pkt.way_id = lce_cmd_way_id;
+              data_mem_pkt.opcode = e_cache_data_mem_read;
+              data_mem_pkt_v_o = lce_cmd_v_i;
+
+              // clear dirty bit if command is e_lce_st_tr (not doing writeback) and block
+              // is changing to invalid, since transfer target will take ownership of dirty block.
+              // Thus, this LCE needs to make block clean (without the writeback).
+              stat_mem_pkt.index = lce_cmd_addr_index;
+              stat_mem_pkt.way_id = lce_cmd_way_id;
+              stat_mem_pkt.opcode = e_cache_stat_mem_clear_dirty;
+              stat_mem_pkt_v_o = lce_cmd_v_i & (lce_cmd.header.msg_type == e_lce_cmd_st_tr)
+                                & (lce_cmd.header.state == e_COH_I);
+
+              // for both of these commands, do the transfer next
+              state_n = data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i
+                ? e_tr
+                : e_ready;
+
+            end
+
+            //  Uncached Store Done - store has committed to memory
+            e_lce_cmd_uc_st_done: begin
+              // dequeue message and assert request complete signal for a cycle
+              lce_cmd_yumi_o = lce_cmd_v_i;
+              uc_store_req_complete_o = lce_cmd_yumi_o;
+
+            end
+
             // Uncached Data - send data to cache and raise request complete signal for one cycle
             // when data sends and command is dequeued
             e_lce_cmd_uc_data: begin
@@ -469,21 +543,7 @@ module bp_lce_cmd
 
               lce_cmd_yumi_o = data_mem_pkt_yumi_i;
 
-              cache_req_complete_o = data_mem_pkt_yumi_i;
-            end
-
-            // Set Clear - invalidate entire set specified by command
-            e_lce_cmd_set_clear: begin
-              tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.opcode = e_cache_tag_mem_set_clear;
-              tag_mem_pkt_v_o = lce_cmd_v_i;
-
-              stat_mem_pkt.index = lce_cmd_addr_index;
-              stat_mem_pkt.opcode = e_cache_stat_mem_set_clear;
-              stat_mem_pkt_v_o = lce_cmd_v_i;
-
-              lce_cmd_yumi_o = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
-
+              cache_req_complete_o = lce_cmd_yumi_o;
             end
 
             // for other message types in this state, use default as defined at top.
@@ -501,13 +561,13 @@ module bp_lce_cmd
         lce_resp.header.msg_type = e_lce_cce_coh_ack;
         lce_resp.header.src_id = lce_id_i;
         lce_resp.header.dst_id = lce_cmd.header.src_id;
-        lce_resp_v_o = lce_resp_ready_i;
+        lce_resp_v_o = lce_cmd_v_i & lce_resp_ready_i;
 
         lce_cmd_yumi_o = lce_resp_v_o;
 
-        cache_req_complete_o = lce_resp_v_o;
+        cache_req_complete_o = lce_cmd_yumi_o;
 
-        state_n = lce_resp_v_o
+        state_n = lce_cmd_yumi_o
           ? e_ready
           : e_coh_ack;
 
@@ -515,7 +575,7 @@ module bp_lce_cmd
 
       // Transfer
       // send e_lce_cmd_data message to target LCE
-      // data_buf_r holds valid data when this state is entered
+      // data_buf_r holds valid data when data_buf_v_r is high
       e_tr: begin
 
         // form the outbound message
@@ -526,7 +586,7 @@ module bp_lce_cmd
         lce_cmd_out.header.msg_type = e_lce_cmd_data;
         lce_cmd_out.header.way_id = lce_cmd.header.target_way_id;
         lce_cmd_out.header.addr = lce_cmd.header.addr;
-        lce_cmd_out.header.state = lce_cmd.header.state;
+        lce_cmd_out.header.state = lce_cmd.header.target_state;
         lce_cmd_out.header.size = cmd_block_size_lp;
         lce_cmd_out.data = data_buf_r;
 
@@ -534,12 +594,32 @@ module bp_lce_cmd
         // outbound command is ready->valid
         // inbound is valid->yumi, but only dequeue when outbound sends
         lce_cmd_v_o = lce_cmd_ready_i & lce_cmd_v_i & data_buf_v_r;
-        lce_cmd_yumi_o = lce_cmd_v_o;
 
-        state_n = lce_cmd_yumi_o
-          ? e_ready
+        // dequeue the command if transfer is last action
+        lce_cmd_yumi_o = lce_cmd_v_o & (lce_cmd.header.msg_type != e_lce_cmd_st_tr_wb);
+
+        // do a writeback if needed, otherwise go to ready after the transfer sends
+        // move to next state when LCE command sends
+        state_n = lce_cmd_v_o
+          ? (lce_cmd.header.msg_type == e_lce_cmd_st_tr_wb)
+            ? e_wb_stat_rd
+            : e_ready
           : e_tr;
 
+      end
+
+      // Writeback stat mem read, when processing e_lce_cmd_st_tr_wb
+      // i.e., after the set state and transfer happen
+      e_wb_stat_rd: begin
+        // read stat mem to determine if line is dirty
+        stat_mem_pkt.index = lce_cmd_addr_index;
+        stat_mem_pkt.way_id = lce_cmd_way_id;
+        stat_mem_pkt.opcode = e_cache_stat_mem_read;
+        stat_mem_pkt_v_o = lce_cmd_v_i;
+
+        state_n = stat_mem_pkt_yumi_i
+          ? e_wb
+          : e_wb_stat_rd;
       end
 
       // Writeback
@@ -555,11 +635,12 @@ module bp_lce_cmd
         lce_resp.header.src_id = lce_id_i;
         lce_resp.header.dst_id = lce_cmd.header.src_id;
         lce_resp_v_o = lce_resp_ready_i & stat_buf_v_r & ~stat_buf_r.dirty[lce_cmd_way_id];
+        // dequeue command only if sending null writeback
         lce_cmd_yumi_o = lce_resp_v_o;
 
         state_n = stat_buf_v_r & stat_buf_r.dirty[lce_cmd_way_id]
                   ? e_wb_dirty_rd
-                  : stat_buf_v_r & lce_resp_v_o
+                  : stat_buf_v_r & lce_cmd_yumi_o
                     ? e_ready
                     : e_wb;
           
@@ -568,13 +649,13 @@ module bp_lce_cmd
       // Writeback dirty block - read from data memory, write to stat memory to clear dirty bit
       e_wb_dirty_rd: begin
 
-        // read from data memory, if data read wasn't already accepted in a previous cycle
+        // read from data memory
         data_mem_pkt.index = lce_cmd_addr_index;
         data_mem_pkt.way_id = lce_cmd_way_id;
         data_mem_pkt.opcode = e_cache_data_mem_read;
         data_mem_pkt_v_o = 1'b1;
 
-        // write to stat memory, if stat write wasn't already accepted in a previous cycle
+        // write to stat memory
         stat_mem_pkt.index = lce_cmd_addr_index;
         stat_mem_pkt.way_id = lce_cmd_way_id;
         stat_mem_pkt.opcode = e_cache_stat_mem_clear_dirty;
@@ -588,7 +669,7 @@ module bp_lce_cmd
       end
 
       // Dirty Writeback Response
-      // data_buf_r holds valid data when this state is entered
+      // data_buf_r holds valid data when data_buf_v_r is high
       e_wb_dirty_send: begin
 
         lce_resp.data = data_buf_r;
@@ -601,7 +682,7 @@ module bp_lce_cmd
 
         lce_cmd_yumi_o = lce_resp_v_o;
 
-        state_n = lce_resp_v_o
+        state_n = lce_cmd_yumi_o
           ? e_ready
           : e_wb_dirty_send;
 

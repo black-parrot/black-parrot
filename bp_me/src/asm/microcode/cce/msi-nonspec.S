@@ -38,7 +38,8 @@ gad
 replace_check: bfz next_coh_state rf
 
 # Replacement Routine
-replace: pushq lceCmd WB addr=lru lce=req way=lru
+replace: movis COH_I nextCohSt
+pushq lceCmd ST_WB addr=lru lce=req way=lru
 # wait for writeback response
 replacement_poph: poph lceResp r0
 beqi r0 COH_ACK replacement_poph
@@ -78,11 +79,9 @@ transfer_check: bfz read_l2 cmf pt
 transfer: bf transfer_write rqf
 
 # transfer from owner in M, downgrade owner to S, send block to req in S
-movis COH_S nextCohSt
-pushq lceCmd ST addr=req lce=owner way=owner
-wds addr=req lce=owner way=owner state=nextCohSt
-pushq lceCmd TR addr=req lce=owner way=owner
-pushq lceCmd WB addr=req lce=owner way=owner
+movis COH_S ownerCohSt
+pushq lceCmd ST_TR_WB addr=req lce=owner way=owner
+wds addr=req lce=owner way=owner state=ownerCohSt
 # wait for transfer WB response
 transfer_poph: poph lceResp r0
 beqi r0 COH_ACK transfer_poph
@@ -91,11 +90,9 @@ pushq memCmd MEM_CMD_WR addr=req lce=owner way=owner wp=1
 complete_transfer: popq lceResp
 bi ready
 
-transfer_write: movis COH_I nextCohSt
-pushq lceCmd ST addr=req lce=owner way=owner
-wds addr=req lce=owner way=owner state=nextCohSt
-movis COH_M nextCohSt
-pushq lceCmd TR addr=req lce=owner way=owner
+transfer_write: movis COH_I ownerCohSt
+pushq lceCmd ST_TR addr=req lce=owner way=owner
+wds addr=req lce=owner way=owner state=ownerCohSt
 bi ready
 
 # Read Line from L2 Routine

@@ -58,6 +58,7 @@ module bp_cce_reg
    , input [lce_assoc_width_p-1:0]                                         gad_req_addr_way_i
    , input [lce_id_width_p-1:0]                                            gad_owner_lce_i
    , input [lce_assoc_width_p-1:0]                                         gad_owner_way_i
+   , input bp_coh_states_e                                                 gad_owner_coh_state_i
    , input                                                                 gad_replacement_flag_i
    , input                                                                 gad_upgrade_flag_i
    , input                                                                 gad_cached_shared_flag_i
@@ -123,6 +124,8 @@ module bp_cce_reg
   wire lce_req_nerf  = (lce_req_hdr.non_exclusive == e_lce_req_non_excl);
 
   // operation writes all flags in bulk
+  // branch flag ops only use e_opd_flags as source
+  // movgs or movis may use e_opd_flags as destination
   wire write_all_flags = ((decoded_inst_i.dst_sel == e_dst_sel_special)
                           & (decoded_inst_i.dst.special == e_opd_flags));
 
@@ -187,6 +190,7 @@ module bp_cce_reg
       mshr_n.way_id = src_a_i[0+:lce_id_width_p];
       mshr_n.owner_lce_id = src_a_i[0+:lce_id_width_p];
       mshr_n.owner_way_id = src_a_i[0+:lce_assoc_width_p];
+      mshr_n.owner_coh_state = bp_coh_states_e'(src_a_i[0+:$bits(bp_coh_states_e)]);
       mshr_n.lru_paddr = src_a_i[0+:paddr_width_p];
 
       // Flags - by default, next value comes from src_a
@@ -230,6 +234,7 @@ module bp_cce_reg
         mshr_n.way_id = gad_req_addr_way_i;
         mshr_n.owner_lce_id = gad_owner_lce_i;
         mshr_n.owner_way_id = gad_owner_way_i;
+        mshr_n.owner_coh_state = gad_owner_coh_state_i;
         mshr_n.flags[e_opd_rf] = gad_replacement_flag_i;
         mshr_n.flags[e_opd_uf] = gad_upgrade_flag_i;
         mshr_n.flags[e_opd_csf] = gad_cached_shared_flag_i;
@@ -321,6 +326,9 @@ module bp_cce_reg
         end
         if (~stall_i & decoded_inst_i.owner_way_w_v) begin
           mshr_r.owner_way_id <= mshr_n.owner_way_id;
+        end
+        if (~stall_i & decoded_inst_i.owner_coh_state_w_v) begin
+          mshr_r.owner_coh_state <= mshr_n.owner_coh_state;
         end
         if (~stall_i & decoded_inst_i.next_coh_state_w_v) begin
           mshr_r.next_coh_state <= mshr_n.next_coh_state;
