@@ -8,7 +8,7 @@
 package bp_me_pkg;
 
   `include "bsg_defines.v"
-  `include "bp_me_cce_mem_if.vh"
+  `include "bp_common_mem_if.vh"
 
 endpackage : bp_me_pkg
 
