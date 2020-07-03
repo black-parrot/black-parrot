@@ -74,9 +74,6 @@ module bp_cce_fsm
    , input                                             mem_cmd_ready_i
   );
 
-  // stub cfg ucode output, since FSM CCE has no ucode
-  assign cfg_cce_ucode_data_o = '0;
-
   //synopsys translate_off
   initial begin
     assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
