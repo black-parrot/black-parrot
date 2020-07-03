@@ -780,7 +780,9 @@ module bp_cce_msg
                 if ((decoded_inst_i.lce_cmd == e_lce_cmd_st)
                     | (decoded_inst_i.lce_cmd == e_lce_cmd_st_wakeup)
                     | (decoded_inst_i.lce_cmd == e_lce_cmd_st_wb)) begin
-                  // TODO: decoder sets coh_state_i to mshr.next_coh_state
+                  // decoder sets coh_state_i to mshr.next_coh_state so any ST_X command
+                  // that doesn't include a transfer needs to set mshr.next_coh_state
+                  // to the correct value before sending the command (pushq)
                   lce_cmd.header.state = coh_state_i;
                 end
 
