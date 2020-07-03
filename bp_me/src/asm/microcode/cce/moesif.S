@@ -1,4 +1,4 @@
-# This microcode uses MSI protocol with speculative memory access
+# This microcode uses MOESIF protocol with speculative memory access
 
 #include "microcode.h"
 
@@ -18,7 +18,7 @@ inc r0
 bi sync_top
 
 # set default value for mshr.next_coh_state
-finish_init: movip COH_S cohSt
+finish_init: movip COH_E cohSt
 
 # Wait for LCE Requests
 # Try to fast-path the request
@@ -28,15 +28,15 @@ rdp addr=req
 # pending or uncached should be handled without issuing a speculative access
 bfnz handle_pf_ucf pf ucf
 # send speculative memory access, also sets speculative flag
-# assumed state for block is S
+# assumed state for block is E
 pushq memCmd MEM_CMD_RD addr=req lce=req way=lru spec=1 wp=1
 # dequeue the request
 popq lceReq wp
 # read the directory and process
 rdw addr=req lce=req lru_way=lru
 gad
-# handle slowly if write, transfer, replacement, or upgrade
-bfnz handle_req rqf cmf rf uf
+# handle slowly if write, transfer, replacement, upgrade, or block cached in S
+bfnz handle_req rqf cmf cef cof cff csf rf uf
 
 # complete fast path access
 # uses the speculative memory access
@@ -74,21 +74,44 @@ pushq memCmd MEM_CMD_WR addr=lru lce=req way=lru wp=1
 complete_replacement: popq lceResp
 
 # Next Coherence State Routine
-# write request means set to M, else read is S
+# write request means set to M, else check non-exclusive request or cached
 next_coh_state: bf next_coh_set_m rqf
+# non-exclusive request (read-only) or blocked cached somewhere, set to S
+bfnz next_coh_set_s nerf csf cef cmf cff cof
+# block not cached and read, grant E to requestor
+next_coh_set_e: movis COH_E nextCohSt
+bi inv_check
 next_coh_set_s: movis COH_S nextCohSt
 bi inv_check
 next_coh_set_m: movis COH_M nextCohSt
 # fall through to inv_check
 
 # Invalidation Check
+# Invalidations can also occur if upgrade and cof or cff
 inv_check: bfnot upgrade_check rqf csf pt
 
 # Invalidation Routine
 invalidate: inv
 
 # Upgrade Check Routine
+# Upgrades must be handled carefully as there are multiple cases
+# 1. block is in S state at directory, nothing special, sharers will be invalidated, then upgrade
+# 2. block is in O or F at directory and cof/cff set. This means requestor is not owner so
+#    the owner needs to be downgraded to I. Other sharers invalidated as normal.
+# 3. block is in O or F at directory and cof/cff not set. This means requestor is owner, so
+#    only need to give requestor block in M. Other sharers invalidated as normal.
 upgrade_check: bfz set_entry uf pt
+
+# LCE other than requestor might have block in O or F and needs downgrade to I
+# might also be able to simply send a ST message with nextCohSt == COH_I since both were readers
+# this has the effect of letting the previous owner read a little longer and changing the point
+# in time at which the state change becomes visible to all cores
+bfz upgrade cff cof pt
+upgrade_inv: pushq lceCmd INV addr=req lce=owner way=owner
+wds addr=req lce=owner way=owner state=imm COH_I
+upgrade_poph: poph lceResp r0
+beqi r0 COH_ACK upgrade_poph
+complete_upgrade_inv: popq lceResp
 
 # Upgrade Routine
 upgrade: wds addr=req lce=req way=req state=nextCohSt
@@ -99,17 +122,26 @@ bi ready
 set_entry: wde addr=req lce=req way=lru state=nextCohSt
 
 # Transfer Check
-transfer_check: bfz read_l2 cmf pt
+transfer_check: bfz read_l2 cmf cef cff cof pt
 # transfer, squash speculative access
 specq squash req
 
-# Transfer routine - other cache has block in M
-# write requests invalidate owner, read requests downgrade owner to S and writeback
-transfer: bf transfer_write rqf
+# Transfer routine - other cache has block in E, M, O, or F
+# write requests invalidate owner
+# read with owner in F or O does transfer only
+# read with owner in M downgrades to O
+# read with owner in E downgrades to F
 
-# transfer from owner in M, downgrade owner to S, send block to req in S
-# writeback block from owner
-movis COH_S ownerCohSt
+transfer: bf transfer_write rqf
+bfnz transfer_downgrade cmf cef
+# block in F or O, transfer only, no writeback or owner state change
+pushq lceCmd TR addr=req lce=owner way=owner
+bi ready
+
+transfer_downgrade: bf transfer_owner_m cmf
+# owner has block in E (assume clean), so downgrade to F, but need to do writeback to ensure
+# block didn't become dirty and change to M silently
+movis COH_F ownerCohSt
 pushq lceCmd ST_TR_WB addr=req lce=owner way=owner
 wds addr=req lce=owner way=owner state=ownerCohSt
 # wait for transfer WB response
@@ -120,16 +152,25 @@ pushq memCmd MEM_CMD_WR addr=req lce=owner way=owner wp=1
 complete_transfer: popq lceResp
 bi ready
 
+# owner has block in dirty state, let it stay dirty so downgrade owner to O
+transfer_owner_m: movis COH_O ownerCohSt
+pushq lceCmd ST_TR addr=req lce=owner way=owner
+wds addr=req lce=owner way=owner state=ownerCohSt
+bi ready
+
 transfer_write: movis COH_I ownerCohSt
 pushq lceCmd ST_TR addr=req lce=owner way=owner
 wds addr=req lce=owner way=owner state=ownerCohSt
 bi ready
 
 # Read Line from L2 Routine
-# memory access was already issued speculatively (S), so resolve the speculation
+# memory access was already issued speculatively (E), so resolve the speculation
 read_l2: bf resolve_fwd_mod_m rqf
-resolve_fwd_mod_s: specq unset req
+bfnz resolve_fwd_mod_s csf nerf
+resolve_e: specq unset req
 bi ready
 resolve_fwd_mod_m: specq fwd_mod req COH_M
+bi ready
+resolve_fwd_mod_s: specq fwd_mod req COH_S
 bi ready
 

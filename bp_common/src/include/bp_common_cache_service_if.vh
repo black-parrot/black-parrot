@@ -77,10 +77,10 @@ typedef enum logic [1:0] {
 typedef enum logic [2:0] {
  // clear all blocks in a set for a given index
  e_cache_tag_mem_set_clear,
- // invalidate a block for given index and way_id
- e_cache_tag_mem_invalidate,
  // set tag and coherence state for given index and way_id
  e_cache_tag_mem_set_tag,
+ // set coherence state for given index and way_id
+ e_cache_tag_mem_set_state,
  // read tag mem packets for writeback and transfer (Used for UCE)
  e_cache_tag_mem_read
 } bp_cache_tag_mem_opcode_e;

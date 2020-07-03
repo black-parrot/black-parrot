@@ -1046,18 +1046,18 @@ module bp_be_dcache
         tag_mem_data_li = {(tag_info_width_lp*dcache_assoc_p){1'b0}};
         tag_mem_mask_li = {(tag_info_width_lp*dcache_assoc_p){1'b1}};
       end
-      e_cache_tag_mem_invalidate: begin
-        tag_mem_data_li = {((tag_info_width_lp)*dcache_assoc_p){1'b0}};
-        for (integer i = 0; i < dcache_assoc_p; i++) begin
-          tag_mem_mask_li[i].coh_state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
-          tag_mem_mask_li[i].tag = {ptag_width_lp{1'b0}};
-        end
-      end
       e_cache_tag_mem_set_tag: begin
         tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
         for (integer i = 0; i < dcache_assoc_p; i++) begin
           tag_mem_mask_li[i].coh_state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
           tag_mem_mask_li[i].tag = {ptag_width_lp{lce_tag_mem_way_one_hot[i]}};
+        end
+      end
+      e_cache_tag_mem_set_state: begin
+        tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
+        for (integer i = 0; i < dcache_assoc_p; i++) begin
+          tag_mem_mask_li[i].coh_state = {$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].tag = {ptag_width_lp{1'b0}};
         end
       end
       default: begin
@@ -1193,7 +1193,7 @@ module bp_be_dcache
       end else if (sc_op_tv_r) begin
         load_reserved_v_r <= 1'b0;
       // Invalidates from other harts which match the reservation address clear the reservation
-      end else if (tag_mem_pkt_v & (tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
+      end else if (tag_mem_pkt_v & ((tag_mem_pkt.opcode == e_cache_tag_mem_set_state) && (tag_mem_pkt.state == e_COH_I))
                   & (tag_mem_pkt.tag == load_reserved_tag_r)
                   & (tag_mem_pkt.index == load_reserved_index_r)) begin
         load_reserved_v_r <= 1'b0;

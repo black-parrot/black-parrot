@@ -189,11 +189,12 @@ module bp_me_nonsynth_cce_tracer
         end
 
         else begin
-        $fdisplay(file, "[%t]: CCE[%0d] CMD LCE[%0d] addr[%H] wg[%0d] cmd[%4b] way[%0d] st[%3b] tgt[%0d] tgtWay[%0d]"
+        $fdisplay(file, "[%t]: CCE[%0d] CMD LCE[%0d] addr[%H] wg[%0d] cmd[%4b] way[%0d] st[%3b] tgt[%0d] tgtWay[%0d] tgtSt[%3b]"
                  , $time, lce_cmd.header.src_id, lce_cmd.header.dst_id, lce_cmd.header.addr
                  , lce_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , lce_cmd.header.msg_type, lce_cmd.header.way_id
                  , lce_cmd.header.state, lce_cmd.header.target, lce_cmd.header.target_way_id
+                 , lce_cmd.header.target_state
                  );
         end
       end
