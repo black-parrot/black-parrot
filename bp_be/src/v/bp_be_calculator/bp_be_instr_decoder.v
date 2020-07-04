@@ -83,7 +83,7 @@ always_comb
 
     illegal_instr        = '0;
 
-    unique casez (instr.opcode) 
+    unique casez (instr.t.rtype.opcode) 
       `RV64_OP_OP, `RV64_OP_32_OP : 
         begin
           if (instr inside {`RV64_MUL, `RV64_MULW})
@@ -97,7 +97,7 @@ always_comb
 
           // The writeback for long latency ops comes out of band
           decode.irf_w_v    = ~decode.pipe_long_v;
-          decode.opw_v      = (instr.opcode == `RV64_OP_32_OP);
+          decode.opw_v      = (instr.t.rtype.opcode == `RV64_OP_32_OP);
           unique casez (instr)
             `RV64_ADD, `RV64_ADDW : decode.fu_op = e_int_op_add;
             `RV64_SUB, `RV64_SUBW : decode.fu_op = e_int_op_sub;
@@ -126,7 +126,7 @@ always_comb
         begin
           decode.pipe_int_v = 1'b1;
           decode.irf_w_v    = 1'b1;
-          decode.opw_v      = (instr.opcode == `RV64_OP_IMM_32_OP);
+          decode.opw_v      = (instr.t.rtype.opcode == `RV64_OP_IMM_32_OP);
           unique casez (instr)
             `RV64_ADDI, `RV64_ADDIW : decode.fu_op = e_int_op_add;
             `RV64_SLLI, `RV64_SLLIW : decode.fu_op = e_int_op_sll;

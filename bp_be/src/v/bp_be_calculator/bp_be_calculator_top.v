@@ -171,9 +171,9 @@ if (fp_en_p)
     bp_be_bypass
      #(.depth_p(pipe_stage_els_lp), .els_p(3), .zero_x0_p(0))
      fp_bypass
-      (.id_addr_i({dispatch_pkt.instr.fields.fmatype.rs3_addr
-                   ,dispatch_pkt.instr.fields.fmatype.rs2_addr
-                   ,dispatch_pkt.instr.fields.fmatype.rs1_addr
+      (.id_addr_i({dispatch_pkt.instr.t.fmatype.rs3_addr
+                   ,dispatch_pkt.instr.t.fmatype.rs2_addr
+                   ,dispatch_pkt.instr.t.fmatype.rs1_addr
                    })
        ,.id_i({dispatch_pkt.imm, dispatch_pkt.rs2, dispatch_pkt.rs1})
     
@@ -220,7 +220,7 @@ else
 bp_be_bypass
  #(.depth_p(pipe_stage_els_lp), .els_p(2), .zero_x0_p(1))
  int_bypass
-  (.id_addr_i({dispatch_pkt.instr.fields.rtype.rs2_addr, dispatch_pkt.instr.fields.rtype.rs1_addr})
+  (.id_addr_i({dispatch_pkt.instr.t.rtype.rs2_addr, dispatch_pkt.instr.t.rtype.rs1_addr})
    ,.id_i({dispatch_pkt.rs2, dispatch_pkt.rs1})
 
    ,.fwd_rd_v_i(comp_stage_n_slice_iwb_v)
@@ -554,7 +554,7 @@ always_comb
         calc_status.dep_status[i].fp_fwb_v  = calc_stage_r[i].pipe_fp_v  
                                               & ~exc_stage_n[i+1].poison_v
                                               & calc_stage_r[i].frf_w_v;
-        calc_status.dep_status[i].rd_addr   = calc_stage_r[i].instr.fields.rtype.rd_addr;
+        calc_status.dep_status[i].rd_addr   = calc_stage_r[i].instr.t.rtype.rd_addr;
         calc_status.dep_status[i].mem_v     = calc_stage_r[i].mem_v & ~exc_stage_n[i+1].poison_v;
         calc_status.dep_status[i].serial_v  = calc_stage_r[i].serial_v & ~exc_stage_n[i+1].poison_v;
       end
@@ -564,7 +564,7 @@ always_comb
       begin : comp_stage_slice
         comp_stage_n_slice_iwb_v[i]   = calc_stage_n[i].irf_w_v & ~exc_stage_n[i].poison_v; 
         comp_stage_n_slice_fwb_v[i]   = calc_stage_n[i].frf_w_v & ~exc_stage_n[i].poison_v; 
-        comp_stage_n_slice_rd_addr[i] = calc_stage_n[i].instr.fields.rtype.rd_addr;
+        comp_stage_n_slice_rd_addr[i] = calc_stage_n[i].instr.t.rtype.rd_addr;
 
         comp_stage_n_slice_rd[i]      = comp_stage_n[i];
       end
@@ -617,7 +617,7 @@ assign commit_pkt.npc        = calc_stage_r[1].pc;
 assign commit_pkt.instr      = calc_stage_r[2].instr;
 
 assign calc_wb_pkt.rd_w_v  = calc_stage_r[4].irf_w_v & ~exc_stage_r[4].poison_v;
-assign calc_wb_pkt.rd_addr = calc_stage_r[4].instr.fields.rtype.rd_addr;
+assign calc_wb_pkt.rd_addr = calc_stage_r[4].instr.t.rtype.rd_addr;
 assign calc_wb_pkt.rd_data = comp_stage_r[4];
 
 assign wb_pkt_o = pipe_long_data_lo_v ? long_wb_pkt : calc_wb_pkt;

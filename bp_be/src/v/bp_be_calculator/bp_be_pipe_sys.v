@@ -95,7 +95,7 @@ wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
 always_comb
   begin
     csr_cmd_li.csr_op   = decode.fu_op;
-    csr_cmd_li.csr_addr = instr.fields.itype.imm12;
+    csr_cmd_li.csr_addr = instr.t.itype.imm12;
     csr_cmd_li.data     = csr_imm_op ? imm_i : rs1_i;
     csr_cmd_li.exc      = '0;
   end

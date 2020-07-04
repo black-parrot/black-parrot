@@ -89,7 +89,7 @@ module bp_be_pipe_long
      ,.reset_i(reset_i | flush_i)
      ,.en_i(v_i | v_lo)
 
-     ,.data_i({v_i, instr.fields.rtype.rd_addr, decode.fu_op, decode.opw_v})
+     ,.data_i({v_i, instr.t.rtype.rd_addr, decode.fu_op, decode.opw_v})
      ,.data_o({rd_w_v_r, rd_addr_r, fu_op_r, opw_v_r})
      );
 

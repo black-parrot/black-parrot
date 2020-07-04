@@ -121,7 +121,7 @@ always_comb
         issue_pkt.instr                  = fe_queue_cast_i.msg.fetch.instr;
 
         // Pre-decode
-        casez (fetch_instr.opcode)
+        casez (fetch_instr.t.rtype.opcode)
           `RV64_LOAD_OP, `RV64_STORE_OP, `RV64_AMO_OP: issue_pkt.mem_v = 1'b1;
         endcase
         
@@ -132,7 +132,7 @@ always_comb
         endcase
         
         // Decide whether to read from integer regfile (saves power)
-        casez (fetch_instr.opcode)
+        casez (fetch_instr.t.rtype.opcode)
           `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
             begin 
               issue_pkt.irs1_v = '1; 
@@ -151,7 +151,7 @@ always_comb
         issue_pkt.frs2_v = '0;
 
         // Immediate extraction
-        unique casez (fetch_instr.opcode)
+        unique casez (fetch_instr.t.rtype.opcode)
           `RV64_LUI_OP, `RV64_AUIPC_OP: 
             issue_pkt.imm = `rv64_signext_u_imm(fetch_instr);
           `RV64_JAL_OP: 
@@ -202,11 +202,11 @@ bp_be_regfile
    ,.rd_data_i(wb_pkt.rd_data)
 
    ,.rs1_r_v_i(issue_v & issue_pkt.irs1_v)
-   ,.rs1_addr_i(issue_pkt.instr.fields.rtype.rs1_addr)
+   ,.rs1_addr_i(issue_pkt.instr.t.rtype.rs1_addr)
    ,.rs1_data_o(irf_rs1)
 
    ,.rs2_r_v_i(issue_v & issue_pkt.irs2_v)
-   ,.rs2_addr_i(issue_pkt.instr.fields.rtype.rs2_addr)
+   ,.rs2_addr_i(issue_pkt.instr.t.rtype.rs2_addr)
    ,.rs2_data_o(irf_rs2)
    );
 
@@ -236,10 +236,10 @@ always_comb
     isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
     isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
     isd_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
-    isd_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
+    isd_status.isd_rs1_addr = issue_pkt_r.instr.t.rtype.rs1_addr;
     isd_status.isd_irs2_v   = issue_pkt_v_r & issue_pkt_r.irs2_v;
     isd_status.isd_frs2_v   = issue_pkt_v_r & issue_pkt_r.frs2_v;
-    isd_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
+    isd_status.isd_rs2_addr = issue_pkt_r.instr.t.rtype.rs2_addr;
 
     // Form dispatch packet
     dispatch_pkt.v      = issue_pkt_v_r & dispatch_v_i;
