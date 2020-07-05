@@ -903,7 +903,6 @@ module bp_be_dcache
   );
 
   wire lce_data_mem_v = ((data_mem_pkt.opcode != e_cache_data_mem_uncached) 
-    & ((data_mem_pkt.opcode != e_cache_data_mem_amo) | ((lr_sc_p == e_l1) & (amo_fetch_logic_p == e_none) & (amo_fetch_arithmetic_p == e_none))))
     & data_mem_pkt_yumi_o;
 
   assign data_mem_v_li = lce_data_mem_v 

@@ -80,8 +80,6 @@ typedef enum logic [1:0] {
  e_cache_data_mem_read,
  // write uncached load data
  e_cache_data_mem_uncached,
- // write L2 atomic data
- e_cache_data_mem_amo
 } bp_cache_data_mem_opcode_e;
 
 `define bp_cache_data_mem_opcode_width $bits(bp_cache_data_mem_opcode_e)
