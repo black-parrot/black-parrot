@@ -34,16 +34,17 @@ module bp_nonsynth_cosim
 
     , input                                   interrupt_v_i
     , input [dword_width_p-1:0]               cause_i
-
-    , output logic                            finish_o
     );
 
 import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
-import "DPI-C" context function bit  dromajo_step(int      hart_id,
+import "DPI-C" context function bit  dromajo_step(int hartid,
                                                   longint pc,
                                                   int insn,
                                                   longint wdata);
-import "DPI-C" context function void dromajo_trap(int hart_id, longint cause);
+import "DPI-C" context function void dromajo_trap(int hartid, longint cause);
+
+import "DPI-C" context function void set_finish(int hartid);
+import "DPI-C" context function bit check_terminate();
 
 always_ff @(negedge reset_i)
   if (en_i)
@@ -98,18 +99,17 @@ always_ff @(negedge reset_i)
      ,.count_o(instr_cnt)
      );
 
-  logic finish_n, finish_r, finish_rr;
+  logic finish_n, finish_r, terminate;
   assign finish_n = finish_r | (instr_cap_i != 0 && instr_cnt == instr_cap_i);
   bsg_dff_reset
-   #(.width_p(2))
+   #(.width_p(1))
    finish_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({finish_r, finish_n})
-     ,.data_o({finish_rr, finish_r})
+     ,.data_i(finish_n)
+     ,.data_o(finish_r)
      );
-  assign finish_o = finish_r;
 
   always_ff @(negedge clk_i) begin
     if(en_i) begin
@@ -122,9 +122,13 @@ always_ff @(negedge reset_i)
         end
       end
 
-      if (finish_rr) begin
-        $display("COSIM_PASS");
-        $finish();
+      terminate <= check_terminate();
+      if(terminate) begin
+         $display("COSIM_PASS");
+         $finish();
+      end
+      if (finish_r) begin
+          set_finish(mhartid_i);
       end
     end
   end
