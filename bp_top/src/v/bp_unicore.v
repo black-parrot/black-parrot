@@ -121,6 +121,8 @@ module bp_unicore
   logic [vaddr_width_p-1:0] cfg_npc_data_li;
   logic [dword_width_p-1:0] cfg_csr_data_li;
   logic [1:0]               cfg_priv_data_li;
+  logic [7:0]               cfg_domain_data_li;
+  logic                     cfg_sac_data_li;
   logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
 
   bp_core_minimal
@@ -438,9 +440,10 @@ module bp_unicore
   /* TODO: Extract local memory map to module */
   wire local_cmd_li        = (cmd_fifo_selected_lo.header.addr < dram_base_addr_gp);
   wire [3:0] device_cmd_li = cmd_fifo_selected_lo.header.addr[20+:4];
+  wire is_other_domain     = (cmd_fifo_selected_lo.header.addr[paddr_width_p-1-:io_noc_did_width_p] != 0);
   wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
   wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
-  wire is_io_cmd           = local_cmd_li & (device_cmd_li == host_dev_gp);
+  wire is_io_cmd           = (local_cmd_li & (device_cmd_li == host_dev_gp)) | is_other_domain;
   wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_cache_cmd;
 

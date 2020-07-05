@@ -44,6 +44,8 @@ $(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
 
 NBF_INPUTS = $(NCPUS)
 NBF_INPUTS += cce_ucode.mem
+NBF_INPUTS += $(DOMAINS_P)
+NBF_INPUTS += $(SAC_P)
 ifeq ($(PRELOAD_MEM_P), 0)
 	NBF_INPUTS += --mem=prog.mem
 endif

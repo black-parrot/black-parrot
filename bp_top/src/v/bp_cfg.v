@@ -65,7 +65,7 @@ module bp_cfg
   logic         freeze_r;
   bp_lce_mode_e icache_mode_r;
   bp_lce_mode_e dcache_mode_r;
-  bp_cce_mode_e cce_mode_r;
+  bp_cce_mode_e cce_mode_r; 
 
 wire                        cfg_v_li    = mem_cmd_v_lo;
 wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_cce_mem_uc_wr);
@@ -109,7 +109,7 @@ wire [vaddr_width_p-1:0] npc_li = cfg_data_li[0+:vaddr_width_p];
 // Need to delay reads by 1 cycle here, to align with other synchronous reads
 logic [dword_width_p-1:0] npc_data_r;
 always_ff @(posedge clk_i)
-  npc_data_r <= csr_data_i;
+  npc_data_r <= npc_data_i;
 
 wire irf_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
 wire irf_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
@@ -130,6 +130,43 @@ always_ff @(posedge clk_i)
 wire priv_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire priv_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire [1:0] priv_data_li = cfg_data_li[1:0];
+
+wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_domain_mask_gp);
+wire [7:0] domain_li = cfg_data_li[7:0] | 8'h01;
+
+wire sac_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_sac_mask_gp);
+wire sac_li = cfg_data_li[0];
+
+// Address map (40 bits)
+// | did | sac_not_cc | tile ID | remaining |
+// |  3  |      1     |  log(N) |
+
+// Enabled DIDs
+logic [7:0] domain_data_r;
+bsg_dff_reset_en
+  #(.width_p(8)
+   ,.reset_val_p(1)
+   )
+   domain_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(domain_w_v_li)
+   ,.data_i(domain_li)
+   ,.data_o(domain_data_r)
+   );
+
+logic sac_data_r;
+bsg_dff_reset_en
+  #(.width_p(1)
+   ,.reset_val_p(0)
+   )
+   sac_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(sac_w_v_li)
+   ,.data_i(sac_li)
+   ,.data_o(sac_data_r)
+   );
 
 logic [core_id_width_p-1:0] core_id_li;
 logic [cce_id_width_p-1:0]  cce_id_li;
@@ -170,6 +207,8 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
                           ,priv_w_v: priv_w_v_li
                           ,priv_r_v: priv_r_v_li
                           ,priv_data: priv_data_li
+                          ,domain: domain_data_r
+                          ,sac: sac_data_r
                           };
 
   logic rdata_v_r;

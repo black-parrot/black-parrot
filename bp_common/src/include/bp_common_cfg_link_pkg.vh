@@ -25,6 +25,8 @@ package bp_common_cfg_link_pkg;
   localparam bp_cfg_reg_did_gp            = 'h0006;
   localparam bp_cfg_reg_cord_gp           = 'h0007;
   localparam bp_cfg_reg_host_did_gp       = 'h0008;
+  localparam bp_cfg_reg_domain_mask_gp    = 'h0009;
+  localparam bp_cfg_reg_sac_mask_gp       = 'h000a;
   localparam bp_cfg_reg_icache_id_gp      = 'h0021;
   localparam bp_cfg_reg_icache_mode_gp    = 'h0022;
   localparam bp_cfg_reg_npc_gp            = 'h0040;
