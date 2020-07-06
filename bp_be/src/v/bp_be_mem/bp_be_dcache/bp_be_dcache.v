@@ -821,7 +821,7 @@ module bp_be_dcache
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, bypass_data_masked})
-    ,.sel_i(uncached_tv_r)
+    ,.sel_i(uncached_tv_r | l2_amo_req)
     ,.data_o(result_data)
   );
 
@@ -854,15 +854,9 @@ module bp_be_dcache
     ,.data_o(load_data)
   );
 
-  assign data_o = decode_tv_r.load_op
+  assign data_o = (decode_tv_r.load_op | (sc_req & decode_tv_r.l2_op))
                   ? load_data
-                  : ((decode_tv_r.sc_op && (lr_sc_p == e_l1))
-                    ? decode_tv_r.sc_op & ~sc_success
-                    : ((decode_tv_r.sc_op && decode_tv_r.l2_op) | l2_amo_req)
-                      ? uncached_load_data_v_r
-                        ? uncached_load_data_r
-                        : 64'b0
-                      : decode_tv_r.sc_op && ~sc_success);
+                  : decode_tv_r.sc_op & ~sc_success;
 
   // ctrl logic
   //
