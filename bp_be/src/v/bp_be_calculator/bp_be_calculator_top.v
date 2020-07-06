@@ -483,7 +483,6 @@ module bp_be_calculator_top
       calc_stage_isd.pc             = reservation_n.pc;
       calc_stage_isd.instr          = reservation_n.instr;
       calc_stage_isd.v              = reservation_n.v;
-      calc_stage_isd.queue_v        = reservation_n.decode.queue_v;
       calc_stage_isd.instr_v        = reservation_n.decode.instr_v;
       calc_stage_isd.pipe_ctrl_v    = reservation_n.decode.pipe_ctrl_v;
       calc_stage_isd.pipe_int_v     = reservation_n.decode.pipe_int_v;
@@ -499,7 +498,7 @@ module bp_be_calculator_top
       calc_stage_isd.frf_w_v        = reservation_n.decode.frf_w_v;
   
       // Calculator status EX1 information
-      calc_status.ex1_v                    = reservation_r.decode.queue_v & ~exc_stage_r[0].poison_v;
+      calc_status.ex1_v                    = ~exc_stage_r[0].poison_v;
       calc_status.ex1_npc                  = br_tgt_int1;
       calc_status.ex1_br_or_jmp            = reservation_r.decode.pipe_ctrl_v;
       calc_status.ex1_btaken               = btaken_int1;
@@ -512,7 +511,7 @@ module bp_be_calculator_top
       // Dependency information for pipelines
       for (integer i = 0; i < pipe_stage_els_lp; i++) 
         begin : dep_status
-          calc_status.dep_status[i].v         = calc_stage_r[i].queue_v;
+          calc_status.dep_status[i].v         = calc_stage_r[i].v;
           calc_status.dep_status[i].ctrl_iwb_v = calc_stage_r[i].pipe_ctrl_v 
                                                 & ~exc_stage_n[i+1].poison_v
                                                 & calc_stage_r[i].irf_w_v;
@@ -587,7 +586,7 @@ module bp_be_calculator_top
     end
   
   assign commit_pkt.v          = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
-  assign commit_pkt.queue_v    = calc_stage_r[2].v & calc_stage_r[2].queue_v & ~exc_stage_r[2].roll_v;
+  assign commit_pkt.queue_v    = calc_stage_r[2].v & ~exc_stage_r[2].roll_v;
   assign commit_pkt.instret    = calc_stage_r[2].v & calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
   assign commit_pkt.pc         = calc_stage_r[2].pc;
   assign commit_pkt.npc        = calc_stage_r[1].pc;

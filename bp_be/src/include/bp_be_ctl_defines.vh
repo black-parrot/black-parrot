@@ -146,7 +146,7 @@ typedef enum logic
 
 typedef struct packed
 {
-  logic                             queue_v;
+  logic                             v;
   logic                             instr_v;
 
   logic                             pipe_ctrl_v;
