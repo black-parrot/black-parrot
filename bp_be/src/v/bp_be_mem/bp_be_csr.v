@@ -47,7 +47,7 @@ module bp_be_csr
 
 // Declare parameterizable structs
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_mem_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Casting input and output ports
@@ -184,7 +184,7 @@ assign exception_dec_li =
 
 logic [3:0] exception_ecode_li;
 logic       exception_ecode_v_li;
-bsg_priority_encode 
+bsg_priority_encode
  #(.width_p($bits(exception_dec_li))
    ,.lo_to_hi_p(1)
    )
@@ -218,7 +218,7 @@ bsg_priority_encode
 
 // Compute input CSR data
 wire [dword_width_p-1:0] csr_imm_li = dword_width_p'(csr_cmd.data[4:0]);
-always_comb 
+always_comb
   begin
     unique casez (csr_cmd.csr_op)
       e_csrrw : csr_data_li =  csr_cmd.data;
@@ -261,7 +261,7 @@ bsg_dff_reset
    );
 
 bsg_dff_reset
- #(.width_p(2) 
+ #(.width_p(2)
    ,.reset_val_p(`PRIV_MODE_M)
    )
  priv_mode_reg
@@ -363,7 +363,7 @@ always_comb
     illegal_instr_o  = '0;
     csr_data_lo      = '0;
     sfence_v_o       = '0;
-    
+
     if (~ebreak_v_li & csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
       begin
         debug_mode_n   = 1'b1;
@@ -410,7 +410,7 @@ always_comb
         else
           begin
             priv_mode_n      = {1'b0, mstatus_lo.spp};
-            
+
             mstatus_li.spp   = `PRIV_MODE_U;
             mstatus_li.spie  = 1'b1;
             mstatus_li.sie   = mstatus_lo.spie;
@@ -594,7 +594,7 @@ always_comb
             sepc_li              = paddr_width_p'($signed(exception_pc_i));
             // TODO: Replace with struct
             stval_li             = (exception_ecode_li == 2)
-                                  ? exception_instr_i 
+                                  ? exception_instr_i
                                   : paddr_width_p'($signed(exception_vaddr_i));
 
             scause_li._interrupt = 1'b0;
@@ -614,7 +614,7 @@ always_comb
 
             mepc_li              = paddr_width_p'($signed(exception_pc_i));
             mtval_li             = (exception_ecode_li == 2)
-                                  ? exception_instr_i 
+                                  ? exception_instr_i
                                   : paddr_width_p'($signed(exception_vaddr_i));
 
             mcause_li._interrupt = 1'b0;

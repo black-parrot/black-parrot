@@ -47,23 +47,23 @@ module bp_be_nonsynth_vm_tracer
   `declare_bp_be_mem_structs(vaddr_width_p, paddr_width_p, lce_sets_p, cce_block_width_p/8)
   bp_fe_tlb_entry_s   itlb_w_entry;
   bp_pte_entry_leaf_s dtlb_w_entry;
-  
+
   assign itlb_w_entry = itlb_entry_i;
   assign dtlb_w_entry = dtlb_entry_i;
-  
+
   integer file;
   string file_name;
 
   logic [63:0] itlb_read_count_r;
   logic [63:0] dtlb_read_count_r;
-  
+
   wire delay_li = reset_i | freeze_i;
   always_ff @(negedge delay_li)
     begin
       file_name = $sformatf("%s_%x.trace", vm_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
     end
-  
+
   always_ff @(negedge clk_i)
     begin
       if (itlb_clear_i)

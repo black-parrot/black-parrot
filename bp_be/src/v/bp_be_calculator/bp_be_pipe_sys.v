@@ -2,11 +2,11 @@
  *
  * Name:
  *   bp_be_pipe_sys.v
- * 
+ *
  * Description:
  *
  * Notes:
- *   
+ *
  */
 module bp_be_pipe_sys
  import bp_common_pkg::*;
@@ -65,7 +65,7 @@ module bp_be_pipe_sys
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_mem_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
-  
+
   bp_be_dispatch_pkt_s reservation;
   bp_be_decode_s decode;
   bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r, csr_cmd_lo;
@@ -75,13 +75,13 @@ module bp_be_pipe_sys
   bp_be_commit_pkt_s commit_pkt;
   bp_be_trap_pkt_s trap_pkt;
   bp_be_trans_info_s trans_info;
-  
+
   assign ptw_miss_pkt_o = ptw_miss_pkt;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
   assign commit_pkt = commit_pkt_i;
   assign trap_pkt_o = trap_pkt;
   assign trans_info_o = trans_info;
-  
+
   assign reservation = reservation_i;
   assign decode = reservation.decode;
   assign instr  = reservation.instr;
@@ -89,9 +89,9 @@ module bp_be_pipe_sys
   wire [dword_width_p-1:0] rs1 = reservation.rs1[0+:dword_width_p];
   wire [dword_width_p-1:0] rs2 = reservation.rs2[0+:dword_width_p];
   wire [dword_width_p-1:0] imm = reservation.imm[0+:dword_width_p];
-  
+
   wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
-  
+
   always_comb
     begin
       csr_cmd_li.csr_op   = decode.fu_op;
@@ -99,7 +99,7 @@ module bp_be_pipe_sys
       csr_cmd_li.data     = csr_imm_op ? imm : rs1;
       csr_cmd_li.exc      = '0;
     end
-  
+
   logic csr_cmd_v_lo;
   bsg_shift_reg
    #(.width_p($bits(bp_be_csr_cmd_s))
@@ -108,14 +108,14 @@ module bp_be_pipe_sys
    csr_shift_reg
     (.clk(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.valid_i(decode.csr_v)
      ,.data_i(csr_cmd_li)
-  
+
      ,.valid_o(csr_cmd_v_lo)
      ,.data_o(csr_cmd_r)
      );
-  
+
   // Track if an incoming tlb miss is store or load
   logic is_store_r;
   bsg_dff_chain
@@ -124,11 +124,11 @@ module bp_be_pipe_sys
      )
    store_reg
     (.clk_i(clk_i)
-  
+
      ,.data_i(decode.dcache_w_v)
      ,.data_o(is_store_r)
      );
-  
+
   always_comb
     begin
       ptw_miss_pkt.instr_miss_v = ~kill_ex3_i & csr_cmd_lo.exc.itlb_miss;
@@ -137,11 +137,11 @@ module bp_be_pipe_sys
       ptw_miss_pkt.pc = exception_pc_i;
       ptw_miss_pkt.vaddr = csr_cmd_lo.exc.itlb_miss ? exception_pc_i : exception_vaddr_i;
     end
-  
+
   always_comb
     begin
       csr_cmd_lo = csr_cmd_r;
-  
+
       if (ptw_fill_pkt.instr_page_fault_v)
         begin
           csr_cmd_lo.exc.instr_page_fault = 1'b1;
@@ -175,29 +175,29 @@ module bp_be_pipe_sys
     csr
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.cfg_bus_i(cfg_bus_i)
      ,.cfg_csr_data_o(cfg_csr_data_o)
      ,.cfg_priv_data_o(cfg_priv_data_o)
-  
+
      ,.csr_cmd_i(csr_cmd_lo)
      ,.csr_cmd_v_i(csr_cmd_v_lo & ~kill_ex3_i)
      ,.csr_data_o(data_o)
-  
+
      ,.instret_i(commit_pkt.instret)
-  
+
      ,.exception_v_i(exception_v_li)
      ,.exception_pc_i(exception_pc_li)
      ,.exception_npc_i(exception_npc_li)
      ,.exception_vaddr_i(exception_vaddr_li)
      ,.exception_instr_i(exception_instr_li)
-  
+
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
      ,.interrupt_ready_o(interrupt_ready_o)
      ,.interrupt_v_i(interrupt_v_i)
-  
+
      ,.trap_pkt_o(trap_pkt)
      ,.trans_info_o(trans_info)
      );

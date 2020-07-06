@@ -193,7 +193,7 @@
    + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
    + 6                                                                                             \
-   )                                                                                               
+   )
 
 `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
   (2                                                                                               \
@@ -201,7 +201,7 @@
    + rv64_instr_width_gp                                                                           \
    + 3 * rv64_reg_data_width_gp                                                                    \
    + `bp_be_decode_width                                                                           \
-   )                                                                                               
+   )
 
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
@@ -223,14 +223,14 @@
    + vaddr_width_p                                                                                 \
    + 5                                                                                             \
    + 6 * `bp_be_dep_status_width                                                                   \
-   )                                                                                               
+   )
 
 `define bp_be_commit_pkt_width(vaddr_width_mp) \
   (3                                                                                               \
    + 2 * vaddr_width_mp                                                                            \
    + instr_width_p                                                                                 \
    )
- 
+
 `define bp_be_trap_pkt_width(vaddr_width_mp) \
   (1 * vaddr_width_mp + rv64_priv_width_gp + 8)
 

@@ -45,19 +45,19 @@ module bp_be_pipe_long
   logic [dword_width_p-1:0] op_a, op_b;
   always_comb
     begin
-      op_a = decode.opw_v 
+      op_a = decode.opw_v
              ? signed_div_li
                ? dword_width_p'($signed(rs1[0+:word_width_p]))
                : rs1[0+:word_width_p]
              : rs1;
-      op_b = decode.opw_v 
+      op_b = decode.opw_v
              ? signed_div_li
                ? dword_width_p'($signed(rs2[0+:word_width_p]))
                : rs2[0+:word_width_p]
              : rs2;
     end
 
-  // We actual could exit early here 
+  // We actual could exit early here
   logic [dword_width_p-1:0] quotient_lo, remainder_lo;
   logic idiv_ready_lo;
   logic v_lo;

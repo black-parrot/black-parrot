@@ -2,12 +2,12 @@
  *
  * Name:
  *   bp_be_pipe_int.v
- * 
+ *
  * Description:
  *   Pipeline for RISC-V integer instructions. Handles integer computation.
  *
  * Notes:
- *   
+ *
  */
 module bp_be_pipe_ctrl
  import bp_common_pkg::*;
@@ -33,7 +33,7 @@ module bp_be_pipe_ctrl
   // Suppress unused signal warning
   wire unused0 = clk_i;
   wire unused1 = reset_i;
-  
+
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_dispatch_pkt_s reservation;
   bp_be_decode_s decode;
@@ -44,7 +44,7 @@ module bp_be_pipe_ctrl
   wire [dword_width_p-1:0] rs1 = reservation.rs1[0+:dword_width_p];
   wire [dword_width_p-1:0] rs2 = reservation.rs2[0+:dword_width_p];
   wire [dword_width_p-1:0] imm = reservation.imm[0+:dword_width_p];
-  
+
   logic btaken;
   always_comb
     if (decode.pipe_ctrl_v)
@@ -63,11 +63,11 @@ module bp_be_pipe_ctrl
       begin
         btaken = 1'b0;
       end
-  
+
   wire [vaddr_width_p-1:0] baddr = decode.baddr_sel ? rs1 : pc;
   wire [vaddr_width_p-1:0] taken_tgt = baddr + imm;
   wire [vaddr_width_p-1:0] ntaken_tgt = pc + 4'd4;
-  
+
   assign data_o   = vaddr_width_p'($signed(ntaken_tgt));
   assign br_tgt_o = btaken ? {taken_tgt[vaddr_width_p-1:1], 1'b0} : ntaken_tgt;
   assign btaken_o = btaken;

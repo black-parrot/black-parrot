@@ -204,7 +204,7 @@ module bp_be_dcache
   logic gdirty_r;
 
   assign tl_we = v_i;
-  
+
   always_ff @ (negedge clk_i) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
@@ -872,15 +872,15 @@ module bp_be_dcache
     ,.o(wbuf_data_mem_v)
   );
 
-  wire lce_data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached) 
+  wire lce_data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
     & data_mem_pkt_yumi_o;
 
-  assign data_mem_v_li = lce_data_mem_v 
+  assign data_mem_v_li = lce_data_mem_v
     ? {dcache_assoc_p{lce_data_mem_v}}
     : wbuf_yumi_li
       ? wbuf_data_mem_v
       : {dcache_assoc_p{decode_lo.load_op & tl_we}};
- 
+
   assign data_mem_w_li = wbuf_yumi_li
     | (data_mem_pkt_yumi_o & data_mem_pkt.opcode == e_cache_data_mem_write);
 
@@ -1116,7 +1116,7 @@ module bp_be_dcache
           load_reserved_v_r <= 1'b0;
         // Invalidates from other harts which match the reservation address clear the reservation
         end else if (tag_mem_pkt_v & (tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
-                    & (tag_mem_pkt.tag == load_reserved_tag_r) 
+                    & (tag_mem_pkt.tag == load_reserved_tag_r)
                     & (tag_mem_pkt.index == load_reserved_index_r)) begin
           load_reserved_v_r <= 1'b0;
         end

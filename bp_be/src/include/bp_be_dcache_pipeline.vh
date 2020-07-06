@@ -1,8 +1,8 @@
 /**
- *  Name: 
+ *  Name:
  *    bp_be_dcache_pipeline.vh
  *
- *  Description: 
+ *  Description:
  *    Structs used for dcache pipeline
  */
 
@@ -31,7 +31,7 @@
     logic byte_op;                                                                 \
     logic fencei_op;                                                               \
     logic l2_op;                                                                   \
-  } bp_be_dcache_pipeline_s; 
+  } bp_be_dcache_pipeline_s;
 
 `define bp_be_dcache_pipeline_struct_width                                         \
   (2 + 1 + 11 + 4 + 1 + 1)

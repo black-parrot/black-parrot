@@ -2,15 +2,15 @@
  *
  * Name:
  *   bp_be_regfile.v
- * 
+ *
  * Description:
  *   Synchronous register file wrapper for integer and floating point RISC-V registers. Inlcudes
  *     logic to maintain the source register values during pipeline stalls.
  *
  * Notes:
- *   - Is it okay to continuously read on stalls? There's no switching, so energy may not 
+ *   - Is it okay to continuously read on stalls? There's no switching, so energy may not
  *       be an issue.  An alternative would be to save the read data, but that's more flops / power
- *   - Should we read the regfile at all for x0? The memory will be a power of 2 size, so it comes 
+ *   - Should we read the regfile at all for x0? The memory will be a power of 2 size, so it comes
  *       down to if writing / reading x0 and then muxing is less power than checking x == 0 on input.
  */
 
@@ -76,7 +76,7 @@ module bp_be_regfile
      ,.data_i(rd_data_i)
      ,.data_o(rd_data_r)
      );
-  
+
   for (genvar i = 0; i < read_ports_p; i++)
     begin : bypass
       logic fwd_rs_r, rs_r_v_r;
@@ -98,11 +98,11 @@ module bp_be_regfile
        rs_addr_reg
         (.clk_i(clk_i)
          ,.en_i(rs_r_v_i[i])
-  
+
          ,.data_i(rs_addr_i[i])
          ,.data_o(rs_addr_r)
          );
-  
+
       logic [dword_width_p-1:0] rs_data_n, rs_data_r;
       wire replace_rs = rd_w_v_i & (rs_addr_r == rd_addr_i);
       assign rs_data_n = replace_rs ? rd_data_i : fwd_data_lo;
@@ -125,5 +125,5 @@ module bp_be_regfile
       assign rs_data_o[i] = rs_r_v_r ? fwd_data_lo : rs_data_r;
     end
 
-endmodule 
+endmodule
 
