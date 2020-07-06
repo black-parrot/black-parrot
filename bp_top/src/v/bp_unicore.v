@@ -1,6 +1,7 @@
 // TODO: the mem_port data width between UCE and L2 is defined by cce_mem_if_data_width_p,
 // However, the data_width of IO cmd/resp and the mem_cmd/resp going outside of the unicore 
 // is still cce_block_width. Therefore, additional transformation is reuqiurd.
+// fill_width should be equal to cce_mem_if_data_width_p
 
 module bp_unicore
  import bsg_wormhole_router_pkg::*;
@@ -39,11 +40,11 @@ module bp_unicore
    , input                                             io_resp_ready_i
 
    // Memory Requests
-   , output [cce_mem_msg_width_lp-1:0]                  mem_cmd_o
+   , output [cce_mem_msg_width_lp-1:0]                 mem_cmd_o
    , output                                            mem_cmd_v_o
    , input                                             mem_cmd_ready_i
 
-   , input [cce_mem_msg_width_lp-1:0]                   mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
    , input                                             mem_resp_v_i
    , output                                            mem_resp_yumi_o
    );
@@ -57,7 +58,9 @@ module bp_unicore
 
   `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
   `bp_cast_o(bp_cce_mem_msg_s, io_cmd);
+  `bp_cast_o(bp_cce_mem_msg_s, io_resp);
   `bp_cast_i(bp_cce_mem_msg_s, mem_resp);
+  `bp_cast_i(bp_cce_mem_msg_s, io_cmd);
   `bp_cast_i(bp_cce_mem_msg_s, io_resp);
 
   bp_dcache_req_s dcache_req_lo;
@@ -338,13 +341,39 @@ module bp_unicore
      );
 
   // Assign incoming I/O as basically another UCE interface
-  assign proc_cmd_lo[2] = io_cmd_i;
+  if (cce_block_width_p != cce_mem_if_data_width_p) 
+    begin
+      // Changing the width of data given cce_block_width != cce_mem_if_data_width
+      assign proc_cmd_lo[2].header = io_cmd_cast_i.header;
+      assign proc_cmd_lo[2].data = io_cmd_cast_i.data[0+:cce_mem_if_data_width_p];
+      assign io_resp_cast_o.header = proc_resp_li[2].header;  
+      assign io_resp_cast_o.data = {(cce_block_width_p - cce_mem_if_data_width_p)'(0), proc_resp_li[2].data};
+    end
+  else 
+    begin
+      assign proc_cmd_lo[2] = io_cmd_cast_i;  
+      assign io_resp_cast_o = proc_resp_li[2]; 
+    end
   assign proc_cmd_v_lo[2] = io_cmd_v_i;
   assign io_cmd_yumi_o = proc_cmd_ready_li[2] & proc_cmd_v_lo[2];
 
-  assign io_resp_o = proc_resp_li[2];
   assign io_resp_v_o = proc_resp_v_li[2];
   assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
+
+  bp_uce_l2_msg_s io_resp_shrinked_i, io_cmd_shrinked_o;
+  if (cce_block_width_p != cce_mem_if_data_width_p)
+    // Changing the width of data given cce_block_width != cce_mem_if_data_width
+    begin
+      assign io_resp_shrinked_i.header = io_resp_cast_i.header;
+      assign io_resp_shrinked_i.data = io_resp_cast_i.data[0+:cce_mem_if_data_width_p];
+      assign io_cmd_cast_o.header = io_cmd_shrinked_o.header;
+      assign io_cmd_cast_o.data = {(cce_block_width_p - cce_mem_if_data_width_p)'(0), io_cmd_shrinked_o.data};
+    end
+  else
+    begin
+      assign io_resp_shrinked_i = io_resp_cast_i;
+      assign io_cmd_cast_o = io_cmd_shrinked_o;
+    end
 
   // Command/response FIFOs for timing and helpfulness
   bp_uce_l2_msg_s [2:0] cmd_fifo_lo;
@@ -406,7 +435,7 @@ module bp_unicore
      ,.sel_one_hot_i(cmd_fifo_yumi_li)
      ,.data_o(cmd_fifo_selected_lo)
      );
-  assign {loopback_cmd_li, cache_cmd_li, io_cmd_cast_o, clint_cmd_li, cfg_cmd_li} = {5{cmd_fifo_selected_lo}};
+  assign {loopback_cmd_li, cache_cmd_li, io_cmd_shrinked_o, clint_cmd_li, cfg_cmd_li} = {5{cmd_fifo_selected_lo}};
 
   // Response arbitration logic
   // UCEs may send two commands as part of a writeback routine. Responses can come back in
@@ -428,7 +457,7 @@ module bp_unicore
       bsg_mux_one_hot
        #(.width_p($bits(bp_uce_l2_msg_s)), .els_p(5))
        resp_select
-        (.data_i({loopback_resp_lo, cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
+        (.data_i({loopback_resp_lo, cache_resp_lo, io_resp_shrinked_i, clint_resp_lo, cfg_resp_lo})
          ,.sel_one_hot_i({loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
          ,.data_o(resp_fifo_selected_li)
          );
@@ -498,11 +527,22 @@ module bp_unicore
     end
   else
     begin : no_l2
-      assign mem_cmd_cast_o = cache_cmd_li;
+      if (cce_block_width_p != cce_mem_if_data_width_p)
+        begin
+          // Changing the width of data given cce_block_width != cce_mem_if_data_width 
+          assign mem_cmd_cast_o.header = cache_cmd_li.header;   
+          assign mem_cmd_cast_o.data = {(cce_block_width_p - cce_mem_if_data_width_p)'(0), cache_cmd_li.data};
+          assign cache_resp_lo.header = mem_resp_cast_i.header;
+          assign cache_resp_lo.data = mem_resp_cast_i.data[0+:cce_mem_if_data_width_p];
+        end
+      else
+        begin 
+          assign mem_cmd_cast_o = cache_cmd_li;
+          assign cache_resp_lo = mem_resp_cast_i;
+        end
       assign mem_cmd_v_o = cache_cmd_v_li;
       assign cache_cmd_ready_lo = mem_cmd_ready_i;
 
-      assign cache_resp_lo = mem_resp_cast_i;
       assign cache_resp_v_lo = mem_resp_v_i;
       assign mem_resp_yumi_o = cache_resp_yumi_li;
     end

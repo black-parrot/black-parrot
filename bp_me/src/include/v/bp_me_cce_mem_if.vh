@@ -84,16 +84,16 @@ typedef enum logic [3:0]
 `define declare_bp_cce_mem_msg_s(addr_width_mp, data_width_mp, name_mp)  \
   typedef struct packed                                         \
   {                                                             \
-    bp_cce_mem_msg_payload_s                     payload;       \
+    bp_``name_mp``_msg_payload_s                 payload;       \
     bp_mem_msg_size_e                            size;          \
     logic [addr_width_mp-1:0]                    addr;          \
     bp_cce_mem_cmd_type_e                        msg_type;      \
-  } bp_``name_mp``_msg_header_s;                                    \
+  } bp_``name_mp``_msg_header_s;                                \
                                                                 \
   typedef struct packed                                         \
   {                                                             \
     logic [data_width_mp-1:0]                    data;          \
-    bp_cce_mem_msg_header_s                      header;        \
+    bp_``name_mp``_msg_header_s                  header;        \
   } bp_``name_mp``_msg_s;
 
 /*

@@ -73,6 +73,8 @@ initial
     $fatal("Error: Cache fill width should be less or equal to L1 cache block width");
   if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0) || (dcache_fill_width_p % (dcache_block_width_p / dcache_assoc_p) != 0))
     $fatal("Error: Cache fill width should be a multiple of cache bank width");
+  if ((icache_fill_width_p > cce_mem_if_data_width_p) || (dcache_fill_width_p > cce_mem_if_data_width_p))
+    $fatal("Error: Cache fill width should be equal to or less than the data width between UCE and L2");
 
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
