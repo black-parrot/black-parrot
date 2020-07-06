@@ -84,22 +84,13 @@ typedef enum logic [5:0]
   ,e_csrrsi = 6'b000101
   ,e_csrrci = 6'b000110
 
-  // TODO: Separate out CSR op from exceptions based on flag
-  ,e_ecall      = 6'b000111
   ,e_dret       = 6'b010011
   ,e_mret       = 6'b001000
   ,e_sret       = 6'b001001
-  ,e_ebreak     = 6'b001010
   ,e_sfence_vma = 6'b001011
   ,e_wfi        = 6'b001100
-
-  // We treat FE exceptions as CSR ops
-  ,e_op_take_interrupt     = 6'b011000
-  ,e_op_instr_access_fault = 6'b011001
-  ,e_op_instr_page_fault   = 6'b011010
-  ,e_op_instr_misaligned   = 6'b011011
-  ,e_op_illegal_instr      = 6'b011111
-  ,e_itlb_fill             = 6'b011100
+  ,e_ebreak     = 6'b010100
+  ,e_ecall      = 6'b011011
 } bp_be_csr_fu_op_e;
 
 typedef enum logic [5:0]

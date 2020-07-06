@@ -188,8 +188,8 @@ module bp_be_dcache
   bp_be_dcache_decoder
   #(.bp_params_p(bp_params_p))
     pkt_decoder
-    (.dcache_pkt_i(dcache_pkt_i)
-    ,.dcache_decoded_o(decode_lo)
+    (.pkt_i(dcache_pkt_i)
+    ,.decoded_o(decode_lo)
     );
 
   assign addr_index = dcache_pkt.page_offset[block_offset_width_lp+:index_width_lp];
@@ -379,20 +379,18 @@ module bp_be_dcache
   logic fencei_req;
 
   // For L2 atomics
-  wire lr_req = v_tv_r & decode_tv_r.lr_op & decode_tv_r.l2_op;
-  wire sc_req = v_tv_r & decode_tv_r.sc_op & decode_tv_r.l2_op;
-  wire amoswap_req = v_tv_r & decode_tv_r.amoswap_op & decode_tv_r.l2_op;
-  wire amoadd_req = v_tv_r & decode_tv_r.amoadd_op & decode_tv_r.l2_op;
-  wire amoxor_req = v_tv_r & decode_tv_r.amoxor_op & decode_tv_r.l2_op;
-  wire amoand_req = v_tv_r & decode_tv_r.amoand_op & decode_tv_r.l2_op;
-  wire amoor_req = v_tv_r & decode_tv_r.amoor_op & decode_tv_r.l2_op;
-  wire amomin_req = v_tv_r & decode_tv_r.amomin_op & decode_tv_r.l2_op;
-  wire amomax_req = v_tv_r & decode_tv_r.amomax_op & decode_tv_r.l2_op;
-  wire amominu_req = v_tv_r & decode_tv_r.amominu_op & decode_tv_r.l2_op;
-  wire amomaxu_req = v_tv_r & decode_tv_r.amomaxu_op & decode_tv_r.l2_op;
-  wire amo_req = lr_req | sc_req | amoswap_req | amoadd_req | amoxor_req
-                   | amoand_req | amoor_req | amomin_req | amomax_req
-                   | amominu_req | amomaxu_req;
+  wire lr_req      = v_tv_r & decode_tv_r.lr_op;
+  wire sc_req      = v_tv_r & decode_tv_r.sc_op;
+  wire amoswap_req = v_tv_r & decode_tv_r.amoswap_op;
+  wire amoadd_req  = v_tv_r & decode_tv_r.amoadd_op;
+  wire amoxor_req  = v_tv_r & decode_tv_r.amoxor_op;
+  wire amoand_req  = v_tv_r & decode_tv_r.amoand_op;
+  wire amoor_req   = v_tv_r & decode_tv_r.amoor_op;
+  wire amomin_req  = v_tv_r & decode_tv_r.amomin_op;
+  wire amomax_req  = v_tv_r & decode_tv_r.amomax_op;
+  wire amominu_req = v_tv_r & decode_tv_r.amominu_op;
+  wire amomaxu_req = v_tv_r & decode_tv_r.amomaxu_op;
+  wire l2_amo_req  = v_tv_r & decode_tv_r.l2_op;
 
   // Uncached and L2 atomic refactor
   // TODO: Figure out a better name for these signals
@@ -427,8 +425,8 @@ module bp_be_dcache
      ,.v_o(load_hit_tv)
      );
 
-  wire load_miss_tv = ~load_hit_tv & v_tv_r & decode_tv_r.load_op & ~uncached_tv_r & ~amo_req;
-  wire store_miss_tv = ~store_hit_tv & v_tv_r & decode_tv_r.store_op & ~uncached_tv_r & ~decode_tv_r.sc_op & ~amo_req;
+  wire load_miss_tv = ~load_hit_tv & v_tv_r & decode_tv_r.load_op & ~uncached_tv_r & ~l2_amo_req;
+  wire store_miss_tv = ~store_hit_tv & v_tv_r & decode_tv_r.store_op & ~uncached_tv_r & ~decode_tv_r.sc_op & ~l2_amo_req;
   wire lr_miss_tv = v_tv_r & decode_tv_r.lr_op & ~store_hit_tv & (lr_sc_p == e_l1);
   wire wt_miss_tv = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
 
@@ -606,8 +604,8 @@ module bp_be_dcache
     cache_req_cast_o = '0;
 
     // Assigning sizes to cache miss packet
-    if (uncached_tv_r | wt_req | amo_req) begin
-      if (decode_tv_r.double_op)
+    if (uncached_tv_r | wt_req | l2_amo_req) begin
+      unique if (decode_tv_r.double_op)
         cache_req_cast_o.size = e_size_8B;
       else if (decode_tv_r.word_op)
         cache_req_cast_o.size = e_size_4B;
@@ -615,8 +613,6 @@ module bp_be_dcache
         cache_req_cast_o.size = e_size_2B;
       else if (decode_tv_r.byte_op)
         cache_req_cast_o.size = e_size_1B;
-      else
-        cache_req_cast_o.size = e_size_8B;
     end
     else
       cache_req_cast_o.size = e_size_64B;
@@ -633,49 +629,30 @@ module bp_be_dcache
       cache_req_cast_o.msg_type = e_wt_store;
       cache_req_v_o = cache_req_ready_i & ~poison_i;
     end
-    else if(lr_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_lr;
+    else if (l2_amo_req & ~uncached_load_data_v_r) begin
       cache_req_v_o = cache_req_ready_i;
-    end
-    else if(sc_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_sc;
-      cache_req_v_o = cache_req_ready_i;
-    end
-    else if(amoswap_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_swap;
-      cache_req_v_o = cache_req_ready_i;
-    end
-    else if(amoadd_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_add;
-      cache_req_v_o = cache_req_ready_i;
-    end
-    else if(amoxor_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_xor;
-      cache_req_v_o = cache_req_ready_i;
-    end
-    else if(amoand_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_and;
-      cache_req_v_o = cache_req_ready_i;
-    end
-    else if(amoor_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_or;
-      cache_req_v_o = cache_req_ready_i;
-    end
-    else if(amomin_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_min;
-      cache_req_v_o = cache_req_ready_i;
-    end
-    else if(amomax_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_max;
-      cache_req_v_o = cache_req_ready_i;
-    end
-    else if(amominu_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_minu;
-      cache_req_v_o = cache_req_ready_i;
-    end
-    else if(amomaxu_req & ~uncached_load_data_v_r) begin
-      cache_req_cast_o.msg_type = e_amo_maxu;
-      cache_req_v_o = cache_req_ready_i;
+      unique if (lr_req)
+        cache_req_cast_o.msg_type = e_amo_lr;
+      else if (sc_req)
+        cache_req_cast_o.msg_type = e_amo_sc;
+      else if (amoswap_req)
+        cache_req_cast_o.msg_type = e_amo_swap;
+      else if (amoadd_req)
+        cache_req_cast_o.msg_type = e_amo_add;
+      else if (amoxor_req)
+        cache_req_cast_o.msg_type = e_amo_xor;
+      else if (amoand_req)
+        cache_req_cast_o.msg_type = e_amo_and;
+      else if (amoor_req)
+        cache_req_cast_o.msg_type = e_amo_or;
+      else if (amomin_req)
+        cache_req_cast_o.msg_type = e_amo_min;
+      else if (amomax_req)
+        cache_req_cast_o.msg_type = e_amo_max;
+      else if (amominu_req)
+        cache_req_cast_o.msg_type = e_amo_minu;
+      else if (amomaxu_req)
+        cache_req_cast_o.msg_type = e_amo_maxu;
     end
     else if(uncached_load_req) begin
       cache_req_cast_o.msg_type = e_uc_load;
@@ -728,8 +705,8 @@ module bp_be_dcache
 
   assign v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
                          | (uncached_tv_r & (decode_tv_r.store_op & cache_req_ready_i))
-                         | (amo_req & uncached_load_data_v_r)
-                         | (~uncached_tv_r & ~amo_req & ~decode_tv_r.fencei_op & ~miss_tv)
+                         | (l2_amo_req & uncached_load_data_v_r)
+                         | (~uncached_tv_r & ~l2_amo_req & ~decode_tv_r.fencei_op & ~miss_tv)
                          // Always send fencei when coherent
                          | (fencei_req & (~gdirty_r | (l1_coherent_p == 1)))
                          );
@@ -881,7 +858,7 @@ module bp_be_dcache
                   ? load_data
                   : ((decode_tv_r.sc_op && (lr_sc_p == e_l1))
                     ? decode_tv_r.sc_op & ~sc_success
-                    : ((decode_tv_r.sc_op && decode_tv_r.l2_op) | amo_req)
+                    : ((decode_tv_r.sc_op && decode_tv_r.l2_op) | l2_amo_req)
                       ? uncached_load_data_v_r
                         ? uncached_load_data_r
                         : 64'b0
@@ -902,7 +879,7 @@ module bp_be_dcache
     ,.o(wbuf_data_mem_v)
   );
 
-  wire lce_data_mem_v = ((data_mem_pkt.opcode != e_cache_data_mem_uncached) 
+  wire lce_data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached) 
     & data_mem_pkt_yumi_o;
 
   assign data_mem_v_li = lce_data_mem_v 
@@ -1020,10 +997,10 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~decode_tv_r.fencei_op & ~poison_i & ~amo_req) | stat_mem_pkt_yumi_o;
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~decode_tv_r.fencei_op & ~poison_i & ~l2_amo_req) | stat_mem_pkt_yumi_o;
   assign stat_mem_w_li = stat_mem_pkt_yumi_o
     ? (stat_mem_pkt.opcode != e_cache_stat_mem_read)
-    : ~miss_tv & ~amo_req;
+    : ~miss_tv & ~l2_amo_req;
   assign stat_mem_addr_li = stat_mem_pkt_yumi_o
     ? stat_mem_pkt.index
     : addr_index_tv;
@@ -1089,10 +1066,10 @@ module bp_be_dcache
   // write buffer
   //
   if (l1_writethrough_p == 0) begin : wb_wbuf
-    assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~amo_req & ~poison_i;
+    assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~l2_amo_req & ~poison_i;
   end
   else begin : wt_wbuf
-    assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~amo_req & cache_req_ready_i & ~poison_i;
+    assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~l2_amo_req & cache_req_ready_i & ~poison_i;
   end
   assign wbuf_yumi_li = wbuf_v_lo & ~(decode_lo.load_op & tl_we) & ~data_mem_pkt_yumi_o;
 
