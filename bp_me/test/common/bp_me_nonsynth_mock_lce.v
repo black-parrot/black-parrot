@@ -58,25 +58,28 @@ module bp_me_nonsynth_mock_lce
     ,input                                                  tr_pkt_v_i
     ,output logic                                           tr_pkt_yumi_o
 
+    // ready->valid
     ,output logic [tr_ring_width_lp-1:0]                    tr_pkt_o
     ,output logic                                           tr_pkt_v_o
     ,input                                                  tr_pkt_ready_i
 
     // LCE-CCE Interface
-    // inbound: ready->valid, helpful, buffered; internally FSM uses valid->yumi
-    // outbound: ready->valid, demanding
+    // ready->valid
     ,output logic [lce_cce_req_width_lp-1:0]                lce_req_o
     ,output logic                                           lce_req_v_o
     ,input                                                  lce_req_ready_i
 
+    // ready->valid
     ,output logic [lce_cce_resp_width_lp-1:0]               lce_resp_o
     ,output logic                                           lce_resp_v_o
     ,input                                                  lce_resp_ready_i
 
+    // valid->yumi
     ,input [lce_cmd_width_lp-1:0]                           lce_cmd_i
     ,input                                                  lce_cmd_v_i
     ,output logic                                           lce_cmd_yumi_o
 
+    // ready->valid
     ,output logic [lce_cmd_width_lp-1:0]                    lce_cmd_o
     ,output logic                                           lce_cmd_v_o
     ,input                                                  lce_cmd_ready_i
@@ -329,8 +332,9 @@ module bp_me_nonsynth_mock_lce
     ,LCE_CMD_ST
     ,LCE_CMD_STW
     ,LCE_CMD_STW_RESP
+    ,LCE_CMD_ST_WB
 
-    ,LCE_CMD_ST_DATA_RESP
+    ,LCE_CMD_DATA_RESP
 
     ,TR_CMD
     ,TR_CMD_SWITCH
@@ -563,7 +567,7 @@ module bp_me_nonsynth_mock_lce
       end
       UNCACHED_SEND_REQ: begin
         // uncached access - send LCE request
-        lce_req_v_o = 1'b1;
+        lce_req_v_o = lce_req_ready_i;
 
         lce_req.header.dst_id = mshr_r.cce;
         lce_req.header.msg_type = (mshr_r.store_op) ? e_lce_req_type_uc_wr : e_lce_req_type_uc_rd;
@@ -591,7 +595,7 @@ module bp_me_nonsynth_mock_lce
         // send return packet to TR
         if (lce_cmd_v_i & lce_cmd.header.msg_type == e_lce_cmd_uc_st_done) begin
           // store sends back null packet when it receives lce_cmd back
-          tr_pkt_v_o = 1'b1;
+          tr_pkt_v_o = tr_pkt_ready_i;
           tr_pkt_lo.paddr = lce_cmd.header.addr;
           tr_pkt_lo.uncached = 1'b1;
           lce_state_n = (tr_pkt_ready_i)
@@ -607,7 +611,7 @@ module bp_me_nonsynth_mock_lce
 
         end else if (lce_cmd_v_i & lce_cmd.header.msg_type == e_lce_cmd_uc_data) begin
           // load returns the data, and must wait for lce_data_cmd to return
-          tr_pkt_v_o = 1'b1;
+          tr_pkt_v_o = tr_pkt_ready_i;
           // Extract the desired bits from the returned 64-bit dword
           tr_pkt_lo.paddr = lce_cmd.header.addr;
           tr_pkt_lo.uncached = 1'b1;
@@ -658,9 +662,8 @@ module bp_me_nonsynth_mock_lce
         lce_resp.header.src_id = lce_id_i;
         lce_resp.header.msg_type = e_lce_cce_sync_ack;
 
-        lce_resp_v_o = 1'b1;
+        lce_resp_v_o = lce_resp_ready_i;
 
-        // response goes out if inbound ready signal is high (ready&valid)
         lce_state_n = (lce_resp_ready_i) ? INIT : SEND_SYNC;
       end
       READY: begin
@@ -680,11 +683,10 @@ module bp_me_nonsynth_mock_lce
           // non-data command
           end else if (lce_cmd.header.msg_type == e_lce_cmd_inv) begin
             lce_state_n = LCE_CMD_INV;
-          end else if (lce_cmd.header.msg_type == e_lce_cmd_tr) begin
-            // Read data array
-            data_v_li = 1'b1;
-            data_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
-            lce_state_n = LCE_CMD_TR;
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_st) begin
+            lce_state_n = LCE_CMD_ST;
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_st_wakeup) begin
+            lce_state_n = LCE_CMD_STW;
           end else if (lce_cmd.header.msg_type == e_lce_cmd_wb) begin
             tag_v_li = 1'b1;
             tag_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
@@ -693,10 +695,17 @@ module bp_me_nonsynth_mock_lce
             dirty_bits_v_li = 1'b1;
             dirty_bits_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
             lce_state_n = LCE_CMD_WB;
-          end else if (lce_cmd.header.msg_type == e_lce_cmd_st) begin
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_st_wb) begin
             lce_state_n = LCE_CMD_ST;
-          end else if (lce_cmd.header.msg_type == e_lce_cmd_st_wakeup) begin
-            lce_state_n = LCE_CMD_STW;
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_tr) begin
+            // Read data array
+            data_v_li = 1'b1;
+            data_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+            lce_state_n = LCE_CMD_TR;
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_st_tr) begin
+            lce_state_n = LCE_CMD_ST;
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_st_tr_wb) begin
+            lce_state_n = LCE_CMD_ST;
           end else begin
             lce_state_n = RESET;
             $error("unrecognized LCE command received");
@@ -742,7 +751,7 @@ module bp_me_nonsynth_mock_lce
         mshr_n.data_received = 1'b1;
         mshr_n.tag_received = 1'b1;
 
-        lce_state_n = LCE_CMD_ST_DATA_RESP;
+        lce_state_n = LCE_CMD_DATA_RESP;
 
       end
       LCE_CMD_INV: begin
@@ -768,10 +777,8 @@ module bp_me_nonsynth_mock_lce
         lce_resp.header.msg_type = e_lce_cce_inv_ack;
         lce_resp.header.addr = lce_cmd_r.header.addr;
 
-        // make the LCE response valid
-        lce_resp_v_o = 1'b1;
+        lce_resp_v_o = lce_resp_ready_i;
 
-        // wait until response accepted (r&v) then go to READY
         lce_state_n = (lce_resp_ready_i) ? READY : LCE_CMD_INV_RESP;
 
       end
@@ -791,11 +798,15 @@ module bp_me_nonsynth_mock_lce
         data_v_li = ~lce_cmd_ready_i;
         data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
 
-        // make the command valid
-        lce_cmd_v_o = 1'b1;
+        lce_cmd_v_o = lce_cmd_ready_i;
 
-        // wait until data commmand out accepted (r&v), then go to ready
-        lce_state_n = (lce_cmd_ready_i) ? READY : LCE_CMD_TR;
+        // go to LCE_CMD_ST_WB if writeback is needed to read the rams for the writeback
+        // else, go to READY when transfer sends
+        lce_state_n = (lce_cmd_ready_i)
+                      ? (lce_cmd_r.header.msg_type == e_lce_cmd_st_tr_wb)
+                        ? LCE_CMD_ST_WB
+                        : READY
+                      : LCE_CMD_TR;
 
       end
       LCE_CMD_WB: begin
@@ -837,9 +848,8 @@ module bp_me_nonsynth_mock_lce
 
         end
 
-        lce_resp_v_o = 1'b1;
+        lce_resp_v_o = lce_resp_ready_i;
 
-        // wait until data response accepted (r&v), then go to ready
         lce_state_n = (lce_resp_ready_i) ? READY : LCE_CMD_WB;
 
       end
@@ -855,8 +865,30 @@ module bp_me_nonsynth_mock_lce
 
         lce_state_n = READY;
 
+        if ((lce_cmd_r.header.msg_type == e_lce_cmd_st_tr)
+            || (lce_cmd_r.header.msg_type == e_lce_cmd_st_tr_wb)) begin
+          // Read data array
+          data_v_li = 1'b1;
+          data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+          lce_state_n = LCE_CMD_TR;
+        end else if (lce_cmd_r.header.msg_type == e_lce_cmd_st_wb) begin
+          // go to next state to read tag mem (since it is busy writing with the ST command)
+          // this cycle and to read data and dirty bits memory in preparation for writeback.
+          lce_state_n = LCE_CMD_ST_WB;
+        end
       end
-      LCE_CMD_ST_DATA_RESP: begin
+      LCE_CMD_ST_WB: begin
+        // read tag, data, and dirty bit memories to determine if writeback is required
+        tag_v_li = 1'b1;
+        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        data_v_li = 1'b1;
+        data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        dirty_bits_v_li = 1'b1;
+        dirty_bits_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+
+        lce_state_n = LCE_CMD_WB;
+      end
+      LCE_CMD_DATA_RESP: begin
         // respond to the miss - tag and data both received
         // all information needed to respond is stored in mshr
 
@@ -866,12 +898,11 @@ module bp_me_nonsynth_mock_lce
         lce_resp.header.msg_type = e_lce_cce_coh_ack;
         lce_resp.header.addr = mshr_r.paddr;
 
-        // make the LCE response valid
-        lce_resp_v_o = 1'b1;
+        lce_resp_v_o = lce_resp_ready_i;
 
         // send ack in response to tag and data both received
         // then, send response back to trace replay
-        lce_state_n = (lce_resp_ready_i) ? FINISH_MISS : LCE_CMD_ST_DATA_RESP;
+        lce_state_n = (lce_resp_ready_i) ? FINISH_MISS : LCE_CMD_DATA_RESP;
       end
       LCE_CMD_STW: begin
         // set tag and wakeup command - response to a miss
@@ -897,10 +928,8 @@ module bp_me_nonsynth_mock_lce
         lce_resp.header.msg_type = e_lce_cce_coh_ack;
         lce_resp.header.addr = lce_cmd_r.header.addr;
 
-        // make the LCE response valid
-        lce_resp_v_o = 1'b1;
+        lce_resp_v_o = lce_resp_ready_i;
 
-        // wait until response accepted (r&v), then finish the miss
         lce_state_n = (lce_resp_ready_i) ? FINISH_MISS : LCE_CMD_STW_RESP;
 
       end
@@ -947,7 +976,7 @@ module bp_me_nonsynth_mock_lce
       end
       FINISH_MISS_SEND: begin
         // send return packet back to TR after CCE handles the LCE miss request
-        tr_pkt_v_o = 1'b1;
+        tr_pkt_v_o = tr_pkt_ready_i;
 
         tr_pkt_lo.paddr = mshr_r.paddr;
         tr_pkt_lo.data = '0;
@@ -1060,7 +1089,7 @@ module bp_me_nonsynth_mock_lce
         end
       end
       TR_CMD_LD_HIT_RESP: begin
-        tr_pkt_v_o = 1'b1;
+        tr_pkt_v_o = tr_pkt_ready_i;
         tr_pkt_lo.paddr = mshr_r.paddr;
 
         // select data to return
@@ -1082,7 +1111,7 @@ module bp_me_nonsynth_mock_lce
       end
       TR_CMD_LD_MISS: begin
         // load miss, send lce request
-        lce_req_v_o = 1'b1;
+        lce_req_v_o = lce_req_ready_i;
 
         lce_req.header.dst_id = mshr_r.cce;
         lce_req.header.msg_type = e_lce_req_type_rd;
@@ -1144,7 +1173,7 @@ module bp_me_nonsynth_mock_lce
         mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
 
         // output valid trace replay return packet
-        tr_pkt_v_o = 1'b1;
+        tr_pkt_v_o = tr_pkt_ready_i;
         tr_pkt_lo.paddr = mshr_r.paddr;
         // wait until packet consumed, then go to ready
         lce_state_n = (tr_pkt_ready_i) ? READY : TR_CMD_ST_HIT_RESP;
@@ -1152,7 +1181,7 @@ module bp_me_nonsynth_mock_lce
       end
       TR_CMD_ST_MISS: begin
         // store miss - block present, not writable
-        lce_req_v_o = 1'b1;
+        lce_req_v_o = lce_req_ready_i;
 
         lce_req.header.dst_id = mshr_r.cce;
         lce_req.header.msg_type = e_lce_req_type_wr;
