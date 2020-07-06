@@ -352,7 +352,7 @@ module bp_be_dcache
         decode_tv_r <= decode_tl_r;
         paddr_tv_r <= paddr_tl;
         tag_info_tv_r <= tag_mem_data_lo;
-        uncached_tv_r <= uncached_i;
+        uncached_tv_r <= uncached_i | decode_tl_r.l2_op;
         load_hit_tv_r <= load_hit_tl;
         store_hit_tv_r <= store_hit_tl;
         addr_tag_tv_r <= addr_tag_tl;
@@ -393,7 +393,6 @@ module bp_be_dcache
   wire l2_amo_req  = v_tv_r & decode_tv_r.l2_op;
 
   // Uncached and L2 atomic refactor
-  // TODO: Figure out a better name for these signals
   logic uncached_load_data_v_r;
   logic [dword_width_p-1:0] uncached_load_data_r;
 
@@ -425,8 +424,8 @@ module bp_be_dcache
      ,.v_o(load_hit_tv)
      );
 
-  wire load_miss_tv = ~load_hit_tv & v_tv_r & decode_tv_r.load_op & ~uncached_tv_r & ~l2_amo_req;
-  wire store_miss_tv = ~store_hit_tv & v_tv_r & decode_tv_r.store_op & ~uncached_tv_r & ~decode_tv_r.sc_op & ~l2_amo_req;
+  wire load_miss_tv = ~load_hit_tv & v_tv_r & decode_tv_r.load_op & ~uncached_tv_r & ~decode_tv_r.l2_op;
+  wire store_miss_tv = ~store_hit_tv & v_tv_r & decode_tv_r.store_op & ~uncached_tv_r & ~decode_tv_r.sc_op & ~decode_tv_r.l2_op;
   wire lr_miss_tv = v_tv_r & decode_tv_r.lr_op & ~store_hit_tv & (lr_sc_p == e_l1);
   wire wt_miss_tv = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
 
@@ -705,8 +704,8 @@ module bp_be_dcache
 
   assign v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
                          | (uncached_tv_r & (decode_tv_r.store_op & cache_req_ready_i))
-                         | (l2_amo_req & uncached_load_data_v_r)
-                         | (~uncached_tv_r & ~l2_amo_req & ~decode_tv_r.fencei_op & ~miss_tv)
+                         | (decode_tv_r.l2_op & uncached_load_data_v_r)
+                         | (~uncached_tv_r & ~decode_tv_r.l2_op & ~decode_tv_r.fencei_op & ~miss_tv)
                          // Always send fencei when coherent
                          | (fencei_req & (~gdirty_r | (l1_coherent_p == 1)))
                          );
@@ -821,7 +820,7 @@ module bp_be_dcache
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, bypass_data_masked})
-    ,.sel_i(uncached_tv_r | l2_amo_req)
+    ,.sel_i(uncached_tv_r)
     ,.data_o(result_data)
   );
 
@@ -991,10 +990,10 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~decode_tv_r.fencei_op & ~poison_i & ~l2_amo_req) | stat_mem_pkt_yumi_o;
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~decode_tv_r.fencei_op & ~poison_i & ~decode_tv_r.l2_op) | stat_mem_pkt_yumi_o;
   assign stat_mem_w_li = stat_mem_pkt_yumi_o
     ? (stat_mem_pkt.opcode != e_cache_stat_mem_read)
-    : ~miss_tv & ~l2_amo_req;
+    : ~miss_tv & ~decode_tv_r.l2_op;
   assign stat_mem_addr_li = stat_mem_pkt_yumi_o
     ? stat_mem_pkt.index
     : addr_index_tv;
@@ -1060,10 +1059,10 @@ module bp_be_dcache
   // write buffer
   //
   if (l1_writethrough_p == 0) begin : wb_wbuf
-    assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~l2_amo_req & ~poison_i;
+    assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & ~poison_i;
   end
   else begin : wt_wbuf
-    assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~l2_amo_req & cache_req_ready_i & ~poison_i;
+    assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & cache_req_ready_i & ~poison_i;
   end
   assign wbuf_yumi_li = wbuf_v_lo & ~(decode_lo.load_op & tl_we) & ~data_mem_pkt_yumi_o;
 
@@ -1118,7 +1117,7 @@ module bp_be_dcache
         // Invalidates from other harts which match the reservation address clear the reservation
         end else if (tag_mem_pkt_v & (tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
                     & (tag_mem_pkt.tag == load_reserved_tag_r) 
-                    & (tag_mem_pkt.index == load_reserved_index_r) & (lr_sc_p == e_l1)) begin
+                    & (tag_mem_pkt.index == load_reserved_index_r)) begin
           load_reserved_v_r <= 1'b0;
         end
       end else begin
