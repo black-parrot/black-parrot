@@ -85,6 +85,7 @@ module bp_be_instr_decoder
       decode.result_sel    = bp_be_result_e'('0);
       decode.offset_sel    = e_offset_is_imm;
 
+      imm                  = '0;
       illegal_instr        = '0;
 
       unique casez (instr.opcode)
