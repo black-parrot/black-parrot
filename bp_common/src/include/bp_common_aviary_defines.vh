@@ -337,6 +337,7 @@ typedef struct packed
   , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]                 \
                                                                                                    \
   , localparam dword_width_p       = 64                                                            \
+  , localparam word_width_p        = 32                                                            \
   , localparam instr_width_p       = 32                                                            \
   , localparam csr_addr_width_p    = 12                                                            \
   , localparam reg_addr_width_p    = 5                                                             \
