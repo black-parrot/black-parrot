@@ -305,5 +305,5 @@ the microcode assembly instructions for BedRock. Currently, BedRock is programme
 level.
 
 The microcode source files in the assembler source directory tree provide examples of
-source code implementing the EI, MSI, and MESI coherence protocols. You can find them in the
-bp\_me/src/asm/src/microcode/cce/ directory of the repository.
+source code implementing the EI, MSI, MESI, and MOESIF coherence protocols. You can find them in
+the bp\_me/src/asm/src/microcode/cce/ directory of the repository.
