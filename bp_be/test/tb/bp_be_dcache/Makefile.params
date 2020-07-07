@@ -7,7 +7,7 @@ WT_P           ?= 0
 
 export DUT_PARAMS = 
 export TB_PARAMS  = -pvalue+uce_p=$(UCE_P) \
-	                  -pvalue+wt_p=$(WT_P) \
+                    -pvalue+wt_p=$(WT_P) \
                     -pvalue+cce_trace_p=$(CCE_TRACE_P)   \
                     -pvalue+dram_trace_p=$(DRAM_TRACE_P) \
                     -pvalue+dcache_trace_p=$(DCACHE_TRACE_P) \
