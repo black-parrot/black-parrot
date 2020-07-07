@@ -39,7 +39,6 @@ module bp_be_director
    , input                            reset_i
 
    , input [cfg_bus_width_lp-1:0]     cfg_bus_i
-   , output [vaddr_width_p-1:0]       cfg_npc_data_o
 
    // Dependency information
    , input [isd_status_width_lp-1:0]  isd_status_i
@@ -95,15 +94,12 @@ module bp_be_director
   // Control signals
   logic npc_w_v, btaken_pending, attaboy_pending;
 
-  logic [vaddr_width_p-1:0] roll_mux_o, trap_mux_o;
-
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-  assign npc_w_v = cfg_bus_cast_i.npc_w_v
-                   | calc_status.ex1_instr_v
+  assign npc_w_v = calc_status.ex1_instr_v
                    | (trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
   bsg_dff_reset_en
-   #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
+   #(.width_p(vaddr_width_p), .reset_val_p(bootrom_base_addr_gp))
    npc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -111,18 +107,6 @@ module bp_be_director
 
      ,.data_i(npc_n)
      ,.data_o(npc_r)
-     );
-  assign cfg_npc_data_o = npc_r;
-
-  // NPC calculation
-  bsg_mux
-   #(.width_p(vaddr_width_p)
-     ,.els_p(2)
-     )
-   init_mux
-    (.data_i({cfg_bus_cast_i.npc, trap_mux_o})
-     ,.sel_i(cfg_bus_cast_i.npc_w_v)
-     ,.data_o(npc_n)
      );
 
   bsg_mux
@@ -132,7 +116,7 @@ module bp_be_director
    trap_mux
     (.data_i({trap_pkt.npc, calc_status.ex1_npc})
      ,.sel_i(trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret)
-     ,.data_o(trap_mux_o)
+   ,.data_o(npc_n)
      );
 
   assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);

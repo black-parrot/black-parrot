@@ -14,6 +14,7 @@ module wrapper
  import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   ,parameter uce_p = 1
+  ,parameter wt_p = 1
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
@@ -170,7 +171,9 @@ module wrapper
    );
 
    bp_be_dcache
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.writethrough_p(wt_p)
+     )
    dcache
    (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -178,21 +181,17 @@ module wrapper
    ,.cfg_bus_i(cfg_bus_i)
 
    ,.dcache_pkt_i(rolly_dcache_pkt_lo)
-   ,.v_i(dcache_ready_lo & rolly_v_lo)
+   ,.v_i(rolly_yumi_li)
    ,.ready_o(dcache_ready_lo)
 
    ,.data_o(data_o)
    ,.v_o(v_o)
-   ,.fencei_v_o()
 
-   ,.tlb_miss_i(1'b0)
+   ,.ptag_v_i(1'b1)
    ,.ptag_i(rolly_ptag_r)
    ,.uncached_i(uncached_r)
 
    ,.poison_i(poison_li)
-
-   ,.load_op_tl_o()
-   ,.store_op_tl_o()
 
    ,.dcache_miss_o(dcache_miss_lo)
 
@@ -241,8 +240,8 @@ module wrapper
         ,.block_width_p(dcache_block_width_p)
         ,.timeout_max_limit_p(4)
         ,.credits_p(coh_noc_max_credits_p)
-        ,.data_mem_negedge_p(1)
-        ,.tag_mem_negedge_p(1)
+        ,.data_mem_invert_clk_p(1)
+        ,.tag_mem_invert_clk_p(1)
        )
      dcache_lce
      (.clk_i(clk_i)
@@ -320,7 +319,6 @@ module wrapper
      ,.reset_i(reset_i)
 
      ,.cfg_bus_i(cfg_bus_i)
-     ,.cfg_cce_ucode_data_o()
 
      ,.lce_req_i(lce_req_lo)
      ,.lce_req_v_i(lce_req_v_lo)
@@ -356,8 +354,8 @@ module wrapper
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
-     ,.data_mem_negedge_p(1)
-     ,.tag_mem_negedge_p(1)
+     ,.data_mem_invert_clk_p(1)
+     ,.tag_mem_invert_clk_p(1)
      )
      dcache_uce
      (.clk_i(clk_i)

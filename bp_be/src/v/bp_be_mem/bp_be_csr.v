@@ -17,8 +17,6 @@ module bp_be_csr
     , input                             reset_i
 
     , input [cfg_bus_width_lp-1:0]      cfg_bus_i
-    , output [dword_width_p-1:0]        cfg_csr_data_o
-    , output [1:0]                      cfg_priv_data_o
 
     // CSR instruction interface
     , input [csr_cmd_width_lp-1:0]      csr_cmd_i
@@ -47,23 +45,18 @@ module bp_be_csr
 
 // Declare parameterizable structs
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
 `declare_bp_be_mem_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Casting input and output ports
 bp_cfg_bus_s cfg_bus_cast_i;
 bp_be_csr_cmd_s csr_cmd;
-bp_be_csr_cmd_s cfg_bus_csr_cmd_li;
 
 bp_be_trap_pkt_s trap_pkt_cast_o;
 bp_be_trans_info_s trans_info_cast_o;
 
-assign cfg_bus_csr_cmd_li.csr_op   = cfg_bus_cast_i.csr_r_v ? e_csrrs : e_csrrw;
-assign cfg_bus_csr_cmd_li.csr_addr = cfg_bus_cast_i.csr_addr;
-assign cfg_bus_csr_cmd_li.data     = cfg_bus_cast_i.csr_r_v ? '0 : cfg_bus_cast_i.csr_data;
-
 assign cfg_bus_cast_i = cfg_bus_i;
-assign csr_cmd = (cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) ? cfg_bus_csr_cmd_li : csr_cmd_i;
+assign csr_cmd = csr_cmd_i;
 assign trap_pkt_o = trap_pkt_cast_o;
 assign trans_info_o = trans_info_cast_o;
 
@@ -184,7 +177,7 @@ assign exception_dec_li =
 
 logic [3:0] exception_ecode_li;
 logic       exception_ecode_v_li;
-bsg_priority_encode
+bsg_priority_encode 
  #(.width_p($bits(exception_dec_li))
    ,.lo_to_hi_p(1)
    )
@@ -218,7 +211,7 @@ bsg_priority_encode
 
 // Compute input CSR data
 wire [dword_width_p-1:0] csr_imm_li = dword_width_p'(csr_cmd.data[4:0]);
-always_comb
+always_comb 
   begin
     unique casez (csr_cmd.csr_op)
       e_csrrw : csr_data_li =  csr_cmd.data;
@@ -234,7 +227,7 @@ always_comb
 
 logic [vaddr_width_p-1:0] apc_n, apc_r;
 bsg_dff_reset
- #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
+ #(.width_p(vaddr_width_p), .reset_val_p(bootrom_base_addr_gp))
  apc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -250,28 +243,30 @@ assign apc_n = trap_pkt_cast_o.eret
                    ? exception_npc_i
                    : apc_r;
 
-bsg_dff_reset
+logic enter_debug, exit_debug;
+bsg_dff_reset_set_clear
  #(.width_p(1))
  debug_mode_reg
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i('0)
+   // TODO: Should explicitly set freeze
+   ,.set_i(cfg_bus_cast_i.freeze | enter_debug)
+   ,.clear_i(exit_debug)
 
-   ,.data_i(debug_mode_n)
    ,.data_o(debug_mode_r)
    );
 
 bsg_dff_reset
- #(.width_p(2)
+ #(.width_p(2) 
    ,.reset_val_p(`PRIV_MODE_M)
    )
  priv_mode_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.data_i(cfg_bus_cast_i.priv_w_v ? cfg_bus_cast_i.priv_data : priv_mode_n)
+   ,.data_i(priv_mode_n)
    ,.data_o(priv_mode_r)
    );
-assign cfg_priv_data_o = priv_mode_r;
 
 assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
 bsg_dff_reset
@@ -323,7 +318,6 @@ logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
 // CSR data
 always_comb
   begin
-    debug_mode_n = debug_mode_r;
     priv_mode_n  = priv_mode_r;
 
     stvec_li      = stvec_lo;
@@ -353,8 +347,10 @@ always_comb
     minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
     mcountinhibit_li = mcountinhibit_lo;
 
-    dcsr_li = dcsr_lo;
-    dpc_li  = dpc_lo;
+    enter_debug = '0;
+    exit_debug  = '0;
+    dcsr_li     = dcsr_lo;
+    dpc_li      = dpc_lo;
 
     exception_v_o    = '0;
     interrupt_v_o    = '0;
@@ -363,10 +359,10 @@ always_comb
     illegal_instr_o  = '0;
     csr_data_lo      = '0;
     sfence_v_o       = '0;
-
+    
     if (~ebreak_v_li & csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
       begin
-        debug_mode_n   = 1'b1;
+        enter_debug    = 1'b1;
         dpc_li         = paddr_width_p'($signed(exception_pc_i));
         dcsr_li.cause  = 1; // Ebreak
         dcsr_li.prv    = priv_mode_r;
@@ -382,6 +378,7 @@ always_comb
       end
     else if (csr_cmd_v_i & (csr_cmd.csr_op == e_dret))
       begin
+        exit_debug       = 1'b1;
         priv_mode_n      = dcsr_lo.prv;
 
         illegal_instr_o  = ~is_debug_mode;
@@ -410,7 +407,7 @@ always_comb
         else
           begin
             priv_mode_n      = {1'b0, mstatus_lo.spp};
-
+            
             mstatus_li.spp   = `PRIV_MODE_U;
             mstatus_li.spie  = 1'b1;
             mstatus_li.sie   = mstatus_lo.spie;
@@ -428,8 +425,7 @@ always_comb
         // ECALL is implemented as part of the exception cause vector
         // EBreak is implemented below
       end
-    else if ((csr_cmd_v_i | cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v)
-             & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
+    else if (csr_cmd_v_i & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
       begin
         // Check for access violations
         if (is_s_mode & mstatus_lo.tvm & (csr_cmd.csr_addr == `CSR_ADDR_SATP))
@@ -594,7 +590,7 @@ always_comb
             sepc_li              = paddr_width_p'($signed(exception_pc_i));
             // TODO: Replace with struct
             stval_li             = (exception_ecode_li == 2)
-                                  ? exception_instr_i
+                                  ? exception_instr_i 
                                   : paddr_width_p'($signed(exception_vaddr_i));
 
             scause_li._interrupt = 1'b0;
@@ -614,7 +610,7 @@ always_comb
 
             mepc_li              = paddr_width_p'($signed(exception_pc_i));
             mtval_li             = (exception_ecode_li == 2)
-                                  ? exception_instr_i
+                                  ? exception_instr_i 
                                   : paddr_width_p'($signed(exception_vaddr_i));
 
             mcause_li._interrupt = 1'b0;
@@ -629,7 +625,7 @@ always_comb
     // Always break in single step mode
     if (~is_debug_mode & exception_v_i & dcsr_lo.step)
       begin
-        debug_mode_n = 1'b1;
+        enter_debug   = 1'b1;
         dpc_li        = paddr_width_p'($signed(exception_npc_i));
         dcsr_li.cause = 4;
         dcsr_li.prv   = priv_mode_r;
@@ -644,9 +640,6 @@ always_comb
 assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
-
-assign cfg_csr_data_o = csr_data_lo;
-assign cfg_priv_data_o = priv_mode_r;
 
 assign trap_pkt_cast_o.npc              = apc_n;
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;

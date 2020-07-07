@@ -186,7 +186,7 @@ module wrapper
     ,.cfg_bus_i(cfg_bus_i)
 
     ,.vaddr_i(rolly_vaddr_lo)
-    ,.vaddr_v_i(rolly_v_lo)
+    ,.vaddr_v_i(rolly_yumi_li)
     ,.fencei_v_i(1'b0)
     ,.vaddr_ready_o(icache_ready_lo)
 
@@ -320,7 +320,6 @@ module wrapper
       ,.reset_i(reset_i)
 
       ,.cfg_bus_i(cfg_bus_i)
-      ,.cfg_cce_ucode_data_o()
 
       ,.lce_req_i(lce_req_lo)
       ,.lce_req_v_i(lce_req_v_lo)

@@ -29,7 +29,7 @@ module bp_cce_mmio_cfg_loader
     // to be enabled.
     , parameter domain_mask_p         = 64'h0000_0000_0000_0001
 
-    , localparam bp_pc_entry_point_gp=39'h00_8000_0000
+    , localparam bp_pc_entry_point_gp=39'h10_3000
     , localparam sac_mask_lp = (sac_x_dim_p == 0) ? 64'h0 : 64'h1
     )
   (input                                             clk_i
@@ -87,9 +87,6 @@ module bp_cce_mmio_cfg_loader
     ,WAIT_FOR_SYNC
     ,SEND_DOMAIN_ACTIVATION
     ,SEND_SAC_ACTIVATION
-    ,SEND_PC
-    ,SEND_IRF
-    ,RECV_IRF
     ,BP_FREEZE_CLR
     ,WAIT_FOR_CREDITS
     ,DONE
@@ -159,27 +156,9 @@ module bp_cce_mmio_cfg_loader
      ,.count_o(core_cnt_r)
      );
 
-  localparam reg_els_lp = 2**reg_addr_width_p;
-  logic [cfg_addr_width_p-1:0] irf_cnt_r;
-  logic irf_cnt_clr, irf_cnt_inc;
-  bsg_counter_clear_up
-   #(.max_val_p(2**cfg_addr_width_p-1)
-     ,.init_val_p(0)
-     )
-   irf_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(irf_cnt_clr & io_cmd_yumi_i)
-     ,.up_i(irf_cnt_inc & io_cmd_yumi_i)
-
-     ,.count_o(irf_cnt_r)
-     );
-
   wire sync_done = (sync_cnt_r == cfg_addr_width_p'(256));
   wire ucode_prog_done = (ucode_cnt_r == cfg_addr_width_p'(inst_ram_els_p-1));
   wire core_prog_done  = (core_cnt_r == cfg_addr_width_p'(num_core_p-1));
-  wire irf_done = (irf_cnt_r == cfg_addr_width_p'(reg_els_lp-1));
 
   assign done_o = (state_r == DONE)? 1'b1 : 1'b0;
 
@@ -223,9 +202,6 @@ module bp_cce_mmio_cfg_loader
       core_cnt_clr = 1'b0;
       core_cnt_inc = 1'b0;
 
-      irf_cnt_clr = 1'b0;
-      irf_cnt_inc = 1'b0;
-
       cfg_w_v_lo = '0;
       cfg_r_v_lo = '0;
       cfg_addr_lo = '0;
@@ -238,7 +214,6 @@ module bp_cce_mmio_cfg_loader
           sync_cnt_clr = 1'b1;
           ucode_cnt_clr = 1'b1;
           core_cnt_clr = 1'b1;
-          irf_cnt_clr = 1'b1;
         end
         BP_RESET_SET: begin
           state_n = core_prog_done ? BP_FREEZE_SET : BP_RESET_SET;
@@ -335,7 +310,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = domain_mask_p;
         end
         SEND_SAC_ACTIVATION: begin
-          state_n = core_prog_done ? SEND_PC : SEND_SAC_ACTIVATION;
+          state_n = core_prog_done ? (clear_freeze_p ? BP_FREEZE_CLR : WAIT_FOR_CREDITS) : SEND_SAC_ACTIVATION;
 
           core_cnt_inc = ~core_prog_done & credits_empty_lo;
           core_cnt_clr = core_prog_done & credits_empty_lo;
@@ -343,37 +318,6 @@ module bp_cce_mmio_cfg_loader
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_sac_mask_gp;
           cfg_data_lo = sac_mask_lp;
-        end
-        SEND_PC: begin
-          state_n = core_prog_done ? (clear_freeze_p ? BP_FREEZE_CLR : WAIT_FOR_CREDITS) : SEND_PC;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_npc_gp);
-          cfg_data_lo = bp_pc_entry_point_gp;
-        end
-        // Skip these, just for demonstration
-        SEND_IRF: begin
-          state_n = irf_done ? RECV_IRF : SEND_IRF;
-
-          irf_cnt_inc = ~irf_done;
-          irf_cnt_clr = irf_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
-          cfg_data_lo = dword_width_p'(irf_cnt_r);
-        end
-        RECV_IRF: begin
-          state_n = irf_done ? BP_FREEZE_CLR : RECV_IRF;
-
-          irf_cnt_inc = ~irf_done;
-          irf_cnt_clr = irf_done;
-
-          cfg_r_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
-          cfg_data_lo = '0;
         end
         BP_FREEZE_CLR: begin
           state_n = core_prog_done ? WAIT_FOR_CREDITS : BP_FREEZE_CLR;
