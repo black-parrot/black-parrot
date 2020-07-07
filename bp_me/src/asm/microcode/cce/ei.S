@@ -34,10 +34,8 @@ rdw addr=req lce=req lru_way=lru
 gad
 # fall through
 
-set_entry: wde addr=req lce=req way=lru state=nextCohSt
-
 # Replacement Check Routine
-replace_check: bfz transfer_check rf
+replace_check: bfz next_coh_state rf
 
 # Replacement Routine
 replace: movis COH_I nextCohSt
@@ -49,10 +47,15 @@ bf complete_replacement nwbf
 pushq memCmd MEM_CMD_WR addr=lru lce=req way=lru wp=1
 complete_replacement: popq lceResp
 
-# Transfer Check
-transfer_check: bfz read_l2 cef cmf cof cff pt
+# Next Coherence State Routine
+# all requests get block in E
+next_coh_state: movis COH_E nextCohSt
+set_entry: wde addr=req lce=req way=lru state=nextCohSt
 
-# Transfer routine - other cache has block in E/M
+# Transfer Check
+transfer_check: bfz read_l2 cef pt
+
+# Transfer routine - other cache has block in E
 # state for lceCmd will always come from nextCohSt
 transfer: movis COH_I ownerCohSt
 movis COH_E nextCohSt

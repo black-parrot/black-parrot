@@ -29,7 +29,13 @@ module bp_cce_wrapper
 
    // Configuration Interface
    , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
-   , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
+
+   // ucode programming interface, synchronous read, direct connection to RAM
+   , input                                             ucode_v_i
+   , input                                             ucode_w_i
+   , input [cce_pc_width_p-1:0]                        ucode_addr_i
+   , input [cce_instr_width_p-1:0]                     ucode_data_i
+   , output [cce_instr_width_p-1:0]                    ucode_data_o
 
    // LCE-CCE Interface
    , input [lce_cce_req_width_lp-1:0]                  lce_req_i

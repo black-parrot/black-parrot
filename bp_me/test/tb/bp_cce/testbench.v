@@ -261,6 +261,12 @@ lce_cmd_buffer
   ,.yumi_i(lce_cmd_yumi)
   );
 
+logic cce_ucode_v_li;
+logic cce_ucode_w_li;
+logic [cce_pc_width_p-1:0] cce_ucode_addr_li;
+logic [cce_instr_width_p-1:0] cce_ucode_data_li;
+logic [cce_instr_width_p-1:0] cce_ucode_data_lo;
+
 // CCE
 wrapper
 #(.bp_params_p(bp_params_p)
@@ -271,7 +277,12 @@ wrapper
   ,.reset_i(reset_i)
 
   ,.cfg_bus_i(cfg_bus_lo)
-  ,.cfg_cce_ucode_data_o()
+
+  ,.ucode_v_i(cce_ucode_v_li)
+  ,.ucode_w_i(cce_ucode_w_li)
+  ,.ucode_addr_i(cce_ucode_addr_li)
+  ,.ucode_data_i(cce_ucode_data_li)
+  ,.ucode_data_o(cce_ucode_data_lo)
 
   ,.lce_cmd_o(lce_cmd_lo)
   ,.lce_cmd_v_o(lce_cmd_v_lo)
@@ -410,11 +421,12 @@ bp_cfg
    ,.did_i('0)
    ,.host_did_i('0)
    ,.cord_i(cord_li)
-   ,.irf_data_i('0)
-   ,.npc_data_i('0)
-   ,.csr_data_i('0)
-   ,.priv_data_i('0)
-   ,.cce_ucode_data_i('0)
+
+   ,.cce_ucode_v_o(cce_ucode_v_li)
+   ,.cce_ucode_w_o(cce_ucode_w_li)
+   ,.cce_ucode_addr_o(cce_ucode_addr_li)
+   ,.cce_ucode_data_o(cce_ucode_data_li)
+   ,.cce_ucode_data_i(cce_ucode_data_lo)
    );
 
 // CFG loader

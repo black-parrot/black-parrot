@@ -92,6 +92,8 @@ module bp_be_dcache
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
+    , parameter writethrough_p=l1_writethrough_p
+
     , parameter debug_p=0
     , parameter lock_max_limit_p=8
 
@@ -538,7 +540,7 @@ module bp_be_dcache
   wire load_miss_tv = ~load_hit_tv & v_tv_r & load_op_tv_r & ~uncached_tv_r;
   wire store_miss_tv = ~store_hit_tv & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
   wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit_tv;
-  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
+  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (writethrough_p == 1);
 
   wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | wt_miss_tv;
 
@@ -559,6 +561,7 @@ module bp_be_dcache
   `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, dword_width_p, dcache_assoc_p);
 
   bp_be_dcache_wbuf_entry_s wbuf_entry_in;
+  logic wbuf_success;
   logic wbuf_v_li;
 
   bp_be_dcache_wbuf_entry_s wbuf_entry_out;
@@ -704,7 +707,7 @@ module bp_be_dcache
   logic tag_mem_pkt_v;
   logic stat_mem_pkt_v;
 
-  wire wt_req = (wbuf_v_li & (l1_writethrough_p == 1));
+  wire wt_req = (wbuf_v_li & (writethrough_p == 1));
 
   // Assigning message types
   always_comb begin
@@ -812,7 +815,7 @@ module bp_be_dcache
   //        The CSR unit is now responsible for sending the clear request to the I$.
   wire flush_req = cache_req_v_o & (cache_req_cast_o.msg_type == e_cache_flush);
 
-  if(l1_writethrough_p == 1) begin : wt
+  if(writethrough_p == 1) begin : wt
     assign gdirty_r = '0;
   end
   else begin : wb
@@ -856,6 +859,7 @@ module bp_be_dcache
 
   logic [bank_width_lp-1:0] ld_data_way_picked;
   logic [dword_width_p-1:0] ld_data_dword_picked;
+  logic [dword_width_p-1:0] ld_data_final;
   logic [dword_width_p-1:0] bypass_data_masked;
   logic [dcache_assoc_p-1:0] ld_data_way_select;
 
@@ -876,21 +880,29 @@ module bp_be_dcache
     ,.data_o(ld_data_way_picked)
   );
 
-  bsg_mux
-    #(.width_p(dword_width_p)
+  bsg_mux #(
+    .width_p(dword_width_p)
     ,.els_p(num_dwords_per_bank_lp)
-    )
-    dword_mux
-    (.data_i(ld_data_way_picked)
+  ) dword_mux (
+    .data_i(ld_data_way_picked)
     ,.sel_i(paddr_tv_r[3+:`BSG_CDIV(num_dwords_per_bank_lp, 2)])
     ,.data_o(ld_data_dword_picked)
     );
+
+  bsg_mux #(
+     .width_p(dword_width_p)
+     ,.els_p(2)
+   ) uncached_mux (
+     .data_i({uncached_load_data_r, ld_data_dword_picked})
+     ,.sel_i(uncached_tv_r)
+     ,.data_o(ld_data_final)
+   );
 
   bsg_mux_segmented #(
     .segments_p(bypass_data_mask_width_lp)
     ,.segment_width_p(8)
   ) bypass_mux_segmented (
-    .data0_i(ld_data_dword_picked)
+    .data0_i(ld_data_final)
     ,.data1_i(bypass_data_lo)
     ,.sel_i(bypass_mask_lo)
     ,.data_o(bypass_data_masked)
@@ -935,7 +947,7 @@ module bp_be_dcache
     ,.data_o(load_data)
   );
 
-  assign data_o = sc_op_tv_r ? !sc_success : load_data;
+  assign data_o = load_op_tv_r ? load_data : (sc_op_tv_r & ~sc_success);
 
   // ctrl logic
   //
@@ -1106,7 +1118,7 @@ module bp_be_dcache
     if (v_tv_r) begin
       lru_decode_way_li = store_op_tv_r ? store_hit_way_tv : load_hit_way_tv;
       dirty_mask_way_li = store_hit_way_tv;
-      dirty_mask_v_li = store_op_tv_r & (l1_writethrough_p == 0); // Blocks are never dirty in a writethrough cache
+      dirty_mask_v_li = store_op_tv_r & (writethrough_p == 0); // Blocks are never dirty in a writethrough cache
 
       stat_mem_data_li.lru = lru_decode_data_lo;
       stat_mem_data_li.dirty = {dcache_assoc_p{1'b1}};
@@ -1137,12 +1149,17 @@ module bp_be_dcache
 
   // write buffer
   //
-  if (l1_writethrough_p == 0) begin : wb_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~poison_i;
+  // We break out wbuf_sucess from wbuf_v_li to break a critical path from
+  //   flush to the data mem address lines. We pessimistically consider the
+  //   wbuf to have an incoming entry if there's something going into the
+  //   write buffer, regardless of if it's poisoned or not
+  if (writethrough_p == 0) begin : wb_wbuf
+    assign wbuf_success = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r;
   end
   else begin : wt_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & cache_req_ready_i & ~poison_i;;
+    assign wbuf_success = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & cache_req_ready_i;
   end
+  assign wbuf_v_li = wbuf_success & ~poison_i;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we) & ~data_mem_pkt_yumi_o;
 
   assign bypass_v_li = tv_we & load_op_tl_r;
@@ -1176,7 +1193,7 @@ module bp_be_dcache
   // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
   assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached)
                                ? data_mem_pkt_v
-                               : data_mem_pkt_v & ~(load_op & tl_we) & wbuf_empty_lo;
+                               : data_mem_pkt_v & ~(load_op & tl_we) & wbuf_empty_lo & ~wbuf_success;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin

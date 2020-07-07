@@ -21,7 +21,8 @@ module testbench
    , parameter dram_trace_p                = 0
    , parameter dcache_trace_p              = 0
    , parameter random_yumi_p               = 0
-   , parameter uce_p                       = 1
+   , parameter uce_p                       = 0
+   , parameter wt_p                        = 0
 
    , parameter trace_file_p = "test.tr"
 
@@ -201,6 +202,7 @@ module testbench
   wrapper
     #(.bp_params_p(bp_params_p)
      ,.uce_p(uce_p)
+     ,.wt_p(wt_p)
      )
     wrapper
     (.clk_i(clk_i)
@@ -296,10 +298,12 @@ module testbench
        ,.wt_req(wt_req)
        ,.cache_miss_o(dcache_miss_o)
 
+       ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
        ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
 
+       ,.tag_mem_v_i(tag_mem_v_li)
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)
        ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
@@ -307,6 +311,8 @@ module testbench
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+       ,.program_finish_i('0)
        );
 
   if (uce_p == 0) begin
