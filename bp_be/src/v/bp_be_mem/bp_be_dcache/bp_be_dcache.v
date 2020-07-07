@@ -967,18 +967,18 @@ module bp_be_dcache
         tag_mem_data_li = {(tag_info_width_lp*dcache_assoc_p){1'b0}};
         tag_mem_mask_li = {(tag_info_width_lp*dcache_assoc_p){1'b1}};
       end
-      e_cache_tag_mem_invalidate: begin
-        tag_mem_data_li = {((tag_info_width_lp)*dcache_assoc_p){1'b0}};
-        for (integer i = 0; i < dcache_assoc_p; i++) begin
-          tag_mem_mask_li[i].coh_state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
-          tag_mem_mask_li[i].tag = {ptag_width_lp{1'b0}};
-        end
-      end
       e_cache_tag_mem_set_tag: begin
         tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
         for (integer i = 0; i < dcache_assoc_p; i++) begin
           tag_mem_mask_li[i].coh_state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
           tag_mem_mask_li[i].tag = {ptag_width_lp{lce_tag_mem_way_one_hot[i]}};
+        end
+      end
+      e_cache_tag_mem_set_state: begin
+        tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
+        for (integer i = 0; i < dcache_assoc_p; i++) begin
+          tag_mem_mask_li[i].coh_state = {$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].tag = {ptag_width_lp{1'b0}};
         end
       end
       default: begin
@@ -1099,58 +1099,68 @@ module bp_be_dcache
                                ? data_mem_pkt_v
                                : data_mem_pkt_v & ~(decode_lo.load_op & tl_we) & wbuf_empty_lo;
 
-  // load reservation logic
-  always_ff @ (posedge clk_i) begin
-    if (reset_i) begin
-      load_reserved_v_r <= 1'b0;
+  if (lr_sc_p == e_l1)
+    begin : l1_lrsc
+      // Set reservation on successful LR, without a cache miss or upgrade request
+      wire set_reservation = decode_tv_r.lr_op & v_o;
+      // All SCs clear the reservation (regardless of success)
+      // Invalidates from other harts which match the reservation address clear the reservation
+      wire clear_reservation = decode_tv_r.sc_op
+                               || ((tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode == e_cache_tag_mem_set_state) && (tag_mem_pkt.state == e_COH_I))
+                                   & (tag_mem_pkt.tag == load_reserved_tag_r) & (tag_mem_pkt.index == load_reserved_index_r));
+      bsg_dff_reset_set_clear
+       #(.width_p(1))
+       load_reserved_v_reg
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.set_i(set_reservation)
+         ,.clear_i(clear_reservation)
+         ,.data_o(load_reserved_v_r)
+         );
+
+      bsg_dff_en
+       #(.width_p(ptag_width_lp+index_width_lp))
+       load_reserved_addr
+        (.clk_i(clk_i)
+         ,.en_i(set_reservation)
+         ,.data_i(paddr_tv_r[paddr_width_p-1:block_offset_width_lp])
+         ,.data_o({load_reserved_tag_r, load_reserved_index_r})
+         );
     end
-    else begin
-      // The LR has successfully completed, without a cache miss or upgrade request
-      if (lr_sc_p == e_l1) begin
-        if (decode_tv_r.lr_op & v_o & ~lr_miss_tv) begin
-          load_reserved_v_r     <= 1'b1;
-          load_reserved_tag_r   <= paddr_tv_r[block_offset_width_lp+index_width_lp+:ptag_width_lp];
-          load_reserved_index_r <= paddr_tv_r[block_offset_width_lp+:index_width_lp];
-        // All SCs clear the reservation (regardless of success)
-        end else if (decode_tv_r.sc_op) begin
-          load_reserved_v_r <= 1'b0;
-        // Invalidates from other harts which match the reservation address clear the reservation
-        end else if (tag_mem_pkt_v & (tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
-                    & (tag_mem_pkt.tag == load_reserved_tag_r)
-                    & (tag_mem_pkt.index == load_reserved_index_r)) begin
-          load_reserved_v_r <= 1'b0;
-        end
-      end else begin
-        load_reserved_v_r <= 1'b0;
-        load_reserved_tag_r <= '0;
-        load_reserved_index_r <= '0;
-      end
+  else
+    begin : no_l1_lrsc
+      assign load_reserved_v_r = '0;
+      assign load_reserved_tag_r = '0;
+      assign load_reserved_index_r = '0;
     end
-  end
 
   //  uncached load data logic
   //
-  //synopsys sync_set_reset "reset_i"
-  always_ff @ (posedge clk_i) begin
-    if (reset_i) begin
-      uncached_load_data_v_r <= 1'b0;
-    end
-    else begin
-      if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
-        uncached_load_data_r <= data_mem_pkt.data[0+:dword_width_p];
-        uncached_load_data_v_r <= 1'b1;
-      end
-      else if (poison_i)
-          uncached_load_data_v_r <= 1'b0;
-      else begin
-        // once uncached load request is replayed, and v_o goes high,
-        // cleared the valid bit.
-        if (v_o) begin
-          uncached_load_data_v_r <= 1'b0;
-        end
-      end
-    end
-  end
+  wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached);
+  // Invalidate uncached data if the cache is flushed or we successfully complete the request
+  // NOTE: This method is not valid for non-idempotent loads, will cause replay
+  wire uncached_load_clear = poison_i | v_o;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   uncached_load_data_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i(uncached_load_set)
+     ,.clear_i(uncached_load_clear)
+     ,.data_o(uncached_load_data_v_r)
+     );
+
+  bsg_dff_en
+   #(.width_p(dword_width_p))
+   uncached_load_data_reg
+    (.clk_i(clk_i)
+     ,.en_i(uncached_load_set)
+
+     ,.data_i(data_mem_pkt.data[0+:dword_width_p])
+     ,.data_o(uncached_load_data_r)
+     );
 
   // LCE tag_mem
 
