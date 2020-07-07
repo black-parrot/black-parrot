@@ -35,24 +35,24 @@ class TraceGen:
     packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
 
     if (size == 8):
-      packet += "0011_"
+      packet += "000011_"
     else:
       if (signed):
         if (size == 1):
-          packet+= "0000_"
+          packet+= "000000_"
         elif (size == 2):
-          packet += "0001_"
+          packet += "000001_"
         elif (size == 4):
-          packet += "0010_"
+          packet += "000010_"
         else:
           raise ValueError("unexpected size for signed load.")
       else:
         if (size == 1):
-          packet += "0100_"
+          packet += "000100_"
         elif (size == 2):
-          packet += "0101_"
+          packet += "000101_"
         elif (size == 4):
-          packet += "0110_"
+          packet += "000110_"
         else:
           raise ValueError("unexpected size for unsigned load.")
 
@@ -75,13 +75,13 @@ class TraceGen:
     packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
     
     if (size == 1):
-      packet += "1000_"
+      packet += "001000_"
     elif (size == 2):
-      packet += "1001_"
+      packet += "001001_"
     elif (size == 4):
-      packet += "1010_"
+      packet += "001010_"
     elif (size == 8):
-      packet += "1011_"
+      packet += "001011_"
     else:
       raise ValueError("unexpected size for store.")
     

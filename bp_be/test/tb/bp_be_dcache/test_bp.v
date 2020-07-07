@@ -14,12 +14,12 @@ module test_bp
 
 logic clk, reset;
 
-bsg_nonsynth_clock_gen 
+bsg_nonsynth_clock_gen
  #(.cycle_time_p(10))
- clock_gen 
+ clock_gen
   (.o(clk));
 
-bsg_nonsynth_reset_gen 
+bsg_nonsynth_reset_gen
  #(.num_clocks_p(1)
    ,.reset_cycles_lo_p(1)
    ,.reset_cycles_hi_p(20)
@@ -35,7 +35,7 @@ testbench
    ,.reset_i(reset)
    );
 
-initial 
+initial
   begin
     $assertoff();
     @(posedge clk)

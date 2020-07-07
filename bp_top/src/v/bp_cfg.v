@@ -67,7 +67,7 @@ module bp_cfg
   logic         freeze_r;
   bp_lce_mode_e icache_mode_r;
   bp_lce_mode_e dcache_mode_r;
-  bp_cce_mode_e cce_mode_r;
+  bp_cce_mode_e cce_mode_r; 
 
 wire                        cfg_v_li    = mem_cmd_v_lo;
 wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_cce_mem_uc_wr);
@@ -104,6 +104,43 @@ assign cce_ucode_w_o    = cfg_w_v_li & (cfg_addr_li >= 16'h8000);
 assign cce_ucode_addr_o = cfg_addr_li[0+:cce_pc_width_p];
 assign cce_ucode_data_o = cfg_data_li[0+:cce_instr_width_p];
 
+wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_domain_mask_gp);
+wire [7:0] domain_li = cfg_data_li[7:0] | 8'h01;
+
+wire sac_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_sac_mask_gp);
+wire sac_li = cfg_data_li[0];
+
+// Address map (40 bits)
+// | did | sac_not_cc | tile ID | remaining |
+// |  3  |      1     |  log(N) |
+
+// Enabled DIDs
+logic [7:0] domain_data_r;
+bsg_dff_reset_en
+  #(.width_p(8)
+   ,.reset_val_p(1)
+   )
+   domain_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(domain_w_v_li)
+   ,.data_i(domain_li)
+   ,.data_o(domain_data_r)
+   );
+
+logic sac_data_r;
+bsg_dff_reset_en
+  #(.width_p(1)
+   ,.reset_val_p(0)
+   )
+   sac_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(sac_w_v_li)
+   ,.data_i(sac_li)
+   ,.data_o(sac_data_r)
+   );
+
 logic [core_id_width_p-1:0] core_id_li;
 logic [cce_id_width_p-1:0]  cce_id_li;
 logic [lce_id_width_p-1:0]  icache_id_li, dcache_id_li;
@@ -125,6 +162,8 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
                           ,dcache_mode: dcache_mode_r
                           ,cce_id: cce_id_li
                           ,cce_mode: cce_mode_r
+                          ,domain: domain_data_r
+                          ,sac: sac_data_r
                           };
 
   logic rdata_v_r;
