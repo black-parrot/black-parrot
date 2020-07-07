@@ -100,7 +100,7 @@ module bp_be_dcache
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
-    , localparam bypass_data_mask_width_lp = (dword_width_p >> 3)
+    , localparam wbuf_data_mask_width_lp = (dword_width_p >> 3)
     , localparam data_mem_mask_width_lp = (bank_width_lp >> 3)
     , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(bank_width_lp>>3)
     , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
@@ -461,7 +461,7 @@ module bp_be_dcache
   logic bypass_v_li;
   logic bypass_addr_li;
   logic [dword_width_p-1:0] bypass_data_lo;
-  logic [bypass_data_mask_width_lp-1:0] bypass_mask_lo;
+  logic [wbuf_data_mask_width_lp-1:0] bypass_mask_lo;
 
   logic [index_width_lp-1:0] lce_snoop_index_li;
   logic [lg_dcache_assoc_lp-1:0] lce_snoop_way_li;
@@ -506,31 +506,51 @@ module bp_be_dcache
   assign wbuf_entry_in.paddr = paddr_tv_r;
   assign wbuf_entry_in.way_id = store_hit_way_tv;
 
-  // Hardcoded for 64-bit words
-  assign wbuf_entry_in.data = decode_tv_r.double_op
-    ? data_tv_r
-    : (decode_tv_r.word_op
-      ? {2{data_tv_r[0+:32]}}
-      : (decode_tv_r.half_op
-        ? {4{data_tv_r[0+:16]}}
-        : {8{data_tv_r[0+:8]}}));
+  logic [3:0][dword_width_p-1:0] wbuf_data_in;
+  logic [3:0][wbuf_data_mask_width_lp-1:0] wbuf_mask_in;
+  for (genvar i = 0; i < 4; i++)
+    begin : wbuf_in
+      localparam slice_width_lp = 8*(2**i);
 
-  assign wbuf_entry_in.mask = decode_tv_r.double_op
-    ? 8'b1111_1111
-    : (decode_tv_r.word_op
-      ? {{4{paddr_tv_r[2]}}, {4{~paddr_tv_r[2]}}}
-      : (decode_tv_r.half_op
-        ? {{2{paddr_tv_r[2] & paddr_tv_r[1]}}, {2{paddr_tv_r[2] & ~paddr_tv_r[1]}},
-           {2{~paddr_tv_r[2] & paddr_tv_r[1]}}, {2{~paddr_tv_r[2] & ~paddr_tv_r[1]}}}
-        : {(paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]),
-           (paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
-           (paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
-           (paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0]),
-           (~paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]),
-           (~paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
-           (~paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
-           (~paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0])
-          }));
+      logic [(dword_width_p/slice_width_lp)-1:0] addr_dec;
+      bsg_decode
+       #(.num_out_p(dword_width_p/slice_width_lp))
+       decode
+        (.i(paddr_tv_r[i+:`BSG_MAX(3-i,1)])
+         ,.o(addr_dec)
+         );
+
+      bsg_expand_bitmask
+       #(.in_width_p(dword_width_p/slice_width_lp)
+         ,.expand_p(2**i)
+         )
+       expand
+        (.i(addr_dec)
+         ,.o(wbuf_mask_in[i])
+         );
+
+      assign wbuf_data_in[i] = {(dword_width_p/slice_width_lp){data_tv_r[0+:slice_width_lp]}};
+    end
+
+  bsg_mux_one_hot
+   #(.width_p(dword_width_p)
+     ,.els_p(4)
+     )
+   wbuf_data_in_mux
+    (.data_i(wbuf_data_in)
+     ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op, decode_tv_r.half_op, decode_tv_r.byte_op})
+     ,.data_o(wbuf_entry_in.data)
+     );
+
+  bsg_mux_one_hot
+   #(.width_p(wbuf_data_mask_width_lp)
+     ,.els_p(4)
+     )
+   wbuf_mask_in_mux
+    (.data_i(wbuf_mask_in)
+     ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op, decode_tv_r.half_op, decode_tv_r.byte_op})
+     ,.data_o(wbuf_entry_in.mask)
+     );
 
   // stat_mem {lru, dirty}
   // It has (ways_p-1) bits to form pseudo-LRU tree, and ways_p bits for dirty
@@ -704,7 +724,6 @@ module bp_be_dcache
 
   assign v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
                          | (uncached_tv_r & (decode_tv_r.store_op & cache_req_ready_i))
-                         | (decode_tv_r.l2_op & uncached_load_data_v_r)
                          | (~uncached_tv_r & ~decode_tv_r.l2_op & ~decode_tv_r.fencei_op & ~miss_tv)
                          // Always send fencei when coherent
                          | (fencei_req & (~gdirty_r | (l1_coherent_p == 1)))
@@ -805,7 +824,7 @@ module bp_be_dcache
     );
 
   bsg_mux_segmented #(
-    .segments_p(bypass_data_mask_width_lp)
+    .segments_p(wbuf_data_mask_width_lp)
     ,.segment_width_p(8)
   ) bypass_mux_segmented (
     .data0_i(ld_data_dword_picked)
