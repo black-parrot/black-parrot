@@ -588,7 +588,7 @@ module bp_uce
             begin
               mem_cmd_cast_o.header.msg_type       = e_cce_mem_uc_rd;
               mem_cmd_cast_o.header.addr           = cache_req_r.addr;
-              mem_cmd_cast_o.header.size           = e_mem_msg_size_8;
+              mem_cmd_cast_o.header.size           = bp_mem_msg_size_e'(cache_req_r.size);
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
 

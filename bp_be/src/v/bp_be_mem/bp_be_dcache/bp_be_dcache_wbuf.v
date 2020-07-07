@@ -69,7 +69,7 @@ module bp_be_dcache_wbuf
     unique case (num_els_r)
       2'd0: begin
         v_o = 1'b0;
-        empty_o = ~v_i;
+        empty_o = 1'b1;
         full_o = 1'b0;
         el0_valid = 1'b0;
         el1_valid = 1'b0;

@@ -113,9 +113,8 @@ bsg_dff_reset_en_bypass #(.width_p(1))
    ,.data_o(r_entry_bypass_v_r)
   );  
 
-assign passthrough_entry = '{ptag: vtag_r, default: '0};
-assign entry_o    = translation_en_i ? r_entry_bypass_r : passthrough_entry;
-assign v_o        = translation_en_i ? r_v_r & r_entry_bypass_v_r : r_v_r;
+assign entry_o    = r_entry_bypass_r;
+assign v_o        = r_v_r & r_entry_bypass_v_r;
 assign miss_v_o   = r_v_r & ~v_o;
 
 endmodule

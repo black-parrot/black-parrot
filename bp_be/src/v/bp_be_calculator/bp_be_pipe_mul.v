@@ -2,7 +2,7 @@
  *
  * Name:
  *   bp_be_pipe_mul.v
- * 
+ *
  * Description:
  *   Pipeline for RISC-V multiplication instructions.
  *
@@ -12,53 +12,55 @@
  *   Must use retiming for good QoR.
  */
 module bp_be_pipe_mul
-  import bp_be_pkg::*;
-  import bp_common_rv64_pkg::*;
- #(localparam latency_p = 4
-   // Generated parameters
-   , localparam decode_width_lp      = `bp_be_decode_width
-   // From RISC-V specifications
-   , localparam word_width_lp = rv64_word_width_gp
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
-   )
-  (input                            clk_i
-   , input                          reset_i
+ import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
+ import bp_common_rv64_pkg::*;
+ import bp_be_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
 
-   , input [decode_width_lp-1:0]    decode_i
-   , input [reg_data_width_lp-1:0]  rs1_i
-   , input [reg_data_width_lp-1:0]  rs2_i
+   , localparam latency_lp = 4
+   , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
+   )
+  (input                               clk_i
+   , input                             reset_i
+
+   , input [dispatch_pkt_width_lp-1:0] reservation_i
 
    // Pipeline result
-   , output logic [reg_data_width_lp-1:0] data_o
+   , output [dword_width_p-1:0]        data_o
    );
 
-// Cast input and output ports 
-bp_be_decode_s decode;
-assign decode = decode_i;
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  bp_be_dispatch_pkt_s reservation;
+  bp_be_decode_s decode;
 
-wire opw_li = decode.opw_v;
+  assign reservation = reservation_i;
+  assign decode = reservation.decode;
+  wire [vaddr_width_p-1:0] pc  = reservation.pc[0+:vaddr_width_p];
+  wire [dword_width_p-1:0] rs1 = reservation.rs1[0+:dword_width_p];
+  wire [dword_width_p-1:0] rs2 = reservation.rs2[0+:dword_width_p];
+  wire [dword_width_p-1:0] imm = reservation.imm[0+:dword_width_p];
 
-// TODO: Gate FU with pipe_mul_v
+  wire [dword_width_p-1:0] src1_w_sgn = dword_width_p'($signed(rs1[0+:word_width_p]));
+  wire [dword_width_p-1:0] src2_w_sgn = dword_width_p'($signed(rs2[0+:word_width_p]));
 
-wire [reg_data_width_lp-1:0] src1_w_sgn = reg_data_width_lp'($signed(rs1_i[0+:word_width_lp]));
-wire [reg_data_width_lp-1:0] src2_w_sgn = reg_data_width_lp'($signed(rs2_i[0+:word_width_lp]));
+  wire [dword_width_p-1:0] op_a = decode.opw_v ? src1_w_sgn : rs1;
+  wire [dword_width_p-1:0] op_b = decode.opw_v ? src2_w_sgn : rs2;
 
-wire [reg_data_width_lp-1:0] op_a = opw_li ? src1_w_sgn : rs1_i;
-wire [reg_data_width_lp-1:0] op_b = opw_li ? src2_w_sgn : rs2_i;
+  wire [dword_width_p-1:0] full_result = op_a * op_b;
 
-wire [reg_data_width_lp-1:0] full_result = op_a * op_b;
+  wire [dword_width_p-1:0] mul_lo = decode.opw_v ? dword_width_p'($signed(full_result[0+:word_width_p])) : full_result;
 
-wire [reg_data_width_lp-1:0] mul_lo = opw_li ? reg_data_width_lp'($signed(full_result[0+:word_width_lp])) : full_result;
+  bsg_dff_chain
+   #(.width_p(dword_width_p)
+     ,.num_stages_p(latency_lp-1)
+     )
+   retime_chain
+    (.clk_i(clk_i)
 
-bsg_dff_chain
- #(.width_p(reg_data_width_lp)
-   ,.num_stages_p(latency_p-1)
-   )
- retime_chain
-  (.clk_i(clk_i)
-
-   ,.data_i(mul_lo)
-   ,.data_o(data_o)
-   );
+     ,.data_i(mul_lo)
+     ,.data_o(data_o)
+     );
 
 endmodule

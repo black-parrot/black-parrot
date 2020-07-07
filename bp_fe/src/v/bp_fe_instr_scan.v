@@ -22,15 +22,15 @@ module bp_fe_instr_scan
 
 `declare_bp_fe_instr_scan_s(vaddr_width_p);
 
-rv64_instr_s       instr_cast_i;
+rv64_instr_rtype_s instr_cast_i;
 bp_fe_instr_scan_s scan_cast_o;
 
 assign instr_cast_i = instr_i;
 assign scan_o = scan_cast_o;
 
-wire dest_link   = (instr_cast_i.fields.rtype.rd_addr inside {32'h1, 32'h5});
-wire src_link    = (instr_cast_i.fields.rtype.rs1_addr inside {32'h1, 32'h5});
-wire dest_src_eq = (instr_cast_i.fields.rtype.rd_addr == instr_cast_i.fields.rtype.rs1_addr);
+wire dest_link   = (instr_cast_i.rd_addr inside {32'h1, 32'h5});
+wire src_link    = (instr_cast_i.rs1_addr inside {32'h1, 32'h5});
+wire dest_src_eq = (instr_cast_i.rd_addr == instr_cast_i.rs1_addr);
 
 always_comb
   begin

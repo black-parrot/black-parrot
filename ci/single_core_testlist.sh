@@ -4,7 +4,7 @@
 TESTLIST=$2
 if [ "$ne" == '1' ]
 then
-  echo "Usage: $0 <verilator, vcs> [num_cores]"
+  echo "Usage: $0 <verilator, vcs> <testlist> [num_cores]"
   exit 1
 elif [ $1 == "vcs" ]
 then

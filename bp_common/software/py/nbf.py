@@ -14,6 +14,8 @@ import subprocess
 cfg_base_addr          = 0x200000
 cfg_reg_reset          = 0x01
 cfg_reg_freeze         = 0x02
+cfg_domain_mask        = 0x09
+cfg_sac_mask           = 0x0a
 cfg_reg_icache_mode    = 0x22
 cfg_reg_npc            = 0x40
 cfg_reg_dcache_mode    = 0x43
@@ -25,11 +27,13 @@ cfg_core_offset = 24
 class NBF:
 
   # constructor
-  def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file):
+  def __init__(self, ncpus, ucode_file, domains, sac, mem_file, checkpoint_file):
 
     # input parameters
     self.ncpus = ncpus
     self.ucode_file = ucode_file
+    self.domains = domains
+    self.sac = sac
     self.mem_file = mem_file
     self.checkpoint_file = checkpoint_file
     self.addr_width = 40
@@ -165,8 +169,19 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
+
+    enabled_domains = 1
+    for i in range(6, 0, -1):
+      if (self.domains[i] == '1'):
+        enabled_domains += (2**(7-i))
+
+    #enabled_domains += self.domains
+
+    self.print_nbf_allcores(3, cfg_base_addr + cfg_domain_mask, enabled_domains)
+    self.print_nbf_allcores(3, cfg_base_addr + cfg_sac_mask, self.sac)
+
     # Write PC to the DRAM base
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x80000000)
+    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
 
     # Write checkpoint
     if self.checkpoint_file:
@@ -191,10 +206,12 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('ncpus', type=int, help='number of BlackParrot cores')
   parser.add_argument('ucode_file', metavar='ucode.mem', help='CCE ucode file')
+  parser.add_argument('domains', type=str, help='domains to be enabled')
+  parser.add_argument('sac', type=int, help='sac enabled? (0 or 1)')
   parser.add_argument("--mem", dest='mem_file', metavar='prog.mem', help="DRAM verilog file")
   parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help="checkpoint nbf file")
 
   args = parser.parse_args()
 
-  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file)
+  converter = NBF(args.ncpus, args.ucode_file, args.domains, args.sac, args.mem_file, args.checkpoint_file)
   converter.dump()

@@ -30,10 +30,12 @@ module bp_cfg
    , input [io_noc_did_width_p-1:0]     did_i
    , input [io_noc_did_width_p-1:0]     host_did_i
    , input [coh_noc_cord_width_p-1:0]   cord_i
-   , input [dword_width_p-1:0]          irf_data_i
-   , input [vaddr_width_p-1:0]          npc_data_i
-   , input [dword_width_p-1:0]          csr_data_i
-   , input [1:0]                        priv_data_i
+
+   // ucode programming interface, synchronous read, direct connection to RAM
+   , output                             cce_ucode_v_o
+   , output                             cce_ucode_w_o
+   , output [cce_pc_width_p-1:0]        cce_ucode_addr_o
+   , output [cce_instr_width_p-1:0]     cce_ucode_data_o
    , input [cce_instr_width_p-1:0]      cce_ucode_data_i
    );
 
@@ -65,7 +67,7 @@ module bp_cfg
   logic         freeze_r;
   bp_lce_mode_e icache_mode_r;
   bp_lce_mode_e dcache_mode_r;
-  bp_cce_mode_e cce_mode_r;
+  bp_cce_mode_e cce_mode_r; 
 
 wire                        cfg_v_li    = mem_cmd_v_lo;
 wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_cce_mem_uc_wr);
@@ -97,39 +99,47 @@ wire did_r_v_li       = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_did_gp);
 wire host_did_r_v_li  = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_host_did_gp);
 wire cord_r_v_li      = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_cord_gp);
 
-wire cce_ucode_w_v_li = cfg_w_v_li & (cfg_addr_li >= 16'h8000);
-wire cce_ucode_r_v_li = cfg_r_v_li & (cfg_addr_li >= 16'h8000);
-wire [cce_pc_width_p-1:0] cce_ucode_addr_li = cfg_addr_li[0+:cce_pc_width_p];
-wire [cce_instr_width_p-1:0] cce_ucode_data_li = cfg_data_li[0+:cce_instr_width_p];
+assign cce_ucode_v_o    = (cfg_r_v_li | cfg_w_v_li) & (cfg_addr_li >= 16'h8000);
+assign cce_ucode_w_o    = cfg_w_v_li & (cfg_addr_li >= 16'h8000);
+assign cce_ucode_addr_o = cfg_addr_li[0+:cce_pc_width_p];
+assign cce_ucode_data_o = cfg_data_li[0+:cce_instr_width_p];
 
-wire npc_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
-wire npc_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
-wire [vaddr_width_p-1:0] npc_li = cfg_data_li[0+:vaddr_width_p];
+wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_domain_mask_gp);
+wire [7:0] domain_li = cfg_data_li[7:0] | 8'h01;
 
-// Need to delay reads by 1 cycle here, to align with other synchronous reads
-logic [dword_width_p-1:0] npc_data_r;
-always_ff @(posedge clk_i)
-  npc_data_r <= csr_data_i;
+wire sac_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_sac_mask_gp);
+wire sac_li = cfg_data_li[0];
 
-wire irf_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
-wire irf_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
-// TODO: we could get rid of this subtraction with intellignent address map
-wire [reg_addr_width_p-1:0] irf_addr_li = (cfg_addr_li - bp_cfg_reg_irf_x0_gp);
-wire [dword_width_p-1:0] irf_data_li = cfg_data_li;
+// Address map (40 bits)
+// | did | sac_not_cc | tile ID | remaining |
+// |  3  |      1     |  log(N) |
 
-wire csr_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_csr_begin_gp && cfg_addr_li <= bp_cfg_reg_csr_end_gp);
-wire csr_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_csr_begin_gp && cfg_addr_li <= bp_cfg_reg_csr_end_gp);
-wire [rv64_csr_addr_width_gp-1:0] csr_addr_li = (cfg_addr_li - bp_cfg_reg_csr_begin_gp);
-wire [dword_width_p-1:0] csr_data_li = cfg_data_li;
+// Enabled DIDs
+logic [7:0] domain_data_r;
+bsg_dff_reset_en
+  #(.width_p(8)
+   ,.reset_val_p(1)
+   )
+   domain_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(domain_w_v_li)
+   ,.data_i(domain_li)
+   ,.data_o(domain_data_r)
+   );
 
-// Need to delay reads by 1 cycle here, to align with other synchronous reads
-logic [dword_width_p-1:0] csr_data_r;
-always_ff @(posedge clk_i)
-  csr_data_r <= csr_data_i;
-
-wire priv_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
-wire priv_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
-wire [1:0] priv_data_li = cfg_data_li[1:0];
+logic sac_data_r;
+bsg_dff_reset_en
+  #(.width_p(1)
+   ,.reset_val_p(0)
+   )
+   sac_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(sac_w_v_li)
+   ,.data_i(sac_li)
+   ,.data_o(sac_data_r)
+   );
 
 logic [core_id_width_p-1:0] core_id_li;
 logic [cce_id_width_p-1:0]  cce_id_li;
@@ -148,28 +158,12 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
                           ,core_id: core_id_li
                           ,icache_id: icache_id_li
                           ,icache_mode: icache_mode_r
-                          ,npc_w_v: npc_w_v_li
-                          ,npc_r_v: npc_r_v_li
-                          ,npc: npc_li
                           ,dcache_id: dcache_id_li
                           ,dcache_mode: dcache_mode_r
                           ,cce_id: cce_id_li
                           ,cce_mode: cce_mode_r
-                          ,cce_ucode_w_v: cce_ucode_w_v_li
-                          ,cce_ucode_r_v: cce_ucode_r_v_li
-                          ,cce_ucode_addr: cce_ucode_addr_li
-                          ,cce_ucode_data: cce_ucode_data_li
-                          ,irf_w_v: irf_w_v_li
-                          ,irf_r_v: irf_r_v_li
-                          ,irf_addr: irf_addr_li
-                          ,irf_data: irf_data_li
-                          ,csr_w_v: csr_w_v_li
-                          ,csr_r_v: csr_r_v_li
-                          ,csr_addr: csr_addr_li
-                          ,csr_data: csr_data_li
-                          ,priv_w_v: priv_w_v_li
-                          ,priv_r_v: priv_r_v_li
-                          ,priv_data: priv_data_li
+                          ,domain: domain_data_r
+                          ,sac: sac_data_r
                           };
 
   logic rdata_v_r;
@@ -183,27 +177,23 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
      ,.data_o(rdata_v_r)
      );
 
-  logic [7:0] read_sel_one_hot_r;
+  logic [3:0] read_sel_one_hot_r;
   bsg_dff_reset_en
-   #(.width_p(8))
+   #(.width_p(4))
    read_reg_one_hot
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(mem_cmd_v_lo)
 
-     ,.data_i({irf_r_v_li, npc_r_v_li, csr_r_v_li, priv_r_v_li, host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_r_v_li})
+     ,.data_i({host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_v_o})
      ,.data_o(read_sel_one_hot_r)
      );
 
   logic [dword_width_p-1:0] read_data;
   bsg_mux_one_hot
-   #(.width_p(dword_width_p), .els_p(8))
+   #(.width_p(dword_width_p), .els_p(4))
    read_mux_one_hot
-    (.data_i({dword_width_p'(irf_data_i)
-              ,dword_width_p'(npc_data_r)
-              ,dword_width_p'(csr_data_r)
-              ,dword_width_p'(priv_data_i)
-              ,dword_width_p'(host_did_i)
+    (.data_i({dword_width_p'(host_did_i)
               ,dword_width_p'(did_i)
               ,dword_width_p'(cord_i)
               ,dword_width_p'(cce_ucode_data_i)
