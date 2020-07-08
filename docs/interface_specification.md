@@ -246,7 +246,9 @@ The LCE-CCE Interface comprises three networks: Request, Command, and Response. 
 LCE initiates a coherence request using the Request network. The CCEs issue commands, such as
 invalidations or tag and data commands to complete requests, on the Command network while
 processing a request. The LCEs respond to commands issued by the CCEs by sending messages
-on the Response network. Each of these networks is point-to-point ordered.
+on the Response network. The current implementation of BlackParrot uses point-to-point
+ordered networks for all of the LCE-CCE Interface networks, however, the coherence protocol
+is designed to be correct on unordered networks.
 
 Custom messages are also supported by the interface, and may their processing is dependent on
 the LCE and CCE implementations.
@@ -305,15 +307,18 @@ A Command has the following fields:
 
 Command Message Types:
 * Sync - synchronization command during system initialization
-* Set Clear - set clear command during system initialization
-* Invalidate - invalidate a specific cache block (given by address and way) in an LCE
-* Set Tag - send tag and coherence state to an LCE, but no not wake up LCE
-* Data and Tag - send tag, coherence state, and cache block data to an LCE, and wake up the LCE
-* Set Tag and Wakeup - send tag and coherence state to an LCE, and wake up the LCE
-* Transfer - command an LCE to send cache block and tag to another LCE
-* Writeback - command an LCE to writeback a (potentially) dirty cache block
-* Uncached Store Done - inform LCE that an uncached store was completed by memory
+* Set Clear - clear entire cache set (invalidate all blocks in set)
+* Invalidate - invalidate specified cache block
+* Set State - set coherence state for specified cache block
+* Data and Tag - fill data, tag, and coherence state for specified cache block
+* Set Tag and Wakeup - set tag and coherence state for specified block and wake up LCE (miss resolved)
+* Writeback - command LCE to writeback a (potentially) dirty cache block
+* Transfer - command LCE to send cache block and tag to another LCE
+* Set State & Writeback - set coherence state then writeback cache block
+* Set State & Transfer - set coherence state then transfer cache block to specified target LCE
+* Set State & Transfer & Writeback - set coherence state, transfer cache block to target LCE, and writeback cache block
 * Uncached Data - send uncached load data to an LCE
+* Uncached Store Done - inform LCE that an uncached store was completed by memory
 
 ### Response Network
 
