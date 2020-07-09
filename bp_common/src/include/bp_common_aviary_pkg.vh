@@ -2154,6 +2154,7 @@ package bp_common_aviary_pkg;
       ,acache_assoc         : 8
       ,acache_block_width   : 256
       ,acache_fill_width    : 256
+      ,cce_mem_if_data_width: 256
 
       ,cce_pc_width         : 8
       ,ucode_cce            : 0
