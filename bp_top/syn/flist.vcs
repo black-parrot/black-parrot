@@ -166,7 +166,6 @@ $BP_BE_DIR/src/v/bp_be_top.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_int_alu.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fma.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctl.v

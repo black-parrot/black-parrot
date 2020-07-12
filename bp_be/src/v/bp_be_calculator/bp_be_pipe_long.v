@@ -47,12 +47,12 @@ module bp_be_pipe_long
     begin
       op_a = decode.opw_v
              ? signed_div_li
-               ? dword_width_p'($signed(rs1[0+:word_width_p]))
+               ? {{word_width_p{rs1[word_width_p-1]}}, rs1[0+:word_width_p]}
                : rs1[0+:word_width_p]
              : rs1;
       op_b = decode.opw_v
              ? signed_div_li
-               ? dword_width_p'($signed(rs2[0+:word_width_p]))
+               ? {{word_width_p{rs2[word_width_p-1]}}, rs2[0+:word_width_p]}
                : rs2[0+:word_width_p]
              : rs2;
     end
