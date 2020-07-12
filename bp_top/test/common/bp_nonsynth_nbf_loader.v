@@ -39,6 +39,8 @@ module bp_nonsynth_nbf_loader
   ,input  [cce_mem_msg_width_lp-1:0]       io_resp_i
   ,input                                   io_resp_v_i
   ,output                                  io_resp_ready_o
+
+  ,output                                  done_o
   );
   
   enum logic [1:0] {
@@ -141,5 +143,7 @@ module bp_nonsynth_nbf_loader
         state_r <= state_n;
       end
   end
+
+  assign done_o = (state_r == DONE);
 
 endmodule

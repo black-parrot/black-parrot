@@ -223,8 +223,9 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   if args.dram:
+    converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file)
     converter.dram_iter(int(args.dram))
-    convert.print_finish()
+    converter.print_finish()
   else:
     converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file)
     converter.dump()
