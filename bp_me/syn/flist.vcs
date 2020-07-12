@@ -80,6 +80,7 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_banked.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v
@@ -126,6 +127,8 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_reduce.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_reduce_segmented.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_rotate_left.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_rotate_right.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_round_robin_arb.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_scan.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_strobe.v

@@ -60,6 +60,7 @@ module bp_be_bypass
        match_one_hot
         (.i(match_vector[j])
          ,.o(match_vector_onehot[j])
+         ,.v_o()
          );
 
       // Bypass data with a simple crossbar

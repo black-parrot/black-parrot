@@ -4,7 +4,7 @@
 TESTLIST=$2
 if [ "$ne" == '1' ]
 then
-  echo "Usage: $0 <verilator, vcs> [num_cores]"
+  echo "Usage: $0 <verilator, vcs> <testlist> [num_cores]"
   exit 1
 elif [ $1 == "vcs" ]
 then
@@ -24,7 +24,7 @@ N=${3:-1}
 cfgs=(\
     "e_bp_single_core_ucode_cce_cfg" \
     "e_bp_single_core_cfg" \
-    "e_bp_softcore_cfg" \
+    "e_bp_unicore_cfg" \
     )
 
 let JOBS=${#cfgs[@]}

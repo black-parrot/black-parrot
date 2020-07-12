@@ -156,8 +156,8 @@ typedef enum logic [3:0] {
 //,e_sfz_op                              = 4'b0000   // Move imm[0] = 0 to flag
   ,e_andf_op                             = 4'b0001   // Logical AND two flags to GPR
   ,e_orf_op                              = 4'b0010   // Logical OR two flags to GPR
-  ,e_nandf_op                            = 4'b0011   // Logical AND two flags to GPR
-  ,e_norf_op                             = 4'b0100   // Logical OR two flags to GPR
+  ,e_nandf_op                            = 4'b0011   // Logical NAND two flags to GPR
+  ,e_norf_op                             = 4'b0100   // Logical NOR two flags to GPR
   ,e_notf_op                             = 4'b0101   // Logical not of flag
 
   ,e_bf_op                               = 4'b1000   // Branch if (MSHR.Flags & mask) == mask
@@ -348,12 +348,10 @@ typedef enum logic [3:0] {
   ,e_opd_owner_lce                       = 4'b0101 // MSHR.owner_lce_id
   ,e_opd_owner_way                       = 4'b0110 // MSHR.owner_way_id
   ,e_opd_next_coh_state                  = 4'b0111 // MSHR.next_coh_state
-  ,e_opd_flags                           = 4'b1000 // MSHR.flags
+  ,e_opd_flags                           = 4'b1000 // MSHR.flags & imm[0+:num_flags]
   ,e_opd_msg_size                        = 4'b1001 // MSHR.msg_size
   ,e_opd_lru_coh_state                   = 4'b1010 // MSHR.lru_coh_state
-
-  // only used as a source
-  ,e_opd_flags_and_mask                  = 4'b1100 // MSHR.flags & imm[0+:num_flags]
+  ,e_opd_owner_coh_state                 = 4'b1011 // MSHR.owner_coh_state
 
   // sharers vectors require src_b to provide GPR rX containing index to use
   // These can only be used as source a, not as source b or destinations
@@ -523,6 +521,7 @@ typedef enum logic [3:0] {
   ,e_mux_sel_coh_next_coh_state          = 4'b1000
   ,e_mux_sel_coh_lru_coh_state           = 4'b1001
   ,e_mux_sel_sharer_state                = 4'b1010 // Sharer's vector states, indexed by src_a
+  ,e_mux_sel_coh_owner_coh_state         = 4'b1011
   ,e_mux_sel_coh_inst_imm                = 4'b1111
 } bp_cce_inst_mux_sel_coh_state_e;
 
@@ -943,6 +942,7 @@ typedef struct packed {
   logic                                    owner_way_w_v;
   logic                                    next_coh_state_w_v;
   logic                                    lru_coh_state_w_v;
+  logic                                    owner_coh_state_w_v;
   // Flag write mask - for instructions that write flags, e.g., GAD, poph, mov, sf
   logic [`bp_cce_inst_num_flags-1:0]       flag_w_v;
   logic                                    msg_size_w_v;

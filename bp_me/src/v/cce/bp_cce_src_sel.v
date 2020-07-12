@@ -30,7 +30,7 @@ module bp_cce_src_sel
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
     `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   )
   (// Select signals for src_a and src_b - from decoded instruction
@@ -78,8 +78,8 @@ module bp_cce_src_sel
 
   //synopsys translate_off
   initial begin
-    assert(`bp_cce_inst_gpr_width == dword_width_p)
-      else $error("GPR width and dword_width_p must be same in CCE");
+    assert(cce_block_width_p >= `bp_cce_inst_gpr_width)
+      else $error("CCE block width must be greater than CCE GPR width");
   end
   //synopsys translate_on
 
@@ -93,7 +93,7 @@ module bp_cce_src_sel
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
   // Message casting
   bp_lce_cce_req_s  lce_req;
@@ -147,10 +147,10 @@ module bp_cce_src_sel
           e_opd_owner_lce:      src_a_o[0+:lce_id_width_p] = mshr.owner_lce_id;
           e_opd_owner_way:      src_a_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_a_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
-          e_opd_flags:          src_a_o[0+:`bp_cce_inst_num_flags] = mshr.flags;
+          e_opd_flags:          src_a_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
           e_opd_msg_size:       src_a_o[0+:$bits(bp_mem_msg_size_e)] = mshr.msg_size;
           e_opd_lru_coh_state:  src_a_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
-          e_opd_flags_and_mask: src_a_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
+          e_opd_owner_coh_state: src_a_o[0+:$bits(bp_coh_states_e)] = mshr.owner_coh_state;
           e_opd_sharers_hit:    src_a_o[0] = sharers_hits_i[gpr_i[src_b_i.gpr[0+:`bp_cce_inst_gpr_sel_width]]];
           e_opd_sharers_way:    src_a_o[0+:lce_assoc_width_p] = sharers_ways_i[gpr_i[src_b_i.gpr[0+:`bp_cce_inst_gpr_sel_width]]];
           e_opd_sharers_state:  src_a_o[0+:$bits(bp_coh_states_e)] = sharers_coh_states_i[gpr_i[src_b_i.gpr[0+:`bp_cce_inst_gpr_sel_width]]];
@@ -176,9 +176,9 @@ module bp_cce_src_sel
           e_opd_lce_req_v:     src_a_o[0] = lce_req_v_i;
           e_opd_lce_resp_type: src_a_o[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp.header.msg_type;
           e_opd_mem_resp_type: src_a_o[0+:$bits(bp_cce_mem_cmd_type_e)] = mem_resp.header.msg_type;
-          e_opd_lce_resp_data: src_a_o = lce_resp.data[0+:dword_width_p];
-          e_opd_mem_resp_data: src_a_o = mem_resp.data[0+:dword_width_p];
-          e_opd_lce_req_data:  src_a_o = lce_req.data[0+:dword_width_p];
+          e_opd_lce_resp_data: src_a_o = lce_resp.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_mem_resp_data: src_a_o = mem_resp.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_lce_req_data:  src_a_o = lce_req.data[0+:`bp_cce_inst_gpr_width];
           default:             src_a_o = '0;
         endcase
       end
@@ -236,10 +236,10 @@ module bp_cce_src_sel
           e_opd_owner_lce:      src_b_o[0+:lce_id_width_p] = mshr.owner_lce_id;
           e_opd_owner_way:      src_b_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_b_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
-          e_opd_flags:          src_b_o[0+:`bp_cce_inst_num_flags] = mshr.flags;
+          e_opd_flags:          src_b_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
           e_opd_msg_size:       src_b_o[0+:$bits(bp_mem_msg_size_e)] = mshr.msg_size;
           e_opd_lru_coh_state:  src_b_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
-          e_opd_flags_and_mask: src_b_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
+          e_opd_owner_coh_state: src_b_o[0+:$bits(bp_coh_states_e)] = mshr.owner_coh_state;
           // Sharers vectors as source b is not supported
           //e_opd_sharers_hit:
           //e_opd_sharers_way:
@@ -266,9 +266,9 @@ module bp_cce_src_sel
           e_opd_lce_req_v:     src_b_o[0] = lce_req_v_i;
           e_opd_lce_resp_type: src_b_o[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp.header.msg_type;
           e_opd_mem_resp_type: src_b_o[0+:$bits(bp_cce_mem_cmd_type_e)] = mem_resp.header.msg_type;
-          e_opd_lce_resp_data: src_b_o = lce_resp.data[0+:dword_width_p];
-          e_opd_mem_resp_data: src_b_o = mem_resp.data[0+:dword_width_p];
-          e_opd_lce_req_data:  src_b_o = lce_req.data[0+:dword_width_p];
+          e_opd_lce_resp_data: src_b_o = lce_resp.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_mem_resp_data: src_b_o = mem_resp.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_lce_req_data:  src_b_o = lce_req.data[0+:`bp_cce_inst_gpr_width];
           default:             src_b_o = '0;
         endcase
       end
@@ -367,19 +367,20 @@ module bp_cce_src_sel
 
     // coh_state_sel
     unique case (coh_state_sel_i)
-      e_mux_sel_coh_r0:             state_o = bp_coh_states_e'(gpr_i[e_opd_r0][0+:$bits(bp_coh_states_e)]);
-      e_mux_sel_coh_r1:             state_o = bp_coh_states_e'(gpr_i[e_opd_r1][0+:$bits(bp_coh_states_e)]);
-      e_mux_sel_coh_r2:             state_o = bp_coh_states_e'(gpr_i[e_opd_r2][0+:$bits(bp_coh_states_e)]);
-      e_mux_sel_coh_r3:             state_o = bp_coh_states_e'(gpr_i[e_opd_r3][0+:$bits(bp_coh_states_e)]);
-      e_mux_sel_coh_r4:             state_o = bp_coh_states_e'(gpr_i[e_opd_r4][0+:$bits(bp_coh_states_e)]);
-      e_mux_sel_coh_r5:             state_o = bp_coh_states_e'(gpr_i[e_opd_r5][0+:$bits(bp_coh_states_e)]);
-      e_mux_sel_coh_r6:             state_o = bp_coh_states_e'(gpr_i[e_opd_r6][0+:$bits(bp_coh_states_e)]);
-      e_mux_sel_coh_r7:             state_o = bp_coh_states_e'(gpr_i[e_opd_r7][0+:$bits(bp_coh_states_e)]);
-      e_mux_sel_coh_next_coh_state: state_o = mshr.next_coh_state;
-      e_mux_sel_coh_lru_coh_state:  state_o = mshr.lru_coh_state;
-      e_mux_sel_sharer_state:       state_o = sharers_coh_states_i[gpr_i[src_a_i.gpr[0+:$bits(bp_coh_states_e)]]];
-      e_mux_sel_coh_inst_imm:       state_o = bp_coh_states_e'(imm_i[0+:$bits(bp_coh_states_e)]);
-      default:                      state_o = e_COH_I;
+      e_mux_sel_coh_r0:              state_o = bp_coh_states_e'(gpr_i[e_opd_r0][0+:$bits(bp_coh_states_e)]);
+      e_mux_sel_coh_r1:              state_o = bp_coh_states_e'(gpr_i[e_opd_r1][0+:$bits(bp_coh_states_e)]);
+      e_mux_sel_coh_r2:              state_o = bp_coh_states_e'(gpr_i[e_opd_r2][0+:$bits(bp_coh_states_e)]);
+      e_mux_sel_coh_r3:              state_o = bp_coh_states_e'(gpr_i[e_opd_r3][0+:$bits(bp_coh_states_e)]);
+      e_mux_sel_coh_r4:              state_o = bp_coh_states_e'(gpr_i[e_opd_r4][0+:$bits(bp_coh_states_e)]);
+      e_mux_sel_coh_r5:              state_o = bp_coh_states_e'(gpr_i[e_opd_r5][0+:$bits(bp_coh_states_e)]);
+      e_mux_sel_coh_r6:              state_o = bp_coh_states_e'(gpr_i[e_opd_r6][0+:$bits(bp_coh_states_e)]);
+      e_mux_sel_coh_r7:              state_o = bp_coh_states_e'(gpr_i[e_opd_r7][0+:$bits(bp_coh_states_e)]);
+      e_mux_sel_coh_next_coh_state:  state_o = mshr.next_coh_state;
+      e_mux_sel_coh_lru_coh_state:   state_o = mshr.lru_coh_state;
+      e_mux_sel_sharer_state:        state_o = sharers_coh_states_i[gpr_i[src_a_i.gpr[0+:$bits(bp_coh_states_e)]]];
+      e_mux_sel_coh_owner_coh_state: state_o = mshr.owner_coh_state;
+      e_mux_sel_coh_inst_imm:        state_o = bp_coh_states_e'(imm_i[0+:$bits(bp_coh_states_e)]);
+      default:                       state_o = e_COH_I;
     endcase
 
   end // always_comb

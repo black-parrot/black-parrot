@@ -233,216 +233,111 @@ to carry the memory access and cache coherence traffic between the L1 instructio
 and the coherence directory and rest of the memory system. The two components that interact through
 the interface are the Local Cache Engines (LCE) and Cache Coherence Engines (CCE).
 
-A Local Cache Engine (LCE) is a coherence controller attached to each L1 entity in the system. The
-most common L1 entities are the instruction and data caches in the Front End and Back End,
-respectively, of a BlackParrot processor. The LCE is responsible for initiating coherence requests
-and responding to coherence commands. A Cache Coherence Engine (CCE) is a coherence directory that
-manages the coherence state of blocks cached in any of the LCEs. The CCEs have full control over
-the coherence state of all cache blocks. Each CCE manages the coherence state of a subset of the
-physical address space, and there may be many LCEs and CCEs in a multicore BlackParrot processor.
+A Local Cache Engine (LCE) is a coherence controller attached to each entity in the system
+participating in coherence. The most common entities are the instruction and data caches
+in the Front End and Back End, respectively, of a BlackParrot processor. The LCE is responsible
+for initiating coherence requests and responding to coherence commands. A Cache Coherence Engine (CCE)
+is a coherence directory that manages the coherence state of blocks cached in any of the LCEs.
+The CCEs have full control over the coherence state of all cache blocks. Each CCE manages the coherence
+state of a subset of the physical address space, and there may be many LCEs and CCEs in a multicore
+BlackParrot processor.
 
-The LCE-CCE Interface comprises three networks: LCE Request, LCE Command, and LCE Response. An
-LCE initiates a coherence request using the LCE Request network. The CCEs issue commands, such as
-invalidations or tag and data commands to complete requests, on the LCE Command network while
-processing an LCE Request. The LCEs respond to commands issued by the CCEs by sending messages
-on the LCE Response network. Each of these networks is point-to-point ordered and input buffered.
-The LCEs and CCEs must also be input buffered to conform to the handshaking of the networks.
+The LCE-CCE Interface comprises three networks: Request, Command, and Response. An
+LCE initiates a coherence request using the Request network. The CCEs issue commands, such as
+invalidations or tag and data commands to complete requests, on the Command network while
+processing a request. The LCEs respond to commands issued by the CCEs by sending messages
+on the Response network. Each of these networks is point-to-point ordered.
 
 Custom messages are also supported by the interface, and may their processing is dependent on
-the LCE and CCE implementations. Only destination, message type, address, data length, and data
-fields are required for custom messages.
+the LCE and CCE implementations.
 
 The LCE-CCE Interface is defined in [bp\_common\_me\_if.vh](../bp_common/src/include/bp_common_me_if.vh)
 
-### LCE Request Network
+### Request Network
 
-The LCE Request network carries coherence requests from the LCEs to the CCEs. Requests are initiated
+The Request network carries coherence requests from the LCEs to the CCEs. Requests are initiated
 when an LCE encounters a cache or coherence miss. Cache misses occur when the LCE does not contain
 the desired cache block. A coherence miss occurs when the LCE contains a valid copy of the desired
 cache block, but has insufficient permissions to perform the desired operation (e.g., trying to write
-a cache block that the LCE has with read-only permissions). An LCE Request may also be sent to
-perform an uncached load or store operation. Issuing an LCE Request initiates a new coherence
+a cache block that the LCE has with read-only permissions). A request may also be sent to
+perform an uncached load or store operation. Issuing a request initiates a new coherence
 transaction, which is handled by one of the CCEs in the system.
 
-#### LCE Request Messages
+#### Request Messages
 
-An LCE Request is sent from an LCE to a CCE when the LCE requests a new cache block, needs different
+A request is sent from an LCE to a CCE when the LCE requests a new cache block, needs different
 coherence permissions that it already has for a cache block, or needs to perform an uncached load
 or store.
 
-An LCE Request has the following fields:
+A Request has the following fields:
 * Destination ID - destination CCE ID
 * Message Type - Load/Store, Cached/Uncached, Custom
-* Data Length - Number of 64-bit data packets following header (only for custom messages)
+* Size - Size of valid data in data field
 * Source ID - requesting LCE ID
 * Address - request address (must be naturally aligned if uncached request)
 * Non-Exclusive Request Bit - 1 if LCE does not want Exclusive rights to cache block
 * LRU Way ID - cache way within cache set that LCE wants miss filled to
-* LRU Dirty Bit - 1 if LRU Way ID holds a currently dirty cache block
-* Uncached Request Size - size of load or store, in bytes
 * Data - data for uncached store or custom message payload
 
-### LCE Command Network
+### Command Network
 
-The LCE Command network carries commands and data to the LCEs. Most messages on this network originate
-at the CCEs. LCEs may also occasionally send LCE Command messages to perform LCE to LCE transfers
-of cache block data, but only do so when commanded to by a CCE. Common LCE Commands include cache
+The Command network carries commands and data to the LCEs. Most messages on this network originate
+at the CCEs. LCEs may also occasionally send Command messages to perform LCE to LCE transfers
+of cache block data, but only do so when commanded to by a CCE. Common Commands include cache
 block invalidation and writeback commands, data and tag commands that deliver a valid cache block
 and coherence permissions to an LCE, and transfer commands that tell an LCE to send a cache block
 to another LCE in the system.
 
-#### LCE Command Messages
+#### Command Messages
 
-LCE Command Messages have two formats, one for commands that send data to an LCE and one that does
-not send data. Not all fields in each of the messages are used by every command type. For example,
-a Sync Command only requires the Destination ID, Message Type, and Source ID fields.
-
-An LCE Command has the following fields:
+A Command has the following fields:
 * Destination ID - destination LCE ID
 * Message Type - command message type (see below)
-* Data Length - Number of 64-bit data packets following header (only for custom messages)
-* Source ID - sending LCE ID
+* Size - Size of valid data in data field
+* Source ID - sending CCE ID
 * Address - address
 * Way ID - cache way within LCE's cache set (given by address) to operate on
 * State - coherence state
 * Target LCE - LCE ID that receiving LCE will send cache block data and tag to for Transfer Command
 * Target Way ID - cache way within target LCE's cache set (determined by address) to fill data in
+* Target State - coherence state for target (to be implemented in future)
 * Data - cache block data, uncached load data, or custom message payload
 
-LCE Command Message Types:
+Command Message Types:
 * Sync - synchronization command during system initialization
 * Set Clear - set clear command during system initialization
+* Invalidate - invalidate a specific cache block (given by address and way) in an LCE
+* Set Tag - send tag and coherence state to an LCE, but no not wake up LCE
+* Data and Tag - send tag, coherence state, and cache block data to an LCE, and wake up the LCE
+* Set Tag and Wakeup - send tag and coherence state to an LCE, and wake up the LCE
 * Transfer - command an LCE to send cache block and tag to another LCE
 * Writeback - command an LCE to writeback a (potentially) dirty cache block
-* Set Tag - send tag and coherence state to an LCE, but no not wake up LCE
-* Set Tag and Wakeup - send tag and coherence state to an LCE, and wake up the LCE
-* Invalidate Tag - invalidate a specific cache block (given by address and way) in an LCE
 * Uncached Store Done - inform LCE that an uncached store was completed by memory
-* Data and Tag - send tag, coherence state, and cache block data to an LCE, and wake up the LCE
 * Uncached Data - send uncached load data to an LCE
 
-### LCE Response Network
+### Response Network
 
-The LCE Response network carries acknowledgement and data writeback messages from the LCEs to the
-CCEs. The CCE must be able to sink any potential LCE Response that could be generated in the system
+The Response network carries acknowledgement and data writeback messages from the LCEs to the
+CCEs. The CCE must be able to sink any potential response that could be generated in the system
 in order to prevent deadlock in the system. Sinking a message can be accomplished by processing
 the message when it arrives or placing it into a buffer to consume it from the network. If
 buffering is used, the buffer must be large enough to hold all possible response messages to the
 CCE.
 
-#### LCE Response Messages
+#### Response Messages
 
-An LCE Response message has the following fields:
+A Response message has the following fields:
 * Destination ID - destination CCE ID
 * Message Type - response type (see below)
-* Data Length - Number of 64-bit data packets following header (only for custom messages)
+* Size - Size of valid data in data field
 * Source ID - sending LCE ID
 * Address - cache block address
 * Data - cache block data (if required) or custom message payload
 
-LCE Response Message Types:
+Response Message Types:
 * Sync Ack - synchronization acknowledgement during system initialization
 * Inv Ack - invalidation ack to acknowledge invalidation command has been processed
 * Coh Ack - coherence ack to acknowledge end of coherence transaction
 * Resp WB - cache block writeback response, with cache block data
 * Resp Null WB - cache block writeback response, without cache block data
-
-### Network Priorities
-
-The three networks of the LCE-CCE Interface have a priority ordering, from highest to lowest, of
-LCE Response, LCE Command, LCE Request. In other words, LCE Responses are the highest priority
-messages, followed by LCE Commands, and lastly LCE Requests, which are the lowest priority. The
-priority of messages across the networks is required to ensure deadlock free operation of the
-coherence protocol. A message on a lower priority network may cause a message to be
-sent on a higher priority network, but a higher priority message may not cause a lower priority
-message to be sent. These priority restrictions prevent the presence of cycles between messages
-on the three networks, the presence of which may lead to deadlock in the protocol.
-
-### Cache Coherence Protocol Overview
-
-The LCEs and CCEs operate cooperatively to implement the cache coherence protocol in a multicore
-BlackParrot processor. The standard coherence protocol is a directory-based MESI protocol. The
-coherence protocol implemented is similar to traditional directory-based coherence protocols, but
-differs in a few subtle ways. First, all coherence state is managed exclusively by the CCEs
-(coherence directories). Second, all state transitions in the LCE are atomic, and there are zero
-transient states in the protocol. Third, the coherence directory mantains the full coherence state
-of all blocks cached in the system, and the directories are fully inclusive of all LCEs.
-
-A coherence transaction begins when an LCE sends an LCE Request to a CCE due to a read or write miss.
-The CCE receives the LCE Request and begins processing it by reading the coherence directory. Based on
-the current coherence state of the requested cache block, the CCE will send a sequence of LCE Commands
-that will, if required, 1) invalidate the block from other LCEs, 2) writeback the cache block that
-is being replaced in the requesting LCE, and 3) initiate an LCE to LCE transfer or fetch the requested
-block from the next level of cache or memory. The coherence transaction closes when the requesting
-LCE receives the new coherence state and any required data for the requested block and responds to the
-CCE with a coherence acknowledgement message.
-
-The LCE-CCE Interface described above carries the coherence protocol messages between LCEs and CCEs
-in a BlackParrot multicore system.
-
-### Tag Sets and Way Groups
-
-Coherence information in a multicore BlackParrot system is maintained using Tag Sets and Way Groups.
-A Tag Set Entry comprises an address tag and coherence state for a single cache
-block in an LCE. A Tag Set is the collection of Tag Set Entries for all cache block blocks in a
-single LCE cache set. There is one Tag Set per LCE cache set. Each LCE keeps a shadow copy of the
-Tag Sets for every cache block associated with the LCE, while the CCEs store the true copies of the
-Tag Sets. Only a CCE may modify the address or coherence state of a Tag Set Entry. Each LCE also
-maintains management bits, such as a dirty bit, for each cache block / Tag Set Entry in the LCE's
-cache.
-
-A Way Group is a collection of Tag Sets from all LCEs in the system that map to the same set of
-physical addresses. Way Groups are employed by CCEs to manage the coherence state
-of all cache blocks across all LCE's in the system. Each way group has an associated Pending Bit
-that tracks whether the way group already has an outstanding coherence transaction being processed.
-In order to maintain correctness in the memory system, a CCE only processes a new LCE Request if
-the pending bit is cleared for the way group associated with the request address. Requests
-targeting unique way groups may be processed concurrently in the system in order to provide
-concurrency in the memory system.
-
-### Way Group Pending Bits
-
-Each way group contains a Pending Bit that is used to order coherence requests for addresses
-mapping to the way group. In practice, the pending bit is implemented as a small counter. This
-counter is incremented when the CCE begins processing a new LCE Request and when the CCE sends
-a command to memory while processing the request. The counter is decremented when the CCE
-receives and processes responses from memory and the coherence acknowledgement from the LCE. The
-protocol makes no assumptions about the latency of messages between the LCEs and CCEs or the CCEs
-and memory, and a transaction is only complete when all memory commands have been completed and
-the LCE has responded with a coherence acknowldegement, which may arrive before or after the last
-memory response.
-
-### LCE Request Processing
-
-Each LCE Request is processed by a single CCE, and requests are processed in the order they arrive at
-the CCE. When a new request arrives, the CCE performs a sequence of operations including reading
-the coherence directory, checking the associated way group's pending bit, invalidating or downgrading
-the block from LCEs, writing back the LRU block from the requesting LCE, and providing the cache block
-data and tag to the requesting LCE. In order to preserve correctness of the coherence protocol, the CCE
-must perform certain operations before others.
-
-At a high level, a coherence request is processed as described by the following list of steps. Each step
-may include multiple substeps, and it may be possible to overlap actions of certain steps. The
-amount of concurrency between independent requests is dependent on the complexity of the CCE
-implementation. In the simplest form, all requests to a single CCE are processed in the order
-received. In a complex implementation, it is only necessary to serialize requests to each way group,
-while requests to independent way groups may be processed concurrently.
-
-1. Check Pending Bit for way group associated with request address. If the bit is cleared,
-   the request can be processed, otherwise stall this request.
-
-2. Read coherence directory to determine which LCEs have block cached and in which states and to
-   determine the new coherence state for the block in the requesting LCE.
-
-3. Invalidate block from other LCEs, if required.
-
-4. Perform a writeback of the LRU block from requesting LCE, if required.
-
-5. Determine how request will be satisfied, which may be an Upgrade, LCE to LCE Transfer,
-   or read from next level of memory (e.g., L2 cache).
-
-6. If an LCE to LCE Transfer is used, optionally write back the cache block if it was dirty in the
-   sending LCE's cache. This writeback may be deferred until the block is evicted from the last LCE.
-
-7. Receive coherence acknowledgement to close transaction.
 

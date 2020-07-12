@@ -3,7 +3,7 @@
   * testbench.v
   *
   */
-  
+
 module testbench
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -21,7 +21,8 @@ module testbench
    , parameter dram_trace_p                = 0
    , parameter dcache_trace_p              = 0
    , parameter random_yumi_p               = 0
-   , parameter uce_p                       = 1
+   , parameter uce_p                       = 0
+   , parameter wt_p                        = 0
 
    , parameter trace_file_p = "test.tr"
 
@@ -49,7 +50,7 @@ module testbench
    , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dword_width_p)
    , localparam trace_replay_data_width_lp = ptag_width_lp + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
-   , localparam trace_rom_addr_width_lp = 8 
+   , localparam trace_rom_addr_width_lp = 8
 
    , localparam yumi_min_delay_lp = 0
    , localparam yumi_max_delay_lp = 15
@@ -68,7 +69,7 @@ module testbench
   logic mem_cmd_v_lo, mem_resp_v_lo;
   logic mem_cmd_ready_lo, mem_resp_yumi_lo;
   logic [cce_mem_msg_width_lp-1:0] mem_cmd_lo, mem_resp_lo;
- 
+
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
   logic trace_v_lo;
   logic dut_ready_lo;
@@ -152,7 +153,7 @@ module testbench
       (.addr_i(trace_rom_addr_lo)
       ,.data_o(trace_rom_data_li)
       );
-           
+
   assign dcache_pkt_li = trace_data_lo[0+:dcache_pkt_width_lp];
   assign ptag_li = trace_data_lo[dcache_pkt_width_lp+:ptag_width_lp];
   assign uncached_li = trace_data_lo[(dcache_pkt_width_lp+ptag_width_lp)+:1];
@@ -179,10 +180,10 @@ module testbench
   // We need an 8 FIFO because we might be receiving all data at once rather
   // than receive data at regular intervals. This is possible a side effect of
   // our testing strategy. Open for debate.
-  bsg_fifo_1r1w_small 
+  bsg_fifo_1r1w_small
     #(.width_p(dword_width_p)
      ,.els_p(8))
-    output_fifo 
+    output_fifo
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
@@ -201,11 +202,12 @@ module testbench
   wrapper
     #(.bp_params_p(bp_params_p)
      ,.uce_p(uce_p)
+     ,.wt_p(wt_p)
      )
     wrapper
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
-  
+
     ,.cfg_bus_i(cfg_bus_li)
 
     ,.dcache_pkt_i(dcache_pkt_li)
@@ -218,7 +220,7 @@ module testbench
     ,.ptag_i(ptag_li)
 
     ,.uncached_i(uncached_li)
- 
+
     ,.mem_resp_v_i(mem_resp_v_lo)
     ,.mem_resp_i(mem_resp_lo)
     ,.mem_resp_yumi_o(mem_resp_yumi_lo)
@@ -236,12 +238,12 @@ module testbench
     ,.mem_zero_p(mem_zero_p)
     ,.mem_file_p(mem_file_p)
     ,.mem_offset_p(mem_offset_p)
- 
+
     ,.use_max_latency_p(use_max_latency_p)
     ,.use_random_latency_p(use_random_latency_p)
     ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
     ,.max_latency_p(max_latency_p)
- 
+
     ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
     ,.dram_cfg_p(dram_cfg_p)
     ,.dram_sys_cfg_p(dram_sys_cfg_p)
@@ -250,11 +252,11 @@ module testbench
     mem
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
- 
+
     ,.mem_cmd_i(mem_cmd_lo)
     ,.mem_cmd_v_i(mem_cmd_v_lo)
     ,.mem_cmd_ready_o(mem_cmd_ready_lo)
- 
+
     ,.mem_resp_o(mem_resp_lo)
     ,.mem_resp_v_o(mem_resp_v_lo)
     ,.mem_resp_yumi_i(mem_resp_yumi_lo)
@@ -267,11 +269,12 @@ module testbench
       ,.sets_p(dcache_sets_p)
       ,.assoc_p(dcache_assoc_p)
       ,.block_width_p(dcache_block_width_p)
+      ,.fill_width_p(dcache_fill_width_p)
       ,.trace_file_p("dcache"))
      dcache_tracer
       (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
        ,.reset_i(reset_i)
-       
+
        ,.freeze_i(cfg_bus_cast_i.freeze)
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
@@ -295,10 +298,12 @@ module testbench
        ,.wt_req(wt_req)
        ,.cache_miss_o(dcache_miss_o)
 
+       ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
        ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
 
+       ,.tag_mem_v_i(tag_mem_v_li)
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)
        ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
@@ -306,6 +311,8 @@ module testbench
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+       ,.program_finish_i('0)
        );
 
   if (uce_p == 0) begin
@@ -315,10 +322,10 @@ module testbench
         bp_cce_tracer
          (.clk_i(clk_i & (testbench.cce_trace_p == 1))
           ,.reset_i(reset_i)
-          
+
           ,.freeze_i(cfg_bus_cast_i.freeze)
           ,.cce_id_i(cfg_bus_cast_i.cce_id)
-    
+
           // To CCE
           ,.lce_req_i(lce_req_i)
           ,.lce_req_v_i(lce_req_v_i)
@@ -327,17 +334,17 @@ module testbench
           ,.lce_resp_i(lce_resp_i)
           ,.lce_resp_v_i(lce_resp_v_i)
           ,.lce_resp_yumi_i(lce_resp_yumi_o)
-    
+
           // From CCE
           ,.lce_cmd_i(lce_cmd_o)
           ,.lce_cmd_v_i(lce_cmd_v_o)
           ,.lce_cmd_ready_i(lce_cmd_ready_i)
-    
+
           // To CCE
           ,.mem_resp_i(mem_resp_i)
           ,.mem_resp_v_i(mem_resp_v_i)
           ,.mem_resp_yumi_i(mem_resp_yumi_o)
-    
+
           // From CCE
           ,.mem_cmd_i(mem_cmd_o)
           ,.mem_cmd_v_i(mem_cmd_v_o)
@@ -359,7 +366,7 @@ module testbench
      ,.mem_resp_v_i(mem_resp_v_lo)
      ,.mem_resp_yumi_i(mem_resp_yumi_lo)
      );
-  
+
   // Assertions
   if(uce_p == 0 && l1_writethrough_p == 1)
     $error("Writethrough cache with CCE not yet supported");

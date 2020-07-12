@@ -1,14 +1,17 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
+include $(BP_TEST_DIR)/Makefile.linux
 
 perch_dir       := $(BP_TEST_SRC_DIR)/perch
+bootrom_dir     := $(BP_TEST_SRC_DIR)/bootrom
 bp_tests_dir    := $(BP_TEST_SRC_DIR)/bp_tests
 riscv_tests_dir := $(BP_TEST_SRC_DIR)/riscv-tests
 beebs_dir       := $(BP_TEST_SRC_DIR)/beebs
 coremark_dir    := $(BP_TEST_SRC_DIR)/coremark
 spec_dir        := $(BP_TEST_SRC_DIR)/spec
 riscvdv_dir     := $(BP_TEST_SRC_DIR)/riscv-dv
+demos_dir       := $(BP_TEST_SRC_DIR)/demos
 
 define submodule_test_template
 $(1)_tag := $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
@@ -49,6 +52,9 @@ spec_build:
 riscvdv_build:
 	$(MAKE) -C $(riscvdv_dir)
 
+linux_build: $(fw_payload)
+	cp $< $(BP_TEST_MEM_DIR)/linux/linux.riscv
+
 perch: $(BP_TEST_DIR)/lib/libperch.a
 $(BP_TEST_DIR)/lib/libperch.a:
 	$(MAKE) -C $(perch_dir)
@@ -57,6 +63,16 @@ $(BP_TEST_DIR)/lib/libperch.a:
 	cp $(BP_TEST_DIR)/src/perch/libperch.a $(BP_TEST_DIR)/lib
 	cp $(BP_TEST_DIR)/src/perch/*.h $(BP_TEST_DIR)/include
 
+bootrom: $(BP_TEST_DIR)/mem/bootrom.riscv
+$(BP_TEST_DIR)/mem/bootrom.riscv:
+	$(MAKE) -C $(bootrom_dir)
+	cp $(BP_TEST_DIR)/src/bootrom/bootrom.riscv $(BP_TEST_MEM_DIR)/bootrom.riscv
+
+demos:
+	$(MAKE) -C $(demos_dir)
+	mkdir -p $(BP_TEST_MEM_DIR)/demos
+	find $(demos_dir) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/demos/ \;
+
 $(eval $(call submodule_test_template,bp_tests,$(bp_tests_dir)))
 $(eval $(call submodule_test_template,riscv_tests,$(riscv_tests_dir)))
 $(eval $(call submodule_test_template,beebs,$(beebs_dir)))
@@ -64,8 +80,7 @@ $(eval $(call submodule_test_template,coremark,$(coremark_dir)))
 $(eval $(call submodule_test_template,spec,$(spec_dir)))
 $(eval $(call submodule_test_template,riscvdv,$(riscvdv_dir)))
 
-RISCV_ISA_SIM ?= spike
-RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -D
+RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -d -t
 RISCV_OBJCOPY ?= $(CROSS_COMPILE)objcopy
 MEM2NBF       ?= $(BP_COMMON_DIR)/software/py/nbf.py
 DROMAJO       ?= dromajo
@@ -78,21 +93,4 @@ DROMAJO       ?= dromajo
 
 %.dump: %.riscv
 	$(RISCV_OBJDUMP) $*.riscv > $@
-
-%.spike: %.riscv
-	$(RISCV_ISA_SIM) $*.riscv > $@ 2>&1
-
-%.nbf: %.mem
-	$(PYTHON) $(MEM2NBF) --mem_file $*.mem > $@
-
-include $(BP_TEST_DIR)/Makefile.frag
-$(BP_TESTS_RISCV): bp_tests
-$(RV64_P_TESTS_RISCV): riscv_tests
-$(RV64_V_TESTS_RISCV): riscv_tests
-$(RV64_PT_TESTS_RISCV): riscv_tests
-$(RV64_VT_TESTS_RISCV): riscv_tests
-$(RV64_BENCHMARKS_RISCV): riscv_tests
-$(BEEBS_TESTS_RISCV): beebs
-$(SPEC_RISCV): spec
-$(RISCVDV_RISCV): riscvdv
 

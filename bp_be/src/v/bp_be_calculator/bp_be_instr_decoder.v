@@ -23,8 +23,7 @@ module bp_be_instr_decoder
    localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
-  (input                             interrupt_v_i
-   , input                           fe_exc_not_instr_i
+  (input                             fe_exc_not_instr_i
    , input bp_fe_exception_code_e    fe_exc_i
    , input [instr_width_lp-1:0]      instr_i
 
@@ -226,10 +225,7 @@ always_comb
       `RV64_MISC_MEM_OP : 
         begin
           unique casez (instr)
-            `RV64_FENCE   : 
-              begin
-                decode.pipe_mem_v = 1'b1;
-              end
+            `RV64_FENCE   : begin end
             `RV64_FENCE_I : 
               begin 
                 decode.pipe_mem_v  = 1'b1;
@@ -242,7 +238,7 @@ always_comb
         end
       `RV64_SYSTEM_OP : 
         begin
-          decode.pipe_mem_v = 1'b1;
+          decode.pipe_sys_v = 1'b1;
           decode.csr_v      = 1'b1;
           decode.serial_v   = 1'b1;
           unique casez (instr)
@@ -292,37 +288,21 @@ always_comb
       default : illegal_instr = 1'b1;
     endcase
 
-    if (interrupt_v_i)
+    if (fe_exc_not_instr_i)
       begin
         decode = '0;
-        decode.queue_v     = 1'b0;
-        decode.pipe_mem_v  = 1'b1;
-        decode.csr_v       = 1'b1;
-        decode.serial_v    = 1'b1;
-        decode.fu_op       = e_op_take_interrupt;
-      end
-    else if (fe_exc_not_instr_i)
-      begin
-        decode = '0;
-        decode.queue_v     = 1'b1;
-        decode.pipe_mem_v  = 1'b1;
-        decode.csr_v       = 1'b1;
-        decode.serial_v    = 1'b1;
+        decode.queue_v = 1'b1;
         casez (fe_exc_i)
-          e_instr_misaligned  : decode.fu_op = e_op_instr_misaligned;
-          e_instr_access_fault: decode.fu_op = e_op_instr_access_fault;
-          e_instr_page_fault  : decode.fu_op = e_op_instr_page_fault;
-          e_itlb_miss         : decode.fu_op = e_itlb_fill;
+          e_instr_access_fault: decode.instr_access_fault = 1'b1;
+          e_instr_page_fault  : decode.instr_page_fault   = 1'b1;
+          e_itlb_miss         : decode.itlb_miss          = 1'b1;
         endcase
       end
     else if (illegal_instr)
       begin
         decode = '0;
-        decode.queue_v     = 1'b1;
-        decode.pipe_mem_v  = 1'b1;
-        decode.csr_v       = 1'b1;
-        decode.serial_v    = 1'b1;
-        decode.fu_op       = e_op_illegal_instr;
+        decode.queue_v = 1'b1;
+        decode.illegal_instr = 1'b1;
       end
   end
 

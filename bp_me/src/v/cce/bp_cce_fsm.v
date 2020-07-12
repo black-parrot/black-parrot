@@ -36,7 +36,7 @@ module bp_cce_fsm
     , localparam lg_max_tag_sets_lp        = `BSG_SAFE_CLOG2(max_tag_sets_lp)
 
     // interface widths
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
     , localparam counter_max = 256
@@ -48,7 +48,6 @@ module bp_cce_fsm
 
    // Config channel
    , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
-   , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
    , input [lce_cce_req_width_lp-1:0]                  lce_req_i
@@ -75,9 +74,6 @@ module bp_cce_fsm
    , input                                             mem_cmd_ready_i
   );
 
-  // stub cfg ucode output, since FSM CCE has no ucode
-  assign cfg_cce_ucode_data_o = '0;
-
   //synopsys translate_off
   initial begin
     assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
@@ -93,7 +89,7 @@ module bp_cce_fsm
   // Define structure variables for output queues
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -175,11 +171,10 @@ module bp_cce_fsm
   bp_coh_states_e dir_coh_state_li;
 
   // GAD signals
-  logic gad_v;
-
   logic [lg_lce_assoc_lp-1:0] gad_req_addr_way_lo;
   logic [lce_id_width_p-1:0] gad_owner_lce_lo;
   logic [lg_lce_assoc_lp-1:0] gad_owner_lce_way_lo;
+  bp_coh_states_e gad_owner_coh_state_lo;
   logic gad_replacement_flag_lo;
   logic gad_upgrade_flag_lo;
   logic gad_cached_shared_flag_lo;
@@ -227,7 +222,7 @@ module bp_cce_fsm
     gad
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.gad_v_i(gad_v)
+      ,.gad_v_i(sharers_v_lo & ~dir_busy_lo)
 
       ,.sharers_v_i(sharers_v_lo)
       ,.sharers_hits_i(sharers_hits_lo)
@@ -241,6 +236,7 @@ module bp_cce_fsm
       ,.req_addr_way_o(gad_req_addr_way_lo)
       ,.owner_lce_o(gad_owner_lce_lo)
       ,.owner_way_o(gad_owner_lce_way_lo)
+      ,.owner_coh_state_o(gad_owner_coh_state_lo)
       ,.replacement_flag_o(gad_replacement_flag_lo)
       ,.upgrade_flag_o(gad_upgrade_flag_lo)
       ,.cached_shared_flag_o(gad_cached_shared_flag_lo)
@@ -252,39 +248,39 @@ module bp_cce_fsm
 
 
   typedef enum logic [5:0] {
-    RESET
-    , CLEAR_DIR
-    , UNCACHED_ONLY
-    , SEND_SYNC
-    , SYNC_ACK
-    , READY
+    e_reset
+    , e_clear_dir
+    , e_uncached_only
+    , e_send_sync
+    , e_sync_ack
+    , e_ready
 
-    , UC_REQ
-    , READ_PENDING
-    , DEQ_LCE_REQ
-    , READ_MEM_SPEC
-    , READ_DIR
-    , WAIT_DIR_GAD
-    , GAD
+    , e_uc_req
+    , e_read_pending
+    , e_deq_lce_req
+    , e_read_mem_spec
+    , e_read_dir
+    , e_wait_dir_gad
 
-    , WRITE_NEXT_STATE
+    , e_write_next_state
 
-    , INV_CMD
-    , INV_ACK
+    , e_inv_cmd
+    , e_inv_ack
 
-    , REPLACEMENT
-    , REPLACEMENT_WB_RESP
+    , e_replacement
+    , e_replacement_wb_resp
 
-    , UPGRADE_STW_CMD
+    , e_upgrade_stw_cmd
 
-    , TRANSFER_CMD
-    , TRANSFER_ST_CMD
-    , TRANSFER_WB_CMD
-    , TRANSFER_WB_RESP
+    , e_transfer
+    , e_transfer_cmd
+    , e_transfer_st_cmd
+    , e_transfer_wb_cmd
+    , e_transfer_wb_resp
 
-    , RESOLVE_SPECULATION
+    , e_resolve_speculation
 
-    , ERROR
+    , e_error
 
   } state_e;
 
@@ -456,8 +452,11 @@ module bp_cce_fsm
 
   wire lce_resp_coh_ack_yumi = lce_resp_v_i & (lce_resp.header.msg_type == e_lce_cce_coh_ack) & ~pending_busy;
 
+  // transfer occurs if any cache has block in E, M, O, or F (ownerhsip states)
   wire transfer_flag = (mshr_r.flags[e_opd_cef] | mshr_r.flags[e_opd_cmf]
                         | mshr_r.flags[e_opd_cof] | mshr_r.flags[e_opd_cff]);
+  // invalidations occur if write request and any blcok in S state (shared, not owner)
+  // owner does not need to be invalidated; owner state is changed by the st_tr or st_tr_wb command
   wire invalidate_flag = (mshr_r.flags[e_opd_rqf] & mshr_r.flags[e_opd_csf]);
 
   always_comb begin
@@ -499,8 +498,6 @@ module bp_cce_fsm
     pending_r_v = '0;
     pending_w_v = '0;
     pending_w_addr = '0;
-
-    gad_v = '0;
 
     dir_r_v = '0;
     dir_w_v = '0;
@@ -657,7 +654,7 @@ module bp_cce_fsm
         lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
         lce_cmd.header.msg_type = e_lce_cmd_uc_data;
         lce_cmd.header.way_id = '0;
-        lce_cmd.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
+        lce_cmd.data = mem_resp.data;
         lce_cmd.header.addr = mem_resp.header.addr;
         lce_cmd.header.size = mem_resp.header.size;
 
@@ -717,13 +714,13 @@ module bp_cce_fsm
 
     // FSM
     case (state_r)
-      RESET: begin
-        state_n = CLEAR_DIR;
+      e_reset: begin
+        state_n = e_clear_dir;
         cnt_0_clr = 1'b1;
         cnt_1_clr = 1'b1;
         ack_cnt_clr = 1'b1;
       end
-      CLEAR_DIR: begin
+      e_clear_dir: begin
         dir_w_v = 1'b1;
         dir_cmd = e_clr_op;
 
@@ -734,7 +731,8 @@ module bp_cce_fsm
         // bypass the address hashing in bp_cce_dir_segment, using dir_addr_li directly as the
         // tag set number for the operation
         dir_addr_bypass_li = 1'b1;
-        dir_addr_li = {'0, cnt_0[0+:lg_max_tag_sets_lp]};
+        dir_addr_li = '0;
+        dir_addr_li[0+:lg_max_tag_sets_lp] = cnt_0[0+:lg_max_tag_sets_lp];
         dir_lce_li = cnt_1[0+:lce_id_width_p];
 
         // inner loop - LCE
@@ -749,16 +747,16 @@ module bp_cce_fsm
         // move to next tag set when cnt_1 clears back to LCE 0
         cnt_0_inc = cnt_1_clr;
 
-        // Stay in CLEAR_DIR until cnt_0_clr goes high
+        // Stay in e_clear_dir until cnt_0_clr goes high
         // Next state depends on the CCE mode, as set by config bus
         state_n = cnt_0_clr
                   ? cce_normal_mode
-                    ? SEND_SYNC
-                    : UNCACHED_ONLY
-                  : CLEAR_DIR;
+                    ? e_send_sync
+                    : e_uncached_only
+                  : e_clear_dir;
 
-      end // CLEAR_DIR
-      UNCACHED_ONLY: begin
+      end // e_clear_dir
+      e_uncached_only: begin
 
         // clear the MSHR
         mshr_n = '0;
@@ -768,10 +766,10 @@ module bp_cce_fsm
         ack_cnt_clr = 1'b1;
         cnt_rst = 1'b1;
 
-        state_n = UNCACHED_ONLY;
+        state_n = e_uncached_only;
 
         if (cce_normal_mode) begin
-          state_n = SEND_SYNC;
+          state_n = e_send_sync;
         // only issue uncached request if number of outstanding is less than max allowed
         // only process uncached requests
         // cached requests will stall on the input port
@@ -790,7 +788,7 @@ module bp_cce_fsm
           // Uncached Store
           if (lce_req.header.msg_type == e_lce_req_type_uc_wr) begin
             mem_cmd.header.msg_type = e_cce_mem_uc_wr;
-            mem_cmd.data = {{(cce_block_width_p-dword_width_p){1'b0}}, lce_req.data};
+            mem_cmd.data = lce_req.data;
           // Uncached Load
           end else begin
             mem_cmd.header.msg_type = e_cce_mem_uc_rd;
@@ -801,38 +799,37 @@ module bp_cce_fsm
           mem_cmd.header.size = lce_req.header.size;
 
         end // send uncached request
-      end // UNCACHED_ONLY
-      SEND_SYNC: begin
-        // after first entering SEND_SYNC from UNCACHED_ONLY, wait for all oustanding uncached
+      end // e_uncached_only
+      e_send_sync: begin
+        // after first entering e_send_sync from e_uncached_only, wait for all oustanding uncached
         // accesses to complete before sending first sync commnad
         if ((uc_cnt == 0) & ~lce_cmd_busy) begin
           lce_cmd_v_o = lce_cmd_ready_i;
 
-          // LCE Cmd Common Fields
-          lce_cmd.header.dst_id = {'0, cnt_1[0+:lg_num_lce_lp]};
+          lce_cmd.header.dst_id[0+:lg_num_lce_lp] = cnt_1[0+:lg_num_lce_lp];
           lce_cmd.header.msg_type = e_lce_cmd_sync;
 
-          state_n = (lce_cmd_ready_i) ? SYNC_ACK : SEND_SYNC;
+          state_n = (lce_cmd_ready_i) ? e_sync_ack : e_send_sync;
           cnt_1_inc = lce_cmd_ready_i;
         end
       end
-      SYNC_ACK: begin
+      e_sync_ack: begin
         if (~lce_resp_coh_ack_yumi) begin
           lce_resp_yumi_o = lce_resp_v_i;
           state_n = (lce_resp_v_i)
-                    ? (ack_cnt == num_lce_p-1)
-                      ? READY
-                      : SEND_SYNC
-                    : SYNC_ACK;
+                    ? (ack_cnt == (num_lce_p-1))
+                      ? e_ready
+                      : e_send_sync
+                    : e_sync_ack;
           state_n = (lce_resp_v_i & (lce_resp.header.msg_type != e_lce_cce_sync_ack))
-                    ? ERROR
+                    ? e_error
                     : state_n;
-          ack_cnt_clr = (state_n == READY);
+          ack_cnt_clr = (state_n == e_ready);
           ack_cnt_inc = lce_resp_v_i & ~ack_cnt_clr;
-          cnt_1_clr = (state_n == READY);
+          cnt_1_clr = (state_n == e_ready);
         end
       end
-      READY: begin
+      e_ready: begin
         // clear the MSHR
         mshr_n = '0;
         // clear the ack counter
@@ -843,7 +840,7 @@ module bp_cce_fsm
 
         if (lce_req_v_i) begin
           mshr_n.lce_id = lce_req.header.src_id;
-          state_n = ERROR;
+          state_n = e_error;
           // cached request
           if (lce_req.header.msg_type == e_lce_req_type_rd
               | lce_req.header.msg_type == e_lce_req_type_wr) begin
@@ -854,7 +851,7 @@ module bp_cce_fsm
             mshr_n.flags[e_opd_rqf] = (lce_req.header.msg_type == e_lce_req_type_wr);
             mshr_n.flags[e_opd_nerf] = lce_req.header.non_exclusive;
 
-            state_n = READ_PENDING;
+            state_n = e_read_pending;
 
           // uncached request
           // request will be dequeued in the next state
@@ -866,11 +863,11 @@ module bp_cce_fsm
             mshr_n.flags[e_opd_ucf] = 1'b1;
             mshr_n.flags[e_opd_rqf] = (lce_req.header.msg_type == e_lce_req_type_uc_wr);
 
-            state_n = UC_REQ;
+            state_n = e_uc_req;
           end
         end
-      end // READY
-      UC_REQ: begin
+      end // e_ready
+      e_uc_req: begin
         // send uncached request to memory
         if (lce_req_v_i & mem_cmd_ready_i) begin
           mem_cmd_v_o = mem_cmd_ready_i;
@@ -878,7 +875,7 @@ module bp_cce_fsm
           // Uncached Store
           if (mshr_r.flags[e_opd_rqf]) begin
             mem_cmd.header.msg_type = e_cce_mem_uc_wr;
-            mem_cmd.data = {{(cce_block_width_p-dword_width_p){1'b0}}, lce_req.data};
+            mem_cmd.data = lce_req.data;
           // Uncached Load
           end else begin
             mem_cmd.header.msg_type = e_cce_mem_uc_rd;
@@ -891,20 +888,20 @@ module bp_cce_fsm
           lce_req_yumi_o = lce_req_v_i & mem_cmd_ready_i;
 
           // go back to ready state since this state is only entered when CCE is in normal mode
-          state_n = READY;
+          state_n = e_ready;
         end // mem_cmd_ready
 
-      end // UC_REQ
-      READ_PENDING: begin
+      end // e_uc_req
+      e_read_pending: begin
         pending_r_v = 1'b1;
         state_n = (pending_lo)
-                  ? READ_PENDING
-                  : DEQ_LCE_REQ;
+                  ? e_read_pending
+                  : e_deq_lce_req;
       end
-      DEQ_LCE_REQ: begin
+      e_deq_lce_req: begin
         // dequeueing the request writes the pending bit and must arbitrate with logic above
         if (lce_req_v_i & ~pending_busy) begin
-          state_n = READ_MEM_SPEC;
+          state_n = e_read_mem_spec;
           lce_req_yumi_o = lce_req_v_i;
 
           pending_w_v = lce_req_yumi_o;
@@ -912,12 +909,12 @@ module bp_cce_fsm
           pending_li = 1'b1;
 
         end else begin
-          // pending bit write port is busy, stay in READY state and try to consume request
+          // pending bit write port is busy, stay in e_ready state and try to consume request
           // next cycle
-          state_n = DEQ_LCE_REQ;
+          state_n = e_deq_lce_req;
         end
       end
-      READ_MEM_SPEC: begin
+      e_read_mem_spec: begin
         // Mem Cmd needs to write pending bit, so only send if Mem Resp / LCE Cmd is not
         // writing the pending bit
         if (~pending_busy) begin
@@ -942,7 +939,7 @@ module bp_cce_fsm
           spec_bits_li.fwd_mod = 1'b0;
           spec_bits_li.state = e_COH_I;
 
-          state_n = (mem_cmd_v_o) ? READ_DIR : READ_MEM_SPEC;
+          state_n = (mem_cmd_v_o) ? e_read_dir : e_read_mem_spec;
 
           pending_w_v = mem_cmd_v_o;
           pending_li = 1'b1;
@@ -950,7 +947,7 @@ module bp_cce_fsm
         end
 
       end
-      READ_DIR: begin
+      e_read_dir: begin
         // initiate the directory read
         // At the earliest, data will be valid in the next cycle
         dir_r_v = 1'b1;
@@ -958,9 +955,9 @@ module bp_cce_fsm
         dir_cmd = e_rdw_op;
         dir_lce_li = mshr_r.lce_id;
         dir_lru_way_li = mshr_r.lru_way_id;
-        state_n = WAIT_DIR_GAD;
+        state_n = e_wait_dir_gad;
       end
-      WAIT_DIR_GAD: begin
+      e_wait_dir_gad: begin
 
         // capture LRU outputs when they appear
         if (dir_lru_v_lo) begin
@@ -973,8 +970,7 @@ module bp_cce_fsm
           sharers_hits_n = sharers_hits_lo;
         end
 
-        gad_v = sharers_v_lo & ~dir_busy_lo;
-        if (gad_v) begin
+        if (sharers_v_lo & ~dir_busy_lo) begin
 
           mshr_n.way_id = gad_req_addr_way_lo;
 
@@ -988,7 +984,9 @@ module bp_cce_fsm
 
           mshr_n.owner_lce_id = gad_owner_lce_lo;
           mshr_n.owner_way_id = gad_owner_lce_way_lo;
+          mshr_n.owner_coh_state = gad_owner_coh_state_lo;
 
+          // TODO: MOESIF
           mshr_n.next_coh_state =
             (mshr_r.flags[e_opd_rqf])
             ? e_COH_M
@@ -999,11 +997,11 @@ module bp_cce_fsm
                 ? e_COH_S
                 : e_COH_E;
 
-          state_n = WRITE_NEXT_STATE;
+          state_n = e_write_next_state;
         end
 
       end
-      WRITE_NEXT_STATE: begin
+      e_write_next_state: begin
         // writing to the directory will make the sharers_v_lo signal go low, but in this FSM
         // CCE we know that the sharers vectors are still valid in the state we need from the
         // previous read, so we perform the coherence state update for the requesting LCE anyway
@@ -1020,20 +1018,23 @@ module bp_cce_fsm
           dir_way_li = mshr_r.lru_way_id;
         end
 
-        // TODO: for performance, move replacement before invalidation
+        // Ordering of coherence actions:
+        // Replacement, if needed
+        // Invalidations, if needed
+        // Upgrade, Transfer, or Memory access (resolve speculative access)
         state_n =
-          (invalidate_flag)
-          ? INV_CMD
-          : (mshr_r.flags[e_opd_uf])
-            ? UPGRADE_STW_CMD
-            : (mshr_r.flags[e_opd_rf])
-              ? REPLACEMENT
+          (mshr_r.flags[e_opd_rf])
+          ? e_replacement
+          : (invalidate_flag)
+            ? e_inv_cmd
+            : (mshr_r.flags[e_opd_uf])
+              ? e_upgrade_stw_cmd
               : (transfer_flag)
-                ? TRANSFER_ST_CMD
-                : RESOLVE_SPECULATION;
+                ? e_transfer
+                : e_resolve_speculation;
 
         // setup required state for sending invalidations
-        if (invalidate_flag) begin
+        if (~mshr_r.flags[e_opd_rf] & invalidate_flag) begin
           // don't invalidate the requesting LCE
           pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
           // if doing a transfer, also remove owner LCE since transfer
@@ -1045,105 +1046,38 @@ module bp_cce_fsm
           cnt_rst = 1'b1;
         end
 
-      end
-      INV_CMD: begin
-
-        // only send invalidation if priority encode has valid output
-        // this indicates the sharers vector has a valid bit set
-        if (pe_v) begin
-
-          // try to send additional commands, but give priority to mem_resp auto-forward
-          if (~lce_cmd_busy & lce_cmd_ready_i) begin
-
-            lce_cmd_v_o = lce_cmd_ready_i;
-            lce_cmd.header.msg_type = e_lce_cmd_inv;
-
-            // destination and way come from sharers information
-            lce_cmd.header.dst_id = pe_lce_id;
-            lce_cmd.header.way_id = sharers_ways_r[pe_lce_id];
-
-            lce_cmd.header.addr = mshr_r.paddr;
-
-            // message sent, increment count, write directory, clear bit for the destination LCE
-            cnt_inc = lce_cmd_v_o;
-            dir_w_v = lce_cmd_v_o;
-            dir_cmd = e_wds_op;
-            dir_addr_li = mshr_r.paddr;
-            dir_lce_li = {'0, pe_lce_id};
-            dir_way_li = sharers_ways_r[pe_lce_id];
-            dir_coh_state_li = e_COH_I;
-
-            // update sharers hit vector to feed back to priority encode module
-            pe_sharers_n = pe_sharers_r & ~pe_lce_id_one_hot;
-
-            // move to response state if none of the sharer bits are set, indicating
-            // that the last command is sending this cycle
-            if (pe_sharers_n == '0) begin
-              state_n = INV_ACK;
-            end
-
-          end else begin
-            // could not send message, don't clear bit for first sharer
-            pe_sharers_n = pe_sharers_r;
-          end
-
-        end // pe_v
-
-        // dequeue responses as they arrive
-        if (lce_resp_v_i & (lce_resp.header.msg_type == e_lce_cce_inv_ack)) begin
-          lce_resp_yumi_o = lce_resp_v_i;
-          cnt_dec = lce_resp_yumi_o;
-        end
-      end
-      INV_ACK: begin
-        if (cnt == '0) begin
-          state_n = (mshr_r.flags[e_opd_uf])
-                    ? UPGRADE_STW_CMD
-                    : (mshr_r.flags[e_opd_rf])
-                      ? REPLACEMENT
-                      : (transfer_flag)
-                        ? TRANSFER_ST_CMD
-                        : RESOLVE_SPECULATION;
-        end else begin
-          // dequeue responses as they arrive
-          if (lce_resp_v_i & (lce_resp.header.msg_type == e_lce_cce_inv_ack)) begin
-            lce_resp_yumi_o = lce_resp_v_i;
-            cnt_dec = lce_resp_yumi_o;
-            if (cnt == 'd1) begin
-              state_n = (mshr_r.flags[e_opd_uf])
-                        ? UPGRADE_STW_CMD
-                        : (mshr_r.flags[e_opd_rf])
-                          ? REPLACEMENT
-                          : (transfer_flag)
-                            ? TRANSFER_ST_CMD
-                            : RESOLVE_SPECULATION;
-            end // cnt == 'd1
-          end // inv ack
-        end // else
-      end
-      REPLACEMENT: begin
+      end // e_write_next_state
+      e_replacement: begin
         // Send replacement writeback command if LCE Cmd port is free, else try again next cycle
         if (~lce_cmd_busy & lce_cmd_ready_i) begin
           lce_cmd_v_o = lce_cmd_ready_i;
 
-          // LCE Cmd Common Fields
           lce_cmd.header.dst_id = mshr_r.lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_wb;
+          // set state to invalid and writeback
+          lce_cmd.header.msg_type = e_lce_cmd_st_wb;
           lce_cmd.header.way_id = mshr_r.lru_way_id;
-
-          // Sub message fields
           lce_cmd.header.addr = mshr_r.lru_paddr;
+          lce_cmd.header.state = e_COH_I;
 
-          state_n = (lce_cmd_ready_i) ? REPLACEMENT_WB_RESP : REPLACEMENT;
+          state_n = (lce_cmd_ready_i) ? e_replacement_wb_resp : e_replacement;
         end
-      end
-      REPLACEMENT_WB_RESP: begin
+      end // e_replacement
+      // TODO: replacement response could maybe move out of FSM and into auto-logic
+      // need a DFF that tracks if wb response is pending, and must block certain following operations
+      // if still waiting for response (i.e., finishing the transaction).
+      // However, could overlap invalidations with waiting for wb response.
+      e_replacement_wb_resp: begin
         if (lce_resp_v_i) begin
           if (lce_resp.header.msg_type == e_lce_cce_resp_null_wb) begin
             lce_resp_yumi_o = lce_resp_v_i;
-            state_n = (transfer_flag)
-                      ? TRANSFER_ST_CMD
-                      : RESOLVE_SPECULATION;
+            // replacement done, not an upgrade, so either do invalidations, transfer, or resolve
+            // the speculative memory access
+            state_n = (invalidate_flag)
+                      ? e_inv_cmd
+                      : (transfer_flag)
+                        ? e_transfer
+                        : e_resolve_speculation;
+
             // clear the replacement flag
             mshr_n.flags[e_opd_rf] = 1'b0;
             // set null writeback flag
@@ -1163,11 +1097,15 @@ module bp_cce_fsm
             mem_cmd.data = lce_resp.data;
             mem_cmd.header.size = lce_resp.header.size;
 
+            // replacement done, not an upgrade, so either do invalidations, transfer, or resolve
+            // the speculative memory access
             state_n = (lce_resp_yumi_o)
-                      ? (transfer_flag)
-                        ? TRANSFER_ST_CMD
-                        : RESOLVE_SPECULATION
-                      : REPLACEMENT_WB_RESP;
+                      ? (invalidate_flag)
+                        ? e_inv_cmd
+                        : (transfer_flag)
+                          ? e_transfer
+                          : e_resolve_speculation
+                      : e_replacement_wb_resp;
 
             // set the pending bit
             pending_w_v = lce_resp_yumi_o;
@@ -1181,20 +1119,106 @@ module bp_cce_fsm
 
           end // wb & pending bit available
         end // lce_resp_v_i
+      end // e_replacement_wb_resp
+      e_inv_cmd: begin
+
+        // only send invalidation if priority encode has valid output
+        // this indicates the sharers vector has a valid bit set
+        if (pe_v) begin
+
+          // try to send additional commands, but give priority to mem_resp auto-forward
+          if (~lce_cmd_busy & lce_cmd_ready_i) begin
+
+            lce_cmd_v_o = lce_cmd_ready_i;
+            lce_cmd.header.msg_type = e_lce_cmd_inv;
+
+            // destination and way come from sharers information
+            lce_cmd.header.dst_id[0+:lg_num_lce_lp] = pe_lce_id;
+            lce_cmd.header.way_id = sharers_ways_r[pe_lce_id];
+
+            lce_cmd.header.addr = mshr_r.paddr;
+
+            // message sent, increment count, write directory, clear bit for the destination LCE
+            cnt_inc = lce_cmd_v_o;
+            dir_w_v = lce_cmd_v_o;
+            dir_cmd = e_wds_op;
+            dir_addr_li = mshr_r.paddr;
+            dir_lce_li = '0;
+            dir_lce_li[0+:lg_num_lce_lp] = pe_lce_id;
+            dir_way_li = sharers_ways_r[pe_lce_id];
+            dir_coh_state_li = e_COH_I;
+
+            // update sharers hit vector to feed back to priority encode module
+            pe_sharers_n = pe_sharers_r & ~pe_lce_id_one_hot;
+
+            // move to response state if none of the sharer bits are set, indicating
+            // that the last command is sending this cycle
+            if (pe_sharers_n == '0) begin
+              state_n = e_inv_ack;
+            end
+
+          end else begin
+            // could not send message, don't clear bit for first sharer
+            pe_sharers_n = pe_sharers_r;
+          end
+
+        end // pe_v
+
+        // dequeue responses as they arrive
+        if (lce_resp_v_i & (lce_resp.header.msg_type == e_lce_cce_inv_ack)) begin
+          lce_resp_yumi_o = lce_resp_v_i;
+          cnt_dec = lce_resp_yumi_o;
+        end
       end
-      TRANSFER_ST_CMD: begin
+      e_inv_ack: begin
+        if (cnt == '0) begin
+          state_n = (mshr_r.flags[e_opd_uf])
+                    ? e_upgrade_stw_cmd
+                    : (transfer_flag)
+                      ? e_transfer
+                      : e_resolve_speculation;
+        end else begin
+          // dequeue responses as they arrive
+          if (lce_resp_v_i & (lce_resp.header.msg_type == e_lce_cce_inv_ack)) begin
+            lce_resp_yumi_o = lce_resp_v_i;
+            cnt_dec = lce_resp_yumi_o;
+            if (cnt == 'd1) begin
+              state_n = (mshr_r.flags[e_opd_uf])
+                        ? e_upgrade_stw_cmd
+                        : (mshr_r.flags[e_opd_rf])
+                          ? e_replacement
+                          : (transfer_flag)
+                            ? e_transfer
+                            : e_resolve_speculation;
+            end // cnt == 'd1
+          end // inv ack
+        end // else
+      end
+      e_transfer: begin
+        // TODO: modify for MOESIF
+        // Transfer required, three options:
+        // 1. transfer: not used in MESI
+        // 2. set state and transfer: write request and block in E, M
+        // 3. set state, transfer, writeback: read request, block in E, M
         if (~lce_cmd_busy & lce_cmd_ready_i) begin
           lce_cmd_v_o = lce_cmd_ready_i;
 
-          // LCE Cmd Common Fields
           lce_cmd.header.dst_id = mshr_r.owner_lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_st;
           lce_cmd.header.way_id = mshr_r.owner_way_id;
 
-          // Sub message fields
+          lce_cmd.header.msg_type = mshr_r.flags[e_opd_rqf]
+                                    ? e_lce_cmd_st_tr
+                                    : e_lce_cmd_st_tr_wb;
+
           lce_cmd.header.addr = mshr_r.paddr;
-          // either Invalidate or Downgrade Owner
+
+          // either Invalidate or Downgrade Owner, depending on request type
           lce_cmd.header.state = mshr_r.flags[e_opd_rqf] ? e_COH_I : e_COH_S;
+
+          // transfer information
+          lce_cmd.header.target = mshr_r.lce_id;
+          lce_cmd.header.target_way_id = mshr_r.lru_way_id;
+          lce_cmd.header.target_state = mshr_r.next_coh_state;
 
           // update state of owner in directory
           dir_w_v = lce_cmd_v_o;
@@ -1204,47 +1228,19 @@ module bp_cce_fsm
           dir_way_li = mshr_r.owner_way_id;
           dir_coh_state_li = mshr_r.flags[e_opd_rqf] ? e_COH_I : e_COH_S;
 
-          state_n = (lce_cmd_ready_i) ? TRANSFER_CMD : TRANSFER_ST_CMD;
+          state_n = (lce_cmd_ready_i)
+                    ? mshr_r.flags[e_opd_rqf]
+                      ? e_resolve_speculation
+                      : e_transfer_wb_resp
+                    : e_transfer;
         end
-      end
-      TRANSFER_CMD: begin
-        if (~lce_cmd_busy & lce_cmd_ready_i) begin
-          lce_cmd_v_o = lce_cmd_ready_i;
 
-          // LCE Cmd Common Fields
-          lce_cmd.header.dst_id = mshr_r.owner_lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_tr;
-          lce_cmd.header.way_id = mshr_r.owner_way_id;
-
-          // Sub message fields
-          lce_cmd.header.addr = mshr_r.paddr;
-          lce_cmd.header.target = mshr_r.lce_id;
-          lce_cmd.header.target_way_id = mshr_r.lru_way_id;
-          lce_cmd.header.state = mshr_r.next_coh_state;
-
-          state_n = (lce_cmd_ready_i) ? TRANSFER_WB_CMD : TRANSFER_CMD;
-        end
-      end
-      TRANSFER_WB_CMD: begin
-        if (~lce_cmd_busy & lce_cmd_ready_i) begin
-          lce_cmd_v_o = lce_cmd_ready_i;
-
-          // LCE Cmd Common Fields
-          lce_cmd.header.dst_id = mshr_r.owner_lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_wb;
-          lce_cmd.header.way_id = mshr_r.owner_way_id;
-
-          // Sub message fields
-          lce_cmd.header.addr = mshr_r.paddr;
-
-          state_n = (lce_cmd_ready_i) ? TRANSFER_WB_RESP : TRANSFER_WB_CMD;
-        end
-      end
-      TRANSFER_WB_RESP: begin
+      end // e_transfer
+      e_transfer_wb_resp: begin
         if (lce_resp_v_i) begin
           if (lce_resp.header.msg_type == e_lce_cce_resp_null_wb) begin
             lce_resp_yumi_o = lce_resp_v_i;
-            state_n = RESOLVE_SPECULATION;
+            state_n = e_resolve_speculation;
 
           end
           else if ((lce_resp.header.msg_type == e_lce_cce_resp_wb) & ~pending_busy) begin
@@ -1260,7 +1256,7 @@ module bp_cce_fsm
             mem_cmd.data = lce_resp.data;
             mem_cmd.header.size = lce_resp.header.size;
 
-            state_n = (lce_resp_yumi_o) ? RESOLVE_SPECULATION : TRANSFER_WB_RESP;
+            state_n = (lce_resp_yumi_o) ? e_resolve_speculation : e_transfer_wb_resp;
 
             // set the pending bit
             pending_w_v = lce_resp_yumi_o;
@@ -1270,23 +1266,20 @@ module bp_cce_fsm
           end
         end
       end
-      UPGRADE_STW_CMD: begin
+      e_upgrade_stw_cmd: begin
         if (~lce_cmd_busy & lce_cmd_ready_i) begin
           lce_cmd_v_o = lce_cmd_ready_i;
 
-          // LCE Cmd Common Fields
           lce_cmd.header.dst_id = mshr_r.lce_id;
           lce_cmd.header.msg_type = e_lce_cmd_st_wakeup;
           lce_cmd.header.way_id = mshr_r.way_id;
-
-          // Sub message fields
           lce_cmd.header.addr = mshr_r.paddr;
           lce_cmd.header.state = mshr_r.next_coh_state;
 
-          state_n = (lce_cmd_ready_i) ? RESOLVE_SPECULATION : UPGRADE_STW_CMD;
+          state_n = (lce_cmd_ready_i) ? e_resolve_speculation : e_upgrade_stw_cmd;
         end
       end
-      RESOLVE_SPECULATION: begin
+      e_resolve_speculation: begin
         // Resolve speculation
         if (transfer_flag | mshr_r.flags[e_opd_uf]) begin
           // squash speculative memory request if transfer or upgrade
@@ -1321,11 +1314,10 @@ module bp_cce_fsm
           spec_v_li = 1'b1;
           spec_bits_li.spec = 1'b0;
         end
-        state_n = READY;
+        state_n = e_ready;
       end
-      ERROR: begin
-        $display("oh no - error!");
-        $finish(0);
+      e_error: begin
+        state_n = e_error;
       end
       default: begin
         // use defaults above
@@ -1336,7 +1328,7 @@ module bp_cce_fsm
   // Sequential Logic
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
-      state_r <= RESET;
+      state_r <= e_reset;
       mshr_r <= '0;
       sharers_ways_r <= '0;
       sharers_hits_r <= '0;

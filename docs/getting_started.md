@@ -10,7 +10,7 @@ BlackParrot requires Python, Verilator and a RISCV GNU toolchain in order to bui
 
     sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev wget byacc device-tree-compiler python gtkwave
 
-BlackParrot has been tested extensively on CentOS 7. Please raise issues with problems found on this or other platforms! 
+BlackParrot has been tested extensively on CentOS 7. Please raise issues with problems found on this or other platforms!
 
 ## Build the toolchains
     # Clone the latest repo
@@ -30,12 +30,12 @@ Other branches are used for internal development and are not recommended for cas
 
 ## Running Tests
 The main testbenches are at the FE, BE, ME and TOP levels. The general syntax for running a testbench is:
-    
+
     cd bp_<end>/syn
     make <ACTION>.<TOOL> [TB=] [CFG=] [PROG=] [DUMP=] [COV=] [COSIM=] [<TRACER>_P=]
-    
+
 ### Testbench structure
-The bp_tethered testbench in bp_top/test/tb is the primary testbench for BlackParrot. It can instantiate a full BlackParrot cache-coherent multicore or a minimal BlackParrot softcore, as well as the host infrastructure to bootstrap the core and manage DRAM requests. 
+The bp_tethered testbench in bp_top/test/tb is the primary testbench for BlackParrot. It can instantiate a full BlackParrot cache-coherent multicore or a minimal BlackParrot unicore, as well as the host infrastructure to bootstrap the core and manage DRAM requests.
 
 Additionally, each of bp_fe, bp_be and bp_me has a set of more targeted testbenches. These testbenches are more prone to breakage due to their tighter coupling to implementation, but they are intended to serve as a set of compliance tests for external contributors.
 
@@ -128,7 +128,7 @@ The reports directory contains very brief summaries of tool runs. For example, w
 # BlackParrot Repository Overview
 - **bp_fe/** contains the front-end (FE) of BlackParrot, responsible for speculative fetching of instructions.
 - **bp_be/** contains the back-end (BE) of BlackParrot, responsible for atomically executing instructions, as well as logically controlling the FE.
-- **bp_me/** contains the memory-end (ME) of BlackParrot, responsible for servicing memory/IO requests as well as maintaining cache coherence between BlackParrot cores. 
+- **bp_me/** contains the memory-end (ME) of BlackParrot, responsible for servicing memory/IO requests as well as maintaining cache coherence between BlackParrot cores.
 - **bp_top/** contains configurations of FE, BE, and ME components. For instance, tile components and NOC assemblies.
 - **bp_common/** contains the interface components which connect FE, BE and ME. FE, BE, ME may depend on bp\_common, but not each other.
 - **ci/** contains scripts used to run Continuous Integration jobs, mostly using the same Makefile commands but with additional data collection.

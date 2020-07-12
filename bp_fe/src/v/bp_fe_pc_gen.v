@@ -21,7 +21,7 @@ module bp_fe_pc_gen
    )
   (input                                             clk_i
    , input                                           reset_i
- 
+
    , output [mem_cmd_width_lp-1:0]                   mem_cmd_o
    , output                                          mem_cmd_v_o
    , input                                           mem_cmd_yumi_i
@@ -85,7 +85,7 @@ wire [vaddr_width_p-1:0] pc_if2 = pc_gen_stage_r[1].pc;
 
 // Flags for valid FE commands
 wire fetch_v          = mem_cmd_yumi_i & (mem_cmd_cast_o.op == e_fe_op_fetch);
-wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset); 
+wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
 wire pc_redirect_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
 wire itlb_fill_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
 wire icache_fence_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
@@ -94,6 +94,7 @@ wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
 wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
 wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 wire br_miss_v = pc_redirect_v
                 & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
 wire br_res_taken = (attaboy_v & fe_cmd_cast_i.operands.attaboy.taken)
@@ -101,7 +102,11 @@ wire br_res_taken = (attaboy_v & fe_cmd_cast_i.operands.attaboy.taken)
 wire br_res_ntaken = (attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken)
                      | (br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_pred_ntaken));
 wire br_miss_nonbr = br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
-assign fe_cmd_branch_metadata = br_miss_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
+assign fe_cmd_branch_metadata = br_miss_v
+                                ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd
+                                : attaboy_v
+                                  ? fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd
+                                  : '0;
 
 logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
 wire shadow_priv_w = state_reset_v | trap_v;
@@ -116,9 +121,9 @@ bsg_dff_reset_en
    ,.data_i(shadow_priv_n)
    ,.data_o(shadow_priv_r)
    );
-   
+
 logic shadow_translation_en_n, shadow_translation_en_r;
-wire shadow_translation_en_w = state_reset_v | trap_v | itlb_fence_v;
+wire shadow_translation_en_w = state_reset_v | trap_v | translation_v;
 assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_enabled;
 bsg_dff_reset_en
  #(.width_p(1))
@@ -134,8 +139,6 @@ bsg_dff_reset_en
 // Until we support C, must be aligned to 4 bytes
 // There's also an interesting question about physical alignment (I/O devices, etc)
 //   But let's punt that for now...
-// TODO: misaligned is actually done by the branch target, not the PC
-wire misalign_exception           = 1'b0;
 wire itlb_miss_exception          = v_if2 & (mem_resp_v_i & mem_resp_cast_i.itlb_miss);
 wire instr_access_fault_exception = v_if2 & (mem_resp_v_i & mem_resp_cast_i.instr_access_fault);
 wire instr_page_fault_exception   = v_if2 & (mem_resp_v_i & mem_resp_cast_i.instr_page_fault);
@@ -143,7 +146,7 @@ wire instr_page_fault_exception   = v_if2 & (mem_resp_v_i & mem_resp_cast_i.inst
 wire fetch_fail     = v_if2 & ~fe_queue_v_o;
 wire queue_miss     = v_if2 & ~fe_queue_ready_i;
 wire icache_miss    = v_if2 & (mem_resp_v_i & mem_resp_cast_i.icache_miss);
-wire fe_exception_v = v_if2 & (instr_page_fault_exception | instr_access_fault_exception | misalign_exception | itlb_miss_exception);
+wire fe_exception_v = v_if2 & (instr_page_fault_exception | instr_access_fault_exception | itlb_miss_exception);
 wire flush          = fe_exception_v | icache_miss | queue_miss | cmd_nonattaboy_v;
 wire fe_instr_v     = v_if2 & mem_resp_v_i & ~flush;
 
@@ -177,15 +180,15 @@ always_comb
     // Stall until we can start valid fetch
     e_stall: state_n = pc_gen_stage_n[0].v ? e_run : e_stall;
     // Run state -- PCs are actually being fetched
-    // Stay in run if there's an incoming cmd, the next pc will automatically be valid 
+    // Stay in run if there's an incoming cmd, the next pc will automatically be valid
     // Transition to wait if there's a TLB miss while we wait for fill
     // Transition to stall if we don't successfully complete the fetch for whatever reason
-    e_run  : state_n = cmd_nonattaboy_v 
-                       ? e_run 
-                       : fetch_fail 
-                         ? e_stall 
-                         : fe_exception_v 
-                           ? e_wait 
+    e_run  : state_n = cmd_nonattaboy_v
+                       ? e_run
+                       : fetch_fail
+                         ? e_stall
+                         : fe_exception_v
+                           ? e_wait
                            : e_run;
     default: state_n = e_wait;
   endcase
@@ -195,7 +198,7 @@ always_ff @(posedge clk_i)
   if (reset_i)
       state_r <= e_wait;
   else
-    begin 
+    begin
       state_r <= state_n;
     end
 
@@ -299,7 +302,7 @@ always_ff @(posedge clk_i)
   end
 
 bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata;
-assign fe_queue_cast_o_branch_metadata = 
+assign fe_queue_cast_o_branch_metadata =
   '{pred_taken: pc_gen_stage_r[1].taken | is_jalr // We can't predict target, but jalr are always taken
     ,src_btb  : pc_gen_stage_r[1].btb
     ,src_ret  : pc_gen_stage_r[1].ret
@@ -338,7 +341,7 @@ bp_fe_btb
    ,.w_v_i(fe_cmd_yumi_o & btb_incorrect)
    ,.w_clr_i(br_miss_nonbr)
    ,.w_jmp_i(br_res_jmp)
-   ,.w_tag_i(fe_cmd_branch_metadata.btb_tag) 
+   ,.w_tag_i(fe_cmd_branch_metadata.btb_tag)
    ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
    ,.br_tgt_i(fe_cmd_cast_i.vaddr)
    );
@@ -367,7 +370,7 @@ bp_fe_bht
 
 `declare_bp_fe_instr_scan_s(vaddr_width_p)
 bp_fe_instr_scan_s scan_instr;
-bp_fe_instr_scan 
+bp_fe_instr_scan
  #(.bp_params_p(bp_params_p))
  instr_scan
   (.instr_i(mem_resp_cast_i.data)
@@ -402,7 +405,7 @@ bsg_dff_reset_en
 // We wait until both the FE queue and I$ are ready, but flushes invalidate the fetch.
 // The next PC is valid during a FE cmd, since it is a non-speculative
 //   command and we must accept it immediately.
-// This may cause us to fetch during an I$ miss or a with a full queue.  
+// This may cause us to fetch during an I$ miss or a with a full queue.
 // FE cmds normally flush the queue, so we don't expect this to affect
 //   power much in practice.
 assign mem_cmd_v_o = cmd_nonattaboy_v || (~is_wait & fe_queue_ready_i & ~flush);
@@ -433,7 +436,7 @@ always_comb
       end
   end
 
-assign mem_poison_o         = ~pc_gen_stage_n[1].v;
+assign mem_poison_o         = flush | ovr_taken | ovr_ret;
 assign mem_priv_o           = shadow_priv_w ? shadow_priv_n : shadow_priv_r;
 assign mem_translation_en_o = shadow_translation_en_w ? shadow_translation_en_n : shadow_translation_en_r;
 
@@ -451,15 +454,13 @@ always_comb
       begin
         fe_queue_cast_o.msg_type                     = e_fe_exception;
         fe_queue_cast_o.msg.exception.vaddr          = pc_if2;
-        fe_queue_cast_o.msg.exception.exception_code = misalign_exception
-                                                       ? e_instr_misaligned
-                                                       : itlb_miss_exception
-                                                         ? e_itlb_miss
-                                                         : instr_page_fault_exception
-                                                           ? e_instr_page_fault
-                                                           : e_instr_access_fault;
+        fe_queue_cast_o.msg.exception.exception_code = itlb_miss_exception
+                                                       ? e_itlb_miss
+                                                       : instr_page_fault_exception
+                                                         ? e_instr_page_fault
+                                                         : e_instr_access_fault;
       end
-    else 
+    else
       begin
         fe_queue_cast_o.msg_type                      = e_fe_fetch;
         fe_queue_cast_o.msg.fetch.pc                  = pc_if2;
@@ -469,4 +470,3 @@ always_comb
   end
 
 endmodule
-

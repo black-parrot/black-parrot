@@ -27,7 +27,7 @@ module bp_be_dcache_wbuf
   (
     input clk_i
     , input reset_i
-    
+
     , input v_i
     , input [wbuf_entry_width_lp-1:0] wbuf_entry_i
 
@@ -36,7 +36,8 @@ module bp_be_dcache_wbuf
     , output logic [wbuf_entry_width_lp-1:0] wbuf_entry_o
 
     , output logic empty_o
-    
+    , output logic full_o
+
     , input [paddr_width_p-1:0] bypass_addr_i
     , input bypass_v_i
     , output logic [data_width_p-1:0] bypass_data_o
@@ -51,7 +52,7 @@ module bp_be_dcache_wbuf
 
   bp_be_dcache_wbuf_entry_s wbuf_entry_in;
   assign wbuf_entry_in = wbuf_entry_i;
-  
+
   bp_be_dcache_wbuf_entry_s wbuf_entry_el0;
   bp_be_dcache_wbuf_entry_s wbuf_entry_el1;
 
@@ -65,21 +66,22 @@ module bp_be_dcache_wbuf
   logic el1_enable;
 
   always_comb begin
-    case (num_els_r) 
+    unique case (num_els_r)
       2'd0: begin
-        v_o = v_i;
+        v_o = 1'b0;
         empty_o = 1'b1;
+        full_o = 1'b0;
         el0_valid = 1'b0;
         el1_valid = 1'b0;
         el0_enable = 1'b0;
-        el1_enable = v_i & ~yumi_i;
+        el1_enable = v_i;
         mux0_sel = 1'b0;
         mux1_sel = 1'b0;
       end
-      
       2'd1: begin
         v_o = 1'b1;
         empty_o = 1'b0;
+        full_o = 1'b0;
         el0_valid = 1'b0;
         el1_valid = 1'b1;
         el0_enable = v_i & ~yumi_i;
@@ -87,10 +89,10 @@ module bp_be_dcache_wbuf
         mux0_sel = 1'b0;
         mux1_sel = 1'b1;
       end
-
       2'd2: begin
         v_o = 1'b1;
         empty_o = 1'b0;
+        full_o = 1'b1;
         el0_valid = 1'b1;
         el1_valid = 1'b1;
         el0_enable = v_i & yumi_i;
@@ -101,6 +103,7 @@ module bp_be_dcache_wbuf
       default: begin
         v_o = 1'b0;
         empty_o = 1'b0;
+        full_o = 1'b1;
         el0_valid = 1'b0;
         el1_valid = 1'b0;
         el0_enable = 1'b0;
@@ -110,6 +113,16 @@ module bp_be_dcache_wbuf
       end
     endcase
   end
+
+  //synopsys translate_off
+  wire overflow = (num_els_r == 2'd3);
+  always_ff @(negedge clk_i) begin
+    if (~reset_i) begin
+      assert(~overflow) else
+        $error("Write buffer overflow\n");
+    end
+  end
+  //synopsys translate_on
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -144,9 +157,9 @@ module bp_be_dcache_wbuf
   logic [paddr_width_p-byte_offset_width_lp-1:0] bypass_word_addr;
 
   assign bypass_word_addr = bypass_addr_i[paddr_width_p-1:byte_offset_width_lp];
-  assign tag_hit0_n = bypass_word_addr == wbuf_entry_el0.paddr[paddr_width_p-1:byte_offset_width_lp]; 
-  assign tag_hit1_n = bypass_word_addr == wbuf_entry_el1.paddr[paddr_width_p-1:byte_offset_width_lp]; 
-  assign tag_hit2_n = bypass_word_addr == wbuf_entry_in.paddr[paddr_width_p-1:byte_offset_width_lp]; 
+  assign tag_hit0_n = bypass_word_addr == wbuf_entry_el0.paddr[paddr_width_p-1:byte_offset_width_lp];
+  assign tag_hit1_n = bypass_word_addr == wbuf_entry_el1.paddr[paddr_width_p-1:byte_offset_width_lp];
+  assign tag_hit2_n = bypass_word_addr == wbuf_entry_in.paddr[paddr_width_p-1:byte_offset_width_lp];
 
   assign tag_hit0 = tag_hit0_n & el0_valid;
   assign tag_hit1 = tag_hit1_n & el1_valid;
@@ -155,11 +168,11 @@ module bp_be_dcache_wbuf
   logic [data_mask_width_lp-1:0] tag_hit0x4;
   logic [data_mask_width_lp-1:0] tag_hit1x4;
   logic [data_mask_width_lp-1:0] tag_hit2x4;
-  
+
   assign tag_hit0x4 = {data_mask_width_lp{tag_hit0}};
   assign tag_hit1x4 = {data_mask_width_lp{tag_hit1}};
   assign tag_hit2x4 = {data_mask_width_lp{tag_hit2}};
-   
+
   logic [data_width_p-1:0] el0or1_data;
   logic [data_width_p-1:0] bypass_data_n;
   logic [data_mask_width_lp-1:0] bypass_mask_n;
@@ -170,7 +183,7 @@ module bp_be_dcache_wbuf
 
   bsg_mux_segmented #(
     .segments_p(data_mask_width_lp)
-    ,.segment_width_p(8) 
+    ,.segment_width_p(8)
   ) mux_segmented_merge0 (
     .data0_i(wbuf_entry_el1.data)
     ,.data1_i(wbuf_entry_el0.data)
@@ -180,7 +193,7 @@ module bp_be_dcache_wbuf
 
   bsg_mux_segmented #(
     .segments_p(data_mask_width_lp)
-    ,.segment_width_p(8) 
+    ,.segment_width_p(8)
   ) mux_segmented_merge1 (
     .data0_i(el0or1_data)
     ,.data1_i(wbuf_entry_in.data)
@@ -188,7 +201,7 @@ module bp_be_dcache_wbuf
     ,.data_o(bypass_data_n)
   );
 
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (reset_i) begin
       bypass_mask_o <= '0;
       bypass_data_o <= '0;
@@ -196,7 +209,7 @@ module bp_be_dcache_wbuf
     else begin
       if (bypass_v_i) begin
         bypass_mask_o <= bypass_mask_n;
-        bypass_data_o <= bypass_data_n; 
+        bypass_data_o <= bypass_data_n;
       end
     end
   end

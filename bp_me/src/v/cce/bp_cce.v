@@ -33,7 +33,7 @@ module bp_cce
     // Interface Widths
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   )
   (input                                               clk_i
@@ -41,7 +41,13 @@ module bp_cce
 
    // Configuration Interface
    , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
-   , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
+
+   // ucode programming interface, synchronous read, direct connection to RAM
+   , input                                             ucode_v_i
+   , input                                             ucode_w_i
+   , input [cce_pc_width_p-1:0]                        ucode_addr_i
+   , input [cce_instr_width_p-1:0]                     ucode_data_i
+   , output [cce_instr_width_p-1:0]                    ucode_data_o
 
    // LCE-CCE Interface
    , input [lce_cce_req_width_lp-1:0]                  lce_req_i
@@ -91,7 +97,7 @@ module bp_cce
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
   // Config Interface
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -183,6 +189,7 @@ module bp_cce
   logic [lce_assoc_width_p-1:0]        gad_req_addr_way_lo;
   logic [lce_id_width_p-1:0]           gad_owner_lce_lo;
   logic [lce_assoc_width_p-1:0]        gad_owner_way_lo;
+  bp_coh_states_e                      gad_owner_coh_state_lo;
   logic                                gad_replacement_flag_lo;
   logic                                gad_upgrade_flag_lo;
   logic                                gad_cached_shared_flag_lo;
@@ -235,7 +242,15 @@ module bp_cce
     inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+
       ,.cfg_bus_i(cfg_bus_i)
+
+      ,.ucode_v_i(ucode_v_i)
+      ,.ucode_w_i(ucode_w_i)
+      ,.ucode_addr_i(ucode_addr_i)
+      ,.ucode_data_i(ucode_data_i)
+      ,.ucode_data_o(ucode_data_o)
+
       ,.predicted_fetch_pc_i(predicted_fetch_pc_lo)
       ,.branch_resolution_pc_i(branch_resolution_pc_lo)
       ,.stall_i(stall_lo)
@@ -244,9 +259,6 @@ module bp_cce
       ,.inst_o(fetch_inst_lo)
       ,.inst_v_o(fetch_inst_v_lo)
       );
-
-  // Configuration Bus Microcode Data output
-  assign cfg_cce_ucode_data_o = fetch_inst_lo;
 
   // Inst Pre-decode
   bp_cce_inst_predecode
@@ -473,6 +485,7 @@ module bp_cce
       ,.req_addr_way_o(gad_req_addr_way_lo)
       ,.owner_lce_o(gad_owner_lce_lo)
       ,.owner_way_o(gad_owner_way_lo)
+      ,.owner_coh_state_o(gad_owner_coh_state_lo)
       ,.replacement_flag_o(gad_replacement_flag_lo)
       ,.upgrade_flag_o(gad_upgrade_flag_lo)
       ,.cached_shared_flag_o(gad_cached_shared_flag_lo)
@@ -499,9 +512,9 @@ module bp_cce
       ,.src_a_i(src_a)
       ,.alu_res_i(alu_res_lo)
 
-      ,.lce_req_i(lce_req)
-      ,.lce_resp_i(lce_resp)
-      ,.mem_resp_i(mem_resp)
+      ,.lce_req_header_i(lce_req.header)
+      ,.lce_resp_header_i(lce_resp.header)
+      ,.mem_resp_header_i(mem_resp.header)
 
       ,.pending_i(pending_lo)
 
@@ -514,6 +527,7 @@ module bp_cce
       ,.gad_req_addr_way_i(gad_req_addr_way_lo)
       ,.gad_owner_lce_i(gad_owner_lce_lo)
       ,.gad_owner_way_i(gad_owner_way_lo)
+      ,.gad_owner_coh_state_i(gad_owner_coh_state_lo)
       ,.gad_replacement_flag_i(gad_replacement_flag_lo)
       ,.gad_upgrade_flag_i(gad_upgrade_flag_lo)
       ,.gad_cached_shared_flag_i(gad_cached_shared_flag_lo)

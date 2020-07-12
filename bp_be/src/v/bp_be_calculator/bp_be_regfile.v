@@ -20,15 +20,9 @@ module bp_be_regfile
  import bp_common_rv64_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    )
   (input                           clk_i
    , input                         reset_i
-
-   // Pipeline control signals
-   , input [cfg_bus_width_lp-1:0]  cfg_bus_i
-   , output [dword_width_p-1:0]    cfg_data_o
 
    // rd write bus
    , input                         rd_w_v_i
@@ -46,10 +40,6 @@ module bp_be_regfile
    , output [dword_width_p-1:0]    rs2_data_o
    );
 
-`declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-bp_cfg_bus_s cfg_bus;
-assign cfg_bus = cfg_bus_i;
-
 // Intermediate connections
 logic                        rs1_read_v     , rs2_read_v;
 logic [dword_width_p-1:0]    rs1_reg_data   , rs2_reg_data;
@@ -64,19 +54,18 @@ bsg_mem_2r1w_sync
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.w_v_i(cfg_bus.irf_w_v | rd_w_v_i)
-   ,.w_addr_i(cfg_bus.irf_w_v ? cfg_bus.irf_addr : rd_addr_i)
-   ,.w_data_i(cfg_bus.irf_w_v ? cfg_bus.irf_data : rd_data_i)
+   ,.w_v_i(rd_w_v_i)
+   ,.w_addr_i(rd_addr_i)
+   ,.w_data_i(rd_data_i)
 
-   ,.r0_v_i(cfg_bus.irf_r_v | rs1_read_v)
-   ,.r0_addr_i(cfg_bus.irf_r_v ? cfg_bus.irf_addr : rs1_reread_addr)
+   ,.r0_v_i(rs1_read_v)
+   ,.r0_addr_i(rs1_reread_addr)
    ,.r0_data_o(rs1_reg_data)
 
    ,.r1_v_i(rs2_read_v)
    ,.r1_addr_i(rs2_reread_addr)
    ,.r1_data_o(rs2_reg_data)
    );
-assign cfg_data_o = rs1_reg_data;
 
 // Save the last issued register addresses
 bsg_dff_reset_en 
@@ -106,8 +95,8 @@ always_comb
     // Technically, this is unnecessary, since most hardened SRAMs still write correctly
     //   on read-write conflicts, and the read is handled by forwarding. But this avoids
     //   nasty warnings and possible power sink.
-    rs1_read_v = ~fwd_rs1 & ~cfg_bus.irf_r_v & ~cfg_bus.irf_w_v;
-    rs2_read_v = ~fwd_rs2 & ~cfg_bus.irf_r_v & ~cfg_bus.irf_w_v;
+    rs1_read_v = ~fwd_rs1;
+    rs2_read_v = ~fwd_rs2;
   
     // If we have issued a new instruction, use input address to read, 
     //   else use last request address to read

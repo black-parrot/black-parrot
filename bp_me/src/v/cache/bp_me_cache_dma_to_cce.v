@@ -210,7 +210,7 @@ module bp_me_cache_dma_to_cce
   
   dma_state_e dma_state_r, dma_state_n;
   
-  //synopsys sync_set_reset "reset_i"
+  //synopsys sync_set_reset reset_i
   always_ff @(posedge clk_i)
     if (reset_i)
       begin

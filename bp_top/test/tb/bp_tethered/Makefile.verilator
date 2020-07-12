@@ -11,7 +11,7 @@ $(LINT_DIR)/flist.vcs:
 $(LINT_DIR)/config.vlt:
 	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
 
-LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.v testbench.v test_bp.cpp)
+LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.v testbench.v test_bp.cpp)
 
 $(BUILD_DIR)/testbench.v $(BUILD_DIR)/wrapper.v $(BUILD_DIR)/test_bp.cpp:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
@@ -27,7 +27,6 @@ $(BUILD_DIR)/config.vlt:
 	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
 
 VBUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.v testbench.v test_bp.cpp)
-CBUILD_COLLATERAL = none
 
 $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
 	@ln -nsf $</simsc $@
@@ -38,9 +37,6 @@ $(SIM_DIR)/prog.riscv: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 	cp $^ $@
 
-$(SIM_DIR)/prog.cfg: $(BP_COMMON_DIR)/test/cfg/cosim.cfg
-	cp $^ $@
-
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
@@ -48,11 +44,26 @@ $(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
 	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(@D)/dram_ch.ini
 	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(@D)/dram_sys.ini
 
+NBF_INPUTS = $(NCPUS)
+NBF_INPUTS += cce_ucode.mem
+ifeq ($(PRELOAD_MEM_P), 0)
+	NBF_INPUTS += --mem=prog.mem
+endif
+
+$(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
+	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
+
+$(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
+	cp $^ $@
+
+$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
+	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=4 --verilog-data-width=4 $@
+
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.cfg)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.bin bootrom.mem bootrom.dump)
 
 sim_sample.sc: build.sc
 sim_sample.sc: $(SIM_DIR)/run_samplesc
@@ -61,14 +72,16 @@ sim_sample.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PR
 sim_sample.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_DIR)/run_samplesc: $(SIM_COLLATERAL)
 	cd $(@D); \
-		$(DROMAJO) $(@D)/prog.riscv --host --maxinsn=$(SAMPLE_START_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
+		$(DROMAJO) $(@D)/prog.riscv --host --ncpus=$(NCPUS) --maxinsn=$(SAMPLE_START_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
 	mv $(@D)/dromajo.*.mainram $(@D)/prog.mainram
 	mv $(@D)/dromajo.*.bootram $(@D)/prog.bootram
-	mv $(@D)/dromajo.*.bp_regs $(@D)/prog.nbf
-	cat $(BP_COMMON_DIR)/test/cfg/sample.cfg | envsubst > $(@D)/prog.cfg
+	mv $(@D)/dromajo.*.bp_regs $(@D)/prog.bp_regs
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
 	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
+	$(RISCV_OBJCOPY) -I binary -O verilog --verilog-data-width=4 $(@D)/prog.bootram $(@D)/bootrom.mem
+	cd $(@D); \
+		python $(MEM2NBF) $(NBF_INPUTS) --checkpoint=prog.bp_regs > prog.nbf
 	cd $(@D); \
 		./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)

@@ -1,0 +1,75 @@
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
+export LINUX_TARGET ?= riscv64-unknown-linux-gnu
+
+opensbi_srcdir   := $(BP_TEST_SRC_DIR)/opensbi
+linux_srcdir     := $(BP_TEST_SRC_DIR)/linux
+buildroot_srcdir := $(BP_TEST_SRC_DIR)/buildroot
+
+wrkdir           := $(BP_TEST_DIR)/work
+
+buildroot_wrkdir        := $(wrkdir)/buildroot
+buildroot_sysroot       := $(wrkdir)/sysroot
+buildroot_sysroot_stamp := $(wrkdir)/.buildroot_sysroot_stamp
+buildroot_tar           := $(buildroot_wrkdir)/images/rootfs.tar
+buildroot_config        := $(BP_TEST_CFG_DIR)/buildroot_initramfs_config
+
+linux_wrkdir     := $(wrkdir)/linux
+linux_defconfig  := $(BP_TEST_CFG_DIR)/linux_defconfig
+linux_patch      := $(BP_TEST_CFG_DIR)/linux.patch
+vmlinux          := $(linux_wrkdir)/vmlinux
+vmlinux_stripped := $(linux_wrkdir)/vmlinux-stripped
+vmlinux_binary   := $(linux_wrkdir)/vmlinux.bin
+
+opensbi_wrkdir   := $(wrkdir)/opensbi
+fw_payload       := $(opensbi_wrkdir)/platform/blackparrot/firmware/fw_payload.elf
+
+$(buildroot_wrkdir)/.config: $(buildroot_srcdir)
+	mkdir -p $(dir $@)
+	cp $(buildroot_config) $@
+	$(MAKE) -C $< RISCV=$(BP_EXTERNAL_DIR) PATH=$(PATH) O=$(buildroot_wrkdir) olddefconfig CROSS_COMPILE=$(LINUX_TARGET)-
+
+$(buildroot_tar): $(buildroot_srcdir) $(buildroot_wrkdir)/.config
+	$(MAKE) -C $< RISCV=$(BP_EXTERNAL_DIR) PATH=$(PATH) O=$(buildroot_wrkdir)
+
+$(buildroot_sysroot_stamp): $(buildroot_tar)
+	mkdir -p $(buildroot_sysroot)
+	tar -xpf $< -C $(buildroot_sysroot) --exclude ./dev --exclude ./usr/share/locale
+	cp $(BP_TEST_CFG_DIR)/inittab $(buildroot_sysroot)/etc/inittab
+	cp $(BP_TEST_CFG_DIR)/test.sh $(buildroot_sysroot)/test.sh
+	touch $@
+
+$(linux_wrkdir)/.config: $(linux_srcdir)
+	cd $(linux_srcdir); git stash; git apply $(linux_patch)
+	mkdir -p $(dir $@)
+	cp -p $(linux_defconfig) $@
+	$(MAKE) -C $< O=$(linux_wrkdir) ARCH=riscv olddefconfig
+
+$(vmlinux): $(linux_srcdir) $(linux_wrkdir)/.config $(buildroot_sysroot_stamp)
+	$(MAKE) -j -C $< O=$(linux_wrkdir) \
+		CONFIG_INITRAMFS_SOURCE="$(BP_TEST_CFG_DIR)/initramfs.txt $(buildroot_sysroot)" \
+		CONFIG_INITRAMFS_ROOT_UID=$(shell id -u) \
+		CONFIG_INITRAMFS_ROOT_GID=$(shell id -g) \
+		CROSS_COMPILE=$(LINUX_TARGET)- \
+		ARCH=riscv \
+		vmlinux
+
+$(vmlinux_stripped): $(vmlinux)
+	$(LINUX_TARGET)-strip -o $@ $<
+
+$(vmlinux_binary): $(vmlinux_stripped)
+	$(LINUX_TARGET)-objcopy -O binary $< $@
+
+$(fw_payload): $(opensbi_srcdir) $(vmlinux_binary)
+	$(MAKE) -C $< O=$(opensbi_wrkdir) \
+		PLATFORM=blackparrot \
+		PLATFORM_RISCV_ISA=rv64ima \
+		CROSS_COMPILE=$(LINUX_TARGET)- \
+		FW_PAYLOAD_PATH=$(vmlinux_binary)
+
+buildroot: $(buildroot_sysroot_stamp)
+vmlinux: $(vmlinux_stripped)
+fw_payload: $(fw_payload)
+

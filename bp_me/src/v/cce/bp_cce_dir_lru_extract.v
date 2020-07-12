@@ -55,12 +55,9 @@ module bp_cce_dir_lru_extract
   assign lru_v_o = (row_v_i[lce_i[0]]) & ((lce_i >> 1) == row_num_i);
 
   bp_coh_states_e lru_coh_state;
-  assign lru_coh_state = (row_v_i)
-                         ? row[lce_i[0]][lru_way_i].state
-                         : e_COH_I;
+  assign lru_coh_state = row[lce_i[0]][lru_way_i].state;
   assign lru_coh_state_o = lru_coh_state;
-  assign lru_tag_o = (row_v_i)
-                     ? row[lce_i[0]][lru_way_i].tag
-                     : '0;
+  assign lru_tag_o = row[lce_i[0]][lru_way_i].tag;
+
 endmodule
 

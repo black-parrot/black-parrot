@@ -47,6 +47,7 @@ module bp_cce_gad
 
    , output logic [lce_id_width_p-1:0]                     owner_lce_o
    , output logic [lce_assoc_width_p-1:0]                  owner_way_o
+   , output bp_coh_states_e                                owner_coh_state_o
 
    , output logic                                          replacement_flag_o
    , output logic                                          upgrade_flag_o
@@ -109,15 +110,11 @@ module bp_cce_gad
     ? sharers_ways_i[req_lce_id]
     : '0;
 
-  // request type
-  logic req_wr;
-  assign req_wr = (req_type_flag_i == e_lce_req_type_wr);
-
   // Flag outputs
 
   // Upgrade from read-only to read-write
   // Requesting LCE has block cached in read-only state and request is a store-miss
-  assign upgrade_flag_o = (req_wr & req_lce_ro);
+  assign upgrade_flag_o = (req_type_flag_i & req_lce_ro);
 
   // Replace the LRU block if not doing an upgrade and the lru block might be dirty
   assign replacement_flag_o = ~upgrade_flag_o & ((lru_coh_state_i == e_COH_E)
@@ -147,8 +144,10 @@ module bp_cce_gad
       );
 
   assign owner_lce_o = (gad_v_i & owner_lce_v)
-                          ? {'0, owner_lce_lo} : '0;
+                       ? {'0, owner_lce_lo} : '0;
   assign owner_way_o = (gad_v_i & owner_lce_v)
-                          ? sharers_ways_i[owner_lce_lo] : '0;
+                       ? sharers_ways_i[owner_lce_lo] : '0;
+  assign owner_coh_state_o = (gad_v_i & owner_lce_v)
+                             ? sharers_coh_states_i[owner_lce_lo] : e_COH_I;
 
 endmodule

@@ -16,6 +16,7 @@ stages:
   - test-short
   - test-medium
   - test-long
+  - test-ultralong
  
 clean_all:
   when: manual
@@ -114,7 +115,6 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/touchfiles
     policy: pull
   dependencies: []
-  retry: 1
 
 prep:
   <<: *job_definition
@@ -188,7 +188,6 @@ lint-vcs:
 
 me-regress-verilator:
   <<: *job_definition
-  when: manual
   stage: test-short
   tags:
     - verilator
@@ -225,7 +224,7 @@ dcache-vcs:
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/dcache_regress.sh $CI_CORES
+    - $CI_PROJECT_DIR/ci/dcache_regress.sh vcs $CI_CORES
 
 icache-vcs:
   <<: *job_definition
@@ -233,7 +232,7 @@ icache-vcs:
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/icache_regress.sh $CI_CORES
+    - $CI_PROJECT_DIR/ci/icache_regress.sh vcs $CI_CORES
 
 top-mc-verilator:
   <<: *job_definition
@@ -307,4 +306,23 @@ top-beebs-vcs:
     - vcs
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs BEEBS_TESTLIST $CI_CORES
+
+top-linux-verilator:
+  <<: *job_definition
+  when: manual
+  stage: test-ultralong
+  tags:
+    - verilator
+  script:
+    $CI_PROJECT_DIR/ci/linux.sh verilator $CI_CORES
+
+
+top-linux-vcs:
+  <<: *job_definition
+  when: manual
+  stage: test-ultralong
+  tags:
+    - vcs
+  script:
+    $CI_PROJECT_DIR/ci/linux.sh vcs $CI_CORES
 

@@ -16,7 +16,8 @@ module testbench
    `declare_bp_proc_params(bp_params_p)
 
    // interface widths
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
+   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter cce_trace_p = 0
@@ -62,7 +63,7 @@ module testbench
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
 // CFG IF
 bp_cfg_bus_s           cfg_bus_lo;
@@ -76,16 +77,17 @@ bp_cce_mem_msg_s       mem_cmd;
 logic                  mem_cmd_v, mem_cmd_ready;
 
 // LCE-CCE IF
-bp_lce_cce_req_s       lce_req, lce_req_lo;
+bp_lce_cce_req_s       lce_req_lo, lce_req;
 logic                  lce_req_v, lce_req_v_lo, lce_req_yumi, lce_req_ready_li;
 bp_lce_cce_resp_s      lce_resp, lce_resp_lo;
 logic                  lce_resp_v, lce_resp_v_lo, lce_resp_yumi, lce_resp_ready_li;
-bp_lce_cmd_s           lce_cmd;
+bp_lce_cmd_s           lce_cmd, lce_cmd_lo;
 logic                  lce_cmd_v, lce_cmd_ready;
-bp_lce_cmd_s           lce_cmd_lo;
 logic                  lce_cmd_v_lo, lce_cmd_ready_li;
+bp_lce_cmd_s           lce_cmd_out_lo;
+logic                  lce_cmd_out_v_lo, lce_cmd_out_ready_li;
 // Single LCE setup - LCE should never send a Data Command
-assign lce_cmd_ready_li = '0;
+assign lce_cmd_out_ready_li = '0;
 
 // Trace Replay for LCE
 logic                        tr_v_li, tr_ready_lo;
@@ -145,27 +147,24 @@ bp_me_nonsynth_mock_lce #(
 
   ,.lce_cmd_i(lce_cmd)
   ,.lce_cmd_v_i(lce_cmd_v)
-  ,.lce_cmd_ready_o(lce_cmd_ready)
+  ,.lce_cmd_yumi_o(lce_cmd_yumi)
 
-  ,.lce_cmd_o(lce_cmd_lo)
-  ,.lce_cmd_v_o(lce_cmd_v_lo)
-  ,.lce_cmd_ready_i(lce_cmd_ready_li)
+  ,.lce_cmd_o(lce_cmd_out_lo)
+  ,.lce_cmd_v_o(lce_cmd_out_v_lo)
+  ,.lce_cmd_ready_i(lce_cmd_out_ready_li)
 );
 
 bind bp_me_nonsynth_mock_lce
   bp_me_nonsynth_lce_tracer
-    #(.bp_params_p(bp_params_p))
+    #(.bp_params_p(bp_params_p)
+      ,.sets_p(sets_p)
+      ,.assoc_p(assoc_p)
+      ,.block_width_p(cce_block_width_p)
+      )
     lce_tracer
      (.clk_i(clk_i & (testbench.lce_trace_p == 1))
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
       ,.lce_id_i(lce_id_i)
-      ,.tr_pkt_i(tr_pkt_i)
-      ,.tr_pkt_v_i(tr_pkt_v_i)
-      ,.tr_pkt_yumi_i(tr_pkt_yumi_o)
-      ,.tr_pkt_o_i(tr_pkt_o)
-      ,.tr_pkt_v_o_i(tr_pkt_v_o)
-      ,.tr_pkt_ready_i(tr_pkt_ready_i)
       ,.lce_req_i(lce_req_o)
       ,.lce_req_v_i(lce_req_v_o)
       ,.lce_req_ready_i(lce_req_ready_i)
@@ -174,7 +173,7 @@ bind bp_me_nonsynth_mock_lce
       ,.lce_resp_ready_i(lce_resp_ready_i)
       ,.lce_cmd_i(lce_cmd_i)
       ,.lce_cmd_v_i(lce_cmd_v_i)
-      ,.lce_cmd_ready_i(lce_cmd_ready_o)
+      ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
       ,.lce_cmd_o_i(lce_cmd_o)
       ,.lce_cmd_o_v_i(lce_cmd_v_o)
       ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
@@ -188,7 +187,7 @@ bind bp_cce_wrapper
       ,.reset_i(reset_i)
       ,.freeze_i(cfg_bus_cast_i.freeze)
 
-      ,.cce_id_i('0)
+      ,.cce_id_i(cfg_bus_cast_i.cce_id)
 
       // To CCE
       ,.lce_req_i(lce_req_i)
@@ -246,6 +245,28 @@ lce_resp_buffer
   ,.yumi_i(lce_resp_yumi)
   );
 
+bsg_two_fifo
+#(.width_p(lce_cmd_width_lp)
+  )
+lce_cmd_buffer
+ (.clk_i(clk_i)
+  ,.reset_i(reset_i)
+  // from CCE
+  ,.v_i(lce_cmd_v_lo)
+  ,.data_i(lce_cmd_lo)
+  ,.ready_o(lce_cmd_ready_li)
+  // to LCE
+  ,.v_o(lce_cmd_v)
+  ,.data_o(lce_cmd)
+  ,.yumi_i(lce_cmd_yumi)
+  );
+
+logic cce_ucode_v_li;
+logic cce_ucode_w_li;
+logic [cce_pc_width_p-1:0] cce_ucode_addr_li;
+logic [cce_instr_width_p-1:0] cce_ucode_data_li;
+logic [cce_instr_width_p-1:0] cce_ucode_data_lo;
+
 // CCE
 wrapper
 #(.bp_params_p(bp_params_p)
@@ -256,11 +277,16 @@ wrapper
   ,.reset_i(reset_i)
 
   ,.cfg_bus_i(cfg_bus_lo)
-  ,.cfg_cce_ucode_data_o()
 
-  ,.lce_cmd_o(lce_cmd)
-  ,.lce_cmd_v_o(lce_cmd_v)
-  ,.lce_cmd_ready_i(lce_cmd_ready)
+  ,.ucode_v_i(cce_ucode_v_li)
+  ,.ucode_w_i(cce_ucode_w_li)
+  ,.ucode_addr_i(cce_ucode_addr_li)
+  ,.ucode_data_i(cce_ucode_data_li)
+  ,.ucode_data_o(cce_ucode_data_lo)
+
+  ,.lce_cmd_o(lce_cmd_lo)
+  ,.lce_cmd_v_o(lce_cmd_v_lo)
+  ,.lce_cmd_ready_i(lce_cmd_ready_li)
 
   ,.lce_req_i(lce_req)
   ,.lce_req_v_i(lce_req_v)
@@ -375,6 +401,7 @@ bp_mem_nonsynth_tracer
    ,.mem_resp_yumi_i(mem_resp_yumi)
    );
 
+logic [coh_noc_cord_width_p-1:0] cord_li = {{coh_noc_y_cord_width_p'(1'b1)}, {coh_noc_x_cord_width_p'('0)}};
 logic cfg_resp_v_lo;
 bp_cfg
  #(.bp_params_p(bp_params_p))
@@ -393,12 +420,13 @@ bp_cfg
    ,.cfg_bus_o(cfg_bus_lo)
    ,.did_i('0)
    ,.host_did_i('0)
-   ,.cord_i('0)
-   ,.irf_data_i('0)
-   ,.npc_data_i('0)
-   ,.csr_data_i('0)
-   ,.priv_data_i('0)
-   ,.cce_ucode_data_i('0)
+   ,.cord_i(cord_li)
+
+   ,.cce_ucode_v_o(cce_ucode_v_li)
+   ,.cce_ucode_w_o(cce_ucode_w_li)
+   ,.cce_ucode_addr_o(cce_ucode_addr_li)
+   ,.cce_ucode_data_o(cce_ucode_data_li)
+   ,.cce_ucode_data_i(cce_ucode_data_lo)
    );
 
 // CFG loader

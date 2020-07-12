@@ -24,7 +24,6 @@ module bp_cce_reg
 
     // Interface Widths
     `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   )
   (input                                                                   clk_i
@@ -41,9 +40,9 @@ module bp_cce_reg
    , input [`bp_cce_inst_gpr_width-1:0]                                    src_a_i
    , input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
 
-   , input [lce_cce_req_width_lp-1:0]                                      lce_req_i
-   , input [lce_cce_resp_width_lp-1:0]                                     lce_resp_i
-   , input [cce_mem_msg_width_lp-1:0]                                      mem_resp_i
+   , input [lce_cce_req_header_width_lp-1:0]                               lce_req_header_i
+   , input [lce_cce_resp_header_width_lp-1:0]                              lce_resp_header_i
+   , input [cce_mem_msg_header_width_lp-1:0]                               mem_resp_header_i
 
    // For RDP, output state of pending bits from read operation
    , input                                                                 pending_i
@@ -59,6 +58,7 @@ module bp_cce_reg
    , input [lce_assoc_width_p-1:0]                                         gad_req_addr_way_i
    , input [lce_id_width_p-1:0]                                            gad_owner_lce_i
    , input [lce_assoc_width_p-1:0]                                         gad_owner_way_i
+   , input bp_coh_states_e                                                 gad_owner_coh_state_i
    , input                                                                 gad_replacement_flag_i
    , input                                                                 gad_upgrade_flag_i
    , input                                                                 gad_cached_shared_flag_i
@@ -80,15 +80,15 @@ module bp_cce_reg
 
   // Interface Structs
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
-  bp_lce_cce_req_s  lce_req;
-  bp_lce_cce_resp_s lce_resp;
-  bp_cce_mem_msg_s  mem_resp;
+  bp_lce_cce_req_header_s  lce_req_hdr;
+  bp_lce_cce_resp_header_s lce_resp_hdr;
+  bp_cce_mem_msg_header_s  mem_resp_hdr;
 
-  assign lce_req  = lce_req_i;
-  assign lce_resp = lce_resp_i;
-  assign mem_resp = mem_resp_i;
+  assign lce_req_hdr  = lce_req_header_i;
+  assign lce_resp_hdr = lce_resp_header_i;
+  assign mem_resp_hdr = mem_resp_header_i;
 
   // Registers
   `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
@@ -116,14 +116,16 @@ module bp_cce_reg
   wire queue_op      = (decoded_inst_i.op == e_op_queue);
 
   // Flag next values
-  wire lce_req_rqf   = (lce_req.header.msg_type == e_lce_req_type_wr)
-                       | (lce_req.header.msg_type == e_lce_req_type_uc_wr);
-  wire lce_req_ucf   = (lce_req.header.msg_type == e_lce_req_type_uc_rd)
-                       | (lce_req.header.msg_type == e_lce_req_type_uc_wr);
-  wire lce_resp_nwbf = (lce_resp.header.msg_type == e_lce_cce_resp_null_wb);
-  wire lce_req_nerf  = (lce_req.header.non_exclusive == e_lce_req_non_excl);
+  wire lce_req_rqf   = (lce_req_hdr.msg_type == e_lce_req_type_wr)
+                       | (lce_req_hdr.msg_type == e_lce_req_type_uc_wr);
+  wire lce_req_ucf   = (lce_req_hdr.msg_type == e_lce_req_type_uc_rd)
+                       | (lce_req_hdr.msg_type == e_lce_req_type_uc_wr);
+  wire lce_resp_nwbf = (lce_resp_hdr.msg_type == e_lce_cce_resp_null_wb);
+  wire lce_req_nerf  = (lce_req_hdr.non_exclusive == e_lce_req_non_excl);
 
   // operation writes all flags in bulk
+  // branch flag ops only use e_opd_flags as source
+  // movgs or movis may use e_opd_flags as destination
   wire write_all_flags = ((decoded_inst_i.dst_sel == e_dst_sel_special)
                           & (decoded_inst_i.dst.special == e_opd_flags));
 
@@ -174,8 +176,7 @@ module bp_cce_reg
       // paddr - from lce_req, lce_resp, mem_resp, or move
       // LRU Way ID - from lce_req or move
       // Next Coh State - from move or mem_resp.payload
-      // UC Req Size - from lce_req or move
-      // Data Length - from lce_req, lce_resp, or move
+      // Message Size - from lce_req or move
       // Way ID - from move, GAD, or mem_resp
       // Owner LCE ID - from GAD or move
       // Owner Way ID - from GAD or move
@@ -189,6 +190,7 @@ module bp_cce_reg
       mshr_n.way_id = src_a_i[0+:lce_id_width_p];
       mshr_n.owner_lce_id = src_a_i[0+:lce_id_width_p];
       mshr_n.owner_way_id = src_a_i[0+:lce_assoc_width_p];
+      mshr_n.owner_coh_state = bp_coh_states_e'(src_a_i[0+:$bits(bp_coh_states_e)]);
       mshr_n.lru_paddr = src_a_i[0+:paddr_width_p];
 
       // Flags - by default, next value comes from src_a
@@ -200,27 +202,27 @@ module bp_cce_reg
       if (decoded_inst_i.poph) begin
         unique case (decoded_inst_i.popq_qsel)
           e_src_q_sel_lce_req: begin
-            mshr_n.lce_id = lce_req.header.src_id;
-            mshr_n.paddr = lce_req.header.addr;
-            mshr_n.lru_way_id = lce_req.header.lru_way_id;
-            mshr_n.msg_size = lce_req.header.size;
+            mshr_n.lce_id = lce_req_hdr.src_id;
+            mshr_n.paddr = lce_req_hdr.addr;
+            mshr_n.lru_way_id = lce_req_hdr.lru_way_id;
+            mshr_n.msg_size = lce_req_hdr.size;
             mshr_n.flags[e_opd_rqf] = lce_req_rqf;
             mshr_n.flags[e_opd_ucf] = lce_req_ucf;
             mshr_n.flags[e_opd_nerf] = lce_req_nerf;
           end
           e_src_q_sel_lce_resp: begin
-            //mshr_n.lce_id = lce_resp.header.src_id;
-            //mshr_n.paddr = lce_resp.header.addr;
-            //mshr_n.msg_size = lce_resp.header.size;
+            //mshr_n.lce_id = lce_resp_hdr.src_id;
+            //mshr_n.paddr = lce_resp_hdr.addr;
+            //mshr_n.msg_size = lce_resp_hdr.size;
             mshr_n.flags[e_opd_nwbf] = lce_resp_nwbf;
           end
           e_src_q_sel_mem_resp: begin
-            //mshr_n.lce_id = mem_resp.header.payload.lce_id;
-            //mshr_n.way_id = mem_resp.header.payload.way_id;
-            //mshr_n.paddr = mem_resp.header.addr;
-            //mshr_n.next_coh_state = mem_resp.header.payload.state;
-            //mshr_n.msg_size = mem_resp.header.size;
-            mshr_n.flags[e_opd_sf] = mem_resp.header.payload.speculative;
+            //mshr_n.lce_id = mem_resp_hdr.payload.lce_id;
+            //mshr_n.way_id = mem_resp_hdr.payload.way_id;
+            //mshr_n.paddr = mem_resp_hdr.addr;
+            //mshr_n.next_coh_state = mem_resp_hdr.payload.state;
+            //mshr_n.msg_size = mem_resp_hdr.size;
+            mshr_n.flags[e_opd_sf] = mem_resp_hdr.payload.speculative;
           end
           default: begin
           end
@@ -232,6 +234,7 @@ module bp_cce_reg
         mshr_n.way_id = gad_req_addr_way_i;
         mshr_n.owner_lce_id = gad_owner_lce_i;
         mshr_n.owner_way_id = gad_owner_way_i;
+        mshr_n.owner_coh_state = gad_owner_coh_state_i;
         mshr_n.flags[e_opd_rf] = gad_replacement_flag_i;
         mshr_n.flags[e_opd_uf] = gad_upgrade_flag_i;
         mshr_n.flags[e_opd_csf] = gad_cached_shared_flag_i;
@@ -323,6 +326,9 @@ module bp_cce_reg
         end
         if (~stall_i & decoded_inst_i.owner_way_w_v) begin
           mshr_r.owner_way_id <= mshr_n.owner_way_id;
+        end
+        if (~stall_i & decoded_inst_i.owner_coh_state_w_v) begin
+          mshr_r.owner_coh_state <= mshr_n.owner_coh_state;
         end
         if (~stall_i & decoded_inst_i.next_coh_state_w_v) begin
           mshr_r.next_coh_state <= mshr_n.next_coh_state;

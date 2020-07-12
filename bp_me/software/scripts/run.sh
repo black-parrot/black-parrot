@@ -30,14 +30,14 @@ do
     # run experiments for (program,protocol) pair across all core counts
     for i in "${!nums[@]}"
     do
-      make sim.v PROG=${prog}_${nums[$i]} TB=bp_processor CFG=e_bp_${cfgs[$i]}_core${cce}cfg COH_PROTO=$p &
+      make sim.v PROG=${prog}_${nums[$i]} TB=bp_multicore CFG=e_bp_${cfgs[$i]}_core${cce}cfg COH_PROTO=$p &
     done
     # wait for all simulations
     wait
     # collect results
     for i in "${!nums[@]}"
     do
-      failures=`grep -rE "FAIL" reports/vcs/bp_processor.e_bp_${cfgs[$i]}_core${cce}cfg.sim.${prog}_${nums[$i]}.rpt | wc -l`
+      failures=`grep -rE "FAIL" reports/vcs/bp_multicore.e_bp_${cfgs[$i]}_core${cce}cfg.sim.${prog}_${nums[$i]}.rpt | wc -l`
       if [ $failures -gt 0 ]
       then
         echo "$prog,$p,${cfgs[$i]},FAIL" >> regress${cce}results.txt

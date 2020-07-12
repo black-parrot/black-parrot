@@ -190,17 +190,17 @@ typedef struct packed
 
 typedef struct packed
 {
-  logic [38:0] base;
+  logic [37:0] addr_39_2;
 }  bp_stvec_s;
 
 `define bp_stvec_width ($bits(bp_stvec_s))
 
 `define compress_stvec_s(data_cast_mp) \
-  '{base: data_cast_mp.base[0+:39]}
+  '{addr_39_2: data_cast_mp.base[0+:38]}
 
 `define decompress_stvec_s(data_comp_mp) \
-  '{base : {22'h0, data_comp_mp.base} \
-    ,mode: 2'b00                      \
+  '{base : {24'h0, data_comp_mp.addr_39_2} \
+    ,mode: 2'b00                           \
     }
 
 typedef struct packed
@@ -239,16 +239,12 @@ typedef logic [63:0] bp_sscratch_s;
   64'(data_comp_mp)
 
 typedef logic [63:0] rv64_sepc_s;
-typedef struct packed
-{
-  logic sgn;
-  logic [39:0] addr;
-}  bp_sepc_s;
+typedef logic [38:0] bp_sepc_s;
 
 `define bp_sepc_width ($bits(bp_sepc_s))
 
 `define compress_sepc_s(data_cast_mp) \
-  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]}
+  bp_sepc_s'(data_cast_mp[0+:39])
 
 `define decompress_sepc_s(data_comp_mp) \
   64'($signed(data_comp_mp))
@@ -276,14 +272,10 @@ typedef struct packed
     }
 
 typedef logic [63:0] rv64_stval_s;
-typedef struct packed
-{
-  logic sgn;
-  logic [39:0] addr;
-}  bp_stval_s;
+typedef logic [39:0] bp_stval_s;
 
 `define compress_stval_s(data_cast_mp) \
-  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]}
+  bp_stval_s'(data_cast_mp[0+:40])
 
 `define decompress_stval_s(data_comp_mp) \
   64'($signed(data_comp_mp))
@@ -601,17 +593,17 @@ typedef struct packed
 
 typedef struct packed
 {
-  logic [38:0] base;
+  logic [37:0] addr_39_2;
 }  bp_mtvec_s;
 
 `define bp_mtvec_width ($bits(bp_mtvec_s))
 
 `define compress_mtvec_s(data_cast_mp) \
-  '{base: data_cast_mp.base[0+:39]}
+  '{addr_39_2: data_cast_mp.base[0+:38]}
 
 `define decompress_mtvec_s(data_comp_mp) \
-  '{base : {22'h0, data_comp_mp.base} \
-    ,mode: 2'b00                      \
+  '{base : {24'h0, data_comp_mp.addr_39_2} \
+    ,mode: 2'b00                           \
     }
 
 typedef struct packed
@@ -712,27 +704,19 @@ typedef struct packed
     }
 
 typedef logic [63:0] rv64_mtval_s;
-typedef struct packed
-{
-  logic sgn;
-  logic [39:0] addr;
-}  bp_mtval_s;
+typedef logic [39:0] bp_mtval_s;
 
 `define compress_mtval_s(data_cast_mp) \
-  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]}
+  bp_mtval_s'(data_cast_mp[0+:40])
 
 `define decompress_mtval_s(data_comp_mp) \
   64'($signed(data_comp_mp))
 
 typedef logic [63:0] rv64_mepc_s;
-typedef struct packed
-{
-  logic sgn;
-  logic [39:0] addr;
-}  bp_mepc_s;
+typedef logic [38:0] bp_mepc_s;
 
 `define compress_mepc_s(data_cast_mp) \
-  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]} 
+  bp_mepc_s'(data_cast_mp[0+:39])
 
 `define decompress_mepc_s(data_comp_mp) \
   64'($signed(data_comp_mp))
@@ -990,15 +974,10 @@ typedef struct packed
     }
 
 typedef logic [63:0] rv64_dpc_s;
-
-typedef struct packed
-{
-  logic sgn;
-  logic [39:0] addr;
-}  bp_dpc_s;
+typedef logic [38:0] bp_dpc_s;
 
 `define compress_dpc_s(data_cast_mp) \
-  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]} 
+  bp_dpc_s'(data_cast_mp[0+:39])
 
 `define decompress_dpc_s(data_comp_mp) \
   64'($signed(data_comp_mp))

@@ -20,7 +20,7 @@ module bp_be_calculator_top
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    // Default parameters
    , parameter fp_en_p                  = 0
@@ -28,24 +28,25 @@ module bp_be_calculator_top
    // Generated parameters
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p)
-   , localparam exception_width_lp      = `bp_be_exception_width
-   , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
-   , localparam csr_cmd_width_lp        = `bp_be_csr_cmd_width
-   , localparam mem_resp_width_lp       = `bp_be_mem_resp_width(vaddr_width_p)
+   , localparam exc_stage_width_lp      = `bp_be_exc_stage_width
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam trap_pkt_width_lp       = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
+   , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 6
-   , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
    // From RISC-V specifications
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    )
  (input                                 clk_i
   , input                               reset_i
+
+  , input [cfg_bus_width_lp-1:0]        cfg_bus_i
    
   // Calculator - Checker interface   
   , input [dispatch_pkt_width_lp-1:0]   dispatch_pkt_i
@@ -54,40 +55,63 @@ module bp_be_calculator_top
    
   , output [calc_status_width_lp-1:0]   calc_status_o
    
-  // Mem interface   
-  , output [mmu_cmd_width_lp-1:0]       mmu_cmd_o
-  , output                              mmu_cmd_v_o
-  , input                               mmu_cmd_ready_i
-   
-  , output [csr_cmd_width_lp-1:0]       csr_cmd_o
-  , output                              csr_cmd_v_o
-  , input                               csr_cmd_ready_i
-
-  , input [mem_resp_width_lp-1:0]       mem_resp_i
-  , input                               mem_resp_v_i
-  , output                              mem_resp_ready_o
-
+  , output [ptw_fill_pkt_width_lp-1:0]  ptw_fill_pkt_o
   , output [commit_pkt_width_lp-1:0]    commit_pkt_o
+  , output [trap_pkt_width_lp-1:0]      trap_pkt_o
   , output [wb_pkt_width_lp-1:0]        wb_pkt_o
+  
+  , input                               timer_irq_i
+  , input                               software_irq_i
+  , input                               external_irq_i
+  , output logic                        interrupt_ready_o
+  , input                               interrupt_v_i
+
+  // D$-LCE Interface
+  // signals to LCE
+  , output logic [dcache_req_width_lp-1:0]          cache_req_o
+  , output logic                                    cache_req_v_o
+  , input                                           cache_req_ready_i
+  , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
+  , output logic                                    cache_req_metadata_v_o
+  , input                                           cache_req_critical_i
+  , input                                           cache_req_complete_i
+
+  // data_mem
+  , input data_mem_pkt_v_i
+  , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
+  , output logic data_mem_pkt_yumi_o
+  , output logic [dcache_block_width_p-1:0] data_mem_o
+
+  // tag_mem
+  , input tag_mem_pkt_v_i
+  , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
+  , output logic tag_mem_pkt_yumi_o
+  , output logic [ptag_width_p-1:0] tag_mem_o
+
+  // stat_mem
+  , input stat_mem_pkt_v_i
+  , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
+  , output logic stat_mem_pkt_yumi_o
+  , output logic [dcache_stat_info_width_lp-1:0] stat_mem_o
   );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p / 8)
+`declare_bp_be_mem_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p / 8)
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 // Cast input and output ports 
 bp_be_dispatch_pkt_s   dispatch_pkt;
 bp_be_calc_status_s    calc_status;
-bp_be_mem_resp_s       mem_resp;
 bp_cfg_bus_s           cfg_bus;
 bp_be_wb_pkt_s         long_wb_pkt, calc_wb_pkt;
 bp_be_commit_pkt_s     commit_pkt;
+bp_be_trap_pkt_s       trap_pkt;
 
 assign dispatch_pkt = dispatch_pkt_i;
-assign mem_resp = mem_resp_i;
 assign calc_status_o = calc_status;
 assign commit_pkt_o = commit_pkt;
+assign trap_pkt_o = trap_pkt;
 
 // Declare intermediate signals
 
@@ -102,18 +126,34 @@ logic [dword_width_p-1:0] bypass_rs1 , bypass_rs2;
 bp_be_pipe_stage_reg_s                         calc_stage_isd;
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp  :0] calc_stage_n;
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r;
-bp_be_exception_s      [pipe_stage_els_lp  :0] exc_stage_n;
-bp_be_exception_s      [pipe_stage_els_lp-1:0] exc_stage_r;
+bp_be_exc_stage_s      [pipe_stage_els_lp  :0] exc_stage_n;
+bp_be_exc_stage_s      [pipe_stage_els_lp-1:0] exc_stage_r;
 
 bp_be_comp_stage_reg_s [pipe_stage_els_lp  :0] comp_stage_n;
 bp_be_comp_stage_reg_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
+bp_be_ptw_miss_pkt_s ptw_miss_pkt;
+bp_be_ptw_fill_pkt_s ptw_fill_pkt;
+bp_be_trans_info_s   trans_info_lo;
+assign ptw_fill_pkt_o = ptw_fill_pkt;
+
+logic pipe_mem_dtlb_miss_lo;
+logic pipe_mem_dcache_miss_lo;
+logic pipe_mem_fencei_lo;
+logic pipe_mem_load_misaligned_lo;
+logic pipe_mem_load_access_fault_lo;
+logic pipe_mem_load_page_fault_lo;
+logic pipe_mem_store_misaligned_lo;
+logic pipe_mem_store_access_fault_lo;
+logic pipe_mem_store_page_fault_lo;
+
 logic [dword_width_p-1:0] pipe_nop_data_lo;
-logic [dword_width_p-1:0] pipe_ctrl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo, pipe_long_data_lo;
+logic [dword_width_p-1:0] pipe_ctrl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_sys_data_lo, pipe_fp_data_lo, pipe_long_data_lo;
+logic [vaddr_width_p-1:0] pipe_mem_vaddr_lo;
 
 logic nop_pipe_result_v;
-logic pipe_ctrl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v, pipe_long_data_lo_v;
-logic pipe_mem_exc_v_lo, pipe_mem_miss_v_lo;
+logic pipe_ctrl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_sys_data_lo_v, pipe_fp_data_lo_v, pipe_long_data_lo_v;
+logic pipe_sys_exc_v_lo, pipe_sys_miss_v_lo;
 
 logic [vaddr_width_p-1:0] br_tgt_int1;
 logic btaken_int1;
@@ -252,40 +292,124 @@ bp_be_pipe_mul
    ,.data_o(pipe_mul_data_lo)
    );
 
-// Memory pipe: 3 cycle latency
-bp_be_pipe_mem
- #(.bp_params_p(bp_params_p))
- pipe_mem
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+  logic [rv64_priv_width_gp-1:0]       priv_mode_lo;
+  logic [ptag_width_p-1:0]             satp_ppn_lo;
+  logic                                translation_en_lo;
+  logic                                mstatus_sum_lo;
+  logic                                mstatus_mxr_lo;
 
-   ,.kill_ex1_i(exc_stage_n[1].poison_v)
-   ,.kill_ex2_i(exc_stage_n[2].poison_v)
-   ,.kill_ex3_i(exc_stage_r[2].poison_v) 
+  logic                                pipe_mem_ready_lo;
+  // Memory pipe: 3 cycle latency
+  bp_be_pipe_mem
+   #(.bp_params_p(bp_params_p))
+   pipe_mem
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+  
+     ,.cfg_bus_i(cfg_bus_i)
 
-   ,.decode_i(reservation_r.decode)
-   ,.pc_i(reservation_r.pc)
-   ,.instr_i(reservation_r.instr)
-   ,.rs1_i(reservation_r.rs1)
-   ,.rs2_i(reservation_r.rs2)
-   ,.imm_i(reservation_r.imm)
+     ,.kill_ex1_i(exc_stage_r[0].poison_v)
+     ,.flush_i(flush_i)
+     ,.sfence_i(trap_pkt.sfence)
+  
+     ,.ready_o(pipe_mem_ready_lo)
+     ,.decode_i(reservation_r.decode)
+     ,.pc_i(reservation_r.pc)
+     ,.instr_i(reservation_r.instr)
+     ,.rs1_i(reservation_r.rs1)
+     ,.rs2_i(reservation_r.rs2)
+     ,.imm_i(reservation_r.imm)
+ 
+     ,.ptw_miss_pkt_i(ptw_miss_pkt)
+     ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
-   ,.mmu_cmd_o(mmu_cmd_o)
-   ,.mmu_cmd_v_o(mmu_cmd_v_o)
-   ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
+     ,.cache_req_o(cache_req_o)
+     ,.cache_req_v_o(cache_req_v_o)
+     ,.cache_req_ready_i(cache_req_ready_i)
+     ,.cache_req_metadata_o(cache_req_metadata_o)
+     ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+     ,.cache_req_critical_i(cache_req_critical_i)
+     ,.cache_req_complete_i(cache_req_complete_i)
 
-   ,.csr_cmd_o(csr_cmd_o)
-   ,.csr_cmd_v_o(csr_cmd_v_o)
-   ,.csr_cmd_ready_i(csr_cmd_ready_i)
+     ,.data_mem_pkt_i(data_mem_pkt_i)
+     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+     ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+     ,.data_mem_o(data_mem_o)
 
-   ,.mem_resp_i(mem_resp_i)
-   ,.mem_resp_v_i(mem_resp_v_i)
-   ,.mem_resp_ready_o(mem_resp_ready_o)
+     ,.tag_mem_pkt_i(tag_mem_pkt_i)
+     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+     ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+     ,.tag_mem_o(tag_mem_o)
 
-   ,.exc_v_o(pipe_mem_exc_v_lo)
-   ,.miss_v_o(pipe_mem_miss_v_lo)
-   ,.data_o(pipe_mem_data_lo)
-   );
+     ,.stat_mem_pkt_i(stat_mem_pkt_i)
+     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+     ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+     ,.stat_mem_o(stat_mem_o)
+
+     ,.tlb_miss_v_o(pipe_mem_dtlb_miss_lo)
+     ,.cache_miss_v_o(pipe_mem_dcache_miss_lo)
+     ,.fencei_v_o(pipe_mem_fencei_lo)
+     ,.load_misaligned_v_o(pipe_mem_load_misaligned_lo)
+     ,.load_access_fault_v_o(pipe_mem_load_access_fault_lo)
+     ,.load_page_fault_v_o(pipe_mem_load_page_fault_lo)
+     ,.store_misaligned_v_o(pipe_mem_store_misaligned_lo)
+     ,.store_access_fault_v_o(pipe_mem_store_access_fault_lo)
+     ,.store_page_fault_v_o(pipe_mem_store_page_fault_lo)
+     ,.data_o(pipe_mem_data_lo)
+     ,.vaddr_o(pipe_mem_vaddr_lo)
+
+     ,.trans_info_i(trans_info_lo)
+     );
+
+  logic [vaddr_width_p-1:0] pipe_mem_vaddr_r;
+  bsg_dff
+   #(.width_p(vaddr_width_p))
+   pipe_mem_vaddr_reg
+    (.clk_i(clk_i)
+     ,.data_i(pipe_mem_vaddr_lo)
+     ,.data_o(pipe_mem_vaddr_r)
+     );
+
+  logic pipe_long_ready_lo;
+  bp_be_pipe_sys
+   #(.bp_params_p(bp_params_p))
+   pipe_sys
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_i)
+
+     ,.kill_ex1_i(exc_stage_n[1].poison_v)
+     ,.kill_ex2_i(exc_stage_n[2].poison_v)
+     ,.kill_ex3_i(exc_stage_r[2].poison_v) 
+
+     ,.decode_i(reservation_r.decode)
+     ,.pc_i(reservation_r.pc)
+     ,.instr_i(reservation_r.instr)
+     ,.rs1_i(reservation_r.rs1)
+     ,.rs2_i(reservation_r.rs2)
+     ,.imm_i(reservation_r.imm)
+
+     ,.ptw_miss_pkt_o(ptw_miss_pkt)
+     ,.ptw_fill_pkt_i(ptw_fill_pkt)
+
+     ,.exception_i(exc_stage_r[2].exc)
+     ,.exception_pc_i(calc_stage_r[2].pc)
+     ,.exception_vaddr_i(pipe_mem_vaddr_r)
+     ,.commit_pkt_i(commit_pkt)
+     ,.trap_pkt_o(trap_pkt)
+
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
+     ,.interrupt_ready_o(interrupt_ready_o)
+     ,.interrupt_v_i(interrupt_v_i)
+
+     ,.exc_v_o(pipe_sys_exc_v_lo)
+     ,.miss_v_o(pipe_sys_miss_v_lo)
+     ,.data_o(pipe_sys_data_lo)
+
+     ,.trans_info_o(trans_info_lo)
+     );
 
   // Floating point pipe: 4 cycle latency
   bp_be_pipe_fp 
@@ -300,7 +424,6 @@ bp_be_pipe_mem
      ,.data_o(pipe_fp_data_lo)
      );
 
-  logic pipe_long_ready_lo;
   bp_be_pipe_long
    #(.bp_params_p(bp_params_p))
    pipe_long
@@ -336,7 +459,8 @@ bsg_dff
 //   static latencies, we cannot have two pipelines complete at the same time.
 assign pipe_fp_data_lo_v  = calc_stage_r[4].pipe_fp_v;
 assign pipe_mul_data_lo_v = calc_stage_r[3].pipe_mul_v;
-assign pipe_mem_data_lo_v = calc_stage_r[2].pipe_mem_v;
+assign pipe_sys_data_lo_v = calc_stage_r[2].pipe_sys_v;
+assign pipe_mem_data_lo_v = calc_stage_r[1].pipe_mem_v;
 assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
 assign pipe_ctrl_data_lo_v = calc_stage_r[0].pipe_ctrl_v;
 
@@ -346,8 +470,8 @@ always_comb
     // TODO: Add fflags
     comp_stage_n[0] = '0;
     comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo} : pipe_ctrl_data_lo;
-    comp_stage_n[2] = comp_stage_r[1];
-    comp_stage_n[3] = pipe_mem_data_lo_v ? '{data: pipe_mem_data_lo} : comp_stage_r[2];
+    comp_stage_n[2] = pipe_mem_data_lo_v ? '{data: pipe_mem_data_lo} : comp_stage_r[1];
+    comp_stage_n[3] = pipe_sys_data_lo_v ? '{data: pipe_sys_data_lo} : comp_stage_r[2];
     comp_stage_n[4] = pipe_mul_data_lo_v ? '{data: pipe_mul_data_lo} : comp_stage_r[3];
     comp_stage_n[5] = pipe_fp_data_lo_v  ? '{data: pipe_fp_data_lo } : comp_stage_r[4];
     comp_stage_n[6] = comp_stage_r[5];
@@ -364,7 +488,7 @@ bsg_dff
 
 // Exception pipeline
 bsg_dff 
- #(.width_p(exception_width_lp*pipe_stage_els_lp)
+ #(.width_p(exc_stage_width_lp*pipe_stage_els_lp)
    ) 
  exc_stage_reg
   (.clk_i(clk_i)
@@ -383,6 +507,7 @@ always_comb
     calc_stage_isd.pipe_ctrl_v    = reservation_n.decode.pipe_ctrl_v;
     calc_stage_isd.pipe_int_v     = reservation_n.decode.pipe_int_v;
     calc_stage_isd.pipe_mem_v     = reservation_n.decode.pipe_mem_v;
+    calc_stage_isd.pipe_sys_v     = reservation_n.decode.pipe_sys_v;
     calc_stage_isd.pipe_mul_v     = reservation_n.decode.pipe_mul_v;
     calc_stage_isd.pipe_fp_v      = reservation_n.decode.pipe_fp_v;
     calc_stage_isd.pipe_long_v    = reservation_n.decode.pipe_long_v;
@@ -400,6 +525,8 @@ always_comb
     calc_status.ex1_instr_v              = reservation_r.decode.instr_v & ~exc_stage_r[0].poison_v;
 
     calc_status.long_busy                = ~pipe_long_ready_lo;
+    calc_status.mem_busy                 = ~pipe_mem_ready_lo;
+    calc_status.commit_v                 = commit_pkt.v;
 
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
@@ -447,28 +574,40 @@ always_comb
         // Normally, shift down in the pipe
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
-        // If there are new exceptions, add them to the list
-        // TODO: Fix
-        exc_stage_n[0].fe_nop_v        = ~dispatch_pkt.v;
-        exc_stage_n[0].be_nop_v        = ~dispatch_pkt.v;
-        exc_stage_n[0].me_nop_v        = ~dispatch_pkt.v;
+        exc_stage_n[0].nop_v           = ~reservation_n.v;
 
-        exc_stage_n[0].roll_v          =                           pipe_mem_miss_v_lo;
-        exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | pipe_mem_miss_v_lo;
-        exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | pipe_mem_miss_v_lo;
-        exc_stage_n[3].roll_v          = exc_stage_r[2].roll_v   | pipe_mem_miss_v_lo;
+        exc_stage_n[0].roll_v          =                           pipe_sys_miss_v_lo;
+        exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | pipe_sys_miss_v_lo;
+        exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | pipe_sys_miss_v_lo;
+        exc_stage_n[3].roll_v          = exc_stage_r[2].roll_v   | pipe_sys_miss_v_lo;
 
         exc_stage_n[0].poison_v        = reservation_n.poison    | flush_i;
         exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | flush_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | flush_i;
-        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
+        // We only poison on exception or cache miss, because we also flush
+        // on, for instance, fence.i
+        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_sys_miss_v_lo | pipe_sys_exc_v_lo;
+
+        exc_stage_n[0].exc.itlb_miss          = reservation_n.decode.itlb_miss;
+        exc_stage_n[0].exc.instr_access_fault = reservation_n.decode.instr_access_fault;
+        exc_stage_n[0].exc.instr_page_fault   = reservation_n.decode.instr_page_fault;
+        exc_stage_n[0].exc.illegal_instr      = reservation_n.decode.illegal_instr;
+
+        exc_stage_n[1].exc.dtlb_miss          = pipe_mem_dtlb_miss_lo;
+
+        exc_stage_n[2].exc.dcache_miss        = pipe_mem_dcache_miss_lo;
+        exc_stage_n[2].exc.fencei_v           = pipe_mem_fencei_lo;
+        exc_stage_n[2].exc.load_misaligned    = pipe_mem_load_misaligned_lo;
+        exc_stage_n[2].exc.load_access_fault  = pipe_mem_load_access_fault_lo;
+        exc_stage_n[2].exc.load_page_fault    = pipe_mem_load_page_fault_lo;
+        exc_stage_n[2].exc.store_misaligned   = pipe_mem_store_misaligned_lo;
+        exc_stage_n[2].exc.store_access_fault = pipe_mem_store_access_fault_lo;
+        exc_stage_n[2].exc.store_page_fault   = pipe_mem_store_page_fault_lo;
   end
 
 assign commit_pkt.v          = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
 assign commit_pkt.queue_v    = calc_stage_r[2].v & calc_stage_r[2].queue_v & ~exc_stage_r[2].roll_v;
 assign commit_pkt.instret    = calc_stage_r[2].v & calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
-assign commit_pkt.cache_miss = calc_stage_r[2].v & pipe_mem_miss_v_lo & ~exc_stage_r[2].poison_v;
-assign commit_pkt.tlb_miss   = 1'b0; // TODO: Add to mem resp
 assign commit_pkt.pc         = calc_stage_r[2].pc;
 assign commit_pkt.npc        = calc_stage_r[1].pc;
 assign commit_pkt.instr      = calc_stage_r[2].instr;

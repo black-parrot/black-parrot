@@ -3,7 +3,7 @@
  * wrapper.v
  *
  */
- 
+
 module wrapper
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -14,10 +14,11 @@ module wrapper
  import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   ,parameter uce_p = 1
+  ,parameter wt_p = 1
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
+   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
@@ -35,11 +36,10 @@ module wrapper
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
 
-   , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p) 
+   , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
 
    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dword_width_p)
    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
-   , localparam stat_info_width_lp=`bp_cache_stat_info_width(dcache_assoc_p)
    )
    ( input                                             clk_i
    , input                                             reset_i
@@ -80,7 +80,7 @@ module wrapper
    // Miss, Management Interfaces
    logic cache_req_v_lo, cache_req_metadata_v_lo;
    logic cache_req_ready_lo;
-   logic cache_req_complete_lo;
+   logic cache_req_complete_lo, cache_req_critical_lo;
    logic [dcache_req_width_lp-1:0] cache_req_lo;
    logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
 
@@ -92,7 +92,7 @@ module wrapper
    logic [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_lo;
    logic [dcache_block_width_p-1:0] data_mem_lo;
    logic [ptag_width_lp-1:0] tag_mem_lo;
-   logic [stat_info_width_lp-1:0] stat_mem_lo;
+   logic [dcache_stat_info_width_lp-1:0] stat_mem_lo;
 
    // Credits
    logic credits_full_lo, credits_empty_lo;
@@ -100,18 +100,18 @@ module wrapper
    bsg_fifo_1r1w_rolly
    #(.width_p(dcache_pkt_width_lp+ptag_width_lp+1)
     ,.els_p(8))
-    rolly 
+    rolly
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
-    
+
     ,.roll_v_i(rollback_li)
     ,.clr_v_i(1'b0)
     ,.deq_v_i(v_o)
-    
+
     ,.data_i({uncached_i, ptag_i, dcache_pkt_i})
     ,.v_i(v_i)
     ,.ready_o(ready_o)
-    
+
     ,.data_o({rolly_uncached_lo, rolly_ptag_lo, rolly_dcache_pkt_lo})
     ,.v_o(rolly_v_lo)
     ,.yumi_i(rolly_yumi_li)
@@ -130,7 +130,7 @@ module wrapper
 
    assign rollback_li = rolly_yumi_rr & ~v_o;
    assign rolly_yumi_li = rolly_v_lo & dcache_ready_lo;
-  
+
    logic [ptag_width_lp-1:0] rolly_ptag_r;
    bsg_dff_reset
     #(.width_p(ptag_width_lp)
@@ -156,7 +156,7 @@ module wrapper
     );
 
    assign poison_li = dcache_v_rr & ~v_o;
-   
+
    logic uncached_r;
    bsg_dff_reset
    #(.width_p(1)
@@ -169,40 +169,39 @@ module wrapper
    ,.data_i(rolly_uncached_lo)
    ,.data_o(uncached_r)
    );
-  
+
    bp_be_dcache
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.writethrough_p(wt_p)
+     )
    dcache
    (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   
+
    ,.cfg_bus_i(cfg_bus_i)
-   
+
    ,.dcache_pkt_i(rolly_dcache_pkt_lo)
-   ,.v_i(rolly_v_lo)
+   ,.v_i(rolly_yumi_li)
    ,.ready_o(dcache_ready_lo)
 
    ,.data_o(data_o)
    ,.v_o(v_o)
-   ,.fencei_v_o()
 
-   ,.tlb_miss_i(1'b0)
+   ,.ptag_v_i(1'b1)
    ,.ptag_i(rolly_ptag_r)
    ,.uncached_i(uncached_r)
 
    ,.poison_i(poison_li)
 
-   ,.load_op_tl_o()
-   ,.store_op_tl_o()
-
    ,.dcache_miss_o(dcache_miss_lo)
-    
+
    ,.cache_req_v_o(cache_req_v_lo)
    ,.cache_req_o(cache_req_lo)
    ,.cache_req_metadata_o(cache_req_metadata_lo)
    ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
    ,.cache_req_ready_i(cache_req_ready_lo)
    ,.cache_req_complete_i(cache_req_complete_lo)
+   ,.cache_req_critical_i(cache_req_critical_lo)
 
    ,.data_mem_pkt_v_i(data_mem_pkt_v_lo)
    ,.data_mem_pkt_i(data_mem_pkt_lo)
@@ -223,20 +222,33 @@ module wrapper
    if(uce_p == 0) begin : cce
      logic lce_req_v_lo, lce_resp_v_lo;
      logic lce_req_ready_lo, lce_resp_ready_lo;
-     logic fifo_lce_cmd_v_lo, fifo_lce_cmd_yumi_li, lce_cmd_v_lo, lce_cmd_ready_li;  
+     logic fifo_lce_cmd_v_lo, fifo_lce_cmd_yumi_li, lce_cmd_v_lo, lce_cmd_ready_li;
      logic [lce_cce_req_width_lp-1:0] lce_req_lo;
      logic [lce_cmd_width_lp-1:0] lce_cmd_lo, fifo_lce_cmd_lo;
      logic [lce_cce_resp_width_lp-1:0] lce_resp_lo;
-     
+
      logic mem_resp_ready_lo;
 
-     bp_be_dcache_lce
-     #(.bp_params_p(bp_params_p))
+     `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+     bp_cfg_bus_s cfg_bus_cast_i;
+     assign cfg_bus_cast_i = cfg_bus_i;
+
+     bp_lce
+     #(.bp_params_p(bp_params_p)
+        ,.assoc_p(dcache_assoc_p)
+        ,.sets_p(dcache_sets_p)
+        ,.block_width_p(dcache_block_width_p)
+        ,.timeout_max_limit_p(4)
+        ,.credits_p(coh_noc_max_credits_p)
+        ,.data_mem_invert_clk_p(1)
+        ,.tag_mem_invert_clk_p(1)
+       )
      dcache_lce
      (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     
-     ,.lce_id_i('0)
+
+     ,.lce_id_i(cfg_bus_cast_i.dcache_id)
+     ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
 
      ,.cache_req_i(cache_req_lo)
      ,.cache_req_v_i(cache_req_v_lo)
@@ -245,6 +257,7 @@ module wrapper
      ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
 
      ,.cache_req_complete_o(cache_req_complete_lo)
+     ,.cache_req_critical_o(cache_req_critical_lo)
 
      ,.data_mem_pkt_v_o(data_mem_pkt_v_lo)
      ,.data_mem_pkt_o(data_mem_pkt_lo)
@@ -260,7 +273,7 @@ module wrapper
      ,.stat_mem_pkt_o(stat_mem_pkt_lo)
      ,.stat_mem_i(stat_mem_lo)
      ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo)
-      
+
      ,.lce_req_o(lce_req_lo)
      ,.lce_req_v_o(lce_req_v_lo)
      ,.lce_req_ready_i(lce_req_ready_lo)
@@ -268,23 +281,23 @@ module wrapper
      ,.lce_resp_o(lce_resp_lo)
      ,.lce_resp_v_o(lce_resp_v_lo)
      ,.lce_resp_ready_i(lce_resp_ready_lo)
-     
+
      ,.lce_cmd_i(fifo_lce_cmd_lo)
      ,.lce_cmd_v_i(fifo_lce_cmd_v_lo)
      ,.lce_cmd_yumi_o(fifo_lce_cmd_yumi_li)
 
      ,.lce_cmd_o()
      ,.lce_cmd_v_o()
-     ,.lce_cmd_ready_i()
+     ,.lce_cmd_ready_i(1'b1)
 
      ,.credits_full_o(credits_full_lo)
      ,.credits_empty_o(credits_empty_lo)
      );
-    
+
      // lce_cmd demanding -> demanding handshake conversion
-     bsg_two_fifo 
+     bsg_two_fifo
        #(.width_p(lce_cmd_width_lp))
-       cmd_fifo 
+       cmd_fifo
        (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
@@ -306,7 +319,6 @@ module wrapper
      ,.reset_i(reset_i)
 
      ,.cfg_bus_i(cfg_bus_i)
-     ,.cfg_cce_ucode_data_o()
 
      ,.lce_req_i(lce_req_lo)
      ,.lce_req_v_i(lce_req_v_lo)
@@ -342,11 +354,13 @@ module wrapper
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
+     ,.data_mem_invert_clk_p(1)
+     ,.tag_mem_invert_clk_p(1)
      )
      dcache_uce
      (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     
+
      ,.lce_id_i('0)
 
      ,.cache_req_i(cache_req_lo)
@@ -356,6 +370,7 @@ module wrapper
      ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
 
      ,.cache_req_complete_o(cache_req_complete_lo)
+     ,.cache_req_critical_o(cache_req_critical_lo)
 
      ,.tag_mem_pkt_o(tag_mem_pkt_lo)
      ,.tag_mem_pkt_v_o(tag_mem_pkt_v_lo)
@@ -383,7 +398,7 @@ module wrapper
      ,.mem_resp_v_i(mem_resp_v_i)
      ,.mem_resp_yumi_o(mem_resp_yumi_o)
      );
-    
+
     // We need a mem cmd fifo because we need to buffer the wt stores to
     // memory since we don't raise a miss for these stores.
     // Update: This is useful even on writebacks to successively allow the
@@ -402,7 +417,7 @@ module wrapper
       ,.data_o(mem_cmd_o)
       ,.yumi_i(mem_cmd_v_o & mem_cmd_ready_i)
       );
-    
+
    end
 
 endmodule

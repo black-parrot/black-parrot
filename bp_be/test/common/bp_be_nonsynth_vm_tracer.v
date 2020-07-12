@@ -27,20 +27,24 @@ module bp_be_nonsynth_vm_tracer
    , input                           itlb_fill_v_i
    , input [vtag_width_p-1:0]        itlb_vtag_i
    , input [itlb_entry_width_lp-1:0] itlb_entry_i
+   , input                           itlb_cam_r_v_i
 
    , input                           dtlb_clear_i
    , input                           dtlb_fill_v_i
    , input [vtag_width_p-1:0]        dtlb_vtag_i
    , input [dtlb_entry_width_lp-1:0] dtlb_entry_i
+   , input                           dtlb_cam_r_v_i
 
    //, input                           sfence_i
    //, input [rv64_priv_width_gp-1:0]  priv_i
    //, input [rv64_priv_width_gp-1:0]  shadow_priv_i
+
+   , input [num_core_p-1:0]          program_finish_i
    );
 
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
-  `declare_bp_be_mmu_structs(vaddr_width_p, paddr_width_p, lce_sets_p, cce_block_width_p/8)
+  `declare_bp_be_mem_structs(vaddr_width_p, paddr_width_p, lce_sets_p, cce_block_width_p/8)
   bp_fe_tlb_entry_s   itlb_w_entry;
   bp_pte_entry_leaf_s dtlb_w_entry;
   
@@ -49,6 +53,9 @@ module bp_be_nonsynth_vm_tracer
   
   integer file;
   string file_name;
+
+  logic [63:0] itlb_read_count_r;
+  logic [63:0] dtlb_read_count_r;
   
   wire delay_li = reset_i | freeze_i;
   always_ff @(negedge delay_li)
@@ -85,6 +92,26 @@ module bp_be_nonsynth_vm_tracer
                 //,dtlb_w_entry.a
                 //,dtlb_w_entry.d
                 );
+    end
+
+  // the following counters count how often itlb and dtlb are read
+  always_ff @(posedge clk_i)
+    begin
+      if (reset_i)
+        begin
+          itlb_read_count_r <= '0;
+          dtlb_read_count_r <= '0;
+        end
+      else if (program_finish_i)
+        begin
+          $fwrite(file, "[%t] Total ITLB read access count is %0d.\n", $time, itlb_read_count_r);
+          $fwrite(file, "[%t] Total DTLB read access count is %0d.\n", $time, dtlb_read_count_r);
+        end
+      else
+        begin
+          itlb_read_count_r <= itlb_cam_r_v_i + itlb_read_count_r;
+          dtlb_read_count_r <= dtlb_cam_r_v_i + dtlb_read_count_r;
+        end
     end
 
 endmodule

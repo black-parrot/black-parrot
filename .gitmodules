@@ -24,8 +24,8 @@
 
 [submodule "external/basejump_stl"]
   path = external/basejump_stl
-  url = https://github.com/black-parrot/basejump_stl.git
-  branch = blackparrot_mods
+  url = https://github.com/bespoke-silicon-group/basejump_stl.git
+  branch = master
   ignore = dirty
 
 [submodule "external/DRAMSim2"]
@@ -125,3 +125,14 @@
   branch = master
   ignore = dirty
 
+[submodule "bp_common/test/src/linux"]
+  path = bp_common/test/src/linux
+  url = https://github.com/torvalds/linux
+  branch = master
+  ignore = dirty
+
+[submodule "bp_common/test/src/buildroot"]
+  path = bp_common/test/src/buildroot
+  url = https://github.com/buildroot/buildroot
+  branch = master
+  ignore = dirty
