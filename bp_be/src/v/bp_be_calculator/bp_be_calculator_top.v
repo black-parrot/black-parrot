@@ -148,11 +148,11 @@ module bp_be_calculator_top
   logic pipe_mem_store_page_fault_lo;
 
   logic [dword_width_p-1:0] pipe_nop_data_lo;
-  logic [dword_width_p-1:0] pipe_ctrl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_sys_data_lo, pipe_fp_data_lo, pipe_long_data_lo;
+  logic [dword_width_p-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_sys_data_lo, pipe_fma_data_lo, pipe_long_data_lo;
   logic [vaddr_width_p-1:0] pipe_mem_vaddr_lo;
 
   logic nop_pipe_result_v;
-  logic pipe_ctrl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_sys_data_lo_v, pipe_fp_data_lo_v, pipe_long_data_lo_v;
+  logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_sys_data_lo_v, pipe_fma_data_lo_v, pipe_long_data_lo_v;
   logic pipe_sys_exc_v_lo, pipe_sys_miss_v_lo;
 
   logic [vaddr_width_p-1:0] br_tgt_int1;
@@ -245,15 +245,15 @@ module bp_be_calculator_top
      ,.data_o(reservation_r)
      );
 
-  bp_be_pipe_ctrl
+  bp_be_pipe_ctl
    #(.bp_params_p(bp_params_p))
-   pipe_ctrl
+   pipe_ctl
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.reservation_i(reservation_r)
 
-     ,.data_o(pipe_ctrl_data_lo)
+     ,.data_o(pipe_ctl_data_lo)
      ,.br_tgt_o(br_tgt_int1)
      ,.btaken_o(btaken_int1)
      );
@@ -393,15 +393,15 @@ module bp_be_calculator_top
        );
 
     // Floating point pipe: 4 cycle latency
-    bp_be_pipe_fp
+    bp_be_pipe_fma
      #(.bp_params_p(bp_params_p))
-     pipe_fp
+     pipe_fma
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
        ,.reservation_i(reservation_r)
 
-       ,.data_o(pipe_fp_data_lo)
+       ,.data_o(pipe_fma_data_lo)
        );
 
     bp_be_pipe_long
@@ -434,23 +434,23 @@ module bp_be_calculator_top
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have
   //   static latencies, we cannot have two pipelines complete at the same time.
-  assign pipe_fp_data_lo_v  = calc_stage_r[4].pipe_fp_v;
+  assign pipe_fma_data_lo_v = calc_stage_r[4].pipe_fma_v;
   assign pipe_mul_data_lo_v = calc_stage_r[3].pipe_mul_v;
   assign pipe_sys_data_lo_v = calc_stage_r[2].pipe_sys_v;
   assign pipe_mem_data_lo_v = calc_stage_r[1].pipe_mem_v;
   assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
-  assign pipe_ctrl_data_lo_v = calc_stage_r[0].pipe_ctrl_v;
+  assign pipe_ctl_data_lo_v = calc_stage_r[0].pipe_ctl_v;
 
 
   always_comb
     begin
       // TODO: Add fflags
       comp_stage_n[0] = '0;
-      comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo} : pipe_ctrl_data_lo;
+      comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo} : pipe_ctl_data_lo;
       comp_stage_n[2] = pipe_mem_data_lo_v ? '{data: pipe_mem_data_lo} : comp_stage_r[1];
       comp_stage_n[3] = pipe_sys_data_lo_v ? '{data: pipe_sys_data_lo} : comp_stage_r[2];
       comp_stage_n[4] = pipe_mul_data_lo_v ? '{data: pipe_mul_data_lo} : comp_stage_r[3];
-      comp_stage_n[5] = pipe_fp_data_lo_v  ? '{data: pipe_fp_data_lo } : comp_stage_r[4];
+      comp_stage_n[5] = pipe_fma_data_lo_v ? '{data: pipe_fma_data_lo} : comp_stage_r[4];
       comp_stage_n[6] = comp_stage_r[5];
     end
 
@@ -480,12 +480,12 @@ module bp_be_calculator_top
       calc_stage_isd.instr          = reservation_n.instr;
       calc_stage_isd.v              = reservation_n.v;
       calc_stage_isd.instr_v        = reservation_n.decode.instr_v;
-      calc_stage_isd.pipe_ctrl_v    = reservation_n.decode.pipe_ctrl_v;
+      calc_stage_isd.pipe_ctl_v     = reservation_n.decode.pipe_ctl_v;
       calc_stage_isd.pipe_int_v     = reservation_n.decode.pipe_int_v;
       calc_stage_isd.pipe_mem_v     = reservation_n.decode.pipe_mem_v;
       calc_stage_isd.pipe_sys_v     = reservation_n.decode.pipe_sys_v;
       calc_stage_isd.pipe_mul_v     = reservation_n.decode.pipe_mul_v;
-      calc_stage_isd.pipe_fp_v      = reservation_n.decode.pipe_fp_v;
+      calc_stage_isd.pipe_fma_v     = reservation_n.decode.pipe_fma_v;
       calc_stage_isd.pipe_long_v    = reservation_n.decode.pipe_long_v;
       calc_stage_isd.mem_v          = reservation_n.decode.mem_v;
       calc_stage_isd.csr_v          = reservation_n.decode.csr_v;
@@ -496,7 +496,7 @@ module bp_be_calculator_top
       // Calculator status EX1 information
       calc_status.ex1_v                    = ~exc_stage_r[0].poison_v;
       calc_status.ex1_npc                  = br_tgt_int1;
-      calc_status.ex1_br_or_jmp            = reservation_r.decode.pipe_ctrl_v;
+      calc_status.ex1_br_or_jmp            = reservation_r.decode.pipe_ctl_v;
       calc_status.ex1_btaken               = btaken_int1;
       calc_status.ex1_instr_v              = reservation_r.decode.instr_v & ~exc_stage_r[0].poison_v;
 
@@ -508,7 +508,7 @@ module bp_be_calculator_top
       for (integer i = 0; i < pipe_stage_els_lp; i++)
         begin : dep_status
           calc_status.dep_status[i].v         = calc_stage_r[i].v;
-          calc_status.dep_status[i].ctrl_iwb_v = calc_stage_r[i].pipe_ctrl_v
+          calc_status.dep_status[i].ctrl_iwb_v = calc_stage_r[i].pipe_ctl_v
                                                 & ~exc_stage_n[i+1].poison_v
                                                 & calc_stage_r[i].irf_w_v;
           calc_status.dep_status[i].int_iwb_v = calc_stage_r[i].pipe_int_v
@@ -523,7 +523,7 @@ module bp_be_calculator_top
           calc_status.dep_status[i].mem_fwb_v = calc_stage_r[i].pipe_mem_v
                                                 & ~exc_stage_n[i+1].poison_v
                                                 & calc_stage_r[i].frf_w_v;
-          calc_status.dep_status[i].fp_fwb_v  = calc_stage_r[i].pipe_fp_v
+          calc_status.dep_status[i].fp_fwb_v  = calc_stage_r[i].pipe_fma_v
                                                 & ~exc_stage_n[i+1].poison_v
                                                 & calc_stage_r[i].frf_w_v;
           calc_status.dep_status[i].rd_addr   = calc_stage_r[i].instr.t.rtype.rd_addr;

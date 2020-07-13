@@ -47,12 +47,12 @@
                                                                                                    \
     logic                              v;                                                          \
     logic                              instr_v;                                                    \
-    logic                              pipe_ctrl_v;                                                \
+    logic                              pipe_ctl_v;                                                 \
     logic                              pipe_int_v;                                                 \
     logic                              pipe_mem_v;                                                 \
     logic                              pipe_sys_v;                                                 \
     logic                              pipe_mul_v;                                                 \
-    logic                              pipe_fp_v;                                                  \
+    logic                              pipe_fma_v;                                                 \
     logic                              pipe_long_v;                                                \
                                                                                                    \
     logic                              mem_v;                                                      \

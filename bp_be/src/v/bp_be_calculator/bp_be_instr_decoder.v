@@ -53,11 +53,11 @@ module bp_be_instr_decoder
       decode.instr_v       = 1'b1;
 
       // Destination pipe
-      decode.pipe_ctrl_v   = '0;
+      decode.pipe_ctl_v    = '0;
       decode.pipe_int_v    = '0;
       decode.pipe_mem_v    = '0;
       decode.pipe_mul_v    = '0;
-      decode.pipe_fp_v     = '0;
+      decode.pipe_fma_v    = '0;
       decode.pipe_long_v   = '0;
 
       // R/W signals
@@ -168,14 +168,14 @@ module bp_be_instr_decoder
           end
         `RV64_JAL_OP :
           begin
-            decode.pipe_ctrl_v = 1'b1;
+            decode.pipe_ctl_v = 1'b1;
             decode.irf_w_v    = 1'b1;
             decode.fu_op      = e_ctrl_op_jal;
             decode.baddr_sel  = e_baddr_is_pc;
           end
         `RV64_JALR_OP :
           begin
-            decode.pipe_ctrl_v = 1'b1;
+            decode.pipe_ctl_v = 1'b1;
             decode.irf_w_v    = 1'b1;
             unique casez (instr)
               `RV64_JALR: decode.fu_op = e_ctrl_op_jalr;
@@ -185,7 +185,7 @@ module bp_be_instr_decoder
           end
         `RV64_BRANCH_OP :
           begin
-            decode.pipe_ctrl_v = 1'b1;
+            decode.pipe_ctl_v = 1'b1;
             unique casez (instr)
               `RV64_BEQ  : decode.fu_op = e_ctrl_op_beq;
               `RV64_BNE  : decode.fu_op = e_ctrl_op_bne;
