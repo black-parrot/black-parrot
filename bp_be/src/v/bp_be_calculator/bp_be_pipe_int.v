@@ -54,7 +54,7 @@ module bp_be_pipe_int
 
   wire [rv64_shamt_width_gp-1:0] shamt = decode.opw_v ? src2[0+:rv64_shamtw_width_gp] : src2[0+:rv64_shamt_width_gp];
 
-  // Shfit the operands to the high bits of the ALU in order to reuse 64-bit operators
+  // Shift the operands to the high bits of the ALU in order to reuse 64-bit operators
   wire [dword_width_p-1:0] final_src1 = decode.opw_v ? (src1 << word_width_p) : src1;
   wire [dword_width_p-1:0] final_src2 = decode.opw_v ? (src2 << word_width_p) : src2;
 

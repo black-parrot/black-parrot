@@ -19,17 +19,22 @@ module bp_be_pipe_long
 
    , input                             flush_i
 
-   , output [wb_pkt_width_lp-1:0]      wb_pkt_o
-   , output                            v_o
+   , output [wb_pkt_width_lp-1:0]      iwb_pkt_o
+   , output                            iwb_v_o
+
+   , output [wb_pkt_width_lp-1:0]      fwb_pkt_o
+   , output                            fwb_v_o
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_dispatch_pkt_s reservation;
   rv64_instr_rtype_s instr;
   bp_be_decode_s decode;
-  bp_be_wb_pkt_s wb_pkt;
+  bp_be_wb_pkt_s iwb_pkt;
+  bp_be_wb_pkt_s fwb_pkt;
 
-  assign wb_pkt_o = wb_pkt;
+  assign iwb_pkt_o = iwb_pkt;
+  assign fwb_pkt_o = fwb_pkt;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
@@ -107,11 +112,13 @@ module bp_be_pipe_long
     else
       rd_data_lo = remainder_lo;
 
-  assign wb_pkt.rd_w_v     = rd_w_v_r;
-  assign wb_pkt.rd_addr    = rd_addr_r;
-  assign wb_pkt.rd_data    = rd_data_lo;
-  assign wb_pkt.fflags_acc = '0;
-  assign v_o = v_lo & rd_w_v_r;
+  assign iwb_pkt.rd_w_v  = rd_w_v_r;
+  assign iwb_pkt.rd_addr = rd_addr_r;
+  assign iwb_pkt.rd_data = rd_data_lo;
+  assign iwb_v_o = v_lo & rd_w_v_r;
+
+  assign fwb_pkt = '0;
+  assign fwb_v_o = '0;
 
   // Actually a "busy" signal
   assign ready_o = idiv_ready_lo & ~v_i;

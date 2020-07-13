@@ -58,7 +58,8 @@ module bp_be_calculator_top
   , output [ptw_fill_pkt_width_lp-1:0]  ptw_fill_pkt_o
   , output [commit_pkt_width_lp-1:0]    commit_pkt_o
   , output [trap_pkt_width_lp-1:0]      trap_pkt_o
-  , output [wb_pkt_width_lp-1:0]        wb_pkt_o
+  , output [wb_pkt_width_lp-1:0]        iwb_pkt_o
+  , output [wb_pkt_width_lp-1:0]        fwb_pkt_o
 
   , input                               timer_irq_i
   , input                               software_irq_i
@@ -104,7 +105,7 @@ module bp_be_calculator_top
   bp_be_dispatch_pkt_s   dispatch_pkt;
   bp_be_calc_status_s    calc_status;
   bp_cfg_bus_s           cfg_bus;
-  bp_be_wb_pkt_s         long_wb_pkt, calc_wb_pkt;
+  bp_be_wb_pkt_s         long_iwb_pkt, long_fwb_pkt, calc_int_wb_pkt, calc_fp_wb_pkt;
   bp_be_commit_pkt_s     commit_pkt;
   bp_be_trap_pkt_s       trap_pkt;
 
@@ -147,12 +148,11 @@ module bp_be_calculator_top
   logic pipe_mem_store_access_fault_lo;
   logic pipe_mem_store_page_fault_lo;
 
-  logic [dword_width_p-1:0] pipe_nop_data_lo;
-  logic [dword_width_p-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_sys_data_lo, pipe_fma_data_lo, pipe_long_data_lo;
+  logic [dword_width_p-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_sys_data_lo, pipe_fma_data_lo;
   logic [vaddr_width_p-1:0] pipe_mem_vaddr_lo;
 
   logic nop_pipe_result_v;
-  logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_sys_data_lo_v, pipe_fma_data_lo_v, pipe_long_data_lo_v;
+  logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_sys_data_lo_v, pipe_fma_data_lo_v, pipe_long_idata_lo_v, pipe_long_fdata_lo_v;
   logic pipe_sys_exc_v_lo, pipe_sys_miss_v_lo;
 
   logic [vaddr_width_p-1:0] br_tgt_int1;
@@ -416,8 +416,11 @@ module bp_be_calculator_top
 
        ,.flush_i(flush_i)
 
-       ,.wb_pkt_o(long_wb_pkt)
-       ,.v_o(pipe_long_data_lo_v)
+       ,.iwb_pkt_o(long_iwb_pkt)
+       ,.iwb_v_o(pipe_long_idata_lo_v)
+
+       ,.fwb_pkt_o(long_fwb_pkt)
+       ,.fwb_v_o(pipe_long_fdata_lo_v)
        );
 
   // Execution pipelines
@@ -588,12 +591,15 @@ module bp_be_calculator_top
   assign commit_pkt.npc        = calc_stage_r[1].pc;
   assign commit_pkt.instr      = calc_stage_r[2].instr;
 
-  assign calc_wb_pkt.rd_w_v      = calc_stage_r[4].irf_w_v & ~exc_stage_r[4].poison_v;
-  assign calc_wb_pkt.rd_addr     = calc_stage_r[4].instr.t.rtype.rd_addr;
-  assign calc_wb_pkt.rd_data     = comp_stage_r[4].data;
-  assign calc_wb_pkt.fflags_acc  = '0; //comp_stage_r[4].fflags & {5{calc_stage_r[4].fflags_w_v & ~exc_stage_r[4].poison_v}};
+  assign calc_int_wb_pkt.rd_w_v      = calc_stage_r[4].irf_w_v & ~exc_stage_r[4].poison_v;
+  assign calc_int_wb_pkt.rd_addr     = calc_stage_r[4].instr.t.rtype.rd_addr;
+  assign calc_int_wb_pkt.rd_data     = comp_stage_r[4].data;
+  assign calc_int_wb_pkt.fflags_acc  = '0;
 
-  assign wb_pkt_o = pipe_long_data_lo_v ? long_wb_pkt : calc_wb_pkt;
+  assign calc_fp_wb_pkt = '0;
+
+  assign iwb_pkt_o = pipe_long_idata_lo_v ? long_iwb_pkt : calc_int_wb_pkt;
+  assign fwb_pkt_o  = pipe_long_fdata_lo_v ? long_fwb_pkt : calc_fp_wb_pkt;
 
 endmodule
 

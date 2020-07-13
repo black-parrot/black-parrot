@@ -55,7 +55,8 @@ module bp_be_scheduler
   // Dispatch interface
   , output [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
 
-  , input [wb_pkt_width_lp-1:0]        wb_pkt_i
+  , input [wb_pkt_width_lp-1:0]        iwb_pkt_i
+  , input [wb_pkt_width_lp-1:0]        fwb_pkt_i
   );
 
   wire unused = &{clk_i, reset_i};
@@ -73,12 +74,13 @@ module bp_be_scheduler
   bp_fe_queue_s     fe_queue_cast_i;
   bp_be_issue_pkt_s issue_pkt;
   rv64_instr_s      fetch_instr;
-  bp_be_wb_pkt_s    wb_pkt;
+  bp_be_wb_pkt_s    iwb_pkt, fwb_pkt;
 
   assign isd_status_o    = isd_status;
   assign fe_queue_cast_i = fe_queue_i;
   assign fetch_instr     = fe_queue_cast_i.msg.fetch.instr;
-  assign wb_pkt          = wb_pkt_i;
+  assign iwb_pkt         = iwb_pkt_i;
+  assign fwb_pkt         = fwb_pkt_i;
 
   wire issue_v = fe_queue_yumi_o;
 
@@ -176,9 +178,9 @@ module bp_be_scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.rd_w_v_i(wb_pkt.rd_w_v)
-     ,.rd_addr_i(wb_pkt.rd_addr)
-     ,.rd_data_i(wb_pkt.rd_data)
+     ,.rd_w_v_i(iwb_pkt.rd_w_v)
+     ,.rd_addr_i(iwb_pkt.rd_addr)
+     ,.rd_data_i(iwb_pkt.rd_data)
 
      ,.rs_r_v_i({issue_v & issue_pkt.irs2_v
                  ,issue_v & issue_pkt.irs1_v
