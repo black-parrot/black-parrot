@@ -446,11 +446,11 @@ module bp_be_calculator_top
     begin
       // TODO: Add fflags
       comp_stage_n[0] = '0;
-      comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo} : pipe_ctl_data_lo;
-      comp_stage_n[2] = pipe_mem_data_lo_v ? '{data: pipe_mem_data_lo} : comp_stage_r[1];
-      comp_stage_n[3] = pipe_sys_data_lo_v ? '{data: pipe_sys_data_lo} : comp_stage_r[2];
-      comp_stage_n[4] = pipe_mul_data_lo_v ? '{data: pipe_mul_data_lo} : comp_stage_r[3];
-      comp_stage_n[5] = pipe_fma_data_lo_v ? '{data: pipe_fma_data_lo} : comp_stage_r[4];
+      comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo, fflags: '0} : pipe_ctl_data_lo;
+      comp_stage_n[2] = pipe_mem_data_lo_v ? '{data: pipe_mem_data_lo, fflags: '0} : comp_stage_r[1];
+      comp_stage_n[3] = pipe_sys_data_lo_v ? '{data: pipe_sys_data_lo, fflags: '0} : comp_stage_r[2];
+      comp_stage_n[4] = pipe_mul_data_lo_v ? '{data: pipe_mul_data_lo, fflags: '0} : comp_stage_r[3];
+      comp_stage_n[5] = pipe_fma_data_lo_v ? '{data: pipe_fma_data_lo, fflags: '0} : comp_stage_r[4];
       comp_stage_n[6] = comp_stage_r[5];
     end
 
@@ -588,9 +588,10 @@ module bp_be_calculator_top
   assign commit_pkt.npc        = calc_stage_r[1].pc;
   assign commit_pkt.instr      = calc_stage_r[2].instr;
 
-  assign calc_wb_pkt.rd_w_v  = calc_stage_r[4].irf_w_v & ~exc_stage_r[4].poison_v;
-  assign calc_wb_pkt.rd_addr = calc_stage_r[4].instr.t.rtype.rd_addr;
-  assign calc_wb_pkt.rd_data = comp_stage_r[4];
+  assign calc_wb_pkt.rd_w_v      = calc_stage_r[4].irf_w_v & ~exc_stage_r[4].poison_v;
+  assign calc_wb_pkt.rd_addr     = calc_stage_r[4].instr.t.rtype.rd_addr;
+  assign calc_wb_pkt.rd_data     = comp_stage_r[4].data;
+  assign calc_wb_pkt.fflags_acc  = '0; //comp_stage_r[4].fflags & {5{calc_stage_r[4].fflags_w_v & ~exc_stage_r[4].poison_v}};
 
   assign wb_pkt_o = pipe_long_data_lo_v ? long_wb_pkt : calc_wb_pkt;
 

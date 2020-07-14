@@ -107,9 +107,10 @@ module bp_be_pipe_long
     else
       rd_data_lo = remainder_lo;
 
-  assign wb_pkt.rd_w_v  = rd_w_v_r;
-  assign wb_pkt.rd_addr = rd_addr_r;
-  assign wb_pkt.rd_data = rd_data_lo;
+  assign wb_pkt.rd_w_v     = rd_w_v_r;
+  assign wb_pkt.rd_addr    = rd_addr_r;
+  assign wb_pkt.rd_data    = rd_data_lo;
+  assign wb_pkt.fflags_acc = '0;
   assign v_o = v_lo & rd_w_v_r;
 
   // Actually a "busy" signal

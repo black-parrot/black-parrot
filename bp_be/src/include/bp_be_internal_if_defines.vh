@@ -65,6 +65,7 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic [4:0]               fflags;                                                              \
     logic [dword_width_p-1:0] data;                                                                \
   }  bp_be_comp_stage_reg_s;                                                                       \
                                                                                                    \
@@ -148,6 +149,7 @@
     logic                        rd_w_v;                                                           \
     logic [reg_addr_width_p-1:0] rd_addr;                                                          \
     logic [dword_width_p-1:0]    rd_data;                                                          \
+    logic [4:0]                  fflags_acc;                                                       \
   }  bp_be_wb_pkt_s;                                                                               \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -210,7 +212,7 @@
    )
 
 `define bp_be_comp_stage_reg_width \
-  (dword_width_p)
+  (5 + dword_width_p)
 
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
   (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 4 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
@@ -238,6 +240,7 @@
   (1                                                                                               \
    + reg_addr_width_p                                                                              \
    + dword_width_p                                                                                 \
+   + 5                                                                                             \
    )
 
 `define bp_be_ptw_miss_pkt_width(vaddr_width_mp) \
