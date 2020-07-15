@@ -1,7 +1,6 @@
 /*
  * bp_me_cce_to_cache.v
  * 
- * Shrinking the latency for 
  */
  
 `include "bp_me_cce_mem_if.vh"
@@ -15,10 +14,11 @@ module bp_me_cce_to_cache
   import bsg_cache_pkg::*;
 
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    , parameter uce_mem_data_width_p = "inv"
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_mem_if_data_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+    `declare_bp_me_if_widths(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce_mem)
 
-    , parameter cce_data_size_in_words_lp=cce_mem_if_data_width_p/dword_width_p
+    , parameter cce_data_size_in_words_lp=uce_mem_data_width_p/dword_width_p
     , parameter lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
     , parameter lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
     , parameter word_offset_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_p)
@@ -34,11 +34,11 @@ module bp_me_cce_to_cache
     , input reset_i
 
     // manycore-side
-    , input  [cce_mem_msg_width_lp-1:0]   mem_cmd_i
+    , input  [uce_mem_msg_width_lp-1:0]   mem_cmd_i
     , input                               mem_cmd_v_i
     , output logic                        mem_cmd_ready_o
                                           
-    , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
+    , output [uce_mem_msg_width_lp-1:0]   mem_resp_o
     , output logic                        mem_resp_v_o
     , input                               mem_resp_yumi_i
 
@@ -58,7 +58,7 @@ module bp_me_cce_to_cache
   `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
   
   // cce logics
-  `declare_bp_me_if(paddr_width_p, cce_mem_if_data_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_me_if(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce_mem);
   
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = cache_pkt;
@@ -76,16 +76,16 @@ module bp_me_cce_to_cache
   logic [counter_width_lp-1:0] cmd_counter_r, cmd_counter_n;
   logic [counter_width_lp-1:0] cmd_max_count_r, cmd_max_count_n;
   
-  bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
+  bp_uce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
   
   assign mem_cmd_cast_i = mem_cmd_i;
   assign mem_resp_o = mem_resp_cast_o;
   
   logic mem_cmd_ready_lo;
-  bp_cce_mem_msg_s mem_cmd_lo;
+  bp_uce_mem_msg_s mem_cmd_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
   bsg_fifo_1r1w_small
-   #(.width_p(cce_mem_msg_width_lp), .els_p(l2_outstanding_reqs_p))
+   #(.width_p(uce_mem_msg_width_lp), .els_p(l2_outstanding_reqs_p))
    cmd_fifo
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -271,7 +271,7 @@ module bp_me_cce_to_cache
   end
 
   bsg_dff_en
-   #(.width_p(cce_mem_msg_width_lp-cce_mem_if_data_width_p))
+   #(.width_p(uce_mem_msg_width_lp-uce_mem_data_width_p))
    resp_header_reg
     (.clk_i(clk_i)
      ,.en_i(mem_cmd_yumi_li)

@@ -10,7 +10,7 @@ module bp_clint_slice
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_mem_if_data_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_me_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    // TODO: Should I be a global param?
    , localparam clint_max_outstanding_p = 2
@@ -32,7 +32,7 @@ module bp_clint_slice
    , output                                             external_irq_o
    );
 
-`declare_bp_me_if(paddr_width_p, cce_mem_if_data_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+`declare_bp_me_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
 
 bp_cce_mem_msg_s mem_cmd_li, mem_cmd_lo;
 assign mem_cmd_li = mem_cmd_i;
@@ -171,7 +171,7 @@ assign mem_resp_lo =
     ,payload       : mem_cmd_lo.header.payload
     ,size          : mem_cmd_lo.header.size
     }
-    ,data          : cce_mem_if_data_width_p'(rdata_lo)
+    ,data          : dword_width_p'(rdata_lo)
     };
 assign mem_resp_o = mem_resp_lo;
 assign mem_resp_v_o = small_fifo_v_lo;

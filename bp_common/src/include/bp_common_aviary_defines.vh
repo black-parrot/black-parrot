@@ -117,7 +117,6 @@ typedef struct packed
   integer acache_assoc;
   integer acache_block_width;
   integer acache_fill_width;
-  integer cce_mem_if_data_width;
   integer cce_pc_width;
   integer ucode_cce;
 
@@ -231,7 +230,6 @@ typedef struct packed
   , localparam acache_assoc_p             = proc_param_lp.acache_assoc                             \
   , localparam acache_block_width_p       = proc_param_lp.acache_block_width                       \
   , localparam acache_fill_width_p        = proc_param_lp.acache_fill_width                        \
-  , localparam cce_mem_if_data_width_p    = proc_param_lp.cce_mem_if_data_width                    \
   , localparam lce_assoc_p                = `BSG_MAX(dcache_assoc_p,                               \
                                                      `BSG_MAX(icache_assoc_p, acache_assoc_p))     \
   , localparam lce_assoc_width_p          = `BSG_SAFE_CLOG2(lce_assoc_p)                           \

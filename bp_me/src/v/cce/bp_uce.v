@@ -6,8 +6,9 @@ module bp_uce
   import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    , parameter uce_mem_data_width_p = "inv"
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_mem_if_data_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+    `declare_bp_me_if_widths(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce_mem)
     , parameter assoc_p = 8
     , parameter sets_p = 64
     , parameter block_width_p = 512
@@ -73,16 +74,16 @@ module bp_uce
     , output logic                                   credits_full_o
     , output logic                                   credits_empty_o
 
-    , output [cce_mem_msg_width_lp-1:0]              mem_cmd_o
+    , output [uce_mem_msg_width_lp-1:0]              mem_cmd_o
     , output logic                                   mem_cmd_v_o
     , input                                          mem_cmd_ready_i
 
-    , input [cce_mem_msg_width_lp-1:0]               mem_resp_i
+    , input [uce_mem_msg_width_lp-1:0]               mem_resp_i
     , input                                          mem_resp_v_i
     , output logic                                   mem_resp_yumi_o
     );
 
-  `declare_bp_me_if(paddr_width_p, cce_mem_if_data_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_me_if(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce_mem);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
@@ -90,8 +91,8 @@ module bp_uce
   `bp_cast_o(bp_cache_data_mem_pkt_s, data_mem_pkt);
   `bp_cast_o(bp_cache_stat_mem_pkt_s, stat_mem_pkt);
 
-  `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
-  `bp_cast_i(bp_cce_mem_msg_s, mem_resp);
+  `bp_cast_o(bp_uce_mem_msg_s, mem_cmd);
+  `bp_cast_i(bp_uce_mem_msg_s, mem_resp);
 
   logic cache_req_v_r;
   bsg_dff_reset_set_clear
