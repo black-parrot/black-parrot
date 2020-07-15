@@ -17,7 +17,7 @@ module bp_cce_mmio_cfg_loader
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
     , parameter inst_width_p          = "inv"
     , parameter inst_ram_addr_width_p = "inv"
@@ -53,7 +53,7 @@ module bp_cce_mmio_cfg_loader
   wire unused0 = &{io_resp_i, io_resp_v_i};
   assign io_resp_ready_o = 1'b1;
 
- `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+ `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
 
   bp_cce_mem_msg_s io_cmd_cast_o;
   bp_cce_mem_msg_s io_resp_cast_i;
@@ -175,7 +175,7 @@ module bp_cce_mmio_cfg_loader
       io_cmd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
-      io_cmd_cast_o.header.msg_type      = cfg_w_v_lo ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
+      io_cmd_cast_o.header.msg_type      = cfg_w_v_lo ? e_bp_mem_uc_wr : e_bp_mem_uc_rd;
       io_cmd_cast_o.header.addr          = local_addr_lo;
       io_cmd_cast_o.header.payload       = '0;
       io_cmd_cast_o.header.payload.lce_id = lce_id_i;

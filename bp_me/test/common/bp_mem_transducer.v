@@ -9,7 +9,7 @@ module bp_mem_transducer
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    , parameter [paddr_width_p-1:0] dram_offset_p = '0
 
@@ -47,7 +47,7 @@ module bp_mem_transducer
    , output                              yumi_o
    );
 
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
 
   bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
 
@@ -77,12 +77,12 @@ module bp_mem_transducer
   wire [cce_block_width_p-1:0]   rd_byte_shift = rd_word_offset*num_word_bytes_lp;
 
   assign v_o = mem_cmd_v_i;
-  assign w_o = v_o & (mem_cmd_cast_i.header.msg_type inside {e_cce_mem_uc_wr, e_cce_mem_wr});
+  assign w_o = v_o & (mem_cmd_cast_i.header.msg_type inside {e_bp_mem_uc_wr, e_bp_mem_wr});
   assign addr_o = (((mem_cmd_cast_i.header.addr - dram_offset_p) >> block_offset_bits_lp) << block_offset_bits_lp);
   assign data_o = mem_cmd_cast_i.data << wr_bit_shift;
   assign write_mask_o = ((1 << (1 << mem_cmd_cast_i.header.size)) - 1) << wr_byte_shift;
 
-  wire [cce_block_width_p-1:0] data_li = (mem_cmd_r.header.msg_type == e_cce_mem_uc_rd)
+  wire [cce_block_width_p-1:0] data_li = (mem_cmd_r.header.msg_type == e_bp_mem_uc_rd)
                                          ? data_i >> rd_bit_shift
                                          : data_i;
 

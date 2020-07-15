@@ -10,7 +10,7 @@ module bp_clint_slice
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    // TODO: Should I be a global param?
    , localparam clint_max_outstanding_p = 2
@@ -32,7 +32,7 @@ module bp_clint_slice
    , output                                             external_irq_o
    );
 
-`declare_bp_me_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+`declare_bp_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
 
 bp_cce_mem_msg_s mem_cmd_li, mem_cmd_lo;
 assign mem_cmd_li = mem_cmd_i;
@@ -69,7 +69,7 @@ always_comb
     mipi_cmd_v     = 1'b0;
     plic_cmd_v     = 1'b0;
 
-    wr_not_rd = mem_cmd_lo.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
+    wr_not_rd = mem_cmd_lo.header.msg_type inside {e_bp_mem_wr, e_bp_mem_uc_wr};
 
     unique 
     casez ({local_addr.dev, local_addr.addr})

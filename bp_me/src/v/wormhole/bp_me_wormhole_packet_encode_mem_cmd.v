@@ -18,7 +18,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
     , parameter flit_width_p = "inv"
     , parameter cord_width_p = "inv"
@@ -38,7 +38,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
     , output [mem_cmd_packet_width_lp-1:0] packet_o
     );
 
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p, bp_cmd_wormhole_packet_s);
 
   bp_cce_mem_msg_s mem_cmd_cast_i;
@@ -92,11 +92,11 @@ module bp_me_wormhole_packet_encode_mem_cmd
     endcase
 
     case (mem_cmd_cast_i.header.msg_type)
-      e_cce_mem_rd
-      ,e_cce_mem_uc_rd
-      ,e_cce_mem_pre  : packet_cast_o.len = len_width_p'(mem_cmd_req_len_lp);
-      e_cce_mem_uc_wr
-      ,e_cce_mem_wr   : packet_cast_o.len = data_cmd_len_li;
+      e_bp_mem_rd
+      ,e_bp_mem_uc_rd
+      ,e_bp_mem_pre  : packet_cast_o.len = len_width_p'(mem_cmd_req_len_lp);
+      e_bp_mem_uc_wr
+      ,e_bp_mem_wr   : packet_cast_o.len = data_cmd_len_li;
       default: packet_cast_o = '0;
     endcase
   end

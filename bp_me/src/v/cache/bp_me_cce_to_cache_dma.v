@@ -16,7 +16,7 @@ module bp_me_cce_to_cache_dma
   
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
   
   ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
   ,localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
@@ -58,7 +58,7 @@ module bp_me_cce_to_cache_dma
   `declare_bsg_cache_dma_pkt_s(paddr_width_p);
   
   // cce
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   
   
   /********************* Resp queue fifo *********************/
@@ -138,7 +138,7 @@ module bp_me_cce_to_cache_dma
     dma_data_fifo_valid_li = 1'b0;
     queue_fifo_valid_li = 1'b0;
     
-    dma_pkt_fifo_data_li.write_not_read = (mem_cmd_li.header.msg_type == e_cce_mem_wr);
+    dma_pkt_fifo_data_li.write_not_read = (mem_cmd_li.header.msg_type == e_bp_mem_wr);
     dma_pkt_fifo_data_li.addr = mem_cmd_li.header.addr;
     dma_data_fifo_data_li = mem_cmd_li.data;
     queue_fifo_data_li = mem_cmd_li.header;
@@ -208,7 +208,7 @@ module bp_me_cce_to_cache_dma
     
     if (~reset_i & queue_fifo_valid_lo)
       begin
-        if (mem_resp_lo.header.msg_type == e_cce_mem_wr)
+        if (mem_resp_lo.header.msg_type == e_bp_mem_wr)
           begin
             mem_resp_lo.data = '0;
             mem_resp_v_lo = 1'b1;

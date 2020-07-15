@@ -9,7 +9,7 @@ module bp_io_link_to_lce
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
@@ -40,7 +40,7 @@ module bp_io_link_to_lce
    );
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
   bp_cce_mem_msg_s io_cmd_li;
   bp_cce_mem_msg_s io_resp_lo;
@@ -67,7 +67,7 @@ module bp_io_link_to_lce
      ,.cce_id_o(cce_id_lo)
      );
 
-  wire io_cmd_wr_not_rd = (io_cmd_li.header.msg_type == e_cce_mem_uc_wr);
+  wire io_cmd_wr_not_rd = (io_cmd_li.header.msg_type == e_bp_mem_uc_wr);
   wire lce_cmd_wr_not_rd = (lce_cmd_li.header.msg_type == e_lce_cmd_uc_st_done);
   always_comb
     begin
@@ -83,7 +83,7 @@ module bp_io_link_to_lce
       io_resp_lo.data            = lce_cmd_li.data;
       io_resp_lo.header.size     = lce_cmd_li.header.size;
       io_resp_lo.header.addr     = lce_cmd_li.header.addr;
-      io_resp_lo.header.msg_type = lce_cmd_wr_not_rd ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
+      io_resp_lo.header.msg_type = lce_cmd_wr_not_rd ? e_bp_mem_uc_wr : e_bp_mem_uc_rd;
     end
 
 endmodule

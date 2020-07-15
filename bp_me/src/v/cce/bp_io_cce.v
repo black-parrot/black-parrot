@@ -7,7 +7,7 @@ module bp_io_cce
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
    )
   (input                                      clk_i
    , input                                    reset_i
@@ -31,7 +31,7 @@ module bp_io_cce
    , output                                   io_resp_yumi_o
    );
 
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
   bp_lce_cce_req_s        lce_req_cast_i;
@@ -51,7 +51,7 @@ module bp_io_cce
   wire lce_req_wr_not_rd = (lce_req_cast_i.header.msg_type == e_lce_req_type_uc_wr);
   always_comb begin
     io_cmd_cast_o                         = '0;
-    io_cmd_cast_o.header.msg_type         = (lce_req_wr_not_rd) ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
+    io_cmd_cast_o.header.msg_type         = (lce_req_wr_not_rd) ? e_bp_mem_uc_wr : e_bp_mem_uc_rd;
     io_cmd_cast_o.header.addr             = lce_req_cast_i.header.addr;
     io_cmd_cast_o.header.size             = lce_req_cast_i.header.size;
     io_cmd_cast_o.header.payload.lce_id   = lce_req_cast_i.header.src_id;
@@ -61,7 +61,7 @@ module bp_io_cce
 
   assign io_resp_yumi_o  = io_resp_v_i & lce_cmd_ready_i;
   assign lce_cmd_v_o     = io_resp_yumi_o;
-  wire io_resp_wr_not_rd = (io_resp_cast_i.header.msg_type == e_cce_mem_uc_wr);
+  wire io_resp_wr_not_rd = (io_resp_cast_i.header.msg_type == e_bp_mem_uc_wr);
   always_comb
     if (io_resp_wr_not_rd)
       begin

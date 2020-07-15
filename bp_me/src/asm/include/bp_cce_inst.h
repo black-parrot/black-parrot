@@ -654,7 +654,7 @@ typedef union {
 
 typedef union {
   bp_lce_cmd_type_e      lce_cmd : bp_lce_cmd_type_width;
-  bp_cce_mem_cmd_type_e  mem_cmd : bp_cce_mem_cmd_type_width;
+  bp_mem_cmd_type_e      mem_cmd : bp_cce_mem_cmd_type_width;
 } pushq_cmd_u;
 
 typedef struct {
