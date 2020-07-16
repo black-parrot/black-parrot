@@ -55,8 +55,9 @@ module bp_be_pipe_mem
    , output logic                         store_access_fault_v_o
    , output logic                         store_page_fault_v_o
 
-   , output logic [vaddr_width_p-1:0]     vaddr_o
-   , output logic [reg_data_width_lp-1:0] data_o
+   , output logic [reg_data_width_lp-1:0] early_data_o
+   , output logic [reg_data_width_lp-1:0] final_data_o
+   , output logic [vaddr_width_p-1:0]     final_vaddr_o
 
    , input [trans_info_width_lp-1:0]      trans_info_i
 
@@ -133,13 +134,12 @@ module bp_be_pipe_mem
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic [dword_width_p-1:0] dcache_data;
+  logic [dword_width_p-1:0] dcache_early_data, dcache_final_data;
   logic [ptag_width_p-1:0]  dcache_ptag;
-  logic                     dcache_v, dcache_fencei_v, dcache_pkt_v;
+  logic                     dcache_early_v, dcache_final_v, dcache_fencei_v, dcache_pkt_v;
   logic                     dcache_ptag_v;
   logic                     dcache_uncached;
   logic                     dcache_ready_lo;
-  logic                     dcache_miss_lo;
 
   logic load_access_fault_v, store_access_fault_v;
   logic load_page_fault_v, store_page_fault_v;
@@ -153,21 +153,22 @@ module bp_be_pipe_mem
   logic is_req_mem1, is_req_mem2;
   logic is_store_mem1;
   logic is_fencei_mem1, is_fencei_mem2;
-  logic [rv64_eaddr_width_gp-1:0] eaddr_mem1, eaddr_mem2;
+  logic [rv64_eaddr_width_gp-1:0] eaddr_mem1, eaddr_mem2, eaddr_mem3;
 
-  wire is_req    = decode.pipe_mem_v;
-  wire is_store  = decode.pipe_mem_v & decode.fu_op inside {e_dcache_op_sb, e_dcache_op_sh, e_dcache_op_sw, e_dcache_op_sd
-                                                            , e_dcache_op_scw, e_dcache_op_scd
-                                                            , e_dcache_op_amoswapw, e_dcache_op_amoswapd
-                                                            , e_dcache_op_amoaddw, e_dcache_op_amoaddd
-                                                            , e_dcache_op_amoxorw, e_dcache_op_amoxord
-                                                            , e_dcache_op_amoandw, e_dcache_op_amoandd
-                                                            , e_dcache_op_amoorw, e_dcache_op_amoord
-                                                            , e_dcache_op_amominw, e_dcache_op_amomind
-                                                            , e_dcache_op_amomaxw, e_dcache_op_amomaxd
-                                                            , e_dcache_op_amominuw, e_dcache_op_amominud
-                                                            , e_dcache_op_amomaxuw, e_dcache_op_amomaxud};
-  wire is_fencei = decode.pipe_mem_v & decode.fu_op inside {e_dcache_op_fencei};
+  wire is_req    = (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
+  wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v)
+    & decode.fu_op inside {e_dcache_op_sb, e_dcache_op_sh, e_dcache_op_sw, e_dcache_op_sd
+                           , e_dcache_op_scw, e_dcache_op_scd
+                           , e_dcache_op_amoswapw, e_dcache_op_amoswapd
+                           , e_dcache_op_amoaddw, e_dcache_op_amoaddd
+                           , e_dcache_op_amoxorw, e_dcache_op_amoxord
+                           , e_dcache_op_amoandw, e_dcache_op_amoandd
+                           , e_dcache_op_amoorw, e_dcache_op_amoord
+                           , e_dcache_op_amominw, e_dcache_op_amomind
+                           , e_dcache_op_amomaxw, e_dcache_op_amomaxd
+                           , e_dcache_op_amominuw, e_dcache_op_amominud
+                           , e_dcache_op_amomaxuw, e_dcache_op_amomaxud};
+  wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
 
   // Calculate cache access eaddr
   wire [rv64_reg_data_width_gp-1:0] offset = decode.offset_sel ? '0 : imm;
@@ -183,12 +184,12 @@ module bp_be_pipe_mem
      (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(decode.pipe_mem_v & eaddr_fault)
+     ,.data_i((decode.pipe_mem_early_v | decode.pipe_mem_final_v) & eaddr_fault)
      ,.data_o(eaddr_fault_r)
      );
 
   // D-TLB connections
-  assign dtlb_r_v     = decode.pipe_mem_v & trans_info.translation_en & ~eaddr_fault & ~is_fencei;
+  assign dtlb_r_v     = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & trans_info.translation_en & ~eaddr_fault & ~is_fencei;
   assign dtlb_r_vtag  = eaddr[bp_page_offset_width_gp+:vtag_width_p];
   assign dtlb_w_v     = ptw_fill_pkt.dtlb_fill_v;
   assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
@@ -245,15 +246,14 @@ module bp_be_pipe_mem
      ,.ptw_miss_pkt_i(ptw_miss_pkt)
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
-     ,.dcache_v_i(dcache_v)
-     ,.dcache_data_i(dcache_data)
+     ,.dcache_v_i(dcache_early_v)
+     ,.dcache_data_i(dcache_early_data)
 
      ,.dcache_v_o(ptw_dcache_v)
      ,.dcache_pkt_o(ptw_dcache_pkt)
      ,.dcache_ptag_o(ptw_dcache_ptag)
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
      ,.dcache_rdy_i(dcache_ready_lo)
-     ,.dcache_miss_i(dcache_miss_lo)
     );
 
   bp_be_dcache
@@ -268,17 +268,18 @@ module bp_be_pipe_mem
       ,.v_i(dcache_pkt_v)
       ,.ready_o(dcache_ready_lo)
 
-      ,.v_o(dcache_v)
-      ,.data_o(dcache_data)
-
       ,.ptag_i(dcache_ptag)
       ,.ptag_v_i(dcache_ptag_v)
       ,.uncached_i(dcache_uncached)
 
-      ,.poison_i(flush_i)
+      ,.early_v_o(dcache_early_v)
+      ,.early_data_o(dcache_early_data)
+      ,.final_data_o(dcache_final_data)
+      ,.final_v_o(dcache_final_v)
+
+      ,.flush_i(flush_i)
 
       // D$-LCE Interface
-      ,.dcache_miss_o(dcache_miss_lo)
       ,.cache_req_o(cache_req_cast_o)
       ,.cache_req_v_o(cache_req_v_o)
       ,.cache_req_ready_i(cache_req_ready_i)
@@ -336,6 +337,14 @@ module bp_be_pipe_mem
     end
   end
 
+  always_ff @(posedge clk_i) begin
+    if (reset_i) begin
+      eaddr_mem3 <= '0;
+    end else begin
+      eaddr_mem3 <= eaddr_mem2;
+    end
+  end
+
   // Check instruction accesses
   wire data_priv_page_fault = ((trans_info.priv_mode == `PRIV_MODE_S) & ~trans_info.mstatus_sum & dtlb_r_entry.u)
                                 | ((trans_info.priv_mode == `PRIV_MODE_U) & ~dtlb_r_entry.u);
@@ -357,7 +366,7 @@ module bp_be_pipe_mem
         dcache_ptag_v   = ptw_dcache_ptag_v;
       end
       else begin
-        dcache_pkt_v = v_i & decode.pipe_mem_v;
+        dcache_pkt_v = v_i & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
         // TODO: Use dcache opcode directly
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
         dcache_pkt.page_offset = eaddr[0+:page_offset_width_p];
@@ -381,8 +390,8 @@ module bp_be_pipe_mem
   assign store_access_fault_v = dtlb_r_v_lo & is_store_mem1 & (mode_fault_v | did_fault_v | sac_fault_v);
 
   assign tlb_miss_v_o           = dtlb_miss_v;
-  assign cache_miss_v_o         = is_req_mem2 & ~dcache_v;
-  assign fencei_v_o             = is_fencei_mem2 & dcache_v;
+  assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v;
+  assign fencei_v_o             = is_fencei_mem2 & dcache_early_v;
   assign store_page_fault_v_o   = store_page_fault_mem2;
   assign load_page_fault_v_o    = load_page_fault_mem2;
   assign store_access_fault_v_o = store_access_fault_mem2;
@@ -391,8 +400,9 @@ module bp_be_pipe_mem
   assign load_misaligned_v_o    = load_misaligned_mem2;
 
   assign ready_o                = dcache_ready_lo & ~ptw_busy;
-  assign vaddr_o                = eaddr_mem2[0+:vaddr_width_p];
-  assign data_o                 = dcache_data;
+  assign early_data_o           = dcache_early_data;
+  assign final_data_o           = dcache_final_data;
+  assign final_vaddr_o          = eaddr_mem3[0+:vaddr_width_p];
 
   //// synopsys translate_off
   //bp_be_mem_cmd_s mem_cmd_r;

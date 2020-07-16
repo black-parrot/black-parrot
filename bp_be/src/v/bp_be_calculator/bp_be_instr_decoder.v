@@ -55,7 +55,8 @@ module bp_be_instr_decoder
       // Destination pipe
       decode.pipe_ctl_v    = '0;
       decode.pipe_int_v    = '0;
-      decode.pipe_mem_v    = '0;
+      decode.pipe_mem_early_v = '0;
+      decode.pipe_mem_final_v = '0;
       decode.pipe_mul_v    = '0;
       decode.pipe_fma_v    = '0;
       decode.pipe_long_v   = '0;
@@ -199,7 +200,8 @@ module bp_be_instr_decoder
           end
         `RV64_LOAD_OP :
           begin
-            decode.pipe_mem_v = 1'b1;
+            decode.pipe_mem_early_v =  (instr inside {`RV64_LD});
+            decode.pipe_mem_final_v = ~(instr inside {`RV64_LD});
             decode.irf_w_v    = 1'b1;
             decode.dcache_r_v = 1'b1;
             decode.mem_v      = 1'b1;
@@ -216,7 +218,7 @@ module bp_be_instr_decoder
           end
         `RV64_STORE_OP :
           begin
-            decode.pipe_mem_v = 1'b1;
+            decode.pipe_mem_early_v = 1'b1;
             decode.dcache_w_v = 1'b1;
             decode.mem_v      = 1'b1;
             unique casez (instr)
@@ -233,7 +235,7 @@ module bp_be_instr_decoder
               `RV64_FENCE   : begin end
               `RV64_FENCE_I :
                 begin
-                  decode.pipe_mem_v  = 1'b1;
+                  decode.pipe_mem_early_v = 1'b1;
                   decode.dcache_w_v  = 1'b1;
                   decode.serial_v    = 1'b1;
                   decode.fu_op       = e_dcache_op_fencei;
@@ -274,7 +276,7 @@ module bp_be_instr_decoder
           end
         `RV64_AMO_OP:
           begin
-            decode.pipe_mem_v = 1'b1;
+            decode.pipe_mem_early_v = 1'b1;
             decode.irf_w_v    = 1'b1;
             decode.dcache_r_v = 1'b1;
             decode.dcache_w_v = 1'b1;

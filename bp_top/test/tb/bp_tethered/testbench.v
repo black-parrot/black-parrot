@@ -329,9 +329,9 @@ bind bp_be_top
         
        ,.cache_req_complete_i(cache_req_complete_i)
 
-       ,.v_o(v_o)
-       ,.load_data(data_o)
-       ,.cache_miss_o(dcache_miss_o)
+       ,.v_o(early_v_o)
+       ,.load_data(early_data_o)
+       ,.cache_miss_o('0)
        ,.wt_req(wt_req)
        ,.store_data(data_tv_r)
 
@@ -385,7 +385,7 @@ bind bp_be_top
 
        ,.v_o(data_v_o)
        ,.load_data(dword_width_p'(data_o))
-       ,.cache_miss_o(miss_o)
+       ,.cache_miss_o('0)
        ,.wt_req()
        ,.store_data(dword_width_p'(0))
 
@@ -478,8 +478,8 @@ bind bp_be_top
        ,._interrupt(be.director.trap_pkt._interrupt)
        ,.control_haz(be.detector.control_haz_v)
        ,.data_haz(be.detector.data_haz_v)
-       ,.load_dep((be.detector.dep_status_li[0].mem_iwb_v
-                   | be.detector.dep_status_li[1].mem_iwb_v
+       ,.load_dep((be.detector.dep_status_li[0].emem_iwb_v
+                   | be.detector.dep_status_li[1].emem_iwb_v
                    ) & be.detector.data_haz_v
                   )
        ,.mul_dep((be.detector.dep_status_li[0].mul_iwb_v
