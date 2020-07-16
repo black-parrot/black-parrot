@@ -34,6 +34,10 @@ _start:
     li x29, 0
     li x30, 0
     li x31, 0
+
+    # Enable FPU
+    li x31, 0x2000
+    csrs mstatus, x31
     
     li x31, 0x80000000
     csrw dpc, x31

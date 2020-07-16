@@ -199,9 +199,13 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.rd_w_v_i(scheduler.iwb_pkt.rd_w_v)
-     ,.rd_addr_i(scheduler.iwb_pkt.rd_addr)
-     ,.rd_data_i(scheduler.iwb_pkt.rd_data)
+     ,.ird_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
+     ,.ird_data_i(scheduler.iwb_pkt.rd_data)
+
+     ,.frd_w_v_i(scheduler.fwb_pkt.rd_w_v)
+     ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
+     ,.frd_data_i(scheduler.fwb_pkt.rd_data)
      );
 
 bind bp_be_top
@@ -228,9 +232,13 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.rd_w_v_i(scheduler.iwb_pkt.rd_w_v)
-     ,.rd_addr_i(scheduler.iwb_pkt.rd_addr)
-     ,.rd_data_i(scheduler.iwb_pkt.rd_data)
+     ,.ird_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
+     ,.ird_data_i(scheduler.iwb_pkt.rd_data)
+
+     ,.frd_w_v_i(scheduler.fwb_pkt.rd_w_v)
+     ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
+     ,.frd_data_i(scheduler.fwb_pkt.rd_data)
 
      ,.interrupt_v_i(calculator.pipe_sys.csr.trap_pkt_cast_o._interrupt)
      ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
@@ -330,10 +338,10 @@ bind bp_be_top
        ,.cache_req_complete_i(cache_req_complete_i)
 
        ,.v_o(early_v_o)
-       ,.load_data(early_data_o)
+       ,.load_data(early_data_o[0+:65])
        ,.cache_miss_o('0)
        ,.wt_req(wt_req)
-       ,.store_data(data_tv_r)
+       ,.store_data(data_tv_r[0+:dword_width_p])
 
        ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
@@ -384,7 +392,7 @@ bind bp_be_top
        ,.cache_req_complete_i(cache_req_complete_i)
 
        ,.v_o(data_v_o)
-       ,.load_data(dword_width_p'(data_o))
+       ,.load_data(65'(data_o))
        ,.cache_miss_o('0)
        ,.wt_req()
        ,.store_data(dword_width_p'(0))
@@ -472,7 +480,7 @@ bind bp_be_top
 
        ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)
        ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
-       ,.long_haz(be.detector.long_haz_v)
+       ,.long_haz(be.detector.struct_haz_v)
        ,.exception(be.director.trap_pkt.exception)
        ,.eret(be.director.trap_pkt.eret)
        ,._interrupt(be.director.trap_pkt._interrupt)

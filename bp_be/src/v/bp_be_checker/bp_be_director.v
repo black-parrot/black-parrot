@@ -97,7 +97,7 @@ module bp_be_director
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
   assign npc_w_v = calc_status.ex1_instr_v
-                   | (trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
+                   | (trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret | trap_pkt.fencei);
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p), .reset_val_p(bootrom_base_addr_gp))
    npc
@@ -115,8 +115,8 @@ module bp_be_director
      )
    trap_mux
     (.data_i({trap_pkt.npc, calc_status.ex1_npc})
-     ,.sel_i(trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret)
-   ,.data_o(npc_n)
+     ,.sel_i(trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret | trap_pkt.fencei)
+     ,.data_o(npc_n)
      );
 
   assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);

@@ -15,7 +15,7 @@ module bp_be_ptw
     ,localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
     ,localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
-    ,localparam dcache_pkt_width_lp     = `bp_be_dcache_pkt_width(page_offset_width_p, pte_width_p)
+    ,localparam dcache_pkt_width_lp     = `bp_be_dcache_pkt_width(page_offset_width_p, dpath_width_p)
     ,localparam tlb_entry_width_lp      = `bp_pte_entry_leaf_width(paddr_width_p)
     ,localparam lg_page_table_depth_lp  = `BSG_SAFE_CLOG2(page_table_depth_p)
 
@@ -45,12 +45,12 @@ module bp_be_ptw
    , input                                  dcache_rdy_i
 
    , input                                  dcache_v_i
-   , input [pte_width_p-1:0]                dcache_data_i
+   , input [dpath_width_p-1:0]              dcache_data_i
   );
 
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_be_dcache_pkt_s(page_offset_width_p, pte_width_p);
+  `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
   `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
 
   typedef enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eRecvLoad, eWriteBack, eStuck } state_e;
@@ -189,7 +189,7 @@ module bp_be_ptw
     dcache_data_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i({dcache_v_i, dcache_data_i})
+     ,.data_i({dcache_v_i, dcache_data_i[0+:dword_width_p]})
      ,.data_o({dcache_v_r, dcache_data_r})
     );
 
