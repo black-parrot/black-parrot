@@ -175,7 +175,7 @@ module bp_cce_src_sel
           e_opd_pending_v:     src_a_o = '0;
           e_opd_lce_req_v:     src_a_o[0] = lce_req_v_i;
           e_opd_lce_resp_type: src_a_o[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp.header.msg_type;
-          e_opd_mem_resp_type: src_a_o[0+:$bits(bp_mem_cmd_type_e)] = mem_resp.header.msg_type;
+          e_opd_mem_resp_type: src_a_o[0+:$bits(bp_mem_msg_e)] = mem_resp.header.msg_type;
           e_opd_lce_resp_data: src_a_o = lce_resp.data[0+:`bp_cce_inst_gpr_width];
           e_opd_mem_resp_data: src_a_o = mem_resp.data[0+:`bp_cce_inst_gpr_width];
           e_opd_lce_req_data:  src_a_o = lce_req.data[0+:`bp_cce_inst_gpr_width];
@@ -265,7 +265,7 @@ module bp_cce_src_sel
           e_opd_pending_v:     src_b_o = '0;
           e_opd_lce_req_v:     src_b_o[0] = lce_req_v_i;
           e_opd_lce_resp_type: src_b_o[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp.header.msg_type;
-          e_opd_mem_resp_type: src_b_o[0+:$bits(bp_mem_cmd_type_e)] = mem_resp.header.msg_type;
+          e_opd_mem_resp_type: src_b_o[0+:$bits(bp_mem_msg_e)] = mem_resp.header.msg_type;
           e_opd_lce_resp_data: src_b_o = lce_resp.data[0+:`bp_cce_inst_gpr_width];
           e_opd_mem_resp_data: src_b_o = mem_resp.data[0+:`bp_cce_inst_gpr_width];
           e_opd_lce_req_data:  src_b_o = lce_req.data[0+:`bp_cce_inst_gpr_width];

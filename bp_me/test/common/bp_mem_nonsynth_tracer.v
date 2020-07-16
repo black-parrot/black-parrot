@@ -45,13 +45,13 @@ assign mem_resp_cast_i = mem_resp_i;
 always_ff @(posedge clk_i) begin
   if (mem_cmd_v_i)
     case (mem_cmd_cast_i.header.msg_type)
-      e_bp_mem_rd: 
+      e_mem_msg_rd: 
         $fwrite(file, "[%t] CMD  RD  : (%x) %b\n", $time, mem_cmd_cast_i.header.addr, mem_cmd_cast_i.header.size);
-      e_bp_mem_wr:
+      e_mem_msg_wr:
         $fwrite(file, "[%t] CMD  WR  : (%x) %b %x\n", $time, mem_cmd_cast_i.header.addr, mem_cmd_cast_i.header.size, mem_cmd_cast_i.data);
-      e_bp_mem_uc_rd:
+      e_mem_msg_uc_rd:
         $fwrite(file, "[%t] CMD  UCRD: (%x) %b\n", $time, mem_cmd_cast_i.header.addr, mem_cmd_cast_i.header.size);
-      e_bp_mem_uc_wr:
+      e_mem_msg_uc_wr:
         $fwrite(file, "[%t] CMD  UCWR: (%x) %b %x\n", $time, mem_cmd_cast_i.header.addr, mem_cmd_cast_i.header.size, mem_cmd_cast_i.data);
       default: 
         $fwrite(file, "[%t] CMD  ERROR: unknown cmd_type %x received!", $time, mem_resp_cast_i.header.msg_type);
@@ -59,13 +59,13 @@ always_ff @(posedge clk_i) begin
 
   if (mem_resp_yumi_i)
     case (mem_resp_cast_i.header.msg_type)
-      e_bp_mem_rd:
+      e_mem_msg_rd:
         $fwrite(file, "[%t] RESP RD  : (%x) %b %x\n", $time, mem_resp_cast_i.header.addr, mem_resp_cast_i.header.size, mem_resp_cast_i.data);
-      e_bp_mem_wr:
+      e_mem_msg_wr:
         $fwrite(file, "[%t] RESP WR  : (%x) %b\n", $time, mem_resp_cast_i.header.addr, mem_resp_cast_i.header.size);
-      e_bp_mem_uc_rd:
+      e_mem_msg_uc_rd:
         $fwrite(file, "[%t] RESP UCRD: (%x) %b %x\n", $time, mem_resp_cast_i.header.addr, mem_resp_cast_i.header.size, mem_resp_cast_i.data);
-      e_bp_mem_uc_wr:
+      e_mem_msg_uc_wr:
         $fwrite(file, "[%t] RESP UCWR: (%x) %b\n", $time, mem_resp_cast_i.header.addr, mem_resp_cast_i.header.size);
       default: 
         $fwrite(file, "[%t] ERROR: unknown resp_type %x received!", $time, mem_resp_cast_i.header.msg_type);

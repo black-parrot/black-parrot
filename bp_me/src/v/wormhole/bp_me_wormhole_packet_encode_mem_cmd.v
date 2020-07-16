@@ -92,11 +92,11 @@ module bp_me_wormhole_packet_encode_mem_cmd
     endcase
 
     case (mem_cmd_cast_i.header.msg_type)
-      e_bp_mem_rd
-      ,e_bp_mem_uc_rd
-      ,e_bp_mem_pre  : packet_cast_o.len = len_width_p'(mem_cmd_req_len_lp);
-      e_bp_mem_uc_wr
-      ,e_bp_mem_wr   : packet_cast_o.len = data_cmd_len_li;
+      e_mem_msg_rd
+      ,e_mem_msg_uc_rd
+      ,e_mem_msg_pre  : packet_cast_o.len = len_width_p'(mem_cmd_req_len_lp);
+      e_mem_msg_uc_wr
+      ,e_mem_msg_wr   : packet_cast_o.len = data_cmd_len_li;
       default: packet_cast_o = '0;
     endcase
   end

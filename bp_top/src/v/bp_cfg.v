@@ -70,8 +70,8 @@ module bp_cfg
   bp_cce_mode_e cce_mode_r; 
 
 wire                        cfg_v_li    = mem_cmd_v_lo;
-wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_bp_mem_uc_wr);
-wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_bp_mem_uc_rd);
+wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_mem_msg_uc_wr);
+wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_mem_msg_uc_rd);
 wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_lo.header.addr[0+:cfg_addr_width_p];
 wire [cfg_data_width_p-1:0] cfg_data_li = mem_cmd_lo.data[0+:cfg_data_width_p];
 

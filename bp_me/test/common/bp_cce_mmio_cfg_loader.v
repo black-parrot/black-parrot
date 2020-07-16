@@ -175,7 +175,7 @@ module bp_cce_mmio_cfg_loader
       io_cmd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
-      io_cmd_cast_o.header.msg_type      = cfg_w_v_lo ? e_bp_mem_uc_wr : e_bp_mem_uc_rd;
+      io_cmd_cast_o.header.msg_type      = cfg_w_v_lo ? e_mem_msg_uc_wr : e_mem_msg_uc_rd;
       io_cmd_cast_o.header.addr          = local_addr_lo;
       io_cmd_cast_o.header.payload       = '0;
       io_cmd_cast_o.header.payload.lce_id = lce_id_i;

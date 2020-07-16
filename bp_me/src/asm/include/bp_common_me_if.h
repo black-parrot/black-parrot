@@ -95,12 +95,12 @@ typedef enum {
 
 // Mem Commands
 typedef enum {
-  e_bp_mem_rd               = 0
-  ,e_bp_mem_wr              = 1
-  ,e_bp_mem_uc_rd           = 2
-  ,e_bp_mem_uc_wr           = 3
-  ,e_bp_mem_pre             = 4
-} bp_mem_cmd_type_e;
+  e_mem_msg_rd               = 0
+  ,e_mem_msg_wr              = 1
+  ,e_mem_msg_uc_rd           = 2
+  ,e_mem_msg_uc_wr           = 3
+  ,e_mem_msg_pre             = 4
+} bp_mem_msg_e;
 
 #define bp_cce_mem_cmd_type_width 4
 

@@ -95,7 +95,7 @@ module bp_nonsynth_nbf_loader
     io_cmd.header.payload = '0;
     io_cmd.header.payload.lce_id = lce_id_i;
     io_cmd.header.addr = curr_nbf.addr;
-    io_cmd.header.msg_type = e_bp_mem_uc_wr;
+    io_cmd.header.msg_type = e_mem_msg_uc_wr;
     
     case (curr_nbf.opcode)
       2: io_cmd.header.size = e_mem_msg_size_4;

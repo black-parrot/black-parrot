@@ -74,7 +74,7 @@ module bp_sacc_vdp
    
   bp_cce_mem_msg_payload_s  resp_payload;
   bp_mem_msg_size_e         resp_size;
-  bp_mem_cmd_type_e         resp_msg;
+  bp_mem_msg_e              resp_msg;
   bp_local_addr_s           local_addr_li;
   bp_global_addr_s          global_addr_li;
   
@@ -148,7 +148,7 @@ module bp_sacc_vdp
       spm_external_write_v_li <= '0;
       spm_external_read_v_li  <= '0;
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bp_mem_uc_wr) & (global_addr_li.did == '0))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_mem_msg_uc_wr) & (global_addr_li.did == '0))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -170,7 +170,7 @@ module bp_sacc_vdp
       endcase 
 
     end 
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bp_mem_uc_rd) &  (global_addr_li.did == '0))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_mem_msg_uc_rd) &  (global_addr_li.did == '0))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -192,7 +192,7 @@ module bp_sacc_vdp
         default : begin end
       endcase 
     end 
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bp_mem_uc_wr) & (global_addr_li.did == 1))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_mem_msg_uc_wr) & (global_addr_li.did == 1))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -204,7 +204,7 @@ module bp_sacc_vdp
       spm_external_data_li  <= io_cmd_cast_i.data;
       spm_external_addr <= io_cmd_cast_i.header.addr; 
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bp_mem_uc_rd) &  (global_addr_li.did == 1))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_mem_msg_uc_rd) &  (global_addr_li.did == 1))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;

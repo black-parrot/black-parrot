@@ -152,21 +152,21 @@ module bp_me_nonsynth_cce_tracer
         end
       end
       if (mem_resp_v_i & mem_resp_yumi_i) begin
-        if (mem_resp.header.msg_type == e_bp_mem_wr | mem_resp.header.msg_type == e_bp_mem_uc_wr) begin
+        if (mem_resp.header.msg_type == e_mem_msg_wr | mem_resp.header.msg_type == e_mem_msg_uc_wr) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d]"
-                 , $time, cce_id_i, (mem_resp.header.msg_type == e_bp_mem_wr)
-                 , (mem_resp.header.msg_type == e_bp_mem_uc_wr)
+                 , $time, cce_id_i, (mem_resp.header.msg_type == e_mem_msg_wr)
+                 , (mem_resp.header.msg_type == e_mem_msg_uc_wr)
                  , mem_resp.header.addr
                  , mem_resp.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_resp.header.payload.lce_id, mem_resp.header.payload.way_id);
         end
-        if (mem_resp.header.msg_type == e_bp_mem_rd | mem_resp.header.msg_type == e_bp_mem_uc_rd) begin
+        if (mem_resp.header.msg_type == e_mem_msg_rd | mem_resp.header.msg_type == e_mem_msg_uc_rd) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM DATA RESP addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b] %H"
                  , $time, cce_id_i, mem_resp.header.addr
                  , mem_resp.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_resp.header.payload.lce_id, mem_resp.header.payload.way_id, mem_resp.header.payload.state
                  , mem_resp.header.payload.speculative
-                 , (mem_resp.header.msg_type == e_bp_mem_uc_rd), mem_resp.data);
+                 , (mem_resp.header.msg_type == e_mem_msg_uc_rd), mem_resp.data);
         end
       end
       // outbound messages
@@ -199,20 +199,20 @@ module bp_me_nonsynth_cce_tracer
         end
       end
       if (mem_cmd_v_i & mem_cmd_ready_i) begin
-        if (mem_cmd.header.msg_type == e_bp_mem_rd | mem_cmd.header.msg_type == e_bp_mem_uc_rd) begin
+        if (mem_cmd.header.msg_type == e_mem_msg_rd | mem_cmd.header.msg_type == e_mem_msg_uc_rd) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM CMD addr[%H] wg[%0d] lce[%0d] way[%0d] spec[%0b] uc[%0b]"
                  , $time, cce_id_i, mem_cmd.header.addr
                  , mem_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_cmd.header.payload.lce_id
                  , mem_cmd.header.payload.way_id, mem_cmd.header.payload.speculative
-                 , (mem_cmd.header.msg_type == e_bp_mem_uc_rd));
+                 , (mem_cmd.header.msg_type == e_mem_msg_uc_rd));
         end
-        if (mem_cmd.header.msg_type == e_bp_mem_uc_wr | mem_cmd.header.msg_type == e_bp_mem_wr) begin
+        if (mem_cmd.header.msg_type == e_mem_msg_uc_wr | mem_cmd.header.msg_type == e_mem_msg_wr) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b] %H"
-                 , $time, cce_id_i, (mem_cmd.header.msg_type == e_bp_mem_wr), mem_cmd.header.addr
+                 , $time, cce_id_i, (mem_cmd.header.msg_type == e_mem_msg_wr), mem_cmd.header.addr
                  , mem_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_cmd.header.payload.lce_id, mem_cmd.header.payload.way_id, mem_cmd.header.payload.state
-                 , (mem_cmd.header.msg_type == e_bp_mem_uc_wr), mem_cmd.data);
+                 , (mem_cmd.header.msg_type == e_mem_msg_uc_wr), mem_cmd.data);
         end
       end
     end // reset & trace

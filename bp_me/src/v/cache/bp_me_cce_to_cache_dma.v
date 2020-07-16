@@ -138,7 +138,7 @@ module bp_me_cce_to_cache_dma
     dma_data_fifo_valid_li = 1'b0;
     queue_fifo_valid_li = 1'b0;
     
-    dma_pkt_fifo_data_li.write_not_read = (mem_cmd_li.header.msg_type == e_bp_mem_wr);
+    dma_pkt_fifo_data_li.write_not_read = (mem_cmd_li.header.msg_type == e_mem_msg_wr);
     dma_pkt_fifo_data_li.addr = mem_cmd_li.header.addr;
     dma_data_fifo_data_li = mem_cmd_li.data;
     queue_fifo_data_li = mem_cmd_li.header;
@@ -208,7 +208,7 @@ module bp_me_cce_to_cache_dma
     
     if (~reset_i & queue_fifo_valid_lo)
       begin
-        if (mem_resp_lo.header.msg_type == e_bp_mem_wr)
+        if (mem_resp_lo.header.msg_type == e_mem_msg_wr)
           begin
             mem_resp_lo.data = '0;
             mem_resp_v_lo = 1'b1;

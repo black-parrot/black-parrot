@@ -51,7 +51,7 @@ module bp_io_cce
   wire lce_req_wr_not_rd = (lce_req_cast_i.header.msg_type == e_lce_req_type_uc_wr);
   always_comb begin
     io_cmd_cast_o                         = '0;
-    io_cmd_cast_o.header.msg_type         = (lce_req_wr_not_rd) ? e_bp_mem_uc_wr : e_bp_mem_uc_rd;
+    io_cmd_cast_o.header.msg_type         = (lce_req_wr_not_rd) ? e_mem_msg_uc_wr : e_mem_msg_uc_rd;
     io_cmd_cast_o.header.addr             = lce_req_cast_i.header.addr;
     io_cmd_cast_o.header.size             = lce_req_cast_i.header.size;
     io_cmd_cast_o.header.payload.lce_id   = lce_req_cast_i.header.src_id;
@@ -61,7 +61,7 @@ module bp_io_cce
 
   assign io_resp_yumi_o  = io_resp_v_i & lce_cmd_ready_i;
   assign lce_cmd_v_o     = io_resp_yumi_o;
-  wire io_resp_wr_not_rd = (io_resp_cast_i.header.msg_type == e_bp_mem_uc_wr);
+  wire io_resp_wr_not_rd = (io_resp_cast_i.header.msg_type == e_mem_msg_uc_wr);
   always_comb
     if (io_resp_wr_not_rd)
       begin

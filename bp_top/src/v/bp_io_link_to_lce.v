@@ -67,7 +67,7 @@ module bp_io_link_to_lce
      ,.cce_id_o(cce_id_lo)
      );
 
-  wire io_cmd_wr_not_rd = (io_cmd_li.header.msg_type == e_bp_mem_uc_wr);
+  wire io_cmd_wr_not_rd = (io_cmd_li.header.msg_type == e_mem_msg_uc_wr);
   wire lce_cmd_wr_not_rd = (lce_cmd_li.header.msg_type == e_lce_cmd_uc_st_done);
   always_comb
     begin
@@ -83,7 +83,7 @@ module bp_io_link_to_lce
       io_resp_lo.data            = lce_cmd_li.data;
       io_resp_lo.header.size     = lce_cmd_li.header.size;
       io_resp_lo.header.addr     = lce_cmd_li.header.addr;
-      io_resp_lo.header.msg_type = lce_cmd_wr_not_rd ? e_bp_mem_uc_wr : e_bp_mem_uc_rd;
+      io_resp_lo.header.msg_type = lce_cmd_wr_not_rd ? e_mem_msg_uc_wr : e_mem_msg_uc_rd;
     end
 
 endmodule

@@ -187,8 +187,8 @@ module bp_me_cce_to_cache
       SEND: begin
         v_o = 1'b1;
         case (mem_cmd_lo.header.msg_type)
-          e_bp_mem_rd
-          ,e_bp_mem_uc_rd:
+          e_mem_msg_rd
+          ,e_mem_msg_uc_rd:
             case (mem_cmd_lo.header.size)
               e_mem_msg_size_1: cache_pkt.opcode = LB;
               e_mem_msg_size_2: cache_pkt.opcode = LH;
@@ -199,8 +199,8 @@ module bp_me_cce_to_cache
               ,e_mem_msg_size_64: cache_pkt.opcode = LM;
               default: cache_pkt.opcode = LB;
             endcase
-          e_bp_mem_uc_wr
-          ,e_bp_mem_wr   :
+          e_mem_msg_uc_wr
+          ,e_mem_msg_wr   :
             case (mem_cmd_lo.header.size)
               e_mem_msg_size_1: cache_pkt.opcode = SB;
               e_mem_msg_size_2: cache_pkt.opcode = SH;

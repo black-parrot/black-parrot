@@ -215,7 +215,7 @@ bp_be_dcache_lce
 
   bp_cce_mem_msg_payload_s  resp_payload;
   bp_mem_msg_size_e         resp_size;
-  bp_mem_cmd_type_e         resp_msg;
+  bp_mem_msg_e              resp_msg;
   bp_local_addr_s          local_addr_li;
 
   assign local_addr_li = io_cmd_cast_i.header.addr;
@@ -277,7 +277,7 @@ bp_be_dcache_lce
     end
     if (state_r == DONE)
       start_cmd  <= '0;
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bp_mem_uc_wr))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_mem_msg_uc_wr))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -295,7 +295,7 @@ bp_be_dcache_lce
         default : begin end
       endcase
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bp_mem_uc_rd))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_mem_msg_uc_rd))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;

@@ -187,7 +187,7 @@ module bp_me_cache_dma_to_cce
   bp_cce_mem_msg_s mem_cmd_lo;
   
   assign mem_cmd_lo.header.msg_type = (send_dma_pkt_r.write_not_read)? 
-                                       e_bp_mem_wr : e_bp_mem_rd;
+                                       e_mem_msg_wr : e_mem_msg_rd;
   assign mem_cmd_lo.header.addr = (num_mem_p == 1)? send_dma_pkt_r.addr : 
                                 {send_dma_pkt_r.addr[paddr_width_p-1:block_offset_width_lp], 
                                 dma_pkt_rr_tag_r, send_dma_pkt_r.addr[block_offset_width_lp-1:0]};
@@ -300,8 +300,8 @@ module bp_me_cache_dma_to_cce
   ,.yumi_i (two_fifo_yumi_li)
   );
 
-  assign piso_v_li = two_fifo_v_lo & (mem_resp_li.header.msg_type == e_bp_mem_rd);
-  assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.header.msg_type == e_bp_mem_wr) | piso_ready_lo);
+  assign piso_v_li = two_fifo_v_lo & (mem_resp_li.header.msg_type == e_mem_msg_rd);
+  assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.header.msg_type == e_mem_msg_wr) | piso_ready_lo);
   
   bsg_parallel_in_serial_out 
  #(.width_p(dword_width_p)

@@ -18,7 +18,7 @@
  */
 
 /*
- * bp_mem_cmd_type_e specifies the memory command from the UCE/CCE
+ * bp_mem_msg_e specifies the memory command from the UCE/CCE
  *
  * There are three types of commands:
  * 1. Access to memory that should be cached in L2/LLC (rd/wr)
@@ -33,13 +33,13 @@
  */
 typedef enum logic [3:0]
 {
-  e_bp_mem_rd       = 4'b0000  // Cache block fetch / load / Get (cached in L2/LLC)
-  ,e_bp_mem_wr      = 4'b0001  // Cache block write / writeback / store / Put (cached in L2/LLC)
-  ,e_bp_mem_uc_rd   = 4'b0010  // Uncached load (uncached in L2/LLC)
-  ,e_bp_mem_uc_wr   = 4'b0011  // Uncached store (uncached in L2/LLC)
-  ,e_bp_mem_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
+  e_mem_msg_rd       = 4'b0000  // Cache block fetch / load / Get (cached in L2/LLC)
+  ,e_mem_msg_wr      = 4'b0001  // Cache block write / writeback / store / Put (cached in L2/LLC)
+  ,e_mem_msg_uc_rd   = 4'b0010  // Uncached load (uncached in L2/LLC)
+  ,e_mem_msg_uc_wr   = 4'b0011  // Uncached store (uncached in L2/LLC)
+  ,e_mem_msg_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
   // 4'b0101 - 4'b1111 reserved // custom
-} bp_mem_cmd_type_e;
+} bp_mem_msg_e;
 
 /*
  *
@@ -87,7 +87,7 @@ typedef enum logic [3:0]
     bp_``name_mp``_msg_payload_s                 payload;       \
     bp_mem_msg_size_e                            size;          \
     logic [addr_width_mp-1:0]                    addr;          \
-    bp_mem_cmd_type_e                            msg_type;      \
+    bp_mem_msg_e                                 msg_type;      \
   } bp_``name_mp``_msg_header_s;                                \
                                                                 \
   typedef struct packed                                         \
@@ -105,7 +105,7 @@ typedef enum logic [3:0]
   (3+lce_id_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp)+$bits(bp_coh_states_e))
 
 `define bp_mem_msg_header_width(addr_width_mp, lce_id_width_mp, lce_assoc_mp) \
-  ($bits(bp_mem_cmd_type_e)+addr_width_mp \
+  ($bits(bp_mem_msg_e)+addr_width_mp \
    +`bp_mem_msg_payload_width(lce_id_width_mp, lce_assoc_mp)\
    +$bits(bp_mem_msg_size_e))
 
