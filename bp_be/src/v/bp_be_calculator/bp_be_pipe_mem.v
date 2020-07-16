@@ -156,18 +156,18 @@ module bp_be_pipe_mem
   logic [rv64_eaddr_width_gp-1:0] eaddr_mem1, eaddr_mem2;
 
   wire is_req    = decode.pipe_mem_v;
-  wire is_store  = decode.pipe_mem_v & decode.fu_op inside {e_dcache_opcode_sb, e_dcache_opcode_sh, e_dcache_opcode_sw, e_dcache_opcode_sd
-                                                            , e_dcache_opcode_scw, e_dcache_opcode_scd
-                                                            , e_dcache_opcode_amoswapw, e_dcache_opcode_amoswapd
-                                                            , e_dcache_opcode_amoaddw, e_dcache_opcode_amoaddd
-                                                            , e_dcache_opcode_amoxorw, e_dcache_opcode_amoxord
-                                                            , e_dcache_opcode_amoandw, e_dcache_opcode_amoandd
-                                                            , e_dcache_opcode_amoorw, e_dcache_opcode_amoord
-                                                            , e_dcache_opcode_amominw, e_dcache_opcode_amomind
-                                                            , e_dcache_opcode_amomaxw, e_dcache_opcode_amomaxd
-                                                            , e_dcache_opcode_amominuw, e_dcache_opcode_amominud
-                                                            , e_dcache_opcode_amomaxuw, e_dcache_opcode_amomaxud};
-  wire is_fencei = decode.pipe_mem_v & decode.fu_op inside {e_dcache_opcode_fencei};
+  wire is_store  = decode.pipe_mem_v & decode.fu_op inside {e_dcache_op_sb, e_dcache_op_sh, e_dcache_op_sw, e_dcache_op_sd
+                                                            , e_dcache_op_scw, e_dcache_op_scd
+                                                            , e_dcache_op_amoswapw, e_dcache_op_amoswapd
+                                                            , e_dcache_op_amoaddw, e_dcache_op_amoaddd
+                                                            , e_dcache_op_amoxorw, e_dcache_op_amoxord
+                                                            , e_dcache_op_amoandw, e_dcache_op_amoandd
+                                                            , e_dcache_op_amoorw, e_dcache_op_amoord
+                                                            , e_dcache_op_amominw, e_dcache_op_amomind
+                                                            , e_dcache_op_amomaxw, e_dcache_op_amomaxd
+                                                            , e_dcache_op_amominuw, e_dcache_op_amominud
+                                                            , e_dcache_op_amomaxuw, e_dcache_op_amomaxud};
+  wire is_fencei = decode.pipe_mem_v & decode.fu_op inside {e_dcache_op_fencei};
 
   // Calculate cache access eaddr
   wire [rv64_reg_data_width_gp-1:0] offset = decode.offset_sel ? '0 : imm;

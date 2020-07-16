@@ -9,7 +9,7 @@
  * Notes:
  *
  */
-module bp_be_pipe_ctrl
+module bp_be_pipe_ctl
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
@@ -47,7 +47,7 @@ module bp_be_pipe_ctrl
 
   logic btaken;
   always_comb
-    if (decode.pipe_ctrl_v)
+    if (decode.pipe_ctl_v)
       case (decode.fu_op)
         e_ctrl_op_beq  : btaken = (rs1 == rs2);
         e_ctrl_op_bne  : btaken = (rs1 != rs2);

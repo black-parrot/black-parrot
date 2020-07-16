@@ -34,45 +34,45 @@ typedef enum logic [5:0]
 
 typedef enum logic [5:0]
 {
-  e_dcache_opcode_lb        = 6'b000000
-  ,e_dcache_opcode_lh       = 6'b000001
-  ,e_dcache_opcode_lw       = 6'b000010
-  ,e_dcache_opcode_ld       = 6'b000011
-  ,e_dcache_opcode_lbu      = 6'b000100
-  ,e_dcache_opcode_lhu      = 6'b000101
-  ,e_dcache_opcode_lwu      = 6'b000110
+  e_dcache_op_lb        = 6'b000000
+  ,e_dcache_op_lh       = 6'b000001
+  ,e_dcache_op_lw       = 6'b000010
+  ,e_dcache_op_ld       = 6'b000011
+  ,e_dcache_op_lbu      = 6'b000100
+  ,e_dcache_op_lhu      = 6'b000101
+  ,e_dcache_op_lwu      = 6'b000110
 
-  ,e_dcache_opcode_sb       = 6'b001000
-  ,e_dcache_opcode_sh       = 6'b001001
-  ,e_dcache_opcode_sw       = 6'b001010
-  ,e_dcache_opcode_sd       = 6'b001011
+  ,e_dcache_op_sb       = 6'b001000
+  ,e_dcache_op_sh       = 6'b001001
+  ,e_dcache_op_sw       = 6'b001010
+  ,e_dcache_op_sd       = 6'b001011
 
-  ,e_dcache_opcode_lrw      = 6'b000111
-  ,e_dcache_opcode_scw      = 6'b001100
+  ,e_dcache_op_lrw      = 6'b000111
+  ,e_dcache_op_scw      = 6'b001100
 
-  ,e_dcache_opcode_lrd      = 6'b001101
-  ,e_dcache_opcode_scd      = 6'b001110
-  ,e_dcache_opcode_fencei   = 6'b001111
+  ,e_dcache_op_lrd      = 6'b001101
+  ,e_dcache_op_scd      = 6'b001110
+  ,e_dcache_op_fencei   = 6'b001111
 
-  ,e_dcache_opcode_amoswapw = 6'b010000
-  ,e_dcache_opcode_amoaddw  = 6'b010001
-  ,e_dcache_opcode_amoxorw  = 6'b010010
-  ,e_dcache_opcode_amoandw  = 6'b010011
-  ,e_dcache_opcode_amoorw   = 6'b010100
-  ,e_dcache_opcode_amominw  = 6'b010101
-  ,e_dcache_opcode_amomaxw  = 6'b010110
-  ,e_dcache_opcode_amominuw = 6'b010111
-  ,e_dcache_opcode_amomaxuw = 6'b011000
+  ,e_dcache_op_amoswapw = 6'b010000
+  ,e_dcache_op_amoaddw  = 6'b010001
+  ,e_dcache_op_amoxorw  = 6'b010010
+  ,e_dcache_op_amoandw  = 6'b010011
+  ,e_dcache_op_amoorw   = 6'b010100
+  ,e_dcache_op_amominw  = 6'b010101
+  ,e_dcache_op_amomaxw  = 6'b010110
+  ,e_dcache_op_amominuw = 6'b010111
+  ,e_dcache_op_amomaxuw = 6'b011000
 
-  ,e_dcache_opcode_amoswapd = 6'b011001
-  ,e_dcache_opcode_amoaddd  = 6'b011010
-  ,e_dcache_opcode_amoxord  = 6'b011011
-  ,e_dcache_opcode_amoandd  = 6'b011100
-  ,e_dcache_opcode_amoord   = 6'b011101
-  ,e_dcache_opcode_amomind  = 6'b011110
-  ,e_dcache_opcode_amomaxd  = 6'b011111
-  ,e_dcache_opcode_amominud = 6'b100000
-  ,e_dcache_opcode_amomaxud = 6'b100001
+  ,e_dcache_op_amoswapd = 6'b011001
+  ,e_dcache_op_amoaddd  = 6'b011010
+  ,e_dcache_op_amoxord  = 6'b011011
+  ,e_dcache_op_amoandd  = 6'b011100
+  ,e_dcache_op_amoord   = 6'b011101
+  ,e_dcache_op_amomind  = 6'b011110
+  ,e_dcache_op_amomaxd  = 6'b011111
+  ,e_dcache_op_amominud = 6'b100000
+  ,e_dcache_op_amomaxud = 6'b100001
 } bp_be_dcache_fu_op_e;
 
 typedef enum logic [5:0]
@@ -149,12 +149,12 @@ typedef struct packed
   logic                             v;
   logic                             instr_v;
 
-  logic                             pipe_ctrl_v;
+  logic                             pipe_ctl_v;
   logic                             pipe_int_v;
   logic                             pipe_mem_v;
   logic                             pipe_sys_v;
   logic                             pipe_mul_v;
-  logic                             pipe_fp_v;
+  logic                             pipe_fma_v;
   logic                             pipe_long_v;
 
   logic                             irf_w_v;
