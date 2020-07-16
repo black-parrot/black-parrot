@@ -8,6 +8,7 @@ export BP_ME_DIR        ?= $(TOP)/bp_me
 export BP_TOP_DIR       ?= $(TOP)/bp_top
 export BP_EXTERNAL_DIR  ?= $(TOP)/external
 export BASEJUMP_STL_DIR ?= $(BP_EXTERNAL_DIR)/basejump_stl
+export HARDFLOAT_DIR    ?= $(BP_EXTERNAL_DIR)/HardFloat
 
 export BP_BIN_DIR     ?= $(BP_EXTERNAL_DIR)/bin
 export BP_LIB_DIR     ?= $(BP_EXTERNAL_DIR)/lib

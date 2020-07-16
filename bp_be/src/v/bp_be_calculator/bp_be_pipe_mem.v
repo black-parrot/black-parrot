@@ -27,7 +27,6 @@ module bp_be_pipe_mem
    , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
 
    // From RISC-V specifications
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    , localparam eaddr_pad_lp = rv64_eaddr_width_gp - vaddr_width_p
    )
   (input                                  clk_i
@@ -55,8 +54,8 @@ module bp_be_pipe_mem
    , output logic                         store_access_fault_v_o
    , output logic                         store_page_fault_v_o
 
-   , output logic [reg_data_width_lp-1:0] early_data_o
-   , output logic [reg_data_width_lp-1:0] final_data_o
+   , output logic [dpath_width_p-1:0]     early_data_o
+   , output logic [dpath_width_p-1:0]     final_data_o
    , output logic [vaddr_width_p-1:0]     final_vaddr_o
 
    , input [trans_info_width_lp-1:0]      trans_info_i
@@ -95,12 +94,13 @@ module bp_be_pipe_mem
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dword_width_p)
-  `declare_bp_be_dcache_pkt_s(page_offset_width_p, dword_width_p);
+  `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
 
   // Cast input and output ports
   bp_be_dispatch_pkt_s   reservation;
   bp_be_decode_s         decode;
+  rv64_instr_s           instr;
   bp_cfg_bus_s           cfg_bus;
   bp_be_ptw_miss_pkt_s   ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s   ptw_fill_pkt;
@@ -115,10 +115,11 @@ module bp_be_pipe_mem
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
+  assign instr = reservation.instr;
   wire [vaddr_width_p-1:0] pc  = reservation.pc[0+:vaddr_width_p];
-  wire [dword_width_p-1:0] rs1 = reservation.rs1[0+:dword_width_p];
-  wire [dword_width_p-1:0] rs2 = reservation.rs2[0+:dword_width_p];
-  wire [dword_width_p-1:0] imm = reservation.imm[0+:dword_width_p];
+  wire [dpath_width_p-1:0] rs1 = reservation.rs1[0+:dpath_width_p];
+  wire [dpath_width_p-1:0] rs2 = reservation.rs2[0+:dpath_width_p];
+  wire [dpath_width_p-1:0] imm = reservation.imm[0+:dpath_width_p];
 
   /* Internal connections */
   /* TLB ports */
@@ -134,7 +135,7 @@ module bp_be_pipe_mem
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic [dword_width_p-1:0] dcache_early_data, dcache_final_data;
+  logic [dpath_width_p-1:0] dcache_early_data, dcache_final_data;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_early_v, dcache_final_v, dcache_fencei_v, dcache_pkt_v;
   logic                     dcache_ptag_v;
@@ -156,18 +157,7 @@ module bp_be_pipe_mem
   logic [rv64_eaddr_width_gp-1:0] eaddr_mem1, eaddr_mem2, eaddr_mem3;
 
   wire is_req    = (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
-  wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v)
-    & decode.fu_op inside {e_dcache_op_sb, e_dcache_op_sh, e_dcache_op_sw, e_dcache_op_sd
-                           , e_dcache_op_scw, e_dcache_op_scd
-                           , e_dcache_op_amoswapw, e_dcache_op_amoswapd
-                           , e_dcache_op_amoaddw, e_dcache_op_amoaddd
-                           , e_dcache_op_amoxorw, e_dcache_op_amoxord
-                           , e_dcache_op_amoandw, e_dcache_op_amoandd
-                           , e_dcache_op_amoorw, e_dcache_op_amoord
-                           , e_dcache_op_amominw, e_dcache_op_amomind
-                           , e_dcache_op_amomaxw, e_dcache_op_amomaxd
-                           , e_dcache_op_amominuw, e_dcache_op_amominud
-                           , e_dcache_op_amomaxuw, e_dcache_op_amomaxud};
+  wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
 
   // Calculate cache access eaddr
