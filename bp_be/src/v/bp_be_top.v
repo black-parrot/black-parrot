@@ -37,6 +37,10 @@ module bp_be_top
    , output                                          fe_queue_clr_o
    , output                                          fe_queue_deq_o
    , output                                          fe_queue_roll_o
+   , input [reg_addr_width_p-1:0]                    rs1_addr_i
+   , input                                           rs1_v_i
+   , input [reg_addr_width_p-1:0]                    rs2_addr_i
+   , input                                           rs2_v_i
 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]                    fe_cmd_o
@@ -124,6 +128,9 @@ module bp_be_top
      ,.calc_status_i(calc_status)
      ,.expected_npc_o(expected_npc_lo)
      ,.flush_o(flush)
+     ,.fe_queue_clr_o(fe_queue_clr_o)
+     ,.fe_queue_roll_o(fe_queue_roll_o)
+     ,.fe_queue_deq_o(fe_queue_deq_o)
 
      ,.fe_cmd_o(fe_cmd_o)
      ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -134,6 +141,7 @@ module bp_be_top
      ,.poison_isd_o(poison_isd_lo)
 
      ,.br_pkt_i(br_pkt)
+     ,.commit_pkt_i(commit_pkt)
      ,.trap_pkt_i(trap_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
      );
@@ -177,10 +185,10 @@ module bp_be_top
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)
      ,.fe_queue_yumi_o(fe_queue_yumi_o)
-     ,.fe_queue_clr_o(fe_queue_clr_o)
-     ,.fe_queue_roll_o(fe_queue_roll_o)
-     ,.fe_queue_deq_o(fe_queue_deq_o)
-
+     ,.rs1_addr_i(rs1_addr_i)
+     ,.rs1_v_i(rs1_v_i)
+     ,.rs2_addr_i(rs2_addr_i)
+     ,.rs2_v_i(rs2_v_i)
 
      ,.dispatch_pkt_o(dispatch_pkt)
 

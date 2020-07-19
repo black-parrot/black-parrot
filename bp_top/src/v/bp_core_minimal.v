@@ -162,11 +162,10 @@ module bp_core_minimal
   wire fe_cmd_fence_li = fe_cmd_v_lo;
 
   logic fe_queue_clr_li, fe_queue_deq_li, fe_queue_roll_li;
+  logic [reg_addr_width_p-1:0] rs1_addr_lo, rs2_addr_lo;
+  logic rs1_v_lo, rs2_v_lo;
   bsg_fifo_1r1w_rolly
-   #(.width_p(fe_queue_width_lp)
-     ,.els_p(fe_queue_fifo_els_p)
-     ,.ready_THEN_valid_p(1)
-     )
+   #(.bp_params_p(bp_params_p))
    fe_queue_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -175,13 +174,18 @@ module bp_core_minimal
      ,.deq_v_i(fe_queue_deq_li)
      ,.roll_v_i(fe_queue_roll_li)
 
-     ,.data_i(fe_queue_li)
-     ,.v_i(fe_queue_v_li)
-     ,.ready_o(fe_queue_ready_lo)
+     ,.fe_queue_i(fe_queue_li)
+     ,.fe_queue_v_i(fe_queue_v_li)
+     ,.fe_queue_ready_o(fe_queue_ready_lo)
 
-     ,.data_o(fe_queue_lo)
-     ,.v_o(fe_queue_v_lo)
-     ,.yumi_i(fe_queue_yumi_li)
+     ,.fe_queue_o(fe_queue_lo)
+     ,.fe_queue_v_o(fe_queue_v_lo)
+     ,.fe_queue_yumi_i(fe_queue_yumi_li)
+
+     ,.rs1_addr_o(rs1_addr_lo)
+     ,.rs1_v_o(rs1_v_lo)
+     ,.rs2_addr_o(rs2_addr_lo)
+     ,.rs2_v_o(rs2_v_lo)
      );
 
   bp_be_top
@@ -199,6 +203,11 @@ module bp_core_minimal
      ,.fe_queue_i(fe_queue_lo)
      ,.fe_queue_v_i(fe_queue_v_lo)
      ,.fe_queue_yumi_o(fe_queue_yumi_li)
+     ,.rs1_addr_i(rs1_addr_lo)
+     ,.rs1_v_i(rs1_v_lo)
+
+     ,.rs2_addr_i(rs2_addr_lo)
+     ,.rs2_v_i(rs2_v_lo)
 
      ,.fe_cmd_o(fe_cmd_li)
      ,.fe_cmd_v_o(fe_cmd_v_li)

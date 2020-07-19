@@ -44,9 +44,10 @@ module bp_be_scheduler
   , input [fe_queue_width_lp-1:0]      fe_queue_i
   , input                              fe_queue_v_i
   , output                             fe_queue_yumi_o
-  , output                             fe_queue_clr_o
-  , output                             fe_queue_roll_o
-  , output                             fe_queue_deq_o
+  , input [reg_addr_width_p-1:0]       rs1_addr_i
+  , input                              rs1_v_i
+  , input [reg_addr_width_p-1:0]       rs2_addr_i
+  , input                              rs2_v_i
 
   // Dispatch interface
   , output [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
@@ -76,30 +77,6 @@ module bp_be_scheduler
   assign fwb_pkt         = fwb_pkt_i;
 
   wire issue_v = fe_queue_yumi_o;
-
-  bp_be_issue_pkt_s issue_pkt_r;
-  logic issue_pkt_v_r, poison_iss_r;
-  bsg_dff_reset_en
-   #(.width_p(1+$bits(bp_be_issue_pkt_s)))
-   issue_pkt_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i | cache_miss_v_i)
-     ,.en_i(issue_v | dispatch_v_i)
-
-     ,.data_i({issue_v, issue_pkt})
-     ,.data_o({issue_pkt_v_r, issue_pkt_r})
-     );
-
-  bsg_dff_reset_en
-   #(.width_p(1))
-   issue_status_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(issue_v | dispatch_v_i | poison_iss_i | poison_isd_i)
-
-     ,.data_i(poison_iss_i | poison_isd_i)
-     ,.data_o(poison_iss_r)
-     );
 
   always_comb
     begin
@@ -216,12 +193,7 @@ module bp_be_scheduler
     end
 
   // Interface handshakes
-  assign fe_queue_yumi_o = ~suppress_iss_i & fe_queue_v_i & (dispatch_v_i | ~issue_pkt_v_r);
-
-  // Queue control signals
-  assign fe_queue_clr_o  = suppress_iss_i;
-  assign fe_queue_roll_o = cache_miss_v_i;
-  assign fe_queue_deq_o  = ~cache_miss_v_i & cmt_v_i;
+  assign fe_queue_yumi_o = ~suppress_iss_i & fe_queue_v_i & dispatch_v_i;
 
   logic [dword_width_p-1:0] irf_rs1, irf_rs2;
   bp_be_regfile
@@ -234,12 +206,8 @@ module bp_be_scheduler
      ,.rd_addr_i(iwb_pkt.rd_addr)
      ,.rd_data_i(iwb_pkt.rd_data[0+:dword_width_p])
 
-     ,.rs_r_v_i({issue_v & issue_pkt.irs2_v
-                 ,issue_v & issue_pkt.irs1_v
-                 })
-     ,.rs_addr_i({issue_pkt.instr.t.rtype.rs2_addr
-                  ,issue_pkt.instr.t.rtype.rs1_addr
-                  })
+     ,.rs_r_v_i({rs2_v_i, rs1_v_i})
+     ,.rs_addr_i({rs2_addr_i, rs1_addr_i})
      ,.rs_data_o({irf_rs2, irf_rs1})
      );
 
@@ -271,9 +239,9 @@ module bp_be_scheduler
   bp_be_instr_decoder
    #(.bp_params_p(bp_params_p))
    instr_decoder
-     (.fe_exc_not_instr_i(issue_pkt_r.fe_exception_not_instr)
-     ,.fe_exc_i(issue_pkt_r.fe_exception_code)
-     ,.instr_i(issue_pkt_r.instr)
+     (.fe_exc_not_instr_i(issue_pkt.fe_exception_not_instr)
+     ,.fe_exc_i(issue_pkt.fe_exception_code)
+     ,.instr_i(issue_pkt.instr)
 
      ,.decode_o(decoded)
      ,.imm_o(decoded_imm_lo)
@@ -285,35 +253,34 @@ module bp_be_scheduler
   always_comb
     begin
       // Calculator status ISD stage
-      isd_status.isd_v        = (issue_pkt_v_r & dispatch_v_i)
-                                & ~(poison_iss_r | poison_iss_i);
-      isd_status.isd_pc       = issue_pkt_r.pc;
-      isd_status.isd_branch_metadata_fwd = issue_pkt_r.branch_metadata_fwd;
-      isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
-      isd_status.isd_csr_v    = issue_pkt_v_r & issue_pkt_r.csr_v;
-      isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
-      isd_status.isd_long_v   = issue_pkt_v_r & issue_pkt_r.long_v;
-      isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
-      isd_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
-      isd_status.isd_rs1_addr = issue_pkt_r.instr.t.rtype.rs1_addr;
-      isd_status.isd_irs2_v   = issue_pkt_v_r & issue_pkt_r.irs2_v;
-      isd_status.isd_frs2_v   = issue_pkt_v_r & issue_pkt_r.frs2_v;
-      isd_status.isd_rs2_addr = issue_pkt_r.instr.t.rtype.rs2_addr;
-      isd_status.isd_frs3_v   = issue_pkt_v_r & issue_pkt_r.frs3_v;
-      isd_status.isd_rs3_addr = issue_pkt_r.instr.t.fmatype.rs3_addr;
+      isd_status.isd_v        = fe_queue_yumi_o;
+      isd_status.isd_pc       = issue_pkt.pc;
+      isd_status.isd_branch_metadata_fwd = issue_pkt.branch_metadata_fwd;
+      isd_status.isd_fence_v  = fe_queue_v_i & issue_pkt.fence_v;
+      isd_status.isd_csr_v    = fe_queue_v_i & issue_pkt.csr_v;
+      isd_status.isd_mem_v    = fe_queue_v_i & issue_pkt.mem_v;
+      isd_status.isd_long_v   = fe_queue_v_i & issue_pkt.long_v;
+      isd_status.isd_irs1_v   = fe_queue_v_i & issue_pkt.irs1_v;
+      isd_status.isd_frs1_v   = fe_queue_v_i & issue_pkt.frs1_v;
+      isd_status.isd_rs1_addr = issue_pkt.instr.t.rtype.rs1_addr;
+      isd_status.isd_irs2_v   = fe_queue_v_i & issue_pkt.irs2_v;
+      isd_status.isd_frs2_v   = fe_queue_v_i & issue_pkt.frs2_v;
+      isd_status.isd_rs2_addr = issue_pkt.instr.t.rtype.rs2_addr;
+      isd_status.isd_frs3_v   = fe_queue_v_i & issue_pkt.frs3_v;
+      isd_status.isd_rs3_addr = issue_pkt.instr.t.fmatype.rs3_addr;
 
       // Form dispatch packet
-      dispatch_pkt.v      = issue_pkt_v_r & dispatch_v_i;
-      dispatch_pkt.poison = (poison_iss_r | poison_isd_i | ~dispatch_pkt.v);
-      dispatch_pkt.pc     = expected_npc_i;
-      dispatch_pkt.instr  = issue_pkt_r.instr;
-      dispatch_pkt.rs1_fp_v = issue_pkt_r.frs1_v;
-      dispatch_pkt.rs1    = issue_pkt_r.frs1_v ? frf_rs1 : irf_rs1;
-      dispatch_pkt.rs2_fp_v = issue_pkt_r.frs2_v;
-      dispatch_pkt.rs2    = issue_pkt_r.frs2_v ? frf_rs2 : irf_rs2;
-      dispatch_pkt.rs3_fp_v = issue_pkt_r.frs3_v;
-      dispatch_pkt.imm    = issue_pkt_r.frs3_v ? frf_rs3 : decoded_imm_lo;
-      dispatch_pkt.decode = decoded;
+      dispatch_pkt.v        = fe_queue_yumi_o;
+      dispatch_pkt.poison   = (poison_isd_i | ~dispatch_pkt.v);
+      dispatch_pkt.pc       = expected_npc_i;
+      dispatch_pkt.instr    = issue_pkt.instr;
+      dispatch_pkt.rs1_fp_v = issue_pkt.frs1_v;
+      dispatch_pkt.rs1      = issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
+      dispatch_pkt.rs2_fp_v = issue_pkt.frs2_v;
+      dispatch_pkt.rs2      = issue_pkt.frs2_v ? frf_rs2 : irf_rs2;
+      dispatch_pkt.rs3_fp_v = issue_pkt.frs3_v;
+      dispatch_pkt.imm      = issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
+      dispatch_pkt.decode   = decoded;
     end
   assign dispatch_pkt_o = dispatch_pkt;
 
