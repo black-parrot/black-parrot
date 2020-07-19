@@ -28,6 +28,12 @@ typedef enum logic
   ,e_cce_mode_normal
 } bp_cce_mode_e;
 
+// Place of atomic operation
+typedef enum logic [1:0] {
+  e_none
+  , e_l1
+  , e_l2
+} bp_atomic_op_e;
 
 typedef enum logic [15:0]{
   e_sacc_vdp
@@ -49,6 +55,8 @@ typedef enum logic [15:0]{
     bp_lce_mode_e                            dcache_mode;                                          \
     logic [cce_id_width_mp-1:0]              cce_id;                                               \
     bp_cce_mode_e                            cce_mode;                                             \
+    logic [7:0]                              domain;                                               \
+    logic                                    sac;                                                  \
   }  bp_cfg_bus_s
 
 `define bp_cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
@@ -60,6 +68,8 @@ typedef enum logic [15:0]{
    + $bits(bp_lce_mode_e)           \
    + cce_id_width_mp                \
    + $bits(bp_cce_mode_e)           \
+   + 8                              \
+   + 1                              \
    )
 
 
@@ -87,6 +97,11 @@ typedef struct packed
 
   integer itlb_els;
   integer dtlb_els;
+
+  integer lr_sc;
+  integer amo_swap;
+  integer amo_fetch_logic;
+  integer amo_fetch_arithmetic;
 
   integer l1_writethrough;
   integer l1_coherent;
@@ -196,6 +211,11 @@ typedef struct packed
   , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
   , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
                                                                                                    \
+  , localparam lr_sc_p                    = proc_param_lp.lr_sc                                    \
+  , localparam amo_swap_p                 = proc_param_lp.amo_swap                                 \
+  , localparam amo_fetch_logic_p          = proc_param_lp.amo_fetch_logic                          \
+  , localparam amo_fetch_arithmetic_p     = proc_param_lp.amo_fetch_arithmetic                     \
+                                                                                                   \
   , localparam l1_coherent_p              = proc_param_lp.l1_coherent                              \
   , localparam l1_writethrough_p          = proc_param_lp.l1_writethrough                          \
   , localparam dcache_sets_p              = proc_param_lp.dcache_sets                              \
@@ -285,6 +305,7 @@ typedef struct packed
   , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]                 \
                                                                                                    \
   , localparam dword_width_p       = 64                                                            \
+  , localparam word_width_p        = 32                                                            \
   , localparam instr_width_p       = 32                                                            \
   , localparam csr_addr_width_p    = 12                                                            \
   , localparam reg_addr_width_p    = 5                                                             \

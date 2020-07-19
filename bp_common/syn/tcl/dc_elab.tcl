@@ -65,6 +65,7 @@ set BP_ME_DIR        $::env(BP_ME_DIR)
 set BP_COMMON_DIR    $::env(BP_COMMON_DIR)
 
 set BASEJUMP_STL_DIR $::env(BASEJUMP_STL_DIR)
+set HARDFLOAT_DIR    $::env(HARDFLOAT_DIR)
 
 set SYN_PATH $::env(SYN_PATH)
 set TB_PATH  $::env(TB_PATH)

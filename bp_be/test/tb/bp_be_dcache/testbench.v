@@ -283,7 +283,7 @@ module testbench
        ,.v_tv_r(v_tv_r)
        ,.addr_tv_r(paddr_tv_r)
        ,.lr_miss_tv(lr_miss_tv)
-       ,.sc_op_tv_r(sc_op_tv_r)
+       ,.sc_op_tv_r(decode_tv_r.sc_op)
        ,.sc_success(sc_success)
 
        ,.cache_req_v_o(cache_req_v_o)
@@ -292,11 +292,11 @@ module testbench
        ,.cache_req_metadata_o(cache_req_metadata_o)
        ,.cache_req_complete_i(cache_req_complete_i)
 
-       ,.v_o(v_o)
-       ,.load_data(data_o)
+       ,.v_o(early_v_o)
+       ,.load_data(early_data_o)
        ,.store_data(data_tv_r)
        ,.wt_req(wt_req)
-       ,.cache_miss_o(dcache_miss_o)
+       ,.cache_miss_o('0)
 
        ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

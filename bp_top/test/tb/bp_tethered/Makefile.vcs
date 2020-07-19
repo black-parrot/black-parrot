@@ -10,7 +10,7 @@ $(LINT_DIR)/flist.vcs:
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
-LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
+LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
 
 $(BUILD_DIR)/testbench.v $(BUILD_DIR)/wrapper.v $(BUILD_DIR)/test_bp.v:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
@@ -20,11 +20,11 @@ $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@ 
 	@echo wrapper.v                              >> $@ 
 	@echo testbench.v                            >> $@ 
-	@echo test_bp.v                              >> $@
+	@echo test_bp.v                              >> $@ 
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
-BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
+BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
 
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
 	@ln -nsf $(<D)/$(@F) $@
@@ -50,6 +50,8 @@ $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
 
 NBF_INPUTS = $(NCPUS)
 NBF_INPUTS += cce_ucode.mem
+NBF_INPUTS += $(DOMAINS_P)
+NBF_INPUTS += $(SAC_P)
 ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem
 endif

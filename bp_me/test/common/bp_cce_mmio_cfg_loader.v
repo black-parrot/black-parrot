@@ -25,8 +25,12 @@ module bp_cce_mmio_cfg_loader
     , parameter cce_ucode_filename_p  = "cce_ucode.mem"
     , parameter skip_ram_init_p       = 0
     , parameter clear_freeze_p        = 0
+    // Change the last 8 bits of the data below to indicate the domains
+    // to be enabled.
+    , parameter domain_mask_p         = 64'h0000_0000_0000_0001
 
     , localparam bp_pc_entry_point_gp=39'h10_3000
+    , localparam sac_mask_lp = (sac_x_dim_p == 0) ? 64'h0 : 64'h1
     )
   (input                                             clk_i
    , input                                           reset_i
@@ -81,6 +85,8 @@ module bp_cce_mmio_cfg_loader
     ,SEND_DCACHE_NORMAL
     ,SEND_CCE_NORMAL
     ,WAIT_FOR_SYNC
+    ,SEND_DOMAIN_ACTIVATION
+    ,SEND_SAC_ACTIVATION
     ,BP_FREEZE_CLR
     ,WAIT_FOR_CREDITS
     ,DONE
@@ -284,7 +290,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = dword_width_p'(e_cce_mode_normal);
         end
         WAIT_FOR_SYNC: begin
-          state_n = sync_done ? (clear_freeze_p ? BP_FREEZE_CLR : WAIT_FOR_CREDITS) : WAIT_FOR_SYNC;
+          state_n = sync_done ? SEND_DOMAIN_ACTIVATION : WAIT_FOR_SYNC;
 
           sync_cnt_inc = ~sync_done;
           sync_cnt_clr = sync_done;
@@ -292,6 +298,26 @@ module bp_cce_mmio_cfg_loader
           cfg_w_v_lo = 1'b0;
           cfg_addr_lo = '0;
           cfg_data_lo = '0;
+        end
+        SEND_DOMAIN_ACTIVATION: begin
+          state_n = core_prog_done ? SEND_SAC_ACTIVATION : SEND_DOMAIN_ACTIVATION;
+
+          core_cnt_inc = ~core_prog_done & credits_empty_lo;
+          core_cnt_clr = core_prog_done & credits_empty_lo;
+
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = bp_cfg_reg_domain_mask_gp;
+          cfg_data_lo = domain_mask_p;
+        end
+        SEND_SAC_ACTIVATION: begin
+          state_n = core_prog_done ? (clear_freeze_p ? BP_FREEZE_CLR : WAIT_FOR_CREDITS) : SEND_SAC_ACTIVATION;
+
+          core_cnt_inc = ~core_prog_done & credits_empty_lo;
+          core_cnt_clr = core_prog_done & credits_empty_lo;
+
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = bp_cfg_reg_sac_mask_gp;
+          cfg_data_lo = sac_mask_lp;
         end
         BP_FREEZE_CLR: begin
           state_n = core_prog_done ? WAIT_FOR_CREDITS : BP_FREEZE_CLR;
