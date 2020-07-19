@@ -262,7 +262,7 @@ module bp_be_calculator_top
 
   // Aux pipe: 2 cycle latency
   bp_be_pipe_aux
-   #(.bp_params_p(bp_params_p), .latency_p(1))
+   #(.bp_params_p(bp_params_p), .latency_p(2))
    pipe_aux
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -434,8 +434,8 @@ module bp_be_calculator_top
   assign pipe_sys_data_lo_v = calc_stage_r[2].pipe_sys_v;
   assign pipe_mem_final_data_lo_v = calc_stage_r[2].pipe_mem_final_v;
   assign pipe_mem_early_data_lo_v = calc_stage_r[1].pipe_mem_early_v;
+  assign pipe_aux_data_lo_v = calc_stage_r[1].pipe_aux_v;
   assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
-  assign pipe_aux_data_lo_v = calc_stage_r[0].pipe_aux_v;
   assign pipe_ctl_data_lo_v = calc_stage_r[0].pipe_ctl_v;
 
   always_comb
@@ -443,13 +443,23 @@ module bp_be_calculator_top
       comp_stage_n[0] = '0;
       comp_stage_n[1] = pipe_int_data_lo_v
                         ? '{data: pipe_int_data_lo, fflags: '0}
+                        : '{data: pipe_ctl_data_lo, fflags: '0};
+      comp_stage_n[2] = pipe_mem_early_data_lo_v
+                        ? '{data: pipe_mem_early_data_lo, fflags: '0}
                         : pipe_aux_data_lo_v
                           ? '{data: pipe_aux_data_lo, fflags: pipe_aux_fflags_lo}
-                          : '{data: pipe_ctl_data_lo, fflags: '0};
-      comp_stage_n[2] = pipe_mem_early_data_lo_v ? '{data: pipe_mem_early_data_lo, fflags: '0} : comp_stage_r[1];
-      comp_stage_n[3] = pipe_mem_final_data_lo_v ? '{data: pipe_mem_final_data_lo, fflags: '0} : pipe_sys_data_lo_v ? '{data: pipe_sys_data_lo, fflags: '0} : comp_stage_r[2];
-      comp_stage_n[4] = pipe_mul_data_lo_v ? '{data: pipe_mul_data_lo, fflags: '0} : comp_stage_r[3];
-      comp_stage_n[5] = pipe_fma_data_lo_v ? '{data: pipe_fma_data_lo, fflags: pipe_fma_fflags_lo} : comp_stage_r[4];
+                          : comp_stage_r[1];
+      comp_stage_n[3] = pipe_mem_final_data_lo_v
+                        ? '{data: pipe_mem_final_data_lo, fflags: '0}
+                        : pipe_sys_data_lo_v
+                          ? '{data: pipe_sys_data_lo, fflags: '0}
+                          : comp_stage_r[2];
+      comp_stage_n[4] = pipe_mul_data_lo_v
+                        ? '{data: pipe_mul_data_lo, fflags: '0}
+                        : comp_stage_r[3];
+      comp_stage_n[5] = pipe_fma_data_lo_v
+                        ? '{data: pipe_fma_data_lo, fflags: pipe_fma_fflags_lo}
+                        : comp_stage_r[4];
       comp_stage_n[6] = comp_stage_r[5];
     end
 
