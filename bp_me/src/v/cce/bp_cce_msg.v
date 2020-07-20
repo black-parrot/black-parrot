@@ -244,8 +244,6 @@ module bp_cce_msg
   typedef enum logic [1:0] {
     e_uc_reset
     ,e_uc_ready
-    ,e_uc_send_mem_cmd
-    ,e_uc_send_mem_data_cmd
   } uc_state_e;
   uc_state_e uc_state_r, uc_state_n;
 
@@ -339,85 +337,90 @@ module bp_cce_msg
       // from uncached to normal modes.
       busy_o = 1'b1;
 
-      // memory response forwarding logic
-      if (mem_resp_v_i & (mem_resp.header.msg_type == e_mem_msg_uc_rd)) begin
-        // after load response is received, need to send data back to LCE
-        lce_cmd_v_o = lce_cmd_ready_i;
-
-        lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
-        lce_cmd.header.msg_type = e_lce_cmd_uc_data;
-        lce_cmd.header.size = mem_resp.header.size;
-        lce_cmd.header.src_id = cfg_bus_cast.cce_id;
-        lce_cmd.header.addr = mem_resp.header.addr;
-        lce_cmd.data = mem_resp.data;
-
-        // dequeue the mem data response if outbound lce data cmd is accepted
-        mem_resp_yumi_o = lce_cmd_ready_i;
-
-        uc_cnt_dec = mem_resp_yumi_o;
-
-      end else if (mem_resp_v_i & (mem_resp.header.msg_type == e_mem_msg_uc_wr)) begin
-        // after store response is received, need to send uncached store done command to LCE
-        lce_cmd_v_o = lce_cmd_ready_i;
-
-        lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
-        lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
-        // leave size field as '0 equivalent - no data in this message
-        lce_cmd.header.src_id = cfg_bus_cast.cce_id;
-        lce_cmd.header.addr = mem_resp.header.addr;
-
-        // dequeue the mem data response if outbound lce data cmd is accepted
-        mem_resp_yumi_o = lce_cmd_ready_i;
-
-        uc_cnt_dec = mem_resp_yumi_o;
-      end
-
       // Command send state machine
       unique case (uc_state_r)
       e_uc_reset: begin
         uc_state_n = e_uc_ready;
       end
       e_uc_ready: begin
-        // process uncached read or write requests
+
+        // memory response forwarding logic
+        if (mem_resp_v_i) begin
+          unique case (mem_resp.header.msg_type)
+            e_mem_msg_uc_rd: begin
+              // after load response is received, need to send data back to LCE
+              lce_cmd_v_o = lce_cmd_ready_i;
+
+              lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
+              lce_cmd.header.msg_type = e_lce_cmd_uc_data;
+              lce_cmd.header.size = mem_resp.header.size;
+              lce_cmd.header.src_id = cfg_bus_cast.cce_id;
+              lce_cmd.header.addr = mem_resp.header.addr;
+              lce_cmd.data = mem_resp.data;
+
+              // dequeue the mem data response if outbound lce data cmd is accepted
+              mem_resp_yumi_o = lce_cmd_ready_i;
+
+              uc_cnt_dec = mem_resp_yumi_o;
+            end
+            e_mem_msg_uc_wr: begin
+              // after store response is received, need to send uncached store done command to LCE
+              lce_cmd_v_o = lce_cmd_ready_i;
+
+              lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
+              lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
+              // leave size field as '0 equivalent - no data in this message
+              lce_cmd.header.src_id = cfg_bus_cast.cce_id;
+              lce_cmd.header.addr = mem_resp.header.addr;
+
+              // dequeue the mem data response if outbound lce data cmd is accepted
+              mem_resp_yumi_o = lce_cmd_ready_i;
+
+              uc_cnt_dec = mem_resp_yumi_o;
+            end
+            default: begin
+            end
+          endcase
+        end // mem_resp
+
+        // request logic
         // cached requests will stall on the input port until normal mode is entered
-        if (lce_req_v_i
-            & ((lce_req.header.msg_type == e_lce_req_type_uc_rd)
-               | (lce_req.header.msg_type == e_lce_req_type_uc_wr))
-            ) begin
-          // uncached read first sends a memory cmd, uncached store sends memory data cmd
-          uc_state_n = (lce_req.header.msg_type == e_lce_req_type_uc_rd)
-                       ? e_uc_send_mem_cmd
-                       : e_uc_send_mem_data_cmd;
-        end
-      end
-      e_uc_send_mem_cmd: begin
-        // uncached load, send a memory cmd
-        mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~uncached_full;
-        lce_req_yumi_o = mem_cmd_v_o;
-        uc_cnt_inc = mem_cmd_v_o;
+        if (lce_req_v_i) begin
 
-        mem_cmd.header.msg_type = e_mem_msg_uc_rd;
-        mem_cmd.header.addr = lce_req.header.addr;
-        mem_cmd.header.size = lce_req.header.size;
-        mem_cmd.header.payload.lce_id = lce_req.header.src_id;
-        mem_cmd.header.payload.uncached = 1'b1;
+          unique case (lce_req.header.msg_type)
 
-        uc_state_n = (mem_cmd_v_o) ? e_uc_ready : e_uc_send_mem_cmd;
-      end
-      e_uc_send_mem_data_cmd: begin
-        // uncached store, send memory data cmd
-        mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~uncached_full;
-        lce_req_yumi_o = mem_cmd_v_o;
-        uc_cnt_inc = mem_cmd_v_o;
+            // uncached load, send a memory cmd
+            e_lce_req_type_uc_rd: begin
+              mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~uncached_full;
+              lce_req_yumi_o = mem_cmd_v_o;
+              uc_cnt_inc = mem_cmd_v_o;
 
-        mem_cmd.header.msg_type = e_mem_msg_uc_wr;
-        mem_cmd.header.addr = lce_req.header.addr;
-        mem_cmd.header.size = lce_req.header.size;
-        mem_cmd.header.payload.lce_id = lce_req.header.src_id;
-        mem_cmd.header.payload.uncached = 1'b1;
-        mem_cmd.data = lce_req.data;
+              mem_cmd.header.msg_type = e_mem_msg_uc_rd;
+              mem_cmd.header.addr = lce_req.header.addr;
+              mem_cmd.header.size = lce_req.header.size;
+              mem_cmd.header.payload.lce_id = lce_req.header.src_id;
+              mem_cmd.header.payload.uncached = 1'b1;
+            end
 
-        uc_state_n = (mem_cmd_v_o) ? e_uc_ready : e_uc_send_mem_data_cmd;
+            // uncached store, send memory data cmd
+            e_lce_req_type_uc_wr: begin
+              mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~uncached_full;
+              lce_req_yumi_o = mem_cmd_v_o;
+              uc_cnt_inc = mem_cmd_v_o;
+
+              mem_cmd.header.msg_type = e_mem_msg_uc_wr;
+              mem_cmd.header.addr = lce_req.header.addr;
+              mem_cmd.header.size = lce_req.header.size;
+              mem_cmd.header.payload.lce_id = lce_req.header.src_id;
+              mem_cmd.header.payload.uncached = 1'b1;
+              mem_cmd.data = lce_req.data;
+            end
+
+            // default = stall
+            default: begin
+            end
+          endcase
+        end // lce_request
       end
       default: begin
         uc_state_n = e_uc_reset;
