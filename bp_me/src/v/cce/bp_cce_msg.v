@@ -12,7 +12,7 @@
  */
 
 // TODO:
-// 1. support globally uncached, locally cached access; locally uncached, globally cached
+// 1. support locally uncached, globally cached/coherent
 
 module bp_cce_msg
   import bp_common_pkg::*;
@@ -336,49 +336,51 @@ module bp_cce_msg
       // from uncached to normal modes.
       busy_o = 1'b1;
 
+      // memory response forwarding logic
+      if (mem_resp_v_i & (mem_resp.header.msg_type == e_mem_msg_uc_rd)) begin
+        // after load response is received, need to send data back to LCE
+        lce_cmd_v_o = lce_cmd_ready_i;
+
+        lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
+        lce_cmd.header.msg_type = e_lce_cmd_uc_data;
+        lce_cmd.header.size = mem_resp.header.size;
+        lce_cmd.header.src_id = cfg_bus_cast.cce_id;
+        lce_cmd.header.addr = mem_resp.header.addr;
+        lce_cmd.data = mem_resp.data;
+
+        // dequeue the mem data response if outbound lce data cmd is accepted
+        mem_resp_yumi_o = lce_cmd_ready_i;
+
+        uc_cnt_dec = mem_resp_yumi_o;
+
+      end else if (mem_resp_v_i & (mem_resp.header.msg_type == e_mem_msg_uc_wr)) begin
+        // after store response is received, need to send uncached store done command to LCE
+        lce_cmd_v_o = lce_cmd_ready_i;
+
+        lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
+        lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
+        // leave size field as '0 equivalent - no data in this message
+        lce_cmd.header.src_id = cfg_bus_cast.cce_id;
+        lce_cmd.header.addr = mem_resp.header.addr;
+
+        // dequeue the mem data response if outbound lce data cmd is accepted
+        mem_resp_yumi_o = lce_cmd_ready_i;
+
+        uc_cnt_dec = mem_resp_yumi_o;
+      end
+
+      // Command send state machine
       unique case (uc_state_r)
       e_uc_reset: begin
         uc_state_n = e_uc_ready;
       end
       e_uc_ready: begin
-
-        if (mem_resp_v_i & (mem_resp.header.msg_type == e_mem_msg_uc_rd)) begin
-          // after load response is received, need to send data back to LCE
-          lce_cmd_v_o = lce_cmd_ready_i;
-
-          lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_uc_data;
-          lce_cmd.header.size = mem_resp.header.size;
-          lce_cmd.header.src_id = cfg_bus_cast.cce_id;
-          lce_cmd.header.addr = mem_resp.header.addr;
-          lce_cmd.data = mem_resp.data;
-
-          // dequeue the mem data response if outbound lce data cmd is accepted
-          mem_resp_yumi_o = lce_cmd_ready_i;
-
-          uc_cnt_dec = mem_resp_yumi_o;
-
-        end else if (mem_resp_v_i & (mem_resp.header.msg_type == e_mem_msg_uc_wr)) begin
-          // after store response is received, need to send uncached store done command to LCE
-          lce_cmd_v_o = lce_cmd_ready_i;
-
-          lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
-          // leave size field as '0 equivalent - no data in this message
-          lce_cmd.header.src_id = cfg_bus_cast.cce_id;
-          lce_cmd.header.addr = mem_resp.header.addr;
-
-          // dequeue the mem data response if outbound lce data cmd is accepted
-          mem_resp_yumi_o = lce_cmd_ready_i;
-
-          uc_cnt_dec = mem_resp_yumi_o;
-
         // process uncached read or write requests
         // cached requests will stall on the input port until normal mode is entered
-        end else if (lce_req_v_i
-                     & ((lce_req.header.msg_type == e_lce_req_type_uc_rd)
-                        | (lce_req.header.msg_type == e_lce_req_type_uc_wr))
-                    ) begin
+        if (lce_req_v_i
+            & ((lce_req.header.msg_type == e_lce_req_type_uc_rd)
+               | (lce_req.header.msg_type == e_lce_req_type_uc_wr))
+            ) begin
           // uncached read first sends a memory cmd, uncached store sends memory data cmd
           uc_state_n = (lce_req.header.msg_type == e_lce_req_type_uc_rd)
                        ? e_uc_send_mem_cmd
