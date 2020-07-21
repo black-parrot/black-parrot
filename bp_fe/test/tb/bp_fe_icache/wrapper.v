@@ -88,7 +88,6 @@ module wrapper
   logic icache_ready_lo;
   assign rolly_yumi_li = rolly_v_lo & icache_ready_lo;
 
-  logic icache_miss_lo;
   logic rollback_li, rolly_yumi_rr;
 
   bsg_fifo_1r1w_rolly
@@ -197,7 +196,6 @@ module wrapper
 
     ,.data_o(data_o)
     ,.data_v_o(data_v_o)
-    ,.miss_o(icache_miss_lo)
 
     ,.cache_req_ready_i(cache_req_ready_li)
     ,.cache_req_o(cache_req_lo)

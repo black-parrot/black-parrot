@@ -292,11 +292,11 @@ module testbench
        ,.cache_req_metadata_o(cache_req_metadata_o)
        ,.cache_req_complete_i(cache_req_complete_i)
 
-       ,.v_o(v_o)
-       ,.load_data(data_o)
+       ,.v_o(early_v_o)
+       ,.load_data(early_data_o)
        ,.store_data(data_tv_r)
        ,.wt_req(wt_req)
-       ,.cache_miss_o(dcache_miss_o)
+       ,.cache_miss_o('0)
 
        ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

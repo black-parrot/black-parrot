@@ -151,7 +151,8 @@ typedef struct packed
 
   logic                             pipe_ctl_v;
   logic                             pipe_int_v;
-  logic                             pipe_mem_v;
+  logic                             pipe_mem_early_v;
+  logic                             pipe_mem_final_v;
   logic                             pipe_sys_v;
   logic                             pipe_mul_v;
   logic                             pipe_fma_v;

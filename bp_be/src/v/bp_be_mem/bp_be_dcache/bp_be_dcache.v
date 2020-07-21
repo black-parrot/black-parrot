@@ -3,85 +3,80 @@
  *    bp_be_dcache.v
  *
  *  Description:
- *    L1 data cache. It receives load or store instruction from the mmu. This
- *    is virtually-indexed and physically-tagged cache. It is 2-8-way
- *    set-associative.
+ *    L1 Data Cache. Features:
+ *    - Virtually-indexed, physically-tagged
+ *    - 2-8 way set-associative
+ *    - 128-512 bit block size (minimum 64-bit data mem bank size)
  *
- *    There are three different 1rw memory blocks: data_mem, tag_mem, stat_mem.
+ *    There are three large 1rw memory blocks: data_mem, tag_mem, stat_mem:
+ *    - data_mem is divided into 1 bank per way, and cache blocks are
+ *      interleaved among the banks. The governing relationship is "bank_id =
+ *      word_offset + way_id" (with modular arithmetic).
  *
- *    data_mem is divided into 1 bank per way, and cache blocks are
- *    interleaved among the banks. The governing relationship is "bank_id =
- *    word_offset + way_id" (with modular arithmetic).
+ *    - tag_mem contains tag and coherence state bits.
  *
- *    tag_mem contains tag and coherence state bits.
+ *    - stat_mem contains information about dirty bits for each cache block and
+ *      LRU info about each way group (pseudo-LRU replacement policy).
  *
- *    stat_mem contains information about dirty bits for each cache block and
- *    LRU info about each way group. This cache uses pseudo tree-LRU
- *    algorithm.
+ *    There are three pipeline stages: tag lookup (TL), tag verity (TV), and
+ *      data mux (DM) stages. Signals and registers are suffixed by stage name.
  *
- *    There are two pipeline stages: tag lookup (tl) and tag verity (tv) stages.
- *    Signals or registers belonging to each stage is suffixed by "_tl" or
- *    "tv". We could also think of input as another stage.
+ *    - Before TL, a dcache_pkt containing opcode, address and store data arrives
+ *        at the cache. It is decoded and latched on the NEGATIVE edge of the clock.
+ *        This gives half a cycle for address calculation.
  *
- *    Physical tag translated by TLB arrives in tag lookup stages. tag_mem and
- *    TLB are accessed in the same cycle for each instruction. tlb_miss_i
- *    indicates that there is TLB miss and all instructions in tl and input stage
- *    has to be poisoned.
+ *    - In TL, data mem and tag mem are synchronously accessed. Addtionally, the
+ *        physical tag and PMA attributes arrive and are latched. Hit detection is
+ *        also performed in this stage. This information is latched on the NEGATIVE
+ *        edge of the clock as well. This gives a full cycle for the large data memory
+ *        access.
  *
- *    Instructions from mmu arrives in the form of bp_be_dcache_pkt_s. It
- *    contains opcode, addr, data.
+ *    - In TV, the data read is muxed down to the correct word based on the bank hash
+ *        of the hit vector and the word offset. This is expected to be latched by the
+ *        external pipeline on a positive edge. This gives half a cycle for data muxing.
+ *        This data is returned as "early_data".
  *
- *    There is write buffer which allows holding write data info that left tv stage,
- *    in forms of "bp_be_dcache_wbuf_entry_s" until data_mem becomes free from incoming
- *    load instructions. It also allows bypassing of store data when load moving
- *    from tl to tv stage has the same address as the entries in write buffer.
- *    LCE can snoop write buffer entries to hold off lce_data_mem operations until entries
- *    with matching address is no longer present in write buffer.
+ *    - In DM, the data word selected in TV selected down to byte for sub-word ops, or
+ *        recoded for floating point loads. This data is returned as "final_data"
  *
- *    There are tags in two different contexts: 'ptag' and 'tag'. 'ptag' is
- *    used in the context of translating 'vtag' into 'ptag', and its width is
- *    fixed as defined by sv39. 'tag' width can vary with the number of sets,
- *    and it is the width of the tag that is stored inside the cache.
+ *    There is a write buffer which allows holding write data from tv stage, delaying the
+ *      physical write until data_mem becomes from from incoming loads. To prevent data
+ *      hazards, it also supports bypassing from TL to TV if there is an address match in
+ *      the write buffer
  *
- *    paddr_width = ptag_width + page_offset_width = tag_width + index_width
- *    + block_offset_width
+ *    An address is broken down as follows:
+ *      physical address = [physical tag | virtual index | block offset]
  *
  *    Load reserved and store conditional are implemented at a cache line granularity.
- *    A load reserved acts as a normal load with the following addtional properties:
- *    1) If the block is not in an exclusive ownership state (M or E in MESI), then the cache
- *    will send an upgrade request (store miss).
- *    2) If the LR is successful, a reservation is placed on the cache line. This reservation is
- *    valid for the current hart only.
- *    A store conditional will succeed (return 0) if there is a valid reservation on the address of
- *    the SC. Else, it will fail (return nonzero and will not commit the store). A failing store
- *    conditional will not produce a cache miss.
+ *      A load reserved acts as a normal load with the following addtional properties:
+ *      1) If the block is not in an exclusive ownership state (M or E in MESI), then the cache
+ *      will send an upgrade request (store miss).
+ *      2) If the LR is successful, a reservation is placed on the cache line. This reservation is
+ *      valid for the current hart only.
+ *      A store conditional will succeed (return 0) if there is a valid reservation on the address of
+ *      the SC. Else, it will fail (return nonzero and will not commit the store). A failing store
+ *      conditional will not produce a cache miss.
  *
  *    The reservation can be cleared by:
- *    1) Any SC to any address by this hart.
- *    2) A second LR (this will not clear the reservation, but it will change the reservation
- *    address).
- *    3) An invalidate received from the LCE. This command covers all cases of losing exclusive
- *    access to the block in this hart, including eviction and a cache miss.
+ *      1) Any SC to any address by this hart.
+ *      2) A second LR (this will not clear the reservation, but it will change the reservation
+ *      address).
+ *      3) An invalidate received from the LCE. This command covers all cases of losing exclusive
+ *      access to the block in this hart, including eviction and a cache miss.
 
  *    RISC-V guarantees forward progress for LR/SC sequences that match a set of conditions.
- *    Currently, BlackParrot makes no guarantees about these sequences, but one option to guarantee
- *    progress is to block reservation invalidates from other harts until a following SC. There is
- *    a design space exploration to be done between QoS and performance based on the backoff model
- *    used for these schemes.
+ *      BlackParrot guarantees progress by blocking remote invalidations until a following SC
+ *      (subject to a timeout). Tradeoffs between local and remote QoS can be made by adjusting
+ *      the lock time.
  *
  *    LR/SC aq/rl semantics are irrelevant for BlackParrot. Since we are in-order single issue and
- *    do not use a store buffer that allows stores before cache lines have been fetched,, all
- *     memory requests are inherently ordered within a hart.
+ *      do not use a store buffer that allows stores before cache lines have been fetched, all
+ *       memory requests are inherently ordered within a hart.
  *
- *    The dcache supports multi-cycle fill/eviction with the UCE in unicore configuration.
- *    Some key concepts and their relation can be summarized as:
- *      bank_width = block_width / assoc >= dword_width
- *      fill_width = N*bank_width <= block_width
- *    For detailed description and supported fill width parameters, please refer to Cache Serivce Interface Doc
+ *    The dcache supports multi-cycle fill/eviction with the following constraints:
+ *      - bank_width = block_width / assoc >= dword_width
+ *      - fill_width = N*bank_width <= block_width
  *
- *    The dcache rearranges its large memory accesses in order to enable a two-cycle load-use
- *    latency. The data mem and tag mem accesses are performed on the negative edge, so that address
- *    calculation is done in half a cycle and data muxing is done in half a cycle.
  */
 
 module bp_be_dcache
@@ -125,17 +120,18 @@ module bp_be_dcache
     , input v_i
     , output logic ready_o
 
-    , output logic [dword_width_p-1:0] data_o
-    , output logic v_o
-
     // TLB interface
     , input [ptag_width_lp-1:0] ptag_i
     , input ptag_v_i
     , input uncached_i
 
+    , output logic [dword_width_p-1:0] early_data_o
+    , output logic                     early_v_o
+    , output logic [dword_width_p-1:0] final_data_o
+    , output logic                     final_v_o
+
     // ctrl
-    , output dcache_miss_o // Used for mem connections (ptw and MMU resp connections)
-    , input poison_i
+    , input flush_i
 
     // D$-LCE Interface
     // signals to LCE
@@ -215,7 +211,7 @@ module bp_be_dcache
       // We poison the valid of the stage rather than tl_we, to relieve critical paths on the
       //   large memory enables. The tradeoff is an additional toggle whenever there is a flush
       //   during an incoming dcache request
-      v_tl_r <= tl_we & ~poison_i;
+      v_tl_r <= tl_we & ~flush_i;
       if (tl_we) begin
         decode_tl_r <= decode_lo;
         page_offset_tl_r <= dcache_pkt.page_offset;
@@ -348,7 +344,7 @@ module bp_be_dcache
       // We poison the valid of the stage rather than tl_we, to relieve critical paths on the
       //   large memory enables. The tradeoff is an additional toggle whenever there is a flush
       //   during an incoming dcache request
-      v_tv_r <= tv_we & ~poison_i;
+      v_tv_r <= tv_we & ~flush_i;
 
       if (tv_we) begin
         decode_tv_r <= decode_tl_r;
@@ -641,15 +637,15 @@ module bp_be_dcache
 
     if(load_miss_tv) begin
       cache_req_cast_o.msg_type = e_miss_load;
-      cache_req_v_o = cache_req_ready_i & ~poison_i;
+      cache_req_v_o = cache_req_ready_i & ~flush_i;
     end
     else if(store_miss_tv | lr_miss_tv) begin
       cache_req_cast_o.msg_type = e_miss_store;
-      cache_req_v_o = cache_req_ready_i & ~poison_i;
+      cache_req_v_o = cache_req_ready_i & ~flush_i;
     end
     else if(wt_req) begin
       cache_req_cast_o.msg_type = e_wt_store;
-      cache_req_v_o = cache_req_ready_i & ~poison_i;
+      cache_req_v_o = cache_req_ready_i & ~flush_i;
     end
     else if (l2_amo_req & ~uncached_load_data_v_r) begin
       cache_req_v_o = cache_req_ready_i;
@@ -678,11 +674,11 @@ module bp_be_dcache
     end
     else if(uncached_load_req) begin
       cache_req_cast_o.msg_type = e_uc_load;
-      cache_req_v_o = cache_req_ready_i & ~poison_i;
+      cache_req_v_o = cache_req_ready_i & ~flush_i;
     end
     else if(uncached_store_req) begin
       cache_req_cast_o.msg_type = e_uc_store;
-      cache_req_v_o = cache_req_ready_i & ~poison_i;
+      cache_req_v_o = cache_req_ready_i & ~flush_i;
     end
     else if(fencei_req) begin
       // Don't flush on fencei when coherent
@@ -723,14 +719,13 @@ module bp_be_dcache
      ,.data_o(cache_miss_r)
      );
   assign ready_o = cache_req_ready_i & ~cache_miss_r;
-  assign dcache_miss_o = cache_miss_r || (v_tv_r & ~v_o);
 
-  assign v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
-                         | (uncached_tv_r & (decode_tv_r.store_op & cache_req_ready_i))
-                         | (~uncached_tv_r & ~decode_tv_r.l2_op & ~decode_tv_r.fencei_op & ~miss_tv)
-                         // Always send fencei when coherent
-                         | (fencei_req & (~gdirty_r | (l1_coherent_p == 1)))
-                         );
+  assign early_v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
+                              | (uncached_tv_r & (decode_tv_r.store_op & cache_req_ready_i))
+                              | (~uncached_tv_r & ~decode_tv_r.l2_op & ~decode_tv_r.fencei_op & ~miss_tv)
+                              // Always send fencei when coherent
+                              | (fencei_req & (~gdirty_r | (l1_coherent_p == 1)))
+                              );
 
   // Locking logic - Block processing of new dcache_packets
   logic cache_miss_resolved;
@@ -770,7 +765,7 @@ module bp_be_dcache
   end
 
   logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
-  wire lock_clr = v_o || (lock_cnt_r == lock_max_limit_p);
+  wire lock_clr = early_v_o || (lock_cnt_r == lock_max_limit_p);
   wire lock_inc = ~lock_clr & (cache_miss_resolved || lr_hit_tv || (lock_cnt_r > 0));
 
   bsg_counter_clear_up
@@ -826,20 +821,11 @@ module bp_be_dcache
     ,.data_o(ld_data_dword_picked)
     );
 
-  bsg_mux #(
-     .width_p(dword_width_p)
-     ,.els_p(2)
-   ) uncached_mux (
-     .data_i({uncached_load_data_r, ld_data_dword_picked})
-     ,.sel_i(uncached_tv_r)
-     ,.data_o(ld_data_final)
-   );
-
   bsg_mux_segmented #(
     .segments_p(wbuf_data_mask_width_lp)
     ,.segment_width_p(8)
   ) bypass_mux_segmented (
-    .data0_i(ld_data_final)
+    .data0_i(ld_data_dword_picked)
     ,.data1_i(bypass_data_lo)
     ,.sel_i(bypass_mask_lo)
     ,.data_o(bypass_data_masked)
@@ -855,7 +841,38 @@ module bp_be_dcache
     ,.data_o(result_data)
   );
 
-  logic [3:0][dword_width_p-1:0] final_data;
+  assign early_data_o = (decode_tv_r.load_op | (sc_req & decode_tv_r.l2_op))
+    ? result_data
+    : decode_tv_r.sc_op & ~sc_success;
+
+  // DM stage
+  //
+  logic dm_we;
+  logic v_dm_r;
+  logic [dword_width_p-1:0] data_dm_r;
+  logic [3:0] byte_offset_dm_r;
+  logic double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r, signed_op_dm_r;
+
+  assign dm_we = v_tv_r & early_v_o;
+  always_ff @(posedge clk_i) begin
+    if (reset_i) begin
+      v_dm_r <= '0;
+    end else begin
+      v_dm_r <= dm_we;
+
+      if (dm_we) begin
+        data_dm_r        <= early_data_o;
+        byte_offset_dm_r <= paddr_tv_r[0+:4];
+        signed_op_dm_r   <= decode_tv_r.signed_op;
+        double_op_dm_r   <= decode_tv_r.double_op;
+        word_op_dm_r     <= decode_tv_r.word_op;
+        half_op_dm_r     <= decode_tv_r.half_op;
+        byte_op_dm_r     <= decode_tv_r.byte_op;
+      end
+    end
+  end
+
+  logic [3:0][dword_width_p-1:0] sigext_data;
   for (genvar i = 0; i < 4; i++)
     begin : alignment
       localparam slice_width_lp = 8*(2**i);
@@ -865,28 +882,27 @@ module bp_be_dcache
         .width_p(slice_width_lp)
         ,.els_p(dword_width_p/slice_width_lp)
       ) align_mux (
-        .data_i(result_data)
-        ,.sel_i(paddr_tv_r[i+:`BSG_MAX(1, 3-i)])
+        .data_i(data_dm_r)
+        ,.sel_i(byte_offset_dm_r[i+:`BSG_MAX(1, 3-i)])
         ,.data_o(slice_data)
       );
 
-      wire sigext = decode_tv_r.signed_op & slice_data[slice_width_lp-1];
-      assign final_data[i] = {{(dword_width_p-slice_width_lp){sigext}}, slice_data};
+      wire sigext = signed_op_dm_r & slice_data[slice_width_lp-1];
+      assign sigext_data[i] = {{(dword_width_p-slice_width_lp){sigext}}, slice_data};
     end
 
-  logic [dword_width_p-1:0] load_data;
+  logic [dword_width_p-1:0] final_data;
   bsg_mux_one_hot #(
     .width_p(dword_width_p)
     ,.els_p(4)
   ) byte_mux (
-    .data_i(final_data)
-    ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op, decode_tv_r.half_op, decode_tv_r.byte_op})
-    ,.data_o(load_data)
+    .data_i(sigext_data)
+    ,.sel_one_hot_i({double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r})
+    ,.data_o(final_data)
   );
 
-  assign data_o = (decode_tv_r.load_op | (sc_req & decode_tv_r.l2_op))
-                  ? load_data
-                  : decode_tv_r.sc_op & ~sc_success;
+  assign final_data_o = final_data;
+  assign final_v_o = v_dm_r;
 
   // ctrl logic
   //
@@ -1021,7 +1037,7 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~decode_tv_r.fencei_op & ~poison_i & ~decode_tv_r.l2_op) | stat_mem_pkt_yumi_o;
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~decode_tv_r.fencei_op & ~flush_i & ~decode_tv_r.l2_op) | stat_mem_pkt_yumi_o;
   assign stat_mem_w_li = stat_mem_pkt_yumi_o
     ? (stat_mem_pkt.opcode != e_cache_stat_mem_read)
     : ~miss_tv & ~decode_tv_r.l2_op;
@@ -1099,7 +1115,7 @@ module bp_be_dcache
   else begin : wt_wbuf
     assign wbuf_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & cache_req_ready_i;
   end
-  assign wbuf_v_li = wbuf_success & ~poison_i;
+  assign wbuf_v_li = wbuf_success & ~flush_i;
   assign wbuf_yumi_li = wbuf_v_lo & ~(decode_lo.load_op & tl_we) & ~data_mem_pkt_yumi_o;
 
   assign bypass_v_li = tv_we & decode_tl_r.load_op;
@@ -1138,7 +1154,7 @@ module bp_be_dcache
   if (lr_sc_p == e_l1)
     begin : l1_lrsc
       // Set reservation on successful LR, without a cache miss or upgrade request
-      wire set_reservation = decode_tv_r.lr_op & v_o;
+      wire set_reservation = decode_tv_r.lr_op & early_v_o;
       // All SCs clear the reservation (regardless of success)
       // Invalidates from other harts which match the reservation address clear the reservation
       wire clear_reservation = decode_tv_r.sc_op
@@ -1176,7 +1192,7 @@ module bp_be_dcache
   wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached);
   // Invalidate uncached data if the cache is flushed or we successfully complete the request
   // NOTE: This method is not valid for non-idempotent loads, will cause replay
-  wire uncached_load_clear = poison_i | v_o;
+  wire uncached_load_clear = flush_i | early_v_o;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    uncached_load_data_v_reg
@@ -1236,7 +1252,7 @@ module bp_be_dcache
       axe_trace_gen
         (.clk_i(clk_i)
         ,.id_i(cfg_bus_cast_i.dcache_id)
-        ,.v_i(v_o)
+        ,.v_i(early_v_o)
         ,.addr_i(paddr_tv_r)
         ,.load_data_i(data_o)
         ,.store_data_i(data_tv_r)

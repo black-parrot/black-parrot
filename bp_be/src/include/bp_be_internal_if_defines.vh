@@ -49,7 +49,8 @@
     logic                              instr_v;                                                    \
     logic                              pipe_ctl_v;                                                 \
     logic                              pipe_int_v;                                                 \
-    logic                              pipe_mem_v;                                                 \
+    logic                              pipe_mem_early_v;                                           \
+    logic                              pipe_mem_final_v;                                           \
     logic                              pipe_sys_v;                                                 \
     logic                              pipe_mul_v;                                                 \
     logic                              pipe_fma_v;                                                 \
@@ -75,8 +76,10 @@
     logic                              ctrl_iwb_v;                                                 \
     logic                              int_iwb_v;                                                  \
     logic                              mul_iwb_v;                                                  \
-    logic                              mem_iwb_v;                                                  \
-    logic                              mem_fwb_v;                                                  \
+    logic                              emem_iwb_v;                                                 \
+    logic                              emem_fwb_v;                                                 \
+    logic                              fmem_iwb_v;                                                 \
+    logic                              fmem_fwb_v;                                                 \
     logic                              fp_fwb_v;                                                   \
     logic                              serial_v;                                                   \
     logic                              mem_v;                                                      \
@@ -208,7 +211,7 @@
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
    + rv64_instr_width_gp                                                                           \
-   + 14                                                                                            \
+   + 15                                                                                            \
    )
 
 `define bp_be_comp_stage_reg_width \
@@ -218,7 +221,7 @@
   (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 4 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
 
 `define bp_be_dep_status_width \
-  (9 + rv64_reg_addr_width_gp)
+  (11 + rv64_reg_addr_width_gp)
 
 `define bp_be_calc_status_width(vaddr_width_mp) \
   (2                                                                                               \

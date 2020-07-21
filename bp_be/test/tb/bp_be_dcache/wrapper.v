@@ -50,12 +50,11 @@ module wrapper
    , input                                             v_i
    , output logic                                      ready_o
 
+   , input [ptag_width_lp-1:0]                         ptag_i
+   , input                                             uncached_i
+
    , output logic [dword_width_p-1:0]                  data_o
    , output logic                                      v_o
-
-   , input [ptag_width_lp-1:0]                         ptag_i
-
-   , input                                             uncached_i
 
    , input                                             mem_resp_v_i
    , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
@@ -69,7 +68,7 @@ module wrapper
    `declare_bp_be_dcache_pkt_s(page_offset_width_p, dword_width_p);
 
    // Cache to Rolly FIFO signals
-   logic dcache_miss_lo, dcache_ready_lo;
+   logic dcache_ready_lo;
    logic rollback_li;
    logic [ptag_width_lp-1:0] rolly_ptag_lo;
    logic rolly_uncached_lo;
@@ -116,59 +115,42 @@ module wrapper
     ,.v_o(rolly_v_lo)
     ,.yumi_i(rolly_yumi_li)
     );
-
-   logic rolly_yumi_rr;
-   bsg_dff_chain
-   #(.width_p(1)
-    ,.num_stages_p(2)
-    )
-    rolly_yumi_reg
-    (.clk_i(clk_i)
-    ,.data_i(rolly_yumi_li)
-    ,.data_o(rolly_yumi_rr)
-    );
-
-   assign rollback_li = rolly_yumi_rr & ~v_o;
    assign rolly_yumi_li = rolly_v_lo & dcache_ready_lo;
 
    logic [ptag_width_lp-1:0] rolly_ptag_r;
+   logic rolly_uncached_r;
    bsg_dff_reset
-    #(.width_p(ptag_width_lp)
+    #(.width_p(1+ptag_width_lp)
      ,.reset_val_p(0)
     )
     ptag_dff
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.data_i(rolly_ptag_lo)
-    ,.data_o(rolly_ptag_r)
+    ,.data_i({rolly_uncached_lo, rolly_ptag_lo})
+    ,.data_o({rolly_uncached_r, rolly_ptag_r})
     );
 
-   logic dcache_v_rr, poison_li;
+   wire is_store = rolly_dcache_pkt_lo.opcode inside {e_dcache_op_sb, e_dcache_op_sh, e_dcache_op_sw, e_dcache_op_sd};
+
+   logic is_store_rr, dcache_v_rr, poison_li;
    bsg_dff_chain
-    #(.width_p(1)
+    #(.width_p(2)
      ,.num_stages_p(2)
     )
     dcache_v_reg
     (.clk_i(clk_i)
-    ,.data_i(rolly_yumi_li)
-    ,.data_o(dcache_v_rr)
+    ,.data_i({is_store, rolly_yumi_li})
+    ,.data_o({is_store_rr, dcache_v_rr})
     );
 
    assign poison_li = dcache_v_rr & ~v_o;
+   assign rollback_li = poison_li;
 
-   logic uncached_r;
-   bsg_dff_reset
-   #(.width_p(1)
-    ,.reset_val_p(0)
-   )
-   uncached_reg
-   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.data_i(rolly_uncached_lo)
-   ,.data_o(uncached_r)
-   );
+   logic [dword_width_p-1:0] early_data_lo;
+   logic early_v_lo;
+   logic [dword_width_p-1:0] final_data_lo;
+   logic final_v_lo;
 
    bp_be_dcache
    #(.bp_params_p(bp_params_p)
@@ -184,16 +166,16 @@ module wrapper
    ,.v_i(rolly_yumi_li)
    ,.ready_o(dcache_ready_lo)
 
-   ,.data_o(data_o)
-   ,.v_o(v_o)
+   ,.early_data_o(early_data_lo)
+   ,.early_v_o(early_v_lo)
+   ,.final_data_o(final_data_lo)
+   ,.final_v_o(final_v_lo)
 
    ,.ptag_v_i(1'b1)
    ,.ptag_i(rolly_ptag_r)
-   ,.uncached_i(uncached_r)
+   ,.uncached_i(rolly_uncached_r)
 
-   ,.poison_i(poison_li)
-
-   ,.dcache_miss_o(dcache_miss_lo)
+   ,.flush_i(poison_li)
 
    ,.cache_req_v_o(cache_req_v_lo)
    ,.cache_req_o(cache_req_lo)
@@ -218,6 +200,10 @@ module wrapper
    ,.stat_mem_o(stat_mem_lo)
    ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_lo)
    );
+
+   // Stores "return" 0 to the trace replay module
+   assign data_o = is_store_rr ? '0 : final_data_lo;
+   assign v_o = final_v_lo;
 
    if(uce_p == 0) begin : cce
      logic lce_req_v_lo, lce_resp_v_lo;

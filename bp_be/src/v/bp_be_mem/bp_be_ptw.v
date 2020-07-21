@@ -43,7 +43,6 @@ module bp_be_ptw
    , output logic [ptag_width_p-1:0]        dcache_ptag_o
    , output logic                           dcache_ptag_v_o
    , input                                  dcache_rdy_i
-   , input                                  dcache_miss_i
 
    , input                                  dcache_v_i
    , input [pte_width_p-1:0]                dcache_data_i
@@ -54,7 +53,7 @@ module bp_be_ptw
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, pte_width_p);
   `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
 
-  typedef enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eWriteBack, eStuck } state_e;
+  typedef enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eRecvLoad, eWriteBack, eStuck } state_e;
 
   bp_be_dcache_pkt_s  dcache_pkt;
   bp_sv39_pte_s       dcache_data;
@@ -152,13 +151,12 @@ module bp_be_ptw
     case(state_r)
       eIdle:      state_n = tlb_miss_v ? eSendLoad : eIdle;
       eSendLoad:  state_n = dcache_rdy_i ? eWaitLoad : eSendLoad;
-      eWaitLoad:  state_n = dcache_miss_i
-                            ? eSendLoad
-                            : (dcache_v_r
-                                ? (page_fault_v
-                                    ? eIdle
-                                    : (pte_is_leaf ? eWriteBack : eSendLoad))
-                                    : eWaitLoad);
+      eWaitLoad:  state_n = eRecvLoad;
+      eRecvLoad:  state_n = (dcache_v_r
+                             ? (page_fault_v
+                                ? eIdle
+                                : (pte_is_leaf ? eWriteBack : eSendLoad))
+                             : eSendLoad);
       eWriteBack: state_n = eIdle;
       default: state_n = eStuck;
     endcase
