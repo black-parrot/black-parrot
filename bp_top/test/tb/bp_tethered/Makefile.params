@@ -2,9 +2,6 @@ export COH_PROTO   ?= mesi
 export CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms
 export CCE_MEM      = $(COH_PROTO).mem
 
-export DRAMSIM_CH_CFG  ?= DDR3_micron_32M_8B_x8_sg25E.ini
-export DRAMSIM_SYS_CFG ?= system.ini
-
 export CCE_TRACE_P    ?= 0
 export LCE_TRACE_P    ?= 0
 export CMT_TRACE_P    ?= 0
