@@ -199,9 +199,9 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.rd_w_v_i(scheduler.wb_pkt.rd_w_v)
-     ,.rd_addr_i(scheduler.wb_pkt.rd_addr)
-     ,.rd_data_i(scheduler.wb_pkt.rd_data)
+     ,.rd_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.rd_addr_i(scheduler.iwb_pkt.rd_addr)
+     ,.rd_data_i(scheduler.iwb_pkt.rd_data)
      );
 
 bind bp_be_top
@@ -228,9 +228,9 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.rd_w_v_i(scheduler.wb_pkt.rd_w_v)
-     ,.rd_addr_i(scheduler.wb_pkt.rd_addr)
-     ,.rd_data_i(scheduler.wb_pkt.rd_data)
+     ,.rd_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.rd_addr_i(scheduler.iwb_pkt.rd_addr)
+     ,.rd_data_i(scheduler.iwb_pkt.rd_data)
 
      ,.interrupt_v_i(calculator.pipe_sys.csr.trap_pkt_cast_o._interrupt)
      ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)

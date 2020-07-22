@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_be_pipe_fp.v
+ *   bp_be_pipe_fma.v
  *
  * Description:
  *   Pipeline for RISC-V float instructions. Handles float and double computation.
@@ -9,7 +9,7 @@
  * Notes:
  *
  */
-module bp_be_pipe_fp
+module bp_be_pipe_fma
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;

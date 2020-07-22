@@ -96,7 +96,7 @@ module bp_be_top
 
   bp_be_commit_pkt_s commit_pkt;
   bp_be_trap_pkt_s trap_pkt;
-  bp_be_wb_pkt_s wb_pkt;
+  bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
 
   bp_be_isd_status_s isd_status;
   logic [vaddr_width_p-1:0] expected_npc_lo;
@@ -181,7 +181,8 @@ module bp_be_top
 
      ,.dispatch_pkt_o(dispatch_pkt)
 
-     ,.wb_pkt_i(wb_pkt)
+     ,.iwb_pkt_i(iwb_pkt)
+     ,.fwb_pkt_i(fwb_pkt)
      );
 
   bp_be_calculator_top
@@ -202,7 +203,8 @@ module bp_be_top
 
      ,.commit_pkt_o(commit_pkt)
      ,.trap_pkt_o(trap_pkt)
-     ,.wb_pkt_o(wb_pkt)
+     ,.iwb_pkt_o(iwb_pkt)
+     ,.fwb_pkt_o(fwb_pkt)
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
