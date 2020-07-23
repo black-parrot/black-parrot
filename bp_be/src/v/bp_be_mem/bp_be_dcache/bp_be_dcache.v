@@ -81,8 +81,10 @@
 
 module bp_be_dcache
   import bp_common_pkg::*;
+  import bp_common_rv64_pkg::*;
   import bp_be_pkg::*;
   import bp_be_dcache_pkg::*;
+  import bp_be_hardfloat_pkg::*;
   import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -107,7 +109,7 @@ module bp_be_dcache
     , localparam block_size_in_fill_lp = dcache_block_width_p / dcache_fill_width_p
     , localparam fill_size_in_bank_lp = dcache_fill_width_p / bank_width_lp
 
-    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dword_width_p)
+    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dpath_width_p)
     , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
   )
   (
@@ -125,9 +127,9 @@ module bp_be_dcache
     , input ptag_v_i
     , input uncached_i
 
-    , output logic [dword_width_p-1:0] early_data_o
+    , output logic [dpath_width_p-1:0] early_data_o
     , output logic                     early_v_o
-    , output logic [dword_width_p-1:0] final_data_o
+    , output logic [dpath_width_p-1:0] final_data_o
     , output logic                     final_v_o
 
     // ctrl
@@ -174,7 +176,7 @@ module bp_be_dcache
   assign cache_req_o = cache_req_cast_o;
   assign cache_req_metadata_o = cache_req_metadata_cast_o;
 
-  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dword_width_p);
+  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = dcache_pkt_i;
 
@@ -198,7 +200,7 @@ module bp_be_dcache
   logic v_tl_r; // valid bit
   logic tl_we;
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
-  logic [dword_width_p-1:0] data_tl_r;
+  logic [dpath_width_p-1:0] data_tl_r;
   logic gdirty_r;
 
   assign tl_we = v_i;
@@ -311,7 +313,7 @@ module bp_be_dcache
   logic tv_we;
   logic uncached_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
-  logic [dword_width_p-1:0] data_tv_r;
+  logic [dpath_width_p-1:0] data_tv_r;
   bp_be_dcache_tag_info_s [dcache_assoc_p-1:0] tag_info_tv_r;
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
   logic [ptag_width_lp-1:0] addr_tag_tv_r;
@@ -505,11 +507,25 @@ module bp_be_dcache
   assign wbuf_entry_in.paddr = paddr_tv_r;
   assign wbuf_entry_in.way_id = store_hit_way_tv;
 
+  bp_be_fp_reg_s fp_reg;
+  assign fp_reg = data_tv_r;
+
+  logic [dword_width_p-1:0] fp_raw_data;
+  bp_be_rec_to_fp
+   #(.bp_params_p(bp_params_p))
+   rec_to_fp
+    (.rec_i(fp_reg.rec)
+
+     ,.raw_sp_not_dp_i(fp_reg.sp_not_dp)
+     ,.raw_o(fp_raw_data)
+     );
+
   logic [3:0][dword_width_p-1:0] wbuf_data_in;
   logic [3:0][wbuf_data_mask_width_lp-1:0] wbuf_mask_in;
   for (genvar i = 0; i < 4; i++)
     begin : wbuf_in
       localparam slice_width_lp = 8*(2**i);
+      logic [slice_width_lp-1:0] slice_data;
 
       logic [(dword_width_p/slice_width_lp)-1:0] addr_dec;
       bsg_decode
@@ -528,7 +544,16 @@ module bp_be_dcache
          ,.o(wbuf_mask_in[i])
          );
 
-      assign wbuf_data_in[i] = {(dword_width_p/slice_width_lp){data_tv_r[0+:slice_width_lp]}};
+      if ((i == 2'b10) || (i == 2'b11))
+        begin
+          assign slice_data = decode_tv_r.float_op ? fp_raw_data[0+:slice_width_lp] : data_tv_r[0+:slice_width_lp];
+        end
+      else
+        begin : fi
+          assign slice_data = data_tv_r[0+:slice_width_lp];
+        end
+
+      assign wbuf_data_in[i] = {(dword_width_p/slice_width_lp){slice_data}};
     end
 
   bsg_mux_one_hot
@@ -623,7 +648,7 @@ module bp_be_dcache
 
     // Assigning sizes to cache miss packet
     if (uncached_tv_r | wt_req | l2_amo_req) begin
-      unique if (decode_tv_r.double_op)
+      if (decode_tv_r.double_op)
         cache_req_cast_o.size = e_size_8B;
       else if (decode_tv_r.word_op)
         cache_req_cast_o.size = e_size_4B;
@@ -851,19 +876,21 @@ module bp_be_dcache
   logic v_dm_r;
   logic [dword_width_p-1:0] data_dm_r;
   logic [3:0] byte_offset_dm_r;
-  logic double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r, signed_op_dm_r;
+  logic double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r;
+  logic signed_op_dm_r, float_op_dm_r;
 
   assign dm_we = v_tv_r & early_v_o;
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       v_dm_r <= '0;
     end else begin
-      v_dm_r <= dm_we;
+      v_dm_r <= dm_we & ~flush_i;
 
       if (dm_we) begin
         data_dm_r        <= early_data_o;
         byte_offset_dm_r <= paddr_tv_r[0+:4];
         signed_op_dm_r   <= decode_tv_r.signed_op;
+        float_op_dm_r    <= decode_tv_r.float_op;
         double_op_dm_r   <= decode_tv_r.double_op;
         word_op_dm_r     <= decode_tv_r.word_op;
         half_op_dm_r     <= decode_tv_r.half_op;
@@ -891,17 +918,28 @@ module bp_be_dcache
       assign sigext_data[i] = {{(dword_width_p-slice_width_lp){sigext}}, slice_data};
     end
 
-  logic [dword_width_p-1:0] final_data;
+  logic [dword_width_p-1:0] final_int_data;
   bsg_mux_one_hot #(
     .width_p(dword_width_p)
     ,.els_p(4)
   ) byte_mux (
     .data_i(sigext_data)
     ,.sel_one_hot_i({double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r})
-    ,.data_o(final_data)
+    ,.data_o(final_int_data)
   );
 
-  assign final_data_o = final_data;
+  bp_be_fp_reg_s final_float_data;
+  bp_be_fp_to_rec
+   #(.bp_params_p(bp_params_p))
+   fp_to_rec
+    (.raw_i(data_dm_r)
+     ,.raw_sp_not_dp_i(word_op_dm_r)
+
+     ,.rec_sp_not_dp_o(final_float_data.sp_not_dp)
+     ,.rec_o(final_float_data.rec)
+     );
+
+  assign final_data_o = float_op_dm_r ? final_float_data : final_int_data;
   assign final_v_o = v_dm_r;
 
   // ctrl logic
@@ -1024,7 +1062,7 @@ module bp_be_dcache
       e_cache_tag_mem_set_state: begin
         tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
         for (integer i = 0; i < dcache_assoc_p; i++) begin
-          tag_mem_mask_li[i].coh_state = {$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].coh_state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
           tag_mem_mask_li[i].tag = {ptag_width_lp{1'b0}};
         end
       end

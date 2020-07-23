@@ -6,7 +6,7 @@ module bp_be_dcache_decoder
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(bp_page_offset_width_gp, dword_width_p)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(bp_page_offset_width_gp, dpath_width_p)
    , localparam dcache_pipeline_struct_width_lp = `bp_be_dcache_pipeline_struct_width
 
   )
@@ -15,7 +15,7 @@ module bp_be_dcache_decoder
     , output logic [dcache_pipeline_struct_width_lp-1:0] decoded_o
   );
 
-  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dword_width_p);
+  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = pkt_i;
 
@@ -133,6 +133,16 @@ module bp_be_dcache_decoder
         decoded_cast_o.store_op                      = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
        end
+      e_dcache_op_flw, e_dcache_op_fld:
+        begin
+          decoded_cast_o.load_op                     = 1'b1;
+          decoded_cast_o.float_op                    = 1'b1;
+        end
+      e_dcache_op_fsw, e_dcache_op_fsd:
+        begin
+          decoded_cast_o.store_op                    = 1'b1;
+          decoded_cast_o.float_op                    = 1'b1;
+        end
       e_dcache_op_fencei:
        begin
         decoded_cast_o.fencei_op                     = 1'b1;
@@ -143,11 +153,13 @@ module bp_be_dcache_decoder
 
     // Size decoding
     unique case (dcache_pkt.opcode)
-      e_dcache_op_ld, e_dcache_op_lrd, e_dcache_op_sd, e_dcache_op_scd:
+      e_dcache_op_ld, e_dcache_op_lrd, e_dcache_op_sd, e_dcache_op_scd
+      ,e_dcache_op_fld, e_dcache_op_fsd:
        begin
         decoded_cast_o.double_op                = 1'b1;
        end
-      e_dcache_op_lw, e_dcache_op_lwu, e_dcache_op_lrw, e_dcache_op_sw, e_dcache_op_scw:
+      e_dcache_op_lw, e_dcache_op_lwu, e_dcache_op_lrw, e_dcache_op_sw, e_dcache_op_scw
+      ,e_dcache_op_flw, e_dcache_op_fsw:
        begin
         decoded_cast_o.word_op                  = 1'b1;
        end

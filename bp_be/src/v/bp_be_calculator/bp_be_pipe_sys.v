@@ -26,6 +26,7 @@ module bp_be_pipe_sys
    , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp     = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
+   , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    )
   (input                                  clk_i
    , input                                reset_i
@@ -47,8 +48,10 @@ module bp_be_pipe_sys
 
    , output logic                         miss_v_o
    , output logic                         exc_v_o
-   , output logic [dword_width_p-1:0]     data_o
+   , output logic [dpath_width_p-1:0]     data_o
 
+   , input [wb_pkt_width_lp-1:0]          iwb_pkt_i
+   , input [wb_pkt_width_lp-1:0]          fwb_pkt_i
    , input [commit_pkt_width_lp-1:0]      commit_pkt_i
    , output [trap_pkt_width_lp-1:0]       trap_pkt_o
 
@@ -59,6 +62,8 @@ module bp_be_pipe_sys
    , input                                external_irq_i
 
    , output [trans_info_width_lp-1:0]     trans_info_o
+   , output rv64_frm_e                    frm_dyn_o
+   , output                               fpu_en_o
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -72,12 +77,15 @@ module bp_be_pipe_sys
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_commit_pkt_s commit_pkt;
   bp_be_trap_pkt_s trap_pkt;
+  bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_trans_info_s trans_info;
 
   assign ptw_miss_pkt_o = ptw_miss_pkt;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
   assign commit_pkt = commit_pkt_i;
   assign trap_pkt_o = trap_pkt;
+  assign iwb_pkt = iwb_pkt_i;
+  assign fwb_pkt = fwb_pkt_i;
   assign trans_info_o = trans_info;
 
   assign reservation = reservation_i;
@@ -168,6 +176,7 @@ module bp_be_pipe_sys
   wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_fill_pkt.vaddr : exception_vaddr_i;
   wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
 
+  logic [dword_width_p-1:0] csr_data_lo;
   bp_be_csr
    #(.bp_params_p(bp_params_p))
     csr
@@ -178,9 +187,11 @@ module bp_be_pipe_sys
 
      ,.csr_cmd_i(csr_cmd_lo)
      ,.csr_cmd_v_i(csr_cmd_v_lo & ~kill_ex3_i)
-     ,.csr_data_o(data_o)
+     ,.csr_data_o(csr_data_lo)
 
      ,.instret_i(commit_pkt.instret)
+     ,.fflags_acc_i(iwb_pkt.fflags_acc | fwb_pkt.fflags_acc)
+     ,.frf_w_v_i(fwb_pkt.rd_w_v)
 
      ,.exception_v_i(exception_v_li)
      ,.exception_pc_i(exception_pc_li)
@@ -196,8 +207,11 @@ module bp_be_pipe_sys
 
      ,.trap_pkt_o(trap_pkt)
      ,.trans_info_o(trans_info)
+     ,.frm_dyn_o(frm_dyn_o)
+     ,.fpu_en_o(fpu_en_o)
      );
 
+  assign data_o           = csr_data_lo;
   assign exc_v_o          = trap_pkt.exception;
   assign miss_v_o         = trap_pkt.rollback;
 
