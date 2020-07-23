@@ -345,7 +345,7 @@ module bp_mem_to_dram
 
   // resp async FIFO
   // Cannot accept data when sending read requests
-  assign resp_afifo_deq_li = resp_afifo_v_lo & ~reorder_alloc_yumi_li;
+  assign resp_afifo_deq_li = ~reset_i & ~dram_reset_i & resp_afifo_v_lo & ~reorder_alloc_yumi_li;
 
   // ID -> address CAM
   assign cam_w_v_li = reorder_alloc_yumi_li

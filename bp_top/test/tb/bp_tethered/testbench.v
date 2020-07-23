@@ -37,8 +37,9 @@ module testbench
    , parameter cosim_cfg_file_p            = "prog.cfg"
    , parameter cosim_instr_p               = 0
    , parameter warmup_instr_p              = 0
-
+   , parameter dram_fixed_latency_p        = 0
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
+   , parameter mem_cap_in_bytes_p = 2**28
    )
   (input clk_i
    , input reset_i
@@ -105,6 +106,8 @@ wrapper
 bp_mem
  #(.bp_params_p(bp_params_p)
    ,.mem_offset_p(mem_offset_p)
+   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+   ,.dram_fixed_latency_p(dram_fixed_latency_p)
    )
  mem
   (.clk_i(clk_i)
