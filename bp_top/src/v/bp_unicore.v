@@ -15,6 +15,11 @@ module bp_unicore
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p) 
    `declare_bp_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem)
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   , localparam flit_width_lp = 64
+   , localparam cid_width_lp = `BSG_SAFE_CLOG2(5)
+   , localparam cord_width_lp = 1
+   , localparam len_width_lp = `BSG_SAFE_CLOG2(3)
+   , localparam link_width_lp = `bsg_ready_and_link_sif_width(flit_width_lp)
    )
   (  input                                               clk_i
    , input                                             reset_i
@@ -96,6 +101,11 @@ module bp_unicore
   logic [2:0] proc_cmd_v_lo, proc_cmd_ready_li;
   bp_uce_mem_msg_s [2:0] proc_resp_li;
   logic [2:0] proc_resp_v_li, proc_resp_yumi_lo;
+
+  bp_uce_mem_msg_s [4:0] cmd_lo;
+  logic [4:0] cmd_v_lo, cmd_yumi_li;
+  bp_uce_mem_msg_s [4:0] resp_li;
+  logic [4:0] resp_v_li, resp_ready_lo;
 
   bp_uce_mem_msg_s cfg_cmd_li;
   logic cfg_cmd_v_li, cfg_cmd_ready_lo;
@@ -345,113 +355,212 @@ module bp_unicore
   assign io_resp_v_o = proc_resp_v_li[2];
   assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
 
-  // Command/response FIFOs for timing and helpfulness
-  bp_uce_mem_msg_s [2:0] cmd_fifo_lo;
-  logic [2:0] cmd_fifo_v_lo, cmd_fifo_yumi_li;
+  `declare_bp_mem_wormhole_packet_s(flit_width_lp, cord_width_lp, len_width_lp, cid_width_lp, uce_mem_msg_width_lp-uce_mem_data_width_lp, uce_mem_data_width_lp, bp_cmd_resp_wormhole_packet_s);
+
+  // proc side port
+  // 2:io 1:d-cache 0:i-cache
+  bp_cmd_resp_wormhole_packet_s [2:0] proc_cmd_packet_lo, proc_resp_packet_li;
+  bp_cmd_resp_wormhole_packet_s [4:0] cmd_packet_li, resp_packet_lo;
   
-  bp_uce_mem_msg_s [2:0] resp_fifo_li;
-  logic [2:0] resp_fifo_v_li, resp_fifo_ready_lo;
+  logic [2:0][link_width_lp-1:0] proc_cmd_link_lo, proc_resp_link_li;
+  logic [4:0][link_width_lp-1:0] cmd_link_li, resp_link_lo;
+  logic [link_width_lp-1:0] resp_concentrated_link_li, cmd_concentrated_link_lo;
+  // Wormhole links for UCE side, including icache_cmd/resp, dcache_cmd/resp, io_cmd_i, io_resp_o
+  for (genvar i = 0; i < 2; i++)
+    begin : uce
+      // Generate CID based on the address in the header
+      wire [3:0] device_cmd_li = proc_cmd_lo[i].header.addr[20+:4];
+      wire is_other_domain     = (proc_cmd_lo[i].header.addr[paddr_width_p-1-:io_noc_did_width_p] != 0);
+      wire local_cmd_li        = (proc_cmd_lo[i].header.addr < dram_base_addr_gp);
+      wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
+      wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
+      wire is_io_cmd           = (local_cmd_li & (device_cmd_li inside {boot_dev_gp, host_dev_gp})) | is_other_domain;
+      wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
+      wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_cache_cmd;
+      
+      wire [cid_width_lp-1:0] dst_cid;
+      always_comb
+        begin
+          if (is_cfg_cmd) dst_cid = cid_width_lp'(4);
+          else if (is_clint_cmd) dst_cid = cid_width_lp'(3);
+          else if (is_io_cmd) dst_cid = cid_width_lp'(2);
+          else if (is_cache_cmd) dst_cid = cid_width_lp'(1);
+          else dst_cid = cid_width_lp'(0);
+        end
 
-  for (genvar i = 0; i < 3; i++)
-    begin : fifo
-      bsg_two_fifo
-       #(.width_p($bits(bp_uce_mem_msg_s)))
-       cmd_fifo
+      // Encode mem_cmds to wormhole packets
+      bp_me_wormhole_packet_encode_mem_cmd
+       #(.bp_params_p(bp_params_p)
+       ,.flit_width_p(flit_width_lp)
+       ,.cord_width_p(cord_width_lp)
+       ,.cid_width_p(cid_width_lp)
+       ,.len_width_p(len_width_lp)
+       )
+       cmd_packet_encode
+        (.mem_cmd_i(proc_cmd_lo[i])
+
+        ,.src_cord_i('0)
+        ,.src_cid_i(cid_width_lp'(i))
+        ,.dst_cord_i('0)
+        ,.dst_cid_i(dst_cid)
+
+        ,.packet_o(proc_cmd_packet_lo[i])
+        );
+
+      bsg_wormhole_router_adapter
+       #(.max_payload_width_p(uce_mem_msg_width_lp)
+       ,.len_width_p()
+       ,.cord_width_p()
+       ,.flit_width_p()
+       )
+       uce_adapter
         (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+        ,.reset_i(reset_r)
 
-         ,.data_i(proc_cmd_lo[i])
-         ,.v_i(proc_cmd_v_lo[i])
-         ,.ready_o(proc_cmd_ready_li[i])
+        ,.packet_i(proc_cmd_packet_lo[i])
+        ,.v_i(proc_cmd_v_lo[i])
+        ,.ready_o(proc_cmd_ready_li[i])
 
-         ,.data_o(cmd_fifo_lo[i])
-         ,.v_o(cmd_fifo_v_lo[i])
-         ,.yumi_i(cmd_fifo_yumi_li[i])
-         );
+        ,.link_i(proc_resp_link_li[i])
+        ,.link_o(proc_cmd_link_lo[i])
 
-      bsg_two_fifo
-       #(.width_p($bits(bp_uce_mem_msg_s)))
-       resp_fifo
+        ,.packet_o(proc_resp_packet_li[i])
+        ,.v_o(proc_resp_v_li[i])
+        ,.yumi_i(proc_resp_yumi_lo[i])
+        );
+      // Decode the response packet
+      assign proc_resp_li = {proc_resp_packet_li[i].data, proc_resp_packet_li[i].msg};
+    end 
+
+  // Wormhole Concentrator for UCE side
+  bsg_wormhole_concentrator
+   #(.flit_width_p(flit_width_lp)
+   ,.len_width_p(len_width_lp)
+   ,.cid_width_p(cid_width_lp)
+   ,.cord_width_p(cord_width_lp)
+   ,.num_in_p(3)
+   )
+   uce_concentrator
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.links_i(proc_cmd_link_lo)
+    ,.links_o(proc_resp_link_li)
+
+    ,.concentrated_link_i(resp_concentrated_link_li)
+    ,.concentrated_link_o(cmd_concentrated_link_lo)
+    );
+
+  // Wormhole Concentrator for mem side
+  bsg_wormhole_concentrator
+   #(.flit_width_p(flit_width_lp)
+   ,.len_width_p(len_width_lp)
+   ,.cid_width_p(cid_width_lp)
+   ,.cord_width_p(cord_width_lp)
+   ,.num_in_p(5)
+   )
+   mem_concentrator
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.links_i(resp_link_lo)
+    ,.links_o(cmd_link_li)
+
+    ,.concentrated_link_i(cmd_concentrated_link_lo)
+    ,.concentrated_link_o(resp_concentrated_link_li)
+    );
+
+  // Wormhole links for mem side, including io, clint, cfg, loopback, L2 cache
+  for (genvar i = 0; i < 5; i++)
+    begin : mem
+      wire [cid_width_lp-1:0] dst_cid = resp_li[i].header.payload.lce_id;
+      // Encode mem_respss to wormhole packets
+      bp_me_wormhole_packet_encode_mem_resp
+       #(.bp_params_p (bp_params_p)
+       ,.flit_width_p(flit_width_lp)
+       ,.cord_width_p(cord_width_lp)
+       ,.cid_width_p(cid_width_lp)
+       ,.len_width_p(len_width_lp)
+       )
+       resp_packet_encode
+        (.mem_resp_i(resp_li[i])
+
+        ,.src_cord_i('0)
+        ,.src_cid_i(cid_width_lp'(i))
+        ,.dst_cord_i('0)
+        ,.dst_cid_i(dst_cid)
+
+        ,.packet_o(resp_packet_lo[i])
+        );
+
+      bsg_wormhole_router_adapter
+      #(.max_payload_width_p(uce_mem_msg_width_lp) 
+        ,.len_width_p(len_width_lp)
+        ,.cord_width_p(cord_width_lp)
+        ,.flit_width_p(flit_width_lp)
+        )
+      mem_adapter
         (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+        ,.reset_i(reset_r)
 
-         ,.data_i(resp_fifo_li[i])
-         ,.v_i(resp_fifo_v_li[i])
-         ,.ready_o(resp_fifo_ready_lo[i])
+        ,.packet_i(resp_packet_lo[i])
+        ,.v_i(resp_v_li[i])
+        ,.ready_o(resp_ready_lo[i])
 
-         ,.data_o(proc_resp_li[i])
-         ,.v_o(proc_resp_v_li[i])
-         ,.yumi_i(proc_resp_yumi_lo[i])
-         );
-    end
+        ,.link_i(cmd_link_li)
+        ,.link_o(resp_link_lo)
 
-  // Command arbitration logic
-  // This is suboptimal for performance, because a blocked I/O channel will put backpressure on the
-  //   cache.
-  wire cmd_arb_ready_li = &{cfg_cmd_ready_lo, clint_cmd_ready_lo, io_cmd_ready_i, cache_cmd_ready_lo, loopback_cmd_ready_lo};
-  bsg_arb_fixed
-   #(.inputs_p(3), .lo_to_hi_p(0))
-   cmd_arbiter
-    (.ready_i(cmd_arb_ready_li)
-     ,.reqs_i(cmd_fifo_v_lo)
-     ,.grants_o(cmd_fifo_yumi_li)
-     );
+        ,.packet_o(cmd_packet_li[i])
+        ,.v_o(cmd_v_lo[i])
+        ,.yumi_i(cmd_yumi_li[i])
+        );
 
-  bp_uce_mem_msg_s cmd_fifo_selected_lo;
-  bsg_mux_one_hot
-   #(.width_p($bits(bp_uce_mem_msg_s)), .els_p(3))
-   cmd_select
-    (.data_i(cmd_fifo_lo)
-     ,.sel_one_hot_i(cmd_fifo_yumi_li)
-     ,.data_o(cmd_fifo_selected_lo)
-     );
-  assign {loopback_cmd_li, cache_cmd_li, io_cmd_o, clint_cmd_li, cfg_cmd_li} = {5{cmd_fifo_selected_lo}};
-
-  // Response arbitration logic
-  // UCEs may send two commands as part of a writeback routine. Responses can come back in
-  //   arbitrary orders, especially when considering CLINT or I/O responses
-  // This is also suboptimal. Theoretically, we could dequeue into each fifo at once, but this
-  //   would require more complex arbitration logic
-  wire resp_arb_ready_li = &resp_fifo_ready_lo;
-  bsg_arb_fixed
-   #(.inputs_p(5), .lo_to_hi_p(0))
-   resp_arbiter
-    (.ready_i(resp_arb_ready_li)
-     ,.reqs_i({loopback_resp_v_lo, cache_resp_v_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo})
-     ,.grants_o({loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
-     );
+      // Decode the packet
+      assign cmd_lo[i] = {cmd_packet_li[i].data, cmd_packet_li[i].msg};
+    end 
     
-  for (genvar i = 0; i < 3; i++)
-    begin : resp_match
-      bp_uce_mem_msg_s resp_fifo_selected_li;
-      bsg_mux_one_hot
-       #(.width_p($bits(bp_uce_mem_msg_s)), .els_p(5))
-       resp_select
-        (.data_i({loopback_resp_lo, cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
-         ,.sel_one_hot_i({loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
-         ,.data_o(resp_fifo_selected_li)
-         );
-      wire resp_selected_v_li = |{loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li};
-
-      assign resp_fifo_v_li[i] = resp_selected_v_li & (resp_fifo_selected_li.header.payload.lce_id == i);
-      assign resp_fifo_li[i] = resp_fifo_selected_li;
-    end
-
-  /* TODO: Extract local memory map to module */
-  wire local_cmd_li        = (cmd_fifo_selected_lo.header.addr < dram_base_addr_gp);
-  wire [3:0] device_cmd_li = cmd_fifo_selected_lo.header.addr[20+:4];
-  wire is_other_domain     = (cmd_fifo_selected_lo.header.addr[paddr_width_p-1-:io_noc_did_width_p] != 0);
-  wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
-  wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
-  wire is_io_cmd           = (local_cmd_li & (device_cmd_li inside {boot_dev_gp, host_dev_gp})) | is_other_domain;
-  wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
-  wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_cache_cmd;
-
-  assign cfg_cmd_v_li      = is_cfg_cmd   & |cmd_fifo_yumi_li;
-  assign clint_cmd_v_li    = is_clint_cmd & |cmd_fifo_yumi_li;
-  assign io_cmd_v_o        = is_io_cmd    & |cmd_fifo_yumi_li;
-  assign cache_cmd_v_li    = is_cache_cmd & |cmd_fifo_yumi_li;
-  assign loopback_cmd_v_li = is_loopback_cmd & |cmd_fifo_yumi_li;
+  // Connect the adapters to the moudules at the mem side 
+  // 4: cfg 3: clint 2: io 1: cache 0: loopback
+  // CMDS
+  assign cfg_cmd_li     = cmd_lo[4];
+  assign cfg_cmd_v_li   = cmd_v_lo[4];
+  assign cmd_yumi_li[4] = cfg_cmd_v_li & cfg_cmd_ready_lo;
+  
+  assign clint_cmd_li   = cmd_lo[3];
+  assign clint_cmd_v_li = cmd_v_lo[3];
+  assign cmd_yumi_li[3] = clint_cmd_v_li & clint_cmd_ready_lo;
+  
+  assign io_cmd_o       = cce_mem_msg_width_lp'(cmd_lo[2]);
+  assign io_cmd_v_o     = cmd_v_lo[2];
+  assign cmd_yumi_li[2] = io_cmd_v_o & io_cmd_ready_i;
+  
+  assign cache_cmd_li   = cmd_lo[1];
+  assign cache_cmd_v_li = cmd_v_lo[1];
+  assign cmd_yumi_li[1] = cache_cmd_v_li & cache_cmd_ready_lo;
+  
+  assign loopback_cmd_li   = cmd_lo[0];
+  assign loopback_cmd_v_li = cmd_v_lo[0];
+  assign cmd_yumi_li[0]    = loopback_cmd_v_li & loopback_cmd_ready_lo;
+  // RESPS
+  assign resp_li[4]       = cfg_resp_lo;
+  assign resp_v_li[4]     = cfg_resp_v_lo;
+  assign cfg_resp_yumi_li = cfg_resp_v_lo & resp_ready_lo[4];
+  
+  assign resp_li[3]         = clint_resp_lo;
+  assign resp_v_li[3]       = clint_resp_v_lo;
+  assign clint_resp_yumi_li = clint_resp_v_lo & resp_ready_lo[3];
+  
+  assign resp_li[2]     = io_resp_i[0+:uce_mem_msg_width_lp];
+  assign resp_v_li[2]   = io_resp_v_i;
+  assign io_resp_yumi_o = io_resp_v_i & resp_ready_lo[2];
+  
+  assign resp_li[1]         = cache_resp_lo;
+  assign resp_v_li[1]       = cache_resp_v_lo;
+  assign cache_resp_yumi_li = cache_resp_v_lo & resp_ready_lo[1];
+  
+  assign resp_li[0]            = loopback_resp_lo;
+  assign resp_v_li[0]          = loopback_resp_v_lo;
+  assign loopback_resp_yumi_li = loopback_resp_v_lo & resp_ready_lo[0];
 
   bp_cce_loopback
    #(.bp_params_p(bp_params_p))
