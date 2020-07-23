@@ -31,7 +31,6 @@ module testbench
    , parameter dcache_trace_p              = 0
    , parameter vm_trace_p                  = 0
    , parameter core_profile_p              = 0
-   , parameter preload_mem_p               = 0
    , parameter checkpoint_p                = 0
    , parameter cosim_p                     = 0
    , parameter cosim_memsize_p             = 256
@@ -40,18 +39,7 @@ module testbench
    , parameter warmup_instr_p              = 0
 
    , parameter mem_zero_p         = 1
-   , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**28
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-
-   // Number of elements in the fake BlackParrot memory
-   , parameter use_max_latency_p      = 0
-   , parameter use_random_latency_p   = 0
-   , parameter use_dramsim2_latency_p = 0
-
-   , parameter max_latency_p = 15
-
-   , parameter dram_capacity_p           = 16384
    )
   (input clk_i
    , input reset_i
@@ -117,18 +105,8 @@ wrapper
 
 bp_mem
  #(.bp_params_p(bp_params_p)
-   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-   ,.mem_load_p(preload_mem_p)
    ,.mem_zero_p(mem_zero_p)
-   ,.mem_file_p(mem_file_p)
    ,.mem_offset_p(mem_offset_p)
-
-   ,.use_max_latency_p(use_max_latency_p)
-   ,.use_random_latency_p(use_random_latency_p)
-   ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
-   ,.max_latency_p(max_latency_p)
-
-   ,.dram_capacity_p(dram_capacity_p)
    )
  mem
   (.clk_i(clk_i)

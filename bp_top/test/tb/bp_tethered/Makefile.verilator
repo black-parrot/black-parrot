@@ -43,9 +43,7 @@ $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 
 NBF_INPUTS = $(NCPUS)
 NBF_INPUTS += cce_ucode.mem
-ifeq ($(PRELOAD_MEM_P), 0)
-	NBF_INPUTS += --mem=prog.mem
-endif
+NBF_INPUTS += --mem=prog.mem
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@

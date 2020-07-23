@@ -11,7 +11,6 @@ export DCACHE_TRACE_P ?= 0
 export NPC_TRACE_P    ?= 0
 export VM_TRACE_P     ?= 0
 export CORE_PROFILE_P ?= 0
-export PRELOAD_MEM_P  ?= 0
 export CHECKPOINT_P   ?= 0
 export COSIM_P        ?= 0
 
@@ -19,10 +18,6 @@ export SAMPLE_MEMSIZE   ?= 256
 export SAMPLE_START_P   ?= 0
 export SAMPLE_WARMUP_P  ?= 0
 export SAMPLE_INSTR_P   ?= 0
-
-export USE_DRAMSIM2_LATENCY_P ?= 0
-export USE_MAX_LATENCY_P      ?= 1
-export USE_RANDOM_LATENCY_P   ?= 0
 
 export BP_SIM_CLK_PERIOD ?= 10
 
@@ -37,15 +32,11 @@ export TB_PARAMS  = \
                     -pvalue+npc_trace_p=$(NPC_TRACE_P) \
                     -pvalue+vm_trace_p=$(VM_TRACE_P) \
                     -pvalue+core_profile_p=$(CORE_PROFILE_P) \
-                    -pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
                     -pvalue+checkpoint_p=$(CHECKPOINT_P) \
                     -pvalue+cosim_p=$(COSIM_P) \
                     -pvalue+cosim_memsize_p=$(SAMPLE_MEMSIZE) \
                     -pvalue+cosim_instr_p=$(SAMPLE_INSTR_P) \
-                    -pvalue+warmup_instr_p=$(SAMPLE_WARMUP_P) \
-                    -pvalue+use_dramsim2_latency_p=$(USE_DRAMSIM2_LATENCY_P) \
-                    -pvalue+use_max_latency_p=$(USE_MAX_LATENCY_P) \
-                    -pvalue+use_random_latency_p=$(USE_RANDOM_LATENCY_P)
+                    -pvalue+warmup_instr_p=$(SAMPLE_WARMUP_P)
 
 export DUT_DEFINES = 
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD)

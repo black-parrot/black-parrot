@@ -15,19 +15,8 @@ module bp_mem
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-   , parameter mem_cap_in_bytes_p = "inv"
    , parameter mem_zero_p         = 0
-   , parameter mem_load_p         = 0
-   , parameter mem_file_p         = "inv"
    , parameter mem_offset_p       = 0
-
-   , parameter use_max_latency_p      = 0
-   , parameter use_random_latency_p   = 0
-   , parameter use_dramsim2_latency_p = 0
-
-   , parameter max_latency_p = "inv"
-
-   , parameter dram_capacity_p           = "inv"
 
    , localparam num_block_bytes_lp = cce_block_width_p / 8
    )
@@ -110,7 +99,7 @@ bsg_nonsynth_dramsim3
     ,.config_p(`dram_pkg::config_p)
     ,.masked_p(1)
     ,.debug_p(0)
-    ,.init_mem_p(1)
+    ,.init_mem_p(mem_zero_p)
    )
   dram
    (.clk_i(dram_clk)

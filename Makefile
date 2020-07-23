@@ -58,7 +58,6 @@ $(TARGET_DIRS):
 #
 libs: $(TARGET_DIRS)
 	$(MAKE) basejump
-	$(MAKE) dramsim2
 	$(MAKE) dromajo
 
 tools: | $(TARGET_DIRS)
