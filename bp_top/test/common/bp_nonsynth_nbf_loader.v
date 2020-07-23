@@ -15,7 +15,7 @@ module bp_nonsynth_nbf_loader
 
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
   ,parameter nbf_filename_p = "prog.nbf"
   ,parameter nbf_opcode_width_p = 8
@@ -75,7 +75,7 @@ module bp_nonsynth_nbf_loader
   } bp_nbf_s;
 
   // bp_cce packet
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   bp_cce_mem_msg_s io_cmd, io_resp;
   
   assign io_cmd_o = io_cmd;
@@ -95,7 +95,7 @@ module bp_nonsynth_nbf_loader
     io_cmd.header.payload = '0;
     io_cmd.header.payload.lce_id = lce_id_i;
     io_cmd.header.addr = curr_nbf.addr;
-    io_cmd.header.msg_type = e_cce_mem_uc_wr;
+    io_cmd.header.msg_type = e_mem_msg_uc_wr;
     
     case (curr_nbf.opcode)
       2: io_cmd.header.size = e_mem_msg_size_4;
