@@ -212,7 +212,7 @@ module bp_mem_to_dram
   assign dma_fifo_v_li = mem_cmd_v_i & mem_cmd_ready_o;
   assign dma_fifo_yumi_li =  req_afifo_enq_li & (word_cnt_r == (block_size_in_words_lp-1));
   assign dma_fifo_write_not_read_li = (mem_cmd_li.header.msg_type inside {e_cce_mem_uc_wr, e_cce_mem_wr});
-  assign dma_fifo_ch_addr_li = mem_cmd_li.header.addr - dram_base_p;
+  assign dma_fifo_ch_addr_li = (mem_cmd_li.header.addr - dram_base_p) & ({channel_addr_width_p{1'b1}} << byte_offset_width_lp);
   assign req_afifo_enq_li = dma_fifo_v_lo & ~req_afifo_full_lo;
   assign word_addr_lo = dma_fifo_ch_addr_lo + (word_cnt_r << byte_offset_width_lp);
 
