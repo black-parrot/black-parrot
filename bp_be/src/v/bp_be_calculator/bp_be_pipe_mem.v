@@ -161,17 +161,14 @@ module bp_be_pipe_mem
   wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
 
   // Calculate cache access eaddr
-  wire [rv64_reg_data_width_gp-1:0] offset = decode.offset_sel ? '0 : imm;
-  wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + offset;
+  wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
 
   logic eaddr_fault, eaddr_fault_r;
 
   bsg_dff_reset
-  #(.width_p(1)
-   ,.reset_val_p(0)
-  )
+   #(.width_p(1))
     eaddr_fault_reg
-     (.clk_i(clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.data_i((decode.pipe_mem_early_v | decode.pipe_mem_final_v) & eaddr_fault)

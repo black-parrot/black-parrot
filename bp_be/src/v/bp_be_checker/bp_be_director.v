@@ -120,7 +120,7 @@ module bp_be_director
      );
 
   assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
-  assign poison_isd_o = npc_mismatch_v;
+  assign poison_isd_o = npc_mismatch_v | flush_o;
 
   // Last operation was branch. Was it successful? Let's find out
   // TODO: I think this is wrong, may send extra attaboys
@@ -165,7 +165,7 @@ module bp_be_director
         state_r <= state_n;
       end
 
-  assign suppress_iss_o = (state_n == e_fence) & fe_cmd_fence_i;
+  assign suppress_iss_o = (state_r == e_fence) & fe_cmd_fence_i;
 
   // Flush on FE cmds which are not attaboys.  Also don't flush the entire pipeline on a mispredict.
   always_comb

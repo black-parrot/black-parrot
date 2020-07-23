@@ -53,7 +53,6 @@ module bp_be_pipe_int
 
   wire [dword_width_p-1:0] src1  = decode.src1_sel  ? pc_sext_li : rs1;
   wire [dword_width_p-1:0] src2  = decode.src2_sel  ? imm        : rs2;
-  wire [dword_width_p-1:0] baddr = decode.baddr_sel ? src1       : pc_sext_li;
 
   wire [rv64_shamt_width_gp-1:0] shamt = decode.opw_v ? src2[0+:rv64_shamtw_width_gp] : src2[0+:rv64_shamt_width_gp];
 

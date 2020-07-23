@@ -88,8 +88,6 @@ module bp_be_instr_decoder
       decode.src1_sel      = bp_be_src1_e'('0);
       decode.src2_sel      = bp_be_src2_e'('0);
       decode.baddr_sel     = bp_be_baddr_e'('0);
-      decode.result_sel    = bp_be_result_e'('0);
-      decode.offset_sel    = e_offset_is_imm;
 
       imm                  = '0;
       illegal_instr        = '0;
@@ -134,7 +132,6 @@ module bp_be_instr_decoder
 
             decode.src1_sel   = e_src1_is_rs1;
             decode.src2_sel   = e_src2_is_rs2;
-            decode.result_sel = e_result_from_alu;
           end
         `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP :
           begin
@@ -156,7 +153,6 @@ module bp_be_instr_decoder
 
             decode.src1_sel   = e_src1_is_rs1;
             decode.src2_sel   = e_src2_is_imm;
-            decode.result_sel = e_result_from_alu;
           end
         `RV64_LUI_OP :
           begin
@@ -164,7 +160,6 @@ module bp_be_instr_decoder
             decode.irf_w_v    = 1'b1;
             decode.fu_op      = e_int_op_pass_src2;
             decode.src2_sel   = e_src2_is_imm;
-            decode.result_sel = e_result_from_alu;
           end
         `RV64_AUIPC_OP :
           begin
@@ -173,7 +168,6 @@ module bp_be_instr_decoder
             decode.fu_op      = e_int_op_add;
             decode.src1_sel   = e_src1_is_pc;
             decode.src2_sel   = e_src2_is_imm;
-            decode.result_sel = e_result_from_alu;
           end
         `RV64_JAL_OP :
           begin
@@ -550,7 +544,6 @@ module bp_be_instr_decoder
             decode.dcache_r_v = 1'b1;
             decode.dcache_w_v = 1'b1;
             decode.mem_v      = 1'b1;
-            decode.offset_sel = e_offset_is_zero;
             // Note: could do a more efficent decoding here by having atomic be a flag
             //   And having the op simply taken from funct3
             unique casez (instr)
@@ -628,6 +621,8 @@ module bp_be_instr_decoder
           imm = `rv64_signext_i_imm(instr);
         `RV64_SYSTEM_OP:
           imm = `rv64_signext_c_imm(instr);
+        `RV64_AMO_OP:
+          imm = '0;
         default: begin end
       endcase
     end

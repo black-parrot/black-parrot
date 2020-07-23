@@ -225,8 +225,6 @@ typedef struct packed
   bp_be_src1_e                      src1_sel;
   bp_be_src2_e                      src2_sel;
   bp_be_baddr_e                     baddr_sel;
-  bp_be_offset_e                    offset_sel;
-  bp_be_result_e                    result_sel;
 
   logic                             itlb_miss;
   logic                             instr_access_fault;
