@@ -41,9 +41,7 @@ $(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
-NBF_INPUTS = $(NCPUS)
-NBF_INPUTS += cce_ucode.mem
-NBF_INPUTS += --mem=prog.mem
+NBF_INPUTS = --ncpus=$(NCPUS) --ucode=cce_ucode.mem --mem=prog.mem --skip_zeros
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
