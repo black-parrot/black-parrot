@@ -866,8 +866,37 @@ module bp_be_dcache
     ,.data_o(result_data)
   );
 
+  logic [3:0][dword_width_p-1:0] sigext_data;
+  for (genvar i = 0; i < 4; i++)
+    begin : alignment
+      localparam slice_width_lp = 8*(2**i);
+
+      logic [slice_width_lp-1:0] slice_data;
+      bsg_mux #(
+        .width_p(slice_width_lp)
+        ,.els_p(dword_width_p/slice_width_lp)
+      ) align_mux (
+        .data_i(result_data)
+        ,.sel_i(paddr_tv_r[i+:`BSG_MAX(1, 3-i)])
+        ,.data_o(slice_data)
+      );
+
+      wire sigext = decode_tv_r.signed_op & slice_data[slice_width_lp-1];
+      assign sigext_data[i] = {{(dword_width_p-slice_width_lp){sigext}}, slice_data};
+    end
+
+  logic [dword_width_p-1:0] final_data;
+  bsg_mux_one_hot #(
+    .width_p(dword_width_p)
+    ,.els_p(4)
+  ) byte_mux (
+    .data_i(sigext_data)
+    ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op, decode_tv_r.half_op, decode_tv_r.byte_op})
+    ,.data_o(final_data)
+  );
+
   assign early_data_o = (decode_tv_r.load_op | (sc_req & decode_tv_r.l2_op))
-    ? result_data
+    ? final_data
     : decode_tv_r.sc_op & ~sc_success;
 
   // DM stage
@@ -899,47 +928,18 @@ module bp_be_dcache
     end
   end
 
-  logic [3:0][dword_width_p-1:0] sigext_data;
-  for (genvar i = 0; i < 4; i++)
-    begin : alignment
-      localparam slice_width_lp = 8*(2**i);
-
-      logic [slice_width_lp-1:0] slice_data;
-      bsg_mux #(
-        .width_p(slice_width_lp)
-        ,.els_p(dword_width_p/slice_width_lp)
-      ) align_mux (
-        .data_i(data_dm_r)
-        ,.sel_i(byte_offset_dm_r[i+:`BSG_MAX(1, 3-i)])
-        ,.data_o(slice_data)
-      );
-
-      wire sigext = signed_op_dm_r & slice_data[slice_width_lp-1];
-      assign sigext_data[i] = {{(dword_width_p-slice_width_lp){sigext}}, slice_data};
-    end
-
-  logic [dword_width_p-1:0] final_int_data;
-  bsg_mux_one_hot #(
-    .width_p(dword_width_p)
-    ,.els_p(4)
-  ) byte_mux (
-    .data_i(sigext_data)
-    ,.sel_one_hot_i({double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r})
-    ,.data_o(final_int_data)
-  );
-
   bp_be_fp_reg_s final_float_data;
   bp_be_fp_to_rec
    #(.bp_params_p(bp_params_p))
    fp_to_rec
-    (.raw_i(word_op_dm_r ? sigext_data[2] : sigext_data[3])
+    (.raw_i(data_dm_r)
      ,.raw_sp_not_dp_i(word_op_dm_r)
 
      ,.rec_sp_not_dp_o(final_float_data.sp_not_dp)
      ,.rec_o(final_float_data.rec)
      );
 
-  assign final_data_o = float_op_dm_r ? final_float_data : final_int_data;
+  assign final_data_o = float_op_dm_r ? final_float_data : data_dm_r;
   assign final_v_o = v_dm_r;
 
   // ctrl logic

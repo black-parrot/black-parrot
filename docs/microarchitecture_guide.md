@@ -39,7 +39,7 @@ RISC-V instructions:
 - Memory Pipeline, executes 2/3-cycle D$ access instructions
   - The Memory Pipeline is capable of generating memory access and page fault exceptions
   - The Memory Pipeline also contains a hardware page table walker, used for both I$ and D$
-  - Double-word (64-bit) loads take 2 cycles, smaller operations take 3 cycles
+  - Integer loads and all stores take 2 cycles, float loads take 3 cycles
 - Floating-point Auxiliary Pipeline, executes 2-cycle floating point conversion operations
   - FMV, FCVT, FSGNJ, FMIN/FMAX, FCMP
   - Floating point values are stored in the register file in a 65-bit recoded double-precision format, along with a

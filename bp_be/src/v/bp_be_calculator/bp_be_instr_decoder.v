@@ -202,8 +202,7 @@ module bp_be_instr_decoder
           end
         `RV64_LOAD_OP :
           begin
-            decode.pipe_mem_early_v =  (instr inside {`RV64_LD});
-            decode.pipe_mem_final_v = ~(instr inside {`RV64_LD});
+            decode.pipe_mem_early_v = 1'b1;
             decode.irf_w_v    = 1'b1;
             decode.dcache_r_v = 1'b1;
             decode.mem_v      = 1'b1;
@@ -538,8 +537,7 @@ module bp_be_instr_decoder
 
         `RV64_AMO_OP:
           begin
-            // TODO: Can actual make early under certain conditions (dword ops, L2 uncached)
-            decode.pipe_mem_final_v = 1'b1;
+            decode.pipe_mem_early_v = 1'b1;
             decode.irf_w_v    = 1'b1;
             decode.dcache_r_v = 1'b1;
             decode.dcache_w_v = 1'b1;
