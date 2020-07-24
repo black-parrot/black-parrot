@@ -932,7 +932,7 @@ module bp_be_dcache
   bp_be_fp_to_rec
    #(.bp_params_p(bp_params_p))
    fp_to_rec
-    (.raw_i(data_dm_r)
+    (.raw_i(word_op_dm_r ? sigext_data[2] : sigext_data[3])
      ,.raw_sp_not_dp_i(word_op_dm_r)
 
      ,.rec_sp_not_dp_o(final_float_data.sp_not_dp)
