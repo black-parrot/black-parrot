@@ -64,6 +64,7 @@ bp_me_wormhole_packet_encode_mem_cmd
    ,.cord_width_p(cord_width_p)
    ,.cid_width_p(cid_width_p)
    ,.len_width_p(len_width_p)
+   ,.data_width_p(cce_block_width_p)
    )
  mem_cmd_encode
   (.mem_cmd_i(mem_cmd_cast_i)
@@ -80,6 +81,7 @@ bsg_wormhole_router_adapter
    ,.len_width_p(len_width_p)
    ,.cord_width_p(cord_width_p)
    ,.flit_width_p(flit_width_p)
+   ,.data_width_p(cce_block_width_p)
    )
  mem_adapter
   (.clk_i(clk_i)

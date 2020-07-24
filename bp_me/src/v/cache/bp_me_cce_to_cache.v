@@ -295,7 +295,7 @@ module bp_me_cce_to_cache
       end
       RESP_READY: begin
         is_resp_ready = 1'b1;
-        if (mem_cmd_v_lo)
+        if (mem_cmd_v_lo & cmd_state_r inside {READY, SEND})
           begin
             case (mem_cmd_lo.header.size)
               e_mem_msg_size_1

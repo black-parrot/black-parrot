@@ -16,9 +16,9 @@ module bp_unicore
    `declare_bp_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem)
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
    , localparam flit_width_lp = 64
-   , localparam cid_width_lp = `BSG_SAFE_CLOG2(5)
+   , localparam cid_width_lp = `BSG_SAFE_CLOG2(5) // 5 modules on the mem side
    , localparam cord_width_lp = 1
-   , localparam len_width_lp = `BSG_SAFE_CLOG2(3)
+   , localparam len_width_lp = `BSG_SAFE_CLOG2(10) // larger enough for fill_width = 512
    , localparam link_width_lp = `bsg_ready_and_link_sif_width(flit_width_lp)
    )
   (  input                                               clk_i
@@ -362,12 +362,14 @@ module bp_unicore
   bp_cmd_resp_wormhole_packet_s [2:0] proc_cmd_packet_lo, proc_resp_packet_li;
   bp_cmd_resp_wormhole_packet_s [4:0] cmd_packet_li, resp_packet_lo;
   
+  logic [2:0][cid_width_lp-1:0] cmd_dst_cid;
   logic [2:0][link_width_lp-1:0] proc_cmd_link_lo, proc_resp_link_li;
+  logic [4:0][cid_width_lp-1:0] resp_dst_cid;
   logic [4:0][link_width_lp-1:0] cmd_link_li, resp_link_lo;
   logic [link_width_lp-1:0] resp_concentrated_link_li, cmd_concentrated_link_lo;
   // Wormhole links for UCE side, including icache_cmd/resp, dcache_cmd/resp, io_cmd_i, io_resp_o
-  for (genvar i = 0; i < 2; i++)
-    begin : uce
+  for (genvar i = 0; i < 3; i++)
+    begin : proc_ports
       // Generate CID based on the address in the header
       wire [3:0] device_cmd_li = proc_cmd_lo[i].header.addr[20+:4];
       wire is_other_domain     = (proc_cmd_lo[i].header.addr[paddr_width_p-1-:io_noc_did_width_p] != 0);
@@ -378,14 +380,14 @@ module bp_unicore
       wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
       wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_cache_cmd;
       
-      wire [cid_width_lp-1:0] dst_cid;
+      
       always_comb
         begin
-          if (is_cfg_cmd) dst_cid = cid_width_lp'(4);
-          else if (is_clint_cmd) dst_cid = cid_width_lp'(3);
-          else if (is_io_cmd) dst_cid = cid_width_lp'(2);
-          else if (is_cache_cmd) dst_cid = cid_width_lp'(1);
-          else dst_cid = cid_width_lp'(0);
+          if (is_cfg_cmd) cmd_dst_cid[i] = cid_width_lp'(4);
+          else if (is_clint_cmd) cmd_dst_cid[i] = cid_width_lp'(3);
+          else if (is_io_cmd) cmd_dst_cid[i] = cid_width_lp'(2);
+          else if (is_cache_cmd) cmd_dst_cid[i] = cid_width_lp'(1);
+          else cmd_dst_cid[i] = cid_width_lp'(0);
         end
 
       // Encode mem_cmds to wormhole packets
@@ -395,6 +397,7 @@ module bp_unicore
        ,.cord_width_p(cord_width_lp)
        ,.cid_width_p(cid_width_lp)
        ,.len_width_p(len_width_lp)
+       ,.data_width_p(uce_mem_data_width_lp)
        )
        cmd_packet_encode
         (.mem_cmd_i(proc_cmd_lo[i])
@@ -402,20 +405,20 @@ module bp_unicore
         ,.src_cord_i('0)
         ,.src_cid_i(cid_width_lp'(i))
         ,.dst_cord_i('0)
-        ,.dst_cid_i(dst_cid)
+        ,.dst_cid_i(cmd_dst_cid[i])
 
         ,.packet_o(proc_cmd_packet_lo[i])
         );
 
       bsg_wormhole_router_adapter
-       #(.max_payload_width_p(uce_mem_msg_width_lp)
-       ,.len_width_p()
-       ,.cord_width_p()
-       ,.flit_width_p()
+       #(.max_payload_width_p($bits(bp_cmd_resp_wormhole_packet_s)-cord_width_lp-len_width_lp)
+       ,.len_width_p(len_width_lp)
+       ,.cord_width_p(cord_width_lp)
+       ,.flit_width_p(flit_width_lp)
        )
-       uce_adapter
+       proc_adapter
         (.clk_i(clk_i)
-        ,.reset_i(reset_r)
+        ,.reset_i(reset_i)
 
         ,.packet_i(proc_cmd_packet_lo[i])
         ,.v_i(proc_cmd_v_lo[i])
@@ -429,7 +432,7 @@ module bp_unicore
         ,.yumi_i(proc_resp_yumi_lo[i])
         );
       // Decode the response packet
-      assign proc_resp_li = {proc_resp_packet_li[i].data, proc_resp_packet_li[i].msg};
+      assign proc_resp_li[i] = {proc_resp_packet_li[i].data, proc_resp_packet_li[i].msg};
     end 
 
   // Wormhole Concentrator for UCE side
@@ -440,7 +443,7 @@ module bp_unicore
    ,.cord_width_p(cord_width_lp)
    ,.num_in_p(3)
    )
-   uce_concentrator
+   proc_concentrator
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
@@ -472,8 +475,8 @@ module bp_unicore
 
   // Wormhole links for mem side, including io, clint, cfg, loopback, L2 cache
   for (genvar i = 0; i < 5; i++)
-    begin : mem
-      wire [cid_width_lp-1:0] dst_cid = resp_li[i].header.payload.lce_id;
+    begin : mem_ports
+      assign resp_dst_cid[i] = resp_li[i].header.payload.lce_id;
       // Encode mem_respss to wormhole packets
       bp_me_wormhole_packet_encode_mem_resp
        #(.bp_params_p (bp_params_p)
@@ -481,6 +484,7 @@ module bp_unicore
        ,.cord_width_p(cord_width_lp)
        ,.cid_width_p(cid_width_lp)
        ,.len_width_p(len_width_lp)
+       ,.data_width_p(uce_mem_data_width_lp)
        )
        resp_packet_encode
         (.mem_resp_i(resp_li[i])
@@ -488,27 +492,27 @@ module bp_unicore
         ,.src_cord_i('0)
         ,.src_cid_i(cid_width_lp'(i))
         ,.dst_cord_i('0)
-        ,.dst_cid_i(dst_cid)
+        ,.dst_cid_i(resp_dst_cid[i])
 
         ,.packet_o(resp_packet_lo[i])
         );
 
       bsg_wormhole_router_adapter
-      #(.max_payload_width_p(uce_mem_msg_width_lp) 
+      #(.max_payload_width_p($bits(bp_cmd_resp_wormhole_packet_s)-cord_width_lp-len_width_lp) 
         ,.len_width_p(len_width_lp)
         ,.cord_width_p(cord_width_lp)
         ,.flit_width_p(flit_width_lp)
         )
       mem_adapter
         (.clk_i(clk_i)
-        ,.reset_i(reset_r)
+        ,.reset_i(reset_i)
 
         ,.packet_i(resp_packet_lo[i])
         ,.v_i(resp_v_li[i])
         ,.ready_o(resp_ready_lo[i])
 
-        ,.link_i(cmd_link_li)
-        ,.link_o(resp_link_lo)
+        ,.link_i(cmd_link_li[i])
+        ,.link_o(resp_link_lo[i])
 
         ,.packet_o(cmd_packet_li[i])
         ,.v_o(cmd_v_lo[i])

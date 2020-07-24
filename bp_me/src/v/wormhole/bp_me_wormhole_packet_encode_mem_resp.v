@@ -18,15 +18,16 @@ module bp_me_wormhole_packet_encode_mem_resp
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
     , parameter flit_width_p = "inv"
     , parameter cord_width_p = "inv"
     , parameter cid_width_p = "inv"
     , parameter len_width_p = "inv"
+    , parameter data_width_p = "inv"
 
+    `declare_bp_mem_if_widths(paddr_width_p, data_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
     , localparam mem_resp_packet_width_lp = 
-        `bp_mem_wormhole_packet_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p)
+        `bp_mem_wormhole_packet_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-data_width_p, data_width_p)
     )
    (input [cce_mem_msg_width_lp-1:0]        mem_resp_i
     , input [cord_width_p-1:0]              src_cord_i
@@ -36,8 +37,8 @@ module bp_me_wormhole_packet_encode_mem_resp
     , output [mem_resp_packet_width_lp-1:0] packet_o
     );
 
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
-  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p, bp_resp_wormhole_packet_s);
+  `declare_bp_mem_if(paddr_width_p, data_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-data_width_p, data_width_p, bp_resp_wormhole_packet_s);
 
   bp_cce_mem_msg_s mem_resp_cast_i;
   bp_resp_wormhole_packet_s packet_cast_o;
@@ -70,7 +71,7 @@ module bp_me_wormhole_packet_encode_mem_resp
     packet_cast_o = '0;
 
     packet_cast_o.data       = mem_resp_cast_i.data;
-    packet_cast_o.msg        = mem_resp_cast_i[0+:cce_mem_msg_width_lp-cce_block_width_p];
+    packet_cast_o.msg        = mem_resp_cast_i[0+:cce_mem_msg_width_lp-data_width_p];
     packet_cast_o.src_cord   = src_cord_i;
     packet_cast_o.src_cid    = src_cid_i;
 
