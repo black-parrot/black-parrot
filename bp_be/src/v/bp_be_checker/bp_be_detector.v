@@ -73,6 +73,7 @@ module bp_be_detector
   logic fence_haz_v, queue_haz_v, interrupt_haz_v, serial_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
   logic csr_haz_v;
+  logic long_haz_v;
   logic mem_in_pipe_v;
 
   always_comb
@@ -166,7 +167,13 @@ module bp_be_detector
                      | dep_status_li[2].fflags_w_v
                      );
 
-      control_haz_v = fence_haz_v | interrupt_haz_v | serial_haz_v | csr_haz_v;
+      long_haz_v = isd_status_cast_i.isd_long_v
+                   & (dep_status_li[0].instr_v
+                      | dep_status_li[1].instr_v
+                      | dep_status_li[2].instr_v
+                      );
+
+      control_haz_v = fence_haz_v | interrupt_haz_v | serial_haz_v | csr_haz_v | long_haz_v;
 
       // Combine all data hazard information
       // TODO: Parameterize away floating point data hazards without hardware support

@@ -129,6 +129,13 @@ module bp_be_scheduler
             `RV64_SFENCE_VMA: issue_pkt.fence_v  = 1'b1;
           endcase
 
+          casez (instr)
+            `RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
+            ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
+            ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D:
+              issue_pkt.long_v = 1'b1;
+          endcase
+
           // Decide whether to read from integer regfile (saves power)
           casez (instr.t.rtype.opcode)
             `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
@@ -285,6 +292,7 @@ module bp_be_scheduler
       isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
       isd_status.isd_csr_v    = issue_pkt_v_r & issue_pkt_r.csr_v;
       isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
+      isd_status.isd_long_v   = issue_pkt_v_r & issue_pkt_r.long_v;
       isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
       isd_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
       isd_status.isd_rs1_addr = issue_pkt_r.instr.t.rtype.rs1_addr;

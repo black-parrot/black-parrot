@@ -21,6 +21,7 @@
     rv64_instr_s                             instr;                                                \
     logic                                    csr_v;                                                \
     logic                                    mem_v;                                                \
+    logic                                    long_v;                                               \
     logic                                    fence_v;                                              \
     logic                                    irs1_v;                                               \
     logic                                    irs2_v;                                               \
@@ -103,6 +104,7 @@
     logic [branch_metadata_fwd_width_mp-1:0] isd_branch_metadata_fwd;                              \
     logic                                    isd_fence_v;                                          \
     logic                                    isd_mem_v;                                            \
+    logic                                    isd_long_v;                                           \
     logic                                    isd_csr_v;                                            \
     logic                                    isd_irs1_v;                                           \
     logic                                    isd_frs1_v;                                           \
@@ -209,7 +211,7 @@
    + $bits(bp_fe_exception_code_e)                                                                 \
    + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
-   + 8                                                                                             \
+   + 9                                                                                             \
    )
 
 `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
@@ -231,7 +233,7 @@
   ($bits(rv64_fflags_s) + dpath_width_p)
 
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 8 + 3*rv64_reg_addr_width_gp)
+  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 9 + 3*rv64_reg_addr_width_gp)
 
 `define bp_be_dep_status_width \
   (14 + rv64_reg_addr_width_gp)

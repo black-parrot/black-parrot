@@ -85,16 +85,19 @@ module bp_be_pipe_long
      ,.quotient_o(quotient_lo)
      ,.remainder_o(remainder_lo)
      ,.v_o(idiv_v_lo)
-     ,.yumi_i(iwb_v_o)
+     // Immediately ack, since the data stays safe until the next incoming division
+     ,.yumi_i(idiv_v_lo)
      );
 
   logic idiv_safe_r;
-  bsg_dff_chain
-   #(.width_p(1), .num_stages_p(2))
-   idiv_safe_chain
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   idiv_safe_reg
     (.clk_i(clk_i)
+     ,.reset_i(reset_i | flush_i)
 
-     ,.data_i(idiv_v_lo)
+     ,.set_i(idiv_v_lo)
+     ,.clear_i(iwb_v_o)
      ,.data_o(idiv_safe_r)
      );
 
@@ -210,7 +213,7 @@ module bp_be_pipe_long
    #(.width_p(1))
    fdiv_safe_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_i | flush_i)
 
      ,.set_i(fdivsqrt_v_lo)
      ,.clear_i(fwb_v_o)
@@ -226,7 +229,7 @@ module bp_be_pipe_long
    wb_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i | flush_i)
-     ,.en_i(v_i)
+     ,.en_i(v_i | (iwb_v_o | fwb_v_o))
 
      ,.data_i({v_i, instr.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
      ,.data_o({rd_w_v_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
@@ -248,53 +251,20 @@ module bp_be_pipe_long
     else
       rd_data_lo = remainder_lo;
 
-  enum logic [3:0] {e_reset, e_ready, e_wait1, e_wait2, e_wait3, e_wait4, e_busy, e_done} state_n, state_r;
-
-  // We delay for several cycles so as to make sure that the long latency operation commits
-  // This is somewhat inefficent. Instead we should have an ack come from commit 
-  wire is_reset = (state_r == e_reset);
-  wire is_ready = (state_r == e_ready);
-  wire is_wait1 = (state_r == e_wait1);
-  wire is_wait2 = (state_r == e_wait2);
-  wire is_wait3 = (state_r == e_wait3);
-  wire is_wait4 = (state_r == e_wait4);
-  wire is_busy  = (state_r == e_busy);
-  wire is_done  = (state_r == e_done);
-
-  always_comb
-    case (state_r)
-      e_reset: state_n = e_ready;
-      e_ready: state_n = v_i ? e_wait1 : e_ready;
-      e_wait1: state_n = e_wait2;
-      e_wait2: state_n = e_wait3;
-      e_wait3: state_n = e_wait4;
-      e_wait4: state_n = e_busy;
-      e_busy : state_n = (idiv_safe_r | fdivsqrt_safe_r) ? e_done : e_busy;
-      e_done : state_n = (idiv_ready_lo & fdiv_ready_lo) ? e_ready : e_done;
-      default: state_n = e_reset;
-    endcase
-
-  // synopsys sync_set_reset "reset_i"
-  always_ff @(posedge clk_i)
-    if (reset_i)
-      state_r <= e_reset;
-    else
-      state_r <= state_n;
-
   // Actually a busy signal
-  assign ready_o = is_ready & ~v_i;
+  assign ready_o = ~rd_w_v_r & ~v_i;
 
   assign iwb_pkt.rd_w_v     = rd_w_v_r;
   assign iwb_pkt.rd_addr    = rd_addr_r;
   assign iwb_pkt.rd_data    = rd_data_lo;
   assign iwb_pkt.fflags_acc = '0;
-  assign iwb_v_o = (state_n == e_done) & rd_w_v_r & idiv_safe_r;
+  assign iwb_v_o = idiv_safe_r & rd_w_v_r;
 
   assign fwb_pkt.rd_w_v     = rd_w_v_r;
   assign fwb_pkt.rd_addr    = rd_addr_r;
   assign fwb_pkt.rd_data    = fdivsqrt_result;
   assign fwb_pkt.fflags_acc = fdivsqrt_fflags;
-  assign fwb_v_o = (state_n == e_done) & rd_w_v_r & fdivsqrt_safe_r;
+  assign fwb_v_o = fdivsqrt_safe_r &  rd_w_v_r;
 
 endmodule
 
