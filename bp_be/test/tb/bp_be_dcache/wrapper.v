@@ -25,20 +25,12 @@ module wrapper
 
    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam block_size_in_words_lp=dcache_assoc_p
-   , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
-   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
-   , localparam data_mem_mask_width_lp=(bank_width_lp>>3)
-   , localparam bypass_data_width_lp = (dword_width_p >> 3)
-   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp>>3)
-   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-   , localparam index_width_lp=`BSG_SAFE_CLOG2(dcache_sets_p)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
 
    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
 
-   , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dword_width_p)
+   , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dpath_width_p)
    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
    )
    ( input                                             clk_i
@@ -65,7 +57,7 @@ module wrapper
    , input                                             mem_cmd_ready_i
    );
 
-   `declare_bp_be_dcache_pkt_s(page_offset_width_p, dword_width_p);
+   `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
 
    // Cache to Rolly FIFO signals
    logic dcache_ready_lo;
@@ -147,9 +139,9 @@ module wrapper
    assign poison_li = dcache_v_rr & ~v_o;
    assign rollback_li = poison_li;
 
-   logic [dword_width_p-1:0] early_data_lo;
+   logic [dpath_width_p-1:0] early_data_lo;
    logic early_v_lo;
-   logic [dword_width_p-1:0] final_data_lo;
+   logic [dpath_width_p-1:0] final_data_lo;
    logic final_v_lo;
 
    bp_be_dcache
