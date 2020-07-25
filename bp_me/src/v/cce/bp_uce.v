@@ -283,6 +283,9 @@ module bp_uce
   logic [fill_cnt_width_lp-1:0] mem_cmd_cnt;
   logic [block_size_in_fill_lp-1:0] fill_index_shift;
   logic [bank_offset_width_lp-1:0] bank_index;
+  logic [fill_cnt_width_lp-1:0] mem_cmd_init_slice, mem_cmd_init_slice_r;
+  logic [paddr_width_p-1:0] critical_addr;
+
   if (fill_size_in_bank_lp == 1)
     begin
       assign bank_index =  mem_cmd_cnt;
@@ -295,14 +298,15 @@ module bp_uce
     end
 
   logic fill_up, fill_done, mem_cmd_up, mem_cmd_done;
-  if (fill_width_p == block_width_p)
-    begin
+  if (fill_width_p == block_width_p) 
+    begin : fill_equals_block
       assign mem_cmd_cnt = 1'b0;
       assign fill_done = 1'b1;
       assign mem_cmd_done = 1'b1;
+      assign critical_addr = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
     end
-  else
-    begin
+  else 
+    begin : fill_less_than_block
       logic [fill_cnt_width_lp-1:0] fill_cnt;
       bsg_counter_clear_up
        #(.max_val_p(block_size_in_fill_lp-1)
@@ -319,20 +323,25 @@ module bp_uce
         );
       assign fill_done = (fill_cnt == block_size_in_fill_lp-1);
 
-      bsg_counter_clear_up
+      bsg_counter_set_en
        #(.max_val_p(block_size_in_fill_lp-1)
-        ,.init_val_p(0)
-        ,.disable_overflow_warning_p(1))
+        ,.reset_val_p(0))
        mem_cmd_counter
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
 
-        ,.clear_i('0)
-        ,.up_i(mem_cmd_up)
-
+        ,.set_i(cache_req_v_i)
+        ,.en_i(mem_cmd_up)
+        ,.val_i(mem_cmd_init_slice)
         ,.count_o(mem_cmd_cnt)
         );
-      assign mem_cmd_done = (mem_cmd_cnt == block_size_in_fill_lp-1);
+      
+      assign mem_cmd_init_slice = cache_req_cast_i.addr[block_offset_width_lp-1-:fill_cnt_width_lp]; 
+      assign mem_cmd_init_slice_r = cache_req_r.addr[block_offset_width_lp-1-:fill_cnt_width_lp]; 
+      assign mem_cmd_done = (mem_cmd_init_slice_r == fill_cnt_width_lp'(0))
+                            ? cache_req_v_r & (mem_cmd_cnt == ((1'b1 << fill_cnt_width_lp)-1))
+                            : cache_req_v_r & (mem_cmd_cnt == (mem_cmd_init_slice_r-1));
+      assign critical_addr = {cache_req_r.addr[paddr_width_p-1:(block_offset_width_lp-fill_cnt_width_lp)], (block_offset_width_lp-fill_cnt_width_lp)'(0)};
     end
 
   logic [index_width_lp-1:0] index_cnt;
@@ -572,8 +581,8 @@ module bp_uce
         e_send_critical:
           if (miss_v_li)
             begin
-              mem_cmd_cast_o.header.msg_type       = e_mem_msg_rd;
-              mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
+              mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
+              mem_cmd_cast_o.header.addr           = critical_addr;
               mem_cmd_cast_o.header.size           = block_msg_size_lp;
               mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
