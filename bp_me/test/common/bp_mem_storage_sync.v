@@ -3,10 +3,7 @@ module bp_mem_storage_sync
  #(parameter   data_width_p       = "inv"
    , parameter addr_width_p       = "inv"
    , parameter mem_cap_in_bytes_p = "inv"
-   , parameter mem_load_p         = 0
    , parameter mem_zero_p         = 0
-   , parameter mem_file_p         = "inv"
-   , parameter mem_offset_p       = "inv"
 
    , localparam num_data_bytes_lp   = data_width_p / 8 
    , localparam mem_cap_in_words_lp = mem_cap_in_bytes_p / num_data_bytes_lp
@@ -38,40 +35,23 @@ always_comb
 
 assign data_li = data_i;
 
-import "DPI-C" context function string rebase_hexfile(input string memfile_name
-                                                      , input longint dram_base);
-
-string hex_file;
-initial
-  begin
-    if (mem_load_p)
-      begin
-        for (integer i = 0; i < mem_cap_in_bytes_p; i++)
-          mem[i] = '0;
-        hex_file = rebase_hexfile(mem_file_p, mem_offset_p);
-        $readmemh(hex_file, mem);     
-      end
-    else if (mem_zero_p)
-      begin
-        for (integer i = 0; i < mem_cap_in_bytes_p; i++)
-          mem[i] = '0;
-      end
+initial begin
+  if (mem_zero_p) begin
+    for (integer i = 0; i < mem_cap_in_bytes_p; i++)
+       mem[i] = '0;
   end
+end
 
-always @(posedge clk_i)
-  begin
-    if (v_i & w_i)
-      // byte-maskable writes
-      begin
-        for (integer i = 0; i < num_data_bytes_lp; i++)
-          begin
-            if (write_mask_i[i])
-              mem[addr_i+i] <= data_li[i*8+:8];
-          end
-      end
-    if (v_i & ~w_i)
-      addr_r <= addr_i;
+always @(posedge clk_i) begin
+  if (v_i & w_i) begin
+    for (integer i = 0; i < num_data_bytes_lp; i++) begin
+      if (write_mask_i[i])
+        mem[addr_i+i] <= data_li[i*8+:8];
+    end
   end
+  if (v_i & ~w_i)
+    addr_r <= addr_i;
+end
 
 assign data_o = data_lo;
 

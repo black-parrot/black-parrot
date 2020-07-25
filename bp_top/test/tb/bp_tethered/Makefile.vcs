@@ -38,15 +38,7 @@ $(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
-$(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
-	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(@D)/dram_ch.ini
-	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(@D)/dram_sys.ini
-
-NBF_INPUTS = $(NCPUS)
-NBF_INPUTS += cce_ucode.mem
-ifeq ($(PRELOAD_MEM_P), 0)
-	NBF_INPUTS += --mem=prog.mem
-endif
+NBF_INPUTS = --ncpus=$(NCPUS) --ucode=cce_ucode.mem --mem=prog.mem --skip_zeros
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
@@ -54,12 +46,10 @@ $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)
 
 SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.dump)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
-SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)
 
 sim_sample.v: build.v
 sim_sample.v: $(SIM_DIR)/run_samplev

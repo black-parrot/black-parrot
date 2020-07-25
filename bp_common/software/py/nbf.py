@@ -25,17 +25,19 @@ cfg_core_offset = 24
 class NBF:
 
   # constructor
-  def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file):
+  def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file, skip_zeros):
 
     # input parameters
     self.ncpus = ncpus
     self.ucode_file = ucode_file
     self.mem_file = mem_file
     self.checkpoint_file = checkpoint_file
+    self.skip_zeros = skip_zeros
     self.addr_width = 40
     self.block_size = 8
 
-    self.ucode = self.read_binary(self.ucode_file)
+    if self.ucode_file:
+      self.ucode = self.read_binary(self.ucode_file)
 
     # process riscv
     if self.mem_file:
@@ -135,7 +137,8 @@ class NBF:
     for k in sorted(self.dram_data.keys()):
       addr = k
       opcode = self.get_opcode(addr)
-      self.print_nbf(opcode, addr, self.dram_data[k])
+      if not(self.skip_zeros and self.dram_data[k] == 0):
+        self.print_nbf(opcode, addr, self.dram_data[k])
 
   # print finish
   # when spmd loader sees, this it stops sending packets.
@@ -156,10 +159,11 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_reset, 0)
 
     # Write CCE ucode
-    for core in range(self.ncpus):
-      for i in range(len(self.ucode)):
-        full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
-        self.print_nbf(3, full_addr, self.ucode[i])
+    if self.ucode_file:
+      for core in range(self.ncpus):
+        for i in range(len(self.ucode)):
+          full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
+          self.print_nbf(3, full_addr, self.ucode[i])
 
     # Write I$, D$, and CCE modes
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
@@ -189,12 +193,13 @@ class NBF:
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser()
-  parser.add_argument('ncpus', type=int, help='number of BlackParrot cores')
-  parser.add_argument('ucode_file', metavar='ucode.mem', help='CCE ucode file')
-  parser.add_argument("--mem", dest='mem_file', metavar='prog.mem', help="DRAM verilog file")
-  parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help="checkpoint nbf file")
+  parser.add_argument('--ncpus', type=int, default=1, help='number of BlackParrot cores')
+  parser.add_argument('--ucode', dest='ucode_file', metavar='ucode.mem', help='CCE ucode file')
+  parser.add_argument('--mem', dest='mem_file', metavar='prog.mem', help='DRAM verilog file')
+  parser.add_argument('--checkpoint', dest='checkpoint_file', metavar='sample.nbf', help='checkpoint nbf file')
+  parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
 
   args = parser.parse_args()
 
-  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file)
+  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file, args.skip_zeros)
   converter.dump()

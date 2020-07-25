@@ -24,7 +24,7 @@ VV_OPTS += -o simsc
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module $(TOP_MODULE) -f flist.vcs config.vlt
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++11 
 BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
-BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim -ldromajo_cosim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim3 -ldromajo_cosim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
 VERILATOR_OPTIONS =
 
