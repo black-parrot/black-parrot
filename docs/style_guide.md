@@ -85,9 +85,9 @@ This document is intended to provide more rigid structure for coding style and f
 -Space between keywords and operators.
 
     begin : // this
-    if(x)   // this
+    if (x)  // this
     begin:  // not this
-    if (x)  // not this
+    if(x)  // not this
 
 - Per BSG SystemVerilog Style Guide, all generate blocks should be labeled.
 - Lines should not exceed 100 (soft limit) or 120 (hard limit) columns

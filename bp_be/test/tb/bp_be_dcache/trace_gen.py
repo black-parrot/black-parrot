@@ -11,6 +11,7 @@ class TraceGen:
     self.ptag_width_p = ptag_width_p
     self.page_offset_width_p = page_offset_width_p
     self.opcode_width_p = opcode_width_p
+    # TODO: Update formatting operators to use data width
     self.data_width_p = data_width_p
     self.packet_len = ptag_width_p + page_offset_width_p + opcode_width_p + data_width_p + 1 # A bit is added to denote cached/uncached accesses
 
@@ -57,7 +58,7 @@ class TraceGen:
           raise ValueError("unexpected size for unsigned load.")
 
     packet += format(page_offset, "0"+str(self.page_offset_width_p)+"b") + "_"
-    packet += format(0, "064b") + "\n" 
+    packet += format(0, "066b") + "\n" 
     return packet
 
   # send store
@@ -86,7 +87,7 @@ class TraceGen:
       raise ValueError("unexpected size for store.")
     
     packet += format(page_offset, "0" + str(self.page_offset_width_p) + "b") + "_"
-    packet += format(data, "064b") + "\n"
+    packet += format(data, "066b") + "\n"
     return packet
 
   # receive data
@@ -94,7 +95,7 @@ class TraceGen:
   def recv_data(self, data):
     packet = "0010_"
     bin_data = np.binary_repr(data, 64)
-    packet += "0" + "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.page_offset_width_p) + "_" + bin_data + "\n"
+    packet += "0" + "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.page_offset_width_p) + "_" + "00" + bin_data + "\n"
     return packet
 
   # wait for a number of cycles

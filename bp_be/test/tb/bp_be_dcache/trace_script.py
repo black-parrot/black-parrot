@@ -5,7 +5,7 @@ from trace_gen import TraceGen
 
 def main():
 
-  tracer = TraceGen(28, 12, 6, 64)
+  tracer = TraceGen(28, 12, 6, 66)
   filepath = sys.argv[1]
 
   # Store/Load double word test
