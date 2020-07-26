@@ -528,13 +528,7 @@ bind bp_be_top
        ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
        );
 
-  // TODO: There should be a param about whether to instantiate the uncore, rather than a list of
-  //   unicore configs
-  if (!((bp_params_p == e_bp_unicore_cfg)
-        || (bp_params_p == e_bp_unicore_no_l2_cfg)
-        || (bp_params_p == e_bp_unicore_l1_small_cfg)
-        || (bp_params_p == e_bp_unicore_l1_medium_cfg)
-        ))
+  if (multicore_p)
     begin
       bind bp_cce_wrapper
         bp_me_nonsynth_cce_tracer
