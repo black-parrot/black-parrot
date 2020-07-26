@@ -22,23 +22,23 @@ else ifeq ($(CFG), e_bp_twelve_core_cfg)
   NUM_LCE_P=24
 else ifeq ($(CFG), e_bp_sexta_core_cfg)
   NUM_LCE_P=32
-else ifeq ($(CFG), e_bp_half_core_ucode_cce_cfg)
+else ifeq ($(CFG), e_bp_half_core_cce_ucode_cfg)
   NUM_LCE_P=1
-else ifeq ($(CFG), e_bp_single_core_ucode_cce_cfg)
+else ifeq ($(CFG), e_bp_single_core_cce_ucode_cfg)
   NUM_LCE_P=2
-else ifeq ($(CFG), e_bp_dual_core_ucode_cce_cfg)
+else ifeq ($(CFG), e_bp_dual_core_cce_ucode_cfg)
   NUM_LCE_P=4
-else ifeq ($(CFG), e_bp_tri_core_ucode_cce_cfg)
+else ifeq ($(CFG), e_bp_tri_core_cce_ucode_cfg)
   NUM_LCE_P=6
-else ifeq ($(CFG), e_bp_quad_core_ucode_cce_cfg)
+else ifeq ($(CFG), e_bp_quad_core_cce_ucode_cfg)
   NUM_LCE_P=8
-else ifeq ($(CFG), e_bp_hexa_core_ucode_cce_cfg)
+else ifeq ($(CFG), e_bp_hexa_core_cce_ucode_cfg)
   NUM_LCE_P=12
-else ifeq ($(CFG), e_bp_oct_core_ucode_cce_cfg)
+else ifeq ($(CFG), e_bp_oct_core_cce_ucode_cfg)
   NUM_LCE_P=16
-else ifeq ($(CFG), e_bp_twelve_core_ucode_cce_cfg)
+else ifeq ($(CFG), e_bp_twelve_core_cce_ucode_cfg)
   NUM_LCE_P=24
-else ifeq ($(CFG), e_bp_sexta_core_ucode_cce_cfg)
+else ifeq ($(CFG), e_bp_sexta_core_cce_ucode_cfg)
   NUM_LCE_P=32
 endif
 

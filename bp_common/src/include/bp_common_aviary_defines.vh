@@ -118,7 +118,7 @@ typedef struct packed
   integer acache_block_width;
   integer acache_fill_width;
   integer cce_pc_width;
-  integer ucode_cce;
+  integer cce_ucode;
 
   integer l2_en;
   integer l2_sets;
@@ -191,8 +191,8 @@ typedef struct packed
   , localparam num_cacc_p  = cac_x_dim_p * cac_y_dim_p                                             \
   , localparam num_sacc_p  = sac_x_dim_p * sac_y_dim_p                                             \
                                                                                                    \
-  , localparam num_cce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_ucode_cce_cfg)) ? 1 : num_core_p + num_l2e_p    \
-  , localparam num_lce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_ucode_cce_cfg)) ? 1 : 2*num_core_p + num_cacc_p \
+  , localparam num_cce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_cce_ucode_cfg)) ? 1 : num_core_p + num_l2e_p    \
+  , localparam num_lce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_cce_ucode_cfg)) ? 1 : 2*num_core_p + num_cacc_p \
                                                                                                    \
   , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                            \
   , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))                \
@@ -246,7 +246,7 @@ typedef struct packed
   , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                      \
   , localparam cce_way_groups_p           = `BSG_MAX(dcache_sets_p, icache_sets_p)                 \
   , localparam cce_instr_width_p          = 34                                                     \
-  , localparam ucode_cce_p                = proc_param_lp.ucode_cce                                \
+  , localparam cce_ucode_p                = proc_param_lp.cce_ucode                                \
                                                                                                    \
   , localparam l2_en_p    = proc_param_lp.l2_en                                                    \
   , localparam l2_sets_p  = proc_param_lp.l2_sets                                                  \
