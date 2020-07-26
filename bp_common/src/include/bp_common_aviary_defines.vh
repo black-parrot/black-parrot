@@ -7,169 +7,173 @@
 `ifndef BP_COMMON_AVIARY_DEFINES_VH
 `define BP_COMMON_AVIARY_DEFINES_VH
 
-// Thoughts: 
-// Hardcoding hartid and lceid width limits us to 8 cores for our standard configurations,
-//   but would allow the hierachical flow to reuse a single BP core for both dual-core and
-//   oct-core configurations.
-// typedef logic[2:0] bp_mhartid_t;
-// typedef logic[3:0] bp_lce_id_t;
+  // Thoughts: 
+  // Hardcoding hartid and lceid width limits us to 8 cores for our standard configurations,
+  //   but would allow the hierachical flow to reuse a single BP core for both dual-core and
+  //   oct-core configurations.
+  // typedef logic[2:0] bp_mhartid_t;
+  // typedef logic[3:0] bp_lce_id_t;
+  
+  typedef enum logic {
+    e_lce_mode_uncached
+    ,e_lce_mode_normal
+  } bp_lce_mode_e;
+  
+  // CCE Operating Mode
+  // e_cce_mode_uncached: CCE supports uncached requests only
+  // e_cce_mode_normal: CCE operates as a microcoded engine, features depend on microcode provided
+  typedef enum logic
+  {
+    e_cce_mode_uncached
+    ,e_cce_mode_normal
+  } bp_cce_mode_e;
+  
+  // Place of atomic operation
+  typedef enum logic [1:0] {
+    e_none
+    , e_l1
+    , e_l2
+  } bp_atomic_op_e;
+  
+  typedef enum logic [15:0]{
+    e_sacc_vdp
+  } bp_sacc_type_e;
+  
+  typedef enum logic [15:0]{
+    e_cacc_vdp
+  } bp_cacc_type_e;
+  
+  
+  `define declare_bp_cfg_bus_s(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
+    typedef struct packed                                                                            \
+    {                                                                                                \
+      logic                                    freeze;                                               \
+      logic [core_id_width_mp-1:0]             core_id;                                              \
+      logic [lce_id_width_mp-1:0]              icache_id;                                            \
+      bp_lce_mode_e                            icache_mode;                                          \
+      logic [lce_id_width_mp-1:0]              dcache_id;                                            \
+      bp_lce_mode_e                            dcache_mode;                                          \
+      logic [cce_id_width_mp-1:0]              cce_id;                                               \
+      bp_cce_mode_e                            cce_mode;                                             \
+      logic [7:0]                              domain;                                               \
+      logic                                    sac;                                                  \
+    }  bp_cfg_bus_s
+  
+  `define bp_cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
+    (1                                \
+     + core_id_width_mp               \
+     + lce_id_width_mp                \
+     + $bits(bp_lce_mode_e)           \
+     + lce_id_width_mp                \
+     + $bits(bp_lce_mode_e)           \
+     + cce_id_width_mp                \
+     + $bits(bp_cce_mode_e)           \
+     + 8                              \
+     + 1                              \
+     )
+  
+  
+  typedef struct packed
+  {
+    integer multicore;
 
-typedef enum logic {
-  e_lce_mode_uncached
-  ,e_lce_mode_normal
-} bp_lce_mode_e;
-
-// CCE Operating Mode
-// e_cce_mode_uncached: CCE supports uncached requests only
-// e_cce_mode_normal: CCE operates as a microcoded engine, features depend on microcode provided
-typedef enum logic
-{
-  e_cce_mode_uncached
-  ,e_cce_mode_normal
-} bp_cce_mode_e;
-
-// Place of atomic operation
-typedef enum logic [1:0] {
-  e_none
-  , e_l1
-  , e_l2
-} bp_atomic_op_e;
-
-typedef enum logic [15:0]{
-  e_sacc_vdp
-} bp_sacc_type_e;
-
-typedef enum logic [15:0]{
-  e_cacc_vdp
-} bp_cacc_type_e;
-
-
-`define declare_bp_cfg_bus_s(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
-  typedef struct packed                                                                            \
-  {                                                                                                \
-    logic                                    freeze;                                               \
-    logic [core_id_width_mp-1:0]             core_id;                                              \
-    logic [lce_id_width_mp-1:0]              icache_id;                                            \
-    bp_lce_mode_e                            icache_mode;                                          \
-    logic [lce_id_width_mp-1:0]              dcache_id;                                            \
-    bp_lce_mode_e                            dcache_mode;                                          \
-    logic [cce_id_width_mp-1:0]              cce_id;                                               \
-    bp_cce_mode_e                            cce_mode;                                             \
-    logic [7:0]                              domain;                                               \
-    logic                                    sac;                                                  \
-  }  bp_cfg_bus_s
-
-`define bp_cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
-  (1                                \
-   + core_id_width_mp               \
-   + lce_id_width_mp                \
-   + $bits(bp_lce_mode_e)           \
-   + lce_id_width_mp                \
-   + $bits(bp_lce_mode_e)           \
-   + cce_id_width_mp                \
-   + $bits(bp_cce_mode_e)           \
-   + 8                              \
-   + 1                              \
-   )
-
-
-typedef struct packed
-{
-  integer cc_x_dim;
-  integer cc_y_dim;
-
-  integer ic_y_dim;
-  integer mc_y_dim;
-  integer cac_x_dim;
-  integer sac_x_dim;
-  integer cacc_type;
-  integer sacc_type;
-
-  integer vaddr_width;
-  integer paddr_width;
-  integer asid_width;
-
-  integer branch_metadata_fwd_width;
-  integer btb_tag_width;
-  integer btb_idx_width;
-  integer bht_idx_width;
-  integer ghist_width;
-
-  integer itlb_els;
-  integer dtlb_els;
-
-  integer lr_sc;
-  integer amo_swap;
-  integer amo_fetch_logic;
-  integer amo_fetch_arithmetic;
-
-  integer l1_writethrough;
-  integer l1_coherent;
-  integer dcache_sets;
-  integer dcache_assoc;
-  integer dcache_block_width;
-  integer dcache_fill_width;
-  integer icache_sets;
-  integer icache_assoc;
-  integer icache_block_width;
-  integer icache_fill_width;
-  integer acache_sets;
-  integer acache_assoc;
-  integer acache_block_width;
-  integer acache_fill_width;
-  integer cce_pc_width;
-  integer cce_ucode;
-
-  integer l2_en;
-  integer l2_sets;
-  integer l2_assoc;
-  integer l2_outstanding_reqs;
-
-  integer fe_queue_fifo_els;
-  integer fe_cmd_fifo_els;
-
-  integer async_coh_clk;
-  integer coh_noc_max_credits;
-  integer coh_noc_flit_width;
-  integer coh_noc_cid_width;
-  integer coh_noc_len_width;
-
-  integer async_mem_clk;
-  integer mem_noc_max_credits;
-  integer mem_noc_flit_width;
-  integer mem_noc_cid_width;
-  integer mem_noc_len_width;
-
-  integer async_io_clk;
-  integer io_noc_max_credits;
-  integer io_noc_flit_width;
-  integer io_noc_did_width;
-  integer io_noc_cid_width;
-  integer io_noc_len_width;
-
-}  bp_proc_param_s;
-
-// For now, we have a fixed address map
-typedef struct packed
-{
-  logic [2:0]  did;
-  logic [36:0] addr;
-}  bp_global_addr_s;
-
-localparam cfg_cce_width_p  = 7;
-localparam cfg_dev_width_p  = 4;
-localparam cfg_addr_width_p = 20;
-localparam cfg_data_width_p = 64;
-typedef struct packed
-{
-  logic [8:0]  nonlocal;
-  logic [6:0]  cce;
-  logic [3:0]  dev;
-  logic [19:0] addr;
-}  bp_local_addr_s;
+    integer cc_x_dim;
+    integer cc_y_dim;
+  
+    integer ic_y_dim;
+    integer mc_y_dim;
+    integer cac_x_dim;
+    integer sac_x_dim;
+    integer cacc_type;
+    integer sacc_type;
+  
+    integer vaddr_width;
+    integer paddr_width;
+    integer asid_width;
+  
+    integer branch_metadata_fwd_width;
+    integer btb_tag_width;
+    integer btb_idx_width;
+    integer bht_idx_width;
+    integer ghist_width;
+  
+    integer itlb_els;
+    integer dtlb_els;
+  
+    integer lr_sc;
+    integer amo_swap;
+    integer amo_fetch_logic;
+    integer amo_fetch_arithmetic;
+  
+    integer l1_writethrough;
+    integer l1_coherent;
+    integer dcache_sets;
+    integer dcache_assoc;
+    integer dcache_block_width;
+    integer dcache_fill_width;
+    integer icache_sets;
+    integer icache_assoc;
+    integer icache_block_width;
+    integer icache_fill_width;
+    integer acache_sets;
+    integer acache_assoc;
+    integer acache_block_width;
+    integer acache_fill_width;
+    integer cce_pc_width;
+    integer cce_ucode;
+  
+    integer l2_en;
+    integer l2_sets;
+    integer l2_assoc;
+    integer l2_outstanding_reqs;
+  
+    integer fe_queue_fifo_els;
+    integer fe_cmd_fifo_els;
+  
+    integer async_coh_clk;
+    integer coh_noc_max_credits;
+    integer coh_noc_flit_width;
+    integer coh_noc_cid_width;
+    integer coh_noc_len_width;
+  
+    integer async_mem_clk;
+    integer mem_noc_max_credits;
+    integer mem_noc_flit_width;
+    integer mem_noc_cid_width;
+    integer mem_noc_len_width;
+  
+    integer async_io_clk;
+    integer io_noc_max_credits;
+    integer io_noc_flit_width;
+    integer io_noc_did_width;
+    integer io_noc_cid_width;
+    integer io_noc_len_width;
+  
+  }  bp_proc_param_s;
+  
+  // For now, we have a fixed address map
+  typedef struct packed
+  {
+    logic [2:0]  did;
+    logic [36:0] addr;
+  }  bp_global_addr_s;
+  
+  localparam cfg_cce_width_p  = 7;
+  localparam cfg_dev_width_p  = 4;
+  localparam cfg_addr_width_p = 20;
+  localparam cfg_data_width_p = 64;
+  typedef struct packed
+  {
+    logic [8:0]  nonlocal;
+    logic [6:0]  cce;
+    logic [3:0]  dev;
+    logic [19:0] addr;
+  }  bp_local_addr_s;
 
 `define declare_bp_proc_params(bp_params_e_mp) \
   , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]                         \
+                                                                                                   \
+  , localparam multicore_p = proc_param_lp.multicore                                               \
                                                                                                    \
   , localparam cc_x_dim_p  = proc_param_lp.cc_x_dim                                                \
   , localparam cc_y_dim_p  = proc_param_lp.cc_y_dim                                                \
@@ -313,5 +317,88 @@ typedef struct packed
                                                                                                    \
   , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_p                     \
   , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_p                     \
+
+  `define bp_aviary_parameter_override(parameter_mp, override_cfg_mp, default_cfg_mp) \
+    parameter_mp: (override_cfg_mp.``parameter_mp`` == "inv") \
+                  ? default_cfg_mp.``parameter_mp``           \
+                  : override_cfg_mp.``parameter_mp``          \
+
+  `define bp_aviary_derive_cfg(cfg_name_mp, override_cfg_mp, default_cfg_mp) \
+    localparam bp_proc_param_s cfg_name_mp =                                                         \
+      '{`bp_aviary_parameter_override(multicore, override_cfg_mp, default_cfg_mp)                    \
+        ,`bp_aviary_parameter_override(cc_x_dim, override_cfg_mp, default_cfg_mp)                    \
+        ,`bp_aviary_parameter_override(cc_y_dim, override_cfg_mp, default_cfg_mp)                    \
+        ,`bp_aviary_parameter_override(ic_y_dim, override_cfg_mp, default_cfg_mp)                    \
+        ,`bp_aviary_parameter_override(mc_y_dim, override_cfg_mp, default_cfg_mp)                    \
+        ,`bp_aviary_parameter_override(cac_x_dim, override_cfg_mp, default_cfg_mp)                   \
+        ,`bp_aviary_parameter_override(sac_x_dim, override_cfg_mp, default_cfg_mp)                   \
+        ,`bp_aviary_parameter_override(cacc_type, override_cfg_mp, default_cfg_mp)                   \
+        ,`bp_aviary_parameter_override(sacc_type, override_cfg_mp, default_cfg_mp)                   \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(vaddr_width, override_cfg_mp, default_cfg_mp)                 \
+        ,`bp_aviary_parameter_override(paddr_width, override_cfg_mp, default_cfg_mp)                 \
+        ,`bp_aviary_parameter_override(asid_width, override_cfg_mp, default_cfg_mp)                  \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(fe_queue_fifo_els, override_cfg_mp, default_cfg_mp)           \
+        ,`bp_aviary_parameter_override(fe_cmd_fifo_els, override_cfg_mp, default_cfg_mp)             \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(branch_metadata_fwd_width, override_cfg_mp, default_cfg_mp)   \
+        ,`bp_aviary_parameter_override(btb_tag_width, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(btb_idx_width, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(bht_idx_width, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(ghist_width, override_cfg_mp, default_cfg_mp)                 \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(itlb_els, override_cfg_mp, default_cfg_mp)                    \
+        ,`bp_aviary_parameter_override(dtlb_els, override_cfg_mp, default_cfg_mp)                    \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(lr_sc, override_cfg_mp, default_cfg_mp)                       \
+        ,`bp_aviary_parameter_override(amo_swap, override_cfg_mp, default_cfg_mp)                    \
+        ,`bp_aviary_parameter_override(amo_fetch_logic, override_cfg_mp, default_cfg_mp)             \
+        ,`bp_aviary_parameter_override(amo_fetch_arithmetic, override_cfg_mp, default_cfg_mp)        \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(l1_writethrough, override_cfg_mp, default_cfg_mp)             \
+        ,`bp_aviary_parameter_override(l1_coherent, override_cfg_mp, default_cfg_mp)                 \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(icache_sets, override_cfg_mp, default_cfg_mp)                 \
+        ,`bp_aviary_parameter_override(icache_assoc, override_cfg_mp, default_cfg_mp)                \
+        ,`bp_aviary_parameter_override(icache_block_width, override_cfg_mp, default_cfg_mp)          \
+        ,`bp_aviary_parameter_override(icache_fill_width, override_cfg_mp, default_cfg_mp)           \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(dcache_sets, override_cfg_mp, default_cfg_mp)                 \
+        ,`bp_aviary_parameter_override(dcache_assoc, override_cfg_mp, default_cfg_mp)                \
+        ,`bp_aviary_parameter_override(dcache_block_width, override_cfg_mp, default_cfg_mp)          \
+        ,`bp_aviary_parameter_override(dcache_fill_width, override_cfg_mp, default_cfg_mp)           \
+        ,`bp_aviary_parameter_override(acache_sets, override_cfg_mp, default_cfg_mp)                 \
+        ,`bp_aviary_parameter_override(acache_assoc, override_cfg_mp, default_cfg_mp)                \
+        ,`bp_aviary_parameter_override(acache_block_width, override_cfg_mp, default_cfg_mp)          \
+        ,`bp_aviary_parameter_override(acache_fill_width, override_cfg_mp, default_cfg_mp)           \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(cce_ucode, override_cfg_mp, default_cfg_mp)                   \
+        ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)                \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                       \
+        ,`bp_aviary_parameter_override(l2_sets, override_cfg_mp, default_cfg_mp)                     \
+        ,`bp_aviary_parameter_override(l2_assoc, override_cfg_mp, default_cfg_mp)                    \
+        ,`bp_aviary_parameter_override(l2_outstanding_reqs, override_cfg_mp, default_cfg_mp)         \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(async_coh_clk, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(coh_noc_max_credits, override_cfg_mp, default_cfg_mp)         \
+        ,`bp_aviary_parameter_override(coh_noc_flit_width, override_cfg_mp, default_cfg_mp)          \
+        ,`bp_aviary_parameter_override(coh_noc_cid_width, override_cfg_mp, default_cfg_mp)           \
+        ,`bp_aviary_parameter_override(coh_noc_len_width, override_cfg_mp, default_cfg_mp)           \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(async_mem_clk, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(mem_noc_max_credits, override_cfg_mp, default_cfg_mp)         \
+        ,`bp_aviary_parameter_override(mem_noc_flit_width, override_cfg_mp, default_cfg_mp)          \
+        ,`bp_aviary_parameter_override(mem_noc_cid_width, override_cfg_mp, default_cfg_mp)           \
+        ,`bp_aviary_parameter_override(mem_noc_len_width, override_cfg_mp, default_cfg_mp)           \
+                                                                                                     \
+        ,`bp_aviary_parameter_override(async_io_clk, override_cfg_mp, default_cfg_mp)                \
+        ,`bp_aviary_parameter_override(io_noc_max_credits, override_cfg_mp, default_cfg_mp)          \
+        ,`bp_aviary_parameter_override(io_noc_flit_width, override_cfg_mp, default_cfg_mp)           \
+        ,`bp_aviary_parameter_override(io_noc_cid_width, override_cfg_mp, default_cfg_mp)            \
+        ,`bp_aviary_parameter_override(io_noc_did_width, override_cfg_mp, default_cfg_mp)            \
+        ,`bp_aviary_parameter_override(io_noc_len_width, override_cfg_mp, default_cfg_mp)            \
+        }
 
 `endif
