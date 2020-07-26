@@ -647,8 +647,8 @@ module bp_be_dcache
     cache_req_cast_o = '0;
 
     // Assigning sizes to cache miss packet
-    if (uncached_tv_r | wt_req | l2_amo_req) begin
-      if (decode_tv_r.double_op)
+    if (uncached_tv_r | wt_req | l2_amo_req | store_miss_tv) begin
+      unique if (decode_tv_r.double_op)
         cache_req_cast_o.size = e_size_8B;
       else if (decode_tv_r.word_op)
         cache_req_cast_o.size = e_size_4B;
@@ -656,6 +656,8 @@ module bp_be_dcache
         cache_req_cast_o.size = e_size_2B;
       else if (decode_tv_r.byte_op)
         cache_req_cast_o.size = e_size_1B;
+      else
+        cache_req_cast_o.size = e_size_8B;
     end
     else
       cache_req_cast_o.size = e_size_64B;
@@ -712,7 +714,7 @@ module bp_be_dcache
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
-    cache_req_cast_o.data = data_tv_r;
+    cache_req_cast_o.data = store_miss_tv ? wbuf_entry_in.data : data_tv_r;
   end
 
   // Cache metadata is valid after the request goes out
