@@ -86,7 +86,10 @@
     integer sac_x_dim;
     integer cacc_type;
     integer sacc_type;
-  
+ 
+    integer num_cce;
+    integer num_lce;
+ 
     integer vaddr_width;
     integer paddr_width;
     integer asid_width;
@@ -195,8 +198,8 @@
   , localparam num_cacc_p  = cac_x_dim_p * cac_y_dim_p                                             \
   , localparam num_sacc_p  = sac_x_dim_p * sac_y_dim_p                                             \
                                                                                                    \
-  , localparam num_cce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_cce_ucode_cfg)) ? 1 : num_core_p + num_l2e_p    \
-  , localparam num_lce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_cce_ucode_cfg)) ? 1 : 2*num_core_p + num_cacc_p \
+  , localparam num_cce_p = proc_param_lp.num_cce                                                   \
+  , localparam num_lce_p = proc_param_lp.num_lce                                                   \
                                                                                                    \
   , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                            \
   , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))                \
@@ -323,82 +326,93 @@
                   ? default_cfg_mp.``parameter_mp``           \
                   : override_cfg_mp.``parameter_mp``          \
 
+  `define bp_aviary_define_override(parameter_mp, define_mp, default_cfg_mp) \
+    `ifdef define_mp                                          \
+    parameter_mp: `define_mp                                  \
+    `else                                                     \
+    parameter_mp: default_cfg_mp.``parameter_mp``             \
+    `endif
+
   `define bp_aviary_derive_cfg(cfg_name_mp, override_cfg_mp, default_cfg_mp) \
-    localparam bp_proc_param_s cfg_name_mp =                                                         \
-      '{`bp_aviary_parameter_override(multicore, override_cfg_mp, default_cfg_mp)                    \
-        ,`bp_aviary_parameter_override(cc_x_dim, override_cfg_mp, default_cfg_mp)                    \
-        ,`bp_aviary_parameter_override(cc_y_dim, override_cfg_mp, default_cfg_mp)                    \
-        ,`bp_aviary_parameter_override(ic_y_dim, override_cfg_mp, default_cfg_mp)                    \
-        ,`bp_aviary_parameter_override(mc_y_dim, override_cfg_mp, default_cfg_mp)                    \
-        ,`bp_aviary_parameter_override(cac_x_dim, override_cfg_mp, default_cfg_mp)                   \
-        ,`bp_aviary_parameter_override(sac_x_dim, override_cfg_mp, default_cfg_mp)                   \
-        ,`bp_aviary_parameter_override(cacc_type, override_cfg_mp, default_cfg_mp)                   \
-        ,`bp_aviary_parameter_override(sacc_type, override_cfg_mp, default_cfg_mp)                   \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(vaddr_width, override_cfg_mp, default_cfg_mp)                 \
-        ,`bp_aviary_parameter_override(paddr_width, override_cfg_mp, default_cfg_mp)                 \
-        ,`bp_aviary_parameter_override(asid_width, override_cfg_mp, default_cfg_mp)                  \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(fe_queue_fifo_els, override_cfg_mp, default_cfg_mp)           \
-        ,`bp_aviary_parameter_override(fe_cmd_fifo_els, override_cfg_mp, default_cfg_mp)             \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(branch_metadata_fwd_width, override_cfg_mp, default_cfg_mp)   \
-        ,`bp_aviary_parameter_override(btb_tag_width, override_cfg_mp, default_cfg_mp)               \
-        ,`bp_aviary_parameter_override(btb_idx_width, override_cfg_mp, default_cfg_mp)               \
-        ,`bp_aviary_parameter_override(bht_idx_width, override_cfg_mp, default_cfg_mp)               \
-        ,`bp_aviary_parameter_override(ghist_width, override_cfg_mp, default_cfg_mp)                 \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(itlb_els, override_cfg_mp, default_cfg_mp)                    \
-        ,`bp_aviary_parameter_override(dtlb_els, override_cfg_mp, default_cfg_mp)                    \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(lr_sc, override_cfg_mp, default_cfg_mp)                       \
-        ,`bp_aviary_parameter_override(amo_swap, override_cfg_mp, default_cfg_mp)                    \
-        ,`bp_aviary_parameter_override(amo_fetch_logic, override_cfg_mp, default_cfg_mp)             \
-        ,`bp_aviary_parameter_override(amo_fetch_arithmetic, override_cfg_mp, default_cfg_mp)        \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(l1_writethrough, override_cfg_mp, default_cfg_mp)             \
-        ,`bp_aviary_parameter_override(l1_coherent, override_cfg_mp, default_cfg_mp)                 \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(icache_sets, override_cfg_mp, default_cfg_mp)                 \
-        ,`bp_aviary_parameter_override(icache_assoc, override_cfg_mp, default_cfg_mp)                \
-        ,`bp_aviary_parameter_override(icache_block_width, override_cfg_mp, default_cfg_mp)          \
-        ,`bp_aviary_parameter_override(icache_fill_width, override_cfg_mp, default_cfg_mp)           \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(dcache_sets, override_cfg_mp, default_cfg_mp)                 \
-        ,`bp_aviary_parameter_override(dcache_assoc, override_cfg_mp, default_cfg_mp)                \
-        ,`bp_aviary_parameter_override(dcache_block_width, override_cfg_mp, default_cfg_mp)          \
-        ,`bp_aviary_parameter_override(dcache_fill_width, override_cfg_mp, default_cfg_mp)           \
-        ,`bp_aviary_parameter_override(acache_sets, override_cfg_mp, default_cfg_mp)                 \
-        ,`bp_aviary_parameter_override(acache_assoc, override_cfg_mp, default_cfg_mp)                \
-        ,`bp_aviary_parameter_override(acache_block_width, override_cfg_mp, default_cfg_mp)          \
-        ,`bp_aviary_parameter_override(acache_fill_width, override_cfg_mp, default_cfg_mp)           \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(cce_ucode, override_cfg_mp, default_cfg_mp)                   \
-        ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)                \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                       \
-        ,`bp_aviary_parameter_override(l2_sets, override_cfg_mp, default_cfg_mp)                     \
-        ,`bp_aviary_parameter_override(l2_assoc, override_cfg_mp, default_cfg_mp)                    \
-        ,`bp_aviary_parameter_override(l2_outstanding_reqs, override_cfg_mp, default_cfg_mp)         \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(async_coh_clk, override_cfg_mp, default_cfg_mp)               \
-        ,`bp_aviary_parameter_override(coh_noc_max_credits, override_cfg_mp, default_cfg_mp)         \
-        ,`bp_aviary_parameter_override(coh_noc_flit_width, override_cfg_mp, default_cfg_mp)          \
-        ,`bp_aviary_parameter_override(coh_noc_cid_width, override_cfg_mp, default_cfg_mp)           \
-        ,`bp_aviary_parameter_override(coh_noc_len_width, override_cfg_mp, default_cfg_mp)           \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(async_mem_clk, override_cfg_mp, default_cfg_mp)               \
-        ,`bp_aviary_parameter_override(mem_noc_max_credits, override_cfg_mp, default_cfg_mp)         \
-        ,`bp_aviary_parameter_override(mem_noc_flit_width, override_cfg_mp, default_cfg_mp)          \
-        ,`bp_aviary_parameter_override(mem_noc_cid_width, override_cfg_mp, default_cfg_mp)           \
-        ,`bp_aviary_parameter_override(mem_noc_len_width, override_cfg_mp, default_cfg_mp)           \
-                                                                                                     \
-        ,`bp_aviary_parameter_override(async_io_clk, override_cfg_mp, default_cfg_mp)                \
-        ,`bp_aviary_parameter_override(io_noc_max_credits, override_cfg_mp, default_cfg_mp)          \
-        ,`bp_aviary_parameter_override(io_noc_flit_width, override_cfg_mp, default_cfg_mp)           \
-        ,`bp_aviary_parameter_override(io_noc_cid_width, override_cfg_mp, default_cfg_mp)            \
-        ,`bp_aviary_parameter_override(io_noc_did_width, override_cfg_mp, default_cfg_mp)            \
-        ,`bp_aviary_parameter_override(io_noc_len_width, override_cfg_mp, default_cfg_mp)            \
+    localparam bp_proc_param_s cfg_name_mp =                                                       \
+      '{`bp_aviary_parameter_override(multicore, override_cfg_mp, default_cfg_mp)                  \
+        ,`bp_aviary_parameter_override(cc_x_dim, override_cfg_mp, default_cfg_mp)                  \
+        ,`bp_aviary_parameter_override(cc_y_dim, override_cfg_mp, default_cfg_mp)                  \
+        ,`bp_aviary_parameter_override(ic_y_dim, override_cfg_mp, default_cfg_mp)                  \
+        ,`bp_aviary_parameter_override(mc_y_dim, override_cfg_mp, default_cfg_mp)                  \
+        ,`bp_aviary_parameter_override(cac_x_dim, override_cfg_mp, default_cfg_mp)                 \
+        ,`bp_aviary_parameter_override(sac_x_dim, override_cfg_mp, default_cfg_mp)                 \
+        ,`bp_aviary_parameter_override(cacc_type, override_cfg_mp, default_cfg_mp)                 \
+        ,`bp_aviary_parameter_override(sacc_type, override_cfg_mp, default_cfg_mp)                 \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(num_cce, override_cfg_mp, default_cfg_mp)                   \
+        ,`bp_aviary_parameter_override(num_lce, override_cfg_mp, default_cfg_mp)                   \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(vaddr_width, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(paddr_width, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(asid_width, override_cfg_mp, default_cfg_mp)                \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(fe_queue_fifo_els, override_cfg_mp, default_cfg_mp)         \
+        ,`bp_aviary_parameter_override(fe_cmd_fifo_els, override_cfg_mp, default_cfg_mp)           \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(branch_metadata_fwd_width, override_cfg_mp, default_cfg_mp) \
+        ,`bp_aviary_parameter_override(btb_tag_width, override_cfg_mp, default_cfg_mp)             \
+        ,`bp_aviary_parameter_override(btb_idx_width, override_cfg_mp, default_cfg_mp)             \
+        ,`bp_aviary_parameter_override(bht_idx_width, override_cfg_mp, default_cfg_mp)             \
+        ,`bp_aviary_parameter_override(ghist_width, override_cfg_mp, default_cfg_mp)               \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(itlb_els, override_cfg_mp, default_cfg_mp)                  \
+        ,`bp_aviary_parameter_override(dtlb_els, override_cfg_mp, default_cfg_mp)                  \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(lr_sc, override_cfg_mp, default_cfg_mp)                     \
+        ,`bp_aviary_parameter_override(amo_swap, override_cfg_mp, default_cfg_mp)                  \
+        ,`bp_aviary_parameter_override(amo_fetch_logic, override_cfg_mp, default_cfg_mp)           \
+        ,`bp_aviary_parameter_override(amo_fetch_arithmetic, override_cfg_mp, default_cfg_mp)      \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(l1_writethrough, override_cfg_mp, default_cfg_mp)           \
+        ,`bp_aviary_parameter_override(l1_coherent, override_cfg_mp, default_cfg_mp)               \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(icache_sets, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(icache_assoc, override_cfg_mp, default_cfg_mp)              \
+        ,`bp_aviary_parameter_override(icache_block_width, override_cfg_mp, default_cfg_mp)        \
+        ,`bp_aviary_parameter_override(icache_fill_width, override_cfg_mp, default_cfg_mp)         \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(dcache_sets, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(dcache_assoc, override_cfg_mp, default_cfg_mp)              \
+        ,`bp_aviary_parameter_override(dcache_block_width, override_cfg_mp, default_cfg_mp)        \
+        ,`bp_aviary_parameter_override(dcache_fill_width, override_cfg_mp, default_cfg_mp)         \
+        ,`bp_aviary_parameter_override(acache_sets, override_cfg_mp, default_cfg_mp)               \
+        ,`bp_aviary_parameter_override(acache_assoc, override_cfg_mp, default_cfg_mp)              \
+        ,`bp_aviary_parameter_override(acache_block_width, override_cfg_mp, default_cfg_mp)        \
+        ,`bp_aviary_parameter_override(acache_fill_width, override_cfg_mp, default_cfg_mp)         \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(cce_ucode, override_cfg_mp, default_cfg_mp)                 \
+        ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)              \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                     \
+        ,`bp_aviary_parameter_override(l2_sets, override_cfg_mp, default_cfg_mp)                   \
+        ,`bp_aviary_parameter_override(l2_assoc, override_cfg_mp, default_cfg_mp)                  \
+        ,`bp_aviary_parameter_override(l2_outstanding_reqs, override_cfg_mp, default_cfg_mp)       \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(async_coh_clk, override_cfg_mp, default_cfg_mp)             \
+        ,`bp_aviary_parameter_override(coh_noc_max_credits, override_cfg_mp, default_cfg_mp)       \
+        ,`bp_aviary_parameter_override(coh_noc_flit_width, override_cfg_mp, default_cfg_mp)        \
+        ,`bp_aviary_parameter_override(coh_noc_cid_width, override_cfg_mp, default_cfg_mp)         \
+        ,`bp_aviary_parameter_override(coh_noc_len_width, override_cfg_mp, default_cfg_mp)         \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(async_mem_clk, override_cfg_mp, default_cfg_mp)             \
+        ,`bp_aviary_parameter_override(mem_noc_max_credits, override_cfg_mp, default_cfg_mp)       \
+        ,`bp_aviary_parameter_override(mem_noc_flit_width, override_cfg_mp, default_cfg_mp)        \
+        ,`bp_aviary_parameter_override(mem_noc_cid_width, override_cfg_mp, default_cfg_mp)         \
+        ,`bp_aviary_parameter_override(mem_noc_len_width, override_cfg_mp, default_cfg_mp)         \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(async_io_clk, override_cfg_mp, default_cfg_mp)              \
+        ,`bp_aviary_parameter_override(io_noc_max_credits, override_cfg_mp, default_cfg_mp)        \
+        ,`bp_aviary_parameter_override(io_noc_flit_width, override_cfg_mp, default_cfg_mp)         \
+        ,`bp_aviary_parameter_override(io_noc_cid_width, override_cfg_mp, default_cfg_mp)          \
+        ,`bp_aviary_parameter_override(io_noc_did_width, override_cfg_mp, default_cfg_mp)          \
+        ,`bp_aviary_parameter_override(io_noc_len_width, override_cfg_mp, default_cfg_mp)          \
         }
 
 `endif
+
