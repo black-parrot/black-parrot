@@ -227,7 +227,7 @@ always_comb
 
 logic [vaddr_width_p-1:0] apc_n, apc_r;
 bsg_dff_reset
- #(.width_p(vaddr_width_p), .reset_val_p(bootrom_base_addr_gp))
+ #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
  apc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -249,9 +249,8 @@ bsg_dff_reset_set_clear
  debug_mode_reg
   (.clk_i(clk_i)
    ,.reset_i('0)
-   // TODO: Should explicitly set freeze
-   ,.set_i(cfg_bus_cast_i.freeze | enter_debug)
-   ,.clear_i(exit_debug)
+   ,.set_i((reset_i & (boot_in_debug_p == 1'b1)) | enter_debug)
+   ,.clear_i((reset_i & (boot_in_debug_p == 1'b0)) | exit_debug)
 
    ,.data_o(debug_mode_r)
    );

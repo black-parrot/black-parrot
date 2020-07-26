@@ -2,6 +2,8 @@
 package bp_common_aviary_pkg;
   `include "bp_common_aviary_defines.vh"
 
+  import bp_common_pkg::*;
+
   // Suitably high enough to not run out of configs.
   localparam max_cfgs    = 128;
   localparam lg_max_cfgs = `BSG_SAFE_CLOG2(max_cfgs);
@@ -24,7 +26,10 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 36
+      ,boot_pc       : dram_base_addr_gp
+      ,boot_in_debug : 0
+
+      ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -37,7 +42,7 @@ package bp_common_aviary_pkg;
       ,amo_swap             : e_none
       ,amo_fetch_logic      : e_none
       ,amo_fetch_arithmetic : e_none
-      
+
       ,l1_writethrough      : 0
       ,l1_coherent          : 0
       ,dcache_sets          : 64
@@ -53,13 +58,13 @@ package bp_common_aviary_pkg;
       ,acache_block_width   : 512
       ,acache_fill_width    : 512
 
-      ,cce_pc_width         : 8
       ,cce_ucode            : 0
+      ,cce_pc_width         : 8
 
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
-      ,l2_outstanding_reqs: 2
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -415,6 +420,9 @@ package bp_common_aviary_pkg;
       ,`bp_aviary_define_override(vaddr_width, BP_VADDR_WIDTH, bp_default_cfg_p)
       ,`bp_aviary_define_override(paddr_width, BP_PADDR_WIDTH, bp_default_cfg_p)
       ,`bp_aviary_define_override(asid_width, BP_ASID_WIDTH, bp_default_cfg_p)
+
+      ,`bp_aviary_define_override(boot_pc, BP_BOOT_PC, bp_default_cfg_p)
+      ,`bp_aviary_define_override(boot_in_debug, BP_BOOT_IN_DEBUG, bp_default_cfg_p)
 
       ,`bp_aviary_define_override(fe_queue_fifo_els, BP_FE_QUEUE_WIDTH, bp_default_cfg_p)
       ,`bp_aviary_define_override(fe_cmd_fifo_els, BP_FE_CMD_WIDTH, bp_default_cfg_p)

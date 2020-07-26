@@ -9,7 +9,7 @@
 `ifndef BP_BE_DCACHE_TAG_INFO_VH
 `define BP_BE_DCACHE_TAG_INFO_VH
 
-`include "bp_common_me_if.vh"
+`include "bp_common_lce_cce_if.vh"
 
 `define declare_bp_be_dcache_tag_info_s(ptag_width_mp) \
   typedef struct packed {                              \

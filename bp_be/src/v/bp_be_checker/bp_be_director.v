@@ -99,7 +99,7 @@ module bp_be_director
   assign npc_w_v = calc_status.ex1_instr_v
                    | (trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
   bsg_dff_reset_en
-   #(.width_p(vaddr_width_p), .reset_val_p(bootrom_base_addr_gp))
+   #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
    npc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
