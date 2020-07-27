@@ -75,83 +75,153 @@
   
   typedef struct packed
   {
+    // 0: BP unicore (minimal, single-core configuration)
+    // 1: BP multicore (coherent, multi-core configuration)
     integer multicore;
 
+    // Dimensions of the different complexes
+    // Core Complex may be any integer (though has only been validated up to 4x4)
+    // All other Complexes are 1-dimensional
+    //                                    [                           ]
+    //                                    [        I/O Complex        ]
+    //                                    [                           ]
+    //
+    //  [                               ] [                           ] [                               ]
+    //  [ Streaming Accelerator Complex ] [        Core Complex       ] [ Coherent Accelerator Complex  ]
+    //  [                               ] [                           ] [                               ]
+    //
+    //                                    [                           ]
+    //                                    [       Memory Complex      ]
+    //                                    [                           ]
+    //
     integer cc_x_dim;
     integer cc_y_dim;
-  
     integer ic_y_dim;
     integer mc_y_dim;
     integer cac_x_dim;
     integer sac_x_dim;
+
+    // The type of accelerator in the accelerator complexes, selected out of bp_cacc_type_e/bp_sacc_type_e
+    // Only supports homogeneous configurations
     integer cacc_type;
     integer sacc_type;
  
+    // Number of CCEs/LCEs in the system. Must be consistent within complex dimensions
     integer num_cce;
     integer num_lce;
  
+    // Virtual address width
+    //   Only tested for SV39 (39-bit virtual address)
     integer vaddr_width;
+    // Physical address width
+    //   Only tested for 40-bit physical address
     integer paddr_width;
+    // Address space ID width
+    //   Currently unused, so set to 1 bit
     integer asid_width;
-  
+
+    // Branch metadata information for the Front End
+    // Must be kept consistent with FE
     integer branch_metadata_fwd_width;
     integer btb_tag_width;
     integer btb_idx_width;
     integer bht_idx_width;
     integer ghist_width;
-  
+ 
+    // Capacity of the Instruction/Data TLBs 
     integer itlb_els;
     integer dtlb_els;
-  
+
+    // Atomic support in the system. There are 3 levels of support
+    //   None: Will cause illegal instruction trap
+    //   L1  : Handled by L1
+    //   L2  : Handled by L2 via uncached access in L1
     integer lr_sc;
     integer amo_swap;
     integer amo_fetch_logic;
     integer amo_fetch_arithmetic;
-  
+
+    // Whether the D$ is writethrough or writeback
     integer l1_writethrough;
+    // Whether the I$ and D$ are kept coherent
     integer l1_coherent;
-    integer dcache_sets;
-    integer dcache_assoc;
-    integer dcache_block_width;
-    integer dcache_fill_width;
+
+    // I$ parameterizations
     integer icache_sets;
     integer icache_assoc;
     integer icache_block_width;
     integer icache_fill_width;
+
+    // D$ parameterizations
+    integer dcache_sets;
+    integer dcache_assoc;
+    integer dcache_block_width;
+    integer dcache_fill_width;
+
+    // A$ parameterizations
     integer acache_sets;
     integer acache_assoc;
     integer acache_block_width;
     integer acache_fill_width;
-    integer cce_pc_width;
+
+    // Microcoded CCE parameters
+    // 0: CCE is FSM-based
+    // 1: CCE is ucode
     integer cce_ucode;
+    // Determines the size of the CCE instruction RAM
+    integer cce_pc_width;
   
+    // L2 slice parameters (per core)
     integer l2_en;
     integer l2_sets;
     integer l2_assoc;
     integer l2_outstanding_reqs;
   
+    // Size of the issue queue
     integer fe_queue_fifo_els;
+    // Size of the cmd queue
     integer fe_cmd_fifo_els;
   
+    // Whether the coherence network is on the core clock or on its own clock
     integer async_coh_clk;
-    integer coh_noc_max_credits;
+    // Flit width of the coherence network. Has major impact on latency / area of the network
     integer coh_noc_flit_width;
+    // Concentrator ID width of the coherence network. Corresponds to how many nodes can be on a
+    //   single wormhole router
     integer coh_noc_cid_width;
+    // Maximum number of flits in a single wormhole message. Determined by protocol and affects
+    //   buffer size
     integer coh_noc_len_width;
+    // Maximum credits supported by the network. Correlated to the bandwidth delay product
+    integer coh_noc_max_credits;
   
+    // Whether the memory network is on the core clock or on its own clock
     integer async_mem_clk;
-    integer mem_noc_max_credits;
+    // Flit width of the memory network. Has major impact on latency / area of the network
     integer mem_noc_flit_width;
+    // Concentrator ID width of the memory network. Corresponds to how many nodes can be on a
+    //   single wormhole router
     integer mem_noc_cid_width;
+    // Maximum number of flits in a single wormhole message. Determined by protocol and affects
+    //   buffer size
     integer mem_noc_len_width;
+    // Maximum credits supported by the network. Correlated to the bandwidth delay product
+    integer mem_noc_max_credits;
   
+    // Whether the I/O network is on the core clock or on its own clock
     integer async_io_clk;
-    integer io_noc_max_credits;
+    // Flit width of the I/O network. Has major impact on latency / area of the network
     integer io_noc_flit_width;
-    integer io_noc_did_width;
+    // Concentrator ID width of the I/O network. Corresponds to how many nodes can be on a
+    //   single wormhole router
     integer io_noc_cid_width;
+    // Domain ID width of the I/O network. Corresponds to how many chips compose a multichip chain
+    integer io_noc_did_width;
+    // Maximum number of flits in a single wormhole message. Determined by protocol and affects
+    //   buffer size
     integer io_noc_len_width;
-  
+    // Maximum credits supported by the network. Correlated to the bandwidth delay product
+    integer io_noc_max_credits;
   }  bp_proc_param_s;
   
   // For now, we have a fixed address map
