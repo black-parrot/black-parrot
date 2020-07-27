@@ -13,27 +13,27 @@ module bp_unicore
    `declare_bp_proc_params(bp_params_p)
   
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p) 
-   `declare_bp_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem)
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem)
    )
-  (  input                                               clk_i
+  (  input                                             clk_i
    , input                                             reset_i
 
    // Outgoing I/O
-   , output [cce_mem_msg_width_lp-1:0]                 io_cmd_o
+   , output [uce_mem_msg_width_lp-1:0]                 io_cmd_o
    , output                                            io_cmd_v_o
    , input                                             io_cmd_ready_i
 
-   , input [cce_mem_msg_width_lp-1:0]                  io_resp_i
+   , input [uce_mem_msg_width_lp-1:0]                  io_resp_i
    , input                                             io_resp_v_i
    , output                                            io_resp_yumi_o
 
    // Incoming I/O
-   , input [cce_mem_msg_width_lp-1:0]                  io_cmd_i
+   , input [uce_mem_msg_width_lp-1:0]                  io_cmd_i
    , input                                             io_cmd_v_i
    , output                                            io_cmd_yumi_o
 
-   , output [cce_mem_msg_width_lp-1:0]                 io_resp_o
+   , output [uce_mem_msg_width_lp-1:0]                 io_resp_o
    , output                                            io_resp_v_o
    , input                                             io_resp_ready_i
 
@@ -341,7 +341,7 @@ module bp_unicore
   assign proc_cmd_v_lo[2] = io_cmd_v_i;
   assign io_cmd_yumi_o = proc_cmd_ready_li[2] & proc_cmd_v_lo[2];
 
-  assign io_resp_o = cce_mem_msg_width_lp'(proc_resp_li[2]); 
+  assign io_resp_o = uce_mem_msg_width_lp'(proc_resp_li[2]); 
   assign io_resp_v_o = proc_resp_v_li[2];
   assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
 
