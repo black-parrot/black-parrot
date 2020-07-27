@@ -50,20 +50,7 @@ module wrapper
    , output                                            mem_resp_yumi_o
    );
 
-  // TODO: There should be a param about whether to instantiate the uncore, rather than a list of
-  //   unicore configs
-  if ((bp_params_p == e_bp_unicore_cfg)
-      || (bp_params_p == e_bp_unicore_no_l2_cfg)
-      || (bp_params_p == e_bp_unicore_l1_small_cfg)
-      || (bp_params_p == e_bp_unicore_l1_medium_cfg)
-      )
-    begin : unicore
-      bp_unicore
-       #(.bp_params_p(bp_params_p))
-       dut
-        (.*);
-    end
-  else
+  if (multicore_p)
     begin : multicore
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
@@ -177,6 +164,13 @@ module wrapper
          ,.cmd_link_i(dram_cmd_link_lo)
          ,.resp_link_o(dram_resp_link_li)
          );
+    end
+  else
+    begin
+      bp_unicore
+       #(.bp_params_p(bp_params_p))
+       dut
+        (.*);
     end
 
 endmodule

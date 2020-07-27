@@ -10,7 +10,7 @@ module bp_fe_instr_scan
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_fe_pkg::*; 
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
    , localparam instr_scan_width_lp = `bp_fe_instr_scan_width(vaddr_width_p)

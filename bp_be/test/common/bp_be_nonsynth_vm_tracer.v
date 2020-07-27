@@ -5,7 +5,7 @@ module bp_be_nonsynth_vm_tracer
  import bp_fe_pkg::*;
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
    , parameter vm_trace_file_p = "vm"

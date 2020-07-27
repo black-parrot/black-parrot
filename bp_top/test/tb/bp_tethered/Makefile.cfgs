@@ -1,32 +1,37 @@
-e_bp_unicore_writethrough_cfg_cores    := 1
-e_bp_single_core_l1_medium_cfg_cores   := 1
-e_bp_single_core_l1_small_cfg_cores    := 1
-e_bp_unicore_l1_medium_cfg_cores       := 1
-e_bp_unicore_l1_small_cfg_cores        := 1
-e_bp_sexta_core_ucode_cce_cfg_cores    := 16
-e_bp_twelve_core_ucode_cce_cfg_cores   := 12
-e_bp_oct_core_ucode_cce_cfg_cores      := 8
-e_bp_hexa_core_ucode_cce_cfg_cores     := 6
-e_bp_quad_core_ucode_cce_cfg_cores     := 4
-e_bp_tri_core_ucode_cce_cfg_cores      := 3
-e_bp_dual_core_ucode_cce_cfg_cores     := 2
-e_bp_single_core_ucode_cce_cfg_cores   := 1
-e_bp_half_core_ucode_cce_cfg_cores     := 1
-e_bp_accelerator_quad_core_cfg_cores   := 4
-e_bp_accelerator_single_core_cfg_cores := 1
-e_bp_sexta_core_cfg_cores              := 16
-e_bp_twelve_core_cfg_cores             := 12
-e_bp_oct_core_cfg_cores                := 8
-e_bp_hexa_core_cfg_cores               := 6
-e_bp_quad_core_cfg_cores               := 4
-e_bp_tri_core_cfg_cores                := 3
-e_bp_dual_core_cfg_cores               := 2
-e_bp_single_core_cfg_cores             := 1
-e_bp_single_core_no_l2_cfg_cores       := 1
-e_bp_half_core_cfg_cores               := 1
-e_bp_unicore_cfg_cores                 := 1
-e_bp_unicore_no_l2_cfg_cores           := 1
+e_bp_multicore_cce_ucode_half_cfg_cores := 1
+e_bp_multicore_half_cfg_cores           := 1
+e_bp_unicore_half_cfg_cores             := 1
 
+e_bp_multicore_16_cce_ucode_cfg_cores   := 16
+e_bp_multicore_16_cfg_cores             := 16
+e_bp_multicore_12_cce_ucode_cfg_cores   := 12
+e_bp_multicore_12_cfg_cores             := 12
+e_bp_multicore_8_cce_ucode_cfg_cores    := 8
+e_bp_multicore_8_cfg_cores              := 8
+e_bp_multicore_6_cce_ucode_cfg_cores    := 6
+e_bp_multicore_6_cfg_cores              := 6
+e_bp_multicore_4_accelerator_cfg_cores  := 4
+e_bp_multicore_4_cce_ucode_cfg_cores    := 4
+e_bp_multicore_4_cfg_cores              := 4
+e_bp_multicore_3_cce_ucode_cfg_cores    := 3
+e_bp_multicore_3_cfg_cores              := 3
+e_bp_multicore_2_cce_ucode_cfg_cores    := 2
+e_bp_multicore_2_cfg_cores              := 2
+e_bp_multicore_1_accelerator_cfg_cores  := 1
+e_bp_multicore_1_cce_ucode_cfg_cores    := 1
+e_bp_multicore_1_l1_medium_cfg_cores    := 1
+e_bp_multicore_1_l1_small_cfg_cores     := 1
+e_bp_multicore_1_cfg_cores              := 1
+
+e_bp_unicore_writethrough_cfg_cores     := 1
+e_bp_unicore_l1_medium_cfg_cores        := 1
+e_bp_unicore_l1_small_cfg_cores         := 1
+e_bp_unicore_no_l2_cfg_cores            := 1
+e_bp_unicore_cfg_cores                  := 1
+
+# Note, custom must be manually overidden here for cosim to work properly
+e_bp_custom_cfg_cores                   := 1
+e_bp_default_cfg_cores                  := 1
 
 export NCPUS ?= $($(CFG)_cores)
 
