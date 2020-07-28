@@ -48,6 +48,16 @@ module testbench
    );
 
 import "DPI-C" context function bit get_finish(int hartid);
+export "DPI-C" function get_dram_period;
+export "DPI-C" function get_sim_period;
+
+function int get_dram_period();
+  return (`dram_pkg::tck_ps);
+endfunction
+
+function int get_sim_period();
+  return (`BP_SIM_CLK_PERIOD);
+endfunction
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
