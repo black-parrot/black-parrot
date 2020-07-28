@@ -581,7 +581,7 @@ module bp_uce
         e_send_critical:
           if (miss_v_li)
             begin
-              mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
+              mem_cmd_cast_o.header.msg_type       = e_mem_msg_rd;
               mem_cmd_cast_o.header.addr           = critical_addr;
               mem_cmd_cast_o.header.size           = block_msg_size_lp;
               mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
