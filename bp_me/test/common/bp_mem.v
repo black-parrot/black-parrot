@@ -3,14 +3,11 @@
  * bp_mem.v
  */
 
-`define dram_pkg bsg_dramsim3_hbm2_8gb_x128_pkg
-
 module bp_mem
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  import `dram_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
@@ -31,6 +28,9 @@ module bp_mem
    , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
    , output                              mem_resp_v_o
    , input                               mem_resp_yumi_i
+
+   , input                               dram_clk_i
+   , input                               dram_reset_i
    );
 
 if(dram_fixed_latency_p) begin: fixed_latency
@@ -129,7 +129,6 @@ if(dram_fixed_latency_p) begin: fixed_latency
      ,.addr_width_p(paddr_width_p)
      ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
      ,.mem_zero_p(1)
-     ,.mem_offset_p(mem_offset_p)
      )
    dram
     (.clk_i(clk_i)
@@ -147,8 +146,6 @@ if(dram_fixed_latency_p) begin: fixed_latency
 
 end
 else begin: dramsim3
-
-  logic dram_clk, dram_reset;
 
   logic [`dram_pkg::num_channels_p-1:0] dram_v_li, dram_w_li, dram_data_v_li, dram_data_v_lo;
   logic [`dram_pkg::num_channels_p-1:0] dram_yumi_lo, dram_data_yumi_lo;
@@ -182,8 +179,8 @@ else begin: dramsim3
       ,.mem_resp_v_o(mem_resp_v_o)
       ,.mem_resp_yumi_i(mem_resp_yumi_i)
 
-      ,.dram_clk_i(dram_clk)
-      ,.dram_reset_i(dram_reset)
+      ,.dram_clk_i(dram_clk_i)
+      ,.dram_reset_i(dram_reset_i)
 
       ,.dram_ch_addr_o(dram_ch_addr_li[0])
       ,.dram_write_not_read_o(dram_w_li[0])
@@ -214,8 +211,8 @@ else begin: dramsim3
       ,.init_mem_p(1)
      )
     dram
-     (.clk_i(dram_clk)
-      ,.reset_i(dram_reset)
+     (.clk_i(dram_clk_i)
+      ,.reset_i(dram_reset_i)
 
       ,.v_i(dram_v_li)
       ,.write_not_read_i(dram_w_li)
@@ -234,21 +231,6 @@ else begin: dramsim3
       ,.write_done_o()
       ,.write_done_ch_addr_o()
      );
-
-  bsg_nonsynth_clock_gen
-    #(.cycle_time_p(`dram_pkg::tck_ps))
-    clock_gen
-    (.o(dram_clk));
-
-  bsg_nonsynth_reset_gen
-    #(.num_clocks_p(1)
-     ,.reset_cycles_lo_p(0)
-     ,.reset_cycles_hi_p(10)
-     )
-    reset_gen
-    (.clk_i(dram_clk)
-     ,.async_reset_o(dram_reset)
-    );
 end
 
 endmodule

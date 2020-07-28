@@ -21,11 +21,13 @@ int sc_main(int argc, char **argv)
   // Use me to find the correct scope of your DPI functions
   //Verilated::scopesDump();
 
-  sc_clock clock("clk", sc_time(BP_SIM_CLK_PERIOD, SC_NS));
+  sc_clock clock("clk", sc_time(BP_SIM_CLK_PERIOD, SC_PS));
   sc_signal <bool> reset("reset");
 
   tb->clk_i(clock);
   tb->reset_i(reset);
+  tb->dram_clk_i(clock);
+  tb->dram_reset_i(reset);
 
 #if VM_TRACE
   std::cout << "Opening dump file" << std::endl;
@@ -38,7 +40,7 @@ int sc_main(int argc, char **argv)
 
   std::cout << "Raising reset" << std::endl;
   for (int i = 0; i < 20; i++) {
-    sc_start(BP_SIM_CLK_PERIOD, SC_NS);
+    sc_start(BP_SIM_CLK_PERIOD, SC_PS);
   }
   std::cout << "Lowering reset" << std::endl;
 
@@ -46,7 +48,7 @@ int sc_main(int argc, char **argv)
   Verilated::assertOn(true);
 
   while (!Verilated::gotFinish()) {
-    sc_start(BP_SIM_CLK_PERIOD, SC_NS);
+    sc_start(BP_SIM_CLK_PERIOD, SC_PS);
   }
   std::cout << "Finishing test" << std::endl;
 

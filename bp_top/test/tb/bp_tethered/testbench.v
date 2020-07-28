@@ -43,6 +43,8 @@ module testbench
    )
   (input clk_i
    , input reset_i
+   , input dram_clk_i
+   , input dram_reset_i
    );
 
 import "DPI-C" context function bit get_finish(int hartid);
@@ -120,6 +122,9 @@ bp_mem
    ,.mem_resp_o(proc_mem_resp_li)
    ,.mem_resp_v_o(proc_mem_resp_v_li)
    ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
+
+   ,.dram_clk_i(dram_clk_i)
+   ,.dram_reset_i(dram_reset_i)
    );
 
 bp_nonsynth_nbf_loader
