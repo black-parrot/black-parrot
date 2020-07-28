@@ -124,6 +124,13 @@ module bp_lce
   end
   //synopsys translate_on
 
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  
+  logic [fill_width_p-1:0] data_to_l1;
+  bp_cache_req_s cache_req_r;
+  bp_cache_data_mem_pkt_s data_mem_pkt, data_mem_pkt_merged;
+  assign data_mem_pkt_o = data_mem_pkt_merged;
+
   // LCE Request Module
   logic req_ready_lo;
   logic uc_store_req_complete_lo;
@@ -150,6 +157,8 @@ module bp_lce
       ,.cache_req_metadata_i(cache_req_metadata_i)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
       ,.cache_req_complete_i(cache_req_complete_o)
+
+      ,.cache_req_r_o(cache_req_r)
 
       ,.credits_full_o(credits_full_o)
       ,.credits_empty_o(credits_empty_o)
@@ -187,7 +196,7 @@ module bp_lce
       ,.cache_req_critical_o(cache_req_critical_o)
       ,.uc_store_req_complete_o(uc_store_req_complete_lo)
 
-      ,.data_mem_pkt_o(data_mem_pkt_o)
+      ,.data_mem_pkt_o(data_mem_pkt)
       ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
       ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
       ,.data_mem_i(data_mem_i)
@@ -215,6 +224,38 @@ module bp_lce
       ,.lce_cmd_ready_i(lce_cmd_ready_i)
       );
 
+  // Write merge logic
+  logic store_miss;
+  bsg_dff_reset_set_clear
+   #(.width_p(1), .clear_over_set_p(1))
+   store_miss_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(cache_req_complete_o | uc_store_req_complete_lo)
+     ,.set_i((cache_req_r.msg_type == e_miss_store) & lce_req_v_o)
+     ,.data_o(store_miss)
+     );
+
+  bp_store_data_merge
+   #(.bp_params_p(bp_params_p)
+     ,.assoc_p(assoc_p)
+     ,.sets_p(sets_p)
+     ,.block_width_p(block_width_p)
+     ,.fill_width_p(fill_width_p)
+    )
+    store_data_merge
+     (.data0_i(data_mem_pkt.data)
+      ,.cache_req_i(cache_req_r)
+      ,.write_v_i(store_miss)
+      ,.data_o(data_to_l1)
+      );
+
+  always_comb
+    begin
+      data_mem_pkt_merged = data_mem_pkt;
+      data_mem_pkt_merged.data = data_to_l1;
+    end
 
   // LCE timeout logic
   //

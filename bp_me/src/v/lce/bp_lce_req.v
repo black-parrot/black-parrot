@@ -73,6 +73,7 @@ module bp_lce_req
     , input                                          cache_req_v_i
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
+    , output [cache_req_width_lp-1:0]                cache_req_r_o
 
     // LCE-Cache Interface
     , output logic                                   credits_full_o
@@ -155,6 +156,8 @@ module bp_lce_req
      ,.data_i(cache_req_metadata_i)
      ,.data_o(cache_req_metadata_r)
      );
+
+  assign cache_req_r_o = cache_req_r;
 
   // Outstanding request credit counter
   logic [`BSG_WIDTH(credits_p)-1:0] credit_count_lo;

@@ -347,35 +347,23 @@ module bp_uce
     end
 
   // Write merge logic
-  logic [`BSG_SAFE_CLOG2(fill_width_p)-1:0] addr_fill_slice;
-  logic [5:0] byte_select;
-  logic [fill_width_p-1:0] write_mask;
   logic [fill_width_p-1:0] data_to_l1;
 
-  if (fill_width_p == 64)
-    begin : fill_dword
-      assign addr_fill_slice = '0;
-    end
-  else if (fill_width_p == block_width_p)
-    begin : fill_block
-      assign addr_fill_slice = (cache_req_r.addr[block_offset_width_lp-1:3] << 6);
-    end
-  else 
-    begin : fill_chunks
-      assign addr_fill_slice = (cache_req_r.addr[block_offset_width_lp-fill_cnt_width_lp-1:3] << 6);
-    end
+  bp_store_data_merge
+   #(.bp_params_p(bp_params_p)
+     ,.assoc_p(assoc_p)
+     ,.sets_p(sets_p)
+     ,.block_width_p(block_width_p)
+     ,.fill_width_p(fill_width_p)
+    )
+    store_data_merge
+     (.data0_i(mem_resp_cast_i.data[0+:fill_width_p])
+      ,.cache_req_i(cache_req_r)
+      ,.write_v_i(miss_store_v_li & (fill_cnt == '0))
+      ,.data_o(data_to_l1)
+      );
 
-  assign byte_select = (cache_req_r.addr[2:0] << 3);
-
-  bsg_mux_bitwise
-   #(.width_p(fill_width_p))
-   write_merge_mux
-    (.data0_i(mem_resp_cast_i.data[0+:fill_width_p])
-     ,.data1_i({num_dwords_per_fill_lp{cache_req_r.data}})
-     ,.sel_i(write_mask)
-     ,.data_o(data_to_l1)
-     );
-
+  // Index counter
   logic [index_width_lp-1:0] index_cnt;
   logic index_up;
   bsg_counter_clear_up
@@ -463,7 +451,6 @@ module bp_uce
     begin
       cache_req_ready_o = '0;
 
-      write_mask = '0;
       index_up   = '0;
       way_up     = '0;
       fill_up    = '0;
@@ -659,32 +646,6 @@ module bp_uce
           end
         e_writeback_read_req:
           begin
-            if (miss_store_v_li & (fill_cnt == '0)) begin
-              case (cache_req_r.size)
-                e_size_1B:
-                  begin
-                    write_mask = fill_width_p'(({8{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-                e_size_2B:
-                  begin
-                    write_mask = fill_width_p'(({16{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-                e_size_4B:
-                  begin
-                    write_mask = fill_width_p'(({32{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-                e_size_8B:
-                  begin
-                    write_mask = fill_width_p'(({64{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-                default: 
-                  begin
-                    write_mask = fill_width_p'(({64{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-              endcase
-            end else
-              write_mask = '0;
-
             // send the sub-block from L2 to cache
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_cast_o.index  = mem_resp_cast_i.header.addr[block_offset_width_lp+:index_width_lp];
@@ -730,32 +691,6 @@ module bp_uce
           end
         e_read_req:
           begin
-            if (miss_store_v_li & (fill_cnt == '0)) begin
-              case (cache_req_r.size)
-                e_size_1B:
-                  begin
-                    write_mask = fill_width_p'(({8{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-                e_size_2B:
-                  begin
-                    write_mask = fill_width_p'(({16{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-                e_size_4B:
-                  begin
-                    write_mask = fill_width_p'(({32{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-                e_size_8B:
-                  begin
-                    write_mask = fill_width_p'(({64{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-                default: 
-                  begin
-                    write_mask = fill_width_p'(({64{1'b1}} << addr_fill_slice) << byte_select);
-                  end
-              endcase
-            end else
-              write_mask = '0;
-            
             // send the sub-block from L2 to cache
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_cast_o.index  = mem_resp_cast_i.header.addr[block_offset_width_lp+:index_width_lp];
