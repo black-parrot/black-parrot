@@ -1,3 +1,5 @@
+VCS_TIMEOUT = 5ms
+
 $(LINT_DIR)/wrapper.v $(LINT_DIR)/testbench.v $(LINT_DIR)/test_bp.v:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
