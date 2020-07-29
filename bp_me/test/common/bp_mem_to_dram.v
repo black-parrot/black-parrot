@@ -281,7 +281,7 @@ module bp_mem_to_dram
   ,.w_tag_i(cam_w_tag_li)
   ,.w_empty_o()
 
-  ,.r_v_i(resp_afifo_v_lo)
+  ,.r_v_i(resp_afifo_deq_li)
   ,.r_tag_i(resp_afifo_ch_addr_lo)
   ,.r_match_o(cam_r_match_lo)
   );
@@ -350,7 +350,7 @@ module bp_mem_to_dram
   // ID -> address CAM
   assign cam_w_v_li = reorder_alloc_yumi_li
                       ? id_decode_lo
-                      : resp_afifo_v_lo
+                      : resp_afifo_deq_li
                         ? cam_r_match_lo
                         : '0;
   assign cam_w_set_not_clear_i = reorder_alloc_yumi_li;
