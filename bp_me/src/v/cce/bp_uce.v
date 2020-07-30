@@ -283,7 +283,7 @@ module bp_uce
   logic [fill_cnt_width_lp-1:0] mem_cmd_cnt;
   logic [block_size_in_fill_lp-1:0] fill_index_shift;
   logic [bank_offset_width_lp-1:0] bank_index;
-  logic [fill_cnt_width_lp-1:0] mem_cmd_init_slice, mem_cmd_init_slice_r;
+  logic [fill_cnt_width_lp-1:0] mem_cmd_init_slice, mem_cmd_final_slice;
   logic [paddr_width_p-1:0] critical_addr;
 
   if (fill_size_in_bank_lp == 1)
@@ -337,10 +337,8 @@ module bp_uce
         );
       
       assign mem_cmd_init_slice = cache_req_cast_i.addr[block_offset_width_lp-1-:fill_cnt_width_lp]; 
-      assign mem_cmd_init_slice_r = cache_req_r.addr[block_offset_width_lp-1-:fill_cnt_width_lp]; 
-      assign mem_cmd_done = (mem_cmd_init_slice_r == fill_cnt_width_lp'(0))
-                            ? cache_req_v_r & (mem_cmd_cnt == ((1'b1 << fill_cnt_width_lp)-1))
-                            : cache_req_v_r & (mem_cmd_cnt == (mem_cmd_init_slice_r-1));
+      assign mem_cmd_final_slice = (cache_req_r.addr[block_offset_width_lp-1-:fill_cnt_width_lp] + {fill_cnt_width_lp{1'b1}});
+      assign mem_cmd_done = cache_req_v_r & (mem_cmd_cnt == mem_cmd_final_slice);
       assign critical_addr = {cache_req_r.addr[paddr_width_p-1:(block_offset_width_lp-fill_cnt_width_lp)], (block_offset_width_lp-fill_cnt_width_lp)'(0)};
     end
 
