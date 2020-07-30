@@ -6,13 +6,15 @@
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
 +incdir+$BASEJUMP_STL_DIR/bsg_test
 +incdir+$BASEJUMP_STL_DIR/bsg_noc
+# HardFloat includes
++incdir+$HARDFLOAT_DIR/source
++incdir+$HARDFLOAT_DIR/source/RISCV
 # common includes
 +incdir+$BP_COMMON_DIR/src/include
 # fe includes
 +incdir+$BP_FE_DIR/src/include
 # be includes
 +incdir+$BP_BE_DIR/src/include
-+incdir+$BP_BE_DIR/src/include/bp_be_dcache
 # me includes
 +incdir+$BP_ME_DIR/src/include/v
 # top includes
@@ -32,10 +34,12 @@ $BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
 $BP_FE_DIR/src/include/bp_fe_pkg.vh
 # BE packages
 $BP_BE_DIR/src/include/bp_be_pkg.vh
-$BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
+$BP_BE_DIR/src/include/bp_be_dcache_pkg.vh
 # ME packages
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
+# HardFloat packages
+$BP_BE_DIR/src/include/bp_be_hardfloat_pkg.vh
 ## bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
@@ -86,6 +90,8 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_2r1w_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_2r1w_sync_synth.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_3r1w_sync.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_3r1w_sync_synth.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_cin.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_ripple_carry.v
@@ -157,6 +163,21 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
+# HardFloat files
+$HARDFLOAT_DIR/source/addRecFN.v
+$HARDFLOAT_DIR/source/compareRecFN.v
+$HARDFLOAT_DIR/source/divSqrtRecFN_small.v
+$HARDFLOAT_DIR/source/fNToRecFN.v
+$HARDFLOAT_DIR/source/HardFloat_primitives.v
+$HARDFLOAT_DIR/source/HardFloat_rawFN.v
+$HARDFLOAT_DIR/source/iNToRecFN.v
+$HARDFLOAT_DIR/source/isSigNaNRecFN.v
+$HARDFLOAT_DIR/source/mulAddRecFN.v
+$HARDFLOAT_DIR/source/mulRecFN.v
+$HARDFLOAT_DIR/source/recFNToFN.v
+$HARDFLOAT_DIR/source/recFNToIN.v
+$HARDFLOAT_DIR/source/recFNToRecFN.v
+$HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
 $BP_COMMON_DIR/src/v/bp_pma.v
@@ -167,14 +188,16 @@ $BP_BE_DIR/src/v/bp_be_top.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_int_alu.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fp.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctrl.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_aux.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctl.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fma.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_sys.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_regfile.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_to_rec.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_rec_to_fp.v
 # Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
@@ -183,6 +206,7 @@ $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_ptw.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_csr.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_decoder.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 ## FE files
@@ -225,6 +249,7 @@ $BP_ME_DIR/src/v/cce/bp_io_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.v
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.v
 # Network
+$BP_ME_DIR/src/v/cce/bp_cce_loopback.v
 $BP_ME_DIR/src/v/cce/bp_uce.v
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v

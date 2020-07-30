@@ -16,7 +16,7 @@
     bp_coh_states_e              coh_state;            \
     logic [ptag_width_mp-1:0]    tag;                  \
   } bp_be_dcache_tag_info_s
-  
+
 `define bp_be_dcache_tag_info_width(ptag_width_mp) \
   (ptag_width_mp+$bits(bp_coh_states_e))
 

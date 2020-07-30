@@ -34,14 +34,20 @@ module bp_cce
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
   )
   (input                                               clk_i
    , input                                             reset_i
 
    // Configuration Interface
    , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
-   , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
+
+   // ucode programming interface, synchronous read, direct connection to RAM
+   , input                                             ucode_v_i
+   , input                                             ucode_w_i
+   , input [cce_pc_width_p-1:0]                        ucode_addr_i
+   , input [cce_instr_width_p-1:0]                     ucode_data_i
+   , output [cce_instr_width_p-1:0]                    ucode_data_o
 
    // LCE-CCE Interface
    , input [lce_cce_req_width_lp-1:0]                  lce_req_i
@@ -90,7 +96,7 @@ module bp_cce
   //synopsys translate_on
 
   // LCE-CCE and Mem-CCE Interface
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
   // Config Interface
@@ -236,7 +242,15 @@ module bp_cce
     inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+
       ,.cfg_bus_i(cfg_bus_i)
+
+      ,.ucode_v_i(ucode_v_i)
+      ,.ucode_w_i(ucode_w_i)
+      ,.ucode_addr_i(ucode_addr_i)
+      ,.ucode_data_i(ucode_data_i)
+      ,.ucode_data_o(ucode_data_o)
+
       ,.predicted_fetch_pc_i(predicted_fetch_pc_lo)
       ,.branch_resolution_pc_i(branch_resolution_pc_lo)
       ,.stall_i(stall_lo)
@@ -245,9 +259,6 @@ module bp_cce
       ,.inst_o(fetch_inst_lo)
       ,.inst_v_o(fetch_inst_v_lo)
       );
-
-  // Configuration Bus Microcode Data output
-  assign cfg_cce_ucode_data_o = fetch_inst_lo;
 
   // Inst Pre-decode
   bp_cce_inst_predecode

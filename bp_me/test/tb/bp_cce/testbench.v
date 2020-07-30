@@ -18,7 +18,7 @@ module testbench
    // interface widths
    `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    , parameter cce_trace_p = 0
    , parameter axe_trace_p = 0
@@ -62,7 +62,7 @@ module testbench
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+`declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
 `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
 // CFG IF
@@ -261,6 +261,12 @@ lce_cmd_buffer
   ,.yumi_i(lce_cmd_yumi)
   );
 
+logic cce_ucode_v_li;
+logic cce_ucode_w_li;
+logic [cce_pc_width_p-1:0] cce_ucode_addr_li;
+logic [cce_instr_width_p-1:0] cce_ucode_data_li;
+logic [cce_instr_width_p-1:0] cce_ucode_data_lo;
+
 // CCE
 wrapper
 #(.bp_params_p(bp_params_p)
@@ -271,7 +277,12 @@ wrapper
   ,.reset_i(reset_i)
 
   ,.cfg_bus_i(cfg_bus_lo)
-  ,.cfg_cce_ucode_data_o()
+
+  ,.ucode_v_i(cce_ucode_v_li)
+  ,.ucode_w_i(cce_ucode_w_li)
+  ,.ucode_addr_i(cce_ucode_addr_li)
+  ,.ucode_data_i(cce_ucode_data_li)
+  ,.ucode_data_o(cce_ucode_data_lo)
 
   ,.lce_cmd_o(lce_cmd_lo)
   ,.lce_cmd_v_o(lce_cmd_v_lo)
@@ -410,11 +421,12 @@ bp_cfg
    ,.did_i('0)
    ,.host_did_i('0)
    ,.cord_i(cord_li)
-   ,.irf_data_i('0)
-   ,.npc_data_i('0)
-   ,.csr_data_i('0)
-   ,.priv_data_i('0)
-   ,.cce_ucode_data_i('0)
+
+   ,.cce_ucode_v_o(cce_ucode_v_li)
+   ,.cce_ucode_w_o(cce_ucode_w_li)
+   ,.cce_ucode_addr_o(cce_ucode_addr_li)
+   ,.cce_ucode_data_o(cce_ucode_data_li)
+   ,.cce_ucode_data_i(cce_ucode_data_lo)
    );
 
 // CFG loader

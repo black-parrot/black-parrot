@@ -17,7 +17,7 @@ module bp_tile
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
    `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
 
@@ -50,7 +50,7 @@ module bp_tile
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+`declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
 // Cast the routing links
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -120,11 +120,10 @@ always_ff @(posedge clk_i)
   reset_r <= reset_i;
 
 bp_cfg_bus_s cfg_bus_lo;
-logic [dword_width_p-1:0] cfg_irf_data_li;
-logic [vaddr_width_p-1:0] cfg_npc_data_li;
-logic [dword_width_p-1:0] cfg_csr_data_li;
-logic [1:0]               cfg_priv_data_li;
-logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
+logic cce_ucode_v_lo;
+logic cce_ucode_w_lo;
+logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
+logic [cce_instr_width_p-1:0] cce_ucode_data_lo, cce_ucode_data_li;
 bp_cfg
  #(.bp_params_p(bp_params_p))
  cfg
@@ -143,11 +142,12 @@ bp_cfg
    ,.did_i(my_did_i)
    ,.host_did_i(host_did_i)
    ,.cord_i(my_cord_i)
-   ,.irf_data_i(cfg_irf_data_li)
-   ,.npc_data_i(cfg_npc_data_li)
-   ,.csr_data_i(cfg_csr_data_li)
-   ,.priv_data_i(cfg_priv_data_li)
-   ,.cce_ucode_data_i(cfg_cce_ucode_data_li)
+
+   ,.cce_ucode_v_o(cce_ucode_v_lo)
+   ,.cce_ucode_w_o(cce_ucode_w_lo)
+   ,.cce_ucode_addr_o(cce_ucode_addr_lo)
+   ,.cce_ucode_data_o(cce_ucode_data_lo)
+   ,.cce_ucode_data_i(cce_ucode_data_li)
    );
 
 bp_clint_slice
@@ -177,10 +177,6 @@ bp_core
    ,.reset_i(reset_r)
 
    ,.cfg_bus_i(cfg_bus_lo)
-   ,.cfg_irf_data_o(cfg_irf_data_li)
-   ,.cfg_npc_data_o(cfg_npc_data_li)
-   ,.cfg_csr_data_o(cfg_csr_data_li)
-   ,.cfg_priv_data_o(cfg_priv_data_li)
 
    ,.lce_req_o(lce_req_lo)
    ,.lce_req_v_o(lce_req_v_lo)
@@ -210,7 +206,12 @@ bp_cce_wrapper
    ,.reset_i(reset_r)
 
    ,.cfg_bus_i(cfg_bus_lo)
-   ,.cfg_cce_ucode_data_o(cfg_cce_ucode_data_li)
+
+   ,.ucode_v_i(cce_ucode_v_lo)
+   ,.ucode_w_i(cce_ucode_w_lo)
+   ,.ucode_addr_i(cce_ucode_addr_lo)
+   ,.ucode_data_i(cce_ucode_data_lo)
+   ,.ucode_data_o(cce_ucode_data_li)
 
    ,.lce_req_i(cce_lce_req_li)
    ,.lce_req_v_i(cce_lce_req_v_li)

@@ -14,14 +14,15 @@ module testbench
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    // Tracing parameters
    , parameter cce_trace_p                 = 0
    , parameter dram_trace_p                = 0
    , parameter dcache_trace_p              = 0
    , parameter random_yumi_p               = 0
-   , parameter uce_p                       = 1
+   , parameter uce_p                       = 0
+   , parameter wt_p                        = 0
 
    , parameter trace_file_p = "test.tr"
 
@@ -47,7 +48,7 @@ module testbench
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam page_offset_width_lp = bp_page_offset_width_gp
    , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
-   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dword_width_p)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dpath_width_p)
    , localparam trace_replay_data_width_lp = ptag_width_lp + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
    , localparam trace_rom_addr_width_lp = 8
 
@@ -58,7 +59,7 @@ module testbench
    , input reset_i
    );
 
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_li;
@@ -201,6 +202,7 @@ module testbench
   wrapper
     #(.bp_params_p(bp_params_p)
      ,.uce_p(uce_p)
+     ,.wt_p(wt_p)
      )
     wrapper
     (.clk_i(clk_i)
@@ -281,7 +283,7 @@ module testbench
        ,.v_tv_r(v_tv_r)
        ,.addr_tv_r(paddr_tv_r)
        ,.lr_miss_tv(lr_miss_tv)
-       ,.sc_op_tv_r(sc_op_tv_r)
+       ,.sc_op_tv_r(decode_tv_r.sc_op)
        ,.sc_success(sc_success)
 
        ,.cache_req_v_o(cache_req_v_o)
@@ -290,16 +292,18 @@ module testbench
        ,.cache_req_metadata_o(cache_req_metadata_o)
        ,.cache_req_complete_i(cache_req_complete_i)
 
-       ,.v_o(v_o)
-       ,.load_data(data_o)
-       ,.store_data(data_tv_r)
+       ,.v_o(early_v_o)
+       ,.load_data(early_data_o[0+:65])
+       ,.store_data(data_tv_r[0+:64])
        ,.wt_req(wt_req)
-       ,.cache_miss_o(dcache_miss_o)
+       ,.cache_miss_o('0)
 
+       ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
        ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
 
+       ,.tag_mem_v_i(tag_mem_v_li)
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)
        ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
@@ -307,6 +311,8 @@ module testbench
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+       ,.program_finish_i('0)
        );
 
   if (uce_p == 0) begin

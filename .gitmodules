@@ -124,3 +124,9 @@
   url = https://github.com/buildroot/buildroot
   branch = master
   ignore = dirty
+
+[submodule "external/HardFloat"]
+  path = external/HardFloat
+  url = https://github.com/bsg-external/HardFloat.git
+  branch = master
+  ignore = dirty

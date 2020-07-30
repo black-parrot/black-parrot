@@ -10,6 +10,7 @@ module bp_be_csr
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
+    , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
     , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
     , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
     )
@@ -17,8 +18,6 @@ module bp_be_csr
     , input                             reset_i
 
     , input [cfg_bus_width_lp-1:0]      cfg_bus_i
-    , output [dword_width_p-1:0]        cfg_csr_data_o
-    , output [1:0]                      cfg_priv_data_o
 
     // CSR instruction interface
     , input [csr_cmd_width_lp-1:0]      csr_cmd_i
@@ -27,6 +26,8 @@ module bp_be_csr
 
     // Misc interface
     , input                             instret_i
+    , input rv64_fflags_s               fflags_acc_i
+    , input                             frf_w_v_i
 
     , input                             exception_v_i
     , input [vaddr_width_p-1:0]         exception_pc_i
@@ -43,6 +44,8 @@ module bp_be_csr
     , output [trap_pkt_width_lp-1:0]    trap_pkt_o
 
     , output [trans_info_width_lp-1:0]  trans_info_o
+    , output rv64_frm_e                 frm_dyn_o
+    , output                            fpu_en_o
     );
 
 // Declare parameterizable structs
@@ -53,17 +56,13 @@ module bp_be_csr
 // Casting input and output ports
 bp_cfg_bus_s cfg_bus_cast_i;
 bp_be_csr_cmd_s csr_cmd;
-bp_be_csr_cmd_s cfg_bus_csr_cmd_li;
 
+bp_be_wb_pkt_s wb_pkt_cast_i;
 bp_be_trap_pkt_s trap_pkt_cast_o;
 bp_be_trans_info_s trans_info_cast_o;
 
-assign cfg_bus_csr_cmd_li.csr_op   = cfg_bus_cast_i.csr_r_v ? e_csrrs : e_csrrw;
-assign cfg_bus_csr_cmd_li.csr_addr = cfg_bus_cast_i.csr_addr;
-assign cfg_bus_csr_cmd_li.data     = cfg_bus_cast_i.csr_r_v ? '0 : cfg_bus_cast_i.csr_data;
-
 assign cfg_bus_cast_i = cfg_bus_i;
-assign csr_cmd = (cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) ? cfg_bus_csr_cmd_li : csr_cmd_i;
+assign csr_cmd = csr_cmd_i;
 assign trap_pkt_o = trap_pkt_cast_o;
 assign trans_info_o = trans_info_cast_o;
 
@@ -83,6 +82,8 @@ wire is_debug_mode = debug_mode_r;
 wire is_m_mode = is_debug_mode | (priv_mode_r == `PRIV_MODE_M);
 wire is_s_mode = (priv_mode_r == `PRIV_MODE_S);
 wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
+
+`declare_csr(fcsr)
 
 // sstatus subset of mstatus
 // sedeleg hardcoded to 0
@@ -234,7 +235,7 @@ always_comb
 
 logic [vaddr_width_p-1:0] apc_n, apc_r;
 bsg_dff_reset
- #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
+ #(.width_p(vaddr_width_p), .reset_val_p(bootrom_base_addr_gp))
  apc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -250,13 +251,16 @@ assign apc_n = trap_pkt_cast_o.eret
                    ? exception_npc_i
                    : apc_r;
 
-bsg_dff_reset
+logic enter_debug, exit_debug;
+bsg_dff_reset_set_clear
  #(.width_p(1))
  debug_mode_reg
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i('0)
+   // TODO: Should explicitly set freeze
+   ,.set_i(cfg_bus_cast_i.freeze | enter_debug)
+   ,.clear_i(exit_debug)
 
-   ,.data_i(debug_mode_n)
    ,.data_o(debug_mode_r)
    );
 
@@ -268,10 +272,9 @@ bsg_dff_reset
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.data_i(cfg_bus_cast_i.priv_w_v ? cfg_bus_cast_i.priv_data : priv_mode_n)
+   ,.data_i(priv_mode_n)
    ,.data_o(priv_mode_r)
    );
-assign cfg_priv_data_o = priv_mode_r;
 
 assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
 bsg_dff_reset
@@ -323,8 +326,9 @@ logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
 // CSR data
 always_comb
   begin
-    debug_mode_n = debug_mode_r;
     priv_mode_n  = priv_mode_r;
+
+    fcsr_li = fcsr_lo;
 
     stvec_li      = stvec_lo;
     scounteren_li = scounteren_lo;
@@ -353,8 +357,10 @@ always_comb
     minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
     mcountinhibit_li = mcountinhibit_lo;
 
-    dcsr_li = dcsr_lo;
-    dpc_li  = dpc_lo;
+    enter_debug = '0;
+    exit_debug  = '0;
+    dcsr_li     = dcsr_lo;
+    dpc_li      = dpc_lo;
 
     exception_v_o    = '0;
     interrupt_v_o    = '0;
@@ -366,7 +372,7 @@ always_comb
     
     if (~ebreak_v_li & csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
       begin
-        debug_mode_n   = 1'b1;
+        enter_debug    = 1'b1;
         dpc_li         = paddr_width_p'($signed(exception_pc_i));
         dcsr_li.cause  = 1; // Ebreak
         dcsr_li.prv    = priv_mode_r;
@@ -382,6 +388,7 @@ always_comb
       end
     else if (csr_cmd_v_i & (csr_cmd.csr_op == e_dret))
       begin
+        exit_debug       = 1'b1;
         priv_mode_n      = dcsr_lo.prv;
 
         illegal_instr_o  = ~is_debug_mode;
@@ -428,8 +435,7 @@ always_comb
         // ECALL is implemented as part of the exception cause vector
         // EBreak is implemented below
       end
-    else if ((csr_cmd_v_i | cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v)
-             & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
+    else if (csr_cmd_v_i & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
       begin
         // Check for access violations
         if (is_s_mode & mstatus_lo.tvm & (csr_cmd.csr_addr == `CSR_ADDR_SATP))
@@ -448,6 +454,9 @@ always_comb
           begin
             // Read case
             unique casez (csr_cmd.csr_addr)
+              `CSR_ADDR_FFLAGS : csr_data_lo = fcsr_lo.fflags;
+              `CSR_ADDR_FRM    : csr_data_lo = fcsr_lo.frm;
+              `CSR_ADDR_FCSR   : csr_data_lo = fcsr_lo;
               `CSR_ADDR_CYCLE  : csr_data_lo = mcycle_lo;
               // Time must be done by trapping, since we can't stall at this point
               `CSR_ADDR_INSTRET: csr_data_lo = minstret_lo;
@@ -499,6 +508,9 @@ always_comb
             endcase
             // Write case
             unique casez (csr_cmd.csr_addr)
+              `CSR_ADDR_FFLAGS : fcsr_li = '{frm: fcsr_lo.frm, fflags: csr_data_li, default: '0};
+              `CSR_ADDR_FRM    : fcsr_li = '{frm: csr_data_li, fflags: fcsr_lo.fflags, default: '0};
+              `CSR_ADDR_FCSR   : fcsr_li = csr_data_li;
               `CSR_ADDR_CYCLE  : mcycle_li = csr_data_li;
               // Time must be done by trapping, since we can't stall at this point
               `CSR_ADDR_INSTRET: minstret_li = csr_data_li;
@@ -629,7 +641,7 @@ always_comb
     // Always break in single step mode
     if (~is_debug_mode & exception_v_i & dcsr_lo.step)
       begin
-        debug_mode_n = 1'b1;
+        enter_debug   = 1'b1;
         dpc_li        = paddr_width_p'($signed(exception_npc_i));
         dcsr_li.cause = 4;
         dcsr_li.prv   = priv_mode_r;
@@ -638,15 +650,18 @@ always_comb
     mip_li.mtip = timer_irq_i;
     mip_li.msip = software_irq_i;
     mip_li.meip = external_irq_i;
+
+    // Accumulate FFLAGS
+    fcsr_li.fflags |= fflags_acc_i;
+
+    // Set FS to dirty if: fflags set, frf written, fcsr written
+    mstatus_li.fs |= {2{|fflags_acc_i | frf_w_v_i | (csr_cmd_v_i & (csr_cmd.csr_addr == `CSR_ADDR_FCSR))}};
   end
 
 // Debug Mode masks all interrupts
 assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
-
-assign cfg_csr_data_o = csr_data_lo;
-assign cfg_priv_data_o = priv_mode_r;
 
 assign trap_pkt_cast_o.npc              = apc_n;
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
@@ -665,6 +680,9 @@ assign trans_info_cast_o.translation_en = translation_en_r
     | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
 assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
 assign trans_info_cast_o.mstatus_mxr = mstatus_lo.mxr;
+
+assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
+assign fpu_en_o = (mstatus_lo.fs != 2'b00);
 
 endmodule
 

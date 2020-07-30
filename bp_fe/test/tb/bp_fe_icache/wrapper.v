@@ -11,7 +11,7 @@ module wrapper
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
@@ -88,7 +88,6 @@ module wrapper
   logic icache_ready_lo;
   assign rolly_yumi_li = rolly_v_lo & icache_ready_lo;
 
-  logic icache_miss_lo;
   logic rollback_li, rolly_yumi_rr;
 
   bsg_fifo_1r1w_rolly
@@ -186,7 +185,7 @@ module wrapper
     ,.cfg_bus_i(cfg_bus_i)
 
     ,.vaddr_i(rolly_vaddr_lo)
-    ,.vaddr_v_i(rolly_v_lo)
+    ,.vaddr_v_i(rolly_yumi_li)
     ,.fencei_v_i(1'b0)
     ,.vaddr_ready_o(icache_ready_lo)
 
@@ -197,7 +196,6 @@ module wrapper
 
     ,.data_o(data_o)
     ,.data_v_o(data_v_o)
-    ,.miss_o(icache_miss_lo)
 
     ,.cache_req_ready_i(cache_req_ready_li)
     ,.cache_req_o(cache_req_lo)
@@ -320,7 +318,6 @@ module wrapper
       ,.reset_i(reset_i)
 
       ,.cfg_bus_i(cfg_bus_i)
-      ,.cfg_cce_ucode_data_o()
 
       ,.lce_req_i(lce_req_lo)
       ,.lce_req_v_i(lce_req_v_lo)

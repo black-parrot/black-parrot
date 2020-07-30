@@ -17,6 +17,10 @@ from all other CCEs. The current mapping from address to CCE stripes cache block
 in the system. All cache blocks that map to the same cache set will map to the same
 CCE.
 
+The current implementation of BlackParrot uses point-to-point ordered networks for the
+coherence networks, however the coherence protocol is designed and verified correct
+for unordered or ordered networks.
+
 ![BedRock System diagram](bedrock.png)
 
 ## Networks

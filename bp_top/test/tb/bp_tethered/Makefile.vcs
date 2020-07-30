@@ -40,18 +40,25 @@ $(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
-NBF_INPUTS = --ncpus=$(NCPUS) --ucode=cce_ucode.mem --mem=prog.mem --skip_zeros
+$(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
+	cp $^ $@
 
+$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
+	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=4 --verilog-data-width=4 $@
+
+NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem --mem=prog.mem --skip_zeros
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.bin bootrom.mem bootrom.dump)
 
 SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.dump)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
+SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.bin bootrom.mem bootrom.dump)
 
 sim_sample.v: build.v
 sim_sample.v: $(SIM_DIR)/run_samplev
@@ -67,6 +74,7 @@ $(SIM_DIR)/run_samplev: $(SAMPLE_COLLATERAL)
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
 	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
+	$(RISCV_OBJCOPY) -I binary -O verilog --verilog-data-width=4 $(@D)/prog.bootram $(@D)/bootrom.mem
 	cd $(@D); \
 		python $(MEM2NBF) $(NBF_INPUTS) --checkpoint=prog.bp_regs > prog.nbf
 	cd $(@D); \

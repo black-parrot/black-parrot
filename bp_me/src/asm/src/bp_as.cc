@@ -671,7 +671,7 @@ Assembler::parsePushQueueArgs(vector<string> *tokens, int n, pushq_args *args) {
   if (args->dst_q == e_dst_q_sel_lce_cmd) {
     args->lce_cmd = (bp_lce_cmd_type_e)parseImm(tokens->at(2));
   } else {
-    args->mem_cmd = (bp_cce_mem_cmd_type_e)parseImm(tokens->at(2));
+    args->mem_cmd = (bp_mem_msg_e)parseImm(tokens->at(2));
   }
   // after the opcode, address, and command, all args are optional and default to 0
   // args are specified as "arg=value"

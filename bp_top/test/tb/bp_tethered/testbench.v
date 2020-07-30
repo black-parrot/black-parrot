@@ -18,7 +18,7 @@ module testbench
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    // Tracing parameters
    , parameter calc_trace_p                = 0
@@ -59,7 +59,7 @@ function int get_sim_period();
   return (`BP_SIM_CLK_PERIOD);
 endfunction
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+`declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
 logic [num_core_p-1:0] program_finish_lo;
 logic [num_core_p-1:0] cosim_finish_lo;
@@ -177,9 +177,9 @@ bind bp_be_top
    commit_tracer
     (.clk_i(clk_i & (testbench.cmt_trace_p == 1))
      ,.reset_i(reset_i)
-     ,.freeze_i(scheduler.int_regfile.cfg_bus.freeze)
+     ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
-     ,.mhartid_i(scheduler.int_regfile.cfg_bus.core_id)
+     ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
      ,.decode_i(calculator.reservation_n.decode)
 
@@ -187,9 +187,13 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.rd_w_v_i(scheduler.wb_pkt.rd_w_v)
-     ,.rd_addr_i(scheduler.wb_pkt.rd_addr)
-     ,.rd_data_i(scheduler.wb_pkt.rd_data)
+     ,.ird_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
+     ,.ird_data_i(scheduler.iwb_pkt.rd_data)
+
+     ,.frd_w_v_i(scheduler.fwb_pkt.rd_w_v)
+     ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
+     ,.frd_data_i(scheduler.fwb_pkt.rd_data)
      );
 
 bind bp_be_top
@@ -198,14 +202,14 @@ bind bp_be_top
    cosim
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.freeze_i(scheduler.int_regfile.cfg_bus.freeze)
+     ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
      // We want to pass these values as parameters, but cannot in Verilator 4.025
      // Parameter-resolved constants must not use dotted references
      ,.en_i(testbench.cosim_p == 1)
      ,.checkpoint_i(testbench.checkpoint_p == 1)
      ,.num_core_i(testbench.num_core_p)
-     ,.mhartid_i(scheduler.int_regfile.cfg_bus.core_id)
+     ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
      ,.config_file_i(testbench.cosim_cfg_file_p)
      ,.instr_cap_i(testbench.cosim_instr_p)
      ,.memsize_i(testbench.cosim_memsize_p)
@@ -216,9 +220,13 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.rd_w_v_i(scheduler.wb_pkt.rd_w_v)
-     ,.rd_addr_i(scheduler.wb_pkt.rd_addr)
-     ,.rd_data_i(scheduler.wb_pkt.rd_data)
+     ,.ird_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
+     ,.ird_data_i(scheduler.iwb_pkt.rd_data)
+
+     ,.frd_w_v_i(scheduler.fwb_pkt.rd_w_v)
+     ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
+     ,.frd_data_i(scheduler.fwb_pkt.rd_data)
 
      ,.interrupt_v_i(calculator.pipe_sys.csr.trap_pkt_cast_o._interrupt)
      ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
@@ -239,10 +247,10 @@ bind bp_be_top
    perf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.freeze_i(scheduler.int_regfile.cfg_bus.freeze)
+     ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
      ,.warmup_instr_i(testbench.warmup_instr_p)
 
-     ,.mhartid_i(scheduler.int_regfile.cfg_bus.core_id)
+     ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
      ,.commit_v_i(calculator.commit_pkt.instret)
 
@@ -258,9 +266,9 @@ bind bp_be_top
      watchdog
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.freeze_i(scheduler.int_regfile.cfg_bus.freeze)
+       ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
-       ,.mhartid_i(scheduler.int_regfile.cfg_bus.core_id)
+       ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
        ,.npc_i(director.npc_r)
        ,.instret_i(calculator.commit_pkt.instret)
@@ -272,9 +280,9 @@ bind bp_be_top
      npc_tracer
       (.clk_i(clk_i & (testbench.npc_trace_p == 1))
        ,.reset_i(reset_i)
-       ,.freeze_i(scheduler.int_regfile.cfg_bus.freeze)
+       ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
-       ,.mhartid_i(scheduler.int_regfile.cfg_bus.core_id)
+       ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
        ,.npc_w_v(npc_w_v)
        ,.npc_n(npc_n)
@@ -306,7 +314,7 @@ bind bp_be_top
        ,.v_tv_r(v_tv_r)
        ,.addr_tv_r(paddr_tv_r)
        ,.lr_miss_tv(lr_miss_tv)
-       ,.sc_op_tv_r(sc_op_tv_r)
+       ,.sc_op_tv_r(decode_tv_r.sc_op)
        ,.sc_success(sc_success)
         
        ,.cache_req_v_o(cache_req_v_o)
@@ -317,11 +325,11 @@ bind bp_be_top
         
        ,.cache_req_complete_i(cache_req_complete_i)
 
-       ,.v_o(v_o)
-       ,.load_data(data_o)
-       ,.cache_miss_o(dcache_miss_o)
+       ,.v_o(early_v_o)
+       ,.load_data(early_data_o[0+:65])
+       ,.cache_miss_o('0)
        ,.wt_req(wt_req)
-       ,.store_data(data_tv_r)
+       ,.store_data(data_tv_r[0+:dword_width_p])
 
        ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
@@ -372,8 +380,8 @@ bind bp_be_top
        ,.cache_req_complete_i(cache_req_complete_i)
 
        ,.v_o(data_v_o)
-       ,.load_data(dword_width_p'(data_o))
-       ,.cache_miss_o(miss_o)
+       ,.load_data(65'(data_o))
+       ,.cache_miss_o('0)
        ,.wt_req()
        ,.store_data(dword_width_p'(0))
 
@@ -400,9 +408,9 @@ bind bp_be_top
     vm_tracer
       (.clk_i(clk_i & (testbench.vm_trace_p == 1))
        ,.reset_i(reset_i)
-       ,.freeze_i(be.scheduler.int_regfile.cfg_bus.freeze)
+       ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
-       ,.mhartid_i(be.scheduler.int_regfile.cfg_bus.core_id)
+       ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
        ,.itlb_clear_i(fe.mem.itlb.flush_i)
        ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)
@@ -440,9 +448,9 @@ bind bp_be_top
      core_profiler
       (.clk_i(clk_i & (testbench.core_profile_p == 1))
        ,.reset_i(reset_i)
-       ,.freeze_i(be.scheduler.int_regfile.cfg_bus.freeze)
+       ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
-       ,.mhartid_i(be.scheduler.int_regfile.cfg_bus.core_id)
+       ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
        ,.fe_wait_stall(fe.pc_gen.is_wait)
        ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)
@@ -460,14 +468,14 @@ bind bp_be_top
 
        ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)
        ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
-       ,.long_haz(be.detector.long_haz_v)
+       ,.long_haz(be.detector.struct_haz_v)
        ,.exception(be.director.trap_pkt.exception)
        ,.eret(be.director.trap_pkt.eret)
        ,._interrupt(be.director.trap_pkt._interrupt)
        ,.control_haz(be.detector.control_haz_v)
        ,.data_haz(be.detector.data_haz_v)
-       ,.load_dep((be.detector.dep_status_li[0].mem_iwb_v
-                   | be.detector.dep_status_li[1].mem_iwb_v
+       ,.load_dep((be.detector.dep_status_li[0].emem_iwb_v
+                   | be.detector.dep_status_li[1].emem_iwb_v
                    ) & be.detector.data_haz_v
                   )
        ,.mul_dep((be.detector.dep_status_li[0].mul_iwb_v
@@ -488,9 +496,9 @@ bind bp_be_top
      pc_profiler
       (.clk_i(clk_i & (testbench.core_profile_p == 1))
        ,.reset_i(reset_i)
-       ,.freeze_i(be.scheduler.int_regfile.cfg_bus.freeze)
+       ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
-       ,.mhartid_i(be.scheduler.int_regfile.cfg_bus.core_id)
+       ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
        ,.commit_pkt(be.calculator.commit_pkt)
 

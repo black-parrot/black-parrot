@@ -14,6 +14,8 @@ import subprocess
 cfg_base_addr          = 0x200000
 cfg_reg_reset          = 0x01
 cfg_reg_freeze         = 0x02
+cfg_domain_mask        = 0x09
+cfg_sac_mask           = 0x0a
 cfg_reg_icache_mode    = 0x22
 cfg_reg_npc            = 0x40
 cfg_reg_dcache_mode    = 0x43
@@ -169,8 +171,9 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
+
     # Write PC to the DRAM base
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x80000000)
+    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
 
     # Write checkpoint
     if self.checkpoint_file:

@@ -39,14 +39,13 @@ module bp_cce_fsm_top
 
     // interface widths
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
   )
   (input                                                   clk_i
    , input                                                 reset_i
 
    , input [cfg_bus_width_lp-1:0]                          cfg_bus_i
-   , output [cce_instr_width_p-1:0]                        cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
    // inbound: ready&valid
@@ -168,7 +167,6 @@ module bp_cce_fsm_top
       ,.reset_i(reset_i)
 
       ,.cfg_bus_i(cfg_bus_i)
-      ,.cfg_cce_ucode_data_o(cfg_cce_ucode_data_o)
 
       // To CCE
       ,.lce_req_i(lce_req_to_cce)

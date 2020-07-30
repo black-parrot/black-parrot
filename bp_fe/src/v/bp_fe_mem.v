@@ -79,7 +79,7 @@ assign cfg_bus_cast_i = cfg_bus_i;
 assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o     = mem_resp_cast_o;
 
-logic instr_page_fault_lo, instr_access_fault_lo, icache_miss_lo, itlb_miss_lo;
+logic instr_page_fault_lo, instr_access_fault_lo, itlb_miss_lo;
 
 logic fetch_ready;
 wire itlb_fence_v = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
@@ -87,8 +87,9 @@ wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
 wire fetch_v      = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
 wire fencei_v     = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_icache_fence);
 
-bp_fe_tlb_entry_s itlb_r_entry;
-logic itlb_r_v_lo;
+logic fetch_v_r, fetch_v_rr;
+bp_fe_tlb_entry_s itlb_r_entry, entry_lo, passthrough_entry;
+logic itlb_r_v_lo, itlb_v_lo, passthrough_v_lo;
 bp_tlb
  #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
  itlb
@@ -97,25 +98,45 @@ bp_tlb
    ,.flush_i(itlb_fence_v)
    ,.translation_en_i(mem_translation_en_i)
 
-   ,.v_i(fetch_v | itlb_fill_v)
-         
+   ,.v_i((fetch_v | itlb_fill_v) & mem_translation_en_i)
    ,.w_i(itlb_fill_v)
    ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr.tag)
    ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
 
-   ,.v_o(itlb_r_v_lo)
+   ,.v_o(itlb_v_lo)
    ,.miss_v_o(itlb_miss_lo)
-   ,.entry_o(itlb_r_entry)
+   ,.entry_o(entry_lo)
    );
+
+logic [vtag_width_p-1:0] vtag_r;
+bsg_dff_reset_en
+ #(.width_p(vtag_width_p))
+ vtag_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(fetch_v)
+
+   ,.data_i(mem_cmd_cast_i.operands.fetch.vaddr.tag)
+   ,.data_o(vtag_r)
+  );
+
+assign passthrough_entry = '{ptag: vtag_r, default: '0};
+assign passthrough_v_lo  = fetch_v_r;
+assign itlb_r_entry      = mem_translation_en_i ? entry_lo : passthrough_entry;
+assign itlb_r_v_lo       = mem_translation_en_i ? itlb_v_lo : passthrough_v_lo;
 
 wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
 wire                    ptag_v_li   = itlb_r_v_lo;
 
 logic uncached_li;
+
 bp_pma
  #(.bp_params_p(bp_params_p))
  pma
-  (.ptag_v_i(ptag_v_li)
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.ptag_v_i(ptag_v_li)
    ,.ptag_i(ptag_li)
 
    ,.uncached_o(uncached_li)
@@ -145,7 +166,6 @@ bp_fe_icache
 
    ,.data_o(icache_data_lo)
    ,.data_v_o(icache_data_v_lo)
-   ,.miss_o()
 
    // LCE Interface
 
@@ -174,7 +194,6 @@ bp_fe_icache
    ,.stat_mem_o(stat_mem_o)
    );
 
-logic fetch_v_r, fetch_v_rr;
 logic itlb_miss_r;
 logic instr_access_fault_r, instr_page_fault_r;
 always_ff @(posedge clk_i)
@@ -204,12 +223,10 @@ wire instr_exe_page_fault = ~itlb_r_entry.x;
 // Fault if in uncached mode but access is not for an uncached address
 wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
 wire mode_fault_v = (is_uncached_mode & ~uncached_li);
-// TODO: Enable other domains by setting enabled dids with cfg_bus
-wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p] != '0);
-// Don't allow speculative access to local tile memory
-wire local_fault_v = (ptag_li < (dram_base_addr_gp >> page_offset_width_p));
+// Fault if domain is not zero (top <io_noc_did_width_p> bits) and SAC bit is not zero (next bit)
+wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p+1] != '0);
 
-assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v | local_fault_v);
+assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v);
 assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_i & (instr_priv_page_fault | instr_exe_page_fault);
 
 assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v | fencei_v;

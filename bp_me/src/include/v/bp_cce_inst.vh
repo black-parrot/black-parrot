@@ -802,7 +802,7 @@ typedef struct packed {
   union packed
   {
     bp_lce_cmd_type_e             lce_cmd;
-    bp_cce_mem_cmd_type_e         mem_cmd;
+    bp_mem_msg_e                  mem_cmd;
   }                                      cmd;
   logic                                  spec;
   logic                                  custom;
@@ -925,7 +925,7 @@ typedef struct packed {
   logic                                    lce_cmd_v;
   bp_lce_cmd_type_e                        lce_cmd;
   logic                                    mem_cmd_v;
-  bp_cce_mem_cmd_type_e                    mem_cmd;
+  bp_mem_msg_e                             mem_cmd;
   logic                                    inv_cmd_v;
 
   // GPR write mask

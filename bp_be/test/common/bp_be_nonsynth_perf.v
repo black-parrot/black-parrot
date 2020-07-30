@@ -39,14 +39,14 @@ logic [63:0] instr_cnt_r;
 logic [num_core_p-1:0] program_finish_r;
 always_ff @(posedge clk_i)
   begin
-    if (reset_i | freeze_i | ~warm) 
+    if (reset_i | freeze_i | ~warm)
       begin
         clk_cnt_r <= '0;
         instr_cnt_r <= '0;
 
         program_finish_r <= '0;
       end
-    else 
+    else
       begin
         clk_cnt_r <= clk_cnt_r + 64'b1;
         instr_cnt_r <= instr_cnt_r + commit_v_i;
