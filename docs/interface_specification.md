@@ -152,7 +152,6 @@ A UCE implementation must support the following operations:
 - Handle both uncached and cached requests
 - Support both write-through and write-back protocols
 - Support credit-based flow control, to support fencing in the core
-- Support ordering addresses starting from the requested address (aligned based on the fill width), continuing with the higher addresses and wrapping around to the lower addresses
 
 The request interface is ready-valid and uses a parameterized struct to pass arguments,
 bp_cache_req_s, which contains the following fields.
@@ -225,6 +224,11 @@ A memory command or response packet is composed of:
   - Coherence state
   - Whether this is a speculative request
 - Data
+
+Misaligned addresses return data wrapped around the request size using the following scheme:
+
+Request: 0x0 [d c b a]
+Request: 0x2 [b a d c]
 
 ## LCE-CCE Interface
 
