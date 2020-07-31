@@ -30,6 +30,7 @@ module bp_uce
     , localparam block_size_in_fill_lp = block_width_p / fill_width_p
     , localparam fill_size_in_bank_lp = fill_width_p / bank_width_lp
     , localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp)
+    , localparam fill_offset_width_lp = (block_offset_width_lp - fill_cnt_width_lp)
     , localparam bank_sub_offset_width_lp = `BSG_SAFE_CLOG2(fill_size_in_bank_lp)
 
     // Fill size parameterisations -
@@ -283,7 +284,6 @@ module bp_uce
   logic [fill_cnt_width_lp-1:0] mem_cmd_cnt;
   logic [block_size_in_fill_lp-1:0] fill_index_shift;
   logic [bank_offset_width_lp-1:0] bank_index;
-  logic [fill_cnt_width_lp-1:0] mem_cmd_init_slice, mem_cmd_final_slice;
   logic [paddr_width_p-1:0] critical_addr;
 
   if (fill_size_in_bank_lp == 1)
@@ -307,6 +307,7 @@ module bp_uce
     end
   else 
     begin : fill_less_than_block
+      logic [fill_cnt_width_lp-1:0] first_addr, last_addr;
       logic [fill_cnt_width_lp-1:0] fill_cnt;
       bsg_counter_clear_up
        #(.max_val_p(block_size_in_fill_lp-1)
@@ -332,14 +333,14 @@ module bp_uce
 
         ,.set_i(cache_req_v_i)
         ,.en_i(mem_cmd_up)
-        ,.val_i(mem_cmd_init_slice)
+        ,.val_i(first_addr)
         ,.count_o(mem_cmd_cnt)
         );
       
-      assign mem_cmd_init_slice = cache_req_cast_i.addr[block_offset_width_lp-1-:fill_cnt_width_lp]; 
-      assign mem_cmd_final_slice = (cache_req_r.addr[block_offset_width_lp-1-:fill_cnt_width_lp] + {fill_cnt_width_lp{1'b1}});
-      assign mem_cmd_done = cache_req_v_r & (mem_cmd_cnt == mem_cmd_final_slice);
-      assign critical_addr = {cache_req_r.addr[paddr_width_p-1:(block_offset_width_lp-fill_cnt_width_lp)], (block_offset_width_lp-fill_cnt_width_lp)'(0)};
+      assign first_addr = cache_req_cast_i.addr[block_offset_width_lp-1-:fill_cnt_width_lp];
+      assign last_addr = (cache_req_r.addr[block_offset_width_lp-1-:fill_cnt_width_lp] - fill_cnt_width_lp'(1));
+      assign mem_cmd_done = cache_req_v_r & (mem_cmd_cnt == last_addr);
+      assign critical_addr = {cache_req_r.addr[paddr_width_p-1-:(paddr_width_p-fill_offset_width_lp)], (fill_offset_width_lp)'(0)};
     end
 
   logic [index_width_lp-1:0] index_cnt;
