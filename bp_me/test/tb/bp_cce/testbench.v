@@ -25,26 +25,15 @@ module testbench
    , parameter instr_count = 1
    , parameter skip_init_p = 0
    , parameter lce_trace_p = 0
-	 , parameter dram_trace_p = 0
+   , parameter dram_trace_p = 0
+   , parameter dram_fixed_latency_p=0
 
-	 // memory params
-   , parameter mem_zero_p         = 1
+   // memory params
    , parameter mem_load_p         = 0
    , parameter mem_file_p         = "inv"
    , parameter mem_cap_in_bytes_p = 2**20
    // CCE testing uses any address it wants, no DRAM offset required
    , parameter mem_offset_p       = '0
-
-   , parameter use_max_latency_p      = 0
-   , parameter use_random_latency_p   = 1
-   , parameter use_dramsim2_latency_p = 0
-
-   , parameter max_latency_p = 15
-
-   , parameter dram_clock_period_in_ps_p = 1000
-   , parameter dram_cfg_p                = "dram_ch.ini"
-   , parameter dram_sys_cfg_p            = "dram_sys.ini"
-   , parameter dram_capacity_p           = 16384
 
    // size of CCE-Memory buffers for cmd/resp messages
    // for this testbench (one LCE, one CCE, one memory) only need enough space to hold as many
@@ -59,7 +48,20 @@ module testbench
    )
   (input clk_i
    , input reset_i
+   , input dram_clk_i
+   , input dram_reset_i
    );
+
+export "DPI-C" function get_dram_period;
+export "DPI-C" function get_sim_period;
+
+function int get_dram_period();
+  return (`dram_pkg::tck_ps);
+endfunction
+
+function int get_sim_period();
+  return (`BP_SIM_CLK_PERIOD);
+endfunction
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
@@ -358,20 +360,10 @@ mem_resp_buffer
 bp_mem
 #(.bp_params_p(bp_params_p)
   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-  ,.mem_zero_p(mem_zero_p)
-  ,.mem_load_p(mem_load_p)
+  ,.mem_load_p(1)
   ,.mem_file_p(mem_file_p)
   ,.mem_offset_p(mem_offset_p)
-
-  ,.use_max_latency_p(use_max_latency_p)
-  ,.use_random_latency_p(use_random_latency_p)
-  ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
-  ,.max_latency_p(max_latency_p)
-
-  ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-  ,.dram_cfg_p(dram_cfg_p)
-  ,.dram_sys_cfg_p(dram_sys_cfg_p)
-  ,.dram_capacity_p(dram_capacity_p)
+  ,.dram_fixed_latency_p(dram_fixed_latency_p)
   )
 mem
  (.clk_i(clk_i)
@@ -384,6 +376,9 @@ mem
   ,.mem_resp_o(mem_resp_lo)
   ,.mem_resp_v_o(mem_resp_v_lo)
   ,.mem_resp_yumi_i(mem_resp_v_lo & mem_resp_ready_lo)
+
+  ,.dram_clk_i(dram_clk_i)
+  ,.dram_reset_i(dram_reset_i)
   );
 
 bp_mem_nonsynth_tracer
