@@ -180,6 +180,7 @@ $HARDFLOAT_DIR/source/recFNToRecFN.v
 $HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
+$BP_COMMON_DIR/src/v/bsg_bus_pack.v
 $BP_COMMON_DIR/src/v/bp_pma.v
 $BP_COMMON_DIR/src/v/bp_tlb.v
 ## BE files

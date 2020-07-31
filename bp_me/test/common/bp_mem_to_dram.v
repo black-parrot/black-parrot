@@ -324,6 +324,16 @@ module bp_mem_to_dram
   ,.yumi_i (dma_data_sipo_yumi_li)
   );
 
+  logic [cce_block_width_p-1:0] dma_data_packed_lo;
+  bsg_bus_pack
+   #(.width_p(cce_block_width_p))
+   pack
+    (.data_i(dma_data_sipo_data_lo)
+     ,.sel_i(mem_resp_lo.header.addr[0+:`BSG_SAFE_CLOG2(cce_block_width_p/8)])
+     ,.size_i(mem_resp_lo.header.size)
+     ,.data_o(dma_data_packed_lo)
+     );
+
   bsg_encode_one_hot
  #(.width_p(reorder_fifo_els_lp)
   ) id_enc
@@ -365,7 +375,7 @@ module bp_mem_to_dram
 
   // mem resp output
   assign mem_resp_lo.header = queue_fifo_data_lo;
-  assign mem_resp_lo.data = is_write ? '0 : dma_data_sipo_data_lo;
+  assign mem_resp_lo.data = is_write ? '0 : dma_data_packed_lo;
   assign mem_resp_v_o = queue_fifo_v_lo & (is_write | dma_data_sipo_v_lo);
 
   // resp data
