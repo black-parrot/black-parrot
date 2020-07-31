@@ -14,8 +14,6 @@ $BP_TOP_DIR/test/common/bp_nonsynth_cache_tracer.v
 $BP_ME_DIR/src/v/cce/bp_cce_fsm_top.v
 $BP_ME_DIR/test/common/bp_mem.v
 $BP_ME_DIR/test/common/bp_mem_to_dram.v
-$BP_ME_DIR/test/common/bp_mem_storage_sync.v
-$BP_ME_DIR/test/common/bp_mem_utils.cpp
 $BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.v
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.v

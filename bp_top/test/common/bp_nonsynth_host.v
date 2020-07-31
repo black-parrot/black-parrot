@@ -176,7 +176,7 @@ always_ff @(negedge clk_i)
       end
   end
 
-  localparam bootrom_els_p = 64;
+  localparam bootrom_els_p = 1024;
   localparam lg_bootrom_els_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
   logic [lg_bootrom_els_lp-1:0] bootrom_addr_li;
   logic [instr_width_p-1:0] bootrom_data_lo;

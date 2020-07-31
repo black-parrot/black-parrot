@@ -99,6 +99,7 @@ class NBF:
     addr_step = 0
     count = 0
     assembled_hex = ""
+    base_addr = 0x80000000
 
     f = open(mem_file, "r")
     lines = f.readlines()
@@ -108,7 +109,7 @@ class NBF:
       if stripped:
         if stripped.startswith("@"):
           if count != 0:
-            addr_val[curr_addr] = int(assembled_hex, 16)
+            addr_val[base_addr+curr_addr] = int(assembled_hex, 16)
             assembled_hex = ""
             count = 0
           curr_addr = int(stripped.strip("@"), 16)
@@ -119,14 +120,14 @@ class NBF:
             assembled_hex = words[i] + assembled_hex
             count += 1
             if count == addr_step:
-              addr_val[curr_addr] = int(assembled_hex, 16)
+              addr_val[base_addr+curr_addr] = int(assembled_hex, 16)
               curr_addr += addr_step
               addr_step = 1 << self.get_opcode(curr_addr)
               assembled_hex = ""
               count = 0
               
     if count != 0:
-      addr_val[curr_addr] = int(assembled_hex, 16)
+      addr_val[base_addr+curr_addr] = int(assembled_hex, 16)
 
     return addr_val
 

@@ -40,7 +40,7 @@ module testbench
    , parameter preload_mem_p               = 0
    , parameter dram_fixed_latency_p        = 0
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-   , parameter mem_cap_in_bytes_p = 2**28
+   , parameter mem_cap_in_bytes_p = 2**26
    , parameter mem_file_p         = "prog.mem"
    )
   (input clk_i
