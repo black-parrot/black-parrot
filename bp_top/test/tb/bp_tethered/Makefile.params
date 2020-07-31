@@ -13,6 +13,7 @@ export VM_TRACE_P     ?= 0
 export CORE_PROFILE_P ?= 0
 export CHECKPOINT_P   ?= 0
 export COSIM_P        ?= 0
+export PRELOAD_MEM_P  ?= 0
 
 export DOMAINS_P      ?= '00000001'
 export SAC_P          ?= 0
@@ -43,6 +44,7 @@ export TB_PARAMS  = \
                     -pvalue+cosim_memsize_p=$(SAMPLE_MEMSIZE) \
                     -pvalue+cosim_instr_p=$(SAMPLE_INSTR_P) \
                     -pvalue+warmup_instr_p=$(SAMPLE_WARMUP_P) \
+                    -pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
                     -pvalue+dram_fixed_latency_p=$(DRAM_FIXED_LATENCY)
 
 export DUT_DEFINES = 
