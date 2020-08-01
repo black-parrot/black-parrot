@@ -120,6 +120,12 @@
     //   Currently unused, so set to 1 bit
     integer asid_width;
 
+    // The virtual address of the PC coming out of reset
+    integer boot_pc;
+    // 0: boots in M-mode, not debug-mode
+    // 1: boots in M-mode, debug-mode
+    integer boot_in_debug;
+
     // Branch metadata information for the Front End
     // Must be kept consistent with FE
     integer branch_metadata_fwd_width;
@@ -279,6 +285,9 @@
   , localparam paddr_width_p = proc_param_lp.paddr_width                                           \
   , localparam asid_width_p  = proc_param_lp.asid_width                                            \
                                                                                                    \
+  , localparam boot_pc_p       = proc_param_lp.boot_pc                                             \
+  , localparam boot_in_debug_p = proc_param_lp.boot_in_debug                                       \
+                                                                                                   \
   , localparam branch_metadata_fwd_width_p = proc_param_lp.branch_metadata_fwd_width               \
   , localparam btb_tag_width_p             = proc_param_lp.btb_tag_width                           \
   , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                           \
@@ -421,6 +430,9 @@
         ,`bp_aviary_parameter_override(vaddr_width, override_cfg_mp, default_cfg_mp)               \
         ,`bp_aviary_parameter_override(paddr_width, override_cfg_mp, default_cfg_mp)               \
         ,`bp_aviary_parameter_override(asid_width, override_cfg_mp, default_cfg_mp)                \
+                                                                                                   \
+        ,`bp_aviary_parameter_override(boot_pc, override_cfg_mp, default_cfg_mp)                   \
+        ,`bp_aviary_parameter_override(boot_in_debug, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
         ,`bp_aviary_parameter_override(fe_queue_fifo_els, override_cfg_mp, default_cfg_mp)         \
         ,`bp_aviary_parameter_override(fe_cmd_fifo_els, override_cfg_mp, default_cfg_mp)           \

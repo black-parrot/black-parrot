@@ -3,7 +3,7 @@
 // 
 // 
 
-`include "bp_me_cce_mem_if.vh"
+`include "bp_common_mem_if.vh"
 
 module bp_me_cce_to_cache_dma
 
