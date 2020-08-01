@@ -34,6 +34,29 @@ typedef enum logic [5:0]
 
 typedef enum logic [5:0]
 {
+  // Movement instructions
+  e_aux_op_f2f        = 6'b000000
+  ,e_aux_op_f2i       = 6'b000001
+  ,e_aux_op_i2f       = 6'b000010
+  ,e_aux_op_f2iu      = 6'b000011
+  ,e_aux_op_iu2f      = 6'b000100
+  ,e_aux_op_imvf      = 6'b000101
+  ,e_aux_op_fmvi      = 6'b000110
+  ,e_aux_op_fsgnj     = 6'b000111
+  ,e_aux_op_fsgnjn    = 6'b001000
+  ,e_aux_op_fsgnjx    = 6'b001001
+
+  // FCMP instructions
+  ,e_aux_op_feq       = 6'b001010
+  ,e_aux_op_flt       = 6'b001011
+  ,e_aux_op_fle       = 6'b001100
+  ,e_aux_op_fmax      = 6'b001101
+  ,e_aux_op_fmin      = 6'b001110
+  ,e_aux_op_fclass    = 6'b001111
+} bp_be_aux_fu_op_e;
+
+typedef enum logic [5:0]
+{
   e_dcache_op_lb        = 6'b000000
   ,e_dcache_op_lh       = 6'b000001
   ,e_dcache_op_lw       = 6'b000010
@@ -52,7 +75,12 @@ typedef enum logic [5:0]
 
   ,e_dcache_op_lrd      = 6'b001101
   ,e_dcache_op_scd      = 6'b001110
-  ,e_dcache_op_fencei   = 6'b001111
+
+  ,e_dcache_op_flw      = 6'b100010
+  ,e_dcache_op_fld      = 6'b100011
+
+  ,e_dcache_op_fsw      = 6'b100100
+  ,e_dcache_op_fsd      = 6'b100101
 
   ,e_dcache_op_amoswapw = 6'b010000
   ,e_dcache_op_amoaddw  = 6'b010001
@@ -73,6 +101,8 @@ typedef enum logic [5:0]
   ,e_dcache_op_amomaxd  = 6'b011111
   ,e_dcache_op_amominud = 6'b100000
   ,e_dcache_op_amomaxud = 6'b100001
+
+  ,e_dcache_op_fencei   = 6'b111111
 } bp_be_dcache_fu_op_e;
 
 typedef enum logic [5:0]
@@ -95,6 +125,20 @@ typedef enum logic [5:0]
 
 typedef enum logic [5:0]
 {
+  e_fma_op_fadd    = 6'b000000
+  ,e_fma_op_fsub   = 6'b000001
+  ,e_fma_op_fmul   = 6'b000010
+  ,e_fma_op_fmadd  = 6'b000011
+  ,e_fma_op_fmsub  = 6'b000100
+  ,e_fma_op_fnmsub = 6'b000101
+  ,e_fma_op_fnmadd = 6'b000110
+  ,e_fma_op_imul   = 6'b000111
+  ,e_fma_op_fdiv   = 6'b001000
+  ,e_fma_op_fsqrt  = 6'b001001
+} bp_be_fma_fu_op_e;
+
+typedef enum logic [5:0]
+{
   e_mul_op_mul        = 6'b000000
   ,e_mul_op_div       = 6'b000001
   ,e_mul_op_divu      = 6'b000010
@@ -107,9 +151,11 @@ typedef struct packed
   union packed
   {
     bp_be_ctrl_fu_op_e     ctrl_fu_op;
+    bp_be_aux_fu_op_e      aux_fu_op;
     bp_be_int_fu_op_e      int_fu_op;
     bp_be_dcache_fu_op_e   dcache_op;
     bp_be_csr_fu_op_e      csr_fu_op;
+    bp_be_fma_fu_op_e      fma_fu_op;
     bp_be_mul_fu_op_e      mul_fu_op;
   }  fu_op;
 }  bp_be_fu_op_s;
@@ -151,7 +197,9 @@ typedef struct packed
 
   logic                             pipe_ctl_v;
   logic                             pipe_int_v;
-  logic                             pipe_mem_v;
+  logic                             pipe_mem_early_v;
+  logic                             pipe_aux_v;
+  logic                             pipe_mem_final_v;
   logic                             pipe_sys_v;
   logic                             pipe_mul_v;
   logic                             pipe_fma_v;
@@ -159,24 +207,24 @@ typedef struct packed
 
   logic                             irf_w_v;
   logic                             frf_w_v;
-  logic                             mem_v;
+  logic                             fflags_w_v;
   logic                             dcache_r_v;
   logic                             dcache_w_v;
+  logic                             late_iwb_v;
+  logic                             late_fwb_v;
   logic                             fencei_v;
   logic                             csr_w_v;
   logic                             csr_r_v;
   logic                             csr_v;
-  logic                             serial_v;
-  logic                             fp_not_int_v;
+  logic                             mem_v;
   logic                             opw_v;
+  logic                             ops_v;
 
   bp_be_fu_op_s                     fu_op;
 
   bp_be_src1_e                      src1_sel;
   bp_be_src2_e                      src2_sel;
   bp_be_baddr_e                     baddr_sel;
-  bp_be_offset_e                    offset_sel;
-  bp_be_result_e                    result_sel;
 
   logic                             itlb_miss;
   logic                             instr_access_fault;

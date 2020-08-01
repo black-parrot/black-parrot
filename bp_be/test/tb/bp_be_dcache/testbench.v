@@ -48,7 +48,7 @@ module testbench
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam page_offset_width_lp = bp_page_offset_width_gp
    , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
-   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dword_width_p)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dpath_width_p)
    , localparam trace_replay_data_width_lp = ptag_width_lp + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
    , localparam trace_rom_addr_width_lp = 8
 
@@ -292,11 +292,11 @@ module testbench
        ,.cache_req_metadata_o(cache_req_metadata_o)
        ,.cache_req_complete_i(cache_req_complete_i)
 
-       ,.v_o(v_o)
-       ,.load_data(data_o)
-       ,.store_data(data_tv_r)
+       ,.v_o(early_v_o)
+       ,.load_data(early_data_o[0+:65])
+       ,.store_data(data_tv_r[0+:64])
        ,.wt_req(wt_req)
-       ,.cache_miss_o(dcache_miss_o)
+       ,.cache_miss_o('0)
 
        ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

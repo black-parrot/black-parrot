@@ -26,8 +26,8 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,boot_pc       : dram_base_addr_gp
-      ,boot_in_debug : 0
+      ,boot_pc       : bootrom_base_addr_gp
+      ,boot_in_debug : 1
 
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10

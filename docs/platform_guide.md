@@ -6,7 +6,8 @@
 * RV64I arithmetic instructions have 1-cycle latency
 * RV64IA memory instructions have 3-cycle latency
 * RV64M instructions have a 4-cycle latency, except for division, which is iterative
-* BlackParrot has a load-to-use time of 3 cycles
+* Rv64FD instructions have a 5-cycle latency, exception for fdiv/fsqrt, which are iterative
+* BlackParrot has a load-to-use time of 2 cycles for dwords, 3 cycles for words, halfs, and bytes
 * BlackParrot has a 2-cycle L1 hit latency
 * BlackParrot has a 2-cycle L2 hit latency, plus possible network interaction
 
@@ -36,6 +37,7 @@ BlackParrot supports having a number of devices in each tile. In a standard Blac
   * mtime increments at a frequency much lower than the clock speed
   * When mtimecmp >= mtime, a timer irq is raised
   * When mipi is set, a software irq is raised
+TODO: update config map
 * CFG (Tile Configuration Controller)
   * Contains memory-mapped registers which provide system-level configuration options and debug access
   * Freeze - prevents the processor from executing instructions

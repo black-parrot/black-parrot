@@ -21,6 +21,7 @@ module bp_be_regfile
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
+   , parameter data_width_p = "inv"
    , parameter read_ports_p = "inv"
    )
   (input                                            clk_i
@@ -29,22 +30,22 @@ module bp_be_regfile
    // rs read bus
    , input [read_ports_p-1:0]                       rs_r_v_i
    , input [read_ports_p-1:0][reg_addr_width_p-1:0] rs_addr_i
-   , output [read_ports_p-1:0][dword_width_p-1:0]   rs_data_o
+   , output [read_ports_p-1:0][data_width_p-1:0]    rs_data_o
 
    // rd write bus
    , input                                          rd_w_v_i
    , input [reg_addr_width_p-1:0]                   rd_addr_i
-   , input [dword_width_p-1:0]                      rd_data_i
+   , input [data_width_p-1:0]                       rd_data_i
    );
 
   localparam rf_els_lp = 2**reg_addr_width_p;
   logic [read_ports_p-1:0] rs_v_li;
   logic [read_ports_p-1:0][reg_addr_width_p-1:0] rs_addr_li;
-  logic [read_ports_p-1:0][dword_width_p-1:0] rs_data_lo;
+  logic [read_ports_p-1:0][data_width_p-1:0] rs_data_lo;
   if (read_ports_p == 2)
     begin : tworonew
       bsg_mem_2r1w_sync
-       #(.width_p(dword_width_p), .els_p(rf_els_lp))
+       #(.width_p(data_width_p), .els_p(rf_els_lp))
        rf
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
@@ -62,15 +63,40 @@ module bp_be_regfile
          ,.r1_data_o(rs_data_lo[1])
          );
     end
+  else if (read_ports_p == 3)
+    begin : threeronew
+      bsg_mem_3r1w_sync
+       #(.width_p(data_width_p), .els_p(rf_els_lp))
+       rf
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.w_v_i(rd_w_v_i)
+         ,.w_addr_i(rd_addr_i)
+         ,.w_data_i(rd_data_i)
+
+         ,.r0_v_i(rs_v_li[0])
+         ,.r0_addr_i(rs_addr_li[0])
+         ,.r0_data_o(rs_data_lo[0])
+
+         ,.r1_v_i(rs_v_li[1])
+         ,.r1_addr_i(rs_addr_li[1])
+         ,.r1_data_o(rs_data_lo[1])
+
+         ,.r2_v_i(rs_v_li[2])
+         ,.r2_addr_i(rs_addr_li[2])
+         ,.r2_data_o(rs_data_lo[2])
+         );
+    end
   else
     begin : error
       $fatal(1, "Error: unsupported number of read ports");
     end
 
   // Save the written data for forwarding
-  logic [dword_width_p-1:0] rd_data_r;
+  logic [data_width_p-1:0] rd_data_r;
   bsg_dff
-   #(.width_p(dword_width_p))
+   #(.width_p(data_width_p))
    rd_reg
     (.clk_i(clk_i)
      ,.data_i(rd_data_i)
@@ -80,7 +106,7 @@ module bp_be_regfile
   for (genvar i = 0; i < read_ports_p; i++)
     begin : bypass
       logic fwd_rs_r, rs_r_v_r;
-      logic [dword_width_p-1:0] fwd_data_lo;
+      logic [data_width_p-1:0] fwd_data_lo;
       wire fwd_rs = rd_w_v_i & rs_r_v_i[i] & (rd_addr_i == rs_addr_i[i]);
       bsg_dff
        #(.width_p(2))
@@ -103,11 +129,11 @@ module bp_be_regfile
          ,.data_o(rs_addr_r)
          );
 
-      logic [dword_width_p-1:0] rs_data_n, rs_data_r;
+      logic [data_width_p-1:0] rs_data_n, rs_data_r;
       wire replace_rs = rd_w_v_i & (rs_addr_r == rd_addr_i);
       assign rs_data_n = replace_rs ? rd_data_i : fwd_data_lo;
       bsg_dff_en
-       #(.width_p(dword_width_p))
+       #(.width_p(data_width_p))
        rs_data_reg
         (.clk_i(clk_i)
 

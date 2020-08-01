@@ -97,7 +97,7 @@ module bp_be_director
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
   assign npc_w_v = calc_status.ex1_instr_v
-                   | (trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
+                   | (trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret | trap_pkt.fencei);
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
    npc
@@ -115,12 +115,12 @@ module bp_be_director
      )
    trap_mux
     (.data_i({trap_pkt.npc, calc_status.ex1_npc})
-     ,.sel_i(trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret)
-   ,.data_o(npc_n)
+     ,.sel_i(trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret | trap_pkt.fencei)
+     ,.data_o(npc_n)
      );
 
   assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
-  assign poison_isd_o = npc_mismatch_v;
+  assign poison_isd_o = npc_mismatch_v | flush_o;
 
   // Last operation was branch. Was it successful? Let's find out
   // TODO: I think this is wrong, may send extra attaboys
@@ -165,7 +165,7 @@ module bp_be_director
         state_r <= state_n;
       end
 
-  assign suppress_iss_o = (state_n == e_fence) & fe_cmd_fence_i;
+  assign suppress_iss_o = (state_r == e_fence) & fe_cmd_fence_i;
 
   // Flush on FE cmds which are not attaboys.  Also don't flush the entire pipeline on a mispredict.
   always_comb

@@ -81,11 +81,9 @@ coherent accelerators in a BlackParrot multicore system. Please see the [BedRock
 for more details on the coherence protocol and system.
 
 ## Microarchitecture Guide
-Coming soon!
 [Microarchitecture Guide](docs/microarchitecture_guide.md)
 
 ## Platform Guide
-Coming soon!
 [Platform Guide](docs/platform_guide.md)
 
 ## CAD Backend Guide
