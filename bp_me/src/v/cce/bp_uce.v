@@ -307,7 +307,7 @@ module bp_uce
     end
   else 
     begin : fill_less_than_block
-      logic [fill_cnt_width_lp-1:0] first_addr, last_addr;
+      logic [fill_cnt_width_lp-1:0] first_cmd_cnt, last_cmd_cnt;
       logic [fill_cnt_width_lp-1:0] fill_cnt;
       bsg_counter_clear_up
        #(.max_val_p(block_size_in_fill_lp-1)
@@ -333,14 +333,14 @@ module bp_uce
 
         ,.set_i(cache_req_v_i)
         ,.en_i(mem_cmd_up)
-        ,.val_i(first_addr)
+        ,.val_i(first_cmd_cnt)
         ,.count_o(mem_cmd_cnt)
         );
       
-      assign first_addr = cache_req_cast_i.addr[block_offset_width_lp-1-:fill_cnt_width_lp];
-      assign last_addr = (cache_req_r.addr[block_offset_width_lp-1-:fill_cnt_width_lp] - fill_cnt_width_lp'(1));
-      assign mem_cmd_done = cache_req_v_r & (mem_cmd_cnt == last_addr);
-      assign critical_addr = {cache_req_r.addr[paddr_width_p-1-:(paddr_width_p-fill_offset_width_lp)], (fill_offset_width_lp)'(0)};
+      assign first_cmd_cnt = cache_req_cast_i.addr[block_offset_width_lp-1-:fill_cnt_width_lp];
+      assign last_cmd_cnt = (cache_req_r.addr[fill_offset_width_lp+:fill_cnt_width_lp] - fill_cnt_width_lp'(1));
+      assign mem_cmd_done = cache_req_v_r & (mem_cmd_cnt == last_cmd_cnt);
+      assign critical_addr = {cache_req_r.addr[paddr_width_p-1:fill_offset_width_lp], (fill_offset_width_lp)'(0)};
     end
 
   logic [index_width_lp-1:0] index_cnt;
