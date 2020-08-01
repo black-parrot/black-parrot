@@ -22,7 +22,7 @@ different environments.
 We use the following hierarchical scheme for BlackParrot tapeouts:
 * Top - bsg_chip
 * Mid -
-* Bot - bp_tile_node
+* Bot - bp_tile_node bp_io_tile_node
 
 bsg_chip is an test chip skeleon which uses an open-source BaseJump STL padring, bsg_tag bootstrapping and low-speed configuration, as well as hardened clock generators.
 bp_tile_node is a BlackParrot tile that has CDC, routers, and link adapters so that it can connect to other tiles in a regularized 2D mesh.
@@ -31,15 +31,25 @@ bp_tile_node is a BlackParrot tile that has CDC, routers, and link adapters so t
 To achieve good QoR (Quality of Results), ASIC designers must "harden" large memories in their chip. Unlike in traditional FPGA flows, RAMs are not often inferred but must be explicitly specified by the designer. Usually this process involves first invoking a vendor-provided SRAM compiler, then substituting this black-box macro for the RTL memory variant, using the vendor-provided Verilog model for simulation instead.
 
 For BlackParrot, we find the following memories to be worth hardening for good QoR:
+* BTB memory
 * I$ data
 * I$ tags
+* I$ stat
 * Integer register file
+* FP register file
 * D$ data
 * D$ tags
+* D$ stat
 * CCE directory tags
 * CCE Instruction RAM
 * L2 slice data
 * L2 slice tags
+* L2 slice stat
+
+### Retiming
+To achieve reasonable timing closure, the following blocks MUST be retimed. We find that adaptive retiming is typically insufficent and manual register retiming should be used to guide the tools:
+* AUX pipeline
+* FMA pipeline
 
 ## FPGA Tips and Tricks
 ### Hardened Memories

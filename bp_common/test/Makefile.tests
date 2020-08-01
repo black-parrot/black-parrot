@@ -52,7 +52,9 @@ spec_build:
 riscvdv_build:
 	$(MAKE) -C $(riscvdv_dir)
 
+linux: linux_build
 linux_build: $(fw_payload)
+	mkdir -p $(BP_TEST_MEM_DIR)/linux
 	cp $< $(BP_TEST_MEM_DIR)/linux/linux.riscv
 
 perch: $(BP_TEST_DIR)/lib/libperch.a

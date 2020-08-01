@@ -103,17 +103,18 @@ bp_be_dcache
     ,.v_i(dcache_pkt_v)
     ,.ready_o(dcache_ready)
 
-    ,.v_o(dcache_v)
-    ,.data_o(dcache_data)
+    ,.early_v_o(dcache_v)
+    ,.early_data_o(dcache_data)
+    ,.final_v_o()
+    ,.final_data_o()
 
     ,.ptag_v_i(1'b1)
     ,.ptag_i(dcache_ptag)
     ,.uncached_i(dcache_uncached)
 
-    ,.poison_i(1'b0)
+    ,.flush_i(1'b0)
 
     // D$-LCE Interface
-    ,.dcache_miss_o(dcache_miss_v)
     ,.cache_req_complete_i(cache_req_complete_lo)
     ,.cache_req_o(cache_req_cast_o)
     ,.cache_req_v_o(cache_req_v_o)

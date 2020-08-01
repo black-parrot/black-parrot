@@ -102,6 +102,8 @@ module bp_be_top
   logic [vaddr_width_p-1:0] expected_npc_lo;
   logic poison_isd_lo, suppress_iss_lo;
 
+  logic fpu_en_lo;
+
   logic [rv64_priv_width_gp-1:0] priv_mode_lo;
   logic [ptag_width_p-1:0]       satp_ppn_lo;
   logic                          translation_en_lo;
@@ -160,8 +162,6 @@ module bp_be_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.cfg_bus_i(cfg_bus_i)
-
      ,.isd_status_o(isd_status)
      ,.expected_npc_i(expected_npc_lo)
      ,.poison_iss_i(flush)
@@ -170,6 +170,7 @@ module bp_be_top
      ,.cache_miss_v_i(trap_pkt.rollback)
      ,.cmt_v_i(commit_pkt.queue_v)
      ,.suppress_iss_i(suppress_iss_lo)
+     ,.fpu_en_i(fpu_en_lo)
 
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)
@@ -198,6 +199,7 @@ module bp_be_top
      ,.flush_i(flush)
 
      ,.calc_status_o(calc_status)
+     ,.fpu_en_o(fpu_en_lo)
 
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
 

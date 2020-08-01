@@ -285,7 +285,7 @@ module testbench
       ,.v_o(data_v_o)
       ,.load_data(dword_width_p'(data_o))
       ,.store_data(dword_width_p'(0))
-      ,.cache_miss_o(miss_o)
+      ,.cache_miss_o('0)
 
       ,.data_mem_v_i(data_mem_v_li)
       ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

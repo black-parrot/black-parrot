@@ -57,7 +57,7 @@ module bp_nonsynth_cache_tracer
 
    // Cache data
    , input                                                 v_o
-   , input [dword_width_p-1:0]                             load_data
+   , input [dpath_width_p-2:0]                             load_data
    , input                                                 cache_miss_o
    , input                                                 wt_req
    , input [dword_width_p-1:0]                             store_data

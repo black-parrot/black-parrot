@@ -25,7 +25,7 @@ module bp_be_pipe_ctl
 
    , input [dispatch_pkt_width_lp-1:0] reservation_i
 
-   , output [dword_width_p-1:0]        data_o
+   , output [dpath_width_p-1:0]        data_o
    , output [vaddr_width_p-1:0]        br_tgt_o
    , output                            btaken_o
    );
