@@ -16,6 +16,7 @@ $BP_BE_DIR/test/common/bp_be_nonsynth_vm_tracer.v
 $BP_ME_DIR/test/common/bp_mem.v
 $BP_ME_DIR/test/common/bp_mem_to_dram.v
 $BP_ME_DIR/test/common/bp_mem_storage_sync.v
+$BP_ME_DIR/test/common/bp_mem_utils.cpp
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.vh
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.v

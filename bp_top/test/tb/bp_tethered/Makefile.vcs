@@ -46,7 +46,11 @@ $(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
 	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=4 --verilog-data-width=4 $@
 
-NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem --mem=prog.mem --skip_zeros
+NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
+ifeq ($(PRELOAD_MEM_P), 0)
+NBF_INPUTS += --mem=prog.mem --skip_zeros
+endif
+
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
 

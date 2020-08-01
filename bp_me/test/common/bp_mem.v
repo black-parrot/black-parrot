@@ -14,6 +14,8 @@ module bp_mem
 
    , parameter mem_offset_p         = "inv"
    , parameter mem_cap_in_bytes_p   = "inv"
+   , parameter mem_load_p           = "inv"
+   , parameter mem_file_p           = "inv"
    , parameter dram_fixed_latency_p = "inv"
    )
   (input                                 clk_i
@@ -128,6 +130,9 @@ if(dram_fixed_latency_p) begin: fixed_latency
    #(.data_width_p(cce_block_width_p)
      ,.addr_width_p(paddr_width_p)
      ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+     ,.mem_offset_p(mem_offset_p)
+     ,.mem_load_p(mem_load_p)
+     ,.mem_file_p(mem_file_p)
      ,.mem_zero_p(1)
      )
    dram
