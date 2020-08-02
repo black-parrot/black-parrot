@@ -44,7 +44,7 @@ $(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
 	cp $^ $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
-	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=4 --verilog-data-width=4 $@
+	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=8 --verilog-data-width=8 $@
 
 NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
 ifeq ($(PRELOAD_MEM_P), 0)
@@ -79,7 +79,7 @@ $(SIM_DIR)/run_samplev: $(SAMPLE_COLLATERAL)
 		$(@D)/prog.mainram $(@D)/prog.riscv
 	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
 	$(SED) -i "s/@8/@0/g" $(@D)/prog.mem
-	$(RISCV_OBJCOPY) -I binary -O verilog --verilog-data-width=4 $(@D)/prog.bootram $(@D)/bootrom.mem
+	$(RISCV_OBJCOPY) -I binary -O verilog --verilog-data-width=8 --reverse-bytes=8 $(@D)/prog.bootram $(@D)/bootrom.mem
 	cd $(@D); \
 		python $(MEM2NBF) $(NBF_INPUTS) --checkpoint=prog.bp_regs > prog.nbf
 	cd $(@D); \
