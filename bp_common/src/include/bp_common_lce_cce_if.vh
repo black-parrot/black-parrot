@@ -1,13 +1,13 @@
 /**
- * bp_common_me_if.vh
+ * bp_common_lce_cce_if.vh
  *
  * This file defines the interface between the CCEs and LCEs in the BlackParrot coherence system.
  * The interface is defined as a set of parameterized structs.
  *
  */
 
-`ifndef BP_COMMON_ME_IF_VH
-`define BP_COMMON_ME_IF_VH
+`ifndef BP_COMMON_LCE_CCE_IF_VH
+`define BP_COMMON_LCE_CCE_IF_VH
 
 `include "bsg_defines.v"
 

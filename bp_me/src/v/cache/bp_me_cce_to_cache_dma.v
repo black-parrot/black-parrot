@@ -3,7 +3,7 @@
 // 
 // 
 
-`include "bp_me_cce_mem_if.vh"
+`include "bp_common_mem_if.vh"
 
 module bp_me_cce_to_cache_dma
 
@@ -14,7 +14,7 @@ module bp_me_cce_to_cache_dma
   
   import bsg_cache_pkg::*;
   
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
   
