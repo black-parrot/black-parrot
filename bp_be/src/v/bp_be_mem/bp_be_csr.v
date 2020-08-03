@@ -130,6 +130,8 @@ wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
 //   This is non-compliant. We should hardcode to 0 instead of trapping
 `declare_csr(dcsr)
 `declare_csr(dpc)
+`declare_csr(dscratch0)
+`declare_csr(dscratch1)
 
 wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
 wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
@@ -504,6 +506,8 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: csr_data_lo = mcountinhibit_lo;
               `CSR_ADDR_DCSR: csr_data_lo = dcsr_lo;
               `CSR_ADDR_DPC: csr_data_lo = dpc_lo;
+              `CSR_ADDR_DSCRATCH0: csr_data_lo = dscratch0_lo;
+              `CSR_ADDR_DSCRATCH1: csr_data_lo = dscratch1_lo;
               default: illegal_instr_o = 1'b1;
             endcase
             // Write case
@@ -551,6 +555,8 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: mcountinhibit_li = csr_data_li;
               `CSR_ADDR_DCSR: dcsr_li = csr_data_li;
               `CSR_ADDR_DPC: dpc_li = csr_data_li;
+              `CSR_ADDR_DSCRATCH0: dscratch0_li = csr_data_li;
+              `CSR_ADDR_DSCRATCH1: dscratch1_li = csr_data_li;
               default: illegal_instr_o = 1'b1;
             endcase
           end
