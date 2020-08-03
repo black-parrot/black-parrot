@@ -9,7 +9,7 @@ module bp_unicore
  import bp_me_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
   
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p) 

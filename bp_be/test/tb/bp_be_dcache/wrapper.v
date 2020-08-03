@@ -12,7 +12,7 @@ module wrapper
  import bp_me_pkg::*;
  import bp_cce_pkg::*;
  import bp_be_dcache_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   ,parameter uce_p = 1
   ,parameter wt_p = 1
    `declare_bp_proc_params(bp_params_p)

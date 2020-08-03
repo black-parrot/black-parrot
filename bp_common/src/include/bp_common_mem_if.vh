@@ -1,15 +1,15 @@
 /**
- * bp_me_cce_mem_if.vh
+ * bp_common_mem_if.vh
  *
  * This file defines the interface between the UCE/CCE and memory.
  *
  */
 
-`ifndef BP_ME_CCE_MEM_IF_VH
-`define BP_ME_CCE_MEM_IF_VH
+`ifndef BP_COMMON_MEM_IF_VH
+`define BP_COMMON_MEM_IF_VH
 
 `include "bsg_defines.v"
-`include "bp_common_me_if.vh"
+`include "bp_common_lce_cce_if.vh"
 
 /*
  *

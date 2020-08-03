@@ -5,9 +5,6 @@
 `ifndef BP_COMMON_CACHE_SERVICE_VH
 `define BP_COMMON_CACHE_SERVICE_VH
 
-//`include "bsg_defines.vh"
-//`include "bp_common_me_if.vh"
-
 // Miss IF
 // Cache Service Interface - Cache miss message type
 
