@@ -126,28 +126,39 @@ if(dram_fixed_latency_p) begin: fixed_latency
       ,.dram_data_ready_o(dram_data_ready_lo)
    );
 
-  bp_mem_storage_sync
-   #(.data_width_p(cce_block_width_p)
-     ,.addr_width_p(paddr_width_p)
-     ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-     ,.mem_offset_p(mem_offset_p)
-     ,.mem_load_p(mem_load_p)
-     ,.mem_file_p(mem_file_p)
-     ,.mem_zero_p(1)
+  localparam mem_els_lp = mem_cap_in_bytes_p / (cce_block_width_p/8);
+  localparam lg_mem_els_lp = `BSG_SAFE_CLOG2(mem_els_lp);
+  localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
+  bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma
+   #(.width_p(cce_block_width_p)
+     ,.els_p(mem_els_lp)
+     ,.id_p(0)
+     ,.init_mem_p(1)
      )
    dram
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.v_i(dram_v_lo & dram_yumi_li)
+     ,.v_i(dram_yumi_li)
      ,.w_i(dram_write_not_read_lo)
 
-     ,.addr_i(dram_ch_addr_lo)
+     ,.addr_i(dram_ch_addr_lo[block_offset_width_lp+:lg_mem_els_lp])
      ,.data_i(dram_data_lo)
-     ,.write_mask_i(dram_mask_lo)
+     ,.w_mask_i(dram_mask_lo)
 
      ,.data_o(dram_data_li)
-   );
+     );
+  
+  if (mem_load_p)
+    begin : preload
+      logic [7:0] mem [0:mem_cap_in_bytes_p];
+      always_ff @(negedge reset_i)
+        begin
+          $readmemh(mem_file_p, mem);
+          for (integer i = 0; i < mem_cap_in_bytes_p; i++)
+            dram.mem.bsg_mem_dma_set(dram.mem.memory, i, mem[i]);
+        end
+    end
 
 end
 else begin: dramsim3
@@ -236,6 +247,19 @@ else begin: dramsim3
       ,.write_done_o()
       ,.write_done_ch_addr_o()
      );
+
+  localparam mem_els_lp = mem_cap_in_bytes_p / cce_block_width_p;
+  localparam lg_mem_els_lp = `BSG_SAFE_CLOG2(mem_els_lp);
+  if (mem_load_p)
+    begin : preload
+      logic [cce_block_width_p-1:0] mem [0:mem_els_lp];
+      always_ff @(negedge reset_i)
+        begin
+          $readmemh(mem_file_p, mem);
+          for (integer i = 0; i < mem_els_lp; i++)
+            dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, mem[i]);
+        end
+    end
 end
 
 endmodule

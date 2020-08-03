@@ -86,9 +86,11 @@ RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -d -t
 RISCV_OBJCOPY ?= $(CROSS_COMPILE)objcopy
 MEM2NBF       ?= $(BP_COMMON_DIR)/software/py/nbf.py
 DROMAJO       ?= dromajo
+SED           ?= sed
 
 %.mem: %.riscv
 	$(RISCV_OBJCOPY) -O verilog $*.riscv $@
+	$(SED) -i "s/@8/@0/g" $@
 
 %.bin: %.riscv
 	$(RISCV_OBJCOPY) -O binary $*.riscv $@
