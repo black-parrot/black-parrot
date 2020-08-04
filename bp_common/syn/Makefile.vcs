@@ -19,7 +19,7 @@ include $(TB_PATH)/$(TB)/Makefile.vcs
 ## Tool specific options
 LINT_VCS_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 
-VCS_OPTIONS  = +vcs+finish+5000000000ps   # Change this to run longer / shorter
+VCS_OPTIONS  = +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
 VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
@@ -34,7 +34,7 @@ VCS_BUILD_OPTS += +noportcoerce
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 VCS_BUILD_OPTS += -diag timescale
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
-VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save
 VCS_BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
@@ -72,9 +72,7 @@ $(BUILD_DIR)/simv: $(BUILD_COLLATERAL)
 	-@test -s $(BUILD_ERROR) && echo "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
 
 build_dump.v: VCS_BUILD_OPTS += -debug_pp
-build_dump.v: VCS_BUILD_OPTS += +memcbk
 build_dump.v: VCS_BUILD_OPTS += +vcs+vcdpluson
-build_dump.v: VCS_BUILD_OPTS += +vcs+vcdplusmemon
 build_dump.v: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
 build_dump.v: build.v
 

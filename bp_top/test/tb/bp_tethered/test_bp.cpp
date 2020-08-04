@@ -6,10 +6,6 @@
 #include "Vtestbench.h"
 #include "Vtestbench__Dpi.h"
 
-#ifndef BP_SIM_CLK_PERIOD
-#define BP_SIM_CLK_PERIOD 10
-#endif
-
 int sc_main(int argc, char **argv)
 {
   Verilated::commandArgs(argc, argv);
@@ -18,14 +14,22 @@ int sc_main(int argc, char **argv)
 
   Vtestbench *tb = new Vtestbench("test_bp");
 
+  svScope g_scope = svGetScopeFromName("test_bp.testbench");
+  svSetScope(g_scope);
+
+  int sim_period = get_sim_period();
+  int dram_period = get_dram_period();
   // Use me to find the correct scope of your DPI functions
   //Verilated::scopesDump();
 
-  sc_clock clock("clk", sc_time(BP_SIM_CLK_PERIOD, SC_NS));
+  sc_clock clock("clk", sc_time(sim_period, SC_PS));
+  sc_clock dram_clock("clk", sc_time(dram_period, SC_PS));
   sc_signal <bool> reset("reset");
 
   tb->clk_i(clock);
   tb->reset_i(reset);
+  tb->dram_clk_i(dram_clock);
+  tb->dram_reset_i(reset);
 
 #if VM_TRACE
   std::cout << "Opening dump file" << std::endl;
@@ -38,7 +42,7 @@ int sc_main(int argc, char **argv)
 
   std::cout << "Raising reset" << std::endl;
   for (int i = 0; i < 20; i++) {
-    sc_start(BP_SIM_CLK_PERIOD, SC_NS);
+    sc_start(std::max(sim_period, dram_period), SC_PS);
   }
   std::cout << "Lowering reset" << std::endl;
 
@@ -46,7 +50,7 @@ int sc_main(int argc, char **argv)
   Verilated::assertOn(true);
 
   while (!Verilated::gotFinish()) {
-    sc_start(BP_SIM_CLK_PERIOD, SC_NS);
+    sc_start(sim_period, SC_PS);
   }
   std::cout << "Finishing test" << std::endl;
 

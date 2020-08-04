@@ -1,3 +1,5 @@
+VCS_TIMEOUT = 1000ms
+
 $(LINT_DIR)/testbench.v $(LINT_DIR)/wrapper.v $(LINT_DIR)/test_bp.v:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
@@ -38,22 +40,15 @@ $(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
-$(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
-	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(@D)/dram_ch.ini
-	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(@D)/dram_sys.ini
-
 $(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
 	cp $^ $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
-	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=4 --verilog-data-width=4 $@
+	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=8 --verilog-data-width=8 $@
 
-NBF_INPUTS = $(NCPUS)
-NBF_INPUTS += cce_ucode.mem
-NBF_INPUTS += $(DOMAINS_P)
-NBF_INPUTS += $(SAC_P)
+NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
 ifeq ($(PRELOAD_MEM_P), 0)
-NBF_INPUTS += --mem=prog.mem
+NBF_INPUTS += --mem=prog.mem --skip_zeros
 endif
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
@@ -62,13 +57,11 @@ $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.bin bootrom.mem bootrom.dump)
 
 SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.dump)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
-SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)
 
 sim_sample.v: build.v
 sim_sample.v: $(SIM_DIR)/run_samplev
@@ -84,7 +77,11 @@ $(SIM_DIR)/run_samplev: $(SAMPLE_COLLATERAL)
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
 	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
-	$(RISCV_OBJCOPY) -I binary -O verilog --verilog-data-width=4 $(@D)/prog.bootram $(@D)/bootrom.mem
+	$(SED) -i "s/@8/@0/g" $(@D)/prog.mem
+	$(RISCV_OBJCOPY) -I binary -O elf64-littleriscv -B riscv $(@D)/prog.bootram $(@D)/bootrom.riscv
+	$(RISCV_OBJDUMP) -D $(@D)/bootrom.riscv > $(@D)/bootrom.dump
+	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 --reverse-bytes=8 $(@D)/bootrom.riscv $(@D)/bootrom.mem
+	$(RISCV_OBJCOPY) -O binary $(@D)/bootrom.riscv $(@D)/bootrom.bin
 	cd $(@D); \
 		python $(MEM2NBF) $(NBF_INPUTS) --checkpoint=prog.bp_regs > prog.nbf
 	cd $(@D); \
