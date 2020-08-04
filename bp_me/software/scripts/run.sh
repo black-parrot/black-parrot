@@ -7,7 +7,7 @@ if [ $# -eq 1 ] && [ $1 == "fsm" ]
 then
   cce="_"
 else
-  cce="_ucode_cce_"
+  cce="_cce_ucode_"
 fi
 
 # coherence protocols
