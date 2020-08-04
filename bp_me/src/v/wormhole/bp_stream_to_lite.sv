@@ -109,7 +109,7 @@ module bp_stream_to_lite
     //  if (mem_v_i)
     //    $display("[%t] Stream received: %p %x", $time, mem_header_cast_i, mem_data_i);
 
-    //  if (mem_ready_i & mem_v_o)
+    //  if (mem_yumi_i)
     //    $display("[%t] Msg sent: %p", $time, mem_cast_o);
     end
   //synopsys translate_on

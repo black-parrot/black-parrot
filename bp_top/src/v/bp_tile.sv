@@ -661,6 +661,44 @@ for (genvar i = 0; i < 2; i++)
       assign cache_mem_resp_lo = dma_mem_resp_li;
       assign cache_mem_resp_v_lo = dma_mem_resp_v_li;
       assign dma_mem_resp_yumi_lo = cache_mem_resp_yumi_li;
+<<<<<<< HEAD:bp_top/src/v/bp_tile.sv
+=======
+
+      localparam dram_y_cord_lp = ic_y_dim_p + cc_y_dim_p + mc_y_dim_p;
+      wire [mem_noc_cord_width_p-1:0] dst_cord_li = dram_y_cord_lp;
+      bp_me_cce_to_mem_link_master
+       #(.bp_params_p(bp_params_p)
+         ,.flit_width_p(mem_noc_flit_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.cid_width_p(mem_noc_cid_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         )
+       dma_link
+        (.clk_i(clk_i)
+         ,.reset_i(reset_r)
+
+         ,.mem_cmd_i(dma_mem_cmd_lo)
+         ,.mem_cmd_v_i(dma_mem_cmd_v_lo)
+         ,.mem_cmd_ready_o(dma_mem_cmd_ready_li)
+
+         ,.mem_resp_o(dma_mem_resp_li)
+         ,.mem_resp_v_o(dma_mem_resp_v_li)
+         ,.mem_resp_yumi_i(dma_mem_resp_yumi_lo)
+
+         ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
+         // TODO: CID == noc cord right now (1 DMC per column)
+         ,.my_cid_i(my_cord_i[0+:mem_noc_cid_width_p]-sac_x_dim_p[0+:mem_noc_cid_width_p])
+         ,.dst_cord_i(dst_cord_li)
+         ,.dst_cid_i('0)
+
+         ,.cmd_link_o(mem_cmd_link_cast_o)
+         ,.resp_link_i(mem_resp_link_cast_i)
+         );
+<<<<<<< HEAD
+=======
+
+>>>>>>> Using wormhole stream for cache dma
+>>>>>>> Using wormhole stream for cache dma:bp_top/src/v/bp_tile.v
     end
 
   bp_cce_loopback
