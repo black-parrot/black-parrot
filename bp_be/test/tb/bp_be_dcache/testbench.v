@@ -23,6 +23,7 @@ module testbench
    , parameter random_yumi_p               = 0
    , parameter uce_p                       = 0
    , parameter wt_p                        = 0
+   , parameter num_caches_p                = 1
 
    , parameter trace_file_p = "test.tr"
 
@@ -59,22 +60,26 @@ module testbench
   logic mem_cmd_ready_lo, mem_resp_yumi_lo;
   logic [cce_mem_msg_width_lp-1:0] mem_cmd_lo, mem_resp_lo;
 
-  logic [trace_replay_data_width_lp-1:0] trace_data_lo;
-  logic trace_v_lo;
-  logic dut_ready_lo;
+  logic [num_caches_p-1:0][trace_replay_data_width_lp-1:0] trace_data_lo;
+  logic [num_caches_p-1:0] trace_v_lo;
+  logic [num_caches_p-1:0] dut_ready_lo;
 
-  logic [trace_replay_data_width_lp-1:0] trace_data_li;
-  logic trace_v_li, trace_ready_lo;
-  logic [dword_width_p-1:0] data_lo;
-  logic v_lo;
+  logic [num_caches_p-1:0][trace_replay_data_width_lp-1:0] trace_data_li;
+  logic [num_caches_p-1:0] trace_v_li, trace_ready_lo;
+  logic [num_caches_p-1:0][dword_width_p-1:0] data_lo;
+  logic [num_caches_p-1:0] v_lo;
 
-  logic [trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
-  logic [trace_replay_data_width_lp+3:0] trace_rom_data_li;
+  logic [num_caches_p-1:0][trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
+  logic [num_caches_p-1:0][trace_replay_data_width_lp+3:0] trace_rom_data_li;
 
-  logic [dcache_pkt_width_lp-1:0] dcache_pkt_li;
-  logic [ptag_width_lp-1:0] ptag_li;
-  logic uncached_li;
+  logic [num_caches_p-1:0][dcache_pkt_width_lp-1:0] dcache_pkt_li;
+  logic [num_caches_p-1:0][ptag_width_lp-1:0] ptag_li;
+  logic [num_caches_p-1:0] uncached_li;
+  logic [num_caches_p-1:0] dcache_ready_li;
 
+  logic [num_caches_p-1:0] fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
+  logic [num_caches_p-1:0][dword_width_p-1:0] fifo_data_lo;
+  
   // Setting up the config bus
   // logic switch_cce_mode;
   always_comb begin
@@ -99,99 +104,101 @@ module testbench
     end
   end
 
-  // Trace Replay
-  logic test_done_lo;
-  bsg_trace_replay
-    #(.payload_width_p(trace_replay_data_width_lp)
-     ,.rom_addr_width_p(trace_rom_addr_width_lp)
-     ,.debug_p(2)
-     )
-    trace_replay
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-    ,.en_i(1'b1)
-
-    ,.v_i(trace_v_li)
-    ,.data_i(trace_data_li)
-    ,.ready_o(trace_ready_lo)
-
-    ,.v_o(trace_v_lo)
-    ,.data_o(trace_data_lo)
-    ,.yumi_i(dut_ready_lo & trace_v_lo)
-
-    ,.rom_addr_o(trace_rom_addr_lo)
-    ,.rom_data_i(trace_rom_data_li)
-
-    ,.done_o(test_done_lo)
-    ,.error_o()
-    );
-
-    always_ff @(negedge clk_i) begin
-      if (test_done_lo) begin
-        $display("PASS");
-        $finish();
-      end
+  logic [num_caches_p-1:0] test_done_lo;
+  always_ff @(negedge clk_i) begin
+    if (&test_done_lo) begin
+      $display("PASS");
+      $finish();
     end
+  end
 
-    bsg_nonsynth_test_rom
-    #(.data_width_p(trace_replay_data_width_lp+4)
-      ,.addr_width_p(trace_rom_addr_width_lp)
-      ,.filename_p(trace_file_p)
-      )
-      ROM
-      (.addr_i(trace_rom_addr_lo)
-      ,.data_o(trace_rom_data_li)
+  for (genvar i = 0; i < num_caches_p; i++)
+    begin : trace_replay
+      // Trace Replay
+      bsg_trace_replay
+        #(.payload_width_p(trace_replay_data_width_lp)
+         ,.rom_addr_width_p(trace_rom_addr_width_lp)
+         ,.debug_p(2)
+         )
+        trace_replay
+        (.clk_i(clk_i)
+        ,.reset_i(reset_i)
+        ,.en_i(1'b1)
+
+        ,.v_i(trace_v_li[i])
+        ,.data_i(trace_data_li[i])
+        ,.ready_o(trace_ready_lo[i])
+
+        ,.v_o(trace_v_lo[i])
+        ,.data_o(trace_data_lo[i])
+        ,.yumi_i(dut_ready_lo[i] & trace_v_lo[i])
+
+        ,.rom_addr_o(trace_rom_addr_lo[i])
+        ,.rom_data_i(trace_rom_data_li[i])
+
+        ,.done_o(test_done_lo[i])
+        ,.error_o()
+        );
+
+        bsg_nonsynth_test_rom
+        #(.data_width_p(trace_replay_data_width_lp+4)
+          ,.addr_width_p(trace_rom_addr_width_lp)
+          ,.filename_p(trace_file_p)
+          )
+          ROM
+          (.addr_i(trace_rom_addr_lo[i])
+          ,.data_o(trace_rom_data_li[i])
+          );
+
+      assign dcache_pkt_li[i] = trace_data_lo[i][0+:dcache_pkt_width_lp];
+      assign ptag_li[i] = trace_data_lo[i][dcache_pkt_width_lp+:ptag_width_lp];
+      assign uncached_li[i] = trace_data_lo[i][(dcache_pkt_width_lp+ptag_width_lp)+:1];
+
+      // Output FIFO
+      assign fifo_yumi_li[i] = (random_yumi_p == 1) ? (fifo_random_yumi_lo[i] & trace_ready_lo[i]) : (fifo_v_lo[i] & trace_ready_lo[i]);
+      assign trace_v_li[i] = (random_yumi_p == 1) ? fifo_yumi_li[i] : fifo_v_lo[i];
+      assign trace_data_li[i] = {'0, fifo_data_lo[i]};
+
+      bsg_nonsynth_random_yumi_gen
+        #(.yumi_min_delay_p(yumi_min_delay_lp)
+         ,.yumi_max_delay_p(yumi_max_delay_lp)
+         )
+         yumi_gen
+         (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.v_i(fifo_v_lo[i])
+         ,.yumi_o(fifo_random_yumi_lo[i])
+         );
+
+      // We need an 8 FIFO because we might be receiving all data at once rather
+      // than receive data at regular intervals. This is possible a side effect of
+      // our testing strategy. Open for debate.
+      bsg_fifo_1r1w_small
+        #(.width_p(dword_width_p)
+         ,.els_p(8))
+        output_fifo
+        (.clk_i(clk_i)
+        ,.reset_i(reset_i)
+
+        // from dcache
+        ,.v_i(v_lo[i])
+        ,.ready_o(dcache_ready_li[i])
+        ,.data_i(data_lo[i])
+
+        // to trace replay
+        ,.v_o(fifo_v_lo[i])
+        ,.yumi_i(fifo_yumi_li[i])
+        ,.data_o(fifo_data_lo[i])
       );
-
-  assign dcache_pkt_li = trace_data_lo[0+:dcache_pkt_width_lp];
-  assign ptag_li = trace_data_lo[dcache_pkt_width_lp+:ptag_width_lp];
-  assign uncached_li = trace_data_lo[(dcache_pkt_width_lp+ptag_width_lp)+:1];
-
-  // Output FIFO
-  logic fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
-  logic [dword_width_p-1:0] fifo_data_lo;
-  assign fifo_yumi_li = (random_yumi_p == 1) ? (fifo_random_yumi_lo & trace_ready_lo) : (fifo_v_lo & trace_ready_lo);
-  assign trace_v_li = (random_yumi_p == 1) ? fifo_yumi_li  : fifo_v_lo;
-  assign trace_data_li = {'0, fifo_data_lo};
-
-  bsg_nonsynth_random_yumi_gen
-    #(.yumi_min_delay_p(yumi_min_delay_lp)
-     ,.yumi_max_delay_p(yumi_max_delay_lp)
-     )
-     yumi_gen
-     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.v_i(fifo_v_lo)
-     ,.yumi_o(fifo_random_yumi_lo)
-     );
-
-  // We need an 8 FIFO because we might be receiving all data at once rather
-  // than receive data at regular intervals. This is possible a side effect of
-  // our testing strategy. Open for debate.
-  bsg_fifo_1r1w_small
-    #(.width_p(dword_width_p)
-     ,.els_p(8))
-    output_fifo
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-
-    // from dcache
-    ,.v_i(v_lo)
-    ,.ready_o(dcache_ready_li)
-    ,.data_i(data_lo)
-
-    // to trace replay
-    ,.v_o(fifo_v_lo)
-    ,.yumi_i(fifo_yumi_li)
-    ,.data_o(fifo_data_lo)
-  );
+    end
 
   // Subsystem Under Test
   wrapper
     #(.bp_params_p(bp_params_p)
      ,.uce_p(uce_p)
      ,.wt_p(wt_p)
+     ,.num_caches_p(num_caches_p)
      )
     wrapper
     (.clk_i(clk_i)
@@ -245,7 +252,7 @@ module testbench
       );
 
   // Tracers
-  bind bp_be_dcache
+  /*bind bp_be_dcache
     bp_nonsynth_cache_tracer
      #(.bp_params_p(bp_params_p)
       ,.sets_p(dcache_sets_p)
@@ -332,7 +339,7 @@ module testbench
           ,.mem_cmd_v_i(mem_cmd_v_o)
           ,.mem_cmd_ready_i(mem_cmd_ready_i)
           );
-  end
+  end*/
 
   bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))
@@ -354,5 +361,9 @@ module testbench
     $error("Writethrough cache with CCE not yet supported");
   if(cce_block_width_p != dcache_block_width_p)
     $error("Memory fetch block width does not match D$ block width");
+  if(num_caches_p == 0)
+    $error("Please provide a valid number of caches");
+  if((uce_p == 1) && (num_caches_p > 1))
+    $error("UCE does not support multi-cache testing");
 
 endmodule
