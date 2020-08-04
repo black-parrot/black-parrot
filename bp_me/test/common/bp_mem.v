@@ -151,13 +151,17 @@ if(dram_fixed_latency_p) begin: fixed_latency
   
   if (mem_load_p)
     begin : preload
-      logic [7:0] mem [0:mem_cap_in_bytes_p];
-      always_ff @(negedge reset_i)
-        begin
-          $readmemh(mem_file_p, mem);
-          for (integer i = 0; i < mem_cap_in_bytes_p; i++)
-            dram.mem.bsg_mem_dma_set(dram.mem.memory, i, mem[i]);
-        end
+      `ifndef VERILATOR
+        logic [7:0] mem [0:mem_cap_in_bytes_p];
+        always_ff @(negedge reset_i)
+          begin
+            $readmemh(mem_file_p, mem);
+            for (integer i = 0; i < mem_cap_in_bytes_p; i++)
+              dram.mem.bsg_mem_dma_set(dram.mem.memory, i, mem[i]);
+          end
+      `else
+         $fatal("Preloading with Verilator is not current supported, due to the dot references");
+      `endif
     end
 
 end
@@ -252,13 +256,17 @@ else begin: dramsim3
   localparam lg_mem_els_lp = `BSG_SAFE_CLOG2(mem_els_lp);
   if (mem_load_p)
     begin : preload
-      logic [cce_block_width_p-1:0] mem [0:mem_els_lp];
-      always_ff @(negedge reset_i)
-        begin
-          $readmemh(mem_file_p, mem);
-          for (integer i = 0; i < mem_els_lp; i++)
-            dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, mem[i]);
-        end
+      `ifndef VERILATOR
+        logic [cce_block_width_p-1:0] mem [0:mem_els_lp];
+        always_ff @(negedge reset_i)
+          begin
+            $readmemh(mem_file_p, mem);
+            for (integer i = 0; i < mem_els_lp; i++)
+              dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, mem[i]);
+          end
+      `else
+         $fatal("Preloading with Verilator is not current supported, due to the dot references");
+      `endif
     end
 end
 
