@@ -18,6 +18,7 @@ module testbench
 
    // Tracing parameters
    , parameter cce_trace_p                 = 0
+   , parameter lce_trace_p                 = 0
    , parameter dram_trace_p                = 0
    , parameter dcache_trace_p              = 0
    , parameter random_yumi_p               = 0
@@ -252,7 +253,7 @@ module testbench
       );
 
   // Tracers
-  /*bind bp_be_dcache
+  bind bp_be_dcache
     bp_nonsynth_cache_tracer
      #(.bp_params_p(bp_params_p)
       ,.sets_p(dcache_sets_p)
@@ -305,6 +306,32 @@ module testbench
        );
 
   if (uce_p == 0) begin
+    bind bp_lce
+      bp_me_nonsynth_lce_tracer
+       #(.bp_params_p(bp_params_p)
+         ,.sets_p(dcache_sets_p)
+         ,.assoc_p(dcache_assoc_p)
+         ,.block_width_p(dcache_block_width_p)
+         )
+       bp_lce_tracer
+         (.clk_i(clk_i & (testbench.lce_trace_p == 1))
+          ,.reset_i(reset_i)
+
+          ,.lce_id_i(lce_id_i)
+          ,.lce_req_i(lce_req_o)
+          ,.lce_req_v_i(lce_req_v_o)
+          ,.lce_req_ready_i(lce_req_ready_i)
+          ,.lce_resp_i(lce_resp_o)
+          ,.lce_resp_v_i(lce_resp_v_o)
+          ,.lce_resp_ready_i(lce_resp_ready_i)
+          ,.lce_cmd_i(lce_cmd_i)
+          ,.lce_cmd_v_i(lce_cmd_v_i)
+          ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
+          ,.lce_cmd_o_i(lce_cmd_o)
+          ,.lce_cmd_o_v_i(lce_cmd_v_o)
+          ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+          );
+
     bind bp_cce_fsm
       bp_me_nonsynth_cce_tracer
         #(.bp_params_p(bp_params_p))
@@ -339,7 +366,7 @@ module testbench
           ,.mem_cmd_v_i(mem_cmd_v_o)
           ,.mem_cmd_ready_i(mem_cmd_ready_i)
           );
-  end*/
+  end
 
   bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))
