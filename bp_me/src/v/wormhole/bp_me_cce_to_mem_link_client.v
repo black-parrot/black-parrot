@@ -52,6 +52,7 @@ module bp_me_cce_to_mem_link_client
   bp_mem_wormhole_packet_s mem_cmd_packet_lo;
   logic mem_cmd_packet_v_lo, mem_cmd_packet_yumi_li;
   bp_mem_wormhole_packet_s mem_resp_packet_lo;
+  bp_mem_wormhole_header_s mem_resp_header_lo;
   bsg_wormhole_router_adapter
    #(.max_payload_width_p(payload_width_lp)
      ,.len_width_p(len_width_p)
@@ -105,6 +106,8 @@ module bp_me_cce_to_mem_link_client
   wire [cord_width_p-1:0] dst_cord_lo = src_cord_lo;
   wire [cid_width_p-1:0]  dst_cid_lo  = src_cid_lo;
 
+  bp_cce_mem_msg_s mem_resp_cast_i;
+  assign mem_resp_cast_i = mem_resp_i;
   bp_me_wormhole_packet_encode_mem_resp
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
@@ -113,13 +116,14 @@ module bp_me_cce_to_mem_link_client
      ,.len_width_p(len_width_p)
      )
    mem_resp_encode
-    (.mem_resp_i(mem_resp_i)
+    (.mem_resp_header_i(mem_resp_cast_i.header)
      ,.src_cord_i(src_cord_lo)
      ,.src_cid_i(src_cid_lo)
      ,.dst_cord_i(dst_cord_lo)
      ,.dst_cid_i(dst_cid_lo)
-     ,.packet_o(mem_resp_packet_lo)
+     ,.wh_header_o(mem_resp_header_lo)
      );
+  assign mem_resp_packet_lo = '{header: mem_resp_header_lo, data: mem_resp_cast_i.data};
   
 endmodule
 

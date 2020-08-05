@@ -56,6 +56,7 @@ assign mem_resp_o = mem_resp_cast_o;
 localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_cce_mem_msg_header_s), cce_block_width_p);
 
 bp_mem_wormhole_packet_s mem_cmd_packet_li;
+bp_mem_wormhole_header_s mem_cmd_header_li;
 bp_me_wormhole_packet_encode_mem_cmd
  #(.bp_params_p(bp_params_p)
    ,.flit_width_p(flit_width_p)
@@ -64,13 +65,14 @@ bp_me_wormhole_packet_encode_mem_cmd
    ,.len_width_p(len_width_p)
    )
  mem_cmd_encode
-  (.mem_cmd_i(mem_cmd_cast_i)
+  (.mem_cmd_header_i(mem_cmd_cast_i.header)
    ,.src_cord_i(my_cord_i)
    ,.src_cid_i(my_cid_i)
    ,.dst_cord_i(dst_cord_i)
    ,.dst_cid_i(dst_cid_i)
-   ,.packet_o(mem_cmd_packet_li)
+   ,.wh_header_o(mem_cmd_header_li)
    );
+assign mem_cmd_packet_li = '{header: mem_cmd_header_li, data: mem_cmd_cast_i.data};
 
 bp_mem_wormhole_packet_s mem_resp_packet_lo;
 bsg_wormhole_router_adapter

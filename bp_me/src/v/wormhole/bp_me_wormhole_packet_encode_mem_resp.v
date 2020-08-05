@@ -25,58 +25,58 @@ module bp_me_wormhole_packet_encode_mem_resp
     , parameter cid_width_p = "inv"
     , parameter len_width_p = "inv"
 
-    , localparam mem_resp_packet_width_lp = 
-        `bp_mem_wormhole_packet_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_header_width_lp, cce_block_width_p)
+    , localparam mem_resp_wormhole_header_width_lp = 
+        `bp_mem_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_header_width_lp)
     )
-   (input [cce_mem_msg_width_lp-1:0]        mem_resp_i
-    , input [cord_width_p-1:0]              src_cord_i
-    , input [cid_width_p-1:0]               src_cid_i
-    , input [cord_width_p-1:0]              dst_cord_i
-    , input [cid_width_p-1:0]               dst_cid_i
-    , output [mem_resp_packet_width_lp-1:0] packet_o
+   (input [cce_mem_msg_header_width_lp-1:0]          mem_resp_header_i
+    , input [cord_width_p-1:0]                       src_cord_i
+    , input [cid_width_p-1:0]                        src_cid_i
+    , input [cord_width_p-1:0]                       dst_cord_i
+    , input [cid_width_p-1:0]                        dst_cid_i
+
+    , output [mem_resp_wormhole_header_width_lp-1:0] wh_header_o
     );
 
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_cce_mem_msg_header_s, cce_block_width_p);
 
-  bp_cce_mem_msg_s mem_resp_cast_i;
-  bp_mem_wormhole_packet_s packet_cast_o;
+  bp_cce_mem_msg_header_s header_cast_i;
+  bp_mem_wormhole_header_s header_cast_o;
 
-  assign mem_resp_cast_i = mem_resp_i;
-  assign packet_o        = packet_cast_o;
+  assign header_cast_i = mem_resp_header_i;
+  assign wh_header_o = header_cast_o;
 
   localparam mem_resp_ack_len_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data), mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_resp_wormhole_header_width_lp, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_1_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*1, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_resp_wormhole_header_width_lp + 8*1, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_2_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*2, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_resp_wormhole_header_width_lp + 8*2, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_4_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*4, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_resp_wormhole_header_width_lp + 8*4, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_8_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*8, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_resp_wormhole_header_width_lp + 8*8, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_16_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*16, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_resp_wormhole_header_width_lp + 8*16, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_32_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*32, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_resp_wormhole_header_width_lp + 8*32, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_64_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*64, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_resp_wormhole_header_width_lp + 8*64, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_128_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*128, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_resp_wormhole_header_width_lp + 8*128, mem_noc_flit_width_p) - 1;
 
   logic [len_width_p-1:0] data_resp_len_li;
 
   always_comb begin
-    packet_cast_o = '0;
+    header_cast_o = '0;
 
-    packet_cast_o.data                   = mem_resp_cast_i.data;
-    packet_cast_o.header.msg_hdr         = mem_resp_cast_i.header;
-    packet_cast_o.header.wh_hdr.src_cord = src_cord_i;
-    packet_cast_o.header.wh_hdr.src_cid  = src_cid_i;
-    packet_cast_o.header.wh_hdr.cord     = dst_cord_i;
-    packet_cast_o.header.wh_hdr.cid      = dst_cid_i;
+    header_cast_o.msg_hdr         = header_cast_i;
+    header_cast_o.wh_hdr.src_cord = src_cord_i;
+    header_cast_o.wh_hdr.src_cid  = src_cid_i;
+    header_cast_o.wh_hdr.cord     = dst_cord_i;
+    header_cast_o.wh_hdr.cid      = dst_cid_i;
 
-    case (mem_resp_cast_i.header.size)
+    case (header_cast_i.size)
       e_mem_msg_size_1 : data_resp_len_li = len_width_p'(mem_resp_data_len_1_lp);
       e_mem_msg_size_2 : data_resp_len_li = len_width_p'(mem_resp_data_len_2_lp);
       e_mem_msg_size_4 : data_resp_len_li = len_width_p'(mem_resp_data_len_4_lp);
@@ -88,13 +88,13 @@ module bp_me_wormhole_packet_encode_mem_resp
       default: data_resp_len_li = '0;
     endcase
 
-    case (mem_resp_cast_i.header.msg_type)
+    case (header_cast_i.msg_type)
       e_mem_msg_rd
-      ,e_mem_msg_uc_rd: packet_cast_o.header.wh_hdr.len = data_resp_len_li;
+      ,e_mem_msg_uc_rd: header_cast_o.wh_hdr.len = data_resp_len_li;
       e_mem_msg_uc_wr
       ,e_mem_msg_wr
-      ,e_mem_msg_pre  : packet_cast_o.header.wh_hdr.len = len_width_p'(mem_resp_ack_len_lp);
-      default: packet_cast_o = '0;
+      ,e_mem_msg_pre  : header_cast_o.wh_hdr.len = len_width_p'(mem_resp_ack_len_lp);
+      default: header_cast_o.wh_hdr.len = '0;
     endcase
   end
 
