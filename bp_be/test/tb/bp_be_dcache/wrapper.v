@@ -315,6 +315,7 @@ module wrapper
            ,.credits_empty_o(credits_empty_lo[i])
            );
 
+           // Supporting logic for multicore case
            if (num_caches_p > 1) 
              begin : multiple
                bp_me_cce_id_to_cord
@@ -330,6 +331,8 @@ module wrapper
                assign lce_req_packet_lo[i].cord = req_cce_cord_li[i];
                assign lce_req_packet_lo[i].len = coh_noc_len_width_p'(0);
 
+               // Request adapter to convert the request packet to the link
+               // format
                bsg_wormhole_router_adapter_in
                 #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
                   ,.len_width_p(coh_noc_len_width_p)
@@ -362,6 +365,8 @@ module wrapper
                assign lce_cmd_packet_lo[i].cord = lce_cord_li[i];
                assign lce_cmd_packet_lo[i].len = coh_noc_len_width_p'(0);
 
+               // Command out adapter to convert the command packet to the
+               // link format
                bsg_wormhole_router_adapter
                 #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
                   ,.len_width_p(coh_noc_len_width_p)
@@ -398,6 +403,8 @@ module wrapper
                assign lce_resp_packet_lo[i].cord = resp_cce_cord_li[i];
                assign lce_resp_packet_lo[i].len = coh_noc_len_width_p'(0);
                
+               // Response adapter to convert the response packet to the link
+               // format
                bsg_wormhole_router_adapter_in
                 #(.max_payload_width_p($bits(lce_resp_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
                   ,.len_width_p(coh_noc_len_width_p)
@@ -416,7 +423,9 @@ module wrapper
                     ,.link_o(lce_resp_link_lo[i])
                     );
              end
-           else 
+           else
+             // Single core case: Connecting the signals directly without
+             // adapters
              begin : single
                // lce_req demanding -> demanding handshake conversion
                bsg_two_fifo
@@ -557,6 +566,8 @@ module wrapper
        coh_cmd_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo, cmd_concentrated_link_r;
        coh_resp_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo, resp_concentrated_link_r;
        
+       // Request in adapter to convert the link format to the CCE request input
+       // format
        lce_req_packet_s cce_lce_req_packet_li;
        bsg_wormhole_router_adapter_out
         #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
@@ -595,6 +606,8 @@ module wrapper
        assign cce_lce_cmd_packet_lo.cord = cce_lce_cord_li;
        assign cce_lce_cmd_packet_lo.len = coh_noc_len_width_p'(0); 
 
+       // Command in adapter to convert from the CCE command output format to
+       // the link format
        bsg_wormhole_router_adapter_in
         #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
           ,.len_width_p(coh_noc_len_width_p)
@@ -613,6 +626,8 @@ module wrapper
             ,.link_o(cce_lce_cmd_link_lo)
             );
 
+       // Response in adapter to convert from the link format to the CCE
+       // response input  format
        lce_resp_packet_s cce_lce_resp_packet_li;
        bsg_wormhole_router_adapter_out
         #(.max_payload_width_p($bits(lce_resp_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
@@ -633,12 +648,12 @@ module wrapper
             );
        assign cce_lce_resp_li = cce_lce_resp_packet_li.payload;
 
-
        assign req_concentrated_link_li = '{data          : req_concentrated_link_lo.data
                                            ,v            : req_concentrated_link_lo.v
                                            ,ready_and_rev: cce_lce_req_link_lo.ready_and_rev
                                            };
 
+       // Request concentrator
        bsg_wormhole_concentrator_in
         #(.flit_width_p($bits(lce_req_packet_s))
           ,.len_width_p(coh_noc_len_width_p)
@@ -658,6 +673,7 @@ module wrapper
             );
 
        assign cmd_concentrated_link_li = cmd_concentrated_link_lo;
+       // Command concentrator
        bsg_wormhole_concentrator
         #(.flit_width_p($bits(lce_cmd_packet_s))
           ,.len_width_p(coh_noc_len_width_p)
@@ -679,7 +695,9 @@ module wrapper
        assign resp_concentrated_link_li = '{data          : resp_concentrated_link_lo.data
                                             ,v            : resp_concentrated_link_lo.v
                                             ,ready_and_rev: cce_lce_resp_link_lo.ready_and_rev
-                                            };
+                                           };
+
+       // Response concentrator
        bsg_wormhole_concentrator_in
         #(.flit_width_p($bits(lce_resp_packet_s))
           ,.len_width_p(coh_noc_len_width_p)
