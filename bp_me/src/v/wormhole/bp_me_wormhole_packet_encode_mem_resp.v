@@ -26,7 +26,7 @@ module bp_me_wormhole_packet_encode_mem_resp
     , parameter len_width_p = "inv"
 
     , localparam mem_resp_packet_width_lp = 
-        `bp_mem_wormhole_packet_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p)
+        `bp_mem_wormhole_packet_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_header_width_lp, cce_block_width_p)
     )
    (input [cce_mem_msg_width_lp-1:0]        mem_resp_i
     , input [cord_width_p-1:0]              src_cord_i
@@ -37,10 +37,10 @@ module bp_me_wormhole_packet_encode_mem_resp
     );
 
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
-  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p, bp_resp_wormhole_packet_s);
+  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_cce_mem_msg_header_s, cce_block_width_p);
 
   bp_cce_mem_msg_s mem_resp_cast_i;
-  bp_resp_wormhole_packet_s packet_cast_o;
+  bp_mem_wormhole_packet_s packet_cast_o;
 
   assign mem_resp_cast_i = mem_resp_i;
   assign packet_o        = packet_cast_o;
@@ -69,13 +69,12 @@ module bp_me_wormhole_packet_encode_mem_resp
   always_comb begin
     packet_cast_o = '0;
 
-    packet_cast_o.data       = mem_resp_cast_i.data;
-    packet_cast_o.msg        = mem_resp_cast_i[0+:cce_mem_msg_width_lp-cce_block_width_p];
-    packet_cast_o.src_cord   = src_cord_i;
-    packet_cast_o.src_cid    = src_cid_i;
-
-    packet_cast_o.cord    = dst_cord_i;
-    packet_cast_o.cid     = dst_cid_i;
+    packet_cast_o.data                   = mem_resp_cast_i.data;
+    packet_cast_o.header.msg_hdr         = mem_resp_cast_i.header;
+    packet_cast_o.header.wh_hdr.src_cord = src_cord_i;
+    packet_cast_o.header.wh_hdr.src_cid  = src_cid_i;
+    packet_cast_o.header.wh_hdr.cord     = dst_cord_i;
+    packet_cast_o.header.wh_hdr.cid      = dst_cid_i;
 
     case (mem_resp_cast_i.header.size)
       e_mem_msg_size_1 : data_resp_len_li = len_width_p'(mem_resp_data_len_1_lp);
@@ -91,10 +90,10 @@ module bp_me_wormhole_packet_encode_mem_resp
 
     case (mem_resp_cast_i.header.msg_type)
       e_mem_msg_rd
-      ,e_mem_msg_uc_rd: packet_cast_o.len = data_resp_len_li;
+      ,e_mem_msg_uc_rd: packet_cast_o.header.wh_hdr.len = data_resp_len_li;
       e_mem_msg_uc_wr
       ,e_mem_msg_wr
-      ,e_mem_msg_pre  : packet_cast_o.len = len_width_p'(mem_resp_ack_len_lp);
+      ,e_mem_msg_pre  : packet_cast_o.header.wh_hdr.len = len_width_p'(mem_resp_ack_len_lp);
       default: packet_cast_o = '0;
     endcase
   end

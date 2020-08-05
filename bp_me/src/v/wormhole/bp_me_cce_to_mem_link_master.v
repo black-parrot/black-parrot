@@ -52,12 +52,10 @@ assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o = mem_resp_cast_o;
 
 // CCE-MEM IF to Wormhole routed interface
-`declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p, mem_cmd_packet_s);
-`declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p, mem_resp_packet_s);
+`declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_cce_mem_msg_header_s, cce_block_width_p);
+localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_cce_mem_msg_header_s), cce_block_width_p);
 
-localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p);
-
-mem_cmd_packet_s mem_cmd_packet_li;
+bp_mem_wormhole_packet_s mem_cmd_packet_li;
 bp_me_wormhole_packet_encode_mem_cmd
  #(.bp_params_p(bp_params_p)
    ,.flit_width_p(flit_width_p)
@@ -74,7 +72,7 @@ bp_me_wormhole_packet_encode_mem_cmd
    ,.packet_o(mem_cmd_packet_li)
    );
 
-mem_resp_packet_s mem_resp_packet_lo;
+bp_mem_wormhole_packet_s mem_resp_packet_lo;
 bsg_wormhole_router_adapter
  #(.max_payload_width_p(payload_width_lp)
    ,.len_width_p(len_width_p)
@@ -96,7 +94,7 @@ bsg_wormhole_router_adapter
    ,.v_o(mem_resp_v_o)
    ,.yumi_i(mem_resp_yumi_i)
    );
-assign mem_resp_cast_o = {mem_resp_packet_lo.data, mem_resp_packet_lo.msg};
+assign mem_resp_cast_o = {mem_resp_packet_lo.data, mem_resp_packet_lo.header.msg_hdr};
 
 endmodule
 

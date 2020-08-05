@@ -41,19 +41,17 @@ module bp_me_cce_to_mem_link_client
   );
   
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
-  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p, mem_cmd_packet_s);
-  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p, mem_resp_packet_s);
-
-  localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p);
+  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_cce_mem_msg_header_s, cce_block_width_p);
+  localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_cce_mem_msg_header_s), cce_block_width_p);
 
   // We save coordinates between sending and receiving. This assumes we get responses in-order
   logic [cord_width_p-1:0] fifo_cord_li, fifo_cord_lo;
   logic [cid_width_p-1:0] fifo_cid_li, fifo_cid_lo;
   logic fifo_ready_lo, fifo_v_li, fifo_v_lo, fifo_yumi_li;
 
-  mem_cmd_packet_s mem_cmd_packet_lo;
+  bp_mem_wormhole_packet_s mem_cmd_packet_lo;
   logic mem_cmd_packet_v_lo, mem_cmd_packet_yumi_li;
-  mem_resp_packet_s mem_resp_packet_lo;
+  bp_mem_wormhole_packet_s mem_resp_packet_lo;
   bsg_wormhole_router_adapter
    #(.max_payload_width_p(payload_width_lp)
      ,.len_width_p(len_width_p)
@@ -75,13 +73,13 @@ module bp_me_cce_to_mem_link_client
       ,.v_i(mem_resp_v_i)
       ,.ready_o(mem_resp_ready_o)
       );
-  assign mem_cmd_o = {mem_cmd_packet_lo.data, mem_cmd_packet_lo.msg};
+  assign mem_cmd_o = {mem_cmd_packet_lo.data, mem_cmd_packet_lo.header.msg_hdr};
   assign mem_cmd_v_o = mem_cmd_packet_v_lo & fifo_ready_lo;
   assign mem_cmd_packet_yumi_li = mem_cmd_yumi_i;
   
   wire bypass_fifo = mem_resp_v_i & ~fifo_v_lo;
-  assign fifo_cord_li = mem_cmd_packet_lo.src_cord;
-  assign fifo_cid_li  = mem_cmd_packet_lo.src_cid;
+  assign fifo_cord_li = mem_cmd_packet_lo.header.wh_hdr.src_cord;
+  assign fifo_cid_li  = mem_cmd_packet_lo.header.wh_hdr.src_cid;
   assign fifo_v_li    = mem_cmd_yumi_i & ~bypass_fifo;
   bsg_fifo_1r1w_small 
   #(.width_p(cord_width_p+cid_width_p)
@@ -101,8 +99,8 @@ module bp_me_cce_to_mem_link_client
     );
   assign fifo_yumi_li = fifo_v_lo & mem_resp_v_i;
 
-  wire [cord_width_p-1:0] src_cord_lo = bypass_fifo ? mem_cmd_packet_lo.src_cord : fifo_cord_lo;
-  wire [cid_width_p-1:0]  src_cid_lo  = bypass_fifo ? mem_cmd_packet_lo.src_cid  : fifo_cid_lo;
+  wire [cord_width_p-1:0] src_cord_lo = bypass_fifo ? mem_cmd_packet_lo.header.wh_hdr.src_cord : fifo_cord_lo;
+  wire [cid_width_p-1:0]  src_cid_lo  = bypass_fifo ? mem_cmd_packet_lo.header.wh_hdr.src_cid  : fifo_cid_lo;
   
   wire [cord_width_p-1:0] dst_cord_lo = src_cord_lo;
   wire [cid_width_p-1:0]  dst_cid_lo  = src_cid_lo;
