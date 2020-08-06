@@ -1,0 +1,56 @@
+
+bootrom.riscv:     file format elf64-littleriscv
+
+SYMBOL TABLE:
+0000000000000000 l    d  .text.start	0000000000000000 .text.start
+0000000000000000 l    df *ABS*	0000000000000000 /tmp/ccaBgB2d.o
+000000000000009c l       .text.start	0000000000000000 halt
+0000000000000000 g       .text.start	0000000000000000 _start
+
+
+
+Disassembly of section .text.start:
+
+0000000000000000 <_start>:
+   0:	00000013          	nop
+   4:	00000093          	li	ra,0
+   8:	00000113          	li	sp,0
+   c:	00000193          	li	gp,0
+  10:	00000213          	li	tp,0
+  14:	00000293          	li	t0,0
+  18:	00000313          	li	t1,0
+  1c:	00000393          	li	t2,0
+  20:	00000413          	li	s0,0
+  24:	00000493          	li	s1,0
+  28:	00000513          	li	a0,0
+  2c:	00000593          	li	a1,0
+  30:	00000613          	li	a2,0
+  34:	00000693          	li	a3,0
+  38:	00000713          	li	a4,0
+  3c:	00000793          	li	a5,0
+  40:	00000813          	li	a6,0
+  44:	00000893          	li	a7,0
+  48:	00000913          	li	s2,0
+  4c:	00000993          	li	s3,0
+  50:	00000a13          	li	s4,0
+  54:	00000a93          	li	s5,0
+  58:	00000b13          	li	s6,0
+  5c:	00000b93          	li	s7,0
+  60:	00000c13          	li	s8,0
+  64:	00000c93          	li	s9,0
+  68:	00000d13          	li	s10,0
+  6c:	00000d93          	li	s11,0
+  70:	00000e13          	li	t3,0
+  74:	00000e93          	li	t4,0
+  78:	00000f13          	li	t5,0
+  7c:	00000f93          	li	t6,0
+  80:	00002fb7          	lui	t6,0x2
+  84:	300fa073          	csrs	mstatus,t6
+  88:	00100f9b          	addiw	t6,zero,1
+  8c:	01ff9f93          	slli	t6,t6,0x1f
+  90:	7b1f9073          	csrw	dpc,t6
+  94:	7b01d073          	csrwi	dcsr,3
+  98:	7b200073          	dret
+
+000000000000009c <halt>:
+  9c:	0000006f          	j	9c <halt>
