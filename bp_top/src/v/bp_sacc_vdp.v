@@ -317,6 +317,7 @@ module bp_sacc_vdp
    assign dot_product_temp = sum_l2[0] + sum_l2[1];
 
 //SPM
+wire [`BSG_SAFE_CLOG2(20)-1:0] spm_addr_li = spm_addr >> 3;
 bsg_mem_1rw_sync
   #(.width_p(64)
     ,.els_p(20)
@@ -325,7 +326,7 @@ bsg_mem_1rw_sync
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.data_i(spm_data_li)
-   ,.addr_i(spm_addr >> 3)
+   ,.addr_i(spm_addr_li)
    ,.v_i(spm_internal_read_v_li | spm_external_read_v_li | spm_internal_write_v_li | spm_external_write_v_li)
    ,.w_i(spm_internal_write_v_li | spm_external_write_v_li)
    ,.data_o(spm_data_lo)
