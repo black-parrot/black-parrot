@@ -386,7 +386,7 @@ module bp_fe_icache
      ,.data_o(cache_miss)
      );
 
-  assign vaddr_ready_o = (cache_req_ready_i & ~cache_miss & ~cache_req_v_o) | cache_req_safe_i;
+  assign vaddr_ready_o = cache_req_ready_i & ~cache_miss & ~cache_req_v_o;
 
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
                               | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
