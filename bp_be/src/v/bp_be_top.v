@@ -52,6 +52,7 @@ module bp_be_top
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
    , input                                           cache_req_critical_i
+   , input                                           cache_req_safe_i
    , input                                           cache_req_complete_i
 
    // data_mem
@@ -220,6 +221,7 @@ module bp_be_top
      ,.cache_req_ready_i(cache_req_ready_i)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
      ,.cache_req_critical_i(cache_req_critical_i)
+     ,.cache_req_safe_i(cache_req_safe_i)
      ,.cache_req_complete_i(cache_req_complete_i)
 
      ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

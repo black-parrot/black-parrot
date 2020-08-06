@@ -51,6 +51,7 @@ module bp_fe_mem
 
    , input                                            cache_req_complete_i
    , input                                            cache_req_critical_i
+   , input                                            cache_req_safe_i
 
    , input [icache_data_mem_pkt_width_lp-1:0]         data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
@@ -177,6 +178,7 @@ bp_fe_icache
 
    ,.cache_req_complete_i(cache_req_complete_i)
    ,.cache_req_critical_i(cache_req_critical_i)
+   ,.cache_req_safe_i(cache_req_safe_i)
 
    ,.data_mem_pkt_i(data_mem_pkt_i)
    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

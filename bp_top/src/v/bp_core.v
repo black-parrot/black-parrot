@@ -129,6 +129,7 @@ module bp_core
 
      ,.dcache_req_complete_i(dcache_req_complete_lo)
      ,.dcache_req_critical_i(dcache_req_critical_lo)
+     ,.dcache_req_safe_i('0)
 
      ,.icache_req_o(icache_req_cast_lo)
      ,.icache_req_v_o(icache_req_v_lo)
@@ -138,6 +139,7 @@ module bp_core
 
      ,.icache_req_complete_i(icache_req_complete_lo)
      ,.icache_req_critical_i(icache_req_critical_lo)
+     ,.icache_req_safe_i('0)
      // response side - Interface from D$ LCE
      ,.dcache_data_mem_pkt_i(dcache_data_mem_pkt_li)
      ,.dcache_data_mem_pkt_v_i(dcache_data_mem_pkt_v_li)

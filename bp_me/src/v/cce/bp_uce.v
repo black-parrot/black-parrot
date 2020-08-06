@@ -56,6 +56,7 @@ module bp_uce
     , input                                          cache_req_metadata_v_i
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_critical_o
+    , output logic                                   cache_req_safe_o
 
     , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
     , output logic                                   tag_mem_pkt_v_o
@@ -465,6 +466,7 @@ module bp_uce
 
       cache_req_complete_o = '0;
       cache_req_critical_o = '0;
+      cache_req_safe_o = '0;
 
       mem_cmd_cast_o   = '0;
       mem_cmd_v_o      = '0;
@@ -729,6 +731,7 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             cache_req_complete_o = data_mem_pkt_yumi_i;
+            cache_req_safe_o = '0;
             mem_resp_yumi_lo = cache_req_complete_o;
 
             state_n = cache_req_complete_o ? e_ready : e_uc_read_wait;

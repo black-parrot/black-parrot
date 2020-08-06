@@ -88,6 +88,7 @@ module bp_unicore
 
   logic dcache_req_complete_li, icache_req_complete_li;
   logic dcache_req_critical_li, icache_req_critical_li;
+  logic dcache_req_safe_li, icache_req_safe_li;
 
   logic [1:0] credits_full_li, credits_empty_li;
   logic timer_irq_li, software_irq_li, external_irq_li;
@@ -141,6 +142,7 @@ module bp_unicore
      ,.dcache_req_metadata_v_o(dcache_req_metadata_v_lo)
      ,.dcache_req_complete_i(dcache_req_complete_li)
      ,.dcache_req_critical_i(dcache_req_critical_li)
+     ,.dcache_req_safe_i(dcache_req_safe_li)
 
      ,.icache_req_o(icache_req_lo)
      ,.icache_req_v_o(icache_req_v_lo)
@@ -149,6 +151,7 @@ module bp_unicore
      ,.icache_req_metadata_v_o(icache_req_metadata_v_lo)
      ,.icache_req_complete_i(icache_req_complete_li)
      ,.icache_req_critical_i(icache_req_critical_li)
+     ,.icache_req_safe_i(icache_req_safe_li)
 
      ,.dcache_tag_mem_pkt_i(dcache_tag_mem_pkt_li)
      ,.dcache_tag_mem_pkt_v_i(dcache_tag_mem_pkt_v_li)
@@ -229,6 +232,7 @@ module bp_unicore
 
     ,.cache_req_complete_o(dcache_req_complete_li)
     ,.cache_req_critical_o(dcache_req_critical_li)
+    ,.cache_req_safe_o(dcache_req_safe_li)
 
     ,.credits_full_o(credits_full_li[1])
     ,.credits_empty_o(credits_empty_li[1])
@@ -278,6 +282,7 @@ module bp_unicore
 
     ,.cache_req_complete_o(icache_req_complete_li)
     ,.cache_req_critical_o(icache_req_critical_li)
+    ,.cache_req_safe_o(icache_req_safe_li)
 
     ,.credits_full_o(credits_full_li[0])
     ,.credits_empty_o(credits_empty_li[0])

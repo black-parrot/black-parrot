@@ -145,6 +145,7 @@ module bp_be_dcache
 
     , input cache_req_complete_i
     , input cache_req_critical_i
+    , input cache_req_safe_i
 
     // data_mem
     , input data_mem_pkt_v_i
@@ -745,7 +746,7 @@ module bp_be_dcache
      ,.clear_i(cache_req_complete_i)
      ,.data_o(cache_miss_r)
      );
-  assign ready_o = cache_req_ready_i & ~cache_miss_r;
+  assign ready_o = (cache_req_ready_i & ~cache_miss_r) | cache_req_safe_i;
 
   assign early_v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
                               | (uncached_tv_r & (decode_tv_r.store_op & cache_req_ready_i))
