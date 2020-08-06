@@ -95,6 +95,7 @@ module bp_lce_cmd
     // cache_req_complete_o is routed to the cache to indicate a blocking request is complete
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_critical_o
+    , output logic                                   cache_req_safe_o
     // uncached store request complete is used by the LCE to decrement the request credit counter
     // when an uncached store complete, but is not routed to the cache because the caches do not
     // block (miss) on uncached stores
@@ -271,6 +272,7 @@ module bp_lce_cmd
     cache_req_complete_o = 1'b0;
     //TODO: support partial fill, currently not supported
     cache_req_critical_o = 1'b0;
+    cache_req_safe_o = 1'b0;
 
     // LCE-CCE Interface signals
     lce_cmd_yumi_o = 1'b0;

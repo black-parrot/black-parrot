@@ -84,6 +84,7 @@ module bp_lce
 
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_critical_o
+    , output logic                                   cache_req_safe_o
 
     // LCE-CCE interface
     // Req: ready->valid
@@ -194,6 +195,7 @@ module bp_lce
       ,.sync_done_o(cmd_sync_done_lo)
       ,.cache_req_complete_o(cache_req_complete_o)
       ,.cache_req_critical_o(cache_req_critical_o)
+      ,.cache_req_safe_o(cache_req_safe_o)
       ,.uc_store_req_complete_o(uc_store_req_complete_lo)
 
       ,.data_mem_pkt_o(data_mem_pkt)
