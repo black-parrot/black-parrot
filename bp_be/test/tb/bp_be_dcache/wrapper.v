@@ -104,16 +104,16 @@ module wrapper
 
    logic [num_caches_p-1:0] lce_req_v_lo, lce_resp_v_lo;
    logic cce_lce_req_v_li, cce_lce_req_yumi_lo;
-   logic [num_caches_p-1:0] lce_req_ready_li, lce_resp_ready_li;
+   logic [num_caches_p-1:0] lce_req_ready_li, lce_resp_ready_li, fifo_lce_cmd_ready_lo;
    logic cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
-   logic [num_caches_p-1:0] fifo_lce_cmd_v_lo, fifo_lce_cmd_yumi_li, lce_cmd_v_li, lce_cmd_yumi_lo, lce_cmd_v_lo, lce_cmd_ready_li;
+   logic [num_caches_p-1:0] lce_cmd_v_li, lce_cmd_yumi_lo, lce_cmd_v_lo, lce_cmd_ready_li;
    logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
    
    `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, dcache_assoc_p, dcache_block_width_p);
    
    bp_lce_cce_req_s [num_caches_p-1:0] lce_req_lo;
    bp_lce_cce_req_s cce_lce_req_li;
-   bp_lce_cmd_s [num_caches_p-1:0] lce_cmd_li, lce_cmd_lo, fifo_lce_cmd_lo;
+   bp_lce_cmd_s [num_caches_p-1:0] lce_cmd_li, lce_cmd_lo;
    bp_lce_cmd_s cce_lce_cmd_lo;
    bp_lce_cce_resp_s [num_caches_p-1:0] lce_resp_lo;
    bp_lce_cce_resp_s cce_lce_resp_li;
@@ -137,16 +137,10 @@ module wrapper
    coh_cmd_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;
    coh_resp_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
    
-   logic [num_caches_p-1:0][coh_noc_cord_width_p-1:0] req_cce_cord_li;
-   logic [num_caches_p-1:0][coh_noc_cid_width_p-1:0] req_cce_cid_li;
    lce_req_packet_s [num_caches_p-1:0] lce_req_packet_lo;
    
-   logic [num_caches_p-1:0][coh_noc_cord_width_p-1:0] lce_cord_li;
-   logic [num_caches_p-1:0][coh_noc_cid_width_p-1:0] lce_cid_li;
-   lce_cmd_packet_s [num_caches_p-1:0] lce_cmd_packet_lo, lce_cmd_packet_li;
+   lce_cmd_packet_s [num_caches_p-1:0] lce_cmd_packet_lo, lce_cmd_packet_li, fifo_lce_cmd_data_lo;
 
-   logic [num_caches_p-1:0][coh_noc_cord_width_p-1:0] resp_cce_cord_li;
-   logic [num_caches_p-1:0][coh_noc_cid_width_p-1:0] resp_cce_cid_li;
    lce_resp_packet_s [num_caches_p-1:0] lce_resp_packet_lo;
 
    for (genvar i = 0; i < num_caches_p; i++)
@@ -268,7 +262,7 @@ module wrapper
            (.clk_i(clk_i)
            ,.reset_i(reset_i)
 
-           ,.lce_id_i(/*cfg_bus_cast_i.dcache_id*/lce_id_width_p'(i))
+           ,.lce_id_i(lce_id_width_p'(i))
            ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
 
            ,.cache_req_i(cache_req_lo[i])
@@ -315,170 +309,62 @@ module wrapper
            ,.credits_empty_o(credits_empty_lo[i])
            );
 
-           // Supporting logic for multicore case
-           if (num_caches_p > 1) 
-             begin : multiple
-               bp_me_cce_id_to_cord
-                #(.bp_params_p(bp_params_p))
-                 req_router_cord
-                  (.cce_id_i(lce_req_lo[i].header.dst_id)
-                   ,.cce_cord_o(req_cce_cord_li[i])
-                   ,.cce_cid_o(req_cce_cid_li[i])
-                   );
-               
-               assign lce_req_packet_lo[i].payload = lce_req_lo[i];
-               assign lce_req_packet_lo[i].cid = req_cce_cid_li[i];
-               assign lce_req_packet_lo[i].cord = req_cce_cord_li[i];
-               assign lce_req_packet_lo[i].len = coh_noc_len_width_p'(0);
+           // Request out
+           assign lce_req_packet_lo[i].payload = lce_req_lo[i];
+           assign lce_req_packet_lo[i].cid = '0;
+           assign lce_req_packet_lo[i].cord = '0;
+           assign lce_req_packet_lo[i].len = coh_noc_len_width_p'(0);
 
-               // Request adapter to convert the request packet to the link
-               // format
-               bsg_wormhole_router_adapter_in
-                #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
-                  ,.len_width_p(coh_noc_len_width_p)
-                  ,.cord_width_p(coh_noc_cord_width_p)
-                  ,.flit_width_p($bits(lce_req_packet_s))
-                  )
-                  lce_req_adapter_in
-                   (.clk_i(clk_i)
-                    ,.reset_i(reset_i)
+           // Conversion from request packet to link format
+           assign lce_req_link_lo[i].data = lce_req_packet_lo[i];
+           assign lce_req_link_lo[i].v = lce_req_v_lo[i];
+           assign lce_req_link_lo[i].ready_and_rev = 1'b0;
+           assign lce_req_ready_li[i] = lce_req_link_li[i].ready_and_rev;
 
-                    ,.packet_i(lce_req_packet_lo[i])
-                    ,.v_i(lce_req_v_lo[i])
-                    ,.ready_o(lce_req_ready_li[i])
+           // Command out
+           assign lce_cmd_packet_lo[i].payload = lce_cmd_lo[i];
+           assign lce_cmd_packet_lo[i].cid = lce_cmd_lo[i].header.dst_id;
+           assign lce_cmd_packet_lo[i].cord = '0;
+           assign lce_cmd_packet_lo[i].len = coh_noc_len_width_p'(0);
 
-                    ,.link_i(lce_req_link_li[i])
-                    ,.link_o(lce_req_link_lo[i])
-                    );
+           // Conversion from command link to command in
+           assign lce_cmd_link_lo[i].ready_and_rev = fifo_lce_cmd_ready_lo[i];
+           assign lce_cmd_packet_li[i] = fifo_lce_cmd_data_lo[i][0+:$bits(lce_cmd_packet_s)];
+           assign lce_cmd_li[i] = lce_cmd_packet_li[i].payload;
+           
+           // Conversion from command packet to link format
+           assign lce_cmd_link_lo[i].data = lce_cmd_packet_lo[i];
+           assign lce_cmd_link_lo[i].v = lce_cmd_v_lo[i];
+           assign lce_cmd_ready_li[i] = lce_cmd_link_li[i].ready_and_rev;
 
-               
-               bp_me_lce_id_to_cord
-                #(.bp_params_p(bp_params_p))
-                cmd_router_cord
-                 (.lce_id_i(lce_cmd_lo[i].header.dst_id)
-                  ,.lce_cord_o(lce_cord_li[i])
-                  ,.lce_cid_o(lce_cid_li[i])
-                  );
+           // LCE cmd demanding -> demanding conversion
+           bsg_two_fifo
+            #(.width_p($bits(lce_cmd_packet_s)))
+            cmd_fifo
+             (.clk_i(clk_i)
+              ,.reset_i(reset_i)
 
-               assign lce_cmd_packet_lo[i].payload = lce_cmd_lo[i];
-               assign lce_cmd_packet_lo[i].cid = lce_cmd_lo[i].header.dst_id;
-               assign lce_cmd_packet_lo[i].cord = lce_cord_li[i];
-               assign lce_cmd_packet_lo[i].len = coh_noc_len_width_p'(0);
+              ,.data_i(lce_cmd_link_li[i].data)
+              ,.v_i(lce_cmd_link_li[i].v)
+              ,.ready_o(fifo_lce_cmd_ready_lo[i])
 
-               // Command out adapter to convert the command packet to the
-               // link format
-               bsg_wormhole_router_adapter
-                #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
-                  ,.len_width_p(coh_noc_len_width_p)
-                  ,.cord_width_p(coh_noc_cord_width_p)
-                  ,.flit_width_p($bits(lce_cmd_packet_s))
-                  )
-                  cmd_adapter
-                   (.clk_i(clk_i)
-                    ,.reset_i(reset_i)
+              ,.data_o(fifo_lce_cmd_data_lo[i])
+              ,.v_o(lce_cmd_v_li[i])
+              ,.yumi_i(lce_cmd_yumi_lo[i])
+              );
 
-                    ,.packet_i(lce_cmd_packet_lo[i])
-                    ,.v_i(lce_cmd_v_lo[i])
-                    ,.ready_o(lce_cmd_ready_li[i])
+           // Response out
+           assign lce_resp_packet_lo[i].payload = lce_resp_lo[i];
+           assign lce_resp_packet_lo[i].cid = '0;
+           assign lce_resp_packet_lo[i].cord = '0;
+           assign lce_resp_packet_lo[i].len = coh_noc_len_width_p'(0);
+           
+           // Conversion from response packet to link format
+           assign lce_resp_link_lo[i].data = lce_resp_packet_lo[i];
+           assign lce_resp_link_lo[i].v = lce_resp_v_lo[i];
+           assign lce_resp_link_lo[i].ready_and_rev = 1'b0;
+           assign lce_resp_ready_li[i] = lce_resp_link_li[i].ready_and_rev;
 
-                    ,.link_i(lce_cmd_link_li[i])
-                    ,.link_o(lce_cmd_link_lo[i])
-
-                    ,.packet_o(lce_cmd_packet_li[i])
-                    ,.v_o(lce_cmd_v_li[i])
-                    ,.yumi_i(lce_cmd_yumi_lo[i])
-                    );
-               assign lce_cmd_li[i] = lce_cmd_packet_li[i].payload;
-
-               bp_me_cce_id_to_cord
-                #(.bp_params_p(bp_params_p))
-                 resp_router_cord
-                  (.cce_id_i(lce_resp_lo[i].header.dst_id)
-                   ,.cce_cord_o(resp_cce_cord_li[i])
-                   ,.cce_cid_o(resp_cce_cid_li[i])
-                   );
-
-               assign lce_resp_packet_lo[i].payload = lce_resp_lo[i];
-               assign lce_resp_packet_lo[i].cid = resp_cce_cid_li[i];
-               assign lce_resp_packet_lo[i].cord = resp_cce_cord_li[i];
-               assign lce_resp_packet_lo[i].len = coh_noc_len_width_p'(0);
-               
-               // Response adapter to convert the response packet to the link
-               // format
-               bsg_wormhole_router_adapter_in
-                #(.max_payload_width_p($bits(lce_resp_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
-                  ,.len_width_p(coh_noc_len_width_p)
-                  ,.cord_width_p(coh_noc_cord_width_p)
-                  ,.flit_width_p($bits(lce_resp_packet_s))
-                  )
-                  lce_resp_adapter_in
-                   (.clk_i(clk_i)
-                    ,.reset_i(reset_i)
-
-                    ,.packet_i(lce_resp_packet_lo[i])
-                    ,.v_i(lce_resp_v_lo[i])
-                    ,.ready_o(lce_resp_ready_li[i])
-
-                    ,.link_i(lce_resp_link_li[i])
-                    ,.link_o(lce_resp_link_lo[i])
-                    );
-             end
-           else
-             // Single core case: Connecting the signals directly without
-             // adapters
-             begin : single
-               // lce_req demanding -> demanding handshake conversion
-               bsg_two_fifo
-                #(.width_p(lce_cce_req_width_lp))
-                lce_cce_req_fifo
-                 (.clk_i(clk_i)
-                  ,.reset_i(reset_i)
-
-                  ,.v_i(lce_req_v_lo)
-                  ,.data_i(lce_req_lo)
-                  ,.ready_o(lce_req_ready_li)
-
-                  ,.v_o(cce_lce_req_v_li)
-                  ,.data_o(cce_lce_req_li)
-                  ,.yumi_i(cce_lce_req_yumi_lo)
-                  );
-               
-               // lce_resp demanding -> demanding handshake conversion
-               bsg_fifo_1r1w_small
-                #(.width_p(lce_cce_resp_width_lp)
-                  ,.els_p(wg_per_cce_lp)
-                  )
-                  lce_cce_resp_fifo
-                   (.clk_i(clk_i)
-                    ,.reset_i(reset_i)
-
-                    ,.v_i(lce_resp_v_lo)
-                    ,.data_i(lce_resp_lo)
-                    ,.ready_o(lce_resp_ready_li)
-
-                    ,.v_o(cce_lce_resp_v_li)
-                    ,.data_o(cce_lce_resp_li)
-                    ,.yumi_i(cce_lce_resp_yumi_lo)
-                    );
-
-               // lce_cmd demanding -> demanding handshake conversion
-               bsg_two_fifo
-                #(.width_p(lce_cmd_width_lp))
-                cmd_fifo
-                 (.clk_i(clk_i)
-                  ,.reset_i(reset_i)
-
-                  // from CCE
-                  ,.v_i(cce_lce_cmd_v_lo)
-                  ,.ready_o(cce_lce_cmd_ready_li)
-                  ,.data_i(cce_lce_cmd_lo)
-
-                  // to LCE
-                  ,.v_o(lce_cmd_v_li)
-                  ,.yumi_i(lce_cmd_yumi_lo)
-                  ,.data_o(lce_cmd_li)
-                  );
-             end
          end
        else if (uce_p == 1)
          begin : uce
@@ -560,13 +446,13 @@ module wrapper
          end
      end
 
-   if ((uce_p == 0) & (num_caches_p > 1))
+   if (uce_p == 0) 
      begin : concentrator
        coh_req_ready_and_link_s req_concentrated_link_li, req_concentrated_link_lo, req_concentrated_link_r;
        coh_cmd_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo, cmd_concentrated_link_r;
        coh_resp_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo, resp_concentrated_link_r;
        
-       // Request in adapter to convert the link format to the CCE request input
+       // Request adapter to convert the link format to the CCE request input
        // format
        lce_req_packet_s cce_lce_req_packet_li;
        bsg_wormhole_router_adapter_out
@@ -589,44 +475,19 @@ module wrapper
 
        assign cce_lce_req_li = cce_lce_req_packet_li.payload;
 
-       logic [coh_noc_cord_width_p-1:0] cce_lce_cord_li;
-       logic [coh_noc_cid_width_p-1:0] cce_lce_cid_li;
        lce_cmd_packet_s cce_lce_cmd_packet_lo;
-
-       bp_me_lce_id_to_cord
-        #(.bp_params_p(bp_params_p))
-        cce_cmd_router_cord
-         (.lce_id_i(cce_lce_cmd_lo.header.dst_id)
-          ,.lce_cord_o(cce_lce_cord_li)
-          ,.lce_cid_o(cce_lce_cid_li)
-          );
 
        assign cce_lce_cmd_packet_lo.payload = cce_lce_cmd_lo;
        assign cce_lce_cmd_packet_lo.cid = cce_lce_cmd_lo.header.dst_id;
-       assign cce_lce_cmd_packet_lo.cord = cce_lce_cord_li;
+       assign cce_lce_cmd_packet_lo.cord = '0;
        assign cce_lce_cmd_packet_lo.len = coh_noc_len_width_p'(0); 
 
-       // Command in adapter to convert from the CCE command output format to
-       // the link format
-       bsg_wormhole_router_adapter_in
-        #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
-          ,.len_width_p(coh_noc_len_width_p)
-          ,.cord_width_p(coh_noc_cord_width_p)
-          ,.flit_width_p($bits(lce_cmd_packet_s))
-          )
-          cmd_adapter_in
-           (.clk_i(clk_i)
-            ,.reset_i(reset_i)
+       assign cce_lce_cmd_link_lo.data = cce_lce_cmd_packet_lo;
+       assign cce_lce_cmd_link_lo.v = cce_lce_cmd_v_lo;
+       assign cce_lce_cmd_link_lo.ready_and_rev = '0;
+       assign cce_lce_cmd_ready_li = cce_lce_cmd_link_li.ready_and_rev;
 
-            ,.packet_i(cce_lce_cmd_packet_lo)
-            ,.v_i(cce_lce_cmd_v_lo)
-            ,.ready_o(cce_lce_cmd_ready_li)
-
-            ,.link_i(cce_lce_cmd_link_li)
-            ,.link_o(cce_lce_cmd_link_lo)
-            );
-
-       // Response in adapter to convert from the link format to the CCE
+       // Response adapter to convert from the link format to the CCE
        // response input  format
        lce_resp_packet_s cce_lce_resp_packet_li;
        bsg_wormhole_router_adapter_out
@@ -715,10 +576,7 @@ module wrapper
             ,.concentrated_link_i(resp_concentrated_link_li)
             ,.concentrated_link_o(resp_concentrated_link_lo)
             );
-     end   
-
-   if (uce_p == 0)
-     begin : cce
+       
        logic mem_resp_v_to_cce, mem_resp_yumi_from_cce, mem_resp_ready_lo;
        logic mem_cmd_v_from_cce, mem_cmd_ready_to_cce, mem_cmd_v_lo, mem_cmd_yumi_li;
        logic [cce_mem_msg_width_lp-1:0] mem_resp_to_cce;
