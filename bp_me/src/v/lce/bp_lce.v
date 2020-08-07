@@ -234,6 +234,7 @@ module bp_lce
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
+     // The condition for clear should change when partial fill is supported
      ,.clear_i(cache_req_complete_o | uc_store_req_complete_lo)
      ,.set_i((cache_req_r.msg_type == e_miss_store) & lce_req_v_o)
      ,.data_o(store_miss)
@@ -248,7 +249,9 @@ module bp_lce
     )
     store_data_merge
      (.data0_i(data_mem_pkt.data)
-      ,.cache_req_i(cache_req_r)
+      ,.data1_i(cache_req_r.data)
+      ,.addr_i(cache_req_r.addr)
+      ,.size_i(cache_req_r.size)
       ,.write_v_i(store_miss)
       ,.data_o(data_to_l1)
       );

@@ -27,24 +27,21 @@ module bp_store_data_merge
    , localparam block_offset_width_lp  = (bank_offset_width_lp + byte_offset_width_lp)
    , localparam block_size_in_fill_lp  = block_width_p / fill_width_p
    , localparam fill_cnt_width_lp      = `BSG_SAFE_CLOG2(block_size_in_fill_lp)
-
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   , localparam num_byte_segments_lp   = fill_width_p / 8
   )
   (
     input [fill_width_p-1:0] data0_i
-    , input [cache_req_width_lp-1:0] cache_req_i
+    , input [dword_width_p-1:0] data1_i
+    , input [paddr_width_p-1:0] addr_i
+    , input [$bits(bp_cache_req_size_e)-1:0] size_i
 
     , input write_v_i
     , output [fill_width_p-1:0] data_o
   );
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
-
-  `bp_cast_i(bp_cache_req_s, cache_req);
-
-  logic [`BSG_SAFE_CLOG2(fill_width_p)-1:0] addr_fill_slice;
-  logic [5:0] byte_select;
-  logic [fill_width_p-1:0] write_mask;
+  logic [`BSG_SAFE_CLOG2(num_byte_segments_lp)-1:0] addr_fill_slice;
+  logic [2:0] byte_select;
+  logic [num_byte_segments_lp-1:0] write_mask;
 
   if (fill_width_p == 64)
     begin : fill_dword
@@ -52,20 +49,24 @@ module bp_store_data_merge
     end
   else if (fill_width_p == block_width_p)
     begin : fill_block
-      assign addr_fill_slice = (cache_req_cast_i.addr[block_offset_width_lp-1:3] << 6);
+      // Multiply by 8 to get to the correct dword offset
+      assign addr_fill_slice = (addr_i[block_offset_width_lp-1:3] << 3);
     end
   else 
     begin : fill_chunks
-      assign addr_fill_slice = (cache_req_cast_i.addr[block_offset_width_lp-fill_cnt_width_lp-1:3] << 6);
+      // Multiply by 8 to get to the correct dword offset
+      assign addr_fill_slice = (addr_i[block_offset_width_lp-fill_cnt_width_lp-1:3] << 3);
     end
 
-  assign byte_select = (cache_req_cast_i.addr[2:0] << 3);
+  assign byte_select = addr_i[2:0];
 
-  bsg_mux_bitwise
-   #(.width_p(fill_width_p))
+  bsg_mux_segmented
+   #(.segments_p(num_byte_segments_lp)
+     ,.segment_width_p(8)
+     )
     write_merge_mux
      (.data0_i(data0_i)
-      ,.data1_i({num_dwords_per_fill_lp{cache_req_cast_i.data}})
+      ,.data1_i({num_dwords_per_fill_lp{data1_i}})
       ,.sel_i(write_mask)
       ,.data_o(data_o)
       );
@@ -73,30 +74,30 @@ module bp_store_data_merge
   always_comb
     begin
       if (write_v_i) begin
-        case(cache_req_cast_i.size)
+        case(size_i)
           e_size_1B:
             begin
-              write_mask = fill_width_p'(({8{1'b1}} << addr_fill_slice) << byte_select);
+              write_mask = fill_width_p'((1'b1 << addr_fill_slice) << byte_select);
             end
           e_size_2B:
             begin
-              write_mask = fill_width_p'(({16{1'b1}} << addr_fill_slice) << byte_select);
+              write_mask = fill_width_p'(({2{1'b1}} << addr_fill_slice) << byte_select);
             end
           e_size_4B:
             begin
-              write_mask = fill_width_p'(({32{1'b1}} << addr_fill_slice) << byte_select);
+              write_mask = fill_width_p'(({4{1'b1}} << addr_fill_slice) << byte_select);
             end
           e_size_8B:
             begin
-              write_mask = fill_width_p'(({64{1'b1}} << addr_fill_slice) << byte_select);
+              write_mask = fill_width_p'(({8{1'b1}} << addr_fill_slice) << byte_select);
             end
           default: 
             begin
-              write_mask = fill_width_p'(({64{1'b1}} << addr_fill_slice) << byte_select);
+              write_mask = fill_width_p'(({8{1'b1}} << addr_fill_slice) << byte_select);
             end
         endcase
       end else
         write_mask = '0;
     end
 
-endmodule    
+endmodule

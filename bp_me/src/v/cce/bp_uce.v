@@ -359,7 +359,9 @@ module bp_uce
     )
     store_data_merge
      (.data0_i(mem_resp_cast_i.data[0+:fill_width_p])
-      ,.cache_req_i(cache_req_r)
+      ,.data1_i(cache_req_r.data)
+      ,.addr_i(cache_req_r.addr)
+      ,.size_i(cache_req_r.size)
       ,.write_v_i(miss_store_v_li & (fill_cnt == '0))
       ,.data_o(data_to_l1)
       );
