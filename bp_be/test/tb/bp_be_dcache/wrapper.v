@@ -514,6 +514,9 @@ module wrapper
                                            ,ready_and_rev: cce_lce_req_link_lo.ready_and_rev
                                            };
 
+       // We use concentrators just for the 1 -> N arbitration capabilities,
+       // rather than serialization
+
        // Request concentrator
        bsg_wormhole_concentrator_in
         #(.flit_width_p($bits(lce_req_packet_s))
@@ -578,9 +581,7 @@ module wrapper
             );
        
        logic mem_resp_v_to_cce, mem_resp_yumi_from_cce, mem_resp_ready_lo;
-       logic mem_cmd_v_from_cce, mem_cmd_ready_to_cce, mem_cmd_v_lo, mem_cmd_yumi_li;
        logic [cce_mem_msg_width_lp-1:0] mem_resp_to_cce;
-       logic [cce_mem_msg_width_lp-1:0] mem_cmd_from_cce;
        bp_cce_fsm
        #(.bp_params_p(bp_params_p))
        cce
@@ -605,9 +606,9 @@ module wrapper
        ,.mem_resp_v_i(mem_resp_v_to_cce)
        ,.mem_resp_yumi_o(mem_resp_yumi_from_cce)
 
-       ,.mem_cmd_o(mem_cmd_from_cce)
-       ,.mem_cmd_v_o(mem_cmd_v_from_cce)
-       ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
+       ,.mem_cmd_o(mem_cmd_o)
+       ,.mem_cmd_v_o(mem_cmd_v_o)
+       ,.mem_cmd_ready_i(mem_cmd_ready_i)
        );
 
        // Inbound Mem to CCE
@@ -626,23 +627,7 @@ module wrapper
           ,.yumi_i(mem_resp_yumi_from_cce)
           );
 
-       // Outbound CCE to Mem
-       bsg_two_fifo
-        #(.width_p(cce_mem_msg_width_lp))
-        cce_mem_cmd_fifo
-         (.clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.v_i(mem_cmd_v_from_cce)
-          ,.data_i(mem_cmd_from_cce)
-          ,.ready_o(mem_cmd_ready_to_cce)
-          ,.v_o(mem_cmd_v_lo)
-          ,.data_o(mem_cmd_o)
-          ,.yumi_i(mem_cmd_yumi_li)
-          );
-
        assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
-       assign mem_cmd_yumi_li = mem_cmd_ready_i & mem_cmd_v_lo;
-       assign mem_cmd_v_o = mem_cmd_yumi_li;
 
      end
 endmodule
