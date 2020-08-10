@@ -13,6 +13,7 @@ module testbench
 
    // Tracing parameters
    , parameter cce_trace_p                 = 0
+   , parameter lce_trace_p                 = 0
    , parameter dram_trace_p                = 0
    , parameter icache_trace_p              = 0
    , parameter preload_mem_p               = 1
@@ -234,7 +235,7 @@ module testbench
      ,.fill_width_p(icache_fill_width_p)
      ,.trace_file_p("icache"))
     icache_tracer
-      (.clk_i(clk_i)
+      (.clk_i(clk_i & (testbench.icache_trace_p == 1))
       ,.reset_i(reset_i)
 
       ,.freeze_i(cfg_bus_cast_i.freeze)
@@ -280,6 +281,32 @@ module testbench
 
   // CCE tracer
   if (uce_p == 0) begin
+    bind bp_lce
+      bp_me_nonsynth_lce_tracer
+       #(.bp_params_p(bp_params_p)
+         ,.sets_p(icache_sets_p)
+         ,.assoc_p(icache_assoc_p)
+         ,.block_width_p(icache_block_width_p)
+         )
+       bp_lce_tracer
+         (.clk_i(clk_i & (testbench.lce_trace_p == 1))
+          ,.reset_i(reset_i)
+
+          ,.lce_id_i(lce_id_i)
+          ,.lce_req_i(lce_req_o)
+          ,.lce_req_v_i(lce_req_v_o)
+          ,.lce_req_ready_i(lce_req_ready_i)
+          ,.lce_resp_i(lce_resp_o)
+          ,.lce_resp_v_i(lce_resp_v_o)
+          ,.lce_resp_ready_i(lce_resp_ready_i)
+          ,.lce_cmd_i(lce_cmd_i)
+          ,.lce_cmd_v_i(lce_cmd_v_i)
+          ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
+          ,.lce_cmd_o_i(lce_cmd_o)
+          ,.lce_cmd_o_v_i(lce_cmd_v_o)
+          ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+          );
+
     bind bp_cce_fsm
       bp_me_nonsynth_cce_tracer
         #(.bp_params_p(bp_params_p))
