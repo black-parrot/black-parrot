@@ -188,23 +188,6 @@ module bp_cce_msg
   wire mem_credits_empty = (mem_credit_count_lo == mem_noc_max_credits_p);
   wire mem_credits_full = (mem_credit_count_lo == 0);
 
-  // CCE mode register
-  // This register tracks with the config bus mode input, but only switches modes
-  // after all outstanding memory responses return.
-  bp_cce_mode_e cce_mode_lo;
-  wire cce_mode_en = ~mem_credits_full;
-  bsg_dff_reset_en
-    #(.width_p($bits(bp_cce_mode_e))
-      ,.reset_val_p(e_cce_mode_uncached)
-      )
-    cce_mode_r
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(cce_mode_en)
-     ,.data_i(cfg_bus_cast.cce_mode)
-     ,.data_o(cce_mode_lo)
-     );
-
   // Registers for inputs
   logic  [paddr_width_p-1:0] addr_r, addr_n;
 
@@ -340,7 +323,15 @@ module bp_cce_msg
     cnt_rst = '0;
 
     // Uncached Mode FSM
-    if (cce_mode_lo == e_cce_mode_uncached) begin
+    // The uncached mode FSM stops issuing requests as soon as the config bus sets the mode
+    // to normal mode to ensure that the mode transition happens.
+    // Any outstanding memory responses will be processed automatically by the normal mode FSM,
+    // unless the auto-forwarding mechanism is disabled, in which case the ucode must process
+    // the responses.
+    // A global fence in the cores can be used to force completion of all requests from uncached
+    // mode prior to the config bus setting the CCE to normal operating mode, but this is left to
+    // software.
+    if (cfg_bus_cast.cce_mode == e_cce_mode_uncached) begin
       // Assert the busy signal to block ucode instructions when transitioning
       // from uncached to normal modes.
       busy_o = 1'b1;
@@ -391,9 +382,7 @@ module bp_cce_msg
 
         // request logic
         // cached requests will stall on the input port until normal mode is entered
-        // The uncached mode FSM stops issuing requests as soon as the config bus sets the mode
-        // to normal mode to ensure that the mode transition happens.
-        if (lce_req_v_i && ~(cfg_bus_cast.cce_mode == e_cce_mode_normal)) begin
+        if (lce_req_v_i) begin
 
           unique case (lce_req.header.msg_type)
 
