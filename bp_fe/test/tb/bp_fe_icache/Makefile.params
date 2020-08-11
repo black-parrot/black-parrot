@@ -1,18 +1,25 @@
-UCE_P          ?= 0
 CCE_TRACE_P    ?= 0
 DRAM_TRACE_P   ?= 0
-DCACHE_TRACE_P ?= 0
+ICACHE_TRACE_P ?= 0
 RANDOM_YUMI_P  ?= 0
+UCE_P          ?= 0
+
+export DRAM_PKG = bsg_dramsim3_hbm2_4gb_x128_pkg
+
+export DRAM_FIXED_LATENCY ?= 10
+export BP_SIM_CLK_PERIOD ?= 1000
 
 export DUT_PARAMS = 
 export TB_PARAMS  = -pvalue+uce_p=$(UCE_P) \
                     -pvalue+cce_trace_p=$(CCE_TRACE_P)   \
                     -pvalue+dram_trace_p=$(DRAM_TRACE_P) \
-                    -pvalue+dcache_trace_p=$(DCACHE_TRACE_P) \
-                    -pvalue+random_yumi_p=$(RANDOM_YUMI_P)
+                    -pvalue+icache_trace_p=$(ICACHE_TRACE_P) \
+                    -pvalue+random_yumi_p=$(RANDOM_YUMI_P) \
+                    -pvalue+dram_fixed_latency_p=$(DRAM_FIXED_LATENCY)
 
 export DUT_DEFINES =
-export TB_DEFINES  =
+export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
+                     +define+dram_pkg=$(DRAM_PKG)
 
 export HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)
 export HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)

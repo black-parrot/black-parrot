@@ -186,6 +186,13 @@ lint-vcs:
   script:
     - $CI_PROJECT_DIR/ci/lint.sh vcs $CI_CORES
 
+tire_kick:
+  stage: check
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/tire_kick.sh
+
 me-regress-verilator:
   <<: *job_definition
   stage: test-short
