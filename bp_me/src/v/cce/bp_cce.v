@@ -227,6 +227,7 @@ module bp_cce
   logic                                      msg_lce_resp_busy_lo;
   logic                                      msg_mem_resp_busy_lo;
   logic                                      msg_busy_lo;
+  logic                                      msg_mem_credits_empty_lo;
 
   // From Stall Unit
   //logic [counter_width_lp-1:0]               stall_count_lo;
@@ -623,6 +624,8 @@ module bp_cce
       ,.mem_resp_busy_o(msg_mem_resp_busy_lo)
       // Stall ucode (as in inv command being processed)
       ,.busy_o(msg_busy_lo)
+      // memory credits empty
+      ,.mem_credits_empty_o(msg_mem_credits_empty_lo)
 
       );
 
@@ -668,6 +671,7 @@ module bp_cce
 
       ,.lce_cmd_ready_i(lce_cmd_ready_i)
       ,.mem_cmd_ready_i(mem_cmd_ready_i)
+      ,.mem_credits_empty_i(msg_mem_credits_empty_lo)
 
       // From Messague Unit
       ,.msg_busy_i(msg_busy_lo)
