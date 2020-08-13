@@ -34,9 +34,6 @@ module bp_cce_msg
     // counter width (used for e.g., stall and performance counters)
     , localparam counter_width_lp          = 64
 
-    // maximum number of memory requests in uncached only mode
-    , parameter max_mem_requests_p = mem_noc_max_credits_p
-
     // Interface Widths
     , localparam mshr_width_lp             = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -170,28 +167,26 @@ module bp_cce_msg
      ,.count_o(cnt)
      );
 
-  // Counter for uncached mode send/receive
-  // This counter tracks the number of uncached mode memory commands
-  // sent and responses received. If the config bus changes the CCE mode to
-  // normal, but there are still outstanding accesses, the message module will
-  // wait to transition modes until
-  logic uc_cnt_inc, uc_cnt_dec;
-  logic [`BSG_WIDTH(max_mem_requests_p)-1:0] uc_cnt;
-  bsg_counter_up_down
-    #(.max_val_p(max_mem_requests_p)
-      ,.init_val_p(0)
-      ,.max_step_p(1)
+  // memory command/response counter
+  logic [`BSG_WIDTH(mem_noc_max_credits_p)-1:0] mem_credit_count_lo;
+  bsg_flow_counter
+    #(.els_p(mem_noc_max_credits_p)
+      // memory command handshake is r->v
+      ,.ready_THEN_valid_p(1)
       )
-    uc_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.up_i(uc_cnt_inc)
-     ,.down_i(uc_cnt_dec)
-     ,.count_o(uc_cnt)
-     );
+    mem_credit_counter
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      // memory commands consume credits
+      ,.v_i(mem_cmd_v_o)
+      ,.ready_i(mem_cmd_ready_i)
+      // memory responses return credits
+      ,.yumi_i(mem_resp_yumi_o)
+      ,.count_o(mem_credit_count_lo)
+      );
 
-  wire uncached_outstanding = (uc_cnt > 0);
-  wire uncached_full = (uc_cnt == max_mem_requests_p);
+  wire mem_credits_empty = (mem_credit_count_lo == mem_noc_max_credits_p);
+  wire mem_credits_full = (mem_credit_count_lo == 0);
 
   // Registers for inputs
   logic  [paddr_width_p-1:0] addr_r, addr_n;
@@ -327,12 +322,16 @@ module bp_cce_msg
     cnt_dec = '0;
     cnt_rst = '0;
 
-    // Uncached Counter control
-    uc_cnt_inc = '0;
-    uc_cnt_dec = '0;
-
     // Uncached Mode FSM
-    if (uncached_outstanding || (cfg_bus_cast.cce_mode == e_cce_mode_uncached)) begin
+    // The uncached mode FSM stops issuing requests as soon as the config bus sets the mode
+    // to normal mode to ensure that the mode transition happens.
+    // Any outstanding memory responses will be processed automatically by the normal mode FSM,
+    // unless the auto-forwarding mechanism is disabled, in which case the ucode must process
+    // the responses.
+    // A global fence in the cores can be used to force completion of all requests from uncached
+    // mode prior to the config bus setting the CCE to normal operating mode, but this is left to
+    // software.
+    if (cfg_bus_cast.cce_mode == e_cce_mode_uncached) begin
       // Assert the busy signal to block ucode instructions when transitioning
       // from uncached to normal modes.
       busy_o = 1'b1;
@@ -361,7 +360,6 @@ module bp_cce_msg
               // dequeue the mem data response if outbound lce data cmd is accepted
               mem_resp_yumi_o = lce_cmd_ready_i;
 
-              uc_cnt_dec = mem_resp_yumi_o;
             end
             e_mem_msg_uc_wr: begin
               // after store response is received, need to send uncached store done command to LCE
@@ -376,7 +374,6 @@ module bp_cce_msg
               // dequeue the mem data response if outbound lce data cmd is accepted
               mem_resp_yumi_o = lce_cmd_ready_i;
 
-              uc_cnt_dec = mem_resp_yumi_o;
             end
             default: begin
             end
@@ -391,9 +388,8 @@ module bp_cce_msg
 
             // uncached load, send a memory cmd
             e_lce_req_type_uc_rd: begin
-              mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~uncached_full;
+              mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~mem_credits_empty;
               lce_req_yumi_o = mem_cmd_v_o;
-              uc_cnt_inc = mem_cmd_v_o;
 
               mem_cmd.header.msg_type = e_mem_msg_uc_rd;
               mem_cmd.header.addr = lce_req.header.addr;
@@ -404,9 +400,8 @@ module bp_cce_msg
 
             // uncached store, send memory data cmd
             e_lce_req_type_uc_wr: begin
-              mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~uncached_full;
+              mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~mem_credits_empty;
               lce_req_yumi_o = mem_cmd_v_o;
-              uc_cnt_inc = mem_cmd_v_o;
 
               mem_cmd.header.msg_type = e_mem_msg_uc_wr;
               mem_cmd.header.addr = lce_req.header.addr;
@@ -421,7 +416,7 @@ module bp_cce_msg
             end
           endcase
         end // lce_request
-      end
+      end // e_uc_ready
       default: begin
         uc_state_n = e_uc_reset;
       end
