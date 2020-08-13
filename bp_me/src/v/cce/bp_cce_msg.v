@@ -112,6 +112,8 @@ module bp_cce_msg
    , output logic                                      mem_resp_busy_o
    , output logic                                      busy_o
 
+   , output logic                                      mem_credits_empty_o
+
   );
 
   // LCE-CCE and Mem-CCE Interface
@@ -187,6 +189,7 @@ module bp_cce_msg
 
   wire mem_credits_empty = (mem_credit_count_lo == mem_noc_max_credits_p);
   wire mem_credits_full = (mem_credit_count_lo == 0);
+  assign mem_credits_empty_o = mem_credits_empty;
 
   // Registers for inputs
   logic  [paddr_width_p-1:0] addr_r, addr_n;
@@ -665,7 +668,7 @@ module bp_cce_msg
                 & ((decoded_inst_i.pending_w_v & ~pending_w_v_o)
                    | ~decoded_inst_i.pending_w_v)) begin
 
-              mem_cmd_v_o = mem_cmd_ready_i;
+              mem_cmd_v_o = mem_cmd_ready_i & ~mem_credits_empty;
 
               // All commands use message type
               mem_cmd.header.msg_type = decoded_inst_i.mem_cmd;
