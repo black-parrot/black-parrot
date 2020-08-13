@@ -40,7 +40,6 @@ module bp_cce_fsm
     `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
     , localparam counter_max = 256
-    , localparam max_uc_req_lp = (counter_max-1)
     , localparam hash_index_width_lp=$clog2((2**lg_lce_sets_lp+num_cce_p-1)/num_cce_p)
   )
   (input                                               clk_i
@@ -348,25 +347,26 @@ module bp_cce_fsm
       ,.count_o(ack_cnt)
       );
 
-  // Counter for uncached mode send/receive
-  // This counter tracks the number of uncached mode memory commands
-  // sent and responses received. If the config bus changes the CCE mode to
-  // normal, but there are still outstanding accesses, the message module will
-  // wait to transition modes until
-  logic uc_cnt_inc, uc_cnt_dec, uc_cnt_rst;
-  logic [`BSG_WIDTH(counter_max)-1:0] uc_cnt;
-  bsg_counter_up_down
-    #(.max_val_p(counter_max)
-      ,.init_val_p(0)
-      ,.max_step_p(1)
+  // memory command/response counter
+  logic [`BSG_WIDTH(mem_noc_max_credits_p)-1:0] mem_credit_count_lo;
+  bsg_flow_counter
+    #(.els_p(mem_noc_max_credits_p)
+      // memory command handshake is r->v
+      ,.ready_THEN_valid_p(1)
       )
-    uc_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i | uc_cnt_rst)
-     ,.up_i(uc_cnt_inc)
-     ,.down_i(uc_cnt_dec)
-     ,.count_o(uc_cnt)
-     );
+    mem_credit_counter
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      // memory commands consume credits
+      ,.v_i(mem_cmd_v_o)
+      ,.ready_i(mem_cmd_ready_i)
+      // memory responses return credits
+      ,.yumi_i(mem_resp_yumi_o)
+      ,.count_o(mem_credit_count_lo)
+      );
+
+  wire mem_credits_empty = (mem_credit_count_lo == mem_noc_max_credits_p);
+  wire mem_credits_full = (mem_credit_count_lo == 0);
 
   // Speculative memory access management
   bp_cce_spec_s spec_bits_li, spec_bits_lo;
@@ -481,10 +481,6 @@ module bp_cce_fsm
     cnt_inc = '0;
     cnt_dec = '0;
     cnt_rst = '0;
-
-    uc_cnt_inc = '0;
-    uc_cnt_dec = '0;
-    uc_cnt_rst = '0;
 
     cnt_1_clr = '0;
     cnt_1_inc = '0;
@@ -643,11 +639,6 @@ module bp_cce_fsm
         lce_cmd_v_o = lce_cmd_ready_i & mem_resp_v_i;
         mem_resp_yumi_o = lce_cmd_ready_i & mem_resp_v_i;
 
-        // decrement count of outstanding uncached mode accesses if in uncached mode
-        // or if waiting for responses during transition
-        uc_cnt_dec = (~cce_normal_mode & mem_resp_yumi_o)
-                     | ((uc_cnt > 0) & mem_resp_yumi_o);
-
         // block FSM from using LCE Command network
         lce_cmd_busy = lce_cmd_v_o;
 
@@ -667,11 +658,6 @@ module bp_cce_fsm
         // handshaking
         lce_cmd_v_o = lce_cmd_ready_i & mem_resp_v_i;
         mem_resp_yumi_o = lce_cmd_ready_i & mem_resp_v_i;
-
-        // decrement count of outstanding uncached mode accesses if in uncached mode
-        // or if waiting for responses during transition
-        uc_cnt_dec = (~cce_normal_mode & mem_resp_yumi_o)
-                     | ((uc_cnt > 0) & mem_resp_yumi_o);
 
         // block FSM from using LCE Command network
         lce_cmd_busy = lce_cmd_v_o;
@@ -770,20 +756,18 @@ module bp_cce_fsm
 
         if (cce_normal_mode) begin
           state_n = e_send_sync;
-        // only issue uncached request if number of outstanding is less than max allowed
+
+        // only issue memory command if memory credit is available
         // only process uncached requests
         // cached requests will stall on the input port
         end else if (lce_req_v_i
                      & ((lce_req.header.msg_type == e_lce_req_type_uc_wr)
                         | (lce_req.header.msg_type == e_lce_req_type_uc_rd))
-                     & mem_cmd_ready_i & (uc_cnt < max_uc_req_lp)) begin
+                     ) begin
 
           // handshaking
-          mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i;
-          lce_req_yumi_o = lce_req_v_i & mem_cmd_ready_i;
-
-          // increment count of uncached requests sent
-          uc_cnt_inc = lce_req_v_i & mem_cmd_ready_i;
+          mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~mem_credits_empty;
+          lce_req_yumi_o = mem_cmd_v_o;
 
           // Uncached Store
           if (lce_req.header.msg_type == e_lce_req_type_uc_wr) begin
@@ -803,7 +787,7 @@ module bp_cce_fsm
       e_send_sync: begin
         // after first entering e_send_sync from e_uncached_only, wait for all oustanding uncached
         // accesses to complete before sending first sync commnad
-        if ((uc_cnt == 0) & ~lce_cmd_busy) begin
+        if (mem_credits_full & ~lce_cmd_busy) begin
           lce_cmd_v_o = lce_cmd_ready_i;
 
           lce_cmd.header.dst_id[0+:lg_num_lce_lp] = cnt_1[0+:lg_num_lce_lp];
@@ -868,28 +852,29 @@ module bp_cce_fsm
         end
       end // e_ready
       e_uc_req: begin
-        // send uncached request to memory
-        if (lce_req_v_i & mem_cmd_ready_i) begin
-          mem_cmd_v_o = mem_cmd_ready_i;
+        // try to send uncached request to memory
+        mem_cmd_v_o = mem_cmd_ready_i & lce_req_v_i & ~mem_credits_empty;
 
-          // Uncached Store
-          if (mshr_r.flags[e_opd_rqf]) begin
-            mem_cmd.header.msg_type = e_mem_msg_uc_wr;
-            mem_cmd.data = lce_req.data;
-          // Uncached Load
-          end else begin
-            mem_cmd.header.msg_type = e_mem_msg_uc_rd;
-          end
+        // Uncached Store
+        if (mshr_r.flags[e_opd_rqf]) begin
+          mem_cmd.header.msg_type = e_mem_msg_uc_wr;
+          mem_cmd.data = lce_req.data;
+        // Uncached Load
+        end else begin
+          mem_cmd.header.msg_type = e_mem_msg_uc_rd;
+        end
 
-          mem_cmd.header.addr = mshr_r.paddr;
-          mem_cmd.header.payload.lce_id = mshr_r.lce_id;
-          mem_cmd.header.size = lce_req.header.size;
+        mem_cmd.header.addr = mshr_r.paddr;
+        mem_cmd.header.payload.lce_id = mshr_r.lce_id;
+        mem_cmd.header.size = lce_req.header.size;
 
-          lce_req_yumi_o = lce_req_v_i & mem_cmd_ready_i;
+        lce_req_yumi_o = mem_cmd_v_o;
 
-          // go back to ready state since this state is only entered when CCE is in normal mode
-          state_n = e_ready;
-        end // mem_cmd_ready
+        // go back to ready state after sending memory command
+        // since this state is only entered when CCE is in normal mode
+        state_n = mem_cmd_v_o
+                  ? e_ready
+                  : e_uc_req;
 
       end // e_uc_req
       e_read_pending: begin
@@ -918,7 +903,7 @@ module bp_cce_fsm
         // Mem Cmd needs to write pending bit, so only send if Mem Resp / LCE Cmd is not
         // writing the pending bit
         if (~pending_busy) begin
-          mem_cmd_v_o = mem_cmd_ready_i;
+          mem_cmd_v_o = mem_cmd_ready_i & ~mem_credits_empty;
           mem_cmd.header.msg_type = e_mem_msg_rd;
           mem_cmd.header.addr = (mshr_r.paddr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
           mem_cmd.header.size = mshr_r.msg_size;
@@ -1087,8 +1072,8 @@ module bp_cce_fsm
           else if ((lce_resp.header.msg_type == e_lce_cce_resp_wb) & ~pending_busy) begin
             // Mem Data Cmd needs to write pending bit, so only send if Mem Data Resp / LCE Data Cmd is
             // not writing the pending bit
-            mem_cmd_v_o = lce_resp_v_i & mem_cmd_ready_i;
-            lce_resp_yumi_o = lce_resp_v_i & mem_cmd_ready_i;
+            mem_cmd_v_o = lce_resp_v_i & mem_cmd_ready_i & ~mem_credits_empty;
+            lce_resp_yumi_o = mem_cmd_v_o;
 
             mem_cmd.header.msg_type = e_mem_msg_wr;
             mem_cmd.header.addr = (lce_resp.header.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
@@ -1246,8 +1231,8 @@ module bp_cce_fsm
           else if ((lce_resp.header.msg_type == e_lce_cce_resp_wb) & ~pending_busy) begin
             // Mem Data Cmd needs to write pending bit, so only send if Mem Data Resp / LCE Data Cmd is
             // not writing the pending bit
-            mem_cmd_v_o = lce_resp_v_i & mem_cmd_ready_i;
-            lce_resp_yumi_o = lce_resp_v_i & mem_cmd_ready_i;
+            mem_cmd_v_o = lce_resp_v_i & mem_cmd_ready_i & ~mem_credits_empty;
+            lce_resp_yumi_o = mem_cmd_v_o;
 
             mem_cmd.header.msg_type = e_mem_msg_wr;
             mem_cmd.header.addr = (lce_resp.header.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
