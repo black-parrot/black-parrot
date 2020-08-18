@@ -167,11 +167,27 @@ module wrapper
          );
     end
   else
-    begin
+    begin : unicore
+      localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p);
+      `declare_bp_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem);
+      bp_uce_mem_msg_s io_cmd_lo, io_cmd_li;
+      bp_uce_mem_msg_s io_resp_lo, io_resp_li;
+
+      // We need to expand the IO ports to their full width here
       bp_unicore
        #(.bp_params_p(bp_params_p))
        dut
-        (.*);
+        (.io_cmd_o(io_cmd_lo)
+         ,.io_cmd_i(io_cmd_li)
+         ,.io_resp_o(io_resp_lo)
+         ,.io_resp_i(io_resp_li)
+         ,.*
+         );
+
+      assign io_cmd_o = io_cmd_lo;
+      assign io_cmd_li = io_cmd_i;
+      assign io_resp_o = io_resp_lo;
+      assign io_resp_li = io_resp_i;
     end
 
 endmodule

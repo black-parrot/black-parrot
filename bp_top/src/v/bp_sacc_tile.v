@@ -15,7 +15,7 @@ module bp_sacc_tile
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
-   , parameter accelerator_type_p = 1 
+   , parameter accelerator_type_p = e_sacc_vdp
    )
   (input                                    clk_i
    , input                                  reset_i
@@ -32,10 +32,6 @@ module bp_sacc_tile
 
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
-
-  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
-  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
-   
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
  
   //io-cce-side connections 
@@ -47,8 +43,6 @@ module bp_sacc_tile
   logic cce_io_cmd_v_lo, cce_io_cmd_ready_li, lce_io_cmd_v_li, lce_io_cmd_yumi_lo;
   bp_cce_mem_msg_s cce_io_resp_li, lce_io_resp_lo;
   logic cce_io_resp_v_li, cce_io_resp_yumi_lo, lce_io_resp_v_lo, lce_io_resp_ready_li;
-
-   
 
   logic [cce_id_width_p-1:0]  cce_id_li;
   logic [lce_id_width_p-1:0]  lce_id_li;
@@ -112,18 +106,21 @@ module bp_sacc_tile
      ,.io_resp_yumi_o(cce_io_resp_yumi_lo)
      );
 
+  `declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_lce_cce_req_header_s, cce_block_width_p);
+  localparam lce_req_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_lce_cce_req_header_s), cce_block_width_p);
+  bp_lce_req_wormhole_packet_s lce_req_packet_li, lce_req_packet_lo;
+  bp_lce_req_wormhole_header_s lce_req_header_li, lce_req_header_lo;
 
-  lce_req_packet_s lce_req_packet_li, lce_req_packet_lo;
   bp_me_wormhole_packet_encode_lce_req
-   #(.bp_params_p(bp_params_p)
-     )
+   #(.bp_params_p(bp_params_p))
    req_encode
-    (.payload_i(lce_lce_req_lo)
-     ,.packet_o(lce_req_packet_lo)
+    (.lce_req_header_i(lce_lce_req_lo.header)
+     ,.wh_header_o(lce_req_header_lo)
      );
+   assign lce_req_packet_lo = '{header: lce_req_header_lo, data: lce_lce_req_lo.data};
 
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+   #(.max_payload_width_p(lce_req_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -143,19 +140,23 @@ module bp_sacc_tile
      ,.v_o(cce_lce_req_v_li)
      ,.yumi_i(cce_lce_req_yumi_lo)
      );
-   assign cce_lce_req_li = lce_req_packet_li.payload;
+   assign cce_lce_req_li = '{header: lce_req_packet_li.header.msg_hdr, data: lce_req_packet_li.data};
 
+  `declare_bp_lce_cmd_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_lce_cmd_header_s, cce_block_width_p);
+  localparam lce_cmd_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_lce_cmd_header_s), cce_block_width_p);
+  bp_lce_cmd_wormhole_packet_s lce_cmd_packet_li, cce_lce_cmd_packet_lo;
+  bp_lce_cmd_wormhole_header_s lce_cmd_header_li, cce_lce_cmd_header_lo;
 
- lce_cmd_packet_s cce_lce_cmd_packet_lo, lce_cmd_packet_li;
-   bp_me_wormhole_packet_encode_lce_cmd
-    #(.bp_params_p(bp_params_p))
-    cce_cmd_encode
-     (.payload_i(cce_lce_cmd_lo)
-      ,.packet_o(cce_lce_cmd_packet_lo)
-      );
+  bp_me_wormhole_packet_encode_lce_cmd
+   #(.bp_params_p(bp_params_p))
+   cce_cmd_encode
+    (.lce_cmd_header_i(cce_lce_cmd_lo.header)
+     ,.wh_header_o(cce_lce_cmd_header_lo)
+     );
+  assign cce_lce_cmd_packet_lo = '{header: cce_lce_cmd_header_lo, data: cce_lce_cmd_lo.data};
   
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+   #(.max_payload_width_p(lce_cmd_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -175,37 +176,35 @@ module bp_sacc_tile
      ,.v_o(lce_lce_cmd_v_li)
      ,.yumi_i(lce_lce_cmd_yumi_lo)
      );
-   assign lce_lce_cmd_li = lce_cmd_packet_li.payload;
+   assign lce_lce_cmd_li = '{header: lce_cmd_packet_li.header.msg_hdr, data: lce_cmd_packet_li.data};
 
+  if (sacc_type_p == e_sacc_vdp)
+    begin : sacc_vdp
+      bp_sacc_vdp
+       #(.bp_params_p(bp_params_p))
+       accelerator_link
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
 
-if(sacc_type_p == e_sacc_vdp)
-  begin: sacc_vdp
-  bp_sacc_vdp
-   #(.bp_params_p(bp_params_p))
-   accelerator_link
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+         ,.lce_id_i(lce_id_li)
 
-     ,.lce_id_i(lce_id_li)
+         ,.io_cmd_i(cce_io_cmd_lo)
+         ,.io_cmd_v_i(cce_io_cmd_v_lo)
+         ,.io_cmd_ready_o(cce_io_cmd_ready_li)
 
-     ,.io_cmd_i(cce_io_cmd_lo)
-     ,.io_cmd_v_i(cce_io_cmd_v_lo)
-     ,.io_cmd_ready_o(cce_io_cmd_ready_li)
+         ,.io_resp_o(cce_io_resp_li)
+         ,.io_resp_v_o(cce_io_resp_v_li)
+         ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
 
-     ,.io_resp_o(cce_io_resp_li)
-     ,.io_resp_v_o(cce_io_resp_v_li)
-     ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
+         ,.io_cmd_o(lce_io_cmd_li)
+         ,.io_cmd_v_o(lce_io_cmd_v_li)
+         ,.io_cmd_yumi_i(lce_io_cmd_yumi_lo)
 
-     ,.io_cmd_o(lce_io_cmd_li)
-     ,.io_cmd_v_o(lce_io_cmd_v_li)
-     ,.io_cmd_yumi_i(lce_io_cmd_yumi_lo)
-
-     ,.io_resp_i(lce_io_resp_lo)
-     ,.io_resp_v_i(lce_io_resp_v_lo)
-     ,.io_resp_ready_o(lce_io_resp_ready_li)
-
-     );
-  end
+         ,.io_resp_i(lce_io_resp_lo)
+         ,.io_resp_v_i(lce_io_resp_v_lo)
+         ,.io_resp_ready_o(lce_io_resp_ready_li)
+         );
+    end
 
 endmodule
 
