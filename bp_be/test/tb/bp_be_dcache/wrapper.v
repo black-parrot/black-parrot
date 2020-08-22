@@ -368,11 +368,6 @@ module wrapper
          end
        else if (uce_p == 1)
          begin : uce
-           logic fifo_mem_resp_v_lo, fifo_mem_cmd_v_lo;
-           logic fifo_mem_resp_yumi_li;
-           logic [cce_mem_msg_width_lp-1:0] fifo_mem_resp_lo, fifo_mem_cmd_lo;
-           logic mem_resp_ready_lo, fifo_mem_cmd_ready_li;
-
            bp_uce
            #(.bp_params_p(bp_params_p)
             ,.uce_mem_data_width_p(dcache_fill_width_p)
@@ -416,33 +411,14 @@ module wrapper
             ,.credits_full_o(credits_full_lo)
             ,.credits_empty_o(credits_empty_lo)
 
-            ,.mem_cmd_o(fifo_mem_cmd_lo)
-            ,.mem_cmd_v_o(fifo_mem_cmd_v_lo)
-            ,.mem_cmd_ready_i(fifo_mem_cmd_ready_li)
+            ,.mem_cmd_o(mem_cmd_o)
+            ,.mem_cmd_v_o(mem_cmd_v_o)
+            ,.mem_cmd_ready_i(mem_cmd_ready_i)
 
             ,.mem_resp_i(mem_resp_i)
             ,.mem_resp_v_i(mem_resp_v_i)
             ,.mem_resp_yumi_o(mem_resp_yumi_o)
             );
-
-            // We need a mem cmd fifo because we need to buffer the wt stores to
-            // memory since we don't raise a miss for these stores.
-            // Update: This is useful even on writebacks to successively allow the
-            // read request and hold the following writeback request
-            bsg_two_fifo
-             #(.width_p(cce_mem_msg_width_lp))
-             mem_cmd_fifo
-             (.clk_i(clk_i)
-             ,.reset_i(reset_i)
-
-             ,.v_i(fifo_mem_cmd_v_lo)
-             ,.data_i(fifo_mem_cmd_lo)
-             ,.ready_o(fifo_mem_cmd_ready_li)
-
-             ,.v_o(mem_cmd_v_o)
-             ,.data_o(mem_cmd_o)
-             ,.yumi_i(mem_cmd_v_o & mem_cmd_ready_i)
-             );
          end
      end
 
