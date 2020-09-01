@@ -772,22 +772,24 @@ module bp_be_dcache
   //        The CSR unit is now responsible for sending the clear request to the I$.
   wire flush_req = cache_req_v_o & (cache_req_cast_o.msg_type == e_cache_flush);
 
-  if(writethrough_p == 1) begin : wt
-    assign gdirty_r = '0;
-  end
-  else begin : wb
-    bsg_dff_reset_en
-     #(.width_p(1))
-     gdirty_reg
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+  if (writethrough_p == 1)
+    begin : wt
+      assign gdirty_r = '0;
+    end
+  else
+    begin : wb
+      bsg_dff_reset_en
+       #(.width_p(1))
+       gdirty_reg
+       (.clk_i(clk_i)
+        ,.reset_i(reset_i)
 
-      ,.en_i(wbuf_v_li | flush_req)
-      ,.data_i(wbuf_v_li)
+        ,.en_i(wbuf_v_li | flush_req)
+        ,.data_i(wbuf_v_li)
 
-      ,.data_o(gdirty_r)
-      );
-  end
+        ,.data_o(gdirty_r)
+        );
+    end
 
   logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
   wire lock_clr = early_v_o || (lock_cnt_r == lock_max_limit_p);
