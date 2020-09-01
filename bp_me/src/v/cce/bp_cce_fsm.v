@@ -1027,7 +1027,6 @@ module bp_cce_fsm
           pe_sharers_n = transfer_flag
                          ? pe_sharers_n & ~owner_lce_id_one_hot
                          : pe_sharers_n;
-          sharers_ways_n = sharers_ways_r;
           cnt_rst = 1'b1;
         end
 
@@ -1068,6 +1067,18 @@ module bp_cce_fsm
             // set null writeback flag
             mshr_n.flags[e_opd_nwbf] = 1'b1;
 
+            // setup required state for sending invalidations
+            if (invalidate_flag) begin
+              // don't invalidate the requesting LCE
+              pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
+              // if doing a transfer, also remove owner LCE since transfer
+              // routine will take care of setting owner into correct new state
+              pe_sharers_n = transfer_flag
+                             ? pe_sharers_n & ~owner_lce_id_one_hot
+                             : pe_sharers_n;
+              cnt_rst = 1'b1;
+            end
+
           end
           else if ((lce_resp.header.msg_type == e_lce_cce_resp_wb) & ~pending_busy) begin
             // Mem Data Cmd needs to write pending bit, so only send if Mem Data Resp / LCE Data Cmd is
@@ -1101,6 +1112,19 @@ module bp_cce_fsm
             mshr_n.flags[e_opd_rf] = 1'b0;
             // clear null writeback flag
             mshr_n.flags[e_opd_nwbf] = 1'b0;
+
+            // setup required state for sending invalidations
+            if (lce_resp_yumi_o & invalidate_flag) begin
+              // don't invalidate the requesting LCE
+              pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
+              // if doing a transfer, also remove owner LCE since transfer
+              // routine will take care of setting owner into correct new state
+              pe_sharers_n = transfer_flag
+                             ? pe_sharers_n & ~owner_lce_id_one_hot
+                             : pe_sharers_n;
+              cnt_rst = 1'b1;
+            end
+
 
           end // wb & pending bit available
         end // lce_resp_v_i
