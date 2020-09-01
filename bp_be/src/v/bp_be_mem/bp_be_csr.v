@@ -490,8 +490,8 @@ always_comb
               `CSR_ADDR_MHARTID: csr_data_lo = cfg_bus_cast_i.core_id;
               `CSR_ADDR_MSTATUS: csr_data_lo = mstatus_lo;
               // MISA is optionally read-write, but all fields are read-only in BlackParrot
-              //   64 bit MXLEN, IMASU extensions
-              `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h141101};
+              //   64 bit MXLEN, IMAFDSU extensions
+              `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h141129};
               `CSR_ADDR_MEDELEG: csr_data_lo = medeleg_lo;
               `CSR_ADDR_MIDELEG: csr_data_lo = mideleg_lo;
               `CSR_ADDR_MIE: csr_data_lo = mie_lo;
