@@ -199,7 +199,7 @@ typedef struct packed
   '{addr_39_2: data_cast_mp.base[0+:38]}
 
 `define decompress_stvec_s(data_comp_mp) \
-  '{base : {24'h0, data_comp_mp.addr_39_2} \
+  '{base : 62'($signed(data_comp_mp.addr_39_2)) \
     ,mode: 2'b00                           \
     }
 
@@ -602,8 +602,8 @@ typedef struct packed
   '{addr_39_2: data_cast_mp.base[0+:38]}
 
 `define decompress_mtvec_s(data_comp_mp) \
-  '{base : {24'h0, data_comp_mp.addr_39_2} \
-    ,mode: 2'b00                           \
+  '{base : 62'($signed(data_comp_mp.addr_39_2)) \
+    ,mode: 2'b00                                \
     }
 
 typedef struct packed
