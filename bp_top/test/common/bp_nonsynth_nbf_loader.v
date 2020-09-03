@@ -13,7 +13,7 @@ module bp_nonsynth_nbf_loader
   import bp_be_dcache_pkg::*;
   import bp_me_pkg::*;
 
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
@@ -23,7 +23,7 @@ module bp_nonsynth_nbf_loader
   ,parameter nbf_data_width_p = dword_width_p
 
   ,localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
-  ,localparam max_nbf_index_lp = 2**20
+  ,localparam max_nbf_index_lp = 2**26
   ,localparam nbf_index_width_lp = `BSG_SAFE_CLOG2(max_nbf_index_lp)
   )
 

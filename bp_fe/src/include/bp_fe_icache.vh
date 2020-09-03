@@ -10,7 +10,7 @@
 `define BP_FE_ICACHE_VH
 
 `include "bsg_defines.v"
-`include "bp_common_me_if.vh"
+`include "bp_common_lce_cce_if.vh"
 
 /*
  *

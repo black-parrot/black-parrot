@@ -3,45 +3,6 @@ SEED_P ?= 1
 # uncached / normal mode testing
 export SKIP_INIT_P ?= 0
 
-# Select CCE ROM based on CFG and Coherence Protocol
-ifeq ($(CFG), e_bp_half_core_cfg)
-  NUM_LCE_P=1
-else ifeq ($(CFG), e_bp_single_core_cfg)
-  NUM_LCE_P=2
-else ifeq ($(CFG), e_bp_dual_core_cfg)
-  NUM_LCE_P=4
-else ifeq ($(CFG), e_bp_tri_core_cfg)
-  NUM_LCE_P=6
-else ifeq ($(CFG), e_bp_quad_core_cfg)
-  NUM_LCE_P=8
-else ifeq ($(CFG), e_bp_hexa_core_cfg)
-  NUM_LCE_P=12
-else ifeq ($(CFG), e_bp_oct_core_cfg)
-  NUM_LCE_P=16
-else ifeq ($(CFG), e_bp_twelve_core_cfg)
-  NUM_LCE_P=24
-else ifeq ($(CFG), e_bp_sexta_core_cfg)
-  NUM_LCE_P=32
-else ifeq ($(CFG), e_bp_half_core_ucode_cce_cfg)
-  NUM_LCE_P=1
-else ifeq ($(CFG), e_bp_single_core_ucode_cce_cfg)
-  NUM_LCE_P=2
-else ifeq ($(CFG), e_bp_dual_core_ucode_cce_cfg)
-  NUM_LCE_P=4
-else ifeq ($(CFG), e_bp_tri_core_ucode_cce_cfg)
-  NUM_LCE_P=6
-else ifeq ($(CFG), e_bp_quad_core_ucode_cce_cfg)
-  NUM_LCE_P=8
-else ifeq ($(CFG), e_bp_hexa_core_ucode_cce_cfg)
-  NUM_LCE_P=12
-else ifeq ($(CFG), e_bp_oct_core_ucode_cce_cfg)
-  NUM_LCE_P=16
-else ifeq ($(CFG), e_bp_twelve_core_ucode_cce_cfg)
-  NUM_LCE_P=24
-else ifeq ($(CFG), e_bp_sexta_core_ucode_cce_cfg)
-  NUM_LCE_P=32
-endif
-
 COH_PROTO   ?= mesi
 CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms
 CCE_MEM      = $(COH_PROTO).mem
@@ -50,8 +11,10 @@ NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-export DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
-export DRAMSIM_SYS_CFG ?= system.ini
+export DRAM_PKG = bsg_dramsim3_hbm2_4gb_x128_pkg
+
+export DRAM_FIXED_LATENCY ?= 10
+export BP_SIM_CLK_PERIOD ?= 1000
 
 export AXE_TRACE_P ?= 0
 export CCE_TRACE_P ?= 0
@@ -66,10 +29,12 @@ export TB_PARAMS  = \
     -pvalue+skip_init_p=$(SKIP_INIT_P) \
     -pvalue+lce_trace_p=$(LCE_TRACE_P) \
     -pvalue+dram_trace_p=$(DRAM_TRACE_P) \
+    -pvalue+dram_fixed_latency_p=$(DRAM_FIXED_LATENCY)
 
 export DUT_DEFINES =
-export TB_DEFINES =
+export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
+                     +define+dram_pkg=$(DRAM_PKG)
 
-export HDL_DEFINES =
+export HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)
 export HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)
 

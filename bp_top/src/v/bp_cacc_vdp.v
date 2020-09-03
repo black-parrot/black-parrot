@@ -7,7 +7,7 @@ module bp_cacc_vdp
  import bp_cce_pkg::*;
  import bp_me_pkg::*;
  import bp_be_dcache_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
     `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
@@ -47,12 +47,12 @@ module bp_cacc_vdp
     );
 
 
- `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dword_width_p);
+ `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
  `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8);
    
   bp_be_dcache_pkt_s        dcache_pkt;   
   logic                     dcache_ready, dcache_v;
-  logic [dword_width_p-1:0] dcache_data;
+  logic [dpath_width_p-1:0] dcache_data;
   logic                     dcache_tlb_miss, dcache_poison;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_uncached;
@@ -69,7 +69,7 @@ module bp_cacc_vdp
   data_mem_pkt_v_i, data_mem_pkt_yumi_o,
   tag_mem_pkt_v_i, tag_mem_pkt_yumi_o,
   stat_mem_pkt_v_i, stat_mem_pkt_yumi_o,
-  cache_req_complete_lo;
+  cache_req_complete_lo, cache_req_critical_lo;
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache);
 
@@ -85,7 +85,10 @@ module bp_cacc_vdp
 bp_pma
  #(.bp_params_p(bp_params_p))
   pma
-   (.ptag_v_i(dcache_pkt_v)
+   (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+    
+    ,.ptag_v_i(dcache_pkt_v)
     ,.ptag_i(dcache_ptag)
 
     ,.uncached_o(dcache_uncached)
@@ -116,6 +119,7 @@ bp_be_dcache
 
     // D$-LCE Interface
     ,.cache_req_complete_i(cache_req_complete_lo)
+    ,.cache_req_critical_i(cache_req_critical_lo)
     ,.cache_req_o(cache_req_cast_o)
     ,.cache_req_v_o(cache_req_v_o)
     ,.cache_req_ready_i(cache_req_ready_i)
@@ -137,13 +141,23 @@ bp_be_dcache
     );
 
 
-bp_be_dcache_lce
- #(.bp_params_p(bp_params_p))
+bp_lce
+ #(.bp_params_p(bp_params_p)
+   ,.assoc_p(dcache_assoc_p)
+   ,.sets_p(dcache_sets_p)
+   ,.block_width_p(dcache_block_width_p)
+   ,.fill_width_p(dcache_fill_width_p)
+   ,.timeout_max_limit_p(4)
+   ,.credits_p(coh_noc_max_credits_p)
+   ,.data_mem_invert_clk_p(1)
+   ,.tag_mem_invert_clk_p(1)
+   )
   be_lce
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
     ,.lce_id_i(cfg_bus_cast_i.dcache_id)
+    ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
 
     ,.cache_req_i(cache_req_cast_o)
     ,.cache_req_v_i(cache_req_v_o)
@@ -152,6 +166,7 @@ bp_be_dcache_lce
     ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
 
     ,.cache_req_complete_o(cache_req_complete_lo)
+    ,.cache_req_critical_o(cache_req_critical_lo)
 
     ,.data_mem_pkt_o(data_mem_pkt_i)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_i)

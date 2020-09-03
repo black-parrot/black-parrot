@@ -36,9 +36,9 @@ let JOBS=${#protos[@]}
 echo "Running ${JOBS} jobs with 1 core per job"
 
 # ucode CCE (EI, MSI, MESI, MSI-nonspec, MESI-nonspec)
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO={} CFG=e_bp_half_core_ucode_cce_cfg" ::: ${protos[@]}
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO={} CFG=e_bp_multicore_cce_ucode_half_cfg" ::: ${protos[@]}
 # FSM CCE (MESI)
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=mesi CFG={}" ::: e_bp_half_core_cfg
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=mesi CFG={}" ::: e_bp_multicore_half_core_cfg
 
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1

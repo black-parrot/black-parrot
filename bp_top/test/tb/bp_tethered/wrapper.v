@@ -17,6 +17,7 @@ module wrapper
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
+
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
    )
   (input                                               clk_i
@@ -50,20 +51,7 @@ module wrapper
    , output                                            mem_resp_yumi_o
    );
 
-  // TODO: There should be a param about whether to instantiate the uncore, rather than a list of
-  //   unicore configs
-  if ((bp_params_p == e_bp_unicore_cfg)
-      || (bp_params_p == e_bp_unicore_no_l2_cfg)
-      || (bp_params_p == e_bp_unicore_l1_small_cfg)
-      || (bp_params_p == e_bp_unicore_l1_medium_cfg)
-      )
-    begin : unicore
-      bp_unicore
-       #(.bp_params_p(bp_params_p))
-       dut
-        (.*);
-    end
-  else
+  if (multicore_p)
     begin : multicore
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
@@ -177,6 +165,29 @@ module wrapper
          ,.cmd_link_i(dram_cmd_link_lo)
          ,.resp_link_o(dram_resp_link_li)
          );
+    end
+  else
+    begin : unicore
+      localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p);
+      `declare_bp_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem);
+      bp_uce_mem_msg_s io_cmd_lo, io_cmd_li;
+      bp_uce_mem_msg_s io_resp_lo, io_resp_li;
+
+      // We need to expand the IO ports to their full width here
+      bp_unicore
+       #(.bp_params_p(bp_params_p))
+       dut
+        (.io_cmd_o(io_cmd_lo)
+         ,.io_cmd_i(io_cmd_li)
+         ,.io_resp_o(io_resp_lo)
+         ,.io_resp_i(io_resp_li)
+         ,.*
+         );
+
+      assign io_cmd_o = io_cmd_lo;
+      assign io_cmd_li = io_cmd_i;
+      assign io_resp_o = io_resp_lo;
+      assign io_resp_li = io_resp_i;
     end
 
 endmodule

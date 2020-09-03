@@ -3,7 +3,7 @@ module bp_be_csr
   import bp_common_aviary_pkg::*;
   import bp_common_rv64_pkg::*;
   import bp_be_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
@@ -130,6 +130,8 @@ wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
 //   This is non-compliant. We should hardcode to 0 instead of trapping
 `declare_csr(dcsr)
 `declare_csr(dpc)
+`declare_csr(dscratch0)
+`declare_csr(dscratch1)
 
 wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
 wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
@@ -235,7 +237,7 @@ always_comb
 
 logic [vaddr_width_p-1:0] apc_n, apc_r;
 bsg_dff_reset
- #(.width_p(vaddr_width_p), .reset_val_p(bootrom_base_addr_gp))
+ #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
  apc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -257,9 +259,8 @@ bsg_dff_reset_set_clear
  debug_mode_reg
   (.clk_i(clk_i)
    ,.reset_i('0)
-   // TODO: Should explicitly set freeze
-   ,.set_i(cfg_bus_cast_i.freeze | enter_debug)
-   ,.clear_i(exit_debug)
+   ,.set_i((reset_i & (boot_in_debug_p == 1'b1)) | enter_debug)
+   ,.clear_i((reset_i & (boot_in_debug_p == 1'b0)) | exit_debug)
 
    ,.data_o(debug_mode_r)
    );
@@ -361,6 +362,8 @@ always_comb
     exit_debug  = '0;
     dcsr_li     = dcsr_lo;
     dpc_li      = dpc_lo;
+    dscratch0_li = dscratch0_lo;
+    dscratch1_li = dscratch1_lo;
 
     exception_v_o    = '0;
     interrupt_v_o    = '0;
@@ -504,6 +507,8 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: csr_data_lo = mcountinhibit_lo;
               `CSR_ADDR_DCSR: csr_data_lo = dcsr_lo;
               `CSR_ADDR_DPC: csr_data_lo = dpc_lo;
+              `CSR_ADDR_DSCRATCH0: csr_data_lo = dscratch0_lo;
+              `CSR_ADDR_DSCRATCH1: csr_data_lo = dscratch1_lo;
               default: illegal_instr_o = 1'b1;
             endcase
             // Write case
@@ -551,6 +556,8 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: mcountinhibit_li = csr_data_li;
               `CSR_ADDR_DCSR: dcsr_li = csr_data_li;
               `CSR_ADDR_DPC: dpc_li = csr_data_li;
+              `CSR_ADDR_DSCRATCH0: dscratch0_li = csr_data_li;
+              `CSR_ADDR_DSCRATCH1: dscratch1_li = csr_data_li;
               default: illegal_instr_o = 1'b1;
             endcase
           end

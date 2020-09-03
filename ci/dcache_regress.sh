@@ -21,7 +21,7 @@ N=${2:-1}
 
 # Bash array to iterate over for configurations
 cfgs=(\
-    "e_bp_half_core_cfg"\
+    "e_bp_unicore_half_cfg"\
     )
 
 # The base command to append the configuration to

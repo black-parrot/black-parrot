@@ -3,7 +3,7 @@ module bp_be_dcache_decoder
   import bp_be_pkg::*;
   import bp_be_dcache_pkg::*;
   import bp_common_aviary_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(bp_page_offset_width_gp, dpath_width_p)

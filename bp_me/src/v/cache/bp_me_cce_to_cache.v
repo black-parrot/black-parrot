@@ -11,7 +11,7 @@ module bp_me_cce_to_cache
   import bp_me_pkg::*;
   import bsg_cache_pkg::*;
 
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
@@ -276,7 +276,16 @@ module bp_me_cce_to_cache
      ,.data_i(mem_cmd_lo.header)
      ,.data_o(mem_resp_cast_o.header)
      );
-  assign mem_resp_cast_o.data = resp_data_r;
+
+  bsg_bus_pack
+   #(.width_p(cce_block_width_p))
+   pack
+    (.data_i(resp_data_r)
+     ,.sel_i(mem_resp_cast_o.header.addr[0+:block_offset_width_lp])
+     ,.size_i(mem_resp_cast_o.header.size)
+
+     ,.data_o(mem_resp_cast_o.data)
+     );
 
   always_comb begin
     yumi_o = 1'b0;

@@ -8,7 +8,7 @@ module bp_nonsynth_host
  import bsg_noc_pkg::*;
  import bp_common_cfg_link_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
@@ -176,14 +176,14 @@ always_ff @(negedge clk_i)
       end
   end
 
-  localparam bootrom_els_p = 64;
+  localparam bootrom_els_p = 1024;
   localparam lg_bootrom_els_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
   logic [lg_bootrom_els_lp-1:0] bootrom_addr_li;
-  logic [instr_width_p-1:0] bootrom_data_lo;
-  assign bootrom_addr_li = io_cmd_lo.header.addr[2+:lg_bootrom_els_lp];
+  logic [dword_width_p-1:0] bootrom_data_lo;
+  assign bootrom_addr_li = io_cmd_lo.header.addr[3+:lg_bootrom_els_lp];
   bsg_nonsynth_test_rom
    #(.filename_p("bootrom.mem")
-     ,.data_width_p(instr_width_p)
+     ,.data_width_p(dword_width_p)
      ,.addr_width_p(lg_bootrom_els_lp)
      ,.hex_not_bin_p(1)
      )
@@ -192,11 +192,21 @@ always_ff @(negedge clk_i)
      ,.data_o(bootrom_data_lo)
      );
 
+  logic [dword_width_p-1:0] bootrom_final_lo;
+  bsg_bus_pack
+   #(.width_p(dword_width_p))
+   bootrom_pack
+    (.data_i(bootrom_data_lo)
+     ,.size_i(io_cmd_lo.header.size[0+:2])
+     ,.sel_i(io_cmd_lo.header.addr[0+:3])
+     ,.data_o(bootrom_final_lo)
+     );
+
   bp_cce_mem_msg_s host_io_resp_lo, domain_io_resp_lo, bootrom_io_resp_lo;
   
   assign host_io_resp_lo = '{header: io_cmd_lo.header, data: ch};
   assign domain_io_resp_lo = '{header: io_cmd_lo.header, data: '0};
-  assign bootrom_io_resp_lo = '{header: io_cmd_lo.header, data: {bootrom_data_lo, bootrom_data_lo}};
+  assign bootrom_io_resp_lo = '{header: io_cmd_lo.header, data: bootrom_final_lo};
 
   assign io_resp_cast_o = bootrom_data_cmd_v
                           ? bootrom_io_resp_lo

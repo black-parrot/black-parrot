@@ -4,7 +4,7 @@ module bp_io_tile
  import bp_common_aviary_pkg::*;
  import bp_cce_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
@@ -34,7 +34,6 @@ module bp_io_tile
 
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
-  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
 
   bp_lce_cce_req_s  cce_lce_req_li, lce_lce_req_lo;
@@ -109,17 +108,21 @@ module bp_io_tile
      ,.io_resp_yumi_o(cce_io_resp_yumi_lo)
      );
 
-  lce_req_packet_s lce_req_packet_li, lce_req_packet_lo;
+  `declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_lce_cce_req_header_s, cce_block_width_p);
+  bp_lce_req_wormhole_packet_s lce_req_packet_li, lce_req_packet_lo;
+  bp_lce_req_wormhole_header_s lce_req_header_li, lce_req_header_lo;
   bp_me_wormhole_packet_encode_lce_req
    #(.bp_params_p(bp_params_p)
      )
    req_encode
-    (.payload_i(lce_lce_req_lo)
-     ,.packet_o(lce_req_packet_lo)
+    (.lce_req_header_i(lce_lce_req_lo.header)
+     ,.wh_header_o(lce_req_header_lo)
      );
+  assign lce_req_packet_lo = '{header: lce_req_header_lo, data: lce_lce_req_lo.data};
 
+  localparam lce_req_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_lce_cce_req_header_s), cce_block_width_p);
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+   #(.max_payload_width_p(lce_req_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -139,18 +142,22 @@ module bp_io_tile
      ,.v_o(cce_lce_req_v_li)
      ,.yumi_i(cce_lce_req_yumi_lo)
      );
-  assign cce_lce_req_li = lce_req_packet_li.payload;
+  assign cce_lce_req_li = '{header: lce_req_packet_li.header.msg_hdr, data: lce_req_packet_li.data};
 
-  lce_cmd_packet_s lce_cmd_packet_li, lce_cmd_packet_lo;
+  `declare_bp_lce_cmd_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_lce_cmd_header_s, cce_block_width_p);
+  bp_lce_cmd_wormhole_packet_s lce_cmd_packet_li, lce_cmd_packet_lo;
+  bp_lce_cmd_wormhole_header_s lce_cmd_header_li, lce_cmd_header_lo;
   bp_me_wormhole_packet_encode_lce_cmd
    #(.bp_params_p(bp_params_p))
    cmd_encode
-    (.payload_i(cce_lce_cmd_lo)
-     ,.packet_o(lce_cmd_packet_lo)
+    (.lce_cmd_header_i(cce_lce_cmd_lo.header)
+     ,.wh_header_o(lce_cmd_header_lo)
      );
+  assign lce_cmd_packet_lo = '{header: lce_cmd_header_lo, data: cce_lce_cmd_lo.data};
 
+  localparam lce_cmd_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_lce_cmd_header_s), cce_block_width_p);
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+   #(.max_payload_width_p(lce_cmd_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -170,7 +177,7 @@ module bp_io_tile
      ,.v_o(lce_lce_cmd_v_li)
      ,.yumi_i(lce_lce_cmd_yumi_lo)
      );
-  assign lce_lce_cmd_li = lce_cmd_packet_li.payload;
+  assign lce_lce_cmd_li = '{header: lce_cmd_packet_li.header.msg_hdr, data: lce_cmd_packet_li.data};
 
   logic [io_noc_did_width_p-1:0]  dst_did_lo;
   logic [io_noc_cord_width_p-1:0] dst_cord_lo;

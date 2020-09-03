@@ -7,7 +7,7 @@ module bp_sacc_vdp
  import bp_cce_pkg::*;
  import bp_me_pkg::*;
  import bp_be_dcache_pkg::*;  
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -317,6 +317,7 @@ module bp_sacc_vdp
    assign dot_product_temp = sum_l2[0] + sum_l2[1];
 
 //SPM
+wire [`BSG_SAFE_CLOG2(20)-1:0] spm_addr_li = spm_addr >> 3;
 bsg_mem_1rw_sync
   #(.width_p(64)
     ,.els_p(20)
@@ -325,7 +326,7 @@ bsg_mem_1rw_sync
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.data_i(spm_data_li)
-   ,.addr_i(spm_addr >> 3)
+   ,.addr_i(spm_addr_li)
    ,.v_i(spm_internal_read_v_li | spm_external_read_v_li | spm_internal_write_v_li | spm_external_write_v_li)
    ,.w_i(spm_internal_write_v_li | spm_external_write_v_li)
    ,.data_o(spm_data_lo)

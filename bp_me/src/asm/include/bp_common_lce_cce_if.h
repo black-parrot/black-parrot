@@ -1,16 +1,16 @@
 /**
- * bp_common_me_if.h
+ * bp_common_lce_cce_if.h
  *
  * This file defines the interface between the CCEs and LCEs in the BlackParrot cohrence
  * system. For ease of reuse and flexiblity, this interface is defined as a collection of
  * parameterized structs.
  *
- * This file is derived from bp_common/bp_common_me_if.vh
+ * This file is derived from bp_common/bp_common_lce_cce_if.vh
  *
  */
 
-#ifndef BP_COMMON_ME_IF_H
-#define BP_COMMON_ME_IF_H
+#ifndef BP_COMMON_LCE_CCE_IF_H
+#define BP_COMMON_LCE_CCE_IF_H
 
 typedef enum {
   e_mem_msg_size_1        = 0  // 1 byte

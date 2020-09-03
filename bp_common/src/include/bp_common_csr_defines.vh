@@ -1006,6 +1006,24 @@ typedef logic [38:0] bp_dpc_s;
 `define decompress_dpc_s(data_comp_mp) \
   64'($signed(data_comp_mp))
 
+typedef logic [63:0] rv64_dscratch0_s;
+typedef logic [63:0] bp_dscratch0_s;
+
+`define compress_dscratch0_s(data_cast_mp) \
+  data_cast_mp[0+:64]
+
+`define decompress_dscratch0_s(data_comp_mp) \
+  64'(data_comp_mp)
+
+typedef logic [63:0] rv64_dscratch1_s;
+typedef logic [63:0] bp_dscratch1_s;
+
+`define compress_dscratch1_s(data_cast_mp) \
+  data_cast_mp[0+:64]
+
+`define decompress_dscratch1_s(data_comp_mp) \
+  64'(data_comp_mp)
+
 `define declare_csr(csr_name_mp) \
   /* verilator lint_off UNUSED */                                                               \
   rv64_``csr_name_mp``_s ``csr_name_mp``_li, ``csr_name_mp``_lo;                                \
