@@ -27,8 +27,8 @@ export TB_PARAMS  = -pvalue+uce_p=$(UCE_P) \
 
 export DUT_DEFINES =
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
-										 +define+BP_NUM_LCE=$(BP_NUM_LCE) \
-										 +define+BP_COH_NOC_CID_WIDTH=$(BP_COH_NOC_CID_WIDTH) \
+                     +define+BP_NUM_LCE=$(BP_NUM_LCE) \
+                     +define+BP_COH_NOC_CID_WIDTH=$(BP_COH_NOC_CID_WIDTH) \
                      +define+dram_pkg=$(DRAM_PKG)
 
 export HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)
