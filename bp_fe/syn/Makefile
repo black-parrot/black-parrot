@@ -13,7 +13,7 @@ export REPORT_PATH  := $(BP_FE_DIR)/syn/reports
 export TOUCH_PATH   := $(BP_FE_DIR)/syn/touchfiles
 
 export TB    ?= bp_fe_icache
-export CFG   ?= e_bp_unicore_cfg
+export CFG   ?= e_bp_half_core_cfg
 export SUITE ?= none
 export PROG  ?= test_load
 export TAG   ?= none
