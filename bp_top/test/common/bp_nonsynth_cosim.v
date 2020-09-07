@@ -37,7 +37,7 @@ module bp_nonsynth_cosim
     , input [rv64_reg_addr_width_gp-1:0]      frd_addr_i
     , input [dpath_width_p-1:0]               frd_data_i
 
-    , input                                   interrupt_v_i
+    , input                                   trap_v_i
     , input [dword_width_p-1:0]               cause_i
     );
 
@@ -73,7 +73,7 @@ always_ff @(negedge reset_i)
   logic [instr_width_p-1:0] commit_instr_r;
   logic                     commit_ird_w_v_r;
   logic                     commit_frd_w_v_r;
-  logic                     interrupt_v_r;
+  logic                     trap_v_r;
   logic [dword_width_p-1:0] cause_r;
   logic commit_fifo_v_lo, commit_fifo_yumi_li;
   wire commit_ird_w_v_li = commit_v_i & (decode_r.irf_w_v | decode_r.late_iwb_v);
@@ -84,11 +84,11 @@ always_ff @(negedge reset_i)
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({commit_v_i, commit_pc_i, commit_instr_i, commit_ird_w_v_li, commit_frd_w_v_li, interrupt_v_i, cause_i})
-     ,.v_i(commit_v_i | interrupt_v_i)
+     ,.data_i({commit_v_i, commit_pc_i, commit_instr_i, commit_ird_w_v_li, commit_frd_w_v_li, trap_v_i, cause_i})
+     ,.v_i(commit_v_i | trap_v_i)
      ,.ready_o()
 
-     ,.data_o({commit_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, interrupt_v_r, cause_r})
+     ,.data_o({commit_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, trap_v_r, cause_r})
      ,.v_o(commit_fifo_v_lo)
      ,.yumi_i(commit_fifo_yumi_li)
      );
@@ -175,7 +175,7 @@ always_ff @(negedge reset_i)
 
   always_ff @(negedge clk_i) begin
     if(en_i) begin
-      if(commit_fifo_yumi_li & interrupt_v_r) begin
+      if(commit_fifo_yumi_li & trap_v_r) begin
         dromajo_trap(mhartid_i, cause_r);
       end else if (commit_fifo_yumi_li & commit_v_r & commit_pc_r != '0) begin
         if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, frd_fifo_yumi_li ? frd_raw_li : iwb_data_r)) begin
