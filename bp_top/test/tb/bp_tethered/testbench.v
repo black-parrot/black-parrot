@@ -232,7 +232,7 @@ bind bp_be_top
      ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
      ,.frd_data_i(scheduler.fwb_pkt.rd_data)
 
-     ,.interrupt_v_i(calculator.pipe_sys.csr.trap_pkt_cast_o._interrupt)
+     ,.trap_v_i(calculator.pipe_sys.csr.trap_pkt_cast_o.exception | calculator.pipe_sys.csr.trap_pkt_cast_o._interrupt)
      ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
                ? calculator.pipe_sys.csr.scause_li
                : calculator.pipe_sys.csr.mcause_li

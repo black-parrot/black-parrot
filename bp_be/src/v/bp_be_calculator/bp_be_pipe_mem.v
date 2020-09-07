@@ -137,7 +137,7 @@ module bp_be_pipe_mem
   bp_be_dcache_pkt_s        dcache_pkt;
   logic [dpath_width_p-1:0] dcache_early_data, dcache_final_data;
   logic [ptag_width_p-1:0]  dcache_ptag;
-  logic                     dcache_early_v, dcache_final_v, dcache_fencei_v, dcache_pkt_v;
+  logic                     dcache_early_v, dcache_final_v, dcache_pkt_v;
   logic                     dcache_ptag_v;
   logic                     dcache_uncached;
   logic                     dcache_ready_lo;
@@ -156,9 +156,10 @@ module bp_be_pipe_mem
   logic is_fencei_mem1, is_fencei_mem2;
   logic [rv64_eaddr_width_gp-1:0] eaddr_mem1, eaddr_mem2, eaddr_mem3;
 
-  wire is_req    = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & (decode.dcache_w_v | decode.dcache_r_v);
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
+  wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
   wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
+  wire is_req    = is_store | is_load | is_fencei;
 
   // Calculate cache access eaddr
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
