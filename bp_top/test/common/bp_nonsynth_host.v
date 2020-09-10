@@ -178,8 +178,9 @@ always_ff @(negedge clk_i)
 
   localparam bootrom_els_p = 1024;
   localparam lg_bootrom_els_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
-  logic [lg_bootrom_els_lp-1:0] bootrom_addr_li;
-  logic [dword_width_p-1:0] bootrom_data_lo;
+  // bit helps with x pessimism with undersized bootrom
+  bit [lg_bootrom_els_lp-1:0] bootrom_addr_li;
+  bit [dword_width_p-1:0] bootrom_data_lo;
   assign bootrom_addr_li = io_cmd_lo.header.addr[3+:lg_bootrom_els_lp];
   bsg_nonsynth_test_rom
    #(.filename_p("bootrom.mem")
