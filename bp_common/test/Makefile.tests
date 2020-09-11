@@ -17,7 +17,7 @@ define submodule_test_template
 $(1)_tag := $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
 $(BP_TOUCH_DIR)/$$($(1)_tag):
 	rm -rf $(BP_TOUCH_DIR)/$(1).*
-	cd $(TOP); git submodule update --init --recursive $$($(1)_dir)
+	cd $(TOP); git submodule update --init --merge --recursive $$($(1)_dir)
 	+$(MAKE) $(1)_build
 	mkdir -p $(BP_TEST_MEM_DIR)/$(1)
 	find $(2) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/$(1)/ \;
