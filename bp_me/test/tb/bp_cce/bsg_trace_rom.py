@@ -3,7 +3,7 @@ import sys
 import random
 import math
 from argparse import ArgumentParser
-# import trace generator for D$
+# import trace generator for $
 # Note: this path is relative to bp_me/syn directory
 # it would be nice to simply add the directory that TraceGen source lives in to the path
 # that python will search for files in, then remove the sys.path.append call
@@ -20,51 +20,68 @@ parser.add_argument('-s', '--seed', dest='seed', type=int, default=1,
                     help='random number generator seed')
 parser.add_argument('-m', dest='paddr_width', type=int, default=40,
                     help='Physical address width in bits')
-parser.add_argument('-d', dest='data_width', type=int, default=64,
-                    help='Data cache word size in bits')
+
+# cache parameters
+parser.add_argument('-b', dest='block_size', type=int, default=512,
+                    help='cache block size')
 parser.add_argument('-e', dest='assoc', type=int, default=8,
-                    help='Data cache associativity')
+                    help='cache associativity')
 parser.add_argument('--sets', dest='sets', type=int, default=64,
-                    help='Data cache number of sets')
-parser.add_argument('--mem-size', dest='mem_size', type=int, default=2,
-                    help='Size of backing memory, given as integer multiple of D$ size')
+                    help='cache sets')
+parser.add_argument('-d', dest='dword_size', type=int, default=64,
+                    help='dword size')
+
+# operating mode
 parser.add_argument('-u', '--uncached', dest='uncached', type=int, default=0,
-                    help='Set to issue only uncached requests')
+                    help='Set to issue only uncached and incoherent requests')
+
+# memory map arguments and parameters
+# The basic memory map is only DRAM is cacheable and coherent and all other memory
+# is incoherent and uncacheable only. Uncacheable accesses may be issued to coherent
+# DRAM memory space, and are kept coherent by the CCE.
+parser.add_argument('--dram-offset', dest='dram_offset', type=int, default=0x80000000,
+                    help='base address of cacheable memory (DRAM)')
+parser.add_argument('--dram-high', dest='dram_high', type=int, default=0x100000000,
+                    help='DRAM upper limit (i.e., first address above DRAM)')
+parser.add_argument('--mem-size', dest='mem_size', type=int, default=2,
+                    help='Size of backing memory, given as integer multiple of $ size')
+
+
 
 args = parser.parse_args()
 
-## Cache Parameters
-# D$ associativity
-E = args.assoc
-# D$ number of sets
-S = args.sets
-s = int(math.log(S, 2))
-# D$ number of cache blocks per cache
-N_B = E*S
-#eprint('D$ blocks: {0}'.format(N_B))
-# D$ data word size (in bits)
-D = args.data_width
-D_bytes = D / 8
-# D$ block size (in bytes) is equal to associativity times D$ data word size
-B = (D_bytes * E)
-b = int(math.log(B, 2))
-# D$ size in bytes
-C = N_B * B
-#eprint('D$ bytes: {0}'.format(C))
+## cache parameters
+cache_assoc = args.assoc
+cache_sets = args.sets
+assert(cache_sets > 1, 'direct mapped cache not supported')
+cache_blocks = cache_assoc*cache_sets
+cache_block_size = args.block_size
+cache_block_size_bytes = (cache_block_size / 8)
+dword_size = args.dword_size
 
-# number of tag bits
+# bits in address
+s = int(math.log(cache_sets, 2))
+b = int(math.log(cache_block_size_bytes, 2))
 t = args.paddr_width - s - b
 #eprint('t: {0}, s: {1}, b: {2}'.format(t, s, b))
 
-# Memory size in bytes
-C_MEM = C * args.mem_size
-# Number of cache blocks in memory
-N_B_MEM = N_B * args.mem_size
-#eprint('Memory blocks: {0}'.format(N_B_MEM))
-#eprint('Memory bytes: {0}'.format(C_MEM))
+cache_cap_bytes = cache_blocks * cache_block_size_bytes
+#eprint('$ bytes: {0}'.format(cache_cap_bytes))
+
+# memory params
+mem_bytes = cache_cap_bytes * args.mem_size
+mem_blocks = cache_blocks * args.mem_size
+#eprint('memory blocks: {0}'.format(mem_blocks))
+#eprint('memory bytes: {0}'.format(mem_bytes))
+
+# base memory address
+mem_base = 0 if args.uncached else args.dram_offset
+mem_high = mem_base + mem_bytes
+#eprint('memory base: 0x{0:010x}'.format(mem_base))
+#eprint('memory high: 0x{0:010x}'.format(mem_high))
 
 def check_valid_addr(addr):
-  assert(addr < C_MEM), 'addr {0} out of range'.format(addr)
+  assert((addr >= mem_base) and (addr < mem_high)), 'illegal address 0x{0:010x}'.format(addr)
 
 # Simulated memory
 byte_memory = {}
@@ -91,7 +108,7 @@ def write_memory(mem, addr, value, size):
 #write_memory(byte_memory, 0, 256, 2)
 #print(read_memory(byte_memory, 0, 1))
 
-tg = TraceGen(addr_width_p=args.paddr_width, data_width_p=args.data_width)
+tg = TraceGen(addr_width_p=args.paddr_width, data_width_p=args.dword_size)
 
 # preamble  
 tg.print_header()
@@ -106,16 +123,21 @@ store_val = 1
 uncached = 1 if args.uncached else 0
 
 for i in range(args.num_instr):
+  # pick access parameters
   load = random.choice([True, False])
   size = random.choice([1, 2, 4, 8])
   size_shift = int(math.log(size, 2))
   # choose which cache block in memory to target
-  block = random.randint(0, N_B_MEM-1)
+  block = random.randint(0, mem_blocks-1)
+  #eprint('block: {0}'.format(block))
   # choose offset in cache block based on size of access ("word" size for this access)
-  words = B / size
+  words = cache_block_size_bytes / size
   word = random.randint(0, words-1)
+  #eprint('word: {0}'.format(word))
   # build the address
   addr = (block << b) + (word << size_shift)
+  if not uncached:
+    addr = addr + mem_base
   check_valid_addr(addr)
 
   if load:
