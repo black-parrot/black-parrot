@@ -483,40 +483,57 @@ for (genvar i = 0; i < 2; i++)
      );
 
   /* TODO: Extract local memory map to module */
-  wire local_cmd_li    = (cce_mem_cmd_lo.header.addr < dram_base_addr_gp);
-  wire [3:0] device_li =  cce_mem_cmd_lo.header.addr[20+:4];
+  wire local_cmd_li        = (cce_mem_cmd_lo.header.addr < dram_base_addr_gp);
+  wire [3:0] device_cmd_li = cce_mem_cmd_lo.header.addr[20+:4];
+  wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
+  wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
+  wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
+  wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_cache_cmd;
 
-  assign cce_mem_cmd_ready_li = loopback_mem_cmd_ready_lo & cache_mem_cmd_ready_lo & cfg_mem_cmd_ready_lo & clint_mem_cmd_ready_lo;
+  assign cfg_mem_cmd_v_li      = is_cfg_cmd   & cce_mem_cmd_v_lo;
+  assign clint_mem_cmd_v_li    = is_clint_cmd & cce_mem_cmd_v_lo;
+  assign cache_mem_cmd_v_li    = is_cache_cmd & cce_mem_cmd_v_lo;
+  assign loopback_mem_cmd_v_li = is_loopback_cmd & cce_mem_cmd_v_lo;
 
-  assign cfg_mem_cmd_li       = cce_mem_cmd_lo;
-  assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == cfg_dev_gp);
+  assign cce_mem_cmd_ready_li = &{loopback_mem_cmd_ready_lo, cache_mem_cmd_ready_lo, cfg_mem_cmd_ready_lo, clint_mem_cmd_ready_lo};
 
-  assign clint_mem_cmd_li     = cce_mem_cmd_lo;
-  assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == clint_dev_gp);
+  assign {loopback_mem_cmd_li, cache_mem_cmd_li, clint_mem_cmd_li, cfg_mem_cmd_li} = {4{cce_mem_cmd_lo}};
 
-  assign cache_mem_cmd_li     = cce_mem_cmd_lo;
-  assign cache_mem_cmd_v_li   = cce_mem_cmd_v_lo & (~local_cmd_li | (local_cmd_li & (device_li == cache_dev_gp)));
-
-  assign loopback_mem_cmd_li   = cce_mem_cmd_lo;
-  assign loopback_mem_cmd_v_li = cce_mem_cmd_v_lo & (local_cmd_li & ~cfg_mem_cmd_v_li & ~clint_mem_cmd_v_li & ~cache_mem_cmd_v_li);
-
+  bp_cce_mem_msg_s mem_resp_selected_li;
+  logic mem_resp_selected_v_li, mem_resp_selected_ready_lo;
   bsg_arb_fixed
    #(.inputs_p(4)
      ,.lo_to_hi_p(1)
      )
    resp_arb
-    (.ready_i(cce_mem_resp_yumi_lo)
+    (.ready_i(mem_resp_selected_ready_lo)
      ,.reqs_i({loopback_mem_resp_v_lo, clint_mem_resp_v_lo, cfg_mem_resp_v_lo, cache_mem_resp_v_lo})
      ,.grants_o({loopback_mem_resp_yumi_li, clint_mem_resp_yumi_li, cfg_mem_resp_yumi_li, cache_mem_resp_yumi_li})
      );
-  assign cce_mem_resp_v_li = loopback_mem_resp_v_lo | cache_mem_resp_v_lo | cfg_mem_resp_v_lo | clint_mem_resp_v_lo;
-  assign cce_mem_resp_li = cache_mem_resp_v_lo
-                           ? cache_mem_resp_lo
-                           : cfg_mem_resp_v_lo
-                             ? cfg_mem_resp_lo
-                               : clint_mem_resp_v_lo
-                                 ? clint_mem_resp_lo
-                                 : loopback_mem_resp_lo;
+
+  bsg_mux_one_hot
+   #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(4))
+   resp_select
+    (.data_i({loopback_mem_resp_lo, clint_mem_resp_lo, cfg_mem_resp_lo, cache_mem_resp_lo})
+     ,.sel_one_hot_i({loopback_mem_resp_v_lo, clint_mem_resp_v_lo, cfg_mem_resp_v_lo, cache_mem_resp_v_lo})
+     ,.data_o(mem_resp_selected_li)
+     );
+
+  assign mem_resp_selected_v_li = loopback_mem_resp_yumi_li | cache_mem_resp_yumi_li | cfg_mem_resp_yumi_li | clint_mem_resp_yumi_li;
+  bsg_two_fifo
+   #(.width_p($bits(bp_cce_mem_msg_s)))
+   resp_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(mem_resp_selected_li)
+     ,.v_i(mem_resp_selected_v_li)
+     ,.ready_o(mem_resp_selected_ready_lo)
+
+     ,.data_o(cce_mem_resp_li)
+     ,.v_o(cce_mem_resp_v_li)
+     ,.yumi_i(cce_mem_resp_yumi_lo)
+     );
 
   bp_cce_mem_msg_s dma_mem_cmd_lo;
   logic dma_mem_cmd_v_lo, dma_mem_cmd_ready_li;
