@@ -28,8 +28,8 @@ extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory
       dromajo_pointer = dromajo_cosim_init(6, argv);
     }
     else {
-      char* argv[] = {"dromajo", (char*)(&ncpus_str[0]), (char*)(&memsize_str[0]), (char*)(&mmio_str[0]), bootrom_str, "prog.elf"};
-      dromajo_pointer = dromajo_cosim_init(6, argv);
+      char* argv[] = {"dromajo", (char*)(&ncpus_str[0]), (char*)(&memsize_str[0]), (char*)(&mmio_str[0]), "prog.elf"};
+      dromajo_pointer = dromajo_cosim_init(5, argv);
     }
   }
 }
@@ -45,7 +45,7 @@ extern "C" bool dromajo_step(int      hartid,
                                      wdata,
                                      0,
                                      true,
-                                     false);
+                                     true);
   if(exit_code != 0)
     return true;
   else
