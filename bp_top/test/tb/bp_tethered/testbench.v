@@ -293,8 +293,8 @@ bind bp_be_top
        ,.npc_r(npc_r)
        ,.expected_npc_o(expected_npc_o)
 
-       ,.fe_cmd_i(fe_cmd)
-       ,.fe_cmd_v(fe_cmd_v)
+       ,.fe_cmd_i(fe_cmd_li)
+       ,.fe_cmd_v(fe_cmd_v_li)
 
        ,.trap_pkt_i(trap_pkt)
        );
@@ -521,7 +521,8 @@ bind bp_be_top
 
        ,.fe_cmd_o(director.fe_cmd_o)
        ,.fe_cmd_v_o(director.fe_cmd_v_o)
-       ,.fe_cmd_ready_i(director.fe_cmd_ready_i)
+       // TODO: Fix handshake
+       ,.fe_cmd_ready_i(director.fe_cmd_yumi_i)
 
        ,.commit_v_i(calculator.commit_pkt.instret)
 

@@ -88,15 +88,13 @@ module bp_core_minimal
 
     );
 
-  // TODO: fix interfaces for fe/be
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   bp_fe_queue_s fe_queue_li, fe_queue_lo;
   logic fe_queue_v_li, fe_queue_ready_lo;
   logic fe_queue_v_lo, fe_queue_yumi_li;
 
-  bp_fe_cmd_s fe_cmd_li, fe_cmd_lo;
-  logic fe_cmd_v_li, fe_cmd_ready_lo;
+  bp_fe_cmd_s fe_cmd_lo;
   logic fe_cmd_v_lo, fe_cmd_yumi_li;
 
   bp_fe_top
@@ -139,55 +137,6 @@ module bp_core_minimal
      ,.stat_mem_o(icache_stat_mem_o)
      );
 
-  bsg_fifo_1r1w_small
-   #(.width_p(fe_cmd_width_lp)
-     ,.els_p(fe_cmd_fifo_els_p)
-     ,.ready_THEN_valid_p(1)
-     )
-   fe_cmd_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i(fe_cmd_li)
-     ,.v_i(fe_cmd_v_li)
-     ,.ready_o(fe_cmd_ready_lo)
-
-     ,.data_o(fe_cmd_lo)
-     ,.v_o(fe_cmd_v_lo)
-     ,.yumi_i(fe_cmd_yumi_li)
-     );
-
-  wire fe_cmd_empty_lo = ~fe_cmd_v_lo;
-  wire fe_cmd_full_lo  = ~fe_cmd_ready_lo;
-  wire fe_cmd_fence_li = fe_cmd_v_lo;
-
-  logic fe_queue_clr_li, fe_queue_deq_li, fe_queue_roll_li;
-  logic [reg_addr_width_p-1:0] rs1_addr_lo, rs2_addr_lo;
-  logic rs1_v_lo, rs2_v_lo;
-  bsg_fifo_1r1w_rolly
-   #(.bp_params_p(bp_params_p))
-   fe_queue_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clr_v_i(fe_queue_clr_li)
-     ,.deq_v_i(fe_queue_deq_li)
-     ,.roll_v_i(fe_queue_roll_li)
-
-     ,.fe_queue_i(fe_queue_li)
-     ,.fe_queue_v_i(fe_queue_v_li)
-     ,.fe_queue_ready_o(fe_queue_ready_lo)
-
-     ,.fe_queue_o(fe_queue_lo)
-     ,.fe_queue_v_o(fe_queue_v_lo)
-     ,.fe_queue_yumi_i(fe_queue_yumi_li)
-
-     ,.rs1_addr_o(rs1_addr_lo)
-     ,.rs1_v_o(rs1_v_lo)
-     ,.rs2_addr_o(rs2_addr_lo)
-     ,.rs2_v_o(rs2_v_lo)
-     );
-
   bp_be_top
    #(.bp_params_p(bp_params_p))
    be
@@ -196,25 +145,15 @@ module bp_core_minimal
 
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.fe_queue_clr_o(fe_queue_clr_li)
-     ,.fe_queue_deq_o(fe_queue_deq_li)
-     ,.fe_queue_roll_o(fe_queue_roll_li)
+     ,.fe_queue_i(fe_queue_li)
+     ,.fe_queue_v_i(fe_queue_v_li)
+     ,.fe_queue_ready_o(fe_queue_ready_lo)
 
-     ,.fe_queue_i(fe_queue_lo)
-     ,.fe_queue_v_i(fe_queue_v_lo)
-     ,.fe_queue_yumi_o(fe_queue_yumi_li)
-     ,.rs1_addr_i(rs1_addr_lo)
-     ,.rs1_v_i(rs1_v_lo)
+     ,.fe_cmd_o(fe_cmd_lo)
+     ,.fe_cmd_v_o(fe_cmd_v_lo)
+     ,.fe_cmd_yumi_i(fe_cmd_yumi_li)
 
-     ,.rs2_addr_i(rs2_addr_lo)
-     ,.rs2_v_i(rs2_v_lo)
-
-     ,.fe_cmd_o(fe_cmd_li)
-     ,.fe_cmd_v_o(fe_cmd_v_li)
-     ,.fe_cmd_ready_i(fe_cmd_ready_lo)
-     ,.fe_cmd_fence_i(fe_cmd_fence_li)
-
-      ,.cache_req_o(dcache_req_o)
+     ,.cache_req_o(dcache_req_o)
      ,.cache_req_v_o(dcache_req_v_o)
      ,.cache_req_ready_i(dcache_req_ready_i)
      ,.cache_req_metadata_o(dcache_req_metadata_o)

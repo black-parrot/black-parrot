@@ -29,6 +29,9 @@ module bsg_fifo_1r1w_rolly
 
    , output logic [reg_addr_width_p-1:0]    rs2_addr_o
    , output logic                           rs2_v_o
+
+   , output logic [reg_addr_width_p-1:0]    rs3_addr_o
+   , output logic                           rs3_v_o
    );
 
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -118,30 +121,33 @@ module bsg_fifo_1r1w_rolly
   assign fe_queue_ready_o = ~clr & ~full;
 
   wire bypass_reg = (wptr_r == rptr_n);
-  rv64_instr_rtype_s fetch_instr;
+  rv64_instr_fmatype_s fetch_instr;
   assign fetch_instr = fe_queue_cast_i.msg.fetch.instr;
-  logic [reg_addr_width_p-1:0] rs1_addr_li, rs2_addr_li;
-  logic [reg_addr_width_p-1:0] rs1_addr_lo, rs2_addr_lo;
+  logic [reg_addr_width_p-1:0] rs1_addr_li, rs2_addr_li, rs3_addr_li;
+  logic [reg_addr_width_p-1:0] rs1_addr_lo, rs2_addr_lo, rs3_addr_lo;
   assign rs1_addr_li = fetch_instr.rs1_addr;
   assign rs2_addr_li = fetch_instr.rs2_addr;
+  assign rs3_addr_li = fetch_instr.rs3_addr;
   bsg_mem_1r1w
-  #(.width_p(2*reg_addr_width_p), .els_p(fe_queue_fifo_els_p), .read_write_same_addr_p(1))
+  #(.width_p(3*reg_addr_width_p), .els_p(fe_queue_fifo_els_p), .read_write_same_addr_p(1))
   reg_fifo_mem
    (.w_clk_i(clk_i)
     ,.w_reset_i(reset_i)
     ,.w_v_i(enq)
     ,.w_addr_i(wptr_r[0+:ptr_width_lp])
-    ,.w_data_i({rs2_addr_li, rs1_addr_li})
+    ,.w_data_i({rs3_addr_li, rs2_addr_li, rs1_addr_li})
     ,.r_v_i(1'b1)
     ,.r_addr_i(rptr_n[0+:ptr_width_lp])
-    ,.r_data_o({rs2_addr_lo, rs1_addr_lo})
+    ,.r_data_o({rs3_addr_lo, rs2_addr_lo, rs1_addr_lo})
     );
   // TODO: Save power by predecoding
   assign rs1_v_o = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
   assign rs2_v_o = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
+  assign rs3_v_o = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
 
   assign rs1_addr_o = bypass_reg ? rs1_addr_li : rs1_addr_lo;
   assign rs2_addr_o = bypass_reg ? rs2_addr_li : rs2_addr_lo;
+  assign rs3_addr_o = bypass_reg ? rs3_addr_li : rs3_addr_lo;
 
 endmodule
 
