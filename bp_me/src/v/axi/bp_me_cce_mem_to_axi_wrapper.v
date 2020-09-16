@@ -314,7 +314,7 @@ module bp_me_cce_mem_to_axi_wrapper
 
     ,.valid_o   (axi_write_piso_v_lo)
     ,.data_o    (axi_write_piso_data_lo)
-    ,.input     (axi_wready_i)
+    ,.yumi_i     (axi_wready_i)
     );
 
 endmodule
