@@ -10,95 +10,93 @@ module bp_me_cce_mem_to_axi_wrapper
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
   // AXI WRITE DATA CHANNEL PARAMS
-  , localparam axi_data_width_lp = 64
-  , localparam axi_strb_width_lp = axi_data_width_lp/8
+  , parameter axi_data_width_p   = 64
+  , localparam axi_strb_width_lp = axi_data_width_p/8
 
   // AXI WRITE/READ ADDRESS CHANNEL PARAMS	
-  , localparam axi_id_width_lp   = 1
-  , localparam axi_addr_width_lp = 64
-  , localparam axi_burst_type_lp = 2'b01                                     //INCR type
-  , localparam axi_len_lp        = cce_block_width_p/axi_data_width_lp - 1   //(512/64) - 1 = 7 (but it's 8 transfers since AxLEN+1)
-  , localparam axi_size_lp       = 3                                         //8 Bytes, or 64bits, per transfer (this is done in power of 2's)
+  , parameter axi_id_width_p     = 1
+  , parameter axi_addr_width_p   = 64
+  , parameter axi_burst_type_p   = 2'b01                                      //INCR type
+  , parameter axi_size_p         = 3                                          //8 Bytes, or 64bits, per transfer (this is done in power of 2's)
+  , localparam axi_len_lp        = cce_block_width_p/axi_data_width_p - 1     //(512/64) - 1 = 7 (but it's 8 transfers since AxLEN+1)
   //, localparam axi_user_width_lp = 1 
   
   // FIFO depth for PISO and SIPO
-  , localparam fifo_els_lp       = cce_block_width_p/axi_data_width_lp       //in most cases, it'll be 512/64 = 8
+  , localparam fifo_els_lp       = cce_block_width_p/axi_data_width_p         //in most cases, it'll be 512/64 = 8
   )
 
-  ( input 	aclk_i  
+  ( 
+  //==================== GLOBAL SIGNALS =======================
+    input 	aclk_i  
   , input 	aresetn_i
 
   //========================= BP side =========================
   // memory commands from the ME into the axi wrapper
-  , input  [cce_mem_msg_width_lp-1:0]  mem_cmd_i
-  , input                              mem_cmd_v_i
-  , output                             mem_cmd_ready_o
+  , input  [cce_mem_msg_width_lp-1:0]       mem_cmd_i
+  , input                                   mem_cmd_v_i
+  , output logic                            mem_cmd_ready_o
 
   // memory responses from the axi wrapper into ME
-  , output [cce_mem_msg_width_lp-1:0]  mem_resp_o
-  , output                             mem_resp_v_o
-  , input                              mem_resp_yumi_i
+  , output logic [cce_mem_msg_width_lp-1:0] mem_resp_o
+  , output logic                            mem_resp_v_o
+  , input                                   mem_resp_yumi_i
   //===========================================================
 
   //======================== AXI side =========================
-  // GLOBAL SIGNALS
-  //, output axi_aclk_o  
-  //, output axi_aresetn_o
-
   // WRITE ADDRESS CHANNEL SIGNALS
-  , output [axi_id_width_lp-1:0]        axi_awid_o     //write addr ID    
-  , output [axi_addr_width_lp-1:0]      axi_awaddr_o   //write address
-  , output [7:0]                        axi_awlen_o    //burst length (# of transfers 0-256)
-  , output [2:0]                        axi_awsize_o   //burst size (# of bytes in transfer 0-128)
-  , output [1:0]                        axi_awburst_o  //burst type (FIXED, INCR, or WRAP)
-  , output [3:0]                        axi_awcache_o  //memory type (write-through, write-back, etc.)
-  , output [2:0]                        axi_awprot_o   //protection type (unpriv, secure, etc)
-  , output [3:0]                        axi_awqos_o    //QoS (use default 0000 if no QoS scheme)
-  , output                              axi_awvalid_o  //master device write addr validity
-  , input                               axi_awready_i  //slave device readiness
-  //, output                            axi_awlock_o   //lock type (not supported by AXI-4)
-  //, output [axi_user_width_lp-1:0]    axi_awuser_o   //user-defined signals (optional, recommended for interconnect)
-  //, output [3:0]                      axi_awregion_o //region identifier (optional)
+  , output logic [axi_id_width_p-1:0]       axi_awid_o     //write addr ID    
+  , output logic [axi_addr_width_p-1:0]     axi_awaddr_o   //write address
+  , output logic [7:0]                      axi_awlen_o    //burst length (# of transfers 0-256)
+  , output logic [2:0]                      axi_awsize_o   //burst size (# of bytes in transfer 0-128)
+  , output logic [1:0]                      axi_awburst_o  //burst type (FIXED, INCR, or WRAP)
+  , output logic [3:0]                      axi_awcache_o  //memory type (write-through, write-back, etc.)
+  , output logic [2:0]                      axi_awprot_o   //protection type (unpriv, secure, etc)
+  , output logic [3:0]                      axi_awqos_o    //QoS (use default 0000 if no QoS scheme)
+  , output logic                            axi_awvalid_o  //master device write addr validity
+  , input                                   axi_awready_i  //slave device readiness
+  //, output                                axi_awlock_o   //lock type (not supported by AXI-4)
+  //, output [axi_user_width_lp-1:0]        axi_awuser_o   //user-defined signals (optional, recommended for interconnect)
+  //, output [3:0]                          axi_awregion_o //region identifier (optional)
 
   // WRITE DATA CHANNEL SIGNALS
-  , output [axi_id_width_lp-1:0]        axi_wid_o      //write data ID
-  , output [axi_data_width_lp-1:0]      axi_wdata_o    //write data
-  , output [axi_strb_width_lp-1:0]      axi_wstrb_o    //write strobes (indicates valid data byte lane)
-  , output                              axi_wlast_o    //write last (indicates last transfer in a write burst)
-  , output                              axi_wvalid_o   //master device write validity
-  , input                               axi_wready_i   //slave device readiness
-  //, output [axi_user_width_lp-1:0]    axi_wuser_o    //user-defined signals (optional)
+  , output logic [axi_id_width_p-1:0]       axi_wid_o      //write data ID
+  , output logic [axi_data_width_p-1:0]     axi_wdata_o    //write data
+  , output logic [axi_strb_width_lp-1:0]    axi_wstrb_o    //write strobes (indicates valid data byte lane)
+  , output logic                            axi_wlast_o    //write last (indicates last transfer in a write burst)
+  , output logic                            axi_wvalid_o   //master device write validity
+  , input                                   axi_wready_i   //slave device readiness
+  //, output [axi_user_width_lp-1:0]        axi_wuser_o    //user-defined signals (optional)
 
   // WRITE RESPONSE CHANNEL SIGNALS
-  , input [axi_id_width_lp-1:0]         axi_bid_i      //slave response ID
-  , input [1:0]                         axi_bresp_i    //status of the write transaction (OKAY, EXOKAY, SLVERR, or DECERR)
-  , input                               axi_bvalid_i   //slave device write reponse validity
-  , output                              axi_bready_o   //master device write response readiness 
-   //, input [axi_user_width_lp-1:0]    axi_buser_o    //user-defined signals (optional)
+  , input [axi_id_width_p-1:0]              axi_bid_i      //slave response ID
+  , input [1:0]                             axi_bresp_i    //status of the write transaction (OKAY, EXOKAY, SLVERR, or DECERR)
+  , input                                   axi_bvalid_i   //slave device write reponse validity
+  , output logic                            axi_bready_o   //master device write response readiness 
+   //, input [axi_user_width_lp-1:0]        axi_buser_o    //user-defined signals (optional)
   
   // READ ADDRESS CHANNEL SIGNALS
-  , output [axi_id_width_lp-1:0]        axi_arid_o     //read addr ID
-  , output [axi_addr_width_lp-1:0]      axi_araddr_o   //read address
-  , output [7:0]                        axi_arlen_o    //burst length (# of transfers 0-256)
-  , output [2:0]                        axi_arsize_o   //burst size (# of bytes in transfer 0-128)
-  , output [1:0]                        axi_arburst_o  //burst type (FIXED, INCR, or WRAP)
-  , output [3:0]                        axi_arcache_o  //memory type (write-through, write-back, etc.)
-  , output [2:0]                        axi_arprot_o   //protection type (unpriv, secure, etc)
-  , output [3:0]                        axi_arqos_o    //QoS (use default 0000 if no QoS scheme)
-  , output                              axi_arvalid_o  //master device read addr validity
-  , input                               axi_arready_i  //slave device readiness
-  //, output                            axi_arlock_o   //lock type (not supported by AXI-4)
-  //, output [axi_user_width_lp-1:0]    axi_aruser_o   //user-defined signals (optional)
-  //, output [3:0]                      axi_arregion_o //region identifier (optional)
+  , output logic [axi_id_width_p-1:0]       axi_arid_o     //read addr ID
+  , output logic [axi_addr_width_p-1:0]     axi_araddr_o   //read address
+  , output logic [7:0]                      axi_arlen_o    //burst length (# of transfers 0-256)
+  , output logic [2:0]                      axi_arsize_o   //burst size (# of bytes in transfer 0-128)
+  , output logic [1:0]                      axi_arburst_o  //burst type (FIXED, INCR, or WRAP)
+  , output logic [3:0]                      axi_arcache_o  //memory type (write-through, write-back, etc.)
+  , output logic [2:0]                      axi_arprot_o   //protection type (unpriv, secure, etc)
+  , output logic [3:0]                      axi_arqos_o    //QoS (use default 0000 if no QoS scheme)
+  , output logic                            axi_arvalid_o  //master device read addr validity
+  , input                                   axi_arready_i  //slave device readiness
+  //, output                                axi_arlock_o   //lock type (not supported by AXI-4)
+  //, output [axi_user_width_lp-1:0]        axi_aruser_o   //user-defined signals (optional)
+  //, output [3:0]                          axi_arregion_o //region identifier (optional)
 
   // READ DATA CHANNEL SIGNALS
-  , input [axi_id_width_lp-1:0]         axi_rid_i      //read data ID
-  , input [axi_data_width_lp-1:0]       axi_rdata_i    //read data
-  , input [1:0]                         axi_rresp_i    //read response
-  , input                               axi_rlast_i    //read last
-  , input                               axi_rvalid_i   //slave device read data validity
-  , output                              axi_rready_o   //master device read data readiness
-  //, input                             axi_ruser_i    //user-defined signals (optional)
+  , input [axi_id_width_p-1:0]              axi_rid_i      //read data ID
+  , input [axi_data_width_p-1:0]            axi_rdata_i    //read data
+  , input [1:0]                             axi_rresp_i    //read response
+  , input                                   axi_rlast_i    //read last
+  , input                                   axi_rvalid_i   //slave device read data validity
+  , output logic                            axi_rready_o   //master device read data readiness
+  //, input                                 axi_ruser_i    //user-defined signals (optional)
   //===========================================================
  );
 
@@ -114,13 +112,13 @@ module bp_me_cce_mem_to_axi_wrapper
   assign mem_cmd_cast_i  = mem_cmd_i;
 
   // SIPO and PISO related signals
-  Logic	                        axi_read_sipo_ready_lo;
+  logic	                        axi_read_sipo_ready_lo;
   logic	                        axi_read_sipo_v_lo;
   logic [cce_block_width_p-1:0] axi_read_sipo_data_lo;
 
   logic                         axi_write_piso_ready_lo;
   logic                         axi_write_piso_v_lo;
-  logic [axi_data_width_lp-1:0] axi_write_piso_data_lo;
+  logic [axi_data_width_p-1:0]  axi_write_piso_data_lo;
 
   // Write counter for sending the last bit
   logic [`BSG_SAFE_CLOG2(axi_len_lp)-1:0] axi_awburst_cnt_r, axi_awburst_cnt_n;
@@ -164,8 +162,8 @@ module bp_me_cce_mem_to_axi_wrapper
     // READ ADDRESS CHANNEL SIGNALS
     axi_araddr_o  = '0;
     axi_arlen_o   = axi_len_lp;
-    axi_arsize_o  = axi_size_lp;
-    axi_arburst_o = axi_burst_type_lp;
+    axi_arsize_o  = axi_size_p;
+    axi_arburst_o = axi_burst_type_p;
     axi_arvalid_o = '0;
     axi_arid_o    = '0;
     axi_arcache_o = 4'b0011;  //normal non-cacheable bufferable (recommended for Xilinx IP)
@@ -178,8 +176,8 @@ module bp_me_cce_mem_to_axi_wrapper
     // WRITE ADDRRESS CHANNEL SIGNALS
     axi_awaddr_o  = '0;
     axi_awlen_o   = axi_len_lp;
-    axi_awsize_o  = axi_size_lp;
-    axi_awburst_o = axi_burst_type_lp;
+    axi_awsize_o  = axi_size_p;
+    axi_awburst_o = axi_burst_type_p;
     axi_awvalid_o = '0;
     axi_awid_o    = '0;
     axi_awcache_o = 4'b0011; //normal non-cacheable bufferable (recommended for Xilinx IP)
@@ -198,9 +196,9 @@ module bp_me_cce_mem_to_axi_wrapper
 
     case (state_r)
       WAIT: begin
-        if (mem_cmd_v_i & axi_arready_i & mem_cmd_cast_i.header.msg_type == (e_cce_mem_rd || e_cce_mem_uc_rd || e_cce_mem_pre))
+        if (mem_cmd_v_i & axi_arready_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_rd, e_cce_mem_uc_rd, e_cce_mem_pre})
           state_n = READ_ADDR_SEND;
-        else if (mem_cmd_v_i & axi_awready_i & mem_cmd_cast_i.header.msg_type == (e_cce_mem_wr || e_cce_mem_uc_wr))
+        else if (mem_cmd_v_i & axi_awready_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr})
           state_n = WRITE_ADDR_SEND;
         else
           state_n = WAIT;
@@ -209,15 +207,15 @@ module bp_me_cce_mem_to_axi_wrapper
       // READ STATES
       READ_ADDR_SEND: begin
         // sending read addr signals
-        axi_araddr_o  = {(axi_addr_width_lp - paddr_width_p){1'b0}, mem_cmd_cast_i.header.addr}; //64-bit address with top bits all 0
+        axi_araddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_cast_i.header.addr}; //64-bit address with top bits all 0
         axi_arvalid_o = 1'b1;
         // sending read data signals
-        axi_rready_o  = axi_read_data_sipo_ready_lo
+        axi_rready_o  = axi_read_sipo_ready_lo;
         // if read data response is not ok
         if (axi_rresp_i != '0)
           state_n = READ_ERR;
         else if (axi_rlast_i)
-          state_n	= READ_DONE;
+          state_n = READ_DONE;
         else
           state_n = READ_ADDR_SEND;
       end
@@ -227,7 +225,7 @@ module bp_me_cce_mem_to_axi_wrapper
         mem_resp_v_o = axi_read_sipo_v_lo;
         // if mem_resp is ready to accept the data, then return to WAIT
         if (mem_resp_yumi_i)
-          state_n	= WAIT;
+          state_n = WAIT;
         else
           state_n = READ_DONE;
       end
@@ -239,11 +237,11 @@ module bp_me_cce_mem_to_axi_wrapper
       // WRITE STATES
       WRITE_ADDR_SEND: begin
         // sending write addr signals
-        axi_awaddr_o  = {(axi_addr_width_lp - paddr_width_p){1'b0}, mem_cmd_cast_i.header.addr};
+        axi_awaddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_cast_i.header.addr};
         axi_awvalid_o = 1'b1;
         // if the receiving slave device is ready, then proceed to send data
         if (axi_wready_i)
-          state_n	= WRITE_DATA_SEND;
+          state_n = WRITE_DATA_SEND;
         else
           state_n = WRITE_ADDR_SEND;
       end
@@ -253,15 +251,15 @@ module bp_me_cce_mem_to_axi_wrapper
         axi_wdata_o   = axi_read_sipo_data_lo;
         axi_wstrb_o   = {axi_strb_width_lp{1'b1}};
         axi_wvalid_o  = 1'b1;
-        axi_wlast_o   = (axi_awburst_cnt_r == axi_awlen_lp);
+        axi_wlast_o   = (axi_awburst_cnt_r == axi_len_lp);
         axi_awburst_cnt_n = (axi_wready_i) 
                           ? axi_awburst_cnt_r + 1
                           : axi_awburst_cnt_n;
         // if a valid write response returns not okay, then go to write error state
-        if (axi_bresp_i != '0) & axi_bvalid_i
+        if (axi_bresp_i != '0 & axi_bvalid_i)
           state_n = WRITE_ERR;
         // else if a valid write response returns OKAY, then go back to wait state
-        else if (axi_bresp_i == '0) & axi_bvalid_i
+        else if (axi_bresp_i == '0 & axi_bvalid_i)
           state_n = WAIT;
       end
 
@@ -272,7 +270,7 @@ module bp_me_cce_mem_to_axi_wrapper
   end
 
   // Sequential Logic
-  always_comb @(posedge clk_i) begin
+  always_ff @(posedge aclk_i) begin
     if (~aresetn_i) begin
       state_r           <= WAIT;
       axi_awburst_cnt_r <= '0;
@@ -285,7 +283,7 @@ module bp_me_cce_mem_to_axi_wrapper
 
   // SIPO for read data
   bsg_serial_in_parallel_out_full 
-    #(.width_p  (axi_data_width_lp)
+    #(.width_p  (axi_data_width_p)
      ,.els_p    (fifo_els_lp)
      )
     axi_read_data_sipo
@@ -303,7 +301,7 @@ module bp_me_cce_mem_to_axi_wrapper
 
   // PISO for write data
   bsg_parallel_in_serial_out
-    #(.width_p  (axi_data_width_lp)
+    #(.width_p  (axi_data_width_p)
      ,.els_p    (fifo_els_lp)
      ) 
     axi_write_data_piso
