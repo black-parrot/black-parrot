@@ -45,7 +45,7 @@ extern "C" bool dromajo_step(int      hartid,
                                      wdata,
                                      0,
                                      true,
-                                     true);
+                                     false);
   if(exit_code != 0)
     return true;
   else

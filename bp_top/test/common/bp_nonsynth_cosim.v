@@ -151,14 +151,12 @@ always_ff @(negedge reset_i)
                                                    | (commit_frd_w_v_r & frd_fifo_v_lo)
                                                    );
 
-  wire disable_cosim = is_debug_mode_r;
-
   logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
   bsg_counter_clear_up
    #(.max_val_p(max_instr_lp), .init_val_p(0))
    instr_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i | disable_cosim)
+     ,.reset_i(reset_i | freeze_i | is_debug_mode_r)
 
      ,.clear_i(1'b0)
      ,.up_i(commit_v_i)
@@ -181,7 +179,7 @@ always_ff @(negedge reset_i)
     if(en_i) begin
       if(commit_fifo_yumi_li & interrupt_v_r) begin
         dromajo_trap(mhartid_i, cause_r);
-      end else if (commit_fifo_yumi_li & commit_v_r & ~disable_cosim & commit_pc_r != '0) begin
+      end else if (commit_fifo_yumi_li & commit_v_r  & ~is_debug_mode_r & commit_pc_r != '0) begin
         if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, frd_fifo_yumi_li ? frd_raw_li : iwb_data_r)) begin
           $display("COSIM_FAIL");
           $finish();
