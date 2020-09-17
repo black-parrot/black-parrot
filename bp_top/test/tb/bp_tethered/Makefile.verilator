@@ -56,8 +56,8 @@ $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 $(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
 	cp $^ $@
 
-$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
-	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=4 --verilog-data-width=4 $@
+$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
+	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=4 --verilog-data-width=4 $< $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
