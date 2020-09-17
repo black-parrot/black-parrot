@@ -694,11 +694,14 @@ for (genvar i = 0; i < 2; i++)
          ,.cmd_link_o(mem_cmd_link_cast_o)
          ,.resp_link_i(mem_resp_link_cast_i)
          );
+<<<<<<< HEAD:bp_top/src/v/bp_tile.sv
 <<<<<<< HEAD
 =======
 
 >>>>>>> Using wormhole stream for cache dma
 >>>>>>> Using wormhole stream for cache dma:bp_top/src/v/bp_tile.v
+=======
+>>>>>>> Add bp_stream_pumps and attach the pumps to bp_me_cce_to_cache_new:bp_top/src/v/bp_tile.v
     end
 
   bp_cce_loopback

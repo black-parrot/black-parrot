@@ -31,7 +31,7 @@ module bp_lite_to_stream
    , output logic [out_data_width_p-1:0]            mem_data_o
    , output logic                                   mem_v_o
    , input                                          mem_ready_i
-   , output logic                                   mem_lock_o
+   , output logic                                   mem_last_o
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in);
@@ -89,22 +89,30 @@ module bp_lite_to_stream
      );
 
   // We wouldn't need this counter if we could peek into the PISO...
-  localparam data_ptr_width_lp = `BSG_WIDTH(stream_words_lp);
-  logic [data_ptr_width_lp-1:0] first_cnt, last_cnt, current_cnt;
+  logic [data_len_width_lp-1:0] first_cnt, last_cnt, last_cnt_r, current_cnt;
   bsg_counter_set_en
-   #(.max_val_p(stream_words_lp), .reset_val_p(0))
+   #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
    data_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.set_i(mem_v_i)
-     ,.en_i(mem_ready_o & mem_v_i)
+     ,.en_i(mem_ready_i & mem_v_o)
      ,.val_i(first_cnt)
      ,.count_o(current_cnt)
      );
-  assign first_cnt = header_lo.addr[stream_offset_width_lp+:data_ptr_width_lp];
-  assign last_cnt  = first_cnt - 1'b1;
-  wire cnt_done = (current_cnt == last_cnt);
+  assign first_cnt = mem_cast_i.header.addr[stream_offset_width_lp+:data_len_width_lp];
+  assign last_cnt = first_cnt + num_stream_cmds - 1'b1;
+  bsg_dff_en_bypass
+   #(.width_p(data_len_width_lp))
+   last_cnt_reg
+    (.clk_i(clk_i)
+    ,.data_i(last_cnt)
+    ,.en_i(mem_v_i)
+    ,.data_o(last_cnt_r)
+    );
+  
+  wire cnt_done = (current_cnt == last_cnt_r);
 
   bp_bedrock_out_mem_msg_header_s mem_header_cast_o;
   assign mem_header_o = mem_header_cast_o;
@@ -112,12 +120,12 @@ module bp_lite_to_stream
     begin
       // Autoincrement address
       mem_header_cast_o = header_lo;
-      mem_header_cast_o.addr = {header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_ptr_width_lp]
+      mem_header_cast_o.addr = {header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
                                 ,current_cnt
                                 ,header_lo.addr[0+:stream_offset_width_lp]
                                 };
     end
-  assign mem_lock_o = mem_v_o & ~cnt_done;
+  assign mem_last_o = mem_v_o & cnt_done;
   assign mem_yumi_li = cnt_done & mem_ready_i & mem_v_o;
 
   //synopsys translate_off
@@ -134,7 +142,7 @@ module bp_lite_to_stream
       //if (mem_ready_o & mem_v_i)
       //  $display("[%t] Msg received: %p", $time, mem_cast_i);
 
-      //if (mem_yumi_i)
+      //if (mem_ready_i & mem_v_o)
       //  $display("[%t] Stream sent: %p %x CNT: %x", $time, mem_header_cast_o, mem_data_o, data_cnt);
     end
   //synopsys translate_on

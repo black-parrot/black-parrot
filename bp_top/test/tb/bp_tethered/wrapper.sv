@@ -258,8 +258,7 @@ module wrapper
       assign io_cmd_o = io_cmd_lo;
       assign io_cmd_li = io_cmd_i;
       assign io_resp_o = io_resp_lo;
-      assign io_resp_li = io_resp_i;
+      assign io_resp_li = io_resp_i; 
     end
 
 endmodule
-

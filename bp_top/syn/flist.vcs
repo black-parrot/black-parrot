@@ -272,6 +272,8 @@ $BP_ME_DIR/src/v/wormhole/bp_lite_to_stream.sv
 $BP_ME_DIR/src/v/wormhole/bp_stream_to_lite.sv
 $BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
 $BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
+$BP_ME_DIR/src/v/wormhole/bp_stream_pump_in.sv
+$BP_ME_DIR/src/v/wormhole/bp_stream_pump_out.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
