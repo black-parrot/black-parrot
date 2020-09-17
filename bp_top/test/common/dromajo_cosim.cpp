@@ -21,7 +21,6 @@ extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory
     string memsize_str = "--memory_size=" + to_string(memory_size);
     string mmio_str = "--mmio_range=0x20000:0x80000000";
     char* load_str = "--load=prog";
-    char* bootrom_str = "--bootrom=bootrom.bin";
 
     if(checkpoint) {
       char* argv[] = {"dromajo", (char*)(&ncpus_str[0]), (char*)(&memsize_str[0]), (char*)(&mmio_str[0]), load_str, "prog.elf"};
