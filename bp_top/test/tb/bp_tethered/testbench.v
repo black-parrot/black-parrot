@@ -237,6 +237,7 @@ bind bp_be_top
                ? calculator.pipe_sys.csr.scause_li
                : calculator.pipe_sys.csr.mcause_li
                )
+     ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
      );
 
 always_ff @(posedge clk_i) begin
