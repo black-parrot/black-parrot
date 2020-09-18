@@ -91,13 +91,9 @@ module bp_be_director
   // Logic for handling coming out of reset
   enum logic [1:0] {e_reset, e_boot, e_run, e_fence} state_n, state_r;
 
-  // Control signals
-  logic npc_w_v, btaken_pending, attaboy_pending;
-
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-  assign npc_w_v = calc_status.ex1_instr_v
-                   | (trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret | trap_pkt.fencei);
+  wire npc_w_v = calc_status.ex1_v | trap_pkt.v | ptw_fill_pkt.itlb_fill_v;
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
    npc
@@ -108,22 +104,15 @@ module bp_be_director
      ,.data_i(npc_n)
      ,.data_o(npc_r)
      );
-
-  bsg_mux
-   #(.width_p(vaddr_width_p)
-     ,.els_p(2)
-     )
-   trap_mux
-    (.data_i({trap_pkt.npc, calc_status.ex1_npc})
-     ,.sel_i(trap_pkt.rollback | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret | trap_pkt.fencei)
-     ,.data_o(npc_n)
-     );
+  assign npc_n = ptw_fill_pkt.itlb_fill_v ? ptw_fill_pkt.vaddr : trap_pkt.v ? trap_pkt.npc : calc_status.ex1_npc;
 
   assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
   assign poison_isd_o = npc_mismatch_v | flush_o;
 
   // Last operation was branch. Was it successful? Let's find out
   // TODO: I think this is wrong, may send extra attaboys
+  //   Should make attaboys idempotent to fix
+  logic btaken_pending, attaboy_pending;
   bsg_dff_reset_en
    #(.width_p(2))
    attaboy_pending_reg
@@ -141,9 +130,9 @@ module bp_be_director
   // On a cache miss, this is actually the generated pc in ex1. We could use this to redirect during
   //   mispredict-under-cache-miss. However, there's a critical path vs extra speculation argument.
   //   Currently, we just don't send pc redirects under a cache miss.
+  wire fe_cmd_nonattaboy_v = fe_cmd_v_o & (fe_cmd.opcode != e_op_attaboy);
   assign expected_npc_o = npc_w_v ? npc_n : npc_r;
 
-  wire fe_cmd_nonattaboy_v = fe_cmd_v_o & (fe_cmd.opcode != e_op_attaboy);
   // Boot logic
   always_comb
     begin

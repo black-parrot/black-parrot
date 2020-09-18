@@ -52,7 +52,6 @@
     rv64_instr_s                       instr;                                                      \
                                                                                                    \
     logic                              v;                                                          \
-    logic                              instr_v;                                                    \
     logic                              pipe_ctl_v;                                                 \
     logic                              pipe_int_v;                                                 \
     logic                              pipe_mem_early_v;                                           \
@@ -119,7 +118,6 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                                    ex1_v;                                                \
-    logic                                    ex1_instr_v;                                          \
     logic [vaddr_width_p-1:0]                ex1_npc;                                              \
     logic                                    ex1_br_or_jmp;                                        \
     logic                                    ex1_btaken;                                           \
@@ -146,9 +144,9 @@
     logic [instr_width_p-1:0]    instr;                                                            \
   }  bp_be_commit_pkt_s;                                                                           \
                                                                                                    \
-  /* TODO: make opcode */                                                                          \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic                           v;                                                             \
     logic [vaddr_width_p-1:0]       npc;                                                           \
     logic [rv64_priv_width_gp-1:0]  priv_n;                                                        \
     logic                           translation_en_n;                                              \
@@ -226,7 +224,7 @@
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
    + rv64_instr_width_gp                                                                           \
-   + 16                                                                                            \
+   + 15                                                                                            \
    )
 
 `define bp_be_comp_stage_reg_width \
@@ -239,7 +237,7 @@
   (14 + rv64_reg_addr_width_gp)
 
 `define bp_be_calc_status_width(vaddr_width_mp) \
-  (2                                                                                               \
+  (1                                                                                               \
    + vaddr_width_p                                                                                 \
    + 5                                                                                             \
    + 6 * `bp_be_dep_status_width                                                                   \
@@ -252,7 +250,7 @@
    )
 
 `define bp_be_trap_pkt_width(vaddr_width_mp) \
-  (1 * vaddr_width_mp + rv64_priv_width_gp + 8)
+  (1 + 1 * vaddr_width_mp + rv64_priv_width_gp + 8)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (1                                                                                               \
