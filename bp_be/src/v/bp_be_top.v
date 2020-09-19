@@ -86,6 +86,7 @@ module bp_be_top
 
   // Top-level interface connections
   bp_be_dispatch_pkt_s dispatch_pkt;
+  bp_be_branch_pkt_s   br_pkt;
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
@@ -132,6 +133,7 @@ module bp_be_top
      ,.suppress_iss_o(suppress_iss_lo)
      ,.poison_isd_o(poison_isd_lo)
 
+     ,.br_pkt_i(br_pkt)
      ,.trap_pkt_i(trap_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
      );
@@ -203,6 +205,7 @@ module bp_be_top
 
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
+     ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)
      ,.trap_pkt_o(trap_pkt)
      ,.iwb_pkt_o(iwb_pkt)
