@@ -163,6 +163,9 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_stream_control.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_stream_in.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_stream_out.v
 # HardFloat files
 $HARDFLOAT_DIR/source/addRecFN.v
 $HARDFLOAT_DIR/source/compareRecFN.v
@@ -226,6 +229,7 @@ $BP_ME_DIR/src/v/lce/bp_lce_cmd.v
 # Cache
 $BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.v
 $BP_ME_DIR/src/v/cache/bp_me_cache_slice.v
+$BP_ME_DIR/src/v/cache/bp_me_cache_slice_burst.v
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.v
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v

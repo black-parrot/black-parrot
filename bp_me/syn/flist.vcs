@@ -150,6 +150,9 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_stream_control.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_stream_in.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_stream_out.v
 ## ME files
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v

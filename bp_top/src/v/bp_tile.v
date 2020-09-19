@@ -56,6 +56,11 @@ module bp_tile
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
 
+bp_mem_ready_and_link_s mem_cmd_link_cast_o, mem_resp_link_cast_i;
+
+assign mem_cmd_link_o = mem_cmd_link_cast_o;
+assign mem_resp_link_cast_i = mem_resp_link_i;
+
 bp_coh_ready_and_link_s lce_req_link_cast_i, lce_req_link_cast_o;
 bp_coh_ready_and_link_s lce_resp_link_cast_i, lce_resp_link_cast_o;
 bp_coh_ready_and_link_s lce_cmd_link_cast_i, lce_cmd_link_cast_o;
@@ -535,13 +540,21 @@ for (genvar i = 0; i < 2; i++)
      ,.yumi_i(cce_mem_resp_yumi_lo)
      );
 
-  bp_cce_mem_msg_s dma_mem_cmd_lo;
-  logic dma_mem_cmd_v_lo, dma_mem_cmd_ready_li;
-  bp_cce_mem_msg_s dma_mem_resp_li;
-  logic dma_mem_resp_v_li, dma_mem_resp_ready_lo, dma_mem_resp_yumi_lo;
   if (l2_en_p)
     begin : l2s
-      bp_me_cache_slice
+      `declare_bp_mem_wormhole_packet_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, bp_cce_mem_msg_header_s, cce_block_width_p);
+      bp_mem_wormhole_header_s mem_cmd_header_lo;
+      bp_cce_mem_msg_header_s cache_cmd_header_lo;
+      logic cache_cmd_header_v_lo, cache_cmd_header_ready_li;
+      logic [dword_width_p-1:0] cache_cmd_data_lo;
+      logic cache_cmd_data_v_lo, cache_cmd_data_ready_li;
+
+      bp_mem_wormhole_header_s mem_resp_header_li;
+      bp_cce_mem_msg_header_s cache_resp_header_li;
+      logic cache_resp_header_v_li, cache_resp_header_ready_lo;
+      logic [dword_width_p-1:0] cache_resp_data_li;
+      logic cache_resp_data_v_li, cache_resp_data_ready_lo;
+      bp_me_cache_slice_burst
        #(.bp_params_p(bp_params_p))
        l2s
         (.clk_i(clk_i)
@@ -555,18 +568,99 @@ for (genvar i = 0; i < 2; i++)
          ,.mem_resp_v_o(cache_mem_resp_v_lo)
          ,.mem_resp_yumi_i(cache_mem_resp_yumi_li)
 
-         ,.mem_cmd_o(dma_mem_cmd_lo)
-         ,.mem_cmd_v_o(dma_mem_cmd_v_lo)
-         ,.mem_cmd_yumi_i(dma_mem_cmd_ready_li & dma_mem_cmd_v_lo)
+         ,.mem_cmd_header_o(cache_cmd_header_lo)
+         ,.mem_cmd_header_v_o(cache_cmd_header_v_lo)
+         ,.mem_cmd_header_yumi_i(cache_cmd_header_ready_li & cache_cmd_header_v_lo)
 
-         ,.mem_resp_i(dma_mem_resp_li)
-         ,.mem_resp_v_i(dma_mem_resp_v_li)
-         ,.mem_resp_ready_o(dma_mem_resp_ready_lo)
+         ,.mem_cmd_data_o(cache_cmd_data_lo)
+         ,.mem_cmd_data_v_o(cache_cmd_data_v_lo)
+         ,.mem_cmd_data_yumi_i(cache_cmd_data_ready_li & cache_cmd_data_v_lo)
+
+         ,.mem_resp_header_i(cache_resp_header_li)
+         ,.mem_resp_header_v_i(cache_resp_header_v_li)
+         ,.mem_resp_header_ready_o(cache_resp_header_ready_lo)
+
+         ,.mem_resp_data_i(cache_resp_data_li)
+         ,.mem_resp_data_v_i(cache_resp_data_v_li)
+         ,.mem_resp_data_ready_o(cache_resp_data_ready_lo)
          );
-         assign dma_mem_resp_yumi_lo = dma_mem_resp_ready_lo & dma_mem_resp_v_li;
+
+      localparam dram_y_cord_lp = ic_y_dim_p + cc_y_dim_p + mc_y_dim_p;
+      wire [mem_noc_cord_width_p-1:0] dst_cord_li = dram_y_cord_lp;
+      wire [mem_noc_cid_width_p-1:0] dst_cid_li = '0;
+      bp_me_wormhole_packet_encode_mem_cmd
+       #(.bp_params_p(bp_params_p)
+         ,.flit_width_p(mem_noc_flit_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.cid_width_p(mem_noc_cid_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         )
+       mem_cmd_encode
+        (.mem_cmd_header_i(cache_cmd_header_lo)
+         ,.src_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
+         ,.src_cid_i(my_cord_i[0+:mem_noc_cid_width_p]-sac_x_dim_p[0+:mem_noc_cid_width_p])
+         ,.dst_cord_i(dst_cord_li)
+         ,.dst_cid_i(dst_cid_li)
+
+         ,.wh_header_o(mem_cmd_header_lo)
+         );
+
+      bsg_wormhole_stream_in
+       #(.flit_width_p(mem_noc_flit_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         ,.hdr_width_p($bits(bp_mem_wormhole_header_s))
+         ,.pr_data_width_p(dword_width_p)
+         )
+       stream_in
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.hdr_i(mem_cmd_header_lo)
+         ,.hdr_v_i(cache_cmd_header_v_lo)
+         ,.hdr_ready_o(cache_cmd_header_ready_li)
+
+         ,.data_i(cache_cmd_data_lo)
+         ,.data_v_i(cache_cmd_data_v_lo)
+         ,.data_ready_o(cache_cmd_data_ready_li)
+
+         ,.link_data_o(mem_cmd_link_cast_o.data)
+         ,.link_v_o(mem_cmd_link_cast_o.v)
+         ,.link_ready_i(mem_resp_link_cast_i.ready_and_rev)
+         );
+
+      bsg_wormhole_stream_out
+       #(.flit_width_p(mem_noc_flit_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         ,.hdr_width_p($bits(bp_mem_wormhole_header_s))
+         ,.pr_data_width_p(dword_width_p)
+         )
+       stream_out
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.link_data_i(mem_resp_link_cast_i.data)
+         ,.link_v_i(mem_resp_link_cast_i.v)
+         ,.link_ready_o(mem_cmd_link_cast_o.ready_and_rev)
+
+         ,.hdr_o(mem_resp_header_li)
+         ,.hdr_v_o(cache_resp_header_v_li)
+         ,.hdr_yumi_i(cache_resp_header_ready_lo & cache_resp_header_v_li)
+
+         ,.data_o(cache_resp_data_li)
+         ,.data_v_o(cache_resp_data_v_li)
+         ,.data_yumi_i(cache_resp_data_ready_lo & cache_resp_data_v_li)
+         );
+      assign cache_resp_header_li = mem_resp_header_li.msg_hdr;
     end
   else
     begin : no_l2s
+      bp_cce_mem_msg_s dma_mem_cmd_lo;
+      logic dma_mem_cmd_v_lo, dma_mem_cmd_ready_li;
+      bp_cce_mem_msg_s dma_mem_resp_li;
+      logic dma_mem_resp_v_li, dma_mem_resp_ready_lo, dma_mem_resp_yumi_lo;
+
       assign dma_mem_cmd_lo = cache_mem_cmd_li;
       assign dma_mem_cmd_v_lo = cache_mem_cmd_v_li;
       assign cache_mem_cmd_ready_lo = dma_mem_cmd_ready_li;
@@ -574,6 +668,37 @@ for (genvar i = 0; i < 2; i++)
       assign cache_mem_resp_lo = dma_mem_resp_li;
       assign cache_mem_resp_v_lo = dma_mem_resp_v_li;
       assign dma_mem_resp_yumi_lo = cache_mem_resp_yumi_li;
+
+      localparam dram_y_cord_lp = ic_y_dim_p + cc_y_dim_p + mc_y_dim_p;
+      wire [mem_noc_cord_width_p-1:0] dst_cord_li = dram_y_cord_lp;
+      bp_me_cce_to_mem_link_master
+       #(.bp_params_p(bp_params_p)
+         ,.flit_width_p(mem_noc_flit_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.cid_width_p(mem_noc_cid_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         )
+       dma_link
+        (.clk_i(clk_i)
+         ,.reset_i(reset_r)
+
+         ,.mem_cmd_i(dma_mem_cmd_lo)
+         ,.mem_cmd_v_i(dma_mem_cmd_v_lo)
+         ,.mem_cmd_ready_o(dma_mem_cmd_ready_li)
+
+         ,.mem_resp_o(dma_mem_resp_li)
+         ,.mem_resp_v_o(dma_mem_resp_v_li)
+         ,.mem_resp_yumi_i(dma_mem_resp_yumi_lo)
+
+         ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
+         // TODO: CID == noc cord right now (1 DMC per column)
+         ,.my_cid_i(my_cord_i[0+:mem_noc_cid_width_p]-sac_x_dim_p[0+:mem_noc_cid_width_p])
+         ,.dst_cord_i(dst_cord_li)
+         ,.dst_cid_i('0)
+
+         ,.cmd_link_o(mem_cmd_link_cast_o)
+         ,.resp_link_i(mem_resp_link_cast_i)
+         );
     end
 
   bp_cce_loopback
@@ -589,37 +714,6 @@ for (genvar i = 0; i < 2; i++)
      ,.mem_resp_o(loopback_mem_resp_lo)
      ,.mem_resp_v_o(loopback_mem_resp_v_lo)
      ,.mem_resp_yumi_i(loopback_mem_resp_yumi_li)
-     );
-
-  localparam dram_y_cord_lp = ic_y_dim_p + cc_y_dim_p + mc_y_dim_p;
-  wire [mem_noc_cord_width_p-1:0] dst_cord_li = dram_y_cord_lp;
-  bp_me_cce_to_mem_link_master
-   #(.bp_params_p(bp_params_p)
-     ,.flit_width_p(mem_noc_flit_width_p)
-     ,.cord_width_p(mem_noc_cord_width_p)
-     ,.cid_width_p(mem_noc_cid_width_p)
-     ,.len_width_p(mem_noc_len_width_p)
-     )
-   dma_link
-    (.clk_i(clk_i)
-     ,.reset_i(reset_r)
-
-     ,.mem_cmd_i(dma_mem_cmd_lo)
-     ,.mem_cmd_v_i(dma_mem_cmd_v_lo)
-     ,.mem_cmd_ready_o(dma_mem_cmd_ready_li)
-
-     ,.mem_resp_o(dma_mem_resp_li)
-     ,.mem_resp_v_o(dma_mem_resp_v_li)
-     ,.mem_resp_yumi_i(dma_mem_resp_yumi_lo)
-
-     ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
-     // TODO: CID == noc cord right now (1 DMC per column)
-     ,.my_cid_i(my_cord_i[0+:mem_noc_cid_width_p]-sac_x_dim_p[0+:mem_noc_cid_width_p])
-     ,.dst_cord_i(dst_cord_li)
-     ,.dst_cid_i('0)
-
-     ,.cmd_link_o(mem_cmd_link_o)
-     ,.resp_link_i(mem_resp_link_i)
      );
 
 endmodule
