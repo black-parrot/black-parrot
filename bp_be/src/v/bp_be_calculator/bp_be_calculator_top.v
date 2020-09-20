@@ -27,6 +27,7 @@ module bp_be_calculator_top
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p)
    , localparam exc_stage_width_lp      = `bp_be_exc_stage_width
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
+   , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp       = `bp_be_trap_pkt_width(vaddr_width_p)
@@ -53,6 +54,7 @@ module bp_be_calculator_top
   , output [ptw_fill_pkt_width_lp-1:0]  ptw_fill_pkt_o
   , output [commit_pkt_width_lp-1:0]    commit_pkt_o
   , output [trap_pkt_width_lp-1:0]      trap_pkt_o
+  , output [branch_pkt_width_lp-1:0]    br_pkt_o
   , output [wb_pkt_width_lp-1:0]        iwb_pkt_o
   , output [wb_pkt_width_lp-1:0]        fwb_pkt_o
 
@@ -241,10 +243,10 @@ module bp_be_calculator_top
      ,.reset_i(reset_i)
 
      ,.reservation_i(reservation_r)
+     ,.flush_i(flush_i)
 
      ,.data_o(pipe_ctl_data_lo)
-     ,.br_tgt_o(br_tgt_int1)
-     ,.btaken_o(btaken_int1)
+     ,.br_pkt_o(br_pkt_o)
      );
 
   // Computation pipelines
@@ -502,12 +504,6 @@ module bp_be_calculator_top
       calc_stage_isd.irf_w_v        = reservation_n.decode.irf_w_v;
       calc_stage_isd.frf_w_v        = reservation_n.decode.frf_w_v;
       calc_stage_isd.fflags_w_v     = reservation_n.decode.fflags_w_v;
-
-      // Calculator status EX1 information
-      calc_status.ex1_v                    = ~exc_stage_r[0].poison_v;
-      calc_status.ex1_npc                  = br_tgt_int1;
-      calc_status.ex1_br_or_jmp            = reservation_r.decode.pipe_ctl_v;
-      calc_status.ex1_btaken               = btaken_int1;
 
       calc_status.long_busy                = ~pipe_long_ready_lo;
       calc_status.mem_busy                 = ~pipe_mem_ready_lo;

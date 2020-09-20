@@ -30,6 +30,7 @@ module bp_be_director
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p)
+   , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp    = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
@@ -55,6 +56,7 @@ module bp_be_director
 
    , output                           suppress_iss_o
 
+   , input [branch_pkt_width_lp-1:0]  br_pkt_i
    , input [trap_pkt_width_lp-1:0]    trap_pkt_i
 
    , input [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_i
@@ -72,6 +74,7 @@ module bp_be_director
   bp_fe_cmd_s                      fe_cmd;
   logic                            fe_cmd_v;
   bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
+  bp_be_branch_pkt_s               br_pkt;
   bp_be_trap_pkt_s                 trap_pkt;
   bp_be_ptw_fill_pkt_s             ptw_fill_pkt;
 
@@ -81,6 +84,7 @@ module bp_be_director
   assign fe_cmd_o    = fe_cmd;
   assign fe_cmd_v_o  = fe_cmd_v;
   assign trap_pkt    = trap_pkt_i;
+  assign br_pkt       = br_pkt_i;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
 
   // Declare intermediate signals
@@ -93,7 +97,7 @@ module bp_be_director
 
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-  wire npc_w_v = calc_status.ex1_v | trap_pkt.v | ptw_fill_pkt.itlb_fill_v;
+  wire npc_w_v = br_pkt.v | trap_pkt.v | ptw_fill_pkt.itlb_fill_v;
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
    npc
@@ -104,7 +108,7 @@ module bp_be_director
      ,.data_i(npc_n)
      ,.data_o(npc_r)
      );
-  assign npc_n = ptw_fill_pkt.itlb_fill_v ? ptw_fill_pkt.vaddr : trap_pkt.v ? trap_pkt.npc : calc_status.ex1_npc;
+  assign npc_n = ptw_fill_pkt.itlb_fill_v ? ptw_fill_pkt.vaddr : trap_pkt.v ? trap_pkt.npc : br_pkt.npc;
 
   assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
   assign poison_isd_o = npc_mismatch_v | flush_o;
@@ -113,18 +117,18 @@ module bp_be_director
   // TODO: I think this is wrong, may send extra attaboys
   //   Should make attaboys idempotent to fix
   logic btaken_pending, attaboy_pending;
-  bsg_dff_reset_en
-   #(.width_p(2))
+  bsg_dff_reset_set_clear
+   #(.width_p(2), .clear_over_set_p(1))
    attaboy_pending_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(calc_status.ex1_v || isd_status.isd_v)
 
-     ,.data_i({(calc_status.ex1_v & calc_status.ex1_btaken) & ~isd_status.isd_v, (calc_status.ex1_v & calc_status.ex1_br_or_jmp) & ~isd_status.isd_v})
+     ,.set_i({br_pkt.btaken, br_pkt.branch})
+     ,.clear_i({isd_status.isd_v, isd_status.isd_v})
      ,.data_o({btaken_pending, attaboy_pending})
      );
-  wire last_instr_was_branch = attaboy_pending | (calc_status.ex1_v & calc_status.ex1_br_or_jmp);
-  wire last_instr_was_btaken = btaken_pending | (calc_status.ex1_v & calc_status.ex1_btaken);
+  wire last_instr_was_branch = attaboy_pending | br_pkt.branch;
+  wire last_instr_was_btaken = btaken_pending  | br_pkt.btaken;
 
   // Generate control signals
   // On a cache miss, this is actually the generated pc in ex1. We could use this to redirect during

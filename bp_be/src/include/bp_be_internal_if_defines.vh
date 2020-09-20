@@ -79,6 +79,8 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                              instr_v;                                                    \
+    logic                              mem_v;                                                      \
+    logic                              csr_v;                                                      \
     logic                              fflags_w_v;                                                 \
     logic                              ctl_iwb_v;                                                  \
     logic                              aux_iwb_v;                                                  \
@@ -90,8 +92,6 @@
     logic                              fmem_fwb_v;                                                 \
     logic                              mul_iwb_v;                                                  \
     logic                              fma_fwb_v;                                                  \
-    logic                              csr_v;                                                      \
-    logic                              mem_v;                                                      \
                                                                                                    \
     logic [rv64_reg_addr_width_gp-1:0] rd_addr;                                                    \
    } bp_be_dep_status_s;                                                                           \
@@ -117,22 +117,20 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic                                    ex1_v;                                                \
-    logic [vaddr_width_p-1:0]                ex1_npc;                                              \
-    logic                                    ex1_br_or_jmp;                                        \
-    logic                                    ex1_btaken;                                           \
-                                                                                                   \
     logic                                    long_busy;                                            \
     logic                                    mem_busy;                                             \
     logic                                    commit_v;                                             \
                                                                                                    \
-    /*                                                                                             \
-     * 5 is the number of stages in the pipeline.                                                  \
-     * In fact, we don't need all of this dependency information, since some of the stages are     \
-     *    post-commit. However, for now we're passing all of it.                                   \
-     */                                                                                            \
-    bp_be_dep_status_s[5:0]                 dep_status;                                            \
+    bp_be_dep_status_s [5:0]                 dep_status;                                           \
   }  bp_be_calc_status_s;                                                                          \
+                                                                                                   \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic                     v;                                                                   \
+    logic                     branch;                                                              \
+    logic                     btaken;                                                              \
+    logic [vaddr_width_p-1:0] npc;                                                                 \
+  }  bp_be_branch_pkt_s;                                                                           \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
@@ -237,11 +235,12 @@
   (14 + rv64_reg_addr_width_gp)
 
 `define bp_be_calc_status_width(vaddr_width_mp) \
-  (1                                                                                               \
-   + vaddr_width_p                                                                                 \
-   + 5                                                                                             \
+  (3                                                                                               \
    + 6 * `bp_be_dep_status_width                                                                   \
    )
+
+`define bp_be_branch_pkt_width(vaddr_width_mp) \
+  (3 + vaddr_width_mp)
 
 `define bp_be_commit_pkt_width(vaddr_width_mp) \
   (3                                                                                               \
