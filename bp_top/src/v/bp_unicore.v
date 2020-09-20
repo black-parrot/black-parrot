@@ -38,13 +38,23 @@ module bp_unicore
    , input                                             io_resp_ready_i
 
    // Memory Requests
-   , output [cce_mem_msg_width_lp-1:0]                 mem_cmd_o
-   , output                                            mem_cmd_v_o
-   , input                                             mem_cmd_ready_i
+   , output logic [cce_mem_msg_header_width_lp-1:0]     mem_cmd_header_o
+   , output logic                                       mem_cmd_header_v_o
+   , input                                              mem_cmd_header_ready_i
 
-   , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
-   , input                                             mem_resp_v_i
-   , output                                            mem_resp_yumi_o
+   // Only supports dword width cache
+   , output logic [dword_width_p-1:0]                   mem_cmd_data_o
+   , output logic                                       mem_cmd_data_v_o
+   , input                                              mem_cmd_data_ready_i
+
+   , input [cce_mem_msg_header_width_lp-1:0]            mem_resp_header_i
+   , input                                              mem_resp_header_v_i
+   , output                                             mem_resp_header_yumi_o
+
+   // Only supports dword width cache
+   , input [dword_width_p-1:0]                          mem_resp_data_i
+   , input                                              mem_resp_data_v_i
+   , output logic                                       mem_resp_data_yumi_o
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -53,9 +63,6 @@ module bp_unicore
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem)
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
-
-  `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
-  `bp_cast_i(bp_cce_mem_msg_s, mem_resp);
 
   bp_dcache_req_s dcache_req_lo;
   bp_icache_req_s icache_req_lo;
@@ -470,7 +477,7 @@ module bp_unicore
 
   if (l2_en_p)
     begin : l2
-      logic mem_resp_ready_lo;
+      logic mem_resp_header_ready_lo, mem_resp_data_ready_lo;
       bp_me_cache_slice
        #(.bp_params_p(bp_params_p))
        l2s
@@ -485,25 +492,34 @@ module bp_unicore
          ,.mem_resp_v_o(cache_resp_v_lo)
          ,.mem_resp_yumi_i(cache_resp_yumi_li)
 
-         ,.mem_cmd_o(mem_cmd_cast_o)
-         ,.mem_cmd_v_o(mem_cmd_v_o)
-         ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
+         ,.mem_cmd_header_o(mem_cmd_header_o)
+         ,.mem_cmd_header_v_o(mem_cmd_header_v_o)
+         ,.mem_cmd_header_yumi_i(mem_cmd_header_ready_i & mem_cmd_header_v_o)
 
-         ,.mem_resp_i(mem_resp_cast_i)
-         ,.mem_resp_v_i(mem_resp_v_i)
-         ,.mem_resp_ready_o(mem_resp_ready_lo)
+         ,.mem_cmd_data_o(mem_cmd_data_o)
+         ,.mem_cmd_data_v_o(mem_cmd_data_v_o)
+         ,.mem_cmd_data_yumi_i(mem_cmd_data_ready_i & mem_cmd_data_v_o)
+
+         ,.mem_resp_header_i(mem_resp_header_i)
+         ,.mem_resp_header_v_i(mem_resp_header_v_i)
+         ,.mem_resp_header_ready_o(mem_resp_header_ready_lo)
+
+         ,.mem_resp_data_i(mem_resp_data_i)
+         ,.mem_resp_data_v_i(mem_resp_data_v_i)
+         ,.mem_resp_data_ready_o(mem_resp_data_ready_lo)
          );
-      assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
+      assign mem_resp_header_yumi_o = mem_resp_header_ready_lo & mem_resp_header_v_i;
+      assign mem_resp_data_yumi_o = mem_resp_data_ready_lo & mem_resp_data_v_i;
     end
   else
     begin : no_l2
-      assign mem_cmd_cast_o = cce_mem_msg_width_lp'(cache_cmd_li);
-      assign mem_cmd_v_o = cache_cmd_v_li;
-      assign cache_cmd_ready_lo = mem_cmd_ready_i;
+      //assign mem_cmd_cast_o = cce_mem_msg_width_lp'(cache_cmd_li);
+      //assign mem_cmd_v_o = cache_cmd_v_li;
+      //assign cache_cmd_ready_lo = mem_cmd_ready_i;
 
-      assign cache_resp_lo = mem_resp_cast_i[0+:uce_mem_msg_width_lp];
-      assign cache_resp_v_lo = mem_resp_v_i;
-      assign mem_resp_yumi_o = cache_resp_yumi_li;
+      //assign cache_resp_lo = mem_resp_cast_i[0+:uce_mem_msg_width_lp];
+      //assign cache_resp_v_lo = mem_resp_v_i;
+      //assign mem_resp_yumi_o = cache_resp_yumi_li;
     end
 
 endmodule
