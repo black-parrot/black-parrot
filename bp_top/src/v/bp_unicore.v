@@ -513,13 +513,52 @@ module bp_unicore
     end
   else
     begin : no_l2
-      //assign mem_cmd_cast_o = cce_mem_msg_width_lp'(cache_cmd_li);
-      //assign mem_cmd_v_o = cache_cmd_v_li;
-      //assign cache_cmd_ready_lo = mem_cmd_ready_i;
+      bp_lite_to_burst
+       #(.bp_params_p(bp_params_p)
+         ,.in_data_width_p(cce_block_width_p)
+         ,.out_data_width_p(dword_width_p)
+         )
+       lite2burst
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
 
-      //assign cache_resp_lo = mem_resp_cast_i[0+:uce_mem_msg_width_lp];
-      //assign cache_resp_v_lo = mem_resp_v_i;
-      //assign mem_resp_yumi_o = cache_resp_yumi_li;
+         ,.mem_i(cache_cmd_li)
+         ,.mem_v_i(cache_cmd_v_li)
+         ,.mem_ready_o(cache_cmd_ready_lo)
+
+         ,.mem_header_o(mem_cmd_header_o)
+         ,.mem_header_v_o(mem_cmd_header_v_o)
+         ,.mem_header_yumi_i(mem_cmd_header_ready_i & mem_cmd_header_v_o)
+
+         ,.mem_data_o(mem_cmd_data_o)
+         ,.mem_data_v_o(mem_cmd_data_v_o)
+         ,.mem_data_yumi_i(mem_cmd_data_ready_i & mem_cmd_data_v_o)
+         );
+
+      logic mem_resp_header_ready_lo, mem_resp_data_ready_lo;
+      bp_burst_to_lite
+       #(.bp_params_p(bp_params_p)
+         ,.in_data_width_p(dword_width_p)
+         ,.out_data_width_p(cce_block_width_p)
+         )
+       burst2lite
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.mem_header_i(mem_resp_header_i)
+         ,.mem_header_v_i(mem_resp_header_v_i)
+         ,.mem_header_ready_o(mem_resp_header_ready_lo)
+
+         ,.mem_data_i(mem_resp_data_i)
+         ,.mem_data_v_i(mem_resp_data_v_i)
+         ,.mem_data_ready_o(mem_resp_data_ready_lo)
+
+         ,.mem_o(cache_resp_lo)
+         ,.mem_v_o(cache_resp_v_lo)
+         ,.mem_yumi_i(cache_resp_yumi_li)
+         );
+       assign mem_resp_header_yumi_o = mem_resp_header_ready_lo & mem_resp_header_v_i;
+       assign mem_resp_data_yumi_o = mem_resp_data_ready_lo & mem_resp_data_v_i;
     end
 
 endmodule
