@@ -90,7 +90,7 @@ module bp_burst_to_lite
   assign mem_cast_o = '{header: header_lo, data: data_lo};
   assign mem_o = mem_cast_o;
   wire is_rd_out = header_lo.msg_type inside {e_mem_msg_uc_rd, e_mem_msg_rd};
-  assign mem_v_o = header_v_lo & (data_v_lo | is_rd_out);
+  assign mem_v_o = header_v_lo & (data_v_lo | (master_p == is_rd_out));
 
   //synopsys translate_off
   initial
