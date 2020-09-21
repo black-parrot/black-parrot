@@ -62,14 +62,13 @@ module bp_be_scheduler
 
   // Cast input and output ports
   bp_be_isd_status_s isd_status;
-  bp_be_issue_pkt_s  issue_pkt;
   rv64_instr_s       instr;
   bp_be_commit_pkt_s commit_pkt;
   bp_be_trap_pkt_s   trap_pkt;
   bp_be_wb_pkt_s     iwb_pkt, fwb_pkt;
 
   bp_fe_queue_s fe_queue_lo;
-  logic fe_queue_v_lo, fe_queue_ready_li;
+  logic fe_queue_v_lo;
 
   assign isd_status_o    = isd_status;
   assign instr           = fe_queue_lo.msg.fetch.instr;
@@ -78,125 +77,10 @@ module bp_be_scheduler
   assign iwb_pkt         = iwb_pkt_i;
   assign fwb_pkt         = fwb_pkt_i;
 
-  always_comb
-    begin
-      if (fe_queue_lo.msg_type == e_fe_fetch)
-        begin
-          // Populate the issue packet with a valid pc/instruction pair.
-          issue_pkt = '0;
-
-          issue_pkt.fe_exception_not_instr = 1'b0;
-
-          issue_pkt.pc                     = fe_queue_lo.msg.fetch.pc;
-          issue_pkt.branch_metadata_fwd    = fe_queue_lo.msg.fetch.branch_metadata_fwd;
-          issue_pkt.instr                  = fe_queue_lo.msg.fetch.instr;
-
-          // Pre-decode
-          casez (instr.t.rtype.opcode)
-            `RV64_LOAD_OP, `RV64_STORE_OP, `RV64_AMO_OP: issue_pkt.mem_v = 1'b1;
-          endcase
-
-          casez (instr.t.rtype.opcode)
-            `RV64_SYSTEM_OP: issue_pkt.csr_v = 1'b1;
-          endcase
-
-          casez (instr)
-            `RV64_FENCE     : issue_pkt.fence_v  = 1'b1;
-            `RV64_FENCE_I   : issue_pkt.fence_v  = 1'b1;
-            `RV64_SFENCE_VMA: issue_pkt.fence_v  = 1'b1;
-          endcase
-
-          casez (instr)
-            `RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
-            ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
-            ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D:
-              issue_pkt.long_v = 1'b1;
-          endcase
-
-          // Decide whether to read from integer regfile (saves power)
-          casez (instr.t.rtype.opcode)
-            `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
-              begin
-                issue_pkt.irs1_v = '1;
-                issue_pkt.irs2_v = '0;
-              end
-            `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP:
-              begin
-                issue_pkt.irs1_v = '1;
-                issue_pkt.irs2_v = '1;
-              end
-            default: begin end
-          endcase
-
-        casez (instr.t.rtype.opcode)
-          `RV64_FLOAD_OP:
-            begin
-              issue_pkt.irs1_v = 1'b1;
-            end
-          `RV64_FSTORE_OP:
-            begin
-              issue_pkt.irs1_v = 1'b1;
-              issue_pkt.frs2_v = 1'b1;
-            end
-          `RV64_FP_OP:
-            casez (instr)
-              `RV64_FCVT_WS, `RV64_FCVT_WUS, `RV64_FCVT_LS, `RV64_FCVT_LUS
-              ,`RV64_FCVT_WD, `RV64_FCVT_WUD, `RV64_FCVT_LD, `RV64_FCVT_LUD:
-                begin
-                  issue_pkt.frs1_v = 1'b1;
-                end
-              `RV64_FCVT_SW, `RV64_FCVT_SWU, `RV64_FCVT_SL, `RV64_FCVT_SLU
-              ,`RV64_FCVT_DW, `RV64_FCVT_DWU, `RV64_FCVT_DL, `RV64_FCVT_DLU:
-                begin
-                  issue_pkt.irs1_v = 1'b1;
-                end
-              `RV64_FCVT_SD, `RV64_FCVT_DS:
-                begin
-                  issue_pkt.frs1_v = 1'b1;
-                end
-              `RV64_FMV_WX, `RV64_FMV_DX:
-                begin
-                  issue_pkt.irs1_v = 1'b1;
-                end
-              `RV64_FMV_XW, `RV64_FMV_XD:
-                begin
-                  issue_pkt.frs1_v = 1'b1;
-                end
-              `RV64_FCLASS_S, `RV64_FCLASS_D:
-                begin
-                  issue_pkt.frs1_v = 1'b1;
-                end
-              default:
-                begin
-                  issue_pkt.frs1_v = 1'b1;
-                  issue_pkt.frs2_v = 1'b1;
-                end
-            endcase
-          `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FNMADD_OP:
-            begin
-              issue_pkt.frs1_v = 1'b1;
-              issue_pkt.frs2_v = 1'b1;
-              issue_pkt.frs3_v = 1'b1;
-            end
-          default: begin end
-        endcase
-        end
-      else
-        // FE exceptions only have an exception address, code and flag.
-        begin
-          issue_pkt = '0;
-
-          issue_pkt.fe_exception_not_instr = 1'b1;
-          issue_pkt.fe_exception_code      = fe_queue_lo.msg.exception.exception_code;
-          issue_pkt.pc                     = fe_queue_lo.msg.exception.vaddr;
-        end
-    end
-
   wire fe_queue_clr_li  = suppress_iss_i;
   wire fe_queue_deq_li  = commit_pkt.queue_v & ~trap_pkt.rollback;
   wire fe_queue_roll_li = trap_pkt.rollback;
-  logic [reg_addr_width_p-1:0] rs1_addr_lo, rs2_addr_lo, rs3_addr_lo;
-  logic rs1_v_lo, rs2_v_lo, rs3_v_lo;
+  bp_be_issue_pkt_s preissue_pkt, issue_pkt;
   bsg_fifo_1r1w_rolly
    #(.bp_params_p(bp_params_p))
    fe_queue_fifo
@@ -215,12 +99,8 @@ module bp_be_scheduler
      ,.fe_queue_v_o(fe_queue_v_lo)
      ,.fe_queue_yumi_i(fe_queue_yumi_li)
 
-     ,.rs1_addr_o(rs1_addr_lo)
-     ,.rs1_v_o(rs1_v_lo)
-     ,.rs2_addr_o(rs2_addr_lo)
-     ,.rs2_v_o(rs2_v_lo)
-     ,.rs3_addr_o(rs3_addr_lo)
-     ,.rs3_v_o(rs3_v_lo)
+     ,.preissue_pkt_o(preissue_pkt)
+     ,.issue_pkt_o(issue_pkt)
      );
 
   // Interface handshakes
@@ -238,8 +118,8 @@ module bp_be_scheduler
      ,.rd_addr_i(iwb_pkt.rd_addr)
      ,.rd_data_i(iwb_pkt.rd_data[0+:dword_width_p])
 
-     ,.rs_r_v_i({rs2_v_lo, rs1_v_lo})
-     ,.rs_addr_i({rs2_addr_lo, rs1_addr_lo})
+     ,.rs_r_v_i({preissue_pkt.irs2_v, preissue_pkt.irs1_v})
+     ,.rs_addr_i({preissue_pkt.rs2_addr, preissue_pkt.rs1_addr})
      ,.rs_data_o({irf_rs2, irf_rs1})
      );
 
@@ -254,20 +134,21 @@ module bp_be_scheduler
      ,.rd_addr_i(fwb_pkt.rd_addr)
      ,.rd_data_i(fwb_pkt.rd_data)
 
-     ,.rs_r_v_i({rs3_v_lo, rs2_v_lo, rs1_v_lo})
-     ,.rs_addr_i({rs3_addr_lo, rs2_addr_lo, rs1_addr_lo})
+     ,.rs_r_v_i({preissue_pkt.frs3_v, preissue_pkt.frs2_v, preissue_pkt.frs1_v})
+     ,.rs_addr_i({preissue_pkt.rs3_addr, preissue_pkt.rs2_addr, preissue_pkt.rs1_addr})
      ,.rs_data_o({frf_rs3, frf_rs2, frf_rs1})
      );
 
   // Decode the dispatched instruction
   bp_be_decode_s            decoded;
   logic [dword_width_p-1:0] decoded_imm_lo;
+  wire fe_exc_not_instr_li = (fe_queue_lo.msg_type == e_fe_exception);
   bp_be_instr_decoder
    #(.bp_params_p(bp_params_p))
    instr_decoder
-     (.fe_exc_not_instr_i(issue_pkt.fe_exception_not_instr)
-     ,.fe_exc_i(issue_pkt.fe_exception_code)
-     ,.instr_i(issue_pkt.instr)
+     (.fe_exc_not_instr_i(fe_exc_not_instr_li)
+     ,.fe_exc_i(fe_queue_lo.msg.exception.exception_code)
+     ,.instr_i(fe_queue_lo.msg.fetch.instr)
 
      ,.decode_o(decoded)
      ,.imm_o(decoded_imm_lo)
@@ -280,26 +161,26 @@ module bp_be_scheduler
     begin
       // Calculator status ISD stage
       isd_status.isd_v        = fe_queue_yumi_li;
-      isd_status.isd_pc       = issue_pkt.pc;
-      isd_status.isd_branch_metadata_fwd = issue_pkt.branch_metadata_fwd;
+      isd_status.isd_pc       = fe_queue_lo.msg.fetch.pc;
+      isd_status.isd_branch_metadata_fwd = fe_queue_lo.msg.fetch.branch_metadata_fwd;
       isd_status.isd_fence_v  = fe_queue_v_lo & issue_pkt.fence_v;
       isd_status.isd_csr_v    = fe_queue_v_lo & issue_pkt.csr_v;
       isd_status.isd_mem_v    = fe_queue_v_lo & issue_pkt.mem_v;
       isd_status.isd_long_v   = fe_queue_v_lo & issue_pkt.long_v;
       isd_status.isd_irs1_v   = fe_queue_v_lo & issue_pkt.irs1_v;
       isd_status.isd_frs1_v   = fe_queue_v_lo & issue_pkt.frs1_v;
-      isd_status.isd_rs1_addr = issue_pkt.instr.t.rtype.rs1_addr;
+      isd_status.isd_rs1_addr = instr.t.fmatype.rs1_addr;
       isd_status.isd_irs2_v   = fe_queue_v_lo & issue_pkt.irs2_v;
       isd_status.isd_frs2_v   = fe_queue_v_lo & issue_pkt.frs2_v;
-      isd_status.isd_rs2_addr = issue_pkt.instr.t.rtype.rs2_addr;
+      isd_status.isd_rs2_addr = instr.t.fmatype.rs2_addr;
       isd_status.isd_frs3_v   = fe_queue_v_lo & issue_pkt.frs3_v;
-      isd_status.isd_rs3_addr = issue_pkt.instr.t.fmatype.rs3_addr;
+      isd_status.isd_rs3_addr = instr.t.fmatype.rs3_addr;
 
       // Form dispatch packet
       dispatch_pkt.v        = fe_queue_yumi_li;
       dispatch_pkt.poison   = (poison_isd_i | ~dispatch_pkt.v);
       dispatch_pkt.pc       = expected_npc_i;
-      dispatch_pkt.instr    = issue_pkt.instr;
+      dispatch_pkt.instr    = instr;
       dispatch_pkt.rs1_fp_v = issue_pkt.frs1_v;
       dispatch_pkt.rs1      = issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
       dispatch_pkt.rs2_fp_v = issue_pkt.frs2_v;

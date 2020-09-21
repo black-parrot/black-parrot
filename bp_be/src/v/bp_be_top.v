@@ -175,7 +175,7 @@ module bp_be_top
      ,.fwb_pkt_i(fwb_pkt)
      );
 
-  bp_be_calculator
+  bp_be_calculator_top
    #(.bp_params_p(bp_params_p))
    calculator
     (.clk_i(clk_i)

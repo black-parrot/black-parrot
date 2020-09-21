@@ -187,7 +187,7 @@ $BP_COMMON_DIR/src/v/bp_tlb.v
 $BP_BE_DIR/src/v/bp_be_top.v
 # Calculator
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_aux.v

@@ -520,9 +520,7 @@ bind bp_be_top
        ,.mhartid_i(detector.cfg_bus_cast_i.core_id)
 
        ,.fe_cmd_o(director.fe_cmd_o)
-       ,.fe_cmd_v_o(director.fe_cmd_v_o)
-       // TODO: Fix handshake
-       ,.fe_cmd_ready_i(director.fe_cmd_yumi_i)
+       ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)
 
        ,.commit_v_i(calculator.commit_pkt.instret)
 

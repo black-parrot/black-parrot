@@ -17,8 +17,7 @@ module bp_nonsynth_branch_profiler
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
     , input [fe_cmd_width_lp-1:0] fe_cmd_o
-    , input                       fe_cmd_v_o
-    , input                       fe_cmd_ready_i
+    , input                       fe_cmd_yumi_i
 
     , input                       commit_v_i
 
@@ -31,8 +30,8 @@ module bp_nonsynth_branch_profiler
   bp_fe_branch_metadata_fwd_s branch_metadata;
   assign fe_cmd = fe_cmd_o;
 
-  wire pc_redirect_v    = fe_cmd_v_o & (fe_cmd.opcode == e_op_pc_redirection);
-  wire attaboy_v        = fe_cmd_v_o & (fe_cmd.opcode == e_op_attaboy);
+  wire pc_redirect_v    = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_pc_redirection);
+  wire attaboy_v        = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_attaboy);
 
   assign branch_metadata = pc_redirect_v 
                            ? fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd

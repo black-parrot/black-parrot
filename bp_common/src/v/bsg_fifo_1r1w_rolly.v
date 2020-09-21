@@ -3,10 +3,12 @@ module bsg_fifo_1r1w_rolly
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
+ import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_multicore_1_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
+   , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam ptr_width_lp = `BSG_SAFE_CLOG2(fe_queue_fifo_els_p)
    )
   (input                                    clk_i
@@ -24,17 +26,12 @@ module bsg_fifo_1r1w_rolly
    , output logic                           fe_queue_v_o
    , input                                  fe_queue_yumi_i
 
-   , output logic [reg_addr_width_p-1:0]    rs1_addr_o
-   , output logic                           rs1_v_o
-
-   , output logic [reg_addr_width_p-1:0]    rs2_addr_o
-   , output logic                           rs2_v_o
-
-   , output logic [reg_addr_width_p-1:0]    rs3_addr_o
-   , output logic                           rs3_v_o
+   , output logic [issue_pkt_width_lp-1:0]  preissue_pkt_o
+   , output logic [issue_pkt_width_lp-1:0]  issue_pkt_o
    );
 
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `bp_cast_i(bp_fe_queue_s, fe_queue);
   `bp_cast_o(bp_fe_queue_s, fe_queue);
 
@@ -120,34 +117,105 @@ module bsg_fifo_1r1w_rolly
   assign fe_queue_v_o     = ~roll & ~empty;
   assign fe_queue_ready_o = ~clr & ~full;
 
+  rv64_instr_fmatype_s instr;
+  assign instr = fe_queue_cast_i.msg.fetch.instr;
+
+  bp_be_issue_pkt_s issue_pkt_li, issue_pkt_lo;
   wire bypass_reg = (wptr_r == rptr_n);
-  rv64_instr_fmatype_s fetch_instr;
-  assign fetch_instr = fe_queue_cast_i.msg.fetch.instr;
-  logic [reg_addr_width_p-1:0] rs1_addr_li, rs2_addr_li, rs3_addr_li;
-  logic [reg_addr_width_p-1:0] rs1_addr_lo, rs2_addr_lo, rs3_addr_lo;
-  assign rs1_addr_li = fetch_instr.rs1_addr;
-  assign rs2_addr_li = fetch_instr.rs2_addr;
-  assign rs3_addr_li = fetch_instr.rs3_addr;
   bsg_mem_1r1w
-  #(.width_p(3*reg_addr_width_p), .els_p(fe_queue_fifo_els_p), .read_write_same_addr_p(1))
+  #(.width_p($bits(bp_be_issue_pkt_s)), .els_p(fe_queue_fifo_els_p), .read_write_same_addr_p(1))
   reg_fifo_mem
    (.w_clk_i(clk_i)
     ,.w_reset_i(reset_i)
     ,.w_v_i(enq)
     ,.w_addr_i(wptr_r[0+:ptr_width_lp])
-    ,.w_data_i({rs3_addr_li, rs2_addr_li, rs1_addr_li})
+    ,.w_data_i(issue_pkt_li)
     ,.r_v_i(1'b1)
     ,.r_addr_i(rptr_n[0+:ptr_width_lp])
-    ,.r_data_o({rs3_addr_lo, rs2_addr_lo, rs1_addr_lo})
+    ,.r_data_o(issue_pkt_lo)
     );
-  // TODO: Save power by predecoding
-  assign rs1_v_o = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
-  assign rs2_v_o = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
-  assign rs3_v_o = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
+  wire issue_v = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
+  assign preissue_pkt_o = bypass_reg ? issue_pkt_li : issue_v ? issue_pkt_lo : '0;
 
-  assign rs1_addr_o = bypass_reg ? rs1_addr_li : rs1_addr_lo;
-  assign rs2_addr_o = bypass_reg ? rs2_addr_li : rs2_addr_lo;
-  assign rs3_addr_o = bypass_reg ? rs3_addr_li : rs3_addr_lo;
+  bsg_dff
+   #(.width_p($bits(bp_be_issue_pkt_s)))
+   issue_reg
+    (.clk_i(clk_i)
 
+     ,.data_i(preissue_pkt_o)
+     ,.data_o(issue_pkt_o)
+     );
+
+  always_comb
+    begin
+      issue_pkt_li = '0;
+
+      // Pre-decode
+      issue_pkt_li.csr_v = instr.opcode inside {`RV64_SYSTEM_OP};
+      issue_pkt_li.mem_v = instr.opcode inside {`RV64_FLOAD_OP, `RV64_FSTORE_OP
+                                                ,`RV64_LOAD_OP, `RV64_STORE_OP
+                                                ,`RV64_AMO_OP, `RV64_SYSTEM_OP
+                                                };
+      issue_pkt_li.fence_v = instr inside {`RV64_FENCE, `RV64_FENCE_I, `RV64_SFENCE_VMA};
+      issue_pkt_li.long_v = instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
+                                       ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
+                                       ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D
+                                       };
+
+      // Decide whether to read from integer regfile (saves power)
+      casez (instr.opcode)
+        `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
+          begin
+            issue_pkt_li.irs1_v = '1;
+          end
+        `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP:
+          begin
+            issue_pkt_li.irs1_v = '1;
+            issue_pkt_li.irs2_v = '1;
+          end
+        `RV64_FLOAD_OP:
+          begin
+            issue_pkt_li.irs1_v = 1'b1;
+          end
+        `RV64_FSTORE_OP:
+          begin
+            issue_pkt_li.irs1_v = 1'b1;
+            issue_pkt_li.frs2_v = 1'b1;
+          end
+        `RV64_FP_OP:
+          casez (instr)
+            `RV64_FCVT_WS, `RV64_FCVT_WUS, `RV64_FCVT_LS, `RV64_FCVT_LUS
+            ,`RV64_FCVT_WD, `RV64_FCVT_WUD, `RV64_FCVT_LD, `RV64_FCVT_LUD
+            ,`RV64_FCVT_SD, `RV64_FCVT_DS
+            ,`RV64_FMV_XW, `RV64_FMV_XD
+            ,`RV64_FCLASS_S, `RV64_FCLASS_D:
+              begin
+                issue_pkt_li.frs1_v = 1'b1;
+              end
+            `RV64_FCVT_SW, `RV64_FCVT_SWU, `RV64_FCVT_SL, `RV64_FCVT_SLU
+            ,`RV64_FCVT_DW, `RV64_FCVT_DWU, `RV64_FCVT_DL, `RV64_FCVT_DLU
+            ,`RV64_FMV_WX, `RV64_FMV_DX:
+              begin
+                issue_pkt_li.irs1_v = 1'b1;
+              end
+            default:
+              begin
+                issue_pkt_li.frs1_v = 1'b1;
+                issue_pkt_li.frs2_v = 1'b1;
+              end
+          endcase
+        `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FNMADD_OP:
+          begin
+            issue_pkt_li.frs1_v = 1'b1;
+            issue_pkt_li.frs2_v = 1'b1;
+            issue_pkt_li.frs3_v = 1'b1;
+          end
+        default: begin end
+      endcase
+
+      issue_pkt_li.rs1_addr = instr.rs1_addr;
+      issue_pkt_li.rs2_addr = instr.rs2_addr;
+      issue_pkt_li.rs3_addr = instr.rs3_addr;
+    end
 endmodule
 

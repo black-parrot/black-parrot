@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_be_calculator.v
+ *   bp_be_calculator_top.v
  *
  * Description:
  *
@@ -12,7 +12,7 @@
  *     once code is more stable, fixing in cleanup could cause regressions
  */
 
-module bp_be_calculator
+module bp_be_calculator_top
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
