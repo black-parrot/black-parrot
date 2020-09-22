@@ -1,3 +1,21 @@
+/*
+ * The bootrom loads the CCE ucode and the processor configuration and switches to the program for execution
+ */
+
+// CCE parameters
+#define CCE_PC_WIDTH 8
+#define NUM_CCE_INSTR (1 << CCE_PC_WIDTH)
+#define CCE_INSTR_END 0xFFFFFFFFFFFFFFFF
+
+// Configuration parameters
+#define CFG_CCE_UCODE_BASE_ADDR 0x00208000
+
+#define CFG_CCE_MODE_ADDR 0x00200081
+#define CFG_DCACHE_MODE_ADDR 0x00200043
+#define CFG_ICACHE_MODE_ADDR 0x00200022
+
+#define CFG_DOMAIN_MASK_ADDR 0x00200009
+#define CFG_SAC_MASK_ADDR 0x0020000a 
 
 .section .text.start
 .globl _start
@@ -35,6 +53,39 @@ _start:
     li x30, 0
     li x31, 0
 
+    // Copy CCE microcode
+    la t0, _ucode
+    li t1, CFG_CCE_UCODE_BASE_ADDR
+    li t2, CCE_INSTR_END
+load_ucode:
+    ld t3, 0(t0)
+    beq t3, t2, load_config
+    sd t3, 0(t1)
+    addi t0, t0, 8
+    addi t1, t1, 1
+    j load_ucode
+        
+    // Switch I$, D$ and CCE modes
+load_config:
+    li t0, 1
+    li t1, CFG_DCACHE_MODE_ADDR
+    sd t0, 0(t1)
+    
+    li t1, CFG_ICACHE_MODE_ADDR
+    sd t0, 0(t1)
+
+    li t1, CFG_CCE_MODE_ADDR
+    sd t0, 0(t1)
+
+    // Set up domain and SAC information
+    li t0, CFG_DOMAIN_MASK_ADDR
+    li t1, DOMAIN_MASK
+    sd t1, 0(t0)
+
+    li t0, CFG_SAC_MASK_ADDR
+    li t1, SAC_MASK
+    sd t1, 0(t0)
+        
     # Enable FPU
     li x31, 0x2000
     csrs mstatus, x31
@@ -45,3 +96,11 @@ _start:
     dret
 halt:
     j halt
+    addi x0, x0, 0
+    addi x0, x0, 0
+
+.section .data.ucode
+.globl _ucode
+.balign 8, 0
+_ucode:
+    .incbin "cce_ucode.bin" 

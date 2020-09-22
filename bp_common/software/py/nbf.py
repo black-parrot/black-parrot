@@ -164,26 +164,26 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_reset, 0)
 
     # Write CCE ucode
-    if self.ucode_file:
-      for core in range(self.ncpus):
-        for i in range(len(self.ucode)):
-          full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
-          self.print_nbf(3, full_addr, self.ucode[i])
+    # if self.ucode_file:
+    #   for core in range(self.ncpus):
+    #    for i in range(len(self.ucode)):
+    #       full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
+    #       self.print_nbf(3, full_addr, self.ucode[i])
 
     # Write I$, D$, and CCE modes
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
 
-    enabled_domains = 1
-    for i in range(6, 0, -1):
-      if (self.domains[i] == '1'):
-        enabled_domains += (2**(7-i))
+    # enabled_domains = 1
+    # for i in range(6, 0, -1):
+    #   if (self.domains[i] == '1'):
+    #     enabled_domains += (2**(7-i))
 
-    #enabled_domains += self.domains
+    # enabled_domains += self.domains
 
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_domain_mask, enabled_domains)
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_sac_mask, self.sac)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_domain_mask, enabled_domains)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_sac_mask, self.sac)
 
     # Write PC to the DRAM base
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
@@ -211,7 +211,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--ncpus', type=int, help='number of BlackParrot cores')
   parser.add_argument('--ucode', dest='ucode_file', metavar='ucode.mem', help='CCE ucode file')
-  parser.add_argument('--domains', dest='domain', type=str, help='domains to be enabled')
+  parser.add_argument('--domains', dest='domains', type=str, help='domains to be enabled')
   parser.add_argument('--sac', dest='sac', type=int, help='sac enabled? (0 or 1)')
   parser.add_argument("--mem", dest='mem_file', metavar='prog.mem', help="DRAM verilog file")
   parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help="checkpoint nbf file")
