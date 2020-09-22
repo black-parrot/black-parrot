@@ -41,6 +41,8 @@ $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
 NBF_INPUTS = --ncpus=$(NCPUS) --ucode=cce_ucode.mem
+NBF_INPUTS += --domains=$(DOMAINS_P)
+NBF_INPUTS += --sac=$(SAC_P)
 ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem --skip_zeros
 endif

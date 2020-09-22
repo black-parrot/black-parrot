@@ -47,7 +47,7 @@ $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
 	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=8 --verilog-data-width=8 $< $@
 
 NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
-NBF_INPUTS += --domain=$(DOMAINS_P)
+NBF_INPUTS += --domains=$(DOMAINS_P)
 NBF_INPUTS += --sac=$(SAC_P)
 ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem --skip_zeros
