@@ -2,8 +2,12 @@ module bp_me_cce_mem_to_axi_wrapper
 
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_me_pkg::*;
+ import bp_be_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
+ import bp_me_pkg::*;
+ import bp_common_cfg_link_pkg::*;
+ import bsg_noc_pkg::*;
 
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   `declare_bp_proc_params(bp_params_p)
@@ -23,6 +27,7 @@ module bp_me_cce_mem_to_axi_wrapper
   
   // FIFO depth for PISO and SIPO
   , localparam fifo_els_lp       = cce_block_width_p/axi_data_width_p         //in most cases, it'll be 512/64 = 8
+  //, localparam fifo_els_lp       = 512/64 
   )
 
   ( 
@@ -114,7 +119,8 @@ module bp_me_cce_mem_to_axi_wrapper
   // SIPO and PISO related signals
   logic	                        axi_read_sipo_ready_lo;
   logic	                        axi_read_sipo_v_lo;
-  logic [cce_block_width_p-1:0] axi_read_sipo_data_lo;
+  //logic [cce_block_width_p-1:0] axi_read_sipo_data_lo;
+  logic [511:0]                 axi_read_sipo_data_lo;
 
   logic                         axi_write_piso_ready_lo;
   logic                         axi_write_piso_v_lo;
@@ -133,7 +139,7 @@ module bp_me_cce_mem_to_axi_wrapper
     (.clk_i(aclk_i)
     ,.reset_i(~aresetn_i)
     ,.en_i(mem_cmd_v_i)
-    ,.data_i(mem_cmd_i.header)
+    ,.data_i(mem_cmd_cast_i.header)
     ,.data_o(mem_cmd_header_r)
     );
 
@@ -190,6 +196,7 @@ module bp_me_cce_mem_to_axi_wrapper
     axi_wlast_o   = '0; 
     axi_wvalid_o  = '0;
     axi_wid_o     = '0;
+    axi_awburst_cnt_n = axi_awburst_cnt_r;
 
     // WRITE RESPONSE CHANNEL SIGNALS
     axi_bready_o  = '0;
@@ -254,7 +261,7 @@ module bp_me_cce_mem_to_axi_wrapper
         axi_wlast_o   = (axi_awburst_cnt_r == axi_len_lp);
         axi_awburst_cnt_n = (axi_wready_i) 
                           ? axi_awburst_cnt_r + 1
-                          : axi_awburst_cnt_n;
+                          : axi_awburst_cnt_r;
         // if a valid write response returns not okay, then go to write error state
         if (axi_bresp_i != '0 & axi_bvalid_i)
           state_n = WRITE_ERR;
@@ -308,13 +315,13 @@ module bp_me_cce_mem_to_axi_wrapper
     (.clk_i     (aclk_i)
     ,.reset_i   (~aresetn_i)
 
-    ,.valid_i   (mem_cmd_v_i)
+    ,.valid_i   (mem_cmd_v_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr})
     ,.data_i    (mem_cmd_cast_i.data)
     ,.ready_o   (axi_write_piso_ready_lo)
 
     ,.valid_o   (axi_write_piso_v_lo)
     ,.data_o    (axi_write_piso_data_lo)
-    ,.yumi_i     (axi_wready_i)
+    ,.yumi_i    (axi_wready_i)
     );
 
 endmodule

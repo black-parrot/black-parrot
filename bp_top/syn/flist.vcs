@@ -218,6 +218,9 @@ $BP_FE_DIR/src/v/bp_fe_mem.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
 ## ME files
+# AXI
+$BP_ME_DIR/src/v/axi/bp_me_cce_mem_to_axi_wrapper.v
+$BP_ME_DIR/test/tb/bp_axi/bp_nonsynth_mem_to_axi_wrapper_tb.v
 # LCE
 $BP_ME_DIR/src/v/lce/bp_lce.v
 $BP_ME_DIR/src/v/lce/bp_lce_req.v

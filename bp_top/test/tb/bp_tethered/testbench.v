@@ -149,6 +149,130 @@ bp_mem
    ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
    );
 
+///*
+//==================axi========================
+logic proc_mem_cmd_axi_ready_li, proc_mem_resp_axi_v_li;
+bp_cce_mem_msg_s proc_mem_resp_axi_li;
+
+logic axi_awid, axi_wid, axi_bid, axi_arid, axi_rid;
+logic [63:0] axi_awaddr, axi_araddr;
+logic [7:0] axi_awlen, axi_arlen;
+logic [2:0] axi_awsize, axi_arsize;
+logic [1:0] axi_awburst, axi_arburst;
+logic [3:0] axi_awcache, axi_arcache;
+logic [2:0] axi_awprot, axi_arprot;
+logic [3:0] axi_awqos, axi_arqos;
+logic axi_awvalid, axi_wvalid, axi_bvalid, axi_arvalid, axi_rvalid;
+logic axi_awready, axi_wready, axi_bready, axi_arready, axi_rready;
+logic [63:0] axi_wdata, axi_rdata;
+logic [7:0] axi_wstrb;
+logic axi_wlast, axi_rlast;
+logic [1:0] axi_bresp, axi_rresp;
+
+bp_me_cce_mem_to_axi_wrapper 
+  #(.bp_params_p(bp_params_p))
+  axi_wrapper
+  (.aclk_i             (clk_i)
+  ,.aresetn_i          (~reset_i)
+
+  ,.mem_cmd_i          (proc_mem_cmd_lo)
+  ,.mem_cmd_v_i        (proc_mem_cmd_axi_ready_li & proc_mem_cmd_v_lo) 
+  ,.mem_cmd_ready_o    (proc_mem_cmd_axi_ready_li)  
+  
+   ,.mem_resp_o        (proc_mem_resp_axi_li)
+   ,.mem_resp_v_o      (proc_mem_resp_axi_v_li)
+   ,.mem_resp_yumi_i   (proc_mem_resp_yumi_lo)
+
+   ,.axi_awid_o        (axi_awid)
+   ,.axi_awaddr_o      (axi_awaddr)
+   ,.axi_awlen_o       (axi_awlen)
+   ,.axi_awsize_o      (axi_awsize)
+   ,.axi_awburst_o     (axi_awburst)
+   ,.axi_awcache_o     (axi_awcache)
+   ,.axi_awprot_o      (axi_awprot)
+   ,.axi_awqos_o       (axi_awqos)
+   ,.axi_awvalid_o     (axi_awvalid)
+   ,.axi_awready_i     (axi_awready)
+
+   ,.axi_wid_o         (axi_wid)
+   ,.axi_wdata_o       (axi_wdata)
+   ,.axi_wstrb_o       (axi_wstrb)
+   ,.axi_wlast_o       (axi_wlast)
+   ,.axi_wvalid_o      (axi_wvalid)
+   ,.axi_wready_i      (axi_wready)
+
+   ,.axi_bid_i         (axi_bid)
+   ,.axi_bresp_i       (axi_bresp)
+   ,.axi_bvalid_i      (axi_bvalid)
+   ,.axi_bready_o      (axi_bready)
+
+   ,.axi_arid_o        (axi_arid)
+   ,.axi_araddr_o      (axi_araddr)
+   ,.axi_arlen_o       (axi_arlen)
+   ,.axi_arsize_o      (axi_arsize)
+   ,.axi_arburst_o     (axi_arburst)
+   ,.axi_arcache_o     (axi_arcache)
+   ,.axi_arprot_o      (axi_arprot)
+   ,.axi_arqos_o       (axi_arqos)
+   ,.axi_arvalid_o     (axi_arvalid)
+   ,.axi_arready_i     (axi_arready)
+
+   ,.axi_rid_i         (axi_rid)
+   ,.axi_rdata_i       (axi_rdata)
+   ,.axi_rresp_i       (axi_rresp)
+   ,.axi_rlast_i       (axi_rlast)
+   ,.axi_rvalid_i      (axi_rvalid)
+   ,.axi_rready_o      (axi_rready)
+   );
+
+bp_nonsynth_mem_to_axi_wrapper_tb axi_wrapper_tb
+  (.aclk_i             (clk_i)
+  ,.aresetn_i          (~reset_i)
+
+  ,.axi_awid_i         (axi_awid)
+  ,.axi_awaddr_i       (axi_awaddr)
+  ,.axi_awlen_i        (axi_awlen)
+  ,.axi_awsize_i       (axi_awsize)
+  ,.axi_awburst_i      (axi_awburst)
+  ,.axi_awcache_i      (axi_awcache)
+  ,.axi_awprot_i       (axi_awprot)
+  ,.axi_awqos_i        (axi_awqos)
+  ,.axi_awvalid_i      (axi_awvalid)
+  ,.axi_awready_o      (axi_awready)
+
+  ,.axi_wid_i          (axi_wid)
+  ,.axi_wdata_i        (axi_wdata)
+  ,.axi_wstrb_i        (axi_wstrb)
+  ,.axi_wlast_i        (axi_wlast)
+  ,.axi_wvalid_i       (axi_wvalid)
+  ,.axi_wready_o       (axi_wready)
+
+  ,.axi_bid_o          (axi_bid)
+  ,.axi_bresp_o        (axi_bresp)
+  ,.axi_bvalid_o       (axi_bvalid)
+  ,.axi_bready_i       (axi_bready)
+
+  ,.axi_arid_i         (axi_arid)
+  ,.axi_araddr_i       (axi_araddr)
+  ,.axi_arlen_i        (axi_arlen)
+  ,.axi_arsize_i       (axi_arsize)
+  ,.axi_arburst_i      (axi_arburst)
+  ,.axi_arcache_i      (axi_arcache)
+  ,.axi_arprot_i       (axi_arprot)  
+  ,.axi_arqos_i        (axi_arqos)
+  ,.axi_arvalid_i      (axi_arvalid)
+  ,.axi_arready_o      (axi_arready)
+
+  ,.axi_rid_o          (axi_rid)  
+  ,.axi_rdata_o        (axi_rdata)
+  ,.axi_rresp_o        (axi_rresp)
+  ,.axi_rlast_o        (axi_rlast)
+  ,.axi_rvalid_o       (axi_rvalid)
+  ,.axi_rready_i       (axi_rready)
+  );
+
+//===========================================
+//*/
 bp_nonsynth_nbf_loader
  #(.bp_params_p(bp_params_p))
  nbf_loader
