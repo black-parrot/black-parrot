@@ -1,5 +1,5 @@
 
-module bp_lite_to_stream
+module bp_lite_to_burst
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
@@ -13,7 +13,7 @@ module bp_lite_to_stream
    // This is necessary to differentiate between read/write requests/responses
    // 1: write is N beat, read is 1 beat
    // 0: write is 1 beat, read is N beats
-   , parameter logic forward_p = 0
+   , parameter logic forward_p = 1
 
    `declare_bp_mem_if_widths(paddr_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in_mem)
    `declare_bp_mem_if_widths(paddr_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out_mem)
@@ -27,13 +27,16 @@ module bp_lite_to_stream
    , input                                          mem_v_i
    , output logic                                   mem_ready_o
 
-   // Client BP Stream
+   // Client BP Burst
    // ready-valid-and
    , output logic [out_mem_msg_header_width_lp-1:0] mem_header_o
+   , output logic                                   mem_header_v_o
+   , input logic                                    mem_header_ready_i
+
+   // ready-valid-and
    , output logic [out_data_width_p-1:0]            mem_data_o
-   , output logic                                   mem_v_o
-   , input                                          mem_ready_i
-   , output logic                                   mem_lock_o
+   , output logic                                   mem_data_v_o
+   , input                                          mem_data_ready_i
    );
 
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in_mem);
@@ -43,11 +46,11 @@ module bp_lite_to_stream
 
   localparam in_data_bytes_lp = in_data_width_p/8;
   localparam out_data_bytes_lp = out_data_width_p/8;
-  localparam stream_words_lp = in_data_width_p/out_data_width_p;
-  localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
+  localparam burst_words_lp = in_data_width_p/out_data_width_p;
+  localparam burst_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
+  // We could make this a two fifo to get more throughput
   bp_in_mem_msg_header_s header_lo;
-  logic mem_v_lo, mem_yumi_li;
   bsg_one_fifo
    #(.width_p($bits(bp_in_mem_msg_header_s)))
    header_fifo
@@ -55,70 +58,38 @@ module bp_lite_to_stream
      ,.reset_i(reset_i)
 
      ,.data_i(mem_cast_i.header)
-     ,.ready_o(mem_ready_o)
      ,.v_i(mem_v_i)
+     ,.ready_o(mem_ready_o)
 
-     ,.data_o(header_lo)
-     ,.v_o(mem_v_lo)
-     ,.yumi_i(mem_yumi_li)
+     ,.data_o(mem_header_o)
+     ,.v_o(mem_header_v_o)
+     ,.yumi_i(mem_header_ready_i & mem_header_v_o)
      );
 
   wire is_wr = mem_cast_i.header.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr};
-  localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
-  wire [data_len_width_lp-1:0] num_stream_cmds = (forward_p ^ is_wr)
+  localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
+  wire [data_len_width_lp-1:0] num_burst_cmds = (forward_p ^ is_wr)
     ? 1'b1
     : `BSG_MAX(((1'b1 << mem_cast_i.header.size) / out_data_bytes_lp), 1'b1);
   logic [out_data_width_p-1:0] data_lo;
   bsg_parallel_in_serial_out_dynamic
-   #(.width_p(out_data_width_p), .max_els_p(stream_words_lp))
+   #(.width_p(out_data_width_p), .max_els_p(burst_words_lp))
    piso
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.data_i(mem_cast_i.data)
-     ,.len_i(num_stream_cmds - 1'b1)
+     ,.len_i(num_burst_cmds - 1'b1)
      ,.v_i(mem_v_i)
 
      ,.data_o(mem_data_o)
-     ,.v_o(mem_v_o)
-     ,.yumi_i(mem_ready_i & mem_v_o)
+     ,.v_o(mem_data_v_o)
+     ,.yumi_i(mem_data_ready_i & mem_data_v_o)
 
      // We rely on the header fifo to handle ready/valid handshaking
      ,.len_v_o(/* Unused */)
      ,.ready_o(/* Unused */)
      );
-
-  // We wouldn't need this counter if we could peek into the PISO...
-  localparam data_ptr_width_lp = `BSG_WIDTH(stream_words_lp);
-  logic [data_ptr_width_lp-1:0] first_cnt, last_cnt, current_cnt;
-  bsg_counter_set_en
-   #(.max_val_p(stream_words_lp), .reset_val_p(0))
-   data_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.set_i(mem_v_i)
-     ,.en_i(mem_ready_o & mem_v_i)
-     ,.val_i(first_cnt)
-     ,.count_o(current_cnt)
-     );
-  assign first_cnt = header_lo.addr[stream_offset_width_lp+:data_ptr_width_lp];
-  assign last_cnt  = first_cnt - 1'b1;
-  wire cnt_done = (current_cnt == last_cnt);
-
-  bp_out_mem_msg_header_s mem_header_cast_o;
-  assign mem_header_o = mem_header_cast_o;
-  always_comb
-    begin
-      // Autoincrement address
-      mem_header_cast_o = header_lo;
-      mem_header_cast_o.addr = {header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_ptr_width_lp]
-                                ,current_cnt
-                                ,header_lo.addr[0+:stream_offset_width_lp]
-                                };
-    end
-  assign mem_lock_o = mem_v_o & ~cnt_done;
-  assign mem_yumi_li = cnt_done & mem_ready_i & mem_v_o;
 
   //synopsys translate_off
   initial

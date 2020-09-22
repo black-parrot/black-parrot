@@ -554,7 +554,7 @@ for (genvar i = 0; i < 2; i++)
       logic cache_resp_header_v_li, cache_resp_header_ready_lo;
       logic [dword_width_p-1:0] cache_resp_data_li;
       logic cache_resp_data_v_li, cache_resp_data_ready_lo;
-      bp_me_cache_slice_burst
+      bp_me_cache_slice
        #(.bp_params_p(bp_params_p))
        l2s
         (.clk_i(clk_i)

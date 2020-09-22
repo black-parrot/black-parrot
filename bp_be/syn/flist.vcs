@@ -229,7 +229,6 @@ $BP_ME_DIR/src/v/lce/bp_lce_cmd.v
 # Cache
 $BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.v
 $BP_ME_DIR/src/v/cache/bp_me_cache_slice.v
-$BP_ME_DIR/src/v/cache/bp_me_cache_slice_burst.v
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.v
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v

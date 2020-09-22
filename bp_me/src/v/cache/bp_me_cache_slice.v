@@ -1,4 +1,6 @@
 
+`include "bp_mem_wormhole.vh"
+
 module bp_me_cache_slice
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -16,28 +18,39 @@ module bp_me_cache_slice
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, xce_mem)
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, dram_mem)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
-  (input                                clk_i
-   , input                              reset_i
+  (input                                       clk_i
+   , input                                     reset_i
 
-   , input [xce_mem_msg_width_lp-1:0]   mem_cmd_i
-   , input                              mem_cmd_v_i
-   , output                             mem_cmd_ready_o
+   , input [xce_mem_msg_width_lp-1:0]          mem_cmd_i
+   , input                                     mem_cmd_v_i
+   , output                                    mem_cmd_ready_o
 
-   , output [xce_mem_msg_width_lp-1:0]  mem_resp_o
-   , output                             mem_resp_v_o
-   , input                              mem_resp_yumi_i
+   , output [xce_mem_msg_width_lp-1:0]         mem_resp_o
+   , output                                    mem_resp_v_o
+   , input                                     mem_resp_yumi_i
 
-   , output [dram_mem_msg_width_lp-1:0] mem_cmd_o
-   , output                             mem_cmd_v_o
-   , input                              mem_cmd_yumi_i
+   , output [dram_mem_msg_header_width_lp-1:0] mem_cmd_header_o
+   , output                                    mem_cmd_header_v_o
+   , input                                     mem_cmd_header_yumi_i
 
-   , input [dram_mem_msg_width_lp-1:0]  mem_resp_i
-   , input                              mem_resp_v_i
-   , output                             mem_resp_ready_o
+   // Currently only support cache width == dword width
+   , output [dword_width_p-1:0]                mem_cmd_data_o
+   , output                                    mem_cmd_data_v_o
+   , input                                     mem_cmd_data_yumi_i
+
+   , input [dram_mem_msg_header_width_lp-1:0]  mem_resp_header_i
+   , input                                     mem_resp_header_v_i
+   , output                                    mem_resp_header_ready_o
+
+   // Currently only support cache width == dword width
+   , input [dword_width_p-1:0]                 mem_resp_data_i
+   , input                                     mem_resp_data_v_i
+   , output                                    mem_resp_data_ready_o
    );
 
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
@@ -69,10 +82,6 @@ module bp_me_cache_slice
   `declare_bsg_cache_dma_pkt_s(paddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [dword_width_p-1:0] dma_data_li;
-  logic dma_data_v_li, dma_data_ready_lo;
-  logic [dword_width_p-1:0] dma_data_lo;
-  logic dma_data_v_lo, dma_data_yumi_li;
   bsg_cache
    #(.addr_width_p(paddr_width_p)
      ,.data_width_p(dword_width_p)
@@ -96,43 +105,45 @@ module bp_me_cache_slice
      ,.dma_pkt_v_o(dma_pkt_v_lo)
      ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
 
-     ,.dma_data_i(dma_data_li)
-     ,.dma_data_v_i(dma_data_v_li)
-     ,.dma_data_ready_o(dma_data_ready_lo)
+     ,.dma_data_i(mem_resp_data_i)
+     ,.dma_data_v_i(mem_resp_data_v_i)
+     ,.dma_data_ready_o(mem_resp_data_ready_o)
 
-     ,.dma_data_o(dma_data_lo)
-     ,.dma_data_v_o(dma_data_v_lo)
-     ,.dma_data_yumi_i(dma_data_yumi_li)
+     ,.dma_data_o(mem_cmd_data_o)
+     ,.dma_data_v_o(mem_cmd_data_v_o)
+     ,.dma_data_yumi_i(mem_cmd_data_yumi_i)
 
      ,.v_we_o()
      );
 
-  bp_me_cache_dma_to_cce
-   #(.bp_params_p(bp_params_p))
-   dma_to_mem
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  // coherence message block size
+  // block size smaller than 8-bytes not supported
+  bp_mem_msg_size_e mem_cmd_block_size =
+    (cce_block_width_p == 1024)
+    ? e_mem_msg_size_128
+    : (cce_block_width_p == 512)
+      ? e_mem_msg_size_64
+      : (cce_block_width_p == 256)
+        ? e_mem_msg_size_32
+        : (cce_block_width_p == 128)
+          ? e_mem_msg_size_16
+          : e_mem_msg_size_8;
 
-     ,.dma_pkt_i(dma_pkt_lo)
-     ,.dma_pkt_v_i(dma_pkt_v_lo)
-     ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, dram_mem);
+  bp_dram_mem_msg_header_s dma_cmd_header_lo;
+  assign dma_cmd_header_lo = '{msg_type : dma_pkt_lo.write_not_read ? e_mem_msg_wr : e_mem_msg_rd
+                               ,size    : mem_cmd_block_size
+                               ,addr    : dma_pkt_lo.addr
+                               ,payload : '0
+                               };
+  assign mem_cmd_header_o = dma_cmd_header_lo;
+  assign mem_cmd_header_v_o = dma_pkt_v_lo;
+  assign dma_pkt_yumi_li = mem_cmd_header_yumi_i;
 
-     ,.dma_data_o(dma_data_li)
-     ,.dma_data_v_o(dma_data_v_li)
-     ,.dma_data_ready_i(dma_data_ready_lo)
-
-     ,.dma_data_i(dma_data_lo)
-     ,.dma_data_v_i(dma_data_v_lo)
-     ,.dma_data_yumi_o(dma_data_yumi_li)
-
-     ,.mem_cmd_o(mem_cmd_o)
-     ,.mem_cmd_v_o(mem_cmd_v_o)
-     ,.mem_cmd_yumi_i(mem_cmd_yumi_i)
-
-     ,.mem_resp_i(mem_resp_i)
-     ,.mem_resp_v_i(mem_resp_v_i)
-     ,.mem_resp_ready_o(mem_resp_ready_o)
-     );
+  // We're always "ready" for a mem_resp, because when we send a mem_cmd, the cache is waiting
+  //   for the DMA data. Unsolicited mem_resp are not allowed by the protocol
+  assign mem_resp_header_ready_o = 1'b1;
+  wire unused = mem_resp_header_v_i;
 
 endmodule
 

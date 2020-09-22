@@ -38,13 +38,23 @@ module bp_unicore
    , input                                             io_resp_ready_i
 
    // Memory Requests
-   , output [cce_mem_msg_width_lp-1:0]                 mem_cmd_o
-   , output                                            mem_cmd_v_o
-   , input                                             mem_cmd_ready_i
+   , output logic [cce_mem_msg_header_width_lp-1:0]     mem_cmd_header_o
+   , output logic                                       mem_cmd_header_v_o
+   , input                                              mem_cmd_header_ready_i
 
-   , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
-   , input                                             mem_resp_v_i
-   , output                                            mem_resp_yumi_o
+   // Only supports dword width cache
+   , output logic [dword_width_p-1:0]                   mem_cmd_data_o
+   , output logic                                       mem_cmd_data_v_o
+   , input                                              mem_cmd_data_ready_i
+
+   , input [cce_mem_msg_header_width_lp-1:0]            mem_resp_header_i
+   , input                                              mem_resp_header_v_i
+   , output                                             mem_resp_header_yumi_o
+
+   // Only supports dword width cache
+   , input [dword_width_p-1:0]                          mem_resp_data_i
+   , input                                              mem_resp_data_v_i
+   , output logic                                       mem_resp_data_yumi_o
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -53,9 +63,6 @@ module bp_unicore
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem)
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
-
-  `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
-  `bp_cast_i(bp_cce_mem_msg_s, mem_resp);
 
   bp_dcache_req_s dcache_req_lo;
   bp_icache_req_s icache_req_lo;
@@ -191,7 +198,7 @@ module bp_unicore
   wire [1:0][lce_id_width_p-1:0] lce_id_li = {cfg_bus_lo.dcache_id, cfg_bus_lo.icache_id};
 
   bp_uce
-    #(.bp_params_p(bp_params_p)
+   #(.bp_params_p(bp_params_p)
      ,.uce_mem_data_width_p(uce_mem_data_width_lp)
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
@@ -200,96 +207,97 @@ module bp_unicore
      ,.data_mem_invert_clk_p(1)
      ,.tag_mem_invert_clk_p(1)
      )
-    dcache_uce
+   dcache_uce
     (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+     ,.reset_i(reset_i)
 
-    ,.lce_id_i(lce_id_li[1])
+     ,.lce_id_i(lce_id_li[1])
 
-    ,.cache_req_i(dcache_req_lo)
-    ,.cache_req_v_i(dcache_req_v_lo)
-    ,.cache_req_ready_o(dcache_req_ready_li)
-    ,.cache_req_metadata_i(dcache_req_metadata_lo)
-    ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
+     ,.cache_req_i(dcache_req_lo)
+     ,.cache_req_v_i(dcache_req_v_lo)
+     ,.cache_req_ready_o(dcache_req_ready_li)
+     ,.cache_req_metadata_i(dcache_req_metadata_lo)
+     ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
 
-    ,.tag_mem_pkt_o(dcache_tag_mem_pkt_li)
-    ,.tag_mem_pkt_v_o(dcache_tag_mem_pkt_v_li)
-    ,.tag_mem_pkt_yumi_i(dcache_tag_mem_pkt_yumi_lo)
-    ,.tag_mem_i(dcache_tag_mem_lo)
+     ,.tag_mem_pkt_o(dcache_tag_mem_pkt_li)
+     ,.tag_mem_pkt_v_o(dcache_tag_mem_pkt_v_li)
+     ,.tag_mem_pkt_yumi_i(dcache_tag_mem_pkt_yumi_lo)
+     ,.tag_mem_i(dcache_tag_mem_lo)
 
-    ,.data_mem_pkt_o(dcache_data_mem_pkt_li)
-    ,.data_mem_pkt_v_o(dcache_data_mem_pkt_v_li)
-    ,.data_mem_pkt_yumi_i(dcache_data_mem_pkt_yumi_lo)
-    ,.data_mem_i(dcache_data_mem_lo)
+     ,.data_mem_pkt_o(dcache_data_mem_pkt_li)
+     ,.data_mem_pkt_v_o(dcache_data_mem_pkt_v_li)
+     ,.data_mem_pkt_yumi_i(dcache_data_mem_pkt_yumi_lo)
+     ,.data_mem_i(dcache_data_mem_lo)
 
-    ,.stat_mem_pkt_o(dcache_stat_mem_pkt_li)
-    ,.stat_mem_pkt_v_o(dcache_stat_mem_pkt_v_li)
-    ,.stat_mem_pkt_yumi_i(dcache_stat_mem_pkt_yumi_lo)
-    ,.stat_mem_i(dcache_stat_mem_lo)
+     ,.stat_mem_pkt_o(dcache_stat_mem_pkt_li)
+     ,.stat_mem_pkt_v_o(dcache_stat_mem_pkt_v_li)
+     ,.stat_mem_pkt_yumi_i(dcache_stat_mem_pkt_yumi_lo)
+     ,.stat_mem_i(dcache_stat_mem_lo)
 
-    ,.cache_req_complete_o(dcache_req_complete_li)
-    ,.cache_req_critical_o(dcache_req_critical_li)
+     ,.cache_req_complete_o(dcache_req_complete_li)
+     ,.cache_req_critical_o(dcache_req_critical_li)
 
-    ,.credits_full_o(credits_full_li[1])
-    ,.credits_empty_o(credits_empty_li[1])
+     ,.credits_full_o(credits_full_li[1])
+     ,.credits_empty_o(credits_empty_li[1])
 
-    ,.mem_cmd_o(proc_cmd_lo[1])
-    ,.mem_cmd_v_o(proc_cmd_v_lo[1])
-    ,.mem_cmd_ready_i(proc_cmd_ready_li[1])
+     ,.mem_cmd_o(proc_cmd_lo[1])
+     ,.mem_cmd_v_o(proc_cmd_v_lo[1])
+     ,.mem_cmd_ready_i(proc_cmd_ready_li[1])
 
-    ,.mem_resp_i(proc_resp_li[1])
-    ,.mem_resp_v_i(proc_resp_v_li[1])
-    ,.mem_resp_yumi_o(proc_resp_yumi_lo[1])
-    );
+     ,.mem_resp_i(proc_resp_li[1])
+     ,.mem_resp_v_i(proc_resp_v_li[1])
+     ,.mem_resp_yumi_o(proc_resp_yumi_lo[1])
+     );
 
   bp_uce
-    #(.bp_params_p(bp_params_p)
+   #(.bp_params_p(bp_params_p)
      ,.uce_mem_data_width_p(uce_mem_data_width_lp)
      ,.assoc_p(icache_assoc_p)
      ,.sets_p(icache_sets_p)
      ,.block_width_p(icache_block_width_p)
-     ,.fill_width_p(icache_fill_width_p))
-    icache_uce
+     ,.fill_width_p(icache_fill_width_p)
+     )
+   icache_uce
     (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+     ,.reset_i(reset_i)
 
-    ,.lce_id_i(lce_id_li[0])
+     ,.lce_id_i(lce_id_li[0])
 
-    ,.cache_req_i(icache_req_lo)
-    ,.cache_req_v_i(icache_req_v_lo)
-    ,.cache_req_ready_o(icache_req_ready_li)
-    ,.cache_req_metadata_i(icache_req_metadata_lo)
-    ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
+     ,.cache_req_i(icache_req_lo)
+     ,.cache_req_v_i(icache_req_v_lo)
+     ,.cache_req_ready_o(icache_req_ready_li)
+     ,.cache_req_metadata_i(icache_req_metadata_lo)
+     ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
 
-    ,.tag_mem_pkt_o(icache_tag_mem_pkt_li)
-    ,.tag_mem_pkt_v_o(icache_tag_mem_pkt_v_li)
-    ,.tag_mem_pkt_yumi_i(icache_tag_mem_pkt_yumi_lo)
-    ,.tag_mem_i(icache_tag_mem_lo)
+     ,.tag_mem_pkt_o(icache_tag_mem_pkt_li)
+     ,.tag_mem_pkt_v_o(icache_tag_mem_pkt_v_li)
+     ,.tag_mem_pkt_yumi_i(icache_tag_mem_pkt_yumi_lo)
+     ,.tag_mem_i(icache_tag_mem_lo)
 
-    ,.data_mem_pkt_o(icache_data_mem_pkt_li)
-    ,.data_mem_pkt_v_o(icache_data_mem_pkt_v_li)
-    ,.data_mem_pkt_yumi_i(icache_data_mem_pkt_yumi_lo)
-    ,.data_mem_i(icache_data_mem_lo)
+     ,.data_mem_pkt_o(icache_data_mem_pkt_li)
+     ,.data_mem_pkt_v_o(icache_data_mem_pkt_v_li)
+     ,.data_mem_pkt_yumi_i(icache_data_mem_pkt_yumi_lo)
+     ,.data_mem_i(icache_data_mem_lo)
 
-    ,.stat_mem_pkt_o(icache_stat_mem_pkt_li)
-    ,.stat_mem_pkt_v_o(icache_stat_mem_pkt_v_li)
-    ,.stat_mem_pkt_yumi_i(icache_stat_mem_pkt_yumi_lo)
-    ,.stat_mem_i(icache_stat_mem_lo)
+     ,.stat_mem_pkt_o(icache_stat_mem_pkt_li)
+     ,.stat_mem_pkt_v_o(icache_stat_mem_pkt_v_li)
+     ,.stat_mem_pkt_yumi_i(icache_stat_mem_pkt_yumi_lo)
+     ,.stat_mem_i(icache_stat_mem_lo)
 
-    ,.cache_req_complete_o(icache_req_complete_li)
-    ,.cache_req_critical_o(icache_req_critical_li)
+     ,.cache_req_complete_o(icache_req_complete_li)
+     ,.cache_req_critical_o(icache_req_critical_li)
 
-    ,.credits_full_o(credits_full_li[0])
-    ,.credits_empty_o(credits_empty_li[0])
+     ,.credits_full_o(credits_full_li[0])
+     ,.credits_empty_o(credits_empty_li[0])
 
-    ,.mem_cmd_o(proc_cmd_lo[0])
-    ,.mem_cmd_v_o(proc_cmd_v_lo[0])
-    ,.mem_cmd_ready_i(proc_cmd_ready_li[0])
+     ,.mem_cmd_o(proc_cmd_lo[0])
+     ,.mem_cmd_v_o(proc_cmd_v_lo[0])
+     ,.mem_cmd_ready_i(proc_cmd_ready_li[0])
 
-    ,.mem_resp_i(proc_resp_li[0])
-    ,.mem_resp_v_i(proc_resp_v_li[0])
-    ,.mem_resp_yumi_o(proc_resp_yumi_lo[0])
-    );
+     ,.mem_resp_i(proc_resp_li[0])
+     ,.mem_resp_v_i(proc_resp_v_li[0])
+     ,.mem_resp_yumi_o(proc_resp_yumi_lo[0])
+     );
 
   bp_clint_slice
    #(.bp_params_p(bp_params_p))
@@ -470,7 +478,7 @@ module bp_unicore
 
   if (l2_en_p)
     begin : l2
-      logic mem_resp_ready_lo;
+      logic mem_resp_header_ready_lo, mem_resp_data_ready_lo;
       bp_me_cache_slice
        #(.bp_params_p(bp_params_p))
        l2s
@@ -485,25 +493,75 @@ module bp_unicore
          ,.mem_resp_v_o(cache_resp_v_lo)
          ,.mem_resp_yumi_i(cache_resp_yumi_li)
 
-         ,.mem_cmd_o(mem_cmd_cast_o)
-         ,.mem_cmd_v_o(mem_cmd_v_o)
-         ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
+         ,.mem_cmd_header_o(mem_cmd_header_o)
+         ,.mem_cmd_header_v_o(mem_cmd_header_v_o)
+         ,.mem_cmd_header_yumi_i(mem_cmd_header_ready_i & mem_cmd_header_v_o)
 
-         ,.mem_resp_i(mem_resp_cast_i)
-         ,.mem_resp_v_i(mem_resp_v_i)
-         ,.mem_resp_ready_o(mem_resp_ready_lo)
+         ,.mem_cmd_data_o(mem_cmd_data_o)
+         ,.mem_cmd_data_v_o(mem_cmd_data_v_o)
+         ,.mem_cmd_data_yumi_i(mem_cmd_data_ready_i & mem_cmd_data_v_o)
+
+         ,.mem_resp_header_i(mem_resp_header_i)
+         ,.mem_resp_header_v_i(mem_resp_header_v_i)
+         ,.mem_resp_header_ready_o(mem_resp_header_ready_lo)
+
+         ,.mem_resp_data_i(mem_resp_data_i)
+         ,.mem_resp_data_v_i(mem_resp_data_v_i)
+         ,.mem_resp_data_ready_o(mem_resp_data_ready_lo)
          );
-      assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
+      assign mem_resp_header_yumi_o = mem_resp_header_ready_lo & mem_resp_header_v_i;
+      assign mem_resp_data_yumi_o = mem_resp_data_ready_lo & mem_resp_data_v_i;
     end
   else
     begin : no_l2
-      assign mem_cmd_cast_o = cce_mem_msg_width_lp'(cache_cmd_li);
-      assign mem_cmd_v_o = cache_cmd_v_li;
-      assign cache_cmd_ready_lo = mem_cmd_ready_i;
+      bp_lite_to_burst
+       #(.bp_params_p(bp_params_p)
+         ,.in_data_width_p(cce_block_width_p)
+         ,.out_data_width_p(dword_width_p)
+         ,.forward_p(1)
+         )
+       lite2burst
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
 
-      assign cache_resp_lo = mem_resp_cast_i[0+:uce_mem_msg_width_lp];
-      assign cache_resp_v_lo = mem_resp_v_i;
-      assign mem_resp_yumi_o = cache_resp_yumi_li;
+         ,.mem_i(cache_cmd_li)
+         ,.mem_v_i(cache_cmd_v_li)
+         ,.mem_ready_o(cache_cmd_ready_lo)
+
+         ,.mem_header_o(mem_cmd_header_o)
+         ,.mem_header_v_o(mem_cmd_header_v_o)
+         ,.mem_header_ready_i(mem_cmd_header_ready_i)
+
+         ,.mem_data_o(mem_cmd_data_o)
+         ,.mem_data_v_o(mem_cmd_data_v_o)
+         ,.mem_data_ready_i(mem_cmd_data_ready_i)
+         );
+
+      logic mem_resp_header_ready_lo, mem_resp_data_ready_lo;
+      bp_burst_to_lite
+       #(.bp_params_p(bp_params_p)
+         ,.in_data_width_p(dword_width_p)
+         ,.out_data_width_p(cce_block_width_p)
+         ,.forward_p(0)
+         )
+       burst2lite
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.mem_header_i(mem_resp_header_i)
+         ,.mem_header_v_i(mem_resp_header_v_i)
+         ,.mem_header_ready_o(mem_resp_header_ready_lo)
+
+         ,.mem_data_i(mem_resp_data_i)
+         ,.mem_data_v_i(mem_resp_data_v_i)
+         ,.mem_data_ready_o(mem_resp_data_ready_lo)
+
+         ,.mem_o(cache_resp_lo)
+         ,.mem_v_o(cache_resp_v_lo)
+         ,.mem_ready_i(cache_resp_yumi_li)
+         );
+       assign mem_resp_header_yumi_o = mem_resp_header_ready_lo & mem_resp_header_v_i;
+       assign mem_resp_data_yumi_o = mem_resp_data_ready_lo & mem_resp_data_v_i;
     end
 
 endmodule

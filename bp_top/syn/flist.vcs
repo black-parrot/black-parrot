@@ -229,7 +229,6 @@ $BP_ME_DIR/src/v/lce/bp_lce_cmd.v
 # Cache
 $BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.v
 $BP_ME_DIR/src/v/cache/bp_me_cache_slice.v
-$BP_ME_DIR/src/v/cache/bp_me_cache_slice_burst.v
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.v
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
@@ -268,6 +267,10 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
+$BP_ME_DIR/src/v/wormhole/bp_lite_to_stream.v
+$BP_ME_DIR/src/v/wormhole/bp_stream_to_lite.v
+$BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.v
+$BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.v
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.v
 $BP_TOP_DIR/src/v/bp_cacc_vdp.v
