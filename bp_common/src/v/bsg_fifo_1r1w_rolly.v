@@ -137,11 +137,13 @@ module bsg_fifo_1r1w_rolly
   wire issue_v = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
   assign preissue_pkt_o = bypass_reg ? issue_pkt_li : issue_v ? issue_pkt_lo : '0;
 
-  bsg_dff
+  bsg_dff_reset_en
    #(.width_p($bits(bp_be_issue_pkt_s)))
    issue_reg
     (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
+     ,.en_i(issue_v)
      ,.data_i(preissue_pkt_o)
      ,.data_o(issue_pkt_o)
      );
