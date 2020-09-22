@@ -18,6 +18,7 @@ module bp_stream_to_lite
    , input                                   reset_i
 
    // Master BP Stream
+   // ready-valid-and
    , input [in_mem_msg_header_width_lp-1:0]  mem_header_i
    , input [in_data_width_p-1:0]             mem_data_i
    , input                                   mem_v_i
@@ -25,9 +26,10 @@ module bp_stream_to_lite
    , input                                   mem_lock_i
 
    // Client BP Lite
+   // ready-valid-and
    , output logic [out_mem_msg_width_lp-1:0] mem_o
    , output logic                            mem_v_o
-   , input                                   mem_yumi_i
+   , input                                   mem_ready_i
    );
 
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in_mem);
@@ -50,7 +52,7 @@ module bp_stream_to_lite
      ,.v_i(mem_v_i)
 
      ,.data_o(header_lo)
-     ,.yumi_i(mem_yumi_i)
+     ,.yumi_i(mem_ready_i & mem_v_o)
 
      // We use the sipo ready/valid
      ,.ready_o(/* Unused */)
@@ -74,14 +76,14 @@ module bp_stream_to_lite
 
      ,.data_i(mem_data_i)
      ,.len_i(num_stream_cmds-1'b1)
+     ,.ready_o(mem_ready_o)
      ,.v_i(mem_v_i)
 
      ,.data_o(data_lo)
      ,.v_o(mem_v_o)
-     ,.yumi_i(mem_yumi_i)
+     ,.yumi_i(mem_ready_i & mem_v_o)
 
      // We rely on fifo ready signal
-     ,.ready_o(mem_ready_o)
      ,.len_ready_o(/* Unused */)
      );
 
@@ -105,7 +107,7 @@ module bp_stream_to_lite
     //  if (mem_v_i)
     //    $display("[%t] Stream received: %p %x", $time, mem_header_cast_i, mem_data_i);
 
-    //  if (mem_yumi_i)
+    //  if (mem_ready_i & mem_v_o)
     //    $display("[%t] Msg sent: %p", $time, mem_cast_o);
     end
   //synopsys translate_on

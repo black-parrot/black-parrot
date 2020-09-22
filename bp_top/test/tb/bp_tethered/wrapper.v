@@ -226,7 +226,7 @@ module wrapper
 
          ,.mem_o(mem_cmd_o)
          ,.mem_v_o(mem_cmd_v_o)
-         ,.mem_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
+         ,.mem_ready_i(mem_cmd_ready_i)
          );
 
       logic mem_resp_ready_lo;
@@ -247,11 +247,11 @@ module wrapper
 
          ,.mem_header_o(mem_resp_header_li)
          ,.mem_header_v_o(mem_resp_header_v_li)
-         ,.mem_header_yumi_i(mem_resp_header_yumi_lo)
+         ,.mem_header_ready_i(mem_resp_header_yumi_lo)
 
          ,.mem_data_o(mem_resp_data_li)
          ,.mem_data_v_o(mem_resp_data_v_li)
-         ,.mem_data_yumi_i(mem_resp_data_yumi_lo)
+         ,.mem_data_ready_i(mem_resp_data_yumi_lo)
          );
 
       assign io_cmd_o = io_cmd_lo;

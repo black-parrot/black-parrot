@@ -18,18 +18,21 @@ module bp_lite_to_burst
    , input                                          reset_i
 
    // Master BP Lite
+   // ready-valid-and
    , input [in_mem_msg_width_lp-1:0]                mem_i
    , input                                          mem_v_i
    , output logic                                   mem_ready_o
 
    // Client BP Burst
+   // ready-valid-and
    , output logic [out_mem_msg_header_width_lp-1:0] mem_header_o
    , output logic                                   mem_header_v_o
-   , input logic                                    mem_header_yumi_i
+   , input logic                                    mem_header_ready_i
 
+   // ready-valid-and
    , output logic [out_data_width_p-1:0]            mem_data_o
    , output logic                                   mem_data_v_o
-   , input                                          mem_data_yumi_i
+   , input                                          mem_data_ready_i
    );
 
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in_mem);
@@ -56,7 +59,7 @@ module bp_lite_to_burst
 
      ,.data_o(mem_header_o)
      ,.v_o(mem_header_v_o)
-     ,.yumi_i(mem_header_yumi_i)
+     ,.yumi_i(mem_header_ready_i & mem_header_v_o)
      );
 
   wire is_wr = mem_cast_i.header.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr};
@@ -77,7 +80,7 @@ module bp_lite_to_burst
 
      ,.data_o(mem_data_o)
      ,.v_o(mem_data_v_o)
-     ,.yumi_i(mem_data_yumi_i)
+     ,.yumi_i(mem_data_ready_i & mem_data_v_o)
 
      // We rely on the header fifo to handle ready/valid handshaking
      ,.len_v_o(/* Unused */)

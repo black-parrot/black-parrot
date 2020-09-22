@@ -18,15 +18,17 @@ module bp_lite_to_stream
    , input                                          reset_i
 
    // Master BP Lite
+   // ready-valid-and
    , input [in_mem_msg_width_lp-1:0]                mem_i
    , input                                          mem_v_i
    , output logic                                   mem_ready_o
 
    // Client BP Stream
+   // ready-valid-and
    , output logic [out_mem_msg_header_width_lp-1:0] mem_header_o
    , output logic [out_data_width_p-1:0]            mem_data_o
    , output logic                                   mem_v_o
-   , input                                          mem_yumi_i
+   , input                                          mem_ready_i
    , output logic                                   mem_lock_o
    );
 
@@ -49,13 +51,12 @@ module bp_lite_to_stream
      ,.reset_i(reset_i)
 
      ,.data_i(mem_cast_i.header)
+     ,.ready_o(mem_ready_o)
      ,.v_i(mem_v_i)
 
      ,.data_o(header_lo)
      ,.v_o(mem_v_lo)
      ,.yumi_i(mem_yumi_li)
-
-     ,.ready_o(mem_ready_o)
      );
 
   wire is_wr = mem_cast_i.header.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr};
@@ -76,7 +77,7 @@ module bp_lite_to_stream
 
      ,.data_o(mem_data_o)
      ,.v_o(mem_v_o)
-     ,.yumi_i(mem_yumi_i)
+     ,.yumi_i(mem_ready_i & mem_v_o)
 
      // We rely on the header fifo to handle ready/valid handshaking
      ,.len_v_o(/* Unused */)
@@ -93,13 +94,13 @@ module bp_lite_to_stream
      ,.reset_i(reset_i)
 
      ,.set_i(mem_v_i)
-     ,.en_i(mem_yumi_i)
+     ,.en_i(mem_ready_o & mem_v_i)
      ,.val_i(first_cmd_cnt)
      ,.count_o(current_cnt)
      );
   assign first_cnt = header_lo.addr[stream_offset_width_lp+:data_ptr_width_lp];
   assign last_cnt  = first_cnt - 1'b1;
-  wire cnt_done = mem_yumi_i & (current_cnt == last_cnt);
+  wire cnt_done = (current_cnt == last_cnt);
 
   bp_out_mem_msg_header_s mem_header_cast_o;
   assign mem_header_o = mem_header_cast_o;
@@ -112,8 +113,8 @@ module bp_lite_to_stream
                                 ,header_lo.addr[0+:stream_offset_width_lp]
                                 };
     end
-  assign mem_lock_o = mem_v_o;
-  assign mem_yumi_li = cnt_done & mem_yumi_i;
+  assign mem_lock_o = mem_v_o & ~cnt_done;
+  assign mem_yumi_li = cnt_done & mem_ready_i & mem_v_o;
 
   //synopsys translate_off
   initial

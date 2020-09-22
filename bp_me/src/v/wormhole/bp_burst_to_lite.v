@@ -18,18 +18,21 @@ module bp_burst_to_lite
    , input                                   reset_i
 
    // Master BP Burst
+   // ready-valid-and
    , input [in_mem_msg_header_width_lp-1:0]  mem_header_i
    , input                                   mem_header_v_i
    , output logic                            mem_header_ready_o
 
+   // ready-valid-and
    , input [in_data_width_p-1:0]             mem_data_i
    , input                                   mem_data_v_i
    , output logic                            mem_data_ready_o
 
    // Client BP Lite
+   // ready-valid-and
    , output logic [out_mem_msg_width_lp-1:0] mem_o
    , output logic                            mem_v_o
-   , input                                   mem_yumi_i
+   , input                                   mem_ready_i
    );
 
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in_mem);
@@ -54,7 +57,7 @@ module bp_burst_to_lite
 
      ,.data_o(header_lo)
      ,.v_o(header_v_lo)
-     ,.yumi_i(mem_yumi_i)
+     ,.yumi_i(mem_v_o & mem_ready_i)
      );
 
   bp_in_mem_msg_header_s mem_header_cast_i;
@@ -80,7 +83,7 @@ module bp_burst_to_lite
      ,.data_o(data_lo)
      ,.v_o(data_v_lo)
      // We gate the yumi signal since reads will not produce data
-     ,.yumi_i(data_v_lo & mem_yumi_i)
+     ,.yumi_i(data_v_lo & mem_ready_i & mem_v_o)
 
      // We rely on fifo ready signal
      ,.len_ready_o(/* Unused */)
