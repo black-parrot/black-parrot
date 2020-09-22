@@ -518,7 +518,7 @@ module bp_unicore
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(cce_block_width_p)
          ,.out_data_width_p(dword_width_p)
-         ,.master_p(1)
+         ,.forward_p(1)
          )
        lite2burst
         (.clk_i(clk_i)
@@ -542,7 +542,7 @@ module bp_unicore
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(dword_width_p)
          ,.out_data_width_p(cce_block_width_p)
-         ,.master_p(0)
+         ,.forward_p(0)
          )
        burst2lite
         (.clk_i(clk_i)

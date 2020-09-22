@@ -9,7 +9,11 @@ module bp_lite_to_stream
    , parameter in_data_width_p  = "inv"
    , parameter out_data_width_p = "inv"
 
-   , parameter logic master_p = 0
+   // Determines which direction this module is "pointing"
+   // This is necessary to differentiate between read/write requests/responses
+   // 1: write is N beat, read is 1 beat
+   // 0: write is 1 beat, read is N beats
+   , parameter logic forward_p = 0
 
    `declare_bp_mem_if_widths(paddr_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in_mem)
    `declare_bp_mem_if_widths(paddr_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out_mem)
@@ -61,7 +65,7 @@ module bp_lite_to_stream
 
   wire is_wr = mem_cast_i.header.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr};
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
-  wire [data_len_width_lp-1:0] num_stream_cmds = (master_p ^ is_wr)
+  wire [data_len_width_lp-1:0] num_stream_cmds = (forward_p ^ is_wr)
     ? 1'b1
     : `BSG_MAX(((1'b1 << mem_cast_i.header.size) / out_data_bytes_lp), 1'b1);
   logic [out_data_width_p-1:0] data_lo;
