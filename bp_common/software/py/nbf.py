@@ -209,7 +209,7 @@ class NBF:
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser()
-  parser.add_argument('--ncpus', type=int, help='number of BlackParrot cores')
+  parser.add_argument('--ncpus', type=int, default=1, help='number of BlackParrot cores')
   parser.add_argument('--ucode', dest='ucode_file', metavar='ucode.mem', help='CCE ucode file')
   parser.add_argument('--domains', dest='domains', type=str, help='domains to be enabled')
   parser.add_argument('--sac', dest='sac', type=int, help='sac enabled? (0 or 1)')
