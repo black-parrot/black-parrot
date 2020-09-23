@@ -67,10 +67,9 @@ module bp_lite_to_burst
      );
 
   wire is_wr = mem_cast_i.header.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr};
+  wire has_data = (forward_p == is_wr);
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
-  wire [data_len_width_lp-1:0] num_burst_cmds = (forward_p ^ is_wr)
-    ? 1'b1
-    : `BSG_MAX(((1'b1 << mem_cast_i.header.size) / out_data_bytes_lp), 1'b1);
+  wire [data_len_width_lp-1:0] num_burst_cmds = (1'b1 << mem_cast_i.header.size) / out_data_bytes_lp;
   logic [out_data_width_p-1:0] data_lo;
   bsg_parallel_in_serial_out_dynamic
    #(.width_p(out_data_width_p), .max_els_p(burst_words_lp))
@@ -80,7 +79,7 @@ module bp_lite_to_burst
 
      ,.data_i(mem_cast_i.data)
      ,.len_i(num_burst_cmds - 1'b1)
-     ,.v_i(mem_v_i)
+     ,.v_i(mem_v_i & has_data)
 
      ,.data_o(mem_data_o)
      ,.v_o(mem_data_v_o)
