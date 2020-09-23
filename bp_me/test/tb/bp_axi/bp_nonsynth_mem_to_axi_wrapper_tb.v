@@ -155,7 +155,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
       end
 
       WRITE_DATA_WAIT: begin
-        axi_awready_o = 1'b1;
+        axi_wready_o = 1'b1;
         awaddr_n      = axi_wvalid_i & (axi_awburst_i==2'b01)
                       ? awaddr_r + (1 << `BSG_SAFE_CLOG2(axi_data_width_p>>3))
                       : awaddr_r;

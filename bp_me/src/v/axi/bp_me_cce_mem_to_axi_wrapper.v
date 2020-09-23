@@ -199,7 +199,7 @@ module bp_me_cce_mem_to_axi_wrapper
     axi_awburst_cnt_n = axi_awburst_cnt_r;
 
     // WRITE RESPONSE CHANNEL SIGNALS
-    axi_bready_o  = '0;
+    axi_bready_o  = 1'b1;
 
     case (state_r)
       WAIT: begin
@@ -266,8 +266,10 @@ module bp_me_cce_mem_to_axi_wrapper
         if (axi_bresp_i != '0 & axi_bvalid_i)
           state_n = WRITE_ERR;
         // else if a valid write response returns OKAY, then go back to wait state
-        else if (axi_bresp_i == '0 & axi_bvalid_i)
+        else if (axi_bresp_i == '0 & axi_bvalid_i) begin
           state_n = WAIT;
+          mem_resp_v_o = 1'b1;
+        end
       end
 
       WRITE_ERR: begin
@@ -303,7 +305,7 @@ module bp_me_cce_mem_to_axi_wrapper
 
     ,.data_o    (axi_read_sipo_data_lo)
     ,.v_o       (axi_read_sipo_v_lo)
-    ,.yumi_i    (mem_resp_yumi_i)
+    ,.yumi_i    (mem_resp_yumi_i & (state_r == READ_DONE))
     );
 
   // PISO for write data
@@ -315,7 +317,7 @@ module bp_me_cce_mem_to_axi_wrapper
     (.clk_i     (aclk_i)
     ,.reset_i   (~aresetn_i)
 
-    ,.valid_i   (mem_cmd_v_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr})
+    ,.valid_i   (mem_cmd_v_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr} & (state_r == WAIT))
     ,.data_i    (mem_cmd_cast_i.data)
     ,.ready_o   (axi_write_piso_ready_lo)
 
