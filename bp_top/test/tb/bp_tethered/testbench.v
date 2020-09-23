@@ -87,6 +87,26 @@ logic load_cmd_v_lo, load_cmd_yumi_li;
 bp_cce_mem_msg_s load_resp_li;
 logic load_resp_v_li, load_resp_ready_lo;
 
+//=============== axi logics ========================
+logic proc_mem_cmd_axi_ready_li, proc_mem_resp_axi_v_li;
+bp_cce_mem_msg_s proc_mem_resp_axi_li;
+
+logic axi_awid, axi_wid, axi_bid, axi_arid, axi_rid;
+logic [63:0] axi_awaddr, axi_araddr;
+logic [7:0] axi_awlen, axi_arlen;
+logic [2:0] axi_awsize, axi_arsize;
+logic [1:0] axi_awburst, axi_arburst;
+logic [3:0] axi_awcache, axi_arcache;
+logic [2:0] axi_awprot, axi_arprot;
+logic [3:0] axi_awqos, axi_arqos;
+logic axi_awvalid, axi_wvalid, axi_bvalid, axi_arvalid, axi_rvalid;
+logic axi_awready, axi_wready, axi_bready, axi_arready, axi_rready;
+logic [63:0] axi_wdata, axi_rdata;
+logic [7:0] axi_wstrb;
+logic axi_wlast, axi_rlast;
+logic [1:0] axi_bresp, axi_rresp;
+//===================================================
+
 wrapper
  #(.bp_params_p(bp_params_p))
  wrapper
@@ -113,8 +133,10 @@ wrapper
    ,.mem_cmd_v_o(proc_mem_cmd_v_lo)
    ,.mem_cmd_ready_i(proc_mem_cmd_ready_li)
 
-   ,.mem_resp_i(proc_mem_resp_li)
-   ,.mem_resp_v_i(proc_mem_resp_v_li)
+   //,.mem_resp_i(proc_mem_resp_li)
+   //,.mem_resp_v_i(proc_mem_resp_v_li)
+   ,.mem_resp_i(proc_mem_resp_axi_li)
+   ,.mem_resp_v_i(proc_mem_resp_axi_v_li)
    ,.mem_resp_yumi_o(proc_mem_resp_yumi_lo)
    );
 
@@ -151,24 +173,6 @@ bp_mem
 
 ///*
 //==================axi========================
-logic proc_mem_cmd_axi_ready_li, proc_mem_resp_axi_v_li;
-bp_cce_mem_msg_s proc_mem_resp_axi_li;
-
-logic axi_awid, axi_wid, axi_bid, axi_arid, axi_rid;
-logic [63:0] axi_awaddr, axi_araddr;
-logic [7:0] axi_awlen, axi_arlen;
-logic [2:0] axi_awsize, axi_arsize;
-logic [1:0] axi_awburst, axi_arburst;
-logic [3:0] axi_awcache, axi_arcache;
-logic [2:0] axi_awprot, axi_arprot;
-logic [3:0] axi_awqos, axi_arqos;
-logic axi_awvalid, axi_wvalid, axi_bvalid, axi_arvalid, axi_rvalid;
-logic axi_awready, axi_wready, axi_bready, axi_arready, axi_rready;
-logic [63:0] axi_wdata, axi_rdata;
-logic [7:0] axi_wstrb;
-logic axi_wlast, axi_rlast;
-logic [1:0] axi_bresp, axi_rresp;
-
 bp_me_cce_mem_to_axi_wrapper 
   #(.bp_params_p(bp_params_p))
   axi_wrapper
