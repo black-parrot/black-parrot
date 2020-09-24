@@ -39,9 +39,9 @@ module bp_fe_icache
     , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
     , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
-    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
     , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
     , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
+    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
@@ -51,10 +51,9 @@ module bp_fe_icache
 
     , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
 
-    , input [vaddr_width_p-1:0]                        vaddr_i
-    , input                                            vaddr_v_i
-    , input                                            fencei_v_i
-    , output                                           vaddr_ready_o
+    , input [icache_pkt_width_lp-1:0]                  icache_pkt_i
+    , input                                            v_i
+    , output                                           ready_o
 
     , input [ptag_width_p-1:0]                         ptag_i
     , input                                            ptag_v_i
@@ -85,7 +84,7 @@ module bp_fe_icache
     , input                                            tag_mem_pkt_v_i
     , input [icache_tag_mem_pkt_width_lp-1:0]          tag_mem_pkt_i
     , output logic                                     tag_mem_pkt_yumi_o
-    , output logic [ptag_width_lp-1:0]                 tag_mem_o
+    , output logic [ptag_width_p-1:0]                  tag_mem_o
 
     // stat_mem
     , input                                            stat_mem_pkt_v_i
@@ -104,20 +103,24 @@ module bp_fe_icache
   assign cache_req_o = cache_req_cast_lo;
   assign cache_req_metadata_o = cache_req_metadata_cast_lo;
 
+  `declare_bp_fe_icache_pkt_s(vaddr_width_p);
+  bp_fe_icache_pkt_s icache_pkt;
+  assign icache_pkt = icache_pkt_i;
+
   logic [vtag_width_p-1:0]              vaddr_vtag;
   logic [index_width_lp-1:0]            vaddr_index;
   logic [bank_offset_width_lp-1:0]      vaddr_offset;
 
   logic [icache_assoc_p-1:0]            way_v_tv_r; // valid bits of each way
-  logic [lg_icache_assoc_lp-1:0]           way_invalid_index; // first invalid way
+  logic [lg_icache_assoc_lp-1:0]        way_invalid_index; // first invalid way
   logic                                 invalid_exist;
 
   logic uncached_req;
   logic fencei_req;
 
-  assign vaddr_index      = vaddr_i[block_offset_width_lp+:index_width_lp];
-  assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:bank_offset_width_lp];
-  assign vaddr_vtag       = vaddr_i[block_offset_width_lp+index_width_lp+:vtag_width_p];
+  assign vaddr_index      = icache_pkt.vaddr[block_offset_width_lp+:index_width_lp];
+  assign vaddr_offset     = icache_pkt.vaddr[byte_offset_width_lp+:bank_offset_width_lp];
+  assign vaddr_vtag       = icache_pkt.vaddr[block_offset_width_lp+index_width_lp+:vtag_width_p];
 
   // TL stage
   logic v_tl_r;
@@ -126,7 +129,9 @@ module bp_fe_icache
   logic [vaddr_width_p-1:0]           vaddr_tl_r;
   logic fencei_op_tl_r;
 
-  assign tl_we = (vaddr_v_i | fencei_v_i) & cache_req_ready_i & ~fencei_req;
+  wire is_fetch = (icache_pkt.op == e_icache_fetch);
+  wire is_fencei = (icache_pkt.op == e_icache_fencei);
+  assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -136,23 +141,23 @@ module bp_fe_icache
     end else begin
       v_tl_r       <= tl_we;
       if (tl_we) begin
-        page_offset_tl_r <= vaddr_i[bp_page_offset_width_gp-1:0];
-        vaddr_tl_r       <= vaddr_i;
-        fencei_op_tl_r   <= fencei_v_i;
+        page_offset_tl_r <= icache_pkt.vaddr[bp_page_offset_width_gp-1:0];
+        vaddr_tl_r       <= icache_pkt.vaddr;
+        fencei_op_tl_r   <= is_fencei;
       end
     end
   end
 
   // tag memory
-  logic                                                                tag_mem_v_li;
-  logic                                                                tag_mem_w_li;
-  logic [index_width_lp-1:0]                                           tag_mem_addr_li;
-  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_lp-1:0] tag_mem_data_li;
-  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_lp-1:0] tag_mem_w_mask_li;
-  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_lp-1:0] tag_mem_data_lo;
+  logic                                                               tag_mem_v_li;
+  logic                                                               tag_mem_w_li;
+  logic [index_width_lp-1:0]                                          tag_mem_addr_li;
+  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_p-1:0] tag_mem_data_li;
+  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_p-1:0] tag_mem_w_mask_li;
+  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_p-1:0] tag_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit #(
-    .width_p(icache_assoc_p*($bits(bp_coh_states_e)+ptag_width_lp))
+    .width_p(icache_assoc_p*($bits(bp_coh_states_e)+ptag_width_p))
     ,.els_p(icache_sets_p)
     ,.latch_last_read_p(1)
   ) tag_mem (
@@ -167,11 +172,11 @@ module bp_fe_icache
   );
 
   logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)-1:0] state_tl;
-  logic [icache_assoc_p-1:0][ptag_width_lp-1:0] tag_tl;
+  logic [icache_assoc_p-1:0][ptag_width_p-1:0] tag_tl;
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin
-    assign state_tl[i] = tag_mem_data_lo[i][ptag_width_lp+:$bits(bp_coh_states_e)];
-    assign tag_tl[i]   = tag_mem_data_lo[i][0+:ptag_width_lp];
+    assign state_tl[i] = tag_mem_data_lo[i][ptag_width_p+:$bits(bp_coh_states_e)];
+    assign tag_tl[i]   = tag_mem_data_lo[i][0+:ptag_width_p];
   end
 
   // data memory
@@ -200,7 +205,7 @@ module bp_fe_icache
     );
   end
 
-  logic [ptag_width_lp-1:0]        addr_tag_tl;
+  logic [ptag_width_p-1:0]         addr_tag_tl;
   logic [bank_offset_width_lp-1:0] addr_bank_offset_tl;
   logic [icache_assoc_p-1:0]       addr_bank_offset_dec_tl;
   logic [icache_assoc_p-1:0]       hit_v_tl;
@@ -210,7 +215,7 @@ module bp_fe_icache
   logic [vtag_width_p-1:0]         vaddr_vtag_tl;
    
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
-  assign addr_tag_tl = addr_tl[block_offset_width_lp+index_width_lp+:ptag_width_lp];
+  assign addr_tag_tl = addr_tl[block_offset_width_lp+index_width_lp+:ptag_width_p];
   assign addr_bank_offset_tl = addr_tl[byte_offset_width_lp+:bank_offset_width_lp];
 
   assign vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:index_width_lp];
@@ -234,10 +239,10 @@ module bp_fe_icache
   logic                                                      uncached_tv_r;
   logic [paddr_width_p-1:0]                                  addr_tv_r;
   logic [vaddr_width_p-1:0]                                  vaddr_tv_r;
-  logic [icache_assoc_p-1:0][ptag_width_lp-1:0]              tag_tv_r;
+  logic [icache_assoc_p-1:0][ptag_width_p-1:0]               tag_tv_r;
   logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)-1:0]     state_tv_r;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]              ld_data_tv_r;
-  logic [ptag_width_lp-1:0]                                  addr_tag_tv_r;
+  logic [ptag_width_p-1:0]                                   addr_tag_tv_r;
   logic [icache_assoc_p-1:0]                                 addr_bank_offset_dec_tv_r;
   logic [index_width_lp-1:0]                                 addr_index_tv;
   logic                                                      fencei_op_tv_r;
@@ -382,7 +387,7 @@ module bp_fe_icache
      ,.data_o(cache_miss)
      );
 
-  assign vaddr_ready_o = cache_req_ready_i & ~cache_miss & ~cache_req_v_o;
+  assign ready_o = cache_req_ready_i & ~cache_miss & ~cache_req_v_o;
 
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
                               | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
@@ -552,19 +557,19 @@ module bp_fe_icache
       e_cache_tag_mem_set_clear: begin
         for (integer i = 0 ; i < icache_assoc_p; i++) begin
           tag_mem_data_li[i]    = '0;
-          tag_mem_w_mask_li[i]  = {($bits(bp_coh_states_e)+ptag_width_lp){1'b1}};
+          tag_mem_w_mask_li[i]  = {($bits(bp_coh_states_e)+ptag_width_p){1'b1}};
         end
       end
       e_cache_tag_mem_set_tag: begin
         for (integer i = 0; i < icache_assoc_p; i++) begin
           tag_mem_data_li[i]   = {tag_mem_pkt.state, tag_mem_pkt.tag};
-          tag_mem_w_mask_li[i] = {($bits(bp_coh_states_e)+ptag_width_lp){tag_mem_way_one_hot[i]}};
+          tag_mem_w_mask_li[i] = {($bits(bp_coh_states_e)+ptag_width_p){tag_mem_way_one_hot[i]}};
         end
       end
       e_cache_tag_mem_set_state: begin
         for (integer i = 0; i < icache_assoc_p; i++) begin
           tag_mem_data_li[i]   = {tag_mem_pkt.state, '0};
-          tag_mem_w_mask_li[i] = {{$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, {ptag_width_lp{1'b0}}};
+          tag_mem_w_mask_li[i] = {{$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, {ptag_width_p{1'b0}}};
         end
       end
       default: begin
@@ -669,7 +674,7 @@ module bp_fe_icache
     end
   end
 
-  assign tag_mem_o = tag_mem_data_lo[tag_mem_pkt_way_r][0+:ptag_width_lp];
+  assign tag_mem_o = tag_mem_data_lo[tag_mem_pkt_way_r][0+:ptag_width_p];
   assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & ~tl_we;
 
   // LCE: stat_mem
