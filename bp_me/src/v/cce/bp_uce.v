@@ -380,7 +380,7 @@ module bp_uce
   logic mem_cmd_done_r;
   bsg_dff_reset_set_clear
    #(.width_p(1)
-    ,.clear_over_set_p(1)) // if 1, clear overrides set.
+    ,.clear_over_set_p(1))
    mem_cmd_done_reg
     (.clk_i(clk_i)
     ,.reset_i(reset_i)

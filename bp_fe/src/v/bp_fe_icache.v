@@ -246,9 +246,29 @@ module bp_fe_icache
   logic                                                      fencei_op_tv_r;
   logic [icache_assoc_p-1:0]                                 hit_v_tv_r;
 
+  logic [instr_width_p-1:0] snoop_word;
+  localparam snoop_offset_width_p = `BSG_SAFE_CLOG2(icache_fill_width_p/instr_width_p);
+  wire [snoop_offset_width_p-1:0] snoop_word_offset = vaddr_tv_r[2+:snoop_offset_width_p];
+  bsg_mux
+   #(.width_p(instr_width_p), .els_p(icache_fill_width_p/instr_width_p))
+   snoop_mux
+    (.data_i(data_mem_pkt.data)
+     ,.sel_i(snoop_word_offset)
+     ,.data_o(snoop_word)
+     );
+  wire [icache_block_width_p-1:0] snoop_data_lo = {icache_block_width_p/instr_width_p{snoop_word}};
+
+  logic [icache_block_width_p-1:0] ld_data_tv_n;
+  bsg_mux
+   #(.width_p(icache_assoc_p*bank_width_lp), .els_p(2))
+   ld_data_mux
+    (.data_i({snoop_data_lo, data_mem_data_lo})
+     ,.sel_i(cache_req_critical_i)
+     ,.data_o(ld_data_tv_n)
+     );
 
   // Flush ops are non-speculative and so cannot be poisoned
-  assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
+  assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r);
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -263,13 +283,15 @@ module bp_fe_icache
         vaddr_tv_r     <= vaddr_tl_r;
         tag_tv_r       <= tag_tl;
         state_tv_r     <= state_tl;
-        ld_data_tv_r   <= data_mem_data_lo;
         uncached_tv_r  <= uncached_i;
         fencei_op_tv_r <= fencei_op_tl_r;
         hit_v_tv_r     <= hit_v_tl;
         addr_tag_tv_r  <= addr_tag_tl;
         addr_bank_offset_dec_tv_r <= addr_bank_offset_dec_tl;
         way_v_tv_r     <= way_v_tl;
+      end
+      if (tv_we | cache_req_critical_i) begin
+        ld_data_tv_r   <= ld_data_tv_n;
       end
     end
   end
@@ -381,18 +403,8 @@ module bp_fe_icache
   always_comb
     begin
       case (state_r)
-        e_ready:
-          begin
-            state_n = cache_req_v_o ? e_miss : e_ready;
-          end
-        e_miss:
-          begin
-            state_n = cache_req_complete_i ? e_ready : e_miss;
-          end
-        e_recover:
-          begin
-            state_n = e_ready;
-          end
+        e_ready: state_n = cache_req_v_o ? e_miss : e_ready;
+        e_miss: state_n = cache_req_complete_i ? e_ready : e_miss;
         default: state_n = e_ready;
       endcase
     end

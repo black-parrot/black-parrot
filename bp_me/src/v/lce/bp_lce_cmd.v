@@ -547,6 +547,7 @@ module bp_lce_cmd
 
               lce_cmd_yumi_o = data_mem_pkt_yumi_i;
 
+              cache_req_critical_o = lce_cmd_yumi_o;
               cache_req_complete_o = lce_cmd_yumi_o;
             end
 
