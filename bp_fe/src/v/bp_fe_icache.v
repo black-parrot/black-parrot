@@ -33,7 +33,7 @@ module bp_fe_icache
 
     , localparam lg_icache_assoc_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
     , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
-    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
+    , localparam num_words_per_bank_lp = bank_width_lp / word_width_p
     , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
     , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
@@ -373,16 +373,29 @@ module bp_fe_icache
   assign cache_req_metadata_cast_lo.dirty = '0;
 
   // Cache Miss Tracker
-  enum logic {e_ready, e_miss} state_n, state_r;
-  wire is_ready = (state_r == e_ready);
-  wire is_miss  = (state_r == e_miss);
+  enum logic [1:0] {e_ready, e_miss, e_recover} state_n, state_r;
+  wire is_ready   = (state_r == e_ready);
+  wire is_miss    = (state_r == e_miss);
+  wire is_recover = (state_r == e_recover);
 
   always_comb
-    case (state_r)
-      e_ready  : state_n = cache_req_v_o ? e_miss : e_ready;
-      e_miss   : state_n = cache_req_complete_i ? e_ready : e_miss;
-      default: state_n = e_ready;
-    endcase
+    begin
+      case (state_r)
+        e_ready:
+          begin
+            state_n = cache_req_v_o ? e_miss : e_ready;
+          end
+        e_miss:
+          begin
+            state_n = cache_req_complete_i ? e_ready : e_miss;
+          end
+        e_recover:
+          begin
+            state_n = e_ready;
+          end
+        default: state_n = e_ready;
+      endcase
+    end
 
   always_ff @(posedge clk_i)
     if (reset_i)
@@ -416,26 +429,16 @@ module bp_fe_icache
     ,.data_o(ld_data_way_picked)
   );
 
-  logic [dword_width_p-1:0] ld_data_dword_picked;
-  bsg_mux
-    #(.width_p(dword_width_p)
-     ,.els_p(num_dwords_per_bank_lp)
-     )
-     dword_select_mux
-     (.data_i(ld_data_way_picked)
-     ,.sel_i(addr_tv_r[3+:`BSG_CDIV(num_dwords_per_bank_lp, 2)])
-     ,.data_o(ld_data_dword_picked)
-     );
-
   logic [instr_width_p-1:0] final_data;
-  bsg_mux #(
-    .width_p(instr_width_p)
-    ,.els_p(2)
-  ) final_data_mux (
-    .data_i(ld_data_dword_picked)
-    ,.sel_i(addr_tv_r[2])
-    ,.data_o(final_data)
-  );
+  bsg_mux
+   #(.width_p(instr_width_p)
+     ,.els_p(num_words_per_bank_lp)
+     )
+   dword_select_mux
+    (.data_i(ld_data_way_picked)
+     ,.sel_i(addr_tv_r[2+:`BSG_SAFE_CLOG2(num_words_per_bank_lp)])
+     ,.data_o(final_data)
+     );
 
   assign data_o = uncached_tv_r ? uncached_load_data_r : final_data;
 
