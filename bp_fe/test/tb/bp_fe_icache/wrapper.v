@@ -175,6 +175,10 @@ module wrapper
 
    assign poison_li = icache_v_rr & ~data_v_o;
 
+  `declare_bp_fe_icache_pkt_s(vaddr_width_p);
+  bp_fe_icache_pkt_s icache_pkt;
+  assign icache_pkt = '{vaddr: rolly_vaddr_lo, op: e_icache_fetch};
+
   // I-Cache
   bp_fe_icache
     #(.bp_params_p(bp_params_p))
@@ -184,10 +188,9 @@ module wrapper
 
     ,.cfg_bus_i(cfg_bus_i)
 
-    ,.vaddr_i(rolly_vaddr_lo)
-    ,.vaddr_v_i(rolly_yumi_li)
-    ,.fencei_v_i(1'b0)
-    ,.vaddr_ready_o(icache_ready_lo)
+    ,.icache_pkt_i(icache_pkt)
+    ,.v_i(rolly_yumi_li)
+    ,.ready_o(icache_ready_lo)
 
     ,.ptag_i(rolly_ptag_r)
     ,.ptag_v_i(ptag_v_r)

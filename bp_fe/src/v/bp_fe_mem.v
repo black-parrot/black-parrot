@@ -145,6 +145,11 @@ bp_pma
 logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
 
+`declare_bp_fe_icache_pkt_s(vaddr_width_p);
+bp_fe_icache_pkt_s icache_pkt;
+assign icache_pkt = '{vaddr: mem_cmd_cast_i.operands.fetch.vaddr
+                      ,op  : fencei_v ? e_icache_fencei : e_icache_fetch
+                      };
 logic instr_access_fault_v, instr_page_fault_v;
 bp_fe_icache
  #(.bp_params_p(bp_params_p))
@@ -154,10 +159,9 @@ bp_fe_icache
 
    ,.cfg_bus_i(cfg_bus_i)
 
-   ,.vaddr_i(mem_cmd_cast_i.operands.fetch.vaddr)
-   ,.vaddr_v_i(fetch_v)
-   ,.fencei_v_i(fencei_v)
-   ,.vaddr_ready_o(fetch_ready)
+   ,.icache_pkt_i(icache_pkt)
+   ,.v_i(fetch_v | fencei_v)
+   ,.ready_o(fetch_ready)
 
    ,.ptag_i(ptag_li)
    ,.ptag_v_i(ptag_v_li)
