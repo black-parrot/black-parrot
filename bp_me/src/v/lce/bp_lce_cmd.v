@@ -413,6 +413,10 @@ module bp_lce_cmd
               tag_mem_pkt.opcode = e_cache_tag_mem_set_tag;
               tag_mem_pkt_v_o = lce_cmd_v_i;
 
+              // TODO: This is sufficient for the critical signal when only
+              //   line width fills
+              cache_req_critical_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+
               // send coherence ack after updating tag and data memories
               state_n = (tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i)
                         ? e_coh_ack
