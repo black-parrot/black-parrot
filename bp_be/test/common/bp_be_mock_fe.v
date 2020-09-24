@@ -11,7 +11,7 @@ module bp_be_mock_fe
  #(parameter vaddr_width_p                 = "inv"
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
+   , parameter fe_metadata_fwd_width_p = "inv"
 
    , parameter boot_rom_els_p        = "inv"
    , parameter boot_rom_width_p      = "inv"
@@ -21,13 +21,13 @@ module bp_be_mock_fe
    , localparam lg_boot_rom_bytes_lp =`BSG_SAFE_CLOG2(boot_rom_bytes_lp)
 
    , localparam bp_fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p
-                                                          , branch_metadata_fwd_width_p
+                                                          , fe_metadata_fwd_width_p
                                                           )
 
    , localparam bp_fe_cmd_width_lp   = `bp_fe_cmd_width(vaddr_width_p
                                                         , paddr_width_p
                                                         , asid_width_p
-                                                        , branch_metadata_fwd_width_p
+                                                        , fe_metadata_fwd_width_p
                                                         )
 
    , localparam instr_width_lp     = rv64_instr_width_gp
@@ -54,7 +54,7 @@ module bp_be_mock_fe
 `declare_bp_fe_be_if(vaddr_width_p
                                     , paddr_width_p
                                     , asid_width_p
-                                    , branch_metadata_fwd_width_p
+                                    , fe_metadata_fwd_width_p
                                     );
 
 // Cast input and output ports

@@ -29,7 +29,7 @@
 /*
  * Clients need only use this macro to declare all parameterized structs for FE<->BE interface.
  */
-`define declare_bp_fe_be_if(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+`define declare_bp_fe_be_if(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
   /*                                                                                               \
    *                                                                                               \
    * bp_fe_fetch_s contains the pc/instruction pair, along with additional                         \
@@ -44,8 +44,9 @@
     logic [vaddr_width_mp-1:0]                pc;                                                  \
     logic [bp_instr_width_gp-1:0]             instr;                                               \
     logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                                 \
+    logic [icache_metadata_fwd_width_mp-1:0]  icache_metadata_fwd;                                 \
                                                                                                    \
-    logic [`bp_fe_fetch_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)-1:0]           \
+    logic [`bp_fe_fetch_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)-1:0] \
                                               padding;                                             \
   }  bp_fe_fetch_s;                                                                                \
                                                                                                    \
@@ -60,7 +61,7 @@
   {                                                                                                \
     logic [vaddr_width_mp-1:0] vaddr;                                                              \
     bp_fe_exception_code_e     exception_code;                                                     \
-    logic [`bp_fe_exception_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)-1:0]       \
+    logic [`bp_fe_exception_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)-1:0]           \
                                padding;                                                            \
   }  bp_fe_exception_s;                                                                            \
                                                                                                    \
@@ -93,7 +94,7 @@
     logic                                    translation_enabled;                                  \
     logic [1:0]                              priv;                                                 \
                                                                                                    \
-    logic [`bp_fe_cmd_pc_redirect_operands_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+    logic [`bp_fe_cmd_pc_redirect_operands_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)-1:0] \
                                              padding;                                              \
   }  bp_fe_cmd_pc_redirect_operands_s;                                                             \
                                                                                                    \
@@ -106,7 +107,7 @@
     logic                                    taken;                                                \
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
                                                                                                    \
-    logic [`bp_fe_cmd_attaboy_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+    logic [`bp_fe_cmd_attaboy_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)-1:0] \
                                              padding;                                              \
   }  bp_fe_cmd_attaboy_s;                                                                          \
                                                                                                    \
@@ -127,15 +128,25 @@
   }  bp_pte_entry_leaf_s;                                                                          \
                                                                                                    \
   /*                                                                                               \
+   * bp_fe_icache_fill_s provides a nonspeculative miss command to the I$ in the FE                \
+   */                                                                                              \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic [icache_metadata_fwd_width_mp-1:0] icache_metadata_fwd;                                  \
+    logic [`bp_fe_cmd_icache_fill_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)-1:0] \
+                                             padding;                                              \
+  }  bp_fe_cmd_icache_fill_s;                                                                       \
+                                                                                                   \
+  /*                                                                                               \
    * bp_fe_cmd_itlb_map_s provides the virtual, physical translation plus the                      \
    * additional permission bits to the itlb in the case of page walk. Once the                     \
    * frontend sends the page fill request to the backend, the backend performs the                 \
    * page walk, and responds to the frontend with bp_fe_cmd_itlb_map_s.                            \
-  */                                                                                               \
+   */                                                                                              \
   typedef struct packed                                                                            \
   {                                                                                                \
     bp_pte_entry_leaf_s        pte_entry_leaf;                                                     \
-    logic [`bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+    logic [`bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)-1:0] \
                                padding;                                                            \
   }  bp_fe_cmd_itlb_map_s;                                                                         \
                                                                                                    \
@@ -143,19 +154,19 @@
    * bp_fe_cmd_itlb_fence_s consists of virtual address, asid, and flags for whether to flush      \
    * all addresses and/or all asids. In the case of context switch, the itlb will perform itlb     \
    * fence according to the asid.                                                                  \
-  */                                                                                               \
+   */                                                                                              \
   typedef struct packed                                                                            \
   {                                                                                                \
     logic [asid_width_mp-1:0]  asid;                                                               \
     logic                      flush_all_addresses;                                                \
     logic                      flush_all_asid;                                                     \
-    logic [`bp_fe_cmd_itlb_fence_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+    logic [`bp_fe_cmd_itlb_fence_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)-1:0] \
                                padding;                                                            \
   }  bp_fe_cmd_itlb_fence_s;                                                                       \
                                                                                                    \
   /*                                                                                               \
    * bp_fe_cmd_s is the information backend provides to the frontend in the case of                \
-   * misprediction.  It contains the branch_metadata_fwd information and                           \
+   * misprediction.  It contains the fe_metadata information and                                   \
    * misprediction reason. The BE does not examine the branch metadata, but does                   \
    * supply the misprediction reason.                                                              \
    */                                                                                              \
@@ -167,6 +178,7 @@
     {                                                                                              \
       bp_fe_cmd_pc_redirect_operands_s    pc_redirect_operands;                                    \
       bp_fe_cmd_attaboy_s                 attaboy;                                                 \
+      bp_fe_cmd_icache_fill_s             icache_fill_response;                                    \
       bp_fe_cmd_itlb_map_s                itlb_fill_response;                                      \
       bp_fe_cmd_itlb_fence_s              itlb_fence;                                              \
     }  operands;                                                                                   \
@@ -176,9 +188,9 @@
 /*
  * Declare all fe-be widths at once as localparams
  */
-`define declare_bp_fe_be_if_widths(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  , localparam fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
-  , localparam fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)
+`define declare_bp_fe_be_if_widths(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  , localparam fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  , localparam fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)
 
 /*
  * bp_fe_queue_s can either contain an instruction or exception.
@@ -257,62 +269,62 @@ typedef enum logic [2:0]
 } bp_fe_command_queue_subopcodes_e;
 
 /* Declare width macros so that clients can use structs in ports before struct declaration */
-`define bp_fe_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                            \
+`define bp_fe_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                            \
   ($bits(bp_fe_queue_type_e)                                                                       \
-   + `bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                        \
+   + `bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                        \
    )
 
-`define bp_fe_fetch_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                            \
-  (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp))
+`define bp_fe_fetch_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                            \
+  (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp))
 
-`define bp_fe_exception_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                        \
-  (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp))
+`define bp_fe_exception_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                        \
+  (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp))
 
-`define bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+`define bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
   (vaddr_width_mp                                                                                  \
    + $bits(bp_fe_command_queue_opcodes_e)                                                          \
-   + `bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)      \
+   + `bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)      \
    )
 
-`define bp_fe_cmd_reset_operands_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
+`define bp_fe_cmd_reset_operands_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp))
 
-`define bp_fe_cmd_pc_redirect_operands_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
+`define bp_fe_cmd_pc_redirect_operands_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp))
 
-`define bp_fe_cmd_attaboy_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
+`define bp_fe_cmd_attaboy_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp))
 
-`define bp_fe_cmd_itlb_map_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
+`define bp_fe_cmd_itlb_map_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp))
 
 `define bp_pte_entry_leaf_width(paddr_width_mp)                                                 \
   (paddr_width_mp - bp_page_offset_width_gp + 6)
 
-`define bp_fe_cmd_itlb_fence_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
+`define bp_fe_cmd_itlb_fence_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp))
 
 /* Ensure all members of packed unions have the same size. If parameterized unions are desired,
  * examine this code carefully. Else, clients should not have to use these macros
  */
-`define bp_fe_fetch_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp)                 \
-  (vaddr_width_mp + bp_instr_width_gp + branch_metadata_fwd_width_mp)
+`define bp_fe_fetch_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                 \
+  (vaddr_width_mp + bp_instr_width_gp + branch_metadata_fwd_width_mp + icache_metadata_fwd_width_mp)
 
 `define bp_fe_exception_width_no_padding(vaddr_width_mp)                                           \
   (vaddr_width_mp + $bits(bp_fe_exception_code_e))
 
-`define bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
-  (1 + `BSG_MAX(`bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp)         \
+`define bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                      \
+  (1 + `BSG_MAX(`bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp,icache_metadata_fwd_width_mp)         \
                 , `bp_fe_exception_width_no_padding(vaddr_width_mp)                                \
                 )                                                                                  \
    )
 
-`define bp_fe_fetch_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                    \
-  (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                          \
-   - `bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp))
+`define bp_fe_fetch_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                    \
+  (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                          \
+   - `bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp,icache_metadata_fwd_width_mp))
 
-`define bp_fe_exception_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                \
-  (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                          \
+`define bp_fe_exception_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                \
+  (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)                          \
    - `bp_fe_exception_width_no_padding(vaddr_width_mp))
 
 `define bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp) \
@@ -322,39 +334,49 @@ typedef enum logic [2:0]
 `define bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp) \
   (1+branch_metadata_fwd_width_mp)
 
+`define bp_fe_cmd_icache_fill_width_no_padding(icache_metadata_fwd_width_mp) \
+  (icache_metadata_fwd_width_mp)
+
 `define bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp) \
   (`bp_pte_entry_leaf_width(paddr_width_mp))
 
 `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
   (asid_width_mp + 2)
 
-`define bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)       \
-              ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)          \
-                        ,`BSG_MAX(`bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp)             \
-                                  ,`bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp)           \
+`define bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)            \
+              ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)               \
+                        ,`BSG_MAX(`bp_fe_cmd_icache_fill_width_no_padding(icache_metadata_fwd_width_mp) \
+                                  ,`BSG_MAX(`bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp)   \
+                                            ,`bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
+                                            )                                                      \
                                   )                                                                \
                         )                                                                          \
               )                                                                                    \
    )
 
-`define bp_fe_cmd_pc_redirect_operands_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)        \
+`define bp_fe_cmd_pc_redirect_operands_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)        \
    - `bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)                \
    )
 
-`define bp_fe_cmd_attaboy_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)        \
+`define bp_fe_cmd_attaboy_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)        \
    - `bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)                             \
    )
 
-`define bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)        \
+`define bp_fe_cmd_icache_fill_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)        \
+   - `bp_fe_cmd_icache_fill_width_no_padding(icache_metadata_fwd_width_mp)                             \
+   )
+
+`define bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)        \
    - `bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp)                                          \
    )
 
-`define bp_fe_cmd_itlb_fence_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)        \
+`define bp_fe_cmd_itlb_fence_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp)        \
    - `bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp)                                         \
    )
 

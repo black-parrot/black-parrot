@@ -41,7 +41,7 @@ module bp_fe_icache
     , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
     , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
     , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
-    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
+    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p, icache_assoc_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
@@ -103,7 +103,7 @@ module bp_fe_icache
   assign cache_req_o = cache_req_cast_lo;
   assign cache_req_metadata_o = cache_req_metadata_cast_lo;
 
-  `declare_bp_fe_icache_pkt_s(vaddr_width_p);
+  `declare_bp_fe_icache_pkt_s(vaddr_width_p, icache_assoc_p-1);
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = icache_pkt_i;
 

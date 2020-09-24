@@ -23,7 +23,7 @@ module bp_nonsynth_pc_profiler
     , input [num_core_p-1:0] program_finish_i
     );
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
   bp_be_commit_pkt_s commit_pkt_cast_i;
   assign commit_pkt_cast_i = commit_pkt;
 

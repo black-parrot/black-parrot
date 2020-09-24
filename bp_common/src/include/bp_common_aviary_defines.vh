@@ -126,6 +126,9 @@
     // 1: boots in M-mode, debug-mode
     integer boot_in_debug;
 
+    // I$ metadata information used to track misses for the Front End
+    // Must be kept consistent with FE
+    integer icache_metadata_fwd_width;
     // Branch metadata information for the Front End
     // Must be kept consistent with FE
     integer branch_metadata_fwd_width;
@@ -133,7 +136,7 @@
     integer btb_idx_width;
     integer bht_idx_width;
     integer ghist_width;
- 
+
     // Capacity of the Instruction/Data TLBs 
     integer itlb_els;
     integer dtlb_els;
@@ -288,14 +291,15 @@
   , localparam boot_pc_p       = proc_param_lp.boot_pc                                             \
   , localparam boot_in_debug_p = proc_param_lp.boot_in_debug                                       \
                                                                                                    \
+  , localparam icache_metadata_fwd_width_p = proc_param_lp.icache_metadata_fwd_width               \
   , localparam branch_metadata_fwd_width_p = proc_param_lp.branch_metadata_fwd_width               \
   , localparam btb_tag_width_p             = proc_param_lp.btb_tag_width                           \
   , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                           \
   , localparam bht_idx_width_p             = proc_param_lp.bht_idx_width                           \
   , localparam ghist_width_p               = proc_param_lp.ghist_width                             \
                                                                                                    \
-  , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
-  , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
+  , localparam itlb_els_p                 = proc_param_lp.itlb_els                                 \
+  , localparam dtlb_els_p                 = proc_param_lp.dtlb_els                                 \
                                                                                                    \
   , localparam lr_sc_p                    = proc_param_lp.lr_sc                                    \
   , localparam amo_swap_p                 = proc_param_lp.amo_swap                                 \
@@ -437,6 +441,7 @@
         ,`bp_aviary_parameter_override(fe_queue_fifo_els, override_cfg_mp, default_cfg_mp)         \
         ,`bp_aviary_parameter_override(fe_cmd_fifo_els, override_cfg_mp, default_cfg_mp)           \
                                                                                                    \
+        ,`bp_aviary_parameter_override(icache_metadata_fwd_width, override_cfg_mp, default_cfg_mp) \
         ,`bp_aviary_parameter_override(branch_metadata_fwd_width, override_cfg_mp, default_cfg_mp) \
         ,`bp_aviary_parameter_override(btb_tag_width, override_cfg_mp, default_cfg_mp)             \
         ,`bp_aviary_parameter_override(btb_idx_width, override_cfg_mp, default_cfg_mp)             \

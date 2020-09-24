@@ -7,7 +7,7 @@ module bp_be_ptw
   import bp_be_dcache_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p)
 
     ,parameter pte_width_p              = bp_sv39_pte_width_gp
     ,parameter page_table_depth_p       = bp_sv39_page_table_depth_gp
@@ -48,8 +48,8 @@ module bp_be_ptw
    , input [dpath_width_p-1:0]              dcache_data_i
   );
 
-  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
   `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
 

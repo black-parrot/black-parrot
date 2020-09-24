@@ -10,7 +10,7 @@
 /*
  * Clients need only use this macro to declare all parameterized structs for FE<->BE interface.
  */
-`define declare_bp_be_internal_if_structs(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+`define declare_bp_be_internal_if_structs(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
@@ -18,6 +18,7 @@
     logic                                    fe_exception_not_instr;                               \
     bp_fe_exception_code_e                   fe_exception_code;                                    \
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
+    logic [icache_metadata_fwd_width_mp-1:0] icache_metadata_fwd;                                  \
     rv64_instr_s                             instr;                                                \
     logic                                    csr_v;                                                \
     logic                                    mem_v;                                                \
@@ -102,6 +103,7 @@
     logic                                    isd_v;                                                \
     logic [vaddr_width_mp-1:0]               isd_pc;                                               \
     logic [branch_metadata_fwd_width_mp-1:0] isd_branch_metadata_fwd;                              \
+    logic [icache_metadata_fwd_width_mp-1:0] isd_icache_metadata_fwd;                              \
     logic                                    isd_fence_v;                                          \
     logic                                    isd_mem_v;                                            \
     logic                                    isd_long_v;                                           \
@@ -205,11 +207,12 @@
  *   comes from literally counting bits in the struct definition, which is ugly, error-prone,
  *   and an unfortunate, necessary consequence of parameterized structs.
  */
-`define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
+`define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
   (vaddr_width_mp                                                                                  \
    + 1                                                                                             \
    + $bits(bp_fe_exception_code_e)                                                                 \
    + branch_metadata_fwd_width_mp                                                                  \
+   + icache_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
    + 9                                                                                             \
    )
@@ -232,8 +235,8 @@
 `define bp_be_comp_stage_reg_width \
   ($bits(rv64_fflags_s) + dpath_width_p)
 
-`define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 9 + 3*rv64_reg_addr_width_gp)
+`define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp, icache_metadata_fwd_width_mp) \
+  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + icache_metadata_fwd_width_mp + 9 + 3*rv64_reg_addr_width_gp)
 
 `define bp_be_dep_status_width \
   (14 + rv64_reg_addr_width_gp)

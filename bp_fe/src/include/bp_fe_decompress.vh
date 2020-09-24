@@ -9,11 +9,11 @@
 /*`define fe_decompress_s bp_fe_queue_s
 * `define decompress_fe_s bp_fe_queue_s
 *
-* `define fe_decompress_width(vaddr_width_p,branch_metadata_fwd_width_p) \
-*     (`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p))
+* `define fe_decompress_width(vaddr_width_p,fe_metadata_fwd_width_p) \
+*     (`bp_fe_queue_width(vaddr_width_p,fe_metadata_fwd_width_p))
 *
-* `define decompress_fe_width(vaddr_width_p,branch_metadata_fwd_width_p) \
-*     (`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p))
+* `define decompress_fe_width(vaddr_width_p,fe_metadata_fwd_width_p) \
+*     (`bp_fe_queue_width(vaddr_width_p,fe_metadata_fwd_width_p))
 *
 * typedef enum {
 *   e_rvi_aligned          = 3'b000 

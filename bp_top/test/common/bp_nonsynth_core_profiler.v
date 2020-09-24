@@ -117,7 +117,7 @@ module bp_nonsynth_core_profiler
     , input [trap_pkt_width_lp-1:0] trap_pkt
     );
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
 
   localparam num_stages_p = 8;
   bp_stall_reason_s [num_stages_p-1:0] stall_stage_n, stall_stage_r;

@@ -32,7 +32,17 @@
     logic [`BSG_SAFE_CLOG2(cce_block_width_p/8)-1:0]                           offset;             \
   }  bp_fe_itlb_vaddr_s;   
 
-`define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp) \
+`define declare_bp_fe_icache_metadata_fwd_s(icache_assoc_mp) \
+
+`define bp_fe_icache_metadata_fwd_width(icache_assoc_mp) \
+  (icache_assoc_mp-1)
+
+`define declare_bp_fe_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp, icache_assoc_mp) \
+  typedef struct packed                                                                         \
+  {                                                                                             \
+    logic [icache_assoc_mp-2:0] lru;                                                            \
+  }  bp_fe_icache_metadata_fwd_s;                                                               \
+                                                                                                \
   typedef struct packed                                                                         \
   {                                                                                             \
     logic                           pred_taken;                                                 \
@@ -48,7 +58,13 @@
     logic [btb_idx_width_mp-1:0]    btb_idx;                                                    \
     logic [bht_idx_width_mp-1:0]    bht_idx;                                                    \
     logic [ghist_width_mp-1:0]      ghist;                                                      \
-  }  bp_fe_branch_metadata_fwd_s;
+  }  bp_fe_branch_metadata_fwd_s;                                                               \
+                                                                                                \
+  typedef struct packed                                                                         \
+  {                                                                                             \
+    bp_fe_icache_metadata_fwd_s icache_metadata;                                                \
+    bp_fe_branch_metadata_fwd_s branch_metadata;                                                \
+  }  bp_fe_metadata_fwd_s;
 
 `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp, ghist_width_mp) \
   typedef struct packed             \

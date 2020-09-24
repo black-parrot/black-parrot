@@ -14,7 +14,7 @@ module bp_fe_pc_gen
  import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p)
 
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
    , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
@@ -42,8 +42,8 @@ module bp_fe_pc_gen
    , input                                           fe_queue_ready_i
    );
 
-`declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
+`declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
+`declare_bp_fe_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, icache_assoc_p);
 `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
 `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p);
 
@@ -319,6 +319,13 @@ assign fe_queue_cast_o_branch_metadata =
     ,default  : '0
     };
 
+// TODO: Assign from I$
+bp_fe_icache_metadata_fwd_s fe_queue_cast_o_icache_metadata;
+assign fe_queue_cast_o_icache_metadata =
+  '{lru     : '0
+    ,default: '0
+    };
+
 // Casting branch metadata forwarded from BE
 wire btb_incorrect = (br_miss_nonbr & fe_cmd_branch_metadata.src_btb)
                      | (br_res_taken & (~fe_cmd_branch_metadata.src_btb | br_miss_v));
@@ -466,6 +473,7 @@ always_comb
         fe_queue_cast_o.msg.fetch.pc                  = pc_if2;
         fe_queue_cast_o.msg.fetch.instr               = mem_resp_cast_i.data;
         fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fe_queue_cast_o_branch_metadata;
+        fe_queue_cast_o.msg.fetch.icache_metadata_fwd = fe_queue_cast_o_icache_metadata;
       end
   end
 

@@ -57,7 +57,7 @@ module mock_be
 );
 
 // be fe interface udpate (not sure if this is needed)
-  localparam branch_metadata_fwd_width_p = branch_metadata_fwd_width_lp; 
+  localparam fe_metadata_fwd_width_p = branch_metadata_fwd_width_lp; 
    `declare_bp_fe_be_if(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
     `declare_bp_fe_branch_metadata_fwd_s(btb_idx_width_p,bht_idx_width_p,ras_idx_width_p);
    bp_fe_branch_metadata_fwd_s                           branch_metadata_fwd;

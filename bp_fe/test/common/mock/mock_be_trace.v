@@ -12,7 +12,7 @@ module mock_be_trace
    , parameter btb_idx_width_p="inv"
    , parameter bht_idx_width_p="inv"
    , parameter ras_idx_width_p="inv"
-   , parameter branch_metadata_fwd_width_p
+   , parameter fe_metadata_fwd_width_p
    , parameter num_cce_p="inv"
    , parameter num_lce_p="inv"
    , parameter num_mem_p="inv"
@@ -21,8 +21,8 @@ module mock_be_trace
    , parameter num_core_p="inv"
    , parameter cce_block_size_in_bytes_p="inv"
    , localparam cce_block_size_in_bits_lp=8*cce_block_size_in_bytes_p
-   , localparam bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
-   , localparam  bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p)
+   , localparam bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,fe_metadata_fwd_width_p)
+   , localparam  bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p,fe_metadata_fwd_width_p)
    //trace_rom params
    , parameter trace_ring_width_p="inv"
 
@@ -87,9 +87,9 @@ module mock_be_trace
 `declare_bp_common_cfg_bus_s(num_core_p, num_lce_p)
 
 // the first level of structs
-`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p);   
+`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,fe_metadata_fwd_width_p);   
 // fe to pc_gen
-`declare_bp_fe_pc_gen_cmd_s(vaddr_width_p,branch_metadata_fwd_width_p);
+`declare_bp_fe_pc_gen_cmd_s(vaddr_width_p,fe_metadata_fwd_width_p);
 
 bp_fe_queue_s                    bp_fe_queue;
 bp_fe_cmd_s                      bp_fe_cmd;

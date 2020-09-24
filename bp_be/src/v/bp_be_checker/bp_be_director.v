@@ -24,11 +24,11 @@ module bp_be_director
  import bp_common_cfg_link_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p)
 
    // Generated parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-   , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p)
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p)
    , localparam trap_pkt_width_lp    = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
@@ -62,8 +62,8 @@ module bp_be_director
 
   // Declare parameterized structures
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
 
   // Cast input and output ports
   bp_cfg_bus_s                     cfg_bus_cast_i;
@@ -293,25 +293,6 @@ module bp_be_director
           fe_cmd_v = fe_cmd_ready_i;
         end
     end
-
-  //synopsys translate_off
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
-  bp_fe_branch_metadata_fwd_s attaboy_md;
-  bp_fe_branch_metadata_fwd_s redir_md;
-
-  assign attaboy_md = fe_cmd.operands.attaboy.branch_metadata_fwd;
-  assign redir_md = fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd;
-
-  always_ff @(negedge clk_i)
-    if (debug_lp) begin
-      if (fe_cmd_v_o & (fe_cmd.opcode == e_op_pc_redirection))
-        $display("[REDIR  ] %x->%x %p", isd_status.isd_pc, fe_cmd.vaddr, redir_md);
-      else if (fe_cmd_v_o & (fe_cmd.opcode == e_op_attaboy))
-        $display("[ATTABOY] %x %p", fe_cmd.vaddr, attaboy_md);
-      else if (isd_status.isd_v)
-        $display("[FETCH  ] %x   ", isd_status.isd_pc);
-    end
-  //synopsys translate_on
 
 endmodule
 

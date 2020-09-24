@@ -145,10 +145,12 @@ bp_pma
 logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
 
-`declare_bp_fe_icache_pkt_s(vaddr_width_p);
+`declare_bp_fe_icache_pkt_s(vaddr_width_p, icache_assoc_p-1);
 bp_fe_icache_pkt_s icache_pkt;
 assign icache_pkt = '{vaddr: mem_cmd_cast_i.operands.fetch.vaddr
+                      // TODO: Use
                       ,op  : fencei_v ? e_icache_fencei : e_icache_fetch
+                      ,miss_lru: '0
                       };
 logic instr_access_fault_v, instr_page_fault_v;
 bp_fe_icache

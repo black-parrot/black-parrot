@@ -175,9 +175,9 @@ module wrapper
 
    assign poison_li = icache_v_rr & ~data_v_o;
 
-  `declare_bp_fe_icache_pkt_s(vaddr_width_p);
+  `declare_bp_fe_icache_pkt_s(vaddr_width_p, icache_assoc_p);
   bp_fe_icache_pkt_s icache_pkt;
-  assign icache_pkt = '{vaddr: rolly_vaddr_lo, op: e_icache_fetch};
+  assign icache_pkt = '{vaddr: rolly_vaddr_lo, op: e_icache_fetch, miss_lru: '0};
 
   // I-Cache
   bp_fe_icache

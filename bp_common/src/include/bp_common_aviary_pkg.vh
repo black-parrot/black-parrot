@@ -29,6 +29,7 @@ package bp_common_aviary_pkg;
       ,boot_pc       : bootrom_base_addr_gp
       ,boot_in_debug : 1
 
+      ,icache_metadata_fwd_width: 7
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
@@ -428,6 +429,7 @@ package bp_common_aviary_pkg;
       ,`bp_aviary_define_override(fe_queue_fifo_els, BP_FE_QUEUE_WIDTH, bp_default_cfg_p)
       ,`bp_aviary_define_override(fe_cmd_fifo_els, BP_FE_CMD_WIDTH, bp_default_cfg_p)
 
+      ,`bp_aviary_define_override(icache_metadata_fwd_width, ICACHE_METADATA_FWD_WIDTH, bp_default_cfg_p)
       ,`bp_aviary_define_override(branch_metadata_fwd_width, BRANCH_METADATA_FWD_WIDTH, bp_default_cfg_p)
       ,`bp_aviary_define_override(btb_tag_width, BP_BTB_TAG_WIDTH, bp_default_cfg_p)
       ,`bp_aviary_define_override(btb_idx_width, BP_BTB_IDX_WIDTH, bp_default_cfg_p)

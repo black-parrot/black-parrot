@@ -28,7 +28,7 @@ module bp_be_pipe_long
    , output                            fwb_v_o
    );
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
   bp_be_dispatch_pkt_s reservation;
   rv64_instr_fmatype_s instr;
   bp_be_decode_s decode;

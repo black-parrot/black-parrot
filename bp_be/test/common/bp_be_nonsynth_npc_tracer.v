@@ -6,7 +6,7 @@ module bp_be_nonsynth_npc_tracer
  import bp_common_rv64_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p)
    , parameter npc_trace_file_p = "npc"
 
    , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
@@ -29,8 +29,8 @@ module bp_be_nonsynth_npc_tracer
    , input [trap_pkt_width_lp-1:0] trap_pkt_i
    );
 
-`declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, icache_metadata_fwd_width_p);
 bp_fe_cmd_s fe_cmd;
 bp_be_trap_pkt_s trap_pkt;
 assign fe_cmd = fe_cmd_i;
