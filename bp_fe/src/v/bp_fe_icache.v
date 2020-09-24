@@ -140,6 +140,7 @@ module bp_fe_icache
     end else begin
       v_tl_r       <= tl_we;
       if (tl_we) begin
+        page_offset_tl_r <= icache_pkt.vaddr[bp_page_offset_width_gp-1:0];
         vaddr_tl_r       <= icache_pkt.vaddr;
         fencei_op_tl_r   <= is_fencei;
       end
