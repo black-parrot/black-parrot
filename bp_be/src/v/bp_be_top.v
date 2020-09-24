@@ -126,7 +126,6 @@ module bp_be_top
      ,.flush_o(flush)
 
      ,.br_pkt_i(br_pkt)
-     ,.commit_pkt_i(commit_pkt)
      ,.trap_pkt_i(trap_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
      );

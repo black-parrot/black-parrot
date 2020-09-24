@@ -31,7 +31,6 @@ module bp_be_director
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p)
    , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
@@ -58,7 +57,6 @@ module bp_be_director
    , output                           fe_cmd_full_o
 
    , input [branch_pkt_width_lp-1:0]   br_pkt_i
-   , input [commit_pkt_width_lp-1:0]   commit_pkt_i
    , input [trap_pkt_width_lp-1:0]     trap_pkt_i
 
    , input [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_i
@@ -77,14 +75,12 @@ module bp_be_director
   logic                            fe_cmd_v_li, fe_cmd_ready_lo;
   bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
   bp_be_branch_pkt_s               br_pkt;
-  bp_be_commit_pkt_s               commit_pkt;
   bp_be_trap_pkt_s                 trap_pkt;
   bp_be_ptw_fill_pkt_s             ptw_fill_pkt;
 
   assign cfg_bus_cast_i = cfg_bus_i;
   assign isd_status = isd_status_i;
   assign calc_status = calc_status_i;
-  assign commit_pkt  = commit_pkt_i;
   assign trap_pkt    = trap_pkt_i;
   assign br_pkt       = br_pkt_i;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
@@ -318,9 +314,9 @@ module bp_be_director
 
   always_ff @(negedge clk_i)
     if (debug_lp) begin
-      if (fe_cmd_v_o & (fe_cmd_li.opcode == e_op_pc_redirection))
+      if (fe_cmd_v_li & (fe_cmd_li.opcode == e_op_pc_redirection))
         $display("[REDIR  ] %x->%x %p", isd_status.isd_pc, fe_cmd_li.vaddr, redir_md);
-      else if (fe_cmd_v_o & (fe_cmd_li.opcode == e_op_attaboy))
+      else if (fe_cmd_v_li & (fe_cmd_li.opcode == e_op_attaboy))
         $display("[ATTABOY] %x %p", fe_cmd_li.vaddr, attaboy_md);
       else if (isd_status.isd_v)
         $display("[FETCH  ] %x   ", isd_status.isd_pc);

@@ -121,6 +121,7 @@ module bsg_fifo_1r1w_rolly
   assign instr = fe_queue_cast_i.msg.fetch.instr;
 
   bp_be_issue_pkt_s issue_pkt_li, issue_pkt_lo;
+  wire issue_v = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
   wire bypass_reg = (wptr_r == rptr_n);
   bsg_mem_1r1w
   #(.width_p($bits(bp_be_issue_pkt_s)), .els_p(fe_queue_fifo_els_p), .read_write_same_addr_p(1))
@@ -130,11 +131,10 @@ module bsg_fifo_1r1w_rolly
     ,.w_v_i(enq)
     ,.w_addr_i(wptr_r[0+:ptr_width_lp])
     ,.w_data_i(issue_pkt_li)
-    ,.r_v_i(1'b1)
+    ,.r_v_i(issue_v)
     ,.r_addr_i(rptr_n[0+:ptr_width_lp])
     ,.r_data_o(issue_pkt_lo)
     );
-  wire issue_v = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
   assign preissue_pkt_o = bypass_reg ? issue_pkt_li : issue_v ? issue_pkt_lo : '0;
 
   bsg_dff_reset_en
@@ -142,7 +142,6 @@ module bsg_fifo_1r1w_rolly
    issue_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
      ,.en_i(issue_v)
      ,.data_i(preissue_pkt_o)
      ,.data_o(issue_pkt_o)
