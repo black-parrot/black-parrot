@@ -43,9 +43,6 @@ module bp_fe_icache
     , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
     , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
 
-    `declare_bp_icache_widths(vaddr_width_p, ptag_width_lp, icache_assoc_p)
-
-    , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
     )
@@ -79,22 +76,22 @@ module bp_fe_icache
     , input                                            cache_req_critical_i
 
     // data_mem
-    , input data_mem_pkt_v_i
-    , input [icache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-    , output logic data_mem_pkt_yumi_o
-    , output logic [icache_block_width_p-1:0] data_mem_o
+    , input                                            data_mem_pkt_v_i
+    , input [icache_data_mem_pkt_width_lp-1:0]         data_mem_pkt_i
+    , output logic                                     data_mem_pkt_yumi_o
+    , output logic [icache_block_width_p-1:0]          data_mem_o
 
     // tag_mem
-    , input tag_mem_pkt_v_i
-    , input [icache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-    , output logic tag_mem_pkt_yumi_o
-    , output logic [ptag_width_lp-1:0] tag_mem_o
+    , input                                            tag_mem_pkt_v_i
+    , input [icache_tag_mem_pkt_width_lp-1:0]          tag_mem_pkt_i
+    , output logic                                     tag_mem_pkt_yumi_o
+    , output logic [ptag_width_lp-1:0]                 tag_mem_o
 
     // stat_mem
-    , input stat_mem_pkt_v_i
-    , input [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-    , output logic stat_mem_pkt_yumi_o
-    , output logic [stat_width_lp-1:0] stat_mem_o
+    , input                                            stat_mem_pkt_v_i
+    , input [icache_stat_mem_pkt_width_lp-1:0]         stat_mem_pkt_i
+    , output logic                                     stat_mem_pkt_yumi_o
+    , output logic [icache_stat_info_width_lp-1:0]     stat_mem_o
  );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -287,25 +284,25 @@ module bp_fe_icache
   assign fencei_req = v_tv_r & fencei_op_tv_r;
 
   // stat memory
-  logic                                       stat_mem_v_li;
-  logic                                       stat_mem_w_li;
-  logic [index_width_lp-1:0]                  stat_mem_addr_li;
-  logic [bp_fe_icache_stat_width_lp-1:0]      stat_mem_data_li;
-  logic [bp_fe_icache_stat_width_lp-1:0]      stat_mem_mask_li;
-  logic [bp_fe_icache_stat_width_lp-1:0]      stat_mem_data_lo;
+  logic                          stat_mem_v_li;
+  logic                          stat_mem_w_li;
+  logic [index_width_lp-1:0]     stat_mem_addr_li;
+  bp_icache_stat_info_s          stat_mem_data_li;
+  bp_icache_stat_info_s          stat_mem_mask_li;
+  bp_icache_stat_info_s          stat_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit #(
-    .width_p(bp_fe_icache_stat_width_lp)
+    .width_p(icache_assoc_p-1)
     ,.els_p(icache_sets_p)
   ) stat_mem (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
-    ,.data_i(stat_mem_data_li)
+    ,.data_i(stat_mem_data_li.lru)
     ,.addr_i(stat_mem_addr_li)
     ,.v_i(stat_mem_v_li)
-    ,.w_mask_i(stat_mem_mask_li)
+    ,.w_mask_i(stat_mem_mask_li.lru)
     ,.w_i(stat_mem_w_li)
-    ,.data_o(stat_mem_data_lo)
+    ,.data_o(stat_mem_data_lo.lru)
   );
 
   logic [lg_icache_assoc_lp-1:0] lru_encode;
@@ -313,7 +310,7 @@ module bp_fe_icache
   bsg_lru_pseudo_tree_encode #(
     .ways_p(icache_assoc_p)
   ) lru_encoder (
-    .lru_i(stat_mem_data_lo)
+    .lru_i(stat_mem_data_lo.lru)
     ,.way_id_o(lru_encode)
   );
 
@@ -610,11 +607,11 @@ module bp_fe_icache
 
   always_comb begin
     if (v_tv_r) begin
-      stat_mem_data_li = lru_decode_data_lo;
-      stat_mem_mask_li = lru_decode_mask_lo;
+      stat_mem_data_li.lru = lru_decode_data_lo;
+      stat_mem_mask_li.lru = lru_decode_mask_lo;
     end else begin
-      stat_mem_data_li = {(icache_assoc_p-1){1'b0}};
-      stat_mem_mask_li = {(icache_assoc_p-1){1'b1}};
+      stat_mem_data_li.lru = {(icache_assoc_p-1){1'b0}};
+      stat_mem_mask_li.lru = {(icache_assoc_p-1){1'b1}};
     end
   end
 
@@ -677,7 +674,7 @@ module bp_fe_icache
 
   // LCE: stat_mem
   // Stub out dirty bits in icache
-  assign stat_mem_o = {stat_mem_data_lo, icache_assoc_p'(0)};
+  assign stat_mem_o = {stat_mem_data_lo.lru, icache_assoc_p'(0)};
   assign stat_mem_pkt_yumi_o = ~(v_tv_r & ~uncached_tv_r) & stat_mem_pkt_v_i;
 
   // synopsys translate_off
