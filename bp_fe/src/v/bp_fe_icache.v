@@ -125,13 +125,12 @@ module bp_fe_icache
   // TL stage
   logic v_tl_r;
   logic tl_we;
-  logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [vaddr_width_p-1:0]           vaddr_tl_r;
   logic fencei_op_tl_r;
 
   wire is_fetch = (icache_pkt.op == e_icache_fetch);
   wire is_fencei = (icache_pkt.op == e_icache_fencei);
-  assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
+  assign tl_we = v_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -141,7 +140,6 @@ module bp_fe_icache
     end else begin
       v_tl_r       <= tl_we;
       if (tl_we) begin
-        page_offset_tl_r <= icache_pkt.vaddr[bp_page_offset_width_gp-1:0];
         vaddr_tl_r       <= icache_pkt.vaddr;
         fencei_op_tl_r   <= is_fencei;
       end
@@ -375,19 +373,24 @@ module bp_fe_icache
   assign cache_req_metadata_cast_lo.dirty = '0;
 
   // Cache Miss Tracker
-  logic cache_miss, miss_tracker_r;
+  enum logic {e_ready, e_miss} state_n, state_r;
+  wire is_ready = (state_r == e_ready);
+  wire is_miss  = (state_r == e_miss);
 
-  bsg_dff_reset_en
-    #(.width_p(1))
-     cache_miss_tracker
-     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(cache_req_v_o | cache_req_complete_i)
-     ,.data_i(cache_req_v_o)
-     ,.data_o(cache_miss)
-     );
+  always_comb
+    case (state_r)
+      e_ready  : state_n = cache_req_v_o ? e_miss : e_ready;
+      e_miss   : state_n = cache_req_complete_i ? e_ready : e_miss;
+      default: state_n = e_ready;
+    endcase
 
-  assign ready_o = cache_req_ready_i & ~cache_miss & ~cache_req_v_o;
+  always_ff @(posedge clk_i)
+    if (reset_i)
+      state_r <= e_ready;
+    else
+      state_r <= state_n;
+
+  assign ready_o = is_ready & cache_req_ready_i & ~cache_req_v_o;
 
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
                               | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
