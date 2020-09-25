@@ -175,16 +175,6 @@ class NBF:
     # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
     # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
 
-    # enabled_domains = 1
-    # for i in range(6, 0, -1):
-    #   if (self.domains[i] == '1'):
-    #     enabled_domains += (2**(7-i))
-
-    # enabled_domains += self.domains
-
-    # self.print_nbf_allcores(3, cfg_base_addr + cfg_domain_mask, enabled_domains)
-    # self.print_nbf_allcores(3, cfg_base_addr + cfg_sac_mask, self.sac)
-
     # Write PC to the DRAM base
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
 
@@ -211,8 +201,6 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--ncpus', type=int, default=1, help='number of BlackParrot cores')
   parser.add_argument('--ucode', dest='ucode_file', metavar='ucode.mem', help='CCE ucode file')
-  parser.add_argument('--domains', dest='domains', type=str, help='domains to be enabled')
-  parser.add_argument('--sac', dest='sac', type=int, help='sac enabled? (0 or 1)')
   parser.add_argument("--mem", dest='mem_file', metavar='prog.mem', help="DRAM verilog file")
   parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help="checkpoint nbf file")
   parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
