@@ -27,13 +27,11 @@ cfg_core_offset = 24
 class NBF:
 
   # constructor
-  def __init__(self, ncpus, ucode_file, domains, sac, mem_file, checkpoint_file, skip_zeros):
+  def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file, skip_zeros):
 
     # input parameters
     self.ncpus = ncpus
     self.ucode_file = ucode_file
-    self.domains = domains
-    self.sac = sac
     self.mem_file = mem_file
     self.checkpoint_file = checkpoint_file
     self.skip_zeros = skip_zeros
@@ -207,5 +205,5 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
 
-  converter = NBF(args.ncpus, args.ucode_file, args.domains, args.sac, args.mem_file, args.checkpoint_file, args.skip_zeros)
+  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file, args.skip_zeros)
   converter.dump()

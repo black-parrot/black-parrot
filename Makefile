@@ -18,6 +18,7 @@ prep_lite: | $(TARGET_DIRS)
 	$(MAKE) libs
 	$(MAKE) verilator
 	$(MAKE) -j1 ucode
+	$(MAKE) -j1 bootrom
 
 ## This is the big target that just builds everything. Most users should just press this button
 prep: | $(TARGET_DIRS)
@@ -26,6 +27,7 @@ prep: | $(TARGET_DIRS)
 	$(MAKE) tools
 	$(MAKE) -j1 progs 
 	$(MAKE) -j1 ucode
+	$(MAKE) -j1 bootrom
 
 ## This target updates submodules needed for building BlackParrot.
 #  We only need to keep update basejump_stl up to date. The other submodules
@@ -77,3 +79,5 @@ progs: tools
 ucode: | basejump
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
 
+bootrom: tools
+	$(MAKE) -C $(BP_COMMON_DIR)/test bootrom

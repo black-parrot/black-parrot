@@ -87,7 +87,6 @@ load_config:
     dret
 halt:
     j halt
-    addi x0, x0, 0
 
 .section .data.ucode
 .globl _ucode
