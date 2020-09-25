@@ -14,9 +14,6 @@
 #define CFG_DCACHE_MODE_ADDR 0x00200043
 #define CFG_ICACHE_MODE_ADDR 0x00200022
 
-#define CFG_DOMAIN_MASK_ADDR 0x00200009
-#define CFG_SAC_MASK_ADDR 0x0020000a 
-
 .section .text.start
 .globl _start
 _start:
@@ -76,27 +73,20 @@ load_config:
 
     li t1, CFG_CCE_MODE_ADDR
     sd t0, 0(t1)
-
-    // Set up domain and SAC information
-    li t0, CFG_DOMAIN_MASK_ADDR
-    li t1, DOMAIN_MASK
-    sd t1, 0(t0)
-
-    li t0, CFG_SAC_MASK_ADDR
-    li t1, SAC_MASK
-    sd t1, 0(t0)
-        
-    # Enable FPU
-    li x31, 0x2000
-    csrs mstatus, x31
     
-    li x31, 0x80000000
-    csrw dpc, x31
+    li t0, 0x80000000
+    csrw dpc, t0
     csrwi dcsr, 0x3
+
+    // Zero out used registers
+    li t0, 0
+    li t1, 0
+    li t2, 0
+    li t3, 0
+
     dret
 halt:
     j halt
-    addi x0, x0, 0
     addi x0, x0, 0
 
 .section .data.ucode
