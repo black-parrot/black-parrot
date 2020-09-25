@@ -61,7 +61,7 @@ module testbench
   logic trace_v_li, trace_ready_lo;
 
   logic [instr_width_p-1:0] icache_data_lo;
-  logic icache_data_v_lo;
+  logic icache_data_v_lo, icache_data_ready_li;
 
   logic [trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
   logic [trace_replay_data_width_lp+3:0] trace_rom_data_li;
@@ -160,7 +160,7 @@ module testbench
 
     // from icache
     ,.v_i(icache_data_v_lo)
-    ,.ready_o(icache_ready_li)
+    ,.ready_o(icache_data_ready_li)
     ,.data_i(icache_data_lo)
 
     // to trace replay
@@ -186,10 +186,11 @@ module testbench
 
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(trace_v_lo)
-
      ,.uncached_i(uncached_li)
+
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
+     ,.data_yumi_i(icache_data_ready_li & icache_data_v_lo)
 
      ,.mem_resp_i(mem_resp_lo)
      ,.mem_resp_v_i(mem_resp_v_lo)

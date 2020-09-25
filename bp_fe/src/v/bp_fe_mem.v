@@ -166,7 +166,6 @@ bp_fe_icache
    ,.ptag_i(ptag_li)
    ,.ptag_v_i(ptag_v_li)
    ,.uncached_i(uncached_li)
-   ,.poison_i(mem_poison_i | instr_access_fault_v | instr_page_fault_v)
 
    ,.data_o(icache_data_lo)
    ,.data_v_o(icache_data_v_lo)

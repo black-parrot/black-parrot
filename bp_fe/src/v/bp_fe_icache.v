@@ -58,10 +58,10 @@ module bp_fe_icache
     , input [ptag_width_p-1:0]                         ptag_i
     , input                                            ptag_v_i
     , input                                            uncached_i
-    , input                                            poison_i
 
     , output [instr_width_p-1:0]                       data_o
     , output                                           data_v_o
+    , input                                            data_yumi_i
 
     // LCE Interface
 
@@ -107,6 +107,14 @@ module bp_fe_icache
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = icache_pkt_i;
 
+  enum logic [1:0] {e_ready, e_miss, e_recover, e_restart} state_n, state_r;
+  wire is_ready   = (state_r == e_ready);
+  wire is_miss    = (state_r == e_miss);
+  wire is_recover = (state_r == e_recover);
+  wire is_restart = (state_r == e_restart);
+
+  logic tl_we, tv_we;
+
   logic [vtag_width_p-1:0]              vaddr_vtag;
   logic [index_width_lp-1:0]            vaddr_index;
   logic [bank_offset_width_lp-1:0]      vaddr_offset;
@@ -124,22 +132,19 @@ module bp_fe_icache
 
   // TL stage
   logic v_tl_r;
-  logic tl_we;
-  logic [vaddr_width_p-1:0]           vaddr_tl_r;
+  logic [vaddr_width_p-1:0] vaddr_tl_r;
   logic fencei_op_tl_r;
 
   wire is_fetch = (icache_pkt.op == e_icache_fetch);
   wire is_fencei = (icache_pkt.op == e_icache_fencei);
-  assign tl_we = v_i;
+  assign tl_we = ready_o & v_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tl_r       <= 1'b0;
-
-      fencei_op_tl_r <= 1'b0;
     end else begin
-      v_tl_r       <= tl_we;
-      if (tl_we) begin
+      if (ready_o) begin
+        v_tl_r           <= v_i;
         vaddr_tl_r       <= icache_pkt.vaddr;
         fencei_op_tl_r   <= is_fencei;
       end
@@ -233,7 +238,6 @@ module bp_fe_icache
 
   // TV stage
   logic                                                      v_tv_r;
-  logic                                                      tv_we;
   logic                                                      uncached_tv_r;
   logic [paddr_width_p-1:0]                                  addr_tv_r;
   logic [vaddr_width_p-1:0]                                  vaddr_tv_r;
@@ -245,6 +249,7 @@ module bp_fe_icache
   logic [index_width_lp-1:0]                                 addr_index_tv;
   logic                                                      fencei_op_tv_r;
   logic [icache_assoc_p-1:0]                                 hit_v_tv_r;
+  logic                                                      complete_tv_r;
 
   logic [instr_width_p-1:0] snoop_word;
   localparam snoop_offset_width_p = `BSG_SAFE_CLOG2(icache_fill_width_p/instr_width_p);
@@ -267,25 +272,21 @@ module bp_fe_icache
      ,.data_o(ld_data_tv_n)
      );
 
-  // Flush ops are non-speculative and so cannot be poisoned
-  assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r);
+  assign tv_we = v_tl_r & (~v_tv_r | data_yumi_i | is_restart);
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r       <= 1'b0;
-
-      fencei_op_tv_r <= 1'b0;
     end
     else begin
-      v_tv_r <= tv_we;
       if (tv_we) begin
+        v_tv_r         <= v_tl_r;
         addr_tv_r      <= addr_tl;
         vaddr_tv_r     <= vaddr_tl_r;
         tag_tv_r       <= tag_tl;
         state_tv_r     <= state_tl;
         uncached_tv_r  <= uncached_i;
         fencei_op_tv_r <= fencei_op_tl_r;
-        hit_v_tv_r     <= hit_v_tl;
         addr_tag_tv_r  <= addr_tag_tl;
         addr_bank_offset_dec_tv_r <= addr_bank_offset_dec_tl;
         way_v_tv_r     <= way_v_tl;
@@ -293,20 +294,41 @@ module bp_fe_icache
       if (tv_we | cache_req_critical_i) begin
         ld_data_tv_r   <= ld_data_tv_n;
       end
+      if (tv_we) begin
+        hit_v_tv_r    <= hit_v_tl;
+        complete_tv_r <= |hit_v_tl;
+      end else if (cache_req_complete_i) begin
+        // We make a hit so that an arbitrary data word is selected from the
+        //   snooped line, which has replicated versions of the word
+        hit_v_tv_r    <= 1'b1;
+        complete_tv_r <= 1'b1;
+      end
     end
   end
 
   assign addr_index_tv = addr_tv_r[block_offset_width_lp+:index_width_lp];
 
-  logic miss_tv;
-  assign miss_tv = ~|hit_v_tv_r & v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r;
+  always_comb
+    begin
+      case (state_r)
+        e_ready  : state_n = cache_req_v_o ? e_miss : e_ready;
+        e_miss   : state_n = (cache_req_complete_i & v_tl_r) ? e_recover : e_miss;
+        e_recover: state_n = e_restart;
+        e_restart: state_n = e_ready;
+        default: state_n = e_ready;
+      endcase
+    end
+
+  always_ff @(posedge clk_i)
+    if (reset_i)
+      state_r <= e_ready;
+    else
+      state_r <= state_n;
 
   // uncached request
-  logic uncached_load_data_v_r;
-  logic [dword_width_p-1:0] uncached_load_data_r;
-
-  assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
-  assign fencei_req = v_tv_r & fencei_op_tv_r;
+  assign uncached_req = is_ready & v_tv_r & uncached_tv_r;
+  assign fencei_req   = is_ready & v_tv_r & fencei_op_tv_r;
+  assign miss_req     = is_ready & v_tv_r & ~complete_tv_r & ~uncached_tv_r & ~fencei_op_tv_r;
 
   // stat memory
   logic                          stat_mem_v_li;
@@ -360,7 +382,7 @@ module bp_fe_icache
     cache_req_cast_lo = '0;
     cache_req_v_o = '0;
 
-    if (miss_tv) begin
+    if (miss_req) begin
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_miss_load;
       cache_req_cast_lo.size = e_size_64B;
@@ -394,32 +416,9 @@ module bp_fe_icache
   assign cache_req_metadata_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
   assign cache_req_metadata_cast_lo.dirty = '0;
 
-  // Cache Miss Tracker
-  enum logic [1:0] {e_ready, e_miss, e_recover} state_n, state_r;
-  wire is_ready   = (state_r == e_ready);
-  wire is_miss    = (state_r == e_miss);
-  wire is_recover = (state_r == e_recover);
+  assign ready_o = cache_req_ready_i & (is_ready | is_restart) & (~v_tl_r | tv_we);
 
-  always_comb
-    begin
-      case (state_r)
-        e_ready: state_n = cache_req_v_o ? e_miss : e_ready;
-        e_miss: state_n = cache_req_complete_i ? e_ready : e_miss;
-        default: state_n = e_ready;
-      endcase
-    end
-
-  always_ff @(posedge clk_i)
-    if (reset_i)
-      state_r <= e_ready;
-    else
-      state_r <= state_n;
-
-  assign ready_o = is_ready & cache_req_ready_i & ~cache_req_v_o;
-
-  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
-                              | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
-                              );
+  assign data_v_o = v_tv_r & complete_tv_r;
 
   logic [bank_width_lp-1:0]   ld_data_way_picked;
   logic [icache_assoc_p-1:0]  ld_data_way_select;
@@ -451,8 +450,7 @@ module bp_fe_icache
      ,.sel_i(addr_tv_r[2+:`BSG_SAFE_CLOG2(num_words_per_bank_lp)])
      ,.data_o(final_data)
      );
-
-  assign data_o = uncached_tv_r ? uncached_load_data_r : final_data;
+  assign data_o = final_data;
 
   // data mem
   logic                                                       data_mem_v;
@@ -490,10 +488,9 @@ module bp_fe_icache
   // the following bypass logic assumes that vtag->ptag mapping will not change during bypass
   assign data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & data_mem_last_read_r;
 
-  assign data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
-    & data_mem_pkt_yumi_o;
+  assign data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached) & data_mem_pkt_yumi_o;
 
-  assign data_mem_v_li = tl_we
+  assign data_mem_v_li = (tl_we | is_recover)
     ? data_mem_bypass
       ? data_mem_bypass_select 
       : {icache_assoc_p{1'b1}}
@@ -507,7 +504,9 @@ module bp_fe_icache
 
     assign data_mem_addr_li[i] = tl_we
       ? {vaddr_index, vaddr_offset}
-      : {data_mem_pkt.index, data_mem_pkt_offset};
+      : is_recover
+        ? vaddr_index_tl
+        : {data_mem_pkt.index, data_mem_pkt_offset};
 
     // use fill_index to generate write_mask
     assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
@@ -555,12 +554,15 @@ module bp_fe_icache
     ,.data_o(tag_mem_last_read_r)
   ); 
 
+  // Suboptimially blocks on last read
   assign tag_mem_bypass = (vaddr_index == vaddr_index_tl) & tag_mem_last_read_r;
-  assign tag_mem_v_li = (tl_we & ~tag_mem_bypass) | tag_mem_pkt_yumi_o;
-  assign tag_mem_w_li = ~tl_we & tag_mem_pkt_v_i;
+  assign tag_mem_v_li = (tl_we & ~tag_mem_bypass) | is_recover | tag_mem_pkt_yumi_o;
+  assign tag_mem_w_li = ~tl_we & ~is_recover & tag_mem_pkt_v_i & (tag_mem_pkt.opcode != e_cache_tag_mem_read);
   assign tag_mem_addr_li = tl_we
     ? vaddr_index
-    : tag_mem_pkt.index;
+    : is_recover
+      ? vaddr_index_tl
+      : tag_mem_pkt.index;
 
   logic [icache_assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode #(
@@ -598,11 +600,11 @@ module bp_fe_icache
   end
 
   // stat mem
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | stat_mem_pkt_yumi_o;
-  assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r)
-    ? ~miss_tv
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r) | stat_mem_pkt_yumi_o;
+  assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
+    ? complete_tv_r
     : stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
-  assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r)
+  assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
     ? addr_index_tv
     : stat_mem_pkt.index;
 
@@ -660,28 +662,6 @@ module bp_fe_icache
                                ? data_mem_pkt_v_i
                                : data_mem_pkt_v_i & ~tl_we;
 
-  // uncached load data logic
-  //synopsys sync_set_reset "reset_i"
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      uncached_load_data_v_r <= 1'b0;
-    end
-    else begin
-      if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
-        uncached_load_data_r <= data_mem_pkt.data[0+:dword_width_p];
-        uncached_load_data_v_r <= 1'b1;
-      end
-      else if (poison_i)
-          uncached_load_data_v_r <= 1'b0;
-      else begin
-        // once the uncached load is replayed, and v_o goes high, clear the valid bit
-        if (data_v_o) begin
-          uncached_load_data_v_r <= 1'b0;
-        end
-      end
-    end
-  end
-
   // LCE: tag_mem
 
   logic [lg_icache_assoc_lp-1:0] tag_mem_pkt_way_r;
@@ -698,21 +678,7 @@ module bp_fe_icache
   // LCE: stat_mem
   // Stub out dirty bits in icache
   assign stat_mem_o = {stat_mem_data_lo.lru, icache_assoc_p'(0)};
-  assign stat_mem_pkt_yumi_o = ~(v_tv_r & ~uncached_tv_r) & stat_mem_pkt_v_i;
-
-  // synopsys translate_off
-  if (debug_p) begin
-    bp_fe_icache_axe_trace_gen #(
-      .addr_width_p(paddr_width_p)
-      ,.dword_width_p(instr_width_p)
-    ) cc (
-      .clk_i(clk_i)
-      ,.id_i(cfg_bus_cast_i.icache_id)
-      ,.v_i(data_v_o)
-      ,.addr_i(addr_tv_r)
-      ,.data_i(data_o)
-    );
-  end
-  // synopsys translate_on
+  assign stat_mem_pkt_yumi_o = ~(v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r) & stat_mem_pkt_v_i;
 
 endmodule
+
