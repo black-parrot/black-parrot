@@ -1,3 +1,8 @@
+""" 
+  This file is used to convert the CCE ucode from a 34-bit binary representation to a 64-bit hexadecimal representation.
+  This makes it easier to link the CCE ucode into the bootrom
+"""
+
 import argparse
 
 parser = argparse.ArgumentParser()
