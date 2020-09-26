@@ -1,5 +1,5 @@
 
-RISCV_GCC = $(CROSS_COMPILE)gcc -fPIC -march=rv64im -mabi=lp64 -mcmodel=medany -static -nostdlib -nostartfiles
+RISCV_GCC = $(CROSS_COMPILE)gcc -march=rv64im -mabi=lp64 -mcmodel=medany -static -nostdlib -nostartfiles
 
 UCODE2BOOT = $(BP_COMMON_DIR)/software/py/ucode2boot.py
 

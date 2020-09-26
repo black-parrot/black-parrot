@@ -88,8 +88,5 @@ load_config:
 halt:
     j halt
 
-.section .data.ucode
-.globl _ucode
-.balign 8, 0
 _ucode:
     .incbin "cce_ucode.bin" 
