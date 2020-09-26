@@ -16,8 +16,12 @@ with open(args.ucode_file, 'r') as rf:
   lines = rf.readlines()
   for line in lines:
     line = line.strip()
-    hex64 = hex(int(line.zfill(64), 2))
-    wf.write(str(hex64)[2:].zfill(16))
+    hex64 = str(hex(int(line.zfill(64), 2)))[2:].zfill(16)
+    reverse_bytes = hex64[::-1]
+    reversed_bytes = ''
+    for i in range(0, 15, 2):
+      reversed_bytes = reversed_bytes + reverse_bytes[i:i+2][::-1]
+    wf.write(reversed_bytes)
     wf.write("\n")
   wf.write("FFFFFFFFFFFFFFFF")
   wf.write("\n")
