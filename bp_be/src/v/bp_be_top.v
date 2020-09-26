@@ -33,16 +33,12 @@ module bp_be_top
    // FE queue interface
    , input [fe_queue_width_lp-1:0]                   fe_queue_i
    , input                                           fe_queue_v_i
-   , output                                          fe_queue_yumi_o
-   , output                                          fe_queue_clr_o
-   , output                                          fe_queue_deq_o
-   , output                                          fe_queue_roll_o
+   , output                                          fe_queue_ready_o
 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]                    fe_cmd_o
    , output                                          fe_cmd_v_o
-   , input                                           fe_cmd_ready_i
-   , input                                           fe_cmd_fence_i
+   , input                                           fe_cmd_yumi_i
 
    // D$-LCE Interface
    // signals to LCE
@@ -81,6 +77,7 @@ module bp_be_top
    );
 
   // Declare parameterized structures
+  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p)
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -104,12 +101,7 @@ module bp_be_top
   logic poison_isd_lo, suppress_iss_lo;
 
   logic fpu_en_lo;
-
-  logic [rv64_priv_width_gp-1:0] priv_mode_lo;
-  logic [ptag_width_p-1:0]       satp_ppn_lo;
-  logic                          translation_en_lo;
-  logic                          mstatus_sum_lo;
-  logic                          mstatus_mxr_lo;
+  logic fe_cmd_full_lo;
 
   logic flush;
   bp_be_director
@@ -123,15 +115,15 @@ module bp_be_top
      ,.isd_status_i(isd_status)
      ,.calc_status_i(calc_status)
      ,.expected_npc_o(expected_npc_lo)
-     ,.flush_o(flush)
 
      ,.fe_cmd_o(fe_cmd_o)
      ,.fe_cmd_v_o(fe_cmd_v_o)
-     ,.fe_cmd_ready_i(fe_cmd_ready_i)
-     ,.fe_cmd_fence_i(fe_cmd_fence_i)
+     ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
+     ,.fe_cmd_full_o(fe_cmd_full_lo)
 
      ,.suppress_iss_o(suppress_iss_lo)
      ,.poison_isd_o(poison_isd_lo)
+     ,.flush_o(flush)
 
      ,.br_pkt_i(br_pkt)
      ,.trap_pkt_i(trap_pkt)
@@ -148,8 +140,7 @@ module bp_be_top
 
      ,.isd_status_i(isd_status)
      ,.calc_status_i(calc_status)
-     ,.expected_npc_i(expected_npc_lo)
-     ,.fe_cmd_ready_i(fe_cmd_ready_i)
+     ,.fe_cmd_full_i(fe_cmd_full_lo)
      ,.credits_full_i(credits_full_i)
      ,.credits_empty_i(credits_empty_i)
      ,.interrupt_ready_i(interrupt_ready_lo)
@@ -166,24 +157,19 @@ module bp_be_top
 
      ,.isd_status_o(isd_status)
      ,.expected_npc_i(expected_npc_lo)
-     ,.poison_iss_i(flush)
      ,.poison_isd_i(poison_isd_lo)
      ,.dispatch_v_i(chk_dispatch_v)
-     ,.cache_miss_v_i(trap_pkt.rollback)
-     ,.cmt_v_i(commit_pkt.queue_v)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.fpu_en_i(fpu_en_lo)
 
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)
-     ,.fe_queue_yumi_o(fe_queue_yumi_o)
-     ,.fe_queue_clr_o(fe_queue_clr_o)
-     ,.fe_queue_roll_o(fe_queue_roll_o)
-     ,.fe_queue_deq_o(fe_queue_deq_o)
-
+     ,.fe_queue_ready_o(fe_queue_ready_o)
 
      ,.dispatch_pkt_o(dispatch_pkt)
 
+     ,.commit_pkt_i(commit_pkt)
+     ,.trap_pkt_i(trap_pkt)
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
      );

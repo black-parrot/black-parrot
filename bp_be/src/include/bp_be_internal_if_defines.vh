@@ -14,20 +14,18 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [vaddr_width_mp-1:0]               pc;                                                   \
-    logic                                    fe_exception_not_instr;                               \
-    bp_fe_exception_code_e                   fe_exception_code;                                    \
-    logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
-    rv64_instr_s                             instr;                                                \
     logic                                    csr_v;                                                \
     logic                                    mem_v;                                                \
-    logic                                    long_v;                                               \
     logic                                    fence_v;                                              \
+    logic                                    long_v;                                               \
     logic                                    irs1_v;                                               \
     logic                                    irs2_v;                                               \
     logic                                    frs1_v;                                               \
     logic                                    frs2_v;                                               \
     logic                                    frs3_v;                                               \
+    logic [reg_addr_width_p-1:0]             rs1_addr;                                             \
+    logic [reg_addr_width_p-1:0]             rs2_addr;                                             \
+    logic [reg_addr_width_p-1:0]             rs3_addr;                                             \
    } bp_be_issue_pkt_s;                                                                            \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -202,13 +200,7 @@
  *   and an unfortunate, necessary consequence of parameterized structs.
  */
 `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-  (vaddr_width_mp                                                                                  \
-   + 1                                                                                             \
-   + $bits(bp_fe_exception_code_e)                                                                 \
-   + branch_metadata_fwd_width_mp                                                                  \
-   + rv64_instr_width_gp                                                                           \
-   + 9                                                                                             \
-   )
+  (9+3*reg_addr_width_p)                                                                           \
 
 `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
   (2                                                                                               \
