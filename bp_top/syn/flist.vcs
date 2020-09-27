@@ -202,6 +202,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_rec_to_fp.v
 # Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
+$BP_BE_DIR/src/v/bp_be_checker/bp_be_issue_queue.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
 # MMU
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_ptw.v

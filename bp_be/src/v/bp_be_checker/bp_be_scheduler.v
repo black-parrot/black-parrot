@@ -81,7 +81,7 @@ module bp_be_scheduler
   wire fe_queue_deq_li  = commit_pkt.queue_v & ~trap_pkt.rollback;
   wire fe_queue_roll_li = trap_pkt.rollback;
   bp_be_issue_pkt_s preissue_pkt, issue_pkt;
-  bsg_fifo_1r1w_rolly
+  bp_be_issue_queue
    #(.bp_params_p(bp_params_p))
    fe_queue_fifo
     (.clk_i(clk_i)
