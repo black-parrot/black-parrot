@@ -357,7 +357,7 @@ module bp_be_calculator_top
      ,.ptw_miss_pkt_o(ptw_miss_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
-     ,.exception_i(exc_stage_r[2].exc)
+     ,.exception_i(exc_stage_r[2].exc & ~{$bits(bp_be_exception_s){exc_stage_r[2].poison_v}})
      ,.exception_pc_i(calc_stage_r[2].pc)
      ,.exception_vaddr_i(pipe_mem_vaddr_lo)
      ,.commit_pkt_i(commit_pkt)
@@ -494,7 +494,7 @@ module bp_be_calculator_top
       calc_stage_isd.pipe_mem_final_v = reservation_n.decode.pipe_mem_final_v;
       calc_stage_isd.pipe_sys_v     = reservation_n.decode.pipe_sys_v;
       calc_stage_isd.pipe_mul_v     = reservation_n.decode.pipe_mul_v;
-      calc_stage_isd.pipe_fma_v      = reservation_n.decode.pipe_fma_v;
+      calc_stage_isd.pipe_fma_v     = reservation_n.decode.pipe_fma_v;
       calc_stage_isd.pipe_long_v    = reservation_n.decode.pipe_long_v;
       calc_stage_isd.mem_v          = reservation_n.decode.mem_v;
       calc_stage_isd.csr_v          = reservation_n.decode.csr_v;
@@ -506,48 +506,6 @@ module bp_be_calculator_top
       calc_status.mem_busy                 = ~pipe_mem_ready_lo;
       calc_status.sys_busy                 = ~pipe_sys_ready_lo;
       calc_status.commit_v                 = commit_pkt.v;
-
-      // Dependency information for pipelines
-      for (integer i = 0; i < pipe_stage_els_lp; i++)
-        begin : dep_status
-          calc_status.dep_status[i].instr_v    = calc_stage_r[i].v
-                                                 & ~exc_stage_n[i+1].poison_v;
-          calc_status.dep_status[i].fflags_w_v = calc_stage_r[i].fflags_w_v
-                                                 & ~exc_stage_n[i+1].poison_v;
-          calc_status.dep_status[i].ctl_iwb_v = calc_stage_r[i].pipe_ctl_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].irf_w_v;
-          calc_status.dep_status[i].aux_iwb_v = calc_stage_r[i].pipe_aux_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].irf_w_v;
-          calc_status.dep_status[i].aux_fwb_v = calc_stage_r[i].pipe_aux_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].frf_w_v;
-          calc_status.dep_status[i].int_iwb_v = calc_stage_r[i].pipe_int_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].irf_w_v;
-          calc_status.dep_status[i].emem_iwb_v = calc_stage_r[i].pipe_mem_early_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].irf_w_v;
-          calc_status.dep_status[i].emem_fwb_v = calc_stage_r[i].pipe_mem_early_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].frf_w_v;
-          calc_status.dep_status[i].fmem_iwb_v = calc_stage_r[i].pipe_mem_final_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].irf_w_v;
-          calc_status.dep_status[i].fmem_fwb_v = calc_stage_r[i].pipe_mem_final_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].frf_w_v;
-          calc_status.dep_status[i].mul_iwb_v = calc_stage_r[i].pipe_mul_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].irf_w_v;
-          calc_status.dep_status[i].fma_fwb_v = calc_stage_r[i].pipe_fma_v
-                                                & ~exc_stage_n[i+1].poison_v
-                                                & calc_stage_r[i].frf_w_v;
-          calc_status.dep_status[i].rd_addr   = calc_stage_r[i].instr.t.rtype.rd_addr;
-          calc_status.dep_status[i].csr_v     = calc_stage_r[i].csr_v & ~exc_stage_n[i+1].poison_v;
-          calc_status.dep_status[i].mem_v     = calc_stage_r[i].mem_v & ~exc_stage_n[i+1].poison_v;
-        end
 
       // Slicing the completion pipe for Forwarding information
       for (integer i = 1; i <= pipe_stage_els_lp; i++)

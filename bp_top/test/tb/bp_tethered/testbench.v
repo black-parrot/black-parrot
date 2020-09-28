@@ -463,13 +463,13 @@ bind bp_be_top
          ,._interrupt(be.director.trap_pkt._interrupt)                                            \
          ,.control_haz(be.detector.control_haz_v)                                                 \
          ,.data_haz(be.detector.data_haz_v)                                                       \
-         ,.load_dep((be.detector.dep_status_li[0].emem_iwb_v                                      \
-                     | be.detector.dep_status_li[1].emem_iwb_v                                    \
+         ,.load_dep((be.detector.dep_status_r[0].emem_iwb_v                                       \
+                     | be.detector.dep_status_r[1].emem_iwb_v                                     \
                      ) & be.detector.data_haz_v                                                   \
                     )                                                                             \
-         ,.mul_dep((be.detector.dep_status_li[0].mul_iwb_v                                        \
-                    | be.detector.dep_status_li[1].mul_iwb_v                                      \
-                    | be.detector.dep_status_li[2].mul_iwb_v                                      \
+         ,.mul_dep((be.detector.dep_status_r[0].mul_iwb_v                                         \
+                    | be.detector.dep_status_r[1].mul_iwb_v                                       \
+                    | be.detector.dep_status_r[2].mul_iwb_v                                       \
                     ) & be.detector.data_haz_v                                                    \
                    )                                                                              \
          ,.struct_haz(be.detector.struct_haz_v)                                                   \

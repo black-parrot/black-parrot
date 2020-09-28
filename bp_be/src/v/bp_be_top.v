@@ -144,6 +144,7 @@ module bp_be_top
      ,.credits_empty_i(credits_empty_i)
 
      ,.chk_dispatch_v_o(chk_dispatch_v)
+     ,.dispatch_pkt_i(dispatch_pkt)
      );
 
   bp_be_scheduler
@@ -194,10 +195,6 @@ module bp_be_top
      ,.iwb_pkt_o(iwb_pkt)
      ,.fwb_pkt_o(fwb_pkt)
 
-     ,.timer_irq_i(timer_irq_i)
-     ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
-
      ,.cache_req_o(cache_req_o)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_v_o(cache_req_v_o)
@@ -220,6 +217,10 @@ module bp_be_top
      ,.stat_mem_pkt_i(stat_mem_pkt_i)
      ,.stat_mem_o(stat_mem_o)
      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
      );
 
 endmodule
