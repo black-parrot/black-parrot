@@ -90,7 +90,6 @@ module bp_be_top
   bp_be_calc_status_s calc_status;
 
   logic chk_dispatch_v;
-  logic interrupt_ready_lo, interrupt_v_li;
 
   bp_be_commit_pkt_s commit_pkt;
   bp_be_trap_pkt_s trap_pkt;
@@ -143,8 +142,6 @@ module bp_be_top
      ,.fe_cmd_full_i(fe_cmd_full_lo)
      ,.credits_full_i(credits_full_i)
      ,.credits_empty_i(credits_empty_i)
-     ,.interrupt_ready_i(interrupt_ready_lo)
-     ,.interrupt_v_o(interrupt_v_li)
 
      ,.chk_dispatch_v_o(chk_dispatch_v)
      );
@@ -200,8 +197,6 @@ module bp_be_top
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
-     ,.interrupt_ready_o(interrupt_ready_lo)
-     ,.interrupt_v_i(interrupt_v_li)
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_metadata_o(cache_req_metadata_o)

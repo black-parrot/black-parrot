@@ -37,8 +37,6 @@ module bp_be_detector
    , input                             fe_cmd_full_i
    , input                             credits_full_i
    , input                             credits_empty_i
-   , input                             interrupt_ready_i
-   , output logic                      interrupt_v_o
 
    // Pipeline control signals from the checker to the calculator
    , output                            chk_dispatch_v_o
@@ -69,7 +67,7 @@ module bp_be_detector
   logic [3:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
   logic [3:0] rs1_match_vector, rs2_match_vector, rs3_match_vector;
 
-  logic fence_haz_v, queue_haz_v, interrupt_haz_v, serial_haz_v;
+  logic fence_haz_v, queue_haz_v, serial_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
   logic csr_haz_v;
   logic long_haz_v;
@@ -151,7 +149,6 @@ module bp_be_detector
       mem_in_pipe_v      = dep_status_li[0].mem_v | dep_status_li[1].mem_v;
       fence_haz_v        = (isd_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
                            | (isd_status_cast_i.isd_mem_v & credits_full_i);
-      interrupt_haz_v    = interrupt_ready_i;
       queue_haz_v        = fe_cmd_full_i;
 
       // Conservatively serialize on csr operations.  Could change to only write operations
@@ -172,7 +169,7 @@ module bp_be_detector
                       | dep_status_li[2].instr_v
                       );
 
-      control_haz_v = fence_haz_v | interrupt_haz_v | serial_haz_v | csr_haz_v | long_haz_v;
+      control_haz_v = fence_haz_v | serial_haz_v | csr_haz_v | long_haz_v;
 
       // Combine all data hazard information
       // TODO: Parameterize away floating point data hazards without hardware support
@@ -193,11 +190,6 @@ module bp_be_detector
 
   // Generate calculator control signals
   assign chk_dispatch_v_o = ~(control_haz_v | data_haz_v | struct_haz_v);
-  assign interrupt_v_o    = interrupt_ready_i
-                            & ~cfg_bus_cast_i.freeze
-                            & ~calc_status_cast_i.mem_busy
-                            & ~calc_status_cast_i.long_busy
-                            & ~calc_status_cast_i.commit_v;
 
 endmodule
 

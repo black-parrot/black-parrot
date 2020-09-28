@@ -61,8 +61,6 @@ module bp_be_calculator_top
   , input                               timer_irq_i
   , input                               software_irq_i
   , input                               external_irq_i
-  , output logic                        interrupt_ready_o
-  , input                               interrupt_v_i
 
   // D$-LCE Interface
   // signals to LCE
@@ -341,6 +339,7 @@ module bp_be_calculator_top
      ,.trans_info_i(trans_info_lo)
      );
 
+  logic pipe_long_ready_lo, pipe_sys_ready_lo;
   bp_be_pipe_sys
    #(.bp_params_p(bp_params_p))
    pipe_sys
@@ -348,11 +347,12 @@ module bp_be_calculator_top
      ,.reset_i(reset_i)
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.kill_ex1_i(exc_stage_n[1].poison_v)
-     ,.kill_ex2_i(exc_stage_n[2].poison_v)
-     ,.kill_ex3_i(exc_stage_r[2].poison_v)
+     ,.ready_o(pipe_sys_ready_lo)
+     ,.pipe_mem_ready_i(pipe_mem_ready_lo)
+     ,.pipe_long_ready_i(pipe_long_ready_lo)
 
      ,.reservation_i(reservation_r)
+     ,.flush_i(flush_i)
 
      ,.ptw_miss_pkt_o(ptw_miss_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
@@ -368,8 +368,6 @@ module bp_be_calculator_top
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
-     ,.interrupt_ready_o(interrupt_ready_o)
-     ,.interrupt_v_i(interrupt_v_i)
 
      ,.exc_v_o(pipe_sys_exc_v_lo)
      ,.miss_v_o(pipe_sys_miss_v_lo)
@@ -396,7 +394,6 @@ module bp_be_calculator_top
      );
 
   // Variable length pipeline, used for long (potentially scoreboarded operations)
-  logic pipe_long_ready_lo;
   bp_be_pipe_long
    #(.bp_params_p(bp_params_p))
    pipe_long
@@ -404,11 +401,11 @@ module bp_be_calculator_top
      ,.reset_i(reset_i)
 
      ,.reservation_i(reservation_r)
+     ,.flush_i(flush_i)
      ,.v_i(reservation_r.v & reservation_r.decode.pipe_long_v & ~exc_stage_r[0].poison_v)
      ,.ready_o(pipe_long_ready_lo)
      ,.frm_dyn_i(frm_dyn_lo)
 
-     ,.flush_i(flush_i)
 
      ,.iwb_pkt_o(long_iwb_pkt)
      ,.iwb_v_o(pipe_long_idata_lo_v)
@@ -507,6 +504,7 @@ module bp_be_calculator_top
 
       calc_status.long_busy                = ~pipe_long_ready_lo;
       calc_status.mem_busy                 = ~pipe_mem_ready_lo;
+      calc_status.sys_busy                 = ~pipe_sys_ready_lo;
       calc_status.commit_v                 = commit_pkt.v;
 
       // Dependency information for pipelines
