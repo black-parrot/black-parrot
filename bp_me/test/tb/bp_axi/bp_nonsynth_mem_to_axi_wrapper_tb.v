@@ -18,7 +18,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
   //, localparam axi_user_width_lp = 1 
   
   // Memory depth
-  , parameter mem_els_p          = 2^40
+  , parameter mem_els_p          = 2**28
   , localparam lg_mem_els_lp     =`BSG_SAFE_CLOG2(mem_els_p)                                      
   )
 
@@ -86,7 +86,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
   );
 
   // declaring RAM
-  logic [axi_data_width_p-1:0] ram [mem_els_p-1:0];
+  logic [axi_data_width_p-1:0] ram [0:mem_els_p-1];
 
   //==================================================  
   // write channel signal declaration and assignment

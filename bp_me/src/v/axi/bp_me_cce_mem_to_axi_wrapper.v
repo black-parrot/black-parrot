@@ -21,13 +21,10 @@ module bp_me_cce_mem_to_axi_wrapper
   , parameter axi_id_width_p     = 1
   , parameter axi_addr_width_p   = 64
   , parameter axi_burst_type_p   = 2'b01                                      //INCR type
-  , parameter axi_size_p         = 3                                          //8 Bytes, or 64bits, per transfer (this is done in power of 2's)
-  , localparam axi_len_lp        = cce_block_width_p/axi_data_width_p - 1     //(512/64) - 1 = 7 (but it's 8 transfers since AxLEN+1)
   //, localparam axi_user_width_lp = 1 
   
   // FIFO depth for PISO and SIPO
   , localparam fifo_els_lp       = cce_block_width_p/axi_data_width_p         //in most cases, it'll be 512/64 = 8
-  //, localparam fifo_els_lp       = 512/64 
   )
 
   ( 
@@ -45,7 +42,6 @@ module bp_me_cce_mem_to_axi_wrapper
   , output logic [cce_mem_msg_width_lp-1:0] mem_resp_o
   , output logic                            mem_resp_v_o
   , input                                   mem_resp_yumi_i
-  //===========================================================
 
   //======================== AXI side =========================
   // WRITE ADDRESS CHANNEL SIGNALS
@@ -102,7 +98,6 @@ module bp_me_cce_mem_to_axi_wrapper
   , input                                   axi_rvalid_i   //slave device read data validity
   , output logic                            axi_rready_o   //master device read data readiness
   //, input                                 axi_ruser_i    //user-defined signals (optional)
-  //===========================================================
  );
 
   // unused wires
@@ -119,15 +114,15 @@ module bp_me_cce_mem_to_axi_wrapper
   // SIPO and PISO related signals
   logic	                        axi_read_sipo_ready_lo;
   logic	                        axi_read_sipo_v_lo;
-  //logic [cce_block_width_p-1:0] axi_read_sipo_data_lo;
-  logic [511:0]                 axi_read_sipo_data_lo;
+  logic [cce_block_width_p-1:0] axi_read_sipo_data_lo;
 
   logic                         axi_write_piso_ready_lo;
   logic                         axi_write_piso_v_lo;
   logic [axi_data_width_p-1:0]  axi_write_piso_data_lo;
+  logic                         axi_write_piso_reset_li;
 
   // Write counter for sending the last bit
-  logic [`BSG_SAFE_CLOG2(axi_len_lp)-1:0] axi_awburst_cnt_r, axi_awburst_cnt_n;
+  logic [7:0] axi_awburst_cnt_r, axi_awburst_cnt_n;
 
   // storing mem_cmd's header for mem_resp's use
   // only accepts changes when mem_cmd is valid and the axi receiver is ready
@@ -146,11 +141,10 @@ module bp_me_cce_mem_to_axi_wrapper
   // Declaring all possible states
   typedef enum logic [3:0] {
     WAIT,
-    READ_ADDR_SEND,
+    READ_TX,
     READ_ERR,
     READ_DONE,
-    WRITE_ADDR_SEND,
-    WRITE_DATA_SEND,
+    WRITE_TX,
     WRITE_ERR
   } state_e;
 
@@ -160,35 +154,35 @@ module bp_me_cce_mem_to_axi_wrapper
   always_comb begin
   
     // BP side
-    mem_cmd_ready_o         = axi_write_piso_ready_lo;
+    mem_cmd_ready_o         = axi_write_piso_ready_lo  & (state_r == WAIT);
     mem_resp_cast_o.header  = mem_cmd_header_r;
-    mem_resp_cast_o.data    = axi_read_sipo_data_lo;
+    mem_resp_cast_o.data    = '0;
     mem_resp_v_o            = '0;
 
     // READ ADDRESS CHANNEL SIGNALS
     axi_araddr_o  = '0;
-    axi_arlen_o   = axi_len_lp;
-    axi_arsize_o  = axi_size_p;
+    axi_arlen_o   = mem_cmd_cast_i.header.size >> 3 - 1;  //(msg_size/bits_in_byte) - 1; arlen defaults to arlen + 1 transfers 
+    axi_arsize_o  = mem_cmd_cast_i.header.size;           //msg_size indicates # of bytes to be sent
     axi_arburst_o = axi_burst_type_p;
     axi_arvalid_o = '0;
     axi_arid_o    = '0;
-    axi_arcache_o = 4'b0011;  //normal non-cacheable bufferable (recommended for Xilinx IP)
-    axi_arprot_o  = '0;       //unprivileged access
-    axi_arqos_o   = '0;       //no QoS scheme
+    axi_arcache_o = 4'b0011;                              //normal non-cacheable bufferable (recommended for Xilinx IP)
+    axi_arprot_o  = '0;                                   //unprivileged access
+    axi_arqos_o   = '0;                                   //no QoS scheme
 
     // READ DATA CHANNEL SIGNALS
     axi_rready_o  = '0;
 
     // WRITE ADDRRESS CHANNEL SIGNALS
     axi_awaddr_o  = '0;
-    axi_awlen_o   = axi_len_lp;
-    axi_awsize_o  = axi_size_p;
+    axi_awlen_o   = mem_cmd_cast_i.header.size >> 3 - 1;
+    axi_awsize_o  = mem_cmd_cast_i.header.size;
     axi_awburst_o = axi_burst_type_p;
     axi_awvalid_o = '0;
     axi_awid_o    = '0;
-    axi_awcache_o = 4'b0011; //normal non-cacheable bufferable (recommended for Xilinx IP)
-    axi_awprot_o  = '0;      //unprivileged access
-    axi_awqos_o   = '0;      //no QoS scheme
+    axi_awcache_o = 4'b0011; 
+    axi_awprot_o  = '0;      
+    axi_awqos_o   = '0;      
 
     // WRITE DATA CHANNEL SIGNALS
     axi_wdata_o   = '0;
@@ -196,25 +190,28 @@ module bp_me_cce_mem_to_axi_wrapper
     axi_wlast_o   = '0; 
     axi_wvalid_o  = '0;
     axi_wid_o     = '0;
-    axi_awburst_cnt_n = axi_awburst_cnt_r;
+    axi_awburst_cnt_n = '0;
 
     // WRITE RESPONSE CHANNEL SIGNALS
     axi_bready_o  = 1'b1;
 
+    // PISO logic
+    axi_write_piso_reset_li = 1'b0;
+
     case (state_r)
       WAIT: begin
         if (mem_cmd_v_i & axi_arready_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_rd, e_cce_mem_uc_rd, e_cce_mem_pre})
-          state_n = READ_ADDR_SEND;
+          state_n = READ_TX;
         else if (mem_cmd_v_i & axi_awready_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr})
-          state_n = WRITE_ADDR_SEND;
+          state_n = WRITE_TX;
         else
           state_n = WAIT;
       end
 
       // READ STATES
-      READ_ADDR_SEND: begin
+      READ_TX: begin
         // sending read addr signals
-        axi_araddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_cast_i.header.addr}; //64-bit address with top bits all 0
+        axi_araddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_r.addr}; //64-bit address with top bits all 0
         axi_arvalid_o = 1'b1;
         // sending read data signals
         axi_rready_o  = axi_read_sipo_ready_lo;
@@ -223,18 +220,15 @@ module bp_me_cce_mem_to_axi_wrapper
           state_n = READ_ERR;
         else if (axi_rlast_i)
           state_n = READ_DONE;
-        else
-          state_n = READ_ADDR_SEND;
       end
 
       READ_DONE: begin
         // bp signals
-        mem_resp_v_o = axi_read_sipo_v_lo;
+        mem_resp_v_o            = axi_read_sipo_v_lo;
+        mem_resp_cast_o.data    = axi_read_sipo_data_lo;
         // if mem_resp is ready to accept the data, then return to WAIT
         if (mem_resp_yumi_i)
           state_n = WAIT;
-        else
-          state_n = READ_DONE;
       end
 
       READ_ERR: begin
@@ -242,33 +236,30 @@ module bp_me_cce_mem_to_axi_wrapper
       end
 
       // WRITE STATES
-      WRITE_ADDR_SEND: begin
+      WRITE_TX: begin
         // sending write addr signals
-        axi_awaddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_cast_i.header.addr};
+        axi_awaddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_r.addr};
         axi_awvalid_o = 1'b1;
-        // if the receiving slave device is ready, then proceed to send data
-        if (axi_wready_i)
-          state_n = WRITE_DATA_SEND;
-        else
-          state_n = WRITE_ADDR_SEND;
-      end
-
-      WRITE_DATA_SEND: begin
-        // sending write data signals
-        axi_wdata_o   = axi_read_sipo_data_lo;
+        axi_wvalid_o  = axi_write_piso_v_lo;
+        axi_wdata_o   = axi_write_piso_data_lo;
         axi_wstrb_o   = {axi_strb_width_lp{1'b1}};
-        axi_wvalid_o  = 1'b1;
-        axi_wlast_o   = (axi_awburst_cnt_r == axi_len_lp);
-        axi_awburst_cnt_n = (axi_wready_i) 
-                          ? axi_awburst_cnt_r + 1
-                          : axi_awburst_cnt_r;
-        // if a valid write response returns not okay, then go to write error state
-        if (axi_bresp_i != '0 & axi_bvalid_i)
+        axi_awburst_cnt_n = axi_awburst_cnt_r;
+
+        // if the receiving slave device is ready, then proceed to send data
+        if (axi_wready_i) begin
+          axi_wlast_o   = (axi_awburst_cnt_r == (mem_cmd_cast_i.header.size >> 3));
+          axi_awburst_cnt_n = axi_awburst_cnt_r + 1;
+        end
+        
+        // else if the response is not OKAY and valid
+        else if (axi_bresp_i != '0 & axi_bvalid_i)
           state_n = WRITE_ERR;
-        // else if a valid write response returns OKAY, then go back to wait state
+
+        // else if the response is OKAY and valid
         else if (axi_bresp_i == '0 & axi_bvalid_i) begin
           state_n = WAIT;
           mem_resp_v_o = 1'b1;
+          axi_write_piso_reset_li = 1'b1;        
         end
       end
 
@@ -315,7 +306,7 @@ module bp_me_cce_mem_to_axi_wrapper
      ) 
     axi_write_data_piso
     (.clk_i     (aclk_i)
-    ,.reset_i   (~aresetn_i)
+    ,.reset_i   (~aresetn_i | axi_write_piso_reset_li)
 
     ,.valid_i   (mem_cmd_v_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr} & (state_r == WAIT))
     ,.data_i    (mem_cmd_cast_i.data)
