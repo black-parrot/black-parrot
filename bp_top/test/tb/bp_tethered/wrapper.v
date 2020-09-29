@@ -18,35 +18,37 @@ module wrapper
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
 
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
    )
   (input                                               clk_i
    , input                                             reset_i
 
    // Outgoing I/O
-   , output [cce_mem_msg_width_lp-1:0]                 io_cmd_o
+   , output [bp_bedrock_cce_mem_msg_width_lp-1:0]      io_cmd_o
    , output                                            io_cmd_v_o
    , input                                             io_cmd_ready_i
 
-   , input [cce_mem_msg_width_lp-1:0]                  io_resp_i
+   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]       io_resp_i
    , input                                             io_resp_v_i
    , output                                            io_resp_yumi_o
 
    // Incoming I/O
-   , input [cce_mem_msg_width_lp-1:0]                  io_cmd_i
+   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]       io_cmd_i
    , input                                             io_cmd_v_i
    , output                                            io_cmd_yumi_o
 
-   , output [cce_mem_msg_width_lp-1:0]                 io_resp_o
+   , output [bp_bedrock_cce_mem_msg_width_lp-1:0]      io_resp_o
    , output                                            io_resp_v_o
    , input                                             io_resp_ready_i
 
    // Memory Requests
-   , output [cce_mem_msg_width_lp-1:0]                 mem_cmd_o
+   , output [bp_bedrock_cce_mem_msg_width_lp-1:0]      mem_cmd_o
    , output                                            mem_cmd_v_o
    , input                                             mem_cmd_ready_i
 
-   , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
+   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]       mem_resp_i
    , input                                             mem_resp_v_i
    , output                                            mem_resp_yumi_o
    );
@@ -168,17 +170,16 @@ module wrapper
     end
   else
     begin : unicore
-      localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p);
-      `declare_bp_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem);
-      bp_uce_mem_msg_s io_cmd_lo, io_cmd_li;
-      bp_uce_mem_msg_s io_resp_lo, io_resp_li;
+      `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
+      bp_bedrock_uce_mem_msg_s io_cmd_lo, io_cmd_li;
+      bp_bedrock_uce_mem_msg_s io_resp_lo, io_resp_li;
 
-      bp_uce_mem_msg_header_s mem_cmd_header_lo;
+      bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
       logic mem_cmd_header_v_lo, mem_cmd_header_ready_li;
       logic [dword_width_p-1:0] mem_cmd_data_lo;
       logic mem_cmd_data_v_lo, mem_cmd_data_ready_li;
 
-      bp_uce_mem_msg_header_s mem_resp_header_li;
+      bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
       logic mem_resp_header_v_li, mem_resp_header_yumi_lo;
       logic [dword_width_p-1:0] mem_resp_data_li;
       logic mem_resp_data_v_li, mem_resp_data_yumi_lo;
@@ -210,7 +211,7 @@ module wrapper
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(dword_width_p)
          ,.out_data_width_p(cce_block_width_p)
-         ,.forward_p(1)
+         ,.payload_mask_p(mem_cmd_payload_mask_gp)
          )
        burst2lite
         (.clk_i(clk_i)
@@ -235,7 +236,7 @@ module wrapper
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(cce_block_width_p)
          ,.out_data_width_p(dword_width_p)
-         ,.forward_p(0)
+         ,.payload_mask_p(mem_resp_payload_mask_gp)
          )
        lite2burst
         (.clk_i(clk_i)
