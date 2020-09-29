@@ -37,7 +37,9 @@ module bp_lite_to_stream
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, out);
   bp_bedrock_in_mem_msg_s mem_cast_i;
+  bp_bedrock_in_mem_msg_header_s mem_header_cast_i;
   assign mem_cast_i = mem_i;
+  assign mem_header_cast_i = mem_cast_i.header;
 
   localparam in_data_bytes_lp = in_data_width_p/8;
   localparam out_data_bytes_lp = out_data_width_p/8;
