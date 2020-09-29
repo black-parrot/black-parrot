@@ -14,7 +14,7 @@ module testbench
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    // Tracing parameters
    , parameter cce_trace_p                 = 0
@@ -48,7 +48,7 @@ module testbench
    , input dram_reset_i
    );
 
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_li;
@@ -57,7 +57,7 @@ module testbench
 
   logic mem_cmd_v_lo, mem_resp_v_lo;
   logic mem_cmd_ready_lo, mem_resp_yumi_lo;
-  logic [cce_mem_msg_width_lp-1:0] mem_cmd_lo, mem_resp_lo;
+  logic [bp_bedrock_cce_mem_msg_width_lp-1:0] mem_cmd_lo, mem_resp_lo;
 
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
   logic trace_v_lo;

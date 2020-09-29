@@ -16,8 +16,8 @@ module wrapper
   ,parameter uce_p = 1
   ,parameter wt_p = 1
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    , parameter debug_p=0
@@ -48,13 +48,13 @@ module wrapper
    , output logic [dword_width_p-1:0]                  data_o
    , output logic                                      v_o
 
-   , input                                             mem_resp_v_i
-   , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
-   , output logic                                      mem_resp_yumi_o
+   , input                                              mem_resp_v_i
+   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]        mem_resp_i
+   , output logic                                       mem_resp_yumi_o
 
-   , output logic                                      mem_cmd_v_o
-   , output logic [cce_mem_msg_width_lp-1:0]           mem_cmd_o
-   , input                                             mem_cmd_ready_i
+   , output logic                                       mem_cmd_v_o
+   , output logic [bp_bedrock_cce_mem_msg_width_lp-1:0] mem_cmd_o
+   , input                                              mem_cmd_ready_i
    );
 
    `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
@@ -201,9 +201,9 @@ module wrapper
      logic lce_req_v_lo, lce_resp_v_lo;
      logic lce_req_ready_lo, lce_resp_ready_lo;
      logic fifo_lce_cmd_v_lo, fifo_lce_cmd_yumi_li, lce_cmd_v_lo, lce_cmd_ready_li;
-     logic [lce_cce_req_width_lp-1:0] lce_req_lo;
-     logic [lce_cmd_width_lp-1:0] lce_cmd_lo, fifo_lce_cmd_lo;
-     logic [lce_cce_resp_width_lp-1:0] lce_resp_lo;
+     logic [bp_bedrock_lce_req_msg_width_lp-1:0] lce_req_lo;
+     logic [bp_bedrock_lce_cmd_msg_width_lp-1:0] lce_cmd_lo, fifo_lce_cmd_lo;
+     logic [bp_bedrock_lce_resp_msg_width_lp-1:0] lce_resp_lo;
 
      logic mem_resp_ready_lo;
 
@@ -274,7 +274,7 @@ module wrapper
 
      // lce_cmd demanding -> demanding handshake conversion
      bsg_two_fifo
-       #(.width_p(lce_cmd_width_lp))
+       #(.width_p(bp_bedrock_lce_cmd_msg_width_lp))
        cmd_fifo
        (.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -324,7 +324,7 @@ module wrapper
   else begin : uce
     logic fifo_mem_resp_v_lo, fifo_mem_cmd_v_lo;
     logic fifo_mem_resp_yumi_li;
-    logic [cce_mem_msg_width_lp-1:0] fifo_mem_resp_lo, fifo_mem_cmd_lo;
+    logic [bp_bedrock_cce_mem_msg_width_lp-1:0] fifo_mem_resp_lo, fifo_mem_cmd_lo;
     logic mem_resp_ready_lo, fifo_mem_cmd_ready_li;
 
     bp_uce
@@ -334,6 +334,7 @@ module wrapper
      ,.block_width_p(dcache_block_width_p)
      ,.data_mem_invert_clk_p(1)
      ,.tag_mem_invert_clk_p(1)
+     ,.uce_mem_data_width_p(cce_block_width_p)
      )
      dcache_uce
      (.clk_i(clk_i)
@@ -382,7 +383,7 @@ module wrapper
     // Update: This is useful even on writebacks to successively allow the
     // read request and hold the following writeback request
     bsg_two_fifo
-      #(.width_p(cce_mem_msg_width_lp))
+      #(.width_p(bp_bedrock_cce_mem_msg_width_lp))
       mem_cmd_fifo
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
