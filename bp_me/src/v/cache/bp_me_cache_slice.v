@@ -15,42 +15,41 @@ module bp_me_cache_slice
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, xce_mem)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, dram_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, dram)
 
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
   (input                                       clk_i
    , input                                     reset_i
 
-   , input [xce_mem_msg_width_lp-1:0]          mem_cmd_i
-   , input                                     mem_cmd_v_i
-   , output                                    mem_cmd_ready_o
+   , input [bp_bedrock_xce_mem_msg_width_lp-1:0]          mem_cmd_i
+   , input                                                mem_cmd_v_i
+   , output                                               mem_cmd_ready_o
 
-   , output [xce_mem_msg_width_lp-1:0]         mem_resp_o
-   , output                                    mem_resp_v_o
-   , input                                     mem_resp_yumi_i
+   , output [bp_bedrock_xce_mem_msg_width_lp-1:0]         mem_resp_o
+   , output                                               mem_resp_v_o
+   , input                                                mem_resp_yumi_i
 
-   , output [dram_mem_msg_header_width_lp-1:0] mem_cmd_header_o
-   , output                                    mem_cmd_header_v_o
-   , input                                     mem_cmd_header_yumi_i
-
-   // Currently only support cache width == dword width
-   , output [dword_width_p-1:0]                mem_cmd_data_o
-   , output                                    mem_cmd_data_v_o
-   , input                                     mem_cmd_data_yumi_i
-
-   , input [dram_mem_msg_header_width_lp-1:0]  mem_resp_header_i
-   , input                                     mem_resp_header_v_i
-   , output                                    mem_resp_header_ready_o
+   , output [bp_bedrock_dram_mem_msg_header_width_lp-1:0] mem_cmd_header_o
+   , output                                               mem_cmd_header_v_o
+   , input                                                mem_cmd_header_yumi_i
 
    // Currently only support cache width == dword width
-   , input [dword_width_p-1:0]                 mem_resp_data_i
-   , input                                     mem_resp_data_v_i
-   , output                                    mem_resp_data_ready_o
+   , output [dword_width_p-1:0]                           mem_cmd_data_o
+   , output                                               mem_cmd_data_v_o
+   , input                                                mem_cmd_data_yumi_i
+
+   , input [bp_bedrock_dram_mem_msg_header_width_lp-1:0]  mem_resp_header_i
+   , input                                                mem_resp_header_v_i
+   , output                                               mem_resp_header_ready_o
+
+   // Currently only support cache width == dword width
+   , input [dword_width_p-1:0]                            mem_resp_data_i
+   , input                                                mem_resp_data_v_i
+   , output                                               mem_resp_data_ready_o
    );
 
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
@@ -118,20 +117,20 @@ module bp_me_cache_slice
 
   // coherence message block size
   // block size smaller than 8-bytes not supported
-  bp_mem_msg_size_e mem_cmd_block_size =
+  bp_bedrock_msg_size_e mem_cmd_block_size =
     (cce_block_width_p == 1024)
-    ? e_mem_msg_size_128
+    ? e_bedrock_msg_size_128
     : (cce_block_width_p == 512)
-      ? e_mem_msg_size_64
+      ? e_bedrock_msg_size_64
       : (cce_block_width_p == 256)
-        ? e_mem_msg_size_32
+        ? e_bedrock_msg_size_32
         : (cce_block_width_p == 128)
-          ? e_mem_msg_size_16
-          : e_mem_msg_size_8;
+          ? e_bedrock_msg_size_16
+          : e_bedrock_msg_size_8;
 
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, dram_mem);
-  bp_dram_mem_msg_header_s dma_cmd_header_lo;
-  assign dma_cmd_header_lo = '{msg_type : dma_pkt_lo.write_not_read ? e_mem_msg_wr : e_mem_msg_rd
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, dram);
+  bp_bedrock_dram_mem_msg_header_s dma_cmd_header_lo;
+  assign dma_cmd_header_lo = '{msg_type : dma_pkt_lo.write_not_read ? e_bedrock_mem_wr : e_bedrock_mem_rd
                                ,size    : mem_cmd_block_size
                                ,addr    : dma_pkt_lo.addr
                                ,payload : '0

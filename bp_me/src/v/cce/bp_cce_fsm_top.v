@@ -38,8 +38,8 @@ module bp_cce_fsm_top
     , localparam wg_per_cce_lp          = (lce_sets_p / num_cce_p)
 
     // interface widths
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
   )
   (input                                                   clk_i
@@ -50,17 +50,17 @@ module bp_cce_fsm_top
    // LCE-CCE Interface
    // inbound: ready&valid
    // Inputs to CCE from LCE are buffered by two element FIFOs
-   , input [lce_cce_req_width_lp-1:0]                      lce_req_i
+   , input [bp_bedrock_lce_req_msg_width_lp-1:0]           lce_req_i
    , input                                                 lce_req_v_i
    , output logic                                          lce_req_ready_o
 
-   , input [lce_cce_resp_width_lp-1:0]                     lce_resp_i
+   , input [bp_bedrock_lce_resp_msg_width_lp-1:0]          lce_resp_i
    , input                                                 lce_resp_v_i
    , output logic                                          lce_resp_ready_o
 
    // outbound: ready&valid
    // messages are not buffered by the CCE, and connection is directly to ME network
-   , output logic [lce_cmd_width_lp-1:0]                   lce_cmd_o
+   , output logic [bp_bedrock_lce_cmd_msg_width_lp-1:0]    lce_cmd_o
    , output logic                                          lce_cmd_v_o
    , input                                                 lce_cmd_ready_i
 
@@ -68,37 +68,37 @@ module bp_cce_fsm_top
    // inbound: ready&valid, helpful consumer from demanding producer
    // outbound: valid->yumi, helpful producer to demanding consumer
    // Both inbound and outbound messages are buffered by two element FIFOs
-   , input [cce_mem_msg_width_lp-1:0]                      mem_resp_i
+   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]           mem_resp_i
    , input                                                 mem_resp_v_i
    , output logic                                          mem_resp_ready_o
 
-   , output logic [cce_mem_msg_width_lp-1:0]               mem_cmd_o
+   , output logic [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_cmd_o
    , output logic                                          mem_cmd_v_o
    , input                                                 mem_cmd_yumi_i
   );
 
-  logic [lce_cce_req_width_lp-1:0]               lce_req_to_cce;
+  logic [bp_bedrock_lce_req_msg_width_lp-1:0]    lce_req_to_cce;
   logic                                          lce_req_v_to_cce;
   logic                                          lce_req_yumi_from_cce;
-  logic [lce_cce_resp_width_lp-1:0]              lce_resp_to_cce;
+  logic [bp_bedrock_lce_resp_msg_width_lp-1:0]   lce_resp_to_cce;
   logic                                          lce_resp_v_to_cce;
   logic                                          lce_resp_yumi_from_cce;
-  logic [cce_mem_msg_width_lp-1:0]               mem_resp_to_cce;
+  logic [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_resp_to_cce;
   logic                                          mem_resp_v_to_cce;
   logic                                          mem_resp_yumi_from_cce;
-  logic [cce_mem_msg_width_lp-1:0]               mem_cmd_to_cce;
+  logic [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_cmd_to_cce;
   logic                                          mem_cmd_v_to_cce;
   logic                                          mem_cmd_yumi_from_cce;
-  logic [cce_mem_msg_width_lp-1:0]               mem_cmd_from_cce;
+  logic [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_cmd_from_cce;
   logic                                          mem_cmd_v_from_cce;
   logic                                          mem_cmd_ready_to_cce;
-  logic [cce_mem_msg_width_lp-1:0]               mem_resp_from_cce;
+  logic [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_resp_from_cce;
   logic                                          mem_resp_v_from_cce;
   logic                                          mem_resp_ready_to_cce;
 
   // Inbound LCE to CCE
   bsg_two_fifo
-    #(.width_p(lce_cce_req_width_lp)
+    #(.width_p(bp_bedrock_lce_req_msg_width_lp)
       )
     lce_cce_req_fifo
      (.clk_i(clk_i)
@@ -112,7 +112,7 @@ module bp_cce_fsm_top
       );
 
   bsg_fifo_1r1w_small
-    #(.width_p(lce_cce_resp_width_lp)
+    #(.width_p(bp_bedrock_lce_resp_msg_width_lp)
       // See top comments about sizing
       ,.els_p(wg_per_cce_lp)
       )
@@ -129,7 +129,7 @@ module bp_cce_fsm_top
 
   // Inbound Mem to CCE
   bsg_fifo_1r1w_small
-    #(.width_p(cce_mem_msg_width_lp)
+    #(.width_p(bp_bedrock_cce_mem_msg_width_lp)
       // See top comments about sizing
       ,.els_p(wg_per_cce_lp)
       )
@@ -146,7 +146,7 @@ module bp_cce_fsm_top
 
   // Outbound CCE to Mem
   bsg_two_fifo
-    #(.width_p(cce_mem_msg_width_lp)
+    #(.width_p(bp_bedrock_cce_mem_msg_width_lp)
       )
     cce_mem_cmd_fifo
      (.clk_i(clk_i)

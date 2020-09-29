@@ -10,7 +10,7 @@ module bp_mem
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter mem_offset_p         = "inv"
    , parameter mem_cap_in_bytes_p   = "inv"
@@ -23,13 +23,13 @@ module bp_mem
 
    // BP side
    // ready->valid (ready then valid)
-   , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
-   , input                               mem_cmd_v_i
-   , output                              mem_cmd_ready_o
+   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_cmd_i
+   , input                                          mem_cmd_v_i
+   , output                                         mem_cmd_ready_o
 
-   , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
-   , output                              mem_resp_v_o
-   , input                               mem_resp_yumi_i
+   , output [bp_bedrock_cce_mem_msg_width_lp-1:0]   mem_resp_o
+   , output                                         mem_resp_v_o
+   , input                                          mem_resp_yumi_i
 
    , input                               dram_clk_i
    , input                               dram_reset_i

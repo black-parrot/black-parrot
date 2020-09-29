@@ -13,7 +13,7 @@
  *   directly in hardware (e.g., ALU increment and decrement).
  *
  *   Note: this file may rely on defines from bsg_defines.h in the BaseJump STL repo.
- *   Note: this file relies on the LCE-CCE IF defines in bp_common_lce_cce_if.vh
+ *   Note: this file relies on bp_common_bedrock_if.vh
  */
 
 `ifndef BP_CCE_INST_VH
@@ -801,8 +801,8 @@ typedef struct packed {
   bp_cce_inst_mux_sel_addr_e             addr_sel;
   union packed
   {
-    bp_lce_cmd_type_e             lce_cmd;
-    bp_mem_msg_e                  mem_cmd;
+    bp_bedrock_cmd_type_e         lce_cmd;
+    bp_bedrock_mem_type_e         mem_cmd;
   }                                      cmd;
   logic                                  spec;
   logic                                  custom;
@@ -915,7 +915,7 @@ typedef struct packed {
   logic                                    popd;
   logic                                    pushq;
   logic                                    pushq_custom;
-  bp_mem_msg_size_e                        msg_size;
+  bp_bedrock_msg_size_e                    msg_size;
   bp_cce_inst_dst_q_sel_e                  pushq_qsel;
   bp_cce_inst_src_q_sel_e                  popq_qsel;
   logic                                    lce_req_yumi;
@@ -923,9 +923,9 @@ typedef struct packed {
   logic                                    mem_resp_yumi;
   logic                                    pending_yumi;
   logic                                    lce_cmd_v;
-  bp_lce_cmd_type_e                        lce_cmd;
+  bp_bedrock_cmd_type_e                    lce_cmd;
   logic                                    mem_cmd_v;
-  bp_mem_msg_e                             mem_cmd;
+  bp_bedrock_mem_type_e                    mem_cmd;
   logic                                    inv_cmd_v;
 
   // GPR write mask
