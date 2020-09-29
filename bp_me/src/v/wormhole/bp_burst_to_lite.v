@@ -9,48 +9,46 @@ module bp_burst_to_lite
    , parameter in_data_width_p  = "inv"
    , parameter out_data_width_p = "inv"
 
-   // Determines which direction this module is "pointing"
-   // This is necessary to differentiate between read/write requests/responses
-   // 1: write is N beat, read is 1 beat
-   // 0: write is 1 beat, read is N beats
-   , parameter logic forward_p = 1
+   // Bitmask which etermines which message types have a data payload
+   // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
+   , parameter int payload_mask_p = 0
 
-   `declare_bp_mem_if_widths(paddr_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in_mem)
-   `declare_bp_mem_if_widths(paddr_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out)
    )
   (input                                     clk_i
    , input                                   reset_i
 
    // Master BP Burst
    // ready-valid-and
-   , input [in_mem_msg_header_width_lp-1:0]  mem_header_i
-   , input                                   mem_header_v_i
-   , output logic                            mem_header_ready_o
+   , input [bp_bedrock_in_mem_msg_header_width_lp-1:0]  mem_header_i
+   , input                                              mem_header_v_i
+   , output logic                                       mem_header_ready_o
 
    // ready-valid-and
-   , input [in_data_width_p-1:0]             mem_data_i
-   , input                                   mem_data_v_i
-   , output logic                            mem_data_ready_o
+   , input [in_data_width_p-1:0]                        mem_data_i
+   , input                                              mem_data_v_i
+   , output logic                                       mem_data_ready_o
 
    // Client BP Lite
    // ready-valid-and
-   , output logic [out_mem_msg_width_lp-1:0] mem_o
-   , output logic                            mem_v_o
-   , input                                   mem_ready_i
+   , output logic [bp_bedrock_out_mem_msg_width_lp-1:0] mem_o
+   , output logic                                       mem_v_o
+   , input                                              mem_ready_i
    );
 
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in_mem);
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, out_mem);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, out);
 
   localparam in_data_bytes_lp = in_data_width_p/8;
   localparam out_data_bytes_lp = out_data_width_p/8;
   localparam burst_words_lp = out_data_width_p/in_data_width_p;
   localparam burst_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
-  bp_in_mem_msg_header_s header_lo;
+  bp_bedrock_in_mem_msg_header_s header_lo;
   logic header_v_lo;
   bsg_one_fifo
-   #(.width_p($bits(bp_in_mem_msg_header_s)))
+   #(.width_p($bits(bp_bedrock_in_mem_msg_header_s)))
    header_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -64,10 +62,8 @@ module bp_burst_to_lite
      ,.yumi_i(mem_v_o & mem_ready_i)
      );
 
-  bp_in_mem_msg_header_s mem_header_cast_i;
+  bp_bedrock_in_mem_msg_header_s mem_header_cast_i;
   assign mem_header_cast_i = mem_header_i;
-  wire is_wr = mem_header_cast_i.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr};
-  wire has_data = (forward_p == is_wr);
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
   wire [data_len_width_lp-1:0] incoming_burst_cmds = ((1'b1 << mem_header_cast_i.size) / in_data_bytes_lp);
   logic [data_len_width_lp-1:0] num_burst_cmds;
@@ -102,11 +98,11 @@ module bp_burst_to_lite
      ,.len_ready_o(/* Unused */)
      );
 
-  bp_out_mem_msg_s mem_cast_o;
+  bp_bedrock_out_mem_msg_s mem_cast_o;
   assign mem_cast_o = '{header: header_lo, data: data_lo};
   assign mem_o = mem_cast_o;
-  wire is_rd_out = header_lo.msg_type inside {e_mem_msg_uc_rd, e_mem_msg_rd};
-  assign mem_v_o = header_v_lo & (data_v_lo | (forward_p == is_rd_out));
+  wire has_data_out = payload_mask_p[header_lo.msg_type];
+  assign mem_v_o = header_v_lo & (data_v_lo | ~has_data_out);
 
   //synopsys translate_off
   initial

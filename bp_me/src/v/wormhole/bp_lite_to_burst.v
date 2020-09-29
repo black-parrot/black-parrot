@@ -9,29 +9,27 @@ module bp_lite_to_burst
    , parameter in_data_width_p  = "inv"
    , parameter out_data_width_p = "inv"
 
-   // Determines which direction this module is "pointing"
-   // This is necessary to differentiate between read/write requests/responses
-   // 1: write is N beat, read is 1 beat
-   // 0: write is 1 beat, read is N beats
-   , parameter logic forward_p = 1
+   // Bitmask which etermines which message types have a data payload
+   // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
+   , parameter payload_mask_p = 0
 
-   `declare_bp_mem_if_widths(paddr_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in_mem)
-   `declare_bp_mem_if_widths(paddr_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out)
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Master BP Lite
    // ready-valid-and
-   , input [in_mem_msg_width_lp-1:0]                mem_i
+   , input [bp_bedrock_in_mem_msg_width_lp-1:0]     mem_i
    , input                                          mem_v_i
    , output logic                                   mem_ready_o
 
    // Client BP Burst
    // ready-valid-and
-   , output logic [out_mem_msg_header_width_lp-1:0] mem_header_o
-   , output logic                                   mem_header_v_o
-   , input logic                                    mem_header_ready_i
+   , output logic [bp_bedrock_out_mem_msg_header_width_lp-1:0] mem_header_o
+   , output logic                                              mem_header_v_o
+   , input logic                                               mem_header_ready_i
 
    // ready-valid-and
    , output logic [out_data_width_p-1:0]            mem_data_o
@@ -39,9 +37,9 @@ module bp_lite_to_burst
    , input                                          mem_data_ready_i
    );
 
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in_mem);
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, out_mem);
-  bp_in_mem_msg_s mem_cast_i;
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, out);
+  bp_bedrock_in_mem_msg_s mem_cast_i;
   assign mem_cast_i = mem_i;
 
   localparam in_data_bytes_lp = in_data_width_p/8;
@@ -50,9 +48,9 @@ module bp_lite_to_burst
   localparam burst_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
   // We could make this a two fifo to get more throughput
-  bp_in_mem_msg_header_s header_lo;
+  bp_bedrock_in_mem_msg_header_s header_lo;
   bsg_one_fifo
-   #(.width_p($bits(bp_in_mem_msg_header_s)))
+   #(.width_p($bits(bp_bedrock_in_mem_msg_header_s)))
    header_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -66,8 +64,7 @@ module bp_lite_to_burst
      ,.yumi_i(mem_header_ready_i & mem_header_v_o)
      );
 
-  wire is_wr = mem_cast_i.header.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr};
-  wire has_data = (forward_p == is_wr);
+  wire has_data = payload_mask_p[mem_cast_i.header.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
   wire [data_len_width_lp-1:0] num_burst_cmds = (1'b1 << mem_cast_i.header.size) / out_data_bytes_lp;
   logic [out_data_width_p-1:0] data_lo;

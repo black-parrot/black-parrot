@@ -9,36 +9,34 @@ module bp_lite_to_stream
    , parameter in_data_width_p  = "inv"
    , parameter out_data_width_p = "inv"
 
-   // Determines which direction this module is "pointing"
-   // This is necessary to differentiate between read/write requests/responses
-   // 1: write is N beat, read is 1 beat
-   // 0: write is 1 beat, read is N beats
-   , parameter logic forward_p = 0
+   // Bitmask which etermines which message types have a data payload
+   // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
+   , parameter payload_mask_p = 0
 
-   `declare_bp_mem_if_widths(paddr_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in_mem)
-   `declare_bp_mem_if_widths(paddr_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out)
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Master BP Lite
    // ready-valid-and
-   , input [in_mem_msg_width_lp-1:0]                mem_i
+   , input [bp_bedrock_in_mem_msg_width_lp-1:0]     mem_i
    , input                                          mem_v_i
    , output logic                                   mem_ready_o
 
    // Client BP Stream
    // ready-valid-and
-   , output logic [out_mem_msg_header_width_lp-1:0] mem_header_o
-   , output logic [out_data_width_p-1:0]            mem_data_o
-   , output logic                                   mem_v_o
-   , input                                          mem_ready_i
-   , output logic                                   mem_lock_o
+   , output logic [bp_bedrock_out_mem_msg_header_width_lp-1:0] mem_header_o
+   , output logic [out_data_width_p-1:0]                       mem_data_o
+   , output logic                                              mem_v_o
+   , input                                                     mem_ready_i
+   , output logic                                              mem_lock_o
    );
 
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in_mem);
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, out_mem);
-  bp_in_mem_msg_s mem_cast_i;
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, out);
+  bp_bedrock_in_mem_msg_s mem_cast_i;
   assign mem_cast_i = mem_i;
 
   localparam in_data_bytes_lp = in_data_width_p/8;
@@ -46,10 +44,10 @@ module bp_lite_to_stream
   localparam stream_words_lp = in_data_width_p/out_data_width_p;
   localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
-  bp_in_mem_msg_header_s header_lo;
+  bp_bedrock_in_mem_msg_header_s header_lo;
   logic mem_v_lo, mem_yumi_li;
   bsg_one_fifo
-   #(.width_p($bits(bp_in_mem_msg_header_s)))
+   #(.width_p($bits(bp_bedrock_in_mem_msg_header_s)))
    header_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -63,11 +61,11 @@ module bp_lite_to_stream
      ,.yumi_i(mem_yumi_li)
      );
 
-  wire is_wr = mem_cast_i.header.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr};
+  wire has_data = payload_mask_p[mem_header_cast_i.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
-  wire [data_len_width_lp-1:0] num_stream_cmds = (forward_p ^ is_wr)
-    ? 1'b1
-    : `BSG_MAX(((1'b1 << mem_cast_i.header.size) / out_data_bytes_lp), 1'b1);
+  wire [data_len_width_lp-1:0] num_stream_cmds = has_data
+    ? `BSG_MAX(((1'b1 << mem_cast_i.header.size) / out_data_bytes_lp), 1'b1)
+    : 1'b1;
   logic [out_data_width_p-1:0] data_lo;
   bsg_parallel_in_serial_out_dynamic
    #(.width_p(out_data_width_p), .max_els_p(stream_words_lp))
@@ -106,7 +104,7 @@ module bp_lite_to_stream
   assign last_cnt  = first_cnt - 1'b1;
   wire cnt_done = (current_cnt == last_cnt);
 
-  bp_out_mem_msg_header_s mem_header_cast_o;
+  bp_bedrock_out_mem_msg_header_s mem_header_cast_o;
   assign mem_header_o = mem_header_cast_o;
   always_comb
     begin
