@@ -481,9 +481,6 @@ module bp_me_nonsynth_mock_lce
     lce_req_payload = '0;
     lce_resp_payload = '0;
     lce_cmd_lo_payload ='0;
-    lce_req.header.payload = lce_req_payload;
-    lce_resp.header.payload = lce_resp_payload;
-    lce_cmd_lo.header.payload = lce_cmd_lo_payload;
 
     // inbound queues
     lce_cmd_n = lce_cmd_r;
@@ -585,6 +582,7 @@ module bp_me_nonsynth_mock_lce
         lce_req.header.msg_type.req = (mshr_r.store_op) ? e_bedrock_req_uc_wr : e_bedrock_req_uc_rd;
         lce_req_payload.src_id = lce_id_i;
         lce_req.header.addr = mshr_r.paddr;
+        lce_req.header.payload = lce_req_payload;
 
         lce_req.header.size =
           (double_op)
@@ -672,6 +670,7 @@ module bp_me_nonsynth_mock_lce
         // Common LCE Resp fields
         lce_resp_payload.dst_id = lce_cmd_r_payload.src_id;
         lce_resp_payload.src_id = lce_id_i;
+        lce_resp.header.payload = lce_resp_payload;
         lce_resp.header.msg_type.resp = e_bedrock_resp_sync_ack;
 
         lce_resp_v_o = lce_resp_ready_i;
@@ -786,6 +785,7 @@ module bp_me_nonsynth_mock_lce
         // Common LCE Resp fields
         lce_resp_payload.dst_id = lce_cmd_r_payload.src_id;
         lce_resp_payload.src_id = lce_id_i;
+        lce_resp.header.payload = lce_resp_payload;
         lce_resp.header.msg_type.resp = e_bedrock_resp_inv_ack;
         lce_resp.header.addr = lce_cmd_r.header.addr;
 
@@ -803,6 +803,7 @@ module bp_me_nonsynth_mock_lce
         // Assign data command to msg field of LCE Cmd
         lce_cmd_lo.data = data_lo[lce_cmd_r_payload.way_id];
         lce_cmd_lo_payload.state = lce_cmd_r_payload.state;
+        lce_cmd_lo.header.payload = lce_cmd_lo_payload;
         lce_cmd_lo.header.addr = lce_cmd_r.header.addr;
         lce_cmd_lo.header.size = msg_block_size;
 
@@ -839,6 +840,7 @@ module bp_me_nonsynth_mock_lce
 
         lce_resp_payload.dst_id = lce_cmd_r_payload.src_id;
         lce_resp_payload.src_id = lce_id_i;
+        lce_resp.header.payload = lce_resp_payload;
         lce_resp.header.addr = lce_cmd_r.header.addr;
 
         if (dirty_bits_data_lo[lce_cmd_r_payload.way_id]) begin
@@ -907,6 +909,7 @@ module bp_me_nonsynth_mock_lce
         // Common LCE Resp fields
         lce_resp_payload.dst_id = mshr_r.cce;
         lce_resp_payload.src_id = lce_id_i;
+        lce_resp.header.payload = lce_resp_payload;
         lce_resp.header.msg_type.resp = e_bedrock_resp_coh_ack;
         lce_resp.header.addr = mshr_r.paddr;
 
@@ -937,6 +940,7 @@ module bp_me_nonsynth_mock_lce
         // Common LCE Resp fields
         lce_resp_payload.dst_id = lce_cmd_r_payload.src_id;
         lce_resp_payload.src_id = lce_id_i;
+        lce_resp.header.payload = lce_resp_payload;
         lce_resp.header.msg_type.resp = e_bedrock_resp_coh_ack;
         lce_resp.header.addr = lce_cmd_r.header.addr;
 
@@ -1131,6 +1135,7 @@ module bp_me_nonsynth_mock_lce
         lce_req.header.addr = mshr_r.paddr & addr_mask;
         lce_req_payload.non_exclusive = e_bedrock_req_excl;
         lce_req_payload.lru_way_id[0+:lg_assoc_lp] = mshr_r.lru_way;
+        lce_req.header.payload = lce_req_payload;
 
         lce_req.header.size = msg_block_size;
 
@@ -1202,6 +1207,7 @@ module bp_me_nonsynth_mock_lce
         lce_req_payload.non_exclusive = e_bedrock_req_excl;
         lce_req_payload.lru_way_id[0+:lg_assoc_lp] = mshr_r.lru_way;
         lce_req.header.size = msg_block_size;
+        lce_req.header.payload = lce_req_payload;
 
         lce_state_n = (lce_req_ready_i) ? READY : TR_CMD_ST_MISS;
 
