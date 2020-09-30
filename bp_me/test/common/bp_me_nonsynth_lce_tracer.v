@@ -79,16 +79,9 @@ module bp_me_nonsynth_lce_tracer
   integer file;
   string file_name;
 
-  logic reset_done_r;
-  always_ff @(posedge clk_i) begin
-    reset_done_r <= ~reset_i;
-  end
-
-  always_ff @(negedge clk_i) begin
-    if (~reset_done_r & ~reset_i) begin
-      file_name = $sformatf("%s_%x.trace", lce_trace_file_p, lce_id_i);
-      file      = $fopen(file_name, "w");
-    end
+  always_ff @(negedge reset_i) begin
+    file_name = $sformatf("%s_%x.trace", lce_trace_file_p, lce_id_i);
+    file      = $fopen(file_name, "w");
   end
 
   always_ff @(negedge clk_i) begin
