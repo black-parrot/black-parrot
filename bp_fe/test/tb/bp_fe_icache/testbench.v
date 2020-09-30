@@ -16,8 +16,6 @@ module testbench
    , parameter lce_trace_p                 = 0
    , parameter dram_trace_p                = 0
    , parameter icache_trace_p              = 0
-   , parameter preload_mem_p               = 1
-   , parameter random_yumi_p               = 0
    , parameter uce_p                       = 1
 
    , parameter trace_file_p = "test.tr"
@@ -60,8 +58,10 @@ module testbench
   logic [trace_replay_data_width_lp-1:0] trace_data_li;
   logic trace_v_li, trace_ready_lo;
 
+  logic [vaddr_width_p-1:0] icache_vaddr_lo;
   logic [instr_width_p-1:0] icache_data_lo;
   logic icache_data_v_lo, icache_data_ready_li;
+  logic icache_miss_not_data_lo;
 
   logic [trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
   logic [trace_replay_data_width_lp+3:0] trace_rom_data_li;
@@ -132,8 +132,9 @@ module testbench
   // Output FIFO
   logic fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
   logic [instr_width_p-1:0] fifo_data_lo;
-  assign fifo_yumi_li = (random_yumi_p == 1) ? (fifo_random_yumi_lo & trace_ready_lo) : (fifo_v_lo  & trace_ready_lo);
-  assign trace_v_li = (random_yumi_p == 1) ? fifo_yumi_li : fifo_v_lo;
+  logic [vaddr_width_p-1:0] fifo_vaddr_lo;
+  logic fifo_miss_not_data_lo;
+  assign trace_v_li = fifo_yumi_li & ~fifo_miss_not_data_lo;
   assign trace_data_li = {'0, fifo_data_lo};
 
   bsg_nonsynth_random_yumi_gen
@@ -144,14 +145,14 @@ module testbench
      (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.v_i(fifo_v_lo)
-     ,.yumi_o(fifo_random_yumi_lo)
+     ,.v_i(fifo_v_lo & trace_ready_lo)
+     ,.yumi_o(fifo_yumi_li)
      );
 
   // This fifo has 16 elements since maximum number of streaming hits is 16
   // Probably a side effect of the testing strategy.  Open for debate
   bsg_fifo_1r1w_small
-    #(.width_p(instr_width_p)
+    #(.width_p(1+vaddr_width_p+instr_width_p)
      ,.els_p(16)
     )
     output_fifo
@@ -159,14 +160,14 @@ module testbench
     ,.reset_i(reset_i)
 
     // from icache
+    ,.data_i({icache_miss_not_data_lo, icache_vaddr_lo, icache_data_lo})
     ,.v_i(icache_data_v_lo)
     ,.ready_o(icache_data_ready_li)
-    ,.data_i(icache_data_lo)
 
     // to trace replay
+    ,.data_o({fifo_miss_not_data_lo, fifo_vaddr_lo, fifo_data_lo})
     ,.v_o(fifo_v_lo)
     ,.yumi_i(fifo_yumi_li)
-    ,.data_o(fifo_data_lo)
     );
 
   // Subsystem under test
@@ -181,6 +182,7 @@ module testbench
      ,.cfg_bus_i(cfg_bus_li)
 
      ,.vaddr_i(vaddr_li)
+     ,.fill_i(fifo_miss_not_data_lo)
      ,.vaddr_v_i(trace_v_lo)
      ,.vaddr_ready_o(dut_ready_lo)
 
@@ -188,8 +190,10 @@ module testbench
      ,.ptag_v_i(trace_v_lo)
      ,.uncached_i(uncached_li)
 
+     ,.vaddr_o(icache_vaddr_lo)
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
+     ,.miss_not_data_o(icache_miss_not_data_lo)
      ,.data_yumi_i(icache_data_ready_li & icache_data_v_lo)
 
      ,.mem_resp_i(mem_resp_lo)

@@ -35,6 +35,7 @@ module wrapper
 
   , input [vaddr_width_p-1:0]         vaddr_i
   , input                             vaddr_v_i
+  , input                             fill_i
   , output                            vaddr_ready_o
 
   , input [ptag_width_p-1:0]          ptag_i
@@ -42,8 +43,10 @@ module wrapper
 
   , input                             uncached_i
 
+  , output [vaddr_width_p-1:0]        vaddr_o
   , output [instr_width_p-1:0]        data_o
   , output                            data_v_o
+  , output                            miss_not_data_o
   , input                             data_yumi_i
 
   , input [cce_mem_msg_width_lp-1:0]  mem_resp_i
@@ -123,9 +126,9 @@ module wrapper
     ,.data_o({uncached_r, ptag_v_r, rolly_ptag_r})
     );
 
-  `declare_bp_fe_icache_pkt_s(vaddr_width_p);
+  `declare_bp_fe_icache_pkt_s(vaddr_width_p, icache_assoc_p);
   bp_fe_icache_pkt_s icache_pkt;
-  assign icache_pkt = '{vaddr: rolly_vaddr_lo, op: e_icache_fetch, default: '0};
+  assign icache_pkt = '{vaddr: rolly_vaddr_lo, op: e_icache_fill, default: '0};
 
   // I-Cache
   bp_fe_icache
@@ -144,8 +147,10 @@ module wrapper
     ,.ptag_v_i(ptag_v_r)
     ,.uncached_i(uncached_r)
 
+    ,.vaddr_o(vaddr_o)
     ,.data_o(data_o)
     ,.data_v_o(data_v_o)
+    ,.miss_not_data_o(miss_not_data_o)
     ,.data_yumi_i(data_yumi_i)
 
     ,.cache_req_ready_i(cache_req_ready_li)
@@ -342,28 +347,10 @@ module wrapper
       ,.mem_cmd_v_o(mem_cmd_v_o)
       ,.mem_cmd_ready_i(mem_cmd_ready_i)
 
-      ,.mem_resp_i(fifo_mem_resp_lo)
-      ,.mem_resp_v_i(fifo_mem_resp_v_lo)
-      ,.mem_resp_yumi_o(fifo_mem_resp_yumi_li)
+      ,.mem_resp_i(mem_resp_i)
+      ,.mem_resp_v_i(mem_resp_v_i)
+      ,.mem_resp_yumi_o(mem_resp_yumi_o)
       );
-
-    bsg_fifo_1r1w_small
-      #(.width_p(cce_mem_msg_width_lp)
-       ,.els_p(1)
-       )
-      mem_resp_fifo
-      (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.v_i(mem_resp_v_i)
-      ,.data_i(mem_resp_i)
-      ,.ready_o(mem_resp_ready_lo)
-
-      ,.v_o(fifo_mem_resp_v_lo)
-      ,.data_o(fifo_mem_resp_lo)
-      ,.yumi_i(fifo_mem_resp_yumi_li)
-      );
-
-    assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
   end
 endmodule
+

@@ -145,7 +145,7 @@ bp_pma
 logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
 
-`declare_bp_fe_icache_pkt_s(vaddr_width_p);
+`declare_bp_fe_icache_pkt_s(vaddr_width_p, icache_assoc_p);
 bp_fe_icache_pkt_s icache_pkt;
 assign icache_pkt = '{vaddr: mem_cmd_cast_i.operands.fetch.vaddr
                       ,op  : fencei_v ? e_icache_fencei : e_icache_fetch

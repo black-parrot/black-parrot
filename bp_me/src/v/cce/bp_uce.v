@@ -6,8 +6,8 @@ module bp_uce
   import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    , parameter uce_mem_data_width_p = "inv"
     `declare_bp_proc_params(bp_params_p)
+    , parameter uce_mem_data_width_p = cce_block_width_p
     `declare_bp_mem_if_widths(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce_mem)
     , parameter assoc_p = 8
     , parameter sets_p = 64
