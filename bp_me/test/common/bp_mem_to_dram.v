@@ -335,6 +335,11 @@ module bp_mem_to_dram
      ,.data_o(dma_data_packed_lo)
      );
 
+if(reorder_fifo_els_lp == 1) begin
+  assign id_encode_lo = 1'b0;
+  assign id_encode_v_lo = cam_r_match_lo;
+end
+else begin
   bsg_priority_encode
  #(.width_p(reorder_fifo_els_lp)
    ,.lo_to_hi_p(1)
@@ -343,6 +348,7 @@ module bp_mem_to_dram
   ,.addr_o(id_encode_lo)
   ,.v_o(id_encode_v_lo)
   );
+end
 
   bsg_decode
  #(.num_out_p(reorder_fifo_els_lp)
