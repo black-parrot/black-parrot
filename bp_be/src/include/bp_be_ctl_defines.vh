@@ -193,7 +193,6 @@ typedef enum logic
 typedef struct packed
 {
   logic                             v;
-  logic                             instr_v;
 
   logic                             pipe_ctl_v;
   logic                             pipe_int_v;
