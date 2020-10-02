@@ -77,14 +77,14 @@ module bp_me_nonsynth_lce_tracer
     reset_done_r <= ~reset_i;
   end
 
-  always_ff @(negedge clk_i) begin
+  always_ff @(posedge clk_i) begin
     if (~reset_done_r & ~reset_i) begin
       file_name = $sformatf("%s_%x.trace", lce_trace_file_p, lce_id_i);
       file      = $fopen(file_name, "w");
     end
   end
 
-  always_ff @(negedge clk_i) begin
+  always_ff @(posedge clk_i) begin
     if (~reset_i) begin
 
       // LCE-CCE Interface

@@ -1,9 +1,13 @@
-CCE_TRACE_P    ?= 0
-DRAM_TRACE_P   ?= 0
-DCACHE_TRACE_P ?= 0
-RANDOM_YUMI_P  ?= 0
-UCE_P          ?= 0
-WT_P           ?= 0
+CCE_TRACE_P          ?= 0
+LCE_TRACE_P          ?= 0
+DRAM_TRACE_P         ?= 0
+DCACHE_TRACE_P       ?= 0
+RANDOM_YUMI_P        ?= 0
+UCE_P                ?= 0
+WT_P                 ?= 0
+NUM_CACHES_P         ?= 1
+BP_NUM_LCE           ?= 1
+BP_COH_NOC_CID_WIDTH ?= 2
 
 export DRAM_PKG = bsg_dramsim3_hbm2_4gb_x128_pkg
 
@@ -13,7 +17,9 @@ export BP_SIM_CLK_PERIOD ?= 1000
 export DUT_PARAMS = 
 export TB_PARAMS  = -pvalue+uce_p=$(UCE_P) \
                     -pvalue+wt_p=$(WT_P) \
+                    -pvalue+num_caches_p=$(NUM_CACHES_P) \
                     -pvalue+cce_trace_p=$(CCE_TRACE_P)   \
+                    -pvalue+lce_trace_p=$(LCE_TRACE_P)   \
                     -pvalue+dram_trace_p=$(DRAM_TRACE_P) \
                     -pvalue+dcache_trace_p=$(DCACHE_TRACE_P) \
                     -pvalue+random_yumi_p=$(RANDOM_YUMI_P) \
@@ -21,6 +27,8 @@ export TB_PARAMS  = -pvalue+uce_p=$(UCE_P) \
 
 export DUT_DEFINES =
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
+                     +define+BP_NUM_LCE=$(BP_NUM_LCE) \
+                     +define+BP_COH_NOC_CID_WIDTH=$(BP_COH_NOC_CID_WIDTH) \
                      +define+dram_pkg=$(DRAM_PKG)
 
 export HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)
