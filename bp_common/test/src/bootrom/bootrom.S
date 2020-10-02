@@ -73,6 +73,8 @@ load_config:
 
     li t1, CFG_CCE_MODE_ADDR
     sd t0, 0(t1)
+
+    fence.i
     
     li t0, 0x80000000
     csrw dpc, t0
@@ -87,6 +89,7 @@ load_config:
     dret
 halt:
     j halt
+    nop
 
 _ucode:
     .incbin "cce_ucode.bin" 

@@ -3,11 +3,7 @@ RISCV_GCC = $(CROSS_COMPILE)gcc -march=rv64im -mabi=lp64 -mcmodel=medany -static
 
 UCODE2BOOT = $(BP_COMMON_DIR)/software/py/ucode2boot.py
 
-ifdef CCE_MEM_PATH
 BOOT_INPUTS = --ucode=$(CCE_MEM_PATH)/$(CCE_MEM)
-else
-BOOT_INPUTS = --ucode=$(BP_ME_DIR)/src/asm/roms/mesi.mem
-endif
 BOOT_INPUTS += --path=$(BP_COMMON_DIR)/test/src/bootrom
 
 XXD ?= xxd

@@ -161,6 +161,9 @@ class NBF:
     # Reset clear
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_reset, 0)
 
+    #######################################################
+    # This CCE ucode write is now handled by the bootrom
+    #######################################################
     # Write CCE ucode
     # if self.ucode_file:
     #   for core in range(self.ncpus):
@@ -168,13 +171,19 @@ class NBF:
     #       full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
     #       self.print_nbf(3, full_addr, self.ucode[i])
 
+    #################################################################
+    # The cache and CCE mode switch is now handled by the bootrom
+    #################################################################
     # Write I$, D$, and CCE modes
     # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
     # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
     # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
 
+    ##############################################
+    # This is now handled by the config settings
+    ##############################################
     # Write PC to the DRAM base
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
 
     # Write checkpoint
     if self.checkpoint_file:
