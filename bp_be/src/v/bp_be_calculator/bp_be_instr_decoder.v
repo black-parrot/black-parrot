@@ -52,7 +52,6 @@ module bp_be_instr_decoder
       // Set decoded defaults
       // NOPs are set after bypassing for critical path reasons
       decode               = '0;
-      decode.instr_v       = 1'b1;
 
       // Destination pipe
       decode.pipe_ctl_v       = '0;

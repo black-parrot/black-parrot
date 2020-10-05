@@ -205,6 +205,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_rec_to_fp.v
 # Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
+$BP_BE_DIR/src/v/bp_be_checker/bp_be_issue_queue.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
 # MMU
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_ptw.v
@@ -280,7 +281,6 @@ $BP_TOP_DIR/src/v/bp_sacc_complex.v
 $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
-$BP_TOP_DIR/src/v/bp_core_minimal.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v
 $BP_TOP_DIR/src/v/bp_l2e_tile.v
 $BP_TOP_DIR/src/v/bp_l2e_tile_node.v

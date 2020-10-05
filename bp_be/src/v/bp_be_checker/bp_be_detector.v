@@ -34,8 +34,7 @@ module bp_be_detector
    // Dependency information
    , input [isd_status_width_lp-1:0]   isd_status_i
    , input [calc_status_width_lp-1:0]  calc_status_i
-   , input [vaddr_width_p-1:0]         expected_npc_i
-   , input                             fe_cmd_ready_i
+   , input                             fe_cmd_full_i
    , input                             credits_full_i
    , input                             credits_empty_i
    , input                             interrupt_ready_i
@@ -153,7 +152,7 @@ module bp_be_detector
       fence_haz_v        = (isd_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
                            | (isd_status_cast_i.isd_mem_v & credits_full_i);
       interrupt_haz_v    = interrupt_ready_i;
-      queue_haz_v        = ~fe_cmd_ready_i;
+      queue_haz_v        = fe_cmd_full_i;
 
       // Conservatively serialize on csr operations.  Could change to only write operations
       serial_haz_v       = dep_status_li[0].csr_v

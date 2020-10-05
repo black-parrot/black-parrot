@@ -242,7 +242,7 @@ module bp_mem_to_dram
 
   // reordering CAM
   logic cam_w_set_not_clear_i;
-  logic [reorder_fifo_els_lp-1:0] cam_w_v_li, cam_r_match_lo;
+  logic [reorder_fifo_els_lp-1:0] cam_w_v_li, cam_r_match_lo, cam_match_lo;
   logic [channel_addr_width_p-1:0] cam_w_tag_li;
 
   // id decoder
@@ -272,6 +272,7 @@ module bp_mem_to_dram
   bsg_cam_1r1w_tag_array
  #(.els_p(reorder_fifo_els_lp)
   ,.width_p(channel_addr_width_p)
+  ,.multiple_entries_p(1)
   ) id_cam
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
@@ -334,8 +335,9 @@ module bp_mem_to_dram
      ,.data_o(dma_data_packed_lo)
      );
 
-  bsg_encode_one_hot
+  bsg_priority_encode
  #(.width_p(reorder_fifo_els_lp)
+   ,.lo_to_hi_p(1)
   ) id_enc
   (.i(cam_r_match_lo)
   ,.addr_o(id_encode_lo)
@@ -349,6 +351,13 @@ module bp_mem_to_dram
   ,.o(id_decode_lo)
   );
 
+  bsg_decode
+ #(.num_out_p(reorder_fifo_els_lp)
+  ) cam_match_dec
+  (.i(id_encode_lo)
+  ,.o(cam_match_lo)
+  );
+  
   // queue FIFO
   wire is_write = mem_resp_lo.header.msg_type.mem inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr};
   assign queue_fifo_yumi_li = mem_resp_v_o & mem_resp_yumi_i;
@@ -361,7 +370,7 @@ module bp_mem_to_dram
   assign cam_w_v_li = reorder_alloc_yumi_li
                       ? id_decode_lo
                       : resp_afifo_deq_li
-                        ? cam_r_match_lo
+                        ? cam_match_lo
                         : '0;
   assign cam_w_set_not_clear_i = reorder_alloc_yumi_li;
   assign cam_w_tag_li = word_addr_lo;
