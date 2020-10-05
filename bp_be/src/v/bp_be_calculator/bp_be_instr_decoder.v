@@ -595,6 +595,7 @@ module bp_be_instr_decoder
             e_instr_access_fault: decode.instr_access_fault = 1'b1;
             e_instr_page_fault  : decode.instr_page_fault   = 1'b1;
             e_itlb_miss         : decode.itlb_miss          = 1'b1;
+            e_icache_miss       : decode.icache_miss        = 1'b1;
           endcase
         end
       else if (illegal_instr)

@@ -96,7 +96,6 @@ bp_tlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(itlb_fence_v)
-   ,.translation_en_i(mem_translation_en_i)
 
    ,.v_i((fetch_v | itlb_fill_v) & mem_translation_en_i)
    ,.w_i(itlb_fill_v)

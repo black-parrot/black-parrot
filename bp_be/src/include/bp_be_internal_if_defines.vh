@@ -152,6 +152,7 @@
     logic                           fencei;                                                        \
     logic                           sfence;                                                        \
     logic                           satp;                                                          \
+    logic                           icache_miss;                                                   \
     logic                           rollback;                                                      \
   }  bp_be_trap_pkt_s;                                                                             \
                                                                                                    \
@@ -241,7 +242,7 @@
    )
 
 `define bp_be_trap_pkt_width(vaddr_width_mp) \
-  (1 + 1 * vaddr_width_mp + rv64_priv_width_gp + 8)
+  (1 + 1 * vaddr_width_mp + rv64_priv_width_gp + 9)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (1                                                                                               \

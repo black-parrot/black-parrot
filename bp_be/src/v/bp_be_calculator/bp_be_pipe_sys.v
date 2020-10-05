@@ -212,7 +212,9 @@ module bp_be_pipe_sys
      );
 
   assign data_o           = csr_data_lo;
-  assign exc_v_o          = trap_pkt.exception | (ptw_miss_pkt.instr_miss_v | ptw_miss_pkt.load_miss_v | ptw_miss_pkt.store_miss_v);
+  assign exc_v_o          = trap_pkt.exception
+                            | trap_pkt.icache_miss
+                            | (ptw_miss_pkt.instr_miss_v | ptw_miss_pkt.load_miss_v | ptw_miss_pkt.store_miss_v);
   assign miss_v_o         = trap_pkt.rollback;
 
 endmodule

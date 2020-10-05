@@ -586,6 +586,7 @@ module bp_be_calculator_top
           exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_sys_miss_v_lo | pipe_sys_exc_v_lo;
 
           exc_stage_n[0].exc.itlb_miss          = reservation_n.decode.itlb_miss;
+          exc_stage_n[0].exc.icache_miss        = reservation_n.decode.icache_miss;
           exc_stage_n[0].exc.instr_access_fault = reservation_n.decode.instr_access_fault;
           exc_stage_n[0].exc.instr_page_fault   = reservation_n.decode.instr_page_fault;
           exc_stage_n[0].exc.illegal_instr      = reservation_n.decode.illegal_instr;
