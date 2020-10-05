@@ -349,15 +349,11 @@ module wrapper
 
     bp_uce
       #(.bp_params_p(bp_params_p)
-       ,.uce_mem_data_width_p(icache_fill_width_p)
+       ,.uce_mem_data_width_p(cce_block_width_p)
        ,.assoc_p(icache_assoc_p)
        ,.sets_p(icache_sets_p)
        ,.block_width_p(icache_block_width_p)
-<<<<<<< HEAD
-       ,.uce_mem_data_width_p(cce_block_width_p)
-=======
        ,.fill_width_p(icache_fill_width_p)
->>>>>>> dev
        )
       icache_uce
       (.clk_i(clk_i)
