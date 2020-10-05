@@ -13,12 +13,10 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
   , parameter axi_id_width_p     = 1
   , parameter axi_addr_width_p   = 64
   , parameter axi_burst_type_p   = 2'b01                                     //INCR type
-  , parameter axi_size_p         = 3                                         //8 Bytes, or 64bits, per transfer (this is done in power of 2's)
-  , localparam axi_len_lp        = cce_block_width_p/axi_data_width_p - 1    //(512/64) - 1 = 7 (but it's 8 transfers since AxLEN+1)
   //, localparam axi_user_width_lp = 1 
   
   // Memory depth
-  , parameter mem_els_p          = 2**28
+  , parameter mem_els_p          = 2**30
   , localparam lg_mem_els_lp     =`BSG_SAFE_CLOG2(mem_els_p)                                      
   )
 
@@ -86,10 +84,11 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
   );
 
   // declaring RAM
-  logic [axi_data_width_p-1:0] ram [0:mem_els_p-1];
+  logic [7:0] ram [0:mem_els_p-1];
 
   //==================================================  
   // write channel signal declaration and assignment
+  // 
   typedef enum logic [1:0] {
     WRITE_ADDR_WAIT,
     WRITE_DATA_WAIT,
@@ -100,13 +99,10 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
   
   logic [axi_id_width_p-1:0]   awid_r, awid_n;
   logic [axi_addr_width_p-1:0] awaddr_r, awaddr_n;
-  logic [lg_mem_els_lp-1:0]     wr_ram_idx;
-
-  //assign wr_ram_idx = awaddr_r[`BSG_SAFE_CLOG2(axi_data_width_p>>3)+:lg_mem_els_lp];
-  assign wr_ram_idx = awaddr_r;
 
   //==================================================
   // read channel signal declaration and assignment
+  // 
   typedef enum logic {
     READ_ADDR_WAIT,
     READ_DATA_SEND
@@ -116,14 +112,11 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
 
   logic [axi_id_width_p-1:0] arid_r, arid_n;
   logic [axi_addr_width_p-1:0] araddr_r, araddr_n;
-  logic [`BSG_SAFE_CLOG2(axi_len_lp)-1:0] rd_burst_r, rd_burst_n;
-  logic [lg_mem_els_lp-1:0] rd_ram_idx;
-
-  //assign rd_ram_idx = araddr_r[`BSG_SAFE_CLOG2(axi_data_width_p>>3)+:lg_mem_els_lp];
-  assign rd_ram_idx = araddr_r;
-
+  logic [7:0] rd_burst_r, rd_burst_n;
+  
   //==================================================
   // write related combinational logic
+  // 
   always_comb begin
     // WRITE ADDRESS SIGNALS
     axi_awready_o = '0;
@@ -156,9 +149,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
 
       WRITE_DATA_WAIT: begin
         axi_wready_o = 1'b1;
-        awaddr_n      = axi_wvalid_i & (axi_awburst_i==2'b01)
-                      ? awaddr_r + (1 << `BSG_SAFE_CLOG2(axi_data_width_p>>3))
-                      : awaddr_r;
+        awaddr_n      = awaddr_r;
         wr_state_n    = (axi_wvalid_i & axi_wlast_i)
                       ? WRITE_RESP
                       : wr_state_r;
@@ -175,6 +166,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
 
   //==================================================
   // read related combinational logic
+  // 
   always_comb begin
     // READ ADDRESS SIGNALS
     axi_arready_o = '0;
@@ -206,7 +198,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
 
       READ_DATA_SEND: begin
         axi_rvalid_o  = 1'b1;
-        axi_rlast_o   = (rd_burst_r == axi_len_lp);
+        axi_rlast_o   = (rd_burst_r == axi_arlen_i);
 
         rd_burst_n    = axi_rready_i
                       ? rd_burst_r + 1
@@ -217,7 +209,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
                       : rd_state_r;
 
         araddr_n      = axi_rready_i
-                      ? araddr_r + (1 << `BSG_SAFE_CLOG2(axi_data_width_p>>3))
+                      ? araddr_r + 8
                       : araddr_r;
       end
     endcase
@@ -225,7 +217,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
   
   //==================================================
   // sequential logic
-
+  // 
   always_ff @(posedge aclk_i) begin
     if (~aresetn_i) begin
       // write logic
@@ -249,7 +241,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
       if ((wr_state_r == WRITE_DATA_WAIT) & axi_wvalid_i) begin
         for (integer i=0; i < axi_strb_width_lp; i++) begin
           if (axi_wstrb_i[i]) begin
-            ram[wr_ram_idx][i*8+:8] = axi_wdata_i[i*8+:8];
+            ram[awaddr_r[28:0]+i][7:0] = axi_wdata_i[i*8+:8];
           end
         end
       end
@@ -266,12 +258,12 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
   // uninitialized data
   //
   logic [axi_data_width_p-1:0] uninit_data;
-  assign uninit_data = {(axi_data_width_p/32){32'hdead_beef}};
+  assign uninit_data = {(axi_data_width_p/32){32'h0}};
 
-  for (genvar i = 0; i < axi_data_width_p; i++) begin
-    assign axi_rdata_o[i] = (ram[rd_ram_idx][i] === 1'bx)
-      ? uninit_data[i]
-      : ram[rd_ram_idx][i];
+  for (genvar i = 0; i < axi_data_width_p/8; i++) begin
+    assign axi_rdata_o[i*8+:8] = (ram[araddr_r[28:0]+i] === 8'bx)
+                               ? uninit_data[i*8+:8]
+                               : ram[araddr_r[28:0]+i];
   end
 
 endmodule
