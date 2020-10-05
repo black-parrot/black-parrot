@@ -429,7 +429,7 @@ module testbench
          ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)                                            \
                                                                                                   \
          ,.itlb_miss(fe.mem.itlb_miss_r)                                                          \
-         ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)                      \
+         ,.icache_miss(~fe.mem.icache.ready_o | fe.pc_gen.icache_miss)                            \
          ,.icache_fence(fe.mem.icache.fencei_req)                                                 \
          ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)                              \
          ,.ret_override(fe.pc_gen.ovr_ret)                                                        \

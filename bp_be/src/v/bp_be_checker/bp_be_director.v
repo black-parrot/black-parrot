@@ -225,6 +225,15 @@ module bp_be_director
 
           flush_o = 1'b1;
         end
+      else if (commit_pkt.icache_miss)
+        begin
+          fe_cmd_li.opcode = e_op_icache_fill_response;
+          fe_cmd_li.vaddr = commit_pkt.npc;
+
+          fe_cmd_v_li = fe_cmd_ready_lo;
+
+          flush_o = 1'b1;
+        end
       // Redirect the pc if there's an NPC mismatch
       // Should not lump trap and ret into branch misprediction
       else if (commit_pkt.exception | commit_pkt._interrupt | commit_pkt.eret)

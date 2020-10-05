@@ -203,12 +203,13 @@ typedef enum logic
  */
 typedef enum logic [2:0]
 {
-  e_op_state_reset         = 0
-  ,e_op_pc_redirection     = 1
-  ,e_op_attaboy            = 2
-  ,e_op_icache_fence       = 3
-  ,e_op_itlb_fill_response = 4
-  ,e_op_itlb_fence         = 5
+  e_op_state_reset           = 0
+  ,e_op_pc_redirection       = 1
+  ,e_op_attaboy              = 2
+  ,e_op_icache_fill_response = 3
+  ,e_op_icache_fence         = 4
+  ,e_op_itlb_fill_response   = 5
+  ,e_op_itlb_fence           = 6
 } bp_fe_command_queue_opcodes_e;
 
 /*
@@ -228,12 +229,13 @@ typedef enum logic [1:0]
  * miss. e_instruction_access_fault is when the access control is violated.
  * e_instr_page_fault is when the instruction page is accessed with insufficent privilege
  */
-typedef enum logic [1:0]
+typedef enum logic [2:0]
 {
   e_itlb_miss           = 0
-  ,e_instr_misaligned   = 1
-  ,e_instr_access_fault = 2
-  ,e_instr_page_fault   = 3
+  ,e_icache_miss        = 1
+  ,e_instr_misaligned   = 2
+  ,e_instr_access_fault = 3
+  ,e_instr_page_fault   = 4
 } bp_fe_exception_code_e;
 
 /*

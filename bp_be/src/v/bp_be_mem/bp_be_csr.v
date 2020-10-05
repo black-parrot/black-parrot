@@ -671,7 +671,7 @@ assign interrupt_ready_o = ~is_debug_mode & ~cfg_bus_cast_i.freeze & (m_interrup
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
 
-assign commit_pkt_cast_o.v                = |{csr_cmd.exc.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss};
+assign commit_pkt_cast_o.v                = |{csr_cmd.exc.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, csr_cmd.exc.icache_miss, csr_cmd.exc.dcache_miss, csr_cmd.exc.dtlb_miss};
 assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
 assign commit_pkt_cast_o.instret          = instret_i;
 assign commit_pkt_cast_o.pc               = exception_pc_i;
@@ -685,7 +685,8 @@ assign commit_pkt_cast_o.exception        = exception_v_o;
 assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
 assign commit_pkt_cast_o.eret             = ret_v_o;
 assign commit_pkt_cast_o.satp             = satp_v_o;
-assign commit_pkt_cast_o.rollback         = csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss | csr_cmd.exc.itlb_miss;
+assign commit_pkt_cast_o.icache_miss      = csr_cmd.exc.icache_miss;
+assign commit_pkt_cast_o.rollback         = csr_cmd.exc.icache_miss | csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss | csr_cmd.exc.itlb_miss;
 
 assign trans_info_cast_o.priv_mode = priv_mode_r;
 assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
