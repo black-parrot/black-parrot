@@ -276,7 +276,16 @@ module bp_me_cce_to_cache
      ,.data_i(mem_cmd_lo.header)
      ,.data_o(mem_resp_cast_o.header)
      );
-  assign mem_resp_cast_o.data = resp_data_r;
+
+  bsg_bus_pack
+   #(.width_p(cce_block_width_p))
+   pack
+    (.data_i(resp_data_r)
+     ,.sel_i(mem_resp_cast_o.header.addr[0+:block_offset_width_lp])
+     ,.size_i(mem_resp_cast_o.header.size)
+
+     ,.data_o(mem_resp_cast_o.data)
+     );
 
   always_comb begin
     yumi_o = 1'b0;

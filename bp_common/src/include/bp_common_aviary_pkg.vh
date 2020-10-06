@@ -143,9 +143,10 @@ package bp_common_aviary_pkg;
                         );
 
   localparam bp_proc_param_s bp_multicore_1_override_p =
-    '{multicore : 1
-      ,num_cce  : 1
-      ,num_lce  : 2
+    '{multicore      : 1
+      ,num_cce       : 1
+      ,num_lce       : 2
+      ,l1_coherent   : 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p

@@ -199,7 +199,7 @@ typedef struct packed
   '{addr_39_2: data_cast_mp.base[0+:38]}
 
 `define decompress_stvec_s(data_comp_mp) \
-  '{base : {24'h0, data_comp_mp.addr_39_2} \
+  '{base : 62'($signed(data_comp_mp.addr_39_2)) \
     ,mode: 2'b00                           \
     }
 
@@ -602,8 +602,8 @@ typedef struct packed
   '{addr_39_2: data_cast_mp.base[0+:38]}
 
 `define decompress_mtvec_s(data_comp_mp) \
-  '{base : {24'h0, data_comp_mp.addr_39_2} \
-    ,mode: 2'b00                           \
+  '{base : 62'($signed(data_comp_mp.addr_39_2)) \
+    ,mode: 2'b00                                \
     }
 
 typedef struct packed
@@ -1005,6 +1005,24 @@ typedef logic [38:0] bp_dpc_s;
 
 `define decompress_dpc_s(data_comp_mp) \
   64'($signed(data_comp_mp))
+
+typedef logic [63:0] rv64_dscratch0_s;
+typedef logic [63:0] bp_dscratch0_s;
+
+`define compress_dscratch0_s(data_cast_mp) \
+  data_cast_mp[0+:64]
+
+`define decompress_dscratch0_s(data_comp_mp) \
+  64'(data_comp_mp)
+
+typedef logic [63:0] rv64_dscratch1_s;
+typedef logic [63:0] bp_dscratch1_s;
+
+`define compress_dscratch1_s(data_cast_mp) \
+  data_cast_mp[0+:64]
+
+`define decompress_dscratch1_s(data_comp_mp) \
+  64'(data_comp_mp)
 
 `define declare_csr(csr_name_mp) \
   /* verilator lint_off UNUSED */                                                               \

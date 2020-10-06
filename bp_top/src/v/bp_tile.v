@@ -234,13 +234,20 @@ bp_cce_wrapper
    ,.mem_resp_yumi_o(cce_mem_resp_yumi_lo)
    );
 
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
+`declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_lce_cce_req_header_s, cce_block_width_p);
+localparam lce_req_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_lce_cce_req_header_s), cce_block_width_p);
+bp_lce_req_wormhole_packet_s [1:0] lce_req_packet_lo;
+bp_lce_req_wormhole_header_s [1:0] lce_req_header_lo;
 
-lce_req_packet_s [1:0]  lce_req_packet_lo;
-lce_cmd_packet_s [1:0]  lce_cmd_packet_lo, lce_cmd_packet_li;
-lce_resp_packet_s [1:0] lce_resp_packet_lo;
+`declare_bp_lce_cmd_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_lce_cmd_header_s, cce_block_width_p);
+localparam lce_cmd_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_lce_cmd_header_s), cce_block_width_p);
+bp_lce_cmd_wormhole_packet_s [1:0] lce_cmd_packet_lo, lce_cmd_packet_li;
+bp_lce_cmd_wormhole_header_s [1:0] lce_cmd_header_lo, lce_cmd_header_li;
+
+`declare_bp_lce_resp_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_lce_cce_resp_header_s, cce_block_width_p);
+localparam lce_resp_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_lce_cce_resp_header_s), cce_block_width_p);
+bp_lce_resp_wormhole_packet_s [1:0] lce_resp_packet_lo;
+bp_lce_resp_wormhole_header_s [1:0] lce_resp_header_lo;
 
 bp_coh_ready_and_link_s [1:0] lce_req_link_li, lce_req_link_lo;
 bp_coh_ready_and_link_s [1:0] lce_cmd_link_li, lce_cmd_link_lo;
@@ -256,12 +263,13 @@ for (genvar i = 0; i < 2; i++)
      #(.bp_params_p(bp_params_p)
        )
      req_encode
-      (.payload_i(lce_req_lo[i])
-       ,.packet_o(lce_req_packet_lo[i])
+      (.lce_req_header_i(lce_req_lo[i].header)
+       ,.wh_header_o(lce_req_header_lo[i])
        );
+    assign lce_req_packet_lo[i] = '{header: lce_req_header_lo[i], data: lce_req_lo[i].data};
 
     bsg_wormhole_router_adapter_in
-     #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+     #(.max_payload_width_p(lce_req_payload_width_lp)
        ,.len_width_p(coh_noc_len_width_p)
        ,.cord_width_p(coh_noc_cord_width_p)
        ,.flit_width_p(coh_noc_flit_width_p)
@@ -281,12 +289,13 @@ for (genvar i = 0; i < 2; i++)
     bp_me_wormhole_packet_encode_lce_cmd
      #(.bp_params_p(bp_params_p))
      cmd_encode
-      (.payload_i(lce_cmd_lo[i])
-       ,.packet_o(lce_cmd_packet_lo[i])
+      (.lce_cmd_header_i(lce_cmd_lo[i].header)
+       ,.wh_header_o(lce_cmd_header_lo[i])
        );
+    assign lce_cmd_packet_lo[i] = '{header: lce_cmd_header_lo[i], data: lce_cmd_lo[i].data};
 
     bsg_wormhole_router_adapter
-     #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+     #(.max_payload_width_p(lce_cmd_payload_width_lp)
        ,.len_width_p(coh_noc_len_width_p)
        ,.cord_width_p(coh_noc_cord_width_p)
        ,.flit_width_p(coh_noc_flit_width_p)
@@ -306,17 +315,18 @@ for (genvar i = 0; i < 2; i++)
        ,.v_o(lce_cmd_v_li[i])
        ,.yumi_i(lce_cmd_yumi_lo[i])
        );
-    assign lce_cmd_li[i] = lce_cmd_packet_li[i].payload;
+    assign lce_cmd_li[i] = '{header: lce_cmd_packet_li[i].header.msg_hdr, data: lce_cmd_packet_li[i].data};
 
     bp_me_wormhole_packet_encode_lce_resp
      #(.bp_params_p(bp_params_p))
      resp_encode
-      (.payload_i(lce_resp_lo[i])
-       ,.packet_o(lce_resp_packet_lo[i])
+      (.lce_resp_header_i(lce_resp_lo[i].header)
+       ,.wh_header_o(lce_resp_header_lo[i])
        );
+    assign lce_resp_packet_lo[i] = '{header: lce_resp_header_lo[i], data: lce_resp_lo[i].data};
 
     bsg_wormhole_router_adapter_in
-     #(.max_payload_width_p($bits(lce_resp_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+     #(.max_payload_width_p(lce_resp_payload_width_lp)
        ,.len_width_p(coh_noc_len_width_p)
        ,.cord_width_p(coh_noc_cord_width_p)
        ,.flit_width_p(coh_noc_flit_width_p)
@@ -334,9 +344,9 @@ for (genvar i = 0; i < 2; i++)
        );
   end
 
-  lce_req_packet_s cce_lce_req_packet_li;
+  bp_lce_req_wormhole_packet_s cce_lce_req_packet_li;
   bsg_wormhole_router_adapter_out
-   #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+   #(.max_payload_width_p(lce_req_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -352,18 +362,20 @@ for (genvar i = 0; i < 2; i++)
     ,.v_o(cce_lce_req_v_li)
     ,.yumi_i(cce_lce_req_yumi_lo)
     );
-  assign cce_lce_req_li = cce_lce_req_packet_li.payload;
+  assign cce_lce_req_li = '{header: cce_lce_req_packet_li.header.msg_hdr, data: cce_lce_req_packet_li.data};
 
-  lce_cmd_packet_s cce_lce_cmd_packet_lo;
+  bp_lce_cmd_wormhole_packet_s cce_lce_cmd_packet_lo;
+  bp_lce_cmd_wormhole_header_s cce_lce_cmd_header_lo;
   bp_me_wormhole_packet_encode_lce_cmd
    #(.bp_params_p(bp_params_p))
    cmd_encode
-    (.payload_i(cce_lce_cmd_lo)
-     ,.packet_o(cce_lce_cmd_packet_lo)
+    (.lce_cmd_header_i(cce_lce_cmd_lo.header)
+     ,.wh_header_o(cce_lce_cmd_header_lo)
      );
+  assign cce_lce_cmd_packet_lo = '{header: cce_lce_cmd_header_lo, data: cce_lce_cmd_lo.data};
 
   bsg_wormhole_router_adapter_in
-   #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+   #(.max_payload_width_p(lce_cmd_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -380,9 +392,9 @@ for (genvar i = 0; i < 2; i++)
      ,.link_o(cce_lce_cmd_link_lo)
      );
 
-  lce_resp_packet_s cce_lce_resp_packet_li;
+  bp_lce_resp_wormhole_packet_s cce_lce_resp_packet_li;
   bsg_wormhole_router_adapter_out
-   #(.max_payload_width_p($bits(lce_resp_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+   #(.max_payload_width_p(lce_resp_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -398,7 +410,7 @@ for (genvar i = 0; i < 2; i++)
     ,.v_o(cce_lce_resp_v_li)
     ,.yumi_i(cce_lce_resp_yumi_lo)
     );
-  assign cce_lce_resp_li = cce_lce_resp_packet_li.payload;
+  assign cce_lce_resp_li = '{header: cce_lce_resp_packet_li.header.msg_hdr, data: cce_lce_resp_packet_li.data};
 
   bp_coh_ready_and_link_s req_concentrated_link_li, req_concentrated_link_lo;
   bp_coh_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo;
@@ -471,40 +483,57 @@ for (genvar i = 0; i < 2; i++)
      );
 
   /* TODO: Extract local memory map to module */
-  wire local_cmd_li    = (cce_mem_cmd_lo.header.addr < dram_base_addr_gp);
-  wire [3:0] device_li =  cce_mem_cmd_lo.header.addr[20+:4];
+  wire local_cmd_li        = (cce_mem_cmd_lo.header.addr < dram_base_addr_gp);
+  wire [3:0] device_cmd_li = cce_mem_cmd_lo.header.addr[20+:4];
+  wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
+  wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
+  wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
+  wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_cache_cmd;
 
-  assign cce_mem_cmd_ready_li = loopback_mem_cmd_ready_lo & cache_mem_cmd_ready_lo & cfg_mem_cmd_ready_lo & clint_mem_cmd_ready_lo;
+  assign cfg_mem_cmd_v_li      = is_cfg_cmd   & cce_mem_cmd_v_lo;
+  assign clint_mem_cmd_v_li    = is_clint_cmd & cce_mem_cmd_v_lo;
+  assign cache_mem_cmd_v_li    = is_cache_cmd & cce_mem_cmd_v_lo;
+  assign loopback_mem_cmd_v_li = is_loopback_cmd & cce_mem_cmd_v_lo;
 
-  assign cfg_mem_cmd_li       = cce_mem_cmd_lo;
-  assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == cfg_dev_gp);
+  assign cce_mem_cmd_ready_li = &{loopback_mem_cmd_ready_lo, cache_mem_cmd_ready_lo, cfg_mem_cmd_ready_lo, clint_mem_cmd_ready_lo};
 
-  assign clint_mem_cmd_li     = cce_mem_cmd_lo;
-  assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == clint_dev_gp);
+  assign {loopback_mem_cmd_li, cache_mem_cmd_li, clint_mem_cmd_li, cfg_mem_cmd_li} = {4{cce_mem_cmd_lo}};
 
-  assign cache_mem_cmd_li     = cce_mem_cmd_lo;
-  assign cache_mem_cmd_v_li   = cce_mem_cmd_v_lo & (~local_cmd_li | (local_cmd_li & (device_li == cache_dev_gp)));
-
-  assign loopback_mem_cmd_li   = cce_mem_cmd_lo;
-  assign loopback_mem_cmd_v_li = cce_mem_cmd_v_lo & (local_cmd_li & ~cfg_mem_cmd_v_li & ~clint_mem_cmd_v_li & ~cache_mem_cmd_v_li);
-
+  bp_cce_mem_msg_s mem_resp_selected_li;
+  logic mem_resp_selected_v_li, mem_resp_selected_ready_lo;
   bsg_arb_fixed
    #(.inputs_p(4)
      ,.lo_to_hi_p(1)
      )
    resp_arb
-    (.ready_i(cce_mem_resp_yumi_lo)
+    (.ready_i(mem_resp_selected_ready_lo)
      ,.reqs_i({loopback_mem_resp_v_lo, clint_mem_resp_v_lo, cfg_mem_resp_v_lo, cache_mem_resp_v_lo})
      ,.grants_o({loopback_mem_resp_yumi_li, clint_mem_resp_yumi_li, cfg_mem_resp_yumi_li, cache_mem_resp_yumi_li})
      );
-  assign cce_mem_resp_v_li = loopback_mem_resp_lo | cache_mem_resp_v_lo | cfg_mem_resp_v_lo | clint_mem_resp_v_lo;
-  assign cce_mem_resp_li = cache_mem_resp_v_lo
-                           ? cache_mem_resp_lo
-                           : cfg_mem_resp_v_lo
-                             ? cfg_mem_resp_lo
-                               : clint_mem_resp_v_lo
-                                 ? clint_mem_resp_lo
-                                 : loopback_mem_resp_lo;
+
+  bsg_mux_one_hot
+   #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(4))
+   resp_select
+    (.data_i({loopback_mem_resp_lo, clint_mem_resp_lo, cfg_mem_resp_lo, cache_mem_resp_lo})
+     ,.sel_one_hot_i({loopback_mem_resp_v_lo, clint_mem_resp_v_lo, cfg_mem_resp_v_lo, cache_mem_resp_v_lo})
+     ,.data_o(mem_resp_selected_li)
+     );
+
+  assign mem_resp_selected_v_li = loopback_mem_resp_yumi_li | cache_mem_resp_yumi_li | cfg_mem_resp_yumi_li | clint_mem_resp_yumi_li;
+  bsg_two_fifo
+   #(.width_p($bits(bp_cce_mem_msg_s)))
+   resp_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(mem_resp_selected_li)
+     ,.v_i(mem_resp_selected_v_li)
+     ,.ready_o(mem_resp_selected_ready_lo)
+
+     ,.data_o(cce_mem_resp_li)
+     ,.v_o(cce_mem_resp_v_li)
+     ,.yumi_i(cce_mem_resp_yumi_lo)
+     );
 
   bp_cce_mem_msg_s dma_mem_cmd_lo;
   logic dma_mem_cmd_v_lo, dma_mem_cmd_ready_li;

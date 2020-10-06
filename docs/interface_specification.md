@@ -225,6 +225,11 @@ A memory command or response packet is composed of:
   - Whether this is a speculative request
 - Data
 
+Misaligned addresses return data wrapped around the request size using the following scheme:
+
+Request: 0x0 [d c b a]
+Request: 0x2 [b a d c]
+
 ## LCE-CCE Interface
 
 The LCE-CCE Interface comprises the connections between the BlackParrot caches and the

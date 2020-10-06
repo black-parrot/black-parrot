@@ -1,6 +1,7 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
+include $(BP_EXTERNAL_DIR)/Makefile.dramsim3
 
 basejump_dir    := $(BP_EXTERNAL_DIR)/basejump_stl
 systemc_dir     := $(BP_EXTERNAL_DIR)/systemc
@@ -10,8 +11,6 @@ dtc_dir         := $(BP_EXTERNAL_DIR)/dtc
 spike_dir       := $(BP_EXTERNAL_DIR)/riscv-isa-sim
 dromajo_dir     := $(BP_EXTERNAL_DIR)/dromajo
 axe_dir         := $(BP_EXTERNAL_DIR)/axe
-dramsim2_dir    := $(BP_EXTERNAL_DIR)/DRAMSim2
-dramsim3_dir    := $(BP_EXTERNAL_DIR)/DRAMsim3
 cmurphi_dir     := $(BP_EXTERNAL_DIR)/cmurphi
 zachjs_sv2v_dir := $(BP_EXTERNAL_DIR)/zachjs_sv2v
 bsg_sv2v_dir    := $(BP_EXTERNAL_DIR)/bsg_sv2v
@@ -28,7 +27,8 @@ $(1)_manual:
 	+$(MAKE) $(1)_build
 endef
 
-basejump_build: ;
+basejump_build:
+	$(MAKE) dramsim3_build
 
 systemc_build:
 	cd $(systemc_dir); \
@@ -74,15 +74,8 @@ axe_build:
 		./make.sh
 	cp $(axe_dir)/src/axe $(BP_BIN_DIR)
 
-dramsim2_build:
-	$(MAKE) -C $(dramsim2_dir) libdramsim.so
-	cp $(dramsim2_dir)/libdramsim.so $(BP_LIB_DIR) 
-	cp $(dramsim2_dir)/*.h $(BP_INCLUDE_DIR)
-
 dramsim3_build:
-	$(MAKE) -C $(dramsim3_dir) libdramsim3.so
-	cp $(dramsim3_dir)/libdramsim3.so $(BP_LIB_DIR)
-	cp $(dramsim3_dir)/src/*.h $(BP_INCLUDE_DIR)
+	$(MAKE) libdramsim3.so
 
 cmurphi_build:
 	$(MAKE) -C $(cmurphi_dir)/src/ mu
@@ -108,8 +101,6 @@ $(eval $(call submodule_tool_template,dtc,$(dtc_dir)))
 $(eval $(call submodule_tool_template,spike,$(spike_dir)))
 $(eval $(call submodule_tool_template,dromajo,$(dromajo_dir)))
 $(eval $(call submodule_tool_template,axe,$(axe_dir)))
-$(eval $(call submodule_tool_template,dramsim2,$(dramsim2_dir)))
-$(eval $(call submodule_tool_template,dramsim3,$(dramsim3_dir)))
 $(eval $(call submodule_tool_template,cmurphi,$(cmurphi_dir)))
 $(eval $(call submodule_tool_template,zachjs_sv2v,$(zachjs_sv2v_dir)))
 $(eval $(call submodule_tool_template,bsg_sv2v,$(bsg_sv2v_dir)))

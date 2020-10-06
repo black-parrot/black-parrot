@@ -31,36 +31,35 @@ module testbench
    , parameter dcache_trace_p              = 0
    , parameter vm_trace_p                  = 0
    , parameter core_profile_p              = 0
-   , parameter preload_mem_p               = 0
    , parameter checkpoint_p                = 0
    , parameter cosim_p                     = 0
-   , parameter cosim_memsize_p             = 256
+   , parameter cosim_memsize_p             = 0
    , parameter cosim_cfg_file_p            = "prog.cfg"
    , parameter cosim_instr_p               = 0
    , parameter warmup_instr_p              = 0
-
-   , parameter mem_zero_p         = 1
-   , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**28
+   , parameter preload_mem_p               = 0
+   , parameter dram_fixed_latency_p        = 0
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-
-   // Number of elements in the fake BlackParrot memory
-   , parameter use_max_latency_p      = 0
-   , parameter use_random_latency_p   = 0
-   , parameter use_dramsim2_latency_p = 0
-
-   , parameter max_latency_p = 15
-
-   , parameter dram_clock_period_in_ps_p = `BP_SIM_CLK_PERIOD
-   , parameter dram_cfg_p                = "dram_ch.ini"
-   , parameter dram_sys_cfg_p            = "dram_sys.ini"
-   , parameter dram_capacity_p           = 16384
+   , parameter mem_cap_in_bytes_p = 2**27
+   , parameter mem_file_p         = "prog.mem"
    )
   (input clk_i
    , input reset_i
+   , input dram_clk_i
+   , input dram_reset_i
    );
 
 import "DPI-C" context function bit get_finish(int hartid);
+export "DPI-C" function get_dram_period;
+export "DPI-C" function get_sim_period;
+
+function int get_dram_period();
+  return (`dram_pkg::tck_ps);
+endfunction
+
+function int get_sim_period();
+  return (`BP_SIM_CLK_PERIOD);
+endfunction
 
 `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
@@ -120,21 +119,11 @@ wrapper
 
 bp_mem
  #(.bp_params_p(bp_params_p)
-   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-   ,.mem_load_p(preload_mem_p)
-   ,.mem_zero_p(mem_zero_p)
-   ,.mem_file_p(mem_file_p)
    ,.mem_offset_p(mem_offset_p)
-
-   ,.use_max_latency_p(use_max_latency_p)
-   ,.use_random_latency_p(use_random_latency_p)
-   ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
-   ,.max_latency_p(max_latency_p)
-
-   ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-   ,.dram_cfg_p(dram_cfg_p)
-   ,.dram_sys_cfg_p(dram_sys_cfg_p)
-   ,.dram_capacity_p(dram_capacity_p)
+   ,.mem_load_p(preload_mem_p)
+   ,.mem_file_p(mem_file_p)
+   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+   ,.dram_fixed_latency_p(dram_fixed_latency_p)
    )
  mem
   (.clk_i(clk_i)
@@ -147,6 +136,9 @@ bp_mem
    ,.mem_resp_o(proc_mem_resp_li)
    ,.mem_resp_v_o(proc_mem_resp_v_li)
    ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
+
+   ,.dram_clk_i(dram_clk_i)
+   ,.dram_reset_i(dram_reset_i)
    );
 
 bp_nonsynth_nbf_loader
@@ -240,7 +232,7 @@ bind bp_be_top
      ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
      ,.frd_data_i(scheduler.fwb_pkt.rd_data)
 
-     ,.interrupt_v_i(calculator.pipe_sys.csr.trap_pkt_cast_o._interrupt)
+     ,.trap_v_i(calculator.pipe_sys.csr.trap_pkt_cast_o.exception | calculator.pipe_sys.csr.trap_pkt_cast_o._interrupt)
      ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
                ? calculator.pipe_sys.csr.scause_li
                : calculator.pipe_sys.csr.mcause_li
@@ -301,8 +293,8 @@ bind bp_be_top
        ,.npc_r(npc_r)
        ,.expected_npc_o(expected_npc_o)
 
-       ,.fe_cmd_i(fe_cmd)
-       ,.fe_cmd_v(fe_cmd_v)
+       ,.fe_cmd_i(fe_cmd_li)
+       ,.fe_cmd_v(fe_cmd_v_li)
 
        ,.trap_pkt_i(trap_pkt)
        );
@@ -414,30 +406,89 @@ bind bp_be_top
        ,.program_finish_i(&testbench.program_finish_lo)
        );
 
-  bind bp_core_minimal
-    bp_be_nonsynth_vm_tracer
-    #(.bp_params_p(bp_params_p))
-    vm_tracer
-      (.clk_i(clk_i & (testbench.vm_trace_p == 1))
-       ,.reset_i(reset_i)
-       ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
+   `define declare_bp_be_nonsynth_vm_tracer \
+      bp_be_nonsynth_vm_tracer                                                                    \
+       #(.bp_params_p(bp_params_p))                                                               \
+       vm_tracer                                                                                  \
+        (.clk_i(clk_i & (testbench.vm_trace_p == 1))                                              \
+         ,.reset_i(reset_i)                                                                       \
+         ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)                             \
+                                                                                                  \
+         ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)                           \
+                                                                                                  \
+         ,.itlb_clear_i(fe.mem.itlb.flush_i)                                                      \
+         ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)                                       \
+         ,.itlb_vtag_i(fe.mem.itlb.vtag_i)                                                        \
+         ,.itlb_entry_i(fe.mem.itlb.entry_i)                                                      \
+         ,.itlb_cam_r_v_i(fe.mem.itlb.cam.r_v_i)                                                  \
+                                                                                                  \
+         ,.dtlb_clear_i(be.calculator.pipe_mem.dtlb.flush_i)                                      \
+         ,.dtlb_fill_v_i(be.calculator.pipe_mem.dtlb.v_i & be.calculator.pipe_mem.dtlb.w_i)       \
+         ,.dtlb_vtag_i(be.calculator.pipe_mem.dtlb.vtag_i)                                        \
+         ,.dtlb_entry_i(be.calculator.pipe_mem.dtlb.entry_i)                                      \
+         ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dtlb.cam.r_v_i)                                  \
+                                                                                                  \
+         ,.program_finish_i(testbench.program_finish_lo)                                          \
+         );
 
-       ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
+  `define declare_bp_nonsynth_core_profiler \
+      bp_nonsynth_core_profiler                                                                   \
+       #(.bp_params_p(bp_params_p))                                                               \
+       core_profiler                                                                              \
+        (.clk_i(clk_i & (testbench.core_profile_p == 1))                                          \
+         ,.reset_i(reset_i)                                                                       \
+         ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)                             \
+                                                                                                  \
+         ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)                           \
+                                                                                                  \
+         ,.fe_wait_stall(fe.pc_gen.is_wait)                                                       \
+         ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)                                            \
+                                                                                                  \
+         ,.itlb_miss(fe.mem.itlb_miss_r)                                                          \
+         ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)                      \
+         ,.icache_fence(fe.mem.icache.fencei_req)                                                 \
+         ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)                              \
+         ,.ret_override(fe.pc_gen.ovr_ret)                                                        \
+                                                                                                  \
+         ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)                                 \
+                                                                                                  \
+         ,.mispredict(be.director.npc_mismatch_v)                                                 \
+         ,.target(be.director.isd_status.isd_pc)                                                  \
+                                                                                                  \
+         ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)                                          \
+         ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)                                    \
+         ,.long_haz(be.detector.struct_haz_v)                                                     \
+         ,.exception(be.director.trap_pkt.exception)                                              \
+         ,.eret(be.director.trap_pkt.eret)                                                        \
+         ,._interrupt(be.director.trap_pkt._interrupt)                                            \
+         ,.control_haz(be.detector.control_haz_v)                                                 \
+         ,.data_haz(be.detector.data_haz_v)                                                       \
+         ,.load_dep((be.detector.dep_status_li[0].emem_iwb_v                                      \
+                     | be.detector.dep_status_li[1].emem_iwb_v                                    \
+                     ) & be.detector.data_haz_v                                                   \
+                    )                                                                             \
+         ,.mul_dep((be.detector.dep_status_li[0].mul_iwb_v                                        \
+                    | be.detector.dep_status_li[1].mul_iwb_v                                      \
+                    | be.detector.dep_status_li[2].mul_iwb_v                                      \
+                    ) & be.detector.data_haz_v                                                    \
+                   )                                                                              \
+         ,.struct_haz(be.detector.struct_haz_v)                                                   \
+                                                                                                  \
+         ,.reservation(be.calculator.reservation_n)                                               \
+         ,.commit_pkt(be.calculator.commit_pkt)                                                   \
+         ,.trap_pkt(be.calculator.pipe_sys.csr.trap_pkt_o)                                        \
+         );
 
-       ,.itlb_clear_i(fe.mem.itlb.flush_i)
-       ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)
-       ,.itlb_vtag_i(fe.mem.itlb.vtag_i)
-       ,.itlb_entry_i(fe.mem.itlb.entry_i)
-       ,.itlb_cam_r_v_i(fe.mem.itlb.cam.r_v_i)
-
-       ,.dtlb_clear_i(be.calculator.pipe_mem.dtlb.flush_i)
-       ,.dtlb_fill_v_i(be.calculator.pipe_mem.dtlb.v_i & be.calculator.pipe_mem.dtlb.w_i)
-       ,.dtlb_vtag_i(be.calculator.pipe_mem.dtlb.vtag_i)
-       ,.dtlb_entry_i(be.calculator.pipe_mem.dtlb.entry_i)
-       ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dtlb.cam.r_v_i)
-  
-       ,.program_finish_i(testbench.program_finish_lo)
-       );
+    if (multicore_p)
+      begin : multicore
+        bind bp_core `declare_bp_be_nonsynth_vm_tracer
+        bind bp_core `declare_bp_nonsynth_core_profiler
+      end
+    else
+      begin : unicore
+        bind bp_unicore `declare_bp_be_nonsynth_vm_tracer;
+        bind bp_unicore `declare_bp_nonsynth_core_profiler
+      end
 
   bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))
@@ -454,65 +505,17 @@ bind bp_be_top
      ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
      );
 
-  bind bp_core_minimal
-    bp_nonsynth_core_profiler
-     #(.bp_params_p(bp_params_p))
-     core_profiler
-      (.clk_i(clk_i & (testbench.core_profile_p == 1))
-       ,.reset_i(reset_i)
-       ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
-
-       ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
-
-       ,.fe_wait_stall(fe.pc_gen.is_wait)
-       ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)
-
-       ,.itlb_miss(fe.mem.itlb_miss_r)
-       ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)
-       ,.icache_fence(fe.mem.icache.fencei_req)
-       ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
-       ,.ret_override(fe.pc_gen.ovr_ret)
-
-       ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
-
-       ,.mispredict(be.director.npc_mismatch_v)
-       ,.target(be.director.isd_status.isd_pc)
-
-       ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)
-       ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
-       ,.long_haz(be.detector.struct_haz_v)
-       ,.exception(be.director.trap_pkt.exception)
-       ,.eret(be.director.trap_pkt.eret)
-       ,._interrupt(be.director.trap_pkt._interrupt)
-       ,.control_haz(be.detector.control_haz_v)
-       ,.data_haz(be.detector.data_haz_v)
-       ,.load_dep((be.detector.dep_status_li[0].emem_iwb_v
-                   | be.detector.dep_status_li[1].emem_iwb_v
-                   ) & be.detector.data_haz_v
-                  )
-       ,.mul_dep((be.detector.dep_status_li[0].mul_iwb_v
-                  | be.detector.dep_status_li[1].mul_iwb_v
-                  | be.detector.dep_status_li[2].mul_iwb_v
-                  ) & be.detector.data_haz_v
-                 )
-       ,.struct_haz(be.detector.struct_haz_v)
-
-       ,.reservation(be.calculator.reservation_n)
-       ,.commit_pkt(be.calculator.commit_pkt)
-       ,.trap_pkt(be.calculator.pipe_sys.csr.trap_pkt_o)
-       );
-
-  bind bp_core_minimal
+  bind bp_be_top
     bp_nonsynth_pc_profiler
      #(.bp_params_p(bp_params_p))
      pc_profiler
       (.clk_i(clk_i & (testbench.core_profile_p == 1))
        ,.reset_i(reset_i)
-       ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
+       ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
-       ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
+       ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-       ,.commit_pkt(be.calculator.commit_pkt)
+       ,.commit_pkt(calculator.commit_pkt)
 
        ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
        );
@@ -520,7 +523,7 @@ bind bp_be_top
   bind bp_be_top
     bp_nonsynth_branch_profiler
      #(.bp_params_p(bp_params_p))
-     pc_profiler
+     branch_profiler
       (.clk_i(clk_i & (testbench.core_profile_p == 1))
        ,.reset_i(reset_i)
        ,.freeze_i(detector.cfg_bus_cast_i.freeze)
@@ -528,8 +531,7 @@ bind bp_be_top
        ,.mhartid_i(detector.cfg_bus_cast_i.core_id)
 
        ,.fe_cmd_o(director.fe_cmd_o)
-       ,.fe_cmd_v_o(director.fe_cmd_v_o)
-       ,.fe_cmd_ready_i(director.fe_cmd_ready_i)
+       ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)
 
        ,.commit_v_i(calculator.commit_pkt.instret)
 

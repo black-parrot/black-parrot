@@ -130,6 +130,8 @@ wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
 //   This is non-compliant. We should hardcode to 0 instead of trapping
 `declare_csr(dcsr)
 `declare_csr(dpc)
+`declare_csr(dscratch0)
+`declare_csr(dscratch1)
 
 wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
 wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
@@ -360,6 +362,8 @@ always_comb
     exit_debug  = '0;
     dcsr_li     = dcsr_lo;
     dpc_li      = dpc_lo;
+    dscratch0_li = dscratch0_lo;
+    dscratch1_li = dscratch1_lo;
 
     exception_v_o    = '0;
     interrupt_v_o    = '0;
@@ -486,8 +490,8 @@ always_comb
               `CSR_ADDR_MHARTID: csr_data_lo = cfg_bus_cast_i.core_id;
               `CSR_ADDR_MSTATUS: csr_data_lo = mstatus_lo;
               // MISA is optionally read-write, but all fields are read-only in BlackParrot
-              //   64 bit MXLEN, IMASU extensions
-              `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h141101};
+              //   64 bit MXLEN, IMAFDSU extensions
+              `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h141129};
               `CSR_ADDR_MEDELEG: csr_data_lo = medeleg_lo;
               `CSR_ADDR_MIDELEG: csr_data_lo = mideleg_lo;
               `CSR_ADDR_MIE: csr_data_lo = mie_lo;
@@ -503,6 +507,8 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: csr_data_lo = mcountinhibit_lo;
               `CSR_ADDR_DCSR: csr_data_lo = dcsr_lo;
               `CSR_ADDR_DPC: csr_data_lo = dpc_lo;
+              `CSR_ADDR_DSCRATCH0: csr_data_lo = dscratch0_lo;
+              `CSR_ADDR_DSCRATCH1: csr_data_lo = dscratch1_lo;
               default: illegal_instr_o = 1'b1;
             endcase
             // Write case
@@ -550,6 +556,8 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: mcountinhibit_li = csr_data_li;
               `CSR_ADDR_DCSR: dcsr_li = csr_data_li;
               `CSR_ADDR_DPC: dpc_li = csr_data_li;
+              `CSR_ADDR_DSCRATCH0: dscratch0_li = csr_data_li;
+              `CSR_ADDR_DSCRATCH1: dscratch1_li = csr_data_li;
               default: illegal_instr_o = 1'b1;
             endcase
           end
@@ -662,6 +670,7 @@ assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrup
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
 
+assign trap_pkt_cast_o.v                = |{csr_cmd.exc.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss};
 assign trap_pkt_cast_o.npc              = apc_n;
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
 assign trap_pkt_cast_o.translation_en_n = translation_en_n;

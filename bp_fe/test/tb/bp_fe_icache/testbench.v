@@ -9,9 +9,11 @@ module testbench
   import bp_cce_pkg::*;
   #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    // Tracing parameters
    , parameter cce_trace_p                 = 0
+   , parameter lce_trace_p                 = 0
    , parameter dram_trace_p                = 0
    , parameter icache_trace_p              = 0
    , parameter preload_mem_p               = 1
@@ -20,32 +22,10 @@ module testbench
 
    , parameter trace_file_p = "test.tr"
 
-   , parameter mem_zero_p         = 1
-   , parameter mem_load_p         = 1
-   , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**25
+   , parameter dram_fixed_latency_p = 0
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-
-   // Number of elements in the fake BlackParrot memory
-   , parameter use_max_latency_p      = 0
-   , parameter use_random_latency_p   = 1
-   , parameter use_dramsim2_latency_p = 0
-
-   , parameter max_latency_p = 15
-
-   , parameter dram_clock_period_in_ps_p = 1000
-   , parameter dram_cfg_p                = "dram_ch.ini"
-   , parameter dram_sys_cfg_p            = "dram_sys.ini"
-   , parameter dram_capacity_p           = 16384
-
-  // I-Cache Widths
-  `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
-
-  // LCE-CCE Interface Widths
-  `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-
-  // CCE-MEM Interface Widths
-  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   , parameter mem_cap_in_bytes_p = 2**25
+   , parameter mem_file_p = "prog.mem"
 
   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   , localparam page_offset_width_lp = bp_page_offset_width_gp
@@ -58,6 +38,8 @@ module testbench
   )
   ( input clk_i
   , input reset_i
+  , input dram_clk_i
+  , input dram_reset_i
   );
 
   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
@@ -221,21 +203,11 @@ module testbench
   // Memory
   bp_mem
    #(.bp_params_p(bp_params_p)
-     ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-     ,.mem_load_p(preload_mem_p)
-     ,.mem_zero_p(mem_zero_p)
-     ,.mem_file_p(mem_file_p)
      ,.mem_offset_p(mem_offset_p)
-
-     ,.use_max_latency_p(use_max_latency_p)
-     ,.use_random_latency_p(use_random_latency_p)
-     ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
-     ,.max_latency_p(max_latency_p)
-
-     ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-     ,.dram_cfg_p(dram_cfg_p)
-     ,.dram_sys_cfg_p(dram_sys_cfg_p)
-     ,.dram_capacity_p(dram_capacity_p)
+     ,.mem_load_p(1)
+     ,.mem_file_p(mem_file_p)
+     ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+     ,.dram_fixed_latency_p(dram_fixed_latency_p)
      )
     mem
     (.clk_i(clk_i)
@@ -248,6 +220,9 @@ module testbench
     ,.mem_resp_o(mem_resp_lo)
     ,.mem_resp_v_o(mem_resp_v_lo)
     ,.mem_resp_yumi_i(mem_resp_yumi_li)
+
+    ,.dram_clk_i(dram_clk_i)
+    ,.dram_reset_i(dram_reset_i)
     );
 
   // I$ tracer
@@ -260,7 +235,7 @@ module testbench
      ,.fill_width_p(icache_fill_width_p)
      ,.trace_file_p("icache"))
     icache_tracer
-      (.clk_i(clk_i)
+      (.clk_i(clk_i & (testbench.icache_trace_p == 1))
       ,.reset_i(reset_i)
 
       ,.freeze_i(cfg_bus_cast_i.freeze)
@@ -283,8 +258,8 @@ module testbench
       ,.wt_req()
 
       ,.v_o(data_v_o)
-      ,.load_data(dword_width_p'(data_o))
-      ,.store_data(dword_width_p'(0))
+      ,.load_data(65'(data_o))
+      ,.store_data(64'(0))
       ,.cache_miss_o('0)
 
       ,.data_mem_v_i(data_mem_v_li)
@@ -306,6 +281,32 @@ module testbench
 
   // CCE tracer
   if (uce_p == 0) begin
+    bind bp_lce
+      bp_me_nonsynth_lce_tracer
+       #(.bp_params_p(bp_params_p)
+         ,.sets_p(icache_sets_p)
+         ,.assoc_p(icache_assoc_p)
+         ,.block_width_p(icache_block_width_p)
+         )
+       bp_lce_tracer
+         (.clk_i(clk_i & (testbench.lce_trace_p == 1))
+          ,.reset_i(reset_i)
+
+          ,.lce_id_i(lce_id_i)
+          ,.lce_req_i(lce_req_o)
+          ,.lce_req_v_i(lce_req_v_o)
+          ,.lce_req_ready_i(lce_req_ready_i)
+          ,.lce_resp_i(lce_resp_o)
+          ,.lce_resp_v_i(lce_resp_v_o)
+          ,.lce_resp_ready_i(lce_resp_ready_i)
+          ,.lce_cmd_i(lce_cmd_i)
+          ,.lce_cmd_v_i(lce_cmd_v_i)
+          ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
+          ,.lce_cmd_o_i(lce_cmd_o)
+          ,.lce_cmd_o_v_i(lce_cmd_v_o)
+          ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+          );
+
     bind bp_cce_fsm
       bp_me_nonsynth_cce_tracer
         #(.bp_params_p(bp_params_p))

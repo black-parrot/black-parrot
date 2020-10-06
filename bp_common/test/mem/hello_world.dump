@@ -1,5 +1,54 @@
 
-/mnt/users/ssd0/no_backup/petrisko/pre-alpha-release/bp_top/syn/results/vcs/bp_tethered.e_bp_softcore_cfg.none.sim.bp_tests.hello_world/prog.riscv:     file format elf64-littleriscv
+hello_world.riscv:     file format elf64-littleriscv
+
+SYMBOL TABLE:
+0000000080000000 l    d  .text.init	0000000000000000 .text.init
+00000000800000c0 l    d  .text	0000000000000000 .text
+0000000080000768 l    d  .got	0000000000000000 .got
+0000000080000780 l    d  .got.plt	0000000000000000 .got.plt
+0000000080000790 l    d  .data.rel	0000000000000000 .data.rel
+00000000800009d0 l    d  .data.rel.local	0000000000000000 .data.rel.local
+0000000000000000 l    d  .comment	0000000000000000 .comment
+0000000000000000 l    d  .riscv.attributes	0000000000000000 .riscv.attributes
+0000000000000000 l    df *ABS*	0000000000000000 start.o
+00000000800000b8 l       .text.init	0000000000000000 loop
+0000000000000000 l    df *ABS*	0000000000000000 hello_world.s
+0000000000000000 l    df *ABS*	0000000000000000 emulation.c
+0000000080000790 l     O .data.rel	0000000000000100 amow_jt
+0000000080000890 l     O .data.rel	0000000000000100 amod_jt
+00000000800009d0 l     O .data.rel.local	0000000000000040 amo_jt
+0000000080000990 l     O .data.rel	0000000000000040 mul_jt
+0000000000000000 l    df *ABS*	0000000000000000 
+0000000080000768 l     O .got	0000000000000000 _GLOBAL_OFFSET_TABLE_
+000000008000069c g       .text	0000000000000000 amo_maxuw
+000000008000073c g       .text	0000000000000000 amo_minuw
+00000000800005ac g       .text	0000000000000000 amo_andd
+0000000080001210 g       .data.rel.local	0000000000000000 __global_pointer$
+00000000800004ec g       .text	0000000000000000 mul_mulhu
+00000000800002a0 g     F .text	00000000000001ac decode_illegal
+000000008000057c g       .text	0000000000000000 amo_addd
+00000000800005dc g       .text	0000000000000000 amo_ord
+0000000080000a10 g       .data.rel.local	0000000000000000 _tls_data
+000000008000049c g       .text	0000000000000000 mul_mulhsu
+0000000080000624 g       .text	0000000000000000 amo_maxd
+00000000800006c4 g       .text	0000000000000000 amo_mind
+0000000080000550 g       .text	0000000000000000 amo_swapd
+000000008000053c g       .text	0000000000000000 amo_swapw
+0000000080000000 g       .text.init	0000000000000000 _start
+0000000080000594 g       .text	0000000000000000 amo_andw
+00000000800000c0 g     F .text	0000000000000000 main
+0000000080000674 g       .text	0000000000000000 amo_maxud
+0000000080000714 g       .text	0000000000000000 amo_minud
+00000000800005c4 g       .text	0000000000000000 amo_orw
+000000008000060c g       .text	0000000000000000 amo_xord
+0000000080000564 g       .text	0000000000000000 amo_addw
+00000000800005f4 g       .text	0000000000000000 amo_xorw
+0000000080000a10 g       .data.rel.local	0000000000000000 _end
+000000008000064c g       .text	0000000000000000 amo_maxw
+00000000800006ec g       .text	0000000000000000 amo_minw
+000000008000044c g       .text	0000000000000000 mul_mulh
+000000008000016c g       .text	0000000000000000 bp_mtvec_handler
+
 
 
 Disassembly of section .text.init:
@@ -530,143 +579,3 @@ Disassembly of section .text:
     80000758:	fe0312e3          	bnez	t1,8000073c <amo_minuw>
     8000075c:	00028513          	mv	a0,t0
     80000760:	00008067          	ret
-
-Disassembly of section .got:
-
-0000000080000768 <_GLOBAL_OFFSET_TABLE_>:
-	...
-    80000770:	1210                	addi	a2,sp,288
-    80000772:	8000                	0x8000
-    80000774:	0000                	unimp
-    80000776:	0000                	unimp
-    80000778:	016c                	addi	a1,sp,140
-    8000077a:	8000                	0x8000
-    8000077c:	0000                	unimp
-	...
-
-Disassembly of section .got.plt:
-
-0000000080000780 <.got.plt>:
-    80000780:	ffff                	0xffff
-    80000782:	ffff                	0xffff
-    80000784:	ffff                	0xffff
-    80000786:	ffff                	0xffff
-	...
-
-Disassembly of section .data.rel:
-
-0000000080000790 <amow_jt>:
-    80000790:	0564                	addi	s1,sp,652
-    80000792:	8000                	0x8000
-    80000794:	0000                	unimp
-    80000796:	0000                	unimp
-    80000798:	053c                	addi	a5,sp,648
-    8000079a:	8000                	0x8000
-	...
-    800007b0:	05f4                	addi	a3,sp,716
-    800007b2:	8000                	0x8000
-	...
-    800007d0:	05c4                	addi	s1,sp,708
-    800007d2:	8000                	0x8000
-	...
-    800007f0:	0594                	addi	a3,sp,704
-    800007f2:	8000                	0x8000
-	...
-    80000810:	06ec                	addi	a1,sp,844
-    80000812:	8000                	0x8000
-	...
-    80000830:	064c                	addi	a1,sp,772
-    80000832:	8000                	0x8000
-	...
-    80000850:	073c                	addi	a5,sp,904
-    80000852:	8000                	0x8000
-	...
-    80000870:	069c                	addi	a5,sp,832
-    80000872:	8000                	0x8000
-	...
-
-0000000080000890 <amod_jt>:
-    80000890:	057c                	addi	a5,sp,652
-    80000892:	8000                	0x8000
-    80000894:	0000                	unimp
-    80000896:	0000                	unimp
-    80000898:	0550                	addi	a2,sp,644
-    8000089a:	8000                	0x8000
-	...
-    800008b0:	060c                	addi	a1,sp,768
-    800008b2:	8000                	0x8000
-	...
-    800008d0:	05dc                	addi	a5,sp,708
-    800008d2:	8000                	0x8000
-	...
-    800008f0:	05ac                	addi	a1,sp,712
-    800008f2:	8000                	0x8000
-	...
-    80000910:	06c4                	addi	s1,sp,836
-    80000912:	8000                	0x8000
-	...
-    80000930:	0624                	addi	s1,sp,776
-    80000932:	8000                	0x8000
-	...
-    80000950:	0714                	addi	a3,sp,896
-    80000952:	8000                	0x8000
-	...
-    80000970:	0674                	addi	a3,sp,780
-    80000972:	8000                	0x8000
-	...
-
-0000000080000990 <mul_jt>:
-	...
-    80000998:	044c                	addi	a1,sp,516
-    8000099a:	8000                	0x8000
-    8000099c:	0000                	unimp
-    8000099e:	0000                	unimp
-    800009a0:	049c                	addi	a5,sp,576
-    800009a2:	8000                	0x8000
-    800009a4:	0000                	unimp
-    800009a6:	0000                	unimp
-    800009a8:	04ec                	addi	a1,sp,588
-    800009aa:	8000                	0x8000
-	...
-
-Disassembly of section .data.rel.local:
-
-00000000800009d0 <amo_jt>:
-	...
-    800009e0:	0790                	addi	a2,sp,960
-    800009e2:	8000                	0x8000
-    800009e4:	0000                	unimp
-    800009e6:	0000                	unimp
-    800009e8:	0890                	addi	a2,sp,80
-    800009ea:	8000                	0x8000
-	...
-
-Disassembly of section .comment:
-
-0000000000000000 <.comment>:
-   0:	3a434347          	fmsub.d	ft6,ft6,ft4,ft7,rmm
-   4:	2820                	fld	fs0,80(s0)
-   6:	29554e47          	fmsub.s	ft8,fa0,fs5,ft5,rmm
-   a:	3920                	fld	fs0,112(a0)
-   c:	322e                	fld	ft4,232(sp)
-   e:	302e                	fld	ft0,232(sp)
-	...
-
-Disassembly of section .riscv.attributes:
-
-0000000000000000 <.riscv.attributes>:
-   0:	2541                	addiw	a0,a0,16
-   2:	0000                	unimp
-   4:	7200                	ld	s0,32(a2)
-   6:	7369                	lui	t1,0xffffa
-   8:	01007663          	bgeu	zero,a6,14 <_start-0x7fffffec>
-   c:	0000001b          	sext.w	zero,zero
-  10:	1004                	addi	s1,sp,32
-  12:	7205                	lui	tp,0xfffe1
-  14:	3676                	fld	fa2,376(sp)
-  16:	6934                	ld	a3,80(a0)
-  18:	7032                	0x7032
-  1a:	5f30                	lw	a2,120(a4)
-  1c:	326d                	addiw	tp,tp,-5
-  1e:	3070                	fld	fa2,224(s0)
-  20:	615f 7032 0030      	0x307032615f

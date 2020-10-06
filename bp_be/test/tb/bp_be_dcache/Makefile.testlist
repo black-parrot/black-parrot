@@ -9,7 +9,8 @@ DCACHE_TESTLIST := \
 	uncached_test \
 	wt_test_1 \
 	wt_test_2 \
-	wt_test_3
+	wt_test_3 \
+	multicycle_fill_test
 
 ifeq ($(UCE_P),1)
 CE := UCE

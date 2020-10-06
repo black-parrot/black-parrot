@@ -52,7 +52,6 @@ module bp_be_instr_decoder
       // Set decoded defaults
       // NOPs are set after bypassing for critical path reasons
       decode               = '0;
-      decode.instr_v       = 1'b1;
 
       // Destination pipe
       decode.pipe_ctl_v       = '0;
@@ -268,8 +267,7 @@ module bp_be_instr_decoder
               `RV64_FENCE_I :
                 begin
                   decode.pipe_mem_early_v = 1'b1;
-                  decode.dcache_w_v  = 1'b1;
-                  decode.fu_op       = e_dcache_op_fencei;
+                  decode.fu_op            = e_dcache_op_fencei;
                 end
               default : illegal_instr = 1'b1;
             endcase
@@ -539,8 +537,8 @@ module bp_be_instr_decoder
           begin
             decode.pipe_mem_early_v = 1'b1;
             decode.irf_w_v    = 1'b1;
-            decode.dcache_r_v = 1'b1;
-            decode.dcache_w_v = 1'b1;
+            decode.dcache_r_v = ~(instr inside {`RV64_SCD, `RV64_SCW});
+            decode.dcache_w_v = ~(instr inside {`RV64_LRD, `RV64_LRW});
             decode.mem_v      = 1'b1;
             // Note: could do a more efficent decoding here by having atomic be a flag
             //   And having the op simply taken from funct3
