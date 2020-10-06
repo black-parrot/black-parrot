@@ -53,7 +53,7 @@ args = parser.parse_args()
 ## cache parameters
 cache_assoc = args.assoc
 cache_sets = args.sets
-assert(cache_sets > 1, 'direct mapped cache not supported')
+assert cache_sets > 1, 'direct mapped cache not supported'
 cache_blocks = cache_assoc*cache_sets
 cache_block_size = args.block_size
 cache_block_size_bytes = (cache_block_size / 8)
@@ -81,7 +81,7 @@ mem_high = mem_base + mem_bytes
 #eprint('memory high: 0x{0:010x}'.format(mem_high))
 
 def check_valid_addr(addr):
-  assert((addr >= mem_base) and (addr < mem_high)), 'illegal address 0x{0:010x}'.format(addr)
+  assert ((addr >= mem_base) and (addr < mem_high)), 'illegal address 0x{0:010x}'.format(addr)
 
 # Simulated memory
 byte_memory = {}
