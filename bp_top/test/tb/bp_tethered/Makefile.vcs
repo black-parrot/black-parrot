@@ -40,8 +40,9 @@ $(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
-$(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
-	cp $^ $@
+OVERRIDE_BOOTROM ?= 0
+$(SIM_DIR)/bootrom.riscv: bootrom
+	cp $(BP_TEST_DIR)/src/bootrom/bootrom.riscv $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
 	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=8 --verilog-data-width=8 $< $@
