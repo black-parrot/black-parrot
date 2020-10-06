@@ -84,7 +84,7 @@ load_config:
     or t1, t1, t4
     sd t0, 0(t1)
 
-    fence.i
+    fence
     
     li t0, 0x80000000
     csrw dpc, t0
