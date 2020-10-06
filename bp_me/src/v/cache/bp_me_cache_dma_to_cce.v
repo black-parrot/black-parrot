@@ -309,7 +309,7 @@ module bp_me_cache_dma_to_cce
   ,.reset_i(reset_i)
   ,.valid_i(piso_v_li)
   ,.data_i (mem_resp_li.data)
-  ,.ready_o(piso_ready_lo)
+  ,.ready_and_o(piso_ready_lo)
   ,.valid_o(dma_data_v_lo)
   ,.data_o (dma_data_lo)
   ,.yumi_i (dma_data_v_lo & dma_data_ready_li)

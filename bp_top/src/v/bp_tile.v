@@ -617,15 +617,15 @@ for (genvar i = 0; i < 2; i++)
 
          ,.hdr_i(mem_cmd_header_lo)
          ,.hdr_v_i(cache_cmd_header_v_lo)
-         ,.hdr_ready_o(cache_cmd_header_ready_li)
+         ,.hdr_ready_and_o(cache_cmd_header_ready_li)
 
          ,.data_i(cache_cmd_data_lo)
          ,.data_v_i(cache_cmd_data_v_lo)
-         ,.data_ready_o(cache_cmd_data_ready_li)
+         ,.data_ready_and_o(cache_cmd_data_ready_li)
 
          ,.link_data_o(mem_cmd_link_cast_o.data)
          ,.link_v_o(mem_cmd_link_cast_o.v)
-         ,.link_ready_i(mem_resp_link_cast_i.ready_and_rev)
+         ,.link_ready_and_i(mem_resp_link_cast_i.ready_and_rev)
          );
 
       bsg_wormhole_stream_out
@@ -641,15 +641,15 @@ for (genvar i = 0; i < 2; i++)
 
          ,.link_data_i(mem_resp_link_cast_i.data)
          ,.link_v_i(mem_resp_link_cast_i.v)
-         ,.link_ready_o(mem_cmd_link_cast_o.ready_and_rev)
+         ,.link_ready_and_o(mem_cmd_link_cast_o.ready_and_rev)
 
          ,.hdr_o(mem_resp_header_li)
          ,.hdr_v_o(cache_resp_header_v_li)
-         ,.hdr_yumi_i(cache_resp_header_ready_lo & cache_resp_header_v_li)
+         ,.hdr_ready_and_i(cache_resp_header_ready_lo)
 
          ,.data_o(cache_resp_data_li)
          ,.data_v_o(cache_resp_data_v_li)
-         ,.data_yumi_i(cache_resp_data_ready_lo & cache_resp_data_v_li)
+         ,.data_ready_and_i(cache_resp_data_ready_lo)
          );
       assign cache_resp_header_li = mem_resp_header_li.msg_hdr;
     end
