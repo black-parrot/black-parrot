@@ -14,6 +14,8 @@
 #define CFG_DCACHE_MODE_ADDR 0x00200043
 #define CFG_ICACHE_MODE_ADDR 0x00200022
 
+#define CFG_CORE_OFFSET 24
+
 .section .text.start
 .globl _start
 _start:
@@ -50,9 +52,14 @@ _start:
     li x30, 0
     li x31, 0
 
+    // Read hartid to set offset correctly
+    csrr t4, mhartid
+    slli t4, t4, CFG_CORE_OFFSET
+    
     // Copy CCE microcode
     la t0, _ucode
     li t1, CFG_CCE_UCODE_BASE_ADDR
+    or t1, t1, t4
     li t2, CCE_INSTR_END
 load_ucode:
     ld t3, 0(t0)
@@ -66,12 +73,15 @@ load_ucode:
 load_config:
     li t0, 1
     li t1, CFG_DCACHE_MODE_ADDR
+    or t1, t1, t4
     sd t0, 0(t1)
     
     li t1, CFG_ICACHE_MODE_ADDR
+    or t1, t1, t4
     sd t0, 0(t1)
 
     li t1, CFG_CCE_MODE_ADDR
+    or t1, t1, t4
     sd t0, 0(t1)
 
     fence.i
@@ -85,11 +95,11 @@ load_config:
     li t1, 0
     li t2, 0
     li t3, 0
+    li t4, 0
 
     dret
 halt:
     j halt
-    nop
 
 _ucode:
     .incbin "cce_ucode.bin" 
