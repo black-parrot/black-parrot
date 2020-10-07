@@ -149,7 +149,9 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
 
       WRITE_DATA_WAIT: begin
         axi_wready_o = 1'b1;
-        awaddr_n      = awaddr_r;
+        awaddr_n      = (axi_wvalid_i & axi_wlast_i)
+                      ? awaddr_r
+                      : awaddr_r + (axi_data_width_p >> 3);
         wr_state_n    = (axi_wvalid_i & axi_wlast_i)
                       ? WRITE_RESP
                       : wr_state_r;
@@ -209,7 +211,7 @@ module bp_nonsynth_mem_to_axi_wrapper_tb
                       : rd_state_r;
 
         araddr_n      = axi_rready_i
-                      ? araddr_r + 8
+                      ? araddr_r + (axi_data_width_p >> 3)
                       : araddr_r;
       end
     endcase

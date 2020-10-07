@@ -9,9 +9,9 @@ module bp_me_outgoing_io_to_axi_wrapper
  import bp_common_cfg_link_pkg::*;
  import bsg_noc_pkg::*;
 
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p,cce_mem)
 
   // AXI WRITE DATA CHANNEL PARAMS
   , parameter  axi_data_width_p             = 64
@@ -104,7 +104,7 @@ module bp_me_outgoing_io_to_axi_wrapper
  );
 
   // declaring io command and response struct type and size
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   bp_cce_mem_msg_s io_cmd_cast_i, io_resp_cast_o;
 
   assign io_resp_o      = io_resp_cast_o;
@@ -130,8 +130,8 @@ module bp_me_outgoing_io_to_axi_wrapper
   logic io_cmd_read_v;
   logic io_cmd_write_v;
 
-  assign io_cmd_read_v  = io_cmd_v_i & io_cmd_cast_i.header.msg_type inside {e_cce_mem_rd, e_cce_mem_uc_rd, e_cce_mem_pre};
-  assign io_cmd_write_v = io_cmd_v_i & io_cmd_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
+  assign io_cmd_read_v  = io_cmd_v_i & io_cmd_cast_i.header.msg_type inside {e_mem_msg_rd, e_mem_msg_uc_rd, e_mem_msg_pre};
+  assign io_cmd_write_v = io_cmd_v_i & io_cmd_cast_i.header.msg_type inside {e_mem_msg_wr, e_mem_msg_uc_wr};
 
   // storing io_cmd's header for io_resp's use
   // only accepts changes when io_cmd is valid

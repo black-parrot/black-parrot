@@ -9,9 +9,9 @@ module bp_me_cce_mem_to_axi_wrapper
  import bp_common_cfg_link_pkg::*;
  import bsg_noc_pkg::*;
 
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
   // AXI WRITE DATA CHANNEL PARAMS
   , parameter  axi_data_width_p             = 64
@@ -107,11 +107,11 @@ module bp_me_cce_mem_to_axi_wrapper
   wire unused_1 = axi_bid_i;
 
   // declaring mem command and response struct type and size
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
   bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
 
-  assign mem_resp_o      = mem_resp_cast_o;
-  assign mem_cmd_cast_i  = mem_cmd_i;
+  assign mem_resp_o     = mem_resp_cast_o;
+  assign mem_cmd_cast_i = mem_cmd_i;
 
   // SIPO and PISO related signals
   logic                         axi_read_sipo_ready_lo;
@@ -124,17 +124,22 @@ module bp_me_cce_mem_to_axi_wrapper
   logic                         axi_write_piso_reset_li;
   logic                         axi_write_piso_deq_li;
 
-  // Write counter and strobe logic
-  logic [7:0]                              axi_awburst_cnt_r, axi_awburst_cnt_n;
+  // Write counters and strobe logic
+  logic [7:0]                              awburst_cnt_r, awburst_cnt_n;
+  logic [7:0]                              burst_length; 
   logic [axi_strb_width_lp-1:0]            write_strb;
   logic [lg_axi_data_width_in_byte_lp-1:0] write_strb_cnt_r, write_strb_cnt_n, write_strb_cnt_max;
+
+  assign burst_length = ((2**mem_cmd_header_r.size << 3) > axi_data_width_p) 
+                      ? (2**(mem_cmd_header_r.size  - lg_axi_data_width_in_byte_lp)) - 1
+                      : 8'h01;
 
   // memory command read/write validity
   logic mem_cmd_read_v;
   logic mem_cmd_write_v;
 
-  assign mem_cmd_read_v  = mem_cmd_v_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_rd, e_cce_mem_uc_rd, e_cce_mem_pre};
-  assign mem_cmd_write_v = mem_cmd_v_i & mem_cmd_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
+  assign mem_cmd_read_v  = mem_cmd_v_i & mem_cmd_cast_i.header.msg_type inside {e_mem_msg_rd, e_mem_msg_uc_rd, e_mem_msg_pre};
+  assign mem_cmd_write_v = mem_cmd_v_i & mem_cmd_cast_i.header.msg_type inside {e_mem_msg_wr, e_mem_msg_uc_wr};
 
   // storing mem_cmd's header for mem_resp's use
   // only accepts changes when mem_cmd is valid
@@ -152,13 +157,13 @@ module bp_me_cce_mem_to_axi_wrapper
 
   // Declaring all possible states
   typedef enum logic [2:0] {
-    e_wait             = 3'b000
-    ,e_read_tx         = 3'b001
-    ,e_read_err        = 3'b010
-    ,e_read_done       = 3'b011
-    ,e_write_addr_tx   = 3'b100
-    ,e_write_data_tx   = 3'b101
-    ,e_write_err       = 3'b110
+    e_wait           = 3'b000
+    ,e_read_tx       = 3'b001
+    ,e_read_err      = 3'b010
+    ,e_read_done     = 3'b011
+    ,e_write_addr_tx = 3'b100
+    ,e_write_data_tx = 3'b101
+    ,e_write_err     = 3'b110
   } state_e;
 
   state_e state_r, state_n;
@@ -167,10 +172,10 @@ module bp_me_cce_mem_to_axi_wrapper
   always_comb begin
   
     // BP side
-    mem_cmd_ready_o         = axi_write_piso_ready_lo & (state_r == e_wait);
-    mem_resp_cast_o.header  = mem_cmd_header_r;
-    mem_resp_cast_o.data    = '0;
-    mem_resp_v_o            = '0;
+    mem_cmd_ready_o        = axi_write_piso_ready_lo & (state_r == e_wait);
+    mem_resp_cast_o.header = mem_cmd_header_r;
+    mem_resp_cast_o.data   = '0;
+    mem_resp_v_o           = '0;
 
     // READ ADDRESS CHANNEL SIGNALS
     axi_araddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_cast_i.header.addr};
@@ -202,12 +207,12 @@ module bp_me_cce_mem_to_axi_wrapper
     axi_awqos_o   = '0;      
 
     // WRITE DATA CHANNEL SIGNALS
-    axi_wdata_o       = '0;
-    axi_wstrb_o       = '0;
-    axi_wlast_o       = '0; 
-    axi_wvalid_o      = '0;
-    axi_wid_o         = '0;
-    axi_awburst_cnt_n = '0;
+    axi_wdata_o   = '0;
+    axi_wstrb_o   = '0;
+    axi_wlast_o   = '0; 
+    axi_wvalid_o  = '0;
+    axi_wid_o     = '0;
+    awburst_cnt_n = '0;
 
     // WRITE RESPONSE CHANNEL SIGNALS
     axi_bready_o  = 1'b1;
@@ -242,9 +247,7 @@ module bp_me_cce_mem_to_axi_wrapper
 
         // continue to send read address/control info until the slave device is ready to receive
         axi_araddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_r.addr};
-        axi_arlen_o   = ((2**mem_cmd_header_r.size << 3) > axi_data_width_p) 
-                      ? (2**(mem_cmd_header_r.size  - lg_axi_data_width_in_byte_lp)) - 1
-                      : 8'h01;
+        axi_arlen_o   = burst_length;
         axi_arsize_o  = mem_cmd_header_r.size;
 
         // sending read data signals
@@ -261,8 +264,8 @@ module bp_me_cce_mem_to_axi_wrapper
 
       e_read_done : begin
         // bp signals
-        mem_resp_v_o            = axi_read_sipo_v_lo;
-        mem_resp_cast_o.data    = axi_read_sipo_data_lo;
+        mem_resp_v_o         = axi_read_sipo_v_lo;
+        mem_resp_cast_o.data = axi_read_sipo_data_lo;
 
         // if mem_resp is ready to accept the data, then return to e_wait
         if (mem_resp_yumi_i) begin
@@ -281,9 +284,7 @@ module bp_me_cce_mem_to_axi_wrapper
 
         // continue to send write address/control info until the slave device is ready to receive
         axi_awaddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_r.addr};
-        axi_awlen_o   = ((2**mem_cmd_header_r.size << 3) > axi_data_width_p)
-                      ? (2**(mem_cmd_header_r.size  - lg_axi_data_width_in_byte_lp)) - 1
-                      : 8'h01;
+        axi_awlen_o   = burst_length;
         axi_awsize_o  = mem_cmd_header_r.size;
 
         // if the address is accepted, move onto data transfer
@@ -297,7 +298,7 @@ module bp_me_cce_mem_to_axi_wrapper
         axi_wvalid_o       = axi_write_piso_v_lo;
         axi_wdata_o        = axi_write_piso_data_lo;
         axi_wstrb_o        = '0;
-        axi_awburst_cnt_n  = axi_awburst_cnt_r;
+        awburst_cnt_n      = awburst_cnt_r;
         write_strb_cnt_max = (lg_axi_data_width_in_byte_lp > mem_cmd_header_r.size)
                            ? 2**(lg_axi_data_width_in_byte_lp - mem_cmd_header_r.size) - 1
                            : '0;
@@ -305,19 +306,17 @@ module bp_me_cce_mem_to_axi_wrapper
 
         // if the receiving slave device is ready, then proceed to send data
         if (axi_wready_i) begin
-          axi_wlast_o       = (axi_awburst_cnt_r == (mem_cmd_cast_i.header.size >> 3));
-          axi_awburst_cnt_n = axi_awburst_cnt_r + 1;
-
-          write_strb_cnt_n  = (write_strb_cnt_r == write_strb_cnt_max)
-                            ? '0
-                            : write_strb_cnt_r + 1;
-
+          axi_wlast_o           = (awburst_cnt_r == burst_length);
+          awburst_cnt_n         = awburst_cnt_r + 1;
           axi_write_piso_deq_li = (write_strb_cnt_r == write_strb_cnt_max);
           write_strb            = write_strb << ((axi_data_width_p >> 3) - (2**mem_cmd_header_r.size));
           write_strb            = write_strb >> ((axi_data_width_p >> 3) - (2**mem_cmd_header_r.size) - write_strb_cnt_r);
           axi_wstrb_o           = ((2**mem_cmd_header_r.size << 3) < axi_data_width_p)
                                 ? write_strb
                                 : '1;
+          write_strb_cnt_n      = (write_strb_cnt_r == write_strb_cnt_max)
+                                ? '0
+                                : write_strb_cnt_r + 1;
         end
         
         // else if the response is not OKAY and valid
@@ -333,7 +332,7 @@ module bp_me_cce_mem_to_axi_wrapper
         end
       end
 
-      e_write_err: begin
+      e_write_err : begin
         // do something if there is an write error
       end
     endcase
@@ -343,50 +342,50 @@ module bp_me_cce_mem_to_axi_wrapper
   always_ff @(posedge aclk_i) begin
     if (~aresetn_i) begin
       state_r           <= e_wait;
-      axi_awburst_cnt_r <= '0;
+      awburst_cnt_r     <= '0;
       write_strb_cnt_r  <= '0;
     end
     else begin
       state_r           <= state_n;
-      axi_awburst_cnt_r <= axi_awburst_cnt_n;
+      awburst_cnt_r     <= awburst_cnt_n;
       write_strb_cnt_r  <= write_strb_cnt_n;
     end
   end
 
   // SIPO for read data
   bsg_serial_in_parallel_out_full 
-    #(.width_p  (axi_data_width_p)
-     ,.els_p    (fifo_els_lp)
+    #(.width_p (axi_data_width_p)
+     ,.els_p   (fifo_els_lp)
      )
     axi_read_data_sipo
-    (.clk_i     (aclk_i)
-    ,.reset_i   (~aresetn_i)
+    (.clk_i    (aclk_i)
+    ,.reset_i  (~aresetn_i)
 
-    ,.v_i       (axi_rvalid_i)
-    ,.ready_o   (axi_read_sipo_ready_lo)
-    ,.data_i    (axi_rdata_i) 
+    ,.v_i      (axi_rvalid_i)
+    ,.ready_o  (axi_read_sipo_ready_lo)
+    ,.data_i   (axi_rdata_i) 
 
-    ,.data_o    (axi_read_sipo_data_lo)
-    ,.v_o       (axi_read_sipo_v_lo)
-    ,.yumi_i    (mem_resp_yumi_i & (state_r == e_read_done))
+    ,.data_o   (axi_read_sipo_data_lo)
+    ,.v_o      (axi_read_sipo_v_lo)
+    ,.yumi_i   (mem_resp_yumi_i & (state_r == e_read_done))
     );
 
   // PISO for write data
   bsg_parallel_in_serial_out
-    #(.width_p  (axi_data_width_p)
-     ,.els_p    (fifo_els_lp)
+    #(.width_p (axi_data_width_p)
+     ,.els_p   (fifo_els_lp)
      ) 
     axi_write_data_piso
-    (.clk_i     (aclk_i)
-    ,.reset_i   (~aresetn_i | axi_write_piso_reset_li)
+    (.clk_i    (aclk_i)
+    ,.reset_i  (~aresetn_i | axi_write_piso_reset_li)
 
-    ,.valid_i   (mem_cmd_write_v & (state_r == e_wait))
-    ,.data_i    (mem_cmd_cast_i.data)
-    ,.ready_o   (axi_write_piso_ready_lo)
+    ,.valid_i  (mem_cmd_write_v & (state_r == e_wait))
+    ,.data_i   (mem_cmd_cast_i.data)
+    ,.ready_o  (axi_write_piso_ready_lo)
 
-    ,.valid_o   (axi_write_piso_v_lo)
-    ,.data_o    (axi_write_piso_data_lo)
-    ,.yumi_i    (axi_wready_i & axi_write_piso_deq_li)
+    ,.valid_o  (axi_write_piso_v_lo)
+    ,.data_o   (axi_write_piso_data_lo)
+    ,.yumi_i   (axi_wready_i & axi_write_piso_deq_li)
     );
 
 endmodule
