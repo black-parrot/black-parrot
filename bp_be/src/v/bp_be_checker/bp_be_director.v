@@ -8,8 +8,6 @@
  *     and sends redirect signals to the FE when a misprediction is detected.
  *
  * Notes:
- *   We don't need the entirety of the calc_status structure here, but for simplicity
- *     we pass it all. If the compiler doesn't flatten and optimize, we can do it ourselves.
  *   Branch_metadata should come from the target instruction, not the branch instruction,
  *     eliminating the need to store this in the BE
  *   We don't currently support MTVAL or EPC, so error muxes are disconnected
@@ -29,7 +27,6 @@ module bp_be_director
    // Generated parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p)
    , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
@@ -43,7 +40,6 @@ module bp_be_director
 
    // Dependency information
    , input [isd_status_width_lp-1:0]  isd_status_i
-   , input [calc_status_width_lp-1:0] calc_status_i
    , output [vaddr_width_p-1:0]       expected_npc_o
    , output                           poison_isd_o
    , output                           suppress_iss_o
@@ -70,7 +66,6 @@ module bp_be_director
   // Cast input and output ports
   bp_cfg_bus_s                     cfg_bus_cast_i;
   bp_be_isd_status_s               isd_status;
-  bp_be_calc_status_s              calc_status;
   bp_fe_cmd_s                      fe_cmd_li;
   logic                            fe_cmd_v_li, fe_cmd_ready_lo;
   bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
@@ -80,7 +75,6 @@ module bp_be_director
 
   assign cfg_bus_cast_i = cfg_bus_i;
   assign isd_status = isd_status_i;
-  assign calc_status = calc_status_i;
   assign trap_pkt    = trap_pkt_i;
   assign br_pkt       = br_pkt_i;
   assign ptw_fill_pkt = ptw_fill_pkt_i;

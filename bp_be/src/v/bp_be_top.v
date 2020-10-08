@@ -87,8 +87,6 @@ module bp_be_top
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
-  bp_be_calc_status_s calc_status;
-
   logic chk_dispatch_v;
 
   bp_be_commit_pkt_s commit_pkt;
@@ -101,6 +99,8 @@ module bp_be_top
 
   logic fpu_en_lo;
   logic fe_cmd_full_lo;
+  logic mem_ready_lo, long_ready_lo;
+
 
   logic flush;
   bp_be_director
@@ -112,7 +112,6 @@ module bp_be_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.isd_status_i(isd_status)
-     ,.calc_status_i(calc_status)
      ,.expected_npc_o(expected_npc_lo)
 
      ,.fe_cmd_o(fe_cmd_o)
@@ -138,10 +137,12 @@ module bp_be_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.isd_status_i(isd_status)
-     ,.calc_status_i(calc_status)
      ,.fe_cmd_full_i(fe_cmd_full_lo)
      ,.credits_full_i(credits_full_i)
      ,.credits_empty_i(credits_empty_i)
+     ,.mem_ready_i(mem_ready_lo)
+     ,.long_ready_i(long_ready_lo)
+     ,.sys_ready_i(sys_ready_lo)
 
      ,.chk_dispatch_v_o(chk_dispatch_v)
      ,.dispatch_pkt_i(dispatch_pkt)
@@ -184,8 +185,10 @@ module bp_be_top
 
      ,.flush_i(flush)
 
-     ,.calc_status_o(calc_status)
      ,.fpu_en_o(fpu_en_lo)
+     ,.mem_ready_o(mem_ready_lo)
+     ,.long_ready_o(long_ready_lo)
+     ,.sys_ready_o(sys_ready_lo)
 
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
 

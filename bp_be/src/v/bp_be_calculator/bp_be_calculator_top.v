@@ -24,8 +24,6 @@ module bp_be_calculator_top
 
    // Generated parameters
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-   , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p)
-   , localparam exc_stage_width_lp      = `bp_be_exc_stage_width
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
@@ -48,8 +46,10 @@ module bp_be_calculator_top
 
   , input                               flush_i
 
-  , output [calc_status_width_lp-1:0]   calc_status_o
   , output                              fpu_en_o
+  , output                              long_ready_o
+  , output                              mem_ready_o
+  , output                              sys_ready_o
 
   , output [ptw_fill_pkt_width_lp-1:0]  ptw_fill_pkt_o
   , output [commit_pkt_width_lp-1:0]    commit_pkt_o
@@ -98,14 +98,12 @@ module bp_be_calculator_top
 
   // Cast input and output ports
   bp_be_dispatch_pkt_s   dispatch_pkt;
-  bp_be_calc_status_s    calc_status;
   bp_cfg_bus_s           cfg_bus;
   bp_be_wb_pkt_s         long_iwb_pkt, long_fwb_pkt, calc_iwb_pkt, calc_fwb_pkt;
   bp_be_commit_pkt_s     commit_pkt;
   bp_be_trap_pkt_s       trap_pkt;
 
   assign dispatch_pkt = dispatch_pkt_i;
-  assign calc_status_o = calc_status;
   assign commit_pkt_o = commit_pkt;
   assign trap_pkt_o = trap_pkt;
 
@@ -472,7 +470,7 @@ module bp_be_calculator_top
 
   // Exception pipeline
   bsg_dff
-   #(.width_p(exc_stage_width_lp*pipe_stage_els_lp)
+   #(.width_p($bits(bp_be_exc_stage_s)*pipe_stage_els_lp)
      )
    exc_stage_reg
     (.clk_i(clk_i)
@@ -500,11 +498,6 @@ module bp_be_calculator_top
       calc_stage_isd.irf_w_v        = reservation_n.decode.irf_w_v;
       calc_stage_isd.frf_w_v        = reservation_n.decode.frf_w_v;
       calc_stage_isd.fflags_w_v     = reservation_n.decode.fflags_w_v;
-
-      calc_status.long_busy                = ~pipe_long_ready_lo;
-      calc_status.mem_busy                 = ~pipe_mem_ready_lo;
-      calc_status.sys_busy                 = ~pipe_sys_ready_lo;
-      calc_status.commit_v                 = commit_pkt.v;
 
       // Slicing the completion pipe for Forwarding information
       for (integer i = 1; i <= pipe_stage_els_lp; i++)
@@ -576,6 +569,10 @@ module bp_be_calculator_top
 
   assign iwb_pkt_o = pipe_long_idata_lo_v ? long_iwb_pkt : calc_iwb_pkt;
   assign fwb_pkt_o = pipe_long_fdata_lo_v ? long_fwb_pkt : calc_fwb_pkt;
+
+  assign mem_ready_o  = pipe_mem_ready_lo;
+  assign long_ready_o = pipe_long_ready_lo;
+  assign sys_ready_o  = pipe_sys_ready_lo;
 
 endmodule
 
