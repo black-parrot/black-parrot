@@ -55,7 +55,9 @@ module bp_be_pipe_mem
    , output logic                         store_page_fault_v_o
 
    , output logic [dpath_width_p-1:0]     early_data_o
+   , output logic                         early_v_o
    , output logic [dpath_width_p-1:0]     final_data_o
+   , output logic                         final_v_o
    , output logic [vaddr_width_p-1:0]     final_vaddr_o
 
    , input [trans_info_width_lp-1:0]      trans_info_i
@@ -392,17 +394,25 @@ module bp_be_pipe_mem
   assign final_data_o           = dcache_final_data;
   assign final_vaddr_o          = eaddr_mem3[0+:vaddr_width_p];
 
-  //// synopsys translate_off
-  //bp_be_mem_cmd_s mem_cmd_r;
-  //always_ff @(posedge clk_i)
-  //  mem_cmd_r <= mem_cmd;
-  //
-  //always_ff @(negedge clk_i)
-  //  begin
-  //    assert ((reset_i !== 1'b0) || ~(mem_cmd_v_r & dtlb_r_v_lo & dcache_uncached & (mem_cmd_r.mem_op inside {e_lrw, e_lrd, e_scw, e_scd})))
-  //      else $warning("LR/SC to uncached memory not supported");
-  //  end
-  //
-  //// synopsys translate_on
+  wire early_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mem_early_v;
+  bsg_dff_chain
+   #(.width_p(1), .num_stages_p(1))
+   early_chain
+    (.clk_i(clk_i)
+
+     ,.data_i(early_v_li)
+     ,.data_o(early_v_o)
+     );
+
+  wire final_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mem_final_v;
+  bsg_dff_chain
+   #(.width_p(1), .num_stages_p(2))
+   final_chain
+    (.clk_i(clk_i)
+
+     ,.data_i(final_v_li)
+     ,.data_o(final_v_o)
+     );
 
 endmodule
+

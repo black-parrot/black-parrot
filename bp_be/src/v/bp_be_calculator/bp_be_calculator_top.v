@@ -221,6 +221,7 @@ module bp_be_calculator_top
   always_comb
     begin
       reservation_n        = dispatch_pkt_i;
+      reservation_n.poison = dispatch_pkt.poison;
       reservation_n.rs1    = bypass_rs1;
       reservation_n.rs2    = bypass_rs2;
       reservation_n.imm    = bypass_rs3;
@@ -245,6 +246,7 @@ module bp_be_calculator_top
 
      ,.data_o(pipe_ctl_data_lo)
      ,.br_pkt_o(br_pkt_o)
+     ,.v_o(pipe_ctl_data_lo_v)
      );
 
   // Computation pipelines
@@ -258,6 +260,7 @@ module bp_be_calculator_top
      ,.reservation_i(reservation_r)
 
      ,.data_o(pipe_int_data_lo)
+     ,.v_o(pipe_int_data_lo_v)
      );
 
   // Aux pipe: 2 cycle latency
@@ -272,6 +275,7 @@ module bp_be_calculator_top
 
      ,.data_o(pipe_aux_data_lo)
      ,.fflags_o(pipe_aux_fflags_lo)
+     ,.v_o(pipe_aux_data_lo_v)
      );
 
   logic [rv64_priv_width_gp-1:0]       priv_mode_lo;
@@ -334,6 +338,8 @@ module bp_be_calculator_top
      ,.store_page_fault_v_o(pipe_mem_store_page_fault_lo)
      ,.early_data_o(pipe_mem_early_data_lo)
      ,.final_data_o(pipe_mem_final_data_lo)
+     ,.early_v_o(pipe_mem_early_data_lo_v)
+     ,.final_v_o(pipe_mem_final_data_lo_v)
      ,.final_vaddr_o(pipe_mem_vaddr_lo)
 
      ,.trans_info_i(trans_info_lo)
@@ -372,6 +378,7 @@ module bp_be_calculator_top
      ,.exc_v_o(pipe_sys_exc_v_lo)
      ,.miss_v_o(pipe_sys_miss_v_lo)
      ,.data_o(pipe_sys_data_lo)
+     ,.v_o(pipe_sys_data_lo_v)
 
      ,.trans_info_o(trans_info_lo)
      ,.frm_dyn_o(frm_dyn_lo)
@@ -389,8 +396,10 @@ module bp_be_calculator_top
      ,.frm_dyn_i(frm_dyn_lo)
 
      ,.imul_data_o(pipe_mul_data_lo)
+     ,.imul_v_o(pipe_mul_data_lo_v)
      ,.fma_data_o(pipe_fma_data_lo)
      ,.fma_fflags_o(pipe_fma_fflags_lo)
+     ,.fma_v_o(pipe_fma_data_lo_v)
      );
 
   // Variable length pipeline, used for long (potentially scoreboarded operations)
@@ -405,7 +414,6 @@ module bp_be_calculator_top
      ,.v_i(reservation_r.v & reservation_r.decode.pipe_long_v & ~exc_stage_r[0].poison_v)
      ,.ready_o(pipe_long_ready_lo)
      ,.frm_dyn_i(frm_dyn_lo)
-
 
      ,.iwb_pkt_o(long_iwb_pkt)
      ,.iwb_v_o(pipe_long_idata_lo_v)
@@ -428,15 +436,6 @@ module bp_be_calculator_top
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have
   //   static latencies, we cannot have two pipelines complete at the same time.
-  assign pipe_fma_data_lo_v = calc_stage_r[4].pipe_fma_v;
-  assign pipe_mul_data_lo_v = calc_stage_r[3].pipe_mul_v;
-  assign pipe_sys_data_lo_v = calc_stage_r[2].pipe_sys_v;
-  assign pipe_mem_final_data_lo_v = calc_stage_r[2].pipe_mem_final_v;
-  assign pipe_mem_early_data_lo_v = calc_stage_r[1].pipe_mem_early_v;
-  assign pipe_aux_data_lo_v = calc_stage_r[1].pipe_aux_v;
-  assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
-  assign pipe_ctl_data_lo_v = calc_stage_r[0].pipe_ctl_v;
-
   always_comb
     begin
       comp_stage_n[0] = '0;

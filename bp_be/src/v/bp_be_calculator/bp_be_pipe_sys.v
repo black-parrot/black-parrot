@@ -50,6 +50,7 @@ module bp_be_pipe_sys
    , output logic                         miss_v_o
    , output logic                         exc_v_o
    , output logic [dpath_width_p-1:0]     data_o
+   , output logic                         v_o
 
    , input [wb_pkt_width_lp-1:0]          iwb_pkt_i
    , input [wb_pkt_width_lp-1:0]          fwb_pkt_i
@@ -216,6 +217,16 @@ module bp_be_pipe_sys
   assign data_o           = csr_data_lo;
   assign exc_v_o          = trap_pkt.exception | (ptw_miss_pkt.instr_miss_v | ptw_miss_pkt.load_miss_v | ptw_miss_pkt.store_miss_v);
   assign miss_v_o         = trap_pkt.rollback;
+
+  wire sys_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_sys_v;
+  bsg_dff_chain
+   #(.width_p(1), .num_stages_p(2))
+   sys_chain
+    (.clk_i(clk_i)
+
+     ,.data_i(sys_v_li)
+     ,.data_o(v_o)
+     );
 
 endmodule
 

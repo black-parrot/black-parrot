@@ -32,11 +32,8 @@ module bp_be_pipe_aux
    // Pipeline results
    , output [dpath_width_p-1:0]        data_o
    , output rv64_fflags_s              fflags_o
+   , output                            v_o
    );
-
-  // Suppress unused signal warning
-  wire unused0 = clk_i;
-  wire unused1 = reset_i;
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_dispatch_pkt_s reservation;
@@ -497,13 +494,14 @@ module bp_be_pipe_aux
       endcase
     end
 
+  wire faux_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_aux_v;
   bsg_dff_chain
-   #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(latency_p-1))
+   #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)+1), .num_stages_p(latency_p-1))
    retiming_chain
     (.clk_i(clk_i)
 
-     ,.data_i({faux_fflags, faux_result})
-     ,.data_o({fflags_o, data_o})
+     ,.data_i({faux_fflags, faux_result, faux_v_li})
+     ,.data_o({fflags_o, data_o, v_o})
      );
 
 endmodule
