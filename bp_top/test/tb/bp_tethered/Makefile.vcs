@@ -40,11 +40,12 @@ $(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
-$(SIM_DIR)/bootrom.riscv: $(BP_TEST_MEM_DIR)/bootrom.riscv
-	cp $^ $@
+OVERRIDE_BOOTROM ?= 0
+$(SIM_DIR)/bootrom.riscv: bootrom
+	cp $(BP_TEST_DIR)/src/bootrom/bootrom.riscv $@
 
-$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.bin
-	$(RISCV_OBJCOPY) -I binary $< -O verilog --reverse-bytes=8 --verilog-data-width=8 $@
+$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
+	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=8 --verilog-data-width=8 $< $@
 
 NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
 ifeq ($(PRELOAD_MEM_P), 0)
@@ -57,7 +58,7 @@ $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.bin bootrom.mem bootrom.dump)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.mem bootrom.dump)
 
 SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.dump)

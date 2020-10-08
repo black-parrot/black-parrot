@@ -15,6 +15,7 @@ module bp_be_nonsynth_perf
    , input [31:0] warmup_instr_i
 
    , input commit_v_i
+   , input is_debug_mode_i
 
    , input [num_core_p-1:0] program_finish_i
    );
@@ -39,7 +40,7 @@ logic [63:0] instr_cnt_r;
 logic [num_core_p-1:0] program_finish_r;
 always_ff @(posedge clk_i)
   begin
-    if (reset_i | freeze_i | ~warm)
+    if (reset_i | freeze_i | ~warm | is_debug_mode_i)
       begin
         clk_cnt_r <= '0;
         instr_cnt_r <= '0;
