@@ -8,8 +8,6 @@
  *     and sends redirect signals to the FE when a misprediction is detected.
  *
  * Notes:
- *   We don't need the entirety of the calc_status structure here, but for simplicity
- *     we pass it all. If the compiler doesn't flatten and optimize, we can do it ourselves.
  *   Branch_metadata should come from the target instruction, not the branch instruction,
  *     eliminating the need to store this in the BE
  *   We don't currently support MTVAL or EPC, so error muxes are disconnected
@@ -29,9 +27,8 @@ module bp_be_director
    // Generated parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p)
    , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
-   , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
    , localparam debug_lp = 0
@@ -43,7 +40,6 @@ module bp_be_director
 
    // Dependency information
    , input [isd_status_width_lp-1:0]  isd_status_i
-   , input [calc_status_width_lp-1:0] calc_status_i
    , output [vaddr_width_p-1:0]       expected_npc_o
    , output                           poison_isd_o
    , output                           suppress_iss_o
@@ -57,7 +53,7 @@ module bp_be_director
    , output                           fe_cmd_full_o
 
    , input [branch_pkt_width_lp-1:0]   br_pkt_i
-   , input [trap_pkt_width_lp-1:0]     trap_pkt_i
+   , input [commit_pkt_width_lp-1:0]     commit_pkt_i
 
    , input [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_i
   );
@@ -70,18 +66,16 @@ module bp_be_director
   // Cast input and output ports
   bp_cfg_bus_s                     cfg_bus_cast_i;
   bp_be_isd_status_s               isd_status;
-  bp_be_calc_status_s              calc_status;
   bp_fe_cmd_s                      fe_cmd_li;
   logic                            fe_cmd_v_li, fe_cmd_ready_lo;
   bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
   bp_be_branch_pkt_s               br_pkt;
-  bp_be_trap_pkt_s                 trap_pkt;
+  bp_be_commit_pkt_s                 commit_pkt;
   bp_be_ptw_fill_pkt_s             ptw_fill_pkt;
 
   assign cfg_bus_cast_i = cfg_bus_i;
   assign isd_status = isd_status_i;
-  assign calc_status = calc_status_i;
-  assign trap_pkt    = trap_pkt_i;
+  assign commit_pkt    = commit_pkt_i;
   assign br_pkt       = br_pkt_i;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
 
@@ -95,7 +89,7 @@ module bp_be_director
 
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-  wire npc_w_v = br_pkt.v | trap_pkt.v | ptw_fill_pkt.itlb_fill_v;
+  wire npc_w_v = br_pkt.v | commit_pkt.v | ptw_fill_pkt.itlb_fill_v;
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
    npc
@@ -106,7 +100,7 @@ module bp_be_director
      ,.data_i(npc_n)
      ,.data_o(npc_r)
      );
-  assign npc_n = ptw_fill_pkt.itlb_fill_v ? ptw_fill_pkt.vaddr : trap_pkt.v ? trap_pkt.npc : br_pkt.npc;
+  assign npc_n = ptw_fill_pkt.itlb_fill_v ? ptw_fill_pkt.vaddr : commit_pkt.v ? commit_pkt.npc : br_pkt.npc;
 
   assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
   assign poison_isd_o = npc_mismatch_v | flush_o;
@@ -177,8 +171,8 @@ module bp_be_director
           fe_cmd_li.vaddr  = npc_r;
 
           fe_cmd_pc_redirect_operands = '0;
-          fe_cmd_pc_redirect_operands.priv                = trap_pkt.priv_n;
-          fe_cmd_pc_redirect_operands.translation_enabled = trap_pkt.translation_en_n;
+          fe_cmd_pc_redirect_operands.priv                = commit_pkt.priv_n;
+          fe_cmd_pc_redirect_operands.translation_enabled = commit_pkt.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
@@ -195,37 +189,37 @@ module bp_be_director
         end
       // TODO: This is compliant but suboptimal, since satp is not required to flush TLBs
       //   Should add message to fe-be interface
-      else if (trap_pkt.sfence)
+      else if (commit_pkt.sfence)
         begin
           fe_cmd_li.opcode = e_op_itlb_fence;
-          fe_cmd_li.vaddr  = trap_pkt.npc;
+          fe_cmd_li.vaddr  = commit_pkt.npc;
 
           fe_cmd_pc_redirect_operands = '0;
-          fe_cmd_pc_redirect_operands.translation_enabled = trap_pkt.translation_en_n;
+          fe_cmd_pc_redirect_operands.translation_enabled = commit_pkt.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li     = fe_cmd_ready_lo;
 
           flush_o = 1'b1;
         end
-      else if (trap_pkt.satp)
+      else if (commit_pkt.satp)
         begin
           fe_cmd_pc_redirect_operands = '0;
 
           fe_cmd_li.opcode                                    = e_op_pc_redirection;
-          fe_cmd_li.vaddr                                     = trap_pkt.npc;
+          fe_cmd_li.vaddr                                     = commit_pkt.npc;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_translation_switch;
-          fe_cmd_pc_redirect_operands.translation_enabled  = trap_pkt.translation_en_n;
+          fe_cmd_pc_redirect_operands.translation_enabled  = commit_pkt.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
 
           flush_o = 1'b1;
         end
-      else if (trap_pkt.fencei)
+      else if (commit_pkt.fencei)
         begin
           fe_cmd_li.opcode = e_op_icache_fence;
-          fe_cmd_li.vaddr  = trap_pkt.npc;
+          fe_cmd_li.vaddr  = commit_pkt.npc;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
 
@@ -233,7 +227,7 @@ module bp_be_director
         end
       // Redirect the pc if there's an NPC mismatch
       // Should not lump trap and ret into branch misprediction
-      else if (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret)
+      else if (commit_pkt.exception | commit_pkt._interrupt | commit_pkt.eret)
         begin
           fe_cmd_pc_redirect_operands = '0;
 
@@ -243,15 +237,15 @@ module bp_be_director
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_trap;
           fe_cmd_pc_redirect_operands.branch_metadata_fwd  = '0;
           fe_cmd_pc_redirect_operands.misprediction_reason = e_not_a_branch;
-          fe_cmd_pc_redirect_operands.priv                 = trap_pkt.priv_n;
-          fe_cmd_pc_redirect_operands.translation_enabled  = trap_pkt.translation_en_n;
+          fe_cmd_pc_redirect_operands.priv                 = commit_pkt.priv_n;
+          fe_cmd_pc_redirect_operands.translation_enabled  = commit_pkt.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
 
           flush_o = 1'b1;
         end
-      else if (trap_pkt.rollback)
+      else if (commit_pkt.rollback)
         begin
           flush_o = 1'b1;
         end

@@ -265,11 +265,12 @@ top-misc-vcs:
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs MISC_TESTLIST $CI_CORES
 
-top-misc-vcs:
+top-misc-verilator:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
-    - vcs
+    - verilator
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh verilator MISC_TESTLIST $CI_CORES
 
