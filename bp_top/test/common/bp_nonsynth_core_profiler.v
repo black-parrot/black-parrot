@@ -63,7 +63,6 @@ module bp_nonsynth_core_profiler
 
     , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
     , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
-    , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
     )
    (input clk_i
     , input reset_i
@@ -111,10 +110,8 @@ module bp_nonsynth_core_profiler
     // Reservation packet
     , input [dispatch_pkt_width_lp-1:0] reservation
 
-    // Commit packet
-    , input [commit_pkt_width_lp-1:0] commit_pkt
     // Trap packet
-    , input [trap_pkt_width_lp-1:0] trap_pkt
+    , input [commit_pkt_width_lp-1:0] commit_pkt
     );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -156,21 +153,11 @@ module bp_nonsynth_core_profiler
   bp_be_commit_pkt_s commit_pkt_r;
   bsg_dff_reset
    #(.width_p($bits(bp_be_commit_pkt_s)))
-   commit_pipe
+   trap_pipe
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.data_i(commit_pkt)
      ,.data_o(commit_pkt_r)
-     );
-
-  bp_be_trap_pkt_s trap_pkt_r;
-  bsg_dff_reset
-   #(.width_p($bits(bp_be_trap_pkt_s)))
-   trap_pipe
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i(trap_pkt)
-     ,.data_o(trap_pkt_r)
      );
 
   logic [29:0] cycle_cnt;

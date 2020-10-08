@@ -90,7 +90,6 @@ module bp_be_top
   logic chk_dispatch_v;
 
   bp_be_commit_pkt_s commit_pkt;
-  bp_be_trap_pkt_s trap_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
 
   bp_be_isd_status_s isd_status;
@@ -124,7 +123,7 @@ module bp_be_top
      ,.flush_o(flush)
 
      ,.br_pkt_i(br_pkt)
-     ,.trap_pkt_i(trap_pkt)
+     ,.commit_pkt_i(commit_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
      );
 
@@ -168,7 +167,6 @@ module bp_be_top
      ,.dispatch_pkt_o(dispatch_pkt)
 
      ,.commit_pkt_i(commit_pkt)
-     ,.trap_pkt_i(trap_pkt)
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
      );
@@ -194,7 +192,6 @@ module bp_be_top
 
      ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)
-     ,.trap_pkt_o(trap_pkt)
      ,.iwb_pkt_o(iwb_pkt)
      ,.fwb_pkt_o(fwb_pkt)
 

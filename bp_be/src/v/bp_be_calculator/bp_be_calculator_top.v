@@ -26,8 +26,7 @@ module bp_be_calculator_top
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
-   , localparam trap_pkt_width_lp       = `bp_be_trap_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp       = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
@@ -51,8 +50,7 @@ module bp_be_calculator_top
   , output                              sys_ready_o
 
   , output [ptw_fill_pkt_width_lp-1:0]  ptw_fill_pkt_o
-  , output [commit_pkt_width_lp-1:0]    commit_pkt_o
-  , output [trap_pkt_width_lp-1:0]      trap_pkt_o
+  , output [commit_pkt_width_lp-1:0]      commit_pkt_o
   , output [branch_pkt_width_lp-1:0]    br_pkt_o
   , output [wb_pkt_width_lp-1:0]        iwb_pkt_o
   , output [wb_pkt_width_lp-1:0]        fwb_pkt_o
@@ -99,12 +97,10 @@ module bp_be_calculator_top
   bp_be_dispatch_pkt_s   dispatch_pkt;
   bp_cfg_bus_s           cfg_bus;
   bp_be_wb_pkt_s         long_iwb_pkt, long_fwb_pkt, calc_iwb_pkt, calc_fwb_pkt;
-  bp_be_commit_pkt_s     commit_pkt;
-  bp_be_trap_pkt_s       trap_pkt;
+  bp_be_commit_pkt_s       commit_pkt;
 
   assign dispatch_pkt = dispatch_pkt_i;
   assign commit_pkt_o = commit_pkt;
-  assign trap_pkt_o = trap_pkt;
 
   // Pipeline stage registers
   bp_be_exc_stage_s      [pipe_stage_els_lp  :0] exc_stage_n;
@@ -268,7 +264,7 @@ module bp_be_calculator_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.flush_i(flush_i)
-     ,.sfence_i(trap_pkt.sfence)
+     ,.sfence_i(commit_pkt.sfence)
 
      ,.reservation_i(reservation_r)
      ,.ready_o(pipe_mem_ready_lo)
@@ -335,11 +331,11 @@ module bp_be_calculator_top
      ,.ptw_miss_pkt_o(ptw_miss_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
+     ,.commit_v_i(~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v)
+     ,.commit_queue_v_i(~exc_stage_r[2].nop_v & ~exc_stage_r[2].roll_v)
      ,.exception_i(exc_stage_r[2].exc & ~{$bits(bp_be_exception_s){exc_stage_r[2].poison_v}})
-     ,.exception_pc_i(commit_pkt.pc)
      ,.exception_vaddr_i(pipe_mem_vaddr_lo)
-     ,.commit_pkt_i(commit_pkt)
-     ,.trap_pkt_o(trap_pkt)
+     ,.commit_pkt_o(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt_o)
      ,.fwb_pkt_i(fwb_pkt_o)
 
@@ -520,14 +516,6 @@ module bp_be_calculator_top
       pc_r[5:1]         <= pc_r[4:0];
       instr_r[5:1]      <= instr_r[4:0];
     end
-
-
-  assign commit_pkt.v          = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v;
-  assign commit_pkt.queue_v    = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].roll_v;
-  assign commit_pkt.instret    = ~exc_stage_r[2].nop_v & ~exc_stage_n[3].poison_v;
-  assign commit_pkt.pc         = pc_r[2];
-  assign commit_pkt.npc        = pc_r[1];
-  assign commit_pkt.instr      = instr_r[2];
 
   assign calc_iwb_pkt.ird_w_v    = comp_stage_r[4].ird_w_v;
   assign calc_iwb_pkt.frd_w_v    = comp_stage_r[4].frd_w_v;
