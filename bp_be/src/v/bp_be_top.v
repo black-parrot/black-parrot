@@ -99,7 +99,7 @@ module bp_be_top
 
   logic fpu_en_lo;
   logic fe_cmd_full_lo;
-  logic mem_ready_lo, long_ready_lo;
+  logic mem_ready_lo, long_ready_lo, sys_ready_lo;
 
 
   logic flush;

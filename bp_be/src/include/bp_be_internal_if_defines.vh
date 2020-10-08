@@ -50,19 +50,6 @@
     rv64_instr_s                       instr;                                                      \
                                                                                                    \
     logic                              v;                                                          \
-    logic                              pipe_ctl_v;                                                 \
-    logic                              pipe_int_v;                                                 \
-    logic                              pipe_mem_early_v;                                           \
-    logic                              pipe_aux_v;                                                 \
-    logic                              pipe_mem_final_v;                                           \
-    logic                              pipe_sys_v;                                                 \
-    logic                              pipe_mul_v;                                                 \
-    logic                              pipe_fma_v;                                                 \
-    logic                              pipe_long_v;                                                \
-                                                                                                   \
-    logic                              csr_v;                                                      \
-    logic                              mem_v;                                                      \
-                                                                                                   \
     logic                              irf_w_v;                                                    \
     logic                              frf_w_v;                                                    \
     logic                              fflags_w_v;                                                 \
@@ -206,7 +193,7 @@
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
    + rv64_instr_width_gp                                                                           \
-   + 15                                                                                            \
+   + 4                                                                                             \
    )
 
 `define bp_be_comp_stage_reg_width \

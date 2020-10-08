@@ -484,17 +484,6 @@ module bp_be_calculator_top
       calc_stage_isd.pc             = reservation_n.pc;
       calc_stage_isd.instr          = reservation_n.instr;
       calc_stage_isd.v              = reservation_n.v;
-      calc_stage_isd.pipe_ctl_v     = reservation_n.decode.pipe_ctl_v;
-      calc_stage_isd.pipe_aux_v     = reservation_n.decode.pipe_aux_v;
-      calc_stage_isd.pipe_int_v     = reservation_n.decode.pipe_int_v;
-      calc_stage_isd.pipe_mem_early_v = reservation_n.decode.pipe_mem_early_v;
-      calc_stage_isd.pipe_mem_final_v = reservation_n.decode.pipe_mem_final_v;
-      calc_stage_isd.pipe_sys_v     = reservation_n.decode.pipe_sys_v;
-      calc_stage_isd.pipe_mul_v     = reservation_n.decode.pipe_mul_v;
-      calc_stage_isd.pipe_fma_v     = reservation_n.decode.pipe_fma_v;
-      calc_stage_isd.pipe_long_v    = reservation_n.decode.pipe_long_v;
-      calc_stage_isd.mem_v          = reservation_n.decode.mem_v;
-      calc_stage_isd.csr_v          = reservation_n.decode.csr_v;
       calc_stage_isd.irf_w_v        = reservation_n.decode.irf_w_v;
       calc_stage_isd.frf_w_v        = reservation_n.decode.frf_w_v;
       calc_stage_isd.fflags_w_v     = reservation_n.decode.fflags_w_v;
@@ -550,9 +539,9 @@ module bp_be_calculator_top
           exc_stage_n[2].exc.store_page_fault   = pipe_mem_store_page_fault_lo;
     end
 
-  assign commit_pkt.v          = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
-  assign commit_pkt.queue_v    = calc_stage_r[2].v & ~exc_stage_r[2].roll_v;
-  assign commit_pkt.instret    = calc_stage_r[2].v & ~exc_stage_r[2].poison_v & ~pipe_sys_miss_v_lo & ~pipe_sys_exc_v_lo;
+  assign commit_pkt.v          = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v;
+  assign commit_pkt.queue_v    = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].roll_v;
+  assign commit_pkt.instret    = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v & ~pipe_sys_miss_v_lo & ~pipe_sys_exc_v_lo;
   assign commit_pkt.pc         = calc_stage_r[2].pc;
   assign commit_pkt.npc        = calc_stage_r[1].pc;
   assign commit_pkt.instr      = calc_stage_r[2].instr;
