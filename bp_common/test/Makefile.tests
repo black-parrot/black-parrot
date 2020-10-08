@@ -65,10 +65,12 @@ $(BP_TEST_DIR)/lib/libperch.a:
 	cp $(BP_TEST_DIR)/src/perch/libperch.a $(BP_TEST_DIR)/lib
 	cp $(BP_TEST_DIR)/src/perch/*.h $(BP_TEST_DIR)/include
 
-bootrom: $(BP_TEST_DIR)/mem/bootrom.riscv
-$(BP_TEST_DIR)/mem/bootrom.riscv:
+bootrom:
+ifeq ($(OVERRIDE_BOOTROM),1)
 	$(MAKE) -C $(bootrom_dir)
-	cp $(BP_TEST_DIR)/src/bootrom/bootrom.riscv $(BP_TEST_MEM_DIR)/bootrom.riscv
+else
+	@echo "Skipping bootrom generation"
+endif
 
 demos:
 	$(MAKE) -C $(demos_dir)
