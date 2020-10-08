@@ -46,16 +46,6 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic                        irf_w_v;                                                          \
-    logic                        frf_w_v;                                                          \
-    logic                        fflags_w_v;                                                       \
-    rv64_fflags_s                fflags;                                                           \
-    logic [dpath_width_p-1:0]    data;                                                             \
-    logic [reg_addr_width_p-1:0] rd_addr;                                                          \
-  }  bp_be_comp_stage_reg_s;                                                                       \
-                                                                                                   \
-  typedef struct packed                                                                            \
-  {                                                                                                \
     logic                              instr_v;                                                    \
     logic                              mem_v;                                                      \
     logic                              csr_v;                                                      \
@@ -129,7 +119,8 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic                        rd_w_v;                                                           \
+    logic                        ird_w_v;                                                          \
+    logic                        frd_w_v;                                                          \
     logic [reg_addr_width_p-1:0] rd_addr;                                                          \
     logic [dpath_width_p-1:0]    rd_data;                                                          \
     logic                        fflags_w_v;                                                       \
@@ -184,9 +175,6 @@
    + `bp_be_decode_width                                                                           \
    )
 
-`define bp_be_comp_stage_reg_width \
-  (3+$bits(rv64_fflags_s) + dpath_width_p + reg_addr_width_p)
-
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
   (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 9 + 3*rv64_reg_addr_width_gp)
 
@@ -206,7 +194,7 @@
   (1 + 1 * vaddr_width_mp + rv64_priv_width_gp + 8)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
-  (1                                                                                               \
+  (2                                                                                               \
    + reg_addr_width_p                                                                              \
    + dpath_width_p                                                                                 \
    + 1                                                                                             \

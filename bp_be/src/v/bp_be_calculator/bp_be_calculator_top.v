@@ -110,8 +110,8 @@ module bp_be_calculator_top
   bp_be_exc_stage_s      [pipe_stage_els_lp  :0] exc_stage_n;
   bp_be_exc_stage_s      [pipe_stage_els_lp-1:0] exc_stage_r;
 
-  bp_be_comp_stage_reg_s [pipe_stage_els_lp  :0] comp_stage_n;
-  bp_be_comp_stage_reg_s [pipe_stage_els_lp-1:0] comp_stage_r;
+  bp_be_wb_pkt_s [pipe_stage_els_lp  :0] comp_stage_n;
+  bp_be_wb_pkt_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
@@ -407,26 +407,38 @@ module bp_be_calculator_top
         begin : comp_stage
           // Normally, shift down in the pipe
           comp_stage_n[i] = (i == 0)
-            ? '{irf_w_v    : reservation_n.decode.irf_w_v
-                ,frf_w_v   : reservation_n.decode.frf_w_v
+            ? '{ird_w_v    : reservation_n.decode.irf_w_v
+                ,frd_w_v   : reservation_n.decode.frf_w_v
                 ,fflags_w_v: reservation_n.decode.fflags_w_v
                 ,rd_addr   : reservation_n.instr.t.rtype.rd_addr
                 ,default: '0
                 }
             : comp_stage_r[i-1];
         end
-      comp_stage_n[1].data   |= pipe_int_data_lo_v       ? pipe_int_data_lo       : pipe_ctl_data_lo_v ? pipe_ctl_data_lo : '0;
-      comp_stage_n[2].data   |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo : pipe_aux_data_lo_v ? pipe_aux_data_lo : '0;
-      comp_stage_n[3].data   |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo : pipe_sys_data_lo_v ? pipe_sys_data_lo : '0;
-      comp_stage_n[4].data   |= pipe_mul_data_lo_v       ? pipe_mul_data_lo       : '0;
-      comp_stage_n[5].data   |= pipe_fma_data_lo_v       ? pipe_fma_data_lo       : '0;
+      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo       : pipe_ctl_data_lo_v ? pipe_ctl_data_lo : '0;
+      comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo : pipe_aux_data_lo_v ? pipe_aux_data_lo : '0;
+      comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo : pipe_sys_data_lo_v ? pipe_sys_data_lo : '0;
+      comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo       : '0;
+      comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo       : '0;
 
-      comp_stage_n[2].fflags |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo     : '0;
-      comp_stage_n[5].fflags |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo     : '0;
+      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v ? pipe_aux_fflags_lo     : '0;
+      comp_stage_n[5].fflags     |= pipe_fma_data_lo_v ? pipe_fma_fflags_lo     : '0;
+
+      //comp_stage_n[0].ird_w_v    &= ~exc_stage_n[0].poison_v;
+      //comp_stage_n[1].ird_w_v    &= ~exc_stage_n[1].poison_v;
+      //comp_stage_n[2].ird_w_v    &= ~exc_stage_n[2].poison_v;
+
+      //comp_stage_n[0].frd_w_v    &= ~exc_stage_n[0].poison_v;
+      //comp_stage_n[1].frd_w_v    &= ~exc_stage_n[1].poison_v;
+      //comp_stage_n[2].frd_w_v    &= ~exc_stage_n[2].poison_v;
+
+      //comp_stage_n[0].fflags_w_v &= ~exc_stage_n[0].poison_v;
+      //comp_stage_n[1].fflags_w_v &= ~exc_stage_n[1].poison_v;
+      //comp_stage_n[2].fflags_w_v &= ~exc_stage_n[2].poison_v;
     end
 
   bsg_dff
-   #(.width_p($bits(bp_be_comp_stage_reg_s)*pipe_stage_els_lp)
+   #(.width_p($bits(bp_be_wb_pkt_s)*pipe_stage_els_lp)
      )
    comp_stage_reg
     (.clk_i(clk_i)
@@ -441,12 +453,12 @@ module bp_be_calculator_top
       // Slicing the completion pipe for Forwarding information
       for (integer i = 1; i <= pipe_stage_els_lp; i++)
         begin : comp_stage_slice
-          comp_stage_n_slice_iwb_v[i]   = comp_stage_r[i-1].irf_w_v & ~exc_stage_n[i].poison_v;
-          comp_stage_n_slice_fwb_v[i]   = comp_stage_r[i-1].frf_w_v & ~exc_stage_n[i].poison_v;
+          comp_stage_n_slice_iwb_v[i]   = comp_stage_r[i-1].ird_w_v & ~exc_stage_n[i].poison_v;
+          comp_stage_n_slice_fwb_v[i]   = comp_stage_r[i-1].frd_w_v & ~exc_stage_n[i].poison_v;
           comp_stage_n_slice_rd_addr[i] = comp_stage_r[i-1].rd_addr;
 
-          comp_stage_n_slice_ird[i]     = comp_stage_n[i].data[0+:dword_width_p];
-          comp_stage_n_slice_frd[i]     = comp_stage_n[i].data[0+:dpath_width_p];
+          comp_stage_n_slice_ird[i]     = comp_stage_n[i].rd_data[0+:dword_width_p];
+          comp_stage_n_slice_frd[i]     = comp_stage_n[i].rd_data[0+:dpath_width_p];
         end
     end
 
@@ -516,15 +528,17 @@ module bp_be_calculator_top
   assign commit_pkt.npc        = pc_r[1];
   assign commit_pkt.instr      = instr_r[2];
 
-  assign calc_iwb_pkt.rd_w_v     = comp_stage_r[4].irf_w_v & ~exc_stage_r[4].poison_v;
+  assign calc_iwb_pkt.ird_w_v    = comp_stage_r[4].ird_w_v & ~exc_stage_r[4].poison_v;
+  assign calc_iwb_pkt.frd_w_v    = comp_stage_r[4].frd_w_v & ~exc_stage_r[4].poison_v;
   assign calc_iwb_pkt.rd_addr    = comp_stage_r[4].rd_addr;
-  assign calc_iwb_pkt.rd_data    = comp_stage_r[4].data;
+  assign calc_iwb_pkt.rd_data    = comp_stage_r[4].rd_data;
   assign calc_iwb_pkt.fflags_w_v = comp_stage_r[4].fflags_w_v & ~exc_stage_r[4].poison_v;
   assign calc_iwb_pkt.fflags     = comp_stage_r[4].fflags;
 
-  assign calc_fwb_pkt.rd_w_v      = comp_stage_r[5].frf_w_v & ~exc_stage_r[5].poison_v;
+  assign calc_fwb_pkt.ird_w_v     = comp_stage_r[5].ird_w_v & ~exc_stage_r[5].poison_v;
+  assign calc_fwb_pkt.frd_w_v     = comp_stage_r[5].frd_w_v & ~exc_stage_r[5].poison_v;
   assign calc_fwb_pkt.rd_addr     = comp_stage_r[5].rd_addr;
-  assign calc_fwb_pkt.rd_data     = comp_stage_r[5].data;
+  assign calc_fwb_pkt.rd_data     = comp_stage_r[5].rd_data;
   assign calc_fwb_pkt.fflags_w_v  = comp_stage_r[5].fflags_w_v & ~exc_stage_r[5].poison_v;
   assign calc_fwb_pkt.fflags      = comp_stage_r[5].fflags;
 

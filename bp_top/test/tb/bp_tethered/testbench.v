@@ -191,11 +191,11 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.ird_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
      ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
      ,.ird_data_i(scheduler.iwb_pkt.rd_data)
 
-     ,.frd_w_v_i(scheduler.fwb_pkt.rd_w_v)
+     ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
      ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
      ,.frd_data_i(scheduler.fwb_pkt.rd_data)
      );
@@ -224,11 +224,11 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.ird_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
      ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
      ,.ird_data_i(scheduler.iwb_pkt.rd_data)
 
-     ,.frd_w_v_i(scheduler.fwb_pkt.rd_w_v)
+     ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
      ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
      ,.frd_data_i(scheduler.fwb_pkt.rd_data)
 

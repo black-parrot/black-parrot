@@ -254,14 +254,16 @@ module bp_be_pipe_long
   // Actually a busy signal
   assign ready_o = ~rd_w_v_r & ~v_i;
 
-  assign iwb_pkt.rd_w_v     = rd_w_v_r;
+  assign iwb_pkt.ird_w_v    = rd_w_v_r;
+  assign iwb_pkt.frd_w_v    = 1'b0;
   assign iwb_pkt.rd_addr    = rd_addr_r;
   assign iwb_pkt.rd_data    = rd_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
   assign iwb_pkt.fflags     = '0;
   assign iwb_v_o = idiv_safe_r & rd_w_v_r;
 
-  assign fwb_pkt.rd_w_v     = rd_w_v_r;
+  assign fwb_pkt.ird_w_v    = 1'b0;
+  assign fwb_pkt.frd_w_v    = rd_w_v_r;
   assign fwb_pkt.rd_addr    = rd_addr_r;
   assign fwb_pkt.rd_data    = fdivsqrt_result;
   assign fwb_pkt.fflags_w_v = 1'b1;

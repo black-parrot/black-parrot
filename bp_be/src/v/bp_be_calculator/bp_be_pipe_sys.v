@@ -191,7 +191,7 @@ module bp_be_pipe_sys
 
      ,.instret_i(commit_pkt.instret)
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
-     ,.frf_w_v_i(fwb_pkt.rd_w_v)
+     ,.frf_w_v_i(fwb_pkt.frd_w_v)
 
      ,.exception_v_i(exception_v_li)
      ,.exception_pc_i(exception_pc_li)

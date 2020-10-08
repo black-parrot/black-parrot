@@ -114,7 +114,7 @@ module bp_be_scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.rd_w_v_i(iwb_pkt.rd_w_v)
+     ,.rd_w_v_i(iwb_pkt.ird_w_v)
      ,.rd_addr_i(iwb_pkt.rd_addr)
      ,.rd_data_i(iwb_pkt.rd_data[0+:dword_width_p])
 
@@ -130,7 +130,7 @@ module bp_be_scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.rd_w_v_i(fwb_pkt.rd_w_v)
+     ,.rd_w_v_i(fwb_pkt.frd_w_v)
      ,.rd_addr_i(fwb_pkt.rd_addr)
      ,.rd_data_i(fwb_pkt.rd_data)
 
