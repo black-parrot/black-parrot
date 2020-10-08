@@ -12,7 +12,6 @@ spike_dir       := $(BP_EXTERNAL_DIR)/riscv-isa-sim
 dromajo_dir     := $(BP_EXTERNAL_DIR)/dromajo
 axe_dir         := $(BP_EXTERNAL_DIR)/axe
 cmurphi_dir     := $(BP_EXTERNAL_DIR)/cmurphi
-zachjs_sv2v_dir := $(BP_EXTERNAL_DIR)/zachjs_sv2v
 bsg_sv2v_dir    := $(BP_EXTERNAL_DIR)/bsg_sv2v
 
 define submodule_tool_template
@@ -86,10 +85,6 @@ stack:
 	cp stack*/stack $(BP_BIN_DIR)
 	rm -rf stack*
 
-zachjs_sv2v_build: stack
-	$(MAKE) -C $(zachjs_sv2v_dir)
-	cp $(zachjs_sv2v_dir)/bin/sv2v $(BP_BIN_DIR)
-
 bsg_sv2v_build:
 	$(MAKE) -j1 -C $(bsg_sv2v_dir) tools
 
@@ -102,6 +97,5 @@ $(eval $(call submodule_tool_template,spike,$(spike_dir)))
 $(eval $(call submodule_tool_template,dromajo,$(dromajo_dir)))
 $(eval $(call submodule_tool_template,axe,$(axe_dir)))
 $(eval $(call submodule_tool_template,cmurphi,$(cmurphi_dir)))
-$(eval $(call submodule_tool_template,zachjs_sv2v,$(zachjs_sv2v_dir)))
 $(eval $(call submodule_tool_template,bsg_sv2v,$(bsg_sv2v_dir)))
 
