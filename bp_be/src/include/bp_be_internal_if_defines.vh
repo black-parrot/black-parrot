@@ -46,8 +46,12 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    rv64_fflags_s             fflags;                                                              \
-    logic [dpath_width_p-1:0] data;                                                                \
+    logic                        irf_w_v;                                                          \
+    logic                        frf_w_v;                                                          \
+    logic                        fflags_w_v;                                                       \
+    rv64_fflags_s                fflags;                                                           \
+    logic [dpath_width_p-1:0]    data;                                                             \
+    logic [reg_addr_width_p-1:0] rd_addr;                                                          \
   }  bp_be_comp_stage_reg_s;                                                                       \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -180,7 +184,7 @@
    )
 
 `define bp_be_comp_stage_reg_width \
-  ($bits(rv64_fflags_s) + dpath_width_p)
+  (3+$bits(rv64_fflags_s) + dpath_width_p + reg_addr_width_p)
 
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
   (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 9 + 3*rv64_reg_addr_width_gp)
