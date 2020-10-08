@@ -117,6 +117,7 @@
   {                                                                                                \
     logic                                    long_busy;                                            \
     logic                                    mem_busy;                                             \
+    logic                                    sys_busy;                                             \
     logic                                    commit_v;                                             \
                                                                                                    \
     bp_be_dep_status_s [5:0]                 dep_status;                                           \
@@ -227,7 +228,7 @@
   (14 + rv64_reg_addr_width_gp)
 
 `define bp_be_calc_status_width(vaddr_width_mp) \
-  (3                                                                                               \
+  (4                                                                                               \
    + 6 * `bp_be_dep_status_width                                                                   \
    )
 

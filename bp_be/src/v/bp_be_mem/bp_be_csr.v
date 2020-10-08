@@ -666,7 +666,7 @@ always_comb
   end
 
 // Debug Mode masks all interrupts
-assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
+assign interrupt_ready_o = ~is_debug_mode & ~cfg_bus_cast_i.freeze & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
 
