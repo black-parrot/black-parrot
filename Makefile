@@ -70,8 +70,7 @@ tools: | $(TARGET_DIRS)
 
 progs: tools
 	git submodule update --init --recursive $(BP_COMMON_DIR)/test
-	$(MAKE) -C $(BP_COMMON_DIR)/test perch bp_tests riscv_tests beebs coremark bootrom
+	$(MAKE) -C $(BP_COMMON_DIR)/test perch bp_tests riscv_tests beebs coremark
 
 ucode: | basejump
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
-

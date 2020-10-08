@@ -161,20 +161,29 @@ class NBF:
     # Reset clear
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_reset, 0)
 
+    #######################################################
+    # This CCE ucode write is now handled by the bootrom
+    #######################################################
     # Write CCE ucode
-    if self.ucode_file:
-      for core in range(self.ncpus):
-        for i in range(len(self.ucode)):
-          full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
-          self.print_nbf(3, full_addr, self.ucode[i])
+    # if self.ucode_file:
+    #   for core in range(self.ncpus):
+    #    for i in range(len(self.ucode)):
+    #       full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
+    #       self.print_nbf(3, full_addr, self.ucode[i])
 
+    #################################################################
+    # The cache and CCE mode switch is now handled by the bootrom
+    #################################################################
     # Write I$, D$, and CCE modes
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
 
+    ##############################################
+    # This is now handled by the config settings
+    ##############################################
     # Write PC to the DRAM base
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
+    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
 
     # Write checkpoint
     if self.checkpoint_file:
@@ -199,8 +208,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--ncpus', type=int, default=1, help='number of BlackParrot cores')
   parser.add_argument('--ucode', dest='ucode_file', metavar='ucode.mem', help='CCE ucode file')
-  parser.add_argument('--mem', dest='mem_file', metavar='prog.mem', help='DRAM verilog file')
-  parser.add_argument('--checkpoint', dest='checkpoint_file', metavar='sample.nbf', help='checkpoint nbf file')
+  parser.add_argument("--mem", dest='mem_file', metavar='prog.mem', help="DRAM verilog file")
+  parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help="checkpoint nbf file")
   parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
 
   args = parser.parse_args()
