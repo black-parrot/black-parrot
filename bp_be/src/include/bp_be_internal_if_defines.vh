@@ -132,7 +132,8 @@
     logic                        rd_w_v;                                                           \
     logic [reg_addr_width_p-1:0] rd_addr;                                                          \
     logic [dpath_width_p-1:0]    rd_data;                                                          \
-    rv64_fflags_s                fflags_acc;                                                       \
+    logic                        fflags_w_v;                                                       \
+    rv64_fflags_s                fflags;                                                           \
   }  bp_be_wb_pkt_s;                                                                               \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -208,6 +209,7 @@
   (1                                                                                               \
    + reg_addr_width_p                                                                              \
    + dpath_width_p                                                                                 \
+   + 1                                                                                             \
    + $bits(rv64_fflags_s)                                                                          \
    )
 

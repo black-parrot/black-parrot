@@ -257,13 +257,15 @@ module bp_be_pipe_long
   assign iwb_pkt.rd_w_v     = rd_w_v_r;
   assign iwb_pkt.rd_addr    = rd_addr_r;
   assign iwb_pkt.rd_data    = rd_data_lo;
-  assign iwb_pkt.fflags_acc = '0;
+  assign iwb_pkt.fflags_w_v = 1'b0;
+  assign iwb_pkt.fflags     = '0;
   assign iwb_v_o = idiv_safe_r & rd_w_v_r;
 
   assign fwb_pkt.rd_w_v     = rd_w_v_r;
   assign fwb_pkt.rd_addr    = rd_addr_r;
   assign fwb_pkt.rd_data    = fdivsqrt_result;
-  assign fwb_pkt.fflags_acc = fdivsqrt_fflags;
+  assign fwb_pkt.fflags_w_v = 1'b1;
+  assign fwb_pkt.fflags     = fdivsqrt_fflags;
   assign fwb_v_o = fdivsqrt_safe_r &  rd_w_v_r;
 
 endmodule
