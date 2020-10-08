@@ -46,17 +46,6 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [vaddr_width_mp-1:0]         pc;                                                         \
-    rv64_instr_s                       instr;                                                      \
-                                                                                                   \
-    logic                              v;                                                          \
-    logic                              irf_w_v;                                                    \
-    logic                              frf_w_v;                                                    \
-    logic                              fflags_w_v;                                                 \
-  }  bp_be_pipe_stage_reg_s;                                                                       \
-                                                                                                   \
-  typedef struct packed                                                                            \
-  {                                                                                                \
     rv64_fflags_s             fflags;                                                              \
     logic [dpath_width_p-1:0] data;                                                                \
   }  bp_be_comp_stage_reg_s;                                                                       \
@@ -188,12 +177,6 @@
    + 3                                                                                             \
    + 3 * dpath_width_p                                                                             \
    + `bp_be_decode_width                                                                           \
-   )
-
-`define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
-   (vaddr_width_mp                                                                                 \
-   + rv64_instr_width_gp                                                                           \
-   + 4                                                                                             \
    )
 
 `define bp_be_comp_stage_reg_width \

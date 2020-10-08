@@ -26,7 +26,6 @@ module bp_be_calculator_top
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
-   , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp       = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
@@ -108,9 +107,6 @@ module bp_be_calculator_top
   assign trap_pkt_o = trap_pkt;
 
   // Pipeline stage registers
-  bp_be_pipe_stage_reg_s                         calc_stage_isd;
-  bp_be_pipe_stage_reg_s [pipe_stage_els_lp  :0] calc_stage_n;
-  bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r;
   bp_be_exc_stage_s      [pipe_stage_els_lp  :0] exc_stage_n;
   bp_be_exc_stage_s      [pipe_stage_els_lp-1:0] exc_stage_r;
 
@@ -362,7 +358,7 @@ module bp_be_calculator_top
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
      ,.exception_i(exc_stage_r[2].exc & ~{$bits(bp_be_exception_s){exc_stage_r[2].poison_v}})
-     ,.exception_pc_i(calc_stage_r[2].pc)
+     ,.exception_pc_i(commit_pkt.pc)
      ,.exception_vaddr_i(pipe_mem_vaddr_lo)
      ,.commit_pkt_i(commit_pkt)
      ,.trap_pkt_o(trap_pkt)
@@ -420,17 +416,6 @@ module bp_be_calculator_top
      ,.fwb_v_o(pipe_long_fdata_lo_v)
      );
 
-  // Execution pipelines
-  // Shift in dispatch pkt and move everything else down the pipe
-  assign calc_stage_n = {calc_stage_r[0+:pipe_stage_els_lp], calc_stage_isd};
-  bsg_dff
-   #(.width_p(pipe_stage_reg_width_lp*pipe_stage_els_lp))
-   calc_stage_reg
-    (.clk_i(clk_i)
-     ,.data_i({calc_stage_r[0+:pipe_stage_els_lp-1], calc_stage_isd})
-     ,.data_o(calc_stage_r)
-     );
-
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have
   //   static latencies, we cannot have two pipelines complete at the same time.
@@ -478,22 +463,19 @@ module bp_be_calculator_top
      ,.data_o(exc_stage_r)
      );
 
+  logic [5:0][vaddr_width_p-1:0] pc_r;
+  rv64_instr_s [5:0]             instr_r;
+  logic [5:0]                    irf_w_v_r;
+  logic [5:0]                    frf_w_v_r;
+  logic [5:0]                    fflags_w_v_r;
   always_comb
     begin
-      // Strip out elements of the dispatch packet that we want to save for later
-      calc_stage_isd.pc             = reservation_n.pc;
-      calc_stage_isd.instr          = reservation_n.instr;
-      calc_stage_isd.v              = reservation_n.v;
-      calc_stage_isd.irf_w_v        = reservation_n.decode.irf_w_v;
-      calc_stage_isd.frf_w_v        = reservation_n.decode.frf_w_v;
-      calc_stage_isd.fflags_w_v     = reservation_n.decode.fflags_w_v;
-
       // Slicing the completion pipe for Forwarding information
       for (integer i = 1; i <= pipe_stage_els_lp; i++)
         begin : comp_stage_slice
-          comp_stage_n_slice_iwb_v[i]   = calc_stage_n[i].irf_w_v & ~exc_stage_n[i].poison_v;
-          comp_stage_n_slice_fwb_v[i]   = calc_stage_n[i].frf_w_v & ~exc_stage_n[i].poison_v;
-          comp_stage_n_slice_rd_addr[i] = calc_stage_n[i].instr.t.rtype.rd_addr;
+          comp_stage_n_slice_iwb_v[i]   = irf_w_v_r[i-1] & ~exc_stage_n[i].poison_v;
+          comp_stage_n_slice_fwb_v[i]   = frf_w_v_r[i-1] & ~exc_stage_n[i].poison_v;
+          comp_stage_n_slice_rd_addr[i] = instr_r[i-1].t.rtype.rd_addr;
 
           comp_stage_n_slice_ird[i]     = comp_stage_n[i].data[0+:dword_width_p];
           comp_stage_n_slice_frd[i]     = comp_stage_n[i].data[0+:dpath_width_p];
@@ -539,22 +521,38 @@ module bp_be_calculator_top
           exc_stage_n[2].exc.store_page_fault   = pipe_mem_store_page_fault_lo;
     end
 
+  always_ff @(posedge clk_i)
+    begin
+      pc_r[0]         <= reservation_n.pc;
+      instr_r[0]      <= reservation_n.instr;
+      irf_w_v_r[0]    <= reservation_n.decode.irf_w_v;
+      frf_w_v_r[0]    <= reservation_n.decode.frf_w_v;
+      fflags_w_v_r[0] <= reservation_n.decode.fflags_w_v;
+
+      pc_r[5:1]         <= pc_r[4:0];
+      instr_r[5:1]      <= instr_r[4:0];
+      irf_w_v_r[5:1]    <= irf_w_v_r[4:0];
+      frf_w_v_r[5:1]    <= frf_w_v_r[4:0];
+      fflags_w_v_r[5:1] <= fflags_w_v_r[4:0];
+    end
+
+
   assign commit_pkt.v          = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v;
   assign commit_pkt.queue_v    = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].roll_v;
   assign commit_pkt.instret    = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v & ~pipe_sys_miss_v_lo & ~pipe_sys_exc_v_lo;
-  assign commit_pkt.pc         = calc_stage_r[2].pc;
-  assign commit_pkt.npc        = calc_stage_r[1].pc;
-  assign commit_pkt.instr      = calc_stage_r[2].instr;
+  assign commit_pkt.pc         = pc_r[2];
+  assign commit_pkt.npc        = pc_r[1];
+  assign commit_pkt.instr      = instr_r[2];
 
-  assign calc_iwb_pkt.rd_w_v     = calc_stage_r[4].irf_w_v & ~exc_stage_r[4].poison_v;
-  assign calc_iwb_pkt.rd_addr    = calc_stage_r[4].instr.t.rtype.rd_addr;
+  assign calc_iwb_pkt.rd_w_v     = irf_w_v_r[4] & ~exc_stage_r[4].poison_v;
+  assign calc_iwb_pkt.rd_addr    = instr_r[4].t.rtype.rd_addr;
   assign calc_iwb_pkt.rd_data    = comp_stage_r[4].data;
-  assign calc_iwb_pkt.fflags_acc = comp_stage_r[4].fflags & {5{calc_stage_r[4].fflags_w_v & ~exc_stage_r[4].poison_v}};
+  assign calc_iwb_pkt.fflags_acc = comp_stage_r[4].fflags & {5{fflags_w_v_r[4] & ~exc_stage_r[4].poison_v}};
 
-  assign calc_fwb_pkt.rd_w_v      = calc_stage_r[5].frf_w_v & ~exc_stage_r[5].poison_v;
-  assign calc_fwb_pkt.rd_addr     = calc_stage_r[5].instr.t.rtype.rd_addr;
+  assign calc_fwb_pkt.rd_w_v      = frf_w_v_r[5] & ~exc_stage_r[5].poison_v;
+  assign calc_fwb_pkt.rd_addr     = instr_r[5].t.rtype.rd_addr;
   assign calc_fwb_pkt.rd_data     = comp_stage_r[5].data;
-  assign calc_fwb_pkt.fflags_acc  = comp_stage_r[5].fflags & {5{calc_stage_r[5].fflags_w_v & ~exc_stage_r[5].poison_v}};
+  assign calc_fwb_pkt.fflags_acc  = comp_stage_r[5].fflags & {5{fflags_w_v_r[5] & ~exc_stage_r[5].poison_v}};
 
   assign iwb_pkt_o = pipe_long_idata_lo_v ? long_iwb_pkt : calc_iwb_pkt;
   assign fwb_pkt_o = pipe_long_fdata_lo_v ? long_fwb_pkt : calc_fwb_pkt;
