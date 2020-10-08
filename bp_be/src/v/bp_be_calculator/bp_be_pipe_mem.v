@@ -37,7 +37,6 @@ module bp_be_pipe_mem
    , input                                sfence_i
 
    , output logic                         ready_o
-   , input                                v_i
 
    , input [dispatch_pkt_width_lp-1:0]    reservation_i
 
@@ -356,7 +355,7 @@ module bp_be_pipe_mem
         dcache_ptag_v   = ptw_dcache_ptag_v;
       end
       else begin
-        dcache_pkt_v = v_i & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
+        dcache_pkt_v = reservation.v & ~reservation.poison & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
         // TODO: Use dcache opcode directly
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
         dcache_pkt.page_offset = eaddr[0+:page_offset_width_p];

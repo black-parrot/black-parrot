@@ -215,7 +215,7 @@ module bp_be_pipe_sys
 
   assign ready_o          = ~interrupt_ready_lo;
   assign data_o           = csr_data_lo;
-  assign exc_v_o          = trap_pkt.exception | (ptw_miss_pkt.instr_miss_v | ptw_miss_pkt.load_miss_v | ptw_miss_pkt.store_miss_v);
+  assign exc_v_o          = trap_pkt.exception;
   assign miss_v_o         = trap_pkt.rollback;
 
   wire sys_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_sys_v;

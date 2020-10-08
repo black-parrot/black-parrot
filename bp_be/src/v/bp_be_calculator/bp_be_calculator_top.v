@@ -272,7 +272,6 @@ module bp_be_calculator_top
 
      ,.reservation_i(reservation_r)
      ,.ready_o(pipe_mem_ready_lo)
-     ,.v_i(~exc_stage_r[0].poison_v)
 
      ,.ptw_miss_pkt_i(ptw_miss_pkt)
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
@@ -384,7 +383,6 @@ module bp_be_calculator_top
 
      ,.reservation_i(reservation_r)
      ,.flush_i(flush_i)
-     ,.v_i(reservation_r.v & reservation_r.decode.pipe_long_v & ~exc_stage_r[0].poison_v)
      ,.ready_o(pipe_long_ready_lo)
      ,.frm_dyn_i(frm_dyn_lo)
 
@@ -421,20 +419,23 @@ module bp_be_calculator_top
       comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo       : '0;
       comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo       : '0;
 
-      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v ? pipe_aux_fflags_lo     : '0;
-      comp_stage_n[5].fflags     |= pipe_fma_data_lo_v ? pipe_fma_fflags_lo     : '0;
+      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo     : '0;
+      comp_stage_n[5].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo     : '0;
 
-      //comp_stage_n[0].ird_w_v    &= ~exc_stage_n[0].poison_v;
-      //comp_stage_n[1].ird_w_v    &= ~exc_stage_n[1].poison_v;
-      //comp_stage_n[2].ird_w_v    &= ~exc_stage_n[2].poison_v;
+      comp_stage_n[0].ird_w_v    &= ~exc_stage_n[0].poison_v;
+      comp_stage_n[1].ird_w_v    &= ~exc_stage_n[1].poison_v;
+      comp_stage_n[2].ird_w_v    &= ~exc_stage_n[2].poison_v;
+      comp_stage_n[3].ird_w_v    &= ~exc_stage_n[3].poison_v;
 
-      //comp_stage_n[0].frd_w_v    &= ~exc_stage_n[0].poison_v;
-      //comp_stage_n[1].frd_w_v    &= ~exc_stage_n[1].poison_v;
-      //comp_stage_n[2].frd_w_v    &= ~exc_stage_n[2].poison_v;
+      comp_stage_n[0].frd_w_v    &= ~exc_stage_n[0].poison_v;
+      comp_stage_n[1].frd_w_v    &= ~exc_stage_n[1].poison_v;
+      comp_stage_n[2].frd_w_v    &= ~exc_stage_n[2].poison_v;
+      comp_stage_n[3].frd_w_v    &= ~exc_stage_n[3].poison_v;
 
-      //comp_stage_n[0].fflags_w_v &= ~exc_stage_n[0].poison_v;
-      //comp_stage_n[1].fflags_w_v &= ~exc_stage_n[1].poison_v;
-      //comp_stage_n[2].fflags_w_v &= ~exc_stage_n[2].poison_v;
+      comp_stage_n[0].fflags_w_v &= ~exc_stage_n[0].poison_v;
+      comp_stage_n[1].fflags_w_v &= ~exc_stage_n[1].poison_v;
+      comp_stage_n[2].fflags_w_v &= ~exc_stage_n[2].poison_v;
+      comp_stage_n[3].fflags_w_v &= ~exc_stage_n[3].poison_v;
     end
 
   bsg_dff
@@ -523,23 +524,23 @@ module bp_be_calculator_top
 
   assign commit_pkt.v          = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v;
   assign commit_pkt.queue_v    = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].roll_v;
-  assign commit_pkt.instret    = ~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v & ~pipe_sys_miss_v_lo & ~pipe_sys_exc_v_lo;
+  assign commit_pkt.instret    = ~exc_stage_r[2].nop_v & ~exc_stage_n[3].poison_v;
   assign commit_pkt.pc         = pc_r[2];
   assign commit_pkt.npc        = pc_r[1];
   assign commit_pkt.instr      = instr_r[2];
 
-  assign calc_iwb_pkt.ird_w_v    = comp_stage_r[4].ird_w_v & ~exc_stage_r[4].poison_v;
-  assign calc_iwb_pkt.frd_w_v    = comp_stage_r[4].frd_w_v & ~exc_stage_r[4].poison_v;
+  assign calc_iwb_pkt.ird_w_v    = comp_stage_r[4].ird_w_v;
+  assign calc_iwb_pkt.frd_w_v    = comp_stage_r[4].frd_w_v;
   assign calc_iwb_pkt.rd_addr    = comp_stage_r[4].rd_addr;
   assign calc_iwb_pkt.rd_data    = comp_stage_r[4].rd_data;
-  assign calc_iwb_pkt.fflags_w_v = comp_stage_r[4].fflags_w_v & ~exc_stage_r[4].poison_v;
+  assign calc_iwb_pkt.fflags_w_v = comp_stage_r[4].fflags_w_v;
   assign calc_iwb_pkt.fflags     = comp_stage_r[4].fflags;
 
-  assign calc_fwb_pkt.ird_w_v     = comp_stage_r[5].ird_w_v & ~exc_stage_r[5].poison_v;
-  assign calc_fwb_pkt.frd_w_v     = comp_stage_r[5].frd_w_v & ~exc_stage_r[5].poison_v;
+  assign calc_fwb_pkt.ird_w_v     = comp_stage_r[5].ird_w_v;
+  assign calc_fwb_pkt.frd_w_v     = comp_stage_r[5].frd_w_v;
   assign calc_fwb_pkt.rd_addr     = comp_stage_r[5].rd_addr;
   assign calc_fwb_pkt.rd_data     = comp_stage_r[5].rd_data;
-  assign calc_fwb_pkt.fflags_w_v  = comp_stage_r[5].fflags_w_v & ~exc_stage_r[5].poison_v;
+  assign calc_fwb_pkt.fflags_w_v  = comp_stage_r[5].fflags_w_v;
   assign calc_fwb_pkt.fflags      = comp_stage_r[5].fflags;
 
   assign iwb_pkt_o = pipe_long_idata_lo_v ? long_iwb_pkt : calc_iwb_pkt;

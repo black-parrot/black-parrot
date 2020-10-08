@@ -680,7 +680,7 @@ assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
 assign trap_pkt_cast_o.eret             = ret_v_o;
 assign trap_pkt_cast_o.satp             = satp_v_o;
-assign trap_pkt_cast_o.rollback         = csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss;
+assign trap_pkt_cast_o.rollback         = csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss | csr_cmd.exc.itlb_miss;
 
 assign trans_info_cast_o.priv_mode = priv_mode_r;
 assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
