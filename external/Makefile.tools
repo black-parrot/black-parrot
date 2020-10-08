@@ -33,7 +33,7 @@ basejump_build:
 systemc_build:
 	cd $(systemc_dir); \
 		autoreconf; \
-	   	./configure --prefix=$(BP_EXTERNAL_DIR) CXXFLAGS="-std=c++11"
+		./configure --prefix=$(BP_EXTERNAL_DIR) CXXFLAGS="-std=c++14"
 	$(MAKE) -C $(systemc_dir)
 	$(MAKE) -C $(systemc_dir) install
 
