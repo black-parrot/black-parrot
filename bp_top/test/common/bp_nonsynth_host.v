@@ -17,13 +17,13 @@ module bp_nonsynth_host
   (input clk_i
    , input reset_i
 
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]   io_cmd_i
+   , input [cce_mem_msg_width_lp-1:0]              io_cmd_i
    , input                                         io_cmd_v_i
    , output logic                                  io_cmd_ready_o
 
-   , output logic [bp_bedrock_cce_mem_msg_width_lp-1:0] io_resp_o
-   , output logic                                       io_resp_v_o
-   , input                                              io_resp_yumi_i
+   , output logic [cce_mem_msg_width_lp-1:0]       io_resp_o
+   , output logic                                  io_resp_v_o
+   , input                                         io_resp_yumi_i
 
    , output [num_core_p-1:0]                       program_finish_o
    );

@@ -28,20 +28,20 @@ module bp_me_cce_to_mem_link_bidir
    , input [cid_width_p-1:0]                      dst_cid_i
 
    // Master link
-   , input  [bp_bedrock_cce_mem_msg_width_lp-1:0]  mem_cmd_i
-   , input                                         mem_cmd_v_i
-   , output                                        mem_cmd_ready_o
+   , input  [cce_mem_msg_width_lp-1:0]            mem_cmd_i
+   , input                                        mem_cmd_v_i
+   , output                                       mem_cmd_ready_o
 
-   , output [bp_bedrock_cce_mem_msg_width_lp-1:0]  mem_resp_o
-   , output                                        mem_resp_v_o
-   , input                                         mem_resp_yumi_i
+   , output [cce_mem_msg_width_lp-1:0]            mem_resp_o
+   , output                                       mem_resp_v_o
+   , input                                        mem_resp_yumi_i
 
    // Client link
-   , output  [bp_bedrock_cce_mem_msg_width_lp-1:0] mem_cmd_o
-   , output                                        mem_cmd_v_o
-   , input                                         mem_cmd_yumi_i
+   , output  [cce_mem_msg_width_lp-1:0]           mem_cmd_o
+   , output                                       mem_cmd_v_o
+   , input                                        mem_cmd_yumi_i
 
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]  mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]             mem_resp_i
    , input                                        mem_resp_v_i
    , output                                       mem_resp_ready_o
 

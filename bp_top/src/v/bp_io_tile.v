@@ -34,7 +34,7 @@ module bp_io_tile
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_msg_width_lp, lce_cmd_packet_s);
+  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_msg_width_lp, lce_cmd_packet_s);
 
   bp_bedrock_lce_req_msg_s  cce_lce_req_li, lce_lce_req_lo;
   logic cce_lce_req_v_li, cce_lce_req_yumi_lo, lce_lce_req_v_lo, lce_lce_req_ready_li;
@@ -120,9 +120,9 @@ module bp_io_tile
      );
   assign lce_req_packet_lo = '{header: lce_req_header_lo, data: lce_lce_req_lo.data};
 
-  localparam lce_req_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_msg_header_s), cce_block_width_p);
+  localparam lce_req_wh_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_msg_header_s), cce_block_width_p);
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p(lce_req_payload_width_lp)
+   #(.max_payload_width_p(lce_req_wh_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -155,9 +155,9 @@ module bp_io_tile
      );
   assign lce_cmd_packet_lo = '{header: lce_cmd_header_lo, data: cce_lce_cmd_lo.data};
 
-  localparam lce_cmd_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_msg_header_s), cce_block_width_p);
+  localparam lce_cmd_wh_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_msg_header_s), cce_block_width_p);
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p(lce_cmd_payload_width_lp)
+   #(.max_payload_width_p(lce_cmd_wh_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)

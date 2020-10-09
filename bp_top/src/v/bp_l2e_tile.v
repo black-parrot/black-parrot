@@ -143,9 +143,9 @@ bp_cce_wrapper
    ,.mem_resp_yumi_o(cce_mem_resp_yumi_lo)
    );
 
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_msg_width_lp, lce_req_packet_s);
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_msg_width_lp, lce_cmd_packet_s);
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_resp_msg_width_lp, lce_resp_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_msg_width_lp, lce_req_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_msg_width_lp, lce_cmd_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_resp_msg_width_lp, lce_resp_packet_s);
 
 bp_coh_ready_and_link_s cce_lce_req_link_li, cce_lce_req_link_lo;
 bp_coh_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;

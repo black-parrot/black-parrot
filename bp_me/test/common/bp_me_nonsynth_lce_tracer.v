@@ -39,19 +39,19 @@ module bp_me_nonsynth_lce_tracer
     ,input [lce_id_width_p-1:0]                             lce_id_i
 
     // LCE-CCE Interface
-    ,input [bp_bedrock_lce_req_msg_width_lp-1:0]            lce_req_i
+    ,input [lce_req_msg_width_lp-1:0]                       lce_req_i
     ,input                                                  lce_req_v_i
     ,input                                                  lce_req_ready_i
 
-    ,input [bp_bedrock_lce_resp_msg_width_lp-1:0]           lce_resp_i
+    ,input [lce_resp_msg_width_lp-1:0]                      lce_resp_i
     ,input                                                  lce_resp_v_i
     ,input                                                  lce_resp_ready_i
 
-    ,input [bp_bedrock_lce_cmd_msg_width_lp-1:0]            lce_cmd_i
+    ,input [lce_cmd_msg_width_lp-1:0]                       lce_cmd_i
     ,input                                                  lce_cmd_v_i
     ,input                                                  lce_cmd_yumi_i
 
-    ,input [bp_bedrock_lce_cmd_msg_width_lp-1:0]            lce_cmd_o_i
+    ,input [lce_cmd_msg_width_lp-1:0]                       lce_cmd_o_i
     ,input                                                  lce_cmd_o_v_i
     ,input                                                  lce_cmd_o_ready_i
   );

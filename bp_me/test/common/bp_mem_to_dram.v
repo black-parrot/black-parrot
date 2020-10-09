@@ -28,13 +28,13 @@ module bp_mem_to_dram
    input                                           clk_i
   ,input                                           reset_i
 
-  ,input        [bp_bedrock_cce_mem_msg_width_lp-1:0] mem_cmd_i
-  ,input                                              mem_cmd_v_i
-  ,output                                             mem_cmd_ready_o
+  ,input        [cce_mem_msg_width_lp-1:0]         mem_cmd_i
+  ,input                                           mem_cmd_v_i
+  ,output                                          mem_cmd_ready_o
 
-  ,output       [bp_bedrock_cce_mem_msg_width_lp-1:0] mem_resp_o
-  ,output                                             mem_resp_v_o
-  ,input                                              mem_resp_yumi_i
+  ,output       [cce_mem_msg_width_lp-1:0]         mem_resp_o
+  ,output                                          mem_resp_v_o
+  ,input                                           mem_resp_yumi_i
 
   // DRAM Side
   ,input                                           dram_clk_i
@@ -56,7 +56,7 @@ module bp_mem_to_dram
   ,output                                          dram_data_ready_o
   );
 
-  localparam fifo_width_lp = bp_bedrock_cce_mem_msg_width_lp - cce_block_width_p;
+  localparam fifo_width_lp = cce_mem_msg_width_lp - cce_block_width_p;
   
   /********************* Packet definition *********************/
   

@@ -23,13 +23,13 @@ module bp_mem
 
    // BP side
    // ready->valid (ready then valid)
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_cmd_i
-   , input                                          mem_cmd_v_i
-   , output                                         mem_cmd_ready_o
+   , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
+   , input                               mem_cmd_v_i
+   , output                              mem_cmd_ready_o
 
-   , output [bp_bedrock_cce_mem_msg_width_lp-1:0]   mem_resp_o
-   , output                                         mem_resp_v_o
-   , input                                          mem_resp_yumi_i
+   , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
+   , output                              mem_resp_v_o
+   , input                               mem_resp_yumi_i
 
    , input                               dram_clk_i
    , input                               dram_reset_i

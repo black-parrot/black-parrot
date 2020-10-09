@@ -88,9 +88,9 @@ module bp_lce_req
 
     // LCE-CCE interface
     // Req: ready->valid
-    , output logic [bp_bedrock_lce_req_msg_width_lp-1:0]   lce_req_o
-    , output logic                                         lce_req_v_o
-    , input                                                lce_req_ready_i
+    , output logic [lce_req_msg_width_lp-1:0]        lce_req_o
+    , output logic                                   lce_req_v_o
+    , input                                          lce_req_ready_i
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);

@@ -75,11 +75,11 @@ module bp_uce
     , output logic                                   credits_full_o
     , output logic                                   credits_empty_o
 
-    , output [bp_bedrock_uce_mem_msg_width_lp-1:0]   mem_cmd_o
+    , output [uce_mem_msg_width_lp-1:0]              mem_cmd_o
     , output logic                                   mem_cmd_v_o
     , input                                          mem_cmd_ready_i
 
-    , input [bp_bedrock_uce_mem_msg_width_lp-1:0]    mem_resp_i
+    , input [uce_mem_msg_width_lp-1:0]               mem_resp_i
     , input                                          mem_resp_v_i
     , output logic                                   mem_resp_yumi_o
     );

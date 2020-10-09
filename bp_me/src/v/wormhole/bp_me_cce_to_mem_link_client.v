@@ -27,13 +27,13 @@ module bp_me_cce_to_mem_link_client
   (input                                         clk_i
   , input                                        reset_i
 
-  , output [bp_bedrock_cce_mem_msg_width_lp-1:0]  mem_cmd_o
-  , output                                        mem_cmd_v_o
-  , input                                         mem_cmd_yumi_i
+  , output [cce_mem_msg_width_lp-1:0]            mem_cmd_o
+  , output                                       mem_cmd_v_o
+  , input                                        mem_cmd_yumi_i
                                            
-  , input [bp_bedrock_cce_mem_msg_width_lp-1:0]   mem_resp_i
-  , input                                         mem_resp_v_i
-  , output                                        mem_resp_ready_o
+  , input [cce_mem_msg_width_lp-1:0]             mem_resp_i
+  , input                                        mem_resp_v_i
+  , output                                       mem_resp_ready_o
 
   // bsg_noc_wormhole interface
   , input [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i

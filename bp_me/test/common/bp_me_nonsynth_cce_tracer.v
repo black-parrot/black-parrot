@@ -38,32 +38,32 @@ module bp_me_nonsynth_cce_tracer
    // outbound: ready&valid (connects directly to ME network)
 
    // inbound: valid->yumi (to CCE)
-   , input [bp_bedrock_lce_req_msg_width_lp-1:0]       lce_req_i
-   , input                                             lce_req_v_i
-   , input                                             lce_req_yumi_i
+   , input [lce_req_msg_width_lp-1:0]           lce_req_i
+   , input                                      lce_req_v_i
+   , input                                      lce_req_yumi_i
 
-   , input [bp_bedrock_lce_resp_msg_width_lp-1:0]      lce_resp_i
-   , input                                             lce_resp_v_i
-   , input                                             lce_resp_yumi_i
+   , input [lce_resp_msg_width_lp-1:0]          lce_resp_i
+   , input                                      lce_resp_v_i
+   , input                                      lce_resp_yumi_i
 
    // outbound: ready&valid (from CCE)
-   , input [bp_bedrock_lce_cmd_msg_width_lp-1:0]       lce_cmd_i
-   , input                                             lce_cmd_v_i
-   , input                                             lce_cmd_ready_i
+   , input [lce_cmd_msg_width_lp-1:0]           lce_cmd_i
+   , input                                      lce_cmd_v_i
+   , input                                      lce_cmd_ready_i
 
    // CCE-MEM Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
    // outbound: ready&valid (connects to FIFO)
 
    // inbound: valid->yumi (to CCE)
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]       mem_resp_i
-   , input                                             mem_resp_v_i
-   , input                                             mem_resp_yumi_i
+   , input [cce_mem_msg_width_lp-1:0]           mem_resp_i
+   , input                                      mem_resp_v_i
+   , input                                      mem_resp_yumi_i
 
    // outbound: ready&valid (from CCE)
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]       mem_cmd_i
-   , input                                             mem_cmd_v_i
-   , input                                             mem_cmd_ready_i
+   , input [cce_mem_msg_width_lp-1:0]           mem_cmd_i
+   , input                                      mem_cmd_v_i
+   , input                                      mem_cmd_ready_i
 
    , input [cce_id_width_p-1:0]                 cce_id_i
   );

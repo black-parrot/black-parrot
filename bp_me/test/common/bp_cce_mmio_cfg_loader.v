@@ -38,12 +38,12 @@ module bp_cce_mmio_cfg_loader
    , input [lce_id_width_p-1:0]                      lce_id_i
 
    // Config channel
-   , output logic [bp_bedrock_cce_mem_msg_width_lp-1:0]  io_cmd_o
-   , output logic                                        io_cmd_v_o
-   , input                                               io_cmd_yumi_i
+   , output logic [cce_mem_msg_width_lp-1:0]         io_cmd_o
+   , output logic                                    io_cmd_v_o
+   , input                                           io_cmd_yumi_i
 
    // We don't need a response from the cfg network
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]     io_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                io_resp_i
    , input                                           io_resp_v_i
    , output                                          io_resp_ready_o
 

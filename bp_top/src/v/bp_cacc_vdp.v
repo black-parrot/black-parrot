@@ -21,27 +21,27 @@ module bp_cacc_vdp
 
     , input [lce_id_width_p-1:0]              lce_id_i
 
-    , output [bp_bedrock_lce_req_msg_width_lp-1:0]       lce_req_o
+    , output [lce_req_msg_width_lp-1:0]       lce_req_o
     , output                                  lce_req_v_o
     , input                                   lce_req_ready_i
 
-    , output [bp_bedrock_lce_resp_msg_width_lp-1:0]      lce_resp_o
+    , output [lce_resp_msg_width_lp-1:0]      lce_resp_o
     , output                                  lce_resp_v_o
     , input                                   lce_resp_ready_i
 
-    , input [bp_bedrock_lce_cmd_msg_width_lp-1:0]            lce_cmd_i
+    , input [lce_cmd_msg_width_lp-1:0]        lce_cmd_i
     , input                                   lce_cmd_v_i
     , output                                  lce_cmd_yumi_o
 
-    , output [bp_bedrock_lce_cmd_msg_width_lp-1:0]           lce_cmd_o
+    , output [lce_cmd_msg_width_lp-1:0]       lce_cmd_o
     , output                                  lce_cmd_v_o
     , input                                   lce_cmd_ready_i
 
-    , input  [bp_bedrock_cce_mem_msg_width_lp-1:0]       io_cmd_i
+    , input  [cce_mem_msg_width_lp-1:0]       io_cmd_i
     , input                                   io_cmd_v_i
     , output                                  io_cmd_ready_o
 
-    , output [bp_bedrock_cce_mem_msg_width_lp-1:0]       io_resp_o
+    , output [cce_mem_msg_width_lp-1:0]       io_resp_o
     , output logic                            io_resp_v_o
     , input                                   io_resp_yumi_i
     );

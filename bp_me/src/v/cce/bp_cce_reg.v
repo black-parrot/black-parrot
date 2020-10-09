@@ -41,9 +41,9 @@ module bp_cce_reg
    , input [`bp_cce_inst_gpr_width-1:0]                                    src_a_i
    , input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
 
-   , input [bp_bedrock_lce_req_msg_header_width_lp-1:0]                    lce_req_header_i
-   , input [bp_bedrock_lce_resp_msg_header_width_lp-1:0]                   lce_resp_header_i
-   , input [bp_bedrock_cce_mem_msg_header_width_lp-1:0]                    mem_resp_header_i
+   , input [lce_req_msg_header_width_lp-1:0]                               lce_req_header_i
+   , input [lce_resp_msg_header_width_lp-1:0]                              lce_resp_header_i
+   , input [cce_mem_msg_header_width_lp-1:0]                               mem_resp_header_i
 
    // For RDP, output state of pending bits from read operation
    , input                                                                 pending_i

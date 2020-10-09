@@ -31,13 +31,13 @@ module bp_me_cce_to_cache
     , input reset_i
 
     // manycore-side
-    , input  [bp_bedrock_cce_mem_msg_width_lp-1:0]   mem_cmd_i
-    , input                                          mem_cmd_v_i
-    , output logic                                   mem_cmd_ready_o
+    , input  [cce_mem_msg_width_lp-1:0]   mem_cmd_i
+    , input                               mem_cmd_v_i
+    , output logic                        mem_cmd_ready_o
                                           
-    , output [bp_bedrock_cce_mem_msg_width_lp-1:0]   mem_resp_o
-    , output logic                                   mem_resp_v_o
-    , input                                          mem_resp_yumi_i
+    , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
+    , output logic                        mem_resp_v_o
+    , input                               mem_resp_yumi_i
 
     // cache-side
     , output [bsg_cache_pkt_width_lp-1:0] cache_pkt_o
@@ -82,7 +82,7 @@ module bp_me_cce_to_cache
   bp_bedrock_cce_mem_msg_s mem_cmd_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
   bsg_fifo_1r1w_small
-   #(.width_p(bp_bedrock_cce_mem_msg_width_lp), .els_p(l2_outstanding_reqs_p))
+   #(.width_p(cce_mem_msg_width_lp), .els_p(l2_outstanding_reqs_p))
    cmd_fifo
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -268,7 +268,7 @@ module bp_me_cce_to_cache
   end
 
   bsg_dff_en
-   #(.width_p(bp_bedrock_cce_mem_msg_width_lp-cce_block_width_p))
+   #(.width_p(cce_mem_msg_width_lp-cce_block_width_p))
    resp_header_reg
     (.clk_i(clk_i)
      ,.en_i(mem_cmd_yumi_li)

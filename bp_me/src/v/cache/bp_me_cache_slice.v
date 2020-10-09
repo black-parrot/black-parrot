@@ -23,31 +23,31 @@ module bp_me_cache_slice
   (input                                       clk_i
    , input                                     reset_i
 
-   , input [bp_bedrock_xce_mem_msg_width_lp-1:0]          mem_cmd_i
-   , input                                                mem_cmd_v_i
-   , output                                               mem_cmd_ready_o
+   , input [xce_mem_msg_width_lp-1:0]          mem_cmd_i
+   , input                                     mem_cmd_v_i
+   , output                                    mem_cmd_ready_o
 
-   , output [bp_bedrock_xce_mem_msg_width_lp-1:0]         mem_resp_o
-   , output                                               mem_resp_v_o
-   , input                                                mem_resp_yumi_i
+   , output [xce_mem_msg_width_lp-1:0]         mem_resp_o
+   , output                                    mem_resp_v_o
+   , input                                     mem_resp_yumi_i
 
-   , output [bp_bedrock_dram_mem_msg_header_width_lp-1:0] mem_cmd_header_o
-   , output                                               mem_cmd_header_v_o
-   , input                                                mem_cmd_header_yumi_i
-
-   // Currently only support cache width == dword width
-   , output [dword_width_p-1:0]                           mem_cmd_data_o
-   , output                                               mem_cmd_data_v_o
-   , input                                                mem_cmd_data_yumi_i
-
-   , input [bp_bedrock_dram_mem_msg_header_width_lp-1:0]  mem_resp_header_i
-   , input                                                mem_resp_header_v_i
-   , output                                               mem_resp_header_ready_o
+   , output [dram_mem_msg_header_width_lp-1:0] mem_cmd_header_o
+   , output                                    mem_cmd_header_v_o
+   , input                                     mem_cmd_header_yumi_i
 
    // Currently only support cache width == dword width
-   , input [dword_width_p-1:0]                            mem_resp_data_i
-   , input                                                mem_resp_data_v_i
-   , output                                               mem_resp_data_ready_o
+   , output [dword_width_p-1:0]                mem_cmd_data_o
+   , output                                    mem_cmd_data_v_o
+   , input                                     mem_cmd_data_yumi_i
+
+   , input [dram_mem_msg_header_width_lp-1:0]  mem_resp_header_i
+   , input                                     mem_resp_header_v_i
+   , output                                    mem_resp_header_ready_o
+
+   // Currently only support cache width == dword width
+   , input [dword_width_p-1:0]                 mem_resp_data_i
+   , input                                     mem_resp_data_v_i
+   , output                                    mem_resp_data_ready_o
    );
 
   `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);

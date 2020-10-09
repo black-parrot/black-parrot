@@ -41,11 +41,11 @@ module bp_me_cache_dma_to_cce
   ,output logic [num_mem_p-1:0]                                   dma_data_v_o
   ,input        [num_mem_p-1:0]                                   dma_data_ready_i
 
-  ,output       [bp_bedrock_cce_mem_msg_width_lp-1:0]             mem_cmd_o
+  ,output       [cce_mem_msg_width_lp-1:0]                        mem_cmd_o
   ,output                                                         mem_cmd_v_o
   ,input                                                          mem_cmd_yumi_i
   
-  ,input        [bp_bedrock_cce_mem_msg_width_lp-1:0]             mem_resp_i
+  ,input        [cce_mem_msg_width_lp-1:0]                        mem_resp_i
   ,input                                                          mem_resp_v_i
   ,output                                                         mem_resp_ready_o
   );
@@ -286,7 +286,7 @@ module bp_me_cache_dma_to_cce
   bp_bedrock_cce_mem_msg_s mem_resp_li;
   
   bsg_two_fifo
- #(.width_p(bp_bedrock_cce_mem_msg_width_lp)
+ #(.width_p(cce_mem_msg_width_lp)
   ) two_fifo
   (.clk_i  (clk_i)
   ,.reset_i(reset_i)

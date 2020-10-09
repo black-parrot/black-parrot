@@ -20,41 +20,41 @@ module bp_unicore
    , input                                             reset_i
 
    // Outgoing I/O
-   , output [bp_bedrock_uce_mem_msg_width_lp-1:0]      io_cmd_o
+   , output [uce_mem_msg_width_lp-1:0]                 io_cmd_o
    , output                                            io_cmd_v_o
    , input                                             io_cmd_ready_i
 
-   , input [bp_bedrock_uce_mem_msg_width_lp-1:0]       io_resp_i
+   , input [uce_mem_msg_width_lp-1:0]                  io_resp_i
    , input                                             io_resp_v_i
    , output                                            io_resp_yumi_o
 
    // Incoming I/O
-   , input [bp_bedrock_uce_mem_msg_width_lp-1:0]       io_cmd_i
+   , input [uce_mem_msg_width_lp-1:0]                  io_cmd_i
    , input                                             io_cmd_v_i
    , output                                            io_cmd_yumi_o
 
-   , output [bp_bedrock_uce_mem_msg_width_lp-1:0]      io_resp_o
+   , output [uce_mem_msg_width_lp-1:0]                 io_resp_o
    , output                                            io_resp_v_o
    , input                                             io_resp_ready_i
 
    // Memory Requests
-   , output logic [bp_bedrock_cce_mem_msg_header_width_lp-1:0] mem_cmd_header_o
-   , output logic                                              mem_cmd_header_v_o
-   , input                                                     mem_cmd_header_ready_i
+   , output logic [cce_mem_msg_header_width_lp-1:0]    mem_cmd_header_o
+   , output logic                                      mem_cmd_header_v_o
+   , input                                             mem_cmd_header_ready_i
 
    // Only supports dword width cache
-   , output logic [dword_width_p-1:0]                   mem_cmd_data_o
-   , output logic                                       mem_cmd_data_v_o
-   , input                                              mem_cmd_data_ready_i
+   , output logic [dword_width_p-1:0]                  mem_cmd_data_o
+   , output logic                                      mem_cmd_data_v_o
+   , input                                             mem_cmd_data_ready_i
 
-   , input [bp_bedrock_cce_mem_msg_header_width_lp-1:0] mem_resp_header_i
-   , input                                              mem_resp_header_v_i
-   , output                                             mem_resp_header_yumi_o
+   , input [cce_mem_msg_header_width_lp-1:0]           mem_resp_header_i
+   , input                                             mem_resp_header_v_i
+   , output                                            mem_resp_header_yumi_o
 
    // Only supports dword width cache
-   , input [dword_width_p-1:0]                          mem_resp_data_i
-   , input                                              mem_resp_data_v_i
-   , output logic                                       mem_resp_data_yumi_o
+   , input [dword_width_p-1:0]                         mem_resp_data_i
+   , input                                             mem_resp_data_v_i
+   , output logic                                      mem_resp_data_yumi_o
    );
 
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -369,11 +369,11 @@ module bp_unicore
      );
 
   // Assign incoming I/O as basically another UCE interface
-  assign proc_cmd_lo[2] = io_cmd_i[0+:bp_bedrock_uce_mem_msg_width_lp];
+  assign proc_cmd_lo[2] = io_cmd_i[0+:uce_mem_msg_width_lp];
   assign proc_cmd_v_lo[2] = io_cmd_v_i;
   assign io_cmd_yumi_o = proc_cmd_ready_li[2] & proc_cmd_v_lo[2];
 
-  assign io_resp_o = bp_bedrock_uce_mem_msg_width_lp'(proc_resp_li[2]); 
+  assign io_resp_o = uce_mem_msg_width_lp'(proc_resp_li[2]); 
   assign io_resp_v_o = proc_resp_v_li[2];
   assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
 

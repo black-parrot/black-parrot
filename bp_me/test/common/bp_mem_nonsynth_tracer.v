@@ -18,13 +18,13 @@ module bp_mem_nonsynth_tracer
    , input                               reset_i
 
    // BP side
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_cmd_i
-   , input                                          mem_cmd_v_i
-   , input                                          mem_cmd_ready_i
+   , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
+   , input                               mem_cmd_v_i
+   , input                               mem_cmd_ready_i
 
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_resp_i
-   , input                                          mem_resp_v_i
-   , input                                          mem_resp_yumi_i
+   , input [cce_mem_msg_width_lp-1:0]    mem_resp_i
+   , input                               mem_resp_v_i
+   , input                               mem_resp_yumi_i
    );
 
 `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);

@@ -29,22 +29,22 @@ module bp_core
     , input [cfg_bus_width_lp-1:0]                 cfg_bus_i
 
     // LCE-CCE interface
-    , output [1:0][bp_bedrock_lce_req_msg_width_lp-1:0]  lce_req_o
-    , output [1:0]                                       lce_req_v_o
-    , input [1:0]                                        lce_req_ready_i
+    , output [1:0][lce_req_msg_width_lp-1:0]       lce_req_o
+    , output [1:0]                                 lce_req_v_o
+    , input [1:0]                                  lce_req_ready_i
 
-    , output [1:0][bp_bedrock_lce_resp_msg_width_lp-1:0] lce_resp_o
-    , output [1:0]                                       lce_resp_v_o
-    , input [1:0]                                        lce_resp_ready_i
+    , output [1:0][lce_resp_msg_width_lp-1:0]      lce_resp_o
+    , output [1:0]                                 lce_resp_v_o
+    , input [1:0]                                  lce_resp_ready_i
 
     // CCE-LCE interface
-    , input [1:0][bp_bedrock_lce_cmd_msg_width_lp-1:0]   lce_cmd_i
-    , input [1:0]                                        lce_cmd_v_i
-    , output [1:0]                                       lce_cmd_yumi_o
+    , input [1:0][lce_cmd_msg_width_lp-1:0]        lce_cmd_i
+    , input [1:0]                                  lce_cmd_v_i
+    , output [1:0]                                 lce_cmd_yumi_o
 
-    , output [1:0][bp_bedrock_lce_cmd_msg_width_lp-1:0]  lce_cmd_o
-    , output [1:0]                                       lce_cmd_v_o
-    , input [1:0]                                        lce_cmd_ready_i
+    , output [1:0][lce_cmd_msg_width_lp-1:0]       lce_cmd_o
+    , output [1:0]                                 lce_cmd_v_o
+    , input [1:0]                                  lce_cmd_ready_i
 
     , input                                        timer_irq_i
     , input                                        software_irq_i

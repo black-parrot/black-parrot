@@ -101,21 +101,21 @@ module bp_lce_cmd
 
     // LCE-CCE interface
     // Resp: ready->valid
-    , output logic [bp_bedrock_lce_resp_msg_width_lp-1:0]  lce_resp_o
-    , output logic                                         lce_resp_v_o
-    , input                                                lce_resp_ready_i
+    , output logic [lce_resp_msg_width_lp-1:0]       lce_resp_o
+    , output logic                                   lce_resp_v_o
+    , input                                          lce_resp_ready_i
 
     // CCE-LCE interface
     // Cmd_i: valid->yumi
-    , input [bp_bedrock_lce_cmd_msg_width_lp-1:0]          lce_cmd_i
-    , input                                                lce_cmd_v_i
-    , output logic                                         lce_cmd_yumi_o
+    , input [lce_cmd_msg_width_lp-1:0]               lce_cmd_i
+    , input                                          lce_cmd_v_i
+    , output logic                                   lce_cmd_yumi_o
 
     // LCE-LCE interface
     // Cmd_o: ready->valid
-    , output logic [bp_bedrock_lce_cmd_msg_width_lp-1:0]   lce_cmd_o
-    , output logic                                         lce_cmd_v_o
-    , input                                                lce_cmd_ready_i
+    , output logic [lce_cmd_msg_width_lp-1:0]        lce_cmd_o
+    , output logic                                   lce_cmd_v_o
+    , input                                          lce_cmd_ready_i
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);

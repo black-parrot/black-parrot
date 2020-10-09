@@ -18,19 +18,19 @@ module bp_sacc_vdp
 
     , input [lce_id_width_p-1:0]              lce_id_i
     
-    , input  [bp_bedrock_cce_mem_msg_width_lp-1:0]       io_cmd_i
+    , input  [cce_mem_msg_width_lp-1:0]       io_cmd_i
     , input                                   io_cmd_v_i
     , output                                  io_cmd_ready_o
 
-    , output [bp_bedrock_cce_mem_msg_width_lp-1:0]       io_resp_o
+    , output [cce_mem_msg_width_lp-1:0]       io_resp_o
     , output logic                            io_resp_v_o
     , input                                   io_resp_yumi_i
 
-    , output [bp_bedrock_cce_mem_msg_width_lp-1:0]       io_cmd_o
+    , output [cce_mem_msg_width_lp-1:0]       io_cmd_o
     , output logic                            io_cmd_v_o
     , input                                   io_cmd_yumi_i
 
-    , input [bp_bedrock_cce_mem_msg_width_lp-1:0]        io_resp_i
+    , input [cce_mem_msg_width_lp-1:0]        io_resp_i
     , input                                   io_resp_v_i
     , output                                  io_resp_ready_o
     );

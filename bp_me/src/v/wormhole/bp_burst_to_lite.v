@@ -21,20 +21,20 @@ module bp_burst_to_lite
 
    // Master BP Burst
    // ready-valid-and
-   , input [bp_bedrock_in_mem_msg_header_width_lp-1:0]  mem_header_i
-   , input                                              mem_header_v_i
-   , output logic                                       mem_header_ready_o
+   , input [in_mem_msg_header_width_lp-1:0]  mem_header_i
+   , input                                   mem_header_v_i
+   , output logic                            mem_header_ready_o
 
    // ready-valid-and
-   , input [in_data_width_p-1:0]                        mem_data_i
-   , input                                              mem_data_v_i
-   , output logic                                       mem_data_ready_o
+   , input [in_data_width_p-1:0]             mem_data_i
+   , input                                   mem_data_v_i
+   , output logic                            mem_data_ready_o
 
    // Client BP Lite
    // ready-valid-and
-   , output logic [bp_bedrock_out_mem_msg_width_lp-1:0] mem_o
-   , output logic                                       mem_v_o
-   , input                                              mem_ready_i
+   , output logic [out_mem_msg_width_lp-1:0] mem_o
+   , output logic                            mem_v_o
+   , input                                   mem_ready_i
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in);

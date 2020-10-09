@@ -59,9 +59,9 @@ module bp_cce_src_sel
    , input                                                          mem_resp_v_i
    , input                                                          lce_resp_v_i
    , input                                                          lce_req_v_i
-   , input [bp_bedrock_lce_req_msg_width_lp-1:0]                    lce_req_i
-   , input [bp_bedrock_lce_resp_msg_width_lp-1:0]                   lce_resp_i
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]                    mem_resp_i
+   , input [lce_req_msg_width_lp-1:0]                               lce_req_i
+   , input [lce_resp_msg_width_lp-1:0]                              lce_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                               mem_resp_i
 
    // Source A and B outputs
    , output logic [`bp_cce_inst_gpr_width-1:0]   src_a_o

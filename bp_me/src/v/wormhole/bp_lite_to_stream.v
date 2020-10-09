@@ -21,17 +21,17 @@ module bp_lite_to_stream
 
    // Master BP Lite
    // ready-valid-and
-   , input [bp_bedrock_in_mem_msg_width_lp-1:0]     mem_i
+   , input [in_mem_msg_width_lp-1:0]                mem_i
    , input                                          mem_v_i
    , output logic                                   mem_ready_o
 
    // Client BP Stream
    // ready-valid-and
-   , output logic [bp_bedrock_out_mem_msg_header_width_lp-1:0] mem_header_o
-   , output logic [out_data_width_p-1:0]                       mem_data_o
-   , output logic                                              mem_v_o
-   , input                                                     mem_ready_i
-   , output logic                                              mem_lock_o
+   , output logic [out_mem_msg_header_width_lp-1:0] mem_header_o
+   , output logic [out_data_width_p-1:0]            mem_data_o
+   , output logic                                   mem_v_o
+   , input                                          mem_ready_i
+   , output logic                                   mem_lock_o
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in);

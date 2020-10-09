@@ -18,13 +18,13 @@ module bp_cfg
   (input                                clk_i
    , input                              reset_i
 
-   , input [bp_bedrock_xce_mem_msg_width_lp-1:0]   mem_cmd_i
-   , input                                         mem_cmd_v_i
-   , output                                        mem_cmd_ready_o
+   , input [xce_mem_msg_width_lp-1:0]   mem_cmd_i
+   , input                              mem_cmd_v_i
+   , output                             mem_cmd_ready_o
 
-   , output [bp_bedrock_xce_mem_msg_width_lp-1:0]  mem_resp_o
-   , output                                        mem_resp_v_o
-   , input                                         mem_resp_yumi_i
+   , output [xce_mem_msg_width_lp-1:0]  mem_resp_o
+   , output                             mem_resp_v_o
+   , input                              mem_resp_yumi_i
 
    , output [cfg_bus_width_lp-1:0]      cfg_bus_o
    , input [io_noc_did_width_p-1:0]     did_i

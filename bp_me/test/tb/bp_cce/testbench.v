@@ -214,7 +214,7 @@ bind bp_cce_wrapper
       );
 
 bsg_two_fifo
-#(.width_p(bp_bedrock_lce_req_msg_width_lp)
+#(.width_p(lce_req_msg_width_lp)
   )
 lce_req_buffer
  (.clk_i(clk_i)
@@ -230,7 +230,7 @@ lce_req_buffer
   );
 
 bsg_two_fifo
-#(.width_p(bp_bedrock_lce_resp_msg_width_lp)
+#(.width_p(lce_resp_msg_width_lp)
   )
 lce_resp_buffer
  (.clk_i(clk_i)
@@ -246,7 +246,7 @@ lce_resp_buffer
   );
 
 bsg_two_fifo
-#(.width_p(bp_bedrock_lce_cmd_msg_width_lp)
+#(.width_p(lce_cmd_msg_width_lp)
   )
 lce_cmd_buffer
  (.clk_i(clk_i)
@@ -318,7 +318,7 @@ wrapper
 bp_bedrock_cce_mem_msg_s mem_cmd_lo;
 logic                    mem_cmd_v_lo, mem_cmd_ready_lo;
 bsg_fifo_1r1w_small
-#(.width_p(bp_bedrock_cce_mem_msg_width_lp)
+#(.width_p(cce_mem_msg_width_lp)
   ,.els_p(mem_buffer_els_lp)
   )
 mem_cmd_buffer
@@ -338,7 +338,7 @@ mem_cmd_buffer
 bp_bedrock_cce_mem_msg_s mem_resp_lo;
 logic                    mem_resp_v_lo, mem_resp_ready_lo;
 bsg_fifo_1r1w_small
-#(.width_p(bp_bedrock_cce_mem_msg_width_lp)
+#(.width_p(cce_mem_msg_width_lp)
   ,.els_p(mem_buffer_els_lp)
   )
 mem_resp_buffer

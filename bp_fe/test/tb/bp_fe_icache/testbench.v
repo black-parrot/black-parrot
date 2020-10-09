@@ -51,7 +51,7 @@ module testbench
 
   logic mem_cmd_v_lo, mem_resp_v_lo;
   logic mem_cmd_ready_lo, mem_resp_yumi_li;
-  logic [bp_bedrock_cce_mem_msg_width_lp-1:0] mem_cmd_lo, mem_resp_lo;
+  bp_bedrock_cce_mem_msg_s mem_cmd_lo, mem_resp_lo;
 
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
   logic trace_v_lo;

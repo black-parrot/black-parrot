@@ -36,24 +36,24 @@ module wrapper
    , output [cce_instr_width_p-1:0]                        ucode_data_o
 
    // LCE-CCE Interface
-   , input [bp_bedrock_lce_req_msg_width_lp-1:0]           lce_req_i
+   , input [lce_req_msg_width_lp-1:0]                      lce_req_i
    , input                                                 lce_req_v_i
    , output logic                                          lce_req_yumi_o
 
-   , input [bp_bedrock_lce_resp_msg_width_lp-1:0]          lce_resp_i
+   , input [lce_resp_msg_width_lp-1:0]                     lce_resp_i
    , input                                                 lce_resp_v_i
    , output logic                                          lce_resp_yumi_o
 
-   , output logic [bp_bedrock_lce_cmd_msg_width_lp-1:0]    lce_cmd_o
+   , output logic [lce_cmd_msg_width_lp-1:0]               lce_cmd_o
    , output logic                                          lce_cmd_v_o
    , input                                                 lce_cmd_ready_i
 
    // CCE-MEM Interface
-   , input [bp_bedrock_cce_mem_msg_width_lp-1:0]           mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                      mem_resp_i
    , input                                                 mem_resp_v_i
    , output logic                                          mem_resp_yumi_o
 
-   , output logic [bp_bedrock_cce_mem_msg_width_lp-1:0]    mem_cmd_o
+   , output logic [cce_mem_msg_width_lp-1:0]               mem_cmd_o
    , output logic                                          mem_cmd_v_o
    , input                                                 mem_cmd_ready_i
   );

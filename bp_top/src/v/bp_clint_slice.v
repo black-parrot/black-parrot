@@ -18,11 +18,11 @@ module bp_clint_slice
   (input                                                clk_i
    , input                                              reset_i
 
-   , input [bp_bedrock_xce_mem_msg_width_lp-1:0]        mem_cmd_i
+   , input [xce_mem_msg_width_lp-1:0]                   mem_cmd_i
    , input                                              mem_cmd_v_i
    , output                                             mem_cmd_ready_o
 
-   , output [bp_bedrock_xce_mem_msg_width_lp-1:0]       mem_resp_o
+   , output [xce_mem_msg_width_lp-1:0]                  mem_resp_o
    , output                                             mem_resp_v_o
    , input                                              mem_resp_yumi_i
 

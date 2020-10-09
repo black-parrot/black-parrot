@@ -18,10 +18,10 @@ module bp_me_wormhole_packet_encode_lce_req
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
 
-    , localparam lce_cce_req_wormhole_header_lp = `bp_coh_wormhole_header_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_msg_header_width_lp)
+    , localparam lce_cce_req_wormhole_header_lp = `bp_coh_wormhole_header_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_msg_header_width_lp)
     )
-   (input [bp_bedrock_lce_req_msg_header_width_lp-1:0] lce_req_header_i
-    , output [lce_cce_req_wormhole_header_lp-1:0]      wh_header_o
+   (input [lce_req_msg_header_width_lp-1:0]       lce_req_header_i
+    , output [lce_cce_req_wormhole_header_lp-1:0] wh_header_o
     );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);

@@ -46,13 +46,13 @@ module wrapper
   , output [instr_width_p-1:0]        data_o
   , output                            data_v_o
 
-  , input [bp_bedrock_cce_mem_msg_width_lp-1:0]        mem_resp_i
-  , input                                              mem_resp_v_i
-  , output                                             mem_resp_yumi_o
+  , input [cce_mem_msg_width_lp-1:0]        mem_resp_i
+  , input                                   mem_resp_v_i
+  , output                                  mem_resp_yumi_o
 
-  , output logic [bp_bedrock_cce_mem_msg_width_lp-1:0] mem_cmd_o
-  , output                                             mem_cmd_v_o
-  , input                                              mem_cmd_ready_i
+  , output logic [cce_mem_msg_width_lp-1:0] mem_cmd_o
+  , output                                  mem_cmd_v_o
+  , input                                   mem_cmd_ready_i
   );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -225,9 +225,9 @@ module wrapper
   if (uce_p == 0) begin : CCE
     logic lce_req_v_lo, lce_resp_v_lo, lce_cmd_v_lo, fifo_lce_cmd_v_lo;
     logic lce_req_ready_li, lce_resp_ready_li, lce_cmd_ready_li, fifo_lce_cmd_yumi_li;
-    logic [bp_bedrock_lce_req_msg_width_lp-1:0] lce_req_lo;
-    logic [bp_bedrock_lce_resp_msg_width_lp-1:0] lce_resp_lo;
-    logic [bp_bedrock_lce_cmd_msg_width_lp-1:0] lce_cmd_lo, fifo_lce_cmd_lo;
+    bp_bedrock_lce_req_msg_s lce_req_lo;
+    bp_bedrock_lce_resp_msg_s lce_resp_lo;
+    bp_bedrock_lce_cmd_msg_s lce_cmd_lo, fifo_lce_cmd_lo;
     logic mem_resp_ready_lo;
 
     // I-Cache LCE
@@ -294,7 +294,7 @@ module wrapper
 
     // lce cmd demanding -> demanding handshake conversion
     bsg_two_fifo
-      #(.width_p(bp_bedrock_lce_cmd_msg_width_lp))
+      #(.width_p(lce_cmd_msg_width_lp))
       cmd_fifo
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -345,7 +345,7 @@ module wrapper
   else begin: UCE
     logic mem_resp_ready_lo;
     logic fifo_mem_resp_v_lo, fifo_mem_resp_yumi_li;
-    logic [bp_bedrock_cce_mem_msg_width_lp-1:0] fifo_mem_resp_lo;
+    bp_bedrock_cce_mem_msg_s fifo_mem_resp_lo;
 
     bp_uce
       #(.bp_params_p(bp_params_p)
@@ -397,7 +397,7 @@ module wrapper
       );
 
     bsg_fifo_1r1w_small
-      #(.width_p(bp_bedrock_cce_mem_msg_width_lp)
+      #(.width_p(cce_mem_msg_width_lp)
        ,.els_p(1)
        )
       mem_resp_fifo

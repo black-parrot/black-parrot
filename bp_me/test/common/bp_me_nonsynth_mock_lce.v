@@ -64,22 +64,22 @@ module bp_me_nonsynth_mock_lce
 
     // LCE-CCE Interface
     // ready->valid
-    ,output logic [bp_bedrock_lce_req_msg_width_lp-1:0]     lce_req_o
+    ,output logic [lce_req_msg_width_lp-1:0]                lce_req_o
     ,output logic                                           lce_req_v_o
     ,input                                                  lce_req_ready_i
 
     // ready->valid
-    ,output logic [bp_bedrock_lce_resp_msg_width_lp-1:0]    lce_resp_o
+    ,output logic [lce_resp_msg_width_lp-1:0]               lce_resp_o
     ,output logic                                           lce_resp_v_o
     ,input                                                  lce_resp_ready_i
 
     // valid->yumi
-    ,input [bp_bedrock_lce_cmd_msg_width_lp-1:0]            lce_cmd_i
+    ,input [lce_cmd_msg_width_lp-1:0]                       lce_cmd_i
     ,input                                                  lce_cmd_v_i
     ,output logic                                           lce_cmd_yumi_o
 
     // ready->valid
-    ,output logic [bp_bedrock_lce_cmd_msg_width_lp-1:0]     lce_cmd_o
+    ,output logic [lce_cmd_msg_width_lp-1:0]                lce_cmd_o
     ,output logic                                           lce_cmd_v_o
     ,input                                                  lce_cmd_ready_i
   );

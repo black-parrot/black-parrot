@@ -100,12 +100,12 @@ module bp_cacc_tile
 
 ////////////////////////////////////////////////////////////////////
   `declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_msg_header_s, cce_block_width_p);
-  localparam lce_req_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_msg_header_s), cce_block_width_p);
+  localparam lce_req_wh_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_msg_header_s), cce_block_width_p);
   bp_lce_req_wormhole_packet_s lce_req_packet_lo, lce_req_packet_li;
   bp_lce_req_wormhole_header_s lce_req_header_lo, lce_req_header_li;
 
   `declare_bp_lce_cmd_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_msg_header_s, cce_block_width_p);
-  localparam lce_cmd_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_msg_header_s), cce_block_width_p);
+  localparam lce_cmd_wh_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_msg_header_s), cce_block_width_p);
   bp_lce_cmd_wormhole_packet_s lce_cmd_packet_lo, lce_cmd_packet_li, cce_lce_cmd_packet_lo;
   bp_lce_cmd_wormhole_header_s lce_cmd_header_lo, lce_cmd_header_li, cce_lce_cmd_header_lo;
 
@@ -113,7 +113,7 @@ module bp_cacc_tile
   bp_coh_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;  
   
   `declare_bp_lce_resp_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_resp_msg_header_s, cce_block_width_p);
-  localparam lce_resp_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_resp_msg_header_s), cce_block_width_p);
+  localparam lce_resp_wh_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_resp_msg_header_s), cce_block_width_p);
   bp_lce_resp_wormhole_packet_s lce_resp_packet_lo;
   bp_lce_resp_wormhole_header_s lce_resp_header_lo;
 
@@ -127,7 +127,7 @@ module bp_cacc_tile
   assign lce_req_packet_lo = '{header: lce_req_header_lo, data: lce_req_lo.data};
 
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p(lce_req_payload_width_lp)
+   #(.max_payload_width_p(lce_req_wh_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -158,7 +158,7 @@ module bp_cacc_tile
   assign lce_resp_packet_lo = '{header: lce_resp_header_lo, data: lce_resp_lo.data};
 
   bsg_wormhole_router_adapter_in
-    #(.max_payload_width_p(lce_resp_payload_width_lp)
+    #(.max_payload_width_p(lce_resp_wh_payload_width_lp)
       ,.len_width_p(coh_noc_len_width_p)
       ,.cord_width_p(coh_noc_cord_width_p)
       ,.flit_width_p(coh_noc_flit_width_p)
@@ -184,7 +184,7 @@ module bp_cacc_tile
   assign lce_cmd_packet_lo = '{header: lce_cmd_header_lo, data: lce_cmd_lo.data};
 
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p(lce_cmd_payload_width_lp)
+   #(.max_payload_width_p(lce_cmd_wh_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)
@@ -215,7 +215,7 @@ module bp_cacc_tile
   assign cce_lce_cmd_packet_lo = '{header: cce_lce_cmd_header_lo, data: cce_lce_cmd_lo.data};
 
   bsg_wormhole_router_adapter_in
-   #(.max_payload_width_p(lce_cmd_payload_width_lp)
+   #(.max_payload_width_p(lce_cmd_wh_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.flit_width_p(coh_noc_flit_width_p)

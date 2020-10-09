@@ -42,12 +42,12 @@ initial
     $display("bp_fe_cmd_s            bits: struct %d width %d", $bits(bp_fe_cmd_s), fe_cmd_width_lp);
 
     $display("########### LCE-CCE IF ##############");
-    $display("bp_bedrock_lce_req_msg_s       bits: struct %d width %d", $bits(bp_bedrock_lce_req_msg_s), bp_bedrock_lce_req_msg_width_lp);
-    $display("bp_bedrock_lce_cmd_msg_s       bits: struct %d width %d", $bits(bp_bedrock_lce_cmd_msg_s), bp_bedrock_lce_cmd_msg_width_lp);
-    $display("bp_bedrock_lce_resp_msg_s      bits: struct %d width %d", $bits(bp_bedrock_lce_resp_msg_s), bp_bedrock_lce_resp_msg_width_lp);
+    $display("bp_bedrock_lce_req_msg_s       bits: struct %d width %d", $bits(bp_bedrock_lce_req_msg_s), lce_req_msg_width_lp);
+    $display("bp_bedrock_lce_cmd_msg_s       bits: struct %d width %d", $bits(bp_bedrock_lce_cmd_msg_s), lce_cmd_msg_width_lp);
+    $display("bp_bedrock_lce_resp_msg_s      bits: struct %d width %d", $bits(bp_bedrock_lce_resp_msg_s), lce_resp_msg_width_lp);
 
     $display("########### CCE-MEM IF ##############");
-    $display("bp_bedrock_cce_mem_msg_s       bits: struct %d width %d", $bits(bp_bedrock_cce_mem_msg_s), bp_bedrock_cce_mem_msg_width_lp);
+    $display("bp_bedrock_cce_mem_msg_s       bits: struct %d width %d", $bits(bp_bedrock_cce_mem_msg_s), cce_mem_msg_width_lp);
 
     if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
       $fatal("Error: unsupported number of CCE's");
