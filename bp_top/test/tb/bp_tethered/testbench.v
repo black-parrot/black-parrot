@@ -42,6 +42,8 @@ module testbench
 
    // DRAM parameters
    , parameter preload_mem_p               = 0
+   , parameter use_ddr_p                   = 0
+   , parameter use_dramsim3_p              = 0
    , parameter dram_fixed_latency_p        = 0
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
    , parameter mem_cap_in_bytes_p = 2**27
@@ -124,6 +126,8 @@ module testbench
      ,.mem_load_p(preload_mem_p)
      ,.mem_file_p(mem_file_p)
      ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+     ,.use_ddr_p(use_ddr_p)
+     ,.use_dramsim3_p(use_dramsim3_p)
      ,.dram_fixed_latency_p(dram_fixed_latency_p)
      )
    mem
