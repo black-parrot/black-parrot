@@ -77,6 +77,9 @@ module bp_cce_fsm_top
    , input                                                 mem_cmd_yumi_i
   );
 
+  `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+
   bp_bedrock_lce_req_msg_s    lce_req_to_cce;
   logic                       lce_req_v_to_cce;
   logic                       lce_req_yumi_from_cce;
