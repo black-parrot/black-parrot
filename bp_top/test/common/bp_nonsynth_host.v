@@ -24,8 +24,6 @@ module bp_nonsynth_host
    , output logic [cce_mem_msg_width_lp-1:0]       io_resp_o
    , output logic                                  io_resp_v_o
    , input                                         io_resp_yumi_i
-
-   , output [num_core_p-1:0]                       program_finish_o
    );
 
 import "DPI-C" context function void start();
@@ -143,8 +141,6 @@ bsg_dff_reset
    ,.data_i(&finish_r)
    ,.data_o(all_finished_r)
    );
-
-assign program_finish_o = finish_r;
 
 always_ff @(negedge clk_i)
   begin

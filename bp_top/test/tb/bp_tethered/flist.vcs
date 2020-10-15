@@ -9,10 +9,6 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_unmanaged.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.v
-# be files
-$BP_BE_DIR/test/common/bp_be_nonsynth_perf.v
-$BP_BE_DIR/test/common/bp_be_nonsynth_npc_tracer.v
-$BP_BE_DIR/test/common/bp_be_nonsynth_vm_tracer.v
 # me files
 $BP_ME_DIR/test/common/bp_mem.v
 $BP_ME_DIR/test/common/bp_mem_to_dram.v
@@ -22,6 +18,7 @@ $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.v
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.v
 # top files
 $BP_TOP_DIR/test/common/bp_nonsynth_watchdog.v
+$BP_TOP_DIR/test/common/bp_nonsynth_vm_tracer.v
 $BP_TOP_DIR/test/common/bp_nonsynth_cosim.v
 $BP_TOP_DIR/test/common/bp_nonsynth_host.v
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.v
@@ -33,3 +30,4 @@ $BP_TOP_DIR/test/common/dromajo_cosim.cpp
 $BP_TOP_DIR/test/common/bp_nonsynth_core_profiler.v
 $BP_TOP_DIR/test/common/bp_nonsynth_pc_profiler.v
 $BP_TOP_DIR/test/common/bp_nonsynth_branch_profiler.v
+$BP_TOP_DIR/test/common/bp_nonsynth_perf.v

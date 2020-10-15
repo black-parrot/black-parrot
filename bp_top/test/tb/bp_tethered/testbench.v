@@ -63,9 +63,6 @@ endfunction
 
 `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
-logic [num_core_p-1:0] program_finish_lo;
-logic [num_core_p-1:0] cosim_finish_lo;
-
 bp_cce_mem_msg_s proc_mem_cmd_lo;
 logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;
 bp_cce_mem_msg_s proc_mem_resp_li;
@@ -171,97 +168,63 @@ bp_nonsynth_host
    ,.io_resp_o(proc_io_resp_li)
    ,.io_resp_v_o(proc_io_resp_v_li)
    ,.io_resp_yumi_i(proc_io_resp_yumi_lo)
-
-   ,.program_finish_o(program_finish_lo)
    );
 
-bind bp_be_top
-  bp_nonsynth_commit_tracer
-   #(.bp_params_p(bp_params_p))
-   commit_tracer
-    (.clk_i(clk_i & (testbench.cmt_trace_p == 1))
-     ,.reset_i(reset_i)
-     ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
+  bind bp_be_top
+    bp_nonsynth_cosim
+     #(.bp_params_p(bp_params_p))
+     cosim
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+       ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
+  
+       // We want to pass these values as parameters, but cannot in Verilator 4.025
+       // Parameter-resolved constants must not use dotted references
+       ,.cosim_en_i(testbench.cosim_p == 1)
+       ,.trace_en_i(testbench.cmt_trace_p == 1)
+       ,.checkpoint_i(testbench.checkpoint_p == 1)
+       ,.num_core_i(testbench.num_core_p)
+       ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
+       ,.config_file_i(testbench.cosim_cfg_file_p)
+       ,.instr_cap_i(testbench.cosim_instr_p)
+       ,.memsize_i(testbench.cosim_memsize_p)
+  
+       ,.decode_i(calculator.reservation_n.decode)
+  
+       ,.commit_v_i(calculator.commit_pkt.instret)
+       ,.commit_pc_i(calculator.commit_pkt.pc)
+       ,.commit_instr_i(calculator.commit_pkt.instr)
+  
+       ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
+       ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
+       ,.ird_data_i(scheduler.iwb_pkt.rd_data)
+  
+       ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
+       ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
+       ,.frd_data_i(scheduler.fwb_pkt.rd_data)
+  
+       ,.trap_v_i(calculator.pipe_sys.csr.commit_pkt_cast_o.exception | calculator.pipe_sys.csr.commit_pkt_cast_o._interrupt)
+       ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
+                 ? calculator.pipe_sys.csr.scause_li
+                 : calculator.pipe_sys.csr.mcause_li
+                 )
+       ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
+       );
 
-     ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
-
-     ,.decode_i(calculator.reservation_n.decode)
-
-     ,.commit_v_i(calculator.commit_pkt.instret)
-     ,.commit_pc_i(calculator.commit_pkt.pc)
-     ,.commit_instr_i(calculator.commit_pkt.instr)
-
-     ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
-     ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
-     ,.ird_data_i(scheduler.iwb_pkt.rd_data)
-
-     ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
-     ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
-     ,.frd_data_i(scheduler.fwb_pkt.rd_data)
-     );
-
-bind bp_be_top
-  bp_nonsynth_cosim
-   #(.bp_params_p(bp_params_p))
-   cosim
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
-
-     // We want to pass these values as parameters, but cannot in Verilator 4.025
-     // Parameter-resolved constants must not use dotted references
-     ,.en_i(testbench.cosim_p == 1)
-     ,.checkpoint_i(testbench.checkpoint_p == 1)
-     ,.num_core_i(testbench.num_core_p)
-     ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
-     ,.config_file_i(testbench.cosim_cfg_file_p)
-     ,.instr_cap_i(testbench.cosim_instr_p)
-     ,.memsize_i(testbench.cosim_memsize_p)
-
-     ,.decode_i(calculator.reservation_n.decode)
-
-     ,.commit_v_i(calculator.commit_pkt.instret)
-     ,.commit_pc_i(calculator.commit_pkt.pc)
-     ,.commit_instr_i(calculator.commit_pkt.instr)
-
-     ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
-     ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
-     ,.ird_data_i(scheduler.iwb_pkt.rd_data)
-
-     ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
-     ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
-     ,.frd_data_i(scheduler.fwb_pkt.rd_data)
-
-     ,.trap_v_i(calculator.pipe_sys.csr.commit_pkt_cast_o.exception | calculator.pipe_sys.csr.commit_pkt_cast_o._interrupt)
-     ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
-               ? calculator.pipe_sys.csr.scause_li
-               : calculator.pipe_sys.csr.mcause_li
-               )
-     ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
-     );
-
-always_ff @(posedge clk_i) begin
-  for (integer i = 0; i < num_core_p; i++) begin
-    cosim_finish_lo[i] <= get_finish(i);
-  end
-end
-
-bind bp_be_top
-  bp_be_nonsynth_perf
-   #(.bp_params_p(bp_params_p))
-   perf
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
-     ,.warmup_instr_i(testbench.warmup_instr_p)
-
-     ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
-
-     ,.commit_v_i(calculator.commit_pkt.instret)
-     ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
-
-     ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
-     );
+  bind bp_be_top
+    bp_nonsynth_perf
+     #(.bp_params_p(bp_params_p))
+     perf
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+       ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
+       ,.warmup_instr_i(testbench.warmup_instr_p)
+  
+       ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
+  
+       ,.commit_v_i(calculator.commit_pkt.instret)
+       ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
+       );
 
   bind bp_be_top
     bp_nonsynth_watchdog
@@ -278,27 +241,6 @@ bind bp_be_top
 
        ,.npc_i(director.npc_r)
        ,.instret_i(calculator.commit_pkt.instret)
-       );
-
-  bind bp_be_director
-    bp_be_nonsynth_npc_tracer
-     #(.bp_params_p(bp_params_p))
-     npc_tracer
-      (.clk_i(clk_i & (testbench.npc_trace_p == 1))
-       ,.reset_i(reset_i)
-       ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
-
-       ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
-
-       ,.npc_w_v(npc_w_v)
-       ,.npc_n(npc_n)
-       ,.npc_r(npc_r)
-       ,.expected_npc_o(expected_npc_o)
-
-       ,.fe_cmd_i(fe_cmd_li)
-       ,.fe_cmd_v(fe_cmd_v_li)
-
-       ,.commit_pkt_i(commit_pkt)
        );
 
   bind bp_be_dcache
@@ -350,8 +292,6 @@ bind bp_be_top
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-
-       ,.program_finish_i(&testbench.program_finish_lo)
        );
 
   bind bp_fe_icache
@@ -404,12 +344,10 @@ bind bp_be_top
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-
-       ,.program_finish_i(&testbench.program_finish_lo)
        );
 
-   `define declare_bp_be_nonsynth_vm_tracer \
-      bp_be_nonsynth_vm_tracer                                                                    \
+   `define declare_bp_nonsynth_vm_tracer \
+      bp_nonsynth_vm_tracer                                                                       \
        #(.bp_params_p(bp_params_p))                                                               \
        vm_tracer                                                                                  \
         (.clk_i(clk_i & (testbench.vm_trace_p == 1))                                              \
@@ -429,8 +367,6 @@ bind bp_be_top
          ,.dtlb_vtag_i(be.calculator.pipe_mem.dtlb.vtag_i)                                        \
          ,.dtlb_entry_i(be.calculator.pipe_mem.dtlb.entry_i)                                      \
          ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dtlb.cam.r_v_i)                                  \
-                                                                                                  \
-         ,.program_finish_i(testbench.program_finish_lo)                                          \
          );
 
   `define declare_bp_nonsynth_core_profiler \
@@ -482,12 +418,12 @@ bind bp_be_top
 
     if (multicore_p)
       begin : multicore
-        bind bp_core `declare_bp_be_nonsynth_vm_tracer
+        bind bp_core `declare_bp_nonsynth_vm_tracer
         bind bp_core `declare_bp_nonsynth_core_profiler
       end
     else
       begin : unicore
-        bind bp_unicore `declare_bp_be_nonsynth_vm_tracer;
+        bind bp_unicore `declare_bp_nonsynth_vm_tracer;
         bind bp_unicore `declare_bp_nonsynth_core_profiler
       end
 
@@ -517,8 +453,6 @@ bind bp_be_top
        ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
        ,.commit_pkt(calculator.commit_pkt)
-
-       ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
        );
 
   bind bp_be_top
@@ -535,8 +469,6 @@ bind bp_be_top
        ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)
 
        ,.commit_v_i(calculator.commit_pkt.instret)
-
-       ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
        );
 
   if (multicore_p)
