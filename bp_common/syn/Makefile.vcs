@@ -33,7 +33,7 @@ VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += +noportcoerce
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 VCS_BUILD_OPTS += -diag timescale
-VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
+VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++14"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save

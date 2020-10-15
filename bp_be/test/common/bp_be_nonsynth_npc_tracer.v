@@ -9,7 +9,7 @@ module bp_be_nonsynth_npc_tracer
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    , parameter npc_trace_file_p = "npc"
 
-   , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
    )
   (input                         clk_i
@@ -26,15 +26,15 @@ module bp_be_nonsynth_npc_tracer
    , input [fe_cmd_width_lp-1:0] fe_cmd_i
    , input                       fe_cmd_v
 
-   , input [trap_pkt_width_lp-1:0] trap_pkt_i
+   , input [commit_pkt_width_lp-1:0] commit_pkt_i
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 bp_fe_cmd_s fe_cmd;
-bp_be_trap_pkt_s trap_pkt;
+bp_be_commit_pkt_s commit_pkt;
 assign fe_cmd = fe_cmd_i;
-assign trap_pkt = trap_pkt_i;
+assign commit_pkt = commit_pkt_i;
 
 integer file;
 string file_name;
@@ -52,7 +52,7 @@ always_ff @(negedge clk_i)
       $fwrite(file, "[%t] %x\n", $time, npc_r);
     if (fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection))
       $fwrite(file, "\tRedirect to %x\n", expected_npc_o);
-    if (trap_pkt.rollback)
+    if (commit_pkt.rollback)
       $fwrite(file, "\tRollback to %x\n", npc_n);
   end
 

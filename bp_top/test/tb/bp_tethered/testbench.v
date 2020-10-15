@@ -191,11 +191,11 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.ird_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
      ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
      ,.ird_data_i(scheduler.iwb_pkt.rd_data)
 
-     ,.frd_w_v_i(scheduler.fwb_pkt.rd_w_v)
+     ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
      ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
      ,.frd_data_i(scheduler.fwb_pkt.rd_data)
      );
@@ -224,15 +224,15 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.ird_w_v_i(scheduler.iwb_pkt.rd_w_v)
+     ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
      ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
      ,.ird_data_i(scheduler.iwb_pkt.rd_data)
 
-     ,.frd_w_v_i(scheduler.fwb_pkt.rd_w_v)
+     ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
      ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
      ,.frd_data_i(scheduler.fwb_pkt.rd_data)
 
-     ,.trap_v_i(calculator.pipe_sys.csr.trap_pkt_cast_o.exception | calculator.pipe_sys.csr.trap_pkt_cast_o._interrupt)
+     ,.trap_v_i(calculator.pipe_sys.csr.commit_pkt_cast_o.exception | calculator.pipe_sys.csr.commit_pkt_cast_o._interrupt)
      ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
                ? calculator.pipe_sys.csr.scause_li
                : calculator.pipe_sys.csr.mcause_li
@@ -298,7 +298,7 @@ bind bp_be_top
        ,.fe_cmd_i(fe_cmd_li)
        ,.fe_cmd_v(fe_cmd_v_li)
 
-       ,.trap_pkt_i(trap_pkt)
+       ,.commit_pkt_i(commit_pkt)
        );
 
   bind bp_be_dcache
@@ -460,25 +460,24 @@ bind bp_be_top
          ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)                                          \
          ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)                                    \
          ,.long_haz(be.detector.struct_haz_v)                                                     \
-         ,.exception(be.director.trap_pkt.exception)                                              \
-         ,.eret(be.director.trap_pkt.eret)                                                        \
-         ,._interrupt(be.director.trap_pkt._interrupt)                                            \
+         ,.exception(be.director.commit_pkt.exception)                                            \
+         ,.eret(be.director.commit_pkt.eret)                                                      \
+         ,._interrupt(be.director.commit_pkt._interrupt)                                          \
          ,.control_haz(be.detector.control_haz_v)                                                 \
          ,.data_haz(be.detector.data_haz_v)                                                       \
-         ,.load_dep((be.detector.dep_status_li[0].emem_iwb_v                                      \
-                     | be.detector.dep_status_li[1].emem_iwb_v                                    \
+         ,.load_dep((be.detector.dep_status_r[0].emem_iwb_v                                       \
+                     | be.detector.dep_status_r[1].emem_iwb_v                                     \
                      ) & be.detector.data_haz_v                                                   \
                     )                                                                             \
-         ,.mul_dep((be.detector.dep_status_li[0].mul_iwb_v                                        \
-                    | be.detector.dep_status_li[1].mul_iwb_v                                      \
-                    | be.detector.dep_status_li[2].mul_iwb_v                                      \
+         ,.mul_dep((be.detector.dep_status_r[0].mul_iwb_v                                         \
+                    | be.detector.dep_status_r[1].mul_iwb_v                                       \
+                    | be.detector.dep_status_r[2].mul_iwb_v                                       \
                     ) & be.detector.data_haz_v                                                    \
                    )                                                                              \
          ,.struct_haz(be.detector.struct_haz_v)                                                   \
                                                                                                   \
          ,.reservation(be.calculator.reservation_n)                                               \
          ,.commit_pkt(be.calculator.commit_pkt)                                                   \
-         ,.trap_pkt(be.calculator.pipe_sys.csr.trap_pkt_o)                                        \
          );
 
     if (multicore_p)
