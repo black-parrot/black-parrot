@@ -160,33 +160,24 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
     # Reset clear
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_reset, 0)
-
-    #######################################################
-    # This CCE ucode write is now handled by the bootrom
-    #######################################################
-    # Write CCE ucode
-    # if self.ucode_file:
-    #   for core in range(self.ncpus):
-    #    for i in range(len(self.ucode)):
-    #       full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
-    #       self.print_nbf(3, full_addr, self.ucode[i])
-
-    #################################################################
-    # The cache and CCE mode switch is now handled by the bootrom
-    #################################################################
-    # Write I$, D$, and CCE modes
-    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
-    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
-    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
-
-    ##############################################
-    # This is now handled by the config settings
-    ##############################################
-    # Write PC to the DRAM base
-    # self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
-
-    # Write checkpoint
+    
+    # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
+    # For checkpoint, load CCE ucode, cache/CCE modes and the checkpoint
     if self.checkpoint_file:
+    
+      # Write CCE ucode
+      if self.ucode_file:
+        for core in range(self.ncpus):
+          for i in range(len(self.ucode)):
+            full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
+            self.print_nbf(3, full_addr, self.ucode[i])
+       
+      # Write I$, D$, and CCE modes
+      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
+      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
+      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
+      
+      # Write the checkpoint
       for nbf in self.checkpoint:
         print(nbf)
 

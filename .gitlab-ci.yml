@@ -315,6 +315,22 @@ top-beebs-vcs:
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs BEEBS_TESTLIST $CI_CORES
 
+top-checkpoint-verilator:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/checkpoint.sh verilator
+
+top-checkpoint-vcs:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/checkpoint.sh vcs
+
 top-linux-verilator:
   <<: *job_definition
   when: manual
