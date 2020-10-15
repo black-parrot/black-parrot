@@ -66,11 +66,7 @@ $(BP_TEST_DIR)/lib/libperch.a:
 	cp $(BP_TEST_DIR)/src/perch/*.h $(BP_TEST_DIR)/include
 
 bootrom:
-ifeq ($(OVERRIDE_BOOTROM),1)
 	$(MAKE) -C $(bootrom_dir)
-else
-	@echo "Skipping bootrom generation"
-endif
 
 demos:
 	$(MAKE) -C $(demos_dir)
