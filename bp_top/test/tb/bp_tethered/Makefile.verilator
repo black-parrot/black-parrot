@@ -48,7 +48,7 @@ endif
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
 
-OVERRIDE_BOOTROM ?= 0
+OVERRIDE_BOOTROM ?= 1
 $(SIM_DIR)/bootrom.riscv: bootrom
 	cp $(BP_TEST_DIR)/src/bootrom/bootrom.riscv $@
 
@@ -91,6 +91,7 @@ $(SIM_DIR)/run_samplesc: $(SAMPLE_COLLATERAL)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
 tire_kick: $(SIM_DIR)/tire_kick
+tire_kick: OVERRIDE_BOOTROM := 0
 tire_kick: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
 tire_kick: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
 tire_kick: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err

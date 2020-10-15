@@ -40,7 +40,7 @@ $(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
 
-OVERRIDE_BOOTROM ?= 0
+OVERRIDE_BOOTROM ?= 1
 $(SIM_DIR)/bootrom.riscv: bootrom
 	cp $(BP_TEST_DIR)/src/bootrom/bootrom.riscv $@
 
