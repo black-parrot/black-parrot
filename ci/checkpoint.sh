@@ -30,7 +30,7 @@ let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1
 
 # The base command to append the configuration to
-cmd_base="make -C bp_top/syn build.v sim_sample.v SUITE=beebs PROG=aha-compress CHECKPOINT_P=1 SAMPLE_START_P=1000 SAMPLE_MEMSIZE=64"
+cmd_base="make -C bp_top/syn build.${SUFFIX} sim_sample.${SUFFIX} SUITE=beebs PROG=aha-compress CHECKPOINT_P=1 SAMPLE_START_P=1000 SAMPLE_MEMSIZE=64"
 
 # Any setup needed for the job
 make -C bp_top/syn clean.${SUFFIX}
