@@ -275,8 +275,6 @@ module testbench
       ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
       ,.stat_mem_pkt_i(stat_mem_pkt_i)
       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-
-      ,.program_finish_i('0)
       );
 
   // CCE tracer

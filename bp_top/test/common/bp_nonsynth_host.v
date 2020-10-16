@@ -12,18 +12,42 @@ module bp_nonsynth_host
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
+   , parameter icache_trace_p         = 0
+   , parameter dcache_trace_p         = 0
+   , parameter lce_trace_p            = 0
+   , parameter cce_trace_p            = 0
+   , parameter dram_trace_p           = 0
+   , parameter vm_trace_p             = 0
+   , parameter cmt_trace_p            = 0
+   , parameter core_profile_p         = 0
+   , parameter pc_profile_p           = 0
+   , parameter br_profile_p           = 0
+   , parameter cosim_p                = 0
+
    , parameter host_max_outstanding_p = 32
    )
-  (input clk_i
-   , input reset_i
+  (input                                     clk_i
+   , input                                   reset_i
 
-   , input [cce_mem_msg_width_lp-1:0]              io_cmd_i
-   , input                                         io_cmd_v_i
-   , output logic                                  io_cmd_ready_o
+   , input [cce_mem_msg_width_lp-1:0]        io_cmd_i
+   , input                                   io_cmd_v_i
+   , output logic                            io_cmd_ready_o
 
-   , output logic [cce_mem_msg_width_lp-1:0]       io_resp_o
-   , output logic                                  io_resp_v_o
-   , input                                         io_resp_yumi_i
+   , output logic [cce_mem_msg_width_lp-1:0] io_resp_o
+   , output logic                            io_resp_v_o
+   , input                                   io_resp_yumi_i
+
+   , output logic                            icache_trace_en_o
+   , output logic                            dcache_trace_en_o
+   , output logic                            lce_trace_en_o
+   , output logic                            cce_trace_en_o
+   , output logic                            dram_trace_en_o
+   , output logic                            vm_trace_en_o
+   , output logic                            cmt_trace_en_o
+   , output logic                            core_profile_en_o
+   , output logic                            pc_profile_en_o
+   , output logic                            branch_profile_en_o
+   , output logic                            cosim_en_o
    );
 
   import "DPI-C" context function void start();
@@ -217,6 +241,19 @@ module bp_nonsynth_host
                           : domain_data_cmd_v
                             ? domain_io_resp_lo
                             : host_io_resp_lo;
+
+  // TODO: Add dynamic enable
+  assign icache_trace_en_o   = icache_trace_p;
+  assign dcache_trace_en_o   = dcache_trace_p;
+  assign lce_trace_en_o      = lce_trace_p;
+  assign cce_trace_en_o      = cce_trace_p;
+  assign dram_trace_en_o     = dram_trace_p;
+  assign vm_trace_en_o       = vm_trace_p;
+  assign cmt_trace_en_o      = cmt_trace_p;
+  assign core_profile_en_o   = core_profile_p;
+  assign pc_profile_en_o     = pc_profile_p;
+  assign branch_profile_en_o = br_profile_p;
+  assign cosim_en_o          = cosim_p;
 
 endmodule
 
