@@ -65,8 +65,9 @@ $(BP_TEST_DIR)/lib/libperch.a:
 	cp $(BP_TEST_DIR)/src/perch/libperch.a $(BP_TEST_DIR)/lib
 	cp $(BP_TEST_DIR)/src/perch/*.h $(BP_TEST_DIR)/include
 
-bootrom:
-	$(MAKE) -C $(bootrom_dir)
+bootrom: $(bootrom_dir)/bootrom
+%/bootrom:
+	$(MAKE) -C $(bootrom_dir) $(@D)/bootrom.riscv
 
 demos:
 	$(MAKE) -C $(demos_dir)

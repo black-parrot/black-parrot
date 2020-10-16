@@ -10,8 +10,6 @@ parser.add_argument('--ucode', dest='ucode_file', type=str, required=True, help=
 parser.add_argument('--path', dest='path', type=str, required=True, help='Output path')
 args = parser.parse_args()
 
-out_file = args.path + "/cce_ucode.mem"
-wf = open(out_file, 'w')
 with open(args.ucode_file, 'r') as rf:
   lines = rf.readlines()
   for line in lines:
@@ -21,10 +19,7 @@ with open(args.ucode_file, 'r') as rf:
     reversed_bytes = ''
     for i in range(0, 15, 2):
       reversed_bytes = reversed_bytes + reverse_bytes[i:i+2][::-1]
-    wf.write(reversed_bytes)
-    wf.write("\n")
-  wf.write("FFFFFFFFFFFFFFFF")
-  wf.write("\n")
+    print(reversed_bytes)
+  print("FFFFFFFFFFFFFFFF")
 
 rf.close()
-wf.close()
