@@ -540,7 +540,7 @@ run_psample.%: dromajo_dump
 # Special case 0, because we won't drop a checkpoint for it
 run_sample@0%:
 	$(eval override TS := $(word 1,$(subst @,  ,$*)))
-	$(MAKE) -j1 build.$(TS) COSIM_P=1 TAG=$(SAMPLE_START_P).$(SAMPLE_WARMUP_P).$(SAMPLE_INSTR_P)
+	$(MAKE) -j1 build.$(TS) COSIM_P=1 CHECKPOINT_P=0 TAG=$(SAMPLE_START_P).$(SAMPLE_WARMUP_P).$(SAMPLE_INSTR_P)
 	$(MAKE) sim.$(TS) TAG=$(SAMPLE_START_P).$(SAMPLE_WARMUP_P).$(SAMPLE_INSTR_P)
 
 # For example: run_sample@bp_tests@hello_world@60
