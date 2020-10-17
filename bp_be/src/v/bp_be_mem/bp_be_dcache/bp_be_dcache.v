@@ -712,7 +712,7 @@ module bp_be_dcache
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
-    cache_req_cast_o.data = data_tv_r;
+    cache_req_cast_o.data = wbuf_entry_in.data;
   end
 
   // Cache metadata is valid after the request goes out
