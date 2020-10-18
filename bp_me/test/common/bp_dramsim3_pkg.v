@@ -1,16 +1,3 @@
-package bp_dramsim3_pkg;
-`include "bsg_defines.v"
-
-  localparam int max_cfgs = 128;
-  localparam int lg_max_cfgs = `BSG_SAFE_CLOG2(max_cfgs);
-
-  typedef enum bit [lg_max_cfgs-1:0] {
-    e_ro_ra_bg_ba_ch_co,
-    e_ro_ra_bg_ba_co_ch,
-    e_ro_ch_ra_ba_bg_co
-  } bsg_dramsim3_address_mapping_e;
-
-endpackage
 
 package bp_dramsim3_lpddr_2Gb_x16_pkg;
   parameter int tck_ps=4800;
@@ -24,5 +11,5 @@ package bp_dramsim3_lpddr_2Gb_x16_pkg;
   parameter int num_ranks_p=1; //?
   parameter longint size_in_bits_p=2**33; // 1GB (8Gb)
   parameter string config_p="lpddr_2Gb_x16.ini";
-  parameter address_mapping_p=bp_dramsim3_pkg::e_ro_ch_ra_ba_bg_co;
+  parameter address_mapping_p=bsg_dramsim3_pkg::e_ro_ch_ra_ba_bg_co;
 endpackage

@@ -35,7 +35,7 @@ module bp_ddr
   localparam dmc_cmd_sfifo_depth_lp = 4;
 
   localparam tag_trace_rom_addr_width_lp = 32;
-  localparam tag_trace_rom_data_width_lp = 25;
+  localparam tag_trace_rom_data_width_lp = 24;
 
   // BSG Tag
   logic [tag_trace_rom_addr_width_lp-1:0] rom_addr_li;
@@ -45,7 +45,7 @@ module bp_ddr
 
   logic dfi_clk_1x_lo;
 
-  bsg_tag_s [49:0] tag_lines_lo;
+  bsg_tag_s [22:0] tag_lines_lo;
   logic [12:0][7:0] dmc_cfg_tag_data_lo;
 
   wire bsg_tag_s        dmc_reset_tag_lines_lo       = tag_lines_lo[0];
@@ -73,7 +73,7 @@ module bp_ddr
     #(.rom_addr_width_p(tag_trace_rom_addr_width_lp)
      ,.rom_data_width_p(tag_trace_rom_data_width_lp)
      ,.num_masters_p(1)
-     ,.num_clients_p(50)
+     ,.num_clients_p(23)
      ,.max_payload_width_p(9)
      )
     tag_trace_replay
@@ -98,7 +98,7 @@ module bp_ddr
       );
 
   bsg_tag_master
-    #(.els_p(50)
+    #(.els_p(23)
      ,.lg_width_p(4)
      )
     btm
