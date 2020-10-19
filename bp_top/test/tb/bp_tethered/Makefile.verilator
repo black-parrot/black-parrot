@@ -59,6 +59,12 @@ endif
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
 
+$(SIM_DIR)/bootrom.riscv:
+	$(MAKE) -C $(BP_COMMON_DIR)/test/src/bootrom $@
+
+$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
+	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=8 --verilog-data-width=8 $< $@
+
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)

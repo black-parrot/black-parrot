@@ -20,8 +20,6 @@ module bp_nonsynth_branch_profiler
     , input                       fe_cmd_yumi_i
 
     , input                       commit_v_i
-
-    , input [num_core_p-1:0] program_finish_i
     );
 
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -117,30 +115,17 @@ module bp_nonsynth_branch_profiler
           end
       end
 
-  logic [num_core_p-1:0] program_finish_r;
-  bsg_dff_reset
-   #(.width_p(num_core_p))
-   program_finish_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i(program_finish_i)
-     ,.data_o(program_finish_r)
-     );
-
-  // TODO: This doesn't account for exceptions
-  always_ff @(negedge clk_i)
-   if (program_finish_i[mhartid_i] & ~program_finish_r[mhartid_i])
-     begin
-       $fwrite(file, "Branch statistics\n");
-       $fwrite(file, "MPKI: %d\n", redirect_cnt / (instr_cnt / 1000));
-       $fwrite(file, "BTB hit%%: %d\n", (btb_hit_cnt * 100) / (attaboy_cnt + redirect_cnt));
-       $fwrite(file, "BHT hit%%: %d\n", (bht_hit_cnt * 100) / (br_cnt));
-       $fwrite(file, "==================================== Branches ======================================\n");
-       $fwrite(file, "[target\t]\t\toccurances\t\tmisses\t\tmiss%%]\n");
-       foreach (branch_histo[key])
-         $fwrite(file, "[%x] %d %d %d\n", key, branch_histo[key], miss_histo[key], (miss_histo[key]*100)/branch_histo[key]);
-     end
+  final
+    begin
+      $fwrite(file, "Branch statistics\n");
+      $fwrite(file, "MPKI: %d\n", redirect_cnt / (instr_cnt / 1000));
+      $fwrite(file, "BTB hit%%: %d\n", (btb_hit_cnt * 100) / (attaboy_cnt + redirect_cnt));
+      $fwrite(file, "BHT hit%%: %d\n", (bht_hit_cnt * 100) / (br_cnt));
+      $fwrite(file, "==================================== Branches ======================================\n");
+      $fwrite(file, "[target\t]\t\toccurances\t\tmisses\t\tmiss%%]\n");
+      foreach (branch_histo[key])
+        $fwrite(file, "[%x] %d %d %d\n", key, branch_histo[key], miss_histo[key], (miss_histo[key]*100)/branch_histo[key]);
+    end
 
 endmodule
 
