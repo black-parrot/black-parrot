@@ -164,7 +164,7 @@ fix_job:
 
 check-design:
   <<: *job_definition
-  stage: check
+  stage: test-medium
   tags:
     - dc
   script:
