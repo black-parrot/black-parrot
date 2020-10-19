@@ -45,12 +45,6 @@ XXD ?= xxd
 $(SIM_DIR)/cce_ucode.bin: $(SIM_DIR)/cce_ucode.mem
 	cd $(@D); python3 $(UCODE2BOOT) --ucode=$< --path=$(@D) | $(XXD) -r -p > $@
 
-$(SIM_DIR)/bootrom.riscv: $(SIM_DIR)/cce_ucode.bin
-	$(MAKE) -C $(BP_COMMON_DIR)/test/src/bootrom $@
-
-$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
-	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=8 --verilog-data-width=8 $< $@
-
 NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
 ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem --skip_zeros
@@ -58,6 +52,12 @@ endif
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
+
+$(SIM_DIR)/bootrom.riscv: $(SIM_DIR)/cce_ucode.bin
+	$(MAKE) -C $(BP_COMMON_DIR)/test/src/bootrom $@
+
+$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
+	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=8 --verilog-data-width=8 $< $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
