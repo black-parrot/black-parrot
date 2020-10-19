@@ -321,7 +321,7 @@ top-checkpoint-verilator:
   tags:
     - verilator
   script:
-    - $CI_PROJECT_DIR/ci/checkpoint.sh verilator
+    - $CI_PROJECT_DIR/ci/checkpoint.sh verilator $CI_CORES
 
 top-checkpoint-vcs:
   <<: *job_definition
@@ -329,7 +329,7 @@ top-checkpoint-vcs:
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/checkpoint.sh vcs
+    - $CI_PROJECT_DIR/ci/checkpoint.sh vcs $CI_CORES
 
 top-linux-verilator:
   <<: *job_definition

@@ -37,7 +37,7 @@ cmd_base="make -C bp_top/syn sim_sample.${SUFFIX} SUITE=beebs PROG=aha-compress 
 
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} sample jobs"
-#parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
