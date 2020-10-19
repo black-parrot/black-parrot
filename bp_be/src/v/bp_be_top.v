@@ -87,13 +87,9 @@ module bp_be_top
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
-  bp_be_calc_status_s calc_status;
-
   logic chk_dispatch_v;
-  logic interrupt_ready_lo, interrupt_v_li;
 
   bp_be_commit_pkt_s commit_pkt;
-  bp_be_trap_pkt_s trap_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
 
   bp_be_isd_status_s isd_status;
@@ -102,6 +98,8 @@ module bp_be_top
 
   logic fpu_en_lo;
   logic fe_cmd_full_lo;
+  logic mem_ready_lo, long_ready_lo, sys_ready_lo;
+
 
   logic flush;
   bp_be_director
@@ -113,7 +111,6 @@ module bp_be_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.isd_status_i(isd_status)
-     ,.calc_status_i(calc_status)
      ,.expected_npc_o(expected_npc_lo)
 
      ,.fe_cmd_o(fe_cmd_o)
@@ -126,7 +123,7 @@ module bp_be_top
      ,.flush_o(flush)
 
      ,.br_pkt_i(br_pkt)
-     ,.trap_pkt_i(trap_pkt)
+     ,.commit_pkt_i(commit_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
      );
 
@@ -139,14 +136,15 @@ module bp_be_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.isd_status_i(isd_status)
-     ,.calc_status_i(calc_status)
      ,.fe_cmd_full_i(fe_cmd_full_lo)
      ,.credits_full_i(credits_full_i)
      ,.credits_empty_i(credits_empty_i)
-     ,.interrupt_ready_i(interrupt_ready_lo)
-     ,.interrupt_v_o(interrupt_v_li)
+     ,.mem_ready_i(mem_ready_lo)
+     ,.long_ready_i(long_ready_lo)
+     ,.sys_ready_i(sys_ready_lo)
 
      ,.chk_dispatch_v_o(chk_dispatch_v)
+     ,.dispatch_pkt_i(dispatch_pkt)
      );
 
   bp_be_scheduler
@@ -169,7 +167,6 @@ module bp_be_top
      ,.dispatch_pkt_o(dispatch_pkt)
 
      ,.commit_pkt_i(commit_pkt)
-     ,.trap_pkt_i(trap_pkt)
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
      );
@@ -186,22 +183,17 @@ module bp_be_top
 
      ,.flush_i(flush)
 
-     ,.calc_status_o(calc_status)
      ,.fpu_en_o(fpu_en_lo)
+     ,.mem_ready_o(mem_ready_lo)
+     ,.long_ready_o(long_ready_lo)
+     ,.sys_ready_o(sys_ready_lo)
 
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
      ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)
-     ,.trap_pkt_o(trap_pkt)
      ,.iwb_pkt_o(iwb_pkt)
      ,.fwb_pkt_o(fwb_pkt)
-
-     ,.timer_irq_i(timer_irq_i)
-     ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
-     ,.interrupt_ready_o(interrupt_ready_lo)
-     ,.interrupt_v_i(interrupt_v_li)
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_metadata_o(cache_req_metadata_o)
@@ -225,6 +217,10 @@ module bp_be_top
      ,.stat_mem_pkt_i(stat_mem_pkt_i)
      ,.stat_mem_o(stat_mem_o)
      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
      );
 
 endmodule

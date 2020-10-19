@@ -34,13 +34,11 @@ module bp_be_pipe_fma
 
    // Pipeline results
    , output [dpath_width_p-1:0]        imul_data_o
+   , output                            imul_v_o
    , output [dpath_width_p-1:0]        fma_data_o
    , output rv64_fflags_s              fma_fflags_o
+   , output                            fma_v_o
    );
-
-  // Suppress unused signal warning
-  wire unused0 = clk_i;
-  wire unused1 = reset_i;
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_dispatch_pkt_s reservation;
@@ -193,22 +191,24 @@ module bp_be_pipe_fma
 
   wire [dpath_width_p-1:0] imulw_out = {{word_width_p{imul_out[word_width_p-1]}}, imul_out[0+:word_width_p]};
   wire [dpath_width_p-1:0] imul_result = decode.opw_v ? imulw_out : imul_out;
+  wire imul_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mul_v;
   bsg_dff_chain
-   #(.width_p(dpath_width_p), .num_stages_p(imul_latency_p-1))
+   #(.width_p(1+dpath_width_p), .num_stages_p(imul_latency_p-1))
    retiming_chain
     (.clk_i(clk_i)
 
-     ,.data_i(imul_result)
-     ,.data_o(imul_data_o)
+     ,.data_i({imul_v_li, imul_result})
+     ,.data_o({imul_v_o, imul_data_o})
      );
 
+  wire fma_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_fma_v;
   bsg_dff_chain
-   #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(fma_latency_p-1))
+   #(.width_p(1+$bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(fma_latency_p-1))
    fma_retiming_chain
     (.clk_i(clk_i)
 
-     ,.data_i({fma_fflags, fma_result})
-     ,.data_o({fma_fflags_o, fma_data_o})
+     ,.data_i({fma_v_li, fma_fflags, fma_result})
+     ,.data_o({fma_v_o, fma_fflags_o, fma_data_o})
      );
 
 endmodule

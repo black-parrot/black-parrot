@@ -11,7 +11,7 @@ module bp_be_csr
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
     , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
-    , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
+    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
     , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
     )
    (input                               clk_i
@@ -30,6 +30,7 @@ module bp_be_csr
     , input                             frf_w_v_i
 
     , input                             exception_v_i
+    , input                             exception_queue_v_i
     , input [vaddr_width_p-1:0]         exception_pc_i
     , input [vaddr_width_p-1:0]         exception_npc_i
     , input [vaddr_width_p-1:0]         exception_vaddr_i
@@ -41,7 +42,7 @@ module bp_be_csr
     , output                            interrupt_ready_o
     , input                             interrupt_v_i
 
-    , output [trap_pkt_width_lp-1:0]    trap_pkt_o
+    , output [commit_pkt_width_lp-1:0]    commit_pkt_o
 
     , output [trans_info_width_lp-1:0]  trans_info_o
     , output rv64_frm_e                 frm_dyn_o
@@ -58,12 +59,12 @@ bp_cfg_bus_s cfg_bus_cast_i;
 bp_be_csr_cmd_s csr_cmd;
 
 bp_be_wb_pkt_s wb_pkt_cast_i;
-bp_be_trap_pkt_s trap_pkt_cast_o;
+bp_be_commit_pkt_s commit_pkt_cast_o;
 bp_be_trans_info_s trans_info_cast_o;
 
 assign cfg_bus_cast_i = cfg_bus_i;
 assign csr_cmd = csr_cmd_i;
-assign trap_pkt_o = trap_pkt_cast_o;
+assign commit_pkt_o = commit_pkt_cast_o;
 assign trans_info_o = trans_info_cast_o;
 
 // The muxed and demuxed CSR outputs
@@ -245,9 +246,9 @@ bsg_dff_reset
    ,.data_i(apc_n)
    ,.data_o(apc_r)
    );
-assign apc_n = trap_pkt_cast_o.eret
+assign apc_n = commit_pkt_cast_o.eret
                ? ((csr_cmd.csr_op == e_sret) ? sepc_lo : (csr_cmd.csr_op == e_mret) ? mepc_lo : dpc_lo)
-               : (trap_pkt_cast_o.exception | trap_pkt_cast_o._interrupt)
+               : (commit_pkt_cast_o.exception | commit_pkt_cast_o._interrupt)
                  ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
                  : instret_i
                    ? exception_npc_i
@@ -666,21 +667,25 @@ always_comb
   end
 
 // Debug Mode masks all interrupts
-assign interrupt_ready_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
+assign interrupt_ready_o = ~is_debug_mode & ~cfg_bus_cast_i.freeze & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
 assign csr_data_o = dword_width_p'(csr_data_lo);
 
-assign trap_pkt_cast_o.v                = |{csr_cmd.exc.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss};
-assign trap_pkt_cast_o.npc              = apc_n;
-assign trap_pkt_cast_o.priv_n           = priv_mode_n;
-assign trap_pkt_cast_o.translation_en_n = translation_en_n;
-assign trap_pkt_cast_o.fencei           = csr_cmd.exc.fencei_v;
-assign trap_pkt_cast_o.sfence           = sfence_v_o;
-assign trap_pkt_cast_o.exception        = exception_v_o;
-assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
-assign trap_pkt_cast_o.eret             = ret_v_o;
-assign trap_pkt_cast_o.satp             = satp_v_o;
-assign trap_pkt_cast_o.rollback         = csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss;
+assign commit_pkt_cast_o.v                = |{csr_cmd.exc.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss};
+assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
+assign commit_pkt_cast_o.instret          = instret_i;
+assign commit_pkt_cast_o.pc               = exception_pc_i;
+assign commit_pkt_cast_o.instr            = exception_instr_i;
+assign commit_pkt_cast_o.npc              = apc_n;
+assign commit_pkt_cast_o.priv_n           = priv_mode_n;
+assign commit_pkt_cast_o.translation_en_n = translation_en_n;
+assign commit_pkt_cast_o.fencei           = csr_cmd.exc.fencei_v;
+assign commit_pkt_cast_o.sfence           = sfence_v_o;
+assign commit_pkt_cast_o.exception        = exception_v_o;
+assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
+assign commit_pkt_cast_o.eret             = ret_v_o;
+assign commit_pkt_cast_o.satp             = satp_v_o;
+assign commit_pkt_cast_o.rollback         = csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss | csr_cmd.exc.itlb_miss;
 
 assign trans_info_cast_o.priv_mode = priv_mode_r;
 assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;

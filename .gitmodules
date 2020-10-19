@@ -107,12 +107,6 @@
   branch = master
   ignore = dirty
 
-[submodule "external/zachjs_sv2v"]
-  path = external/zachjs_sv2v
-  url = https://github.com/zachjs/sv2v.git
-  branch = master
-  ignore = dirty
-
 [submodule "bp_common/test/src/linux"]
   path = bp_common/test/src/linux
   url = https://github.com/torvalds/linux

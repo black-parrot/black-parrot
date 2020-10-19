@@ -116,7 +116,7 @@ module bp_me_cce_to_cache_dma
   ,.reset_i(reset_i)
   ,.valid_i(dma_data_fifo_valid_li)
   ,.data_i (dma_data_fifo_data_li)
-  ,.ready_o(dma_data_fifo_ready_lo)
+  ,.ready_and_o(dma_data_fifo_ready_lo)
   ,.valid_o(dma_data_v_o)
   ,.data_o (dma_data_o)
   ,.yumi_i (dma_data_yumi_i)
