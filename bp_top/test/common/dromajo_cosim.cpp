@@ -17,17 +17,17 @@ extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory
 
     finish = new vector<bool>(ncpus, false);
 
-    char dromajo_str[20];
+    char dromajo_str[50];
     sprintf(dromajo_str, "dromajo");
-    char ncpus_str[20];
+    char ncpus_str[50];
     sprintf(ncpus_str, "--ncpus=%d", ncpus);
-    char memsize_str[20];
+    char memsize_str[50];
     sprintf(memsize_str, "--memory_size=%d", memory_size);
-    char mmio_str[20];
+    char mmio_str[50];
     sprintf(mmio_str, "--mmio_range=0x20000:0x80000000");
-    char load_str[20];
+    char load_str[50];
     sprintf(load_str, "--load=prog");
-    char prog_str[20];
+    char prog_str[50];
     sprintf(prog_str, "prog.elf");
 
     if(checkpoint) {
