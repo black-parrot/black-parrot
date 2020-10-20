@@ -317,6 +317,7 @@ top-beebs-vcs:
 
 top-checkpoint-verilator:
   <<: *job_definition
+  when: manual
   stage: test-short
   tags:
     - verilator
@@ -325,6 +326,7 @@ top-checkpoint-verilator:
 
 top-checkpoint-vcs:
   <<: *job_definition
+  when: manual
   stage: test-short
   tags:
     - vcs
