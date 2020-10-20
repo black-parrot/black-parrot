@@ -7,9 +7,12 @@
 
 package bp_me_pkg;
 
-  `include "bsg_defines.v"
-  `include "bp_common_mem_if.vh"
+  import bp_common_pkg::*;
+
   `include "bp_mem_wormhole.vh"
+
+  localparam mem_cmd_payload_mask_gp  = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr);
+  localparam mem_resp_payload_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd);
 
 endpackage : bp_me_pkg
 

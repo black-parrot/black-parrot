@@ -17,9 +17,8 @@ module wrapper
   ,parameter wt_p = 1
   ,parameter num_caches_p = 1
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
-   `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    , parameter debug_p=0
@@ -35,7 +34,7 @@ module wrapper
    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dpath_width_p)
    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
 
-   , localparam lce_cce_req_packet_width_lp = `bsg_wormhole_concentrator_packet_width(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp)
+   , localparam lce_cce_req_packet_width_lp = `bsg_wormhole_concentrator_packet_width(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_msg_width_lp)
    , localparam lce_cce_req_packet_hdr_width_lp = (lce_cce_req_packet_width_lp-cce_block_width_p)
    )
    ( input                                             clk_i
@@ -109,22 +108,25 @@ module wrapper
    logic [num_caches_p-1:0] lce_cmd_v_li, lce_cmd_yumi_lo, lce_cmd_v_lo, lce_cmd_ready_li;
    logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
    
-   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, dcache_assoc_p, dcache_block_width_p);
+   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
    
-   bp_lce_cce_req_s [num_caches_p-1:0] lce_req_lo;
-   bp_lce_cce_req_s cce_lce_req_li;
-   bp_lce_cmd_s [num_caches_p-1:0] lce_cmd_li, lce_cmd_lo;
-   bp_lce_cmd_s cce_lce_cmd_lo;
-   bp_lce_cce_resp_s [num_caches_p-1:0] lce_resp_lo;
-   bp_lce_cce_resp_s cce_lce_resp_li;
+   bp_bedrock_lce_req_msg_s [num_caches_p-1:0] lce_req_lo;
+   bp_bedrock_lce_req_msg_s cce_lce_req_li;
+   bp_bedrock_lce_cmd_msg_s [num_caches_p-1:0] lce_cmd_li, lce_cmd_lo;
+   bp_bedrock_lce_cmd_payload_s [num_caches_p-1:0] lce_cmd_payload_lo;
+   bp_bedrock_lce_cmd_msg_s cce_lce_cmd_lo;
+   bp_bedrock_lce_cmd_payload_s cce_lce_cmd_payload_lo;
+   bp_bedrock_lce_resp_msg_s [num_caches_p-1:0] lce_resp_lo;
+   bp_bedrock_lce_resp_msg_s cce_lce_resp_li;
    
    `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
    bp_cfg_bus_s cfg_bus_cast_i;
    assign cfg_bus_cast_i = cfg_bus_i;
 
-   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
-   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
-   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
+   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_msg_width_lp, lce_req_packet_s);
+   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_msg_width_lp, lce_cmd_packet_s);
+   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_resp_msg_width_lp, lce_resp_packet_s);
    `declare_bsg_ready_and_link_sif_s($bits(lce_req_packet_s), coh_req_ready_and_link_s);
    `declare_bsg_ready_and_link_sif_s($bits(lce_cmd_packet_s), coh_cmd_ready_and_link_s);
    `declare_bsg_ready_and_link_sif_s($bits(lce_resp_packet_s), coh_resp_ready_and_link_s);
@@ -323,7 +325,8 @@ module wrapper
 
            // Command out
            assign lce_cmd_packet_lo[i].payload = lce_cmd_lo[i];
-           assign lce_cmd_packet_lo[i].cid = lce_cmd_lo[i].header.dst_id;
+           assign lce_cmd_payload_lo[i] = lce_cmd_lo[i].header.payload;
+           assign lce_cmd_packet_lo[i].cid = lce_cmd_payload_lo[i].dst_id;
            assign lce_cmd_packet_lo[i].cord = '0;
            assign lce_cmd_packet_lo[i].len = coh_noc_len_width_p'(0);
 
@@ -370,7 +373,7 @@ module wrapper
          begin : uce
            bp_uce
            #(.bp_params_p(bp_params_p)
-            ,.uce_mem_data_width_p(dcache_fill_width_p)
+            ,.uce_mem_data_width_p(cce_block_width_p)
             ,.assoc_p(dcache_assoc_p)
             ,.sets_p(dcache_sets_p)
             ,.block_width_p(dcache_block_width_p)
@@ -454,7 +457,8 @@ module wrapper
        lce_cmd_packet_s cce_lce_cmd_packet_lo;
 
        assign cce_lce_cmd_packet_lo.payload = cce_lce_cmd_lo;
-       assign cce_lce_cmd_packet_lo.cid = cce_lce_cmd_lo.header.dst_id;
+       assign cce_lce_cmd_payload_lo = cce_lce_cmd_lo.header.payload;
+       assign cce_lce_cmd_packet_lo.cid = cce_lce_cmd_payload_lo.dst_id;
        assign cce_lce_cmd_packet_lo.cord = '0;
        assign cce_lce_cmd_packet_lo.len = coh_noc_len_width_p'(0); 
 
@@ -557,7 +561,7 @@ module wrapper
             );
        
        logic mem_resp_v_to_cce, mem_resp_yumi_from_cce, mem_resp_ready_lo;
-       logic [cce_mem_msg_width_lp-1:0] mem_resp_to_cce;
+       bp_bedrock_cce_mem_msg_s mem_resp_to_cce;
        bp_cce_fsm
        #(.bp_params_p(bp_params_p))
        cce

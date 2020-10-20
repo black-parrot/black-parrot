@@ -11,7 +11,7 @@ module bp_cce_loopback
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
     )
    (input                                           clk_i
     , input                                         reset_i
@@ -25,10 +25,10 @@ module bp_cce_loopback
     , input                                         mem_resp_yumi_i
     );
 
-  `declare_bp_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  bp_cce_mem_msg_s mem_cmd_cast_i;
-  bp_cce_mem_msg_s mem_resp_cast_o;
+  bp_bedrock_cce_mem_msg_s mem_cmd_cast_i;
+  bp_bedrock_cce_mem_msg_s mem_resp_cast_o;
 
   assign mem_cmd_cast_i = mem_cmd_i;
   assign mem_resp_o = mem_resp_cast_o;

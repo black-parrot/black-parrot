@@ -625,7 +625,7 @@ module bp_cce_inst_decode
               decoded_inst_o.pushq_custom = op_type_u.pushq.custom;
 
               // custom push commands use msg_size field
-              decoded_inst_o.msg_size = bp_mem_msg_size_e'(op_type_u.pushq.way_or_size.msg_size);
+              decoded_inst_o.msg_size = bp_bedrock_msg_size_e'(op_type_u.pushq.way_or_size.msg_size);
               // normal push commands use way_select and coh_state_select
               decoded_inst_o.way_sel = op_type_u.pushq.way_or_size.way_sel;
               // TODO: make coh_state_sel flexible / set by instruction, not

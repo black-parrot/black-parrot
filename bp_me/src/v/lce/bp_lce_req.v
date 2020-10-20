@@ -35,24 +35,23 @@ module bp_lce_req
     , localparam ptag_width_lp = (paddr_width_p-lg_sets_lp-lg_block_size_in_bytes_lp)
     , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
 
-   `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
 
     // coherence request size for cached requests
     // block size smaller than 8-bytes not supported
-    , localparam bp_mem_msg_size_e req_block_size_lp =
+    , localparam bp_bedrock_msg_size_e req_block_size_lp =
       (block_size_in_bytes_lp == 128)
-      ? e_mem_msg_size_128
+      ? e_bedrock_msg_size_128
       : (block_size_in_bytes_lp == 64)
-        ? e_mem_msg_size_64
+        ? e_bedrock_msg_size_64
         : (block_size_in_bytes_lp == 32)
-          ? e_mem_msg_size_32
+          ? e_bedrock_msg_size_32
           : (block_size_in_bytes_lp == 16)
-            ? e_mem_msg_size_16
-            : e_mem_msg_size_8
+            ? e_bedrock_msg_size_16
+            : e_bedrock_msg_size_8
   )
   (
     input                                            clk_i
@@ -87,14 +86,14 @@ module bp_lce_req
     // Uncached Store request complete signal
     , input                                          uc_store_req_complete_i
 
-    // LCE Request out
-    // ready->valid
-    , output logic [lce_cce_req_width_lp-1:0]        lce_req_o
+    // LCE-CCE interface
+    // Req: ready->valid
+    , output logic [lce_req_msg_width_lp-1:0]        lce_req_o
     , output logic                                   lce_req_v_o
     , input                                          lce_req_ready_i
   );
 
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
+  `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
 
   // FSM states
@@ -109,7 +108,8 @@ module bp_lce_req
   bp_cache_req_s cache_req;
   assign cache_req = cache_req_i;
 
-  bp_lce_cce_req_s lce_req;
+  bp_bedrock_lce_req_msg_s lce_req;
+  bp_bedrock_lce_req_payload_s lce_req_payload;
   assign lce_req_o = lce_req;
 
   logic cache_req_v_r;
@@ -192,8 +192,9 @@ module bp_lce_req
 
     // Request message defaults
     lce_req = '0;
-    lce_req.header.dst_id = req_cce_id_lo;
-    lce_req.header.src_id = lce_id_i;
+    lce_req_payload = '0;
+    lce_req_payload.dst_id = req_cce_id_lo;
+    lce_req_payload.src_id = lce_id_i;
 
     unique case (state_r)
 
@@ -215,9 +216,10 @@ module bp_lce_req
               lce_req_v_o = lce_req_ready_i;
 
               lce_req.data[0+:dword_width_p] = cache_req.data[0+:dword_width_p];
-              lce_req.header.size = bp_mem_msg_size_e'(cache_req.size);
+              lce_req.header.size = bp_bedrock_msg_size_e'(cache_req.size);
               lce_req.header.addr = cache_req.addr;
-              lce_req.header.msg_type = e_lce_req_type_uc_wr;
+              lce_req.header.msg_type.req = e_bedrock_req_uc_wr;
+              lce_req.header.payload = lce_req_payload;
             end
             e_uc_load: begin
               state_n = e_send_uncached_req;
@@ -235,19 +237,20 @@ module bp_lce_req
         // send when port is ready and metadata has arrived
         lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
 
-        lce_req.header.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.repl_way);
-        lce_req.header.addr = cache_req_r.addr;
         lce_req.header.size = req_block_size_lp;
         lce_req.header.addr = cache_req_r.addr;
         lce_req.header.msg_type = (cache_req_r.msg_type == e_miss_load)
-          ? e_lce_req_type_rd
-          : e_lce_req_type_wr;
+          ? e_bedrock_req_rd
+          : e_bedrock_req_wr;
 
-        lce_req.header.non_exclusive = (cache_req_r.msg_type == e_miss_load)
+        lce_req_payload.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.repl_way);
+        lce_req_payload.non_exclusive = (cache_req_r.msg_type == e_miss_load)
           ? (non_excl_reads_p == 1)
-            ? e_lce_req_non_excl
-            : e_lce_req_excl
-          : e_lce_req_excl;
+            ? e_bedrock_req_non_excl
+            : e_bedrock_req_excl
+          : e_bedrock_req_excl;
+
+        lce_req.header.payload = lce_req_payload;
 
         state_n = lce_req_v_o
           ? e_ready
@@ -262,9 +265,11 @@ module bp_lce_req
         // send when port is ready and metadata has arrived
         lce_req_v_o = lce_req_ready_i;
 
-        lce_req.header.size = bp_mem_msg_size_e'(cache_req_r.size);
+        lce_req.header.size = bp_bedrock_msg_size_e'(cache_req_r.size);
         lce_req.header.addr = cache_req_r.addr;
-        lce_req.header.msg_type = e_lce_req_type_uc_rd;
+        lce_req.header.msg_type = e_bedrock_req_uc_rd;
+
+        lce_req.header.payload = lce_req_payload;
 
         state_n = lce_req_v_o
           ? e_ready

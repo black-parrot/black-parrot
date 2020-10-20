@@ -11,7 +11,7 @@ module bp_me_cce_to_mem_link_client
   import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
   
    , parameter num_outstanding_req_p = "inv"
 
@@ -40,9 +40,9 @@ module bp_me_cce_to_mem_link_client
   , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
   );
   
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
-  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_cce_mem_msg_header_s, cce_block_width_p);
-  localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_cce_mem_msg_header_s), cce_block_width_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, cce_block_width_p);
+  localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_cce_mem_msg_header_s), cce_block_width_p);
 
   // We save coordinates between sending and receiving. This assumes we get responses in-order
   logic [cord_width_p-1:0] fifo_cord_li, fifo_cord_lo;
@@ -106,7 +106,7 @@ module bp_me_cce_to_mem_link_client
   wire [cord_width_p-1:0] dst_cord_lo = src_cord_lo;
   wire [cid_width_p-1:0]  dst_cid_lo  = src_cid_lo;
 
-  bp_cce_mem_msg_s mem_resp_cast_i;
+  bp_bedrock_cce_mem_msg_s mem_resp_cast_i;
   assign mem_resp_cast_i = mem_resp_i;
   bp_me_wormhole_packet_encode_mem_resp
    #(.bp_params_p(bp_params_p)

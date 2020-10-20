@@ -12,8 +12,8 @@ module bp_l2e_tile
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
     , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    // Wormhole parameters
@@ -45,8 +45,8 @@ module bp_l2e_tile
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
-`declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+`declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+`declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 
 // Cast the routing links
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -65,27 +65,27 @@ assign lce_cmd_link_o  = lce_cmd_link_cast_o;
 assign lce_resp_link_o = lce_resp_link_cast_o;
 
 // CCE connections
-bp_lce_cce_req_s  cce_lce_req_li;
+bp_bedrock_lce_req_msg_s  cce_lce_req_li;
 logic             cce_lce_req_v_li, cce_lce_req_yumi_lo;
-bp_lce_cmd_s      cce_lce_cmd_lo;
+bp_bedrock_lce_cmd_msg_s      cce_lce_cmd_lo;
 logic             cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
-bp_lce_cce_resp_s cce_lce_resp_li;
+bp_bedrock_lce_resp_msg_s cce_lce_resp_li;
 logic             cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
 
 // Mem connections
-bp_cce_mem_msg_s       cce_mem_cmd_lo;
+bp_bedrock_cce_mem_msg_s       cce_mem_cmd_lo;
 logic                  cce_mem_cmd_v_lo, cce_mem_cmd_ready_li;
-bp_cce_mem_msg_s       cce_mem_resp_li;
+bp_bedrock_cce_mem_msg_s       cce_mem_resp_li;
 logic                  cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
 
-bp_cce_mem_msg_s       cache_mem_cmd_li;
+bp_bedrock_cce_mem_msg_s       cache_mem_cmd_li;
 logic                  cache_mem_cmd_v_li, cache_mem_cmd_ready_lo;
-bp_cce_mem_msg_s       cache_mem_resp_lo;
+bp_bedrock_cce_mem_msg_s       cache_mem_resp_lo;
 logic                  cache_mem_resp_v_lo, cache_mem_resp_yumi_li;
 
-bp_cce_mem_msg_s       cfg_mem_cmd_li;
+bp_bedrock_cce_mem_msg_s       cfg_mem_cmd_li;
 logic                  cfg_mem_cmd_v_li, cfg_mem_cmd_ready_lo;
-bp_cce_mem_msg_s       cfg_mem_resp_lo;
+bp_bedrock_cce_mem_msg_s       cfg_mem_resp_lo;
 logic                  cfg_mem_resp_v_lo, cfg_mem_resp_yumi_li;
 bp_cfg_bus_s cfg_bus_lo;
 logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
@@ -143,9 +143,9 @@ bp_cce_wrapper
    ,.mem_resp_yumi_o(cce_mem_resp_yumi_lo)
    );
 
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_msg_width_lp, lce_req_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_msg_width_lp, lce_cmd_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_resp_msg_width_lp, lce_resp_packet_s);
 
 bp_coh_ready_and_link_s cce_lce_req_link_li, cce_lce_req_link_lo;
 bp_coh_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;
@@ -244,9 +244,9 @@ bp_coh_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
                            ? cache_mem_resp_lo
                            : cfg_mem_resp_lo;
 
-  bp_cce_mem_msg_s dma_mem_cmd_lo;
+  bp_bedrock_cce_mem_msg_s dma_mem_cmd_lo;
   logic dma_mem_cmd_v_lo, dma_mem_cmd_ready_li;
-  bp_cce_mem_msg_s dma_mem_resp_li;
+  bp_bedrock_cce_mem_msg_s dma_mem_resp_li;
   logic dma_mem_resp_v_li, dma_mem_resp_ready_lo;
   bp_me_cache_slice
    #(.bp_params_p(bp_params_p))

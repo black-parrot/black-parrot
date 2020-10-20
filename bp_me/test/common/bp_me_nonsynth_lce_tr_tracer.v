@@ -49,16 +49,9 @@ module bp_me_nonsynth_lce_tr_tracer
   integer file;
   string file_name;
 
-  logic freeze_r;
-  always_ff @(posedge clk_i) begin
-    freeze_r <= freeze_i;
-  end
-
-  always_ff @(negedge clk_i) begin
-    if (freeze_r & ~freeze_i) begin
-      file_name = $sformatf("%s_%x.trace", lce_trace_file_p, lce_id_i);
-      file      = $fopen(file_name, "w");
-    end
+  always_ff @(negedge reset_i) begin
+    file_name = $sformatf("%s_%x.trace", lce_trace_file_p, lce_id_i);
+    file      = $fopen(file_name, "w");
   end
 
   time tr_start_t;
