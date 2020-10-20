@@ -19,8 +19,6 @@ module bp_nonsynth_pc_profiler
 
     // Commit packet
     , input [commit_pkt_width_lp-1:0] commit_pkt
-    
-    , input [num_core_p-1:0] program_finish_i
     );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -53,21 +51,9 @@ module bp_nonsynth_pc_profiler
           histogram[commit_pkt_cast_i.pc] <= 1'b1;
     end
 
-  logic [num_core_p-1:0] program_finish_r;
-  bsg_dff_reset
-   #(.width_p(num_core_p))
-   program_finish_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i(program_finish_i)
-     ,.data_o(program_finish_r)
-     );
-
-  always_ff @(negedge clk_i)
-   if (program_finish_i[mhartid_i] & ~program_finish_r[mhartid_i])
-     foreach (histogram[key])
-       $fwrite(file, "[%x] %x\n", key, histogram[key]);
+  final
+   foreach (histogram[key])
+     $fwrite(file, "[%x] %x\n", key, histogram[key]);
 
 endmodule
 

@@ -1294,7 +1294,7 @@ module bp_be_dcache
         ,.id_i(cfg_bus_cast_i.dcache_id)
         ,.v_i(early_v_o)
         ,.addr_i(paddr_tv_r)
-        ,.load_data_i(data_o)
+        ,.load_data_i(final_data_o)
         ,.store_data_i(data_tv_r)
         ,.load_i(decode_tv_r.load_op)
         ,.store_i(decode_tv_r.store_op)

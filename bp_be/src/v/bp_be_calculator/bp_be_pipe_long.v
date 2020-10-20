@@ -15,7 +15,6 @@ module bp_be_pipe_long
    , input                             reset_i
 
    , input [dispatch_pkt_width_lp-1:0] reservation_i
-   , input                             v_i
    , output                            ready_o
    , input rv64_frm_e                  frm_dyn_i
 
@@ -46,6 +45,8 @@ module bp_be_pipe_long
   wire [dword_width_p-1:0] rs2 = reservation.rs2[0+:dword_width_p];
   wire [dword_width_p-1:0] imm = reservation.imm[0+:dword_width_p];
 
+  wire v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_long_v;
+
   wire signed_div_li = decode.fu_op inside {e_mul_op_div, e_mul_op_rem};
   wire rem_not_div_li = decode.fu_op inside {e_mul_op_rem, e_mul_op_remu};
 
@@ -68,8 +69,8 @@ module bp_be_pipe_long
   logic [dword_width_p-1:0] quotient_lo, remainder_lo;
   logic idiv_ready_lo;
   logic idiv_v_lo;
-  wire idiv_v_li = v_i & (decode.fu_op inside {e_mul_op_div, e_mul_op_divu});
-  wire irem_v_li = v_i & (decode.fu_op inside {e_mul_op_rem, e_mul_op_remu});
+  wire idiv_v_li = v_li & (decode.fu_op inside {e_mul_op_div, e_mul_op_divu});
+  wire irem_v_li = v_li & (decode.fu_op inside {e_mul_op_rem, e_mul_op_remu});
   bsg_idiv_iterative
    #(.width_p(dword_width_p))
    idiv
@@ -112,8 +113,8 @@ module bp_be_pipe_long
   assign frm_li = (instr.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
-  wire fdiv_v_li  = v_i & (decode.fu_op == e_fma_op_fdiv);
-  wire fsqrt_v_li = v_i & (decode.fu_op == e_fma_op_fsqrt);
+  wire fdiv_v_li  = v_li & (decode.fu_op == e_fma_op_fdiv);
+  wire fsqrt_v_li = v_li & (decode.fu_op == e_fma_op_fsqrt);
 
   logic fdiv_ready_lo, fdivsqrt_v_lo;
   logic sqrt_lo;
@@ -229,9 +230,9 @@ module bp_be_pipe_long
    wb_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i | flush_i)
-     ,.en_i(v_i | (iwb_v_o | fwb_v_o))
+     ,.en_i(v_li | (iwb_v_o | fwb_v_o))
 
-     ,.data_i({v_i, instr.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
+     ,.data_i({v_li, instr.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
      ,.data_o({rd_w_v_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
      );
 
@@ -252,18 +253,22 @@ module bp_be_pipe_long
       rd_data_lo = remainder_lo;
 
   // Actually a busy signal
-  assign ready_o = ~rd_w_v_r & ~v_i;
+  assign ready_o = ~rd_w_v_r & ~v_li;
 
-  assign iwb_pkt.rd_w_v     = rd_w_v_r;
+  assign iwb_pkt.ird_w_v    = rd_w_v_r;
+  assign iwb_pkt.frd_w_v    = 1'b0;
   assign iwb_pkt.rd_addr    = rd_addr_r;
   assign iwb_pkt.rd_data    = rd_data_lo;
-  assign iwb_pkt.fflags_acc = '0;
+  assign iwb_pkt.fflags_w_v = 1'b0;
+  assign iwb_pkt.fflags     = '0;
   assign iwb_v_o = idiv_safe_r & rd_w_v_r;
 
-  assign fwb_pkt.rd_w_v     = rd_w_v_r;
+  assign fwb_pkt.ird_w_v    = 1'b0;
+  assign fwb_pkt.frd_w_v    = rd_w_v_r;
   assign fwb_pkt.rd_addr    = rd_addr_r;
   assign fwb_pkt.rd_data    = fdivsqrt_result;
-  assign fwb_pkt.fflags_acc = fdivsqrt_fflags;
+  assign fwb_pkt.fflags_w_v = 1'b1;
+  assign fwb_pkt.fflags     = fdivsqrt_fflags;
   assign fwb_v_o = fdivsqrt_safe_r &  rd_w_v_r;
 
 endmodule

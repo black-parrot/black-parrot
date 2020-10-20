@@ -9,8 +9,8 @@ module bp_cacc_vdp
  import bp_be_dcache_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache)
 
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -21,19 +21,19 @@ module bp_cacc_vdp
 
     , input [lce_id_width_p-1:0]              lce_id_i
 
-    , output [lce_cce_req_width_lp-1:0]       lce_req_o
+    , output [lce_req_msg_width_lp-1:0]       lce_req_o
     , output                                  lce_req_v_o
     , input                                   lce_req_ready_i
 
-    , output [lce_cce_resp_width_lp-1:0]      lce_resp_o
+    , output [lce_resp_msg_width_lp-1:0]      lce_resp_o
     , output                                  lce_resp_v_o
     , input                                   lce_resp_ready_i
 
-    , input [lce_cmd_width_lp-1:0]            lce_cmd_i
+    , input [lce_cmd_msg_width_lp-1:0]        lce_cmd_i
     , input                                   lce_cmd_v_i
     , output                                  lce_cmd_yumi_o
 
-    , output [lce_cmd_width_lp-1:0]           lce_cmd_o
+    , output [lce_cmd_msg_width_lp-1:0]       lce_cmd_o
     , output                                  lce_cmd_v_o
     , input                                   lce_cmd_ready_i
 
@@ -205,11 +205,11 @@ bp_lce
 
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-   `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  bp_cce_mem_msg_s io_resp_cast_o;
-  bp_cce_mem_msg_s io_cmd_cast_i;
-  bp_cce_mem_msg_header_s resp_header;
+  bp_bedrock_cce_mem_msg_s io_resp_cast_o;
+  bp_bedrock_cce_mem_msg_s io_cmd_cast_i;
+  bp_bedrock_cce_mem_msg_header_s resp_header;
 
   assign io_cmd_ready_o = 1'b1;
   assign io_cmd_cast_i = io_cmd_i;
@@ -229,9 +229,9 @@ bp_lce
   logic [63:0] sum_l2 [0:1];
   logic [63:0] dot_product_temp;
 
-  bp_cce_mem_msg_payload_s  resp_payload;
-  bp_mem_msg_size_e         resp_size;
-  bp_mem_msg_e              resp_msg;
+  bp_bedrock_cce_mem_payload_s  resp_payload;
+  bp_bedrock_msg_size_e         resp_size;
+  bp_bedrock_mem_type_e         resp_msg;
   bp_local_addr_s          local_addr_li;
 
   assign local_addr_li = io_cmd_cast_i.header.addr;
@@ -293,7 +293,7 @@ bp_lce
     end
     if (state_r == DONE)
       start_cmd  <= '0;
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_mem_msg_uc_wr))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -311,7 +311,7 @@ bp_lce
         default : begin end
       endcase
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_mem_msg_uc_rd))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;

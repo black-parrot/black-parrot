@@ -23,8 +23,7 @@ module bp_be_pipe_sys
    , localparam exception_width_lp    = `bp_be_exception_width
    , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p)
-   , localparam trap_pkt_width_lp     = `bp_be_trap_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
    , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    )
@@ -34,13 +33,15 @@ module bp_be_pipe_sys
    , input [cfg_bus_width_lp-1:0]         cfg_bus_i
 
    , input [dispatch_pkt_width_lp-1:0]    reservation_i
+   , input                                flush_i
 
-   , input                                kill_ex1_i
-   , input                                kill_ex2_i
-   , input                                kill_ex3_i
+   , output                               ready_o
+   , input                                pipe_mem_ready_i
+   , input                                pipe_long_ready_i
 
+   , input                                commit_v_i
+   , input                                commit_queue_v_i
    , input [exception_width_lp-1:0]       exception_i
-   , input [vaddr_width_p-1:0]            exception_pc_i
    , input [vaddr_width_p-1:0]            exception_vaddr_i
 
    , output [ptw_miss_pkt_width_lp-1:0]   ptw_miss_pkt_o
@@ -49,14 +50,12 @@ module bp_be_pipe_sys
    , output logic                         miss_v_o
    , output logic                         exc_v_o
    , output logic [dpath_width_p-1:0]     data_o
+   , output logic                         v_o
 
    , input [wb_pkt_width_lp-1:0]          iwb_pkt_i
    , input [wb_pkt_width_lp-1:0]          fwb_pkt_i
-   , input [commit_pkt_width_lp-1:0]      commit_pkt_i
-   , output [trap_pkt_width_lp-1:0]       trap_pkt_o
+   , output [commit_pkt_width_lp-1:0]       commit_pkt_o
 
-   , input                                interrupt_v_i
-   , output                               interrupt_ready_o
    , input                                timer_irq_i
    , input                                software_irq_i
    , input                                external_irq_i
@@ -76,14 +75,12 @@ module bp_be_pipe_sys
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_commit_pkt_s commit_pkt;
-  bp_be_trap_pkt_s trap_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_trans_info_s trans_info;
 
   assign ptw_miss_pkt_o = ptw_miss_pkt;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
-  assign commit_pkt = commit_pkt_i;
-  assign trap_pkt_o = trap_pkt;
+  assign commit_pkt_o = commit_pkt;
   assign iwb_pkt = iwb_pkt_i;
   assign fwb_pkt = fwb_pkt_i;
   assign trans_info_o = trans_info;
@@ -122,6 +119,9 @@ module bp_be_pipe_sys
      ,.data_o(csr_cmd_r)
      );
 
+  logic [vaddr_width_p-1:0] commit_npc_r, commit_pc_r;
+  logic [instr_width_p-1:0] commit_ninstr_r, commit_instr_r;
+
   // Track if an incoming tlb miss is store or load
   logic is_store_r;
   bsg_dff_chain
@@ -137,11 +137,11 @@ module bp_be_pipe_sys
 
   always_comb
     begin
-      ptw_miss_pkt.instr_miss_v = ~kill_ex3_i & csr_cmd_lo.exc.itlb_miss;
-      ptw_miss_pkt.load_miss_v = ~kill_ex3_i & csr_cmd_lo.exc.dtlb_miss & ~is_store_r;
-      ptw_miss_pkt.store_miss_v = ~kill_ex3_i & csr_cmd_lo.exc.dtlb_miss & is_store_r;
-      ptw_miss_pkt.pc = exception_pc_i;
-      ptw_miss_pkt.vaddr = csr_cmd_lo.exc.itlb_miss ? exception_pc_i : exception_vaddr_i;
+      ptw_miss_pkt.instr_miss_v = commit_v_i & csr_cmd_lo.exc.itlb_miss;
+      ptw_miss_pkt.load_miss_v  = commit_v_i & csr_cmd_lo.exc.dtlb_miss & ~is_store_r;
+      ptw_miss_pkt.store_miss_v = commit_v_i & csr_cmd_lo.exc.dtlb_miss & is_store_r;
+      ptw_miss_pkt.pc           = commit_pc_r;
+      ptw_miss_pkt.vaddr        = csr_cmd_lo.exc.itlb_miss ? commit_pc_r : exception_vaddr_i;
     end
 
   always_comb
@@ -163,20 +163,21 @@ module bp_be_pipe_sys
       else
         begin
           // Override data width vaddr for dtlb fill
-          // Kill exception on ex3
-          csr_cmd_lo.exc = kill_ex3_i ? '0 : exception_i;
+          csr_cmd_lo.exc = commit_v_i ? exception_i : '0;
           csr_cmd_lo.data = csr_cmd_lo.data;
         end
     end
 
   wire ptw_page_fault_v  = ptw_fill_pkt.instr_page_fault_v | ptw_fill_pkt.load_page_fault_v | ptw_fill_pkt.store_page_fault_v;
-  wire exception_v_li = ptw_page_fault_v | commit_pkt.v;
-  wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? ptw_fill_pkt.pc : commit_pkt.pc;
-  wire [vaddr_width_p-1:0] exception_npc_li = ptw_page_fault_v ? '0 : commit_pkt.npc;
+  wire exception_v_li = ptw_page_fault_v | commit_v_i;
+  wire exception_queue_v_li = commit_queue_v_i;
+  wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? ptw_fill_pkt.pc : commit_pc_r;
+  wire [vaddr_width_p-1:0] exception_npc_li = ptw_page_fault_v ? '0 : commit_npc_r;
   wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_fill_pkt.vaddr : exception_vaddr_i;
-  wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
+  wire [instr_width_p-1:0] exception_instr_li = commit_instr_r;
 
   logic [dword_width_p-1:0] csr_data_lo;
+  logic interrupt_ready_lo, interrupt_v_li;
   bp_be_csr
    #(.bp_params_p(bp_params_p))
     csr
@@ -186,14 +187,16 @@ module bp_be_pipe_sys
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.csr_cmd_i(csr_cmd_lo)
-     ,.csr_cmd_v_i(csr_cmd_v_lo & ~kill_ex3_i)
+     ,.csr_cmd_v_i(csr_cmd_v_lo & commit_v_i)
      ,.csr_data_o(csr_data_lo)
 
-     ,.instret_i(commit_pkt.instret)
-     ,.fflags_acc_i(iwb_pkt.fflags_acc | fwb_pkt.fflags_acc)
-     ,.frf_w_v_i(fwb_pkt.rd_w_v)
+     // Simplify
+     ,.instret_i(commit_v_i & ~commit_pkt.exception & ~commit_pkt.rollback)
+     ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
+     ,.frf_w_v_i(fwb_pkt.frd_w_v)
 
      ,.exception_v_i(exception_v_li)
+     ,.exception_queue_v_i(exception_queue_v_li)
      ,.exception_pc_i(exception_pc_li)
      ,.exception_npc_i(exception_npc_li)
      ,.exception_vaddr_i(exception_vaddr_li)
@@ -202,18 +205,40 @@ module bp_be_pipe_sys
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
-     ,.interrupt_ready_o(interrupt_ready_o)
-     ,.interrupt_v_i(interrupt_v_i)
+     ,.interrupt_ready_o(interrupt_ready_lo)
+     ,.interrupt_v_i(interrupt_v_li)
 
-     ,.trap_pkt_o(trap_pkt)
+     ,.commit_pkt_o(commit_pkt)
      ,.trans_info_o(trans_info)
      ,.frm_dyn_o(frm_dyn_o)
      ,.fpu_en_o(fpu_en_o)
      );
 
+  assign interrupt_v_li   = interrupt_ready_lo & pipe_mem_ready_i & pipe_long_ready_i & ~commit_v_i;
+
+  always_ff @(posedge clk_i)
+    begin
+      commit_npc_r <= reservation.pc;
+      commit_pc_r  <= commit_npc_r;
+
+      commit_ninstr_r <= reservation.instr;
+      commit_instr_r  <= commit_ninstr_r;
+    end
+
+  assign ready_o          = ~interrupt_ready_lo;
   assign data_o           = csr_data_lo;
-  assign exc_v_o          = trap_pkt.exception | (ptw_miss_pkt.instr_miss_v | ptw_miss_pkt.load_miss_v | ptw_miss_pkt.store_miss_v);
-  assign miss_v_o         = trap_pkt.rollback;
+  assign exc_v_o          = commit_pkt.exception;
+  assign miss_v_o         = commit_pkt.rollback;
+
+  wire sys_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_sys_v;
+  bsg_dff_chain
+   #(.width_p(1), .num_stages_p(2))
+   sys_chain
+    (.clk_i(clk_i)
+
+     ,.data_i(sys_v_li)
+     ,.data_o(v_o)
+     );
 
 endmodule
 

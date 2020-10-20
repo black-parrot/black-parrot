@@ -29,6 +29,7 @@ module bp_be_pipe_ctl
 
    , output [dpath_width_p-1:0]        data_o
    , output [branch_pkt_width_lp-1:0]  br_pkt_o
+   , output                            v_o
    );
 
   // Suppress unused signal warning
@@ -72,6 +73,7 @@ module bp_be_pipe_ctl
   wire [vaddr_width_p-1:0] ntaken_tgt = pc + 4'd4;
 
   assign data_o   = vaddr_width_p'($signed(ntaken_tgt));
+  assign v_o      = reservation.v & ~reservation.poison & reservation.decode.pipe_ctl_v;
 
   assign br_pkt.v         = reservation.v & ~reservation.poison & ~flush_i;
   assign br_pkt.branch    = reservation.v & ~reservation.poison & reservation.decode.pipe_ctl_v;

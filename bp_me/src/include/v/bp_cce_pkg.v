@@ -32,12 +32,12 @@ package bp_cce_pkg;
     bp_coh_states_e                               owner_coh_state;        \
     bp_coh_states_e                               next_coh_state;         \
     logic [`bp_cce_inst_num_flags-1:0]            flags;                  \
-    bp_mem_msg_size_e                             msg_size;               \
+    bp_bedrock_msg_size_e                         msg_size;               \
   } bp_cce_mshr_s
 
   `define bp_cce_mshr_width(lce_id_width_mp, lce_assoc_mp, paddr_width_mp)          \
     ((2*lce_id_width_mp)+(3*`BSG_SAFE_CLOG2(lce_assoc_mp))+(2*paddr_width_mp)       \
-     +(3*$bits(bp_coh_states_e))+`bp_cce_inst_num_flags+$bits(bp_mem_msg_size_e))
+     +(3*$bits(bp_coh_states_e))+`bp_cce_inst_num_flags+$bits(bp_bedrock_msg_size_e))
 
   `define declare_bp_cce_dir_entry_s(tag_width_mp) \
   typedef struct packed                            \

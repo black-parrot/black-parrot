@@ -23,7 +23,7 @@ int sc_main(int argc, char **argv)
   //Verilated::scopesDump();
 
   sc_clock clock("clk", sc_time(sim_period, SC_PS));
-  sc_clock dram_clock("clk", sc_time(dram_period, SC_PS));
+  sc_clock dram_clock("dram_clk", sc_time(dram_period, SC_PS));
   sc_signal <bool> reset("reset");
 
   tb->clk_i(clock);

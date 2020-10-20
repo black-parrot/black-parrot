@@ -160,24 +160,24 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
     # Reset clear
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_reset, 0)
-
-    # Write CCE ucode
-    if self.ucode_file:
-      for core in range(self.ncpus):
-        for i in range(len(self.ucode)):
-          full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
-          self.print_nbf(3, full_addr, self.ucode[i])
-
-    # Write I$, D$, and CCE modes
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
-
-    # Write PC to the DRAM base
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x103000)
-
-    # Write checkpoint
+    
+    # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
+    # For checkpoint, load CCE ucode, cache/CCE modes and the checkpoint
     if self.checkpoint_file:
+    
+      # Write CCE ucode
+      if self.ucode_file:
+        for core in range(self.ncpus):
+          for i in range(len(self.ucode)):
+            full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
+            self.print_nbf(3, full_addr, self.ucode[i])
+       
+      # Write I$, D$, and CCE modes
+      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
+      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
+      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
+      
+      # Write the checkpoint
       for nbf in self.checkpoint:
         print(nbf)
 
@@ -199,8 +199,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--ncpus', type=int, default=1, help='number of BlackParrot cores')
   parser.add_argument('--ucode', dest='ucode_file', metavar='ucode.mem', help='CCE ucode file')
-  parser.add_argument('--mem', dest='mem_file', metavar='prog.mem', help='DRAM verilog file')
-  parser.add_argument('--checkpoint', dest='checkpoint_file', metavar='sample.nbf', help='checkpoint nbf file')
+  parser.add_argument("--mem", dest='mem_file', metavar='prog.mem', help="DRAM verilog file")
+  parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help="checkpoint nbf file")
   parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
 
   args = parser.parse_args()

@@ -13,8 +13,8 @@ module bp_unicore
    `declare_bp_proc_params(bp_params_p)
   
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p) 
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
-   `declare_bp_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
    )
   (  input                                             clk_i
    , input                                             reset_i
@@ -52,11 +52,11 @@ module bp_unicore
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
-  `declare_bp_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem)
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
 
-  `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
-  `bp_cast_i(bp_cce_mem_msg_s, mem_resp);
+  `bp_cast_o(bp_bedrock_cce_mem_msg_s, mem_cmd);
+  `bp_cast_i(bp_bedrock_cce_mem_msg_s, mem_resp);
 
   bp_dcache_req_s dcache_req_lo;
   bp_icache_req_s icache_req_lo;
@@ -93,29 +93,29 @@ module bp_unicore
   logic [1:0] credits_full_li, credits_empty_li;
   logic timer_irq_li, software_irq_li, external_irq_li;
 
-  bp_uce_mem_msg_s [2:0] proc_cmd_lo;
+  bp_bedrock_uce_mem_msg_s [2:0] proc_cmd_lo;
   logic [2:0] proc_cmd_v_lo, proc_cmd_ready_li;
-  bp_uce_mem_msg_s [2:0] proc_resp_li;
+  bp_bedrock_uce_mem_msg_s [2:0] proc_resp_li;
   logic [2:0] proc_resp_v_li, proc_resp_yumi_lo;
 
-  bp_uce_mem_msg_s cfg_cmd_li;
+  bp_bedrock_uce_mem_msg_s cfg_cmd_li;
   logic cfg_cmd_v_li, cfg_cmd_ready_lo;
-  bp_uce_mem_msg_s cfg_resp_lo;
+  bp_bedrock_uce_mem_msg_s cfg_resp_lo;
   logic cfg_resp_v_lo, cfg_resp_yumi_li;
 
-  bp_uce_mem_msg_s clint_cmd_li;
+  bp_bedrock_uce_mem_msg_s clint_cmd_li;
   logic clint_cmd_v_li, clint_cmd_ready_lo;
-  bp_uce_mem_msg_s clint_resp_lo;
+  bp_bedrock_uce_mem_msg_s clint_resp_lo;
   logic clint_resp_v_lo, clint_resp_yumi_li;
 
-  bp_uce_mem_msg_s cache_cmd_li;
+  bp_bedrock_uce_mem_msg_s cache_cmd_li;
   logic cache_cmd_v_li, cache_cmd_ready_lo;
-  bp_uce_mem_msg_s cache_resp_lo;
+  bp_bedrock_uce_mem_msg_s cache_resp_lo;
   logic cache_resp_v_lo, cache_resp_yumi_li;
 
-  bp_uce_mem_msg_s loopback_cmd_li;
+  bp_bedrock_uce_mem_msg_s loopback_cmd_li;
   logic loopback_cmd_v_li, loopback_cmd_ready_lo;
-  bp_uce_mem_msg_s loopback_resp_lo;
+  bp_bedrock_uce_mem_msg_s loopback_resp_lo;
   logic loopback_resp_v_lo, loopback_resp_yumi_li;
 
   bp_cfg_bus_s cfg_bus_lo;
@@ -371,16 +371,16 @@ module bp_unicore
   assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
 
   // Command/response FIFOs for timing and helpfulness
-  bp_uce_mem_msg_s [2:0] cmd_fifo_lo;
+  bp_bedrock_uce_mem_msg_s [2:0] cmd_fifo_lo;
   logic [2:0] cmd_fifo_v_lo, cmd_fifo_yumi_li;
   
-  bp_uce_mem_msg_s [2:0] resp_fifo_li;
+  bp_bedrock_uce_mem_msg_s [2:0] resp_fifo_li;
   logic [2:0] resp_fifo_v_li, resp_fifo_ready_lo;
 
   for (genvar i = 0; i < 3; i++)
     begin : fifo
       bsg_two_fifo
-       #(.width_p($bits(bp_uce_mem_msg_s)))
+       #(.width_p($bits(bp_bedrock_uce_mem_msg_s)))
        cmd_fifo
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
@@ -395,7 +395,7 @@ module bp_unicore
          );
 
       bsg_two_fifo
-       #(.width_p($bits(bp_uce_mem_msg_s)))
+       #(.width_p($bits(bp_bedrock_uce_mem_msg_s)))
        resp_fifo
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
@@ -422,9 +422,9 @@ module bp_unicore
      ,.grants_o(cmd_fifo_yumi_li)
      );
 
-  bp_uce_mem_msg_s cmd_fifo_selected_lo;
+  bp_bedrock_uce_mem_msg_s cmd_fifo_selected_lo;
   bsg_mux_one_hot
-   #(.width_p($bits(bp_uce_mem_msg_s)), .els_p(3))
+   #(.width_p($bits(bp_bedrock_uce_mem_msg_s)), .els_p(3))
    cmd_select
     (.data_i(cmd_fifo_lo)
      ,.sel_one_hot_i(cmd_fifo_yumi_li)
@@ -448,9 +448,11 @@ module bp_unicore
     
   for (genvar i = 0; i < 3; i++)
     begin : resp_match
-      bp_uce_mem_msg_s resp_fifo_selected_li;
+      bp_bedrock_uce_mem_msg_s resp_fifo_selected_li;
+      bp_bedrock_uce_mem_payload_s resp_fifo_selected_payload_li;
+      assign resp_fifo_selected_payload_li = resp_fifo_selected_li.header.payload;
       bsg_mux_one_hot
-       #(.width_p($bits(bp_uce_mem_msg_s)), .els_p(5))
+       #(.width_p($bits(bp_bedrock_uce_mem_msg_s)), .els_p(5))
        resp_select
         (.data_i({loopback_resp_lo, cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
          ,.sel_one_hot_i({loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
@@ -458,7 +460,7 @@ module bp_unicore
          );
       wire resp_selected_v_li = |{loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li};
 
-      assign resp_fifo_v_li[i] = resp_selected_v_li & (resp_fifo_selected_li.header.payload.lce_id == i);
+      assign resp_fifo_v_li[i] = resp_selected_v_li & (resp_fifo_selected_payload_li.lce_id == i);
       assign resp_fifo_li[i] = resp_fifo_selected_li;
     end
 

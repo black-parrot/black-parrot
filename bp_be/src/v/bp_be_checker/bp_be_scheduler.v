@@ -26,7 +26,6 @@ module bp_be_scheduler
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
-   , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp     = `bp_be_wb_pkt_width(vaddr_width_p)
    )
   (input                               clk_i
@@ -47,8 +46,7 @@ module bp_be_scheduler
   // Dispatch interface
   , output [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
 
-  , input [commit_pkt_width_lp-1:0]    commit_pkt_i
-  , input [trap_pkt_width_lp-1:0]      trap_pkt_i
+  , input [commit_pkt_width_lp-1:0]      commit_pkt_i
   , input [wb_pkt_width_lp-1:0]        iwb_pkt_i
   , input [wb_pkt_width_lp-1:0]        fwb_pkt_i
   );
@@ -63,8 +61,7 @@ module bp_be_scheduler
   // Cast input and output ports
   bp_be_isd_status_s isd_status;
   rv64_instr_s       instr;
-  bp_be_commit_pkt_s commit_pkt;
-  bp_be_trap_pkt_s   trap_pkt;
+  bp_be_commit_pkt_s   commit_pkt;
   bp_be_wb_pkt_s     iwb_pkt, fwb_pkt;
 
   bp_fe_queue_s fe_queue_lo;
@@ -72,14 +69,13 @@ module bp_be_scheduler
 
   assign isd_status_o    = isd_status;
   assign instr           = fe_queue_lo.msg.fetch.instr;
-  assign commit_pkt      = commit_pkt_i;
-  assign trap_pkt        = trap_pkt_i;
+  assign commit_pkt        = commit_pkt_i;
   assign iwb_pkt         = iwb_pkt_i;
   assign fwb_pkt         = fwb_pkt_i;
 
   wire fe_queue_clr_li  = suppress_iss_i;
-  wire fe_queue_deq_li  = commit_pkt.queue_v & ~trap_pkt.rollback;
-  wire fe_queue_roll_li = trap_pkt.rollback;
+  wire fe_queue_deq_li  = commit_pkt.queue_v & ~commit_pkt.rollback;
+  wire fe_queue_roll_li = commit_pkt.rollback;
   bp_be_issue_pkt_s preissue_pkt, issue_pkt;
   bp_be_issue_queue
    #(.bp_params_p(bp_params_p))
@@ -114,7 +110,7 @@ module bp_be_scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.rd_w_v_i(iwb_pkt.rd_w_v)
+     ,.rd_w_v_i(iwb_pkt.ird_w_v)
      ,.rd_addr_i(iwb_pkt.rd_addr)
      ,.rd_data_i(iwb_pkt.rd_data[0+:dword_width_p])
 
@@ -130,7 +126,7 @@ module bp_be_scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.rd_w_v_i(fwb_pkt.rd_w_v)
+     ,.rd_w_v_i(fwb_pkt.frd_w_v)
      ,.rd_addr_i(fwb_pkt.rd_addr)
      ,.rd_data_i(fwb_pkt.rd_data)
 

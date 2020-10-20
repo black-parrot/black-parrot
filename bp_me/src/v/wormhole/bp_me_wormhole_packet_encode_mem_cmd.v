@@ -18,7 +18,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
     , parameter flit_width_p = "inv"
     , parameter cord_width_p = "inv"
@@ -38,10 +38,10 @@ module bp_me_wormhole_packet_encode_mem_cmd
     , output [mem_cmd_wormhole_header_lp-1:0] wh_header_o
     );
 
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
-  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_cce_mem_msg_header_s, cce_block_width_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, cce_block_width_p);
 
-  bp_cce_mem_msg_header_s header_cast_i;
+  bp_bedrock_cce_mem_msg_header_s header_cast_i;
   bp_mem_wormhole_header_s header_cast_o;
 
   assign header_cast_i = mem_cmd_header_i;
@@ -78,23 +78,23 @@ module bp_me_wormhole_packet_encode_mem_cmd
     header_cast_o.wh_hdr.cid      = dst_cid_i;
 
     case (header_cast_i.size)
-      e_mem_msg_size_1 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_1_lp);
-      e_mem_msg_size_2 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_2_lp);
-      e_mem_msg_size_4 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_4_lp);
-      e_mem_msg_size_8 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_8_lp);
-      e_mem_msg_size_16: data_cmd_len_li = len_width_p'(mem_cmd_data_len_16_lp);
-      e_mem_msg_size_32: data_cmd_len_li = len_width_p'(mem_cmd_data_len_32_lp);
-      e_mem_msg_size_64: data_cmd_len_li = len_width_p'(mem_cmd_data_len_64_lp);
-      e_mem_msg_size_128: data_cmd_len_li = len_width_p'(mem_cmd_data_len_128_lp);
+      e_bedrock_msg_size_1 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_1_lp);
+      e_bedrock_msg_size_2 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_2_lp);
+      e_bedrock_msg_size_4 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_4_lp);
+      e_bedrock_msg_size_8 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_8_lp);
+      e_bedrock_msg_size_16: data_cmd_len_li = len_width_p'(mem_cmd_data_len_16_lp);
+      e_bedrock_msg_size_32: data_cmd_len_li = len_width_p'(mem_cmd_data_len_32_lp);
+      e_bedrock_msg_size_64: data_cmd_len_li = len_width_p'(mem_cmd_data_len_64_lp);
+      e_bedrock_msg_size_128: data_cmd_len_li = len_width_p'(mem_cmd_data_len_128_lp);
       default: data_cmd_len_li = '0;
     endcase
 
     case (header_cast_i.msg_type)
-      e_mem_msg_rd
-      ,e_mem_msg_uc_rd
-      ,e_mem_msg_pre  : header_cast_o.wh_hdr.len = len_width_p'(mem_cmd_req_len_lp);
-      e_mem_msg_uc_wr
-      ,e_mem_msg_wr   : header_cast_o.wh_hdr.len = data_cmd_len_li;
+      e_bedrock_mem_rd
+      ,e_bedrock_mem_uc_rd
+      ,e_bedrock_mem_pre  : header_cast_o.wh_hdr.len = len_width_p'(mem_cmd_req_len_lp);
+      e_bedrock_mem_uc_wr
+      ,e_bedrock_mem_wr   : header_cast_o.wh_hdr.len = data_cmd_len_li;
       default: header_cast_o.wh_hdr.len = '0;
     endcase
   end
