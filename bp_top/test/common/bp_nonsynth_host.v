@@ -10,7 +10,7 @@ module bp_nonsynth_host
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter host_max_outstanding_p = 32
    )
@@ -41,7 +41,7 @@ always_ff @(posedge clk_i) begin
   ch = scan();
 end
 
-`declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+`declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
 // HOST I/O mappings
 //localparam host_dev_base_addr_gp     = 32'h03??_????;
@@ -54,8 +54,8 @@ localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
 localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
 localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
 
-bp_cce_mem_msg_s io_cmd_li, io_cmd_lo;
-bp_cce_mem_msg_s io_resp_cast_o;
+bp_bedrock_cce_mem_msg_s io_cmd_li, io_cmd_lo;
+bp_bedrock_cce_mem_msg_s io_resp_cast_o;
 
 assign io_cmd_li = io_cmd_i;
 assign io_resp_o = io_resp_cast_o;
@@ -64,7 +64,7 @@ localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
 logic io_cmd_v_lo, io_cmd_yumi_li;
 bsg_fifo_1r1w_small
- #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(host_max_outstanding_p))
+ #(.width_p($bits(bp_bedrock_cce_mem_msg_s)), .els_p(host_max_outstanding_p))
  small_fifo
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -203,7 +203,7 @@ always_ff @(negedge clk_i)
      ,.data_o(bootrom_final_lo)
      );
 
-  bp_cce_mem_msg_s host_io_resp_lo, domain_io_resp_lo, bootrom_io_resp_lo;
+  bp_bedrock_cce_mem_msg_s host_io_resp_lo, domain_io_resp_lo, bootrom_io_resp_lo;
   
   assign host_io_resp_lo = '{header: io_cmd_lo.header, data: ch};
   assign domain_io_resp_lo = '{header: io_cmd_lo.header, data: '0};

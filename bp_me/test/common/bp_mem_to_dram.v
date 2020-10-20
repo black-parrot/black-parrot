@@ -8,7 +8,7 @@ module bp_mem_to_dram
   
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
   , parameter channel_addr_width_p = "inv"
   , parameter data_width_p = "inv"
   , parameter dram_base_p = "inv"
@@ -61,7 +61,7 @@ module bp_mem_to_dram
   /********************* Packet definition *********************/
   
   // cce
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   
   
   /********************* Resp queue fifo *********************/
@@ -199,7 +199,7 @@ module bp_mem_to_dram
   );
 
   // input mem cmd
-  bp_cce_mem_msg_s mem_cmd_li , mem_resp_lo;
+  bp_bedrock_cce_mem_msg_s mem_cmd_li , mem_resp_lo;
   assign mem_cmd_li = mem_cmd_i;
   assign mem_resp_o = mem_resp_lo;
   assign mem_cmd_ready_o = ~reset_i & ~dram_reset_i & queue_fifo_ready_lo & dma_fifo_ready_lo & dma_data_piso_ready_lo;
@@ -211,7 +211,7 @@ module bp_mem_to_dram
   // address channel
   assign dma_fifo_v_li = mem_cmd_v_i & mem_cmd_ready_o;
   assign dma_fifo_yumi_li =  req_afifo_enq_li & (word_cnt_r == (block_size_in_words_lp-1));
-  assign dma_fifo_write_not_read_li = (mem_cmd_li.header.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr});
+  assign dma_fifo_write_not_read_li = (mem_cmd_li.header.msg_type.mem inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr});
   assign dma_fifo_ch_addr_li = (mem_cmd_li.header.addr - dram_base_p) & ({channel_addr_width_p{1'b1}} << byte_offset_width_lp);
   assign req_afifo_enq_li = dma_fifo_v_lo & ~req_afifo_full_lo;
   assign word_addr_lo = dma_fifo_ch_addr_lo + (word_cnt_r << byte_offset_width_lp);
@@ -359,7 +359,7 @@ module bp_mem_to_dram
   );
   
   // queue FIFO
-  wire is_write = mem_resp_lo.header.msg_type inside {e_mem_msg_uc_wr, e_mem_msg_wr};
+  wire is_write = mem_resp_lo.header.msg_type.mem inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr};
   assign queue_fifo_yumi_li = mem_resp_v_o & mem_resp_yumi_i;
 
   // resp async FIFO

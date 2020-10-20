@@ -65,12 +65,14 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_flow_counter.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_passthrough.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_1_to_n.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_dynamic.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_full.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_passthrough.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w.v
@@ -102,6 +104,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_buf_ctrl.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_circular_ptr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_concentrate_static.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_down.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down.v
@@ -265,6 +268,10 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
+$BP_ME_DIR/src/v/wormhole/bp_lite_to_stream.v
+$BP_ME_DIR/src/v/wormhole/bp_stream_to_lite.v
+$BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.v
+$BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.v
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.v
 $BP_TOP_DIR/src/v/bp_cacc_vdp.v

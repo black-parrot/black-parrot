@@ -16,9 +16,8 @@ module testbench
    `declare_bp_proc_params(bp_params_p)
 
    // interface widths
-   `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter cce_trace_p = 0
    , parameter axe_trace_p = 0
@@ -64,29 +63,28 @@ function int get_sim_period();
 endfunction
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
-`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
+`declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+`declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
 // CFG IF
 bp_cfg_bus_s           cfg_bus_lo;
-bp_cce_mem_msg_s       cfg_mem_cmd_lo;
+bp_bedrock_cce_mem_msg_s cfg_mem_cmd_lo;
 logic                  cfg_mem_cmd_v_lo, cfg_mem_cmd_ready_li;
 
 // CCE-MEM IF
-bp_cce_mem_msg_s       mem_resp;
-logic                  mem_resp_v, mem_resp_yumi;
-bp_cce_mem_msg_s       mem_cmd;
-logic                  mem_cmd_v, mem_cmd_ready;
+bp_bedrock_cce_mem_msg_s mem_resp;
+logic                    mem_resp_v, mem_resp_yumi;
+bp_bedrock_cce_mem_msg_s mem_cmd;
+logic                    mem_cmd_v, mem_cmd_ready;
 
 // LCE-CCE IF
-bp_lce_cce_req_s       lce_req_lo, lce_req;
+bp_bedrock_lce_req_msg_s  lce_req_lo, lce_req;
+bp_bedrock_lce_resp_msg_s lce_resp, lce_resp_lo;
+bp_bedrock_lce_cmd_msg_s  lce_cmd, lce_cmd_lo, lce_cmd_out_lo;
 logic                  lce_req_v, lce_req_v_lo, lce_req_yumi, lce_req_ready_li;
-bp_lce_cce_resp_s      lce_resp, lce_resp_lo;
 logic                  lce_resp_v, lce_resp_v_lo, lce_resp_yumi, lce_resp_ready_li;
-bp_lce_cmd_s           lce_cmd, lce_cmd_lo;
-logic                  lce_cmd_v, lce_cmd_ready;
+logic                  lce_cmd_v, lce_cmd_yumi;
 logic                  lce_cmd_v_lo, lce_cmd_ready_li;
-bp_lce_cmd_s           lce_cmd_out_lo;
 logic                  lce_cmd_out_v_lo, lce_cmd_out_ready_li;
 // Single LCE setup - LCE should never send a Data Command
 assign lce_cmd_out_ready_li = '0;
@@ -216,7 +214,7 @@ bind bp_cce_wrapper
       );
 
 bsg_two_fifo
-#(.width_p(lce_cce_req_width_lp)
+#(.width_p(lce_req_msg_width_lp)
   )
 lce_req_buffer
  (.clk_i(clk_i)
@@ -232,7 +230,7 @@ lce_req_buffer
   );
 
 bsg_two_fifo
-#(.width_p(lce_cce_resp_width_lp)
+#(.width_p(lce_resp_msg_width_lp)
   )
 lce_resp_buffer
  (.clk_i(clk_i)
@@ -248,7 +246,7 @@ lce_resp_buffer
   );
 
 bsg_two_fifo
-#(.width_p(lce_cmd_width_lp)
+#(.width_p(lce_cmd_msg_width_lp)
   )
 lce_cmd_buffer
  (.clk_i(clk_i)
@@ -317,8 +315,8 @@ wrapper
 // deadlock!
 
 // Memory Command Buffer
-bp_cce_mem_msg_s       mem_cmd_lo;
-logic                  mem_cmd_v_lo, mem_cmd_ready_lo;
+bp_bedrock_cce_mem_msg_s mem_cmd_lo;
+logic                    mem_cmd_v_lo, mem_cmd_ready_lo;
 bsg_fifo_1r1w_small
 #(.width_p(cce_mem_msg_width_lp)
   ,.els_p(mem_buffer_els_lp)
@@ -337,8 +335,8 @@ mem_cmd_buffer
   );
 
 // Memory Response Buffer
-bp_cce_mem_msg_s       mem_resp_lo;
-logic                  mem_resp_v_lo, mem_resp_ready_lo;
+bp_bedrock_cce_mem_msg_s mem_resp_lo;
+logic                    mem_resp_v_lo, mem_resp_ready_lo;
 bsg_fifo_1r1w_small
 #(.width_p(cce_mem_msg_width_lp)
   ,.els_p(mem_buffer_els_lp)

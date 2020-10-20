@@ -21,8 +21,8 @@ module bp_cce_wrapper
 
     // Interface Widths
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
   )
   (input                                               clk_i
    , input                                             reset_i
@@ -38,16 +38,16 @@ module bp_cce_wrapper
    , output [cce_instr_width_p-1:0]                    ucode_data_o
 
    // LCE-CCE Interface
-   , input [lce_cce_req_width_lp-1:0]                  lce_req_i
+   , input [lce_req_msg_width_lp-1:0]                  lce_req_i
    , input                                             lce_req_v_i
    , output logic                                      lce_req_yumi_o
 
-   , input [lce_cce_resp_width_lp-1:0]                 lce_resp_i
+   , input [lce_resp_msg_width_lp-1:0]                 lce_resp_i
    , input                                             lce_resp_v_i
    , output logic                                      lce_resp_yumi_o
 
    // ready->valid
-   , output logic [lce_cmd_width_lp-1:0]               lce_cmd_o
+   , output logic [lce_cmd_msg_width_lp-1:0]           lce_cmd_o
    , output logic                                      lce_cmd_v_o
    , input                                             lce_cmd_ready_i
 

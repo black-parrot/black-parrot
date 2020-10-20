@@ -36,8 +36,7 @@ module bp_lce
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam ptag_width_lp = (paddr_width_p-lg_sets_lp-lg_block_size_in_bytes_lp)
 
-   `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
@@ -87,24 +86,24 @@ module bp_lce
 
     // LCE-CCE interface
     // Req: ready->valid
-    , output logic [lce_cce_req_width_lp-1:0]        lce_req_o
+    , output logic [lce_req_msg_width_lp-1:0]        lce_req_o
     , output logic                                   lce_req_v_o
     , input                                          lce_req_ready_i
 
     // Resp: ready->valid
-    , output logic [lce_cce_resp_width_lp-1:0]       lce_resp_o
+    , output logic [lce_resp_msg_width_lp-1:0]       lce_resp_o
     , output logic                                   lce_resp_v_o
     , input                                          lce_resp_ready_i
 
     // CCE-LCE interface
     // Cmd_i: valid->yumi
-    , input [lce_cmd_width_lp-1:0]                   lce_cmd_i
+    , input [lce_cmd_msg_width_lp-1:0]               lce_cmd_i
     , input                                          lce_cmd_v_i
     , output logic                                   lce_cmd_yumi_o
 
     // LCE-LCE interface
     // Cmd_o: ready->valid
-    , output logic [lce_cmd_width_lp-1:0]            lce_cmd_o
+    , output logic [lce_cmd_msg_width_lp-1:0]        lce_cmd_o
     , output logic                                   lce_cmd_v_o
     , input                                          lce_cmd_ready_i
   );

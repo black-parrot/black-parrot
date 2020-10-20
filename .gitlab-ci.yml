@@ -247,7 +247,7 @@ top-mc-verilator:
   tags:
     - verilator
   script:
-    - $CI_PROJECT_DIR/ci/multicore.sh verilator $CI_CORES $CI_CORES
+    - $CI_PROJECT_DIR/ci/multicore.sh verilator $CI_CORES
 
 top-mc-vcs:
   <<: *job_definition
@@ -255,7 +255,7 @@ top-mc-vcs:
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/multicore.sh vcs $CI_CORES $CI_CORES
+    - $CI_PROJECT_DIR/ci/multicore.sh vcs $CI_CORES
 
 top-misc-vcs:
   <<: *job_definition
@@ -317,6 +317,7 @@ top-beebs-vcs:
 
 top-checkpoint-verilator:
   <<: *job_definition
+  when: manual
   stage: test-short
   tags:
     - verilator
@@ -325,6 +326,7 @@ top-checkpoint-verilator:
 
 top-checkpoint-vcs:
   <<: *job_definition
+  when: manual
   stage: test-short
   tags:
     - vcs

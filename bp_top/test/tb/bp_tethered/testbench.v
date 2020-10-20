@@ -18,7 +18,7 @@ module testbench
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    // Tracing parameters
    , parameter calc_trace_p                = 0
@@ -61,29 +61,29 @@ function int get_sim_period();
   return (`BP_SIM_CLK_PERIOD);
 endfunction
 
-`declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+`declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
 logic [num_core_p-1:0] program_finish_lo;
 logic [num_core_p-1:0] cosim_finish_lo;
 
-bp_cce_mem_msg_s proc_mem_cmd_lo;
+bp_bedrock_cce_mem_msg_s proc_mem_cmd_lo;
 logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;
-bp_cce_mem_msg_s proc_mem_resp_li;
+bp_bedrock_cce_mem_msg_s proc_mem_resp_li;
 logic proc_mem_resp_v_li, proc_mem_resp_yumi_lo;
 
-bp_cce_mem_msg_s proc_io_cmd_lo;
+bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
 logic proc_io_cmd_v_lo, proc_io_cmd_ready_li;
-bp_cce_mem_msg_s proc_io_resp_li;
+bp_bedrock_cce_mem_msg_s proc_io_resp_li;
 logic proc_io_resp_v_li, proc_io_resp_yumi_lo;
 
-bp_cce_mem_msg_s io_cmd_lo;
+bp_bedrock_cce_mem_msg_s io_cmd_lo;
 logic io_cmd_v_lo, io_cmd_ready_li;
-bp_cce_mem_msg_s io_resp_li;
+bp_bedrock_cce_mem_msg_s io_resp_li;
 logic io_resp_v_li, io_resp_yumi_lo;
 
-bp_cce_mem_msg_s load_cmd_lo;
+bp_bedrock_cce_mem_msg_s load_cmd_lo;
 logic load_cmd_v_lo, load_cmd_yumi_li;
-bp_cce_mem_msg_s load_resp_li;
+bp_bedrock_cce_mem_msg_s load_resp_li;
 logic load_resp_v_li, load_resp_ready_lo;
 
 wrapper

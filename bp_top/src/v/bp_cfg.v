@@ -9,7 +9,7 @@ module bp_cfg
  import bp_common_cfg_link_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, xce_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, xce)
 
    // TODO: Should I be a global param
    , localparam cfg_max_outstanding_p = 1
@@ -40,17 +40,17 @@ module bp_cfg
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce_mem);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce);
   
   bp_cfg_bus_s cfg_bus_cast_o;
-  bp_xce_mem_msg_s mem_cmd_li, mem_cmd_lo;
+  bp_bedrock_xce_mem_msg_s mem_cmd_li, mem_cmd_lo;
   
   assign cfg_bus_o = cfg_bus_cast_o;
   assign mem_cmd_li = mem_cmd_i;
 
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
   bsg_fifo_1r1w_small
-   #(.width_p($bits(bp_xce_mem_msg_s)), .els_p(cfg_max_outstanding_p))
+   #(.width_p($bits(bp_bedrock_xce_mem_msg_s)), .els_p(cfg_max_outstanding_p))
    small_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -70,8 +70,8 @@ module bp_cfg
   bp_cce_mode_e cce_mode_r; 
 
 wire                        cfg_v_li    = mem_cmd_v_lo;
-wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_mem_msg_uc_wr);
-wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_mem_msg_uc_rd);
+wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_bedrock_mem_uc_wr);
+wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_bedrock_mem_uc_rd);
 wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_lo.header.addr[0+:cfg_addr_width_p];
 wire [cfg_data_width_p-1:0] cfg_data_li = mem_cmd_lo.data[0+:cfg_data_width_p];
 
@@ -214,7 +214,7 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
      ,.data_o(read_data_r)
      );
 
-  bp_xce_mem_msg_s mem_resp_lo;
+  bp_bedrock_xce_mem_msg_s mem_resp_lo;
   assign mem_resp_lo = '{header: mem_cmd_lo.header, data: dword_width_p'(read_data_r)};
 
   assign mem_resp_o = mem_resp_lo;

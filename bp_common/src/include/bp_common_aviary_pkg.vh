@@ -516,6 +516,7 @@ package bp_common_aviary_pkg;
     ,bp_multicore_1_cce_ucode_cfg_p
     ,bp_multicore_1_l1_medium_cfg_p
     ,bp_multicore_1_l1_small_cfg_p
+    ,bp_multicore_1_no_l2_cfg_p
     ,bp_multicore_1_cfg_p
 
     // Unicore configurations
@@ -536,30 +537,31 @@ package bp_common_aviary_pkg;
   typedef enum bit [lg_max_cfgs-1:0]
   {
     // Various testing configs
-    e_bp_multicore_cce_ucode_half_cfg       = 29
-    ,e_bp_multicore_half_cfg                = 28
-    ,e_bp_unicore_half_cfg                  = 27
+    e_bp_multicore_cce_ucode_half_cfg       = 30
+    ,e_bp_multicore_half_cfg                = 29
+    ,e_bp_unicore_half_cfg                  = 28
 
     // Multicore configurations
-    ,e_bp_multicore_16_cce_ucode_cfg        = 26
-    ,e_bp_multicore_16_cfg                  = 25
-    ,e_bp_multicore_12_cce_ucode_cfg        = 24
-    ,e_bp_multicore_12_cfg                  = 23
-    ,e_bp_multicore_8_cce_ucode_cfg         = 22
-    ,e_bp_multicore_8_cfg                   = 21
-    ,e_bp_multicore_6_cce_ucode_cfg         = 20
-    ,e_bp_multicore_6_cfg                   = 19
-    ,e_bp_multicore_4_accelerator_cfg       = 18
-    ,e_bp_multicore_4_cce_ucode_cfg         = 17
-    ,e_bp_multicore_4_cfg                   = 16
-    ,e_bp_multicore_3_cce_ucode_cfg         = 15
-    ,e_bp_multicore_3_cfg                   = 14
-    ,e_bp_multicore_2_cce_ucode_cfg         = 13
-    ,e_bp_multicore_2_cfg                   = 12
-    ,e_bp_multicore_1_accelerator_cfg       = 11
-    ,e_bp_multicore_1_cce_ucode_cfg         = 10
-    ,e_bp_multicore_1_l1_medium_cfg         = 9
-    ,e_bp_multicore_1_l1_small_cfg          = 8
+    ,e_bp_multicore_16_cce_ucode_cfg        = 27
+    ,e_bp_multicore_16_cfg                  = 26
+    ,e_bp_multicore_12_cce_ucode_cfg        = 25
+    ,e_bp_multicore_12_cfg                  = 24
+    ,e_bp_multicore_8_cce_ucode_cfg         = 23
+    ,e_bp_multicore_8_cfg                   = 22
+    ,e_bp_multicore_6_cce_ucode_cfg         = 21
+    ,e_bp_multicore_6_cfg                   = 20
+    ,e_bp_multicore_4_accelerator_cfg       = 19
+    ,e_bp_multicore_4_cce_ucode_cfg         = 18
+    ,e_bp_multicore_4_cfg                   = 17
+    ,e_bp_multicore_3_cce_ucode_cfg         = 16
+    ,e_bp_multicore_3_cfg                   = 15
+    ,e_bp_multicore_2_cce_ucode_cfg         = 14
+    ,e_bp_multicore_2_cfg                   = 13
+    ,e_bp_multicore_1_accelerator_cfg       = 12
+    ,e_bp_multicore_1_cce_ucode_cfg         = 11
+    ,e_bp_multicore_1_l1_medium_cfg         = 10
+    ,e_bp_multicore_1_l1_small_cfg          = 9
+    ,e_bp_multicore_1_no_l2_cfg             = 8
     ,e_bp_multicore_1_cfg                   = 7
 
     // Unicore configurations
