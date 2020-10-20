@@ -231,7 +231,7 @@ module testbench
   bp_mem
     #(.bp_params_p(bp_params_p)
       ,.mem_offset_p(mem_offset_p)
-      ,.mem_load_p(1)
+      ,.mem_load_p(0)
       ,.mem_file_p(mem_file_p)
       ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
       ,.dram_fixed_latency_p(dram_fixed_latency_p)
@@ -301,8 +301,6 @@ module testbench
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-
-       ,.program_finish_i('0)
        );
 
   if (uce_p == 0) begin

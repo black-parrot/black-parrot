@@ -17,17 +17,25 @@ extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory
 
     finish = new vector<bool>(ncpus, false);
 
-    string ncpus_str = "--ncpus=" + to_string(ncpus);
-    string memsize_str = "--memory_size=" + to_string(memory_size);
-    string mmio_str = "--mmio_range=0x20000:0x80000000";
-    char* load_str = "--load=prog";
+    char dromajo_str[50];
+    sprintf(dromajo_str, "dromajo");
+    char ncpus_str[50];
+    sprintf(ncpus_str, "--ncpus=%d", ncpus);
+    char memsize_str[50];
+    sprintf(memsize_str, "--memory_size=%d", memory_size);
+    char mmio_str[50];
+    sprintf(mmio_str, "--mmio_range=0x20000:0x80000000");
+    char load_str[50];
+    sprintf(load_str, "--load=prog");
+    char prog_str[50];
+    sprintf(prog_str, "prog.elf");
 
     if(checkpoint) {
-      char* argv[] = {"dromajo", (char*)(&ncpus_str[0]), (char*)(&memsize_str[0]), (char*)(&mmio_str[0]), load_str, "prog.elf"};
+      char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, load_str, prog_str};
       dromajo_pointer = dromajo_cosim_init(6, argv);
     }
     else {
-      char* argv[] = {"dromajo", (char*)(&ncpus_str[0]), (char*)(&memsize_str[0]), (char*)(&mmio_str[0]), "prog.elf"};
+      char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, prog_str};
       dromajo_pointer = dromajo_cosim_init(5, argv);
     }
   }

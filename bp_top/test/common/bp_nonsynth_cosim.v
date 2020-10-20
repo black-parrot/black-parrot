@@ -8,13 +8,16 @@ module bp_nonsynth_cosim
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
+    , parameter commit_trace_file_p = "commit"
+
     , localparam max_instr_lp = 2**30
     , localparam decode_width_lp = `bp_be_decode_width
     )
    (input                                     clk_i
     , input                                   reset_i
     , input                                   freeze_i
-    , input                                   en_i
+    , input                                   cosim_en_i
+    , input                                   trace_en_i
 
     , input                                   checkpoint_i
     , input [31:0]                            num_core_i
@@ -42,21 +45,15 @@ module bp_nonsynth_cosim
     , input                                   is_debug_mode_i
     );
 
-import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
-import "DPI-C" context function bit  dromajo_step(int hartid,
-                                                  longint pc,
-                                                  int insn,
-                                                  longint wdata);
-import "DPI-C" context function void dromajo_trap(int hartid, longint cause);
-
-import "DPI-C" context function void set_finish(int hartid);
-import "DPI-C" context function bit check_terminate();
-
-always_ff @(negedge reset_i)
-  if (en_i)
-    begin
-      dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i);
-    end
+  import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
+  import "DPI-C" context function bit  dromajo_step(int hartid,
+                                                    longint pc,
+                                                    int insn,
+                                                    longint wdata);
+  import "DPI-C" context function void dromajo_trap(int hartid, longint cause);
+  
+  import "DPI-C" context function void set_finish(int hartid);
+  import "DPI-C" context function bit check_terminate();
 
   bp_be_decode_s decode_r;
   bsg_dff_chain
@@ -163,39 +160,81 @@ always_ff @(negedge reset_i)
      ,.count_o(instr_cnt)
      );
 
-  logic finish_n, finish_r, terminate;
-  assign finish_n = finish_r | (instr_cap_i != 0 && instr_cnt == instr_cap_i);
-  bsg_dff_reset
+  logic finish_r, terminate;
+  bsg_dff_reset_set_clear
    #(.width_p(1))
    finish_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(finish_n)
+     ,.set_i((instr_cap_i != 0 && instr_cnt == instr_cap_i))
+     ,.clear_i('0)
      ,.data_o(finish_r)
      );
 
-  always_ff @(negedge clk_i) begin
-    if(en_i) begin
-      if(commit_fifo_yumi_li & trap_v_r) begin
+  always_ff @(negedge reset_i)
+    if (cosim_en_i)
+      dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i);
+
+  always_ff @(negedge clk_i)
+    if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)
+      begin
         dromajo_trap(mhartid_i, cause_r);
-      end else if (commit_fifo_yumi_li & commit_v_r  & ~is_debug_mode_r & commit_pc_r != '0) begin
-        if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, frd_fifo_yumi_li ? frd_raw_li : iwb_data_r)) begin
+      end
+    else if (cosim_en_i & commit_fifo_yumi_li & commit_v_r & ~is_debug_mode_r & commit_pc_r != '0)
+      if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, frd_fifo_yumi_li ? frd_raw_li : iwb_data_r))
+        begin
           $display("COSIM_FAIL");
           $finish();
         end
+    else if (terminate)
+        begin
+          $display("COSIM_PASS");
+          $finish();
+        end
+    else if (finish_r)
+      begin
+        set_finish(mhartid_i);
+      end
+    else
+      begin
+        terminate <= check_terminate();
       end
 
-      terminate <= check_terminate();
-      if(terminate) begin
-         $display("COSIM_PASS");
-         $finish();
-      end
-      if (finish_r) begin
-          set_finish(mhartid_i);
-      end
+  integer file;
+  string file_name;
+  wire delay_li = reset_i | freeze_i;
+  always_ff @(negedge delay_li)
+    begin
+      file_name = $sformatf("%s_%x.trace", commit_trace_file_p, mhartid_i);
+      file      = $fopen(file_name, "w");
     end
-  end
+
+  logic [29:0] itag_cnt;
+  bsg_counter_clear_up
+   #(.max_val_p(2**30-1)
+     ,.init_val_p(0)
+     )
+   itag_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(1'b0)
+     ,.up_i(commit_v_i)
+
+     ,.count_o(itag_cnt)
+     );
+
+  always_ff @(negedge clk_i)
+    if (trace_en_i & commit_fifo_yumi_li & commit_v_r & commit_pc_r != '0)
+      begin
+        $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, itag_cnt);
+        if (ird_w_v_i)
+          $fwrite(file, "%x %x", ird_addr_i, ird_data_i);
+        if (frd_w_v_i)
+          $fwrite(file, "%x %x", frd_addr_i, frd_data_i);
+        $fwrite(file, "\n");
+      end
 
 endmodule
 

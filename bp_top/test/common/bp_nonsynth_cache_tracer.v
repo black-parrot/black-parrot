@@ -78,7 +78,6 @@ module bp_nonsynth_cache_tracer
    // tag and data mem read counter
    , input                                                 tag_mem_v_i
    , input [icache_assoc_p-1:0]                            data_mem_v_i
-   , input                                                 program_finish_i
    );
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
@@ -228,14 +227,14 @@ module bp_nonsynth_cache_tracer
 
       if (cache_req_v_o & (cache_req_cast_o.msg_type == e_miss_store || cache_req_cast_o.msg_type == e_uc_store))
         $fwrite(file, "[%t] store data: %x \n", $time, store_data);
+    end
 
-      if (program_finish_i)
+  final
+    begin
+      $fwrite(file,"[%t] Tag Mem valid count: %0d \n", $time, tag_mem_v_count_r);
+      for (i = 0; i < assoc_p; i++)
         begin
-          $fwrite(file,"[%t] Tag Mem valid count: %0d \n", $time, tag_mem_v_count_r);
-         for (i = 0; i < icache_assoc_p; i++)
-           begin
-             $fwrite(file,"[%t] Data Mem%0d valid count: %0d \n", $time, i, data_mem_v_count_r[i]);
-           end
+          $fwrite(file,"[%t] Data Mem%0d valid count: %0d \n", $time, i, data_mem_v_count_r[i]);
         end
     end
 

@@ -164,7 +164,7 @@ fix_job:
 
 check-design:
   <<: *job_definition
-  stage: check
+  stage: test-medium
   tags:
     - dc
   script:
@@ -317,21 +317,19 @@ top-beebs-vcs:
 
 top-checkpoint-verilator:
   <<: *job_definition
-  when: manual
-  stage: test-short
+  stage: test-medium
   tags:
     - verilator
   script:
-    - $CI_PROJECT_DIR/ci/checkpoint.sh verilator
+    - $CI_PROJECT_DIR/ci/checkpoint.sh verilator $CI_CORES
 
 top-checkpoint-vcs:
   <<: *job_definition
-  when: manual
-  stage: test-short
+  stage: test-medium
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/checkpoint.sh vcs
+    - $CI_PROJECT_DIR/ci/checkpoint.sh vcs $CI_CORES
 
 top-linux-verilator:
   <<: *job_definition
