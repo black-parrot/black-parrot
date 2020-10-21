@@ -48,23 +48,23 @@ module bp_me_wormhole_packet_encode_mem_cmd
   assign wh_header_o   = header_cast_o;
 
   localparam mem_cmd_req_len_lp =
-    `BSG_CDIV(mem_cmd_wormhole_header_lp, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_cmd_wormhole_header_lp, flit_width_p) - 1;
   localparam mem_cmd_data_len_1_lp =
-    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*1, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*1, flit_width_p) - 1;
   localparam mem_cmd_data_len_2_lp =
-    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*2, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*2, flit_width_p) - 1;
   localparam mem_cmd_data_len_4_lp =
-    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*4, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*4, flit_width_p) - 1;
   localparam mem_cmd_data_len_8_lp =
-    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*8, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*8, flit_width_p) - 1;
   localparam mem_cmd_data_len_16_lp =
-    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*16, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*16, flit_width_p) - 1;
   localparam mem_cmd_data_len_32_lp =
-    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*32, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*32, flit_width_p) - 1;
   localparam mem_cmd_data_len_64_lp =
-    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*64, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*64, flit_width_p) - 1;
   localparam mem_cmd_data_len_128_lp =
-    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*128, mem_noc_flit_width_p) - 1;
+    `BSG_CDIV(mem_cmd_wormhole_header_lp + 8*128, flit_width_p) - 1;
 
   logic [len_width_p-1:0] data_cmd_len_li;
 
