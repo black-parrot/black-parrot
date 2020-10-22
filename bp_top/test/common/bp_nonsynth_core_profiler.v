@@ -197,57 +197,44 @@ module bp_nonsynth_core_profiler
       stall_stage_n[1].fe_cmd            |= fe_cmd;
       stall_stage_n[1].mispredict        |= mispredict;
 
-      // ISS
+      // ISD
       stall_stage_n[2].mispredict        |= mispredict;
       stall_stage_n[2].itlb_miss         |= itlb_miss;
       stall_stage_n[2].icache_miss       |= icache_miss;
       stall_stage_n[2].icache_fence      |= icache_fence;
+      stall_stage_n[2].dtlb_miss         |= dtlb_miss;
+      stall_stage_n[2].dcache_miss       |= dcache_miss;
       stall_stage_n[2].exception         |= exception;
       stall_stage_n[2].eret              |= eret;
-      stall_stage_n[2]._interrupt         |= _interrupt;
+      stall_stage_n[2]._interrupt        |= _interrupt;
 
-      // ISD
+      // EX1
       stall_stage_n[3].mispredict        |= mispredict;
       stall_stage_n[3].dtlb_miss         |= dtlb_miss;
       stall_stage_n[3].dcache_miss       |= dcache_miss;
+      stall_stage_n[3].long_haz          |= long_haz;
       stall_stage_n[3].exception         |= exception;
       stall_stage_n[3].eret              |= eret;
       stall_stage_n[3]._interrupt        |= _interrupt;
+      stall_stage_n[3].control_haz       |= control_haz;
+      stall_stage_n[3].load_dep          |= load_dep;
+      stall_stage_n[3].mul_dep           |= mul_dep;
+      stall_stage_n[3].data_haz          |= data_haz;
+      stall_stage_n[3].struct_haz        |= struct_haz;
 
-      // EX1
-      stall_stage_n[4].mispredict        |= mispredict;
+      // EX2
       stall_stage_n[4].dtlb_miss         |= dtlb_miss;
       stall_stage_n[4].dcache_miss       |= dcache_miss;
-      stall_stage_n[4].long_haz          |= long_haz;
       stall_stage_n[4].exception         |= exception;
       stall_stage_n[4].eret              |= eret;
       stall_stage_n[4]._interrupt        |= _interrupt;
-      stall_stage_n[4].control_haz       |= control_haz;
-      stall_stage_n[4].load_dep          |= load_dep;
-      stall_stage_n[4].mul_dep           |= mul_dep;
-      stall_stage_n[4].data_haz          |= data_haz;
-      stall_stage_n[4].struct_haz        |= struct_haz;
 
-      // EX2
+      // EX3
       stall_stage_n[5].dtlb_miss         |= dtlb_miss;
       stall_stage_n[5].dcache_miss       |= dcache_miss;
       stall_stage_n[5].exception         |= exception;
       stall_stage_n[5].eret              |= eret;
       stall_stage_n[5]._interrupt        |= _interrupt;
-
-      // EX3
-      stall_stage_n[6].dtlb_miss         |= dtlb_miss;
-      stall_stage_n[6].dcache_miss       |= dcache_miss;
-      stall_stage_n[6].exception         |= exception;
-      stall_stage_n[6].eret              |= eret;
-      stall_stage_n[6]._interrupt        |= _interrupt;
-
-      // EX4
-      stall_stage_n[7].dtlb_miss         |= dtlb_miss;
-      stall_stage_n[7].dcache_miss       |= dcache_miss;
-      stall_stage_n[7].exception         |= exception;
-      stall_stage_n[7].eret              |= eret;
-      stall_stage_n[7]._interrupt        |= _interrupt;
     end
 
   bp_stall_reason_s stall_reason_dec;
@@ -286,9 +273,10 @@ module bp_nonsynth_core_profiler
       else
         $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "unknown");
 
-      if (~reset_i & ~freeze_i & ~commit_pkt_r.v & stall_reason_v & (stall_reason_enum.name() == "mispredict"))
-        $fwrite(file, "_%x\n", target_r);
-      else if (~reset_i & ~freeze_i)
+      //if (~reset_i & ~freeze_i & ~commit_pkt_r.v & stall_reason_v & (stall_reason_enum.name() == "mispredict"))
+      //  $fwrite(file, "_%x\n", target_r);
+      //else if (~reset_i & ~freeze_i)
+      if (~reset_i & ~freeze_i)
         $fwrite(file, "\n");
     end
 

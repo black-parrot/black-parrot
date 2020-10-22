@@ -60,8 +60,7 @@ class BloodGraph:
                       "branch_override",
                       "fe_cmd",
                       "cmd_fence",
-                      "dir_mispredict",
-                      "target_mispredict",
+                      "mispredict",
                       "control_haz",
                       "data_haz",
                       "load_dep",
@@ -192,8 +191,7 @@ class BloodGraph:
                                    "fe_cmd"                       : rand_color(),
                                    "cmd_fence"                    : rand_color(),
 
-                                   "dir_mispredict"               : rand_color(),
-                                   "target_mispredict"            : rand_color(),
+                                   "mispredict"                   : rand_color(),
                                    "control_haz"                  : rand_color(),
 
                                    "data_haz"                     : rand_color(),
