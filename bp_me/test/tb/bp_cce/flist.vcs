@@ -1,4 +1,3 @@
-+incdir+$BP_ME_DIR/test/common
 $BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.v
