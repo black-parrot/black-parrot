@@ -11,7 +11,7 @@ module bp_me_cce_to_xui
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter flit_width_p = "inv"
    , parameter cord_width_p = "inv"
@@ -48,10 +48,10 @@ module bp_me_cce_to_xui
    );
   
 // CCE-MEM interface packets
-`declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+`declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-bp_cce_mem_msg_s mem_cmd_cast_li, mem_resp_cast_lo;
-bp_cce_mem_msg_s mem_cmd_cast;
+bp_bedrock_cce_mem_msg_s mem_cmd_cast_li, mem_resp_cast_lo;
+bp_bedrock_cce_mem_msg_s mem_cmd_cast;
 
 logic wr_cyc, rd_cyc;
 
@@ -62,9 +62,9 @@ assign mem_cmd_cast_li = mem_cmd_i;
 assign mem_resp_o = mem_resp_cast_lo;
 
 assign app_addr_o      = mem_cmd_cast_li.header.addr;
-assign app_cmd_o       = mem_cmd_cast_li.header.msg_type == e_mem_msg_rd;
+assign app_cmd_o       = mem_cmd_cast_li.header.msg_type == e_bedrock_mem_rd;
 assign app_en_o        = mem_cmd_v_i & mem_cmd_ready_o;
-assign app_wdf_wren_o  = app_en_o & (mem_cmd_cast_li.header.msg_type == e_mem_msg_wr);
+assign app_wdf_wren_o  = app_en_o & (mem_cmd_cast_li.header.msg_type == e_bedrock_mem_wr);
 assign app_wdf_data_o  = mem_cmd_cast_li.data;
 assign app_wdf_mask_o  = '0;
 assign app_wdf_end_o   = app_wdf_wren_o;
@@ -88,14 +88,14 @@ always_ff @ (posedge clk_i) begin
   else if(mem_resp_yumi_i)
     rd_cyc <= 1'b0;
   else if(mem_cmd_v_i && mem_cmd_ready_o)
-    rd_cyc <= mem_cmd_cast_li.header.msg_type==e_mem_msg_rd;
+    rd_cyc <= mem_cmd_cast_li.header.msg_type==e_bedrock_mem_rd;
 end
 
 always_ff @ (posedge clk_i) begin
   if (reset_i)
     wr_cyc <= 1'b0;
   else if(mem_cmd_v_i && mem_cmd_ready_o)
-    wr_cyc <= (mem_cmd_cast_li.header.msg_type==e_mem_msg_wr) & app_rdy_i;
+    wr_cyc <= (mem_cmd_cast_li.header.msg_type==e_bedrock_mem_wr) & app_rdy_i;
   else
     wr_cyc <= 1'b0;
 end
