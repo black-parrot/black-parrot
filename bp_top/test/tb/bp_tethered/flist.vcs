@@ -1,33 +1,12 @@
 # bsg_ip_cores files
-$BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
-$BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.v
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.v
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_map.v
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
-$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_unmanaged.v
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.v
++incdir+$BASEJUMP_STL_DIR/bsg_clk_gen
++incdir+$BASEJUMP_STL_DIR/testing/bsg_dmc/lpddr_verilog_model
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_pkg.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_controller.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_phy.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_clk_rst_gen.v
+$BASEJUMP_STL_DIR/bsg_clk_gen/bsg_dly_line.v
+$BASEJUMP_STL_DIR/testing/bsg_dmc/lpddr_verilog_model/mobile_ddr.v
 # me files
-$BP_ME_DIR/test/common/bp_mem.v
-$BP_ME_DIR/test/common/bp_mem_to_dram.v
-$BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.v
-$BP_ME_DIR/test/common/bp_me_nonsynth_pkg.vh
-$BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.v
-$BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.v
-# top files
-$BP_TOP_DIR/test/common/bp_nonsynth_watchdog.v
-$BP_TOP_DIR/test/common/bp_nonsynth_vm_tracer.v
-$BP_TOP_DIR/test/common/bp_nonsynth_cosim.v
-$BP_TOP_DIR/test/common/bp_nonsynth_host.v
-$BP_TOP_DIR/test/common/bp_nonsynth_if_verif.v
-$BP_TOP_DIR/test/common/bp_nonsynth_commit_tracer.v
-$BP_TOP_DIR/test/common/bp_nonsynth_cache_tracer.v
-$BP_TOP_DIR/test/common/bp_nonsynth_nbf_loader.v
-$BP_TOP_DIR/test/common/bp_monitor.cpp
-$BP_TOP_DIR/test/common/dromajo_cosim.cpp
-$BP_TOP_DIR/test/common/bp_nonsynth_core_profiler.v
-$BP_TOP_DIR/test/common/bp_nonsynth_pc_profiler.v
-$BP_TOP_DIR/test/common/bp_nonsynth_branch_profiler.v
-$BP_TOP_DIR/test/common/bp_nonsynth_perf.v
+$BP_ME_DIR/test/common/bp_ddr.v
