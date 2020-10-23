@@ -220,6 +220,22 @@ me-regress-vcs:
   script:
     - $CI_PROJECT_DIR/ci/me_regress.sh vcs $CI_CORES
 
+top-bootrom-verilator:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/bootrom.sh verilator $CI_CORES
+
+top-bootrom-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/bootrom.sh vcs $CI_CORES
+
 top-riscv-tests-verilator:
   <<: *job_definition
   stage: test-short
