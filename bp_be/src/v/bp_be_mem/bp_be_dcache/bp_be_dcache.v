@@ -105,12 +105,11 @@ module bp_be_dcache
     , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
     , localparam block_offset_width_lp=(bank_offset_width_lp+byte_offset_width_lp)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(dcache_sets_p)
-    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
     , localparam block_size_in_fill_lp = dcache_block_width_p / dcache_fill_width_p
     , localparam fill_size_in_bank_lp = dcache_fill_width_p / bank_width_lp
 
     , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dpath_width_p)
-    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
+    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_p)
   )
   (
     input clk_i
@@ -123,7 +122,7 @@ module bp_be_dcache
     , output logic ready_o
 
     // TLB interface
-    , input [ptag_width_lp-1:0] ptag_i
+    , input [ptag_width_p-1:0] ptag_i
     , input ptag_v_i
     , input uncached_i
 
@@ -156,7 +155,7 @@ module bp_be_dcache
     , input tag_mem_pkt_v_i
     , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
     , output logic tag_mem_pkt_yumi_o
-    , output logic [ptag_width_lp-1:0] tag_mem_o
+    , output logic [ptag_width_p-1:0] tag_mem_o
 
     // stat_mem
     , input stat_mem_pkt_v_i
@@ -227,7 +226,7 @@ module bp_be_dcache
 
   // tag_mem
   //
-  `declare_bp_be_dcache_tag_info_s(ptag_width_lp);
+  `declare_bp_be_dcache_tag_info_s(ptag_width_p);
   logic tag_mem_v_li;
   logic tag_mem_w_li;
   logic [index_width_lp-1:0] tag_mem_addr_li;
@@ -283,13 +282,13 @@ module bp_be_dcache
   logic [dcache_assoc_p-1:0] store_hit_tl;
   logic [dcache_assoc_p-1:0] invalid_tl;
   logic [paddr_width_p-1:0]  paddr_tl;
-  logic [ptag_width_lp-1:0] addr_tag_tl;
+  logic [ptag_width_p-1:0] addr_tag_tl;
   logic [bank_offset_width_lp-1:0] addr_bank_offset_tl;
   logic [dcache_assoc_p-1:0] addr_bank_offset_dec_tl;
 
   assign paddr_tl = {ptag_i, page_offset_tl_r};
 
-  assign addr_tag_tl = paddr_tl[block_offset_width_lp+index_width_lp+:ptag_width_lp];
+  assign addr_tag_tl = paddr_tl[block_offset_width_lp+index_width_lp+:ptag_width_p];
   assign addr_bank_offset_tl = paddr_tl[byte_offset_width_lp+:bank_offset_width_lp];
 
   for (genvar i = 0; i < dcache_assoc_p; i++) begin: tag_comp_tl
@@ -316,7 +315,7 @@ module bp_be_dcache
   logic [dpath_width_p-1:0] data_tv_r;
   bp_be_dcache_tag_info_s [dcache_assoc_p-1:0] tag_info_tv_r;
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
-  logic [ptag_width_lp-1:0] addr_tag_tv_r;
+  logic [ptag_width_p-1:0] addr_tag_tv_r;
   logic [index_width_lp-1:0] addr_index_tv;
   logic [dcache_assoc_p-1:0] load_hit_tv_r;
   logic [dcache_assoc_p-1:0] store_hit_tv_r;
@@ -400,7 +399,7 @@ module bp_be_dcache
   logic lr_hit_tv;
   logic sc_success;
   logic sc_fail;
-  logic [ptag_width_lp-1:0]  load_reserved_tag_r;
+  logic [ptag_width_p-1:0]  load_reserved_tag_r;
   logic [index_width_lp-1:0] load_reserved_index_r;
   logic load_reserved_v_r;
 
@@ -1058,14 +1057,14 @@ module bp_be_dcache
         tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
         for (integer i = 0; i < dcache_assoc_p; i++) begin
           tag_mem_mask_li[i].coh_state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
-          tag_mem_mask_li[i].tag = {ptag_width_lp{lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].tag = {ptag_width_p{lce_tag_mem_way_one_hot[i]}};
         end
       end
       e_cache_tag_mem_set_state: begin
         tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
         for (integer i = 0; i < dcache_assoc_p; i++) begin
           tag_mem_mask_li[i].coh_state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
-          tag_mem_mask_li[i].tag = {ptag_width_lp{1'b0}};
+          tag_mem_mask_li[i].tag = {ptag_width_p{1'b0}};
         end
       end
       default: begin
@@ -1212,11 +1211,11 @@ module bp_be_dcache
          );
 
       bsg_dff_en
-       #(.width_p(ptag_width_lp+index_width_lp))
+       #(.width_p(ptag_width_p+index_width_lp))
        load_reserved_addr
         (.clk_i(clk_i)
          ,.en_i(set_reservation)
-         ,.data_i(paddr_tv_r[paddr_width_p-1:block_offset_width_lp])
+         ,.data_i({paddr_tv_r[paddr_width_p-1-:ptag_width_p], paddr_tv_r[block_offset_width_lp+:index_width_lp]})
          ,.data_o({load_reserved_tag_r, load_reserved_index_r})
          );
     end

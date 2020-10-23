@@ -251,6 +251,11 @@ module bp_nonsynth_core_profiler
      );
   assign stall_reason_enum = bp_stall_reason_e'(stall_reason_lo);
 
+  int stall_hist [bp_stall_reason_e];
+  always_ff @(posedge clk_i)
+    if (~reset_i & ~freeze_i & ~commit_pkt_r.v)
+      stall_hist[stall_reason_enum] <= stall_hist[stall_reason_enum] + 1'b1;
+
   integer file;
   string file_name;
   wire reset_li = reset_i | freeze_i;
@@ -279,6 +284,15 @@ module bp_nonsynth_core_profiler
       if (~reset_i & ~freeze_i)
         $fwrite(file, "\n");
     end
+
+  `ifndef VERILATOR
+  final
+    begin
+      $fwrite(file, "Total Stalls:\n");
+      foreach (stall_hist[i])
+        $fwrite(file, "%s: %0d\n", i.name(), stall_hist[i]);
+    end
+  `endif
 
 endmodule
 
