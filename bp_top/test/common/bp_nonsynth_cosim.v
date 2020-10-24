@@ -192,12 +192,11 @@ module bp_nonsynth_cosim
           $display("COSIM_PASS");
           $finish();
         end
-    else if (finish_r)
+
+  always_ff @(negedge clk_i)
+    if (finish_r)
       begin
         set_finish(mhartid_i);
-      end
-    else
-      begin
         terminate <= check_terminate();
       end
 
