@@ -197,8 +197,8 @@ tire_kick:
 
 weird-verilator:
   <<: *job_definition
-  when: manual
   stage: test-short
+  allow_failure: true
   tags:
     - verilator
   script:
@@ -206,8 +206,8 @@ weird-verilator:
 
 weird-vcs:
   <<: *job_definition
-  when: manual
   stage: test-short
+  allow_failure: true
   tags:
     - vcs
   script:
@@ -303,7 +303,6 @@ top-misc-vcs:
 
 top-misc-verilator:
   <<: *job_definition
-  when: manual
   stage: test-medium
   tags:
     - verilator
@@ -312,8 +311,8 @@ top-misc-verilator:
 
 top-riscvdv-vcs:
   <<: *job_definition
-  when: manual
   stage: test-medium
+  allow_failure: true
   tags:
     - vcs
   script:
