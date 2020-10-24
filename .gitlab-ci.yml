@@ -193,16 +193,25 @@ tire_kick:
   script:
     - $CI_PROJECT_DIR/ci/tire_kick.sh
 
-weird:
+weird-verilator:
   <<: *job_definition
-  only:
-    - dev_fix_nbfconfigload
-  when: always
-  stage: manual
+  when:
+    - manual
+  stage: test-short
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/weird_config.sh verilator $CI_CORES
+
+weird-vcs:
+  <<: *job_definition
+  when:
+    - manual
+  stage: test-short
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/weird_config.sh vs $CI_CORES
+    - $CI_PROJECT_DIR/ci/weird_config.sh vcs $CI_CORES
 
 me-regress-verilator:
   <<: *job_definition
