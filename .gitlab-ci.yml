@@ -74,15 +74,16 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/touchfiles
     policy: push
 
+        #    - master
+        #    - dev
+        #    - fe_dev
+        #    - be_dev
+        #    - me_dev
+        #    - top_dev
+        #    - sw_dev
 .job_template: &job_definition
   only:
-    - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - dev_fix_nbfconfigload
   before_script:
     - echo "Forcefully updating submodules"
     - git submodule update --init --force
@@ -142,29 +143,30 @@ prep:
 ## This job runs on fix branches only. We generally assume fix branches do not have major
 #    architectural changes that need to be thoroughly tested. Simply checking synthesizability
 #    susses out most typos.
-fix_job:
-  only:
-    - /^.*fix.*$/
-  stage: check
-  tags:
-    - bsg
-    - vcs
-  script:
-    - $CI_PROJECT_DIR/ci/check_design.sh
-    - make -C bp_top/syn clean
-  cache:
-    key: "dev"
-    paths:
-      - $CI_PROJECT_DIR/external/
-    policy: pull
-  artifacts:
-    when: always
-    paths:
-      - "bp_top/syn/reports/"
+# TODO: This target is not super useful, but consumes a lot of CI cycles...
+#fix_job:
+#  only:
+#    - /^.*fix.*$/
+#  stage: check
+#  tags:
+#    - bsg
+#    - vcs
+#  script:
+#    - $CI_PROJECT_DIR/ci/check_design.sh
+#    - make -C bp_top/syn clean
+#  cache:
+#    key: "dev"
+#    paths:
+#      - $CI_PROJECT_DIR/external/
+#    policy: pull
+#  artifacts:
+#    when: always
+#    paths:
+#      - "bp_top/syn/reports/"
 
 check-design:
   <<: *job_definition
-  stage: test-medium
+  stage: check
   tags:
     - dc
   script:
@@ -364,6 +366,14 @@ top-checkpoint-vcs:
     - vcs
   script:
     - $CI_PROJECT_DIR/ci/checkpoint.sh vcs $CI_CORES
+
+check-loops:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - dc
+  script:
+    - $CI_PROJECT_DIR/ci/check_loops.sh $CI_CORES
 
 top-linux-verilator:
   <<: *job_definition
