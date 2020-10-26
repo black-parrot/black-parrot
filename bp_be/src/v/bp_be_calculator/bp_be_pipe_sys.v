@@ -190,8 +190,7 @@ module bp_be_pipe_sys
      ,.csr_cmd_v_i(csr_cmd_v_lo & commit_v_i)
      ,.csr_data_o(csr_data_lo)
 
-     // Simplify
-     ,.instret_i(commit_v_i & ~commit_pkt.exception & ~commit_pkt.rollback)
+     ,.instret_i(commit_pkt.instret)
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
      ,.frf_w_v_i(fwb_pkt.frd_w_v)
 

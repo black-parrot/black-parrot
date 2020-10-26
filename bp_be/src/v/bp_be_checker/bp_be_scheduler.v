@@ -74,7 +74,7 @@ module bp_be_scheduler
   assign fwb_pkt         = fwb_pkt_i;
 
   wire fe_queue_clr_li  = suppress_iss_i;
-  wire fe_queue_deq_li  = commit_pkt.queue_v & ~commit_pkt.rollback;
+  wire fe_queue_deq_li  = commit_pkt.queue_v;
   wire fe_queue_roll_li = commit_pkt.rollback;
   bp_be_issue_pkt_s preissue_pkt, issue_pkt;
   bp_be_issue_queue

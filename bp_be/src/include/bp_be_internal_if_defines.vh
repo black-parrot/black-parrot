@@ -95,6 +95,7 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                           v;                                                             \
+    logic                           trap_v;                                                        \
     logic                           queue_v;                                                       \
     logic                           instret;                                                       \
     logic [vaddr_width_p-1:0]       pc;                                                            \
@@ -179,7 +180,7 @@
   (3 + vaddr_width_mp)
 
 `define bp_be_commit_pkt_width(vaddr_width_mp) \
-  (3 + 2 * vaddr_width_mp + instr_width_p + rv64_priv_width_gp + 8)
+  (4 + 2 * vaddr_width_mp + instr_width_p + rv64_priv_width_gp + 8)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (2                                                                                               \

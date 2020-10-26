@@ -25,6 +25,7 @@ module bp_be_pipe_mem
    , localparam ptw_miss_pkt_width_lp  = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
    , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
+   , localparam wb_pkt_width_lp        = `bp_be_wb_pkt_width(vaddr_width_p)
 
    // From RISC-V specifications
    , localparam eaddr_pad_lp = rv64_eaddr_width_gp - vaddr_width_p
@@ -58,6 +59,11 @@ module bp_be_pipe_mem
    , output logic [dpath_width_p-1:0]     final_data_o
    , output logic                         final_v_o
    , output logic [vaddr_width_p-1:0]     final_vaddr_o
+
+   , output logic [wb_pkt_width_lp-1:0]   late_iwb_pkt_o
+   , output logic                         late_iwb_pkt_v_o
+   , output logic [wb_pkt_width_lp-1:0]   late_fwb_pkt_o
+   , output logic                         late_fwb_pkt_v_o
 
    , input [trans_info_width_lp-1:0]      trans_info_i
 
@@ -107,12 +113,16 @@ module bp_be_pipe_mem
   bp_be_ptw_fill_pkt_s   ptw_fill_pkt;
   bp_be_trans_info_s     trans_info;
   bp_dcache_req_s        cache_req_cast_o;
+  bp_be_wb_pkt_s         late_iwb_pkt;
+  bp_be_wb_pkt_s         late_fwb_pkt;
 
   assign cfg_bus = cfg_bus_i;
   assign ptw_miss_pkt = ptw_miss_pkt_i;
   assign ptw_fill_pkt_o = ptw_fill_pkt;
   assign trans_info = trans_info_i;
   assign cache_req_o = cache_req_cast_o;
+  assign late_iwb_pkt_o = late_iwb_pkt;
+  assign late_fwb_pkt_o = late_fwb_pkt;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
@@ -160,7 +170,7 @@ module bp_be_pipe_mem
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
   wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
-  wire is_req    = is_store | is_load | is_fencei;
+  wire is_req    = reservation.v & ~reservation.poison & (is_store | is_load | is_fencei);
 
   // Calculate cache access eaddr
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
@@ -393,14 +403,16 @@ module bp_be_pipe_mem
   assign final_data_o           = dcache_final_data;
   assign final_vaddr_o          = eaddr_mem3[0+:vaddr_width_p];
 
+  logic [reg_addr_width_p-1:0] rd_addr_r;
+  logic frf_w_v_r;
   wire early_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mem_early_v;
   bsg_dff_chain
-   #(.width_p(1), .num_stages_p(1))
+   #(.width_p(1+reg_addr_width_p+1), .num_stages_p(1))
    early_chain
     (.clk_i(clk_i)
 
-     ,.data_i(early_v_li)
-     ,.data_o(early_v_o)
+     ,.data_i({decode.frf_w_v, instr.t.fmatype.rd_addr, early_v_li})
+     ,.data_o({frf_w_v_r, rd_addr_r, early_v_o})
      );
 
   wire final_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mem_final_v;
@@ -412,6 +424,33 @@ module bp_be_pipe_mem
      ,.data_i(final_v_li)
      ,.data_o(final_v_o)
      );
+
+  logic [reg_addr_width_p-1:0] late_rd_addr_r;
+  logic late_frf_w_v_r, late_pending_r;
+  bsg_dff_reset_en
+   #(.width_p(1+reg_addr_width_p+1))
+   rd_addr
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(dcache_final_v | cache_miss_v_o)
+
+     ,.data_i({frf_w_v_r, rd_addr_r, cache_miss_v_o})
+     ,.data_o({late_frf_w_v_r, late_rd_addr_r, late_pending_r})
+     );
+   // TODO: Should suppress final_v_o in case of scoreboarding.
+   //   This is safe when blocking on miss
+   assign late_iwb_pkt = '{ird_w_v    : 1'b1
+                           ,rd_addr   : late_rd_addr_r
+                           ,rd_data   : final_data_o
+                           ,default: '0
+                           };
+   assign late_fwb_pkt = '{frd_w_v    : 1'b1
+                           ,rd_addr   : late_rd_addr_r
+                           ,rd_data   : final_data_o
+                           ,default: '0
+                           };
+   assign late_iwb_pkt_v_o = late_pending_r & dcache_final_v & ~late_frf_w_v_r;
+   assign late_fwb_pkt_v_o = late_pending_r & dcache_final_v &  late_frf_w_v_r;
 
 endmodule
 

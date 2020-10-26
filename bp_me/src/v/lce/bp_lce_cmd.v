@@ -545,7 +545,8 @@ module bp_lce_cmd
             // when data sends and command is dequeued
             e_bedrock_cmd_uc_data: begin
               data_mem_pkt.index = lce_cmd_addr_index;
-              data_mem_pkt.data = lce_cmd.data;
+              // TODO: Should be dynamic, not always dword sized
+              data_mem_pkt.data = {(fill_width_p/dword_width_p){lce_cmd.data[0+:dword_width_p]}};
               data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
               data_mem_pkt.opcode = e_cache_data_mem_uncached;
               data_mem_pkt_v_o = lce_cmd_v_i;
