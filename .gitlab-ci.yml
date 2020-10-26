@@ -196,6 +196,7 @@ tire_kick:
 
 weird-verilator:
   <<: *job_definition
+  when: manual
   stage: test-short
   allow_failure: true
   tags:
@@ -205,6 +206,7 @@ weird-verilator:
 
 weird-vcs:
   <<: *job_definition
+  when: manual
   stage: test-short
   allow_failure: true
   tags:
