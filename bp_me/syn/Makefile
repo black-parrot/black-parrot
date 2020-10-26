@@ -18,12 +18,12 @@ export SUITE ?= cce
 export PROG  ?= none
 export TAG   ?= none
 
--include $(BP_TEST_DIR)/Makefile.tests
--include $(TB_PATH)/$(TB)/Makefile.cfgs
--include $(TB_PATH)/$(TB)/Makefile.params
--include $(TB_PATH)/$(TB)/Makefile.testlist
--include $(BP_COMMON_DIR)/syn/Makefile.common
--include $(BP_COMMON_DIR)/syn/Makefile.dc
--include $(BP_COMMON_DIR)/syn/Makefile.verilator
--include $(BP_COMMON_DIR)/syn/Makefile.vcs
+include $(BP_TEST_DIR)/Makefile.tests
+include $(TB_PATH)/$(TB)/Makefile.cfgs
+include $(TB_PATH)/$(TB)/Makefile.params
+include $(TB_PATH)/$(TB)/Makefile.testlist
+include $(BP_COMMON_DIR)/syn/Makefile.common
+include $(BP_COMMON_DIR)/syn/Makefile.dc
+include $(BP_COMMON_DIR)/syn/Makefile.verilator
+include $(BP_COMMON_DIR)/syn/Makefile.vcs
 

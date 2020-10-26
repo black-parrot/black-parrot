@@ -17,13 +17,13 @@ export SUITE ?= bp_tests
 export PROG  ?= hello_world
 export TAG   ?= none
 
--include $(BP_TEST_DIR)/Makefile.tests
--include $(TB_PATH)/$(TB)/Makefile.cfgs
--include $(TB_PATH)/$(TB)/Makefile.params
--include $(TB_PATH)/$(TB)/Makefile.testlist
--include $(BP_COMMON_DIR)/syn/Makefile.common
--include $(BP_COMMON_DIR)/syn/Makefile.dc
--include $(BP_COMMON_DIR)/syn/Makefile.sv2v
--include $(BP_COMMON_DIR)/syn/Makefile.verilator
--include $(BP_COMMON_DIR)/syn/Makefile.vcs
+include $(BP_TEST_DIR)/Makefile.tests
+include $(TB_PATH)/$(TB)/Makefile.cfgs
+include $(TB_PATH)/$(TB)/Makefile.params
+include $(TB_PATH)/$(TB)/Makefile.testlist
+include $(BP_COMMON_DIR)/syn/Makefile.common
+include $(BP_COMMON_DIR)/syn/Makefile.dc
+include $(BP_COMMON_DIR)/syn/Makefile.sv2v
+include $(BP_COMMON_DIR)/syn/Makefile.verilator
+include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
