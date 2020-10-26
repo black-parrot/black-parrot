@@ -142,29 +142,30 @@ prep:
 ## This job runs on fix branches only. We generally assume fix branches do not have major
 #    architectural changes that need to be thoroughly tested. Simply checking synthesizability
 #    susses out most typos.
-fix_job:
-  only:
-    - /^.*fix.*$/
-  stage: check
-  tags:
-    - bsg
-    - vcs
-  script:
-    - $CI_PROJECT_DIR/ci/check_design.sh
-    - make -C bp_top/syn clean
-  cache:
-    key: "dev"
-    paths:
-      - $CI_PROJECT_DIR/external/
-    policy: pull
-  artifacts:
-    when: always
-    paths:
-      - "bp_top/syn/reports/"
+# TODO: This target is not super useful, but consumes a lot of CI cycles...
+#fix_job:
+#  only:
+#    - /^.*fix.*$/
+#  stage: check
+#  tags:
+#    - bsg
+#    - vcs
+#  script:
+#    - $CI_PROJECT_DIR/ci/check_design.sh
+#    - make -C bp_top/syn clean
+#  cache:
+#    key: "dev"
+#    paths:
+#      - $CI_PROJECT_DIR/external/
+#    policy: pull
+#  artifacts:
+#    when: always
+#    paths:
+#      - "bp_top/syn/reports/"
 
 check-design:
   <<: *job_definition
-  stage: test-medium
+  stage: check
   tags:
     - dc
   script:
@@ -193,6 +194,24 @@ tire_kick:
   script:
     - $CI_PROJECT_DIR/ci/tire_kick.sh
 
+weird-verilator:
+  <<: *job_definition
+  stage: test-short
+  allow_failure: true
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/weird_config.sh verilator $CI_CORES
+
+weird-vcs:
+  <<: *job_definition
+  stage: test-short
+  allow_failure: true
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/weird_config.sh vcs $CI_CORES
+
 me-regress-verilator:
   <<: *job_definition
   stage: test-short
@@ -208,6 +227,22 @@ me-regress-vcs:
     - vcs
   script:
     - $CI_PROJECT_DIR/ci/me_regress.sh vcs $CI_CORES
+
+top-bootrom-verilator:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/bootrom.sh verilator $CI_CORES
+
+top-bootrom-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/bootrom.sh vcs $CI_CORES
 
 top-riscv-tests-verilator:
   <<: *job_definition
@@ -267,7 +302,6 @@ top-misc-vcs:
 
 top-misc-verilator:
   <<: *job_definition
-  when: manual
   stage: test-medium
   tags:
     - verilator
@@ -276,8 +310,8 @@ top-misc-verilator:
 
 top-riscvdv-vcs:
   <<: *job_definition
-  when: manual
   stage: test-medium
+  allow_failure: true
   tags:
     - vcs
   script:
@@ -330,6 +364,14 @@ top-checkpoint-vcs:
     - vcs
   script:
     - $CI_PROJECT_DIR/ci/checkpoint.sh vcs $CI_CORES
+
+check-loops:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - dc
+  script:
+    - $CI_PROJECT_DIR/ci/check_loops.sh $CI_CORES
 
 top-linux-verilator:
   <<: *job_definition

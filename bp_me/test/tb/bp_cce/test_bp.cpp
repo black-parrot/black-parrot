@@ -59,6 +59,9 @@ int sc_main(int argc, char **argv)
   VerilatedCov::write("coverage.dat");
 #endif
 
+  std::cout << "Executing final" << std::endl;
+  tb->final();
+
   std::cout << "Exiting" << std::endl;
   exit(EXIT_SUCCESS);
 }

@@ -290,6 +290,7 @@ module testbench
       ,.assoc_p(dcache_assoc_p)
       ,.sets_p(dcache_sets_p)
       ,.block_width_p(dcache_block_width_p)
+      ,.fill_width_p(dcache_fill_width_p)
       ,.trace_file_p("dcache"))
      dcache_tracer
       (.clk_i(clk_i & testbench.dcache_trace_en_lo)

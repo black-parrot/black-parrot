@@ -15,6 +15,7 @@ export BR_PROFILE_P   ?= 0
 export CHECKPOINT_P   ?= 0
 export COSIM_P        ?= 0
 export PRELOAD_MEM_P  ?= 0
+export NBF_CONFIG_P   ?= 1
 
 export SAMPLE_MEMSIZE   ?= 128
 export SAMPLE_START_P   ?= 0
