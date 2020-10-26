@@ -16,7 +16,7 @@ module bp_core
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
@@ -29,20 +29,20 @@ module bp_core
     , input [cfg_bus_width_lp-1:0]                 cfg_bus_i
 
     // LCE-CCE interface
-    , output [1:0][lce_cce_req_width_lp-1:0]       lce_req_o
+    , output [1:0][lce_req_msg_width_lp-1:0]       lce_req_o
     , output [1:0]                                 lce_req_v_o
     , input [1:0]                                  lce_req_ready_i
 
-    , output [1:0][lce_cce_resp_width_lp-1:0]      lce_resp_o
+    , output [1:0][lce_resp_msg_width_lp-1:0]      lce_resp_o
     , output [1:0]                                 lce_resp_v_o
     , input [1:0]                                  lce_resp_ready_i
 
     // CCE-LCE interface
-    , input [1:0][lce_cmd_width_lp-1:0]            lce_cmd_i
+    , input [1:0][lce_cmd_msg_width_lp-1:0]        lce_cmd_i
     , input [1:0]                                  lce_cmd_v_i
     , output [1:0]                                 lce_cmd_yumi_o
 
-    , output [1:0][lce_cmd_width_lp-1:0]           lce_cmd_o
+    , output [1:0][lce_cmd_msg_width_lp-1:0]       lce_cmd_o
     , output [1:0]                                 lce_cmd_v_o
     , input [1:0]                                  lce_cmd_ready_i
 

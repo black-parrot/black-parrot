@@ -18,7 +18,9 @@ module wrapper
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
 
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
    )
   (input                                               clk_i
    , input                                             reset_i
@@ -168,10 +170,9 @@ module wrapper
     end
   else
     begin : unicore
-      localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p);
-      `declare_bp_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce_mem);
-      bp_uce_mem_msg_s io_cmd_lo, io_cmd_li;
-      bp_uce_mem_msg_s io_resp_lo, io_resp_li;
+      `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
+      bp_bedrock_uce_mem_msg_s io_cmd_lo, io_cmd_li;
+      bp_bedrock_uce_mem_msg_s io_resp_lo, io_resp_li;
 
       // We need to expand the IO ports to their full width here
       bp_unicore

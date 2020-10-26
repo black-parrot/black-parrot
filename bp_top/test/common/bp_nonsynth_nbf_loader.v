@@ -15,7 +15,7 @@ module bp_nonsynth_nbf_loader
 
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
   ,parameter nbf_filename_p = "prog.nbf"
   ,parameter nbf_opcode_width_p = 8
@@ -75,8 +75,9 @@ module bp_nonsynth_nbf_loader
   } bp_nbf_s;
 
   // bp_cce packet
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
-  bp_cce_mem_msg_s io_cmd, io_resp;
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  bp_bedrock_cce_mem_msg_s io_cmd, io_resp;
+  bp_bedrock_cce_mem_payload_s io_cmd_payload;
   
   assign io_cmd_o = io_cmd;
   assign io_resp = io_resp_i;
@@ -92,15 +93,16 @@ module bp_nonsynth_nbf_loader
   always_comb
   begin
     io_cmd.data = curr_nbf.data;
-    io_cmd.header.payload = '0;
-    io_cmd.header.payload.lce_id = lce_id_i;
+    io_cmd_payload = '0;
+    io_cmd_payload.lce_id = lce_id_i;
+    io_cmd.header.payload = io_cmd_payload;
     io_cmd.header.addr = curr_nbf.addr;
-    io_cmd.header.msg_type = e_mem_msg_uc_wr;
+    io_cmd.header.msg_type.mem = e_bedrock_mem_uc_wr;
     
     case (curr_nbf.opcode)
-      2: io_cmd.header.size = e_mem_msg_size_4;
-      3: io_cmd.header.size = e_mem_msg_size_8;
-      default: io_cmd.header.size = e_mem_msg_size_4;
+      2: io_cmd.header.size = e_bedrock_msg_size_4;
+      3: io_cmd.header.size = e_bedrock_msg_size_8;
+      default: io_cmd.header.size = e_bedrock_msg_size_4;
     endcase
   end
 

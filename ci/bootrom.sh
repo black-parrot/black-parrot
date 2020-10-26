@@ -22,19 +22,20 @@ N=${3:-1}
 
 # Bash array to iterate over for configurations
 cfgs=(\
-    "e_bp_unicore_cfg"
-    "e_bp_multicore_1_cfg"
-    "e_bp_multicore_1_cce_ucode_cfg"
+    "e_bp_multicore_1_cce_ucode_bootrom_cfg"
+    "e_bp_multicore_1_bootrom_cfg"
+    "e_bp_unicore_bootrom_cfg"
     )
+
+# The base command to append the configuration to
+cmd_base="make -C bp_top/syn build.${SUFFIX} sim.${SUFFIX} NBF_CONFIG_P=0 COSIM_P=1 SUITE=bp_tests PROG=cache_hammer"
+
+# Any setup needed for the job
+echo "Cleaning bp_top"
+make -C bp_top/syn clean.syn
 
 let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1
-
-# The base command to append the configuration to
-cmd_base="make -j ${CORES_PER_JOB} -C bp_top/syn COSIM_P=1 run_testlist.${SUFFIX} TESTLIST=$TESTLIST"
-
-# Any setup needed for the job
-make -C bp_top/syn clean.${SUFFIX}
 
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"

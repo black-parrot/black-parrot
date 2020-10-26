@@ -24,11 +24,12 @@ check_design.syn: $(BUILD_DIR)/check
 check_design.syn: CHK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).check_design.log
 check_design.syn: CHK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).check_design.rpt
 check_design.syn: CHK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).check_design.err
-check_design.syn: export DESIGN_NAME ?= wrapper
+check_design.syn: DESIGN_NAME ?= wrapper
 # Change to your own stdcell db from a PDK. We suggest the freely available FreePDK45
-check_design.syn: export STDCELL_DB ?= $(FREE45_NLDM_DB_TYP)
 $(CHK_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/check: $(CHK_COLLATERAL)
+	$(eval export DESIGN_NAME)
+	$(eval export STDCELL_DB)
 	cd $(@D); \
 		$(DC_SHELL) -64bit -f $(BP_COMMON_DIR)/syn/tcl/dc_elab.tcl | tee -i $(CHK_LOG)
 		-@grep --color      "^Error"                               $(CHK_LOG) | tee    $(CHK_ERROR)
@@ -41,6 +42,11 @@ $(BUILD_DIR)/check: $(CHK_COLLATERAL)
 		-@grep --color      "(OPT-150)"                            $(CHK_LOG) | tee -a $(CHK_ERROR)
 		-@test -s $(CHK_ERROR) && echo "Design Compiler check_synth: FAILED" > $(CHK_REPORT) \
 		|| (echo "Design Compiler check_synth: PASSED" > $(CHK_REPORT) && rm $(CHK_ERROR))
+
+# Does the check_design target, but also checks for timing loops
+# We accomplish this by overriding the STDCELL_DB variable
+check_loops.syn: STDCELL_DB ?= $(FREE45_NLDM_DB_TYP)
+check_loops.syn: check_design.syn
 
 # This target allows users to look up commands and message codes for
 # DesignCompiler. If there is a message with a code (e.g. LINT-1) then you can

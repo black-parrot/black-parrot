@@ -26,8 +26,8 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,boot_pc       : bootrom_base_addr_gp
-      ,boot_in_debug : 1
+      ,boot_pc       : dram_base_addr_gp
+      ,boot_in_debug : 0
 
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
@@ -92,6 +92,16 @@ package bp_common_aviary_pkg;
   // Default configuration is unicore
   localparam bp_proc_param_s bp_unicore_cfg_p = bp_default_cfg_p;
 
+  localparam bp_proc_param_s bp_unicore_bootrom_override_p =
+    '{boot_pc        : bootrom_base_addr_gp
+      ,boot_in_debug : 1
+      ,default       : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_unicore_bootrom_cfg_p
+                        ,bp_unicore_bootrom_override_p
+                        ,bp_unicore_cfg_p
+                        );
+
   localparam bp_proc_param_s bp_unicore_writethrough_override_p =
     '{l1_writethrough: 1
       ,default       : "inv"
@@ -103,7 +113,7 @@ package bp_common_aviary_pkg;
 
   localparam bp_proc_param_s bp_unicore_no_l2_override_p =
     '{l2_en   : 0
-      ,default: "inv"
+      ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_no_l2_cfg_p
                         ,bp_unicore_no_l2_override_p
@@ -154,9 +164,19 @@ package bp_common_aviary_pkg;
                         ,bp_unicore_cfg_p
                         );
 
+  localparam bp_proc_param_s bp_multicore_1_bootrom_override_p =
+    '{boot_pc        : bootrom_base_addr_gp
+      ,boot_in_debug : 1
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_1_bootrom_cfg_p
+                        ,bp_multicore_1_bootrom_override_p
+                        ,bp_multicore_1_cfg_p
+                        );
+
   localparam bp_proc_param_s bp_multicore_1_no_l2_override_p =
     '{l2_en   : 0
-      ,default: "inv"
+      ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_no_l2_cfg_p
                         ,bp_multicore_1_no_l2_override_p
@@ -290,25 +310,22 @@ package bp_common_aviary_pkg;
                         ,bp_multicore_1_cfg_p
                         );
 
-  localparam bp_proc_param_s bp_multicore_4_accelerator_override_p =
-    '{cac_x_dim : 2
-      ,sac_x_dim: 2
-      ,cacc_type: e_cacc_vdp
-      ,sacc_type: e_sacc_vdp
-      ,num_lce  : 10
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_multicore_4_accelerator_cfg_p
-                        ,bp_multicore_4_accelerator_override_p
-                        ,bp_multicore_4_cfg_p
-                        );
-
   localparam bp_proc_param_s bp_multicore_1_cce_ucode_override_p =
     '{cce_ucode: 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_cfg_p
                         ,bp_multicore_1_cce_ucode_override_p
+                        ,bp_multicore_1_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_1_cce_ucode_bootrom_override_p =
+    '{boot_pc        : bootrom_base_addr_gp
+      ,boot_in_debug : 1
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_bootrom_cfg_p
+                        ,bp_multicore_1_cce_ucode_bootrom_override_p
                         ,bp_multicore_1_cfg_p
                         );
 
@@ -496,33 +513,40 @@ package bp_common_aviary_pkg;
     ,bp_multicore_half_cfg_p
     ,bp_unicore_half_cfg_p
 
-    // Multicore configurations
-    ,bp_multicore_16_cce_ucode_cfg_p
-    ,bp_multicore_16_cfg_p
-    ,bp_multicore_12_cce_ucode_cfg_p
-    ,bp_multicore_12_cfg_p
-    ,bp_multicore_8_cce_ucode_cfg_p
-    ,bp_multicore_8_cfg_p
-    ,bp_multicore_6_cce_ucode_cfg_p
-    ,bp_multicore_6_cfg_p
-    ,bp_multicore_4_accelerator_cfg_p
-    ,bp_multicore_4_cce_ucode_cfg_p
-    ,bp_multicore_4_cfg_p
-    ,bp_multicore_3_cce_ucode_cfg_p
-    ,bp_multicore_3_cfg_p
-    ,bp_multicore_2_cce_ucode_cfg_p
-    ,bp_multicore_2_cfg_p
+    // Accelerator configurations
     ,bp_multicore_1_accelerator_cfg_p
+
+    // Ucode configurations
+    ,bp_multicore_16_cce_ucode_cfg_p
+    ,bp_multicore_12_cce_ucode_cfg_p
+    ,bp_multicore_8_cce_ucode_cfg_p
+    ,bp_multicore_6_cce_ucode_cfg_p
+    ,bp_multicore_4_cce_ucode_cfg_p
+    ,bp_multicore_3_cce_ucode_cfg_p
+    ,bp_multicore_2_cce_ucode_cfg_p
+    ,bp_multicore_1_cce_ucode_bootrom_cfg_p
     ,bp_multicore_1_cce_ucode_cfg_p
-    ,bp_multicore_1_l1_medium_cfg_p
+
+    // Multicore configurations
+    ,bp_multicore_16_cfg_p
+    ,bp_multicore_12_cfg_p
+    ,bp_multicore_8_cfg_p
+    ,bp_multicore_6_cfg_p
+    ,bp_multicore_4_cfg_p
+    ,bp_multicore_3_cfg_p
+    ,bp_multicore_2_cfg_p
     ,bp_multicore_1_l1_small_cfg_p
+    ,bp_multicore_1_l1_medium_cfg_p
+    ,bp_multicore_1_no_l2_cfg_p
+    ,bp_multicore_1_bootrom_cfg_p
     ,bp_multicore_1_cfg_p
 
     // Unicore configurations
     ,bp_unicore_writethrough_cfg_p
-    ,bp_unicore_l1_medium_cfg_p
     ,bp_unicore_l1_small_cfg_p
+    ,bp_unicore_l1_medium_cfg_p
     ,bp_unicore_no_l2_cfg_p
+    ,bp_unicore_bootrom_cfg_p
     ,bp_unicore_cfg_p
 
     // A custom BP configuration generated from Makefile
@@ -536,37 +560,44 @@ package bp_common_aviary_pkg;
   typedef enum bit [lg_max_cfgs-1:0]
   {
     // Various testing configs
-    e_bp_multicore_cce_ucode_half_cfg       = 29
-    ,e_bp_multicore_half_cfg                = 28
-    ,e_bp_unicore_half_cfg                  = 27
+    e_bp_multicore_cce_ucode_half_cfg       = 32
+    ,e_bp_multicore_half_cfg                = 31
+    ,e_bp_unicore_half_cfg                  = 30
+
+    // Accelerator configurations
+    ,e_bp_multicore_1_accelerator_cfg       = 29
+
+    // Ucode configurations
+    ,e_bp_multicore_16_cce_ucode_cfg        = 28
+    ,e_bp_multicore_12_cce_ucode_cfg        = 27
+    ,e_bp_multicore_8_cce_ucode_cfg         = 26
+    ,e_bp_multicore_6_cce_ucode_cfg         = 25
+    ,e_bp_multicore_4_cce_ucode_cfg         = 24
+    ,e_bp_multicore_3_cce_ucode_cfg         = 23
+    ,e_bp_multicore_2_cce_ucode_cfg         = 22
+    ,e_bp_multicore_1_cce_ucode_bootrom_cfg = 21
+    ,e_bp_multicore_1_cce_ucode_cfg         = 20
 
     // Multicore configurations
-    ,e_bp_multicore_16_cce_ucode_cfg        = 26
-    ,e_bp_multicore_16_cfg                  = 25
-    ,e_bp_multicore_12_cce_ucode_cfg        = 24
-    ,e_bp_multicore_12_cfg                  = 23
-    ,e_bp_multicore_8_cce_ucode_cfg         = 22
-    ,e_bp_multicore_8_cfg                   = 21
-    ,e_bp_multicore_6_cce_ucode_cfg         = 20
-    ,e_bp_multicore_6_cfg                   = 19
-    ,e_bp_multicore_4_accelerator_cfg       = 18
-    ,e_bp_multicore_4_cce_ucode_cfg         = 17
-    ,e_bp_multicore_4_cfg                   = 16
-    ,e_bp_multicore_3_cce_ucode_cfg         = 15
+    ,e_bp_multicore_16_cfg                  = 19
+    ,e_bp_multicore_12_cfg                  = 18
+    ,e_bp_multicore_8_cfg                   = 17
+    ,e_bp_multicore_6_cfg                   = 16
+    ,e_bp_multicore_4_cfg                   = 15
     ,e_bp_multicore_3_cfg                   = 14
-    ,e_bp_multicore_2_cce_ucode_cfg         = 13
-    ,e_bp_multicore_2_cfg                   = 12
-    ,e_bp_multicore_1_accelerator_cfg       = 11
-    ,e_bp_multicore_1_cce_ucode_cfg         = 10
-    ,e_bp_multicore_1_l1_medium_cfg         = 9
-    ,e_bp_multicore_1_l1_small_cfg          = 8
-    ,e_bp_multicore_1_cfg                   = 7
+    ,e_bp_multicore_2_cfg                   = 13
+    ,e_bp_multicore_1_l1_small_cfg          = 12
+    ,e_bp_multicore_1_l1_medium_cfg         = 11
+    ,e_bp_multicore_1_no_l2_cfg             = 10
+    ,e_bp_multicore_1_bootrom_cfg           = 9
+    ,e_bp_multicore_1_cfg                   = 8
 
     // Unicore configurations
-    ,e_bp_unicore_writethrough_cfg          = 6
+    ,e_bp_unicore_writethrough_cfg          = 7
+    ,e_bp_unicore_l1_small_cfg              = 6
     ,e_bp_unicore_l1_medium_cfg             = 5
-    ,e_bp_unicore_l1_small_cfg              = 4
-    ,e_bp_unicore_no_l2_cfg                 = 3
+    ,e_bp_unicore_no_l2_cfg                 = 4
+    ,e_bp_unicore_bootrom_cfg               = 3
     ,e_bp_unicore_cfg                       = 2
 
     // A custom BP configuration generated from Makefile

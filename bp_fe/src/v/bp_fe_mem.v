@@ -100,7 +100,7 @@ bp_tlb
 
    ,.v_i((fetch_v | itlb_fill_v) & mem_translation_en_i)
    ,.w_i(itlb_fill_v)
-   ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr.tag)
+   ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr[vaddr_width_p-1-:vtag_width_p])
    ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
 
    ,.v_o(itlb_v_lo)
@@ -116,7 +116,7 @@ bsg_dff_reset_en
    ,.reset_i(reset_i)
    ,.en_i(fetch_v)
 
-   ,.data_i(mem_cmd_cast_i.operands.fetch.vaddr.tag)
+   ,.data_i(mem_cmd_cast_i.operands.fetch.vaddr[vaddr_width_p-1-:vtag_width_p])
    ,.data_o(vtag_r)
   );
 

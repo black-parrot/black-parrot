@@ -23,7 +23,7 @@ int sc_main(int argc, char **argv)
   //Verilated::scopesDump();
 
   sc_clock clock("clk", sc_time(sim_period, SC_PS));
-  sc_clock dram_clock("clk", sc_time(dram_period, SC_PS));
+  sc_clock dram_clock("dram_clk", sc_time(dram_period, SC_PS));
   sc_signal <bool> reset("reset");
 
   tb->clk_i(clock);
@@ -58,6 +58,9 @@ int sc_main(int argc, char **argv)
   std::cout << "Writing coverage" << std::endl;
   VerilatedCov::write("coverage.dat");
 #endif
+
+  std::cout << "Executing final" << std::endl;
+  tb->final();
 
   std::cout << "Exiting" << std::endl;
   exit(EXIT_SUCCESS);

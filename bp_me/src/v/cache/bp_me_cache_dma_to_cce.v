@@ -14,7 +14,7 @@ module bp_me_cache_dma_to_cce
   
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
   
   ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
   ,localparam block_size_in_bytes_lp = (cce_block_width_p / 8)
@@ -59,7 +59,7 @@ module bp_me_cache_dma_to_cce
   `declare_bsg_cache_dma_pkt_s(paddr_width_p);
   
   // cce
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   
   
   /********************* dma packet fifo *********************/
@@ -170,22 +170,22 @@ module bp_me_cache_dma_to_cce
 
   // coherence message block size
   // block size smaller than 8-bytes not supported
-  bp_mem_msg_size_e mem_cmd_block_size =
+  bp_bedrock_msg_size_e mem_cmd_block_size =
     (block_size_in_bytes_lp == 128)
-    ? e_mem_msg_size_128
+    ? e_bedrock_msg_size_128
     : (block_size_in_bytes_lp == 64)
-      ? e_mem_msg_size_64
+      ? e_bedrock_msg_size_64
       : (block_size_in_bytes_lp == 32)
-        ? e_mem_msg_size_32
+        ? e_bedrock_msg_size_32
         : (block_size_in_bytes_lp == 16)
-          ? e_mem_msg_size_16
-          : e_mem_msg_size_8;
+          ? e_bedrock_msg_size_16
+          : e_bedrock_msg_size_8;
 
   logic mem_cmd_v_lo;
-  bp_cce_mem_msg_s mem_cmd_lo;
+  bp_bedrock_cce_mem_msg_s mem_cmd_lo;
   
   assign mem_cmd_lo.header.msg_type = (send_dma_pkt_r.write_not_read)? 
-                                       e_mem_msg_wr : e_mem_msg_rd;
+                                       e_bedrock_mem_wr : e_bedrock_mem_rd;
   assign mem_cmd_lo.header.addr = (num_mem_p == 1)? send_dma_pkt_r.addr : 
                                 {send_dma_pkt_r.addr[paddr_width_p-1:block_offset_width_lp], 
                                 dma_pkt_rr_tag_r, send_dma_pkt_r.addr[block_offset_width_lp-1:0]};
@@ -283,7 +283,7 @@ module bp_me_cache_dma_to_cce
   /********************* cce -> Cache DMA *********************/
   
   logic piso_v_li, piso_ready_lo, two_fifo_v_lo, two_fifo_yumi_li;
-  bp_cce_mem_msg_s mem_resp_li;
+  bp_bedrock_cce_mem_msg_s mem_resp_li;
   
   bsg_two_fifo
  #(.width_p(cce_mem_msg_width_lp)
@@ -298,8 +298,8 @@ module bp_me_cache_dma_to_cce
   ,.yumi_i (two_fifo_yumi_li)
   );
 
-  assign piso_v_li = two_fifo_v_lo & (mem_resp_li.header.msg_type == e_mem_msg_rd);
-  assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.header.msg_type == e_mem_msg_wr) | piso_ready_lo);
+  assign piso_v_li = two_fifo_v_lo & (mem_resp_li.header.msg_type == e_bedrock_mem_rd);
+  assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.header.msg_type == e_bedrock_mem_wr) | piso_ready_lo);
   
   bsg_parallel_in_serial_out 
  #(.width_p(dword_width_p)
