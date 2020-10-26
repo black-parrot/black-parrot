@@ -74,16 +74,15 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/touchfiles
     policy: push
 
-        #    - master
-        #    - dev
-        #    - fe_dev
-        #    - be_dev
-        #    - me_dev
-        #    - top_dev
-        #    - sw_dev
 .job_template: &job_definition
   only:
-    - dev_fix_nbfconfigload
+    - master
+    - dev
+    - fe_dev
+    - be_dev
+    - me_dev
+    - top_dev
+    - sw_dev
   before_script:
     - echo "Forcefully updating submodules"
     - git submodule update --init --force
