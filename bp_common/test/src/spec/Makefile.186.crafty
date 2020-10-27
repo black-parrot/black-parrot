@@ -1,16 +1,17 @@
 .DEFAULT_GOAL = all
 
+SUITE = CINT2000
 BENCHMARK = 186.crafty
 
 MAX_CYCLES = 1000000000
 
 BENCHMARK_OBJS = \
-       searchr.o search.o repeat.o next.o nextr.o history.o \
-			 nexte.o quiesce.o evaluate.o movgen.o make.o unmake.o \
-			 lookup.o store.o attacks.o swap.o boolean.o draw.o \
-			 utility.o valid.o drawn.o edit.o enprise.o init.o \
-			 input.o interupt.o iterate.o main.o option.o output.o \
-			 phase.o ponder.o preeval.o root.o setboard.o time.o validate.o raw.o 
+	searchr.o search.o repeat.o next.o nextr.o history.o \
+	nexte.o quiesce.o evaluate.o movgen.o make.o unmake.o \
+	lookup.o store.o attacks.o swap.o boolean.o draw.o \
+	utility.o valid.o drawn.o edit.o enprise.o init.o \
+	input.o interupt.o iterate.o main.o option.o output.o \
+	phase.o ponder.o preeval.o root.o setboard.o time.o validate.o
 
 INPUT_TYPE = smred
 

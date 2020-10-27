@@ -1,5 +1,6 @@
 .DEFAULT_GOAL = all
 
+SUITE = CINT2000
 BENCHMARK = 175.vpr
 
 MAX_CYCLES = 1000000000
@@ -9,7 +10,7 @@ BENCHMARK_OBJS = \
 	draw.o graphics.o stats.o segment_stats.o rr_graph.o \
 	rr_graph2.o rr_graph_sbox.o rr_graph_util.o \
 	rr_graph_timing_params.o rr_graph_area.o check_rr_graph.o \
-	check_route.o hash.o read_place.o raw.o
+	check_route.o hash.o read_place.o
 
 INPUT_TYPE = smred
 
