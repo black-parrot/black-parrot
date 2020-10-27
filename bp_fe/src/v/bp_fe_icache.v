@@ -64,7 +64,8 @@ module bp_fe_icache
     // Cache Engine Interface
     , output logic [icache_req_width_lp-1:0]           cache_req_o
     , output logic                                     cache_req_v_o
-    , input                                            cache_req_ready_i
+    , input                                            cache_req_yumi_i
+    , input                                            cache_req_busy_i
     , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
     , output logic                                     cache_req_metadata_v_o
     , input                                            cache_req_critical_i
@@ -345,18 +346,18 @@ module bp_fe_icache
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_miss_load;
       cache_req_cast_lo.size = max_req_size;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = 1'b1;
     end
     else if (uncached_req) begin
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_uc_load;
       cache_req_cast_lo.size = e_size_4B;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = 1'b1;
     end
     else if (fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_lo.msg_type = e_cache_clear;
-      cache_req_v_o = cache_req_ready_i & (l1_coherent_p == 0);
+      cache_req_v_o = (l1_coherent_p == 0);
     end
   end
 
@@ -367,7 +368,7 @@ module bp_fe_icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(cache_req_v_o)
+     ,.data_i(cache_req_yumi_i)
      ,.data_o(cache_req_metadata_v_o)
      );
 
@@ -406,7 +407,7 @@ module bp_fe_icache
     else
       state_r <= state_n;
 
-  assign ready_o = is_ready & cache_req_ready_i & ~cache_req_v_o;
+  assign ready_o = is_ready & ~cache_req_busy_i & ~cache_req_yumi_i;
 
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
                               | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)

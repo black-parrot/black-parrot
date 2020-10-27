@@ -135,7 +135,8 @@ module bp_be_dcache
    // D$ Engine Interface
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
    , output logic                                    cache_req_v_o
-   , input                                           cache_req_ready_i
+   , input                                           cache_req_yumi_i
+   , input                                           cache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
    , input                                           cache_req_critical_i
@@ -421,7 +422,7 @@ module bp_be_dcache
   wire load_miss_tv = ~load_hit_tv & v_tv_r & decode_tv_r.load_op & ~uncached_tv_r & ~decode_tv_r.l2_op;
   wire store_miss_tv = ~store_hit_tv & v_tv_r & decode_tv_r.store_op & ~uncached_tv_r & ~decode_tv_r.sc_op & ~decode_tv_r.l2_op;
   wire lr_miss_tv = v_tv_r & decode_tv_r.lr_op & ~store_hit_tv & ~decode_tv_r.l2_op;
-  wire wt_miss_tv = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (writethrough_p == 1);
+  wire wt_miss_tv = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & (cache_req_v_o & ~cache_req_yumi_i) & (writethrough_p == 1);
 
   wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | wt_miss_tv;
 
@@ -632,7 +633,8 @@ module bp_be_dcache
   logic tag_mem_pkt_v;
   logic stat_mem_pkt_v;
 
-  wire wt_req = (wbuf_v_li & (writethrough_p == 1));
+  wire wt_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & (writethrough_p == 1);
+  wire wt_req = wt_success & ~flush_i;
 
   localparam num_bytes_lp = dcache_block_width_p >> 3;
   localparam bp_cache_req_size_e max_req_size = (num_bytes_lp == 16)
@@ -662,18 +664,18 @@ module bp_be_dcache
 
     if(load_miss_tv) begin
       cache_req_cast_o.msg_type = e_miss_load;
-      cache_req_v_o = cache_req_ready_i & ~flush_i;
+      cache_req_v_o = ~flush_i;
     end
     else if(store_miss_tv | lr_miss_tv) begin
       cache_req_cast_o.msg_type = e_miss_store;
-      cache_req_v_o = cache_req_ready_i & ~flush_i;
+      cache_req_v_o = ~flush_i;
     end
     else if(wt_req) begin
       cache_req_cast_o.msg_type = e_wt_store;
-      cache_req_v_o = cache_req_ready_i & ~flush_i;
+      cache_req_v_o = 1'b1;
     end
     else if (l2_amo_req & ~uncached_load_data_v_r) begin
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = 1'b1;
       unique if (lr_req)
         cache_req_cast_o.msg_type = e_amo_lr;
       else if (sc_req)
@@ -699,16 +701,16 @@ module bp_be_dcache
     end
     else if(uncached_load_req) begin
       cache_req_cast_o.msg_type = e_uc_load;
-      cache_req_v_o = cache_req_ready_i & ~flush_i;
+      cache_req_v_o = ~flush_i;
     end
     else if(uncached_store_req) begin
       cache_req_cast_o.msg_type = e_uc_store;
-      cache_req_v_o = cache_req_ready_i & ~flush_i;
+      cache_req_v_o = ~flush_i;
     end
     else if(fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_o.msg_type = e_cache_flush;
-      cache_req_v_o = cache_req_ready_i & gdirty_r & (l1_coherent_p == 0);
+      cache_req_v_o = gdirty_r & (l1_coherent_p == 0);
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
@@ -739,14 +741,15 @@ module bp_be_dcache
      ,.reset_i(reset_i)
 
      // We don't wait for ack on uncached stores or writethrough requests
-     ,.set_i(cache_req_v_o & ~uncached_store_req & ~wt_req)
+     ,.set_i(cache_req_yumi_i & ~uncached_store_req & ~wt_req)
      ,.clear_i(cache_req_complete_i)
      ,.data_o(cache_miss_r)
      );
-  assign ready_o = cache_req_ready_i & ~cache_miss_r;
 
-  assign early_v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
-                              | (uncached_tv_r & (decode_tv_r.store_op & cache_req_ready_i))
+  assign ready_o = ~cache_req_busy_i & ~cache_miss_r;
+
+  assign early_v_o = v_tv_r & ( (uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
+                              | (uncached_tv_r & (decode_tv_r.store_op & cache_req_yumi_i))
                               | (~uncached_tv_r & ~decode_tv_r.l2_op & ~decode_tv_r.fencei_op & ~miss_tv)
                               // Always send fencei when coherent
                               | (fencei_req & (~gdirty_r | (l1_coherent_p == 1)))
@@ -770,7 +773,7 @@ module bp_be_dcache
   //   1) If dirty bit is set, we force a miss and send off a flush request to the CE
   //   2) If dirty bit is not set, we do not send a request and simply return valid flush.
   //        The CSR unit is now responsible for sending the clear request to the I$.
-  wire flush_req = cache_req_v_o & (cache_req_cast_o.msg_type == e_cache_flush);
+  wire flush_req = cache_req_yumi_i & (cache_req_cast_o.msg_type == e_cache_flush);
 
   if (writethrough_p == 1)
     begin : wt
@@ -1153,7 +1156,7 @@ module bp_be_dcache
     assign wbuf_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op;
   end
   else begin : wt_wbuf
-    assign wbuf_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & cache_req_ready_i;
+    assign wbuf_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & cache_req_yumi_i;
   end
   assign wbuf_v_li = wbuf_success & ~flush_i;
   assign wbuf_yumi_li = wbuf_v_lo & ~(decode_lo.load_op & tl_we) & ~data_mem_pkt_yumi_o;
