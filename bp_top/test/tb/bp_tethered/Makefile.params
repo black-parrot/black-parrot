@@ -27,6 +27,7 @@ export USE_DDR            ?= 0
 export USE_DRAMSIM3       ?= 0
 export DRAM_FIXED_LATENCY ?= 10
 export DRAM_PKG           ?= bp_dramsim3_lpddr_2Gb_x16_pkg
+export DRAM_MODEL         ?= den2048Mb+sg5+x16+FULL_MEM
 
 export DUT_PARAMS = 
 export TB_PARAMS  = \
@@ -52,7 +53,8 @@ export TB_PARAMS  = \
 
 export DUT_DEFINES = 
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
-                     +define+dram_pkg=$(DRAM_PKG)
+                     +define+dram_pkg=$(DRAM_PKG) \
+                     +define+$(DRAM_MODEL)
 
 export HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)
 export HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)

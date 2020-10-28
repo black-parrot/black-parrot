@@ -8,7 +8,6 @@ $(LINT_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
 
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.common >> $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
 	@echo wrapper.v                                 >> $@
 	@echo testbench.v                               >> $@
@@ -27,7 +26,6 @@ $(BUILD_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
 
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.common >> $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
 	@echo wrapper.v                                 >> $@
 	@echo testbench.v                               >> $@

@@ -37,7 +37,6 @@ VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++14"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save
-VCS_BUILD_OPTS += +define+den2048Mb+sg5+x16+FULL_MEM
 VCS_BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
 VCS_BUILD_OPTS += -top test_bp
 VCS_BUILD_OPTS += -f flist.vcs 
