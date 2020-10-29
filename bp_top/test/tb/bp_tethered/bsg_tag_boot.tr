@@ -1,0 +1,216 @@
+# PRO-TIP: Set editior syntax to bash (or sh)
+
+################################################################################
+# DESIGN SPECIFIC TAG INFO
+#
+# Number | Description            | Width
+# -------+------------------------+-------
+#     0  | Clkgen Async Reset     | 1-bit
+#   4-1  | Clkgen Oscillator      | 5-bits
+#   8-5  | Clkgen Osc Trigger     | 1-bit
+#    9   | Clkgen Downsampoler    | 3-bits
+#    10  | DMC trefi 0            | 8-bits
+#    11  | DMC trefi 1            | 8-bits
+#    12  | DMC tmrd trfc          | 8-bits
+#    13  | DMC trc trp            | 8-bits
+#    14  | DMC tras trrd          | 8-bits
+#    15  | DMC trcd twr           | 8-bits
+#    16  | DMC twtr trtp          | 8-bits
+#    17  | DMC tcas dqs_sel_cal   | 7-bits
+#    18  | DMC col \ row width    | 8-bits
+#    19  | DMC bank width \ pos   | 8-bits
+#    20  | DMC init_cycles 0      | 8-bits
+#    21  | DMC init_cycles 1      | 8-bits
+#    22  | DMC System Reset       | 1-bit
+#
+#
+# Number of masters = 1
+# Number of clients = 23
+# Max data width = 9
+#
+# Packet lengths
+# <4b>___<1b>___<5b>_1b_<4b>___<9b>
+# <4b>___<20b>
+#
+
+################################################################################
+# Tag Trace Replay Packet Format
+#
+# M = number of masters
+# N = max(1, clog2(#_of_tag_clients))
+# D = max(client_1_width, client_2_width, ..., client_n_width)
+# L = clog2(D+1)
+#
+# |<    4-bits    >|< M-bits >|< N-bits >|<     1-bit    >|< L-bits >|< D-bits >|
+# +----------------+----------+----------+----------------+----------+----------+
+# | replay command | masterEn |  nodeID  | data_not_reset |  length  |   data   |
+# +----------------+----------+----------+----------------+----------+----------+
+#
+# Replay Commands
+#   0 = 0000 = Wait a cycle
+#   1 = 0001 = Send data
+#   2 = 0010 = Receive data
+#   3 = 0011 = Assert done_o ouput signal
+#   4 = 0100 = End test (calls $finish)
+#   5 = 0101 = Wait for cycle_counter == 0
+#   6 = 0110 = Initialize cycle_counter with a 16 bit number
+
+################################################################################
+#
+# RESET BSG TAG MASTER
+#
+# First, we must reset the bsg_tag_master. To do this, we send a 1, then we
+# send a bunch of 0's! By a bunch, the exact amount is (2^clog2(N+1+L+D))+1
+
+# Send a full 0 packet to all masters
+0001___1___00000_0_0000___000000000
+
+# Wait ~32 cycles
+0110___00000000000000100000
+0101___00000000000000000000
+
+################################################################################
+#
+# RESET BSG TAG CLIENTS
+
+#SEND  en  id=0  r l=1
+0001___1___00000_0_0001___000000001
+#SEND  en  id=1  r l=5
+0001___1___00001_0_0101___000011111
+#SEND  en  id=2  r l=5
+0001___1___00010_0_0101___000011111
+#SEND  en  id=3  r l=5
+0001___1___00011_0_0101___000011111
+#SEND  en  id=4  r l=5
+0001___1___00100_0_0101___000011111
+#SEND  en  id=5  r l=1
+0001___1___00101_0_0001___000000001
+#SEND  en  id=6  r l=1
+0001___1___00110_0_0001___000000001
+#SEND  en  id=7  r l=1
+0001___1___00111_0_0001___000000001
+#SEND  en  id=8  r l=1
+0001___1___01000_0_0001___000000001
+#SEND  en  id=9  r l=3
+0001___1___01001_0_0011___000000111
+
+### Set delay line triggers low
+
+#SEND  en  id=5  d l=1    {trigger}
+0001___1___00101_1_0001___000000000
+#SEND  en  id=6  d l=1    {trigger}
+0001___1___00110_1_0001___000000000
+#SEND  en  id=7  d l=1    {trigger}
+0001___1___00111_1_0001___000000000
+#SEND  en  id=8  d l=1    {trigger}
+0001___1___01000_1_0001___000000000
+
+### Program the delay lines phase shift
+
+#SEND  en  id=1  d l=5    {adt, cdt, fdt}
+0001___1___00001_1_0101___000000000
+#SEND  en  id=2  d l=5    {adt, cdt, fdt}
+0001___1___00010_1_0101___000000000
+#SEND  en  id=3  d l=5    {adt, cdt, fdt}
+0001___1___00011_1_0101___000000000
+#SEND  en  id=4  d l=5    {adt, cdt, fdt}
+0001___1___00100_1_0101___000000000
+
+### Trigger delay lines
+
+#SEND  en  id=5  d l=1    {trigger}
+0001___1___00101_1_0001___000000001
+0001___1___00101_1_0001___000000000
+#SEND  en  id=6  d l=1    {trigger}
+0001___1___00110_1_0001___000000001
+0001___1___00110_1_0001___000000000
+#SEND  en  id=7  d l=1    {trigger}
+0001___1___00111_1_0001___000000001
+0001___1___00111_1_0001___000000000
+#SEND  en  id=8  d l=1    {trigger}
+0001___1___01000_1_0001___000000001
+0001___1___01000_1_0001___000000000
+
+### Async clk-gen reset to get things moving
+
+#SEND  en  id=0  d l=1    {async_reset}
+0001___1___00000_1_0001___000000000
+0001___1___00000_1_0001___000000001
+0001___1___00000_1_0001___000000000
+
+### Set downsamples and reset
+#
+#SEND  en  id=9  d l=2    {ds_val, reset}
+0001___1___01001_1_0011___000000001
+0001___1___01001_1_0011___000000000
+
+################################################################################
+#
+# RESET BSG TAG CLIENTS
+
+#SEND  en  id=10 r l=8
+0001___1___01010_0_1000___011111111
+#SEND  en  id=11 r l=8
+0001___1___01011_0_1000___011111111
+#SEND  en  id=12 r l=8
+0001___1___01100_0_1000___011111111
+#SEND  en  id=13 r l=8
+0001___1___01101_0_1000___011111111
+#SEND  en  id=14 r l=8
+0001___1___01110_0_1000___011111111
+#SEND  en  id=15 r l=8
+0001___1___01111_0_1000___011111111
+#SEND  en  id=16 r l=8
+0001___1___10000_0_1000___011111111
+#SEND  en  id=17 r l=8
+0001___1___10001_0_1000___011111111
+#SEND  en  id=18 r l=8
+0001___1___10010_0_1000___011111111
+#SEND  en  id=19 r l=8
+0001___1___10011_0_1000___011111111
+#SEND  en  id=20 r l=8
+0001___1___10100_0_1000___011111111
+#SEND  en  id=21 r l=8
+0001___1___10101_0_1000___011111111
+#SEND  en  id=22 r l=8
+0001___1___10110_0_1000___011111111
+
+# Reset DMC configs and set dmc_p
+
+#SEND  en  id=10 d l=8    {trefi[7:0]}
+0001___1___01010_1_1000___011111111
+#SEND  en  id=11 d l=8    {trefi[15:8]}
+0001___1___01011_1_1000___000000011
+#SEND  en  id=12 d l=8    {trfc, tmrd}
+0001___1___01100_1_1000___011110001
+#SEND  en  id=13 d l=8    {trp, trc}
+0001___1___01101_1_1000___000111010
+#SEND  en  id=14 d l=8    {trrd, tras}
+0001___1___01110_1_1000___000010111
+#SEND  en  id=15 d l=8    {twr, trcd}
+0001___1___01111_1_1000___010110010
+#SEND  en  id=16 d l=8    {trtp, twtr}
+0001___1___10000_1_1000___010000111
+#SEND  en  id=17 d l=8    {dqs_sel_cal, cas}
+0001___1___10001_1_1000___000000011
+#SEND  en  id=18 d l=8    {row_width, col_width}
+0001___1___10010_1_1000___011101011
+#SEND  en  id=19 d l=8    {bank_pos, bank_width}
+0001___1___10011_1_1000___001100110
+#SEND  en  id=20 d l=8    {init_cycles[7:0]}
+0001___1___10100_1_1000___001001010
+#SEND  en  id=21 d l=8    {init_cycles[15:8]}
+0001___1___10101_1_1000___010011100
+#SEND  en  id=22 d l=8    {reset}
+0001___1___10110_1_1000___000000001
+0001___1___10110_1_1000___000000000
+
+################################################################################
+#
+# Done!
+#
+# Configuration is complete and we are out of reset. We should indicate we are
+# done to allow the next part of the testbench to come alive.
+
+# Assert done_o
+0011___00000000000000000000

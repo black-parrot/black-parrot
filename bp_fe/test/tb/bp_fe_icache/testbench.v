@@ -207,6 +207,8 @@ module testbench
      ,.mem_load_p(1)
      ,.mem_file_p(mem_file_p)
      ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+     ,.use_ddr_p(0)
+     ,.use_dramsim3_p(0)
      ,.dram_fixed_latency_p(dram_fixed_latency_p)
      )
     mem
