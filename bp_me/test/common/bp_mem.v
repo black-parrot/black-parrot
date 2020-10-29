@@ -3,6 +3,11 @@
  * bp_mem.v
  */
 
+// Set default DRAM package
+`ifndef dram_pkg
+`define dram_pkg bsg_dramsim2_hmb2_4gb_x128_pkg
+`endif
+
 module bp_mem
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
@@ -12,13 +17,13 @@ module bp_mem
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , parameter mem_offset_p         = "inv"
+   , parameter mem_offset_p         = 0
    , parameter mem_cap_in_bytes_p   = "inv"
-   , parameter mem_load_p           = "inv"
+   , parameter mem_load_p           = 0
    , parameter mem_file_p           = "inv"
-   , parameter use_ddr_p            = "inv"
-   , parameter use_dramsim3_p       = "inv"
-   , parameter dram_fixed_latency_p = "inv"
+   , parameter use_ddr_p            = 0
+   , parameter use_dramsim3_p       = 0
+   , parameter dram_fixed_latency_p = 0
    )
   (input                                 clk_i
    , input                               reset_i

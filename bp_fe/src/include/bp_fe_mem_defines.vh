@@ -13,16 +13,9 @@ typedef enum logic [1:0]
 `define declare_bp_fe_mem_structs(vaddr_width_mp, lce_sets_mp, cce_block_width_mp, vtag_width_mp, ptag_width_mp) \
   typedef struct packed                                        \
   {                                                            \
-    logic [vtag_width_mp-1:0]                         tag;     \
-    logic [`BSG_SAFE_CLOG2(lce_sets_mp)-1:0]          index;   \
-    logic [`BSG_SAFE_CLOG2(cce_block_width_mp/8)-1:0] offset;  \
-  }  bp_fe_vaddr_s;                                            \
-                                                               \
-  typedef struct packed                                        \
-  {                                                            \
     logic [`bp_fe_fetch_operands_padding_width(vaddr_width_mp, vtag_width_mp, ptag_width_mp)-1:0] \
                   padding;                                     \
-    bp_fe_vaddr_s vaddr;                                       \
+    logic [vaddr_width_mp-1:0] vaddr;                          \
   }  bp_fe_fetch_operands_s;                                   \
                                                                \
   typedef struct packed                                        \

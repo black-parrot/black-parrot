@@ -124,7 +124,7 @@ $(SIM_DIR)/wavev:
 BLOODGRAPH ?= $(BP_COMMON_DIR)/software/py/blood_graph.py --generate --generate-key
 blood.v: $(SIM_DIR)/bloodv
 $(SIM_DIR)/bloodv:
-	cd $(@D); $(PYTHON) $(BLOODGRAPH) --input stall_0.trace
+	cd $(@D); $(PYTHON) $(BLOODGRAPH) --trace stall_0.trace
 
 clean.v:
 	@-rm -rf touchfiles/vcs

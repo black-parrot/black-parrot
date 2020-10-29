@@ -15,7 +15,7 @@ module bp_me_cce_to_mem_link_bidir
    , parameter cid_width_p  = "inv"
    , parameter len_width_p  = "inv"
 
-   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(flit_width_p)
    )
 
   (input                                          clk_i
@@ -53,7 +53,7 @@ module bp_me_cce_to_mem_link_bidir
    , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
    );
 
-`declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(flit_width_p, bsg_ready_and_link_sif_s);
 bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o, resp_link_cast_i, resp_link_cast_o;
 bsg_ready_and_link_sif_s master_cmd_link_lo, master_resp_link_li;
 bsg_ready_and_link_sif_s client_cmd_link_li, client_resp_link_lo;
