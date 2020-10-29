@@ -1,4 +1,5 @@
 # bsg_ip_cores files
++incdir+$BASEJUMP_STL_DIR/bsg_tag
 $BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.v
@@ -9,9 +10,21 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_unmanaged.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.v
+$BASEJUMP_STL_DIR/bsg_tag/bsg_tag_pkg.v
+$BASEJUMP_STL_DIR/bsg_tag/bsg_tag_trace_replay.v
+$BASEJUMP_STL_DIR/bsg_tag/bsg_tag_master.v
+$BASEJUMP_STL_DIR/bsg_tag/bsg_tag_client.v
+$BASEJUMP_STL_DIR/bsg_tag/bsg_tag_client_unsync.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_make_2D_array.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_flatten_2D_array.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_mux2_gatestack.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clock_downsample.v
+$BASEJUMP_STL_DIR/bsg_async/bsg_sync_sync.v
 # me files
+$BP_ME_DIR/test/common/bp_dramsim3_pkg.v
 $BP_ME_DIR/test/common/bp_mem.v
 $BP_ME_DIR/test/common/bp_mem_to_dram.v
+$BP_ME_DIR/test/common/bp_me_cce_to_xui.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.vh
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.v
@@ -31,3 +44,15 @@ $BP_TOP_DIR/test/common/bp_nonsynth_core_profiler.v
 $BP_TOP_DIR/test/common/bp_nonsynth_pc_profiler.v
 $BP_TOP_DIR/test/common/bp_nonsynth_branch_profiler.v
 $BP_TOP_DIR/test/common/bp_nonsynth_perf.v
+# bsg_ip_cores files
++incdir+$BASEJUMP_STL_DIR/bsg_clk_gen
++incdir+$BASEJUMP_STL_DIR/testing/bsg_dmc/lpddr_verilog_model
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_pkg.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_controller.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_phy.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_clk_rst_gen.v
+$BASEJUMP_STL_DIR/bsg_clk_gen/bsg_dly_line.v
+$BASEJUMP_STL_DIR/testing/bsg_dmc/lpddr_verilog_model/mobile_ddr.v
+# me files
+$BP_ME_DIR/test/common/bp_ddr.v

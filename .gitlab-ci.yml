@@ -394,3 +394,11 @@ top-linux-vcs:
   script:
     $CI_PROJECT_DIR/ci/linux.sh vcs $CI_CORES
 
+top-dram-vcs:
+  <<: *job_definition
+  when: manual
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/dram.sh

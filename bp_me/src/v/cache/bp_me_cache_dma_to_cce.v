@@ -170,7 +170,7 @@ module bp_me_cache_dma_to_cce
 
   // coherence message block size
   // block size smaller than 8-bytes not supported
-  bp_bedrock_msg_size_e mem_cmd_block_size =
+  localparam bp_bedrock_msg_size_e mem_cmd_block_size =
     (block_size_in_bytes_lp == 128)
     ? e_bedrock_msg_size_128
     : (block_size_in_bytes_lp == 64)

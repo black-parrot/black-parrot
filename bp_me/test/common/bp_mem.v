@@ -3,6 +3,11 @@
  * bp_mem.v
  */
 
+// Set default DRAM package
+`ifndef dram_pkg
+`define dram_pkg bsg_dramsim2_hmb2_4gb_x128_pkg
+`endif
+
 module bp_mem
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
@@ -12,11 +17,13 @@ module bp_mem
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , parameter mem_offset_p         = "inv"
+   , parameter mem_offset_p         = 0
    , parameter mem_cap_in_bytes_p   = "inv"
-   , parameter mem_load_p           = "inv"
+   , parameter mem_load_p           = 0
    , parameter mem_file_p           = "inv"
-   , parameter dram_fixed_latency_p = "inv"
+   , parameter use_ddr_p            = 0
+   , parameter use_dramsim3_p       = 0
+   , parameter dram_fixed_latency_p = 0
    )
   (input                                 clk_i
    , input                               reset_i
@@ -35,7 +42,133 @@ module bp_mem
    , input                               dram_reset_i
    );
 
-if(dram_fixed_latency_p) begin: fixed_latency
+if(use_ddr_p) begin: ddr
+  bp_ddr
+    #(.bp_params_p(bp_params_p)
+     ,.mem_offset_p(mem_offset_p)
+     )
+    ddr
+     (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_i(mem_cmd_i)
+     ,.mem_cmd_v_i(mem_cmd_v_i)
+     ,.mem_cmd_ready_o(mem_cmd_ready_o)
+
+     ,.mem_resp_o(mem_resp_o)
+     ,.mem_resp_v_o(mem_resp_v_o)
+     ,.mem_resp_yumi_i(mem_resp_yumi_i)
+     );
+end
+else if(use_dramsim3_p) begin: dramsim3
+
+  logic [`dram_pkg::num_channels_p-1:0] dram_v_li, dram_w_li, dram_data_v_li, dram_data_v_lo;
+  logic [`dram_pkg::num_channels_p-1:0] dram_yumi_lo, dram_data_yumi_lo;
+  logic [`dram_pkg::num_channels_p-1:0][`dram_pkg::channel_addr_width_p-1:0] dram_ch_addr_li, dram_read_done_ch_addr_lo;
+  logic [`dram_pkg::num_channels_p-1:0][`dram_pkg::data_width_p-1:0] dram_data_li, dram_data_lo;
+  logic [`dram_pkg::num_channels_p-1:0][(`dram_pkg::data_width_p >> 3)-1:0] dram_mask_li;
+
+  genvar i;
+  for (i=1; i<`dram_pkg::num_channels_p; i=i+1) begin
+    assign dram_v_li[i] = '0;
+    assign dram_w_li[i] = '0;
+    assign dram_data_v_li[i] = '0;
+  end
+
+  bp_mem_to_dram
+    #(.bp_params_p(bp_params_p)
+      ,.channel_addr_width_p(`dram_pkg::channel_addr_width_p)
+      ,.data_width_p(`dram_pkg::data_width_p)
+      ,.dram_base_p(mem_offset_p)
+      ,.fifo_els_p(1)
+     )
+    mem2dram
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.mem_cmd_i(mem_cmd_i)
+      ,.mem_cmd_v_i(mem_cmd_v_i)
+      ,.mem_cmd_ready_o(mem_cmd_ready_o)
+
+      ,.mem_resp_o(mem_resp_o)
+      ,.mem_resp_v_o(mem_resp_v_o)
+      ,.mem_resp_yumi_i(mem_resp_yumi_i)
+
+      ,.dram_clk_i(dram_clk_i)
+      ,.dram_reset_i(dram_reset_i)
+
+      ,.dram_ch_addr_o(dram_ch_addr_li[0])
+      ,.dram_write_not_read_o(dram_w_li[0])
+      ,.dram_v_o(dram_v_li[0])
+      ,.dram_yumi_i(dram_yumi_lo[0])
+
+      ,.dram_data_o(dram_data_li[0])
+      ,.dram_mask_o(dram_mask_li[0])
+      ,.dram_data_v_o(dram_data_v_li[0])
+      ,.dram_data_yumi_i(dram_data_yumi_lo[0])
+
+      ,.dram_data_i(dram_data_lo[0])
+      ,.dram_ch_addr_i(dram_read_done_ch_addr_lo[0])
+      ,.dram_data_v_i(dram_data_v_lo[0])
+      ,.dram_data_ready_o()
+     );
+
+  bsg_nonsynth_dramsim3
+    #(.channel_addr_width_p(`dram_pkg::channel_addr_width_p)
+      ,.data_width_p(`dram_pkg::data_width_p)
+      ,.num_channels_p(`dram_pkg::num_channels_p)
+      ,.num_columns_p(`dram_pkg::num_columns_p)
+      ,.num_rows_p(`dram_pkg::num_rows_p)
+      ,.num_ba_p(`dram_pkg::num_ba_p)
+      ,.num_bg_p(`dram_pkg::num_bg_p)
+      ,.num_ranks_p(`dram_pkg::num_ranks_p)
+      ,.address_mapping_p(`dram_pkg::address_mapping_p)
+      ,.size_in_bits_p(`dram_pkg::size_in_bits_p)
+      ,.config_p(`dram_pkg::config_p)
+      ,.masked_p(1)
+      ,.debug_p(0)
+      ,.init_mem_p(1)
+     )
+    dram
+     (.clk_i(dram_clk_i)
+      ,.reset_i(dram_reset_i)
+
+      ,.v_i(dram_v_li)
+      ,.write_not_read_i(dram_w_li)
+      ,.ch_addr_i(dram_ch_addr_li)
+      ,.yumi_o(dram_yumi_lo)
+
+      ,.data_v_i(dram_data_v_li)
+      ,.data_i(dram_data_li)
+      ,.mask_i(dram_mask_li)
+      ,.data_yumi_o(dram_data_yumi_lo)
+
+      ,.data_v_o(dram_data_v_lo)
+      ,.data_o(dram_data_lo)
+      ,.read_done_ch_addr_o(dram_read_done_ch_addr_lo)
+
+      ,.write_done_o()
+      ,.write_done_ch_addr_o()
+     );
+
+  localparam mem_els_lp = mem_cap_in_bytes_p / cce_block_width_p;
+  localparam lg_mem_els_lp = `BSG_SAFE_CLOG2(mem_els_lp);
+  if (mem_load_p)
+    begin : preload
+      `ifndef VERILATOR
+        logic [cce_block_width_p-1:0] mem [0:mem_els_lp];
+        always_ff @(negedge reset_i)
+          begin
+            $readmemh(mem_file_p, mem);
+            for (integer i = 0; i < mem_els_lp; i++)
+              dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, mem[i]);
+          end
+      `else
+         $fatal("Preloading with Verilator is not current supported, due to the dot references");
+      `endif
+    end
+end
+else begin: fixed_latency
 
   localparam latency_width_lp = `BSG_SAFE_CLOG2(dram_fixed_latency_p+1);
 
@@ -165,109 +298,4 @@ if(dram_fixed_latency_p) begin: fixed_latency
     end
 
 end
-else begin: dramsim3
-
-  logic [`dram_pkg::num_channels_p-1:0] dram_v_li, dram_w_li, dram_data_v_li, dram_data_v_lo;
-  logic [`dram_pkg::num_channels_p-1:0] dram_yumi_lo, dram_data_yumi_lo;
-  logic [`dram_pkg::num_channels_p-1:0][`dram_pkg::channel_addr_width_p-1:0] dram_ch_addr_li, dram_read_done_ch_addr_lo;
-  logic [`dram_pkg::num_channels_p-1:0][`dram_pkg::data_width_p-1:0] dram_data_li, dram_data_lo;
-  logic [`dram_pkg::num_channels_p-1:0][(`dram_pkg::data_width_p >> 3)-1:0] dram_mask_li;
-
-  genvar i;
-  for (i=1; i<`dram_pkg::num_channels_p; i=i+1) begin
-    assign dram_v_li[i] = '0;
-    assign dram_w_li[i] = '0;
-    assign dram_data_v_li[i] = '0;
-  end
-
-  bp_mem_to_dram
-    #(.bp_params_p(bp_params_p)
-      ,.channel_addr_width_p(`dram_pkg::channel_addr_width_p)
-      ,.data_width_p(`dram_pkg::data_width_p)
-      ,.dram_base_p(mem_offset_p)
-      ,.fifo_els_p(16)
-     )
-    mem2dram
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.mem_cmd_i(mem_cmd_i)
-      ,.mem_cmd_v_i(mem_cmd_v_i)
-      ,.mem_cmd_ready_o(mem_cmd_ready_o)
-
-      ,.mem_resp_o(mem_resp_o)
-      ,.mem_resp_v_o(mem_resp_v_o)
-      ,.mem_resp_yumi_i(mem_resp_yumi_i)
-
-      ,.dram_clk_i(dram_clk_i)
-      ,.dram_reset_i(dram_reset_i)
-
-      ,.dram_ch_addr_o(dram_ch_addr_li[0])
-      ,.dram_write_not_read_o(dram_w_li[0])
-      ,.dram_v_o(dram_v_li[0])
-      ,.dram_yumi_i(dram_yumi_lo[0])
-
-      ,.dram_data_o(dram_data_li[0])
-      ,.dram_mask_o(dram_mask_li[0])
-      ,.dram_data_v_o(dram_data_v_li[0])
-      ,.dram_data_yumi_i(dram_data_yumi_lo[0])
-
-      ,.dram_data_i(dram_data_lo[0])
-      ,.dram_ch_addr_i(dram_read_done_ch_addr_lo[0])
-      ,.dram_data_v_i(dram_data_v_lo[0])
-      ,.dram_data_ready_o()
-     );
-
-  bsg_nonsynth_dramsim3
-    #(.channel_addr_width_p(`dram_pkg::channel_addr_width_p)
-      ,.data_width_p(`dram_pkg::data_width_p)
-      ,.num_channels_p(`dram_pkg::num_channels_p)
-      ,.num_columns_p(`dram_pkg::num_columns_p)
-      ,.address_mapping_p(`dram_pkg::address_mapping_p)
-      ,.size_in_bits_p(`dram_pkg::size_in_bits_p)
-      ,.config_p(`dram_pkg::config_p)
-      ,.masked_p(1)
-      ,.debug_p(0)
-      ,.init_mem_p(1)
-     )
-    dram
-     (.clk_i(dram_clk_i)
-      ,.reset_i(dram_reset_i)
-
-      ,.v_i(dram_v_li)
-      ,.write_not_read_i(dram_w_li)
-      ,.ch_addr_i(dram_ch_addr_li)
-      ,.yumi_o(dram_yumi_lo)
-
-      ,.data_v_i(dram_data_v_li)
-      ,.data_i(dram_data_li)
-      ,.mask_i(dram_mask_li)
-      ,.data_yumi_o(dram_data_yumi_lo)
-
-      ,.data_v_o(dram_data_v_lo)
-      ,.data_o(dram_data_lo)
-      ,.read_done_ch_addr_o(dram_read_done_ch_addr_lo)
-
-      ,.write_done_o()
-      ,.write_done_ch_addr_o()
-     );
-
-  localparam mem_els_lp = mem_cap_in_bytes_p / cce_block_width_p;
-  localparam lg_mem_els_lp = `BSG_SAFE_CLOG2(mem_els_lp);
-  if (mem_load_p)
-    begin : preload
-      `ifndef VERILATOR
-        logic [cce_block_width_p-1:0] mem [0:mem_els_lp];
-        always_ff @(negedge reset_i)
-          begin
-            $readmemh(mem_file_p, mem);
-            for (integer i = 0; i < mem_els_lp; i++)
-              dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, mem[i]);
-          end
-      `else
-         $fatal("Preloading with Verilator is not current supported, due to the dot references");
-      `endif
-    end
-end
-
 endmodule
