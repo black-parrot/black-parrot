@@ -552,15 +552,15 @@ module bp_unicore
 
          ,.mem_i(cache_cmd_li)
          ,.mem_v_i(cache_cmd_v_li)
-         ,.mem_ready_o(cache_cmd_ready_lo)
+         ,.mem_ready_and_o(cache_cmd_ready_lo)
 
          ,.mem_header_o(mem_cmd_header_o)
          ,.mem_header_v_o(mem_cmd_header_v_o)
-         ,.mem_header_ready_i(mem_cmd_header_ready_i)
+         ,.mem_header_ready_and_i(mem_cmd_header_ready_i)
 
          ,.mem_data_o(mem_cmd_data_o)
          ,.mem_data_v_o(mem_cmd_data_v_o)
-         ,.mem_data_ready_i(mem_cmd_data_ready_i)
+         ,.mem_data_ready_and_i(mem_cmd_data_ready_i)
          );
 
       logic mem_resp_header_ready_lo, mem_resp_data_ready_lo;
@@ -576,15 +576,15 @@ module bp_unicore
 
          ,.mem_header_i(mem_resp_header_i)
          ,.mem_header_v_i(mem_resp_header_v_i)
-         ,.mem_header_ready_o(mem_resp_header_ready_lo)
+         ,.mem_header_ready_and_o(mem_resp_header_ready_lo)
 
          ,.mem_data_i(mem_resp_data_i)
          ,.mem_data_v_i(mem_resp_data_v_i)
-         ,.mem_data_ready_o(mem_resp_data_ready_lo)
+         ,.mem_data_ready_and_o(mem_resp_data_ready_lo)
 
          ,.mem_o(cache_resp_lo)
          ,.mem_v_o(cache_resp_v_lo)
-         ,.mem_ready_i(cache_resp_yumi_li)
+         ,.mem_ready_and_i(cache_resp_yumi_li)
          );
        assign mem_resp_header_yumi_o = mem_resp_header_ready_lo & mem_resp_header_v_i;
        assign mem_resp_data_yumi_o = mem_resp_data_ready_lo & mem_resp_data_v_i;

@@ -23,18 +23,18 @@ module bp_lite_to_burst
    // ready-valid-and
    , input [in_mem_msg_width_lp-1:0]                mem_i
    , input                                          mem_v_i
-   , output logic                                   mem_ready_o
+   , output logic                                   mem_ready_and_o
 
    // Client BP Burst
    // ready-valid-and
    , output logic [out_mem_msg_header_width_lp-1:0] mem_header_o
    , output logic                                   mem_header_v_o
-   , input logic                                    mem_header_ready_i
+   , input logic                                    mem_header_ready_and_i
 
    // ready-valid-and
    , output logic [out_data_width_p-1:0]            mem_data_o
    , output logic                                   mem_data_v_o
-   , input                                          mem_data_ready_i
+   , input                                          mem_data_ready_and_i
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in);
@@ -57,11 +57,11 @@ module bp_lite_to_burst
 
      ,.data_i(mem_cast_i.header)
      ,.v_i(mem_v_i)
-     ,.ready_o(mem_ready_o)
+     ,.ready_o(mem_ready_and_o)
 
      ,.data_o(mem_header_o)
      ,.v_o(mem_header_v_o)
-     ,.yumi_i(mem_header_ready_i & mem_header_v_o)
+     ,.yumi_i(mem_header_ready_and_i & mem_header_v_o)
      );
 
   wire has_data = payload_mask_p[mem_cast_i.header.msg_type];
@@ -76,11 +76,11 @@ module bp_lite_to_burst
 
      ,.data_i(mem_cast_i.data)
      ,.len_i(num_burst_cmds - 1'b1)
-     ,.v_i(mem_v_i & has_data)
+     ,.v_i(mem_ready_and_o & mem_v_i & has_data)
 
      ,.data_o(mem_data_o)
      ,.v_o(mem_data_v_o)
-     ,.yumi_i(mem_data_ready_i & mem_data_v_o)
+     ,.yumi_i(mem_data_ready_and_i & mem_data_v_o)
 
      // We rely on the header fifo to handle ready/valid handshaking
      ,.len_v_o(/* Unused */)
@@ -98,7 +98,7 @@ module bp_lite_to_burst
 
   always_ff @(negedge clk_i)
     begin
-      //if (mem_ready_o & mem_v_i)
+      //if (mem_ready_and_o & mem_v_i)
       //  $display("[%t] Msg received: %p", $time, mem_cast_i);
 
       //if (mem_yumi_i)

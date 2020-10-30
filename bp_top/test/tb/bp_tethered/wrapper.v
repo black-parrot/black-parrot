@@ -219,15 +219,15 @@ module wrapper
 
          ,.mem_header_i(mem_cmd_header_lo)
          ,.mem_header_v_i(mem_cmd_header_v_lo)
-         ,.mem_header_ready_o(mem_cmd_header_ready_li)
+         ,.mem_header_ready_and_o(mem_cmd_header_ready_li)
 
          ,.mem_data_i(mem_cmd_data_lo)
          ,.mem_data_v_i(mem_cmd_data_v_lo)
-         ,.mem_data_ready_o(mem_cmd_data_ready_li)
+         ,.mem_data_ready_and_o(mem_cmd_data_ready_li)
 
          ,.mem_o(mem_cmd_o)
          ,.mem_v_o(mem_cmd_v_o)
-         ,.mem_ready_i(mem_cmd_ready_i)
+         ,.mem_ready_and_i(mem_cmd_ready_i)
          );
 
       logic mem_resp_ready_lo;
@@ -244,15 +244,15 @@ module wrapper
 
          ,.mem_i(mem_resp_i)
          ,.mem_v_i(mem_resp_ready_lo & mem_resp_v_i)
-         ,.mem_ready_o(mem_resp_ready_lo)
+         ,.mem_ready_and_o(mem_resp_ready_lo)
 
          ,.mem_header_o(mem_resp_header_li)
          ,.mem_header_v_o(mem_resp_header_v_li)
-         ,.mem_header_ready_i(mem_resp_header_yumi_lo)
+         ,.mem_header_ready_and_i(mem_resp_header_yumi_lo)
 
          ,.mem_data_o(mem_resp_data_li)
          ,.mem_data_v_o(mem_resp_data_v_li)
-         ,.mem_data_ready_i(mem_resp_data_yumi_lo)
+         ,.mem_data_ready_and_i(mem_resp_data_yumi_lo)
          );
 
       assign io_cmd_o = io_cmd_lo;

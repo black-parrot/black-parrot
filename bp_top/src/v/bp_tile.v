@@ -591,15 +591,15 @@ for (genvar i = 0; i < 2; i++)
 
          ,.mem_header_i(dma_mem_cmd_header_lo)
          ,.mem_header_v_i(dma_mem_cmd_header_v_lo)
-         ,.mem_header_ready_o(dma_mem_cmd_header_ready_li)
+         ,.mem_header_ready_and_o(dma_mem_cmd_header_ready_li)
 
          ,.mem_data_i(dma_mem_cmd_data_lo)
          ,.mem_data_v_i(dma_mem_cmd_data_v_lo)
-         ,.mem_data_ready_o(dma_mem_cmd_data_ready_li)
+         ,.mem_data_ready_and_o(dma_mem_cmd_data_ready_li)
 
          ,.mem_o(dma_mem_cmd_lo)
          ,.mem_v_o(dma_mem_cmd_v_lo)
-         ,.mem_ready_i(dma_mem_cmd_ready_li)
+         ,.mem_ready_and_i(dma_mem_cmd_ready_li)
          );
 
       bp_lite_to_burst
@@ -614,15 +614,15 @@ for (genvar i = 0; i < 2; i++)
 
          ,.mem_i(dma_mem_resp_li)
          ,.mem_v_i(dma_mem_resp_v_li)
-         ,.mem_ready_o(dma_mem_resp_ready_lo)
+         ,.mem_ready_and_o(dma_mem_resp_ready_lo)
 
          ,.mem_header_o(dma_mem_resp_header_li)
          ,.mem_header_v_o(dma_mem_resp_header_v_li)
-         ,.mem_header_ready_i(dma_mem_resp_header_ready_lo)
+         ,.mem_header_ready_and_i(dma_mem_resp_header_ready_lo)
 
          ,.mem_data_o(dma_mem_resp_data_li)
          ,.mem_data_v_o(dma_mem_resp_data_v_li)
-         ,.mem_data_ready_i(dma_mem_resp_data_ready_lo)
+         ,.mem_data_ready_and_i(dma_mem_resp_data_ready_lo)
          );
       assign dma_mem_resp_yumi_lo = dma_mem_resp_ready_lo & dma_mem_resp_v_li;
     end
