@@ -12,8 +12,6 @@ module bp_unicore
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
  
-   , localparam dram_data_width_lp = dword_width_p
-
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p) 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
@@ -44,7 +42,7 @@ module bp_unicore
    , output logic                                      mem_cmd_header_v_o
    , input                                             mem_cmd_header_ready_i
 
-   , output logic [dram_data_width_lp-1:0]             mem_cmd_data_o
+   , output logic [dword_width_p-1:0]                  mem_cmd_data_o
    , output logic                                      mem_cmd_data_v_o
    , input                                             mem_cmd_data_ready_i
 
@@ -52,7 +50,7 @@ module bp_unicore
    , input                                             mem_resp_header_v_i
    , output logic                                      mem_resp_header_yumi_o
 
-   , input [dram_data_width_lp-1:0]                    mem_resp_data_i
+   , input [dword_width_p-1:0]                         mem_resp_data_i
    , input                                             mem_resp_data_v_i
    , output logic                                      mem_resp_data_yumi_o
    );
