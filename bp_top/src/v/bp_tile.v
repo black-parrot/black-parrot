@@ -540,6 +540,14 @@ for (genvar i = 0; i < 2; i++)
   logic dma_mem_resp_v_li, dma_mem_resp_ready_lo, dma_mem_resp_yumi_lo;
   if (l2_en_p)
     begin : l2s
+      bp_bedrock_cce_mem_msg_header_s dma_mem_cmd_header_lo;
+      logic dma_mem_cmd_header_v_lo, dma_mem_cmd_header_ready_li;
+      logic [dword_width_p-1:0] dma_mem_cmd_data_lo;
+      logic dma_mem_cmd_data_v_lo, dma_mem_cmd_data_ready_li;
+      bp_bedrock_cce_mem_msg_header_s dma_mem_resp_header_li;
+      logic dma_mem_resp_header_v_li, dma_mem_resp_header_ready_lo;
+      logic [dword_width_p-1:0] dma_mem_resp_data_li;
+      logic dma_mem_resp_data_v_li, dma_mem_resp_data_ready_lo;
       bp_me_cache_slice
        #(.bp_params_p(bp_params_p))
        l2s
@@ -554,15 +562,69 @@ for (genvar i = 0; i < 2; i++)
          ,.mem_resp_v_o(cache_mem_resp_v_lo)
          ,.mem_resp_yumi_i(cache_mem_resp_yumi_li)
 
-         ,.mem_cmd_o(dma_mem_cmd_lo)
-         ,.mem_cmd_v_o(dma_mem_cmd_v_lo)
-         ,.mem_cmd_yumi_i(dma_mem_cmd_ready_li & dma_mem_cmd_v_lo)
+         ,.mem_cmd_header_o(dma_mem_cmd_header_lo)
+         ,.mem_cmd_header_v_o(dma_mem_cmd_header_v_lo)
+         ,.mem_cmd_header_yumi_i(dma_mem_cmd_header_ready_li & dma_mem_cmd_header_v_lo)
 
-         ,.mem_resp_i(dma_mem_resp_li)
-         ,.mem_resp_v_i(dma_mem_resp_v_li)
-         ,.mem_resp_ready_o(dma_mem_resp_ready_lo)
+         ,.mem_cmd_data_o(dma_mem_cmd_data_lo)
+         ,.mem_cmd_data_v_o(dma_mem_cmd_data_v_lo)
+         ,.mem_cmd_data_yumi_i(dma_mem_cmd_data_ready_li & dma_mem_cmd_data_v_lo)
+
+         ,.mem_resp_header_i(dma_mem_resp_header_li)
+         ,.mem_resp_header_v_i(dma_mem_resp_header_v_li)
+         ,.mem_resp_header_ready_o(dma_mem_resp_header_ready_lo)
+
+         ,.mem_resp_data_i(dma_mem_resp_data_li)
+         ,.mem_resp_data_v_i(dma_mem_resp_data_v_li)
+         ,.mem_resp_data_ready_o(dma_mem_resp_data_ready_lo)
          );
-         assign dma_mem_resp_yumi_lo = dma_mem_resp_ready_lo & dma_mem_resp_v_li;
+
+      bp_burst_to_lite
+       #(.bp_params_p(bp_params_p)
+         ,.in_data_width_p(dword_width_p)
+         ,.out_data_width_p(cce_block_width_p)
+         ,.payload_mask_p(mem_cmd_payload_mask_gp)
+         )
+       burst2lite
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.mem_header_i(dma_mem_cmd_header_lo)
+         ,.mem_header_v_i(dma_mem_cmd_header_v_lo)
+         ,.mem_header_ready_o(dma_mem_cmd_header_ready_li)
+
+         ,.mem_data_i(dma_mem_cmd_data_lo)
+         ,.mem_data_v_i(dma_mem_cmd_data_v_lo)
+         ,.mem_data_ready_o(dma_mem_cmd_data_ready_li)
+
+         ,.mem_o(dma_mem_cmd_lo)
+         ,.mem_v_o(dma_mem_cmd_v_lo)
+         ,.mem_ready_i(dma_mem_cmd_ready_li)
+         );
+
+      bp_lite_to_burst
+       #(.bp_params_p(bp_params_p)
+         ,.in_data_width_p(cce_block_width_p)
+         ,.out_data_width_p(dword_width_p)
+         ,.payload_mask_p(mem_resp_payload_mask_gp)
+         )
+       lite2burst
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.mem_i(dma_mem_resp_li)
+         ,.mem_v_i(dma_mem_resp_v_li)
+         ,.mem_ready_o(dma_mem_resp_ready_lo)
+
+         ,.mem_header_o(dma_mem_resp_header_li)
+         ,.mem_header_v_o(dma_mem_resp_header_v_li)
+         ,.mem_header_ready_i(dma_mem_resp_header_ready_lo)
+
+         ,.mem_data_o(dma_mem_resp_data_li)
+         ,.mem_data_v_o(dma_mem_resp_data_v_li)
+         ,.mem_data_ready_i(dma_mem_resp_data_ready_lo)
+         );
+      assign dma_mem_resp_yumi_lo = dma_mem_resp_ready_lo & dma_mem_resp_v_li;
     end
   else
     begin : no_l2s
