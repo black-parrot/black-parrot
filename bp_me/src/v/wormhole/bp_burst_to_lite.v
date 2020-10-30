@@ -23,18 +23,18 @@ module bp_burst_to_lite
    // ready-valid-and
    , input [in_mem_msg_header_width_lp-1:0]  mem_header_i
    , input                                   mem_header_v_i
-   , output logic                            mem_header_ready_o
+   , output logic                            mem_header_ready_and_o
 
    // ready-valid-and
    , input [in_data_width_p-1:0]             mem_data_i
    , input                                   mem_data_v_i
-   , output logic                            mem_data_ready_o
+   , output logic                            mem_data_ready_and_o
 
    // Client BP Lite
    // ready-valid-and
    , output logic [out_mem_msg_width_lp-1:0] mem_o
    , output logic                            mem_v_o
-   , input                                   mem_ready_i
+   , input                                   mem_ready_and_i
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, in);
@@ -54,12 +54,12 @@ module bp_burst_to_lite
      ,.reset_i(reset_i)
 
      ,.data_i(mem_header_i)
-     ,.ready_o(mem_header_ready_o)
+     ,.ready_o(mem_header_ready_and_o)
      ,.v_i(mem_header_v_i)
 
      ,.data_o(header_lo)
      ,.v_o(header_v_lo)
-     ,.yumi_i(mem_v_o & mem_ready_i)
+     ,.yumi_i(mem_ready_and_i & mem_v_o)
      );
 
   bp_bedrock_in_mem_msg_header_s mem_header_cast_i;
@@ -71,7 +71,7 @@ module bp_burst_to_lite
    #(.width_p(data_len_width_lp))
    burst_len_reg
     (.clk_i(clk_i)
-     ,.en_i(mem_header_ready_o & mem_header_v_i)
+     ,.en_i(mem_header_ready_and_o & mem_header_v_i)
      ,.data_i(incoming_burst_cmds)
      ,.data_o(num_burst_cmds)
      );
@@ -86,13 +86,13 @@ module bp_burst_to_lite
 
      ,.data_i(mem_data_i)
      ,.len_i(num_burst_cmds-1'b1)
-     ,.ready_o(mem_data_ready_o)
+     ,.ready_o(mem_data_ready_and_o)
      ,.v_i(mem_data_v_i)
 
      ,.data_o(data_lo)
      ,.v_o(data_v_lo)
      // We gate the yumi signal since reads will not produce data
-     ,.yumi_i(data_v_lo & mem_ready_i & mem_v_o)
+     ,.yumi_i(data_v_lo & mem_ready_and_i & mem_v_o)
 
      // We rely on fifo ready signal
      ,.len_ready_o(/* Unused */)
@@ -115,10 +115,10 @@ module bp_burst_to_lite
 
   always_ff @(negedge clk_i)
     begin
-    //  if (mem_v_i)
+    //  if (mem_header_ready_and_o & mem_header_v_i)
     //    $display("[%t] Stream received: %p %x", $time, mem_header_cast_i, mem_data_i);
 
-    //  if (mem_yumi_i)
+    //  if (mem_ready_and_i & mem_v_o)
     //    $display("[%t] Msg sent: %p", $time, mem_cast_o);
     end
   //synopsys translate_on
