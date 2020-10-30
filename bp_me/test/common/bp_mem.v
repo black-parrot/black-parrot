@@ -3,11 +3,6 @@
  * bp_mem.v
  */
 
-// Set default DRAM package
-`ifndef dram_pkg
-`define dram_pkg bsg_dramsim2_hmb2_4gb_x128_pkg
-`endif
-
 module bp_mem
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
@@ -61,6 +56,12 @@ if(use_ddr_p) begin: ddr
      );
 end
 else if(use_dramsim3_p) begin: dramsim3
+
+  import bsg_dramsim3_pkg::*;
+  // Set default DRAM package
+  `ifndef dram_pkg
+  `define dram_pkg bp_dramsim3_lpddr_2Gb_x16_pkg
+  `endif
 
   logic [`dram_pkg::num_channels_p-1:0] dram_v_li, dram_w_li, dram_data_v_li, dram_data_v_lo;
   logic [`dram_pkg::num_channels_p-1:0] dram_yumi_lo, dram_data_yumi_lo;
