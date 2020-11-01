@@ -121,14 +121,18 @@ package bp_common_aviary_pkg;
                         );
 
   localparam bp_proc_param_s bp_unicore_l1_medium_override_p =
-    '{icache_sets         : 64
+    '{icache_sets         : 128
       ,icache_assoc       : 4
       ,icache_block_width : 256
       ,icache_fill_width  : 256
-      ,dcache_sets        : 64
+      ,dcache_sets        : 128
       ,dcache_assoc       : 4
       ,dcache_block_width : 256
       ,dcache_fill_width  : 256
+      ,acache_sets        : 128
+      ,acache_assoc       : 4
+      ,acache_block_width : 256
+      ,acache_fill_width  : 256
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_medium_cfg_p
@@ -137,14 +141,18 @@ package bp_common_aviary_pkg;
                         );
 
   localparam bp_proc_param_s bp_unicore_l1_small_override_p =
-    '{icache_sets         : 64
+    '{icache_sets         : 256
       ,icache_assoc       : 2
       ,icache_block_width : 128
       ,icache_fill_width  : 128
-      ,dcache_sets        : 64
+      ,dcache_sets        : 256
       ,dcache_assoc       : 2
       ,dcache_block_width : 128
       ,dcache_fill_width  : 128
+      ,acache_sets        : 256
+      ,acache_assoc       : 2
+      ,acache_block_width : 128
+      ,acache_fill_width  : 128
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_small_cfg_p
@@ -184,14 +192,18 @@ package bp_common_aviary_pkg;
                         );
 
   localparam bp_proc_param_s bp_multicore_1_l1_medium_override_p =
-    '{icache_sets         : 64
+    '{icache_sets         : 128
       ,icache_assoc       : 4
       ,icache_block_width : 256
       ,icache_fill_width  : 256
-      ,dcache_sets        : 64
+      ,dcache_sets        : 128
       ,dcache_assoc       : 4
       ,dcache_block_width : 256
       ,dcache_fill_width  : 256
+      ,acache_sets        : 128
+      ,acache_assoc       : 4
+      ,acache_block_width : 256
+      ,acache_fill_width  : 256
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_l1_medium_cfg_p
@@ -200,14 +212,18 @@ package bp_common_aviary_pkg;
                         );
 
   localparam bp_proc_param_s bp_multicore_1_l1_small_override_p =
-    '{icache_sets         : 64
+    '{icache_sets         : 256
       ,icache_assoc       : 2
       ,icache_block_width : 128
       ,icache_fill_width  : 128
-      ,dcache_sets        : 64
+      ,dcache_sets        : 256
       ,dcache_assoc       : 2
       ,dcache_block_width : 128
       ,dcache_fill_width  : 128
+      ,acache_sets        : 256
+      ,acache_assoc       : 2
+      ,acache_block_width : 128
+      ,acache_fill_width  : 128
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_l1_small_cfg_p

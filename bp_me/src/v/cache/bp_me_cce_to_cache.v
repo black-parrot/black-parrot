@@ -258,6 +258,7 @@ module bp_me_cce_to_cache
       resp_state_r      <= RESP_RESET;
       resp_counter_r    <= '0;
       resp_max_count_r  <= '0;
+      resp_data_r       <= '0;
     end
     else begin
       resp_state_r      <= resp_state_n;

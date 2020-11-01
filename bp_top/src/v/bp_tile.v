@@ -19,6 +19,7 @@ module bp_tile
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce)
 
     , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    // Wormhole parameters
@@ -50,6 +51,7 @@ module bp_tile
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+`declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce);
 
 // Cast the routing links
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -95,9 +97,17 @@ bp_bedrock_cce_mem_msg_s       cce_mem_resp_li;
 logic                  cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
 
 bp_bedrock_cce_mem_msg_s       loopback_mem_cmd_li;
+bp_bedrock_xce_mem_msg_s       loopback_mem_cmd;
 logic                  loopback_mem_cmd_v_li, loopback_mem_cmd_ready_lo;
 bp_bedrock_cce_mem_msg_s       loopback_mem_resp_lo;
+bp_bedrock_xce_mem_msg_s       loopback_mem_resp;
 logic                  loopback_mem_resp_v_lo, loopback_mem_resp_yumi_li;
+assign loopback_mem_cmd = {header: loopback_mem_cmd_li.header
+                          ,data: loopback_mem_cmd_li.data[0+:dword_width_p]
+                          };
+assign loopback_mem_resp_lo = {header: loopback_mem_resp.header
+                              ,data: {'0, loopback_mem_resp.data}
+                              };
 
 bp_bedrock_cce_mem_msg_s       cache_mem_cmd_li;
 logic                  cache_mem_cmd_v_li, cache_mem_cmd_ready_lo;
@@ -105,14 +115,30 @@ bp_bedrock_cce_mem_msg_s       cache_mem_resp_lo;
 logic                  cache_mem_resp_v_lo, cache_mem_resp_yumi_li;
 
 bp_bedrock_cce_mem_msg_s       cfg_mem_cmd_li;
+bp_bedrock_xce_mem_msg_s       cfg_mem_cmd;
 logic                  cfg_mem_cmd_v_li, cfg_mem_cmd_ready_lo;
 bp_bedrock_cce_mem_msg_s       cfg_mem_resp_lo;
+bp_bedrock_xce_mem_msg_s       cfg_mem_resp;
 logic                  cfg_mem_resp_v_lo, cfg_mem_resp_yumi_li;
+assign cfg_mem_cmd = {header: cfg_mem_cmd_li.header
+                      ,data: cfg_mem_cmd_li.data[0+:dword_width_p]
+                     };
+assign cfg_mem_resp_lo = {header: cfg_mem_resp.header
+                         ,data: {'0, cfg_mem_resp.data}
+                         };
 
 bp_bedrock_cce_mem_msg_s       clint_mem_cmd_li;
+bp_bedrock_xce_mem_msg_s       clint_mem_cmd;
 logic                  clint_mem_cmd_v_li, clint_mem_cmd_ready_lo;
 bp_bedrock_cce_mem_msg_s       clint_mem_resp_lo;
+bp_bedrock_xce_mem_msg_s       clint_mem_resp;
 logic                  clint_mem_resp_v_lo, clint_mem_resp_yumi_li;
+assign clint_mem_cmd = {header: clint_mem_cmd_li.header
+                       ,data: clint_mem_cmd_li.data[0+:dword_width_p]
+                       };
+assign clint_mem_resp_lo = {header: clint_mem_resp.header
+                           ,data: {'0, clint_mem_resp.data}
+                           };
 
 logic reset_r;
 always_ff @(posedge clk_i)
@@ -129,11 +155,11 @@ bp_cfg
   (.clk_i(clk_i)
    ,.reset_i(reset_r)
 
-   ,.mem_cmd_i(cfg_mem_cmd_li)
+   ,.mem_cmd_i(cfg_mem_cmd)
    ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
    ,.mem_cmd_ready_o(cfg_mem_cmd_ready_lo)
 
-   ,.mem_resp_o(cfg_mem_resp_lo)
+   ,.mem_resp_o(cfg_mem_resp)
    ,.mem_resp_v_o(cfg_mem_resp_v_lo)
    ,.mem_resp_yumi_i(cfg_mem_resp_yumi_li)
 
@@ -155,11 +181,11 @@ bp_clint_slice
   (.clk_i(clk_i)
    ,.reset_i(reset_r)
 
-   ,.mem_cmd_i(clint_mem_cmd_li)
+   ,.mem_cmd_i(clint_mem_cmd)
    ,.mem_cmd_v_i(clint_mem_cmd_v_li)
    ,.mem_cmd_ready_o(clint_mem_cmd_ready_lo)
 
-   ,.mem_resp_o(clint_mem_resp_lo)
+   ,.mem_resp_o(clint_mem_resp)
    ,.mem_resp_v_o(clint_mem_resp_v_lo)
    ,.mem_resp_yumi_i(clint_mem_resp_yumi_li)
 
@@ -643,11 +669,11 @@ for (genvar i = 0; i < 2; i++)
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(loopback_mem_cmd_li)
+     ,.mem_cmd_i(loopback_mem_cmd)
      ,.mem_cmd_v_i(loopback_mem_cmd_v_li)
      ,.mem_cmd_ready_o(loopback_mem_cmd_ready_lo)
 
-     ,.mem_resp_o(loopback_mem_resp_lo)
+     ,.mem_resp_o(loopback_mem_resp)
      ,.mem_resp_v_o(loopback_mem_resp_v_lo)
      ,.mem_resp_yumi_i(loopback_mem_resp_yumi_li)
      );

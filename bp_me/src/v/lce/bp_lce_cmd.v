@@ -35,10 +35,9 @@ module bp_lce_cmd
     , localparam lg_assoc_lp = `BSG_SAFE_CLOG2(assoc_p)
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
-    , localparam ptag_width_lp = (paddr_width_p-lg_sets_lp-lg_block_size_in_bytes_lp)
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     // width for counter used during initiliazation and for sync messages
     , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(sets_p)+1)
@@ -82,7 +81,7 @@ module bp_lce_cmd
     , output logic                                   tag_mem_pkt_v_o
     , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
     , input                                          tag_mem_pkt_yumi_i
-    , input [ptag_width_lp-1:0]                      tag_mem_i
+    , input [ptag_width_p-1:0]                      tag_mem_i
 
     , output logic                                   stat_mem_pkt_v_o
     , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
@@ -119,7 +118,7 @@ module bp_lce_cmd
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
 
   // FSM states
   typedef enum logic [3:0] {
@@ -239,11 +238,11 @@ module bp_lce_cmd
 
   // common fields from LCE Command used in many states for responses or pkt fields
   logic [lg_sets_lp-1:0] lce_cmd_addr_index;
-  logic [ptag_width_lp-1:0] lce_cmd_addr_tag;
+  logic [ptag_width_p-1:0] lce_cmd_addr_tag;
   logic [lg_assoc_lp-1:0] lce_cmd_way_id;
 
   assign lce_cmd_addr_index = lce_cmd.header.addr[lg_block_size_in_bytes_lp+:lg_sets_lp];
-  assign lce_cmd_addr_tag = lce_cmd.header.addr[(paddr_width_p-1) -: ptag_width_lp];
+  assign lce_cmd_addr_tag = lce_cmd.header.addr[(paddr_width_p-1) -: ptag_width_p];
   assign lce_cmd_way_id = lce_cmd_payload.way_id[0+:lg_assoc_lp];
 
   // LCE Command module is ready after it clears the cache's tag and stat memories

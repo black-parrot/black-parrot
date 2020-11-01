@@ -15,6 +15,7 @@ module bp_unicore
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p) 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce)
    )
   (  input                                             clk_i
    , input                                             reset_i
@@ -62,6 +63,7 @@ module bp_unicore
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce);
 
   bp_dcache_req_s dcache_req_lo;
   bp_icache_req_s icache_req_lo;
@@ -104,24 +106,56 @@ module bp_unicore
   logic [2:0] proc_resp_v_li, proc_resp_yumi_lo;
 
   bp_bedrock_uce_mem_msg_s cfg_cmd_li;
+  bp_bedrock_xce_mem_msg_s cfg_cmd;
   logic cfg_cmd_v_li, cfg_cmd_ready_lo;
   bp_bedrock_uce_mem_msg_s cfg_resp_lo;
+  bp_bedrock_xce_mem_msg_s cfg_resp;
   logic cfg_resp_v_lo, cfg_resp_yumi_li;
+  assign cfg_cmd = {header: cfg_cmd_li.header
+                   ,data: cfg_cmd_li.data[0+:dword_width_p]
+                   };
+  assign cfg_resp_lo = {header: cfg_resp.header
+                       ,data: {'0,cfg_resp.data}
+                       };
 
   bp_bedrock_uce_mem_msg_s clint_cmd_li;
+  bp_bedrock_xce_mem_msg_s clint_cmd;
   logic clint_cmd_v_li, clint_cmd_ready_lo;
   bp_bedrock_uce_mem_msg_s clint_resp_lo;
+  bp_bedrock_xce_mem_msg_s clint_resp;
   logic clint_resp_v_lo, clint_resp_yumi_li;
+  assign clint_cmd = {header: clint_cmd_li.header
+                     ,data: clint_cmd_li.data[0+:dword_width_p]
+                     };
+  assign clint_resp_lo = {header: clint_resp.header
+                         ,data: {'0,clint_resp.data}
+                         };
 
   bp_bedrock_uce_mem_msg_s cache_cmd_li;
+  bp_bedrock_cce_mem_msg_s cache_cmd;
   logic cache_cmd_v_li, cache_cmd_ready_lo;
   bp_bedrock_uce_mem_msg_s cache_resp_lo;
+  bp_bedrock_cce_mem_msg_s cache_resp;
   logic cache_resp_v_lo, cache_resp_yumi_li;
+  assign cache_cmd = {header: cache_cmd_li.header
+                     ,data: {'0,cache_cmd_li.data}
+                     };
+  assign cache_resp_lo = {header: cache_resp.header
+                         ,data: cache_resp.data[0+:uce_mem_data_width_lp]
+                         };
 
   bp_bedrock_uce_mem_msg_s loopback_cmd_li;
+  bp_bedrock_xce_mem_msg_s loopback_cmd;
   logic loopback_cmd_v_li, loopback_cmd_ready_lo;
   bp_bedrock_uce_mem_msg_s loopback_resp_lo;
+  bp_bedrock_xce_mem_msg_s loopback_resp;
   logic loopback_resp_v_lo, loopback_resp_yumi_li;
+  assign loopback_cmd = {header: loopback_cmd_li.header
+                        ,data: loopback_cmd_li.data[0+:dword_width_p]
+                        };
+  assign loopback_resp_lo = {header: loopback_resp.header
+                            ,data: {'0,loopback_resp.data}
+                            };
 
   bp_cfg_bus_s cfg_bus_lo;
   bp_fe_queue_s fe_queue_li, fe_queue_lo;
@@ -327,11 +361,11 @@ module bp_unicore
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(clint_cmd_li)
+     ,.mem_cmd_i(clint_cmd)
      ,.mem_cmd_v_i(clint_cmd_v_li)
      ,.mem_cmd_ready_o(clint_cmd_ready_lo)
 
-     ,.mem_resp_o(clint_resp_lo)
+     ,.mem_resp_o(clint_resp)
      ,.mem_resp_v_o(clint_resp_v_lo)
      ,.mem_resp_yumi_i(clint_resp_yumi_li)
 
@@ -346,11 +380,11 @@ module bp_unicore
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(cfg_cmd_li)
+     ,.mem_cmd_i(cfg_cmd)
      ,.mem_cmd_v_i(cfg_cmd_v_li)
      ,.mem_cmd_ready_o(cfg_cmd_ready_lo)
 
-     ,.mem_resp_o(cfg_resp_lo)
+     ,.mem_resp_o(cfg_resp)
      ,.mem_resp_v_o(cfg_resp_v_lo)
      ,.mem_resp_yumi_i(cfg_resp_yumi_li)
 
@@ -491,11 +525,11 @@ module bp_unicore
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(loopback_cmd_li)
+     ,.mem_cmd_i(loopback_cmd)
      ,.mem_cmd_v_i(loopback_cmd_v_li)
      ,.mem_cmd_ready_o(loopback_cmd_ready_lo)
 
-     ,.mem_resp_o(loopback_resp_lo)
+     ,.mem_resp_o(loopback_resp)
      ,.mem_resp_v_o(loopback_resp_v_lo)
      ,.mem_resp_yumi_i(loopback_resp_yumi_li)
      );
@@ -509,11 +543,11 @@ module bp_unicore
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.mem_cmd_i(cache_cmd_li)
+         ,.mem_cmd_i(cache_cmd)
          ,.mem_cmd_v_i(cache_cmd_v_li)
          ,.mem_cmd_ready_o(cache_cmd_ready_lo)
 
-         ,.mem_resp_o(cache_resp_lo)
+         ,.mem_resp_o(cache_resp)
          ,.mem_resp_v_o(cache_resp_v_lo)
          ,.mem_resp_yumi_i(cache_resp_yumi_li)
 
