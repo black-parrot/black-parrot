@@ -111,12 +111,12 @@ module bp_unicore
   bp_bedrock_uce_mem_msg_s cfg_resp_lo;
   bp_bedrock_xce_mem_msg_s cfg_resp;
   logic cfg_resp_v_lo, cfg_resp_yumi_li;
-  assign cfg_cmd = {header: cfg_cmd_li.header
-                   ,data: cfg_cmd_li.data[0+:dword_width_p]
-                   };
-  assign cfg_resp_lo = {header: cfg_resp.header
-                       ,data: {'0,cfg_resp.data}
-                       };
+  assign cfg_cmd = '{header: cfg_cmd_li.header
+                    ,data: cfg_cmd_li.data[0+:dword_width_p]
+                    };
+  assign cfg_resp_lo = '{header: cfg_resp.header
+                        ,data: {'0,cfg_resp.data}
+                        };
 
   bp_bedrock_uce_mem_msg_s clint_cmd_li;
   bp_bedrock_xce_mem_msg_s clint_cmd;
@@ -124,12 +124,12 @@ module bp_unicore
   bp_bedrock_uce_mem_msg_s clint_resp_lo;
   bp_bedrock_xce_mem_msg_s clint_resp;
   logic clint_resp_v_lo, clint_resp_yumi_li;
-  assign clint_cmd = {header: clint_cmd_li.header
-                     ,data: clint_cmd_li.data[0+:dword_width_p]
-                     };
-  assign clint_resp_lo = {header: clint_resp.header
-                         ,data: {'0,clint_resp.data}
-                         };
+  assign clint_cmd = '{header: clint_cmd_li.header
+                      ,data: clint_cmd_li.data[0+:dword_width_p]
+                      };
+  assign clint_resp_lo = '{header: clint_resp.header
+                          ,data: {'0,clint_resp.data}
+                          };
 
   bp_bedrock_uce_mem_msg_s cache_cmd_li;
   bp_bedrock_cce_mem_msg_s cache_cmd;
@@ -137,12 +137,12 @@ module bp_unicore
   bp_bedrock_uce_mem_msg_s cache_resp_lo;
   bp_bedrock_cce_mem_msg_s cache_resp;
   logic cache_resp_v_lo, cache_resp_yumi_li;
-  assign cache_cmd = {header: cache_cmd_li.header
-                     ,data: {'0,cache_cmd_li.data}
-                     };
-  assign cache_resp_lo = {header: cache_resp.header
-                         ,data: cache_resp.data[0+:uce_mem_data_width_lp]
-                         };
+  assign cache_cmd = '{header: cache_cmd_li.header
+                      ,data: {'0,cache_cmd_li.data}
+                      };
+  assign cache_resp_lo = '{header: cache_resp.header
+                          ,data: cache_resp.data[0+:uce_mem_data_width_lp]
+                          };
 
   bp_bedrock_uce_mem_msg_s loopback_cmd_li;
   bp_bedrock_xce_mem_msg_s loopback_cmd;
@@ -150,12 +150,12 @@ module bp_unicore
   bp_bedrock_uce_mem_msg_s loopback_resp_lo;
   bp_bedrock_xce_mem_msg_s loopback_resp;
   logic loopback_resp_v_lo, loopback_resp_yumi_li;
-  assign loopback_cmd = {header: loopback_cmd_li.header
-                        ,data: loopback_cmd_li.data[0+:dword_width_p]
-                        };
-  assign loopback_resp_lo = {header: loopback_resp.header
-                            ,data: {'0,loopback_resp.data}
-                            };
+  assign loopback_cmd = '{header: loopback_cmd_li.header
+                         ,data: loopback_cmd_li.data[0+:dword_width_p]
+                         };
+  assign loopback_resp_lo = '{header: loopback_resp.header
+                             ,data: {'0,loopback_resp.data}
+                             };
 
   bp_cfg_bus_s cfg_bus_lo;
   bp_fe_queue_s fe_queue_li, fe_queue_lo;

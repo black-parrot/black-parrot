@@ -102,12 +102,12 @@ logic                  loopback_mem_cmd_v_li, loopback_mem_cmd_ready_lo;
 bp_bedrock_cce_mem_msg_s       loopback_mem_resp_lo;
 bp_bedrock_xce_mem_msg_s       loopback_mem_resp;
 logic                  loopback_mem_resp_v_lo, loopback_mem_resp_yumi_li;
-assign loopback_mem_cmd = {header: loopback_mem_cmd_li.header
-                          ,data: loopback_mem_cmd_li.data[0+:dword_width_p]
-                          };
-assign loopback_mem_resp_lo = {header: loopback_mem_resp.header
-                              ,data: {'0, loopback_mem_resp.data}
-                              };
+assign loopback_mem_cmd = '{header: loopback_mem_cmd_li.header
+                           ,data: loopback_mem_cmd_li.data[0+:dword_width_p]
+                           };
+assign loopback_mem_resp_lo = '{header: loopback_mem_resp.header
+                               ,data: {'0, loopback_mem_resp.data}
+                               };
 
 bp_bedrock_cce_mem_msg_s       cache_mem_cmd_li;
 logic                  cache_mem_cmd_v_li, cache_mem_cmd_ready_lo;
@@ -120,12 +120,12 @@ logic                  cfg_mem_cmd_v_li, cfg_mem_cmd_ready_lo;
 bp_bedrock_cce_mem_msg_s       cfg_mem_resp_lo;
 bp_bedrock_xce_mem_msg_s       cfg_mem_resp;
 logic                  cfg_mem_resp_v_lo, cfg_mem_resp_yumi_li;
-assign cfg_mem_cmd = {header: cfg_mem_cmd_li.header
+assign cfg_mem_cmd = '{header: cfg_mem_cmd_li.header
                       ,data: cfg_mem_cmd_li.data[0+:dword_width_p]
-                     };
-assign cfg_mem_resp_lo = {header: cfg_mem_resp.header
-                         ,data: {'0, cfg_mem_resp.data}
-                         };
+                      };
+assign cfg_mem_resp_lo = '{header: cfg_mem_resp.header
+                          ,data: {'0, cfg_mem_resp.data}
+                          };
 
 bp_bedrock_cce_mem_msg_s       clint_mem_cmd_li;
 bp_bedrock_xce_mem_msg_s       clint_mem_cmd;
@@ -133,12 +133,12 @@ logic                  clint_mem_cmd_v_li, clint_mem_cmd_ready_lo;
 bp_bedrock_cce_mem_msg_s       clint_mem_resp_lo;
 bp_bedrock_xce_mem_msg_s       clint_mem_resp;
 logic                  clint_mem_resp_v_lo, clint_mem_resp_yumi_li;
-assign clint_mem_cmd = {header: clint_mem_cmd_li.header
-                       ,data: clint_mem_cmd_li.data[0+:dword_width_p]
-                       };
-assign clint_mem_resp_lo = {header: clint_mem_resp.header
-                           ,data: {'0, clint_mem_resp.data}
-                           };
+assign clint_mem_cmd = '{header: clint_mem_cmd_li.header
+                        ,data: clint_mem_cmd_li.data[0+:dword_width_p]
+                        };
+assign clint_mem_resp_lo = '{header: clint_mem_resp.header
+                            ,data: {'0, clint_mem_resp.data}
+                            };
 
 logic reset_r;
 always_ff @(posedge clk_i)
