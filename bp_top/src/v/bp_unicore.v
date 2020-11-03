@@ -115,7 +115,7 @@ module bp_unicore
                     ,data: cfg_cmd_li.data[0+:dword_width_p]
                     };
   assign cfg_resp_lo = '{header: cfg_resp.header
-                        ,data: {'0,cfg_resp.data}
+                        ,data: {uce_mem_data_width_lp/dword_width_p{cfg_resp.data}}
                         };
 
   bp_bedrock_uce_mem_msg_s clint_cmd_li;
@@ -128,7 +128,7 @@ module bp_unicore
                       ,data: clint_cmd_li.data[0+:dword_width_p]
                       };
   assign clint_resp_lo = '{header: clint_resp.header
-                          ,data: {'0,clint_resp.data}
+                          ,data: {uce_mem_data_width_lp/dword_width_p{clint_resp.data}}
                           };
 
   bp_bedrock_uce_mem_msg_s cache_cmd_li;
@@ -138,7 +138,7 @@ module bp_unicore
   bp_bedrock_cce_mem_msg_s cache_resp;
   logic cache_resp_v_lo, cache_resp_yumi_li;
   assign cache_cmd = '{header: cache_cmd_li.header
-                      ,data: {'0,cache_cmd_li.data}
+                      ,data: {cce_block_width_p/uce_mem_data_width_lp{cache_cmd_li.data}}
                       };
   assign cache_resp_lo = '{header: cache_resp.header
                           ,data: cache_resp.data[0+:uce_mem_data_width_lp]
@@ -154,7 +154,7 @@ module bp_unicore
                          ,data: loopback_cmd_li.data[0+:dword_width_p]
                          };
   assign loopback_resp_lo = '{header: loopback_resp.header
-                             ,data: {'0,loopback_resp.data}
+                             ,data: {uce_mem_data_width_lp/dword_width_p{loopback_resp.data}}
                              };
 
   bp_cfg_bus_s cfg_bus_lo;

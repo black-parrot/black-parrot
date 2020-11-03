@@ -106,7 +106,7 @@ assign loopback_mem_cmd = '{header: loopback_mem_cmd_li.header
                            ,data: loopback_mem_cmd_li.data[0+:dword_width_p]
                            };
 assign loopback_mem_resp_lo = '{header: loopback_mem_resp.header
-                               ,data: {'0, loopback_mem_resp.data}
+                               ,data: {cce_block_width_p/dword_width_p{loopback_mem_resp.data}}
                                };
 
 bp_bedrock_cce_mem_msg_s       cache_mem_cmd_li;
@@ -124,7 +124,7 @@ assign cfg_mem_cmd = '{header: cfg_mem_cmd_li.header
                       ,data: cfg_mem_cmd_li.data[0+:dword_width_p]
                       };
 assign cfg_mem_resp_lo = '{header: cfg_mem_resp.header
-                          ,data: {'0, cfg_mem_resp.data}
+                          ,data: {cce_block_width_p/dword_width_p{cfg_mem_resp.data}}
                           };
 
 bp_bedrock_cce_mem_msg_s       clint_mem_cmd_li;
@@ -137,7 +137,7 @@ assign clint_mem_cmd = '{header: clint_mem_cmd_li.header
                         ,data: clint_mem_cmd_li.data[0+:dword_width_p]
                         };
 assign clint_mem_resp_lo = '{header: clint_mem_resp.header
-                            ,data: {'0, clint_mem_resp.data}
+                            ,data: {cce_block_width_p/dword_width_p{clint_mem_resp.data}}
                             };
 
 logic reset_r;
