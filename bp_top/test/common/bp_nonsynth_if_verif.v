@@ -63,8 +63,8 @@ initial
     $fatal("Error: Must have <= 1 column of streaming accelerators");
   if (cac_x_dim_p > 1)
     $fatal("Error: Must have <= 1 column of coherent accelerators");
-  if (!((dcache_block_width_p == icache_block_width_p) && (dcache_block_width_p ==  acache_block_width_p)))
-    $fatal("Error: We don't currently support different block widths");
+  if (multicore_p == 1 && !((dcache_block_width_p == icache_block_width_p) && (dcache_block_width_p ==  acache_block_width_p)))
+    $fatal("Error: We don't currently support different block widths for multicore configurations");
   if ((cce_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
     $fatal("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
   if ((cce_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))

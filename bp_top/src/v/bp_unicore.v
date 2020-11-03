@@ -582,7 +582,7 @@ module bp_unicore
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.mem_i(cache_cmd_li)
+         ,.mem_i(cache_cmd)
          ,.mem_v_i(cache_cmd_v_li)
          ,.mem_ready_and_o(cache_cmd_ready_lo)
 
@@ -614,7 +614,7 @@ module bp_unicore
          ,.mem_data_v_i(mem_resp_data_v_i)
          ,.mem_data_ready_and_o(mem_resp_data_ready_lo)
 
-         ,.mem_o(cache_resp_lo)
+         ,.mem_o(cache_resp)
          ,.mem_v_o(cache_resp_v_lo)
          ,.mem_ready_and_i(cache_resp_yumi_li)
          );
