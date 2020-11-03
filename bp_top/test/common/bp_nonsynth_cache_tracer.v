@@ -77,7 +77,7 @@ module bp_nonsynth_cache_tracer
    
    // tag and data mem read counter
    , input                                                 tag_mem_v_i
-   , input [icache_assoc_p-1:0]                            data_mem_v_i
+   , input [assoc_p-1:0]                                   data_mem_v_i
    );
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);

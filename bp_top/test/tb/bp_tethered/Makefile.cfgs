@@ -27,6 +27,7 @@ e_bp_multicore_1_bootrom_cfg_cores      := 1
 e_bp_multicore_1_cfg_cores              := 1
 
 e_bp_unicore_writethrough_cfg_cores     := 1
+e_bp_unicore_l1_hetero_cfg_cores        := 1
 e_bp_unicore_l1_medium_cfg_cores        := 1
 e_bp_unicore_l1_small_cfg_cores         := 1
 e_bp_unicore_no_l2_cfg_cores            := 1
