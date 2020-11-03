@@ -333,9 +333,13 @@ module bp_fe_icache
   bp_icache_stat_mem_pkt_s stat_mem_pkt;
   assign stat_mem_pkt = stat_mem_pkt_i;
   
-  // Weird Calculation to find correct request size instead of adding another
-  // mux
-  bp_cache_req_size_e req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(icache_block_width_p) - 3);
+  // Find correct max_req_size
+  localparam num_bytes_lp = icache_block_width_p >> 3;
+  localparam bp_cache_req_size_e max_req_size = (num_bytes_lp == 16)
+                                                ? e_size_16B
+                                                : (num_bytes_lp == 32)
+                                                  ? e_size_32B
+                                                  : e_size_64B;
   
   always_comb begin
     cache_req_cast_lo = '0;
@@ -344,7 +348,7 @@ module bp_fe_icache
     if (miss_tv) begin
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_miss_load;
-      cache_req_cast_lo.size = req_size;
+      cache_req_cast_lo.size = max_req_size;
       cache_req_v_o = cache_req_ready_i;
     end
     else if (uncached_req) begin
