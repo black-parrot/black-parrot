@@ -277,35 +277,13 @@ module bp_me_cce_to_cache
      ,.data_o(mem_resp_cast_o.header)
      );
   
-  localparam num_bytes_lp = cce_block_width_p/8;
-  localparam lg_num_bytes_lp = `BSG_SAFE_CLOG2(num_bytes_lp);
-  localparam num_els_lp = 2**`BSG_WIDTH(lg_num_bytes_lp);
-  logic [num_els_lp-1:0][cce_block_width_p-1:0] repeated_data;
-  logic [cce_block_width_p-1:0] repeated_resp_data;
-  wire [cce_block_width_p-1:0] resp_data_r_cast = resp_data_r;
-  for (genvar i = 0; i <= lg_num_bytes_lp; i++)
-    begin : rep
-      localparam slice_width_lp = 8*(2**i);
-      assign repeated_data[i] = {cce_block_width_p/slice_width_lp{resp_data_r_cast[0+:slice_width_lp]}};
-    end
-
-  bsg_mux
-   #(.width_p(cce_block_width_p)
-    ,.els_p(num_els_lp)
-    )
-    rep_mux
-     (.data_i(repeated_data)
-     ,.sel_i(mem_resp_cast_o.header.size)
-     ,.data_o(repeated_resp_data)
-     );
-
   bsg_bus_pack
    #(.width_p(cce_block_width_p))
-   pack
-    (.data_i(repeated_resp_data)
-     ,.sel_i(mem_resp_cast_o.header.addr[0+:block_offset_width_lp])
+   repl_mux
+    (.data_i(resp_data_r)
+     // Response data is always aggregated from zero in this module
+     ,.sel_i('0)
      ,.size_i(mem_resp_cast_o.header.size)
-
      ,.data_o(mem_resp_cast_o.data)
      );
 

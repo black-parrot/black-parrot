@@ -30,7 +30,6 @@ cfgs=(\
     "e_bp_multicore_8_cfg"
     "e_bp_multicore_6_cce_ucode_cfg"
     "e_bp_multicore_6_cfg"
-    "e_bp_multicore_4_accelerator_cfg"
     "e_bp_multicore_4_cce_ucode_cfg"
     "e_bp_multicore_4_cfg"
     "e_bp_multicore_3_cce_ucode_cfg"
