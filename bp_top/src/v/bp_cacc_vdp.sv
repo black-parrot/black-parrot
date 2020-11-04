@@ -145,15 +145,12 @@ bp_be_dcache
 
 bp_lce
  #(.bp_params_p(bp_params_p)
-   ,.assoc_p(dcache_assoc_p)
-   ,.sets_p(dcache_sets_p)
-   ,.block_width_p(dcache_block_width_p)
-   ,.fill_width_p(dcache_fill_width_p)
+   ,.assoc_p(acache_assoc_p)
+   ,.sets_p(acache_sets_p)
+   ,.block_width_p(acache_block_width_p)
+   ,.fill_width_p(acache_fill_width_p)
    ,.timeout_max_limit_p(4)
-   ,.credits_p(coh_noc_max_credits_p)
-   ,.data_mem_invert_clk_p(1)
-   ,.tag_mem_invert_clk_p(1)
-   )
+   ,.credits_p(coh_noc_max_credits_p))
   be_lce
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -169,8 +166,6 @@ bp_lce
     ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
     ,.cache_req_critical_o(cache_req_critical_lo)
     ,.cache_req_complete_o(cache_req_complete_lo)
-    ,.cache_req_credits_full_o(cache_req_credits_full_lo)
-    ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
 
     ,.data_mem_pkt_o(data_mem_pkt_i)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
