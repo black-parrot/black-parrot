@@ -167,6 +167,7 @@ bp_lce
     ,.cache_req_critical_o(cache_req_critical_lo)
     ,.cache_req_complete_o(cache_req_complete_lo)
 
+
     ,.data_mem_pkt_o(data_mem_pkt_i)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
     ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_o)
