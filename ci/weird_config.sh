@@ -45,6 +45,7 @@ cfgs=(\
 
     "e_bp_unicore_writethrough_cfg"
     "e_bp_unicore_no_l2_cfg"
+    "e_bp_unicore_l1_wide_cfg"
     "e_bp_unicore_l1_hetero_cfg"
     "e_bp_unicore_l1_medium_cfg"
     "e_bp_unicore_l1_small_cfg"
