@@ -40,6 +40,7 @@ $(BUILD_DIR)/check: $(CHK_COLLATERAL)
 		-@grep --color      "undeclared symbol"                    $(CHK_LOG) | tee -a $(CHK_ERROR)
 		-@grep --color      "(ELAB-395)"                           $(CHK_LOG) | tee -a $(CHK_ERROR)
 		-@grep --color      "(OPT-150)"                            $(CHK_LOG) | tee -a $(CHK_ERROR)
+		-@grep --color      "declaration initial"                  $(CHK_LOG) | tee -a $(CHK_ERROR)
 		-@test -s $(CHK_ERROR) && echo "Design Compiler check_synth: FAILED" > $(CHK_REPORT) \
 		|| (echo "Design Compiler check_synth: PASSED" > $(CHK_REPORT) && rm $(CHK_ERROR))
 
