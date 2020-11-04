@@ -30,7 +30,6 @@ cfgs=(\
     "e_bp_multicore_8_cfg"
     "e_bp_multicore_6_cce_ucode_cfg"
     "e_bp_multicore_6_cfg"
-    "e_bp_multicore_4_accelerator_cfg"
     "e_bp_multicore_4_cce_ucode_cfg"
     "e_bp_multicore_4_cfg"
     "e_bp_multicore_3_cce_ucode_cfg"
@@ -45,6 +44,8 @@ cfgs=(\
 
     "e_bp_unicore_writethrough_cfg"
     "e_bp_unicore_no_l2_cfg"
+    "e_bp_unicore_l1_wide_cfg"
+    "e_bp_unicore_l1_hetero_cfg"
     "e_bp_unicore_l1_medium_cfg"
     "e_bp_unicore_l1_small_cfg"
     "e_bp_unicore_cfg"

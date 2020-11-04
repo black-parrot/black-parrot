@@ -639,6 +639,12 @@ module bp_be_dcache
 
   wire wt_req = (wbuf_v_li & (writethrough_p == 1));
 
+  localparam num_bytes_lp = dcache_block_width_p >> 3;
+  localparam bp_cache_req_size_e max_req_size = (num_bytes_lp == 16)
+                                                ? e_size_16B
+                                                : (num_bytes_lp == 32)
+                                                  ? e_size_32B
+                                                  : e_size_64B;
   // Assigning message types
   always_comb begin
     cache_req_v_o = 1'b0;
@@ -657,7 +663,7 @@ module bp_be_dcache
         cache_req_cast_o.size = e_size_1B;
     end
     else
-      cache_req_cast_o.size = e_size_64B;
+      cache_req_cast_o.size = max_req_size;
 
     if(load_miss_tv) begin
       cache_req_cast_o.msg_type = e_miss_load;
