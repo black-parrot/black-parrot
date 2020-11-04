@@ -37,7 +37,7 @@ module bp_cacc_tile
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
-  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_header_width_lp+dword_width_p, lce_req_packet_s);
+  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, cce_lce_req_packet_s);
   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
@@ -56,7 +56,8 @@ module bp_cacc_tile
   logic cce_io_resp_v_li, cce_io_resp_yumi_lo;
 
   // accelerator-side connections network connections
-  logic [lce_cce_req_header_width_lp+dword_width_p-1:0]  lce_req_lo;
+  //logic [lce_cce_req_header_width_lp+dword_width_p-1:0]  lce_req_lo;
+  bp_lce_cce_req_s  lce_req_lo;
   logic             lce_req_v_lo, lce_req_ready_li;
   bp_lce_cce_resp_s lce_resp_lo;
   logic             lce_resp_v_lo, lce_resp_ready_li;

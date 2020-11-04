@@ -144,13 +144,20 @@ bp_be_dcache
     );
 
 
-bp_be_dcache_lce
- #(.bp_params_p(bp_params_p))
+bp_lce
+ #(.bp_params_p(bp_params_p)
+   ,.assoc_p(acache_assoc_p)
+   ,.sets_p(acache_sets_p)
+   ,.block_width_p(acache_block_width_p)
+   ,.fill_width_p(acache_fill_width_p)
+   ,.timeout_max_limit_p(4)
+   ,.credits_p(coh_noc_max_credits_p))
   be_lce
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
     ,.lce_id_i(cfg_bus_cast_i.dcache_id)
+    ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
 
     ,.cache_req_i(cache_req_cast_o)
     ,.cache_req_v_i(cache_req_v_o)
@@ -159,6 +166,7 @@ bp_be_dcache_lce
     ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
 
     ,.cache_req_complete_o(cache_req_complete_lo)
+    ,.cache_req_critical_o(dcache_req_critical_lo)
 
     ,.data_mem_pkt_o(data_mem_pkt_i)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
