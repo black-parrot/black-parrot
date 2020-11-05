@@ -88,7 +88,7 @@ module bp_fe_btb
   bp_btb_entry_s tag_mem_data_li;
   wire                          tag_mem_w_v_li = is_clear | w_v_i;
   wire [btb_idx_width_p-1:0] tag_mem_w_addr_li = is_clear ? init_cnt : w_idx_i;
-  assign tag_mem_data_li = (is_clear | w_clr_i) ? '0 : '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: br_tgt_i};
+  assign tag_mem_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: br_tgt_i};
 
   bp_btb_entry_s tag_mem_data_lo;
   wire                           tag_mem_r_v_li = r_v_i;
@@ -144,7 +144,7 @@ module bp_fe_btb
      );
 
   assign br_tgt_v_o   = tag_mem_data_bypass_lo.v & (tag_mem_data_bypass_lo.tag == r_tag_r);
-  assign br_tgt_jmp_o = tag_mem_data_bypass_lo.jmp;
+  assign br_tgt_jmp_o = tag_mem_data_bypass_lo.v & tag_mem_data_bypass_lo.jmp;
   assign br_tgt_o     = tag_mem_data_bypass_lo.tgt;
 
 

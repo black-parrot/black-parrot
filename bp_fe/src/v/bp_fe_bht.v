@@ -36,7 +36,7 @@ module bp_fe_bht
   wire is_run   = (state_r == e_run);
 
   localparam bht_els_lp = 2**bht_idx_width_p;
-  localparam bht_init_lp = 2'b10;
+  localparam bht_init_lp = 2'b01;
   logic [`BSG_WIDTH(bht_els_lp)-1:0] init_cnt;
   bsg_counter_clear_up
    #(.max_val_p(bht_els_lp), .init_val_p(0))
