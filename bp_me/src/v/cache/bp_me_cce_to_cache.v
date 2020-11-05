@@ -15,16 +15,16 @@ module bp_me_cce_to_cache
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-    , parameter block_size_in_words_lp=cce_block_width_p/dword_width_p
-    , parameter lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
-    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
-    , parameter word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , parameter data_mask_width_lp=(dword_width_p>>3)
-    , parameter byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
-    , parameter block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+    , localparam block_size_in_words_lp=cce_block_width_p/dword_width_p
+    , localparam lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
+    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+    , localparam data_mask_width_lp=(dword_width_p>>3)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
+    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     
-    , parameter bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(paddr_width_p,dword_width_p)
-    , parameter counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_p)
+    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(paddr_width_p,dword_width_p)
+    , localparam counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_p)
   )
   (
     input clk_i
@@ -276,14 +276,14 @@ module bp_me_cce_to_cache
      ,.data_i(mem_cmd_lo.header)
      ,.data_o(mem_resp_cast_o.header)
      );
-
+  
   bsg_bus_pack
    #(.width_p(cce_block_width_p))
-   pack
+   repl_mux
     (.data_i(resp_data_r)
-     ,.sel_i(mem_resp_cast_o.header.addr[0+:block_offset_width_lp])
+     // Response data is always aggregated from zero in this module
+     ,.sel_i('0)
      ,.size_i(mem_resp_cast_o.header.size)
-
      ,.data_o(mem_resp_cast_o.data)
      );
 
