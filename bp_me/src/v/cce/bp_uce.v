@@ -60,7 +60,7 @@ module bp_uce
     , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
     , output logic                                   tag_mem_pkt_v_o
     , input                                          tag_mem_pkt_yumi_i
-    , input [ptag_width_p-1:0]                       tag_mem_i
+    , input [cache_tag_info_width_lp-1:0]            tag_mem_i
 
     , output logic [cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
     , output logic                                   data_mem_pkt_v_o
@@ -203,9 +203,9 @@ module bp_uce
      ,.data_o(dirty_tag_v_r)
      );
 
-  logic [ptag_width_p-1:0] dirty_tag_r;
+  bp_cache_tag_info_s dirty_tag_r;
   bsg_dff_en
-   #(.width_p(ptag_width_p))
+   #(.width_p($bits(bp_cache_tag_info_s)))
    dirty_tag_reg
     (.clk_i(tag_mem_clk)
 
@@ -525,7 +525,7 @@ module bp_uce
         e_flush_write:
           begin
             mem_cmd_cast_o.header.msg_type = e_bedrock_mem_wr;
-            mem_cmd_cast_o.header.addr     = {dirty_tag_r, index_cnt, bank_index, byte_offset_width_lp'(0)};
+            mem_cmd_cast_o.header.addr     = {dirty_tag_r.tag, index_cnt, bank_index, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = block_msg_size_lp;
             mem_cmd_cast_payload.lce_id    = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
@@ -668,7 +668,7 @@ module bp_uce
         e_writeback_write_req:
           begin
             mem_cmd_cast_o.header.msg_type = e_bedrock_mem_wr;
-            mem_cmd_cast_o.header.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp], bank_index, byte_offset_width_lp'(0)};
+            mem_cmd_cast_o.header.addr     = {dirty_tag_r.tag, cache_req_r.addr[block_offset_width_lp+:index_width_lp], bank_index, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = block_msg_size_lp;
             mem_cmd_cast_payload.lce_id    = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
