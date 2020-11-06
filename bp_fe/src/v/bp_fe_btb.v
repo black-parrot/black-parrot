@@ -1,30 +1,26 @@
 /*
  * bp_fe_btb.v
- * 
+ *
  * Branch Target Buffer (BTB) stores the addresses of the branch targets and the
  * corresponding branch sites. Branch happens from the branch sites to the branch
- * targets. In order to save the logic sizes, the BTB is designed to have limited 
- * entries for storing the branch sites, branch target pairs. The implementation 
+ * targets. In order to save the logic sizes, the BTB is designed to have limited
+ * entries for storing the branch sites, branch target pairs. The implementation
  * uses the bsg_mem_1rw_sync_synth RAM design.
  *
  * Notes:
- *   BTB writes are prioritized over BTB reads, since they come on redirections and therefore 
+ *   BTB writes are prioritized over BTB reads, since they come on redirections and therefore
  *     the BTB read is most likely for an erroneous instruction, anyway.
  */
+
 module bp_fe_btb
  import bp_fe_pkg::*;
  import bp_common_rv64_pkg::*;
- #(parameter vaddr_width_p = "inv"
+ #(parameter vaddr_width_p     = "inv"
    , parameter btb_tag_width_p = "inv"
    , parameter btb_idx_width_p = "inv"
-
-   , localparam debug_p = 0
-
-   , localparam btb_offset_width_lp = 2 // bottom 2 bits are unused without compressed branches
-                                        // TODO: Should be a parameterizable struct
-   ) 
+   )
   (input                          clk_i
-   , input                        reset_i 
+   , input                        reset_i
 
    // Synchronous read
    , input [vaddr_width_p-1:0]    r_addr_i
@@ -33,6 +29,7 @@ module bp_fe_btb
    , output                       br_tgt_v_o
    , output                       br_tgt_jmp_o
 
+   // Synchronous write
    , input                        w_v_i
    , input                        w_clr_i
    , input                        w_jmp_i
@@ -41,99 +38,115 @@ module bp_fe_btb
    , input [vaddr_width_p-1:0]    br_tgt_i
    );
 
-localparam btb_els_lp = 2**btb_idx_width_p;
+  ///////////////////////
+  // Initialization state machine
+  enum logic [1:0] {e_reset, e_clear, e_run} state_n, state_r;
+  wire is_reset = (state_r == e_reset);
+  wire is_clear = (state_r == e_clear);
+  wire is_run   = (state_r == e_run);
 
-logic [btb_tag_width_p-1:0] tag_mem_li, tag_mem_lo;
-logic [btb_idx_width_p-1:0] tag_mem_addr_li;
-logic                       tag_mem_v_lo;
+  localparam btb_els_lp = 2**btb_idx_width_p;
+  logic [`BSG_WIDTH(btb_els_lp)-1:0] init_cnt;
+  bsg_counter_clear_up
+   #(.max_val_p(btb_els_lp), .init_val_p(0))
+   init_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-logic [vaddr_width_p-1:0]   tgt_mem_li, tgt_mem_lo;
-logic [btb_idx_width_p-1:0] tgt_mem_addr_li;
-logic                       tag_jmp_lo;
-   
-logic [btb_tag_width_p-1:0] w_tag_n, w_tag_r;
-logic [btb_tag_width_p-1:0] r_tag_n, r_tag_r;
-logic [btb_idx_width_p-1:0] r_idx_n, r_idx_r;
-logic                       r_v_r;
+     ,.clear_i(1'b0)
+     ,.up_i(is_clear)
+     ,.count_o(init_cnt)
+     );
+  wire finished_init = (init_cnt == btb_els_lp-1'b1);
 
-assign tag_mem_li      = w_tag_i; 
-assign tgt_mem_li      = br_tgt_i[0+:vaddr_width_p];
-                            
-logic [btb_els_lp-1:0] v_r, v_n;
-    
-bsg_mem_1r1w_sync
- #(.width_p(1+btb_tag_width_p+vaddr_width_p)
-   ,.els_p(btb_els_lp)
-   )
- tag_mem
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
- 
+  always_comb
+    case (state_r)
+      e_clear: state_n = finished_init ? e_run : e_clear;
+      e_run  : state_n = e_run;
+      // e_reset
+      default: state_n = e_clear;
+    endcase
 
-   ,.w_v_i(w_v_i & ~w_clr_i)
-   ,.w_addr_i(w_idx_i)
-   ,.w_data_i({w_jmp_i, tag_mem_li, tgt_mem_li})
-
-   ,.r_v_i(r_v_i)
-   ,.r_addr_i(r_addr_i[btb_offset_width_lp+:btb_idx_width_p])
-   ,.r_data_o({tag_jmp_lo, tag_mem_lo, tgt_mem_lo})
-   );
-
-
-assign tag_mem_v_lo = v_r[r_idx_r];
-assign br_tgt_o   = tgt_mem_lo;
-assign br_tgt_v_o = tag_mem_v_lo & r_v_r & (tag_mem_lo == r_tag_r);
-assign br_tgt_jmp_o = tag_mem_v_lo & tag_jmp_lo;
-
-always_ff @(posedge clk_i)
-  begin
+  //synopsys sync_set_reset "reset_i"
+  always_ff @(posedge clk_i)
     if (reset_i)
-      begin
-        r_v_r <= '0;
-        r_tag_r <= '0;
-        r_idx_r <= '0;
-      end
+      state_r <= e_reset;
     else
-      begin
-        r_v_r <= r_v_i;
-        r_tag_r <= r_addr_i[btb_offset_width_lp+btb_idx_width_p+:btb_tag_width_p];
-        r_idx_r <= r_addr_i[btb_offset_width_lp+:btb_idx_width_p];
-      end
-    
-      if (reset_i)
-        v_r <= '0;
-      else if (w_v_i & w_clr_i)
-        v_r[w_idx_i] <= 1'b0;
-      else if (w_v_i & ~w_clr_i)
-        v_r[w_idx_i] <= 1'b1;
-  end
+      state_r <= state_n;
 
-if (debug_p)
-  always_ff @(negedge clk_i)
-    begin
-      if (w_v_i & ~w_clr_i)
-        begin
-          $display("[BTB] WRITE INDEX: %x TAG: %x TARGET: %x"
-                   , tag_mem_addr_li
-                   , tag_mem_li
-                   , tgt_mem_li
-                   );
-        end
-      if (w_v_i & w_clr_i)
-        begin
-          $display("[BTB] CLEAR INDEX: %x TAG: %x"
-                   , tag_mem_addr_li
-                   , tag_mem_li
-                   );
-        end
-      if (br_tgt_v_o)
-        begin
-          $display("[BTB] READ INDEX: %x TAG: %x TARGET: %x"
-                   , r_idx_r
-                   , r_tag_r
-                   , br_tgt_o
-                   );
-        end
-    end
+  typedef struct packed
+  {
+    logic                       v;
+    logic                       jmp;
+    logic [btb_tag_width_p-1:0] tag;
+    logic [vaddr_width_p-1:0]   tgt;
+  }  bp_btb_entry_s;
+
+  wire [btb_idx_width_p-1:0] r_idx_li = r_addr_i[2+:btb_idx_width_p];
+  wire [btb_tag_width_p-1:0] r_tag_li = r_addr_i[2+btb_idx_width_p+:btb_tag_width_p];
+
+  bp_btb_entry_s tag_mem_data_li;
+  wire                          tag_mem_w_v_li = is_clear | w_v_i;
+  wire [btb_idx_width_p-1:0] tag_mem_w_addr_li = is_clear ? init_cnt : w_idx_i;
+  assign tag_mem_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: br_tgt_i};
+
+  bp_btb_entry_s tag_mem_data_lo;
+  wire                           tag_mem_r_v_li = r_v_i;
+  wire [btb_idx_width_p-1:0]  tag_mem_r_addr_li = r_idx_li;
+  bsg_mem_1r1w_sync
+   #(.width_p($bits(bp_btb_entry_s)), .els_p(btb_els_lp))
+   tag_mem
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.w_v_i(tag_mem_w_v_li)
+     ,.w_addr_i(tag_mem_w_addr_li)
+     ,.w_data_i(tag_mem_data_li)
+
+     ,.r_v_i(tag_mem_r_v_li)
+     ,.r_addr_i(tag_mem_r_addr_li)
+     ,.r_data_o(tag_mem_data_lo)
+     );
+
+  logic [btb_tag_width_p-1:0] r_tag_r;
+  bsg_dff_reset_en
+   #(.width_p(btb_tag_width_p))
+   tag_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(r_v_i)
+
+     ,.data_i(r_tag_li)
+     ,.data_o(r_tag_r)
+     );
+
+  logic r_v_r;
+  bsg_dff_reset
+   #(.width_p(1))
+   r_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(r_v_i)
+     ,.data_o(r_v_r)
+     );
+
+  bp_btb_entry_s tag_mem_data_bypass_lo;
+  bsg_dff_reset_en_bypass
+   #(.width_p($bits(bp_btb_entry_s)))
+   btb_bypass_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(r_v_r)
+
+     ,.data_i(tag_mem_data_lo)
+     ,.data_o(tag_mem_data_bypass_lo)
+     );
+
+  assign br_tgt_v_o   = r_v_r & (tag_mem_data_bypass_lo.tag == r_tag_r);
+  assign br_tgt_jmp_o = r_v_r & tag_mem_data_bypass_lo.v & tag_mem_data_bypass_lo.jmp;
+  assign br_tgt_o     = tag_mem_data_bypass_lo.tgt;
+
 
 endmodule
+
