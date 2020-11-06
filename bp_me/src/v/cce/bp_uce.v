@@ -731,7 +731,7 @@ module bp_uce
         e_uc_read_wait:
           begin
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
-            data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_p){mem_resp_cast_i.data}};
+            data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_p){mem_resp_cast_i.data[0+:dword_width_p]}};
             data_mem_pkt_v_o = load_resp_v_li;
 
             cache_req_complete_o = data_mem_pkt_yumi_i;

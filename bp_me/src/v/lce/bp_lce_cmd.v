@@ -544,13 +544,14 @@ module bp_lce_cmd
             // when data sends and command is dequeued
             e_bedrock_cmd_uc_data: begin
               data_mem_pkt.index = lce_cmd_addr_index;
-              data_mem_pkt.data = lce_cmd.data;
+              data_mem_pkt.data = {(block_width_p/dword_width_p){lce_cmd.data[0+:dword_width_p]}};
               data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
               data_mem_pkt.opcode = e_cache_data_mem_uncached;
               data_mem_pkt_v_o = lce_cmd_v_i;
 
               lce_cmd_yumi_o = data_mem_pkt_yumi_i;
 
+              cache_req_critical_o = lce_cmd_yumi_o;
               cache_req_complete_o = lce_cmd_yumi_o;
             end
 

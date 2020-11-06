@@ -591,6 +591,7 @@ module bp_be_instr_decoder
       if (fe_exc_not_instr_i)
         begin
           decode = '0;
+          decode.csr_v = 1'b1;
           casez (fe_exc_i)
             e_instr_access_fault: decode.instr_access_fault = 1'b1;
             e_instr_page_fault  : decode.instr_page_fault   = 1'b1;
@@ -601,6 +602,7 @@ module bp_be_instr_decoder
       else if (illegal_instr)
         begin
           decode = '0;
+          decode.csr_v = 1'b1;
           decode.illegal_instr = 1'b1;
         end
 
