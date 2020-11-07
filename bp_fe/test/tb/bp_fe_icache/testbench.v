@@ -16,8 +16,6 @@ module testbench
    , parameter lce_trace_p                 = 0
    , parameter dram_trace_p                = 0
    , parameter icache_trace_p              = 0
-   , parameter preload_mem_p               = 1
-   , parameter random_yumi_p               = 0
    , parameter uce_p                       = 1
 
    , parameter trace_file_p = "test.tr"
@@ -132,8 +130,8 @@ module testbench
   // Output FIFO
   logic fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
   logic [instr_width_p-1:0] fifo_data_lo;
-  assign fifo_yumi_li = (random_yumi_p == 1) ? (fifo_random_yumi_lo & trace_ready_lo) : (fifo_v_lo  & trace_ready_lo);
-  assign trace_v_li = (random_yumi_p == 1) ? fifo_yumi_li : fifo_v_lo;
+  assign fifo_yumi_li = fifo_random_yumi_lo & trace_ready_lo;
+  assign trace_v_li = fifo_yumi_li;
   assign trace_data_li = {'0, fifo_data_lo};
 
   bsg_nonsynth_random_yumi_gen
