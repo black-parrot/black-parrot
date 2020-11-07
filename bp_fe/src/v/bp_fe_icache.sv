@@ -295,7 +295,7 @@ module bp_fe_icache
   logic [lg_icache_assoc_lp-1:0] lru_encode;
 
   bsg_mem_1rw_sync_mask_write_bit #(
-    .width_p(icache_assoc_p-1)
+    .width_p(`BSG_MAX(2, icache_assoc_p)-1)
     ,.els_p(icache_sets_p)
   ) stat_mem (
     .clk_i(clk_i)
