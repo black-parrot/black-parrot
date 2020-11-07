@@ -59,7 +59,7 @@ module bp_be_top
    // tag_mem
    , input                                           tag_mem_pkt_v_i
    , input [dcache_tag_mem_pkt_width_lp-1:0]         tag_mem_pkt_i
-   , output logic [ptag_width_p-1:0]                 tag_mem_o
+   , output logic [dcache_tag_info_width_lp-1:0]     tag_mem_o
    , output logic                                    tag_mem_pkt_yumi_o
 
    // stat_mem

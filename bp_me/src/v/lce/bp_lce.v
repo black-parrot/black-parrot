@@ -70,7 +70,7 @@ module bp_lce
     , output logic                                   tag_mem_pkt_v_o
     , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
     , input                                          tag_mem_pkt_yumi_i
-    , input [ptag_width_p-1:0]                       tag_mem_i
+    , input [cache_tag_info_width_lp-1:0]            tag_mem_i
 
     , output logic                                   stat_mem_pkt_v_o
     , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
