@@ -38,9 +38,12 @@ module bp_fe_icache
     , localparam num_words_per_bank_lp = bank_width_lp / word_width_p
     , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
+    // Two kinds of bank offsets to handle indexing and memory instantion respectively for a direct-mapped cache. 
+    // They boil down to the same thing for a set associative cache
     , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
+    , localparam mem_bank_offset_width_lp = $clog2(icache_assoc_p)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
-    , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
+    , localparam block_offset_width_lp = (mem_bank_offset_width_lp+byte_offset_width_lp)
     , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
     , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
     )
@@ -114,7 +117,7 @@ module bp_fe_icache
   logic fencei_req;
 
   assign vaddr_index      = icache_pkt.vaddr[block_offset_width_lp+:index_width_lp];
-  assign vaddr_offset     = icache_pkt.vaddr[byte_offset_width_lp+:bank_offset_width_lp];
+  assign vaddr_offset     = (icache_assoc_p > 1) ? icache_pkt.vaddr[byte_offset_width_lp+:bank_offset_width_lp] : '0;
   assign vaddr_vtag       = icache_pkt.vaddr[block_offset_width_lp+index_width_lp+:vtag_width_p];
 
   // TL stage
@@ -173,12 +176,12 @@ module bp_fe_icache
   end
 
   // data memory
-  logic [icache_assoc_p-1:0]                                           data_mem_v_li;
-  logic                                                                data_mem_w_li;
-  logic [icache_assoc_p-1:0][index_width_lp+bank_offset_width_lp-1:0]  data_mem_addr_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_li;
-  logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]               data_mem_w_mask_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_lo;
+  logic [icache_assoc_p-1:0]                                               data_mem_v_li;
+  logic                                                                    data_mem_w_li;
+  logic [icache_assoc_p-1:0][index_width_lp+mem_bank_offset_width_lp-1:0]  data_mem_addr_li;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                            data_mem_data_li;
+  logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]                   data_mem_w_mask_li;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                            data_mem_data_lo;
 
   // data memory: banks
   for (genvar bank = 0; bank < icache_assoc_p; bank++)
@@ -209,7 +212,7 @@ module bp_fe_icache
    
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
   assign addr_tag_tl = addr_tl[block_offset_width_lp+index_width_lp+:ptag_width_p];
-  assign addr_bank_offset_tl = addr_tl[byte_offset_width_lp+:bank_offset_width_lp];
+  assign addr_bank_offset_tl = (icache_assoc_p > 1) ? addr_tl[byte_offset_width_lp+:bank_offset_width_lp] : '0;
 
   assign vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:index_width_lp];
   assign vaddr_vtag_tl = vaddr_tl_r[block_offset_width_lp+index_width_lp+:vtag_width_p];
@@ -289,6 +292,8 @@ module bp_fe_icache
   bp_icache_stat_info_s          stat_mem_mask_li;
   bp_icache_stat_info_s          stat_mem_data_lo;
 
+  logic [lg_icache_assoc_lp-1:0] lru_encode;
+
   bsg_mem_1rw_sync_mask_write_bit #(
     .width_p(icache_assoc_p-1)
     ,.els_p(icache_sets_p)
@@ -303,10 +308,10 @@ module bp_fe_icache
     ,.data_o(stat_mem_data_lo.lru)
   );
 
-  logic [lg_icache_assoc_lp-1:0] lru_encode;
-
+  // For direct-mapped the LRU bits are unused. Constant propagation will
+  // remove the LRU-specific modules
   bsg_lru_pseudo_tree_encode #(
-    .ways_p(icache_assoc_p)
+    .ways_p(`BSG_MAX(2, icache_assoc_p))
   ) lru_encoder (
     .lru_i(stat_mem_data_lo.lru)
     ,.way_id_o(lru_encode)
@@ -372,7 +377,12 @@ module bp_fe_icache
      );
 
   // invalid way takes priority over LRU way
-  assign cache_req_metadata_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
+  // For direct-mapped cache, we default to 0 since there is no concept of way
+  assign cache_req_metadata_cast_lo.repl_way = (icache_assoc_p > 1)
+                                                 ? invalid_exist
+                                                   ? way_invalid_index
+                                                   : lru_encode
+                                                 : '0;
   assign cache_req_metadata_cast_lo.dirty = '0;
 
   // Cache Miss Tracker
@@ -494,11 +504,20 @@ module bp_fe_icache
     & (data_mem_pkt.opcode == e_cache_data_mem_write);
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin : rof1
-    wire [bank_offset_width_lp-1:0] data_mem_pkt_offset = (bank_offset_width_lp'(i) - data_mem_pkt.way_id);
+    if (icache_assoc_p > 1)
+      begin: setassoc
+        wire [bank_offset_width_lp-1:0] data_mem_pkt_offset = (bank_offset_width_lp'(i) - data_mem_pkt.way_id);
 
-    assign data_mem_addr_li[i] = tl_we
-      ? {vaddr_index, vaddr_offset}
-      : {data_mem_pkt.index, data_mem_pkt_offset};
+        assign data_mem_addr_li[i] = tl_we
+          ? {vaddr_index, vaddr_offset}
+          : {data_mem_pkt.index, data_mem_pkt_offset};
+      end
+    else
+      begin: dmap
+        assign data_mem_addr_li[i] = tl_we
+          ? vaddr_index
+          : data_mem_pkt.index;
+      end
 
     // use fill_index to generate write_mask
     assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
@@ -516,7 +535,7 @@ module bp_fe_icache
     ,.o(data_mem_data_li)
   );
 
-  // use fill_index to generate brank write mask
+  // use fill_index to generate bank write mask
   for (genvar i = 0; i < block_size_in_fill_lp; i++) begin
     assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt.fill_index[i]}};
   end
@@ -597,8 +616,8 @@ module bp_fe_icache
     ? addr_index_tv
     : stat_mem_pkt.index;
 
-  logic [icache_assoc_p-2:0] lru_decode_data_lo;
-  logic [icache_assoc_p-2:0] lru_decode_mask_lo;
+  logic [`BSG_MAX(2, icache_assoc_p)-2:0] lru_decode_data_lo;
+  logic [`BSG_MAX(2, icache_assoc_p)-2:0] lru_decode_mask_lo;
 
   logic [lg_icache_assoc_lp-1:0] hit_index_tv;
   bsg_encode_one_hot
@@ -612,7 +631,7 @@ module bp_fe_icache
      );
 
   bsg_lru_pseudo_tree_decode #(
-     .ways_p(icache_assoc_p)
+     .ways_p(`BSG_MAX(2, icache_assoc_p))
   ) lru_decode (
      .way_id_i(hit_index_tv)
      ,.data_o(lru_decode_data_lo)
@@ -624,8 +643,8 @@ module bp_fe_icache
       stat_mem_data_li.lru = lru_decode_data_lo;
       stat_mem_mask_li.lru = lru_decode_mask_lo;
     end else begin
-      stat_mem_data_li.lru = {(icache_assoc_p-1){1'b0}};
-      stat_mem_mask_li.lru = {(icache_assoc_p-1){1'b1}};
+      stat_mem_data_li.lru = {(`BSG_MAX(2, icache_assoc_p)-1){1'b0}};
+      stat_mem_mask_li.lru = {(`BSG_MAX(2, icache_assoc_p)-1){1'b1}};
     end
   end
 
@@ -688,7 +707,7 @@ module bp_fe_icache
 
   // LCE: stat_mem
   // Stub out dirty bits in icache
-  assign stat_mem_o = {stat_mem_data_lo.lru, icache_assoc_p'(0)};
+  assign stat_mem_o = (icache_assoc_p > 1) ? {stat_mem_data_lo.lru, icache_assoc_p'(0)} : '0;
   assign stat_mem_pkt_yumi_o = ~(v_tv_r & ~uncached_tv_r) & stat_mem_pkt_v_i;
 
   //synopsys translate_off
