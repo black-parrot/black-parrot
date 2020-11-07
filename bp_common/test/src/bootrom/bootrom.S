@@ -72,15 +72,16 @@ load_ucode:
     // Switch I$, D$ and CCE modes
 load_config:
     li t0, 1
+
+    li t1, CFG_CCE_MODE_ADDR
+    or t1, t1, t4
+    sd t0, 0(t1)
+
     li t1, CFG_DCACHE_MODE_ADDR
     or t1, t1, t4
     sd t0, 0(t1)
     
     li t1, CFG_ICACHE_MODE_ADDR
-    or t1, t1, t4
-    sd t0, 0(t1)
-
-    li t1, CFG_CCE_MODE_ADDR
     or t1, t1, t4
     sd t0, 0(t1)
 
