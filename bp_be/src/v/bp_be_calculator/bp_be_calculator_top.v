@@ -443,8 +443,6 @@ module bp_be_calculator_top
      ,.data_o(comp_stage_r)
      );
 
-  logic [5:0][vaddr_width_p-1:0] pc_r;
-  rv64_instr_s [5:0]             instr_r;
   always_comb
     begin
       // Slicing the completion pipe for Forwarding information
@@ -482,6 +480,7 @@ module bp_be_calculator_top
           exc_stage_n[3].poison_v               |= pipe_sys_miss_v_lo | pipe_sys_exc_v_lo;
 
           exc_stage_n[0].exc.itlb_miss          |= reservation_n.decode.itlb_miss;
+          exc_stage_n[0].exc.icache_miss        |= reservation_n.decode.icache_miss;
           exc_stage_n[0].exc.instr_access_fault |= reservation_n.decode.instr_access_fault;
           exc_stage_n[0].exc.instr_page_fault   |= reservation_n.decode.instr_page_fault;
           exc_stage_n[0].exc.illegal_instr      |= reservation_n.decode.illegal_instr;
@@ -507,15 +506,6 @@ module bp_be_calculator_top
      ,.data_i(exc_stage_n[0+:pipe_stage_els_lp])
      ,.data_o(exc_stage_r)
      );
-
-  always_ff @(posedge clk_i)
-    begin
-      pc_r[0]         <= reservation_n.pc;
-      instr_r[0]      <= reservation_n.instr;
-
-      pc_r[5:1]         <= pc_r[4:0];
-      instr_r[5:1]      <= instr_r[4:0];
-    end
 
   assign calc_iwb_pkt.ird_w_v    = comp_stage_r[4].ird_w_v;
   assign calc_iwb_pkt.frd_w_v    = comp_stage_r[4].frd_w_v;

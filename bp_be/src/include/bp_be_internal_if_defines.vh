@@ -108,6 +108,7 @@
     logic                           fencei;                                                        \
     logic                           sfence;                                                        \
     logic                           satp;                                                          \
+    logic                           icache_miss;                                                   \
     logic                           rollback;                                                      \
   }  bp_be_commit_pkt_s;                                                                           \
                                                                                                    \
@@ -179,7 +180,7 @@
   (3 + vaddr_width_mp)
 
 `define bp_be_commit_pkt_width(vaddr_width_mp) \
-  (3 + 2 * vaddr_width_mp + instr_width_p + rv64_priv_width_gp + 8)
+  (3 + 2 * vaddr_width_mp + instr_width_p + rv64_priv_width_gp + 9)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (2                                                                                               \

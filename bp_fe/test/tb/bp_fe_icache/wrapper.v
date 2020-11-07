@@ -25,7 +25,6 @@ module wrapper
   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
   , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-  , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
   , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
 
   )
@@ -79,11 +78,11 @@ module wrapper
   logic [icache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_li;
   logic [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
   logic [icache_block_width_p-1:0] data_mem_lo;
-  logic [ptag_width_lp-1:0] tag_mem_lo;
+  logic [ptag_width_p-1:0] tag_mem_lo;
   logic [stat_width_lp-1:0] stat_mem_lo;
 
   // Rolly fifo signals
-  logic [ptag_width_lp-1:0] rolly_ptag_lo;
+  logic [ptag_width_p-1:0] rolly_ptag_lo;
   logic [vaddr_width_p-1:0] rolly_vaddr_lo;
   logic rolly_uncached_lo;
   logic rolly_v_lo;
@@ -94,7 +93,7 @@ module wrapper
   logic rollback_li, rolly_yumi_rr;
 
   bsg_fifo_1r1w_rolly
-   #(.width_p(vaddr_width_p+ptag_width_lp+1)
+   #(.width_p(vaddr_width_p+ptag_width_p+1)
     ,.els_p(8)
     )
     rolly_icache (
@@ -126,9 +125,9 @@ module wrapper
 
   assign rollback_li = rolly_yumi_rr & ~data_v_o;
 
-  logic [ptag_width_lp-1:0] rolly_ptag_r;
+  logic [ptag_width_p-1:0] rolly_ptag_r;
   bsg_dff_reset
-    #(.width_p(ptag_width_lp)
+    #(.width_p(ptag_width_p)
      ,.reset_val_p(0)
     )
     ptag_dff
@@ -178,6 +177,10 @@ module wrapper
 
    assign poison_li = icache_v_rr & ~data_v_o;
 
+  `declare_bp_fe_icache_pkt_s(vaddr_width_p);
+  bp_fe_icache_pkt_s icache_pkt;
+  assign icache_pkt = '{vaddr: rolly_vaddr_lo, op: e_icache_fetch};
+
   // I-Cache
   bp_fe_icache
     #(.bp_params_p(bp_params_p))
@@ -187,10 +190,9 @@ module wrapper
 
     ,.cfg_bus_i(cfg_bus_i)
 
-    ,.vaddr_i(rolly_vaddr_lo)
-    ,.vaddr_v_i(rolly_yumi_li)
-    ,.fencei_v_i(1'b0)
-    ,.vaddr_ready_o(icache_ready_lo)
+    ,.icache_pkt_i(icache_pkt)
+    ,.v_i(rolly_yumi_li)
+    ,.ready_o(icache_ready_lo)
 
     ,.ptag_i(rolly_ptag_r)
     ,.ptag_v_i(ptag_v_r)

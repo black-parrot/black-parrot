@@ -12,7 +12,6 @@ module bp_tlb
  (input                               clk_i
   , input                             reset_i
   , input                             flush_i
-  , input                             translation_en_i
   
   , input                             v_i
   , input                             w_i
@@ -52,7 +51,7 @@ logic tlb_last_read_r;
 logic r_entry_bypass_v_r;
 bp_pte_entry_leaf_s r_entry_bypass_r;
 
-assign tlb_bypass = ((vtag_i == vtag_r) & tlb_last_read_r) | ~translation_en_i;
+assign tlb_bypass = ((vtag_i == vtag_r) & tlb_last_read_r);
 
 bsg_dff_reset #(.width_p(1))
   tlb_bypass_reg
@@ -70,7 +69,7 @@ bsg_dff_reset #(.width_p(1))
    ,.data_o(tlb_last_read_r)
   );
 
-bp_pte_entry_leaf_s r_entry, passthrough_entry;
+bp_pte_entry_leaf_s r_entry;
 logic r_v_lo;
 bsg_cam_1r1w_sync
  #(.els_p(tlb_els_p)
