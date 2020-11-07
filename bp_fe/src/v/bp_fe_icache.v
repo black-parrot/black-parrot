@@ -44,7 +44,6 @@ module bp_fe_icache
 
     `declare_bp_icache_widths(vaddr_width_p, ptag_width_p, icache_assoc_p)
 
-    , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
     )
@@ -87,13 +86,13 @@ module bp_fe_icache
     , input tag_mem_pkt_v_i
     , input [icache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
     , output logic tag_mem_pkt_yumi_o
-    , output logic [ptag_width_p-1:0] tag_mem_o
+    , output logic [icache_tag_info_width_lp-1:0] tag_mem_o
 
     // stat_mem
     , input stat_mem_pkt_v_i
     , input [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
     , output logic stat_mem_pkt_yumi_o
-    , output logic [stat_width_lp-1:0] stat_mem_o
+    , output logic [icache_stat_info_width_lp-1:0] stat_mem_o
  );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);

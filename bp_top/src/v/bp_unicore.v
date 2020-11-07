@@ -78,7 +78,8 @@ module bp_unicore
   bp_icache_tag_mem_pkt_s icache_tag_mem_pkt_li;
   logic dcache_tag_mem_pkt_v_li, dcache_tag_mem_pkt_yumi_lo;
   logic icache_tag_mem_pkt_v_li, icache_tag_mem_pkt_yumi_lo;
-  logic [ptag_width_p-1:0] dcache_tag_mem_lo, icache_tag_mem_lo;
+  bp_dcache_tag_info_s dcache_tag_mem_lo;
+  bp_icache_tag_info_s icache_tag_mem_lo;
 
   bp_dcache_data_mem_pkt_s dcache_data_mem_pkt_li;
   bp_icache_data_mem_pkt_s icache_data_mem_pkt_li;
