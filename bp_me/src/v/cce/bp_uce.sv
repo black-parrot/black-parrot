@@ -297,7 +297,10 @@ module bp_uce
   if (fill_size_in_bank_lp == 1)
     begin
       assign bank_index =  mem_cmd_cnt;
-      assign fill_index_shift = mem_resp_cast_i.header.addr[byte_offset_width_lp+:bank_offset_width_lp];
+      // Setting fill_index_shift to zero for direct-mapped caches since there aren't any opportunities for iterative filling as well as no data memory banks
+      assign fill_index_shift = (assoc_p > 1) 
+                                  ? mem_resp_cast_i.header.addr[byte_offset_width_lp+:bank_offset_width_lp]
+                                  : '0;
     end
   else
     begin
