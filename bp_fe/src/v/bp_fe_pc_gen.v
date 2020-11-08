@@ -221,30 +221,19 @@ bsg_dff_reset
    ,.data_o(ghistory_r)
    );
 
-logic bht_pred_lo;
+logic [1:0] bht_val_lo;
 logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
-wire btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
+wire btb_taken = btb_br_tgt_v_lo & (bht_val_lo[1] | btb_br_tgt_jmp_lo);
 always_comb
   begin
     pc_gen_stage_n[0]            = '0;
     pc_gen_stage_n[0].v          = fetch_v;
-    pc_gen_stage_n[0].taken      = ovr_taken | btb_taken | ovr_ret;
-    pc_gen_stage_n[0].btb        = btb_br_tgt_v_lo;
-    pc_gen_stage_n[0].bht        = bht_pred_lo;
-    pc_gen_stage_n[0].ret        = ovr_ret;
-    pc_gen_stage_n[0].ovr        = ovr_taken;
-    pc_gen_stage_n[0].ghist      = ghistory_n;
 
     // Next PC calculation
     // load boot pc on reset command
     // if we need to redirect or load boot pc on reset
     if (state_reset_v | pc_redirect_v | icache_fence_v | itlb_fence_v)
       begin
-        pc_gen_stage_n[0].taken = br_res_taken;
-        pc_gen_stage_n[0].btb = fe_cmd_branch_metadata.src_btb;
-        pc_gen_stage_n[0].bht = '0; // Does not come from metadata
-        pc_gen_stage_n[0].ret = fe_cmd_branch_metadata.src_ret;
-        pc_gen_stage_n[0].ovr = '0; // Does not come from metadata
         pc_gen_stage_n[0].pc = fe_cmd_cast_i.vaddr;
       end
     else if (state_r != e_run)
@@ -258,6 +247,35 @@ always_comb
     else
       begin
         pc_gen_stage_n[0].pc = pc_gen_stage_r[0].pc + 4;
+      end
+
+    if (state_reset_v | pc_redirect_v | icache_fence_v | itlb_fence_v)
+      begin
+        pc_gen_stage_n[0].taken = br_res_taken;
+        pc_gen_stage_n[0].btb = fe_cmd_branch_metadata.src_btb;
+        pc_gen_stage_n[0].bht = fe_cmd_branch_metadata.bht_val;
+        pc_gen_stage_n[0].ret = fe_cmd_branch_metadata.src_ret;
+        pc_gen_stage_n[0].ovr = '0;
+        pc_gen_stage_n[0].ghist = ghistory_n;
+      end
+    else if (ovr_ret | ovr_taken)
+      begin
+        pc_gen_stage_n[0].taken = 1'b1;
+        pc_gen_stage_n[0].btb = 1'b0;
+        pc_gen_stage_n[0].bht = pc_gen_stage_r[1].bht;
+        pc_gen_stage_n[0].ret = ovr_ret;
+        pc_gen_stage_n[0].ovr = 1'b1;
+        pc_gen_stage_n[0].ghist = ghistory_n;
+      end
+    else
+      begin
+        // What happens if there's a bubble...
+        pc_gen_stage_n[0].taken      = btb_taken;
+        pc_gen_stage_n[0].btb        = btb_br_tgt_v_lo;
+        pc_gen_stage_n[0].bht        = bht_val_lo;
+        pc_gen_stage_n[0].ret        = 1'b0;
+        pc_gen_stage_n[0].ovr        = 1'b0;
+        pc_gen_stage_n[0].ghist = ghistory_n;
       end
 
     pc_gen_stage_n[1]    = pc_gen_stage_r[0];
@@ -303,8 +321,7 @@ always_ff @(posedge clk_i)
 
 bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata;
 assign fe_queue_cast_o_branch_metadata =
-  '{pred_taken: pc_gen_stage_r[1].taken | is_jalr // We can't predict target, but jalr are always taken
-    ,src_btb  : pc_gen_stage_r[1].btb
+  '{src_btb   : pc_gen_stage_r[1].btb
     ,src_ret  : pc_gen_stage_r[1].ret
     ,src_ovr  : pc_gen_stage_r[1].ovr
     ,ghist    : pc_gen_stage_r[1].ghist
@@ -316,6 +333,7 @@ assign fe_queue_cast_o_branch_metadata =
     ,btb_tag  : btb_tag_site
     ,btb_idx  : btb_idx_site
     ,bht_idx  : bht_idx_site
+    ,bht_val  : pc_gen_stage_r[1].bht
     ,default  : '0
     };
 
@@ -350,7 +368,6 @@ bp_fe_btb
 //
 // Direct bimodal
 wire [bht_idx_width_p-1:0] bht_idx_r_li = pc_gen_stage_n[0].pc[2+:bht_idx_width_p] ^ pc_gen_stage_n[0].ghist;
-
 bp_fe_bht
  #(.vaddr_width_p(vaddr_width_p)
    ,.bht_idx_width_p(bht_idx_width_p+ghist_width_p)
@@ -361,11 +378,12 @@ bp_fe_bht
 
    ,.r_v_i(pc_gen_stage_n[0].v)
    ,.idx_r_i({pc_gen_stage_n[0].pc[2+:bht_idx_width_p], pc_gen_stage_n[0].ghist})
-   ,.predict_o(bht_pred_lo)
+   ,.val_o(bht_val_lo)
 
    ,.w_v_i((br_miss_v | attaboy_v) & fe_cmd_branch_metadata.is_br & fe_cmd_yumi_o)
    ,.idx_w_i({fe_cmd_branch_metadata.bht_idx, fe_cmd_branch_metadata.ghist})
    ,.correct_i(attaboy_v)
+   ,.val_i(fe_cmd_branch_metadata.bht_val)
    );
 
 `declare_bp_fe_instr_scan_s(vaddr_width_p)
@@ -386,7 +404,7 @@ assign is_ret       = fe_queue_v_o & scan_instr.ret;
 wire btb_miss_ras   = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != return_addr_r);
 wire btb_miss_br    = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != br_target);
 assign ovr_ret      = btb_miss_ras & is_ret;
-assign ovr_taken    = btb_miss_br & ((is_br & pc_gen_stage_r[0].bht) | is_jal);
+assign ovr_taken    = btb_miss_br & ((is_br & pc_gen_stage_r[0].bht[1]) | is_jal);
 assign br_target    = pc_gen_stage_r[1].pc + scan_instr.imm;
 
 assign return_addr_n = pc_gen_stage_r[1].pc + vaddr_width_p'(4);

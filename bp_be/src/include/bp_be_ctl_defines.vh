@@ -226,6 +226,7 @@ typedef struct packed
   bp_be_baddr_e                     baddr_sel;
 
   logic                             itlb_miss;
+  logic                             icache_miss;
   logic                             instr_access_fault;
   logic                             instr_page_fault;
   logic                             illegal_instr;
@@ -247,6 +248,7 @@ typedef struct packed
 
   // BP "exceptions"
   logic itlb_miss;
+  logic icache_miss;
   logic dtlb_miss;
   logic dcache_miss;
   logic fencei_v;

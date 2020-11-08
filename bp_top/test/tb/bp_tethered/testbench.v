@@ -402,11 +402,11 @@ module testbench
                                                                                                   \
          ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)                           \
                                                                                                   \
-         ,.itlb_clear_i(fe.mem.itlb.flush_i)                                                      \
-         ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)                                       \
-         ,.itlb_vtag_i(fe.mem.itlb.vtag_i)                                                        \
-         ,.itlb_entry_i(fe.mem.itlb.entry_i)                                                      \
-         ,.itlb_cam_r_v_i(fe.mem.itlb.cam.r_v_i)                                                  \
+         ,.itlb_clear_i(fe.itlb.flush_i)                                                          \
+         ,.itlb_fill_v_i(fe.itlb.v_i & fe.itlb.w_i)                                               \
+         ,.itlb_vtag_i(fe.itlb.vtag_i)                                                            \
+         ,.itlb_entry_i(fe.itlb.entry_i)                                                          \
+         ,.itlb_cam_r_v_i(fe.itlb.cam.r_v_i)                                                      \
                                                                                                   \
          ,.dtlb_clear_i(be.calculator.pipe_mem.dtlb.flush_i)                                      \
          ,.dtlb_fill_v_i(be.calculator.pipe_mem.dtlb.v_i & be.calculator.pipe_mem.dtlb.w_i)       \
@@ -428,9 +428,9 @@ module testbench
          ,.fe_wait_stall(fe.pc_gen.is_wait)                                                       \
          ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)                                            \
                                                                                                   \
-         ,.itlb_miss(fe.mem.itlb_miss_r)                                                          \
-         ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)                      \
-         ,.icache_fence(fe.mem.icache.fencei_req)                                                 \
+         ,.itlb_miss(fe.itlb_miss_r)                                                              \
+         ,.icache_miss(~fe.icache.ready_o | fe.pc_gen.icache_miss)                                \
+         ,.icache_fence(fe.icache.fencei_req)                                                     \
          ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)                              \
          ,.ret_override(fe.pc_gen.ovr_ret)                                                        \
                                                                                                   \

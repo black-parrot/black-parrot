@@ -358,7 +358,7 @@ mem_resp_buffer
 bp_mem
 #(.bp_params_p(bp_params_p)
   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-  ,.mem_load_p(1)
+  ,.mem_load_p(0)
   ,.mem_file_p(mem_file_p)
   ,.mem_offset_p(mem_offset_p)
   ,.use_ddr_p(0)
