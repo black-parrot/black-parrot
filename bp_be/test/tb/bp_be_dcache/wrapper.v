@@ -26,13 +26,11 @@ module wrapper
 
    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam block_size_in_words_lp=dcache_assoc_p
-   , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
 
    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
 
    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dpath_width_p)
-   , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
 
    , localparam lce_cce_req_packet_width_lp = `bsg_wormhole_concentrator_packet_width(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_msg_width_lp)
    , localparam lce_cce_req_packet_hdr_width_lp = (lce_cce_req_packet_width_lp-cce_block_width_p)
@@ -46,7 +44,7 @@ module wrapper
    , input [num_caches_p-1:0]                          v_i
    , output logic [num_caches_p-1:0]                   ready_o
 
-   , input [num_caches_p-1:0][ptag_width_lp-1:0]       ptag_i
+   , input [num_caches_p-1:0][ptag_width_p-1:0]        ptag_i
    , input [num_caches_p-1:0]                          uncached_i
 
    , output logic [num_caches_p-1:0][dword_width_p-1:0]data_o
@@ -69,7 +67,7 @@ module wrapper
    logic [num_caches_p-1:0] rolly_uncached_lo;
    logic [num_caches_p-1:0] rolly_v_lo, rolly_yumi_li;
    bp_be_dcache_pkt_s [num_caches_p-1:0] rolly_dcache_pkt_lo;
-   logic [num_caches_p-1:0][ptag_width_lp-1:0] rolly_ptag_lo;
+   logic [num_caches_p-1:0][ptag_width_p-1:0] rolly_ptag_lo;
 
    // D$ - LCE Interface signals
    // Miss, Management Interfaces
@@ -86,13 +84,13 @@ module wrapper
    logic [num_caches_p-1:0][dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_lo;
    logic [num_caches_p-1:0][dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_lo;
    logic [num_caches_p-1:0][dcache_block_width_p-1:0] data_mem_lo;
-   logic [num_caches_p-1:0][ptag_width_lp-1:0] tag_mem_lo;
+   logic [num_caches_p-1:0][ptag_width_p-1:0] tag_mem_lo;
    logic [num_caches_p-1:0][dcache_stat_info_width_lp-1:0] stat_mem_lo;
 
    // Credits
    logic [num_caches_p-1:0] credits_full_lo, credits_empty_lo;
 
-   logic [num_caches_p-1:0][ptag_width_lp-1:0] rolly_ptag_r;
+   logic [num_caches_p-1:0][ptag_width_p-1:0] rolly_ptag_r;
    logic [num_caches_p-1:0] rolly_uncached_r;
    logic [num_caches_p-1:0] is_store, is_store_rr, dcache_v_rr, poison_li;
 
@@ -148,7 +146,7 @@ module wrapper
    for (genvar i = 0; i < num_caches_p; i++)
      begin : cache
        bsg_fifo_1r1w_rolly
-       #(.width_p(dcache_pkt_width_lp+ptag_width_lp+1)
+       #(.width_p(dcache_pkt_width_lp+ptag_width_p+1)
         ,.els_p(8))
         rolly
         (.clk_i(clk_i)
@@ -169,7 +167,7 @@ module wrapper
        assign rolly_yumi_li[i] = rolly_v_lo[i] & dcache_ready_lo[i];
 
        bsg_dff_reset
-        #(.width_p(1+ptag_width_lp)
+        #(.width_p(1+ptag_width_p)
          ,.reset_val_p(0)
         )
         ptag_dff

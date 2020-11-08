@@ -32,6 +32,7 @@ module bp_fe_icache
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
+    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
     , localparam lg_icache_assoc_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
     , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
     , localparam num_words_per_bank_lp = bank_width_lp / word_width_p
@@ -42,7 +43,6 @@ module bp_fe_icache
     , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
     , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
     , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
-    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
     )
    (input                                              clk_i
     , input                                            reset_i
@@ -82,7 +82,7 @@ module bp_fe_icache
     , input                                            tag_mem_pkt_v_i
     , input [icache_tag_mem_pkt_width_lp-1:0]          tag_mem_pkt_i
     , output logic                                     tag_mem_pkt_yumi_o
-    , output logic [ptag_width_p-1:0]                  tag_mem_o
+    , output logic [icache_tag_info_width_lp-1:0]      tag_mem_o
 
     // stat_mem
     , input                                            stat_mem_pkt_v_i

@@ -70,7 +70,7 @@ module bp_lce
     , output logic                                   tag_mem_pkt_v_o
     , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
     , input                                          tag_mem_pkt_yumi_i
-    , input [ptag_width_p-1:0]                       tag_mem_i
+    , input [cache_tag_info_width_lp-1:0]            tag_mem_i
 
     , output logic                                   stat_mem_pkt_v_o
     , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
@@ -125,6 +125,7 @@ module bp_lce
   // LCE Request Module
   logic req_ready_lo;
   logic uc_store_req_complete_lo;
+  logic sync_done_lo;
   bp_lce_req
     #(.bp_params_p(bp_params_p)
       ,.assoc_p(assoc_p)
@@ -140,6 +141,7 @@ module bp_lce
 
       ,.lce_id_i(lce_id_i)
       ,.lce_mode_i(lce_mode_i)
+      ,.sync_done_i(sync_done_lo)
 
       ,.ready_o(req_ready_lo)
 
@@ -161,7 +163,6 @@ module bp_lce
 
   // LCE Command Module
   logic cmd_ready_lo;
-  logic cmd_sync_done_lo;
   bp_lce_cmd
     #(.bp_params_p(bp_params_p)
       ,.assoc_p(assoc_p)
@@ -180,7 +181,7 @@ module bp_lce
       ,.lce_mode_i(lce_mode_i)
 
       ,.ready_o(cmd_ready_lo)
-      ,.sync_done_o(cmd_sync_done_lo)
+      ,.sync_done_o(sync_done_lo)
       ,.cache_req_complete_o(cache_req_complete_o)
       ,.cache_req_critical_o(cache_req_critical_o)
       ,.uc_store_req_complete_o(uc_store_req_complete_lo)
