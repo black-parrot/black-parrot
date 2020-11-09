@@ -199,6 +199,14 @@ tire_kick:
   script:
     - $CI_PROJECT_DIR/ci/tire_kick.sh
 
+bloodgraph-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/bloodgraph.sh $CI_CORES
+
 # Takes too long to build
 weird-verilator:
   <<: *job_definition
