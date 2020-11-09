@@ -23,7 +23,7 @@ module bp_tlb
   , output logic [entry_width_lp-1:0] entry_o
  );
 
-`declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 logic r_v_r;
 bsg_dff_reset #(.width_p(1))

@@ -40,7 +40,7 @@ module bp_nonsynth_vm_tracer
    //, input [rv64_priv_width_gp-1:0]  shadow_priv_i
    );
 
-  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
   `declare_bp_be_mem_structs(vaddr_width_p, paddr_width_p, lce_sets_p, cce_block_width_p/8)
   bp_fe_tlb_entry_s   itlb_w_entry;

@@ -1,8 +1,8 @@
 /**
  *
- * bp_common_fe_be_if.vh
+ * bp_common_core_if.vh
  *
- * bp_fe_be_interface.vh declares the interface between the BlackParrot Front End
+ * bp_core_interface.vh declares the interface between the BlackParrot Front End
  * and Back End For simplicity and flexibility, these signals are declared as
  * parameterizable structures. Each structure declares its width separately to
  * avoid preprocessor ordering issues.
@@ -29,7 +29,7 @@
 /*
  * Clients need only use this macro to declare all parameterized structs for FE<->BE interface.
  */
-`define declare_bp_fe_be_if(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+`define declare_bp_core_if(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
   /*                                                                                               \
    *                                                                                               \
    * bp_fe_fetch_s contains the pc/instruction pair, along with additional                         \
@@ -176,7 +176,7 @@
 /*
  * Declare all fe-be widths at once as localparams
  */
-`define declare_bp_fe_be_if_widths(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+`define declare_bp_core_if_widths(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
   , localparam fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
   , localparam fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)
 
