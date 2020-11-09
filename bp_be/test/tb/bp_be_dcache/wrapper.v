@@ -84,11 +84,11 @@ module wrapper
    logic [num_caches_p-1:0][dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_lo;
    logic [num_caches_p-1:0][dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_lo;
    logic [num_caches_p-1:0][dcache_block_width_p-1:0] data_mem_lo;
-   logic [num_caches_p-1:0][ptag_width_p-1:0] tag_mem_lo;
+   logic [num_caches_p-1:0][dcache_tag_info_width_lp-1:0] tag_mem_lo;
    logic [num_caches_p-1:0][dcache_stat_info_width_lp-1:0] stat_mem_lo;
 
    // Credits
-   logic [num_caches_p-1:0] credits_full_lo, credits_empty_lo;
+   logic [num_caches_p-1:0] cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
    logic [num_caches_p-1:0][ptag_width_p-1:0] rolly_ptag_r;
    logic [num_caches_p-1:0] rolly_uncached_r;
@@ -225,6 +225,8 @@ module wrapper
        ,.cache_req_ready_i(cache_req_ready_lo[i])
        ,.cache_req_complete_i(cache_req_complete_lo[i])
        ,.cache_req_critical_i(cache_req_critical_lo[i])
+       ,.cache_req_credits_full_i(cache_req_credits_full_lo[i])
+       ,.cache_req_credits_empty_i(cache_req_credits_empty_lo[i])
 
        ,.data_mem_pkt_v_i(data_mem_pkt_v_lo[i])
        ,.data_mem_pkt_i(data_mem_pkt_lo[i])
@@ -270,9 +272,10 @@ module wrapper
            ,.cache_req_ready_o(cache_req_ready_lo[i])
            ,.cache_req_metadata_i(cache_req_metadata_lo[i])
            ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
-
-           ,.cache_req_complete_o(cache_req_complete_lo[i])
            ,.cache_req_critical_o(cache_req_critical_lo[i])
+           ,.cache_req_complete_o(cache_req_complete_lo[i])
+           ,.cache_req_credits_full_o(cache_req_credits_full_lo[i])
+           ,.cache_req_credits_empty_o(cache_req_credits_empty_lo[i])
 
            ,.data_mem_pkt_v_o(data_mem_pkt_v_lo[i])
            ,.data_mem_pkt_o(data_mem_pkt_lo[i])
@@ -304,9 +307,6 @@ module wrapper
            ,.lce_cmd_o(lce_cmd_lo[i])
            ,.lce_cmd_v_o(lce_cmd_v_lo[i])
            ,.lce_cmd_ready_i(lce_cmd_ready_li[i])
-
-           ,.credits_full_o(credits_full_lo[i])
-           ,.credits_empty_o(credits_empty_lo[i])
            );
 
            // Request out
@@ -390,9 +390,10 @@ module wrapper
             ,.cache_req_ready_o(cache_req_ready_lo)
             ,.cache_req_metadata_i(cache_req_metadata_lo)
             ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-
-            ,.cache_req_complete_o(cache_req_complete_lo)
             ,.cache_req_critical_o(cache_req_critical_lo)
+            ,.cache_req_complete_o(cache_req_complete_lo)
+            ,.cache_req_credits_full_o(cache_req_credits_full_lo)
+            ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
 
             ,.tag_mem_pkt_o(tag_mem_pkt_lo)
             ,.tag_mem_pkt_v_o(tag_mem_pkt_v_lo)
@@ -408,9 +409,6 @@ module wrapper
             ,.stat_mem_pkt_v_o(stat_mem_pkt_v_lo)
             ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo)
             ,.stat_mem_i(stat_mem_lo)
-
-            ,.credits_full_o(credits_full_lo)
-            ,.credits_empty_o(credits_empty_lo)
 
             ,.mem_cmd_o(mem_cmd_o)
             ,.mem_cmd_v_o(mem_cmd_v_o)

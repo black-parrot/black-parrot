@@ -25,7 +25,6 @@ module wrapper
   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
   , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-  , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
 
   )
   ( input                             clk_i
@@ -68,8 +67,8 @@ module wrapper
   logic cache_req_v_lo;
   logic [icache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
   logic cache_req_metadata_v_lo;
-
-  logic cache_req_complete_li, cache_req_critical_li;
+  logic cache_req_critical_li, cache_req_complete_li;
+  logic cache_req_credits_full_li, cache_req_credits_empty_li;
 
   // Fill Interfaces
   logic data_mem_pkt_v_li, tag_mem_pkt_v_li, stat_mem_pkt_v_li;
@@ -78,8 +77,8 @@ module wrapper
   logic [icache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_li;
   logic [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
   logic [icache_block_width_p-1:0] data_mem_lo;
-  logic [ptag_width_p-1:0] tag_mem_lo;
-  logic [stat_width_lp-1:0] stat_mem_lo;
+  logic [icache_tag_info_width_lp-1:0] tag_mem_lo;
+  logic [icache_stat_info_width_lp-1:0] stat_mem_lo;
 
   // Rolly fifo signals
   logic [ptag_width_p-1:0] rolly_ptag_lo;
@@ -207,9 +206,10 @@ module wrapper
     ,.cache_req_v_o(cache_req_v_lo)
     ,.cache_req_metadata_o(cache_req_metadata_lo)
     ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
-
-    ,.cache_req_complete_i(cache_req_complete_li)
     ,.cache_req_critical_i(cache_req_critical_li)
+    ,.cache_req_complete_i(cache_req_complete_li)
+    ,.cache_req_credits_full_i(cache_req_credits_full_li)
+    ,.cache_req_credits_empty_i(cache_req_credits_empty_li)
 
     ,.data_mem_pkt_v_i(data_mem_pkt_v_li)
     ,.data_mem_pkt_i(data_mem_pkt_li)
@@ -257,9 +257,10 @@ module wrapper
       ,.cache_req_ready_o(cache_req_ready_li)
       ,.cache_req_metadata_i(cache_req_metadata_lo)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-
-      ,.cache_req_complete_o(cache_req_complete_li)
       ,.cache_req_critical_o(cache_req_critical_li)
+      ,.cache_req_complete_o(cache_req_complete_li)
+      ,.cache_req_credits_full_o(cache_req_credits_full_li)
+      ,.cache_req_credits_empty_o(cache_req_credits_empty_li)
 
       ,.data_mem_i(data_mem_lo)
       ,.data_mem_pkt_o(data_mem_pkt_li)
@@ -291,9 +292,6 @@ module wrapper
       ,.lce_cmd_o()
       ,.lce_cmd_v_o()
       ,.lce_cmd_ready_i(1'b1)
-
-      ,.credits_full_o()
-      ,.credits_empty_o()
       );
 
 
@@ -371,8 +369,10 @@ module wrapper
       ,.cache_req_ready_o(cache_req_ready_li)
       ,.cache_req_metadata_i(cache_req_metadata_lo)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-      ,.cache_req_complete_o(cache_req_complete_li)
       ,.cache_req_critical_o(cache_req_critical_li)
+      ,.cache_req_complete_o(cache_req_complete_li)
+      ,.cache_req_credits_full_o(cache_req_credits_full_li)
+      ,.cache_req_credits_empty_o(cache_req_credits_empty_li)
 
       ,.tag_mem_pkt_o(tag_mem_pkt_li)
       ,.tag_mem_pkt_v_o(tag_mem_pkt_v_li)
@@ -388,9 +388,6 @@ module wrapper
       ,.stat_mem_pkt_v_o(stat_mem_pkt_v_li)
       ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo)
       ,.stat_mem_i(stat_mem_lo)
-
-      ,.credits_full_o()
-      ,.credits_empty_o()
 
       ,.mem_cmd_o(mem_cmd_o)
       ,.mem_cmd_v_o(mem_cmd_v_o)
