@@ -49,12 +49,8 @@ module bp_be_top
    , output logic                                    cache_req_metadata_v_o
    , input                                           cache_req_critical_i
    , input                                           cache_req_complete_i
-
-   // data_mem
-   , input                                           data_mem_pkt_v_i
-   , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
-   , output logic [dcache_block_width_p-1:0]         data_mem_o
-   , output logic                                    data_mem_pkt_yumi_o
+   , input                                           cache_req_credits_full_i
+   , input                                           cache_req_credits_empty_i
 
    // tag_mem
    , input                                           tag_mem_pkt_v_i
@@ -62,14 +58,17 @@ module bp_be_top
    , output logic [dcache_tag_info_width_lp-1:0]     tag_mem_o
    , output logic                                    tag_mem_pkt_yumi_o
 
+   // data_mem
+   , input                                           data_mem_pkt_v_i
+   , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
+   , output logic [dcache_block_width_p-1:0]         data_mem_o
+   , output logic                                    data_mem_pkt_yumi_o
+
    // stat_mem
    , input                                           stat_mem_pkt_v_i
    , input [dcache_stat_mem_pkt_width_lp-1:0]        stat_mem_pkt_i
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    , output logic                                    stat_mem_pkt_yumi_o
-
-   , input                                           credits_full_i
-   , input                                           credits_empty_i
 
    , input                                           timer_irq_i
    , input                                           software_irq_i
@@ -137,8 +136,8 @@ module bp_be_top
 
      ,.isd_status_i(isd_status)
      ,.fe_cmd_full_i(fe_cmd_full_lo)
-     ,.credits_full_i(credits_full_i)
-     ,.credits_empty_i(credits_empty_i)
+     ,.credits_full_i(cache_req_credits_full_i)
+     ,.credits_empty_i(cache_req_credits_empty_i)
      ,.mem_ready_i(mem_ready_lo)
      ,.long_ready_i(long_ready_lo)
      ,.sys_ready_i(sys_ready_lo)
@@ -202,16 +201,18 @@ module bp_be_top
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
      ,.cache_req_critical_i(cache_req_critical_i)
      ,.cache_req_complete_i(cache_req_complete_i)
-
-     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-     ,.data_mem_pkt_i(data_mem_pkt_i)
-     ,.data_mem_o(data_mem_o)
-     ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+     ,.cache_req_credits_full_i(cache_req_credits_full_i)
+     ,.cache_req_credits_empty_i(cache_req_credits_empty_i)
 
      ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
      ,.tag_mem_pkt_i(tag_mem_pkt_i)
      ,.tag_mem_o(tag_mem_o)
      ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+
+     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+     ,.data_mem_pkt_i(data_mem_pkt_i)
+     ,.data_mem_o(data_mem_o)
+     ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
 
      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
      ,.stat_mem_pkt_i(stat_mem_pkt_i)

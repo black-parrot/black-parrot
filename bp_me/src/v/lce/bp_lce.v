@@ -52,36 +52,34 @@ module bp_lce
     // ready_o->valid_i handshake
     // metadata arrives in the same cycle as req, or any cycle after, but before the next request
     // can arrive, as indicated by the metadata_v_i signal
+    , input [cache_req_width_lp-1:0]                 cache_req_i
     , input                                          cache_req_v_i
     , output logic                                   cache_req_ready_o
-    , input [cache_req_width_lp-1:0]                 cache_req_i
-    , input                                          cache_req_metadata_v_i
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
+    , input                                          cache_req_metadata_v_i
+    , output logic                                   cache_req_critical_o
+    , output logic                                   cache_req_complete_o
+    , output logic                                   cache_req_credits_full_o
+    , output logic                                   cache_req_credits_empty_o
 
     // LCE-Cache Interface
     // valid->yumi
     // commands issued that read and return data have data returned the cycle after
     // the valid->yumi command handshake occurs
-    , output logic                                   data_mem_pkt_v_o
-    , output logic [cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
-    , input                                          data_mem_pkt_yumi_i
-    , input [block_width_p-1:0]                      data_mem_i
-
     , output logic                                   tag_mem_pkt_v_o
     , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
     , input                                          tag_mem_pkt_yumi_i
     , input [cache_tag_info_width_lp-1:0]            tag_mem_i
 
+    , output logic                                   data_mem_pkt_v_o
+    , output logic [cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
+    , input                                          data_mem_pkt_yumi_i
+    , input [block_width_p-1:0]                      data_mem_i
+
     , output logic                                   stat_mem_pkt_v_o
     , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , input                                          stat_mem_pkt_yumi_i
     , input [stat_info_width_lp-1:0]                 stat_mem_i
-
-    , output logic                                   credits_full_o
-    , output logic                                   credits_empty_o
-
-    , output logic                                   cache_req_complete_o
-    , output logic                                   cache_req_critical_o
 
     // LCE-CCE interface
     // Req: ready->valid
@@ -150,9 +148,8 @@ module bp_lce
       ,.cache_req_metadata_i(cache_req_metadata_i)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
       ,.cache_req_complete_i(cache_req_complete_o)
-
-      ,.credits_full_o(credits_full_o)
-      ,.credits_empty_o(credits_empty_o)
+      ,.credits_full_o(cache_req_credits_full_o)
+      ,.credits_empty_o(cache_req_credits_empty_o)
 
       ,.uc_store_req_complete_i(uc_store_req_complete_lo)
 

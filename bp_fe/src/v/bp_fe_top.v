@@ -47,9 +47,11 @@ module bp_fe_top
    , input                                            cache_req_ready_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
-
-   , input                                            cache_req_complete_i
    , input                                            cache_req_critical_i
+   , input                                            cache_req_complete_i
+   , input                                            cache_req_credits_full_i
+   , input                                            cache_req_credits_empty_i
+
    , input [icache_data_mem_pkt_width_lp-1:0]         data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
    , output logic                                     data_mem_pkt_yumi_o
@@ -204,9 +206,10 @@ module bp_fe_top
      ,.cache_req_ready_i(cache_req_ready_i)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-  
-     ,.cache_req_complete_i(cache_req_complete_i)
      ,.cache_req_critical_i(cache_req_critical_i)
+     ,.cache_req_complete_i(cache_req_complete_i)
+     ,.cache_req_credits_full_i(cache_req_credits_full_i)
+     ,.cache_req_credits_empty_i(cache_req_credits_empty_i)
   
      ,.data_mem_pkt_i(data_mem_pkt_i)
      ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

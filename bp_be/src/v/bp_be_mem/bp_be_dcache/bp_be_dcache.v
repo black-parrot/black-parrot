@@ -80,90 +80,85 @@
  */
 
 module bp_be_dcache
-  import bp_common_pkg::*;
-  import bp_common_rv64_pkg::*;
-  import bp_be_pkg::*;
-  import bp_be_dcache_pkg::*;
-  import bp_be_hardfloat_pkg::*;
-  import bp_common_aviary_pkg::*;
+ import bp_common_pkg::*;
+ import bp_common_rv64_pkg::*;
+ import bp_be_pkg::*;
+ import bp_be_dcache_pkg::*;
+ import bp_be_hardfloat_pkg::*;
+ import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
-    , parameter writethrough_p=l1_writethrough_p
+   , parameter writethrough_p=l1_writethrough_p
 
-    , parameter debug_p=0
-    , parameter lock_max_limit_p=8
+   , parameter lock_max_limit_p=8
 
-    , localparam lg_dcache_assoc_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
-    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
-    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
-    , localparam wbuf_data_mask_width_lp = (dword_width_p >> 3)
-    , localparam data_mem_mask_width_lp = (bank_width_lp >> 3)
-    , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(bank_width_lp>>3)
-    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
-    , localparam block_offset_width_lp=(bank_offset_width_lp+byte_offset_width_lp)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(dcache_sets_p)
-    , localparam block_size_in_fill_lp = dcache_block_width_p / dcache_fill_width_p
-    , localparam fill_size_in_bank_lp = dcache_fill_width_p / bank_width_lp
+   , localparam lg_dcache_assoc_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
+   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
+   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
+   , localparam wbuf_data_mask_width_lp = (dword_width_p >> 3)
+   , localparam data_mem_mask_width_lp = (bank_width_lp >> 3)
+   , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(bank_width_lp>>3)
+   , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
+   , localparam block_offset_width_lp=(bank_offset_width_lp+byte_offset_width_lp)
+   , localparam index_width_lp=`BSG_SAFE_CLOG2(dcache_sets_p)
+   , localparam block_size_in_fill_lp = dcache_block_width_p / dcache_fill_width_p
+   , localparam fill_size_in_bank_lp = dcache_fill_width_p / bank_width_lp
 
-    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dpath_width_p)
-    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_p)
-  )
-  (
-    input clk_i
-    , input reset_i
+   , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dpath_width_p)
+   , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_p)
+   )
+  (input                              clk_i
+   , input                            reset_i
 
-    , input [cfg_bus_width_lp-1:0] cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]     cfg_bus_i
 
-    , input [dcache_pkt_width_lp-1:0] dcache_pkt_i
-    , input v_i
-    , output logic ready_o
+   , input [dcache_pkt_width_lp-1:0]  dcache_pkt_i
+   , input                            v_i
+   , output logic                     ready_o
 
-    // TLB interface
-    , input [ptag_width_p-1:0] ptag_i
-    , input ptag_v_i
-    , input uncached_i
+   // TLB interface
+   , input [ptag_width_p-1:0]         ptag_i
+   , input                            ptag_v_i
+   , input                            uncached_i
 
-    , output logic [dpath_width_p-1:0] early_data_o
-    , output logic                     early_v_o
-    , output logic [dpath_width_p-1:0] final_data_o
-    , output logic                     final_v_o
+   , output logic [dpath_width_p-1:0] early_data_o
+   , output logic                     early_v_o
+   , output logic [dpath_width_p-1:0] final_data_o
+   , output logic                     final_v_o
 
-    // ctrl
-    , input flush_i
+   // ctrl
+   , input                            flush_i
 
-    // D$-LCE Interface
-    // signals to LCE
-    , output [dcache_req_width_lp-1:0] cache_req_o
-    , output logic cache_req_v_o
-    , input cache_req_ready_i
-    , output [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
-    , output cache_req_metadata_v_o
+   // D$ Engine Interface
+   , output logic [dcache_req_width_lp-1:0]          cache_req_o
+   , output logic                                    cache_req_v_o
+   , input                                           cache_req_ready_i
+   , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
+   , output logic                                    cache_req_metadata_v_o
+   , input                                           cache_req_critical_i
+   , input                                           cache_req_complete_i
+   // Unused
+   , input                                           cache_req_credits_full_i
+   , input                                           cache_req_credits_empty_i
 
-    , input cache_req_complete_i
-    , input cache_req_critical_i
+   , input                                           data_mem_pkt_v_i
+   , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
+   , output logic                                    data_mem_pkt_yumi_o
+   , output logic [dcache_block_width_p-1:0]         data_mem_o
 
-    // data_mem
-    , input data_mem_pkt_v_i
-    , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-    , output logic data_mem_pkt_yumi_o
-    , output logic [dcache_block_width_p-1:0] data_mem_o
+   , input                                           tag_mem_pkt_v_i
+   , input [dcache_tag_mem_pkt_width_lp-1:0]         tag_mem_pkt_i
+   , output logic                                    tag_mem_pkt_yumi_o
+   , output logic [dcache_tag_info_width_lp-1:0]     tag_mem_o
 
-    // tag_mem
-    , input tag_mem_pkt_v_i
-    , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-    , output logic tag_mem_pkt_yumi_o
-    , output logic [dcache_tag_info_width_lp-1:0] tag_mem_o
-
-    // stat_mem
-    , input stat_mem_pkt_v_i
-    , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-    , output logic stat_mem_pkt_yumi_o
-    , output logic [dcache_stat_info_width_lp-1:0] stat_mem_o
-
-  );
+   , input                                           stat_mem_pkt_v_i
+   , input [dcache_stat_mem_pkt_width_lp-1:0]        stat_mem_pkt_i
+   , output logic                                    stat_mem_pkt_yumi_o
+   , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
+   );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
@@ -1288,24 +1283,6 @@ module bp_be_dcache
   assign stat_mem_o = stat_mem_data_lo;
 
   // synopsys translate_off
-  if (debug_p) begin: axe
-    bp_be_dcache_axe_trace_gen
-      #(.addr_width_p(paddr_width_p)
-        ,.data_width_p(dword_width_p)
-        ,.num_lce_p(num_lce_p)
-        )
-      axe_trace_gen
-        (.clk_i(clk_i)
-        ,.id_i(cfg_bus_cast_i.dcache_id)
-        ,.v_i(early_v_o)
-        ,.addr_i(paddr_tv_r)
-        ,.load_data_i(final_data_o)
-        ,.store_data_i(data_tv_r)
-        ,.load_i(decode_tv_r.load_op)
-        ,.store_i(decode_tv_r.store_op)
-        );
-  end
-
   always_ff @ (posedge clk_i) begin
     if (v_tv_r) begin
       assert($countones(load_hit_tl) <= 1)
