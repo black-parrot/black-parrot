@@ -115,6 +115,10 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/touchfiles
     policy: pull
   dependencies: []
+  retry:
+    max: 2
+    when:
+      - script_failure
 
 prep:
   <<: *job_definition
