@@ -11,15 +11,12 @@
  *
  */
 
-// TODO:
-// 1. support locally uncached, globally cached/coherent
-
 module bp_cce_msg
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  #(parameter bp_params_p                  = e_bp_default_cfg
+  #(parameter bp_params_e bp_params_p      = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
@@ -246,6 +243,16 @@ module bp_cce_msg
      ,.o(pe_lce_id_one_hot)
      );
 
+  // CCE coherence PMA - Mem responses
+  logic resp_pma_coherent_lo;
+  bp_cce_pma
+    #(.bp_params_p(bp_params_p)
+      )
+    resp_pma
+      (.paddr_i(mem_resp.header.addr)
+       ,.coherent_o(resp_pma_coherent_lo)
+       );
+
   // Uncached only mode FSM states
   typedef enum logic [1:0] {
     e_uc_reset
@@ -448,7 +455,6 @@ module bp_cce_msg
       if (auto_fwd_msg_i) begin
         if (mem_resp_v_i) begin
           // Uncached load response - forward data to LCE
-          // This transaction does not modify the pending bits
           if (mem_resp.header.msg_type.mem == e_bedrock_mem_uc_rd) begin
             // handshaking
             lce_cmd_v_o = mem_resp_v_i & lce_cmd_ready_i;
@@ -465,10 +471,16 @@ module bp_cce_msg
             lce_cmd.header.addr = mem_resp.header.addr;
             // Data is copied directly from the Mem Data Response
             lce_cmd.data = mem_resp.data;
+
+            // decrement pending bit if uncached to cacheable/coherent memory
+            pending_w_v_o = mem_resp_yumi_o & resp_pma_coherent_lo;
+            pending_w_addr_o = mem_resp.header.addr;
+            pending_w_addr_bypass_o = 1'b0;
+            pending_o = 1'b0;
+
           end // uncached read response
 
           // Uncached store response - send uncached store done command on LCE Command
-          // This transaction does not modify the pending bits
           else if (mem_resp.header.msg_type.mem == e_bedrock_mem_uc_wr) begin
             // handshaking
             lce_cmd_v_o = mem_resp_v_i & lce_cmd_ready_i;
@@ -484,6 +496,13 @@ module bp_cce_msg
             lce_cmd_payload.src_id = cfg_bus_cast.cce_id;
             lce_cmd.header.payload = lce_cmd_payload;
             lce_cmd.header.addr = mem_resp.header.addr;
+
+            // decrement pending bit if uncached to cacheable/coherent memory
+            pending_w_v_o = mem_resp_yumi_o & resp_pma_coherent_lo;
+            pending_w_addr_o = mem_resp.header.addr;
+            pending_w_addr_bypass_o = 1'b0;
+            pending_o = 1'b0;
+
           end // uncached store response
 
           // Writeback response - clears the pending bit

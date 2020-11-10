@@ -109,6 +109,16 @@ module bp_cce_reg
   assign coh_state_o    = coh_state_r;
   assign auto_fwd_msg_o = auto_fwd_msg_r;
 
+  // CCE coherence PMA - LCE requests
+  logic req_pma_coherent_lo;
+  bp_cce_pma
+    #(.bp_params_p(bp_params_p)
+      )
+    req_pma
+      (.paddr_i(lce_req_hdr.addr)
+       ,.coherent_o(req_pma_coherent_lo)
+       );
+
   // Write mask for GPRs
   // This is by default the write mask from the decoded instruction, but it is also modified
   // by the Directory on RDE operation to indicate which GPR the address from RDE is written to.
@@ -211,9 +221,11 @@ module bp_cce_reg
             mshr_n.paddr = lce_req_hdr.addr;
             mshr_n.lru_way_id = lce_req_payload.lru_way_id;
             mshr_n.msg_size = lce_req_hdr.size;
+            // flags written here must have their flag_w_v bit set by the decoder
             mshr_n.flags[e_opd_rqf] = lce_req_rqf;
             mshr_n.flags[e_opd_ucf] = lce_req_ucf;
             mshr_n.flags[e_opd_nerf] = lce_req_nerf;
+            mshr_n.flags[e_opd_rcf] = req_pma_coherent_lo;
           end
           e_src_q_sel_lce_resp: begin
             //mshr_n.lce_id = lce_resp_hdr.src_id;
