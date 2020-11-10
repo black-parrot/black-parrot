@@ -62,6 +62,7 @@
   path = bp_common/test/src/beebs
   url = https://github.com/black-parrot/beebs.git
   branch = blackparrot_mods
+  tag = 73135c945f22d0ffd81c00cdc929d2d6652e95f7
   ignore = dirty
 
 [submodule "bp_common/test/src/riscv-dv"]

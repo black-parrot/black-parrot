@@ -30,9 +30,18 @@ import "DPI-C" context function void start();
 import "DPI-C" context function int scan();
 import "DPI-C" context function void pop();
 
+integer stdout[num_core_p];
+
 logic [63:0] ch;
 initial begin
   start();
+
+      for (integer j = 0; j < num_core_p; j++)
+      begin
+        stdout[j] = $fopen($sformatf("stdout.%02d", j), "w");
+        $fwrite(stdout[j], "# bparrot stdout file for core %d\n", j);
+        $fflush(stdout[j]);
+      end
 end
 
 always_ff @(posedge clk_i) begin
@@ -61,6 +70,8 @@ logic putchar_data_cmd_v;
 logic getchar_data_cmd_v;
 logic finish_data_cmd_v;
 
+assign putchar_core_id = io_cmd_cast_i.header.addr & 64'h0000_0000_0000_0fff;
+
 always_comb
   begin
     putchar_data_cmd_v = 1'b0;
@@ -68,8 +79,8 @@ always_comb
     finish_data_cmd_v = 1'b0;
 
     unique
-    casez (io_cmd_cast_i.header.addr)
-      putchar_base_addr_gp: putchar_data_cmd_v = io_cmd_v_i; 
+    casez (io_cmd_cast_i.header.addr & 64'hffff_ffff_ffff_f000)
+      putchar_base_addr_gp: putchar_data_cmd_v = io_cmd_v_i;
       getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_v_i;
       finish_base_addr_gp: finish_data_cmd_v = io_cmd_v_i;
       default: begin end
@@ -118,9 +129,11 @@ assign program_finish_o = finish_r;
 
 always_ff @(negedge clk_i)
   begin
-    if (putchar_data_cmd_v & io_cmd_v_i) begin
-      $write("%c", io_cmd_cast_i.data[0+:8]);
-      $fflush(32'h8000_0001);
+    if (putchar_data_cmd_v & io_cmd_v_i) 
+    begin
+      $fwrite(stdout[putchar_core_id], "%c", io_cmd_cast_i.data[0+:8]);
+      // $fflush(32'h8000_0001);
+      $fflush(stdout[putchar_core_id]);
     end
     if (getchar_data_cmd_v & io_cmd_v_i)
       pop();

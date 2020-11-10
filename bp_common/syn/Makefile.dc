@@ -26,7 +26,7 @@ check_design.syn: CHK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).check_design.r
 check_design.syn: CHK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).check_design.err
 check_design.syn: export DESIGN_NAME ?= wrapper
 # Change to your own stdcell db from a PDK. We suggest the freely available FreePDK45
-check_design.syn: export STDCELL_DB ?= $(FREE45_NLDM_DB_TYP)
+check_design.syn: export STDCELL_DB ?= /Lhome/harsha/pdk/typical.db
 $(CHK_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/check: $(CHK_COLLATERAL)
 	cd $(@D); \
