@@ -27,7 +27,6 @@ module bp_me_nonsynth_lce_tr_tracer
   (
     input                                                   clk_i
     ,input                                                  reset_i
-    ,input                                                  freeze_i
 
     ,input [lce_id_width_p-1:0]                             lce_id_i
 
