@@ -23,6 +23,7 @@ protos=(
     "mesi"
     "msi-nonspec"
     "mesi-nonspec"
+    "moesif"
     )
 
 # The base command to append the configuration to
