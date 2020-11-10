@@ -244,13 +244,14 @@ module bp_cce_msg
      );
 
   // CCE coherence PMA - Mem responses
-  logic resp_pma_coherent_lo;
+  logic resp_pma_coherent_addr_lo;
   bp_cce_pma
     #(.bp_params_p(bp_params_p)
       )
     resp_pma
       (.paddr_i(mem_resp.header.addr)
-       ,.coherent_o(resp_pma_coherent_lo)
+       ,.paddr_v_i(mem_resp_v_i)
+       ,.cacheable_addr_o(resp_pma_coherent_addr_lo)
        );
 
   // Uncached only mode FSM states
@@ -473,7 +474,7 @@ module bp_cce_msg
             lce_cmd.data = mem_resp.data;
 
             // decrement pending bit if uncached to cacheable/coherent memory
-            pending_w_v_o = mem_resp_yumi_o & resp_pma_coherent_lo;
+            pending_w_v_o = mem_resp_yumi_o & resp_pma_coherent_addr_lo;
             pending_w_addr_o = mem_resp.header.addr;
             pending_w_addr_bypass_o = 1'b0;
             pending_o = 1'b0;
@@ -498,7 +499,7 @@ module bp_cce_msg
             lce_cmd.header.addr = mem_resp.header.addr;
 
             // decrement pending bit if uncached to cacheable/coherent memory
-            pending_w_v_o = mem_resp_yumi_o & resp_pma_coherent_lo;
+            pending_w_v_o = mem_resp_yumi_o & resp_pma_coherent_addr_lo;
             pending_w_addr_o = mem_resp.header.addr;
             pending_w_addr_bypass_o = 1'b0;
             pending_o = 1'b0;

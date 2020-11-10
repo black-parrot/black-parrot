@@ -517,6 +517,7 @@ module bp_cce
       ,.alu_res_i(alu_res_lo)
 
       ,.lce_req_header_i(lce_req.header)
+      ,.lce_req_v_i(lce_req_v_i)
       ,.lce_resp_header_i(lce_resp.header)
       ,.mem_resp_header_i(mem_resp.header)
 
