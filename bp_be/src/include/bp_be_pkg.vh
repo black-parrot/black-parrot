@@ -5,7 +5,7 @@ package bp_be_pkg;
 
   localparam dpath_width_p = 66;
 
-  `include "bp_common_fe_be_if.vh"
+  `include "bp_common_core_if.vh"
   `include "bp_be_ctl_defines.vh"
   `include "bp_be_mem_defines.vh"
   `include "bp_be_internal_if_defines.vh"

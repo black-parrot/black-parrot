@@ -29,7 +29,7 @@ module bp_fe_icache
   import bp_fe_icache_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
     , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
@@ -61,30 +61,27 @@ module bp_fe_icache
     , output [instr_width_p-1:0]                       data_o
     , output                                           data_v_o
 
-    // LCE Interface
-
-    , output [icache_req_width_lp-1:0]                 cache_req_o
+    // Cache Engine Interface
+    , output logic [icache_req_width_lp-1:0]           cache_req_o
     , output logic                                     cache_req_v_o
     , input                                            cache_req_ready_i
-    , output [icache_req_metadata_width_lp-1:0]        cache_req_metadata_o
-    , output                                           cache_req_metadata_v_o
-
-    , input                                            cache_req_complete_i
+    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
+    , output logic                                     cache_req_metadata_v_o
     , input                                            cache_req_critical_i
+    , input                                            cache_req_complete_i
+    , input                                            cache_req_credits_full_i
+    , input                                            cache_req_credits_empty_i
 
-    // data_mem
     , input                                            data_mem_pkt_v_i
     , input [icache_data_mem_pkt_width_lp-1:0]         data_mem_pkt_i
     , output logic                                     data_mem_pkt_yumi_o
     , output logic [icache_block_width_p-1:0]          data_mem_o
 
-    // tag_mem
     , input                                            tag_mem_pkt_v_i
     , input [icache_tag_mem_pkt_width_lp-1:0]          tag_mem_pkt_i
     , output logic                                     tag_mem_pkt_yumi_o
     , output logic [icache_tag_info_width_lp-1:0]      tag_mem_o
 
-    // stat_mem
     , input                                            stat_mem_pkt_v_i
     , input [icache_stat_mem_pkt_width_lp-1:0]         stat_mem_pkt_i
     , output logic                                     stat_mem_pkt_yumi_o
@@ -95,7 +92,7 @@ module bp_fe_icache
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
   bp_icache_req_s cache_req_cast_lo;
   bp_icache_req_metadata_s cache_req_metadata_cast_lo;
   assign cache_req_o = cache_req_cast_lo;

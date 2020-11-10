@@ -1,11 +1,11 @@
 # BlackParrot Interface Specifications
 
-BlackParrot is designed as a set of modular processor building blocks connected by intentionally designed, narrow, flexible interfaces. By standardizing these interfaces at a suitable level of abstraction, designers can easily understand differnt configurations composing a wide variety of implementations, write peripheral components, or even substitute their own optimized version of modules. BlackParrot currently has 6 standardized interfaces which are unlikely to significantly change.
-- Front End to Back End (Issue Interface)
-- Back End to Front End (Resolution Interface)
-- Cache Service (Cache Miss and Management Interface)
-- Local Cache Engine to Cache Coherence Engine (BedRock Interface)
-- Memory Interface (DRAM and I/O Interfaces)
+BlackParrot is designed as a set of modular processor building blocks connected by intentionally designed, narrow, flexible interfaces. By standardizing these interfaces at a suitable level of abstraction, designers can easily understand differnt configurations composing a wide variety of implementations, write peripheral components, or even substitute their own optimized version of modules. BlackParrot currently has 5 standardized interfaces which are unlikely to significantly change.
+- Front End to Back End (Core Interface, Issue Channel)
+- Back End to Front End (Core Interface, Resolution Channel)
+- Cache Engine (Cache Miss, Fill, and Coherence Interfaces)
+- Local Cache Engine to Cache Coherence Engine (BedRock Interface, Coherence Channels)
+- Memory Interface (BedRock Interface, DRAM and I/O Channels)
 
 
 ## FE-BE Interfaces
@@ -128,10 +128,10 @@ Illegal Instruction
       - All asid flag
     - A simple implementation will flush the entire itlb
 
-## Cache Service Interface
+## Cache Engine Interface
 
-The Cache Service interface provides flexible connections between an (optionally) coherent cache and
-a Cache Engine, which services misses, invalidations, coherence transactions, etc. The Cache Service
+The Cache Engine interface provides flexible connections between an (optionally) coherent cache and
+a Cache Engine, which services misses, invalidations, coherence transactions, etc. The Cache Engine
 interface supports both coherent and non-coherent caches, and can be extended to support
 both blocking and non-blocking caches. The interface is latency insensitive and may be optionally
 routed through a FIFO. BlackParrot provides 3 types of Cache Engines:
@@ -147,7 +147,7 @@ routed through a FIFO. BlackParrot provides 3 types of Cache Engines:
 More details are provided about the LCE and CCE interface in the following section.
 
 A UCE implementation must support the following operations:
-- Service loads, stores and optionally amo operations
+- Engine loads, stores and optionally amo operations
 - Handle remote invalidations
 - Handle both uncached and cached requests
 - Support both write-through and write-back protocols
@@ -258,7 +258,7 @@ is designed to be correct on unordered networks.
 Custom messages are also supported by the interface, and may their processing is dependent on
 the LCE and CCE implementations.
 
-The LCE-CCE Interface is defined in [bp\_common\_me\_if.vh](../bp_common/src/include/bp_common_me_if.vh)
+The LCE-CCE Interface is defined in [bp\_common\_bedrock\_if.vh](../bp_common/src/include/bp_common_bedrock_if.vh)
 
 ### Request Network
 

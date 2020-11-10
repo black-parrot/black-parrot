@@ -6,7 +6,7 @@ module bp_be_issue_queue
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_multicore_1_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+   `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam ptr_width_lp = `BSG_SAFE_CLOG2(fe_queue_fifo_els_p)
@@ -30,7 +30,7 @@ module bp_be_issue_queue
    , output logic [issue_pkt_width_lp-1:0]  issue_pkt_o
    );
 
-  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `bp_cast_i(bp_fe_queue_s, fe_queue);
   `bp_cast_o(bp_fe_queue_s, fe_queue);

@@ -13,7 +13,7 @@ module bp_uce
     , parameter sets_p = 64
     , parameter block_width_p = 512
     , parameter fill_width_p = 512
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     , parameter tag_mem_invert_clk_p  = 0
     , parameter data_mem_invert_clk_p = 0
@@ -54,8 +54,10 @@ module bp_uce
     , output logic                                   cache_req_ready_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
-    , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_critical_o
+    , output logic                                   cache_req_complete_o
+    , output logic                                   cache_req_credits_full_o
+    , output logic                                   cache_req_credits_empty_o
 
     , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
     , output logic                                   tag_mem_pkt_v_o
@@ -72,9 +74,6 @@ module bp_uce
     , input                                          stat_mem_pkt_yumi_i
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
-    , output logic                                   credits_full_o
-    , output logic                                   credits_empty_o
-
     , output [uce_mem_msg_width_lp-1:0]              mem_cmd_o
     , output logic                                   mem_cmd_v_o
     , input                                          mem_cmd_ready_i
@@ -85,7 +84,7 @@ module bp_uce
     );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_o(bp_cache_tag_mem_pkt_s, tag_mem_pkt);
@@ -413,8 +412,8 @@ module bp_uce
      ,.yumi_i(credit_returned_li)
      ,.count_o(credit_count_lo)
      );
-  assign credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
-  assign credits_empty_o = (credit_count_lo == 0);
+  assign cache_req_credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
+  assign cache_req_credits_empty_o = (credit_count_lo == 0);
 
   logic [fill_width_p-1:0] writeback_data;
   bsg_mux
@@ -563,13 +562,15 @@ module bp_uce
           end
         e_flush_fence:
           begin
-            cache_req_complete_o = credits_empty_o;
+            cache_req_complete_o = cache_req_credits_empty_o;
 
             state_n = cache_req_complete_o ? e_ready : e_flush_fence;
           end
         e_ready:
           begin
-            cache_req_ready_o = mem_cmd_ready_i & ~credits_full_o;
+            // TODO: ready shouldn't depend on credits, the cache should
+            //   handle the flow control
+            cache_req_ready_o = mem_cmd_ready_i & ~cache_req_credits_full_o;
             if (uc_store_v_li)
               begin
                 mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_uc_wr;
