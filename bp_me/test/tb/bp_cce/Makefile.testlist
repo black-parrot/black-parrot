@@ -1,5 +1,7 @@
 
 run_testlist.%:
-	$(MAKE) build.$* sim.$* SKIP_INIT_P=0 TAG=$(COH_PROTO).cached
-	$(MAKE) build.$* sim.$* SKIP_INIT_P=1 TAG=$(COH_PROTO).uncached
+	$(MAKE) build.$* sim.$* LCE_MODE_P=0 SKIP_INIT_P=0 TAG=$(COH_PROTO).cached
+	$(MAKE) build.$* sim.$* LCE_MODE_P=1 SKIP_INIT_P=0 TAG=$(COH_PROTO).lce_uncached
+	$(MAKE) build.$* sim.$* LCE_MODE_P=2 SKIP_INIT_P=0 TAG=$(COH_PROTO).mixed
+	$(MAKE) build.$* sim.$* LCE_MODE_P=1 SKIP_INIT_P=1 TAG=$(COH_PROTO).uncached
 
