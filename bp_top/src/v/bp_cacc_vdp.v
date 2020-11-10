@@ -11,7 +11,7 @@ module bp_cacc_vdp
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache)
 
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     )
@@ -58,7 +58,6 @@ module bp_cacc_vdp
   logic                     dcache_uncached;
   logic                     dcache_miss_v;
   logic                     dcache_pkt_v;
-  logic                     credits_full_o, credits_empty_o;
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
@@ -69,9 +68,10 @@ module bp_cacc_vdp
   data_mem_pkt_v_i, data_mem_pkt_yumi_o,
   tag_mem_pkt_v_i, tag_mem_pkt_yumi_o,
   stat_mem_pkt_v_i, stat_mem_pkt_yumi_o,
-  cache_req_complete_lo, cache_req_critical_lo;
+  cache_req_complete_lo, cache_req_critical_lo,
+  cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache);
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;
@@ -125,6 +125,8 @@ bp_be_dcache
     ,.cache_req_ready_i(cache_req_ready_i)
     ,.cache_req_metadata_o(cache_req_metadata_o)
     ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+    ,.cache_req_credits_full_i(cache_req_credits_full_lo)
+    ,.cache_req_credits_empty_i(cache_req_credits_empty_lo)
 
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)
@@ -164,9 +166,10 @@ bp_lce
     ,.cache_req_ready_o(cache_req_ready_i)
     ,.cache_req_metadata_i(cache_req_metadata_o)
     ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
-
-    ,.cache_req_complete_o(cache_req_complete_lo)
     ,.cache_req_critical_o(cache_req_critical_lo)
+    ,.cache_req_complete_o(cache_req_complete_lo)
+    ,.cache_req_credits_full_o(cache_req_credits_full_lo)
+    ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
 
     ,.data_mem_pkt_o(data_mem_pkt_i)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
@@ -198,9 +201,6 @@ bp_lce
     ,.lce_cmd_o(lce_cmd_o)
     ,.lce_cmd_v_o(lce_cmd_v_o)
     ,.lce_cmd_ready_i(lce_cmd_ready_i)
-
-    ,.credits_full_o(credits_full_o)
-    ,.credits_empty_o(credits_empty_o)
     );
 
 
@@ -442,8 +442,8 @@ bp_lce
         done = 0;
       end
       DONE: begin
-        state_n = credits_empty_o ? RESET : DONE;
-        res_status = credits_empty_o ? 1 : 0;
+        state_n = cache_req_credits_empty_lo ? RESET : DONE;
+        res_status = cache_req_credits_empty_lo ? 1 : 0;
         dcache_ptag = '0;
         dcache_pkt = '0;
         dcache_pkt_v = '0;

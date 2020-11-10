@@ -12,9 +12,9 @@ package bp_common_pkg;
 
   `include "bsg_defines.v"
   `include "bp_common_defines.vh"
-  `include "bp_common_fe_be_if.vh"
+  `include "bp_common_core_if.vh"
   `include "bp_common_bedrock_if.vh"
-  `include "bp_common_cache_service_if.vh"
+  `include "bp_common_cache_engine_if.vh"
 
   /*
    * RV64 specifies a 64b effective address and 32b instruction.
