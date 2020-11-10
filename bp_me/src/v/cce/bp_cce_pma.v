@@ -5,10 +5,10 @@
  *
  * Description:
  *   This module defines the physical memory attributes (PMAs) obeyed by the CCE.
- *   The purpose is to define which regions of memory are coherent and which are incoherent.
+ *   The purpose is to define the cacheability properties of memory.
  *
- *   Only cached, global memory is kept coherent (i.e., DRAM memory). All other memory
- *   is uncached and incoherent. See the BlackParrot Platform Guide (docs/platform_guide.md)
+ *   Only cached, global memory is kept explicitly coherent (i.e., DRAM memory). All other memory
+ *   is uncached. See the BlackParrot Platform Guide (docs/platform_guide.md)
  *   and the bp_common_pkg files in bp_common/src/include/ for more details on BlackParrot's
  *   platform memory maps.
  *
@@ -25,12 +25,15 @@ module bp_cce_pma
     `declare_bp_proc_params(bp_params_p)
   )
   (input [paddr_width_p-1:0]                           paddr_i
-   , output logic                                      coherent_o
+   , input                                             paddr_v_i
+   , output logic                                      cacheable_addr_o
   );
 
   always_comb begin
 
-    coherent_o = (paddr_i >= dram_base_addr_gp) && (paddr_i < (coproc_base_addr_gp));
+    cacheable_addr_o = paddr_v_i
+                       ? (paddr_i >= dram_base_addr_gp) && (paddr_i < (coproc_base_addr_gp))
+                       : 1'b0;
 
   end
 

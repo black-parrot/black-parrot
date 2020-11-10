@@ -265,23 +265,39 @@ module bp_cce_fsm
       );
 
   // CCE coherence PMA - LCE requests
-  logic req_pma_coherent_lo;
+  logic req_pma_coherent_addr_lo;
   bp_cce_pma
     #(.bp_params_p(bp_params_p)
       )
     req_pma
       (.paddr_i(lce_req.header.addr)
-       ,.coherent_o(req_pma_coherent_lo)
+       ,.paddr_v_i(lce_req_v_i)
+       ,.cacheable_addr_o(req_pma_coherent_addr_lo)
        );
 
+  //synopsys translate_off
+  always @(negedge clk_i) begin
+    if (~reset_i) begin
+      // Cacheable requests must target cacheable memory
+      assert(!(lce_req_v_i && ~req_pma_coherent_addr_lo
+               && ((lce_req.header.msg_type.req == e_bedrock_req_rd)
+                   || (lce_req.header.msg_type.req == e_bedrock_req_wr))
+              )
+            ) else
+      $error("CCE PMA violation - cacheable requests must target cacheable memory");
+    end
+  end
+  //synopsys translate_on
+
   // CCE coherence PMA - Mem responses
-  logic resp_pma_coherent_lo;
+  logic resp_pma_coherent_addr_lo;
   bp_cce_pma
     #(.bp_params_p(bp_params_p)
       )
     resp_pma
       (.paddr_i(mem_resp.header.addr)
-       ,.coherent_o(resp_pma_coherent_lo)
+       ,.paddr_v_i(mem_resp_v_i)
+       ,.cacheable_addr_o(resp_pma_coherent_addr_lo)
        );
 
   typedef enum logic [5:0] {
@@ -699,8 +715,8 @@ module bp_cce_fsm
 
         // decrement pending bits if operating in normal mode and request was made
         // to coherent memory space
-        pending_busy = mem_resp_yumi_o & cce_normal_mode_r & resp_pma_coherent_lo;
-        pending_w_v = mem_resp_yumi_o & cce_normal_mode_r & resp_pma_coherent_lo;
+        pending_busy = mem_resp_yumi_o & cce_normal_mode_r & resp_pma_coherent_addr_lo;
+        pending_w_v = mem_resp_yumi_o & cce_normal_mode_r & resp_pma_coherent_addr_lo;
         pending_w_addr = mem_resp.header.addr;
         pending_li = 1'b0;
 
@@ -726,8 +742,8 @@ module bp_cce_fsm
 
         // decrement pending bits if operating in normal mode and request was made
         // to coherent memory space
-        pending_busy = mem_resp_yumi_o & cce_normal_mode_r & resp_pma_coherent_lo;
-        pending_w_v = mem_resp_yumi_o & cce_normal_mode_r & resp_pma_coherent_lo;
+        pending_busy = mem_resp_yumi_o & cce_normal_mode_r & resp_pma_coherent_addr_lo;
+        pending_w_v = mem_resp_yumi_o & cce_normal_mode_r & resp_pma_coherent_addr_lo;
         pending_w_addr = mem_resp.header.addr;
         pending_li = 1'b0;
 
@@ -931,9 +947,9 @@ module bp_cce_fsm
 
             // query PMA for coherence property - it is a violation for a cached request
             // to be incoherent.
-            mshr_n.flags[e_opd_rcf] = req_pma_coherent_lo;
+            mshr_n.flags[e_opd_rcf] = req_pma_coherent_addr_lo;
 
-            state_n = ~req_pma_coherent_lo
+            state_n = ~req_pma_coherent_addr_lo
                       ? e_error
                       : e_read_pending;
 
@@ -948,11 +964,11 @@ module bp_cce_fsm
 
             // query PMA for coherence property
             // uncached requests can be made to coherent or incoherent memory regions
-            mshr_n.flags[e_opd_rcf] = req_pma_coherent_lo;
+            mshr_n.flags[e_opd_rcf] = req_pma_coherent_addr_lo;
 
             // a coherent, but uncached request must serialize with other coherent operations
             // using the pending bits
-            state_n = req_pma_coherent_lo
+            state_n = req_pma_coherent_addr_lo
                       ? e_read_pending
                       : e_uncached_req;
 

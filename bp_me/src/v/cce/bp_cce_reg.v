@@ -42,6 +42,7 @@ module bp_cce_reg
    , input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
 
    , input [lce_req_msg_header_width_lp-1:0]                               lce_req_header_i
+   , input                                                                 lce_req_v_i
    , input [lce_resp_msg_header_width_lp-1:0]                              lce_resp_header_i
    , input [cce_mem_msg_header_width_lp-1:0]                               mem_resp_header_i
 
@@ -110,14 +111,29 @@ module bp_cce_reg
   assign auto_fwd_msg_o = auto_fwd_msg_r;
 
   // CCE coherence PMA - LCE requests
-  logic req_pma_coherent_lo;
+  logic req_pma_coherent_addr_lo;
   bp_cce_pma
     #(.bp_params_p(bp_params_p)
       )
     req_pma
       (.paddr_i(lce_req_hdr.addr)
-       ,.coherent_o(req_pma_coherent_lo)
+       ,.paddr_v_i(lce_req_v_i)
+       ,.cacheable_addr_o(req_pma_coherent_addr_lo)
        );
+
+  //synopsys translate_off
+  always @(negedge clk_i) begin
+    if (~reset_i) begin
+      // Cacheable requests must target cacheable memory
+      assert(!(lce_req_v_i && ~req_pma_coherent_addr_lo
+               && ((lce_req_hdr.msg_type.req == e_bedrock_req_rd)
+                   || (lce_req_hdr.msg_type.req == e_bedrock_req_wr))
+              )
+            ) else
+      $error("CCE PMA violation - cacheable requests must target cacheable memory");
+    end
+  end
+  //synopsys translate_on
 
   // Write mask for GPRs
   // This is by default the write mask from the decoded instruction, but it is also modified
@@ -225,7 +241,7 @@ module bp_cce_reg
             mshr_n.flags[e_opd_rqf] = lce_req_rqf;
             mshr_n.flags[e_opd_ucf] = lce_req_ucf;
             mshr_n.flags[e_opd_nerf] = lce_req_nerf;
-            mshr_n.flags[e_opd_rcf] = req_pma_coherent_lo;
+            mshr_n.flags[e_opd_rcf] = req_pma_coherent_addr_lo;
           end
           e_src_q_sel_lce_resp: begin
             //mshr_n.lce_id = lce_resp_hdr.src_id;
