@@ -32,7 +32,7 @@ cmd_base="make -C bp_top/syn build.${SUFFIX} sim.${SUFFIX} NBF_CONFIG_P=0 COSIM_
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
-make -C bp_top/syn clean.syn
+make -C bp_top/syn clean
 
 let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1

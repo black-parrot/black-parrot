@@ -393,27 +393,27 @@ module testbench
        );
 
   bind bp_core_minimal
-      bp_nonsynth_vm_tracer
-       #(.bp_params_p(bp_params_p))
-       vm_tracer
-        (.clk_i(clk_i & testbench.vm_trace_en_lo)
-         ,.reset_i(reset_i)
-         ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
+    bp_nonsynth_vm_tracer
+     #(.bp_params_p(bp_params_p))
+     vm_tracer
+      (.clk_i(clk_i & testbench.vm_trace_en_lo)
+       ,.reset_i(reset_i)
+       ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
-         ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
+       ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-         ,.itlb_clear_i(fe.itlb.flush_i)
-         ,.itlb_fill_v_i(fe.itlb.v_i & fe.itlb.w_i)
-         ,.itlb_vtag_i(fe.itlb.vtag_i)
-         ,.itlb_entry_i(fe.itlb.entry_i)
-         ,.itlb_cam_r_v_i(fe.itlb.cam.r_v_i)
+       ,.itlb_clear_i(fe.itlb.flush_i)
+       ,.itlb_fill_v_i(fe.itlb.v_i & fe.itlb.w_i)
+       ,.itlb_vtag_i(fe.itlb.vtag_i)
+       ,.itlb_entry_i(fe.itlb.entry_i)
+       ,.itlb_cam_r_v_i(fe.itlb.cam.r_v_i)
 
-         ,.dtlb_clear_i(be.calculator.pipe_mem.dtlb.flush_i)
-         ,.dtlb_fill_v_i(be.calculator.pipe_mem.dtlb.v_i & be.calculator.pipe_mem.dtlb.w_i)
-         ,.dtlb_vtag_i(be.calculator.pipe_mem.dtlb.vtag_i)
-         ,.dtlb_entry_i(be.calculator.pipe_mem.dtlb.entry_i)
-         ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dtlb.cam.r_v_i)
-         );
+       ,.dtlb_clear_i(be.calculator.pipe_mem.dtlb.flush_i)
+       ,.dtlb_fill_v_i(be.calculator.pipe_mem.dtlb.v_i & be.calculator.pipe_mem.dtlb.w_i)
+       ,.dtlb_vtag_i(be.calculator.pipe_mem.dtlb.vtag_i)
+       ,.dtlb_entry_i(be.calculator.pipe_mem.dtlb.entry_i)
+       ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dtlb.cam.r_v_i)
+       );
 
   bind bp_core_minimal
     bp_nonsynth_core_profiler
@@ -429,26 +429,32 @@ module testbench
        ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)
 
        ,.itlb_miss(fe.itlb_miss_r)
-       ,.icache_miss(~fe.icache.ready_o | fe.pc_gen.icache_miss)
+       ,.icache_miss(~fe.icache.ready_o)
+       ,.icache_rollback(fe.pc_gen.icache_miss)
        ,.icache_fence(fe.icache.fencei_req)
        ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
        ,.ret_override(fe.pc_gen.ovr_ret)
 
        ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
+       ,.fe_cmd_fence(be.director.suppress_iss_o)
 
        ,.mispredict(be.director.npc_mismatch_v)
-       ,.target(be.director.isd_status.isd_pc)
 
        ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)
        ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
-       ,.long_haz(be.detector.struct_haz_v)
-       ,.exception(be.director.commit_pkt.exception)
+       ,.dcache_rollback(be.scheduler.commit_pkt.rollback)
+       ,.long_haz(be.detector.long_haz_v)
+       ,.exception(be.director.commit_pkt.exception | be.director.commit_pkt.satp)
        ,.eret(be.director.commit_pkt.eret)
        ,._interrupt(be.director.commit_pkt._interrupt)
        ,.control_haz(be.detector.control_haz_v)
        ,.data_haz(be.detector.data_haz_v)
        ,.load_dep((be.detector.dep_status_r[0].emem_iwb_v
-                   | be.detector.dep_status_r[1].emem_iwb_v
+                   | be.detector.dep_status_r[0].fmem_iwb_v
+                   | be.detector.dep_status_r[1].fmem_iwb_v
+                   | be.detector.dep_status_r[0].emem_fwb_v
+                   | be.detector.dep_status_r[0].fmem_fwb_v
+                   | be.detector.dep_status_r[1].fmem_fwb_v
                    ) & be.detector.data_haz_v
                   )
        ,.mul_dep((be.detector.dep_status_r[0].mul_iwb_v
@@ -457,7 +463,6 @@ module testbench
                   ) & be.detector.data_haz_v
                  )
        ,.struct_haz(be.detector.struct_haz_v)
-
        ,.reservation(be.calculator.reservation_n)
        ,.commit_pkt(be.calculator.commit_pkt)
        );

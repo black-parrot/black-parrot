@@ -51,15 +51,17 @@ class BloodGraph:
 
 
     # List of types of stalls incurred by the core 
-    _STALLS_LIST   = ["freeze",
+    _STALLS_LIST   = [
                       "fe_queue_stall",
                       "fe_wait_stall",
                       "itlb_miss",
                       "icache_miss",
+                      "icache_rollback",
                       "icache_fence",
                       "branch_override",
+                      "ret_override",
                       "fe_cmd",
-                      "cmd_fence",
+                      "fe_cmd_fence",
                       "mispredict",
                       "control_haz",
                       "data_haz",
@@ -68,149 +70,43 @@ class BloodGraph:
                       "struct_haz",
                       "dtlb_miss",
                       "dcache_miss",
+                      "dcache_rollback",
                       "long_haz",
                       "eret",
                       "exception",
                       "interrupt",
-
-                      "none_mispredict",
-                      "ovr_mispredict",
-                      "btb_mispredict",
-                      "ret_mispredict",
-                      "ret_override",
+                      "unknown",
                       ]
-
-                       
-    # List of types of integer instructions executed by the core 
-    _INSTRS_LIST    = ["instr",
-                       "local_ld",
-                       "local_st",
-                       "remote_ld_dram",
-                       "remote_ld_global",
-                       "remote_ld_group",
-                       "remote_st_dram",
-                       "remote_st_global",
-                       "remote_st_group",
-                       "local_flw",
-                       "local_fsw",
-                       "remote_flw",
-                       "remote_fsw",
-                       # icache_miss is no longer treated as an instruction
-                       # but treated the same as stall_ifetch_wait
-                       #"icache_miss",
-                       "lr",
-                       "lr_aq",
-                       "swap_aq",
-                       "swap_rl",
-                       "beq",
-                       "bne",
-                       "blt",
-                       "bge",
-                       "bltu",
-                       "bgeu",
-                       "jalr",
-                       "jal",
-                       "beq_miss",
-                       "bne_miss",
-                       "blt_miss",
-                       "bge_miss",
-                       "bltu_miss",
-                       "bgeu_miss",
-                       "jalr_miss",
-                       "sll",
-                       "slli",
-                       "srl",
-                       "srli",
-                       "sra",
-                       "srai",
-                       "add",
-                       "addi",
-                       "sub",
-                       "lui",
-                       "auipc",
-                       "xor",
-                       "xori",
-                       "or",
-                       "ori",
-                       "and",
-                       "andi",
-                       "slt",
-                       "slti",
-                       "sltu",
-                       "sltiu",
-                       "mul",
-                       "mulh",
-                       "mulhsu",
-                       "mulhu",
-                       "div",
-                       "divu",
-                       "rem",
-                       "remu",
-                       "fence",
-                       "amoswap",
-                       "amoor",
-                       "unknown" ]
-
-
-    # List of types of floating point instructions executed by the core
-    _FP_INSTRS_LIST = ["fadd",
-                       "fsub",
-                       "fmul",
-                       "fsgnj",
-                       "fsgnjn",
-                       "fsgnjx",
-                       "fmin",
-                       "fmax",
-                       "fcvt_s_w",
-                       "fcvt_s_wu",
-                       "fmv_w_x",
-                       "feq",
-                       "flt",
-                       "fle",
-                       "fcvt_w_s",
-                       "fcvt_wu_s",
-                       "fclass",
-                       "fmv_x_w" ]
-
 
 
     # Coloring scheme for different types of operations
     # For detailed mode 
     # i_cache miss is treated the same is stall_ifetch_wait
     _DETAILED_STALL_BUBBLE_COLOR = {
-                                   "freeze"                       : rand_color(), 
                                    "fe_queue_stall"               : rand_color(),
-
                                    "fe_wait_stall"                : rand_color(),
                                    "itlb_miss"                    : rand_color(),
                                    "icache_miss"                  : rand_color(),
+                                   "icache_rollback"              : rand_color(),
                                    "icache_fence"                 : rand_color(),
-
                                    "branch_override"              : rand_color(),
-
+                                   "ret_override"                 : rand_color(),
                                    "fe_cmd"                       : rand_color(),
-                                   "cmd_fence"                    : rand_color(),
-
+                                   "fe_cmd_fence"                 : rand_color(),
                                    "mispredict"                   : rand_color(),
                                    "control_haz"                  : rand_color(),
-
                                    "data_haz"                     : rand_color(),
                                    "load_dep"                     : rand_color(),
                                    "mul_dep"                      : rand_color(),
                                    "struct_haz"                   : rand_color(),
                                    "dtlb_miss"                    : rand_color(),
                                    "dcache_miss"                  : rand_color(),
+                                   "dcache_rollback"              : rand_color(),
                                    "long_haz"                     : rand_color(),
                                    "eret"                         : rand_color(),
-
                                    "exception"                    : rand_color(),
                                    "interrupt"                    : rand_color(),
-
-                                   "none_mispredict"              : rand_color(),
-                                   "ovr_mispredict"               : rand_color(),
-                                   "btb_mispredict"               : rand_color(),
-                                   "ret_mispredict"               : rand_color(),
-                                   "ret_override"                 : rand_color(), 
+                                   "unknown"                      : rand_color(),
                                    }
     _DETAILED_UNIFIED_INSTR_COLOR =                                 (0xff, 0xff, 0xff)  ## white
     _DETAILED_UNIFIED_FP_INSTR_COLOR =                              (0xff, 0xaa, 0xff)  ## light pink
@@ -264,22 +160,16 @@ class BloodGraph:
         self.abstract = abstract
 
         # Determine coloring rules based on mode {abstract / detailed}
-        if (self.abstract):
-            self.stall_bubble_color     = self._ABSTRACT_STALL_BUBBLE_COLOR
-            self.unified_instr_color    = self._ABSTRACT_UNIFIED_INSTR_COLOR
-            self.unified_fp_instr_color = self._ABSTRACT_UNIFIED_INSTR_COLOR
-        else:
-            self.stall_bubble_color     = self._DETAILED_STALL_BUBBLE_COLOR
-            self.unified_instr_color    = self._DETAILED_UNIFIED_INSTR_COLOR
-            self.unified_fp_instr_color = self._DETAILED_UNIFIED_INSTR_COLOR
-
+        self.stall_bubble_color     = self._DETAILED_STALL_BUBBLE_COLOR
+        self.unified_instr_color    = self._DETAILED_UNIFIED_INSTR_COLOR
+        self.unified_fp_instr_color = self._DETAILED_UNIFIED_INSTR_COLOR
 
         # Parse vanilla operation trace file to generate traces
         self.traces = self.__parse_traces(trace_file)
 
-        # Parse vanilla stats file to generate timing stats 
+        # Parse vanilla stats file to generate timing stats
         self.stats = self.__parse_stats(stats_file)
-       
+
         # get tile group diemsnions
         self.__get_tile_group_dim(self.traces)
 
@@ -293,6 +183,9 @@ class BloodGraph:
         with open(trace_file) as f:
             csv_reader = csv.DictReader(f, delimiter=",")
             for row in csv_reader:
+                if "====" in row["cycle"]:
+                    break
+
                 trace = {}
                 trace["x"] = int(row["x"])  
                 trace["y"] = int(row["y"])  
@@ -302,7 +195,7 @@ class BloodGraph:
         return traces
 
 
-    # Parses vanilla_stats.csv to generate timing stats 
+    # Parses vanilla_stats.csv to generate timing stats
     # to gather start and end cycle of entire graph
     def __parse_stats(self, stats_file):
         stats = []
@@ -318,6 +211,7 @@ class BloodGraph:
             else:
                 warnings.warn("Stats file not found, overriding blood graph's start/end cycle with traces.")
         return stats
+
 
 
     # look through the input file to get the tile group dimension (x,y)
@@ -441,12 +335,10 @@ class BloodGraph:
         # determine color
         if trace["operation"] in self.stall_bubble_color.keys():
             self.pixel[col,row] = self.stall_bubble_color[trace["operation"]]
-        elif trace["operation"] in self._INSTRS_LIST:
+        elif trace["operation"] in ["instr"]:
             self.pixel[col,row] = self.unified_instr_color
-        elif trace["operation"] in self._FP_INSTRS_LIST:
-            self.pixel[col,row] = self.unified_fp_instr_color
         else:
-            raise Exception('Invalid operation in vanilla operation trace log {}'.format(trace["operation"]))
+            raise Exception('Invalid operation in trace log {}'.format(trace["operation"]))
         return
 
 
