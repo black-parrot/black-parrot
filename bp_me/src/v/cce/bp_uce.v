@@ -447,7 +447,7 @@ module bp_uce
   // We ack mem_resps for uncached stores no matter what, so mem_resp_yumi_lo is for other responses
   logic mem_resp_yumi_lo;
   assign mem_resp_yumi_o = mem_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_busy_o = is_reset | is_clear | credits_full_o;
+  assign cache_req_busy_o = is_reset | is_clear | cache_req_credits_full_o;
   always_comb
     begin
       cache_req_yumi_o = '0; 
@@ -680,7 +680,7 @@ module bp_uce
             mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_payload.lce_id          = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
-            mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r & ~credits_full_o;
+            mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r & ~cache_req_credits_full_o;
             mem_cmd_up = mem_cmd_v_o;
 
             cache_req_complete_o = fill_done & mem_cmd_done_r & tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
@@ -727,7 +727,7 @@ module bp_uce
             mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_payload.lce_id          = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
-            mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r & ~credits_full_o;
+            mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r & ~cache_req_credits_full_o;
             mem_cmd_up = mem_cmd_v_o;
 
             cache_req_complete_o = fill_done & mem_cmd_done_r & tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;

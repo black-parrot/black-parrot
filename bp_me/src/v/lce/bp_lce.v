@@ -246,6 +246,6 @@ module bp_lce
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
   // - LCE Command module is ready to process commands (raised after initialization complete)
   assign cache_req_yumi_o = cache_req_v_i & req_ready_lo & cmd_ready_lo & ~timeout;
-  assign cache_req_busy_o = credits_full_o | timeout | ~cmd_ready_lo;
+  assign cache_req_busy_o = cache_req_credits_full_o | timeout | ~cmd_ready_lo;
 
 endmodule
