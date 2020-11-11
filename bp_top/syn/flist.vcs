@@ -62,7 +62,12 @@ $BP_BE_DIR/src/include/bp_be_hardfloat_pkg.sv
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 
-##zipline
+
+# HardFloat packages
+$BP_BE_DIR/src/include/bp_be_hardfloat_pkg.vh
+
+#zipline
+
 -y $BP_EXTERNAL_DIR/zipline/rtl/common
 -y $BP_EXTERNAL_DIR/zipline/rtl/common/nx_library
 -y $BP_EXTERNAL_DIR/zipline/rtl/common/cr_tlvp
@@ -340,6 +345,7 @@ $BP_ME_DIR/src/v/wormhole/bp_stream_to_lite.sv
 $BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
 $BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
 ## TOP
+<<<<<<< HEAD
 
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
