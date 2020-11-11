@@ -31,17 +31,21 @@ import "DPI-C" context function int scan();
 import "DPI-C" context function void pop();
 
 integer stdout[num_core_p];
+integer stdout_global;
 
 logic [63:0] ch;
 initial begin
   start();
+  stdout_global = $fopen("stdoutglobal.out", "w");
+  $fwrite(stdout_global, "# bparrot global stdout file\n");
+  $fflush(stdout_global);
 
-      for (integer j = 0; j < num_core_p; j++)
-      begin
-        stdout[j] = $fopen($sformatf("stdout.%02d", j), "w");
-        $fwrite(stdout[j], "# bparrot stdout file for core %d\n", j);
-        $fflush(stdout[j]);
-      end
+  for (integer j = 0; j < num_core_p; j++)
+  begin
+    stdout[j] = $fopen($sformatf("stdout.%02d", j), "w");
+    $fwrite(stdout[j], "# bparrot stdout file for core %d\n", j);
+    $fflush(stdout[j]);
+  end
 end
 
 always_ff @(posedge clk_i) begin
@@ -57,8 +61,9 @@ end
 //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
 
 localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
-localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
+localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_3000);
 localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
+localparam putch_core_base_addr_gp  = paddr_width_p'(64'h0010_1000);
 
 bp_cce_mem_msg_s  io_cmd_cast_i;
 
@@ -69,20 +74,30 @@ localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 logic putchar_data_cmd_v;
 logic getchar_data_cmd_v;
 logic finish_data_cmd_v;
+logic putch_core_data_cmd_v;
 
-assign putchar_core_id = io_cmd_cast_i.header.addr & 64'h0000_0000_0000_0fff;
+integer putchar_core_id = 0;
+
+// assign putchar_core_id = io_cmd_cast_i.header.addr & 64'h0000_0000_0000_0fff;
 
 always_comb
   begin
     putchar_data_cmd_v = 1'b0;
     getchar_data_cmd_v = 1'b0;
     finish_data_cmd_v = 1'b0;
+    putch_core_data_cmd_v = 1'b0;
+
+//    $display("addr is %h data is %c",io_cmd_cast_i.header.addr, io_cmd_cast_i.data[0+:8]); 
 
     unique
     casez (io_cmd_cast_i.header.addr & 64'hffff_ffff_ffff_f000)
       putchar_base_addr_gp: putchar_data_cmd_v = io_cmd_v_i;
       getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_v_i;
       finish_base_addr_gp: finish_data_cmd_v = io_cmd_v_i;
+      putch_core_base_addr_gp:  begin
+                                  putch_core_data_cmd_v = io_cmd_v_i;
+                                  putchar_core_id = io_cmd_cast_i.header.addr & 12'hfff;
+                                end
       default: begin end
     endcase
   end
@@ -131,10 +146,18 @@ always_ff @(negedge clk_i)
   begin
     if (putchar_data_cmd_v & io_cmd_v_i) 
     begin
-      $fwrite(stdout[putchar_core_id], "%c", io_cmd_cast_i.data[0+:8]);
+      $fwrite(stdout_global, "%c", io_cmd_cast_i.data[0+:8]);
       // $fflush(32'h8000_0001);
+      $fflush(stdout_global);
+    end
+
+    if (putch_core_data_cmd_v & io_cmd_v_i) 
+    begin
+      // $display("addr is %h core is %d data is %h",io_cmd_cast_i.header.addr, putchar_core_id, io_cmd_cast_i.data[0+:8]); 
+      $fwrite(stdout[putchar_core_id], "%c", io_cmd_cast_i.data[0+:8]);
       $fflush(stdout[putchar_core_id]);
     end
+
     if (getchar_data_cmd_v & io_cmd_v_i)
       pop();
     for (integer i = 0; i < num_core_p; i++)
