@@ -145,7 +145,7 @@ module bp_lce
       ,.ready_o(req_ready_lo)
 
       ,.cache_req_i(cache_req_i)
-      ,.cache_req_v_i(cache_req_v_i)
+      ,.cache_req_v_i(cache_req_v_i & req_ready_lo)
       ,.cache_req_metadata_i(cache_req_metadata_i)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
       ,.cache_req_complete_i(cache_req_complete_o)
