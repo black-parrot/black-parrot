@@ -63,6 +63,9 @@ module bp_cce_dir
    , output logic                                                 addr_v_o
    , output logic [paddr_width_p-1:0]                             addr_o
    , output bp_cce_inst_opd_gpr_e                                 addr_dst_gpr_o
+
+   // Debug
+   , input [cce_id_width_p-1:0]                                   cce_id_i
   );
 
 

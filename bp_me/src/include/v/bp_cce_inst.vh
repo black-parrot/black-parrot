@@ -313,9 +313,11 @@ typedef enum logic [3:0] {
   // special flags from GAD
   ,e_opd_rf                              = 4'b1011 // requesting LCE needs replacement
   ,e_opd_uf                              = 4'b1100 // rqf & (rsf | rof | rff)
-  // 1101 - unused
-  // 1110 - unused
-  // 1111 - unused
+  // atomics
+  ,e_opd_arf                             = 4'b1101 // atomic request
+  ,e_opd_anrf                            = 4'b1110 // atomic no return
+  // coherence PMA
+  ,e_opd_rcf                             = 4'b1111 // request to coherent memory
 } bp_cce_inst_opd_flag_e;
 
 // Control Flag one hot encoding
@@ -333,6 +335,9 @@ typedef enum logic [15:0] {
   ,e_flag_cff                   = 16'b0000_0100_0000_0000 // cached F by other flag
   ,e_flag_rf                    = 16'b0000_1000_0000_0000 // replacement flag
   ,e_flag_uf                    = 16'b0001_0000_0000_0000 // upgrade flag
+  ,e_flag_arf                   = 16'b0010_0000_0000_0000 // atomic request flag
+  ,e_flag_anrf                  = 16'b0100_0000_0000_0000 // atomic no return flag
+  ,e_flag_rcf                   = 16'b1000_0000_0000_0000 // request to coherent memory flag
 } bp_cce_inst_flag_onehot_e;
 
 `define bp_cce_inst_num_flags $bits(bp_cce_inst_flag_onehot_e)

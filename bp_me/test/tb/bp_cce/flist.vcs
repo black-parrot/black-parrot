@@ -9,7 +9,9 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_set_clear.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.vh
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.v
+$BP_ME_DIR/test/common/bp_me_nonsynth_cce_dir_tracer.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.v
+$BP_ME_DIR/test/common/bp_me_nonsynth_lce_tr_tracer.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_mock_lce_tag_lookup.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_mock_lce.v
 $BP_ME_DIR/test/common/bp_mem.v
