@@ -106,6 +106,7 @@
   branch = master
   ignore = dirty
 
+
 [submodule "external/HardFloat"]
   path = external/HardFloat
   url = https://github.com/bsg-external/HardFloat.git
@@ -118,3 +119,9 @@
   branch = blackparrot_mods
   update = none
   ignore = dirty
+
+[submodule "external/zipline"]
+	path = external/zipline
+	url = https://github.com/opencomputeproject/Project-Zipline.git
+
+
