@@ -211,23 +211,24 @@ module wrapper
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(dword_width_p)
          ,.out_data_width_p(cce_block_width_p)
+         ,.payload_width_p(cce_mem_payload_width_lp)
          ,.payload_mask_p(mem_cmd_payload_mask_gp)
          )
        burst2lite
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.mem_header_i(mem_cmd_header_lo)
-         ,.mem_header_v_i(mem_cmd_header_v_lo)
-         ,.mem_header_ready_and_o(mem_cmd_header_ready_li)
+         ,.in_msg_header_i(mem_cmd_header_lo)
+         ,.in_msg_header_v_i(mem_cmd_header_v_lo)
+         ,.in_msg_header_ready_and_o(mem_cmd_header_ready_li)
 
-         ,.mem_data_i(mem_cmd_data_lo)
-         ,.mem_data_v_i(mem_cmd_data_v_lo)
-         ,.mem_data_ready_and_o(mem_cmd_data_ready_li)
+         ,.in_msg_data_i(mem_cmd_data_lo)
+         ,.in_msg_data_v_i(mem_cmd_data_v_lo)
+         ,.in_msg_data_ready_and_o(mem_cmd_data_ready_li)
 
-         ,.mem_o(mem_cmd_o)
-         ,.mem_v_o(mem_cmd_v_o)
-         ,.mem_ready_and_i(mem_cmd_ready_i)
+         ,.out_msg_o(mem_cmd_o)
+         ,.out_msg_v_o(mem_cmd_v_o)
+         ,.out_msg_ready_and_i(mem_cmd_ready_i)
          );
 
       logic mem_resp_ready_lo;
@@ -236,23 +237,24 @@ module wrapper
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(cce_block_width_p)
          ,.out_data_width_p(dword_width_p)
+         ,.payload_width_p(cce_mem_payload_width_lp)
          ,.payload_mask_p(mem_resp_payload_mask_gp)
          )
        lite2burst
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.mem_i(mem_resp_i)
-         ,.mem_v_i(mem_resp_ready_lo & mem_resp_v_i)
-         ,.mem_ready_and_o(mem_resp_ready_lo)
+         ,.in_msg_i(mem_resp_i)
+         ,.in_msg_v_i(mem_resp_ready_lo & mem_resp_v_i)
+         ,.in_msg_ready_and_o(mem_resp_ready_lo)
 
-         ,.mem_header_o(mem_resp_header_li)
-         ,.mem_header_v_o(mem_resp_header_v_li)
-         ,.mem_header_ready_and_i(mem_resp_header_yumi_lo)
+         ,.out_msg_header_o(mem_resp_header_li)
+         ,.out_msg_header_v_o(mem_resp_header_v_li)
+         ,.out_msg_header_ready_and_i(mem_resp_header_yumi_lo)
 
-         ,.mem_data_o(mem_resp_data_li)
-         ,.mem_data_v_o(mem_resp_data_v_li)
-         ,.mem_data_ready_and_i(mem_resp_data_yumi_lo)
+         ,.out_msg_data_o(mem_resp_data_li)
+         ,.out_msg_data_v_o(mem_resp_data_v_li)
+         ,.out_msg_data_ready_and_i(mem_resp_data_yumi_lo)
          );
 
       assign io_cmd_o = io_cmd_lo;

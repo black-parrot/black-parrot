@@ -549,23 +549,24 @@ module bp_unicore
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(cce_block_width_p)
          ,.out_data_width_p(dword_width_p)
+         ,.payload_width_p(cce_mem_payload_width_lp)
          ,.payload_mask_p(mem_cmd_payload_mask_gp)
          )
        lite2burst
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.mem_i(cache_cmd)
-         ,.mem_v_i(cache_cmd_v_li)
-         ,.mem_ready_and_o(cache_cmd_ready_lo)
+         ,.in_msg_i(cache_cmd)
+         ,.in_msg_v_i(cache_cmd_v_li)
+         ,.in_msg_ready_and_o(cache_cmd_ready_lo)
 
-         ,.mem_header_o(mem_cmd_header_o)
-         ,.mem_header_v_o(mem_cmd_header_v_o)
-         ,.mem_header_ready_and_i(mem_cmd_header_ready_i)
+         ,.out_msg_header_o(mem_cmd_header_o)
+         ,.out_msg_header_v_o(mem_cmd_header_v_o)
+         ,.out_msg_header_ready_and_i(mem_cmd_header_ready_i)
 
-         ,.mem_data_o(mem_cmd_data_o)
-         ,.mem_data_v_o(mem_cmd_data_v_o)
-         ,.mem_data_ready_and_i(mem_cmd_data_ready_i)
+         ,.out_msg_data_o(mem_cmd_data_o)
+         ,.out_msg_data_v_o(mem_cmd_data_v_o)
+         ,.out_msg_data_ready_and_i(mem_cmd_data_ready_i)
          );
 
       logic mem_resp_header_ready_lo, mem_resp_data_ready_lo;
@@ -573,23 +574,24 @@ module bp_unicore
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(dword_width_p)
          ,.out_data_width_p(cce_block_width_p)
+         ,.payload_width_p(cce_mem_payload_width_lp)
          ,.payload_mask_p(mem_resp_payload_mask_gp)
          )
        burst2lite
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.mem_header_i(mem_resp_header_i)
-         ,.mem_header_v_i(mem_resp_header_v_i)
-         ,.mem_header_ready_and_o(mem_resp_header_ready_lo)
+         ,.in_msg_header_i(mem_resp_header_i)
+         ,.in_msg_header_v_i(mem_resp_header_v_i)
+         ,.in_msg_header_ready_and_o(mem_resp_header_ready_lo)
 
-         ,.mem_data_i(mem_resp_data_i)
-         ,.mem_data_v_i(mem_resp_data_v_i)
-         ,.mem_data_ready_and_o(mem_resp_data_ready_lo)
+         ,.in_msg_data_i(mem_resp_data_i)
+         ,.in_msg_data_v_i(mem_resp_data_v_i)
+         ,.in_msg_data_ready_and_o(mem_resp_data_ready_lo)
 
-         ,.mem_o(cache_resp)
-         ,.mem_v_o(cache_resp_v_lo)
-         ,.mem_ready_and_i(cache_resp_yumi_li)
+         ,.out_msg_o(cache_resp)
+         ,.out_msg_v_o(cache_resp_v_lo)
+         ,.out_msg_ready_and_i(cache_resp_yumi_li)
          );
        assign mem_resp_header_yumi_o = mem_resp_header_ready_lo & mem_resp_header_v_i;
        assign mem_resp_data_yumi_o = mem_resp_data_ready_lo & mem_resp_data_v_i;
