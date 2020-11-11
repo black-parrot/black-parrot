@@ -124,3 +124,8 @@
   url = https://github.com/bsg-external/HardFloat.git
   branch = master
   ignore = dirty
+
+[submodule "external/zipline"]
+	path = external/zipline
+	url = https://github.com/opencomputeproject/Project-Zipline.git
+

@@ -1,4 +1,7 @@
 +define+DRAMSIM2
++define+ENA_BIMC+
++libext+.v
++libext+.sv
 ## Includes
 # BSG_IP_CORES includes
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
@@ -6,9 +9,31 @@
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
 +incdir+$BASEJUMP_STL_DIR/bsg_test
 +incdir+$BASEJUMP_STL_DIR/bsg_noc
+
 # HardFloat includes
 +incdir+$HARDFLOAT_DIR/source
 +incdir+$HARDFLOAT_DIR/source/RISCV
+
+#zipline
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/common/include/cr_global_params.vh
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/common/include
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/common/nx_library
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/common/axi
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_isf
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_osf
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_cg
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_crcgc
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_prefix
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_prefix_attach
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_lz77_comp
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_huf_comp
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_xp10_decomp
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64_support
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64_sa
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_su
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/mem_wrappers/bimc_master/top
+
 # common includes
 +incdir+$BP_COMMON_DIR/src/include
 # fe includes
@@ -38,8 +63,54 @@ $BP_BE_DIR/src/include/bp_be_dcache_pkg.vh
 # ME packages
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
+
 # HardFloat packages
 $BP_BE_DIR/src/include/bp_be_hardfloat_pkg.vh
+
+#zipline
+-y $BP_EXTERNAL_DIR/zipline/rtl/common
+-y $BP_EXTERNAL_DIR/zipline/rtl/common/nx_library
+-y $BP_EXTERNAL_DIR/zipline/rtl/common/cr_tlvp
+-y $BP_EXTERNAL_DIR/zipline/rtl/common/cr_tlvp_apps
+-y $BP_EXTERNAL_DIR/zipline/rtl/common/cr_crc
+-y $BP_EXTERNAL_DIR/zipline/rtl/common/axi
+-y $BP_EXTERNAL_DIR/zipline/rtl/common/cr_adler
+-y $BP_EXTERNAL_DIR/zipline/rtl/common/cr_crc16t
+-y $BP_EXTERNAL_DIR/zipline/rtl/common/fifo 
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_isf
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_osf
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_cg
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_crcgc
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_prefix
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_prefix_attach
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_huf_comp
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_xp10_decomp
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64_support
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64_sa
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_su
+-y $BP_EXTERNAL_DIR/zipline/rtl/mem_wrappers/bimc_master/top
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_lz77_comp
+$BP_EXTERNAL_DIR/zipline/rtl/common/include/cr_global_params.vh
+$BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64/cr_cceip_64.v
+$BP_EXTERNAL_DIR/zipline/rtl/common/fifo/cr_cdc_fifo_wrap1.v
+$BP_EXTERNAL_DIR/zipline/rtl/common/fifo/cr_fifo_wrap1.v
+$BP_EXTERNAL_DIR/zipline/rtl/common/fifo/cr_fifo_wrap2.v
+$BP_EXTERNAL_DIR/zipline/rtl/common/fifo/cr_fifo_wrap3.v
+$BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64_support/cr_cceip_64_support_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_xp10_decomp/cr_xp10_decomp_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_crcgc/cr_crcgc_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_crcgc/cr_crcgc_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_crcgc/cr_crcgc_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_huf_comp/cr_huf_comp_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_lz77_comp/cr_lz77_comp_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_prefix_attach/cr_prefix_attach_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_prefix/cr_prefix_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_isf/cr_isf_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_cg/cr_cg_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_osf/cr_osf_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64_sa/cr_cceip_64_sa_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_su/cr_su_regs.sv
+
 ## bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
@@ -279,6 +350,7 @@ $BP_TOP_DIR/src/v/bp_cacc_tile.v
 $BP_TOP_DIR/src/v/bp_cacc_tile_node.v
 $BP_TOP_DIR/src/v/bp_cacc_complex.v
 $BP_TOP_DIR/src/v/bp_sacc_vdp.v
+$BP_TOP_DIR/src/v/bp_sacc_zipline.v
 $BP_TOP_DIR/src/v/bp_sacc_tile.v
 $BP_TOP_DIR/src/v/bp_sacc_tile_node.v
 $BP_TOP_DIR/src/v/bp_sacc_complex.v
