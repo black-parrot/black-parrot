@@ -18,8 +18,8 @@ module wrapper
    `declare_bp_proc_params(bp_params_p)
 
    // interface widths
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
    , parameter cce_trace_p = 0
@@ -28,18 +28,23 @@ module wrapper
    , input                                                 reset_i
 
    , input [cfg_bus_width_lp-1:0]                          cfg_bus_i
-   , output logic [cce_instr_width_p-1:0]                  cfg_cce_ucode_data_o
+
+   , input                                                 ucode_v_i
+   , input                                                 ucode_w_i
+   , input [cce_pc_width_p-1:0]                            ucode_addr_i
+   , input [cce_instr_width_p-1:0]                         ucode_data_i
+   , output [cce_instr_width_p-1:0]                        ucode_data_o
 
    // LCE-CCE Interface
-   , input [lce_cce_req_width_lp-1:0]                      lce_req_i
+   , input [lce_req_msg_width_lp-1:0]                      lce_req_i
    , input                                                 lce_req_v_i
    , output logic                                          lce_req_yumi_o
 
-   , input [lce_cce_resp_width_lp-1:0]                     lce_resp_i
+   , input [lce_resp_msg_width_lp-1:0]                     lce_resp_i
    , input                                                 lce_resp_v_i
    , output logic                                          lce_resp_yumi_o
 
-   , output logic [lce_cmd_width_lp-1:0]                   lce_cmd_o
+   , output logic [lce_cmd_msg_width_lp-1:0]               lce_cmd_o
    , output logic                                          lce_cmd_v_o
    , input                                                 lce_cmd_ready_i
 

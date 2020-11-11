@@ -13,7 +13,7 @@ export TOUCH_PATH   := $(BP_ME_DIR)/syn/touchfiles
 
 ## End specific flags and variables
 export TB    ?= bp_cce
-export CFG   ?= e_bp_half_core_cfg
+export CFG   ?= e_bp_multicore_half_cfg
 export SUITE ?= cce
 export PROG  ?= none
 export TAG   ?= none
@@ -26,16 +26,4 @@ include $(BP_COMMON_DIR)/syn/Makefile.common
 include $(BP_COMMON_DIR)/syn/Makefile.dc
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
-
-clean: clean.me
-clean.me:
-	rm -f *.axe
-
-# NOTE: targets below are not up to date
-#axe: AXE_LOG ?= ./axe.log
-#axe:
-#	python $(BP_ME_DIR)/software/py/axe_trace_filter.py $(AXE_LOG) > trace.axe
-#	cat trace.axe
-#	axe check TSO trace.axe
-
 

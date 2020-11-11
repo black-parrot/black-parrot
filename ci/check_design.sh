@@ -7,11 +7,11 @@ N=${1:-1}
 
 # Bash array to iterate over for configurations
 cfgs=(\
-    "e_bp_single_core_ucode_cce_cfg"
-    "e_bp_single_core_cfg"
     "e_bp_unicore_cfg"
-    "e_bp_quad_core_cfg"
-    "e_bp_quad_core_ucode_cce_cfg"
+    "e_bp_multicore_1_cfg"
+    "e_bp_multicore_1_cce_ucode_cfg"
+    "e_bp_multicore_4_cfg"
+    "e_bp_multicore_4_cce_ucode_cfg"
     )
 
 # The base command to append the configuration to
@@ -19,7 +19,7 @@ cmd_base="make -C bp_top/syn check_design.syn"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
-make -C bp_top/syn clean.syn
+make -C bp_top/syn clean
 
 let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1

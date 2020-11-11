@@ -8,7 +8,7 @@ module bp_me_nonsynth_lce_tr_tracer
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_nonsynth_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_half_core_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_unicore_half_cfg
     `declare_bp_proc_params(bp_params_p)
 
     , parameter sets_p = "inv"
@@ -49,16 +49,9 @@ module bp_me_nonsynth_lce_tr_tracer
   integer file;
   string file_name;
 
-  logic freeze_r;
-  always_ff @(posedge clk_i) begin
-    freeze_r <= freeze_i;
-  end
-
-  always_ff @(negedge clk_i) begin
-    if (freeze_r & ~freeze_i) begin
-      file_name = $sformatf("%s_%x.trace", lce_trace_file_p, lce_id_i);
-      file      = $fopen(file_name, "w");
-    end
+  always_ff @(negedge reset_i) begin
+    file_name = $sformatf("%s_%x.trace", lce_trace_file_p, lce_id_i);
+    file      = $fopen(file_name, "w");
   end
 
   time tr_start_t;

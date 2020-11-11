@@ -3,7 +3,7 @@
 module bp_me_cce_id_to_cord
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    )
   (input [cce_id_width_p-1:0]                cce_id_i

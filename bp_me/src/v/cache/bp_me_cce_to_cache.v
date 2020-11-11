@@ -3,8 +3,6 @@
  *
  */
  
-`include "bp_me_cce_mem_if.vh"
-
 module bp_me_cce_to_cache
 
   import bp_cce_pkg::*;
@@ -13,20 +11,20 @@ module bp_me_cce_to_cache
   import bp_me_pkg::*;
   import bsg_cache_pkg::*;
 
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-    , parameter block_size_in_words_lp=cce_block_width_p/dword_width_p
-    , parameter lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
-    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
-    , parameter word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , parameter data_mask_width_lp=(dword_width_p>>3)
-    , parameter byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
-    , parameter block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+    , localparam block_size_in_words_lp=cce_block_width_p/dword_width_p
+    , localparam lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
+    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+    , localparam data_mask_width_lp=(dword_width_p>>3)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
+    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     
-    , parameter bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(paddr_width_p,dword_width_p)
-    , parameter counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_p)
+    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(paddr_width_p,dword_width_p)
+    , localparam counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_p)
   )
   (
     input clk_i
@@ -57,7 +55,7 @@ module bp_me_cce_to_cache
   `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
   
   // cce logics
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = cache_pkt;
@@ -75,13 +73,13 @@ module bp_me_cce_to_cache
   logic [counter_width_lp-1:0] cmd_counter_r, cmd_counter_n;
   logic [counter_width_lp-1:0] cmd_max_count_r, cmd_max_count_n;
   
-  bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
+  bp_bedrock_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
   
   assign mem_cmd_cast_i = mem_cmd_i;
   assign mem_resp_o = mem_resp_cast_o;
   
   logic mem_cmd_ready_lo;
-  bp_cce_mem_msg_s mem_cmd_lo;
+  bp_bedrock_cce_mem_msg_s mem_cmd_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
   bsg_fifo_1r1w_small
    #(.width_p(cce_mem_msg_width_lp), .els_p(l2_outstanding_reqs_p))
@@ -171,13 +169,13 @@ module bp_me_cce_to_cache
         if (mem_cmd_v_lo & is_resp_ready)
           begin
             case (mem_cmd_lo.header.size)
-              e_mem_msg_size_1
-              ,e_mem_msg_size_2
-              ,e_mem_msg_size_4
-              ,e_mem_msg_size_8: cmd_max_count_n = '0;
-              e_mem_msg_size_16: cmd_max_count_n = counter_width_lp'(1);
-              e_mem_msg_size_32: cmd_max_count_n = counter_width_lp'(3);
-              e_mem_msg_size_64: cmd_max_count_n = counter_width_lp'(7);
+              e_bedrock_msg_size_1
+              ,e_bedrock_msg_size_2
+              ,e_bedrock_msg_size_4
+              ,e_bedrock_msg_size_8: cmd_max_count_n = '0;
+              e_bedrock_msg_size_16: cmd_max_count_n = counter_width_lp'(1);
+              e_bedrock_msg_size_32: cmd_max_count_n = counter_width_lp'(3);
+              e_bedrock_msg_size_64: cmd_max_count_n = counter_width_lp'(7);
               default: cmd_max_count_n = '0;
             endcase
             cmd_state_n = SEND;
@@ -186,28 +184,28 @@ module bp_me_cce_to_cache
       SEND: begin
         v_o = 1'b1;
         case (mem_cmd_lo.header.msg_type)
-          e_cce_mem_rd
-          ,e_cce_mem_uc_rd:
+          e_bedrock_mem_rd
+          ,e_bedrock_mem_uc_rd:
             case (mem_cmd_lo.header.size)
-              e_mem_msg_size_1: cache_pkt.opcode = LB;
-              e_mem_msg_size_2: cache_pkt.opcode = LH;
-              e_mem_msg_size_4: cache_pkt.opcode = LW;
-              e_mem_msg_size_8
-              ,e_mem_msg_size_16
-              ,e_mem_msg_size_32
-              ,e_mem_msg_size_64: cache_pkt.opcode = LM;
+              e_bedrock_msg_size_1: cache_pkt.opcode = LB;
+              e_bedrock_msg_size_2: cache_pkt.opcode = LH;
+              e_bedrock_msg_size_4: cache_pkt.opcode = LW;
+              e_bedrock_msg_size_8
+              ,e_bedrock_msg_size_16
+              ,e_bedrock_msg_size_32
+              ,e_bedrock_msg_size_64: cache_pkt.opcode = LM;
               default: cache_pkt.opcode = LB;
             endcase
-          e_cce_mem_uc_wr
-          ,e_cce_mem_wr   :
+          e_bedrock_mem_uc_wr
+          ,e_bedrock_mem_wr   :
             case (mem_cmd_lo.header.size)
-              e_mem_msg_size_1: cache_pkt.opcode = SB;
-              e_mem_msg_size_2: cache_pkt.opcode = SH;
-              e_mem_msg_size_4: cache_pkt.opcode = SW;
-              e_mem_msg_size_8
-              ,e_mem_msg_size_16
-              ,e_mem_msg_size_32
-              ,e_mem_msg_size_64: cache_pkt.opcode = SM;
+              e_bedrock_msg_size_1: cache_pkt.opcode = SB;
+              e_bedrock_msg_size_2: cache_pkt.opcode = SH;
+              e_bedrock_msg_size_4: cache_pkt.opcode = SW;
+              e_bedrock_msg_size_8
+              ,e_bedrock_msg_size_16
+              ,e_bedrock_msg_size_32
+              ,e_bedrock_msg_size_64: cache_pkt.opcode = SM;
               default: cache_pkt.opcode = LB;
             endcase
           default: cache_pkt.opcode = LB;
@@ -278,7 +276,16 @@ module bp_me_cce_to_cache
      ,.data_i(mem_cmd_lo.header)
      ,.data_o(mem_resp_cast_o.header)
      );
-  assign mem_resp_cast_o.data = resp_data_r;
+  
+  bsg_bus_pack
+   #(.width_p(cce_block_width_p))
+   repl_mux
+    (.data_i(resp_data_r)
+     // Response data is always aggregated from zero in this module
+     ,.sel_i('0)
+     ,.size_i(mem_resp_cast_o.header.size)
+     ,.data_o(mem_resp_cast_o.data)
+     );
 
   always_comb begin
     yumi_o = 1'b0;
@@ -300,13 +307,13 @@ module bp_me_cce_to_cache
         if (mem_cmd_v_lo)
           begin
             case (mem_cmd_lo.header.size)
-              e_mem_msg_size_1
-              ,e_mem_msg_size_2
-              ,e_mem_msg_size_4
-              ,e_mem_msg_size_8: resp_max_count_n = '0;
-              e_mem_msg_size_16: resp_max_count_n = counter_width_lp'(1);
-              e_mem_msg_size_32: resp_max_count_n = counter_width_lp'(3);
-              e_mem_msg_size_64: resp_max_count_n = counter_width_lp'(7);
+              e_bedrock_msg_size_1
+              ,e_bedrock_msg_size_2
+              ,e_bedrock_msg_size_4
+              ,e_bedrock_msg_size_8: resp_max_count_n = '0;
+              e_bedrock_msg_size_16: resp_max_count_n = counter_width_lp'(1);
+              e_bedrock_msg_size_32: resp_max_count_n = counter_width_lp'(3);
+              e_bedrock_msg_size_64: resp_max_count_n = counter_width_lp'(7);
               default: resp_max_count_n = '0;
             endcase
             resp_state_n = RESP_RECEIVE;

@@ -11,6 +11,7 @@ class TraceGen:
     self.ptag_width_p = ptag_width_p
     self.page_offset_width_p = page_offset_width_p
     self.opcode_width_p = opcode_width_p
+    # TODO: Update formatting operators to use data width
     self.data_width_p = data_width_p
     self.packet_len = ptag_width_p + page_offset_width_p + opcode_width_p + data_width_p + 1 # A bit is added to denote cached/uncached accesses
 
@@ -35,29 +36,29 @@ class TraceGen:
     packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
 
     if (size == 8):
-      packet += "0011_"
+      packet += "000011_"
     else:
       if (signed):
         if (size == 1):
-          packet+= "0000_"
+          packet+= "000000_"
         elif (size == 2):
-          packet += "0001_"
+          packet += "000001_"
         elif (size == 4):
-          packet += "0010_"
+          packet += "000010_"
         else:
           raise ValueError("unexpected size for signed load.")
       else:
         if (size == 1):
-          packet += "0100_"
+          packet += "000100_"
         elif (size == 2):
-          packet += "0101_"
+          packet += "000101_"
         elif (size == 4):
-          packet += "0110_"
+          packet += "000110_"
         else:
           raise ValueError("unexpected size for unsigned load.")
 
     packet += format(page_offset, "0"+str(self.page_offset_width_p)+"b") + "_"
-    packet += format(0, "064b") + "\n" 
+    packet += format(0, "066b") + "\n" 
     return packet
 
   # send store
@@ -75,18 +76,18 @@ class TraceGen:
     packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
     
     if (size == 1):
-      packet += "1000_"
+      packet += "001000_"
     elif (size == 2):
-      packet += "1001_"
+      packet += "001001_"
     elif (size == 4):
-      packet += "1010_"
+      packet += "001010_"
     elif (size == 8):
-      packet += "1011_"
+      packet += "001011_"
     else:
       raise ValueError("unexpected size for store.")
     
     packet += format(page_offset, "0" + str(self.page_offset_width_p) + "b") + "_"
-    packet += format(data, "064b") + "\n"
+    packet += format(data, "066b") + "\n"
     return packet
 
   # receive data
@@ -94,7 +95,7 @@ class TraceGen:
   def recv_data(self, data):
     packet = "0010_"
     bin_data = np.binary_repr(data, 64)
-    packet += "0" + "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.page_offset_width_p) + "_" + bin_data + "\n"
+    packet += "0" + "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.page_offset_width_p) + "_" + "00" + bin_data + "\n"
     return packet
 
   # wait for a number of cycles

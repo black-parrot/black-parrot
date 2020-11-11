@@ -11,20 +11,25 @@ VV ?= $(VERILATOR)
 
 TOP_MODULE ?= testbench
 
+# Max number of threads to run verilated model with
+VERILATOR_THREADS ?= 4
 ## Tool options
 VV_OPTS  = --sc                 # Output in SystemC rather than C++
 #VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
 VV_OPTS += -O1
+VV_OPTS += --x-assign fast --x-initial fast
+VV_OPTS += --threads $(VERILATOR_THREADS)
 VV_OPTS += --top-module $(TOP_MODULE)
 VV_OPTS += -f flist.vcs
 VV_OPTS += config.vlt
 VV_OPTS += --build --exe
 VV_OPTS += -o simsc
+VV_OPTS += -Wno-timescalemod
 
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module $(TOP_MODULE) -f flist.vcs config.vlt
-BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++11 
+BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++14
 BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
-BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim -ldromajo_cosim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim3 -ldromajo_cosim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
 VERILATOR_OPTIONS =
 
@@ -104,7 +109,7 @@ $(SIM_DIR)/wavesc:
 # TODO: Make compatible with multi-core
 blood.sc: $(SIM_DIR)/bloodsc
 $(SIM_DIR)/bloodsc:
-	cd $(@D); $(PYTHON) $(BLOODGRAPH) --input stall_0.trace
+	cd $(@D); $(PYTHON) $(BLOODGRAPH) --trace stall_0.trace
 
 clean.sc:
 	@rm -rf results/verilator

@@ -4,14 +4,14 @@ module bp_nonsynth_cache_tracer
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
- #( parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #( parameter bp_params_e bp_params_p = e_bp_default_cfg
   , parameter assoc_p = 8
   , parameter sets_p = 64
   , parameter block_width_p = 512
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
@@ -57,7 +57,7 @@ module bp_nonsynth_cache_tracer
 
    // Cache data
    , input                                                 v_o
-   , input [dword_width_p-1:0]                             load_data
+   , input [dpath_width_p-2:0]                             load_data
    , input                                                 cache_miss_o
    , input                                                 wt_req
    , input [dword_width_p-1:0]                             store_data
@@ -77,11 +77,10 @@ module bp_nonsynth_cache_tracer
    
    // tag and data mem read counter
    , input                                                 tag_mem_v_i
-   , input [icache_assoc_p-1:0]                            data_mem_v_i
-   , input                                                 program_finish_i
+   , input [assoc_p-1:0]                                   data_mem_v_i
    );
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
 
   // Input Casting
   bp_cache_req_s cache_req_cast_o;
@@ -169,8 +168,8 @@ module bp_nonsynth_cache_tracer
       tag_op = "[set clear]";
     else if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_set_tag)
       tag_op = "[set tag]";
-    else if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_invalidate)
-      tag_op = "[invalidate]";
+    else if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_set_state)
+      tag_op = "[set state]";
     else if (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read)
       tag_op = "[read]";
     else
@@ -228,14 +227,14 @@ module bp_nonsynth_cache_tracer
 
       if (cache_req_v_o & (cache_req_cast_o.msg_type == e_miss_store || cache_req_cast_o.msg_type == e_uc_store))
         $fwrite(file, "[%t] store data: %x \n", $time, store_data);
+    end
 
-      if (program_finish_i)
+  final
+    begin
+      $fwrite(file,"[%t] Tag Mem valid count: %0d \n", $time, tag_mem_v_count_r);
+      for (i = 0; i < assoc_p; i++)
         begin
-          $fwrite(file,"[%t] Tag Mem valid count: %0d \n", $time, tag_mem_v_count_r);
-         for (i = 0; i < icache_assoc_p; i++)
-           begin
-             $fwrite(file,"[%t] Data Mem%0d valid count: %0d \n", $time, i, data_mem_v_count_r[i]);
-           end
+          $fwrite(file,"[%t] Data Mem%0d valid count: %0d \n", $time, i, data_mem_v_count_r[i]);
         end
     end
 

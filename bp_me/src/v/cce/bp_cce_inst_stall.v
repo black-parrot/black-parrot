@@ -26,6 +26,7 @@ module bp_cce_inst_stall
    // output queue ready signals
    , input                                       lce_cmd_ready_i
    , input                                       mem_cmd_ready_i
+   , input                                       mem_credits_empty_i
 
    // Messague Unit resource busy signals
 
@@ -82,6 +83,7 @@ module bp_cce_inst_stall
     // Message send
     stall_o |= (decoded_inst_i.lce_cmd_v & ~lce_cmd_ready);
     stall_o |= (decoded_inst_i.mem_cmd_v & ~mem_cmd_ready);
+    stall_o |= (decoded_inst_i.mem_cmd_v & mem_credits_empty_i);
 
     // Wait for queue operation
     stall_o |= (decoded_inst_i.wfq_v & ~(|(wfq_mask & wfq_v_vec)));

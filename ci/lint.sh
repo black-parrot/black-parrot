@@ -22,10 +22,10 @@ N=${2:-1}
 # Bash array to iterate over for configurations
 cfgs=(\
     "e_bp_unicore_cfg"
-    "e_bp_single_core_cfg"
-    "e_bp_single_core_ucode_cce_cfg"
-    "e_bp_quad_core_cfg"
-    "e_bp_quad_core_ucode_cce_cfg"
+    "e_bp_multicore_1_cfg"
+    "e_bp_multicore_1_cce_ucode_cfg"
+    "e_bp_multicore_4_cfg"
+    "e_bp_multicore_4_cce_ucode_cfg"
     )
 
 let JOBS=${#cfgs[@]}

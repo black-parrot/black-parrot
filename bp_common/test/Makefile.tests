@@ -4,6 +4,7 @@ include $(TOP)/Makefile.common
 include $(BP_TEST_DIR)/Makefile.linux
 
 perch_dir       := $(BP_TEST_SRC_DIR)/perch
+bootrom_dir     := $(BP_TEST_SRC_DIR)/bootrom
 bp_tests_dir    := $(BP_TEST_SRC_DIR)/bp_tests
 riscv_tests_dir := $(BP_TEST_SRC_DIR)/riscv-tests
 beebs_dir       := $(BP_TEST_SRC_DIR)/beebs
@@ -16,7 +17,7 @@ define submodule_test_template
 $(1)_tag := $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
 $(BP_TOUCH_DIR)/$$($(1)_tag):
 	rm -rf $(BP_TOUCH_DIR)/$(1).*
-	cd $(TOP); git submodule update --init --recursive $$($(1)_dir)
+	cd $(TOP); git submodule update --init --merge --recursive $$($(1)_dir)
 	+$(MAKE) $(1)_build
 	mkdir -p $(BP_TEST_MEM_DIR)/$(1)
 	find $(2) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/$(1)/ \;
@@ -51,7 +52,9 @@ spec_build:
 riscvdv_build:
 	$(MAKE) -C $(riscvdv_dir)
 
+linux: linux_build
 linux_build: $(fw_payload)
+	mkdir -p $(BP_TEST_MEM_DIR)/linux
 	cp $< $(BP_TEST_MEM_DIR)/linux/linux.riscv
 
 perch: $(BP_TEST_DIR)/lib/libperch.a
@@ -61,6 +64,10 @@ $(BP_TEST_DIR)/lib/libperch.a:
 	mkdir -p $(BP_TEST_DIR)/include
 	cp $(BP_TEST_DIR)/src/perch/libperch.a $(BP_TEST_DIR)/lib
 	cp $(BP_TEST_DIR)/src/perch/*.h $(BP_TEST_DIR)/include
+
+bootrom: $(bootrom_dir)/bootrom
+%/bootrom:
+	$(MAKE) -C $(bootrom_dir) $(@D)/bootrom.riscv
 
 demos:
 	$(MAKE) -C $(demos_dir)
@@ -74,13 +81,15 @@ $(eval $(call submodule_test_template,coremark,$(coremark_dir)))
 $(eval $(call submodule_test_template,spec,$(spec_dir)))
 $(eval $(call submodule_test_template,riscvdv,$(riscvdv_dir)))
 
-RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -d
+RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -d -t
 RISCV_OBJCOPY ?= $(CROSS_COMPILE)objcopy
 MEM2NBF       ?= $(BP_COMMON_DIR)/software/py/nbf.py
 DROMAJO       ?= dromajo
+SED           ?= sed
 
 %.mem: %.riscv
 	$(RISCV_OBJCOPY) -O verilog $*.riscv $@
+	$(SED) -i "s/@8/@0/g" $@
 
 %.bin: %.riscv
 	$(RISCV_OBJCOPY) -O binary $*.riscv $@

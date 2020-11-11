@@ -3,7 +3,7 @@
 // 
 // 
 
-`include "bp_me_cce_mem_if.vh"
+`include "bp_common_bedrock_if.vh"
 
 module bp_me_cce_to_cache_dma
 
@@ -14,9 +14,9 @@ module bp_me_cce_to_cache_dma
   
   import bsg_cache_pkg::*;
   
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
   
   ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
   ,localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
@@ -58,7 +58,7 @@ module bp_me_cce_to_cache_dma
   `declare_bsg_cache_dma_pkt_s(paddr_width_p);
   
   // cce
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   
   
   /********************* Resp queue fifo *********************/
@@ -116,14 +116,14 @@ module bp_me_cce_to_cache_dma
   ,.reset_i(reset_i)
   ,.valid_i(dma_data_fifo_valid_li)
   ,.data_i (dma_data_fifo_data_li)
-  ,.ready_o(dma_data_fifo_ready_lo)
+  ,.ready_and_o(dma_data_fifo_ready_lo)
   ,.valid_o(dma_data_v_o)
   ,.data_o (dma_data_o)
   ,.yumi_i (dma_data_yumi_i)
   );
   
   // input mem cmd
-  bp_cce_mem_msg_s mem_cmd_li;
+  bp_bedrock_cce_mem_msg_s mem_cmd_li;
   logic mem_cmd_yumi_lo;
   
   assign mem_cmd_li = mem_cmd_i;
@@ -138,7 +138,7 @@ module bp_me_cce_to_cache_dma
     dma_data_fifo_valid_li = 1'b0;
     queue_fifo_valid_li = 1'b0;
     
-    dma_pkt_fifo_data_li.write_not_read = (mem_cmd_li.header.msg_type == e_cce_mem_wr);
+    dma_pkt_fifo_data_li.write_not_read = (mem_cmd_li.header.msg_type == e_bedrock_mem_wr);
     dma_pkt_fifo_data_li.addr = mem_cmd_li.header.addr;
     dma_data_fifo_data_li = mem_cmd_li.data;
     queue_fifo_data_li = mem_cmd_li.header;
@@ -189,7 +189,7 @@ module bp_me_cce_to_cache_dma
   );
   
   // mem resp output
-  bp_cce_mem_msg_s mem_resp_lo;
+  bp_bedrock_cce_mem_msg_s mem_resp_lo;
   logic mem_resp_v_lo;
   
   assign mem_resp_o = mem_resp_lo;
@@ -208,7 +208,7 @@ module bp_me_cce_to_cache_dma
     
     if (~reset_i & queue_fifo_valid_lo)
       begin
-        if (mem_resp_lo.header.msg_type == e_cce_mem_wr)
+        if (mem_resp_lo.header.msg_type == e_bedrock_mem_wr)
           begin
             mem_resp_lo.data = '0;
             mem_resp_v_lo = 1'b1;

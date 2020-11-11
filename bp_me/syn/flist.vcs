@@ -32,10 +32,11 @@ $BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
 $BP_FE_DIR/src/include/bp_fe_pkg.vh
 # BE packages
 $BP_BE_DIR/src/include/bp_be_pkg.vh
-$BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
+$BP_BE_DIR/src/include/bp_be_dcache_pkg.vh
 # ME packages
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
+$BP_COMMON_DIR/src/v/bsg_bus_pack.v
 ## bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
