@@ -14,7 +14,7 @@ module bp_cce
   import bp_cce_pkg::*;
   import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
-  #(parameter bp_params_e bp_params_p      = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p      = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
@@ -32,28 +32,33 @@ module bp_cce
 
     // Interface Widths
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
   )
   (input                                               clk_i
    , input                                             reset_i
 
    // Configuration Interface
    , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
-   , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
+
+   // ucode programming interface, synchronous read, direct connection to RAM
+   , input                                             ucode_v_i
+   , input                                             ucode_w_i
+   , input [cce_pc_width_p-1:0]                        ucode_addr_i
+   , input [cce_instr_width_p-1:0]                     ucode_data_i
+   , output [cce_instr_width_p-1:0]                    ucode_data_o
 
    // LCE-CCE Interface
-   , input [lce_cce_req_width_lp-1:0]                  lce_req_i
+   , input [lce_req_msg_width_lp-1:0]                  lce_req_i
    , input                                             lce_req_v_i
    , output logic                                      lce_req_yumi_o
 
-   , input [lce_cce_resp_width_lp-1:0]                 lce_resp_i
+   , input [lce_resp_msg_width_lp-1:0]                 lce_resp_i
    , input                                             lce_resp_v_i
    , output logic                                      lce_resp_yumi_o
 
    // ready->valid
-   , output logic [lce_cmd_width_lp-1:0]               lce_cmd_o
+   , output logic [lce_cmd_msg_width_lp-1:0]           lce_cmd_o
    , output logic                                      lce_cmd_v_o
    , input                                             lce_cmd_ready_i
 
@@ -90,8 +95,8 @@ module bp_cce
   //synopsys translate_on
 
   // LCE-CCE and Mem-CCE Interface
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
+  `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // Config Interface
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -104,10 +109,10 @@ module bp_cce
   assign cfg_bus_cast_i = cfg_bus_i;
 
   // Message casting
-  bp_lce_cce_req_s  lce_req;
-  bp_lce_cce_resp_s lce_resp;
-  bp_lce_cmd_s      lce_cmd;
-  bp_cce_mem_msg_s  mem_cmd, mem_resp;
+  bp_bedrock_lce_req_msg_s  lce_req;
+  bp_bedrock_lce_resp_msg_s lce_resp;
+  bp_bedrock_lce_cmd_msg_s  lce_cmd;
+  bp_bedrock_cce_mem_msg_s  mem_cmd, mem_resp;
   assign lce_req   = lce_req_i;
   assign lce_resp  = lce_resp_i;
   assign lce_cmd_o = lce_cmd;
@@ -183,6 +188,7 @@ module bp_cce
   logic [lce_assoc_width_p-1:0]        gad_req_addr_way_lo;
   logic [lce_id_width_p-1:0]           gad_owner_lce_lo;
   logic [lce_assoc_width_p-1:0]        gad_owner_way_lo;
+  bp_coh_states_e                      gad_owner_coh_state_lo;
   logic                                gad_replacement_flag_lo;
   logic                                gad_upgrade_flag_lo;
   logic                                gad_cached_shared_flag_lo;
@@ -220,6 +226,7 @@ module bp_cce
   logic                                      msg_lce_resp_busy_lo;
   logic                                      msg_mem_resp_busy_lo;
   logic                                      msg_busy_lo;
+  logic                                      msg_mem_credits_empty_lo;
 
   // From Stall Unit
   //logic [counter_width_lp-1:0]               stall_count_lo;
@@ -235,7 +242,15 @@ module bp_cce
     inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+
       ,.cfg_bus_i(cfg_bus_i)
+
+      ,.ucode_v_i(ucode_v_i)
+      ,.ucode_w_i(ucode_w_i)
+      ,.ucode_addr_i(ucode_addr_i)
+      ,.ucode_data_i(ucode_data_i)
+      ,.ucode_data_o(ucode_data_o)
+
       ,.predicted_fetch_pc_i(predicted_fetch_pc_lo)
       ,.branch_resolution_pc_i(branch_resolution_pc_lo)
       ,.stall_i(stall_lo)
@@ -244,9 +259,6 @@ module bp_cce
       ,.inst_o(fetch_inst_lo)
       ,.inst_v_o(fetch_inst_v_lo)
       );
-
-  // Configuration Bus Microcode Data output
-  assign cfg_cce_ucode_data_o = fetch_inst_lo;
 
   // Inst Pre-decode
   bp_cce_inst_predecode
@@ -473,6 +485,7 @@ module bp_cce
       ,.req_addr_way_o(gad_req_addr_way_lo)
       ,.owner_lce_o(gad_owner_lce_lo)
       ,.owner_way_o(gad_owner_way_lo)
+      ,.owner_coh_state_o(gad_owner_coh_state_lo)
       ,.replacement_flag_o(gad_replacement_flag_lo)
       ,.upgrade_flag_o(gad_upgrade_flag_lo)
       ,.cached_shared_flag_o(gad_cached_shared_flag_lo)
@@ -514,6 +527,7 @@ module bp_cce
       ,.gad_req_addr_way_i(gad_req_addr_way_lo)
       ,.gad_owner_lce_i(gad_owner_lce_lo)
       ,.gad_owner_way_i(gad_owner_way_lo)
+      ,.gad_owner_coh_state_i(gad_owner_coh_state_lo)
       ,.gad_replacement_flag_i(gad_replacement_flag_lo)
       ,.gad_upgrade_flag_i(gad_upgrade_flag_lo)
       ,.gad_cached_shared_flag_i(gad_cached_shared_flag_lo)
@@ -609,6 +623,8 @@ module bp_cce
       ,.mem_resp_busy_o(msg_mem_resp_busy_lo)
       // Stall ucode (as in inv command being processed)
       ,.busy_o(msg_busy_lo)
+      // memory credits empty
+      ,.mem_credits_empty_o(msg_mem_credits_empty_lo)
 
       );
 
@@ -654,6 +670,7 @@ module bp_cce
 
       ,.lce_cmd_ready_i(lce_cmd_ready_i)
       ,.mem_cmd_ready_i(mem_cmd_ready_i)
+      ,.mem_credits_empty_i(msg_mem_credits_empty_lo)
 
       // From Messague Unit
       ,.msg_busy_i(msg_busy_lo)

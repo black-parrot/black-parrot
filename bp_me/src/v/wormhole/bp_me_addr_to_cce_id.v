@@ -3,7 +3,7 @@
 module bp_me_addr_to_cce_id
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    )
   (input [paddr_width_p-1:0]           paddr_i
@@ -51,7 +51,7 @@ bsg_hash_bank
 
 always_comb begin
   cce_id_o = '0;
-  if (external_io_v_li || (core_local_addr_v_li && (local_addr_li.dev == host_dev_gp)))
+  if (external_io_v_li || (core_local_addr_v_li && (local_addr_li.dev inside {boot_dev_gp, host_dev_gp})))
     // Stripe by 4kiB page, start at io CCE id
     cce_id_o = (num_io_p > 1)
                ? max_sac_cce_lp + paddr_i[page_offset_width_p+:`BSG_SAFE_CLOG2(num_io_p)]

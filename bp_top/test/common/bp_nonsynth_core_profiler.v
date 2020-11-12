@@ -1,15 +1,16 @@
 
   typedef struct packed
   {
-    logic freeze;
     logic fe_queue_stall;
     logic fe_wait_stall;
     logic itlb_miss;
     logic icache_miss;
+    logic icache_rollback;
     logic icache_fence;
     logic branch_override;
     logic ret_override;
     logic fe_cmd;
+    logic fe_cmd_fence;
     logic mispredict;
     logic control_haz;
     logic data_haz;
@@ -18,35 +19,40 @@
     logic struct_haz;
     logic dtlb_miss;
     logic dcache_miss;
+    logic dcache_rollback;
     logic long_haz;
     logic eret;
     logic exception;
     logic _interrupt;
+    logic unknown;
   }  bp_stall_reason_s;
 
   typedef enum logic [4:0]
   {
-    freeze               = 5'd20
-    ,fe_queue_stall      = 5'd19
-    ,fe_wait_stall       = 5'd18
-    ,itlb_miss           = 5'd17
-    ,icache_miss         = 5'd16
-    ,icache_fence        = 5'd15
-    ,branch_override     = 5'd14
-    ,ret_override        = 5'd13
-    ,fe_cmd              = 5'd12
-    ,mispredict          = 5'd11
-    ,control_haz         = 5'd10
-    ,data_haz            = 5'd9
-    ,load_dep            = 5'd8
-    ,mul_dep             = 5'd7
-    ,struct_haz          = 5'd6
-    ,dtlb_miss           = 5'd5
-    ,dcache_miss         = 5'd4
-    ,long_haz            = 5'd3
-    ,eret                = 5'd2
-    ,exception           = 5'd1
-    ,_interrupt           = 5'd0
+    fe_queue_stall       = 5'd23
+    ,fe_wait_stall       = 5'd22
+    ,itlb_miss           = 5'd21
+    ,icache_miss         = 5'd20
+    ,icache_rollback     = 5'd19
+    ,icache_fence        = 5'd18
+    ,branch_override     = 5'd17
+    ,ret_override        = 5'd16
+    ,fe_cmd              = 5'd15
+    ,fe_cmd_fence        = 5'd14
+    ,mispredict          = 5'd13
+    ,control_haz         = 5'd12
+    ,data_haz            = 5'd11
+    ,load_dep            = 5'd10
+    ,mul_dep             = 5'd9
+    ,struct_haz          = 5'd8
+    ,dtlb_miss           = 5'd7
+    ,dcache_miss         = 5'd6
+    ,dcache_rollback     = 5'd5
+    ,long_haz            = 5'd4
+    ,eret                = 5'd3
+    ,exception           = 5'd2
+    ,_interrupt          = 5'd1
+    ,unknown             = 5'd0
   } bp_stall_reason_e;
 
 // The BlackParrot core pipeline is a mostly non-stalling pipeline, decoupled between the front-end
@@ -56,14 +62,13 @@ module bp_nonsynth_core_profiler
   import bp_common_aviary_pkg::*;
   import bp_common_rv64_pkg::*;
   import bp_be_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
     , parameter stall_trace_file_p = "stall"
 
     , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
     , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
-    , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
     )
    (input clk_i
     , input reset_i
@@ -78,6 +83,7 @@ module bp_nonsynth_core_profiler
     // IF2 events
     , input itlb_miss
     , input icache_miss
+    , input icache_rollback
     , input icache_fence
     , input branch_override
     , input ret_override
@@ -85,10 +91,10 @@ module bp_nonsynth_core_profiler
     // Backwards ISS events
     // TODO: Differentiate between different FE cmds
     , input fe_cmd
+    , input fe_cmd_fence
 
     // ISD events
     , input mispredict
-    , input [vaddr_width_p-1:0] target
 
     , input long_haz
     , input control_haz
@@ -104,6 +110,7 @@ module bp_nonsynth_core_profiler
     // MEM events
     , input dtlb_miss
     , input dcache_miss
+    , input dcache_rollback
     , input eret
     , input exception
     , input _interrupt
@@ -111,10 +118,8 @@ module bp_nonsynth_core_profiler
     // Reservation packet
     , input [dispatch_pkt_width_lp-1:0] reservation
 
-    // Commit packet
-    , input [commit_pkt_width_lp-1:0] commit_pkt
     // Trap packet
-    , input [trap_pkt_width_lp-1:0] trap_pkt
+    , input [commit_pkt_width_lp-1:0] commit_pkt
     );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -142,35 +147,14 @@ module bp_nonsynth_core_profiler
      ,.data_o(reservation_r)
      );
 
-  logic [vaddr_width_p-1:0] target_r;
-  bsg_dff_chain
-   #(.width_p(vaddr_width_p)
-     ,.num_stages_p(4)
-     )
-   target_pipe
-    (.clk_i(clk_i)
-     ,.data_i(target)
-     ,.data_o(target_r)
-     );
-
   bp_be_commit_pkt_s commit_pkt_r;
   bsg_dff_reset
    #(.width_p($bits(bp_be_commit_pkt_s)))
-   commit_pipe
+   trap_pipe
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.data_i(commit_pkt)
      ,.data_o(commit_pkt_r)
-     );
-
-  bp_be_trap_pkt_s trap_pkt_r;
-  bsg_dff_reset
-   #(.width_p($bits(bp_be_trap_pkt_s)))
-   trap_pipe
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i(trap_pkt)
-     ,.data_o(trap_pkt_r)
      );
 
   logic [29:0] cycle_cnt;
@@ -192,75 +176,72 @@ module bp_nonsynth_core_profiler
         stall_stage_n[i] = (i == '0) ? '0 : stall_stage_r[i-1];
 
       // IF1
-      stall_stage_n[0].freeze            |= freeze_i;
       stall_stage_n[0].fe_wait_stall     |= fe_wait_stall;
       stall_stage_n[0].fe_queue_stall    |= fe_queue_stall;
       stall_stage_n[0].itlb_miss         |= itlb_miss;
+      stall_stage_n[0].icache_rollback   |= icache_rollback;
       stall_stage_n[0].icache_miss       |= icache_miss;
       stall_stage_n[0].icache_fence      |= icache_fence;
-      // Only some FE cmds affect IF1
       stall_stage_n[0].fe_cmd            |= fe_cmd;
+      stall_stage_n[0].exception         |= exception;
+      stall_stage_n[0].eret              |= eret;
+      stall_stage_n[0]._interrupt        |= _interrupt;
 
       // IF2
+      stall_stage_n[1].fe_queue_stall    |= fe_queue_stall;
       stall_stage_n[1].itlb_miss         |= itlb_miss;
-      stall_stage_n[1].icache_miss       |= icache_miss;
+      stall_stage_n[1].icache_rollback   |= icache_rollback;
       stall_stage_n[1].icache_fence      |= icache_fence;
-      stall_stage_n[1].branch_override   |= branch_override;
-      stall_stage_n[1].ret_override      |= ret_override;
       stall_stage_n[1].fe_cmd            |= fe_cmd;
       stall_stage_n[1].mispredict        |= mispredict;
-
-      // ISS
-      stall_stage_n[2].mispredict        |= mispredict;
-      stall_stage_n[2].itlb_miss         |= itlb_miss;
-      stall_stage_n[2].icache_miss       |= icache_miss;
-      stall_stage_n[2].icache_fence      |= icache_fence;
-      stall_stage_n[2].exception         |= exception;
-      stall_stage_n[2].eret              |= eret;
-      stall_stage_n[2]._interrupt         |= _interrupt;
+      stall_stage_n[1].exception         |= exception;
+      stall_stage_n[1].eret              |= eret;
+      stall_stage_n[1]._interrupt        |= _interrupt;
 
       // ISD
-      stall_stage_n[3].mispredict        |= mispredict;
-      stall_stage_n[3].dtlb_miss         |= dtlb_miss;
-      stall_stage_n[3].dcache_miss       |= dcache_miss;
-      stall_stage_n[3].exception         |= exception;
-      stall_stage_n[3].eret              |= eret;
-      stall_stage_n[3]._interrupt         |= _interrupt;
+      stall_stage_n[2].mispredict        |= mispredict;
+      stall_stage_n[2].itlb_miss         |= itlb_miss;
+      stall_stage_n[2].icache_rollback   |= icache_rollback;
+      stall_stage_n[2].icache_fence      |= icache_fence;
+      stall_stage_n[2].fe_cmd            |= fe_cmd;
+      stall_stage_n[2].dcache_rollback   |= dcache_rollback;
+      stall_stage_n[2].branch_override   |= branch_override;
+      stall_stage_n[2].ret_override      |= ret_override;
+      stall_stage_n[2].exception         |= exception;
+      stall_stage_n[2].eret              |= eret;
+      stall_stage_n[2]._interrupt        |= _interrupt;
 
       // EX1
-      stall_stage_n[4].mispredict        |= mispredict;
-      stall_stage_n[4].dtlb_miss         |= dtlb_miss;
-      stall_stage_n[4].dcache_miss       |= dcache_miss;
-      stall_stage_n[4].long_haz          |= long_haz;
-      stall_stage_n[4].exception         |= exception;
-      stall_stage_n[4].eret              |= eret;
-      stall_stage_n[4]._interrupt         |= _interrupt;
-      stall_stage_n[4].control_haz       |= control_haz;
-      stall_stage_n[4].load_dep          |= load_dep;
-      stall_stage_n[4].mul_dep           |= mul_dep;
-      stall_stage_n[4].data_haz          |= data_haz;
-      stall_stage_n[4].struct_haz        |= struct_haz;
+      stall_stage_n[3].fe_cmd_fence      |= fe_cmd_fence;
+      stall_stage_n[3].icache_rollback   |= icache_rollback;
+      stall_stage_n[3].mispredict        |= mispredict;
+      stall_stage_n[3].dcache_miss       |= dcache_miss;
+      stall_stage_n[3].long_haz          |= long_haz;
+      stall_stage_n[3].mul_dep           |= mul_dep;
+      stall_stage_n[3].data_haz          |= data_haz;
+      stall_stage_n[3].struct_haz        |= struct_haz;
+      stall_stage_n[3].control_haz       |= control_haz;
+      stall_stage_n[3].load_dep          |= load_dep;
+      stall_stage_n[3].dcache_rollback   |= dcache_rollback;
+      stall_stage_n[3].exception         |= exception;
+      stall_stage_n[3].eret              |= eret;
+      stall_stage_n[3]._interrupt        |= _interrupt;
 
       // EX2
-      stall_stage_n[5].dtlb_miss         |= dtlb_miss;
-      stall_stage_n[5].dcache_miss       |= dcache_miss;
+      // We stall for up to 3 cycles for control hazards (CSRs)
+      stall_stage_n[4].mispredict        |= mispredict;
+      stall_stage_n[4].control_haz       |= control_haz;
+      stall_stage_n[4].dcache_rollback   |= dcache_rollback;
+      stall_stage_n[4].exception         |= exception;
+      stall_stage_n[4].eret              |= eret;
+      stall_stage_n[4]._interrupt        |= _interrupt;
+
+      // EX3
+      stall_stage_n[5].control_haz       |= control_haz;
+      stall_stage_n[5].dcache_rollback   |= dcache_rollback;
       stall_stage_n[5].exception         |= exception;
       stall_stage_n[5].eret              |= eret;
       stall_stage_n[5]._interrupt        |= _interrupt;
-
-      // EX3
-      stall_stage_n[6].dtlb_miss         |= dtlb_miss;
-      stall_stage_n[6].dcache_miss       |= dcache_miss;
-      stall_stage_n[6].exception         |= exception;
-      stall_stage_n[6].eret              |= eret;
-      stall_stage_n[6]._interrupt        |= _interrupt;
-
-      // EX4
-      stall_stage_n[7].dtlb_miss         |= dtlb_miss;
-      stall_stage_n[7].dcache_miss       |= dcache_miss;
-      stall_stage_n[7].exception         |= exception;
-      stall_stage_n[7].eret              |= eret;
-      stall_stage_n[7]._interrupt        |= _interrupt;
     end
 
   bp_stall_reason_s stall_reason_dec;
@@ -277,6 +258,11 @@ module bp_nonsynth_core_profiler
      );
   assign stall_reason_enum = bp_stall_reason_e'(stall_reason_lo);
 
+  int stall_hist [bp_stall_reason_e];
+  always_ff @(posedge clk_i)
+    if (~reset_i & ~freeze_i & ~commit_pkt_r.instret)
+      stall_hist[stall_reason_enum] <= stall_hist[stall_reason_enum] + 1'b1;
+
   integer file;
   string file_name;
   wire reset_li = reset_i | freeze_i;
@@ -292,18 +278,24 @@ module bp_nonsynth_core_profiler
 
   always_ff @(negedge clk_i)
     begin
-      if (~reset_i & ~freeze_i & commit_pkt_r.v)
+      if (~reset_i & ~freeze_i & commit_pkt_r.instret)
         $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "instr");
-      else if (~reset_i & ~freeze_i & ~commit_pkt_r.v & stall_reason_v)
-        $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, stall_reason_enum.name());
-      else
-        $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "unknown");
-
-      if (~reset_i & ~freeze_i & ~commit_pkt_r.v & stall_reason_v & (stall_reason_enum.name() == "mispredict"))
-        $fwrite(file, "_%x\n", target_r);
       else if (~reset_i & ~freeze_i)
+        $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, stall_reason_enum.name());
+
+      if (~reset_i & ~freeze_i)
         $fwrite(file, "\n");
     end
+
+  `ifndef VERILATOR
+  final
+    begin
+      $fwrite(file, "=============================\n");
+      $fwrite(file, "Total Stalls:\n");
+      foreach (stall_hist[i])
+        $fwrite(file, "%s: %0d\n", i.name(), stall_hist[i]);
+    end
+  `endif
 
 endmodule
 

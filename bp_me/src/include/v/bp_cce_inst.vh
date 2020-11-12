@@ -13,7 +13,7 @@
  *   directly in hardware (e.g., ALU increment and decrement).
  *
  *   Note: this file may rely on defines from bsg_defines.h in the BaseJump STL repo.
- *   Note: this file relies on the LCE-CCE IF defines in bp_common_me_if.vh
+ *   Note: this file relies on bp_common_bedrock_if.vh
  */
 
 `ifndef BP_CCE_INST_VH
@@ -348,12 +348,10 @@ typedef enum logic [3:0] {
   ,e_opd_owner_lce                       = 4'b0101 // MSHR.owner_lce_id
   ,e_opd_owner_way                       = 4'b0110 // MSHR.owner_way_id
   ,e_opd_next_coh_state                  = 4'b0111 // MSHR.next_coh_state
-  ,e_opd_flags                           = 4'b1000 // MSHR.flags
+  ,e_opd_flags                           = 4'b1000 // MSHR.flags & imm[0+:num_flags]
   ,e_opd_msg_size                        = 4'b1001 // MSHR.msg_size
   ,e_opd_lru_coh_state                   = 4'b1010 // MSHR.lru_coh_state
-
-  // only used as a source
-  ,e_opd_flags_and_mask                  = 4'b1100 // MSHR.flags & imm[0+:num_flags]
+  ,e_opd_owner_coh_state                 = 4'b1011 // MSHR.owner_coh_state
 
   // sharers vectors require src_b to provide GPR rX containing index to use
   // These can only be used as source a, not as source b or destinations
@@ -523,6 +521,7 @@ typedef enum logic [3:0] {
   ,e_mux_sel_coh_next_coh_state          = 4'b1000
   ,e_mux_sel_coh_lru_coh_state           = 4'b1001
   ,e_mux_sel_sharer_state                = 4'b1010 // Sharer's vector states, indexed by src_a
+  ,e_mux_sel_coh_owner_coh_state         = 4'b1011
   ,e_mux_sel_coh_inst_imm                = 4'b1111
 } bp_cce_inst_mux_sel_coh_state_e;
 
@@ -794,7 +793,7 @@ typedef struct packed {
     bp_cce_inst_mux_sel_way_e                    way_sel;
     // msg_size field must be same or fewer bits than way_sel field
     // currently, msg_size requires 3 bits to hold bp_mem_msg_size_e from
-    // bp_common_me_if.vh
+    // bp_common_lce_cce_if.vh
     logic [$bits(bp_cce_inst_mux_sel_way_e)-1:0] msg_size;
   }                                      way_or_size;
   bp_cce_inst_opd_gpr_e                  src_a;
@@ -802,8 +801,8 @@ typedef struct packed {
   bp_cce_inst_mux_sel_addr_e             addr_sel;
   union packed
   {
-    bp_lce_cmd_type_e             lce_cmd;
-    bp_cce_mem_cmd_type_e         mem_cmd;
+    bp_bedrock_cmd_type_e         lce_cmd;
+    bp_bedrock_mem_type_e         mem_cmd;
   }                                      cmd;
   logic                                  spec;
   logic                                  custom;
@@ -916,7 +915,7 @@ typedef struct packed {
   logic                                    popd;
   logic                                    pushq;
   logic                                    pushq_custom;
-  bp_mem_msg_size_e                        msg_size;
+  bp_bedrock_msg_size_e                    msg_size;
   bp_cce_inst_dst_q_sel_e                  pushq_qsel;
   bp_cce_inst_src_q_sel_e                  popq_qsel;
   logic                                    lce_req_yumi;
@@ -924,9 +923,9 @@ typedef struct packed {
   logic                                    mem_resp_yumi;
   logic                                    pending_yumi;
   logic                                    lce_cmd_v;
-  bp_lce_cmd_type_e                        lce_cmd;
+  bp_bedrock_cmd_type_e                    lce_cmd;
   logic                                    mem_cmd_v;
-  bp_cce_mem_cmd_type_e                    mem_cmd;
+  bp_bedrock_mem_type_e                    mem_cmd;
   logic                                    inv_cmd_v;
 
   // GPR write mask
@@ -943,6 +942,7 @@ typedef struct packed {
   logic                                    owner_way_w_v;
   logic                                    next_coh_state_w_v;
   logic                                    lru_coh_state_w_v;
+  logic                                    owner_coh_state_w_v;
   // Flag write mask - for instructions that write flags, e.g., GAD, poph, mov, sf
   logic [`bp_cce_inst_num_flags-1:0]       flag_w_v;
   logic                                    msg_size_w_v;

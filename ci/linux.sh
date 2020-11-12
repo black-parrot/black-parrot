@@ -22,6 +22,8 @@ N=${2:-1}
 # Bash array to iterate over for configurations
 cfgs=(\
     "e_bp_unicore_cfg" \
+    "e_bp_multicore_1_cfg" \
+    "e_bp_multicore_1_cce_ucode_cfg" \
     )
 # For now, just run linux regression on unicore cfg
 #    "e_bp_single_core_ucode_cce_cfg" \
@@ -31,10 +33,10 @@ let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Build linux binary
-make -C bp_common/test linux_build
+make -C bp_common/test linux
 
 # The base command to append the configuration to
-cmd_base="make -j ${CORES_PER_JOB} -C bp_top/syn run_psample.v SUITE=linux PROG=linux SAMPLE_INSTR_P=10000000 SAMPLE_MEMSIZE=256"
+cmd_base="make -j ${CORES_PER_JOB} -C bp_top/syn run_psample.v SUITE=linux PROG=linux SAMPLE_INSTR_P=10000000 SAMPLE_MEMSIZE=256 COSIM_P=1"
 
 # Any setup needed for the job
 make -C bp_top/syn clean.${SUFFIX}

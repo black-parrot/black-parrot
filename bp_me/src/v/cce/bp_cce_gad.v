@@ -19,7 +19,7 @@ module bp_cce_gad
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
@@ -47,6 +47,7 @@ module bp_cce_gad
 
    , output logic [lce_id_width_p-1:0]                     owner_lce_o
    , output logic [lce_assoc_width_p-1:0]                  owner_way_o
+   , output bp_coh_states_e                                owner_coh_state_o
 
    , output logic                                          replacement_flag_o
    , output logic                                          upgrade_flag_o
@@ -143,8 +144,10 @@ module bp_cce_gad
       );
 
   assign owner_lce_o = (gad_v_i & owner_lce_v)
-                          ? {'0, owner_lce_lo} : '0;
+                       ? {'0, owner_lce_lo} : '0;
   assign owner_way_o = (gad_v_i & owner_lce_v)
-                          ? {'0, sharers_ways_i[owner_lce_lo]} : '0;
+                       ? sharers_ways_i[owner_lce_lo] : '0;
+  assign owner_coh_state_o = (gad_v_i & owner_lce_v)
+                             ? sharers_coh_states_i[owner_lce_lo] : e_COH_I;
 
 endmodule

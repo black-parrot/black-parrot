@@ -28,12 +28,6 @@
   branch = master
   ignore = dirty
 
-[submodule "external/DRAMSim2"]
-  path = external/DRAMSim2
-  url = https://github.com/umd-memsys/DRAMSim2.git
-  branch = master
-  ignore = dirty
-
 [submodule "bp_common/test/src/riscv-tests"]
   path = bp_common/test/src/riscv-tests
   url = https://github.com/black-parrot/riscv-tests.git
@@ -89,12 +83,6 @@
   branch = master
   ignore = dirty
 
-[submodule "external/DRAMsim3"]
-  path = external/DRAMsim3
-  url = https://github.com/umd-memsys/DRAMsim3.git
-  branch = master
-  ignore = dirty
-
 [submodule "external/bsg_sv2v"]
   path = external/bsg_sv2v
   url = https://github.com/bespoke-silicon-group/bsg_sv2v.git
@@ -120,12 +108,6 @@
   branch = master
   ignore = dirty
 
-[submodule "external/zachjs_sv2v"]
-  path = external/zachjs_sv2v
-  url = https://github.com/zachjs/sv2v.git
-  branch = master
-  ignore = dirty
-
 [submodule "bp_common/test/src/linux"]
   path = bp_common/test/src/linux
   url = https://github.com/torvalds/linux
@@ -135,5 +117,11 @@
 [submodule "bp_common/test/src/buildroot"]
   path = bp_common/test/src/buildroot
   url = https://github.com/buildroot/buildroot
+  branch = master
+  ignore = dirty
+
+[submodule "external/HardFloat"]
+  path = external/HardFloat
+  url = https://github.com/bsg-external/HardFloat.git
   branch = master
   ignore = dirty

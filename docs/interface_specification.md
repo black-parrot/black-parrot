@@ -1,11 +1,11 @@
 # BlackParrot Interface Specifications
 
-BlackParrot is designed as a set of modular processor building blocks connected by intentionally designed, narrow, flexible interfaces. By standardizing these interfaces at a suitable level of abstraction, designers can easily understand differnt configurations composing a wide variety of implementations, write peripheral components, or even substitute their own optimized version of modules. BlackParrot currently has 6 standardized interfaces which are unlikely to significantly change.
-- Front End to Back End (Issue Interface)
-- Back End to Front End (Resolution Interface)
-- Cache Service (Cache Miss and Management Interface)
-- Local Cache Engine to Cache Coherence Engine (BedRock Interface)
-- Memory Interface (DRAM and I/O Interfaces)
+BlackParrot is designed as a set of modular processor building blocks connected by intentionally designed, narrow, flexible interfaces. By standardizing these interfaces at a suitable level of abstraction, designers can easily understand differnt configurations composing a wide variety of implementations, write peripheral components, or even substitute their own optimized version of modules. BlackParrot currently has 5 standardized interfaces which are unlikely to significantly change.
+- Front End to Back End (Core Interface, Issue Channel)
+- Back End to Front End (Core Interface, Resolution Channel)
+- Cache Engine (Cache Miss, Fill, and Coherence Interfaces)
+- Local Cache Engine to Cache Coherence Engine (BedRock Interface, Coherence Channels)
+- Memory Interface (BedRock Interface, DRAM and I/O Channels)
 
 
 ## FE-BE Interfaces
@@ -128,10 +128,10 @@ Illegal Instruction
       - All asid flag
     - A simple implementation will flush the entire itlb
 
-## Cache Service Interface
+## Cache Engine Interface
 
-The Cache Service interface provides flexible connections between an (optionally) coherent cache and
-a Cache Engine, which services misses, invalidations, coherence transactions, etc. The Cache Service
+The Cache Engine interface provides flexible connections between an (optionally) coherent cache and
+a Cache Engine, which services misses, invalidations, coherence transactions, etc. The Cache Engine
 interface supports both coherent and non-coherent caches, and can be extended to support
 both blocking and non-blocking caches. The interface is latency insensitive and may be optionally
 routed through a FIFO. BlackParrot provides 3 types of Cache Engines:
@@ -147,7 +147,7 @@ routed through a FIFO. BlackParrot provides 3 types of Cache Engines:
 More details are provided about the LCE and CCE interface in the following section.
 
 A UCE implementation must support the following operations:
-- Service loads, stores and optionally amo operations
+- Engine loads, stores and optionally amo operations
 - Handle remote invalidations
 - Handle both uncached and cached requests
 - Support both write-through and write-back protocols
@@ -225,6 +225,11 @@ A memory command or response packet is composed of:
   - Whether this is a speculative request
 - Data
 
+Misaligned addresses return data wrapped around the request size using the following scheme:
+
+Request: 0x0 [d c b a]
+Request: 0x2 [b a d c]
+
 ## LCE-CCE Interface
 
 The LCE-CCE Interface comprises the connections between the BlackParrot caches and the
@@ -246,12 +251,14 @@ The LCE-CCE Interface comprises three networks: Request, Command, and Response. 
 LCE initiates a coherence request using the Request network. The CCEs issue commands, such as
 invalidations or tag and data commands to complete requests, on the Command network while
 processing a request. The LCEs respond to commands issued by the CCEs by sending messages
-on the Response network. Each of these networks is point-to-point ordered.
+on the Response network. The current implementation of BlackParrot uses point-to-point
+ordered networks for all of the LCE-CCE Interface networks, however, the coherence protocol
+is designed to be correct on unordered networks.
 
 Custom messages are also supported by the interface, and may their processing is dependent on
 the LCE and CCE implementations.
 
-The LCE-CCE Interface is defined in [bp\_common\_me\_if.vh](../bp_common/src/include/bp_common_me_if.vh)
+The LCE-CCE Interface is defined in [bp\_common\_bedrock\_if.vh](../bp_common/src/include/bp_common_bedrock_if.vh)
 
 ### Request Network
 
@@ -305,15 +312,18 @@ A Command has the following fields:
 
 Command Message Types:
 * Sync - synchronization command during system initialization
-* Set Clear - set clear command during system initialization
-* Invalidate - invalidate a specific cache block (given by address and way) in an LCE
-* Set Tag - send tag and coherence state to an LCE, but no not wake up LCE
-* Data and Tag - send tag, coherence state, and cache block data to an LCE, and wake up the LCE
-* Set Tag and Wakeup - send tag and coherence state to an LCE, and wake up the LCE
-* Transfer - command an LCE to send cache block and tag to another LCE
-* Writeback - command an LCE to writeback a (potentially) dirty cache block
-* Uncached Store Done - inform LCE that an uncached store was completed by memory
+* Set Clear - clear entire cache set (invalidate all blocks in set)
+* Invalidate - invalidate specified cache block
+* Set State - set coherence state for specified cache block
+* Data and Tag - fill data, tag, and coherence state for specified cache block
+* Set Tag and Wakeup - set tag and coherence state for specified block and wake up LCE (miss resolved)
+* Writeback - command LCE to writeback a (potentially) dirty cache block
+* Transfer - command LCE to send cache block and tag to another LCE
+* Set State & Writeback - set coherence state then writeback cache block
+* Set State & Transfer - set coherence state then transfer cache block to specified target LCE
+* Set State & Transfer & Writeback - set coherence state, transfer cache block to target LCE, and writeback cache block
 * Uncached Data - send uncached load data to an LCE
+* Uncached Store Done - inform LCE that an uncached store was completed by memory
 
 ### Response Network
 

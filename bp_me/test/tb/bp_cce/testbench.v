@@ -16,35 +16,23 @@ module testbench
    `declare_bp_proc_params(bp_params_p)
 
    // interface widths
-   `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter cce_trace_p = 0
    , parameter axe_trace_p = 0
    , parameter instr_count = 1
    , parameter skip_init_p = 0
    , parameter lce_trace_p = 0
-	 , parameter dram_trace_p = 0
+   , parameter dram_trace_p = 0
+   , parameter dram_fixed_latency_p=0
 
-	 // memory params
-   , parameter mem_zero_p         = 1
+   // memory params
    , parameter mem_load_p         = 0
    , parameter mem_file_p         = "inv"
    , parameter mem_cap_in_bytes_p = 2**20
    // CCE testing uses any address it wants, no DRAM offset required
    , parameter mem_offset_p       = '0
-
-   , parameter use_max_latency_p      = 0
-   , parameter use_random_latency_p   = 1
-   , parameter use_dramsim2_latency_p = 0
-
-   , parameter max_latency_p = 15
-
-   , parameter dram_clock_period_in_ps_p = 1000
-   , parameter dram_cfg_p                = "dram_ch.ini"
-   , parameter dram_sys_cfg_p            = "dram_sys.ini"
-   , parameter dram_capacity_p           = 16384
 
    // size of CCE-Memory buffers for cmd/resp messages
    // for this testbench (one LCE, one CCE, one memory) only need enough space to hold as many
@@ -59,32 +47,44 @@ module testbench
    )
   (input clk_i
    , input reset_i
+   , input dram_clk_i
+   , input dram_reset_i
    );
 
+export "DPI-C" function get_dram_period;
+export "DPI-C" function get_sim_period;
+
+function int get_dram_period();
+  return (`dram_pkg::tck_ps);
+endfunction
+
+function int get_sim_period();
+  return (`BP_SIM_CLK_PERIOD);
+endfunction
+
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
+`declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+`declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
 // CFG IF
 bp_cfg_bus_s           cfg_bus_lo;
-bp_cce_mem_msg_s       cfg_mem_cmd_lo;
+bp_bedrock_cce_mem_msg_s cfg_mem_cmd_lo;
 logic                  cfg_mem_cmd_v_lo, cfg_mem_cmd_ready_li;
 
 // CCE-MEM IF
-bp_cce_mem_msg_s       mem_resp;
-logic                  mem_resp_v, mem_resp_yumi;
-bp_cce_mem_msg_s       mem_cmd;
-logic                  mem_cmd_v, mem_cmd_ready;
+bp_bedrock_cce_mem_msg_s mem_resp;
+logic                    mem_resp_v, mem_resp_yumi;
+bp_bedrock_cce_mem_msg_s mem_cmd;
+logic                    mem_cmd_v, mem_cmd_ready;
 
 // LCE-CCE IF
-bp_lce_cce_req_s       lce_req_lo, lce_req;
+bp_bedrock_lce_req_msg_s  lce_req_lo, lce_req;
+bp_bedrock_lce_resp_msg_s lce_resp, lce_resp_lo;
+bp_bedrock_lce_cmd_msg_s  lce_cmd, lce_cmd_lo, lce_cmd_out_lo;
 logic                  lce_req_v, lce_req_v_lo, lce_req_yumi, lce_req_ready_li;
-bp_lce_cce_resp_s      lce_resp, lce_resp_lo;
 logic                  lce_resp_v, lce_resp_v_lo, lce_resp_yumi, lce_resp_ready_li;
-bp_lce_cmd_s           lce_cmd, lce_cmd_lo;
-logic                  lce_cmd_v, lce_cmd_ready;
+logic                  lce_cmd_v, lce_cmd_yumi;
 logic                  lce_cmd_v_lo, lce_cmd_ready_li;
-bp_lce_cmd_s           lce_cmd_out_lo;
 logic                  lce_cmd_out_v_lo, lce_cmd_out_ready_li;
 // Single LCE setup - LCE should never send a Data Command
 assign lce_cmd_out_ready_li = '0;
@@ -214,7 +214,7 @@ bind bp_cce_wrapper
       );
 
 bsg_two_fifo
-#(.width_p(lce_cce_req_width_lp)
+#(.width_p(lce_req_msg_width_lp)
   )
 lce_req_buffer
  (.clk_i(clk_i)
@@ -230,7 +230,7 @@ lce_req_buffer
   );
 
 bsg_two_fifo
-#(.width_p(lce_cce_resp_width_lp)
+#(.width_p(lce_resp_msg_width_lp)
   )
 lce_resp_buffer
  (.clk_i(clk_i)
@@ -246,7 +246,7 @@ lce_resp_buffer
   );
 
 bsg_two_fifo
-#(.width_p(lce_cmd_width_lp)
+#(.width_p(lce_cmd_msg_width_lp)
   )
 lce_cmd_buffer
  (.clk_i(clk_i)
@@ -261,6 +261,12 @@ lce_cmd_buffer
   ,.yumi_i(lce_cmd_yumi)
   );
 
+logic cce_ucode_v_li;
+logic cce_ucode_w_li;
+logic [cce_pc_width_p-1:0] cce_ucode_addr_li;
+logic [cce_instr_width_p-1:0] cce_ucode_data_li;
+logic [cce_instr_width_p-1:0] cce_ucode_data_lo;
+
 // CCE
 wrapper
 #(.bp_params_p(bp_params_p)
@@ -271,7 +277,12 @@ wrapper
   ,.reset_i(reset_i)
 
   ,.cfg_bus_i(cfg_bus_lo)
-  ,.cfg_cce_ucode_data_o()
+
+  ,.ucode_v_i(cce_ucode_v_li)
+  ,.ucode_w_i(cce_ucode_w_li)
+  ,.ucode_addr_i(cce_ucode_addr_li)
+  ,.ucode_data_i(cce_ucode_data_li)
+  ,.ucode_data_o(cce_ucode_data_lo)
 
   ,.lce_cmd_o(lce_cmd_lo)
   ,.lce_cmd_v_o(lce_cmd_v_lo)
@@ -304,8 +315,8 @@ wrapper
 // deadlock!
 
 // Memory Command Buffer
-bp_cce_mem_msg_s       mem_cmd_lo;
-logic                  mem_cmd_v_lo, mem_cmd_ready_lo;
+bp_bedrock_cce_mem_msg_s mem_cmd_lo;
+logic                    mem_cmd_v_lo, mem_cmd_ready_lo;
 bsg_fifo_1r1w_small
 #(.width_p(cce_mem_msg_width_lp)
   ,.els_p(mem_buffer_els_lp)
@@ -324,8 +335,8 @@ mem_cmd_buffer
   );
 
 // Memory Response Buffer
-bp_cce_mem_msg_s       mem_resp_lo;
-logic                  mem_resp_v_lo, mem_resp_ready_lo;
+bp_bedrock_cce_mem_msg_s mem_resp_lo;
+logic                    mem_resp_v_lo, mem_resp_ready_lo;
 bsg_fifo_1r1w_small
 #(.width_p(cce_mem_msg_width_lp)
   ,.els_p(mem_buffer_els_lp)
@@ -347,20 +358,12 @@ mem_resp_buffer
 bp_mem
 #(.bp_params_p(bp_params_p)
   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-  ,.mem_zero_p(mem_zero_p)
-  ,.mem_load_p(mem_load_p)
+  ,.mem_load_p(0)
   ,.mem_file_p(mem_file_p)
   ,.mem_offset_p(mem_offset_p)
-
-  ,.use_max_latency_p(use_max_latency_p)
-  ,.use_random_latency_p(use_random_latency_p)
-  ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
-  ,.max_latency_p(max_latency_p)
-
-  ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-  ,.dram_cfg_p(dram_cfg_p)
-  ,.dram_sys_cfg_p(dram_sys_cfg_p)
-  ,.dram_capacity_p(dram_capacity_p)
+  ,.use_ddr_p(0)
+  ,.use_dramsim3_p(0)
+  ,.dram_fixed_latency_p(dram_fixed_latency_p)
   )
 mem
  (.clk_i(clk_i)
@@ -373,6 +376,9 @@ mem
   ,.mem_resp_o(mem_resp_lo)
   ,.mem_resp_v_o(mem_resp_v_lo)
   ,.mem_resp_yumi_i(mem_resp_v_lo & mem_resp_ready_lo)
+
+  ,.dram_clk_i(dram_clk_i)
+  ,.dram_reset_i(dram_reset_i)
   );
 
 bp_mem_nonsynth_tracer
@@ -410,11 +416,12 @@ bp_cfg
    ,.did_i('0)
    ,.host_did_i('0)
    ,.cord_i(cord_li)
-   ,.irf_data_i('0)
-   ,.npc_data_i('0)
-   ,.csr_data_i('0)
-   ,.priv_data_i('0)
-   ,.cce_ucode_data_i('0)
+
+   ,.cce_ucode_v_o(cce_ucode_v_li)
+   ,.cce_ucode_w_o(cce_ucode_w_li)
+   ,.cce_ucode_addr_o(cce_ucode_addr_li)
+   ,.cce_ucode_data_o(cce_ucode_data_li)
+   ,.cce_ucode_data_i(cce_ucode_data_lo)
    );
 
 // CFG loader

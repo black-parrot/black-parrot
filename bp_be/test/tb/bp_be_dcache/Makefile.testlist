@@ -9,15 +9,24 @@ DCACHE_TESTLIST := \
 	uncached_test \
 	wt_test_1 \
 	wt_test_2 \
-	wt_test_3
+	wt_test_3 \
+	multicycle_fill_test
+
+ifeq ($(UCE_P),1)
+CE := UCE
+else
+CE := CCE
+endif
+
+ifeq ($(WT_P),1)
+CA := WT
+else
+CA := WB
+endif
 
 run_testlist.%:
-	$(MAKE) build.$* CE=CCE CA=WB TAG=CCE.WB
-	$(MAKE) build.$* CE=UCE CA=WB TAG=UCE.WB
-	$(MAKE) build.$* CE=UCE CA=WT TAG=UCE.WT
-	$(MAKE) $(addsuffix .$*, $(addprefix run_test.CCE.WB.,$(DCACHE_TESTLIST)))
-	$(MAKE) $(addsuffix .$*, $(addprefix run_test.UCE.WB.,$(DCACHE_TESTLIST)))
-	$(MAKE) $(addsuffix .$*, $(addprefix run_test.UCE.WT.,$(DCACHE_TESTLIST)))
+	$(MAKE) build.$* TAG=$(CE).$(CA)
+	$(MAKE) $(addsuffix .$*, $(addprefix run_test.$(CE).$(CA).,$(DCACHE_TESTLIST)))
 
 # We can trim this up a bit when we have custom configs
 run_test.%:
@@ -25,4 +34,4 @@ run_test.%:
 	$(eval override CA    := $(word 2,$(subst .,  ,$*)))
 	$(eval override PROG  := $(word 3,$(subst .,  ,$*)))
 	$(eval override TS    := $(word 4,$(subst .,  ,$*)))
-	$(MAKE) sim.$(TS) CE=$(CE) CA=$(CA) PROG=$(PROG) TAG=$(CE).$(CA)
+	$(MAKE) sim.$(TS) PROG=$(PROG) TAG=$(CE).$(CA)

@@ -8,9 +8,9 @@ module bp_clint_slice
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce)
 
    // TODO: Should I be a global param?
    , localparam clint_max_outstanding_p = 2
@@ -18,11 +18,11 @@ module bp_clint_slice
   (input                                                clk_i
    , input                                              reset_i
 
-   , input [cce_mem_msg_width_lp-1:0]                   mem_cmd_i
+   , input [xce_mem_msg_width_lp-1:0]                   mem_cmd_i
    , input                                              mem_cmd_v_i
    , output                                             mem_cmd_ready_o
 
-   , output [cce_mem_msg_width_lp-1:0]                  mem_resp_o
+   , output [xce_mem_msg_width_lp-1:0]                  mem_resp_o
    , output                                             mem_resp_v_o
    , input                                              mem_resp_yumi_i
 
@@ -32,14 +32,14 @@ module bp_clint_slice
    , output                                             external_irq_o
    );
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+`declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce);
 
-bp_cce_mem_msg_s mem_cmd_li, mem_cmd_lo;
+bp_bedrock_xce_mem_msg_s mem_cmd_li, mem_cmd_lo;
 assign mem_cmd_li = mem_cmd_i;
 
 logic small_fifo_v_lo, small_fifo_yumi_li;
 bsg_fifo_1r1w_small
- #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(clint_max_outstanding_p))
+ #(.width_p($bits(bp_bedrock_xce_mem_msg_s)), .els_p(clint_max_outstanding_p))
  small_fifo
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -69,7 +69,7 @@ always_comb
     mipi_cmd_v     = 1'b0;
     plic_cmd_v     = 1'b0;
 
-    wr_not_rd = mem_cmd_lo.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
+    wr_not_rd = mem_cmd_lo.header.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
 
     unique 
     casez ({local_addr.dev, local_addr.addr})
@@ -97,7 +97,7 @@ bsg_strobe
    ,.init_val_r_i(ds_ratio_li)
    ,.strobe_r_o(mtime_inc_li)
    );
-assign mtime_val_li = mem_cmd_li.data[0+:dword_width_p];
+assign mtime_val_li = mem_cmd_lo.data[0+:dword_width_p];
 wire mtime_w_v_li = wr_not_rd & mtime_cmd_v;
 bsg_counter_set_en
  #(.lg_max_val_lp(dword_width_p)
@@ -163,7 +163,7 @@ wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
                                         ? dword_width_p'(mtimecmp_r)
                                         : mtime_r;
 
-bp_cce_mem_msg_s mem_resp_lo;
+bp_bedrock_xce_mem_msg_s mem_resp_lo;
 assign mem_resp_lo =
   '{header : '{
     msg_type       : mem_cmd_lo.header.msg_type
@@ -171,7 +171,7 @@ assign mem_resp_lo =
     ,payload       : mem_cmd_lo.header.payload
     ,size          : mem_cmd_lo.header.size
     }
-    ,data          : cce_block_width_p'(rdata_lo)
+    ,data          : dword_width_p'(rdata_lo)
     };
 assign mem_resp_o = mem_resp_lo;
 assign mem_resp_v_o = small_fifo_v_lo;

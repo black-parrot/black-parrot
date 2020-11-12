@@ -2,7 +2,7 @@
 `define BP_FE_DECOMPRESS_VH
 
 `include "bsg_defines.v"
-`include "bp_common_fe_be_if.vh"
+`include "bp_common_core_if.vh"
 
 // DISCLAIMER: Decompression will be changed in the future. 
 

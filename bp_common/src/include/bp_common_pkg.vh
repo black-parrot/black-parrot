@@ -12,9 +12,9 @@ package bp_common_pkg;
 
   `include "bsg_defines.v"
   `include "bp_common_defines.vh"
-  `include "bp_common_fe_be_if.vh"
-  `include "bp_common_me_if.vh"
-  `include "bp_common_cache_service_if.vh"
+  `include "bp_common_core_if.vh"
+  `include "bp_common_bedrock_if.vh"
+  `include "bp_common_cache_engine_if.vh"
 
   /*
    * RV64 specifies a 64b effective address and 32b instruction.
@@ -36,12 +36,14 @@ package bp_common_pkg;
   parameter bp_page_size_in_bytes_gp = 4096;
   parameter bp_page_offset_width_gp = `BSG_SAFE_CLOG2(bp_page_size_in_bytes_gp);
 
+  localparam boot_dev_gp  = 0;
   localparam host_dev_gp  = 1;
   localparam cfg_dev_gp   = 2;
   localparam clint_dev_gp = 3;
   localparam cache_dev_gp = 4;
 
                              // 0x00_0(nnnN)(D)(A_AAAA)
+  localparam boot_dev_base_addr_gp     = 32'h0000_0000;
   localparam host_dev_base_addr_gp     = 32'h0010_0000;
   localparam cfg_dev_base_addr_gp      = 32'h0020_0000;
   localparam clint_dev_base_addr_gp    = 32'h0030_0000;
@@ -54,6 +56,7 @@ package bp_common_pkg;
 
   localparam cache_tagfl_base_addr_gp  = 20'h0_0000;
 
+  localparam bootrom_base_addr_gp      = 40'h00_0001_0000;
   localparam dram_base_addr_gp         = 40'h00_8000_0000;
   localparam coproc_base_addr_gp       = 40'h10_0000_0000;
   localparam global_base_addr_gp       = 40'h20_0000_0000;

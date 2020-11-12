@@ -17,7 +17,10 @@ module wrapper
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+
+   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
    )
   (input                                               clk_i
    , input                                             reset_i
@@ -50,20 +53,7 @@ module wrapper
    , output                                            mem_resp_yumi_o
    );
 
-  // TODO: There should be a param about whether to instantiate the uncore, rather than a list of
-  //   unicore configs
-  if ((bp_params_p == e_bp_unicore_cfg)
-      || (bp_params_p == e_bp_unicore_no_l2_cfg)
-      || (bp_params_p == e_bp_unicore_l1_small_cfg)
-      || (bp_params_p == e_bp_unicore_l1_medium_cfg)
-      )
-    begin : unicore
-      bp_unicore
-       #(.bp_params_p(bp_params_p))
-       dut
-        (.*);
-    end
-  else
+  if (multicore_p)
     begin : multicore
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
@@ -177,6 +167,98 @@ module wrapper
          ,.cmd_link_i(dram_cmd_link_lo)
          ,.resp_link_o(dram_resp_link_li)
          );
+    end
+  else
+    begin : unicore
+      `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
+      bp_bedrock_uce_mem_msg_s io_cmd_lo, io_cmd_li;
+      bp_bedrock_uce_mem_msg_s io_resp_lo, io_resp_li;
+
+      bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
+      logic mem_cmd_header_v_lo, mem_cmd_header_ready_li;
+      logic [dword_width_p-1:0] mem_cmd_data_lo;
+      logic mem_cmd_data_v_lo, mem_cmd_data_ready_li;
+
+      bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
+      logic mem_resp_header_v_li, mem_resp_header_yumi_lo;
+      logic [dword_width_p-1:0] mem_resp_data_li;
+      logic mem_resp_data_v_li, mem_resp_data_yumi_lo;
+
+      // We need to expand the IO ports to their full width here
+      bp_unicore
+       #(.bp_params_p(bp_params_p))
+       dut
+        (.io_cmd_o(io_cmd_lo)
+         ,.io_cmd_i(io_cmd_li)
+         ,.io_resp_o(io_resp_lo)
+         ,.io_resp_i(io_resp_li)
+         ,.mem_cmd_header_o(mem_cmd_header_lo)
+         ,.mem_cmd_header_v_o(mem_cmd_header_v_lo)
+         ,.mem_cmd_header_ready_i(mem_cmd_header_ready_li)
+         ,.mem_cmd_data_o(mem_cmd_data_lo)
+         ,.mem_cmd_data_v_o(mem_cmd_data_v_lo)
+         ,.mem_cmd_data_ready_i(mem_cmd_data_ready_li)
+         ,.mem_resp_header_i(mem_resp_header_li)
+         ,.mem_resp_header_v_i(mem_resp_header_v_li)
+         ,.mem_resp_header_yumi_o(mem_resp_header_yumi_lo)
+         ,.mem_resp_data_i(mem_resp_data_li)
+         ,.mem_resp_data_v_i(mem_resp_data_v_li)
+         ,.mem_resp_data_yumi_o(mem_resp_data_yumi_lo)
+         ,.*
+         );
+
+      bp_burst_to_lite
+       #(.bp_params_p(bp_params_p)
+         ,.in_data_width_p(dword_width_p)
+         ,.out_data_width_p(cce_block_width_p)
+         ,.payload_mask_p(mem_cmd_payload_mask_gp)
+         )
+       burst2lite
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.mem_header_i(mem_cmd_header_lo)
+         ,.mem_header_v_i(mem_cmd_header_v_lo)
+         ,.mem_header_ready_and_o(mem_cmd_header_ready_li)
+
+         ,.mem_data_i(mem_cmd_data_lo)
+         ,.mem_data_v_i(mem_cmd_data_v_lo)
+         ,.mem_data_ready_and_o(mem_cmd_data_ready_li)
+
+         ,.mem_o(mem_cmd_o)
+         ,.mem_v_o(mem_cmd_v_o)
+         ,.mem_ready_and_i(mem_cmd_ready_i)
+         );
+
+      logic mem_resp_ready_lo;
+      assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
+      bp_lite_to_burst
+       #(.bp_params_p(bp_params_p)
+         ,.in_data_width_p(cce_block_width_p)
+         ,.out_data_width_p(dword_width_p)
+         ,.payload_mask_p(mem_resp_payload_mask_gp)
+         )
+       lite2burst
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.mem_i(mem_resp_i)
+         ,.mem_v_i(mem_resp_ready_lo & mem_resp_v_i)
+         ,.mem_ready_and_o(mem_resp_ready_lo)
+
+         ,.mem_header_o(mem_resp_header_li)
+         ,.mem_header_v_o(mem_resp_header_v_li)
+         ,.mem_header_ready_and_i(mem_resp_header_yumi_lo)
+
+         ,.mem_data_o(mem_resp_data_li)
+         ,.mem_data_v_o(mem_resp_data_v_li)
+         ,.mem_data_ready_and_i(mem_resp_data_yumi_lo)
+         );
+
+      assign io_cmd_o = io_cmd_lo;
+      assign io_cmd_li = io_cmd_i;
+      assign io_resp_o = io_resp_lo;
+      assign io_resp_li = io_resp_i;
     end
 
 endmodule

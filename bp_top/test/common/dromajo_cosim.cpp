@@ -3,40 +3,50 @@
 #include "dromajo_cosim.h"
 #include "stdlib.h"
 #include <string>
+#include <vector>
 
 using namespace std;
 
 dromajo_cosim_state_t* dromajo_pointer;
-uint64_t d_address = 0;
-uint64_t d_count = 0;
+vector<bool>* finish;
 
 extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory_size, bool checkpoint) {
 
   if(hartid == 0) {
     cout << "Running with Dromajo cosimulation" << endl;
 
-    string ncpus_str = "--ncpus=" + to_string(ncpus);
-    string memsize_str = "--memory_size=" + to_string(memory_size);
-    string mmio_str = "--mmio_range=0x20000:0x80000000";
-    char* load_str = "--load=prog";
+    finish = new vector<bool>(ncpus, false);
+
+    char dromajo_str[50];
+    sprintf(dromajo_str, "dromajo");
+    char ncpus_str[50];
+    sprintf(ncpus_str, "--ncpus=%d", ncpus);
+    char memsize_str[50];
+    sprintf(memsize_str, "--memory_size=%d", memory_size);
+    char mmio_str[50];
+    sprintf(mmio_str, "--mmio_range=0x20000:0x80000000");
+    char load_str[50];
+    sprintf(load_str, "--load=prog");
+    char prog_str[50];
+    sprintf(prog_str, "prog.elf");
 
     if(checkpoint) {
-      char* argv[] = {"dromajo", (char*)(&ncpus_str[0]), (char*)(&memsize_str[0]), (char*)(&mmio_str[0]), load_str, "prog.elf"};
+      char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, load_str, prog_str};
       dromajo_pointer = dromajo_cosim_init(6, argv);
     }
     else {
-      char* argv[] = {"dromajo", (char*)(&ncpus_str[0]), (char*)(&memsize_str[0]), (char*)(&mmio_str[0]), "prog.elf"};
+      char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, prog_str};
       dromajo_pointer = dromajo_cosim_init(5, argv);
     }
   }
 }
 
-extern "C" bool dromajo_step(int      hart_id,
+extern "C" bool dromajo_step(int      hartid,
                              uint64_t pc,
                              uint32_t insn,
                              uint64_t wdata) {
   int exit_code = dromajo_cosim_step(dromajo_pointer, 
-                                     hart_id,
+                                     hartid,
                                      pc,
                                      insn,
                                      wdata,
@@ -49,6 +59,26 @@ extern "C" bool dromajo_step(int      hart_id,
     return false;
 }
 
-extern "C" void dromajo_trap(int hart_id, uint64_t cause) {
-  dromajo_cosim_raise_trap(dromajo_pointer, hart_id, cause, false);
+extern "C" void dromajo_trap(int hartid, uint64_t cause) {
+  dromajo_cosim_raise_trap(dromajo_pointer, hartid, cause, false);
+}
+
+extern "C" bool get_finish(int hartid) {
+  if(!finish)
+    return false;
+  return finish->at(hartid);
+}
+
+extern "C" void set_finish(int hartid) {
+  finish->at(hartid) = true;
+}
+
+extern "C" bool check_terminate() {
+  if(!finish)
+    return false;
+
+  for(int i=0; i < finish->size(); i++)
+    if(finish->at(i) == false)
+      return false;
+  return true;
 }

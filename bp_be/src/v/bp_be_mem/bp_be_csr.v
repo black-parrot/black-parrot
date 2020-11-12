@@ -3,87 +3,69 @@ module bp_be_csr
   import bp_common_aviary_pkg::*;
   import bp_common_rv64_pkg::*;
   import bp_be_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
-    , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
-    , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
+    , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
+    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
+    , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
     )
    (input                               clk_i
     , input                             reset_i
 
     , input [cfg_bus_width_lp-1:0]      cfg_bus_i
-    , output [dword_width_p-1:0]        cfg_csr_data_o
-    , output [1:0]                      cfg_priv_data_o
 
     // CSR instruction interface
     , input [csr_cmd_width_lp-1:0]      csr_cmd_i
     , input                             csr_cmd_v_i
-    , output                            csr_cmd_ready_o
-
-    , output [dword_width_p-1:0]        data_o
-    , output                            v_o
-    , output logic                      illegal_instr_o
+    , output logic [dword_width_p-1:0]  csr_data_o
 
     // Misc interface
-    , input [core_id_width_p-1:0]       hartid_i
     , input                             instret_i
+    , input rv64_fflags_s               fflags_acc_i
+    , input                             frf_w_v_i
 
     , input                             exception_v_i
-    , input                             fencei_v_i
+    , input                             exception_queue_v_i
     , input [vaddr_width_p-1:0]         exception_pc_i
     , input [vaddr_width_p-1:0]         exception_npc_i
     , input [vaddr_width_p-1:0]         exception_vaddr_i
     , input [instr_width_p-1:0]         exception_instr_i
-    , input [ecode_dec_width_lp-1:0]    exception_ecode_dec_i
 
     , input                             timer_irq_i
     , input                             software_irq_i
     , input                             external_irq_i
-    , output                            accept_irq_o
-    , output                            single_step_o
+    , output                            interrupt_ready_o
+    , input                             interrupt_v_i
 
-    , output [trap_pkt_width_lp-1:0]    trap_pkt_o
+    , output [commit_pkt_width_lp-1:0]    commit_pkt_o
 
-    , output                            debug_mode_o
-    , output [rv64_priv_width_gp-1:0]   priv_mode_o
-    , output [ptag_width_p-1:0]         satp_ppn_o
-    , output                            translation_en_o
-    , output                            mstatus_sum_o
-    , output                            mstatus_mxr_o
-    
-    // FE Exceptions
-    , output logic                      itlb_fill_o
-    , output logic                      instr_page_fault_o
-    , output logic                      instr_access_fault_o
-    , output logic                      instr_misaligned_o
-    , output logic                      ebreak_o
+    , output [trans_info_width_lp-1:0]  trans_info_o
+    , output rv64_frm_e                 frm_dyn_o
+    , output                            fpu_en_o
     );
 
 // Declare parameterizable structs
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
-`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
+`declare_bp_be_mem_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Casting input and output ports
 bp_cfg_bus_s cfg_bus_cast_i;
 bp_be_csr_cmd_s csr_cmd;
-bp_be_csr_cmd_s cfg_bus_csr_cmd_li;
-bp_be_ecode_dec_s exception_ecode_dec_cast_i;
-bp_be_trap_pkt_s trap_pkt_cast_o;
 
-assign cfg_bus_csr_cmd_li.csr_op   = cfg_bus_cast_i.csr_r_v ? e_csrrs : e_csrrw;
-assign cfg_bus_csr_cmd_li.csr_addr = cfg_bus_cast_i.csr_addr;
-assign cfg_bus_csr_cmd_li.data     = cfg_bus_cast_i.csr_r_v ? '0 : cfg_bus_cast_i.csr_data;
+bp_be_wb_pkt_s wb_pkt_cast_i;
+bp_be_commit_pkt_s commit_pkt_cast_o;
+bp_be_trans_info_s trans_info_cast_o;
 
 assign cfg_bus_cast_i = cfg_bus_i;
-assign csr_cmd = (cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) ? cfg_bus_csr_cmd_li : csr_cmd_i;
-assign exception_ecode_dec_cast_i = exception_ecode_dec_i;
-assign trap_pkt_o = trap_pkt_cast_o;
+assign csr_cmd = csr_cmd_i;
+assign commit_pkt_o = commit_pkt_cast_o;
+assign trans_info_o = trans_info_cast_o;
 
 // The muxed and demuxed CSR outputs
 logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
@@ -101,6 +83,8 @@ wire is_debug_mode = debug_mode_r;
 wire is_m_mode = is_debug_mode | (priv_mode_r == `PRIV_MODE_M);
 wire is_s_mode = (priv_mode_r == `PRIV_MODE_S);
 wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
+
+`declare_csr(fcsr)
 
 // sstatus subset of mstatus
 // sedeleg hardcoded to 0
@@ -147,6 +131,8 @@ wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
 //   This is non-compliant. We should hardcode to 0 instead of trapping
 `declare_csr(dcsr)
 `declare_csr(dpc)
+`declare_csr(dscratch0)
+`declare_csr(dscratch1)
 
 wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
 wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
@@ -179,14 +165,35 @@ wire [15:0] interrupt_icode_dec_li =
    ,1'b0
    };
 
+wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
+logic illegal_instr_o;
+rv64_exception_dec_s exception_dec_li;
+assign exception_dec_li =
+    '{instr_misaligned    : csr_cmd.exc.instr_misaligned
+      ,instr_access_fault : csr_cmd.exc.instr_access_fault
+      ,illegal_instr      : csr_cmd.exc.illegal_instr | illegal_instr_o
+      ,breakpoint         : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak) & ebreak_v_li
+      ,load_misaligned    : csr_cmd.exc.load_misaligned
+      ,load_access_fault  : csr_cmd.exc.load_access_fault
+      ,store_misaligned   : csr_cmd.exc.store_misaligned
+      ,store_access_fault : csr_cmd.exc.store_access_fault
+      ,ecall_u_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_r == `PRIV_MODE_U)
+      ,ecall_s_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_r == `PRIV_MODE_S)
+      ,ecall_m_mode       : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_r == `PRIV_MODE_M)
+      ,instr_page_fault   : csr_cmd.exc.instr_page_fault
+      ,load_page_fault    : csr_cmd.exc.load_page_fault
+      ,store_page_fault   : csr_cmd.exc.store_page_fault
+      ,default : '0
+      };
+
 logic [3:0] exception_ecode_li;
 logic       exception_ecode_v_li;
 bsg_priority_encode 
- #(.width_p(ecode_dec_width_lp)
+ #(.width_p($bits(exception_dec_li))
    ,.lo_to_hi_p(1)
    )
  mcause_exception_enc
-  (.i(exception_ecode_dec_i)
+  (.i(exception_dec_li)
    ,.addr_o(exception_ecode_li)
    ,.v_o(exception_ecode_v_li)
    );
@@ -194,21 +201,21 @@ bsg_priority_encode
 logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
 logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
 bsg_priority_encode
- #(.width_p(ecode_dec_width_lp)
+ #(.width_p($bits(exception_dec_li))
    ,.lo_to_hi_p(1)
    )
  m_interrupt_enc
-  (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:ecode_dec_width_lp] & ecode_dec_width_lp'($signed(mgie)))
+  (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:$bits(exception_dec_li)] & $bits(exception_dec_li)'($signed(mgie)))
    ,.addr_o(m_interrupt_icode_li)
    ,.v_o(m_interrupt_icode_v_li)
    );
 
 bsg_priority_encode
- #(.width_p(ecode_dec_width_lp)
+ #(.width_p($bits(exception_dec_li))
    ,.lo_to_hi_p(1)
    )
  s_interrupt_enc
-  (.i(interrupt_icode_dec_li & mideleg_lo[0+:ecode_dec_width_lp] & ecode_dec_width_lp'($signed(sgie)))
+  (.i(interrupt_icode_dec_li & mideleg_lo[0+:$bits(exception_dec_li)] & $bits(exception_dec_li)'($signed(sgie)))
    ,.addr_o(s_interrupt_icode_li)
    ,.v_o(s_interrupt_icode_v_li)
    );
@@ -229,16 +236,35 @@ always_comb
     endcase
   end
 
+logic [vaddr_width_p-1:0] apc_n, apc_r;
 bsg_dff_reset
- #(.width_p(1))
- debug_mode_reg
+ #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
+ apc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.data_i(debug_mode_n)
+   ,.data_i(apc_n)
+   ,.data_o(apc_r)
+   );
+assign apc_n = commit_pkt_cast_o.eret
+               ? ((csr_cmd.csr_op == e_sret) ? sepc_lo : (csr_cmd.csr_op == e_mret) ? mepc_lo : dpc_lo)
+               : (commit_pkt_cast_o.exception | commit_pkt_cast_o._interrupt)
+                 ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
+                 : instret_i
+                   ? exception_npc_i
+                   : apc_r;
+
+logic enter_debug, exit_debug;
+bsg_dff_reset_set_clear
+ #(.width_p(1))
+ debug_mode_reg
+  (.clk_i(clk_i)
+   ,.reset_i('0)
+   ,.set_i((reset_i & (boot_in_debug_p == 1'b1)) | enter_debug)
+   ,.clear_i((reset_i & (boot_in_debug_p == 1'b0)) | exit_debug)
+
    ,.data_o(debug_mode_r)
    );
-assign debug_mode_o = debug_mode_r;
 
 bsg_dff_reset
  #(.width_p(2) 
@@ -248,10 +274,9 @@ bsg_dff_reset
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.data_i(cfg_bus_cast_i.priv_w_v ? cfg_bus_cast_i.priv_data : priv_mode_n)
+   ,.data_i(priv_mode_n)
    ,.data_o(priv_mode_r)
    );
-assign cfg_priv_data_o = priv_mode_r;
 
 assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
 bsg_dff_reset
@@ -303,8 +328,9 @@ logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
 // CSR data
 always_comb
   begin
-    debug_mode_n = debug_mode_r;
     priv_mode_n  = priv_mode_r;
+
+    fcsr_li = fcsr_lo;
 
     stvec_li      = stvec_lo;
     scounteren_li = scounteren_lo;
@@ -333,8 +359,12 @@ always_comb
     minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
     mcountinhibit_li = mcountinhibit_lo;
 
-    dcsr_li = dcsr_lo;
-    dpc_li  = dpc_lo;
+    enter_debug = '0;
+    exit_debug  = '0;
+    dcsr_li     = dcsr_lo;
+    dpc_li      = dpc_lo;
+    dscratch0_li = dscratch0_lo;
+    dscratch1_li = dscratch1_lo;
 
     exception_v_o    = '0;
     interrupt_v_o    = '0;
@@ -344,154 +374,93 @@ always_comb
     csr_data_lo      = '0;
     sfence_v_o       = '0;
     
-    itlb_fill_o           = '0;
-    instr_page_fault_o    = '0;
-    instr_access_fault_o  = '0;
-    instr_misaligned_o    = '0;
-    ebreak_o              = '0;
-
-    if (csr_cmd_v_i | cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v)
-      if (~is_debug_mode & (csr_cmd.csr_op == e_ebreak))
-        begin
-          ebreak_o = (is_m_mode & ~dcsr_lo.ebreakm) 
-                     | (is_s_mode & ~dcsr_lo.ebreaks) 
-                     | (is_u_mode & ~dcsr_lo.ebreaku);
-
-          if (~ebreak_o)
-            begin
-              debug_mode_n   = 1'b1;
-              dpc_li         = paddr_width_p'($signed(exception_pc_i));
-              dcsr_li.cause  = 1; // Ebreak
-              dcsr_li.prv    = priv_mode_r;
-            end
-        end
-      else if (csr_cmd.csr_op == e_sfence_vma)
-        begin
-          if ((is_s_mode & mstatus_lo.tvm) || (priv_mode_r < `PRIV_MODE_S))
-              illegal_instr_o = 1'b1;
-          else
-            begin
-              sfence_v_o = 1'b1;
-            end
-        end
-      else if (csr_cmd.csr_op == e_dret)
-        begin
-          priv_mode_n      = dcsr_lo.prv;
-
-          illegal_instr_o  = ~is_debug_mode;
-          ret_v_o          = ~illegal_instr_o;
-        end
-      else if (csr_cmd.csr_op == e_mret)
-        begin
-          if (priv_mode_r < `PRIV_MODE_M)
-            illegal_instr_o = 1'b1;
-          else
-            begin
-              priv_mode_n      = mstatus_lo.mpp;
-
-              mstatus_li.mpp   = `PRIV_MODE_U;
-              mstatus_li.mpie  = 1'b1;
-              mstatus_li.mie   = mstatus_lo.mpie;
-              mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
-
-              ret_v_o          = 1'b1;
-            end
-        end
-      else if (csr_cmd.csr_op == e_sret)
-        begin
-          if ((is_s_mode & mstatus_lo.tsr) || (priv_mode_r < `PRIV_MODE_S))
-            illegal_instr_o = 1'b1;
-          else
-            begin
-              priv_mode_n      = {1'b0, mstatus_lo.spp};
-              
-              mstatus_li.spp   = `PRIV_MODE_U;
-              mstatus_li.spie  = 1'b1;
-              mstatus_li.sie   = mstatus_lo.spie;
-              mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
-
-              ret_v_o          = 1'b1;
-            end
-        end
-      else if (csr_cmd.csr_op == e_itlb_fill)
-        begin
-          itlb_fill_o = 1'b1;
-        end
-      else if (csr_cmd.csr_op == e_op_instr_page_fault)
-        begin
-          instr_page_fault_o = 1'b1;
-        end
-      else if (csr_cmd.csr_op == e_op_instr_access_fault)
-        begin
-          instr_access_fault_o = 1'b1;
-        end
-      else if (csr_cmd.csr_op == e_op_instr_misaligned)
-        begin
-          instr_misaligned_o = 1'b1;
-        end
-      else if (csr_cmd.csr_op == e_op_take_interrupt)
-        begin
-          if (~is_debug_mode & m_interrupt_icode_v_li)
-            begin
-              priv_mode_n          = `PRIV_MODE_M;
-
-              mstatus_li.mpp       = priv_mode_r;
-              mstatus_li.mpie      = mstatus_lo.mie;
-              mstatus_li.mie       = 1'b0;
-
-              mepc_li              = paddr_width_p'($signed(exception_pc_i));
-              mtval_li             = '0;
-              mcause_li._interrupt = 1'b1;
-              mcause_li.ecode      = m_interrupt_icode_li;
-
-              exception_v_o        = 1'b0;
-              interrupt_v_o        = 1'b1;
-              ret_v_o              = 1'b0;
-            end
-          else if (~is_debug_mode & s_interrupt_icode_v_li)
-            begin
-              priv_mode_n          = `PRIV_MODE_S;
-
-              mstatus_li.spp       = priv_mode_r;
-              mstatus_li.spie      = mstatus_lo.sie;
-              mstatus_li.sie       = 1'b0;
-
-              sepc_li              = paddr_width_p'($signed(exception_pc_i));
-              stval_li             = '0;
-              scause_li._interrupt = 1'b1;
-              scause_li.ecode      = s_interrupt_icode_li;
-
-              exception_v_o        = 1'b0;
-              interrupt_v_o        = 1'b1;
-              ret_v_o              = 1'b0;
-            end
-        end
-      else if (csr_cmd.csr_op == e_wfi)
-        begin
-          illegal_instr_o = mstatus_lo.tw;
-        end
-      else if (csr_cmd.csr_op inside {e_ebreak, e_ecall})
+    if (~ebreak_v_li & csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
       begin
-          // ECALL is implemented as part of the exception cause vector
-          // EBreak is implemented below
-        end
-      // Check for access violations
-      else if (is_s_mode & mstatus_lo.tvm & (csr_cmd.csr_addr == `CSR_ADDR_SATP))
-        illegal_instr_o = 1'b1;
-      else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~mcounteren_lo.cy)
-        illegal_instr_o = 1'b1;
-      else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~scounteren_lo.cy)
-        illegal_instr_o = 1'b1;
-      else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~mcounteren_lo.ir)
-        illegal_instr_o = 1'b1;
-      else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~scounteren_lo.ir)
-        illegal_instr_o = 1'b1;
-      else if (priv_mode_r < csr_cmd.csr_addr[9:8])
-        illegal_instr_o = 1'b1;
-      else
-        begin
+        enter_debug    = 1'b1;
+        dpc_li         = paddr_width_p'($signed(exception_pc_i));
+        dcsr_li.cause  = 1; // Ebreak
+        dcsr_li.prv    = priv_mode_r;
+      end
+    else if (csr_cmd_v_i & (csr_cmd.csr_op == e_sfence_vma))
+      begin
+        if ((is_s_mode & mstatus_lo.tvm) || (priv_mode_r < `PRIV_MODE_S))
+            illegal_instr_o = 1'b1;
+        else
+          begin
+            sfence_v_o = 1'b1;
+          end
+      end
+    else if (csr_cmd_v_i & (csr_cmd.csr_op == e_dret))
+      begin
+        exit_debug       = 1'b1;
+        priv_mode_n      = dcsr_lo.prv;
+
+        illegal_instr_o  = ~is_debug_mode;
+        ret_v_o          = ~illegal_instr_o;
+      end
+    else if (csr_cmd_v_i & (csr_cmd.csr_op == e_mret))
+      begin
+        if (priv_mode_r < `PRIV_MODE_M)
+          illegal_instr_o = 1'b1;
+        else
+          begin
+            priv_mode_n      = mstatus_lo.mpp;
+
+            mstatus_li.mpp   = `PRIV_MODE_U;
+            mstatus_li.mpie  = 1'b1;
+            mstatus_li.mie   = mstatus_lo.mpie;
+            mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
+
+            ret_v_o          = 1'b1;
+          end
+      end
+    else if (csr_cmd_v_i & (csr_cmd.csr_op == e_sret))
+      begin
+        if ((is_s_mode & mstatus_lo.tsr) || (priv_mode_r < `PRIV_MODE_S))
+          illegal_instr_o = 1'b1;
+        else
+          begin
+            priv_mode_n      = {1'b0, mstatus_lo.spp};
+            
+            mstatus_li.spp   = `PRIV_MODE_U;
+            mstatus_li.spie  = 1'b1;
+            mstatus_li.sie   = mstatus_lo.spie;
+            mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
+
+            ret_v_o          = 1'b1;
+          end
+      end
+    else if (csr_cmd_v_i & (csr_cmd.csr_op == e_wfi))
+      begin
+        illegal_instr_o = mstatus_lo.tw;
+      end
+    else if (csr_cmd_v_i & (csr_cmd.csr_op inside {e_ebreak, e_ecall}))
+      begin
+        // ECALL is implemented as part of the exception cause vector
+        // EBreak is implemented below
+      end
+    else if (csr_cmd_v_i & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
+      begin
+        // Check for access violations
+        if (is_s_mode & mstatus_lo.tvm & (csr_cmd.csr_addr == `CSR_ADDR_SATP))
+          illegal_instr_o = 1'b1;
+        else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~mcounteren_lo.cy)
+          illegal_instr_o = 1'b1;
+        else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~scounteren_lo.cy)
+          illegal_instr_o = 1'b1;
+        else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~mcounteren_lo.ir)
+          illegal_instr_o = 1'b1;
+        else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~scounteren_lo.ir)
+          illegal_instr_o = 1'b1;
+        else if (priv_mode_r < csr_cmd.csr_addr[9:8])
+          illegal_instr_o = 1'b1;
+        else
+          begin
             // Read case
             unique casez (csr_cmd.csr_addr)
+              `CSR_ADDR_FFLAGS : csr_data_lo = fcsr_lo.fflags;
+              `CSR_ADDR_FRM    : csr_data_lo = fcsr_lo.frm;
+              `CSR_ADDR_FCSR   : csr_data_lo = fcsr_lo;
               `CSR_ADDR_CYCLE  : csr_data_lo = mcycle_lo;
               // Time must be done by trapping, since we can't stall at this point
               `CSR_ADDR_INSTRET: csr_data_lo = minstret_lo;
@@ -519,11 +488,11 @@ always_comb
               // 0: Tapeout 0, July 2019
               // 1: Current
               `CSR_ADDR_MIMPID: csr_data_lo = 64'd1;
-              `CSR_ADDR_MHARTID: csr_data_lo = hartid_i;
+              `CSR_ADDR_MHARTID: csr_data_lo = cfg_bus_cast_i.core_id;
               `CSR_ADDR_MSTATUS: csr_data_lo = mstatus_lo;
               // MISA is optionally read-write, but all fields are read-only in BlackParrot
-              //   64 bit MXLEN, IMASU extensions
-              `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h141101};
+              //   64 bit MXLEN, IMAFDSU extensions
+              `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h141129};
               `CSR_ADDR_MEDELEG: csr_data_lo = medeleg_lo;
               `CSR_ADDR_MIDELEG: csr_data_lo = mideleg_lo;
               `CSR_ADDR_MIE: csr_data_lo = mie_lo;
@@ -539,10 +508,15 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: csr_data_lo = mcountinhibit_lo;
               `CSR_ADDR_DCSR: csr_data_lo = dcsr_lo;
               `CSR_ADDR_DPC: csr_data_lo = dpc_lo;
+              `CSR_ADDR_DSCRATCH0: csr_data_lo = dscratch0_lo;
+              `CSR_ADDR_DSCRATCH1: csr_data_lo = dscratch1_lo;
               default: illegal_instr_o = 1'b1;
             endcase
             // Write case
             unique casez (csr_cmd.csr_addr)
+              `CSR_ADDR_FFLAGS : fcsr_li = '{frm: fcsr_lo.frm, fflags: csr_data_li, default: '0};
+              `CSR_ADDR_FRM    : fcsr_li = '{frm: csr_data_li, fflags: fcsr_lo.fflags, default: '0};
+              `CSR_ADDR_FCSR   : fcsr_li = csr_data_li;
               `CSR_ADDR_CYCLE  : mcycle_li = csr_data_li;
               // Time must be done by trapping, since we can't stall at this point
               `CSR_ADDR_INSTRET: minstret_li = csr_data_li;
@@ -583,103 +557,146 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: mcountinhibit_li = csr_data_li;
               `CSR_ADDR_DCSR: dcsr_li = csr_data_li;
               `CSR_ADDR_DPC: dpc_li = csr_data_li;
+              `CSR_ADDR_DSCRATCH0: dscratch0_li = csr_data_li;
+              `CSR_ADDR_DSCRATCH1: dscratch1_li = csr_data_li;
               default: illegal_instr_o = 1'b1;
             endcase
-        end
+          end
+      end
+
+    if (interrupt_v_i)
+      begin
+        if (m_interrupt_icode_v_li)
+          begin
+            priv_mode_n          = `PRIV_MODE_M;
+
+            mstatus_li.mpp       = priv_mode_r;
+            mstatus_li.mpie      = mstatus_lo.mie;
+            mstatus_li.mie       = 1'b0;
+
+            mepc_li              = paddr_width_p'($signed(apc_r));
+            mtval_li             = '0;
+            mcause_li._interrupt = 1'b1;
+            mcause_li.ecode      = m_interrupt_icode_li;
+
+            exception_v_o        = 1'b0;
+            interrupt_v_o        = 1'b1;
+            ret_v_o              = 1'b0;
+          end
+        else if (s_interrupt_icode_v_li)
+          begin
+            priv_mode_n          = `PRIV_MODE_S;
+
+            mstatus_li.spp       = priv_mode_r;
+            mstatus_li.spie      = mstatus_lo.sie;
+            mstatus_li.sie       = 1'b0;
+
+            sepc_li              = paddr_width_p'($signed(apc_r));
+            stval_li             = '0;
+            scause_li._interrupt = 1'b1;
+            scause_li.ecode      = s_interrupt_icode_li;
+
+            exception_v_o        = 1'b0;
+            interrupt_v_o        = 1'b1;
+            ret_v_o              = 1'b0;
+          end
+      end
+    else if (~is_debug_mode & exception_v_i & exception_ecode_v_li)
+      begin
+        if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
+          begin
+            priv_mode_n          = `PRIV_MODE_S;
+
+            mstatus_li.spp       = priv_mode_r;
+            mstatus_li.spie      = mstatus_lo.sie;
+            mstatus_li.sie       = 1'b0;
+
+            sepc_li              = paddr_width_p'($signed(exception_pc_i));
+            // TODO: Replace with struct
+            stval_li             = (exception_ecode_li == 2)
+                                  ? exception_instr_i 
+                                  : paddr_width_p'($signed(exception_vaddr_i));
+
+            scause_li._interrupt = 1'b0;
+            scause_li.ecode      = exception_ecode_li;
+
+            exception_v_o        = 1'b1;
+            interrupt_v_o        = 1'b0;
+            ret_v_o              = 1'b0;
+          end
+        else
+          begin
+            priv_mode_n          = `PRIV_MODE_M;
+
+            mstatus_li.mpp       = priv_mode_r;
+            mstatus_li.mpie      = mstatus_lo.mie;
+            mstatus_li.mie       = 1'b0;
+
+            mepc_li              = paddr_width_p'($signed(exception_pc_i));
+            mtval_li             = (exception_ecode_li == 2)
+                                  ? exception_instr_i 
+                                  : paddr_width_p'($signed(exception_vaddr_i));
+
+            mcause_li._interrupt = 1'b0;
+            mcause_li.ecode      = exception_ecode_li;
+
+            exception_v_o        = 1'b1;
+            interrupt_v_o        = 1'b0;
+            ret_v_o              = 1'b0;
+          end
+      end
+
+    // Always break in single step mode
+    if (~is_debug_mode & exception_v_i & dcsr_lo.step)
+      begin
+        enter_debug   = 1'b1;
+        dpc_li        = paddr_width_p'($signed(exception_npc_i));
+        dcsr_li.cause = 4;
+        dcsr_li.prv   = priv_mode_r;
+      end
 
     mip_li.mtip = timer_irq_i;
     mip_li.msip = software_irq_i;
     mip_li.meip = external_irq_i;
 
-    if (~is_debug_mode & exception_v_i & exception_ecode_v_li)
-      if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
-        begin
-          priv_mode_n          = `PRIV_MODE_S;
+    // Accumulate FFLAGS
+    fcsr_li.fflags |= fflags_acc_i;
 
-          mstatus_li.spp       = priv_mode_r;
-          mstatus_li.spie      = mstatus_lo.sie;
-          mstatus_li.sie       = 1'b0;
-
-          sepc_li              = paddr_width_p'($signed(exception_pc_i));
-          stval_li             = exception_ecode_dec_cast_i.illegal_instr 
-                                ? exception_instr_i 
-                                : paddr_width_p'($signed(exception_vaddr_i));
-
-          scause_li._interrupt = 1'b0;
-          scause_li.ecode      = exception_ecode_li;
-
-          exception_v_o        = 1'b1;
-          interrupt_v_o        = 1'b0;
-          ret_v_o              = 1'b0;
-        end
-      else
-        begin
-          priv_mode_n          = `PRIV_MODE_M;
-
-          mstatus_li.mpp       = priv_mode_r;
-          mstatus_li.mpie      = mstatus_lo.mie;
-          mstatus_li.mie       = 1'b0;
-
-          mepc_li              = paddr_width_p'($signed(exception_pc_i));
-          mtval_li             = exception_ecode_dec_cast_i.illegal_instr 
-                                ? exception_instr_i 
-                                : paddr_width_p'($signed(exception_vaddr_i));
-
-          mcause_li._interrupt = 1'b0;
-          mcause_li.ecode      = exception_ecode_li;
-
-          exception_v_o        = 1'b1;
-          interrupt_v_o        = 1'b0;
-          ret_v_o              = 1'b0;
-        end
-
-      if (~is_debug_mode & exception_v_i & dcsr_lo.step)
-        begin
-          debug_mode_n = 1'b1;
-          dpc_li        = paddr_width_p'($signed(exception_npc_i));
-          dcsr_li.cause = 4;
-          dcsr_li.prv   = priv_mode_r;
-        end
+    // Set FS to dirty if: fflags set, frf written, fcsr written
+    mstatus_li.fs |= {2{|fflags_acc_i | frf_w_v_i | (csr_cmd_v_i & (csr_cmd.csr_addr == `CSR_ADDR_FCSR))}};
   end
 
 // Debug Mode masks all interrupts
-assign accept_irq_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
+assign interrupt_ready_o = ~is_debug_mode & ~cfg_bus_cast_i.freeze & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
-// CSR slow paths
-assign satp_ppn_o       = satp_r.ppn;
+assign csr_data_o = dword_width_p'(csr_data_lo);
 
-assign mstatus_sum_o = mstatus_lo.sum;
-assign mstatus_mxr_o = mstatus_lo.mxr;
+assign commit_pkt_cast_o.v                = |{csr_cmd.exc.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, csr_cmd.exc.itlb_miss, csr_cmd.exc.icache_miss, csr_cmd.exc.dcache_miss, csr_cmd.exc.dtlb_miss};
+assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
+assign commit_pkt_cast_o.instret          = instret_i;
+assign commit_pkt_cast_o.pc               = exception_pc_i;
+assign commit_pkt_cast_o.instr            = exception_instr_i;
+assign commit_pkt_cast_o.npc              = apc_n;
+assign commit_pkt_cast_o.priv_n           = priv_mode_n;
+assign commit_pkt_cast_o.translation_en_n = translation_en_n;
+assign commit_pkt_cast_o.fencei           = csr_cmd.exc.fencei_v;
+assign commit_pkt_cast_o.sfence           = sfence_v_o;
+assign commit_pkt_cast_o.exception        = exception_v_o;
+assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
+assign commit_pkt_cast_o.eret             = ret_v_o;
+assign commit_pkt_cast_o.satp             = satp_v_o;
+assign commit_pkt_cast_o.icache_miss      = csr_cmd.exc.icache_miss;
+assign commit_pkt_cast_o.rollback         = csr_cmd.exc.icache_miss | csr_cmd.exc.dcache_miss | csr_cmd.exc.dtlb_miss | csr_cmd.exc.itlb_miss;
 
-assign single_step_o = ~is_debug_mode & dcsr_lo.step;
+assign trans_info_cast_o.priv_mode = priv_mode_r;
+assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
+assign trans_info_cast_o.translation_en = translation_en_r
+    | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
+assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
+assign trans_info_cast_o.mstatus_mxr = mstatus_lo.mxr;
 
-assign csr_cmd_ready_o = 1'b1;
-assign data_o          = dword_width_p'(csr_data_lo);
-assign v_o             = csr_cmd_v_i;
-
-assign cfg_csr_data_o = csr_data_lo;
-assign cfg_priv_data_o = priv_mode_r;
-
-assign trap_pkt_cast_o.epc              = (csr_cmd.csr_op == e_sret)
-                                          ? sepc_r
-                                          : (csr_cmd.csr_op == e_mret)
-                                            ? mepc_r
-                                            : dpc_r;
-assign trap_pkt_cast_o.tvec             = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
-assign trap_pkt_cast_o.cause            = (priv_mode_n == `PRIV_MODE_S) ? scause_li : mcause_li;
-assign trap_pkt_cast_o.priv_n           = priv_mode_n;
-assign trap_pkt_cast_o.translation_en_n = translation_en_n;
-// TODO: Find more solid invariant
-assign trap_pkt_cast_o.fencei           = fencei_v_i;
-assign trap_pkt_cast_o.sfence           = sfence_v_o;
-assign trap_pkt_cast_o.exception        = exception_v_o;
-assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
-assign trap_pkt_cast_o.eret             = ret_v_o;
-assign trap_pkt_cast_o.satp             = satp_v_o;
-
-assign priv_mode_o      = priv_mode_r;
-assign translation_en_o = translation_en_r
-                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
+assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
+assign fpu_en_o = (mstatus_lo.fs != 2'b00);
 
 endmodule
 

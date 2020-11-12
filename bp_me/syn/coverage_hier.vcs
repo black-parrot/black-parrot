@@ -36,6 +36,6 @@
 -moduletree bsg_nonsynth_clock_gen
 -moduletree bsg_nonsynth_reset_gen
 -moduletree itlb
--moduletree bp_be_pipe_fp
+-moduletree bp_be_pipe_fma
 -moduletree bp_be_regfile
 

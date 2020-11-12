@@ -188,16 +188,19 @@ typedef struct packed
   logic [1:0]  mode;
 }  rv64_stvec_s;
 
-typedef logic [36:0] bp_stvec_s;
+typedef struct packed
+{
+  logic [37:0] addr_39_2;
+}  bp_stvec_s;
 
 `define bp_stvec_width ($bits(bp_stvec_s))
 
 `define compress_stvec_s(data_cast_mp) \
-  bp_stvec_s'(data_cast_mp.base[0+:37])
+  '{addr_39_2: data_cast_mp.base[0+:38]}
 
 `define decompress_stvec_s(data_comp_mp) \
-  '{base : $signed(data_comp_mp) \
-    ,mode: 2'b00                 \
+  '{base : 62'($signed(data_comp_mp.addr_39_2)) \
+    ,mode: 2'b00                           \
     }
 
 typedef struct packed
@@ -588,16 +591,19 @@ typedef struct packed
   logic [1:0]  mode;
 }  rv64_mtvec_s;
 
-typedef logic [36:0] bp_mtvec_s;
+typedef struct packed
+{
+  logic [37:0] addr_39_2;
+}  bp_mtvec_s;
 
 `define bp_mtvec_width ($bits(bp_mtvec_s))
 
 `define compress_mtvec_s(data_cast_mp) \
-  bp_mtvec_s'(data_cast_mp.base[0+:37])
+  '{addr_39_2: data_cast_mp.base[0+:38]}
 
 `define decompress_mtvec_s(data_comp_mp) \
-  '{base : $signed(data_comp_mp) \
-    ,mode: 2'b00                 \
+  '{base : 62'($signed(data_comp_mp.addr_39_2)) \
+    ,mode: 2'b00                                \
     }
 
 typedef struct packed
@@ -868,6 +874,30 @@ typedef struct packed
 
 typedef struct packed
 {
+  logic [23:0] warl;
+  logic [2:0]  frm;
+  logic [4:0]  fflags;
+}  rv64_fcsr_s;
+
+typedef struct packed
+{
+  logic [2:0] frm;
+  logic [4:0] fflags;
+}  bp_fcsr_s;
+
+`define compress_fcsr_s(data_cast_mp) \
+  '{frm    : data_cast_mp.frm    \
+    ,fflags: data_cast_mp.fflags \
+    }
+
+`define decompress_fcsr_s(data_comp_mp) \
+  '{frm     : data_comp_mp.frm    \
+    ,fflags : data_comp_mp.fflags \
+    ,default: '0                  \
+    }
+
+typedef struct packed
+{
   // Debugger version
   //   0 : No external debug support
   //   4 : External debug support ala RISC-V Debug Spec
@@ -975,6 +1005,24 @@ typedef logic [38:0] bp_dpc_s;
 
 `define decompress_dpc_s(data_comp_mp) \
   64'($signed(data_comp_mp))
+
+typedef logic [63:0] rv64_dscratch0_s;
+typedef logic [63:0] bp_dscratch0_s;
+
+`define compress_dscratch0_s(data_cast_mp) \
+  data_cast_mp[0+:64]
+
+`define decompress_dscratch0_s(data_comp_mp) \
+  64'(data_comp_mp)
+
+typedef logic [63:0] rv64_dscratch1_s;
+typedef logic [63:0] bp_dscratch1_s;
+
+`define compress_dscratch1_s(data_cast_mp) \
+  data_cast_mp[0+:64]
+
+`define decompress_dscratch1_s(data_comp_mp) \
+  64'(data_comp_mp)
 
 `define declare_csr(csr_name_mp) \
   /* verilator lint_off UNUSED */                                                               \
