@@ -177,6 +177,7 @@ module bp_sacc_tile
      ,.v_o(lce_lce_cmd_v_li)
      ,.yumi_i(lce_lce_cmd_yumi_lo)
      );
+/*
    assign lce_lce_cmd_li = '{header: lce_cmd_packet_li.header.msg_hdr, data: lce_cmd_packet_li.data};
 
   if (sacc_type_p == e_sacc_vdp)
@@ -205,7 +206,40 @@ module bp_sacc_tile
          ,.io_resp_v_i(lce_io_resp_v_lo)
          ,.io_resp_ready_o(lce_io_resp_ready_li)
          );
-    end
+    end*/
+
+   assign lce_lce_cmd_li = lce_cmd_packet_li.payload;
+
+
+if(sacc_type_p == e_sacc_zipline)
+  begin: sacc_zipline
+  bp_sacc_zipline
+   #(.bp_params_p(bp_params_p))
+   accelerator_link
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.lce_id_i(lce_id_li)
+
+     ,.io_cmd_i(cce_io_cmd_lo)
+     ,.io_cmd_v_i(cce_io_cmd_v_lo)
+     ,.io_cmd_ready_o(cce_io_cmd_ready_li)
+
+     ,.io_resp_o(cce_io_resp_li)
+     ,.io_resp_v_o(cce_io_resp_v_li)
+     ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
+
+     ,.io_cmd_o(lce_io_cmd_li)
+     ,.io_cmd_v_o(lce_io_cmd_v_li)
+     ,.io_cmd_yumi_i(lce_io_cmd_yumi_lo)
+
+     ,.io_resp_i(lce_io_resp_lo)
+     ,.io_resp_v_i(lce_io_resp_v_lo)
+     ,.io_resp_ready_o(lce_io_resp_ready_li)
+
+     );
+  end
+
 
 endmodule
 

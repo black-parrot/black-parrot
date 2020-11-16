@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 
-#define CONFIG 4
+#define CONFIG 1
 #define CACCEL_VDP_BASE_ADDR  (CONFIG == 1) ? ((uint64_t *)(0x01000000)) : ((uint64_t *)(0x04000000))
 #define CACCEL_VADD_BASE_ADDR ((uint64_t *)(0x05000000))
 #define SACCEL_VDP_BASE_ADDR  (CONFIG == 1) ? ((uint64_t *)(0x02000000)) : ((uint64_t *)(0x06000000))
@@ -29,6 +29,15 @@ struct VDP_CSR
   uint64_t *resp_ptr;
 };
 
+#define TLV_TYPE       0 
+#define TLV_IDX        1
+struct zipline_tlv
+{
+  uint64_t tlv_header;//content of a header
+  uint64_t tlv_idx;//1:sot, 0:mot, 2:eot, 3:sot-eot
+  uint64_t header_type;//0:rqe, 1:cmd, 2:frmd, 3:dara, 4:cqe
+};
+
 void bp_set_mmio_csr(uint64_t *accel_base_address, uint8_t csr_idx, uint64_t csr_value);
 uint64_t bp_get_mmio_csr(uint64_t *accel_base_address, uint8_t csr_idx); 
 void dma_cpy(uint64_t *src, uint64_t *dest, uint64_t length);
@@ -41,4 +50,5 @@ void bp_vdp_wait_for_completion(uint64_t *base_cfg_addr);
 void bp_call_vector_dot_product_accelerator(uint8_t type, struct VDP_CSR vdp_csrs);
 void bp_call_vector_add_accelerator(uint8_t type, struct VDP_CSR vdp_csrs);
 
+void bp_call_zipline_accelerator(uint8_t type, struct VDP_CSR vdp_csrs, struct zipline_tlv *tlv_headers, uint64_t tlv_num);
 #endif

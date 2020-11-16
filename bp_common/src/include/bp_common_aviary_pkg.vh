@@ -2,6 +2,7 @@
 package bp_common_aviary_pkg;
   `include "bp_common_aviary_defines.vh"
 
+
   import bp_common_pkg::*;
 
   // Suitably high enough to not run out of configs.
@@ -341,7 +342,7 @@ package bp_common_aviary_pkg;
     '{cac_x_dim : 1
       ,sac_x_dim: 1
       ,cacc_type: e_cacc_vdp
-      ,sacc_type: e_sacc_vdp
+      ,sacc_type: e_sacc_zipline
       ,num_lce  : 4
       ,default : "inv"
       };
