@@ -672,10 +672,10 @@ module bp_be_dcache
     end
     else if(wt_req) begin
       cache_req_cast_o.msg_type = e_wt_store;
-      cache_req_v_o = 1'b1;
+      cache_req_v_o = ~flush_i;
     end
     else if (l2_amo_req & ~uncached_load_data_v_r) begin
-      cache_req_v_o = 1'b1;
+      cache_req_v_o = ~flush_i;
       unique if (lr_req)
         cache_req_cast_o.msg_type = e_amo_lr;
       else if (sc_req)
@@ -710,7 +710,7 @@ module bp_be_dcache
     else if(fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_o.msg_type = e_cache_flush;
-      cache_req_v_o = gdirty_r & (l1_coherent_p == 0);
+      cache_req_v_o = gdirty_r & (l1_coherent_p == 0) & ~flush_i;
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
@@ -1156,7 +1156,7 @@ module bp_be_dcache
     assign wbuf_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op;
   end
   else begin : wt_wbuf
-    assign wbuf_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & cache_req_yumi_i;
+    assign wbuf_success = wt_success & cache_req_yumi_i;
   end
   assign wbuf_v_li = wbuf_success & ~flush_i;
   assign wbuf_yumi_li = wbuf_v_lo & ~(decode_lo.load_op & tl_we) & ~data_mem_pkt_yumi_o;
