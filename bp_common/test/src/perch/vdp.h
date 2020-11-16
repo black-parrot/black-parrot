@@ -33,6 +33,7 @@ struct VDP_CSR
 //Zipline CSR IDX
 #define TLV_TYPE       0 
 #define DATA_TLV_LEN   1
+#define DATA_TLV_PART  2
 //HW DMA CSR IDX 
 #define DATA_PTR       0
 #define DATA_LEN       1
@@ -46,6 +47,7 @@ struct dma_cfg
   uint64_t *data_ptr;
   uint64_t length;
   uint8_t  type;//0:req, 1:cmd, 2:frmd, 3:data, 4:cqe 
+  uint8_t  part;//used for data tlv
 };
 
 struct Zipline_CSR
