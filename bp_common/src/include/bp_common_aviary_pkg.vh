@@ -1191,7 +1191,7 @@ package bp_common_aviary_pkg;
       ,cac_x_dim : 1
       ,sac_x_dim : 1
       ,cacc_type : e_cacc_vdp
-      ,sacc_type : e_sacc_vdp
+      ,sacc_type : e_sacc_zipline
 
       ,vaddr_width: 39
       ,paddr_width: 40

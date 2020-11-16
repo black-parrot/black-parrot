@@ -1,16 +1,19 @@
 #include <stdint.h>
 #include "vdp.h"
+#include "bp_utils.h"
+
+#define TO_HEX(i) (i <= 9 ? '0' + i : 'A' - 10 + i)
 
 void bp_set_mmio_csr(uint64_t *accel_base_address, uint8_t csr_idx, uint64_t csr_value)
 {
-  *(accel_base_address+csr_idx*8) = csr_value;
+  *(accel_base_address+csr_idx) = csr_value;
 }
 
 
 uint64_t bp_get_mmio_csr(uint64_t *accel_base_address, uint8_t csr_idx)
 {
   uint64_t csr_value;
-  csr_value = *(accel_base_address+csr_idx*8);
+  csr_value = *(accel_base_address+csr_idx);
   return csr_value;
 }
 
@@ -98,3 +101,42 @@ void bp_call_vector_add_accelerator(uint8_t type, struct VDP_CSR vdp_csrs){
   }
 }
 
+
+void bp_call_zipline_accelerator(uint8_t type, struct VDP_CSR vdp_csrs, struct zipline_tlv *tlv_headers, uint64_t tlv_num)
+{
+  uint64_t *cfg_base_addr;
+  uint64_t csr_value;
+
+  /*int i=0;
+  uint64_t test = tlv_headers[0].tlv_header;
+  for(i = 0; i < 16;++i){
+    bp_cprint(TO_HEX((uint8_t)((test>>i*4) & 0x0F)));
+    }*/
+
+  //cfg_base_addr = type ? SACCEL_VDP_BASE_ADDR : CACCEL_VADD_BASE_ADDR;
+  cfg_base_addr = (uint64_t *)(0x02010000);//chnage the device id to dma in the tile
+  uint64_t tlv_count =0;
+  int i=0;
+  for(i=0; i < tlv_num; i++){
+    if((tlv_headers[i].tlv_idx == 1) | (tlv_headers[i].tlv_idx == 3)){//sot
+      tlv_count = 0;
+      bp_set_mmio_csr(cfg_base_addr, TLV_TYPE, tlv_headers[i].header_type);
+      bp_set_mmio_csr(cfg_base_addr, TLV_IDX,  tlv_headers[i].tlv_idx);
+      dma_cpy((uint64_t *) &(tlv_headers[i].tlv_header), SACCEL_VDP_MEM_BASE+i, 1);
+    }
+    else if (tlv_headers[i].tlv_idx == 2){//eot
+      bp_set_mmio_csr(cfg_base_addr, TLV_IDX,  tlv_headers[i].tlv_idx);
+      dma_cpy((uint64_t *) &(tlv_headers[i].tlv_header), SACCEL_VDP_MEM_BASE+i, 1);
+    }
+    else{//middle tlvs
+      if(tlv_count == 0)
+        bp_set_mmio_csr(cfg_base_addr, TLV_IDX,  tlv_headers[i].tlv_idx);
+      tlv_count ++;
+      dma_cpy((uint64_t *) &(tlv_headers[i].tlv_header), SACCEL_VDP_MEM_BASE+i, 1);
+    }
+  }
+  //change the device id to cce engine in the tile
+  cfg_base_addr = SACCEL_VDP_BASE_ADDR;  
+  csr_value=bp_get_mmio_csr(cfg_base_addr, 0);
+  dma_cpy((uint64_t *) &csr_value, vdp_csrs.resp_ptr, 1);
+}

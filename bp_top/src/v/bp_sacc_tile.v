@@ -178,9 +178,9 @@ module bp_sacc_tile
    assign lce_lce_cmd_li = lce_cmd_packet_li.payload;
 
 
-if(sacc_type_p == e_sacc_vdp)
-  begin: sacc_vdp
-  bp_sacc_vdp
+if(sacc_type_p == e_sacc_zipline)
+  begin: sacc_zipline
+  bp_sacc_zipline
    #(.bp_params_p(bp_params_p))
    accelerator_link
     (.clk_i(clk_i)

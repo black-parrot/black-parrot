@@ -31,6 +31,7 @@ typedef enum logic
 
 typedef enum logic [15:0]{
   e_sacc_vdp
+  ,e_sacc_zipline
 } bp_sacc_type_e;
 
 typedef enum logic [15:0]{
