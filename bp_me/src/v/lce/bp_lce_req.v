@@ -62,6 +62,7 @@ module bp_lce_req
     , input                                          sync_done_i
 
     // LCE Req is able to sink any requests this cycle
+    , output logic                                   ready_o
     , output logic                                   yumi_o
 
     // Cache-LCE Interface
@@ -186,6 +187,7 @@ module bp_lce_req
   always_comb begin
     state_n = state_r;
 
+    ready_o= 1'b0;
     yumi_o = 1'b0;
 
     lce_req_v_o = 1'b0;
@@ -205,7 +207,8 @@ module bp_lce_req
       // Ready for new request
       e_ready: begin
         // yumi a new request if LCE hasn't used all its credits
-        yumi_o = ~credits_full_o & lce_req_ready_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i) & cache_req_v_i;
+        ready_o = ~credits_full_o & lce_req_ready_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
+        yumi_o = ready_o & cache_req_v_i;
         if (yumi_o) begin
           unique case (cache_req.msg_type)
             e_miss_store
