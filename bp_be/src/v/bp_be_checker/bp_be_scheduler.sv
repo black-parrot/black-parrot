@@ -1,14 +1,13 @@
 /**
  *
  * Name:
- *   bp_be_scheduler.v
+ *   bp_be_scheduler.sv
  *
  * Description:
  *   Schedules instruction issue from the FE queue to the Calculator.
  *
  * Notes:
  *   It might make sense to use an enum for RISC-V opcodes rather than `defines.
- *   Floating point instruction decoding is not implemented, so we do not predecode.
  */
 
 `include "bp_common_defines.svh"
@@ -21,36 +20,39 @@ module bp_be_scheduler
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-   , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam fe_queue_width_lp     = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
-   , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
-   , localparam wb_pkt_width_lp     = `bp_be_wb_pkt_width(vaddr_width_p)
+   , localparam isd_status_width_lp   = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
+   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
+   , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    )
-  (input                               clk_i
-   , input                             reset_i
+  (input                                clk_i
+   , input                              reset_i
 
-  , output [isd_status_width_lp-1:0]   isd_status_o
-  , input [vaddr_width_p-1:0]          expected_npc_i
-  , input                              poison_isd_i
-  , input                              dispatch_v_i
-  , input                              suppress_iss_i
-  , input                              fpu_en_i
+   , output [isd_status_width_lp-1:0]   isd_status_o
+   , input [vaddr_width_p-1:0]          expected_npc_i
+   , input                              poison_isd_i
+   , input                              dispatch_v_i
+   , input                              interrupt_v_i
+   , input                              suppress_iss_i
+   , input                              fpu_en_i
 
-  // Fetch interface
-  , input [fe_queue_width_lp-1:0]      fe_queue_i
-  , input                              fe_queue_v_i
-  , output                             fe_queue_ready_o
+   // Fetch interface
+   , input [fe_queue_width_lp-1:0]      fe_queue_i
+   , input                              fe_queue_v_i
+   , output                             fe_queue_ready_o
 
-  // Dispatch interface
-  , output [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
+   // Dispatch interface
+   , output [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
 
-  , input [commit_pkt_width_lp-1:0]    commit_pkt_i
-  , input [wb_pkt_width_lp-1:0]        iwb_pkt_i
-  , input [wb_pkt_width_lp-1:0]        fwb_pkt_i
-  );
+   , input [commit_pkt_width_lp-1:0]    commit_pkt_i
+   , input [ptw_fill_pkt_width_lp-1:0]  ptw_fill_pkt_i
+   , input [wb_pkt_width_lp-1:0]        iwb_pkt_i
+   , input [wb_pkt_width_lp-1:0]        fwb_pkt_i
+   );
 
   // Declare parameterizable structures
   `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -61,6 +63,7 @@ module bp_be_scheduler
   bp_be_isd_status_s isd_status_cast_o;
   rv64_instr_s       instr;
   bp_be_commit_pkt_s commit_pkt;
+  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_wb_pkt_s     iwb_pkt, fwb_pkt;
 
   bp_fe_queue_s fe_queue_lo;
@@ -68,6 +71,7 @@ module bp_be_scheduler
 
   assign isd_status_o    = isd_status_cast_o;
   assign instr           = fe_queue_lo.msg.fetch.instr;
+  assign ptw_fill_pkt    = ptw_fill_pkt_i;
   assign commit_pkt      = commit_pkt_i;
   assign iwb_pkt         = iwb_pkt_i;
   assign fwb_pkt         = fwb_pkt_i;
@@ -97,10 +101,6 @@ module bp_be_scheduler
      ,.preissue_pkt_o(preissue_pkt)
      ,.issue_pkt_o(issue_pkt)
      );
-
-  // Interface handshakes
-  assign fe_queue_yumi_li = ~suppress_iss_i & fe_queue_v_lo & dispatch_v_i;
-  wire issue_v = fe_queue_yumi_li;
 
   logic [dword_width_gp-1:0] irf_rs1, irf_rs2;
   bp_be_regfile
@@ -135,21 +135,63 @@ module bp_be_scheduler
      );
 
   // Decode the dispatched instruction
-  bp_be_decode_s            decoded;
-  logic [dword_width_gp-1:0] decoded_imm_lo;
   wire fe_exc_not_instr_li = (fe_queue_lo.msg_type == e_fe_exception);
+  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
+
+  wire be_exc_not_instr_li = ptw_fill_pkt.instr_page_fault_v
+                             | ptw_fill_pkt.load_page_fault_v
+                             | ptw_fill_pkt.store_page_fault_v
+                             | interrupt_v_i;
+  wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt.vaddr;
+
+  bp_be_decode_s instr_decoded;
+  logic [dword_width_gp-1:0] decoded_imm_lo;
   bp_be_instr_decoder
    #(.bp_params_p(bp_params_p))
    instr_decoder
-     (.fe_exc_not_instr_i(fe_exc_not_instr_li)
-     ,.fe_exc_i(fe_queue_lo.msg.exception.exception_code)
-     ,.instr_i(fe_queue_lo.msg.fetch.instr)
+    (.instr_i(fe_queue_lo.msg.fetch.instr)
 
-     ,.decode_o(decoded)
+     ,.decode_o(instr_decoded)
      ,.imm_o(decoded_imm_lo)
 
      ,.fpu_en_i(fpu_en_i)
      );
+
+  bp_be_decode_s be_exc_decoded;
+  always_comb
+    begin
+      be_exc_decoded = '0;
+      be_exc_decoded.instr_page_fault = ptw_fill_pkt.instr_page_fault_v;
+      be_exc_decoded.load_page_fault  = ptw_fill_pkt.load_page_fault_v;
+      be_exc_decoded.store_page_fault = ptw_fill_pkt.store_page_fault_v;
+      be_exc_decoded._interrupt       = interrupt_v_i;
+    end
+
+  bp_be_decode_s fe_exc_decoded;
+  always_comb
+    begin
+      fe_exc_decoded = '0;
+      fe_exc_decoded.queue_v            = 1'b1;
+      fe_exc_decoded.instr_access_fault = fe_queue_lo.msg.exception.exception_code inside {e_instr_access_fault};
+      fe_exc_decoded.instr_page_fault   = fe_queue_lo.msg.exception.exception_code inside {e_instr_page_fault};
+      fe_exc_decoded.itlb_miss          = fe_queue_lo.msg.exception.exception_code inside {e_itlb_miss};
+      fe_exc_decoded.icache_miss        = fe_queue_lo.msg.exception.exception_code inside {e_icache_miss};
+    end
+
+  bp_be_decode_s decoded;
+  assign decoded = be_exc_not_instr_li
+    ? be_exc_decoded
+    : fe_exc_not_instr_li
+      ? fe_exc_decoded
+      : instr_decoded;
+
+  wire [dword_width_gp-1:0] imm_lo = be_exc_not_instr_li
+    ? be_exc_vaddr_li
+    : fe_exc_not_instr_li
+      ? fe_exc_vaddr_li
+      : decoded_imm_lo;
+
+  assign fe_queue_yumi_li = fe_queue_v_lo & dispatch_v_i & ~suppress_iss_i & ~be_exc_not_instr_li;
 
   bp_be_dispatch_pkt_s dispatch_pkt;
   always_comb
@@ -175,7 +217,7 @@ module bp_be_scheduler
       isd_status_cast_o.fwb_v    = decoded.frf_w_v;
 
       // Form dispatch packet
-      dispatch_pkt.v        = fe_queue_yumi_li & ~poison_isd_i;
+      dispatch_pkt.v        = (fe_queue_yumi_li & ~poison_isd_i) | be_exc_not_instr_li;
       dispatch_pkt.queue_v  = fe_queue_yumi_li;
       dispatch_pkt.pc       = expected_npc_i;
       dispatch_pkt.instr    = instr;
@@ -184,7 +226,7 @@ module bp_be_scheduler
       dispatch_pkt.rs2_fp_v = issue_pkt.frs2_v;
       dispatch_pkt.rs2      = issue_pkt.frs2_v ? frf_rs2 : irf_rs2;
       dispatch_pkt.rs3_fp_v = issue_pkt.frs3_v;
-      dispatch_pkt.imm      = issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
+      dispatch_pkt.imm      = issue_pkt.frs3_v ? frf_rs3 : imm_lo;
       dispatch_pkt.decode   = decoded;
     end
   assign dispatch_pkt_o = dispatch_pkt;

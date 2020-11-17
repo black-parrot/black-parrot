@@ -28,6 +28,7 @@ module bp_be_calculator_top
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
+   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
 
    // From BP BE specifications
@@ -50,12 +51,12 @@ module bp_be_calculator_top
   , output [branch_pkt_width_lp-1:0]                br_pkt_o
   , output [wb_pkt_width_lp-1:0]                    iwb_pkt_o
   , output [wb_pkt_width_lp-1:0]                    fwb_pkt_o
+  , output [ptw_fill_pkt_width_lp-1:0]              ptw_fill_pkt_o
 
   , input                                           timer_irq_i
   , input                                           software_irq_i
   , input                                           external_irq_i
   , output logic                                    irq_pending_o
-  , input                                           interrupt_v_i
 
   , output logic [dcache_req_width_lp-1:0]          cache_req_o
   , output logic                                    cache_req_v_o
@@ -106,6 +107,20 @@ module bp_be_calculator_top
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_trans_info_s   trans_info_lo;
   rv64_frm_e           frm_dyn_lo;
+
+  assign ptw_fill_pkt_o = ptw_fill_pkt;
+
+  logic pipe_sys_illegal_instr_lo;
+  logic pipe_sys_satp_v_lo;
+  logic pipe_sys_sfence_v_lo;
+  logic pipe_sys_sret_v_lo;
+  logic pipe_sys_mret_v_lo;
+  logic pipe_sys_dret_v_lo;
+  logic pipe_sys_ecall_u_v_lo;
+  logic pipe_sys_ecall_s_v_lo;
+  logic pipe_sys_ecall_m_v_lo;
+  logic pipe_sys_ebreak_v_lo;
+  logic pipe_sys_dbreak_v_lo;
 
   logic pipe_mem_dtlb_store_miss_lo;
   logic pipe_mem_dtlb_load_miss_lo;
@@ -192,9 +207,8 @@ module bp_be_calculator_top
      ,.v_o(pipe_ctl_data_lo_v)
      );
 
-  // Computation pipelines
-  // System pipe: 3 cycle latency
-  logic pipe_long_ready_lo;
+  // System pipe: 1 cycle latency for CSR read/write, but also handles
+  //   asynchronous events
   bp_be_pipe_sys
    #(.bp_params_p(bp_params_p))
    pipe_sys
@@ -205,8 +219,6 @@ module bp_be_calculator_top
      ,.reservation_i(reservation_r)
      ,.flush_i(commit_pkt.npc_w_v)
 
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
-
      ,.commit_v_i(exc_stage_r[2].v)
      ,.commit_queue_v_i(exc_stage_r[2].queue_v)
      ,.exception_i(exc_stage_r[2].exc)
@@ -214,13 +226,24 @@ module bp_be_calculator_top
      ,.commit_pkt_o(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt_o)
      ,.fwb_pkt_i(fwb_pkt_o)
+     ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
      ,.irq_pending_o(irq_pending_o)
-     ,.interrupt_v_i(interrupt_v_i)
 
+     ,.illegal_instr_o(pipe_sys_illegal_instr_lo)
+     ,.satp_v_o(pipe_sys_satp_v_lo)
+     ,.sfence_v_o(pipe_sys_sfence_v_lo)
+     ,.sret_v_o(pipe_sys_sret_v_lo)
+     ,.mret_v_o(pipe_sys_mret_v_lo)
+     ,.dret_v_o(pipe_sys_dret_v_lo)
+     ,.ecall_u_v_o(pipe_sys_ecall_u_v_lo)
+     ,.ecall_s_v_o(pipe_sys_ecall_s_v_lo)
+     ,.ecall_m_v_o(pipe_sys_ecall_m_v_lo)
+     ,.ebreak_v_o(pipe_sys_ebreak_v_lo)
+     ,.dbreak_v_o(pipe_sys_dbreak_v_lo)
      ,.data_o(pipe_sys_data_lo)
      ,.v_o(pipe_sys_data_lo_v)
 
@@ -229,8 +252,9 @@ module bp_be_calculator_top
      ,.fpu_en_o(fpu_en_o)
      );
 
-
+  // Computation pipelines
   // Integer pipe: 1 cycle latency
+  logic pipe_int_ready_lo;
   bp_be_pipe_int
    #(.bp_params_p(bp_params_p))
    pipe_int
@@ -270,13 +294,13 @@ module bp_be_calculator_top
 
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.flush_i(commit_pkt.npc_w_v)
-     ,.sfence_i(commit_pkt.sfence)
-
-     ,.reservation_i(reservation_r)
      ,.ready_o(pipe_mem_ready_lo)
+     ,.reservation_i(reservation_r)
+     ,.flush_i(commit_pkt.npc_w_v)
+     ,.trans_info_i(trans_info_lo)
 
      ,.commit_pkt_i(commit_pkt)
+     ,.sfence_i(commit_pkt.sfence)
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
      ,.ptw_busy_o(ptw_busy_o)
 
@@ -320,8 +344,6 @@ module bp_be_calculator_top
      ,.final_data_o(pipe_mem_final_data_lo)
      ,.early_v_o(pipe_mem_early_data_lo_v)
      ,.final_v_o(pipe_mem_final_data_lo_v)
-
-     ,.trans_info_i(trans_info_lo)
      );
 
   // Floating point pipe: 4/5 cycle latency
@@ -343,15 +365,16 @@ module bp_be_calculator_top
      );
 
   // Variable length pipeline, used for long (potentially scoreboarded operations)
+  logic pipe_long_ready_lo;
   bp_be_pipe_long
    #(.bp_params_p(bp_params_p))
    pipe_long
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
+     ,.ready_o(pipe_long_ready_lo)
      ,.reservation_i(reservation_r)
      ,.flush_i(commit_pkt.npc_w_v)
-     ,.ready_o(pipe_long_ready_lo)
      ,.frm_dyn_i(frm_dyn_lo)
 
      ,.iwb_pkt_o(long_iwb_pkt)
@@ -380,12 +403,12 @@ module bp_be_calculator_top
                 }
             : comp_stage_r[i-1];
         end
-      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo       : '0;
       comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo       : '0;
+      comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo       : '0;
+      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo       : '0;
       comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo : '0;
       comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo       : '0;
       comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo : '0;
-      comp_stage_n[3].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo       : '0;
       comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo       : '0;
       comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo       : '0;
 
@@ -436,13 +459,26 @@ module bp_be_calculator_top
           exc_stage_n[2].queue_v                &= ~commit_pkt.rollback;
           exc_stage_n[3].queue_v                &= ~commit_pkt.rollback;
 
+          exc_stage_n[0].exc._interrupt         |= reservation_n.decode._interrupt;
           exc_stage_n[0].spec.itlb_miss         |= reservation_n.decode.itlb_miss;
           exc_stage_n[0].spec.icache_miss       |= reservation_n.decode.icache_miss;
           exc_stage_n[0].exc.instr_access_fault |= reservation_n.decode.instr_access_fault;
           exc_stage_n[0].exc.instr_page_fault   |= reservation_n.decode.instr_page_fault;
+          exc_stage_n[0].exc.load_page_fault    |= reservation_n.decode.load_page_fault;
+          exc_stage_n[0].exc.store_page_fault   |= reservation_n.decode.store_page_fault;
           exc_stage_n[0].exc.illegal_instr      |= reservation_n.decode.illegal_instr;
-          exc_stage_n[0].exc.ebreak             |= reservation_n.decode.ebreak;
-          exc_stage_n[0].exc.ecall              |= reservation_n.decode.ecall;
+
+          exc_stage_n[1].exc.illegal_instr      |= pipe_sys_illegal_instr_lo;
+          exc_stage_n[1].spec.satp_v            |= pipe_sys_satp_v_lo;
+          exc_stage_n[1].spec.sfence_v          |= pipe_sys_sfence_v_lo;
+          exc_stage_n[1].spec.sret_v            |= pipe_sys_sret_v_lo;
+          exc_stage_n[1].spec.mret_v            |= pipe_sys_mret_v_lo;
+          exc_stage_n[1].spec.dret_v            |= pipe_sys_dret_v_lo;
+          exc_stage_n[1].exc.ecall_u            |= pipe_sys_ecall_u_v_lo;
+          exc_stage_n[1].exc.ecall_s            |= pipe_sys_ecall_s_v_lo;
+          exc_stage_n[1].exc.ecall_m            |= pipe_sys_ecall_m_v_lo;
+          exc_stage_n[1].exc.ebreak             |= pipe_sys_ebreak_v_lo;
+          exc_stage_n[1].spec.dbreak            |= pipe_sys_dbreak_v_lo;
 
           exc_stage_n[1].spec.dtlb_store_miss   |= pipe_mem_dtlb_store_miss_lo;
           exc_stage_n[1].spec.dtlb_load_miss    |= pipe_mem_dtlb_load_miss_lo;

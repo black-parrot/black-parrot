@@ -43,6 +43,17 @@ module bp_be_pipe_sys
 
    , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
 
+   , output logic                         illegal_instr_o
+   , output logic                         satp_v_o
+   , output logic                         sfence_v_o
+   , output logic                         sret_v_o
+   , output logic                         mret_v_o
+   , output logic                         dret_v_o
+   , output logic                         ecall_u_v_o
+   , output logic                         ecall_s_v_o
+   , output logic                         ecall_m_v_o
+   , output logic                         ebreak_v_o
+   , output logic                         dbreak_v_o
    , output logic [dpath_width_gp-1:0]    data_o
    , output logic                         v_o
 
@@ -54,7 +65,6 @@ module bp_be_pipe_sys
    , input                                software_irq_i
    , input                                external_irq_i
    , output logic                         irq_pending_o
-   , input                                interrupt_v_i
 
    , output [trans_info_width_lp-1:0]     trans_info_o
    , output rv64_frm_e                    frm_dyn_o
@@ -65,7 +75,7 @@ module bp_be_pipe_sys
 
   bp_be_dispatch_pkt_s reservation;
   bp_be_decode_s decode;
-  bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r;
+  bp_be_csr_cmd_s csr_cmd_li;
   rv64_instr_s instr;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_commit_pkt_s commit_pkt;
@@ -87,51 +97,32 @@ module bp_be_pipe_sys
   wire [dword_width_gp-1:0] imm = reservation.imm[0+:dword_width_gp];
 
   wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
+  wire [dword_width_gp-1:0] csr_data = csr_imm_op ? dword_width_gp'(instr.t.rtype.rs1_addr) : rs1;
 
-  always_comb
-    begin
-      csr_cmd_li.csr_op   = decode.fu_op;
-      csr_cmd_li.csr_addr = instr.t.itype.imm12;
-      csr_cmd_li.data     = csr_imm_op ? imm : rs1;
-    end
-
-  logic csr_cmd_v_lo;
-  bsg_shift_reg
-   #(.width_p($bits(bp_be_csr_cmd_s))
-     ,.stages_p(2)
-     )
-   csr_shift_reg
-    (.clk(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.valid_i(decode.csr_v)
-     ,.data_i(csr_cmd_li)
-
-     ,.valid_o(csr_cmd_v_lo)
-     ,.data_o(csr_cmd_r)
-     );
+  wire csr_cmd_v_li = reservation.v & decode.pipe_sys_v;
+  assign csr_cmd_li = '{csr_op   : decode.fu_op
+                        ,csr_addr: instr.t.itype.imm12
+                        ,data    : csr_data
+                        };
 
   logic [vaddr_width_p-1:0] commit_npc_r, commit_pc_r;
   logic [vaddr_width_p-1:0] commit_nvaddr_r, commit_vaddr_r;
   logic [instr_width_gp-1:0] commit_ninstr_r, commit_instr_r;
+  always_ff @(posedge clk_i)
+    begin
+      commit_npc_r <= reservation.pc;
+      commit_pc_r  <= commit_npc_r;
 
-  bp_be_special_s special_li;
-  always_comb
-    if (commit_v_i)
-      begin
-        special_li = special_i;
-      end
-    else
-      begin
-        special_li = '0;
-      end
+      // The commit virtual address, which is rs1+imm for all actual instructions
+      //   and imm for out-of-band exceptions and interrupts
+      commit_nvaddr_r <= (reservation.decode.pipe_mem_early_v | reservation.decode.pipe_mem_final_v)
+                         ? (rs1 + imm)
+                         : imm;
+      commit_vaddr_r  <= commit_nvaddr_r;
 
-  wire ptw_page_fault_v  = ptw_fill_pkt.instr_page_fault_v | ptw_fill_pkt.load_page_fault_v | ptw_fill_pkt.store_page_fault_v;
-  wire exception_v_li = ptw_page_fault_v | commit_v_i;
-  wire exception_queue_v_li = commit_queue_v_i;
-  wire [vaddr_width_p-1:0] exception_npc_li = commit_npc_r;
-  wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_fill_pkt.vaddr : commit_vaddr_r;
-  wire [instr_width_gp-1:0] exception_instr_li = commit_instr_r;
+      commit_ninstr_r <= reservation.instr;
+      commit_instr_r  <= commit_ninstr_r;
+    end
 
   logic [dword_width_gp-1:0] csr_data_lo;
   bp_be_csr
@@ -142,27 +133,37 @@ module bp_be_pipe_sys
 
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.csr_cmd_i(csr_cmd_r)
-     ,.csr_cmd_v_i(csr_cmd_v_lo & commit_v_i)
+     ,.csr_cmd_i(csr_cmd_li)
+     ,.csr_cmd_v_i(csr_cmd_v_li)
      ,.csr_data_o(csr_data_lo)
+     ,.csr_illegal_instr_o(illegal_instr_o)
+     ,.csr_satp_v_o(satp_v_o)
+     ,.csr_sfence_v_o(sfence_v_o)
+     ,.csr_sret_v_o(sret_v_o)
+     ,.csr_mret_v_o(mret_v_o)
+     ,.csr_dret_v_o(dret_v_o)
+     ,.csr_ecall_u_v_o(ecall_u_v_o)
+     ,.csr_ecall_s_v_o(ecall_s_v_o)
+     ,.csr_ecall_m_v_o(ecall_m_v_o)
+     ,.csr_ebreak_v_o(ebreak_v_o)
+     ,.csr_dbreak_v_o(dbreak_v_o)
 
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
      ,.frf_w_v_i(fwb_pkt.frd_w_v)
 
-     ,.exception_v_i(exception_v_li)
-     ,.exception_queue_v_i(exception_queue_v_li)
-     ,.exception_npc_i(exception_npc_li)
-     ,.exception_vaddr_i(exception_vaddr_li)
-     ,.exception_instr_i(exception_instr_li)
+     ,.exception_v_i(commit_v_i)
+     ,.exception_queue_v_i(commit_queue_v_i)
+     ,.exception_npc_i(commit_npc_r)
+     ,.exception_vaddr_i(commit_vaddr_r)
+     ,.exception_instr_i(commit_instr_r)
      ,.exception_i(exception_i)
-     ,.special_i(special_li)
+     ,.special_i(special_i)
      ,.ptw_fill_pkt_i(ptw_fill_pkt_i)
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
      ,.irq_pending_o(irq_pending_o)
-     ,.interrupt_v_i(interrupt_v_i)
 
      ,.commit_pkt_o(commit_pkt)
      ,.trans_info_o(trans_info)
@@ -170,29 +171,10 @@ module bp_be_pipe_sys
      ,.fpu_en_o(fpu_en_o)
      );
 
-  always_ff @(posedge clk_i)
-    begin
-      commit_npc_r <= reservation.pc;
-      commit_pc_r  <= commit_npc_r;
-
-      commit_nvaddr_r <= rs1 + imm;
-      commit_vaddr_r  <= commit_nvaddr_r;
-
-      commit_ninstr_r <= reservation.instr;
-      commit_instr_r  <= commit_ninstr_r;
-    end
-
-  assign data_o           = csr_data_lo;
+  assign data_o = csr_data_lo;
 
   wire sys_v_li = reservation.v & reservation.decode.pipe_sys_v;
-  bsg_dff_chain
-   #(.width_p(1), .num_stages_p(2))
-   sys_chain
-    (.clk_i(clk_i)
-
-     ,.data_i(sys_v_li)
-     ,.data_o(v_o)
-     );
+  assign v_o = sys_v_li;
 
 endmodule
 

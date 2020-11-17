@@ -28,9 +28,7 @@ module bp_be_instr_decoder
    , localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = $bits(bp_be_decode_s)
    )
-  (input                             fe_exc_not_instr_i
-   , input bp_fe_exception_code_e    fe_exc_i
-   , input [instr_width_lp-1:0]      instr_i
+  (input [instr_width_lp-1:0]        instr_i
 
    , output [decode_width_lp-1:0]    decode_o
    , output [dword_width_gp-1:0]     imm_o
@@ -51,7 +49,6 @@ module bp_be_instr_decoder
   always_comb
     begin
       decode               = '0;
-
       imm                  = '0;
       illegal_instr        = '0;
 
@@ -242,8 +239,8 @@ module bp_be_instr_decoder
             decode.pipe_sys_v = 1'b1;
             decode.csr_v      = 1'b1;
             unique casez (instr)
-              `RV64_ECALL      : decode.ecall  = 1'b1;
-              `RV64_EBREAK     : decode.ebreak = 1'b1;
+              `RV64_ECALL      : decode.fu_op = e_ecall;
+              `RV64_EBREAK     : decode.fu_op = e_ebreak;
               `RV64_DRET       : decode.fu_op = e_dret;
               `RV64_MRET       : decode.fu_op = e_mret;
               `RV64_SRET       : decode.fu_op = e_sret;
@@ -550,23 +547,10 @@ module bp_be_instr_decoder
         default : illegal_instr = 1'b1;
       endcase
 
-      if (fe_exc_not_instr_i)
+      if (illegal_instr)
         begin
           decode = '0;
           decode.pipe_sys_v = 1'b1;
-          decode.csr_v = 1'b1;
-          casez (fe_exc_i)
-            e_instr_access_fault: decode.instr_access_fault = 1'b1;
-            e_instr_page_fault  : decode.instr_page_fault   = 1'b1;
-            e_itlb_miss         : decode.itlb_miss          = 1'b1;
-            e_icache_miss       : decode.icache_miss        = 1'b1;
-          endcase
-        end
-      else if (illegal_instr)
-        begin
-          decode = '0;
-          decode.pipe_sys_v = 1'b1;
-          decode.csr_v = 1'b1;
           decode.illegal_instr = 1'b1;
         end
 

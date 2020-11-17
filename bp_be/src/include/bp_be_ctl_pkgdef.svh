@@ -194,6 +194,7 @@
   typedef struct packed
   {
     logic                             v;
+    logic                             queue_v;
 
     logic                             pipe_ctl_v;
     logic                             pipe_int_v;
@@ -223,13 +224,15 @@
     bp_be_src2_e                      src2_sel;
     bp_be_baddr_e                     baddr_sel;
 
+
+    logic                             _interrupt;
     logic                             itlb_miss;
     logic                             icache_miss;
     logic                             instr_access_fault;
     logic                             instr_page_fault;
+    logic                             load_page_fault;
+    logic                             store_page_fault;
     logic                             illegal_instr;
-    logic                             ebreak;
-    logic                             ecall;
   }  bp_be_decode_s;
 
   typedef struct packed
@@ -237,7 +240,9 @@
     logic store_page_fault;
     logic load_page_fault;
     logic instr_page_fault;
-    logic ecall;
+    logic ecall_m;
+    logic ecall_s;
+    logic ecall_u;
     logic store_access_fault;
     logic store_misaligned;
     logic load_access_fault;
@@ -246,16 +251,23 @@
     logic illegal_instr;
     logic instr_access_fault;
     logic instr_misaligned;
+    logic _interrupt;
   }  bp_be_exception_s;
 
   typedef struct packed
   {
     logic itlb_miss;
     logic icache_miss;
-    logic dtlb_load_miss;
     logic dtlb_store_miss;
+    logic dtlb_load_miss;
     logic dcache_miss;
     logic fencei_v;
+    logic satp_v;
+    logic sfence_v;
+    logic sret_v;
+    logic mret_v;
+    logic dret_v;
+    logic dbreak;
   }  bp_be_special_s;
 
   typedef struct packed

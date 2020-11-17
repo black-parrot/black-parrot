@@ -85,10 +85,11 @@ module bp_be_top
 
   bp_be_commit_pkt_s commit_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
+  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
   bp_be_isd_status_s isd_status;
   logic [vaddr_width_p-1:0] expected_npc_lo;
-  logic poison_isd_lo, suppress_iss_lo;
+  logic poison_isd_lo, suppress_iss_lo, irq_pending_lo;
 
   logic fpu_en_lo;
   logic fe_cmd_full_lo;
@@ -152,6 +153,7 @@ module bp_be_top
      ,.expected_npc_i(expected_npc_lo)
      ,.poison_isd_i(poison_isd_lo)
      ,.dispatch_v_i(chk_dispatch_v)
+     ,.interrupt_v_i(chk_interrupt_v)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.fpu_en_i(fpu_en_lo)
 
@@ -162,6 +164,7 @@ module bp_be_top
      ,.dispatch_pkt_o(dispatch_pkt)
 
      ,.commit_pkt_i(commit_pkt)
+     ,.ptw_fill_pkt_i(ptw_fill_pkt)
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
      );
@@ -183,6 +186,7 @@ module bp_be_top
 
      ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)
+     ,.ptw_fill_pkt_o(ptw_fill_pkt)
      ,.iwb_pkt_o(iwb_pkt)
      ,.fwb_pkt_o(fwb_pkt)
 
@@ -215,7 +219,6 @@ module bp_be_top
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
-     ,.interrupt_v_i(chk_interrupt_v)
      ,.irq_pending_o(irq_pending_lo)
      );
 
