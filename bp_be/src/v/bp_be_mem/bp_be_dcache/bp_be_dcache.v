@@ -633,8 +633,7 @@ module bp_be_dcache
   logic tag_mem_pkt_v;
   logic stat_mem_pkt_v;
 
-  wire wt_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & (writethrough_p == 1);
-  wire wt_req = wt_success & ~flush_i;
+  wire wt_req = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & (writethrough_p == 1) & ~flush_i;
 
   localparam num_bytes_lp = dcache_block_width_p >> 3;
   localparam bp_cache_req_size_e max_req_size = (num_bytes_lp == 16)
@@ -1156,7 +1155,7 @@ module bp_be_dcache
     assign wbuf_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op;
   end
   else begin : wt_wbuf
-    assign wbuf_success = wt_success & cache_req_yumi_i;
+    assign wbuf_success = wt_req & cache_req_yumi_i;
   end
   assign wbuf_v_li = wbuf_success & ~flush_i;
   assign wbuf_yumi_li = wbuf_v_lo & ~(decode_lo.load_op & tl_we) & ~data_mem_pkt_yumi_o;
