@@ -183,34 +183,6 @@ $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
 $BP_COMMON_DIR/src/v/bsg_bus_pack.v
 $BP_COMMON_DIR/src/v/bp_pma.v
 $BP_COMMON_DIR/src/v/bp_tlb.v
-## BE files
-$BP_BE_DIR/src/v/bp_be_top.v
-# Calculator
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_aux.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctl.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fma.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_sys.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_regfile.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_to_rec.v
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_rec_to_fp.v
-# Checker
-$BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
-$BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
-$BP_BE_DIR/src/v/bp_be_checker/bp_be_issue_queue.v
-$BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
-# MMU
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_ptw.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_csr.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_decoder.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
 $BP_FE_DIR/src/v/bp_fe_btb.v

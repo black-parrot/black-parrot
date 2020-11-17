@@ -130,9 +130,6 @@ module bp_be_calculator_top
   logic [vaddr_width_p-1:0] pipe_mem_vaddr_lo;
   logic pipe_sys_exc_v_lo, pipe_sys_miss_v_lo;
 
-  logic [vaddr_width_p-1:0] br_tgt_int1;
-  logic btaken_int1;
-
   // Forwarding information
   logic [pipe_stage_els_lp:1]                        comp_stage_n_slice_iwb_v;
   logic [pipe_stage_els_lp:1]                        comp_stage_n_slice_fwb_v;
@@ -244,13 +241,7 @@ module bp_be_calculator_top
      ,.v_o(pipe_aux_data_lo_v)
      );
 
-  logic [rv64_priv_width_gp-1:0]       priv_mode_lo;
-  logic [ptag_width_p-1:0]             satp_ppn_lo;
-  logic                                translation_en_lo;
-  logic                                mstatus_sum_lo;
-  logic                                mstatus_mxr_lo;
-
-  logic                                pipe_mem_ready_lo;
+  logic pipe_mem_ready_lo;
   // Memory pipe: 2/3 cycle latency
   bp_be_pipe_mem
    #(.bp_params_p(bp_params_p))
@@ -332,7 +323,7 @@ module bp_be_calculator_top
 
      ,.commit_v_i(~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v)
      ,.commit_queue_v_i(~exc_stage_r[2].nop_v & ~exc_stage_r[2].roll_v)
-     ,.exception_i(exc_stage_r[2].exc & ~{$bits(bp_be_exception_s){exc_stage_r[2].poison_v}})
+     ,.exception_i(exc_stage_r[2].exc)
      ,.exception_vaddr_i(pipe_mem_vaddr_lo)
      ,.commit_pkt_o(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt_o)
@@ -391,9 +382,6 @@ module bp_be_calculator_top
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have
   //   static latencies, we cannot have two pipelines complete at the same time.
-  logic irf_w_v;
-  logic frf_w_v;
-  logic fflags_w_v;
   always_comb
     begin
       for (integer i = 0; i <= pipe_stage_els_lp; i++)
@@ -498,8 +486,7 @@ module bp_be_calculator_top
 
   // Exception pipeline
   bsg_dff
-   #(.width_p($bits(bp_be_exc_stage_s)*pipe_stage_els_lp)
-     )
+   #(.width_p($bits(bp_be_exc_stage_s)*pipe_stage_els_lp))
    exc_stage_reg
     (.clk_i(clk_i)
      ,.data_i(exc_stage_n[0+:pipe_stage_els_lp])
