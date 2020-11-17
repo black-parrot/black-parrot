@@ -66,7 +66,7 @@ module bp_lite_to_burst
 
   wire has_data = payload_mask_p[mem_cast_i.header.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
-  wire [data_len_width_lp-1:0] num_burst_cmds = (1'b1 << mem_cast_i.header.size) / out_data_bytes_lp;
+  wire [data_len_width_lp-1:0] num_burst_cmds = `BSG_MAX(1, (1'b1 << mem_cast_i.header.size) / out_data_bytes_lp);
   logic [out_data_width_p-1:0] data_lo;
   bsg_parallel_in_serial_out_dynamic
    #(.width_p(out_data_width_p), .max_els_p(burst_words_lp))
@@ -101,8 +101,8 @@ module bp_lite_to_burst
       //if (mem_ready_and_o & mem_v_i)
       //  $display("[%t] Msg received: %p", $time, mem_cast_i);
 
-      //if (mem_yumi_i)
-      //  $display("[%t] Stream sent: %p %x CNT: %x", $time, mem_header_cast_o, mem_data_o, current_cnt);
+      //if (mem_header_ready_and_i & mem_header_v_o)
+      //  $display("[%t] Stream sent: %p %x CNT: %x", $time, mem_header_cast_o, mem_data_o, num_burst_cmds);
     end
   //synopsys translate_on
 
