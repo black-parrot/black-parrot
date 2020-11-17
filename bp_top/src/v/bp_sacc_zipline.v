@@ -40,6 +40,7 @@ module bp_sacc_zipline
 
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
+
 //   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
@@ -93,9 +94,11 @@ module bp_sacc_zipline
    logic                         xp9_disable;
 
 
+
    bp_bedrock_cce_mem_payload_s  resp_payload;
    bp_bedrock_msg_size_e         resp_size;
    bp_bedrock_mem_type_e         resp_msg;
+
    logic [paddr_width_p-1:0]     resp_addr;
    logic [63:0]                  resp_data;
    logic [63:0]                  tlv_type;
@@ -113,6 +116,7 @@ module bp_sacc_zipline
 //   assign io_cmd_ready_o = apb_pready;
    assign io_cmd_ready_o = 1;
    assign io_resp_ready_o = 1'b1;
+
 //   assign io_cmd_v_o = 1'b0;
    
 
@@ -138,7 +142,9 @@ module bp_sacc_zipline
    assign apb_psel= 1'b1;
    assign apb_penable= io_cmd_v_i & (local_addr_li.dev == '1);
    
+
    assign apb_pwrite= io_cmd_v_i & (io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_wr) & (local_addr_li.dev == '1);
+
    assign apb_pwdata= io_cmd_cast_i.data;
 
 /*   assign io_resp_out =apb_prdata;
@@ -154,7 +160,9 @@ assign ob_tready= 1'b1;
 //dma engine
 logic           dma_enable;
 logic [63:0]    dma_address;
+
 assign dma_enable = io_cmd_v_i & (local_addr_li.dev == 4'd2) & (local_addr_li.nonlocal == 9'd0);//device number 2 is dma
+
 assign io_cmd_o = io_cmd_cast_o;
 
    

@@ -177,6 +177,7 @@ module bp_sacc_tile
      ,.v_o(lce_lce_cmd_v_li)
      ,.yumi_i(lce_lce_cmd_yumi_lo)
      );
+
 /*
    assign lce_lce_cmd_li = '{header: lce_cmd_packet_li.header.msg_hdr, data: lce_cmd_packet_li.data};
 
@@ -211,7 +212,6 @@ module bp_sacc_tile
    //assign lce_lce_cmd_li = lce_cmd_packet_li.payload;
    assign lce_lce_cmd_li = '{header: lce_cmd_packet_li.header.msg_hdr, data: lce_cmd_packet_li.data};
     
-
 if(sacc_type_p == e_sacc_zipline)
   begin: sacc_zipline
   bp_sacc_zipline

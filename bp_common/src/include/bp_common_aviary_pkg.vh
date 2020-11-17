@@ -2,7 +2,6 @@
 package bp_common_aviary_pkg;
   `include "bp_common_aviary_defines.vh"
 
-
   import bp_common_pkg::*;
 
   // Suitably high enough to not run out of configs.

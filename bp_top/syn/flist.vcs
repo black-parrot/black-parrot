@@ -14,6 +14,7 @@
 +incdir+$HARDFLOAT_DIR/source
 +incdir+$HARDFLOAT_DIR/source/RISCV
 
+
 #zipline
 +incdir+$BP_EXTERNAL_DIR/zipline/rtl/common/include/cr_global_params.vh
 +incdir+$BP_EXTERNAL_DIR/zipline/rtl/common/include
@@ -64,10 +65,12 @@ $BP_BE_DIR/src/include/bp_be_dcache_pkg.vh
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 
+
 # HardFloat packages
 $BP_BE_DIR/src/include/bp_be_hardfloat_pkg.vh
 
-#zipline
+
+##zipline
 -y $BP_EXTERNAL_DIR/zipline/rtl/common
 -y $BP_EXTERNAL_DIR/zipline/rtl/common/nx_library
 -y $BP_EXTERNAL_DIR/zipline/rtl/common/cr_tlvp

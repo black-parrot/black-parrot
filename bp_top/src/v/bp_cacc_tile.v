@@ -56,6 +56,7 @@ module bp_cacc_tile
 
   // accelerator-side connections network connections
   //logic [lce_cce_req_header_width_lp+dword_width_p-1:0]  lce_req_lo;
+
   bp_bedrock_lce_req_msg_s  lce_req_lo;
 
   logic             lce_req_v_lo, lce_req_ready_li;
