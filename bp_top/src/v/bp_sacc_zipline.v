@@ -8,9 +8,10 @@ module bp_sacc_zipline
  import bp_cce_pkg::*;
  import bp_me_pkg::*;
  import bp_be_dcache_pkg::*;  
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     )
    (
@@ -39,11 +40,14 @@ module bp_sacc_zipline
 
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+//   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
    
-  bp_cce_mem_msg_s io_resp_cast_o;
-  bp_cce_mem_msg_header_s resp_header; 
-  bp_cce_mem_msg_s io_cmd_cast_i, io_cmd_cast_o;
+  bp_bedrock_cce_mem_msg_s io_resp_cast_o;
+  bp_bedrock_cce_mem_msg_header_s resp_header; 
+  bp_bedrock_cce_mem_msg_s io_cmd_cast_i, io_cmd_cast_o;
+
  // bp_cce_mem_msg_s io_resp_cast_i;
  // bp_cce_mem_msg_s io_cmd_cast_o;
   
@@ -89,9 +93,9 @@ module bp_sacc_zipline
    logic                         xp9_disable;
 
 
-   bp_cce_mem_msg_payload_s      resp_payload;
-   bp_mem_msg_size_e             resp_size;
-   bp_cce_mem_cmd_type_e         resp_msg;
+   bp_bedrock_cce_mem_payload_s  resp_payload;
+   bp_bedrock_msg_size_e         resp_size;
+   bp_bedrock_mem_type_e         resp_msg;
    logic [paddr_width_p-1:0]     resp_addr;
    logic [63:0]                  resp_data;
    logic [63:0]                  tlv_type;
@@ -109,7 +113,7 @@ module bp_sacc_zipline
 //   assign io_cmd_ready_o = apb_pready;
    assign io_cmd_ready_o = 1;
    assign io_resp_ready_o = 1'b1;
-   assign io_cmd_v_o = 1'b0;
+//   assign io_cmd_v_o = 1'b0;
    
 
    assign io_cmd_cast_i = io_cmd_i;
@@ -134,7 +138,7 @@ module bp_sacc_zipline
    assign apb_psel= 1'b1;
    assign apb_penable= io_cmd_v_i & (local_addr_li.dev == '1);
    
-   assign apb_pwrite= io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_cce_mem_uc_wr) & (local_addr_li.dev == '1);
+   assign apb_pwrite= io_cmd_v_i & (io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_wr) & (local_addr_li.dev == '1);
    assign apb_pwdata= io_cmd_cast_i.data;
 
 /*   assign io_resp_out =apb_prdata;
@@ -150,7 +154,7 @@ assign ob_tready= 1'b1;
 //dma engine
 logic           dma_enable;
 logic [63:0]    dma_address;
-assign dma_enable = io_cmd_v_i & (local_addr_li.dev == '2) & (local_addr_li.dev == '2);//device number 2 is dma
+assign dma_enable = io_cmd_v_i & (local_addr_li.dev == 4'd2) & (local_addr_li.nonlocal == 9'd0);//device number 2 is dma
 assign io_cmd_o = io_cmd_cast_o;
 
    
@@ -161,7 +165,7 @@ begin
         resp_size    <= io_cmd_cast_i.header.size;
         resp_payload <= io_cmd_cast_i.header.payload;
         resp_addr    <= io_cmd_cast_i.header.addr;
-        resp_msg     <= io_cmd_cast_i.header.msg_type;
+        resp_msg     <= io_cmd_cast_i.header.msg_type.mem;
         io_resp_v_o  <= 1'b1;
         ib_tvalid    <= 1'b0;
         ib_tlast     <= 1'b0;
@@ -179,12 +183,14 @@ begin
         resp_size    <= io_cmd_cast_i.header.size;
         resp_payload <= io_cmd_cast_i.header.payload;
         resp_addr    <= io_cmd_cast_i.header.addr;
-        resp_msg     <= io_cmd_cast_i.header.msg_type;
+        resp_msg     <= io_cmd_cast_i.header.msg_type.mem;
         io_resp_v_o  <= 1'b1;
         ib_tvalid    <= 1'b1;
         ib_tlast     <= (tlv_type == 64'd4) & (tlv_idx == 64'd2);
         ib_tdata     <= io_cmd_cast_i.data;
         ib_tid       <=1'b0;
+        io_cmd_v_o   <= 1'b0;
+        io_cmd_v_o   <= 1'b0;
      end
    else if(dma_enable)
      begin
@@ -202,7 +208,8 @@ begin
         ib_tvalid    <= 1'b0;
         ib_tdata     <= 64'd0;
         ib_tid       <= 1'b0;
-        ib_tlast     <= 1'b0; 
+        ib_tlast     <= 1'b0;
+        io_cmd_v_o   <= 1'b0;
      end
 end 
 
