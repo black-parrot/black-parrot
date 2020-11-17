@@ -24,7 +24,8 @@ module bp_core_minimal
 
    , output logic [icache_req_width_lp-1:0]          icache_req_o
    , output logic                                    icache_req_v_o
-   , input                                           icache_req_ready_i
+   , input                                           icache_req_yumi_i
+   , input                                           icache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0] icache_req_metadata_o
    , output logic                                    icache_req_metadata_v_o
    , input                                           icache_req_critical_i
@@ -49,7 +50,8 @@ module bp_core_minimal
 
    , output logic [dcache_req_width_lp-1:0]          dcache_req_o
    , output logic                                    dcache_req_v_o
-   , input                                           dcache_req_ready_i
+   , input                                           dcache_req_yumi_i
+   , input                                           dcache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] dcache_req_metadata_o
    , output logic                                    dcache_req_metadata_v_o
    , input                                           dcache_req_critical_i
@@ -105,7 +107,8 @@ module bp_core_minimal
 
      ,.cache_req_o(icache_req_o)
      ,.cache_req_v_o(icache_req_v_o)
-     ,.cache_req_ready_i(icache_req_ready_i)
+     ,.cache_req_yumi_i(icache_req_yumi_i)
+     ,.cache_req_busy_i(icache_req_busy_i)
      ,.cache_req_metadata_o(icache_req_metadata_o)
      ,.cache_req_metadata_v_o(icache_req_metadata_v_o)
      ,.cache_req_critical_i(icache_req_critical_i)
@@ -147,7 +150,8 @@ module bp_core_minimal
 
      ,.cache_req_o(dcache_req_o)
      ,.cache_req_v_o(dcache_req_v_o)
-     ,.cache_req_ready_i(dcache_req_ready_i)
+     ,.cache_req_yumi_i(dcache_req_yumi_i)
+     ,.cache_req_busy_i(dcache_req_busy_i)
      ,.cache_req_metadata_o(dcache_req_metadata_o)
      ,.cache_req_metadata_v_o(dcache_req_metadata_v_o)
      ,.cache_req_critical_i(dcache_req_critical_i)

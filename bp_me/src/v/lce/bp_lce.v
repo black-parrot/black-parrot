@@ -54,7 +54,8 @@ module bp_lce
     // can arrive, as indicated by the metadata_v_i signal
     , input [cache_req_width_lp-1:0]                 cache_req_i
     , input                                          cache_req_v_i
-    , output logic                                   cache_req_ready_o
+    , output logic                                   cache_req_yumi_o
+    , output logic                                   cache_req_busy_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
     , output logic                                   cache_req_critical_o
@@ -121,7 +122,7 @@ module bp_lce
   //synopsys translate_on
 
   // LCE Request Module
-  logic req_ready_lo;
+  logic req_ready_lo, req_yumi_lo;
   logic uc_store_req_complete_lo;
   logic sync_done_lo;
   bp_lce_req
@@ -142,6 +143,7 @@ module bp_lce
       ,.sync_done_i(sync_done_lo)
 
       ,.ready_o(req_ready_lo)
+      ,.yumi_o(req_yumi_lo)
 
       ,.cache_req_i(cache_req_i)
       ,.cache_req_v_i(cache_req_v_i)
@@ -159,7 +161,7 @@ module bp_lce
       );
 
   // LCE Command Module
-  logic cmd_ready_lo;
+  logic cmd_ready_lo, cmd_busy_lo;
   bp_lce_cmd
     #(.bp_params_p(bp_params_p)
       ,.assoc_p(assoc_p)
@@ -217,7 +219,7 @@ module bp_lce
   // LCE can read/write to data_mem, tag_mem, and stat_mem during cycles the cache itself is
   // not using them. To prevent the LCE from stalling for too long while waiting for one of
   // these ports, or when processing an inbound LCE command, there is a timer that deasserts the
-  // LCE's cache_req_ready_o signal to prevent the cache from issuing a new request, thereby
+  // LCE's busy_o signal to prevent the cache from issuing a new request, thereby
   // freeing up a cycle for the LCE to use these resources.
 
   logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_cnt_r;
@@ -241,9 +243,10 @@ module bp_lce
   wire timeout = (timeout_cnt_r == timeout_max_limit_p);
 
   // LCE is ready to accept new cache requests if:
-  // - LCE Request module is ready (raised when in ready state and free credits exist)
+  // - LCE Request module is in ready state and free credits exist
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
   // - LCE Command module is ready to process commands (raised after initialization complete)
-  assign cache_req_ready_o = req_ready_lo & cmd_ready_lo & ~timeout;
+  assign cache_req_busy_o = cache_req_credits_full_o | timeout | ~cmd_ready_lo | ~req_ready_lo;
+  assign cache_req_yumi_o = req_yumi_lo & ~cache_req_busy_o;
 
 endmodule

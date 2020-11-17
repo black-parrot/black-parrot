@@ -63,9 +63,10 @@ module bp_lce_req
 
     // LCE Req is able to sink any requests this cycle
     , output logic                                   ready_o
+    , output logic                                   yumi_o
 
     // Cache-LCE Interface
-    // ready_o->valid_i handshake
+    // valid_i -> yumi_o handshake
     // metadata arrives in the same cycle as req, or any cycle after, but before the next request
     // can arrive, as indicated by the metadata_v_i signal
     , input [cache_req_width_lp-1:0]                 cache_req_i
@@ -119,7 +120,7 @@ module bp_lce_req
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(cache_req_v_i)
+     ,.data_i(yumi_o)
      ,.data_o(cache_req_v_r)
      );
 
@@ -128,7 +129,7 @@ module bp_lce_req
     #(.width_p($bits(bp_cache_req_s)))
     req_reg
      (.clk_i(clk_i)
-      ,.en_i(cache_req_v_i)
+      ,.en_i(yumi_o)
       ,.data_i(cache_req_i)
       ,.data_o(cache_req_r)
       );
@@ -141,7 +142,7 @@ module bp_lce_req
      ,.reset_i(reset_i)
 
      ,.set_i(cache_req_metadata_v_i)
-     ,.clear_i(cache_req_v_i)
+     ,.clear_i(yumi_o)
      ,.data_o(cache_req_metadata_v_r)
      );
 
@@ -186,7 +187,8 @@ module bp_lce_req
   always_comb begin
     state_n = state_r;
 
-    ready_o = 1'b0;
+    ready_o= 1'b0;
+    yumi_o = 1'b0;
 
     lce_req_v_o = 1'b0;
 
@@ -204,9 +206,10 @@ module bp_lce_req
 
       // Ready for new request
       e_ready: begin
-        // ready for new request if LCE hasn't used all its credits
+        // yumi a new request if LCE hasn't used all its credits
         ready_o = ~credits_full_o & lce_req_ready_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
-        if (cache_req_v_i) begin
+        yumi_o = ready_o & cache_req_v_i;
+        if (yumi_o) begin
           unique case (cache_req.msg_type)
             e_miss_store
             , e_miss_load: begin
