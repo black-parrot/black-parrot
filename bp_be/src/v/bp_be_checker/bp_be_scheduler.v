@@ -46,12 +46,10 @@ module bp_be_scheduler
   // Dispatch interface
   , output [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
 
-  , input [commit_pkt_width_lp-1:0]      commit_pkt_i
+  , input [commit_pkt_width_lp-1:0]    commit_pkt_i
   , input [wb_pkt_width_lp-1:0]        iwb_pkt_i
   , input [wb_pkt_width_lp-1:0]        fwb_pkt_i
   );
-
-  wire unused = &{clk_i, reset_i};
 
   // Declare parameterizable structures
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -61,7 +59,7 @@ module bp_be_scheduler
   // Cast input and output ports
   bp_be_isd_status_s isd_status;
   rv64_instr_s       instr;
-  bp_be_commit_pkt_s   commit_pkt;
+  bp_be_commit_pkt_s commit_pkt;
   bp_be_wb_pkt_s     iwb_pkt, fwb_pkt;
 
   bp_fe_queue_s fe_queue_lo;
@@ -69,7 +67,7 @@ module bp_be_scheduler
 
   assign isd_status_o    = isd_status;
   assign instr           = fe_queue_lo.msg.fetch.instr;
-  assign commit_pkt        = commit_pkt_i;
+  assign commit_pkt      = commit_pkt_i;
   assign iwb_pkt         = iwb_pkt_i;
   assign fwb_pkt         = fwb_pkt_i;
 

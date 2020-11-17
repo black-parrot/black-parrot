@@ -277,8 +277,8 @@ module bp_be_instr_decoder
             decode.pipe_sys_v = 1'b1;
             decode.csr_v      = 1'b1;
             unique casez (instr)
-              `RV64_ECALL      : decode.fu_op = e_ecall;
-              `RV64_EBREAK     : decode.fu_op = e_ebreak;
+              `RV64_ECALL      : decode.ecall  = 1'b1;
+              `RV64_EBREAK     : decode.ebreak = 1'b1;
               `RV64_DRET       : decode.fu_op = e_dret;
               `RV64_MRET       : decode.fu_op = e_mret;
               `RV64_SRET       : decode.fu_op = e_sret;
@@ -591,6 +591,7 @@ module bp_be_instr_decoder
       if (fe_exc_not_instr_i)
         begin
           decode = '0;
+          decode.pipe_sys_v = 1'b1;
           decode.csr_v = 1'b1;
           casez (fe_exc_i)
             e_instr_access_fault: decode.instr_access_fault = 1'b1;
@@ -602,6 +603,7 @@ module bp_be_instr_decoder
       else if (illegal_instr)
         begin
           decode = '0;
+          decode.pipe_sys_v = 1'b1;
           decode.csr_v = 1'b1;
           decode.illegal_instr = 1'b1;
         end

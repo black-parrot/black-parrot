@@ -127,7 +127,6 @@
     logic instr_miss_v;                                                                            \
     logic load_miss_v;                                                                             \
     logic store_miss_v;                                                                            \
-    logic [vaddr_width_mp-1:0] pc;                                                                 \
     logic [vaddr_width_mp-1:0] vaddr;                                                              \
   }  bp_be_ptw_miss_pkt_s;                                                                         \
                                                                                                    \
@@ -138,7 +137,6 @@
     logic instr_page_fault_v;                                                                      \
     logic load_page_fault_v;                                                                       \
     logic store_page_fault_v;                                                                      \
-    logic [vaddr_width_mp-1:0] pc;                                                                 \
     logic [vaddr_width_mp-1:0] vaddr;                                                              \
     logic [dword_width_p-1:0]  entry;                                                              \
   }  bp_be_ptw_fill_pkt_s;                                                                         \
@@ -191,11 +189,11 @@
    )
 
 `define bp_be_ptw_miss_pkt_width(vaddr_width_mp) \
-  (3 + 2*vaddr_width_mp)
+  (3 + vaddr_width_mp)
 
 `define bp_be_ptw_fill_pkt_width(vaddr_width_mp) \
   (5                                                                                               \
-   + 2*vaddr_width_mp                                                                              \
+   + vaddr_width_mp                                                                                \
    + dword_width_p                                                                                 \
    )
 

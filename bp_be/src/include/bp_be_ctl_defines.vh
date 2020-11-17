@@ -230,6 +230,8 @@
     logic                             instr_access_fault;
     logic                             instr_page_fault;
     logic                             illegal_instr;
+    logic                             ebreak;
+    logic                             ecall;
   }  bp_be_decode_s;
   
   typedef struct packed
@@ -238,10 +240,12 @@
     logic store_page_fault;
     logic load_page_fault;
     logic instr_page_fault;
+    logic ecall;
     logic store_access_fault;
     logic store_misaligned;
     logic load_access_fault;
     logic load_misaligned;
+    logic ebreak;
     logic illegal_instr;
     logic instr_access_fault;
     logic instr_misaligned;
