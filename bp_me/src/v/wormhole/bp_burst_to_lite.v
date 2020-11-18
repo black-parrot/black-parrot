@@ -65,7 +65,7 @@ module bp_burst_to_lite
   bp_bedrock_in_mem_msg_header_s mem_header_cast_i;
   assign mem_header_cast_i = mem_header_i;
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
-  wire [data_len_width_lp-1:0] incoming_burst_cmds = ((1'b1 << mem_header_cast_i.size) / in_data_bytes_lp);
+  wire [data_len_width_lp-1:0] incoming_burst_cmds = `BSG_MAX(1, ((1'b1 << mem_header_cast_i.size) / in_data_bytes_lp));
   logic [data_len_width_lp-1:0] num_burst_cmds;
   bsg_dff_en_bypass
    #(.width_p(data_len_width_lp))
