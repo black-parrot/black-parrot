@@ -189,12 +189,6 @@ module bp_be_dcache
   assign addr_index = dcache_pkt.page_offset[block_offset_width_lp+:index_width_lp];
   assign addr_bank_offset = dcache_pkt.page_offset[byte_offset_width_lp+:bank_offset_width_lp];
  
-  generate // dcache parameter check in compile time
-  if ( (dcache_block_width_p/dcache_assoc_p) < dword_width_p || dcache_fill_width_p > dcache_block_width_p )begin
-    $error("ERROR: The dcache supports multi-cycle fill/eviction with the following constraints: - bank_width = block_width / assoc >= dword_width and fill_width = N*bank_width <= block_width. Please adjust the parameters according to these conditions and recompile");
-  end
-  endgenerate
- 
   // TL stage
   //
   logic v_tl_r; // valid bit
@@ -1289,6 +1283,10 @@ module bp_be_dcache
   assign stat_mem_o = stat_mem_data_lo;
 
   // synopsys translate_off
+  if ( (dcache_block_width_p/dcache_assoc_p) < dword_width_p || dcache_fill_width_p > dcache_block_width_p ) begin // dcache parameter check in compile time
+    $error("ERROR: The dcache supports multi-cycle fill/eviction with the following constraints: - bank_width = block_width / assoc >= dword_width and fill_width = N*bank_width <= block_width. Please adjust the parameters according to these conditions and recompile");
+  end
+ 
   always_ff @ (posedge clk_i) begin
     if (v_tv_r) begin
       assert($countones(load_hit_tl) <= 1)
