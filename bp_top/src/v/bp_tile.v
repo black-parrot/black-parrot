@@ -34,7 +34,6 @@ module bp_tile
    , input [io_noc_did_width_p-1:0]                           host_did_i
    , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
-   // Connected to other tiles on east and west
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_req_link_i
    , output [coh_noc_ral_link_width_lp-1:0]                   lce_req_link_o
 
@@ -72,36 +71,35 @@ module bp_tile
   logic timer_irq_li, software_irq_li, external_irq_li;
   
   // Proc-side connections network connections
-  // Proc-side LCE Requests support up to dword_width_p of data, and are passed as header+data
-  bp_bedrock_lce_req_msg_s  [1:0] lce_req_lo;
-  logic             [1:0] lce_req_v_lo, lce_req_ready_li;
+  bp_bedrock_lce_req_msg_s [1:0] lce_req_lo;
+  logic [1:0] lce_req_v_lo, lce_req_ready_li;
   bp_bedrock_lce_resp_msg_s [1:0] lce_resp_lo;
-  logic             [1:0] lce_resp_v_lo, lce_resp_ready_li;
-  bp_bedrock_lce_cmd_msg_s      [1:0] lce_cmd_li;
-  logic             [1:0] lce_cmd_v_li, lce_cmd_yumi_lo;
-  bp_bedrock_lce_cmd_msg_s      [1:0] lce_cmd_lo;
-  logic             [1:0] lce_cmd_v_lo, lce_cmd_ready_li;
+  logic [1:0] lce_resp_v_lo, lce_resp_ready_li;
+  bp_bedrock_lce_cmd_msg_s [1:0] lce_cmd_li;
+  logic [1:0] lce_cmd_v_li, lce_cmd_yumi_lo;
+  bp_bedrock_lce_cmd_msg_s [1:0] lce_cmd_lo;
+  logic [1:0] lce_cmd_v_lo, lce_cmd_ready_li;
   
   // CCE connections
-  bp_bedrock_lce_req_msg_s  cce_lce_req_li;
-  logic             cce_lce_req_v_li, cce_lce_req_yumi_lo;
-  bp_bedrock_lce_cmd_msg_s      cce_lce_cmd_lo;
-  logic             cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
+  bp_bedrock_lce_req_msg_s cce_lce_req_li;
+  logic cce_lce_req_v_li, cce_lce_req_yumi_lo;
+  bp_bedrock_lce_cmd_msg_s cce_lce_cmd_lo;
+  logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
   bp_bedrock_lce_resp_msg_s cce_lce_resp_li;
-  logic             cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
+  logic cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
   
   // Mem connections
-  bp_bedrock_cce_mem_msg_s       cce_mem_cmd_lo;
-  logic                  cce_mem_cmd_v_lo, cce_mem_cmd_ready_li;
-  bp_bedrock_cce_mem_msg_s       cce_mem_resp_li;
-  logic                  cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
+  bp_bedrock_cce_mem_msg_s cce_mem_cmd_lo;
+  logic cce_mem_cmd_v_lo, cce_mem_cmd_ready_li;
+  bp_bedrock_cce_mem_msg_s cce_mem_resp_li;
+  logic cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
   
-  bp_bedrock_cce_mem_msg_s       loopback_mem_cmd_li;
-  bp_bedrock_xce_mem_msg_s       loopback_mem_cmd;
-  logic                  loopback_mem_cmd_v_li, loopback_mem_cmd_ready_lo;
-  bp_bedrock_cce_mem_msg_s       loopback_mem_resp_lo;
-  bp_bedrock_xce_mem_msg_s       loopback_mem_resp;
-  logic                  loopback_mem_resp_v_lo, loopback_mem_resp_yumi_li;
+  bp_bedrock_cce_mem_msg_s loopback_mem_cmd_li;
+  bp_bedrock_xce_mem_msg_s loopback_mem_cmd;
+  logic loopback_mem_cmd_v_li, loopback_mem_cmd_ready_lo;
+  bp_bedrock_cce_mem_msg_s loopback_mem_resp_lo;
+  bp_bedrock_xce_mem_msg_s loopback_mem_resp;
+  logic loopback_mem_resp_v_lo, loopback_mem_resp_yumi_li;
   assign loopback_mem_cmd = '{header: loopback_mem_cmd_li.header
                              ,data: loopback_mem_cmd_li.data[0+:dword_width_p]
                              };
@@ -109,17 +107,17 @@ module bp_tile
                                  ,data: {cce_block_width_p/dword_width_p{loopback_mem_resp.data}}
                                  };
   
-  bp_bedrock_cce_mem_msg_s       cache_mem_cmd_li;
-  logic                  cache_mem_cmd_v_li, cache_mem_cmd_ready_lo;
-  bp_bedrock_cce_mem_msg_s       cache_mem_resp_lo;
-  logic                  cache_mem_resp_v_lo, cache_mem_resp_yumi_li;
+  bp_bedrock_cce_mem_msg_s cache_mem_cmd_li;
+  logic cache_mem_cmd_v_li, cache_mem_cmd_ready_lo;
+  bp_bedrock_cce_mem_msg_s cache_mem_resp_lo;
+  logic cache_mem_resp_v_lo, cache_mem_resp_yumi_li;
   
-  bp_bedrock_cce_mem_msg_s       cfg_mem_cmd_li;
-  bp_bedrock_xce_mem_msg_s       cfg_mem_cmd;
-  logic                  cfg_mem_cmd_v_li, cfg_mem_cmd_ready_lo;
-  bp_bedrock_cce_mem_msg_s       cfg_mem_resp_lo;
-  bp_bedrock_xce_mem_msg_s       cfg_mem_resp;
-  logic                  cfg_mem_resp_v_lo, cfg_mem_resp_yumi_li;
+  bp_bedrock_cce_mem_msg_s cfg_mem_cmd_li;
+  bp_bedrock_xce_mem_msg_s cfg_mem_cmd;
+  logic cfg_mem_cmd_v_li, cfg_mem_cmd_ready_lo;
+  bp_bedrock_cce_mem_msg_s cfg_mem_resp_lo;
+  bp_bedrock_xce_mem_msg_s cfg_mem_resp;
+  logic cfg_mem_resp_v_lo, cfg_mem_resp_yumi_li;
   assign cfg_mem_cmd = '{header: cfg_mem_cmd_li.header
                         ,data: cfg_mem_cmd_li.data[0+:dword_width_p]
                         };
@@ -127,12 +125,12 @@ module bp_tile
                             ,data: {cce_block_width_p/dword_width_p{cfg_mem_resp.data}}
                             };
   
-  bp_bedrock_cce_mem_msg_s       clint_mem_cmd_li;
-  bp_bedrock_xce_mem_msg_s       clint_mem_cmd;
-  logic                  clint_mem_cmd_v_li, clint_mem_cmd_ready_lo;
-  bp_bedrock_cce_mem_msg_s       clint_mem_resp_lo;
-  bp_bedrock_xce_mem_msg_s       clint_mem_resp;
-  logic                  clint_mem_resp_v_lo, clint_mem_resp_yumi_li;
+  bp_bedrock_cce_mem_msg_s clint_mem_cmd_li;
+  bp_bedrock_xce_mem_msg_s clint_mem_cmd;
+  logic clint_mem_cmd_v_li, clint_mem_cmd_ready_lo;
+  bp_bedrock_cce_mem_msg_s clint_mem_resp_lo;
+  bp_bedrock_xce_mem_msg_s clint_mem_resp;
+  logic clint_mem_resp_v_lo, clint_mem_resp_yumi_li;
   assign clint_mem_cmd = '{header: clint_mem_cmd_li.header
                           ,data: clint_mem_cmd_li.data[0+:dword_width_p]
                           };
