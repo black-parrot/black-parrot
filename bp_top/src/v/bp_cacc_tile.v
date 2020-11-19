@@ -98,7 +98,7 @@ module bp_cacc_tile
      );
 
 
-////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
   `declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_msg_header_s, cce_block_width_p);
   localparam lce_req_wh_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_msg_header_s), cce_block_width_p);
   bp_lce_req_wormhole_packet_s lce_req_packet_lo, lce_req_packet_li;

@@ -136,9 +136,9 @@ module bp_l2e_tile
      ,.mem_resp_yumi_i(cfg_mem_resp_yumi_li)
   
      ,.cfg_bus_o(cfg_bus_lo)
-     ,.did_i()
-     ,.host_did_i()
-     ,.cord_i()
+     ,.did_i(my_did_i)
+     ,.host_did_i('0)
+     ,.cord_i(my_cord_i)
   
      ,.cce_ucode_v_o(cce_ucode_v_lo)
      ,.cce_ucode_w_o(cce_ucode_w_lo)

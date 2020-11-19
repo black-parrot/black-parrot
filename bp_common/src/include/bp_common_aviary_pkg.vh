@@ -198,7 +198,7 @@ package bp_common_aviary_pkg;
 
   localparam bp_proc_param_s bp_multicore_1_l2e_override_p =
     '{mc_y_dim   : 1
-      ,num_cce   : 1
+      ,num_cce   : 2
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_l2e_cfg_p
