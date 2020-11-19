@@ -23,15 +23,15 @@ module bp_uce
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
     , localparam byte_offset_width_lp  = `BSG_SAFE_CLOG2(bank_width_lp>>3)
     // Words per line == associativity
-    , localparam bank_offset_width_lp  = $clog2(assoc_p)
-    , localparam block_offset_width_lp = (bank_offset_width_lp + byte_offset_width_lp)
+    , localparam bank_offset_width_lp  = `BSG_SAFE_CLOG2(assoc_p)
+    , localparam block_offset_width_lp = (assoc_p > 1) ? (bank_offset_width_lp + byte_offset_width_lp) : byte_offset_width_lp
     , localparam index_width_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam way_width_lp = `BSG_SAFE_CLOG2(assoc_p)
     , localparam block_size_in_fill_lp = block_width_p / fill_width_p
     , localparam fill_size_in_bank_lp = fill_width_p / bank_width_lp
     , localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp)
     , localparam fill_offset_width_lp = (block_offset_width_lp - fill_cnt_width_lp)
-    , localparam bank_sub_offset_width_lp = `BSG_SAFE_CLOG2(fill_size_in_bank_lp)
+    , localparam bank_sub_offset_width_lp = $clog2(fill_size_in_bank_lp)
 
     // Fill size parameterisations -
     , localparam bp_bedrock_msg_size_e block_msg_size_lp = (fill_width_p == 512)
@@ -285,25 +285,12 @@ module bp_uce
   // to write back dirty data to L2 in the size of fill_width.
   logic [fill_cnt_width_lp-1:0] mem_cmd_cnt;
   logic [block_size_in_fill_lp-1:0] fill_index_shift;
-  logic [`BSG_SAFE_MINUS(bank_offset_width_lp,1):0] bank_index;
+  logic [bank_offset_width_lp-1:0] bank_index;
   logic [paddr_width_p-1:0] critical_addr;
 
-  // For direct-mapped caches, the fill width should be equal to block width
-  // since bank width = block width and fill width can't be less than bank
-  // width
-  if (fill_size_in_bank_lp == 1)
-    begin
-      assign bank_index =  mem_cmd_cnt;
-      // Setting fill_index_shift to zero for direct-mapped caches since there aren't any opportunities for iterative filling as well as no data memory banks
-      assign fill_index_shift = (assoc_p > 1) 
-                                  ? mem_resp_cast_i.header.addr[byte_offset_width_lp+:`BSG_MAX(bank_offset_width_lp,1)]
-                                  : '0;
-    end
-  else
-    begin
-      assign bank_index = mem_cmd_cnt << bank_sub_offset_width_lp;
-      assign fill_index_shift = mem_resp_cast_i.header.addr[byte_offset_width_lp+:`BSG_MAX(bank_offset_width_lp,1)] >> bank_sub_offset_width_lp;
-    end
+  assign bank_index = mem_cmd_cnt << bank_sub_offset_width_lp;
+  // fill_index_shift corresponds to a single data bank in a direct-mapped cache
+  assign fill_index_shift = {{(assoc_p != 1){mem_resp_cast_i.header.addr[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp}}, {(assoc_p == 1){'0}}};
 
   logic fill_up, fill_done, mem_cmd_up, mem_cmd_done;
   if (fill_width_p == block_width_p) 
@@ -678,9 +665,6 @@ module bp_uce
             mem_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             // request next sub-block
             mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_rd;
-            // Although this command wouldn't be sent in the direct-mapped
-            // case, this assignment is conditional to satisfy width
-            // requirements
             mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size           = block_msg_size_lp;
             mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.repl_way);

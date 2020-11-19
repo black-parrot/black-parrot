@@ -15,16 +15,6 @@ module bp_fe_top
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
 
-   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-   , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
-   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
-   , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
-   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
-   , localparam bank_offset_width_lp=$clog2(icache_assoc_p)
-   , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
-   , localparam block_offset_width_lp=(bank_offset_width_lp+byte_offset_width_lp)
-
-
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    )
   (input                                              clk_i
