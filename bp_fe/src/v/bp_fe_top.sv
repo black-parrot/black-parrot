@@ -20,10 +20,9 @@ module bp_fe_top
    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
    , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
-   , localparam bank_offset_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-   , localparam mem_bank_offset_width_lp= $clog2(icache_assoc_p)
+   , localparam bank_offset_width_lp=$clog2(icache_assoc_p)
    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
-   , localparam block_offset_width_lp=(mem_bank_offset_width_lp+byte_offset_width_lp)
+   , localparam block_offset_width_lp=(bank_offset_width_lp+byte_offset_width_lp)
 
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)

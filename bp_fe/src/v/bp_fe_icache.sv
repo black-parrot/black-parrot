@@ -38,13 +38,9 @@ module bp_fe_icache
     , localparam num_words_per_bank_lp = bank_width_lp / word_width_p
     , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
-    // Two kinds of bank offsets to handle indexing and memory instantion respectively for a direct-mapped cache. 
-    // They boil down to the same thing for a set associative cache
-    // TODO: Check PR review comment
-    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
-    , localparam mem_bank_offset_width_lp = $clog2(icache_assoc_p)
+    , localparam bank_offset_width_lp = $clog2(icache_assoc_p)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
-    , localparam block_offset_width_lp = (mem_bank_offset_width_lp+byte_offset_width_lp)
+    , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
     , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
     , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
     )
@@ -106,9 +102,9 @@ module bp_fe_icache
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = icache_pkt_i;
 
-  logic [vtag_width_p-1:0]              vaddr_vtag;
-  logic [index_width_lp-1:0]            vaddr_index;
-  logic [bank_offset_width_lp-1:0]      vaddr_offset;
+  logic [vtag_width_p-1:0]                               vaddr_vtag;
+  logic [index_width_lp-1:0]                             vaddr_index;
+  logic [`BSG_SAFE_MINUS(bank_offset_width_lp,1):0]      vaddr_offset;
 
   logic [icache_assoc_p-1:0]            way_v_tv_r; // valid bits of each way
   logic [lg_icache_assoc_lp-1:0]        way_invalid_index; // first invalid way
@@ -118,7 +114,7 @@ module bp_fe_icache
   logic fencei_req;
 
   assign vaddr_index      = icache_pkt.vaddr[block_offset_width_lp+:index_width_lp];
-  assign vaddr_offset     = (icache_assoc_p > 1) ? icache_pkt.vaddr[byte_offset_width_lp+:bank_offset_width_lp] : '0;
+  assign vaddr_offset     = (icache_assoc_p > 1) ? icache_pkt.vaddr[byte_offset_width_lp+:`BSG_MAX(bank_offset_width_lp,1)] : '0;
   assign vaddr_vtag       = icache_pkt.vaddr[block_offset_width_lp+index_width_lp+:vtag_width_p];
 
   // TL stage
@@ -177,12 +173,12 @@ module bp_fe_icache
   end
 
   // data memory
-  logic [icache_assoc_p-1:0]                                               data_mem_v_li;
-  logic                                                                    data_mem_w_li;
-  logic [icache_assoc_p-1:0][index_width_lp+mem_bank_offset_width_lp-1:0]  data_mem_addr_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                            data_mem_data_li;
-  logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]                   data_mem_w_mask_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                            data_mem_data_lo;
+  logic [icache_assoc_p-1:0]                                           data_mem_v_li;
+  logic                                                                data_mem_w_li;
+  logic [icache_assoc_p-1:0][index_width_lp+bank_offset_width_lp-1:0]  data_mem_addr_li;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_li;
+  logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]               data_mem_w_mask_li;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_lo;
 
   // data memory: banks
   for (genvar bank = 0; bank < icache_assoc_p; bank++)
@@ -202,18 +198,18 @@ module bp_fe_icache
     );
   end
 
-  logic [ptag_width_p-1:0]         addr_tag_tl;
-  logic [bank_offset_width_lp-1:0] addr_bank_offset_tl;
-  logic [icache_assoc_p-1:0]       addr_bank_offset_dec_tl;
-  logic [icache_assoc_p-1:0]       hit_v_tl;
-  logic [paddr_width_p-1:0]        addr_tl;
-  logic [icache_assoc_p-1:0]       way_v_tl;
-  logic [index_width_lp-1:0]       vaddr_index_tl;
-  logic [vtag_width_p-1:0]         vaddr_vtag_tl;
+  logic [ptag_width_p-1:0]                          addr_tag_tl;
+  logic [`BSG_SAFE_MINUS(bank_offset_width_lp,1):0] addr_bank_offset_tl;
+  logic [icache_assoc_p-1:0]                        addr_bank_offset_dec_tl;
+  logic [icache_assoc_p-1:0]                        hit_v_tl;
+  logic [paddr_width_p-1:0]                         addr_tl;
+  logic [icache_assoc_p-1:0]                        way_v_tl;
+  logic [index_width_lp-1:0]                        vaddr_index_tl;
+  logic [vtag_width_p-1:0]                          vaddr_vtag_tl;
    
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
   assign addr_tag_tl = addr_tl[block_offset_width_lp+index_width_lp+:ptag_width_p];
-  assign addr_bank_offset_tl = (icache_assoc_p > 1) ? addr_tl[byte_offset_width_lp+:bank_offset_width_lp] : '0;
+  assign addr_bank_offset_tl = (icache_assoc_p > 1) ? addr_tl[byte_offset_width_lp+:`BSG_MAX(bank_offset_width_lp,1)] : '0;
 
   assign vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:index_width_lp];
   assign vaddr_vtag_tl = vaddr_tl_r[block_offset_width_lp+index_width_lp+:vtag_width_p];

@@ -23,11 +23,8 @@ module bp_uce
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
     , localparam byte_offset_width_lp  = `BSG_SAFE_CLOG2(bank_width_lp>>3)
     // Words per line == associativity
-    // Two localparams for bank offset to handle the special direct-mapped
-    // case
-    , localparam bank_offset_width_lp  = `BSG_SAFE_CLOG2(assoc_p)
-    , localparam mem_bank_offset_width_lp  = $clog2(assoc_p)
-    , localparam block_offset_width_lp = (mem_bank_offset_width_lp + byte_offset_width_lp)
+    , localparam bank_offset_width_lp  = $clog2(assoc_p)
+    , localparam block_offset_width_lp = (bank_offset_width_lp + byte_offset_width_lp)
     , localparam index_width_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam way_width_lp = `BSG_SAFE_CLOG2(assoc_p)
     , localparam block_size_in_fill_lp = block_width_p / fill_width_p
@@ -288,7 +285,7 @@ module bp_uce
   // to write back dirty data to L2 in the size of fill_width.
   logic [fill_cnt_width_lp-1:0] mem_cmd_cnt;
   logic [block_size_in_fill_lp-1:0] fill_index_shift;
-  logic [bank_offset_width_lp-1:0] bank_index;
+  logic [`BSG_SAFE_MINUS(bank_offset_width_lp,1):0] bank_index;
   logic [paddr_width_p-1:0] critical_addr;
 
   // For direct-mapped caches, the fill width should be equal to block width
@@ -299,13 +296,13 @@ module bp_uce
       assign bank_index =  mem_cmd_cnt;
       // Setting fill_index_shift to zero for direct-mapped caches since there aren't any opportunities for iterative filling as well as no data memory banks
       assign fill_index_shift = (assoc_p > 1) 
-                                  ? mem_resp_cast_i.header.addr[byte_offset_width_lp+:bank_offset_width_lp]
+                                  ? mem_resp_cast_i.header.addr[byte_offset_width_lp+:`BSG_MAX(bank_offset_width_lp,1)]
                                   : '0;
     end
   else
     begin
       assign bank_index = mem_cmd_cnt << bank_sub_offset_width_lp;
-      assign fill_index_shift = mem_resp_cast_i.header.addr[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp;
+      assign fill_index_shift = mem_resp_cast_i.header.addr[byte_offset_width_lp+:`BSG_MAX(bank_offset_width_lp,1)] >> bank_sub_offset_width_lp;
     end
 
   logic fill_up, fill_done, mem_cmd_up, mem_cmd_done;
@@ -550,9 +547,7 @@ module bp_uce
         e_flush_write:
           begin
             mem_cmd_cast_o.header.msg_type = e_bedrock_mem_wr;
-            mem_cmd_cast_o.header.addr     = (assoc_p > 1) 
-                                               ? {dirty_tag_r.tag, index_cnt, bank_index, byte_offset_width_lp'(0)}
-                                               : {dirty_tag_r.tag, index_cnt, byte_offset_width_lp'(0)};
+            mem_cmd_cast_o.header.addr     = {dirty_tag_r.tag, index_cnt, {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = block_msg_size_lp;
             mem_cmd_cast_payload.lce_id    = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
@@ -686,9 +681,7 @@ module bp_uce
             // Although this command wouldn't be sent in the direct-mapped
             // case, this assignment is conditional to satisfy width
             // requirements
-            mem_cmd_cast_o.header.addr           = (assoc_p > 1) 
-                                                    ? {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)}
-                                                    : {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], byte_offset_width_lp'(0)};
+            mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size           = block_msg_size_lp;
             mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_payload.lce_id          = lce_id_i;
@@ -701,9 +694,7 @@ module bp_uce
         e_writeback_write_req:
           begin
             mem_cmd_cast_o.header.msg_type = e_bedrock_mem_wr;
-            mem_cmd_cast_o.header.addr     = (assoc_p > 1)
-                                              ? {dirty_tag_r.tag, cache_req_r.addr[block_offset_width_lp+:index_width_lp], bank_index, byte_offset_width_lp'(0)}
-                                              : {dirty_tag_r.tag, cache_req_r.addr[block_offset_width_lp+:index_width_lp], byte_offset_width_lp'(0)};
+            mem_cmd_cast_o.header.addr     = {dirty_tag_r.tag, cache_req_r.addr[block_offset_width_lp+:index_width_lp], {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = block_msg_size_lp;
             mem_cmd_cast_payload.lce_id    = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
@@ -736,9 +727,7 @@ module bp_uce
             mem_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             // request next sub-block
             mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_rd;
-            mem_cmd_cast_o.header.addr           = (assoc_p > 1)
-                                                    ? {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)}
-                                                    : {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], byte_offset_width_lp'(0)};
+            mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size           = block_msg_size_lp;
             mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_payload.lce_id          = lce_id_i;
