@@ -59,7 +59,7 @@ module bp_mem_complex
 
   for (genvar i = 0; i < mc_x_dim_p; i++)
     begin : node
-      wire [coh_noc_cord_width_p-1:0] cord_li = {'0, coh_noc_x_cord_width_p'(i+sac_x_dim_p)};
+      wire [coh_noc_cord_width_p-1:0] cord_li = {coh_noc_y_cord_width_p'(1'b1+cc_y_dim_p), coh_noc_x_cord_width_p'(i+sac_x_dim_p)};
       bp_l2e_tile_node
        #(.bp_params_p(bp_params_p))
        l2e
