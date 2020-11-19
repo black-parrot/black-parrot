@@ -156,12 +156,12 @@ typedef enum logic [1:0] {
 
 `define declare_bp_cache_stat_info_s(ways_mp, cache_name_mp)  \
   typedef struct packed {                 \
-    logic [ways_mp-2:0] lru;              \
+    logic [`BSG_MAX(ways_mp-2, 0):0] lru; \
     logic [ways_mp-1:0] dirty;            \
   } bp_``cache_name_mp``_stat_info_s
 
 `define bp_cache_stat_info_width(ways_mp) \
-  (2*ways_mp-1)
+  (`BSG_MAX(2, (2*ways_mp-1)))
 
 `define declare_bp_cache_engine_if(addr_width_mp, tag_width_mp, sets_mp, ways_mp, req_data_width_mp, block_data_width_mp, fill_width_mp, cache_name_mp) \
   `declare_bp_cache_req_s(req_data_width_mp, addr_width_mp, cache_name_mp);                              \

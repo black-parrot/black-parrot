@@ -40,6 +40,7 @@ module bp_fe_icache
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
     // Two kinds of bank offsets to handle indexing and memory instantion respectively for a direct-mapped cache. 
     // They boil down to the same thing for a set associative cache
+    // TODO: Check PR review comment
     , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
     , localparam mem_bank_offset_width_lp = $clog2(icache_assoc_p)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
@@ -308,10 +309,8 @@ module bp_fe_icache
     ,.data_o(stat_mem_data_lo.lru)
   );
 
-  // For direct-mapped the LRU bits are unused. Constant propagation will
-  // remove the LRU-specific modules
   bsg_lru_pseudo_tree_encode #(
-    .ways_p(`BSG_MAX(2, icache_assoc_p))
+    .ways_p(icache_assoc_p)
   ) lru_encoder (
     .lru_i(stat_mem_data_lo.lru)
     ,.way_id_o(lru_encode)
@@ -631,7 +630,7 @@ module bp_fe_icache
      );
 
   bsg_lru_pseudo_tree_decode #(
-     .ways_p(`BSG_MAX(2, icache_assoc_p))
+     .ways_p(icache_assoc_p)
   ) lru_decode (
      .way_id_i(hit_index_tv)
      ,.data_o(lru_decode_data_lo)
