@@ -42,10 +42,10 @@ module bp_io_complex
   `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
 
   bp_io_ready_and_link_s [ic_x_dim_p-1:0][E:W]  io_cmd_link_li, io_cmd_link_lo, io_resp_link_li, io_resp_link_lo;
-  bp_io_ready_and_link_s [E:W]                   io_cmd_hor_link_li, io_cmd_hor_link_lo, io_resp_hor_link_li, io_resp_hor_link_lo;
+  bp_io_ready_and_link_s [E:W]                  io_cmd_hor_link_li, io_cmd_hor_link_lo, io_resp_hor_link_li, io_resp_hor_link_lo;
   bp_coh_ready_and_link_s [ic_x_dim_p-1:0][S:W] lce_req_link_li, lce_req_link_lo, lce_cmd_link_li, lce_cmd_link_lo;
   bp_coh_ready_and_link_s [S:N][ic_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo, lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
-  bp_coh_ready_and_link_s [E:W]                  lce_req_hor_link_li, lce_req_hor_link_lo, lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
+  bp_coh_ready_and_link_s [E:W]                 lce_req_hor_link_li, lce_req_hor_link_lo, lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
   
   for (genvar i = 0; i < ic_x_dim_p; i++)
     begin : node
