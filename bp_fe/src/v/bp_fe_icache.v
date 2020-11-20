@@ -692,5 +692,11 @@ module bp_fe_icache
   assign stat_mem_o = {stat_mem_data_lo.lru, icache_assoc_p'(0)};
   assign stat_mem_pkt_yumi_o = ~(v_tv_r & ~uncached_tv_r) & stat_mem_pkt_v_i;
 
+  //synopsys translate_off
+  if (`BSG_SAFE_CLOG2(icache_block_width_p*icache_sets_p/8) != page_offset_width_p) begin
+    $error("Total cache size must be equal to 4kB * associativity");
+  end
+  //synopsys translate_on
+
 endmodule
 
