@@ -12,6 +12,7 @@ e_bp_multicore_6_cce_ucode_cfg_cores    := 6
 e_bp_multicore_6_cfg_cores              := 6
 e_bp_multicore_4_accelerator_cfg_cores  := 4
 e_bp_multicore_4_cce_ucode_cfg_cores    := 4
+e_bp_multicore_4_l2e_cfg_cores          := 6
 e_bp_multicore_4_cfg_cores              := 4
 e_bp_multicore_3_cce_ucode_cfg_cores    := 3
 e_bp_multicore_3_cfg_cores              := 3

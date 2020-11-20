@@ -299,6 +299,16 @@ package bp_common_aviary_pkg;
                         ,bp_multicore_1_cfg_p
                         );
 
+  localparam bp_proc_param_s bp_multicore_4_l2e_override_p =
+    '{mc_y_dim   : 1
+      ,num_cce   : 6
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_4_l2e_cfg_p
+                        ,bp_multicore_4_l2e_override_p
+                        ,bp_multicore_4_cfg_p
+                        );
+
   localparam bp_proc_param_s bp_multicore_6_override_p =
     '{cc_x_dim : 3
       ,cc_y_dim: 2
@@ -561,12 +571,14 @@ package bp_common_aviary_pkg;
   /* verilator lint_off WIDTH */
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =
   {
-    bp_multicore_1_l2e_cfg_p
-
     // Various testing configs
-    ,bp_multicore_cce_ucode_half_cfg_p
+    bp_multicore_cce_ucode_half_cfg_p
     ,bp_multicore_half_cfg_p
     ,bp_unicore_half_cfg_p
+
+    // L2 extension configurations
+    ,bp_multicore_4_l2e_cfg_p
+    ,bp_multicore_1_l2e_cfg_p
 
     // Accelerator configurations
     ,bp_multicore_1_accelerator_cfg_p
@@ -616,14 +628,14 @@ package bp_common_aviary_pkg;
   // This enum MUST be kept up to date with the parameter array above
   typedef enum bit [lg_max_cfgs-1:0]
   {
-
-    // TEST
-    e_bp_multicore_1_l2e_cfg                = 35
-
     // Various testing config
-    ,e_bp_multicore_cce_ucode_half_cfg      = 34
-    ,e_bp_multicore_half_cfg                = 33
-    ,e_bp_unicore_half_cfg                  = 32
+    e_bp_multicore_cce_ucode_half_cfg       = 36
+    ,e_bp_multicore_half_cfg                = 35
+    ,e_bp_unicore_half_cfg                  = 34
+
+    // L2 extension configurations
+    ,e_bp_multicore_4_l2e_cfg               = 33
+    ,e_bp_multicore_1_l2e_cfg               = 32
 
     // Accelerator configurations
     ,e_bp_multicore_1_accelerator_cfg       = 31
