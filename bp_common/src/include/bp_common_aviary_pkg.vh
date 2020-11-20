@@ -276,6 +276,16 @@ package bp_common_aviary_pkg;
                         ,bp_multicore_1_cfg_p
                         );
 
+  localparam bp_proc_param_s bp_multicore_2_l2e_override_p =
+    '{mc_y_dim   : 1
+      ,num_cce   : 4
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_2_l2e_cfg_p
+                        ,bp_multicore_2_l2e_override_p
+                        ,bp_multicore_2_cfg_p
+                        );
+
   localparam bp_proc_param_s bp_multicore_3_override_p =
     '{cc_x_dim : 3
       ,num_cce : 3
@@ -578,6 +588,7 @@ package bp_common_aviary_pkg;
 
     // L2 extension configurations
     ,bp_multicore_4_l2e_cfg_p
+    ,bp_multicore_2_l2e_cfg_p
     ,bp_multicore_1_l2e_cfg_p
 
     // Accelerator configurations
@@ -629,12 +640,13 @@ package bp_common_aviary_pkg;
   typedef enum bit [lg_max_cfgs-1:0]
   {
     // Various testing config
-    e_bp_multicore_cce_ucode_half_cfg       = 36
-    ,e_bp_multicore_half_cfg                = 35
-    ,e_bp_unicore_half_cfg                  = 34
+    e_bp_multicore_cce_ucode_half_cfg       = 37
+    ,e_bp_multicore_half_cfg                = 36
+    ,e_bp_unicore_half_cfg                  = 35
 
     // L2 extension configurations
-    ,e_bp_multicore_4_l2e_cfg               = 33
+    ,e_bp_multicore_4_l2e_cfg               = 34
+    ,e_bp_multicore_2_l2e_cfg               = 33
     ,e_bp_multicore_1_l2e_cfg               = 32
 
     // Accelerator configurations
