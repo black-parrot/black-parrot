@@ -59,6 +59,9 @@ module bp_cacc_tile
   bp_bedrock_lce_cmd_msg_s      lce_cmd_lo;
   logic             lce_cmd_v_lo, lce_cmd_ready_li;
    
+  logic reset_r;
+  always_ff @(posedge clk_i)
+    reset_r <= reset_i;
 
   logic [cce_id_width_p-1:0]  cce_id_li;
   logic [lce_id_width_p-1:0]  lce_id_li;
@@ -76,7 +79,7 @@ module bp_cacc_tile
    #(.bp_params_p(bp_params_p))
    io_cce
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.cce_id_i(cce_id_li)
 
@@ -134,7 +137,7 @@ module bp_cacc_tile
      )
    lce_req_adapter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(lce_req_packet_lo)
      ,.v_i(lce_req_v_lo)
@@ -165,7 +168,7 @@ module bp_cacc_tile
       )
     lce_resp_adapter_in
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(lce_resp_packet_lo)
      ,.v_i(lce_resp_v_lo)
@@ -191,7 +194,7 @@ module bp_cacc_tile
      )
    cmd_adapter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(lce_cmd_packet_lo)
      ,.v_i(lce_cmd_v_lo)
@@ -222,7 +225,7 @@ module bp_cacc_tile
      )
     cce_lce_cmd_adapter_in
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(cce_lce_cmd_packet_lo)
      ,.v_i(cce_lce_cmd_v_lo)
@@ -249,7 +252,7 @@ module bp_cacc_tile
      )
    cmd_concentrator
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.links_i({cce_lce_cmd_link_lo, lce_cmd_link_lo})
      ,.links_o({cce_lce_cmd_link_li, lce_cmd_link_li})
@@ -265,7 +268,7 @@ module bp_cacc_tile
        #(.bp_params_p(bp_params_p))
        accelerator_link
         (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+         ,.reset_i(reset_r)
 
          ,.lce_id_i(lce_id_li)
 

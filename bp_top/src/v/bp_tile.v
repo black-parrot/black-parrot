@@ -378,7 +378,7 @@ module bp_tile
    (.clk_i(clk_i)
     ,.reset_i(reset_r)
 
-    ,.link_i(lce_req_link_i)
+    ,.link_i(lce_req_link_cast_i)
     ,.link_o(cce_lce_req_link_lo)
 
     ,.packet_o(cce_lce_req_packet_li)
@@ -426,7 +426,7 @@ module bp_tile
    (.clk_i(clk_i)
     ,.reset_i(reset_r)
 
-    ,.link_i(lce_resp_link_i)
+    ,.link_i(lce_resp_link_cast_i)
     ,.link_o(cce_lce_resp_link_lo)
 
     ,.packet_o(cce_lce_resp_packet_li)
@@ -547,7 +547,7 @@ module bp_tile
    #(.width_p($bits(bp_bedrock_cce_mem_msg_s)))
    resp_fifo
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.data_i(mem_resp_selected_li)
      ,.v_i(mem_resp_selected_v_li)
@@ -611,7 +611,7 @@ module bp_tile
          )
        burst2lite
         (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+         ,.reset_i(reset_r)
 
          ,.mem_header_i(dma_mem_cmd_header_lo)
          ,.mem_header_v_i(dma_mem_cmd_header_v_lo)
@@ -634,7 +634,7 @@ module bp_tile
          )
        lite2burst
         (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+         ,.reset_i(reset_r)
 
          ,.mem_i(dma_mem_resp_li)
          ,.mem_v_i(dma_mem_resp_v_li)
@@ -665,7 +665,7 @@ module bp_tile
    #(.bp_params_p(bp_params_p))
    loopback
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.mem_cmd_i(loopback_mem_cmd)
      ,.mem_cmd_v_i(loopback_mem_cmd_v_li)
