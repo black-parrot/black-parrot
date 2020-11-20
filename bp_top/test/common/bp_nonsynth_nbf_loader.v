@@ -29,24 +29,24 @@ module bp_nonsynth_nbf_loader
 
   (input  clk_i
   ,input  reset_i
-  
+
   ,input [lce_id_width_p-1:0]              lce_id_i
 
   ,output [cce_mem_msg_width_lp-1:0]       io_cmd_o
   ,output                                  io_cmd_v_o
   ,input                                   io_cmd_yumi_i
-  
+
   ,input  [cce_mem_msg_width_lp-1:0]       io_resp_i
   ,input                                   io_resp_v_i
   ,output                                  io_resp_ready_o
   );
-  
+
   enum logic [1:0] {
     RESET
     ,SEND_NBF
     ,DONE
   } state_n, state_r;
-  
+
   // response network not used
   wire unused_resp = &{io_resp_i, io_resp_v_i};
   assign io_resp_ready_o = 1'b1;
@@ -78,7 +78,7 @@ module bp_nonsynth_nbf_loader
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   bp_bedrock_cce_mem_msg_s io_cmd, io_resp;
   bp_bedrock_cce_mem_payload_s io_cmd_payload;
-  
+
   assign io_cmd_o = io_cmd;
   assign io_resp = io_resp_i;
   assign io_cmd_v_o = ~credits_full_lo & (state_r == SEND_NBF);
@@ -88,7 +88,7 @@ module bp_nonsynth_nbf_loader
   logic [nbf_index_width_lp-1:0] nbf_index_r, nbf_index_n;
   bp_nbf_s curr_nbf;
   assign curr_nbf = nbf[nbf_index_r];
-  
+
   // assemble cce cmd packet
   always_comb
   begin
@@ -98,7 +98,7 @@ module bp_nonsynth_nbf_loader
     io_cmd.header.payload = io_cmd_payload;
     io_cmd.header.addr = curr_nbf.addr;
     io_cmd.header.msg_type.mem = e_bedrock_mem_uc_wr;
-    
+
     case (curr_nbf.opcode)
       2: io_cmd.header.size = e_bedrock_msg_size_4;
       3: io_cmd.header.size = e_bedrock_msg_size_8;
@@ -111,7 +111,7 @@ module bp_nonsynth_nbf_loader
 
   assign nbf_index_n = nbf_index_r + io_cmd_yumi_i;
    // combinational
-  always_comb 
+  always_comb
   begin
     unique casez (state_r)
       RESET       : state_n = reset_i ? RESET : SEND_NBF;
@@ -120,7 +120,7 @@ module bp_nonsynth_nbf_loader
       default : state_n = RESET;
     endcase
   end
-  
+
   always_ff @(posedge clk_i)
   begin
     if (reset_i)
@@ -128,7 +128,7 @@ module bp_nonsynth_nbf_loader
         nbf_index_r <= '0;
         state_r <= RESET;
       end
-    else 
+    else
       begin
         nbf_index_r <= nbf_index_n;
         state_r <= state_n;

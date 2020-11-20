@@ -46,7 +46,7 @@ module bp_io_link_to_lce
   bp_bedrock_cce_mem_msg_s io_resp_lo;
   bp_bedrock_lce_req_msg_s lce_req_lo;
   bp_bedrock_lce_req_payload_s lce_req_payload;
-  bp_bedrock_lce_cmd_msg_s lce_cmd_li; 
+  bp_bedrock_lce_cmd_msg_s lce_cmd_li;
 
   assign io_cmd_li  = io_cmd_i;
   assign io_resp_o  = io_resp_lo;

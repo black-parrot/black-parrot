@@ -9,7 +9,7 @@
 `ifndef BP_FE_DEFINES_VH
 `define BP_FE_DEFINES_VH
 
-/* 
+/*
  * bp_fe_instr_scan_s specifies metadata about the instruction, including FE-special opcodes
  *   and the calculated branch target
  */
@@ -30,7 +30,7 @@
     logic [vaddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*cce_block_width_p/8)-1:0]    tag;                \
     logic [`BSG_SAFE_CLOG2(sets_mp)-1:0]                                       index;              \
     logic [`BSG_SAFE_CLOG2(cce_block_width_p/8)-1:0]                           offset;             \
-  }  bp_fe_itlb_vaddr_s;   
+  }  bp_fe_itlb_vaddr_s;
 
 `define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp) \
   typedef struct packed                                                                         \

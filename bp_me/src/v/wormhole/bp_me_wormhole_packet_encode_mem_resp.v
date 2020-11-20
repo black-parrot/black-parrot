@@ -25,7 +25,7 @@ module bp_me_wormhole_packet_encode_mem_resp
     , parameter cid_width_p = "inv"
     , parameter len_width_p = "inv"
 
-    , localparam mem_resp_wormhole_header_width_lp = 
+    , localparam mem_resp_wormhole_header_width_lp =
         `bp_mem_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_header_width_lp)
     )
    (input [cce_mem_msg_header_width_lp-1:0]          mem_resp_header_i

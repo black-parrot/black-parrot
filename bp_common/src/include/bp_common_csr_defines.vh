@@ -390,7 +390,7 @@ typedef struct packed
   logic        mie;
   logic        wpri5;
   logic        sie;
-  logic        uie; 
+  logic        uie;
 }  rv64_mstatus_s;
 
 typedef struct packed
@@ -546,7 +546,7 @@ typedef struct packed
   logic        usie;
 }  rv64_mie_s;
 
-typedef struct packed 
+typedef struct packed
 {
   logic meie;
   logic seie;
@@ -729,7 +729,7 @@ typedef struct packed
   // Address Matching Mode
   //  00 - Off  , Null region (disabled)
   //  01 - TOR  , Top of range (pmpaddr[i-1] <= a < pmpaddr[i], or 0 <= a < pmpaddr[0])
-  //  10 - NA4  , Naturally aligned four-byte region 
+  //  10 - NA4  , Naturally aligned four-byte region
   //  11 - NAPOT, Naturally aligned power-of-two region
   logic [1:0]    a;
   // Execute permissions

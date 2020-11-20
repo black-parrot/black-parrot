@@ -51,7 +51,7 @@ module bp_nonsynth_cosim
                                                     int insn,
                                                     longint wdata);
   import "DPI-C" context function void dromajo_trap(int hartid, longint cause);
-  
+
   import "DPI-C" context function void set_finish(int hartid);
   import "DPI-C" context function bit check_terminate();
 

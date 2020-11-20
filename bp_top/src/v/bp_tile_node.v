@@ -54,12 +54,12 @@ module bp_tile_node
   // Declare the routing links
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
   `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
-  
+
   // Tile-side coherence connections
   bp_coh_ready_and_link_s core_lce_req_link_li, core_lce_req_link_lo;
   bp_coh_ready_and_link_s core_lce_cmd_link_li, core_lce_cmd_link_lo;
   bp_coh_ready_and_link_s core_lce_resp_link_li, core_lce_resp_link_lo;
-  
+
   // Tile side membus connections
   bp_mem_ready_and_link_s core_mem_cmd_link_lo, core_mem_resp_link_li;
 
@@ -113,7 +113,7 @@ module bp_tile_node
  bp_nd_socket
    #(.flit_width_p(mem_noc_flit_width_p)
      ,.dims_p(mem_noc_dims_p)
-     ,.cord_dims_p(mem_noc_cord_dims_p)  
+     ,.cord_dims_p(mem_noc_cord_dims_p)
      ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
      ,.len_width_p(mem_noc_len_width_p)
      ,.routing_matrix_p(StrictX)
@@ -131,6 +131,6 @@ module bp_tile_node
      ,.tile_link_i(core_mem_cmd_link_lo)
      ,.tile_link_o(core_mem_resp_link_li)
      );
-   
+
 endmodule
 

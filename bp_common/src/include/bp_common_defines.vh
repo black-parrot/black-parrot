@@ -9,7 +9,7 @@
  *   file_mp - The name of the log file, optional if using stdout
  *   str_mp - This is the format string for the print statement. Must be enclosed in parentheses
  *
- * Example usage -     
+ * Example usage -
  *  `BP_LOG(0, `BP_LOG_STDOUT, ("I'm a display log %d", 2));
  *  `BP_LOG(file, `BP_LOG_FILE, ("I'm a file log %d %d", 1, 2));
  *  `BP_LOG(file, `BP_LOG_STDOUT | `BP_LOG_FILE, ("I'm both! %d", 3));
@@ -17,8 +17,8 @@
  *
  * In practice, we expect users will set the log level as a module parameter rather than in the
  *   macro.
- * An obvious enhancement is to add log levels to control verbosity. A less obvious enhancement is 
- *   to support ordering of logs through a parameter. Perhaps #``delay_mp`` 
+ * An obvious enhancement is to add log levels to control verbosity. A less obvious enhancement is
+ *   to support ordering of logs through a parameter. Perhaps #``delay_mp``
  */
 localparam bp_log_none_gp   = 0;
 localparam bp_log_stdout_gp = 1;

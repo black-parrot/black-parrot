@@ -11,8 +11,8 @@ module bp_unicore
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
- 
-   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p) 
+
+   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce)
@@ -374,14 +374,14 @@ module bp_unicore
   assign proc_cmd_v_lo[2] = io_cmd_v_i;
   assign io_cmd_yumi_o = proc_cmd_ready_li[2] & proc_cmd_v_lo[2];
 
-  assign io_resp_o = uce_mem_msg_width_lp'(proc_resp_li[2]); 
+  assign io_resp_o = uce_mem_msg_width_lp'(proc_resp_li[2]);
   assign io_resp_v_o = proc_resp_v_li[2];
   assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
 
   // Command/response FIFOs for timing and helpfulness
   bp_bedrock_uce_mem_msg_s [2:0] cmd_fifo_lo;
   logic [2:0] cmd_fifo_v_lo, cmd_fifo_yumi_li;
-  
+
   bp_bedrock_uce_mem_msg_s [2:0] resp_fifo_li;
   logic [2:0] resp_fifo_v_li, resp_fifo_ready_lo;
 
@@ -453,7 +453,7 @@ module bp_unicore
      ,.reqs_i({loopback_resp_v_lo, cache_resp_v_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo})
      ,.grants_o({loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
      );
-    
+
   for (genvar i = 0; i < 3; i++)
     begin : resp_match
       bp_bedrock_uce_mem_msg_s resp_fifo_selected_li;

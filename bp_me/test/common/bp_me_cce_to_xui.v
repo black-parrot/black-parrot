@@ -1,7 +1,7 @@
 /**
  * bp_me_cce_to_wormhole_link_master.v
  */
- 
+
 `include "bp_mem_wormhole.vh"
 
 module bp_me_cce_to_xui
@@ -27,11 +27,11 @@ module bp_me_cce_to_xui
    , input  [cce_mem_msg_width_lp-1:0]   mem_cmd_i
    , input                               mem_cmd_v_i
    , output                              mem_cmd_ready_o
-                                          
+
    , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
    , output logic                        mem_resp_v_o
    , input                               mem_resp_yumi_i
-                                         
+
    // xilinx user interface
    , output [paddr_width_p-1:0]          app_addr_o
    , output [2:0]                        app_cmd_o
@@ -46,7 +46,7 @@ module bp_me_cce_to_xui
    , input [cce_block_width_p-1:0]       app_rd_data_i
    , input                               app_rd_data_end_i
    );
-  
+
 // CCE-MEM interface packets
 `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 

@@ -3,7 +3,7 @@
  * wrapper.v
  *
  */
- 
+
 `include "bsg_noc_links.vh"
 
 module wrapper
@@ -75,25 +75,25 @@ module wrapper
        dut
         (.core_clk_i(clk_i)
          ,.core_reset_i(reset_i)
-      
+
          ,.coh_clk_i(clk_i)
          ,.coh_reset_i(reset_i)
-      
+
          ,.io_clk_i(clk_i)
          ,.io_reset_i(reset_i)
-      
+
          ,.mem_clk_i(clk_i)
          ,.mem_reset_i(reset_i)
-      
+
          ,.my_did_i(proc_did_li)
          ,.host_did_i(dram_did_li)
-      
+
          ,.io_cmd_link_i({proc_cmd_link_li, stub_cmd_link_li})
          ,.io_cmd_link_o({proc_cmd_link_lo, stub_cmd_link_lo})
-      
+
          ,.io_resp_link_i({proc_resp_link_li, stub_resp_link_li})
          ,.io_resp_link_o({proc_resp_link_lo, stub_resp_link_lo})
-      
+
          ,.dram_cmd_link_o(dram_cmd_link_lo)
          ,.dram_resp_link_i(dram_resp_link_li)
          );
@@ -155,15 +155,15 @@ module wrapper
         (.clk_i(clk_i)
 
          ,.reset_i(reset_i)
-      
+
          ,.mem_cmd_o(mem_cmd_o)
          ,.mem_cmd_v_o(mem_cmd_v_o)
          ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
-      
+
          ,.mem_resp_i(mem_resp_i)
          ,.mem_resp_v_i(mem_resp_v_i & mem_resp_ready_lo)
          ,.mem_resp_ready_o(mem_resp_ready_lo)
-      
+
          ,.cmd_link_i(dram_cmd_link_lo)
          ,.resp_link_o(dram_resp_link_li)
          );

@@ -2,7 +2,7 @@ module mock_tlb
   #(parameter tag_width_p="inv")
   (
     input clk_i
-    
+
     ,input v_i
     ,input [tag_width_p-1:0] tag_i
 

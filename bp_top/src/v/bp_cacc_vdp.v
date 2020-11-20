@@ -49,8 +49,8 @@ module bp_cacc_vdp
 
  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
  `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8);
-   
-  bp_be_dcache_pkt_s        dcache_pkt;   
+
+  bp_be_dcache_pkt_s        dcache_pkt;
   logic                     dcache_ready, dcache_v;
   logic [dpath_width_p-1:0] dcache_data;
   logic                     dcache_tlb_miss, dcache_poison;
@@ -80,14 +80,14 @@ module bp_cacc_vdp
   logic [ptag_width_p-1:0] tag_mem_o;
   bp_cache_stat_mem_pkt_s stat_mem_pkt_i;
   logic [cache_stat_info_width_lp-1:0] stat_mem_o;
-  bp_cache_req_metadata_s cache_req_metadata_o; 
-   
+  bp_cache_req_metadata_s cache_req_metadata_o;
+
 bp_pma
  #(.bp_params_p(bp_params_p))
   pma
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
-    
+
     ,.ptag_v_i(dcache_pkt_v)
     ,.ptag_i(dcache_ptag)
 
@@ -243,10 +243,10 @@ bp_lce
   assign io_resp_cast_o = '{header         : resp_header
                             ,data          : resp_data  };
 
-   
+
   logic [vaddr_width_p-1:0] v_addr;
-  assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8) 
-                                         : (input_a_ptr+len_a_cnt*8)) 
+  assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8)
+                                         : (input_a_ptr+len_a_cnt*8))
                        : res_ptr;
 
 
@@ -368,7 +368,7 @@ bp_lce
         state_n = WAIT_DCACHE_C1;
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
-        dcache_pkt.data = load ? '0 : dot_product_res; 
+        dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
         res_status = '0;
         dcache_pkt_v = '1;

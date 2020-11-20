@@ -8,7 +8,7 @@ module bp_sacc_tile
    import bsg_noc_pkg::*;
    import bp_common_cfg_link_pkg::*;
    import bsg_wormhole_router_pkg::*;
-  
+
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
@@ -22,7 +22,7 @@ module bp_sacc_tile
    , input                                  reset_i
 
    , input [coh_noc_cord_width_p-1:0]       my_cord_i
-   
+
    , input [coh_noc_ral_link_width_lp-1:0]  lce_req_link_i
    , output [coh_noc_ral_link_width_lp-1:0] lce_req_link_o
 
@@ -34,12 +34,12 @@ module bp_sacc_tile
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
- 
-  //io-cce-side connections 
+
+  //io-cce-side connections
   bp_bedrock_lce_req_msg_s  cce_lce_req_li, lce_lce_req_lo;
   logic cce_lce_req_v_li, cce_lce_req_yumi_lo, lce_lce_req_v_lo, lce_req_ready_li;
   bp_bedrock_lce_cmd_msg_s cce_lce_cmd_lo, lce_lce_cmd_li;
-  logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li, lce_lce_cmd_v_li, lce_lce_cmd_yumi_lo;  
+  logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li, lce_lce_cmd_v_li, lce_lce_cmd_yumi_lo;
   bp_bedrock_cce_mem_msg_s cce_io_cmd_lo, lce_io_cmd_li;
   logic cce_io_cmd_v_lo, cce_io_cmd_ready_li, lce_io_cmd_v_li, lce_io_cmd_yumi_lo;
   bp_bedrock_cce_mem_msg_s cce_io_resp_li, lce_io_resp_lo;
@@ -159,7 +159,7 @@ module bp_sacc_tile
      ,.wh_header_o(cce_lce_cmd_header_lo)
      );
   assign cce_lce_cmd_packet_lo = '{header: cce_lce_cmd_header_lo, data: cce_lce_cmd_lo.data};
-  
+
   bsg_wormhole_router_adapter
    #(.max_payload_width_p(lce_cmd_wh_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
