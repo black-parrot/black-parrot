@@ -23,18 +23,18 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 # Interface packages
-$BP_COMMON_DIR/src/include/bp_common_rv64_pkg.vh
-$BP_COMMON_DIR/src/include/bp_common_pkg.vh
-$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
-$BP_COMMON_DIR/src/include/bp_common_cfg_link_pkg.vh
+$BP_COMMON_DIR/src/include/bp_common_rv64_pkg.v
+$BP_COMMON_DIR/src/include/bp_common_pkg.v
+$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.v
+$BP_COMMON_DIR/src/include/bp_common_cfg_link_pkg.v
 # FE packages
-$BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
-$BP_FE_DIR/src/include/bp_fe_pkg.vh
+$BP_FE_DIR/src/include/bp_fe_icache_pkg.v
+$BP_FE_DIR/src/include/bp_fe_pkg.v
 # BE packages
-$BP_BE_DIR/src/include/bp_be_pkg.vh
-$BP_BE_DIR/src/include/bp_be_dcache_pkg.vh
+$BP_BE_DIR/src/include/bp_be_pkg.v
+$BP_BE_DIR/src/include/bp_be_dcache_pkg.v
 # ME packages
-$BP_ME_DIR/src/include/v/bp_me_pkg.vh
+$BP_ME_DIR/src/include/v/bp_me_pkg.v
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_COMMON_DIR/src/v/bsg_bus_pack.v
 ## bsg_ip_cores files
@@ -152,28 +152,28 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
 ## ME files
 # CCE
-$BP_ME_DIR/src/v/cce/bp_cce_alu.v
-$BP_ME_DIR/src/v/cce/bp_cce_arbitrate.v
-$BP_ME_DIR/src/v/cce/bp_cce_branch.v
-$BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.v
-$BP_ME_DIR/src/v/cce/bp_cce_dir_segment.v
-$BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.v
-$BP_ME_DIR/src/v/cce/bp_cce_dir.v
-$BP_ME_DIR/src/v/cce/bp_cce_gad.v
-$BP_ME_DIR/src/v/cce/bp_cce_inst_decode.v
-$BP_ME_DIR/src/v/cce/bp_cce_inst_predecode.v
-$BP_ME_DIR/src/v/cce/bp_cce_inst_ram.v
-$BP_ME_DIR/src/v/cce/bp_cce_inst_stall.v
-$BP_ME_DIR/src/v/cce/bp_cce_msg.v
-$BP_ME_DIR/src/v/cce/bp_cce_pending_bits.v
-$BP_ME_DIR/src/v/cce/bp_cce_reg.v
-$BP_ME_DIR/src/v/cce/bp_cce_spec_bits.v
-$BP_ME_DIR/src/v/cce/bp_cce_src_sel.v
-$BP_ME_DIR/src/v/cce/bp_cce.v
-$BP_ME_DIR/src/v/cce/bp_cce_fsm.v
-$BP_ME_DIR/src/v/cce/bp_cce_wrapper.v
-$BP_ME_DIR/src/v/cce/bp_io_cce.v
+$BP_ME_DIR/src/v/cce/bp_cce_alu.sv
+$BP_ME_DIR/src/v/cce/bp_cce_arbitrate.sv
+$BP_ME_DIR/src/v/cce/bp_cce_branch.sv
+$BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.sv
+$BP_ME_DIR/src/v/cce/bp_cce_dir_segment.sv
+$BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.sv
+$BP_ME_DIR/src/v/cce/bp_cce_dir.sv
+$BP_ME_DIR/src/v/cce/bp_cce_gad.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_decode.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_predecode.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_ram.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_stall.sv
+$BP_ME_DIR/src/v/cce/bp_cce_msg.sv
+$BP_ME_DIR/src/v/cce/bp_cce_pending_bits.sv
+$BP_ME_DIR/src/v/cce/bp_cce_reg.sv
+$BP_ME_DIR/src/v/cce/bp_cce_spec_bits.sv
+$BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
+$BP_ME_DIR/src/v/cce/bp_cce.sv
+$BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
+$BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
+$BP_ME_DIR/src/v/cce/bp_io_cce.sv
 # NETWORK
-$BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.sv
 ## TOP Files
-$BP_TOP_DIR/src/v/bp_cfg.v
+$BP_TOP_DIR/src/v/bp_cfg.sv
