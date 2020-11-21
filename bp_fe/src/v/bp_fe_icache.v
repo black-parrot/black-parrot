@@ -387,7 +387,7 @@ module bp_fe_icache
       case (state_r)
         e_ready:
           begin
-            state_n = cache_req_v_o ? e_miss : e_ready;
+            state_n = cache_req_yumi_i ? e_miss : e_ready;
           end
         e_miss:
           begin
@@ -407,7 +407,7 @@ module bp_fe_icache
     else
       state_r <= state_n;
 
-  assign ready_o = is_ready & ~cache_req_busy_i & ~cache_req_yumi_i;
+  assign ready_o = is_ready & ~cache_req_busy_i;
 
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
                               | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
