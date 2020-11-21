@@ -63,7 +63,6 @@ module bp_lce_req
 
     // LCE Req is able to sink any requests this cycle
     , output logic                                   ready_o
-    , output logic                                   yumi_o
 
     // Cache-LCE Interface
     // valid_i -> yumi_o handshake
@@ -71,6 +70,7 @@ module bp_lce_req
     // can arrive, as indicated by the metadata_v_i signal
     , input [cache_req_width_lp-1:0]                 cache_req_i
     , input                                          cache_req_v_i
+    , output logic                                   cache_req_yumi_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
 
@@ -120,7 +120,7 @@ module bp_lce_req
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(yumi_o)
+     ,.data_i(cache_req_yumi_o)
      ,.data_o(cache_req_v_r)
      );
 
@@ -129,7 +129,7 @@ module bp_lce_req
     #(.width_p($bits(bp_cache_req_s)))
     req_reg
      (.clk_i(clk_i)
-      ,.en_i(yumi_o)
+      ,.en_i(cache_req_yumi_o)
       ,.data_i(cache_req_i)
       ,.data_o(cache_req_r)
       );
@@ -142,7 +142,7 @@ module bp_lce_req
      ,.reset_i(reset_i)
 
      ,.set_i(cache_req_metadata_v_i)
-     ,.clear_i(yumi_o)
+     ,.clear_i(cache_req_yumi_o)
      ,.data_o(cache_req_metadata_v_r)
      );
 
@@ -188,7 +188,7 @@ module bp_lce_req
     state_n = state_r;
 
     ready_o= 1'b0;
-    yumi_o = 1'b0;
+    cache_req_yumi_o = 1'b0;
 
     lce_req_v_o = 1'b0;
 
@@ -206,31 +206,34 @@ module bp_lce_req
 
       // Ready for new request
       e_ready: begin
-        // yumi a new request if LCE hasn't used all its credits
         ready_o = ~credits_full_o & lce_req_ready_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
-        yumi_o = ready_o & cache_req_v_i;
-        if (yumi_o) begin
+
+        if (ready_o)
           unique case (cache_req.msg_type)
             e_miss_store
-            , e_miss_load: begin
-              state_n = e_send_cached_req;
+            ,e_miss_load: begin
+              cache_req_yumi_o = cache_req_v_i & (lce_mode_i == e_lce_mode_normal) & sync_done_i;
+              state_n = cache_req_yumi_o ? e_send_cached_req : e_ready;
             end
             e_uc_store: begin
-              lce_req_v_o = lce_req_ready_i;
+              lce_req_v_o = lce_req_ready_i & cache_req_v_i;
 
               lce_req.data[0+:dword_width_p] = cache_req.data[0+:dword_width_p];
               lce_req.header.size = bp_bedrock_msg_size_e'(cache_req.size);
               lce_req.header.addr = cache_req.addr;
               lce_req.header.msg_type.req = e_bedrock_req_uc_wr;
               lce_req.header.payload = lce_req_payload;
+
+              cache_req_yumi_o = lce_req_v_o;
+              state_n = e_ready;
             end
             e_uc_load: begin
+              cache_req_yumi_o = cache_req_v_i;
               state_n = e_send_uncached_req;
             end
             default: begin
             end
           endcase
-        end
       end
 
       // Cached Request

@@ -44,6 +44,7 @@ module bp_nonsynth_nbf_loader
   enum logic [1:0] {
     RESET
     ,SEND_NBF
+    ,FENCE
     ,DONE
   } state_n, state_r;
   
@@ -81,7 +82,6 @@ module bp_nonsynth_nbf_loader
   
   assign io_cmd_o = io_cmd;
   assign io_resp = io_resp_i;
-  assign io_cmd_v_o = ~credits_full_lo & (state_r == SEND_NBF);
 
   // read nbf file.
   logic [nbf_width_lp-1:0] nbf [max_nbf_index_lp-1:0];
@@ -105,17 +105,23 @@ module bp_nonsynth_nbf_loader
       default: io_cmd.header.size = e_bedrock_msg_size_4;
     endcase
   end
+  wire is_fence_packet = (curr_nbf.opcode == 8'hFE);
+  wire is_finish_packet = (curr_nbf.opcode == 8'hFF);
+  wire is_store_packet = ~is_fence_packet & ~is_finish_packet;
+
+  assign io_cmd_v_o = ~credits_full_lo & (state_r == SEND_NBF) & ~is_fence_packet & ~is_finish_packet;
 
   // read nbf file
   initial $readmemh(nbf_filename_p, nbf);
 
-  assign nbf_index_n = nbf_index_r + io_cmd_yumi_i;
+  assign nbf_index_n = nbf_index_r + (state_r == SEND_NBF && (io_cmd_yumi_i || is_fence_packet || is_finish_packet));
    // combinational
   always_comb 
   begin
     unique casez (state_r)
       RESET       : state_n = reset_i ? RESET : SEND_NBF;
-      SEND_NBF    : state_n = (curr_nbf.opcode == 8'hFF) ? DONE : SEND_NBF;
+      SEND_NBF    : state_n = is_fence_packet ? FENCE: is_finish_packet ? DONE : SEND_NBF;
+      FENCE       : state_n = credits_empty_lo ? SEND_NBF : FENCE;
       DONE        : state_n = DONE;
       default : state_n = RESET;
     endcase

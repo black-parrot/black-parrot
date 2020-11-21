@@ -633,7 +633,7 @@ module bp_be_dcache
   logic tag_mem_pkt_v;
   logic stat_mem_pkt_v;
 
-  wire wt_req = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & (writethrough_p == 1) & ~flush_i;
+  wire wt_req = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & (writethrough_p == 1);
 
   localparam num_bytes_lp = dcache_block_width_p >> 3;
   localparam bp_cache_req_size_e max_req_size = (num_bytes_lp == 16)
@@ -749,7 +749,7 @@ module bp_be_dcache
     else
       state_r <= state_n;
 
-  assign ready_o = ~cache_req_busy_i & ~cache_miss_r;
+  assign ready_o = ~cache_req_busy_i & is_ready;
 
   assign early_v_o = v_tv_r & ( (uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
                               | (uncached_tv_r & (decode_tv_r.store_op & cache_req_yumi_i))

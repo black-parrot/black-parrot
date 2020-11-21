@@ -122,7 +122,7 @@ module bp_lce
   //synopsys translate_on
 
   // LCE Request Module
-  logic req_ready_lo, req_yumi_lo;
+  logic req_ready_lo;
   logic uc_store_req_complete_lo;
   logic sync_done_lo;
   bp_lce_req
@@ -143,10 +143,11 @@ module bp_lce
       ,.sync_done_i(sync_done_lo)
 
       ,.ready_o(req_ready_lo)
-      ,.yumi_o(req_yumi_lo)
 
       ,.cache_req_i(cache_req_i)
-      ,.cache_req_v_i(cache_req_v_i)
+      // Gate the cache_req_v_i signal to prevent yumis when busy
+      ,.cache_req_v_i(~cache_req_busy_o & cache_req_v_i)
+      ,.cache_req_yumi_o(cache_req_yumi_o)
       ,.cache_req_metadata_i(cache_req_metadata_i)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
       ,.cache_req_complete_i(cache_req_complete_o)
@@ -247,6 +248,5 @@ module bp_lce
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
   // - LCE Command module is ready to process commands (raised after initialization complete)
   assign cache_req_busy_o = cache_req_credits_full_o | timeout | ~cmd_ready_lo | ~req_ready_lo;
-  assign cache_req_yumi_o = req_yumi_lo & ~cache_req_busy_o;
 
 endmodule

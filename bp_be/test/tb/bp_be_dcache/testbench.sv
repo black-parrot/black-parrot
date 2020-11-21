@@ -153,7 +153,8 @@ module testbench
           );
 
       assign dcache_pkt_li[i] = trace_data_lo[i][0+:dcache_pkt_width_lp];
-      assign ptag_li[i] = trace_data_lo[i][dcache_pkt_width_lp+:ptag_width_lp];
+      // Slight hack, but makes all address "cacheable"
+      assign ptag_li[i] = (32'h8000_0000 >> 12) | trace_data_lo[i][dcache_pkt_width_lp+:ptag_width_lp];
       assign uncached_li[i] = trace_data_lo[i][(dcache_pkt_width_lp+ptag_width_lp)+:1];
 
       // Output FIFO
