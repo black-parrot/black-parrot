@@ -36,11 +36,11 @@ module bsg_async_noc_link
    assign alink_cast_o.ready_and_rev = ~alink_full_lo;
    wire alink_enq_li = alink_cast_i.v & alink_cast_o.ready_and_rev;
    wire blink_deq_li = blink_cast_o.v & blink_cast_i.ready_and_rev;
-   bsg_async_fifo 
+   bsg_async_fifo
     #(.width_p(width_p)
       ,.lg_size_p(lg_size_p)
       )
-    link_a_to_b 
+    link_a_to_b
      (.w_clk_i(aclk_i)
       ,.w_reset_i(areset_i)
       ,.w_enq_i(alink_enq_li)

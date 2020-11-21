@@ -11,7 +11,7 @@ module mock_cce
     ,parameter tag_width_p="inv"
     ,parameter num_cce_p="inv"
     ,parameter num_lce_p="inv"
-    ,parameter eaddr_width_p="inv" 
+    ,parameter eaddr_width_p="inv"
 
     ,parameter data_mask_width_lp=(data_width_p>>3)
     ,parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
@@ -26,7 +26,7 @@ module mock_cce
     ,parameter lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp)
     ,parameter cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_lp, ways_p)
     ,parameter cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp, ways_p)
-   
+
     ,parameter rom_addr_width_lp=eaddr_width_p
     ,parameter rom_data_width_lp=ways_p*data_width_p
   )
@@ -41,18 +41,18 @@ module mock_cce
     ,input [lce_cce_resp_width_lp-1:0] lce_resp_i
     ,input lce_resp_v_i
     ,output logic lce_resp_ready_o
-   
+
     ,input [lce_cce_data_resp_width_lp-1:0] lce_data_resp_i
     ,input lce_data_resp_v_i
     ,output logic lce_data_resp_ready_o
-    
+
     ,output logic [cce_lce_cmd_width_lp-1:0] lce_cmd_o
     ,output logic lce_cmd_v_o
     ,input lce_cmd_yumi_i
 
     ,output logic [cce_lce_data_cmd_width_lp-1:0] lce_data_cmd_o
     ,output logic lce_data_cmd_v_o
-    ,input lce_data_cmd_yumi_i 
+    ,input lce_data_cmd_yumi_i
 
     ,output logic done_o
 
@@ -71,14 +71,14 @@ module mock_cce
   bp_lce_cce_resp_s lce_resp;
   bp_cce_lce_data_cmd_s lce_data_cmd;
   bp_lce_cce_req_s lce_req;
-   
+
   assign lce_cmd_o = lce_cmd;
   assign lce_resp = lce_resp_i;
   assign lce_data_cmd_o = lce_data_cmd;
   assign lce_req = lce_req_i;
 
   assign rom_addr_o   = lce_req.addr >>> 6;
-  
+
   // states
   //
   typedef enum logic [3:0] {
@@ -126,7 +126,7 @@ module mock_cce
         lce_cmd_v_o = 1'b1;
         lce_cmd.msg_type = e_lce_cmd_set_clear;
         lce_cmd.addr = {{tag_width_p{1'b0}}, set_clear_count_r, {(lg_ways_lp+lg_data_mask_width_lp){1'b0}}};
-        set_clear_count_n = lce_cmd_yumi_i 
+        set_clear_count_n = lce_cmd_yumi_i
           ? set_clear_count_r + 1
           : set_clear_count_r;
         state_n = lce_cmd_yumi_i & (set_clear_count_r == sets_p-1)
@@ -153,7 +153,7 @@ module mock_cce
             : e_send_sync
           : e_wait_sync;
       end
-      
+
       e_sleep: begin
         lce_req_ready_o = 1'b1;
         lce_data_cmd.dst_id = lce_req.src_id;
@@ -209,7 +209,7 @@ module mock_cce
         lce_cmd.target_way_id = way_r;
         state_n = lce_cmd_yumi_i
           ? e_set_tag
-          : e_send_tr_req;   
+          : e_send_tr_req;
       end
 
      e_set_tag: begin

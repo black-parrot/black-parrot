@@ -35,12 +35,12 @@ module bp_cacc_tile_node
 
   // Declare the routing links
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  
+
   // Tile-side coherence connections
   bp_coh_ready_and_link_s accel_lce_req_link_li, accel_lce_req_link_lo;
   bp_coh_ready_and_link_s accel_lce_cmd_link_li, accel_lce_cmd_link_lo;
   bp_coh_ready_and_link_s accel_lce_resp_link_li, accel_lce_resp_link_lo;
-  
+
 
   bp_cacc_tile
    #(.bp_params_p(bp_params_p))
@@ -49,7 +49,7 @@ module bp_cacc_tile_node
      ,.reset_i(core_reset_i)
 
      ,.my_cord_i(my_cord_i)
-     
+
      ,.lce_req_link_i(accel_lce_req_link_li)
      ,.lce_req_link_o(accel_lce_req_link_lo)
 
@@ -61,7 +61,7 @@ module bp_cacc_tile_node
 
      );
 
-   
+
   bp_nd_socket
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
@@ -83,7 +83,7 @@ module bp_cacc_tile_node
      ,.tile_link_i({accel_lce_req_link_lo, accel_lce_cmd_link_lo, accel_lce_resp_link_lo})
      ,.tile_link_o({accel_lce_req_link_li, accel_lce_cmd_link_li, accel_lce_resp_link_li})
      );
-   
-     
+
+
 endmodule
 

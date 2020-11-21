@@ -82,12 +82,12 @@ module mock_be_trace
   , output logic                                          trace_yumi_o
 );
 
-   
+
 `declare_bp_be_mem_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
 `declare_bp_common_cfg_bus_s(num_core_p, num_lce_p)
 
 // the first level of structs
-`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p);   
+`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p);
 // fe to pc_gen
 `declare_bp_fe_pc_gen_cmd_s(vaddr_width_p,branch_metadata_fwd_width_p);
 
@@ -95,7 +95,7 @@ bp_fe_queue_s                    bp_fe_queue;
 bp_fe_cmd_s                      bp_fe_cmd;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
 bp_fe_cmd_itlb_map_s             fe_cmd_itlb_map;
-   
+
 assign bp_fe_queue = bp_fe_queue_i;
 assign bp_fe_cmd_o = bp_fe_cmd;
 
@@ -105,7 +105,7 @@ logic chk_psn_ex;
 logic prev_trace_v;
 
 logic prev_tlb_miss;
-   
+
 logic [reg_data_width_lp-1:0] next_btarget_r, next_btarget_n;
 
 logic redirect_pending_r;
@@ -113,7 +113,7 @@ logic redirect_pending_r;
 logic tlb_miss;
 
 assign tlb_miss = (bp_fe_queue.msg_type == e_fe_exception) & bp_fe_queue.msg.exception.exception_code == e_itlb_miss;
-   
+
 enum logic [1:0] {e_reset, e_boot, e_run} state_n, state_r;
 always_comb begin : be_cmd_gen
   if (state_r == e_boot)
@@ -121,7 +121,7 @@ always_comb begin : be_cmd_gen
       bp_fe_cmd_v_o = 1'b1;
 
       bp_fe_cmd.opcode = e_op_state_reset;
-      bp_fe_cmd.operands.reset_operands.pc = bp_first_pc_p; 
+      bp_fe_cmd.operands.reset_operands.pc = bp_first_pc_p;
     end
   else
     begin
@@ -148,7 +148,7 @@ always_ff @(posedge clk_i) begin
   if (reset_i) begin
     next_btarget_r <= '0;
     redirect_pending_r <= '0;
-    prev_tlb_miss <= 0; 
+    prev_tlb_miss <= 0;
     state_r <= e_reset;
   end else begin
     state_r <= (state_r == e_reset) ? e_boot : e_run;
@@ -156,12 +156,12 @@ always_ff @(posedge clk_i) begin
     next_btarget_r <= next_btarget_n;
     redirect_pending_r <= (bp_fe_cmd_v_o & bp_fe_cmd_ready_i)
                           ? 1'b1
-                          : redirect_pending_r 
+                          : redirect_pending_r
                             & ~(bp_fe_queue_ready_o & (bp_fe_queue.msg.fetch.pc == next_btarget_r));
   end
 end
 
-   
+
 always_comb begin
   if (trace_v_i) begin
     next_btarget_n = trace_data_i[32+:64];
@@ -176,11 +176,11 @@ end
 always_comb begin : be_queue_gen
   trace_data_o = {bp_fe_queue.msg.fetch.pc, bp_fe_queue.msg.fetch.instr};
 
-  trace_v_o           = bp_fe_queue_v_i 
+  trace_v_o           = bp_fe_queue_v_i
                         & (bp_fe_queue.msg_type == e_fe_fetch)
-                        & trace_ready_i 
+                        & trace_ready_i
                         & (bp_fe_queue.msg.fetch.pc == next_btarget_r);
-  bp_fe_queue_ready_o = bp_fe_queue_v_i; 
+  bp_fe_queue_ready_o = bp_fe_queue_v_i;
 end
 
 logic do_fetch;

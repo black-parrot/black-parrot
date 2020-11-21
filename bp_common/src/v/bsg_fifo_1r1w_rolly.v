@@ -3,7 +3,7 @@ module bsg_fifo_1r1w_rolly
   #(parameter width_p              = "inv"
     , parameter els_p              = "inv"
     , parameter ready_THEN_valid_p = 0
-    
+
     , localparam ptr_width_lp = `BSG_SAFE_CLOG2(els_p)
     )
   (input                  clk_i
@@ -16,16 +16,16 @@ module bsg_fifo_1r1w_rolly
    , input [width_p-1:0]  data_i
    , input                v_i
    , output               ready_o
-   
+
    , output [width_p-1:0] data_o
    , output               v_o
    , input                yumi_i
    );
-  
+
   // One read pointer, one write pointer, one checkpoint pointer
   // ptr_width + 1 for wrap bit
   logic [ptr_width_lp:0] wptr_r, rptr_r, cptr_r;
-    
+
   // Used to catch up on roll and clear
   logic [ptr_width_lp:0] rptr_jmp, wptr_jmp;
 
@@ -38,7 +38,7 @@ module bsg_fifo_1r1w_rolly
 
   assign rptr_jmp = roll
                     ? (cptr_r - rptr_r + (ptr_width_lp+1)'(deq))
-                    : read 
+                    : read
                        ? ((ptr_width_lp+1)'(1))
                        : ((ptr_width_lp+1)'(0));
 
@@ -48,16 +48,16 @@ module bsg_fifo_1r1w_rolly
                        ? ((ptr_width_lp+1)'(1))
                        : ((ptr_width_lp+1)'(0));
 
-  wire empty = (rptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp]) 
+  wire empty = (rptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp])
                & (rptr_r[ptr_width_lp] == wptr_r[ptr_width_lp]);
-  wire full = (cptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp]) 
+  wire full = (cptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp])
               & (cptr_r[ptr_width_lp] != wptr_r[ptr_width_lp]);
 
   assign ready_o = ~clr & ~full;
   assign v_o     = ~roll & ~empty;
 
-  bsg_circular_ptr 
-   #(.slots_p(2*els_p), .max_add_p(1)) 
+  bsg_circular_ptr
+   #(.slots_p(2*els_p), .max_add_p(1))
    cptr
     (.clk(clk_i)
      ,.reset_i(reset_i)
@@ -65,8 +65,8 @@ module bsg_fifo_1r1w_rolly
     ,.o(cptr_r)
     ,.n_o()
      );
-    
-  bsg_circular_ptr 
+
+  bsg_circular_ptr
    #(.slots_p(2*els_p),.max_add_p(2*els_p-1))
    wptr
     (.clk(clk_i)
@@ -76,7 +76,7 @@ module bsg_fifo_1r1w_rolly
      ,.n_o()
      );
 
-  bsg_circular_ptr 
+  bsg_circular_ptr
   #(.slots_p(2*els_p), .max_add_p(2*els_p-1))
   rptr_circ_ptr
    (.clk(clk_i)
@@ -85,9 +85,9 @@ module bsg_fifo_1r1w_rolly
     ,.o(rptr_r)
     ,.n_o()
     );
-  
-  bsg_mem_1r1w 
-  #(.width_p(width_p), .els_p(els_p)) 
+
+  bsg_mem_1r1w
+  #(.width_p(width_p), .els_p(els_p))
   fifo_mem
    (.w_clk_i(clk_i)
     ,.w_reset_i(reset_i)
@@ -98,6 +98,6 @@ module bsg_fifo_1r1w_rolly
     ,.r_addr_i(rptr_r[0+:ptr_width_lp])
     ,.r_data_o(data_o)
     );
-  
+
 endmodule
 

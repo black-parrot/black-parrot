@@ -1,9 +1,9 @@
-/* 
+/*
  * bp_common_pkg.vh
  *
  * Contains the interface structures used for communicating between FE, BE, ME in BlackParrot.
- * Additionally contains global parameters used to configure the system. In the future, when 
- *   multiple configurations are supported, these global parameters will belong to groups 
+ * Additionally contains global parameters used to configure the system. In the future, when
+ *   multiple configurations are supported, these global parameters will belong to groups
  *   e.g. SV39, VM-disabled, ...
  *
  */
@@ -19,7 +19,7 @@ package bp_common_pkg;
   /*
    * RV64 specifies a 64b effective address and 32b instruction.
    * BlackParrot supports SV39 virtual memory, which specifies 39b virtual / 56b physical address.
-   * Effective addresses must have bits 39-63 match bit 38 
+   * Effective addresses must have bits 39-63 match bit 38
    *   or a page fault exception will occur during translation.
    * Currently, we only support a very limited number of parameter configurations.
    * Thought: We could have a `define surrounding core instantiations of each parameter and then
@@ -48,7 +48,7 @@ package bp_common_pkg;
   localparam cfg_dev_base_addr_gp      = 32'h0020_0000;
   localparam clint_dev_base_addr_gp    = 32'h0030_0000;
   localparam cache_dev_base_addr_gp    = 32'h0040_0000;
-  
+
   localparam mipi_reg_base_addr_gp     = 32'h0030_0000;
   localparam mtimecmp_reg_base_addr_gp = 32'h0030_4000;
   localparam mtime_reg_addr_gp         = 32'h0030_bff8;

@@ -2,7 +2,7 @@
  * bp_me_cce_to_cache.v
  *
  */
- 
+
 module bp_me_cce_to_cache
 
   import bp_cce_pkg::*;
@@ -22,7 +22,7 @@ module bp_me_cce_to_cache
     , localparam data_mask_width_lp=(dword_width_p>>3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-    
+
     , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(paddr_width_p,dword_width_p)
     , localparam counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_p)
   )
@@ -34,7 +34,7 @@ module bp_me_cce_to_cache
     , input  [cce_mem_msg_width_lp-1:0]   mem_cmd_i
     , input                               mem_cmd_v_i
     , output logic                        mem_cmd_ready_o
-                                          
+
     , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
     , output logic                        mem_resp_v_o
     , input                               mem_resp_yumi_i
@@ -53,10 +53,10 @@ module bp_me_cce_to_cache
   // After all the tags are completedly initialized, this module starts
   // accepting packets from manycore network.
   `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
-  
+
   // cce logics
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  
+
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = cache_pkt;
 
@@ -72,12 +72,12 @@ module bp_me_cce_to_cache
   logic [lg_sets_lp+lg_ways_lp:0] tagst_received_r, tagst_received_n;
   logic [counter_width_lp-1:0] cmd_counter_r, cmd_counter_n;
   logic [counter_width_lp-1:0] cmd_max_count_r, cmd_max_count_n;
-  
+
   bp_bedrock_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
-  
+
   assign mem_cmd_cast_i = mem_cmd_i;
   assign mem_resp_o = mem_resp_cast_o;
-  
+
   logic mem_cmd_ready_lo;
   bp_bedrock_cce_mem_msg_s mem_cmd_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
@@ -129,7 +129,7 @@ module bp_me_cce_to_cache
 
     mem_cmd_ready_o = mem_cmd_ready_lo;
     mem_cmd_yumi_li = 1'b0;
-    
+
     cmd_state_n = cmd_state_r;
     cmd_counter_n = cmd_counter_r;
     cmd_max_count_n = cmd_max_count_r;
@@ -144,7 +144,7 @@ module bp_me_cce_to_cache
         mem_cmd_ready_o = 1'b0;
 
         v_o = tagst_sent_r != (l2_assoc_p*l2_sets_p);
-        
+
         cache_pkt.opcode = TAGST;
         cache_pkt.data = '0;
         cache_pkt.addr = {
@@ -236,8 +236,8 @@ module bp_me_cce_to_cache
       end
     endcase
   end
-  
-  
+
+
   typedef enum logic [1:0] {
     RESP_RESET
     ,RESP_READY
@@ -248,7 +248,7 @@ module bp_me_cce_to_cache
   resp_state_e resp_state_r, resp_state_n;
   logic [counter_width_lp-1:0] resp_counter_r, resp_counter_n;
   logic [counter_width_lp-1:0] resp_max_count_r, resp_max_count_n;
-  
+
   logic [dword_width_p-1:0] resp_data_n;
   logic [block_size_in_words_lp-1:0][dword_width_p-1:0] resp_data_r;
 
@@ -276,7 +276,7 @@ module bp_me_cce_to_cache
      ,.data_i(mem_cmd_lo.header)
      ,.data_o(mem_resp_cast_o.header)
      );
-  
+
   bsg_bus_pack
    #(.width_p(cce_block_width_p))
    repl_mux
@@ -290,7 +290,7 @@ module bp_me_cce_to_cache
   always_comb begin
     yumi_o = 1'b0;
     is_resp_ready = 1'b0;
-    
+
     resp_state_n = resp_state_r;
     resp_counter_n = resp_counter_r;
     resp_max_count_n = resp_max_count_r;
@@ -345,6 +345,6 @@ module bp_me_cce_to_cache
       end
     endcase
   end
-  
+
 
 endmodule

@@ -5,7 +5,7 @@ module bp_mem_to_dram
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
-  
+
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
@@ -16,13 +16,13 @@ module bp_mem_to_dram
 
   , localparam write_mask_width_lp = (data_width_p>>3)
   , localparam cce_write_mask_width_lp = (cce_block_width_p >> 3)
-  , localparam byte_offset_width_lp =`BSG_SAFE_CLOG2(data_width_p>>3) 
+  , localparam byte_offset_width_lp =`BSG_SAFE_CLOG2(data_width_p>>3)
   , localparam block_size_in_words_lp = cce_block_width_p / data_width_p
   , localparam lg_block_size_in_words_lp = `BSG_SAFE_CLOG2(block_size_in_words_lp)
   , localparam reorder_fifo_els_lp = fifo_els_p * block_size_in_words_lp
   , localparam lg_reorder_fifo_els_lp = `BSG_SAFE_CLOG2(reorder_fifo_els_lp)
   )
-  
+
   (
    // Core Side
    input                                           clk_i
@@ -38,7 +38,7 @@ module bp_mem_to_dram
 
   // DRAM Side
   ,input                                           dram_clk_i
-  ,input                                           dram_reset_i 
+  ,input                                           dram_reset_i
 
   ,output       [channel_addr_width_p-1:0]         dram_ch_addr_o
   ,output                                          dram_write_not_read_o
@@ -57,22 +57,22 @@ module bp_mem_to_dram
   );
 
   localparam fifo_width_lp = cce_mem_msg_width_lp - cce_block_width_p;
-  
+
   /********************* Packet definition *********************/
-  
+
   // cce
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  
-  
+
+
   /********************* Resp queue fifo *********************/
-  
+
   // Stores CCE packet header information
   logic queue_fifo_v_li, queue_fifo_ready_lo;
   logic [fifo_width_lp-1:0] queue_fifo_data_li;
-  
+
   logic queue_fifo_v_lo, queue_fifo_yumi_li;
   logic [fifo_width_lp-1:0] queue_fifo_data_lo;
-  
+
   bsg_fifo_1r1w_small
  #(.width_p(fifo_width_lp)
   ,.els_p  (fifo_els_p)
@@ -86,10 +86,10 @@ module bp_mem_to_dram
   ,.data_o (queue_fifo_data_lo)
   ,.yumi_i (queue_fifo_yumi_li)
   );
-  
-  
+
+
   /********************* core -> dram *********************/
-  
+
   // Address Channel
   logic dma_fifo_v_li, dma_fifo_ready_lo, dma_fifo_write_not_read_li;
   logic [channel_addr_width_p-1:0] dma_fifo_ch_addr_li;
@@ -101,7 +101,7 @@ module bp_mem_to_dram
 
   logic [lg_block_size_in_words_lp-1:0] word_cnt_r;
   logic [channel_addr_width_p-1:0] word_addr_lo;
- 
+
   bsg_two_fifo
  #(.width_p(1+channel_addr_width_p)
   ) dma_fifo
@@ -142,7 +142,7 @@ module bp_mem_to_dram
   ,.up_i(req_afifo_enq_li & ~dma_fifo_yumi_li)
   ,.count_o(word_cnt_r)
   );
- 
+
   // Data Channel
   logic dma_data_piso_v_li, dma_data_piso_ready_lo;
   logic [cce_block_width_p-1:0] dma_data_piso_data_li;
@@ -153,7 +153,7 @@ module bp_mem_to_dram
 
   logic req_data_afifo_full_lo;
 
-  bsg_parallel_in_serial_out 
+  bsg_parallel_in_serial_out
  #(.width_p(data_width_p)
   ,.els_p  (block_size_in_words_lp)
   ) dma_data_piso
@@ -315,7 +315,7 @@ module bp_mem_to_dram
   ) dma_data_sipo
   (.clk_i  (clk_i)
   ,.reset_i(reset_i)
-  
+
   ,.v_i    (reorder_deq_v_lo)
   ,.ready_o(dma_data_sipo_ready_lo)
   ,.data_i (reorder_deq_data_lo)
@@ -363,7 +363,7 @@ end
   (.i(id_encode_lo)
   ,.o(cam_match_lo)
   );
-  
+
   // queue FIFO
   wire is_write = mem_resp_lo.header.msg_type.mem inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr};
   assign queue_fifo_yumi_li = mem_resp_v_o & mem_resp_yumi_i;

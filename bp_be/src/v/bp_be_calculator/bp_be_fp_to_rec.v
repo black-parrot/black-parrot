@@ -19,7 +19,7 @@ module bp_be_fp_to_rec
 
   // The control bits control tininess, which is fixed in RISC-V
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
-  // We also convert from 32 bit inputs to 64 bit recoded inputs. 
+  // We also convert from 32 bit inputs to 64 bit recoded inputs.
   //   This double rounding behavior was formally proved correct in
   //   "Innocuous Double Rounding of Basic Arithmetic Operations" by Pierre Roux
 

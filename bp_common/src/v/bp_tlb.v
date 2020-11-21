@@ -5,19 +5,19 @@ module bp_tlb
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    ,parameter tlb_els_p       = "inv"
-   
+
    ,localparam lg_els_lp      = `BSG_SAFE_CLOG2(tlb_els_p)
    ,localparam entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
  )
  (input                               clk_i
   , input                             reset_i
   , input                             flush_i
-  
+
   , input                             v_i
   , input                             w_i
   , input [vtag_width_p-1:0]          vtag_i
   , input [entry_width_lp-1:0]        entry_i
-    
+
   , output logic                      v_o
   , output logic                      miss_v_o
   , output logic [entry_width_lp-1:0] entry_o
@@ -43,7 +43,7 @@ bsg_dff_reset #(.width_p(vtag_width_p))
    ,.data_o(vtag_r)
   );
 
-// Tlb bypass logic bypasses tlb reads if translation is disabled 
+// Tlb bypass logic bypasses tlb reads if translation is disabled
 // or if the input vtags on consecutive reads are the same
 logic tlb_bypass;
 logic tlb_bypass_r;
@@ -110,7 +110,7 @@ bsg_dff_reset_en_bypass #(.width_p(1))
    ,.en_i(~tlb_bypass_r)
    ,.data_i(r_v_lo)
    ,.data_o(r_entry_bypass_v_r)
-  );  
+  );
 
 assign entry_o    = r_entry_bypass_r;
 assign v_o        = r_v_r & r_entry_bypass_v_r;
