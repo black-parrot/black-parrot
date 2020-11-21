@@ -63,7 +63,6 @@ tools: | $(TARGET_DIRS)
 	$(MAKE) gnu
 	$(MAKE) verilator
 	$(MAKE) dromajo
-	$(MAKE) spike
 	$(MAKE) axe
 	$(MAKE) cmurphi
 	$(MAKE) bsg_sv2v
