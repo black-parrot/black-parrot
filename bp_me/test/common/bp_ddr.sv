@@ -146,7 +146,7 @@ module bp_ddr
   logic [paddr_width_p-1:0] app_addr_lo;
   logic [cce_block_width_p-1:0] app_wdf_data_lo, app_rd_data_li;
   logic [(cce_block_width_p>>3)-1:0] app_wdf_mask_lo;
-  logic [2:0] app_cmd_lo;
+  app_cmd_e app_cmd_lo;
 
   // DMC
   logic ui_reset_lo;

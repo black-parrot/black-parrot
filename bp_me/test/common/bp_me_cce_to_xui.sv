@@ -9,6 +9,7 @@ module bp_me_cce_to_xui
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
+ import bsg_dmc_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
@@ -34,7 +35,7 @@ module bp_me_cce_to_xui
                                          
    // xilinx user interface
    , output [paddr_width_p-1:0]          app_addr_o
-   , output [2:0]                        app_cmd_o
+   , output app_cmd_e                    app_cmd_o
    , output                              app_en_o
    , input                               app_rdy_i
    , output                              app_wdf_wren_o
@@ -62,7 +63,7 @@ assign mem_cmd_cast_li = mem_cmd_i;
 assign mem_resp_o = mem_resp_cast_lo;
 
 assign app_addr_o      = mem_cmd_cast_li.header.addr;
-assign app_cmd_o       = mem_cmd_cast_li.header.msg_type == e_bedrock_mem_rd;
+assign app_cmd_o       = app_cmd_e'(mem_cmd_cast_li.header.msg_type == e_bedrock_mem_rd);
 assign app_en_o        = mem_cmd_v_i & mem_cmd_ready_o;
 assign app_wdf_wren_o  = app_en_o & (mem_cmd_cast_li.header.msg_type == e_bedrock_mem_wr);
 assign app_wdf_data_o  = mem_cmd_cast_li.data;
