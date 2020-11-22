@@ -22,7 +22,7 @@ module bp_be_director
  import bp_common_cfg_link_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+   `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    // Generated parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -60,7 +60,7 @@ module bp_be_director
 
   // Declare parameterized structures
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   // Cast input and output ports
@@ -105,9 +105,6 @@ module bp_be_director
   assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
   assign poison_isd_o = npc_mismatch_v | flush_o;
 
-  // Last operation was branch. Was it successful? Let's find out
-  // TODO: I think this is wrong, may send extra attaboys
-  //   Should make attaboys idempotent to fix
   logic btaken_pending, attaboy_pending;
   bsg_dff_reset_set_clear
    #(.width_p(2), .clear_over_set_p(1))
@@ -187,18 +184,12 @@ module bp_be_director
 
           flush_o = 1'b1;
         end
-      // TODO: This is compliant but suboptimal, since satp is not required to flush TLBs
-      //   Should add message to fe-be interface
       else if (commit_pkt.sfence)
         begin
           fe_cmd_li.opcode = e_op_itlb_fence;
           fe_cmd_li.vaddr  = commit_pkt.npc;
 
-          fe_cmd_pc_redirect_operands = '0;
-          fe_cmd_pc_redirect_operands.translation_enabled = commit_pkt.translation_en_n;
-          fe_cmd_li.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
-
-          fe_cmd_v_li     = fe_cmd_ready_lo;
+          fe_cmd_v_li = fe_cmd_ready_lo;
 
           flush_o = 1'b1;
         end
@@ -206,11 +197,11 @@ module bp_be_director
         begin
           fe_cmd_pc_redirect_operands = '0;
 
-          fe_cmd_li.opcode                                    = e_op_pc_redirection;
-          fe_cmd_li.vaddr                                     = commit_pkt.npc;
+          fe_cmd_li.opcode                                 = e_op_pc_redirection;
+          fe_cmd_li.vaddr                                  = commit_pkt.npc;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_translation_switch;
           fe_cmd_pc_redirect_operands.translation_enabled  = commit_pkt.translation_en_n;
-          fe_cmd_li.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
+          fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
 
@@ -225,21 +216,30 @@ module bp_be_director
 
           flush_o = 1'b1;
         end
+      else if (commit_pkt.icache_miss)
+        begin
+          fe_cmd_li.opcode = e_op_icache_fill_response;
+          fe_cmd_li.vaddr  = commit_pkt.npc;
+
+          fe_cmd_v_li = fe_cmd_ready_lo;
+
+          flush_o = 1'b1;
+        end
       // Redirect the pc if there's an NPC mismatch
       // Should not lump trap and ret into branch misprediction
       else if (commit_pkt.exception | commit_pkt._interrupt | commit_pkt.eret)
         begin
           fe_cmd_pc_redirect_operands = '0;
 
-          fe_cmd_li.opcode                                    = e_op_pc_redirection;
-          fe_cmd_li.vaddr                                     = npc_n;
+          fe_cmd_li.opcode                                 = e_op_pc_redirection;
+          fe_cmd_li.vaddr                                  = npc_n;
           // TODO: Fill in missing subopcodes.  They're not used by FE yet...
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_trap;
           fe_cmd_pc_redirect_operands.branch_metadata_fwd  = '0;
           fe_cmd_pc_redirect_operands.misprediction_reason = e_not_a_branch;
           fe_cmd_pc_redirect_operands.priv                 = commit_pkt.priv_n;
           fe_cmd_pc_redirect_operands.translation_enabled  = commit_pkt.translation_en_n;
-          fe_cmd_li.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
+          fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
 
@@ -253,25 +253,24 @@ module bp_be_director
         begin
           fe_cmd_pc_redirect_operands = '0;
 
-          fe_cmd_li.opcode                                    = e_op_pc_redirection;
-          fe_cmd_li.vaddr                                     = expected_npc_o;
+          fe_cmd_li.opcode                                 = e_op_pc_redirection;
+          fe_cmd_li.vaddr                                  = expected_npc_o;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_branch_mispredict;
           fe_cmd_pc_redirect_operands.branch_metadata_fwd  = isd_status.isd_branch_metadata_fwd;
-          // TODO: Add not a branch case
           fe_cmd_pc_redirect_operands.misprediction_reason = last_instr_was_branch
                                                              ? last_instr_was_btaken
                                                                ? e_incorrect_pred_taken
                                                                : e_incorrect_pred_ntaken
                                                              : e_not_a_branch;
-          fe_cmd_li.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
+          fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end
       // Send an attaboy if there's a correct prediction
       else if (isd_status.isd_v & ~npc_mismatch_v & last_instr_was_branch)
         begin
-          fe_cmd_li.opcode                      = e_op_attaboy;
-          fe_cmd_li.vaddr                       = expected_npc_o;
+          fe_cmd_li.opcode                               = e_op_attaboy;
+          fe_cmd_li.vaddr                                = expected_npc_o;
           fe_cmd_li.operands.attaboy.taken               = last_instr_was_btaken;
           fe_cmd_li.operands.attaboy.branch_metadata_fwd = isd_status.isd_branch_metadata_fwd;
 

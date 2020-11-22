@@ -23,5 +23,6 @@ int main(int arc, char** argv) {
   bp_cprint(' ');
   bp_cprint(' ' + core_id);
 
+  bp_finish(core_id);
   return 0;
 }

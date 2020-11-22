@@ -83,6 +83,7 @@ update-cache: &update-cache-manual
     - me_dev
     - top_dev
     - sw_dev
+    - dev_hotfix_bursttolitesubword
   before_script:
     - echo "Forcefully updating submodules"
     - git submodule update --init --force
@@ -115,6 +116,10 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/touchfiles
     policy: pull
   dependencies: []
+  retry:
+    max: 2
+    when:
+      - script_failure
 
 prep:
   <<: *job_definition
@@ -194,11 +199,19 @@ tire_kick:
   script:
     - $CI_PROJECT_DIR/ci/tire_kick.sh
 
+bloodgraph-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/bloodgraph.sh $CI_CORES
+
+# Takes too long to build
 weird-verilator:
   <<: *job_definition
   when: manual
   stage: test-short
-  allow_failure: true
   tags:
     - verilator
   script:
@@ -206,9 +219,7 @@ weird-verilator:
 
 weird-vcs:
   <<: *job_definition
-  when: manual
   stage: test-short
-  allow_failure: true
   tags:
     - vcs
   script:
@@ -319,6 +330,47 @@ top-riscvdv-vcs:
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCVDV_TESTLIST $CI_CORES
 
+top-checkpoint-verilator:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/checkpoint.sh verilator $CI_CORES
+
+top-checkpoint-vcs:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/checkpoint.sh vcs $CI_CORES
+
+check-loops:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - dc
+  script:
+    - $CI_PROJECT_DIR/ci/check_loops.sh $CI_CORES
+
+top-dram-vcs:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/dram.sh
+
+top-linux-verilator:
+  <<: *job_definition
+  when: manual
+  stage: test-ultralong
+  tags:
+    - verilator
+  script:
+    $CI_PROJECT_DIR/ci/linux.sh verilator $CI_CORES
+
 top-coremark-verilator:
   <<: *job_definition
   stage: test-long
@@ -351,40 +403,6 @@ top-beebs-vcs:
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs BEEBS_TESTLIST $CI_CORES
 
-top-checkpoint-verilator:
-  <<: *job_definition
-  stage: test-medium
-  tags:
-    - verilator
-  script:
-    - $CI_PROJECT_DIR/ci/checkpoint.sh verilator $CI_CORES
-
-top-checkpoint-vcs:
-  <<: *job_definition
-  stage: test-medium
-  tags:
-    - vcs
-  script:
-    - $CI_PROJECT_DIR/ci/checkpoint.sh vcs $CI_CORES
-
-check-loops:
-  <<: *job_definition
-  stage: test-medium
-  tags:
-    - dc
-  script:
-    - $CI_PROJECT_DIR/ci/check_loops.sh $CI_CORES
-
-top-linux-verilator:
-  <<: *job_definition
-  when: manual
-  stage: test-ultralong
-  tags:
-    - verilator
-  script:
-    $CI_PROJECT_DIR/ci/linux.sh verilator $CI_CORES
-
-
 top-linux-vcs:
   <<: *job_definition
   when: manual
@@ -394,11 +412,3 @@ top-linux-vcs:
   script:
     $CI_PROJECT_DIR/ci/linux.sh vcs $CI_CORES
 
-top-dram-vcs:
-  <<: *job_definition
-  when: manual
-  stage: test-medium
-  tags:
-    - vcs
-  script:
-    - $CI_PROJECT_DIR/ci/dram.sh

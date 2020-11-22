@@ -34,10 +34,9 @@ module bp_lce
     , localparam block_size_in_bytes_lp = (block_width_p/8)
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
-    , localparam ptag_width_lp = (paddr_width_p-lg_sets_lp-lg_block_size_in_bytes_lp)
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
   )
@@ -53,36 +52,34 @@ module bp_lce
     // ready_o->valid_i handshake
     // metadata arrives in the same cycle as req, or any cycle after, but before the next request
     // can arrive, as indicated by the metadata_v_i signal
+    , input [cache_req_width_lp-1:0]                 cache_req_i
     , input                                          cache_req_v_i
     , output logic                                   cache_req_ready_o
-    , input [cache_req_width_lp-1:0]                 cache_req_i
-    , input                                          cache_req_metadata_v_i
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
+    , input                                          cache_req_metadata_v_i
+    , output logic                                   cache_req_critical_o
+    , output logic                                   cache_req_complete_o
+    , output logic                                   cache_req_credits_full_o
+    , output logic                                   cache_req_credits_empty_o
 
     // LCE-Cache Interface
     // valid->yumi
     // commands issued that read and return data have data returned the cycle after
     // the valid->yumi command handshake occurs
+    , output logic                                   tag_mem_pkt_v_o
+    , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
+    , input                                          tag_mem_pkt_yumi_i
+    , input [cache_tag_info_width_lp-1:0]            tag_mem_i
+
     , output logic                                   data_mem_pkt_v_o
     , output logic [cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
     , input                                          data_mem_pkt_yumi_i
     , input [block_width_p-1:0]                      data_mem_i
 
-    , output logic                                   tag_mem_pkt_v_o
-    , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
-    , input                                          tag_mem_pkt_yumi_i
-    , input [ptag_width_lp-1:0]                      tag_mem_i
-
     , output logic                                   stat_mem_pkt_v_o
     , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , input                                          stat_mem_pkt_yumi_i
     , input [stat_info_width_lp-1:0]                 stat_mem_i
-
-    , output logic                                   credits_full_o
-    , output logic                                   credits_empty_o
-
-    , output logic                                   cache_req_complete_o
-    , output logic                                   cache_req_critical_o
 
     // LCE-CCE interface
     // Req: ready->valid
@@ -126,6 +123,7 @@ module bp_lce
   // LCE Request Module
   logic req_ready_lo;
   logic uc_store_req_complete_lo;
+  logic sync_done_lo;
   bp_lce_req
     #(.bp_params_p(bp_params_p)
       ,.assoc_p(assoc_p)
@@ -141,6 +139,7 @@ module bp_lce
 
       ,.lce_id_i(lce_id_i)
       ,.lce_mode_i(lce_mode_i)
+      ,.sync_done_i(sync_done_lo)
 
       ,.ready_o(req_ready_lo)
 
@@ -149,9 +148,8 @@ module bp_lce
       ,.cache_req_metadata_i(cache_req_metadata_i)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
       ,.cache_req_complete_i(cache_req_complete_o)
-
-      ,.credits_full_o(credits_full_o)
-      ,.credits_empty_o(credits_empty_o)
+      ,.credits_full_o(cache_req_credits_full_o)
+      ,.credits_empty_o(cache_req_credits_empty_o)
 
       ,.uc_store_req_complete_i(uc_store_req_complete_lo)
 
@@ -162,7 +160,6 @@ module bp_lce
 
   // LCE Command Module
   logic cmd_ready_lo;
-  logic cmd_sync_done_lo;
   bp_lce_cmd
     #(.bp_params_p(bp_params_p)
       ,.assoc_p(assoc_p)
@@ -181,7 +178,7 @@ module bp_lce
       ,.lce_mode_i(lce_mode_i)
 
       ,.ready_o(cmd_ready_lo)
-      ,.sync_done_o(cmd_sync_done_lo)
+      ,.sync_done_o(sync_done_lo)
       ,.cache_req_complete_o(cache_req_complete_o)
       ,.cache_req_critical_o(cache_req_critical_o)
       ,.uc_store_req_complete_o(uc_store_req_complete_lo)

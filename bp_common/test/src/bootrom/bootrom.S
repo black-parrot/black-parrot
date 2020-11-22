@@ -19,6 +19,8 @@
 .section .text.start
 .globl _start
 _start:
+    // Clear out the registers, useful for avoiding x-prop and for bare-metal
+    //   programs
     li x0, 0
     li x1, 0
     li x2, 0
@@ -52,11 +54,13 @@ _start:
     li x30, 0
     li x31, 0
 
-    // Read hartid to set offset correctly
+    // Read hartid to set offset for tile-level configurations
     csrr t4, mhartid
     slli t4, t4, CFG_CORE_OFFSET
     
-    // Copy CCE microcode
+    // Copy CCE microcode from bootrom to CCE instruction RAM
+    // TODO: Do not need to do this copy if there's not a programmable
+    //    CCE. Should first query platform data
     la t0, _ucode
     li t1, CFG_CCE_UCODE_BASE_ADDR
     or t1, t1, t4
@@ -69,9 +73,18 @@ load_ucode:
     addi t1, t1, 1
     j load_ucode
         
-    // Switch I$, D$ and CCE modes
+    // Load the configuration data for the core. This switches the cache modes
+    //   to enable coherent, cached memory requests
 load_config:
     li t0, 1
+
+    // First switch the CCE mode so that we don't accidentally send cached
+    //   requests before they can be handled
+    li t1, CFG_CCE_MODE_ADDR
+    or t1, t1, t4
+    sd t0, 0(t1)
+
+    // Then enable D$ and I$ (order doesn't really matter)
     li t1, CFG_DCACHE_MODE_ADDR
     or t1, t1, t4
     sd t0, 0(t1)
@@ -80,12 +93,10 @@ load_config:
     or t1, t1, t4
     sd t0, 0(t1)
 
-    li t1, CFG_CCE_MODE_ADDR
-    or t1, t1, t4
-    sd t0, 0(t1)
-
+    // Fence to make sure configuration is set before continuing
     fence
     
+    // Set up the debug mode exit to DRAM base address
     li t0, 0x80000000
     csrw dpc, t0
     csrwi dcsr, 0x3
@@ -98,8 +109,10 @@ load_config:
     li t4, 0
 
     dret
+// Should not get here
 halt:
     j halt
 
+// Flat 64-bit wide binary of CCE ucode
 _ucode:
     .incbin "cce_ucode.bin" 

@@ -219,7 +219,6 @@ $BP_FE_DIR/src/v/bp_fe_bht.v
 $BP_FE_DIR/src/v/bp_fe_btb.v
 $BP_FE_DIR/src/v/bp_fe_icache.v
 $BP_FE_DIR/src/v/bp_fe_instr_scan.v
-$BP_FE_DIR/src/v/bp_fe_mem.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
 ## ME files
@@ -284,6 +283,7 @@ $BP_TOP_DIR/src/v/bp_sacc_tile_node.v
 $BP_TOP_DIR/src/v/bp_sacc_complex.v
 $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_core.v
+$BP_TOP_DIR/src/v/bp_core_minimal.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v
 $BP_TOP_DIR/src/v/bp_l2e_tile.v

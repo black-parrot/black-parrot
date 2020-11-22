@@ -1,21 +1,18 @@
 #!/bin/bash
 
 # Command line arguments
-
 # Default to 1 core
 N=${1:-1}
 
 # Bash array to iterate over for configurations
 cfgs=(\
-    "e_bp_unicore_cfg"
-    "e_bp_multicore_1_cfg"
-    "e_bp_multicore_1_cce_ucode_cfg"
-    "e_bp_multicore_4_cfg"
-    "e_bp_multicore_4_cce_ucode_cfg"
+    "e_bp_multicore_1_cce_ucode_bootrom_cfg"
+    "e_bp_multicore_1_bootrom_cfg"
+    "e_bp_unicore_bootrom_cfg"
     )
 
 # The base command to append the configuration to
-cmd_base="make -C bp_top/syn check_loops.syn"
+cmd_base="make -C bp_top/syn build.v sim.v blood.v CORE_PROFILE_P=1 COSIM_P=1 SUITE=bp_tests PROG=cache_hammer"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
@@ -28,11 +25,14 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
-echo "Running check_loops on bp_me"
-make -C bp_me/syn CFG=e_bp_half_core_cfg & 
-make -C bp_me/syn CFG=e_bp_half_core_ucode_cce_cfg &
-wait
-
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
-echo "[CI CHECK] $0: PASSED" && exit 0
+
+num_graphs=$(find -name "*blood_detailed.png" | wc -l)
+
+if [[ $num_graphs -eq 3 ]]
+then
+  echo "[CI CHECK] $0: PASSED" && exit 0
+else
+  echo "[CI CHECK] $0: FAILED" && exit 1
+fi

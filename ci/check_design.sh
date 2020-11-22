@@ -19,7 +19,7 @@ cmd_base="make -C bp_top/syn check_design.syn"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
-make -C bp_top/syn clean.syn
+make -C bp_top/syn clean
 
 let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1

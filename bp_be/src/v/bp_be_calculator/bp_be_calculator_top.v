@@ -19,14 +19,14 @@ module bp_be_calculator_top
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp       = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
@@ -34,33 +34,31 @@ module bp_be_calculator_top
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 6
    )
- (input                                 clk_i
-  , input                               reset_i
+ (input                                             clk_i
+  , input                                           reset_i
 
-  , input [cfg_bus_width_lp-1:0]        cfg_bus_i
+  , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
 
   // Calculator - Checker interface
-  , input [dispatch_pkt_width_lp-1:0]   dispatch_pkt_i
+  , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
 
-  , input                               flush_i
+  , input                                           flush_i
 
-  , output                              fpu_en_o
-  , output                              long_ready_o
-  , output                              mem_ready_o
-  , output                              sys_ready_o
+  , output                                          fpu_en_o
+  , output                                          long_ready_o
+  , output                                          mem_ready_o
+  , output                                          sys_ready_o
 
-  , output [ptw_fill_pkt_width_lp-1:0]  ptw_fill_pkt_o
-  , output [commit_pkt_width_lp-1:0]      commit_pkt_o
-  , output [branch_pkt_width_lp-1:0]    br_pkt_o
-  , output [wb_pkt_width_lp-1:0]        iwb_pkt_o
-  , output [wb_pkt_width_lp-1:0]        fwb_pkt_o
+  , output [ptw_fill_pkt_width_lp-1:0]              ptw_fill_pkt_o
+  , output [commit_pkt_width_lp-1:0]                commit_pkt_o
+  , output [branch_pkt_width_lp-1:0]                br_pkt_o
+  , output [wb_pkt_width_lp-1:0]                    iwb_pkt_o
+  , output [wb_pkt_width_lp-1:0]                    fwb_pkt_o
 
-  , input                               timer_irq_i
-  , input                               software_irq_i
-  , input                               external_irq_i
+  , input                                           timer_irq_i
+  , input                                           software_irq_i
+  , input                                           external_irq_i
 
-  // D$-LCE Interface
-  // signals to LCE
   , output logic [dcache_req_width_lp-1:0]          cache_req_o
   , output logic                                    cache_req_v_o
   , input                                           cache_req_ready_i
@@ -68,24 +66,23 @@ module bp_be_calculator_top
   , output logic                                    cache_req_metadata_v_o
   , input                                           cache_req_critical_i
   , input                                           cache_req_complete_i
+  , input                                           cache_req_credits_full_i
+  , input                                           cache_req_credits_empty_i
 
-  // data_mem
-  , input data_mem_pkt_v_i
-  , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-  , output logic data_mem_pkt_yumi_o
-  , output logic [dcache_block_width_p-1:0] data_mem_o
+  , input                                           data_mem_pkt_v_i
+  , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
+  , output logic                                    data_mem_pkt_yumi_o
+  , output logic [dcache_block_width_p-1:0]         data_mem_o
 
-  // tag_mem
-  , input tag_mem_pkt_v_i
-  , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-  , output logic tag_mem_pkt_yumi_o
-  , output logic [ptag_width_p-1:0] tag_mem_o
+  , input                                           tag_mem_pkt_v_i
+  , input [dcache_tag_mem_pkt_width_lp-1:0]         tag_mem_pkt_i
+  , output logic                                    tag_mem_pkt_yumi_o
+  , output logic [dcache_tag_info_width_lp-1:0]     tag_mem_o
 
-  // stat_mem
-  , input stat_mem_pkt_v_i
-  , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-  , output logic stat_mem_pkt_yumi_o
-  , output logic [dcache_stat_info_width_lp-1:0] stat_mem_o
+  , input                                           stat_mem_pkt_v_i
+  , input [dcache_stat_mem_pkt_width_lp-1:0]        stat_mem_pkt_i
+  , output logic                                    stat_mem_pkt_yumi_o
+  , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
   );
 
   // Declare parameterizable structs
@@ -279,6 +276,8 @@ module bp_be_calculator_top
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
      ,.cache_req_critical_i(cache_req_critical_i)
      ,.cache_req_complete_i(cache_req_complete_i)
+     ,.cache_req_credits_full_i(cache_req_credits_full_i)
+     ,.cache_req_credits_empty_i(cache_req_credits_empty_i)
 
      ,.data_mem_pkt_i(data_mem_pkt_i)
      ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
@@ -443,8 +442,6 @@ module bp_be_calculator_top
      ,.data_o(comp_stage_r)
      );
 
-  logic [5:0][vaddr_width_p-1:0] pc_r;
-  rv64_instr_s [5:0]             instr_r;
   always_comb
     begin
       // Slicing the completion pipe for Forwarding information
@@ -482,6 +479,7 @@ module bp_be_calculator_top
           exc_stage_n[3].poison_v               |= pipe_sys_miss_v_lo | pipe_sys_exc_v_lo;
 
           exc_stage_n[0].exc.itlb_miss          |= reservation_n.decode.itlb_miss;
+          exc_stage_n[0].exc.icache_miss        |= reservation_n.decode.icache_miss;
           exc_stage_n[0].exc.instr_access_fault |= reservation_n.decode.instr_access_fault;
           exc_stage_n[0].exc.instr_page_fault   |= reservation_n.decode.instr_page_fault;
           exc_stage_n[0].exc.illegal_instr      |= reservation_n.decode.illegal_instr;
@@ -507,15 +505,6 @@ module bp_be_calculator_top
      ,.data_i(exc_stage_n[0+:pipe_stage_els_lp])
      ,.data_o(exc_stage_r)
      );
-
-  always_ff @(posedge clk_i)
-    begin
-      pc_r[0]         <= reservation_n.pc;
-      instr_r[0]      <= reservation_n.instr;
-
-      pc_r[5:1]         <= pc_r[4:0];
-      instr_r[5:1]      <= instr_r[4:0];
-    end
 
   assign calc_iwb_pkt.ird_w_v    = comp_stage_r[4].ird_w_v;
   assign calc_iwb_pkt.frd_w_v    = comp_stage_r[4].frd_w_v;

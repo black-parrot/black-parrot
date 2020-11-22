@@ -32,11 +32,10 @@ module bp_lce_req
     , localparam block_size_in_bytes_lp = (block_width_p/8)
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
-    , localparam ptag_width_lp = (paddr_width_p-lg_sets_lp-lg_block_size_in_bytes_lp)
     , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
 
@@ -60,6 +59,7 @@ module bp_lce_req
     // LCE Configuration
     , input [lce_id_width_p-1:0]                     lce_id_i
     , input bp_lce_mode_e                            lce_mode_i
+    , input                                          sync_done_i
 
     // LCE Req is able to sink any requests this cycle
     , output logic                                   ready_o
@@ -94,7 +94,7 @@ module bp_lce_req
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
 
   // FSM states
   typedef enum logic [2:0] {
@@ -205,7 +205,7 @@ module bp_lce_req
       // Ready for new request
       e_ready: begin
         // ready for new request if LCE hasn't used all its credits
-        ready_o = ~credits_full_o & lce_req_ready_i;
+        ready_o = ~credits_full_o & lce_req_ready_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
         if (cache_req_v_i) begin
           unique case (cache_req.msg_type)
             e_miss_store
