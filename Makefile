@@ -35,7 +35,6 @@ tidy_tools:
 	cd $(TOP); git submodule deinit -f external/riscv-gnu-toolchain
 	cd $(TOP); git submodule deinit -f external/verilator
 	cd $(TOP); git submodule deinit -f external/dromajo
-	cd $(TOP); git submodule deinit -f external/riscv-isa-sim
 	cd $(TOP); git submodule deinit -f external/axe
 	cd $(TOP); git submodule deinit -f external/cmurphi
 
@@ -63,7 +62,6 @@ tools: | $(TARGET_DIRS)
 	$(MAKE) gnu
 	$(MAKE) verilator
 	$(MAKE) dromajo
-	$(MAKE) spike
 	$(MAKE) axe
 	$(MAKE) cmurphi
 	$(MAKE) bsg_sv2v

@@ -13,7 +13,6 @@ csrc
 *_rom.tr.v
 *_rom.v
 *.elf
-*.spike
 *.tr
 obj_dir
 *.vcd

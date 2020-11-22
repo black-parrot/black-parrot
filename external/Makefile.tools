@@ -8,7 +8,6 @@ systemc_dir     := $(BP_EXTERNAL_DIR)/systemc
 verilator_dir   := $(BP_EXTERNAL_DIR)/verilator
 gnu_dir         := $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
 dtc_dir         := $(BP_EXTERNAL_DIR)/dtc
-spike_dir       := $(BP_EXTERNAL_DIR)/riscv-isa-sim
 dromajo_dir     := $(BP_EXTERNAL_DIR)/dromajo
 axe_dir         := $(BP_EXTERNAL_DIR)/axe
 cmurphi_dir     := $(BP_EXTERNAL_DIR)/cmurphi
@@ -51,17 +50,6 @@ gnu_build:
 	$(MAKE) -C $(gnu_dir) install
 	cp $(BP_EXTERNAL_DIR)/riscv64-unknown-elf-dramfs/bin/dramfs_mklfs $(BP_BIN_DIR)
 
-dtc_build:
-	$(MAKE) -j1 -C $(dtc_dir) install
-	cp $(dtc_dir)/dtc $(BP_BIN_DIR)
-
-spike_build: dtc
-	rm -rf $(BP_TOUCH_DIR)/spike.*
-	cd $(spike_dir); \
-		./configure --enable-commitlog --enable-histogram --with-isa=rv64imafd --prefix=$(BP_EXTERNAL_DIR)
-	$(MAKE) -C $(spike_dir)
-	$(MAKE) -C $(spike_dir) install
-
 dromajo_build:
 	$(MAKE) -C $(dromajo_dir)/src
 	cp $(dromajo_dir)/src/dromajo $(BP_BIN_DIR)
@@ -92,8 +80,6 @@ $(eval $(call submodule_tool_template,basejump,$(basejump_dir)))
 $(eval $(call submodule_tool_template,systemc,$(systemc_dir)))
 $(eval $(call submodule_tool_template,verilator,$(verilator_dir)))
 $(eval $(call submodule_tool_template,gnu,$(gnu_dir)))
-$(eval $(call submodule_tool_template,dtc,$(dtc_dir)))
-$(eval $(call submodule_tool_template,spike,$(spike_dir)))
 $(eval $(call submodule_tool_template,dromajo,$(dromajo_dir)))
 $(eval $(call submodule_tool_template,axe,$(axe_dir)))
 $(eval $(call submodule_tool_template,cmurphi,$(cmurphi_dir)))
