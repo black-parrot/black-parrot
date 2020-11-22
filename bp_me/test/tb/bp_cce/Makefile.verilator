@@ -1,11 +1,11 @@
-$(LINT_DIR)/wrapper.v $(LINT_DIR)/testbench.v:
+$(LINT_DIR)/wrapper.sv $(LINT_DIR)/testbench.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
-	@echo testbench.v                            >> $@
-	@echo wrapper.v                              >> $@
+	@echo testbench.sv                           >> $@
+	@echo wrapper.sv                             >> $@
 	@echo bsg_trace_rom_0.v                      >> $@
 
 # TODO: NUM_INSTR_P, SEED_P, SKIP_INIT_P should be part of the rom name to help enable
@@ -19,18 +19,18 @@ $(LINT_DIR)/bsg_trace_rom_%.v: $(LINT_DIR)/bsg_trace_rom_%.tr
 $(LINT_DIR)/config.vlt:
 	touch $@
 
-LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.v testbench.v)
+LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv)
 LINT_COLLATERAL += $(addprefix $(LINT_DIR)/, bsg_trace_rom_0.v)
 
-$(BUILD_DIR)/testbench.v $(BUILD_DIR)/wrapper.v $(BUILD_DIR)/test_bp.cpp:
+$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.cpp:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
 # TODO: This target will only build for trace rom 0 at the moment
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
-	@echo wrapper.v                              >> $@
-	@echo testbench.v                            >> $@
+	@echo wrapper.sv                             >> $@
+	@echo testbench.sv                           >> $@
 	@echo test_bp.cpp                            >> $@
 	@echo bsg_trace_rom_0.v                      >> $@
 
@@ -45,7 +45,7 @@ $(BUILD_DIR)/bsg_trace_rom_%.v: $(BUILD_DIR)/bsg_trace_rom_%.tr
 $(BUILD_DIR)/config.vlt:
 	touch $@
 
-VBUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.v testbench.v test_bp.cpp)
+VBUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv test_bp.cpp)
 VBUILD_COLLATERAL += $(addprefix $(BUILD_DIR)/, bsg_trace_rom_0.v)
 CBUILD_COLLATERAL  = none
 
