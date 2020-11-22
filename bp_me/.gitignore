@@ -7,7 +7,6 @@ reports
 *_rom.tr.v
 *_rom.v
 *.elf
-*.spike
 *.tr
 run_dc
 DVEfiles

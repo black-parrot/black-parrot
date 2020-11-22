@@ -6,6 +6,10 @@ BlackParrot requires Python, Verilator and a RISCV GNU toolchain in order to bui
 
     yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel expat-devel dtc gtkwave
 
+CentOS 7 requires a more modern gcc to build Linux. If you receive an error such as "These critical programs are missing or too old: make" try
+
+    scl enable devtoolset-8 bash
+
 ### Ubuntu
 
     sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev wget byacc device-tree-compiler python gtkwave
