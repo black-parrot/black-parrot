@@ -4,7 +4,7 @@
  *
  */
  
-`include "bsg_noc_links.svh"
+`include "bsg_noc_links.vh"
 
 module wrapper
  import bp_common_pkg::*;

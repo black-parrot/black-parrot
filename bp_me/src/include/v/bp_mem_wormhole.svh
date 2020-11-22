@@ -8,8 +8,8 @@
 `ifndef BP_MEM_WORMHOLE_VH
 `define BP_MEM_WORMHOLE_VH
 
-`include "bsg_noc_links.svh"
-`include "bsg_wormhole_router.svh"
+`include "bsg_noc_links.vh"
+`include "bsg_wormhole_router.vh"
 
 `define declare_bp_mem_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, data_width_mp) \
   typedef struct packed                 \
