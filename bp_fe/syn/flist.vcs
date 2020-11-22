@@ -25,21 +25,21 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 # Interface packages
-$BP_COMMON_DIR/src/include/bp_common_rv64_pkg.v
-$BP_COMMON_DIR/src/include/bp_common_pkg.v
-$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.v
-$BP_COMMON_DIR/src/include/bp_common_cfg_link_pkg.v
+$BP_COMMON_DIR/src/include/bp_common_rv64_pkg.sv
+$BP_COMMON_DIR/src/include/bp_common_pkg.sv
+$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.sv
+$BP_COMMON_DIR/src/include/bp_common_cfg_link_pkg.sv
 # FE packages
-$BP_FE_DIR/src/include/bp_fe_icache_pkg.v
-$BP_FE_DIR/src/include/bp_fe_pkg.v
+$BP_FE_DIR/src/include/bp_fe_icache_pkg.sv
+$BP_FE_DIR/src/include/bp_fe_pkg.sv
 # BE packages
-$BP_BE_DIR/src/include/bp_be_pkg.v
-$BP_BE_DIR/src/include/bp_be_dcache_pkg.v
+$BP_BE_DIR/src/include/bp_be_pkg.sv
+$BP_BE_DIR/src/include/bp_be_dcache_pkg.sv
 # ME packages
-$BP_ME_DIR/src/include/v/bp_me_pkg.v
-$BP_ME_DIR/src/include/v/bp_cce_pkg.v
+$BP_ME_DIR/src/include/v/bp_me_pkg.sv
+$BP_ME_DIR/src/include/v/bp_cce_pkg.sv
 # HardFloat packages
-$BP_BE_DIR/src/include/bp_be_hardfloat_pkg.v
+$BP_BE_DIR/src/include/bp_be_hardfloat_pkg.sv
 ## bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
