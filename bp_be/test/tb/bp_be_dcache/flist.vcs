@@ -1,14 +1,14 @@
 # bsg_ip_cores files
-$BASEJUMP_STL_DIR/bsg_test/bsg_trace_replay.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_map.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.sv
-$BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.sv
-$BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.sv
-$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.sv
-$BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.sv
+$BASEJUMP_STL_DIR/bsg_test/bsg_trace_replay.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_map.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
+$BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.v
 # top files
 $BP_TOP_DIR/test/common/bp_nonsynth_cache_tracer.sv
 # me files

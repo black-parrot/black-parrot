@@ -1,6 +1,6 @@
 VCS_TIMEOUT = 1000ms
 
-$(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv $(LINT_DIR)/test_bp.v:
+$(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv $(LINT_DIR)/test_bp.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
 $(LINT_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
@@ -15,6 +15,9 @@ $(LINT_DIR)/flist.vcs:
 	@echo bsg_tag_boot_rom.v                        >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_dly_line.v"        >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_dmc/bsg_dmc_clk_rst_gen.v"     >> $@
+	@echo "$(BASEJUMP_STL_DIR)/testing/bsg_dmc/lpddr_verilog_model/mobile_ddr.v" >> $@
 
 LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.sv testbench.sv test_bp.sv bsg_tag_boot_rom.v)
 
@@ -33,6 +36,9 @@ $(BUILD_DIR)/flist.vcs:
 	@echo bsg_tag_boot_rom.v                        >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_dly_line.v"        >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_dmc/bsg_dmc_clk_rst_gen.v"     >> $@
+	@echo "$(BASEJUMP_STL_DIR)/testing/bsg_dmc/lpddr_verilog_model/mobile_ddr.v" >> $@
 
 BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv testbench.sv test_bp.sv bsg_tag_boot_rom.v)
 
