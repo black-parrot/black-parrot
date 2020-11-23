@@ -188,7 +188,7 @@ module bp_be_dcache
 
   assign addr_index = dcache_pkt.page_offset[block_offset_width_lp+:index_width_lp];
   assign addr_bank_offset = dcache_pkt.page_offset[byte_offset_width_lp+:bank_offset_width_lp];
- 
+
   // TL stage
   //
   logic v_tl_r; // valid bit
@@ -729,21 +729,26 @@ module bp_be_dcache
   assign cache_req_metadata_cast_o.repl_way = lru_way_li;
   assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[lru_way_li];
 
-  // output stage
+  enum logic [1:0] {e_ready, e_miss} state_n, state_r;
+  wire is_ready = (state_r == e_ready);
+  wire is_miss  = (state_r == e_miss);
   // Cache Miss Tracking logic
-  logic cache_miss_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(1), .clear_over_set_p(1))
-   cache_miss_tracker
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  always_comb
+    case (state_r)
+     // Uncached stores and writethrough requests are non-blocking
+      e_ready: state_n = (cache_req_v_o & ~uncached_store_req & ~wt_req) ? e_miss : e_ready;
+      e_miss : state_n = cache_req_complete_i ? e_ready : e_miss;
+      default: state_n = e_ready;
+    endcase
 
-     // We don't wait for ack on uncached stores or writethrough requests
-     ,.set_i(cache_req_v_o & ~uncached_store_req & ~wt_req)
-     ,.clear_i(cache_req_complete_i)
-     ,.data_o(cache_miss_r)
-     );
-  assign ready_o = cache_req_ready_i & ~cache_miss_r;
+  //synopsys sync_set_reset "reset_i"
+  always_ff @(posedge clk_i)
+    if (reset_i)
+      state_r <= e_ready;
+    else
+      state_r <= state_n;
+
+  assign ready_o = cache_req_ready_i & is_ready;
 
   assign early_v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
                               | (uncached_tv_r & (decode_tv_r.store_op & cache_req_ready_i))
@@ -751,18 +756,6 @@ module bp_be_dcache
                               // Always send fencei when coherent
                               | (fencei_req & (~gdirty_r | (l1_coherent_p == 1)))
                               );
-
-  // Locking logic - Block processing of new dcache_packets
-  logic cache_miss_resolved;
-  bsg_edge_detect
-   #(.falling_not_rising_p(1))
-   cache_miss_detect
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.sig_i(cache_miss_r)
-     ,.detect_o(cache_miss_resolved)
-     );
 
   // Maintain a global dirty bit for the cache. When data is written to the write buffer, we set
   //   it. When we send a flush request to the CE, we clear it.
@@ -778,14 +771,13 @@ module bp_be_dcache
     end
   else
     begin : wb
-      bsg_dff_reset_en
+      bsg_dff_reset_set_clear
        #(.width_p(1))
        gdirty_reg
        (.clk_i(clk_i)
         ,.reset_i(reset_i)
-
-        ,.en_i(wbuf_v_li | flush_req)
-        ,.data_i(wbuf_v_li)
+        ,.set_i(wbuf_v_li)
+        ,.clear_i(flush_req)
 
         ,.data_o(gdirty_r)
         );
@@ -793,6 +785,7 @@ module bp_be_dcache
 
   logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
   wire lock_clr = early_v_o || (lock_cnt_r == lock_max_limit_p);
+  wire cache_miss_resolved = (state_r == e_miss) && (state_n == e_ready);
   wire lock_inc = ~lock_clr & (cache_miss_resolved || lr_hit_tv || (lock_cnt_r > 0));
 
   bsg_counter_clear_up
@@ -1227,32 +1220,32 @@ module bp_be_dcache
       assign load_reserved_index_r = '0;
     end
 
-  //  uncached load data logic
-  //
-  wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached);
-  // Invalidate uncached data if the cache is flushed or we successfully complete the request
-  // NOTE: This method is not valid for non-idempotent loads, will cause replay
-  wire uncached_load_clear = flush_i | early_v_o;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   uncached_load_data_v_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  //  uncached load data logic  
+  //    
+  wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached);    
+  // Invalidate uncached data if the cache is flushed or we successfully complete the request   
+  // NOTE: This method is not valid for non-idempotent loads, will cause replay 
+  wire uncached_load_clear = flush_i | early_v_o;   
+  bsg_dff_reset_set_clear   
+   #(.width_p(1))   
+   uncached_load_data_v_reg 
+    (.clk_i(clk_i)  
+     ,.reset_i(reset_i) 
 
-     ,.set_i(uncached_load_set)
-     ,.clear_i(uncached_load_clear)
-     ,.data_o(uncached_load_data_v_r)
-     );
+     ,.set_i(uncached_load_set) 
+     ,.clear_i(uncached_load_clear) 
+     ,.data_o(uncached_load_data_v_r)   
+     ); 
 
-  bsg_dff_en
-   #(.width_p(dword_width_p))
-   uncached_load_data_reg
-    (.clk_i(clk_i)
-     ,.en_i(uncached_load_set)
+  bsg_dff_en    
+   #(.width_p(dword_width_p))   
+   uncached_load_data_reg   
+    (.clk_i(clk_i)  
+     ,.en_i(uncached_load_set)  
 
-     ,.data_i(data_mem_pkt.data[0+:dword_width_p])
-     ,.data_o(uncached_load_data_r)
-     );
+     ,.data_i(data_mem_pkt.data[0+:dword_width_p])  
+     ,.data_o(uncached_load_data_r) 
+     ); 
 
   // LCE tag_mem
 
@@ -1283,27 +1276,20 @@ module bp_be_dcache
   assign stat_mem_o = stat_mem_data_lo;
 
   // synopsys translate_off
-  if ( (dcache_block_width_p/dcache_assoc_p) < dword_width_p || dcache_fill_width_p > dcache_block_width_p ) begin // dcache parameter check in compile time
-    $error("ERROR: The dcache supports multi-cycle fill/eviction with the following constraints: - bank_width = block_width / assoc >= dword_width and fill_width = N*bank_width <= block_width. Please adjust the parameters according to these conditions and recompile");
-  end
+  always_ff @ (posedge clk_i)
+    if (v_tv_r)
+      begin
+        assert($countones(load_hit_tl) <= 1)
+          else $error("multiple load hit: %b. id = %0d. addr = %H", load_hit_tl, cfg_bus_cast_i.dcache_id, addr_tag_tl);
+        assert($countones(store_hit_tl) <= 1)
+          else $error("multiple store hit: %b. id = %0d. addr = %H", store_hit_tl, cfg_bus_cast_i.dcache_id, addr_tag_tl);
+      end
 
-  if (`BSG_SAFE_CLOG2(dcache_block_width_p*dcache_sets_p/8) != page_offset_width_p) begin
-    $error("Total cache size must be equal to 4kB * associativity");
-  end
- 
-  always_ff @ (posedge clk_i) begin
-    if (v_tv_r) begin
-      assert($countones(load_hit_tl) <= 1)
-        else $error("multiple load hit: %b. id = %0d. addr = %H", load_hit_tl, cfg_bus_cast_i.dcache_id, addr_tag_tl);
-      assert($countones(store_hit_tl) <= 1)
-        else $error("multiple store hit: %b. id = %0d. addr = %H", store_hit_tl, cfg_bus_cast_i.dcache_id, addr_tag_tl);
+  initial
+    begin
+      assert(dword_width_p == 64) else $error("dword_width_p has to be 64");
+      assert(dcache_assoc_p == 8 | dcache_assoc_p == 4 | dcache_assoc_p == 2) else $error("dcache_assoc_p has to be 8, 4 or 2");
     end
-  end
-
-  initial begin
-    assert(dword_width_p == 64) else $error("dword_width_p has to be 64");
-    assert(dcache_assoc_p == 8 | dcache_assoc_p == 4 | dcache_assoc_p == 2) else $error("dcache_assoc_p has to be 8, 4 or 2");
-  end
   // synopsys translate_on
 
 endmodule

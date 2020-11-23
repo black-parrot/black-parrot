@@ -50,20 +50,8 @@ module bp_be_pipe_long
   wire signed_div_li = decode.fu_op inside {e_mul_op_div, e_mul_op_rem};
   wire rem_not_div_li = decode.fu_op inside {e_mul_op_rem, e_mul_op_remu};
 
-  logic [dword_width_p-1:0] op_a, op_b;
-  always_comb
-    begin
-      op_a = decode.opw_v
-             ? signed_div_li
-               ? {{word_width_p{rs1[word_width_p-1]}}, rs1[0+:word_width_p]}
-               : rs1[0+:word_width_p]
-             : rs1;
-      op_b = decode.opw_v
-             ? signed_div_li
-               ? {{word_width_p{rs2[word_width_p-1]}}, rs2[0+:word_width_p]}
-               : rs2[0+:word_width_p]
-             : rs2;
-    end
+  wire [dword_width_p-1:0] op_a = decode.opw_v ? (rs1 << word_width_p) : rs1;
+  wire [dword_width_p-1:0] op_b = decode.opw_v ? (rs2 << word_width_p) : rs2;
 
   // We actual could exit early here
   logic [dword_width_p-1:0] quotient_lo, remainder_lo;
@@ -88,18 +76,6 @@ module bp_be_pipe_long
      ,.v_o(idiv_v_lo)
      // Immediately ack, since the data stays safe until the next incoming division
      ,.yumi_i(idiv_v_lo)
-     );
-
-  logic idiv_safe_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   idiv_safe_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i | flush_i)
-
-     ,.set_i(idiv_v_lo)
-     ,.clear_i(iwb_v_o)
-     ,.data_o(idiv_safe_r)
      );
 
   bp_be_fp_reg_s frs1, frs2;
@@ -209,18 +185,6 @@ module bp_be_pipe_long
                                   ,fract: fdivsqrt_sp_final.fract << (dp_sig_width_gp-sp_sig_width_gp)
                                   };
 
-  logic fdivsqrt_safe_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   fdiv_safe_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i | flush_i)
-
-     ,.set_i(fdivsqrt_v_lo)
-     ,.clear_i(fwb_v_o)
-     ,.data_o(fdivsqrt_safe_r)
-     );
-
   logic opw_v_r, ops_v_r;
   bp_be_fu_op_s fu_op_r;
   logic [reg_addr_width_p-1:0] rd_addr_r;
@@ -246,7 +210,7 @@ module bp_be_pipe_long
     if (opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
       rd_data_lo = $signed(quotient_lo[0+:word_width_p]);
     else if (opw_v_r && fu_op_r inside {e_mul_op_rem, e_mul_op_remu})
-      rd_data_lo = $signed(remainder_lo[0+:word_width_p]);
+      rd_data_lo = $signed(remainder_lo) >>> word_width_p;
     else if (~opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
       rd_data_lo = quotient_lo;
     else
@@ -261,7 +225,7 @@ module bp_be_pipe_long
   assign iwb_pkt.rd_data    = rd_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
   assign iwb_pkt.fflags     = '0;
-  assign iwb_v_o = idiv_safe_r & rd_w_v_r;
+  assign iwb_v_o = idiv_v_lo & rd_w_v_r;
 
   assign fwb_pkt.ird_w_v    = 1'b0;
   assign fwb_pkt.frd_w_v    = rd_w_v_r;
@@ -269,7 +233,7 @@ module bp_be_pipe_long
   assign fwb_pkt.rd_data    = fdivsqrt_result;
   assign fwb_pkt.fflags_w_v = 1'b1;
   assign fwb_pkt.fflags     = fdivsqrt_fflags;
-  assign fwb_v_o = fdivsqrt_safe_r &  rd_w_v_r;
+  assign fwb_v_o = fdivsqrt_v_lo & rd_w_v_r;
 
 endmodule
 
