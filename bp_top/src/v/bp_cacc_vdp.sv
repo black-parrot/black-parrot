@@ -48,9 +48,7 @@ module bp_cacc_vdp
 
 
  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
- `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8);
-
-  bp_be_dcache_pkt_s        dcache_pkt;
+  bp_be_dcache_pkt_s        dcache_pkt;   
   logic                     dcache_ready, dcache_v;
   logic [dpath_width_p-1:0] dcache_data;
   logic                     dcache_tlb_miss, dcache_poison;
