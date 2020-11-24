@@ -70,7 +70,8 @@ module bp_fe_bht
   wire [bht_idx_width_p-1:0] w_addr_li = is_clear ? init_cnt : idx_w_i;
   wire [1:0]                 w_data_li = is_clear ? bht_init_lp : correct_i ? {val_i[1], 1'b0} : {val_i[1]^val_i[0], 1'b1};
 
-  wire                          r_v_li = r_v_i;
+  wire                    rw_same_addr = r_v_i & w_v_i & (w_addr_li == idx_r_i);
+  wire                          r_v_li = r_v_i & ~rw_same_addr;
   wire [bht_idx_width_p-1:0] r_addr_li = idx_r_i;
   logic [1:0] r_data_lo;
   bsg_mem_1r1w_sync
@@ -95,7 +96,7 @@ module bp_fe_bht
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(r_v_i)
+     ,.data_i(r_v_li)
      ,.data_o(r_v_r)
      );
 
