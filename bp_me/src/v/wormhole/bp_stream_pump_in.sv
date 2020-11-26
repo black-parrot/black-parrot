@@ -26,22 +26,22 @@ module bp_stream_pump_in
   , input reset_i
 
   // bus side
-  , input         [bp_bedrock_xce_mem_msg_header_width_lp-1:0] mem_header_i
-  , input         [stream_data_width_p-1:0]                    mem_data_i
-  , input                                                      mem_v_i
-  , input                                                      mem_last_i
-  , output logic                                               mem_ready_and_o
+  , input         [xce_mem_msg_header_width_lp-1:0] mem_header_i
+  , input         [stream_data_width_p-1:0]         mem_data_i
+  , input                                           mem_v_i
+  , input                                           mem_last_i
+  , output logic                                    mem_ready_and_o
   
   // FSM side
-  , output logic [bp_bedrock_xce_mem_msg_header_width_lp-1:0] fsm_base_header_o
-  , output logic [paddr_width_p-1:0]                          fsm_addr_o
-  , output logic [stream_data_width_p-1:0]                    fsm_data_o
-  , output logic                                              fsm_v_o
-  , input                                                     fsm_ready_and_i
+  , output logic [xce_mem_msg_header_width_lp-1:0] fsm_base_header_o
+  , output logic [paddr_width_p-1:0]               fsm_addr_o
+  , output logic [stream_data_width_p-1:0]         fsm_data_o
+  , output logic                                   fsm_v_o
+  , input                                          fsm_ready_and_i
 
   // control signals
-  , output logic                                              stream_new_o
-  , output logic                                              stream_done_o
+  , output logic                                   stream_new_o
+  , output logic                                   stream_done_o
   );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
