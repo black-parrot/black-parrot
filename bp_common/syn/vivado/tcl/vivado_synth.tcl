@@ -1,8 +1,8 @@
 set proj_name "blackparrot_test"
 
-#set part "xc7k325tffg900-2"
-set part "xc7a200tfbg676-2"
-create_project -force $proj_name ./$proj_name -part $part
+# Genesys 2 - xc7k325tffg900-2
+# Artix 7 - xc7a200tfbg676-2
+create_project -force $proj_name ./$proj_name -part $::env(PART)
 
 if {[string equal [get_filesets -quiet sources_1] ""]} {
   create_fileset -srcset sources_1
@@ -42,9 +42,8 @@ foreach x $f {
           # Need to add bsg_defines and the HardFloat .vi files
           if {(([string match "*bsg_defines.v*" $item]) || ([string match "*.vi" $item]))} {
             lappend flist $item
-          # Need to add only those .vh files not included later in the flist file, like the pkg files
+          # Need to add only those .(s)vh files not included later in the flist file
           } elseif {([string match "*vh" $item]) && !([string match "*pkg*" $item])} {
-              puts "Adding to list"
               lappend flist $item
             }
         }
@@ -52,8 +51,8 @@ foreach x $f {
   }
 }
 # Add a top wrapper
-set filepath "BP_COMMON_DIR"
-set top "$::env($filepath)/syn/tcl/design_wrapper.v"
+set filepath "WRAPPER_DIR"
+set top "$::env($filepath)/wrapper.sv"
 lappend flist $top
 add_files -norecurse -fileset $fileset_obj $flist
 
@@ -82,7 +81,7 @@ set obj [get_filesets sources_1]
 # Ensure there are no warnings or errors
 check_syntax -fileset sources_1
 # Set the design wrapper as the top module
-set_property -name "top" -value "design_wrapper" -objects $obj
+set_property -name "top" -value "wrapper" -objects $obj
 set_property -name "top_auto_set" -value "0" -objects $obj
 
 # Create 'constrs_1' fileset (if not found)
@@ -95,18 +94,18 @@ set obj [get_filesets constrs_1]
 
 # Add/Import constrs file and set constrs file properties
 set filepath "BP_COMMON_DIR"
-set file "[file normalize "$::env($filepath)/syn/xdc/design.xdc"]"
+set file "[file normalize "$::env($filepath)/syn/vivado/xdc/design.xdc"]"
 add_files -norecurse -fileset $obj [list $file]
 set file_obj [get_files -of_objects [get_filesets constrs_1] [list "*$file"]]
 set_property -name "file_type" -value "XDC" -objects $file_obj
 
 # Set 'constrs_1' fileset properties
 set obj [get_filesets constrs_1]
-set_property -name "target_part" -value $part -objects $obj
+set_property -name "target_part" -value $::env(PART) -objects $obj
 
 # Run synthesis
 current_run -synthesis [get_runs synth_1]
-synth_design -part $part -constrset constrs_1
+synth_design -part $::env(PART) -constrset constrs_1
 set filepath "BP_TOP_DIR"
 # Generate a hierarchical utilization report
-report_utilization -file $::env($filepath)/syn/logs/hierarchical.rpt -hierarchical -hierarchical_percentages
+report_utilization -file $::env($filepath)/syn/logs/vivado/hierarchical.rpt -hierarchical -hierarchical_percentages

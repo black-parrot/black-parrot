@@ -9,16 +9,23 @@ override BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
 $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR):
 	mkdir -p $@
 
+export WRAPPER_DIR := $(BUILD_DIR)
+
 .PHONY:
 
 -include $(TB_PATH)/$(TB)/Makefile.vivado
+
+export PART ?= xc7k325tffg900-2
+export CFG ?= e_bp_unicore_cfg
+
+$(BUILD_DIR)/wrapper.sv:
+	sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
 synth.vivado: $(BUILD_DIR)/synth
 synth.vivado: SYNTH_LOG   := $(LOG_DIR)/$(TB).$(CFG).$(TAG).synth.log
 synth.vivado: SYNTH_REPORT:= $(REPORT_DIR)/$(TB).$(CFG).$(TAG).synth.rpt
 synth.vivado: SYNTH_ERROR := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).synth.err
 $(SYNTH_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
-$(BUILD_DIR)/synth: $(SYNTH_COLLATERAL)
+$(BUILD_DIR)/synth: $(SYNTH_COLLATERAL) $(BUILD_DIR)/wrapper.sv
 	cd $(@D); \
-		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/tcl/vivado_synth.tcl | tee -i $(SYNTH_LOG)
-
+		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/vivado/tcl/vivado_synth.tcl | tee -i $(SYNTH_LOG)
