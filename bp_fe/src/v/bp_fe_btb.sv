@@ -90,8 +90,11 @@ module bp_fe_btb
   wire [btb_idx_width_p-1:0] tag_mem_w_addr_li = is_clear ? init_cnt : w_idx_i;
   assign tag_mem_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: br_tgt_i};
 
+  // We could technically forward, but instead we'll bank the memory in
+  //   the future, so won't waste effort here
+  wire rw_same_addr = r_v_i & w_v_i & (r_idx_li == w_idx_i);
   bp_btb_entry_s tag_mem_data_lo;
-  wire                           tag_mem_r_v_li = r_v_i;
+  wire                           tag_mem_r_v_li = r_v_i & ~rw_same_addr;
   wire [btb_idx_width_p-1:0]  tag_mem_r_addr_li = r_idx_li;
   bsg_mem_1r1w_sync
    #(.width_p($bits(bp_btb_entry_s)), .els_p(btb_els_lp))
@@ -114,7 +117,7 @@ module bp_fe_btb
    tag_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(r_v_i)
+     ,.en_i(tag_mem_r_v_li)
 
      ,.data_i(r_tag_li)
      ,.data_o(r_tag_r)
@@ -127,7 +130,7 @@ module bp_fe_btb
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(r_v_i)
+     ,.data_i(tag_mem_r_v_li)
      ,.data_o(r_v_r)
      );
 
