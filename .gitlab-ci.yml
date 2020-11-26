@@ -42,6 +42,8 @@ bleach_all:
     - me_dev
     - top_dev
     - sw_dev
+    - me_dev_fix_ci
+    - me_dev_stream_pump
   before_script:
     - echo "Updating hardware libraries"
     - git submodule update --init --recursive external/basejump_stl
