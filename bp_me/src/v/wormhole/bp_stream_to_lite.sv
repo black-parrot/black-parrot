@@ -29,7 +29,7 @@ module bp_stream_to_lite
    , input [in_data_width_p-1:0]             in_msg_data_i
    , input                                   in_msg_v_i
    , output logic                            in_msg_ready_and_o
-   , input                                   in_msg_lock_i
+   , input                                   in_msg_last_i
 
    // Client BP Lite
    // ready-valid-and
@@ -93,7 +93,7 @@ module bp_stream_to_lite
      ,.len_ready_o(/* Unused */)
      );
 
-  wire unused = &{in_msg_lock_i};
+  wire unused = &{in_msg_last_i};
 
   bp_bedrock_out_msg_s msg_cast_o;
   assign msg_cast_o = '{header: header_lo, data: data_lo};
