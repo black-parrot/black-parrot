@@ -84,7 +84,6 @@ module bp_me_cce_to_cache
 
   logic [lg_sets_lp+lg_ways_lp:0] tagst_sent_r, tagst_sent_n;
   logic [lg_sets_lp+lg_ways_lp:0] tagst_received_r, tagst_received_n;
-  logic [paddr_width_p-1:0] cmd_addr_r, cmd_addr_n;
 
   bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo;
@@ -116,7 +115,6 @@ module bp_me_cce_to_cache
     ,.stream_new_o(mem_cmd_stream_new_lo)
     ,.stream_done_o(mem_cmd_done_lo)
     );
-  wire [caddr_width_p-1:0] cmd_addr = mem_cmd_header_lo.addr; //TODO:  mem_cmd_header_lo.addr or mem_cmd_stream_addr_lo?
 
   bp_local_addr_s local_addr_cast;
   assign local_addr_cast = mem_cmd_header_lo.addr;
@@ -127,7 +125,7 @@ module bp_me_cce_to_cache
   wire is_write = mem_cmd_header_lo.msg_type inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr};
   wire is_csr   = (mem_cmd_header_lo.addr < dram_base_addr_gp);
   wire is_tagfl = is_csr && (local_addr_cast.dev == cache_tagfl_base_addr_gp);
-  wire [paddr_width_p-1:0] tagfl_addr = {mem_cmd_data_lo[0+:lg_sets_lp+lg_ways_lp], block_offset_width_lp'(0)};
+  wire [caddr_width_p-1:0] tagfl_addr = {mem_cmd_data_lo[0+:lg_sets_lp+lg_ways_lp], block_offset_width_lp'(0)};
 
   bp_bedrock_cce_mem_msg_header_s mem_resp_header_li, mem_resp_header_lo;
   logic mem_resp_v_li, mem_resp_ready_lo;
