@@ -18,8 +18,8 @@
 
 [submodule "external/basejump_stl"]
   path = external/basejump_stl
-  url = https://github.com/sripathi-muralitharan/basejump_stl.git
-  branch = bsg_pe_fix_width_1
+  url = https://github.com/bespoke-silicon-group/basejump_stl.git
+  branch = master
   ignore = dirty
 
 [submodule "bp_common/test/src/riscv-tests"]
