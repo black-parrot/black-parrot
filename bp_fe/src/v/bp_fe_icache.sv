@@ -40,7 +40,7 @@ module bp_fe_icache
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
     , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
-    , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
+    , localparam block_offset_width_lp = (icache_assoc_p > 1) ? (bank_offset_width_lp+byte_offset_width_lp) : byte_offset_width_lp
     , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
     , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
     )
@@ -173,9 +173,10 @@ module bp_fe_icache
   end
 
   // data memory
+  localparam data_mem_addr_width_lp = (icache_assoc_p > 1) ? (index_width_lp+bank_offset_width_lp) : index_width_lp;
   logic [icache_assoc_p-1:0]                                           data_mem_v_li;
   logic                                                                data_mem_w_li;
-  logic [icache_assoc_p-1:0][index_width_lp+bank_offset_width_lp-1:0]  data_mem_addr_li;
+  logic [icache_assoc_p-1:0][data_mem_addr_width_lp-1:0]               data_mem_addr_li;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_li;
   logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]               data_mem_w_mask_li;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_lo;
@@ -497,8 +498,8 @@ module bp_fe_icache
     wire [bank_offset_width_lp-1:0] data_mem_pkt_offset = (bank_offset_width_lp'(i) - data_mem_pkt.way_id);
 
     assign data_mem_addr_li[i] = tl_we
-      ? {vaddr_index, vaddr_offset}
-      : {data_mem_pkt.index, data_mem_pkt_offset};
+      ? {vaddr_index, {(icache_assoc_p > 1){vaddr_offset}}}
+      : {data_mem_pkt.index, {(icache_assoc_p > 1){data_mem_pkt_offset}}};
 
     // use fill_index to generate write_mask
     assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
@@ -516,7 +517,7 @@ module bp_fe_icache
     ,.o(data_mem_data_li)
   );
 
-  // use fill_index to generate brank write mask
+  // use fill_index to generate bank write mask
   for (genvar i = 0; i < block_size_in_fill_lp; i++) begin
     assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt.fill_index[i]}};
   end
@@ -597,8 +598,8 @@ module bp_fe_icache
     ? addr_index_tv
     : stat_mem_pkt.index;
 
-  logic [icache_assoc_p-2:0] lru_decode_data_lo;
-  logic [icache_assoc_p-2:0] lru_decode_mask_lo;
+  logic [`BSG_SAFE_MINUS(icache_assoc_p, 2):0] lru_decode_data_lo;
+  logic [`BSG_SAFE_MINUS(icache_assoc_p, 2):0] lru_decode_mask_lo;
 
   logic [lg_icache_assoc_lp-1:0] hit_index_tv;
   bsg_encode_one_hot
@@ -624,8 +625,8 @@ module bp_fe_icache
       stat_mem_data_li.lru = lru_decode_data_lo;
       stat_mem_mask_li.lru = lru_decode_mask_lo;
     end else begin
-      stat_mem_data_li.lru = {(icache_assoc_p-1){1'b0}};
-      stat_mem_mask_li.lru = {(icache_assoc_p-1){1'b1}};
+      stat_mem_data_li.lru = '0;
+      stat_mem_mask_li.lru = '1;
     end
   end
 
