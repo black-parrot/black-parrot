@@ -9,14 +9,12 @@ override BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
 $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR):
 	mkdir -p $@
 
-export WRAPPER_DIR := $(BUILD_DIR)
-
 .PHONY:
 
 -include $(TB_PATH)/$(TB)/Makefile.vivado
 
 export PART ?= xc7k325tffg900-2
-export CFG ?= e_bp_unicore_cfg
+export CFG ?= e_bp_default_cfg
 
 $(BUILD_DIR)/wrapper.sv:
 	sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@

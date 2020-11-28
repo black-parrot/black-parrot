@@ -1,7 +1,7 @@
 set proj_name "blackparrot_test"
 
 # Genesys 2 - xc7k325tffg900-2
-# Artix 7 - xc7a200tfbg676-2
+# Artix 7   - xc7a200tfbg676-2
 create_project -force $proj_name ./$proj_name -part $::env(PART)
 
 if {[string equal [get_filesets -quiet sources_1] ""]} {
@@ -21,8 +21,8 @@ foreach x $f {
     set expanded $::env($a)
     append expanded $b
     # If not already in the list, add this file to the list
-    if {[lsearch -exact $flist $expanded] < 0} {
-      lappend flist [file normalize $expanded]
+    if {[lsearch -exact $flist $x] < 0} {
+      lappend flist [file normalize $x]
     }
   # If the item starts with +incdir+, directory files may need to be added
   } elseif {[string match "+incdir+*" $x]} {
@@ -37,7 +37,6 @@ foreach x $f {
       # Get the files in the directory
       set check [glob $expanded]
       foreach item $check {
-        puts $item
         if {[lsearch -exact $flist $item] < 0} {
           # Need to add bsg_defines and the HardFloat .vi files
           if {(([string match "*bsg_defines.v*" $item]) || ([string match "*.vi" $item]))} {
@@ -51,8 +50,7 @@ foreach x $f {
   }
 }
 # Add a top wrapper
-set filepath "WRAPPER_DIR"
-set top "$::env($filepath)/wrapper.sv"
+set top "wrapper.sv"
 lappend flist $top
 add_files -norecurse -fileset $fileset_obj $flist
 
