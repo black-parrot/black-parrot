@@ -71,7 +71,7 @@ always_comb
 
     wr_not_rd = mem_cmd_lo.header.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
 
-    unique 
+    unique
     casez ({local_addr.dev, local_addr.addr})
       mtime_reg_addr_gp        : mtime_cmd_v    = small_fifo_v_lo;
       mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = small_fifo_v_lo;
@@ -155,11 +155,11 @@ bsg_dff_reset_en
    );
 assign external_irq_o = plic_r;
 
-wire [dword_width_p-1:0] rdata_lo = plic_cmd_v 
+wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
                                     ? dword_width_p'(plic_r)
-                                    : mipi_cmd_v 
+                                    : mipi_cmd_v
                                       ? dword_width_p'(mipi_r)
-                                      : mtimecmp_cmd_v 
+                                      : mtimecmp_cmd_v
                                         ? dword_width_p'(mtimecmp_r)
                                         : mtime_r;
 

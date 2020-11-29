@@ -32,7 +32,7 @@ module bp_core_minimal
    , input                                           icache_req_complete_i
    , input                                           icache_req_credits_full_i
    , input                                           icache_req_credits_empty_i
-    
+
    , input [icache_tag_mem_pkt_width_lp-1:0]         icache_tag_mem_pkt_i
    , input                                           icache_tag_mem_pkt_v_i
    , output logic                                    icache_tag_mem_pkt_yumi_o
@@ -58,7 +58,7 @@ module bp_core_minimal
    , input                                           dcache_req_complete_i
    , input                                           dcache_req_credits_full_i
    , input                                           dcache_req_credits_empty_i
-    
+
    , input [dcache_tag_mem_pkt_width_lp-1:0]         dcache_tag_mem_pkt_i
    , input                                           dcache_tag_mem_pkt_v_i
    , output logic                                    dcache_tag_mem_pkt_yumi_o

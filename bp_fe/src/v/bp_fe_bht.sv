@@ -1,8 +1,8 @@
 /*
  * bp_fe_bht.v
- * 
+ *
  * Branch History Table (BHT) records the information of the branch history, i.e.
- * branch taken or not taken. 
+ * branch taken or not taken.
  * Each entry consists of 2 bit saturation counter. If the counter value is in
  * the positive regime, the BHT predicts "taken"; if the counter value is in the
  * negative regime, the BHT predicts "not taken". The implementation of BHT is
@@ -10,7 +10,7 @@
  * 2-bit saturating counter(high_bit:prediction direction,low_bit:strong/weak prediction)
  */
 module bp_fe_bht
- import bp_fe_pkg::*; 
+ import bp_fe_pkg::*;
  #(parameter vaddr_width_p     = "inv"
    , parameter bht_idx_width_p = "inv"
 
@@ -18,13 +18,13 @@ module bp_fe_bht
    )
   (input                         clk_i
    , input                       reset_i
-    
+
    , input                       w_v_i
    , input [bht_idx_width_p-1:0] idx_w_i
    , input [1:0]                 val_i
    , input                       correct_i
- 
-   , input                       r_v_i   
+
+   , input                       r_v_i
    , input [bht_idx_width_p-1:0] idx_r_i
    , output [1:0]                val_o
    );
@@ -81,11 +81,11 @@ module bp_fe_bht
    bht_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
- 
+
      ,.w_v_i(w_v_li)
      ,.w_addr_i(w_addr_li)
      ,.w_data_i(w_data_li)
- 
+
      ,.r_v_i(r_v_li)
      ,.r_addr_i(r_addr_li)
      ,.r_data_o(r_data_lo)
@@ -106,7 +106,7 @@ module bp_fe_bht
    #(.width_p(2))
    bypass_reg
    (.clk_i(clk_i)
-    ,.reset_i(reset_i) 
+    ,.reset_i(reset_i)
     ,.en_i(r_v_r)
 
     ,.data_i(r_data_lo)

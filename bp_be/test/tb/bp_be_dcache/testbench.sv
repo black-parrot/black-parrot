@@ -80,7 +80,7 @@ module testbench
 
   logic [num_caches_p-1:0] fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
   logic [num_caches_p-1:0][dword_width_p-1:0] fifo_data_lo;
-  
+
   // Setting up the config bus
   // logic switch_cce_mode;
   always_comb begin
@@ -243,15 +243,15 @@ module testbench
     mem
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-  
+
       ,.mem_cmd_i(mem_cmd_lo)
       ,.mem_cmd_v_i(mem_cmd_v_lo)
       ,.mem_cmd_ready_o(mem_cmd_ready_lo)
-  
+
       ,.mem_resp_o(mem_resp_lo)
       ,.mem_resp_v_o(mem_resp_v_lo)
       ,.mem_resp_yumi_i(mem_resp_yumi_lo)
-  
+
       ,.dram_clk_i(dram_clk_i)
       ,.dram_reset_i(dram_reset_i)
       );

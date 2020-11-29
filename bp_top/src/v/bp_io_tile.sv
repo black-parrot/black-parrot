@@ -46,6 +46,11 @@ module bp_io_tile
   bp_bedrock_cce_mem_msg_s cce_io_resp_li, lce_io_resp_lo;
   logic cce_io_resp_v_li, cce_io_resp_yumi_lo, lce_io_resp_v_lo, lce_io_resp_ready_li;
 
+  logic reset_r;
+  always_ff @(posedge clk_i)
+    reset_r <= reset_i;
+
+
   logic [cce_id_width_p-1:0]  cce_id_li;
   logic [lce_id_width_p-1:0]  lce_id_li;
   bp_me_cord_to_id
@@ -62,7 +67,7 @@ module bp_io_tile
    #(.bp_params_p(bp_params_p))
    lce_link
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.lce_id_i(lce_id_li)
 
@@ -87,7 +92,7 @@ module bp_io_tile
    #(.bp_params_p(bp_params_p))
    io_cce
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.cce_id_i(cce_id_li)
 
@@ -129,7 +134,7 @@ module bp_io_tile
      )
    lce_req_adapter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(lce_req_packet_lo)
      ,.v_i(lce_lce_req_v_lo)
@@ -164,7 +169,7 @@ module bp_io_tile
      )
    lce_cmd_adapter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(lce_cmd_packet_lo)
      ,.v_i(cce_lce_cmd_v_lo)
@@ -202,7 +207,7 @@ module bp_io_tile
      )
    mem_link
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.mem_cmd_i(cce_io_cmd_lo)
      ,.mem_cmd_v_i(cce_io_cmd_v_lo)

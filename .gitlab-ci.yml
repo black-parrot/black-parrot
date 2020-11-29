@@ -17,7 +17,7 @@ stages:
   - test-medium
   - test-long
   - test-ultralong
- 
+
 clean_all:
   when: manual
   stage: manual
@@ -175,7 +175,7 @@ check-design:
     - dc
   script:
     - $CI_PROJECT_DIR/ci/check_design.sh $CI_CORES
-      
+
 lint-verilator:
   <<: *job_definition
   stage: check
@@ -183,7 +183,7 @@ lint-verilator:
     - verilator
   script:
     - $CI_PROJECT_DIR/ci/lint.sh verilator $CI_CORES
- 
+
 lint-vcs:
   <<: *job_definition
   stage: check
@@ -225,6 +225,22 @@ weird-vcs:
   script:
     - $CI_PROJECT_DIR/ci/weird_config.sh vcs $CI_CORES
 
+l2e-vcs:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/l2e_config.sh vcs $CI_CORES
+
+l2e-verilator:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/l2e_config.sh verilator $CI_CORES
+
 me-regress-verilator:
   <<: *job_definition
   stage: test-short
@@ -232,7 +248,7 @@ me-regress-verilator:
     - verilator
   script:
     - $CI_PROJECT_DIR/ci/me_regress.sh verilator $CI_CORES
- 
+
 me-regress-vcs:
   <<: *job_definition
   stage: test-short
@@ -264,7 +280,7 @@ top-riscv-tests-verilator:
     - verilator
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh verilator RISCV_TESTLIST $CI_CORES
- 
+
 top-riscv-tests-vcs:
   <<: *job_definition
   stage: test-short

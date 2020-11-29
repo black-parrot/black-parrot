@@ -228,7 +228,7 @@ module bp_cce_dir_segment
       lru_way_r <= '0;
       addr_r <= '0;
       dir_data_o_v_r <= '0;
-      dir_ram_addr_r <= '0;      
+      dir_ram_addr_r <= '0;
 
       addr_dst_gpr_r <= e_opd_r0;
 

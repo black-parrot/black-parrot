@@ -244,7 +244,7 @@ module bp_me_nonsynth_mock_lce
     ,.sel_i(byte_offset[2])
     ,.data_o(load_word)
   );
-  
+
   bsg_mux #(
     .width_p(16)
     ,.els_p(4)
@@ -263,9 +263,9 @@ module bp_me_nonsynth_mock_lce
     ,.data_o(load_byte)
   );
 
-  assign word_sigext = signed_op & load_word[31]; 
-  assign half_sigext = signed_op & load_half[15]; 
-  assign byte_sigext = signed_op & load_byte[7]; 
+  assign word_sigext = signed_op & load_word[31];
+  assign half_sigext = signed_op & load_half[15];
+  assign byte_sigext = signed_op & load_byte[7];
 
   // Tag lookup
   // inputs

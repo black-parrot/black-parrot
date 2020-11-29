@@ -42,11 +42,11 @@ module bp_io_complex
   `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
 
   bp_io_ready_and_link_s [ic_x_dim_p-1:0][E:W]  io_cmd_link_li, io_cmd_link_lo, io_resp_link_li, io_resp_link_lo;
-  bp_io_ready_and_link_s [E:W]                   io_cmd_hor_link_li, io_cmd_hor_link_lo, io_resp_hor_link_li, io_resp_hor_link_lo;
+  bp_io_ready_and_link_s [E:W]                  io_cmd_hor_link_li, io_cmd_hor_link_lo, io_resp_hor_link_li, io_resp_hor_link_lo;
   bp_coh_ready_and_link_s [ic_x_dim_p-1:0][S:W] lce_req_link_li, lce_req_link_lo, lce_cmd_link_li, lce_cmd_link_lo;
   bp_coh_ready_and_link_s [S:N][ic_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo, lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
-  bp_coh_ready_and_link_s [E:W]                  lce_req_hor_link_li, lce_req_hor_link_lo, lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
-  
+  bp_coh_ready_and_link_s [E:W]                 lce_req_hor_link_li, lce_req_hor_link_lo, lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
+
   for (genvar i = 0; i < ic_x_dim_p; i++)
     begin : node
       wire [coh_noc_cord_width_p-1:0] cord_li = {'0, coh_noc_x_cord_width_p'(i+sac_x_dim_p)};
@@ -55,31 +55,31 @@ module bp_io_complex
        io
         (.core_clk_i(core_clk_i)
          ,.core_reset_i(core_reset_i)
-  
+
          ,.coh_clk_i(coh_clk_i)
          ,.coh_reset_i(coh_reset_i)
-  
+
          ,.io_clk_i(io_clk_i)
          ,.io_reset_i(io_reset_i)
-  
+
          ,.host_did_i(host_did_i)
          ,.my_did_i(my_did_i)
          ,.my_cord_i(cord_li)
-  
+
          ,.coh_lce_req_link_i(lce_req_link_li[i])
          ,.coh_lce_req_link_o(lce_req_link_lo[i])
-  
+
          ,.coh_lce_cmd_link_i(lce_cmd_link_li[i])
          ,.coh_lce_cmd_link_o(lce_cmd_link_lo[i])
-  
+
          ,.io_cmd_link_i(io_cmd_link_li[i])
          ,.io_cmd_link_o(io_cmd_link_lo[i])
-  
+
          ,.io_resp_link_i(io_resp_link_li[i])
          ,.io_resp_link_o(io_resp_link_lo[i])
          );
     end
-  
+
   assign lce_req_ver_link_li[N] = '0;
   assign lce_req_ver_link_li[S] = coh_req_link_i;
   assign lce_req_hor_link_li    = '0;

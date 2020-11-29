@@ -7,18 +7,18 @@
 `ifndef BP_COMMON_AVIARY_DEFINES_VH
 `define BP_COMMON_AVIARY_DEFINES_VH
 
-  // Thoughts: 
+  // Thoughts:
   // Hardcoding hartid and lceid width limits us to 8 cores for our standard configurations,
   //   but would allow the hierachical flow to reuse a single BP core for both dual-core and
   //   oct-core configurations.
   // typedef logic[2:0] bp_mhartid_t;
   // typedef logic[3:0] bp_lce_id_t;
-  
+
   typedef enum logic {
     e_lce_mode_uncached
     ,e_lce_mode_normal
   } bp_lce_mode_e;
-  
+
   // CCE Operating Mode
   // e_cce_mode_uncached: CCE supports uncached requests only
   // e_cce_mode_normal: CCE operates as a microcoded engine, features depend on microcode provided
@@ -27,23 +27,23 @@
     e_cce_mode_uncached
     ,e_cce_mode_normal
   } bp_cce_mode_e;
-  
+
   // Place of atomic operation
   typedef enum logic [1:0] {
     e_none
     , e_l1
     , e_l2
   } bp_atomic_op_e;
-  
+
   typedef enum logic [15:0]{
     e_sacc_vdp
   } bp_sacc_type_e;
-  
+
   typedef enum logic [15:0]{
     e_cacc_vdp
   } bp_cacc_type_e;
-  
-  
+
+
   `define declare_bp_cfg_bus_s(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
     typedef struct packed                                                                            \
     {                                                                                                \
@@ -58,7 +58,7 @@
       logic [7:0]                              domain;                                               \
       logic                                    sac;                                                  \
     }  bp_cfg_bus_s
-  
+
   `define bp_cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
     (1                                \
      + core_id_width_mp               \
@@ -71,8 +71,8 @@
      + 8                              \
      + 1                              \
      )
-  
-  
+
+
   typedef struct packed
   {
     // 0: BP unicore (minimal, single-core configuration)
@@ -105,11 +105,11 @@
     // Only supports homogeneous configurations
     integer cacc_type;
     integer sacc_type;
- 
+
     // Number of CCEs/LCEs in the system. Must be consistent within complex dimensions
     integer num_cce;
     integer num_lce;
- 
+
     // Virtual address width
     //   Only tested for SV39 (39-bit virtual address)
     integer vaddr_width;
@@ -133,8 +133,8 @@
     integer btb_idx_width;
     integer bht_idx_width;
     integer ghist_width;
- 
-    // Capacity of the Instruction/Data TLBs 
+
+    // Capacity of the Instruction/Data TLBs
     integer itlb_els;
     integer dtlb_els;
 
@@ -176,18 +176,18 @@
     integer cce_ucode;
     // Determines the size of the CCE instruction RAM
     integer cce_pc_width;
-  
+
     // L2 slice parameters (per core)
     integer l2_en;
     integer l2_sets;
     integer l2_assoc;
     integer l2_outstanding_reqs;
-  
+
     // Size of the issue queue
     integer fe_queue_fifo_els;
     // Size of the cmd queue
     integer fe_cmd_fifo_els;
-  
+
     // Whether the coherence network is on the core clock or on its own clock
     integer async_coh_clk;
     // Flit width of the coherence network. Has major impact on latency / area of the network
@@ -200,7 +200,7 @@
     integer coh_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
     integer coh_noc_max_credits;
-  
+
     // Whether the memory network is on the core clock or on its own clock
     integer async_mem_clk;
     // Flit width of the memory network. Has major impact on latency / area of the network
@@ -213,7 +213,7 @@
     integer mem_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
     integer mem_noc_max_credits;
-  
+
     // Whether the I/O network is on the core clock or on its own clock
     integer async_io_clk;
     // Flit width of the I/O network. Has major impact on latency / area of the network
@@ -229,14 +229,14 @@
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
     integer io_noc_max_credits;
   }  bp_proc_param_s;
-  
+
   // For now, we have a fixed address map
   typedef struct packed
   {
     logic [2:0]  did;
     logic [36:0] addr;
   }  bp_global_addr_s;
-  
+
   localparam cfg_cce_width_p  = 7;
   localparam cfg_dev_width_p  = 4;
   localparam cfg_addr_width_p = 20;
@@ -363,7 +363,7 @@
   , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                         \
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
   , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)     \
-  , localparam mem_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p+1)   \
+  , localparam mem_noc_x_cord_width_p    = 0                                                       \
   , localparam mem_noc_dims_p            = 1                                                       \
   , localparam mem_noc_cord_dims_p       = 2                                                       \
   , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \
@@ -379,7 +379,7 @@
   , localparam io_noc_flit_width_p      = proc_param_lp.io_noc_flit_width                          \
   , localparam io_noc_cid_width_p       = proc_param_lp.io_noc_cid_width                           \
   , localparam io_noc_len_width_p       = proc_param_lp.io_noc_len_width                           \
-  , localparam io_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+1)                            \
+  , localparam io_noc_y_cord_width_p    = 0                                                        \
   , localparam io_noc_x_cord_width_p    = io_noc_did_width_p                                       \
   , localparam io_noc_dims_p            = 1                                                        \
   , localparam io_noc_cord_dims_p       = 2                                                        \

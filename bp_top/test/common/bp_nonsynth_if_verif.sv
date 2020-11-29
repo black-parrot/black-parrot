@@ -57,8 +57,8 @@ initial
 
   if (ic_y_dim_p != 1)
     $fatal("Error: Must have exactly 1 row of I/O routers");
-  if (mc_y_dim_p != 0)
-    $fatal("Error: L2 expansion nodes not yet supported, MC must have 0 rows");
+  if (mc_y_dim_p > 2)
+    $fatal("Error: Multi-row L2 expansion nodes not yet supported");
   if (sac_x_dim_p > 1)
     $fatal("Error: Must have <= 1 column of streaming accelerators");
   if (cac_x_dim_p > 1)

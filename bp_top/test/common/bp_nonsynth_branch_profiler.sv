@@ -31,7 +31,7 @@ module bp_nonsynth_branch_profiler
   wire pc_redirect_v    = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_pc_redirection);
   wire attaboy_v        = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_attaboy);
 
-  assign branch_metadata = pc_redirect_v 
+  assign branch_metadata = pc_redirect_v
                            ? fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd
                            : fe_cmd.operands.attaboy.branch_metadata_fwd;
 

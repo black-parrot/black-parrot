@@ -75,7 +75,7 @@ package bp_common_rv64_pkg;
     logic [rv64_opcode_width_gp-1:0]   opcode;
   }  rv64_instr_stype_s;
 
-  typedef struct packed 
+  typedef struct packed
   {
     logic [rv64_imm20_width_gp-1:0]    imm20;
     logic [rv64_reg_addr_width_gp-1:0] rd_addr;

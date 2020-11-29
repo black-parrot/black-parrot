@@ -105,10 +105,10 @@ module wrapper
    logic cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
    logic [num_caches_p-1:0] lce_cmd_v_li, lce_cmd_yumi_lo, lce_cmd_v_lo, lce_cmd_ready_li;
    logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
-   
+
    `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
    `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-   
+
    bp_bedrock_lce_req_msg_s [num_caches_p-1:0] lce_req_lo;
    bp_bedrock_lce_req_msg_s cce_lce_req_li;
    bp_bedrock_lce_cmd_msg_s [num_caches_p-1:0] lce_cmd_li, lce_cmd_lo;
@@ -117,7 +117,7 @@ module wrapper
    bp_bedrock_lce_cmd_payload_s cce_lce_cmd_payload_lo;
    bp_bedrock_lce_resp_msg_s [num_caches_p-1:0] lce_resp_lo;
    bp_bedrock_lce_resp_msg_s cce_lce_resp_li;
-   
+
    `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
    bp_cfg_bus_s cfg_bus_cast_i;
    assign cfg_bus_cast_i = cfg_bus_i;
@@ -136,9 +136,9 @@ module wrapper
    coh_req_ready_and_link_s cce_lce_req_link_li, cce_lce_req_link_lo;
    coh_cmd_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;
    coh_resp_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
-   
+
    lce_req_packet_s [num_caches_p-1:0] lce_req_packet_lo;
-   
+
    lce_cmd_packet_s [num_caches_p-1:0] lce_cmd_packet_lo, lce_cmd_packet_li, fifo_lce_cmd_data_lo;
 
    lce_resp_packet_s [num_caches_p-1:0] lce_resp_packet_lo;
@@ -334,7 +334,7 @@ module wrapper
            assign lce_cmd_link_lo[i].ready_and_rev = fifo_lce_cmd_ready_lo[i];
            assign lce_cmd_packet_li[i] = fifo_lce_cmd_data_lo[i][0+:$bits(lce_cmd_packet_s)];
            assign lce_cmd_li[i] = lce_cmd_packet_li[i].payload;
-           
+
            // Conversion from command packet to link format
            assign lce_cmd_link_lo[i].data = lce_cmd_packet_lo[i];
            assign lce_cmd_link_lo[i].v = lce_cmd_v_lo[i];
@@ -361,7 +361,7 @@ module wrapper
            assign lce_resp_packet_lo[i].cid = '0;
            assign lce_resp_packet_lo[i].cord = '0;
            assign lce_resp_packet_lo[i].len = coh_noc_len_width_p'(0);
-           
+
            // Conversion from response packet to link format
            assign lce_resp_link_lo[i].data = lce_resp_packet_lo[i];
            assign lce_resp_link_lo[i].v = lce_resp_v_lo[i];
@@ -424,12 +424,12 @@ module wrapper
          end
      end
 
-   if (uce_p == 0) 
+   if (uce_p == 0)
      begin : concentrator
        coh_req_ready_and_link_s req_concentrated_link_li, req_concentrated_link_lo, req_concentrated_link_r;
        coh_cmd_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo, cmd_concentrated_link_r;
        coh_resp_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo, resp_concentrated_link_r;
-       
+
        // Request adapter to convert the link format to the CCE request input
        // format
        lce_req_packet_s cce_lce_req_packet_li;
@@ -459,7 +459,7 @@ module wrapper
        assign cce_lce_cmd_payload_lo = cce_lce_cmd_lo.header.payload;
        assign cce_lce_cmd_packet_lo.cid = cce_lce_cmd_payload_lo.dst_id;
        assign cce_lce_cmd_packet_lo.cord = '0;
-       assign cce_lce_cmd_packet_lo.len = coh_noc_len_width_p'(0); 
+       assign cce_lce_cmd_packet_lo.len = coh_noc_len_width_p'(0);
 
        assign cce_lce_cmd_link_lo.data = cce_lce_cmd_packet_lo;
        assign cce_lce_cmd_link_lo.v = cce_lce_cmd_v_lo;
@@ -558,7 +558,7 @@ module wrapper
             ,.concentrated_link_i(resp_concentrated_link_li)
             ,.concentrated_link_o(resp_concentrated_link_lo)
             );
-       
+
        logic mem_resp_v_to_cce, mem_resp_yumi_from_cce, mem_resp_ready_lo;
        bp_bedrock_cce_mem_msg_s mem_resp_to_cce;
        bp_cce_fsm

@@ -51,63 +51,63 @@ module bp_be_csr
 
   // Declare parameterizable structs
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
-  
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+
   // Casting input and output ports
   bp_cfg_bus_s cfg_bus_cast_i;
   bp_be_csr_cmd_s csr_cmd;
   bp_be_exception_s exception;
-  
+
   bp_be_wb_pkt_s wb_pkt_cast_i;
   bp_be_commit_pkt_s commit_pkt_cast_o;
   bp_be_trans_info_s trans_info_cast_o;
-  
+
   assign cfg_bus_cast_i = cfg_bus_i;
   assign csr_cmd = csr_cmd_i;
   assign exception = exception_i;
   assign commit_pkt_o = commit_pkt_cast_o;
   assign trans_info_o = trans_info_cast_o;
-  
+
   // The muxed and demuxed CSR outputs
   logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
   logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
-  
+
   rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
   rv64_mie_s sie_rwmask_li;
   rv64_mip_s sip_wmask_li, sip_rmask_li, mip_wmask_li;
-  
+
   logic [rv64_priv_width_gp-1:0] priv_mode_n, priv_mode_r;
   logic debug_mode_n, debug_mode_r;
   logic translation_en_n, translation_en_r;
-  
+
   wire is_debug_mode = debug_mode_r;
   // Debug Mode grants pseudo M-mode permission
   wire is_m_mode = is_debug_mode | (priv_mode_r == `PRIV_MODE_M);
   wire is_s_mode = (priv_mode_r == `PRIV_MODE_S);
   wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
-  
+
   `declare_csr(fcsr)
-  
+
   // sstatus subset of mstatus
   // sedeleg hardcoded to 0
   // sideleg hardcoded to 0
   // sie subset of mie
   `declare_csr(stvec)
   `declare_csr(scounteren)
-  
+
   `declare_csr(sscratch)
   `declare_csr(sepc)
   `declare_csr(scause)
   `declare_csr(stval)
   // sip subset of mip
-  
+
   `declare_csr(satp)
-  
+
   // mvendorid readonly
   // marchid readonly
   // mimpid readonly
   // mhartid readonly
-  
+
   `declare_csr(mstatus)
   // misa readonly
   `declare_csr(medeleg)
@@ -115,15 +115,15 @@ module bp_be_csr
   `declare_csr(mie)
   `declare_csr(mtvec)
   `declare_csr(mcounteren)
-  
+
   `declare_csr(mscratch)
   `declare_csr(mepc)
   `declare_csr(mcause)
   `declare_csr(mtval)
   `declare_csr(mip)
-  
+
   // No support for PMP currently
-  
+
   `declare_csr(mcycle)
   `declare_csr(minstret)
   // mhpmcounter not implemented
@@ -135,38 +135,38 @@ module bp_be_csr
   `declare_csr(dpc)
   `declare_csr(dscratch0)
   `declare_csr(dscratch1)
-  
+
   wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
   wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
-  
+
   wire mti_v = mie_r.mtie & mip_r.mtip;
   wire msi_v = mie_r.msie & mip_r.msip;
   wire mei_v = mie_r.meie & mip_r.meip;
-  
+
   wire sti_v = mie_r.stie & mip_r.stip;
   wire ssi_v = mie_r.ssie & mip_r.ssip;
   wire sei_v = mie_r.seie & mip_r.seip;
-  
+
   // TODO: interrupt priority is non-compliant with the spec.
   wire [15:0] interrupt_icode_dec_li =
     {4'b0
-  
+
      ,mei_v
      ,1'b0
      ,sei_v
      ,1'b0
-  
+
      ,mti_v
      ,1'b0 // Reserved
      ,sti_v
      ,1'b0
-  
+
      ,msi_v
      ,1'b0 // Reserved
      ,ssi_v
      ,1'b0
      };
-  
+
   wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
   logic illegal_instr_o;
   rv64_exception_dec_s exception_dec_li;
@@ -187,10 +187,10 @@ module bp_be_csr
         ,store_page_fault   : exception.store_page_fault
         ,default : '0
         };
-  
+
   logic [3:0] exception_ecode_li;
   logic       exception_ecode_v_li;
-  bsg_priority_encode 
+  bsg_priority_encode
    #(.width_p($bits(exception_dec_li))
      ,.lo_to_hi_p(1)
      )
@@ -199,7 +199,7 @@ module bp_be_csr
      ,.addr_o(exception_ecode_li)
      ,.v_o(exception_ecode_v_li)
      );
-  
+
   logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
   logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
   bsg_priority_encode
@@ -211,7 +211,7 @@ module bp_be_csr
      ,.addr_o(m_interrupt_icode_li)
      ,.v_o(m_interrupt_icode_v_li)
      );
-  
+
   bsg_priority_encode
    #(.width_p($bits(exception_dec_li))
      ,.lo_to_hi_p(1)
@@ -221,32 +221,32 @@ module bp_be_csr
      ,.addr_o(s_interrupt_icode_li)
      ,.v_o(s_interrupt_icode_v_li)
      );
-  
+
   // Compute input CSR data
   wire [dword_width_p-1:0] csr_imm_li = dword_width_p'(csr_cmd.data[4:0]);
-  always_comb 
+  always_comb
     begin
       unique casez (csr_cmd.csr_op)
         e_csrrw : csr_data_li =  csr_cmd.data;
         e_csrrs : csr_data_li =  csr_cmd.data | csr_data_lo;
         e_csrrc : csr_data_li = ~csr_cmd.data & csr_data_lo;
-  
+
         e_csrrwi: csr_data_li =  csr_imm_li;
         e_csrrsi: csr_data_li =  csr_imm_li | csr_data_lo;
         e_csrrci: csr_data_li = ~csr_imm_li & csr_data_lo;
         default : csr_data_li = '0;
       endcase
     end
-  
+
   wire instret_i = exception_v_i & ~exception_v_o & ~commit_pkt_cast_o.rollback;
-  
+
   logic [vaddr_width_p-1:0] apc_n, apc_r;
   bsg_dff_reset
    #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
    apc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.data_i(apc_n)
      ,.data_o(apc_r)
      );
@@ -257,7 +257,7 @@ module bp_be_csr
                    : instret_i
                      ? exception_npc_i
                      : apc_r;
-  
+
   logic enter_debug, exit_debug;
   bsg_dff_reset_set_clear
    #(.width_p(1))
@@ -266,22 +266,22 @@ module bp_be_csr
      ,.reset_i('0)
      ,.set_i((reset_i & (boot_in_debug_p == 1'b1)) | enter_debug)
      ,.clear_i((reset_i & (boot_in_debug_p == 1'b0)) | exit_debug)
-  
+
      ,.data_o(debug_mode_r)
      );
-  
+
   bsg_dff_reset
-   #(.width_p(2) 
+   #(.width_p(2)
      ,.reset_val_p(`PRIV_MODE_M)
      )
    priv_mode_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.data_i(priv_mode_n)
      ,.data_o(priv_mode_r)
      );
-  
+
   assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
   bsg_dff_reset
    #(.width_p(1)
@@ -289,11 +289,11 @@ module bp_be_csr
    translation_en_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.data_i(translation_en_n)
      ,.data_o(translation_en_r)
      );
-  
+
   // sstatus mask
   assign sstatus_wmask_li = '{fs: 2'b11
                               ,mxr: 1'b1, sum: 1'b1
@@ -309,17 +309,17 @@ module bp_be_csr
                               ,mie: 1'b0, sie: 1'b1
                               ,default: '0
                               };
-  
+
   // mip mask
   assign mip_wmask_li     = '{meip: 1'b0, seip: 1'b1
                               ,mtip: 1'b0, stip: 1'b1
                               ,msip: 1'b0, ssip: 1'b1
                               ,default: '0
                               };
-  
+
   // sie mask
   assign sie_rwmask_li    = mideleg_lo;
-  
+
   // sip mask
   assign sip_rmask_li     = mideleg_lo;
   assign sip_wmask_li    = '{meip: 1'b0, seip: 1'b0
@@ -327,48 +327,48 @@ module bp_be_csr
                               ,msip: 1'b0, ssip: mideleg_lo.ssi
                               ,default: '0
                              };
-  
+
   // CSR data
   always_comb
     begin
       priv_mode_n  = priv_mode_r;
-  
+
       fcsr_li = fcsr_lo;
-  
+
       stvec_li      = stvec_lo;
       scounteren_li = scounteren_lo;
-  
+
       sscratch_li = sscratch_lo;
       sepc_li     = sepc_lo;
       scause_li   = scause_lo;
       stval_li    = stval_lo;
-  
+
       satp_li     = satp_lo;
-  
+
       mstatus_li    = mstatus_lo;
       medeleg_li    = medeleg_lo;
       mideleg_li    = mideleg_lo;
       mie_li        = mie_lo;
       mtvec_li      = mtvec_lo;
       mcounteren_li = mcounteren_lo;
-  
+
       mscratch_li = mscratch_lo;
       mepc_li     = mepc_lo;
       mcause_li   = mcause_lo;
       mtval_li    = mtval_lo;
       mip_li      = mip_lo;
-  
+
       mcycle_li        = mcountinhibit_lo.cy ? mcycle_lo + dword_width_p'(1) : mcycle_lo;
       minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
       mcountinhibit_li = mcountinhibit_lo;
-  
+
       enter_debug = '0;
       exit_debug  = '0;
       dcsr_li     = dcsr_lo;
       dpc_li      = dpc_lo;
       dscratch0_li = dscratch0_lo;
       dscratch1_li = dscratch1_lo;
-  
+
       exception_v_o    = '0;
       interrupt_v_o    = '0;
       ret_v_o          = '0;
@@ -376,7 +376,7 @@ module bp_be_csr
       illegal_instr_o  = '0;
       csr_data_lo      = '0;
       sfence_v_o       = '0;
-      
+
       if (~ebreak_v_li & exception_v_i & exception.ebreak)
         begin
           enter_debug    = 1'b1;
@@ -397,7 +397,7 @@ module bp_be_csr
         begin
           exit_debug       = 1'b1;
           priv_mode_n      = dcsr_lo.prv;
-  
+
           illegal_instr_o  = ~is_debug_mode;
           ret_v_o          = ~illegal_instr_o;
         end
@@ -408,12 +408,12 @@ module bp_be_csr
           else
             begin
               priv_mode_n      = mstatus_lo.mpp;
-  
+
               mstatus_li.mpp   = `PRIV_MODE_U;
               mstatus_li.mpie  = 1'b1;
               mstatus_li.mie   = mstatus_lo.mpie;
               mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
-  
+
               ret_v_o          = 1'b1;
             end
         end
@@ -424,12 +424,12 @@ module bp_be_csr
           else
             begin
               priv_mode_n      = {1'b0, mstatus_lo.spp};
-              
+
               mstatus_li.spp   = `PRIV_MODE_U;
               mstatus_li.spie  = 1'b1;
               mstatus_li.sie   = mstatus_lo.spie;
               mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
-  
+
               ret_v_o          = 1'b1;
             end
         end
@@ -561,22 +561,22 @@ module bp_be_csr
               endcase
             end
         end
-  
+
       if (interrupt_v_i)
         begin
           if (m_interrupt_icode_v_li)
             begin
               priv_mode_n          = `PRIV_MODE_M;
-  
+
               mstatus_li.mpp       = priv_mode_r;
               mstatus_li.mpie      = mstatus_lo.mie;
               mstatus_li.mie       = 1'b0;
-  
+
               mepc_li              = paddr_width_p'($signed(apc_r));
               mtval_li             = '0;
               mcause_li._interrupt = 1'b1;
               mcause_li.ecode      = m_interrupt_icode_li;
-  
+
               exception_v_o        = 1'b0;
               interrupt_v_o        = 1'b1;
               ret_v_o              = 1'b0;
@@ -584,16 +584,16 @@ module bp_be_csr
           else if (s_interrupt_icode_v_li)
             begin
               priv_mode_n          = `PRIV_MODE_S;
-  
+
               mstatus_li.spp       = priv_mode_r;
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
-  
+
               sepc_li              = paddr_width_p'($signed(apc_r));
               stval_li             = '0;
               scause_li._interrupt = 1'b1;
               scause_li.ecode      = s_interrupt_icode_li;
-  
+
               exception_v_o        = 1'b0;
               interrupt_v_o        = 1'b1;
               ret_v_o              = 1'b0;
@@ -604,20 +604,20 @@ module bp_be_csr
           if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
             begin
               priv_mode_n          = `PRIV_MODE_S;
-  
+
               mstatus_li.spp       = priv_mode_r;
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
-  
+
               sepc_li              = paddr_width_p'($signed(apc_r));
               // TODO: Replace with struct
               stval_li             = (exception_ecode_li == 2)
-                                    ? exception_instr_i 
+                                    ? exception_instr_i
                                     : paddr_width_p'($signed(exception_vaddr_i));
-  
+
               scause_li._interrupt = 1'b0;
               scause_li.ecode      = exception_ecode_li;
-  
+
               exception_v_o        = 1'b1;
               interrupt_v_o        = 1'b0;
               ret_v_o              = 1'b0;
@@ -625,25 +625,25 @@ module bp_be_csr
           else
             begin
               priv_mode_n          = `PRIV_MODE_M;
-  
+
               mstatus_li.mpp       = priv_mode_r;
               mstatus_li.mpie      = mstatus_lo.mie;
               mstatus_li.mie       = 1'b0;
-  
+
               mepc_li              = paddr_width_p'($signed(apc_r));
               mtval_li             = (exception_ecode_li == 2)
-                                    ? exception_instr_i 
+                                    ? exception_instr_i
                                     : paddr_width_p'($signed(exception_vaddr_i));
-  
+
               mcause_li._interrupt = 1'b0;
               mcause_li.ecode      = exception_ecode_li;
-  
+
               exception_v_o        = 1'b1;
               interrupt_v_o        = 1'b0;
               ret_v_o              = 1'b0;
             end
         end
-  
+
       // Always break in single step mode
       if (~is_debug_mode & exception_v_i & dcsr_lo.step)
         begin
@@ -652,23 +652,23 @@ module bp_be_csr
           dcsr_li.cause = 4;
           dcsr_li.prv   = priv_mode_r;
         end
-  
+
       mip_li.mtip = timer_irq_i;
       mip_li.msip = software_irq_i;
       mip_li.meip = external_irq_i;
-  
+
       // Accumulate FFLAGS
       fcsr_li.fflags |= fflags_acc_i;
-  
+
       // Set FS to dirty if: fflags set, frf written, fcsr written
       mstatus_li.fs |= {2{|fflags_acc_i | frf_w_v_i | (csr_cmd_v_i & (csr_cmd.csr_addr == `CSR_ADDR_FCSR))}};
     end
-  
+
   // Debug Mode masks all interrupts
   assign interrupt_ready_o = ~is_debug_mode & ~cfg_bus_cast_i.freeze & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
-  
+
   assign csr_data_o = dword_width_p'(csr_data_lo);
-  
+
   assign commit_pkt_cast_o.v                = |{exception.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_miss};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
@@ -685,13 +685,13 @@ module bp_be_csr
   assign commit_pkt_cast_o.satp             = satp_v_o;
   assign commit_pkt_cast_o.icache_miss      = exception.icache_miss;
   assign commit_pkt_cast_o.rollback         = exception.icache_miss | exception.dcache_miss | exception.dtlb_miss | exception.itlb_miss;
-  
+
   assign trans_info_cast_o.priv_mode = priv_mode_r;
   assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
   assign trans_info_cast_o.translation_en = translation_en_r | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
   assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
   assign trans_info_cast_o.mstatus_mxr = mstatus_lo.mxr;
-  
+
   assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
   assign fpu_en_o = (mstatus_lo.fs != 2'b00);
 

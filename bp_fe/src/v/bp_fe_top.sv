@@ -82,41 +82,41 @@ module bp_fe_top
   logic            mem_poison_lo, mem_translation_en_lo;
   bp_fe_mem_resp_s mem_resp_li;
   logic            mem_resp_v_li;
-  
+
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
    pc_gen
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.mem_cmd_o(mem_cmd_lo)
      ,.mem_cmd_v_o(mem_cmd_v_lo)
      ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
-  
+
      ,.mem_priv_o(mem_priv_lo)
      ,.mem_translation_en_o(mem_translation_en_lo)
      ,.mem_poison_o(mem_poison_lo)
-  
+
      ,.mem_resp_i(mem_resp_li)
      ,.mem_resp_v_i(mem_resp_v_li)
-  
+
      ,.fe_cmd_i(fe_cmd_i)
      ,.fe_cmd_v_i(fe_cmd_v_i)
      ,.fe_cmd_yumi_o(fe_cmd_yumi_o)
-  
+
      ,.fe_queue_o(fe_queue_o)
      ,.fe_queue_v_o(fe_queue_v_o)
      ,.fe_queue_ready_i(fe_queue_ready_i)
      );
-  
+
   logic instr_page_fault_lo, instr_access_fault_lo, itlb_miss_lo;
-  
+
   logic fetch_ready;
   wire itlb_fence_v = mem_cmd_v_lo & (mem_cmd_lo.op == e_fe_op_tlb_fence);
   wire itlb_fill_v  = mem_cmd_v_lo & (mem_cmd_lo.op == e_fe_op_tlb_fill);
   wire fetch_v      = fetch_ready & mem_cmd_v_lo & (mem_cmd_lo.op == e_fe_op_fetch);
   wire fencei_v     = fetch_ready & mem_cmd_v_lo & (mem_cmd_lo.op == e_fe_op_icache_fence);
-  
+
   logic fetch_v_r, fetch_v_rr;
   bp_fe_tlb_entry_s itlb_r_entry, entry_lo, passthrough_entry;
   logic itlb_r_v_lo, itlb_v_lo, passthrough_v_lo;
@@ -126,17 +126,17 @@ module bp_fe_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.flush_i(itlb_fence_v)
-  
+
      ,.v_i((fetch_v | itlb_fill_v) & mem_translation_en_lo)
      ,.w_i(itlb_fill_v)
      ,.vtag_i(itlb_fill_v ? mem_cmd_lo.operands.fill.vtag : mem_cmd_lo.operands.fetch.vaddr[vaddr_width_p-1-:vtag_width_p])
      ,.entry_i(mem_cmd_lo.operands.fill.entry)
-  
+
      ,.v_o(itlb_v_lo)
      ,.miss_v_o(itlb_miss_lo)
      ,.entry_o(entry_lo)
      );
-  
+
   logic [vtag_width_p-1:0] vtag_r;
   bsg_dff_reset_en
    #(.width_p(vtag_width_p))
@@ -144,36 +144,36 @@ module bp_fe_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(fetch_v)
-  
+
      ,.data_i(mem_cmd_lo.operands.fetch.vaddr[vaddr_width_p-1-:vtag_width_p])
      ,.data_o(vtag_r)
     );
-  
+
   assign passthrough_entry = '{ptag: vtag_r, default: '0};
   assign passthrough_v_lo  = fetch_v_r;
   assign itlb_r_entry      = mem_translation_en_lo ? entry_lo : passthrough_entry;
   assign itlb_r_v_lo       = mem_translation_en_lo ? itlb_v_lo : passthrough_v_lo;
-  
+
   wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
   wire                    ptag_v_li   = itlb_r_v_lo;
-  
+
   logic uncached_li;
-  
+
   bp_pma
    #(.bp_params_p(bp_params_p))
    pma
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.ptag_v_i(ptag_v_li)
      ,.ptag_i(ptag_li)
-  
+
      ,.uncached_o(uncached_li)
      );
-  
+
   logic [instr_width_p-1:0] icache_data_lo;
   logic                     icache_data_v_lo;
-  
+
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = '{vaddr: mem_cmd_lo.operands.fetch.vaddr
@@ -185,23 +185,23 @@ module bp_fe_top
    icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.cfg_bus_i(cfg_bus_i)
-  
+
      ,.icache_pkt_i(icache_pkt)
      ,.v_i(fetch_v | fencei_v)
      ,.ready_o(fetch_ready)
-  
+
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(ptag_v_li)
      ,.uncached_i(uncached_li)
      ,.poison_i(mem_poison_lo | instr_access_fault_v | instr_page_fault_v)
-  
+
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
-  
+
      // LCE Interface
-  
+
      ,.cache_req_o(cache_req_o)
      ,.cache_req_v_o(cache_req_v_o)
      ,.cache_req_yumi_i(cache_req_yumi_i)
@@ -212,23 +212,23 @@ module bp_fe_top
      ,.cache_req_complete_i(cache_req_complete_i)
      ,.cache_req_credits_full_i(cache_req_credits_full_i)
      ,.cache_req_credits_empty_i(cache_req_credits_empty_i)
-  
+
      ,.data_mem_pkt_i(data_mem_pkt_i)
      ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
      ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
      ,.data_mem_o(data_mem_o)
-  
+
      ,.tag_mem_pkt_i(tag_mem_pkt_i)
      ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
      ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
      ,.tag_mem_o(tag_mem_o)
-  
+
      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
      ,.stat_mem_pkt_i(stat_mem_pkt_i)
      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
      ,.stat_mem_o(stat_mem_o)
      );
-  
+
   logic itlb_miss_r;
   logic instr_access_fault_r, instr_page_fault_r;
   always_ff @(posedge clk_i)
@@ -237,7 +237,7 @@ module bp_fe_top
         itlb_miss_r <= '0;
         fetch_v_r   <= '0;
         fetch_v_rr  <= '0;
-  
+
         instr_access_fault_r <= '0;
         instr_page_fault_r   <= '0;
       end
@@ -245,27 +245,27 @@ module bp_fe_top
         fetch_v_r   <= fetch_v;
         fetch_v_rr  <= fetch_v_r & ~mem_poison_lo;
         itlb_miss_r <= itlb_miss_lo & ~mem_poison_lo;
-  
+
         instr_access_fault_r <= instr_access_fault_v & ~mem_poison_lo;
         instr_page_fault_r   <= instr_page_fault_v & ~mem_poison_lo;
       end
     end
-  
+
   wire instr_priv_page_fault = ((mem_priv_lo == `PRIV_MODE_S) & itlb_r_entry.u)
                                  | ((mem_priv_lo == `PRIV_MODE_U) & ~itlb_r_entry.u);
   wire instr_exe_page_fault = ~itlb_r_entry.x;
-  
+
   // Fault if in uncached mode but access is not for an uncached address
   wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
   wire mode_fault_v = (is_uncached_mode & ~uncached_li);
   // Fault if domain is not zero (top <io_noc_did_width_p> bits) and SAC bit is not zero (next bit)
   wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p+1] != '0);
-  
+
   assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v);
   assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_lo & (instr_priv_page_fault | instr_exe_page_fault);
-  
+
   assign mem_cmd_yumi_li = itlb_fence_v | itlb_fill_v | fetch_v | fencei_v;
-  
+
   assign mem_resp_v_li   = fetch_v_rr;
   assign mem_resp_li     = '{instr_access_fault: instr_access_fault_r
                              ,instr_page_fault : instr_page_fault_r

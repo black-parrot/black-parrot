@@ -87,7 +87,7 @@ module bp_nonsynth_core_profiler
     , input icache_fence
     , input branch_override
     , input ret_override
- 
+
     // Backwards ISS events
     // TODO: Differentiate between different FE cmds
     , input fe_cmd

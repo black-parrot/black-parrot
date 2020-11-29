@@ -63,7 +63,7 @@ assign resp_link_cast_i = resp_link_i;
 assign cmd_link_o  = cmd_link_cast_o;
 assign resp_link_o = resp_link_cast_o;
 
-// Swizzle ready_and_rev 
+// Swizzle ready_and_rev
 assign client_cmd_link_li  = '{data          : cmd_link_cast_i.data
                                ,v            : cmd_link_cast_i.v
                                ,ready_and_rev: resp_link_cast_i.ready_and_rev
@@ -106,7 +106,7 @@ bp_me_cce_to_mem_link_master
   ,.my_cid_i(my_cid_i)
   ,.dst_cord_i(dst_cord_i)
   ,.dst_cid_i(dst_cid_i)
-  
+
   ,.cmd_link_o(master_cmd_link_lo)
   ,.resp_link_i(master_resp_link_li)
   );

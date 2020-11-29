@@ -45,7 +45,7 @@ assign mem_resp_cast_i = mem_resp_i;
 always_ff @(posedge clk_i) begin
   if (mem_cmd_v_i)
     case (mem_cmd_cast_i.header.msg_type.mem)
-      e_bedrock_mem_rd: 
+      e_bedrock_mem_rd:
         $fwrite(file, "[%t] CMD  RD  : (%x) %b\n", $time, mem_cmd_cast_i.header.addr, mem_cmd_cast_i.header.size);
       e_bedrock_mem_wr:
         $fwrite(file, "[%t] CMD  WR  : (%x) %b %x\n", $time, mem_cmd_cast_i.header.addr, mem_cmd_cast_i.header.size, mem_cmd_cast_i.data);
@@ -53,7 +53,7 @@ always_ff @(posedge clk_i) begin
         $fwrite(file, "[%t] CMD  UCRD: (%x) %b\n", $time, mem_cmd_cast_i.header.addr, mem_cmd_cast_i.header.size);
       e_bedrock_mem_uc_wr:
         $fwrite(file, "[%t] CMD  UCWR: (%x) %b %x\n", $time, mem_cmd_cast_i.header.addr, mem_cmd_cast_i.header.size, mem_cmd_cast_i.data);
-      default: 
+      default:
         $fwrite(file, "[%t] CMD  ERROR: unknown cmd_type %x received!", $time, mem_resp_cast_i.header.msg_type.mem);
     endcase
 
@@ -67,7 +67,7 @@ always_ff @(posedge clk_i) begin
         $fwrite(file, "[%t] RESP UCRD: (%x) %b %x\n", $time, mem_resp_cast_i.header.addr, mem_resp_cast_i.header.size, mem_resp_cast_i.data);
       e_bedrock_mem_uc_wr:
         $fwrite(file, "[%t] RESP UCWR: (%x) %b\n", $time, mem_resp_cast_i.header.addr, mem_resp_cast_i.header.size);
-      default: 
+      default:
         $fwrite(file, "[%t] ERROR: unknown resp_type %x received!", $time, mem_resp_cast_i.header.msg_type.mem);
     endcase
 end

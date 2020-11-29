@@ -19,12 +19,12 @@ module test_bp
 logic clk, reset;
 logic dram_clk, dram_reset;
 
-bsg_nonsynth_clock_gen 
+bsg_nonsynth_clock_gen
  #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
- clock_gen 
+ clock_gen
   (.o(clk));
 
-bsg_nonsynth_reset_gen 
+bsg_nonsynth_reset_gen
  #(.num_clocks_p(1)
    ,.reset_cycles_lo_p(0)
    ,.reset_cycles_hi_p(20)
@@ -57,7 +57,7 @@ testbench
    ,.dram_reset_i(dram_reset)
    );
 
-initial 
+initial
   begin
     $assertoff();
     @(posedge clk);

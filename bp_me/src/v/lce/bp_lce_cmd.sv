@@ -655,7 +655,7 @@ module bp_lce_cmd
                   : stat_buf_v_r & lce_cmd_yumi_o
                     ? e_ready
                     : e_wb;
-          
+
       end
 
       // Writeback dirty block - read from data memory, write to stat memory to clear dirty bit

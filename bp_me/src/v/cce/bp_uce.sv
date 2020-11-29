@@ -301,14 +301,14 @@ module bp_uce
     end
 
   logic fill_up, fill_done, mem_cmd_up, mem_cmd_done;
-  if (fill_width_p == block_width_p) 
+  if (fill_width_p == block_width_p)
     begin : fill_equals_block
       assign mem_cmd_cnt = 1'b0;
       assign fill_done = 1'b1;
       assign mem_cmd_done = 1'b1;
       assign critical_addr = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
     end
-  else 
+  else
     begin : fill_less_than_block
       logic [fill_cnt_width_lp-1:0] first_cmd_cnt, last_cmd_cnt;
       logic [fill_cnt_width_lp-1:0] fill_cnt;
@@ -339,7 +339,7 @@ module bp_uce
         ,.val_i(first_cmd_cnt)
         ,.count_o(mem_cmd_cnt)
         );
-      
+
       assign first_cmd_cnt = cache_req_cast_i.addr[block_offset_width_lp-1-:fill_cnt_width_lp];
       assign last_cmd_cnt = (cache_req_r.addr[fill_offset_width_lp+:fill_cnt_width_lp] - fill_cnt_width_lp'(1));
       assign mem_cmd_done = (mem_cmd_cnt == last_cmd_cnt);

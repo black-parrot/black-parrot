@@ -281,7 +281,7 @@ else begin: fixed_latency
 
      ,.data_o(dram_data_li)
      );
-  
+
   if (mem_load_p)
     begin : preload
       `ifndef VERILATOR

@@ -11,8 +11,8 @@ module bp_nd_socket
    , parameter len_width_p = 1
    , parameter dims_p = 2
    , parameter cord_dims_p = dims_p
-   , parameter int cord_markers_pos_p[cord_dims_p:0] = '{ 5, 4, 0 } 
-   , localparam dirs_lp = dims_p*2+1 
+   , parameter int cord_markers_pos_p[cord_dims_p:0] = '{ 5, 4, 0 }
+   , localparam dirs_lp = dims_p*2+1
    , parameter bit [1:0][dirs_lp-1:0][dirs_lp-1:0] routing_matrix_p =  (dims_p == 2) ? StrictXY : StrictX
    , parameter async_clk_p = 0
    , parameter els_p = 0
@@ -32,10 +32,10 @@ module bp_nd_socket
 
    , input  [els_p-1:0][ral_link_width_lp-1:0]               tile_link_i
    , output [els_p-1:0][ral_link_width_lp-1:0]               tile_link_o
-   
+
    );
 
-  
+
   `declare_bsg_ready_and_link_sif_s(flit_width_p, bsg_ready_and_link_s);
   bsg_ready_and_link_s [els_p-1:0] network_link_li, network_link_lo;
 
@@ -64,7 +64,7 @@ for (genvar i=0; i < els_p; i++)
   else
     begin : sync
       assign network_link_li[i]  = tile_link_i[i];
-      assign tile_link_o[i]      = network_link_lo[i]; 
+      assign tile_link_o[i]      = network_link_lo[i];
     end
 
   bsg_wormhole_router
@@ -85,8 +85,8 @@ for (genvar i=0; i < els_p; i++)
      ,.link_i({network_link_i[i], network_link_li[i]})
      ,.link_o({network_link_o[i], network_link_lo[i]})
      );
-  end 
-   
+  end
+
 
 endmodule
 
