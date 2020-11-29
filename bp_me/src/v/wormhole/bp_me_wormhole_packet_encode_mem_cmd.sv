@@ -29,7 +29,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
         `bp_mem_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_header_width_lp)
     )
    (input [cce_mem_msg_header_width_lp-1:0]   mem_cmd_header_i
-   
+
     , input [cord_width_p-1:0]                src_cord_i
     , input [cid_width_p-1:0]                 src_cid_i
     , input [cord_width_p-1:0]                dst_cord_i

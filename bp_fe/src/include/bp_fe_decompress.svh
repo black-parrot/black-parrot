@@ -4,7 +4,7 @@
 `include "bsg_defines.v"
 `include "bp_common_core_if.svh"
 
-// DISCLAIMER: Decompression will be changed in the future. 
+// DISCLAIMER: Decompression will be changed in the future.
 
 /*`define fe_decompress_s bp_fe_queue_s
 * `define decompress_fe_s bp_fe_queue_s
@@ -16,7 +16,7 @@
 *     (`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p))
 *
 * typedef enum {
-*   e_rvi_aligned          = 3'b000 
+*   e_rvi_aligned          = 3'b000
 *   ,e_rvc_aligned         = 3'b001
 *   ,e_rvc_rvi_misaligned  = 3'b010
 *   ,e_rvi_rvc_misaligned  = 3'b011
@@ -27,7 +27,7 @@
 * `define C_LDSP     5'b01110
 * `define C_LQSP     5'b00110
 * `define C_FLWSP    5'b01110
-* `define C_FLDSP    5'b00110 
+* `define C_FLDSP    5'b00110
 *
 * `define C_SWSP     5'b11010
 * `define C_SDSP     5'b11110
@@ -39,7 +39,7 @@
 * `define C_LD       5'b01100
 * `define C_LQ       5'b00100
 * `define C_FLW      5'b01100
-* `define C_FLD      5'b00100 
+* `define C_FLD      5'b00100
 *
 * `define C_SW       5'b11000
 * `define C_SD       5'b11100
@@ -67,27 +67,27 @@
 *
 * `define C_SLLI     5'b00010
 * `define C_SLLI64   5'b00010
-* 
+*
 * `define C_SRLI     5'b10001
 * `define C_SRAI     5'b10001
-* 
+*
 * `define C_ANDI     5'b10001
-* 
+*
 * `define C_MV       5'b10010
 * `define C_ADD      5'b10010
-* 
+*
 * `define C_EBREAK   5'b10010
-* 
+*
 * `define C_AND      5'b10001
 * `define C_OR       5'b10001
 * `define C_XOR      5'b10001
 * `define C_SUB      5'b10001
 * `define C_ADDW     5'b10001
 * `define C_SUBW     5'b10001
-* 
+*
 * `define C_NOP      5'b00001
 * `define C_ILLEGAL  5'b00000
-* 
+*
 * // register name
 * `define x0         5'0
 * `define x1         5'1
@@ -121,7 +121,7 @@
 * `define x29        5'29
 * `define x30        5'30
 * `define x31        5'31
-* 
+*
 * //rvc format
 * `define funct4_width_p    4
 * `define funct3_width_p    3
@@ -141,7 +141,7 @@
 * `define offset1_width_p   3
 * `define offset2_width_p   5
 * `define jump_width_p     11
-* 
+*
 * typedef struct packed {
 *   logic [funct4_width_p-1:0]     funct4;
 *   logic [rd_rs1_width_p-1:0]     rd_rs1;
@@ -156,21 +156,21 @@
 *   logic [ci_imm2_width_p-1:0]    imm2;
 *   logic [op_width_p-1:0]         op;
 * } format_ci_s;
-* 
+*
 * typedef struct packed {
 *   logic [funct3_width_p-1:0]     funct3;
 *   logic [css_imm_width_p-1:0]    imm;
 *   logic [rs2_width_p-1:0]        rs2;
 *   logic [op_width_p-1:0]         op;
 * } format_css_s;
-* 
+*
 * typedef struct packed {
 *   logic [funct3_width_p-1:0]     funct3;
 *   logic [ciw_imm_width_p-1:0]    imm;
 *   logic [rd_prime_width_p-1:0]   rd;
 *   logic [op_width_p-1:0]         op;
 * } format_ciw_s;
-* 
+*
 * typedef struct packed {
 *   logic [funct3_width_p-1:0]     funct3;
 *   logic [cl_imm1_width_p-1:0]    imm1;
@@ -179,7 +179,7 @@
 *   logic [rd_prime_width_p-1:0]   rd;
 *   logic [op_width_p-1:0]         op;
 * } format_cl_s;
-* 
+*
 * typedef struct packed {
 *   logic [funct3_width_p-1:0]     funct3;
 *   logic [cs_imm1_width_p-1:0]    imm1;
@@ -188,7 +188,7 @@
 *   logic [rs2_prime_width_p-1:0]  rs2;
 *   logic [op_width_p-1:0]         op;
 * } format_cs_s;
-* 
+*
 * typedef struct packed {
 *   logic [funct3_width_p-1:0]     funct3;
 *   logic [offset1_width_p-1:0]    offset1;
@@ -196,15 +196,15 @@
 *   logic [offset2_width_p-1:0]    offset2;
 *   logic [op_width_p-1:0]         op;
 * } format_cb_s;
-* 
+*
 * typedef struct packed {
 *   logic [funct3_width_p-1:0]     funct3;
 *   logic [jump_width_p-1:0]       jump_target;
 *   logic [op_width_p-1:0]         op;
 * } format_cj_s;
-* 
+*
 * // rvi format
-* 
+*
 * `define funct7_width_p 7
 * `define rs1_width_p    5
 * `define funct3_width_p 3
@@ -212,7 +212,7 @@
 * `define i_imm1_width_p 12
 * `define s_imm1_width_p 7
 * `define s_imm2_width_p 5
-* 
+*
 * typedef struct packed {
 *   logic [funct7_width_p-1:0]     funct7;
 *   logic [rs2_width_p-1:0]        rs2;
@@ -221,7 +221,7 @@
 *   logic [rd_width_p-1:0]         rd;
 *   logic [op_width_p-1:0]         op;
 * } format_r_s;
-* 
+*
 * typedef struct packed {
 *   logic [i_imm_width_p-1:0]      imm;
 *   logic [rs1_width_p-1:0]        rs1;
@@ -229,7 +229,7 @@
 *   logic [rd_width_p-1:0]         rd;
 *   logic [op_width_p-1:0]         op;
 * } format_i_s;
-* 
+*
 * typedef struct packed {
 *   logic [s_imm1_width_p-1:0]     imm1;
 *   logic [rs2_width_p-1:0]        rs2;
@@ -238,6 +238,6 @@
 *   logic [s_imm2_width_p-1:0]     imm2;
 *   logic [op_width_p-1:0]         op;
 * } format_s_s;
-* 
+*
 * `endif
 */

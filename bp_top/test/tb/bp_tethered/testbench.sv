@@ -33,7 +33,7 @@ module testbench
    , parameter br_profile_p                = 0
    , parameter cosim_p                     = 0
 
-   // COSIM parameters 
+   // COSIM parameters
    , parameter checkpoint_p                = 0
    , parameter cosim_memsize_p             = 0
    , parameter cosim_cfg_file_p            = "prog.cfg"
@@ -58,32 +58,32 @@ module testbench
   import "DPI-C" context function bit get_finish(int hartid);
   export "DPI-C" function get_dram_period;
   export "DPI-C" function get_sim_period;
-  
+
   function int get_dram_period();
     return (`dram_pkg::tck_ps);
   endfunction
-  
+
   function int get_sim_period();
     return (`BP_SIM_CLK_PERIOD);
   endfunction
-  
+
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  
+
   bp_bedrock_cce_mem_msg_s proc_mem_cmd_lo;
   logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;
   bp_bedrock_cce_mem_msg_s proc_mem_resp_li;
   logic proc_mem_resp_v_li, proc_mem_resp_yumi_lo;
-  
+
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_li;
   bp_bedrock_cce_mem_msg_s proc_io_resp_li;
   logic proc_io_resp_v_li, proc_io_resp_yumi_lo;
-  
+
   bp_bedrock_cce_mem_msg_s io_cmd_lo;
   logic io_cmd_v_lo, io_cmd_ready_li;
   bp_bedrock_cce_mem_msg_s io_resp_li;
   logic io_resp_v_li, io_resp_yumi_lo;
-  
+
   bp_bedrock_cce_mem_msg_s load_cmd_lo;
   logic load_cmd_v_lo, load_cmd_yumi_li;
   bp_bedrock_cce_mem_msg_s load_resp_li;
@@ -95,32 +95,32 @@ module testbench
    wrapper
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.io_cmd_o(proc_io_cmd_lo)
      ,.io_cmd_v_o(proc_io_cmd_v_lo)
      ,.io_cmd_ready_i(proc_io_cmd_ready_li)
-  
+
      ,.io_resp_i(proc_io_resp_li)
      ,.io_resp_v_i(proc_io_resp_v_li)
      ,.io_resp_yumi_o(proc_io_resp_yumi_lo)
-  
+
      ,.io_cmd_i(load_cmd_lo)
      ,.io_cmd_v_i(load_cmd_v_lo)
      ,.io_cmd_yumi_o(load_cmd_yumi_li)
-  
+
      ,.io_resp_o(load_resp_li)
      ,.io_resp_v_o(load_resp_v_li)
      ,.io_resp_ready_i(load_resp_ready_lo)
-  
+
      ,.mem_cmd_o(proc_mem_cmd_lo)
      ,.mem_cmd_v_o(proc_mem_cmd_v_lo)
      ,.mem_cmd_ready_i(proc_mem_cmd_ready_li)
-  
+
      ,.mem_resp_i(proc_mem_resp_li)
      ,.mem_resp_v_i(proc_mem_resp_v_li)
      ,.mem_resp_yumi_o(proc_mem_resp_yumi_lo)
      );
-  
+
   bp_mem
    #(.bp_params_p(bp_params_p)
      ,.mem_offset_p(mem_offset_p)
@@ -134,36 +134,36 @@ module testbench
    mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.mem_cmd_i(proc_mem_cmd_lo)
      ,.mem_cmd_v_i(proc_mem_cmd_ready_li & proc_mem_cmd_v_lo)
      ,.mem_cmd_ready_o(proc_mem_cmd_ready_li)
-  
+
      ,.mem_resp_o(proc_mem_resp_li)
      ,.mem_resp_v_o(proc_mem_resp_v_li)
      ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
-  
+
      ,.dram_clk_i(dram_clk_i)
      ,.dram_reset_i(dram_reset_i)
      );
-  
+
   bp_nonsynth_nbf_loader
    #(.bp_params_p(bp_params_p))
    nbf_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.lce_id_i(lce_id_width_p'('b10))
-      
+
      ,.io_cmd_o(load_cmd_lo)
      ,.io_cmd_v_o(load_cmd_v_lo)
      ,.io_cmd_yumi_i(load_cmd_yumi_li)
-  
+
      ,.io_resp_i(load_resp_li)
      ,.io_resp_v_i(load_resp_v_li)
      ,.io_resp_ready_o(load_resp_ready_lo)
      );
-  
+
   logic cosim_en_lo;
   logic icache_trace_en_lo;
   logic dcache_trace_en_lo;
@@ -192,11 +192,11 @@ module testbench
    host
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.io_cmd_i(proc_io_cmd_lo)
      ,.io_cmd_v_i(proc_io_cmd_v_lo & proc_io_cmd_ready_li)
      ,.io_cmd_ready_o(proc_io_cmd_ready_li)
-  
+
      ,.io_resp_o(proc_io_resp_li)
      ,.io_resp_v_o(proc_io_resp_v_li)
      ,.io_resp_yumi_i(proc_io_resp_yumi_lo)
@@ -222,9 +222,9 @@ module testbench
        ,.reset_i(reset_i)
        ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
        ,.warmup_instr_i(testbench.warmup_instr_p)
-  
+
        ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
-  
+
        ,.commit_v_i(calculator.commit_pkt.instret)
        ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
        );
@@ -254,7 +254,7 @@ module testbench
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
        ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
-  
+
        // We want to pass these values as parameters, but cannot in Verilator 4.025
        // Parameter-resolved constants must not use dotted references
        ,.cosim_en_i(testbench.cosim_en_lo)
@@ -265,21 +265,21 @@ module testbench
        ,.config_file_i(testbench.cosim_cfg_file_p)
        ,.instr_cap_i(testbench.cosim_instr_p)
        ,.memsize_i(testbench.cosim_memsize_p)
-  
+
        ,.decode_i(calculator.reservation_n.decode)
-  
+
        ,.commit_v_i(calculator.commit_pkt.instret)
        ,.commit_pc_i(calculator.commit_pkt.pc)
        ,.commit_instr_i(calculator.commit_pkt.instr)
-  
+
        ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
        ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
        ,.ird_data_i(scheduler.iwb_pkt.rd_data)
-  
+
        ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
        ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
        ,.frd_data_i(scheduler.fwb_pkt.rd_data)
-  
+
        ,.trap_v_i(calculator.pipe_sys.csr.commit_pkt_cast_o.exception | calculator.pipe_sys.csr.commit_pkt_cast_o._interrupt)
        ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
                  ? calculator.pipe_sys.csr.scause_li
@@ -304,19 +304,19 @@ module testbench
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
        ,.v_tl_r(v_tl_r)
-       
+
        ,.v_tv_r(v_tv_r)
        ,.addr_tv_r(paddr_tv_r)
        ,.lr_miss_tv(lr_miss_tv)
        ,.sc_op_tv_r(decode_tv_r.sc_op)
        ,.sc_success(sc_success)
-        
+
        ,.cache_req_v_o(cache_req_v_o)
        ,.cache_req_o(cache_req_o)
 
        ,.cache_req_metadata_o(cache_req_metadata_o)
        ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-        
+
        ,.cache_req_complete_i(cache_req_complete_i)
 
        ,.v_o(early_v_o)
@@ -329,7 +329,7 @@ module testbench
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
        ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-       
+
        ,.tag_mem_v_i(tag_mem_v_li)
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)

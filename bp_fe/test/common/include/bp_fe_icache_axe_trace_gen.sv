@@ -16,7 +16,7 @@ module bp_fe_icache_axe_trace_gen
     ,input [addr_width_p-1:0] addr_i
   );
 
-  // synopsys translate_off 
+  // synopsys translate_off
   logic [addr_width_p-1:0] addr;
   assign addr = addr_i>>(lg_data_mask_width_lp-1);
 

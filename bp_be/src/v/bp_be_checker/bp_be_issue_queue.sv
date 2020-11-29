@@ -21,7 +21,7 @@ module bp_be_issue_queue
    , input [fe_queue_width_lp-1:0]          fe_queue_i
    , input                                  fe_queue_v_i
    , output logic                           fe_queue_ready_o
-   
+
    , output logic [fe_queue_width_lp-1:0]   fe_queue_o
    , output logic                           fe_queue_v_o
    , input                                  fe_queue_yumi_i
@@ -39,7 +39,7 @@ module bp_be_issue_queue
   // ptr_width + 1 for wrap bit
   logic [ptr_width_lp:0] wptr_n, rptr_n, cptr_n;
   logic [ptr_width_lp:0] wptr_r, rptr_r, cptr_r;
-    
+
   // Used to catch up on roll and clear
   logic [ptr_width_lp:0] wptr_jmp, rptr_jmp;
   logic cptr_jmp;
@@ -53,7 +53,7 @@ module bp_be_issue_queue
 
   assign rptr_jmp = roll
                     ? (cptr_r - rptr_r + (ptr_width_lp+1)'(deq))
-                    : read 
+                    : read
                        ? ((ptr_width_lp+1)'(1))
                        : ((ptr_width_lp+1)'(0));
   assign wptr_jmp = clr
@@ -63,16 +63,16 @@ module bp_be_issue_queue
                        : ((ptr_width_lp+1)'(0));
   assign cptr_jmp = deq_v_i;
 
-  wire empty = (rptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp]) 
+  wire empty = (rptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp])
                & (rptr_r[ptr_width_lp] == wptr_r[ptr_width_lp]);
-  wire empty_n = (rptr_n[0+:ptr_width_lp] == wptr_n[0+:ptr_width_lp]) 
+  wire empty_n = (rptr_n[0+:ptr_width_lp] == wptr_n[0+:ptr_width_lp])
                  & (rptr_n[ptr_width_lp] == wptr_n[ptr_width_lp]);
   wire full  = (cptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp])
                & (cptr_r[ptr_width_lp] != wptr_r[ptr_width_lp]);
   wire full_n = (cptr_n[0+:ptr_width_lp] == wptr_n[0+:ptr_width_lp])
                 & (cptr_n[ptr_width_lp] != wptr_n[ptr_width_lp]);
 
-  bsg_circular_ptr 
+  bsg_circular_ptr
    #(.slots_p(2*fe_queue_fifo_els_p), .max_add_p(1))
    cptr
     (.clk(clk_i)
@@ -81,8 +81,8 @@ module bp_be_issue_queue
      ,.o(cptr_r)
      ,.n_o(cptr_n)
      );
-    
-  bsg_circular_ptr 
+
+  bsg_circular_ptr
    #(.slots_p(2*fe_queue_fifo_els_p),.max_add_p(2*fe_queue_fifo_els_p-1))
    wptr
     (.clk(clk_i)
@@ -92,7 +92,7 @@ module bp_be_issue_queue
      ,.n_o(wptr_n)
      );
 
-  bsg_circular_ptr 
+  bsg_circular_ptr
   #(.slots_p(2*fe_queue_fifo_els_p), .max_add_p(2*fe_queue_fifo_els_p-1))
   rptr
    (.clk(clk_i)
@@ -101,8 +101,8 @@ module bp_be_issue_queue
     ,.o(rptr_r)
     ,.n_o(rptr_n)
     );
-  
-  bsg_mem_1r1w 
+
+  bsg_mem_1r1w
   #(.width_p(fe_queue_width_lp), .els_p(fe_queue_fifo_els_p))
   queue_fifo_mem
    (.w_clk_i(clk_i)

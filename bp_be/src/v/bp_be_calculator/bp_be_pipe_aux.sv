@@ -165,7 +165,7 @@ module bp_be_pipe_aux
     ,.out(i2s2d_out)
     ,.exceptionFlags()
     );
-  
+
   assign i2f_result = '{sp_not_dp: decode.ops_v, rec: decode.ops_v ? i2s2d_out : i2d_out};
   assign i2f_fflags = decode.ops_v ? i2s_fflags : i2d_fflags;
 
