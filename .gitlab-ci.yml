@@ -330,8 +330,10 @@ top-riscvdv-vcs:
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCVDV_TESTLIST $CI_CORES
 
+# Verilator 4.104 "internal error"
 top-checkpoint-verilator:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - verilator
