@@ -444,7 +444,6 @@ module bp_be_dcache
   `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, dword_width_p, dcache_assoc_p);
 
   bp_be_dcache_wbuf_entry_s wbuf_entry_in;
-  logic wbuf_success;
   logic wbuf_v_li;
 
   bp_be_dcache_wbuf_entry_s wbuf_entry_out;
@@ -737,7 +736,7 @@ module bp_be_dcache
   always_comb
     case (state_r)
      // Uncached stores and writethrough requests are non-blocking
-      e_ready: state_n = (cache_req_v_o & ~uncached_store_req & ~wt_req) ? e_miss : e_ready;
+      e_ready: state_n = (cache_req_yumi_i & ~uncached_store_req & ~wt_req) ? e_miss : e_ready;
       e_miss : state_n = cache_req_complete_i ? e_ready : e_miss;
       default: state_n = e_ready;
     endcase
@@ -1144,12 +1143,11 @@ module bp_be_dcache
   //   wbuf to have an incoming entry if there's something going into the
   //   write buffer, regardless of if it's poisoned or not
   if (writethrough_p == 0) begin : wb_wbuf
-    assign wbuf_success = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op;
+    assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~decode_tv_r.l2_op & ~flush_i;
   end
   else begin : wt_wbuf
-    assign wbuf_success = wt_req & cache_req_yumi_i;
+    assign wbuf_v_li = wt_req & cache_req_yumi_i;
   end
-  assign wbuf_v_li = wbuf_success & ~flush_i;
   assign wbuf_yumi_li = wbuf_v_lo & ~(decode_lo.load_op & tl_we) & ~data_mem_pkt_yumi_o;
 
   assign bypass_v_li = tv_we & decode_tl_r.load_op;
@@ -1175,7 +1173,6 @@ module bp_be_dcache
     ,.o(data_mem_o)
   );
 
-  // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
   // As an optimization, we could snoop the data_mem_pkt to see if there are any matching entries
   //   in the write buffer, so that the write buffer will only drain if it is full, or if there is
   //   a snoop match. However, this is a critical path, so we simply drain the write buffer on
@@ -1183,7 +1180,7 @@ module bp_be_dcache
   // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
   assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached)
                                ? data_mem_pkt_v
-                               : data_mem_pkt_v & ~(decode_lo.load_op & tl_we) & wbuf_empty_lo & ~wbuf_success;
+                               : data_mem_pkt_v & ~(decode_lo.load_op & tl_we) & wbuf_empty_lo & ~wbuf_v_li;
 
   if (lr_sc_p == e_l1)
     begin : l1_lrsc

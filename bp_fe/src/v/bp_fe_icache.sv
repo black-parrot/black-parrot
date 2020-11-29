@@ -377,30 +377,18 @@ module bp_fe_icache
   assign cache_req_metadata_cast_lo.dirty = '0;
 
   // Cache Miss Tracker
-  enum logic [1:0] {e_ready, e_miss, e_recover} state_n, state_r;
+  enum logic [1:0] {e_ready, e_miss} state_n, state_r;
   wire is_ready   = (state_r == e_ready);
   wire is_miss    = (state_r == e_miss);
-  wire is_recover = (state_r == e_recover);
 
   always_comb
-    begin
-      case (state_r)
-        e_ready:
-          begin
-            state_n = cache_req_yumi_i ? e_miss : e_ready;
-          end
-        e_miss:
-          begin
-            state_n = cache_req_complete_i ? e_ready : e_miss;
-          end
-        e_recover:
-          begin
-            state_n = e_ready;
-          end
-        default: state_n = e_ready;
-      endcase
-    end
+    case (state_r)
+      e_ready  : state_n = cache_req_yumi_i ? e_miss : e_ready;
+      e_miss   : state_n = cache_req_complete_i ? e_ready : e_miss;
+      default: state_n = e_ready;
+    endcase
 
+  //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
       state_r <= e_ready;
