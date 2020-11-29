@@ -101,7 +101,7 @@ module bp_cce_gad
 
   // hit in requesting LCE
   logic req_lce_cached;
-  assign req_lce_cached = lce_cached[req_lce_id];
+  assign req_lce_cached = lce_cached[req_lce_id] & (req_lce_id < num_lce_p);
   // read-only permissions in requesting LCE (block in S, F, or O)
   logic req_lce_ro;
   assign req_lce_ro = req_lce_cached & ((sharers_coh_states_i[req_lce_id] == e_COH_S)
