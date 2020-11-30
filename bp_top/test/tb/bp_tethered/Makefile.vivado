@@ -1,9 +1,13 @@
+XDC_DIR := $(BP_COMMON_DIR)/syn/vivado/xdc
+
 $(BUILD_DIR)/flist.vcs:
 	grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
 	echo wrapper.sv                             >> $@
 
-$(BUILD_DIR)/wrapper.v:
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+$(BUILD_DIR)/wrapper.sv:
+	sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
-SYNTH_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv)
+$(BUILD_DIR)/design.xdc:
+	cp $(XDC_DIR)/$(@F) $@
 
+SYNTH_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv design.xdc)
