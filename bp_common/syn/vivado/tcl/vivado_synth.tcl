@@ -15,30 +15,21 @@ set dir_list [list ]
 foreach x $f {
   # If the item has a file to be added, it starts with $BP_*_DIR
   if {[string match "\$" [string index $x 0]]} {
-    set env_var [string trimleft $x "\$"]
-    regexp {([A-Za-z_$]*)} $env_var a
-    regexp {([/][A-Za-z0-9_./]*)} $x b
-    # Get the environment variable
-    set expanded [set $a]
-    append expanded $b
+    set expanded [subst $x]
     # If not already in the list, add this file to the list
     if {[lsearch -exact $flist $expanded] < 0} {
       lappend flist $expanded
     }
   # If the item starts with +incdir+, directory files may need to be added
   } elseif {[string match "+incdir+*" $x]} {
-      set trimchars "+incdir+\$"
+      set trimchars "+incdir+"
       set temp [string trimleft $x $trimchars]
-      regexp {([A-Za-z_]*)} $temp a
-      regexp {([/][A-Za-z0-9_./]*)} $temp b
-      set expanded $::env($a)
-      append expanded $b
+      set expanded [subst $temp]
       if {[string match "*top*" $expanded]} continue
       lappend dir_list $expanded
   }
 }
-puts $flist
-puts $dir_list
+
 # Add a top wrapper
 set top "wrapper.sv"
 lappend flist $top
