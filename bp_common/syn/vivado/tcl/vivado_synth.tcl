@@ -1,28 +1,29 @@
-set proj_name "blackparrot_test"
-
 # Genesys 2 - xc7k325tffg900-2
 # Artix 7   - xc7a200tfbg676-2
-create_project -force $proj_name ./$proj_name -part $::env(PART)
 
-if {[string equal [get_filesets -quiet sources_1] ""]} {
-  create_fileset -srcset sources_1
-}
+set BP_TOP_DIR $::env(BP_TOP_DIR)
+set BP_COMMON_DIR $::env(BP_COMMON_DIR)
+set BP_BE_DIR $::env(BP_BE_DIR)
+set BP_FE_DIR $::env(BP_FE_DIR)
+set BP_ME_DIR $::env(BP_ME_DIR)
+set BASEJUMP_STL_DIR $::env(BASEJUMP_STL_DIR)
+set HARDFLOAT_DIR $::env(HARDFLOAT_DIR)
 
-set fileset_obj [get_filesets sources_1]
 set f [split [string trim [read [open "flist.vcs" r]]] "\n"]
 set flist [list ]
+set dir_list [list ]
 foreach x $f {
   # If the item has a file to be added, it starts with $BP_*_DIR
   if {[string match "\$" [string index $x 0]]} {
     set env_var [string trimleft $x "\$"]
-    regexp {([A-Za-z_]*)} $env_var a
+    regexp {([A-Za-z_$]*)} $env_var a
     regexp {([/][A-Za-z0-9_./]*)} $x b
     # Get the environment variable
-    set expanded $::env($a)
+    set expanded [set $a]
     append expanded $b
     # If not already in the list, add this file to the list
-    if {[lsearch -exact $flist $x] < 0} {
-      lappend flist [file normalize $x]
+    if {[lsearch -exact $flist $expanded] < 0} {
+      lappend flist $expanded
     }
   # If the item starts with +incdir+, directory files may need to be added
   } elseif {[string match "+incdir+*" $x]} {
@@ -32,78 +33,20 @@ foreach x $f {
       regexp {([/][A-Za-z0-9_./]*)} $temp b
       set expanded $::env($a)
       append expanded $b
-      append expanded "/*v*"
       if {[string match "*top*" $expanded]} continue
-      # Get the files in the directory
-      set check [glob $expanded]
-      foreach item $check {
-        if {[lsearch -exact $flist $item] < 0} {
-          # Need to add bsg_defines and the HardFloat .vi files
-          if {(([string match "*bsg_defines.v*" $item]) || ([string match "*.vi" $item]))} {
-            lappend flist $item
-          # Need to add only those .(s)vh files not included later in the flist file
-          } elseif {([string match "*vh" $item]) && !([string match "*pkg*" $item])} {
-              lappend flist $item
-            }
-        }
-      }
+      lappend dir_list $expanded
   }
 }
+puts $flist
+puts $dir_list
 # Add a top wrapper
 set top "wrapper.sv"
 lappend flist $top
-add_files -norecurse -fileset $fileset_obj $flist
 
-# Set the type for the files
-foreach new_file $flist {
-  set this_file $new_file
-  set this_file [file normalize $this_file]
-  set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$this_file"]]
-  if {[string match "*pkg*" $new_file]} {
-    set_property -name "file_type" -value "SystemVerilog" -objects $file_obj
-  } elseif {[string match "*vh" $new_file]} {
-    set_property -name "file_type" -value "Verilog Header" -objects $file_obj
-  } elseif {[string match "*bsg_defines.v*" $new_file]} {
-    set_property -name "file_type" -value "Verilog Header" -objects $file_obj
-  } elseif {[string match "*.vi" $new_file]} {
-    set_property -name "file_type" -value "Verilog Header" -objects $file_obj
-  } elseif {[string match "*.mem" $new_file]} {
-    set_property -name "file_type" -value "Memory File" -objects $file_obj
-  } else {
-    set_property -name "file_type" -value "SystemVerilog" -objects $file_obj
-  }
-}
+set_part $::env(PART)
+read_verilog -sv $flist
+read_xdc design.xdc
 
-set obj [get_filesets sources_1]
-
-# Ensure there are no warnings or errors
-check_syntax -fileset sources_1
-# Set the design wrapper as the top module
-set_property -name "top" -value "wrapper" -objects $obj
-set_property -name "top_auto_set" -value "0" -objects $obj
-
-# Create 'constrs_1' fileset (if not found)
-if {[string equal [get_filesets -quiet constrs_1] ""]} {
-  create_fileset -constrset constrs_1
-}
-
-# Set 'constrs_1' fileset object
-set obj [get_filesets constrs_1]
-
-# Add/Import constrs file and set constrs file properties
-set filepath "BP_COMMON_DIR"
-set file "[file normalize "$::env($filepath)/syn/vivado/xdc/design.xdc"]"
-add_files -norecurse -fileset $obj [list $file]
-set file_obj [get_files -of_objects [get_filesets constrs_1] [list "*$file"]]
-set_property -name "file_type" -value "XDC" -objects $file_obj
-
-# Set 'constrs_1' fileset properties
-set obj [get_filesets constrs_1]
-set_property -name "target_part" -value $::env(PART) -objects $obj
-
-# Run synthesis
-current_run -synthesis [get_runs synth_1]
-synth_design -part $::env(PART) -constrset constrs_1
+synth_design -top wrapper -part $::env(PART) -include_dirs $dir_list
 set filepath "BP_TOP_DIR"
-# Generate a hierarchical utilization report
-report_utilization -file $::env($filepath)/syn/logs/vivado/hierarchical.rpt -hierarchical -hierarchical_percentages
+report_utilization -file $::env($filepath)/syn/reports/vivado/hierarchical.rpt -hierarchical -hierarchical_percentages
