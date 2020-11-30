@@ -1,6 +1,6 @@
 /*
  * bp_fe_instr_scan.v
- * 
+ *
  * Instr scan check if the intruction is aligned, compressed, or normal instruction.
  * The entire block is implemented in combinational logic, achieved within one cycle.
 */
@@ -9,7 +9,7 @@ module bp_fe_instr_scan
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
- import bp_fe_pkg::*; 
+ import bp_fe_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 

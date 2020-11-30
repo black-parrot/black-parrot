@@ -40,15 +40,15 @@ module bp_io_tile_node
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
   `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
-  
+
   // Tile-side coherence connections
   bp_coh_ready_and_link_s core_lce_req_link_li, core_lce_req_link_lo;
   bp_coh_ready_and_link_s core_lce_cmd_link_li, core_lce_cmd_link_lo;
-  
+
   // Tile side IO connections
   bp_io_ready_and_link_s core_io_cmd_link_li, core_io_cmd_link_lo;
   bp_io_ready_and_link_s core_io_resp_link_li, core_io_resp_link_lo;
-  
+
   bp_io_tile
    #(.bp_params_p(bp_params_p))
    io_tile
@@ -72,7 +72,7 @@ module bp_io_tile_node
      ,.io_resp_link_o(core_io_resp_link_lo)
      );
 
-   
+
   // Network-side coherence connections
 //  bp_coh_ready_and_link_s coh_lce_req_link_li, coh_lce_req_link_lo;
  // bp_coh_ready_and_link_s coh_lce_cmd_link_li, coh_lce_cmd_link_lo;
@@ -120,6 +120,6 @@ module bp_io_tile_node
      ,.tile_link_i({core_io_cmd_link_lo, core_io_resp_link_lo})
      ,.tile_link_o({core_io_cmd_link_li, core_io_resp_link_li})
      );
-   
+
 endmodule
 

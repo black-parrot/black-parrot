@@ -207,7 +207,7 @@ module bp_fe_icache
   logic [icache_assoc_p-1:0]       way_v_tl;
   logic [index_width_lp-1:0]       vaddr_index_tl;
   logic [vtag_width_p-1:0]         vaddr_vtag_tl;
-   
+
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
   assign addr_tag_tl = addr_tl[block_offset_width_lp+index_width_lp+:ptag_width_p];
   assign addr_bank_offset_tl = addr_tl[byte_offset_width_lp+:bank_offset_width_lp];
@@ -329,7 +329,7 @@ module bp_fe_icache
   assign tag_mem_pkt = tag_mem_pkt_i;
   bp_icache_stat_mem_pkt_s stat_mem_pkt;
   assign stat_mem_pkt = stat_mem_pkt_i;
-  
+
   // Find correct max_req_size
   localparam num_bytes_lp = icache_block_width_p >> 3;
   localparam bp_cache_req_size_e max_req_size = (num_bytes_lp == 16)
@@ -337,11 +337,11 @@ module bp_fe_icache
                                                 : (num_bytes_lp == 32)
                                                   ? e_size_32B
                                                   : e_size_64B;
-  
+
   always_comb begin
     cache_req_cast_lo = '0;
     cache_req_v_o = '0;
-    
+
     if (miss_tv) begin
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_miss_load;
@@ -466,8 +466,8 @@ module bp_fe_icache
      ,.data_o(data_mem_last_read_r)
     );
 
-  bsg_decode #(.num_out_p(icache_assoc_p)) 
-    input_offset_decode 
+  bsg_decode #(.num_out_p(icache_assoc_p))
+    input_offset_decode
     (.i(vaddr_offset)
      ,.o(vaddr_offset_dec)
     );
@@ -487,7 +487,7 @@ module bp_fe_icache
 
   assign data_mem_v_li = tl_we
     ? data_mem_bypass
-      ? data_mem_bypass_select 
+      ? data_mem_bypass_select
       : {icache_assoc_p{1'b1}}
     : {icache_assoc_p{data_mem_v}};
 
@@ -545,7 +545,7 @@ module bp_fe_icache
     ,.set_i(tl_we)
     ,.clear_i(tag_mem_w_li)
     ,.data_o(tag_mem_last_read_r)
-  ); 
+  );
 
   assign tag_mem_bypass = (vaddr_index == vaddr_index_tl) & tag_mem_last_read_r;
   assign tag_mem_v_li = (tl_we & ~tag_mem_bypass) | tag_mem_pkt_yumi_o;

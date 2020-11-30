@@ -57,7 +57,6 @@ module bp_be_pipe_mem
    , output logic                         early_v_o
    , output logic [dpath_width_p-1:0]     final_data_o
    , output logic                         final_v_o
-   , output logic [vaddr_width_p-1:0]     final_vaddr_o
 
    , input [trans_info_width_lp-1:0]      trans_info_i
 
@@ -93,7 +92,6 @@ module bp_be_pipe_mem
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dword_width_p)
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
 
@@ -154,7 +152,7 @@ module bp_be_pipe_mem
   logic is_req_mem1, is_req_mem2;
   logic is_store_mem1;
   logic is_fencei_mem1, is_fencei_mem2;
-  logic [rv64_eaddr_width_gp-1:0] eaddr_mem1, eaddr_mem2, eaddr_mem3;
+  logic [rv64_eaddr_width_gp-1:0] eaddr_mem1;
 
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
@@ -299,7 +297,6 @@ module bp_be_pipe_mem
       is_req_mem2 <= '0;
       is_store_mem1 <= '0;
       eaddr_mem1 <= '0;
-      eaddr_mem2 <= '0;
       is_fencei_mem1 <= '0;
       is_fencei_mem2 <= '0;
       load_access_fault_mem2 <= '0;
@@ -314,7 +311,6 @@ module bp_be_pipe_mem
       is_req_mem2 <= is_req_mem1;
       is_store_mem1 <= is_store;
       eaddr_mem1 <= eaddr;
-      eaddr_mem2 <= eaddr_mem1;
       is_fencei_mem1 <= is_fencei;
       is_fencei_mem2 <= is_fencei_mem1;
       load_access_fault_mem2 <= load_access_fault_v;
@@ -323,14 +319,6 @@ module bp_be_pipe_mem
       store_page_fault_mem2 <= store_page_fault_v;
       load_misaligned_mem2 <= load_misaligned_v;
       store_misaligned_mem2 <= store_misaligned_v;
-    end
-  end
-
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      eaddr_mem3 <= '0;
-    end else begin
-      eaddr_mem3 <= eaddr_mem2;
     end
   end
 
@@ -391,7 +379,6 @@ module bp_be_pipe_mem
   assign ready_o                = dcache_ready_lo & ~ptw_busy;
   assign early_data_o           = dcache_early_data;
   assign final_data_o           = dcache_final_data;
-  assign final_vaddr_o          = eaddr_mem3[0+:vaddr_width_p];
 
   wire early_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mem_early_v;
   bsg_dff_chain

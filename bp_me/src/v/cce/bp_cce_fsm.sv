@@ -663,7 +663,7 @@ module bp_cce_fsm
       end // uc_rd
 
       // Uncached store response, send UC Store Done to requesting LCE,
-      // don't modify pending bits 
+      // don't modify pending bits
       else if (mem_resp.header.msg_type.mem == e_bedrock_mem_uc_wr) begin
 
         // handshaking

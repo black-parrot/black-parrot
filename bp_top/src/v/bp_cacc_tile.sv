@@ -21,7 +21,7 @@ module bp_cacc_tile
    , input                                  reset_i
 
    , input [coh_noc_cord_width_p-1:0]       my_cord_i
-   
+
    , input [coh_noc_ral_link_width_lp-1:0]  lce_req_link_i
    , output [coh_noc_ral_link_width_lp-1:0] lce_req_link_o
 
@@ -37,13 +37,13 @@ module bp_cacc_tile
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
- 
-  //io-cce-side connections 
+
+  //io-cce-side connections
   bp_bedrock_lce_req_msg_s  cce_lce_req_li;
   logic cce_lce_req_v_li, cce_lce_req_yumi_lo;
   bp_bedrock_lce_cmd_msg_s cce_lce_cmd_lo;
   logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
-  
+
   bp_bedrock_cce_mem_msg_s cce_io_cmd_lo;
   logic cce_io_cmd_v_lo, cce_io_cmd_ready_li;
   bp_bedrock_cce_mem_msg_s cce_io_resp_li;
@@ -58,7 +58,10 @@ module bp_cacc_tile
   logic             lce_cmd_v_li, lce_cmd_yumi_lo;
   bp_bedrock_lce_cmd_msg_s      lce_cmd_lo;
   logic             lce_cmd_v_lo, lce_cmd_ready_li;
-   
+
+  logic reset_r;
+  always_ff @(posedge clk_i)
+    reset_r <= reset_i;
 
   logic [cce_id_width_p-1:0]  cce_id_li;
   logic [lce_id_width_p-1:0]  lce_id_li;
@@ -76,7 +79,7 @@ module bp_cacc_tile
    #(.bp_params_p(bp_params_p))
    io_cce
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.cce_id_i(cce_id_li)
 
@@ -98,7 +101,7 @@ module bp_cacc_tile
      );
 
 
-////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
   `declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_msg_header_s, cce_block_width_p);
   localparam lce_req_wh_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_msg_header_s), cce_block_width_p);
   bp_lce_req_wormhole_packet_s lce_req_packet_lo, lce_req_packet_li;
@@ -110,8 +113,8 @@ module bp_cacc_tile
   bp_lce_cmd_wormhole_header_s lce_cmd_header_lo, lce_cmd_header_li, cce_lce_cmd_header_lo;
 
   bp_coh_ready_and_link_s lce_cmd_link_li, lce_cmd_link_lo;
-  bp_coh_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;  
-  
+  bp_coh_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;
+
   `declare_bp_lce_resp_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_resp_msg_header_s, cce_block_width_p);
   localparam lce_resp_wh_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_resp_msg_header_s), cce_block_width_p);
   bp_lce_resp_wormhole_packet_s lce_resp_packet_lo;
@@ -134,7 +137,7 @@ module bp_cacc_tile
      )
    lce_req_adapter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(lce_req_packet_lo)
      ,.v_i(lce_req_v_lo)
@@ -165,7 +168,7 @@ module bp_cacc_tile
       )
     lce_resp_adapter_in
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(lce_resp_packet_lo)
      ,.v_i(lce_resp_v_lo)
@@ -191,7 +194,7 @@ module bp_cacc_tile
      )
    cmd_adapter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(lce_cmd_packet_lo)
      ,.v_i(lce_cmd_v_lo)
@@ -205,7 +208,7 @@ module bp_cacc_tile
      ,.yumi_i(lce_cmd_yumi_lo)
      );
   assign lce_cmd_li = '{header: lce_cmd_packet_li.header.msg_hdr, data: lce_cmd_packet_li.data};
-   
+
   bp_me_wormhole_packet_encode_lce_cmd
    #(.bp_params_p(bp_params_p))
    cce_cmd_encode
@@ -222,7 +225,7 @@ module bp_cacc_tile
      )
     cce_lce_cmd_adapter_in
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(cce_lce_cmd_packet_lo)
      ,.v_i(cce_lce_cmd_v_lo)
@@ -234,12 +237,12 @@ module bp_cacc_tile
 
   bp_coh_ready_and_link_s lce_cmd_link_cast_i, lce_cmd_link_cast_o;
   bp_coh_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo;
-  
+
   assign lce_cmd_link_cast_i  = lce_cmd_link_i;
   assign lce_cmd_link_o  = lce_cmd_link_cast_o;
   assign cmd_concentrated_link_li = lce_cmd_link_cast_i;
   assign lce_cmd_link_cast_o = cmd_concentrated_link_lo;
-    
+
   bsg_wormhole_concentrator
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
@@ -249,7 +252,7 @@ module bp_cacc_tile
      )
    cmd_concentrator
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.links_i({cce_lce_cmd_link_lo, lce_cmd_link_lo})
      ,.links_o({cce_lce_cmd_link_li, lce_cmd_link_li})
@@ -265,7 +268,7 @@ module bp_cacc_tile
        #(.bp_params_p(bp_params_p))
        accelerator_link
         (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+         ,.reset_i(reset_r)
 
          ,.lce_id_i(lce_id_li)
 

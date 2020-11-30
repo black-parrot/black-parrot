@@ -53,7 +53,7 @@ module bp_be_director
    , output                           fe_cmd_full_o
 
    , input [branch_pkt_width_lp-1:0]   br_pkt_i
-   , input [commit_pkt_width_lp-1:0]     commit_pkt_i
+   , input [commit_pkt_width_lp-1:0]   commit_pkt_i
 
    , input [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_i
   );
@@ -70,12 +70,12 @@ module bp_be_director
   logic                            fe_cmd_v_li, fe_cmd_ready_lo;
   bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
   bp_be_branch_pkt_s               br_pkt;
-  bp_be_commit_pkt_s                 commit_pkt;
+  bp_be_commit_pkt_s               commit_pkt;
   bp_be_ptw_fill_pkt_s             ptw_fill_pkt;
 
   assign cfg_bus_cast_i = cfg_bus_i;
   assign isd_status = isd_status_i;
-  assign commit_pkt    = commit_pkt_i;
+  assign commit_pkt = commit_pkt_i;
   assign br_pkt       = br_pkt_i;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
 

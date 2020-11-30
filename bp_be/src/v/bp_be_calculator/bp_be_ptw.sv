@@ -51,7 +51,6 @@ module bp_be_ptw
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
-  `declare_bp_be_mem_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
 
   typedef enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eRecvLoad, eWriteBack, eStuck } state_e;
 
@@ -73,7 +72,6 @@ module bp_be_ptw
   logic [vtag_width_p-1:0]           vpn_r, vpn_n;
   logic [ptag_width_p-1:0]           ppn_r, ppn_n, writeback_ppn;
   logic                              ppn_en;
-  logic [vaddr_width_p-1:0]          ptw_pc_r;
   logic [vaddr_width_p-1:0]          ptw_vaddr_r;
 
   logic [page_table_depth_p-1:0] [partial_vpn_width_lp-1:0] partial_vpn;
@@ -132,7 +130,6 @@ module bp_be_ptw
   assign ptw_fill_pkt.instr_page_fault_v = busy_o & dcache_v_r & instr_ptw_r & (common_faults | (pte_is_leaf & ~dcache_data.x));
   assign ptw_fill_pkt.load_page_fault_v  = busy_o & dcache_v_r & load_ptw_r & (common_faults | (pte_is_leaf & ~(dcache_data.r | (dcache_data.x & mstatus_mxr_i))));
   assign ptw_fill_pkt.store_page_fault_v = busy_o & dcache_v_r & store_ptw_r & (common_faults | (pte_is_leaf & ~dcache_data.w));
-  assign ptw_fill_pkt.pc                 = ptw_pc_r;
   assign ptw_fill_pkt.vaddr              = ptw_vaddr_r;
   assign ptw_fill_pkt.entry              = tlb_w_entry;
 
@@ -201,15 +198,6 @@ module bp_be_ptw
      ,.data_i(vpn_n)
      ,.data_o(vpn_r)
     );
-
-  bsg_dff_reset_en #(.width_p(vaddr_width_p))
-    miss_pc_reg
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.en_i(start)
-      ,.data_i(ptw_miss_pkt.pc)
-      ,.data_o(ptw_pc_r)
-      );
 
   bsg_dff_reset_en #(.width_p(vaddr_width_p))
     miss_vaddr_reg
