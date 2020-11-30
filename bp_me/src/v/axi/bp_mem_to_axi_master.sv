@@ -131,8 +131,7 @@ module bp_mem_to_axi_master
     );
 
   // memory command read/write validity
-  logic mem_cmd_header_read_v;
-  logic mem_cmd_header_write_v;
+  logic mem_cmd_header_read_v, mem_cmd_header_write_v;
 
   assign mem_cmd_header_read_v  = mem_cmd_header_v_i & mem_cmd_header_cast_i.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_pre};
   assign mem_cmd_header_write_v = mem_cmd_header_v_i & mem_cmd_header_cast_i.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
@@ -143,7 +142,7 @@ module bp_mem_to_axi_master
 
   assign burst_length = ((2**mem_cmd_header_r.size << 3) > axi_data_width_p) 
                       ? (2**(mem_cmd_header_r.size  - lg_axi_data_width_in_byte_lp)) - 1
-                      : 8'h00;//: 8'h01;
+                      : 8'h00;
 
   // Declaring all possible states
   typedef enum logic [2:0] {
@@ -174,7 +173,7 @@ module bp_mem_to_axi_master
     m_axi_araddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_cast_i.addr};
     m_axi_arlen_o   = ((2**mem_cmd_header_cast_i.size << 3) > axi_data_width_p)               //if data transfer size is larger than data bus width
                     ? (2**(mem_cmd_header_cast_i.size - lg_axi_data_width_in_byte_lp)) - 1    //then it's multiple transfers, otherwise
-                    : 8'h00;//: 8'h01;                                                        //it's one transfer
+                    : 8'h00;                                                                  //it's one transfer
     m_axi_arsize_o  = mem_cmd_header_cast_i.size;              
     m_axi_arburst_o = axi_burst_type_p;
     m_axi_arvalid_o = mem_cmd_header_read_v;
@@ -186,11 +185,11 @@ module bp_mem_to_axi_master
     // READ DATA CHANNEL SIGNALS
     m_axi_rready_o  = '0;
 
-    // WRITE ADDRRESS CHANNEL SIGNALS
+    // WRITE ADDRESS CHANNEL SIGNALS
     m_axi_awaddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_cast_i.addr};
     m_axi_awlen_o   = ((2**mem_cmd_header_cast_i.size << 3) > axi_data_width_p)
                     ? (2**(mem_cmd_header_cast_i.size - lg_axi_data_width_in_byte_lp)) - 1
-                    : 8'h00;//: 8'h01;
+                    : 8'h00;
     m_axi_awsize_o  = mem_cmd_header_cast_i.size;
     m_axi_awburst_o = axi_burst_type_p;
     m_axi_awvalid_o = mem_cmd_header_write_v;
@@ -315,12 +314,12 @@ module bp_mem_to_axi_master
   // Sequential Logic
   always_ff @(posedge aclk_i) begin
     if (~aresetn_i) begin
-      state_r           <= e_wait;
-      awburst_cnt_r     <= '0;
+      state_r       <= e_wait;
+      awburst_cnt_r <= '0;
     end
     else begin
-      state_r           <= state_n;
-      awburst_cnt_r     <= awburst_cnt_n;
+      state_r       <= state_n;
+      awburst_cnt_r <= awburst_cnt_n;
     end
   end
   
