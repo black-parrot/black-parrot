@@ -44,10 +44,13 @@ module bp_sacc_zipline
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
    
-  bp_bedrock_cce_mem_msg_s io_resp_cast_o;
-  bp_bedrock_cce_mem_msg_header_s resp_header; 
+  bp_bedrock_cce_mem_msg_s io_resp_cast_o, io_resp_cast_i;
+  bp_bedrock_cce_mem_msg_header_s resp_header, cmd_header; 
   bp_bedrock_cce_mem_msg_s io_cmd_cast_i, io_cmd_cast_o;
+  bp_bedrock_cce_mem_payload_s mem_cmd_payload;
 
+  assign io_resp_cast_i = io_resp_i;
+   
  // bp_cce_mem_msg_s io_resp_cast_i;
  // bp_cce_mem_msg_s io_cmd_cast_o;
   
@@ -155,12 +158,17 @@ assign ob_tready= 1'b1;
 logic           dma_enable;
 logic [63:0]    dma_address;
 assign dma_enable = io_cmd_v_i & (local_addr_li.dev == 4'd2) & (local_addr_li.nonlocal == 9'd0);//device number 2 is dma
+
+assign mem_cmd_payload.lce_id = lce_id_i;
+assign mem_cmd_payload.uncached = 1'b1;
+   
+   
 assign io_cmd_o = io_cmd_cast_o;
 
    
 always_ff @(posedge clk_i) 
 begin
-   if (io_cmd_v_i  & (local_addr_li.nonlocal == 9'd0) /*&  (global_addr_li.did == '0)*/)
+   if (io_cmd_v_i  & (local_addr_li.dev == 4'd1) & (local_addr_li.nonlocal == 9'd0) /*&  (global_addr_li.did == '0)*/)
      begin
         resp_size    <= io_cmd_cast_i.header.size;
         resp_payload <= io_cmd_cast_i.header.payload;
@@ -194,16 +202,22 @@ begin
      end
    else if(dma_enable)
      begin
-        io_resp_v_o  <= 1'b0;
-        ib_tvalid    <= 1'b0;
-        ib_tdata     <= 64'd0;
-        ib_tid       <= 1'b0;
-        ib_tlast     <= 1'b0;
-        io_cmd_v_o   <= io_cmd_yumi_i;
-        dma_address  <= dma_enable ? io_cmd_cast_i.data : 64'd0;
+        io_resp_v_o    <= 1'b0;
+        ib_tvalid      <= 1'b0;
+        ib_tdata       <= 64'd0;
+        ib_tid         <= 1'b0;
+        ib_tlast       <= 1'b0;
+        //io_cmd_v_o     <= io_cmd_yumi_i; //wrong because io_cmd_v_o needs to be 1 to change io_cmd_yumi_i to 1
+        io_cmd_v_o     <= 1'b1;
+        io_cmd_cast_o.header.payload      <= mem_cmd_payload;
+        io_cmd_cast_o.header.size         <= 3'b011;//8 byte
+        io_cmd_cast_o.header.addr         <= io_cmd_cast_i.data;
+        io_cmd_cast_o.header.msg_type.mem <= e_bedrock_mem_uc_rd;
+        dma_address    <= io_cmd_cast_i.data;
      end
    else
      begin
+        dma_address  <= '0;
         io_resp_v_o  <= 1'b0;
         ib_tvalid    <= 1'b0;
         ib_tdata     <= 64'd0;
