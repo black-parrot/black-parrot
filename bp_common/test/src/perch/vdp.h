@@ -8,7 +8,7 @@
 #define CACCEL_VADD_BASE_ADDR ((uint64_t *)(0x05000000))
 #define SACCEL_VDP_BASE_ADDR  (CONFIG == 1) ? ((uint64_t *)(0x02000000)) : ((uint64_t *)(0x06000000))
 #define SACCEL_VADD_BASE_ADDR ((uint64_t *)(0x07000000))
-#define SACCEL_VDP_MEM_BASE   ((uint64_t *)(0x2000000000))
+#define SACCEL_VDP_MEM_BASE   ((uint64_t *)(0x1000000000))
 #define SACCEL_VADD_MEM_BASE  ((uint64_t *)(0x3000000000))
 
 #define ACCEL_VPD_INPUT_A_PTR    0
@@ -27,6 +27,7 @@ struct VDP_CSR
   uint64_t *input_b_ptr;
   uint64_t input_length;
   uint64_t *resp_ptr;
+  uint64_t *tlv_header_ptr;
 };
 
 #define TLV_TYPE       0 

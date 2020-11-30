@@ -178,7 +178,7 @@ module bp_sacc_tile
      ,.yumi_i(lce_lce_cmd_yumi_lo)
      );
 
-/*
+
    assign lce_lce_cmd_li = '{header: lce_cmd_packet_li.header.msg_hdr, data: lce_cmd_packet_li.data};
 
   if (sacc_type_p == e_sacc_vdp)
@@ -192,7 +192,7 @@ module bp_sacc_tile
          ,.lce_id_i(lce_id_li)
 
          ,.io_cmd_i(cce_io_cmd_lo)
-         ,.io_cmd_v_i(cce_io_cmd_v_lo)
+         ,.io_cmd_vc_i(cce_io_cmd_v_lo)
          ,.io_cmd_ready_o(cce_io_cmd_ready_li)
 
          ,.io_resp_o(cce_io_resp_li)
@@ -207,12 +207,9 @@ module bp_sacc_tile
          ,.io_resp_v_i(lce_io_resp_v_lo)
          ,.io_resp_ready_o(lce_io_resp_ready_li)
          );
-    end*/
-
-   //assign lce_lce_cmd_li = lce_cmd_packet_li.payload;
-   assign lce_lce_cmd_li = '{header: lce_cmd_packet_li.header.msg_hdr, data: lce_cmd_packet_li.data};
+    end
     
-if(sacc_type_p == e_sacc_zipline)
+else if(sacc_type_p == e_sacc_zipline)
   begin: sacc_zipline
   bp_sacc_zipline
    #(.bp_params_p(bp_params_p))

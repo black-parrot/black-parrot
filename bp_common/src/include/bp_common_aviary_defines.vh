@@ -37,7 +37,7 @@
   
   typedef enum logic [15:0]{
     e_sacc_vdp
-    , e_sacc_zipline
+    ,e_sacc_zipline
   } bp_sacc_type_e;
   
   typedef enum logic [15:0]{
@@ -126,7 +126,6 @@
     // 0: boots in M-mode, not debug-mode
     // 1: boots in M-mode, debug-mode
     integer boot_in_debug;
-
 
     // Branch metadata information for the Front End
     // Must be kept consistent with FE
