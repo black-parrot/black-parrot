@@ -38,4 +38,13 @@
 #define MEM_CMD_UC_WR 3
 #define MEM_CMD_PRE 4
 
+#define SIZE_1 0
+#define SIZE_2 1
+#define SIZE_4 2
+#define SIZE_8 3
+#define SIZE_16 4
+#define SIZE_32 5
+#define SIZE_64 6
+#define SIZE_128 7
+
 #endif

@@ -437,6 +437,8 @@ module bp_cce
       ,.addr_v_o(dir_addr_v_lo)
       ,.addr_o(dir_addr_lo)
       ,.addr_dst_gpr_o(dir_addr_dst_gpr_lo)
+      // Debug
+      ,.cce_id_i(cfg_bus_cast_i.cce_id)
       );
 
   // Pending Bits
@@ -481,6 +483,8 @@ module bp_cce
       ,.req_lce_i(mshr_lo.lce_id)
       ,.req_type_flag_i(mshr_lo.flags[e_opd_rqf])
       ,.lru_coh_state_i(mshr_lo.lru_coh_state)
+      ,.atomic_req_flag_i(mshr_lo.flags[e_opd_arf])
+      ,.uncached_req_flag_i(mshr_lo.flags[e_opd_ucf])
 
       ,.req_addr_way_o(gad_req_addr_way_lo)
       ,.owner_lce_o(gad_owner_lce_lo)
@@ -513,6 +517,7 @@ module bp_cce
       ,.alu_res_i(alu_res_lo)
 
       ,.lce_req_header_i(lce_req.header)
+      ,.lce_req_v_i(lce_req_v_i)
       ,.lce_resp_header_i(lce_resp.header)
       ,.mem_resp_header_i(mem_resp.header)
 

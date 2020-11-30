@@ -83,6 +83,7 @@ update-cache: &update-cache-manual
     - me_dev
     - top_dev
     - sw_dev
+    - me_dev_fix_ci
   before_script:
     - echo "Forcefully updating submodules"
     - git submodule update --init --force
@@ -345,8 +346,10 @@ top-riscvdv-vcs:
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCVDV_TESTLIST $CI_CORES
 
+# Verilator 4.104 "internal error"
 top-checkpoint-verilator:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - verilator

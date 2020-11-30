@@ -233,9 +233,9 @@ typedef enum {
   // special flags from GAD
   ,e_opd_rf                              = 0xB // requesting LCE needs replacement
   ,e_opd_uf                              = 0xC // rqf & (rsf | rof | rff)
-  // 1101 - unused
-  // 1110 - unused
-  // 1111 - unused
+  ,e_opd_arf                             = 0xD // atomic request
+  ,e_opd_anrf                            = 0xE // atomic no return
+  ,e_opd_rcf                             = 0xF // request to coherent memory
 
   ,e_opd_req_lce                         = 0x0 // MSHR.lce_id
   ,e_opd_req_addr                        = 0x1 // MSHR.paddr
@@ -296,6 +296,9 @@ typedef enum {
   ,e_flag_cff                   = 1024 // cached F by other flag
   ,e_flag_rf                    = 2048 // replacement flag
   ,e_flag_uf                    = 4096 // upgrade flag
+  ,e_flag_arf                   = 8192 // atomic request flag
+  ,e_flag_anrf                  = 16384 // atomic no return flag
+  ,e_flag_rcf                   = 32768 // request to coherent memory flag
 } bp_cce_inst_flag_onehot_e;
 
 #define bp_cce_inst_num_flags 16

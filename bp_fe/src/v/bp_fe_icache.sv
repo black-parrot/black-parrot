@@ -64,7 +64,8 @@ module bp_fe_icache
     // Cache Engine Interface
     , output logic [icache_req_width_lp-1:0]           cache_req_o
     , output logic                                     cache_req_v_o
-    , input                                            cache_req_ready_i
+    , input                                            cache_req_yumi_i
+    , input                                            cache_req_busy_i
     , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
     , output logic                                     cache_req_metadata_v_o
     , input                                            cache_req_critical_i
@@ -345,18 +346,18 @@ module bp_fe_icache
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_miss_load;
       cache_req_cast_lo.size = max_req_size;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = 1'b1;
     end
     else if (uncached_req) begin
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_uc_load;
       cache_req_cast_lo.size = e_size_4B;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = 1'b1;
     end
     else if (fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_lo.msg_type = e_cache_clear;
-      cache_req_v_o = cache_req_ready_i & (l1_coherent_p == 0);
+      cache_req_v_o = (l1_coherent_p == 0);
     end
   end
 
@@ -367,7 +368,7 @@ module bp_fe_icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(cache_req_v_o)
+     ,.data_i(cache_req_yumi_i)
      ,.data_o(cache_req_metadata_v_o)
      );
 
@@ -376,37 +377,25 @@ module bp_fe_icache
   assign cache_req_metadata_cast_lo.dirty = '0;
 
   // Cache Miss Tracker
-  enum logic [1:0] {e_ready, e_miss, e_recover} state_n, state_r;
+  enum logic [1:0] {e_ready, e_miss} state_n, state_r;
   wire is_ready   = (state_r == e_ready);
   wire is_miss    = (state_r == e_miss);
-  wire is_recover = (state_r == e_recover);
 
   always_comb
-    begin
-      case (state_r)
-        e_ready:
-          begin
-            state_n = cache_req_v_o ? e_miss : e_ready;
-          end
-        e_miss:
-          begin
-            state_n = cache_req_complete_i ? e_ready : e_miss;
-          end
-        e_recover:
-          begin
-            state_n = e_ready;
-          end
-        default: state_n = e_ready;
-      endcase
-    end
+    case (state_r)
+      e_ready  : state_n = cache_req_yumi_i ? e_miss : e_ready;
+      e_miss   : state_n = cache_req_complete_i ? e_ready : e_miss;
+      default: state_n = e_ready;
+    endcase
 
+  //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
       state_r <= e_ready;
     else
       state_r <= state_n;
 
-  assign ready_o = is_ready & cache_req_ready_i & ~cache_req_v_o;
+  assign ready_o = is_ready & ~cache_req_busy_i;
 
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
                               | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
