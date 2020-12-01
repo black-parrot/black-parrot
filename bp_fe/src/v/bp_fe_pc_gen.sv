@@ -16,15 +16,14 @@ module bp_fe_pc_gen
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
-   , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
    , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
    )
   (input                                             clk_i
    , input                                           reset_i
 
-   , output [mem_cmd_width_lp-1:0]                   mem_cmd_o
-   , output                                          mem_cmd_v_o
-   , input                                           mem_cmd_yumi_i
+   , output [vaddr_width_p-1:0]                      next_pc_o
+   , output                                          next_pc_v_o
+   , input                                           next_pc_yumi_i
 
    , output [rv64_priv_width_gp-1:0]                 mem_priv_o
    , output                                          mem_translation_en_o
@@ -47,10 +46,8 @@ module bp_fe_pc_gen
 `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
 `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p);
 
-bp_fe_mem_cmd_s mem_cmd_cast_o;
 bp_fe_mem_resp_s mem_resp_cast_i;
 
-assign mem_cmd_o       = mem_cmd_cast_o;
 assign mem_resp_cast_i = mem_resp_i;
 
 // branch prediction wires
@@ -84,7 +81,6 @@ wire [vaddr_width_p-1:0] pc_if1 = pc_gen_stage_r[0].pc;
 wire [vaddr_width_p-1:0] pc_if2 = pc_gen_stage_r[1].pc;
 
 // Flags for valid FE commands
-wire fetch_v          = mem_cmd_yumi_i & (mem_cmd_cast_o.op == e_fe_op_fetch);
 wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
 wire pc_redirect_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
 wire itlb_fill_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
@@ -227,7 +223,7 @@ wire btb_taken = btb_br_tgt_v_lo & (bht_val_lo[1] | btb_br_tgt_jmp_lo);
 always_comb
   begin
     pc_gen_stage_n[0]            = '0;
-    pc_gen_stage_n[0].v          = fetch_v;
+    pc_gen_stage_n[0].v          = next_pc_yumi_i;
 
     // Next PC calculation
     // load boot pc on reset command
@@ -426,40 +422,15 @@ bsg_dff_reset_en
 // This may cause us to fetch during an I$ miss or a with a full queue.
 // FE cmds normally flush the queue, so we don't expect this to affect
 //   power much in practice.
-assign mem_cmd_v_o = cmd_nonattaboy_v || (~is_wait & fe_queue_ready_i & ~flush);
-always_comb
-  begin
-    mem_cmd_cast_o = '0;
-
-    if (icache_fence_v)
-      begin
-        mem_cmd_cast_o.op                   = e_fe_op_icache_fence;
-        mem_cmd_cast_o.operands.fetch.vaddr = fe_cmd_cast_i.vaddr;
-      end
-    else if (itlb_fence_v)
-      begin
-        mem_cmd_cast_o.op                   = e_fe_op_tlb_fence;
-        mem_cmd_cast_o.operands.fetch.vaddr = fe_cmd_cast_i.vaddr;
-      end
-    else if (itlb_fill_v)
-      begin
-        mem_cmd_cast_o.op                  = e_fe_op_tlb_fill;
-        mem_cmd_cast_o.operands.fill.vtag  = fe_cmd_cast_i.vaddr[vaddr_width_p-1:page_offset_width_p];
-        mem_cmd_cast_o.operands.fill.entry = fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf;
-      end
-    else
-      begin
-        mem_cmd_cast_o.op                   = e_fe_op_fetch;
-        mem_cmd_cast_o.operands.fetch.vaddr = pc_gen_stage_n[0].pc;
-      end
-  end
+assign next_pc_v_o = ~is_wait & (fe_queue_ready_i | fe_cmd_v_i);
+assign next_pc_o = pc_gen_stage_n[0].pc;
 
 assign mem_poison_o         = flush | ovr_taken | ovr_ret;
 assign mem_priv_o           = shadow_priv_w ? shadow_priv_n : shadow_priv_r;
 assign mem_translation_en_o = shadow_translation_en_w ? shadow_translation_en_n : shadow_translation_en_r;
 
 // Handshaking signals
-assign fe_cmd_yumi_o = attaboy_v | (fe_cmd_v_i & mem_cmd_yumi_i);
+assign fe_cmd_yumi_o = fe_cmd_v_i;
 
 // Organize the FE queue message
 assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v);

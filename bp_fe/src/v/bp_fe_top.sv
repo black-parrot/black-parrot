@@ -62,16 +62,19 @@ module bp_fe_top
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_fe_mem_structs(vaddr_width_p, icache_sets_p, icache_block_width_p, vtag_width_p, ptag_width_p)
+  bp_fe_cmd_s fe_cmd_cast_i;
+  assign fe_cmd_cast_i = fe_cmd_i;
 
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  bp_fe_mem_cmd_s  mem_cmd_lo;
-  logic            mem_cmd_v_lo, mem_cmd_yumi_li;
   logic [rv64_priv_width_gp-1:0]  mem_priv_lo;
   logic            mem_poison_lo, mem_translation_en_lo;
   bp_fe_mem_resp_s mem_resp_li;
   logic            mem_resp_v_li;
+
+  logic [vaddr_width_p-1:0] next_pc_lo;
+  logic next_pc_v_lo, next_pc_yumi_li;
 
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
@@ -79,9 +82,9 @@ module bp_fe_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_o(mem_cmd_lo)
-     ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
+     ,.next_pc_o(next_pc_lo)
+     ,.next_pc_v_o(next_pc_v_lo)
+     ,.next_pc_yumi_i(next_pc_yumi_li)
 
      ,.mem_priv_o(mem_priv_lo)
      ,.mem_translation_en_o(mem_translation_en_lo)
@@ -102,10 +105,16 @@ module bp_fe_top
   logic instr_page_fault_lo, instr_access_fault_lo, itlb_miss_lo;
 
   logic fetch_ready;
-  wire itlb_fence_v = mem_cmd_v_lo & (mem_cmd_lo.op == e_fe_op_tlb_fence);
-  wire itlb_fill_v  = mem_cmd_v_lo & (mem_cmd_lo.op == e_fe_op_tlb_fill);
-  wire fetch_v      = fetch_ready & mem_cmd_v_lo & (mem_cmd_lo.op == e_fe_op_fetch);
-  wire fencei_v     = fetch_ready & mem_cmd_v_lo & (mem_cmd_lo.op == e_fe_op_icache_fence);
+  assign next_pc_yumi_li = next_pc_v_lo & fetch_ready;
+  wire fetch_v = next_pc_yumi_li;
+  
+  wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
+  wire pc_redirect_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
+  wire itlb_fill_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
+  wire icache_fence_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
+  wire itlb_fence_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
+  wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
+  wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
   logic fetch_v_r, fetch_v_rr;
   bp_fe_tlb_entry_s itlb_r_entry, entry_lo, passthrough_entry;
@@ -119,8 +128,11 @@ module bp_fe_top
 
      ,.v_i((fetch_v | itlb_fill_v) & mem_translation_en_lo)
      ,.w_i(itlb_fill_v)
-     ,.vtag_i(itlb_fill_v ? mem_cmd_lo.operands.fill.vtag : mem_cmd_lo.operands.fetch.vaddr[vaddr_width_p-1-:vtag_width_p])
-     ,.entry_i(mem_cmd_lo.operands.fill.entry)
+     ,.vtag_i(itlb_fill_v
+              ? fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p]
+              : next_pc_lo[vaddr_width_p-1-:vtag_width_p]
+              )
+     ,.entry_i(fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf)
 
      ,.v_o(itlb_v_lo)
      ,.miss_v_o(itlb_miss_lo)
@@ -135,7 +147,7 @@ module bp_fe_top
      ,.reset_i(reset_i)
      ,.en_i(fetch_v)
 
-     ,.data_i(mem_cmd_lo.operands.fetch.vaddr[vaddr_width_p-1-:vtag_width_p])
+     ,.data_i(next_pc_lo[vaddr_width_p-1-:vtag_width_p])
      ,.data_o(vtag_r)
     );
 
@@ -166,8 +178,8 @@ module bp_fe_top
 
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
-  assign icache_pkt = '{vaddr: mem_cmd_lo.operands.fetch.vaddr
-                        ,op  : fencei_v ? e_icache_fencei : e_icache_fetch
+  assign icache_pkt = '{vaddr: next_pc_lo
+                        ,op  : icache_fence_v ? e_icache_fencei : e_icache_fetch
                         };
   logic instr_access_fault_v, instr_page_fault_v;
   bp_fe_icache
@@ -179,7 +191,7 @@ module bp_fe_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.icache_pkt_i(icache_pkt)
-     ,.v_i(fetch_v | fencei_v)
+     ,.v_i(fetch_v | icache_fence_v)
      ,.ready_o(fetch_ready)
 
      ,.ptag_i(ptag_li)
@@ -253,8 +265,6 @@ module bp_fe_top
 
   assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v);
   assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_lo & (instr_priv_page_fault | instr_exe_page_fault);
-
-  assign mem_cmd_yumi_li = itlb_fence_v | itlb_fill_v | fetch_v | fencei_v;
 
   assign mem_resp_v_li   = fetch_v_rr;
   assign mem_resp_li     = '{instr_access_fault: instr_access_fault_r
