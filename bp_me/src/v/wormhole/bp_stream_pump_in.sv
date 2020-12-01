@@ -13,6 +13,7 @@ module bp_stream_pump_in
    // Bitmask which determines which message types have a data payload
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter payload_mask_p = 0
+   , parameter stream_mask_p = 0
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
@@ -116,10 +117,10 @@ module bp_stream_pump_in
   assign last_cnt  = first_cnt + num_stream - 1'b1;
   
   wire has_data = payload_mask_p[mem_header_lo.msg_type];
-  wire single_beat = (first_cnt == last_cnt) | (resp_payload_lp & ~has_data);
-  
+  wire is_stream = stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
+
   assign stream_cnt = stream_new_o ? first_cnt : current_cnt;
-  assign is_last_cnt = (stream_cnt == last_cnt) | single_beat;
+  assign is_last_cnt = (stream_cnt == last_cnt) | ~is_stream;
 
   always_comb
     begin
@@ -133,7 +134,7 @@ module bp_stream_pump_in
 
       cnt_up = fsm_ready_and_i & fsm_v_o & ~is_last_cnt;
       stream_done_o = is_last_cnt & fsm_ready_and_i & fsm_v_o; // also used for credits return
-      stream_new_o = fsm_v_o & ~single_beat & ~streaming_r;
+      stream_new_o = fsm_v_o & is_stream & ~streaming_r;
 
       mem_yumi_li = has_data ? (fsm_ready_and_i & fsm_v_o) : stream_done_o;
     end
