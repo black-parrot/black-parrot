@@ -59,12 +59,6 @@ $BP_ME_DIR/src/include/v/bp_cce_pkg.sv
 # HardFloat packages
 $BP_BE_DIR/src/include/bp_be_hardfloat_pkg.sv
 
-$BP_ME_DIR/src/include/v/bp_me_pkg.vh
-$BP_ME_DIR/src/include/v/bp_cce_pkg.v
-
-
-# HardFloat packages
-$BP_BE_DIR/src/include/bp_be_hardfloat_pkg.vh
 
 #zipline
 
@@ -345,14 +339,13 @@ $BP_ME_DIR/src/v/wormhole/bp_stream_to_lite.sv
 $BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
 $BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
 ## TOP
-<<<<<<< HEAD
-
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
 $BP_TOP_DIR/src/v/bp_cacc_tile.sv
 $BP_TOP_DIR/src/v/bp_cacc_tile_node.sv
 $BP_TOP_DIR/src/v/bp_cacc_complex.sv
 $BP_TOP_DIR/src/v/bp_sacc_vdp.sv
+$BP_TOP_DIR/src/v/bp_sacc_zipline.sv
 $BP_TOP_DIR/src/v/bp_sacc_tile.sv
 $BP_TOP_DIR/src/v/bp_sacc_tile_node.sv
 $BP_TOP_DIR/src/v/bp_sacc_complex.sv

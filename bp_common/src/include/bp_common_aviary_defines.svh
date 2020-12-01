@@ -3,6 +3,7 @@
  * bp_common_aviary_defines.svh
  *
  */
+
 `ifndef BP_COMMON_AVIARY_DEFINES_VH
 `define BP_COMMON_AVIARY_DEFINES_VH
 

@@ -196,7 +196,7 @@ module bp_sacc_tile
          ,.lce_id_i(lce_id_li)
 
          ,.io_cmd_i(cce_io_cmd_lo)
-         ,.io_cmd_vc_i(cce_io_cmd_v_lo)
+         ,.io_cmd_v_i(cce_io_cmd_v_lo)
          ,.io_cmd_ready_o(cce_io_cmd_ready_li)
 
          ,.io_resp_o(cce_io_resp_li)
