@@ -13,6 +13,7 @@ module bp_stream_pump_out
    // Bitmask which determines which message types have a data payload
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter payload_mask_p = 0
+   , parameter stream_mask_p = 0
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
 
@@ -85,10 +86,10 @@ module bp_stream_pump_out
   assign last_cnt  = first_cnt + num_stream - 1'b1;
   
   wire has_data = payload_mask_p[fsm_base_header_cast_i.msg_type];
-  wire single_beat = (first_cnt == last_cnt) | (cmd_payload_lp & ~has_data);
+  wire is_stream = stream_mask_p[fsm_base_header_cast_i.msg_type] & ~(first_cnt == last_cnt);
   
   assign stream_cnt_o = set_cnt ? first_cnt : current_cnt;
-  assign is_last_cnt = (stream_cnt_o == last_cnt) | single_beat;
+  assign is_last_cnt = (stream_cnt_o == last_cnt) | ~is_stream;
 
   always_comb 
     begin
@@ -98,7 +99,7 @@ module bp_stream_pump_out
 
       stream_done_o = mem_ready_and_i & mem_v_o & is_last_cnt; 
 
-      if (single_beat | has_data)
+      if (~is_stream | has_data)
         begin
           // handle message size <= stream_data_width_p ｜ command w/o data payload ｜ message size > stream_data_width_p w/ data payload
           mem_v_o = fsm_v_i;

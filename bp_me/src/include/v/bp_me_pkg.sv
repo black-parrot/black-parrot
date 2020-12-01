@@ -14,5 +14,8 @@ package bp_me_pkg;
   localparam mem_cmd_payload_mask_gp  = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr);
   localparam mem_resp_payload_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd);
 
+  localparam mem_stream_wr_mask_gp = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr);
+  localparam mem_stream_rd_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd);
+
 endpackage : bp_me_pkg
 
