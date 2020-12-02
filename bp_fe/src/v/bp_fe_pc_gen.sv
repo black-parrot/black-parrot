@@ -110,11 +110,7 @@ always_comb
     // Next PC calculation
     // load boot pc on reset command
     // if we need to redirect or load boot pc on reset
-    if (cmd_nonattaboy_v)
-      begin
-        pc_gen_stage_n[0].pc = fe_cmd_cast_i.vaddr;
-      end
-    else if (resume_v_i)
+    if (resume_v_i)
         pc_gen_stage_n[0].pc = resume_pc_i;
     else if (ovr_ret)
         pc_gen_stage_n[0].pc = return_addr_r;

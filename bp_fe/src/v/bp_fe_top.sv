@@ -165,18 +165,19 @@ module bp_fe_top
   // Change the resume pc on redirect command, else save the PC in IF2 while running
   logic [vaddr_width_p-1:0] pc_resume_n, pc_resume_r;
   assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.vaddr : vaddr_rr;
-  bsg_dff_reset_en
+  bsg_dff_reset_en_bypass
    #(.width_p(vaddr_width_p))
    pc_resume_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(cmd_nonattaboy_v | fetch_instr_v_li)
+     ,.en_i(cmd_nonattaboy_v | fetch_instr_v_li | fetch_exception_v_li | fetch_fail_v_li)
   
      ,.data_i(pc_resume_n)
      ,.data_o(pc_resume_r)
      );
   assign resume_pc_li = pc_resume_r;
-  assign resume_v_li = ~is_run;
+  // TODO: Replay logic here is wonky
+  assign resume_v_li = (is_stall & next_pc_yumi_li) | cmd_nonattaboy_v;
 
   //assign next_pc_yumi_li = ~is_wait & icache_ready & (fe_queue_ready_i | cmd_nonattaboy_v);
   assign next_pc_yumi_li = cmd_nonattaboy_v | (~is_wait & icache_ready & fe_queue_ready_i);
