@@ -15,8 +15,6 @@ module bp_fe_pc_gen
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-
-   , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -29,8 +27,12 @@ module bp_fe_pc_gen
    , output                                          mem_translation_en_o
    , output                                          mem_poison_o
 
-   , input [mem_resp_width_lp-1:0]                   mem_resp_i
-   , input                                           mem_resp_v_i
+   , input [instr_width_p-1:0]                       fetch_i
+   , input                                           fetch_v_i
+   , input                                           fetch_itlb_miss_i
+   , input                                           fetch_instr_access_fault_i
+   , input                                           fetch_instr_page_fault_i
+   , input                                           fetch_icache_miss_i
 
    , input [fe_cmd_width_lp-1:0]                     fe_cmd_i
    , input                                           fe_cmd_v_i
@@ -43,12 +45,7 @@ module bp_fe_pc_gen
 
 `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
-`declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
 `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p);
-
-bp_fe_mem_resp_s mem_resp_cast_i;
-
-assign mem_resp_cast_i = mem_resp_i;
 
 // branch prediction wires
 logic [vaddr_width_p-1:0]       br_target;
@@ -135,16 +132,16 @@ bsg_dff_reset_en
 // Until we support C, must be aligned to 4 bytes
 // There's also an interesting question about physical alignment (I/O devices, etc)
 //   But let's punt that for now...
-wire itlb_miss_exception          = v_if2 & (mem_resp_v_i & mem_resp_cast_i.itlb_miss);
-wire instr_access_fault_exception = v_if2 & (mem_resp_v_i & mem_resp_cast_i.instr_access_fault);
-wire instr_page_fault_exception   = v_if2 & (mem_resp_v_i & mem_resp_cast_i.instr_page_fault);
+wire itlb_miss_exception          = v_if2 & (fetch_v_i & fetch_itlb_miss_i);
+wire instr_access_fault_exception = v_if2 & (fetch_v_i & fetch_instr_access_fault_i);
+wire instr_page_fault_exception   = v_if2 & (fetch_v_i & fetch_instr_page_fault_i);
 
 wire fetch_fail     = v_if2 & ~fe_queue_v_o;
 wire queue_miss     = v_if2 & ~fe_queue_ready_i;
-wire icache_miss    = v_if2 & (mem_resp_v_i & mem_resp_cast_i.icache_miss);
+wire icache_miss    = v_if2 & (fetch_v_i & fetch_icache_miss_i);
 wire fe_exception_v = v_if2 & (instr_page_fault_exception | instr_access_fault_exception | itlb_miss_exception);
 wire flush          = fe_exception_v | icache_miss | queue_miss | cmd_nonattaboy_v;
-wire fe_instr_v     = v_if2 & mem_resp_v_i & ~flush;
+wire fe_instr_v     = v_if2 & fetch_v_i & ~flush;
 
 // FSM
 enum logic [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
@@ -387,7 +384,7 @@ bp_fe_instr_scan_s scan_instr;
 bp_fe_instr_scan
  #(.bp_params_p(bp_params_p))
  instr_scan
-  (.instr_i(mem_resp_cast_i.data)
+  (.instr_i(fetch_i)
 
    ,.scan_o(scan_instr)
    );
@@ -453,7 +450,7 @@ always_comb
       begin
         fe_queue_cast_o.msg_type                      = e_fe_fetch;
         fe_queue_cast_o.msg.fetch.pc                  = pc_if2;
-        fe_queue_cast_o.msg.fetch.instr               = mem_resp_cast_i.data;
+        fe_queue_cast_o.msg.fetch.instr               = fetch_i;
         fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fe_queue_cast_o_branch_metadata;
       end
   end

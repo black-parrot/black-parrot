@@ -61,7 +61,6 @@ module bp_fe_top
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_fe_mem_structs(vaddr_width_p, icache_sets_p, icache_block_width_p, vtag_width_p, ptag_width_p)
   bp_fe_cmd_s fe_cmd_cast_i;
   assign fe_cmd_cast_i = fe_cmd_i;
 
@@ -70,12 +69,14 @@ module bp_fe_top
 
   logic [rv64_priv_width_gp-1:0]  mem_priv_lo;
   logic            mem_poison_lo, mem_translation_en_lo;
-  bp_fe_mem_resp_s mem_resp_li;
-  logic            mem_resp_v_li;
 
   logic [vaddr_width_p-1:0] next_pc_lo;
   logic next_pc_v_lo, next_pc_yumi_li;
 
+  logic [instr_width_p-1:0] fetch_li;
+  logic fetch_v_li;
+  logic fetch_itlb_miss_li, fetch_instr_access_fault_li;
+  logic fetch_instr_page_fault_li, fetch_icache_miss_li;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
    pc_gen
@@ -90,8 +91,12 @@ module bp_fe_top
      ,.mem_translation_en_o(mem_translation_en_lo)
      ,.mem_poison_o(mem_poison_lo)
 
-     ,.mem_resp_i(mem_resp_li)
-     ,.mem_resp_v_i(mem_resp_v_li)
+     ,.fetch_i(fetch_li)
+     ,.fetch_v_i(fetch_v_li)
+     ,.fetch_itlb_miss_i(fetch_itlb_miss_li)
+     ,.fetch_instr_access_fault_i(fetch_instr_access_fault_li)
+     ,.fetch_instr_page_fault_i(fetch_instr_page_fault_li)
+     ,.fetch_icache_miss_i(fetch_icache_miss_li)
 
      ,.fe_cmd_i(fe_cmd_i)
      ,.fe_cmd_v_i(fe_cmd_v_i)
@@ -117,7 +122,7 @@ module bp_fe_top
   wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
   logic fetch_v_r, fetch_v_rr;
-  bp_fe_tlb_entry_s itlb_r_entry, entry_lo, passthrough_entry;
+  bp_pte_entry_leaf_s itlb_r_entry, entry_lo, passthrough_entry;
   logic itlb_r_v_lo, itlb_v_lo, passthrough_v_lo;
   bp_tlb
    #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
@@ -266,13 +271,12 @@ module bp_fe_top
   assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v);
   assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_lo & (instr_priv_page_fault | instr_exe_page_fault);
 
-  assign mem_resp_v_li   = fetch_v_rr;
-  assign mem_resp_li     = '{instr_access_fault: instr_access_fault_r
-                             ,instr_page_fault : instr_page_fault_r
-                             ,itlb_miss        : itlb_miss_r
-                             ,icache_miss      : fetch_v_rr & ~icache_data_v_lo
-                             ,data             : icache_data_lo
-                             };
+  assign fetch_v_li = fetch_v_rr;
+  assign fetch_li = icache_data_lo;
+  assign fetch_instr_access_fault_li = instr_access_fault_r;
+  assign fetch_instr_page_fault_li = instr_page_fault_r;
+  assign fetch_itlb_miss_li = itlb_miss_r;
+  assign fetch_icache_miss_li = fetch_v_rr & ~icache_data_v_lo;
 
 endmodule
 
