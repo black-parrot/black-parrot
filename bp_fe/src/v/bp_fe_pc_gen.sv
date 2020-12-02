@@ -19,8 +19,10 @@ module bp_fe_pc_gen
   (input                                             clk_i
    , input                                           reset_i
 
+   , input                                           resume_v_i
+   , input [vaddr_width_p-1:0]                       resume_pc_i
+
    , output [vaddr_width_p-1:0]                      next_pc_o
-   , output                                          next_pc_v_o
    , input                                           next_pc_yumi_i
 
    , output                                          mem_poison_o
@@ -62,16 +64,10 @@ logic [btb_idx_width_p-1:0] btb_idx_site;
 logic [bht_idx_width_p-1:0] bht_idx_site;
 
 // Flags for valid FE commands
-wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
 wire pc_redirect_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
-wire itlb_fill_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
-wire icache_fence_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
-wire itlb_fence_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
 wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
 wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
-wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
-wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 wire br_miss_v = pc_redirect_v
                 & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
 wire br_res_taken = (attaboy_v & fe_cmd_cast_i.operands.attaboy.taken)
@@ -84,58 +80,6 @@ assign fe_cmd_branch_metadata = br_miss_v
                                 : attaboy_v
                                   ? fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd
                                   : '0;
-
-// FSM
-enum logic [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
-
-// Decoded state signals
-wire is_wait  = (state_r == e_wait);
-wire is_run   = (state_r == e_run);
-wire is_stall = (state_r == e_stall);
-
-// Change the resume pc on redirect command, else save the PC in IF2 while running
-logic [vaddr_width_p-1:0] pc_resume_n, pc_resume_r;
-assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.vaddr :  pc_gen_stage_r[1].pc;
-bsg_dff_reset_en
- #(.width_p(vaddr_width_p))
- pc_resume_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(cmd_nonattaboy_v | is_run)
-
-   ,.data_i({pc_resume_n})
-   ,.data_o({pc_resume_r})
-   );
-
-// Controlling state machine
-always_comb
-  case (state_r)
-    // Wait for FE cmd
-    e_wait : state_n = cmd_nonattaboy_v ? e_stall : e_wait;
-    // Stall until we can start valid fetch
-    e_stall: state_n = next_pc_yumi_i ? e_run : e_stall;
-    // Run state -- PCs are actually being fetched
-    // Stay in run if there's an incoming cmd, the next pc will automatically be valid
-    // Transition to wait if there's a TLB miss while we wait for fill
-    // Transition to stall if we don't successfully complete the fetch for whatever reason
-    e_run  : state_n = cmd_nonattaboy_v
-                       ? e_run
-                       : fetch_fail_v_i
-                         ? e_stall
-                         : fetch_exception_v_i
-                           ? e_wait
-                           : e_run;
-    default: state_n = e_wait;
-  endcase
-
-// synopsys sync_set_reset "reset_i"
-always_ff @(posedge clk_i)
-  if (reset_i)
-      state_r <= e_wait;
-  else
-    begin
-      state_r <= state_n;
-    end
 
 // Global history
 //
@@ -166,12 +110,12 @@ always_comb
     // Next PC calculation
     // load boot pc on reset command
     // if we need to redirect or load boot pc on reset
-    if (state_reset_v | pc_redirect_v | icache_fence_v | itlb_fence_v)
+    if (cmd_nonattaboy_v)
       begin
         pc_gen_stage_n[0].pc = fe_cmd_cast_i.vaddr;
       end
-    else if (state_r != e_run)
-        pc_gen_stage_n[0].pc = pc_resume_r;
+    else if (resume_v_i)
+        pc_gen_stage_n[0].pc = resume_pc_i;
     else if (ovr_ret)
         pc_gen_stage_n[0].pc = return_addr_r;
     else if (ovr_taken)
@@ -183,7 +127,7 @@ always_comb
         pc_gen_stage_n[0].pc = pc_gen_stage_r[0].pc + 4;
       end
 
-    if (state_reset_v | pc_redirect_v | icache_fence_v | itlb_fence_v)
+    if (cmd_nonattaboy_v)
       begin
         pc_gen_stage_n[0].taken = br_res_taken;
         pc_gen_stage_n[0].btb = fe_cmd_branch_metadata.src_btb;
@@ -358,7 +302,6 @@ bsg_dff_reset_en
 // This may cause us to fetch during an I$ miss or a with a full queue.
 // FE cmds normally flush the queue, so we don't expect this to affect
 //   power much in practice.
-assign next_pc_v_o = ~is_wait | fe_cmd_v_i;
 assign next_pc_o = pc_gen_stage_n[0].pc;
 
 assign mem_poison_o         = ovr_taken | ovr_ret;

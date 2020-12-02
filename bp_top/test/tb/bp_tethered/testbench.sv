@@ -425,7 +425,7 @@ module testbench
 
        ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-       ,.fe_wait_stall(fe.pc_gen.is_wait)
+       ,.fe_wait_stall(fe.is_wait)
        ,.fe_queue_stall(~fe.fe_queue_ready_i)
 
        ,.itlb_miss(fe.itlb_miss_r)

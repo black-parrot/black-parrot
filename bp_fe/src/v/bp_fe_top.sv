@@ -76,6 +76,20 @@ module bp_fe_top
   logic [vaddr_width_p-1:0] next_pc_lo;
   logic next_pc_v_lo, next_pc_yumi_li;
 
+  logic itlb_miss_r;
+  logic instr_access_fault_r, instr_page_fault_r;
+  logic [vaddr_width_p-1:0] vaddr_r, vaddr_rr;
+
+  // FSM
+  enum logic [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
+
+  // Decoded state signals
+  wire is_wait  = (state_r == e_wait);
+  wire is_run   = (state_r == e_run);
+  wire is_stall = (state_r == e_stall);
+
+  logic resume_v_li;
+  logic [vaddr_width_p-1:0] resume_pc_li;
   logic [instr_width_p-1:0] fetch_li;
   logic fetch_instr_v_li, fetch_exception_v_li, fetch_fail_v_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
@@ -85,8 +99,10 @@ module bp_fe_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
+     ,.resume_v_i(resume_v_li)
+     ,.resume_pc_i(resume_pc_li)
+
      ,.next_pc_o(next_pc_lo)
-     ,.next_pc_v_o(next_pc_v_lo)
      ,.next_pc_yumi_i(next_pc_yumi_li)
 
      ,.mem_poison_o(ovr_lo)
@@ -127,7 +143,7 @@ module bp_fe_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(shadow_priv_w)
-  
+
      ,.data_i(shadow_priv_n)
      ,.data_o(shadow_priv_r)
      );
@@ -141,12 +157,29 @@ module bp_fe_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(shadow_translation_en_w)
-  
+
      ,.data_i(shadow_translation_en_n)
      ,.data_o(shadow_translation_en_r)
      );
 
-  assign next_pc_yumi_li = next_pc_v_lo & icache_ready & (fe_queue_ready_i | cmd_nonattaboy_v);
+  // Change the resume pc on redirect command, else save the PC in IF2 while running
+  logic [vaddr_width_p-1:0] pc_resume_n, pc_resume_r;
+  assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.vaddr : vaddr_rr;
+  bsg_dff_reset_en
+   #(.width_p(vaddr_width_p))
+   pc_resume_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(cmd_nonattaboy_v | fetch_instr_v_li)
+  
+     ,.data_i(pc_resume_n)
+     ,.data_o(pc_resume_r)
+     );
+  assign resume_pc_li = pc_resume_r;
+  assign resume_v_li = ~is_run;
+
+  //assign next_pc_yumi_li = ~is_wait & icache_ready & (fe_queue_ready_i | cmd_nonattaboy_v);
+  assign next_pc_yumi_li = cmd_nonattaboy_v | (~is_wait & icache_ready & fe_queue_ready_i);
 
   logic fetch_v_r, fetch_v_rr;
   bp_pte_entry_leaf_s itlb_r_entry, entry_lo, passthrough_entry;
@@ -223,7 +256,7 @@ module bp_fe_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.icache_pkt_i(icache_pkt)
-     ,.v_i(next_pc_yumi_li | icache_fence_v)
+     ,.v_i((icache_ready & next_pc_yumi_li) | icache_fence_v)
      ,.ready_o(icache_ready)
 
      ,.ptag_i(ptag_li)
@@ -263,9 +296,6 @@ module bp_fe_top
      ,.stat_mem_o(stat_mem_o)
      );
 
-  logic itlb_miss_r;
-  logic instr_access_fault_r, instr_page_fault_r;
-  logic [vaddr_width_p-1:0] vaddr_r, vaddr_rr;
   always_ff @(posedge clk_i)
     begin
       if(reset_i) begin
@@ -344,6 +374,37 @@ module bp_fe_top
           fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fetch_br_metadata_fwd_lo;
         end
     end
+
+  // Controlling state machine
+  always_comb
+    case (state_r)
+      // Wait for FE cmd
+      e_wait : state_n = cmd_nonattaboy_v ? e_stall : e_wait;
+      // Stall until we can start valid fetch
+      e_stall: state_n = next_pc_yumi_li ? e_run : e_stall;
+      // Run state -- PCs are actually being fetched
+      // Stay in run if there's an incoming cmd, the next pc will automatically be valid
+      // Transition to wait if there's a TLB miss while we wait for fill
+      // Transition to stall if we don't successfully complete the fetch for whatever reason
+      e_run  : state_n = cmd_nonattaboy_v
+                         ? e_run
+                         : fetch_fail_v_li
+                           ? e_stall
+                           : fetch_exception_v_li
+                             ? e_wait
+                             : e_run;
+      default: state_n = e_wait;
+    endcase
+
+  // synopsys sync_set_reset "reset_i"
+  always_ff @(posedge clk_i)
+    if (reset_i)
+        state_r <= e_wait;
+    else
+      begin
+        state_r <= state_n;
+      end
+
 
 endmodule
 
