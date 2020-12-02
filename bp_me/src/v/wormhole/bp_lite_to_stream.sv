@@ -104,14 +104,14 @@ module bp_lite_to_stream
      ,.val_i(first_cnt)
      ,.count_o(current_cnt)
      );
-  assign first_cnt = mem_cast_i.header.addr[stream_offset_width_lp+:data_len_width_lp];
+  assign first_cnt = msg_cast_i.header.addr[stream_offset_width_lp+:data_len_width_lp];
   assign last_cnt = first_cnt + num_stream_cmds - 1'b1;
   bsg_dff_en_bypass
    #(.width_p(data_len_width_lp))
    last_cnt_reg
     (.clk_i(clk_i)
     ,.data_i(last_cnt)
-    ,.en_i(mem_v_i)
+    ,.en_i(in_msg_v_i)
     ,.data_o(last_cnt_r)
     );
   
@@ -123,7 +123,7 @@ module bp_lite_to_stream
     begin
       // Autoincrement address
       msg_header_cast_o = header_lo;
-      msg_header_cast_o.addr = {header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_ptr_width_lp]
+      msg_header_cast_o.addr = {header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
                                 ,current_cnt
                                 ,header_lo.addr[0+:stream_offset_width_lp]
                                 };
