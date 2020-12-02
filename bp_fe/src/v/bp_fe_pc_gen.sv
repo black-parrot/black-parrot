@@ -23,8 +23,6 @@ module bp_fe_pc_gen
    , output                                          next_pc_v_o
    , input                                           next_pc_yumi_i
 
-   , output [rv64_priv_width_gp-1:0]                 mem_priv_o
-   , output                                          mem_translation_en_o
    , output                                          mem_poison_o
 
    , input [instr_width_p-1:0]                       fetch_i
@@ -86,34 +84,6 @@ assign fe_cmd_branch_metadata = br_miss_v
                                 : attaboy_v
                                   ? fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd
                                   : '0;
-
-logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
-wire shadow_priv_w = state_reset_v | trap_v;
-assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
-bsg_dff_reset_en
- #(.width_p(rv64_priv_width_gp))
- shadow_priv_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(shadow_priv_w)
-
-   ,.data_i(shadow_priv_n)
-   ,.data_o(shadow_priv_r)
-   );
-
-logic shadow_translation_en_n, shadow_translation_en_r;
-wire shadow_translation_en_w = state_reset_v | trap_v | translation_v;
-assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_enabled;
-bsg_dff_reset_en
- #(.width_p(1))
- shadow_translation_en_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(shadow_translation_en_w)
-
-   ,.data_i(shadow_translation_en_n)
-   ,.data_o(shadow_translation_en_r)
-   );
 
 // FSM
 enum logic [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
@@ -392,8 +362,6 @@ assign next_pc_v_o = ~is_wait | fe_cmd_v_i;
 assign next_pc_o = pc_gen_stage_n[0].pc;
 
 assign mem_poison_o         = ovr_taken | ovr_ret;
-assign mem_priv_o           = shadow_priv_w ? shadow_priv_n : shadow_priv_r;
-assign mem_translation_en_o = shadow_translation_en_w ? shadow_translation_en_n : shadow_translation_en_r;
 
 assign fe_cmd_yumi_o = fe_cmd_v_i;
 

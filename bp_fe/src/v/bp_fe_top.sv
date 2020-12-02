@@ -71,8 +71,7 @@ module bp_fe_top
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  logic [rv64_priv_width_gp-1:0]  mem_priv_lo;
-  logic ovr_lo, mem_poison_lo, mem_translation_en_lo;
+  logic ovr_lo, mem_poison_lo;
 
   logic [vaddr_width_p-1:0] next_pc_lo;
   logic next_pc_v_lo, next_pc_yumi_li;
@@ -90,8 +89,6 @@ module bp_fe_top
      ,.next_pc_v_o(next_pc_v_lo)
      ,.next_pc_yumi_i(next_pc_yumi_li)
 
-     ,.mem_priv_o(mem_priv_lo)
-     ,.mem_translation_en_o(mem_translation_en_lo)
      ,.mem_poison_o(ovr_lo)
 
      ,.fetch_i(fetch_li)
@@ -118,6 +115,37 @@ module bp_fe_top
   wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
   wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
+  wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+  wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
+
+  logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
+  wire shadow_priv_w = state_reset_v | trap_v;
+  assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
+  bsg_dff_reset_en_bypass
+   #(.width_p(rv64_priv_width_gp))
+   shadow_priv_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(shadow_priv_w)
+  
+     ,.data_i(shadow_priv_n)
+     ,.data_o(shadow_priv_r)
+     );
+
+  logic shadow_translation_en_n, shadow_translation_en_r;
+  wire shadow_translation_en_w = state_reset_v | trap_v | translation_v;
+  assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_enabled;
+  bsg_dff_reset_en_bypass
+   #(.width_p(1))
+   shadow_translation_en_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(shadow_translation_en_w)
+  
+     ,.data_i(shadow_translation_en_n)
+     ,.data_o(shadow_translation_en_r)
+     );
+
   assign next_pc_yumi_li = next_pc_v_lo & icache_ready & (fe_queue_ready_i | cmd_nonattaboy_v);
 
   logic fetch_v_r, fetch_v_rr;
@@ -130,7 +158,7 @@ module bp_fe_top
      ,.reset_i(reset_i)
      ,.flush_i(itlb_fence_v)
 
-     ,.v_i((next_pc_yumi_li | itlb_fill_v) & mem_translation_en_lo)
+     ,.v_i((next_pc_yumi_li | itlb_fill_v) & shadow_translation_en_r)
      ,.w_i(itlb_fill_v)
      ,.vtag_i(itlb_fill_v
               ? fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p]
@@ -157,8 +185,8 @@ module bp_fe_top
 
   assign passthrough_entry = '{ptag: vtag_r, default: '0};
   assign passthrough_v_lo  = fetch_v_r;
-  assign itlb_r_entry      = mem_translation_en_lo ? entry_lo : passthrough_entry;
-  assign itlb_r_v_lo       = mem_translation_en_lo ? itlb_v_lo : passthrough_v_lo;
+  assign itlb_r_entry      = shadow_translation_en_r ? entry_lo : passthrough_entry;
+  assign itlb_r_v_lo       = shadow_translation_en_r ? itlb_v_lo : passthrough_v_lo;
 
   wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
   wire                    ptag_v_li   = itlb_r_v_lo;
@@ -264,8 +292,8 @@ module bp_fe_top
       end
     end
 
-  wire instr_priv_page_fault = ((mem_priv_lo == `PRIV_MODE_S) & itlb_r_entry.u)
-                                 | ((mem_priv_lo == `PRIV_MODE_U) & ~itlb_r_entry.u);
+  wire instr_priv_page_fault = ((shadow_priv_r == `PRIV_MODE_S) & itlb_r_entry.u)
+                                 | ((shadow_priv_r == `PRIV_MODE_U) & ~itlb_r_entry.u);
   wire instr_exe_page_fault = ~itlb_r_entry.x;
 
   // Fault if in uncached mode but access is not for an uncached address
@@ -278,7 +306,7 @@ module bp_fe_top
   // There's also an interesting question about physical alignment (I/O devices, etc)
   //   But let's punt that for now...
   assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v);
-  assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_lo & (instr_priv_page_fault | instr_exe_page_fault);
+  assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & shadow_translation_en_r & (instr_priv_page_fault | instr_exe_page_fault);
 
   wire icache_miss    = fetch_v_rr & ~icache_data_v_lo;
   wire queue_miss     = fetch_v_rr & ~fe_queue_ready_i;
