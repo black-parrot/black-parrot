@@ -28,19 +28,14 @@ module bp_fe_pc_gen
    , output                                          mem_poison_o
 
    , input [instr_width_p-1:0]                       fetch_i
-   , input                                           fetch_v_i
-   , input                                           fetch_itlb_miss_i
-   , input                                           fetch_instr_access_fault_i
-   , input                                           fetch_instr_page_fault_i
-   , input                                           fetch_icache_miss_i
+   , input                                           fetch_instr_v_i
+   , input                                           fetch_exception_v_i
+   , input                                           fetch_fail_v_i
+   , output [branch_metadata_fwd_width_p-1:0]        fetch_br_metadata_fwd_o
 
    , input [fe_cmd_width_lp-1:0]                     fe_cmd_i
    , input                                           fe_cmd_v_i
    , output                                          fe_cmd_yumi_o
-
-   , output [fe_queue_width_lp-1:0]                  fe_queue_o
-   , output                                          fe_queue_v_o
-   , input                                           fe_queue_ready_i
    );
 
 `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -55,14 +50,11 @@ logic [vaddr_width_p-1:0]       btb_br_tgt_lo;
 logic                           btb_br_tgt_v_lo;
 logic                           btb_br_tgt_jmp_lo;
 
-bp_fe_queue_s fe_queue_cast_o;
 bp_fe_cmd_s fe_cmd_cast_i;
 
 assign fe_cmd_cast_i = fe_cmd_i;
-assign fe_queue_o = fe_queue_cast_o;
 
 bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
-
 bp_fe_pc_gen_stage_s [1:0] pc_gen_stage_n, pc_gen_stage_r;
 
 logic is_br, is_jal, is_jalr, is_call, is_ret;
@@ -70,12 +62,6 @@ logic is_br_site, is_jal_site, is_jalr_site, is_call_site, is_ret_site;
 logic [btb_tag_width_p-1:0] btb_tag_site;
 logic [btb_idx_width_p-1:0] btb_idx_site;
 logic [bht_idx_width_p-1:0] bht_idx_site;
-
-// Helper signals
-wire                      v_if1 = pc_gen_stage_r[0].v;
-wire                      v_if2 = pc_gen_stage_r[1].v;
-wire [vaddr_width_p-1:0] pc_if1 = pc_gen_stage_r[0].pc;
-wire [vaddr_width_p-1:0] pc_if2 = pc_gen_stage_r[1].pc;
 
 // Flags for valid FE commands
 wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
@@ -129,20 +115,6 @@ bsg_dff_reset_en
    ,.data_o(shadow_translation_en_r)
    );
 
-// Until we support C, must be aligned to 4 bytes
-// There's also an interesting question about physical alignment (I/O devices, etc)
-//   But let's punt that for now...
-wire itlb_miss_exception          = v_if2 & (fetch_v_i & fetch_itlb_miss_i);
-wire instr_access_fault_exception = v_if2 & (fetch_v_i & fetch_instr_access_fault_i);
-wire instr_page_fault_exception   = v_if2 & (fetch_v_i & fetch_instr_page_fault_i);
-
-wire fetch_fail     = v_if2 & ~fe_queue_v_o;
-wire queue_miss     = v_if2 & ~fe_queue_ready_i;
-wire icache_miss    = v_if2 & (fetch_v_i & fetch_icache_miss_i);
-wire fe_exception_v = v_if2 & (instr_page_fault_exception | instr_access_fault_exception | itlb_miss_exception);
-wire flush          = fe_exception_v | icache_miss | queue_miss | cmd_nonattaboy_v;
-wire fe_instr_v     = v_if2 & fetch_v_i & ~flush;
-
 // FSM
 enum logic [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
 
@@ -171,16 +143,16 @@ always_comb
     // Wait for FE cmd
     e_wait : state_n = cmd_nonattaboy_v ? e_stall : e_wait;
     // Stall until we can start valid fetch
-    e_stall: state_n = pc_gen_stage_n[0].v ? e_run : e_stall;
+    e_stall: state_n = next_pc_yumi_i ? e_run : e_stall;
     // Run state -- PCs are actually being fetched
     // Stay in run if there's an incoming cmd, the next pc will automatically be valid
     // Transition to wait if there's a TLB miss while we wait for fill
     // Transition to stall if we don't successfully complete the fetch for whatever reason
     e_run  : state_n = cmd_nonattaboy_v
                        ? e_run
-                       : fetch_fail
+                       : fetch_fail_v_i
                          ? e_stall
-                         : fe_exception_v
+                         : fetch_exception_v_i
                            ? e_wait
                            : e_run;
     default: state_n = e_wait;
@@ -198,9 +170,9 @@ always_ff @(posedge clk_i)
 // Global history
 //
 logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
-wire ghistory_w_v_li = (fe_queue_v_o & is_br_site) | (br_miss_v & fe_cmd_yumi_o);
+wire ghistory_w_v_li = (fetch_instr_v_i & is_br_site) | (br_miss_v & fe_cmd_yumi_o);
 assign ghistory_n = ghistory_w_v_li
-                    ? (fe_queue_v_o & is_br_site)
+                    ? (fetch_instr_v_i & is_br_site)
                       ? {ghistory_r[0+:ghist_width_p-1], pc_gen_stage_r[1].taken}
                       : fe_cmd_branch_metadata.ghist
                     : ghistory_r;
@@ -220,7 +192,6 @@ wire btb_taken = btb_br_tgt_v_lo & (bht_val_lo[1] | btb_br_tgt_jmp_lo);
 always_comb
   begin
     pc_gen_stage_n[0]            = '0;
-    pc_gen_stage_n[0].v          = next_pc_yumi_i;
 
     // Next PC calculation
     // load boot pc on reset command
@@ -272,7 +243,6 @@ always_comb
       end
 
     pc_gen_stage_n[1]    = pc_gen_stage_r[0];
-    pc_gen_stage_n[1].v &= ~flush & ~ovr_taken & ~ovr_ret;
   end
 
 bsg_dff_reset
@@ -299,20 +269,21 @@ always_ff @(posedge clk_i)
         btb_idx_site <= fe_cmd_branch_metadata.btb_idx;
         bht_idx_site <= fe_cmd_branch_metadata.bht_idx;
       end
-    if (fe_queue_v_o)
+    if (fetch_instr_v_i)
       begin
         is_br_site   <= is_br;
         is_jal_site  <= is_jal;
         is_jalr_site <= is_jalr;
         is_call_site <= is_call;
         is_ret_site  <= is_ret;
-        btb_tag_site <= pc_if2[2+btb_idx_width_p+:btb_tag_width_p];
-        btb_idx_site <= pc_if2[2+:btb_idx_width_p];
-        bht_idx_site <= pc_if2[2+:bht_idx_width_p];
+        btb_tag_site <= pc_gen_stage_r[1].pc[2+btb_idx_width_p+:btb_tag_width_p];
+        btb_idx_site <= pc_gen_stage_r[1].pc[2+:btb_idx_width_p];
+        bht_idx_site <= pc_gen_stage_r[1].pc[2+:bht_idx_width_p];
       end
   end
 
 bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata;
+assign fetch_br_metadata_fwd_o = fe_queue_cast_o_branch_metadata;
 assign fe_queue_cast_o_branch_metadata =
   '{src_btb   : pc_gen_stage_r[1].btb
     ,src_ret  : pc_gen_stage_r[1].ret
@@ -344,7 +315,7 @@ bp_fe_btb
    ,.reset_i(reset_i)
 
    ,.r_addr_i(pc_gen_stage_n[0].pc)
-   ,.r_v_i(pc_gen_stage_n[0].v & ~ovr_taken & ~ovr_ret)
+   ,.r_v_i(next_pc_yumi_i & ~ovr_taken & ~ovr_ret)
    ,.br_tgt_o(btb_br_tgt_lo)
    ,.br_tgt_v_o(btb_br_tgt_v_lo)
    ,.br_tgt_jmp_o(btb_br_tgt_jmp_lo)
@@ -359,8 +330,6 @@ bp_fe_btb
 
 // Local index
 //
-// Direct bimodal
-wire [bht_idx_width_p-1:0] bht_idx_r_li = pc_gen_stage_n[0].pc[2+:bht_idx_width_p] ^ pc_gen_stage_n[0].ghist;
 bp_fe_bht
  #(.vaddr_width_p(vaddr_width_p)
    ,.bht_idx_width_p(bht_idx_width_p+ghist_width_p)
@@ -369,7 +338,7 @@ bp_fe_bht
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.r_v_i(pc_gen_stage_n[0].v)
+   ,.r_v_i(next_pc_yumi_i)
    ,.idx_r_i({pc_gen_stage_n[0].pc[2+:bht_idx_width_p], pc_gen_stage_n[0].ghist})
    ,.val_o(bht_val_lo)
 
@@ -389,11 +358,11 @@ bp_fe_instr_scan
    ,.scan_o(scan_instr)
    );
 
-assign is_br        = fe_queue_v_o & scan_instr.branch;
-assign is_jal       = fe_queue_v_o & scan_instr.jal;
-assign is_jalr      = fe_queue_v_o & scan_instr.jalr;
-assign is_call      = fe_queue_v_o & scan_instr.call;
-assign is_ret       = fe_queue_v_o & scan_instr.ret;
+assign is_br        = fetch_instr_v_i & scan_instr.branch;
+assign is_jal       = fetch_instr_v_i & scan_instr.jal;
+assign is_jalr      = fetch_instr_v_i & scan_instr.jalr;
+assign is_call      = fetch_instr_v_i & scan_instr.call;
+assign is_ret       = fetch_instr_v_i & scan_instr.ret;
 wire btb_miss_ras   = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != return_addr_r);
 wire btb_miss_br    = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != br_target);
 assign ovr_ret      = btb_miss_ras & is_ret;
@@ -419,40 +388,14 @@ bsg_dff_reset_en
 // This may cause us to fetch during an I$ miss or a with a full queue.
 // FE cmds normally flush the queue, so we don't expect this to affect
 //   power much in practice.
-assign next_pc_v_o = ~is_wait & (fe_queue_ready_i | fe_cmd_v_i);
+assign next_pc_v_o = ~is_wait | fe_cmd_v_i;
 assign next_pc_o = pc_gen_stage_n[0].pc;
 
-assign mem_poison_o         = flush | ovr_taken | ovr_ret;
+assign mem_poison_o         = ovr_taken | ovr_ret;
 assign mem_priv_o           = shadow_priv_w ? shadow_priv_n : shadow_priv_r;
 assign mem_translation_en_o = shadow_translation_en_w ? shadow_translation_en_n : shadow_translation_en_r;
 
-// Handshaking signals
 assign fe_cmd_yumi_o = fe_cmd_v_i;
 
-// Organize the FE queue message
-assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
-always_comb
-  begin
-    // Set padding to 0
-    fe_queue_cast_o = '0;
-
-    if (fe_exception_v)
-      begin
-        fe_queue_cast_o.msg_type                     = e_fe_exception;
-        fe_queue_cast_o.msg.exception.vaddr          = pc_if2;
-        fe_queue_cast_o.msg.exception.exception_code = itlb_miss_exception
-                                                       ? e_itlb_miss
-                                                       : instr_page_fault_exception
-                                                         ? e_instr_page_fault
-                                                         : e_instr_access_fault;
-      end
-    else
-      begin
-        fe_queue_cast_o.msg_type                      = e_fe_fetch;
-        fe_queue_cast_o.msg.fetch.pc                  = pc_if2;
-        fe_queue_cast_o.msg.fetch.instr               = fetch_i;
-        fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fe_queue_cast_o_branch_metadata;
-      end
-  end
-
 endmodule
+

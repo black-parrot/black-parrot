@@ -426,11 +426,11 @@ module testbench
        ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
        ,.fe_wait_stall(fe.pc_gen.is_wait)
-       ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)
+       ,.fe_queue_stall(~fe.fe_queue_ready_i)
 
        ,.itlb_miss(fe.itlb_miss_r)
        ,.icache_miss(~fe.icache.ready_o)
-       ,.icache_rollback(fe.pc_gen.icache_miss)
+       ,.icache_rollback(fe.icache_miss)
        ,.icache_fence(fe.icache.fencei_req)
        ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
        ,.ret_override(fe.pc_gen.ovr_ret)

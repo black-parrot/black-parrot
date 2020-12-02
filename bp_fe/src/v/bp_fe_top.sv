@@ -61,22 +61,25 @@ module bp_fe_top
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
   bp_fe_cmd_s fe_cmd_cast_i;
   assign fe_cmd_cast_i = fe_cmd_i;
+
+  bp_fe_queue_s fe_queue_cast_o;
+  assign fe_queue_o = fe_queue_cast_o;
 
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
   logic [rv64_priv_width_gp-1:0]  mem_priv_lo;
-  logic            mem_poison_lo, mem_translation_en_lo;
+  logic ovr_lo, mem_poison_lo, mem_translation_en_lo;
 
   logic [vaddr_width_p-1:0] next_pc_lo;
   logic next_pc_v_lo, next_pc_yumi_li;
 
   logic [instr_width_p-1:0] fetch_li;
-  logic fetch_v_li;
-  logic fetch_itlb_miss_li, fetch_instr_access_fault_li;
-  logic fetch_instr_page_fault_li, fetch_icache_miss_li;
+  logic fetch_instr_v_li, fetch_exception_v_li, fetch_fail_v_li;
+  bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
    pc_gen
@@ -89,30 +92,24 @@ module bp_fe_top
 
      ,.mem_priv_o(mem_priv_lo)
      ,.mem_translation_en_o(mem_translation_en_lo)
-     ,.mem_poison_o(mem_poison_lo)
+     ,.mem_poison_o(ovr_lo)
 
      ,.fetch_i(fetch_li)
-     ,.fetch_v_i(fetch_v_li)
-     ,.fetch_itlb_miss_i(fetch_itlb_miss_li)
-     ,.fetch_instr_access_fault_i(fetch_instr_access_fault_li)
-     ,.fetch_instr_page_fault_i(fetch_instr_page_fault_li)
-     ,.fetch_icache_miss_i(fetch_icache_miss_li)
+     ,.fetch_instr_v_i(fetch_instr_v_li)
+     ,.fetch_exception_v_i(fetch_exception_v_li)
+     ,.fetch_fail_v_i(fetch_fail_v_li)
+     ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
 
      ,.fe_cmd_i(fe_cmd_i)
      ,.fe_cmd_v_i(fe_cmd_v_i)
      ,.fe_cmd_yumi_o(fe_cmd_yumi_o)
-
-     ,.fe_queue_o(fe_queue_o)
-     ,.fe_queue_v_o(fe_queue_v_o)
-     ,.fe_queue_ready_i(fe_queue_ready_i)
      );
 
   logic instr_page_fault_lo, instr_access_fault_lo, itlb_miss_lo;
 
-  logic fetch_ready;
-  assign next_pc_yumi_li = next_pc_v_lo & fetch_ready;
-  wire fetch_v = next_pc_yumi_li;
-  
+  logic icache_ready;
+  // TODO: comment about energy
+
   wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
   wire pc_redirect_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
   wire itlb_fill_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
@@ -120,6 +117,8 @@ module bp_fe_top
   wire itlb_fence_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
   wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
   wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
+
+  assign next_pc_yumi_li = next_pc_v_lo & icache_ready & (fe_queue_ready_i | cmd_nonattaboy_v);
 
   logic fetch_v_r, fetch_v_rr;
   bp_pte_entry_leaf_s itlb_r_entry, entry_lo, passthrough_entry;
@@ -131,7 +130,7 @@ module bp_fe_top
      ,.reset_i(reset_i)
      ,.flush_i(itlb_fence_v)
 
-     ,.v_i((fetch_v | itlb_fill_v) & mem_translation_en_lo)
+     ,.v_i((next_pc_yumi_li | itlb_fill_v) & mem_translation_en_lo)
      ,.w_i(itlb_fill_v)
      ,.vtag_i(itlb_fill_v
               ? fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p]
@@ -150,7 +149,7 @@ module bp_fe_top
    vtag_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(fetch_v)
+     ,.en_i(next_pc_yumi_li)
 
      ,.data_i(next_pc_lo[vaddr_width_p-1-:vtag_width_p])
      ,.data_o(vtag_r)
@@ -196,8 +195,8 @@ module bp_fe_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.icache_pkt_i(icache_pkt)
-     ,.v_i(fetch_v | icache_fence_v)
-     ,.ready_o(fetch_ready)
+     ,.v_i(next_pc_yumi_li | icache_fence_v)
+     ,.ready_o(icache_ready)
 
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(ptag_v_li)
@@ -238,9 +237,13 @@ module bp_fe_top
 
   logic itlb_miss_r;
   logic instr_access_fault_r, instr_page_fault_r;
+  logic [vaddr_width_p-1:0] vaddr_r, vaddr_rr;
   always_ff @(posedge clk_i)
     begin
       if(reset_i) begin
+        vaddr_r  <= '0;
+        vaddr_rr <= '0;
+
         itlb_miss_r <= '0;
         fetch_v_r   <= '0;
         fetch_v_rr  <= '0;
@@ -249,7 +252,10 @@ module bp_fe_top
         instr_page_fault_r   <= '0;
       end
       else begin
-        fetch_v_r   <= fetch_v;
+        vaddr_r <= next_pc_lo;
+        vaddr_rr <= vaddr_r;
+
+        fetch_v_r   <= next_pc_yumi_li;
         fetch_v_rr  <= fetch_v_r & ~mem_poison_lo;
         itlb_miss_r <= itlb_miss_lo & ~mem_poison_lo;
 
@@ -268,15 +274,48 @@ module bp_fe_top
   // Fault if domain is not zero (top <io_noc_did_width_p> bits) and SAC bit is not zero (next bit)
   wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p+1] != '0);
 
+  // Until we support C, must be aligned to 4 bytes
+  // There's also an interesting question about physical alignment (I/O devices, etc)
+  //   But let's punt that for now...
   assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v);
   assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_lo & (instr_priv_page_fault | instr_exe_page_fault);
 
-  assign fetch_v_li = fetch_v_rr;
-  assign fetch_li = icache_data_lo;
-  assign fetch_instr_access_fault_li = instr_access_fault_r;
-  assign fetch_instr_page_fault_li = instr_page_fault_r;
-  assign fetch_itlb_miss_li = itlb_miss_r;
-  assign fetch_icache_miss_li = fetch_v_rr & ~icache_data_v_lo;
+  wire icache_miss    = fetch_v_rr & ~icache_data_v_lo;
+  wire queue_miss     = fetch_v_rr & ~fe_queue_ready_i;
+  wire fe_exception_v = fetch_v_rr & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r);
+  wire flush          = icache_miss | queue_miss | fe_exception_v | cmd_nonattaboy_v;
+  wire fe_instr_v     = fetch_v_rr & icache_data_v_lo & ~flush;
+  assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
+  assign mem_poison_lo = ovr_lo | flush;
+
+  assign fetch_instr_v_li     = fe_queue_v_o & fe_instr_v;
+  assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;
+  assign fetch_fail_v_li      = fetch_v_rr & ~fe_queue_v_o;
+  assign fetch_li             = icache_data_lo;
+  always_comb
+    begin
+      // Set padding to 0
+      fe_queue_cast_o = '0;
+
+      if (fe_exception_v)
+        begin
+          fe_queue_cast_o.msg_type                     = e_fe_exception;
+          fe_queue_cast_o.msg.exception.vaddr          = vaddr_rr;
+          // TODO: gate with fetch_v_rr?
+          fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
+                                                         ? e_itlb_miss
+                                                         : instr_page_fault_r
+                                                           ? e_instr_page_fault
+                                                           : e_instr_access_fault;
+        end
+      else
+        begin
+          fe_queue_cast_o.msg_type                      = e_fe_fetch;
+          fe_queue_cast_o.msg.fetch.pc                  = vaddr_rr;
+          fe_queue_cast_o.msg.fetch.instr               = fetch_li;
+          fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fetch_br_metadata_fwd_lo;
+        end
+    end
 
 endmodule
 
