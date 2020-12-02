@@ -20,7 +20,6 @@ module bp_stream_pump_out
    , localparam stream_words_lp = block_width_p / stream_data_width_p
    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
    , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p / 8)
-   , localparam logic cmd_payload_lp  = payload_mask_p[e_bedrock_mem_uc_wr] | payload_mask_p[e_bedrock_mem_wr]
    )
   ( input clk_i
   , input reset_i
