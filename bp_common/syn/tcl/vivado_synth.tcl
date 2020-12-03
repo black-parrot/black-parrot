@@ -13,31 +13,24 @@ set f [split [string trim [read [open "flist.vcs" r]]] "\n"]
 set flist [list ]
 set dir_list [list ]
 foreach x $f {
-  # If the item has a file to be added, it starts with $BP_*_DIR
-  if {[string match "\$" [string index $x 0]]} {
-    set expanded [subst $x]
-    # If not already in the list, add this file to the list
-    if {[lsearch -exact $flist $expanded] < 0} {
-      lappend flist $expanded
-    }
-  # If the item starts with +incdir+, directory files may need to be added
-  } elseif {[string match "+incdir+*" $x]} {
+  if {![string match "" $x]} {
+    # If the item starts with +incdir+, directory files need to be added
+    if {[string match "+" [string index $x 0]]} {
       set trimchars "+incdir+"
       set temp [string trimleft $x $trimchars]
       set expanded [subst $temp]
-      if {[string match "*top*" $expanded]} continue
       lappend dir_list $expanded
+    } else {
+      set expanded [subst $x]
+      lappend flist $expanded
+    }
   }
 }
-
-# Add a top wrapper
-set top "wrapper.sv"
-lappend flist $top
 
 set_part $::env(PART)
 read_verilog -sv $flist
 read_xdc design.xdc
 
 synth_design -top wrapper -part $::env(PART) -include_dirs $dir_list
-set filepath "BP_TOP_DIR"
-report_utilization -file $::env($filepath)/syn/reports/vivado/hierarchical.rpt -hierarchical -hierarchical_percentages
+report_utilization -file hierarchical_utilization.rpt -hierarchical -hierarchical_percentages
+report_timing_summary -file timing.rpt

@@ -1,4 +1,4 @@
-XDC_DIR := $(BP_COMMON_DIR)/syn/vivado/xdc
+XDC_DIR := $(BP_COMMON_DIR)/syn/xdc
 
 $(BUILD_DIR)/flist.vcs:
 	grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@

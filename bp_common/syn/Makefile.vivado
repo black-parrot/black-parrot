@@ -22,6 +22,7 @@ synth.vivado: SYNTH_REPORT:= $(REPORT_DIR)/$(TB).$(CFG).$(TAG).synth.rpt
 synth.vivado: SYNTH_ERROR := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).synth.err
 
 $(SYNTH_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
-$(BUILD_DIR)/synth: $(SYNTH_COLLATERAL) $(BUILD_DIR)/wrapper.sv
+$(BUILD_DIR)/synth: $(SYNTH_COLLATERAL)
 	cd $(@D); \
-		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/vivado/tcl/vivado_synth.tcl | tee -i $(SYNTH_LOG)
+		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/tcl/vivado_synth.tcl | tee -i $(SYNTH_LOG) \
+		[-f ./*.rpt] && mv *.rpt $(REPORT_DIR)/
