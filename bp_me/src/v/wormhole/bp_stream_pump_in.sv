@@ -10,9 +10,8 @@ module bp_stream_pump_in
    , parameter stream_data_width_p = dword_width_p
    , parameter block_width_p = cce_block_width_p
 
-   // Bitmask which determines which message types have a data payload
-   // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
-   , parameter payload_mask_p = 0
+   // Bitmask which determines which message types should get streamed
+   // Constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
    , parameter stream_mask_p = 0
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
@@ -115,7 +114,6 @@ module bp_stream_pump_in
   assign first_cnt = critical_addr_r[stream_offset_width_lp+:data_len_width_lp];
   assign last_cnt  = first_cnt + num_stream - 1'b1;
   
-  wire has_data = payload_mask_p[mem_header_lo.msg_type];
   wire is_stream = stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
 
   assign stream_cnt = stream_new_o ? first_cnt : current_cnt;
@@ -135,7 +133,7 @@ module bp_stream_pump_in
       stream_done_o = is_last_cnt & fsm_ready_and_i & fsm_v_o; // also used for credits return
       stream_new_o = fsm_v_o & is_stream & ~streaming_r;
 
-      mem_yumi_li = has_data ? (fsm_ready_and_i & fsm_v_o) : stream_done_o;
+      mem_yumi_li = (is_stream & mem_last_lo & mem_v_lo) ? stream_done_o : (fsm_ready_and_i & fsm_v_o);
     end
 
   // TODO: assertion to identify whether critical_addr is aligned to the bus_data_width/burst_width

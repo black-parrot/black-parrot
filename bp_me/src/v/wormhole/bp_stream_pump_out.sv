@@ -13,6 +13,8 @@ module bp_stream_pump_out
    // Bitmask which determines which message types have a data payload
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter payload_mask_p = 0
+   // Bitmask which determines which message types should get streamed
+   // Constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
    , parameter stream_mask_p = 0
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
