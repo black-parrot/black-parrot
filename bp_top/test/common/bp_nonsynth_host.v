@@ -143,7 +143,9 @@ module bp_nonsynth_host
       finish_data_cmd_v = 1'b0;
       bootrom_data_cmd_v = 1'b0;
       domain_data_cmd_v = io_cmd_v_lo & (domain_id != '0);
-      putch_core_data_cmd_v = 0;
+      putch_core_data_cmd_v = 1'b0;
+
+      // $display("header addr is %0h data is %h (%c)",io_cmd_lo.header.addr,io_cmd_lo.data[0+:8],io_cmd_lo.data[0+:8]);
 
       unique
       casez (io_cmd_lo.header.addr & 64'hffff_ffff_ffff_f000)
