@@ -62,9 +62,9 @@ tools: | $(TARGET_DIRS)
 	$(MAKE) gnu
 	$(MAKE) verilator
 	$(MAKE) dromajo
-	$(MAKE) axe
-	$(MAKE) cmurphi
-	$(MAKE) bsg_sv2v
+	#$(MAKE) axe
+	#$(MAKE) cmurphi
+	#$(MAKE) bsg_sv2v
 
 progs: tools
 	git submodule update --init --recursive $(BP_COMMON_DIR)/test
