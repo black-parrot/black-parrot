@@ -98,7 +98,7 @@ module bp_nonsynth_host
   localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
   localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
   localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
-  localparam putch_core_base_addr_gp  = paddr_width_p'(64'h0010_3000);
+  localparam putch_core_base_addr_gp  = paddr_width_p'(64'h0010_3???);
   bp_bedrock_cce_mem_msg_s io_cmd_li, io_cmd_lo;
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
   
@@ -148,7 +148,7 @@ module bp_nonsynth_host
       // $display("header addr is %0h data is %h (%c)",io_cmd_lo.header.addr,io_cmd_lo.data[0+:8],io_cmd_lo.data[0+:8]);
 
       unique
-      casez (io_cmd_lo.header.addr & 64'hffff_ffff_ffff_f000)
+      casez (io_cmd_lo.header.addr)
         putchar_base_addr_gp: putchar_data_cmd_v = io_cmd_v_lo;
         getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_v_lo;
         finish_base_addr_gp : finish_data_cmd_v = io_cmd_v_lo;
