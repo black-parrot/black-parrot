@@ -1,32 +1,32 @@
-$(LINT_DIR)/testbench.v $(LINT_DIR)/wrapper.v $(LINT_DIR)/test_bp.cpp:
+$(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv $(LINT_DIR)/test_bp.cpp:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	@echo wrapper.v                                 >> $@
-	@echo testbench.v                               >> $@
+	@echo wrapper.sv                                >> $@
+	@echo testbench.sv                              >> $@
 	@echo test_bp.cpp                               >> $@
 
 $(LINT_DIR)/config.vlt:
 	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
 
-LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.v testbench.v test_bp.cpp)
+LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv test_bp.cpp)
 
-$(BUILD_DIR)/testbench.v $(BUILD_DIR)/wrapper.v $(BUILD_DIR)/test_bp.cpp:
+$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.cpp:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	@echo wrapper.v                                 >> $@
-	@echo testbench.v                               >> $@
+	@echo wrapper.sv                                >> $@
+	@echo testbench.sv                              >> $@
 	@echo test_bp.cpp                               >> $@
 
 $(BUILD_DIR)/config.vlt:
 	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
 
-VBUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.v testbench.v test_bp.cpp)
+VBUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv test_bp.cpp)
 
 $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
 	@ln -nsf $</simsc $@
