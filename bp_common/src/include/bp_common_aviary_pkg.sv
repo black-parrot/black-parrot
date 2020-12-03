@@ -158,7 +158,7 @@ package bp_common_aviary_pkg;
       ,icache_block_width : 512
       ,icache_fill_width  : 512
       ,dcache_sets        : 64
-      ,dcache_assoc       : 8
+      ,dcache_assoc       : 1
       ,dcache_block_width : 512
       ,dcache_fill_width  : 512
       ,default : "inv"
