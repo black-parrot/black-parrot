@@ -53,7 +53,7 @@ module bp_nonsynth_host
   import "DPI-C" context function void start();
   import "DPI-C" context function int scan();
   import "DPI-C" context function void pop();
-  
+
   integer stdout[num_core_p];
   integer stdout_global;
 
@@ -80,20 +80,20 @@ module bp_nonsynth_host
      ,.reset_r_i(reset_i)
      ,.init_val_r_i('0)
      ,.strobe_r_o(do_scan)
-     ); 
+     );
   logic [63:0] ch;
   always_ff @(posedge clk_i)
     if (do_scan)
       ch = scan();
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  
+
   // HOST I/O mappings
   //localparam host_dev_base_addr_gp     = 32'h03??_????;
-  
+
   // Host I/O mappings (arbitrarily decided for now)
   //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
-  
+
   localparam bootrom_base_addr_gp = paddr_width_p'(64'h0001_????);
   localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
   localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
@@ -101,23 +101,23 @@ module bp_nonsynth_host
   localparam putch_core_base_addr_gp  = paddr_width_p'(64'h0010_3???);
   bp_bedrock_cce_mem_msg_s io_cmd_li, io_cmd_lo;
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
-  
+
   assign io_cmd_li = io_cmd_i;
   assign io_resp_o = io_resp_cast_o;
-  
+
   localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
-  
+
   logic io_cmd_v_lo, io_cmd_yumi_li;
   bsg_fifo_1r1w_small
    #(.width_p($bits(bp_bedrock_cce_mem_msg_s)), .els_p(host_max_outstanding_p))
    small_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.data_i(io_cmd_li)
      ,.v_i(io_cmd_v_i)
      ,.ready_o(io_cmd_ready_o)
-  
+
      ,.data_o(io_cmd_lo)
      ,.v_o(io_cmd_v_lo)
      ,.yumi_i(io_cmd_yumi_li)
@@ -125,8 +125,8 @@ module bp_nonsynth_host
    assign io_resp_v_o = io_cmd_v_lo;
    assign io_cmd_yumi_li = io_resp_yumi_i;
    wire [2:0] domain_id = io_cmd_lo.header.addr[paddr_width_p-1-:3];
-  
-  
+
+
   logic putchar_data_cmd_v;
   logic getchar_data_cmd_v;
   logic finish_data_cmd_v;
@@ -160,45 +160,45 @@ module bp_nonsynth_host
         default: begin end
       endcase
     end
-  
+
   logic [num_core_p-1:0] finish_w_v_li;
-  
+
   // Memory-mapped I/O is 64 bit aligned
   localparam byte_offset_width_lp = 3;
   wire [lg_num_core_lp-1:0] io_cmd_core_enc =
     io_cmd_lo.header.addr[byte_offset_width_lp+:lg_num_core_lp];
-  
+
   bsg_decode_with_v
    #(.num_out_p(num_core_p))
    finish_data_cmd_decoder
     (.v_i(finish_data_cmd_v)
      ,.i(io_cmd_core_enc)
-  
+
      ,.o(finish_w_v_li)
      );
-  
+
   logic [num_core_p-1:0] finish_r;
   bsg_dff_reset
    #(.width_p(num_core_p))
    finish_accumulator
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.data_i(finish_r | finish_w_v_li)
      ,.data_o(finish_r)
      );
-  
+
   logic all_finished_r;
   bsg_dff_reset
    #(.width_p(1))
    all_finished_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.data_i(&finish_r)
      ,.data_o(all_finished_r)
      );
-  
+
   always_ff @(negedge clk_i)
     begin
       if (putchar_data_cmd_v) begin
@@ -209,14 +209,14 @@ module bp_nonsynth_host
       end
 
       if (putch_core_data_cmd_v) begin
-        // $display("addr is %h core is %d data is %h",io_cmd_cast_i.header.addr, putchar_core_id, io_cmd_cast_i.data[0+:8]); 
+        // $display("addr is %h core is %d data is %h",io_cmd_cast_i.header.addr, putchar_core_id, io_cmd_cast_i.data[0+:8]);
         $fwrite(stdout[putchar_core_id], "%c", io_cmd_lo.data[0+:8]);
         $fflush(stdout[putchar_core_id]);
       end
 
       if (getchar_data_cmd_v)
         pop();
-  
+
       if (io_cmd_v_i & (domain_id != '0))
         $display("Warning: Accesing illegal domain %0h. Sending loopback message!", domain_id);
       for (integer i = 0; i < num_core_p; i++)
@@ -230,7 +230,7 @@ module bp_nonsynth_host
             (io_cmd_lo.data[0+:8] != 8'(0)))
             $display("[CORE%0x FSH] FAIL", i);
         end
-  
+
       if (all_finished_r)
         begin
           $display("All cores finished! Terminating...");
@@ -266,7 +266,7 @@ module bp_nonsynth_host
      );
 
   bp_bedrock_cce_mem_msg_s host_io_resp_lo, domain_io_resp_lo, bootrom_io_resp_lo;
-  
+
   assign host_io_resp_lo = '{header: io_cmd_lo.header, data: ch};
   assign domain_io_resp_lo = '{header: io_cmd_lo.header, data: '0};
   assign bootrom_io_resp_lo = '{header: io_cmd_lo.header, data: bootrom_final_lo};
