@@ -54,7 +54,25 @@ module bp_nonsynth_host
   import "DPI-C" context function int scan();
   import "DPI-C" context function void pop();
 
-  initial start();
+  integer stdout[num_core_p];
+  integer stdout_global;
+
+  // initial start();
+  initial begin
+  start();
+  stdout_global = $fopen("stdoutglobal.out", "w");
+  $fwrite(stdout_global, "# bparrot global stdout file\n");
+  $fflush(stdout_global);
+
+  for (integer j = 0; j < num_core_p; j++)
+    begin
+      integer tmp;
+      tmp = $fopen($sformatf("stdout.%02d", j), "w");
+      stdout[j] = tmp;
+      $fwrite(stdout[j], "# bparrot stdout file for core %d\n", j);
+      $fflush(stdout[j]);
+    end
+  end
 
   logic do_scan;
   bsg_strobe
@@ -82,7 +100,7 @@ module bp_nonsynth_host
   localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
   localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
   localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
-
+  localparam putch_core_base_addr_gp  = paddr_width_p'(64'h0010_3???);
   bp_bedrock_cce_mem_msg_s io_cmd_li, io_cmd_lo;
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
 
@@ -116,6 +134,7 @@ module bp_nonsynth_host
   logic finish_data_cmd_v;
   logic bootrom_data_cmd_v;
   logic domain_data_cmd_v;
+  logic putch_core_data_cmd_v;
 
   always_comb
     begin
@@ -124,6 +143,7 @@ module bp_nonsynth_host
       finish_data_cmd_v = 1'b0;
       bootrom_data_cmd_v = 1'b0;
       domain_data_cmd_v = io_cmd_v_lo & (domain_id != '0);
+      putch_core_data_cmd_v = 1'b0;
 
       unique
       casez (io_cmd_lo.header.addr)
@@ -131,6 +151,7 @@ module bp_nonsynth_host
         getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_v_lo;
         finish_base_addr_gp : finish_data_cmd_v = io_cmd_v_lo;
         bootrom_base_addr_gp: bootrom_data_cmd_v = io_cmd_v_lo;
+        putch_core_base_addr_gp: putch_core_data_cmd_v = io_cmd_v_lo;
         default: begin end
       endcase
     end
@@ -178,7 +199,17 @@ module bp_nonsynth_host
       if (putchar_data_cmd_v) begin
         $write("%c", io_cmd_lo.data[0+:8]);
         $fflush(32'h8000_0001);
+        $fwrite(stdout_global, "%c", io_cmd_lo.data[0+:8]);
+        $fflush(stdout_global);
       end
+
+      if (putch_core_data_cmd_v) begin
+        $write("%c", io_cmd_lo.data[0+:8]);
+        $fflush(32'h8000_0001);
+        $fwrite(stdout[io_cmd_core_enc], "%c", io_cmd_lo.data[0+:8]);
+        $fflush(stdout[io_cmd_core_enc]);
+      end
+
       if (getchar_data_cmd_v)
         pop();
 
