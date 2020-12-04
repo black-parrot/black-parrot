@@ -147,8 +147,6 @@ module bp_nonsynth_host
       domain_data_cmd_v = io_cmd_v_lo & (domain_id != '0);
       putch_core_data_cmd_v = 1'b0;
 
-      // $display("header addr is %0h data is %h (%c)",io_cmd_lo.header.addr,io_cmd_lo.data[0+:8],io_cmd_lo.data[0+:8]);
-
       unique
       casez (io_cmd_lo.header.addr)
         putchar_base_addr_gp: putchar_data_cmd_v = io_cmd_v_lo;
@@ -211,7 +209,8 @@ module bp_nonsynth_host
       end
 
       if (putch_core_data_cmd_v) begin
-        // $display("addr is %h core is %d data is %h",io_cmd_cast_i.header.addr, putchar_core_id, io_cmd_cast_i.data[0+:8]);
+        $write("%c", io_cmd_lo.data[0+:8]);
+        $fflush(32'h8000_0001);
         $fwrite(stdout[putchar_core_id], "%c", io_cmd_lo.data[0+:8]);
         $fflush(stdout[putchar_core_id]);
       end
