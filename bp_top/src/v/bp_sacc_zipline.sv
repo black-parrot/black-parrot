@@ -76,7 +76,7 @@ module bp_sacc_zipline
 
    logic                          ob_tready;
    logic [`AXI_S_TID_WIDTH-1:0]   ob_tid;
-   logic [`AXI_S_DP_DWIDTH-1:0]   ob_tdata;
+   logic [`AXI_S_DP_DWIDTH-1:0]   ob_tdata, temp_ob_tdata;
    logic [`AXI_S_TSTRB_WIDTH-1:0] ob_tstrb;
    logic [`AXI_S_USER_WIDTH-1:0] ob_tuser, prev_ob_tuser;
    logic                         ob_tvalid, prev_ob_tvalid;
@@ -153,7 +153,7 @@ module bp_sacc_zipline
    assign io_resp_out =apb_pslverr;
   */
 
-assign io_cmd_ready_o = ib_tready;
+//assign io_cmd_ready_o = (state_r != DONE_IN) ? ib_tready : prev_ob_tvalid;
 //assign ob_tready= 1'b1;
    
 /*logic                         test,test2;
@@ -169,7 +169,7 @@ always_ff @(posedge clk_i)
           test2=0;
        end
      else if(ob_tdata == 64'h4000_0000_0a00_0400 && test == '0 && test2 == '0)
-       begin
+      begin
           ob_tready= 1'b1;
           test = 1'b1;
           test2=0;
@@ -193,13 +193,15 @@ always_ff @(posedge clk_i)
 */
 
 //dma engine
-logic           dma_enable;
-logic [63:0]    dma_address, dma_csr_data, comp_csr_data, resp_ob;
-logic [63:0]    dma_length, dma_counter, resp_counter;
+logic           dma_enable, ob_read, prev_ob_read;
+logic [63:0] dma_address, dma_csr_data, comp_csr_data, spm_data_lo;
+
+logic [63:0]    dma_length, dma_counter, resp_counter, read_counter;
 logic           dma_start, dma_done, start, resp_start, done_state;
-assign resp_data = (prev_local_addr_li.dev == 4'd2) ? dma_csr_data : comp_csr_data;
+assign resp_data = prev_ob_read  ? spm_data_lo : ((prev_local_addr_li.dev == 4'd2) ? dma_csr_data : comp_csr_data);
 assign dma_enable = io_cmd_v_i & (local_addr_li.dev == 4'd2) & (local_addr_li.nonlocal == 9'd0);//device number 2 is dma
 
+assign ob_read =  io_cmd_v_i & (local_addr_li.nonlocal != 9'd0) & (io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_rd);
 assign mem_cmd_payload.lce_id = lce_id_i;
 assign mem_cmd_payload.uncached = 1'b1;
 assign io_cmd_o = io_cmd_cast_o;
@@ -210,18 +212,21 @@ typedef enum logic [3:0]{
   , FETCH
   , WAIT_RESP
   , DONE_IN
-  , FETCH_RESP
+/*  , FETCH_RESP
   , WAIT_CMD_READY
-  , DONE_OUT
+  , DONE_OUT*/
 } state_e;
 state_e state_r, state_n;
-
+   
+assign ob_tready = 1;   
+assign io_cmd_ready_o = (ib_tlast != 1) ? ib_tready : ((resp_counter-2 >0) & (resp_counter-2 >= read_counter)) ;   
 always_ff @(posedge clk_i) begin
 
    if(reset_i) begin
      state_r <= RESET;
      dma_counter <= 0;
      resp_counter <= 0;
+     read_counter <= 0;
      dma_start <= 0;
      ib_tvalid      <= 1'b0;
      ib_tdata       <= 64'd0;
@@ -234,6 +239,7 @@ always_ff @(posedge clk_i) begin
      prev_local_addr_li <= local_addr_li;
      prev_ob_tuser <= ob_tuser;
      prev_ob_tvalid <= ob_tvalid;
+     prev_ob_read <= ob_read; 
      if (io_resp_v_i)
        begin
         dma_counter <= (state_n == DONE_IN) ? '0 : dma_counter + 1;
@@ -272,7 +278,13 @@ always_ff @(posedge clk_i) begin
      dma_start   <= 0;
 
 
-   if((ib_tlast == 1) & (ob_tuser == 1) & (ob_tvalid == 1) & (io_cmd_ready == 1))
+   if(ob_read)
+     read_counter <= read_counter + 1;
+
+   if(ob_tvalid)
+     resp_counter <= resp_counter + 1;
+   
+ /*  if((ib_tlast == 1) & (ob_tuser == 1) & (ob_tvalid == 1) & (io_cmd_ready == 1))
      begin
         resp_start  <= 1;
         resp_ob     <= ob_tdata;
@@ -294,7 +306,7 @@ always_ff @(posedge clk_i) begin
         done_state <= 1;
      end
    else if (done_state)
-     resp_start <= 0;
+     resp_start <= 0;*/
         
 end  
    
@@ -307,7 +319,6 @@ always_comb begin
         io_cmd_v_o = 1'b0;
         resp_done = 0;
         io_cmd_ready = 1;
-        ob_tready = 1;
      end
      WAIT_START: begin
         state_n = dma_start ? FETCH : WAIT_START;
@@ -335,9 +346,9 @@ always_comb begin
         resp_done = 0;
         dma_done = 1;
         io_cmd_v_o = 1'b0;
-        state_n = resp_start ? FETCH_RESP : (dma_start ? FETCH : DONE_IN);
+        state_n = dma_start ? FETCH : DONE_IN;
      end
-     FETCH_RESP: begin
+    /* FETCH_RESP: begin
         state_n =  io_cmd_ready ? (done_state ? DONE_OUT : FETCH_RESP) : WAIT_CMD_READY;
         temp_cmd_v_o = ((resp_counter == 1) & (prev_ob_tuser == 1)) ? 1 : prev_ob_tvalid;
         io_cmd_ready = ~(temp_cmd_v_o ^ io_cmd_yumi_i);
@@ -365,7 +376,7 @@ always_comb begin
         resp_done = 1;
         io_cmd_v_o = 0;
         state_n = dma_start ? FETCH : DONE_OUT;
-     end
+     end*/
    endcase
 end
    
@@ -397,6 +408,8 @@ begin
         resp_payload <= io_cmd_cast_i.header.payload;
         resp_addr    <= io_cmd_cast_i.header.addr;
         resp_msg     <= io_cmd_cast_i.header.msg_type.mem;
+//        io_resp_v_o    <= ob_tvalid;
+//        temp_ob_tdata  <= ob_tdata;
         io_resp_v_o  <= 1'b1;
      end
    else if(dma_enable)
@@ -407,6 +420,11 @@ begin
         resp_addr      <= io_cmd_cast_i.header.addr;
         resp_msg       <= io_cmd_cast_i.header.msg_type.mem;
      end
+   /*else if (ob_read)
+     begin
+        io_resp_v_o  <= ob_tvalid;
+        temp_ob_tdata <= ob_tdata;
+     end*/
    else
      begin
         io_resp_v_o  <= 1'b0;
@@ -474,6 +492,22 @@ assign ib_tstrb  = 8'hff;
           
                                  
       
+//SPM
+wire [`BSG_SAFE_CLOG2(20)-1:0] spm_addr_li = ob_read ? read_counter : (resp_counter-2);
+bsg_mem_1rw_sync
+  #(.width_p(64)
+    ,.els_p(40)
+  )
+  accel_spm
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.data_i(ob_tdata)
+   ,.addr_i(spm_addr_li)
+   ,.v_i(ob_read | ob_tvalid)
+   ,.w_i(ob_tvalid)
+   ,.data_o(spm_data_lo)
+   );
+
    
   
 endmodule

@@ -155,5 +155,3 @@ uint64_t bp_call_zipline_accelerator(uint8_t type, struct Zipline_CSR zipline_cs
 
   return tlv_num;
 }
-
-
