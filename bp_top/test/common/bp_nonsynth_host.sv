@@ -66,7 +66,9 @@ module bp_nonsynth_host
 
   for (integer j = 0; j < num_core_p; j++)
     begin
-      stdout[j] = $fopen($sformatf("stdout.%02d", j), "w");
+      integer tmp;
+      tmp = $fopen($sformatf("stdout.%02d", j), "w");
+      stdout[j] = tmp;
       $fwrite(stdout[j], "# bparrot stdout file for core %d\n", j);
       $fflush(stdout[j]);
     end
