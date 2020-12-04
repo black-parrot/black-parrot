@@ -1,5 +1,6 @@
 # Genesys 2 - xc7k325tffg900-2
 # Artix 7   - xc7a200tfbg676-2
+set PART $::env(PART)
 
 set BP_TOP_DIR $::env(BP_TOP_DIR)
 set BP_COMMON_DIR $::env(BP_COMMON_DIR)
@@ -8,6 +9,8 @@ set BP_FE_DIR $::env(BP_FE_DIR)
 set BP_ME_DIR $::env(BP_ME_DIR)
 set BASEJUMP_STL_DIR $::env(BASEJUMP_STL_DIR)
 set HARDFLOAT_DIR $::env(HARDFLOAT_DIR)
+
+set REPORT_DIR $::env(REPORT_DIR)
 
 set f [split [string trim [read [open "flist.vcs" r]]] "\n"]
 set flist [list ]
@@ -27,10 +30,11 @@ foreach x $f {
   }
 }
 
-set_part $::env(PART)
+set_part $PART
 read_verilog -sv $flist
 read_xdc design.xdc
 
-synth_design -top wrapper -part $::env(PART) -include_dirs $dir_list
-report_utilization -file hierarchical_utilization.rpt -hierarchical -hierarchical_percentages
-report_timing_summary -file timing.rpt
+synth_design -top wrapper -part $PART -include_dirs $dir_list
+report_utilization -file $REPORT_DIR/hier_util.rpt -hierarchical -hierarchical_percentages
+report_timing_summary -file $REPORT_DIR/timing.rpt
+

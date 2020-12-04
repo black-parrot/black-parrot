@@ -13,8 +13,7 @@ $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR):
 
 include $(TB_PATH)/$(TB)/Makefile.vivado
 
-export PART ?= xc7k325tffg900-2
-export CFG ?= e_bp_default_cfg
+PART ?= xc7k325tffg900-2
 
 synth.vivado: $(BUILD_DIR)/synth
 synth.vivado: SYNTH_LOG   := $(LOG_DIR)/$(TB).$(CFG).$(TAG).synth.log
@@ -23,6 +22,12 @@ synth.vivado: SYNTH_ERROR := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).synth.err
 
 $(SYNTH_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/synth: $(SYNTH_COLLATERAL)
+	$(eval export REPORT_DIR)
+	$(eval export PART)
 	cd $(@D); \
-		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/tcl/vivado_synth.tcl | tee -i $(SYNTH_LOG) \
-		[-f ./*.rpt] && mv *.rpt $(REPORT_DIR)/
+		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/tcl/vivado_synth.tcl | tee -i $(SYNTH_LOG)
+		-@grep --color      "ERROR"                                $(SYNTH_LOG) | tee -a $(SYNTH_ERROR)
+		-@test -s $(SYNTH_ERROR) && echo "Vivado synthesis: FAILED" > $(SYNTH_REPORT) && exit 1
+		-@grep --color      "WARNING"                              $(SYNTH_LOG) | tee -a $(SYNTH_REPORT)
+		-@tail -n5                                                 $(SYNTH_LOG) | tee -a $(SYNTH_REPORT)
+
