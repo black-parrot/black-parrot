@@ -93,6 +93,29 @@ module bp_fe_top
   logic [instr_width_p-1:0] fetch_li;
   logic fetch_instr_v_li, fetch_exception_v_li, fetch_fail_v_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
+
+
+  wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
+  wire pc_redirect_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
+  wire itlb_fill_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
+  wire icache_fence_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
+  wire itlb_fence_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
+  wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
+  wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
+
+  wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+  wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
+
+  logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
+
+  bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
+  logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
+  logic [vaddr_width_p-1:0] attaboy_pc_li;
+  assign attaboy_br_metadata_fwd_li = fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
+  assign attaboy_taken_li           = attaboy_v &  fe_cmd_cast_i.operands.attaboy.taken;
+  assign attaboy_ntaken_li          = attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken;
+  assign attaboy_v_li               = attaboy_v;
+  assign attaboy_pc_li              = fe_cmd_cast_i.vaddr;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
    pc_gen
@@ -116,6 +139,13 @@ module bp_fe_top
      ,.fe_cmd_i(fe_cmd_i)
      ,.fe_cmd_v_i(fe_cmd_v_i)
      ,.fe_cmd_yumi_o(fe_cmd_yumi_o)
+
+     ,.attaboy_pc_i(attaboy_pc_li)
+     ,.attaboy_br_metadata_fwd_i(attaboy_br_metadata_fwd_li)
+     ,.attaboy_taken_i(attaboy_taken_li)
+     ,.attaboy_ntaken_i(attaboy_ntaken_li)
+     ,.attaboy_v_i(attaboy_v_li)
+     ,.attaboy_yumi_o(/* TODO: */)
      );
 
   logic instr_page_fault_lo, instr_access_fault_lo, itlb_miss_lo;
@@ -123,18 +153,6 @@ module bp_fe_top
   logic icache_ready;
   // TODO: comment about energy
 
-  wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
-  wire pc_redirect_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
-  wire itlb_fill_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
-  wire icache_fence_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
-  wire itlb_fence_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
-  wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
-  wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
-
-  wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
-  wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
-
-  logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
   wire shadow_priv_w = state_reset_v | trap_v;
   assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
   bsg_dff_reset_en_bypass

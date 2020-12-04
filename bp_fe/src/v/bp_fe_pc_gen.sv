@@ -36,6 +36,13 @@ module bp_fe_pc_gen
    , input [fe_cmd_width_lp-1:0]                     fe_cmd_i
    , input                                           fe_cmd_v_i
    , output                                          fe_cmd_yumi_o
+
+   , input [vaddr_width_p-1:0]                       attaboy_pc_i
+   , input [branch_metadata_fwd_width_p-1:0]         attaboy_br_metadata_fwd_i
+   , input                                           attaboy_taken_i
+   , input                                           attaboy_ntaken_i
+   , input                                           attaboy_v_i
+   , output logic                                    attaboy_yumi_o
    );
 
 `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -56,6 +63,9 @@ assign fe_cmd_cast_i = fe_cmd_i;
 
 bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
 bp_fe_pc_gen_stage_s [1:0] pc_gen_stage_n, pc_gen_stage_r;
+
+bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd;
+assign attaboy_br_metadata_fwd = attaboy_br_metadata_fwd_i;
 
 logic is_br, is_jal, is_jalr, is_call, is_ret;
 logic is_br_site, is_jal_site, is_jalr_site, is_call_site, is_ret_site;
@@ -80,6 +90,8 @@ assign fe_cmd_branch_metadata = br_miss_v
                                 : attaboy_v
                                   ? fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd
                                   : '0;
+
+assign attaboy_yumi_o = attaboy_v_i;
 
 // Global history
 //
@@ -215,6 +227,24 @@ assign fe_queue_cast_o_branch_metadata =
 wire btb_incorrect = (br_miss_nonbr & fe_cmd_branch_metadata.src_btb)
                      | (br_res_taken & (~fe_cmd_branch_metadata.src_btb | br_miss_v));
 wire br_res_jmp = fe_cmd_branch_metadata.is_jal | fe_cmd_branch_metadata.is_jalr;
+
+wire btb_r_v_li = next_pc_yumi_i & ~ovr_taken & ~ovr_ret;
+wire [vaddr_width_p-1:0] btb_r_addr_li = next_pc_o;
+
+wire btb_w_v_li = fe_cmd_yumi_o & btb_incorrect;
+//(redirect_v_i & ~redirect_br_v_i & ~fetch_fail_v_i & redirect_br_metadata_fwd.src_btb)
+// | (redirect_br_v_i & redirect_br_taken_i)
+// | (attaboy_yumi_o & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
+wire btb_clr_li = br_miss_nonbr;
+//(redirect_v_i & ~redirect_br_v_i & redirect_br_metadata_fwd.src_btb);
+wire btb_jmp_li = fe_cmd_branch_metadata.is_jal | fe_cmd_branch_metadata.is_jalr;
+//redirect_v_i ? (redirect_br_metadata_fwd.is_jal | redirect_br_metadata_fwd.is_jalr) : (attaboy_br_metadata_fwd.is_jal | attaboy_br_metadata_fwd.is_jalr);
+wire [btb_tag_width_p-1:0] btb_tag_li = fe_cmd_branch_metadata.btb_tag;
+//redirect_v_i ? redirect_br_metadata_fwd.btb_tag : attaboy_br_metadata_fwd.btb_tag;
+wire [btb_idx_width_p-1:0] btb_idx_li = fe_cmd_branch_metadata.btb_idx;
+//redirect_v_i ? redirect_br_metadata_fwd.btb_idx : attaboy_br_metadata_fwd.btb_idx;
+wire [vaddr_width_p-1:0]   btb_tgt_li = fe_cmd_cast_i.vaddr;
+//redirect_v_i ? redirect_pc_i : attaboy_pc_i;
 bp_fe_btb
  #(.vaddr_width_p(vaddr_width_p)
    ,.btb_tag_width_p(btb_tag_width_p)
@@ -224,22 +254,34 @@ bp_fe_btb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.r_addr_i(pc_gen_stage_n[0].pc)
-   ,.r_v_i(next_pc_yumi_i & ~ovr_taken & ~ovr_ret)
+   ,.r_v_i(btb_r_v_li)
+   ,.r_addr_i(btb_r_addr_li)
    ,.br_tgt_o(btb_br_tgt_lo)
    ,.br_tgt_v_o(btb_br_tgt_v_lo)
    ,.br_tgt_jmp_o(btb_br_tgt_jmp_lo)
 
-   ,.w_v_i(fe_cmd_yumi_o & btb_incorrect)
-   ,.w_clr_i(br_miss_nonbr)
-   ,.w_jmp_i(br_res_jmp)
-   ,.w_tag_i(fe_cmd_branch_metadata.btb_tag)
-   ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
-   ,.br_tgt_i(fe_cmd_cast_i.vaddr)
+   ,.w_v_i(btb_w_v_li)
+   ,.w_clr_i(btb_clr_li)
+   ,.w_jmp_i(btb_jmp_li)
+   ,.w_tag_i(btb_tag_li)
+   ,.w_idx_i(btb_idx_li)
+   ,.br_tgt_i(btb_tgt_li)
    );
 
 // Local index
 //
+wire bht_r_v_li = next_pc_yumi_i; // X-prop? & ~ovr_taken & ~ovr_ret;
+wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_r_li =
+  {next_pc_o[2+:bht_idx_width_p], pc_gen_stage_n[0].ghist};
+wire bht_w_v_li = (br_miss_v | attaboy_v) & fe_cmd_branch_metadata.is_br & fe_cmd_yumi_o;
+//  (redirect_br_v_i & redirect_br_metadata_fwd.is_br) | (attaboy_yumi_o & attaboy_br_metadata_fwd.is_br);
+wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_w_li = {fe_cmd_branch_metadata.bht_idx, fe_cmd_branch_metadata.ghist};
+//  redirect_v_i
+//  ? {redirect_br_metadata_fwd.bht_idx, redirect_br_metadata_fwd.ghist}
+//  : {attaboy_br_metadata_fwd.bht_idx, attaboy_br_metadata_fwd.ghist};
+wire bht_correct_li = attaboy_yumi_o;
+wire [1:0] bht_val_li = fe_cmd_branch_metadata.bht_val;
+//redirect_v_i ? redirect_br_metadata_fwd.bht_val : attaboy_br_metadata_fwd.bht_val;
 bp_fe_bht
  #(.vaddr_width_p(vaddr_width_p)
    ,.bht_idx_width_p(bht_idx_width_p+ghist_width_p)
@@ -248,14 +290,14 @@ bp_fe_bht
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.r_v_i(next_pc_yumi_i)
-   ,.idx_r_i({pc_gen_stage_n[0].pc[2+:bht_idx_width_p], pc_gen_stage_n[0].ghist})
+   ,.r_v_i(bht_r_v_li)
+   ,.idx_r_i(bht_idx_r_li)
    ,.val_o(bht_val_lo)
 
-   ,.w_v_i((br_miss_v | attaboy_v) & fe_cmd_branch_metadata.is_br & fe_cmd_yumi_o)
-   ,.idx_w_i({fe_cmd_branch_metadata.bht_idx, fe_cmd_branch_metadata.ghist})
-   ,.correct_i(attaboy_v)
-   ,.val_i(fe_cmd_branch_metadata.bht_val)
+   ,.w_v_i(bht_w_v_li)
+   ,.idx_w_i(bht_idx_w_li)
+   ,.correct_i(bht_correct_li)
+   ,.val_i(bht_val_li)
    );
 
 `declare_bp_fe_instr_scan_s(vaddr_width_p)
