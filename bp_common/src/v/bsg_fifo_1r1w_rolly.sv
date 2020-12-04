@@ -53,7 +53,8 @@ module bsg_fifo_1r1w_rolly
   wire full = (cptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp])
               & (cptr_r[ptr_width_lp] != wptr_r[ptr_width_lp]);
 
-  assign ready_o = ~clr & ~full;
+  // Entries will dissapear with simultaneous enqueue and clear
+  assign ready_o = ~full;
   assign v_o     = ~roll & ~empty;
 
   bsg_circular_ptr

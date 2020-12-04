@@ -88,12 +88,51 @@ module bp_fe_top
   wire is_run   = (state_r == e_run);
   wire is_stall = (state_r == e_stall);
 
-  logic resume_v_li;
-  logic [vaddr_width_p-1:0] resume_pc_li;
+  logic redirect_v_li;
+  logic [vaddr_width_p-1:0] redirect_pc_li;
+  logic redirect_br_v_li, redirect_br_taken_li, redirect_br_ntaken_li, redirect_br_nonbr_li;
+  bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd_li;
+  bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
+  logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
+  logic [vaddr_width_p-1:0] attaboy_pc_li;
   logic [instr_width_p-1:0] fetch_li;
   logic fetch_instr_v_li, fetch_exception_v_li, fetch_fail_v_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
+  bp_fe_pc_gen
+   #(.bp_params_p(bp_params_p))
+   pc_gen
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
+     ,.redirect_v_i(redirect_v_li)
+     ,.redirect_pc_i(redirect_pc_li)
+     ,.redirect_br_v_i(redirect_br_v_li)
+     ,.redirect_br_metadata_fwd_i(redirect_br_metadata_fwd_li)
+     ,.redirect_br_taken_i(redirect_br_taken_li)
+     ,.redirect_br_ntaken_i(redirect_br_ntaken_li)
+     ,.redirect_br_nonbr_i(redirect_br_nonbr_li)
+
+     ,.next_pc_o(next_pc_lo)
+     ,.next_pc_yumi_i(next_pc_yumi_li)
+
+     ,.ovr_o(ovr_lo)
+
+     ,.fetch_i(fetch_li)
+     ,.fetch_instr_v_i(fetch_instr_v_li)
+     ,.fetch_exception_v_i(fetch_exception_v_li)
+     ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
+
+     ,.attaboy_pc_i(attaboy_pc_li)
+     ,.attaboy_br_metadata_fwd_i(attaboy_br_metadata_fwd_li)
+     ,.attaboy_taken_i(attaboy_taken_li)
+     ,.attaboy_ntaken_i(attaboy_ntaken_li)
+     ,.attaboy_v_i(attaboy_v_li)
+     ,.attaboy_yumi_o(attaboy_yumi_lo)
+     );
+
+  logic instr_page_fault_lo, instr_access_fault_lo, itlb_miss_lo;
+
+  logic icache_ready;
 
   wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
   wire pc_redirect_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
@@ -103,56 +142,19 @@ module bp_fe_top
   wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
   wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
+  wire br_miss_v = pc_redirect_v
+    & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
+  wire br_miss_taken = br_miss_v
+    & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_pred_taken);
+  wire br_miss_ntaken = br_miss_v
+    & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_pred_ntaken);
+  wire br_miss_nonbr = br_miss_v
+    & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
+
   wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
   wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 
   logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
-
-  bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
-  logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
-  logic [vaddr_width_p-1:0] attaboy_pc_li;
-  assign attaboy_br_metadata_fwd_li = fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
-  assign attaboy_taken_li           = attaboy_v &  fe_cmd_cast_i.operands.attaboy.taken;
-  assign attaboy_ntaken_li          = attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken;
-  assign attaboy_v_li               = attaboy_v;
-  assign attaboy_pc_li              = fe_cmd_cast_i.vaddr;
-  bp_fe_pc_gen
-   #(.bp_params_p(bp_params_p))
-   pc_gen
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.resume_v_i(resume_v_li)
-     ,.resume_pc_i(resume_pc_li)
-
-     ,.next_pc_o(next_pc_lo)
-     ,.next_pc_yumi_i(next_pc_yumi_li)
-
-     ,.mem_poison_o(ovr_lo)
-
-     ,.fetch_i(fetch_li)
-     ,.fetch_instr_v_i(fetch_instr_v_li)
-     ,.fetch_exception_v_i(fetch_exception_v_li)
-     ,.fetch_fail_v_i(fetch_fail_v_li)
-     ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
-
-     ,.fe_cmd_i(fe_cmd_i)
-     ,.fe_cmd_v_i(fe_cmd_v_i)
-     ,.fe_cmd_yumi_o(fe_cmd_yumi_o)
-
-     ,.attaboy_pc_i(attaboy_pc_li)
-     ,.attaboy_br_metadata_fwd_i(attaboy_br_metadata_fwd_li)
-     ,.attaboy_taken_i(attaboy_taken_li)
-     ,.attaboy_ntaken_i(attaboy_ntaken_li)
-     ,.attaboy_v_i(attaboy_v_li)
-     ,.attaboy_yumi_o(/* TODO: */)
-     );
-
-  logic instr_page_fault_lo, instr_access_fault_lo, itlb_miss_lo;
-
-  logic icache_ready;
-  // TODO: comment about energy
-
   wire shadow_priv_w = state_reset_v | trap_v;
   assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
   bsg_dff_reset_en_bypass
@@ -182,23 +184,35 @@ module bp_fe_top
 
   // Change the resume pc on redirect command, else save the PC in IF2 while running
   logic [vaddr_width_p-1:0] pc_resume_n, pc_resume_r;
+  bp_fe_branch_metadata_fwd_s br_metadata_fwd_resume_n, br_metadata_fwd_resume_r;
+  logic br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r;
   assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.vaddr : vaddr_rr;
+  assign br_metadata_fwd_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fetch_br_metadata_fwd_lo;
   bsg_dff_reset_en_bypass
-   #(.width_p(vaddr_width_p))
+   #(.width_p(4+$bits(bp_fe_branch_metadata_fwd_s)+vaddr_width_p))
    pc_resume_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(cmd_nonattaboy_v | fetch_instr_v_li | fetch_exception_v_li | fetch_fail_v_li)
-  
-     ,.data_i(pc_resume_n)
-     ,.data_o(pc_resume_r)
-     );
-  assign resume_pc_li = pc_resume_r;
-  // TODO: Replay logic here is wonky
-  assign resume_v_li = (is_stall & next_pc_yumi_li) | cmd_nonattaboy_v;
+     ,.en_i(cmd_nonattaboy_v | is_run)
 
-  //assign next_pc_yumi_li = ~is_wait & icache_ready & (fe_queue_ready_i | cmd_nonattaboy_v);
-  assign next_pc_yumi_li = cmd_nonattaboy_v | (~is_wait & icache_ready & fe_queue_ready_i);
+     ,.data_i({br_miss_v, br_miss_nonbr, br_miss_taken, br_miss_ntaken, br_metadata_fwd_resume_n, pc_resume_n})
+     ,.data_o({br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r, br_metadata_fwd_resume_r, pc_resume_r})
+     );
+  assign redirect_v_li = (is_stall & next_pc_yumi_li) | cmd_nonattaboy_v;
+  assign redirect_pc_li = pc_resume_r;
+  assign redirect_br_v_li = redirect_v_li & br_miss_r;
+  assign redirect_br_metadata_fwd_li = br_metadata_fwd_resume_r;
+  assign redirect_br_taken_li = br_miss_taken_r;
+  assign redirect_br_ntaken_li = br_miss_ntaken_r;
+  assign redirect_br_nonbr_li = br_miss_nonbr_r;
+
+  assign attaboy_br_metadata_fwd_li = fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
+  assign attaboy_taken_li           = attaboy_v &  fe_cmd_cast_i.operands.attaboy.taken;
+  assign attaboy_ntaken_li          = attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken;
+  assign attaboy_v_li               = attaboy_v;
+  assign attaboy_pc_li              = fe_cmd_cast_i.vaddr;
+
+  assign next_pc_yumi_li = ~is_wait & icache_ready & fe_queue_ready_i;
 
   logic fetch_v_r, fetch_v_rr;
   bp_pte_entry_leaf_s itlb_r_entry, entry_lo, passthrough_entry;
@@ -281,7 +295,7 @@ module bp_fe_top
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(ptag_v_li)
      ,.uncached_i(uncached_li)
-     ,.poison_i(mem_poison_lo | instr_access_fault_v | instr_page_fault_v)
+     ,.poison_i(mem_poison_lo)
 
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
@@ -364,6 +378,8 @@ module bp_fe_top
   wire fe_instr_v     = fetch_v_rr & icache_data_v_lo & ~flush;
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
   assign mem_poison_lo = ovr_lo | flush;
+
+  assign fe_cmd_yumi_o = cmd_nonattaboy_v | attaboy_yumi_lo;
 
   assign fetch_instr_v_li     = fe_queue_v_o & fe_instr_v;
   assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;

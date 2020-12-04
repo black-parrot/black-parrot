@@ -435,7 +435,7 @@ module testbench
        ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
        ,.ret_override(fe.pc_gen.ovr_ret)
 
-       ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
+       ,.fe_cmd(fe.fe_cmd_yumi_o & ~fe.attaboy_v)
        ,.fe_cmd_fence(be.director.suppress_iss_o)
 
        ,.mispredict(be.director.npc_mismatch_v)

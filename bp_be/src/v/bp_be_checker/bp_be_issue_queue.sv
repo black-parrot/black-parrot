@@ -115,7 +115,8 @@ module bp_be_issue_queue
     ,.r_data_o(fe_queue_cast_o)
     );
   assign fe_queue_v_o     = ~roll & ~empty;
-  assign fe_queue_ready_o = ~clr & ~full;
+  // Entries will dissapear with simultaneous enqueue and clear
+  assign fe_queue_ready_o = ~full;
 
   rv64_instr_fmatype_s instr;
   assign instr = fe_queue_cast_i.msg.fetch.instr;
