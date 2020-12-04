@@ -136,8 +136,6 @@ module bp_nonsynth_host
   logic domain_data_cmd_v;
   logic putch_core_data_cmd_v;
 
-  integer putchar_core_id = 0;
-
   always_comb
     begin
       putchar_data_cmd_v = 1'b0;
@@ -153,10 +151,7 @@ module bp_nonsynth_host
         getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_v_lo;
         finish_base_addr_gp : finish_data_cmd_v = io_cmd_v_lo;
         bootrom_base_addr_gp: bootrom_data_cmd_v = io_cmd_v_lo;
-        putch_core_base_addr_gp:  begin
-                                    putch_core_data_cmd_v = io_cmd_v_lo;
-                                    putchar_core_id = io_cmd_lo.header.addr & 12'hfff;
-                                  end
+        putch_core_base_addr_gp: putch_core_data_cmd_v = io_cmd_v_lo;
         default: begin end
       endcase
     end
@@ -211,8 +206,8 @@ module bp_nonsynth_host
       if (putch_core_data_cmd_v) begin
         $write("%c", io_cmd_lo.data[0+:8]);
         $fflush(32'h8000_0001);
-        $fwrite(stdout[putchar_core_id], "%c", io_cmd_lo.data[0+:8]);
-        $fflush(stdout[putchar_core_id]);
+        $fwrite(stdout[io_cmd_core_enc], "%c", io_cmd_lo.data[0+:8]);
+        $fflush(stdout[io_cmd_core_enc]);
       end
 
       if (getchar_data_cmd_v)
