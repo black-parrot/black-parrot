@@ -41,7 +41,6 @@ struct VDP_CSR
 #define DONE_DMA       3
 #define DMA_TYPE       4 //0:read, 1:write
 
-
 struct dma_cfg 
 {
   uint64_t *data_ptr;

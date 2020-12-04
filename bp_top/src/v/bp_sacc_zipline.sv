@@ -53,8 +53,9 @@ module bp_sacc_zipline
    
  // bp_cce_mem_msg_s io_resp_cast_i;
  // bp_cce_mem_msg_s io_cmd_cast_o;
-  
-
+   logic  io_cmd_ready;  
+   logic  temp_cmd_v_o;
+   
    logic [`N_RBUS_ADDR_BITS-1:0] apb_paddr;
    logic                         apb_psel;
    logic                         apb_penable;
@@ -77,8 +78,8 @@ module bp_sacc_zipline
    logic [`AXI_S_TID_WIDTH-1:0]   ob_tid;
    logic [`AXI_S_DP_DWIDTH-1:0]   ob_tdata;
    logic [`AXI_S_TSTRB_WIDTH-1:0] ob_tstrb;
-   logic [`AXI_S_USER_WIDTH-1:0] ob_tuser;
-   logic                         ob_tvalid;
+   logic [`AXI_S_USER_WIDTH-1:0] ob_tuser, prev_ob_tuser;
+   logic                         ob_tvalid, prev_ob_tvalid;
    logic                         ob_tlast;
 
 
@@ -102,9 +103,12 @@ module bp_sacc_zipline
    logic [paddr_width_p-1:0]     resp_addr;
    logic [63:0]                  resp_data;
    logic [63:0]                  tlv_type;
-   logic [63:0]                  tlv_idx;
+   logic [63:0]                  resp_ptr;
+   logic                         resp_done;
+    
+//   logic [63:0]                  tlv_idx;
    
-   bp_local_addr_s           local_addr_li;
+   bp_local_addr_s           local_addr_li, prev_local_addr_li;
    bp_global_addr_s          global_addr_li;
 
    assign key_mode = 0;
@@ -114,7 +118,7 @@ module bp_sacc_zipline
    
    
 //   assign io_cmd_ready_o = apb_pready;
-   assign io_cmd_ready_o = 1;
+   //assign io_cmd_ready_o = 1;
    assign io_resp_ready_o = 1'b1;
 //   assign io_cmd_v_o = 1'b0;
    
@@ -125,7 +129,7 @@ module bp_sacc_zipline
    assign global_addr_li = io_cmd_cast_i.header.addr;
    assign local_addr_li = io_cmd_cast_i.header.addr;
 
-   assign resp_data = apb_prdata;
+   //assign resp_data = apb_prdata;
    assign resp_header   =  '{msg_type       : resp_msg
                              ,addr          : resp_addr
                              ,payload       : resp_payload
@@ -150,7 +154,9 @@ module bp_sacc_zipline
   */
 
 assign io_cmd_ready_o = ib_tready;
-logic                         test,test2;
+//assign ob_tready= 1'b1;
+   
+/*logic                         test,test2;
 //assign ob_tready= 1'b1;
 always_ff @(posedge clk_i)
   begin
@@ -184,19 +190,184 @@ always_ff @(posedge clk_i)
      else
        ob_tready= 1'b1;
   end
-
+*/
 
 //dma engine
 logic           dma_enable;
-logic [63:0]    dma_address;
+logic [63:0]    dma_address, dma_csr_data, comp_csr_data, resp_ob;
+logic [63:0]    dma_length, dma_counter, resp_counter;
+logic           dma_start, dma_done, start, resp_start, done_state;
+assign resp_data = (prev_local_addr_li.dev == 4'd2) ? dma_csr_data : comp_csr_data;
 assign dma_enable = io_cmd_v_i & (local_addr_li.dev == 4'd2) & (local_addr_li.nonlocal == 9'd0);//device number 2 is dma
 
 assign mem_cmd_payload.lce_id = lce_id_i;
 assign mem_cmd_payload.uncached = 1'b1;
-   
-   
 assign io_cmd_o = io_cmd_cast_o;
 
+typedef enum logic [3:0]{
+  RESET
+  , WAIT_START
+  , FETCH
+  , WAIT_RESP
+  , DONE_IN
+  , FETCH_RESP
+  , WAIT_CMD_READY
+  , DONE_OUT
+} state_e;
+state_e state_r, state_n;
+
+always_ff @(posedge clk_i) begin
+
+   if(reset_i) begin
+     state_r <= RESET;
+     dma_counter <= 0;
+     resp_counter <= 0;
+     dma_start <= 0;
+     ib_tvalid      <= 1'b0;
+     ib_tdata       <= 64'd0;
+     ib_tid         <= 1'b0;
+     ib_tlast       <= 1'b0;
+     resp_start     <= 1'b0;
+   end
+   else begin
+     state_r <= state_n;
+     prev_local_addr_li <= local_addr_li;
+     prev_ob_tuser <= ob_tuser;
+     prev_ob_tvalid <= ob_tvalid;
+     if (io_resp_v_i)
+       begin
+        dma_counter <= (state_n == DONE_IN) ? '0 : dma_counter + 1;
+                        //sot-eot                    //eot                                     //sot                       //mot
+        ib_tuser     <= (dma_length == 1) ? 64'd3 : ((dma_length-1 == dma_counter) ? 64'd2 : ((dma_counter == 0) ? 64'd1 : 64'd0));
+        ib_tvalid    <= 1'b1;
+        ib_tlast     <= (tlv_type == 64'd4) & (dma_length-1 == dma_counter);
+        ib_tdata     <= io_resp_cast_i.data;
+        ib_tid       <=1'b0;
+       end
+     else
+       ib_tvalid     <= '0;
+   end 
+   
+   
+   if (~dma_enable)
+      dma_start   <= 0;
+   else if (dma_enable & (io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_wr))
+     unique
+       case (local_addr_li.addr)
+           20'h00000 : dma_address <= io_cmd_cast_i.data;
+           20'h00008 : dma_length  <= io_cmd_cast_i.data;
+           20'h00010 : dma_start   <= io_cmd_cast_i.data;
+          default : begin end
+       endcase 
+   else if (dma_enable & (io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_rd))
+     begin
+     unique
+       case (local_addr_li.addr)
+           20'h00018 : dma_csr_data <= dma_done;
+          default : begin end
+       endcase
+        dma_start   <= 0;
+     end
+   else
+     dma_start   <= 0;
+
+
+   if((ib_tlast == 1) & (ob_tuser == 1) & (ob_tvalid == 1) & (io_cmd_ready == 1))
+     begin
+        resp_start  <= 1;
+        resp_ob     <= ob_tdata;
+        resp_counter <= resp_counter + 1;
+        done_state <= 0;
+     end
+   else if ((resp_start == 1) & (ob_tuser == 0) & (ob_tvalid == 1) & (io_cmd_ready == 1))
+     begin
+        resp_start  <= 1;
+        resp_ob     <= ob_tdata;
+        resp_counter <= resp_counter + 1;
+        done_state <= 0;
+     end
+   else if ((resp_start == 1) & (ob_tuser == 2) & (prev_ob_tuser != 2) & (ob_tvalid == 1) & (io_cmd_ready == 1))
+     begin
+        resp_start  <= 1;
+        resp_ob     <= ob_tdata;
+        resp_counter <= resp_counter + 1;
+        done_state <= 1;
+     end
+   else if (done_state)
+     resp_start <= 0;
+        
+end  
+   
+always_comb begin
+   state_n = state_r;
+   case (state_r)
+     RESET: begin
+        state_n = reset_i ? RESET : WAIT_START;
+        dma_done = 0;
+        io_cmd_v_o = 1'b0;
+        resp_done = 0;
+        io_cmd_ready = 1;
+        ob_tready = 1;
+     end
+     WAIT_START: begin
+        state_n = dma_start ? FETCH : WAIT_START;
+        dma_done = 0;
+        io_cmd_v_o = 1'b0;
+        resp_done = 0;
+     end
+     FETCH: begin
+        state_n = (dma_counter == (dma_length-1)) ? DONE_IN : WAIT_RESP;
+        dma_done = 0;
+        io_cmd_v_o = 1'b1;
+        io_cmd_cast_o.header.payload = mem_cmd_payload;
+        io_cmd_cast_o.header.size = 3'b011;//8 byte
+        io_cmd_cast_o.header.addr = dma_address + (dma_counter*8);
+        io_cmd_cast_o.header.msg_type.mem = e_bedrock_mem_uc_rd;
+        resp_done = 0;
+     end
+     WAIT_RESP: begin
+        state_n = io_resp_v_i ? FETCH : WAIT_RESP;
+        dma_done = 0;
+        io_cmd_v_o = 1'b0;
+        resp_done = 0;
+     end
+     DONE_IN: begin
+        resp_done = 0;
+        dma_done = 1;
+        io_cmd_v_o = 1'b0;
+        state_n = resp_start ? FETCH_RESP : (dma_start ? FETCH : DONE_IN);
+     end
+     FETCH_RESP: begin
+        state_n =  io_cmd_ready ? (done_state ? DONE_OUT : FETCH_RESP) : WAIT_CMD_READY;
+        temp_cmd_v_o = ((resp_counter == 1) & (prev_ob_tuser == 1)) ? 1 : prev_ob_tvalid;
+        io_cmd_ready = ~(temp_cmd_v_o ^ io_cmd_yumi_i);
+        io_cmd_v_o = temp_cmd_v_o;
+        ob_tready = io_cmd_ready;
+        io_cmd_cast_o.data = resp_ob;
+        io_cmd_cast_o.header.payload = mem_cmd_payload;
+        io_cmd_cast_o.header.size = 3'b011;//8 byte
+        io_cmd_cast_o.header.addr = resp_ptr + ((resp_counter-1)*8);
+        io_cmd_cast_o.header.msg_type.mem = e_bedrock_mem_uc_wr;
+        resp_done = 0;
+     end 
+     WAIT_CMD_READY: begin
+        temp_cmd_v_o = ((resp_counter == 1) & (prev_ob_tuser == 1)) ? 1 : prev_ob_tvalid;
+        io_cmd_ready = ~(temp_cmd_v_o ^ io_cmd_yumi_i);
+        io_cmd_cast_o.data = resp_ob;
+        io_cmd_cast_o.header.payload = mem_cmd_payload;
+        io_cmd_cast_o.header.size = 3'b011;//8 byte
+        io_cmd_cast_o.header.addr = resp_ptr + ((resp_counter-1)*8);
+        io_cmd_cast_o.header.msg_type.mem = e_bedrock_mem_uc_wr;
+        resp_done = 0;
+        state_n =  io_cmd_ready ? FETCH_RESP : WAIT_CMD_READY;
+     end
+     DONE_OUT: begin
+        resp_done = 1;
+        io_cmd_v_o = 0;
+        state_n = dma_start ? FETCH : DONE_OUT;
+     end
+   endcase
+end
    
 always_ff @(posedge clk_i) 
 begin
@@ -207,16 +378,18 @@ begin
         resp_addr    <= io_cmd_cast_i.header.addr;
         resp_msg     <= io_cmd_cast_i.header.msg_type.mem;
         io_resp_v_o  <= 1'b1;
-        ib_tvalid    <= 1'b0;
-        ib_tlast     <= 1'b0;
-        ib_tdata     <= 64'd0;
-        ib_tid       <= 1'b0;
-        io_cmd_v_o   <= 1'b0;
-        case (local_addr_li.addr)
-          20'h00000 : tlv_type <= io_cmd_cast_i.data;
-          20'h00008 : tlv_idx  <= io_cmd_cast_i.data;
-          default : begin end
-        endcase 
+//        comp_csr_data <= apb_prdata; //need to add this when local_addr_li.dev == 4'd0
+        if ((io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_wr))
+          case (local_addr_li.addr)
+            20'h00000 : tlv_type <= io_cmd_cast_i.data;
+            20'h00008 : resp_ptr <= io_cmd_cast_i.data;
+            default : begin end
+          endcase // case (local_addr_li.addr)
+        else if ((io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_rd))
+          case (local_addr_li.addr)
+            20'h00010 : comp_csr_data <= resp_done;
+            default : begin end
+          endcase
      end 
    else if (io_cmd_v_i  & (local_addr_li.nonlocal != 9'd0))
      begin
@@ -225,43 +398,24 @@ begin
         resp_addr    <= io_cmd_cast_i.header.addr;
         resp_msg     <= io_cmd_cast_i.header.msg_type.mem;
         io_resp_v_o  <= 1'b1;
-        ib_tvalid    <= 1'b1;
-        ib_tlast     <= (tlv_type == 64'd4) & (tlv_idx == 64'd2);
-        ib_tdata     <= io_cmd_cast_i.data;
-        ib_tid       <=1'b0;
-        io_cmd_v_o   <= 1'b0;
-        io_cmd_v_o   <= 1'b0;
      end
    else if(dma_enable)
      begin
-        io_resp_v_o    <= 1'b0;
-        ib_tvalid      <= 1'b0;
-        ib_tdata       <= 64'd0;
-        ib_tid         <= 1'b0;
-        ib_tlast       <= 1'b0;
-        //io_cmd_v_o     <= io_cmd_yumi_i; //wrong because io_cmd_v_o needs to be 1 to change io_cmd_yumi_i to 1
-        io_cmd_v_o     <= 1'b1;
-        io_cmd_cast_o.header.payload      <= mem_cmd_payload;
-        io_cmd_cast_o.header.size         <= 3'b011;//8 byte
-        io_cmd_cast_o.header.addr         <= io_cmd_cast_i.data;
-        io_cmd_cast_o.header.msg_type.mem <= e_bedrock_mem_uc_rd;
-        dma_address    <= io_cmd_cast_i.data;
+        io_resp_v_o    <= 1'b1;
+        resp_size      <= io_cmd_cast_i.header.size;
+        resp_payload   <= io_cmd_cast_i.header.payload;
+        resp_addr      <= io_cmd_cast_i.header.addr;
+        resp_msg       <= io_cmd_cast_i.header.msg_type.mem;
      end
    else
      begin
-        dma_address  <= '0;
         io_resp_v_o  <= 1'b0;
-        ib_tvalid    <= 1'b0;
-        ib_tdata     <= 64'd0;
-        ib_tid       <= 1'b0;
-        ib_tlast     <= 1'b0;
-        io_cmd_v_o   <= 1'b0;
      end
 end 
 
 
 assign ib_tstrb  = 8'hff;
-assign ib_tuser  = tlv_idx;
+//assign ib_tuser  = tlv_idx;
    
    cr_cceip_64#( 
                )
