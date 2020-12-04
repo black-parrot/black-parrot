@@ -1,4 +1,3 @@
-//`include "cr_global_params.vh"
 module bp_sacc_zipline
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -38,10 +37,6 @@ module bp_sacc_zipline
     );
 
 
-
-  // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-//   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
    
   bp_bedrock_cce_mem_msg_s io_resp_cast_o, io_resp_cast_i;
@@ -51,8 +46,7 @@ module bp_sacc_zipline
 
   assign io_resp_cast_i = io_resp_i;
    
- // bp_cce_mem_msg_s io_resp_cast_i;
- // bp_cce_mem_msg_s io_cmd_cast_o;
+
    logic  io_cmd_ready;  
    logic  temp_cmd_v_o;
    
@@ -106,7 +100,6 @@ module bp_sacc_zipline
    logic [63:0]                  resp_ptr;
    logic                         resp_done;
     
-//   logic [63:0]                  tlv_idx;
    
    bp_local_addr_s           local_addr_li, prev_local_addr_li;
    bp_global_addr_s          global_addr_li;
@@ -116,20 +109,13 @@ module bp_sacc_zipline
    assign xp9_disable = 0;
    assign sch_update_tready = 1;
    
-   
-//   assign io_cmd_ready_o = apb_pready;
-   //assign io_cmd_ready_o = 1;
    assign io_resp_ready_o = 1'b1;
-//   assign io_cmd_v_o = 1'b0;
-   
-
    assign io_cmd_cast_i = io_cmd_i;
    assign io_resp_o = io_resp_cast_o;
    
    assign global_addr_li = io_cmd_cast_i.header.addr;
    assign local_addr_li = io_cmd_cast_i.header.addr;
 
-   //assign resp_data = apb_prdata;
    assign resp_header   =  '{msg_type       : resp_msg
                              ,addr          : resp_addr
                              ,payload       : resp_payload
@@ -137,60 +123,12 @@ module bp_sacc_zipline
    assign io_resp_cast_o = '{header         : resp_header
                              ,data          : resp_data  };
    
-   
-  // assign apb_paddr= local_addr_li.addr;
-  // assign apb_psel= io_cmd_v_i & (global_addr_li.did == '0);
-  // assign apb_penable= io_cmd_v_i & (global_addr_li.did == '0);
    assign apb_paddr= 0;
    assign apb_psel= 1'b1;
    assign apb_penable= io_cmd_v_i & (local_addr_li.dev == '1);
    
    assign apb_pwrite= io_cmd_v_i & (io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_wr) & (local_addr_li.dev == '1);
    assign apb_pwdata= io_cmd_cast_i.data;
-
-/*   assign io_resp_out =apb_prdata;
-   assign io_resp_out =apb_pready;
-   assign io_resp_out =apb_pslverr;
-  */
-
-//assign io_cmd_ready_o = (state_r != DONE_IN) ? ib_tready : prev_ob_tvalid;
-//assign ob_tready= 1'b1;
-   
-/*logic                         test,test2;
-//assign ob_tready= 1'b1;
-always_ff @(posedge clk_i)
-  begin
-     if (reset_i)
-       begin
-          ob_tready= 1'b1;
-
-          test = 1'b0;
-
-          test2=0;
-       end
-     else if(ob_tdata == 64'h4000_0000_0a00_0400 && test == '0 && test2 == '0)
-      begin
-          ob_tready= 1'b1;
-          test = 1'b1;
-          test2=0;
-          
-       end
-     else if (test == '1 && test2 == '0)
-       begin
-          ob_tready= 1'b0;
-          test = 1'b0;
-          test2 = 1;
-       end
-     else if (test == '0 && test2 == '1)
-       begin
-          ob_tready= 1'b0;
-          test = 1'b1;
-          test2 = 1;
-       end
-     else
-       ob_tready= 1'b1;
-  end
-*/
 
 //dma engine
 logic           dma_enable, ob_read, prev_ob_read;
@@ -212,9 +150,6 @@ typedef enum logic [3:0]{
   , FETCH
   , WAIT_RESP
   , DONE_IN
-/*  , FETCH_RESP
-  , WAIT_CMD_READY
-  , DONE_OUT*/
 } state_e;
 state_e state_r, state_n;
    
@@ -284,30 +219,6 @@ always_ff @(posedge clk_i) begin
    if(ob_tvalid)
      resp_counter <= resp_counter + 1;
    
- /*  if((ib_tlast == 1) & (ob_tuser == 1) & (ob_tvalid == 1) & (io_cmd_ready == 1))
-     begin
-        resp_start  <= 1;
-        resp_ob     <= ob_tdata;
-        resp_counter <= resp_counter + 1;
-        done_state <= 0;
-     end
-   else if ((resp_start == 1) & (ob_tuser == 0) & (ob_tvalid == 1) & (io_cmd_ready == 1))
-     begin
-        resp_start  <= 1;
-        resp_ob     <= ob_tdata;
-        resp_counter <= resp_counter + 1;
-        done_state <= 0;
-     end
-   else if ((resp_start == 1) & (ob_tuser == 2) & (prev_ob_tuser != 2) & (ob_tvalid == 1) & (io_cmd_ready == 1))
-     begin
-        resp_start  <= 1;
-        resp_ob     <= ob_tdata;
-        resp_counter <= resp_counter + 1;
-        done_state <= 1;
-     end
-   else if (done_state)
-     resp_start <= 0;*/
-        
 end  
    
 always_comb begin
@@ -348,54 +259,24 @@ always_comb begin
         io_cmd_v_o = 1'b0;
         state_n = dma_start ? FETCH : DONE_IN;
      end
-    /* FETCH_RESP: begin
-        state_n =  io_cmd_ready ? (done_state ? DONE_OUT : FETCH_RESP) : WAIT_CMD_READY;
-        temp_cmd_v_o = ((resp_counter == 1) & (prev_ob_tuser == 1)) ? 1 : prev_ob_tvalid;
-        io_cmd_ready = ~(temp_cmd_v_o ^ io_cmd_yumi_i);
-        io_cmd_v_o = temp_cmd_v_o;
-        ob_tready = io_cmd_ready;
-        io_cmd_cast_o.data = resp_ob;
-        io_cmd_cast_o.header.payload = mem_cmd_payload;
-        io_cmd_cast_o.header.size = 3'b011;//8 byte
-        io_cmd_cast_o.header.addr = resp_ptr + ((resp_counter-1)*8);
-        io_cmd_cast_o.header.msg_type.mem = e_bedrock_mem_uc_wr;
-        resp_done = 0;
-     end 
-     WAIT_CMD_READY: begin
-        temp_cmd_v_o = ((resp_counter == 1) & (prev_ob_tuser == 1)) ? 1 : prev_ob_tvalid;
-        io_cmd_ready = ~(temp_cmd_v_o ^ io_cmd_yumi_i);
-        io_cmd_cast_o.data = resp_ob;
-        io_cmd_cast_o.header.payload = mem_cmd_payload;
-        io_cmd_cast_o.header.size = 3'b011;//8 byte
-        io_cmd_cast_o.header.addr = resp_ptr + ((resp_counter-1)*8);
-        io_cmd_cast_o.header.msg_type.mem = e_bedrock_mem_uc_wr;
-        resp_done = 0;
-        state_n =  io_cmd_ready ? FETCH_RESP : WAIT_CMD_READY;
-     end
-     DONE_OUT: begin
-        resp_done = 1;
-        io_cmd_v_o = 0;
-        state_n = dma_start ? FETCH : DONE_OUT;
-     end*/
    endcase
 end
    
 always_ff @(posedge clk_i) 
 begin
-   if (io_cmd_v_i  & (local_addr_li.dev == 4'd1) & (local_addr_li.nonlocal == 9'd0) /*&  (global_addr_li.did == '0)*/)
+   if (io_cmd_v_i  & (local_addr_li.dev == 4'd1) & (local_addr_li.nonlocal == 9'd0))
      begin
         resp_size    <= io_cmd_cast_i.header.size;
         resp_payload <= io_cmd_cast_i.header.payload;
         resp_addr    <= io_cmd_cast_i.header.addr;
         resp_msg     <= io_cmd_cast_i.header.msg_type.mem;
         io_resp_v_o  <= 1'b1;
-//        comp_csr_data <= apb_prdata; //need to add this when local_addr_li.dev == 4'd0
         if ((io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_wr))
           case (local_addr_li.addr)
             20'h00000 : tlv_type <= io_cmd_cast_i.data;
             20'h00008 : resp_ptr <= io_cmd_cast_i.data;
             default : begin end
-          endcase // case (local_addr_li.addr)
+          endcase
         else if ((io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_rd))
           case (local_addr_li.addr)
             20'h00010 : comp_csr_data <= resp_done;
@@ -408,8 +289,6 @@ begin
         resp_payload <= io_cmd_cast_i.header.payload;
         resp_addr    <= io_cmd_cast_i.header.addr;
         resp_msg     <= io_cmd_cast_i.header.msg_type.mem;
-//        io_resp_v_o    <= ob_tvalid;
-//        temp_ob_tdata  <= ob_tdata;
         io_resp_v_o  <= 1'b1;
      end
    else if(dma_enable)
@@ -420,11 +299,6 @@ begin
         resp_addr      <= io_cmd_cast_i.header.addr;
         resp_msg       <= io_cmd_cast_i.header.msg_type.mem;
      end
-   /*else if (ob_read)
-     begin
-        io_resp_v_o  <= ob_tvalid;
-        temp_ob_tdata <= ob_tdata;
-     end*/
    else
      begin
         io_resp_v_o  <= 1'b0;
@@ -433,7 +307,6 @@ end
 
 
 assign ib_tstrb  = 8'hff;
-//assign ib_tuser  = tlv_idx;
    
    cr_cceip_64#( 
                )
