@@ -3,7 +3,6 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_tx.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
-$BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
 $BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_set_clear.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_arb_round_robin.v

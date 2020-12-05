@@ -57,7 +57,6 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_passthrough.v
-$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_passthrough_dynamic.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_1_to_n.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
@@ -65,7 +64,6 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_dynamic.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_full.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_passthrough.v
-$BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_passthrough_dynamic.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w.v
@@ -185,6 +183,8 @@ $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
 $BP_COMMON_DIR/src/v/bp_mmu.sv
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.sv
 # Calculator
@@ -270,6 +270,8 @@ $BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
 $BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
 $BP_ME_DIR/src/v/wormhole/bp_stream_pump_in.sv
 $BP_ME_DIR/src/v/wormhole/bp_stream_pump_out.sv
+$BP_ME_DIR/src/v/wormhole/bp_stream_to_burst.sv
+$BP_ME_DIR/src/v/wormhole/bp_burst_to_stream.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_loopback.sv
 $BP_TOP_DIR/src/v/bp_nd_socket.sv

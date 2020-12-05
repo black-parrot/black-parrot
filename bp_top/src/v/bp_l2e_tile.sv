@@ -302,33 +302,86 @@ module bp_l2e_tile
   assign cfg_mem_resp_yumi_li      = cce_mem_resp_yumi_lo & cfg_mem_resp_grant_li;
   assign loopback_mem_resp_yumi_li = cce_mem_resp_yumi_lo & loopback_mem_resp_grant_li;
 
-  import bsg_cache_pkg::*;
+  bp_bedrock_cce_mem_msg_header_s cache_mem_cmd_header_lo;
+  logic [l2_data_width_p-1:0] cache_mem_cmd_data_lo;
+  logic cache_mem_cmd_v_lo, cache_mem_cmd_ready_and_li, cache_mem_cmd_last_lo;
+  bp_bedrock_cce_mem_msg_header_s cache_mem_resp_header_li;
+  logic [l2_data_width_p-1:0] cache_mem_resp_data_li;
+  logic cache_mem_resp_v_li, cache_mem_resp_ready_and_lo, cache_mem_resp_last_li;
+
+  bp_lite_to_stream
+   #(.bp_params_p(bp_params_p)
+   ,.in_data_width_p(cce_block_width_p)
+   ,.out_data_width_p(l2_data_width_p)
+   ,.payload_width_p(cce_mem_payload_width_lp)
+   ,.payload_mask_p(mem_cmd_payload_mask_gp))
+   lite2stream
+    (.clk_i(clk_i)
+     ,.reset_i(reset_r)
+
+     ,.in_msg_i(cache_mem_cmd_li)
+     ,.in_msg_v_i(cache_mem_cmd_v_li)
+     ,.in_msg_ready_and_o(cache_mem_cmd_ready_lo)
+
+     ,.out_msg_header_o(cache_mem_cmd_header_lo)
+     ,.out_msg_data_o(cache_mem_cmd_data_lo)
+     ,.out_msg_v_o(cache_mem_cmd_v_lo)
+     ,.out_msg_ready_and_i(cache_mem_cmd_ready_and_li)
+     ,.out_msg_last_o(cache_mem_cmd_last_lo)
+     );
+
+  bp_stream_to_lite
+   #(.bp_params_p(bp_params_p)
+   ,.in_data_width_p(l2_data_width_p)
+   ,.out_data_width_p(cce_block_width_p)
+   ,.payload_width_p(cce_mem_payload_width_lp)
+   ,.payload_mask_p(mem_resp_payload_mask_gp))
+   stream2lite
+    (.clk_i(clk_i)
+     ,.reset_i(reset_r)
+
+     ,.in_msg_header_i(cache_mem_resp_header_li)
+     ,.in_msg_data_i(cache_mem_resp_data_li)
+     ,.in_msg_v_i(cache_mem_resp_v_li)
+     ,.in_msg_ready_and_o(cache_mem_resp_ready_and_lo)
+     ,.in_msg_last_i(cache_mem_resp_last_li)
+
+     ,.out_msg_o(cache_mem_resp_lo)
+     ,.out_msg_v_o(cache_mem_resp_v_lo)
+     ,.out_msg_ready_and_i(cache_mem_resp_yumi_li)
+     );
+
   `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [l2_data_width_p-1:0] cache_data_lo;
   logic cache_data_v_lo, cache_data_yumi_li;
   bp_me_cce_to_cache
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+   ,.mem_data_width_p(l2_data_width_p))
    cce_to_cache
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(cache_mem_cmd_li)
-     ,.mem_cmd_v_i(cache_mem_cmd_v_li)
-     ,.mem_cmd_ready_o(cache_mem_cmd_ready_lo)
+     ,.mem_cmd_header_i(cache_mem_cmd_header_lo)
+     ,.mem_cmd_data_i(cache_mem_cmd_data_lo)
+     ,.mem_cmd_v_i(cache_mem_cmd_v_lo)
+     ,.mem_cmd_ready_and_o(cache_mem_cmd_ready_and_li)
+     ,.mem_cmd_last_i(cache_mem_cmd_last_lo)
 
-     ,.mem_resp_o(cache_mem_resp_lo)
-     ,.mem_resp_v_o(cache_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(cache_mem_resp_yumi_li)
+     ,.mem_resp_header_o(cache_mem_resp_header_li)
+     ,.mem_resp_data_o(cache_mem_resp_data_li)
+     ,.mem_resp_v_o(cache_mem_resp_v_li)
+     ,.mem_resp_ready_and_i(cache_mem_resp_ready_and_lo)
+     ,.mem_resp_last_o(cache_mem_resp_last_li)
 
      ,.cache_pkt_o(cache_pkt_li)
-     ,.v_o(cache_pkt_v_li)
-     ,.ready_i(cache_pkt_ready_lo)
+     ,.cache_pkt_v_o(cache_pkt_v_li)
+     ,.cache_pkt_ready_i(cache_pkt_ready_lo)
 
-     ,.data_i(cache_data_lo)
-     ,.v_i(cache_data_v_lo)
-     ,.yumi_o(cache_data_yumi_li)
+     ,.cache_data_i(cache_data_lo)
+     ,.cache_v_i(cache_data_v_lo)
+     ,.cache_yumi_o(cache_data_yumi_li)
      );
 
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
@@ -358,7 +411,7 @@ module bp_l2e_tile
     )
    cache
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.cache_pkt_i(cache_pkt_li)
      ,.v_i(cache_pkt_v_li)
@@ -394,7 +447,7 @@ module bp_l2e_tile
      )
    bsg_cache_dma_to_wormhole
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.dma_pkt_i(dma_pkt_lo)
      ,.dma_pkt_v_i(dma_pkt_v_lo)

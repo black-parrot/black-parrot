@@ -1,13 +1,14 @@
+
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_stream_pump_in
- import bp_cce_pkg::*;
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
- import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    
-   , parameter stream_data_width_p = dword_width_p
+   , parameter stream_data_width_p = dword_width_gp
    , parameter block_width_p = cce_block_width_p
 
    // Bitmask which determines which message types should get streamed
@@ -66,7 +67,6 @@ module bp_stream_pump_in
       );
 
   wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << mem_header_lo.size) / (stream_data_width_p / 8), 1'b1);
-  wire [data_len_width_lp-1:0] num_block_in_msg_size = (block_width_p / 8) / (1'b1 << mem_header_lo.size);
 
   logic cnt_up, is_last_cnt, is_stream, streaming_r;
   logic [block_offset_width_lp-1:0] critical_addr_r; // store this addr for stream state
@@ -81,7 +81,6 @@ module bp_stream_pump_in
   else
     begin: sub_block_stream
       logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt;
-      logic [stream_offset_width_lp+data_len_width_lp-1:0] sub_block_adddr, sub_block_adddr_tuned;
       bsg_counter_set_en
        #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
        data_counter
@@ -122,18 +121,37 @@ module bp_stream_pump_in
           is_stream = stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
           stream_cnt = stream_new_o ? first_cnt : current_cnt;
           is_last_cnt = (stream_cnt == last_cnt) | ~is_stream;
-          
-          sub_block_adddr = {stream_cnt, mem_header_lo.addr[0+:stream_offset_width_lp]};
-          // Generate proper wrap-around address for differenct incoming msg size dynamically, 
-          // if stream_data_width_p < incoming msg size < block_width_p, the width of stream_cnt < data_len_width_lp
-          casez(num_block_in_msg_size)
-            data_len_width_lp'(1):  sub_block_adddr_tuned = sub_block_adddr;
-            data_len_width_lp'(2):  sub_block_adddr_tuned = { mem_header_lo.addr[(stream_offset_width_lp+data_len_width_lp-1)+:1], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-1)]};
-            data_len_width_lp'(4):  sub_block_adddr_tuned = { mem_header_lo.addr[(stream_offset_width_lp+data_len_width_lp-2)+:2], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-2)]};
-            default:                sub_block_adddr_tuned = mem_header_lo.addr[0+:(stream_offset_width_lp+data_len_width_lp)];
-          endcase
-          fsm_addr_o = { mem_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp], sub_block_adddr_tuned};
         end
+          
+      // Generate proper wrap-around address for different incoming msg size dynamically. 
+      // __________________________________________________________
+      // |                |          block offset                  |  input address
+      // |  upper address |________________________________________|
+      // |                |     stream count   |  stream offset    |  output address
+      // |________________|____________________|___________________|
+      // Block size = stream count * stream size, with a request smaller than block_width_p, 
+      // a narrower stream_cnt is required to generate address for each sub-stream pkt.
+      // Eg. block_width_p = 512, stream_data_witdh_p = 64, then counter width = log2(512/64) = 3
+      // size = 512: a wrapped around seq: 2, 3, 4, 5, 6, 7, 0, 1  all 3-bit of cnt is used
+      // size = 256: a wrapped around seq: 2, 3, 0, 1              only lower 2-bit of cnt is used
+      
+      // sel_mask is generated to determined how many bits of counter is used.
+      // For num_stream = x, (x-1) denotes the bits using the counter
+      logic [data_len_width_lp-1:0] sel_mask, wrap_around_cnt;
+      assign sel_mask = num_stream - 1'b1;
+
+      bsg_mux_bitwise
+       #(.width_p(data_len_width_lp))
+       sub_block_addr_mux
+        (.data0_i(mem_header_lo.addr[stream_offset_width_lp+:data_len_width_lp])
+        ,.data1_i(stream_cnt)
+        ,.sel_i(sel_mask)
+        ,.data_o(wrap_around_cnt)
+      );
+      
+      assign fsm_addr_o = { mem_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
+                          , wrap_around_cnt
+                          , mem_header_lo.addr[0+:stream_offset_width_lp]};
     end
 
   always_comb
@@ -145,7 +163,7 @@ module bp_stream_pump_in
 
       cnt_up = fsm_ready_and_i & fsm_v_o & ~is_last_cnt;
       stream_done_o = is_last_cnt & fsm_ready_and_i & fsm_v_o; // also used for credits return
-      stream_new_o = fsm_v_o & is_stream & ~streaming_r;
+      stream_new_o = is_stream & ~streaming_r;
 
       mem_yumi_li = (is_stream & mem_last_lo & mem_v_lo) ? stream_done_o : (fsm_ready_and_i & fsm_v_o);
     end

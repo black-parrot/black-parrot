@@ -47,10 +47,10 @@ module wrapper
 
    , input [cce_mem_msg_width_lp-1:0]        mem_resp_i
    , input                                   mem_resp_v_i
-   , output                                  mem_resp_yumi_o
+   , output logic                            mem_resp_yumi_o
 
    , output logic [cce_mem_msg_width_lp-1:0] mem_cmd_o
-   , output                                  mem_cmd_v_o
+   , output logic                            mem_cmd_v_o
    , input                                   mem_cmd_ready_i
    );
 
@@ -335,9 +335,14 @@ module wrapper
       assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
   end
   else begin: UCE
-    logic mem_resp_ready_lo;
-    logic fifo_mem_resp_v_lo, fifo_mem_resp_yumi_li;
     bp_bedrock_cce_mem_msg_s fifo_mem_resp_lo;
+    logic mem_resp_ready_lo, mem_resp_ready_li;
+    logic fifo_mem_resp_v_lo, fifo_mem_resp_yumi_li;
+
+    bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo, mem_resp_header_li;
+    logic [icache_fill_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
+    logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
+    logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
 
     bp_uce
      #(.bp_params_p(bp_params_p)
@@ -379,15 +384,80 @@ module wrapper
        ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo)
        ,.stat_mem_i(stat_mem_lo)
 
-       ,.mem_cmd_o(mem_cmd_o)
-       ,.mem_cmd_v_o(mem_cmd_v_o)
-       ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
+       ,.mem_cmd_header_o(mem_cmd_header_lo)
+       ,.mem_cmd_data_o(mem_cmd_data_lo)
+       ,.mem_cmd_last_o(mem_cmd_last_lo)
+       ,.mem_cmd_v_o(mem_cmd_v_lo)
+       ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
 
-       ,.mem_resp_i(fifo_mem_resp_lo)
-       ,.mem_resp_v_i(fifo_mem_resp_v_lo)
-       ,.mem_resp_yumi_o(fifo_mem_resp_yumi_li)
+       ,.mem_resp_header_i(mem_resp_header_li)
+       ,.mem_resp_data_i(mem_resp_data_li)
+       ,.mem_resp_last_i(mem_resp_last_li)
+       ,.mem_resp_v_i(mem_resp_v_li)
+       ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
        );
 
+    if (icache_fill_width_p < cce_block_width_p) begin
+      bp_stream_to_lite
+       #(.bp_params_p(bp_params_p)
+       ,.in_data_width_p(icache_fill_width_p)
+       ,.out_data_width_p(cce_block_width_p)
+       ,.payload_width_p(cce_mem_payload_width_lp)
+       ,.payload_mask_p(mem_cmd_payload_mask_gp))
+       stream2lite
+        (.clk_i(clk_i)
+        ,.reset_i(reset_i)
+
+        ,.in_msg_header_i(mem_cmd_header_lo)
+        ,.in_msg_data_i(mem_cmd_data_lo)
+        ,.in_msg_v_i(mem_cmd_v_lo)
+        ,.in_msg_ready_and_o(mem_cmd_ready_and_li)
+        ,.in_msg_last_i(mem_cmd_last_lo)
+
+        ,.out_msg_o(mem_cmd_o)
+        ,.out_msg_v_o(mem_cmd_v_o)
+        ,.out_msg_ready_and_i(mem_cmd_ready_i)
+        );
+
+      bp_lite_to_stream
+       #(.bp_params_p(bp_params_p)
+       ,.in_data_width_p(cce_block_width_p)
+       ,.out_data_width_p(icache_fill_width_p)
+       ,.payload_width_p(cce_mem_payload_width_lp)
+       ,.payload_mask_p(mem_resp_payload_mask_gp))
+       lite2stream
+        (.clk_i(clk_i)
+        ,.reset_i(reset_i)
+
+        ,.in_msg_i(fifo_mem_resp_lo)
+        ,.in_msg_v_i(fifo_mem_resp_v_lo)
+        ,.in_msg_ready_and_o(mem_resp_ready_li)
+
+        ,.out_msg_header_o(mem_resp_header_li)
+        ,.out_msg_data_o(mem_resp_data_li)
+        ,.out_msg_v_o(mem_resp_v_li)
+        ,.out_msg_ready_and_i(mem_resp_ready_and_lo)
+        ,.out_msg_last_o(mem_resp_last_li)
+        );
+    end
+    else begin
+      bp_bedrock_cce_mem_msg_s mem_cmd_lo;
+      always_comb begin
+        mem_cmd_lo = '{header: mem_cmd_header_lo
+                      ,data: mem_cmd_data_lo};
+        mem_cmd_o            = mem_cmd_lo;
+        mem_cmd_v_o          = mem_cmd_v_lo;
+        mem_cmd_ready_and_li = mem_cmd_ready_i;
+
+        mem_resp_header_li    = fifo_mem_resp_lo.header;
+        mem_resp_data_li      = fifo_mem_resp_lo.data;
+        mem_resp_v_li         = fifo_mem_resp_v_lo;
+        mem_resp_last_li      = fifo_mem_resp_v_lo;
+        mem_resp_ready_li     = mem_resp_ready_and_lo;
+      end
+
+    end
+    
     bsg_fifo_1r1w_small
      #(.width_p(cce_mem_msg_width_lp)
        ,.els_p(1)
@@ -404,8 +474,8 @@ module wrapper
        ,.data_o(fifo_mem_resp_lo)
        ,.yumi_i(fifo_mem_resp_yumi_li)
        );
-
     assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
+    assign fifo_mem_resp_yumi_li = fifo_mem_resp_v_lo & mem_resp_ready_li;
   end
 endmodule
 

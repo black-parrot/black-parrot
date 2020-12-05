@@ -226,6 +226,10 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.sv
+$BP_ME_DIR/src/v/wormhole/bp_lite_to_stream.sv
+$BP_ME_DIR/src/v/wormhole/bp_stream_to_lite.sv
+$BP_ME_DIR/src/v/wormhole/bp_stream_pump_in.sv
+$BP_ME_DIR/src/v/wormhole/bp_stream_pump_out.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_loopback.sv
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
