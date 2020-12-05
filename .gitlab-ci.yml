@@ -176,6 +176,14 @@ check-design:
   script:
     - $CI_PROJECT_DIR/ci/check_design.sh $CI_CORES
 
+synth-vivado:
+  <<: *job_definition
+  stage: check
+  tags:
+    - vivado
+  script:
+    - $CI_PROJECT_DIR/ci/synth_vivado.sh $CI_CORES
+
 lint-verilator:
   <<: *job_definition
   stage: check
