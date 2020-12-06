@@ -162,6 +162,8 @@ module testbench
      ,.io_resp_i(load_resp_li)
      ,.io_resp_v_i(load_resp_v_li)
      ,.io_resp_ready_o(load_resp_ready_lo)
+
+     ,.done_o()
      );
 
   logic cosim_en_lo;

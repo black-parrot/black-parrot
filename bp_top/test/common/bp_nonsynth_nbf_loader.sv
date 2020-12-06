@@ -39,6 +39,8 @@ module bp_nonsynth_nbf_loader
   ,input  [cce_mem_msg_width_lp-1:0]       io_resp_i
   ,input                                   io_resp_v_i
   ,output                                  io_resp_ready_o
+
+  ,output                                  done_o
   );
 
   enum logic [1:0] {
@@ -47,6 +49,8 @@ module bp_nonsynth_nbf_loader
     ,FENCE
     ,DONE
   } state_n, state_r;
+
+  assign done_o = (state_r == DONE);
 
   // response network not used
   wire unused_resp = &{io_resp_i, io_resp_v_i};
