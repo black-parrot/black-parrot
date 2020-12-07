@@ -176,8 +176,8 @@ module bp_be_pipe_mem
      ,.sum_i(trans_info.mstatus_sum)
      ,.trans_en_i(trans_info.translation_en)
      ,.uncached_mode_i((cfg_bus.dcache_mode == e_lce_mode_uncached))
-     ,.sac_i('0)
-     ,.domain_mask_i('0)
+     ,.sac_i(cfg_bus.sac)
+     ,.domain_mask_i(cfg_bus.domain)
 
      ,.w_v_i(dtlb_w_v)
      ,.w_vtag_i(dtlb_w_vtag)
@@ -306,22 +306,18 @@ module bp_be_pipe_mem
       end
       else begin
         dcache_pkt_v = reservation.v & ~reservation.poison & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
-        // TODO: Use dcache opcode directly
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
         dcache_pkt.page_offset = eaddr[0+:page_offset_width_p];
         dcache_pkt.data        = rs2;
         dcache_ptag = dtlb_ptag_lo;
-        dcache_ptag_v = dtlb_v_lo
-                        & ~(load_page_fault_v | store_page_fault_v)
-                        & ~(load_access_fault_v | store_access_fault_v)
-                        & ~(load_misaligned_v | store_misaligned_v);
+        dcache_ptag_v = dtlb_v_lo;
       end
   end
 
   assign tlb_miss_v_o           = dtlb_miss_v;
   assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v;
   assign fencei_v_o             = is_fencei_mem2 & dcache_early_v;
-  assign store_page_fault_v_o   = store_page_fault_v;;
+  assign store_page_fault_v_o   = store_page_fault_v;
   assign load_page_fault_v_o    = load_page_fault_v;
   assign store_access_fault_v_o = store_access_fault_v;
   assign load_access_fault_v_o  = load_access_fault_v;

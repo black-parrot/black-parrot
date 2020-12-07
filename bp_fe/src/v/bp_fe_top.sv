@@ -220,10 +220,11 @@ module bp_fe_top
      ,.flush_i(itlb_fence_v)
      ,.priv_mode_i(shadow_priv_r)
      ,.trans_en_i(shadow_translation_en_r)
+     // Supervisor use of user memory is always disabled for immu
      ,.sum_i('0)
      ,.uncached_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_uncached))
-     ,.sac_i('0)
-     ,.domain_mask_i('0)
+     ,.sac_i(cfg_bus_cast_i.sac)
+     ,.domain_mask_i(cfg_bus_cast_i.domain)
 
      ,.w_v_i(itlb_fill_v)
      ,.w_vtag_i(w_vtag_li)
@@ -263,7 +264,7 @@ module bp_fe_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.icache_pkt_i(icache_pkt)
-     ,.v_i((icache_ready_lo & next_pc_yumi_li) | icache_fence_v)
+     ,.v_i(next_pc_yumi_li)
      ,.ready_o(icache_ready_lo)
 
      ,.ptag_i(ptag_li)
@@ -300,7 +301,6 @@ module bp_fe_top
      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
      ,.stat_mem_o(stat_mem_o)
      );
-  assign next_pc_yumi_li = ~is_wait & icache_ready_lo & fe_queue_ready_i;
 
   logic itlb_miss_r, instr_access_fault_r, instr_page_fault_r;
   bsg_dff_reset
@@ -335,6 +335,8 @@ module bp_fe_top
   assign mem_poison_lo = ovr_lo | flush;
 
   assign fe_cmd_yumi_o = cmd_nonattaboy_v | attaboy_yumi_lo;
+  wire unstall = icache_ready_lo & fe_queue_ready_i;
+  assign next_pc_yumi_li = (state_n == e_run);
 
   assign fetch_instr_v_li     = fe_queue_v_o & fe_instr_v;
   assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;
@@ -367,7 +369,7 @@ module bp_fe_top
       // Wait for FE cmd
       e_wait : state_n = cmd_nonattaboy_v ? e_stall : e_wait;
       // Stall until we can start valid fetch
-      e_stall: state_n = next_pc_yumi_li ? e_run : e_stall;
+      e_stall: state_n = unstall ? e_run : e_stall;
       // Run state -- PCs are actually being fetched
       // Stay in run if there's an incoming cmd, the next pc will automatically be valid
       // Transition to wait if there's a TLB miss while we wait for fill

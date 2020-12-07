@@ -93,7 +93,7 @@ module bp_mmu
   bp_pte_entry_leaf_s passthrough_entry, tlb_entry_lo;
   assign passthrough_entry = '{ptag: r_vtag_r, default: '0};
   assign tlb_entry_lo      = trans_en_i ? tlb_r_entry_lo : passthrough_entry;
-  assign tlb_v_lo          = trans_en_i ? tlb_r_v_lo : r_v_r;
+  wire tlb_v_lo            = trans_en_i ? tlb_r_v_lo : r_v_r;
 
   wire ptag_v_lo                  = tlb_v_lo;
   wire [ptag_width_p-1:0] ptag_lo = tlb_entry_lo.ptag;
@@ -118,34 +118,37 @@ module bp_mmu
   // Fault if in uncached mode but access is not for an uncached address
   wire mode_fault_v  = (uncached_mode_i & ~r_uncached_o);
   // Fault if domain is not zero (top <io_noc_did_width_p> bits) and SAC bit is not zero (next bit)
-  //wire did_fault_v   = (ptag_lo[ptag_width_p-1-:io_noc_did_width_p+1] != '0);
-  wire did_fault_v = '0;
+  wire did_fault_v = (r_instr_r & ptag_lo[ptag_width_p-1-:io_noc_did_width_p] != '0)
+    || (~domain_mask_i[ptag_lo[ptag_width_p-1-:io_noc_did_width_p]]);
   // Fault if sac activation bit is not set
-  //wire sac_fault_v = (dcache_ptag[ptag_width_p-1-io_noc_did_width_p+1)] & ~cfg_bus.sac);
-  wire sac_fault_v = '0;
+  wire sac_fault_v = (r_instr_r & ptag_lo[ptag_width_p-1-io_noc_did_width_p-1])
+    || (ptag_lo[ptag_width_p-1-io_noc_did_width_p-1] & ~sac_i);
 
   // Access faults
-  assign load_access_fault_v  = tlb_v_lo & r_load_r & (mode_fault_v | did_fault_v | sac_fault_v);
-  assign store_access_fault_v = tlb_v_lo & r_store_r & (mode_fault_v | did_fault_v | sac_fault_v);
+  wire instr_access_fault_v = r_instr_r & (mode_fault_v | did_fault_v | sac_fault_v);
+  wire load_access_fault_v  = r_load_r  & (mode_fault_v | did_fault_v | sac_fault_v);
+  wire store_access_fault_v = r_store_r & (mode_fault_v | did_fault_v | sac_fault_v);
+  wire any_access_fault_v   = |{instr_access_fault_v, load_access_fault_v, store_access_fault_v};
 
   // Page faults
-  wire instr_exe_page_fault_v  = r_instr_r & ~tlb_entry_lo.x;
+  wire instr_exe_page_fault_v  = ~tlb_entry_lo.x;
   wire instr_priv_page_fault_v = ((priv_mode_i == `PRIV_MODE_S) & tlb_entry_lo.u)
                                  | ((priv_mode_i == `PRIV_MODE_U) & ~tlb_entry_lo.u);
   wire data_priv_page_fault = ((priv_mode_i == `PRIV_MODE_S) & ~sum_i & tlb_entry_lo.u)
                                 | ((priv_mode_i == `PRIV_MODE_U) & ~tlb_entry_lo.u);
   wire data_write_page_fault = r_store_r & (~tlb_entry_lo.w | ~tlb_entry_lo.d);
-  wire instr_page_fault_v = instr_priv_page_fault_v | instr_exe_page_fault_v;
+  wire instr_page_fault_v = trans_en_i & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v);
   wire load_page_fault_v  = trans_en_i & r_load_r & (data_priv_page_fault | eaddr_fault_v);
   wire store_page_fault_v = trans_en_i & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_fault_v);
+  wire any_page_fault_v   = |{instr_page_fault_v, load_page_fault_v, store_page_fault_v};
 
-  assign r_v_o                   = r_v_r &  tlb_v_lo;
+  assign r_v_o                   = r_v_r &  tlb_v_lo & ~any_access_fault_v & ~any_page_fault_v;
   assign r_ptag_o                = ptag_lo;
   assign r_miss_o                = r_v_r & ~tlb_v_lo;
-  assign r_uncached_o            = r_v_r & ptag_uncached_lo;
-  assign r_instr_access_fault_o  = r_v_r & r_instr_r & (mode_fault_v | did_fault_v | sac_fault_v);
-  assign r_load_access_fault_o   = r_v_r & r_load_r & (mode_fault_v | did_fault_v | sac_fault_v);
-  assign r_store_access_fault_o  = r_v_r & r_store_r & (mode_fault_v | did_fault_v | sac_fault_v);
+  assign r_uncached_o            = r_v_r & tlb_v_lo & ptag_uncached_lo;
+  assign r_instr_access_fault_o  = r_v_r & tlb_v_lo & instr_access_fault_v;
+  assign r_load_access_fault_o   = r_v_r & tlb_v_lo & load_access_fault_v;
+  assign r_store_access_fault_o  = r_v_r & tlb_v_lo & store_access_fault_v;
   assign r_instr_page_fault_o    = r_v_r & tlb_r_v_lo & instr_page_fault_v;
   assign r_load_page_fault_o     = r_v_r & tlb_r_v_lo & load_page_fault_v;
   assign r_store_page_fault_o    = r_v_r & tlb_r_v_lo & store_page_fault_v;

@@ -126,7 +126,7 @@ module bp_fe_icache
 
   wire is_fetch = (icache_pkt.op == e_icache_fetch);
   wire is_fencei = (icache_pkt.op == e_icache_fencei);
-  assign tl_we = v_i;
+  assign tl_we = ready_o & v_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
