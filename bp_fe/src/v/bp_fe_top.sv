@@ -212,7 +212,7 @@ module bp_fe_top
   bp_pte_entry_leaf_s itlb_r_entry, entry_lo, passthrough_entry;
   logic itlb_r_v_lo, itlb_v_lo, passthrough_v_lo;
   bp_tlb
-   #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
+   #(.bp_params_p(bp_params_p), .els_p(itlb_els_p))
    itlb
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

@@ -183,9 +183,7 @@ module bp_be_pipe_mem
   assign dtlb_w_entry = ptw_fill_pkt.entry;
 
   bp_tlb
-   #(.bp_params_p(bp_params_p)
-     ,.tlb_els_p(dtlb_els_p)
-     )
+   #(.bp_params_p(bp_params_p), .els_p(dtlb_els_p))
    dtlb
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
