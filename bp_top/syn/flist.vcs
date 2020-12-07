@@ -184,6 +184,7 @@ $HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
+$BP_COMMON_DIR/src/v/bp_mmu.sv
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
 ## BE files

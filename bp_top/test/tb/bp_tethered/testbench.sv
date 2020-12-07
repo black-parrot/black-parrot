@@ -402,11 +402,11 @@ module testbench
 
        ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-       ,.itlb_clear_i(fe.itlb.flush_i)
-       ,.itlb_fill_v_i(fe.itlb.v_i & fe.itlb.w_i)
-       ,.itlb_vtag_i(fe.itlb.vtag_i)
-       ,.itlb_entry_i(fe.itlb.entry_i)
-       ,.itlb_cam_r_v_i(fe.itlb.cam.r_v_i)
+       ,.itlb_clear_i(fe.immu.tlb.flush_i)
+       ,.itlb_fill_v_i(fe.immu.tlb.v_i & fe.immu.tlb.w_i)
+       ,.itlb_vtag_i(fe.immu.tlb.vtag_i)
+       ,.itlb_entry_i(fe.immu.tlb.entry_i)
+       ,.itlb_cam_r_v_i(fe.immu.tlb.cam.r_v_i)
 
        ,.dtlb_clear_i(be.calculator.pipe_mem.dtlb.flush_i)
        ,.dtlb_fill_v_i(be.calculator.pipe_mem.dtlb.v_i & be.calculator.pipe_mem.dtlb.w_i)
