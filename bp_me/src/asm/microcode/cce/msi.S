@@ -46,18 +46,6 @@ specq unset req
 # request handling complete
 bi ready
 
-# handle pending flag set or uncached access
-# pending jumps back to ready, waits for memory response to return and clear flag
-handle_pf_ucf: bf ready pf
-# Uncached Request Routine
-uncached_req: bf uncached_store rqf
-pushq memCmd MEM_CMD_UC_RD addr=req lce=req
-popq lceReq
-bi ready
-uncached_store: pushq memCmd MEM_CMD_UC_WR addr=req lce=req
-popq lceReq
-bi ready
-
 # Handle request that wasn't easily fast-pathed
 
 # Replacement Check Routine
@@ -131,5 +119,61 @@ read_l2: bf resolve_fwd_mod_m rqf
 resolve_fwd_mod_s: specq unset req
 bi ready
 resolve_fwd_mod_m: specq fwd_mod req COH_M
+bi ready
+
+# handle pending flag set or uncached access
+# pending jumps back to ready, waits for memory response to return and clear flag
+handle_pf_ucf: bf ready pf
+# Uncached Request Routine
+uncached_req: bf uc_coherent rcf
+bf uncached_store rqf
+pushq memCmd MEM_CMD_UC_RD addr=req lce=req
+popq lceReq
+bi ready
+uncached_store: pushq memCmd MEM_CMD_UC_WR addr=req lce=req
+popq lceReq
+bi ready
+
+# Uncached request to coherent/cacheable memory
+uc_coherent: rdp addr=req
+bf uc_coherent pf
+rdw addr=req lce=req lru_way=lru
+gad
+movis COH_I nextCohSt
+movsg msgsize r7
+movis SIZE_64 msgsize
+
+bfz uc_inv_check rf
+
+# Replacement Routine
+pushq lceCmd ST_WB addr=req lce=req way=req
+wds addr=req lce=req way=req state=imm COH_I
+uc_replacement_poph: poph lceResp r0
+beqi r0 COH_ACK uc_replacement_poph
+bf uc_complete_replacement nwbf
+pushq memCmd MEM_CMD_WR addr=req lce=req way=req wp=1
+uc_complete_replacement: popq lceResp
+
+# Invalidate any cache with block in S
+uc_inv_check: bfz uc_owned_check csf pt
+inv
+
+# Invalidate and WB owner cache
+uc_owned_check: bfz uc_mem cmf cef pt
+pushq lceCmd ST_WB addr=req lce=owner way=owner
+wds addr=req lce=owner way=owner state=imm COH_I
+uc_inv_poph: poph lceResp r0
+beqi r0 COH_ACK uc_inv_poph
+bf uc_complete_inv nwbf
+pushq memCmd MEM_CMD_WR addr=req lce=req way=req wp=1
+uc_complete_inv: popq lceResp
+
+uc_mem: movgs r7 msgsize
+bf coherent_store rqf
+pushq memCmd MEM_CMD_UC_RD addr=req lce=req wp=1
+popq lceReq
+bi ready
+coherent_store: pushq memCmd MEM_CMD_UC_WR addr=req lce=req wp=1
+popq lceReq
 bi ready
 

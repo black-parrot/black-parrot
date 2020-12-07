@@ -166,6 +166,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_inst_ram.sv
 $BP_ME_DIR/src/v/cce/bp_cce_inst_stall.sv
 $BP_ME_DIR/src/v/cce/bp_cce_msg.sv
 $BP_ME_DIR/src/v/cce/bp_cce_pending_bits.sv
+$BP_ME_DIR/src/v/cce/bp_cce_pma.sv
 $BP_ME_DIR/src/v/cce/bp_cce_reg.sv
 $BP_ME_DIR/src/v/cce/bp_cce_spec_bits.sv
 $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv

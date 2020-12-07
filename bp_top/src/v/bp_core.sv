@@ -57,14 +57,14 @@ module bp_core
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   bp_icache_req_s icache_req_lo;
-  logic icache_req_ready_li, icache_req_v_lo;
+  logic icache_req_v_lo, icache_req_yumi_li, icache_req_busy_li;
   bp_icache_req_metadata_s icache_req_metadata_lo;
   logic icache_req_metadata_v_lo;
   logic icache_req_critical_li, icache_req_complete_li;
   logic icache_req_credits_full_li, icache_req_credits_empty_li;
 
   bp_dcache_req_s dcache_req_lo;
-  logic dcache_req_ready_li, dcache_req_v_lo;
+  logic dcache_req_v_lo, dcache_req_yumi_li, dcache_req_busy_li;
   bp_dcache_req_metadata_s dcache_req_metadata_lo;
   logic dcache_req_metadata_v_lo;
   logic dcache_req_critical_li, dcache_req_complete_li;
@@ -109,7 +109,8 @@ module bp_core
 
      ,.icache_req_o(icache_req_lo)
      ,.icache_req_v_o(icache_req_v_lo)
-     ,.icache_req_ready_i(icache_req_ready_li)
+     ,.icache_req_yumi_i(icache_req_yumi_li)
+     ,.icache_req_busy_i(icache_req_busy_li)
      ,.icache_req_metadata_o(icache_req_metadata_lo)
      ,.icache_req_metadata_v_o(icache_req_metadata_v_lo)
      ,.icache_req_complete_i(icache_req_complete_li)
@@ -134,7 +135,8 @@ module bp_core
 
      ,.dcache_req_o(dcache_req_lo)
      ,.dcache_req_v_o(dcache_req_v_lo)
-     ,.dcache_req_ready_i(dcache_req_ready_li)
+     ,.dcache_req_yumi_i(dcache_req_yumi_li)
+     ,.dcache_req_busy_i(dcache_req_busy_li)
      ,.dcache_req_metadata_o(dcache_req_metadata_lo)
      ,.dcache_req_metadata_v_o(dcache_req_metadata_v_lo)
      ,.dcache_req_complete_i(dcache_req_complete_li)
@@ -181,7 +183,8 @@ module bp_core
 
      ,.cache_req_i(icache_req_lo)
      ,.cache_req_v_i(icache_req_v_lo)
-     ,.cache_req_ready_o(icache_req_ready_li)
+     ,.cache_req_yumi_o(icache_req_yumi_li)
+     ,.cache_req_busy_o(icache_req_busy_li)
      ,.cache_req_metadata_i(icache_req_metadata_lo)
      ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
      ,.cache_req_critical_o(icache_req_critical_li)
@@ -241,7 +244,8 @@ module bp_core
 
      ,.cache_req_i(dcache_req_lo)
      ,.cache_req_v_i(dcache_req_v_lo)
-     ,.cache_req_ready_o(dcache_req_ready_li)
+     ,.cache_req_yumi_o(dcache_req_yumi_li)
+     ,.cache_req_busy_o(dcache_req_busy_li)
      ,.cache_req_metadata_i(dcache_req_metadata_lo)
      ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
      ,.cache_req_critical_o(dcache_req_critical_li)

@@ -62,7 +62,7 @@ module bp_cacc_vdp
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
 
 
-  logic cache_req_v_o, cache_req_ready_i, cache_req_metadata_v_o,
+  logic cache_req_v_o, cache_req_yumi_i, cache_req_busy_i, cache_req_metadata_v_o,
   data_mem_pkt_v_i, data_mem_pkt_yumi_o,
   tag_mem_pkt_v_i, tag_mem_pkt_yumi_o,
   stat_mem_pkt_v_i, stat_mem_pkt_yumi_o,
@@ -120,7 +120,8 @@ bp_be_dcache
     ,.cache_req_critical_i(cache_req_critical_lo)
     ,.cache_req_o(cache_req_cast_o)
     ,.cache_req_v_o(cache_req_v_o)
-    ,.cache_req_ready_i(cache_req_ready_i)
+    ,.cache_req_yumi_i(cache_req_yumi_i)
+    ,.cache_req_busy_i(cache_req_busy_i)
     ,.cache_req_metadata_o(cache_req_metadata_o)
     ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
     ,.cache_req_credits_full_i(cache_req_credits_full_lo)
@@ -161,7 +162,8 @@ bp_lce
 
     ,.cache_req_i(cache_req_cast_o)
     ,.cache_req_v_i(cache_req_v_o)
-    ,.cache_req_ready_o(cache_req_ready_i)
+    ,.cache_req_yumi_o(cache_req_yumi_i)
+    ,.cache_req_busy_o(cache_req_busy_i)
     ,.cache_req_metadata_i(cache_req_metadata_o)
     ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
     ,.cache_req_critical_o(cache_req_critical_lo)
