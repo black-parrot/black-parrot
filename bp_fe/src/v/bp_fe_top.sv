@@ -220,7 +220,10 @@ module bp_fe_top
      ,.flush_i(itlb_fence_v)
      ,.priv_mode_i(shadow_priv_r)
      ,.trans_en_i(shadow_translation_en_r)
+     ,.sum_i('0)
      ,.uncached_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_uncached))
+     ,.sac_i('0)
+     ,.domain_mask_i('0)
 
      ,.w_v_i(itlb_fill_v)
      ,.w_vtag_i(w_vtag_li)

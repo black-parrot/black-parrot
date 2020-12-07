@@ -408,11 +408,11 @@ module testbench
        ,.itlb_entry_i(fe.immu.tlb.entry_i)
        ,.itlb_cam_r_v_i(fe.immu.tlb.cam.r_v_i)
 
-       ,.dtlb_clear_i(be.calculator.pipe_mem.dtlb.flush_i)
-       ,.dtlb_fill_v_i(be.calculator.pipe_mem.dtlb.v_i & be.calculator.pipe_mem.dtlb.w_i)
-       ,.dtlb_vtag_i(be.calculator.pipe_mem.dtlb.vtag_i)
-       ,.dtlb_entry_i(be.calculator.pipe_mem.dtlb.entry_i)
-       ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dtlb.cam.r_v_i)
+       ,.dtlb_clear_i(be.calculator.pipe_mem.dmmu.tlb.flush_i)
+       ,.dtlb_fill_v_i(be.calculator.pipe_mem.dmmu.tlb.v_i & be.calculator.pipe_mem.dmmu.tlb.w_i)
+       ,.dtlb_vtag_i(be.calculator.pipe_mem.dmmu.tlb.vtag_i)
+       ,.dtlb_entry_i(be.calculator.pipe_mem.dmmu.tlb.entry_i)
+       ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dmmu.tlb.cam.r_v_i)
        );
 
   bind bp_core_minimal
