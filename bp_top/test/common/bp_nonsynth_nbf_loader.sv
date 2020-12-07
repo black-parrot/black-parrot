@@ -145,4 +145,8 @@ module bp_nonsynth_nbf_loader
       end
   end
 
+  always_ff @(negedge clk_i)
+    if (state_r != DONE && state_n == DONE) $display("NBF loader done!");
+
 endmodule
+
