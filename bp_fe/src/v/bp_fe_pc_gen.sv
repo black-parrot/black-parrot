@@ -35,6 +35,7 @@ module bp_fe_pc_gen
    , input                                           fetch_instr_v_i
    , input                                           fetch_exception_v_i
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
+   , output logic [vaddr_width_p-1:0]                fetch_pc_o
 
    , input [vaddr_width_p-1:0]                       attaboy_pc_i
    , input [branch_metadata_fwd_width_p-1:0]         attaboy_br_metadata_fwd_i
@@ -224,6 +225,7 @@ module bp_fe_pc_gen
   assign ovr_taken  = btb_miss_br & ((is_br & pred_if1_r.bht[1]) | is_jal);
   assign ovr_o      = ovr_taken | ovr_ret;
   assign br_tgt_lo  = pc_if2_r + scan_instr.imm;
+  assign fetch_pc_o = pc_if2_r;
 
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
