@@ -24,14 +24,6 @@
     logic [vaddr_width_mp-1:0] imm;        \
   }  bp_fe_instr_scan_s;
 
-`define declare_bp_fe_itlb_vaddr_s(vaddr_width_mp, sets_mp, cce_block_width_mp)                    \
-  typedef struct packed                                                                            \
-  {                                                                                                \
-    logic [vaddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*cce_block_width_p/8)-1:0]    tag;                \
-    logic [`BSG_SAFE_CLOG2(sets_mp)-1:0]                                       index;              \
-    logic [`BSG_SAFE_CLOG2(cce_block_width_p/8)-1:0]                           offset;             \
-  }  bp_fe_itlb_vaddr_s;
-
 `define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp) \
   typedef struct packed                                                                         \
   {                                                                                             \
@@ -42,7 +34,6 @@
     logic                           is_ret;                                                     \
     logic                           src_btb;                                                    \
     logic                           src_ret;                                                    \
-    logic                           src_ovr;                                                    \
     logic [btb_tag_width_mp-1:0]    btb_tag;                                                    \
     logic [btb_idx_width_mp-1:0]    btb_idx;                                                    \
     logic [bht_idx_width_mp-1:0]    bht_idx;                                                    \
@@ -51,24 +42,21 @@
   }  bp_fe_branch_metadata_fwd_s;
 
 `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp, ghist_width_mp) \
-  typedef struct packed             \
-  {                                 \
-    logic redir;                    \
-    logic btb;                      \
-    logic [1:0] bht;                \
-    logic ret;                      \
-    logic ovr;                      \
-    logic taken;                    \
-                                    \
-    logic [vaddr_width_mp-1:0] pc;  \
+  typedef struct packed               \
+  {                                   \
+    logic taken;                      \
+    logic redir;                      \
+    logic ret;                        \
+    logic btb;                        \
+    logic [1:0] bht;                  \
     logic [ghist_width_mp-1:0] ghist; \
-  }  bp_fe_pc_gen_stage_s
+  }  bp_fe_pred_s
 
 `define bp_fe_instr_scan_width(vaddr_width_mp) \
-  (vaddr_width_mp + 5)
+  (5 + vaddr_width_mp)
 
-`define bp_fe_pc_gen_stage_width(vaddr_width_mp, ghist_width_mp) \
-  (7 + vaddr_width_mp + ghist_width_mp)
+`define bp_fe_pred_width(vaddr_width_mp, ghist_width_mp) \
+  (6 + ghist_width_mp)
 
 `endif
 
