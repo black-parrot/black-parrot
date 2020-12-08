@@ -9,7 +9,7 @@ override BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
 $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR):
 	mkdir -p $@
 
-.PHONY:
+.PHONY: synth.vivado
 
 include $(TB_PATH)/$(TB)/Makefile.vivado
 
