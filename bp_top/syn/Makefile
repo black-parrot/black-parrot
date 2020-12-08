@@ -26,4 +26,5 @@ include $(BP_COMMON_DIR)/syn/Makefile.dc
 include $(BP_COMMON_DIR)/syn/Makefile.sv2v
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
+include $(BP_COMMON_DIR)/syn/Makefile.vivado
 
