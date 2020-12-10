@@ -49,17 +49,23 @@ module bp_stream_pump_out
   `bp_cast_i(bp_bedrock_xce_mem_msg_header_s, fsm_base_header);
   `bp_cast_o(bp_bedrock_xce_mem_msg_header_s, mem_header);
 
+  // Make the incoming addr aligned with the sub-block
+  wire [paddr_width_p-1:0] fsm_base_aligned_addr_li = {fsm_base_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp], stream_offset_width_lp'(0)};
+
   wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << fsm_base_header_cast_i.size) / (stream_data_width_p / 8), 1'b1);
 
-  logic set_cnt, cnt_up, is_last_cnt, streaming_r;
-  logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt;
+  logic set_cnt, cnt_up, is_last_cnt, is_stream, streaming_r;
+  
   if (stream_words_lp == 1)
     begin: full_block_stream
-      assign current_cnt = first_cnt;
+      assign is_stream = '0;
       assign streaming_r = '0;
+      assign stream_cnt_o = fsm_base_aligned_addr_li[stream_offset_width_lp+:data_len_width_lp];
+      assign is_last_cnt = 1'b1;
     end
   else
     begin: sub_block_stream 
+      logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt;
       bsg_counter_set_en
        #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
        data_counter
@@ -82,15 +88,16 @@ module bp_stream_pump_out
         ,.clear_i(stream_done_o)
         ,.data_o(streaming_r)
         );
+
+      assign first_cnt = fsm_base_aligned_addr_li[stream_offset_width_lp+:data_len_width_lp];
+      assign last_cnt  = first_cnt + num_stream - 1'b1;
+      
+      assign is_stream = stream_mask_p[fsm_base_header_cast_i.msg_type] & ~(first_cnt == last_cnt);
+      assign stream_cnt_o = set_cnt ? first_cnt : current_cnt;
+      assign is_last_cnt = (stream_cnt_o == last_cnt) | ~is_stream;
     end
-  assign first_cnt = fsm_base_header_cast_i.addr[stream_offset_width_lp+:data_len_width_lp];
-  assign last_cnt  = first_cnt + num_stream - 1'b1;
-  
+
   wire has_data = payload_mask_p[fsm_base_header_cast_i.msg_type];
-  wire is_stream = stream_mask_p[fsm_base_header_cast_i.msg_type] & ~(first_cnt == last_cnt);
-  
-  assign stream_cnt_o = set_cnt ? first_cnt : current_cnt;
-  assign is_last_cnt = (stream_cnt_o == last_cnt) | ~is_stream;
 
   always_comb 
     begin
@@ -109,9 +116,9 @@ module bp_stream_pump_out
           cnt_up  = fsm_ready_and_o & ~is_last_cnt;
           set_cnt = fsm_ready_and_o & ~streaming_r;
 
-          mem_header_cast_o.addr = { fsm_base_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
+          mem_header_cast_o.addr = { fsm_base_aligned_addr_li[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
                                    , {data_len_width_lp!=0{stream_cnt_o}}
-                                   , fsm_base_header_cast_i.addr[0+:stream_offset_width_lp] };
+                                   , fsm_base_aligned_addr_li[0+:stream_offset_width_lp] };
         end
       else
         begin
