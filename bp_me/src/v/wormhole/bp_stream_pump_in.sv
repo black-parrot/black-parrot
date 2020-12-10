@@ -67,18 +67,19 @@ module bp_stream_pump_in
       );
 
   wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << mem_header_lo.size) / (stream_data_width_p / 8), 1'b1);
-  
-  logic cnt_up, is_last_cnt, streaming_r;
-  logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt;
+  logic cnt_up, is_last_cnt, is_stream, streaming_r;
   logic [block_offset_width_lp-1:0] critical_addr_r; // store this addr for stream state
   if (stream_words_lp == 1)
     begin: full_block_stream
-      assign current_cnt = first_cnt;
+      assign is_stream = '0;
       assign streaming_r = '0;
       assign critical_addr_r = mem_header_lo.addr[0+:block_offset_width_lp];
+      assign is_last_cnt = 1'b1;
+      assign fsm_addr_o = mem_header_lo.addr;
     end
   else
-    begin: sub_block_stream 
+    begin: sub_block_stream
+    logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt;
       bsg_counter_set_en
        #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
        data_counter
@@ -110,14 +111,18 @@ module bp_stream_pump_in
         ,.en_i(fsm_ready_and_i & fsm_v_o & ~streaming_r)
         ,.data_o(critical_addr_r)
         );
-    end
-  assign first_cnt = critical_addr_r[stream_offset_width_lp+:data_len_width_lp];
-  assign last_cnt  = first_cnt + num_stream - 1'b1;
-  
-  wire is_stream = stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
 
-  assign stream_cnt = stream_new_o ? first_cnt : current_cnt;
-  assign is_last_cnt = (stream_cnt == last_cnt) | ~is_stream;
+      assign first_cnt = critical_addr_r[stream_offset_width_lp+:data_len_width_lp];
+      assign last_cnt  = first_cnt + num_stream - 1'b1;
+
+      assign is_stream = stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
+      assign is_last_cnt = (stream_cnt == last_cnt) | ~is_stream;
+
+      assign stream_cnt = stream_new_o ? first_cnt : current_cnt;
+      assign fsm_addr_o = { mem_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
+                          , stream_cnt
+                          , mem_header_lo.addr[0+:stream_offset_width_lp]};   
+    end
 
   always_comb
     begin
@@ -125,9 +130,6 @@ module bp_stream_pump_in
       fsm_base_header_cast_o.addr[0+:block_offset_width_lp] = critical_addr_r; // keep the address to be the critical word address
       fsm_data_o = mem_data_lo;
       fsm_v_o = mem_v_lo;
-      fsm_addr_o = { mem_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
-                  , {data_len_width_lp!=0{stream_cnt}}
-                  , mem_header_lo.addr[0+:stream_offset_width_lp]};   
 
       cnt_up = fsm_ready_and_i & fsm_v_o & ~is_last_cnt;
       stream_done_o = is_last_cnt & fsm_ready_and_i & fsm_v_o; // also used for credits return
@@ -135,7 +137,5 @@ module bp_stream_pump_in
 
       mem_yumi_li = (is_stream & mem_last_lo & mem_v_lo) ? stream_done_o : (fsm_ready_and_i & fsm_v_o);
     end
-
-  // TODO: assertion to identify whether critical_addr is aligned to the bus_data_width/burst_width
 
 endmodule
