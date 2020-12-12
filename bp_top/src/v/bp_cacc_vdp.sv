@@ -298,7 +298,7 @@ bp_lce
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
       resp_addr    <= io_cmd_cast_i.header.addr;
-      resp_msg     <= io_cmd_cast_i.header.msg_type;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
       unique
       case (local_addr_li.addr)
         20'h00000 : input_a_ptr <= io_cmd_cast_i.data;
@@ -316,7 +316,7 @@ bp_lce
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
       resp_addr    <= io_cmd_cast_i.header.addr;
-      resp_msg     <= io_cmd_cast_i.header.msg_type;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
       unique
       case (local_addr_li.addr)
         20'h00000 : resp_data <= input_a_ptr;

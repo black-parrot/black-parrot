@@ -54,7 +54,20 @@ module bp_nonsynth_host
   import "DPI-C" context function int scan();
   import "DPI-C" context function void pop();
 
+  integer tmp;
+  integer stdout[num_core_p];
+  integer stdout_global;
+
   initial start();
+  always_ff @(negedge reset_i)
+    begin
+      for (integer j = 0; j < num_core_p; j++)
+        begin
+          tmp = $fopen($sformatf("stdout_%0x.txt", j), "w");
+          stdout[j] = tmp;
+        end
+      stdout_global = $fopen("stdout_global.txt", "w");
+    end
 
   logic do_scan;
   bsg_strobe
@@ -72,24 +85,16 @@ module bp_nonsynth_host
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  // HOST I/O mappings
-  //localparam host_dev_base_addr_gp     = 32'h03??_????;
-
-  // Host I/O mappings (arbitrarily decided for now)
-  //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
-
   localparam bootrom_base_addr_gp = paddr_width_p'(64'h0001_????);
   localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
   localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
   localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
-
+  localparam putch_core_base_addr_gp  = paddr_width_p'(64'h0010_3???);
   bp_bedrock_cce_mem_msg_s io_cmd_li, io_cmd_lo;
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
 
   assign io_cmd_li = io_cmd_i;
   assign io_resp_o = io_resp_cast_o;
-
-  localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
   logic io_cmd_v_lo, io_cmd_yumi_li;
   bsg_fifo_1r1w_small
@@ -106,9 +111,9 @@ module bp_nonsynth_host
      ,.v_o(io_cmd_v_lo)
      ,.yumi_i(io_cmd_yumi_li)
      );
-   assign io_resp_v_o = io_cmd_v_lo;
-   assign io_cmd_yumi_li = io_resp_yumi_i;
-   wire [2:0] domain_id = io_cmd_lo.header.addr[paddr_width_p-1-:3];
+  assign io_resp_v_o = io_cmd_v_lo;
+  assign io_cmd_yumi_li = io_resp_yumi_i;
+  wire [2:0] domain_id = io_cmd_lo.header.addr[paddr_width_p-1-:3];
 
 
   logic putchar_data_cmd_v;
@@ -116,6 +121,7 @@ module bp_nonsynth_host
   logic finish_data_cmd_v;
   logic bootrom_data_cmd_v;
   logic domain_data_cmd_v;
+  logic putch_core_data_cmd_v;
 
   always_comb
     begin
@@ -124,6 +130,7 @@ module bp_nonsynth_host
       finish_data_cmd_v = 1'b0;
       bootrom_data_cmd_v = 1'b0;
       domain_data_cmd_v = io_cmd_v_lo & (domain_id != '0);
+      putch_core_data_cmd_v = 1'b0;
 
       unique
       casez (io_cmd_lo.header.addr)
@@ -131,6 +138,7 @@ module bp_nonsynth_host
         getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_v_lo;
         finish_base_addr_gp : finish_data_cmd_v = io_cmd_v_lo;
         bootrom_base_addr_gp: bootrom_data_cmd_v = io_cmd_v_lo;
+        putch_core_base_addr_gp: putch_core_data_cmd_v = io_cmd_v_lo;
         default: begin end
       endcase
     end
@@ -139,6 +147,7 @@ module bp_nonsynth_host
 
   // Memory-mapped I/O is 64 bit aligned
   localparam byte_offset_width_lp = 3;
+  localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
   wire [lg_num_core_lp-1:0] io_cmd_core_enc =
     io_cmd_lo.header.addr[byte_offset_width_lp+:lg_num_core_lp];
 
@@ -178,7 +187,17 @@ module bp_nonsynth_host
       if (putchar_data_cmd_v) begin
         $write("%c", io_cmd_lo.data[0+:8]);
         $fflush(32'h8000_0001);
+        $fwrite(stdout_global, "%c", io_cmd_lo.data[0+:8]);
+        $fflush(stdout_global);
       end
+
+      if (putch_core_data_cmd_v) begin
+        $write("%c", io_cmd_lo.data[0+:8]);
+        $fflush(32'h8000_0001);
+        $fwrite(stdout[io_cmd_core_enc], "%c", io_cmd_lo.data[0+:8]);
+        $fflush(stdout[io_cmd_core_enc]);
+      end
+
       if (getchar_data_cmd_v)
         pop();
 
@@ -187,12 +206,10 @@ module bp_nonsynth_host
       for (integer i = 0; i < num_core_p; i++)
         begin
           // PASS when returned value in finish packet is zero
-          if (finish_w_v_li[i] &
-            (io_cmd_lo.data[0+:8] == 8'(0)))
+          if (finish_w_v_li[i] & (io_cmd_lo.data[0+:8] == 8'(0)))
             $display("[CORE%0x FSH] PASS", i);
           // FAIL when returned value in finish packet is non-zero
-          if (finish_w_v_li[i] &
-            (io_cmd_lo.data[0+:8] != 8'(0)))
+          if (finish_w_v_li[i] & (io_cmd_lo.data[0+:8] != 8'(0)))
             $display("[CORE%0x FSH] FAIL", i);
         end
 

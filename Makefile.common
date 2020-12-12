@@ -42,6 +42,7 @@ export VCS       ?= vcs
 export URG       ?= urg
 export VERILATOR ?= verilator
 export DC_SHELL  ?= dc_shell
+export VIVADO    ?= vivado
 export _DVE      ?= dve
 export GTKWAVE   ?= gtkwave
 export PYTHON    ?= python
