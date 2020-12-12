@@ -2,8 +2,8 @@
  * bp_common_cache_engine.svh
  */
 
-`ifndef BP_COMMON_CACHE_SERVICE_VH
-`define BP_COMMON_CACHE_SERVICE_VH
+`ifndef BP_COMMON_CACHE_ENGINE_VH
+`define BP_COMMON_CACHE_ENGINE_VH
 
   typedef enum logic [4:0]
   {
