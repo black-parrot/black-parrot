@@ -57,7 +57,7 @@ module bp_be_fp_to_rec
 
   assign sp2dp_rec = '{sign  : sp_rec.sign
                        ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                       ,fract: sp_rec.fract << (dp_sig_width_gp-sp_sig_width_gp)
+                       ,fract: {sp_rec.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                        };
 
   wire nanbox_v_li = &raw_i[word_width_p+:word_width_p];

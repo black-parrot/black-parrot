@@ -180,7 +180,7 @@ module bp_be_pipe_long
 
   assign fdivsqrt_sp2dp_final = '{sign  : fdivsqrt_sp_final.sign
                                   ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                                  ,fract: fdivsqrt_sp_final.fract << (dp_sig_width_gp-sp_sig_width_gp)
+                                  ,fract: {fdivsqrt_sp_final.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                                   };
 
   logic opw_v_r, ops_v_r;

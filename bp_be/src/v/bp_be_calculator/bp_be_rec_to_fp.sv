@@ -26,7 +26,7 @@ module bp_be_rec_to_fp
 
   assign dp2sp_rec = '{sign  : dp_rec.sign
                        ,exp  : special ? {exp_code, adjusted_exp[0+:sp_exp_width_gp-2]} : adjusted_exp
-                       ,fract: dp_rec.fract >> (dp_sig_width_gp-sp_sig_width_gp)
+                       ,fract: dp_rec.fract[dp_sig_width_gp-2:dp_sig_width_gp-sp_sig_width_gp]
                        };
 
   logic [word_width_p-1:0] sp_raw_lo;
