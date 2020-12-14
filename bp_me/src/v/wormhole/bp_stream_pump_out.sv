@@ -22,6 +22,7 @@ module bp_stream_pump_out
    , localparam stream_words_lp = block_width_p / stream_data_width_p
    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
    , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p / 8)
+   , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p / 8)
    )
   ( input clk_i
   , input reset_i
@@ -49,9 +50,6 @@ module bp_stream_pump_out
   `bp_cast_i(bp_bedrock_xce_mem_msg_header_s, fsm_base_header);
   `bp_cast_o(bp_bedrock_xce_mem_msg_header_s, mem_header);
 
-  // Make the incoming addr aligned with the sub-block
-  wire [paddr_width_p-1:0] fsm_base_aligned_addr_li = {fsm_base_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp], stream_offset_width_lp'(0)};
-
   wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << fsm_base_header_cast_i.size) / (stream_data_width_p / 8), 1'b1);
   wire [data_len_width_lp-1:0] num_block  = (block_width_p / 8) / (1'b1 << fsm_base_header_cast_i.size);
 
@@ -61,7 +59,7 @@ module bp_stream_pump_out
     begin: full_block_stream
       assign is_stream = '0;
       assign streaming_r = '0;
-      assign stream_cnt_o = fsm_base_aligned_addr_li[stream_offset_width_lp+:data_len_width_lp];
+      assign stream_cnt_o = fsm_base_header_cast_i.addr[stream_offset_width_lp+:data_len_width_lp];
       assign is_last_cnt = 1'b1;
     end
   else
@@ -90,7 +88,7 @@ module bp_stream_pump_out
         ,.data_o(streaming_r)
         );
 
-      assign first_cnt = fsm_base_aligned_addr_li[stream_offset_width_lp+:data_len_width_lp];
+      assign first_cnt = fsm_base_header_cast_i.addr[stream_offset_width_lp+:data_len_width_lp];
       assign last_cnt  = first_cnt + num_stream - 1'b1;
       
       assign is_stream = stream_mask_p[fsm_base_header_cast_i.msg_type] & ~(first_cnt == last_cnt);
@@ -101,7 +99,7 @@ module bp_stream_pump_out
   wire has_data = payload_mask_p[fsm_base_header_cast_i.msg_type];
 
   logic [stream_offset_width_lp+data_len_width_lp-1:0] sub_block_adddr, sub_block_tuned_adddr; 
-  assign sub_block_adddr = {stream_cnt_o, fsm_base_aligned_addr_li[0+:stream_offset_width_lp]}; 
+  assign sub_block_adddr = {stream_cnt_o, fsm_base_header_cast_i.addr[0+:stream_offset_width_lp]}; 
   always_comb 
     begin
       mem_header_cast_o = fsm_base_header_cast_i;
@@ -122,11 +120,11 @@ module bp_stream_pump_out
           // Generate proper wrapp-around addr seq hetero block size
           casez(num_block)
             data_len_width_lp'(1): sub_block_tuned_adddr = sub_block_adddr;
-            data_len_width_lp'(2): sub_block_tuned_adddr = { fsm_base_aligned_addr_li[(stream_offset_width_lp+data_len_width_lp-1)+:1], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-1)]};
-            data_len_width_lp'(4): sub_block_tuned_adddr = { fsm_base_aligned_addr_li[(stream_offset_width_lp+data_len_width_lp-2)+:2], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-2)]};
-            default:               sub_block_tuned_adddr = fsm_base_aligned_addr_li[0+:(stream_offset_width_lp+data_len_width_lp)];
+            data_len_width_lp'(2): sub_block_tuned_adddr = { fsm_base_header_cast_i.addr[(stream_offset_width_lp+data_len_width_lp-1)+:1], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-1)]};
+            data_len_width_lp'(4): sub_block_tuned_adddr = { fsm_base_header_cast_i.addr[(stream_offset_width_lp+data_len_width_lp-2)+:2], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-2)]};
+            default:               sub_block_tuned_adddr = fsm_base_header_cast_i.addr[0+:(stream_offset_width_lp+data_len_width_lp)];
           endcase
-          mem_header_cast_o.addr = { fsm_base_aligned_addr_li[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp], sub_block_tuned_adddr };
+          mem_header_cast_o.addr = { fsm_base_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp], sub_block_tuned_adddr };
         end
       else
         begin
