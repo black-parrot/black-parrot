@@ -228,10 +228,10 @@ module bp_nonsynth_cosim
     if (trace_en_i & commit_fifo_yumi_li & commit_v_r & commit_pc_r != '0)
       begin
         $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, itag_cnt);
-        if (ird_w_v_i)
-          $fwrite(file, "%x %x", ird_addr_i, ird_data_i);
-        if (frd_w_v_i)
-          $fwrite(file, "%x %x", frd_addr_i, frd_data_i);
+        if (ird_fifo_yumi_li)
+          $fwrite(file, "%x %x", iwb_addr_r, iwb_data_r);
+        if (frd_fifo_yumi_li)
+          $fwrite(file, "%x %x", frd_addr_r, frd_raw_li);
         $fwrite(file, "\n");
       end
 
