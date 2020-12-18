@@ -2,8 +2,8 @@
  * bp_common_cache_engine.svh
  */
 
-`ifndef BP_COMMON_CACHE_SERVICE_VH
-`define BP_COMMON_CACHE_SERVICE_VH
+`ifndef BP_COMMON_CACHE_ENGINE_VH
+`define BP_COMMON_CACHE_ENGINE_VH
 
   typedef enum logic [4:0]
   {
@@ -137,16 +137,6 @@
 
 `define bp_cache_stat_mem_pkt_width(sets_mp, ways_mp) \
   (`BSG_SAFE_CLOG2(sets_mp)+`BSG_SAFE_CLOG2(ways_mp)+$bits(bp_cache_stat_mem_opcode_e))
-
-`define declare_bp_cache_tag_info_s(tag_width_mp, cache_name_mp) \
-  typedef struct packed                       \
-  {                                           \
-    logic [$bits(bp_coh_states_e)-1:0] state; \
-    logic [tag_width_mp-1:0]           tag;   \
-  }  bp_``cache_name_mp``_tag_info_s
-
-`define bp_cache_tag_info_width(tag_width_mp) \
-  ($bits(bp_coh_states_e)+tag_width_mp)
 
 `define declare_bp_cache_stat_info_s(ways_mp, cache_name_mp)  \
   typedef struct packed                          \
