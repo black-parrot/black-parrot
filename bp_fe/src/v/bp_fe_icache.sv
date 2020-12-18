@@ -56,10 +56,11 @@ module bp_fe_icache
     , input [ptag_width_p-1:0]                         ptag_i
     , input                                            ptag_v_i
     , input                                            uncached_i
-    , input                                            poison_i
+    , input                                            poison_tl_i
 
     , output [instr_width_p-1:0]                       data_o
     , output                                           data_v_o
+    , input                                            poison_tv_i
 
     // Cache Engine Interface
     , output logic [icache_req_width_lp-1:0]           cache_req_o
@@ -126,7 +127,7 @@ module bp_fe_icache
 
   wire is_fetch = (icache_pkt.op == e_icache_fetch);
   wire is_fencei = (icache_pkt.op == e_icache_fencei);
-  assign tl_we = ready_o & v_i;
+  assign tl_we = ready_o & v_i & ~cache_req_yumi_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -243,9 +244,8 @@ module bp_fe_icache
   logic                                                      fencei_op_tv_r;
   logic [icache_assoc_p-1:0]                                 hit_v_tv_r;
 
-
-  // Flush ops are non-speculative and so cannot be poisoned
-  assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
+  // fence.i does not check tags
+  assign tv_we = v_tl_r & (ptag_v_i | fencei_op_tl_r) & ~poison_tl_i & ~cache_req_yumi_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -347,18 +347,18 @@ module bp_fe_icache
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_miss_load;
       cache_req_cast_lo.size = max_req_size;
-      cache_req_v_o = 1'b1;
+      cache_req_v_o = ~poison_tv_i;
     end
     else if (uncached_req) begin
       cache_req_cast_lo.addr = addr_tv_r;
       cache_req_cast_lo.msg_type = e_uc_load;
       cache_req_cast_lo.size = e_size_4B;
-      cache_req_v_o = 1'b1;
+      cache_req_v_o = ~poison_tv_i;
     end
     else if (fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_lo.msg_type = e_cache_clear;
-      cache_req_v_o = (l1_coherent_p == 0);
+      cache_req_v_o = ~poison_tv_i & (l1_coherent_p == 0);
     end
   end
 
@@ -652,7 +652,7 @@ module bp_fe_icache
         uncached_load_data_r <= data_mem_pkt.data[0+:dword_width_p];
         uncached_load_data_v_r <= 1'b1;
       end
-      else if (poison_i)
+      else if (poison_tv_i)
           uncached_load_data_v_r <= 1'b0;
       else begin
         // once the uncached load is replayed, and v_o goes high, clear the valid bit
