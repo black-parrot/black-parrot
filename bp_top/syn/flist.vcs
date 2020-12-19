@@ -30,7 +30,9 @@
 +incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64_sa
 +incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_su
 +incdir+$BP_EXTERNAL_DIR/zipline/rtl/mem_wrappers/bimc_master/top
-
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_cddip/
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_cddip_support
++incdir+$BP_EXTERNAL_DIR/zipline/rtl/cr_cddip_sa
 # common includes
 +incdir+$BP_COMMON_DIR/src/include
 # fe includes
@@ -84,8 +86,11 @@ $BP_BE_DIR/src/include/bp_be_hardfloat_pkg.sv
 -y $BP_EXTERNAL_DIR/zipline/rtl/cr_su
 -y $BP_EXTERNAL_DIR/zipline/rtl/mem_wrappers/bimc_master/top
 -y $BP_EXTERNAL_DIR/zipline/rtl/cr_lz77_comp
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_cddip_support
+-y $BP_EXTERNAL_DIR/zipline/rtl/cr_cddip_sa
 $BP_EXTERNAL_DIR/zipline/rtl/common/include/cr_global_params.vh
 $BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64/cr_cceip_64.v
+$BP_EXTERNAL_DIR/zipline/rtl/cr_cddip/cr_cddip.v
 $BP_EXTERNAL_DIR/zipline/rtl/common/fifo/cr_cdc_fifo_wrap1.v
 $BP_EXTERNAL_DIR/zipline/rtl/common/fifo/cr_fifo_wrap1.v
 $BP_EXTERNAL_DIR/zipline/rtl/common/fifo/cr_fifo_wrap2.v
@@ -104,7 +109,8 @@ $BP_EXTERNAL_DIR/zipline/rtl/cr_cg/cr_cg_regs.sv
 $BP_EXTERNAL_DIR/zipline/rtl/cr_osf/cr_osf_regs.sv
 $BP_EXTERNAL_DIR/zipline/rtl/cr_cceip_64_sa/cr_cceip_64_sa_regs.sv
 $BP_EXTERNAL_DIR/zipline/rtl/cr_su/cr_su_regs.sv
-
+$BP_EXTERNAL_DIR/zipline/rtl/cr_cddip_support/cr_cddip_support_regs.sv
+$BP_EXTERNAL_DIR/zipline/rtl/cr_cddip_sa/cr_cddip_sa_regs.sv
 ## bsg_ip_cores files
 
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
@@ -345,7 +351,8 @@ $BP_TOP_DIR/src/v/bp_cacc_tile.sv
 $BP_TOP_DIR/src/v/bp_cacc_tile_node.sv
 $BP_TOP_DIR/src/v/bp_cacc_complex.sv
 $BP_TOP_DIR/src/v/bp_sacc_vdp.sv
-$BP_TOP_DIR/src/v/bp_sacc_zipline.sv
+$BP_TOP_DIR/src/v/bp_sacc_cceip.sv
+$BP_TOP_DIR/src/v/bp_sacc_cddip.sv
 $BP_TOP_DIR/src/v/bp_sacc_tile.sv
 $BP_TOP_DIR/src/v/bp_sacc_tile_node.sv
 $BP_TOP_DIR/src/v/bp_sacc_complex.sv
