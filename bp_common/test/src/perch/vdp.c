@@ -127,7 +127,6 @@ void bp_hw_dma(uint64_t *cfg_base_dma_addr, uint64_t *src, uint64_t length, uint
 }
 
 uint64_t bp_call_zipline_accelerator(uint8_t type, struct Zipline_CSR zipline_csrs, uint64_t input_tlv_num)
-
 {
   uint64_t *sac_cfg = (uint64_t *) 0x0020000a;
   bp_set_mmio_csr(sac_cfg, 0, 1);//enable sac mem region csr
@@ -152,6 +151,6 @@ uint64_t bp_call_zipline_accelerator(uint8_t type, struct Zipline_CSR zipline_cs
 
   uint64_t tlv_num;
   tlv_num = bp_get_mmio_csr(cfg_base_addr, DATA_TLV_LEN);
-
   return tlv_num;
 }
+

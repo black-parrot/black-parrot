@@ -213,9 +213,9 @@ module bp_sacc_tile
          );
     end
     
-else if(sacc_type_p == e_sacc_zipline)
-  begin: sacc_zipline
-  bp_sacc_zipline
+else if(sacc_type_p == e_sacc_cceip)
+  begin: sacc_cceip
+  bp_sacc_cceip
    #(.bp_params_p(bp_params_p))
    accelerator_link
     (.clk_i(clk_i)
@@ -240,7 +240,35 @@ else if(sacc_type_p == e_sacc_zipline)
      ,.io_resp_ready_o(lce_io_resp_ready_li)
 
      );
-  end
+  end  
+ else if (sacc_type_p == e_sacc_cddip)
+  begin: sacc_cddip
+  bp_sacc_cddip
+   #(.bp_params_p(bp_params_p))
+   accelerator_link
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.lce_id_i(lce_id_li)
+
+     ,.io_cmd_i(cce_io_cmd_lo)
+     ,.io_cmd_v_i(cce_io_cmd_v_lo)
+     ,.io_cmd_ready_o(cce_io_cmd_ready_li)
+
+     ,.io_resp_o(cce_io_resp_li)
+     ,.io_resp_v_o(cce_io_resp_v_li)
+     ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
+
+     ,.io_cmd_o(lce_io_cmd_li)
+     ,.io_cmd_v_o(lce_io_cmd_v_li)
+     ,.io_cmd_yumi_i(lce_io_cmd_yumi_lo)
+
+     ,.io_resp_i(lce_io_resp_lo)
+     ,.io_resp_v_i(lce_io_resp_v_lo)
+     ,.io_resp_ready_o(lce_io_resp_ready_li)
+
+     );
+  end // 
 
 
 
