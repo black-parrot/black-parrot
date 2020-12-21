@@ -207,6 +207,7 @@ typedef struct packed
 {
   logic [31:3] hpm;
   logic        ir;
+  logic        tm;
   logic        cy;
 }  rv64_scounteren_s;
 
