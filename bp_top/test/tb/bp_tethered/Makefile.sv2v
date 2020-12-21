@@ -1,8 +1,8 @@
 $(CONVERT_DIR)/flist.vcs:
-	grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@ 
-	echo $(CONVERT_DIR)/wrapper.v               >> $@ 
+	grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
+	echo $(CONVERT_DIR)/wrapper.sv              >> $@
 
-$(CONVERT_DIR)/wrapper.v:
+$(CONVERT_DIR)/wrapper.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
 $(CONVERT_DIR)/command.txt: $(CONVERT_DIR)/flist.vcs
@@ -10,4 +10,4 @@ $(CONVERT_DIR)/command.txt: $(CONVERT_DIR)/flist.vcs
 	sed -i "s/+incdir+/--incdir=/g" $@
 	sed -i "s/+define+/--define=/g" $@
 
-CONVERT_COLLATERAL = $(addprefix $(CONVERT_DIR)/, flist.vcs wrapper.v command.txt)
+CONVERT_COLLATERAL = $(addprefix $(CONVERT_DIR)/, flist.vcs wrapper.sv command.txt)

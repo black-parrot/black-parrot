@@ -102,7 +102,7 @@ module bp_be_dcache
    , localparam data_mem_mask_width_lp = (bank_width_lp >> 3)
    , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(bank_width_lp>>3)
    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
-   , localparam block_offset_width_lp=(bank_offset_width_lp+byte_offset_width_lp)
+   , localparam block_offset_width_lp= (dcache_assoc_p > 1) ? (bank_offset_width_lp+byte_offset_width_lp) : byte_offset_width_lp
    , localparam index_width_lp=`BSG_SAFE_CLOG2(dcache_sets_p)
    , localparam block_size_in_fill_lp = dcache_block_width_p / dcache_fill_width_p
    , localparam fill_size_in_bank_lp = dcache_fill_width_p / bank_width_lp
@@ -247,9 +247,10 @@ module bp_be_dcache
 
   // data_mem
   //
+  localparam data_mem_addr_width_lp = (dcache_assoc_p > 1) ? (index_width_lp+bank_offset_width_lp) : index_width_lp;
   logic [dcache_assoc_p-1:0] data_mem_v_li;
   logic data_mem_w_li;
-  logic [dcache_assoc_p-1:0][index_width_lp+bank_offset_width_lp-1:0] data_mem_addr_li;
+  logic [dcache_assoc_p-1:0][data_mem_addr_width_lp-1:0] data_mem_addr_li;
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] data_mem_data_li;
   logic [dcache_assoc_p-1:0][data_mem_mask_width_lp-1:0] data_mem_mask_li;
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] data_mem_data_lo;
@@ -837,7 +838,7 @@ module bp_be_dcache
     ,.els_p(num_dwords_per_bank_lp)
   ) dword_mux (
     .data_i(ld_data_way_picked)
-    ,.sel_i(paddr_tv_r[3+:`BSG_CDIV(num_dwords_per_bank_lp, 2)])
+    ,.sel_i(paddr_tv_r[3+:`BSG_SAFE_CLOG2(num_dwords_per_bank_lp)])
     ,.data_o(ld_data_dword_picked)
     );
 
@@ -989,10 +990,10 @@ module bp_be_dcache
     wire [bank_offset_width_lp-1:0] data_mem_pkt_offset = (bank_offset_width_lp'(i) - data_mem_pkt.way_id);
 
     assign data_mem_addr_li[i] = (decode_lo.load_op & tl_we)
-      ? {addr_index, addr_bank_offset}
+      ? {addr_index, {(dcache_assoc_p > 1){addr_bank_offset}}}
       : wbuf_yumi_li
-        ? {wbuf_entry_out_index, wbuf_entry_out_bank_offset}
-        : {data_mem_pkt.index, data_mem_pkt_offset};
+        ? {wbuf_entry_out_index, {(dcache_assoc_p > 1){wbuf_entry_out_bank_offset}}}
+        : {data_mem_pkt.index, {(dcache_assoc_p > 1){data_mem_pkt_offset}}};
 
     assign data_mem_data_li[i] = wbuf_yumi_li
       ? {num_dwords_per_bank_lp{wbuf_entry_out.data}}
@@ -1079,8 +1080,8 @@ module bp_be_dcache
     : addr_index_tv;
 
   logic [lg_dcache_assoc_lp-1:0] lru_decode_way_li;
-  logic [dcache_assoc_p-2:0] lru_decode_data_lo;
-  logic [dcache_assoc_p-2:0] lru_decode_mask_lo;
+  logic [`BSG_SAFE_MINUS(dcache_assoc_p, 2):0] lru_decode_data_lo;
+  logic [`BSG_SAFE_MINUS(dcache_assoc_p, 2):0] lru_decode_mask_lo;
 
   bsg_lru_pseudo_tree_decode #(
     .ways_p(dcache_assoc_p)
@@ -1124,7 +1125,7 @@ module bp_be_dcache
         end
         e_cache_stat_mem_clear_dirty: begin
           stat_mem_data_li = {(dcache_stat_info_width_lp){1'b0}};
-          stat_mem_mask_li.lru = {(dcache_assoc_p-1){1'b0}};
+          stat_mem_mask_li.lru = '0;
           stat_mem_mask_li.dirty = dirty_mask_lo;
         end
         default: begin
@@ -1286,7 +1287,7 @@ module bp_be_dcache
   initial
     begin
       assert(dword_width_p == 64) else $error("dword_width_p has to be 64");
-      assert(dcache_assoc_p == 8 | dcache_assoc_p == 4 | dcache_assoc_p == 2) else $error("dcache_assoc_p has to be 8, 4 or 2");
+      assert(dcache_assoc_p == 8 | dcache_assoc_p == 4 | dcache_assoc_p == 2 | dcache_assoc_p == 1) else $error("dcache_assoc_p has to be 8, 4, 2 or 1");
     end
   // synopsys translate_on
 

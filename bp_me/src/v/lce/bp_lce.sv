@@ -37,8 +37,6 @@ module bp_lce
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
-
-    , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
   )
   (
     input                                            clk_i
@@ -80,7 +78,7 @@ module bp_lce
     , output logic                                   stat_mem_pkt_v_o
     , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , input                                          stat_mem_pkt_yumi_i
-    , input [stat_info_width_lp-1:0]                 stat_mem_i
+    , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
     // LCE-CCE interface
     // Req: ready->valid

@@ -21,8 +21,8 @@
  *         is a little overwhelming.
  */
 
-`ifndef BP_COMMON_FE_BE_IF
-`define BP_COMMON_FE_BE_IF
+`ifndef BP_COMMON_CORE_IF
+`define BP_COMMON_CORE_IF
 
 `include "bsg_defines.v"
 
