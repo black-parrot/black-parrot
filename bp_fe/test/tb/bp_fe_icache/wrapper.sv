@@ -196,10 +196,11 @@ module wrapper
     ,.ptag_i(rolly_ptag_r)
     ,.ptag_v_i(ptag_v_r)
     ,.uncached_i(uncached_r)
-    ,.poison_i(poison_li)
+    ,.poison_tl_i(poison_li)
 
     ,.data_o(data_o)
     ,.data_v_o(data_v_o)
+    ,.poison_tv_i(1'b0)
 
     ,.cache_req_o(cache_req_lo)
     ,.cache_req_v_o(cache_req_v_lo)
