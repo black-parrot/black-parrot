@@ -130,7 +130,7 @@ module bp_stream_pump_in
             data_len_width_lp'(1):  sub_block_tuned_adddr = sub_block_adddr;
             data_len_width_lp'(2):  sub_block_tuned_adddr = { mem_header_lo.addr[(stream_offset_width_lp+data_len_width_lp-1)+:1], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-1)]};
             data_len_width_lp'(4):  sub_block_tuned_adddr = { mem_header_lo.addr[(stream_offset_width_lp+data_len_width_lp-2)+:2], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-2)]};
-            default:                sub_block_tuned_adddr = mem_header_lo.addr;
+            default:                sub_block_tuned_adddr = mem_header_lo.addr[0+:(stream_offset_width_lp+data_len_width_lp)];
           endcase
           fsm_addr_o = { mem_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp], sub_block_tuned_adddr};
         end
