@@ -122,7 +122,7 @@ module bp_be_pipe_mem
 
   /* Internal connections */
   /* TLB ports */
-  logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo, dtlb_v_lo;
+  logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_v_lo;
   logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag;
   bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry, passthrough_entry, entry_lo;
 
@@ -145,15 +145,9 @@ module bp_be_pipe_mem
   logic load_page_fault_v, store_page_fault_v;
   logic load_misaligned_v, store_misaligned_v;
 
-  logic load_access_fault_mem2, store_access_fault_mem2;
-  logic load_page_fault_mem2, store_page_fault_mem2;
-  logic load_misaligned_mem2, store_misaligned_mem2;
-
   /* Control signals */
   logic is_req_mem1, is_req_mem2;
-  logic is_store_mem1;
   logic is_fencei_mem1, is_fencei_mem2;
-  logic [rv64_eaddr_width_gp-1:0] eaddr_mem1;
 
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
@@ -163,59 +157,48 @@ module bp_be_pipe_mem
   // Calculate cache access eaddr
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
 
-  logic eaddr_fault, eaddr_fault_r;
-
-  bsg_dff_reset
-   #(.width_p(1))
-    eaddr_fault_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i((decode.pipe_mem_early_v | decode.pipe_mem_final_v) & eaddr_fault)
-     ,.data_o(eaddr_fault_r)
-     );
-
   // D-TLB connections
-  assign dtlb_r_v     = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & trans_info.translation_en & ~eaddr_fault & ~is_fencei;
+  assign dtlb_r_v     = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
   assign dtlb_r_vtag  = eaddr[bp_page_offset_width_gp+:vtag_width_p];
   assign dtlb_w_v     = ptw_fill_pkt.dtlb_fill_v;
   assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign dtlb_w_entry = ptw_fill_pkt.entry;
 
-  bp_tlb
-   #(.bp_params_p(bp_params_p)
-     ,.tlb_els_p(dtlb_els_p)
-     )
-   dtlb
+  logic [ptag_width_p-1:0] dtlb_ptag_lo;
+  bp_mmu
+   #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
+   dmmu
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
+
      ,.flush_i(sfence_i)
+     ,.priv_mode_i(trans_info.priv_mode)
+     ,.sum_i(trans_info.mstatus_sum)
+     ,.trans_en_i(trans_info.translation_en)
+     ,.uncached_mode_i((cfg_bus.dcache_mode == e_lce_mode_uncached))
+     ,.sac_i(cfg_bus.sac)
+     ,.domain_mask_i(cfg_bus.domain)
 
-     ,.v_i(dtlb_r_v | dtlb_w_v)
-     ,.w_i(dtlb_w_v)
-     ,.vtag_i((dtlb_w_v)? dtlb_w_vtag : dtlb_r_vtag)
-     ,.entry_i(dtlb_w_entry)
+     ,.w_v_i(dtlb_w_v)
+     ,.w_vtag_i(dtlb_w_vtag)
+     ,.w_entry_i(dtlb_w_entry)
 
-     ,.entry_o(entry_lo)
-     ,.v_o(dtlb_v_lo)
-     ,.miss_v_o(dtlb_miss_v)
-     );
+     ,.r_v_i(dtlb_r_v)
+     ,.r_instr_i('0)
+     ,.r_load_i(is_load)
+     ,.r_store_i(is_store)
+     ,.r_eaddr_i(eaddr)
 
-  assign passthrough_entry = '{ptag: eaddr_mem1[bp_page_offset_width_gp+:ptag_width_p], default: '0};
-  wire passthrough_v_lo = is_req_mem1;
-  assign dtlb_r_entry = trans_info.translation_en ? entry_lo : passthrough_entry;
-  assign dtlb_r_v_lo = trans_info.translation_en ? dtlb_v_lo : passthrough_v_lo;
-
-  bp_pma
-   #(.bp_params_p(bp_params_p))
-   pma
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.ptag_v_i(dtlb_r_v_lo)
-     ,.ptag_i(dtlb_r_entry.ptag)
-
-     ,.uncached_o(dcache_uncached)
+     ,.r_v_o(dtlb_v_lo)
+     ,.r_ptag_o(dtlb_ptag_lo)
+     ,.r_miss_o(dtlb_miss_v)
+     ,.r_uncached_o(dcache_uncached)
+     ,.r_instr_access_fault_o()
+     ,.r_load_access_fault_o(load_access_fault_v)
+     ,.r_store_access_fault_o(store_access_fault_v)
+     ,.r_instr_page_fault_o()
+     ,.r_load_page_fault_o(load_page_fault_v)
+     ,.r_store_page_fault_o(store_page_fault_v)
      );
 
   bp_be_ptw
@@ -297,41 +280,18 @@ module bp_be_pipe_mem
     if (reset_i) begin
       is_req_mem1 <= '0;
       is_req_mem2 <= '0;
-      is_store_mem1 <= '0;
-      eaddr_mem1 <= '0;
       is_fencei_mem1 <= '0;
       is_fencei_mem2 <= '0;
-      load_access_fault_mem2 <= '0;
-      store_access_fault_mem2 <= '0;
-      load_page_fault_mem2 <= '0;
-      store_page_fault_mem2 <= '0;
-      load_misaligned_mem2 <= '0;
-      store_misaligned_mem2 <= '0;
     end
     else begin
       is_req_mem1 <= is_req;
       is_req_mem2 <= is_req_mem1;
-      is_store_mem1 <= is_store;
-      eaddr_mem1 <= eaddr;
       is_fencei_mem1 <= is_fencei;
       is_fencei_mem2 <= is_fencei_mem1;
-      load_access_fault_mem2 <= load_access_fault_v;
-      store_access_fault_mem2 <= store_access_fault_v;
-      load_page_fault_mem2 <= load_page_fault_v;
-      store_page_fault_mem2 <= store_page_fault_v;
-      load_misaligned_mem2 <= load_misaligned_v;
-      store_misaligned_mem2 <= store_misaligned_v;
     end
   end
 
   // Check instruction accesses
-  wire data_priv_page_fault = ((trans_info.priv_mode == `PRIV_MODE_S) & ~trans_info.mstatus_sum & dtlb_r_entry.u)
-                                | ((trans_info.priv_mode == `PRIV_MODE_U) & ~dtlb_r_entry.u);
-  wire data_write_page_fault = is_store_mem1 & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
-
-  assign eaddr_fault = (eaddr[rv64_eaddr_width_gp-1:vaddr_width_p] != {eaddr_pad_lp{eaddr[vaddr_width_p-1]}});
-  assign load_page_fault_v  = ((trans_info.translation_en & ~is_store_mem1) & ((dtlb_r_v_lo & data_priv_page_fault) | eaddr_fault_r));
-  assign store_page_fault_v = ((trans_info.translation_en & is_store_mem1) & ((dtlb_r_v_lo & (data_priv_page_fault | data_write_page_fault)) | eaddr_fault_r));
   assign load_misaligned_v = 1'b0; // TODO: detect
   assign store_misaligned_v = 1'b0; // TODO: detect
 
@@ -346,37 +306,23 @@ module bp_be_pipe_mem
       end
       else begin
         dcache_pkt_v = reservation.v & ~reservation.poison & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
-        // TODO: Use dcache opcode directly
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
         dcache_pkt.page_offset = eaddr[0+:page_offset_width_p];
         dcache_pkt.data        = rs2;
-        dcache_ptag = dtlb_r_entry.ptag;
-        dcache_ptag_v = dtlb_r_v_lo
-                        & ~(load_page_fault_v | store_page_fault_v)
-                        & ~(load_access_fault_v | store_access_fault_v)
-                        & ~(load_misaligned_v | store_misaligned_v);
+        dcache_ptag = dtlb_ptag_lo;
+        dcache_ptag_v = dtlb_v_lo;
       end
   end
-
-  // Fault if in uncached mode but access is not for an uncached address
-  wire is_uncached_mode = (cfg_bus.dcache_mode == e_lce_mode_uncached);
-  wire mode_fault_v = (is_uncached_mode & ~dcache_uncached);
-
-  wire did_fault_v = (cfg_bus.domain[dcache_ptag[ptag_width_p-1-:io_noc_did_width_p]] != 1'b1);
-  wire sac_fault_v = ((dcache_ptag[ptag_width_p-1-:(io_noc_did_width_p+1)] == 1) & ~cfg_bus.sac);
-
-  assign load_access_fault_v  = dtlb_r_v_lo & ~is_store_mem1 & (mode_fault_v | did_fault_v | sac_fault_v);
-  assign store_access_fault_v = dtlb_r_v_lo & is_store_mem1 & (mode_fault_v | did_fault_v | sac_fault_v);
 
   assign tlb_miss_v_o           = dtlb_miss_v;
   assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v;
   assign fencei_v_o             = is_fencei_mem2 & dcache_early_v;
-  assign store_page_fault_v_o   = store_page_fault_mem2;
-  assign load_page_fault_v_o    = load_page_fault_mem2;
-  assign store_access_fault_v_o = store_access_fault_mem2;
-  assign load_access_fault_v_o  = load_access_fault_mem2;
-  assign store_misaligned_v_o   = store_misaligned_mem2;
-  assign load_misaligned_v_o    = load_misaligned_mem2;
+  assign store_page_fault_v_o   = store_page_fault_v;
+  assign load_page_fault_v_o    = load_page_fault_v;
+  assign store_access_fault_v_o = store_access_fault_v;
+  assign load_access_fault_v_o  = load_access_fault_v;
+  assign store_misaligned_v_o   = store_misaligned_v;
+  assign load_misaligned_v_o    = load_misaligned_v;
 
   assign ready_o                = dcache_ready_lo & ~ptw_busy;
   assign early_data_o           = dcache_early_data;

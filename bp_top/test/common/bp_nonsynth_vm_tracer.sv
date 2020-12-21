@@ -41,8 +41,7 @@ module bp_nonsynth_vm_tracer
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
-  bp_fe_tlb_entry_s   itlb_w_entry;
+  bp_pte_entry_leaf_s itlb_w_entry;
   bp_pte_entry_leaf_s dtlb_w_entry;
 
   assign itlb_w_entry = itlb_entry_i;

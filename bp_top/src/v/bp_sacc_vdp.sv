@@ -153,7 +153,7 @@ module bp_sacc_vdp
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
       resp_addr    <= io_cmd_cast_i.header.addr;
-      resp_msg     <= io_cmd_cast_i.header.msg_type;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
       spm_external_write_v_li <= '0;
       spm_external_read_v_li  <= '0;
       resp_v_lo <= 1;
@@ -175,7 +175,7 @@ module bp_sacc_vdp
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
       resp_addr    <= io_cmd_cast_i.header.addr;
-      resp_msg     <= io_cmd_cast_i.header.msg_type;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
       spm_external_write_v_li <= '0;
       spm_external_read_v_li  <= '0;
       resp_v_lo <= 1;
@@ -197,7 +197,7 @@ module bp_sacc_vdp
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
       resp_addr    <= io_cmd_cast_i.header.addr;
-      resp_msg     <= io_cmd_cast_i.header.msg_type;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
       spm_external_write_v_li <= '1;
       spm_external_read_v_li  <= '0;
       resp_v_lo <= 1;
@@ -209,7 +209,7 @@ module bp_sacc_vdp
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
       resp_addr    <= io_cmd_cast_i.header.addr;
-      resp_msg     <= io_cmd_cast_i.header.msg_type;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
       spm_external_read_v_li  <= '1;
       spm_external_write_v_li <= '0;
       resp_v_lo <= 0;

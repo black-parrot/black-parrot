@@ -156,7 +156,7 @@ module bp_nonsynth_cosim
      ,.reset_i(reset_i | freeze_i | is_debug_mode_r)
 
      ,.clear_i(1'b0)
-     ,.up_i(commit_v_i)
+     ,.up_i(commit_v_r & commit_fifo_yumi_li)
      ,.count_o(instr_cnt)
      );
 
@@ -209,28 +209,13 @@ module bp_nonsynth_cosim
       file      = $fopen(file_name, "w");
     end
 
-  logic [29:0] itag_cnt;
-  bsg_counter_clear_up
-   #(.max_val_p(2**30-1)
-     ,.init_val_p(0)
-     )
-   itag_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(1'b0)
-     ,.up_i(commit_v_i)
-
-     ,.count_o(itag_cnt)
-     );
-
   always_ff @(negedge clk_i)
     if (trace_en_i & commit_fifo_yumi_li & commit_v_r & commit_pc_r != '0)
       begin
-        $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, itag_cnt);
-        if (ird_w_v_i)
+        $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, instr_cnt);
+        if (commit_ird_w_v_r)
           $fwrite(file, "%x %x", ird_addr_i, ird_data_i);
-        if (frd_w_v_i)
+        if (commit_frd_w_v_r)
           $fwrite(file, "%x %x", frd_addr_i, frd_data_i);
         $fwrite(file, "\n");
       end

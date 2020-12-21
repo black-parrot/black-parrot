@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_wrapper.v
+ *   bp_cce_wrapper.sv
  *
  * Description:
  *   This is the top level module for the CCE.

@@ -20,14 +20,11 @@ fi
 N=${2:-1}
 
 # Bash array to iterate over for configurations
-cfgs=(\
-    "e_bp_unicore_cfg" \
-    "e_bp_multicore_1_cfg" \
-    "e_bp_multicore_1_cce_ucode_cfg" \
+cfgs=(
+    "e_bp_unicore_bootrom_cfg"
+    "e_bp_multicore_1_bootrom_cfg"
+    "e_bp_multicore_1_cce_ucode_bootrom_cfg"
     )
-# For now, just run linux regression on unicore cfg
-#    "e_bp_single_core_ucode_cce_cfg" \
-#    "e_bp_single_core_cfg" \
 
 let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1

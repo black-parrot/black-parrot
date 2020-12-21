@@ -95,6 +95,10 @@ load_config:
 
     // Fence to make sure configuration is set before continuing
     fence
+    // Fence I$ to make sure we start fetching from cached mode
+    fence.i
+    // NOP for padding
+    nop
     
     // Set up the debug mode exit to DRAM base address
     li t0, 0x80000000
