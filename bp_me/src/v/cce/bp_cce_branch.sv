@@ -17,7 +17,7 @@
  */
 
 module bp_cce_branch
-  import bp_cce_pkg::*;
+  import bp_me_pkg::*;
   #(parameter width_p          = "inv"
     , parameter cce_pc_width_p = "inv"
   )

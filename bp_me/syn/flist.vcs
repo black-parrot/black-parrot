@@ -1,6 +1,6 @@
 +define+DRAMSIM2
 ## Includes
-# bsg_ip_cores includes
+# BaseJump STL includes
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
 +incdir+$BASEJUMP_STL_DIR/bsg_mem
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
@@ -14,30 +14,25 @@
 +incdir+$BP_BE_DIR/src/include
 +incdir+$BP_BE_DIR/src/include/bp_be_dcache
 # me includes 
-+incdir+$BP_ME_DIR/src/include/v
++incdir+$BP_ME_DIR/src/include
 # top includes
 +incdir+$BP_TOP_DIR/src/include
 ## Packages
-# bsg_ip_cores packages
+# BaseJump STL packages
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 # Interface packages
-$BP_COMMON_DIR/src/include/bp_common_rv64_pkg.sv
 $BP_COMMON_DIR/src/include/bp_common_pkg.sv
 $BP_COMMON_DIR/src/include/bp_common_aviary_pkg.sv
-$BP_COMMON_DIR/src/include/bp_common_cfg_link_pkg.sv
 # FE packages
-$BP_FE_DIR/src/include/bp_fe_icache_pkg.sv
 $BP_FE_DIR/src/include/bp_fe_pkg.sv
 # BE packages
 $BP_BE_DIR/src/include/bp_be_pkg.sv
-$BP_BE_DIR/src/include/bp_be_dcache_pkg.sv
 # ME packages
-$BP_ME_DIR/src/include/v/bp_me_pkg.sv
-$BP_ME_DIR/src/include/v/bp_cce_pkg.sv
+$BP_ME_DIR/src/include/bp_me_pkg.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
-## bsg_ip_cores files
+## BaseJump STL files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_ptr_gray.v

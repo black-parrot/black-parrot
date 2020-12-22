@@ -2,7 +2,6 @@
 module bp_ddr
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
-  import bp_cce_pkg::*;
   import bp_me_pkg::*;
   import bsg_tag_pkg::*;
   import bsg_dmc_pkg::*;
