@@ -32,8 +32,10 @@ parser.add_argument('-d', dest='dword_size', type=int, default=64,
                     help='dword size')
 
 # operating mode
-parser.add_argument('-u', '--uncached', dest='uncached', type=int, default=0,
-                    help='Set to issue only uncached and incoherent requests')
+parser.add_argument('--lce-mode', dest='lce_mode', type=int, default=0,
+                    help='0 = cached requests, 1 = uncached requests, 2 = mixed (only if cce-mode == 0)')
+parser.add_argument('--cce-mode', dest='cce_mode', type=int, default=0,
+                    help='0 = normal, 1 = uncached only (requires lce-mode == 1)')
 
 # memory map arguments and parameters
 # The basic memory map is only DRAM is cacheable and coherent and all other memory
@@ -49,6 +51,22 @@ parser.add_argument('--mem-size', dest='mem_size', type=int, default=2,
 
 
 args = parser.parse_args()
+
+skip_init = 1 if (args.cce_mode == 1) else 0
+
+lce_uncached = 1 if (args.lce_mode == 1) else 0
+lce_mixed = 1 if (args.lce_mode == 2) else 0
+lce_cached = 1 if (args.lce_mode == 0) else 0
+
+# Validate LCE and CCE mode selections
+assert (args.lce_mode >= 0 and args.lce_mode <= 2), 'LCE mode invalid'
+assert (args.cce_mode >= 0 and args.cce_mode <= 1), 'CCE mode invalid'
+
+# Validate LCE and CCE mode combinations
+# if CCE mode is uncached, LCE mode must be uncached only
+# if CCE mode is normal, LCE mode can be any
+if skip_init:
+  assert lce_uncached == 1, 'LCE mode must be uncached only if CCE mode is uncached only'
 
 ## cache parameters
 cache_assoc = args.assoc
@@ -75,7 +93,7 @@ mem_blocks = cache_blocks * args.mem_size
 #eprint('memory bytes: {0}'.format(mem_bytes))
 
 # base memory address
-mem_base = 0 if args.uncached else args.dram_offset
+mem_base = 0 if skip_init else args.dram_offset
 mem_high = mem_base + mem_bytes
 #eprint('memory base: 0x{0:010x}'.format(mem_base))
 #eprint('memory high: 0x{0:010x}'.format(mem_high))
@@ -120,8 +138,6 @@ tg.wait(100)
 
 store_val = 1
 
-uncached = 1 if args.uncached else 0
-
 for i in range(args.num_instr):
   # pick access parameters
   load = random.choice([True, False])
@@ -136,24 +152,35 @@ for i in range(args.num_instr):
   #eprint('word: {0}'.format(word))
   # build the address
   addr = (block << b) + (word << size_shift)
-  if not uncached:
+
+  # determine type of request (cached or uncached)
+  uncached_req = 0
+  if lce_mixed:
+    uncached_req = random.choice([0,1])
+  elif lce_uncached:
+    uncached_req = 1
+
+  # adjust request address depending on CCE mode
+  # normal CCE mode expects memory requests to DRAM region of memory
+  if not skip_init:
     addr = addr + mem_base
+
   check_valid_addr(addr)
 
   if load:
-    tg.send_load(signed=0, size=size, addr=addr, uc=uncached)
+    tg.send_load(signed=0, size=size, addr=addr, uc=uncached_req)
     val = read_memory(byte_memory, addr, size)
     #eprint(str(i) + ': mem[{0}:{1}] == {2}'.format(addr, size, val))
-    tg.recv_data(addr=addr, data=val, uc=uncached)
+    tg.recv_data(addr=addr, data=val, uc=uncached_req)
   else:
     # NOTE: the value being stored will be truncated to size number of bytes
     store_val_trunc = store_val
     if (size < 8):
       store_val_trunc = store_val_trunc & ~(~0 << (size*8))
-    tg.send_store(size=size, addr=addr, data=store_val_trunc, uc=uncached)
+    tg.send_store(size=size, addr=addr, data=store_val_trunc, uc=uncached_req)
     write_memory(byte_memory, addr, store_val_trunc, size)
     #eprint(str(i) + ': mem[{0}:{1}] := {2}'.format(addr, size, store_val_trunc))
-    tg.recv_data(addr=addr, data=0, uc=uncached)
+    tg.recv_data(addr=addr, data=0, uc=uncached_req)
     store_val += 1
 
 # test end

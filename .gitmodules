@@ -1,9 +1,3 @@
-[submodule "external/riscv-isa-sim"]
-  path = external/riscv-isa-sim
-  url = https://github.com/black-parrot/riscv-isa-sim.git
-  branch = blackparrot_mods
-  ignore = dirty
-
 [submodule "external/axe"]
   path = external/axe
   url = https://github.com/black-parrot/axe

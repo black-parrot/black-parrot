@@ -144,6 +144,11 @@ class NBF:
       if not(self.skip_zeros and self.dram_data[k] == 0):
         self.print_nbf(opcode, addr, self.dram_data[k])
 
+  # print fence
+  # when loader sees this, it waits until all packets are received to proceed
+  def print_fence(self):
+    self.print_nbf(0xfe, 0x0, 0x0)
+
   # print finish
   # when spmd loader sees, this it stops sending packets.
   def print_finish(self):
@@ -162,6 +167,8 @@ class NBF:
     # Reset clear
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_reset, 0)
     
+    self.print_fence()
+
     # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
     if self.config:
       # Write CCE ucode
@@ -175,22 +182,28 @@ class NBF:
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
-      
+
+    self.print_fence()
+
+    # Write DRAM
+    if self.mem_file:
+      self.init_dram()
+
+    self.print_fence()
+
     # For checkpoint, load CCE ucode, cache/CCE modes and the checkpoint
     if self.checkpoint_file:
       # Write the checkpoint
       for nbf in self.checkpoint:
         print(nbf)
 
-    # Write DRAM
-    if self.mem_file:
-      self.init_dram()
+    self.print_fence()
 
     # Freeze clear
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 0)
     # EOF
+    self.print_fence()
     self.print_finish()
-
 
 #
 #   main()

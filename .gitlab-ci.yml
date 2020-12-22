@@ -17,7 +17,7 @@ stages:
   - test-medium
   - test-long
   - test-ultralong
- 
+
 clean_all:
   when: manual
   stage: manual
@@ -83,6 +83,7 @@ update-cache: &update-cache-manual
     - me_dev
     - top_dev
     - sw_dev
+    - me_dev_fix_ci
   before_script:
     - echo "Forcefully updating submodules"
     - git submodule update --init --force
@@ -174,7 +175,15 @@ check-design:
     - dc
   script:
     - $CI_PROJECT_DIR/ci/check_design.sh $CI_CORES
-      
+
+synth-vivado:
+  <<: *job_definition
+  stage: check
+  tags:
+    - vivado
+  script:
+    - $CI_PROJECT_DIR/ci/synth_vivado.sh $CI_CORES
+
 lint-verilator:
   <<: *job_definition
   stage: check
@@ -182,7 +191,7 @@ lint-verilator:
     - verilator
   script:
     - $CI_PROJECT_DIR/ci/lint.sh verilator $CI_CORES
- 
+
 lint-vcs:
   <<: *job_definition
   stage: check
@@ -224,6 +233,22 @@ weird-vcs:
   script:
     - $CI_PROJECT_DIR/ci/weird_config.sh vcs $CI_CORES
 
+l2e-vcs:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/l2e_config.sh vcs $CI_CORES
+
+l2e-verilator:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/l2e_config.sh verilator $CI_CORES
+
 me-regress-verilator:
   <<: *job_definition
   stage: test-short
@@ -231,7 +256,7 @@ me-regress-verilator:
     - verilator
   script:
     - $CI_PROJECT_DIR/ci/me_regress.sh verilator $CI_CORES
- 
+
 me-regress-vcs:
   <<: *job_definition
   stage: test-short
@@ -263,7 +288,7 @@ top-riscv-tests-verilator:
     - verilator
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh verilator RISCV_TESTLIST $CI_CORES
- 
+
 top-riscv-tests-vcs:
   <<: *job_definition
   stage: test-short
@@ -329,8 +354,10 @@ top-riscvdv-vcs:
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCVDV_TESTLIST $CI_CORES
 
+# Verilator 4.104 "internal error"
 top-checkpoint-verilator:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - verilator

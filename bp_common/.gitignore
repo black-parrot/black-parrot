@@ -1,6 +1,5 @@
 *.swp
 *.dump
-*.spike
 *.mem
 *.mainram
 *.bootram

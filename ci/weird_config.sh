@@ -46,13 +46,11 @@ cfgs=(\
     "e_bp_unicore_no_l2_cfg"
     "e_bp_unicore_l1_wide_cfg"
     "e_bp_unicore_l1_hetero_cfg"
+    "e_bp_unicore_l1_tiny_cfg"
     "e_bp_unicore_l1_medium_cfg"
     "e_bp_unicore_l1_small_cfg"
     "e_bp_unicore_cfg"
     )
-
-# The base command to append the configuration to
-cmd_base="make -C bp_top/syn build.${SUFFIX} sim.${SUFFIX} COSIM_P=1 SUITE=bp_tests PROG=cache_hammer"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
@@ -62,6 +60,12 @@ let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Run the regression in parallel on each configuration
+cmd_base="make -C bp_top/syn build.${SUFFIX} sim.${SUFFIX} COSIM_P=1 SUITE=bp_tests PROG=cache_hammer"
+echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
+
+# Run a second set of tests
+cmd_base="make -C bp_top/syn build.${SUFFIX} sim.${SUFFIX} COSIM_P=1 SUITE=riscv_tests PROG=towers"
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 

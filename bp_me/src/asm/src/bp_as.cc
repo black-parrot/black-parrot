@@ -232,6 +232,12 @@ Assembler::parseOpd(string &s) {
     return e_opd_rf;
   } else if (!s.compare("uf")) {
     return e_opd_uf;
+  } else if (!s.compare("arf")) {
+    return e_opd_arf;
+  } else if (!s.compare("anrf")) {
+    return e_opd_anrf;
+  } else if (!s.compare("rcf")) {
+    return e_opd_rcf;
 
   // Special
   } else if (!s.compare("reqlce")) {
@@ -385,6 +391,12 @@ Assembler::parseFlagOneHot(string &s, bool &error) {
     return e_flag_rf;
   } else if (!s.compare("uf")) {
     return e_flag_uf;
+  } else if (!s.compare("arf")) {
+    return e_flag_arf;
+  } else if (!s.compare("anrf")) {
+    return e_flag_anrf;
+  } else if (!s.compare("rcf")) {
+    return e_flag_rcf;
   } else {
     error = true;
     return e_flag_rqf;
