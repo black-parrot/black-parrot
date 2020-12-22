@@ -21,7 +21,6 @@
 
 module bp_cce_pending_bits
   import bp_common_pkg::*;
-  import bp_cce_pkg::*;
   #(parameter num_way_groups_p            = "inv"
     , parameter cce_way_groups_p          = "inv"
     , parameter num_cce_p                 = "inv"

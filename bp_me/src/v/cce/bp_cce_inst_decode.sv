@@ -24,7 +24,6 @@
 
 module bp_cce_inst_decode
   import bp_common_pkg::*;
-  import bp_cce_pkg::*;
   import bp_me_pkg::*;
   #(parameter cce_pc_width_p = "inv"
   )

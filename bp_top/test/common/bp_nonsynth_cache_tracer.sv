@@ -3,7 +3,6 @@ module bp_nonsynth_cache_tracer
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_common_rv64_pkg::*;
  #( parameter bp_params_e bp_params_p = e_bp_default_cfg
   , parameter assoc_p = 8
   , parameter sets_p = 64
