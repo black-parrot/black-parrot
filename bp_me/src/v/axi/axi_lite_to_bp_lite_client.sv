@@ -202,8 +202,3 @@ module axi_lite_to_bp_lite_client
   end
   //synopsys translate_on
 endmodule
-
-
-
-         
-   
