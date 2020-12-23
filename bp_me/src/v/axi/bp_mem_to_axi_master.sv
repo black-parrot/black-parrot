@@ -118,6 +118,16 @@ module bp_mem_to_axi_master
   assign mem_resp_header_o = mem_resp_header_cast_o;
   assign mem_cmd_header_cast_i = mem_cmd_header_i;
 
+  // Declaring all possible states
+  typedef enum logic [1:0] {
+    e_wait           = 2'b00
+    ,e_read_data_rx  = 2'b01
+    ,e_write_data_tx = 2'b10
+    ,e_write_resp_rx = 2'b11
+  } state_e;
+
+  state_e state_r, state_n;
+
   // storing mem_cmd's header for mem_resp's use
   // only accepts changes when mem_cmd is valid
   bsg_dff_reset_en
@@ -125,7 +135,7 @@ module bp_mem_to_axi_master
    mem_header_reg
     (.clk_i(aclk_i)
     ,.reset_i(~aresetn_i)
-    ,.en_i(mem_cmd_header_v_i)
+    ,.en_i(mem_cmd_header_v_i & (state_r == e_wait))
     ,.data_i(mem_cmd_header_i)
     ,.data_o(mem_cmd_header_r)
     );
@@ -136,32 +146,47 @@ module bp_mem_to_axi_master
   assign mem_cmd_header_read_v  = mem_cmd_header_v_i & mem_cmd_header_cast_i.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_pre};
   assign mem_cmd_header_write_v = mem_cmd_header_v_i & mem_cmd_header_cast_i.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
 
-  // Write counters and strobe logic
+  // Write counters and burst logic
   logic [7:0] awburst_cnt_r, awburst_cnt_n;
-  logic [7:0] burst_length; 
+  logic rready_r; 
 
-  assign burst_length = ((2**mem_cmd_header_r.size << 3) > axi_data_width_p) 
-                      ? (2**(mem_cmd_header_r.size  - lg_axi_data_width_in_byte_lp)) - 1
-                      : 8'h00;
+  function automatic [7:0] len_calc;
+    input [2:0] size;
+    len_calc   = ((2**size << 3) > axi_data_width_p) 
+               ? (2**(size  - lg_axi_data_width_in_byte_lp)) - 1
+               : 8'h00;
+  endfunction
 
-  // Declaring all possible states
-  typedef enum logic [2:0] {
-    e_wait           = 3'b000
-    ,e_read_mem_resp = 3'b001
-    ,e_read_tx       = 3'b010
-    ,e_write_addr_tx = 3'b011
-    ,e_write_data_tx = 3'b100
-    ,e_write_err     = 3'b110
-  } state_e;
+  function automatic [2:0] size_calc;
+    input [2:0] size;
+    size_calc = ((2**size << 3) > axi_data_width_p) 
+              ? 3'b011
+              : size;
+  endfunction
 
-  state_e state_r, state_n;
+  // Special section for unaligned mem writes. 64-bit DDR3 writes will mask last 3-bits of
+  // axi write address. The following logics address that issue
+  logic [axi_addr_width_p-1:0] awaddr_temp;
+  logic [axi_data_width_p-1:0] wdata_temp;
+  logic [axi_strb_width_lp-1:0] wstrb_temp;
+
+  assign awaddr_temp = {mem_cmd_header_cast_i.addr[axi_addr_width_p-1:3], 3'b000};
+
+  for (genvar i=0; i < axi_strb_width_lp; i++) begin
+    assign wdata_temp[i*8+:8] = ((i >= mem_cmd_header_cast_i.addr[2:0]) && (i < (mem_cmd_header_cast_i.addr[2:0] + 2**mem_cmd_header_cast_i.size)))
+                                ? mem_cmd_data_i[(i-mem_cmd_header_cast_i.addr[2:0])*8+:8]
+                                : 8'b0;
+
+    assign wstrb_temp[i] = ((i >= mem_cmd_header_cast_i.addr[2:0]) && (i < (mem_cmd_header_cast_i.addr[2:0] + 2**mem_cmd_header_cast_i.size)))
+                         ? 1'b1
+                         : 1'b0;
+  end
 
   // Combinational Logic
   always_comb begin
-  
     // BP side: mem_cmd
     mem_cmd_header_ready_o = (m_axi_awready_i | m_axi_arready_i) & (state_r == e_wait);
-    mem_cmd_data_ready_o   = (m_axi_wready_i) & (state_r == e_write_data_tx);
+    mem_cmd_data_ready_o   = (m_axi_wready_i) & (state_r inside {e_wait, e_write_data_tx});
 
     // BP side: mem_resp 
     mem_resp_header_cast_o = mem_cmd_header_r;
@@ -171,12 +196,10 @@ module bp_mem_to_axi_master
 
     // READ ADDRESS CHANNEL SIGNALS
     m_axi_araddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_cast_i.addr};
-    m_axi_arlen_o   = ((2**mem_cmd_header_cast_i.size << 3) > axi_data_width_p)               //if data transfer size is larger than data bus width
-                    ? (2**(mem_cmd_header_cast_i.size - lg_axi_data_width_in_byte_lp)) - 1    //then it's multiple transfers, otherwise
-                    : 8'h00;                                                                  //it's one transfer
-    m_axi_arsize_o  = mem_cmd_header_cast_i.size;              
+    m_axi_arlen_o   = len_calc(mem_cmd_header_cast_i.size);
+    m_axi_arsize_o  = size_calc(mem_cmd_header_cast_i.size);              
     m_axi_arburst_o = axi_burst_type_p;
-    m_axi_arvalid_o = mem_cmd_header_read_v;
+    m_axi_arvalid_o = mem_cmd_header_read_v & mem_cmd_header_ready_o;
     m_axi_arid_o    = '0;      //device ID default to 0
     m_axi_arcache_o = 4'b0011; //normal non-cacheable bufferable (recommended for Xilinx IP)
     m_axi_arprot_o  = '0;      //unprivileged access
@@ -186,11 +209,9 @@ module bp_mem_to_axi_master
     m_axi_rready_o  = '0;
 
     // WRITE ADDRESS CHANNEL SIGNALS
-    m_axi_awaddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_cast_i.addr};
-    m_axi_awlen_o   = ((2**mem_cmd_header_cast_i.size << 3) > axi_data_width_p)
-                    ? (2**(mem_cmd_header_cast_i.size - lg_axi_data_width_in_byte_lp)) - 1
-                    : 8'h00;
-    m_axi_awsize_o  = mem_cmd_header_cast_i.size;
+    m_axi_awaddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, awaddr_temp};
+    m_axi_awlen_o   = len_calc(mem_cmd_header_cast_i.size);
+    m_axi_awsize_o  = size_calc(mem_cmd_header_cast_i.size);
     m_axi_awburst_o = axi_burst_type_p;
     m_axi_awvalid_o = mem_cmd_header_write_v;
     m_axi_awid_o    = '0;
@@ -199,10 +220,11 @@ module bp_mem_to_axi_master
     m_axi_awqos_o   = '0;      
 
     // WRITE DATA CHANNEL SIGNALS
-    m_axi_wdata_o   = '0;
-    m_axi_wstrb_o   = '0;
-    m_axi_wlast_o   = '0; 
-    m_axi_wvalid_o  = '0;
+    //m_axi_wdata_o   = mem_cmd_data_i;
+    m_axi_wdata_o   = wdata_temp;
+    m_axi_wstrb_o   = wstrb_temp;
+    m_axi_wlast_o   = (awburst_cnt_r == len_calc(mem_cmd_header_cast_i.size)); 
+    m_axi_wvalid_o  = mem_cmd_data_v_i;
     m_axi_wid_o     = '0;
     awburst_cnt_n   = '0;
 
@@ -210,104 +232,71 @@ module bp_mem_to_axi_master
     m_axi_bready_o  = 1'b1;
 
     // other logic
-    state_n         = state_r;
-
+    state_n      = state_r;
+    
     case(state_r)
       e_wait : begin
         // if the header signals a valid read, transition to read_tx state
         // set mem_resp header to valid
-        if (mem_cmd_header_read_v) begin
-            state_n = e_read_mem_resp;
+        if (mem_cmd_header_read_v & m_axi_arready_i) begin
+            state_n = e_read_data_rx;
         end
 
         // if the header signals a valid write, state transition depends
         // on the readiness of write address of the slave device
-        else if (mem_cmd_header_write_v & m_axi_awready_i) begin
-          state_n = e_write_data_tx;
+        else if (mem_cmd_header_write_v & m_axi_awready_i & m_axi_wready_i & m_axi_wlast_o) begin
+          state_n = e_write_resp_rx;
         end
-        else if (mem_cmd_header_write_v & ~m_axi_awready_i) begin
-          state_n = e_write_addr_tx;
+
+        else if (mem_cmd_header_write_v & m_axi_awready_i) begin
+          awburst_cnt_n = (m_axi_wready_i) ? awburst_cnt_r + 1 : '0;	
+          state_n = e_write_data_tx;
         end
       end
 
       // READ STATES
-      e_read_mem_resp : begin
-        mem_resp_header_v_o = 1'b1;
-        // holding valid high for data transfer and continue to send 
-        // read address/control info until the slave device is ready to receive 
-        m_axi_arvalid_o   = 1'b1;
-        m_axi_araddr_o    = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_r.addr};
-        m_axi_arlen_o     = burst_length;
-        m_axi_arsize_o    = mem_cmd_header_r.size;
-
-        // once the mem response header is accepted, move onto read data transfer state
-        if (mem_resp_header_ready_i) begin
-          state_n = e_read_tx;
-        end
-      end
-
-      e_read_tx : begin
-        m_axi_arvalid_o   = 1'b1;
-        m_axi_araddr_o    = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_r.addr};
-        m_axi_arlen_o     = burst_length;
-        m_axi_arsize_o    = mem_cmd_header_r.size;
+      e_read_data_rx : begin
+      	mem_resp_header_v_o = ~rready_r & mem_resp_data_ready_i;
+        m_axi_arlen_o     = len_calc(mem_cmd_header_r.size);
+        m_axi_awsize_o    = size_calc(mem_cmd_header_r.size);
         m_axi_rready_o    = mem_resp_data_ready_i;
-
-        // if read response from AXI returns an error code
-        // set all mem_resp data to 0
         mem_resp_data_o     = (m_axi_rresp_i == '0)
                             ? m_axi_rdata_i
-                            : '0;
+                            : '0;               
         mem_resp_data_v_o   = m_axi_rvalid_i;
 
         // if read last signal is asserted, we go to read done state
-        if (m_axi_rlast_i) begin
+        if (m_axi_rlast_i & m_axi_rvalid_i) begin
           state_n = e_wait;
+          // give a warning if DRAM gives an error response
+          assert (m_axi_rresp_i == '0) else $warning("DRAM has an error response to memory reads");
         end
+
       end
 
       // WRITE STATES
-      e_write_addr_tx : begin
-        // holding valid high for data transfer and continue to send 
-        // write address/control info until the slave device is ready to receive
-        m_axi_awvalid_o = 1'b1;
-        m_axi_awaddr_o  = {{axi_addr_width_p - paddr_width_p{1'b0}}, mem_cmd_header_r.addr};
-        m_axi_awlen_o   = burst_length;
-        m_axi_awsize_o  = mem_cmd_header_r.size;
-
-        // if the address & control info are accepted, move onto data transfer state
-        if (m_axi_awready_i) begin
-          state_n = e_write_data_tx;
-        end
-      end       
-
       e_write_data_tx : begin
         // sending write addr signals
-        m_axi_wvalid_o     = mem_cmd_data_v_i;
-        m_axi_wdata_o      = mem_cmd_data_i;
-        m_axi_wstrb_o      = '1;
-        awburst_cnt_n      = awburst_cnt_r;
-        
-        if (m_axi_wready_i & mem_cmd_data_v_i) begin
-          m_axi_wlast_o = (awburst_cnt_r == burst_length);
-          awburst_cnt_n = awburst_cnt_r + 1;
-        end
-        
-        // else if the response is not OKAY and valid
-        else if (m_axi_bresp_i != '0 & m_axi_bvalid_i) begin
-          state_n = e_write_err;
+        awburst_cnt_n = awburst_cnt_r;
+        m_axi_wlast_o = (awburst_cnt_r == len_calc(mem_cmd_header_r.size));
+        awburst_cnt_n = (m_axi_wready_i & mem_cmd_data_v_i)
+                      ? awburst_cnt_r + 1
+                      : awburst_cnt_r;
+        state_n       = (m_axi_wlast_o)
+                      ? e_write_resp_rx
+                      : state_r;
         end
 
-        // else if the response is OKAY and valid
-        else if (m_axi_bresp_i == '0 & m_axi_bvalid_i) begin
+      e_write_resp_rx : begin              
+        // if the response is valid, give warning if it's not OKAY
+        if (m_axi_bvalid_i) begin
           mem_resp_header_v_o = 1'b1;
-          state_n             = e_wait;
+          state_n = e_wait;
+          // give a warning if DRAM gives an error response
+          assert (m_axi_bresp_i == '0) else $warning("DRAM has an error response to memory writes");
         end
       end
 
-      e_write_err : begin
-        // do something if there is an write error
-      end
     endcase
   end
 
@@ -316,10 +305,12 @@ module bp_mem_to_axi_master
     if (~aresetn_i) begin
       state_r       <= e_wait;
       awburst_cnt_r <= '0;
+      rready_r      <= '0;
     end
     else begin
       state_r       <= state_n;
       awburst_cnt_r <= awburst_cnt_n;
+      rready_r      <= mem_resp_data_ready_i;
     end
   end
   
