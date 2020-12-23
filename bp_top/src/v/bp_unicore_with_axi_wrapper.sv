@@ -241,7 +241,7 @@ module bp_unicore_with_axi_wrapper
     ,.aresetn_i           (~reset_i)
 
     ,.mem_cmd_header_i        (mem_cmd_header_lo)
-    ,.mem_cmd_header_v_i      (mem_cmd_header_v_lo & mem_cmd_header_ready_li)
+    ,.mem_cmd_header_v_i      (mem_cmd_header_v_lo)
     ,.mem_cmd_header_ready_o  (mem_cmd_header_ready_li)  
     
     ,.mem_cmd_data_i          (mem_cmd_data_lo)      

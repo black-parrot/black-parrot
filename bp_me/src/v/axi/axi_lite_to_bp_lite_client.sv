@@ -14,11 +14,11 @@ module axi_lite_to_bp_lite_client
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, bp_out)
 
    // AXI WRITE DATA CHANNEL PARAMS
-   , parameter  axi_data_width_p             = 32
+   , parameter  axi_data_width_p             = 64
    , localparam axi_strb_width_lp            = axi_data_width_p/8
 
    // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
-   , parameter axi_addr_width_p              = 32 
+   , parameter axi_addr_width_p              = 64 
 
    // BP messeage size
    , localparam msg_size_lp                  = `BSG_SAFE_CLOG2(axi_data_width_p/8)
@@ -39,33 +39,33 @@ module axi_lite_to_bp_lite_client
 
    //====================== AXI-4 LITE =========================
    // WRITE ADDRESS CHANNEL SIGNALS
-   , input [axi_addr_width_p-1:0]        s_axi_lite_awaddr_i
-   , input [2:0]                         s_axi_lite_awprot_i
-   , input                               s_axi_lite_awvalid_i
-   , output logic                        s_axi_lite_awready_o
+   , input [axi_addr_width_p-1:0]               s_axi_lite_awaddr_i
+   , input [2:0]                                s_axi_lite_awprot_i
+   , input                                      s_axi_lite_awvalid_i
+   , output logic                               s_axi_lite_awready_o
 
    // WRITE DATA CHANNEL SIGNALS
-   , input [axi_data_width_p-1:0]        s_axi_lite_wdata_i
-   , input [axi_strb_width_lp-1:0]       s_axi_lite_wstrb_i
-   , input                               s_axi_lite_wvalid_i
-   , output logic                        s_axi_lite_wready_o
+   , input [axi_data_width_p-1:0]               s_axi_lite_wdata_i
+   , input [axi_strb_width_lp-1:0]              s_axi_lite_wstrb_i
+   , input                                      s_axi_lite_wvalid_i
+   , output logic                               s_axi_lite_wready_o
 
    // WRITE RESPONSE CHANNEL SIGNALS
-   , output logic [1:0]                  s_axi_lite_bresp_o   
-   , output logic                        s_axi_lite_bvalid_o   
-   , input                               s_axi_lite_bready_i
+   , output logic [1:0]                         s_axi_lite_bresp_o   
+   , output logic                               s_axi_lite_bvalid_o   
+   , input                                      s_axi_lite_bready_i
 
    // READ ADDRESS CHANNEL SIGNALS
-   , input [axi_addr_width_p-1:0]        s_axi_lite_araddr_i
-   , input [2:0]                         s_axi_lite_arprot_i
-   , input                               s_axi_lite_arvalid_i
-   , output logic                        s_axi_lite_arready_o
+   , input [axi_addr_width_p-1:0]               s_axi_lite_araddr_i
+   , input [2:0]                                s_axi_lite_arprot_i
+   , input                                      s_axi_lite_arvalid_i
+   , output logic                               s_axi_lite_arready_o
 
    // READ DATA CHANNEL SIGNALS
-   , output logic [axi_data_width_p-1:0] s_axi_lite_rdata_o
-   , output logic [1:0]                  s_axi_lite_rresp_o
-   , output logic                        s_axi_lite_rvalid_o
-   , input                               s_axi_lite_rready_i
+   , output logic [axi_data_width_p-1:0]        s_axi_lite_rdata_o
+   , output logic [1:0]                         s_axi_lite_rresp_o
+   , output logic                               s_axi_lite_rvalid_o
+   , input                                      s_axi_lite_rready_i
   );
 
   wire [2:0] unused_0 = s_axi_lite_awprot_i;
@@ -81,9 +81,9 @@ module axi_lite_to_bp_lite_client
   // intermediate values for io_cmd_data_o resulted from a generate block
   logic [axi_data_width_p-1:0] io_cmd_data_lo;
   for (genvar i = 0; i < axi_strb_width_lp; i++) begin : io_cmd_data
-   assign io_cmd_data_lo[i*8+:8] = (s_axi_lite_wstrb_i[i])
-                                 ? s_axi_lite_wdata_i[i*8+:8]
-                                 : 8'b0;
+    assign io_cmd_data_lo[i*8+:8] = (s_axi_lite_wstrb_i[i])
+                                  ? s_axi_lite_wdata_i[i*8+:8]
+                                  : 8'b0;
   end
 
   // axi client device read or write channel validity
@@ -102,11 +102,10 @@ module axi_lite_to_bp_lite_client
 
   // Combinational Logic
   always_comb begin
-
     // BP side
-    io_cmd_cast_o   = '0;
-    io_cmd_v_o      = '0;
-    io_resp_ready_o = '0;
+    io_cmd_cast_o        = '0;
+    io_cmd_v_o           = '0;
+    io_resp_ready_o      = s_axi_lite_rready_i;
 
     // WRITE ADDRESS CHANNEL SIGNALS
     s_axi_lite_awready_o = '0;
@@ -127,7 +126,14 @@ module axi_lite_to_bp_lite_client
     s_axi_lite_bvalid_o  = '0;
 
     // other logic
-    state_n = state_r;
+    state_n              = state_r;
+
+    case (s_axi_lite_wstrb_i)
+      axi_strb_width_lp'('h1)  : io_cmd_cast_o.header.size = e_bedrock_msg_size_1;
+      axi_strb_width_lp'('h3)  : io_cmd_cast_o.header.size = e_bedrock_msg_size_2;
+      axi_strb_width_lp'('hF)  : io_cmd_cast_o.header.size = e_bedrock_msg_size_4;
+      axi_strb_width_lp'('hFF) : io_cmd_cast_o.header.size = e_bedrock_msg_size_8;
+    endcase
 
     case (state_r) 
       e_wait : begin
@@ -136,45 +142,48 @@ module axi_lite_to_bp_lite_client
         s_axi_lite_arready_o = io_cmd_yumi_i;
 
         if (s_axi_lite_arvalid_i) begin
-          io_cmd_cast_o.header.size     = bp_bedrock_msg_size_e'(msg_size_lp);
-          io_cmd_cast_o.header.addr     = s_axi_lite_araddr_i;
+          io_cmd_cast_o.header.payload  = bp_out_mem_payload_width_lp'('h0010);
+          io_cmd_cast_o.header.addr     = (axi_addr_width_p > paddr_width_p)
+                                        ? s_axi_lite_araddr_i
+                                        : {{paddr_width_p-axi_addr_width_p{'0}}, s_axi_lite_araddr_i};
           io_cmd_cast_o.header.msg_type = e_bedrock_mem_uc_rd;
           io_cmd_v_o                    = axi_lite_r_v;
           
-          if (io_cmd_yumi_i & axi_lite_r_v) begin
-            state_n = e_read_data_tx;
-          end
+          state_n                       = (io_cmd_yumi_i & axi_lite_r_v)
+                                        ? e_read_data_tx
+                                        : state_r;
         end
 
         else if (s_axi_lite_awvalid_i) begin
-          io_cmd_cast_o.header.size                = bp_bedrock_msg_size_e'(msg_size_lp);
-          io_cmd_cast_o.header.addr                = s_axi_lite_awaddr_i;
+          io_cmd_cast_o.header.payload             = bp_out_mem_payload_width_lp'('h0010);
+          io_cmd_cast_o.header.addr                = (axi_addr_width_p > paddr_width_p)
+                                                   ? s_axi_lite_awaddr_i
+                                                   : {{paddr_width_p-axi_addr_width_p{'0}}, s_axi_lite_awaddr_i};
           io_cmd_cast_o.header.msg_type            = e_bedrock_mem_uc_wr;
           io_cmd_cast_o.data[axi_data_width_p-1:0] = io_cmd_data_lo;
           io_cmd_v_o                               = axi_lite_w_v;
           
-          if (io_cmd_yumi_i & axi_lite_w_v) begin
-            state_n = e_write_resp;
-          end
+          state_n                                  = (io_cmd_yumi_i & axi_lite_w_v) 
+                                                   ? e_write_resp
+                                                   : state_r;
         end
-
       end
 
       e_write_resp : begin
         s_axi_lite_bvalid_o = 1'b1;
-        if (s_axi_lite_bready_i) begin
-          state_n = e_wait;
-        end
+        state_n             = (s_axi_lite_bready_i)
+                            ? e_wait
+                            : state_r;
       end
 
       e_read_data_tx : begin
-        io_resp_ready_o     = s_axi_lite_rready_i;
         s_axi_lite_rdata_o  = io_resp_cast_i.data[axi_data_width_p-1:0];
         s_axi_lite_rvalid_o = io_resp_v_i;
-        if (s_axi_lite_rready_i) begin
-          state_n = e_wait;
-        end
+        state_n             = (s_axi_lite_rready_i)
+                            ? e_wait
+                            : state_r;
       end
+
     endcase
   end
 
