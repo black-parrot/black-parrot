@@ -79,9 +79,8 @@ sim_sample.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PR
 $(SIM_DIR)/run_samplesc: $(SAMPLE_COLLATERAL)
 	cd $(@D); \
 		$(DROMAJO) $(@D)/prog.riscv --host --ncpus=$(NCPUS) --maxinsn=$(SAMPLE_START_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
-	mv $(@D)/dromajo.*.mainram $(@D)/prog.mainram
-	mv $(@D)/dromajo.*.bootram $(@D)/prog.bootram
-	mv $(@D)/dromajo.*.bp_regs $(@D)/prog.bp_regs
+	mv $(@D)/dromajo.mainram $(@D)/prog.mainram
+	mv $(@D)/dromajo.bootram $(@D)/prog.bootram
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
 	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
@@ -89,8 +88,6 @@ $(SIM_DIR)/run_samplesc: $(SAMPLE_COLLATERAL)
 	$(RISCV_OBJCOPY) -I binary -O elf64-littleriscv -B riscv $(@D)/prog.bootram $(@D)/bootrom.riscv
 	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 --reverse-bytes=8 $(@D)/bootrom.riscv $(@D)/bootrom.mem
 	$(RISCV_OBJCOPY) -O binary $(@D)/bootrom.riscv $(@D)/bootrom.bin
-	cd $(@D); \
-		python $(MEM2NBF) $(NBF_INPUTS) --checkpoint=prog.bp_regs > prog.nbf
 	cd $(@D); \
 		./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
