@@ -83,7 +83,7 @@ update-cache: &update-cache-manual
     - me_dev
     - top_dev
     - sw_dev
-    - me_dev_fix_ci
+    - be_dev_project_scoreboarding
   before_script:
     - echo "Forcefully updating submodules"
     - git submodule update --init --force
