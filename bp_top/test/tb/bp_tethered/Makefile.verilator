@@ -68,7 +68,7 @@ SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.mem bootrom.dump)
 
 SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
-SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
+SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.dump)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 
 sim_sample.sc: build.sc
@@ -88,6 +88,8 @@ $(SIM_DIR)/run_samplesc: $(SAMPLE_COLLATERAL)
 	$(RISCV_OBJCOPY) -I binary -O elf64-littleriscv -B riscv $(@D)/prog.bootram $(@D)/bootrom.riscv
 	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 --reverse-bytes=8 $(@D)/bootrom.riscv $(@D)/bootrom.mem
 	$(RISCV_OBJCOPY) -O binary $(@D)/bootrom.riscv $(@D)/bootrom.bin
+	cd $(@D); \
+		python $(MEM2NBF) $(NBF_INPUTS) > prog.nbf
 	cd $(@D); \
 		./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
