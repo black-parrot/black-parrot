@@ -22,6 +22,7 @@ module bp_be_detector
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
+   , localparam wb_pkt_width_lp     = `bp_be_wb_pkt_width(vaddr_width_p)
    )
   (input                               clk_i
    , input                             reset_i
@@ -40,7 +41,9 @@ module bp_be_detector
    // Pipeline control signals from the checker to the calculator
    , output                            chk_dispatch_v_o
    , input [dispatch_pkt_width_lp-1:0] dispatch_pkt_i
-  );
+   , input [wb_pkt_width_lp-1:0]       iwb_pkt_i
+   , input [wb_pkt_width_lp-1:0]       fwb_pkt_i
+   );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -51,14 +54,21 @@ module bp_be_detector
   // Casting
   bp_be_isd_status_s       isd_status_cast_i;
   bp_be_dispatch_pkt_s     dispatch_pkt;
+  bp_be_wb_pkt_s           iwb_pkt, fwb_pkt;
 
   assign isd_status_cast_i  = isd_status_i;
   assign dispatch_pkt       = dispatch_pkt_i;
+  assign iwb_pkt            = iwb_pkt_i;
+  assign fwb_pkt            = fwb_pkt_i;
 
   // Declare intermediate signals
   // Integer data hazards
+  logic irs1_sb_raw_haz_v, irs2_sb_raw_haz_v;
+  logic ird_sb_waw_haz_v;
   logic [3:0] irs1_data_haz_v , irs2_data_haz_v;
   // Floating point data hazards
+  logic frs1_sb_raw_haz_v, frs2_sb_raw_haz_v, frs3_sb_raw_haz_v;
+  logic frd_sb_waw_haz_v;
   logic [3:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
   logic [3:0] rs1_match_vector, rs2_match_vector, rs3_match_vector;
 
@@ -69,6 +79,57 @@ module bp_be_detector
   logic csr_haz_v;
   logic long_haz_v;
   logic mem_in_pipe_v;
+
+  wire [reg_addr_width_p-1:0] score_rd_li = dispatch_pkt.instr.t.fmatype.rd_addr;
+  wire [reg_addr_width_p-1:0] score_rs1_li = dispatch_pkt.instr.t.fmatype.rs1_addr;
+  wire [reg_addr_width_p-1:0] score_rs2_li = dispatch_pkt.instr.t.fmatype.rs2_addr;
+  wire [reg_addr_width_p-1:0] score_rs3_li = dispatch_pkt.instr.t.fmatype.rs3_addr;
+  wire [reg_addr_width_p-1:0] clear_ird_li = iwb_pkt.rd_addr;
+  wire [reg_addr_width_p-1:0] clear_frd_li = fwb_pkt.rd_addr;
+
+  logic [1:0] irs_match_lo;
+  logic       ird_match_lo;
+  wire score_int_v_li = (dispatch_pkt.v & ~dispatch_pkt.poison) & dispatch_pkt.decode.late_iwb_v;
+  wire clear_int_v_li = iwb_pkt.ird_w_v;
+  bp_be_scoreboard
+   #(.bp_params_p(bp_params_p), .num_rs_p(2))
+   int_scoreboard
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.score_v_i(score_int_v_li)
+     ,.score_rd_i(score_rd_li)
+
+     ,.clear_v_i(clear_int_v_li)
+     ,.clear_rd_i(clear_ird_li)
+
+     ,.rs_i({score_rs2_li, score_rs1_li})
+     ,.rd_i(score_rd_li)
+     ,.rs_match_o(irs_match_lo)
+     ,.rd_match_o(ird_match_lo)
+     );
+
+  logic [2:0] frs_match_lo;
+  logic       frd_match_lo;
+  wire score_fp_v_li = (dispatch_pkt.v & ~dispatch_pkt.poison) & dispatch_pkt.decode.late_fwb_v;
+  wire clear_fp_v_li = fwb_pkt.frd_w_v;
+  bp_be_scoreboard
+   #(.bp_params_p(bp_params_p), .num_rs_p(3))
+   fp_scoreboard
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.score_v_i(score_fp_v_li)
+     ,.score_rd_i(score_rd_li)
+
+     ,.clear_v_i(clear_fp_v_li)
+     ,.clear_rd_i(clear_frd_li)
+
+     ,.rs_i({score_rs3_li, score_rs2_li, score_rs1_li})
+     ,.rd_i(score_rd_li)
+     ,.rs_match_o(frs_match_lo)
+     ,.rd_match_o(frd_match_lo)
+     );
 
   always_comb
     begin
@@ -81,6 +142,22 @@ module bp_be_detector
           rs2_match_vector[i] = (isd_status_cast_i.isd_rs2_addr == dep_status_r[i].rd_addr);
           rs3_match_vector[i] = (isd_status_cast_i.isd_rs3_addr == dep_status_r[i].rd_addr);
         end
+
+      // Detect scoreboard hazards
+      irs1_sb_raw_haz_v = (isd_status_cast_i.isd_irs1_v & irs_match_lo[0])
+                          & (isd_status_cast_i.isd_rs1_addr != '0);
+
+      irs2_sb_raw_haz_v = (isd_status_cast_i.isd_irs2_v & irs_match_lo[1])
+                          & (isd_status_cast_i.isd_rs2_addr != '0);
+
+      ird_sb_waw_haz_v = (isd_status_cast_i.isd_iwb_v & ird_match_lo)
+                         & (isd_status_cast_i.isd_rd_addr != '0);
+
+      frs1_sb_raw_haz_v = (isd_status_cast_i.isd_frs1_v & frs_match_lo[0]);
+      frs2_sb_raw_haz_v = (isd_status_cast_i.isd_frs2_v & frs_match_lo[1]);
+      frs3_sb_raw_haz_v = (isd_status_cast_i.isd_frs3_v & frs_match_lo[2]);
+
+      frd_sb_waw_haz_v = (isd_status_cast_i.isd_fwb_v & frd_match_lo);
 
       // Detect integer and float data hazards for EX1
       irs1_data_haz_v[0] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[0])
@@ -179,15 +256,18 @@ module bp_be_detector
                    | (|irs2_data_haz_v)
                    | (|frs1_data_haz_v)
                    | (|frs2_data_haz_v)
-                   | (|frs3_data_haz_v);
+                   | (|frs3_data_haz_v)
+                   | (irs1_sb_raw_haz_v | irs2_sb_raw_haz_v | ird_sb_waw_haz_v)
+                   | (frs1_sb_raw_haz_v | frs2_sb_raw_haz_v | frs3_sb_raw_haz_v | frd_sb_waw_haz_v);
 
       // Combine all structural hazard information
+      struct_haz_v = cfg_bus_cast_i.freeze
       // We block on mmu not ready even on not memory instructions, because it means there's an
       //   operation being performed asynchronously (such as a page fault)
-      struct_haz_v = cfg_bus_cast_i.freeze
+      //   but, we should really explictly track the PTW
                      | ~mem_ready_i
-                     | ~long_ready_i
                      | ~sys_ready_i
+                     | (~long_ready_i & dispatch_pkt.decode.pipe_long_v)
                      | queue_haz_v;
     end
 

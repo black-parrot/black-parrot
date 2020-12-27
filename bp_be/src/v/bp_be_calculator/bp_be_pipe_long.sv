@@ -191,7 +191,7 @@ module bp_be_pipe_long
    #(.width_p(1+reg_addr_width_p+$bits(bp_be_fu_op_s)+2))
    wb_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | flush_i)
+     ,.reset_i(reset_i)
      ,.en_i(v_li | (iwb_v_o | fwb_v_o))
 
      ,.data_i({v_li, instr.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})

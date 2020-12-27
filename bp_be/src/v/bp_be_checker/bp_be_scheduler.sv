@@ -168,6 +168,9 @@ module bp_be_scheduler
       isd_status.isd_rs2_addr = instr.t.fmatype.rs2_addr;
       isd_status.isd_frs3_v   = fe_queue_v_lo & issue_pkt.frs3_v;
       isd_status.isd_rs3_addr = instr.t.fmatype.rs3_addr;
+      isd_status.isd_rd_addr  = instr.t.fmatype.rd_addr;
+      isd_status.isd_iwb_v    = decoded.irf_w_v;
+      isd_status.isd_fwb_v    = decoded.frf_w_v;
 
       // Form dispatch packet
       dispatch_pkt.v        = fe_queue_yumi_li;
