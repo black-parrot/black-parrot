@@ -37,6 +37,7 @@ module bp_be_detector
    , input                             long_ready_i
    , input                             mem_ready_i
    , input                             sys_ready_i
+   , input                             ptw_busy_i
 
    // Pipeline control signals from the checker to the calculator
    , output                            chk_dispatch_v_o
@@ -138,96 +139,96 @@ module bp_be_detector
       //   can be handled through forwarding
       for(integer i = 0; i < 4; i++)
         begin
-          rs1_match_vector[i] = (isd_status_cast_i.isd_rs1_addr == dep_status_r[i].rd_addr);
-          rs2_match_vector[i] = (isd_status_cast_i.isd_rs2_addr == dep_status_r[i].rd_addr);
-          rs3_match_vector[i] = (isd_status_cast_i.isd_rs3_addr == dep_status_r[i].rd_addr);
+          rs1_match_vector[i] = (isd_status_cast_i.rs1_addr == dep_status_r[i].rd_addr);
+          rs2_match_vector[i] = (isd_status_cast_i.rs2_addr == dep_status_r[i].rd_addr);
+          rs3_match_vector[i] = (isd_status_cast_i.rs3_addr == dep_status_r[i].rd_addr);
         end
 
       // Detect scoreboard hazards
-      irs1_sb_raw_haz_v = (isd_status_cast_i.isd_irs1_v & irs_match_lo[0])
-                          & (isd_status_cast_i.isd_rs1_addr != '0);
+      irs1_sb_raw_haz_v = (isd_status_cast_i.irs1_v & irs_match_lo[0])
+                          & (isd_status_cast_i.rs1_addr != '0);
 
-      irs2_sb_raw_haz_v = (isd_status_cast_i.isd_irs2_v & irs_match_lo[1])
-                          & (isd_status_cast_i.isd_rs2_addr != '0);
+      irs2_sb_raw_haz_v = (isd_status_cast_i.irs2_v & irs_match_lo[1])
+                          & (isd_status_cast_i.rs2_addr != '0);
 
-      ird_sb_waw_haz_v = (isd_status_cast_i.isd_iwb_v & ird_match_lo)
-                         & (isd_status_cast_i.isd_rd_addr != '0);
+      ird_sb_waw_haz_v = (isd_status_cast_i.iwb_v & ird_match_lo)
+                         & (isd_status_cast_i.rd_addr != '0);
 
-      frs1_sb_raw_haz_v = (isd_status_cast_i.isd_frs1_v & frs_match_lo[0]);
-      frs2_sb_raw_haz_v = (isd_status_cast_i.isd_frs2_v & frs_match_lo[1]);
-      frs3_sb_raw_haz_v = (isd_status_cast_i.isd_frs3_v & frs_match_lo[2]);
+      frs1_sb_raw_haz_v = (isd_status_cast_i.frs1_v & frs_match_lo[0]);
+      frs2_sb_raw_haz_v = (isd_status_cast_i.frs2_v & frs_match_lo[1]);
+      frs3_sb_raw_haz_v = (isd_status_cast_i.frs3_v & frs_match_lo[2]);
 
-      frd_sb_waw_haz_v = (isd_status_cast_i.isd_fwb_v & frd_match_lo);
+      frd_sb_waw_haz_v = (isd_status_cast_i.fwb_v & frd_match_lo);
 
       // Detect integer and float data hazards for EX1
-      irs1_data_haz_v[0] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[0])
-                           & (isd_status_cast_i.isd_rs1_addr != '0)
+      irs1_data_haz_v[0] = (isd_status_cast_i.irs1_v & rs1_match_vector[0])
+                           & (isd_status_cast_i.rs1_addr != '0)
                            & (dep_status_r[0].aux_iwb_v | dep_status_r[0].mul_iwb_v | dep_status_r[0].emem_iwb_v | dep_status_r[0].fmem_iwb_v);
 
-      irs2_data_haz_v[0] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[0])
-                           & (isd_status_cast_i.isd_rs2_addr != '0)
+      irs2_data_haz_v[0] = (isd_status_cast_i.irs2_v & rs2_match_vector[0])
+                           & (isd_status_cast_i.rs2_addr != '0)
                            & (dep_status_r[0].aux_iwb_v | dep_status_r[0].mul_iwb_v | dep_status_r[0].emem_iwb_v | dep_status_r[0].fmem_iwb_v);
 
-      frs1_data_haz_v[0] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[0])
+      frs1_data_haz_v[0] = (isd_status_cast_i.frs1_v & rs1_match_vector[0])
                            & (dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v);
 
-      frs2_data_haz_v[0] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[0])
+      frs2_data_haz_v[0] = (isd_status_cast_i.frs2_v & rs2_match_vector[0])
                            & (dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v);
 
-      frs3_data_haz_v[0] = (isd_status_cast_i.isd_frs3_v & rs3_match_vector[0])
+      frs3_data_haz_v[0] = (isd_status_cast_i.frs3_v & rs3_match_vector[0])
                            & (dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v);
 
       // Detect integer and float data hazards for EX2
-      irs1_data_haz_v[1] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[1])
-                           & (isd_status_cast_i.isd_rs1_addr != '0)
+      irs1_data_haz_v[1] = (isd_status_cast_i.irs1_v & rs1_match_vector[1])
+                           & (isd_status_cast_i.rs1_addr != '0)
                            & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
-      irs2_data_haz_v[1] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[1])
-                           & (isd_status_cast_i.isd_rs2_addr != '0)
+      irs2_data_haz_v[1] = (isd_status_cast_i.irs2_v & rs2_match_vector[1])
+                           & (isd_status_cast_i.rs2_addr != '0)
                            & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
-      frs1_data_haz_v[1] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[1])
+      frs1_data_haz_v[1] = (isd_status_cast_i.frs1_v & rs1_match_vector[1])
                            & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
-      frs2_data_haz_v[1] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[1])
+      frs2_data_haz_v[1] = (isd_status_cast_i.frs2_v & rs2_match_vector[1])
                            & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
-      frs3_data_haz_v[1] = (isd_status_cast_i.isd_frs3_v & rs3_match_vector[1])
+      frs3_data_haz_v[1] = (isd_status_cast_i.frs3_v & rs3_match_vector[1])
                            & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
-      irs1_data_haz_v[2] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[2])
-                           & (isd_status_cast_i.isd_rs1_addr != '0)
+      irs1_data_haz_v[2] = (isd_status_cast_i.irs1_v & rs1_match_vector[2])
+                           & (isd_status_cast_i.rs1_addr != '0)
                            & (dep_status_r[2].mul_iwb_v);
 
-      irs2_data_haz_v[2] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[2])
-                           & (isd_status_cast_i.isd_rs2_addr != '0)
+      irs2_data_haz_v[2] = (isd_status_cast_i.irs2_v & rs2_match_vector[2])
+                           & (isd_status_cast_i.rs2_addr != '0)
                            & (dep_status_r[2].mul_iwb_v);
 
-      frs1_data_haz_v[2] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[2])
+      frs1_data_haz_v[2] = (isd_status_cast_i.frs1_v & rs1_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      frs2_data_haz_v[2] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[2])
+      frs2_data_haz_v[2] = (isd_status_cast_i.frs2_v & rs2_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      frs3_data_haz_v[2] = (isd_status_cast_i.isd_frs3_v & rs3_match_vector[2])
+      frs3_data_haz_v[2] = (isd_status_cast_i.frs3_v & rs3_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
       irs1_data_haz_v[3] = '0;
       irs2_data_haz_v[3] = '0;
 
-      frs1_data_haz_v[3] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[3])
+      frs1_data_haz_v[3] = (isd_status_cast_i.frs1_v & rs1_match_vector[3])
                            & (dep_status_r[3].fma_fwb_v);
 
-      frs2_data_haz_v[3] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[3])
+      frs2_data_haz_v[3] = (isd_status_cast_i.frs2_v & rs2_match_vector[3])
                            & (dep_status_r[3].fma_fwb_v);
 
-      frs3_data_haz_v[3] = (isd_status_cast_i.isd_frs3_v & rs3_match_vector[3])
+      frs3_data_haz_v[3] = (isd_status_cast_i.frs3_v & rs3_match_vector[3])
                            & (dep_status_r[3].fma_fwb_v);
 
       mem_in_pipe_v      = (dep_status_r[0].mem_v)
                            | (dep_status_r[1].mem_v);
-      fence_haz_v        = (isd_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
-                           | (isd_status_cast_i.isd_mem_v & credits_full_i);
+      fence_haz_v        = (isd_status_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v))
+                           | (isd_status_cast_i.mem_v & credits_full_i);
       queue_haz_v        = fe_cmd_full_i;
 
       // Conservatively serialize on csr operations.  Could change to only write operations
@@ -236,7 +237,7 @@ module bp_be_detector
                            | (dep_status_r[2].csr_v);
 
       // This is overly conservative, should add an explicit fflags dependency checker
-      csr_haz_v = isd_status_cast_i.isd_csr_v
+      csr_haz_v = isd_status_cast_i.csr_v
                   & ((dep_status_r[0].fflags_w_v)
                      | (dep_status_r[1].fflags_w_v)
                      | (dep_status_r[2].fflags_w_v)
@@ -246,7 +247,7 @@ module bp_be_detector
       //   executing instructions on trap, and only pause on dependency in
       //   EX4, rather than any instruction. Most likely not a huge
       //   performance problem at the moment.
-      long_haz_v = isd_status_cast_i.isd_long_v
+      long_haz_v = isd_status_cast_i.long_v
                    & ((dep_status_r[0].instr_v)
                       | (dep_status_r[1].instr_v)
                       | (dep_status_r[2].instr_v)
@@ -268,12 +269,10 @@ module bp_be_detector
 
       // Combine all structural hazard information
       struct_haz_v = cfg_bus_cast_i.freeze
-      // We block on mmu not ready even on not memory instructions, because it means there's an
-      //   operation being performed asynchronously (such as a page fault)
-      //   but, we should really explictly track the PTW
-                     | ~mem_ready_i
+                     | ptw_busy_i
                      | ~sys_ready_i
-                     | (~long_ready_i & dispatch_pkt.decode.pipe_long_v)
+                     | (~mem_ready_i & isd_status_cast_i.mem_v)
+                     | (~long_ready_i & isd_status_cast_i.long_v)
                      | queue_haz_v;
     end
 

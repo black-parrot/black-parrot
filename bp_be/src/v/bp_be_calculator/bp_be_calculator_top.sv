@@ -47,6 +47,7 @@ module bp_be_calculator_top
   , output                                          long_ready_o
   , output                                          mem_ready_o
   , output                                          sys_ready_o
+  , output                                          ptw_busy_o
 
   , output [ptw_fill_pkt_width_lp-1:0]              ptw_fill_pkt_o
   , output [commit_pkt_width_lp-1:0]                commit_pkt_o
@@ -255,6 +256,7 @@ module bp_be_calculator_top
 
      ,.ptw_miss_pkt_i(ptw_miss_pkt)
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
+     ,.ptw_busy_o(ptw_busy_o)
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_v_o(cache_req_v_o)

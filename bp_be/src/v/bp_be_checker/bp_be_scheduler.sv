@@ -56,7 +56,7 @@ module bp_be_scheduler
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   // Cast input and output ports
-  bp_be_isd_status_s isd_status;
+  bp_be_isd_status_s isd_status_cast_o;
   rv64_instr_s       instr;
   bp_be_commit_pkt_s commit_pkt;
   bp_be_wb_pkt_s     iwb_pkt, fwb_pkt;
@@ -64,7 +64,7 @@ module bp_be_scheduler
   bp_fe_queue_s fe_queue_lo;
   logic fe_queue_v_lo, fe_queue_yumi_li;
 
-  assign isd_status_o    = isd_status;
+  assign isd_status_o    = isd_status_cast_o;
   assign instr           = fe_queue_lo.msg.fetch.instr;
   assign commit_pkt      = commit_pkt_i;
   assign iwb_pkt         = iwb_pkt_i;
@@ -153,24 +153,24 @@ module bp_be_scheduler
   always_comb
     begin
       // Calculator status ISD stage
-      isd_status.isd_v        = fe_queue_yumi_li;
-      isd_status.isd_pc       = fe_queue_lo.msg.fetch.pc;
-      isd_status.isd_branch_metadata_fwd = fe_queue_lo.msg.fetch.branch_metadata_fwd;
-      isd_status.isd_fence_v  = fe_queue_v_lo & issue_pkt.fence_v;
-      isd_status.isd_csr_v    = fe_queue_v_lo & issue_pkt.csr_v;
-      isd_status.isd_mem_v    = fe_queue_v_lo & issue_pkt.mem_v;
-      isd_status.isd_long_v   = fe_queue_v_lo & issue_pkt.long_v;
-      isd_status.isd_irs1_v   = fe_queue_v_lo & issue_pkt.irs1_v;
-      isd_status.isd_frs1_v   = fe_queue_v_lo & issue_pkt.frs1_v;
-      isd_status.isd_rs1_addr = instr.t.fmatype.rs1_addr;
-      isd_status.isd_irs2_v   = fe_queue_v_lo & issue_pkt.irs2_v;
-      isd_status.isd_frs2_v   = fe_queue_v_lo & issue_pkt.frs2_v;
-      isd_status.isd_rs2_addr = instr.t.fmatype.rs2_addr;
-      isd_status.isd_frs3_v   = fe_queue_v_lo & issue_pkt.frs3_v;
-      isd_status.isd_rs3_addr = instr.t.fmatype.rs3_addr;
-      isd_status.isd_rd_addr  = instr.t.fmatype.rd_addr;
-      isd_status.isd_iwb_v    = decoded.irf_w_v;
-      isd_status.isd_fwb_v    = decoded.frf_w_v;
+      isd_status_cast_o.v        = fe_queue_yumi_li;
+      isd_status_cast_o.pc       = fe_queue_lo.msg.fetch.pc;
+      isd_status_cast_o.branch_metadata_fwd = fe_queue_lo.msg.fetch.branch_metadata_fwd;
+      isd_status_cast_o.fence_v  = fe_queue_v_lo & issue_pkt.fence_v;
+      isd_status_cast_o.csr_v    = fe_queue_v_lo & issue_pkt.csr_v;
+      isd_status_cast_o.mem_v    = fe_queue_v_lo & issue_pkt.mem_v;
+      isd_status_cast_o.long_v   = fe_queue_v_lo & issue_pkt.long_v;
+      isd_status_cast_o.irs1_v   = fe_queue_v_lo & issue_pkt.irs1_v;
+      isd_status_cast_o.frs1_v   = fe_queue_v_lo & issue_pkt.frs1_v;
+      isd_status_cast_o.rs1_addr = instr.t.fmatype.rs1_addr;
+      isd_status_cast_o.irs2_v   = fe_queue_v_lo & issue_pkt.irs2_v;
+      isd_status_cast_o.frs2_v   = fe_queue_v_lo & issue_pkt.frs2_v;
+      isd_status_cast_o.rs2_addr = instr.t.fmatype.rs2_addr;
+      isd_status_cast_o.frs3_v   = fe_queue_v_lo & issue_pkt.frs3_v;
+      isd_status_cast_o.rs3_addr = instr.t.fmatype.rs3_addr;
+      isd_status_cast_o.rd_addr  = instr.t.fmatype.rd_addr;
+      isd_status_cast_o.iwb_v    = decoded.irf_w_v;
+      isd_status_cast_o.fwb_v    = decoded.frf_w_v;
 
       // Form dispatch packet
       dispatch_pkt.v        = fe_queue_yumi_li;

@@ -67,24 +67,24 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic                                    isd_v;                                                \
-    logic [vaddr_width_mp-1:0]               isd_pc;                                               \
-    logic [branch_metadata_fwd_width_mp-1:0] isd_branch_metadata_fwd;                              \
-    logic                                    isd_fence_v;                                          \
-    logic                                    isd_mem_v;                                            \
-    logic                                    isd_long_v;                                           \
-    logic                                    isd_csr_v;                                            \
-    logic                                    isd_irs1_v;                                           \
-    logic                                    isd_frs1_v;                                           \
-    logic [rv64_reg_addr_width_gp-1:0]       isd_rs1_addr;                                         \
-    logic                                    isd_irs2_v;                                           \
-    logic                                    isd_frs2_v;                                           \
-    logic [rv64_reg_addr_width_gp-1:0]       isd_rs2_addr;                                         \
-    logic                                    isd_frs3_v;                                           \
-    logic [rv64_reg_addr_width_gp-1:0]       isd_rs3_addr;                                         \
-    logic [rv64_reg_addr_width_gp-1:0]       isd_rd_addr;                                          \
-    logic                                    isd_iwb_v;                                            \
-    logic                                    isd_fwb_v;                                            \
+    logic                                    v;                                                    \
+    logic [vaddr_width_mp-1:0]               pc;                                                   \
+    logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
+    logic                                    fence_v;                                              \
+    logic                                    mem_v;                                                \
+    logic                                    long_v;                                               \
+    logic                                    csr_v;                                                \
+    logic                                    irs1_v;                                               \
+    logic                                    frs1_v;                                               \
+    logic [rv64_reg_addr_width_gp-1:0]       rs1_addr;                                             \
+    logic                                    irs2_v;                                               \
+    logic                                    frs2_v;                                               \
+    logic [rv64_reg_addr_width_gp-1:0]       rs2_addr;                                             \
+    logic                                    frs3_v;                                               \
+    logic [rv64_reg_addr_width_gp-1:0]       rs3_addr;                                             \
+    logic [rv64_reg_addr_width_gp-1:0]       rd_addr;                                              \
+    logic                                    iwb_v;                                                \
+    logic                                    fwb_v;                                                \
   }  bp_be_isd_status_s;                                                                           \
                                                                                                    \
   typedef struct packed                                                                            \
