@@ -72,7 +72,7 @@ module bp_be_detector
   logic [3:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
   logic [3:0] rs1_match_vector, rs2_match_vector, rs3_match_vector;
 
-  bp_be_dep_status_s [3:0] dep_status_r;
+  bp_be_dep_status_s [4:0] dep_status_r;
 
   logic fence_haz_v, queue_haz_v, serial_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
@@ -242,10 +242,16 @@ module bp_be_detector
                      | (dep_status_r[2].fflags_w_v)
                      );
 
+      // TODO: This is pessimistic. Could instead flush currently
+      //   executing instructions on trap, and only pause on dependency in
+      //   EX4, rather than any instruction. Most likely not a huge
+      //   performance problem at the moment.
       long_haz_v = isd_status_cast_i.isd_long_v
                    & ((dep_status_r[0].instr_v)
                       | (dep_status_r[1].instr_v)
                       | (dep_status_r[2].instr_v)
+                      | (dep_status_r[3].instr_v)
+                      | (dep_status_r[4].instr_v)
                       );
 
       control_haz_v = fence_haz_v | serial_haz_v | csr_haz_v | long_haz_v;
@@ -299,7 +305,7 @@ module bp_be_detector
   always_ff @(posedge clk_i)
     begin
       dep_status_r[0]   <= (dispatch_pkt.v & ~dispatch_pkt.poison) ? dep_status_n : '0;
-      dep_status_r[3:1] <= dep_status_r[2:0];
+      dep_status_r[4:1] <= dep_status_r[3:0];
     end
 
 endmodule
