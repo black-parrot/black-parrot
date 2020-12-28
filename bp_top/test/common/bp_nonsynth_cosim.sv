@@ -77,7 +77,7 @@ module bp_nonsynth_cosim
   wire commit_ird_w_v_li = commit_v_i & (decode_r.irf_w_v | decode_r.late_iwb_v);
   wire commit_frd_w_v_li = commit_v_i & (decode_r.frf_w_v | decode_r.late_fwb_v);
   bsg_fifo_1r1w_small
-   #(.width_p(2+vaddr_width_p+instr_width_p+2+dword_width_p+1), .els_p(16))
+   #(.width_p(2+vaddr_width_p+instr_width_p+2+dword_width_p+1), .els_p(128))
    commit_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -94,7 +94,7 @@ module bp_nonsynth_cosim
   localparam rf_els_lp = 2**reg_addr_width_p;
   logic [rf_els_lp-1:0][dword_width_p-1:0] ird_data_r;
   bp_be_fp_reg_s [rf_els_lp-1:0] frd_data_r;
-  logic [rf_els_lp-1:0] iwb_v_r, frd_fifo_v_lo;
+  logic [rf_els_lp-1:0] ird_fifo_v_lo, frd_fifo_v_lo;
   logic [rf_els_lp-1:0][dword_width_p-1:0] frd_raw_li;
 
   for (genvar i = 0; i < rf_els_lp; i++)
@@ -102,7 +102,7 @@ module bp_nonsynth_cosim
       wire fill       = ird_w_v_i & (ird_addr_i == i);
       wire deallocate = commit_ird_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
       bsg_fifo_1r1w_small
-        #(.width_p(dword_width_p), .els_p(16))
+        #(.width_p(dword_width_p), .els_p(128))
         ird_fifo
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
@@ -112,7 +112,7 @@ module bp_nonsynth_cosim
           ,.ready_o()
 
           ,.data_o(ird_data_r[i])
-          ,.v_o(iwb_v_r[i])
+          ,.v_o(ird_fifo_v_lo[i])
           ,.yumi_i(deallocate)
           );
     end
@@ -122,7 +122,7 @@ module bp_nonsynth_cosim
       wire fill       = frd_w_v_i & (frd_addr_i == i);
       wire deallocate = commit_frd_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
       bsg_fifo_1r1w_small
-        #(.width_p(dpath_width_p), .els_p(16))
+        #(.width_p(dpath_width_p), .els_p(128))
         ird_fifo
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
@@ -150,10 +150,10 @@ module bp_nonsynth_cosim
     end
 
   assign commit_fifo_yumi_li = commit_fifo_v_lo & ((~commit_ird_w_v_r & ~commit_frd_w_v_r)
-                                                   | (commit_ird_w_v_r & iwb_v_r[commit_instr_r.rd_addr])
+                                                   | (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr])
                                                    | (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr])
                                                    );
-  assign commit_ird_li = commit_fifo_v_lo & (commit_ird_w_v_r & iwb_v_r[commit_instr_r.rd_addr]);
+  assign commit_ird_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
   assign commit_frd_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);
 
   logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
