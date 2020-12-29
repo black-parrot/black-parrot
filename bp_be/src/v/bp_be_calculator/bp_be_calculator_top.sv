@@ -310,8 +310,7 @@ module bp_be_calculator_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.ready_o(pipe_sys_ready_lo)
-     ,.pipe_mem_ready_i(pipe_mem_ready_lo)
-     ,.pipe_long_ready_i(pipe_long_ready_lo)
+     ,.ptw_busy_i(ptw_busy_o)
 
      ,.reservation_i(reservation_r)
      ,.flush_i(flush_i)
