@@ -21,8 +21,7 @@ module bp_stream_pump_out
 
    , localparam stream_words_lp = block_width_p / stream_data_width_p
    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
-   , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p / 8)
-   , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p / 8)
+   , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p >> 3)
    )
   ( input clk_i
   , input reset_i
