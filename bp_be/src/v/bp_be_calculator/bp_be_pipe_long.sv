@@ -142,20 +142,6 @@ module bp_be_pipe_long
      ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
      );
 
-  logic [2:0] hazard_cnt;
-  wire idiv_safe = (hazard_cnt == 3);
-  wire fdiv_safe = (hazard_cnt == 4);
-  bsg_counter_clear_up
-   #(.max_val_p(4), .init_val_p(0))
-   hazard_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(v_li)
-     ,.up_i(rd_w_v_r & ~idiv_safe & ~fdiv_safe)
-     ,.count_o(hazard_cnt)
-     );
-
   logic idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
   bsg_dff_reset_set_clear
    #(.width_p(3))
@@ -166,6 +152,20 @@ module bp_be_pipe_long
      ,.set_i({idiv_v_lo, fdivsqrt_v_lo, v_li})
      ,.clear_i({v_li, v_li, (iwb_yumi_i | fwb_yumi_i)})
      ,.data_o({idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
+     );
+
+  logic [2:0] hazard_cnt;
+  wire idiv_safe = (hazard_cnt > 2);
+  wire fdiv_safe = (hazard_cnt > 3);
+  bsg_counter_clear_up
+   #(.max_val_p(4), .init_val_p(0))
+   hazard_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(v_li)
+     ,.up_i(rd_w_v_r & ~fdiv_safe)
+     ,.count_o(hazard_cnt)
      );
 
   logic [dp_rec_width_gp-1:0] fdivsqrt_dp_final;
