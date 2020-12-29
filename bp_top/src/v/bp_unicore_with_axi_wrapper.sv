@@ -1,16 +1,10 @@
-`include "bsg_noc_links.vh"
-
 module bp_unicore_with_axi_wrapper
 
- import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_me_pkg::*;
- import bp_cce_pkg::*;
- import bsg_noc_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_unicore_cfg
+
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
@@ -18,8 +12,8 @@ module bp_unicore_with_axi_wrapper
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
    
    // AXI4-LITE PARAMS
-   , parameter axi_lite_addr_width_p   = 32
-   , parameter axi_lite_data_width_p   = 32
+   , parameter axi_lite_addr_width_p   = 64
+   , parameter axi_lite_data_width_p   = 64
    , localparam axi_lite_strb_width_lp = axi_lite_data_width_p/8
    
    // AXI4-FULL PARAMS
@@ -28,7 +22,6 @@ module bp_unicore_with_axi_wrapper
    , parameter axi_full_id_width_p     = 1
    , parameter axi_full_burst_type_p   = 2'b01 //INCR type
    , localparam axi_full_strb_width_lp = axi_full_data_width_p/8
-   , localparam dword_width_lp         = axi_full_data_width_p
    )
 
   (input clk_i
@@ -127,137 +120,143 @@ module bp_unicore_with_axi_wrapper
   , output logic                              m_axi_rready_o
   );
 
-  // unicore declaration
-  `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
-  bp_bedrock_uce_mem_msg_s io_cmd_lo, io_cmd_li;
-  bp_bedrock_uce_mem_msg_s io_resp_lo, io_resp_li;
-  logic io_cmd_v_lo, io_cmd_v_li, io_cmd_ready_li, io_cmd_yumi_lo;
-  logic io_resp_v_li, io_resp_v_lo, io_resp_yumi_lo, io_resp_ready_li;
+  if (multicore_p)
+    begin : multicore
+    // multi-core + wrapper implementation
+    end
 
-  bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
-  logic mem_cmd_header_v_lo, mem_cmd_header_ready_li;
-  logic [dword_width_lp-1:0] mem_cmd_data_lo;
-  logic mem_cmd_data_v_lo, mem_cmd_data_ready_li;
+  else
+    begin : unicore
+    // unicore declaration
+    `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
+    bp_bedrock_uce_mem_msg_s io_cmd_lo, io_cmd_li;
+    bp_bedrock_uce_mem_msg_s io_resp_lo, io_resp_li;
+    logic io_cmd_v_lo, io_cmd_v_li, io_cmd_ready_li, io_cmd_yumi_lo;
+    logic io_resp_v_li, io_resp_v_lo, io_resp_yumi_lo, io_resp_ready_li;
+  
+    bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
+    logic mem_cmd_header_v_lo, mem_cmd_header_ready_li;
+    logic [dword_width_p-1:0] mem_cmd_data_lo;
+    logic mem_cmd_data_v_lo, mem_cmd_data_ready_li;
+  
+    bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
+    logic mem_resp_header_v_li, mem_resp_header_yumi_lo;
+    logic [dword_width_p-1:0] mem_resp_data_li;
+    logic mem_resp_data_v_li, mem_resp_data_yumi_lo;
+  
+    bp_unicore
+     #(.bp_params_p(bp_params_p))
+     unicore
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
 
-  bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
-  logic mem_resp_header_v_li, mem_resp_header_yumi_lo;
-  logic [dword_width_lp-1:0] mem_resp_data_li;
-  logic mem_resp_data_v_li, mem_resp_data_yumi_lo;
+      // Outgoing I/O
+      ,.io_cmd_o               (io_cmd_lo)
+      ,.io_cmd_v_o             (io_cmd_v_lo)
+      ,.io_cmd_ready_i         (io_cmd_ready_li)
 
-  bp_unicore
-   #(.bp_params_p(bp_params_p))
-   unicore
-   (.clk_i(clk_i)
-   	,.reset_i(reset_i)
+      ,.io_resp_i              (io_resp_li)
+      ,.io_resp_v_i            (io_resp_v_li)
+      ,.io_resp_yumi_o         (io_resp_yumi_lo)
 
-    // Outgoing I/O
-   	,.io_cmd_o               (io_cmd_lo)
-    ,.io_cmd_v_o             (io_cmd_v_lo)
-    ,.io_cmd_ready_i         (io_cmd_ready_li)
+      // Incoming I/O
+      ,.io_cmd_i               (io_cmd_li)
+      ,.io_cmd_v_i             (io_cmd_v_li)
+      ,.io_cmd_yumi_o          (io_cmd_yumi_lo)
 
-    ,.io_resp_i              (io_resp_li)
-    ,.io_resp_v_i            (io_resp_v_li)
-    ,.io_resp_yumi_o         (io_resp_yumi_lo)
+      ,.io_resp_o              (io_resp_lo) 
+      ,.io_resp_v_o            (io_resp_v_lo)
+      ,.io_resp_ready_i        (io_resp_ready_li)
 
-    // Incoming I/O
-    ,.io_cmd_i               (io_cmd_li)
-    ,.io_cmd_v_i             (io_cmd_v_li)
-    ,.io_cmd_yumi_o          (io_cmd_yumi_lo)
+      // DRAM interface
+      ,.mem_cmd_header_o       (mem_cmd_header_lo)
+      ,.mem_cmd_header_v_o     (mem_cmd_header_v_lo)
+      ,.mem_cmd_header_ready_i (mem_cmd_header_ready_li)
 
-    ,.io_resp_o              (io_resp_lo) 
-    ,.io_resp_v_o            (io_resp_v_lo)
-    ,.io_resp_ready_i        (io_resp_ready_li)
+      ,.mem_cmd_data_o         (mem_cmd_data_lo)
+      ,.mem_cmd_data_v_o       (mem_cmd_data_v_lo)
+      ,.mem_cmd_data_ready_i   (mem_cmd_data_ready_li)
 
-    // DRAM interface
-    ,.mem_cmd_header_o       (mem_cmd_header_lo)
-    ,.mem_cmd_header_v_o     (mem_cmd_header_v_lo)
-    ,.mem_cmd_header_ready_i (mem_cmd_header_ready_li)
+      ,.mem_resp_header_i      (mem_resp_header_li)
+      ,.mem_resp_header_v_i    (mem_resp_header_v_li)
+      ,.mem_resp_header_yumi_o (mem_resp_header_yumi_lo)
 
-    ,.mem_cmd_data_o         (mem_cmd_data_lo)
-    ,.mem_cmd_data_v_o       (mem_cmd_data_v_lo)
-    ,.mem_cmd_data_ready_i   (mem_cmd_data_ready_li)
+      ,.mem_resp_data_i        (mem_resp_data_li)
+      ,.mem_resp_data_v_i      (mem_resp_data_v_li)
+      ,.mem_resp_data_yumi_o   (mem_resp_data_yumi_lo)
+      );
+  
+    // outgoing io wrapper
+    bp_lite_to_axi_lite_master 
+     #(.bp_params_p(bp_params_p)
+       ,.axi_data_width_p(axi_lite_data_width_p)
+       ,.axi_addr_width_p(axi_lite_addr_width_p)
+       )
+     io2axil
+     (.aclk_i               (clk_i)
+      ,.aresetn_i           (~reset_i)
 
-    ,.mem_resp_header_i      (mem_resp_header_li)
-    ,.mem_resp_header_v_i    (mem_resp_header_v_li)
-    ,.mem_resp_header_yumi_o (mem_resp_header_yumi_lo)
+      ,.io_cmd_i            (io_cmd_lo)
+      ,.io_cmd_v_i          (io_cmd_v_lo & io_cmd_ready_li)
+      ,.io_cmd_ready_o      (io_cmd_ready_li)
 
-    ,.mem_resp_data_i        (mem_resp_data_li)
-    ,.mem_resp_data_v_i      (mem_resp_data_v_li)
-    ,.mem_resp_data_yumi_o   (mem_resp_data_yumi_lo)
-   	);
+      ,.io_resp_o           (io_resp_li)
+      ,.io_resp_v_o         (io_resp_v_li)
+      ,.io_resp_yumi_i      (io_resp_yumi_lo)
 
-  // outgoing io wrapper
-  bp_lite_to_axi_lite_master 
-   #(.bp_params_p(bp_params_p)
-   	,.axi_data_width_p(axi_lite_data_width_p)
-   	,.axi_addr_width_p(axi_lite_addr_width_p)
-   	)
-   outgoing_io_axi_lite_wrapper
-   (.aclk_i               (clk_i)
-    ,.aresetn_i           (~reset_i)
+      ,.*
+      );
+  
+    // incoming io wrapper
+    axi_lite_to_bp_lite_client
+     #(.bp_params_p(bp_params_p)
+       ,.axi_data_width_p(axi_lite_data_width_p)
+       ,.axi_addr_width_p(axi_lite_addr_width_p)
+       )
+     axil2io
+     (.aclk_i               (clk_i)
+      ,.aresetn_i           (~reset_i)
 
-    ,.io_cmd_i            (io_cmd_lo)
-    ,.io_cmd_v_i          (io_cmd_v_lo & io_cmd_ready_li)
-    ,.io_cmd_ready_o      (io_cmd_ready_li)
+      ,.io_cmd_o            (io_cmd_li)
+      ,.io_cmd_v_o          (io_cmd_v_li)
+      ,.io_cmd_yumi_i       (io_cmd_yumi_lo)
 
-    ,.io_resp_o           (io_resp_li)
-    ,.io_resp_v_o         (io_resp_v_li)
-    ,.io_resp_yumi_i      (io_resp_yumi_lo)
+      ,.io_resp_i           (io_resp_lo)
+      ,.io_resp_v_i         (io_resp_v_lo)
+      ,.io_resp_ready_o     (io_resp_ready_li)
 
-    ,.*
-   );
-
-  // incoming io wrapper
-  axi_lite_to_bp_lite_client
-   #(.bp_params_p(bp_params_p)
-   	,.axi_data_width_p(axi_lite_data_width_p)
-   	,.axi_addr_width_p(axi_lite_addr_width_p)
-   	)
-   incoming_io_axi_lite_wrapper
-   (.aclk_i               (clk_i)
-    ,.aresetn_i           (~reset_i)
-
-    ,.io_cmd_o            (io_cmd_li)
-    ,.io_cmd_v_o          (io_cmd_v_li)
-    ,.io_cmd_yumi_i       (io_cmd_yumi_lo)
-
-    ,.io_resp_i           (io_resp_lo)
-    ,.io_resp_v_i         (io_resp_v_lo)
-    ,.io_resp_ready_o     (io_resp_ready_li)
-
-    ,.*
-   );
-
-  // dram interface wrapper
-  bp_mem_to_axi_master
-   #(.bp_params_p(bp_params_p)
-   	,.axi_data_width_p(axi_full_data_width_p)
-   	,.axi_addr_width_p(axi_full_addr_width_p)
-   	,.axi_burst_type_p(axi_full_burst_type_p)
-   	,.axi_id_width_p(axi_full_id_width_p)
-   	)
-   mem_interface_axi_full_wrapper
-   (.aclk_i               (clk_i)
-    ,.aresetn_i           (~reset_i)
-
-    ,.mem_cmd_header_i        (mem_cmd_header_lo)
-    ,.mem_cmd_header_v_i      (mem_cmd_header_v_lo)
-    ,.mem_cmd_header_ready_o  (mem_cmd_header_ready_li)  
+      ,.*
+      );
+  
+    // dram interface wrapper
+    bp_mem_to_axi_master
+     #(.bp_params_p(bp_params_p)
+       ,.axi_data_width_p(axi_full_data_width_p)
+       ,.axi_addr_width_p(axi_full_addr_width_p)
+       ,.axi_burst_type_p(axi_full_burst_type_p)
+       ,.axi_id_width_p(axi_full_id_width_p)
+       )
+     mem2axi
+     (.aclk_i               (clk_i)
+      ,.aresetn_i           (~reset_i)
+  
+      ,.mem_cmd_header_i        (mem_cmd_header_lo)
+      ,.mem_cmd_header_v_i      (mem_cmd_header_v_lo)
+      ,.mem_cmd_header_ready_o  (mem_cmd_header_ready_li)  
     
-    ,.mem_cmd_data_i          (mem_cmd_data_lo)      
-    ,.mem_cmd_data_v_i        (mem_cmd_data_v_lo)
-    ,.mem_cmd_data_ready_o    (mem_cmd_data_ready_li)
+      ,.mem_cmd_data_i          (mem_cmd_data_lo)      
+      ,.mem_cmd_data_v_i        (mem_cmd_data_v_lo)
+      ,.mem_cmd_data_ready_o    (mem_cmd_data_ready_li)
 
-    ,.mem_resp_header_o       (mem_resp_header_li)
-    ,.mem_resp_header_v_o     (mem_resp_header_v_li)
-    ,.mem_resp_header_ready_i (mem_resp_header_yumi_lo)
+      ,.mem_resp_header_o       (mem_resp_header_li)
+      ,.mem_resp_header_v_o     (mem_resp_header_v_li)
+      ,.mem_resp_header_ready_i (mem_resp_header_yumi_lo)
 
-    ,.mem_resp_data_o         (mem_resp_data_li)
-    ,.mem_resp_data_v_o       (mem_resp_data_v_li)
-    ,.mem_resp_data_ready_i   (mem_resp_data_yumi_lo)
+      ,.mem_resp_data_o         (mem_resp_data_li)
+      ,.mem_resp_data_v_o       (mem_resp_data_v_li)
+      ,.mem_resp_data_ready_i   (mem_resp_data_yumi_lo)
 
-    ,.*
-
-    );
+      ,.*
+      );
 
 endmodule
