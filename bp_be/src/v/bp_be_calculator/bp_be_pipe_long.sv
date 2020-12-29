@@ -74,8 +74,7 @@ module bp_be_pipe_long
      ,.quotient_o(quotient_lo)
      ,.remainder_o(remainder_lo)
      ,.v_o(idiv_v_lo)
-     // Immediately ack, since the data stays done until the next incoming division
-     ,.yumi_i(idiv_v_lo)
+     ,.yumi_i(idiv_v_lo & iwb_yumi_i)
      );
 
   bp_be_fp_reg_s frs1, frs2;
