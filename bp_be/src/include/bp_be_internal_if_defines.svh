@@ -119,6 +119,7 @@
   {                                                                                                \
     logic                        ird_w_v;                                                          \
     logic                        frd_w_v;                                                          \
+    logic                        late;                                                             \
     logic [reg_addr_width_p-1:0] rd_addr;                                                          \
     logic [dpath_width_p-1:0]    rd_data;                                                          \
     logic                        fflags_w_v;                                                       \
@@ -184,7 +185,7 @@
   (3 + 2 * vaddr_width_mp + instr_width_p + rv64_priv_width_gp + 9)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
-  (2                                                                                               \
+  (3                                                                                               \
    + reg_addr_width_p                                                                              \
    + dpath_width_p                                                                                 \
    + 1                                                                                             \
