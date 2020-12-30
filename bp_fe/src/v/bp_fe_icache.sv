@@ -107,7 +107,7 @@ module bp_fe_icache
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Various localparameters
-  localparam lg_icache_assoc_lp     =`BSG_SAFE_CLOG2(assoc_p);
+  localparam lg_assoc_lp            =`BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp          = block_width_p / assoc_p;
   localparam num_words_per_bank_lp  = bank_width_lp / word_width_gp;
   localparam data_mem_mask_width_lp = (bank_width_lp >> 3);
@@ -316,9 +316,9 @@ module bp_fe_icache
   // We make a hit so that an arbitrary data word is selected from the
   //   snooped line, which has replicated versions of the word
   // TODO: Get rid of uncached clause here
-  wire [icache_assoc_p-1:0] hit_tl = is_recover | hit_v_tl | (fetch_uncached_tl & uncached_hit_tl);
+  wire [assoc_p-1:0] hit_tl = is_recover | hit_v_tl | (fetch_uncached_tl & uncached_hit_tl);
   bsg_dff_reset_en
-   #(.width_p(icache_assoc_p+1))
+   #(.width_p(assoc_p+1))
    complete_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -327,13 +327,36 @@ module bp_fe_icache
      ,.data_o({hit_v_tv_r, complete_tv_r})
      );
 
+  /////////////////
+  // Snoop logic
+  // We select the load data either from the fast path, else when the critical
+  //   fill comes back, we snoop the word and store it in the correct place
+  logic [instr_width_p-1:0] snoop_word;
+  localparam snoop_offset_width_p = `BSG_SAFE_CLOG2(fill_width_p/instr_width_p);
+  wire [snoop_offset_width_p-1:0] snoop_word_offset = paddr_tv_r[2+:snoop_offset_width_p];
+  bsg_mux
+   #(.width_p(instr_width_p), .els_p(fill_width_p/instr_width_p))
+   snoop_mux
+    (.data_i(data_mem_pkt_cast_i.data)
+     ,.sel_i(snoop_word_offset)
+     ,.data_o(snoop_word)
+     );
+  wire [block_width_p-1:0] snoop_data_lo = {block_width_p/instr_width_p{snoop_word}};
+
   logic [block_width_p-1:0] ld_data_tv_n;
-  assign ld_data_tv_n = data_mem_data_lo;
+  bsg_mux
+   #(.width_p(assoc_p*bank_width_lp), .els_p(2))
+   ld_data_mux
+    (.data_i({snoop_data_lo, data_mem_data_lo})
+     ,.sel_i(cache_req_critical_i)
+     ,.data_o(ld_data_tv_n)
+     );
+
   bsg_dff_en
    #(.width_p(block_width_p))
    ld_data_tv_reg
     (.clk_i(clk_i)
-     ,.en_i(tv_we)
+     ,.en_i(tv_we | cache_req_critical_i)
      ,.data_i(ld_data_tv_n)
      ,.data_o(ld_data_tv_r)
      );
@@ -420,7 +443,7 @@ module bp_fe_icache
      ,.data_o(cache_req_metadata_v_o)
      );
 
-  logic [lg_icache_assoc_lp-1:0] lru_encode;
+  logic [lg_assoc_lp-1:0] lru_encode;
   bsg_lru_pseudo_tree_encode
    #(.ways_p(assoc_p))
    lru_encoder
@@ -428,7 +451,7 @@ module bp_fe_icache
      ,.way_id_o(lru_encode)
      );
 
-  logic [lg_icache_assoc_lp-1:0] way_invalid_index;
+  logic [lg_assoc_lp-1:0] way_invalid_index;
   logic invalid_exist;
   bsg_priority_encode
    #(.width_p(assoc_p), .lo_to_hi_p(1))
@@ -452,7 +475,8 @@ module bp_fe_icache
   always_comb
     case (state_r)
       e_ready  : state_n = cache_req_yumi_i ? e_miss : e_ready;
-      e_miss   : state_n = cache_req_complete_i ? e_ready : e_miss;
+      e_miss   : state_n = cache_req_complete_i ? e_recover : e_miss;
+      e_recover: state_n = e_ready;
       default: state_n = e_ready;
     endcase
 
@@ -485,11 +509,11 @@ module bp_fe_icache
 
   // Tag mem is bypassed if the index is the same on consecutive reads
   wire tag_mem_bypass = (vaddr_index == vaddr_index_tl) & tag_mem_last_read_r;
-  wire tag_mem_fast_read = (tl_we & ~tag_mem_bypass);
+  wire tag_mem_fast_read = (tl_we & ~tag_mem_bypass) | is_recover;
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_pkt_yumi_o;
   assign tag_mem_w_li = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
   assign tag_mem_addr_li = tag_mem_fast_read
-    ? vaddr_index
+    ? is_recover ? vaddr_index_tl : vaddr_index
     : tag_mem_pkt_cast_i.index;
   assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & ~tag_mem_fast_read;
 
@@ -523,9 +547,9 @@ module bp_fe_icache
           end
       endcase
 
-  logic [lg_icache_assoc_lp-1:0] tag_mem_pkt_way_r;
+  logic [lg_assoc_lp-1:0] tag_mem_pkt_way_r;
   bsg_dff
-   #(.width_p(lg_icache_assoc_lp))
+   #(.width_p(lg_assoc_lp))
    tag_mem_pkt_way_reg
     (.clk_i(clk_i)
      ,.data_i(tag_mem_pkt_cast_i.way_id)
@@ -600,20 +624,20 @@ module bp_fe_icache
   for (genvar i = 0; i < assoc_p; i++)
     begin : data_mem_lines
       wire data_mem_slow_write     = data_mem_pkt_v_i & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write) & data_mem_write_bank_mask[i];
-      assign data_mem_fast_read[i] = tl_we & (~data_mem_bypass | data_mem_bypass_select[i]);
+      assign data_mem_fast_read[i] = tl_we & (~data_mem_bypass | data_mem_bypass_select[i]) | is_recover;
 
       assign data_mem_v_li[i] = data_mem_fast_read[i] | (data_mem_pkt_yumi_o & (data_mem_slow_read | data_mem_slow_write));
       assign data_mem_w_li[i] = data_mem_pkt_yumi_o & data_mem_slow_write;
       wire [bindex_width_lp-1:0] data_mem_pkt_offset = (bindex_width_lp'(i) - data_mem_pkt_cast_i.way_id);
       assign data_mem_addr_li[i] = data_mem_fast_read[i]
-        ? {vaddr_index, {(assoc_p > 1){vaddr_bank}}}
+        ? is_recover ? {vaddr_index, {(assoc_p > 1){vaddr_bank_tl}}} : {vaddr_index, {(assoc_p > 1){vaddr_bank}}}
         : {data_mem_pkt_cast_i.index, {(assoc_p > 1){data_mem_pkt_offset}}};
     end
   assign data_mem_pkt_yumi_o = data_mem_pkt_v_i & (~|data_mem_fast_read | data_mem_slow_uncached);
 
-  logic [lg_icache_assoc_lp-1:0] data_mem_pkt_way_r;
+  logic [lg_assoc_lp-1:0] data_mem_pkt_way_r;
   bsg_dff
-   #(.width_p(lg_icache_assoc_lp))
+   #(.width_p(lg_assoc_lp))
    data_mem_pkt_way_reg
     (.clk_i(clk_i)
      ,.data_i(data_mem_pkt_cast_i.way_id)
@@ -642,7 +666,7 @@ module bp_fe_icache
     ? paddr_tv_r[block_offset_width_lp+:sindex_width_lp]
     : stat_mem_pkt_cast_i.index;
 
-  logic [lg_icache_assoc_lp-1:0] hit_index_tv;
+  logic [lg_assoc_lp-1:0] hit_index_tv;
   bsg_encode_one_hot
    #(.width_p(assoc_p), .lo_to_hi_p(1))
    hit_index_encoder
