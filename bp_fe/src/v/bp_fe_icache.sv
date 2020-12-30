@@ -124,6 +124,7 @@ module bp_fe_icache
   enum logic [1:0] {e_ready, e_miss, e_recover} state_n, state_r;
   wire is_ready   = (state_r == e_ready);
   wire is_miss    = (state_r == e_miss);
+  wire is_recover = (state_r == e_recover);
 
   // Feedback signals between stages
   logic tl_we, tv_we;
@@ -287,11 +288,12 @@ module bp_fe_icache
   /////////////////////////////////////////////////////////////////////////////
   // TV stage
   /////////////////////////////////////////////////////////////////////////////
-  logic [paddr_width_p-1:0]                     paddr_tv_r;
+  logic [paddr_width_p-1:0]              paddr_tv_r;
   logic [assoc_p-1:0]                    bank_sel_one_hot_tv_r;
   logic [assoc_p-1:0]                    way_v_tv_r, hit_v_tv_r;
-  logic                                         cached_hit_tv_r, uncached_hit_tv_r;
-  logic                                         fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r;
+  logic                                  cached_hit_tv_r, uncached_hit_tv_r;
+  logic                                  fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r;
+  logic                                  complete_tv_r;
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
 
   // fence.i does not check tags
@@ -307,6 +309,24 @@ module bp_fe_icache
      ,.data_o(v_tv_r)
      );
 
+  // The request completes when it comes back from the engine, or if
+  //   there's a fetch hit or miss, or a fill
+  wire complete_tl =
+    is_recover | (fetch_cached_tl & |hit_v_tl) | (fetch_uncached_tl & uncached_hit_tl) | (fencei_op_tl_r & l1_coherent_p);
+  // We make a hit so that an arbitrary data word is selected from the
+  //   snooped line, which has replicated versions of the word
+  // TODO: Get rid of uncached clause here
+  wire [icache_assoc_p-1:0] hit_tl = is_recover | hit_v_tl | (fetch_uncached_tl & uncached_hit_tl);
+  bsg_dff_reset_en
+   #(.width_p(icache_assoc_p+1))
+   complete_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(tv_we | is_recover)
+     ,.data_i({hit_tl, complete_tl})
+     ,.data_o({hit_v_tv_r, complete_tv_r})
+     );
+
   logic [block_width_p-1:0] ld_data_tv_n;
   assign ld_data_tv_n = data_mem_data_lo;
   bsg_dff_en
@@ -319,16 +339,16 @@ module bp_fe_icache
      );
 
   bsg_dff_en
-   #(.width_p(paddr_width_p+3*assoc_p+5))
+   #(.width_p(paddr_width_p+2*assoc_p+3))
    tv_stage_reg
     (.clk_i(clk_i)
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
-               ,bank_sel_one_hot_tl, way_v_tl, hit_v_tl, cached_hit_tl, uncached_hit_tl
+               ,bank_sel_one_hot_tl, way_v_tl
                ,fencei_op_tl_r, fetch_uncached_tl, fetch_cached_tl
                })
      ,.data_o({paddr_tv_r
-               ,bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r, cached_hit_tv_r, uncached_hit_tv_r
+               ,bank_sel_one_hot_tv_r, way_v_tv_r
                ,fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r
                })
      );
@@ -366,9 +386,7 @@ module bp_fe_icache
      );
 
   assign data_o = uncached_op_tv_r ? uncached_data_r : final_data;
-  assign data_v_o = v_tv_r & ((uncached_op_tv_r & uncached_hit_tv_r)
-                              | (cached_op_tv_r & cached_hit_tv_r)
-                              );
+  assign data_v_o = v_tv_r & complete_tv_r;
 
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
@@ -379,9 +397,9 @@ module bp_fe_icache
   localparam bp_cache_req_size_e block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
   localparam bp_cache_req_size_e uncached_req_size = e_size_4B;
 
-  wire cached_req   = v_tv_r & cached_op_tv_r & ~cached_hit_tv_r;
-  wire uncached_req = v_tv_r & uncached_op_tv_r & ~uncached_hit_tv_r;
-  wire fencei_req   = v_tv_r & fencei_op_tv_r & !coherent_p;
+  wire cached_req   = is_ready & v_tv_r & cached_op_tv_r & ~complete_tv_r;
+  wire uncached_req = is_ready & v_tv_r & uncached_op_tv_r & ~complete_tv_r;
+  wire fencei_req   = is_ready & v_tv_r & fencei_op_tv_r & !l1_coherent_p;
 
   assign cache_req_v_o = |{uncached_req, cached_req, fencei_req} & ~poison_tv_i;
   assign cache_req_cast_o =
@@ -428,6 +446,8 @@ module bp_fe_icache
   // State machine
   //   e_ready  : Cache is ready to accept requests
   //   e_miss   : Cache is waiting for a cache request to be serviced
+  //   e_recover: Cache is re-reading from the tag and data memories to recover
+  //                from cache miss
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
