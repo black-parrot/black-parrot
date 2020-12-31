@@ -50,7 +50,7 @@ module bp_stream_pump_out
   `bp_cast_o(bp_bedrock_xce_mem_msg_header_s, mem_header);
 
   wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << fsm_base_header_cast_i.size) / (stream_data_width_p / 8), 1'b1);
-  wire [data_len_width_lp-1:0] num_block  = (block_width_p / 8) / (1'b1 << fsm_base_header_cast_i.size);
+  wire [data_len_width_lp-1:0] num_block_in_msg_size  = (block_width_p / 8) / (1'b1 << fsm_base_header_cast_i.size);
 
   logic set_cnt, cnt_up, is_last_cnt, is_stream, streaming_r;
   
@@ -97,8 +97,7 @@ module bp_stream_pump_out
 
   wire has_data = payload_mask_p[fsm_base_header_cast_i.msg_type];
 
-  logic [stream_offset_width_lp+data_len_width_lp-1:0] sub_block_adddr, sub_block_tuned_adddr; 
-  assign sub_block_adddr = {stream_cnt_o, fsm_base_header_cast_i.addr[0+:stream_offset_width_lp]}; 
+  logic [stream_offset_width_lp+data_len_width_lp-1:0] sub_block_adddr, sub_block_adddr_tuned;   
   always_comb 
     begin
       mem_header_cast_o = fsm_base_header_cast_i;
@@ -116,14 +115,16 @@ module bp_stream_pump_out
           cnt_up  = fsm_ready_and_o & ~is_last_cnt;
           set_cnt = fsm_ready_and_o & ~streaming_r;
 
-          // Generate proper wrapp-around addr seq hetero block size
-          casez(num_block)
-            data_len_width_lp'(1): sub_block_tuned_adddr = sub_block_adddr;
-            data_len_width_lp'(2): sub_block_tuned_adddr = { fsm_base_header_cast_i.addr[(stream_offset_width_lp+data_len_width_lp-1)+:1], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-1)]};
-            data_len_width_lp'(4): sub_block_tuned_adddr = { fsm_base_header_cast_i.addr[(stream_offset_width_lp+data_len_width_lp-2)+:2], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-2)]};
-            default:               sub_block_tuned_adddr = fsm_base_header_cast_i.addr[0+:(stream_offset_width_lp+data_len_width_lp)];
+          sub_block_adddr = {stream_cnt_o, fsm_base_header_cast_i.addr[0+:stream_offset_width_lp]};
+          // Generate proper wrap-around address for differenct incoming msg size dynamically, 
+          // if stream_data_width_p < incoming msg size < block_width_p, the width of stream_cnt < data_len_width_lp
+          casez(num_block_in_msg_size)
+            data_len_width_lp'(1): sub_block_adddr_tuned = sub_block_adddr;
+            data_len_width_lp'(2): sub_block_adddr_tuned = { fsm_base_header_cast_i.addr[(stream_offset_width_lp+data_len_width_lp-1)+:1], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-1)]};
+            data_len_width_lp'(4): sub_block_adddr_tuned = { fsm_base_header_cast_i.addr[(stream_offset_width_lp+data_len_width_lp-2)+:2], sub_block_adddr[0+:(stream_offset_width_lp+data_len_width_lp-2)]};
+            default:               sub_block_adddr_tuned = fsm_base_header_cast_i.addr[0+:(stream_offset_width_lp+data_len_width_lp)];
           endcase
-          mem_header_cast_o.addr = { fsm_base_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp], sub_block_tuned_adddr };
+          mem_header_cast_o.addr = { fsm_base_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp], sub_block_adddr_tuned };
         end
       else
         begin
