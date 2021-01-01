@@ -139,32 +139,13 @@ module testbench
      ,.yumi_o(fifo_random_yumi_lo)
      );
 
-  // This fifo has 16 elements since maximum number of streaming hits is 16
-  // Probably a side effect of the testing strategy.  Open for debate
-  bsg_fifo_1r1w_small
-    #(.width_p(instr_width_gp)
-     ,.els_p(16)
-    )
-    output_fifo
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-
-    // from icache
-    ,.v_i(icache_data_v_lo)
-    ,.ready_o(icache_ready_li)
-    ,.data_i(icache_data_lo)
-
-    // to trace replay
-    ,.v_o(fifo_v_lo)
-    ,.yumi_i(fifo_yumi_li)
-    ,.data_o(fifo_data_lo)
-    );
+  assign fifo_data_lo = icache_data_lo;
+  assign fifo_v_lo = icache_data_v_lo;
+  assign icache_yumi_li = fifo_yumi_li;
 
   // Subsystem under test
   wrapper
-   #(.bp_params_p(bp_params_p)
-    ,.uce_p(uce_p)
-   )
+   #(.bp_params_p(bp_params_p), .uce_p(uce_p))
    dut
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -181,6 +162,7 @@ module testbench
      ,.uncached_i(uncached_li)
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
+     ,.data_yumi_i(icache_yumi_li)
 
      ,.mem_resp_i(mem_resp_lo)
      ,.mem_resp_v_i(mem_resp_v_lo)
@@ -250,7 +232,7 @@ module testbench
 
       ,.wt_req()
 
-      ,.v_o(data_v_o)
+      ,.v_o(v_o)
       ,.load_data(65'(data_o))
       ,.store_data(64'(0))
       ,.cache_miss_o('0)

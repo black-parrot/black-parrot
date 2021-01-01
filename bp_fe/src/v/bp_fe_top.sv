@@ -127,6 +127,7 @@ module bp_fe_top
   wire pc_redirect_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
   wire itlb_fill_v       = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
   wire icache_fence_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
+  wire icache_fill_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fill_response);
   wire itlb_fence_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
   wire attaboy_v         = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
   wire cmd_nonattaboy_v  = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
@@ -254,12 +255,13 @@ module bp_fe_top
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = '{vaddr: next_pc_lo
-                        ,op  : icache_fence_v ? e_icache_fencei : e_icache_fetch
+                        ,op  : icache_fence_v ? e_icache_fencei : icache_fill_v ? e_icache_fill : e_icache_fetch
                         };
   // TODO: Should only ack icache fence when icache_ready
   wire icache_v_li = next_pc_yumi_li | icache_fence_v;
   logic [instr_width_gp-1:0] icache_data_lo;
-  logic icache_ready_lo, icache_data_v_lo;
+  logic icache_miss_not_data_lo;
+  logic icache_ready_lo, icache_v_lo;
   logic icache_poison_tl, icache_poison_tv;
   bp_fe_icache
    #(.bp_params_p(bp_params_p))
@@ -279,7 +281,8 @@ module bp_fe_top
      ,.poison_tl_i(icache_poison_tl)
 
      ,.data_o(icache_data_lo)
-     ,.data_v_o(icache_data_v_lo)
+     ,.miss_not_data_o(icache_miss_not_data_lo)
+     ,.v_o(icache_v_lo)
      ,.poison_tv_i(icache_poison_tv)
 
      ,.cache_req_o(cache_req_o)
@@ -333,10 +336,11 @@ module bp_fe_top
      ,.data_o({v_if2_r, v_if1_r})
      );
 
-  wire icache_miss    = v_if2_r & ~icache_data_v_lo;
+  wire icache_fail    = v_if2_r & ~icache_v_lo;
+  wire icache_miss    = v_if2_r & icache_v_lo & icache_miss_not_data_lo;
   wire queue_miss     = v_if2_r & ~fe_queue_ready_i;
-  wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r);
-  wire fe_instr_v     = v_if2_r & icache_data_v_lo;
+  wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss);
+  wire fe_instr_v     = v_if2_r & icache_v_lo;
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
 
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
@@ -362,7 +366,9 @@ module bp_fe_top
                                                        ? e_itlb_miss
                                                        : instr_page_fault_r
                                                          ? e_instr_page_fault
-                                                         : e_instr_access_fault;
+                                                         : instr_access_fault_r
+                                                           ? e_instr_access_fault
+                                                           : e_icache_miss;
       end
     else
       begin
@@ -377,14 +383,14 @@ module bp_fe_top
   always_comb
     case (state_r)
       // Wait for FE cmd
-      e_wait : state_n = pc_redirect_v ? e_run : cmd_nonattaboy_v ? e_stall : e_wait;
+      e_wait : state_n = (pc_redirect_v | icache_fill_v) ? e_run : cmd_nonattaboy_v ? e_stall : e_wait;
       // Stall until we can start valid fetch
       e_stall: state_n = unstall ? e_run : e_stall;
       // Run state -- PCs are actually being fetched
       // Stay in run if there's an incoming cmd, the next pc will automatically be valid
       // Transition to wait if there's a TLB miss while we wait for fill
       // Transition to stall if we don't successfully complete the fetch for whatever reason
-      e_run  : state_n = pc_redirect_v
+      e_run  : state_n = (pc_redirect_v | icache_fill_v)
                          ? e_run
                          : stall
                            ? e_stall

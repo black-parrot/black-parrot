@@ -372,7 +372,7 @@ module testbench
 
            ,.cache_req_complete_i(cache_req_complete_i)
 
-           ,.v_o(data_v_o)
+           ,.v_o(v_o)
            ,.load_data(65'(data_o))
            ,.cache_miss_o('0)
            ,.wt_req()

@@ -12,7 +12,7 @@ module wrapper
    , parameter fill_width_p = icache_fill_width_p
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
@@ -43,6 +43,7 @@ module wrapper
 
    , output [instr_width_gp-1:0]             data_o
    , output                                  data_v_o
+   , input                                   data_yumi_i
 
    , input [cce_mem_msg_width_lp-1:0]        mem_resp_i
    , input                                   mem_resp_v_i
@@ -53,7 +54,7 @@ module wrapper
    , input                                   mem_cmd_ready_i
    );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
@@ -80,82 +81,43 @@ module wrapper
   logic [icache_tag_info_width_lp-1:0] tag_mem_lo;
   logic [icache_stat_info_width_lp-1:0] stat_mem_lo;
 
-  // Rolly fifo signals
-  logic [ptag_width_p-1:0] rolly_ptag_lo;
-  logic [vaddr_width_p-1:0] rolly_vaddr_lo;
-  logic rolly_uncached_lo;
-  logic rolly_v_lo;
-  logic rolly_yumi_li;
-  logic icache_ready_lo;
-  assign rolly_yumi_li = rolly_v_lo & icache_ready_lo;
+  logic [ptag_width_p-1:0] fifo_ptag_lo;
+  logic [vaddr_width_p-1:0] fifo_vaddr_lo;
+  logic fifo_uncached_lo;
+  logic fifo_v_lo;
+  logic fifo_yumi_li;
 
-  logic rollback_li, rolly_yumi_rr;
-
-  bsg_fifo_1r1w_rolly
-   #(.width_p(vaddr_width_p+ptag_width_p+1), .els_p(8))
-   rolly_icache
+  bsg_fifo_1r1w_small
+   #(.width_p(vaddr_width_p+ptag_width_p+1), .els_p(32))
+   fifo_icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
-     ,.clr_v_i(1'b0)
-     ,.deq_v_i(data_v_o)
-     ,.roll_v_i(rollback_li)
 
      ,.data_i({uncached_i, vaddr_i, ptag_i})
      ,.v_i(vaddr_v_i)
      ,.ready_o(vaddr_ready_o)
 
-     ,.data_o({rolly_uncached_lo, rolly_vaddr_lo, rolly_ptag_lo})
-     ,.v_o(rolly_v_lo)
-     ,.yumi_i(rolly_yumi_li)
+     ,.data_o({fifo_uncached_lo, fifo_vaddr_lo, fifo_ptag_lo})
+     ,.v_o(fifo_v_lo)
+     ,.yumi_i(fifo_yumi_li)
      );
 
-  bsg_dff_chain
-   #(.width_p(1), .num_stages_p(2))
-   rolly_yumi_reg
-    (.clk_i(clk_i)
-     ,.data_i(rolly_yumi_li)
-     ,.data_o(rolly_yumi_rr)
-     );
-
-  assign rollback_li = rolly_yumi_rr & ~data_v_o;
-
-  logic [ptag_width_p-1:0] rolly_ptag_r;
-  bsg_dff_reset
-   #(.width_p(ptag_width_p))
-   ptag_dff
+  logic [ptag_width_p-1:0] fifo_ptag_r;
+  logic ptag_v_r, ptag_uncached_r;
+  bsg_dff_reset_en
+   #(.width_p(ptag_width_p+2))
+    ptag_dff
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.en_i(fifo_yumi_li)
 
-     ,.data_i(rolly_ptag_lo)
-     ,.data_o(rolly_ptag_r)
+     ,.data_i({fifo_uncached_lo, fifo_v_lo, fifo_ptag_lo})
+     ,.data_o({ptag_uncached_r, ptag_v_r, fifo_ptag_r})
      );
-
-  logic ptag_v_r, uncached_r;
-  bsg_dff_reset
-   #(.width_p(2))
-   ptag_v_dff
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i({rolly_uncached_lo, rolly_v_lo})
-     ,.data_o({uncached_r, ptag_v_r})
-     );
-
-   logic icache_v_rr, poison_li;
-   bsg_dff_chain
-    #(.width_p(1), .num_stages_p(2))
-    icache_v_reg
-     (.clk_i(clk_i)
-      ,.data_i(rolly_yumi_li)
-      ,.data_o(icache_v_rr)
-      );
-
-   assign poison_li = icache_v_rr & ~data_v_o;
 
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
-  assign icache_pkt = '{vaddr: rolly_vaddr_lo, op: e_icache_fetch};
+  assign icache_pkt = '{vaddr: fifo_vaddr_lo, op: e_icache_fill};
 
   // I-Cache
   bp_fe_icache
@@ -172,16 +134,19 @@ module wrapper
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.icache_pkt_i(icache_pkt)
-     ,.v_i(rolly_yumi_li)
-     ,.ready_o(icache_ready_lo)
+     ,.v_i(fifo_v_lo)
+     ,.force_i(1'b0)
+     ,.yumi_o(fifo_yumi_li)
 
-     ,.ptag_i(rolly_ptag_r)
+     ,.ptag_i(fifo_ptag_r)
      ,.ptag_v_i(ptag_v_r)
-     ,.uncached_i(uncached_r)
-     ,.poison_tl_i(poison_li)
+     ,.ptag_uncached_i(ptag_uncached_r)
+     ,.poison_tl_i('0)
 
      ,.data_o(data_o)
-     ,.data_v_o(data_v_o)
+     ,.miss_not_data_o(miss_not_data_lo)
+     ,.v_o(data_v_o)
+     ,.data_yumi_i(data_yumi_i)
      ,.poison_tv_i(1'b0)
 
      ,.cache_req_o(cache_req_lo)
@@ -384,10 +349,8 @@ module wrapper
        ,.mem_resp_yumi_o(fifo_mem_resp_yumi_li)
        );
 
-    bsg_fifo_1r1w_small
-     #(.width_p(cce_mem_msg_width_lp)
-       ,.els_p(1)
-       )
+    bsg_two_fifo
+     #(.width_p(cce_mem_msg_width_lp))
      mem_resp_fifo
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
