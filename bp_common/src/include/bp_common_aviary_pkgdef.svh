@@ -278,7 +278,7 @@
   localparam bp_proc_param_s bp_unicore_bootrom_override_p =
     '{boot_pc        : bootrom_base_addr_gp
       ,boot_in_debug : 1
-      ,default       : "inv"
+      ,default       : -1
       };
   `bp_aviary_derive_cfg(bp_unicore_bootrom_cfg_p
                         ,bp_unicore_bootrom_override_p
@@ -287,7 +287,7 @@
 
   localparam bp_proc_param_s bp_unicore_writethrough_override_p =
     '{l1_writethrough: 1
-      ,default       : "inv"
+      ,default       : -1
       };
   `bp_aviary_derive_cfg(bp_unicore_writethrough_cfg_p
                         ,bp_unicore_writethrough_override_p
@@ -296,7 +296,7 @@
 
   localparam bp_proc_param_s bp_unicore_no_l2_override_p =
     '{l2_en   : 0
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_unicore_no_l2_cfg_p
                         ,bp_unicore_no_l2_override_p
@@ -321,7 +321,7 @@
       ,dcache_assoc       : 4
       ,dcache_block_width : 256
       ,dcache_fill_width  : 256
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_medium_cfg_p
                         ,bp_unicore_l1_medium_override_p
@@ -337,7 +337,7 @@
       ,dcache_assoc       : 2
       ,dcache_block_width : 128
       ,dcache_fill_width  : 128
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_small_cfg_p
                         ,bp_unicore_l1_small_override_p
@@ -353,7 +353,7 @@
       ,dcache_assoc       : 1
       ,dcache_block_width : 512
       ,dcache_fill_width  : 512
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_tiny_cfg_p
                         ,bp_unicore_l1_tiny_override_p
@@ -369,7 +369,7 @@
       ,dcache_assoc       : 4
       ,dcache_block_width : 256
       ,dcache_fill_width  : 256
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_hetero_cfg_p
                         ,bp_unicore_l1_hetero_override_p
@@ -385,7 +385,7 @@
       ,dcache_assoc       : 4
       ,dcache_block_width : 512
       ,dcache_fill_width  : 512
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_wide_cfg_p
                         ,bp_unicore_l1_wide_override_p
@@ -397,7 +397,7 @@
       ,num_cce       : 1
       ,num_lce       : 2
       ,l1_coherent   : 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
                         ,bp_multicore_1_override_p
@@ -416,7 +416,7 @@
   localparam bp_proc_param_s bp_multicore_1_l2e_override_p =
     '{mc_y_dim   : 1
       ,num_cce   : 2
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_1_l2e_cfg_p
                         ,bp_multicore_1_l2e_override_p
@@ -426,7 +426,7 @@
   localparam bp_proc_param_s bp_multicore_1_bootrom_override_p =
     '{boot_pc        : bootrom_base_addr_gp
       ,boot_in_debug : 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_1_bootrom_cfg_p
                         ,bp_multicore_1_bootrom_override_p
@@ -435,7 +435,7 @@
 
   localparam bp_proc_param_s bp_multicore_1_no_l2_override_p =
     '{l2_en   : 0
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_1_no_l2_cfg_p
                         ,bp_multicore_1_no_l2_override_p
@@ -455,7 +455,7 @@
       ,acache_assoc       : 4
       ,acache_block_width : 256
       ,acache_fill_width  : 256
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_1_l1_medium_cfg_p
                         ,bp_multicore_1_l1_medium_override_p
@@ -475,7 +475,7 @@
       ,acache_assoc       : 2
       ,acache_block_width : 128
       ,acache_fill_width  : 128
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_1_l1_small_cfg_p
                         ,bp_multicore_1_l1_small_override_p
@@ -486,7 +486,7 @@
     '{cc_x_dim : 2
       ,num_cce : 2
       ,num_lce : 4
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_2_cfg_p
                         ,bp_multicore_2_override_p
@@ -496,7 +496,7 @@
   localparam bp_proc_param_s bp_multicore_2_l2e_override_p =
     '{mc_y_dim   : 1
       ,num_cce   : 4
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_2_l2e_cfg_p
                         ,bp_multicore_2_l2e_override_p
@@ -507,7 +507,7 @@
     '{cc_x_dim : 3
       ,num_cce : 3
       ,num_lce : 6
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_3_cfg_p
                         ,bp_multicore_3_override_p
@@ -519,7 +519,7 @@
       ,cc_y_dim: 2
       ,num_cce : 4
       ,num_lce : 8
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_4_cfg_p
                         ,bp_multicore_4_override_p
@@ -529,7 +529,7 @@
   localparam bp_proc_param_s bp_multicore_4_l2e_override_p =
     '{mc_y_dim   : 1
       ,num_cce   : 6
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_4_l2e_cfg_p
                         ,bp_multicore_4_l2e_override_p
@@ -541,7 +541,7 @@
       ,cc_y_dim: 2
       ,num_cce : 6
       ,num_lce : 12
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_6_cfg_p
                         ,bp_multicore_6_override_p
@@ -553,7 +553,7 @@
       ,cc_y_dim: 2
       ,num_cce : 8
       ,num_lce : 16
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_8_cfg_p
                         ,bp_multicore_8_override_p
@@ -565,7 +565,7 @@
       ,cc_y_dim: 3
       ,num_cce : 12
       ,num_lce : 24
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_12_cfg_p
                         ,bp_multicore_12_override_p
@@ -577,7 +577,7 @@
       ,cc_y_dim: 4
       ,num_cce : 16
       ,num_lce : 32
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_16_cfg_p
                         ,bp_multicore_16_override_p
@@ -590,7 +590,7 @@
       ,cacc_type: e_cacc_vdp
       ,sacc_type: e_sacc_vdp
       ,num_lce  : 4
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_1_accelerator_cfg_p
                         ,bp_multicore_1_accelerator_override_p
@@ -599,7 +599,7 @@
 
   localparam bp_proc_param_s bp_multicore_1_cce_ucode_override_p =
     '{cce_ucode: 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_cfg_p
                         ,bp_multicore_1_cce_ucode_override_p
@@ -609,7 +609,7 @@
   localparam bp_proc_param_s bp_multicore_1_cce_ucode_bootrom_override_p =
     '{boot_pc        : bootrom_base_addr_gp
       ,boot_in_debug : 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_bootrom_cfg_p
                         ,bp_multicore_1_cce_ucode_bootrom_override_p
@@ -627,7 +627,7 @@
 
   localparam bp_proc_param_s bp_multicore_2_cce_ucode_override_p =
     '{cce_ucode: 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_2_cce_ucode_cfg_p
                         ,bp_multicore_2_cce_ucode_override_p
@@ -636,7 +636,7 @@
 
   localparam bp_proc_param_s bp_multicore_3_cce_ucode_override_p =
     '{cce_ucode: 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_3_cce_ucode_cfg_p
                         ,bp_multicore_3_cce_ucode_override_p
@@ -645,7 +645,7 @@
 
   localparam bp_proc_param_s bp_multicore_4_cce_ucode_override_p =
     '{cce_ucode: 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_4_cce_ucode_cfg_p
                         ,bp_multicore_4_cce_ucode_override_p
@@ -654,7 +654,7 @@
 
   localparam bp_proc_param_s bp_multicore_6_cce_ucode_override_p =
     '{cce_ucode: 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_6_cce_ucode_cfg_p
                         ,bp_multicore_6_cce_ucode_override_p
@@ -663,7 +663,7 @@
 
   localparam bp_proc_param_s bp_multicore_8_cce_ucode_override_p =
     '{cce_ucode: 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_8_cce_ucode_cfg_p
                         ,bp_multicore_8_cce_ucode_override_p
@@ -672,7 +672,7 @@
 
   localparam bp_proc_param_s bp_multicore_12_cce_ucode_override_p =
     '{cce_ucode: 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_12_cce_ucode_cfg_p
                         ,bp_multicore_12_cce_ucode_override_p
@@ -681,7 +681,7 @@
 
   localparam bp_proc_param_s bp_multicore_16_cce_ucode_override_p =
     '{cce_ucode: 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_16_cce_ucode_cfg_p
                         ,bp_multicore_16_cce_ucode_override_p
@@ -691,7 +691,7 @@
   // Half core configs
   localparam bp_proc_param_s bp_unicore_half_override_p =
     '{num_lce  : 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_unicore_half_cfg_p
                         ,bp_unicore_half_override_p
@@ -700,7 +700,7 @@
 
   localparam bp_proc_param_s bp_multicore_half_override_p =
     '{num_lce  : 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_half_cfg_p
                         ,bp_multicore_half_override_p
@@ -709,7 +709,7 @@
 
   localparam bp_proc_param_s bp_multicore_cce_ucode_half_override_p =
     '{num_lce  : 1
-      ,default : "inv"
+      ,default : -1
       };
   `bp_aviary_derive_cfg(bp_multicore_cce_ucode_half_cfg_p
                         ,bp_multicore_cce_ucode_half_override_p

@@ -115,8 +115,14 @@ module bp_be_issue_queue
     ,.r_addr_i(rptr_r[0+:ptr_width_lp])
     ,.r_data_o(fe_queue_cast_o)
     );
-  assign fe_queue_v_o     = ~roll & ~empty;
-  assign fe_queue_ready_o = ~clr & ~full;
+  // We drop entries on clear, which is correct behavior, anyway...
+  //   This breaks a path from BE->FE through ready
+  assign fe_queue_ready_o = ~full;
+  //assign fe_queue_ready_o = ~clr & ~full;
+  // Similarly, we allow an errant instruction to leave from rollback. This is squashed
+  //   by a flush signal, so this saves a round trip
+  //assign fe_queue_v_o     = ~roll & ~empty;
+  assign fe_queue_v_o       = ~empty;
 
   rv64_instr_fmatype_s instr;
   assign instr = fe_queue_cast_i.msg.fetch.instr;

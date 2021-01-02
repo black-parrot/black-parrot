@@ -133,7 +133,7 @@ module bp_be_director
         e_reset : state_n = cfg_bus_cast_i.freeze ? e_reset : e_boot;
         e_boot  : state_n = fe_cmd_v_li ? e_run : e_boot;
         e_run   : state_n = cfg_bus_cast_i.freeze ? e_reset : fe_cmd_nonattaboy_v ? e_fence : e_run;
-        e_fence : state_n = suppress_iss_o ? e_fence : e_run;
+        e_fence : state_n = fe_cmd_v_o ? e_fence : e_run;
         default : state_n = e_reset;
       endcase
     end
@@ -151,7 +151,7 @@ module bp_be_director
 
   // Flush on FE cmds which are not attaboys.  Also don't flush the entire pipeline on a mispredict.
   always_comb
-    begin : fe_cmd_adapter
+    begin
       fe_cmd_li = 'b0;
       fe_cmd_v_li = 1'b0;
       flush_o = 1'b0;

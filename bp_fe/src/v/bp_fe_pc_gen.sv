@@ -19,6 +19,10 @@ module bp_fe_pc_gen
   (input                                             clk_i
    , input                                           reset_i
 
+   // Cycle -1: Fetch goes out to I$ and I-TLB
+   //   A negative branch resolution from the backend
+   //   Information is used to update the predictors and next PC.
+   //   valid-only to avoid putting pressure on the backend
    , input                                           redirect_v_i
    , input [vaddr_width_p-1:0]                       redirect_pc_i
    , input                                           redirect_br_v_i
@@ -26,18 +30,35 @@ module bp_fe_pc_gen
    , input                                           redirect_br_taken_i
    , input                                           redirect_br_ntaken_i
    , input                                           redirect_br_nonbr_i
-
+   //   The next PC to fetch
    , output logic [vaddr_width_p-1:0]                next_pc_o
-   , input                                           next_pc_yumi_i
+   , output logic                                    next_pc_ovr_o
+   //   Whether to latch data for IF1. This should be synchronized to 2-cycle I$
+   , input                                           en_if1_i
+   //   The PC currently in IF1. This information is saved in the I$, so we pipe
+   //   it in to avoid redundancy
+   , input [vaddr_width_p-1:0]                       pc_if1_i
 
-   , output logic                                    ovr_o
+   // Cycle 0: Branch predictor information is used to influence overrides
+   //   Whether to latch data for IF2. This should be synchronized to 2-cycle I$
+   , input                                           en_if2_i
+   //   The PC currently in IF2. This information is saved in the I$, so we pipe
+   //   it in to avoid redundancy
+   , input [vaddr_width_p-1:0]                       pc_if2_i
 
-   , input [instr_width_gp-1:0]                       fetch_i
+   // Cycle 1:
+   //   The fetch packet coming from the I$, the fetch instruction or exception
+   //   We output the branch metadata and PC here to send to the backend
+   , input [instr_width_gp-1:0]                      fetch_i
    , input                                           fetch_instr_v_i
    , input                                           fetch_exception_v_i
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
    , output logic [vaddr_width_p-1:0]                fetch_pc_o
 
+   // Pipeline asynchronous 
+   //   An affirmative branch resolution from the backend
+   //   Information is used to update the predictors
+   //   valid-yumi, because we may not be able to consume predictor data right away
    , input [vaddr_width_p-1:0]                       attaboy_pc_i
    , input [branch_metadata_fwd_width_p-1:0]         attaboy_br_metadata_fwd_i
    , input                                           attaboy_taken_i
@@ -61,12 +82,11 @@ module bp_fe_pc_gen
   // IF1
   /////////////////
   bp_fe_pred_s pred_if1_n, pred_if1_r;
-  logic [vaddr_width_p-1:0] pc_if1_n, pc_if1_r;
   logic ovr_ret, ovr_taken, btb_taken;
   logic [vaddr_width_p-1:0] btb_br_tgt_lo;
   logic [vaddr_width_p-1:0] ras_tgt_lo;
   logic [vaddr_width_p-1:0] br_tgt_lo;
-  wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_r + vaddr_width_p'(4);
+  wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_i + vaddr_width_p'(4);
   always_comb
     if (redirect_v_i)
         next_pc_o = redirect_pc_i;
@@ -80,7 +100,6 @@ module bp_fe_pc_gen
       begin
         next_pc_o = pc_plus4;
       end
-  assign pc_if1_n = next_pc_o;
 
   always_comb
     begin
@@ -91,13 +110,14 @@ module bp_fe_pc_gen
       pred_if1_n.ret   = ovr_ret & ~redirect_v_i;
     end
 
-  bsg_dff
-   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p))
+  bsg_dff_en
+   #(.width_p($bits(bp_fe_pred_s)))
    pred_if1_reg
     (.clk_i(clk_i)
+     ,.en_i(en_if1_i)
 
-     ,.data_i({pred_if1_n, pc_if1_n})
-     ,.data_o({pred_if1_r, pc_if1_r})
+     ,.data_i(pred_if1_n)
+     ,.data_o(pred_if1_r)
      );
 
   `declare_bp_fe_instr_scan_s(vaddr_width_p)
@@ -109,7 +129,7 @@ module bp_fe_pc_gen
   wire is_ret  = fetch_instr_v_i & scan_instr.ret;
 
   // BTB
-  wire btb_r_v_li = next_pc_yumi_i & ~ovr_taken & ~ovr_ret;
+  wire btb_r_v_li = en_if1_i & ~ovr_taken & ~ovr_ret;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb)
     | (attaboy_yumi_o & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
@@ -145,7 +165,7 @@ module bp_fe_pc_gen
      );
 
   // BHT
-  wire bht_r_v_li = next_pc_yumi_i & ~ovr_taken & ~ovr_ret;
+  wire bht_r_v_li = en_if1_i & ~ovr_taken & ~ovr_ret;
   wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_r_li =
     {next_pc_o[2+:bht_idx_width_p], pred_if1_n.ghist};
   wire bht_w_v_li =
@@ -194,7 +214,6 @@ module bp_fe_pc_gen
   // IF2
   /////////////////
   bp_fe_pred_s pred_if2_n, pred_if2_r;
-  logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
   always_comb
     begin
       if (~pred_if1_r.redir)
@@ -210,23 +229,24 @@ module bp_fe_pc_gen
         end
     end
 
-  bsg_dff
-   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p))
+  bsg_dff_en
+   #(.width_p($bits(bp_fe_pred_s)))
    pred_if2_reg
     (.clk_i(clk_i)
+     ,.en_i(en_if2_i)
 
-     ,.data_i({pred_if2_n, pc_if1_r})
-     ,.data_o({pred_if2_r, pc_if2_r})
+     ,.data_i(pred_if2_n)
+     ,.data_o(pred_if2_r)
      );
-  assign return_addr_n = pc_if2_r + vaddr_width_p'(4);
+  assign return_addr_n = pc_if2_i + vaddr_width_p'(4);
 
-  wire btb_miss_ras = ~pred_if1_r.btb | (pc_if1_r != ras_tgt_lo);
-  wire btb_miss_br  = ~pred_if1_r.btb | (pc_if1_r != br_tgt_lo);
-  assign ovr_ret    = btb_miss_ras & is_ret;
-  assign ovr_taken  = btb_miss_br & ((is_br & pred_if1_r.bht[1]) | is_jal);
-  assign ovr_o      = ovr_taken | ovr_ret;
-  assign br_tgt_lo  = pc_if2_r + scan_instr.imm;
-  assign fetch_pc_o = pc_if2_r;
+  wire btb_miss_ras    = ~pred_if1_r.btb | (pc_if1_i != ras_tgt_lo);
+  wire btb_miss_br     = ~pred_if1_r.btb | (pc_if1_i != br_tgt_lo);
+  assign ovr_ret       = btb_miss_ras & is_ret;
+  assign ovr_taken     = btb_miss_br & ((is_br & pred_if1_r.bht[1]) | is_jal);
+  assign next_pc_ovr_o = ovr_taken | ovr_ret;
+  assign br_tgt_lo     = pc_if2_i + scan_instr.imm;
+  assign fetch_pc_o    = pc_if2_i;
 
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
@@ -237,9 +257,9 @@ module bp_fe_pc_gen
           ,src_ret : pred_if2_r.ret
           ,ghist   : pred_if2_r.ghist
           ,bht_val : pred_if2_r.bht
-          ,btb_tag : pc_if2_r[2+btb_idx_width_p+:btb_tag_width_p]
-          ,btb_idx : pc_if2_r[2+:btb_idx_width_p]
-          ,bht_idx : pc_if2_r[2+:bht_idx_width_p]
+          ,btb_tag : pc_if2_i[2+btb_idx_width_p+:btb_tag_width_p]
+          ,btb_idx : pc_if2_i[2+:btb_idx_width_p]
+          ,bht_idx : pc_if2_i[2+:bht_idx_width_p]
           ,is_br   : is_br
           ,is_jal  : is_jal
           ,is_jalr : is_jalr
@@ -256,8 +276,9 @@ module bp_fe_pc_gen
      ,.scan_o(scan_instr)
      );
 
+  /////////////////////
   // Global history
-  //
+  /////////////////////
   wire ghistory_w_v_li = is_br | redirect_br_v_i;
   assign ghistory_n = redirect_br_v_i
     ? redirect_br_metadata_fwd.ghist

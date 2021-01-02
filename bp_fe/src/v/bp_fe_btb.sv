@@ -148,8 +148,8 @@ module bp_fe_btb
      ,.data_o(tag_mem_data_bypass_lo)
      );
 
-  assign br_tgt_v_o   = r_v_r & tag_mem_data_bypass_lo.v & (tag_mem_data_bypass_lo.tag == r_tag_r);
-  assign br_tgt_jmp_o = r_v_r & tag_mem_data_bypass_lo.v & tag_mem_data_bypass_lo.jmp;
+  assign br_tgt_v_o   = tag_mem_data_bypass_lo.v & (tag_mem_data_bypass_lo.tag == r_tag_r);
+  assign br_tgt_jmp_o = tag_mem_data_bypass_lo.v & tag_mem_data_bypass_lo.jmp;
   assign br_tgt_o     = tag_mem_data_bypass_lo.tgt;
 
 
