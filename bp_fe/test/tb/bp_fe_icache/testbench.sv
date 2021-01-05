@@ -1,12 +1,8 @@
 module testbench
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
-  import bp_common_cfg_link_pkg::*;
   import bp_fe_pkg::*;
-  import bp_be_dcache_pkg::*;
-  import bp_fe_icache_pkg::*;
   import bp_me_pkg::*;
-  import bp_cce_pkg::*;
   #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)

@@ -81,10 +81,7 @@
 
 module bp_be_dcache
  import bp_common_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- import bp_be_dcache_pkg::*;
- import bp_be_hardfloat_pkg::*;
  import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)

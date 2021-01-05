@@ -5,9 +5,7 @@ module bp_unicore
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_fe_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_me_pkg::*;
- import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -483,7 +481,7 @@ module bp_unicore
   wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
   wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
   wire is_io_cmd           = (local_cmd_li & (device_cmd_li inside {boot_dev_gp, host_dev_gp})) | is_other_domain;
-  wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
+  wire is_cache_cmd        = (~local_cmd_li & ~is_other_domain) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_cache_cmd;
 
   assign cfg_cmd_v_li      = is_cfg_cmd   & |cmd_fifo_yumi_li;

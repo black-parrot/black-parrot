@@ -17,9 +17,8 @@
  */
 
 module bp_cce_alu
-  import bp_cce_pkg::*;
-  #(parameter width_p = "inv"
-  )
+  import bp_me_pkg::*;
+  #(parameter width_p = "inv")
   (input [width_p-1:0]                       opd_a_i
    , input [width_p-1:0]                     opd_b_i
    , input bp_cce_inst_alu_op_e              alu_op_i

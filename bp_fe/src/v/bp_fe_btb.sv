@@ -14,7 +14,6 @@
 
 module bp_fe_btb
  import bp_fe_pkg::*;
- import bp_common_rv64_pkg::*;
  #(parameter vaddr_width_p     = "inv"
    , parameter btb_tag_width_p = "inv"
    , parameter btb_idx_width_p = "inv"

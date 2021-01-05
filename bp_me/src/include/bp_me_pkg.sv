@@ -1,20 +1,21 @@
-/**
+/*
+ * bp_me_pkg.svh
  *
- * Name:
- *   bp_cce_pkg.v
- *
- * Description:
+ * Contains the interface structures used for communicating between the CCE and Memory.
  *
  */
 
-package bp_cce_pkg;
+package bp_me_pkg;
 
   import bp_common_pkg::*;
-  import bp_me_pkg::*;
 
+  `include "bp_mem_wormhole.svh"
   `include "bp_cce_inst.svh"
 
   `define bp_cce_mode_bits $bits(bp_cce_mode_e)
+
+  localparam mem_cmd_payload_mask_gp  = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr);
+  localparam mem_resp_payload_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd);
 
   // Miss Status Handling Register Struct
   // This struct tracks the information required to process an LCE request
@@ -49,4 +50,5 @@ package bp_cce_pkg;
   `define bp_cce_dir_entry_width(tag_width_mp) \
     ($bits(bp_coh_states_e)+tag_width_mp)
 
-endpackage : bp_cce_pkg
+endpackage : bp_me_pkg
+

@@ -1,7 +1,6 @@
 
 module bp_mem_to_dram
 
-  import bp_cce_pkg::*;
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;

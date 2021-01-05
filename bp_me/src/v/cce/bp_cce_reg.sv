@@ -10,9 +10,7 @@
 module bp_cce_reg
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
-  import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  import bp_common_cfg_link_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
