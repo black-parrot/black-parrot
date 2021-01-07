@@ -26,18 +26,16 @@ Adding a new test to BlackParrot is easy. Simply add the new test C file in bp_c
 To add a new test suite, add a submodule containing the suite to bp_common/test/src. This submodule should have a makefile at the toplevel to build each program in the directory with a .riscv extension. In bp_common/test/Makefile.tests, add a call to submodule_test_template and the submodule will automatically sync and build with make -C bp_common/test <suite name>. 
 
 ## Building a Checkpoint Test
-BlackParrot can use Dromajo to generate checkpoints for certain tests. It runs the test on Dromajo for a certain number of instructions and then generates a memory image and a nbf file which contains the internal architectural state of the core(PC, registers, CSRs, privilege mode, ...). To create the checkpoint simply make sure that the target test is already built in the `bp_common/test/mem` directory and run `make <test>.dromajo MAXINSN=<n>` which will generate the files under the `<test>.dromajo.<n>` name. You can also specify the memory size of the image with `MEMSIZE=<k in MB>`. Default value is 1MB which should be enough for the small tests.
+BlackParrot can use Dromajo to generate checkpoints for certain tests. It runs the test on Dromajo for a certain number of instructions and then generates a memory image and a bootrom image which loads the internal architectural state of the cores(PC, registers, CSRs, privilege mode, ...). We use the `sim_sample` target to create a checkpoint at `SAMPLE_START_P=<n>` for RTL simulation. We have to run it with `NBF_CONFIG_P=1` to load the processor configuration using the nbf loader and also use a bootrom configuration to load the internal state of the cores.
 
-To run the RTL simulation from the checkpoint, we have to run it with `PRELOAD_MEM_P=1 LOAD_NBF_P=1`. The former preloads the memory from the `.mem` file instead of using the nbf loader, and the latter loads the rest of state into the cores through the nbf loader.
+Optionally we can use `PRELOAD_MEM_P=1` to preload the memory image instead of writing it using the nbf loader and `SAMPLE_MEMSIZE=<k in MB>` to specify the size of memory image(default is 128MB).
+
 ### Example:
-    cd <TOP>/bp_common/test
-    make demos
-    make bs.dromajo MAXINSN=5000
     cd <TOP>/bp_top/syn
-    make build.v sim.v PROG=bs.dromajo.5000 PRELOAD_MEM_P=1 LOAD_NBF_P=1
+    make build.v sim_sample.v PROG=bubblesort_demo CFG=e_bp_unicore_bootrom_cfg NBF_CONFIG_P=1 PRELOAD_MEM_P=1 SAMPLE_START_P=1000
 
 ## Cosimulation
-BlackParrot also uses Dromajo to verify the correct execution of the program. It is done through comparing the commit information with the ideal C model in Dromajo using DPI calls in RTL in simulation runtime. To enable cosimulation simply run the RTL simulation  with `COSIM_P=1` flag.
+BlackParrot also uses Dromajo to verify the correct execution of the program. It is done through comparing the commit information with the ideal C model in Dromajo using DPI calls in RTL in simulation runtime. To enable cosimulation simply run the RTL simulation  with `COSIM_P=1` flag. If the program is a checkpoint also add the `CHECKPOINT_P=1` flag.
 
 The DPI calls which are used in the nonsynth cosim module are listed below. `init_dromajo` initializes a Dromajo model instance with a config file which includes pointers to Dromajo checkpoint files, and is called once at the beginning of the simulation. `dromajo_step` is called whenever we commit an instruction in RTL, and it compares the commit information with Dromajo and prints an error message if they diverge. Finally `dromajo_trap` is used to notify Dromajo about an interrupt event in RTL so the C model can follow the same program flow, because the C model cannot precisely predict interrupts beforehand due to their asynchronous nature.
 
@@ -45,7 +43,14 @@ The DPI calls which are used in the nonsynth cosim module are listed below. `ini
 * void dromajo_step(int hart_id, uint64_t pc, uint32_t insn, uint64_t wdata);
 * void dromajo_trap(int hart_id, uint64_t cause);
 
-**Note:** Currently cosimulation only works with the single-core system.
+Dromajo can also be used to as a standalone RISC-V simulator using the command: `dromajo --host <path_to_program_elf>`
+
+## Parallel Cosimulation
+Tests can be broken into multiple checkpoints to be simulated in parallel in order to reduce their overral cosimulation time using the `run_psample` target. A bootrom configuration should be used to load the internal state of the cores.
+
+### Example:
+    cd <TOP>/bp_top/syn
+    make -j5 build.v run_psample.v CFG=e_bp_unicore_bootrom_cfg PROG=bubblesort_demo COSIM_P=1 PRELOAD_MEM_P=1 SAMPLE_INSTR_P=5000
 
 ## Test Libraries
 ### libperch
