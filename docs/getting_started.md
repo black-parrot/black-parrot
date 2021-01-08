@@ -59,6 +59,7 @@ Each testbench supports a set of actions which act upon that specific testbench.
   - build_cov (builds with line+toggle coverage enabled)
 - sim (runs a single test)
   - sim_dump (dumps a waveform)
+  - sim_sample (creates and runs a single checkpoint from a test)
 - blood (generates bloodgraph based on stall information; you must build and run with CORE_PROFILE_P=1)
 - wave (opens a waveform viewer for the dump file, either GTKWave or Synopsys DVE)
 - check_design (checks for DC elaborability, which is a proxy for synthesizability)
@@ -80,15 +81,16 @@ BlackParrot supports these tools for simulation and design checking. We welcome 
 NOTE: Verilator is the free, open-source tool used to evaluate BlackParrot.  VCS and DC are used for simulation and synthesis. If you wish to use these tools, set up the appropriate environment variables in Makefile.common
 
 ### Supported Programs
-The set of programs built by the make progs target can be found in bp_common/test/Makefile.frag. More details about BlackParrot software can be found in the [Software Developer Guide](software_guide.md).
+More details about BlackParrot software can be found in the [Software Developer Guide](software_guide.md).
 Notably, BlackParrot has been tested with:
 - riscv_tests (a set of unit tests for RISC-V functionality)
 - BEEBS (Embedded core test suite)
 - Coremark (Standard benchmark for core performance)
-- demos (one-off tests which are used to test various aspects of the system)
+- bp_tests (one-off tests which are used to test various aspects of the system)
 - spec2000, requires a copy of the proprietary spec2000 benchmark suite
+- Linux (A finite test of RISC-V Linux+BusyBox boot)
 
-Each program belongs to a test suite. The full suite list can be found in bp_common/test/Makefile.frag
+Each program belongs to a test suite. The list of supported programs for each suite can be found in bp_top/test/tb/bp_tethered/Makefile.testlist. `make progs` builds the bp_tests, riscv_tests, beebs, and coremark suites alongside the lipperch firmware.
 
 ### Other flags
 - COSIM\_P: Run with Dromajo-based cosimulation
