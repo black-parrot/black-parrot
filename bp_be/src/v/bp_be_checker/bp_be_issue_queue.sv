@@ -155,6 +155,7 @@ module bp_be_issue_queue
       issue_pkt_li.mem_v = instr.opcode inside {`RV64_FLOAD_OP, `RV64_FSTORE_OP
                                                 ,`RV64_LOAD_OP, `RV64_STORE_OP
                                                 ,`RV64_AMO_OP, `RV64_SYSTEM_OP
+                                                ,`RV64_MISC_MEM_OP
                                                 };
       issue_pkt_li.fence_v = instr inside {`RV64_FENCE, `RV64_FENCE_I, `RV64_SFENCE_VMA};
       issue_pkt_li.long_v = instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
