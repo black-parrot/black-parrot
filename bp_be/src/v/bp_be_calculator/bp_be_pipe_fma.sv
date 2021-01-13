@@ -180,7 +180,7 @@ module bp_be_pipe_fma
 
   assign fma_sp2dp_final = '{sign  : fma_sp_final.sign
                              ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                             ,fract: fma_sp_final.fract << (dp_sig_width_gp-sp_sig_width_gp)
+                             ,fract: {fma_sp_final.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                              };
 
   assign fma_result = '{sp_not_dp: decode.ops_v, rec: decode.ops_v ? fma_sp2dp_final : fma_dp_final};

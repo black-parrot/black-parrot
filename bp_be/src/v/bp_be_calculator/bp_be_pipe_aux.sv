@@ -335,7 +335,7 @@ module bp_be_pipe_aux
 
   assign d2s2d_final = '{sign  : d2s_round.sign
                          ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                         ,fract: d2s_round.fract << (dp_sig_width_gp-sp_sig_width_gp)
+                         ,fract: {d2s_round.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                          };
 
   // SP->DP conversion is a NOP, except for canonicalizing NaNs
