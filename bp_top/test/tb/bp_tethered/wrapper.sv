@@ -159,7 +159,7 @@ module wrapper
          ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
 
          ,.mem_resp_i(mem_resp_i)
-         ,.mem_resp_v_i(mem_resp_v_i & mem_resp_ready_lo)
+         ,.mem_resp_v_i(mem_resp_v_i)
          ,.mem_resp_ready_o(mem_resp_ready_lo)
 
          ,.cmd_link_i(dram_cmd_link_lo)
@@ -243,7 +243,7 @@ module wrapper
          ,.reset_i(reset_i)
 
          ,.in_msg_i(mem_resp_i)
-         ,.in_msg_v_i(mem_resp_ready_lo & mem_resp_v_i)
+         ,.in_msg_v_i(mem_resp_v_i)
          ,.in_msg_ready_and_o(mem_resp_ready_lo)
 
          ,.out_msg_header_o(mem_resp_header_li)
