@@ -241,7 +241,7 @@ module testbench
 
        ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-       ,.npc_i(director.npc_r)
+       ,.npc_i(calculator.pipe_sys.csr.apc_r)
        ,.instret_i(calculator.commit_pkt.instret)
        );
 
