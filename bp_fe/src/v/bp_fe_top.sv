@@ -339,7 +339,7 @@ module bp_fe_top
      ,.reset_i(reset_i)
 
      ,.set_i(v_if1_r & tv_we_lo)
-     ,.clear_i(next_pc_ovr_lo | fetch_exception_v_li | redirect_v_li)
+     ,.clear_i(next_pc_ovr_lo | fetch_exception_v_li | cmd_nonattaboy_v)
      ,.data_o(v_if2_r)
      );
 
