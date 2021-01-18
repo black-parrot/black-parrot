@@ -287,6 +287,7 @@ module testbench
                  ? calculator.pipe_sys.csr.scause_li
                  : calculator.pipe_sys.csr.mcause_li
                  )
+       ,.mstatus_i(calculator.pipe_sys.csr.mstatus_li)
        ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
        );
 

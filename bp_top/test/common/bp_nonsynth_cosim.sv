@@ -42,6 +42,7 @@ module bp_nonsynth_cosim
 
     , input                                   trap_v_i
     , input [dword_width_p-1:0]               cause_i
+    , input [dword_width_p-1:0]               mstatus_i
     , input                                   is_debug_mode_i
     );
 
@@ -49,7 +50,8 @@ module bp_nonsynth_cosim
   import "DPI-C" context function bit  dromajo_step(int hartid,
                                                     longint pc,
                                                     int insn,
-                                                    longint wdata);
+                                                    longint wdata,
+                                                    longint mstatus);
   import "DPI-C" context function void dromajo_trap(int hartid, longint cause);
 
   import "DPI-C" context function void set_finish(int hartid);
@@ -72,22 +74,22 @@ module bp_nonsynth_cosim
   logic                     commit_ird_w_v_r;
   logic                     commit_frd_w_v_r;
   logic                     trap_v_r;
-  logic [dword_width_p-1:0] cause_r;
+  logic [dword_width_p-1:0] cause_r, mstatus_r;
   logic                     is_debug_mode_r;
   logic commit_fifo_v_lo, commit_fifo_yumi_li;
   wire commit_ird_w_v_li = commit_v_i & (decode_r.irf_w_v | decode_r.late_iwb_v);
   wire commit_frd_w_v_li = commit_v_i & (decode_r.frf_w_v | decode_r.late_fwb_v);
   bsg_fifo_1r1w_small
-   #(.width_p(2+vaddr_width_p+instr_width_p+2+dword_width_p+1), .els_p(16))
+   #(.width_p(2+vaddr_width_p+instr_width_p+2+2*dword_width_p+1), .els_p(16))
    commit_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({commit_v_i, commit_pc_i, commit_instr_i, commit_ird_w_v_li, commit_frd_w_v_li, trap_v_i, cause_i, is_debug_mode_i})
+     ,.data_i({commit_v_i, commit_pc_i, commit_instr_i, commit_ird_w_v_li, commit_frd_w_v_li, trap_v_i, cause_i, mstatus_i, is_debug_mode_i})
      ,.v_i(commit_v_i | trap_v_i)
      ,.ready_o()
 
-     ,.data_o({commit_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, trap_v_r, cause_r, is_debug_mode_r})
+     ,.data_o({commit_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, trap_v_r, cause_r, mstatus_r, is_debug_mode_r})
      ,.v_o(commit_fifo_v_lo)
      ,.yumi_i(commit_fifo_yumi_li)
      );
@@ -182,7 +184,7 @@ module bp_nonsynth_cosim
         dromajo_trap(mhartid_i, cause_r);
       end
     else if (cosim_en_i & commit_fifo_yumi_li & commit_v_r & ~is_debug_mode_r & commit_pc_r != '0)
-      if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, frd_fifo_yumi_li ? frd_raw_li : iwb_data_r))
+      if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, frd_fifo_yumi_li ? frd_raw_li : iwb_data_r, mstatus_r))
         begin
           $display("COSIM_FAIL");
           $finish();
