@@ -1,10 +1,8 @@
 
 module bp_be_rec_to_fp
  import bp_common_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_be_hardfloat_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    )
@@ -28,7 +26,7 @@ module bp_be_rec_to_fp
 
   assign dp2sp_rec = '{sign  : dp_rec.sign
                        ,exp  : special ? {exp_code, adjusted_exp[0+:sp_exp_width_gp-2]} : adjusted_exp
-                       ,fract: dp_rec.fract >> (dp_sig_width_gp-sp_sig_width_gp)
+                       ,fract: dp_rec.fract[dp_sig_width_gp-2:dp_sig_width_gp-sp_sig_width_gp]
                        };
 
   logic [word_width_p-1:0] sp_raw_lo;

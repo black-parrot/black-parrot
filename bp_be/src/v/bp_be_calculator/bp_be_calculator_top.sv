@@ -15,7 +15,6 @@
 module bp_be_calculator_top
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -468,15 +467,15 @@ module bp_be_calculator_top
           exc_stage_n[0].exc.ecall              |= reservation_n.decode.ecall;
 
           exc_stage_n[1].exc.dtlb_miss          |= pipe_mem_dtlb_miss_lo;
+          exc_stage_n[1].exc.load_misaligned    |= pipe_mem_load_misaligned_lo;
+          exc_stage_n[1].exc.load_access_fault  |= pipe_mem_load_access_fault_lo;
+          exc_stage_n[1].exc.load_page_fault    |= pipe_mem_load_page_fault_lo;
+          exc_stage_n[1].exc.store_misaligned   |= pipe_mem_store_misaligned_lo;
+          exc_stage_n[1].exc.store_access_fault |= pipe_mem_store_access_fault_lo;
+          exc_stage_n[1].exc.store_page_fault   |= pipe_mem_store_page_fault_lo;
 
           exc_stage_n[2].exc.dcache_miss        |= pipe_mem_dcache_miss_lo;
           exc_stage_n[2].exc.fencei_v           |= pipe_mem_fencei_lo;
-          exc_stage_n[2].exc.load_misaligned    |= pipe_mem_load_misaligned_lo;
-          exc_stage_n[2].exc.load_access_fault  |= pipe_mem_load_access_fault_lo;
-          exc_stage_n[2].exc.load_page_fault    |= pipe_mem_load_page_fault_lo;
-          exc_stage_n[2].exc.store_misaligned   |= pipe_mem_store_misaligned_lo;
-          exc_stage_n[2].exc.store_access_fault |= pipe_mem_store_access_fault_lo;
-          exc_stage_n[2].exc.store_page_fault   |= pipe_mem_store_page_fault_lo;
     end
 
   // Exception pipeline

@@ -2,9 +2,7 @@
 module bp_io_link_to_lce
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
- import bp_common_cfg_link_pkg::*;
  import bsg_wormhole_router_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg

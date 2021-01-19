@@ -207,6 +207,7 @@ typedef struct packed
 {
   logic [31:3] hpm;
   logic        ir;
+  logic        tm;
   logic        cy;
 }  rv64_scounteren_s;
 
@@ -990,7 +991,7 @@ typedef struct packed
     ,stopcount: 1'b0                  \
     ,stoptime : 1'b0                  \
     ,cause    : data_comp_mp.cause    \
-    ,mprven   : 1'b1                  \
+    ,mprven   : 1'b0                  \
     ,nmip     : 1'b0                  \
     ,step     : data_comp_mp.step     \
     ,prv      : data_comp_mp.prv      \

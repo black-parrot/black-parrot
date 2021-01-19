@@ -13,7 +13,7 @@
  */
 
 module bp_cce_inst_stall
-  import bp_cce_pkg::*;
+  import bp_me_pkg::*;
   #()
   (input bp_cce_inst_decoded_s                   decoded_inst_i
 

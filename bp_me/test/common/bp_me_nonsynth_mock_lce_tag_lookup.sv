@@ -6,7 +6,6 @@
 
 module bp_me_nonsynth_mock_lce_tag_lookup
   import bp_common_pkg::*;
-  import bp_cce_pkg::*;
   #(parameter assoc_p="inv"
     , parameter ptag_width_p="inv"
     , localparam dir_entry_width_lp=`bp_cce_dir_entry_width(ptag_width_p)

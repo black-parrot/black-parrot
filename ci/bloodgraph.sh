@@ -6,9 +6,7 @@ N=${1:-1}
 
 # Bash array to iterate over for configurations
 cfgs=(\
-    "e_bp_multicore_1_cce_ucode_bootrom_cfg"
-    "e_bp_multicore_1_bootrom_cfg"
-    "e_bp_unicore_bootrom_cfg"
+    "e_bp_default_cfg"
     )
 
 # The base command to append the configuration to
@@ -30,7 +28,7 @@ grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
 
 num_graphs=$(find -name "*blood_detailed.png" | wc -l)
 
-if [[ $num_graphs -eq 3 ]]
+if [[ $num_graphs -eq 1 ]]
 then
   echo "[CI CHECK] $0: PASSED" && exit 0
 else

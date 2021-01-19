@@ -1,10 +1,7 @@
 module wrapper
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
-  import bp_common_cfg_link_pkg::*;
   import bp_fe_pkg::*;
-  import bp_fe_icache_pkg::*;
-  import bp_cce_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
   , parameter uce_p = 1
@@ -196,10 +193,11 @@ module wrapper
     ,.ptag_i(rolly_ptag_r)
     ,.ptag_v_i(ptag_v_r)
     ,.uncached_i(uncached_r)
-    ,.poison_i(poison_li)
+    ,.poison_tl_i(poison_li)
 
     ,.data_o(data_o)
     ,.data_v_o(data_v_o)
+    ,.poison_tv_i(1'b0)
 
     ,.cache_req_o(cache_req_lo)
     ,.cache_req_v_o(cache_req_v_lo)

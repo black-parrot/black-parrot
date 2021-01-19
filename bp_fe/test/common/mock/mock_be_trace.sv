@@ -1,7 +1,6 @@
 
 module mock_be_trace
  import bp_common_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_first_pc_p="inv"
    , parameter vaddr_width_p="inv"

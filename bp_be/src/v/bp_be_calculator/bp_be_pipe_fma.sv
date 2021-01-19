@@ -14,10 +14,7 @@
 module bp_be_pipe_fma
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- import bp_be_hardfloat_pkg::*;
- import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
@@ -183,7 +180,7 @@ module bp_be_pipe_fma
 
   assign fma_sp2dp_final = '{sign  : fma_sp_final.sign
                              ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                             ,fract: fma_sp_final.fract << (dp_sig_width_gp-sp_sig_width_gp)
+                             ,fract: {fma_sp_final.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                              };
 
   assign fma_result = '{sp_not_dp: decode.ops_v, rec: decode.ops_v ? fma_sp2dp_final : fma_dp_final};

@@ -2,9 +2,7 @@
 module bp_be_pipe_long
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- import bp_be_hardfloat_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
@@ -182,7 +180,7 @@ module bp_be_pipe_long
 
   assign fdivsqrt_sp2dp_final = '{sign  : fdivsqrt_sp_final.sign
                                   ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                                  ,fract: fdivsqrt_sp_final.fract << (dp_sig_width_gp-sp_sig_width_gp)
+                                  ,fract: {fdivsqrt_sp_final.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                                   };
 
   logic opw_v_r, ops_v_r;

@@ -12,10 +12,7 @@
 module bp_be_pipe_aux
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- import bp_be_hardfloat_pkg::*;
- import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
@@ -338,7 +335,7 @@ module bp_be_pipe_aux
 
   assign d2s2d_final = '{sign  : d2s_round.sign
                          ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                         ,fract: d2s_round.fract << (dp_sig_width_gp-sp_sig_width_gp)
+                         ,fract: {d2s_round.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                          };
 
   // SP->DP conversion is a NOP, except for canonicalizing NaNs

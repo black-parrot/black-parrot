@@ -19,8 +19,6 @@
 module bp_cce_fsm
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
-  import bp_cce_pkg::*;
-  import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -861,7 +859,7 @@ module bp_cce_fsm
                        | (lce_req.header.msg_type.req == e_bedrock_req_uc_rd)) begin
 
             // handshaking
-            mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~mem_credits_empty;
+            mem_cmd_v_o = mem_cmd_ready_i & lce_req_v_i & ~mem_credits_empty;
             lce_req_yumi_o = mem_cmd_v_o;
 
             // Uncached Store
@@ -1450,8 +1448,8 @@ module bp_cce_fsm
             if (~pending_busy) begin
               // Mem Data Cmd needs to write pending bit, so only send if Mem Data Resp / LCE Data Cmd is
               // not writing the pending bit
-              mem_cmd_v_o = lce_resp_v_i & mem_cmd_ready_i;
-              lce_resp_yumi_o = lce_resp_v_i & mem_cmd_ready_i;
+              mem_cmd_v_o = lce_resp_v_i & mem_cmd_ready_i & ~mem_credits_empty;
+              lce_resp_yumi_o = mem_cmd_v_o;
 
               mem_cmd.header.msg_type.mem = e_bedrock_mem_wr;
               mem_cmd.header.addr = (lce_resp.header.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
@@ -1485,7 +1483,7 @@ module bp_cce_fsm
       // writes pending bit
       e_uc_coherent_mem_cmd: begin
         if (~pending_busy) begin
-          mem_cmd_v_o = mem_cmd_ready_i & lce_req_v_i;
+          mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i & ~mem_credits_empty;
           // set message type based on request message type
           unique case (lce_req.header.msg_type.req)
             e_bedrock_req_uc_rd: mem_cmd.header.msg_type = e_bedrock_mem_uc_rd;

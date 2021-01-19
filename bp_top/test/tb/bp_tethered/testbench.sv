@@ -10,10 +10,7 @@ module testbench
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_common_rv64_pkg::*;
- import bp_cce_pkg::*;
  import bp_me_pkg::*;
- import bp_common_cfg_link_pkg::*;
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -244,7 +241,7 @@ module testbench
 
        ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-       ,.npc_i(director.npc_r)
+       ,.npc_i(calculator.pipe_sys.csr.apc_r)
        ,.instret_i(calculator.commit_pkt.instret)
        );
 
@@ -357,7 +354,7 @@ module testbench
        ,.v_tl_r(v_tl_r)
 
        ,.v_tv_r(v_tv_r)
-       ,.addr_tv_r(addr_tv_r)
+       ,.addr_tv_r(paddr_tv_r)
        ,.lr_miss_tv(1'b0)
        ,.sc_op_tv_r(1'b0)
        ,.sc_success(1'b0)
@@ -401,17 +398,17 @@ module testbench
 
        ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-       ,.itlb_clear_i(fe.itlb.flush_i)
-       ,.itlb_fill_v_i(fe.itlb.v_i & fe.itlb.w_i)
-       ,.itlb_vtag_i(fe.itlb.vtag_i)
-       ,.itlb_entry_i(fe.itlb.entry_i)
-       ,.itlb_cam_r_v_i(fe.itlb.cam.r_v_i)
+       ,.itlb_clear_i(fe.immu.tlb.flush_i)
+       ,.itlb_fill_v_i(fe.immu.tlb.v_i & fe.immu.tlb.w_i)
+       ,.itlb_vtag_i(fe.immu.tlb.vtag_i)
+       ,.itlb_entry_i(fe.immu.tlb.entry_i)
+       ,.itlb_cam_r_v_i(fe.immu.tlb.cam.r_v_i)
 
-       ,.dtlb_clear_i(be.calculator.pipe_mem.dtlb.flush_i)
-       ,.dtlb_fill_v_i(be.calculator.pipe_mem.dtlb.v_i & be.calculator.pipe_mem.dtlb.w_i)
-       ,.dtlb_vtag_i(be.calculator.pipe_mem.dtlb.vtag_i)
-       ,.dtlb_entry_i(be.calculator.pipe_mem.dtlb.entry_i)
-       ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dtlb.cam.r_v_i)
+       ,.dtlb_clear_i(be.calculator.pipe_mem.dmmu.tlb.flush_i)
+       ,.dtlb_fill_v_i(be.calculator.pipe_mem.dmmu.tlb.v_i & be.calculator.pipe_mem.dmmu.tlb.w_i)
+       ,.dtlb_vtag_i(be.calculator.pipe_mem.dmmu.tlb.vtag_i)
+       ,.dtlb_entry_i(be.calculator.pipe_mem.dmmu.tlb.entry_i)
+       ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dmmu.tlb.cam.r_v_i)
        );
 
   bind bp_core_minimal
@@ -424,17 +421,17 @@ module testbench
 
        ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-       ,.fe_wait_stall(fe.pc_gen.is_wait)
-       ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)
+       ,.fe_wait_stall(fe.is_wait)
+       ,.fe_queue_stall(~fe.fe_queue_ready_i)
 
        ,.itlb_miss(fe.itlb_miss_r)
        ,.icache_miss(~fe.icache.ready_o)
-       ,.icache_rollback(fe.pc_gen.icache_miss)
+       ,.icache_rollback(fe.icache_miss)
        ,.icache_fence(fe.icache.fencei_req)
        ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
        ,.ret_override(fe.pc_gen.ovr_ret)
 
-       ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
+       ,.fe_cmd(fe.fe_cmd_yumi_o & ~fe.attaboy_v)
        ,.fe_cmd_fence(be.director.suppress_iss_o)
 
        ,.mispredict(be.director.npc_mismatch_v)
