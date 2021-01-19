@@ -57,6 +57,7 @@ module bp_be_csr
   bp_cfg_bus_s cfg_bus_cast_i;
   bp_be_csr_cmd_s csr_cmd;
   bp_be_exception_s exception;
+  rv64_instr_s exception_instr;
 
   bp_be_wb_pkt_s wb_pkt_cast_i;
   bp_be_commit_pkt_s commit_pkt_cast_o;
@@ -65,6 +66,7 @@ module bp_be_csr
   assign cfg_bus_cast_i = cfg_bus_i;
   assign csr_cmd = csr_cmd_i;
   assign exception = exception_i;
+  assign exception_instr = exception_instr_i;
   assign commit_pkt_o = commit_pkt_cast_o;
   assign trans_info_o = trans_info_cast_o;
 
@@ -661,7 +663,16 @@ module bp_be_csr
       fcsr_li.fflags |= fflags_acc_i;
 
       // Set FS to dirty if: fflags set, frf written, fcsr written
-      mstatus_li.fs |= {2{|fflags_acc_i | frf_w_v_i | (csr_cmd_v_i & (csr_cmd.csr_addr == `CSR_ADDR_FCSR))}};
+      // TODO: Should pre_decode this write, but requires multiple changes to the datapath
+      //   For now, a few comparators will do
+      mstatus_li.fs |= {2{(csr_cmd_v_i & (csr_cmd.csr_addr == `CSR_ADDR_FCSR))}}
+                       || {2{exception_v_i & exception_instr.t.rtype.opcode inside {`RV64_FLOAD_OP
+                                                                                    ,`RV64_FMADD_OP
+                                                                                    ,`RV64_FNMADD_OP
+                                                                                    ,`RV64_FMSUB_OP
+                                                                                    ,`RV64_FNMSUB_OP
+                                                                                    ,`RV64_FP_OP
+                                                                                    }}};
     end
 
   // Debug Mode masks all interrupts
