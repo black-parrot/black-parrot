@@ -216,7 +216,7 @@ CONFIG_NR_CPUS=8
 # CONFIG_HOTPLUG_CPU is not set
 CONFIG_TUNE_GENERIC=y
 # CONFIG_RISCV_ISA_C is not set
-# CONFIG_FPU is not set
+CONFIG_FPU=y
 # end of Platform type
 
 #
