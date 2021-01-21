@@ -40,6 +40,7 @@ module bp_be_pipe_mem
 
    , input [ptw_miss_pkt_width_lp-1:0]    ptw_miss_pkt_i
    , output [ptw_fill_pkt_width_lp-1:0]   ptw_fill_pkt_o
+   , output logic                         ptw_busy_o
 
    , output logic                         tlb_miss_v_o
    , output logic                         cache_miss_v_o
@@ -322,7 +323,8 @@ module bp_be_pipe_mem
   assign store_misaligned_v_o   = store_misaligned_v;
   assign load_misaligned_v_o    = load_misaligned_v;
 
-  assign ready_o                = dcache_ready_lo & ~ptw_busy;
+  assign ready_o                = dcache_ready_lo;
+  assign ptw_busy_o             = ptw_busy;
   assign early_data_o           = dcache_early_data;
   assign final_data_o           = dcache_final_data;
 
