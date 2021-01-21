@@ -664,14 +664,14 @@ module bp_be_csr
       // Set FS to dirty if: fflags set, frf written, fcsr written
       // TODO: Should pre_decode this write, but requires multiple changes to the datapath
       //   For now, a few comparators will do
-      mstatus_li.fs |= {2{(csr_cmd_v_i & (csr_cmd.csr_addr == `CSR_ADDR_FCSR))}}
-                       || {2{exception_v_i & exception_instr.t.rtype.opcode inside {`RV64_FLOAD_OP
-                                                                                    ,`RV64_FMADD_OP
-                                                                                    ,`RV64_FNMADD_OP
-                                                                                    ,`RV64_FMSUB_OP
-                                                                                    ,`RV64_FNMSUB_OP
-                                                                                    ,`RV64_FP_OP
-                                                                                    }}};
+      mstatus_li.fs |= {2{(csr_cmd_v_i & (csr_cmd.csr_addr == `CSR_ADDR_FCSR))
+                          || (exception_v_i & exception_instr.t.rtype.opcode inside {`RV64_FLOAD_OP
+                                                                                     ,`RV64_FMADD_OP
+                                                                                     ,`RV64_FNMADD_OP
+                                                                                     ,`RV64_FMSUB_OP
+                                                                                     ,`RV64_FNMSUB_OP
+                                                                                     ,`RV64_FP_OP
+                                                                                     })}};
     end
 
   // Debug Mode masks all interrupts
