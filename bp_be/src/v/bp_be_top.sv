@@ -94,8 +94,7 @@ module bp_be_top
 
   logic fpu_en_lo;
   logic fe_cmd_full_lo;
-  logic mem_ready_lo, long_ready_lo, sys_ready_lo;
-
+  logic mem_ready_lo, long_ready_lo, sys_ready_lo, ptw_busy_lo;
 
   logic flush;
   bp_be_director
@@ -138,9 +137,12 @@ module bp_be_top
      ,.mem_ready_i(mem_ready_lo)
      ,.long_ready_i(long_ready_lo)
      ,.sys_ready_i(sys_ready_lo)
+     ,.ptw_busy_i(ptw_busy_lo)
 
      ,.chk_dispatch_v_o(chk_dispatch_v)
      ,.dispatch_pkt_i(dispatch_pkt)
+     ,.iwb_pkt_i(iwb_pkt)
+     ,.fwb_pkt_i(fwb_pkt)
      );
 
   bp_be_scheduler
@@ -183,6 +185,7 @@ module bp_be_top
      ,.mem_ready_o(mem_ready_lo)
      ,.long_ready_o(long_ready_lo)
      ,.sys_ready_o(sys_ready_lo)
+     ,.ptw_busy_o(ptw_busy_lo)
 
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
 

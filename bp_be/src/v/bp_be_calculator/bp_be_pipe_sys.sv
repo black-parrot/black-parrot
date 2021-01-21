@@ -35,8 +35,7 @@ module bp_be_pipe_sys
    , input                                flush_i
 
    , output                               ready_o
-   , input                                pipe_mem_ready_i
-   , input                                pipe_long_ready_i
+   , input                                ptw_busy_i
 
    , input                                commit_v_i
    , input                                commit_queue_v_i
@@ -206,7 +205,7 @@ module bp_be_pipe_sys
      ,.fpu_en_o(fpu_en_o)
      );
 
-  assign interrupt_v_li   = interrupt_ready_lo & pipe_mem_ready_i & pipe_long_ready_i & ~commit_v_i;
+  assign interrupt_v_li   = interrupt_ready_lo & ~ptw_busy_i & ~commit_v_i;
 
   always_ff @(posedge clk_i)
     begin

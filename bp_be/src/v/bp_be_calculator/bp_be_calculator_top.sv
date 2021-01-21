@@ -47,6 +47,7 @@ module bp_be_calculator_top
   , output                                          long_ready_o
   , output                                          mem_ready_o
   , output                                          sys_ready_o
+  , output                                          ptw_busy_o
 
   , output [ptw_fill_pkt_width_lp-1:0]              ptw_fill_pkt_o
   , output [commit_pkt_width_lp-1:0]                commit_pkt_o
@@ -121,7 +122,7 @@ module bp_be_calculator_top
   logic pipe_mem_store_page_fault_lo;
 
   logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
-  logic pipe_long_idata_lo_v, pipe_long_fdata_lo_v;
+  logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
   logic [dpath_width_p-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
   rv64_fflags_s pipe_aux_fflags_lo, pipe_fma_fflags_lo;
 
@@ -255,6 +256,7 @@ module bp_be_calculator_top
 
      ,.ptw_miss_pkt_i(ptw_miss_pkt)
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
+     ,.ptw_busy_o(ptw_busy_o)
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_v_o(cache_req_v_o)
@@ -308,8 +310,7 @@ module bp_be_calculator_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.ready_o(pipe_sys_ready_lo)
-     ,.pipe_mem_ready_i(pipe_mem_ready_lo)
-     ,.pipe_long_ready_i(pipe_long_ready_lo)
+     ,.ptw_busy_i(ptw_busy_o)
 
      ,.reservation_i(reservation_r)
      ,.flush_i(flush_i)
@@ -369,9 +370,11 @@ module bp_be_calculator_top
 
      ,.iwb_pkt_o(long_iwb_pkt)
      ,.iwb_v_o(pipe_long_idata_lo_v)
+     ,.iwb_yumi_i(pipe_long_idata_lo_yumi)
 
      ,.fwb_pkt_o(long_fwb_pkt)
      ,.fwb_v_o(pipe_long_fdata_lo_v)
+     ,.fwb_yumi_i(pipe_long_fdata_lo_yumi)
      );
 
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
@@ -487,8 +490,11 @@ module bp_be_calculator_top
      ,.data_o(exc_stage_r)
      );
 
-  assign iwb_pkt_o = pipe_long_idata_lo_v ? long_iwb_pkt : comp_stage_r[4];
-  assign fwb_pkt_o = pipe_long_fdata_lo_v ? long_fwb_pkt : comp_stage_r[5];
+  assign pipe_long_idata_lo_yumi = pipe_long_idata_lo_v & ~comp_stage_r[4].ird_w_v;
+  assign pipe_long_fdata_lo_yumi = pipe_long_fdata_lo_v & ~comp_stage_r[5].frd_w_v & ~comp_stage_r[5].fflags_w_v;
+
+  assign iwb_pkt_o = pipe_long_idata_lo_yumi ? long_iwb_pkt : comp_stage_r[4];
+  assign fwb_pkt_o = pipe_long_fdata_lo_yumi ? long_fwb_pkt : comp_stage_r[5];
 
   assign mem_ready_o  = pipe_mem_ready_lo;
   assign long_ready_o = pipe_long_ready_lo;

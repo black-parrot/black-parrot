@@ -86,7 +86,7 @@ module bp_nonsynth_cosim
   logic                     instret_v_r;
   logic                     trap_v_r;
   logic [vaddr_width_p-1:0] commit_pc_r;
-  logic [instr_width_p-1:0] commit_instr_r;
+  rv64_instr_fmatype_s      commit_instr, commit_instr_r;
   logic                     commit_ird_w_v_r;
   logic                     commit_frd_w_v_r;
   logic [dword_width_p-1:0] cause_r, mstatus_r;
@@ -100,7 +100,7 @@ module bp_nonsynth_cosim
   wire [dword_width_p-1:0] cause_li = (priv_mode_i == `PRIV_MODE_M) ? mcause_i : scause_i;
   wire [dword_width_p-1:0] mstatus_li = mstatus_i;
   bsg_fifo_1r1w_small
-   #(.width_p(3+vaddr_width_p+instr_width_p+2+2*dword_width_p), .els_p(16))
+   #(.width_p(3+vaddr_width_p+instr_width_p+2+2*dword_width_p), .els_p(128))
    commit_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -114,61 +114,70 @@ module bp_nonsynth_cosim
      ,.yumi_i(commit_fifo_yumi_li)
      );
 
-  logic [reg_addr_width_p-1:0] iwb_addr_r;
-  logic [dword_width_p-1:0] iwb_data_r;
-  logic ird_fifo_v_lo, ird_fifo_yumi_li;
-  bsg_fifo_1r1w_small
-   #(.width_p(reg_addr_width_p+dword_width_p), .els_p(8))
-   ird_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  localparam rf_els_lp = 2**reg_addr_width_p;
+  logic [rf_els_lp-1:0][dword_width_p-1:0] ird_data_r;
+  bp_be_fp_reg_s [rf_els_lp-1:0] frd_data_r;
+  logic [rf_els_lp-1:0] ird_fifo_v_lo, frd_fifo_v_lo;
+  logic [rf_els_lp-1:0][dword_width_p-1:0] frd_raw_li;
 
-     ,.data_i({ird_addr_i, ird_data_i[0+:dword_width_p]})
-     ,.v_i(ird_w_v_i)
-     ,.ready_o()
+  for (genvar i = 0; i < rf_els_lp; i++)
+    begin : iwb
+      wire fill       = ird_w_v_i & (ird_addr_i == i);
+      wire deallocate = commit_ird_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
+      bsg_fifo_1r1w_small
+        #(.width_p(dword_width_p), .els_p(128))
+        ird_fifo
+         (.clk_i(clk_i)
+          ,.reset_i(reset_i)
 
-     ,.data_o({iwb_addr_r, iwb_data_r})
-     ,.v_o(ird_fifo_v_lo)
-     ,.yumi_i(ird_fifo_yumi_li)
-     );
+          ,.data_i(ird_data_i[0+:dword_width_p])
+          ,.v_i(fill)
+          ,.ready_o()
 
-  logic [reg_addr_width_p-1:0] frd_addr_r;
-  bp_be_fp_reg_s frd_data_r;
-  logic frd_fifo_v_lo, frd_fifo_yumi_li;
-  bsg_fifo_1r1w_small
-   #(.width_p(reg_addr_width_p+dpath_width_p), .els_p(8))
-   frd_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+          ,.data_o(ird_data_r[i])
+          ,.v_o(ird_fifo_v_lo[i])
+          ,.yumi_i(deallocate)
+          );
+    end
 
-     ,.data_i({frd_addr_i, frd_data_i})
-     ,.v_i(frd_w_v_i)
-     ,.ready_o()
+  for (genvar i = 0; i < rf_els_lp; i++)
+    begin : fwb
+      wire fill       = frd_w_v_i & (frd_addr_i == i);
+      wire deallocate = commit_frd_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
+      bsg_fifo_1r1w_small
+        #(.width_p(dpath_width_p), .els_p(128))
+        ird_fifo
+         (.clk_i(clk_i)
+          ,.reset_i(reset_i)
 
-     ,.data_o({frd_addr_r, frd_data_r})
-     ,.v_o(frd_fifo_v_lo)
-     ,.yumi_i(frd_fifo_yumi_li)
-     );
+          ,.data_i(frd_data_i)
+          ,.v_i(fill)
+          ,.ready_o()
 
-  // The control bits control tininess, which is fixed in RISC-V
-  wire [`floatControlWidth-1:0] control_li = `flControl_default;
+          ,.data_o(frd_data_r[i])
+          ,.v_o(frd_fifo_v_lo[i])
+          ,.yumi_i(deallocate)
+          );
 
-  logic [dword_width_p-1:0] frd_raw_li;
-  bp_be_rec_to_fp
-   #(.bp_params_p(bp_params_p))
-   debug_fp
-    (.rec_i(frd_data_r.rec)
+      // The control bits control tininess, which is fixed in RISC-V
+      wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
-     ,.raw_sp_not_dp_i(frd_data_r.sp_not_dp)
-     ,.raw_o(frd_raw_li)
-     );
+      bp_be_rec_to_fp
+       #(.bp_params_p(bp_params_p))
+       debug_fp
+        (.rec_i(frd_data_r[i].rec)
 
-  assign ird_fifo_yumi_li = ird_fifo_v_lo & commit_ird_w_v_r;
-  assign frd_fifo_yumi_li = frd_fifo_v_lo & commit_frd_w_v_r;
+         ,.raw_sp_not_dp_i(frd_data_r[i].sp_not_dp)
+         ,.raw_o(frd_raw_li[i])
+         );
+    end
+
   assign commit_fifo_yumi_li = commit_fifo_v_lo & ((~commit_ird_w_v_r & ~commit_frd_w_v_r)
-                                                   | (commit_ird_w_v_r & ird_fifo_v_lo)
-                                                   | (commit_frd_w_v_r & frd_fifo_v_lo)
+                                                   | (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr])
+                                                   | (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr])
                                                    );
+  assign commit_ird_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
+  assign commit_frd_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);
 
   logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
   bsg_counter_clear_up
@@ -204,7 +213,7 @@ module bp_nonsynth_cosim
         dromajo_trap(mhartid_i, cause_r);
       end
     else if (~commit_debug_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
-      if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, frd_fifo_yumi_li ? frd_raw_li : iwb_data_r, mstatus_r))
+      if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, commit_frd_li ? frd_raw_li[commit_instr_r.rd_addr] : ird_data_r[commit_instr_r.rd_addr], mstatus_r))
         begin
           $display("COSIM_FAIL");
           $finish();
@@ -235,10 +244,10 @@ module bp_nonsynth_cosim
     if (trace_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
       begin
         $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, instr_cnt);
-        if (ird_fifo_yumi_li)
-          $fwrite(file, "%x %x", iwb_addr_r, iwb_data_r);
-        if (frd_fifo_yumi_li)
-          $fwrite(file, "%x %x", frd_addr_r, frd_raw_li);
+        if (commit_fifo_yumi_li & commit_ird_w_v_r)
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, ird_data_r[commit_instr_r.rd_addr]);
+        if (commit_fifo_yumi_li & commit_frd_w_v_r)
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, frd_raw_li[commit_instr_r.rd_addr]);
         $fwrite(file, "\n");
       end
 
