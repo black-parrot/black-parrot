@@ -1,13 +1,14 @@
 .DEFAULT_GOAL = all
 
+SUITE = CINT2000
 BENCHMARK = 197.parser
 
 MAX_CYCLES = 1000000000
 
 BENCHMARK_OBJS = \
-analyze-linkage.o extract-links.o main.o parse.o prune.o utilities.o and.o fast-match.o \
-massage.o post-process.o read-dict.o word-file.o build-disjuncts.o idiom.o my_qsort.o \
-print.o strncasecmp.o xalloc.o raw.o
+	analyze-linkage.o extract-links.o main.o parse.o prune.o utilities.o and.o fast-match.o \
+	massage.o post-process.o read-dict.o word-file.o build-disjuncts.o idiom.o my_qsort.o \
+	print.o strncasecmp.o xalloc.o
 
 INPUT_TYPE = smred
 

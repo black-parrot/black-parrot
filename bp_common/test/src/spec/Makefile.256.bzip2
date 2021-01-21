@@ -1,11 +1,11 @@
 .DEFAULT_GOAL = all
 
+SUITE = CINT2000
 BENCHMARK = 256.bzip2
 
 MAX_CYCLES = 1000000000
 
-BENCHMARK_OBJS = \
-bzip2.o spec.o raw.o 
+BENCHMARK_OBJS = bzip2.o spec.o
 
 INPUT_TYPE = lgred
 
@@ -21,7 +21,7 @@ ARGV=bzip2 $(BENCHMARK_INPS) 1
 
 # lfs disk image size
 LFS_BLOCK_SIZE = 128
-LFS_BLOCK_COUNT = 16384 # 2 MB
+LFS_BLOCK_COUNT = 16384 # 2MB
 
 
 include ./Makefile.common

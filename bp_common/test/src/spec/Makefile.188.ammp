@@ -1,0 +1,35 @@
+.DEFAULT_GOAL = all
+
+SUITE = CFP2000
+BENCHMARK = 188.ammp
+
+MAX_CYCLES = 1000000000
+
+BENCHMARK_OBJS = \
+	ammp.o box.o eval.o analyze.o anonbon.o noel.o animate.o atoms.o \
+	bonds.o angle.o gsdg.o hybrid.o unonbon.o rectmm.o vnonbon.o tgroup.o \
+	tset.o tailor.o torsion.o optimist.o variable.o math.o mom.o monitor.o \
+	significance.o random.o tether.o restrain.o
+
+
+INPUT_TYPE = smred
+
+BENCHMARK_INPS = ammp.in $(INPUT_TYPE).ammp
+
+$(BENCHMARK_INPS): $(INPUT_TYPE).%:
+	cp $(BENCHMARK_DIR)/input/$@ $@
+
+ammp.in:
+	cp $(BENCHMARK_DIR)/input/$(INPUT_TYPE).in $@
+	sed -i 's/\/input//g' $@
+
+BENCHMARK_DEFS = -D__raw__ -DSPEC_CPU2000 -DNOTIME
+
+ARGC=1
+ARGV=ammp
+
+# lfs disk image size
+LFS_BLOCK_SIZE = 128
+LFS_BLOCK_COUNT = 8192 # 1MB
+
+include ./Makefile.common

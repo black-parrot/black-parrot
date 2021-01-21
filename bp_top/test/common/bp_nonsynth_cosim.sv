@@ -10,6 +10,7 @@ module bp_nonsynth_cosim
 
     , localparam max_instr_lp = 2**30
     , localparam decode_width_lp = `bp_be_decode_width
+   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
     )
    (input                                     clk_i
     , input                                   reset_i
@@ -26,9 +27,13 @@ module bp_nonsynth_cosim
 
     , input [decode_width_lp-1:0]             decode_i
 
-    , input                                   commit_v_i
-    , input [vaddr_width_p-1:0]               commit_pc_i
-    , input [instr_width_p-1:0]               commit_instr_i
+    , input                                   is_debug_mode_i
+    , input [commit_pkt_width_lp-1:0]         commit_pkt_i
+
+    , input [1:0]                             priv_mode_i
+    , input [dword_width_p-1:0]               mstatus_i
+    , input [dword_width_p-1:0]               mcause_i
+    , input [dword_width_p-1:0]               scause_i
 
     , input                                   ird_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      ird_addr_i
@@ -37,26 +42,27 @@ module bp_nonsynth_cosim
     , input                                   frd_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      frd_addr_i
     , input [dpath_width_p-1:0]               frd_data_i
-
-    , input                                   trap_v_i
-    , input [dword_width_p-1:0]               cause_i
-    , input                                   is_debug_mode_i
     );
 
   import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
   import "DPI-C" context function bit  dromajo_step(int hartid,
                                                     longint pc,
                                                     int insn,
-                                                    longint wdata);
+                                                    longint wdata,
+                                                    longint mstatus);
   import "DPI-C" context function void dromajo_trap(int hartid, longint cause);
 
   import "DPI-C" context function void set_finish(int hartid);
   import "DPI-C" context function bit check_terminate();
 
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  bp_be_commit_pkt_s commit_pkt;
+  assign commit_pkt = commit_pkt_i;
+
   bp_be_decode_s decode_r;
   bsg_dff_chain
    #(.width_p($bits(bp_be_decode_s))
-     ,.num_stages_p(3)
+     ,.num_stages_p(4)
      )
    reservation_pipe
     (.clk_i(clk_i)
@@ -64,29 +70,46 @@ module bp_nonsynth_cosim
      ,.data_o(decode_r)
      );
 
-  logic                     commit_v_r;
+  bp_be_commit_pkt_s commit_pkt_r;
+  logic is_debug_mode_r;
+  bsg_dff_reset
+   #(.width_p(1+$bits(commit_pkt)))
+   commit_pkt_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i({is_debug_mode_i, commit_pkt})
+     ,.data_o({is_debug_mode_r, commit_pkt_r})
+     );
+
+  logic                     commit_debug_r;
+  logic                     instret_v_r;
+  logic                     trap_v_r;
   logic [vaddr_width_p-1:0] commit_pc_r;
   rv64_instr_fmatype_s      commit_instr, commit_instr_r;
   logic                     commit_ird_w_v_r;
   logic                     commit_frd_w_v_r;
-  logic                     trap_v_r;
-  logic [dword_width_p-1:0] cause_r;
-  logic                     is_debug_mode_r;
+  logic [dword_width_p-1:0] cause_r, mstatus_r;
   logic commit_fifo_v_lo, commit_fifo_yumi_li;
-  assign commit_instr = commit_instr_i;
-  wire commit_ird_w_v_li = commit_v_i & (decode_r.irf_w_v | decode_r.late_iwb_v);
-  wire commit_frd_w_v_li = commit_v_i & (decode_r.frf_w_v | decode_r.late_fwb_v);
+  wire instret_v_li = commit_pkt_r.instret;
+  wire [vaddr_width_p-1:0] commit_pc_li = commit_pkt_r.pc;
+  wire [instr_width_p-1:0] commit_instr_li = commit_pkt_r.instr;
+  wire commit_ird_w_v_li = instret_v_li & (decode_r.irf_w_v | decode_r.late_iwb_v);
+  wire commit_frd_w_v_li = instret_v_li & (decode_r.frf_w_v | decode_r.late_fwb_v);
+  wire trap_v_li = commit_pkt_r.exception | commit_pkt_r._interrupt;
+  wire [dword_width_p-1:0] cause_li = (priv_mode_i == `PRIV_MODE_M) ? mcause_i : scause_i;
+  wire [dword_width_p-1:0] mstatus_li = mstatus_i;
   bsg_fifo_1r1w_small
-   #(.width_p(2+vaddr_width_p+instr_width_p+2+dword_width_p+1), .els_p(128))
+   #(.width_p(3+vaddr_width_p+instr_width_p+2+2*dword_width_p), .els_p(128))
    commit_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({commit_v_i, commit_pc_i, commit_instr_i, commit_ird_w_v_li, commit_frd_w_v_li, trap_v_i, cause_i, is_debug_mode_i})
-     ,.v_i(commit_v_i | trap_v_i)
+     ,.data_i({is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, cause_li, mstatus_li})
+     ,.v_i(instret_v_li | trap_v_li)
      ,.ready_o()
 
-     ,.data_o({commit_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, trap_v_r, cause_r, is_debug_mode_r})
+     ,.data_o({commit_debug_r, instret_v_r, trap_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, cause_r, mstatus_r})
      ,.v_o(commit_fifo_v_lo)
      ,.yumi_i(commit_fifo_yumi_li)
      );
@@ -161,10 +184,10 @@ module bp_nonsynth_cosim
    #(.max_val_p(max_instr_lp), .init_val_p(0))
    instr_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i | is_debug_mode_r)
+     ,.reset_i(reset_i | freeze_i)
 
      ,.clear_i(1'b0)
-     ,.up_i(commit_v_r & commit_fifo_yumi_li)
+     ,.up_i(instret_v_r & commit_fifo_yumi_li & ~commit_debug_r)
      ,.count_o(instr_cnt)
      );
 
@@ -189,8 +212,8 @@ module bp_nonsynth_cosim
       begin
         dromajo_trap(mhartid_i, cause_r);
       end
-    else if (cosim_en_i & commit_fifo_yumi_li & commit_v_r & ~is_debug_mode_r & commit_pc_r != '0)
-      if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, commit_frd_li ? frd_raw_li[commit_instr_r.rd_addr] : ird_data_r[commit_instr_r.rd_addr]))
+    else if (~commit_debug_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
+      if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, commit_frd_li ? frd_raw_li[commit_instr_r.rd_addr] : ird_data_r[commit_instr_r.rd_addr], mstatus_r))
         begin
           $display("COSIM_FAIL");
           $finish();
@@ -218,13 +241,13 @@ module bp_nonsynth_cosim
     end
 
   always_ff @(negedge clk_i)
-    if (trace_en_i & commit_fifo_yumi_li & commit_v_r & commit_pc_r != '0)
+    if (trace_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
       begin
         $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, instr_cnt);
-        if (commit_ird_w_v_r)
-          $fwrite(file, "%x %x", ird_addr_i, ird_data_i);
-        if (commit_frd_w_v_r)
-          $fwrite(file, "%x %x", frd_addr_i, frd_data_i);
+        if (commit_fifo_yumi_li & commit_ird_w_v_r)
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, ird_data_r[commit_instr_r.rd_addr]);
+        if (commit_fifo_yumi_li & commit_frd_w_v_r)
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, frd_raw_li[commit_instr_r.rd_addr]);
         $fwrite(file, "\n");
       end
 

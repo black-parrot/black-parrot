@@ -1,12 +1,13 @@
 .DEFAULT_GOAL = all
 
+SUITE = CINT2000
 BENCHMARK = 164.gzip
 
 MAX_CYCLES = 1000000000
 
 BENCHMARK_OBJS = \
 	bits.o deflate.o gzip.o getopt.o inflate.o lzw.o \
-	spec.o trees.o unlzh.o unlzw.o unpack.o unzip.o util.o zip.o raw.o 
+	spec.o trees.o unlzh.o unlzw.o unpack.o unzip.o util.o zip.o
 
 INPUT_TYPE = smred
 
@@ -22,6 +23,6 @@ ARGV=gzip $(BENCHMARK_INPS) 1
 
 # lfs disk image size
 LFS_BLOCK_SIZE = 128
-LFS_BLOCK_COUNT = 8192 # 1Mb
+LFS_BLOCK_COUNT = 8192 # 1MB
 
 include ./Makefile.common
