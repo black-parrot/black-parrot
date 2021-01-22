@@ -241,7 +241,7 @@ module testbench
 
        ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-       ,.npc_i(director.npc_r)
+       ,.npc_i(calculator.pipe_sys.csr.apc_r)
        ,.instret_i(calculator.commit_pkt.instret)
        );
 
@@ -267,9 +267,13 @@ module testbench
 
        ,.decode_i(calculator.reservation_n.decode)
 
-       ,.commit_v_i(calculator.commit_pkt.instret)
-       ,.commit_pc_i(calculator.commit_pkt.pc)
-       ,.commit_instr_i(calculator.commit_pkt.instr)
+       ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
+       ,.commit_pkt_i(calculator.commit_pkt)
+
+       ,.priv_mode_i(calculator.pipe_sys.csr.priv_mode_r)
+       ,.mstatus_i(calculator.pipe_sys.csr.mstatus_lo)
+       ,.mcause_i(calculator.pipe_sys.csr.mcause_lo)
+       ,.scause_i(calculator.pipe_sys.csr.scause_lo)
 
        ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
        ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
@@ -278,13 +282,6 @@ module testbench
        ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
        ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
        ,.frd_data_i(scheduler.fwb_pkt.rd_data)
-
-       ,.trap_v_i(calculator.pipe_sys.csr.commit_pkt_cast_o.exception | calculator.pipe_sys.csr.commit_pkt_cast_o._interrupt)
-       ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)
-                 ? calculator.pipe_sys.csr.scause_li
-                 : calculator.pipe_sys.csr.mcause_li
-                 )
-       ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
        );
 
   bind bp_be_dcache

@@ -1,0 +1,32 @@
+.DEFAULT_GOAL = all
+
+SUITE = CFP2000
+BENCHMARK = 177.mesa
+
+MAX_CYCLES = 1000000000
+
+BENCHMARK_OBJS = accum.o alphabuf.o alpha.o api1.o api2.o attrib.o bitmap.o blend.o \
+		clip.o colortab.o context.o copypix.o depth.o dlist.o drawpix.o \
+		enable.o eval.o feedback.o fog.o get.o hash.o image.o light.o \
+		lines.o logic.o masking.o matrix.o mesa4.o \
+		misc.o mmath.o osmesa.o pb.o pixel.o pointers.o points.o polygon.o \
+		quads.o rastpos.o readpix.o rect.o scissor.o shade.o span.o stencil.o \
+		teximage.o texobj.o texstate.o texture.o triangle.o varray.o vb.o \
+		vbfill.o vbrender.o vbxform.o winpos.o xform.o
+
+
+BENCHMARK_INPS = ref.in
+
+$(BENCHMARK_INPS): %:
+	cp $(BENCHMARK_DIR)/input/$@ $@
+
+BENCHMARK_DEFS = -D__raw__ -DSPEC_CPU2000 -DRAWDEBUG
+
+ARGC=7
+ARGV=mesa -frames 1 -meshfile $(BENCHMARK_INPS) -ppmfile mesa0.ppm
+
+# lfs disk image size
+LFS_BLOCK_SIZE = 128
+LFS_BLOCK_COUNT = 16384 # 2MB
+
+include ./Makefile.common

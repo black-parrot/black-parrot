@@ -56,6 +56,7 @@ module bp_be_csr
   bp_cfg_bus_s cfg_bus_cast_i;
   bp_be_csr_cmd_s csr_cmd;
   bp_be_exception_s exception;
+  rv64_instr_s exception_instr;
 
   bp_be_wb_pkt_s wb_pkt_cast_i;
   bp_be_commit_pkt_s commit_pkt_cast_o;
@@ -64,6 +65,7 @@ module bp_be_csr
   assign cfg_bus_cast_i = cfg_bus_i;
   assign csr_cmd = csr_cmd_i;
   assign exception = exception_i;
+  assign exception_instr = exception_instr_i;
   assign commit_pkt_o = commit_pkt_cast_o;
   assign trans_info_o = trans_info_cast_o;
 
@@ -221,6 +223,11 @@ module bp_be_csr
      ,.v_o(s_interrupt_icode_v_li)
      );
 
+  // TODO: This should be done in decode, pending CSR refactor
+  wire csr_w_v_li = (exception_instr inside {`RV64_CSRRW, `RV64_CSRRWI})
+                    || (exception_instr.t.rtype.rs1_addr != '0);
+  wire csr_r_v_li = (~(exception_instr inside {`RV64_CSRRW, `RV64_CSRRWI}))
+                    || (exception_instr.t.rtype.rd_addr != '0);
   // Compute input CSR data
   wire [dword_width_p-1:0] csr_imm_li = dword_width_p'(csr_cmd.data[4:0]);
   always_comb
@@ -660,7 +667,18 @@ module bp_be_csr
       fcsr_li.fflags |= fflags_acc_i;
 
       // Set FS to dirty if: fflags set, frf written, fcsr written
-      mstatus_li.fs |= {2{|fflags_acc_i | frf_w_v_i | (csr_cmd_v_i & (csr_cmd.csr_addr == `CSR_ADDR_FCSR))}};
+      // TODO: Should pre_decode this write, but requires multiple changes to the datapath
+      //   For now, a few comparators will do
+      mstatus_li.fs |= {2{(csr_cmd_v_i & csr_w_v_li & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR
+                                                                                ,`CSR_ADDR_FFLAGS
+                                                                                ,`CSR_ADDR_FRM}))
+                          || (exception_v_i & exception_instr.t.rtype.opcode inside {`RV64_FLOAD_OP
+                                                                                     ,`RV64_FMADD_OP
+                                                                                     ,`RV64_FNMADD_OP
+                                                                                     ,`RV64_FMSUB_OP
+                                                                                     ,`RV64_FNMSUB_OP
+                                                                                     ,`RV64_FP_OP
+                                                                                     })}};
     end
 
   // Debug Mode masks all interrupts
@@ -687,7 +705,8 @@ module bp_be_csr
 
   assign trans_info_cast_o.priv_mode = priv_mode_r;
   assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
-  assign trans_info_cast_o.translation_en = translation_en_r | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
+  assign trans_info_cast_o.translation_en = translation_en_r
+    | ((~is_debug_mode | dcsr_lo.mprven) & mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
   assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
   assign trans_info_cast_o.mstatus_mxr = mstatus_lo.mxr;
 

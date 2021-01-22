@@ -63,7 +63,7 @@ module bp_be_director
 
   // Cast input and output ports
   bp_cfg_bus_s                     cfg_bus_cast_i;
-  bp_be_isd_status_s               isd_status;
+  bp_be_isd_status_s               isd_status_cast_i;
   bp_fe_cmd_s                      fe_cmd_li;
   logic                            fe_cmd_v_li, fe_cmd_ready_lo;
   bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
@@ -72,7 +72,7 @@ module bp_be_director
   bp_be_ptw_fill_pkt_s             ptw_fill_pkt;
 
   assign cfg_bus_cast_i = cfg_bus_i;
-  assign isd_status = isd_status_i;
+  assign isd_status_cast_i = isd_status_i;
   assign commit_pkt = commit_pkt_i;
   assign br_pkt       = br_pkt_i;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
@@ -100,7 +100,7 @@ module bp_be_director
      );
   assign npc_n = ptw_fill_pkt.itlb_fill_v ? ptw_fill_pkt.vaddr : commit_pkt.v ? commit_pkt.npc : br_pkt.npc;
 
-  assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
+  assign npc_mismatch_v = isd_status_cast_i.v & (expected_npc_o != isd_status_cast_i.pc);
   assign poison_isd_o = npc_mismatch_v | flush_o;
 
   logic btaken_pending, attaboy_pending;
@@ -111,7 +111,7 @@ module bp_be_director
      ,.reset_i(reset_i)
 
      ,.set_i({br_pkt.btaken, br_pkt.branch})
-     ,.clear_i({isd_status.isd_v, isd_status.isd_v})
+     ,.clear_i({isd_status_cast_i.v, isd_status_cast_i.v})
      ,.data_o({btaken_pending, attaboy_pending})
      );
   wire last_instr_was_branch = attaboy_pending | br_pkt.branch;
@@ -247,14 +247,14 @@ module bp_be_director
         begin
           flush_o = 1'b1;
         end
-      else if (isd_status.isd_v & npc_mismatch_v)
+      else if (isd_status_cast_i.v & npc_mismatch_v)
         begin
           fe_cmd_pc_redirect_operands = '0;
 
           fe_cmd_li.opcode                                 = e_op_pc_redirection;
           fe_cmd_li.vaddr                                  = expected_npc_o;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_branch_mispredict;
-          fe_cmd_pc_redirect_operands.branch_metadata_fwd  = isd_status.isd_branch_metadata_fwd;
+          fe_cmd_pc_redirect_operands.branch_metadata_fwd  = isd_status_cast_i.branch_metadata_fwd;
           fe_cmd_pc_redirect_operands.misprediction_reason = last_instr_was_branch
                                                              ? last_instr_was_btaken
                                                                ? e_incorrect_pred_taken
@@ -265,12 +265,12 @@ module bp_be_director
           fe_cmd_v_li = fe_cmd_ready_lo;
         end
       // Send an attaboy if there's a correct prediction
-      else if (isd_status.isd_v & ~npc_mismatch_v & last_instr_was_branch)
+      else if (isd_status_cast_i.v & ~npc_mismatch_v & last_instr_was_branch)
         begin
           fe_cmd_li.opcode                               = e_op_attaboy;
           fe_cmd_li.vaddr                                = expected_npc_o;
           fe_cmd_li.operands.attaboy.taken               = last_instr_was_btaken;
-          fe_cmd_li.operands.attaboy.branch_metadata_fwd = isd_status.isd_branch_metadata_fwd;
+          fe_cmd_li.operands.attaboy.branch_metadata_fwd = isd_status_cast_i.branch_metadata_fwd;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end
@@ -306,11 +306,11 @@ module bp_be_director
   always_ff @(negedge clk_i)
     if (debug_lp) begin
       if (fe_cmd_v_li & (fe_cmd_li.opcode == e_op_pc_redirection))
-        $display("[REDIR  ] %x->%x %p", isd_status.isd_pc, fe_cmd_li.vaddr, redir_md);
+        $display("[REDIR  ] %x->%x %p", isd_status_cast_i.pc, fe_cmd_li.vaddr, redir_md);
       else if (fe_cmd_v_li & (fe_cmd_li.opcode == e_op_attaboy))
         $display("[ATTABOY] %x %p", fe_cmd_li.vaddr, attaboy_md);
-      else if (isd_status.isd_v)
-        $display("[FETCH  ] %x   ", isd_status.isd_pc);
+      else if (isd_status_cast_i.v)
+        $display("[FETCH  ] %x   ", isd_status_cast_i.pc);
     end
   //synopsys translate_on
 

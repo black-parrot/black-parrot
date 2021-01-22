@@ -44,13 +44,14 @@ extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory
 extern "C" bool dromajo_step(int      hartid,
                              uint64_t pc,
                              uint32_t insn,
-                             uint64_t wdata) {
+                             uint64_t wdata,
+                             uint64_t mstatus) {
   int exit_code = dromajo_cosim_step(dromajo_pointer, 
                                      hartid,
                                      pc,
                                      insn,
                                      wdata,
-                                     0,
+                                     mstatus,
                                      true,
                                      false);
   if(exit_code != 0)

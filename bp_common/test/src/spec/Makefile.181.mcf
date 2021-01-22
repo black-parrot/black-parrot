@@ -1,12 +1,13 @@
 .DEFAULT_GOAL = all
 
+SUITE = CINT2000
 BENCHMARK = 181.mcf
 
 MAX_CYCLES = 1000000000
 
 BENCHMARK_OBJS =  \
-  implicit.o mcf.o mcfutil.o output.o pbeampp.o pbla.o \
-	pflowup.o psimplex.o pstart.o readmin.o treeup.o raw.o
+	implicit.o mcf.o mcfutil.o output.o pbeampp.o pbla.o \
+	pflowup.o psimplex.o pstart.o readmin.o treeup.o
 
 INPUT_TYPE = smred
 

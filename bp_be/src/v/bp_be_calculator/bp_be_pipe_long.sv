@@ -20,9 +20,11 @@ module bp_be_pipe_long
 
    , output [wb_pkt_width_lp-1:0]      iwb_pkt_o
    , output                            iwb_v_o
+   , input                             iwb_yumi_i
 
    , output [wb_pkt_width_lp-1:0]      fwb_pkt_o
    , output                            fwb_v_o
+   , input                             fwb_yumi_i
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -72,8 +74,7 @@ module bp_be_pipe_long
      ,.quotient_o(quotient_lo)
      ,.remainder_o(remainder_lo)
      ,.v_o(idiv_v_lo)
-     // Immediately ack, since the data stays safe until the next incoming division
-     ,.yumi_i(idiv_v_lo)
+     ,.yumi_i(idiv_v_lo & iwb_yumi_i)
      );
 
   bp_be_fp_reg_s frs1, frs2;
@@ -125,6 +126,47 @@ module bp_be_pipe_long
      ,.out_sig(fdivsqrt_out_sig)
      );
 
+  logic opw_v_r, ops_v_r;
+  bp_be_fu_op_s fu_op_r;
+  logic [reg_addr_width_p-1:0] rd_addr_r;
+  rv64_frm_e frm_r;
+  bsg_dff_reset_en
+   #(.width_p($bits(rv64_frm_e)+reg_addr_width_p+$bits(bp_be_fu_op_s)+2))
+   wb_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(v_li)
+
+     ,.data_i({frm_li, instr.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
+     ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
+     );
+
+  logic idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(3))
+   wb_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i({idiv_v_lo, fdivsqrt_v_lo, v_li})
+     ,.clear_i({v_li, v_li, (iwb_yumi_i | fwb_yumi_i)})
+     ,.data_o({idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
+     );
+
+  logic [2:0] hazard_cnt;
+  wire idiv_safe = (hazard_cnt > 2);
+  wire fdiv_safe = (hazard_cnt > 3);
+  bsg_counter_clear_up
+   #(.max_val_p(4), .init_val_p(0))
+   hazard_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(v_li)
+     ,.up_i(rd_w_v_r & ~fdiv_safe)
+     ,.count_o(hazard_cnt)
+     );
+
   logic [dp_rec_width_gp-1:0] fdivsqrt_dp_final;
   rv64_fflags_s fdivsqrt_dp_fflags;
   roundAnyRawFNToRecFN
@@ -143,7 +185,7 @@ module bp_be_pipe_long
      ,.in_sign(fdivsqrt_out_sign)
      ,.in_sExp(fdivsqrt_out_sexp)
      ,.in_sig(fdivsqrt_out_sig)
-     ,.roundingMode(frm_li)
+     ,.roundingMode(frm_r)
      ,.out(fdivsqrt_dp_final)
      ,.exceptionFlags(fdivsqrt_dp_fflags)
      );
@@ -166,13 +208,18 @@ module bp_be_pipe_long
      ,.in_sign(fdivsqrt_out_sign)
      ,.in_sExp(fdivsqrt_out_sexp)
      ,.in_sig(fdivsqrt_out_sig)
-     ,.roundingMode(frm_li)
+     ,.roundingMode(frm_r)
      ,.out(fdivsqrt_sp_final)
      ,.exceptionFlags(fdivsqrt_sp_fflags)
      );
 
   localparam bias_adj_lp = (1 << dp_exp_width_gp) - (1 << sp_exp_width_gp);
   bp_hardfloat_rec_dp_s fdivsqrt_sp2dp_final;
+
+  bp_be_fp_reg_s fdivsqrt_result;
+  rv64_fflags_s fdivsqrt_fflags;
+  assign fdivsqrt_result = '{sp_not_dp: ops_v_r, rec: ops_v_r ? fdivsqrt_sp2dp_final : fdivsqrt_dp_final};
+  assign fdivsqrt_fflags = ops_v_r ? fdivsqrt_sp_fflags : fdivsqrt_dp_fflags;
 
   wire [dp_exp_width_gp:0] adjusted_exp = fdivsqrt_sp_final.exp + bias_adj_lp;
   wire [2:0]                   exp_code = fdivsqrt_sp_final.exp[sp_exp_width_gp-:3];
@@ -182,26 +229,6 @@ module bp_be_pipe_long
                                   ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
                                   ,fract: {fdivsqrt_sp_final.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                                   };
-
-  logic opw_v_r, ops_v_r;
-  bp_be_fu_op_s fu_op_r;
-  logic [reg_addr_width_p-1:0] rd_addr_r;
-  logic rd_w_v_r;
-  bsg_dff_reset_en
-   #(.width_p(1+reg_addr_width_p+$bits(bp_be_fu_op_s)+2))
-   wb_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i | flush_i)
-     ,.en_i(v_li | (iwb_v_o | fwb_v_o))
-
-     ,.data_i({v_li, instr.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
-     ,.data_o({rd_w_v_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
-     );
-
-  bp_be_fp_reg_s fdivsqrt_result;
-  rv64_fflags_s fdivsqrt_fflags;
-  assign fdivsqrt_result = '{sp_not_dp: ops_v_r, rec: ops_v_r ? fdivsqrt_sp2dp_final : fdivsqrt_dp_final};
-  assign fdivsqrt_fflags = ops_v_r ? fdivsqrt_sp_fflags : fdivsqrt_dp_fflags;
 
   logic [dword_width_p-1:0] rd_data_lo;
   always_comb
@@ -219,19 +246,21 @@ module bp_be_pipe_long
 
   assign iwb_pkt.ird_w_v    = rd_w_v_r;
   assign iwb_pkt.frd_w_v    = 1'b0;
+  assign iwb_pkt.late       = 1'b1;
   assign iwb_pkt.rd_addr    = rd_addr_r;
   assign iwb_pkt.rd_data    = rd_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
   assign iwb_pkt.fflags     = '0;
-  assign iwb_v_o = idiv_v_lo & rd_w_v_r;
+  assign iwb_v_o = idiv_safe & idiv_done_v_r & rd_w_v_r;
 
   assign fwb_pkt.ird_w_v    = 1'b0;
   assign fwb_pkt.frd_w_v    = rd_w_v_r;
+  assign fwb_pkt.late       = 1'b1;
   assign fwb_pkt.rd_addr    = rd_addr_r;
   assign fwb_pkt.rd_data    = fdivsqrt_result;
   assign fwb_pkt.fflags_w_v = 1'b1;
   assign fwb_pkt.fflags     = fdivsqrt_fflags;
-  assign fwb_v_o = fdivsqrt_v_lo & rd_w_v_r;
+  assign fwb_v_o = fdiv_safe & fdiv_done_v_r & rd_w_v_r;
 
 endmodule
 

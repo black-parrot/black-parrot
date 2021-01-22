@@ -51,10 +51,12 @@ gnu_build:
 	cp $(BP_EXTERNAL_DIR)/riscv64-unknown-elf-dramfs/bin/dramfs_mklfs $(BP_BIN_DIR)
 
 dromajo_build:
-	$(MAKE) -C $(dromajo_dir)/src
-	cp $(dromajo_dir)/src/dromajo $(BP_BIN_DIR)
-	cp $(dromajo_dir)/src/libdromajo_cosim.a $(BP_LIB_DIR)
-	cp $(dromajo_dir)/src/dromajo_cosim.h $(BP_INCLUDE_DIR)
+	mkdir -p $(dromajo_dir)/build
+	cmake -S $(dromajo_dir) -B $(dromajo_dir)/build
+	$(MAKE) -C $(dromajo_dir)/build
+	cp $(dromajo_dir)/build/dromajo $(BP_BIN_DIR)
+	cp $(dromajo_dir)/build/libdromajo_cosim.a $(BP_LIB_DIR)
+	cp $(dromajo_dir)/include/dromajo_cosim.h $(BP_INCLUDE_DIR)
 
 axe_build:
 	cd $(axe_dir)/src; \

@@ -88,13 +88,6 @@
   branch = master
   ignore = dirty
 
-[submodule "bp_common/test/src/spec/src/spec2000"]
-  path = bp_common/test/src/spec/src/spec2000
-  url = https://github.com/black-parrot/spec2000
-  branch = blackparrot_mods
-  update = none
-  ignore = dirty
-
 [submodule "bp_common/test/src/bp_tests"]
   path = bp_common/test/src/bp_tests
   url = https://github.com/black-parrot/bp_tests.git
@@ -117,4 +110,11 @@
   path = external/HardFloat
   url = https://github.com/bsg-external/HardFloat.git
   branch = master
+  ignore = dirty
+
+[submodule "bp_common/test/src/spec/spec2000"]
+  path = bp_common/test/src/spec/spec2000
+  url = https://github.com/black-parrot/spec2000
+  branch = blackparrot_mods
+  update = none
   ignore = dirty
