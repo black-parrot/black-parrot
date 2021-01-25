@@ -1,4 +1,4 @@
-/* 
+/*
  * bp_common_pkg.sv
  *
  * Contains the interface structures used for communicating between FE, BE, ME in BlackParrot.

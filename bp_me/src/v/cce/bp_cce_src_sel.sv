@@ -152,7 +152,7 @@ module bp_cce_src_sel
           e_opd_owner_lce:      src_a_o[0+:lce_id_width_p] = mshr.owner_lce_id;
           e_opd_owner_way:      src_a_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_a_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
-          e_opd_flags:          src_a_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
+          e_opd_flags:          src_a_o[0+:$bits(bp_cce_inst_flag_onehot_e)] = mshr.flags & imm_i[0+:$bits(bp_cce_inst_flag_onehot_e)];
           e_opd_msg_size:       src_a_o[0+:$bits(bp_bedrock_msg_size_e)] = mshr.msg_size;
           e_opd_lru_coh_state:  src_a_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
           e_opd_owner_coh_state: src_a_o[0+:$bits(bp_coh_states_e)] = mshr.owner_coh_state;
@@ -241,7 +241,7 @@ module bp_cce_src_sel
           e_opd_owner_lce:      src_b_o[0+:lce_id_width_p] = mshr.owner_lce_id;
           e_opd_owner_way:      src_b_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_b_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
-          e_opd_flags:          src_b_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
+          e_opd_flags:          src_b_o[0+:$bits(bp_cce_inst_flag_onehot_e)] = mshr.flags & imm_i[0+:$bits(bp_cce_inst_flag_onehot_e)];
           e_opd_msg_size:       src_b_o[0+:$bits(bp_bedrock_msg_size_e)] = mshr.msg_size;
           e_opd_lru_coh_state:  src_b_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
           e_opd_owner_coh_state: src_b_o[0+:$bits(bp_coh_states_e)] = mshr.owner_coh_state;

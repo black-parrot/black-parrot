@@ -440,7 +440,7 @@ module bp_uce
   assign cache_req_busy_o = is_reset | is_clear | cache_req_credits_full_o;
   always_comb
     begin
-      cache_req_yumi_o = '0; 
+      cache_req_yumi_o = '0;
 
       index_up = '0;
       way_up   = '0;

@@ -56,8 +56,8 @@ module bp_cce_inst_stall
   wire lce_cmd_ready = lce_cmd_ready_i;
   wire mem_cmd_ready = mem_cmd_ready_i;
 
-  wire [`bp_cce_num_src_q-1:0] wfq_v_vec = {lce_req_v, lce_resp_v, mem_resp_v, pending_v};
-  wire [`bp_cce_num_src_q-1:0] wfq_mask = decoded_inst_i.imm[0+:`bp_cce_num_src_q];
+  wire [$bits(bp_cce_inst_src_q_e)-1:0] wfq_v_vec = {lce_req_v, lce_resp_v, mem_resp_v, pending_v};
+  wire [$bits(bp_cce_inst_src_q_e)-1:0] wfq_mask = decoded_inst_i.imm[0+:$bits(bp_cce_inst_src_q_e)];
 
   always_comb begin
     stall_o = 1'b0;

@@ -198,7 +198,7 @@ module bp_be_top
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_v_o(cache_req_v_o)
      ,.cache_req_yumi_i(cache_req_yumi_i)
-     ,.cache_req_busy_i(cache_req_busy_i)  
+     ,.cache_req_busy_i(cache_req_busy_i)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
      ,.cache_req_critical_i(cache_req_critical_i)
      ,.cache_req_complete_i(cache_req_complete_i)

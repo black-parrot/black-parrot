@@ -9,7 +9,7 @@
  *    packet = {payload, length, cord}
  */
 
-`include "bp_mem_wormhole.svh"
+`include "bp_me_defines.svh"
 
 module bp_me_wormhole_packet_encode_mem_cmd
   import bp_common_pkg::*;

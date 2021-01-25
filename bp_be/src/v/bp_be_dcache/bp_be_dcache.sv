@@ -1210,32 +1210,32 @@ module bp_be_dcache
       assign load_reserved_index_r = '0;
     end
 
-  //  uncached load data logic  
-  //    
-  wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached);    
-  // Invalidate uncached data if the cache is flushed or we successfully complete the request   
-  // NOTE: This method is not valid for non-idempotent loads, will cause replay 
-  wire uncached_load_clear = flush_i | early_v_o;   
-  bsg_dff_reset_set_clear   
-   #(.width_p(1))   
-   uncached_load_data_v_reg 
-    (.clk_i(clk_i)  
-     ,.reset_i(reset_i) 
+  //  uncached load data logic
+  //
+  wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached);
+  // Invalidate uncached data if the cache is flushed or we successfully complete the request
+  // NOTE: This method is not valid for non-idempotent loads, will cause replay
+  wire uncached_load_clear = flush_i | early_v_o;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   uncached_load_data_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-     ,.set_i(uncached_load_set) 
-     ,.clear_i(uncached_load_clear) 
-     ,.data_o(uncached_load_data_v_r)   
-     ); 
+     ,.set_i(uncached_load_set)
+     ,.clear_i(uncached_load_clear)
+     ,.data_o(uncached_load_data_v_r)
+     );
 
-  bsg_dff_en    
-   #(.width_p(dword_width_p))   
-   uncached_load_data_reg   
-    (.clk_i(clk_i)  
-     ,.en_i(uncached_load_set)  
+  bsg_dff_en
+   #(.width_p(dword_width_p))
+   uncached_load_data_reg
+    (.clk_i(clk_i)
+     ,.en_i(uncached_load_set)
 
-     ,.data_i(data_mem_pkt.data[0+:dword_width_p])  
-     ,.data_o(uncached_load_data_r) 
-     ); 
+     ,.data_i(data_mem_pkt.data[0+:dword_width_p])
+     ,.data_o(uncached_load_data_r)
+     );
 
   // LCE tag_mem
 

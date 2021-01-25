@@ -166,7 +166,7 @@
    */
   `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
     (9+3*reg_addr_width_p)                                                                         \
-  
+
   `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
     (2                                                                                             \
      + vaddr_width_mp                                                                              \
@@ -175,19 +175,19 @@
      + 3 * dpath_width_p                                                                           \
      + $bits(bp_be_decode_s)                                                                       \
      )
-  
+
   `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
     (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 11 + 4*rv64_reg_addr_width_gp)
-  
+
   `define bp_be_dep_status_width \
     (15 + rv64_reg_addr_width_gp)
-  
+
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
     (3 + vaddr_width_mp)
-  
+
   `define bp_be_commit_pkt_width(vaddr_width_mp) \
     (3 + 2 * vaddr_width_mp + instr_width_p + rv64_priv_width_gp + 9)
-  
+
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \
      + reg_addr_width_p                                                                            \
@@ -195,16 +195,16 @@
      + 1                                                                                           \
      + $bits(rv64_fflags_s)                                                                        \
      )
-  
+
   `define bp_be_ptw_miss_pkt_width(vaddr_width_mp) \
     (3 + vaddr_width_mp)
-  
+
   `define bp_be_ptw_fill_pkt_width(vaddr_width_mp) \
     (5                                                                                             \
      + vaddr_width_mp                                                                              \
      + dword_width_p                                                                               \
      )
-  
+
   `define bp_be_trans_info_width(ptag_width_mp) \
     (rv64_priv_width_gp+ptag_width_mp+3)
 

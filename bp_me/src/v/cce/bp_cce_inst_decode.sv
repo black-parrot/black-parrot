@@ -582,7 +582,7 @@ module bp_cce_inst_decode
           unique case (minor_op_u.queue_minor_op)
             e_wfq_op: begin
               decoded_inst_o.wfq_v = 1'b1;
-              decoded_inst_o.imm[0+:`bp_cce_num_src_q] = op_type_u.itype.imm[0+:`bp_cce_num_src_q];
+              decoded_inst_o.imm[0+:$bits(bp_cce_inst_src_q_e)] = op_type_u.itype.imm[0+:$bits(bp_cce_inst_src_q_e)];
             end
             e_pushq_op: begin
               // pushq and pushqc have same encoding, except pushq uses

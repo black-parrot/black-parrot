@@ -1026,7 +1026,7 @@ module bp_cce_fsm
           pending_w_v =  ~(mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]);
           pending_w_addr = lce_req.header.addr;
           pending_li = 1'b1;
- 
+
           // skip speculative memory access if amo/uncached
           state_n = (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
                     ? e_read_dir

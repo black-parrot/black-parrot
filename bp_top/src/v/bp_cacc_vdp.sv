@@ -41,7 +41,7 @@ module bp_cacc_vdp
     , input                                   io_resp_yumi_i
     );
 
-  bp_be_dcache_pkt_s        dcache_pkt;   
+  bp_be_dcache_pkt_s        dcache_pkt;
   logic                     dcache_ready, dcache_v;
   logic [dpath_width_p-1:0] dcache_data;
   logic                     dcache_tlb_miss, dcache_poison;

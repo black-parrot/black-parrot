@@ -9,7 +9,7 @@ module bp_be_scoreboard
    )
   (input                                        clk_i
    , input                                      reset_i
- 
+
    , input                                      score_v_i
    , input [reg_addr_width_p-1:0]               score_rd_i
 
