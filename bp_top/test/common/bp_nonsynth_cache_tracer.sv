@@ -23,7 +23,6 @@ module bp_nonsynth_cache_tracer
    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-   , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
 
    )

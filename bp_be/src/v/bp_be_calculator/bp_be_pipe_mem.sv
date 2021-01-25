@@ -158,7 +158,7 @@ module bp_be_pipe_mem
 
   // D-TLB connections
   assign dtlb_r_v     = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
-  assign dtlb_r_vtag  = eaddr[bp_page_offset_width_gp+:vtag_width_p];
+  assign dtlb_r_vtag  = eaddr[page_offset_width_p+:vtag_width_p];
   assign dtlb_w_v     = ptw_fill_pkt.dtlb_fill_v;
   assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign dtlb_w_entry = ptw_fill_pkt.entry;

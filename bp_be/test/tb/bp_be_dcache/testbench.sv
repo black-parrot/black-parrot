@@ -32,10 +32,8 @@ module testbench
 
    // Derived parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-   , localparam page_offset_width_lp = bp_page_offset_width_gp
-   , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dpath_width_p)
-   , localparam trace_replay_data_width_lp = ptag_width_lp + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
+   , localparam trace_replay_data_width_lp = ptag_width_p + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
    , localparam trace_rom_addr_width_lp = 8
 
    , localparam yumi_min_delay_lp = 0
@@ -71,7 +69,7 @@ module testbench
   logic [num_caches_p-1:0][trace_replay_data_width_lp+3:0] trace_rom_data_li;
 
   logic [num_caches_p-1:0][dcache_pkt_width_lp-1:0] dcache_pkt_li;
-  logic [num_caches_p-1:0][ptag_width_lp-1:0] ptag_li;
+  logic [num_caches_p-1:0][ptag_width_p-1:0] ptag_li;
   logic [num_caches_p-1:0] uncached_li;
   logic [num_caches_p-1:0] dcache_ready_li;
 
@@ -151,8 +149,8 @@ module testbench
 
       assign dcache_pkt_li[i] = trace_data_lo[i][0+:dcache_pkt_width_lp];
       // Slight hack, but makes all address "cacheable"
-      assign ptag_li[i] = (32'h8000_0000 >> 12) | trace_data_lo[i][dcache_pkt_width_lp+:ptag_width_lp];
-      assign uncached_li[i] = trace_data_lo[i][(dcache_pkt_width_lp+ptag_width_lp)+:1];
+      assign ptag_li[i] = (32'h8000_0000 >> 12) | trace_data_lo[i][dcache_pkt_width_lp+:ptag_width_p];
+      assign uncached_li[i] = trace_data_lo[i][(dcache_pkt_width_lp+ptag_width_p)+:1];
 
       // Output FIFO
       assign fifo_yumi_li[i] = (random_yumi_p == 1) ? (fifo_random_yumi_lo[i] & trace_ready_lo[i]) : (fifo_v_lo[i] & trace_ready_lo[i]);

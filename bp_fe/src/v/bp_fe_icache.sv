@@ -225,7 +225,7 @@ module bp_fe_icache
      ,.data_o({vaddr_tl_r, fetch_op_tl_r, fencei_op_tl_r})
      );
 
-  wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
+  wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_p]};
   wire [vtag_width_p-1:0]     vaddr_vtag_tl = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:vtag_width_p];
   wire [sindex_width_lp-1:0] vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0]  vaddr_bank_tl = vaddr_tl_r[byte_offset_width_lp+:bindex_width_lp];

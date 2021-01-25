@@ -22,9 +22,7 @@ module testbench
    , parameter mem_file_p = "prog.mem"
 
   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-  , localparam page_offset_width_lp = bp_page_offset_width_gp
-  , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
-  , localparam trace_replay_data_width_lp = ptag_width_lp + vaddr_width_p + 1
+  , localparam trace_replay_data_width_lp = ptag_width_p + vaddr_width_p + 1
   , localparam trace_rom_addr_width_lp = 7
 
   , localparam yumi_min_delay_lp = 0
@@ -61,7 +59,7 @@ module testbench
   logic [trace_replay_data_width_lp+3:0] trace_rom_data_li;
 
   logic [vaddr_width_p-1:0] vaddr_li;
-  logic [ptag_width_lp-1:0] ptag_li;
+  logic [ptag_width_p-1:0] ptag_li;
   logic uncached_li;
 
   logic switch_cce_mode;
@@ -74,9 +72,9 @@ module testbench
     cfg_bus_cast_li.cce_mode = e_cce_mode_normal;
   end
 
-  assign ptag_li = trace_data_lo[0+:(ptag_width_lp)];
-  assign vaddr_li = trace_data_lo[ptag_width_lp+:vaddr_width_p];
-  assign uncached_li = trace_data_lo[(ptag_width_lp+vaddr_width_p)+:1];
+  assign ptag_li = trace_data_lo[0+:(ptag_width_p)];
+  assign vaddr_li = trace_data_lo[ptag_width_p+:vaddr_width_p];
+  assign uncached_li = trace_data_lo[(ptag_width_p+vaddr_width_p)+:1];
   assign trace_yumi_li = trace_v_lo & dut_ready_lo;
 
   // Trace replay

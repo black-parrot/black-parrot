@@ -43,7 +43,7 @@ module bp_cacc_vdp
     );
 
 
- `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
+ `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
   bp_be_dcache_pkt_s        dcache_pkt;   
   logic                     dcache_ready, dcache_v;
   logic [dpath_width_p-1:0] dcache_data;

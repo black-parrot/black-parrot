@@ -5,7 +5,7 @@ module bp_be_dcache_decoder
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(bp_page_offset_width_gp, dpath_width_p)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dpath_width_p)
    , localparam dcache_pipeline_struct_width_lp = `bp_be_dcache_pipeline_struct_width
 
   )
@@ -14,7 +14,7 @@ module bp_be_dcache_decoder
     , output logic [dcache_pipeline_struct_width_lp-1:0] decoded_o
   );
 
-  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
+  `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = pkt_i;
 

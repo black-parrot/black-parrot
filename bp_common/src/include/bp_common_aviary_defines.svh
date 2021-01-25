@@ -390,13 +390,6 @@
       : '{io_noc_y_cord_width_p+io_noc_x_cord_width_p, io_noc_x_cord_width_p, 0}                   \
   , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]                 \
                                                                                                    \
-  , localparam dword_width_p       = 64                                                            \
-  , localparam word_width_p        = 32                                                            \
-  , localparam instr_width_p       = 32                                                            \
-  , localparam csr_addr_width_p    = 12                                                            \
-  , localparam reg_addr_width_p    = 5                                                             \
-  , localparam page_offset_width_p = 12                                                            \
-                                                                                                   \
   , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_p                     \
   , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_p                     \
 

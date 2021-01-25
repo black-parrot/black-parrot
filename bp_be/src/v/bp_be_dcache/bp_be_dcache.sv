@@ -104,7 +104,7 @@ module bp_be_dcache
    , localparam block_size_in_fill_lp = dcache_block_width_p / dcache_fill_width_p
    , localparam fill_size_in_bank_lp = dcache_fill_width_p / bank_width_lp
 
-   , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dpath_width_p)
+   , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dpath_width_p)
    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_p)
    )
   (input                              clk_i
@@ -168,7 +168,7 @@ module bp_be_dcache
   assign cache_req_o = cache_req_cast_o;
   assign cache_req_metadata_o = cache_req_metadata_cast_o;
 
-  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
+  `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = dcache_pkt_i;
 
@@ -191,7 +191,7 @@ module bp_be_dcache
   //
   logic v_tl_r; // valid bit
   logic tl_we;
-  logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
+  logic [page_offset_width_p-1:0] page_offset_tl_r;
   logic [dpath_width_p-1:0] data_tl_r;
   logic gdirty_r;
 

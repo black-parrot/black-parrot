@@ -28,13 +28,21 @@ package bp_common_pkg;
    * when they import this package, `declare the if structs. No more casting!
    */
 
-  parameter bp_sv39_page_table_depth_gp = 3;
-  parameter bp_sv39_pte_width_gp = 64;
-  parameter bp_sv39_vaddr_width_gp = 39;
-  parameter bp_sv39_paddr_width_gp = 56;
-  parameter bp_sv39_ppn_width_gp = 44;
-  parameter bp_page_size_in_bytes_gp = 4096;
-  parameter bp_page_offset_width_gp = `BSG_SAFE_CLOG2(bp_page_size_in_bytes_gp);
+  localparam bp_sv39_page_table_depth_gp = 3;
+  localparam bp_sv39_pte_width_gp = 64;
+  localparam bp_sv39_vaddr_width_gp = 39;
+  localparam bp_sv39_paddr_width_gp = 56;
+  localparam bp_sv39_ppn_width_gp = 44;
+  localparam bp_page_size_in_bytes_gp = 4096;
+
+  localparam dword_width_p       = 64;
+  localparam word_width_p        = 32;
+  localparam half_width_p        = 16;
+  localparam byte_width_p        = 8;
+  localparam instr_width_p       = 32;
+  localparam csr_addr_width_p    = 12;
+  localparam reg_addr_width_p    = 5;
+  localparam page_offset_width_p = 12;
 
   localparam boot_dev_gp  = 0;
   localparam host_dev_gp  = 1;
