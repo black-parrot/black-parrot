@@ -208,6 +208,7 @@ module bp_fe_top
   bp_pte_entry_leaf_s w_tlb_entry_li;
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf;
+  wire w_gigapage_li = fe_cmd_cast_i.operands.itlb_fill_response.gigapage;
 
   wire [dword_width_gp-1:0] r_eaddr_li = dword_width_gp'($signed(next_pc_lo));
   bp_mmu
@@ -228,6 +229,7 @@ module bp_fe_top
      ,.w_v_i(itlb_fill_v)
      ,.w_vtag_i(w_vtag_li)
      ,.w_entry_i(w_tlb_entry_li)
+     ,.w_gigapage_i(w_gigapage_li)
 
      ,.r_v_i(next_pc_yumi_li)
      ,.r_instr_i(1'b1)

@@ -163,6 +163,7 @@ module bp_be_pipe_mem
   assign dtlb_w_v     = ptw_fill_pkt.dtlb_fill_v;
   assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign dtlb_w_entry = ptw_fill_pkt.entry;
+  assign dtlb_w_gigapage = ptw_fill_pkt.gigapage;
 
   logic [ptag_width_p-1:0] dtlb_ptag_lo;
   bp_mmu
@@ -182,6 +183,7 @@ module bp_be_pipe_mem
      ,.w_v_i(dtlb_w_v)
      ,.w_vtag_i(dtlb_w_vtag)
      ,.w_entry_i(dtlb_w_entry)
+     ,.w_gigapage_i(dtlb_w_gigapage)
 
      ,.r_v_i(dtlb_r_v)
      ,.r_instr_i('0)
@@ -222,7 +224,7 @@ module bp_be_pipe_mem
      ,.dcache_pkt_o(ptw_dcache_pkt)
      ,.dcache_ptag_o(ptw_dcache_ptag)
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
-     ,.dcache_rdy_i(dcache_ready_lo)
+     ,.dcache_ready_i(dcache_ready_lo)
     );
 
   bp_be_dcache

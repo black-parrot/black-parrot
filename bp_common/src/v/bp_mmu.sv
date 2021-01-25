@@ -26,12 +26,13 @@ module bp_mmu
    , input                                            w_v_i
    , input [vtag_width_p-1:0]                         w_vtag_i
    , input [entry_width_lp-1:0]                       w_entry_i
+   , input                                            w_gigapage_i
 
    , input                                            r_v_i
    , input                                            r_instr_i
    , input                                            r_load_i
    , input                                            r_store_i
-   , input [dword_width_gp-1:0]                        r_eaddr_i
+   , input [dword_width_gp-1:0]                       r_eaddr_i
 
    , output logic                                     r_v_o
    , output logic [ptag_width_p-1:0]                  r_ptag_o
@@ -51,7 +52,7 @@ module bp_mmu
   bp_pte_entry_leaf_s tlb_r_entry_lo;
   wire [vtag_width_p-1:0] w_vtag_li = w_v_i ? w_vtag_i : r_eaddr_i[vaddr_width_p-1-:vtag_width_p];
   bp_tlb
-   #(.bp_params_p(bp_params_p), .els_p(tlb_els_p))
+   #(.bp_params_p(bp_params_p), .els_4k_p(tlb_els_p), .els_1g_p(tlb_els_p))
    tlb
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -61,6 +62,7 @@ module bp_mmu
      ,.w_i(w_v_i)
      ,.vtag_i(w_vtag_li)
      ,.entry_i(w_entry_i)
+     ,.gigapage_i(w_gigapage_i)
 
      ,.v_o(tlb_r_v_lo)
      ,.miss_v_o(tlb_r_miss_lo)
