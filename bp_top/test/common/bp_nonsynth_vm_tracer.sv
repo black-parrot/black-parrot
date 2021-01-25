@@ -1,4 +1,6 @@
 
+`include "bp_common_defines.svh"
+
 module bp_nonsynth_vm_tracer
  import bp_common_pkg::*;
  import bp_fe_pkg::*;

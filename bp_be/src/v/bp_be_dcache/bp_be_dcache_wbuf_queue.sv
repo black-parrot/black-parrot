@@ -6,6 +6,9 @@
  *    Data cache write buffer queue.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_dcache_wbuf_queue
   #(parameter width_p="inv")
   (

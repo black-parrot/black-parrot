@@ -15,6 +15,9 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_gad
   import bp_common_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg

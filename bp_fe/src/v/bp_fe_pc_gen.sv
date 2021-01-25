@@ -6,6 +6,9 @@
  * between the frontend and the backend, i.e. the frontend queue).
 */
 
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_pc_gen
  import bp_common_pkg::*;
  import bp_fe_pkg::*;

@@ -3,6 +3,8 @@
  *
  */
 
+`include "bp_common_defines.svh"
+
 module bp_nonsynth_nbf_loader
 
   import bp_common_pkg::*;

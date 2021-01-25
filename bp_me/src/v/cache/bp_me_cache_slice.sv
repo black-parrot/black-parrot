@@ -1,4 +1,7 @@
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_cache_slice
  import bp_common_pkg::*;
  import bp_be_pkg::*;

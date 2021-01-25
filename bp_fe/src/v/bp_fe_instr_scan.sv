@@ -5,6 +5,9 @@
  * The entire block is implemented in combinational logic, achieved within one cycle.
 */
 
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_instr_scan
  import bp_common_pkg::*;
  import bp_fe_pkg::*;

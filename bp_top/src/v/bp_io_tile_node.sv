@@ -1,3 +1,5 @@
+`include "bp_common_defines.svh"
+
 module bp_io_tile_node
  import bp_common_pkg::*;
  import bp_me_pkg::*;

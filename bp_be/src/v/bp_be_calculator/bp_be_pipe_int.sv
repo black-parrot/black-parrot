@@ -9,6 +9,9 @@
  * Notes:
  *
  */
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_pipe_int
  import bp_common_pkg::*;
  import bp_be_pkg::*;

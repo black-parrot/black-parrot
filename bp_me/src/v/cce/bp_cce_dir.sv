@@ -12,6 +12,9 @@
  *   coherence for a single type of LCE (I$, D$, A$, etc.).
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_dir
   import bp_common_pkg::*;
   import bp_me_pkg::*;

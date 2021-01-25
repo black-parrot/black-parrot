@@ -1,4 +1,6 @@
 
+`include "bp_common_defines.svh"
+
 module bp_nonsynth_cosim
   import bp_common_pkg::*;
   import bp_be_pkg::*;

@@ -3,6 +3,9 @@
 //
 //
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_cache_dma_to_cce
 
   import bp_common_pkg::*;

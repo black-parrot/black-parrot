@@ -3,6 +3,9 @@
 // This module is an active tie-off. That is, requests to this module will return the header
 //   with a zero payload. This is useful to not stall the network in the case of an erroneous
 //   address, or prevent deadlock at network boundaries
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_loopback
   import bp_common_pkg::*;
   import bp_me_pkg::*;

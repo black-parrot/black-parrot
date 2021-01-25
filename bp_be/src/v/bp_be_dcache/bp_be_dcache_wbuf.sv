@@ -6,6 +6,9 @@
  *    Data cache write buffer.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_dcache_wbuf
   import bp_common_pkg::*;
   #(parameter data_width_p="inv"

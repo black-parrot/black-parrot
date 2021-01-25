@@ -22,6 +22,9 @@
  *   Currently, it is assumed that N is the same for all CCEs in the system.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_fsm_top
   import bp_common_pkg::*;
   import bp_me_pkg::*;

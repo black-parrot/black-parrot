@@ -12,6 +12,9 @@
  *     the BTB read is most likely for an erroneous instruction, anyway.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_btb
  import bp_fe_pkg::*;
  #(parameter vaddr_width_p     = "inv"

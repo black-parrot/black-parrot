@@ -8,6 +8,9 @@
 `define dram_pkg bsg_dramsim2_hmb2_4gb_x128_pkg
 `endif
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_mem
   import bp_common_pkg::*;
   import bp_me_pkg::*;

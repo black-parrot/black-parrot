@@ -14,6 +14,9 @@
  *       down to if writing / reading x0 and then muxing is less power than checking x == 0 on input.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_regfile
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg

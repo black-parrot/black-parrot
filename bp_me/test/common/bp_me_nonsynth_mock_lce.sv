@@ -11,6 +11,9 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_nonsynth_mock_lce
   import bp_common_pkg::*;
   import bp_me_nonsynth_pkg::*;

@@ -1,4 +1,7 @@
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_mem_to_dram
 
   import bp_common_pkg::*;

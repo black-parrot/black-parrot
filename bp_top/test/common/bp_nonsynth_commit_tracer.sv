@@ -1,4 +1,6 @@
 
+`include "bp_common_defines.svh"
+
 module bp_nonsynth_commit_tracer
   import bp_be_pkg::*;
   import bp_common_pkg::*;

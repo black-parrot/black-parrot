@@ -1,4 +1,6 @@
 
+`include "bp_common_defines.svh"
+
 module bp_unicore
  import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;

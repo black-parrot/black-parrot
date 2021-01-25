@@ -1,4 +1,6 @@
 
+`include "bp_common_defines.svh"
+
 module bp_io_link_to_lce
  import bp_common_pkg::*;
  import bsg_noc_pkg::*;

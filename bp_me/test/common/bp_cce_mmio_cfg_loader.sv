@@ -7,6 +7,9 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_mmio_cfg_loader
   import bp_common_pkg::*;
   import bp_be_pkg::*;

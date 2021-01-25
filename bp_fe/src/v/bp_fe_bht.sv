@@ -9,6 +9,9 @@
  * native to this design.
  * 2-bit saturating counter(high_bit:prediction direction,low_bit:strong/weak prediction)
  */
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_bht
  import bp_fe_pkg::*;
  #(parameter vaddr_width_p     = "inv"

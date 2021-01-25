@@ -1,4 +1,6 @@
 
+`include "bp_common_defines.svh"
+
 module bp_io_complex
  import bp_common_pkg::*;
  import bp_me_pkg::*;

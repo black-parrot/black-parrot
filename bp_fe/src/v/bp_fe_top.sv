@@ -2,6 +2,9 @@
  * bp_fe_top.v
  */
 
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_top
  import bp_fe_pkg::*;
  import bp_common_pkg::*;

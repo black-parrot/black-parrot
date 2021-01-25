@@ -4,6 +4,9 @@
 
 `include "bp_me_defines.svh"
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_cce_to_mem_link_client
   import bp_common_pkg::*;
   import bp_me_pkg::*;

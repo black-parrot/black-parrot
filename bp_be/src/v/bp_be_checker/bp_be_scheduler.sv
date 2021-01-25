@@ -11,6 +11,9 @@
  *   Floating point instruction decoding is not implemented, so we do not predecode.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_scheduler
  import bp_common_pkg::*;
  import bp_be_pkg::*;

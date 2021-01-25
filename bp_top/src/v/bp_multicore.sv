@@ -6,6 +6,8 @@
 
 `include "bsg_noc_links.vh"
 
+`include "bp_common_defines.svh"
+
 module bp_multicore
  import bp_common_pkg::*;
  import bp_be_pkg::*;

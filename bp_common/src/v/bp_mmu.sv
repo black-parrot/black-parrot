@@ -2,6 +2,8 @@
  * bp_mmu.v
  */
 
+`include "bp_common_defines.svh"
+
 module bp_mmu
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg

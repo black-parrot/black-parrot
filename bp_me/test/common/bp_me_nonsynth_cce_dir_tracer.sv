@@ -8,6 +8,9 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_nonsynth_cce_dir_tracer
   import bp_common_pkg::*;
   import bp_me_pkg::*;

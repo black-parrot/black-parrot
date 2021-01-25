@@ -28,6 +28,9 @@
 
 `include "bp_fe_defines.svh"
 
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_icache
  import bp_common_pkg::*;
  import bp_fe_pkg::*;

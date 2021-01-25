@@ -4,6 +4,8 @@
  *
  */
 
+`include "bp_common_defines.svh"
+
 module bp_nd_socket
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
