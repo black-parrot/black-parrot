@@ -14,19 +14,19 @@ module bp_be_scoreboard
    , input                                      reset_i
 
    , input                                      score_v_i
-   , input [reg_addr_width_p-1:0]               score_rd_i
+   , input [reg_addr_width_gp-1:0]               score_rd_i
 
    , input                                      clear_v_i
-   , input [reg_addr_width_p-1:0]               clear_rd_i
+   , input [reg_addr_width_gp-1:0]               clear_rd_i
 
-   , input [num_rs_p-1:0][reg_addr_width_p-1:0] rs_i
-   , input               [reg_addr_width_p-1:0] rd_i
+   , input [num_rs_p-1:0][reg_addr_width_gp-1:0] rs_i
+   , input               [reg_addr_width_gp-1:0] rd_i
 
    , output logic [num_rs_p-1:0]                rs_match_o
    , output logic                               rd_match_o
    );
 
-  localparam rf_els_lp = 2**reg_addr_width_p;
+  localparam rf_els_lp = 2**reg_addr_width_gp;
   logic [rf_els_lp-1:0] scoreboard_r;
 
   logic [rf_els_lp-1:0] score_onehot_li;

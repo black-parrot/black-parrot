@@ -20,15 +20,15 @@ module bp_nonsynth_commit_tracer
 
     , input                                   commit_v_i
     , input [vaddr_width_p-1:0]               commit_pc_i
-    , input [instr_width_p-1:0]               commit_instr_i
+    , input [instr_width_gp-1:0]               commit_instr_i
 
     , input                                   ird_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      ird_addr_i
-    , input [dpath_width_p-1:0]               ird_data_i
+    , input [dpath_width_gp-1:0]               ird_data_i
 
     , input                                   frd_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      frd_addr_i
-    , input [dpath_width_p-1:0]               frd_data_i
+    , input [dpath_width_gp-1:0]               frd_data_i
     );
 
 integer file;
@@ -69,12 +69,12 @@ always_ff @(negedge delay_li)
 
   logic                     commit_v_r;
   logic [vaddr_width_p-1:0] commit_pc_r;
-  logic [instr_width_p-1:0] commit_instr_r;
+  logic [instr_width_gp-1:0] commit_instr_r;
   logic                     commit_rd_w_v_r;
   logic commit_fifo_v_lo, commit_fifo_yumi_li;
   wire commit_rd_w_v_li = decode_r.irf_w_v | decode_r.frf_w_v | decode_r.pipe_long_v;
   bsg_fifo_1r1w_small
-   #(.width_p(1+vaddr_width_p+instr_width_p+1), .els_p(8))
+   #(.width_p(1+vaddr_width_p+instr_width_gp+1), .els_p(8))
    commit_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

@@ -16,7 +16,7 @@ module bp_fe_instr_scan
 
    , localparam instr_scan_width_lp = `bp_fe_instr_scan_width(vaddr_width_p)
    )
-  (input [instr_width_p-1:0]          instr_i
+  (input [instr_width_gp-1:0]          instr_i
 
    , output [instr_scan_width_lp-1:0] scan_o
   );

@@ -20,17 +20,20 @@ package bp_common_pkg;
    * when they import this package, `declare the if structs. No more casting!
    */
 
-  localparam bp_sv39_page_table_depth_gp = 3;
-  localparam bp_sv39_pte_width_gp = 64;
-  localparam bp_sv39_vaddr_width_gp = 39;
-  localparam bp_sv39_paddr_width_gp = 56;
-  localparam bp_sv39_ppn_width_gp = 44;
-  localparam bp_page_size_in_bytes_gp = 4096;
+  localparam sv39_pte_width_gp          = 64;
+  localparam sv39_levels_gp             = 3;
+  localparam sv39_vaddr_width_gp        = 39;
+  localparam sv39_paddr_width_gp        = 56;
+  localparam sv39_ppn_width_gp          = 44;
+  localparam sv39_page_idx_width_gp     = 9;
+  localparam sv39_page_offset_width_gp  = 12;
+  localparam sv39_page_size_in_bytes_gp = 1 << sv39_page_offset_width_gp;
+  localparam sv39_pte_size_in_bytes_gp  = 8;
 
   typedef struct packed
   {
-    logic [bp_sv39_pte_width_gp-10-bp_sv39_ppn_width_gp-1:0] reserved;
-    logic [bp_sv39_ppn_width_gp-1:0] ppn;
+    logic [sv39_pte_width_gp-10-sv39_ppn_width_gp-1:0] reserved;
+    logic [sv39_ppn_width_gp-1:0] ppn;
     logic [1:0] rsw;
     logic d;
     logic a;
@@ -40,16 +43,16 @@ package bp_common_pkg;
     logic w;
     logic r;
     logic v;
-  }  bp_sv39_pte_s;
+  }  sv39_pte_s;
 
-  localparam dword_width_p       = 64;
-  localparam word_width_p        = 32;
-  localparam half_width_p        = 16;
-  localparam byte_width_p        = 8;
-  localparam instr_width_p       = 32;
-  localparam csr_addr_width_p    = 12;
-  localparam reg_addr_width_p    = 5;
-  localparam page_offset_width_p = 12;
+  localparam dword_width_gp       = 64;
+  localparam word_width_gp        = 32;
+  localparam half_width_gp        = 16;
+  localparam byte_width_gp        = 8;
+  localparam instr_width_gp       = 32;
+  localparam csr_addr_width_gp    = 12;
+  localparam reg_addr_width_gp    = 5;
+  localparam page_offset_width_gp = 12;
 
   localparam boot_dev_gp  = 0;
   localparam host_dev_gp  = 1;

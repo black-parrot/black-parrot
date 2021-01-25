@@ -14,7 +14,7 @@ module testbench
    // interface widths
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
 
    , parameter cce_trace_p = 0
    , parameter cce_dir_trace_p = 0
@@ -40,7 +40,7 @@ module testbench
 
    // LCE Trace Replay Width
    , localparam lce_opcode_width_lp=$bits(bp_me_nonsynth_lce_opcode_e)
-   , localparam tr_ring_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_p)
+   , localparam tr_ring_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_gp)
    , localparam tr_rom_addr_width_p = 20
 
    )
@@ -61,10 +61,10 @@ function int get_sim_period();
   return (`BP_SIM_CLK_PERIOD);
 endfunction
 
-`declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-`declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce);
+`declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
 
 // CFG IF
 bp_cfg_bus_s             cfg_bus_lo;
@@ -72,7 +72,7 @@ bp_bedrock_cce_mem_msg_s cfg_mem_cmd_lo;
 bp_bedrock_xce_mem_msg_s cfg_mem_cmd;
 logic                    cfg_mem_cmd_v_lo, cfg_mem_cmd_ready_li;
 assign cfg_mem_cmd = '{header: cfg_mem_cmd_lo.header
-                      ,data: cfg_mem_cmd_lo.data[0+:dword_width_p]
+                      ,data: cfg_mem_cmd_lo.data[0+:dword_width_gp]
                       };
 
 // CCE-MEM IF
@@ -318,8 +318,8 @@ lce_cmd_buffer
 logic cce_ucode_v_li;
 logic cce_ucode_w_li;
 logic [cce_pc_width_p-1:0] cce_ucode_addr_li;
-logic [cce_instr_width_p-1:0] cce_ucode_data_li;
-logic [cce_instr_width_p-1:0] cce_ucode_data_lo;
+logic [cce_instr_width_gp-1:0] cce_ucode_data_li;
+logic [cce_instr_width_gp-1:0] cce_ucode_data_lo;
 
 // CCE
 wrapper

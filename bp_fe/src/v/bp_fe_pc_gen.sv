@@ -32,7 +32,7 @@ module bp_fe_pc_gen
 
    , output logic                                    ovr_o
 
-   , input [instr_width_p-1:0]                       fetch_i
+   , input [instr_width_gp-1:0]                       fetch_i
    , input                                           fetch_instr_v_i
    , input                                           fetch_exception_v_i
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o

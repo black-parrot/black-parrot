@@ -7,15 +7,15 @@ module wrapper
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-  `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+  `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
 
-  , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+  , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
   , localparam lg_icache_assoc_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
   , localparam block_size_in_words_lp=icache_assoc_p
   , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
-  , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
+  , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
   , localparam data_mem_mask_width_lp=(bank_width_lp>>3)
   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp>>3)
   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
@@ -37,7 +37,7 @@ module wrapper
 
   , input                             uncached_i
 
-  , output [instr_width_p-1:0]        data_o
+  , output [instr_width_gp-1:0]        data_o
   , output                            data_v_o
 
   , input [cce_mem_msg_width_lp-1:0]        mem_resp_i
@@ -49,7 +49,7 @@ module wrapper
   , input                                   mem_cmd_ready_i
   );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 

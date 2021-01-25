@@ -13,14 +13,14 @@ module bp_uce
     , parameter sets_p = 64
     , parameter block_width_p = 512
     , parameter fill_width_p = 512
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
     , parameter tag_mem_invert_clk_p  = 0
     , parameter data_mem_invert_clk_p = 0
     , parameter stat_mem_invert_clk_p = 0
 
     , localparam bank_width_lp = block_width_p / assoc_p
-    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
+    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
     , localparam byte_offset_width_lp  = `BSG_SAFE_CLOG2(bank_width_lp>>3)
     // Words per line == associativity
     , localparam bank_offset_width_lp  = `BSG_SAFE_CLOG2(assoc_p)
@@ -85,7 +85,7 @@ module bp_uce
     );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce);
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_o(bp_cache_tag_mem_pkt_s, tag_mem_pkt);
@@ -729,7 +729,7 @@ module bp_uce
         e_uc_read_wait:
           begin
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
-            data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_p){mem_resp_cast_i.data[0+:dword_width_p]}};
+            data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_gp){mem_resp_cast_i.data[0+:dword_width_gp]}};
             data_mem_pkt_v_o = load_resp_v_li;
 
             cache_req_complete_o = data_mem_pkt_yumi_i;

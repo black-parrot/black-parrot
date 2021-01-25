@@ -21,10 +21,10 @@ module bp_be_calculator_top
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
@@ -89,7 +89,7 @@ module bp_be_calculator_top
   );
 
   // Declare parameterizable structs
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   // Cast input and output ports
@@ -125,7 +125,7 @@ module bp_be_calculator_top
 
   logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
   logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
-  logic [dpath_width_p-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
+  logic [dpath_width_gp-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
   rv64_fflags_s pipe_aux_fflags_lo, pipe_fma_fflags_lo;
 
   logic pipe_sys_exc_v_lo, pipe_sys_miss_v_lo;
@@ -133,12 +133,12 @@ module bp_be_calculator_top
   // Forwarding information
   logic [pipe_stage_els_lp:1]                        comp_stage_n_slice_iwb_v;
   logic [pipe_stage_els_lp:1]                        comp_stage_n_slice_fwb_v;
-  logic [pipe_stage_els_lp:1][reg_addr_width_p-1:0]  comp_stage_n_slice_rd_addr;
-  logic [pipe_stage_els_lp:1][dpath_width_p-1:0]     comp_stage_n_slice_ird;
-  logic [pipe_stage_els_lp:1][dpath_width_p-1:0]     comp_stage_n_slice_frd;
+  logic [pipe_stage_els_lp:1][reg_addr_width_gp-1:0]  comp_stage_n_slice_rd_addr;
+  logic [pipe_stage_els_lp:1][dpath_width_gp-1:0]     comp_stage_n_slice_ird;
+  logic [pipe_stage_els_lp:1][dpath_width_gp-1:0]     comp_stage_n_slice_frd;
 
   // Register bypass network
-  logic [dpath_width_p-1:0] bypass_irs1, bypass_irs2;
+  logic [dpath_width_gp-1:0] bypass_irs1, bypass_irs2;
   bp_be_bypass
    #(.depth_p(pipe_stage_els_lp), .els_p(2), .zero_x0_p(1))
    int_bypass
@@ -152,7 +152,7 @@ module bp_be_calculator_top
      ,.bypass_o({bypass_irs2, bypass_irs1})
      );
 
-  logic [dpath_width_p-1:0] bypass_frs1, bypass_frs2, bypass_frs3;
+  logic [dpath_width_gp-1:0] bypass_frs1, bypass_frs2, bypass_frs3;
   bp_be_bypass
    #(.depth_p(pipe_stage_els_lp), .els_p(3), .zero_x0_p(0))
    fp_bypass
@@ -169,9 +169,9 @@ module bp_be_calculator_top
      ,.bypass_o({bypass_frs3, bypass_frs2, bypass_frs1})
      );
 
-  logic [dpath_width_p-1:0] bypass_rs1, bypass_rs2, bypass_rs3;
+  logic [dpath_width_gp-1:0] bypass_rs1, bypass_rs2, bypass_rs3;
   bsg_mux_segmented
-   #(.segments_p(3), .segment_width_p(dpath_width_p))
+   #(.segments_p(3), .segment_width_p(dpath_width_gp))
    bypass_xrs_mux
     (.data0_i({dispatch_pkt.imm, bypass_irs2, bypass_irs1})
      ,.data1_i({bypass_frs3, bypass_frs2, bypass_frs1})
@@ -437,8 +437,8 @@ module bp_be_calculator_top
         comp_stage_n_slice_fwb_v[i]   = comp_stage_r[i-1].frd_w_v & ~exc_stage_n[i].poison_v;
         comp_stage_n_slice_rd_addr[i] = comp_stage_r[i-1].rd_addr;
 
-        comp_stage_n_slice_ird[i]     = comp_stage_n[i].rd_data[0+:dword_width_p];
-        comp_stage_n_slice_frd[i]     = comp_stage_n[i].rd_data[0+:dpath_width_p];
+        comp_stage_n_slice_ird[i]     = comp_stage_n[i].rd_data[0+:dword_width_gp];
+        comp_stage_n_slice_frd[i]     = comp_stage_n[i].rd_data[0+:dpath_width_gp];
       end
 
   always_comb

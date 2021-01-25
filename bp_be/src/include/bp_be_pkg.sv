@@ -3,7 +3,7 @@ package bp_be_pkg;
 
   import bp_common_pkg::*;
 
-  localparam dpath_width_p = 66;
+  localparam dpath_width_gp = 66;
 
   typedef struct packed
   {

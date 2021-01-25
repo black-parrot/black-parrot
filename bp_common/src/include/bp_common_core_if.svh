@@ -40,7 +40,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [vaddr_width_mp-1:0]                pc;                                                \
-      logic [instr_width_p-1:0]                 instr;                                             \
+      logic [instr_width_gp-1:0]                instr;                                             \
       logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                               \
                                                                                                    \
       logic [`bp_fe_fetch_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)-1:0]         \
@@ -115,7 +115,7 @@
     */                                                                                             \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic [paddr_width_mp-page_offset_width_p-1:0] ptag;                                         \
+      logic [paddr_width_mp-page_offset_width_gp-1:0] ptag;                                        \
       logic                                              a;                                        \
       logic                                              d;                                        \
       logic                                              u;                                        \
@@ -287,7 +287,7 @@
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
   
   `define bp_pte_entry_leaf_width(paddr_width_mp) \
-    (paddr_width_mp - page_offset_width_p + 6)
+    (paddr_width_mp - page_offset_width_gp + 6)
   
   `define bp_fe_cmd_itlb_fence_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
@@ -296,7 +296,7 @@
    * examine this code carefully. Else, clients should not have to use these macros
    */
   `define bp_fe_fetch_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-    (vaddr_width_mp + instr_width_p + branch_metadata_fwd_width_mp)
+    (vaddr_width_mp + instr_width_gp + branch_metadata_fwd_width_mp)
   
   `define bp_fe_exception_width_no_padding(vaddr_width_mp) \
     (vaddr_width_mp + $bits(bp_fe_exception_code_e))

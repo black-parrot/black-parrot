@@ -36,7 +36,7 @@ module bp_nonsynth_pc_profiler
       file      = $fopen(file_name, "w");
     end
 
-  logic [dword_width_p-1:0] count;
+  logic [dword_width_gp-1:0] count;
   always_ff @(posedge clk_i)
     begin
       if (reset_i)

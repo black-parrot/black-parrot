@@ -39,7 +39,7 @@ module bp_lce_cmd
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
     // width for counter used during initiliazation and for sync messages
     , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(sets_p)+1)
@@ -120,7 +120,7 @@ module bp_lce_cmd
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   // FSM states
   typedef enum logic [3:0] {
@@ -546,7 +546,7 @@ module bp_lce_cmd
             // when data sends and command is dequeued
             e_bedrock_cmd_uc_data: begin
               data_mem_pkt.index = lce_cmd_addr_index;
-              data_mem_pkt.data = {(block_width_p/dword_width_p){lce_cmd.data[0+:dword_width_p]}};
+              data_mem_pkt.data = {(block_width_p/dword_width_gp){lce_cmd.data[0+:dword_width_gp]}};
               data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
               data_mem_pkt.opcode = e_cache_data_mem_uncached;
               data_mem_pkt_v_o = lce_cmd_v_i;

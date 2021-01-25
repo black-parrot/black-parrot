@@ -11,15 +11,15 @@ module bp_nonsynth_cache_tracer
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
    , localparam block_size_in_words_lp=assoc_p
    , localparam bank_width_lp = block_width_p / assoc_p
-   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
+   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
    , localparam data_mem_mask_width_lp=(bank_width_lp>>3)
-   , localparam bypass_data_width_lp = (dword_width_p >> 3)
+   , localparam bypass_data_width_lp = (dword_width_gp >> 3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp>>3)
    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
@@ -56,10 +56,10 @@ module bp_nonsynth_cache_tracer
 
    // Cache data
    , input                                                 v_o
-   , input [dpath_width_p-2:0]                             load_data
+   , input [dpath_width_gp-2:0]                             load_data
    , input                                                 cache_miss_o
    , input                                                 wt_req
-   , input [dword_width_p-1:0]                             store_data
+   , input [dword_width_gp-1:0]                             store_data
 
    // Fill Packets
    , input                                                 data_mem_pkt_v_i
@@ -79,7 +79,7 @@ module bp_nonsynth_cache_tracer
    , input [assoc_p-1:0]                                   data_mem_v_i
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   // Input Casting
   bp_cache_req_s cache_req_cast_o;

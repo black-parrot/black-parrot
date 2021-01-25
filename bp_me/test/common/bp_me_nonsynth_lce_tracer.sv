@@ -29,7 +29,7 @@ module bp_me_nonsynth_lce_tracer
 
     , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
 
-    , localparam lce_req_data_width_lp = dword_width_p
+    , localparam lce_req_data_width_lp = dword_width_gp
 
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
   )

@@ -15,12 +15,12 @@ module wrapper
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
 
-   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam block_size_in_words_lp=dcache_assoc_p
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
 
@@ -43,7 +43,7 @@ module wrapper
    , input [num_caches_p-1:0][ptag_width_p-1:0]        ptag_i
    , input [num_caches_p-1:0]                          uncached_i
 
-   , output logic [num_caches_p-1:0][dword_width_p-1:0]data_o
+   , output logic [num_caches_p-1:0][dword_width_gp-1:0]data_o
    , output logic [num_caches_p-1:0]                   v_o
 
    , input                                             mem_resp_v_i
@@ -55,7 +55,7 @@ module wrapper
    , input                                             mem_cmd_ready_i
    );
 
-   `declare_bp_be_dcache_structs(paddr_width_p, dpath_width_p);
+   `declare_bp_be_dcache_structs(paddr_width_p, dpath_width_gp);
 
    // Cache to Rolly FIFO signals
    logic [num_caches_p-1:0] dcache_ready_lo;
@@ -90,9 +90,9 @@ module wrapper
    logic [num_caches_p-1:0] rolly_uncached_r;
    logic [num_caches_p-1:0] is_store, is_store_rr, dcache_v_rr, poison_li;
 
-   logic [num_caches_p-1:0][dpath_width_p-1:0] early_data_lo;
+   logic [num_caches_p-1:0][dpath_width_gp-1:0] early_data_lo;
    logic [num_caches_p-1:0] early_v_lo;
-   logic [num_caches_p-1:0][dpath_width_p-1:0] final_data_lo;
+   logic [num_caches_p-1:0][dpath_width_gp-1:0] final_data_lo;
    logic [num_caches_p-1:0] final_v_lo;
 
    logic [num_caches_p-1:0] lce_req_v_lo, lce_resp_v_lo;
@@ -114,7 +114,7 @@ module wrapper
    bp_bedrock_lce_resp_msg_s [num_caches_p-1:0] lce_resp_lo;
    bp_bedrock_lce_resp_msg_s cce_lce_resp_li;
 
-   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
    bp_cfg_bus_s cfg_bus_cast_i;
    assign cfg_bus_cast_i = cfg_bus_i;
 

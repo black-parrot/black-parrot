@@ -33,14 +33,14 @@ module bp_be_instr_decoder
    , input [instr_width_lp-1:0]      instr_i
 
    , output [decode_width_lp-1:0]    decode_o
-   , output [dword_width_p-1:0]      imm_o
+   , output [dword_width_gp-1:0]      imm_o
 
    , input                           fpu_en_i
    );
 
   rv64_instr_fmatype_s instr;
   bp_be_decode_s decode;
-  logic [dword_width_p-1:0] imm;
+  logic [dword_width_gp-1:0] imm;
 
   assign instr    = instr_i;
   assign decode_o = decode;

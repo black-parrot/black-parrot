@@ -44,7 +44,7 @@
   } bp_cacc_type_e;
 
 
-  `define declare_bp_cfg_bus_s(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
+  `define declare_bp_cfg_bus_s(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp) \
     typedef struct packed                                                                            \
     {                                                                                                \
       logic                                    freeze;                                               \
@@ -59,7 +59,7 @@
       logic                                    sac;                                                  \
     }  bp_cfg_bus_s
 
-  `define bp_cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
+  `define bp_cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp) \
     (1                                \
      + core_id_width_mp               \
      + lce_id_width_mp                \
@@ -77,10 +77,10 @@
   {
     // 0: BP unicore (minimal, single-core configuration)
     // 1: BP multicore (coherent, multi-core configuration)
-    integer multicore;
+    integer unsigned multicore;
 
     // Dimensions of the different complexes
-    // Core Complex may be any integer (though has only been validated up to 4x4)
+    // Core Complex may be any integer unsigned (though has only been validated up to 4x4)
     // All other Complexes are 1-dimensional
     //                                    [                           ]
     //                                    [        I/O Complex        ]
@@ -94,140 +94,140 @@
     //                                    [       Memory Complex      ]
     //                                    [                           ]
     //
-    integer cc_x_dim;
-    integer cc_y_dim;
-    integer ic_y_dim;
-    integer mc_y_dim;
-    integer cac_x_dim;
-    integer sac_x_dim;
+    integer unsigned cc_x_dim;
+    integer unsigned cc_y_dim;
+    integer unsigned ic_y_dim;
+    integer unsigned mc_y_dim;
+    integer unsigned cac_x_dim;
+    integer unsigned sac_x_dim;
 
     // The type of accelerator in the accelerator complexes, selected out of bp_cacc_type_e/bp_sacc_type_e
     // Only supports homogeneous configurations
-    integer cacc_type;
-    integer sacc_type;
+    integer unsigned cacc_type;
+    integer unsigned sacc_type;
 
     // Number of CCEs/LCEs in the system. Must be consistent within complex dimensions
-    integer num_cce;
-    integer num_lce;
+    integer unsigned num_cce;
+    integer unsigned num_lce;
 
     // Virtual address width
     //   Only tested for SV39 (39-bit virtual address)
-    integer vaddr_width;
+    integer unsigned vaddr_width;
     // Physical address width
     //   Only tested for 40-bit physical address
-    integer paddr_width;
+    integer unsigned paddr_width;
     // Address space ID width
     //   Currently unused, so set to 1 bit
-    integer asid_width;
+    integer unsigned asid_width;
 
     // The virtual address of the PC coming out of reset
-    integer boot_pc;
+    integer unsigned boot_pc;
     // 0: boots in M-mode, not debug-mode
     // 1: boots in M-mode, debug-mode
-    integer boot_in_debug;
+    integer unsigned boot_in_debug;
 
     // Branch metadata information for the Front End
     // Must be kept consistent with FE
-    integer branch_metadata_fwd_width;
-    integer btb_tag_width;
-    integer btb_idx_width;
-    integer bht_idx_width;
-    integer ghist_width;
+    integer unsigned branch_metadata_fwd_width;
+    integer unsigned btb_tag_width;
+    integer unsigned btb_idx_width;
+    integer unsigned bht_idx_width;
+    integer unsigned ghist_width;
 
     // Capacity of the Instruction/Data TLBs
-    integer itlb_els;
-    integer dtlb_els;
+    integer unsigned itlb_els;
+    integer unsigned dtlb_els;
 
     // Atomic support in the system. There are 3 levels of support
     //   None: Will cause illegal instruction trap
     //   L1  : Handled by L1
     //   L2  : Handled by L2 via uncached access in L1
-    integer lr_sc;
-    integer amo_swap;
-    integer amo_fetch_logic;
-    integer amo_fetch_arithmetic;
+    integer unsigned lr_sc;
+    integer unsigned amo_swap;
+    integer unsigned amo_fetch_logic;
+    integer unsigned amo_fetch_arithmetic;
 
     // Whether the D$ is writethrough or writeback
-    integer l1_writethrough;
+    integer unsigned l1_writethrough;
     // Whether the I$ and D$ are kept coherent
-    integer l1_coherent;
+    integer unsigned l1_coherent;
 
     // I$ parameterizations
-    integer icache_sets;
-    integer icache_assoc;
-    integer icache_block_width;
-    integer icache_fill_width;
+    integer unsigned icache_sets;
+    integer unsigned icache_assoc;
+    integer unsigned icache_block_width;
+    integer unsigned icache_fill_width;
 
     // D$ parameterizations
-    integer dcache_sets;
-    integer dcache_assoc;
-    integer dcache_block_width;
-    integer dcache_fill_width;
+    integer unsigned dcache_sets;
+    integer unsigned dcache_assoc;
+    integer unsigned dcache_block_width;
+    integer unsigned dcache_fill_width;
 
     // A$ parameterizations
-    integer acache_sets;
-    integer acache_assoc;
-    integer acache_block_width;
-    integer acache_fill_width;
+    integer unsigned acache_sets;
+    integer unsigned acache_assoc;
+    integer unsigned acache_block_width;
+    integer unsigned acache_fill_width;
 
     // Microcoded CCE parameters
     // 0: CCE is FSM-based
     // 1: CCE is ucode
-    integer cce_ucode;
+    integer unsigned cce_ucode;
     // Determines the size of the CCE instruction RAM
-    integer cce_pc_width;
+    integer unsigned cce_pc_width;
 
     // L2 slice parameters (per core)
-    integer l2_en;
-    integer l2_sets;
-    integer l2_assoc;
-    integer l2_outstanding_reqs;
+    integer unsigned l2_en;
+    integer unsigned l2_sets;
+    integer unsigned l2_assoc;
+    integer unsigned l2_outstanding_reqs;
 
     // Size of the issue queue
-    integer fe_queue_fifo_els;
+    integer unsigned fe_queue_fifo_els;
     // Size of the cmd queue
-    integer fe_cmd_fifo_els;
+    integer unsigned fe_cmd_fifo_els;
 
     // Whether the coherence network is on the core clock or on its own clock
-    integer async_coh_clk;
+    integer unsigned async_coh_clk;
     // Flit width of the coherence network. Has major impact on latency / area of the network
-    integer coh_noc_flit_width;
+    integer unsigned coh_noc_flit_width;
     // Concentrator ID width of the coherence network. Corresponds to how many nodes can be on a
     //   single wormhole router
-    integer coh_noc_cid_width;
+    integer unsigned coh_noc_cid_width;
     // Maximum number of flits in a single wormhole message. Determined by protocol and affects
     //   buffer size
-    integer coh_noc_len_width;
+    integer unsigned coh_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
-    integer coh_noc_max_credits;
+    integer unsigned coh_noc_max_credits;
 
     // Whether the memory network is on the core clock or on its own clock
-    integer async_mem_clk;
+    integer unsigned async_mem_clk;
     // Flit width of the memory network. Has major impact on latency / area of the network
-    integer mem_noc_flit_width;
+    integer unsigned mem_noc_flit_width;
     // Concentrator ID width of the memory network. Corresponds to how many nodes can be on a
     //   single wormhole router
-    integer mem_noc_cid_width;
+    integer unsigned mem_noc_cid_width;
     // Maximum number of flits in a single wormhole message. Determined by protocol and affects
     //   buffer size
-    integer mem_noc_len_width;
+    integer unsigned mem_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
-    integer mem_noc_max_credits;
+    integer unsigned mem_noc_max_credits;
 
     // Whether the I/O network is on the core clock or on its own clock
-    integer async_io_clk;
+    integer unsigned async_io_clk;
     // Flit width of the I/O network. Has major impact on latency / area of the network
-    integer io_noc_flit_width;
+    integer unsigned io_noc_flit_width;
     // Concentrator ID width of the I/O network. Corresponds to how many nodes can be on a
     //   single wormhole router
-    integer io_noc_cid_width;
+    integer unsigned io_noc_cid_width;
     // Domain ID width of the I/O network. Corresponds to how many chips compose a multichip chain
-    integer io_noc_did_width;
+    integer unsigned io_noc_did_width;
     // Maximum number of flits in a single wormhole message. Determined by protocol and affects
     //   buffer size
-    integer io_noc_len_width;
+    integer unsigned io_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
-    integer io_noc_max_credits;
+    integer unsigned io_noc_max_credits;
   }  bp_proc_param_s;
 
   // For now, we have a fixed address map
@@ -331,7 +331,6 @@
   , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                             \
   , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                      \
   , localparam cce_way_groups_p           = `BSG_MAX(dcache_sets_p, icache_sets_p)                 \
-  , localparam cce_instr_width_p          = 34                                                     \
   , localparam cce_ucode_p                = proc_param_lp.cce_ucode                                \
                                                                                                    \
   , localparam l2_en_p    = proc_param_lp.l2_en                                                    \
@@ -390,8 +389,8 @@
       : '{io_noc_y_cord_width_p+io_noc_x_cord_width_p, io_noc_x_cord_width_p, 0}                   \
   , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]                 \
                                                                                                    \
-  , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_p                     \
-  , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_p                     \
+  , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_gp                    \
+  , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_gp                    \
 
   `define bp_aviary_parameter_override(parameter_mp, override_cfg_mp, default_cfg_mp) \
     parameter_mp: (override_cfg_mp.``parameter_mp`` == "inv") \

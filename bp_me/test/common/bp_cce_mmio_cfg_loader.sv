@@ -71,7 +71,7 @@ module bp_cce_mmio_cfg_loader
   logic                        cfg_w_v_lo, cfg_r_v_lo;
   bp_local_addr_s              local_addr_lo;
   logic [cfg_addr_width_p-1:0] cfg_addr_lo;
-  logic [dword_width_p-1:0] cfg_data_lo;
+  logic [dword_width_gp-1:0] cfg_data_lo;
 
   assign cce_inst_boot_rom_addr = cfg_addr_lo[0+:inst_ram_addr_width_p];
   assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
@@ -224,7 +224,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
-          cfg_data_lo = dword_width_p'(1);
+          cfg_data_lo = dword_width_gp'(1);
         end
         BP_FREEZE_SET: begin
           state_n = core_prog_done ? BP_RESET_CLR : BP_FREEZE_SET;
@@ -234,7 +234,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_freeze_gp;
-          cfg_data_lo = dword_width_p'(1);
+          cfg_data_lo = dword_width_gp'(1);
         end
         BP_RESET_CLR: begin
           state_n = core_prog_done ? SEND_RAM : BP_RESET_CLR;
@@ -244,7 +244,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
-          cfg_data_lo = dword_width_p'(0);
+          cfg_data_lo = dword_width_gp'(0);
         end
         SEND_RAM: begin
           state_n = (core_prog_done & ucode_prog_done) ? SEND_ICACHE_NORMAL : SEND_RAM;
@@ -268,7 +268,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_mode_gp);
-          cfg_data_lo = dword_width_p'(e_lce_mode_normal);
+          cfg_data_lo = dword_width_gp'(e_lce_mode_normal);
         end
         SEND_DCACHE_NORMAL: begin
           state_n = core_prog_done ? SEND_CCE_NORMAL : SEND_DCACHE_NORMAL;
@@ -278,7 +278,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_mode_gp);
-          cfg_data_lo = dword_width_p'(e_lce_mode_normal);
+          cfg_data_lo = dword_width_gp'(e_lce_mode_normal);
         end
         SEND_CCE_NORMAL: begin
           state_n = core_prog_done ? WAIT_FOR_SYNC : SEND_CCE_NORMAL;
@@ -288,7 +288,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = credits_empty_lo;
           cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
-          cfg_data_lo = dword_width_p'(e_cce_mode_normal);
+          cfg_data_lo = dword_width_gp'(e_cce_mode_normal);
         end
         WAIT_FOR_SYNC: begin
           state_n = sync_done ? SEND_DOMAIN_ACTIVATION : WAIT_FOR_SYNC;
@@ -328,7 +328,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_freeze_gp);
-          cfg_data_lo = dword_width_p'(0);
+          cfg_data_lo = dword_width_gp'(0);
         end
         WAIT_FOR_CREDITS: begin
           state_n = credits_empty_lo ? DONE : WAIT_FOR_CREDITS;

@@ -22,6 +22,7 @@
   /*
    * Major Op Codes
    */
+  localparam cce_instr_width_gp = 34;
   
   typedef enum logic [2:0] {
     e_op_alu                               = 3'b000    // ALU operation

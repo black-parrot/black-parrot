@@ -12,7 +12,7 @@ module bp_be_csr
 
    , localparam csr_cmd_width_lp = $bits(bp_be_csr_cmd_s)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
@@ -27,7 +27,7 @@ module bp_be_csr
    // CSR instruction interface
    , input [csr_cmd_width_lp-1:0]      csr_cmd_i
    , input                             csr_cmd_v_i
-   , output logic [dword_width_p-1:0]  csr_data_o
+   , output logic [dword_width_gp-1:0]  csr_data_o
 
    // Misc interface
    , input rv64_fflags_s               fflags_acc_i
@@ -37,7 +37,7 @@ module bp_be_csr
    , input                             exception_queue_v_i
    , input [vaddr_width_p-1:0]         exception_npc_i
    , input [vaddr_width_p-1:0]         exception_vaddr_i
-   , input [instr_width_p-1:0]         exception_instr_i
+   , input [instr_width_gp-1:0]         exception_instr_i
    , input [exception_width_lp-1:0]    exception_i
 
    , input                             timer_irq_i
@@ -54,7 +54,7 @@ module bp_be_csr
    );
 
   // Declare parameterizable structs
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   // Casting input and output ports
@@ -75,7 +75,7 @@ module bp_be_csr
   assign trans_info_o = trans_info_cast_o;
 
   // The muxed and demuxed CSR outputs
-  logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
+  logic [dword_width_gp-1:0] csr_data_li, csr_data_lo;
   logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
 
   rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
@@ -234,7 +234,7 @@ module bp_be_csr
   wire csr_r_v_li = (~(exception_instr inside {`RV64_CSRRW, `RV64_CSRRWI}))
                     || (exception_instr.t.rtype.rd_addr != '0);
   // Compute input CSR data
-  wire [dword_width_p-1:0] csr_imm_li = dword_width_p'(csr_cmd.data[4:0]);
+  wire [dword_width_gp-1:0] csr_imm_li = dword_width_gp'(csr_cmd.data[4:0]);
   always_comb
     begin
       unique casez (csr_cmd.csr_op)
@@ -369,8 +369,8 @@ module bp_be_csr
       mtval_li    = mtval_lo;
       mip_li      = mip_lo;
 
-      mcycle_li        = mcountinhibit_lo.cy ? mcycle_lo + dword_width_p'(1) : mcycle_lo;
-      minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
+      mcycle_li        = mcountinhibit_lo.cy ? mcycle_lo + dword_width_gp'(1) : mcycle_lo;
+      minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_gp'(instret_i) : minstret_lo;
       mcountinhibit_li = mcountinhibit_lo;
 
       enter_debug = '0;
@@ -689,7 +689,7 @@ module bp_be_csr
   // Debug Mode masks all interrupts
   assign interrupt_ready_o = ~is_debug_mode & ~cfg_bus_cast_i.freeze & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
-  assign csr_data_o = dword_width_p'(csr_data_lo);
+  assign csr_data_o = dword_width_gp'(csr_data_lo);
 
   assign commit_pkt_cast_o.v                = |{exception.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_miss};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;

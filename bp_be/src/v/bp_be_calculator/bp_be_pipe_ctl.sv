@@ -27,7 +27,7 @@ module bp_be_pipe_ctl
    , input [dispatch_pkt_width_lp-1:0] reservation_i
    , input                             flush_i
 
-   , output [dpath_width_p-1:0]        data_o
+   , output [dpath_width_gp-1:0]        data_o
    , output [branch_pkt_width_lp-1:0]  br_pkt_o
    , output                            v_o
    );
@@ -44,9 +44,9 @@ module bp_be_pipe_ctl
   assign reservation = reservation_i;
   assign decode = reservation.decode;
   wire [vaddr_width_p-1:0] pc  = reservation.pc[0+:vaddr_width_p];
-  wire [dword_width_p-1:0] rs1 = reservation.rs1[0+:dword_width_p];
-  wire [dword_width_p-1:0] rs2 = reservation.rs2[0+:dword_width_p];
-  wire [dword_width_p-1:0] imm = reservation.imm[0+:dword_width_p];
+  wire [dword_width_gp-1:0] rs1 = reservation.rs1[0+:dword_width_gp];
+  wire [dword_width_gp-1:0] rs2 = reservation.rs2[0+:dword_width_gp];
+  wire [dword_width_gp-1:0] imm = reservation.imm[0+:dword_width_gp];
   assign br_pkt_o = br_pkt;
 
   logic btaken;

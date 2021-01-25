@@ -36,8 +36,8 @@ module bp_fe_icache
  import bp_fe_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
@@ -62,7 +62,7 @@ module bp_fe_icache
 
    // Cycle 2: "Tag Verify"
    // Data (or miss result) comes out of the cache
-   , output [instr_width_p-1:0]                       data_o
+   , output [instr_width_gp-1:0]                       data_o
    , output                                           data_v_o
    , input                                            poison_tv_i
 
@@ -97,14 +97,14 @@ module bp_fe_icache
    , output logic [icache_stat_info_width_lp-1:0]     stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Various localparameters
   localparam lg_icache_assoc_lp     =`BSG_SAFE_CLOG2(icache_assoc_p);
   localparam bank_width_lp          = icache_block_width_p / icache_assoc_p;
-  localparam num_words_per_bank_lp  = bank_width_lp / word_width_p;
+  localparam num_words_per_bank_lp  = bank_width_lp / word_width_gp;
   localparam data_mem_mask_width_lp = (bank_width_lp >> 3);
   localparam byte_offset_width_lp   = `BSG_SAFE_CLOG2(bank_width_lp >> 3);
   localparam bindex_width_lp        = `BSG_SAFE_CLOG2(icache_assoc_p);
@@ -126,7 +126,7 @@ module bp_fe_icache
 
   // Uncached storage
   logic [paddr_width_p-1:0] uncached_paddr_r;
-  logic [dword_width_p-1:0] uncached_data_r;
+  logic [dword_width_gp-1:0] uncached_data_r;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode stage
@@ -229,7 +229,7 @@ module bp_fe_icache
      ,.data_o({vaddr_tl_r, fetch_op_tl_r, fencei_op_tl_r})
      );
 
-  wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_p]};
+  wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_gp]};
   wire [vtag_width_p-1:0]     vaddr_vtag_tl = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:vtag_width_p];
   wire [sindex_width_lp-1:0] vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0]  vaddr_bank_tl = vaddr_tl_r[byte_offset_width_lp+:bindex_width_lp];
@@ -349,9 +349,9 @@ module bp_fe_icache
      ,.data_o(ld_data_way_picked)
      );
 
-  logic [instr_width_p-1:0] final_data;
+  logic [instr_width_gp-1:0] final_data;
   bsg_mux
-   #(.width_p(instr_width_p)
+   #(.width_p(instr_width_gp)
      ,.els_p(num_words_per_bank_lp)
      )
    dword_select_mux
@@ -656,9 +656,9 @@ module bp_fe_icache
      );
 
   wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
-  wire [dword_width_p-1:0] uncached_data = data_mem_pkt_cast_i.data[0+:dword_width_p];
+  wire [dword_width_gp-1:0] uncached_data = data_mem_pkt_cast_i.data[0+:dword_width_gp];
   bsg_dff_en
-   #(.width_p(dword_width_p))
+   #(.width_p(dword_width_gp))
    uncached_data_reg
     (.clk_i(clk_i)
      ,.en_i(uncached_load_set)
@@ -667,7 +667,7 @@ module bp_fe_icache
      );
 
   //synopsys translate_off
-  if (`BSG_SAFE_CLOG2(icache_block_width_p*icache_sets_p/8) != page_offset_width_p) begin
+  if (`BSG_SAFE_CLOG2(icache_block_width_p*icache_sets_p/8) != page_offset_width_gp) begin
     $error("Total cache size must be equal to 4kB * associativity");
   end
   //synopsys translate_on

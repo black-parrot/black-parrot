@@ -24,16 +24,16 @@ module bp_be_bypass
    )
   (
    // Dispatched instruction operands
-   input [els_p-1:0][reg_addr_width_p-1:0]      id_addr_i
-   , input [els_p-1:0][dpath_width_p-1:0]       id_i
+   input [els_p-1:0][reg_addr_width_gp-1:0]      id_addr_i
+   , input [els_p-1:0][dpath_width_gp-1:0]       id_i
 
    // Completed rd writes in the pipeline
    , input [depth_p-1:0]                        fwd_rd_v_i
-   , input [depth_p-1:0][reg_addr_width_p-1:0]  fwd_rd_addr_i
-   , input [depth_p-1:0][dpath_width_p-1:0]     fwd_rd_i
+   , input [depth_p-1:0][reg_addr_width_gp-1:0]  fwd_rd_addr_i
+   , input [depth_p-1:0][dpath_width_gp-1:0]     fwd_rd_i
 
    // The latest valid rs1, rs2 data
-   , output [els_p-1:0][dpath_width_p-1:0]      bypass_o
+   , output [els_p-1:0][dpath_width_gp-1:0]      bypass_o
    );
 
   // synopsys translate_off
@@ -48,8 +48,8 @@ module bp_be_bypass
   // Intermediate connections
   logic [els_p-1:0][depth_p:0]                        match_vector;
   logic [els_p-1:0][depth_p:0]                        match_vector_onehot;
-  logic [els_p-1:0][depth_p:0][dpath_width_p-1:0] data_vector;
-  logic [els_p-1:0][dpath_width_p-1:0]            bypass_lo;
+  logic [els_p-1:0][depth_p:0][dpath_width_gp-1:0] data_vector;
+  logic [els_p-1:0][dpath_width_gp-1:0]            bypass_lo;
 
   // Datapath
   for (genvar j = 0; j < els_p; j++)
@@ -70,7 +70,7 @@ module bp_be_bypass
       bsg_crossbar_o_by_i
        #(.i_els_p(depth_p+1)
          ,.o_els_p(1)
-         ,.width_p(dpath_width_p)
+         ,.width_p(dpath_width_gp)
          )
        crossbar
         (.i({id_i[j], fwd_rd_i})

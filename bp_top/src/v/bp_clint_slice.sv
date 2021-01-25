@@ -9,7 +9,7 @@ module bp_clint_slice
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
 
    // TODO: Should I be a global param?
    , localparam clint_max_outstanding_p = 2
@@ -31,7 +31,7 @@ module bp_clint_slice
    , output                                             external_irq_o
    );
 
-`declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce);
+`declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
 
 bp_bedrock_xce_mem_msg_s mem_cmd_li, mem_cmd_lo;
 assign mem_cmd_li = mem_cmd_i;
@@ -80,7 +80,7 @@ always_comb
     endcase
   end
 
-logic [dword_width_p-1:0] mtime_r, mtime_val_li, mtimecmp_n, mtimecmp_r;
+logic [dword_width_gp-1:0] mtime_r, mtime_val_li, mtimecmp_n, mtimecmp_r;
 logic                     mipi_n, mipi_r;
 logic                     plic_n, plic_r;
 
@@ -96,10 +96,10 @@ bsg_strobe
    ,.init_val_r_i(ds_ratio_li)
    ,.strobe_r_o(mtime_inc_li)
    );
-assign mtime_val_li = mem_cmd_lo.data[0+:dword_width_p];
+assign mtime_val_li = mem_cmd_lo.data[0+:dword_width_gp];
 wire mtime_w_v_li = wr_not_rd & mtime_cmd_v;
 bsg_counter_set_en
- #(.lg_max_val_lp(dword_width_p)
+ #(.lg_max_val_lp(dword_width_gp)
    ,.reset_val_p(0)
    )
  mtime_counter
@@ -112,10 +112,10 @@ bsg_counter_set_en
    ,.count_o(mtime_r)
    );
 
-assign mtimecmp_n = mem_cmd_lo.data[0+:dword_width_p];
+assign mtimecmp_n = mem_cmd_lo.data[0+:dword_width_gp];
 wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
 bsg_dff_reset_en
- #(.width_p(dword_width_p))
+ #(.width_p(dword_width_gp))
  mtimecmp_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -154,12 +154,12 @@ bsg_dff_reset_en
    );
 assign external_irq_o = plic_r;
 
-wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
-                                    ? dword_width_p'(plic_r)
+wire [dword_width_gp-1:0] rdata_lo = plic_cmd_v
+                                    ? dword_width_gp'(plic_r)
                                     : mipi_cmd_v
-                                      ? dword_width_p'(mipi_r)
+                                      ? dword_width_gp'(mipi_r)
                                       : mtimecmp_cmd_v
-                                        ? dword_width_p'(mtimecmp_r)
+                                        ? dword_width_gp'(mtimecmp_r)
                                         : mtime_r;
 
 bp_bedrock_xce_mem_msg_s mem_resp_lo;
@@ -170,7 +170,7 @@ assign mem_resp_lo =
     ,payload       : mem_cmd_lo.header.payload
     ,size          : mem_cmd_lo.header.size
     }
-    ,data          : dword_width_p'(rdata_lo)
+    ,data          : dword_width_gp'(rdata_lo)
     };
 assign mem_resp_o = mem_resp_lo;
 assign mem_resp_v_o = small_fifo_v_lo;

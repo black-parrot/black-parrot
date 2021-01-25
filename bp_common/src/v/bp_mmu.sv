@@ -31,7 +31,7 @@ module bp_mmu
    , input                                            r_instr_i
    , input                                            r_load_i
    , input                                            r_store_i
-   , input [dword_width_p-1:0]                        r_eaddr_i
+   , input [dword_width_gp-1:0]                        r_eaddr_i
 
    , output logic                                     r_v_o
    , output logic [ptag_width_p-1:0]                  r_ptag_o
@@ -112,8 +112,8 @@ module bp_mmu
 
   // Fault if higher bits of eaddr do not match vaddr MSB
   logic eaddr_fault_v;
-  localparam eaddr_pad_lp = dword_width_p - vaddr_width_p;
-  wire eaddr_fault = (r_eaddr_i[dword_width_p-1:vaddr_width_p] != {eaddr_pad_lp{r_eaddr_i[vaddr_width_p-1]}});
+  localparam eaddr_pad_lp = dword_width_gp - vaddr_width_p;
+  wire eaddr_fault = (r_eaddr_i[dword_width_gp-1:vaddr_width_p] != {eaddr_pad_lp{r_eaddr_i[vaddr_width_p-1]}});
   always_ff @(posedge clk_i) eaddr_fault_v <= eaddr_fault;
   // Fault if in uncached mode but access is not for an uncached address
   wire mode_fault_v  = (uncached_mode_i & ~r_uncached_o);

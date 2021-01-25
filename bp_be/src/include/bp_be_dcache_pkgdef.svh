@@ -30,8 +30,8 @@
   typedef struct packed
   {
     bp_be_dcache_fu_op_e opcode;
-    logic [page_offset_width_p-1:0] page_offset;
-    logic [dword_width_p-1:0] data;
+    logic [page_offset_width_gp-1:0] page_offset;
+    logic [dword_width_gp-1:0] data;
   }  bp_be_dcache_pkt_s;
 
 `endif

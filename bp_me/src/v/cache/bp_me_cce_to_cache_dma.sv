@@ -19,7 +19,7 @@ module bp_me_cce_to_cache_dma
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-  ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
+  ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_gp
   ,localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
   ,localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(paddr_width_p)
   )
@@ -32,11 +32,11 @@ module bp_me_cce_to_cache_dma
   ,output                                          dma_pkt_v_o
   ,input                                           dma_pkt_yumi_i
   // Sending cache block
-  ,output       [dword_width_p-1:0]                dma_data_o
+  ,output       [dword_width_gp-1:0]                dma_data_o
   ,output                                          dma_data_v_o
   ,input                                           dma_data_yumi_i
   // Receiving cache block
-  ,input        [dword_width_p-1:0]                dma_data_i
+  ,input        [dword_width_gp-1:0]                dma_data_i
   ,input                                           dma_data_v_i
   ,output                                          dma_data_ready_o
   // Cmd input
@@ -110,7 +110,7 @@ module bp_me_cce_to_cache_dma
   logic [cce_block_width_p-1:0] dma_data_fifo_data_li;
 
   bsg_parallel_in_serial_out
- #(.width_p(dword_width_p)
+ #(.width_p(dword_width_gp)
   ,.els_p  (block_size_in_words_lp)
   ) dma_data_piso
   (.clk_i  (clk_i  )
@@ -174,7 +174,7 @@ module bp_me_cce_to_cache_dma
   logic [cce_block_width_p-1:0] dma_data_fifo_data_lo;
 
   bsg_serial_in_parallel_out_full
- #(.width_p(dword_width_p         )
+ #(.width_p(dword_width_gp         )
   ,.els_p  (block_size_in_words_lp)
   ) dma_data_sipof
   (.clk_i  (clk_i  )

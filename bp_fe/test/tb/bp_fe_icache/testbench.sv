@@ -20,7 +20,7 @@ module testbench
    , parameter mem_cap_in_bytes_p = 2**25
    , parameter mem_file_p = "prog.mem"
 
-  , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+  , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   , localparam trace_replay_data_width_lp = ptag_width_p + vaddr_width_p + 1
   , localparam trace_rom_addr_width_lp = 7
 
@@ -34,7 +34,7 @@ module testbench
   );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_li;
   logic [cfg_bus_width_lp-1:0] cfg_bus_li;
@@ -51,7 +51,7 @@ module testbench
   logic [trace_replay_data_width_lp-1:0] trace_data_li;
   logic trace_v_li, trace_ready_lo;
 
-  logic [instr_width_p-1:0] icache_data_lo;
+  logic [instr_width_gp-1:0] icache_data_lo;
   logic icache_data_v_lo;
 
   logic [trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
@@ -122,7 +122,7 @@ module testbench
 
   // Output FIFO
   logic fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
-  logic [instr_width_p-1:0] fifo_data_lo;
+  logic [instr_width_gp-1:0] fifo_data_lo;
   assign fifo_yumi_li = fifo_random_yumi_lo & trace_ready_lo;
   assign trace_v_li = fifo_yumi_li;
   assign trace_data_li = {'0, fifo_data_lo};
@@ -142,7 +142,7 @@ module testbench
   // This fifo has 16 elements since maximum number of streaming hits is 16
   // Probably a side effect of the testing strategy.  Open for debate
   bsg_fifo_1r1w_small
-    #(.width_p(instr_width_p)
+    #(.width_p(instr_width_gp)
      ,.els_p(16)
     )
     output_fifo

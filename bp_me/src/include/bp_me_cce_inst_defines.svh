@@ -6,7 +6,7 @@
    */
 
   // Instructions are 32-bits wide with 2 bits of attached metadata
-  // cce_instr_width_p should be equal to 34, and used when passing instruction+metadata
+  // cce_instr_width_gp should be equal to 34, and used when passing instruction+metadata
   `define bp_cce_inst_data_width 32
   `define bp_cce_inst_metadata_width 2
   `define bp_cce_inst_op_width 3
