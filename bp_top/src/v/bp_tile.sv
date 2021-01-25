@@ -5,6 +5,7 @@
  */
 
 `include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
 
 module bp_tile
  import bp_common_pkg::*;
