@@ -26,6 +26,8 @@
  *      fill_width = N*bank_width <= block_width
  */
 
+`include "bp_fe_defines.svh"
+
 module bp_fe_icache
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;

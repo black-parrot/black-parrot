@@ -295,24 +295,5 @@ module bp_be_director
      );
   assign fe_cmd_full_o = ~fe_cmd_ready_lo;
 
-  //synopsys translate_off
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
-  bp_fe_branch_metadata_fwd_s attaboy_md;
-  bp_fe_branch_metadata_fwd_s redir_md;
-
-  assign attaboy_md = fe_cmd_li.operands.attaboy.branch_metadata_fwd;
-  assign redir_md = fe_cmd_li.operands.pc_redirect_operands.branch_metadata_fwd;
-
-  always_ff @(negedge clk_i)
-    if (debug_lp) begin
-      if (fe_cmd_v_li & (fe_cmd_li.opcode == e_op_pc_redirection))
-        $display("[REDIR  ] %x->%x %p", isd_status_cast_i.pc, fe_cmd_li.vaddr, redir_md);
-      else if (fe_cmd_v_li & (fe_cmd_li.opcode == e_op_attaboy))
-        $display("[ATTABOY] %x %p", fe_cmd_li.vaddr, attaboy_md);
-      else if (isd_status_cast_i.v)
-        $display("[FETCH  ] %x   ", isd_status_cast_i.pc);
-    end
-  //synopsys translate_on
-
 endmodule
 
