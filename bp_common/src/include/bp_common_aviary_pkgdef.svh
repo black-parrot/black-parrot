@@ -7,6 +7,181 @@
   localparam max_cfgs    = 128;
   localparam lg_max_cfgs = `BSG_SAFE_CLOG2(max_cfgs);
 
+  // Configuration enums
+  typedef enum logic [1:0]
+  {
+    e_none = 0
+    , e_l1 = 1
+    , e_l2 = 2
+  } bp_atomic_op_e;
+
+  typedef enum logic [15:0]
+  {
+    e_sacc_vdp = 0
+  } bp_sacc_type_e;
+
+  typedef enum logic [15:0]
+  {
+    e_cacc_vdp = 0
+  } bp_cacc_type_e;
+
+  typedef struct packed
+  {
+    // 0: BP unicore (minimal, single-core configuration)
+    // 1: BP multicore (coherent, multi-core configuration)
+    integer unsigned multicore;
+
+    // Dimensions of the different complexes
+    // Core Complex may be any integer unsigned (though has only been validated up to 4x4)
+    // All other Complexes are 1-dimensional
+    //                                    [                           ]
+    //                                    [        I/O Complex        ]
+    //                                    [                           ]
+    //
+    //  [                               ] [                           ] [                               ]
+    //  [ Streaming Accelerator Complex ] [        Core Complex       ] [ Coherent Accelerator Complex  ]
+    //  [                               ] [                           ] [                               ]
+    //
+    //                                    [                           ]
+    //                                    [       Memory Complex      ]
+    //                                    [                           ]
+    //
+    integer unsigned cc_x_dim;
+    integer unsigned cc_y_dim;
+    integer unsigned ic_y_dim;
+    integer unsigned mc_y_dim;
+    integer unsigned cac_x_dim;
+    integer unsigned sac_x_dim;
+
+    // The type of accelerator in the accelerator complexes, selected out of bp_cacc_type_e/bp_sacc_type_e
+    // Only supports homogeneous configurations
+    integer unsigned cacc_type;
+    integer unsigned sacc_type;
+
+    // Number of CCEs/LCEs in the system. Must be consistent within complex dimensions
+    integer unsigned num_cce;
+    integer unsigned num_lce;
+
+    // Virtual address width
+    //   Only tested for SV39 (39-bit virtual address)
+    integer unsigned vaddr_width;
+    // Physical address width
+    //   Only tested for 40-bit physical address
+    integer unsigned paddr_width;
+    // Address space ID width
+    //   Currently unused, so set to 1 bit
+    integer unsigned asid_width;
+
+    // The virtual address of the PC coming out of reset
+    integer unsigned boot_pc;
+    // 0: boots in M-mode, not debug-mode
+    // 1: boots in M-mode, debug-mode
+    integer unsigned boot_in_debug;
+
+    // Branch metadata information for the Front End
+    // Must be kept consistent with FE
+    integer unsigned branch_metadata_fwd_width;
+    integer unsigned btb_tag_width;
+    integer unsigned btb_idx_width;
+    integer unsigned bht_idx_width;
+    integer unsigned ghist_width;
+
+    // Capacity of the Instruction/Data TLBs
+    integer unsigned itlb_els;
+    integer unsigned dtlb_els;
+
+    // Atomic support in the system. There are 3 levels of support
+    //   None: Will cause illegal instruction trap
+    //   L1  : Handled by L1
+    //   L2  : Handled by L2 via uncached access in L1
+    integer unsigned lr_sc;
+    integer unsigned amo_swap;
+    integer unsigned amo_fetch_logic;
+    integer unsigned amo_fetch_arithmetic;
+
+    // Whether the D$ is writethrough or writeback
+    integer unsigned l1_writethrough;
+    // Whether the I$ and D$ are kept coherent
+    integer unsigned l1_coherent;
+
+    // I$ parameterizations
+    integer unsigned icache_sets;
+    integer unsigned icache_assoc;
+    integer unsigned icache_block_width;
+    integer unsigned icache_fill_width;
+
+    // D$ parameterizations
+    integer unsigned dcache_sets;
+    integer unsigned dcache_assoc;
+    integer unsigned dcache_block_width;
+    integer unsigned dcache_fill_width;
+
+    // A$ parameterizations
+    integer unsigned acache_sets;
+    integer unsigned acache_assoc;
+    integer unsigned acache_block_width;
+    integer unsigned acache_fill_width;
+
+    // Microcoded CCE parameters
+    // 0: CCE is FSM-based
+    // 1: CCE is ucode
+    integer unsigned cce_ucode;
+    // Determines the size of the CCE instruction RAM
+    integer unsigned cce_pc_width;
+
+    // L2 slice parameters (per core)
+    integer unsigned l2_en;
+    integer unsigned l2_sets;
+    integer unsigned l2_assoc;
+    integer unsigned l2_outstanding_reqs;
+
+    // Size of the issue queue
+    integer unsigned fe_queue_fifo_els;
+    // Size of the cmd queue
+    integer unsigned fe_cmd_fifo_els;
+
+    // Whether the coherence network is on the core clock or on its own clock
+    integer unsigned async_coh_clk;
+    // Flit width of the coherence network. Has major impact on latency / area of the network
+    integer unsigned coh_noc_flit_width;
+    // Concentrator ID width of the coherence network. Corresponds to how many nodes can be on a
+    //   single wormhole router
+    integer unsigned coh_noc_cid_width;
+    // Maximum number of flits in a single wormhole message. Determined by protocol and affects
+    //   buffer size
+    integer unsigned coh_noc_len_width;
+    // Maximum credits supported by the network. Correlated to the bandwidth delay product
+    integer unsigned coh_noc_max_credits;
+
+    // Whether the memory network is on the core clock or on its own clock
+    integer unsigned async_mem_clk;
+    // Flit width of the memory network. Has major impact on latency / area of the network
+    integer unsigned mem_noc_flit_width;
+    // Concentrator ID width of the memory network. Corresponds to how many nodes can be on a
+    //   single wormhole router
+    integer unsigned mem_noc_cid_width;
+    // Maximum number of flits in a single wormhole message. Determined by protocol and affects
+    //   buffer size
+    integer unsigned mem_noc_len_width;
+    // Maximum credits supported by the network. Correlated to the bandwidth delay product
+    integer unsigned mem_noc_max_credits;
+
+    // Whether the I/O network is on the core clock or on its own clock
+    integer unsigned async_io_clk;
+    // Flit width of the I/O network. Has major impact on latency / area of the network
+    integer unsigned io_noc_flit_width;
+    // Concentrator ID width of the I/O network. Corresponds to how many nodes can be on a
+    //   single wormhole router
+    integer unsigned io_noc_cid_width;
+    // Domain ID width of the I/O network. Corresponds to how many chips compose a multichip chain
+    integer unsigned io_noc_did_width;
+    // Maximum number of flits in a single wormhole message. Determined by protocol and affects
+    //   buffer size
+    integer unsigned io_noc_len_width;
+    // Maximum credits supported by the network. Correlated to the bandwidth delay product
+    integer unsigned io_noc_max_credits;
+  }  bp_proc_param_s;
+
   localparam bp_proc_param_s bp_default_cfg_p =
     '{multicore : 0
       ,cc_x_dim : 1

@@ -8,7 +8,7 @@
    * These enums define the options for fields of the BedRock Interface messages. Clients should use
    * the enums to set and compare fields of messages, rather than examining the bit pattern directly.
    */
-  
+
   /*
    * bp_bedrock_msg_size_e specifies the amount of data in the message, after the header
    */
@@ -23,7 +23,7 @@
     ,e_bedrock_msg_size_64   = 3'b110  // 64 bytes
     ,e_bedrock_msg_size_128  = 3'b111  // 128 bytes
   } bp_bedrock_msg_size_e;
-  
+
   /*
    * bp_bedrock_mem_type_e specifies the memory command from the UCE/CCE
    *
@@ -47,7 +47,7 @@
     ,e_bedrock_mem_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
     // 4'b0101 - 4'b1111 reserved // custom
   } bp_bedrock_mem_type_e;
-  
+
   /*
    * bp_bedrock_req_type_e specifies whether the containing message is related to a read or write
    * cache miss request from and LCE.
@@ -60,7 +60,7 @@
     ,e_bedrock_req_uc_wr     = 4'b0011 // Uncached Write-miss
     // 4'b0100 - 4'b1111 reserved / custom
   } bp_bedrock_req_type_e;
-  
+
   /*
    * bp_bedrock_cmd_type_e defines the various commands that an CCE may issue to an LCE
    * e_bedrock_cmd_sync is used at the end of reset to direct the LCE to inform the CCE it is ready
@@ -83,7 +83,7 @@
     ,e_bedrock_cmd_uc_st_done      = 4'b1100 // uncached store complete
     // 4'b1101 - 4'b1111 reserved / custom
   } bp_bedrock_cmd_type_e;
-  
+
   /* bp_bedrock_resp_type_e defines the different LCE-CCE response messages
    * e_bedrock_resp_sync_ack acknowledges receipt and processing of a Sync command
    * e_bedrock_resp_inv_ack acknowledges that an LCE has processed an Invalidation command
@@ -115,7 +115,7 @@
     bp_bedrock_resp_type_e   resp;
     bp_bedrock_mem_type_e    mem;
   } bp_bedrock_msg_u;
-  
+
   /*
    * bp_bedrock_req_non_excl_e specifies whether the requesting LCE would like a read-miss request
    * to be returned in an exclusive coherence state if possible or not. An I$, for example, should
@@ -128,7 +128,7 @@
     e_bedrock_req_excl            = 1'b0 // exclusive cache line request (read-only, exclusive request)
     ,e_bedrock_req_non_excl       = 1'b1 // non-exclusive cache line request (read-only, shared request)
   } bp_bedrock_req_non_excl_e;
-  
+
   /*
    * bp_cce_coh_states_e defines the coherence states available in BlackParrot. Each bit represents
    * a property of the cache block as defined below:
@@ -150,6 +150,6 @@
     ,e_COH_M                  = 3'b110 // Modified - potentially dirty, owned, not shared (exclusive)
     ,e_COH_O                  = 3'b111 // Owned - potentially dirty, owned, shared (not exclusive)
   } bp_coh_states_e;
-  
+
 `endif
 

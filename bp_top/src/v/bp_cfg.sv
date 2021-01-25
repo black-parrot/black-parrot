@@ -11,7 +11,7 @@ module bp_cfg
 
    // TODO: Should I be a global param
    , localparam cfg_max_outstanding_p = 1
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                clk_i
    , input                              reset_i
@@ -70,8 +70,8 @@ module bp_cfg
   wire                        cfg_v_li    = mem_cmd_v_lo;
   wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_bedrock_mem_uc_wr);
   wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_bedrock_mem_uc_rd);
-  wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_lo.header.addr[0+:cfg_addr_width_p];
-  wire [cfg_data_width_p-1:0] cfg_data_li = mem_cmd_lo.data[0+:cfg_data_width_p];
+  wire [cfg_addr_width_gp-1:0] cfg_addr_li = mem_cmd_lo.header.addr[0+:cfg_addr_width_gp];
+  wire [cfg_data_width_gp-1:0] cfg_data_li = mem_cmd_lo.data[0+:cfg_data_width_gp];
 
   always_ff @(posedge clk_i)
     if (reset_i)
@@ -85,27 +85,27 @@ module bp_cfg
       begin
         unique
         case (cfg_addr_li)
-          bp_cfg_reg_freeze_gp      : freeze_r       <= cfg_data_li;
-          bp_cfg_reg_icache_mode_gp : icache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
-          bp_cfg_reg_dcache_mode_gp : dcache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
-          bp_cfg_reg_cce_mode_gp    : cce_mode_r     <= bp_cce_mode_e'(cfg_data_li);
+          cfg_reg_freeze_gp      : freeze_r       <= cfg_data_li;
+          cfg_reg_icache_mode_gp : icache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
+          cfg_reg_dcache_mode_gp : dcache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
+          cfg_reg_cce_mode_gp    : cce_mode_r     <= bp_cce_mode_e'(cfg_data_li);
           default : begin end
         endcase
       end
 
-  wire did_r_v_li       = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_did_gp);
-  wire host_did_r_v_li  = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_host_did_gp);
-  wire cord_r_v_li      = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_cord_gp);
+  wire did_r_v_li       = cfg_r_v_li & (cfg_addr_li == cfg_reg_did_gp);
+  wire host_did_r_v_li  = cfg_r_v_li & (cfg_addr_li == cfg_reg_host_did_gp);
+  wire cord_r_v_li      = cfg_r_v_li & (cfg_addr_li == cfg_reg_cord_gp);
 
   assign cce_ucode_v_o    = (cfg_r_v_li | cfg_w_v_li) & (cfg_addr_li >= 16'h8000);
   assign cce_ucode_w_o    = cfg_w_v_li & (cfg_addr_li >= 16'h8000);
   assign cce_ucode_addr_o = cfg_addr_li[0+:cce_pc_width_p];
   assign cce_ucode_data_o = cfg_data_li[0+:cce_instr_width_gp];
 
-  wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_domain_mask_gp);
+  wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == cfg_reg_domain_mask_gp);
   wire [7:0] domain_li = cfg_data_li[7:0] | 8'h01;
 
-  wire sac_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_sac_mask_gp);
+  wire sac_w_v_li = cfg_w_v_li & (cfg_addr_li == cfg_reg_sac_mask_gp);
   wire sac_li = cfg_data_li[0];
 
   // Address map (40 bits)

@@ -29,14 +29,14 @@
   `define RV64_FMSUB_OP      7'b1000111
   `define RV64_FNMSUB_OP     7'b1001011
   `define RV64_FNMADD_OP     7'b1001111
-  
+
   // Some useful RV64 instruction macros
   `define rv64_r_type(op, funct3, funct7) {``funct7``,{5{1'b?}},{5{1'b?}},``funct3``,{5{1'b?}},``op``}
   `define rv64_i_type(op, funct3)         {{12{1'b?}},{5{1'b?}},``funct3``,{5{1'b?}},``op``}
   `define rv64_s_type(op, funct3)         {{7{1'b?}},{5{1'b?}},{5{1'b?}},``funct3``,{5{1'b?}},``op``}
   `define rv64_u_type(op)                 {{20{1'b?}},{5{1'b?}},``op``}
   `define rv64_fma_type(op, pr2)          {{5{1'b?}},``pr2``,{5{1'b?}},{5{1'b?}},{3{3'b?}},{5{1'b?}},``op``}
-  
+
   // RV64 Immediate sign extension macros
   `define rv64_signext_i_imm(instr) {{53{``instr``[31]}},``instr``[30:20]}
   `define rv64_signext_s_imm(instr) {{53{``instr``[31]}},``instr[30:25],``instr``[11:7]}
@@ -46,7 +46,7 @@
   `define rv64_signext_j_imm(instr) {{44{``instr``[31]}},``instr``[19:12],``instr``[20] \
                                          ,``instr``[30:21], {1'b0}}
   `define rv64_signext_c_imm(instr) {{59{1'b0}},``instr``[19:15]}
-  
+
   // I extension
   `define RV64_LUI        `rv64_u_type(`RV64_LUI_OP)
   `define RV64_AUIPC      `rv64_u_type(`RV64_AUIPC_OP)
@@ -113,7 +113,7 @@
   `define RV64_SFENCE_VMA 32'b0001_001?_????_????_?000_0000_0111_0011
   `define RV64_FENCE_I    32'b0000_0000_0000_0000_0001_0000_0000_1111
   `define RV64_FENCE      32'b????_????_????_????_?000_????_?000_1111
-  
+
   // A extension
   `define RV64_LRW        32'b0001_0??0_0000_????_?010_????_?010_1111
   `define RV64_SCW        32'b0001_1???_????_????_?010_????_?010_1111
@@ -137,7 +137,7 @@
   `define RV64_AMOMAXD    32'b1010_0???_????_????_?011_????_?010_1111
   `define RV64_AMOMINUD   32'b1100_0???_????_????_?011_????_?010_1111
   `define RV64_AMOMAXUD   32'b1110_0???_????_????_?011_????_?010_1111
-  
+
   // M extension
   `define RV64_MUL        `rv64_r_type(`RV64_OP_OP,3'b000,7'b0000001)
   `define RV64_MULH       `rv64_r_type(`RV64_OP_OP,3'b001,7'b0000001)
@@ -147,13 +147,13 @@
   `define RV64_DIVU       `rv64_r_type(`RV64_OP_OP,3'b101,7'b0000001)
   `define RV64_REM        `rv64_r_type(`RV64_OP_OP,3'b110,7'b0000001)
   `define RV64_REMU       `rv64_r_type(`RV64_OP_OP,3'b111,7'b0000001)
-  
+
   `define RV64_MULW       `rv64_r_type(`RV64_OP_32_OP,3'b000,7'b0000001)
   `define RV64_DIVW       `rv64_r_type(`RV64_OP_32_OP,3'b100,7'b0000001)
   `define RV64_DIVUW      `rv64_r_type(`RV64_OP_32_OP,3'b101,7'b0000001)
   `define RV64_REMW       `rv64_r_type(`RV64_OP_32_OP,3'b110,7'b0000001)
   `define RV64_REMUW      `rv64_r_type(`RV64_OP_32_OP,3'b111,7'b0000001)
-  
+
   // F extension
   `define RV64_FL_W       `rv64_i_type(`RV64_FLOAD_OP,3'b010)
   `define RV64_FS_W       `rv64_i_type(`RV64_FSTORE_OP,3'b010)
@@ -185,7 +185,7 @@
   `define RV64_FCVT_LUS   32'b1100000_00011_?????_???_?????_1010011
   `define RV64_FCVT_SL    32'b1101000_00010_?????_???_?????_1010011
   `define RV64_FCVT_SLU   32'b1101000_00011_?????_???_?????_1010011
-  
+
   // D extension
   `define RV64_FL_D       `rv64_i_type(`RV64_FLOAD_OP,3'b011)
   `define RV64_FS_D       `rv64_i_type(`RV64_FSTORE_OP,3'b11)

@@ -79,33 +79,6 @@ package bp_common_pkg;
   localparam coproc_base_addr_gp       = 40'h10_0000_0000;
   localparam global_base_addr_gp       = 40'h20_0000_0000;
 
-  // TODO: This is out of date.  The actual map shouldn't matter much, but we should decide...
-  // The overall memory map of the config link is:
-  //   16'h0000 - 16'h001f: chip level config
-  //   16'h0020 - 16'h003f: fe config
-  //   16'h0040 - 16'h005f: be config
-  //   16'h0060 - 16'h007f: me config
-  //   16'h0080 - 16'h00ff: reserved
-  //   16'h8000 - 16'h8fff: cce ucode
-
-  localparam bp_cfg_base_addr_gp          = 'h0200_0000;
-  localparam bp_cfg_reg_reset_gp          = 'h0001;
-  localparam bp_cfg_reg_freeze_gp         = 'h0002;
-  localparam bp_cfg_reg_core_id_gp        = 'h0005;
-  localparam bp_cfg_reg_did_gp            = 'h0006;
-  localparam bp_cfg_reg_cord_gp           = 'h0007;
-  localparam bp_cfg_reg_host_did_gp       = 'h0008;
-  localparam bp_cfg_reg_domain_mask_gp    = 'h0009;
-  localparam bp_cfg_reg_sac_mask_gp       = 'h000a;
-  localparam bp_cfg_reg_icache_id_gp      = 'h0021;
-  localparam bp_cfg_reg_icache_mode_gp    = 'h0022;
-  localparam bp_cfg_reg_dcache_id_gp      = 'h0042;
-  localparam bp_cfg_reg_dcache_mode_gp    = 'h0043;
-  localparam bp_cfg_reg_cce_id_gp         = 'h0080;
-  localparam bp_cfg_reg_cce_mode_gp       = 'h0081;
-  localparam bp_cfg_reg_num_lce_gp        = 'h0082;
-  localparam bp_cfg_mem_base_cce_ucode_gp = 'h8000;
-
   localparam rv64_rf_els_gp         = 32;
   localparam rv64_instr_width_gp    = 32;
   localparam rv64_eaddr_width_gp    = 64;
@@ -276,6 +249,7 @@ package bp_common_pkg;
 
   `include "bp_common_aviary_pkgdef.svh"
   `include "bp_common_bedrock_pkgdef.svh"
+  `include "bp_common_cfg_bus_pkgdef.svh"
 
 endpackage
 

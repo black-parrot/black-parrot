@@ -169,15 +169,15 @@
         bp_fe_cmd_itlb_fence_s              itlb_fence;                                            \
       }  operands;                                                                                 \
     }  bp_fe_cmd_s;                                                                                \
-  
-  
+
+
   /*
    * Declare all fe-be widths at once as localparams
    */
   `define declare_bp_core_if_widths(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     , localparam fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
     , localparam fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)
-  
+
   /*
    * bp_fe_queue_s can either contain an instruction or exception.
    * bp_fe_queue_type_e specifies which information it contains.
@@ -187,7 +187,7 @@
     e_fe_fetch       = 0
     ,e_fe_exception  = 1
   } bp_fe_queue_type_e;
-  
+
   /*
    * bp_fe_command_queue_opcodes_e defines the opcodes from backend to frontend in
    * the cases of an exception. bp_fe_command_queue_opcodes_e explains the reason
@@ -209,7 +209,7 @@
     ,e_op_itlb_fill_response   = 5
     ,e_op_itlb_fence           = 6
   } bp_fe_command_queue_opcodes_e;
-  
+
   /*
    * bp_fe_misprediction_reason_e is the misprediction reason provided by the backend.
    */
@@ -219,7 +219,7 @@
     ,e_incorrect_pred_taken  = 1
     ,e_incorrect_pred_ntaken = 2
   } bp_fe_misprediction_reason_e;
-  
+
   /*
    * The exception code types. e_itlb_miss is when the instruction has a miss in
    * the iTLB. ITLB misses can cause the instruction misaligned. Thus the frontend
@@ -235,7 +235,7 @@
     ,e_instr_access_fault = 3
     ,e_instr_page_fault   = 4
   } bp_fe_exception_code_e;
-  
+
   /*
    * bp_fe_command_queue_subopcodes_e defines the subopcodes in the case of pc_redirection in
    * bp_fe_command_queue_opcodes_e. It provides the reasons of why pc are redirected.
@@ -255,79 +255,79 @@
     ,e_subop_context_switch
     ,e_subop_translation_switch
   } bp_fe_command_queue_subopcodes_e;
-  
+
   /* Declare width macros so that clients can use structs in ports before struct declaration */
   `define bp_fe_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                          \
     ($bits(bp_fe_queue_type_e)                                                                     \
      + `bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
      )
-  
+
   `define bp_fe_fetch_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                          \
     (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp))
-  
+
   `define bp_fe_exception_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
     (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp))
-  
+
   `define bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (vaddr_width_mp                                                                                \
      + $bits(bp_fe_command_queue_opcodes_e)                                                        \
      + `bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)    \
      )
-  
+
   `define bp_fe_cmd_reset_operands_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
-  
+
   `define bp_fe_cmd_pc_redirect_operands_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
-  
+
   `define bp_fe_cmd_attaboy_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
-  
+
   `define bp_fe_cmd_itlb_map_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
-  
+
   `define bp_pte_entry_leaf_width(paddr_width_mp) \
     (paddr_width_mp - page_offset_width_gp + 6)
-  
+
   `define bp_fe_cmd_itlb_fence_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
-  
+
   /* Ensure all members of packed unions have the same size. If parameterized unions are desired,
    * examine this code carefully. Else, clients should not have to use these macros
    */
   `define bp_fe_fetch_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp) \
     (vaddr_width_mp + instr_width_gp + branch_metadata_fwd_width_mp)
-  
+
   `define bp_fe_exception_width_no_padding(vaddr_width_mp) \
     (vaddr_width_mp + $bits(bp_fe_exception_code_e))
-  
+
   `define bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
     (1 + `BSG_MAX(`bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp)       \
                   , `bp_fe_exception_width_no_padding(vaddr_width_mp)                              \
                   )                                                                                \
      )
-  
+
   `define bp_fe_fetch_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                  \
     (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                        \
      - `bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp))
-  
+
   `define bp_fe_exception_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)              \
     (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                        \
      - `bp_fe_exception_width_no_padding(vaddr_width_mp))
-  
+
   `define bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp) \
     ($bits(bp_fe_command_queue_subopcodes_e)                                                       \
      + branch_metadata_fwd_width_mp + $bits(bp_fe_misprediction_reason_e) + 3)
-  
+
   `define bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp) \
     (1+branch_metadata_fwd_width_mp)
-  
+
   `define bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp) \
     (`bp_pte_entry_leaf_width(paddr_width_mp))
-  
+
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
     (asid_width_mp + 2)
-  
+
   `define bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)     \
                 ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)        \
@@ -337,22 +337,22 @@
                           )                                                                        \
                 )                                                                                  \
      )
-  
+
   `define bp_fe_cmd_pc_redirect_operands_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)      \
      - `bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)              \
      )
-  
+
   `define bp_fe_cmd_attaboy_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)      \
      - `bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)                           \
      )
-  
+
   `define bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)      \
      - `bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp)                                        \
      )
-  
+
   `define bp_fe_cmd_itlb_fence_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)      \
      - `bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp)                                       \

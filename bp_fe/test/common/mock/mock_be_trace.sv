@@ -83,7 +83,7 @@ module mock_be_trace
 
 
 `declare_bp_be_mem_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
-`declare_bp_common_cfg_bus_s(num_core_p, num_lce_p)
+`declare_bp_common_bp_cfg_bus_s(num_core_p, num_lce_p)
 
 // the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p);
