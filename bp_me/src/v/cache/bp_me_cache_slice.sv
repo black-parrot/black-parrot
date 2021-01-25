@@ -1,7 +1,6 @@
 
 module bp_me_cache_slice
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;

@@ -8,7 +8,6 @@
 module bp_me_cce_to_cache_dma
 
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
   
   import bsg_cache_pkg::*;

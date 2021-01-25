@@ -5,7 +5,6 @@
 
 module bp_core_minimal
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_fe_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg

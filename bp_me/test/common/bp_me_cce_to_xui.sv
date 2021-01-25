@@ -6,7 +6,6 @@
 
 module bp_me_cce_to_xui
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
  import bsg_dmc_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg

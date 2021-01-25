@@ -2,7 +2,6 @@
 module bp_unicore
  import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_fe_pkg::*;
  import bp_me_pkg::*;

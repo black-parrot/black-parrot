@@ -4,7 +4,6 @@
 //   the SoC topology is a fixed 2d mesh with a set mapping.  Should be made more flexible
 module bp_me_cord_to_id
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    )

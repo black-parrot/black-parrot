@@ -1,5 +1,5 @@
 /* 
- * bp_common_pkg.svh
+ * bp_common_pkg.sv
  *
  * Contains the interface structures used for communicating between FE, BE, ME in BlackParrot.
  * Additionally contains global parameters used to configure the system. In the future, when
@@ -278,6 +278,8 @@ package bp_common_pkg;
     logic        n_norm;
     logic        n_inf;
   }  rv64_fclass_s;
+
+  `include "bp_common_aviary_pkgdef.svh"
 
 endpackage
 

@@ -1,8 +1,7 @@
+`ifndef BP_COMMON_AVIARY_PKGDEF
+`define BP_COMMON_AVIARY_PKGDEF
 
-package bp_common_aviary_pkg;
   `include "bp_common_aviary_defines.svh"
-
-  import bp_common_pkg::*;
 
   // Suitably high enough to not run out of configs.
   localparam max_cfgs    = 128;
@@ -711,5 +710,5 @@ package bp_common_aviary_pkg;
     ,e_bp_default_cfg                       = 0
   } bp_params_e;
 
-endpackage
+`endif
 

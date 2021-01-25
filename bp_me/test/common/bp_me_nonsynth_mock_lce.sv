@@ -13,7 +13,6 @@
 
 module bp_me_nonsynth_mock_lce
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_nonsynth_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_unicore_half_cfg
     `declare_bp_proc_params(bp_params_p)

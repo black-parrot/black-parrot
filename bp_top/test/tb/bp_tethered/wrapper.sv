@@ -9,7 +9,6 @@
 module wrapper
  import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;
  import bsg_noc_pkg::*;

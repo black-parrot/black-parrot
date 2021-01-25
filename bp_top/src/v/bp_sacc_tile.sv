@@ -1,6 +1,5 @@
 module bp_sacc_tile
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
  import bsg_cache_pkg::*;
    import bp_be_pkg::*;

@@ -1,7 +1,6 @@
 
 module bp_nonsynth_if_verif
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bsg_noc_pkg::*;
  import bp_me_pkg::*;

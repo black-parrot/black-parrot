@@ -6,7 +6,6 @@
 
 module testbench
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
  import bp_me_nonsynth_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
