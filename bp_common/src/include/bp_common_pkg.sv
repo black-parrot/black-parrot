@@ -10,14 +10,6 @@
 
 package bp_common_pkg;
 
-  `include "bsg_defines.v"
-  `include "bp_common_defines.svh"
-  `include "bp_common_core_if.svh"
-  `include "bp_common_bedrock_if.svh"
-  `include "bp_common_cache_engine_if.svh"
-  `include "bp_common_rv64_defines.svh"
-  `include "bp_common_csr_defines.svh"
-
   /*
    * RV64 specifies a 64b effective address and 32b instruction.
    * BlackParrot supports SV39 virtual memory, which specifies 39b virtual / 56b physical address.
@@ -280,6 +272,7 @@ package bp_common_pkg;
   }  rv64_fclass_s;
 
   `include "bp_common_aviary_pkgdef.svh"
+  `include "bp_common_bedrock_pkgdef.svh"
 
 endpackage
 

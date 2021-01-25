@@ -4,8 +4,8 @@
  *
  */
 
-`ifndef BP_COMMON_AVIARY_DEFINES_VH
-`define BP_COMMON_AVIARY_DEFINES_VH
+`ifndef BP_COMMON_AVIARY_DEFINES_SVH
+`define BP_COMMON_AVIARY_DEFINES_SVH
 
   // Thoughts:
   // Hardcoding hartid and lceid width limits us to 8 cores for our standard configurations,

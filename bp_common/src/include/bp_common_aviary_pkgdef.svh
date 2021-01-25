@@ -1,5 +1,5 @@
-`ifndef BP_COMMON_AVIARY_PKGDEF
-`define BP_COMMON_AVIARY_PKGDEF
+`ifndef BP_COMMON_AVIARY_PKGDEF_SVH
+`define BP_COMMON_AVIARY_PKGDEF_SVH
 
   `include "bp_common_aviary_defines.svh"
 
