@@ -1,5 +1,6 @@
-`ifndef BP_BE_CTL_DEFINES_VH
-`define BP_BE_CTL_DEFINES_VH
+
+`ifndef BP_BE_CTL_PKGDEF_SVH
+`define BP_BE_CTL_PKGDEF_SVH
 
   typedef enum logic [5:0]
   {
@@ -267,17 +268,12 @@
     bp_be_exception_s exc;
   }  bp_be_exc_stage_s;
 
-`define bp_be_fu_op_width                                                                          \
-  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_dcache_fu_op_e), $bits(bp_be_csr_fu_op_e))))
-
-`define bp_be_decode_width                                                                         \
-  ($bits(bp_be_decode_s))
-
-`define bp_be_exception_width                                                                      \
-  ($bits(bp_be_exception_s))
-
-`define bp_be_exc_stage_width                                                                      \
-  ($bits(bp_be_exc_stage_s))
+  typedef struct packed
+  {
+    bp_be_fu_op_s                      csr_op;
+    logic [rv64_csr_addr_width_gp-1:0] csr_addr;
+    logic [rv64_reg_data_width_gp-1:0] data;
+  }  bp_be_csr_cmd_s;
 
 `endif
 

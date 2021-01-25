@@ -5,6 +5,7 @@
  *
  */
 
+`include "bp_be_defines.svh"
 
 module bp_be_top
  import bp_common_pkg::*;

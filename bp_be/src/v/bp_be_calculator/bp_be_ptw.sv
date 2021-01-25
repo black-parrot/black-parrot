@@ -1,4 +1,6 @@
 
+`include "bp_be_defines.svh"
+
 module bp_be_ptw
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
@@ -13,7 +15,7 @@ module bp_be_ptw
     ,localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
     ,localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
-    ,localparam dcache_pkt_width_lp     = `bp_be_dcache_pkt_width(page_offset_width_p, dpath_width_p)
+    ,localparam dcache_pkt_width_lp     = $bits(bp_be_dcache_pkt_s)
     ,localparam tlb_entry_width_lp      = `bp_pte_entry_leaf_width(paddr_width_p)
     ,localparam lg_page_table_depth_lp  = `BSG_SAFE_CLOG2(page_table_depth_p)
 
@@ -48,7 +50,6 @@ module bp_be_ptw
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
 
   typedef enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eRecvLoad, eWriteBack, eStuck } state_e;
 

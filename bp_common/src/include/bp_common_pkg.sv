@@ -35,6 +35,21 @@ package bp_common_pkg;
   localparam bp_sv39_ppn_width_gp = 44;
   localparam bp_page_size_in_bytes_gp = 4096;
 
+  typedef struct packed
+  {
+    logic [bp_sv39_pte_width_gp-10-bp_sv39_ppn_width_gp-1:0] reserved;
+    logic [bp_sv39_ppn_width_gp-1:0] ppn;
+    logic [1:0] rsw;
+    logic d;
+    logic a;
+    logic g;
+    logic u;
+    logic x;
+    logic w;
+    logic r;
+    logic v;
+  }  bp_sv39_pte_s;
+
   localparam dword_width_p       = 64;
   localparam word_width_p        = 32;
   localparam half_width_p        = 16;

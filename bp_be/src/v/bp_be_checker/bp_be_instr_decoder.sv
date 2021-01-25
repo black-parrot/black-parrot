@@ -24,7 +24,7 @@ module bp_be_instr_decoder
 
    // Generated parameters
    , localparam instr_width_lp = rv64_instr_width_gp
-   , localparam decode_width_lp = `bp_be_decode_width
+   , localparam decode_width_lp = $bits(bp_be_decode_s)
    )
   (input                             fe_exc_not_instr_i
    , input bp_fe_exception_code_e    fe_exc_i

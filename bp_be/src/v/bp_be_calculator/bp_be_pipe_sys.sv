@@ -16,10 +16,10 @@ module bp_be_pipe_sys
    `declare_bp_proc_params(bp_params_p)
 
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-   , localparam csr_cmd_width_lp       = `bp_be_csr_cmd_width
+   , localparam csr_cmd_width_lp       = $bits(bp_be_csr_cmd_s)
    // Generated parameters
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
-   , localparam exception_width_lp    = `bp_be_exception_width
+   , localparam exception_width_lp    = $bits(bp_be_exception_s)
    , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p)

@@ -7,7 +7,7 @@ module bp_nonsynth_commit_tracer
     `declare_bp_proc_params(bp_params_p)
 
     , parameter commit_trace_file_p = "commit"
-    , localparam decode_width_lp = `bp_be_decode_width
+    , localparam decode_width_lp = $bits(bp_be_decode_s)
     )
    (input                                     clk_i
     , input                                   reset_i

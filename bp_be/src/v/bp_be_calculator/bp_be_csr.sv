@@ -1,3 +1,6 @@
+
+`include "bp_be_defines.svh"
+
 module bp_be_csr
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -5,14 +8,14 @@ module bp_be_csr
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
+   , localparam csr_cmd_width_lp = $bits(bp_be_csr_cmd_s)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
    , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
-   , localparam exception_width_lp = `bp_be_exception_width
+   , localparam exception_width_lp = $bits(bp_be_exception_s)
    )
   (input                               clk_i
    , input                             reset_i

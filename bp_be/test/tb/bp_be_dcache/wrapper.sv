@@ -27,7 +27,7 @@ module wrapper
 
    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
 
-   , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dpath_width_p)
+   , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width
 
    , localparam lce_cce_req_packet_width_lp = `bsg_wormhole_concentrator_packet_width(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_msg_width_lp)
    , localparam lce_cce_req_packet_hdr_width_lp = (lce_cce_req_packet_width_lp-cce_block_width_p)
@@ -56,7 +56,7 @@ module wrapper
    , input                                             mem_cmd_ready_i
    );
 
-   `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
+   `declare_bp_be_dcache_structs(paddr_width_p, dpath_width_p);
 
    // Cache to Rolly FIFO signals
    logic [num_caches_p-1:0] dcache_ready_lo;

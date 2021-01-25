@@ -104,8 +104,7 @@ module bp_be_dcache
    , localparam block_size_in_fill_lp = dcache_block_width_p / dcache_fill_width_p
    , localparam fill_size_in_bank_lp = dcache_fill_width_p / bank_width_lp
 
-   , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dpath_width_p)
-   , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_p)
+   , localparam dcache_pkt_width_lp=$bits(bp_be_dcache_pkt_s)
    )
   (input                              clk_i
    , input                            reset_i
@@ -168,11 +167,9 @@ module bp_be_dcache
   assign cache_req_o = cache_req_cast_o;
   assign cache_req_metadata_o = cache_req_metadata_cast_o;
 
-  `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = dcache_pkt_i;
 
-  `declare_bp_be_dcache_pipeline_s
   bp_be_dcache_pipeline_s decode_lo, decode_tl_r, decode_tv_r;
   logic [index_width_lp-1:0] addr_index;
   logic [bank_offset_width_lp-1:0] addr_bank_offset;
@@ -219,16 +216,15 @@ module bp_be_dcache
 
   // tag_mem
   //
-  `declare_bp_be_dcache_tag_info_s(ptag_width_p);
   logic tag_mem_v_li;
   logic tag_mem_w_li;
   logic [index_width_lp-1:0] tag_mem_addr_li;
-  bp_be_dcache_tag_info_s [dcache_assoc_p-1:0] tag_mem_data_li;
-  bp_be_dcache_tag_info_s [dcache_assoc_p-1:0] tag_mem_mask_li;
-  bp_be_dcache_tag_info_s [dcache_assoc_p-1:0] tag_mem_data_lo;
+  bp_dcache_tag_info_s [dcache_assoc_p-1:0] tag_mem_data_li;
+  bp_dcache_tag_info_s [dcache_assoc_p-1:0] tag_mem_mask_li;
+  bp_dcache_tag_info_s [dcache_assoc_p-1:0] tag_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit
-    #(.width_p(tag_info_width_lp*dcache_assoc_p)
+    #(.width_p(dcache_tag_info_width_lp*dcache_assoc_p)
       ,.els_p(dcache_sets_p)
     )
     tag_mem
@@ -287,10 +283,10 @@ module bp_be_dcache
 
   for (genvar i = 0; i < dcache_assoc_p; i++) begin: tag_comp_tl
     assign tag_match_tl[i] = addr_tag_tl == tag_mem_data_lo[i].tag;
-    assign load_hit_tl[i] = tag_match_tl[i] & (tag_mem_data_lo[i].coh_state != e_COH_I);
-    assign store_hit_tl[i] = tag_match_tl[i] & ((tag_mem_data_lo[i].coh_state == e_COH_M)
-                                                || (tag_mem_data_lo[i].coh_state == e_COH_E));
-    assign invalid_tl[i] = (tag_mem_data_lo[i].coh_state == e_COH_I);
+    assign load_hit_tl[i] = tag_match_tl[i] & (tag_mem_data_lo[i].state != e_COH_I);
+    assign store_hit_tl[i] = tag_match_tl[i] & ((tag_mem_data_lo[i].state == e_COH_M)
+                                                || (tag_mem_data_lo[i].state == e_COH_E));
+    assign invalid_tl[i] = (tag_mem_data_lo[i].state == e_COH_I);
   end
 
   bsg_decode
@@ -307,7 +303,7 @@ module bp_be_dcache
   logic uncached_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
   logic [dpath_width_p-1:0] data_tv_r;
-  bp_be_dcache_tag_info_s [dcache_assoc_p-1:0] tag_info_tv_r;
+  bp_dcache_tag_info_s [dcache_assoc_p-1:0] tag_info_tv_r;
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
   logic [ptag_width_p-1:0] addr_tag_tv_r;
   logic [index_width_lp-1:0] addr_index_tv;
@@ -439,8 +435,7 @@ module bp_be_dcache
 
   // write buffer
   //
-  `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, dword_width_p, dcache_assoc_p);
-
+  `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, dcache_assoc_p);
   bp_be_dcache_wbuf_entry_s wbuf_entry_in;
   logic wbuf_v_li;
 
@@ -1042,26 +1037,26 @@ module bp_be_dcache
   always_comb begin
     case (tag_mem_pkt.opcode)
       e_cache_tag_mem_set_clear: begin
-        tag_mem_data_li = {(tag_info_width_lp*dcache_assoc_p){1'b0}};
-        tag_mem_mask_li = {(tag_info_width_lp*dcache_assoc_p){1'b1}};
+        tag_mem_data_li = {(dcache_tag_info_width_lp*dcache_assoc_p){1'b0}};
+        tag_mem_mask_li = {(dcache_tag_info_width_lp*dcache_assoc_p){1'b1}};
       end
       e_cache_tag_mem_set_tag: begin
         tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
         for (integer i = 0; i < dcache_assoc_p; i++) begin
-          tag_mem_mask_li[i].coh_state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
+          tag_mem_mask_li[i].state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
           tag_mem_mask_li[i].tag = {ptag_width_p{lce_tag_mem_way_one_hot[i]}};
         end
       end
       e_cache_tag_mem_set_state: begin
         tag_mem_data_li = {dcache_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
         for (integer i = 0; i < dcache_assoc_p; i++) begin
-          tag_mem_mask_li[i].coh_state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
+          tag_mem_mask_li[i].state = bp_coh_states_e'({$bits(bp_coh_states_e){lce_tag_mem_way_one_hot[i]}});
           tag_mem_mask_li[i].tag = {ptag_width_p{1'b0}};
         end
       end
       default: begin
-        tag_mem_data_li = {(tag_info_width_lp*dcache_assoc_p){1'b0}};
-        tag_mem_mask_li = {(tag_info_width_lp*dcache_assoc_p){1'b0}};
+        tag_mem_data_li = {(dcache_tag_info_width_lp*dcache_assoc_p){1'b0}};
+        tag_mem_mask_li = {(dcache_tag_info_width_lp*dcache_assoc_p){1'b0}};
       end
     endcase
   end
