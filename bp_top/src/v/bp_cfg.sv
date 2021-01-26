@@ -1,16 +1,18 @@
 
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_cfg
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
 
    // TODO: Should I be a global param
    , localparam cfg_max_outstanding_p = 1
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                clk_i
    , input                              reset_i
@@ -32,12 +34,12 @@ module bp_cfg
    , output                             cce_ucode_v_o
    , output                             cce_ucode_w_o
    , output [cce_pc_width_p-1:0]        cce_ucode_addr_o
-   , output [cce_instr_width_p-1:0]     cce_ucode_data_o
-   , input [cce_instr_width_p-1:0]      cce_ucode_data_i
+   , output [cce_instr_width_gp-1:0]     cce_ucode_data_o
+   , input [cce_instr_width_gp-1:0]      cce_ucode_data_i
    );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
 
   bp_cfg_bus_s cfg_bus_cast_o;
   bp_bedrock_xce_mem_msg_s mem_cmd_li, mem_cmd_lo;
@@ -69,8 +71,8 @@ module bp_cfg
   wire                        cfg_v_li    = mem_cmd_v_lo;
   wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_bedrock_mem_uc_wr);
   wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_bedrock_mem_uc_rd);
-  wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_lo.header.addr[0+:cfg_addr_width_p];
-  wire [cfg_data_width_p-1:0] cfg_data_li = mem_cmd_lo.data[0+:cfg_data_width_p];
+  wire [cfg_addr_width_gp-1:0] cfg_addr_li = mem_cmd_lo.header.addr[0+:cfg_addr_width_gp];
+  wire [cfg_data_width_gp-1:0] cfg_data_li = mem_cmd_lo.data[0+:cfg_data_width_gp];
 
   always_ff @(posedge clk_i)
     if (reset_i)
@@ -84,27 +86,27 @@ module bp_cfg
       begin
         unique
         case (cfg_addr_li)
-          bp_cfg_reg_freeze_gp      : freeze_r       <= cfg_data_li;
-          bp_cfg_reg_icache_mode_gp : icache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
-          bp_cfg_reg_dcache_mode_gp : dcache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
-          bp_cfg_reg_cce_mode_gp    : cce_mode_r     <= bp_cce_mode_e'(cfg_data_li);
+          cfg_reg_freeze_gp      : freeze_r       <= cfg_data_li;
+          cfg_reg_icache_mode_gp : icache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
+          cfg_reg_dcache_mode_gp : dcache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
+          cfg_reg_cce_mode_gp    : cce_mode_r     <= bp_cce_mode_e'(cfg_data_li);
           default : begin end
         endcase
       end
 
-  wire did_r_v_li       = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_did_gp);
-  wire host_did_r_v_li  = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_host_did_gp);
-  wire cord_r_v_li      = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_cord_gp);
+  wire did_r_v_li       = cfg_r_v_li & (cfg_addr_li == cfg_reg_did_gp);
+  wire host_did_r_v_li  = cfg_r_v_li & (cfg_addr_li == cfg_reg_host_did_gp);
+  wire cord_r_v_li      = cfg_r_v_li & (cfg_addr_li == cfg_reg_cord_gp);
 
   assign cce_ucode_v_o    = (cfg_r_v_li | cfg_w_v_li) & (cfg_addr_li >= 16'h8000);
   assign cce_ucode_w_o    = cfg_w_v_li & (cfg_addr_li >= 16'h8000);
   assign cce_ucode_addr_o = cfg_addr_li[0+:cce_pc_width_p];
-  assign cce_ucode_data_o = cfg_data_li[0+:cce_instr_width_p];
+  assign cce_ucode_data_o = cfg_data_li[0+:cce_instr_width_gp];
 
-  wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_domain_mask_gp);
+  wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == cfg_reg_domain_mask_gp);
   wire [7:0] domain_li = cfg_data_li[7:0] | 8'h01;
 
-  wire sac_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_sac_mask_gp);
+  wire sac_w_v_li = cfg_w_v_li & (cfg_addr_li == cfg_reg_sac_mask_gp);
   wire sac_li = cfg_data_li[0];
 
   // Address map (40 bits)
@@ -186,23 +188,23 @@ module bp_cfg
      ,.data_o(read_sel_one_hot_r)
      );
 
-  logic [dword_width_p-1:0] read_data;
+  logic [dword_width_gp-1:0] read_data;
   bsg_mux_one_hot
-   #(.width_p(dword_width_p), .els_p(4))
+   #(.width_p(dword_width_gp), .els_p(4))
    read_mux_one_hot
-    (.data_i({dword_width_p'(host_did_i)
-              ,dword_width_p'(did_i)
-              ,dword_width_p'(cord_i)
-              ,dword_width_p'(cce_ucode_data_i)
+    (.data_i({dword_width_gp'(host_did_i)
+              ,dword_width_gp'(did_i)
+              ,dword_width_gp'(cord_i)
+              ,dword_width_gp'(cce_ucode_data_i)
               })
      ,.sel_one_hot_i(read_sel_one_hot_r)
 
      ,.data_o(read_data)
      );
 
-  logic [dword_width_p-1:0] read_data_r;
+  logic [dword_width_gp-1:0] read_data_r;
   bsg_dff_en_bypass
-   #(.width_p(dword_width_p))
+   #(.width_p(dword_width_gp))
    rdata_reg
     (.clk_i(clk_i)
      ,.en_i(rdata_v_r)
@@ -212,7 +214,7 @@ module bp_cfg
      );
 
   bp_bedrock_xce_mem_msg_s mem_resp_lo;
-  assign mem_resp_lo = '{header: mem_cmd_lo.header, data: dword_width_p'(read_data_r)};
+  assign mem_resp_lo = '{header: mem_cmd_lo.header, data: dword_width_gp'(read_data_r)};
 
   assign mem_resp_o = mem_resp_lo;
   assign mem_resp_v_o = mem_cmd_v_lo & rdata_v_r;

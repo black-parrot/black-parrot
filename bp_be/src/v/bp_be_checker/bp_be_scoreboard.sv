@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_scoreboard
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -10,21 +12,21 @@ module bp_be_scoreboard
    )
   (input                                        clk_i
    , input                                      reset_i
- 
+
    , input                                      score_v_i
-   , input [reg_addr_width_p-1:0]               score_rd_i
+   , input [reg_addr_width_gp-1:0]               score_rd_i
 
    , input                                      clear_v_i
-   , input [reg_addr_width_p-1:0]               clear_rd_i
+   , input [reg_addr_width_gp-1:0]               clear_rd_i
 
-   , input [num_rs_p-1:0][reg_addr_width_p-1:0] rs_i
-   , input               [reg_addr_width_p-1:0] rd_i
+   , input [num_rs_p-1:0][reg_addr_width_gp-1:0] rs_i
+   , input               [reg_addr_width_gp-1:0] rd_i
 
    , output logic [num_rs_p-1:0]                rs_match_o
    , output logic                               rd_match_o
    );
 
-  localparam rf_els_lp = 2**reg_addr_width_p;
+  localparam rf_els_lp = 2**reg_addr_width_gp;
   logic [rf_els_lp-1:0] scoreboard_r;
 
   logic [rf_els_lp-1:0] score_onehot_li;

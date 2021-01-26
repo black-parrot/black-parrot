@@ -14,16 +14,18 @@
  *   FE cmd adapter could be split into a separate module
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_director
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
@@ -57,7 +59,7 @@ module bp_be_director
   );
 
   // Declare parameterized structures
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -294,25 +296,6 @@ module bp_be_director
      ,.yumi_i(fe_cmd_yumi_i)
      );
   assign fe_cmd_full_o = ~fe_cmd_ready_lo;
-
-  //synopsys translate_off
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
-  bp_fe_branch_metadata_fwd_s attaboy_md;
-  bp_fe_branch_metadata_fwd_s redir_md;
-
-  assign attaboy_md = fe_cmd_li.operands.attaboy.branch_metadata_fwd;
-  assign redir_md = fe_cmd_li.operands.pc_redirect_operands.branch_metadata_fwd;
-
-  always_ff @(negedge clk_i)
-    if (debug_lp) begin
-      if (fe_cmd_v_li & (fe_cmd_li.opcode == e_op_pc_redirection))
-        $display("[REDIR  ] %x->%x %p", isd_status_cast_i.pc, fe_cmd_li.vaddr, redir_md);
-      else if (fe_cmd_v_li & (fe_cmd_li.opcode == e_op_attaboy))
-        $display("[ATTABOY] %x %p", fe_cmd_li.vaddr, attaboy_md);
-      else if (isd_status_cast_i.v)
-        $display("[FETCH  ] %x   ", isd_status_cast_i.pc);
-    end
-  //synopsys translate_on
 
 endmodule
 

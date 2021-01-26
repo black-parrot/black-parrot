@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_nonsynth_host
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bsg_noc_pkg::*;
  import bp_me_pkg::*;
@@ -221,11 +223,11 @@ module bp_nonsynth_host
   localparam lg_bootrom_els_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
   // bit helps with x pessimism with undersized bootrom
   bit [lg_bootrom_els_lp-1:0] bootrom_addr_li;
-  bit [dword_width_p-1:0] bootrom_data_lo;
+  bit [dword_width_gp-1:0] bootrom_data_lo;
   assign bootrom_addr_li = io_cmd_lo.header.addr[3+:lg_bootrom_els_lp];
   bsg_nonsynth_test_rom
    #(.filename_p("bootrom.mem")
-     ,.data_width_p(dword_width_p)
+     ,.data_width_p(dword_width_gp)
      ,.addr_width_p(lg_bootrom_els_lp)
      ,.hex_not_bin_p(1)
      )
@@ -234,9 +236,9 @@ module bp_nonsynth_host
      ,.data_o(bootrom_data_lo)
      );
 
-  logic [dword_width_p-1:0] bootrom_final_lo;
+  logic [dword_width_gp-1:0] bootrom_final_lo;
   bsg_bus_pack
-   #(.width_p(dword_width_p))
+   #(.width_p(dword_width_gp))
    bootrom_pack
     (.data_i(bootrom_data_lo)
      ,.size_i(io_cmd_lo.header.size[0+:2])

@@ -5,16 +5,18 @@
  * The entire block is implemented in combinational logic, achieved within one cycle.
 */
 
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_instr_scan
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_fe_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
    , localparam instr_scan_width_lp = `bp_fe_instr_scan_width(vaddr_width_p)
    )
-  (input [instr_width_p-1:0]          instr_i
+  (input [instr_width_gp-1:0]          instr_i
 
    , output [instr_scan_width_lp-1:0] scan_o
   );

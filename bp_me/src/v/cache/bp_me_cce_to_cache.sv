@@ -3,10 +3,12 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_cce_to_cache
 
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
   import bsg_cache_pkg::*;
 
@@ -14,16 +16,16 @@ module bp_me_cce_to_cache
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-    , localparam block_size_in_words_lp=cce_block_width_p/dword_width_p
+    , localparam block_size_in_words_lp=cce_block_width_p/dword_width_gp
     , localparam lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
     , localparam lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , localparam data_mask_width_lp=(dword_width_p>>3)
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
+    , localparam data_mask_width_lp=(dword_width_gp>>3)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_gp>>3)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
 
-    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(paddr_width_p,dword_width_p)
-    , localparam counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_p)
+    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(paddr_width_p,dword_width_gp)
+    , localparam counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_gp)
   )
   (
     input clk_i
@@ -43,7 +45,7 @@ module bp_me_cce_to_cache
     , output logic                        v_o
     , input                               ready_i
 
-    , input [dword_width_p-1:0]           data_i
+    , input [dword_width_gp-1:0]           data_i
     , input                               v_i
     , output logic                        yumi_o
   );
@@ -51,7 +53,7 @@ module bp_me_cce_to_cache
   // at the reset, this module intializes all the tags and valid bits to zero.
   // After all the tags are completedly initialized, this module starts
   // accepting packets from manycore network.
-  `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
+  `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_gp);
 
   // cce logics
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
@@ -95,7 +97,7 @@ module bp_me_cce_to_cache
     ,.yumi_i(mem_cmd_yumi_li)
     );
   wire [paddr_width_p-1:0] cmd_addr = mem_cmd_lo.header.addr;
-  wire [block_size_in_words_lp-1:0][dword_width_p-1:0] cmd_data = mem_cmd_lo.data;
+  wire [block_size_in_words_lp-1:0][dword_width_gp-1:0] cmd_data = mem_cmd_lo.data;
 
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
@@ -248,8 +250,8 @@ module bp_me_cce_to_cache
   logic [counter_width_lp-1:0] resp_counter_r, resp_counter_n;
   logic [counter_width_lp-1:0] resp_max_count_r, resp_max_count_n;
 
-  logic [dword_width_p-1:0] resp_data_n;
-  logic [block_size_in_words_lp-1:0][dword_width_p-1:0] resp_data_r;
+  logic [dword_width_gp-1:0] resp_data_n;
+  logic [block_size_in_words_lp-1:0][dword_width_gp-1:0] resp_data_r;
 
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin

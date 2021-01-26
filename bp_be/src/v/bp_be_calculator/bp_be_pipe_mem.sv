@@ -10,15 +10,17 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_pipe_mem
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
    // Generated parameters
-   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp       = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dispatch_pkt_width_lp  = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam ptw_miss_pkt_width_lp  = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
@@ -52,9 +54,9 @@ module bp_be_pipe_mem
    , output logic                         store_access_fault_v_o
    , output logic                         store_page_fault_v_o
 
-   , output logic [dpath_width_p-1:0]     early_data_o
+   , output logic [dpath_width_gp-1:0]     early_data_o
    , output logic                         early_v_o
-   , output logic [dpath_width_p-1:0]     final_data_o
+   , output logic [dpath_width_gp-1:0]     final_data_o
    , output logic                         final_v_o
 
    , input [trans_info_width_lp-1:0]      trans_info_i
@@ -91,9 +93,8 @@ module bp_be_pipe_mem
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
 
   // Cast input and output ports
   bp_be_dispatch_pkt_s   reservation;
@@ -115,9 +116,9 @@ module bp_be_pipe_mem
   assign decode = reservation.decode;
   assign instr = reservation.instr;
   wire [vaddr_width_p-1:0] pc  = reservation.pc[0+:vaddr_width_p];
-  wire [dpath_width_p-1:0] rs1 = reservation.rs1[0+:dpath_width_p];
-  wire [dpath_width_p-1:0] rs2 = reservation.rs2[0+:dpath_width_p];
-  wire [dpath_width_p-1:0] imm = reservation.imm[0+:dpath_width_p];
+  wire [dpath_width_gp-1:0] rs1 = reservation.rs1[0+:dpath_width_gp];
+  wire [dpath_width_gp-1:0] rs2 = reservation.rs2[0+:dpath_width_gp];
+  wire [dpath_width_gp-1:0] imm = reservation.imm[0+:dpath_width_gp];
 
   /* Internal connections */
   /* TLB ports */
@@ -133,7 +134,7 @@ module bp_be_pipe_mem
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic [dpath_width_p-1:0] dcache_early_data, dcache_final_data;
+  logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_early_v, dcache_final_v, dcache_pkt_v;
   logic                     dcache_ptag_v;
@@ -158,7 +159,7 @@ module bp_be_pipe_mem
 
   // D-TLB connections
   assign dtlb_r_v     = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
-  assign dtlb_r_vtag  = eaddr[bp_page_offset_width_gp+:vtag_width_p];
+  assign dtlb_r_vtag  = eaddr[page_offset_width_gp+:vtag_width_p];
   assign dtlb_w_v     = ptw_fill_pkt.dtlb_fill_v;
   assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign dtlb_w_entry = ptw_fill_pkt.entry;
@@ -306,7 +307,7 @@ module bp_be_pipe_mem
       else begin
         dcache_pkt_v = reservation.v & ~reservation.poison & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
-        dcache_pkt.page_offset = eaddr[0+:page_offset_width_p];
+        dcache_pkt.page_offset = eaddr[0+:page_offset_width_gp];
         dcache_pkt.data        = rs2;
         dcache_ptag = dtlb_ptag_lo;
         dcache_ptag_v = dtlb_v_lo;

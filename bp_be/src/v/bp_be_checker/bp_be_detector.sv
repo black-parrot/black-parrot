@@ -11,15 +11,17 @@
  *     stages. However, like the calculator, this is a high risk change that should be postponed
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_detector
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp     = `bp_be_wb_pkt_width(vaddr_width_p)
@@ -46,7 +48,7 @@ module bp_be_detector
    , input [wb_pkt_width_lp-1:0]       fwb_pkt_i
    );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_i;
@@ -81,12 +83,12 @@ module bp_be_detector
   logic long_haz_v;
   logic mem_in_pipe_v;
 
-  wire [reg_addr_width_p-1:0] score_rd_li = dispatch_pkt.instr.t.fmatype.rd_addr;
-  wire [reg_addr_width_p-1:0] score_rs1_li = dispatch_pkt.instr.t.fmatype.rs1_addr;
-  wire [reg_addr_width_p-1:0] score_rs2_li = dispatch_pkt.instr.t.fmatype.rs2_addr;
-  wire [reg_addr_width_p-1:0] score_rs3_li = dispatch_pkt.instr.t.fmatype.rs3_addr;
-  wire [reg_addr_width_p-1:0] clear_ird_li = iwb_pkt.rd_addr;
-  wire [reg_addr_width_p-1:0] clear_frd_li = fwb_pkt.rd_addr;
+  wire [reg_addr_width_gp-1:0] score_rd_li = dispatch_pkt.instr.t.fmatype.rd_addr;
+  wire [reg_addr_width_gp-1:0] score_rs1_li = dispatch_pkt.instr.t.fmatype.rs1_addr;
+  wire [reg_addr_width_gp-1:0] score_rs2_li = dispatch_pkt.instr.t.fmatype.rs2_addr;
+  wire [reg_addr_width_gp-1:0] score_rs3_li = dispatch_pkt.instr.t.fmatype.rs3_addr;
+  wire [reg_addr_width_gp-1:0] clear_ird_li = iwb_pkt.rd_addr;
+  wire [reg_addr_width_gp-1:0] clear_frd_li = fwb_pkt.rd_addr;
 
   logic [1:0] irs_match_lo;
   logic       ird_match_lo;

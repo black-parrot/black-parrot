@@ -1,6 +1,8 @@
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_cacc_tile
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
  import bsg_cache_pkg::*;
  import bp_be_pkg::*;

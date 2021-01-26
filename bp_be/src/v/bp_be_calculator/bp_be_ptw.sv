@@ -1,26 +1,28 @@
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_ptw
-  import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
-  import bp_be_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    `declare_bp_proc_params(bp_params_p)
-    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+ import bp_common_pkg::*;
+ import bp_be_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
+   `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
-    ,parameter pte_width_p              = bp_sv39_pte_width_gp
-    ,parameter page_table_depth_p       = bp_sv39_page_table_depth_gp
+   , parameter pte_width_p              = sv39_pte_width_gp
+   , parameter page_table_depth_p       = sv39_levels_gp
+   , parameter pte_size_in_bytes_p      = sv39_pte_size_in_bytes_gp
 
-    ,localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
-    ,localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
+   , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
 
-    ,localparam dcache_pkt_width_lp     = `bp_be_dcache_pkt_width(page_offset_width_p, dpath_width_p)
-    ,localparam tlb_entry_width_lp      = `bp_pte_entry_leaf_width(paddr_width_p)
-    ,localparam lg_page_table_depth_lp  = `BSG_SAFE_CLOG2(page_table_depth_p)
+   , localparam dcache_pkt_width_lp     = $bits(bp_be_dcache_pkt_s)
+   , localparam tlb_entry_width_lp      = `bp_pte_entry_leaf_width(paddr_width_p)
+   , localparam lg_page_table_depth_lp  = `BSG_SAFE_CLOG2(page_table_depth_p)
 
-    ,localparam pte_size_in_bytes_lp    = pte_width_p/rv64_byte_width_gp
-    ,localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_lp)
-    ,localparam partial_vpn_width_lp    = page_offset_width_p - lg_pte_size_in_bytes_lp
-  )
+   , localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_p)
+   , localparam partial_vpn_width_lp    = page_offset_width_gp - lg_pte_size_in_bytes_lp
+   )
   (input                                    clk_i
    , input                                  reset_i
 
@@ -43,18 +45,17 @@ module bp_be_ptw
    , input                                  dcache_rdy_i
 
    , input                                  dcache_v_i
-   , input [dpath_width_p-1:0]              dcache_data_i
+   , input [dpath_width_gp-1:0]              dcache_data_i
   );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_be_dcache_pkt_s(page_offset_width_p, dpath_width_p);
 
   typedef enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eRecvLoad, eWriteBack, eStuck } state_e;
 
-  bp_be_dcache_pkt_s  dcache_pkt;
-  bp_sv39_pte_s       dcache_data;
-  bp_pte_entry_leaf_s tlb_w_entry;
+  bp_be_dcache_pkt_s   dcache_pkt;
+  sv39_pte_s           dcache_data;
+  bp_pte_entry_leaf_s  tlb_w_entry;
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
@@ -80,7 +81,7 @@ module bp_be_ptw
 
   logic tlb_miss_v, page_fault_v;
 
-  logic [dword_width_p-1:0] dcache_data_r;
+  logic [dword_width_gp-1:0] dcache_data_r;
   logic dcache_v_r;
 
    for(genvar i=0; i<page_table_depth_p; i++) begin : vpn
@@ -180,11 +181,11 @@ module bp_be_ptw
     end
   end
 
-  bsg_dff_reset #(.width_p(1+dword_width_p))
+  bsg_dff_reset #(.width_p(1+dword_width_gp))
     dcache_data_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i({dcache_v_i, dcache_data_i[0+:dword_width_p]})
+     ,.data_i({dcache_v_i, dcache_data_i[0+:dword_width_gp]})
      ,.data_o({dcache_v_r, dcache_data_r})
     );
 

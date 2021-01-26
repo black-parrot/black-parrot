@@ -6,10 +6,12 @@
  * between the frontend and the backend, i.e. the frontend queue).
 */
 
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_pc_gen
  import bp_common_pkg::*;
  import bp_fe_pkg::*;
- import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
@@ -30,7 +32,7 @@ module bp_fe_pc_gen
 
    , output logic                                    ovr_o
 
-   , input [instr_width_p-1:0]                       fetch_i
+   , input [instr_width_gp-1:0]                       fetch_i
    , input                                           fetch_instr_v_i
    , input                                           fetch_exception_v_i
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
