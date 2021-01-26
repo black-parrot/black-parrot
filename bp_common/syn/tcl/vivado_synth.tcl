@@ -1,6 +1,7 @@
 # Genesys 2 - xc7k325tffg900-2
 # Artix 7   - xc7a200tfbg676-2
 set PART $::env(PART)
+set env(XILINX_VIVADO) /gro/cad/Xilinx/Vivado/2019.1
 
 set BP_TOP_DIR $::env(BP_TOP_DIR)
 set BP_COMMON_DIR $::env(BP_COMMON_DIR)
@@ -23,6 +24,11 @@ foreach x $f {
       set temp [string trimleft $x $trimchars]
       set expanded [subst $temp]
       lappend dir_list $expanded
+    } elseif {[string match "*bsg_mem_1rw_sync_mask_write_bit.v" $x]} {
+      set replace_hard "$BASEJUMP_STL_DIR/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v"
+      set expanded [subst $replace_hard]
+      lappend flist $expanded
+      puts $expanded
     } else {
       set expanded [subst $x]
       lappend flist $expanded
@@ -30,11 +36,16 @@ foreach x $f {
   }
 }
 
+puts $flist
+
 set_part $PART
 read_verilog -sv $flist
 read_xdc design.xdc
 
-synth_design -top wrapper -part $PART -include_dirs $dir_list
+synth_design -top wrapper -part $PART -include_dirs $dir_list -flatten_hierarchy none
 report_utilization -file $REPORT_DIR/hier_util.rpt -hierarchical -hierarchical_percentages
 report_timing_summary -file $REPORT_DIR/timing.rpt
+write_checkpoint -force post_synthesis.dcp
+rename_ref -prefix_all synth_
+write_verilog -force -mode funcsim wrapper_synth.sv
 

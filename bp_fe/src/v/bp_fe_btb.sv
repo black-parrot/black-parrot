@@ -90,7 +90,7 @@ module bp_fe_btb
   bp_btb_entry_s tag_mem_data_li;
   wire                          tag_mem_w_v_li = is_clear | w_v_i;
   wire [btb_idx_width_p-1:0] tag_mem_w_addr_li = is_clear ? init_cnt : w_idx_i;
-  assign tag_mem_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: br_tgt_i};
+  assign tag_mem_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : bp_btb_entry_s'{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: br_tgt_i};
 
   // We could technically forward, but instead we'll bank the memory in
   //   the future, so won't waste effort here

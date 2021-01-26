@@ -23,6 +23,13 @@ VCS_OPTIONS  = +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
 VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
+ifeq ($(SYNTH_P), 1)
+VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src
+VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src/unisims
+VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src/unimacro
+VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src/retarget
+VCS_OPTIONS += +incdir+$(XILINX_VIVADO)/data/verilog/src +libext+.v
+endif
 
 VCS_BUILD_OPTS  = -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -notice
@@ -39,6 +46,9 @@ VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save
 VCS_BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
 VCS_BUILD_OPTS += -top test_bp
+ifeq ($(SYNTH_P), 1)
+VCS_BUILD_OPTS += -top glbl
+endif
 VCS_BUILD_OPTS += -f flist.vcs 
 
 VCS_PLUSARGS  =

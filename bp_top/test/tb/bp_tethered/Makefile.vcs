@@ -1,5 +1,7 @@
 VCS_TIMEOUT = 1000ms
 
+SYNTH_P ?= 0
+
 $(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv $(LINT_DIR)/test_bp.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
@@ -9,7 +11,11 @@ $(LINT_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	@echo wrapper.sv                                >> $@
+ifeq ($(SYNTH_P), 0)
+	@echo wrapper.sv                              >> $@
+else
+	@echo $(SYN_PATH)/results/vivado/bp_tethered.$(CFG).$(TAG).build/wrapper_synth.sv >> $@
+endif
 	@echo testbench.sv                              >> $@
 	@echo test_bp.sv                                >> $@
 	@echo bsg_tag_boot_rom.v                        >> $@
@@ -31,7 +37,11 @@ $(BUILD_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	@echo wrapper.sv                                >> $@
+ifeq ($(SYNTH_P), 0)
+	@echo wrapper.sv                              >> $@
+else
+	@echo $(SYN_PATH)/results/vivado/bp_tethered.$(CFG).$(TAG).build/wrapper_synth.sv >> $@
+endif
 	@echo testbench.sv                              >> $@
 	@echo test_bp.sv                                >> $@
 	@echo bsg_tag_boot_rom.v                        >> $@
