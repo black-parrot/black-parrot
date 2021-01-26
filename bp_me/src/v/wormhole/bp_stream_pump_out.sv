@@ -100,12 +100,6 @@ module bp_stream_pump_out
   logic [stream_offset_width_lp+data_len_width_lp-1:0] sub_block_adddr, sub_block_adddr_tuned;   
   always_comb 
     begin
-      mem_header_cast_o = fsm_base_header_cast_i;
-      mem_data_o = fsm_data_i;
-      mem_last_o = is_last_cnt & mem_v_o;
-
-      stream_done_o = mem_ready_and_i & mem_v_o & is_last_cnt; 
-
       if (~is_stream | has_data)
         begin
           // handle message size <= stream_data_width_p ｜ command w/o data payload ｜ message size > stream_data_width_p w/ data payload
@@ -135,6 +129,12 @@ module bp_stream_pump_out
           cnt_up  = fsm_v_i & ~is_last_cnt;
           set_cnt = fsm_v_i & ~streaming_r;
         end
+      
+      mem_header_cast_o = fsm_base_header_cast_i;
+      mem_data_o = fsm_data_i;
+      mem_last_o = is_last_cnt & mem_v_o;
+
+      stream_done_o = mem_ready_and_i & mem_v_o & is_last_cnt; 
     end
 
 endmodule
