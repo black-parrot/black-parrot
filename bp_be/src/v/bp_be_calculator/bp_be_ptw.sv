@@ -1,6 +1,4 @@
 
-`include "bp_be_defines.svh"
-
 `include "bp_common_defines.svh"
 `include "bp_be_defines.svh"
 
