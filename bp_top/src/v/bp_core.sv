@@ -5,19 +5,21 @@
  *  dcache is connected to 1.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_core
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_fe_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   )
  (input                                          clk_i
   , input                                        reset_i
@@ -47,9 +49,9 @@ module bp_core
   , input                                        external_irq_i
   );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
 
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 

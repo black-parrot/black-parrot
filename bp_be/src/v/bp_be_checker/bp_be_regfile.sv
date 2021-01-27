@@ -14,9 +14,11 @@
  *       down to if writing / reading x0 and then muxing is less power than checking x == 0 on input.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_regfile
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
@@ -28,18 +30,18 @@ module bp_be_regfile
 
    // rs read bus
    , input [read_ports_p-1:0]                       rs_r_v_i
-   , input [read_ports_p-1:0][reg_addr_width_p-1:0] rs_addr_i
+   , input [read_ports_p-1:0][reg_addr_width_gp-1:0] rs_addr_i
    , output [read_ports_p-1:0][data_width_p-1:0]    rs_data_o
 
    // rd write bus
    , input                                          rd_w_v_i
-   , input [reg_addr_width_p-1:0]                   rd_addr_i
+   , input [reg_addr_width_gp-1:0]                   rd_addr_i
    , input [data_width_p-1:0]                       rd_data_i
    );
 
-  localparam rf_els_lp = 2**reg_addr_width_p;
+  localparam rf_els_lp = 2**reg_addr_width_gp;
   logic [read_ports_p-1:0] rs_v_li;
-  logic [read_ports_p-1:0][reg_addr_width_p-1:0] rs_addr_li;
+  logic [read_ports_p-1:0][reg_addr_width_gp-1:0] rs_addr_li;
   logic [read_ports_p-1:0][data_width_p-1:0] rs_data_lo;
   if (read_ports_p == 2)
     begin : tworonew
@@ -117,9 +119,9 @@ module bp_be_regfile
          );
       assign fwd_data_lo = fwd_rs_r ? rd_data_r : rs_data_lo[i];
 
-      logic [reg_addr_width_p-1:0] rs_addr_r;
+      logic [reg_addr_width_gp-1:0] rs_addr_r;
       bsg_dff_en
-       #(.width_p(reg_addr_width_p))
+       #(.width_p(reg_addr_width_gp))
        rs_addr_reg
         (.clk_i(clk_i)
          ,.en_i(rs_r_v_i[i])

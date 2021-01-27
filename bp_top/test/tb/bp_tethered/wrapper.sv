@@ -9,7 +9,6 @@
 module wrapper
  import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;
  import bsg_noc_pkg::*;
@@ -174,12 +173,12 @@ module wrapper
 
       bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
       logic mem_cmd_header_v_lo, mem_cmd_header_ready_li;
-      logic [dword_width_p-1:0] mem_cmd_data_lo;
+      logic [dword_width_gp-1:0] mem_cmd_data_lo;
       logic mem_cmd_data_v_lo, mem_cmd_data_ready_li;
 
       bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
       logic mem_resp_header_v_li, mem_resp_header_yumi_lo;
-      logic [dword_width_p-1:0] mem_resp_data_li;
+      logic [dword_width_gp-1:0] mem_resp_data_li;
       logic mem_resp_data_v_li, mem_resp_data_yumi_lo;
 
       // We need to expand the IO ports to their full width here
@@ -207,7 +206,7 @@ module wrapper
 
       bp_burst_to_lite
        #(.bp_params_p(bp_params_p)
-         ,.in_data_width_p(dword_width_p)
+         ,.in_data_width_p(dword_width_gp)
          ,.out_data_width_p(cce_block_width_p)
          ,.payload_mask_p(mem_cmd_payload_mask_gp)
          )
@@ -233,7 +232,7 @@ module wrapper
       bp_lite_to_burst
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(cce_block_width_p)
-         ,.out_data_width_p(dword_width_p)
+         ,.out_data_width_p(dword_width_gp)
          ,.payload_mask_p(mem_resp_payload_mask_gp)
          )
        lite2burst

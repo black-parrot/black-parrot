@@ -3,9 +3,11 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_nonsynth_lce_tracer
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_nonsynth_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_unicore_half_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -27,7 +29,7 @@ module bp_me_nonsynth_lce_tracer
 
     , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
 
-    , localparam lce_req_data_width_lp = dword_width_p
+    , localparam lce_req_data_width_lp = dword_width_gp
 
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
   )

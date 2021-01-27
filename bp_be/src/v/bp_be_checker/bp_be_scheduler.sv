@@ -11,15 +11,17 @@
  *   Floating point instruction decoding is not implemented, so we do not predecode.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_scheduler
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
@@ -51,7 +53,7 @@ module bp_be_scheduler
   );
 
   // Declare parameterizable structures
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -100,25 +102,25 @@ module bp_be_scheduler
   assign fe_queue_yumi_li = ~suppress_iss_i & fe_queue_v_lo & dispatch_v_i;
   wire issue_v = fe_queue_yumi_li;
 
-  logic [dword_width_p-1:0] irf_rs1, irf_rs2;
+  logic [dword_width_gp-1:0] irf_rs1, irf_rs2;
   bp_be_regfile
-  #(.bp_params_p(bp_params_p), .read_ports_p(2), .data_width_p(dword_width_p))
+  #(.bp_params_p(bp_params_p), .read_ports_p(2), .data_width_p(dword_width_gp))
    int_regfile
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.rd_w_v_i(iwb_pkt.ird_w_v)
      ,.rd_addr_i(iwb_pkt.rd_addr)
-     ,.rd_data_i(iwb_pkt.rd_data[0+:dword_width_p])
+     ,.rd_data_i(iwb_pkt.rd_data[0+:dword_width_gp])
 
      ,.rs_r_v_i({preissue_pkt.irs2_v, preissue_pkt.irs1_v})
      ,.rs_addr_i({preissue_pkt.rs2_addr, preissue_pkt.rs1_addr})
      ,.rs_data_o({irf_rs2, irf_rs1})
      );
 
-  logic [dpath_width_p-1:0] frf_rs1, frf_rs2, frf_rs3;
+  logic [dpath_width_gp-1:0] frf_rs1, frf_rs2, frf_rs3;
   bp_be_regfile
-  #(.bp_params_p(bp_params_p), .read_ports_p(3), .data_width_p(dpath_width_p))
+  #(.bp_params_p(bp_params_p), .read_ports_p(3), .data_width_p(dpath_width_gp))
    fp_regfile
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -134,7 +136,7 @@ module bp_be_scheduler
 
   // Decode the dispatched instruction
   bp_be_decode_s            decoded;
-  logic [dword_width_p-1:0] decoded_imm_lo;
+  logic [dword_width_gp-1:0] decoded_imm_lo;
   wire fe_exc_not_instr_li = (fe_queue_lo.msg_type == e_fe_exception);
   bp_be_instr_decoder
    #(.bp_params_p(bp_params_p))

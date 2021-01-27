@@ -3,9 +3,11 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_nonsynth_lce_tr_tracer
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_nonsynth_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_unicore_half_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -20,7 +22,7 @@ module bp_me_nonsynth_lce_tr_tracer
     , localparam block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
     , localparam lce_opcode_width_lp=$bits(bp_me_nonsynth_lce_opcode_e)
-    , localparam tr_ring_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_p)
+    , localparam tr_ring_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_gp)
 
   )
   (
@@ -39,7 +41,7 @@ module bp_me_nonsynth_lce_tr_tracer
   );
 
   // Trace Replay Interface
-  `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_p);
+  `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_gp);
   bp_me_nonsynth_lce_tr_pkt_s tr_cmd, tr_resp;
   assign tr_cmd = tr_pkt_i;
   assign tr_resp = tr_pkt_o_i;

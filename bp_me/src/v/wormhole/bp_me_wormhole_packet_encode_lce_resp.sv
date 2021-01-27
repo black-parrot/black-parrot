@@ -10,9 +10,11 @@
  */
 
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_wormhole_packet_encode_lce_resp
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)

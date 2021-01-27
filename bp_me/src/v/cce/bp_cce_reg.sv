@@ -7,9 +7,11 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_reg
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -223,7 +225,7 @@ module bp_cce_reg
       mshr_n.lru_paddr = src_a_i[0+:paddr_width_p];
 
       // Flags - by default, next value comes from src_a
-      for (int i = 0; i < `bp_cce_inst_num_flags; i=i+1) begin
+      for (int i = 0; i < $bits(bp_cce_inst_flag_onehot_e); i=i+1) begin
         mshr_n.flags[i] = src_a_i[0];
       end
 
@@ -293,7 +295,7 @@ module bp_cce_reg
 
       // Flag operation - ldflags, ldflagsi, or clf
       if (write_all_flags) begin
-        mshr_n.flags = src_a_i[0+:`bp_cce_inst_num_flags];
+        mshr_n.flags = src_a_i[0+:$bits(bp_cce_inst_flag_onehot_e)];
       end
 
     end // MSHR
@@ -364,7 +366,7 @@ module bp_cce_reg
         if (~stall_i & decoded_inst_i.next_coh_state_w_v) begin
           mshr_r.next_coh_state <= mshr_n.next_coh_state;
         end
-        for (int i = 0; i < `bp_cce_inst_num_flags; i=i+1) begin
+        for (int i = 0; i < $bits(bp_cce_inst_flag_onehot_e); i=i+1) begin
           if (~stall_i & decoded_inst_i.flag_w_v[i]) begin
             mshr_r.flags[i] <= mshr_n.flags[i];
           end

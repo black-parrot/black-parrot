@@ -1,13 +1,15 @@
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_fp_to_rec
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    )
   (// RAW floating point input
-   input [dword_width_p-1:0]      raw_i
+   input [dword_width_gp-1:0]      raw_i
    // Precision of the raw input value
    , input                        raw_sp_not_dp_i
 
@@ -60,7 +62,7 @@ module bp_be_fp_to_rec
                        ,fract: {sp_rec.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                        };
 
-  wire nanbox_v_li = &raw_i[word_width_p+:word_width_p];
+  wire nanbox_v_li = &raw_i[word_width_gp+:word_width_gp];
   wire encode_as_sp = nanbox_v_li | raw_sp_not_dp_i;
 
   assign rec_sp_not_dp_o = encode_as_sp;

@@ -2,17 +2,19 @@
  * bp_fe_top.v
  */
 
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_top
  import bp_fe_pkg::*;
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -55,7 +57,7 @@ module bp_fe_top
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
   bp_fe_cmd_s fe_cmd_cast_i;
   assign fe_cmd_cast_i = fe_cmd_i;
@@ -81,7 +83,7 @@ module bp_fe_top
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
   logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
-  logic [instr_width_p-1:0] fetch_li;
+  logic [instr_width_gp-1:0] fetch_li;
   logic [vaddr_width_p-1:0] fetch_pc_lo;
   logic fetch_instr_v_li, fetch_exception_v_li, fetch_fail_v_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
@@ -207,7 +209,7 @@ module bp_fe_top
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf;
 
-  wire [dword_width_p-1:0] r_eaddr_li = dword_width_p'($signed(next_pc_lo));
+  wire [dword_width_gp-1:0] r_eaddr_li = dword_width_gp'($signed(next_pc_lo));
   bp_mmu
    #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
    immu
@@ -252,7 +254,7 @@ module bp_fe_top
                         };
   // TODO: Should only ack icache fence when icache_ready
   wire icache_v_li = next_pc_yumi_li | icache_fence_v;
-  logic [instr_width_p-1:0] icache_data_lo;
+  logic [instr_width_gp-1:0] icache_data_lo;
   logic icache_ready_lo, icache_data_v_lo;
   logic icache_poison_tl, icache_poison_tv;
   bp_fe_icache

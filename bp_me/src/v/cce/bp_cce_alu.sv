@@ -16,6 +16,9 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_alu
   import bp_me_pkg::*;
   #(parameter width_p = "inv")

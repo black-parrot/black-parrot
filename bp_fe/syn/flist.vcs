@@ -26,7 +26,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 # Interface packages
 $BP_COMMON_DIR/src/include/bp_common_pkg.sv
-$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.sv
 # FE packages
 $BP_FE_DIR/src/include/bp_fe_pkg.sv
 # BE packages

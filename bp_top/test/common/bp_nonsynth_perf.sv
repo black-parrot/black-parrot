@@ -1,6 +1,8 @@
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_nonsynth_perf
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)

@@ -6,7 +6,6 @@
 
 module testbench
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
@@ -31,11 +30,9 @@ module testbench
    , parameter mem_file_p = "prog.mem"
 
    // Derived parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-   , localparam page_offset_width_lp = bp_page_offset_width_gp
-   , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
-   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dpath_width_p)
-   , localparam trace_replay_data_width_lp = ptag_width_lp + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
+   , localparam cfg_bus_width_lp = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
+   , localparam trace_replay_data_width_lp = ptag_width_p + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
    , localparam trace_rom_addr_width_lp = 8
 
    , localparam yumi_min_delay_lp = 0
@@ -48,7 +45,7 @@ module testbench
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_li;
   logic [cfg_bus_width_lp-1:0] cfg_bus_li;
@@ -64,19 +61,19 @@ module testbench
 
   logic [num_caches_p-1:0][trace_replay_data_width_lp-1:0] trace_data_li;
   logic [num_caches_p-1:0] trace_v_li, trace_ready_lo;
-  logic [num_caches_p-1:0][dword_width_p-1:0] data_lo;
+  logic [num_caches_p-1:0][dword_width_gp-1:0] data_lo;
   logic [num_caches_p-1:0] v_lo;
 
   logic [num_caches_p-1:0][trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
   logic [num_caches_p-1:0][trace_replay_data_width_lp+3:0] trace_rom_data_li;
 
   logic [num_caches_p-1:0][dcache_pkt_width_lp-1:0] dcache_pkt_li;
-  logic [num_caches_p-1:0][ptag_width_lp-1:0] ptag_li;
+  logic [num_caches_p-1:0][ptag_width_p-1:0] ptag_li;
   logic [num_caches_p-1:0] uncached_li;
   logic [num_caches_p-1:0] dcache_ready_li;
 
   logic [num_caches_p-1:0] fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
-  logic [num_caches_p-1:0][dword_width_p-1:0] fifo_data_lo;
+  logic [num_caches_p-1:0][dword_width_gp-1:0] fifo_data_lo;
 
   // Setting up the config bus
   // logic switch_cce_mode;
@@ -151,8 +148,8 @@ module testbench
 
       assign dcache_pkt_li[i] = trace_data_lo[i][0+:dcache_pkt_width_lp];
       // Slight hack, but makes all address "cacheable"
-      assign ptag_li[i] = (32'h8000_0000 >> 12) | trace_data_lo[i][dcache_pkt_width_lp+:ptag_width_lp];
-      assign uncached_li[i] = trace_data_lo[i][(dcache_pkt_width_lp+ptag_width_lp)+:1];
+      assign ptag_li[i] = (32'h8000_0000 >> 12) | trace_data_lo[i][dcache_pkt_width_lp+:ptag_width_p];
+      assign uncached_li[i] = trace_data_lo[i][(dcache_pkt_width_lp+ptag_width_p)+:1];
 
       // Output FIFO
       assign fifo_yumi_li[i] = (random_yumi_p == 1) ? (fifo_random_yumi_lo[i] & trace_ready_lo[i]) : (fifo_v_lo[i] & trace_ready_lo[i]);
@@ -175,7 +172,7 @@ module testbench
       // than receive data at regular intervals. This is possible a side effect of
       // our testing strategy. Open for debate.
       bsg_fifo_1r1w_small
-        #(.width_p(dword_width_p)
+        #(.width_p(dword_width_gp)
          ,.els_p(8))
         output_fifo
         (.clk_i(clk_i)

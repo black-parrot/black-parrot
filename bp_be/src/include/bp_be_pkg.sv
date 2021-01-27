@@ -1,18 +1,9 @@
 
 package bp_be_pkg;
+
   import bp_common_pkg::*;
 
-  localparam dpath_width_p = 66;
-
-  `include "bp_common_core_if.svh"
-  `include "bp_be_ctl_defines.svh"
-  `include "bp_be_mem_defines.svh"
-  `include "bp_be_internal_if_defines.svh"
-
-  `include "bp_be_dcache_pkt.svh"
-  `include "bp_be_dcache_pipeline.svh"
-  `include "bp_be_dcache_tag_info.svh"
-  `include "bp_be_dcache_wbuf_entry.svh"
+  localparam dpath_width_gp = 66;
 
   typedef struct packed
   {
@@ -51,6 +42,9 @@ package bp_be_pkg;
     logic [dp_exp_width_gp:0]   exp;
     logic [dp_sig_width_gp-2:0] fract;
   }  bp_hardfloat_rec_dp_s;
+
+  `include "bp_be_ctl_pkgdef.svh"
+  `include "bp_be_dcache_pkgdef.svh"
 
 endpackage
 

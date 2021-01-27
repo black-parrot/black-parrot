@@ -3,10 +3,12 @@
 //
 //
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_cache_dma_to_cce
 
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
 
   import bsg_cache_pkg::*;
@@ -15,7 +17,7 @@ module bp_me_cache_dma_to_cce
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-  ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
+  ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_gp
   ,localparam block_size_in_bytes_lp = (cce_block_width_p / 8)
   ,localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
   ,localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(paddr_width_p)
@@ -32,11 +34,11 @@ module bp_me_cache_dma_to_cce
   ,input        [num_mem_p-1:0]                                   dma_pkt_v_i
   ,output logic [num_mem_p-1:0]                                   dma_pkt_yumi_o
   // Sending cache block
-  ,input        [num_mem_p-1:0][dword_width_p-1:0]                dma_data_i
+  ,input        [num_mem_p-1:0][dword_width_gp-1:0]                dma_data_i
   ,input        [num_mem_p-1:0]                                   dma_data_v_i
   ,output logic [num_mem_p-1:0]                                   dma_data_yumi_o
   // Receiving cache block
-  ,output logic [num_mem_p-1:0][dword_width_p-1:0]                dma_data_o
+  ,output logic [num_mem_p-1:0][dword_width_gp-1:0]                dma_data_o
   ,output logic [num_mem_p-1:0]                                   dma_data_v_o
   ,input        [num_mem_p-1:0]                                   dma_data_ready_i
 
@@ -141,7 +143,7 @@ module bp_me_cache_dma_to_cce
   ,.yumi_i (arbiter_fifo_yumi_li)
   );
 
-  logic [dword_width_p-1:0] dma_data_li, dma_data_lo;
+  logic [dword_width_gp-1:0] dma_data_li, dma_data_lo;
   logic dma_data_v_li, dma_data_v_lo, dma_data_ready_li, dma_data_yumi_lo;
 
   always_comb
@@ -164,8 +166,8 @@ module bp_me_cache_dma_to_cce
 
   // send cache DMA packet
   bsg_cache_dma_pkt_s send_dma_pkt_n, send_dma_pkt_r;
-  logic [dword_width_p-1:0] data_n;
-  logic [block_size_in_words_lp-1:0][dword_width_p-1:0] data_r ;
+  logic [dword_width_gp-1:0] data_n;
+  logic [block_size_in_words_lp-1:0][dword_width_gp-1:0] data_r ;
 
   // coherence message block size
   // block size smaller than 8-bytes not supported
@@ -301,7 +303,7 @@ module bp_me_cache_dma_to_cce
   assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.header.msg_type == e_bedrock_mem_wr) | piso_ready_lo);
 
   bsg_parallel_in_serial_out
- #(.width_p(dword_width_p)
+ #(.width_p(dword_width_gp)
   ,.els_p  (block_size_in_words_lp)
   ) piso
   (.clk_i  (clk_i)
