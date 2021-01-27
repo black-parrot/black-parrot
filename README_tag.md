@@ -1,0 +1,1 @@
+Description: This tag is marks the first integration BlackParrot and the HammerBlade RISC-V manycore for CSE 546 at UW. It achieved I/O communication with the manycore through a set of manycore links.
