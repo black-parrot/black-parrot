@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_pipe_long
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -41,26 +43,26 @@ module bp_be_pipe_long
   assign decode = reservation.decode;
   assign instr  = reservation.instr;
   wire [vaddr_width_p-1:0] pc  = reservation.pc[0+:vaddr_width_p];
-  wire [dword_width_p-1:0] rs1 = reservation.rs1[0+:dword_width_p];
-  wire [dword_width_p-1:0] rs2 = reservation.rs2[0+:dword_width_p];
-  wire [dword_width_p-1:0] imm = reservation.imm[0+:dword_width_p];
+  wire [dword_width_gp-1:0] rs1 = reservation.rs1[0+:dword_width_gp];
+  wire [dword_width_gp-1:0] rs2 = reservation.rs2[0+:dword_width_gp];
+  wire [dword_width_gp-1:0] imm = reservation.imm[0+:dword_width_gp];
 
   wire v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_long_v;
 
   wire signed_div_li = decode.fu_op inside {e_mul_op_div, e_mul_op_rem};
   wire rem_not_div_li = decode.fu_op inside {e_mul_op_rem, e_mul_op_remu};
 
-  wire [dword_width_p-1:0] op_a = decode.opw_v ? (rs1 << word_width_p) : rs1;
-  wire [dword_width_p-1:0] op_b = decode.opw_v ? (rs2 << word_width_p) : rs2;
+  wire [dword_width_gp-1:0] op_a = decode.opw_v ? (rs1 << word_width_gp) : rs1;
+  wire [dword_width_gp-1:0] op_b = decode.opw_v ? (rs2 << word_width_gp) : rs2;
 
   // We actual could exit early here
-  logic [dword_width_p-1:0] quotient_lo, remainder_lo;
+  logic [dword_width_gp-1:0] quotient_lo, remainder_lo;
   logic idiv_ready_lo;
   logic idiv_v_lo;
   wire idiv_v_li = v_li & (decode.fu_op inside {e_mul_op_div, e_mul_op_divu});
   wire irem_v_li = v_li & (decode.fu_op inside {e_mul_op_rem, e_mul_op_remu});
   bsg_idiv_iterative
-   #(.width_p(dword_width_p))
+   #(.width_p(dword_width_gp))
    idiv
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -128,10 +130,10 @@ module bp_be_pipe_long
 
   logic opw_v_r, ops_v_r;
   bp_be_fu_op_s fu_op_r;
-  logic [reg_addr_width_p-1:0] rd_addr_r;
+  logic [reg_addr_width_gp-1:0] rd_addr_r;
   rv64_frm_e frm_r;
   bsg_dff_reset_en
-   #(.width_p($bits(rv64_frm_e)+reg_addr_width_p+$bits(bp_be_fu_op_s)+2))
+   #(.width_p($bits(rv64_frm_e)+reg_addr_width_gp+$bits(bp_be_fu_op_s)+2))
    wb_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -230,12 +232,12 @@ module bp_be_pipe_long
                                   ,fract: {fdivsqrt_sp_final.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                                   };
 
-  logic [dword_width_p-1:0] rd_data_lo;
+  logic [dword_width_gp-1:0] rd_data_lo;
   always_comb
     if (opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
-      rd_data_lo = $signed(quotient_lo[0+:word_width_p]);
+      rd_data_lo = $signed(quotient_lo[0+:word_width_gp]);
     else if (opw_v_r && fu_op_r inside {e_mul_op_rem, e_mul_op_remu})
-      rd_data_lo = $signed(remainder_lo) >>> word_width_p;
+      rd_data_lo = $signed(remainder_lo) >>> word_width_gp;
     else if (~opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
       rd_data_lo = quotient_lo;
     else

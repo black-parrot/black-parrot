@@ -1,8 +1,5 @@
-`ifndef BP_FE_DECOMPRESS_VH
-`define BP_FE_DECOMPRESS_VH
-
-`include "bsg_defines.v"
-`include "bp_common_core_if.svh"
+`ifndef BP_FE_DECOMPRESS_SVH
+`define BP_FE_DECOMPRESS_SVH
 
 // DISCLAIMER: Decompression will be changed in the future.
 
@@ -238,6 +235,5 @@
 *   logic [s_imm2_width_p-1:0]     imm2;
 *   logic [op_width_p-1:0]         op;
 * } format_s_s;
-*
-* `endif
 */
+`endif

@@ -3,13 +3,15 @@
 // This module is an active tie-off. That is, requests to this module will return the header
 //   with a zero payload. This is useful to not stall the network in the case of an erroneous
 //   address, or prevent deadlock at network boundaries
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_loopback
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, cce)
     )
    (input                                           clk_i
     , input                                         reset_i
@@ -23,7 +25,7 @@ module bp_cce_loopback
     , input                                         mem_resp_yumi_i
     );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, cce);
 
   bp_bedrock_cce_mem_msg_s mem_cmd_cast_i;
   bp_bedrock_cce_mem_msg_s mem_resp_cast_o;

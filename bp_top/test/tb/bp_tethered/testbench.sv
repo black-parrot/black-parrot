@@ -8,7 +8,6 @@
 
 module testbench
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;
  import bsg_noc_pkg::*;
@@ -319,7 +318,7 @@ module testbench
        ,.load_data(early_data_o[0+:65])
        ,.cache_miss_o('0)
        ,.wt_req(wt_req)
-       ,.store_data(data_tv_r[0+:dword_width_p])
+       ,.store_data(data_tv_r[0+:dword_width_gp])
 
        ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
@@ -371,7 +370,7 @@ module testbench
        ,.load_data(65'(data_o))
        ,.cache_miss_o('0)
        ,.wt_req()
-       ,.store_data(dword_width_p'(0))
+       ,.store_data(dword_width_gp'(0))
 
        ,.data_mem_v_i(data_mem_v_li)
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

@@ -1,40 +1,42 @@
-// 
+//
 // bp_me_cce_to_cache_dma.v
-// 
-// 
+//
+//
 
 `include "bp_common_bedrock_if.svh"
+
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
 
 module bp_me_cce_to_cache_dma
 
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
-  
+
   import bsg_cache_pkg::*;
-  
+
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-  
-  ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
+
+  ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_gp
   ,localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
   ,localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(paddr_width_p)
   )
-  
+
   (// Cache DMA side
    input                                           clk_i
   ,input                                           reset_i
-  // Sending address and write_en               
+  // Sending address and write_en
   ,output       [bsg_cache_dma_pkt_width_lp-1:0]   dma_pkt_o
   ,output                                          dma_pkt_v_o
   ,input                                           dma_pkt_yumi_i
-  // Sending cache block                                          
-  ,output       [dword_width_p-1:0]                dma_data_o
+  // Sending cache block
+  ,output       [dword_width_gp-1:0]                dma_data_o
   ,output                                          dma_data_v_o
   ,input                                           dma_data_yumi_i
-  // Receiving cache block                                        
-  ,input        [dword_width_p-1:0]                dma_data_i
+  // Receiving cache block
+  ,input        [dword_width_gp-1:0]                dma_data_i
   ,input                                           dma_data_v_i
   ,output                                          dma_data_ready_o
   // Cmd input
@@ -46,29 +48,29 @@ module bp_me_cce_to_cache_dma
   ,output                                          mem_resp_v_o
   ,input                                           mem_resp_ready_i
   );
-  
+
   genvar i;
   localparam fifo_depth_lp = 16;
   localparam fifo_width_lp = cce_mem_msg_width_lp - cce_block_width_p;
-  
+
   /********************* Packet definition *********************/
-  
+
   // Define cache DMA packet
   `declare_bsg_cache_dma_pkt_s(paddr_width_p);
-  
+
   // cce
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  
-  
+
+
   /********************* Resp queue fifo *********************/
-  
+
   // Stores CCE packet header information
   logic queue_fifo_valid_li, queue_fifo_ready_lo;
   logic [fifo_width_lp-1:0] queue_fifo_data_li;
-  
+
   logic queue_fifo_valid_lo, queue_fifo_yumi_li;
   logic [fifo_width_lp-1:0] queue_fifo_data_lo;
-  
+
   bsg_fifo_1r1w_small
  #(.width_p(fifo_width_lp)
   ,.els_p  (fifo_depth_lp)
@@ -82,14 +84,14 @@ module bp_me_cce_to_cache_dma
   ,.data_o (queue_fifo_data_lo )
   ,.yumi_i (queue_fifo_yumi_li )
   );
-  
-  
+
+
   /********************* cce -> cache_dma *********************/
-  
+
   // dma pkt fifo
   logic dma_pkt_fifo_valid_li, dma_pkt_fifo_ready_lo;
   bsg_cache_dma_pkt_s dma_pkt_fifo_data_li;
-  
+
   bsg_two_fifo
  #(.width_p(bsg_cache_dma_pkt_width_lp)
   ) dma_pkt_fifo
@@ -102,13 +104,13 @@ module bp_me_cce_to_cache_dma
   ,.data_o (dma_pkt_o            )
   ,.yumi_i (dma_pkt_yumi_i       )
   );
-  
+
   // dma data piso
   logic dma_data_fifo_valid_li, dma_data_fifo_ready_lo;
   logic [cce_block_width_p-1:0] dma_data_fifo_data_li;
-  
-  bsg_parallel_in_serial_out 
- #(.width_p(dword_width_p)
+
+  bsg_parallel_in_serial_out
+ #(.width_p(dword_width_gp)
   ,.els_p  (block_size_in_words_lp)
   ) dma_data_piso
   (.clk_i  (clk_i  )
@@ -120,28 +122,28 @@ module bp_me_cce_to_cache_dma
   ,.data_o (dma_data_o)
   ,.yumi_i (dma_data_yumi_i)
   );
-  
+
   // input mem cmd
   bp_bedrock_cce_mem_msg_s mem_cmd_li;
   logic mem_cmd_yumi_lo;
-  
+
   assign mem_cmd_li = mem_cmd_i;
   assign mem_cmd_yumi_o = mem_cmd_yumi_lo;
-  
+
   // combinational logics
-  always_comb 
+  always_comb
   begin
-  
+
     mem_cmd_yumi_lo = 1'b0;
     dma_pkt_fifo_valid_li = 1'b0;
     dma_data_fifo_valid_li = 1'b0;
     queue_fifo_valid_li = 1'b0;
-    
+
     dma_pkt_fifo_data_li.write_not_read = (mem_cmd_li.header.msg_type == e_bedrock_mem_wr);
     dma_pkt_fifo_data_li.addr = mem_cmd_li.header.addr;
     dma_data_fifo_data_li = mem_cmd_li.data;
     queue_fifo_data_li = mem_cmd_li.header;
-    
+
     if (mem_cmd_v_i & dma_pkt_fifo_ready_lo & queue_fifo_ready_lo)
       begin
         if (dma_pkt_fifo_data_li.write_not_read)
@@ -161,23 +163,23 @@ module bp_me_cce_to_cache_dma
             mem_cmd_yumi_lo = 1'b1;
           end
       end
-  
+
   end
-  
-  
+
+
   /********************* cache_dma -> cce *********************/
-  
+
   // dma data sipof
   logic dma_data_fifo_valid_lo, dma_data_fifo_yumi_li;
   logic [cce_block_width_p-1:0] dma_data_fifo_data_lo;
-  
+
   bsg_serial_in_parallel_out_full
- #(.width_p(dword_width_p         )
+ #(.width_p(dword_width_gp         )
   ,.els_p  (block_size_in_words_lp)
   ) dma_data_sipof
   (.clk_i  (clk_i  )
   ,.reset_i(reset_i)
-  
+
   ,.v_i    (dma_data_v_i)
   ,.ready_o(dma_data_ready_o)
   ,.data_i (dma_data_i)
@@ -186,25 +188,25 @@ module bp_me_cce_to_cache_dma
   ,.v_o    (dma_data_fifo_valid_lo)
   ,.yumi_i (dma_data_fifo_yumi_li)
   );
-  
+
   // mem resp output
   bp_bedrock_cce_mem_msg_s mem_resp_lo;
   logic mem_resp_v_lo;
-  
+
   assign mem_resp_o = mem_resp_lo;
   assign mem_resp_v_o = mem_resp_v_lo;
-  
+
   // combinational logics
   always_comb
   begin
-  
+
     mem_resp_v_lo = 1'b0;
     dma_data_fifo_yumi_li = 1'b0;
     queue_fifo_yumi_li = 1'b0;
-    
+
     mem_resp_lo.header = queue_fifo_data_lo;
     mem_resp_lo.data = dma_data_fifo_data_lo;
-    
+
     if (~reset_i & queue_fifo_valid_lo)
       begin
         if (mem_resp_lo.header.msg_type == e_bedrock_mem_wr)
@@ -229,8 +231,8 @@ module bp_me_cce_to_cache_dma
               end
           end
       end
-    
+
   end
-  
+
 endmodule
 

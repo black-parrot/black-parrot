@@ -11,9 +11,11 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_lce_req
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
@@ -35,7 +37,7 @@ module bp_lce_req
     , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
 
@@ -95,7 +97,7 @@ module bp_lce_req
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   // FSM states
   typedef enum logic [2:0] {
@@ -218,7 +220,7 @@ module bp_lce_req
             e_uc_store: begin
               lce_req_v_o = lce_req_ready_i & cache_req_v_i;
 
-              lce_req.data[0+:dword_width_p] = cache_req.data[0+:dword_width_p];
+              lce_req.data[0+:dword_width_gp] = cache_req.data[0+:dword_width_gp];
               lce_req.header.size = bp_bedrock_msg_size_e'(cache_req.size);
               lce_req.header.addr = cache_req.addr;
               lce_req.header.msg_type.req = e_bedrock_req_uc_wr;

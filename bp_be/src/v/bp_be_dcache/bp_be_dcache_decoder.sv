@@ -1,24 +1,25 @@
+
+`include "bp_be_defines.svh"
+
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_dcache_decoder
-  import bp_common_pkg::*;
-  import bp_be_pkg::*;
-  import bp_common_aviary_pkg::*;
+ import bp_common_pkg::*;
+ import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(bp_page_offset_width_gp, dpath_width_p)
-   , localparam dcache_pipeline_struct_width_lp = `bp_be_dcache_pipeline_struct_width
+   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
+   , localparam dcache_pipeline_struct_width_lp = $bits(bp_be_dcache_pipeline_s)
+   )
+  (input [dcache_pkt_width_lp-1:0]                      pkt_i
+   , output logic [dcache_pipeline_struct_width_lp-1:0] decoded_o
+   );
 
-  )
-  (
-    input [dcache_pkt_width_lp-1:0]                      pkt_i
-    , output logic [dcache_pipeline_struct_width_lp-1:0] decoded_o
-  );
-
-  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = pkt_i;
 
-  `declare_bp_be_dcache_pipeline_s
   bp_be_dcache_pipeline_s decoded_cast_o;
   assign decoded_o = decoded_cast_o;
 

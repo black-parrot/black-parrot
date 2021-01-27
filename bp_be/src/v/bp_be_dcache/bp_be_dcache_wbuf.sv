@@ -6,6 +6,9 @@
  *    Data cache write buffer.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_dcache_wbuf
   import bp_common_pkg::*;
   #(parameter data_width_p="inv"
@@ -21,8 +24,7 @@ module bp_be_dcache_wbuf
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
 
-    , localparam wbuf_entry_width_lp=
-      `bp_be_dcache_wbuf_entry_width(paddr_width_p,data_width_p,ways_p)
+    , localparam wbuf_entry_width_lp=`bp_be_dcache_wbuf_entry_width(paddr_width_p,ways_p)
   )
   (
     input clk_i
@@ -48,7 +50,7 @@ module bp_be_dcache_wbuf
     , output logic lce_snoop_match_o
   );
 
-  `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, data_width_p, ways_p);
+  `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, ways_p);
 
   bp_be_dcache_wbuf_entry_s wbuf_entry_in;
   assign wbuf_entry_in = wbuf_entry_i;

@@ -10,7 +10,6 @@
 
 module test_bp
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
 #();
 

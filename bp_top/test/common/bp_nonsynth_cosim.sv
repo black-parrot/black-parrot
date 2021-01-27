@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_nonsynth_cosim
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_be_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -9,7 +11,7 @@ module bp_nonsynth_cosim
     , parameter commit_trace_file_p = "commit"
 
     , localparam max_instr_lp = 2**30
-    , localparam decode_width_lp = `bp_be_decode_width
+    , localparam decode_width_lp = $bits(bp_be_decode_s)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
     )
    (input                                     clk_i
@@ -31,17 +33,17 @@ module bp_nonsynth_cosim
     , input [commit_pkt_width_lp-1:0]         commit_pkt_i
 
     , input [1:0]                             priv_mode_i
-    , input [dword_width_p-1:0]               mstatus_i
-    , input [dword_width_p-1:0]               mcause_i
-    , input [dword_width_p-1:0]               scause_i
+    , input [dword_width_gp-1:0]               mstatus_i
+    , input [dword_width_gp-1:0]               mcause_i
+    , input [dword_width_gp-1:0]               scause_i
 
     , input                                   ird_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      ird_addr_i
-    , input [dpath_width_p-1:0]               ird_data_i
+    , input [dpath_width_gp-1:0]               ird_data_i
 
     , input                                   frd_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      frd_addr_i
-    , input [dpath_width_p-1:0]               frd_data_i
+    , input [dpath_width_gp-1:0]               frd_data_i
     );
 
   import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
@@ -89,18 +91,18 @@ module bp_nonsynth_cosim
   rv64_instr_fmatype_s      commit_instr, commit_instr_r;
   logic                     commit_ird_w_v_r;
   logic                     commit_frd_w_v_r;
-  logic [dword_width_p-1:0] cause_r, mstatus_r;
+  logic [dword_width_gp-1:0] cause_r, mstatus_r;
   logic commit_fifo_v_lo, commit_fifo_yumi_li;
   wire instret_v_li = commit_pkt_r.instret;
   wire [vaddr_width_p-1:0] commit_pc_li = commit_pkt_r.pc;
-  wire [instr_width_p-1:0] commit_instr_li = commit_pkt_r.instr;
+  wire [instr_width_gp-1:0] commit_instr_li = commit_pkt_r.instr;
   wire commit_ird_w_v_li = instret_v_li & (decode_r.irf_w_v | decode_r.late_iwb_v);
   wire commit_frd_w_v_li = instret_v_li & (decode_r.frf_w_v | decode_r.late_fwb_v);
   wire trap_v_li = commit_pkt_r.exception | commit_pkt_r._interrupt;
-  wire [dword_width_p-1:0] cause_li = (priv_mode_i == `PRIV_MODE_M) ? mcause_i : scause_i;
-  wire [dword_width_p-1:0] mstatus_li = mstatus_i;
+  wire [dword_width_gp-1:0] cause_li = (priv_mode_i == `PRIV_MODE_M) ? mcause_i : scause_i;
+  wire [dword_width_gp-1:0] mstatus_li = mstatus_i;
   bsg_fifo_1r1w_small
-   #(.width_p(3+vaddr_width_p+instr_width_p+2+2*dword_width_p), .els_p(128))
+   #(.width_p(3+vaddr_width_p+instr_width_gp+2+2*dword_width_gp), .els_p(128))
    commit_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -114,23 +116,23 @@ module bp_nonsynth_cosim
      ,.yumi_i(commit_fifo_yumi_li)
      );
 
-  localparam rf_els_lp = 2**reg_addr_width_p;
-  logic [rf_els_lp-1:0][dword_width_p-1:0] ird_data_r;
+  localparam rf_els_lp = 2**reg_addr_width_gp;
+  logic [rf_els_lp-1:0][dword_width_gp-1:0] ird_data_r;
   bp_be_fp_reg_s [rf_els_lp-1:0] frd_data_r;
   logic [rf_els_lp-1:0] ird_fifo_v_lo, frd_fifo_v_lo;
-  logic [rf_els_lp-1:0][dword_width_p-1:0] frd_raw_li;
+  logic [rf_els_lp-1:0][dword_width_gp-1:0] frd_raw_li;
 
   for (genvar i = 0; i < rf_els_lp; i++)
     begin : iwb
       wire fill       = ird_w_v_i & (ird_addr_i == i);
       wire deallocate = commit_ird_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
       bsg_fifo_1r1w_small
-        #(.width_p(dword_width_p), .els_p(128))
+        #(.width_p(dword_width_gp), .els_p(128))
         ird_fifo
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
 
-          ,.data_i(ird_data_i[0+:dword_width_p])
+          ,.data_i(ird_data_i[0+:dword_width_gp])
           ,.v_i(fill)
           ,.ready_o()
 
@@ -145,7 +147,7 @@ module bp_nonsynth_cosim
       wire fill       = frd_w_v_i & (frd_addr_i == i);
       wire deallocate = commit_frd_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
       bsg_fifo_1r1w_small
-        #(.width_p(dpath_width_p), .els_p(128))
+        #(.width_p(dpath_width_gp), .els_p(128))
         ird_fifo
          (.clk_i(clk_i)
           ,.reset_i(reset_i)

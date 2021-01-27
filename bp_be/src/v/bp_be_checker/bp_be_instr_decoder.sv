@@ -15,30 +15,32 @@
  *     reevaluate this method of CSRRW.
  */
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_instr_decoder
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
    , localparam instr_width_lp = rv64_instr_width_gp
-   , localparam decode_width_lp = `bp_be_decode_width
+   , localparam decode_width_lp = $bits(bp_be_decode_s)
    )
   (input                             fe_exc_not_instr_i
    , input bp_fe_exception_code_e    fe_exc_i
    , input [instr_width_lp-1:0]      instr_i
 
    , output [decode_width_lp-1:0]    decode_o
-   , output [dword_width_p-1:0]      imm_o
+   , output [dword_width_gp-1:0]      imm_o
 
    , input                           fpu_en_i
    );
 
   rv64_instr_fmatype_s instr;
   bp_be_decode_s decode;
-  logic [dword_width_p-1:0] imm;
+  logic [dword_width_gp-1:0] imm;
 
   assign instr    = instr_i;
   assign decode_o = decode;
