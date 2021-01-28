@@ -42,59 +42,78 @@ module bp_lite_to_stream
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out);
 
   bp_bedrock_in_msg_s msg_cast_i;
-  bp_bedrock_in_msg_header_s msg_header_cast_i;
   assign msg_cast_i = in_msg_i;
-  assign msg_header_cast_i = msg_cast_i.header;
 
   localparam in_data_bytes_lp = in_data_width_p/8;
   localparam out_data_bytes_lp = out_data_width_p/8;
   localparam stream_words_lp = in_data_width_p/out_data_width_p;
   localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
-  bp_bedrock_in_msg_header_s header_lo;
-  logic msg_v_lo, msg_yumi_li;
-  bsg_one_fifo
+  bp_bedrock_in_msg_header_s in_msg_header_lo;
+  logic [in_data_width_p-1:0] in_msg_data_lo;
+  // Hold the data and header for multi-cycle streaming
+  bsg_dff_en_bypass
    #(.width_p($bits(bp_bedrock_in_msg_header_s)))
-   header_fifo
+   header_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    ,.en_i(in_msg_v_i)
+    ,.data_i(msg_cast_i.header)
+    ,.data_o(in_msg_header_lo)
+    );
 
-     ,.data_i(msg_cast_i.header)
-     ,.ready_o(in_msg_ready_and_o)
-     ,.v_i(in_msg_v_i)
+  bsg_dff_en_bypass
+   #(.width_p(in_data_width_p))
+   data_reg
+    (.clk_i(clk_i)
+    ,.en_i(in_msg_v_i)
+    ,.data_i(msg_cast_i.data)
+    ,.data_o(in_msg_data_lo)
+    );
 
-     ,.data_o(header_lo)
-     ,.v_o(msg_v_lo)
-     ,.yumi_i(msg_yumi_li)
-     );
+  logic streaming_r, stream_clear;
+  bsg_dff_reset_set_clear
+   #(.width_p(1)
+   ,.clear_over_set_p(1))
+    streaming_reg
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+    ,.set_i(in_msg_v_i)
+    ,.clear_i(stream_clear)
+    ,.data_o(streaming_r)
+    );
 
-  wire has_data = payload_mask_p[msg_header_cast_i.msg_type];
+  assign in_msg_ready_and_o = out_msg_ready_and_i & ~streaming_r;
+
+  wire has_data = payload_mask_p[in_msg_header_lo.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
   wire [data_len_width_lp-1:0] num_stream_cmds = has_data
-    ? `BSG_MAX(((1'b1 << msg_cast_i.header.size) / out_data_bytes_lp), 1'b1)
+    ? `BSG_MAX(((1'b1 << in_msg_header_lo.size) / out_data_bytes_lp), 1'b1)
     : 1'b1;
-  logic [out_data_width_p-1:0] data_lo;
-  bsg_parallel_in_serial_out_dynamic
-   #(.width_p(out_data_width_p), .max_els_p(stream_words_lp))
-   piso
+  
+  logic first_lo;
+  bsg_parallel_in_serial_out_passthrough_dynamic
+   #(.width_p(out_data_width_p)
+   ,.max_els_p(stream_words_lp))
+   piso_passthrough
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    ,.reset_i(reset_i)
 
-     ,.data_i(msg_cast_i.data)
-     ,.len_i(num_stream_cmds - 1'b1)
-     ,.v_i(in_msg_v_i)
+    // data_i and v_i should hold during the entire transcation
+    ,.data_i(in_msg_data_lo)
+    ,.v_i(in_msg_v_i | streaming_r)
+    ,.ready_and_o(/* unused */)
+    ,.len_i(num_stream_cmds - 1'b1)
 
-     ,.data_o(out_msg_data_o)
-     ,.v_o(out_msg_v_o)
-     ,.yumi_i(out_msg_ready_and_i & out_msg_v_o)
-
-     // We rely on the header fifo to handle ready/valid handshaking
-     ,.len_v_o(/* Unused */)
-     ,.ready_o(/* Unused */)
-     );
+    ,.data_o(out_msg_data_o)
+    ,.v_o(out_msg_v_o)
+    ,.ready_and_i(out_msg_ready_and_i)
+    ,.first_o(first_lo)  
+    );
 
   // We wouldn't need this counter if we could peek into the PISO...
-  logic [data_len_width_lp-1:0] first_cnt, last_cnt, last_cnt_r, current_cnt;
+  logic [data_len_width_lp-1:0] first_cnt, last_cnt, last_cnt_r, current_cnt, stream_cnt;
+  logic cnt_up;
+  assign cnt_up = out_msg_ready_and_i & out_msg_v_o;
   bsg_counter_set_en
    #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
    data_counter
@@ -102,11 +121,11 @@ module bp_lite_to_stream
      ,.reset_i(reset_i)
 
      ,.set_i(in_msg_v_i)
-     ,.en_i(out_msg_ready_and_i & out_msg_v_o)
-     ,.val_i(first_cnt)
+     ,.en_i(cnt_up)
+     ,.val_i(first_cnt + cnt_up)
      ,.count_o(current_cnt)
      );
-  assign first_cnt = msg_cast_i.header.addr[stream_offset_width_lp+:data_len_width_lp];
+  assign first_cnt = in_msg_header_lo.addr[stream_offset_width_lp+:data_len_width_lp];
   assign last_cnt = first_cnt + num_stream_cmds - 1'b1;
   bsg_dff_en_bypass
    #(.width_p(data_len_width_lp))
@@ -117,21 +136,23 @@ module bp_lite_to_stream
     ,.data_o(last_cnt_r)
     );
   
-  wire cnt_done = (current_cnt == last_cnt_r);
+  assign stream_cnt = first_lo ? first_cnt : current_cnt;
+  wire cnt_done = (stream_cnt == last_cnt_r);
 
   bp_bedrock_out_msg_header_s msg_header_cast_o;
   assign out_msg_header_o = msg_header_cast_o;
+
   always_comb
     begin
       // Autoincrement address
-      msg_header_cast_o = header_lo;
-      msg_header_cast_o.addr = {header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
-                                ,current_cnt
-                                ,header_lo.addr[0+:stream_offset_width_lp]
+      msg_header_cast_o = in_msg_header_lo;
+      msg_header_cast_o.addr = {in_msg_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
+                                ,stream_cnt
+                                ,in_msg_header_lo.addr[0+:stream_offset_width_lp]
                                 };
     end
   assign out_msg_last_o = out_msg_v_o & cnt_done;
-  assign msg_yumi_li = cnt_done & out_msg_ready_and_i & out_msg_v_o;
+  assign stream_clear = cnt_done & cnt_up;
 
   //synopsys translate_off
   initial
