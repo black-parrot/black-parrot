@@ -23,13 +23,6 @@ VCS_OPTIONS  = +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
 VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
-ifeq ($(SYNTH_P), 1)
-VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src
-VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src/unisims
-VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src/unimacro
-VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src/retarget
-VCS_OPTIONS += +incdir+$(XILINX_VIVADO)/data/verilog/src +libext+.v
-endif
 
 VCS_BUILD_OPTS  = -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -notice
@@ -46,7 +39,9 @@ VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save
 VCS_BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
 VCS_BUILD_OPTS += -top test_bp
-ifeq ($(SYNTH_P), 1)
+## Need the next build option as mentioned in this link for vivado post synth netlist simulation using VCS
+## https://forums.xilinx.com/t5/Simulation-and-Verification/VCS-error-regarding-the-glbl-cross-module-reference-resolution/td-p/735596
+ifeq ($(SIM_SYNTH_VIVADO_P), 1)
 VCS_BUILD_OPTS += -top glbl
 endif
 VCS_BUILD_OPTS += -f flist.vcs 
@@ -104,6 +99,19 @@ $(SIM_DIR)/run_simv: $(SIM_COLLATERAL)
 	cd $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
+
+sim_vivado.v: VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src
+sim_vivado.v: VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src/unisims
+sim_vivado.v: VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src/unimacro
+sim_vivado.v: VCS_OPTIONS += -y $(XILINX_VIVADO)/data/verilog/src/retarget
+sim_vivado.v: VCS_OPTIONS += +incdir+$(XILINX_VIVADO)/data/verilog/src +libext+.v
+sim_vivado.v: sim.v
+
+sim_vivado_dump.v: VCS_OPTIONS += +memcbk
+sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdpluson
+sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon
+sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_vivado_dump.v: sim_vivado.v
 
 sim_dump.v: VCS_OPTIONS += +memcbk
 sim_dump.v: VCS_OPTIONS += +vcs+vcdpluson

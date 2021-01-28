@@ -43,7 +43,7 @@ module testbench
    , parameter dram_fixed_latency_p        = 0
 
    // Synthesis parameters
-   , parameter synth_p                     = 0
+   , parameter no_bind_p                   = 0
 
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
    , parameter mem_cap_in_bytes_p = 2**27
@@ -216,7 +216,7 @@ module testbench
      ,.cosim_en_o(cosim_en_lo)
      );
 
-  if (synth_p == 0)
+  if (no_bind_p == 0)
     begin : bind
       bind bp_be_top
         bp_nonsynth_perf

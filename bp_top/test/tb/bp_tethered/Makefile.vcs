@@ -1,7 +1,5 @@
 VCS_TIMEOUT = 1000ms
 
-SYNTH_P ?= 0
-
 $(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv $(LINT_DIR)/test_bp.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 
@@ -11,11 +9,7 @@ $(LINT_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-ifeq ($(SYNTH_P), 0)
-	@echo wrapper.sv                              >> $@
-else
-	@echo $(SYN_PATH)/results/vivado/bp_tethered.$(CFG).$(TAG).build/wrapper_synth.sv >> $@
-endif
+	@echo wrapper.sv                                >> $@
 	@echo testbench.sv                              >> $@
 	@echo test_bp.sv                                >> $@
 	@echo bsg_tag_boot_rom.v                        >> $@
@@ -28,8 +22,15 @@ endif
 
 LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.sv testbench.sv test_bp.sv bsg_tag_boot_rom.v)
 
-$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.sv:
+$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/test_bp.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+
+$(BUILD_DIR)/wrapper.sv:
+ifeq ($(SIM_SYNTH_VIVADO_P), 0)
+	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+else
+	@cp $(SYN_PATH)/results/vivado/bp_tethered.$(CFG).$(TAG).build/wrapper_synth.sv $@
+endif
 
 $(BUILD_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
 	@python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_tag_boot_rom > $@
@@ -37,11 +38,7 @@ $(BUILD_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-ifeq ($(SYNTH_P), 0)
-	@echo wrapper.sv                              >> $@
-else
-	@echo $(SYN_PATH)/results/vivado/bp_tethered.$(CFG).$(TAG).build/wrapper_synth.sv >> $@
-endif
+	@echo wrapper.sv                                >> $@
 	@echo testbench.sv                              >> $@
 	@echo test_bp.sv                                >> $@
 	@echo bsg_tag_boot_rom.v                        >> $@
