@@ -17,9 +17,7 @@ export COSIM_P        ?= 0
 export PRELOAD_MEM_P  ?= 0
 export NBF_CONFIG_P   ?= 1
 
-export SIM_SYNTH_VIVADO_P ?= 0
-export SIM_SYNTH_DC_P     ?= 0
-export NO_BIND_P          ?= $(shell echo $(SIM_SYNTH_VIVADO_P) || $(SIM_SYNTH_DC_P))
+export NO_BIND_P ?= 0
 
 export SAMPLE_MEMSIZE   ?= 128
 export SAMPLE_START_P   ?= 0
