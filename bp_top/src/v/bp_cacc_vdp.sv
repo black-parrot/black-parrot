@@ -89,8 +89,13 @@ bp_pma
     );
 
 bp_be_dcache
-  #(.bp_params_p(bp_params_p))
-  dcache
+  #(.bp_params_p(bp_params_p)
+    ,.sets_p(acache_sets_p)
+    ,.assoc_p(acache_assoc_p)
+    ,.block_width_p(acache_block_width_p)
+    ,.fill_width_p(acache_fill_width_p)
+    )
+  acache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 

@@ -45,7 +45,7 @@ module bp_be_ptw
    , input                                  dcache_rdy_i
 
    , input                                  dcache_v_i
-   , input [dpath_width_gp-1:0]              dcache_data_i
+   , input [dpath_width_gp-1:0]             dcache_data_i
   );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -101,6 +101,7 @@ module bp_be_ptw
 
   // PMA attributes
   assign dcache_v_o             = dcache_rdy_i & (state_r == eSendLoad);
+  assign dcache_pkt.rd_addr     = '0;
   assign dcache_pkt.opcode      = e_dcache_op_ld;
   assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
   assign dcache_pkt.data        = '0;
