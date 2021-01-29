@@ -16,7 +16,7 @@
       logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]     owner_way_id;           \
       bp_coh_states_e                               owner_coh_state;        \
       bp_coh_states_e                               next_coh_state;         \
-      bp_cce_inst_flag_onehot_e                     flags;                  \
+      logic [$bits(bp_cce_inst_flag_onehot_e)-1:0]  flags;                  \
       bp_bedrock_msg_size_e                         msg_size;               \
     }  bp_cce_mshr_s
 
