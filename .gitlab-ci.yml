@@ -382,8 +382,10 @@ check-loops:
   script:
     - $CI_PROJECT_DIR/ci/check_loops.sh $CI_CORES
 
+# Pending https://github.com/bespoke-silicon-group/basejump_stl/pull/387/
 top-dram-vcs:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - vcs
