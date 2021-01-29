@@ -178,48 +178,534 @@
   `define CSR_ADDR_DSCRATCH0     12'h7b2
   `define CSR_ADDR_DSCRATCH1     12'h7b3
 
-  typedef struct packed
-  {
-    // Base address for traps
-    logic [61:0] base;
-    // Trap Mode
-    //   00 - Direct, all exceptions set pc to BASE
-    //   01 - Vectored, interrupts set pc to BASE+4xcause
-    logic [1:0]  mode;
-  }  rv64_stvec_s;
-
-  typedef struct packed
-  {
-    logic [37:0] addr_39_2;
-  }  bp_stvec_s;
-
+`define declare_csr_structs(vaddr_width_mp, paddr_width_mp)                                \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    /* Base address for traps */                                                           \
+    logic [61:0] base;                                                                     \
+    /* Trap Mode */                                                                        \
+    /*   00 - Direct, all exceptions set pc to BASE */                                     \
+    /*   01 - Vectored, interrupts set pc to BASE+4xcause */                               \
+    logic [1:0]  mode;                                                                     \
+  }  rv64_stvec_s;                                                                         \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [(`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2)-1:0] word_addr;                    \
+  }  bp_stvec_s;                                                                           \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [31:3] hpm;                                                                      \
+    logic        ir;                                                                       \
+    logic        tm;                                                                       \
+    logic        cy;                                                                       \
+  }  rv64_scounteren_s;                                                                    \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic ir;                                                                              \
+    logic cy;                                                                              \
+  }  bp_scounteren_s;                                                                      \
+                                                                                           \
+  typedef logic [63:0] rv64_sscratch_s;                                                    \
+  typedef logic [63:0] bp_sscratch_s;                                                      \
+                                                                                           \
+  typedef logic [63:0] rv64_sepc_s;                                                        \
+  typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_sepc_s;                  \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic        _interrupt;                                                               \
+    logic [62:0] ecode;                                                                    \
+  }  rv64_scause_s;                                                                        \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic       _interrupt;                                                                \
+    logic [3:0] ecode;                                                                     \
+  }  bp_scause_s;                                                                          \
+                                                                                           \
+  typedef logic [63:0] rv64_stval_s;                                                       \
+  typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_stval_s;                 \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    /* Translation Mode */                                                                 \
+    /*   0000 - No Translation */                                                          \
+    /*   1000 - SV39 */                                                                    \
+    /*   1001 - SV48 */                                                                    \
+    /*   Others reserved */                                                                \
+    logic [3:0] mode;                                                                      \
+    logic [15:0] asid;                                                                     \
+    logic [43:0] ppn;                                                                      \
+  }  rv64_satp_s;                                                                          \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    /* We only support No Translation and SV39 */                                          \
+    logic        mode;                                                                     \
+    /* We don't currently have ASID support */                                             \
+    /* We only support 39 bit physical address. */                                         \
+    /* TODO: Generate this based on vaddr */                                               \
+    logic [(paddr_width_mp-page_offset_width_gp)-1:0] ppn;                                 \
+  }  bp_satp_s;                                                                            \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    /* State Dirty */                                                                      \
+    /* 0 - FS and XS are both != 11 */                                                     \
+    /* 1 - set if FS or SX == 11 */                                                        \
+    /*  Note: readonly */                                                                  \
+    logic        sd;                                                                       \
+    logic [26:0] wpri1;                                                                    \
+    /* XLEN */                                                                             \
+    /*   01 - 32 bit data */                                                               \
+    /*   10 - 64 bit data */                                                               \
+    /*   11 - 128 bit data */                                                              \
+    /* MXL is in misa instead. */                                                          \
+    logic [1:0]  sxl;                                                                      \
+    logic [1:0]  uxl;                                                                      \
+    logic [8:0]  wpri2;                                                                    \
+    /* Trap SRET */                                                                        \
+    /* 0 - SRET permitted in S-mode */                                                     \
+    /* 1 - SRET in S-mode is illegal */                                                    \
+    logic        tsr;                                                                      \
+    /* Trap WFI */                                                                         \
+    /* 0 - WFI is permitted in S-mode */                                                   \
+    /* 1 - WFI is executed and not complete within implementation-defined time, is illegal */ \
+    logic        tw;                                                                       \
+    /* Trap VM */                                                                          \
+    /* 0 - The following operations are legal */                                           \
+    /* 1 - attempts to read or write satp or execute SFENCE.VMA in S-mode are illegal */   \
+    logic        tvm;                                                                      \
+    /* Make Executable Readable */                                                         \
+    /*   0 - only loads from pages marked readable succeed */                              \
+    /*   1 - loads from pages marked either readable or executable succeed */              \
+    /*   No effect when translation is disabled */                                         \
+    logic        mxr;                                                                      \
+    /* Supervisor User Memory */                                                           \
+    /*   0 - S-mode memory accesses to U-mode pages will fault */                          \
+    /*   1 - S-mode memory accesses to U-mode pages will succeed */                        \
+    logic        sum;                                                                      \
+    /* Modify Privilege */                                                                 \
+    /*   0 - translation and protection behave normally */                                 \
+    /*   1 - load and stores are translated as though privilege mode is MPP */             \
+    logic        mprv;                                                                     \
+    /* Extension Status */                                                                 \
+    /*   0 - off */                                                                        \
+    /*   1 - initial (none dirty or clean) */                                              \
+    /*   2 - clean (none dirty) */                                                         \
+    /*   3 - dirty */                                                                      \
+    /* Hardwired to 0 in systems without extensions requiring context (vector) */          \
+    logic [1:0]  xs;                                                                       \
+    /* Floating-point Status */                                                            \
+    /*   0 - off */                                                                        \
+    /*   1 - initial (none dirty or clean) */                                              \
+    /*   2 - clean (none dirty) */                                                         \
+    /*   3 - dirty */                                                                      \
+    /* Hardwired to 0 in systems without extensions requiring context (floating point) */  \
+    logic [1:0]  fs;                                                                       \
+    /* Previous Privilege */                                                               \
+    /*   11 - M */                                                                         \
+    /*   01 - S */                                                                         \
+    /*   00 - U */                                                                         \
+    logic [1:0]  mpp;                                                                      \
+    logic [1:0]  wpri3;                                                                    \
+    logic        spp;                                                                      \
+    /* Previous Interrupt Enable */                                                        \
+    /*   0 - Interrupt Previously Disabled for Privilege Mode */                           \
+    /*   1 - Interrupt Previously Enabled for Privilege Mode */                            \
+    logic        mpie;                                                                     \
+    logic        wpri4;                                                                    \
+    logic        spie;                                                                     \
+    logic        upie;                                                                     \
+    /* Global Interrupt Enable */                                                          \
+    /*   0 - Interrupt Disabled for Privilege Mode */                                      \
+    /*   1 - Interrupt Enabled for Privilege Mode */                                       \
+    logic        mie;                                                                      \
+    logic        wpri5;                                                                    \
+    logic        sie;                                                                      \
+    logic        uie;                                                                      \
+  }  rv64_mstatus_s;                                                                       \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic       tsr;                                                                       \
+    logic       tw;                                                                        \
+    logic       tvm;                                                                       \
+                                                                                           \
+    logic       mxr;                                                                       \
+    logic       sum;                                                                       \
+    logic       mprv;                                                                      \
+                                                                                           \
+    logic [1:0] fs;                                                                        \
+                                                                                           \
+    logic [1:0] mpp;                                                                       \
+    logic       spp;                                                                       \
+                                                                                           \
+    logic       mpie;                                                                      \
+    logic       spie;                                                                      \
+                                                                                           \
+    logic       mie;                                                                       \
+    logic       sie;                                                                       \
+  }  bp_mstatus_s;                                                                         \
+                                                                                           \
+  typedef logic [63:0] rv64_medeleg_s;                                                     \
+  /* Hardcode exception 10, 11, 14, 16+ to zero */                                         \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [15:15] deleg_15;                                                                \
+    logic [13:12] deleg_13to12;                                                            \
+    logic [ 9: 0] deleg_9to0;                                                              \
+  }  bp_medeleg_s;                                                                         \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [51:0] wpri1;                                                                    \
+    /* M-mode External Interrupt Delegation */                                             \
+    logic        mei;                                                                      \
+    logic        wpri2;                                                                    \
+    /* S-mode External Interrupt Delegation */                                             \
+    logic        sei;                                                                      \
+    /* U-mode External Interrupt Delegation */                                             \
+    logic        uei;                                                                      \
+    /* M-mode Timer Interrupt Delegation */                                                \
+    logic        mti;                                                                      \
+    logic        wpri3;                                                                    \
+    /* S-mode Timer Interrupt Delegation */                                                \
+    logic        sti;                                                                      \
+    /* U-mode Timer Interrupt Delegation */                                                \
+    logic        uti;                                                                      \
+    /* M-mode Software Interrupt Delegation */                                             \
+    logic        msi;                                                                      \
+    logic        wpri4;                                                                    \
+    /* S-mode Software Interrupt Delegation */                                             \
+    logic        ssi;                                                                      \
+    /* U-mode Software Interrupt Delegation */                                             \
+    logic        usi;                                                                      \
+  }  rv64_mideleg_s;                                                                       \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic sei;                                                                             \
+    logic sti;                                                                             \
+    logic ssi;                                                                             \
+  }  bp_mideleg_s;                                                                         \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [51:0] wpri1;                                                                    \
+    /* M-mode External Interrupt Enable */                                                 \
+    logic        meie;                                                                     \
+    logic        wpri2;                                                                    \
+    /* S-mode External Interrupt Enable */                                                 \
+    logic        seie;                                                                     \
+    /* U-mode External Interrupt Enable */                                                 \
+    logic        ueie;                                                                     \
+    /* M-mode Timer Interrupt Enable */                                                    \
+    logic        mtie;                                                                     \
+    logic        wpri3;                                                                    \
+    /* S-mode Timer Interrupt Enable */                                                    \
+    logic        stie;                                                                     \
+    /* U-mode Timer Interrupt Enable */                                                    \
+    logic        utie;                                                                     \
+    /* M-mode Software Interrupt Enable */                                                 \
+    logic        msie;                                                                     \
+    logic        wpri4;                                                                    \
+    /* S-mode Software Interrupt Enable */                                                 \
+    logic        ssie;                                                                     \
+    /* U-mode Software Interrupt Enable */                                                 \
+    logic        usie;                                                                     \
+  }  rv64_mie_s;                                                                           \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic meie;                                                                            \
+    logic seie;                                                                            \
+                                                                                           \
+    logic mtie;                                                                            \
+    logic stie;                                                                            \
+                                                                                           \
+    logic msie;                                                                            \
+    logic ssie;                                                                            \
+  }  bp_mie_s;                                                                             \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    /* Base address for traps */                                                           \
+    logic [61:0] base;                                                                     \
+    /* Trap Mode */                                                                        \
+    /*   00 - Direct, all exceptions set pc to BASE */                                     \
+    /*   01 - Vectored, interrupts set pc to BASE+4xcause */                               \
+    logic [1:0]  mode;                                                                     \
+  }  rv64_mtvec_s;                                                                         \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [(`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2)-1:0] word_addr;                    \
+  }  bp_mtvec_s;                                                                           \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [31:3] hpm;                                                                      \
+    logic        ir;                                                                       \
+    logic        tm;                                                                       \
+    logic        cy;                                                                       \
+  }  rv64_mcounteren_s;                                                                    \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic ir;                                                                              \
+    logic cy;                                                                              \
+  }  bp_mcounteren_s;                                                                      \
+                                                                                           \
+  typedef logic [63:0] rv64_mscratch_s;                                                    \
+  typedef logic [63:0] bp_mscratch_s;                                                      \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [51:0] wpri1;                                                                    \
+    /* M-mode External Interrupt Pending */                                                \
+    logic        meip;                                                                     \
+    logic        wpri2;                                                                    \
+    /* S-mode External Interrupt Pending */                                                \
+    logic        seip;                                                                     \
+    /* U-mode External Interrupt Pending */                                                \
+    logic        ueip;                                                                     \
+    /* M-mode Timer Interrupt Pending */                                                   \
+    logic        mtip;                                                                     \
+    logic        wpri3;                                                                    \
+    /* S-mode Timer Interrupt Pending */                                                   \
+    logic        stip;                                                                     \
+    /* U-mode Timer Interrupt Pending */                                                   \
+    logic        utip;                                                                     \
+    /* M-mode Software Interrupt Pending */                                                \
+    logic        msip;                                                                     \
+    logic        wpri4;                                                                    \
+    /* S-mode Software Interrupt Pending */                                                \
+    logic        ssip;                                                                     \
+    /* U-mode Software Interrupt Pending */                                                \
+    logic        usip;                                                                     \
+  }  rv64_mip_s;                                                                           \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic meip;                                                                            \
+    logic seip;                                                                            \
+                                                                                           \
+    logic mtip;                                                                            \
+    logic stip;                                                                            \
+                                                                                           \
+    logic msip;                                                                            \
+    logic ssip;                                                                            \
+  }   bp_mip_s;                                                                            \
+                                                                                           \
+  typedef logic [63:0] rv64_mtval_s;                                                       \
+  typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_mtval_s;                 \
+                                                                                           \
+  typedef logic [63:0] rv64_mepc_s;                                                        \
+  typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_mepc_s;                  \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    /* Locked - writes to this pmpcfg and corresponding pmpaddr are ignored */             \
+    logic          l;                                                                      \
+    logic [1:0] wpri;                                                                      \
+    /* Address Matching Mode */                                                            \
+    /*  00 - Off  , Null region (disabled) */                                              \
+    /*  01 - TOR  , Top of range (pmpaddr[i-1] <= a < pmpaddr[i], or 0 <= a < pmpaddr[0]) */ \
+    /*  10 - NA4  , Naturally aligned four-byte region */                                  \
+    /*  11 - NAPOT, Naturally aligned power-of-two region */                               \
+    logic [1:0]    a;                                                                      \
+    /* Execute permissions */                                                              \
+    logic          x;                                                                      \
+    /* Write permissions */                                                                \
+    logic          w;                                                                      \
+    /* Read permissions */                                                                 \
+    logic          r;                                                                      \
+  }  rv64_pmpcfg_entry_s;                                                                  \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    rv64_pmpcfg_entry_s [7:0] pmpcfg;                                                      \
+  }  rv64_pmpcfg_s;                                                                        \
+  typedef rv64_pmpcfg_s rv64_pmpcfg0_s;                                                    \
+  typedef rv64_pmpcfg_s rv64_pmpcfg1_s;                                                    \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    rv64_pmpcfg_entry_s [3:0] pmpcfg;                                                      \
+  }  bp_pmpcfg_s;                                                                          \
+                                                                                           \
+  typedef bp_pmpcfg_s bp_pmpcfg0_s;                                                        \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [9:0]  warl;                                                                     \
+    logic [53:0] addr_55_2;                                                                \
+  }  rv64_pmpaddr_s;                                                                       \
+                                                                                           \
+  typedef rv64_pmpaddr_s rv64_pmpaddr0_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr1_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr2_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr3_s;                                                  \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic        _interrupt;                                                               \
+    logic [62:0] ecode;                                                                    \
+  }  rv64_mcause_s;                                                                        \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic       _interrupt;                                                                \
+    logic [3:0] ecode;                                                                     \
+  }  bp_mcause_s;                                                                          \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [(`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2)-1:0] word_addr;                    \
+  }  bp_pmpaddr_s;                                                                         \
+                                                                                           \
+  typedef bp_pmpaddr_s bp_pmpaddr0_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr1_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr2_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr3_s;                                                      \
+                                                                                           \
+  typedef logic [63:0] rv64_mcounter_s;                                                    \
+  typedef logic [47:0] bp_mcounter_s;                                                      \
+                                                                                           \
+  typedef rv64_mcounter_s rv64_mcycle_s;                                                   \
+  typedef rv64_mcounter_s rv64_minstret_s;                                                 \
+                                                                                           \
+  typedef bp_mcounter_s bp_mcycle_s;                                                       \
+  typedef bp_mcounter_s bp_minstret_s;                                                     \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [31:3] hpm;                                                                      \
+    logic        ir;                                                                       \
+    logic        warl;                                                                     \
+    logic        cy;                                                                       \
+  }  rv64_mcountinhibit_s;                                                                 \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic ir;                                                                              \
+    logic cy;                                                                              \
+  }  bp_mcountinhibit_s;                                                                   \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [23:0] warl;                                                                     \
+    logic [2:0]  frm;                                                                      \
+    logic [4:0]  fflags;                                                                   \
+  }  rv64_fcsr_s;                                                                          \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [2:0] frm;                                                                       \
+    logic [4:0] fflags;                                                                    \
+  }  bp_fcsr_s;                                                                            \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    /* Debugger version */                                                                 \
+    /*   0 : No external debug support */                                                  \
+    /*   4 : External debug support ala RISC-V Debug Spec */                               \
+    /*   15: Non-conformant RISC-V debug spec */                                           \
+    logic [3:0]  xdebugver;                                                                \
+    logic [11:0] reserved1;                                                                \
+    /* Ebreak M-mode behavior */                                                           \
+    /*   0 : behave normally */                                                            \
+    /*   1 : ebreak in M enters Debug Mode */                                              \
+    logic        ebreakm;                                                                  \
+    logic        reserved2;                                                                \
+    /* Ebreak S-mode behavior */                                                           \
+    /*   0 : behave normally */                                                            \
+    /*   1 : ebreak in S enters Debug Mode */                                              \
+    logic        ebreaks;                                                                  \
+    /* Ebreak U-mode behavior */                                                           \
+    /*   0 : behave normally */                                                            \
+    /*   1 : ebreak in U enters Debug Mode */                                              \
+    logic        ebreaku;                                                                  \
+    /* Stepping Interrupt Enable */                                                        \
+    /*   0 : Interrupts are disabled during single stepping */                             \
+    /*   1 : Interrupts are enabled during single stepping */                              \
+    logic        stepie;                                                                   \
+    /* Stop Counters */                                                                    \
+    /*   0 : Increment counters while in Debug Mode */                                     \
+    /*   1 : Don't increment counters while in Debug Mode or ebreak->Debug Mode */         \
+    logic        stopcount;                                                                \
+    /* Stop Timers */                                                                      \
+    /*   0 : Increment timers as usual */                                                  \
+    /*   1 : Don't increment timers in Debug Mode */                                       \
+    logic        stoptime;                                                                 \
+    /* Cause of Debug Mode entry */                                                        \
+    /*   1 : Ebreak was executed (priority 3) */                                           \
+    /*   2 : Trigger Module caused a breakpoint exception  (priority 4) */                 \
+    /*   3 : Debugger requested entry using haltreq (priority 1) */                        \
+    /*   4 : Hart single stepped (priority 0) */                                           \
+    /*   5*: Hart halted out of reset due to resethaltreq (priority 2) */                  \
+    /*         *Also legal to report 3 */                                                  \
+    logic [3:0]  cause;                                                                    \
+    logic        reserved3;                                                                \
+    /* MPRV Enable */                                                                      \
+    /*   0 : MPRV is ignored in Debug Mode */                                              \
+    /*   1 : MPRV is enabled in Debug Mode */                                              \
+    logic        mprven;                                                                   \
+    /* Non-Maskable-Interrupt Pending */                                                   \
+    /*   0 : No NMI pending */                                                             \
+    /*   1 : NMI pending */                                                                \
+    logic        nmip;                                                                     \
+    /* Single Step Mode */                                                                 \
+    /*   0 : Normal behavior during non-Debug Mode */                                      \
+    /*   1 : Hart will only execute a single instruction and then enter Debug Mode. */     \
+    /*         If the instruction does not complete due to execption, hart enters */       \
+    /*         Debug Mode after setting exception registers. */                            \
+    logic        step;                                                                     \
+    /* Privilege mode */                                                                   \
+    /*   The privilege level the hart was operating in prior to Debug Mode entry */        \
+    /*   0 : U-mode */                                                                     \
+    /*   1 : S-mode */                                                                     \
+    /*   3 : M-mode */                                                                     \
+    logic [1:0]  prv;                                                                      \
+  }  rv64_dcsr_s;                                                                          \
+                                                                                           \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic       ebreakm;                                                                   \
+    logic       ebreaks;                                                                   \
+    logic       ebreaku;                                                                   \
+    logic       stepie;                                                                    \
+    logic [3:0] cause;                                                                     \
+    logic [1:0] prv;                                                                       \
+    logic       step;                                                                      \
+  }  bp_dcsr_s;                                                                            \
+                                                                                           \
+  typedef logic [63:0] rv64_dpc_s;                                                         \
+  typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_dpc_s;                   \
+                                                                                           \
+  typedef logic [63:0] rv64_dscratch0_s;                                                   \
+  typedef logic [63:0] bp_dscratch0_s;                                                     \
+                                                                                           \
+  typedef logic [63:0] rv64_dscratch1_s;                                                   \
+  typedef logic [63:0] bp_dscratch1_s;
+  
   `define bp_stvec_width ($bits(bp_stvec_s))
 
-  `define compress_stvec_s(data_cast_mp) \
-    '{addr_39_2: data_cast_mp.base[0+:38]}
+  `define compress_stvec_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
+    '{word_addr: data_cast_mp.base[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2]}
 
   `define decompress_stvec_s(data_comp_mp) \
-    '{base : 62'($signed(data_comp_mp.addr_39_2)) \
+    '{base : 62'($signed(data_comp_mp.word_addr)) \
       ,mode: 2'b00                           \
       }
 
-  typedef struct packed
-  {
-    logic [31:3] hpm;
-    logic        ir;
-    logic        tm;
-    logic        cy;
-  }  rv64_scounteren_s;
-
-  typedef struct packed
-  {
-    logic ir;
-    logic cy;
-  }  bp_scounteren_s;
-
   `define bp_scounteren_width ($bits(bp_scounteren_s))
 
-  `define compress_scounteren_s(data_cast_mp) \
+  `define compress_scounteren_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{ir : data_cast_mp.ir \
       ,cy: data_cast_mp.cy \
       };
@@ -230,39 +716,21 @@
       ,default: '0         \
       };
 
-  typedef logic [63:0] rv64_sscratch_s;
-  typedef logic [63:0] bp_sscratch_s;
-
-  `define compress_sscratch_s(data_cast_mp) \
+  `define compress_sscratch_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     data_cast_mp[0+:64]
 
   `define decompress_sscratch_s(data_comp_mp) \
     64'(data_comp_mp)
 
-  typedef logic [63:0] rv64_sepc_s;
-  typedef logic [38:0] bp_sepc_s;
-
   `define bp_sepc_width ($bits(bp_sepc_s))
 
-  `define compress_sepc_s(data_cast_mp) \
-    bp_sepc_s'(data_cast_mp[0+:39])
+  `define compress_sepc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
+    bp_sepc_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_sepc_s(data_comp_mp) \
     64'($signed(data_comp_mp))
 
-  typedef struct packed
-  {
-    logic        _interrupt;
-    logic [62:0] ecode;
-  }  rv64_scause_s;
-
-  typedef struct packed
-  {
-    logic       _interrupt;
-    logic [3:0] ecode;
-  }  bp_scause_s;
-
-  `define compress_scause_s(data_cast_mp) \
+  `define compress_scause_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{_interrupt: data_cast_mp._interrupt \
       ,ecode: data_cast_mp.ecode[0+:4]    \
       }
@@ -272,42 +740,17 @@
       ,ecode: 63'(data_comp_mp.ecode)     \
       }
 
-  typedef logic [63:0] rv64_stval_s;
-  typedef logic [39:0] bp_stval_s;
-
-  `define compress_stval_s(data_cast_mp) \
-    bp_stval_s'(data_cast_mp[0+:40])
+  `define compress_stval_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
+    bp_stval_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_stval_s(data_comp_mp) \
     64'($signed(data_comp_mp))
 
-  typedef struct packed
-  {
-    // Translation Mode
-    //   0000 - No Translation
-    //   1000 - SV39
-    //   1001 - SV48
-    //   Others reserved
-    logic [3:0] mode;
-    logic [15:0] asid;
-    logic [43:0] ppn;
-  }  rv64_satp_s;
-
-  typedef struct packed
-  {
-    // We only support No Translation and SV39
-    logic        mode;
-    // We don't currently have ASID support
-    // We only support 39 bit physical address.
-    // TODO: Generate this based on vaddr
-    logic [27:0] ppn;
-  }  bp_satp_s;
-
   `define bp_satp_width ($bits(bp_satp_s))
 
-  `define compress_satp_s(data_cast_mp) \
+  `define compress_satp_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{mode: data_cast_mp.mode[3]   \
-      ,ppn: data_cast_mp.ppn[27:0] \
+      ,ppn: data_cast_mp.ppn[(paddr_width_mp-page_offset_width_gp)-1:0] \
       }
 
   `define decompress_satp_s(data_comp_mp) \
@@ -316,107 +759,7 @@
       ,default: '0                      \
       }
 
-  typedef struct packed
-  {
-    // State Dirty
-    // 0 - FS and XS are both != 11
-    // 1 - set if FS or SX == 11
-    //  Note: readonly
-    logic        sd;
-    logic [26:0] wpri1;
-    // XLEN
-    //   01 - 32 bit data
-    //   10 - 64 bit data
-    //   11 - 128 bit data
-    // MXL is in misa instead.
-    logic [1:0]  sxl;
-    logic [1:0]  uxl;
-    logic [8:0]  wpri2;
-    // Trap SRET
-    // 0 - SRET permitted in S-mode
-    // 1 - SRET in S-mode is illegal
-    logic        tsr;
-    // Trap WFI
-    // 0 - WFI is permitted in S-mode
-    // 1 - WFI is executed and not complete within implementation-defined time, is illegal
-    logic        tw;
-    // Trap VM
-    // 0 - The following operations are legal
-    // 1 - attempts to read or write satp or execute SFENCE.VMA in S-mode are illegal
-    logic        tvm;
-    // Make Executable Readable
-    //   0 - only loads from pages marked readable succeed
-    //   1 - loads from pages marked either readable or executable succeed
-    //   No effect when translation is disabled
-    logic        mxr;
-    // Supervisor User Memory
-    //   0 - S-mode memory accesses to U-mode pages will fault
-    //   1 - S-mode memory accesses to U-mode pages will succeed
-    logic        sum;
-    // Modify Privilege
-    //   0 - translation and protection behave normally
-    //   1 - load and stores are translated as though privilege mode is MPP
-    logic        mprv;
-    // Extension Status
-    //   0 - off
-    //   1 - initial (none dirty or clean)
-    //   2 - clean (none dirty)
-    //   3 - dirty
-    // Hardwired to 0 in systems without extensions requiring context (vector)
-    logic [1:0]  xs;
-    // Floating-point Status
-    //   0 - off
-    //   1 - initial (none dirty or clean)
-    //   2 - clean (none dirty)
-    //   3 - dirty
-    // Hardwired to 0 in systems without extensions requiring context (floating point)
-    logic [1:0]  fs;
-    // Previous Privilege
-    //   11 - M
-    //   01 - S
-    //   00 - U
-    logic [1:0]  mpp;
-    logic [1:0]  wpri3;
-    logic        spp;
-    // Previous Interrupt Enable
-    //   0 - Interrupt Previously Disabled for Privilege Mode
-    //   1 - Interrupt Previously Enabled for Privilege Mode
-    logic        mpie;
-    logic        wpri4;
-    logic        spie;
-    logic        upie;
-    // Global Interrupt Enable
-    //   0 - Interrupt Disabled for Privilege Mode
-    //   1 - Interrupt Enabled for Privilege Mode
-    logic        mie;
-    logic        wpri5;
-    logic        sie;
-    logic        uie;
-  }  rv64_mstatus_s;
-
-  typedef struct packed
-  {
-    logic       tsr;
-    logic       tw;
-    logic       tvm;
-
-    logic       mxr;
-    logic       sum;
-    logic       mprv;
-
-    logic [1:0] fs;
-
-    logic [1:0] mpp;
-    logic       spp;
-
-    logic       mpie;
-    logic       spie;
-
-    logic       mie;
-    logic       sie;
-  }  bp_mstatus_s;
-
-  `define compress_mstatus_s(data_cast_mp) \
+  `define compress_mstatus_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{tsr  : data_cast_mp.tsr  \
       ,tw  : data_cast_mp.tw   \
       ,tvm : data_cast_mp.tvm  \
@@ -452,16 +795,7 @@
       ,default: '0             \
       }
 
-  typedef logic [63:0] rv64_medeleg_s;
-  // Hardcode exception 10, 11, 14, 16+ to zero
-  typedef struct packed
-  {
-    logic [15:15] deleg_15;
-    logic [13:12] deleg_13to12;
-    logic [ 9: 0] deleg_9to0;
-  }  bp_medeleg_s;
-
-  `define compress_medeleg_s(data_cast_mp) \
+  `define compress_medeleg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{deleg_15     : data_cast_mp[15]    \
       ,deleg_13to12: data_cast_mp[13:12] \
       ,deleg_9to0  : data_cast_mp[9:0]   \
@@ -475,40 +809,7 @@
                      ,data_comp_mp.deleg_9to0   \
                      });
 
-  typedef struct packed
-  {
-    logic [51:0] wpri1;
-    // M-mode External Interrupt Delegation
-    logic        mei;
-    logic        wpri2;
-    // S-mode External Interrupt Delegation
-    logic        sei;
-    // U-mode External Interrupt Delegation
-    logic        uei;
-    // M-mode Timer Interrupt Delegation
-    logic        mti;
-    logic        wpri3;
-    // S-mode Timer Interrupt Delegation
-    logic        sti;
-    // U-mode Timer Interrupt Delegation
-    logic        uti;
-    // M-mode Software Interrupt Delegation
-    logic        msi;
-    logic        wpri4;
-    // S-mode Software Interrupt Delegation
-    logic        ssi;
-    // U-mode Software Interrupt Delegation
-    logic        usi;
-  }  rv64_mideleg_s;
-
-  typedef struct packed
-  {
-    logic sei;
-    logic sti;
-    logic ssi;
-  }  bp_mideleg_s;
-
-  `define compress_mideleg_s(data_cast_mp) \
+  `define compress_mideleg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{sei : data_cast_mp.sei \
       ,sti: data_cast_mp.sti \
       ,ssi: data_cast_mp.ssi \
@@ -521,45 +822,7 @@
       ,default: '0           \
       }
 
-  typedef struct packed
-  {
-    logic [51:0] wpri1;
-    // M-mode External Interrupt Enable
-    logic        meie;
-    logic        wpri2;
-    // S-mode External Interrupt Enable
-    logic        seie;
-    // U-mode External Interrupt Enable
-    logic        ueie;
-    // M-mode Timer Interrupt Enable
-    logic        mtie;
-    logic        wpri3;
-    // S-mode Timer Interrupt Enable
-    logic        stie;
-    // U-mode Timer Interrupt Enable
-    logic        utie;
-    // M-mode Software Interrupt Enable
-    logic        msie;
-    logic        wpri4;
-    // S-mode Software Interrupt Enable
-    logic        ssie;
-    // U-mode Software Interrupt Enable
-    logic        usie;
-  }  rv64_mie_s;
-
-  typedef struct packed
-  {
-    logic meie;
-    logic seie;
-
-    logic mtie;
-    logic stie;
-
-    logic msie;
-    logic ssie;
-  }  bp_mie_s;
-
-  `define compress_mie_s(data_cast_mp) \
+  `define compress_mie_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{meie : data_cast_mp.meie \
       ,seie: data_cast_mp.seie \
                                \
@@ -582,48 +845,19 @@
       ,default: '0             \
       }
 
-  typedef struct packed
-  {
-    // Base address for traps
-    logic [61:0] base;
-    // Trap Mode
-    //   00 - Direct, all exceptions set pc to BASE
-    //   01 - Vectored, interrupts set pc to BASE+4xcause
-    logic [1:0]  mode;
-  }  rv64_mtvec_s;
-
-  typedef struct packed
-  {
-    logic [37:0] addr_39_2;
-  }  bp_mtvec_s;
-
   `define bp_mtvec_width ($bits(bp_mtvec_s))
 
-  `define compress_mtvec_s(data_cast_mp) \
-    '{addr_39_2: data_cast_mp.base[0+:38]}
+  `define compress_mtvec_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
+    '{word_addr: data_cast_mp.base[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2]}
 
   `define decompress_mtvec_s(data_comp_mp) \
-    '{base : 62'($signed(data_comp_mp.addr_39_2)) \
+    '{base : 62'($signed(data_comp_mp.word_addr)) \
       ,mode: 2'b00                                \
       }
 
-  typedef struct packed
-  {
-    logic [31:3] hpm;
-    logic        ir;
-    logic        tm;
-    logic        cy;
-  }  rv64_mcounteren_s;
-
-  typedef struct packed
-  {
-    logic ir;
-    logic cy;
-  }  bp_mcounteren_s;
-
   `define bp_mcounteren_width ($bits(bp_mcounteren_s))
 
-  `define compress_mcounteren_s(data_cast_mp) \
+  `define compress_mcounteren_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{ir : data_cast_mp.ir \
       ,cy: data_cast_mp.cy \
       };
@@ -634,54 +868,13 @@
       ,default: '0         \
       };
 
-  typedef logic [63:0] rv64_mscratch_s;
-  typedef logic [63:0] bp_mscratch_s;
-
-  `define compress_mscratch_s(data_cast_mp) \
+  `define compress_mscratch_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     data_cast_mp[0+:64]
 
   `define decompress_mscratch_s(data_comp_mp) \
     64'(data_comp_mp)
 
-  typedef struct packed
-  {
-    logic [51:0] wpri1;
-    // M-mode External Interrupt Pending
-    logic        meip;
-    logic        wpri2;
-    // S-mode External Interrupt Pending
-    logic        seip;
-    // U-mode External Interrupt Pending
-    logic        ueip;
-    // M-mode Timer Interrupt Pending
-    logic        mtip;
-    logic        wpri3;
-    // S-mode Timer Interrupt Pending
-    logic        stip;
-    // U-mode Timer Interrupt Pending
-    logic        utip;
-    // M-mode Software Interrupt Pending
-    logic        msip;
-    logic        wpri4;
-    // S-mode Software Interrupt Pending
-    logic        ssip;
-    // U-mode Software Interrupt Pending
-    logic        usip;
-  }  rv64_mip_s;
-
-  typedef struct packed
-  {
-    logic meip;
-    logic seip;
-
-    logic mtip;
-    logic stip;
-
-    logic msip;
-    logic ssip;
-  }   bp_mip_s;
-
-  `define compress_mip_s(data_cast_mp) \
+  `define compress_mip_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{meip : data_cast_mp.meip \
       ,seip: data_cast_mp.seip \
                                \
@@ -704,120 +897,48 @@
       ,default: '0             \
       }
 
-  typedef logic [63:0] rv64_mtval_s;
-  typedef logic [39:0] bp_mtval_s;
-
-  `define compress_mtval_s(data_cast_mp) \
-    bp_mtval_s'(data_cast_mp[0+:40])
+  `define compress_mtval_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
+    bp_mtval_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_mtval_s(data_comp_mp) \
     64'($signed(data_comp_mp))
 
-  typedef logic [63:0] rv64_mepc_s;
-  typedef logic [38:0] bp_mepc_s;
-
-  `define compress_mepc_s(data_cast_mp) \
-    bp_mepc_s'(data_cast_mp[0+:39])
+  `define compress_mepc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
+    bp_mepc_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_mepc_s(data_comp_mp) \
     64'($signed(data_comp_mp))
 
-  typedef struct packed
-  {
-    // Locked - writes to this pmpcfg and corresponding pmpaddr are ignored
-    logic          l;
-    logic [1:0] wpri;
-    // Address Matching Mode
-    //  00 - Off  , Null region (disabled)
-    //  01 - TOR  , Top of range (pmpaddr[i-1] <= a < pmpaddr[i], or 0 <= a < pmpaddr[0])
-    //  10 - NA4  , Naturally aligned four-byte region
-    //  11 - NAPOT, Naturally aligned power-of-two region
-    logic [1:0]    a;
-    // Execute permissions
-    logic          x;
-    // Write permissions
-    logic          w;
-    // Read permissions
-    logic          r;
-  }  rv64_pmpcfg_entry_s;
-
-  typedef struct packed
-  {
-    rv64_pmpcfg_entry_s [7:0] pmpcfg;
-  }  rv64_pmpcfg_s;
-  typedef rv64_pmpcfg_s rv64_pmpcfg0_s;
-  typedef rv64_pmpcfg_s rv64_pmpcfg1_s;
-
-  typedef struct packed
-  {
-    rv64_pmpcfg_entry_s [3:0] pmpcfg;
-  }  bp_pmpcfg_s;
-
-  typedef bp_pmpcfg_s bp_pmpcfg0_s;
-
-  `define compress_pmpcfg_s(data_cast_mp) \
+  `define compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{pmpcfg: data_cast_mp.pmpcfg[0+:4]}
 
   `define decompress_pmpcfg_s(data_comp_mp) \
     '{pmpcfg: ($bits(rv64_pmpcfg_entry_s)*8)'(data_comp_mp.pmpcfg)}
 
-  `define compress_pmpcfg0_s(data_cast_mp) `compress_pmpcfg_s(data_cast_mp)
-  `define compress_pmpcfg1_s(data_cast_mp) `compress_pmpcfg_s(data_cast_mp)
+  `define compress_pmpcfg0_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpcfg1_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
   `define decompress_pmpcfg0_s(data_comp_mp) `decompress_pmpcfg_s(data_comp_mp)
   `define decompress_pmpcfg1_s(data_comp_mp) `decompress_pmpcfg_s(data_comp_mp)
 
-  typedef struct packed
-  {
-    logic [9:0]  warl;
-    logic [53:0] addr_55_2;
-  }  rv64_pmpaddr_s;
-
-  typedef rv64_pmpaddr_s rv64_pmpaddr0_s;
-  typedef rv64_pmpaddr_s rv64_pmpaddr1_s;
-  typedef rv64_pmpaddr_s rv64_pmpaddr2_s;
-  typedef rv64_pmpaddr_s rv64_pmpaddr3_s;
-
-  typedef struct packed
-  {
-    logic [37:0] addr_39_2;
-  }  bp_pmpaddr_s;
-
-  typedef bp_pmpaddr_s bp_pmpaddr0_s;
-  typedef bp_pmpaddr_s bp_pmpaddr1_s;
-  typedef bp_pmpaddr_s bp_pmpaddr2_s;
-  typedef bp_pmpaddr_s bp_pmpaddr3_s;
-
-  `define compress_pmpaddr_s(data_cast_mp) \
-    '{addr_39_2: data_cast_mp.addr_55_2[0+:38]}
+  `define compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
+    '{word_addr: data_cast_mp.addr_55_2[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2]}
 
   `define decompress_pmpaddr_s(data_comp_mp) \
-    '{addr_55_2: 54'(data_comp_mp.addr_39_2) \
+    '{addr_55_2: 54'(data_comp_mp.word_addr) \
       ,default: '0                           \
       }
 
-  `define compress_pmpaddr0_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
-  `define compress_pmpaddr1_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
-  `define compress_pmpaddr2_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
-  `define compress_pmpaddr3_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
+  `define compress_pmpaddr0_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr1_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr2_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr3_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
 
   `define decompress_pmpaddr0_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
   `define decompress_pmpaddr1_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
   `define decompress_pmpaddr2_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
   `define decompress_pmpaddr3_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
 
-  typedef struct packed
-  {
-    logic        _interrupt;
-    logic [62:0] ecode;
-  }  rv64_mcause_s;
-
-  typedef struct packed
-  {
-    logic       _interrupt;
-    logic [3:0] ecode;
-  }  bp_mcause_s;
-
-  `define compress_mcause_s(data_cast_mp) \
+  `define compress_mcause_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{_interrupt: data_cast_mp._interrupt \
       ,ecode: data_cast_mp.ecode[0+:4]  \
       }
@@ -827,42 +948,19 @@
       ,ecode: 63'(data_comp_mp.ecode)   \
       }
 
-  typedef logic [63:0] rv64_mcounter_s;
-  typedef logic [47:0] bp_mcounter_s;
-
-  `define compress_mcounter_s(data_cast_mp) \
+  `define compress_mcounter_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     bp_mcounter_s'(data_cast_mp[0+:48])
 
   `define decompress_mcounter_s(data_comp_mp) \
     rv64_mcounter_s'(data_comp_mp)
 
-  typedef rv64_mcounter_s rv64_mcycle_s;
-  typedef rv64_mcounter_s rv64_minstret_s;
-
-  typedef bp_mcounter_s bp_mcycle_s;
-  typedef bp_mcounter_s bp_minstret_s;
-
-  `define compress_mcycle_s(data_cast_mp)   `compress_mcounter_s(data_cast_mp)
-  `define compress_minstret_s(data_cast_mp) `compress_mcounter_s(data_cast_mp)
+  `define compress_mcycle_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)   `compress_mcounter_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_minstret_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_mcounter_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
 
   `define decompress_mcycle_s(data_comp_mp) `decompress_mcounter_s(data_comp_mp)
   `define decompress_minstret_s(data_comp_mp) `decompress_mcounter_s(data_comp_mp)
 
-  typedef struct packed
-  {
-    logic [31:3] hpm;
-    logic        ir;
-    logic        warl;
-    logic        cy;
-  }  rv64_mcountinhibit_s;
-
-  typedef struct packed
-  {
-    logic ir;
-    logic cy;
-  }  bp_mcountinhibit_s;
-
-  `define compress_mcountinhibit_s(data_cast_mp) \
+  `define compress_mcountinhibit_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{ir : data_cast_mp.ir \
       ,cy: data_cast_mp.cy \
       }
@@ -873,20 +971,7 @@
       ,default: '0         \
       }
 
-  typedef struct packed
-  {
-    logic [23:0] warl;
-    logic [2:0]  frm;
-    logic [4:0]  fflags;
-  }  rv64_fcsr_s;
-
-  typedef struct packed
-  {
-    logic [2:0] frm;
-    logic [4:0] fflags;
-  }  bp_fcsr_s;
-
-  `define compress_fcsr_s(data_cast_mp) \
+  `define compress_fcsr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{frm    : data_cast_mp.frm    \
       ,fflags: data_cast_mp.fflags \
       }
@@ -897,82 +982,7 @@
       ,default: '0                  \
       }
 
-  typedef struct packed
-  {
-    // Debugger version
-    //   0 : No external debug support
-    //   4 : External debug support ala RISC-V Debug Spec
-    //   15: Non-conformant RISC-V debug spec
-    logic [3:0]  xdebugver;
-    logic [11:0] reserved1;
-    // Ebreak M-mode behavior
-    //   0 : behave normally
-    //   1 : ebreak in M enters Debug Mode
-    logic        ebreakm;
-    logic        reserved2;
-    // Ebreak S-mode behavior
-    //   0 : behave normally
-    //   1 : ebreak in S enters Debug Mode
-    logic        ebreaks;
-    // Ebreak U-mode behavior
-    //   0 : behave normally
-    //   1 : ebreak in U enters Debug Mode
-    logic        ebreaku;
-    // Stepping Interrupt Enable
-    //   0 : Interrupts are disabled during single stepping
-    //   1 : Interrupts are enabled during single stepping
-    logic        stepie;
-    // Stop Counters
-    //   0 : Increment counters while in Debug Mode
-    //   1 : Don't increment counters while in Debug Mode or ebreak->Debug Mode
-    logic        stopcount;
-    // Stop Timers
-    //   0 : Increment timers as usual
-    //   1 : Don't increment timers in Debug Mode
-    logic        stoptime;
-    // Cause of Debug Mode entry
-    //   1 : Ebreak was executed (priority 3)
-    //   2 : Trigger Module caused a breakpoint exception  (priority 4)
-    //   3 : Debugger requested entry using haltreq (priority 1)
-    //   4 : Hart single stepped (priority 0)
-    //   5*: Hart halted out of reset due to resethaltreq (priority 2)
-    //         *Also legal to report 3
-    logic [3:0]  cause;
-    logic        reserved3;
-    // MPRV Enable
-    //   0 : MPRV is ignored in Debug Mode
-    //   1 : MPRV is enabled in Debug Mode
-    logic        mprven;
-    // Non-Maskable-Interrupt Pending
-    //   0 : No NMI pending
-    //   1 : NMI pending
-    logic        nmip;
-    // Single Step Mode
-    //   0 : Normal behavior during non-Debug Mode
-    //   1 : Hart will only execute a single instruction and then enter Debug Mode.
-    //         If the instruction does not complete due to execption, hart enters
-    //         Debug Mode after setting exception registers.
-    logic        step;
-    // Privilege mode
-    //   The privilege level the hart was operating in prior to Debug Mode entry
-    //   0 : U-mode
-    //   1 : S-mode
-    //   3 : M-mode
-    logic [1:0]  prv;
-  }  rv64_dcsr_s;
-
-  typedef struct packed
-  {
-    logic       ebreakm;
-    logic       ebreaks;
-    logic       ebreaku;
-    logic       stepie;
-    logic [3:0] cause;
-    logic [1:0] prv;
-    logic       step;
-  }  bp_dcsr_s;
-
-  `define compress_dcsr_s(data_cast_mp) \
+  `define compress_dcsr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{ebreakm : data_cast_mp.ebreakm \
       ,ebreaks: data_cast_mp.ebreaks \
       ,ebreaku: data_cast_mp.ebreaku \
@@ -998,34 +1008,25 @@
       ,default  : '0                    \
       }
 
-  typedef logic [63:0] rv64_dpc_s;
-  typedef logic [38:0] bp_dpc_s;
-
-  `define compress_dpc_s(data_cast_mp) \
-    bp_dpc_s'(data_cast_mp[0+:39])
+  `define compress_dpc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
+    bp_dpc_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_dpc_s(data_comp_mp) \
     64'($signed(data_comp_mp))
 
-  typedef logic [63:0] rv64_dscratch0_s;
-  typedef logic [63:0] bp_dscratch0_s;
-
-  `define compress_dscratch0_s(data_cast_mp) \
+  `define compress_dscratch0_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     data_cast_mp[0+:64]
 
   `define decompress_dscratch0_s(data_comp_mp) \
     64'(data_comp_mp)
 
-  typedef logic [63:0] rv64_dscratch1_s;
-  typedef logic [63:0] bp_dscratch1_s;
-
-  `define compress_dscratch1_s(data_cast_mp) \
+  `define compress_dscratch1_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     data_cast_mp[0+:64]
 
   `define decompress_dscratch1_s(data_comp_mp) \
     64'(data_comp_mp)
 
-  `define declare_csr(csr_name_mp) \
+  `define declare_csr_addr(csr_name_mp, vaddr_width_mp, paddr_width_mp)                           \
     /* verilator lint_off UNUSED */                                                               \
     rv64_``csr_name_mp``_s ``csr_name_mp``_li, ``csr_name_mp``_lo;                                \
     bp_``csr_name_mp``_s ``csr_name_mp``_n, ``csr_name_mp``_r;                                    \
@@ -1034,8 +1035,11 @@
     ``csr_name_mp``_reg                                                                           \
       (.clk_i(clk_i), .reset_i(reset_i), .data_i(``csr_name_mp``_n), .data_o(``csr_name_mp``_r)); \
     assign ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r);                 \
-    assign ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li);                  \
+    assign ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li, vaddr_width_mp, paddr_width_mp);                  \
     /* verilator lint_on UNUSED */
+
+  `define declare_csr(csr_name_mp) \
+    `declare_csr_addr(csr_name_mp, 0, 0)
 
 `endif
 
