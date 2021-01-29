@@ -875,7 +875,7 @@
     logic                                    lru_coh_state_w_v;
     logic                                    owner_coh_state_w_v;
     // Flag write mask - for instructions that write flags, e.g., GAD, poph, mov, sf
-    bp_cce_inst_flag_onehot_e                flag_w_v;
+    logic [$bits(bp_cce_inst_flag_onehot_e)-1:0] flag_w_v;
     logic                                    msg_size_w_v;
     // Special/Param registers
     logic                                    coh_state_w_v;
