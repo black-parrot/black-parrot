@@ -20,7 +20,7 @@ module testbench
    , parameter mem_cap_in_bytes_p = 2**25
    , parameter mem_file_p = "prog.mem"
 
-  , localparam cfg_bus_width_lp = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+  , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   , localparam trace_replay_data_width_lp = ptag_width_p + vaddr_width_p + 1
   , localparam trace_rom_addr_width_lp = 7
 

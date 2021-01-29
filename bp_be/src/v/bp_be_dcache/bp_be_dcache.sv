@@ -97,7 +97,7 @@ module bp_be_dcache
    , parameter fill_width_p   = dcache_fill_width_p
    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
 
-   , localparam cfg_bus_width_lp    = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
    )
   (input                              clk_i

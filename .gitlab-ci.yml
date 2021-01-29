@@ -200,6 +200,7 @@ lint-vcs:
     - $CI_PROJECT_DIR/ci/lint.sh vcs $CI_CORES
 
 tire_kick:
+  <<: *job_definition
   stage: check
   tags:
     - verilator
@@ -214,7 +215,6 @@ bloodgraph-vcs:
   script:
     - $CI_PROJECT_DIR/ci/bloodgraph.sh $CI_CORES
 
-# Takes too long to build
 weird-verilator:
   <<: *job_definition
   when: manual
@@ -242,6 +242,7 @@ l2e-vcs:
 
 l2e-verilator:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - verilator
@@ -250,6 +251,7 @@ l2e-verilator:
 
 me-regress-verilator:
   <<: *job_definition
+  when: manual
   stage: test-short
   tags:
     - verilator
@@ -338,6 +340,7 @@ top-misc-vcs:
 
 top-misc-verilator:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - verilator
@@ -379,8 +382,10 @@ check-loops:
   script:
     - $CI_PROJECT_DIR/ci/check_loops.sh $CI_CORES
 
+# Pending https://github.com/bespoke-silicon-group/basejump_stl/pull/387/
 top-dram-vcs:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - vcs
@@ -398,6 +403,7 @@ top-linux-verilator:
 
 top-coremark-verilator:
   <<: *job_definition
+  when: manual
   stage: test-long
   tags:
     - verilator
@@ -414,6 +420,7 @@ top-coremark-vcs:
 
 top-beebs-verilator:
   <<: *job_definition
+  when: manual
   stage: test-long
   tags:
     - verilator

@@ -43,7 +43,7 @@ module bp_fe_icache
    , parameter fill_width_p  = icache_fill_width_p
 
    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
-   , localparam cfg_bus_width_lp    = `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
   (input                                              clk_i

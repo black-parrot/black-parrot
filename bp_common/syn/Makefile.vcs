@@ -95,6 +95,28 @@ $(SIM_DIR)/run_simv: $(SIM_COLLATERAL)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
+## Need the next build option as mentioned in this link for vivado post synth netlist simulation using VCS
+## https://forums.xilinx.com/t5/Simulation-and-Verification/VCS-error-regarding-the-glbl-cross-module-reference-resolution/td-p/735596
+build_vivado.v: VCS_BUILD_OPTS += -top glbl
+build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src
+build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unisims
+build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unimacro
+build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/retarget
+build_vivado.v: VCS_BUILD_OPTS += +incdir+$(XILINX_VIVADO)/data/verilog/src +libext+.v
+build_vivado.v: SIM_SYNTH_VIVADO_P := 1
+build_vivado.v: NO_BIND_P          := 1
+build_vivado.v: build.v
+
+sim_vivado.v: SIM_SYNTH_VIVADO_P := 1
+sim_vivado.v: NO_BIND_P          := 1
+sim_vivado.v: sim.v
+
+sim_vivado_dump.v: VCS_OPTIONS += +memcbk
+sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdpluson
+sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon
+sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_vivado_dump.v: sim_vivado.v
+
 sim_dump.v: VCS_OPTIONS += +memcbk
 sim_dump.v: VCS_OPTIONS += +vcs+vcdpluson
 sim_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon

@@ -25,7 +25,7 @@ module wrapper
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
 
-   , localparam cfg_bus_width_lp= `cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam block_size_in_words_lp=assoc_p
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
 
