@@ -113,7 +113,8 @@ module bp_be_calculator_top
   rv64_frm_e           frm_dyn_lo;
   assign ptw_fill_pkt_o = ptw_fill_pkt;
 
-  logic pipe_mem_dtlb_miss_lo;
+  logic pipe_mem_dtlb_store_miss_lo;
+  logic pipe_mem_dtlb_load_miss_lo;
   logic pipe_mem_dcache_miss_lo;
   logic pipe_mem_fencei_lo;
   logic pipe_mem_load_misaligned_lo;
@@ -286,7 +287,8 @@ module bp_be_calculator_top
      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
      ,.stat_mem_o(stat_mem_o)
 
-     ,.tlb_miss_v_o(pipe_mem_dtlb_miss_lo)
+     ,.tlb_store_miss_v_o(pipe_mem_dtlb_store_miss_lo)
+     ,.tlb_load_miss_v_o(pipe_mem_dtlb_load_miss_lo)
      ,.cache_miss_v_o(pipe_mem_dcache_miss_lo)
      ,.fencei_v_o(pipe_mem_fencei_lo)
      ,.load_misaligned_v_o(pipe_mem_load_misaligned_lo)
@@ -471,7 +473,8 @@ module bp_be_calculator_top
           exc_stage_n[0].exc.ebreak             |= reservation_n.decode.ebreak;
           exc_stage_n[0].exc.ecall              |= reservation_n.decode.ecall;
 
-          exc_stage_n[1].exc.dtlb_miss          |= pipe_mem_dtlb_miss_lo;
+          exc_stage_n[1].exc.dtlb_store_miss    |= pipe_mem_dtlb_store_miss_lo;
+          exc_stage_n[1].exc.dtlb_load_miss     |= pipe_mem_dtlb_load_miss_lo;
           exc_stage_n[1].exc.load_misaligned    |= pipe_mem_load_misaligned_lo;
           exc_stage_n[1].exc.load_access_fault  |= pipe_mem_load_access_fault_lo;
           exc_stage_n[1].exc.load_page_fault    |= pipe_mem_load_page_fault_lo;

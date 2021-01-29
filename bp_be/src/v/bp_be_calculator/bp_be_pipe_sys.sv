@@ -120,19 +120,6 @@ module bp_be_pipe_sys
   logic [vaddr_width_p-1:0] commit_nvaddr_r, commit_vaddr_r;
   logic [instr_width_gp-1:0] commit_ninstr_r, commit_instr_r;
 
-  // Track if an incoming tlb miss is store or load
-  logic is_store_r;
-  bsg_dff_chain
-   #(.width_p(1)
-     ,.num_stages_p(2)
-     )
-   store_reg
-    (.clk_i(clk_i)
-
-     ,.data_i(decode.dcache_w_v)
-     ,.data_o(is_store_r)
-     );
-
   bp_be_exception_s exception_li;
   always_comb
     if (ptw_fill_pkt.instr_page_fault_v)
@@ -159,8 +146,8 @@ module bp_be_pipe_sys
   always_comb
     begin
       ptw_miss_pkt.instr_miss_v = commit_v_i & exception_li.itlb_miss;
-      ptw_miss_pkt.load_miss_v  = commit_v_i & exception_li.dtlb_miss & ~is_store_r;
-      ptw_miss_pkt.store_miss_v = commit_v_i & exception_li.dtlb_miss & is_store_r;
+      ptw_miss_pkt.load_miss_v  = commit_v_i & exception_li.dtlb_load_miss;
+      ptw_miss_pkt.store_miss_v = commit_v_i & exception_li.dtlb_store_miss;
       ptw_miss_pkt.vaddr        = exception_li.itlb_miss ? commit_pc_r : commit_vaddr_r;
     end
 
