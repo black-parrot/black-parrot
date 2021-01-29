@@ -1,0 +1,39 @@
+.DEFAULT_GOAL = all
+
+SUITE = CINT2000
+BENCHMARK = 300.twolf
+
+BENCHMARK_OBJS = acceptt.o addimp.o alignfeed.o buildimp.o changrid.o clean.o \
+               closepins.o config1.o configure.o configuref.o controlf.o      \
+               countf.o date.o debug.o dimbox.o finalwire.o findcost.o        \
+               findcostf.o findest.o findfeeds.o findrchk.o findrcost.o       \
+               findunlap.o globe.o globedbg.o globroute.o gparser.o grdcell.o \
+               hash.o implfeeds.o main.o mergplist.o move.o mt.o okmalloc.o   \
+               outcm.o outpins.o output.o parser.o purcost.o qsorte.o         \
+               qsortg.o qsortgdx.o qsortx.o rand.o readblck.o readcell.o      \
+               readnets.o readpar.o readseg.o savewolf.o sortpin.o stats.o    \
+               uc0.o ucg0.o ucgxp.o uclosepns.o ucxx1.o ucxx2.o ucxxo1.o      \
+               ucxxo2.o ucxxp.o uglobe.o uglobrout.o ugpair.o uloop.o         \
+               uloop2.o unetseg.o unlap.o upair.o urcost.o utemp.o utils.o    \
+               xcompact.o xpickint.o
+
+INPUT_TYPE = smred
+
+BENCHMARK_INPS = $(INPUT_TYPE).blk $(INPUT_TYPE).cel $(INPUT_TYPE).net \
+                 $(INPUT_TYPE).par $(INPUT_TYPE).pin $(INPUT_TYPE).pl1 \
+                 $(INPUT_TYPE).pl2 $(INPUT_TYPE).sav $(INPUT_TYPE).sv2 \
+                 $(INPUT_TYPE).twf
+
+$(BENCHMARK_INPS): %:
+	cp $(BENCHMARK_DIR)/input/$(INPUT_TYPE)/$@ $@
+
+BENCHMARK_DEFS = -D__raw__ -DSPEC_CPU2000
+
+ARGC=2
+ARGV=twolf $(INPUT_TYPE)
+
+# lfs disk image size
+LFS_BLOCK_SIZE = 128
+LFS_BLOCK_COUNT = 8192 # 1M
+
+include ./Makefile.common

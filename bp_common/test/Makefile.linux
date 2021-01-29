@@ -65,7 +65,7 @@ $(vmlinux_binary): $(vmlinux_stripped)
 $(fw_payload): $(opensbi_srcdir) $(vmlinux_binary)
 	$(MAKE) -C $< O=$(opensbi_wrkdir) \
 		PLATFORM=blackparrot \
-		PLATFORM_RISCV_ISA=rv64ima \
+		PLATFORM_RISCV_ISA=rv64imafd \
 		CROSS_COMPILE=$(LINUX_TARGET)- \
 		FW_PAYLOAD_PATH=$(vmlinux_binary)
 
