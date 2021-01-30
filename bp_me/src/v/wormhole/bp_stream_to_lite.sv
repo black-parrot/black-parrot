@@ -1,5 +1,5 @@
 
-module bp_stream_to_lite_bypass
+module bp_stream_to_lite
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
