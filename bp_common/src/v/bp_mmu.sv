@@ -8,7 +8,8 @@ module bp_mmu
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter tlb_els_p = "inv"
+   , parameter tlb_els_4k_p = "inv"
+   , parameter tlb_els_1g_p = "inv"
 
    , localparam entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    )
@@ -85,7 +86,7 @@ module bp_mmu
   bp_pte_entry_leaf_s tlb_r_entry_lo;
   wire [vtag_width_p-1:0] w_vtag_li = w_v_i ? w_vtag_i : r_eaddr_i[vaddr_width_p-1-:vtag_width_p];
   bp_tlb
-   #(.bp_params_p(bp_params_p), .els_4k_p(tlb_els_p), .els_1g_p(tlb_els_p))
+   #(.bp_params_p(bp_params_p), .els_4k_p(tlb_els_4k_p), .els_1g_p(tlb_els_1g_p))
    tlb
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

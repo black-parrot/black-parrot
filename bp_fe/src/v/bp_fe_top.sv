@@ -212,7 +212,10 @@ module bp_fe_top
 
   wire [dword_width_gp-1:0] r_eaddr_li = dword_width_gp'($signed(next_pc_lo));
   bp_mmu
-   #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
+   #(.bp_params_p(bp_params_p)
+     ,.tlb_els_4k_p(itlb_els_4k_p)
+     ,.tlb_els_1g_p(itlb_els_1g_p)
+     )
    immu
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

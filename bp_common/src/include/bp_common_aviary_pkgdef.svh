@@ -87,8 +87,10 @@
     integer unsigned ghist_width;
 
     // Capacity of the Instruction/Data TLBs
-    integer unsigned itlb_els;
-    integer unsigned dtlb_els;
+    integer unsigned itlb_els_4k;
+    integer unsigned itlb_els_1g;
+    integer unsigned dtlb_els_4k;
+    integer unsigned dtlb_els_1g;
 
     // Atomic support in the system. There are 3 levels of support
     //   None: Will cause illegal instruction trap
@@ -209,8 +211,10 @@
       ,bht_idx_width            : 9
       ,ghist_width              : 2
 
-      ,itlb_els             : 8
-      ,dtlb_els             : 8
+      ,itlb_els_4k : 8
+      ,dtlb_els_4k : 8
+      ,itlb_els_1g : 2
+      ,dtlb_els_1g : 2
 
       ,lr_sc                : e_l1
       ,amo_swap             : e_none
@@ -714,8 +718,10 @@
       ,`bp_aviary_define_override(bht_idx_width, BP_BHT_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(ghist_width, BP_GHIST_WIDTH, `BP_CUSTOM_BASE_CFG)
 
-      ,`bp_aviary_define_override(itlb_els, BP_ITLB_ELS, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(dtlb_els, BP_DTLB_ELS, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(itlb_els_4k, BP_ITLB_ELS_4K, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(itlb_els_1g, BP_ITLB_ELS_1G, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dtlb_els_4k, BP_DTLB_ELS_4K, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dtlb_els_1g, BP_DTLB_ELS_1G, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(lr_sc, BP_LR_SC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(amo_swap, BP_AMO_SWAP, `BP_CUSTOM_BASE_CFG)
