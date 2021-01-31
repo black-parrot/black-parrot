@@ -84,7 +84,7 @@ module bp_tlb
 
      ,.w_v_i(tag_4k_w_v_li)
      ,.w_set_not_clear_i(~flush_4k_li)
-     ,.w_tag_i(vtag_r)
+     ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_4k_lo)
 
      ,.r_v_i(r_v_r)
@@ -118,7 +118,7 @@ module bp_tlb
 
      ,.w_v_i(tag_1g_w_v_li)
      ,.w_set_not_clear_i(~flush_1g_li)
-     ,.w_tag_i(vtag_r)
+     ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_1g_lo)
 
      ,.r_v_i(r_v_r)
@@ -142,7 +142,7 @@ module bp_tlb
 
   logic [els_4k_p-1:0][r_entry_high_bits_lp-1:0] data_4k_high_r;
   logic [els_4k_p-1:0][r_entry_low_bits_lp-1:0] data_4k_low_r;
-  wire [els_4k_p-1:0] mem_4k_w_v_li = repl_way_4k_lo;
+  wire [els_4k_p-1:0] mem_4k_w_v_li = ({els_4k_p{w_v_li & ~gigapage_i}} & repl_way_4k_lo);
   for (genvar i = 0; i < els_4k_p; i++)
     begin : mem_array_4k
       bsg_dff_en
@@ -156,7 +156,7 @@ module bp_tlb
     end
 
   logic [els_1g_p-1:0][r_entry_high_bits_lp-1:0] data_1g_high_r;
-  wire [els_1g_p-1:0] mem_1g_w_v_li = repl_way_1g_lo;
+  wire [els_1g_p-1:0] mem_1g_w_v_li = ({els_1g_p{w_v_li & gigapage_i}} & repl_way_1g_lo);
   for (genvar i = 0; i < els_1g_p; i++)
     begin : mem_array_1g
       bsg_dff_en
