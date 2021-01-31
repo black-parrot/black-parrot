@@ -33,7 +33,7 @@ module bp_be_instr_decoder
    , input [instr_width_lp-1:0]      instr_i
 
    , output [decode_width_lp-1:0]    decode_o
-   , output [dword_width_gp-1:0]      imm_o
+   , output [dword_width_gp-1:0]     imm_o
 
    , input                           fpu_en_i
    );
@@ -202,7 +202,8 @@ module bp_be_instr_decoder
           end
         `RV64_LOAD_OP :
           begin
-            decode.pipe_mem_early_v = 1'b1;
+            decode.pipe_mem_early_v = instr inside {`RV64_LD, `RV64_LW, `RV64_LWU};
+            decode.pipe_mem_final_v = ~decode.pipe_mem_early_v;
             decode.irf_w_v    = 1'b1;
             decode.dcache_r_v = 1'b1;
             decode.mem_v      = 1'b1;

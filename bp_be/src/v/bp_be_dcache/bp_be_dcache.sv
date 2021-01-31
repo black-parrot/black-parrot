@@ -323,33 +323,6 @@ module bp_be_dcache
   wire cached_op_tl   = ~uncached_i & ~decode_tl_r.fencei_op & ~decode_tl_r.l2_op;
   wire uncached_op_tl =  uncached_i | decode_tl_r.l2_op;
 
-  ///////////////////////////
-  // Stat Mem Storage
-  ///////////////////////////
-  `bp_cast_i(bp_dcache_stat_mem_pkt_s, stat_mem_pkt);
-  logic stat_mem_v_li;
-  logic stat_mem_w_li;
-  logic [sindex_width_lp-1:0] stat_mem_addr_li;
-  bp_dcache_stat_info_s stat_mem_data_li;
-  bp_dcache_stat_info_s stat_mem_mask_li;
-  bp_dcache_stat_info_s stat_mem_data_lo;
-
-  bsg_mem_1rw_sync_mask_write_bit
-   #(.width_p(dcache_stat_info_width_lp)
-     ,.els_p(sets_p)
-     ,.latch_last_read_p(1)
-     )
-   stat_mem
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-    ,.v_i(stat_mem_v_li)
-    ,.w_i(stat_mem_w_li)
-    ,.addr_i(stat_mem_addr_li)
-    ,.data_i(stat_mem_data_li)
-    ,.w_mask_i(stat_mem_mask_li)
-    ,.data_o(stat_mem_data_lo)
-    );
-
   /////////////////////////////////////////////////////////////////////////////
   // TV Stage
   /////////////////////////////////////////////////////////////////////////////
@@ -494,9 +467,9 @@ module bp_be_dcache
      ,.data_o(result_data)
      );
 
-  logic [3:0][dword_width_gp-1:0] sigext_data;
-  for (genvar i = 0; i < 4; i++)
-    begin : alignment
+  logic [3:2][dword_width_gp-1:0] sigext_word;
+  for (genvar i = 2; i < 4; i++)
+    begin : word_alignment
       localparam slice_width_lp = 8*(2**i);
 
       logic [slice_width_lp-1:0] slice_data;
@@ -509,15 +482,15 @@ module bp_be_dcache
          );
 
       wire sigext = decode_tv_r.signed_op & slice_data[slice_width_lp-1];
-      assign sigext_data[i] = {{(dword_width_gp-slice_width_lp){sigext}}, slice_data};
+      assign sigext_word[i] = {{(dword_width_gp-slice_width_lp){sigext}}, slice_data};
     end
 
   logic [dword_width_gp-1:0] early_data;
   bsg_mux_one_hot
-   #(.width_p(dword_width_gp), .els_p(4))
-   byte_mux
-    (.data_i(sigext_data)
-     ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op, decode_tv_r.half_op, decode_tv_r.byte_op})
+   #(.width_p(dword_width_gp), .els_p(2))
+   word_mux
+    (.data_i(sigext_word)
+     ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op})
      ,.data_o(early_data)
      );
 
@@ -545,6 +518,33 @@ module bp_be_dcache
                               | (cached_op_tv_r & ~any_miss_tv)
                               );
 
+  ///////////////////////////
+  // Stat Mem Storage
+  ///////////////////////////
+  `bp_cast_i(bp_dcache_stat_mem_pkt_s, stat_mem_pkt);
+  logic stat_mem_v_li;
+  logic stat_mem_w_li;
+  logic [sindex_width_lp-1:0] stat_mem_addr_li;
+  bp_dcache_stat_info_s stat_mem_data_li;
+  bp_dcache_stat_info_s stat_mem_mask_li;
+  bp_dcache_stat_info_s stat_mem_data_lo;
+
+  bsg_mem_1rw_sync_mask_write_bit
+   #(.width_p(dcache_stat_info_width_lp)
+     ,.els_p(sets_p)
+     ,.latch_last_read_p(1)
+     )
+   stat_mem
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+    ,.v_i(stat_mem_v_li)
+    ,.w_i(stat_mem_w_li)
+    ,.addr_i(stat_mem_addr_li)
+    ,.data_i(stat_mem_data_li)
+    ,.w_mask_i(stat_mem_mask_li)
+    ,.data_o(stat_mem_data_lo)
+    );
+
   /////////////////////////////////////////////////////////////////////////////
   // DM Stage
   /////////////////////////////////////////////////////////////////////////////
@@ -570,7 +570,7 @@ module bp_be_dcache
    dm_stage_reg
     (.clk_i(clk_i)
      ,.en_i(dm_we)
-     ,.data_i({early_data, byte_offset_tv
+     ,.data_i({result_data, byte_offset_tv
                ,decode_tv_r.double_op, decode_tv_r.word_op
                ,decode_tv_r.half_op, decode_tv_r.byte_op
                ,decode_tv_r.signed_op, decode_tv_r.float_op
@@ -582,18 +582,45 @@ module bp_be_dcache
                })
      );
 
+  logic [3:0][dword_width_gp-1:0] sigext_byte;
+  for (genvar i = 0; i < 4; i++)
+    begin : byte_alignment
+      localparam slice_width_lp = 8*(2**i);
+
+      logic [slice_width_lp-1:0] slice_data;
+      bsg_mux
+       #(.width_p(slice_width_lp), .els_p(dword_width_gp/slice_width_lp))
+       align_mux
+        (.data_i(data_dm_r)
+         ,.sel_i(byte_offset_dm_r[i+:`BSG_MAX(1, 3-i)])
+         ,.data_o(slice_data)
+         );
+
+      wire sigext = signed_op_dm_r & slice_data[slice_width_lp-1];
+      assign sigext_byte[i] = {{(dword_width_gp-slice_width_lp){sigext}}, slice_data};
+    end
+
+  logic [dword_width_gp-1:0] final_int_data;
+  bsg_mux_one_hot
+   #(.width_p(dword_width_gp), .els_p(4))
+   byte_mux
+    (.data_i(sigext_byte)
+     ,.sel_one_hot_i({double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r})
+     ,.data_o(final_int_data)
+     );
+
   bp_be_fp_reg_s final_float_data;
   bp_be_fp_to_rec
    #(.bp_params_p(bp_params_p))
    fp_to_rec
-    (.raw_i(data_dm_r)
+    (.raw_i(final_int_data)
      ,.raw_sp_not_dp_i(word_op_dm_r)
 
      ,.rec_sp_not_dp_o(final_float_data.sp_not_dp)
      ,.rec_o(final_float_data.rec)
      );
 
-  assign final_data_o = float_op_dm_r ? final_float_data : data_dm_r;
+  assign final_data_o = float_op_dm_r ? final_float_data : final_int_data;
   assign final_v_o = v_dm_r;
 
   ///////////////////////////
