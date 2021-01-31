@@ -48,40 +48,6 @@ module bp_mmu
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  logic tlb_r_v_lo, tlb_r_miss_lo;
-  bp_pte_entry_leaf_s tlb_r_entry_lo;
-  wire [vtag_width_p-1:0] w_vtag_li = w_v_i ? w_vtag_i : r_eaddr_i[vaddr_width_p-1-:vtag_width_p];
-  bp_tlb
-   #(.bp_params_p(bp_params_p), .els_4k_p(tlb_els_p), .els_1g_p(tlb_els_p))
-   tlb
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.flush_i(flush_i)
-
-     ,.v_i((r_v_i | w_v_i) & trans_en_i)
-     ,.w_i(w_v_i)
-     ,.vtag_i(w_vtag_li)
-     ,.entry_i(w_entry_i)
-     ,.gigapage_i(w_gigapage_i)
-
-     ,.v_o(tlb_r_v_lo)
-     ,.miss_v_o(tlb_r_miss_lo)
-     ,.entry_o(tlb_r_entry_lo)
-     );
-
-  logic [vtag_width_p-1:0] r_vtag_r;
-  wire [vtag_width_p-1:0] r_vtag_li = r_eaddr_i[vaddr_width_p-1-:vtag_width_p];
-  bsg_dff_reset_en
-   #(.width_p(vtag_width_p))
-   vtag_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(r_v_i)
-
-     ,.data_i(r_vtag_li)
-     ,.data_o(r_vtag_r)
-    );
-
   logic r_v_r, r_instr_r, r_load_r, r_store_r;
   bsg_dff_reset
    #(.width_p(4))
@@ -92,10 +58,64 @@ module bp_mmu
      ,.data_o({r_v_r, r_instr_r, r_load_r, r_store_r})
      );
 
+  logic [vtag_width_p-1:0] r_vtag_r;
+  wire [vtag_width_p-1:0] r_vtag_li = r_eaddr_i[vaddr_width_p-1-:vtag_width_p];
+  bsg_dff_reset
+   #(.width_p(vtag_width_p))
+   vtag_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(r_vtag_li)
+     ,.data_o(r_vtag_r)
+     );
+
+  logic tlb_bypass_r;
+  wire tlb_bypass = ~w_v_i & ((r_vtag_li == r_vtag_r) & r_v_r);
+  bsg_dff_reset
+   #(.width_p(1))
+   tlb_bypass_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i(tlb_bypass)
+     ,.data_o(tlb_bypass_r)
+     );
+
+  logic tlb_r_v_lo;
+  bp_pte_entry_leaf_s tlb_r_entry_lo;
+  wire [vtag_width_p-1:0] w_vtag_li = w_v_i ? w_vtag_i : r_eaddr_i[vaddr_width_p-1-:vtag_width_p];
+  bp_tlb
+   #(.bp_params_p(bp_params_p), .els_4k_p(tlb_els_p), .els_1g_p(tlb_els_p))
+   tlb
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.flush_i(flush_i)
+
+     ,.v_i((r_v_i | w_v_i) & trans_en_i & ~tlb_bypass)
+     ,.w_i(w_v_i)
+     ,.vtag_i(w_vtag_li)
+     ,.entry_i(w_entry_i)
+     ,.gigapage_i(w_gigapage_i)
+
+     ,.v_o(tlb_r_v_lo)
+     ,.entry_o(tlb_r_entry_lo)
+     );
+
+  bp_pte_entry_leaf_s tlb_r_entry_r;
+  logic tlb_r_v_r;
+  bsg_dff_en_bypass
+   #(.width_p(1+$bits(bp_pte_entry_leaf_s)))
+   entry_reg
+    (.clk_i(clk_i)
+     ,.en_i(~tlb_bypass_r)
+     ,.data_i({tlb_r_v_lo, tlb_r_entry_lo})
+     ,.data_o({tlb_r_v_r, tlb_r_entry_r})
+     );
+
   bp_pte_entry_leaf_s passthrough_entry, tlb_entry_lo;
   assign passthrough_entry = '{ptag: r_vtag_r, default: '0};
-  assign tlb_entry_lo      = trans_en_i ? tlb_r_entry_lo : passthrough_entry;
-  wire tlb_v_lo            = trans_en_i ? tlb_r_v_lo : r_v_r;
+  assign tlb_entry_lo      = trans_en_i ? tlb_r_entry_r : passthrough_entry;
+  wire tlb_v_lo            = trans_en_i ? tlb_r_v_r : r_v_r;
 
   wire ptag_v_lo                  = tlb_v_lo;
   wire [ptag_width_p-1:0] ptag_lo = tlb_entry_lo.ptag;

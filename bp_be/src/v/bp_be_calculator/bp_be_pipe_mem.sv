@@ -158,7 +158,7 @@ module bp_be_pipe_mem
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
 
   // D-TLB connections
-  assign dtlb_r_v     = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
+  assign dtlb_r_v     = ~reservation.poison & (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
   assign dtlb_r_vtag  = eaddr[page_offset_width_gp+:vtag_width_p];
   assign dtlb_w_v     = ptw_fill_pkt.dtlb_fill_v;
   assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];

@@ -33,7 +33,6 @@ module bp_tlb
    , input                             gigapage_i
 
    , output logic                      v_o
-   , output logic                      miss_v_o
    , output logic [entry_width_lp-1:0] entry_o
    );
 
@@ -204,7 +203,6 @@ module bp_tlb
 
   assign entry_o    = entry_unshifted;
   assign v_o        = r_v_r & r_v_lo;
-  assign miss_v_o   = r_v_r & ~r_v_lo;
 
 endmodule
 
