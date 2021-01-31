@@ -100,7 +100,7 @@ module bp_be_ptw
 
   assign start                  = (state_r == eIdle) & tlb_miss_v;
 
-  assign pte_is_leaf            = dcache_data.x | dcache_data.w | dcache_data.r;
+  wire pte_is_leaf              = dcache_data.x | dcache_data.w | dcache_data.r;
   wire pte_is_megapage          = (level_cntr == 2'd1);
   wire pte_is_gigapage          = (level_cntr == 2'd2);
 
