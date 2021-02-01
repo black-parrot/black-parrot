@@ -141,7 +141,7 @@ module bp_be_calculator_top
   // Register bypass network
   logic [dpath_width_gp-1:0] bypass_irs1, bypass_irs2;
   bp_be_bypass
-   #(.depth_p(pipe_stage_els_lp), .els_p(2), .zero_x0_p(1))
+   #(.depth_p(pipe_stage_els_lp), .els_p(2), .zero_x0_p(0))
    int_bypass
     (.id_addr_i({dispatch_pkt.instr.t.rtype.rs2_addr, dispatch_pkt.instr.t.rtype.rs1_addr})
      ,.id_i({dispatch_pkt.rs2, dispatch_pkt.rs1})
@@ -435,8 +435,8 @@ module bp_be_calculator_top
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1; i <= pipe_stage_els_lp; i++)
       begin : comp_stage_slice
-        comp_stage_n_slice_iwb_v[i]   = comp_stage_r[i-1].ird_w_v & ~exc_stage_n[i].poison_v;
-        comp_stage_n_slice_fwb_v[i]   = comp_stage_r[i-1].frd_w_v & ~exc_stage_n[i].poison_v;
+        comp_stage_n_slice_iwb_v[i]   = comp_stage_r[i-1].ird_w_v;
+        comp_stage_n_slice_fwb_v[i]   = comp_stage_r[i-1].frd_w_v;
         comp_stage_n_slice_rd_addr[i] = comp_stage_r[i-1].rd_addr;
 
         comp_stage_n_slice_ird[i]     = comp_stage_n[i].rd_data[0+:dword_width_gp];
