@@ -181,7 +181,6 @@ $BP_COMMON_DIR/src/v/bp_tlb.sv
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.sv
 # Calculator
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_csr.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_to_rec.sv
