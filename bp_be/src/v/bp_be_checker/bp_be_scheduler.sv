@@ -104,7 +104,7 @@ module bp_be_scheduler
 
   logic [dword_width_gp-1:0] irf_rs1, irf_rs2;
   bp_be_regfile
-  #(.bp_params_p(bp_params_p), .read_ports_p(2), .data_width_p(dword_width_gp))
+  #(.bp_params_p(bp_params_p), .read_ports_p(2), .zero_x0_p(1), .data_width_p(dword_width_gp))
    int_regfile
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -120,7 +120,7 @@ module bp_be_scheduler
 
   logic [dpath_width_gp-1:0] frf_rs1, frf_rs2, frf_rs3;
   bp_be_regfile
-  #(.bp_params_p(bp_params_p), .read_ports_p(3), .data_width_p(dpath_width_gp))
+  #(.bp_params_p(bp_params_p), .read_ports_p(3), .zero_x0_p(0), .data_width_p(dpath_width_gp))
    fp_regfile
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
