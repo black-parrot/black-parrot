@@ -30,6 +30,7 @@ e_bp_multicore_1_cfg_cores              := 1
 e_bp_multicore_1_l2e_cfg_cores          := 2
 
 e_bp_unicore_writethrough_cfg_cores     := 1
+e_bp_unicore_l1_atomic_cfg_cores        := 1
 e_bp_unicore_l1_wide_cfg_cores          := 1
 e_bp_unicore_l1_hetero_cfg_cores        := 1
 e_bp_unicore_l1_tiny_cfg_cores          := 1

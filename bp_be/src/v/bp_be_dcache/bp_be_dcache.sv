@@ -89,6 +89,18 @@ module bp_be_dcache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to dcache parameters, but can override if needed
+   , parameter [31:0] amo_support_p  = (((lr_sc_p == e_l1) << e_dcache_subop_lr)
+                                        | ((lr_sc_p == e_l1) << e_dcache_subop_sc)
+                                        | ((amo_swap_p == e_l1) << e_dcache_subop_amoswap)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amoadd)
+                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoxor)
+                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoand)
+                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoor)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomin)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomax)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amominu)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomaxu)
+                                        )
    , parameter coherent_p     = l1_coherent_p
    , parameter writethrough_p = l1_writethrough_p
    , parameter sets_p         = dcache_sets_p
@@ -138,7 +150,7 @@ module bp_be_dcache
    , input                                           data_mem_pkt_v_i
    , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
    , output logic                                    data_mem_pkt_yumi_o
-   , output logic [block_width_p-1:0]         data_mem_o
+   , output logic [block_width_p-1:0]                data_mem_o
 
    , input                                           tag_mem_pkt_v_i
    , input [dcache_tag_mem_pkt_width_lp-1:0]         tag_mem_pkt_i
@@ -632,6 +644,47 @@ module bp_be_dcache
 
   assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_op_tv_r & ~flush_i & ((writethrough_p == 0) || cache_req_yumi_i);
 
+  //
+  // Atomic operations
+  logic [dword_width_gp-1:0] atomic_reg_data, atomic_mem_data;
+  logic [dword_width_gp-1:0] atomic_alu_result, atomic_result;
+
+  // Shift data to high bits for operations less than 64-bits
+  // This allows us to share the arithmetic operators for 32/64 bit atomics
+  wire [dword_width_gp-1:0] amo32_reg_in = st_data_tv_r[0+:word_width_gp] << word_width_gp;
+  wire [dword_width_gp-1:0] amo64_reg_in = st_data_tv_r[0+:dword_width_gp];
+  assign atomic_reg_data = decode_tv_r.double_op ? amo64_reg_in : amo32_reg_in;
+
+  wire [dword_width_gp-1:0] amo32_mem_in = sigext_word[2][0+:word_width_gp] << word_width_gp;
+  wire [dword_width_gp-1:0] amo64_mem_in = sigext_word[3][0+:dword_width_gp];
+  assign atomic_mem_data = decode_tv_r.double_op ? amo64_mem_in : amo32_mem_in;
+
+  // Atomic ALU
+  always_comb
+    // This logic was confirmed not to synthesize unsupported operators in
+    //   Synopsys DC O-2018.06-SP4
+    unique casez ({amo_support_p[decode_tv_r.amo_subop], decode_tv_r.amo_subop})
+      {1'b1, e_dcache_subop_amoand }: atomic_alu_result = atomic_reg_data & atomic_mem_data;
+      {1'b1, e_dcache_subop_amoor  }: atomic_alu_result = atomic_reg_data | atomic_mem_data;
+      {1'b1, e_dcache_subop_amoxor }: atomic_alu_result = atomic_reg_data ^ atomic_mem_data;
+      {1'b1, e_dcache_subop_amoadd }: atomic_alu_result = atomic_reg_data + atomic_mem_data;
+      {1'b1, e_dcache_subop_amomin }: atomic_alu_result =
+          ($signed(atomic_reg_data) < $signed(atomic_mem_data)) ? atomic_reg_data : atomic_mem_data;
+      {1'b1, e_dcache_subop_amomax }: atomic_alu_result =
+          ($signed(atomic_reg_data) > $signed(atomic_mem_data)) ? atomic_reg_data : atomic_mem_data;
+      {1'b1, e_dcache_subop_amominu}: atomic_alu_result =
+          (atomic_reg_data < atomic_mem_data) ? atomic_reg_data : atomic_mem_data;
+      {1'b1, e_dcache_subop_amomaxu}: atomic_alu_result =
+          (atomic_reg_data > atomic_mem_data) ? atomic_reg_data : atomic_mem_data;
+      //{1'b1, e_dcache_subop_amoswap}
+      //{1'b1, e_dcache_subop_sc     }
+      default                       : atomic_alu_result = atomic_reg_data;
+    endcase
+
+  wire [dword_width_gp-1:0] amo32_out = atomic_alu_result >> word_width_gp;
+  wire [dword_width_gp-1:0] amo64_out = atomic_alu_result;
+  assign atomic_result = decode_tv_r.double_op ? amo64_out : amo32_out;
+
   logic [3:0][dword_width_gp-1:0] wbuf_data_in;
   logic [3:0][wbuf_data_mask_width_lp-1:0] wbuf_data_mem_mask_in;
   for (genvar i = 0; i < 4; i++)
@@ -654,7 +707,17 @@ module bp_be_dcache
          ,.o(wbuf_data_mem_mask_in[i])
          );
 
-      assign slice_data = st_data_tv_r[0+:slice_width_lp];
+      if ((i == 2'b10) || (i == 2'b11))
+        begin : atomic
+          assign slice_data = decode_tv_r.amo_op
+            ? atomic_result[0+:slice_width_lp]
+            : st_data_tv_r[0+:slice_width_lp];
+        end
+      else
+        begin : non_atomic
+          assign slice_data = st_data_tv_r[0+:slice_width_lp];
+        end
+
       assign wbuf_data_in[i] = {(dword_width_gp/slice_width_lp){slice_data}};
     end
 
