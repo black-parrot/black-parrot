@@ -137,12 +137,13 @@ both blocking and non-blocking caches. The interface is latency insensitive and 
 routed through a FIFO. BlackParrot provides 3 types of Cache Engines:
 
 - Local Cache Engines (LCE), which manages structures in the cache by responding to local misses and
-  remote coherence messages.
+  remote coherence messages. LCEs are attached to caches that participate in a cache coherence
+  protocol.
 - Cache Coherence Engines (CCE), which maintain a distributed set of directory tags and send messages to
-  maintain coherence among caches.
+  maintain coherence among caches. CCEs are the cache coherence directories.
 - Unified Cache Engines (UCE), which respond to cache requests by directly managing data from
   memory. In this way, a UCE is a combination of an LCE and a CCE, optimized for size and complexity
-  in order to service a single cache.
+  in order to service a single cache. The UCE is used in BlackParrot's unicore configurations.
 
 Additionally, the BlackParrot HDK provides additional cache engines for connecting to external
 memory systems.
@@ -156,7 +157,7 @@ A UCE implementation must support the following operations:
 - Support both write-through and write-back protocols
 - Support credit-based flow control, to support fencing in the core
 
-The request interface is ready-valid and uses a parameterized struct to pass arguments,
+The request interface is valid->yumi and uses a parameterized struct to pass arguments,
 bp_cache_req_s, which contains the following fields.
 - Message type
   - Load Miss
@@ -172,13 +173,21 @@ bp_cache_req_s, which contains the following fields.
 - Hit
 - Subop type (amoswap, amolr, amosc, amoadd, amoxor, amoand, amoor, amomin, amomax, amominu, amomaxu)
 
-Additionally, the Cache Engine may require some metadata in order to service cache misses. This metadata may not be available at the same time as the request, due to the nature of high performance caches. The handshake here is valid-only. If a Cache Engine needs metadata in order to service the miss, it needs to be ready to accept metadata at any cycle later than or equal to the original cache miss. The cache is required to eventually provide this data, although not in any particular cycle. The latency between a cache request and its metadata must be a known constant for all message types, under all backpressure conditions. The current metadata fields are:
+Additionally, the Cache Engine may require some metadata in order to service cache misses. This
+metadata may not be available at the same time as the request, due to the nature of high performance
+caches. The handshake here is valid-only. If a Cache Engine needs metadata in order to service the
+miss, it needs to be ready to accept metadata at any cycle later than or equal to the original cache
+miss. The cache is required to eventually provide this data, although not in any particular cycle.
+The latency between a cache request and its metadata must be a known constant for all message types,
+under all backpressure conditions. The current metadata fields are:
 - Dirty
 - Hit or Replacement way
 
-The fill interface is implemented as a set of ready-valid connections that provide read/write access
-to memory structures in a typical cache. A single cache request may trigger a set of fill responses. To decouple cache logic from any particular fill strategy, there is an additional signal which is raised when a request is
-completed. The three memory structures are a data memory, tag memory and status memory.
+The fill interface is implemented as a set of valid->yumi connections that provide read/write access
+to memory structures in a typical cache. A single cache request may trigger a set of fill responses.
+To decouple cache logic from any particular fill strategy, there is an additional signal which is
+raised when a request is completed. The three memory structures are a data memory, tag memory,
+and status memory.
 
 The data memory contains cache block data, and the packet format is:
 - Opcode
@@ -218,7 +227,12 @@ transactions may be sent to the network.
 
 ## Memory Interface
 
-The BlackParrot Memory Interface is a simple command / response interface used for communicating with memory or I/O devices. The goal is to provide a simple and understandable way to access any type of memory system, be it a shared bus or a more sophisticated network-on-chip scheme. The Memory Interface can easily be transduced to standard protocols such as AXI, AXI-lite or WishBone. Because there are a wide variety of components which connect using the Memory Interface, there is no specific handshake associated with it. However, all nodes should be latency-insensitive.
+The BlackParrot Memory Interface is a simple command / response interface used for communicating
+with memory or I/O devices. The goal is to provide a simple and understandable way to access any
+type of memory system, be it a shared bus or a more sophisticated network-on-chip scheme.
+The Memory Interface can easily be transduced to standard protocols such as AXI, AXI-lite or WishBone.
+Components connecting to the Memory Interface should implement one of the
+[BedRock Interfaces](bedrock_guide.md).
 
 A memory command or response packet is composed of:
 - Message type
@@ -247,32 +261,41 @@ Request: 0x2 [b a d c]
 ## LCE-CCE Interface
 
 The LCE-CCE Interface comprises the connections between the BlackParrot caches and the
-memory system. The interface is implemented as a collection of networks, whose primary purpose is
-to carry the memory access and cache coherence traffic between the L1 instruction and data caches
-and the coherence directory and rest of the memory system. The two components that interact through
-the interface are the Local Cache Engines (LCE) and Cache Coherence Engines (CCE).
+memory system in a cache-coherent BlackParrot multicore processor. The interface is implemented with
+three networks: Request, Command, and Response. These networks carry memory access requests and
+cache coherence management traffic between the Local Cache Engines (LCE) and Cache Coherence
+Engines (CCE). All components participating in cache coherence and communicating on the LCE-CCE
+Interface must implement the [BedRock Interface](bedrock_guide.md) cache coherence channels.
+The BedRock Cache Coherence Protocol is described in detail on [this page](bedrock_coherence_protocol.md).
+The remainder of this section provides a high-level overview of the LCE-CCE Interface components.
 
 A Local Cache Engine (LCE) is a coherence controller attached to each entity in the system
 participating in coherence. The most common entities are the instruction and data caches
 in the Front End and Back End, respectively, of a BlackParrot processor. The LCE is responsible
-for initiating coherence requests and responding to coherence commands. A Cache Coherence Engine (CCE)
-is a coherence directory that manages the coherence state of blocks cached in any of the LCEs.
-The CCEs have full control over the coherence state of all cache blocks. Each CCE manages the coherence
-state of a subset of the physical address space, and there may be many LCEs and CCEs in a multicore
-BlackParrot processor.
+for initiating coherence requests and responding to coherence commands.
+
+A Cache Coherence Engine (CCE) is a coherence directory that manages the coherence state of blocks
+cached in any of the LCEs. The CCEs have full control over the coherence state of all cache blocks.
+Each CCE manages the coherence state of a subset of the physical address space, and there may be
+many LCEs and CCEs in a multicore BlackParrot processor.
 
 The LCE-CCE Interface comprises three networks: Request, Command, and Response. An
 LCE initiates a coherence request using the Request network. The CCEs issue commands, such as
-invalidations or tag and data commands to complete requests, on the Command network while
+invalidations, transfers, or fills to satisfy coherence requests, on the Command network while
 processing a request. The LCEs respond to commands issued by the CCEs by sending messages
 on the Response network. The current implementation of BlackParrot uses point-to-point
 ordered networks for all of the LCE-CCE Interface networks, however, the coherence protocol
-is designed to be correct on unordered networks.
+is designed to be correct on unordered networks. A CCE implementation must obey the following
+network priorities from high to low: Response, Command, Request. A lower priority message may
+cause a higher priority message to be sent, but a higher priority message may not cause a lower
+priority message to send. This priority ordering helps guarantee the correctness of the cache
+coherence protocol.
 
-Custom messages are also supported by the interface, and may their processing is dependent on
-the LCE and CCE implementations.
-
-The LCE-CCE Interface is defined in [bp\_common\_bedrock\_if.vh](../bp_common/src/include/bp_common_bedrock_if.vh)
+The LCE-CCE Interface is defined in [bp\_common\_bedrock\_if.vh](../bp_common/src/include/bp_common_bedrock_if.svh)
+and [bp\_common\_bedrock\_pkgdef.svh](../bp_common/src/include/bp_common_bedrock_pkgdef.svh). All
+LCE-CCE messages use the BedRock message format and differ only in the contents of the payload field in the
+header. These files are the authoritative definitions for the interface in the event that this
+document and the code are out-of-sync.
 
 ### Request Network
 
@@ -280,88 +303,26 @@ The Request network carries coherence requests from the LCEs to the CCEs. Reques
 when an LCE encounters a cache or coherence miss. Cache misses occur when the LCE does not contain
 the desired cache block. A coherence miss occurs when the LCE contains a valid copy of the desired
 cache block, but has insufficient permissions to perform the desired operation (e.g., trying to write
-a cache block that the LCE has with read-only permissions). A request may also be sent to
-perform an uncached load or store operation. Issuing a request initiates a new coherence
-transaction, which is handled by one of the CCEs in the system.
-
-#### Request Messages
-
-A request is sent from an LCE to a CCE when the LCE requests a new cache block, needs different
-coherence permissions that it already has for a cache block, or needs to perform an uncached load
-or store.
-
-A Request has the following fields:
-* Destination ID - destination CCE ID
-* Message Type - Load/Store, Cached/Uncached, Custom
-* Size - Size of valid data in data field
-* Source ID - requesting LCE ID
-* Address - request address (must be naturally aligned if uncached request)
-* Non-Exclusive Request Bit - 1 if LCE does not want Exclusive rights to cache block
-* LRU Way ID - cache way within cache set that LCE wants miss filled to
-* Data - data for uncached store or custom message payload
+a cache block with read-only permissions). Requests may also be issued for uncached loads and stores
+or for atomic operations. Issuing a request initiates a new coherence
+transaction, which is handled by one of the CCEs in the system. Uncached requests may result in
+coherence transactions when targeting cacheable memory to guarantee memory correctness across all
+cores.
 
 ### Command Network
 
 The Command network carries commands and data to the LCEs. Most messages on this network originate
-at the CCEs. LCEs may also occasionally send Command messages to perform LCE to LCE transfers
-of cache block data, but only do so when commanded to by a CCE. Common Commands include cache
-block invalidation and writeback commands, data and tag commands that deliver a valid cache block
-and coherence permissions to an LCE, and transfer commands that tell an LCE to send a cache block
-to another LCE in the system.
-
-#### Command Messages
-
-A Command has the following fields:
-* Destination ID - destination LCE ID
-* Message Type - command message type (see below)
-* Size - Size of valid data in data field
-* Source ID - sending CCE ID
-* Address - address
-* Way ID - cache way within LCE's cache set (given by address) to operate on
-* State - coherence state
-* Target LCE - LCE ID that receiving LCE will send cache block data and tag to for Transfer Command
-* Target Way ID - cache way within target LCE's cache set (determined by address) to fill data in
-* Target State - coherence state for target (to be implemented in future)
-* Data - cache block data, uncached load data, or custom message payload
-
-Command Message Types:
-* Sync - synchronization command during system initialization
-* Set Clear - clear entire cache set (invalidate all blocks in set)
-* Invalidate - invalidate specified cache block
-* Set State - set coherence state for specified cache block
-* Data and Tag - fill data, tag, and coherence state for specified cache block
-* Set Tag and Wakeup - set tag and coherence state for specified block and wake up LCE (miss resolved)
-* Writeback - command LCE to writeback a (potentially) dirty cache block
-* Transfer - command LCE to send cache block and tag to another LCE
-* Set State & Writeback - set coherence state then writeback cache block
-* Set State & Transfer - set coherence state then transfer cache block to specified target LCE
-* Set State & Transfer & Writeback - set coherence state, transfer cache block to target LCE, and writeback cache block
-* Uncached Data - send uncached load data to an LCE
-* Uncached Store Done - inform LCE that an uncached store was completed by memory
+at the CCEs. LCEs may be commanded to send a Command message by a CCE to perform a LCE to LCE
+cache block transfer when required by the coherence protocol, but otherwise may not initiate
+Command messages. Common Commands include cache block invalidation and writeback commands, cache
+block fills, and LCE to LCE transfer commands.
 
 ### Response Network
 
 The Response network carries acknowledgement and data writeback messages from the LCEs to the
 CCEs. The CCE must be able to sink any potential response that could be generated in the system
 in order to prevent deadlock in the system. Sinking a message can be accomplished by processing
-the message when it arrives or placing it into a buffer to consume it from the network. If
-buffering is used, the buffer must be large enough to hold all possible response messages to the
-CCE.
-
-#### Response Messages
-
-A Response message has the following fields:
-* Destination ID - destination CCE ID
-* Message Type - response type (see below)
-* Size - Size of valid data in data field
-* Source ID - sending LCE ID
-* Address - cache block address
-* Data - cache block data (if required) or custom message payload
-
-Response Message Types:
-* Sync Ack - synchronization acknowledgement during system initialization
-* Inv Ack - invalidation ack to acknowledge invalidation command has been processed
-* Coh Ack - coherence ack to acknowledge end of coherence transaction
-* Resp WB - cache block writeback response, with cache block data
-* Resp Null WB - cache block writeback response, without cache block data
+the message when it arrives or placing it into a buffer to consume it from the network. The CCE
+must be able to sink or buffer all possible response messages generated by a single coherence
+transaction in-order to avoid blocking the coherence networks.
 
