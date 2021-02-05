@@ -11,11 +11,6 @@ module testbench
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   // interface widths
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
-
    , parameter cce_trace_p = 0
    , parameter cce_dir_trace_p = 0
    , parameter axe_trace_p = 0
@@ -268,7 +263,7 @@ bind bp_cce_dir
 
 
 bsg_two_fifo
-#(.width_p(lce_req_msg_width_lp)
+#(.width_p($bits(bp_bedrock_lce_req_msg_s))
   )
 lce_req_buffer
  (.clk_i(clk_i)
@@ -284,7 +279,7 @@ lce_req_buffer
   );
 
 bsg_two_fifo
-#(.width_p(lce_resp_msg_width_lp)
+#(.width_p($bits(bp_bedrock_lce_resp_msg_s))
   )
 lce_resp_buffer
  (.clk_i(clk_i)
@@ -300,7 +295,7 @@ lce_resp_buffer
   );
 
 bsg_two_fifo
-#(.width_p(lce_cmd_msg_width_lp)
+#(.width_p($bits(bp_bedrock_lce_cmd_msg_s))
   )
 lce_cmd_buffer
  (.clk_i(clk_i)
@@ -372,7 +367,7 @@ wrapper
 bp_bedrock_cce_mem_msg_s mem_cmd_lo;
 logic                    mem_cmd_v_lo, mem_cmd_ready_lo;
 bsg_fifo_1r1w_small
-#(.width_p(cce_mem_msg_width_lp)
+#(.width_p($bits(bp_bedrock_cce_mem_msg_s))
   ,.els_p(mem_buffer_els_lp)
   )
 mem_cmd_buffer
@@ -392,7 +387,7 @@ mem_cmd_buffer
 bp_bedrock_cce_mem_msg_s mem_resp_lo;
 logic                    mem_resp_v_lo, mem_resp_ready_lo;
 bsg_fifo_1r1w_small
-#(.width_p(cce_mem_msg_width_lp)
+#(.width_p($bits(bp_bedrock_cce_mem_msg_s))
   ,.els_p(mem_buffer_els_lp)
   )
 mem_resp_buffer
