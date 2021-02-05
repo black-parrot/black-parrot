@@ -45,14 +45,15 @@ module bp_be_csr
    , input                             timer_irq_i
    , input                             software_irq_i
    , input                             external_irq_i
-   , output                            irq_pending_o
+   , output logic                      irq_pending_o
+   , output logic                      irq_waiting_o
    , input                             interrupt_v_i
 
-   , output [commit_pkt_width_lp-1:0]  commit_pkt_o
+   , output logic [commit_pkt_width_lp-1:0] commit_pkt_o
 
-   , output [trans_info_width_lp-1:0]  trans_info_o
-   , output rv64_frm_e                 frm_dyn_o
-   , output                            fpu_en_o
+   , output logic [trans_info_width_lp-1:0] trans_info_o
+   , output rv64_frm_e                      frm_dyn_o
+   , output logic                           fpu_en_o
    );
 
   // Declare parameterizable structs
@@ -82,7 +83,7 @@ module bp_be_csr
 
   // The muxed and demuxed CSR outputs
   logic [dword_width_gp-1:0] csr_data_li, csr_data_lo;
-  logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
+  logic exception_v_o, interrupt_v_o, ret_v_o, wfi_v_o, sfence_v_o, satp_v_o;
 
   `declare_csr_structs(vaddr_width_p, paddr_width_p)
 
@@ -180,6 +181,8 @@ module bp_be_csr
      ,ssi_v
      ,1'b0
      };
+
+  assign irq_waiting_o = |interrupt_icode_dec_li;
 
   wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
   logic illegal_instr_o;
@@ -377,8 +380,8 @@ module bp_be_csr
       mtval_li    = mtval_lo;
       mip_li      = mip_lo;
 
-      mcycle_li        = mcountinhibit_lo.cy ? mcycle_lo + dword_width_gp'(1) : mcycle_lo;
-      minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_gp'(instret_i) : minstret_lo;
+      mcycle_li        = ~mcountinhibit_lo.cy ? mcycle_lo + dword_width_gp'(1) : mcycle_lo;
+      minstret_li      = ~mcountinhibit_lo.ir ? minstret_lo + dword_width_gp'(instret_i) : minstret_lo;
       mcountinhibit_li = mcountinhibit_lo;
 
       enter_debug = '0;
@@ -391,6 +394,7 @@ module bp_be_csr
       exception_v_o    = '0;
       interrupt_v_o    = '0;
       ret_v_o          = '0;
+      wfi_v_o          = '0;
       satp_v_o         = '0;
       illegal_instr_o  = '0;
       csr_data_lo      = '0;
@@ -454,7 +458,9 @@ module bp_be_csr
         end
       else if (csr_cmd_v_i & (csr_cmd.csr_op == e_wfi))
         begin
-          illegal_instr_o = mstatus_lo.tw;
+          wfi_v_o = is_m_mode || ~mstatus_lo.tw;
+
+          illegal_instr_o = ~wfi_v_o;
         end
       else if (csr_cmd_v_i & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
         begin
@@ -598,9 +604,7 @@ module bp_be_csr
               mcause_li._interrupt = 1'b1;
               mcause_li.ecode      = m_interrupt_icode_li;
 
-              exception_v_o        = 1'b0;
               interrupt_v_o        = 1'b1;
-              ret_v_o              = 1'b0;
             end
           else if (s_interrupt_icode_v_li)
             begin
@@ -615,9 +619,7 @@ module bp_be_csr
               scause_li._interrupt = 1'b1;
               scause_li.ecode      = s_interrupt_icode_li;
 
-              exception_v_o        = 1'b0;
               interrupt_v_o        = 1'b1;
-              ret_v_o              = 1'b0;
             end
         end
       else if (~is_debug_mode & exception_v_i & exception_ecode_v_li)
@@ -631,7 +633,6 @@ module bp_be_csr
               mstatus_li.sie       = 1'b0;
 
               sepc_li              = paddr_width_p'($signed(apc_r));
-              // TODO: Replace with struct
               stval_li             = (exception_ecode_li == 2)
                                     ? exception_instr_i
                                     : paddr_width_p'($signed(exception_vaddr_i));
@@ -640,8 +641,6 @@ module bp_be_csr
               scause_li.ecode      = exception_ecode_li;
 
               exception_v_o        = 1'b1;
-              interrupt_v_o        = 1'b0;
-              ret_v_o              = 1'b0;
             end
           else
             begin
@@ -660,8 +659,6 @@ module bp_be_csr
               mcause_li.ecode      = exception_ecode_li;
 
               exception_v_o        = 1'b1;
-              interrupt_v_o        = 1'b0;
-              ret_v_o              = 1'b0;
             end
         end
 
@@ -704,9 +701,7 @@ module bp_be_csr
 
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
-  assign commit_pkt_cast_o.npc_w_v          = |{special.fencei_v, sfence_v_o, exception_v_o,
-interrupt_v_o, ret_v_o, satp_v_o, special.itlb_miss, special.icache_miss, special.dcache_miss,
-special.dtlb_store_miss, special.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
+  assign commit_pkt_cast_o.npc_w_v          = |{special.fencei_v, wfi_v_o, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, special.itlb_miss, special.icache_miss, special.dcache_miss, special.dtlb_store_miss, special.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
@@ -721,6 +716,7 @@ special.dtlb_store_miss, special.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_f
   assign commit_pkt_cast_o.sfence           = sfence_v_o;
   assign commit_pkt_cast_o.exception        = exception_v_o;
   assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
+  assign commit_pkt_cast_o.wfi              = wfi_v_o;
   assign commit_pkt_cast_o.eret             = ret_v_o;
   assign commit_pkt_cast_o.satp             = satp_v_o;
   assign commit_pkt_cast_o.itlb_miss        = special.itlb_miss;
