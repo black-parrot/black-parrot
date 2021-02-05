@@ -17,6 +17,8 @@ export COSIM_P        ?= 0
 export PRELOAD_MEM_P  ?= 0
 export NBF_CONFIG_P   ?= 1
 
+export NO_BIND_P ?= 0
+
 export SAMPLE_MEMSIZE   ?= 128
 export SAMPLE_START_P   ?= 0
 export SAMPLE_WARMUP_P  ?= 0
@@ -50,7 +52,8 @@ export TB_PARAMS  = \
                     -pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
                     -pvalue+use_ddr_p=$(USE_DDR) \
                     -pvalue+use_dramsim3_p=$(USE_DRAMSIM3) \
-                    -pvalue+dram_fixed_latency_p=$(DRAM_FIXED_LATENCY)
+                    -pvalue+dram_fixed_latency_p=$(DRAM_FIXED_LATENCY) \
+                    -pvalue+no_bind_p=$(NO_BIND_P)
 
 export DUT_DEFINES = 
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \

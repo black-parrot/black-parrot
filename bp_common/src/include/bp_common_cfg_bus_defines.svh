@@ -16,7 +16,7 @@
       logic                        sac;               \
     }  bp_cfg_bus_s
 
-  `define cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp) \
+  `define bp_cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp) \
     (1                                \
      + core_id_width_mp               \
      + lce_id_width_mp                \
