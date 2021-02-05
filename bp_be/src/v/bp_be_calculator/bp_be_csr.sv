@@ -74,7 +74,7 @@ module bp_be_csr
 
   // The muxed and demuxed CSR outputs
   logic [dword_width_gp-1:0] csr_data_li, csr_data_lo;
-  logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
+  logic exception_v_o, interrupt_v_o, ret_v_o, wfi_v_o, sfence_v_o, satp_v_o;
 
   rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
   rv64_mie_s sie_rwmask_li;
@@ -367,8 +367,8 @@ module bp_be_csr
       mtval_li    = mtval_lo;
       mip_li      = mip_lo;
 
-      mcycle_li        = mcountinhibit_lo.cy ? mcycle_lo + dword_width_gp'(1) : mcycle_lo;
-      minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_gp'(instret_i) : minstret_lo;
+      mcycle_li        = ~mcountinhibit_lo.cy ? mcycle_lo + dword_width_gp'(1) : mcycle_lo;
+      minstret_li      = ~mcountinhibit_lo.ir ? minstret_lo + dword_width_gp'(instret_i) : minstret_lo;
       mcountinhibit_li = mcountinhibit_lo;
 
       enter_debug = '0;
@@ -381,6 +381,7 @@ module bp_be_csr
       exception_v_o    = '0;
       interrupt_v_o    = '0;
       ret_v_o          = '0;
+      wfi_v_o          = '0;
       satp_v_o         = '0;
       illegal_instr_o  = '0;
       csr_data_lo      = '0;
@@ -444,7 +445,9 @@ module bp_be_csr
         end
       else if (csr_cmd_v_i & (csr_cmd.csr_op == e_wfi))
         begin
-          illegal_instr_o = mstatus_lo.tw;
+          wfi_v_o = ~mstatus_lo.tw;
+
+          illegal_instr_o = ~wfi_v_o;
         end
       else if (csr_cmd_v_i & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
         begin
@@ -694,7 +697,7 @@ module bp_be_csr
 
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
-  assign commit_pkt_cast_o.v                = |{exception.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_store_miss, exception.dtlb_load_miss};
+  assign commit_pkt_cast_o.v                = |{exception.fencei_v, wfi_v_o, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_store_miss, exception.dtlb_load_miss};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
@@ -706,6 +709,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.sfence           = sfence_v_o;
   assign commit_pkt_cast_o.exception        = exception_v_o;
   assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
+  assign commit_pkt_cast_o.wfi              = wfi_v_o;
   assign commit_pkt_cast_o.eret             = ret_v_o;
   assign commit_pkt_cast_o.satp             = satp_v_o;
   assign commit_pkt_cast_o.icache_miss      = exception.icache_miss;

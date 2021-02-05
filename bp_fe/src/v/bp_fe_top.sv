@@ -128,6 +128,7 @@ module bp_fe_top
   wire itlb_fill_v       = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
   wire icache_fence_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
   wire itlb_fence_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
+  wire wait_v            = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_wait);
   wire attaboy_v         = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
   wire cmd_nonattaboy_v  = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 

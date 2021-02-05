@@ -195,9 +195,11 @@
    * e_op_state_reset is used after the reset, which flushes all the states.
    * e_op_pc_redirection defines the changes of PC, which happens during the branches.
    * e_op_attaboy informs the frontend that the prediction is correct.
+   * e_op_icache_fill_response happens when an icache miss becomes non-speculative
    * e_op_icache_fence happens when there is flush in the icache.
    * e_op_itlb_fill_response happens when itlb populates translation.
    * e_op_itlb_fence issues a fence operation to itlb.
+   * e_op_wait happens on WFI and causes I$ to stop fetching
    */
   typedef enum logic [2:0]
   {
@@ -208,6 +210,7 @@
     ,e_op_icache_fence         = 4
     ,e_op_itlb_fill_response   = 5
     ,e_op_itlb_fence           = 6
+    ,e_op_wait                 = 7
   } bp_fe_command_queue_opcodes_e;
 
   /*

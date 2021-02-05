@@ -84,8 +84,11 @@ module bp_be_director
   logic [vaddr_width_p-1:0]               npc_n, npc_r, pc_r;
   logic                                   npc_mismatch_v;
 
-  // Logic for handling coming out of reset
-  enum logic [1:0] {e_reset, e_boot, e_run, e_fence} state_n, state_r;
+  enum logic [2:0] {e_reset, e_boot, e_run, e_fence, e_wfi} state_n, state_r;
+  wire is_reset = (state_r == e_reset);
+  wire is_boot  = (state_r == e_boot);
+  wire is_fence = (state_r == e_fence);
+  wire is_wfi   = (state_r == e_wfi);
 
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
@@ -132,8 +135,9 @@ module bp_be_director
       unique casez (state_r)
         e_reset : state_n = cfg_bus_cast_i.freeze ? e_reset : e_boot;
         e_boot  : state_n = fe_cmd_v_li ? e_run : e_boot;
-        e_run   : state_n = cfg_bus_cast_i.freeze ? e_reset : fe_cmd_nonattaboy_v ? e_fence : e_run;
+        e_run   : state_n = commit_pkt.wfi ? e_wfi : fe_cmd_nonattaboy_v ? e_fence : e_run;
         e_fence : state_n = suppress_iss_o ? e_fence : e_run;
+        e_wfi   : state_n = fe_cmd_nonattaboy_v ? e_fence : e_wfi;
         default : state_n = e_reset;
       endcase
     end
@@ -147,7 +151,7 @@ module bp_be_director
         state_r <= state_n;
       end
 
-  assign suppress_iss_o  = (state_r == e_fence) & fe_cmd_v_o;
+  assign suppress_iss_o  = ((state_r == e_fence) & fe_cmd_v_o) || (state_r == e_wfi);
 
   // Flush on FE cmds which are not attaboys.  Also don't flush the entire pipeline on a mispredict.
   always_comb
@@ -202,6 +206,15 @@ module bp_be_director
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_translation_switch;
           fe_cmd_pc_redirect_operands.translation_enabled  = commit_pkt.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
+
+          fe_cmd_v_li = fe_cmd_ready_lo;
+
+          flush_o = 1'b1;
+        end
+      else if (commit_pkt.wfi)
+        begin
+          fe_cmd_li.opcode = e_op_wait;
+          fe_cmd_li.vaddr  = commit_pkt.npc;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
 
