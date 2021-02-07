@@ -44,7 +44,8 @@ module bp_be_pipe_mem
    , output [ptw_fill_pkt_width_lp-1:0]   ptw_fill_pkt_o
    , output logic                         ptw_busy_o
 
-   , output logic                         tlb_miss_v_o
+   , output logic                         tlb_load_miss_v_o
+   , output logic                         tlb_store_miss_v_o
    , output logic                         cache_miss_v_o
    , output logic                         fencei_v_o
    , output logic                         load_misaligned_v_o
@@ -148,6 +149,7 @@ module bp_be_pipe_mem
   /* Control signals */
   logic is_req_mem1, is_req_mem2;
   logic is_fencei_mem1, is_fencei_mem2;
+  logic is_store_mem1, is_store_mem2;
 
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
@@ -285,12 +287,16 @@ module bp_be_pipe_mem
     if (reset_i) begin
       is_req_mem1 <= '0;
       is_req_mem2 <= '0;
+      is_store_mem1 <= '0;
+      is_store_mem2 <= '0;
       is_fencei_mem1 <= '0;
       is_fencei_mem2 <= '0;
     end
     else begin
       is_req_mem1 <= is_req;
       is_req_mem2 <= is_req_mem1;
+      is_store_mem1 <= is_store;
+      is_store_mem2 <= is_store_mem1;
       is_fencei_mem1 <= is_fencei;
       is_fencei_mem2 <= is_fencei_mem1;
     end
@@ -311,6 +317,7 @@ module bp_be_pipe_mem
       end
       else begin
         dcache_pkt_v = reservation.v & ~reservation.poison & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
+        dcache_pkt.rd_addr     = instr.t.rtype.rd_addr;
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
         dcache_pkt.page_offset = eaddr[0+:page_offset_width_gp];
         dcache_pkt.data        = rs2;
@@ -319,7 +326,8 @@ module bp_be_pipe_mem
       end
   end
 
-  assign tlb_miss_v_o           = dtlb_miss_v;
+  assign tlb_store_miss_v_o     = is_store_mem1 & dtlb_miss_v;
+  assign tlb_load_miss_v_o      = ~is_store_mem1 & dtlb_miss_v;
   assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v;
   assign fencei_v_o             = is_fencei_mem2 & dcache_early_v;
   assign store_page_fault_v_o   = store_page_fault_v;

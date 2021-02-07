@@ -40,7 +40,7 @@ module bp_be_ptw
    , input                                  dcache_ready_i
 
    , input                                  dcache_v_i
-   , input [dpath_width_gp-1:0]              dcache_data_i
+   , input [dpath_width_gp-1:0]             dcache_data_i
   );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -95,6 +95,7 @@ module bp_be_ptw
   assign dcache_pkt_cast_o.opcode      = e_dcache_op_ld;
   assign dcache_pkt_cast_o.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
   assign dcache_pkt_cast_o.data        = '0;
+  assign dcache_pkt_cast_o.rd_addr     = '0;
 
   assign busy_o                 = (state_r != eIdle);
 

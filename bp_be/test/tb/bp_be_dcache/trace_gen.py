@@ -7,13 +7,13 @@ import numpy as np
 class TraceGen:
 
   # constructor
-  def __init__(self, ptag_width_p, page_offset_width_p, opcode_width_p, data_width_p):
+  def __init__(self, ptag_width_p, page_offset_width_p, opcode_width_p, data_width_p, rd_addr_width_p):
     self.ptag_width_p = ptag_width_p
     self.page_offset_width_p = page_offset_width_p
     self.opcode_width_p = opcode_width_p
     # TODO: Update formatting operators to use data width
     self.data_width_p = data_width_p
-    self.packet_len = ptag_width_p + page_offset_width_p + opcode_width_p + data_width_p + 1 # A bit is added to denote cached/uncached accesses
+    self.packet_len = ptag_width_p + page_offset_width_p + opcode_width_p + rd_addr_width_p + data_width_p + 1 # A bit is added to denote cached/uncached accesses
 
   # print header
   def print_header(self):

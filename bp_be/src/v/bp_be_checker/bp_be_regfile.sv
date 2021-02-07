@@ -24,6 +24,7 @@ module bp_be_regfile
 
    , parameter data_width_p = "inv"
    , parameter read_ports_p = "inv"
+   , parameter zero_x0_p    = "inv"
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -35,7 +36,7 @@ module bp_be_regfile
 
    // rd write bus
    , input                                          rd_w_v_i
-   , input [reg_addr_width_gp-1:0]                   rd_addr_i
+   , input [reg_addr_width_gp-1:0]                  rd_addr_i
    , input [data_width_p-1:0]                       rd_data_i
    );
 
@@ -106,18 +107,19 @@ module bp_be_regfile
 
   for (genvar i = 0; i < read_ports_p; i++)
     begin : bypass
-      logic fwd_rs_r, rs_r_v_r;
+      logic zero_rs_r, fwd_rs_r, rs_r_v_r;
       logic [data_width_p-1:0] fwd_data_lo;
+      wire zero_rs = rs_r_v_i[i] & (rs_addr_i[i] == '0) & (zero_x0_p == 1);
       wire fwd_rs = rd_w_v_i & rs_r_v_i[i] & (rd_addr_i == rs_addr_i[i]);
       bsg_dff
-       #(.width_p(2))
+       #(.width_p(3))
        rs_r_v_reg
         (.clk_i(clk_i)
 
-         ,.data_i({fwd_rs, rs_r_v_i[i]})
-         ,.data_o({fwd_rs_r, rs_r_v_r})
+         ,.data_i({zero_rs, fwd_rs, rs_r_v_i[i]})
+         ,.data_o({zero_rs_r, fwd_rs_r, rs_r_v_r})
          );
-      assign fwd_data_lo = fwd_rs_r ? rd_data_r : rs_data_lo[i];
+      assign fwd_data_lo = zero_rs_r ? '0 : fwd_rs_r ? rd_data_r : rs_data_lo[i];
 
       logic [reg_addr_width_gp-1:0] rs_addr_r;
       bsg_dff_en
