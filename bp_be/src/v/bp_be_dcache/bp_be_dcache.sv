@@ -95,7 +95,7 @@ module bp_be_dcache
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
    , parameter fill_width_p   = dcache_fill_width_p
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
 
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
@@ -151,7 +151,7 @@ module bp_be_dcache
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache);
 
   localparam lg_dcache_assoc_lp       = `BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp            = block_width_p / assoc_p;
@@ -201,9 +201,9 @@ module bp_be_dcache
   // Tag Mem Storage
   ///////////////////////////
   `bp_cast_i(bp_dcache_tag_mem_pkt_s, tag_mem_pkt);
-  logic                                     tag_mem_v_li;
-  logic                                     tag_mem_w_li;
-  logic [sindex_width_lp-1:0]               tag_mem_addr_li;
+  logic                              tag_mem_v_li;
+  logic                              tag_mem_w_li;
+  logic [sindex_width_lp-1:0]        tag_mem_addr_li;
   bp_dcache_tag_info_s [assoc_p-1:0] tag_mem_data_li;
   bp_dcache_tag_info_s [assoc_p-1:0] tag_mem_mask_li;
   bp_dcache_tag_info_s [assoc_p-1:0] tag_mem_data_lo;
@@ -843,7 +843,7 @@ module bp_be_dcache
           begin
             tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
             tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
-                                   ,tag : {ptag_width_p{tag_mem_way_one_hot[i]}}
+                                   ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
                                    };
           end
         e_cache_tag_mem_set_state:
@@ -1080,7 +1080,7 @@ module bp_be_dcache
   if (lr_sc_p == e_l1)
     begin : l1_lrsc
       logic [sindex_width_lp-1:0] load_reserved_index_r;
-      logic [ptag_width_p-1:0] load_reserved_tag_r;
+      logic [ctag_width_p-1:0] load_reserved_tag_r;
       logic load_reserved_v_r;
 
       // Set reservation on successful LR, without a cache miss or upgrade request
@@ -1104,12 +1104,14 @@ module bp_be_dcache
          ,.data_o(load_reserved_v_r)
          );
 
+      wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
+      wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
       bsg_dff_en
-       #(.width_p(ptag_width_p+sindex_width_lp))
+       #(.width_p(ctag_width_p+sindex_width_lp))
        load_reserved_addr
         (.clk_i(clk_i)
          ,.en_i(set_reservation)
-         ,.data_i(paddr_tv_r[paddr_width_p-1:block_offset_width_lp])
+         ,.data_i({paddr_tag_tv, paddr_index_tv})
          ,.data_o({load_reserved_tag_r, load_reserved_index_r})
          );
 
