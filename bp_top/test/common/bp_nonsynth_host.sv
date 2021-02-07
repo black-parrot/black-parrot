@@ -128,16 +128,16 @@ module bp_nonsynth_host
       getchar_data_cmd_v = 1'b0;
       finish_data_cmd_v = 1'b0;
       bootrom_data_cmd_v = 1'b0;
-      domain_data_cmd_v = io_cmd_v_lo & (domain_id != '0);
+      domain_data_cmd_v = io_cmd_yumi_li & (domain_id != '0);
       putch_core_data_cmd_v = 1'b0;
 
       unique
       casez (io_cmd_lo.header.addr)
-        putchar_base_addr_gp: putchar_data_cmd_v = io_cmd_v_lo;
-        getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_v_lo;
-        finish_base_addr_gp : finish_data_cmd_v = io_cmd_v_lo;
-        bootrom_base_addr_gp: bootrom_data_cmd_v = io_cmd_v_lo;
-        putch_core_base_addr_gp: putch_core_data_cmd_v = io_cmd_v_lo;
+        putchar_base_addr_gp: putchar_data_cmd_v = io_cmd_yumi_li;
+        getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_yumi_li;
+        finish_base_addr_gp : finish_data_cmd_v = io_cmd_yumi_li;
+        bootrom_base_addr_gp: bootrom_data_cmd_v = io_cmd_yumi_li;
+        putch_core_base_addr_gp: putch_core_data_cmd_v = io_cmd_yumi_li;
         default: begin end
       endcase
     end

@@ -254,7 +254,8 @@
     // BP "exceptions"
     logic itlb_miss;
     logic icache_miss;
-    logic dtlb_miss;
+    logic dtlb_load_miss;
+    logic dtlb_store_miss;
     logic dcache_miss;
     logic fencei_v;
   }  bp_be_exception_s;

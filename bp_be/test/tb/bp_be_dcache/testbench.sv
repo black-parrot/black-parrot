@@ -112,39 +112,39 @@ module testbench
     begin : trace_replay
       // Trace Replay
       bsg_trace_replay
-        #(.payload_width_p(trace_replay_data_width_lp)
+       #(.payload_width_p(trace_replay_data_width_lp)
          ,.rom_addr_width_p(trace_rom_addr_width_lp)
          ,.debug_p(2)
          )
-        trace_replay
+       trace_replay
         (.clk_i(clk_i)
-        ,.reset_i(reset_i)
-        ,.en_i(1'b1)
+         ,.reset_i(reset_i)
+         ,.en_i(1'b1)
 
-        ,.v_i(trace_v_li[i])
-        ,.data_i(trace_data_li[i])
-        ,.ready_o(trace_ready_lo[i])
+         ,.v_i(trace_v_li[i])
+         ,.data_i(trace_data_li[i])
+         ,.ready_o(trace_ready_lo[i])
 
-        ,.v_o(trace_v_lo[i])
-        ,.data_o(trace_data_lo[i])
-        ,.yumi_i(dut_ready_lo[i] & trace_v_lo[i])
+         ,.v_o(trace_v_lo[i])
+         ,.data_o(trace_data_lo[i])
+         ,.yumi_i(dut_ready_lo[i] & trace_v_lo[i])
 
-        ,.rom_addr_o(trace_rom_addr_lo[i])
-        ,.rom_data_i(trace_rom_data_li[i])
+         ,.rom_addr_o(trace_rom_addr_lo[i])
+         ,.rom_data_i(trace_rom_data_li[i])
 
-        ,.done_o(test_done_lo[i])
-        ,.error_o()
-        );
+         ,.done_o(test_done_lo[i])
+         ,.error_o()
+         );
 
-        bsg_nonsynth_test_rom
-        #(.data_width_p(trace_replay_data_width_lp+4)
-          ,.addr_width_p(trace_rom_addr_width_lp)
-          ,.filename_p(trace_file_p)
-          )
-          ROM
-          (.addr_i(trace_rom_addr_lo[i])
-          ,.data_o(trace_rom_data_li[i])
-          );
+      bsg_nonsynth_test_rom
+       #(.data_width_p(trace_replay_data_width_lp+4)
+         ,.addr_width_p(trace_rom_addr_width_lp)
+         ,.filename_p(trace_file_p)
+         )
+       ROM
+        (.addr_i(trace_rom_addr_lo[i])
+         ,.data_o(trace_rom_data_li[i])
+         );
 
       assign dcache_pkt_li[i] = trace_data_lo[i][0+:dcache_pkt_width_lp];
       // Slight hack, but makes all address "cacheable"
@@ -157,11 +157,11 @@ module testbench
       assign trace_data_li[i] = {'0, fifo_data_lo[i]};
 
       bsg_nonsynth_random_yumi_gen
-        #(.yumi_min_delay_p(yumi_min_delay_lp)
+       #(.yumi_min_delay_p(yumi_min_delay_lp)
          ,.yumi_max_delay_p(yumi_max_delay_lp)
          )
-         yumi_gen
-         (.clk_i(clk_i)
+       yumi_gen
+        (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
          ,.v_i(fifo_v_lo[i])
@@ -172,83 +172,82 @@ module testbench
       // than receive data at regular intervals. This is possible a side effect of
       // our testing strategy. Open for debate.
       bsg_fifo_1r1w_small
-        #(.width_p(dword_width_gp)
-         ,.els_p(8))
-        output_fifo
+       #(.width_p(dword_width_gp), .els_p(8))
+       output_fifo
         (.clk_i(clk_i)
-        ,.reset_i(reset_i)
+         ,.reset_i(reset_i)
 
-        // from dcache
-        ,.v_i(v_lo[i])
-        ,.ready_o(dcache_ready_li[i])
-        ,.data_i(data_lo[i])
+         // from dcache
+         ,.v_i(v_lo[i])
+         ,.ready_o(dcache_ready_li[i])
+         ,.data_i(data_lo[i])
 
-        // to trace replay
-        ,.v_o(fifo_v_lo[i])
-        ,.yumi_i(fifo_yumi_li[i])
-        ,.data_o(fifo_data_lo[i])
-      );
+         // to trace replay
+         ,.v_o(fifo_v_lo[i])
+         ,.yumi_i(fifo_yumi_li[i])
+         ,.data_o(fifo_data_lo[i])
+         );
     end
 
   // Subsystem Under Test
   wrapper
-    #(.bp_params_p(bp_params_p)
+   #(.bp_params_p(bp_params_p)
      ,.uce_p(uce_p)
      ,.wt_p(wt_p)
      ,.num_caches_p(num_caches_p)
      )
-    wrapper
+   wrapper
     (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+     ,.reset_i(reset_i)
 
-    ,.cfg_bus_i(cfg_bus_li)
+     ,.cfg_bus_i(cfg_bus_li)
 
-    ,.dcache_pkt_i(dcache_pkt_li)
-    ,.v_i(trace_v_lo)
-    ,.ready_o(dut_ready_lo)
+     ,.dcache_pkt_i(dcache_pkt_li)
+     ,.v_i(trace_v_lo)
+     ,.ready_o(dut_ready_lo)
 
-    ,.data_o(data_lo)
-    ,.v_o(v_lo)
+     ,.data_o(data_lo)
+     ,.v_o(v_lo)
 
-    ,.ptag_i(ptag_li)
+     ,.ptag_i(ptag_li)
 
-    ,.uncached_i(uncached_li)
+     ,.uncached_i(uncached_li)
 
-    ,.mem_resp_v_i(mem_resp_v_lo)
-    ,.mem_resp_i(mem_resp_lo)
-    ,.mem_resp_yumi_o(mem_resp_yumi_lo)
+     ,.mem_resp_v_i(mem_resp_v_lo)
+     ,.mem_resp_i(mem_resp_lo)
+     ,.mem_resp_yumi_o(mem_resp_yumi_lo)
 
-    ,.mem_cmd_v_o(mem_cmd_v_lo)
-    ,.mem_cmd_o(mem_cmd_lo)
-    ,.mem_cmd_ready_i(mem_cmd_ready_lo)
-    );
+     ,.mem_cmd_v_o(mem_cmd_v_lo)
+     ,.mem_cmd_o(mem_cmd_lo)
+     ,.mem_cmd_ready_i(mem_cmd_ready_lo)
+     );
 
   // Memory
   bp_mem
-    #(.bp_params_p(bp_params_p)
-      ,.mem_offset_p(mem_offset_p)
-      ,.mem_load_p(0)
-      ,.mem_file_p(mem_file_p)
-      ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-      ,.use_ddr_p(0)
-      ,.use_dramsim3_p(0)
-      ,.dram_fixed_latency_p(dram_fixed_latency_p)
-      )
-    mem
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+   #(.bp_params_p(bp_params_p)
+     ,.mem_offset_p(mem_offset_p)
+     ,.mem_load_p(0)
+     ,.mem_file_p(mem_file_p)
+     ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+     ,.use_ddr_p(0)
+     ,.use_dramsim3_p(0)
+     ,.dram_fixed_latency_p(dram_fixed_latency_p)
+     )
+   mem
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-      ,.mem_cmd_i(mem_cmd_lo)
-      ,.mem_cmd_v_i(mem_cmd_v_lo)
-      ,.mem_cmd_ready_o(mem_cmd_ready_lo)
+     ,.mem_cmd_i(mem_cmd_lo)
+     ,.mem_cmd_v_i(mem_cmd_v_lo)
+     ,.mem_cmd_ready_o(mem_cmd_ready_lo)
 
-      ,.mem_resp_o(mem_resp_lo)
-      ,.mem_resp_v_o(mem_resp_v_lo)
-      ,.mem_resp_yumi_i(mem_resp_yumi_lo)
+     ,.mem_resp_o(mem_resp_lo)
+     ,.mem_resp_v_o(mem_resp_v_lo)
+     ,.mem_resp_yumi_i(mem_resp_yumi_lo)
 
-      ,.dram_clk_i(dram_clk_i)
-      ,.dram_reset_i(dram_reset_i)
-      );
+     ,.dram_clk_i(dram_clk_i)
+     ,.dram_reset_i(dram_reset_i)
+     );
 
   // Tracers
   bind bp_be_dcache
@@ -282,7 +281,7 @@ module testbench
 
        ,.v_o(early_v_o)
        ,.load_data(early_data_o[0+:65])
-       ,.store_data(data_tv_r[0+:64])
+       ,.store_data(st_data_tv_r[0+:64])
        ,.wt_req(wt_req)
        ,.cache_miss_o('0)
 

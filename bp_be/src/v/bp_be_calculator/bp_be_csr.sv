@@ -461,6 +461,8 @@ module bp_be_csr
             illegal_instr_o = 1'b1;
           else if (priv_mode_r < csr_cmd.csr_addr[9:8])
             illegal_instr_o = 1'b1;
+          else if (~fpu_en_o & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR, `CSR_ADDR_FFLAGS, `CSR_ADDR_FRM}))
+            illegal_instr_o = 1'b1;
           else
             begin
               // Read case
@@ -672,16 +674,19 @@ module bp_be_csr
       // Set FS to dirty if: fflags set, frf written, fcsr written
       // TODO: Should pre_decode this write, but requires multiple changes to the datapath
       //   For now, a few comparators will do
-      mstatus_li.fs |= {2{(csr_cmd_v_i & csr_w_v_li & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR
-                                                                                ,`CSR_ADDR_FFLAGS
-                                                                                ,`CSR_ADDR_FRM}))
-                          || (exception_v_i & exception_instr.t.rtype.opcode inside {`RV64_FLOAD_OP
-                                                                                     ,`RV64_FMADD_OP
-                                                                                     ,`RV64_FNMADD_OP
-                                                                                     ,`RV64_FMSUB_OP
-                                                                                     ,`RV64_FNMSUB_OP
-                                                                                     ,`RV64_FP_OP
+      if (~exception_v_o)
+        begin
+          mstatus_li.fs |= {2{(csr_cmd_v_i & csr_w_v_li & fpu_en_o & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR
+                                                                                               ,`CSR_ADDR_FFLAGS
+                                                                                               ,`CSR_ADDR_FRM}))
+                              || (exception_v_i & exception_instr.t.rtype.opcode inside {`RV64_FLOAD_OP
+                                                                                         ,`RV64_FMADD_OP
+                                                                                         ,`RV64_FNMADD_OP
+                                                                                         ,`RV64_FMSUB_OP
+                                                                                         ,`RV64_FNMSUB_OP
+                                                                                         ,`RV64_FP_OP
                                                                                      })}};
+        end
     end
 
   // Debug Mode masks all interrupts
@@ -689,7 +694,7 @@ module bp_be_csr
 
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
-  assign commit_pkt_cast_o.v                = |{exception.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_miss};
+  assign commit_pkt_cast_o.v                = |{exception.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_store_miss, exception.dtlb_load_miss};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
@@ -704,7 +709,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.eret             = ret_v_o;
   assign commit_pkt_cast_o.satp             = satp_v_o;
   assign commit_pkt_cast_o.icache_miss      = exception.icache_miss;
-  assign commit_pkt_cast_o.rollback         = exception.icache_miss | exception.dcache_miss | exception.dtlb_miss | exception.itlb_miss;
+  assign commit_pkt_cast_o.rollback         = exception.icache_miss | exception.dcache_miss | exception.dtlb_store_miss | exception.dtlb_load_miss | exception.itlb_miss;
 
   assign trans_info_cast_o.priv_mode = priv_mode_r;
   assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
