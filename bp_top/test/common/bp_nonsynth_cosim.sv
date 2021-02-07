@@ -19,6 +19,7 @@ module bp_nonsynth_cosim
     , input                                   freeze_i
     , input                                   cosim_en_i
     , input                                   trace_en_i
+    , input                                   amo_en_i
 
     , input                                   checkpoint_i
     , input [31:0]                            num_core_i
@@ -46,7 +47,7 @@ module bp_nonsynth_cosim
     , input [dpath_width_gp-1:0]               frd_data_i
     );
 
-  import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
+  import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint, bit amo_en);
   import "DPI-C" context function bit  dromajo_step(int hartid,
                                                     longint pc,
                                                     int insn,
@@ -207,7 +208,7 @@ module bp_nonsynth_cosim
 
   always_ff @(negedge reset_i)
     if (cosim_en_i)
-      dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i);
+      dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
 
   always_ff @(negedge clk_i)
     if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)

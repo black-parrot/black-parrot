@@ -45,6 +45,9 @@ e_bp_custom_cfg_cores                   := 1
 e_bp_default_cfg_cores                  := 1
 
 export NCPUS ?= $($(CFG)_cores)
+ifeq ($(CFG), e_bp_unicore_l1_atomic_cfg)
+export AMOEN ?= 1
+endif
 
 ifeq ($(origin $(CFG)_cores), undefined)
 $(error NCPUS not found for CFG=$(CFG))
