@@ -49,30 +49,30 @@ module bp_mmu
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  logic r_v_r, r_instr_r, r_load_r, r_store_r;
+  logic trans_en_r, r_v_r, r_instr_r, r_load_r, r_store_r;
   bsg_dff_reset
-   #(.width_p(4))
+   #(.width_p(5))
    r_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i({r_v_i, r_instr_i, r_load_i, r_store_i})
-     ,.data_o({r_v_r, r_instr_r, r_load_r, r_store_r})
+     ,.data_i({trans_en_i, r_v_i, r_instr_i, r_load_i, r_store_i})
+     ,.data_o({trans_en_r, r_v_r, r_instr_r, r_load_r, r_store_r})
      );
 
-  logic [vtag_width_p-1:0] r_vtag_r;
-  wire [vtag_width_p-1:0] r_vtag_li = r_eaddr_i[vaddr_width_p-1-:vtag_width_p];
+  logic [etag_width_p-1:0] r_etag_r;
+  wire [etag_width_p-1:0] r_etag_li = r_eaddr_i[dword_width_gp-1-:etag_width_p];
   bsg_dff_reset
-   #(.width_p(vtag_width_p))
-   vtag_reg
+   #(.width_p(etag_width_p))
+   etag_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(r_vtag_li)
-     ,.data_o(r_vtag_r)
+     ,.data_i(r_etag_li)
+     ,.data_o(r_etag_r)
      );
 
   logic tlb_bypass_r;
-  wire tlb_bypass = ~w_v_i & ((r_vtag_li == r_vtag_r) & r_v_r);
+  wire tlb_bypass = ~w_v_i & (r_etag_li[0+:vtag_width_p] == r_etag_r[0+:vtag_width_p]) & r_v_r & trans_en_r;
   bsg_dff_reset
    #(.width_p(1))
    tlb_bypass_reg
@@ -114,9 +114,9 @@ module bp_mmu
      );
 
   bp_pte_entry_leaf_s passthrough_entry, tlb_entry_lo;
-  assign passthrough_entry = '{ptag: r_vtag_r, default: '0};
-  assign tlb_entry_lo      = trans_en_i ? tlb_r_entry_r : passthrough_entry;
-  wire tlb_v_lo            = trans_en_i ? tlb_r_v_r : r_v_r;
+  assign passthrough_entry = '{ptag: r_etag_r[0+:ptag_width_p], default: '0};
+  assign tlb_entry_lo      = trans_en_r ? tlb_r_entry_r : passthrough_entry;
+  wire tlb_v_lo            = trans_en_r ? tlb_r_v_r : r_v_r;
 
   wire ptag_v_lo                  = tlb_v_lo;
   wire [ptag_width_p-1:0] ptag_lo = tlb_entry_lo.ptag;
@@ -134,10 +134,7 @@ module bp_mmu
      );
 
   // Fault if higher bits of eaddr do not match vaddr MSB
-  logic eaddr_fault_v;
-  localparam eaddr_pad_lp = dword_width_gp - vaddr_width_p;
-  wire eaddr_fault = (r_eaddr_i[dword_width_gp-1:vaddr_width_p] != {eaddr_pad_lp{r_eaddr_i[vaddr_width_p-1]}});
-  always_ff @(posedge clk_i) eaddr_fault_v <= eaddr_fault;
+  wire eaddr_fault_v = ~&r_etag_r[etag_width_p-1:vtag_width_p-1] & |r_etag_r[etag_width_p-1:vtag_width_p-1];
   // Fault if in uncached mode but access is not for an uncached address
   wire mode_fault_v  = (uncached_mode_i & ~r_uncached_o);
   // Fault if domain is not zero (top <io_noc_did_width_p> bits) and SAC bit is not zero (next bit)
@@ -160,9 +157,9 @@ module bp_mmu
   wire data_priv_page_fault = ((priv_mode_i == `PRIV_MODE_S) & ~sum_i & tlb_entry_lo.u)
                                 | ((priv_mode_i == `PRIV_MODE_U) & ~tlb_entry_lo.u);
   wire data_write_page_fault = r_store_r & (~tlb_entry_lo.w | ~tlb_entry_lo.d);
-  wire instr_page_fault_v = trans_en_i & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v);
-  wire load_page_fault_v  = trans_en_i & r_load_r & (data_priv_page_fault | eaddr_fault_v);
-  wire store_page_fault_v = trans_en_i & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_fault_v);
+  wire instr_page_fault_v = trans_en_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v);
+  wire load_page_fault_v  = trans_en_r & r_load_r & (data_priv_page_fault | eaddr_fault_v);
+  wire store_page_fault_v = trans_en_r & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_fault_v);
   wire any_page_fault_v   = |{instr_page_fault_v, load_page_fault_v, store_page_fault_v};
 
   assign r_v_o                   = r_v_r &  tlb_v_lo & ~any_access_fault_v & ~any_page_fault_v;

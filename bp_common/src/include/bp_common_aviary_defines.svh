@@ -151,6 +151,7 @@
                                                                                                    \
     , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_gp                  \
     , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_gp                  \
+    , localparam etag_width_p  = dword_width_gp - page_offset_width_gp
 
     `define bp_aviary_parameter_override(parameter_mp, override_cfg_mp, default_cfg_mp) \
       parameter_mp: (override_cfg_mp.``parameter_mp`` == "inv") \
