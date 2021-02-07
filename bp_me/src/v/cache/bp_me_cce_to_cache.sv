@@ -24,7 +24,7 @@ module bp_me_cce_to_cache
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_gp>>3)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
 
-    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(paddr_width_p,dword_width_gp)
+    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(caddr_width_p,dword_width_gp)
     , localparam counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_gp)
   )
   (
@@ -53,7 +53,7 @@ module bp_me_cce_to_cache
   // at the reset, this module intializes all the tags and valid bits to zero.
   // After all the tags are completedly initialized, this module starts
   // accepting packets from manycore network.
-  `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_gp);
+  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
 
   // cce logics
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
@@ -96,7 +96,7 @@ module bp_me_cce_to_cache
     ,.v_o(mem_cmd_v_lo)
     ,.yumi_i(mem_cmd_yumi_li)
     );
-  wire [paddr_width_p-1:0] cmd_addr = mem_cmd_lo.header.addr;
+  wire [caddr_width_p-1:0] cmd_addr = mem_cmd_lo.header.addr;
   wire [block_size_in_words_lp-1:0][dword_width_gp-1:0] cmd_data = mem_cmd_lo.data;
 
   // synopsys sync_set_reset "reset_i"
@@ -149,7 +149,7 @@ module bp_me_cce_to_cache
         cache_pkt.opcode = TAGST;
         cache_pkt.data = '0;
         cache_pkt.addr = {
-          {(paddr_width_p-lg_sets_lp-lg_ways_lp-block_offset_width_lp){1'b0}},
+          {(caddr_width_p-lg_sets_lp-lg_ways_lp-block_offset_width_lp){1'b0}},
           tagst_sent_r[0+:lg_sets_lp+lg_ways_lp],
           {(block_offset_width_lp){1'b0}}
         };

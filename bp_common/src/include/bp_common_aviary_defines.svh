@@ -41,6 +41,7 @@
                                                                                                    \
     , localparam vaddr_width_p = proc_param_lp.vaddr_width                                         \
     , localparam paddr_width_p = proc_param_lp.paddr_width                                         \
+    , localparam caddr_width_p = `BSG_SAFE_CLOG2(dram_base_addr_gp+dram_max_size_gp)               \
     , localparam asid_width_p  = proc_param_lp.asid_width                                          \
                                                                                                    \
     , localparam boot_pc_p       = proc_param_lp.boot_pc                                           \
@@ -152,7 +153,7 @@
     , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_gp                  \
     , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_gp                  \
     , localparam etag_width_p  = dword_width_gp - page_offset_width_gp                             \
-    , localparam ctag_width_p  = $clog2(dram_base_addr_gp+dram_max_size_gp) - page_offset_width_gp
+    , localparam ctag_width_p  = caddr_width_p - page_offset_width_gp
 
     `define bp_aviary_parameter_override(parameter_mp, override_cfg_mp, default_cfg_mp) \
       parameter_mp: (override_cfg_mp.``parameter_mp`` == "inv") \
