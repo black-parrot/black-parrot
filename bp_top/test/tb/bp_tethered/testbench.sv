@@ -35,6 +35,7 @@ module testbench
    , parameter cosim_cfg_file_p            = "prog.cfg"
    , parameter cosim_instr_p               = 0
    , parameter warmup_instr_p              = 0
+   , parameter amo_en_p                    = 0
 
    // DRAM parameters
    , parameter preload_mem_p               = 0
@@ -269,6 +270,7 @@ module testbench
            ,.config_file_i(testbench.cosim_cfg_file_p)
            ,.instr_cap_i(testbench.cosim_instr_p)
            ,.memsize_i(testbench.cosim_memsize_p)
+           ,.amo_en_i(testbench.amo_en_p == 1)
 
            ,.decode_i(calculator.reservation_n.decode)
 
