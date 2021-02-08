@@ -41,8 +41,5 @@
   localparam coproc_base_addr_gp       = 40'h10_0000_0000;
   localparam global_base_addr_gp       = 40'h20_0000_0000;
 
-  // 4 GB
-  localparam dram_max_size_gp          = 1 << 31;
-
 `endif
 

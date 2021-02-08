@@ -68,6 +68,8 @@
     // Physical address width
     //   Only tested for 40-bit physical address
     integer unsigned paddr_width;
+    // The max size of the connected DRAM i.e. cached address space
+    integer unsigned dram_max_size;
     // Address space ID width
     //   Currently unused, so set to 1 bit
     integer unsigned asid_width;
@@ -182,6 +184,7 @@
     integer unsigned io_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
     integer unsigned io_noc_max_credits;
+
   }  bp_proc_param_s;
 
   localparam bp_proc_param_s bp_default_cfg_p =
@@ -200,6 +203,8 @@
 
       ,vaddr_width: 39
       ,paddr_width: 40
+      // 4 GB
+      ,dram_max_size : (1 << 31)
       ,asid_width : 1
 
       ,boot_pc       : dram_base_addr_gp
@@ -704,6 +709,7 @@
 
       ,`bp_aviary_define_override(vaddr_width, BP_VADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(paddr_width, BP_PADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dram_max_size, BP_DRAM_MAX_SIZE, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(asid_width, BP_ASID_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(boot_pc, BP_BOOT_PC, `BP_CUSTOM_BASE_CFG)
