@@ -215,6 +215,7 @@ module bp_sacc_tile
     
 else if(sacc_type_p == e_sacc_cceip)
   begin: sacc_cceip
+     
   bp_sacc_cceip
    #(.bp_params_p(bp_params_p))
    accelerator_link
@@ -242,7 +243,8 @@ else if(sacc_type_p == e_sacc_cceip)
      );
   end  
  else if (sacc_type_p == e_sacc_cddip)
-  begin: sacc_cddip
+   begin: sacc_cddip
+      
   bp_sacc_cddip
    #(.bp_params_p(bp_params_p))
    accelerator_link

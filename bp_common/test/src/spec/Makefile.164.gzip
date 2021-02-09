@@ -11,7 +11,7 @@ BENCHMARK_OBJS = \
 
 INPUT_TYPE = smred
 
-BENCHMARK_INPS = $(INPUT_TYPE).source
+BENCHMARK_INPS = $(INPUT_TYPE).random
 
 $(BENCHMARK_INPS): %:
 	cp $(BENCHMARK_DIR)/input/$@ $@
@@ -23,6 +23,9 @@ ARGV=gzip $(BENCHMARK_INPS) 1
 
 # lfs disk image size
 LFS_BLOCK_SIZE = 128
-LFS_BLOCK_COUNT = 8192 # 1MB
+
+LFS_BLOCK_COUNT = 100000
+##LFS_BLOCK_COUNT = 8192 # 1MB
+
 
 include ./Makefile.common

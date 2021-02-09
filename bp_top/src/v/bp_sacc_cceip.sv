@@ -96,7 +96,7 @@ module bp_sacc_cceip
    bp_bedrock_mem_type_e         resp_msg;
    logic [paddr_width_p-1:0]     resp_addr;
    logic [63:0]                  resp_data;
-   logic [63:0]                  tlv_type, data_tlv_num;
+   logic [63:0]                  tlv_type, data_tlv_num, data_tlv_part;
    logic [63:0]                  resp_ptr;
    logic                         resp_done;
     
@@ -155,8 +155,9 @@ typedef enum logic [3:0]{
   , WAIT_RESP_O
   , LAST_RESP
   , RESP_DONE
+  , DONE
 } state_e;
-state_e state_r, state_n;
+state_e state_r, state_n, prev_state;
    
 //assign ob_tready = 1;   
 assign io_cmd_ready_o = (ib_tlast != 1) ? ib_tready : 1 ;   
@@ -175,6 +176,7 @@ always_ff @(posedge clk_i) begin
      ib_tlast       <= 1'b0;
    end
    else begin
+     prev_state <= state_r;
      state_r <= state_n;
      prev_local_addr_li <= local_addr_li;
      prev_ob_tuser <= ob_tuser;
@@ -183,7 +185,10 @@ always_ff @(posedge clk_i) begin
        begin
         dma_counter <= (state_n >= DONE_IN) ? '0 : dma_counter + 1;
                         //sot-eot                    //eot                                     //sot                       //mot
-        ib_tuser     <= (dma_length == 1) ? 64'd3 : ((dma_length-1 == dma_counter) ? 64'd2 : ((dma_counter == 0) ? 64'd1 : 64'd0));
+        //ib_tuser     <= (dma_length == 1) ? 64'd3 : ((dma_length-1 == dma_counter) ? 64'd2 : ((dma_counter == 0) ? 64'd1 : 64'd0));
+                        //sot-eot                                        //eot                                                                                      //sot                                                                           //mot
+         ib_tuser     <= (dma_length == 1 && tlv_type != 64'd3) ? 64'd3 : ((dma_length-1 == dma_counter && !(tlv_type == 64'd3 && data_tlv_part == 64'd1)) ? 64'd2 : ((dma_counter == 0 && !(tlv_type == 64'd3 && data_tlv_part == 64'd2)) ? 64'd1 : 64'd0));
+
         ib_tvalid    <= 1'b1;
         ib_tlast     <= (tlv_type == 64'd4) & (dma_length-1 == dma_counter);
         ib_tdata     <= io_resp_cast_i.data;
@@ -267,12 +272,21 @@ always_comb begin
      DONE_IN: begin
         resp_done = 0;
         dma_done = 1;
-        io_cmd_v_o = 1'b0;
+
+          io_cmd_cast_o.header.payload = mem_cmd_payload;
+          io_cmd_cast_o.header.size = 3'b011;//8 byte
+          io_cmd_cast_o.header.addr = plic_reg_base_addr_gp;
+          io_cmd_cast_o.header.msg_type.mem = e_bedrock_mem_uc_wr;
+          io_cmd_v_o = prev_state == FETCH ? 1 : 0;
+
+        
+        //io_cmd_v_o = 1'b0;
         state_n = dma_start ? (ib_tlast ? READY_OB : FETCH) : DONE_IN;
         ob_tready = 0;
      end
      READY_OB: begin
         dma_done = 0;
+        io_cmd_v_o = 1'b0;
         ob_tready = 1;
         temp_ob_tdata = ob_tdata;
         state_n = ~ob_tvalid ? READY_OB : (~ob_tlast ? STORE_RESP : LAST_RESP);
@@ -310,9 +324,23 @@ always_comb begin
      RESP_DONE:
        begin
           dma_done = 1;
+          
+          io_cmd_cast_o.header.payload = mem_cmd_payload;
+          io_cmd_cast_o.header.size = 3'b011;//8 byte
+          io_cmd_cast_o.header.addr = plic_reg_base_addr_gp;
+          io_cmd_cast_o.header.msg_type.mem = e_bedrock_mem_uc_wr;
+          io_cmd_v_o = 1;
+          
+          ob_tready = 0;
+          state_n = (dma_start & ~ib_tlast) ? FETCH : DONE;
+       end // case: RESP_DONE
+     DONE:
+       begin
           ob_tready = 0;
           io_cmd_v_o = 1'b0;
-          state_n = (dma_start & ~ib_tlast) ? FETCH : RESP_DONE;
+          state_n = (dma_start & ~ib_tlast) ? FETCH : DONE;
+          dma_done = 1;
+          io_cmd_v_o = 0;
        end
    endcase
 end
@@ -329,6 +357,7 @@ begin
         if ((io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_wr))
           case (local_addr_li.addr)
             20'h00000 : tlv_type <= io_cmd_cast_i.data;
+            20'h00010 : data_tlv_part <= io_cmd_cast_i.data;
             default : begin end
           endcase
         else if ((io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_rd))

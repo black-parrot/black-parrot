@@ -96,10 +96,14 @@ module bp_sacc_cceip
    bp_bedrock_mem_type_e         resp_msg;
    logic [paddr_width_p-1:0]     resp_addr;
    logic [63:0]                  resp_data;
-   logic [63:0]                  tlv_type, data_tlv_num;
+   logic [63:0]                  tlv_type, data_tlv_num, data_tlv_part, temp_part, temp_cmd;
    logic [63:0]                  resp_ptr;
    logic                         resp_done;
     
+
+   logic                         ttest;
+
+   assign ttest = 1;
    
    bp_local_addr_s           local_addr_li, prev_local_addr_li;
    bp_global_addr_s          global_addr_li;
@@ -182,8 +186,8 @@ always_ff @(posedge clk_i) begin
      if (io_resp_v_i && (io_resp_cast_i.header.msg_type.mem == e_bedrock_mem_uc_rd))
        begin
         dma_counter <= (state_n >= DONE_IN) ? '0 : dma_counter + 1;
-                        //sot-eot                    //eot                                     //sot                       //mot
-        ib_tuser     <= (dma_length == 1) ? 64'd3 : ((dma_length-1 == dma_counter) ? 64'd2 : ((dma_counter == 0) ? 64'd1 : 64'd0));
+                        //sot-eot                                         //eot                                                                                     //sot                                                                           //mot
+        ib_tuser     <= (dma_length == 1 && tlv_type != 64'd3) ? 64'd3 : ((dma_length-1 == dma_counter && !(tlv_type == 64'd3 && data_tlv_part == 64'd1)) ? 64'd2 : ((dma_counter == 0 && !(tlv_type == 64'd3 && data_tlv_part == 64'd2)) ? 64'd1 : 64'd0));
         ib_tvalid    <= 1'b1;
         ib_tlast     <= (tlv_type == 64'd4) & (dma_length-1 == dma_counter);
         ib_tdata     <= io_resp_cast_i.data;
@@ -326,9 +330,13 @@ begin
         resp_addr    <= io_cmd_cast_i.header.addr;
         resp_msg     <= io_cmd_cast_i.header.msg_type.mem;
         io_resp_v_o  <= 1'b1;
+        temp_part <= local_addr_li.addr == 20'h00010 ? io_cmd_cast_i.data : 0;
+        temp_cmd  <=  io_cmd_cast_i.data;
+        
         if ((io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_wr))
           case (local_addr_li.addr)
             20'h00000 : tlv_type <= io_cmd_cast_i.data;
+            20'h00010 : data_tlv_part <= io_cmd_cast_i.data;
             default : begin end
           endcase
         else if ((io_cmd_cast_i.header.msg_type.mem == e_bedrock_mem_uc_rd))

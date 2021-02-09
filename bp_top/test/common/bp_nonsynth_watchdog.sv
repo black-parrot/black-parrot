@@ -62,6 +62,7 @@ module bp_nonsynth_watchdog
      ,.count_o(instr_cnt)
      );
 
+
   always_ff @(negedge clk_i)
     begin
       assert (reset_i !== '0 || (stall_cnt < timeout_cycles_p)) else
@@ -75,14 +76,7 @@ module bp_nonsynth_watchdog
           $finish();
         end
     end
-
-  always_ff @(negedge clk_i)
-    begin
-      if (reset_i === '0 && (instr_cnt > '0) && (instr_cnt % heartbeat_instr_p == '0))
-        begin
-          $display("BEAT: %d instructions completed (%d total)", heartbeat_instr_p, instr_cnt);
-        end
-    end
+   
 
 endmodule
 

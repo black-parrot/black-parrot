@@ -6,6 +6,7 @@ OBJECT_FILES := $(BENCHMARK_OBJS)
 IN_FILES := $(BENCHMARK_INPS)
 
 CLEAN_ITEMS = $(IN_FILES) $(OBJECT_FILES) lfs.c
+
 MKLFS = dramfs_mklfs
 
 vpath %.c $(BENCHMARK_DIR)/src.raw
