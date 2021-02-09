@@ -72,7 +72,7 @@ module bp_mmu
      );
 
   logic tlb_bypass_r;
-  wire tlb_bypass = ~w_v_i & (r_etag_li[0+:vtag_width_p] == r_etag_r[0+:vtag_width_p]) & r_v_r & trans_en_r;
+  wire tlb_bypass = ~w_v_i & (r_etag_li[0+:vtag_width_p] == r_etag_r[0+:vtag_width_p]) & r_v_r & trans_en_r & trans_en_i;
   bsg_dff_reset
    #(.width_p(1))
    tlb_bypass_reg
