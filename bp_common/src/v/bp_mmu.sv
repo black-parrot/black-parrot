@@ -49,14 +49,15 @@ module bp_mmu
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  logic trans_en_r, r_v_r, r_instr_r, r_load_r, r_store_r;
+  logic trans_en_r, r_v_r, r_instr_r, r_load_r, r_store_r, sum_r;
+  logic [1:0] priv_mode_r;
   bsg_dff_reset
-   #(.width_p(5))
+   #(.width_p(8))
    r_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i({trans_en_i, r_v_i, r_instr_i, r_load_i, r_store_i})
-     ,.data_o({trans_en_r, r_v_r, r_instr_r, r_load_r, r_store_r})
+     ,.data_i({sum_i, priv_mode_i, trans_en_i, r_v_i, r_instr_i, r_load_i, r_store_i})
+     ,.data_o({sum_r, priv_mode_r, trans_en_r, r_v_r, r_instr_r, r_load_r, r_store_r})
      );
 
   logic [etag_width_p-1:0] r_etag_r;
@@ -152,10 +153,10 @@ module bp_mmu
 
   // Page faults
   wire instr_exe_page_fault_v  = ~tlb_entry_lo.x;
-  wire instr_priv_page_fault_v = ((priv_mode_i == `PRIV_MODE_S) & tlb_entry_lo.u)
-                                 | ((priv_mode_i == `PRIV_MODE_U) & ~tlb_entry_lo.u);
-  wire data_priv_page_fault = ((priv_mode_i == `PRIV_MODE_S) & ~sum_i & tlb_entry_lo.u)
-                                | ((priv_mode_i == `PRIV_MODE_U) & ~tlb_entry_lo.u);
+  wire instr_priv_page_fault_v = ((priv_mode_r == `PRIV_MODE_S) & tlb_entry_lo.u)
+                                 | ((priv_mode_r == `PRIV_MODE_U) & ~tlb_entry_lo.u);
+  wire data_priv_page_fault = ((priv_mode_r == `PRIV_MODE_S) & ~sum_r & tlb_entry_lo.u)
+                                | ((priv_mode_r == `PRIV_MODE_U) & ~tlb_entry_lo.u);
   wire data_write_page_fault = r_store_r & (~tlb_entry_lo.w | ~tlb_entry_lo.d);
   wire instr_page_fault_v = trans_en_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v);
   wire load_page_fault_v  = trans_en_r & r_load_r & (data_priv_page_fault | eaddr_fault_v);
