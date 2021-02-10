@@ -79,7 +79,8 @@ initial
     $warning("Warning: VM will not work without 39 bit vaddr");
   if (paddr_width_p != 40)
     $warning("Warning: paddr != 40 has not been tested");
-  if ((cce_block_width_p != icache_block_width_p) && (cce_block_width_p != dcache_block_width_p) && (cce_block_width_p != acache_block_width_p))
-    $warning("Warning: Different cache block widths not yet supported");
+  if (dram_max_size_p != (1 << 31))
+    $warning("Warning: dram size != 4GB");
 
 endmodule
+

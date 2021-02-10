@@ -39,9 +39,11 @@
     , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))              \
     , localparam lce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*2+2)*(cc_y_dim_p*2+2))              \
                                                                                                    \
-    , localparam vaddr_width_p = proc_param_lp.vaddr_width                                         \
-    , localparam paddr_width_p = proc_param_lp.paddr_width                                         \
-    , localparam asid_width_p  = proc_param_lp.asid_width                                          \
+    , localparam vaddr_width_p   = proc_param_lp.vaddr_width                                       \
+    , localparam paddr_width_p   = proc_param_lp.paddr_width                                       \
+    , localparam dram_max_size_p = proc_param_lp.dram_max_size                                     \
+    , localparam caddr_width_p   = `BSG_SAFE_CLOG2(dram_base_addr_gp+dram_max_size_p)              \
+    , localparam asid_width_p    = proc_param_lp.asid_width                                        \
                                                                                                    \
     , localparam boot_pc_p       = proc_param_lp.boot_pc                                           \
     , localparam boot_in_debug_p = proc_param_lp.boot_in_debug                                     \
@@ -151,7 +153,8 @@
                                                                                                    \
     , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_gp                  \
     , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_gp                  \
-    , localparam etag_width_p  = dword_width_gp - page_offset_width_gp
+    , localparam etag_width_p  = dword_width_gp - page_offset_width_gp                             \
+    , localparam ctag_width_p  = caddr_width_p - page_offset_width_gp
 
     `define bp_aviary_parameter_override(parameter_mp, override_cfg_mp, default_cfg_mp) \
       parameter_mp: (override_cfg_mp.``parameter_mp`` == "inv") \
@@ -182,6 +185,7 @@
                                                                                                    \
           ,`bp_aviary_parameter_override(vaddr_width, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(paddr_width, override_cfg_mp, default_cfg_mp)             \
+          ,`bp_aviary_parameter_override(dram_max_size, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(asid_width, override_cfg_mp, default_cfg_mp)              \
                                                                                                    \
           ,`bp_aviary_parameter_override(boot_pc, override_cfg_mp, default_cfg_mp)                 \
