@@ -170,9 +170,9 @@ module bp_mmu
   assign r_instr_access_fault_o  = r_v_r & tlb_v_lo & instr_access_fault_v;
   assign r_load_access_fault_o   = r_v_r & tlb_v_lo & load_access_fault_v;
   assign r_store_access_fault_o  = r_v_r & tlb_v_lo & store_access_fault_v;
-  assign r_instr_page_fault_o    = r_v_r & tlb_r_v_lo & instr_page_fault_v;
-  assign r_load_page_fault_o     = r_v_r & tlb_r_v_lo & load_page_fault_v;
-  assign r_store_page_fault_o    = r_v_r & tlb_r_v_lo & store_page_fault_v;
+  assign r_instr_page_fault_o    = r_v_r & tlb_v_lo & instr_page_fault_v;
+  assign r_load_page_fault_o     = r_v_r & tlb_v_lo & load_page_fault_v;
+  assign r_store_page_fault_o    = r_v_r & tlb_v_lo & store_page_fault_v;
 
 endmodule
 
