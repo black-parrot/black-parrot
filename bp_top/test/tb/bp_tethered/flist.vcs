@@ -36,7 +36,6 @@ $BP_TOP_DIR/test/common/bp_nonsynth_vm_tracer.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_cosim.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_host.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.sv
-$BP_TOP_DIR/test/common/bp_nonsynth_commit_tracer.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_cache_tracer.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_nbf_loader.sv
 $BP_TOP_DIR/test/common/bp_monitor.cpp
