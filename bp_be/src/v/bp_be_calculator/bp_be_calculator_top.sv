@@ -45,11 +45,12 @@ module bp_be_calculator_top
   , output logic                                    long_ready_o
   , output logic                                    mem_ready_o
   , output logic                                    ptw_busy_o
+  , output logic                                    replay_pending_o
 
-  , output [commit_pkt_width_lp-1:0]                commit_pkt_o
-  , output [branch_pkt_width_lp-1:0]                br_pkt_o
-  , output [wb_pkt_width_lp-1:0]                    iwb_pkt_o
-  , output [wb_pkt_width_lp-1:0]                    fwb_pkt_o
+  , output logic [commit_pkt_width_lp-1:0]          commit_pkt_o
+  , output logic [branch_pkt_width_lp-1:0]          br_pkt_o
+  , output logic [wb_pkt_width_lp-1:0]              iwb_pkt_o
+  , output logic [wb_pkt_width_lp-1:0]              fwb_pkt_o
 
   , input                                           timer_irq_i
   , input                                           software_irq_i
@@ -324,6 +325,7 @@ module bp_be_calculator_top
      ,.final_v_o(pipe_mem_final_data_lo_v)
 
      ,.trans_info_i(trans_info_lo)
+     ,.replay_pending_o(replay_pending_o)
      );
 
   // Floating point pipe: 4/5 cycle latency

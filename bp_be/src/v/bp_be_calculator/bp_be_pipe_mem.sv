@@ -58,6 +58,7 @@ module bp_be_pipe_mem
    , output logic                         final_v_o
 
    , input [trans_info_width_lp-1:0]      trans_info_i
+   , output logic                         replay_pending_o
 
    // D$-LCE Interface
    // signals to LCE
@@ -258,6 +259,7 @@ module bp_be_pipe_mem
       ,.final_v_o(dcache_final_v)
 
       ,.flush_i(flush_i)
+      ,.replay_pending_o(replay_pending_o)
 
       // D$-LCE Interface
       ,.cache_req_o(cache_req_cast_o)
