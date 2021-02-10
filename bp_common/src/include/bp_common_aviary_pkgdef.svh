@@ -303,6 +303,15 @@
                         ,bp_unicore_cfg_p
                         );
 
+  localparam bp_proc_param_s bp_unicore_paddr_large_override_p =
+    '{paddr_width   : 44
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_unicore_paddr_large_cfg_p
+                        ,bp_unicore_paddr_large_override_p
+                        ,bp_unicore_cfg_p
+                        );
+
   localparam bp_proc_param_s bp_unicore_l1_medium_override_p =
     '{icache_sets         : 128
       ,icache_assoc       : 4
@@ -393,6 +402,15 @@
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
                         ,bp_multicore_1_override_p
                         ,bp_unicore_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_1_paddr_large_override_p =
+    '{paddr_width : 44
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_1_paddr_large_cfg_p
+                        ,bp_multicore_1_paddr_large_override_p
+                        ,bp_multicore_1_cfg_p
                         );
 
   localparam bp_proc_param_s bp_multicore_1_l2e_override_p =
@@ -596,6 +614,15 @@
   `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_bootrom_cfg_p
                         ,bp_multicore_1_cce_ucode_bootrom_override_p
                         ,bp_multicore_1_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_1_cce_ucode_paddr_large_override_p =
+    '{paddr_width : 44
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_paddr_large_cfg_p
+                        ,bp_multicore_1_cce_ucode_paddr_large_override_p
+                        ,bp_multicore_1_cce_ucode_cfg_p
                         );
 
   localparam bp_proc_param_s bp_multicore_2_cce_ucode_override_p =
@@ -804,6 +831,7 @@
     ,bp_multicore_4_cce_ucode_cfg_p
     ,bp_multicore_3_cce_ucode_cfg_p
     ,bp_multicore_2_cce_ucode_cfg_p
+    ,bp_multicore_1_cce_ucode_paddr_large_cfg_p
     ,bp_multicore_1_cce_ucode_bootrom_cfg_p
     ,bp_multicore_1_cce_ucode_cfg_p
 
@@ -815,6 +843,7 @@
     ,bp_multicore_4_cfg_p
     ,bp_multicore_3_cfg_p
     ,bp_multicore_2_cfg_p
+    ,bp_multicore_1_paddr_large_cfg_p
     ,bp_multicore_1_l1_small_cfg_p
     ,bp_multicore_1_l1_medium_cfg_p
     ,bp_multicore_1_no_l2_cfg_p
@@ -822,6 +851,7 @@
     ,bp_multicore_1_cfg_p
 
     // Unicore configurations
+    ,bp_unicore_paddr_large_cfg_p
     ,bp_unicore_writethrough_cfg_p
     ,bp_unicore_l1_wide_cfg_p
     ,bp_unicore_l1_hetero_cfg_p
@@ -843,58 +873,61 @@
   typedef enum bit [lg_max_cfgs-1:0]
   {
     // Various testing config
-    e_bp_multicore_cce_ucode_half_cfg       = 38
-    ,e_bp_multicore_half_cfg                = 37
-    ,e_bp_unicore_half_cfg                  = 36
+    e_bp_multicore_cce_ucode_half_cfg               = 41
+    ,e_bp_multicore_half_cfg                        = 40
+    ,e_bp_unicore_half_cfg                          = 39
 
     // L2 extension configurations
-    ,e_bp_multicore_4_l2e_cfg               = 35
-    ,e_bp_multicore_2_l2e_cfg               = 34
-    ,e_bp_multicore_1_l2e_cfg               = 33
+    ,e_bp_multicore_4_l2e_cfg                       = 38
+    ,e_bp_multicore_2_l2e_cfg                       = 37
+    ,e_bp_multicore_1_l2e_cfg                       = 36
 
     // Accelerator configurations
-    ,e_bp_multicore_1_accelerator_cfg       = 32
+    ,e_bp_multicore_1_accelerator_cfg               = 35
 
     // Ucode configurations
-    ,e_bp_multicore_16_cce_ucode_cfg        = 31
-    ,e_bp_multicore_12_cce_ucode_cfg        = 30
-    ,e_bp_multicore_8_cce_ucode_cfg         = 29
-    ,e_bp_multicore_6_cce_ucode_cfg         = 28
-    ,e_bp_multicore_4_cce_ucode_cfg         = 27
-    ,e_bp_multicore_3_cce_ucode_cfg         = 26
-    ,e_bp_multicore_2_cce_ucode_cfg         = 25
-    ,e_bp_multicore_1_cce_ucode_bootrom_cfg = 24
-    ,e_bp_multicore_1_cce_ucode_cfg         = 23
+    ,e_bp_multicore_16_cce_ucode_cfg                = 34
+    ,e_bp_multicore_12_cce_ucode_cfg                = 33
+    ,e_bp_multicore_8_cce_ucode_cfg                 = 32
+    ,e_bp_multicore_6_cce_ucode_cfg                 = 31
+    ,e_bp_multicore_4_cce_ucode_cfg                 = 30
+    ,e_bp_multicore_3_cce_ucode_cfg                 = 29
+    ,e_bp_multicore_2_cce_ucode_cfg                 = 28
+    ,e_bp_multicore_1_cce_ucode_paddr_large_cfg     = 27
+    ,e_bp_multicore_1_cce_ucode_bootrom_cfg         = 26
+    ,e_bp_multicore_1_cce_ucode_cfg                 = 25
 
     // Multicore configurations
-    ,e_bp_multicore_16_cfg                  = 22
-    ,e_bp_multicore_12_cfg                  = 21
-    ,e_bp_multicore_8_cfg                   = 20
-    ,e_bp_multicore_6_cfg                   = 19
-    ,e_bp_multicore_4_cfg                   = 18
-    ,e_bp_multicore_3_cfg                   = 17
-    ,e_bp_multicore_2_cfg                   = 16
-    ,e_bp_multicore_1_l1_small_cfg          = 15
-    ,e_bp_multicore_1_l1_medium_cfg         = 14
-    ,e_bp_multicore_1_no_l2_cfg             = 13
-    ,e_bp_multicore_1_bootrom_cfg           = 12
-    ,e_bp_multicore_1_cfg                   = 11
+    ,e_bp_multicore_16_cfg                          = 24
+    ,e_bp_multicore_12_cfg                          = 23
+    ,e_bp_multicore_8_cfg                           = 22
+    ,e_bp_multicore_6_cfg                           = 21
+    ,e_bp_multicore_4_cfg                           = 20
+    ,e_bp_multicore_3_cfg                           = 19
+    ,e_bp_multicore_2_cfg                           = 18
+    ,e_bp_multicore_1_paddr_large_cfg               = 17
+    ,e_bp_multicore_1_l1_small_cfg                  = 16
+    ,e_bp_multicore_1_l1_medium_cfg                 = 15
+    ,e_bp_multicore_1_no_l2_cfg                     = 14
+    ,e_bp_multicore_1_bootrom_cfg                   = 13
+    ,e_bp_multicore_1_cfg                           = 12
 
     // Unicore configurations
-    ,e_bp_unicore_writethrough_cfg          = 10
-    ,e_bp_unicore_l1_wide_cfg               = 9
-    ,e_bp_unicore_l1_hetero_cfg             = 8
-    ,e_bp_unicore_l1_tiny_cfg               = 7
-    ,e_bp_unicore_l1_small_cfg              = 6
-    ,e_bp_unicore_l1_medium_cfg             = 5
-    ,e_bp_unicore_no_l2_cfg                 = 4
-    ,e_bp_unicore_bootrom_cfg               = 3
-    ,e_bp_unicore_cfg                       = 2
+    ,e_bp_unicore_paddr_large_cfg                   = 11
+    ,e_bp_unicore_writethrough_cfg                  = 10
+    ,e_bp_unicore_l1_wide_cfg                       = 9
+    ,e_bp_unicore_l1_hetero_cfg                     = 8
+    ,e_bp_unicore_l1_tiny_cfg                       = 7
+    ,e_bp_unicore_l1_small_cfg                      = 6
+    ,e_bp_unicore_l1_medium_cfg                     = 5
+    ,e_bp_unicore_no_l2_cfg                         = 4
+    ,e_bp_unicore_bootrom_cfg                       = 3
+    ,e_bp_unicore_cfg                               = 2
 
     // A custom BP configuration generated from Makefile
-    ,e_bp_custom_cfg                        = 1
+    ,e_bp_custom_cfg                                = 1
     // The default BP
-    ,e_bp_default_cfg                       = 0
+    ,e_bp_default_cfg                               = 0
   } bp_params_e;
 
 `endif

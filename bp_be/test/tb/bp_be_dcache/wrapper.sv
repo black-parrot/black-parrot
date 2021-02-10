@@ -25,7 +25,7 @@ module wrapper
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
 
-   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam block_size_in_words_lp=assoc_p
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
 
@@ -117,7 +117,7 @@ module wrapper
    bp_bedrock_lce_resp_msg_s [num_caches_p-1:0] lce_resp_lo;
    bp_bedrock_lce_resp_msg_s cce_lce_resp_li;
 
-   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+   `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
    bp_cfg_bus_s cfg_bus_cast_i;
    assign cfg_bus_cast_i = cfg_bus_i;
 

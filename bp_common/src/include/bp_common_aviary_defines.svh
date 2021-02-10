@@ -42,8 +42,9 @@
     , localparam vaddr_width_p   = proc_param_lp.vaddr_width                                       \
     , localparam paddr_width_p   = proc_param_lp.paddr_width                                       \
     , localparam dram_max_size_p = proc_param_lp.dram_max_size                                     \
-    , localparam caddr_width_p   = `BSG_SAFE_CLOG2(dram_base_addr_gp+dram_max_size_p)              \
     , localparam asid_width_p    = proc_param_lp.asid_width                                        \
+    , localparam caddr_width_p   = `BSG_SAFE_CLOG2(dram_base_addr_gp+dram_max_size_p)              \
+    , localparam domain_width_p  = paddr_width_p - caddr_width_p                                   \
                                                                                                    \
     , localparam boot_pc_p       = proc_param_lp.boot_pc                                           \
     , localparam boot_in_debug_p = proc_param_lp.boot_in_debug                                     \

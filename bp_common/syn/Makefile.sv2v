@@ -25,7 +25,7 @@ convert.bsg_sv2v: CONVERT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.e
 $(CONVERT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CONVERT_DIR)
 $(CONVERT_DIR)/convert_bsg_sv2v: $(CONVERT_COLLATERAL)
 	$(MAKE) -C $(BP_EXTERNAL_DIR)/bsg_sv2v convert_sv2v \
-		DESIGN_FILELIST=$(@D)/flist.vcs DESIGN_NAME=wrapper OUTPUT_DIR=$(@D) | tee $(CONVERT_LOG)
+		DESIGN_FILELIST=$(@D)/flist.vcs DESIGN_NAME=wrapper OUTPUT_DIR=$(@D) 2>&1 | tee $(CONVERT_LOG)
 	
 # Note: This target fails for current sv2v builds
 convert.zachjs_sv2v: $(CONVERT_DIR)/convert_zachjs_sv2v
@@ -35,7 +35,7 @@ convert.zachjs_sv2v: CONVERT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).conver
 $(CONVERT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CONVERT_DIR)
 $(CONVERT_DIR)/convert_zachjs_sv2v: $(CONVERT_COLLATERAL)
 	$(eval sv2v_args := $(shell cat $(@D)/command.txt))
-	cd $(@D); $(ZACHJS_SV2V) $(sv2v_args) | tee $(CONVERT_LOG)
+	cd $(@D); $(ZACHJS_SV2V) $(sv2v_args) 2>&1 | tee $(CONVERT_LOG)
 
 clean.sv2v:
 	@-rm -rf touchfiles/sv2v

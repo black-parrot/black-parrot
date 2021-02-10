@@ -27,7 +27,7 @@ cfg_core_offset = 24
 class NBF:
 
   # constructor
-  def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file, config, skip_zeros):
+  def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file, config, skip_zeros, addr_width):
 
     # input parameters
     self.ncpus = ncpus
@@ -36,7 +36,7 @@ class NBF:
     self.config = config
     self.checkpoint_file = checkpoint_file
     self.skip_zeros = skip_zeros
-    self.addr_width = 40
+    self.addr_width = addr_width
     self.block_size = 8
 
     if self.ucode_file:
@@ -217,8 +217,9 @@ if __name__ == "__main__":
   parser.add_argument("--config", dest='config', action='store_true', help='Do config over nbf')
   parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help='checkpoint nbf file')
   parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
+  parser.add_argument('--addr_width', type=int, default=40, help='Physical address width')
 
   args = parser.parse_args()
 
-  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file, args.config, args.skip_zeros)
+  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file, args.config, args.skip_zeros, args.addr_width)
   converter.dump()
