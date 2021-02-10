@@ -1093,7 +1093,6 @@ module bp_be_dcache
       wire clear_reservation = decode_tv_r.sc_op
         || flush_i
         || (tag_mem_pkt_yumi_o
-            & (tag_mem_pkt_cast_i.state == e_COH_I)
             & (tag_mem_pkt_cast_i.index == load_reserved_index_r)
             & (tag_mem_pkt_cast_i.tag == load_reserved_tag_r));
       bsg_dff_reset_set_clear
