@@ -305,6 +305,7 @@ module bp_mem_to_dram
 
   ,.fifo_deq_v_o(reorder_deq_v_lo)
   ,.fifo_deq_data_o(reorder_deq_data_lo)
+  ,.fifo_deq_id_o()
   ,.fifo_deq_yumi_i(reorder_deq_yumi_li)
 
   ,.empty_o()

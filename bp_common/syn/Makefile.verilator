@@ -65,7 +65,7 @@ build.sc: VBUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.err
 $(VBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/obj_dir: $(VBUILD_COLLATERAL)
 	cd $(@D); \
-		$(VV) $(VV_OPTS) $(BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) | tee $(VBUILD_LOG)
+		$(VV) $(VV_OPTS) $(BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | tee $(VBUILD_LOG)
 	-@grep "Error" -A 5 $(VBUILD_LOG) > $(VBUILD_ERROR)
 	-@tail -n 3 $(VBUILD_LOG) > $(VBUILD_REPORT)
 	-@test -s $(VBUILD_ERROR) && echo "FAILED" >> $(VBUILD_REPORT) || rm $(VBUILD_ERROR)
@@ -86,7 +86,7 @@ sim.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
 sim.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(SIM_DIR)/run_simsc: $(SIM_COLLATERAL)
-	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
+	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) 2>&1 | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
@@ -101,7 +101,7 @@ cov.sc: COV_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.rpt
 cov.sc: COV_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.err
 $(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(RESULTS_DIR)/covsc: $(COV_COLLATERAL)
-	cd $(@D); verilator_coverage */*.dat --rank --annotate $(COV_REPORT) | tee $(COV_LOG)
+	cd $(@D); verilator_coverage */*.dat --rank --annotate $(COV_REPORT) 2>&1 | tee $(COV_LOG)
 
 wave.sc: $(SIM_DIR)/wavesc
 $(SIM_DIR)/wavesc:

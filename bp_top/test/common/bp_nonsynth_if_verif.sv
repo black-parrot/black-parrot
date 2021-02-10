@@ -77,7 +77,7 @@ module bp_nonsynth_if_verif
 
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
-  if (paddr_width_p > 39)
+  if (paddr_width_p < 40)
     $warning("Warning: paddr < 40 has not been tested");
   if (dram_max_size_p != (1 << 31))
     $warning("Warning: dram size != 4GB");
