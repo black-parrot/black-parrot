@@ -19,6 +19,7 @@ e_bp_multicore_3_cfg_cores              := 3
 e_bp_multicore_2_cce_ucode_cfg_cores    := 2
 e_bp_multicore_2_l2e_cfg_cores          := 4
 e_bp_multicore_2_cfg_cores              := 2
+e_bp_multicore_1_l2e_cfg_cores          := 2
 
 e_bp_default_cfg_cores                  := 1
 

@@ -45,7 +45,7 @@ module bp_me_cce_to_cache
     , output logic                        v_o
     , input                               ready_i
 
-    , input [dword_width_gp-1:0]           data_i
+    , input [dword_width_gp-1:0]          data_i
     , input                               v_i
     , output logic                        yumi_o
   );
@@ -57,6 +57,7 @@ module bp_me_cce_to_cache
 
   // cce logics
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p)
 
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = cache_pkt;
@@ -118,6 +119,9 @@ module bp_me_cce_to_cache
   end
 
   logic is_resp_ready;
+
+  bp_local_addr_s local_addr_cast;
+  assign local_addr_cast = mem_cmd_lo.header.addr;
 
   always_comb begin
     cache_pkt.mask = '0;
@@ -212,7 +216,7 @@ module bp_me_cce_to_cache
           default: cache_pkt.opcode = LB;
         endcase
 
-        if ((mem_cmd_lo.header.addr < dram_base_addr_gp) && (mem_cmd_lo.header.addr[0+:20] == cache_tagfl_base_addr_gp))
+        if ((mem_cmd_lo.header.addr < dram_base_addr_gp) && (local_addr_cast.dev == cache_tagfl_base_addr_gp))
           begin
             cache_pkt.opcode = TAGFL;
             cache_pkt.addr = {cmd_data[0][0+:lg_sets_lp+lg_ways_lp], block_offset_width_lp'(0)};

@@ -15,7 +15,6 @@ cfg_base_addr          = 0x200000
 cfg_reg_reset          = 0x01
 cfg_reg_freeze         = 0x02
 cfg_domain_mask        = 0x09
-cfg_sac_mask           = 0x0a
 cfg_reg_icache_mode    = 0x22
 cfg_reg_npc            = 0x40
 cfg_reg_dcache_mode    = 0x43

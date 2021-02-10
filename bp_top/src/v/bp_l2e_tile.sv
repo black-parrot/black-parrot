@@ -49,6 +49,7 @@ module bp_l2e_tile
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p)
 
   // Cast the routing links
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -262,9 +263,11 @@ module bp_l2e_tile
     );
   assign cce_lce_resp_li = '{header: cce_lce_resp_packet_li.header.msg_hdr, data: cce_lce_resp_packet_li.data};
 
-  /* TODO: Extract local memory map to module */
+  bp_local_addr_s local_addr_cast;
+  assign local_addr_cast = cce_mem_cmd_lo.header.addr;
+  wire [dev_id_width_gp-1:0] device_cmd_li = local_addr_cast.dev;
+
   wire local_cmd_li        = (cce_mem_cmd_lo.header.addr < dram_base_addr_gp);
-  wire [3:0] device_cmd_li = cce_mem_cmd_lo.header.addr[20+:4];
   wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
   wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_cache_cmd;
