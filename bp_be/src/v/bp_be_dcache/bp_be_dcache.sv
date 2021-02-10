@@ -406,8 +406,6 @@ module bp_be_dcache
   // If there is invalid way, then it take prioirty over LRU way.
   wire [lg_dcache_assoc_lp-1:0] lru_way_li = invalid_exist ? invalid_way : lru_encode;
 
-  wire [ptag_width_p-1:0]    addr_tag_tv   = paddr_tv_r[paddr_width_p-1-:ptag_width_p];
-  wire [sindex_width_lp-1:0] addr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
   wire [3:0] byte_offset_tv = paddr_tv_r[0+:4];
 
   logic [lg_dcache_assoc_lp-1:0] store_hit_way_tv;
@@ -1116,8 +1114,8 @@ module bp_be_dcache
          );
 
         assign load_reservation_match_tv = load_reserved_v_r
-          & (load_reserved_index_r == addr_index_tv)
-          & (load_reserved_tag_r == addr_tag_tv);
+          & (load_reserved_index_r == paddr_index_tv)
+          & (load_reserved_tag_r == paddr_tag_tv);
 
         // Linear backoff
         localparam lock_max_limit_lp = 8;
