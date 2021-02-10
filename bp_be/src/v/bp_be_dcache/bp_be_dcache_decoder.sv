@@ -74,7 +74,7 @@ module bp_be_dcache_decoder
        ,e_dcache_op_lwu, e_dcache_op_lhu, e_dcache_op_lbu
        };
 
-    decode_cast_o.store_op = (decode_cast_o.amo_op | decode_cast_o.sc_op) || dcache_pkt.opcode inside
+    decode_cast_o.store_op = (decode_cast_o.amo_op & ~decode_cast_o.lr_op) || dcache_pkt.opcode inside
       {e_dcache_op_sd, e_dcache_op_sw, e_dcache_op_sh, e_dcache_op_sb, e_dcache_op_fsw, e_dcache_op_fsd};
 
     // Size decoding

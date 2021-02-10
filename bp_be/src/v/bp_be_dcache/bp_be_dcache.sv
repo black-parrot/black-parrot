@@ -406,8 +406,6 @@ module bp_be_dcache
   // If there is invalid way, then it take prioirty over LRU way.
   wire [lg_dcache_assoc_lp-1:0] lru_way_li = invalid_exist ? invalid_way : lru_encode;
 
-  wire [ptag_width_p-1:0]    addr_tag_tv   = paddr_tv_r[paddr_width_p-1-:ptag_width_p];
-  wire [sindex_width_lp-1:0] addr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
   wire [3:0] byte_offset_tv = paddr_tv_r[0+:4];
 
   logic [lg_dcache_assoc_lp-1:0] store_hit_way_tv;
@@ -1089,13 +1087,14 @@ module bp_be_dcache
       wire set_reservation = decode_tv_r.lr_op & early_v_o;
       // All SCs clear the reservation (regardless of success)
       // Invalidates from other harts which match the reservation address clear the reservation
+      // Also invalidate on trap
       wire clear_reservation = decode_tv_r.sc_op
-                               || (tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_set_state)
-                                   & (tag_mem_pkt_cast_i.state == e_COH_I) &
-(tag_mem_pkt_cast_i.index == load_reserved_index_r) & (tag_mem_pkt_cast_i.index ==
-load_reserved_index_r));
+        || flush_i
+        || (tag_mem_pkt_yumi_o
+            & (tag_mem_pkt_cast_i.index == load_reserved_index_r)
+            & (tag_mem_pkt_cast_i.tag == load_reserved_tag_r));
       bsg_dff_reset_set_clear
-       #(.width_p(1))
+       #(.width_p(1), .clear_over_set_p(1))
        load_reserved_v_reg
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
@@ -1110,12 +1109,13 @@ load_reserved_index_r));
        load_reserved_addr
         (.clk_i(clk_i)
          ,.en_i(set_reservation)
-         ,.data_i({paddr_tv_r[paddr_width_p-1-:ptag_width_p], paddr_tv_r[block_offset_width_lp+:sindex_width_lp]})
+         ,.data_i(paddr_tv_r[paddr_width_p-1:block_offset_width_lp])
          ,.data_o({load_reserved_tag_r, load_reserved_index_r})
          );
 
-        assign load_reservation_match_tv = load_reserved_v_r & (load_reserved_index_r ==
-addr_index_tv) & (load_reserved_tag_r == addr_tag_tv);
+        assign load_reservation_match_tv = load_reserved_v_r
+          & (load_reserved_index_r == paddr_index_tv)
+          & (load_reserved_tag_r == paddr_tag_tv);
 
         // Linear backoff
         localparam lock_max_limit_lp = 8;
@@ -1123,10 +1123,7 @@ addr_index_tv) & (load_reserved_tag_r == addr_tag_tv);
         wire lock_clr = early_v_o || (lock_cnt_r == lock_max_limit_lp);
         wire lock_inc = ~lock_clr & (lr_hit_tv || (lock_cnt_r > 0));
         bsg_counter_clear_up
-         #(.max_val_p(lock_max_limit_lp)
-           ,.init_val_p(0)
-           ,.disable_overflow_warning_p(1)
-           )
+         #(.max_val_p(lock_max_limit_lp), .init_val_p(0))
          lock_counter
           (.clk_i(clk_i)
            ,.reset_i(reset_i)
