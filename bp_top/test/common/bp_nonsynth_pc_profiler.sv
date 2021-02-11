@@ -45,7 +45,7 @@ module bp_nonsynth_pc_profiler
       else
         count <= count + 1'b1;
 
-      if (commit_pkt_cast_i.v)
+      if (commit_pkt_cast_i.instret)
         if (histogram.exists(commit_pkt_cast_i.pc))
           histogram[commit_pkt_cast_i.pc] <= histogram[commit_pkt_cast_i.pc] + 1'b1;
         else

@@ -101,7 +101,7 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic                           v;                                                           \
+      logic                           npc_w_v;                                                     \
       logic                           queue_v;                                                     \
       logic                           instret;                                                     \
       logic [vaddr_width_p-1:0]       pc;                                                          \

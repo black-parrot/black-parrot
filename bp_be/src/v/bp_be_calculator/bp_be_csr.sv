@@ -696,7 +696,7 @@ module bp_be_csr
 
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
-  assign commit_pkt_cast_o.v                = |{exception.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_store_miss, exception.dtlb_load_miss};
+  assign commit_pkt_cast_o.npc_w_v          = |{exception.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_store_miss, exception.dtlb_load_miss};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
