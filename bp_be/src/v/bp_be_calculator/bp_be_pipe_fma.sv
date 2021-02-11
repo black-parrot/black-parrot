@@ -190,7 +190,7 @@ module bp_be_pipe_fma
 
   wire [dpath_width_gp-1:0] imulw_out = {{word_width_gp{imul_out[word_width_gp-1]}}, imul_out[0+:word_width_gp]};
   wire [dpath_width_gp-1:0] imul_result = decode.opw_v ? imulw_out : imul_out;
-  wire imul_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mul_v;
+  wire imul_v_li = reservation.v & reservation.decode.pipe_mul_v;
   bsg_dff_chain
    #(.width_p(1+dpath_width_gp), .num_stages_p(imul_latency_p-1))
    retiming_chain
@@ -200,7 +200,7 @@ module bp_be_pipe_fma
      ,.data_o({imul_v_o, imul_data_o})
      );
 
-  wire fma_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_fma_v;
+  wire fma_v_li = reservation.v & reservation.decode.pipe_fma_v;
   bsg_dff_chain
    #(.width_p(1+$bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(fma_latency_p-1))
    fma_retiming_chain

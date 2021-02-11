@@ -493,7 +493,7 @@ module bp_be_pipe_aux
       endcase
     end
 
-  wire faux_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_aux_v;
+  wire faux_v_li = reservation.v & reservation.decode.pipe_aux_v;
   bsg_dff_chain
    #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)+1), .num_stages_p(latency_p-1))
    retiming_chain

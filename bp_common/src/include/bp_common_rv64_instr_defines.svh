@@ -4,8 +4,8 @@
  * Based off of: https://bitbucket.org/taylor-bsg/bsg_manycore/src/master/v/vanilla_bean/parameters.v
  */
 
-`ifndef BP_COMMON_RV64_INSTR_DEFINES_VH
-`define BP_COMMON_RV64_INSTR_DEFINES_VH
+`ifndef BP_COMMON_RV64_INSTR_DEFINES_SVH
+`define BP_COMMON_RV64_INSTR_DEFINES_SVH
 
   /* RISCV definitions */
   `define RV64_LUI_OP        7'b0110111

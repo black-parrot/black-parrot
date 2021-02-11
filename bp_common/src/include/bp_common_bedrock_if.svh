@@ -195,4 +195,5 @@
     `declare_bp_bedrock_mem_payload_s(lce_id_width_mp, lce_assoc_mp, name_mp); \
     `declare_bp_bedrock_msg_s(addr_width_mp, ``name_mp``_mem_payload_width_lp, data_width_mp, ``name_mp``_mem);
 
-`endif // BP_COMMON_BEDROCK_IF_VH
+`endif
+

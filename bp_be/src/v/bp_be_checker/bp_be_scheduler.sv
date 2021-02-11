@@ -175,8 +175,8 @@ module bp_be_scheduler
       isd_status_cast_o.fwb_v    = decoded.frf_w_v;
 
       // Form dispatch packet
-      dispatch_pkt.v        = fe_queue_yumi_li;
-      dispatch_pkt.poison   = (poison_isd_i | ~dispatch_pkt.v);
+      dispatch_pkt.v        = fe_queue_yumi_li & ~poison_isd_i;
+      dispatch_pkt.queue_v  = fe_queue_yumi_li;
       dispatch_pkt.pc       = expected_npc_i;
       dispatch_pkt.instr    = instr;
       dispatch_pkt.rs1_fp_v = issue_pkt.frs1_v;

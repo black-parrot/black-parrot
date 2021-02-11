@@ -309,8 +309,8 @@ module bp_be_calculator_top
      ,.ptw_miss_pkt_o(ptw_miss_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
-     ,.commit_v_i(~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v)
-     ,.commit_queue_v_i(~exc_stage_r[2].nop_v & ~exc_stage_r[2].roll_v)
+     ,.commit_v_i(exc_stage_r[2].v)
+     ,.commit_queue_v_i(exc_stage_r[2].queue_v)
      ,.exception_i(exc_stage_r[2].exc)
      ,.commit_pkt_o(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt_o)
@@ -385,29 +385,32 @@ module bp_be_calculator_top
                 }
             : comp_stage_r[i-1];
         end
-      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo       : pipe_ctl_data_lo_v ? pipe_ctl_data_lo : '0;
-      comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo : pipe_aux_data_lo_v ? pipe_aux_data_lo : '0;
-      comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo : pipe_sys_data_lo_v ? pipe_sys_data_lo : '0;
+      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo       : '0;
+      comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo       : '0;
+      comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo : '0;
+      comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo       : '0;
+      comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo : '0;
+      comp_stage_n[3].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo       : '0;
       comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo       : '0;
       comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo       : '0;
 
       comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo     : '0;
       comp_stage_n[5].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo     : '0;
 
-      comp_stage_n[0].ird_w_v    &= ~exc_stage_n[0].poison_v;
-      comp_stage_n[1].ird_w_v    &= ~exc_stage_n[1].poison_v;
-      comp_stage_n[2].ird_w_v    &= ~exc_stage_n[2].poison_v;
-      comp_stage_n[3].ird_w_v    &= ~exc_stage_n[3].poison_v;
+      comp_stage_n[0].ird_w_v    &= exc_stage_n[0].v;
+      comp_stage_n[1].ird_w_v    &= exc_stage_n[1].v;
+      comp_stage_n[2].ird_w_v    &= exc_stage_n[2].v;
+      comp_stage_n[3].ird_w_v    &= exc_stage_n[3].v;
 
-      comp_stage_n[0].frd_w_v    &= ~exc_stage_n[0].poison_v;
-      comp_stage_n[1].frd_w_v    &= ~exc_stage_n[1].poison_v;
-      comp_stage_n[2].frd_w_v    &= ~exc_stage_n[2].poison_v;
-      comp_stage_n[3].frd_w_v    &= ~exc_stage_n[3].poison_v;
+      comp_stage_n[0].frd_w_v    &= exc_stage_n[0].v;
+      comp_stage_n[1].frd_w_v    &= exc_stage_n[1].v;
+      comp_stage_n[2].frd_w_v    &= exc_stage_n[2].v;
+      comp_stage_n[3].frd_w_v    &= exc_stage_n[3].v;
 
-      comp_stage_n[0].fflags_w_v &= ~exc_stage_n[0].poison_v;
-      comp_stage_n[1].fflags_w_v &= ~exc_stage_n[1].poison_v;
-      comp_stage_n[2].fflags_w_v &= ~exc_stage_n[2].poison_v;
-      comp_stage_n[3].fflags_w_v &= ~exc_stage_n[3].poison_v;
+      comp_stage_n[0].fflags_w_v &= exc_stage_n[0].v;
+      comp_stage_n[1].fflags_w_v &= exc_stage_n[1].v;
+      comp_stage_n[2].fflags_w_v &= exc_stage_n[2].v;
+      comp_stage_n[3].fflags_w_v &= exc_stage_n[3].v;
     end
 
   bsg_dff
@@ -426,19 +429,16 @@ module bp_be_calculator_top
           // Normally, shift down in the pipe
           exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
         end
-          exc_stage_n[0].nop_v                  |= ~reservation_n.v;
+          exc_stage_n[0].v                       = reservation_n.v;
+          exc_stage_n[0].v                      &= ~flush_i;
+          exc_stage_n[1].v                      &= ~flush_i;
+          exc_stage_n[2].v                      &= ~flush_i;
+          exc_stage_n[3].v                      &= commit_pkt.instret;
 
-          exc_stage_n[0].roll_v                 |= pipe_sys_miss_v_lo;
-          exc_stage_n[1].roll_v                 |= pipe_sys_miss_v_lo;
-          exc_stage_n[2].roll_v                 |= pipe_sys_miss_v_lo;
-          exc_stage_n[3].roll_v                 |= pipe_sys_miss_v_lo;
-
-          exc_stage_n[0].poison_v               |= reservation_n.poison;
-          exc_stage_n[1].poison_v               |= flush_i;
-          exc_stage_n[2].poison_v               |= flush_i;
-          // We only poison on exception or cache miss, because we also flush
-          // on, for instance, fence.i
-          exc_stage_n[3].poison_v               |= pipe_sys_miss_v_lo | pipe_sys_exc_v_lo;
+          exc_stage_n[0].queue_v                 = reservation_n.queue_v;
+          exc_stage_n[0].queue_v                &= ~pipe_sys_miss_v_lo;
+          exc_stage_n[1].queue_v                &= ~pipe_sys_miss_v_lo;
+          exc_stage_n[2].queue_v                &= ~pipe_sys_miss_v_lo;
 
           exc_stage_n[0].exc.itlb_miss          |= reservation_n.decode.itlb_miss;
           exc_stage_n[0].exc.icache_miss        |= reservation_n.decode.icache_miss;

@@ -213,7 +213,7 @@ module bp_be_pipe_sys
   assign exc_v_o          = commit_pkt.exception;
   assign miss_v_o         = commit_pkt.rollback;
 
-  wire sys_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_sys_v;
+  wire sys_v_li = reservation.v & reservation.decode.pipe_sys_v;
   bsg_dff_chain
    #(.width_p(1), .num_stages_p(2))
    sys_chain

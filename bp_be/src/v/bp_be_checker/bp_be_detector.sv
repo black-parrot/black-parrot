@@ -92,7 +92,7 @@ module bp_be_detector
 
   logic [1:0] irs_match_lo;
   logic       ird_match_lo;
-  wire score_int_v_li = (dispatch_pkt.v & ~dispatch_pkt.poison) & dispatch_pkt.decode.late_iwb_v;
+  wire score_int_v_li = dispatch_pkt.v & dispatch_pkt.decode.late_iwb_v;
   wire clear_int_v_li = iwb_pkt.ird_w_v & iwb_pkt.late;
   bp_be_scoreboard
    #(.bp_params_p(bp_params_p), .num_rs_p(2))
@@ -114,7 +114,7 @@ module bp_be_detector
 
   logic [2:0] frs_match_lo;
   logic       frd_match_lo;
-  wire score_fp_v_li = (dispatch_pkt.v & ~dispatch_pkt.poison) & dispatch_pkt.decode.late_fwb_v;
+  wire score_fp_v_li = dispatch_pkt.v & dispatch_pkt.decode.late_fwb_v;
   wire clear_fp_v_li = fwb_pkt.frd_w_v & fwb_pkt.late;
   bp_be_scoreboard
    #(.bp_params_p(bp_params_p), .num_rs_p(3))
@@ -303,7 +303,7 @@ module bp_be_detector
   bp_be_dep_status_s dep_status_n;
   always_ff @(posedge clk_i)
     begin
-      dep_status_r[0]   <= (dispatch_pkt.v & ~dispatch_pkt.poison) ? dep_status_n : '0;
+      dep_status_r[0]   <= dispatch_pkt.v ? dep_status_n : '0;
       dep_status_r[3:1] <= dep_status_r[2:0];
     end
 
