@@ -24,7 +24,7 @@ module bp_be_pipe_sys
    , localparam exception_width_lp    = $bits(bp_be_exception_s)
    , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
-   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
    , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    )

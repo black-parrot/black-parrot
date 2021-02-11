@@ -28,7 +28,7 @@ module bp_be_director
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
 
    , localparam debug_lp = 0

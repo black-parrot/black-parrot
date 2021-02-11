@@ -12,7 +12,7 @@ module bp_nonsynth_cosim
 
     , localparam max_instr_lp = 2**30
     , localparam decode_width_lp = $bits(bp_be_decode_s)
-   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
     )
    (input                                     clk_i
     , input                                   reset_i

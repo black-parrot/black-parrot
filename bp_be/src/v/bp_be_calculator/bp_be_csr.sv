@@ -13,7 +13,7 @@ module bp_be_csr
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
    , localparam exception_width_lp = $bits(bp_be_exception_s)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
@@ -707,6 +707,7 @@ exception.dtlb_store_miss, exception.dtlb_load_miss};
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
   assign commit_pkt_cast_o.instr            = exception_instr_i;
+  assign commit_pkt_cast_o.pte_leaf         = ptw_fill_pkt.entry;
   assign commit_pkt_cast_o.npc              = apc_n;
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;

@@ -10,7 +10,7 @@ module bp_nonsynth_pc_profiler
 
     , parameter pc_trace_file_p = "pc"
 
-    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
+    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
     )
    (input clk_i
     , input reset_i

@@ -27,7 +27,7 @@ module bp_be_calculator_top
    , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
