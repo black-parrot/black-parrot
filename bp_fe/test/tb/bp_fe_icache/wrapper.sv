@@ -12,19 +12,19 @@ module wrapper
    , parameter fill_width_p = icache_fill_width_p
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
-   , localparam lg_icache_assoc_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
-   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-   , localparam block_size_in_words_lp=icache_assoc_p
-   , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
+   , localparam lg_icache_assoc_lp = `BSG_SAFE_CLOG2(assoc_p)
+   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
+   , localparam block_size_in_words_lp=assoc_p
+   , localparam bank_width_lp = block_width_p / assoc_p
    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
    , localparam data_mem_mask_width_lp=(bank_width_lp>>3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp>>3)
    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-   , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
+   , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    )
   (input                                     clk_i
@@ -77,7 +77,7 @@ module wrapper
   logic [icache_data_mem_pkt_width_lp-1:0] data_mem_pkt_li;
   logic [icache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_li;
   logic [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
-  logic [icache_block_width_p-1:0] data_mem_lo;
+  logic [block_width_p-1:0] data_mem_lo;
   logic [icache_tag_info_width_lp-1:0] tag_mem_lo;
   logic [icache_stat_info_width_lp-1:0] stat_mem_lo;
 
@@ -141,13 +141,17 @@ module wrapper
      ,.ptag_i(fifo_ptag_r)
      ,.ptag_v_i(ptag_v_r)
      ,.ptag_uncached_i(ptag_uncached_r)
-     ,.poison_tl_i('0)
 
      ,.data_o(data_o)
      ,.miss_not_data_o(miss_not_data_lo)
      ,.v_o(data_v_o)
      ,.data_yumi_i(data_yumi_i)
-     ,.poison_tv_i(1'b0)
+
+
+     ,.tl_we_o()
+     ,.tl_vaddr_o()
+     ,.tv_we_o()
+     ,.tv_vaddr_o()
 
      ,.cache_req_o(cache_req_lo)
      ,.cache_req_v_o(cache_req_v_lo)
@@ -187,9 +191,9 @@ module wrapper
     // I-Cache LCE
     bp_lce
      #(.bp_params_p(bp_params_p)
-       ,.assoc_p(icache_assoc_p)
-       ,.sets_p(icache_sets_p)
-       ,.block_width_p(icache_block_width_p)
+       ,.assoc_p(assoc_p)
+       ,.sets_p(sets_p)
+       ,.block_width_p(block_width_p)
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
        ,.non_excl_reads_p(1)
@@ -303,10 +307,10 @@ module wrapper
     bp_uce
      #(.bp_params_p(bp_params_p)
        ,.uce_mem_data_width_p(cce_block_width_p)
-       ,.assoc_p(icache_assoc_p)
-       ,.sets_p(icache_sets_p)
-       ,.block_width_p(icache_block_width_p)
-       ,.fill_width_p(icache_fill_width_p)
+       ,.assoc_p(assoc_p)
+       ,.sets_p(sets_p)
+       ,.block_width_p(block_width_p)
+       ,.fill_width_p(fill_width_p)
        )
      icache_uce
       (.clk_i(clk_i)

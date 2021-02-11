@@ -145,7 +145,13 @@ module testbench
 
   // Subsystem under test
   wrapper
-   #(.bp_params_p(bp_params_p), .uce_p(uce_p))
+   #(.bp_params_p(bp_params_p)
+     ,.uce_p(uce_p)
+     ,.sets_p(icache_sets_p)
+     ,.assoc_p(icache_assoc_p)
+     ,.block_width_p(icache_block_width_p)
+     ,.fill_width_p(icache_fill_width_p)
+     )
    dut
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

@@ -432,7 +432,7 @@ module testbench
            ,.fe_queue_stall(~fe.fe_queue_ready_i)
 
            ,.itlb_miss(fe.itlb_miss_r)
-           ,.icache_miss(~fe.icache.ready_o)
+           ,.icache_miss('0)//~fe.icache.ready_o)
            ,.icache_rollback(fe.icache_miss)
            ,.icache_fence(fe.icache.fencei_req)
            ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
