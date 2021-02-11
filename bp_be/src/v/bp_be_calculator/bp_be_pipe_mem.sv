@@ -18,9 +18,9 @@ module bp_be_pipe_mem
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
    // Generated parameters
-   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dispatch_pkt_width_lp  = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam ptw_miss_pkt_width_lp  = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
@@ -94,7 +94,7 @@ module bp_be_pipe_mem
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
 
   // Cast input and output ports
@@ -123,7 +123,7 @@ module bp_be_pipe_mem
 
   /* Internal connections */
   /* TLB ports */
-  logic                    dtlb_en, dtlb_load_miss_v, dtlb_store_miss_v, dtlb_w_v, dtlb_r_v, dtlb_v_lo, dtlb_miss_v;
+  logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_w_gigapage, dtlb_r_v, dtlb_v_lo;
   logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag;
   bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry, passthrough_entry, entry_lo;
 
@@ -160,15 +160,19 @@ module bp_be_pipe_mem
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
 
   // D-TLB connections
-  assign dtlb_r_v     = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
+  assign dtlb_r_v     = ~reservation.poison & (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
   assign dtlb_r_vtag  = eaddr[page_offset_width_gp+:vtag_width_p];
   assign dtlb_w_v     = ptw_fill_pkt.dtlb_fill_v;
   assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign dtlb_w_entry = ptw_fill_pkt.entry;
+  assign dtlb_w_gigapage = ptw_fill_pkt.gigapage;
 
   logic [ptag_width_p-1:0] dtlb_ptag_lo;
   bp_mmu
-   #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
+   #(.bp_params_p(bp_params_p)
+     ,.tlb_els_4k_p(dtlb_els_4k_p)
+     ,.tlb_els_1g_p(dtlb_els_1g_p)
+     )
    dmmu
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
@@ -178,12 +182,12 @@ module bp_be_pipe_mem
      ,.sum_i(trans_info.mstatus_sum)
      ,.trans_en_i(trans_info.translation_en)
      ,.uncached_mode_i((cfg_bus.dcache_mode == e_lce_mode_uncached))
-     ,.sac_i(cfg_bus.sac)
-     ,.domain_mask_i(cfg_bus.domain)
+     ,.domain_mask_i(cfg_bus.domain_mask)
 
      ,.w_v_i(dtlb_w_v)
      ,.w_vtag_i(dtlb_w_vtag)
      ,.w_entry_i(dtlb_w_entry)
+     ,.w_gigapage_i(dtlb_w_gigapage)
 
      ,.r_v_i(dtlb_r_v)
      ,.r_instr_i('0)
@@ -224,7 +228,7 @@ module bp_be_pipe_mem
      ,.dcache_pkt_o(ptw_dcache_pkt)
      ,.dcache_ptag_o(ptw_dcache_ptag)
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
-     ,.dcache_rdy_i(dcache_ready_lo)
+     ,.dcache_ready_i(dcache_ready_lo)
     );
 
   bp_be_dcache

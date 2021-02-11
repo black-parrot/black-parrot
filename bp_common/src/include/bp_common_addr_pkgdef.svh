@@ -1,20 +1,28 @@
 `ifndef BP_COMMON_ADDR_PKGDEF
 `define BP_COMMON_ADDR_PKGDEF
 
-  // For now, we have a fixed address map
-  typedef struct packed
-  {
-    logic [2:0]  did;
-    logic [36:0] addr;
-  }  bp_global_addr_s;
-
-  typedef struct packed
-  {
-    logic [8:0]  nonlocal;
-    logic [6:0]  cce;
-    logic [3:0]  dev;
-    logic [19:0] addr;
+`define declare_bp_memory_map(paddr_width_mp, caddr_width_mp) \
+  typedef struct packed                                           \
+  {                                                               \
+    logic [paddr_width_mp-caddr_width_mp-1:0] domain;             \
+    logic [caddr_width_mp-1:0]                caddr;              \
+  }  bp_global_addr_s;                                            \
+                                                                  \
+  typedef struct packed                                           \
+  {                                                               \
+    logic [paddr_width_mp-tile_id_width_gp-dev_id_width_gp-dev_addr_width_gp-1:0] \
+                                   nonlocal;         \
+    logic [tile_id_width_gp-1:0]   tile;             \
+    logic [dev_id_width_gp-1:0]    dev;              \
+    logic [dev_addr_width_gp-1:0]  addr;             \
   }  bp_local_addr_s;
+
+  // TODO: These could be parameterizable, but there are some constraints of
+  //   of bit placement within the local uncached space.
+  // TL;DR 16MB ought to be enough for anyone
+  localparam tile_id_width_gp  = 7;
+  localparam dev_id_width_gp   = 4;
+  localparam dev_addr_width_gp = 20;
 
   localparam boot_dev_gp  = 0;
   localparam host_dev_gp  = 1;

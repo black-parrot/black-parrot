@@ -175,9 +175,11 @@ check-design:
   script:
     - $CI_PROJECT_DIR/ci/check_design.sh $CI_CORES
 
+# Some licensing issue as of 02/10/21
 synth-vivado:
   <<: *job_definition
   stage: check
+  allow_failure: true
   tags:
     - vivado
   script:

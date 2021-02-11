@@ -132,6 +132,7 @@
     */                                                                                             \
     typedef struct packed                                                                          \
     {                                                                                              \
+      logic                      gigapage;                                                         \
       bp_pte_entry_leaf_s        pte_entry_leaf;                                                   \
       logic [`bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
@@ -323,7 +324,7 @@
     (1+branch_metadata_fwd_width_mp)
 
   `define bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp) \
-    (`bp_pte_entry_leaf_width(paddr_width_mp))
+    (1+`bp_pte_entry_leaf_width(paddr_width_mp))
 
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
     (asid_width_mp + 2)

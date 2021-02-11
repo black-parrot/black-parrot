@@ -77,7 +77,7 @@ module bp_nonsynth_watchdog
 
   always_ff @(negedge clk_i)
     begin
-      if (reset_i === '0 && (instr_cnt > '0) && (instr_cnt % heartbeat_instr_p == '0))
+      if (reset_i === '0 && (instr_cnt > '0) && (instr_cnt % heartbeat_instr_p == '0) & instret_i)
         begin
           $display("BEAT: %d instructions completed (%d total)", heartbeat_instr_p, instr_cnt);
         end

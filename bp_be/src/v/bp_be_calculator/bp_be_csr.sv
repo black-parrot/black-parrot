@@ -10,7 +10,7 @@ module bp_be_csr
 
    , localparam csr_cmd_width_lp = $bits(bp_be_csr_cmd_s)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
@@ -52,7 +52,7 @@ module bp_be_csr
    );
 
   // Declare parameterizable structs
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   // Casting input and output ports
@@ -76,6 +76,8 @@ module bp_be_csr
   logic [dword_width_gp-1:0] csr_data_li, csr_data_lo;
   logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
 
+  `declare_csr_structs(vaddr_width_p, paddr_width_p)
+
   rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
   rv64_mie_s sie_rwmask_li;
   rv64_mip_s sip_wmask_li, sip_rmask_li, mip_wmask_li;
@@ -96,16 +98,16 @@ module bp_be_csr
   // sedeleg hardcoded to 0
   // sideleg hardcoded to 0
   // sie subset of mie
-  `declare_csr(stvec)
+  `declare_csr_addr(stvec, vaddr_width_p, paddr_width_p)
   `declare_csr(scounteren)
 
   `declare_csr(sscratch)
-  `declare_csr(sepc)
+  `declare_csr_addr(sepc, vaddr_width_p, paddr_width_p)
   `declare_csr(scause)
-  `declare_csr(stval)
+  `declare_csr_addr(stval, vaddr_width_p, paddr_width_p)
   // sip subset of mip
 
-  `declare_csr(satp)
+  `declare_csr_addr(satp, vaddr_width_p, paddr_width_p)
 
   // mvendorid readonly
   // marchid readonly
@@ -117,13 +119,13 @@ module bp_be_csr
   `declare_csr(medeleg)
   `declare_csr(mideleg)
   `declare_csr(mie)
-  `declare_csr(mtvec)
+  `declare_csr_addr(mtvec, vaddr_width_p, paddr_width_p)
   `declare_csr(mcounteren)
 
   `declare_csr(mscratch)
-  `declare_csr(mepc)
+  `declare_csr_addr(mepc, vaddr_width_p, paddr_width_p)
   `declare_csr(mcause)
-  `declare_csr(mtval)
+  `declare_csr_addr(mtval, vaddr_width_p, paddr_width_p)
   `declare_csr(mip)
 
   // No support for PMP currently
@@ -136,7 +138,7 @@ module bp_be_csr
   // mhpmevent not implemented
   //   This is non-compliant. We should hardcode to 0 instead of trapping
   `declare_csr(dcsr)
-  `declare_csr(dpc)
+  `declare_csr_addr(dpc, vaddr_width_p, paddr_width_p)
   `declare_csr(dscratch0)
   `declare_csr(dscratch1)
 

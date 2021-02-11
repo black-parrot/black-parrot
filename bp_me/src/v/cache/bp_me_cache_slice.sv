@@ -15,7 +15,7 @@ module bp_me_cache_slice
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, xce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                clk_i
    , input                              reset_i
@@ -45,7 +45,7 @@ module bp_me_cache_slice
    , output logic                                      mem_resp_data_ready_o
    );
 
-  `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_gp);
+  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [dword_width_gp-1:0] cache_data_lo;
@@ -73,11 +73,11 @@ module bp_me_cache_slice
      ,.yumi_o(cache_data_yumi_li)
      );
 
-  `declare_bsg_cache_dma_pkt_s(paddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
   bsg_cache
-   #(.addr_width_p(paddr_width_p)
+   #(.addr_width_p(caddr_width_p)
      ,.data_width_p(dword_width_gp)
      ,.block_size_in_words_p(cce_block_width_p/dword_width_gp)
      ,.sets_p(l2_sets_p)
