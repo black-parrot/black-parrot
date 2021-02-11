@@ -23,11 +23,8 @@ module bp_be_pipe_mem
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dispatch_pkt_width_lp  = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam ptw_miss_pkt_width_lp  = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
-   , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
-
-   // From RISC-V specifications
-   , localparam eaddr_pad_lp = rv64_eaddr_width_gp - vaddr_width_p
    )
   (input                                  clk_i
    , input                                reset_i
@@ -208,7 +205,7 @@ module bp_be_pipe_mem
      );
 
   bp_be_ptw
-    #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p))
     ptw
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -282,16 +279,8 @@ module bp_be_pipe_mem
 
   // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
   // We latch the dcache miss signal
-  always_ff @(negedge clk_i) begin
-    if (reset_i) begin
-      is_req_mem1 <= '0;
-      is_req_mem2 <= '0;
-      is_store_mem1 <= '0;
-      is_store_mem2 <= '0;
-      is_fencei_mem1 <= '0;
-      is_fencei_mem2 <= '0;
-    end
-    else begin
+  always_ff @(negedge clk_i)
+    begin
       is_req_mem1 <= is_req;
       is_req_mem2 <= is_req_mem1;
       is_store_mem1 <= is_store;
@@ -299,7 +288,6 @@ module bp_be_pipe_mem
       is_fencei_mem1 <= is_fencei;
       is_fencei_mem2 <= is_fencei_mem1;
     end
-  end
 
   // Check instruction accesses
   assign load_misaligned_v = 1'b0; // TODO: detect

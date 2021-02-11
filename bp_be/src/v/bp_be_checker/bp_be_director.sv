@@ -29,7 +29,7 @@ module bp_be_director
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
-   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
 
    , localparam debug_lp = 0
    )
@@ -56,7 +56,7 @@ module bp_be_director
    , input [commit_pkt_width_lp-1:0]   commit_pkt_i
 
    , input [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_i
-  );
+   );
 
   // Declare parameterized structures
   `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);

@@ -101,12 +101,23 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
+      logic [paddr_width_mp-page_offset_width_gp-1:0] ptag;                                        \
+      logic                                              a;                                        \
+      logic                                              d;                                        \
+      logic                                              u;                                        \
+      logic                                              x;                                        \
+      logic                                              w;                                        \
+      logic                                              r;                                        \
+    }  bp_be_pte_leaf_s;                                                                           \
+                                                                                                   \
+    typedef struct packed                                                                          \
+    {                                                                                              \
       logic                           npc_w_v;                                                     \
       logic                           queue_v;                                                     \
       logic                           instret;                                                     \
       logic [vaddr_width_p-1:0]       pc;                                                          \
       logic [vaddr_width_p-1:0]       npc;                                                         \
-      logic [instr_width_gp-1:0]      instr;                                                       \
+      rv64_instr_s                    instr;                                                       \
       logic [rv64_priv_width_gp-1:0]  priv_n;                                                      \
       logic                           translation_en_n;                                            \
       logic                           exception;                                                   \
@@ -148,7 +159,7 @@
       logic load_page_fault_v;                                                                     \
       logic store_page_fault_v;                                                                    \
       logic [vaddr_width_mp-1:0] vaddr;                                                            \
-      logic [dword_width_gp-1:0] entry;                                                            \
+      bp_be_pte_leaf_s entry;                                                                      \
     }  bp_be_ptw_fill_pkt_s;                                                                       \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -187,6 +198,9 @@
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
     (3 + vaddr_width_mp)
 
+  `define bp_be_pte_leaf_width(paddr_width_mp) \
+    (paddr_width_mp - page_offset_width_gp + 6)
+
   `define bp_be_commit_pkt_width(vaddr_width_mp) \
     (3 + 2 * vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 10)
 
@@ -201,10 +215,10 @@
   `define bp_be_ptw_miss_pkt_width(vaddr_width_mp) \
     (3 + vaddr_width_mp)
 
-  `define bp_be_ptw_fill_pkt_width(vaddr_width_mp) \
+  `define bp_be_ptw_fill_pkt_width(vaddr_width_mp, paddr_width_mp) \
     (6                                                                                             \
      + vaddr_width_mp                                                                              \
-     + dword_width_gp                                                                              \
+     + `bp_be_pte_leaf_width(paddr_width_mp)                                                       \
      )
 
   `define bp_be_trans_info_width(ptag_width_mp) \
