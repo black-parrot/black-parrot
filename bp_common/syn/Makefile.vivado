@@ -25,9 +25,9 @@ $(SYNTH_DIR)/synth: $(SYNTH_COLLATERAL)
 	$(eval export REPORT_DIR)
 	$(eval export PART)
 	cd $(@D); \
-		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/tcl/vivado_synth.tcl | tee -i $(SYNTH_LOG)
-		-@grep --color      "ERROR"                                $(SYNTH_LOG) | tee -a $(SYNTH_ERROR)
+		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/tcl/vivado_synth.tcl 2>&1 | tee -i $(SYNTH_LOG)
+		-@grep --color      "ERROR"                                $(SYNTH_LOG) 2>&1 | tee -a $(SYNTH_ERROR)
 		-@test -s $(SYNTH_ERROR) && echo "Vivado synthesis: FAILED" > $(SYNTH_REPORT) && exit 1
-		-@grep --color      "WARNING"                              $(SYNTH_LOG) | tee -a $(SYNTH_REPORT)
-		-@tail -n5                                                 $(SYNTH_LOG) | tee -a $(SYNTH_REPORT)
+		-@grep --color      "WARNING"                              $(SYNTH_LOG) 2>&1 | tee -a $(SYNTH_REPORT)
+		-@tail -n5                                                 $(SYNTH_LOG) 2>&1 | tee -a $(SYNTH_REPORT)
 

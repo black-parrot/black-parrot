@@ -406,16 +406,18 @@ module testbench
            ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
            ,.itlb_clear_i(fe.immu.tlb.flush_i)
-           ,.itlb_fill_v_i(fe.immu.tlb.v_i & fe.immu.tlb.w_i)
+           ,.itlb_fill_v_i(fe.immu.tlb.w_v_li)
+           ,.itlb_fill_g_i(fe.immu.tlb.gigapage_i)
            ,.itlb_vtag_i(fe.immu.tlb.vtag_i)
            ,.itlb_entry_i(fe.immu.tlb.entry_i)
-           ,.itlb_cam_r_v_i(fe.immu.tlb.cam.r_v_i)
-
+           ,.itlb_r_v_i(fe.immu.tlb.r_v_li)
+    
            ,.dtlb_clear_i(be.calculator.pipe_mem.dmmu.tlb.flush_i)
-           ,.dtlb_fill_v_i(be.calculator.pipe_mem.dmmu.tlb.v_i & be.calculator.pipe_mem.dmmu.tlb.w_i)
+           ,.dtlb_fill_v_i(be.calculator.pipe_mem.dmmu.tlb.w_v_li)
+           ,.dtlb_fill_g_i(be.calculator.pipe_mem.dmmu.tlb.gigapage_i)
            ,.dtlb_vtag_i(be.calculator.pipe_mem.dmmu.tlb.vtag_i)
            ,.dtlb_entry_i(be.calculator.pipe_mem.dmmu.tlb.entry_i)
-           ,.dtlb_cam_r_v_i(be.calculator.pipe_mem.dmmu.tlb.cam.r_v_i)
+           ,.dtlb_r_v_i(be.calculator.pipe_mem.dmmu.tlb.r_v_li)
            );
 
       bind bp_core_minimal

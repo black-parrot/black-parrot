@@ -75,6 +75,7 @@ endif
 ifeq ($(NBF_CONFIG_P), 1)
 NBF_INPUTS += --config
 endif
+NBF_INPUTS += --addr_width=$(PADDR_WIDTH)
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@

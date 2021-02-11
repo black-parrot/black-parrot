@@ -26,15 +26,17 @@ module bp_nonsynth_vm_tracer
 
    , input                           itlb_clear_i
    , input                           itlb_fill_v_i
+   , input                           itlb_fill_g_i
    , input [vtag_width_p-1:0]        itlb_vtag_i
    , input [itlb_entry_width_lp-1:0] itlb_entry_i
-   , input                           itlb_cam_r_v_i
+   , input                           itlb_r_v_i
 
    , input                           dtlb_clear_i
    , input                           dtlb_fill_v_i
+   , input                           dtlb_fill_g_i
    , input [vtag_width_p-1:0]        dtlb_vtag_i
    , input [dtlb_entry_width_lp-1:0] dtlb_entry_i
-   , input                           dtlb_cam_r_v_i
+   , input                           dtlb_r_v_i
 
    //, input                           sfence_i
    //, input [rv64_priv_width_gp-1:0]  priv_i
@@ -63,30 +65,34 @@ module bp_nonsynth_vm_tracer
       if (itlb_clear_i)
         $fwrite(file, "[%t] ITLB Clear\n", $time);
       if (itlb_fill_v_i)
-        $fwrite(file, "[%t] ITLB map %x -> %x [R:%x W:%x X:%x]\n" //A:%x D:%x]"
+        $fwrite(file, "[%t] ITLB map %x -> %x [R:%x W:%x X:%x] GP: %x\n" //A:%x D:%x]"
                 ,$time
                 ,itlb_vtag_i
                 ,itlb_w_entry.ptag
                 ,itlb_w_entry.r
                 ,itlb_w_entry.w
                 ,itlb_w_entry.x
+                ,itlb_fill_g_i
                 //,itlb_w_entry.a
                 //,itlb_w_entry.d
                 );
       if (dtlb_clear_i)
         $fwrite(file, "[%t] DTLB Clear\n", $time);
       if (dtlb_fill_v_i)
-        $fwrite(file, "[%t] DTLB map %x -> %x [R:%x W:%x X:%x]\n" //A:%x D:%x]"
+        $fwrite(file, "[%t] DTLB map %x -> %x [R:%x W:%x X:%x] GP: %x\n" //A:%x D:%x]"
                 ,$time
                 ,dtlb_vtag_i
                 ,dtlb_w_entry.ptag
                 ,dtlb_w_entry.r
                 ,dtlb_w_entry.w
                 ,dtlb_w_entry.x
+                ,dtlb_fill_g_i
                 //,dtlb_w_entry.a
                 //,dtlb_w_entry.d
                 );
     end
+// << (itlb_fill_g_i * 2 * sv39_page_idx_width_gp)
+
 
   logic [30:0] itlb_read_count_r;
   bsg_counter_clear_up
@@ -96,7 +102,7 @@ module bp_nonsynth_vm_tracer
      ,.reset_i(reset_i | freeze_i)
 
      ,.clear_i('0)
-     ,.up_i(itlb_cam_r_v_i)
+     ,.up_i(itlb_r_v_i)
      ,.count_o(itlb_read_count_r)
      );
 
@@ -104,11 +110,11 @@ module bp_nonsynth_vm_tracer
   bsg_counter_clear_up
    #(.max_val_p(2**31-1), .init_val_p(0))
    dtlb_counter
-    (.clk_i(clk_i)
+    (.clk_i(~clk_i)
      ,.reset_i(reset_i | freeze_i)
 
      ,.clear_i('0)
-     ,.up_i(dtlb_cam_r_v_i)
+     ,.up_i(dtlb_r_v_i)
      ,.count_o(dtlb_read_count_r)
      );
 

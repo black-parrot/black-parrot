@@ -107,9 +107,9 @@ module bp_be_dcache
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
    , parameter fill_width_p   = dcache_fill_width_p
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
 
-   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
    )
   (input                              clk_i
@@ -163,7 +163,7 @@ module bp_be_dcache
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache);
 
   localparam lg_dcache_assoc_lp       = `BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp            = block_width_p / assoc_p;
@@ -213,9 +213,9 @@ module bp_be_dcache
   // Tag Mem Storage
   ///////////////////////////
   `bp_cast_i(bp_dcache_tag_mem_pkt_s, tag_mem_pkt);
-  logic                                     tag_mem_v_li;
-  logic                                     tag_mem_w_li;
-  logic [sindex_width_lp-1:0]               tag_mem_addr_li;
+  logic                              tag_mem_v_li;
+  logic                              tag_mem_w_li;
+  logic [sindex_width_lp-1:0]        tag_mem_addr_li;
   bp_dcache_tag_info_s [assoc_p-1:0] tag_mem_data_li;
   bp_dcache_tag_info_s [assoc_p-1:0] tag_mem_mask_li;
   bp_dcache_tag_info_s [assoc_p-1:0] tag_mem_data_lo;
@@ -418,8 +418,6 @@ module bp_be_dcache
   // If there is invalid way, then it take prioirty over LRU way.
   wire [lg_dcache_assoc_lp-1:0] lru_way_li = invalid_exist ? invalid_way : lru_encode;
 
-  wire [ptag_width_p-1:0]    addr_tag_tv   = paddr_tv_r[paddr_width_p-1-:ptag_width_p];
-  wire [sindex_width_lp-1:0] addr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
   wire [3:0] byte_offset_tv = paddr_tv_r[0+:4];
 
   logic [lg_dcache_assoc_lp-1:0] store_hit_way_tv;
@@ -908,7 +906,7 @@ module bp_be_dcache
           begin
             tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
             tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
-                                   ,tag : {ptag_width_p{tag_mem_way_one_hot[i]}}
+                                   ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
                                    };
           end
         e_cache_tag_mem_set_state:
@@ -1145,20 +1143,21 @@ module bp_be_dcache
   if (lr_sc_p == e_l1)
     begin : l1_lrsc
       logic [sindex_width_lp-1:0] load_reserved_index_r;
-      logic [ptag_width_p-1:0] load_reserved_tag_r;
+      logic [ctag_width_p-1:0] load_reserved_tag_r;
       logic load_reserved_v_r;
 
       // Set reservation on successful LR, without a cache miss or upgrade request
       wire set_reservation = decode_tv_r.lr_op & early_v_o;
       // All SCs clear the reservation (regardless of success)
       // Invalidates from other harts which match the reservation address clear the reservation
+      // Also invalidate on trap
       wire clear_reservation = decode_tv_r.sc_op
-                               || (tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_set_state)
-                                   & (tag_mem_pkt_cast_i.state == e_COH_I) &
-(tag_mem_pkt_cast_i.index == load_reserved_index_r) & (tag_mem_pkt_cast_i.index ==
-load_reserved_index_r));
+        || flush_i
+        || (tag_mem_pkt_yumi_o
+            & (tag_mem_pkt_cast_i.index == load_reserved_index_r)
+            & (tag_mem_pkt_cast_i.tag == load_reserved_tag_r));
       bsg_dff_reset_set_clear
-       #(.width_p(1))
+       #(.width_p(1), .clear_over_set_p(1))
        load_reserved_v_reg
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
@@ -1168,17 +1167,20 @@ load_reserved_index_r));
          ,.data_o(load_reserved_v_r)
          );
 
+      wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
+      wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
       bsg_dff_en
-       #(.width_p(ptag_width_p+sindex_width_lp))
+       #(.width_p(ctag_width_p+sindex_width_lp))
        load_reserved_addr
         (.clk_i(clk_i)
          ,.en_i(set_reservation)
-         ,.data_i({paddr_tv_r[paddr_width_p-1-:ptag_width_p], paddr_tv_r[block_offset_width_lp+:sindex_width_lp]})
+         ,.data_i({paddr_tag_tv, paddr_index_tv})
          ,.data_o({load_reserved_tag_r, load_reserved_index_r})
          );
 
-        assign load_reservation_match_tv = load_reserved_v_r & (load_reserved_index_r ==
-addr_index_tv) & (load_reserved_tag_r == addr_tag_tv);
+        assign load_reservation_match_tv = load_reserved_v_r
+          & (load_reserved_index_r == paddr_index_tv)
+          & (load_reserved_tag_r == paddr_tag_tv);
 
         // Linear backoff
         localparam lock_max_limit_lp = 8;
@@ -1186,10 +1188,7 @@ addr_index_tv) & (load_reserved_tag_r == addr_tag_tv);
         wire lock_clr = early_v_o || (lock_cnt_r == lock_max_limit_lp);
         wire lock_inc = ~lock_clr & (lr_hit_tv || (lock_cnt_r > 0));
         bsg_counter_clear_up
-         #(.max_val_p(lock_max_limit_lp)
-           ,.init_val_p(0)
-           ,.disable_overflow_warning_p(1)
-           )
+         #(.max_val_p(lock_max_limit_lp), .init_val_p(0))
          lock_counter
           (.clk_i(clk_i)
            ,.reset_i(reset_i)
@@ -1236,7 +1235,7 @@ addr_index_tv) & (load_reserved_tag_r == addr_tag_tv);
      );
 
   // synopsys translate_off
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   always_ff @(negedge clk_i)

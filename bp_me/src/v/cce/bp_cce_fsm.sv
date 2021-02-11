@@ -32,12 +32,10 @@ module bp_cce_fsm
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam ptag_width_lp              = (paddr_width_p-lg_lce_sets_lp
-                                              -lg_block_size_in_bytes_lp)
     , localparam num_way_groups_lp         = `BSG_CDIV(cce_way_groups_p, num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
-    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
     // maximal number of tag sets stored in the directory for all LCE types
     , localparam max_tag_sets_lp           = `BSG_CDIV(lce_sets_p, num_cce_p)
@@ -120,7 +118,7 @@ module bp_cce_fsm
   assign lce_req_payload = lce_req.header.payload;
 
   // Config bus
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
   wire cce_normal_mode_li = (cfg_bus_cast_i.cce_mode == e_cce_mode_normal);

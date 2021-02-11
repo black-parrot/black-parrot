@@ -36,6 +36,7 @@ module bp_io_tile
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_msg_width_lp, lce_cmd_packet_s);
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p)
 
   bp_bedrock_lce_req_msg_s  cce_lce_req_li, lce_lce_req_lo;
   logic cce_lce_req_v_li, cce_lce_req_yumi_lo, lce_lce_req_v_lo, lce_lce_req_ready_li;
@@ -195,7 +196,7 @@ module bp_io_tile
   assign local_addr_lo  = cce_io_cmd_lo.header.addr;
 
   wire is_host_addr  = (~local_addr_lo.nonlocal && (local_addr_lo.dev inside {boot_dev_gp, host_dev_gp}));
-  assign dst_did_lo  = is_host_addr ? host_did_i : global_addr_lo.did;
+  assign dst_did_lo  = is_host_addr ? host_did_i : global_addr_lo.domain;
   assign dst_cord_lo = dst_did_lo;
 
   bp_me_cce_to_mem_link_bidir

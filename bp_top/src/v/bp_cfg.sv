@@ -12,7 +12,7 @@ module bp_cfg
 
    // TODO: Should I be a global param
    , localparam cfg_max_outstanding_p = 1
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                clk_i
    , input                              reset_i
@@ -38,7 +38,7 @@ module bp_cfg
    , input [cce_instr_width_gp-1:0]      cce_ucode_data_i
    );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
 
   bp_cfg_bus_s cfg_bus_cast_o;
@@ -104,40 +104,18 @@ module bp_cfg
   assign cce_ucode_data_o = cfg_data_li[0+:cce_instr_width_gp];
 
   wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == cfg_reg_domain_mask_gp);
-  wire [7:0] domain_li = cfg_data_li[7:0] | 8'h01;
-
-  wire sac_w_v_li = cfg_w_v_li & (cfg_addr_li == cfg_reg_sac_mask_gp);
-  wire sac_li = cfg_data_li[0];
-
-  // Address map (40 bits)
-  // | did | sac_not_cc | tile ID | remaining |
-  // |  3  |      1     |  log(N) |
+  wire [domain_width_p-1:0] domain_li = cfg_data_li[domain_width_p-1:0];
 
   // Enabled DIDs
-  logic [7:0] domain_data_r;
+  logic [domain_width_p-1:0] domain_mask_r;
   bsg_dff_reset_en
-    #(.width_p(8)
-     ,.reset_val_p(1)
-     )
-     domain_reg
-     (.clk_i(clk_i)
+   #(.width_p(domain_width_p))
+   domain_mask_reg
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(domain_w_v_li)
      ,.data_i(domain_li)
-     ,.data_o(domain_data_r)
-     );
-
-  logic sac_data_r;
-  bsg_dff_reset_en
-    #(.width_p(1)
-     ,.reset_val_p(0)
-     )
-     sac_reg
-     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(sac_w_v_li)
-     ,.data_i(sac_li)
-     ,.data_o(sac_data_r)
+     ,.data_o(domain_mask_r)
      );
 
   logic [core_id_width_p-1:0] core_id_li;
@@ -161,8 +139,7 @@ module bp_cfg
                             ,dcache_mode: dcache_mode_r
                             ,cce_id: cce_id_li
                             ,cce_mode: cce_mode_r
-                            ,domain: domain_data_r
-                            ,sac: sac_data_r
+                            ,domain_mask: domain_mask_r
                             };
 
   logic rdata_v_r;

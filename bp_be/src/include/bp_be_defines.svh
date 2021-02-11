@@ -142,6 +142,7 @@
     {                                                                                              \
       logic itlb_fill_v;                                                                           \
       logic dtlb_fill_v;                                                                           \
+      logic gigapage;                                                                              \
       logic instr_page_fault_v;                                                                    \
       logic load_page_fault_v;                                                                     \
       logic store_page_fault_v;                                                                    \
@@ -200,7 +201,7 @@
     (3 + vaddr_width_mp)
 
   `define bp_be_ptw_fill_pkt_width(vaddr_width_mp) \
-    (5                                                                                             \
+    (6                                                                                             \
      + vaddr_width_mp                                                                              \
      + dword_width_gp                                                                              \
      )
