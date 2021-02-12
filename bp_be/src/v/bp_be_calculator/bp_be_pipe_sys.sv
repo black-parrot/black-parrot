@@ -46,8 +46,6 @@ module bp_be_pipe_sys
 
    , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
 
-   , output logic                         miss_v_o
-   , output logic                         exc_v_o
    , output logic [dpath_width_gp-1:0]    data_o
    , output logic                         v_o
 
@@ -190,8 +188,6 @@ module bp_be_pipe_sys
 
   assign ready_o          = ~interrupt_ready_lo;
   assign data_o           = csr_data_lo;
-  assign exc_v_o          = commit_pkt.exception;
-  assign miss_v_o         = commit_pkt.rollback;
 
   wire sys_v_li = reservation.v & reservation.decode.pipe_sys_v;
   bsg_dff_chain

@@ -124,8 +124,6 @@ module bp_be_calculator_top
   logic [dpath_width_gp-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
   rv64_fflags_s pipe_aux_fflags_lo, pipe_fma_fflags_lo;
 
-  logic pipe_sys_exc_v_lo, pipe_sys_miss_v_lo;
-
   // Generating match vector for bypass
   logic [2:0][pipe_stage_els_lp-1:0] match_rs;
   logic [pipe_stage_els_lp-1:0][dpath_width_gp-1:0] forward_data;
@@ -180,6 +178,7 @@ module bp_be_calculator_top
      ,.data_o(reservation_r)
      );
 
+  // Control pipe: 1 cycle latency
   bp_be_pipe_ctl
    #(.bp_params_p(bp_params_p))
    pipe_ctl
@@ -195,6 +194,44 @@ module bp_be_calculator_top
      );
 
   // Computation pipelines
+  // System pipe: 3 cycle latency
+  logic pipe_long_ready_lo, pipe_sys_ready_lo;
+  bp_be_pipe_sys
+   #(.bp_params_p(bp_params_p))
+   pipe_sys
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_i)
+
+     ,.ready_o(pipe_sys_ready_lo)
+     ,.ptw_busy_i(ptw_busy_o)
+
+     ,.reservation_i(reservation_r)
+     ,.flush_i(flush_i)
+
+     ,.ptw_fill_pkt_i(ptw_fill_pkt)
+
+     ,.commit_v_i(exc_stage_r[2].v)
+     ,.commit_queue_v_i(exc_stage_r[2].queue_v)
+     ,.exception_i(exc_stage_r[2].exc)
+     ,.special_i(exc_stage_r[2].spec)
+     ,.commit_pkt_o(commit_pkt)
+     ,.iwb_pkt_i(iwb_pkt_o)
+     ,.fwb_pkt_i(fwb_pkt_o)
+
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
+
+     ,.data_o(pipe_sys_data_lo)
+     ,.v_o(pipe_sys_data_lo_v)
+
+     ,.trans_info_o(trans_info_lo)
+     ,.frm_dyn_o(frm_dyn_lo)
+     ,.fpu_en_o(fpu_en_o)
+     );
+
+
   // Integer pipe: 1 cycle latency
   bp_be_pipe_int
    #(.bp_params_p(bp_params_p))
@@ -285,44 +322,6 @@ module bp_be_calculator_top
      ,.final_v_o(pipe_mem_final_data_lo_v)
 
      ,.trans_info_i(trans_info_lo)
-     );
-
-  logic pipe_long_ready_lo, pipe_sys_ready_lo;
-  bp_be_pipe_sys
-   #(.bp_params_p(bp_params_p))
-   pipe_sys
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.cfg_bus_i(cfg_bus_i)
-
-     ,.ready_o(pipe_sys_ready_lo)
-     ,.ptw_busy_i(ptw_busy_o)
-
-     ,.reservation_i(reservation_r)
-     ,.flush_i(flush_i)
-
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
-
-     ,.commit_v_i(exc_stage_r[2].v)
-     ,.commit_queue_v_i(exc_stage_r[2].queue_v)
-     ,.exception_i(exc_stage_r[2].exc)
-     ,.special_i(exc_stage_r[2].spec)
-     ,.commit_pkt_o(commit_pkt)
-     ,.iwb_pkt_i(iwb_pkt_o)
-     ,.fwb_pkt_i(fwb_pkt_o)
-
-     ,.timer_irq_i(timer_irq_i)
-     ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
-
-     ,.exc_v_o(pipe_sys_exc_v_lo)
-     ,.miss_v_o(pipe_sys_miss_v_lo)
-     ,.data_o(pipe_sys_data_lo)
-     ,.v_o(pipe_sys_data_lo_v)
-
-     ,.trans_info_o(trans_info_lo)
-     ,.frm_dyn_o(frm_dyn_lo)
-     ,.fpu_en_o(fpu_en_o)
      );
 
   // Floating point pipe: 4/5 cycle latency
@@ -425,15 +424,16 @@ module bp_be_calculator_top
           exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
         end
           exc_stage_n[0].v                       = reservation_n.v;
-          exc_stage_n[0].v                      &= ~flush_i;
-          exc_stage_n[1].v                      &= ~flush_i;
-          exc_stage_n[2].v                      &= ~flush_i;
+          exc_stage_n[0].v                      &= ~commit_pkt.npc_w_v;
+          exc_stage_n[1].v                      &= ~commit_pkt.npc_w_v;
+          exc_stage_n[2].v                      &= ~commit_pkt.npc_w_v;
           exc_stage_n[3].v                      &= commit_pkt.instret;
 
           exc_stage_n[0].queue_v                 = reservation_n.queue_v;
-          exc_stage_n[0].queue_v                &= ~pipe_sys_miss_v_lo;
-          exc_stage_n[1].queue_v                &= ~pipe_sys_miss_v_lo;
-          exc_stage_n[2].queue_v                &= ~pipe_sys_miss_v_lo;
+          exc_stage_n[0].queue_v                &= ~commit_pkt.rollback;
+          exc_stage_n[1].queue_v                &= ~commit_pkt.rollback;
+          exc_stage_n[2].queue_v                &= ~commit_pkt.rollback;
+          exc_stage_n[3].queue_v                &= ~commit_pkt.rollback;
 
           exc_stage_n[0].spec.itlb_miss         |= reservation_n.decode.itlb_miss;
           exc_stage_n[0].spec.icache_miss       |= reservation_n.decode.icache_miss;
