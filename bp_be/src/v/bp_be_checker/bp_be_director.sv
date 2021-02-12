@@ -240,19 +240,6 @@ module bp_be_director
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end
-      else if (commit_pkt.exception | commit_pkt._interrupt)
-        begin
-          fe_cmd_pc_redirect_operands = '0;
-
-          fe_cmd_li.opcode                                 = e_op_pc_redirection;
-          fe_cmd_li.vaddr                                  = commit_pkt.npc;
-          fe_cmd_pc_redirect_operands.subopcode            = e_subop_trap;
-          fe_cmd_pc_redirect_operands.priv                 = commit_pkt.priv_n;
-          fe_cmd_pc_redirect_operands.translation_en       = commit_pkt.translation_en_n;
-          fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
-
-          fe_cmd_v_li = fe_cmd_ready_lo;
-        end
       else if (isd_status_cast_i.v & npc_mismatch_v)
         begin
           fe_cmd_pc_redirect_operands = '0;
