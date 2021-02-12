@@ -16,6 +16,7 @@ module bp_be_csr
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
    , localparam exception_width_lp = $bits(bp_be_exception_s)
+   , localparam special_width_lp = $bits(bp_be_special_s)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                               clk_i
@@ -38,6 +39,7 @@ module bp_be_csr
    , input [vaddr_width_p-1:0]         exception_vaddr_i
    , input [instr_width_gp-1:0]        exception_instr_i
    , input [exception_width_lp-1:0]    exception_i
+   , input [special_width_lp-1:0]      special_i
    , input [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_i
 
    , input                             timer_irq_i
@@ -61,6 +63,7 @@ module bp_be_csr
   bp_cfg_bus_s cfg_bus_cast_i;
   bp_be_csr_cmd_s csr_cmd;
   bp_be_exception_s exception;
+  bp_be_special_s special;
   rv64_instr_s exception_instr;
 
   bp_be_wb_pkt_s wb_pkt_cast_i;
@@ -71,6 +74,7 @@ module bp_be_csr
   assign cfg_bus_cast_i = cfg_bus_i;
   assign csr_cmd = csr_cmd_i;
   assign exception = exception_i;
+  assign special = special_i;
   assign exception_instr = exception_instr_i;
   assign commit_pkt_o = commit_pkt_cast_o;
   assign trans_info_o = trans_info_cast_o;
@@ -700,9 +704,9 @@ module bp_be_csr
 
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
-  assign commit_pkt_cast_o.npc_w_v          = |{exception.fencei_v, sfence_v_o, exception_v_o,
-interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss,
-exception.dtlb_store_miss, exception.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
+  assign commit_pkt_cast_o.npc_w_v          = |{special.fencei_v, sfence_v_o, exception_v_o,
+interrupt_v_o, ret_v_o, satp_v_o, special.itlb_miss, special.icache_miss, special.dcache_miss,
+special.dtlb_store_miss, special.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
@@ -713,20 +717,20 @@ exception.dtlb_store_miss, exception.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, p
   assign commit_pkt_cast_o.pte_gigapage     = ptw_fill_pkt.gigapage;
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
-  assign commit_pkt_cast_o.fencei           = exception.fencei_v;
+  assign commit_pkt_cast_o.fencei           = special.fencei_v;
   assign commit_pkt_cast_o.sfence           = sfence_v_o;
   assign commit_pkt_cast_o.exception        = exception_v_o;
   assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
   assign commit_pkt_cast_o.eret             = ret_v_o;
   assign commit_pkt_cast_o.satp             = satp_v_o;
-  assign commit_pkt_cast_o.itlb_miss        = exception.itlb_miss;
-  assign commit_pkt_cast_o.icache_miss      = exception.icache_miss;
-  assign commit_pkt_cast_o.dtlb_store_miss  = exception.dtlb_store_miss;
-  assign commit_pkt_cast_o.dtlb_load_miss   = exception.dtlb_load_miss;
-  assign commit_pkt_cast_o.dcache_miss      = exception.dcache_miss;
+  assign commit_pkt_cast_o.itlb_miss        = special.itlb_miss;
+  assign commit_pkt_cast_o.icache_miss      = special.icache_miss;
+  assign commit_pkt_cast_o.dtlb_store_miss  = special.dtlb_store_miss;
+  assign commit_pkt_cast_o.dtlb_load_miss   = special.dtlb_load_miss;
+  assign commit_pkt_cast_o.dcache_miss      = special.dcache_miss;
   assign commit_pkt_cast_o.itlb_fill_v      = ptw_fill_pkt.itlb_fill_v;
   assign commit_pkt_cast_o.dtlb_fill_v      = ptw_fill_pkt.dtlb_fill_v;
-  assign commit_pkt_cast_o.rollback         = exception.icache_miss | exception.dcache_miss | exception.dtlb_store_miss | exception.dtlb_load_miss | exception.itlb_miss;
+  assign commit_pkt_cast_o.rollback         = special.icache_miss | special.dcache_miss | special.dtlb_store_miss | special.dtlb_load_miss | special.itlb_miss;
 
   assign trans_info_cast_o.priv_mode = priv_mode_r;
   assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;

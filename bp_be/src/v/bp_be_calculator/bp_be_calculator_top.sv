@@ -306,6 +306,7 @@ module bp_be_calculator_top
      ,.commit_v_i(exc_stage_r[2].v)
      ,.commit_queue_v_i(exc_stage_r[2].queue_v)
      ,.exception_i(exc_stage_r[2].exc)
+     ,.special_i(exc_stage_r[2].spec)
      ,.commit_pkt_o(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt_o)
      ,.fwb_pkt_i(fwb_pkt_o)
@@ -434,16 +435,16 @@ module bp_be_calculator_top
           exc_stage_n[1].queue_v                &= ~pipe_sys_miss_v_lo;
           exc_stage_n[2].queue_v                &= ~pipe_sys_miss_v_lo;
 
-          exc_stage_n[0].exc.itlb_miss          |= reservation_n.decode.itlb_miss;
-          exc_stage_n[0].exc.icache_miss        |= reservation_n.decode.icache_miss;
+          exc_stage_n[0].spec.itlb_miss         |= reservation_n.decode.itlb_miss;
+          exc_stage_n[0].spec.icache_miss       |= reservation_n.decode.icache_miss;
           exc_stage_n[0].exc.instr_access_fault |= reservation_n.decode.instr_access_fault;
           exc_stage_n[0].exc.instr_page_fault   |= reservation_n.decode.instr_page_fault;
           exc_stage_n[0].exc.illegal_instr      |= reservation_n.decode.illegal_instr;
           exc_stage_n[0].exc.ebreak             |= reservation_n.decode.ebreak;
           exc_stage_n[0].exc.ecall              |= reservation_n.decode.ecall;
 
-          exc_stage_n[1].exc.dtlb_store_miss    |= pipe_mem_dtlb_store_miss_lo;
-          exc_stage_n[1].exc.dtlb_load_miss     |= pipe_mem_dtlb_load_miss_lo;
+          exc_stage_n[1].spec.dtlb_store_miss   |= pipe_mem_dtlb_store_miss_lo;
+          exc_stage_n[1].spec.dtlb_load_miss    |= pipe_mem_dtlb_load_miss_lo;
           exc_stage_n[1].exc.load_misaligned    |= pipe_mem_load_misaligned_lo;
           exc_stage_n[1].exc.load_access_fault  |= pipe_mem_load_access_fault_lo;
           exc_stage_n[1].exc.load_page_fault    |= pipe_mem_load_page_fault_lo;
@@ -451,8 +452,8 @@ module bp_be_calculator_top
           exc_stage_n[1].exc.store_access_fault |= pipe_mem_store_access_fault_lo;
           exc_stage_n[1].exc.store_page_fault   |= pipe_mem_store_page_fault_lo;
 
-          exc_stage_n[2].exc.dcache_miss        |= pipe_mem_dcache_miss_lo;
-          exc_stage_n[2].exc.fencei_v           |= pipe_mem_fencei_lo;
+          exc_stage_n[2].spec.dcache_miss       |= pipe_mem_dcache_miss_lo;
+          exc_stage_n[2].spec.fencei_v          |= pipe_mem_fencei_lo;
     end
 
   // Exception pipeline

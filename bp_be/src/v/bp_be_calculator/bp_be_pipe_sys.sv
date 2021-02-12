@@ -22,6 +22,7 @@ module bp_be_pipe_sys
    // Generated parameters
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam exception_width_lp    = $bits(bp_be_exception_s)
+   , localparam special_width_lp      = $bits(bp_be_special_s)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
@@ -41,12 +42,13 @@ module bp_be_pipe_sys
    , input                                commit_v_i
    , input                                commit_queue_v_i
    , input [exception_width_lp-1:0]       exception_i
+   , input [special_width_lp-1:0]         special_i
 
    , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
 
    , output logic                         miss_v_o
    , output logic                         exc_v_o
-   , output logic [dpath_width_gp-1:0]     data_o
+   , output logic [dpath_width_gp-1:0]    data_o
    , output logic                         v_o
 
    , input [wb_pkt_width_lp-1:0]          iwb_pkt_i
@@ -116,15 +118,15 @@ module bp_be_pipe_sys
   logic [vaddr_width_p-1:0] commit_nvaddr_r, commit_vaddr_r;
   logic [instr_width_gp-1:0] commit_ninstr_r, commit_instr_r;
 
-  bp_be_exception_s exception_li;
+  bp_be_special_s special_li;
   always_comb
     if (commit_v_i)
       begin
-        exception_li = exception_i;
+        special_li = special_i;
       end
     else
       begin
-        exception_li = '0;
+        special_li = '0;
       end
 
   wire ptw_page_fault_v  = ptw_fill_pkt.instr_page_fault_v | ptw_fill_pkt.load_page_fault_v | ptw_fill_pkt.store_page_fault_v;
@@ -156,7 +158,8 @@ module bp_be_pipe_sys
      ,.exception_npc_i(exception_npc_li)
      ,.exception_vaddr_i(exception_vaddr_li)
      ,.exception_instr_i(exception_instr_li)
-     ,.exception_i(exception_li)
+     ,.exception_i(exception_i)
+     ,.special_i(special_li)
      ,.ptw_fill_pkt_i(ptw_fill_pkt_i)
 
      ,.timer_irq_i(timer_irq_i)
