@@ -212,9 +212,6 @@
     logic                             dcache_w_v;
     logic                             late_iwb_v;
     logic                             late_fwb_v;
-    logic                             fencei_v;
-    logic                             csr_w_v;
-    logic                             csr_r_v;
     logic                             csr_v;
     logic                             mem_v;
     logic                             opw_v;
@@ -237,7 +234,6 @@
 
   typedef struct packed
   {
-    // RISC-V exceptions
     logic store_page_fault;
     logic load_page_fault;
     logic instr_page_fault;
@@ -250,23 +246,25 @@
     logic illegal_instr;
     logic instr_access_fault;
     logic instr_misaligned;
+  }  bp_be_exception_s;
 
-    // BP "exceptions"
+  typedef struct packed
+  {
     logic itlb_miss;
     logic icache_miss;
     logic dtlb_load_miss;
     logic dtlb_store_miss;
     logic dcache_miss;
     logic fencei_v;
-  }  bp_be_exception_s;
+  }  bp_be_special_s;
 
   typedef struct packed
   {
-    logic nop_v;
-    logic poison_v;
-    logic roll_v;
+    logic v;
+    logic queue_v;
 
     bp_be_exception_s exc;
+    bp_be_special_s   spec;
   }  bp_be_exc_stage_s;
 
   typedef struct packed

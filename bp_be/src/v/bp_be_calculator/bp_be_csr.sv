@@ -13,9 +13,11 @@ module bp_be_csr
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
    , localparam exception_width_lp = $bits(bp_be_exception_s)
+   , localparam special_width_lp = $bits(bp_be_special_s)
+   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                               clk_i
    , input                             reset_i
@@ -35,13 +37,15 @@ module bp_be_csr
    , input                             exception_queue_v_i
    , input [vaddr_width_p-1:0]         exception_npc_i
    , input [vaddr_width_p-1:0]         exception_vaddr_i
-   , input [instr_width_gp-1:0]         exception_instr_i
+   , input [instr_width_gp-1:0]        exception_instr_i
    , input [exception_width_lp-1:0]    exception_i
+   , input [special_width_lp-1:0]      special_i
+   , input [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_i
 
    , input                             timer_irq_i
    , input                             software_irq_i
    , input                             external_irq_i
-   , output                            interrupt_ready_o
+   , output                            irq_pending_o
    , input                             interrupt_v_i
 
    , output [commit_pkt_width_lp-1:0]  commit_pkt_o
@@ -59,18 +63,22 @@ module bp_be_csr
   bp_cfg_bus_s cfg_bus_cast_i;
   bp_be_csr_cmd_s csr_cmd;
   bp_be_exception_s exception;
+  bp_be_special_s special;
   rv64_instr_s exception_instr;
 
   bp_be_wb_pkt_s wb_pkt_cast_i;
   bp_be_commit_pkt_s commit_pkt_cast_o;
   bp_be_trans_info_s trans_info_cast_o;
+  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
   assign cfg_bus_cast_i = cfg_bus_i;
   assign csr_cmd = csr_cmd_i;
   assign exception = exception_i;
+  assign special = special_i;
   assign exception_instr = exception_instr_i;
   assign commit_pkt_o = commit_pkt_cast_o;
   assign trans_info_o = trans_info_cast_o;
+  assign ptw_fill_pkt = ptw_fill_pkt_i;
 
   // The muxed and demuxed CSR outputs
   logic [dword_width_gp-1:0] csr_data_li, csr_data_lo;
@@ -188,9 +196,9 @@ module bp_be_csr
         ,ecall_u_mode       : exception.ecall & (priv_mode_r == `PRIV_MODE_U)
         ,ecall_s_mode       : exception.ecall & (priv_mode_r == `PRIV_MODE_S)
         ,ecall_m_mode       : exception.ecall & (priv_mode_r == `PRIV_MODE_M)
-        ,instr_page_fault   : exception.instr_page_fault
-        ,load_page_fault    : exception.load_page_fault
-        ,store_page_fault   : exception.store_page_fault
+        ,instr_page_fault   : exception.instr_page_fault | ptw_fill_pkt.instr_page_fault_v
+        ,load_page_fault    : exception.load_page_fault | ptw_fill_pkt.load_page_fault_v
+        ,store_page_fault   : exception.store_page_fault | ptw_fill_pkt.store_page_fault_v
         ,default : '0
         };
 
@@ -692,26 +700,37 @@ module bp_be_csr
     end
 
   // Debug Mode masks all interrupts
-  assign interrupt_ready_o = ~is_debug_mode & ~cfg_bus_cast_i.freeze & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
+  assign irq_pending_o = ~is_debug_mode & (m_interrupt_icode_v_li | s_interrupt_icode_v_li);
 
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
-  assign commit_pkt_cast_o.v                = |{exception.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_store_miss, exception.dtlb_load_miss};
+  assign commit_pkt_cast_o.npc_w_v          = |{special.fencei_v, sfence_v_o, exception_v_o,
+interrupt_v_o, ret_v_o, satp_v_o, special.itlb_miss, special.icache_miss, special.dcache_miss,
+special.dtlb_store_miss, special.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
-  assign commit_pkt_cast_o.instr            = exception_instr_i;
   assign commit_pkt_cast_o.npc              = apc_n;
+  assign commit_pkt_cast_o.vaddr            = exception_vaddr_i;
+  assign commit_pkt_cast_o.instr            = exception_instr_i;
+  assign commit_pkt_cast_o.pte_leaf         = ptw_fill_pkt.entry;
+  assign commit_pkt_cast_o.pte_gigapage     = ptw_fill_pkt.gigapage;
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
-  assign commit_pkt_cast_o.fencei           = exception.fencei_v;
+  assign commit_pkt_cast_o.fencei           = special.fencei_v;
   assign commit_pkt_cast_o.sfence           = sfence_v_o;
   assign commit_pkt_cast_o.exception        = exception_v_o;
   assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
   assign commit_pkt_cast_o.eret             = ret_v_o;
   assign commit_pkt_cast_o.satp             = satp_v_o;
-  assign commit_pkt_cast_o.icache_miss      = exception.icache_miss;
-  assign commit_pkt_cast_o.rollback         = exception.icache_miss | exception.dcache_miss | exception.dtlb_store_miss | exception.dtlb_load_miss | exception.itlb_miss;
+  assign commit_pkt_cast_o.itlb_miss        = special.itlb_miss;
+  assign commit_pkt_cast_o.icache_miss      = special.icache_miss;
+  assign commit_pkt_cast_o.dtlb_store_miss  = special.dtlb_store_miss;
+  assign commit_pkt_cast_o.dtlb_load_miss   = special.dtlb_load_miss;
+  assign commit_pkt_cast_o.dcache_miss      = special.dcache_miss;
+  assign commit_pkt_cast_o.itlb_fill_v      = ptw_fill_pkt.itlb_fill_v;
+  assign commit_pkt_cast_o.dtlb_fill_v      = ptw_fill_pkt.dtlb_fill_v;
+  assign commit_pkt_cast_o.rollback         = special.icache_miss | special.dcache_miss | special.dtlb_store_miss | special.dtlb_load_miss | special.itlb_miss;
 
   assign trans_info_cast_o.priv_mode = priv_mode_r;
   assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;

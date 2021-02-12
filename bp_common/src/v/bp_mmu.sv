@@ -11,7 +11,7 @@ module bp_mmu
    , parameter tlb_els_4k_p = "inv"
    , parameter tlb_els_1g_p = "inv"
 
-   , localparam entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
+   , localparam entry_width_lp = `bp_pte_leaf_width(paddr_width_p)
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -83,7 +83,7 @@ module bp_mmu
      );
 
   logic tlb_r_v_lo;
-  bp_pte_entry_leaf_s tlb_r_entry_lo;
+  bp_pte_leaf_s tlb_r_entry_lo;
   wire [vtag_width_p-1:0] w_vtag_li = w_v_i ? w_vtag_i : r_eaddr_i[vaddr_width_p-1-:vtag_width_p];
   bp_tlb
    #(.bp_params_p(bp_params_p), .els_4k_p(tlb_els_4k_p), .els_1g_p(tlb_els_1g_p))
@@ -102,10 +102,10 @@ module bp_mmu
      ,.entry_o(tlb_r_entry_lo)
      );
 
-  bp_pte_entry_leaf_s tlb_r_entry_r;
+  bp_pte_leaf_s tlb_r_entry_r;
   logic tlb_r_v_r;
   bsg_dff_en_bypass
-   #(.width_p(1+$bits(bp_pte_entry_leaf_s)))
+   #(.width_p(1+$bits(bp_pte_leaf_s)))
    entry_reg
     (.clk_i(clk_i)
      ,.en_i(~tlb_bypass_r)
@@ -113,7 +113,7 @@ module bp_mmu
      ,.data_o({tlb_r_v_r, tlb_r_entry_r})
      );
 
-  bp_pte_entry_leaf_s passthrough_entry, tlb_entry_lo;
+  bp_pte_leaf_s passthrough_entry, tlb_entry_lo;
   assign passthrough_entry = '{ptag: r_etag_r[0+:ptag_width_p], default: '0};
   assign tlb_entry_lo      = trans_en_r ? tlb_r_entry_r : passthrough_entry;
   wire tlb_v_lo            = trans_en_r ? tlb_r_v_r : r_v_r;

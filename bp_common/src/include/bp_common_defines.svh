@@ -1,5 +1,5 @@
-`ifndef BP_COMMON_DEFINES_VH
-`define BP_COMMON_DEFINES_VH
+`ifndef BP_COMMON_DEFINES_SVH
+`define BP_COMMON_DEFINES_SVH
 
   `include "bsg_defines.v"
   `include "bp_common_defines.svh"

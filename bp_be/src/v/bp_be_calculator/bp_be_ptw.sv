@@ -7,16 +7,15 @@ module bp_be_ptw
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    , parameter pte_width_p         = sv39_pte_width_gp
    , parameter page_table_depth_p  = sv39_levels_gp
    , parameter pte_size_in_bytes_p = sv39_pte_size_in_bytes_gp
    , parameter page_idx_width_p    = sv39_page_idx_width_gp
 
    , localparam dcache_pkt_width_lp     = $bits(bp_be_dcache_pkt_s)
-   , localparam tlb_entry_width_lp      = `bp_pte_entry_leaf_width(paddr_width_p)
+   , localparam tlb_entry_width_lp      = `bp_be_pte_leaf_width(paddr_width_p)
    , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
-   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                                    clk_i
    , input                                  reset_i
@@ -43,14 +42,13 @@ module bp_be_ptw
    , input [dpath_width_gp-1:0]             dcache_data_i
   );
 
-  `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eRecvLoad, eWriteBack } state_n, state_r;
 
   bp_be_dcache_pkt_s   dcache_pkt_cast_o;
   sv39_pte_s           dcache_data;
-  bp_pte_entry_leaf_s  tlb_w_entry;
+  bp_be_pte_leaf_s     tlb_w_entry;
   bp_be_ptw_miss_pkt_s ptw_miss_pkt_cast_i;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt_cast_o;
 

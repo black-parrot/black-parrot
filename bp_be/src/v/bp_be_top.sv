@@ -18,9 +18,6 @@ module bp_be_top
 
    // Default parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-
-   // VM parameters
-   , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
   )
   (input                                             clk_i
    , input                                           reset_i
@@ -82,9 +79,9 @@ module bp_be_top
   bp_be_dispatch_pkt_s dispatch_pkt;
   bp_be_branch_pkt_s   br_pkt;
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
-  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
-  logic chk_dispatch_v;
+  logic chk_dispatch_v, chk_interrupt_v;
+  logic irq_pending_lo;
 
   bp_be_commit_pkt_s commit_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
@@ -95,9 +92,8 @@ module bp_be_top
 
   logic fpu_en_lo;
   logic fe_cmd_full_lo;
-  logic mem_ready_lo, long_ready_lo, sys_ready_lo, ptw_busy_lo;
+  logic mem_ready_lo, long_ready_lo, ptw_busy_lo;
 
-  logic flush;
   bp_be_director
    #(.bp_params_p(bp_params_p))
    director
@@ -116,11 +112,9 @@ module bp_be_top
 
      ,.suppress_iss_o(suppress_iss_lo)
      ,.poison_isd_o(poison_isd_lo)
-     ,.flush_o(flush)
 
      ,.br_pkt_i(br_pkt)
      ,.commit_pkt_i(commit_pkt)
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
      );
 
   bp_be_detector
@@ -137,11 +131,13 @@ module bp_be_top
      ,.credits_empty_i(cache_req_credits_empty_i)
      ,.mem_ready_i(mem_ready_lo)
      ,.long_ready_i(long_ready_lo)
-     ,.sys_ready_i(sys_ready_lo)
      ,.ptw_busy_i(ptw_busy_lo)
+     ,.irq_pending_i(irq_pending_lo)
 
      ,.chk_dispatch_v_o(chk_dispatch_v)
+     ,.chk_interrupt_v_o(chk_interrupt_v)
      ,.dispatch_pkt_i(dispatch_pkt)
+     ,.commit_pkt_i(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
      );
@@ -180,15 +176,10 @@ module bp_be_top
 
      ,.dispatch_pkt_i(dispatch_pkt)
 
-     ,.flush_i(flush)
-
      ,.fpu_en_o(fpu_en_lo)
      ,.mem_ready_o(mem_ready_lo)
      ,.long_ready_o(long_ready_lo)
-     ,.sys_ready_o(sys_ready_lo)
      ,.ptw_busy_o(ptw_busy_lo)
-
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
      ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)
@@ -224,6 +215,8 @@ module bp_be_top
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
+     ,.interrupt_v_i(chk_interrupt_v)
+     ,.irq_pending_o(irq_pending_lo)
      );
 
 endmodule

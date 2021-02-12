@@ -26,12 +26,13 @@ module bp_be_pipe_aux
    , input                             reset_i
 
    , input [dispatch_pkt_width_lp-1:0] reservation_i
+   , input                             flush_i
    , input rv64_frm_e                  frm_dyn_i
 
    // Pipeline results
-   , output [dpath_width_gp-1:0]        data_o
+   , output logic [dpath_width_gp-1:0] data_o
    , output rv64_fflags_s              fflags_o
-   , output                            v_o
+   , output logic                      v_o
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -493,7 +494,7 @@ module bp_be_pipe_aux
       endcase
     end
 
-  wire faux_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_aux_v;
+  wire faux_v_li = reservation.v & reservation.decode.pipe_aux_v;
   bsg_dff_chain
    #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)+1), .num_stages_p(latency_p-1))
    retiming_chain

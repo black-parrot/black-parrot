@@ -70,8 +70,6 @@ module bp_be_instr_decoder
       decode.fflags_w_v    = '0;
       decode.dcache_r_v    = '0;
       decode.dcache_w_v    = '0;
-      decode.csr_r_v       = '0;
-      decode.csr_w_v       = '0;
       decode.late_iwb_v    = '0;
       decode.late_fwb_v    = '0;
 
@@ -289,9 +287,6 @@ module bp_be_instr_decoder
               default:
                 begin
                   decode.irf_w_v    = (instr.rd_addr != '0);
-                  // TODO: Should not write/read based on x0
-                  decode.csr_w_v     = 1'b1;
-                  decode.csr_r_v     = 1'b1;
                   unique casez (instr)
                     `RV64_CSRRW  : decode.fu_op = e_csrrw;
                     `RV64_CSRRWI : decode.fu_op = e_csrrwi;
