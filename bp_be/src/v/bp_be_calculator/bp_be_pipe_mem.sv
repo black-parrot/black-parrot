@@ -22,9 +22,9 @@ module bp_be_pipe_mem
    // Generated parameters
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dispatch_pkt_width_lp  = `bp_be_dispatch_pkt_width(vaddr_width_p)
-   , localparam ptw_miss_pkt_width_lp  = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
+   , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                                  clk_i
    , input                                reset_i
@@ -37,7 +37,7 @@ module bp_be_pipe_mem
 
    , input [dispatch_pkt_width_lp-1:0]    reservation_i
 
-   , input [ptw_miss_pkt_width_lp-1:0]    ptw_miss_pkt_i
+   , input [commit_pkt_width_lp-1:0]      commit_pkt_i
    , output [ptw_fill_pkt_width_lp-1:0]   ptw_fill_pkt_o
    , output logic                         ptw_busy_o
 
@@ -99,14 +99,14 @@ module bp_be_pipe_mem
   bp_be_decode_s         decode;
   rv64_instr_s           instr;
   bp_cfg_bus_s           cfg_bus;
-  bp_be_ptw_miss_pkt_s   ptw_miss_pkt;
+  bp_be_commit_pkt_s     commit_pkt;
   bp_be_ptw_fill_pkt_s   ptw_fill_pkt;
   bp_be_trans_info_s     trans_info;
   bp_dcache_req_s        cache_req_cast_o;
 
   assign cfg_bus = cfg_bus_i;
-  assign ptw_miss_pkt = ptw_miss_pkt_i;
   assign ptw_fill_pkt_o = ptw_fill_pkt;
+  assign commit_pkt = commit_pkt_i;
   assign trans_info = trans_info_i;
   assign cache_req_o = cache_req_cast_o;
 
@@ -203,6 +203,14 @@ module bp_be_pipe_mem
      ,.r_load_page_fault_o(load_page_fault_v)
      ,.r_store_page_fault_o(store_page_fault_v)
      );
+
+  bp_be_ptw_miss_pkt_s ptw_miss_pkt;
+  assign ptw_miss_pkt =
+    '{instr_miss_v  : commit_pkt.itlb_miss
+      ,store_miss_v : commit_pkt.dtlb_store_miss
+      ,load_miss_v  : commit_pkt.dtlb_load_miss
+      ,vaddr        : commit_pkt.itlb_miss ? commit_pkt.pc : commit_pkt.vaddr
+      };
 
   bp_be_ptw
    #(.bp_params_p(bp_params_p))

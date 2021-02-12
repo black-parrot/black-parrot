@@ -22,7 +22,6 @@ module bp_be_pipe_sys
    // Generated parameters
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam exception_width_lp    = $bits(bp_be_exception_s)
-   , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
@@ -43,7 +42,6 @@ module bp_be_pipe_sys
    , input                                commit_queue_v_i
    , input [exception_width_lp-1:0]       exception_i
 
-   , output [ptw_miss_pkt_width_lp-1:0]   ptw_miss_pkt_o
    , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
 
    , output logic                         miss_v_o
@@ -70,13 +68,11 @@ module bp_be_pipe_sys
   bp_be_decode_s decode;
   bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r;
   rv64_instr_s instr;
-  bp_be_ptw_miss_pkt_s ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_commit_pkt_s commit_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_trans_info_s trans_info;
 
-  assign ptw_miss_pkt_o = ptw_miss_pkt;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
   assign commit_pkt_o = commit_pkt;
   assign iwb_pkt = iwb_pkt_i;
@@ -130,14 +126,6 @@ module bp_be_pipe_sys
       begin
         exception_li = '0;
       end
-
-  always_comb
-    begin
-      ptw_miss_pkt.instr_miss_v = commit_pkt.itlb_miss;
-      ptw_miss_pkt.load_miss_v  = commit_pkt.dtlb_load_miss;
-      ptw_miss_pkt.store_miss_v = commit_pkt.dtlb_store_miss;
-      ptw_miss_pkt.vaddr        = commit_pkt.itlb_miss ? commit_pkt.pc : commit_pkt.vaddr;
-    end
 
   wire ptw_page_fault_v  = ptw_fill_pkt.instr_page_fault_v | ptw_fill_pkt.load_page_fault_v | ptw_fill_pkt.store_page_fault_v;
   wire exception_v_li = ptw_page_fault_v | commit_v_i;

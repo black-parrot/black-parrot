@@ -29,7 +29,6 @@ module bp_be_calculator_top
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
-   , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 6
@@ -105,7 +104,6 @@ module bp_be_calculator_top
   bp_be_wb_pkt_s [pipe_stage_els_lp  :0] comp_stage_n;
   bp_be_wb_pkt_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
-  bp_be_ptw_miss_pkt_s ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_trans_info_s   trans_info_lo;
   rv64_frm_e           frm_dyn_lo;
@@ -241,7 +239,7 @@ module bp_be_calculator_top
      ,.reservation_i(reservation_r)
      ,.ready_o(pipe_mem_ready_lo)
 
-     ,.ptw_miss_pkt_i(ptw_miss_pkt)
+     ,.commit_pkt_i(commit_pkt)
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
      ,.ptw_busy_o(ptw_busy_o)
 
@@ -303,7 +301,6 @@ module bp_be_calculator_top
      ,.reservation_i(reservation_r)
      ,.flush_i(flush_i)
 
-     ,.ptw_miss_pkt_o(ptw_miss_pkt)
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
      ,.commit_v_i(exc_stage_r[2].v)
