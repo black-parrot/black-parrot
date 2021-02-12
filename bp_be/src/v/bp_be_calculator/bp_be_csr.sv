@@ -192,9 +192,9 @@ module bp_be_csr
         ,ecall_u_mode       : exception.ecall & (priv_mode_r == `PRIV_MODE_U)
         ,ecall_s_mode       : exception.ecall & (priv_mode_r == `PRIV_MODE_S)
         ,ecall_m_mode       : exception.ecall & (priv_mode_r == `PRIV_MODE_M)
-        ,instr_page_fault   : exception.instr_page_fault
-        ,load_page_fault    : exception.load_page_fault
-        ,store_page_fault   : exception.store_page_fault
+        ,instr_page_fault   : exception.instr_page_fault | ptw_fill_pkt.instr_page_fault_v
+        ,load_page_fault    : exception.load_page_fault | ptw_fill_pkt.load_page_fault_v
+        ,store_page_fault   : exception.store_page_fault | ptw_fill_pkt.store_page_fault_v
         ,default : '0
         };
 
@@ -719,7 +719,10 @@ exception.dtlb_store_miss, exception.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, p
   assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
   assign commit_pkt_cast_o.eret             = ret_v_o;
   assign commit_pkt_cast_o.satp             = satp_v_o;
+  assign commit_pkt_cast_o.itlb_miss        = exception.itlb_miss;
   assign commit_pkt_cast_o.icache_miss      = exception.icache_miss;
+  assign commit_pkt_cast_o.dtlb_store_miss  = exception.dtlb_store_miss;
+  assign commit_pkt_cast_o.dtlb_load_miss   = exception.dtlb_load_miss;
   assign commit_pkt_cast_o.dcache_miss      = exception.dcache_miss;
   assign commit_pkt_cast_o.itlb_fill_v      = ptw_fill_pkt.itlb_fill_v;
   assign commit_pkt_cast_o.dtlb_fill_v      = ptw_fill_pkt.dtlb_fill_v;

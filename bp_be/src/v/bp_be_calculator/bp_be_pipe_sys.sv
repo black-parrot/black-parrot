@@ -122,19 +122,7 @@ module bp_be_pipe_sys
 
   bp_be_exception_s exception_li;
   always_comb
-    if (ptw_fill_pkt.instr_page_fault_v)
-      begin
-        exception_li = '{instr_page_fault: 1'b1, default: '0};
-      end
-    else if (ptw_fill_pkt.store_page_fault_v)
-      begin
-        exception_li = '{store_page_fault: 1'b1, default: '0};
-      end
-    else if (ptw_fill_pkt.load_page_fault_v)
-      begin
-        exception_li = '{load_page_fault: 1'b1, default: '0};
-      end
-    else if (commit_v_i)
+    if (commit_v_i)
       begin
         exception_li = exception_i;
       end
@@ -145,10 +133,10 @@ module bp_be_pipe_sys
 
   always_comb
     begin
-      ptw_miss_pkt.instr_miss_v = commit_v_i & exception_li.itlb_miss;
-      ptw_miss_pkt.load_miss_v  = commit_v_i & exception_li.dtlb_load_miss;
-      ptw_miss_pkt.store_miss_v = commit_v_i & exception_li.dtlb_store_miss;
-      ptw_miss_pkt.vaddr        = exception_li.itlb_miss ? commit_pc_r : commit_vaddr_r;
+      ptw_miss_pkt.instr_miss_v = commit_pkt.itlb_miss;
+      ptw_miss_pkt.load_miss_v  = commit_pkt.dtlb_load_miss;
+      ptw_miss_pkt.store_miss_v = commit_pkt.dtlb_store_miss;
+      ptw_miss_pkt.vaddr        = commit_pkt.itlb_miss ? commit_pkt.pc : commit_pkt.vaddr;
     end
 
   wire ptw_page_fault_v  = ptw_fill_pkt.instr_page_fault_v | ptw_fill_pkt.load_page_fault_v | ptw_fill_pkt.store_page_fault_v;

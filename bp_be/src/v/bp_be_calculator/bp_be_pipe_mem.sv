@@ -52,9 +52,9 @@ module bp_be_pipe_mem
    , output logic                         store_access_fault_v_o
    , output logic                         store_page_fault_v_o
 
-   , output logic [dpath_width_gp-1:0]     early_data_o
+   , output logic [dpath_width_gp-1:0]    early_data_o
    , output logic                         early_v_o
-   , output logic [dpath_width_gp-1:0]     final_data_o
+   , output logic [dpath_width_gp-1:0]    final_data_o
    , output logic                         final_v_o
 
    , input [trans_info_width_lp-1:0]      trans_info_i

@@ -129,7 +129,10 @@
       logic                           fencei;                                                      \
       logic                           sfence;                                                      \
       logic                           satp;                                                        \
+      logic                           itlb_miss;                                                   \
       logic                           icache_miss;                                                 \
+      logic                           dtlb_store_miss;                                             \
+      logic                           dtlb_load_miss;                                              \
       logic                           dcache_miss;                                                 \
       logic                           itlb_fill_v;                                                 \
       logic                           dtlb_fill_v;                                                 \
@@ -207,7 +210,7 @@
     (paddr_width_mp - page_offset_width_gp + 6)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 13)
+    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 16)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \
