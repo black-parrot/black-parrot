@@ -19,7 +19,7 @@ module bp_tlb
    , parameter pte_size_in_bytes_p = sv39_pte_size_in_bytes_gp
    , parameter page_idx_width_p    = sv39_page_idx_width_gp
 
-   , localparam entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
+   , localparam entry_width_lp = `bp_pte_leaf_width(paddr_width_p)
    )
   (input                               clk_i
    , input                             reset_i
@@ -39,9 +39,9 @@ module bp_tlb
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   localparam r_entry_low_bits_lp  = (sv39_levels_gp-1)*sv39_page_idx_width_gp;
-  localparam r_entry_high_bits_lp = $bits(bp_pte_entry_leaf_s) - r_entry_low_bits_lp;
+  localparam r_entry_high_bits_lp = $bits(bp_pte_leaf_s) - r_entry_low_bits_lp;
 
-  bp_pte_entry_leaf_s entry;
+  bp_pte_leaf_s entry;
   assign entry = entry_i;
 
   wire r_v_li = v_i & ~w_i;
@@ -50,10 +50,10 @@ module bp_tlb
   logic flush_4k_li, flush_1g_li;
 
   // We shift so that ppn bits are LSB
-  bp_pte_entry_leaf_s entry_shifted;
+  bp_pte_leaf_s entry_shifted;
   localparam [`BSG_SAFE_CLOG2(entry_width_lp)-1:0] entry_shamt_lp = ptag_width_p;
   bsg_rotate_left
-   #(.width_p($bits(bp_pte_entry_leaf_s)))
+   #(.width_p($bits(bp_pte_leaf_s)))
    entry_shift
     (.data_i(entry)
      ,.rot_i(entry_shamt_lp)
@@ -169,7 +169,7 @@ module bp_tlb
           );
     end
 
-  bp_pte_entry_leaf_s r_entry;
+  bp_pte_leaf_s r_entry;
   bsg_mux_one_hot
    #(.width_p(r_entry_low_bits_lp), .els_p(els_4k_p+1))
    one_hot_sel_low
@@ -192,9 +192,9 @@ module bp_tlb
   assign flush_1g_li = flush_i;
 
   // We shift so that ppn bits are LSB
-  bp_pte_entry_leaf_s entry_unshifted;
+  bp_pte_leaf_s entry_unshifted;
   bsg_rotate_right
-   #(.width_p($bits(bp_pte_entry_leaf_s)))
+   #(.width_p($bits(bp_pte_leaf_s)))
    entry_unshift
     (.data_i(r_entry)
      ,.rot_i(entry_shamt_lp)

@@ -11,8 +11,8 @@ module bp_nonsynth_vm_tracer
 
    , parameter vm_trace_file_p = "vm"
 
-   , localparam itlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
-   , localparam dtlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
+   , localparam itlb_entry_width_lp = `bp_pte_leaf_width(paddr_width_p)
+   , localparam dtlb_entry_width_lp = `bp_pte_leaf_width(paddr_width_p)
    )
   (input                             clk_i
    , input                           reset_i
@@ -44,8 +44,8 @@ module bp_nonsynth_vm_tracer
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  bp_pte_entry_leaf_s itlb_w_entry;
-  bp_pte_entry_leaf_s dtlb_w_entry;
+  bp_pte_leaf_s itlb_w_entry;
+  bp_pte_leaf_s dtlb_w_entry;
 
   assign itlb_w_entry = itlb_entry_i;
   assign dtlb_w_entry = dtlb_entry_i;

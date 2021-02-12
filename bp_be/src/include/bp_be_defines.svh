@@ -117,8 +117,10 @@
       logic                           instret;                                                     \
       logic [vaddr_width_p-1:0]       pc;                                                          \
       logic [vaddr_width_p-1:0]       npc;                                                         \
+      logic [vaddr_width_p-1:0]       vaddr;                                                       \
       rv64_instr_s                    instr;                                                       \
       bp_be_pte_leaf_s                pte_leaf;                                                    \
+      logic                           pte_gigapage;                                                \
       logic [rv64_priv_width_gp-1:0]  priv_n;                                                      \
       logic                           translation_en_n;                                            \
       logic                           exception;                                                   \
@@ -129,6 +131,8 @@
       logic                           satp;                                                        \
       logic                           icache_miss;                                                 \
       logic                           dcache_miss;                                                 \
+      logic                           itlb_fill_v;                                                 \
+      logic                           dtlb_fill_v;                                                 \
       logic                           rollback;                                                    \
     }  bp_be_commit_pkt_s;                                                                         \
                                                                                                    \
@@ -203,7 +207,7 @@
     (paddr_width_mp - page_offset_width_gp + 6)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  2 * vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 10)
+    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 13)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \

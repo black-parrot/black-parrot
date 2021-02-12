@@ -18,9 +18,6 @@ module bp_be_top
 
    // Default parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-
-   // VM parameters
-   , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
   )
   (input                                             clk_i
    , input                                           reset_i
@@ -82,7 +79,6 @@ module bp_be_top
   bp_be_dispatch_pkt_s dispatch_pkt;
   bp_be_branch_pkt_s   br_pkt;
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
-  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
   logic chk_dispatch_v;
 
@@ -120,7 +116,6 @@ module bp_be_top
 
      ,.br_pkt_i(br_pkt)
      ,.commit_pkt_i(commit_pkt)
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
      );
 
   bp_be_detector
@@ -187,8 +182,6 @@ module bp_be_top
      ,.long_ready_o(long_ready_lo)
      ,.sys_ready_o(sys_ready_lo)
      ,.ptw_busy_o(ptw_busy_lo)
-
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
      ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)

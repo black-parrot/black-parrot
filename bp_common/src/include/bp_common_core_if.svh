@@ -80,15 +80,15 @@
      * bp_fe_cmd_pc_redirect_operands_s provides the information needed during the pc              \
      * redirection.  command_queue_subopcode provides the reasons for pc redirection.              \
      * branch_metadata_fwd provides the information of branch misprediction.                       \
-     * translation_enabled tells whether the pc is virtual or physical in the case of              \
-     * context switch.                                                                             \
+     * translation_en tells whether the pc is virtual or physical in the case of context switch.   \
+     * priv is the privilege mode being switched to.                                               \
     */                                                                                             \
     typedef struct packed                                                                          \
     {                                                                                              \
       bp_fe_command_queue_subopcodes_e         subopcode;                                          \
       logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                \
       bp_fe_misprediction_reason_e             misprediction_reason;                               \
-      logic                                    translation_enabled;                                \
+      logic                                    translation_en;                                     \
       logic [1:0]                              priv;                                               \
                                                                                                    \
       logic [`bp_fe_cmd_pc_redirect_operands_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
@@ -109,8 +109,8 @@
     }  bp_fe_cmd_attaboy_s;                                                                        \
                                                                                                    \
     /*                                                                                             \
-     * bp_pte_entry_leaf_s provides the information needed in the case of the page                 \
-     * walk. The bp_pte_entry_leaf_s contains the physical address and the                         \
+     * bp_pte_leaf_s provides the information needed in the case of the page                       \
+     * walk. The bp_pte_leaf_s contains the physical address and the                               \
      * additional bits in the page table entry (pte).                                              \
     */                                                                                             \
     typedef struct packed                                                                          \
@@ -122,7 +122,7 @@
       logic                                              x;                                        \
       logic                                              w;                                        \
       logic                                              r;                                        \
-    }  bp_pte_entry_leaf_s;                                                                        \
+    }  bp_pte_leaf_s;                                                                              \
                                                                                                    \
     /*                                                                                             \
      * bp_fe_cmd_itlb_map_s provides the virtual, physical translation plus the                    \
@@ -133,7 +133,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic                      gigapage;                                                         \
-      bp_pte_entry_leaf_s        pte_entry_leaf;                                                   \
+      bp_pte_leaf_s              pte_leaf;                                                         \
       logic [`bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_itlb_map_s;                                                                       \
@@ -287,7 +287,7 @@
   `define bp_fe_cmd_itlb_map_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
 
-  `define bp_pte_entry_leaf_width(paddr_width_mp) \
+  `define bp_pte_leaf_width(paddr_width_mp) \
     (paddr_width_mp - page_offset_width_gp + 6)
 
   `define bp_fe_cmd_itlb_fence_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
@@ -324,7 +324,7 @@
     (1+branch_metadata_fwd_width_mp)
 
   `define bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp) \
-    (1+`bp_pte_entry_leaf_width(paddr_width_mp))
+    (1+`bp_pte_leaf_width(paddr_width_mp))
 
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
     (asid_width_mp + 2)

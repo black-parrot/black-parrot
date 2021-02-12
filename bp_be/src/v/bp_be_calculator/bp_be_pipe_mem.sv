@@ -122,7 +122,7 @@ module bp_be_pipe_mem
   /* TLB ports */
   logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_w_gigapage, dtlb_r_v, dtlb_v_lo;
   logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag;
-  bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry, passthrough_entry, entry_lo;
+  bp_pte_leaf_s            dtlb_r_entry, dtlb_w_entry, passthrough_entry, entry_lo;
 
   /* PTW ports */
   logic [ptag_width_p-1:0]  ptw_dcache_ptag;

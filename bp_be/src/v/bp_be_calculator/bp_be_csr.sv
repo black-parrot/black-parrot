@@ -702,13 +702,15 @@ module bp_be_csr
 
   assign commit_pkt_cast_o.npc_w_v          = |{exception.fencei_v, sfence_v_o, exception_v_o,
 interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss,
-exception.dtlb_store_miss, exception.dtlb_load_miss};
+exception.dtlb_store_miss, exception.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
+  assign commit_pkt_cast_o.npc              = apc_n;
+  assign commit_pkt_cast_o.vaddr            = exception_vaddr_i;
   assign commit_pkt_cast_o.instr            = exception_instr_i;
   assign commit_pkt_cast_o.pte_leaf         = ptw_fill_pkt.entry;
-  assign commit_pkt_cast_o.npc              = apc_n;
+  assign commit_pkt_cast_o.pte_gigapage     = ptw_fill_pkt.gigapage;
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.fencei           = exception.fencei_v;
@@ -719,6 +721,8 @@ exception.dtlb_store_miss, exception.dtlb_load_miss};
   assign commit_pkt_cast_o.satp             = satp_v_o;
   assign commit_pkt_cast_o.icache_miss      = exception.icache_miss;
   assign commit_pkt_cast_o.dcache_miss      = exception.dcache_miss;
+  assign commit_pkt_cast_o.itlb_fill_v      = ptw_fill_pkt.itlb_fill_v;
+  assign commit_pkt_cast_o.dtlb_fill_v      = ptw_fill_pkt.dtlb_fill_v;
   assign commit_pkt_cast_o.rollback         = exception.icache_miss | exception.dcache_miss | exception.dtlb_store_miss | exception.dtlb_load_miss | exception.itlb_miss;
 
   assign trans_info_cast_o.priv_mode = priv_mode_r;

@@ -30,7 +30,6 @@ module bp_be_calculator_top
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
-   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 6
@@ -51,7 +50,6 @@ module bp_be_calculator_top
   , output                                          sys_ready_o
   , output                                          ptw_busy_o
 
-  , output [ptw_fill_pkt_width_lp-1:0]              ptw_fill_pkt_o
   , output [commit_pkt_width_lp-1:0]                commit_pkt_o
   , output [branch_pkt_width_lp-1:0]                br_pkt_o
   , output [wb_pkt_width_lp-1:0]                    iwb_pkt_o
@@ -111,7 +109,6 @@ module bp_be_calculator_top
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_trans_info_s   trans_info_lo;
   rv64_frm_e           frm_dyn_lo;
-  assign ptw_fill_pkt_o = ptw_fill_pkt;
 
   logic pipe_mem_dtlb_store_miss_lo;
   logic pipe_mem_dtlb_load_miss_lo;
