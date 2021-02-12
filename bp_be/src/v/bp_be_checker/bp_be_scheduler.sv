@@ -21,7 +21,7 @@ module bp_be_scheduler
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
@@ -53,7 +53,7 @@ module bp_be_scheduler
   );
 
   // Declare parameterizable structures
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -104,7 +104,7 @@ module bp_be_scheduler
 
   logic [dword_width_gp-1:0] irf_rs1, irf_rs2;
   bp_be_regfile
-  #(.bp_params_p(bp_params_p), .read_ports_p(2), .data_width_p(dword_width_gp))
+  #(.bp_params_p(bp_params_p), .read_ports_p(2), .zero_x0_p(1), .data_width_p(dword_width_gp))
    int_regfile
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -120,7 +120,7 @@ module bp_be_scheduler
 
   logic [dpath_width_gp-1:0] frf_rs1, frf_rs2, frf_rs3;
   bp_be_regfile
-  #(.bp_params_p(bp_params_p), .read_ports_p(3), .data_width_p(dpath_width_gp))
+  #(.bp_params_p(bp_params_p), .read_ports_p(3), .zero_x0_p(0), .data_width_p(dpath_width_gp))
    fp_regfile
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

@@ -11,7 +11,7 @@ module bp_cacc_vdp
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
     `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache)
 
-    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     )
    (
     input                                     clk_i
@@ -53,7 +53,7 @@ module bp_cacc_vdp
   logic                     dcache_miss_v;
   logic                     dcache_pkt_v;
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
 
@@ -66,6 +66,7 @@ module bp_cacc_vdp
   cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
   `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p)
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;
@@ -89,8 +90,13 @@ bp_pma
     );
 
 bp_be_dcache
-  #(.bp_params_p(bp_params_p))
-  dcache
+  #(.bp_params_p(bp_params_p)
+    ,.sets_p(acache_sets_p)
+    ,.assoc_p(acache_assoc_p)
+    ,.block_width_p(acache_block_width_p)
+    ,.fill_width_p(acache_fill_width_p)
+    )
+  acache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 

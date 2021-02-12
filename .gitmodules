@@ -118,3 +118,10 @@
   branch = blackparrot_mods
   update = none
   ignore = dirty
+
+[submodule "bp_common/test/src/riscv-opcodes"]
+  path = bp_common/test/src/riscv-opcodes
+  url = https://github.com/riscv/riscv-opcodes.git
+  branch = master
+  ignore = dirty
+

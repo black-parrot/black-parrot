@@ -12,9 +12,9 @@ module bp_fe_top
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -57,7 +57,7 @@ module bp_fe_top
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
   bp_fe_cmd_s fe_cmd_cast_i;
   assign fe_cmd_cast_i = fe_cmd_i;
@@ -208,10 +208,14 @@ module bp_fe_top
   bp_pte_entry_leaf_s w_tlb_entry_li;
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf;
+  wire w_gigapage_li = fe_cmd_cast_i.operands.itlb_fill_response.gigapage;
 
   wire [dword_width_gp-1:0] r_eaddr_li = dword_width_gp'($signed(next_pc_lo));
   bp_mmu
-   #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
+   #(.bp_params_p(bp_params_p)
+     ,.tlb_els_4k_p(itlb_els_4k_p)
+     ,.tlb_els_1g_p(itlb_els_1g_p)
+     )
    immu
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -222,12 +226,12 @@ module bp_fe_top
      // Supervisor use of user memory is always disabled for immu
      ,.sum_i('0)
      ,.uncached_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_uncached))
-     ,.sac_i(cfg_bus_cast_i.sac)
-     ,.domain_mask_i(cfg_bus_cast_i.domain)
+     ,.domain_mask_i(cfg_bus_cast_i.domain_mask)
 
      ,.w_v_i(itlb_fill_v)
      ,.w_vtag_i(w_vtag_li)
      ,.w_entry_i(w_tlb_entry_li)
+     ,.w_gigapage_i(w_gigapage_li)
 
      ,.r_v_i(next_pc_yumi_li)
      ,.r_instr_i(1'b1)

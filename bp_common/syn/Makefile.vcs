@@ -56,7 +56,7 @@ lint.v: LINT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
 $(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
 $(LINT_DIR)/lintv: $(LINT_COLLATERAL)
 	cd $(@D); \
-		$(VCS) $(VCS_BUILD_OPTS) $(LINT_VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ | tee $(LINT_LOG)
+		$(VCS) $(VCS_BUILD_OPTS) $(LINT_VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee $(LINT_LOG)
 	-@grep -A5 "Lint" $(LINT_LOG) > $(LINT_REPORT)
 
 build.v: $(BUILD_DIR)/simv
@@ -66,7 +66,7 @@ build.v: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
 $(BUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/simv: $(BUILD_COLLATERAL)
 	cd $(@D); \
-		$(VCS) $(VCS_BUILD_OPTS) $(VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ | tee $(BUILD_LOG)
+		$(VCS) $(VCS_BUILD_OPTS) $(VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee $(BUILD_LOG)
 	-@grep "Error" -A5 $(BUILD_LOG) > $(BUILD_ERROR)
 	-@tail -n3 $(BUILD_LOG) > $(BUILD_REPORT)
 	-@test -s $(BUILD_ERROR) && echo "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
@@ -91,7 +91,7 @@ sim.v: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
 sim.v: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(SIM_DIR)/run_simv: $(SIM_COLLATERAL)
-	cd $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) | tee $(SIM_LOG)
+	cd $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) 2>&1 | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
