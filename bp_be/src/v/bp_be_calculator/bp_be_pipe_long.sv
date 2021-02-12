@@ -11,22 +11,22 @@ module bp_be_pipe_long
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
    )
-  (input                               clk_i
-   , input                             reset_i
+  (input                                clk_i
+   , input                              reset_i
 
-   , input [dispatch_pkt_width_lp-1:0] reservation_i
-   , output                            ready_o
-   , input rv64_frm_e                  frm_dyn_i
+   , input [dispatch_pkt_width_lp-1:0]  reservation_i
+   , output logic                       ready_o
+   , input rv64_frm_e                   frm_dyn_i
 
-   , input                             flush_i
+   , input                              flush_i
 
-   , output [wb_pkt_width_lp-1:0]      iwb_pkt_o
-   , output                            iwb_v_o
-   , input                             iwb_yumi_i
+   , output logic [wb_pkt_width_lp-1:0] iwb_pkt_o
+   , output logic                       iwb_v_o
+   , input                              iwb_yumi_i
 
-   , output [wb_pkt_width_lp-1:0]      fwb_pkt_o
-   , output                            fwb_v_o
-   , input                             fwb_yumi_i
+   , output logic [wb_pkt_width_lp-1:0] fwb_pkt_o
+   , output logic                       fwb_v_o
+   , input                              fwb_yumi_i
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);

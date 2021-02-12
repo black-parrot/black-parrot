@@ -240,6 +240,7 @@ module bp_be_calculator_top
      ,.reset_i(reset_i)
 
      ,.reservation_i(reservation_r)
+     ,.flush_i(flush_i)
 
      ,.data_o(pipe_int_data_lo)
      ,.v_o(pipe_int_data_lo_v)
@@ -253,6 +254,7 @@ module bp_be_calculator_top
      ,.reset_i(reset_i)
 
      ,.reservation_i(reservation_r)
+     ,.flush_i(flush_i)
      ,.frm_dyn_i(frm_dyn_lo)
 
      ,.data_o(pipe_aux_data_lo)
@@ -332,6 +334,7 @@ module bp_be_calculator_top
      ,.reset_i(reset_i)
 
      ,.reservation_i(reservation_r)
+     ,.flush_i(flush_i)
      ,.frm_dyn_i(frm_dyn_lo)
 
      ,.imul_data_o(pipe_mul_data_lo)
