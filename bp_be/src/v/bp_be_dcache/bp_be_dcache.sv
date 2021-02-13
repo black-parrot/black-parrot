@@ -640,7 +640,7 @@ module bp_be_dcache
   bp_be_dcache_wbuf_entry_s wbuf_entry_in, wbuf_entry_out;
   logic wbuf_v_li, wbuf_v_lo, wbuf_yumi_li;
 
-  assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_op_tv_r & ~flush_i & ((writethrough_p == 0) || cache_req_yumi_i);
+  assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_op_tv_r & ((writethrough_p == 0) || cache_req_yumi_i);
 
   //
   // Atomic operations
@@ -744,7 +744,9 @@ module bp_be_dcache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.v_i(wbuf_v_li)
+     // We separate out the poison signal here to avoid a critical path
+     //  i.e. it's fine to block, but not to enqueue
+     ,.v_i(wbuf_v_li & ~flush_i)
      ,.wbuf_entry_i(wbuf_entry_in)
 
      ,.v_o(wbuf_v_lo)

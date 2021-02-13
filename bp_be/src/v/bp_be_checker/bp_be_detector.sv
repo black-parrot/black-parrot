@@ -84,7 +84,6 @@ module bp_be_detector
 
   logic fence_haz_v, cmd_haz_v, fflags_haz_v, csr_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
-  logic fflags_haz_v;
   logic long_haz_v;
   logic mem_in_pipe_v;
 
