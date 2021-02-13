@@ -692,7 +692,7 @@
                                                                                            \
   typedef logic [63:0] rv64_dscratch1_s;                                                   \
   typedef logic [63:0] bp_dscratch1_s;
-  
+
   `define bp_stvec_width ($bits(bp_stvec_s))
 
   `define compress_stvec_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \

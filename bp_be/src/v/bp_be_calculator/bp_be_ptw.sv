@@ -141,7 +141,7 @@ module bp_be_ptw
   assign tlb_miss_v   = ptw_miss_pkt_cast_i.instr_miss_v
                         | ptw_miss_pkt_cast_i.load_miss_v
                         | ptw_miss_pkt_cast_i.store_miss_v;
-  assign page_fault_v = ptw_fill_pkt_cast_o.instr_page_fault_v 
+  assign page_fault_v = ptw_fill_pkt_cast_o.instr_page_fault_v
                         | ptw_fill_pkt_cast_o.load_page_fault_v
                         | ptw_fill_pkt_cast_o.store_page_fault_v;
 

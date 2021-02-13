@@ -50,42 +50,7 @@ module bp_be_instr_decoder
   // Decode logic
   always_comb
     begin
-      // Set decoded defaults
-      // NOPs are set after bypassing for critical path reasons
       decode               = '0;
-
-      // Destination pipe
-      decode.pipe_ctl_v       = '0;
-      decode.pipe_int_v       = '0;
-      decode.pipe_mem_early_v = '0;
-      decode.pipe_aux_v       = '0;
-      decode.pipe_mem_final_v = '0;
-      decode.pipe_mul_v       = '0;
-      decode.pipe_fma_v       = '0;
-      decode.pipe_long_v      = '0;
-
-      // R/W signals
-      decode.irf_w_v       = '0;
-      decode.frf_w_v       = '0;
-      decode.fflags_w_v    = '0;
-      decode.dcache_r_v    = '0;
-      decode.dcache_w_v    = '0;
-      decode.late_iwb_v    = '0;
-      decode.late_fwb_v    = '0;
-
-      // Metadata signals
-      decode.mem_v         = '0;
-      decode.csr_v         = '0;
-
-      // Decode metadata
-      decode.opw_v         = '0;
-      decode.ops_v         = '0;
-
-      // Decode control signals
-      decode.fu_op         = bp_be_fu_op_s'(0);
-      decode.src1_sel      = bp_be_src1_e'('0);
-      decode.src2_sel      = bp_be_src2_e'('0);
-      decode.baddr_sel     = bp_be_baddr_e'('0);
 
       imm                  = '0;
       illegal_instr        = '0;
@@ -626,3 +591,4 @@ module bp_be_instr_decoder
     end
 
 endmodule
+

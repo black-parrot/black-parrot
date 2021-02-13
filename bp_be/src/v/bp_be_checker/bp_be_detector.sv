@@ -73,7 +73,7 @@ module bp_be_detector
   // Integer data hazards
   logic irs1_sb_raw_haz_v, irs2_sb_raw_haz_v;
   logic ird_sb_waw_haz_v;
-  logic [3:0] irs1_data_haz_v , irs2_data_haz_v;
+  logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
   // Floating point data hazards
   logic frs1_sb_raw_haz_v, frs2_sb_raw_haz_v, frs3_sb_raw_haz_v;
   logic frd_sb_waw_haz_v;
@@ -84,6 +84,7 @@ module bp_be_detector
 
   logic fence_haz_v, cmd_haz_v, fflags_haz_v, csr_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
+  logic fflags_haz_v;
   logic long_haz_v;
   logic mem_in_pipe_v;
 
@@ -143,7 +144,7 @@ module bp_be_detector
       // Generate matches for rs1, rs2. rs3
       // 3 stages because we only care about ex1, ex2, and iwb dependencies. fwb dependencies
       //   can be handled through forwarding
-      for(integer i = 0; i < 4; i++)
+      for (integer i = 0; i < 4; i++)
         begin
           rs1_match_vector[i] = (isd_status_cast_i.rs1_addr == dep_status_r[i].rd_addr);
           rs2_match_vector[i] = (isd_status_cast_i.rs2_addr == dep_status_r[i].rd_addr);
@@ -151,14 +152,9 @@ module bp_be_detector
         end
 
       // Detect scoreboard hazards
-      irs1_sb_raw_haz_v = (isd_status_cast_i.irs1_v & irs_match_lo[0])
-                          & (isd_status_cast_i.rs1_addr != '0);
-
-      irs2_sb_raw_haz_v = (isd_status_cast_i.irs2_v & irs_match_lo[1])
-                          & (isd_status_cast_i.rs2_addr != '0);
-
-      ird_sb_waw_haz_v = (isd_status_cast_i.iwb_v & ird_match_lo)
-                         & (isd_status_cast_i.rd_addr != '0);
+      irs1_sb_raw_haz_v = (isd_status_cast_i.irs1_v & irs_match_lo[0]) & (isd_status_cast_i.rs1_addr != '0);
+      irs2_sb_raw_haz_v = (isd_status_cast_i.irs2_v & irs_match_lo[1]) & (isd_status_cast_i.rs2_addr != '0);
+      ird_sb_waw_haz_v = (isd_status_cast_i.iwb_v & ird_match_lo) & (isd_status_cast_i.rd_addr != '0);
 
       frs1_sb_raw_haz_v = (isd_status_cast_i.frs1_v & frs_match_lo[0]);
       frs2_sb_raw_haz_v = (isd_status_cast_i.frs2_v & frs_match_lo[1]);
@@ -219,9 +215,6 @@ module bp_be_detector
       frs3_data_haz_v[2] = (isd_status_cast_i.frs3_v & rs3_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      irs1_data_haz_v[3] = '0;
-      irs2_data_haz_v[3] = '0;
-
       frs1_data_haz_v[3] = (isd_status_cast_i.frs1_v & rs1_match_vector[3])
                            & (dep_status_r[3].fma_fwb_v);
 
@@ -231,8 +224,7 @@ module bp_be_detector
       frs3_data_haz_v[3] = (isd_status_cast_i.frs3_v & rs3_match_vector[3])
                            & (dep_status_r[3].fma_fwb_v);
 
-      mem_in_pipe_v      = (dep_status_r[0].mem_v)
-                           | (dep_status_r[1].mem_v);
+      mem_in_pipe_v      = (dep_status_r[0].mem_v) | (dep_status_r[1].mem_v);
       fence_haz_v        = (isd_status_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v))
                            | (isd_status_cast_i.mem_v & credits_full_i);
       cmd_haz_v          = fe_cmd_full_i;
@@ -254,7 +246,7 @@ module bp_be_detector
                       | (dep_status_r[2].instr_v)
                       );
 
-      //// When CSRs are in EX1, conservatively serialize on csr operations.  Could change to only write operations
+      //// Conservatively serialize on csr operations.  Could change to only write operations
       //csr_haz_v     = isd_status_cast_i.csr_v
       //                & ((dep_status_r[0].instr_v)
       //                   | (dep_status_r[1].instr_v)
@@ -306,7 +298,6 @@ module bp_be_detector
       dep_status_n.fmem_fwb_v = dispatch_pkt.decode.pipe_mem_final_v & dispatch_pkt.decode.frf_w_v;
       dep_status_n.mul_iwb_v  = dispatch_pkt.decode.pipe_mul_v & dispatch_pkt.decode.irf_w_v;
       dep_status_n.fma_fwb_v  = dispatch_pkt.decode.pipe_fma_v & dispatch_pkt.decode.frf_w_v;
-
       dep_status_n.rd_addr    = dispatch_pkt.instr.t.rtype.rd_addr;
     end
 

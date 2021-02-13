@@ -1107,7 +1107,7 @@ module bp_be_dcache
       assign gdirty_r     = '0;
     end
 
-  always_comb 
+  always_comb
     case ({v_tv_r, stat_mem_pkt_cast_i.opcode})
       {1'b0, e_cache_stat_mem_set_clear}:
         begin

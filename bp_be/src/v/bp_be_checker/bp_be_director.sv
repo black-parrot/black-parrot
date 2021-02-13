@@ -8,10 +8,7 @@
  *     and sends redirect signals to the FE when a misprediction is detected.
  *
  * Notes:
- *   Branch_metadata should come from the target instruction, not the branch instruction,
- *     eliminating the need to store this in the BE
- *   We don't currently support MTVAL or EPC, so error muxes are disconnected
- *   FE cmd adapter could be split into a separate module
+ *
  */
 
 `include "bp_common_defines.svh"

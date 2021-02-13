@@ -411,7 +411,7 @@ module testbench
            ,.itlb_vtag_i(fe.immu.tlb.vtag_i)
            ,.itlb_entry_i(fe.immu.tlb.entry_i)
            ,.itlb_r_v_i(fe.immu.tlb.r_v_li)
-    
+
            ,.dtlb_clear_i(be.calculator.pipe_mem.dmmu.tlb.flush_i)
            ,.dtlb_fill_v_i(be.calculator.pipe_mem.dmmu.tlb.w_v_li)
            ,.dtlb_fill_g_i(be.calculator.pipe_mem.dmmu.tlb.gigapage_i)
