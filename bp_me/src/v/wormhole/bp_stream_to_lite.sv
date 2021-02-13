@@ -47,7 +47,6 @@ module bp_stream_to_lite
   localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
   bp_bedrock_in_msg_header_s in_msg_header_lo;
-  logic [in_data_width_p-1:0] in_msg_data_lo;
   bsg_dff_en_bypass
    #(.width_p($bits(bp_bedrock_in_msg_header_s)))
    header_reg
@@ -55,15 +54,6 @@ module bp_stream_to_lite
     ,.en_i(in_msg_v_i)
     ,.data_i(in_msg_header_i)
     ,.data_o(in_msg_header_lo)
-    );
-
-  bsg_dff_en_bypass
-   #(.width_p(in_data_width_p))
-   data_reg
-    (.clk_i(clk_i)
-    ,.en_i(in_msg_v_i)
-    ,.data_i(in_msg_data_i)
-    ,.data_o(in_msg_data_lo)
     );
 
   wire has_data = payload_mask_p[in_msg_header_lo.msg_type];
@@ -80,7 +70,7 @@ module bp_stream_to_lite
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.data_i(in_msg_data_lo)
+    ,.data_i(in_msg_data_i)
     ,.v_i(in_msg_v_i)
     ,.ready_and_o(in_msg_ready_and_o)
     ,.len_i(num_stream_cmds-1'b1)
