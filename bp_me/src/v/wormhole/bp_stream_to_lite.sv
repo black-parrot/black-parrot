@@ -46,7 +46,6 @@ module bp_stream_to_lite
 
   bp_bedrock_in_msg_header_s in_msg_header_lo;
   logic [in_data_width_p-1:0] in_msg_data_lo;
-  logic streaming_r, stream_clear;
   bsg_dff_en_bypass
    #(.width_p($bits(bp_bedrock_in_msg_header_s)))
    header_reg
@@ -63,17 +62,6 @@ module bp_stream_to_lite
     ,.en_i(in_msg_v_i)
     ,.data_i(in_msg_data_i)
     ,.data_o(in_msg_data_lo)
-    );
-
-  bsg_dff_reset_set_clear
-   #(.width_p(1)
-   ,.clear_over_set_p(1))
-    streaming_reg
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-    ,.set_i(in_msg_v_i)
-    ,.clear_i(stream_clear)
-    ,.data_o(streaming_r)
     );
 
   wire has_data = payload_mask_p[in_msg_header_lo.msg_type];
@@ -100,7 +88,7 @@ module bp_stream_to_lite
     ,.ready_and_i(out_msg_ready_and_i)
     ,.first_o(/* unused */)
     );
-  assign stream_clear = in_msg_last_i & out_msg_v_o & out_msg_ready_and_i;
+  wire unused = in_msg_last_i; // counter in the sipo tracks the progress
 
   bp_bedrock_out_msg_s msg_cast_o;
   assign msg_cast_o = '{header: in_msg_header_lo, data: sipo_data_lo};
