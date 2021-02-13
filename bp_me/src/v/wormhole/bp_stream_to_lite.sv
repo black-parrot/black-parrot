@@ -93,7 +93,7 @@ module bp_stream_to_lite
     ,.reset_i(reset_i)
 
     ,.data_i(in_msg_data_lo)
-    ,.v_i(in_msg_v_i | streaming_r)
+    ,.v_i(in_msg_v_i)
     ,.ready_and_o(in_msg_ready_and_o)
     ,.len_i(num_stream_cmds-1'b1)
    
