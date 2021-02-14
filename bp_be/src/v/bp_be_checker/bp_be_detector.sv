@@ -246,15 +246,15 @@ module bp_be_detector
                       | (dep_status_r[2].instr_v)
                       );
 
-      //// Conservatively serialize on csr operations.  Could change to only write operations
-      //csr_haz_v     = isd_status_cast_i.csr_v
-      //                & ((dep_status_r[0].instr_v)
-      //                   | (dep_status_r[1].instr_v)
-      //                   | (dep_status_r[2].instr_v)
-      //                   );
+      // Conservatively serialize on csr operations.  Could change to only write operations
+      csr_haz_v     = isd_status_cast_i.csr_v
+                      & ((dep_status_r[0].instr_v)
+                         | (dep_status_r[1].instr_v)
+                         | (dep_status_r[2].instr_v)
+                         );
 
       // When CSRs are in EX3, serialize...
-      csr_haz_v     = dep_status_r[0].csr_v | dep_status_r[1].csr_v | dep_status_r[2].csr_v;
+      csr_haz_v    |= dep_status_r[0].csr_v | dep_status_r[1].csr_v | dep_status_r[2].csr_v;
 
       control_haz_v = fence_haz_v | csr_haz_v | fflags_haz_v | long_haz_v;
 

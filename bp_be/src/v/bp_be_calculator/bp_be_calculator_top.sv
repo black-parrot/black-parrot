@@ -120,6 +120,8 @@ module bp_be_calculator_top
   logic pipe_mem_store_access_fault_lo;
   logic pipe_mem_store_page_fault_lo;
 
+  logic pipe_sys_illegal_instr_lo;
+
   logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
   logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
   logic [dpath_width_gp-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
@@ -224,6 +226,7 @@ module bp_be_calculator_top
      ,.irq_waiting_o(irq_waiting_o)
      ,.interrupt_v_i(interrupt_v_i)
 
+     ,.illegal_instr_o(pipe_sys_illegal_instr_lo)
      ,.data_o(pipe_sys_data_lo)
      ,.v_o(pipe_sys_data_lo_v)
 
@@ -386,10 +389,10 @@ module bp_be_calculator_top
         end
       comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo       : '0;
       comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo       : '0;
+      comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo       : '0;
       comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo : '0;
       comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo       : '0;
       comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo : '0;
-      comp_stage_n[3].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo       : '0;
       comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo       : '0;
       comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo       : '0;
 
@@ -447,6 +450,8 @@ module bp_be_calculator_top
           exc_stage_n[0].exc.illegal_instr      |= reservation_n.decode.illegal_instr;
           exc_stage_n[0].exc.ebreak             |= reservation_n.decode.ebreak;
           exc_stage_n[0].exc.ecall              |= reservation_n.decode.ecall;
+
+          exc_stage_n[1].exc.illegal_instr      |= pipe_sys_illegal_instr_lo;
 
           exc_stage_n[1].spec.dtlb_store_miss   |= pipe_mem_dtlb_store_miss_lo;
           exc_stage_n[1].spec.dtlb_load_miss    |= pipe_mem_dtlb_load_miss_lo;

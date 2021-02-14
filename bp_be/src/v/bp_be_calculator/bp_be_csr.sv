@@ -27,7 +27,8 @@ module bp_be_csr
    // CSR instruction interface
    , input [csr_cmd_width_lp-1:0]      csr_cmd_i
    , input                             csr_cmd_v_i
-   , output logic [dword_width_gp-1:0]  csr_data_o
+   , output logic [dword_width_gp-1:0] csr_data_o
+   , output logic                      csr_illegal_instr_o
 
    // Misc interface
    , input rv64_fflags_s               fflags_acc_i
@@ -185,12 +186,11 @@ module bp_be_csr
   assign irq_waiting_o = |interrupt_icode_dec_li;
 
   wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
-  logic illegal_instr_o;
   rv64_exception_dec_s exception_dec_li;
   assign exception_dec_li =
       '{instr_misaligned    : exception.instr_misaligned
         ,instr_access_fault : exception.instr_access_fault
-        ,illegal_instr      : exception.illegal_instr | illegal_instr_o
+        ,illegal_instr      : exception.illegal_instr
         ,breakpoint         : exception.ebreak & ebreak_v_li
         ,load_misaligned    : exception.load_misaligned
         ,load_access_fault  : exception.load_access_fault
@@ -220,9 +220,7 @@ module bp_be_csr
   logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
   logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
   bsg_priority_encode
-   #(.width_p($bits(exception_dec_li))
-     ,.lo_to_hi_p(1)
-     )
+   #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
    m_interrupt_enc
     (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:$bits(exception_dec_li)] & $bits(exception_dec_li)'($signed(mgie)))
      ,.addr_o(m_interrupt_icode_li)
@@ -230,9 +228,7 @@ module bp_be_csr
      );
 
   bsg_priority_encode
-   #(.width_p($bits(exception_dec_li))
-     ,.lo_to_hi_p(1)
-     )
+   #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
    s_interrupt_enc
     (.i(interrupt_icode_dec_li & mideleg_lo[0+:$bits(exception_dec_li)] & $bits(exception_dec_li)'($signed(sgie)))
      ,.addr_o(s_interrupt_icode_li)
@@ -396,9 +392,10 @@ module bp_be_csr
       ret_v_o          = '0;
       wfi_v_o          = '0;
       satp_v_o         = '0;
-      illegal_instr_o  = '0;
-      csr_data_lo      = '0;
       sfence_v_o       = '0;
+
+      csr_illegal_instr_o  = '0;
+      csr_data_lo          = '0;
 
       if (~ebreak_v_li & exception_v_i & exception.ebreak)
         begin
@@ -410,7 +407,7 @@ module bp_be_csr
       else if (csr_cmd_v_i & (csr_cmd.csr_op == e_sfence_vma))
         begin
           if ((is_s_mode & mstatus_lo.tvm) || (priv_mode_r < `PRIV_MODE_S))
-              illegal_instr_o = 1'b1;
+              csr_illegal_instr_o = 1'b1;
           else
             begin
               sfence_v_o = 1'b1;
@@ -421,13 +418,13 @@ module bp_be_csr
           exit_debug       = 1'b1;
           priv_mode_n      = dcsr_lo.prv;
 
-          illegal_instr_o  = ~is_debug_mode;
-          ret_v_o          = ~illegal_instr_o;
+          csr_illegal_instr_o  = ~is_debug_mode;
+          ret_v_o              = ~csr_illegal_instr_o;
         end
       else if (csr_cmd_v_i & (csr_cmd.csr_op == e_mret))
         begin
           if (priv_mode_r < `PRIV_MODE_M)
-            illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = 1'b1;
           else
             begin
               priv_mode_n      = mstatus_lo.mpp;
@@ -443,7 +440,7 @@ module bp_be_csr
       else if (csr_cmd_v_i & (csr_cmd.csr_op == e_sret))
         begin
           if ((is_s_mode & mstatus_lo.tsr) || (priv_mode_r < `PRIV_MODE_S))
-            illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = 1'b1;
           else
             begin
               priv_mode_n      = {1'b0, mstatus_lo.spp};
@@ -458,27 +455,25 @@ module bp_be_csr
         end
       else if (csr_cmd_v_i & (csr_cmd.csr_op == e_wfi))
         begin
-          wfi_v_o = is_m_mode || ~mstatus_lo.tw;
-
-          illegal_instr_o = ~wfi_v_o;
+          csr_illegal_instr_o = ~is_m_mode && mstatus_lo.tw;
         end
       else if (csr_cmd_v_i & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
         begin
           // Check for access violations
           if (is_s_mode & mstatus_lo.tvm & (csr_cmd.csr_addr == `CSR_ADDR_SATP))
-            illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = 1'b1;
           else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~mcounteren_lo.cy)
-            illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = 1'b1;
           else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~scounteren_lo.cy)
-            illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = 1'b1;
           else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~mcounteren_lo.ir)
-            illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = 1'b1;
           else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~scounteren_lo.ir)
-            illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = 1'b1;
           else if (priv_mode_r < csr_cmd.csr_addr[9:8])
-            illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = 1'b1;
           else if (~fpu_en_o & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR, `CSR_ADDR_FFLAGS, `CSR_ADDR_FRM}))
-            illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = 1'b1;
           else
             begin
               // Read case
@@ -535,7 +530,7 @@ module bp_be_csr
                 `CSR_ADDR_DPC: csr_data_lo = dpc_lo;
                 `CSR_ADDR_DSCRATCH0: csr_data_lo = dscratch0_lo;
                 `CSR_ADDR_DSCRATCH1: csr_data_lo = dscratch1_lo;
-                default: illegal_instr_o = 1'b1;
+                default: csr_illegal_instr_o = 1'b1;
               endcase
               // Write case
               unique casez (csr_cmd.csr_addr)
@@ -584,7 +579,7 @@ module bp_be_csr
                 `CSR_ADDR_DPC: dpc_li = csr_data_li;
                 `CSR_ADDR_DSCRATCH0: dscratch0_li = csr_data_li;
                 `CSR_ADDR_DSCRATCH1: dscratch1_li = csr_data_li;
-                default: illegal_instr_o = 1'b1;
+                default: csr_illegal_instr_o = 1'b1;
               endcase
             end
         end

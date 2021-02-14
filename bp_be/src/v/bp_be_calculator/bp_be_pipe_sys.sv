@@ -44,6 +44,7 @@ module bp_be_pipe_sys
    , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
 
    , output logic [dpath_width_gp-1:0]    data_o
+   , output logic                         illegal_instr_o
    , output logic                         v_o
 
    , input [wb_pkt_width_lp-1:0]          iwb_pkt_i
@@ -89,28 +90,13 @@ module bp_be_pipe_sys
 
   wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
 
+  wire csr_cmd_v_li = reservation.v & decode.csr_v;
   always_comb
     begin
       csr_cmd_li.csr_op   = decode.fu_op;
       csr_cmd_li.csr_addr = instr.t.itype.imm12;
       csr_cmd_li.data     = csr_imm_op ? imm : rs1;
     end
-
-  logic csr_cmd_v_lo;
-  bsg_shift_reg
-   #(.width_p($bits(bp_be_csr_cmd_s))
-     ,.stages_p(2)
-     )
-   csr_shift_reg
-    (.clk(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.valid_i(decode.csr_v)
-     ,.data_i(csr_cmd_li)
-
-     ,.valid_o(csr_cmd_v_lo)
-     ,.data_o(csr_cmd_r)
-     );
 
   logic [vaddr_width_p-1:0] commit_npc_r, commit_pc_r;
   logic [vaddr_width_p-1:0] commit_nvaddr_r, commit_vaddr_r;
@@ -143,9 +129,10 @@ module bp_be_pipe_sys
 
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.csr_cmd_i(csr_cmd_r)
-     ,.csr_cmd_v_i(csr_cmd_v_lo & commit_v_i)
+     ,.csr_cmd_i(csr_cmd_li)
+     ,.csr_cmd_v_i(csr_cmd_v_li)
      ,.csr_data_o(csr_data_lo)
+     ,.csr_illegal_instr_o(illegal_instr_o)
 
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
      ,.frf_w_v_i(fwb_pkt.frd_w_v)
