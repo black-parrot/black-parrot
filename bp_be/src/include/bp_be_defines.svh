@@ -187,6 +187,10 @@
       logic                          tsr;                                                          \
       logic                          tw;                                                           \
       logic                          tvm;                                                          \
+      logic                          ebreakm;                                                      \
+      logic                          ebreaks;                                                      \
+      logic                          ebreaku;                                                      \
+      logic                          fpu_en;                                                       \
     }  bp_be_decode_info_s;                                                                        \
 
 
@@ -243,7 +247,7 @@
     (rv64_priv_width_gp+ptag_width_mp+3)
 
   `define bp_be_decode_info_width \
-    (rv64_priv_width_gp+4)
+    (rv64_priv_width_gp+8)
 
 `endif
 

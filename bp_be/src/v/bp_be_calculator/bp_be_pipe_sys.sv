@@ -45,6 +45,7 @@ module bp_be_pipe_sys
    , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
 
    , output logic [dpath_width_gp-1:0]    data_o
+   , output logic                         satp_o
    , output logic                         illegal_instr_o
    , output logic                         v_o
 
@@ -62,7 +63,6 @@ module bp_be_pipe_sys
    , output [decode_info_width_lp-1:0]    decode_info_o
    , output [trans_info_width_lp-1:0]     trans_info_o
    , output rv64_frm_e                    frm_dyn_o
-   , output                               fpu_en_o
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -137,6 +137,7 @@ module bp_be_pipe_sys
      ,.csr_cmd_v_i(csr_cmd_v_li)
      ,.csr_data_o(csr_data_lo)
      ,.csr_illegal_instr_o(illegal_instr_o)
+     ,.csr_satp_o(satp_o)
 
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
      ,.frf_w_v_i(fwb_pkt.frd_w_v)
@@ -161,7 +162,6 @@ module bp_be_pipe_sys
      ,.decode_info_o(decode_info)
      ,.trans_info_o(trans_info)
      ,.frm_dyn_o(frm_dyn_o)
-     ,.fpu_en_o(fpu_en_o)
      );
 
   always_ff @(posedge clk_i)
@@ -179,14 +179,7 @@ module bp_be_pipe_sys
   assign data_o           = csr_data_lo;
 
   wire sys_v_li = reservation.v & reservation.decode.pipe_sys_v;
-  bsg_dff_chain
-   #(.width_p(1), .num_stages_p(2))
-   sys_chain
-    (.clk_i(clk_i)
-
-     ,.data_i(sys_v_li)
-     ,.data_o(v_o)
-     );
+  assign v_o = sys_v_li;
 
 endmodule
 

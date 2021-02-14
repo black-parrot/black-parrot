@@ -114,14 +114,6 @@
     ,e_csrrwi = 6'b000100
     ,e_csrrsi = 6'b000101
     ,e_csrrci = 6'b000110
-
-    ,e_dret       = 6'b010011
-    ,e_mret       = 6'b001000
-    ,e_sret       = 6'b001001
-    ,e_sfence_vma = 6'b001011
-    ,e_wfi        = 6'b001100
-    ,e_ebreak     = 6'b010100
-    ,e_ecall      = 6'b011011
   } bp_be_csr_fu_op_e;
 
   typedef enum logic [5:0]
@@ -229,7 +221,15 @@
     logic                             instr_page_fault;
     logic                             illegal_instr;
     logic                             ebreak;
-    logic                             ecall;
+    logic                             dbreak;
+    logic                             ecall_m;
+    logic                             ecall_s;
+    logic                             ecall_u;
+    logic                             dret;
+    logic                             mret;
+    logic                             sret;
+    logic                             wfi;
+    logic                             sfence_vma;
   }  bp_be_decode_s;
 
   typedef struct packed
@@ -237,7 +237,9 @@
     logic store_page_fault;
     logic load_page_fault;
     logic instr_page_fault;
-    logic ecall;
+    logic ecall_m;
+    logic ecall_s;
+    logic ecall_u;
     logic store_access_fault;
     logic store_misaligned;
     logic load_access_fault;
@@ -255,7 +257,14 @@
     logic dtlb_load_miss;
     logic dtlb_store_miss;
     logic dcache_miss;
-    logic fencei_v;
+    logic fencei;
+    logic sfence_vma;
+    logic dbreak;
+    logic dret;
+    logic mret;
+    logic sret;
+    logic wfi;
+    logic satp;
   }  bp_be_special_s;
 
   typedef struct packed

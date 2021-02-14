@@ -38,7 +38,6 @@ module bp_be_scheduler
   , input                              poison_isd_i
   , input                              dispatch_v_i
   , input                              suppress_iss_i
-  , input                              fpu_en_i
   , input [decode_info_width_lp-1:0]   decode_info_i
 
   // Fetch interface
@@ -150,8 +149,6 @@ module bp_be_scheduler
 
      ,.decode_o(decoded)
      ,.imm_o(decoded_imm_lo)
-
-     ,.fpu_en_i(fpu_en_i)
      );
 
   bp_be_dispatch_pkt_s dispatch_pkt;

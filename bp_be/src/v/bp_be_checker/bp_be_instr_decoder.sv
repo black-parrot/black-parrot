@@ -36,8 +36,6 @@ module bp_be_instr_decoder
 
    , output [decode_width_lp-1:0]    decode_o
    , output [dword_width_gp-1:0]     imm_o
-
-   , input                           fpu_en_i
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -194,7 +192,7 @@ module bp_be_instr_decoder
             decode.mem_v      = 1'b1;
             decode.ops_v      = instr inside {`RV64_FL_W};
 
-            illegal_instr = ~fpu_en_i;
+            illegal_instr = ~decode_info.fpu_en;
 
             unique casez (instr)
               `RV64_FL_W: decode.fu_op = e_dcache_op_flw;
@@ -222,7 +220,7 @@ module bp_be_instr_decoder
             decode.mem_v      = 1'b1;
             decode.ops_v      = instr inside {`RV64_FS_W};
 
-            illegal_instr = ~fpu_en_i;
+            illegal_instr = ~decode_info.fpu_en;
 
             unique casez (instr)
               `RV64_FS_W : decode.fu_op = e_dcache_op_fsw;
@@ -246,15 +244,50 @@ module bp_be_instr_decoder
           begin
             decode.pipe_sys_v = 1'b1;
             unique casez (instr)
-              `RV64_ECALL      : decode.ecall  = 1'b1;
-              `RV64_EBREAK     : decode.ebreak = 1'b1;
-              `RV64_DRET       : decode.fu_op = e_dret;
-              `RV64_MRET       : decode.fu_op = e_mret;
-              `RV64_SRET       : decode.fu_op = e_sret;
-              `RV64_WFI        : decode.fu_op = e_wfi;
-              `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
+              `RV64_ECALL      :
+                begin
+                  decode.ecall_m = (decode_info.priv_mode == `PRIV_MODE_M);
+                  decode.ecall_s = (decode_info.priv_mode == `PRIV_MODE_S);
+                  decode.ecall_u = (decode_info.priv_mode == `PRIV_MODE_U);
+                end
+              `RV64_EBREAK     :
+                begin
+                  decode.dbreak = decode_info.debug_mode
+                                  | (decode_info.ebreakm & (decode_info.priv_mode == `PRIV_MODE_M))
+                                  | (decode_info.ebreaks & (decode_info.priv_mode == `PRIV_MODE_S))
+                                  | (decode_info.ebreaku & (decode_info.priv_mode == `PRIV_MODE_U));
+                  decode.ebreak = ~decode.dbreak;
+                end
+              `RV64_DRET       :
+                begin
+                  illegal_instr = ~decode_info.debug_mode;
+                  decode.dret = ~illegal_instr;
+                end
+              `RV64_MRET       :
+                begin
+                  illegal_instr = ~decode_info.debug_mode & (decode_info.priv_mode < `PRIV_MODE_M);
+                  decode.mret = ~illegal_instr;
+                end
+              `RV64_SRET       :
+                begin
+                  illegal_instr = (~decode_info.debug_mode & (decode_info.priv_mode < `PRIV_MODE_S))
+                    | (decode_info.tsr & (decode_info.priv_mode == `PRIV_MODE_S));
+                  decode.sret = ~illegal_instr;
+                end
+              `RV64_WFI        :
+                begin
+                  illegal_instr = decode_info.tw;
+                  decode.wfi = ~illegal_instr;
+                end
+              `RV64_SFENCE_VMA :
+                begin
+                  illegal_instr = (decode_info.tvm & (decode_info.priv_mode == `PRIV_MODE_S))
+                    | (~decode_info.debug_mode & (decode_info.priv_mode < `PRIV_MODE_S));
+                  decode.sfence_vma = ~illegal_instr;
+                end
               default:
                 begin
+                  decode.csr_v      = 1'b1;
                   decode.irf_w_v    = (instr.rd_addr != '0);
                   unique casez (instr)
                     `RV64_CSRRW  : decode.fu_op = e_csrrw;
@@ -270,7 +303,7 @@ module bp_be_instr_decoder
           end
         `RV64_FP_OP:
           begin
-            illegal_instr = ~fpu_en_i;
+            illegal_instr = ~decode_info.fpu_en;
             unique casez (instr)
               `RV64_FCVT_SD, `RV64_FCVT_DS:
                 begin
@@ -496,7 +529,7 @@ module bp_be_instr_decoder
               default: decode.fu_op = e_fma_op_fmadd;
             endcase
 
-            illegal_instr = ~fpu_en_i;
+            illegal_instr = ~decode_info.fpu_en;
           end
 
         `RV64_AMO_OP:

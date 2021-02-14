@@ -29,6 +29,7 @@ module bp_be_csr
    , input [csr_cmd_width_lp-1:0]      csr_cmd_i
    , input                             csr_cmd_v_i
    , output logic [dword_width_gp-1:0] csr_data_o
+   , output logic                      csr_satp_o
    , output logic                      csr_illegal_instr_o
 
    // Misc interface
@@ -56,7 +57,6 @@ module bp_be_csr
    , output logic [decode_info_width_lp-1:0] decode_info_o
    , output logic [trans_info_width_lp-1:0]  trans_info_o
    , output rv64_frm_e                       frm_dyn_o
-   , output logic                            fpu_en_o
    );
 
   // Declare parameterizable structs
@@ -88,7 +88,7 @@ module bp_be_csr
 
   // The muxed and demuxed CSR outputs
   logic [dword_width_gp-1:0] csr_data_li, csr_data_lo;
-  logic exception_v_o, interrupt_v_o, ret_v_o, wfi_v_o, sfence_v_o, satp_v_o;
+  logic exception_v_o, interrupt_v_o, ret_v_o, wfi_v_o, sfence_v_o;
 
   `declare_csr_structs(vaddr_width_p, paddr_width_p)
 
@@ -195,14 +195,14 @@ module bp_be_csr
       '{instr_misaligned    : exception.instr_misaligned
         ,instr_access_fault : exception.instr_access_fault
         ,illegal_instr      : exception.illegal_instr
-        ,breakpoint         : exception.ebreak & ebreak_v_li
+        ,breakpoint         : exception.ebreak
         ,load_misaligned    : exception.load_misaligned
         ,load_access_fault  : exception.load_access_fault
         ,store_misaligned   : exception.store_misaligned
         ,store_access_fault : exception.store_access_fault
-        ,ecall_u_mode       : exception.ecall & (priv_mode_r == `PRIV_MODE_U)
-        ,ecall_s_mode       : exception.ecall & (priv_mode_r == `PRIV_MODE_S)
-        ,ecall_m_mode       : exception.ecall & (priv_mode_r == `PRIV_MODE_M)
+        ,ecall_u_mode       : exception.ecall_u
+        ,ecall_s_mode       : exception.ecall_s
+        ,ecall_m_mode       : exception.ecall_m
         ,instr_page_fault   : exception.instr_page_fault | ptw_fill_pkt.instr_page_fault_v
         ,load_page_fault    : exception.load_page_fault | ptw_fill_pkt.load_page_fault_v
         ,store_page_fault   : exception.store_page_fault | ptw_fill_pkt.store_page_fault_v
@@ -271,7 +271,7 @@ module bp_be_csr
      ,.data_o(apc_r)
      );
   assign apc_n = commit_pkt_cast_o.eret
-                 ? ((csr_cmd.csr_op == e_sret) ? sepc_lo : (csr_cmd.csr_op == e_mret) ? mepc_lo : dpc_lo)
+                 ? (special.sret ? sepc_lo : special.mret ? mepc_lo : dpc_lo)
                  : (commit_pkt_cast_o.exception | commit_pkt_cast_o._interrupt)
                    ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
                    : instret_i
@@ -393,71 +393,55 @@ module bp_be_csr
       interrupt_v_o    = '0;
       ret_v_o          = '0;
       wfi_v_o          = '0;
-      satp_v_o         = '0;
       sfence_v_o       = '0;
 
       csr_illegal_instr_o  = '0;
+      csr_satp_o           = '0;
       csr_data_lo          = '0;
 
-      if (~ebreak_v_li & exception_v_i & exception.ebreak)
+      if (exception_v_i & special.dbreak)
         begin
           enter_debug    = 1'b1;
           dpc_li         = paddr_width_p'($signed(apc_r));
           dcsr_li.cause  = 1; // Ebreak
           dcsr_li.prv    = priv_mode_r;
         end
-      else if (csr_cmd_v_i & (csr_cmd.csr_op == e_sfence_vma))
+      else if (exception_v_i & special.sfence_vma)
         begin
-          if ((is_s_mode & mstatus_lo.tvm) || (priv_mode_r < `PRIV_MODE_S))
-              csr_illegal_instr_o = 1'b1;
-          else
-            begin
-              sfence_v_o = 1'b1;
-            end
+          sfence_v_o = 1'b1;
         end
-      else if (csr_cmd_v_i & (csr_cmd.csr_op == e_dret))
+      else if (exception_v_i & special.dret)
         begin
           exit_debug       = 1'b1;
           priv_mode_n      = dcsr_lo.prv;
 
-          csr_illegal_instr_o  = ~is_debug_mode;
-          ret_v_o              = ~csr_illegal_instr_o;
+          ret_v_o          = 1'b1;
         end
-      else if (csr_cmd_v_i & (csr_cmd.csr_op == e_mret))
+      else if (exception_v_i & special.mret)
         begin
-          if (priv_mode_r < `PRIV_MODE_M)
-            csr_illegal_instr_o = 1'b1;
-          else
-            begin
-              priv_mode_n      = mstatus_lo.mpp;
+          priv_mode_n      = mstatus_lo.mpp;
 
-              mstatus_li.mpp   = `PRIV_MODE_U;
-              mstatus_li.mpie  = 1'b1;
-              mstatus_li.mie   = mstatus_lo.mpie;
-              mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
+          mstatus_li.mpp   = `PRIV_MODE_U;
+          mstatus_li.mpie  = 1'b1;
+          mstatus_li.mie   = mstatus_lo.mpie;
+          mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
 
-              ret_v_o          = 1'b1;
-            end
+          ret_v_o          = 1'b1;
         end
-      else if (csr_cmd_v_i & (csr_cmd.csr_op == e_sret))
+      else if (exception_v_i & special.sret)
         begin
-          if ((is_s_mode & mstatus_lo.tsr) || (priv_mode_r < `PRIV_MODE_S))
-            csr_illegal_instr_o = 1'b1;
-          else
-            begin
-              priv_mode_n      = {1'b0, mstatus_lo.spp};
+          priv_mode_n      = {1'b0, mstatus_lo.spp};
 
-              mstatus_li.spp   = `PRIV_MODE_U;
-              mstatus_li.spie  = 1'b1;
-              mstatus_li.sie   = mstatus_lo.spie;
-              mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
+          mstatus_li.spp   = `PRIV_MODE_U;
+          mstatus_li.spie  = 1'b1;
+          mstatus_li.sie   = mstatus_lo.spie;
+          mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
 
-              ret_v_o          = 1'b1;
-            end
+          ret_v_o          = 1'b1;
         end
-      else if (csr_cmd_v_i & (csr_cmd.csr_op == e_wfi))
+      else if (exception_v_i & special.wfi)
         begin
-          csr_illegal_instr_o = ~is_m_mode && mstatus_lo.tw;
+          wfi_v_o = 1'b1;
         end
       else if (csr_cmd_v_i & csr_cmd.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
         begin
@@ -474,7 +458,7 @@ module bp_be_csr
             csr_illegal_instr_o = 1'b1;
           else if (priv_mode_r < csr_cmd.csr_addr[9:8])
             csr_illegal_instr_o = 1'b1;
-          else if (~fpu_en_o & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR, `CSR_ADDR_FFLAGS, `CSR_ADDR_FRM}))
+          else if (~|mstatus_lo.fs & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR, `CSR_ADDR_FFLAGS, `CSR_ADDR_FRM}))
             csr_illegal_instr_o = 1'b1;
           else
             begin
@@ -557,7 +541,7 @@ module bp_be_csr
                 `CSR_ADDR_STVAL: stval_li = csr_data_li;
                 // SIP subset of MIP
                 `CSR_ADDR_SIP: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
-                `CSR_ADDR_SATP: begin satp_li = csr_data_li; satp_v_o = 1'b1; end
+                `CSR_ADDR_SATP: begin satp_li = csr_data_li; csr_satp_o = 1'b1; end
                 `CSR_ADDR_MVENDORID: begin end
                 `CSR_ADDR_MARCHID: begin end
                 `CSR_ADDR_MIMPID: begin end
@@ -680,7 +664,7 @@ module bp_be_csr
       //   For now, a few comparators will do
       if (~exception_v_o)
         begin
-          mstatus_li.fs |= {2{(csr_cmd_v_i & csr_w_v_li & fpu_en_o & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR
+          mstatus_li.fs |= {2{(csr_cmd_v_i & csr_w_v_li & ~|mstatus_lo.fs & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR
                                                                                                ,`CSR_ADDR_FFLAGS
                                                                                                ,`CSR_ADDR_FRM}))
                               || (exception_v_i & exception_instr.t.rtype.opcode inside {`RV64_FLOAD_OP
@@ -698,7 +682,7 @@ module bp_be_csr
 
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
-  assign commit_pkt_cast_o.npc_w_v          = |{special.fencei_v, wfi_v_o, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, special.itlb_miss, special.icache_miss, special.dcache_miss, special.dtlb_store_miss, special.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
+  assign commit_pkt_cast_o.npc_w_v          = |{special.fencei, wfi_v_o, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, special.satp, special.itlb_miss, special.icache_miss, special.dcache_miss, special.dtlb_store_miss, special.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
@@ -709,13 +693,13 @@ module bp_be_csr
   assign commit_pkt_cast_o.pte_gigapage     = ptw_fill_pkt.gigapage;
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
-  assign commit_pkt_cast_o.fencei           = special.fencei_v;
+  assign commit_pkt_cast_o.fencei           = special.fencei;
   assign commit_pkt_cast_o.sfence           = sfence_v_o;
   assign commit_pkt_cast_o.exception        = exception_v_o;
   assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
   assign commit_pkt_cast_o.wfi              = wfi_v_o;
   assign commit_pkt_cast_o.eret             = ret_v_o;
-  assign commit_pkt_cast_o.satp             = satp_v_o;
+  assign commit_pkt_cast_o.satp             = special.satp;
   assign commit_pkt_cast_o.itlb_miss        = special.itlb_miss;
   assign commit_pkt_cast_o.icache_miss      = special.icache_miss;
   assign commit_pkt_cast_o.dtlb_store_miss  = special.dtlb_store_miss;
@@ -737,9 +721,12 @@ module bp_be_csr
   assign decode_info_cast_o.tsr        = mstatus_lo.tsr;
   assign decode_info_cast_o.tw         = mstatus_lo.tw;
   assign decode_info_cast_o.tvm        = mstatus_lo.tvm;
+  assign decode_info_cast_o.ebreakm    = dcsr_lo.ebreakm;
+  assign decode_info_cast_o.ebreaks    = dcsr_lo.ebreaks;
+  assign decode_info_cast_o.ebreaku    = dcsr_lo.ebreaku;
+  assign decode_info_cast_o.fpu_en     = (mstatus_lo.fs != 2'b00);
 
   assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
-  assign fpu_en_o = (mstatus_lo.fs != 2'b00);
 
 endmodule
 

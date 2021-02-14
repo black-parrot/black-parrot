@@ -42,7 +42,6 @@ module bp_be_calculator_top
   // Calculator - Checker interface
   , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
 
-  , output logic                                    fpu_en_o
   , output logic                                    long_ready_o
   , output logic                                    mem_ready_o
   , output logic                                    ptw_busy_o
@@ -122,7 +121,7 @@ module bp_be_calculator_top
   logic pipe_mem_store_access_fault_lo;
   logic pipe_mem_store_page_fault_lo;
 
-  logic pipe_sys_illegal_instr_lo;
+  logic pipe_sys_illegal_instr_lo, pipe_sys_satp_lo;
 
   logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
   logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
@@ -229,13 +228,13 @@ module bp_be_calculator_top
      ,.interrupt_v_i(interrupt_v_i)
 
      ,.illegal_instr_o(pipe_sys_illegal_instr_lo)
+     ,.satp_o(pipe_sys_satp_lo)
      ,.data_o(pipe_sys_data_lo)
      ,.v_o(pipe_sys_data_lo_v)
 
      ,.decode_info_o(decode_info_o)
      ,.trans_info_o(trans_info_lo)
      ,.frm_dyn_o(frm_dyn_lo)
-     ,.fpu_en_o(fpu_en_o)
      );
 
 
@@ -452,9 +451,18 @@ module bp_be_calculator_top
           exc_stage_n[0].exc.instr_page_fault   |= reservation_n.decode.instr_page_fault;
           exc_stage_n[0].exc.illegal_instr      |= reservation_n.decode.illegal_instr;
           exc_stage_n[0].exc.ebreak             |= reservation_n.decode.ebreak;
-          exc_stage_n[0].exc.ecall              |= reservation_n.decode.ecall;
+          exc_stage_n[0].spec.dbreak            |= reservation_n.decode.dbreak;
+          exc_stage_n[0].exc.ecall_m            |= reservation_n.decode.ecall_m;
+          exc_stage_n[0].exc.ecall_s            |= reservation_n.decode.ecall_s;
+          exc_stage_n[0].exc.ecall_u            |= reservation_n.decode.ecall_u;
+          exc_stage_n[0].spec.dret              |= reservation_n.decode.dret;
+          exc_stage_n[0].spec.mret              |= reservation_n.decode.mret;
+          exc_stage_n[0].spec.sret              |= reservation_n.decode.sret;
+          exc_stage_n[0].spec.wfi               |= reservation_n.decode.wfi;
+          exc_stage_n[0].spec.sfence_vma        |= reservation_n.decode.sfence_vma;
 
           exc_stage_n[1].exc.illegal_instr      |= pipe_sys_illegal_instr_lo;
+          exc_stage_n[1].spec.satp              |= pipe_sys_satp_lo;
 
           exc_stage_n[1].spec.dtlb_store_miss   |= pipe_mem_dtlb_store_miss_lo;
           exc_stage_n[1].spec.dtlb_load_miss    |= pipe_mem_dtlb_load_miss_lo;
@@ -466,7 +474,7 @@ module bp_be_calculator_top
           exc_stage_n[1].exc.store_page_fault   |= pipe_mem_store_page_fault_lo;
 
           exc_stage_n[2].spec.dcache_miss       |= pipe_mem_dcache_miss_lo;
-          exc_stage_n[2].spec.fencei_v          |= pipe_mem_fencei_lo;
+          exc_stage_n[2].spec.fencei            |= pipe_mem_fencei_lo;
     end
 
   // Exception pipeline
