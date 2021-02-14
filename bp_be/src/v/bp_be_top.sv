@@ -85,6 +85,7 @@ module bp_be_top
 
   bp_be_commit_pkt_s commit_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
+  bp_be_decode_info_s decode_info_lo;
 
   bp_be_isd_status_s isd_status;
   logic [vaddr_width_p-1:0] expected_npc_lo;
@@ -157,6 +158,7 @@ module bp_be_top
      ,.dispatch_v_i(chk_dispatch_v)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.fpu_en_i(fpu_en_lo)
+     ,.decode_info_i(decode_info_lo)
 
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)
@@ -180,6 +182,7 @@ module bp_be_top
      ,.dispatch_pkt_i(dispatch_pkt)
 
      ,.fpu_en_o(fpu_en_lo)
+     ,.decode_info_o(decode_info_lo)
      ,.mem_ready_o(mem_ready_lo)
      ,.long_ready_o(long_ready_lo)
      ,.ptw_busy_o(ptw_busy_lo)

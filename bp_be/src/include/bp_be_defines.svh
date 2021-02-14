@@ -179,6 +179,15 @@
       logic                          mstatus_sum;                                                  \
       logic                          mstatus_mxr;                                                  \
     }  bp_be_trans_info_s;                                                                         \
+                                                                                                   \
+    typedef struct packed                                                                          \
+    {                                                                                              \
+      logic [rv64_priv_width_gp-1:0] priv_mode;                                                    \
+      logic                          debug_mode;                                                   \
+      logic                          tsr;                                                          \
+      logic                          tw;                                                           \
+      logic                          tvm;                                                          \
+    }  bp_be_decode_info_s;                                                                        \
 
 
   /* Declare width macros so that clients can use structs in ports before struct declaration
@@ -232,6 +241,9 @@
 
   `define bp_be_trans_info_width(ptag_width_mp) \
     (rv64_priv_width_gp+ptag_width_mp+3)
+
+  `define bp_be_decode_info_width \
+    (rv64_priv_width_gp+4)
 
 `endif
 

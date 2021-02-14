@@ -29,6 +29,7 @@ module bp_be_calculator_top
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
+   , localparam decode_info_width_lp    = `bp_be_decode_info_width
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 6
@@ -46,6 +47,7 @@ module bp_be_calculator_top
   , output logic                                    mem_ready_o
   , output logic                                    ptw_busy_o
   , output logic                                    replay_pending_o
+  , output logic [decode_info_width_lp-1:0]         decode_info_o
 
   , output logic [commit_pkt_width_lp-1:0]          commit_pkt_o
   , output logic [branch_pkt_width_lp-1:0]          br_pkt_o
@@ -230,6 +232,7 @@ module bp_be_calculator_top
      ,.data_o(pipe_sys_data_lo)
      ,.v_o(pipe_sys_data_lo_v)
 
+     ,.decode_info_o(decode_info_o)
      ,.trans_info_o(trans_info_lo)
      ,.frm_dyn_o(frm_dyn_lo)
      ,.fpu_en_o(fpu_en_o)

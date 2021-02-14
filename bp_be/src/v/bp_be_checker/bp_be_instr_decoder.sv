@@ -27,10 +27,12 @@ module bp_be_instr_decoder
    // Generated parameters
    , localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = $bits(bp_be_decode_s)
+   , localparam decode_info_width_lp = `bp_be_decode_info_width
    )
   (input                             fe_exc_not_instr_i
    , input bp_fe_exception_code_e    fe_exc_i
    , input [instr_width_lp-1:0]      instr_i
+   , input [decode_info_width_lp-1:0] decode_info_i
 
    , output [decode_width_lp-1:0]    decode_o
    , output [dword_width_gp-1:0]     imm_o
@@ -38,11 +40,14 @@ module bp_be_instr_decoder
    , input                           fpu_en_i
    );
 
+  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   rv64_instr_fmatype_s instr;
   bp_be_decode_s decode;
+  bp_be_decode_info_s decode_info;
   logic [dword_width_gp-1:0] imm;
 
   assign instr    = instr_i;
+  assign decode_info = decode_info_i;
   assign decode_o = decode;
   assign imm_o    = imm;
 

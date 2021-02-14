@@ -27,6 +27,7 @@ module bp_be_scheduler
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
+   , localparam decode_info_width_lp = `bp_be_decode_info_width
    , localparam wb_pkt_width_lp     = `bp_be_wb_pkt_width(vaddr_width_p)
    )
   (input                               clk_i
@@ -38,6 +39,7 @@ module bp_be_scheduler
   , input                              dispatch_v_i
   , input                              suppress_iss_i
   , input                              fpu_en_i
+  , input [decode_info_width_lp-1:0]   decode_info_i
 
   // Fetch interface
   , input [fe_queue_width_lp-1:0]      fe_queue_i
@@ -144,6 +146,7 @@ module bp_be_scheduler
      (.fe_exc_not_instr_i(fe_exc_not_instr_li)
      ,.fe_exc_i(fe_queue_lo.msg.exception.exception_code)
      ,.instr_i(fe_queue_lo.msg.fetch.instr)
+     ,.decode_info_i(decode_info_i)
 
      ,.decode_o(decoded)
      ,.imm_o(decoded_imm_lo)

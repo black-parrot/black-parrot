@@ -14,6 +14,7 @@ module bp_be_csr
 
    , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
+   , localparam decode_info_width_lp = `bp_be_decode_info_width
    , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
    , localparam exception_width_lp = $bits(bp_be_exception_s)
    , localparam special_width_lp = $bits(bp_be_special_s)
@@ -52,9 +53,10 @@ module bp_be_csr
 
    , output logic [commit_pkt_width_lp-1:0] commit_pkt_o
 
-   , output logic [trans_info_width_lp-1:0] trans_info_o
-   , output rv64_frm_e                      frm_dyn_o
-   , output logic                           fpu_en_o
+   , output logic [decode_info_width_lp-1:0] decode_info_o
+   , output logic [trans_info_width_lp-1:0]  trans_info_o
+   , output rv64_frm_e                       frm_dyn_o
+   , output logic                            fpu_en_o
    );
 
   // Declare parameterizable structs
@@ -70,6 +72,7 @@ module bp_be_csr
 
   bp_be_wb_pkt_s wb_pkt_cast_i;
   bp_be_commit_pkt_s commit_pkt_cast_o;
+  bp_be_decode_info_s decode_info_cast_o;
   bp_be_trans_info_s trans_info_cast_o;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 
@@ -79,6 +82,7 @@ module bp_be_csr
   assign special = special_i;
   assign exception_instr = exception_instr_i;
   assign commit_pkt_o = commit_pkt_cast_o;
+  assign decode_info_o = decode_info_cast_o;
   assign trans_info_o = trans_info_cast_o;
   assign ptw_fill_pkt = ptw_fill_pkt_i;
 
@@ -208,9 +212,7 @@ module bp_be_csr
   logic [3:0] exception_ecode_li;
   logic       exception_ecode_v_li;
   bsg_priority_encode
-   #(.width_p($bits(exception_dec_li))
-     ,.lo_to_hi_p(1)
-     )
+   #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
    mcause_exception_enc
     (.i(exception_dec_li)
      ,.addr_o(exception_ecode_li)
@@ -729,6 +731,12 @@ module bp_be_csr
     | ((~is_debug_mode | dcsr_lo.mprven) & mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
   assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
   assign trans_info_cast_o.mstatus_mxr = mstatus_lo.mxr;
+
+  assign decode_info_cast_o.priv_mode  = priv_mode_r;
+  assign decode_info_cast_o.debug_mode = debug_mode_r;
+  assign decode_info_cast_o.tsr        = mstatus_lo.tsr;
+  assign decode_info_cast_o.tw         = mstatus_lo.tw;
+  assign decode_info_cast_o.tvm        = mstatus_lo.tvm;
 
   assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
   assign fpu_en_o = (mstatus_lo.fs != 2'b00);
