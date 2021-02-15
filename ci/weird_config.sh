@@ -43,6 +43,7 @@ cfgs=(\
     "e_bp_multicore_1_cfg"
 
     "e_bp_unicore_writethrough_cfg"
+    "e_bp_unicore_l1_sub_bank_mask_cfg"
     "e_bp_unicore_no_l2_cfg"
     "e_bp_unicore_l1_wide_cfg"
     "e_bp_unicore_l1_hetero_cfg"
