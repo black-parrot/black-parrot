@@ -11,6 +11,7 @@ class TraceGen:
     self.ptag_width_p = ptag_width_p
     self.page_offset_width_p = page_offset_width_p
     self.opcode_width_p = opcode_width_p
+    self.rd_addr_width_p = rd_addr_width_p
     # TODO: Update formatting operators to use data width
     self.data_width_p = data_width_p
     self.packet_len = ptag_width_p + page_offset_width_p + opcode_width_p + rd_addr_width_p + data_width_p + 1 # A bit is added to denote cached/uncached accesses
@@ -25,7 +26,7 @@ class TraceGen:
   # signed: sign extend or not
   # size: load size in bytes
   # page_offset: dcache pkt page offset
-  def send_load(self, signed, size, page_offset, ptag, uncached):
+  def send_load(self, signed, size, page_offset, ptag, uncached, rd_addr):
     packet = "0001_"
     
     if(uncached):
@@ -34,6 +35,8 @@ class TraceGen:
       packet += "0_"
 
     packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
+
+    packet += format(rd_addr, "0"+str(self.rd_addr_width_p)+"b") + "_"
 
     if (size == 8):
       packet += "000011_"
@@ -65,7 +68,7 @@ class TraceGen:
   # signed: sign extend or not
   # size: store size in bytes
   # page_offset: dcache pkt page offset
-  def send_store(self, size, page_offset, ptag, uncached, data):
+  def send_store(self, size, page_offset, ptag, uncached, data, rd_addr):
     packet = "0001_"
 
     if(uncached):
@@ -75,6 +78,8 @@ class TraceGen:
 
     packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
     
+    packet += format(rd_addr, "0"+str(self.rd_addr_width_p)+"b") + "_"
+
     if (size == 1):
       packet += "001000_"
     elif (size == 2):
@@ -95,7 +100,7 @@ class TraceGen:
   def recv_data(self, data):
     packet = "0010_"
     bin_data = np.binary_repr(data, 64)
-    packet += "0" + "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.page_offset_width_p) + "_" + "00" + bin_data + "\n"
+    packet += "0" + "_" + "0"*(self.ptag_width_p) + "_" + "0"*(self.rd_addr_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.page_offset_width_p) + "_" + "00" + bin_data + "\n"
     return packet
 
   # wait for a number of cycles
