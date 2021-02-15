@@ -180,6 +180,11 @@ module bp_be_dcache
   localparam block_offset_width_lp    = (assoc_p > 1)
     ? (bindex_width_lp+byte_offset_width_lp)
     : byte_offset_width_lp;
+  localparam sub_fill_size_in_bank_lp = bank_width_lp / fill_width_p;
+  localparam sub_fills_per_bank_lp    = `BSG_SAFE_CLOG2(sub_fill_size_in_bank_lp);
+  localparam banks_per_block_lp = (fill_width_p >= bank_width_lp)
+                  ? block_size_in_fill_lp
+                  : block_size_in_fill_lp / sub_fill_size_in_bank_lp;
 
   // State machine declaration
   enum logic [2:0] {e_ready, e_miss, e_fence, e_req} state_n, state_r;
@@ -981,12 +986,44 @@ module bp_be_dcache
   ///////////////////////////
   // Data Mem Control
   ///////////////////////////
-  logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
-  for (genvar i = 0; i < block_size_in_fill_lp; i++)
+  logic [banks_per_block_lp-1:0][`BSG_MAX(fill_size_in_bank_lp, 1)-1:0] data_mem_pkt_fill_mask_expanded;
+  for (genvar i = 0; i < banks_per_block_lp; i++)
     begin : fill_mask
-      assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt_cast_i.fill_index[i]}};
+      if (fill_size_in_bank_lp != 0)
+       begin
+         assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt_cast_i.fill_index[i]}};
+       end
+      else 
+       begin
+         assign data_mem_pkt_fill_mask_expanded[i] = data_mem_pkt_cast_i.fill_index[i];
+       end  
     end
 
+  logic [data_mem_mask_width_lp-1:0] bank_mask;
+  if (fill_size_in_bank_lp != 0)
+   begin : no_sub_bank
+     assign bank_mask = {data_mem_mask_width_lp{1'b1}};
+   end
+  else 
+   begin : sub_bank
+    logic [sub_fill_size_in_bank_lp-1:0] sub_fill_index_dec;
+    bsg_decode
+      #(.num_out_p(sub_fill_size_in_bank_lp))
+      sub_index_dec
+      (.i(data_mem_pkt_cast_i.sub_fill_index)
+      ,.o(sub_fill_index_dec)
+      );
+
+    bsg_expand_bitmask
+      #(.in_width_p(sub_fill_size_in_bank_lp)
+      ,.expand_p(fill_width_p >> 3)
+      )
+      sub_bank_mask
+      (.i(sub_fill_index_dec)
+      ,.o(bank_mask)
+      );
+   end
+  
   logic [assoc_p-1:0] data_mem_write_bank_mask;
   wire [`BSG_SAFE_CLOG2(assoc_p)-1:0] write_mask_rot_li = data_mem_pkt_cast_i.way_id;
   bsg_rotate_left
@@ -1044,7 +1081,7 @@ module bp_be_dcache
 
       assign data_mem_mask_li[i] = (wbuf_yumi_li & wbuf_bank_sel_one_hot[i])
         ? wbuf_data_mem_mask
-        : {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
+        : {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}} & {assoc_p{bank_mask}};
 
       wire [bindex_width_lp-1:0] data_mem_pkt_offset = (bindex_width_lp'(i) - data_mem_pkt_cast_i.way_id);
       assign data_mem_addr_li[i] = data_mem_fast_read[i]
