@@ -31,11 +31,11 @@ module bp_uce
     , localparam way_width_lp = `BSG_SAFE_CLOG2(assoc_p)
     , localparam block_size_in_fill_lp = block_width_p / fill_width_p
     , localparam fill_size_in_bank_lp = fill_width_p / bank_width_lp
-    , localparam sub_fill_size_in_bank_lp = bank_width_lp / fill_width_p
+    , localparam bank_size_in_fill_lp = bank_width_lp / fill_width_p
     , localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp)
     , localparam fill_offset_width_lp = (block_offset_width_lp - fill_cnt_width_lp)
     , localparam bank_sub_offset_width_lp = $clog2(fill_size_in_bank_lp)
-    , localparam sub_bank_sub_offset_width_lp = $clog2(sub_fill_size_in_bank_lp)
+    , localparam sub_bank_sub_offset_width_lp = $clog2(bank_size_in_fill_lp)
 
     // Fill size parameterisations -
     , localparam bp_bedrock_msg_size_e block_msg_size_lp = (fill_width_p == 512)
@@ -741,7 +741,7 @@ module bp_uce
             data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
             // BSG_MAX used here to suppress 'Illegal Part Select' errors from VCS
             data_mem_pkt_cast_o.sub_fill_index = (fill_size_in_bank_lp == 0) 
-                                                  ? mem_resp_cast_i.header.addr[byte_offset_width_lp-1-:`BSG_MAX(`BSG_SAFE_CLOG2(sub_fill_size_in_bank_lp), 1)]
+                                                  ? mem_resp_cast_i.header.addr[byte_offset_width_lp-1-:`BSG_MAX(`BSG_SAFE_CLOG2(bank_size_in_fill_lp), 1)]
                                                   : '0;
             data_mem_pkt_v_o = load_resp_v_li;
 
@@ -791,7 +791,7 @@ module bp_uce
             data_mem_pkt_cast_o.data   = mem_resp_cast_i.data;
             data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
             data_mem_pkt_cast_o.sub_fill_index = (fill_size_in_bank_lp == 0) 
-                                                  ? mem_resp_cast_i.header.addr[byte_offset_width_lp-1-:`BSG_MAX(`BSG_SAFE_CLOG2(sub_fill_size_in_bank_lp), 1)]
+                                                  ? mem_resp_cast_i.header.addr[byte_offset_width_lp-1-:`BSG_MAX(`BSG_SAFE_CLOG2(bank_size_in_fill_lp), 1)]
                                                   : '0;
             data_mem_pkt_v_o = load_resp_v_li;
 

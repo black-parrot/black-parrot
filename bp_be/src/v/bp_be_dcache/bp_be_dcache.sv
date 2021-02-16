@@ -180,11 +180,11 @@ module bp_be_dcache
   localparam block_offset_width_lp    = (assoc_p > 1)
     ? (bindex_width_lp+byte_offset_width_lp)
     : byte_offset_width_lp;
-  localparam sub_fill_size_in_bank_lp = bank_width_lp / fill_width_p;
-  localparam sub_fills_per_bank_lp    = `BSG_SAFE_CLOG2(sub_fill_size_in_bank_lp);
+  localparam bank_size_in_fill_lp = bank_width_lp / fill_width_p;
+  localparam sub_fills_per_bank_lp    = `BSG_SAFE_CLOG2(bank_size_in_fill_lp);
   localparam banks_per_block_lp = (fill_width_p >= bank_width_lp)
                   ? block_size_in_fill_lp
-                  : block_size_in_fill_lp / sub_fill_size_in_bank_lp;
+                  : block_size_in_fill_lp / bank_size_in_fill_lp;
 
   // State machine declaration
   enum logic [2:0] {e_ready, e_miss, e_fence, e_req} state_n, state_r;
@@ -1006,16 +1006,16 @@ module bp_be_dcache
    end
   else 
    begin : sub_bank
-    logic [sub_fill_size_in_bank_lp-1:0] sub_fill_index_dec;
+    logic [bank_size_in_fill_lp-1:0] sub_fill_index_dec;
     bsg_decode
-      #(.num_out_p(sub_fill_size_in_bank_lp))
+      #(.num_out_p(bank_size_in_fill_lp))
       sub_index_dec
       (.i(data_mem_pkt_cast_i.sub_fill_index)
       ,.o(sub_fill_index_dec)
       );
 
     bsg_expand_bitmask
-      #(.in_width_p(sub_fill_size_in_bank_lp)
+      #(.in_width_p(bank_size_in_fill_lp)
       ,.expand_p(fill_width_p >> 3)
       )
       sub_bank_mask

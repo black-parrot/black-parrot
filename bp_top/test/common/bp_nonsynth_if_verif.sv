@@ -75,8 +75,10 @@ module bp_nonsynth_if_verif
     $fatal("Error: Writethrough with coherent_l1 is unsupported");
   if ((icache_fill_width_p > icache_block_width_p) || (dcache_fill_width_p > dcache_block_width_p))
     $fatal("Error: Cache fill width should be less or equal to L1 cache block width");
-  if ((icache_fill_width_p < 64) || (dcache_fill_width_p < 64))
-    $fatal("Error: Cache fill widths lower than 64-bits not supported");
+   if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0))
+    $fatal("Error: I$ fill width should be a multiple of cache bank width");  
+  if ((dcache_fill_width_p != 64) && (dcache_fill_width_p != 128) && (dcache_fill_width_p != 256) && (dcache_fill_width_p != 512))
+    $fatal("Error: D$ fill widths other than 64, 128, 256 and 512 bits not supported");
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");
