@@ -56,7 +56,7 @@ module bp_lite_to_stream
    #(.width_p($bits(bp_bedrock_in_msg_header_s)))
    header_reg
     (.clk_i(clk_i)
-    ,.en_i(in_msg_v_i)
+    ,.en_i(in_msg_ready_and_o & in_msg_v_i)
     ,.data_i(msg_cast_i.header)
     ,.data_o(in_msg_header_lo)
     );
@@ -65,7 +65,7 @@ module bp_lite_to_stream
    #(.width_p(in_data_width_p))
    data_reg
     (.clk_i(clk_i)
-    ,.en_i(in_msg_v_i)
+    ,.en_i(in_msg_ready_and_o & in_msg_v_i)
     ,.data_i(msg_cast_i.data)
     ,.data_o(in_msg_data_lo)
     );
