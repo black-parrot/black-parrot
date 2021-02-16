@@ -274,14 +274,14 @@ module bp_be_dcache
   logic [page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dpath_width_gp-1:0] data_tl_r;
 
-  assign tl_we = ready_o & v_i & ~flush_i;
+  assign tl_we = ready_o & v_i;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_tl_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(tl_we)
+     ,.set_i(tl_we & ~flush_i)
      // We always advance in this non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_tl_r)
@@ -347,13 +347,13 @@ module bp_be_dcache
   logic load_reservation_match_tv;
 
   // fencei does not require a ptag
-  assign tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op) & ~flush_i;
+  assign tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_tv_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(tv_we)
+     ,.set_i(tv_we & ~flush_i)
      // We always advance in the non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_tv_r)
@@ -563,13 +563,13 @@ module bp_be_dcache
   logic double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r;
   logic signed_op_dm_r, float_op_dm_r;
 
-  assign dm_we = v_tv_r & early_v_o & ~flush_i;
+  assign dm_we = v_tv_r & early_v_o;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_dm_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(dm_we)
+     ,.set_i(dm_we & ~flush_i)
      // We always advance in the non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_dm_r)
