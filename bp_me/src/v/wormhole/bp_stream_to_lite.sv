@@ -45,14 +45,30 @@ module bp_stream_to_lite
   localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
   bp_bedrock_in_msg_header_s in_msg_header_lo;
+  logic streaming_r, stream_clear;
+  // Accept no header when
+  // 1. SIPO is not ready (We should keep the corresponding header for the waiting data)
+  // 2. In streaming state (We want to latch the header with critical address) 
   bsg_dff_en_bypass
    #(.width_p($bits(bp_bedrock_in_msg_header_s)))
    header_reg
     (.clk_i(clk_i)
-    ,.en_i(in_msg_v_i)
+    ,.en_i(in_msg_ready_and_o & in_msg_v_i & ~streaming_r)
     ,.data_i(in_msg_header_i)
     ,.data_o(in_msg_header_lo)
     );
+
+  bsg_dff_reset_set_clear
+   #(.width_p(1)
+   ,.clear_over_set_p(1))
+    streaming_reg
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+    ,.set_i(in_msg_v_i)
+    ,.clear_i(stream_clear)
+    ,.data_o(streaming_r)
+    );
+  assign stream_clear = in_msg_last_i & out_msg_v_o & out_msg_ready_and_i;
 
   wire has_data = payload_mask_p[in_msg_header_lo.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
@@ -78,7 +94,6 @@ module bp_stream_to_lite
     ,.ready_and_i(out_msg_ready_and_i)
     ,.first_o(/* unused */)
     );
-  wire unused = in_msg_last_i; // counter in the sipo tracks the progress
 
   bp_bedrock_out_msg_s msg_cast_o;
   assign msg_cast_o = '{header: in_msg_header_lo, data: sipo_data_lo};
