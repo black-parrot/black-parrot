@@ -47,6 +47,7 @@
     ,e_op_icache_fence         = 4
     ,e_op_itlb_fill_response   = 5
     ,e_op_itlb_fence           = 6
+    ,e_op_wait                 = 7
   } bp_fe_command_queue_opcodes_e;
 
   /*

@@ -244,6 +244,7 @@ module testbench
           (.clk_i(clk_i)
            ,.reset_i(reset_i)
            ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
+           ,.wfi_i(director.is_wait)
 
            ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 

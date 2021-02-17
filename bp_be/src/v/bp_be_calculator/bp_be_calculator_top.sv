@@ -41,10 +41,10 @@ module bp_be_calculator_top
   // Calculator - Checker interface
   , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
 
-  , output                                          fpu_en_o
-  , output                                          long_ready_o
-  , output                                          mem_ready_o
-  , output                                          ptw_busy_o
+  , output logic                                    fpu_en_o
+  , output logic                                    long_ready_o
+  , output logic                                    mem_ready_o
+  , output logic                                    ptw_busy_o
 
   , output [commit_pkt_width_lp-1:0]                commit_pkt_o
   , output [branch_pkt_width_lp-1:0]                br_pkt_o
@@ -54,6 +54,7 @@ module bp_be_calculator_top
   , input                                           timer_irq_i
   , input                                           software_irq_i
   , input                                           external_irq_i
+  , output logic                                    irq_waiting_o
   , output logic                                    irq_pending_o
   , input                                           interrupt_v_i
 
@@ -219,6 +220,7 @@ module bp_be_calculator_top
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
      ,.irq_pending_o(irq_pending_o)
+     ,.irq_waiting_o(irq_waiting_o)
      ,.interrupt_v_i(interrupt_v_i)
 
      ,.data_o(pipe_sys_data_lo)
