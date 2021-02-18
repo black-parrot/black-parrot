@@ -388,6 +388,7 @@ module bp_fe_icache
    '{addr     : paddr_tv_r
      ,size    : cached_req ? block_req_size : uncached_req_size
      ,msg_type: cached_req ? e_miss_load : uncached_req ? e_uc_load : e_cache_clear
+     ,subop   : e_req_amoswap
      ,data    : '0
      };
 
@@ -420,8 +421,10 @@ module bp_fe_icache
      ,.addr_o(way_invalid_index)
      );
 
+  // TODO: Does hit way matter for I$?
   // invalid way takes priority over LRU way
-  assign cache_req_metadata_cast_o.repl_way = invalid_exist ? way_invalid_index : lru_encode;
+  assign cache_req_metadata_cast_o.hit_or_repl_way = invalid_exist ? way_invalid_index : lru_encode;
+  assign cache_req_metadata_cast_o.hit_not_repl = 1'b0;
   assign cache_req_metadata_cast_o.dirty = '0;
 
   /////////////////////////////////////////////////////////////////////////////

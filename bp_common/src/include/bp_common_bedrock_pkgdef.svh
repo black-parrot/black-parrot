@@ -58,8 +58,29 @@
     ,e_bedrock_req_wr        = 4'b0001 // Write-miss
     ,e_bedrock_req_uc_rd     = 4'b0010 // Uncached Read-miss
     ,e_bedrock_req_uc_wr     = 4'b0011 // Uncached Write-miss
+    ,e_bedrock_req_amo       = 4'b0100 // AMO
     // 4'b0100 - 4'b1111 reserved / custom
   } bp_bedrock_req_type_e;
+
+  /*
+   * bp_bedrock_wr_subop_e specifies the type of store
+   */
+  typedef enum logic [3:0]
+  {
+      e_store             = 4'b0000
+      ,e_amo_lr           = 4'b0001
+      ,e_amo_sc           = 4'b0010
+      ,e_amo_swap         = 4'b0011
+      ,e_amo_add          = 4'b0100
+      ,e_amo_xor          = 4'b0101
+      ,e_amo_and          = 4'b0110
+      ,e_amo_or           = 4'b0111
+      ,e_amo_min          = 4'b1000
+      ,e_amo_max          = 4'b1001
+      ,e_amo_minu         = 4'b1010
+      ,e_amo_maxu         = 4'b1011
+  } bp_bedrock_wr_subop_e;
+
 
   /*
    * bp_bedrock_cmd_type_e defines the various commands that an CCE may issue to an LCE

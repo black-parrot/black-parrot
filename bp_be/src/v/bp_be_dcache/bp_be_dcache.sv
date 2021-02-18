@@ -807,29 +807,30 @@ module bp_be_dcache
         cache_req_cast_o.msg_type = e_miss_store;
       else if (store_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
-      else if (wt_req)
-        cache_req_cast_o.msg_type = e_wt_store;
       else if (uncached_load_req)
         cache_req_cast_o.msg_type = e_uc_load;
-      else if (uncached_store_req)
-        cache_req_cast_o.msg_type = e_uc_store;
       else if (fencei_req)
         cache_req_cast_o.msg_type = e_cache_flush;
+      else if (uncached_store_req | wt_req)
+        begin
+          cache_req_cast_o.msg_type = e_uc_store;
+          cache_req_cast_o.subop = e_req_amoswap;
+        end
       else
         begin
+          cache_req_cast_o.msg_type = e_uc_store;
           unique casez (decode_tv_r.amo_subop)
-            e_dcache_subop_lr     : cache_req_cast_o.msg_type = e_amo_lr;
-            e_dcache_subop_sc     : cache_req_cast_o.msg_type = e_amo_sc;
-            e_dcache_subop_amoswap: cache_req_cast_o.msg_type = e_amo_swap;
-            e_dcache_subop_amoadd : cache_req_cast_o.msg_type = e_amo_add;
-            e_dcache_subop_amoxor : cache_req_cast_o.msg_type = e_amo_xor;
-            e_dcache_subop_amoand : cache_req_cast_o.msg_type = e_amo_and;
-            e_dcache_subop_amoor  : cache_req_cast_o.msg_type = e_amo_or;
-            e_dcache_subop_amomin : cache_req_cast_o.msg_type = e_amo_min;
-            e_dcache_subop_amomax : cache_req_cast_o.msg_type = e_amo_max;
-            e_dcache_subop_amominu: cache_req_cast_o.msg_type = e_amo_minu;
-            //e_dcache_subop_amomaxu
-            default               : cache_req_cast_o.msg_type = e_amo_maxu;
+            e_dcache_subop_lr     : cache_req_cast_o.subop = e_req_amolr;
+            e_dcache_subop_sc     : cache_req_cast_o.subop = e_req_amosc;
+            e_dcache_subop_amoadd : cache_req_cast_o.subop = e_req_amoadd;
+            e_dcache_subop_amoxor : cache_req_cast_o.subop = e_req_amoxor;
+            e_dcache_subop_amoand : cache_req_cast_o.subop = e_req_amoand;
+            e_dcache_subop_amoor  : cache_req_cast_o.subop = e_req_amoor;
+            e_dcache_subop_amomin : cache_req_cast_o.subop = e_req_amomin;
+            e_dcache_subop_amomax : cache_req_cast_o.subop = e_req_amomax;
+            e_dcache_subop_amominu: cache_req_cast_o.subop = e_req_amominu;
+            e_dcache_subop_amomaxu: cache_req_cast_o.subop = e_req_amomaxu;
+            default : cache_req_cast_o.subop = e_req_amoswap;
           endcase
         end
     end
@@ -847,7 +848,9 @@ module bp_be_dcache
      ,.data_o(cache_req_metadata_v_o)
      );
 
-  assign cache_req_metadata_cast_o.repl_way = lru_way_li;
+  // TODO: Send hit way on non misses. fencei?
+  assign cache_req_metadata_cast_o.hit_or_repl_way = lru_way_li;
+  assign cache_req_metadata_cast_o.hit_not_repl    = 1'b0;
   assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[lru_way_li];
 
   /////////////////////////////////////////////////////////////////////////////
