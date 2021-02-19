@@ -91,7 +91,7 @@ module bp_me_cache_slice
 
     ,.in_msg_header_i(mem_header_li)
     ,.in_msg_data_i(mem_data_li)
-    ,.in_msg_v_i(mem_ready_lo & mem_v_li)
+    ,.in_msg_v_i(mem_v_li)
     ,.in_msg_ready_and_o(mem_ready_lo)
     ,.in_msg_last_i(mem_last_li)
 
