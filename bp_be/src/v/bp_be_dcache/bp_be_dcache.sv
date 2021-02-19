@@ -274,8 +274,9 @@ module bp_be_dcache
   bp_be_dcache_decode_s decode_tl_r;
   logic [page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dpath_width_gp-1:0] data_tl_r;
+  logic tag_mem_self_invalidate;
 
-  assign tl_we = ready_o & v_i;
+  assign tl_we = ready_o & v_i & ~tag_mem_self_invalidate;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_tl_reg
@@ -887,12 +888,14 @@ module bp_be_dcache
   wire tag_mem_fast_read = (tl_we & ~decode_lo.fencei_op & ~decode_lo.l2_op);
   wire tag_mem_slow_read = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
-  assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write;
-  assign tag_mem_w_li = tag_mem_slow_write;
-  assign tag_mem_addr_li = tag_mem_fast_read
+  wire [assoc_p-1:0] tag_match = load_hit_tl | store_hit_tl;
+  assign tag_mem_self_invalidate = uncached_op_tl & |tag_match;
+  assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_self_invalidate;
+  assign tag_mem_w_li = tag_mem_slow_write | tag_mem_self_invalidate;
+  assign tag_mem_addr_li = (tag_mem_fast_read | tag_mem_self_invalidate)
     ? vaddr_index
     : tag_mem_pkt_cast_i.index;
-  assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read;
+  assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_self_invalidate;
 
   logic [assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode
@@ -903,26 +906,32 @@ module bp_be_dcache
       );
 
   always_comb
-    for (integer i = 0; i < assoc_p; i++)
-      case (tag_mem_pkt_cast_i.opcode)
-        e_cache_tag_mem_set_tag:
-          begin
-            tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
-            tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
-                                   ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
-                                   };
-          end
-        e_cache_tag_mem_set_state:
-          begin
-            tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: '0};
-            tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
-          end
-        default: // e_cache_tag_mem_set_clear
-          begin
-            tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
-            tag_mem_mask_li[i] = '{state: bp_coh_states_e'('1), tag: '1};
-          end
-      endcase
+    for (integer i = 0; i < assoc_p; i++) begin
+      if (tag_mem_self_invalidate) begin
+        tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
+        tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_match[i]}}, tag : '0};
+      end else begin
+        case (tag_mem_pkt_cast_i.opcode)
+          e_cache_tag_mem_set_tag:
+            begin
+              tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
+              tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
+                                     ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
+                                     };
+            end
+          e_cache_tag_mem_set_state:
+            begin
+              tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: '0};
+              tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
+            end
+          default: // e_cache_tag_mem_set_clear
+            begin
+              tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
+              tag_mem_mask_li[i] = '{state: bp_coh_states_e'('1), tag: '1};
+            end
+        endcase
+      end
+    end
 
   logic [lg_dcache_assoc_lp-1:0] tag_mem_pkt_way_r;
   bsg_dff
