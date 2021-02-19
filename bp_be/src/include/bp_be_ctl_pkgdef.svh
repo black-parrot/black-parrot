@@ -214,22 +214,6 @@
     bp_be_src1_e                      src1_sel;
     bp_be_src2_e                      src2_sel;
     bp_be_baddr_e                     baddr_sel;
-
-    logic                             itlb_miss;
-    logic                             icache_miss;
-    logic                             instr_access_fault;
-    logic                             instr_page_fault;
-    logic                             illegal_instr;
-    logic                             ebreak;
-    logic                             dbreak;
-    logic                             ecall_m;
-    logic                             ecall_s;
-    logic                             ecall_u;
-    logic                             dret;
-    logic                             mret;
-    logic                             sret;
-    logic                             wfi;
-    logic                             sfence_vma;
   }  bp_be_decode_s;
 
   typedef struct packed

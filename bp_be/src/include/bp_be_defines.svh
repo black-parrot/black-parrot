@@ -46,6 +46,8 @@
       logic [dpath_width_gp-1:0]               rs2;                                                \
       logic                                    rs3_fp_v;                                           \
       logic [dpath_width_gp-1:0]               imm;                                                \
+      bp_be_exception_s                        exception;                                          \
+      bp_be_special_s                          special;                                            \
      } bp_be_dispatch_pkt_s;                                                                       \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -209,6 +211,8 @@
      + 3                                                                                           \
      + 3 * dpath_width_gp                                                                          \
      + $bits(bp_be_decode_s)                                                                       \
+     + $bits(bp_be_exception_s)                                                                    \
+     + $bits(bp_be_special_s)                                                                      \
      )
 
   `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \

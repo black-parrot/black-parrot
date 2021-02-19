@@ -88,7 +88,9 @@ module bp_be_csr
 
   // The muxed and demuxed CSR outputs
   logic [dword_width_gp-1:0] csr_data_li, csr_data_lo;
-  logic exception_v_o, interrupt_v_o, ret_v_o, wfi_v_o, sfence_v_o;
+  logic exception_v_o, interrupt_v_o, ret_v_o, wfi_v_o, fencei_v_o, sfence_v_o;
+  logic satp_v_o, itlb_miss_v_o, icache_miss_v_o, dcache_miss_v_o;
+  logic dtlb_store_miss_v_o, dtlb_load_miss_v_o;
 
   `declare_csr_structs(vaddr_width_p, paddr_width_p)
 
@@ -392,8 +394,15 @@ module bp_be_csr
       exception_v_o    = '0;
       interrupt_v_o    = '0;
       ret_v_o          = '0;
+      fencei_v_o       = '0;
       wfi_v_o          = '0;
       sfence_v_o       = '0;
+      satp_v_o         = '0;
+      itlb_miss_v_o    = '0;
+      icache_miss_v_o  = '0;
+      dcache_miss_v_o  = '0;
+      dtlb_store_miss_v_o = '0;
+      dtlb_load_miss_v_o  = '0;
 
       csr_illegal_instr_o  = '0;
       csr_satp_o           = '0;
@@ -409,6 +418,30 @@ module bp_be_csr
       else if (exception_v_i & special.sfence_vma)
         begin
           sfence_v_o = 1'b1;
+        end
+      else if (exception_v_i & special.satp)
+        begin
+          satp_v_o = 1'b1;
+        end
+      else if (exception_v_i & special.itlb_miss)
+        begin
+          itlb_miss_v_o = 1'b1;
+        end
+      else if (exception_v_i & special.icache_miss)
+        begin
+          icache_miss_v_o = 1'b1;
+        end
+      else if (exception_v_i & special.dtlb_load_miss)
+        begin
+          dtlb_load_miss_v_o = 1'b1;
+        end
+      else if (exception_v_i & special.dtlb_store_miss)
+        begin
+          dtlb_store_miss_v_o = 1'b1;
+        end
+      else if (exception_v_i & special.dcache_miss)
+        begin
+          dcache_miss_v_o = 1'b1;
         end
       else if (exception_v_i & special.dret)
         begin
@@ -438,6 +471,10 @@ module bp_be_csr
           mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
 
           ret_v_o          = 1'b1;
+        end
+      else if (exception_v_i & special.fencei)
+        begin
+          fencei_v_o = 1'b1;
         end
       else if (exception_v_i & special.wfi)
         begin
@@ -682,7 +719,8 @@ module bp_be_csr
 
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
-  assign commit_pkt_cast_o.npc_w_v          = |{special.fencei, wfi_v_o, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, special.satp, special.itlb_miss, special.icache_miss, special.dcache_miss, special.dtlb_store_miss, special.dtlb_load_miss, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
+  assign commit_pkt_cast_o.npc_w_v          = |{fencei_v_o, wfi_v_o, sfence_v_o, exception_v_o,
+interrupt_v_o, ret_v_o, satp_v_o, itlb_miss_v_o, icache_miss_v_o, dcache_miss_v_o, dtlb_store_miss_v_o, dtlb_load_miss_v_o, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
@@ -693,21 +731,21 @@ module bp_be_csr
   assign commit_pkt_cast_o.pte_gigapage     = ptw_fill_pkt.gigapage;
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
-  assign commit_pkt_cast_o.fencei           = special.fencei;
+  assign commit_pkt_cast_o.fencei           = fencei_v_o;
   assign commit_pkt_cast_o.sfence           = sfence_v_o;
   assign commit_pkt_cast_o.exception        = exception_v_o;
   assign commit_pkt_cast_o._interrupt       = interrupt_v_o;
   assign commit_pkt_cast_o.wfi              = wfi_v_o;
   assign commit_pkt_cast_o.eret             = ret_v_o;
-  assign commit_pkt_cast_o.satp             = special.satp;
-  assign commit_pkt_cast_o.itlb_miss        = special.itlb_miss;
-  assign commit_pkt_cast_o.icache_miss      = special.icache_miss;
-  assign commit_pkt_cast_o.dtlb_store_miss  = special.dtlb_store_miss;
-  assign commit_pkt_cast_o.dtlb_load_miss   = special.dtlb_load_miss;
-  assign commit_pkt_cast_o.dcache_miss      = special.dcache_miss;
+  assign commit_pkt_cast_o.satp             = satp_v_o;
+  assign commit_pkt_cast_o.itlb_miss        = itlb_miss_v_o;
+  assign commit_pkt_cast_o.icache_miss      = icache_miss_v_o;
+  assign commit_pkt_cast_o.dtlb_store_miss  = dtlb_store_miss_v_o;
+  assign commit_pkt_cast_o.dtlb_load_miss   = dtlb_load_miss_v_o;
+  assign commit_pkt_cast_o.dcache_miss      = dcache_miss_v_o;
   assign commit_pkt_cast_o.itlb_fill_v      = ptw_fill_pkt.itlb_fill_v;
   assign commit_pkt_cast_o.dtlb_fill_v      = ptw_fill_pkt.dtlb_fill_v;
-  assign commit_pkt_cast_o.rollback         = special.icache_miss | special.dcache_miss | special.dtlb_store_miss | special.dtlb_load_miss | special.itlb_miss;
+  assign commit_pkt_cast_o.rollback         = icache_miss_v_o | dcache_miss_v_o | dtlb_store_miss_v_o | dtlb_load_miss_v_o | itlb_miss_v_o;
 
   assign trans_info_cast_o.priv_mode = priv_mode_r;
   assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;

@@ -106,14 +106,17 @@ module bp_be_pipe_sys
   logic [vaddr_width_p-1:0] commit_nvaddr_r, commit_vaddr_r;
   logic [instr_width_gp-1:0] commit_ninstr_r, commit_instr_r;
 
+  bp_be_exception_s exception_li;
   bp_be_special_s special_li;
   always_comb
     if (commit_v_i)
       begin
+        exception_li = exception_i;
         special_li = special_i;
       end
     else
       begin
+        exception_li = '0;
         special_li = '0;
       end
 
@@ -147,7 +150,7 @@ module bp_be_pipe_sys
      ,.exception_npc_i(exception_npc_li)
      ,.exception_vaddr_i(exception_vaddr_li)
      ,.exception_instr_i(exception_instr_li)
-     ,.exception_i(exception_i)
+     ,.exception_i(exception_li)
      ,.special_i(special_li)
      ,.ptw_fill_pkt_i(ptw_fill_pkt_i)
 

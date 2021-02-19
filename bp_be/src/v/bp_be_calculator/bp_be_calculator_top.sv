@@ -445,21 +445,8 @@ module bp_be_calculator_top
           exc_stage_n[2].queue_v                &= ~commit_pkt.rollback;
           exc_stage_n[3].queue_v                &= ~commit_pkt.rollback;
 
-          exc_stage_n[0].spec.itlb_miss         |= reservation_n.decode.itlb_miss;
-          exc_stage_n[0].spec.icache_miss       |= reservation_n.decode.icache_miss;
-          exc_stage_n[0].exc.instr_access_fault |= reservation_n.decode.instr_access_fault;
-          exc_stage_n[0].exc.instr_page_fault   |= reservation_n.decode.instr_page_fault;
-          exc_stage_n[0].exc.illegal_instr      |= reservation_n.decode.illegal_instr;
-          exc_stage_n[0].exc.ebreak             |= reservation_n.decode.ebreak;
-          exc_stage_n[0].spec.dbreak            |= reservation_n.decode.dbreak;
-          exc_stage_n[0].exc.ecall_m            |= reservation_n.decode.ecall_m;
-          exc_stage_n[0].exc.ecall_s            |= reservation_n.decode.ecall_s;
-          exc_stage_n[0].exc.ecall_u            |= reservation_n.decode.ecall_u;
-          exc_stage_n[0].spec.dret              |= reservation_n.decode.dret;
-          exc_stage_n[0].spec.mret              |= reservation_n.decode.mret;
-          exc_stage_n[0].spec.sret              |= reservation_n.decode.sret;
-          exc_stage_n[0].spec.wfi               |= reservation_n.decode.wfi;
-          exc_stage_n[0].spec.sfence_vma        |= reservation_n.decode.sfence_vma;
+          exc_stage_n[0].spec                   |= reservation_n.special;
+          exc_stage_n[0].exc                    |= reservation_n.exception;
 
           exc_stage_n[1].exc.illegal_instr      |= pipe_sys_illegal_instr_lo;
           exc_stage_n[1].spec.satp              |= pipe_sys_satp_lo;

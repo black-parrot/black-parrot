@@ -101,7 +101,6 @@ module bp_be_scheduler
 
   // Interface handshakes
   assign fe_queue_yumi_li = ~suppress_iss_i & fe_queue_v_lo & dispatch_v_i;
-  wire issue_v = fe_queue_yumi_li;
 
   logic [dword_width_gp-1:0] irf_rs1, irf_rs2;
   bp_be_regfile
@@ -136,25 +135,42 @@ module bp_be_scheduler
      );
 
   // Decode the dispatched instruction
-  bp_be_decode_s            decoded;
+  bp_be_decode_s instr_decoded;
   logic [dword_width_gp-1:0] decoded_imm_lo;
-  wire fe_exc_not_instr_li = (fe_queue_lo.msg_type == e_fe_exception);
+  logic illegal_instr_lo;
+  logic ecall_m_lo, ecall_s_lo, ecall_u_lo;
+  logic ebreak_lo, dbreak_lo;
+  logic dret_lo, mret_lo, sret_lo;
+  logic wfi_lo, sfence_vma_lo;
   bp_be_instr_decoder
    #(.bp_params_p(bp_params_p))
    instr_decoder
-     (.fe_exc_not_instr_i(fe_exc_not_instr_li)
-     ,.fe_exc_i(fe_queue_lo.msg.exception.exception_code)
-     ,.instr_i(fe_queue_lo.msg.fetch.instr)
+    (.instr_i(fe_queue_lo.msg.fetch.instr)
      ,.decode_info_i(decode_info_i)
 
-     ,.decode_o(decoded)
+     ,.decode_o(instr_decoded)
      ,.imm_o(decoded_imm_lo)
+
+     ,.illegal_instr_o(illegal_instr_lo)
+     ,.ecall_m_o(ecall_m_lo)
+     ,.ecall_s_o(ecall_s_lo)
+     ,.ecall_u_o(ecall_u_lo)
+     ,.ebreak_o(ebreak_lo)
+     ,.dbreak_o(dbreak_lo)
+     ,.dret_o(dret_lo)
+     ,.mret_o(mret_lo)
+     ,.sret_o(sret_lo)
+     ,.wfi_o(wfi_lo)
+     ,.sfence_vma_o(sfence_vma_lo)
      );
 
   bp_be_dispatch_pkt_s dispatch_pkt;
+  wire fe_exc_not_instr_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_exception);
+  wire fe_instr_not_exc_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_fetch);
   always_comb
     begin
       // Calculator status ISD stage
+      isd_status_cast_o = '0;
       isd_status_cast_o.v        = fe_queue_yumi_li;
       isd_status_cast_o.pc       = fe_queue_lo.msg.fetch.pc;
       isd_status_cast_o.branch_metadata_fwd = fe_queue_lo.msg.fetch.branch_metadata_fwd;
@@ -171,10 +187,11 @@ module bp_be_scheduler
       isd_status_cast_o.frs3_v   = fe_queue_v_lo & issue_pkt.frs3_v;
       isd_status_cast_o.rs3_addr = instr.t.fmatype.rs3_addr;
       isd_status_cast_o.rd_addr  = instr.t.fmatype.rd_addr;
-      isd_status_cast_o.iwb_v    = decoded.irf_w_v;
-      isd_status_cast_o.fwb_v    = decoded.frf_w_v;
+      isd_status_cast_o.iwb_v    = instr_decoded.irf_w_v;
+      isd_status_cast_o.fwb_v    = instr_decoded.frf_w_v;
 
       // Form dispatch packet
+      dispatch_pkt = '0;
       dispatch_pkt.v        = fe_queue_yumi_li & ~poison_isd_i;
       dispatch_pkt.queue_v  = fe_queue_yumi_li;
       dispatch_pkt.pc       = expected_npc_i;
@@ -185,7 +202,29 @@ module bp_be_scheduler
       dispatch_pkt.rs2      = issue_pkt.frs2_v ? frf_rs2 : irf_rs2;
       dispatch_pkt.rs3_fp_v = issue_pkt.frs3_v;
       dispatch_pkt.imm      = issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
-      dispatch_pkt.decode   = decoded;
+      dispatch_pkt.decode   = (fe_exc_not_instr_li || illegal_instr_lo) ? '0 : instr_decoded;
+      dispatch_pkt.exception.instr_access_fault =
+        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_instr_access_fault};
+      dispatch_pkt.exception.instr_misaligned =
+        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_instr_misaligned};
+      dispatch_pkt.exception.instr_page_fault =
+        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_instr_page_fault};
+      dispatch_pkt.special.itlb_miss =
+        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_itlb_miss};
+      dispatch_pkt.special.icache_miss =
+        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_icache_miss};
+
+      dispatch_pkt.exception.illegal_instr = fe_instr_not_exc_li & illegal_instr_lo;
+      dispatch_pkt.exception.ecall_m       = fe_instr_not_exc_li & ecall_m_lo;
+      dispatch_pkt.exception.ecall_s       = fe_instr_not_exc_li & ecall_s_lo;
+      dispatch_pkt.exception.ecall_u       = fe_instr_not_exc_li & ecall_u_lo;
+      dispatch_pkt.exception.ebreak        = fe_instr_not_exc_li & ebreak_lo;
+      dispatch_pkt.special.dbreak          = fe_instr_not_exc_li & dbreak_lo;
+      dispatch_pkt.special.dret            = fe_instr_not_exc_li & dret_lo;
+      dispatch_pkt.special.mret            = fe_instr_not_exc_li & mret_lo;
+      dispatch_pkt.special.sret            = fe_instr_not_exc_li & sret_lo;
+      dispatch_pkt.special.wfi             = fe_instr_not_exc_li & wfi_lo;
+      dispatch_pkt.special.sfence_vma      = fe_instr_not_exc_li & sfence_vma_lo;
     end
   assign dispatch_pkt_o = dispatch_pkt;
 
