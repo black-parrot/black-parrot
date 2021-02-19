@@ -60,6 +60,7 @@
       logic [payload_width_mp-1:0]                 payload;                                 \
       bp_bedrock_msg_size_e                        size;                                    \
       logic [addr_width_mp-1:0]                    addr;                                    \
+      bp_bedrock_wr_subop_e                        subop;                                   \
       bp_bedrock_msg_u                             msg_type;                                \
     } bp_bedrock_``name_mp``_msg_header_s;                                                  \
                                                                                             \
@@ -157,7 +158,7 @@
    */
 
   `define bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp) \
-    ($bits(bp_bedrock_msg_u)+addr_width_mp+$bits(bp_bedrock_msg_size_e)+payload_width_mp)
+    ($bits(bp_bedrock_msg_u)+$bits(bp_bedrock_wr_subop_e)+addr_width_mp+$bits(bp_bedrock_msg_size_e)+payload_width_mp)
 
   `define bp_bedrock_msg_width(addr_width_mp, payload_width_mp, data_width_mp) \
     (`bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp)+data_width_mp)
