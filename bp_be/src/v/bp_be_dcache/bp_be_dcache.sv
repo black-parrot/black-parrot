@@ -133,6 +133,7 @@ module bp_be_dcache
 
    // ctrl
    , input                             flush_i
+   , output                            replay_pending_o
 
    // D$ Engine Interface
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
@@ -189,7 +190,7 @@ module bp_be_dcache
   logic tl_we, tv_we, dm_we;
   logic v_tl_r, v_tv_r, v_dm_r;
   logic gdirty_r, cache_lock;
-  logic uncached_load_data_v_r;
+  logic uncached_pending_r;
   logic [dword_width_gp-1:0] uncached_load_data_r;
 
   /////////////////////////////////////////////////////////////////////////////
@@ -522,7 +523,7 @@ module bp_be_dcache
     ? (sc_success != 1'b1)
     : early_data;
 
-  assign early_v_o = v_tv_r & ( (uncached_op_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
+  assign early_v_o = v_tv_r & ( (uncached_op_tv_r & (decode_tv_r.load_op & uncached_pending_r))
                               | (uncached_op_tv_r & (decode_tv_r.store_op & cache_req_yumi_i))
                               | (decode_tv_r.fencei_op & (~gdirty_r | (coherent_p == 1)))
                               | (cached_op_tv_r & ~any_miss_tv)
@@ -769,10 +770,10 @@ module bp_be_dcache
 
   wire cached_req         = v_tv_r & (store_miss_tv | load_miss_tv | lr_miss_tv);
   wire fencei_req         = v_tv_r & decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
-  wire uncached_load_req  = v_tv_r & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_load_data_v_r;
+  wire uncached_load_req  = v_tv_r & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_pending_r;
   wire uncached_store_req = v_tv_r & decode_tv_r.store_op & uncached_op_tv_r;
   wire wt_req             = v_tv_r & decode_tv_r.store_op & ~sc_fail & ~uncached_op_tv_r & (writethrough_p == 1);
-  wire l2_amo_req         = v_tv_r & decode_tv_r.l2_op & ~uncached_load_data_v_r;
+  wire l2_amo_req         = v_tv_r & decode_tv_r.l2_op & ~uncached_pending_r;
 
   assign cache_req_v_o = ~flush_i & |{cached_req, uncached_load_req, uncached_store_req, fencei_req, l2_amo_req, wt_req};
 
@@ -1209,28 +1210,30 @@ module bp_be_dcache
 
   ///////////////////////////
   // Uncached Load Storage
-  // Note: Goes away with idempotency-handling D$
   ///////////////////////////
-  wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
-  // Invalidate uncached data if the cache is flushed or we successfully complete the request
-  // NOTE: This method is not valid for non-idempotent loads, will cause replay
-  wire uncached_load_clear = flush_i | early_v_o;
+  wire uncached_pending_set = cache_req_yumi_i & uncached_load_req;
+  // Invalidate uncached data if the cache when we successfully complete the request
+  // TODO: We currently block interrupts until we have replayed a cache miss or
+  //   uncached load. We should decouple the cache writeback from replay in the future
+  wire uncached_pending_clear = early_v_o;
   bsg_dff_reset_set_clear
    #(.width_p(1))
-   uncached_load_data_v_reg
+   uncached_pending_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(uncached_load_set)
-     ,.clear_i(uncached_load_clear)
-     ,.data_o(uncached_load_data_v_r)
+     ,.set_i(uncached_pending_set)
+     ,.clear_i(uncached_pending_clear)
+     ,.data_o(uncached_pending_r)
      );
+  assign replay_pending_o = uncached_pending_r;
 
+  wire uncached_load_data_set = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
   bsg_dff_en
    #(.width_p(dword_width_gp))
    uncached_load_data_reg
     (.clk_i(clk_i)
-     ,.en_i(uncached_load_set)
+     ,.en_i(uncached_load_data_set)
 
      ,.data_i(data_mem_pkt_cast_i.data[0+:dword_width_gp])
      ,.data_o(uncached_load_data_r)
