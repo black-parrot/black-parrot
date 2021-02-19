@@ -239,11 +239,7 @@ module bp_be_csr
      ,.v_o(s_interrupt_icode_v_li)
      );
 
-  // TODO: This should be done in decode, pending CSR refactor
-  wire csr_w_v_li = (exception_instr inside {`RV64_CSRRW, `RV64_CSRRWI})
-                    || (exception_instr.t.rtype.rs1_addr != '0);
-  wire csr_r_v_li = (~(exception_instr inside {`RV64_CSRRW, `RV64_CSRRWI}))
-                    || (exception_instr.t.rtype.rd_addr != '0);
+  wire csr_w_v_li = csr_cmd_v_i & ~(csr_cmd.csr_op inside {e_csrr});
   // Compute input CSR data
   wire [dword_width_gp-1:0] csr_imm_li = dword_width_gp'(csr_cmd.data[4:0]);
   always_comb
@@ -701,9 +697,9 @@ module bp_be_csr
       //   For now, a few comparators will do
       if (~exception_v_o)
         begin
-          mstatus_li.fs |= {2{(csr_cmd_v_i & csr_w_v_li & ~|mstatus_lo.fs & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR
-                                                                                               ,`CSR_ADDR_FFLAGS
-                                                                                               ,`CSR_ADDR_FRM}))
+          mstatus_li.fs |= {2{(csr_w_v_li & ~|mstatus_lo.fs & (csr_cmd.csr_addr inside {`CSR_ADDR_FCSR
+                                                                                        ,`CSR_ADDR_FFLAGS
+                                                                                        ,`CSR_ADDR_FRM}))
                               || (exception_v_i & exception_instr.t.rtype.opcode inside {`RV64_FLOAD_OP
                                                                                          ,`RV64_FMADD_OP
                                                                                          ,`RV64_FNMADD_OP

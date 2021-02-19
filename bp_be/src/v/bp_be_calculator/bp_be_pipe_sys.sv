@@ -94,7 +94,7 @@ module bp_be_pipe_sys
 
   wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
 
-  wire csr_cmd_v_li = reservation.v & decode.csr_v;
+  wire csr_cmd_v_li = reservation.v & (decode.csr_w_v | decode.csr_r_v);
   always_comb
     begin
       csr_cmd_li.csr_op   = decode.fu_op;

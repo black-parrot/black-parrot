@@ -229,7 +229,7 @@ module bp_be_detector
                            | (isd_status_cast_i.mem_v & credits_full_i);
       cmd_haz_v          = fe_cmd_full_i;
 
-      fflags_haz_v = isd_status_cast_i.csr_v
+      fflags_haz_v = isd_status_cast_i.csr_w_v
                      & ((dep_status_r[0].fflags_w_v)
                         | (dep_status_r[1].fflags_w_v)
                         | (dep_status_r[2].fflags_w_v)
@@ -247,7 +247,7 @@ module bp_be_detector
                       );
 
       // Conservatively serialize on csr operations.  Could change to only write operations
-      csr_haz_v     = isd_status_cast_i.csr_v
+      csr_haz_v     = isd_status_cast_i.csr_w_v
                       & ((dep_status_r[0].instr_v)
                          | (dep_status_r[1].instr_v)
                          | (dep_status_r[2].instr_v)
@@ -282,7 +282,7 @@ module bp_be_detector
     begin
       dep_status_n.instr_v    = dispatch_pkt.v;
       dep_status_n.mem_v      = dispatch_pkt.decode.mem_v;
-      dep_status_n.csr_v      = dispatch_pkt.decode.csr_v;
+      dep_status_n.csr_w_v    = dispatch_pkt.decode.csr_w_v;
       dep_status_n.fflags_w_v = dispatch_pkt.decode.fflags_w_v;
       dep_status_n.ctl_iwb_v  = dispatch_pkt.decode.pipe_ctl_v & dispatch_pkt.decode.irf_w_v;
       dep_status_n.int_iwb_v  = dispatch_pkt.decode.pipe_int_v & dispatch_pkt.decode.irf_w_v;

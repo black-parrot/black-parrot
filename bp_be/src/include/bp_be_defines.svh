@@ -18,7 +18,7 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic                                    csr_v;                                              \
+      logic                                    csr_w_v;                                            \
       logic                                    mem_v;                                              \
       logic                                    fence_v;                                            \
       logic                                    long_v;                                             \
@@ -54,7 +54,7 @@
     {                                                                                              \
       logic                              instr_v;                                                  \
       logic                              mem_v;                                                    \
-      logic                              csr_v;                                                    \
+      logic                              csr_w_v;                                                  \
       logic                              fflags_w_v;                                               \
       logic                              ctl_iwb_v;                                                \
       logic                              aux_iwb_v;                                                \
@@ -79,7 +79,7 @@
       logic                                    fence_v;                                            \
       logic                                    mem_v;                                              \
       logic                                    long_v;                                             \
-      logic                                    csr_v;                                              \
+      logic                                    csr_w_v;                                            \
       logic                                    irs1_v;                                             \
       logic                                    frs1_v;                                             \
       logic [rv64_reg_addr_width_gp-1:0]       rs1_addr;                                           \

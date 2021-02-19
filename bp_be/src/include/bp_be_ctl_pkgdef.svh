@@ -108,7 +108,8 @@
 
   typedef enum logic [5:0]
   {
-    e_csrrw   = 6'b000001
+    e_csrr    = 6'b000000
+    ,e_csrrw  = 6'b000001
     ,e_csrrs  = 6'b000010
     ,e_csrrc  = 6'b000011
     ,e_csrrwi = 6'b000100
@@ -204,7 +205,8 @@
     logic                             dcache_w_v;
     logic                             late_iwb_v;
     logic                             late_fwb_v;
-    logic                             csr_v;
+    logic                             csr_w_v;
+    logic                             csr_r_v;
     logic                             mem_v;
     logic                             opw_v;
     logic                             ops_v;

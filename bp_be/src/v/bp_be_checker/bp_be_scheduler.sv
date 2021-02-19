@@ -175,7 +175,7 @@ module bp_be_scheduler
       isd_status_cast_o.pc       = fe_queue_lo.msg.fetch.pc;
       isd_status_cast_o.branch_metadata_fwd = fe_queue_lo.msg.fetch.branch_metadata_fwd;
       isd_status_cast_o.fence_v  = fe_queue_v_lo & issue_pkt.fence_v;
-      isd_status_cast_o.csr_v    = fe_queue_v_lo & issue_pkt.csr_v;
+      isd_status_cast_o.csr_w_v  = fe_queue_v_lo & issue_pkt.csr_w_v;
       isd_status_cast_o.mem_v    = fe_queue_v_lo & issue_pkt.mem_v;
       isd_status_cast_o.long_v   = fe_queue_v_lo & issue_pkt.long_v;
       isd_status_cast_o.irs1_v   = fe_queue_v_lo & issue_pkt.irs1_v;
