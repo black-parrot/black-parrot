@@ -716,6 +716,7 @@ module bp_be_dcache
       cache_req_cast_o = '0;
       cache_req_cast_o.addr = paddr_tv_r;
       cache_req_cast_o.data = wbuf_entry_in.data;
+      cache_req_cast_o.hit = load_hit_tv;
 
       // Assigning sizes to cache miss packet
       if (uncached_load_req | uncached_store_req | wt_req | l2_amo_req)
@@ -781,10 +782,19 @@ module bp_be_dcache
      ,.data_o(cache_req_metadata_v_o)
      );
 
-  // TODO: Send hit way on non misses. fencei?
-  assign cache_req_metadata_cast_o.hit_or_repl_way = lru_way_li;
-  assign cache_req_metadata_cast_o.hit_not_repl    = 1'b0;
-  assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[lru_way_li];
+  logic metadata_hit_r;
+  logic [lg_dcache_assoc_lp-1:0] metadata_hit_index_r;
+  bsg_dff
+   #(.width_p(1+lg_dcache_assoc_lp))
+   cached_hit_reg
+    (.clk_i(clk_i)
+     ,.data_i({load_hit_tv, load_hit_way_tv})
+     ,.data_o({metadata_hit_r, metadata_hit_index_r})
+     );
+
+  wire [assoc_p-1:0] hit_or_repl_way = metadata_hit_r ? metadata_hit_index_r : lru_way_li;
+  assign cache_req_metadata_cast_o.hit_or_repl_way = hit_or_repl_way;
+  assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[hit_or_repl_way];
 
   /////////////////////////////////////////////////////////////////////////////
   // State machine
