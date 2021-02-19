@@ -206,9 +206,15 @@ module bp_nonsynth_cosim
      ,.data_o(finish_r)
      );
 
-  always_ff @(negedge reset_i)
-    if (cosim_en_i)
+  logic init_done_r;
+  always_ff @(posedge clk_i) begin
+    if (reset_i)
+      init_done_r <= 1'b0;
+    else if (cosim_en_i & ~init_done_r) begin
       dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
+      init_done_r <= 1'b1;
+    end
+  end
 
   always_ff @(negedge clk_i)
     if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)
