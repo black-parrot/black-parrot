@@ -99,7 +99,7 @@ module bp_uce
   bp_bedrock_uce_mem_payload_s mem_resp_cast_payload;
   assign mem_resp_cast_payload = mem_resp_cast_i.header.payload;
 
-  enum logic [3:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_check_dirty, e_data_writeback, e_send_critical, e_writeback_evict, e_writeback_read_req, e_writeback_write_req, e_write_wait, e_read_req, e_uc_read_wait} state_n, state_r;
+  enum logic [3:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_uc_writeback_evict, e_uc_writeback_write_req, e_send_critical, e_writeback_evict, e_writeback_read_req, e_writeback_write_req, e_write_wait, e_read_req, e_uc_read_wait} state_n, state_r;
   wire is_reset           = (state_r == e_reset);
   wire is_clear           = (state_r == e_clear);
   wire is_flush_read      = (state_r == e_flush_read);
@@ -274,11 +274,11 @@ module bp_uce
   wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
   wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd};
 
-  wire miss_load_v_li  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
-  wire miss_store_v_li = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
-  wire miss_v_li       = miss_load_v_li | miss_store_v_li;
+  wire miss_load_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
+  wire miss_store_v_r = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
+  wire miss_v_r       = miss_load_v_r | miss_store_v_r;
   wire uc_load_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
-  wire uc_store_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
+  wire uc_store_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
 
   // When fill_width_p < block_width_p, multicycle fill and writeback is implemented in cache flush write,
   // cache miss load with and without dirty data writeback.
@@ -570,7 +570,7 @@ module bp_uce
             if (uc_store_v_li)
               begin
                 if (cache_req_cast_i.hit)
-                  state_n = e_check_dirty;
+                  state_n = e_uc_writeback_evict;
                 else begin
                   mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_uc_wr;
                   mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;
@@ -589,13 +589,13 @@ module bp_uce
                             : clear_v_li
                               ? e_clear
                               : uc_load_v_li
-                                ? e_check_dirty
+                                ? e_uc_writeback_evict
                                 : e_send_critical
                           : e_ready;
               end
           end
 
-        e_check_dirty:
+        e_uc_writeback_evict:
           begin
             if (cache_req_metadata_cast_i.dirty)
               begin
@@ -610,13 +610,13 @@ module bp_uce
                 stat_mem_pkt_cast_o.way_id = cache_req_metadata_cast_i.hit_or_repl_way;
                 stat_mem_pkt_v_o = 1'b1;
 
-                state_n = (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_data_writeback : e_check_dirty;
+                state_n = (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_uc_writeback_write_req : e_uc_writeback_evict;
               end
             else
               state_n = e_send_critical;
           end
 
-        e_data_writeback:
+        e_uc_writeback_write_req:
           begin
             mem_cmd_cast_o.header.msg_type = e_bedrock_mem_wr;
             mem_cmd_cast_o.header.addr     = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)};
@@ -629,11 +629,11 @@ module bp_uce
 
             state_n = (mem_cmd_done & mem_cmd_v_o)
                         ? e_send_critical
-                        : e_data_writeback;
+                        : e_uc_writeback_write_req;
           end
 
         e_send_critical:
-          if (miss_v_li)
+          if (miss_v_r)
             begin
               mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_rd;
               mem_cmd_cast_o.header.addr           = critical_addr;
