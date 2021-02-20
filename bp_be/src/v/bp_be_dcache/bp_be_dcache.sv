@@ -274,16 +274,17 @@ module bp_be_dcache
   bp_be_dcache_decode_s decode_tl_r;
   logic [page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dpath_width_gp-1:0] data_tl_r;
-  logic tag_mem_self_invalidate;
+  logic tag_mem_self_invalidate, flush_self;
+  assign flush_self = flush_i | tag_mem_self_invalidate;
 
-  assign tl_we = ready_o & v_i & ~tag_mem_self_invalidate;
+  assign tl_we = ready_o & v_i;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_tl_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(tl_we & ~flush_i)
+     ,.set_i(tl_we & ~flush_self)
      // We always advance in this non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_tl_r)
@@ -355,7 +356,7 @@ module bp_be_dcache
    v_tv_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(tv_we & ~flush_i)
+     ,.set_i(tv_we & ~flush_self)
      // We always advance in the non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_tv_r)
@@ -748,7 +749,7 @@ module bp_be_dcache
 
      // We separate out the poison signal here to avoid a critical path
      //  i.e. it's fine to block, but not to enqueue
-     ,.v_i(wbuf_v_li & ~flush_i)
+     ,.v_i(wbuf_v_li & ~flush_self)
      ,.wbuf_entry_i(wbuf_entry_in)
 
      ,.v_o(wbuf_v_lo)
@@ -901,14 +902,14 @@ module bp_be_dcache
   wire tag_mem_fast_read = (tl_we & ~decode_lo.fencei_op & ~decode_lo.l2_op);
   wire tag_mem_slow_read = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
-  wire [assoc_p-1:0] tag_match = load_hit_tl | store_hit_tl;
-  assign tag_mem_self_invalidate = uncached_op_tl & |tag_match;
+
+  assign tag_mem_self_invalidate = v_tv_r & uncached_op_tv_r & load_hit_tv;
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_self_invalidate;
   assign tag_mem_w_li = tag_mem_slow_write | tag_mem_self_invalidate;
   assign tag_mem_addr_li = tag_mem_fast_read
     ? vaddr_index
     : tag_mem_self_invalidate
-      ? paddr_tl[block_offset_width_lp+:sindex_width_lp]
+      ? paddr_tv_r[block_offset_width_lp+:sindex_width_lp]
       : tag_mem_pkt_cast_i.index;
   assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_self_invalidate;
 
@@ -921,32 +922,37 @@ module bp_be_dcache
       );
 
   always_comb
-    for (integer i = 0; i < assoc_p; i++) begin
-      if (tag_mem_self_invalidate) begin
-        tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
-        tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_match[i]}}, tag : {ctag_width_p{tag_match[i]}}};
-      end else begin
-        case (tag_mem_pkt_cast_i.opcode)
-          e_cache_tag_mem_set_tag:
-            begin
-              tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
-              tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
-                                     ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
-                                     };
-            end
-          e_cache_tag_mem_set_state:
-            begin
-              tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: '0};
-              tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
-            end
-          default: // e_cache_tag_mem_set_clear
-            begin
-              tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
-              tag_mem_mask_li[i] = '{state: bp_coh_states_e'('1), tag: '1};
-            end
-        endcase
-      end
-    end
+    for (integer i = 0; i < assoc_p; i++)
+      begin : tag_mem_data_mask
+        if (tag_mem_self_invalidate)
+          begin
+            tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
+            tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){load_hit_tv_r[i]}}
+                                   ,tag : {ctag_width_p{load_hit_tv_r[i]}}};
+          end
+        else
+          begin
+            case (tag_mem_pkt_cast_i.opcode)
+              e_cache_tag_mem_set_tag:
+                begin
+                  tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
+                  tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
+                                         ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
+                                        };
+                end
+              e_cache_tag_mem_set_state:
+                begin
+                  tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: '0};
+                  tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
+                end
+              default: // e_cache_tag_mem_set_clear
+                begin
+                  tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
+                  tag_mem_mask_li[i] = '{state: bp_coh_states_e'('1), tag: '1};
+                end
+            endcase
+          end
+        end
 
   logic [lg_dcache_assoc_lp-1:0] tag_mem_pkt_way_r;
   bsg_dff
@@ -1070,7 +1076,7 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read = ~flush_i & ((v_tv_r & ~early_v_o) | (v_tv_r & uncached_op_tv_r));
+  wire stat_mem_fast_read = ~flush_i & ((v_tv_r & ~early_v_o) | (v_tv_r & load_hit_tv & uncached_op_tv_r));
   wire stat_mem_fast_write = ~flush_i & (v_tv_r & early_v_o & ~uncached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
