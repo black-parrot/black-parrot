@@ -838,7 +838,7 @@ module bp_be_dcache
 
   // Cache metadata is valid after the request goes out,
   //   but no metadata for uncached stores, writethroughs, or flushes
-  wire cache_req_metadata_v = (cache_req_yumi_i & ~uncached_store_req & ~wt_req & ~fencei_req);
+  wire cache_req_metadata_v = (cache_req_yumi_i & ~wt_req & ~fencei_req);
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
@@ -905,9 +905,11 @@ module bp_be_dcache
   assign tag_mem_self_invalidate = uncached_op_tl & |tag_match;
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_self_invalidate;
   assign tag_mem_w_li = tag_mem_slow_write | tag_mem_self_invalidate;
-  assign tag_mem_addr_li = (tag_mem_fast_read | tag_mem_self_invalidate)
+  assign tag_mem_addr_li = tag_mem_fast_read
     ? vaddr_index
-    : tag_mem_pkt_cast_i.index;
+    : tag_mem_self_invalidate
+      ? paddr_tl[block_offset_width_lp+:sindex_width_lp]
+      : tag_mem_pkt_cast_i.index;
   assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_self_invalidate;
 
   logic [assoc_p-1:0] tag_mem_way_one_hot;
@@ -922,7 +924,7 @@ module bp_be_dcache
     for (integer i = 0; i < assoc_p; i++) begin
       if (tag_mem_self_invalidate) begin
         tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
-        tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_match[i]}}, tag : '0};
+        tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_match[i]}}, tag : {ctag_width_p{tag_match[i]}}};
       end else begin
         case (tag_mem_pkt_cast_i.opcode)
           e_cache_tag_mem_set_tag:
@@ -1068,7 +1070,7 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read = ~flush_i & (v_tv_r & ~early_v_o & ~uncached_op_tv_r);
+  wire stat_mem_fast_read = ~flush_i & ((v_tv_r & ~early_v_o) | (v_tv_r & uncached_op_tv_r));
   wire stat_mem_fast_write = ~flush_i & (v_tv_r & early_v_o & ~uncached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
