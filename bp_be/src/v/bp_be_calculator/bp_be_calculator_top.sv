@@ -451,8 +451,8 @@ module bp_be_calculator_top
           exc_stage_n[1].exc.illegal_instr      |= pipe_sys_illegal_instr_lo;
           exc_stage_n[1].spec.satp              |= pipe_sys_satp_lo;
 
-          exc_stage_n[1].spec.dtlb_store_miss   |= pipe_mem_dtlb_store_miss_lo;
-          exc_stage_n[1].spec.dtlb_load_miss    |= pipe_mem_dtlb_load_miss_lo;
+          exc_stage_n[1].exc.dtlb_store_miss    |= pipe_mem_dtlb_store_miss_lo;
+          exc_stage_n[1].exc.dtlb_load_miss     |= pipe_mem_dtlb_load_miss_lo;
           exc_stage_n[1].exc.load_misaligned    |= pipe_mem_load_misaligned_lo;
           exc_stage_n[1].exc.load_access_fault  |= pipe_mem_load_access_fault_lo;
           exc_stage_n[1].exc.load_page_fault    |= pipe_mem_load_page_fault_lo;
@@ -460,7 +460,7 @@ module bp_be_calculator_top
           exc_stage_n[1].exc.store_access_fault |= pipe_mem_store_access_fault_lo;
           exc_stage_n[1].exc.store_page_fault   |= pipe_mem_store_page_fault_lo;
 
-          exc_stage_n[2].spec.dcache_miss       |= pipe_mem_dcache_miss_lo;
+          exc_stage_n[2].exc.dcache_miss        |= pipe_mem_dcache_miss_lo;
           exc_stage_n[2].spec.fencei            |= pipe_mem_fencei_lo;
     end
 

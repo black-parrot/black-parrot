@@ -209,9 +209,9 @@ module bp_be_scheduler
         fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_instr_misaligned};
       dispatch_pkt.exception.instr_page_fault =
         fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_instr_page_fault};
-      dispatch_pkt.special.itlb_miss =
+      dispatch_pkt.exception.itlb_miss =
         fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_itlb_miss};
-      dispatch_pkt.special.icache_miss =
+      dispatch_pkt.exception.icache_miss =
         fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_icache_miss};
 
       dispatch_pkt.exception.illegal_instr = fe_instr_not_exc_li & illegal_instr_lo;

@@ -29,8 +29,8 @@ module bp_be_csr
    , input [csr_cmd_width_lp-1:0]      csr_cmd_i
    , input                             csr_cmd_v_i
    , output logic [dword_width_gp-1:0] csr_data_o
-   , output logic                      csr_satp_o
    , output logic                      csr_illegal_instr_o
+   , output logic                      csr_satp_o
 
    // Misc interface
    , input rv64_fflags_s               fflags_acc_i
@@ -419,23 +419,23 @@ module bp_be_csr
         begin
           satp_v_o = 1'b1;
         end
-      else if (exception_v_i & special.itlb_miss)
+      else if (exception_v_i & exception.itlb_miss)
         begin
           itlb_miss_v_o = 1'b1;
         end
-      else if (exception_v_i & special.icache_miss)
+      else if (exception_v_i & exception.icache_miss)
         begin
           icache_miss_v_o = 1'b1;
         end
-      else if (exception_v_i & special.dtlb_load_miss)
+      else if (exception_v_i & exception.dtlb_load_miss)
         begin
           dtlb_load_miss_v_o = 1'b1;
         end
-      else if (exception_v_i & special.dtlb_store_miss)
+      else if (exception_v_i & exception.dtlb_store_miss)
         begin
           dtlb_store_miss_v_o = 1'b1;
         end
-      else if (exception_v_i & special.dcache_miss)
+      else if (exception_v_i & exception.dcache_miss)
         begin
           dcache_miss_v_o = 1'b1;
         end
@@ -574,7 +574,7 @@ module bp_be_csr
                 `CSR_ADDR_STVAL: stval_li = csr_data_li;
                 // SIP subset of MIP
                 `CSR_ADDR_SIP: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
-                `CSR_ADDR_SATP: begin satp_li = csr_data_li; csr_satp_o = 1'b1; end
+                `CSR_ADDR_SATP: begin satp_li = csr_data_li; csr_satp_o = csr_w_v_li; end
                 `CSR_ADDR_MVENDORID: begin end
                 `CSR_ADDR_MARCHID: begin end
                 `CSR_ADDR_MIMPID: begin end
@@ -715,8 +715,8 @@ module bp_be_csr
 
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
-  assign commit_pkt_cast_o.npc_w_v          = |{fencei_v_o, wfi_v_o, sfence_v_o, exception_v_o,
-interrupt_v_o, ret_v_o, satp_v_o, itlb_miss_v_o, icache_miss_v_o, dcache_miss_v_o, dtlb_store_miss_v_o, dtlb_load_miss_v_o, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
+  //assign commit_pkt_cast_o.npc_w_v          = |{exception, special, interrupt_v_o, ptw_fill_pkt.itlb_fill_v, ptw_fill_pkt.dtlb_fill_v};
+  assign commit_pkt_cast_o.npc_w_v          = |{special, exception, interrupt_v_o};
   assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
   assign commit_pkt_cast_o.instret          = instret_i;
   assign commit_pkt_cast_o.pc               = apc_r;
@@ -741,7 +741,7 @@ interrupt_v_o, ret_v_o, satp_v_o, itlb_miss_v_o, icache_miss_v_o, dcache_miss_v_
   assign commit_pkt_cast_o.dcache_miss      = dcache_miss_v_o;
   assign commit_pkt_cast_o.itlb_fill_v      = ptw_fill_pkt.itlb_fill_v;
   assign commit_pkt_cast_o.dtlb_fill_v      = ptw_fill_pkt.dtlb_fill_v;
-  assign commit_pkt_cast_o.rollback         = icache_miss_v_o | dcache_miss_v_o | dtlb_store_miss_v_o | dtlb_load_miss_v_o | itlb_miss_v_o;
+  assign commit_pkt_cast_o.rollback         = |exception;
 
   assign trans_info_cast_o.priv_mode = priv_mode_r;
   assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;

@@ -220,6 +220,7 @@
 
   typedef struct packed
   {
+    // True exceptions
     logic store_page_fault;
     logic load_page_fault;
     logic instr_page_fault;
@@ -234,15 +235,18 @@
     logic illegal_instr;
     logic instr_access_fault;
     logic instr_misaligned;
-  }  bp_be_exception_s;
 
-  typedef struct packed
-  {
+    // BP "exceptions"
     logic itlb_miss;
     logic icache_miss;
     logic dtlb_load_miss;
     logic dtlb_store_miss;
     logic dcache_miss;
+
+  }  bp_be_exception_s;
+
+  typedef struct packed
+  {
     logic fencei;
     logic sfence_vma;
     logic dbreak;

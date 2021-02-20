@@ -117,6 +117,9 @@ module bp_be_pipe_sys
     else
       begin
         exception_li = '0;
+        exception_li.instr_page_fault = ptw_fill_pkt.instr_page_fault_v;
+        exception_li.load_page_fault = ptw_fill_pkt.load_page_fault_v;
+        exception_li.store_page_fault = ptw_fill_pkt.store_page_fault_v;
         special_li = '0;
       end
 
