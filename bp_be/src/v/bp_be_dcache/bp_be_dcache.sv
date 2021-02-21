@@ -192,6 +192,8 @@ module bp_be_dcache
   logic gdirty_r, cache_lock;
   logic uncached_pending_r;
   logic [dword_width_gp-1:0] uncached_load_data_r;
+  logic sram_hazard_flush, miss_request_flush;
+  wire flush_self = flush_i | sram_hazard_flush | miss_request_flush;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
@@ -274,8 +276,6 @@ module bp_be_dcache
   bp_be_dcache_decode_s decode_tl_r;
   logic [page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dpath_width_gp-1:0] data_tl_r;
-  logic tag_mem_self_invalidate, flush_self;
-  assign flush_self = flush_i | tag_mem_self_invalidate;
 
   assign tl_we = ready_o & v_i;
   bsg_dff_reset_set_clear
@@ -348,6 +348,8 @@ module bp_be_dcache
   logic [assoc_p-1:0] load_hit_tv_r, store_hit_tv_r, way_v_tv_r, bank_sel_one_hot_tv_r;
   bp_be_dcache_decode_s decode_tv_r;
   logic load_reservation_match_tv;
+  wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
+  wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
 
   // fencei does not require a ptag
   assign tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
@@ -749,7 +751,7 @@ module bp_be_dcache
 
      // We separate out the poison signal here to avoid a critical path
      //  i.e. it's fine to block, but not to enqueue
-     ,.v_i(wbuf_v_li & ~flush_self)
+     ,.v_i(wbuf_v_li & ~flush_i)
      ,.wbuf_entry_i(wbuf_entry_in)
 
      ,.v_o(wbuf_v_lo)
@@ -838,7 +840,7 @@ module bp_be_dcache
     end
 
   // Cache metadata is valid after the request goes out,
-  //   but no metadata for uncached stores, writethroughs, or flushes
+  //   but no metadata for writethroughs or flushes
   wire cache_req_metadata_v = (cache_req_yumi_i & ~wt_req & ~fencei_req);
   bsg_dff_reset
    #(.width_p(1))
@@ -891,6 +893,7 @@ module bp_be_dcache
       state_r <= state_n;
 
   assign ready_o = ~cache_req_busy_i & is_ready;
+  assign miss_request_flush = cache_req_yumi_i & ~uncached_store_req & ~wt_req;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control
@@ -902,16 +905,18 @@ module bp_be_dcache
   wire tag_mem_fast_read = (tl_we & ~decode_lo.fencei_op & ~decode_lo.l2_op);
   wire tag_mem_slow_read = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
+  // TODO: This will produce spurious invalidations if flush_i goes high while this invalidation is occuring
+  wire tag_mem_fast_write = v_tv_r & uncached_op_tv_r & load_hit_tv;
+  assign sram_hazard_flush = tag_mem_fast_write;
 
-  assign tag_mem_self_invalidate = v_tv_r & uncached_op_tv_r & load_hit_tv;
-  assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_self_invalidate;
-  assign tag_mem_w_li = tag_mem_slow_write | tag_mem_self_invalidate;
+  assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_fast_write;
+  assign tag_mem_w_li = tag_mem_slow_write | tag_mem_fast_write;
   assign tag_mem_addr_li = tag_mem_fast_read
     ? vaddr_index
-    : tag_mem_self_invalidate
-      ? paddr_tv_r[block_offset_width_lp+:sindex_width_lp]
+    : tag_mem_fast_write
+      ? paddr_index_tv
       : tag_mem_pkt_cast_i.index;
-  assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_self_invalidate;
+  assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_fast_write;
 
   logic [assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode
@@ -923,36 +928,32 @@ module bp_be_dcache
 
   always_comb
     for (integer i = 0; i < assoc_p; i++)
-      begin : tag_mem_data_mask
-        if (tag_mem_self_invalidate)
+      case ({tag_mem_fast_write, tag_mem_pkt_cast_i.opcode})
+        {1'b1, 3'b???}:
           begin
             tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
             tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){load_hit_tv_r[i]}}
-                                   ,tag : {ctag_width_p{load_hit_tv_r[i]}}};
+                                   ,tag : {ctag_width_p{load_hit_tv_r[i]}}
+                                   };
           end
-        else
+       {1'b0,  e_cache_tag_mem_set_tag}:
           begin
-            case (tag_mem_pkt_cast_i.opcode)
-              e_cache_tag_mem_set_tag:
-                begin
-                  tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
-                  tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
-                                         ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
-                                        };
-                end
-              e_cache_tag_mem_set_state:
-                begin
-                  tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: '0};
-                  tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
-                end
-              default: // e_cache_tag_mem_set_clear
-                begin
-                  tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
-                  tag_mem_mask_li[i] = '{state: bp_coh_states_e'('1), tag: '1};
-                end
-            endcase
+            tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
+            tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
+                                   ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
+                                   };
           end
-        end
+        {1'b0, e_cache_tag_mem_set_state}:
+          begin
+            tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: '0};
+            tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
+          end
+        default: // e_cache_tag_mem_set_clear
+          begin
+            tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
+            tag_mem_mask_li[i] = '{state: bp_coh_states_e'('1), tag: '1};
+          end
+      endcase
 
   logic [lg_dcache_assoc_lp-1:0] tag_mem_pkt_way_r;
   bsg_dff
@@ -1200,8 +1201,6 @@ module bp_be_dcache
          ,.data_o(load_reserved_v_r)
          );
 
-      wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
-      wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
       bsg_dff_en
        #(.width_p(ctag_width_p+sindex_width_lp))
        load_reserved_addr
