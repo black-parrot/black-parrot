@@ -135,11 +135,11 @@ module bp_be_calculator_top
   logic [pipe_stage_els_lp-1:0][dpath_width_gp-1:0] forward_data;
   for (genvar i = 0; i < pipe_stage_els_lp; i++)
     begin : forward_match
-      assign match_rs[0][i] = (~dispatch_pkt.rs1_fp_v & comp_stage_r[i].ird_w_v & (dispatch_pkt.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr))
-                              || (dispatch_pkt.rs1_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr));
-      assign match_rs[1][i] = (~dispatch_pkt.rs2_fp_v & comp_stage_r[i].ird_w_v & (dispatch_pkt.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr))
-                              || (dispatch_pkt.rs2_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr));
-      assign match_rs[2][i] = (dispatch_pkt.rs3_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt.instr.t.fmatype.rs3_addr == comp_stage_r[i].rd_addr));
+      assign match_rs[0][i] = (dispatch_pkt.queue_v & ~dispatch_pkt.rs1_fp_v & comp_stage_r[i].ird_w_v & (dispatch_pkt.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr))
+                              || (dispatch_pkt.queue_v & dispatch_pkt.rs1_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr));
+      assign match_rs[1][i] = (dispatch_pkt.queue_v & ~dispatch_pkt.rs2_fp_v & comp_stage_r[i].ird_w_v & (dispatch_pkt.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr))
+                              || (dispatch_pkt.queue_v & dispatch_pkt.rs2_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr));
+      assign match_rs[2][i] = (dispatch_pkt.queue_v & dispatch_pkt.rs3_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt.instr.t.fmatype.rs3_addr == comp_stage_r[i].rd_addr));
 
       assign forward_data[i] = comp_stage_n[i+1].rd_data;
     end
@@ -211,8 +211,6 @@ module bp_be_calculator_top
 
      ,.reservation_i(reservation_r)
      ,.flush_i(commit_pkt.npc_w_v)
-
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
      ,.retire_v_i(exc_stage_r[2].v)
      ,.retire_queue_v_i(exc_stage_r[2].queue_v)

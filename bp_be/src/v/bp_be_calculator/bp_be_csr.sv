@@ -16,7 +16,6 @@ module bp_be_csr
    , localparam decode_info_width_lp = `bp_be_decode_info_width
    , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
    , localparam retire_pkt_width_lp = `bp_be_retire_pkt_width(vaddr_width_p)
-   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -32,7 +31,6 @@ module bp_be_csr
 
    // Misc interface
    , input [retire_pkt_width_lp-1:0]         retire_pkt_i
-   , input [ptw_fill_pkt_width_lp-1:0]       ptw_fill_pkt_i
    , input rv64_fflags_s                     fflags_acc_i
    , input                                   frf_w_v_i
 
@@ -67,7 +65,6 @@ module bp_be_csr
   bp_be_commit_pkt_s commit_pkt_cast_o;
   bp_be_decode_info_s decode_info_cast_o;
   bp_be_trans_info_s trans_info_cast_o;
-  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_retire_pkt_s retire_pkt;
 
   assign cfg_bus_cast_i = cfg_bus_i;
@@ -75,7 +72,6 @@ module bp_be_csr
   assign commit_pkt_o = commit_pkt_cast_o;
   assign decode_info_o = decode_info_cast_o;
   assign trans_info_o = trans_info_cast_o;
-  assign ptw_fill_pkt = ptw_fill_pkt_i;
   assign retire_pkt = retire_pkt_i;
   assign exception = retire_pkt.exception;
   assign special = retire_pkt.special;
@@ -642,7 +638,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.npc              = apc_n;
   assign commit_pkt_cast_o.vaddr            = retire_pkt.vaddr;
   assign commit_pkt_cast_o.instr            = retire_pkt.instr;
-  assign commit_pkt_cast_o.pte_leaf         = ptw_fill_pkt.entry;
+  assign commit_pkt_cast_o.pte_leaf         = retire_pkt.data;
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;
@@ -657,8 +653,8 @@ module bp_be_csr
   assign commit_pkt_cast_o.dtlb_store_miss  = exception.dtlb_store_miss;
   assign commit_pkt_cast_o.dtlb_load_miss   = exception.dtlb_load_miss;
   assign commit_pkt_cast_o.dcache_miss      = exception.dcache_miss;;
-  assign commit_pkt_cast_o.itlb_fill_v      = ptw_fill_pkt.itlb_fill_v;
-  assign commit_pkt_cast_o.dtlb_fill_v      = ptw_fill_pkt.dtlb_fill_v;
+  assign commit_pkt_cast_o.itlb_fill_v      = exception.itlb_fill;
+  assign commit_pkt_cast_o.dtlb_fill_v      = exception.dtlb_fill;
   assign commit_pkt_cast_o.rollback         = |exception;
 
   assign trans_info_cast_o.priv_mode = priv_mode_r;

@@ -23,7 +23,6 @@ module bp_be_pipe_sys
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam exception_width_lp    = $bits(bp_be_exception_s)
    , localparam special_width_lp      = $bits(bp_be_special_s)
-   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam decode_info_width_lp  = `bp_be_decode_info_width
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
@@ -42,8 +41,6 @@ module bp_be_pipe_sys
    , input [dpath_width_gp-1:0]           retire_data_i
    , input [exception_width_lp-1:0]       retire_exception_i
    , input [special_width_lp-1:0]         retire_special_i
-
-   , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
 
    , output logic [dpath_width_gp-1:0]    data_o
    , output logic                         satp_o
@@ -72,13 +69,11 @@ module bp_be_pipe_sys
   bp_be_decode_s decode;
   bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r;
   rv64_instr_s instr;
-  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_commit_pkt_s commit_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_decode_info_s decode_info;
   bp_be_trans_info_s trans_info;
 
-  assign ptw_fill_pkt = ptw_fill_pkt_i;
   assign commit_pkt_o = commit_pkt;
   assign iwb_pkt = iwb_pkt_i;
   assign fwb_pkt = fwb_pkt_i;
@@ -130,7 +125,6 @@ module bp_be_pipe_sys
      ,.interrupt_v_i(interrupt_v_i)
 
      ,.retire_pkt_i(retire_pkt)
-     ,.ptw_fill_pkt_i(ptw_fill_pkt_i)
      ,.commit_pkt_o(commit_pkt)
      ,.decode_info_o(decode_info)
      ,.trans_info_o(trans_info)
@@ -148,9 +142,7 @@ module bp_be_pipe_sys
       retire_npc_r <= reservation.pc;
       retire_pc_r  <= retire_npc_r;
 
-      //  The commit virtual address, which is rs1+imm for all actual instructions
-      //    and imm for out-of-band exceptions
-      retire_nvaddr_r <= reservation.queue_v ? rs1+imm : imm;
+      retire_nvaddr_r <= rs1+imm;
       retire_vaddr_r  <= retire_nvaddr_r;
 
       retire_ninstr_r <= reservation.instr;
@@ -162,7 +154,7 @@ module bp_be_pipe_sys
       ,queue_v   : retire_queue_v_i
       ,instret   : retire_v_i & ~|retire_exception_i
       ,npc       : retire_npc_r
-      ,vaddr     : retire_v_i ? retire_vaddr_r : ptw_fill_pkt.vaddr
+      ,vaddr     : retire_vaddr_r
       ,data      : retire_data_i
       ,instr     : retire_instr_r
       // Could do a preemptive onehot decode here

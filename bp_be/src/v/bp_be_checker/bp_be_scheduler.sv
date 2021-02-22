@@ -167,10 +167,9 @@ module bp_be_scheduler
 
   wire fe_exc_not_instr_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_exception);
   wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
-  wire be_exc_not_instr_li = ptw_fill_pkt.instr_page_fault_v
-                             | ptw_fill_pkt.load_page_fault_v
-                             | ptw_fill_pkt.store_page_fault_v;
+  wire be_exc_not_instr_li = ptw_fill_pkt.v;
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt.vaddr;
+  wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt.entry;
 
   wire fe_instr_not_exc_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_fetch);
 
@@ -206,12 +205,13 @@ module bp_be_scheduler
       dispatch_pkt.queue_v  = fe_queue_yumi_li;
       dispatch_pkt.pc       = expected_npc_i;
       dispatch_pkt.instr    = instr;
+      // If register injection is critical, can be done after bypass
       dispatch_pkt.rs1_fp_v = issue_pkt.frs1_v;
-      dispatch_pkt.rs1      = issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
+      dispatch_pkt.rs1      = be_exc_not_instr_li ? be_exc_vaddr_li : issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
       dispatch_pkt.rs2_fp_v = issue_pkt.frs2_v;
-      dispatch_pkt.rs2      = issue_pkt.frs2_v ? frf_rs2 : irf_rs2;
+      dispatch_pkt.rs2      = be_exc_not_instr_li ? be_exc_data_li  : issue_pkt.frs2_v ? frf_rs2 : irf_rs2;
       dispatch_pkt.rs3_fp_v = issue_pkt.frs3_v;
-      dispatch_pkt.imm      = issue_pkt.frs3_v ? frf_rs3 : be_exc_not_instr_li ? be_exc_vaddr_li : decoded_imm_lo;
+      dispatch_pkt.imm      = be_exc_not_instr_li ? '0              : issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
       dispatch_pkt.decode   = (fe_exc_not_instr_li || be_exc_not_instr_li || illegal_instr_lo) ? '0 : instr_decoded;
 
       dispatch_pkt.exception.instr_access_fault |=
@@ -228,6 +228,8 @@ module bp_be_scheduler
       dispatch_pkt.exception.instr_page_fault |= be_exc_not_instr_li & ptw_fill_pkt.instr_page_fault_v;
       dispatch_pkt.exception.load_page_fault  |= be_exc_not_instr_li & ptw_fill_pkt.load_page_fault_v;
       dispatch_pkt.exception.store_page_fault |= be_exc_not_instr_li & ptw_fill_pkt.store_page_fault_v;
+      dispatch_pkt.exception.itlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt.itlb_fill_v;
+      dispatch_pkt.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt.dtlb_fill_v;
 
       dispatch_pkt.exception.illegal_instr |= fe_instr_not_exc_li & illegal_instr_lo;
       dispatch_pkt.exception.ecall_m       |= fe_instr_not_exc_li & ecall_m_lo;
