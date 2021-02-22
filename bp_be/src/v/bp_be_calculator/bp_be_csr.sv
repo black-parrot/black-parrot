@@ -40,7 +40,6 @@ module bp_be_csr
    , input                                   external_irq_i
    , output logic                            irq_pending_o
    , output logic                            irq_waiting_o
-   , input                                   interrupt_v_i
 
    // The final commit packet
    , output logic [commit_pkt_width_lp-1:0]  commit_pkt_o
@@ -498,7 +497,7 @@ module bp_be_csr
             end
         end
 
-      if (interrupt_v_i)
+      if (exception._interrupt)
         begin
           if (m_interrupt_icode_v_li)
             begin

@@ -38,6 +38,7 @@ module bp_be_scheduler
   , input [vaddr_width_p-1:0]          expected_npc_i
   , input                              poison_isd_i
   , input                              dispatch_v_i
+  , input                              interrupt_v_i
   , input                              suppress_iss_i
   , input [decode_info_width_lp-1:0]   decode_info_i
 
@@ -167,7 +168,7 @@ module bp_be_scheduler
 
   wire fe_exc_not_instr_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_exception);
   wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
-  wire be_exc_not_instr_li = ptw_fill_pkt.v;
+  wire be_exc_not_instr_li = ptw_fill_pkt.v | interrupt_v_i;
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt.vaddr;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt.entry;
 
@@ -230,6 +231,7 @@ module bp_be_scheduler
       dispatch_pkt.exception.store_page_fault |= be_exc_not_instr_li & ptw_fill_pkt.store_page_fault_v;
       dispatch_pkt.exception.itlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt.itlb_fill_v;
       dispatch_pkt.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt.dtlb_fill_v;
+      dispatch_pkt.exception._interrupt       |= be_exc_not_instr_li & interrupt_v_i;
 
       dispatch_pkt.exception.illegal_instr |= fe_instr_not_exc_li & illegal_instr_lo;
       dispatch_pkt.exception.ecall_m       |= fe_instr_not_exc_li & ecall_m_lo;

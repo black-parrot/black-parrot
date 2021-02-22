@@ -244,6 +244,7 @@
     logic dcache_miss;
     logic itlb_fill;
     logic dtlb_fill;
+    logic _interrupt;
   }  bp_be_exception_s;
 
   typedef struct packed

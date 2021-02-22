@@ -44,8 +44,8 @@ module bp_be_detector
    , input                             replay_pending_i
 
    // Pipeline control signals from the checker to the calculator
-   , output logic                      chk_dispatch_v_o
-   , output logic                      chk_interrupt_v_o
+   , output logic                      dispatch_v_o
+   , output logic                      interrupt_v_o
    , input [dispatch_pkt_width_lp-1:0] dispatch_pkt_i
    , input [commit_pkt_width_lp-1:0]   commit_pkt_i
    , input [wb_pkt_width_lp-1:0]       iwb_pkt_i
@@ -274,9 +274,8 @@ module bp_be_detector
     end
 
   // Generate calculator control signals
-  assign chk_dispatch_v_o  = ~(control_haz_v | data_haz_v | struct_haz_v) & ~irq_pending_i;
-  // TODO: Inject into pipeline rather than "happening" at EX3
-  assign chk_interrupt_v_o = irq_pending_i & ~replay_pending_i & ~cfg_bus_cast_i.freeze & ~ptw_busy_i & ~dep_status_r[2].instr_v;
+  assign dispatch_v_o  = ~(control_haz_v | data_haz_v | struct_haz_v) & ~irq_pending_i;
+  assign interrupt_v_o = irq_pending_i & ~replay_pending_i & ~ptw_busy_i & ~cfg_bus_cast_i.freeze;
 
   always_comb
     begin

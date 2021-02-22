@@ -56,7 +56,6 @@ module bp_be_pipe_sys
    , input                                external_irq_i
    , output logic                         irq_pending_o
    , output logic                         irq_waiting_o
-   , input                                interrupt_v_i
 
    , output [decode_info_width_lp-1:0]    decode_info_o
    , output [trans_info_width_lp-1:0]     trans_info_o
@@ -122,7 +121,6 @@ module bp_be_pipe_sys
      ,.external_irq_i(external_irq_i)
      ,.irq_pending_o(irq_pending_o)
      ,.irq_waiting_o(irq_waiting_o)
-     ,.interrupt_v_i(interrupt_v_i)
 
      ,.retire_pkt_i(retire_pkt)
      ,.commit_pkt_o(commit_pkt)

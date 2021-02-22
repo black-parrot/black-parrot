@@ -80,7 +80,7 @@ module bp_be_top
   bp_be_branch_pkt_s   br_pkt;
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
 
-  logic chk_dispatch_v, chk_interrupt_v;
+  logic dispatch_v, interrupt_v;
   logic irq_pending_lo, irq_waiting_lo, replay_pending_lo;
 
   bp_be_commit_pkt_s commit_pkt;
@@ -138,8 +138,8 @@ module bp_be_top
      ,.irq_pending_i(irq_pending_lo)
      ,.replay_pending_i(replay_pending_lo)
 
-     ,.chk_dispatch_v_o(chk_dispatch_v)
-     ,.chk_interrupt_v_o(chk_interrupt_v)
+     ,.dispatch_v_o(dispatch_v)
+     ,.interrupt_v_o(interrupt_v)
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.commit_pkt_i(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt)
@@ -155,7 +155,8 @@ module bp_be_top
      ,.isd_status_o(isd_status)
      ,.expected_npc_i(expected_npc_lo)
      ,.poison_isd_i(poison_isd_lo)
-     ,.dispatch_v_i(chk_dispatch_v)
+     ,.dispatch_v_i(dispatch_v)
+     ,.interrupt_v_i(interrupt_v)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.decode_info_i(decode_info_lo)
 
@@ -221,7 +222,6 @@ module bp_be_top
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
-     ,.interrupt_v_i(chk_interrupt_v)
      ,.irq_pending_o(irq_pending_lo)
      ,.irq_waiting_o(irq_waiting_lo)
      ,.replay_pending_o(replay_pending_lo)
