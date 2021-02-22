@@ -212,10 +212,10 @@ module bp_be_calculator_top
 
      ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
-     ,.commit_v_i(exc_stage_r[2].v)
-     ,.commit_queue_v_i(exc_stage_r[2].queue_v)
-     ,.exception_i(exc_stage_r[2].exc)
-     ,.special_i(exc_stage_r[2].spec)
+     ,.retire_v_i(exc_stage_r[2].v)
+     ,.retire_queue_v_i(exc_stage_r[2].queue_v)
+     ,.retire_exception_i(exc_stage_r[2].exc)
+     ,.retire_special_i(exc_stage_r[2].spec)
      ,.commit_pkt_o(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt_o)
      ,.fwb_pkt_i(fwb_pkt_o)

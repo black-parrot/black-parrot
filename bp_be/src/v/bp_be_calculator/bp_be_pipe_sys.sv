@@ -37,10 +37,10 @@ module bp_be_pipe_sys
    , input [dispatch_pkt_width_lp-1:0]    reservation_i
    , input                                flush_i
 
-   , input                                commit_v_i
-   , input                                commit_queue_v_i
-   , input [exception_width_lp-1:0]       exception_i
-   , input [special_width_lp-1:0]         special_i
+   , input                                retire_v_i
+   , input                                retire_queue_v_i
+   , input [exception_width_lp-1:0]       retire_exception_i
+   , input [special_width_lp-1:0]         retire_special_i
 
    , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
 
@@ -102,34 +102,7 @@ module bp_be_pipe_sys
       csr_cmd_li.data     = csr_imm_op ? imm : rs1;
     end
 
-  logic [vaddr_width_p-1:0] commit_npc_r, commit_pc_r;
-  logic [vaddr_width_p-1:0] commit_nvaddr_r, commit_vaddr_r;
-  logic [instr_width_gp-1:0] commit_ninstr_r, commit_instr_r;
-
-  bp_be_exception_s exception_li;
-  bp_be_special_s special_li;
-  always_comb
-    if (commit_v_i)
-      begin
-        exception_li = exception_i;
-        special_li = special_i;
-      end
-    else
-      begin
-        exception_li = '0;
-        exception_li.instr_page_fault = ptw_fill_pkt.instr_page_fault_v;
-        exception_li.load_page_fault = ptw_fill_pkt.load_page_fault_v;
-        exception_li.store_page_fault = ptw_fill_pkt.store_page_fault_v;
-        special_li = '0;
-      end
-
-  wire ptw_page_fault_v  = ptw_fill_pkt.instr_page_fault_v | ptw_fill_pkt.load_page_fault_v | ptw_fill_pkt.store_page_fault_v;
-  wire exception_v_li = ptw_page_fault_v | commit_v_i;
-  wire exception_queue_v_li = commit_queue_v_i;
-  wire [vaddr_width_p-1:0] exception_npc_li = commit_npc_r;
-  wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_fill_pkt.vaddr : commit_vaddr_r;
-  wire [instr_width_gp-1:0] exception_instr_li = commit_instr_r;
-
+  bp_be_retire_pkt_s retire_pkt;
   logic [dword_width_gp-1:0] csr_data_lo;
   bp_be_csr
    #(.bp_params_p(bp_params_p))
@@ -148,15 +121,6 @@ module bp_be_pipe_sys
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
      ,.frf_w_v_i(fwb_pkt.frd_w_v)
 
-     ,.exception_v_i(exception_v_li)
-     ,.exception_queue_v_i(exception_queue_v_li)
-     ,.exception_npc_i(exception_npc_li)
-     ,.exception_vaddr_i(exception_vaddr_li)
-     ,.exception_instr_i(exception_instr_li)
-     ,.exception_i(exception_li)
-     ,.special_i(special_li)
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
-
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.external_irq_i(external_irq_i)
@@ -164,6 +128,8 @@ module bp_be_pipe_sys
      ,.irq_waiting_o(irq_waiting_o)
      ,.interrupt_v_i(interrupt_v_i)
 
+     ,.retire_pkt_i(retire_pkt)
+     ,.ptw_fill_pkt_i(ptw_fill_pkt_i)
      ,.commit_pkt_o(commit_pkt)
      ,.decode_info_o(decode_info)
      ,.trans_info_o(trans_info)
@@ -173,17 +139,38 @@ module bp_be_pipe_sys
   assign data_o = csr_data_lo;
   assign v_o    = sys_v_li;
 
+  logic [vaddr_width_p-1:0] retire_npc_r, retire_pc_r;
+  logic [vaddr_width_p-1:0] retire_nvaddr_r, retire_vaddr_r;
+  logic [instr_width_gp-1:0] retire_ninstr_r, retire_instr_r;
   always_ff @(posedge clk_i)
     begin
-      commit_npc_r <= reservation.pc;
-      commit_pc_r  <= commit_npc_r;
+      retire_npc_r <= reservation.pc;
+      retire_pc_r  <= retire_npc_r;
 
-      commit_nvaddr_r <= rs1 + imm;
-      commit_vaddr_r  <= commit_nvaddr_r;
+      retire_nvaddr_r <= rs1 + imm;
+      retire_vaddr_r  <= retire_nvaddr_r;
 
-      commit_ninstr_r <= reservation.instr;
-      commit_instr_r  <= commit_ninstr_r;
+      retire_ninstr_r <= reservation.instr;
+      retire_instr_r  <= retire_ninstr_r;
     end
+
+  wire ptw_page_fault_v =
+    |{ptw_fill_pkt.instr_page_fault_v, ptw_fill_pkt.load_page_fault_v, ptw_fill_pkt.store_page_fault_v};
+  assign retire_pkt =
+    '{v          : retire_v_i | ptw_page_fault_v
+      ,queue_v   : retire_queue_v_i
+      ,instret   : retire_v_i & ~|retire_exception_i
+      ,npc       : retire_npc_r
+      ,vaddr     : ptw_page_fault_v ? ptw_fill_pkt.vaddr : retire_vaddr_r
+      ,instr     : retire_instr_r
+      // Could do a preemptive onehot decode here
+      ,exception : retire_v_i ? retire_exception_i : '{instr_page_fault: ptw_fill_pkt.instr_page_fault_v
+                                                       ,load_page_fault: ptw_fill_pkt.load_page_fault_v
+                                                       ,store_page_fault: ptw_fill_pkt.store_page_fault_v
+                                                       ,default: '0
+                                                       }
+      ,special   : retire_v_i ? retire_special_i   : '0
+      };
 
 endmodule
 
