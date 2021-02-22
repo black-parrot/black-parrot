@@ -242,7 +242,8 @@
     logic dtlb_load_miss;
     logic dtlb_store_miss;
     logic dcache_miss;
-
+    logic itlb_fill;
+    logic dtlb_fill;
   }  bp_be_exception_s;
 
   typedef struct packed
