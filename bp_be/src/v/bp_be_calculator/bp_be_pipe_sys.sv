@@ -155,7 +155,7 @@ module bp_be_pipe_sys
      ,.exception_instr_i(exception_instr_li)
      ,.exception_i(exception_li)
      ,.special_i(special_li)
-     ,.ptw_fill_pkt_i(ptw_fill_pkt_i)
+     ,.ptw_fill_pkt_i(ptw_fill_pkt)
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
@@ -169,6 +169,9 @@ module bp_be_pipe_sys
      ,.trans_info_o(trans_info)
      ,.frm_dyn_o(frm_dyn_o)
      );
+  wire sys_v_li = reservation.v & reservation.decode.pipe_sys_v;
+  assign data_o = csr_data_lo;
+  assign v_o    = sys_v_li;
 
   always_ff @(posedge clk_i)
     begin
@@ -181,11 +184,6 @@ module bp_be_pipe_sys
       commit_ninstr_r <= reservation.instr;
       commit_instr_r  <= commit_ninstr_r;
     end
-
-  assign data_o           = csr_data_lo;
-
-  wire sys_v_li = reservation.v & reservation.decode.pipe_sys_v;
-  assign v_o = sys_v_li;
 
 endmodule
 
