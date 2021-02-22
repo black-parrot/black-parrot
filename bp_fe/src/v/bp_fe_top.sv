@@ -254,12 +254,13 @@ module bp_fe_top
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = '{vaddr: next_pc_lo
-                        ,op  : icache_fence_v ? e_icache_fencei : e_icache_fetch
+                        //,op  : icache_fence_v ? e_icache_fencei : e_icache_fetch
+                        ,op  : icache_fence_v ? e_icache_fencei : e_icache_fill
                         };
   // TODO: Should only ack icache fence when icache_ready
   wire icache_v_li = next_pc_yumi_li | icache_fence_v;
   logic [instr_width_gp-1:0] icache_data_lo;
-  logic icache_ready_lo, icache_data_v_lo;
+  logic icache_ready_lo, icache_data_v_lo, icache_miss_v_lo;
   logic icache_poison_tl, icache_poison_tv;
   bp_fe_icache
    #(.bp_params_p(bp_params_p))
@@ -280,6 +281,7 @@ module bp_fe_top
 
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
+     ,.miss_v_o(icache_miss_v_lo)
      ,.poison_tv_i(icache_poison_tv)
 
      ,.cache_req_o(cache_req_o)
@@ -335,7 +337,7 @@ module bp_fe_top
 
   wire icache_miss    = v_if2_r & ~icache_data_v_lo;
   wire queue_miss     = v_if2_r & ~fe_queue_ready_i;
-  wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r);
+  wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
   wire fe_instr_v     = v_if2_r & icache_data_v_lo;
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
 
@@ -362,7 +364,9 @@ module bp_fe_top
                                                        ? e_itlb_miss
                                                        : instr_page_fault_r
                                                          ? e_instr_page_fault
-                                                         : e_instr_access_fault;
+                                                         : instr_access_fault_r
+                                                           ? e_instr_access_fault
+                                                           : e_icache_miss;
       end
     else
       begin
@@ -386,11 +390,11 @@ module bp_fe_top
       // Transition to stall if we don't successfully complete the fetch for whatever reason
       e_run  : state_n = pc_redirect_v
                          ? e_run
-                         : stall
-                           ? e_stall
-                           : fetch_exception_v_li
-                             ? e_wait
-                              : e_run;
+                         : fetch_exception_v_li
+                           ? e_wait
+                           : stall
+                             ? e_stall
+                             : e_run;
       default: state_n = e_wait;
     endcase
 
