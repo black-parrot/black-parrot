@@ -197,9 +197,9 @@ module bp_be_csr
         ,ecall_u_mode       : exception.ecall_u
         ,ecall_s_mode       : exception.ecall_s
         ,ecall_m_mode       : exception.ecall_m
-        ,instr_page_fault   : exception.instr_page_fault | ptw_fill_pkt.instr_page_fault_v
-        ,load_page_fault    : exception.load_page_fault | ptw_fill_pkt.load_page_fault_v
-        ,store_page_fault   : exception.store_page_fault | ptw_fill_pkt.store_page_fault_v
+        ,instr_page_fault   : exception.instr_page_fault
+        ,load_page_fault    : exception.load_page_fault
+        ,store_page_fault   : exception.store_page_fault
         ,default : '0
         };
 

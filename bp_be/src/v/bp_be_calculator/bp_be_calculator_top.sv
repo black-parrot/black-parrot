@@ -28,6 +28,7 @@ module bp_be_calculator_top
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
+   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam decode_info_width_lp    = `bp_be_decode_info_width
 
@@ -52,6 +53,7 @@ module bp_be_calculator_top
   , output logic [branch_pkt_width_lp-1:0]          br_pkt_o
   , output logic [wb_pkt_width_lp-1:0]              iwb_pkt_o
   , output logic [wb_pkt_width_lp-1:0]              fwb_pkt_o
+  , output logic [ptw_fill_pkt_width_lp-1:0]        ptw_fill_pkt_o
 
   , input                                           timer_irq_i
   , input                                           software_irq_i
@@ -390,6 +392,8 @@ module bp_be_calculator_top
                 }
             : comp_stage_r[i-1];
         end
+      // Injected instructions can carry a payload in rs2 
+      comp_stage_n[0].rd_data    |= ~dispatch_pkt.queue_v    ? dispatch_pkt.rs2       : '0;
       comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo       : '0;
       comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo       : '0;
       comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo       : '0;
@@ -479,6 +483,8 @@ module bp_be_calculator_top
 
   assign iwb_pkt_o = pipe_long_idata_lo_yumi ? long_iwb_pkt : comp_stage_r[4];
   assign fwb_pkt_o = pipe_long_fdata_lo_yumi ? long_fwb_pkt : comp_stage_r[5];
+
+  assign ptw_fill_pkt_o = ptw_fill_pkt;
 
   assign mem_ready_o  = pipe_mem_ready_lo;
   assign long_ready_o = pipe_long_ready_lo;

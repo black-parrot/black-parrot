@@ -84,6 +84,7 @@ module bp_be_top
   logic irq_pending_lo, irq_waiting_lo, replay_pending_lo;
 
   bp_be_commit_pkt_s commit_pkt;
+  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_decode_info_s decode_info_lo;
 
@@ -165,6 +166,7 @@ module bp_be_top
      ,.dispatch_pkt_o(dispatch_pkt)
 
      ,.commit_pkt_i(commit_pkt)
+     ,.ptw_fill_pkt_i(ptw_fill_pkt)
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
      );
@@ -186,6 +188,7 @@ module bp_be_top
 
      ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)
+     ,.ptw_fill_pkt_o(ptw_fill_pkt)
      ,.iwb_pkt_o(iwb_pkt)
      ,.fwb_pkt_o(fwb_pkt)
 

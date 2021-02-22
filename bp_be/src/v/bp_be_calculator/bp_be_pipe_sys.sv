@@ -148,29 +148,25 @@ module bp_be_pipe_sys
       retire_npc_r <= reservation.pc;
       retire_pc_r  <= retire_npc_r;
 
-      retire_nvaddr_r <= rs1 + imm;
+      //  The commit virtual address, which is rs1+imm for all actual instructions
+      //    and imm for out-of-band exceptions
+      retire_nvaddr_r <= reservation.queue_v ? rs1+imm : imm;
       retire_vaddr_r  <= retire_nvaddr_r;
 
       retire_ninstr_r <= reservation.instr;
       retire_instr_r  <= retire_ninstr_r;
     end
 
-  wire ptw_page_fault_v =
-    |{ptw_fill_pkt.instr_page_fault_v, ptw_fill_pkt.load_page_fault_v, ptw_fill_pkt.store_page_fault_v};
   assign retire_pkt =
-    '{v          : retire_v_i | ptw_page_fault_v
+    '{v          : retire_v_i
       ,queue_v   : retire_queue_v_i
       ,instret   : retire_v_i & ~|retire_exception_i
       ,npc       : retire_npc_r
-      ,vaddr     : ptw_page_fault_v ? ptw_fill_pkt.vaddr : retire_vaddr_r
+      ,vaddr     : retire_v_i ? retire_vaddr_r : ptw_fill_pkt.vaddr
       ,data      : retire_data_i
       ,instr     : retire_instr_r
       // Could do a preemptive onehot decode here
-      ,exception : retire_v_i ? retire_exception_i : '{instr_page_fault: ptw_fill_pkt.instr_page_fault_v
-                                                       ,load_page_fault: ptw_fill_pkt.load_page_fault_v
-                                                       ,store_page_fault: ptw_fill_pkt.store_page_fault_v
-                                                       ,default: '0
-                                                       }
+      ,exception : retire_v_i ? retire_exception_i : '0
       ,special   : retire_v_i ? retire_special_i   : '0
       };
 
