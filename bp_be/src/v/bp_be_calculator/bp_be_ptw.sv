@@ -115,6 +115,7 @@ module bp_be_ptw
   wire ad_fault                 = pte_is_leaf & (~dcache_data.a | (ptw_miss_pkt_r.store_miss_v & ~dcache_data.d));
   wire common_faults            = pte_invalid | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
 
+  assign ptw_fill_pkt_cast_o.v                  = (state_r == eWriteBack) || page_fault_v;
   assign ptw_fill_pkt_cast_o.itlb_fill_v        = (state_r == eWriteBack) &  ptw_miss_pkt_r.instr_miss_v;
   assign ptw_fill_pkt_cast_o.dtlb_fill_v        = (state_r == eWriteBack) & ~ptw_miss_pkt_r.instr_miss_v;
   assign ptw_fill_pkt_cast_o.instr_page_fault_v = busy_o
@@ -128,9 +129,9 @@ module bp_be_ptw
     & (common_faults | (pte_is_leaf & ~dcache_data.w));
   assign ptw_fill_pkt_cast_o.vaddr              = ptw_miss_pkt_r.vaddr;
   assign ptw_fill_pkt_cast_o.entry              = tlb_w_entry;
-  assign ptw_fill_pkt_cast_o.gigapage           = pte_is_gigapage;
 
   assign tlb_w_entry.ptag       = writeback_ppn;
+  assign tlb_w_entry.gigapage   = pte_is_gigapage;
   assign tlb_w_entry.a          = dcache_data.a;
   assign tlb_w_entry.d          = dcache_data.d;
   assign tlb_w_entry.u          = dcache_data.u;

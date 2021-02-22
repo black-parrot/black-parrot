@@ -643,7 +643,6 @@ module bp_be_csr
   assign commit_pkt_cast_o.vaddr            = retire_pkt.vaddr;
   assign commit_pkt_cast_o.instr            = retire_pkt.instr;
   assign commit_pkt_cast_o.pte_leaf         = ptw_fill_pkt.entry;
-  assign commit_pkt_cast_o.pte_gigapage     = ptw_fill_pkt.gigapage;
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;

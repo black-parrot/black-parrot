@@ -116,12 +116,13 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [paddr_width_mp-page_offset_width_gp-1:0] ptag;                                        \
-      logic                                              a;                                        \
-      logic                                              d;                                        \
-      logic                                              u;                                        \
-      logic                                              x;                                        \
-      logic                                              w;                                        \
-      logic                                              r;                                        \
+      logic                                           gigapage;                                    \
+      logic                                           a;                                           \
+      logic                                           d;                                           \
+      logic                                           u;                                           \
+      logic                                           x;                                           \
+      logic                                           w;                                           \
+      logic                                           r;                                           \
     }  bp_be_pte_leaf_s;                                                                           \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -134,7 +135,6 @@
       logic [vaddr_width_p-1:0]       vaddr;                                                       \
       rv64_instr_s                    instr;                                                       \
       bp_be_pte_leaf_s                pte_leaf;                                                    \
-      logic                           pte_gigapage;                                                \
       logic [rv64_priv_width_gp-1:0]  priv_n;                                                      \
       logic                           translation_en_n;                                            \
       logic                           exception;                                                   \
@@ -175,9 +175,9 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
+      logic v;                                                                                     \
       logic itlb_fill_v;                                                                           \
       logic dtlb_fill_v;                                                                           \
-      logic gigapage;                                                                              \
       logic instr_page_fault_v;                                                                    \
       logic load_page_fault_v;                                                                     \
       logic store_page_fault_v;                                                                    \
@@ -240,10 +240,10 @@
     (3 + 2*vaddr_width_mp + instr_width_gp + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
 
   `define bp_be_pte_leaf_width(paddr_width_mp) \
-    (paddr_width_mp - page_offset_width_gp + 6)
+    (paddr_width_mp - page_offset_width_gp + 7)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 17)
+    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 16)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \

@@ -170,7 +170,6 @@ module bp_be_director
           fe_cmd_li.opcode                               = e_op_itlb_fill_response;
           fe_cmd_li.vaddr                                = commit_pkt.npc;
           fe_cmd_li.operands.itlb_fill_response.pte_leaf = commit_pkt.pte_leaf;
-          fe_cmd_li.operands.itlb_fill_response.gigapage = commit_pkt.pte_gigapage;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end

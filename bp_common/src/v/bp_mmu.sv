@@ -26,7 +26,6 @@ module bp_mmu
    , input                                            w_v_i
    , input [vtag_width_p-1:0]                         w_vtag_i
    , input [entry_width_lp-1:0]                       w_entry_i
-   , input                                            w_gigapage_i
 
    , input                                            r_v_i
    , input                                            r_instr_i
@@ -96,7 +95,6 @@ module bp_mmu
      ,.w_i(w_v_i)
      ,.vtag_i(w_vtag_li)
      ,.entry_i(w_entry_i)
-     ,.gigapage_i(w_gigapage_i)
 
      ,.v_o(tlb_r_v_lo)
      ,.entry_o(tlb_r_entry_lo)
