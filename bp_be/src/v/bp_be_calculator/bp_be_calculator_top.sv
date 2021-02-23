@@ -92,13 +92,9 @@ module bp_be_calculator_top
   `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  // Cast input and output ports
-  bp_be_dispatch_pkt_s   dispatch_pkt;
-  bp_be_wb_pkt_s         long_iwb_pkt, long_fwb_pkt;
-  bp_be_commit_pkt_s     commit_pkt;
+  `bp_cast_i(bp_be_dispatch_pkt_s, dispatch_pkt);
+  `bp_cast_o(bp_be_commit_pkt_s, commit_pkt);
 
-  assign dispatch_pkt = dispatch_pkt_i;
-  assign commit_pkt_o = commit_pkt;
 
   // Pipeline stage registers
   bp_be_exc_stage_s      [pipe_stage_els_lp  :0] exc_stage_n;
@@ -110,6 +106,8 @@ module bp_be_calculator_top
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_trans_info_s   trans_info_lo;
   rv64_frm_e           frm_dyn_lo;
+
+  bp_be_wb_pkt_s long_iwb_pkt, long_fwb_pkt;
 
   logic pipe_mem_dtlb_store_miss_lo;
   logic pipe_mem_dtlb_load_miss_lo;
@@ -200,7 +198,6 @@ module bp_be_calculator_top
 
   // Computation pipelines
   // System pipe: 3 cycle latency
-  logic pipe_long_ready_lo;
   bp_be_pipe_sys
    #(.bp_params_p(bp_params_p))
    pipe_sys
@@ -267,7 +264,6 @@ module bp_be_calculator_top
      ,.v_o(pipe_aux_data_lo_v)
      );
 
-  logic pipe_mem_ready_lo;
   // Memory pipe: 2/3 cycle latency
   bp_be_pipe_mem
    #(.bp_params_p(bp_params_p))
@@ -281,10 +277,10 @@ module bp_be_calculator_top
      ,.sfence_i(commit_pkt.sfence)
 
      ,.reservation_i(reservation_r)
-     ,.ready_o(pipe_mem_ready_lo)
+     ,.ready_o(mem_ready_o)
 
      ,.commit_pkt_i(commit_pkt)
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
+     ,.ptw_fill_pkt_o(ptw_fill_pkt_o)
      ,.ptw_busy_o(ptw_busy_o)
 
      ,.cache_req_o(cache_req_o)
@@ -359,7 +355,7 @@ module bp_be_calculator_top
 
      ,.reservation_i(reservation_r)
      ,.flush_i(commit_pkt.npc_w_v)
-     ,.ready_o(pipe_long_ready_lo)
+     ,.ready_o(long_ready_o)
      ,.frm_dyn_i(frm_dyn_lo)
 
      ,.iwb_pkt_o(long_iwb_pkt)
@@ -479,11 +475,6 @@ module bp_be_calculator_top
 
   assign iwb_pkt_o = pipe_long_idata_lo_yumi ? long_iwb_pkt : comp_stage_r[4];
   assign fwb_pkt_o = pipe_long_fdata_lo_yumi ? long_fwb_pkt : comp_stage_r[5];
-
-  assign ptw_fill_pkt_o = ptw_fill_pkt;
-
-  assign mem_ready_o  = pipe_mem_ready_lo;
-  assign long_ready_o = pipe_long_ready_lo;
 
 endmodule
 

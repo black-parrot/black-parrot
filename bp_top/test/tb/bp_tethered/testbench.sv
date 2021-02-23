@@ -283,13 +283,13 @@ module testbench
            ,.mcause_i(calculator.pipe_sys.csr.mcause_lo)
            ,.scause_i(calculator.pipe_sys.csr.scause_lo)
 
-           ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
-           ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
-           ,.ird_data_i(scheduler.iwb_pkt.rd_data)
+           ,.ird_w_v_i(scheduler.iwb_pkt_cast_i.ird_w_v)
+           ,.ird_addr_i(scheduler.iwb_pkt_cast_i.rd_addr)
+           ,.ird_data_i(scheduler.iwb_pkt_cast_i.rd_data)
 
-           ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
-           ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
-           ,.frd_data_i(scheduler.fwb_pkt.rd_data)
+           ,.frd_w_v_i(scheduler.fwb_pkt_cast_i.frd_w_v)
+           ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
+           ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
            );
 
       bind bp_be_dcache
@@ -448,7 +448,7 @@ module testbench
 
            ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)
            ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
-           ,.dcache_rollback(be.scheduler.commit_pkt.rollback)
+           ,.dcache_rollback(be.scheduler.commit_pkt_cast_i.rollback)
            ,.long_haz(be.detector.long_haz_v)
            ,.exception(be.director.commit_pkt.exception | be.director.commit_pkt.satp)
            ,.eret(be.director.commit_pkt.eret)

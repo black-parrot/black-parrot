@@ -61,26 +61,17 @@ module bp_be_scheduler
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  // Cast input and output ports
-  bp_be_isd_status_s isd_status_cast_o;
-  rv64_instr_s       instr;
-  bp_be_commit_pkt_s commit_pkt;
-  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
-  bp_be_wb_pkt_s     iwb_pkt, fwb_pkt;
+  `bp_cast_o(bp_be_isd_status_s, isd_status);
+  `bp_cast_i(bp_be_ptw_fill_pkt_s, ptw_fill_pkt);
+  `bp_cast_i(bp_be_commit_pkt_s, commit_pkt);
+  `bp_cast_i(bp_be_wb_pkt_s, iwb_pkt);
+  `bp_cast_i(bp_be_wb_pkt_s, fwb_pkt);
 
   bp_fe_queue_s fe_queue_lo;
   logic fe_queue_v_lo, fe_queue_yumi_li;
-
-  assign isd_status_o    = isd_status_cast_o;
-  assign instr           = fe_queue_lo.msg.fetch.instr;
-  assign commit_pkt      = commit_pkt_i;
-  assign ptw_fill_pkt    = ptw_fill_pkt_i;
-  assign iwb_pkt         = iwb_pkt_i;
-  assign fwb_pkt         = fwb_pkt_i;
-
   wire fe_queue_clr_li  = suppress_iss_i;
-  wire fe_queue_deq_li  = commit_pkt.queue_v & ~commit_pkt.rollback;
-  wire fe_queue_roll_li = commit_pkt.rollback;
+  wire fe_queue_deq_li  = commit_pkt_cast_i.queue_v & ~commit_pkt_cast_i.rollback;
+  wire fe_queue_roll_li = commit_pkt_cast_i.rollback;
   bp_be_issue_pkt_s preissue_pkt, issue_pkt;
   bp_be_issue_queue
    #(.bp_params_p(bp_params_p))
@@ -111,9 +102,9 @@ module bp_be_scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.rd_w_v_i(iwb_pkt.ird_w_v)
-     ,.rd_addr_i(iwb_pkt.rd_addr)
-     ,.rd_data_i(iwb_pkt.rd_data[0+:dword_width_gp])
+     ,.rd_w_v_i(iwb_pkt_cast_i.ird_w_v)
+     ,.rd_addr_i(iwb_pkt_cast_i.rd_addr)
+     ,.rd_data_i(iwb_pkt_cast_i.rd_data[0+:dword_width_gp])
 
      ,.rs_r_v_i({preissue_pkt.irs2_v, preissue_pkt.irs1_v})
      ,.rs_addr_i({preissue_pkt.rs2_addr, preissue_pkt.rs1_addr})
@@ -127,9 +118,9 @@ module bp_be_scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.rd_w_v_i(fwb_pkt.frd_w_v)
-     ,.rd_addr_i(fwb_pkt.rd_addr)
-     ,.rd_data_i(fwb_pkt.rd_data)
+     ,.rd_w_v_i(fwb_pkt_cast_i.frd_w_v)
+     ,.rd_addr_i(fwb_pkt_cast_i.rd_addr)
+     ,.rd_data_i(fwb_pkt_cast_i.rd_data)
 
      ,.rs_r_v_i({preissue_pkt.frs3_v, preissue_pkt.frs2_v, preissue_pkt.frs1_v})
      ,.rs_addr_i({preissue_pkt.rs3_addr, preissue_pkt.rs2_addr, preissue_pkt.rs1_addr})
@@ -168,9 +159,9 @@ module bp_be_scheduler
 
   wire fe_exc_not_instr_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_exception);
   wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
-  wire be_exc_not_instr_li = ptw_fill_pkt.v | interrupt_v_i;
-  wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt.vaddr;
-  wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt.entry;
+  wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i;
+  wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
+  wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
 
   wire fe_instr_not_exc_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_fetch);
 
@@ -190,13 +181,13 @@ module bp_be_scheduler
       isd_status_cast_o.long_v   = fe_queue_v_lo & issue_pkt.long_v;
       isd_status_cast_o.irs1_v   = fe_queue_v_lo & issue_pkt.irs1_v;
       isd_status_cast_o.frs1_v   = fe_queue_v_lo & issue_pkt.frs1_v;
-      isd_status_cast_o.rs1_addr = instr.t.fmatype.rs1_addr;
+      isd_status_cast_o.rs1_addr = fe_queue_lo.msg.fetch.instr.t.fmatype.rs1_addr;
       isd_status_cast_o.irs2_v   = fe_queue_v_lo & issue_pkt.irs2_v;
       isd_status_cast_o.frs2_v   = fe_queue_v_lo & issue_pkt.frs2_v;
-      isd_status_cast_o.rs2_addr = instr.t.fmatype.rs2_addr;
+      isd_status_cast_o.rs2_addr = fe_queue_lo.msg.fetch.instr.t.fmatype.rs2_addr;
       isd_status_cast_o.frs3_v   = fe_queue_v_lo & issue_pkt.frs3_v;
-      isd_status_cast_o.rs3_addr = instr.t.fmatype.rs3_addr;
-      isd_status_cast_o.rd_addr  = instr.t.fmatype.rd_addr;
+      isd_status_cast_o.rs3_addr = fe_queue_lo.msg.fetch.instr.t.fmatype.rs3_addr;
+      isd_status_cast_o.rd_addr  = fe_queue_lo.msg.fetch.instr.t.fmatype.rd_addr;
       isd_status_cast_o.iwb_v    = instr_decoded.irf_w_v;
       isd_status_cast_o.fwb_v    = instr_decoded.frf_w_v;
 
@@ -205,7 +196,7 @@ module bp_be_scheduler
       dispatch_pkt.v        = (fe_queue_yumi_li & ~poison_isd_i) || be_exc_not_instr_li;
       dispatch_pkt.queue_v  = fe_queue_yumi_li;
       dispatch_pkt.pc       = expected_npc_i;
-      dispatch_pkt.instr    = instr;
+      dispatch_pkt.instr    = fe_queue_lo.msg.fetch.instr;
       // If register injection is critical, can be done after bypass
       dispatch_pkt.rs1_fp_v = issue_pkt.frs1_v;
       dispatch_pkt.rs1      = be_exc_not_instr_li ? be_exc_vaddr_li : issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
@@ -226,11 +217,11 @@ module bp_be_scheduler
       dispatch_pkt.exception.icache_miss        |=
         fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_icache_miss};
 
-      dispatch_pkt.exception.instr_page_fault |= be_exc_not_instr_li & ptw_fill_pkt.instr_page_fault_v;
-      dispatch_pkt.exception.load_page_fault  |= be_exc_not_instr_li & ptw_fill_pkt.load_page_fault_v;
-      dispatch_pkt.exception.store_page_fault |= be_exc_not_instr_li & ptw_fill_pkt.store_page_fault_v;
-      dispatch_pkt.exception.itlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt.itlb_fill_v;
-      dispatch_pkt.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt.dtlb_fill_v;
+      dispatch_pkt.exception.instr_page_fault |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_page_fault_v;
+      dispatch_pkt.exception.load_page_fault  |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.load_page_fault_v;
+      dispatch_pkt.exception.store_page_fault |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.store_page_fault_v;
+      dispatch_pkt.exception.itlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.itlb_fill_v;
+      dispatch_pkt.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.dtlb_fill_v;
       dispatch_pkt.exception._interrupt       |= be_exc_not_instr_li & interrupt_v_i;
 
       dispatch_pkt.exception.illegal_instr |= fe_instr_not_exc_li & illegal_instr_lo;

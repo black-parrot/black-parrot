@@ -40,7 +40,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [vaddr_width_mp-1:0]                pc;                                                \
-      logic [instr_width_gp-1:0]                instr;                                             \
+      rv64_instr_s                              instr;                                             \
       logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                               \
                                                                                                    \
       logic [`bp_fe_fetch_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)-1:0]         \

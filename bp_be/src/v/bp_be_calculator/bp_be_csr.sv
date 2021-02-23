@@ -66,7 +66,6 @@ module bp_be_csr
   logic [dword_width_gp-1:0] csr_data_li, csr_data_lo;
   logic exception_v_lo, interrupt_v_lo;
 
-
   rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
   rv64_mie_s sie_rwmask_li;
   rv64_mip_s sip_wmask_li, sip_rmask_li, mip_wmask_li;
