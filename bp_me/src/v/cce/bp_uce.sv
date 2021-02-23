@@ -19,6 +19,8 @@ module bp_uce
     , parameter data_mem_invert_clk_p = 0
     , parameter stat_mem_invert_clk_p = 0
 
+    , parameter metadata_latency_p    = 0
+
     , localparam bank_width_lp = block_width_p / assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
     , localparam byte_offset_width_lp  = `BSG_SAFE_CLOG2(bank_width_lp>>3)
@@ -140,7 +142,9 @@ module bp_uce
 
   logic cache_req_metadata_v_r;
   bsg_dff_reset_set_clear
-   #(.width_p(1))
+   #(.width_p(1)
+     ,.clear_over_set_p((metadata_latency_p == 1))
+     )
    metadata_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -792,5 +796,10 @@ module bp_uce
     else
       state_r <= state_n;
 
-endmodule
+always_ff @(negedge clk_i)
+  begin
+    assert((metadata_latency_p < 2))
+      else $error("metadata needs to arrive within one cycle of the request");
+  end
 
+endmodule

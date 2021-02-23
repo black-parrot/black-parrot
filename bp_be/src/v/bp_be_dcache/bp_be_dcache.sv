@@ -840,8 +840,8 @@ module bp_be_dcache
     end
 
   // Cache metadata is valid after the request goes out,
-  //   but no metadata for writethroughs or flushes
-  wire cache_req_metadata_v = (cache_req_yumi_i & ~wt_req & ~fencei_req);
+  //   but no metadata for flushes
+  wire cache_req_metadata_v = (cache_req_yumi_i & ~fencei_req);
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
