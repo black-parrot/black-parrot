@@ -40,6 +40,7 @@ module wrapper
    , input                                   ptag_v_i
 
    , input                                   uncached_i
+   , input                                   nonidem_i
 
    , output [instr_width_gp-1:0]             data_o
    , output                                  data_v_o
@@ -83,6 +84,7 @@ module wrapper
   // Rolly fifo signals
   logic [ptag_width_p-1:0] rolly_ptag_lo;
   logic [vaddr_width_p-1:0] rolly_vaddr_lo;
+  logic rolly_nonidem_lo;
   logic rolly_uncached_lo;
   logic rolly_v_lo;
   logic rolly_yumi_li;
@@ -92,7 +94,7 @@ module wrapper
   logic rollback_li, rolly_yumi_rr;
 
   bsg_fifo_1r1w_rolly
-   #(.width_p(vaddr_width_p+ptag_width_p+1), .els_p(8))
+   #(.width_p(vaddr_width_p+ptag_width_p+2), .els_p(8))
    rolly_icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -101,11 +103,11 @@ module wrapper
      ,.deq_v_i(data_v_o)
      ,.roll_v_i(rollback_li)
 
-     ,.data_i({uncached_i, vaddr_i, ptag_i})
+     ,.data_i({non_idem_i, uncached_i, vaddr_i, ptag_i})
      ,.v_i(vaddr_v_i)
      ,.ready_o(vaddr_ready_o)
 
-     ,.data_o({rolly_uncached_lo, rolly_vaddr_lo, rolly_ptag_lo})
+     ,.data_o({rolly_nonidem_lo, rolly_uncached_lo, rolly_vaddr_lo, rolly_ptag_lo})
      ,.v_o(rolly_v_lo)
      ,.yumi_i(rolly_yumi_li)
      );
@@ -131,15 +133,15 @@ module wrapper
      ,.data_o(rolly_ptag_r)
      );
 
-  logic ptag_v_r, uncached_r;
+  logic ptag_v_r, uncached_r, nonidem_r;
   bsg_dff_reset
    #(.width_p(2))
    ptag_v_dff
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({rolly_uncached_lo, rolly_v_lo})
-     ,.data_o({uncached_r, ptag_v_r})
+     ,.data_i({rolly_nonidem_lo, rolly_uncached_lo, rolly_v_lo})
+     ,.data_o({rolly_nonidem_r, uncached_r, ptag_v_r})
      );
 
    logic icache_v_rr, poison_li;
@@ -178,6 +180,7 @@ module wrapper
      ,.ptag_i(rolly_ptag_r)
      ,.ptag_v_i(ptag_v_r)
      ,.uncached_i(uncached_r)
+     ,.nonidem_i(nonidem_r)
      ,.poison_tl_i(poison_li)
 
      ,.data_o(data_o)

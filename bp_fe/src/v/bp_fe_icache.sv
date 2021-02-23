@@ -63,6 +63,7 @@ module bp_fe_icache
    , input [ptag_width_p-1:0]                         ptag_i
    , input                                            ptag_v_i
    , input                                            uncached_i
+   , input                                            nonidem_i
    , input                                            poison_tl_i
 
    // Cycle 2: "Tag Verify"
@@ -243,6 +244,7 @@ module bp_fe_icache
   wire uncached_hit_tl   = (paddr_tl[paddr_width_p-1:2] == uncached_paddr_r[paddr_width_p-1:2]);
   wire fetch_uncached_tl = (fetch_op_tl_r &  uncached_i);
   wire fetch_cached_tl   = (fetch_op_tl_r & ~uncached_i);
+  wire fill_tl           = (fill_op_tl_r | ~nonidem_i);
 
   logic [assoc_p-1:0] bank_sel_one_hot_tl;
   bsg_decode
@@ -283,7 +285,7 @@ module bp_fe_icache
   logic [assoc_p-1:0]                    bank_sel_one_hot_tv_r;
   logic [assoc_p-1:0]                    way_v_tv_r, hit_v_tv_r;
   logic                                  cached_hit_tv_r, uncached_hit_tv_r;
-  logic                                  fill_op_tv_r, fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r;
+  logic                                  fill_tv_r, fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r;
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
 
   // fence.i does not check tags
@@ -317,11 +319,11 @@ module bp_fe_icache
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
                ,bank_sel_one_hot_tl, way_v_tl, hit_v_tl, cached_hit_tl, uncached_hit_tl
-               ,fill_op_tl_r, fencei_op_tl_r, fetch_uncached_tl, fetch_cached_tl
+               ,fill_tl, fencei_op_tl_r, fetch_uncached_tl, fetch_cached_tl
                })
      ,.data_o({paddr_tv_r
                ,bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r, cached_hit_tv_r, uncached_hit_tv_r
-               ,fill_op_tv_r, fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r
+               ,fill_tv_r, fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r
                })
      );
 
@@ -357,7 +359,7 @@ module bp_fe_icache
   assign data_v_o = v_tv_r & ((uncached_op_tv_r & uncached_hit_tv_r)
                               | (cached_op_tv_r & cached_hit_tv_r)
                               );
-  assign miss_v_o = v_tv_r & ~fill_op_tv_r & ~data_v_o;
+  assign miss_v_o = v_tv_r & ~fill_tv_r & ~data_v_o;
 
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
@@ -368,8 +370,8 @@ module bp_fe_icache
   localparam bp_cache_req_size_e block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
   localparam bp_cache_req_size_e uncached_req_size = e_size_4B;
 
-  wire cached_req   = v_tv_r & cached_op_tv_r & fill_op_tv_r & ~cached_hit_tv_r;
-  wire uncached_req = v_tv_r & uncached_op_tv_r & fill_op_tv_r & ~uncached_hit_tv_r;
+  wire cached_req   = v_tv_r & cached_op_tv_r & fill_tv_r & ~cached_hit_tv_r;
+  wire uncached_req = v_tv_r & uncached_op_tv_r & fill_tv_r & ~uncached_hit_tv_r;
   wire fencei_req   = v_tv_r & fencei_op_tv_r & !coherent_p;
 
   assign cache_req_v_o = |{uncached_req, cached_req, fencei_req} & ~poison_tv_i;
