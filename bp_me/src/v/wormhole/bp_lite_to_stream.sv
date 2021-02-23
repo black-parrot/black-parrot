@@ -75,12 +75,13 @@ module bp_lite_to_stream
     streaming_reg
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
-    ,.set_i(in_msg_v_i)
+    ,.set_i(in_msg_ready_and_o & in_msg_v_i)
     ,.clear_i(stream_clear)
     ,.data_o(streaming_r)
     );
 
-  assign in_msg_ready_and_o = out_msg_ready_and_i & ~streaming_r;
+  // Accept no new lite pkt with pending valid data
+  assign in_msg_ready_and_o = ~streaming_r;
 
   wire has_data = payload_mask_p[in_msg_header_lo.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
