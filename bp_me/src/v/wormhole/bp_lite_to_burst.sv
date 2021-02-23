@@ -122,7 +122,7 @@ module bp_lite_to_burst
 
   assign data_burst_clear = data_ready_and_lo;
 
-  // Refuses new lite pkt when: 
+  // Accept no new lite pkt with: 
   // 1. pending header in the register
   // 2. pending burst data 
   assign in_msg_ready_and_o = ~header_v_r & ~data_bursting_r;

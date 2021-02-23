@@ -72,7 +72,8 @@ module bp_burst_to_lite
   assign header_v_lo = in_msg_header_v_i | header_v_r;
   assign header_clear = out_msg_v_o & out_msg_ready_and_i;
 
-  assign in_msg_header_ready_and_o = ~header_v_r; // Refuses new header as long as a valid header exists
+  // Accept no new header as long as a valid header exists
+  assign in_msg_header_ready_and_o = ~header_v_r; 
 
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
 
