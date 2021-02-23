@@ -48,57 +48,56 @@ module bp_burst_to_lite
   localparam burst_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
   bp_bedrock_in_msg_header_s header_lo;
-  logic header_v_lo;
-  bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_in_msg_header_s)))
-   header_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i(in_msg_header_i)
-     ,.ready_o(in_msg_header_ready_and_o)
-     ,.v_i(in_msg_header_v_i)
-
-     ,.data_o(header_lo)
-     ,.v_o(header_v_lo)
-     ,.yumi_i(out_msg_ready_and_i & out_msg_v_o)
-     );
-
-  bp_bedrock_in_msg_header_s msg_header_cast_i;
-  assign msg_header_cast_i = in_msg_header_i;
-  localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
-  wire [data_len_width_lp-1:0] incoming_burst_cmds = `BSG_MAX(1, ((1'b1 << msg_header_cast_i.size) / in_data_bytes_lp));
-  logic [data_len_width_lp-1:0] num_burst_cmds;
+  logic header_v_r, header_clear;
   bsg_dff_en_bypass
-   #(.width_p(data_len_width_lp))
-   burst_len_reg
+   #(.width_p($bits(bp_bedrock_in_msg_header_s)))
+   header_reg
     (.clk_i(clk_i)
-     ,.en_i(in_msg_header_ready_and_o & in_msg_header_v_i)
-     ,.data_i(incoming_burst_cmds)
-     ,.data_o(num_burst_cmds)
-     );
+    ,.en_i(in_msg_header_ready_and_o & in_msg_header_v_i)
+    ,.data_i(in_msg_header_i)
+    ,.data_o(header_lo)
+    );
+
+  bsg_dff_reset_set_clear
+   #(.width_p(1)
+   ,.clear_over_set_p(1))
+    header_v_reg
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+    ,.set_i(in_msg_header_v_i)
+    ,.clear_i(header_clear)
+    ,.data_o(header_v_r) 
+    );
+
+  assign header_v_lo = in_msg_header_v_i | header_v_r;
+  assign header_clear = out_msg_v_o & out_msg_ready_and_i;
+
+  assign in_msg_header_ready_and_o = ~header_v_r; // Refuses new header as long as a valid header exists
+
+  localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
+
+  logic [data_len_width_lp-1:0] num_burst_cmds;
+  assign num_burst_cmds = `BSG_MAX(1, ((1'b1 << header_lo.size) / in_data_bytes_lp));
 
   logic [out_data_width_p-1:0] data_lo;
   logic data_v_lo;
-  bsg_serial_in_parallel_out_dynamic
-   #(.width_p(in_data_width_p), .max_els_p(burst_words_lp))
-   sipo
+  bsg_serial_in_parallel_out_passthrough_dynamic
+   #(.width_p(in_data_width_p)
+   ,.max_els_p(burst_words_lp))
+   sipo_passthrough
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    ,.reset_i(reset_i)
 
-     ,.data_i(in_msg_data_i)
-     ,.len_i(num_burst_cmds-1'b1)
-     ,.ready_o(in_msg_data_ready_and_o)
-     ,.v_i(in_msg_data_v_i)
-
-     ,.data_o(data_lo)
-     ,.v_o(data_v_lo)
-     // We gate the yumi signal since reads will not produce data
-     ,.yumi_i(data_v_lo & out_msg_ready_and_i & out_msg_v_o)
-
-     // We rely on fifo ready signal
-     ,.len_ready_o(/* Unused */)
-     );
+    ,.data_i(in_msg_data_i)
+    ,.v_i(in_msg_data_v_i)
+    ,.ready_and_o(in_msg_data_ready_and_o)
+    ,.len_i(num_burst_cmds-1'b1)
+   
+    ,.data_o(data_lo)
+    ,.v_o(data_v_lo)
+    ,.ready_and_i(out_msg_ready_and_i)
+    ,.first_o(/* unused */)
+    );
 
   bp_bedrock_out_msg_s msg_cast_o;
   assign msg_cast_o = '{header: header_lo, data: data_lo};
@@ -118,7 +117,7 @@ module bp_burst_to_lite
   always_ff @(negedge clk_i)
     begin
     //  if (in_msg_header_ready_and_o & in_msg_header_v_i)
-    //    $display("[%t] Stream received: %p %x", $time, msg_header_cast_i, in_msg_data_i);
+    //    $display("[%t] Burst received: %p %x", $time, header_lo, in_msg_data_i);
 
     //  if (out_msg_ready_and_i & out_msg_v_o)
     //    $display("[%t] Msg sent: %p", $time, msg_cast_o);
