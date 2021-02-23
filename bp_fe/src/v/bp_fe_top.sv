@@ -230,6 +230,7 @@ module bp_fe_top
      // Supervisor use of user memory is always disabled for immu
      ,.sum_i('0)
      ,.uncached_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_uncached))
+     ,.nonspec_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_nonspec))
      ,.domain_mask_i(cfg_bus_cast_i.domain_mask)
 
      ,.w_v_i(itlb_fill_v)

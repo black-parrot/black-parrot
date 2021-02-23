@@ -21,6 +21,7 @@ module bp_mmu
    , input                                            trans_en_i
    , input                                            sum_i
    , input                                            uncached_mode_i
+   , input                                            nonspec_mode_i
    , input [domain_width_p-1:0]                       domain_mask_i
 
    , input                                            w_v_i
@@ -128,6 +129,8 @@ module bp_mmu
 
      ,.ptag_v_i(ptag_v_lo)
      ,.ptag_i(ptag_lo)
+     ,.uncached_mode_i(uncached_mode_i)
+     ,.nonspec_mode_i(nonspec_mode_i)
 
      ,.uncached_o(ptag_uncached_lo)
      ,.nonidem_o(ptag_nonidem_lo)
@@ -135,16 +138,14 @@ module bp_mmu
 
   // Fault if higher bits of eaddr do not match vaddr MSB
   wire eaddr_fault_v = ~&r_etag_r[etag_width_p-1:vtag_width_p-1] & |r_etag_r[etag_width_p-1:vtag_width_p-1];
-  // Fault if in uncached mode but access is not for an uncached address
-  wire mode_fault_v  = (uncached_mode_i & ~r_uncached_o);
   // Fault if domain bit is not enabled and we're accessing that domain
   wire domain_fault_v = (r_instr_r & ptag_lo[ptag_width_p-1-:domain_width_p] != '0)
     || (ptag_lo[ptag_width_p-1-:domain_width_p] & ~domain_mask_i);
 
   // Access faults
-  wire instr_access_fault_v = r_instr_r & (mode_fault_v | domain_fault_v);
-  wire load_access_fault_v  = r_load_r  & (mode_fault_v | domain_fault_v);
-  wire store_access_fault_v = r_store_r & (mode_fault_v | domain_fault_v);
+  wire instr_access_fault_v = r_instr_r & domain_fault_v;
+  wire load_access_fault_v  = r_load_r  & domain_fault_v;
+  wire store_access_fault_v = r_store_r & domain_fault_v;
   wire any_access_fault_v   = |{instr_access_fault_v, load_access_fault_v, store_access_fault_v};
 
   // Page faults
