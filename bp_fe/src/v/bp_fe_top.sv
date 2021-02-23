@@ -72,9 +72,9 @@ module bp_fe_top
   enum logic [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
 
   // Decoded state signals
-  wire is_wait  = (state_r == e_wait);
-  wire is_run   = (state_r == e_run);
-  wire is_stall = (state_r == e_stall);
+  wire is_wait     = (state_r == e_wait);
+  wire is_run      = (state_r == e_run);
+  wire is_stall    = (state_r == e_stall);
 
   logic redirect_v_li;
   logic [vaddr_width_p-1:0] redirect_pc_li;
@@ -123,14 +123,17 @@ module bp_fe_top
      ,.attaboy_yumi_o(attaboy_yumi_lo)
      );
 
-  wire state_reset_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
-  wire pc_redirect_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
-  wire itlb_fill_v       = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
-  wire icache_fence_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
-  wire itlb_fence_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
-  wire wait_v            = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_wait);
-  wire attaboy_v         = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
-  wire cmd_nonattaboy_v  = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
+  wire state_reset_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
+  wire pc_redirect_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
+  wire itlb_fill_v            = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
+  wire icache_fence_v         = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
+  wire icache_fill_response_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fill_response);
+  wire itlb_fence_v           = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
+  wire wait_v                 = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_wait);
+  wire attaboy_v              = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
+  wire cmd_nonattaboy_v       = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
+  wire cmd_complex_v          = (state_reset_v | itlb_fill_v | icache_fence_v | itlb_fence_v);
+  wire cmd_immediate_v        = (pc_redirect_v | icache_fill_response_v);
 
   wire br_miss_v = pc_redirect_v
     & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
@@ -141,8 +144,8 @@ module bp_fe_top
   wire br_miss_nonbr = br_miss_v
     & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
 
-  wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
-  wire eret_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_eret);
+  wire trap_v        = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+  wire eret_v        = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_eret);
   wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 
   logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
@@ -189,7 +192,7 @@ module bp_fe_top
      ,.data_i({br_miss_v, br_miss_nonbr, br_miss_taken, br_miss_ntaken, br_metadata_fwd_resume_n, pc_resume_n})
      ,.data_o({br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r, br_metadata_fwd_resume_r, pc_resume_r})
      );
-  assign redirect_v_li               = (is_stall & next_pc_yumi_li) | pc_redirect_v;
+  assign redirect_v_li               = (is_stall & next_pc_yumi_li) | cmd_immediate_v;
   assign redirect_pc_li              = pc_resume_r;
   assign redirect_br_v_li            = redirect_v_li & br_miss_r;
   assign redirect_br_metadata_fwd_li = br_metadata_fwd_resume_r;
@@ -254,8 +257,8 @@ module bp_fe_top
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = '{vaddr: next_pc_lo
-                        //,op  : icache_fence_v ? e_icache_fencei : e_icache_fetch
-                        ,op  : icache_fence_v ? e_icache_fencei : e_icache_fill
+                        //,op  : icache_fence_v ? e_icache_fencei : e_icache_fill
+                        ,op  : icache_fence_v ? e_icache_fencei : icache_fill_response_v ? e_icache_fill : e_icache_fetch
                         };
   // TODO: Should only ack icache fence when icache_ready
   wire icache_v_li = next_pc_yumi_li | icache_fence_v;
@@ -381,19 +384,19 @@ module bp_fe_top
   always_comb
     case (state_r)
       // Wait for FE cmd
-      e_wait : state_n = pc_redirect_v ? e_run : cmd_nonattaboy_v ? e_stall : e_wait;
+      e_wait : state_n = cmd_immediate_v ? e_run : cmd_nonattaboy_v ? e_stall : e_wait;
       // Stall until we can start valid fetch
       e_stall: state_n = unstall ? e_run : e_stall;
       // Run state -- PCs are actually being fetched
       // Stay in run if there's an incoming cmd, the next pc will automatically be valid
       // Transition to wait if there's a TLB miss while we wait for fill
       // Transition to stall if we don't successfully complete the fetch for whatever reason
-      e_run  : state_n = pc_redirect_v
+      e_run  : state_n = cmd_immediate_v
                          ? e_run
-                         : fetch_exception_v_li
-                           ? e_wait
-                           : stall
-                             ? e_stall
+                         : (stall || cmd_complex_v)
+                           ? e_stall
+                           : fetch_exception_v_li
+                             ? e_wait
                              : e_run;
       default: state_n = e_wait;
     endcase
