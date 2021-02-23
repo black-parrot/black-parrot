@@ -22,12 +22,9 @@ module bp_be_pipe_mem
    // Generated parameters
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dispatch_pkt_width_lp  = `bp_be_dispatch_pkt_width(vaddr_width_p)
-   , localparam ptw_miss_pkt_width_lp  = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
-   , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
-
-   // From RISC-V specifications
-   , localparam eaddr_pad_lp = rv64_eaddr_width_gp - vaddr_width_p
+   , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                                  clk_i
    , input                                reset_i
@@ -40,7 +37,7 @@ module bp_be_pipe_mem
 
    , input [dispatch_pkt_width_lp-1:0]    reservation_i
 
-   , input [ptw_miss_pkt_width_lp-1:0]    ptw_miss_pkt_i
+   , input [commit_pkt_width_lp-1:0]      commit_pkt_i
    , output [ptw_fill_pkt_width_lp-1:0]   ptw_fill_pkt_o
    , output logic                         ptw_busy_o
 
@@ -55,12 +52,13 @@ module bp_be_pipe_mem
    , output logic                         store_access_fault_v_o
    , output logic                         store_page_fault_v_o
 
-   , output logic [dpath_width_gp-1:0]     early_data_o
+   , output logic [dpath_width_gp-1:0]    early_data_o
    , output logic                         early_v_o
-   , output logic [dpath_width_gp-1:0]     final_data_o
+   , output logic [dpath_width_gp-1:0]    final_data_o
    , output logic                         final_v_o
 
    , input [trans_info_width_lp-1:0]      trans_info_i
+   , output logic                         replay_pending_o
 
    // D$-LCE Interface
    // signals to LCE
@@ -102,14 +100,14 @@ module bp_be_pipe_mem
   bp_be_decode_s         decode;
   rv64_instr_s           instr;
   bp_cfg_bus_s           cfg_bus;
-  bp_be_ptw_miss_pkt_s   ptw_miss_pkt;
+  bp_be_commit_pkt_s     commit_pkt;
   bp_be_ptw_fill_pkt_s   ptw_fill_pkt;
   bp_be_trans_info_s     trans_info;
   bp_dcache_req_s        cache_req_cast_o;
 
   assign cfg_bus = cfg_bus_i;
-  assign ptw_miss_pkt = ptw_miss_pkt_i;
   assign ptw_fill_pkt_o = ptw_fill_pkt;
+  assign commit_pkt = commit_pkt_i;
   assign trans_info = trans_info_i;
   assign cache_req_o = cache_req_cast_o;
 
@@ -123,9 +121,9 @@ module bp_be_pipe_mem
 
   /* Internal connections */
   /* TLB ports */
-  logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_w_gigapage, dtlb_r_v, dtlb_v_lo;
-  logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag;
-  bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry, passthrough_entry, entry_lo;
+  logic                    dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_v_lo;
+  logic [vtag_width_p-1:0] dtlb_w_vtag;
+  bp_pte_leaf_s            dtlb_w_entry;
 
   /* PTW ports */
   logic [ptag_width_p-1:0]  ptw_dcache_ptag;
@@ -160,12 +158,10 @@ module bp_be_pipe_mem
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
 
   // D-TLB connections
-  assign dtlb_r_v     = ~reservation.poison & (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
-  assign dtlb_r_vtag  = eaddr[page_offset_width_gp+:vtag_width_p];
-  assign dtlb_w_v     = ptw_fill_pkt.dtlb_fill_v;
-  assign dtlb_w_vtag  = ptw_fill_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
-  assign dtlb_w_entry = ptw_fill_pkt.entry;
-  assign dtlb_w_gigapage = ptw_fill_pkt.gigapage;
+  assign dtlb_r_v        = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
+  assign dtlb_w_v        = commit_pkt.dtlb_fill_v;
+  assign dtlb_w_vtag     = commit_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
+  assign dtlb_w_entry    = commit_pkt.pte_leaf;
 
   logic [ptag_width_p-1:0] dtlb_ptag_lo;
   bp_mmu
@@ -187,7 +183,6 @@ module bp_be_pipe_mem
      ,.w_v_i(dtlb_w_v)
      ,.w_vtag_i(dtlb_w_vtag)
      ,.w_entry_i(dtlb_w_entry)
-     ,.w_gigapage_i(dtlb_w_gigapage)
 
      ,.r_v_i(dtlb_r_v)
      ,.r_instr_i('0)
@@ -207,8 +202,16 @@ module bp_be_pipe_mem
      ,.r_store_page_fault_o(store_page_fault_v)
      );
 
+  bp_be_ptw_miss_pkt_s ptw_miss_pkt;
+  assign ptw_miss_pkt =
+    '{instr_miss_v  : commit_pkt.itlb_miss
+      ,store_miss_v : commit_pkt.dtlb_store_miss
+      ,load_miss_v  : commit_pkt.dtlb_load_miss
+      ,vaddr        : commit_pkt.itlb_miss ? commit_pkt.pc : commit_pkt.vaddr
+      };
+
   bp_be_ptw
-    #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p))
     ptw
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -253,6 +256,7 @@ module bp_be_pipe_mem
       ,.final_v_o(dcache_final_v)
 
       ,.flush_i(flush_i)
+      ,.replay_pending_o(replay_pending_o)
 
       // D$-LCE Interface
       ,.cache_req_o(cache_req_cast_o)
@@ -282,16 +286,8 @@ module bp_be_pipe_mem
 
   // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
   // We latch the dcache miss signal
-  always_ff @(negedge clk_i) begin
-    if (reset_i) begin
-      is_req_mem1 <= '0;
-      is_req_mem2 <= '0;
-      is_store_mem1 <= '0;
-      is_store_mem2 <= '0;
-      is_fencei_mem1 <= '0;
-      is_fencei_mem2 <= '0;
-    end
-    else begin
+  always_ff @(negedge clk_i)
+    begin
       is_req_mem1 <= is_req;
       is_req_mem2 <= is_req_mem1;
       is_store_mem1 <= is_store;
@@ -299,7 +295,6 @@ module bp_be_pipe_mem
       is_fencei_mem1 <= is_fencei;
       is_fencei_mem2 <= is_fencei_mem1;
     end
-  end
 
   // Check instruction accesses
   assign load_misaligned_v = 1'b0; // TODO: detect
@@ -315,7 +310,7 @@ module bp_be_pipe_mem
         dcache_ptag_v   = ptw_dcache_ptag_v;
       end
       else begin
-        dcache_pkt_v = reservation.v & ~reservation.poison & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
+        dcache_pkt_v = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
         dcache_pkt.rd_addr     = instr.t.rtype.rd_addr;
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
         dcache_pkt.page_offset = eaddr[0+:page_offset_width_gp];
@@ -341,7 +336,7 @@ module bp_be_pipe_mem
   assign early_data_o           = dcache_early_data;
   assign final_data_o           = dcache_final_data;
 
-  wire early_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mem_early_v;
+  wire early_v_li = reservation.v & reservation.decode.pipe_mem_early_v;
   bsg_dff_chain
    #(.width_p(1), .num_stages_p(1))
    early_chain
@@ -351,7 +346,7 @@ module bp_be_pipe_mem
      ,.data_o(early_v_o)
      );
 
-  wire final_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mem_final_v;
+  wire final_v_li = reservation.v & reservation.decode.pipe_mem_final_v;
   bsg_dff_chain
    #(.width_p(1), .num_stages_p(2))
    final_chain

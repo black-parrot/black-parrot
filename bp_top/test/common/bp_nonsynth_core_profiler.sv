@@ -69,7 +69,7 @@ module bp_nonsynth_core_profiler
     , parameter stall_trace_file_p = "stall"
 
     , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
-    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
+    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
     )
    (input clk_i
     , input reset_i

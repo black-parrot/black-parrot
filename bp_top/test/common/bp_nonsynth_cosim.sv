@@ -12,13 +12,14 @@ module bp_nonsynth_cosim
 
     , localparam max_instr_lp = 2**30
     , localparam decode_width_lp = $bits(bp_be_decode_s)
-   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
     )
    (input                                     clk_i
     , input                                   reset_i
     , input                                   freeze_i
     , input                                   cosim_en_i
     , input                                   trace_en_i
+    , input                                   amo_en_i
 
     , input                                   checkpoint_i
     , input [31:0]                            num_core_i
@@ -33,20 +34,20 @@ module bp_nonsynth_cosim
     , input [commit_pkt_width_lp-1:0]         commit_pkt_i
 
     , input [1:0]                             priv_mode_i
-    , input [dword_width_gp-1:0]               mstatus_i
-    , input [dword_width_gp-1:0]               mcause_i
-    , input [dword_width_gp-1:0]               scause_i
+    , input [dword_width_gp-1:0]              mstatus_i
+    , input [dword_width_gp-1:0]              mcause_i
+    , input [dword_width_gp-1:0]              scause_i
 
     , input                                   ird_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      ird_addr_i
-    , input [dpath_width_gp-1:0]               ird_data_i
+    , input [dpath_width_gp-1:0]              ird_data_i
 
     , input                                   frd_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      frd_addr_i
-    , input [dpath_width_gp-1:0]               frd_data_i
+    , input [dpath_width_gp-1:0]              frd_data_i
     );
 
-  import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
+  import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint, bit amo_en);
   import "DPI-C" context function bit  dromajo_step(int hartid,
                                                     longint pc,
                                                     int insn,
@@ -210,7 +211,7 @@ module bp_nonsynth_cosim
     if (reset_i)
       init_done_r <= 1'b0;
     else if (cosim_en_i & ~init_done_r) begin
-      dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i);
+      dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
       init_done_r <= 1'b1;
     end
   end

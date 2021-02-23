@@ -128,6 +128,7 @@ module bp_fe_top
   wire itlb_fill_v       = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
   wire icache_fence_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
   wire itlb_fence_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
+  wire wait_v            = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_wait);
   wire attaboy_v         = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
   wire cmd_nonattaboy_v  = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
@@ -141,10 +142,11 @@ module bp_fe_top
     & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
 
   wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+  wire eret_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_eret);
   wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 
   logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
-  wire shadow_priv_w = state_reset_v | trap_v;
+  wire shadow_priv_w = state_reset_v | trap_v | eret_v;
   assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
   bsg_dff_reset_en_bypass
    #(.width_p(rv64_priv_width_gp))
@@ -158,8 +160,8 @@ module bp_fe_top
      );
 
   logic shadow_translation_en_n, shadow_translation_en_r;
-  wire shadow_translation_en_w = state_reset_v | trap_v | translation_v;
-  assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_enabled;
+  wire shadow_translation_en_w = state_reset_v | trap_v | eret_v | translation_v;
+  assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_en;
   bsg_dff_reset_en_bypass
    #(.width_p(1))
    shadow_translation_en_reg
@@ -205,10 +207,9 @@ module bp_fe_top
   logic ptag_v_li, ptag_uncached_li, ptag_miss_li;
   logic [ptag_width_p-1:0] ptag_li;
 
-  bp_pte_entry_leaf_s w_tlb_entry_li;
+  bp_pte_leaf_s w_tlb_entry_li;
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
-  assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf;
-  wire w_gigapage_li = fe_cmd_cast_i.operands.itlb_fill_response.gigapage;
+  assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
   wire [dword_width_gp-1:0] r_eaddr_li = dword_width_gp'($signed(next_pc_lo));
   bp_mmu
@@ -231,7 +232,6 @@ module bp_fe_top
      ,.w_v_i(itlb_fill_v)
      ,.w_vtag_i(w_vtag_li)
      ,.w_entry_i(w_tlb_entry_li)
-     ,.w_gigapage_i(w_gigapage_li)
 
      ,.r_v_i(next_pc_yumi_li)
      ,.r_instr_i(1'b1)

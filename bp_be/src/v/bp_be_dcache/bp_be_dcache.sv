@@ -89,6 +89,18 @@ module bp_be_dcache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to dcache parameters, but can override if needed
+   , parameter [31:0] amo_support_p  = (((lr_sc_p == e_l1) << e_dcache_subop_lr)
+                                        | ((lr_sc_p == e_l1) << e_dcache_subop_sc)
+                                        | ((amo_swap_p == e_l1) << e_dcache_subop_amoswap)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amoadd)
+                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoxor)
+                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoand)
+                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoor)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomin)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomax)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amominu)
+                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomaxu)
+                                        )
    , parameter coherent_p     = l1_coherent_p
    , parameter writethrough_p = l1_writethrough_p
    , parameter sets_p         = dcache_sets_p
@@ -121,6 +133,7 @@ module bp_be_dcache
 
    // ctrl
    , input                             flush_i
+   , output                            replay_pending_o
 
    // D$ Engine Interface
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
@@ -138,7 +151,7 @@ module bp_be_dcache
    , input                                           data_mem_pkt_v_i
    , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
    , output logic                                    data_mem_pkt_yumi_o
-   , output logic [block_width_p-1:0]         data_mem_o
+   , output logic [block_width_p-1:0]                data_mem_o
 
    , input                                           tag_mem_pkt_v_i
    , input [dcache_tag_mem_pkt_width_lp-1:0]         tag_mem_pkt_i
@@ -177,7 +190,7 @@ module bp_be_dcache
   logic tl_we, tv_we, dm_we;
   logic v_tl_r, v_tv_r, v_dm_r;
   logic gdirty_r, cache_lock;
-  logic uncached_load_data_v_r;
+  logic uncached_pending_r;
   logic [dword_width_gp-1:0] uncached_load_data_r;
 
   /////////////////////////////////////////////////////////////////////////////
@@ -262,14 +275,14 @@ module bp_be_dcache
   logic [page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dpath_width_gp-1:0] data_tl_r;
 
-  assign tl_we = ready_o & v_i & ~flush_i;
+  assign tl_we = ready_o & v_i;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_tl_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(tl_we)
+     ,.set_i(tl_we & ~flush_i)
      // We always advance in this non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_tl_r)
@@ -335,13 +348,13 @@ module bp_be_dcache
   logic load_reservation_match_tv;
 
   // fencei does not require a ptag
-  assign tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op) & ~flush_i;
+  assign tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_tv_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(tv_we)
+     ,.set_i(tv_we & ~flush_i)
      // We always advance in the non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_tv_r)
@@ -510,7 +523,7 @@ module bp_be_dcache
     ? (sc_success != 1'b1)
     : early_data;
 
-  assign early_v_o = v_tv_r & ( (uncached_op_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
+  assign early_v_o = v_tv_r & ( (uncached_op_tv_r & (decode_tv_r.load_op & uncached_pending_r))
                               | (uncached_op_tv_r & (decode_tv_r.store_op & cache_req_yumi_i))
                               | (decode_tv_r.fencei_op & (~gdirty_r | (coherent_p == 1)))
                               | (cached_op_tv_r & ~any_miss_tv)
@@ -551,13 +564,13 @@ module bp_be_dcache
   logic double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r;
   logic signed_op_dm_r, float_op_dm_r;
 
-  assign dm_we = v_tv_r & early_v_o & ~flush_i;
+  assign dm_we = v_tv_r & early_v_o;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_dm_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(dm_we)
+     ,.set_i(dm_we & ~flush_i)
      // We always advance in the non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_dm_r)
@@ -628,7 +641,48 @@ module bp_be_dcache
   bp_be_dcache_wbuf_entry_s wbuf_entry_in, wbuf_entry_out;
   logic wbuf_v_li, wbuf_v_lo, wbuf_yumi_li;
 
-  assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_op_tv_r & ~flush_i & ((writethrough_p == 0) || cache_req_yumi_i);
+  assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_op_tv_r & ((writethrough_p == 0) || cache_req_yumi_i);
+
+  //
+  // Atomic operations
+  logic [dword_width_gp-1:0] atomic_reg_data, atomic_mem_data;
+  logic [dword_width_gp-1:0] atomic_alu_result, atomic_result;
+
+  // Shift data to high bits for operations less than 64-bits
+  // This allows us to share the arithmetic operators for 32/64 bit atomics
+  wire [dword_width_gp-1:0] amo32_reg_in = st_data_tv_r[0+:word_width_gp] << word_width_gp;
+  wire [dword_width_gp-1:0] amo64_reg_in = st_data_tv_r[0+:dword_width_gp];
+  assign atomic_reg_data = decode_tv_r.double_op ? amo64_reg_in : amo32_reg_in;
+
+  wire [dword_width_gp-1:0] amo32_mem_in = sigext_word[2][0+:word_width_gp] << word_width_gp;
+  wire [dword_width_gp-1:0] amo64_mem_in = sigext_word[3][0+:dword_width_gp];
+  assign atomic_mem_data = decode_tv_r.double_op ? amo64_mem_in : amo32_mem_in;
+
+  // Atomic ALU
+  always_comb
+    // This logic was confirmed not to synthesize unsupported operators in
+    //   Synopsys DC O-2018.06-SP4
+    unique casez ({amo_support_p[decode_tv_r.amo_subop], decode_tv_r.amo_subop})
+      {1'b1, e_dcache_subop_amoand }: atomic_alu_result = atomic_reg_data & atomic_mem_data;
+      {1'b1, e_dcache_subop_amoor  }: atomic_alu_result = atomic_reg_data | atomic_mem_data;
+      {1'b1, e_dcache_subop_amoxor }: atomic_alu_result = atomic_reg_data ^ atomic_mem_data;
+      {1'b1, e_dcache_subop_amoadd }: atomic_alu_result = atomic_reg_data + atomic_mem_data;
+      {1'b1, e_dcache_subop_amomin }: atomic_alu_result =
+          ($signed(atomic_reg_data) < $signed(atomic_mem_data)) ? atomic_reg_data : atomic_mem_data;
+      {1'b1, e_dcache_subop_amomax }: atomic_alu_result =
+          ($signed(atomic_reg_data) > $signed(atomic_mem_data)) ? atomic_reg_data : atomic_mem_data;
+      {1'b1, e_dcache_subop_amominu}: atomic_alu_result =
+          (atomic_reg_data < atomic_mem_data) ? atomic_reg_data : atomic_mem_data;
+      {1'b1, e_dcache_subop_amomaxu}: atomic_alu_result =
+          (atomic_reg_data > atomic_mem_data) ? atomic_reg_data : atomic_mem_data;
+      //{1'b1, e_dcache_subop_amoswap}
+      //{1'b1, e_dcache_subop_sc     }
+      default                       : atomic_alu_result = atomic_reg_data;
+    endcase
+
+  wire [dword_width_gp-1:0] amo32_out = atomic_alu_result >> word_width_gp;
+  wire [dword_width_gp-1:0] amo64_out = atomic_alu_result;
+  assign atomic_result = decode_tv_r.double_op ? amo64_out : amo32_out;
 
   logic [3:0][dword_width_gp-1:0] wbuf_data_in;
   logic [3:0][wbuf_data_mask_width_lp-1:0] wbuf_data_mem_mask_in;
@@ -652,7 +706,17 @@ module bp_be_dcache
          ,.o(wbuf_data_mem_mask_in[i])
          );
 
-      assign slice_data = st_data_tv_r[0+:slice_width_lp];
+      if ((i == 2'b10) || (i == 2'b11))
+        begin : atomic
+          assign slice_data = decode_tv_r.amo_op
+            ? atomic_result[0+:slice_width_lp]
+            : st_data_tv_r[0+:slice_width_lp];
+        end
+      else
+        begin : non_atomic
+          assign slice_data = st_data_tv_r[0+:slice_width_lp];
+        end
+
       assign wbuf_data_in[i] = {(dword_width_gp/slice_width_lp){slice_data}};
     end
 
@@ -681,7 +745,9 @@ module bp_be_dcache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.v_i(wbuf_v_li)
+     // We separate out the poison signal here to avoid a critical path
+     //  i.e. it's fine to block, but not to enqueue
+     ,.v_i(wbuf_v_li & ~flush_i)
      ,.wbuf_entry_i(wbuf_entry_in)
 
      ,.v_o(wbuf_v_lo)
@@ -704,10 +770,10 @@ module bp_be_dcache
 
   wire cached_req         = v_tv_r & (store_miss_tv | load_miss_tv | lr_miss_tv);
   wire fencei_req         = v_tv_r & decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
-  wire uncached_load_req  = v_tv_r & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_load_data_v_r;
+  wire uncached_load_req  = v_tv_r & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_pending_r;
   wire uncached_store_req = v_tv_r & decode_tv_r.store_op & uncached_op_tv_r;
   wire wt_req             = v_tv_r & decode_tv_r.store_op & ~sc_fail & ~uncached_op_tv_r & (writethrough_p == 1);
-  wire l2_amo_req         = v_tv_r & decode_tv_r.l2_op & ~uncached_load_data_v_r;
+  wire l2_amo_req         = v_tv_r & decode_tv_r.l2_op & ~uncached_pending_r;
 
   assign cache_req_v_o = ~flush_i & |{cached_req, uncached_load_req, uncached_store_req, fencei_req, l2_amo_req, wt_req};
 
@@ -1044,7 +1110,7 @@ module bp_be_dcache
       assign gdirty_r     = '0;
     end
 
-  always_comb 
+  always_comb
     case ({v_tv_r, stat_mem_pkt_cast_i.opcode})
       {1'b0, e_cache_stat_mem_set_clear}:
         begin
@@ -1144,28 +1210,30 @@ module bp_be_dcache
 
   ///////////////////////////
   // Uncached Load Storage
-  // Note: Goes away with idempotency-handling D$
   ///////////////////////////
-  wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
-  // Invalidate uncached data if the cache is flushed or we successfully complete the request
-  // NOTE: This method is not valid for non-idempotent loads, will cause replay
-  wire uncached_load_clear = flush_i | early_v_o;
+  wire uncached_pending_set = cache_req_yumi_i & uncached_load_req;
+  // Invalidate uncached data if the cache when we successfully complete the request
+  // TODO: We currently block interrupts until we have replayed a cache miss or
+  //   uncached load. We should decouple the cache writeback from replay in the future
+  wire uncached_pending_clear = early_v_o;
   bsg_dff_reset_set_clear
    #(.width_p(1))
-   uncached_load_data_v_reg
+   uncached_pending_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(uncached_load_set)
-     ,.clear_i(uncached_load_clear)
-     ,.data_o(uncached_load_data_v_r)
+     ,.set_i(uncached_pending_set)
+     ,.clear_i(uncached_pending_clear)
+     ,.data_o(uncached_pending_r)
      );
+  assign replay_pending_o = uncached_pending_r;
 
+  wire uncached_load_data_set = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
   bsg_dff_en
    #(.width_p(dword_width_gp))
    uncached_load_data_reg
     (.clk_i(clk_i)
-     ,.en_i(uncached_load_set)
+     ,.en_i(uncached_load_data_set)
 
      ,.data_i(data_mem_pkt_cast_i.data[0+:dword_width_gp])
      ,.data_o(uncached_load_data_r)

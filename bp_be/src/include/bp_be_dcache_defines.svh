@@ -1,6 +1,6 @@
 
-`ifndef BP_BE_DCACHE_DEFINES_VH
-`define BP_BE_DCACHE_DEFINES_VH
+`ifndef BP_BE_DCACHE_DEFINES_SVH
+`define BP_BE_DCACHE_DEFINES_SVH
 
   `define declare_bp_be_dcache_wbuf_entry_s(paddr_width_mp, ways_mp) \
     typedef struct packed                                        \
@@ -15,3 +15,4 @@
     (paddr_width_mp+dword_width_gp+(dword_width_gp>>3)+`BSG_SAFE_CLOG2(ways_mp))
 
 `endif
+

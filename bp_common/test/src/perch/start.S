@@ -21,6 +21,11 @@ _start:
    la x1, bp_mtvec_handler
    csrw mtvec, x1
 
+/* Enable FPU */
+   li a0, 0x00006000 & (0x00006000 >> 1);
+   csrs mstatus, a0;
+   csrwi fcsr, 0
+
 /* 0 all registers */
     addi x1,  x0, 0
     /* x2 is the sp which we set, so don't zero */

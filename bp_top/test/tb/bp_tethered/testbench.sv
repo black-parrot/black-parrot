@@ -35,6 +35,7 @@ module testbench
    , parameter cosim_cfg_file_p            = "prog.cfg"
    , parameter cosim_instr_p               = 0
    , parameter warmup_instr_p              = 0
+   , parameter amo_en_p                    = 0
 
    // DRAM parameters
    , parameter preload_mem_p               = 0
@@ -229,7 +230,7 @@ module testbench
 
            ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-           ,.commit_v_i(calculator.commit_pkt.instret)
+           ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
            ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
            );
 
@@ -243,11 +244,12 @@ module testbench
           (.clk_i(clk_i)
            ,.reset_i(reset_i)
            ,.freeze_i(calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
+           ,.wfi_i(director.is_wait)
 
            ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
            ,.npc_i(calculator.pipe_sys.csr.apc_r)
-           ,.instret_i(calculator.commit_pkt.instret)
+           ,.instret_i(calculator.commit_pkt_cast_o.instret)
            );
 
 
@@ -269,24 +271,25 @@ module testbench
            ,.config_file_i(testbench.cosim_cfg_file_p)
            ,.instr_cap_i(testbench.cosim_instr_p)
            ,.memsize_i(testbench.cosim_memsize_p)
+           ,.amo_en_i(testbench.amo_en_p == 1)
 
            ,.decode_i(calculator.reservation_n.decode)
 
            ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
-           ,.commit_pkt_i(calculator.commit_pkt)
+           ,.commit_pkt_i(calculator.commit_pkt_cast_o)
 
            ,.priv_mode_i(calculator.pipe_sys.csr.priv_mode_r)
            ,.mstatus_i(calculator.pipe_sys.csr.mstatus_lo)
            ,.mcause_i(calculator.pipe_sys.csr.mcause_lo)
            ,.scause_i(calculator.pipe_sys.csr.scause_lo)
 
-           ,.ird_w_v_i(scheduler.iwb_pkt.ird_w_v)
-           ,.ird_addr_i(scheduler.iwb_pkt.rd_addr)
-           ,.ird_data_i(scheduler.iwb_pkt.rd_data)
+           ,.ird_w_v_i(scheduler.iwb_pkt_cast_i.ird_w_v)
+           ,.ird_addr_i(scheduler.iwb_pkt_cast_i.rd_addr)
+           ,.ird_data_i(scheduler.iwb_pkt_cast_i.rd_data)
 
-           ,.frd_w_v_i(scheduler.fwb_pkt.frd_w_v)
-           ,.frd_addr_i(scheduler.fwb_pkt.rd_addr)
-           ,.frd_data_i(scheduler.fwb_pkt.rd_data)
+           ,.frd_w_v_i(scheduler.fwb_pkt_cast_i.frd_w_v)
+           ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
+           ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
            );
 
       bind bp_be_dcache
@@ -405,14 +408,14 @@ module testbench
 
            ,.itlb_clear_i(fe.immu.tlb.flush_i)
            ,.itlb_fill_v_i(fe.immu.tlb.w_v_li)
-           ,.itlb_fill_g_i(fe.immu.tlb.gigapage_i)
+           ,.itlb_fill_g_i(fe.immu.tlb.entry.gigapage)
            ,.itlb_vtag_i(fe.immu.tlb.vtag_i)
            ,.itlb_entry_i(fe.immu.tlb.entry_i)
            ,.itlb_r_v_i(fe.immu.tlb.r_v_li)
-    
+
            ,.dtlb_clear_i(be.calculator.pipe_mem.dmmu.tlb.flush_i)
            ,.dtlb_fill_v_i(be.calculator.pipe_mem.dmmu.tlb.w_v_li)
-           ,.dtlb_fill_g_i(be.calculator.pipe_mem.dmmu.tlb.gigapage_i)
+           ,.dtlb_fill_g_i(be.calculator.pipe_mem.dmmu.tlb.entry.gigapage)
            ,.dtlb_vtag_i(be.calculator.pipe_mem.dmmu.tlb.vtag_i)
            ,.dtlb_entry_i(be.calculator.pipe_mem.dmmu.tlb.entry_i)
            ,.dtlb_r_v_i(be.calculator.pipe_mem.dmmu.tlb.r_v_li)
@@ -445,11 +448,11 @@ module testbench
 
            ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)
            ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
-           ,.dcache_rollback(be.scheduler.commit_pkt.rollback)
+           ,.dcache_rollback(be.scheduler.commit_pkt_cast_i.rollback)
            ,.long_haz(be.detector.long_haz_v)
-           ,.exception(be.director.commit_pkt.exception | be.director.commit_pkt.satp)
-           ,.eret(be.director.commit_pkt.eret)
-           ,._interrupt(be.director.commit_pkt._interrupt)
+           ,.exception(be.director.commit_pkt_cast_i.exception | be.director.commit_pkt_cast_i.satp)
+           ,.eret(be.director.commit_pkt_cast_i.eret)
+           ,._interrupt(be.director.commit_pkt_cast_i._interrupt)
            ,.control_haz(be.detector.control_haz_v)
            ,.data_haz(be.detector.data_haz_v)
            ,.load_dep((be.detector.dep_status_r[0].emem_iwb_v
@@ -467,7 +470,7 @@ module testbench
                      )
            ,.struct_haz(be.detector.struct_haz_v)
            ,.reservation(be.calculator.reservation_n)
-           ,.commit_pkt(be.calculator.commit_pkt)
+           ,.commit_pkt(be.calculator.commit_pkt_cast_o)
            );
 
       bp_mem_nonsynth_tracer
@@ -495,7 +498,7 @@ module testbench
 
            ,.mhartid_i(calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-           ,.commit_pkt(calculator.commit_pkt)
+           ,.commit_pkt(calculator.commit_pkt_cast_o)
            );
 
       bind bp_be_top
@@ -511,7 +514,7 @@ module testbench
            ,.fe_cmd_o(director.fe_cmd_o)
            ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)
 
-           ,.commit_v_i(calculator.commit_pkt.instret)
+           ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
            );
 
       if (multicore_p)
