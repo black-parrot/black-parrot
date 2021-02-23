@@ -61,6 +61,7 @@ module bp_be_ptw
   logic                              level_cntr_en;
   logic [ptag_width_p-1:0]           ppn_r, ppn_n, writeback_ppn;
   logic                              ppn_en;
+  bp_be_ptw_miss_pkt_s               ptw_miss_pkt_r;
 
   logic [vtag_width_p-1:0] vpn;
   logic [page_table_depth_p-1:0][page_idx_width_p-1:0] partial_vpn;
@@ -115,6 +116,7 @@ module bp_be_ptw
   wire ad_fault                 = pte_is_leaf & (~dcache_data.a | (ptw_miss_pkt_r.store_miss_v & ~dcache_data.d));
   wire common_faults            = pte_invalid | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
 
+  assign ptw_fill_pkt_cast_o.v                  = (state_r == eWriteBack) || page_fault_v;
   assign ptw_fill_pkt_cast_o.itlb_fill_v        = (state_r == eWriteBack) &  ptw_miss_pkt_r.instr_miss_v;
   assign ptw_fill_pkt_cast_o.dtlb_fill_v        = (state_r == eWriteBack) & ~ptw_miss_pkt_r.instr_miss_v;
   assign ptw_fill_pkt_cast_o.instr_page_fault_v = busy_o
@@ -128,9 +130,9 @@ module bp_be_ptw
     & (common_faults | (pte_is_leaf & ~dcache_data.w));
   assign ptw_fill_pkt_cast_o.vaddr              = ptw_miss_pkt_r.vaddr;
   assign ptw_fill_pkt_cast_o.entry              = tlb_w_entry;
-  assign ptw_fill_pkt_cast_o.gigapage           = pte_is_gigapage;
 
   assign tlb_w_entry.ptag       = writeback_ppn;
+  assign tlb_w_entry.gigapage   = pte_is_gigapage;
   assign tlb_w_entry.a          = dcache_data.a;
   assign tlb_w_entry.d          = dcache_data.d;
   assign tlb_w_entry.u          = dcache_data.u;
@@ -165,7 +167,6 @@ module bp_be_ptw
      ,.data_o({dcache_v_r, dcache_data_r})
     );
 
-  bp_be_ptw_miss_pkt_s ptw_miss_pkt_r;
   bsg_dff_reset_en
    #(.width_p($bits(bp_be_ptw_miss_pkt_s)))
    miss_pkt_reg

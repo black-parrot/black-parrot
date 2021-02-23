@@ -514,7 +514,7 @@
     logic [1:0] wpri;                                                                      \
     /* Address Matching Mode */                                                            \
     /*  00 - Off  , Null region (disabled) */                                              \
-    /*  01 - TOR  , Top of range (pmpaddr[i-1] <= a < pmpaddr[i], or 0 <= a < pmpaddr[0]) */ \
+    /*  01 - TOR  , Top of range (pmpaddr[i-1] <=a< pmpaddr[i], or 0 <=a< pmpaddr[0]) */   \
     /*  10 - NA4  , Naturally aligned four-byte region */                                  \
     /*  11 - NAPOT, Naturally aligned power-of-two region */                               \
     logic [1:0]    a;                                                                      \
@@ -691,7 +691,7 @@
   typedef logic [63:0] bp_dscratch0_s;                                                     \
                                                                                            \
   typedef logic [63:0] rv64_dscratch1_s;                                                   \
-  typedef logic [63:0] bp_dscratch1_s;
+  typedef logic [63:0] bp_dscratch1_s
 
   `define bp_stvec_width ($bits(bp_stvec_s))
 
@@ -1035,7 +1035,7 @@
     ``csr_name_mp``_reg                                                                           \
       (.clk_i(clk_i), .reset_i(reset_i), .data_i(``csr_name_mp``_n), .data_o(``csr_name_mp``_r)); \
     assign ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r);                 \
-    assign ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li, vaddr_width_mp, paddr_width_mp);                  \
+    assign ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li, vaddr_width_mp, paddr_width_mp)
     /* verilator lint_on UNUSED */
 
   `define declare_csr(csr_name_mp) \

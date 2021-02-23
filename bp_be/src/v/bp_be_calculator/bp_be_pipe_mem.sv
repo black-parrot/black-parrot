@@ -121,9 +121,9 @@ module bp_be_pipe_mem
 
   /* Internal connections */
   /* TLB ports */
-  logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_w_gigapage, dtlb_r_v, dtlb_v_lo;
-  logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag;
-  bp_pte_leaf_s            dtlb_r_entry, dtlb_w_entry, passthrough_entry, entry_lo;
+  logic                    dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_v_lo;
+  logic [vtag_width_p-1:0] dtlb_w_vtag;
+  bp_pte_leaf_s            dtlb_w_entry;
 
   /* PTW ports */
   logic [ptag_width_p-1:0]  ptw_dcache_ptag;
@@ -159,11 +159,9 @@ module bp_be_pipe_mem
 
   // D-TLB connections
   assign dtlb_r_v        = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
-  assign dtlb_r_vtag     = eaddr[page_offset_width_gp+:vtag_width_p];
   assign dtlb_w_v        = commit_pkt.dtlb_fill_v;
   assign dtlb_w_vtag     = commit_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign dtlb_w_entry    = commit_pkt.pte_leaf;
-  assign dtlb_w_gigapage = commit_pkt.pte_gigapage;
 
   logic [ptag_width_p-1:0] dtlb_ptag_lo;
   bp_mmu
@@ -185,7 +183,6 @@ module bp_be_pipe_mem
      ,.w_v_i(dtlb_w_v)
      ,.w_vtag_i(dtlb_w_vtag)
      ,.w_entry_i(dtlb_w_entry)
-     ,.w_gigapage_i(dtlb_w_gigapage)
 
      ,.r_v_i(dtlb_r_v)
      ,.r_instr_i('0)

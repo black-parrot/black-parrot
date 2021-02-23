@@ -40,7 +40,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [vaddr_width_mp-1:0]                pc;                                                \
-      logic [instr_width_gp-1:0]                instr;                                             \
+      rv64_instr_s                              instr;                                             \
       logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                               \
                                                                                                    \
       logic [`bp_fe_fetch_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)-1:0]         \
@@ -116,12 +116,13 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [paddr_width_mp-page_offset_width_gp-1:0] ptag;                                        \
-      logic                                              a;                                        \
-      logic                                              d;                                        \
-      logic                                              u;                                        \
-      logic                                              x;                                        \
-      logic                                              w;                                        \
-      logic                                              r;                                        \
+      logic                                           gigapage;                                    \
+      logic                                           a;                                           \
+      logic                                           d;                                           \
+      logic                                           u;                                           \
+      logic                                           x;                                           \
+      logic                                           w;                                           \
+      logic                                           r;                                           \
     }  bp_pte_leaf_s;                                                                              \
                                                                                                    \
     /*                                                                                             \
@@ -132,7 +133,6 @@
     */                                                                                             \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic                      gigapage;                                                         \
       bp_pte_leaf_s              pte_leaf;                                                         \
       logic [`bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
@@ -210,7 +210,7 @@
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
 
   `define bp_pte_leaf_width(paddr_width_mp) \
-    (paddr_width_mp - page_offset_width_gp + 6)
+    (paddr_width_mp - page_offset_width_gp + 7)
 
   `define bp_fe_cmd_itlb_fence_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
@@ -246,7 +246,7 @@
     (1+branch_metadata_fwd_width_mp)
 
   `define bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp) \
-    (1+`bp_pte_leaf_width(paddr_width_mp))
+    (`bp_pte_leaf_width(paddr_width_mp))
 
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
     (asid_width_mp + 2)

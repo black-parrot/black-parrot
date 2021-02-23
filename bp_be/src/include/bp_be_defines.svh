@@ -18,7 +18,7 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic                                    csr_v;                                              \
+      logic                                    csr_w_v;                                            \
       logic                                    mem_v;                                              \
       logic                                    fence_v;                                            \
       logic                                    long_v;                                             \
@@ -46,13 +46,15 @@
       logic [dpath_width_gp-1:0]               rs2;                                                \
       logic                                    rs3_fp_v;                                           \
       logic [dpath_width_gp-1:0]               imm;                                                \
+      bp_be_exception_s                        exception;                                          \
+      bp_be_special_s                          special;                                            \
      } bp_be_dispatch_pkt_s;                                                                       \
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
       logic                              instr_v;                                                  \
       logic                              mem_v;                                                    \
-      logic                              csr_v;                                                    \
+      logic                              csr_w_v;                                                  \
       logic                              fflags_w_v;                                               \
       logic                              ctl_iwb_v;                                                \
       logic                              aux_iwb_v;                                                \
@@ -77,7 +79,7 @@
       logic                                    fence_v;                                            \
       logic                                    mem_v;                                              \
       logic                                    long_v;                                             \
-      logic                                    csr_v;                                              \
+      logic                                    csr_w_v;                                            \
       logic                                    irs1_v;                                             \
       logic                                    frs1_v;                                             \
       logic [rv64_reg_addr_width_gp-1:0]       rs1_addr;                                           \
@@ -101,13 +103,27 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
+      logic                      v;                                                                \
+      logic                      queue_v;                                                          \
+      logic                      instret;                                                          \
+      logic [vaddr_width_p-1:0]  npc;                                                              \
+      logic [vaddr_width_p-1:0]  vaddr;                                                            \
+      logic [dpath_width_gp-1:0] data;                                                             \
+      rv64_instr_s               instr;                                                            \
+      bp_be_exception_s          exception;                                                        \
+      bp_be_special_s            special;                                                          \
+    }  bp_be_retire_pkt_s;                                                                         \
+                                                                                                   \
+    typedef struct packed                                                                          \
+    {                                                                                              \
       logic [paddr_width_mp-page_offset_width_gp-1:0] ptag;                                        \
-      logic                                              a;                                        \
-      logic                                              d;                                        \
-      logic                                              u;                                        \
-      logic                                              x;                                        \
-      logic                                              w;                                        \
-      logic                                              r;                                        \
+      logic                                           gigapage;                                    \
+      logic                                           a;                                           \
+      logic                                           d;                                           \
+      logic                                           u;                                           \
+      logic                                           x;                                           \
+      logic                                           w;                                           \
+      logic                                           r;                                           \
     }  bp_be_pte_leaf_s;                                                                           \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -120,7 +136,6 @@
       logic [vaddr_width_p-1:0]       vaddr;                                                       \
       rv64_instr_s                    instr;                                                       \
       bp_be_pte_leaf_s                pte_leaf;                                                    \
-      logic                           pte_gigapage;                                                \
       logic [rv64_priv_width_gp-1:0]  priv_n;                                                      \
       logic                           translation_en_n;                                            \
       logic                           exception;                                                   \
@@ -161,9 +176,9 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
+      logic v;                                                                                     \
       logic itlb_fill_v;                                                                           \
       logic dtlb_fill_v;                                                                           \
-      logic gigapage;                                                                              \
       logic instr_page_fault_v;                                                                    \
       logic load_page_fault_v;                                                                     \
       logic store_page_fault_v;                                                                    \
@@ -179,6 +194,19 @@
       logic                          mstatus_sum;                                                  \
       logic                          mstatus_mxr;                                                  \
     }  bp_be_trans_info_s;                                                                         \
+                                                                                                   \
+    typedef struct packed                                                                          \
+    {                                                                                              \
+      logic [rv64_priv_width_gp-1:0] priv_mode;                                                    \
+      logic                          debug_mode;                                                   \
+      logic                          tsr;                                                          \
+      logic                          tw;                                                           \
+      logic                          tvm;                                                          \
+      logic                          ebreakm;                                                      \
+      logic                          ebreaks;                                                      \
+      logic                          ebreaku;                                                      \
+      logic                          fpu_en;                                                       \
+    }  bp_be_decode_info_s;                                                                        \
 
 
   /* Declare width macros so that clients can use structs in ports before struct declaration
@@ -196,6 +224,8 @@
      + 3                                                                                           \
      + 3 * dpath_width_gp                                                                          \
      + $bits(bp_be_decode_s)                                                                       \
+     + $bits(bp_be_exception_s)                                                                    \
+     + $bits(bp_be_special_s)                                                                      \
      )
 
   `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
@@ -207,11 +237,14 @@
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
     (3 + vaddr_width_mp)
 
+  `define bp_be_retire_pkt_width(vaddr_width_mp) \
+    (3 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
+
   `define bp_be_pte_leaf_width(paddr_width_mp) \
-    (paddr_width_mp - page_offset_width_gp + 6)
+    (paddr_width_mp - page_offset_width_gp + 7)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 17)
+    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 16)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \
@@ -232,6 +265,9 @@
 
   `define bp_be_trans_info_width(ptag_width_mp) \
     (rv64_priv_width_gp+ptag_width_mp+3)
+
+  `define bp_be_decode_info_width \
+    (rv64_priv_width_gp+8)
 
 `endif
 

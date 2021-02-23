@@ -108,20 +108,13 @@
 
   typedef enum logic [5:0]
   {
-    e_csrrw   = 6'b000001
+    e_csrr    = 6'b000000
+    ,e_csrrw  = 6'b000001
     ,e_csrrs  = 6'b000010
     ,e_csrrc  = 6'b000011
     ,e_csrrwi = 6'b000100
     ,e_csrrsi = 6'b000101
     ,e_csrrci = 6'b000110
-
-    ,e_dret       = 6'b010011
-    ,e_mret       = 6'b001000
-    ,e_sret       = 6'b001001
-    ,e_sfence_vma = 6'b001011
-    ,e_wfi        = 6'b001100
-    ,e_ebreak     = 6'b010100
-    ,e_ecall      = 6'b011011
   } bp_be_csr_fu_op_e;
 
   typedef enum logic [5:0]
@@ -212,7 +205,8 @@
     logic                             dcache_w_v;
     logic                             late_iwb_v;
     logic                             late_fwb_v;
-    logic                             csr_v;
+    logic                             csr_w_v;
+    logic                             csr_r_v;
     logic                             mem_v;
     logic                             opw_v;
     logic                             ops_v;
@@ -222,22 +216,17 @@
     bp_be_src1_e                      src1_sel;
     bp_be_src2_e                      src2_sel;
     bp_be_baddr_e                     baddr_sel;
-
-    logic                             itlb_miss;
-    logic                             icache_miss;
-    logic                             instr_access_fault;
-    logic                             instr_page_fault;
-    logic                             illegal_instr;
-    logic                             ebreak;
-    logic                             ecall;
   }  bp_be_decode_s;
 
   typedef struct packed
   {
+    // True exceptions
     logic store_page_fault;
     logic load_page_fault;
     logic instr_page_fault;
-    logic ecall;
+    logic ecall_m;
+    logic ecall_s;
+    logic ecall_u;
     logic store_access_fault;
     logic store_misaligned;
     logic load_access_fault;
@@ -246,16 +235,28 @@
     logic illegal_instr;
     logic instr_access_fault;
     logic instr_misaligned;
-  }  bp_be_exception_s;
 
-  typedef struct packed
-  {
+    // BP "exceptions"
     logic itlb_miss;
     logic icache_miss;
     logic dtlb_load_miss;
     logic dtlb_store_miss;
     logic dcache_miss;
-    logic fencei_v;
+    logic itlb_fill;
+    logic dtlb_fill;
+    logic _interrupt;
+  }  bp_be_exception_s;
+
+  typedef struct packed
+  {
+    logic fencei;
+    logic sfence_vma;
+    logic dbreak;
+    logic dret;
+    logic mret;
+    logic sret;
+    logic wfi;
+    logic satp;
   }  bp_be_special_s;
 
   typedef struct packed
@@ -269,7 +270,7 @@
 
   typedef struct packed
   {
-    bp_be_fu_op_s                      csr_op;
+    bp_be_csr_fu_op_e                  csr_op;
     logic [rv64_csr_addr_width_gp-1:0] csr_addr;
     logic [rv64_reg_data_width_gp-1:0] data;
   }  bp_be_csr_cmd_s;

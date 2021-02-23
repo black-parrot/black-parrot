@@ -34,17 +34,17 @@ module bp_nonsynth_cosim
     , input [commit_pkt_width_lp-1:0]         commit_pkt_i
 
     , input [1:0]                             priv_mode_i
-    , input [dword_width_gp-1:0]               mstatus_i
-    , input [dword_width_gp-1:0]               mcause_i
-    , input [dword_width_gp-1:0]               scause_i
+    , input [dword_width_gp-1:0]              mstatus_i
+    , input [dword_width_gp-1:0]              mcause_i
+    , input [dword_width_gp-1:0]              scause_i
 
     , input                                   ird_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      ird_addr_i
-    , input [dpath_width_gp-1:0]               ird_data_i
+    , input [dpath_width_gp-1:0]              ird_data_i
 
     , input                                   frd_w_v_i
     , input [rv64_reg_addr_width_gp-1:0]      frd_addr_i
-    , input [dpath_width_gp-1:0]               frd_data_i
+    , input [dpath_width_gp-1:0]              frd_data_i
     );
 
   import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint, bit amo_en);

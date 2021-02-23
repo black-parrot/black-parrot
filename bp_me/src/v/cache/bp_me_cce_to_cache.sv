@@ -57,7 +57,7 @@ module bp_me_cce_to_cache
 
   // cce logics
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p)
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = cache_pkt;
