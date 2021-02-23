@@ -67,20 +67,19 @@ module bp_lite_to_burst_new
     header_v_loeg
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
-    ,.set_i(in_msg_ready_and_o & in_msg_v_i) // TODO
+    ,.set_i(in_msg_ready_and_o & in_msg_v_i)
     ,.clear_i(header_clear)
     ,.data_o(header_v_r)
     );
   assign out_msg_header_o = header_lo;
-  assign out_msg_header_v_o = in_msg_v_i | header_v_r; // TOCHECK
+  assign out_msg_header_v_o = in_msg_v_i | header_v_r;
   assign header_clear = out_msg_header_ready_and_i & out_msg_header_v_o; // clear when the header is acked
 
   wire has_data = payload_mask_p[header_lo.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
   wire [data_len_width_lp-1:0] num_burst_cmds = `BSG_MAX(1, (1'b1 << header_lo.size) / out_data_bytes_lp);
 
-  logic data_bursting_r, burst_clear;
-  logic data_ready_and_lo;
+  logic data_bursting_r, data_burst_clear, data_ready_and_lo;
   // Hold the data for burst
   logic [in_data_width_p-1:0] data_lo;
   bsg_dff_en_bypass
@@ -117,30 +116,11 @@ module bp_lite_to_burst_new
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
     ,.set_i(in_msg_ready_and_o & in_msg_v_i & has_data)
-    ,.clear_i(burst_clear)
+    ,.clear_i(data_burst_clear)
     ,.data_o(data_bursting_r)
     );
 
-  // We wouldn't need this counter if we can make ues of the is_last_cnt signal within the piso
-  logic [data_len_width_lp-1:0] last_cnt, burst_cnt;
-  logic cnt_up, is_last_cnt;
-  bsg_counter_clear_up 
-   #(.max_val_p(burst_words_lp-1)
-	 ,.init_val_p(0))
-    burst_counter
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-
-    ,.clear_i(burst_clear)
-    ,.up_i(cnt_up & ~burst_clear)
-    ,.count_o(burst_cnt)
-    );
-
-  assign cnt_up = out_msg_data_ready_and_i & out_msg_data_v_o;
-  assign last_cnt = num_burst_cmds - 1'b1;
-  assign is_last_cnt = (burst_cnt == last_cnt);
-
-  assign burst_clear = is_last_cnt & cnt_up;
+  assign data_burst_clear = data_ready_and_lo;
 
   // Refuses new lite pkt when: 
   // 1. pending header in the register
