@@ -56,6 +56,8 @@
  *   and each endpoint will interpret the field as appropriate
  *
  */
+
+// placed here for search: this macro defines types like bp_bedrock_cce_mem_msg_s
 `define declare_bp_bedrock_msg_s(addr_width_mp, payload_width_mp, data_width_mp, name_mp) \
   typedef struct packed                                                                   \
   {                                                                                       \
