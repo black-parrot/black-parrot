@@ -13,23 +13,24 @@
 `include "bp_fe_defines.svh"
 
 module bp_fe_bht
+ import bp_common_pkg::*;
  import bp_fe_pkg::*;
- #(parameter vaddr_width_p     = "inv"
-   , parameter bht_idx_width_p = "inv"
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
 
-   , localparam els_lp = 2**bht_idx_width_p
+   , localparam idx_width_lp = bht_idx_width_p+ghist_width_p
    )
   (input                         clk_i
    , input                       reset_i
 
    , input                       w_v_i
-   , input [bht_idx_width_p-1:0] idx_w_i
+   , input [idx_width_lp-1:0]    idx_w_i
    , input [1:0]                 val_i
    , input                       correct_i
    , output logic                w_yumi_o
 
    , input                       r_v_i
-   , input [bht_idx_width_p-1:0] idx_r_i
+   , input [idx_width_lp-1:0]    idx_r_i
    , output logic [1:0]          val_o
    );
 
@@ -39,7 +40,7 @@ module bp_fe_bht
   wire is_clear = (state_r == e_clear);
   wire is_run   = (state_r == e_run);
 
-  localparam bht_els_lp = 2**bht_idx_width_p;
+  localparam bht_els_lp = 2**idx_width_lp;
   localparam bht_init_lp = 2'b01;
   logic [`BSG_WIDTH(bht_els_lp)-1:0] init_cnt;
   bsg_counter_clear_up
@@ -69,19 +70,19 @@ module bp_fe_bht
     else
       state_r <= state_n;
 
-  wire                          w_v_li = is_clear | w_v_i;
-  wire [bht_idx_width_p-1:0] w_addr_li = is_clear ? init_cnt : idx_w_i;
-  wire [1:0]                 w_data_li = is_clear ? bht_init_lp : correct_i ? {val_i[1], 1'b0} : {val_i[1]^val_i[0], 1'b1};
+  wire                       w_v_li = is_clear | w_v_i;
+  wire [idx_width_lp-1:0] w_addr_li = is_clear ? init_cnt : idx_w_i;
+  wire [1:0]              w_data_li = is_clear ? bht_init_lp : correct_i ? {val_i[1], 1'b0} : {val_i[1]^val_i[0], 1'b1};
 
-  wire                          r_v_li = r_v_i;
-  wire [bht_idx_width_p-1:0] r_addr_li = idx_r_i;
+  wire                       r_v_li = r_v_i;
+  wire [idx_width_lp-1:0] r_addr_li = idx_r_i;
   logic [1:0] r_data_lo;
   logic conflict_lo;
   bsg_mem_1r1w_sync_mask_write_bit_reshape
    #(.skinny_width_p(2)
-     ,.skinny_els_p(2**bht_idx_width_p)
+     ,.skinny_els_p(2**idx_width_lp)
      ,.fat_width_p(2)
-     ,.fat_els_p(2**bht_idx_width_p)
+     ,.fat_els_p(2**idx_width_lp)
      ,.drop_write_not_read_p(1)
      )
    bht_mem

@@ -16,10 +16,10 @@
 `include "bp_fe_defines.svh"
 
 module bp_fe_btb
+ import bp_common_pkg::*;
  import bp_fe_pkg::*;
- #(parameter vaddr_width_p     = "inv"
-   , parameter btb_tag_width_p = "inv"
-   , parameter btb_idx_width_p = "inv"
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
    )
   (input                          clk_i
    , input                        reset_i
