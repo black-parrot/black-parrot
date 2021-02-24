@@ -78,11 +78,14 @@ module bp_fe_bht
   wire [idx_width_lp-1:0] r_addr_li = idx_r_i;
   logic [1:0] r_data_lo;
   logic conflict_lo;
+  // 64 is a reasonable value, but there's an optimization space here
+  localparam fat_width_lp = 64;
+  localparam skinny_width_lp = 2;
   bsg_mem_1r1w_sync_mask_write_bit_reshape
-   #(.skinny_width_p(2)
-     ,.skinny_els_p(2**idx_width_lp)
-     ,.fat_width_p(2)
-     ,.fat_els_p(2**idx_width_lp)
+   #(.skinny_width_p(skinny_width_lp)
+     ,.skinny_els_p(bht_els_lp)
+     ,.fat_width_p(fat_width_lp)
+     ,.fat_els_p(bht_els_lp/(fat_width_lp/skinny_width_lp))
      ,.drop_write_not_read_p(1)
      )
    bht_mem
@@ -100,7 +103,7 @@ module bp_fe_bht
 
      ,.conflict_o(conflict_lo)
      );
-  assign w_yumi_o = w_v_i & ~conflict_lo;
+  assign w_yumi_o = is_run & w_v_i & ~conflict_lo;
 
   logic r_v_r;
   bsg_dff_reset

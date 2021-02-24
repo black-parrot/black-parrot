@@ -112,7 +112,7 @@ module bp_fe_pc_gen
   wire btb_r_v_li = next_pc_yumi_i & ~ovr_taken & ~ovr_ret;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb)
-    | (attaboy_yumi_o & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
+    | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
   wire btb_clr_li = redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb;
   wire btb_jmp_li = redirect_br_v_i ? (redirect_br_metadata_fwd.is_jal | redirect_br_metadata_fwd.is_jalr) : (attaboy_br_metadata_fwd.is_jal | attaboy_br_metadata_fwd.is_jalr);
   wire [btb_tag_width_p-1:0] btb_tag_li = redirect_br_v_i ? redirect_br_metadata_fwd.btb_tag : attaboy_br_metadata_fwd.btb_tag;
@@ -121,11 +121,9 @@ module bp_fe_pc_gen
 
   logic btb_br_tgt_v_lo;
   logic btb_br_tgt_jmp_lo;
+  logic btb_w_yumi_lo;
   bp_fe_btb
-   #(.vaddr_width_p(vaddr_width_p)
-     ,.btb_tag_width_p(btb_tag_width_p)
-     ,.btb_idx_width_p(btb_idx_width_p)
-     )
+   #(.bp_params_p(bp_params_p))
    btb
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -142,6 +140,7 @@ module bp_fe_pc_gen
      ,.w_tag_i(btb_tag_li)
      ,.w_idx_i(btb_idx_li)
      ,.br_tgt_i(btb_tgt_li)
+     ,.w_yumi_o(btb_w_yumi_lo)
      );
 
   // BHT
@@ -157,10 +156,8 @@ module bp_fe_pc_gen
   logic [1:0] bht_val_lo;
   logic bht_w_yumi_lo;
   bp_fe_bht
-   #(.vaddr_width_p(vaddr_width_p)
-     ,.bht_idx_width_p(bht_idx_width_p+ghist_width_p)
-     )
-   bp_fe_bht
+   #(.bp_params_p(bp_params_p))
+   bht
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -190,7 +187,7 @@ module bp_fe_pc_gen
      );
   assign ras_tgt_lo = return_addr_r;
 
-  assign attaboy_yumi_o = attaboy_v_i & ~redirect_br_v_i & ~(bht_w_v_li & ~bht_w_yumi_lo);
+  assign attaboy_yumi_o = attaboy_v_i & ~(bht_w_v_li & ~bht_w_yumi_lo) & ~(btb_w_v_li & ~btb_w_yumi_lo);
 
   /////////////////
   // IF2

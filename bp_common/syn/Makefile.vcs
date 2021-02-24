@@ -71,7 +71,7 @@ $(BUILD_DIR)/simv: $(BUILD_COLLATERAL)
 	-@tail -n3 $(BUILD_LOG) > $(BUILD_REPORT)
 	-@test -s $(BUILD_ERROR) && echo "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
 
-build_dump.v: VCS_BUILD_OPTS += -debug_all
+build_dump.v: VCS_BUILD_OPTS += -debug_pp
 build_dump.v: VCS_BUILD_OPTS += +vcs+vcdpluson
 build_dump.v: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
 build_dump.v: build.v

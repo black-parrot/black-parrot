@@ -56,7 +56,6 @@ module bsg_mem_1r1w_sync_mask_write_bit_reshape #(parameter skinny_width_p=-1
       assign fat_w_offset = w_addr_i[0+:offset_width_lp];
       assign fat_r_offset = r_addr_i[0+:offset_width_lp];
 
-      logic [offset_width_lp-1:0] fat_r_offset_r;
       bsg_dff_reset
        #(.width_p(offset_width_lp))
        fat_r_offset_reg
@@ -69,8 +68,8 @@ module bsg_mem_1r1w_sync_mask_write_bit_reshape #(parameter skinny_width_p=-1
     end
 
   logic rw_same_fat_addr;
-  wire drop_read = rw_same_fat_addr & (drop_write_not_read_p == 0);
-  wire drop_write = rw_same_fat_addr & (drop_write_not_read_p == 1);
+  wire drop_read = w_v_i & rw_same_fat_addr & (drop_write_not_read_p == 0);
+  wire drop_write = r_v_i & rw_same_fat_addr & (drop_write_not_read_p == 1);
 
   wire                            fat_w_v_li = w_v_i & ~drop_write;
   wire [fat_width_p-1:0]       fat_w_mask_li = w_mask_i << (fat_w_offset*skinny_width_p);
@@ -80,7 +79,7 @@ module bsg_mem_1r1w_sync_mask_write_bit_reshape #(parameter skinny_width_p=-1
   wire                            fat_r_v_li = r_v_i & ~drop_read;
   wire [fat_addr_width_lp-1:0] fat_r_addr_li = r_addr_i[offset_width_lp+:fat_addr_width_lp];
 
-  assign rw_same_fat_addr = r_v_i & w_v_i & (fat_r_addr_li == fat_w_addr_li);
+  assign rw_same_fat_addr = (fat_r_addr_li == fat_w_addr_li);
 
   logic [fat_width_p-1:0] fat_r_data_lo;
   bsg_mem_1r1w_sync_mask_write_bit
