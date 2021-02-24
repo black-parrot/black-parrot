@@ -302,19 +302,11 @@ module bp_be_csr
 
   // sip mask
   assign sip_rmask_li     = mideleg_lo;
-<<<<<<< HEAD
   assign sip_wmask_li     = '{meip: 1'b0, seip: 1'b0
                               ,mtip: 1'b0, stip: 1'b0
                               ,msip: 1'b0, ssip: mideleg_lo.ssi
                               ,default: '0
                               };
-=======
-  assign sip_wmask_li    = '{meip: 1'b0, seip: 1'b0
-                             ,mtip: 1'b0, stip: 1'b0
-                             ,msip: 1'b0, ssip: mideleg_lo.ssi
-                             ,default: '0
-                             };
->>>>>>> CSR Refactor (#766)
 
   // CSR data
   always_comb
@@ -359,7 +351,6 @@ module bp_be_csr
 
       exception_v_lo    = '0;
       interrupt_v_lo    = '0;
-<<<<<<< HEAD
 
       csr_illegal_instr_o  = '0;
       csr_satp_o           = '0;
@@ -373,14 +364,6 @@ module bp_be_csr
       mstatus_li.fs |= {2{(retire_pkt_cast_i.instret & instr_fany_li)}};
 
       if (csr_cmd_v_i)
-=======
-
-      csr_illegal_instr_o  = '0;
-      csr_satp_o           = '0;
-      csr_data_lo          = '0;
-
-      if (csr_cmd_v_i & csr_cmd_cast_i.csr_op inside {e_csrrw, e_csrrs, e_csrrc, e_csrrwi, e_csrrsi, e_csrrci})
->>>>>>> CSR Refactor (#766)
         begin
           // Check for access violations
           if (is_s_mode & mstatus_lo.tvm & (csr_cmd_cast_i.csr_addr == `CSR_ADDR_SATP))
@@ -399,20 +382,11 @@ module bp_be_csr
             csr_illegal_instr_o = 1'b1;
           else
             begin
-<<<<<<< HEAD
               unique casez ({csr_r_v_li, csr_cmd_cast_i.csr_addr})
                 {1'b1, `CSR_ADDR_FFLAGS       }: csr_data_lo = fcsr_lo.fflags;
                 {1'b1, `CSR_ADDR_FRM          }: csr_data_lo = fcsr_lo.frm;
                 {1'b1, `CSR_ADDR_FCSR         }: csr_data_lo = fcsr_lo;
                 {1'b1, `CSR_ADDR_CYCLE        }: csr_data_lo = mcycle_lo;
-=======
-              // Read case
-              unique casez (csr_cmd_cast_i.csr_addr)
-                `CSR_ADDR_FFLAGS : csr_data_lo = fcsr_lo.fflags;
-                `CSR_ADDR_FRM    : csr_data_lo = fcsr_lo.frm;
-                `CSR_ADDR_FCSR   : csr_data_lo = fcsr_lo;
-                `CSR_ADDR_CYCLE  : csr_data_lo = mcycle_lo;
->>>>>>> CSR Refactor (#766)
                 // Time must be done by trapping, since we can't stall at this point
                 {1'b1, `CSR_ADDR_INSTRET      }: csr_data_lo = minstret_lo;
                 // SSTATUS subset of MSTATUS
@@ -443,7 +417,6 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_MSTATUS      }: csr_data_lo = mstatus_lo;
                 // MISA is optionally read-write, but all fields are read-only in BlackParrot
                 //   64 bit MXLEN, IMAFDSU extensions
-<<<<<<< HEAD
                 {1'b1, `CSR_ADDR_MISA         }: csr_data_lo = {2'b10, 36'b0, 26'h141129};
                 {1'b1, `CSR_ADDR_MEDELEG      }: csr_data_lo = medeleg_lo;
                 {1'b1, `CSR_ADDR_MIDELEG      }: csr_data_lo = mideleg_lo;
@@ -470,34 +443,6 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_FRM          }: fcsr_li = '{frm: csr_data_li, fflags: fcsr_lo.fflags, default: '0};
                 {1'b1, `CSR_ADDR_FCSR         }: fcsr_li = csr_data_li;
                 {1'b1, `CSR_ADDR_CYCLE        }: mcycle_li = csr_data_li;
-=======
-                `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h141129};
-                `CSR_ADDR_MEDELEG: csr_data_lo = medeleg_lo;
-                `CSR_ADDR_MIDELEG: csr_data_lo = mideleg_lo;
-                `CSR_ADDR_MIE: csr_data_lo = mie_lo;
-                `CSR_ADDR_MTVEC: csr_data_lo = mtvec_lo;
-                `CSR_ADDR_MCOUNTEREN: csr_data_lo = mcounteren_lo;
-                `CSR_ADDR_MIP: csr_data_lo = mip_lo;
-                `CSR_ADDR_MSCRATCH: csr_data_lo = mscratch_lo;
-                `CSR_ADDR_MEPC: csr_data_lo = mepc_lo;
-                `CSR_ADDR_MCAUSE: csr_data_lo = mcause_lo;
-                `CSR_ADDR_MTVAL: csr_data_lo = mtval_lo;
-                `CSR_ADDR_MCYCLE: csr_data_lo = mcycle_lo;
-                `CSR_ADDR_MINSTRET: csr_data_lo = minstret_lo;
-                `CSR_ADDR_MCOUNTINHIBIT: csr_data_lo = mcountinhibit_lo;
-                `CSR_ADDR_DCSR: csr_data_lo = dcsr_lo;
-                `CSR_ADDR_DPC: csr_data_lo = dpc_lo;
-                `CSR_ADDR_DSCRATCH0: csr_data_lo = dscratch0_lo;
-                `CSR_ADDR_DSCRATCH1: csr_data_lo = dscratch1_lo;
-                default: csr_illegal_instr_o = 1'b1;
-              endcase
-              // Write case
-              unique casez (csr_cmd_cast_i.csr_addr)
-                `CSR_ADDR_FFLAGS : fcsr_li = '{frm: fcsr_lo.frm, fflags: csr_data_li, default: '0};
-                `CSR_ADDR_FRM    : fcsr_li = '{frm: csr_data_li, fflags: fcsr_lo.fflags, default: '0};
-                `CSR_ADDR_FCSR   : fcsr_li = csr_data_li;
-                `CSR_ADDR_CYCLE  : mcycle_li = csr_data_li;
->>>>>>> CSR Refactor (#766)
                 // Time must be done by trapping, since we can't stall at this point
                 {1'b1, `CSR_ADDR_INSTRET      }: minstret_li = csr_data_li;
                 // SSTATUS subset of MSTATUS
@@ -514,7 +459,6 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_SCAUSE       }: scause_li = csr_data_li;
                 {1'b1, `CSR_ADDR_STVAL        }: stval_li = csr_data_li;
                 // SIP subset of MIP
-<<<<<<< HEAD
                 {1'b1, `CSR_ADDR_SIP          }: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
                 {1'b1, `CSR_ADDR_SATP         }: begin satp_li = csr_data_li; csr_satp_o = 1'b1; end
                 {1'b1, `CSR_ADDR_MVENDORID    }: begin end
@@ -541,33 +485,6 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_DSCRATCH0    }: dscratch0_li = csr_data_li;
                 {1'b1, `CSR_ADDR_DSCRATCH1    }: dscratch1_li = csr_data_li;
                 {1'b0, 12'h???                }: begin end
-=======
-                `CSR_ADDR_SIP: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
-                `CSR_ADDR_SATP: begin satp_li = csr_data_li; csr_satp_o = csr_w_v_li; end
-                `CSR_ADDR_MVENDORID: begin end
-                `CSR_ADDR_MARCHID: begin end
-                `CSR_ADDR_MIMPID: begin end
-                `CSR_ADDR_MHARTID: begin end
-                `CSR_ADDR_MSTATUS: mstatus_li = csr_data_li;
-                `CSR_ADDR_MISA: begin end
-                `CSR_ADDR_MEDELEG: medeleg_li = csr_data_li;
-                `CSR_ADDR_MIDELEG: mideleg_li = csr_data_li;
-                `CSR_ADDR_MIE: mie_li = csr_data_li;
-                `CSR_ADDR_MTVEC: mtvec_li = csr_data_li;
-                `CSR_ADDR_MCOUNTEREN: mcounteren_li = csr_data_li;
-                `CSR_ADDR_MIP: mip_li = (mip_lo & ~mip_wmask_li) | (csr_data_li & mip_wmask_li);
-                `CSR_ADDR_MSCRATCH: mscratch_li = csr_data_li;
-                `CSR_ADDR_MEPC: mepc_li = csr_data_li;
-                `CSR_ADDR_MCAUSE: mcause_li = csr_data_li;
-                `CSR_ADDR_MTVAL: mtval_li = csr_data_li;
-                `CSR_ADDR_MCYCLE: mcycle_li = csr_data_li;
-                `CSR_ADDR_MINSTRET: minstret_li = csr_data_li;
-                `CSR_ADDR_MCOUNTINHIBIT: mcountinhibit_li = csr_data_li;
-                `CSR_ADDR_DCSR: dcsr_li = csr_data_li;
-                `CSR_ADDR_DPC: dpc_li = csr_data_li;
-                `CSR_ADDR_DSCRATCH0: dscratch0_li = csr_data_li;
-                `CSR_ADDR_DSCRATCH1: dscratch1_li = csr_data_li;
->>>>>>> CSR Refactor (#766)
                 default: csr_illegal_instr_o = 1'b1;
               endcase
             end
@@ -692,16 +609,6 @@ module bp_be_csr
       mip_li.mtip = timer_irq_i;
       mip_li.msip = software_irq_i;
       mip_li.meip = external_irq_i;
-<<<<<<< HEAD
-=======
-
-      // Accumulate FFLAGS
-      fcsr_li.fflags |= fflags_acc_i;
-
-      // Set FS to dirty if: fflags set, frf written, fcsr written
-      mstatus_li.fs |= {2{(csr_w_v_li & csr_fany_li)}};
-      mstatus_li.fs |= {2{(retire_pkt_cast_i.instret & instr_fany_li)}};
->>>>>>> CSR Refactor (#766)
     end
 
   // Debug Mode masks all interrupts

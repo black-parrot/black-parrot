@@ -255,7 +255,7 @@ module bp_lce_req
           ? e_bedrock_req_rd
           : e_bedrock_req_wr;
 
-        lce_req_payload.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.repl_way);
+        lce_req_payload.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.hit_or_repl_way);
         lce_req_payload.non_exclusive = (cache_req_r.msg_type == e_miss_load)
           ? (non_excl_reads_p == 1)
             ? e_bedrock_req_non_excl

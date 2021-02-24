@@ -928,7 +928,7 @@ module bp_be_dcache
 
   always_comb
     for (integer i = 0; i < assoc_p; i++)
-      case ({tag_mem_fast_write, tag_mem_pkt_cast_i.opcode})
+      casez ({tag_mem_fast_write, tag_mem_pkt_cast_i.opcode})
         {1'b1, 3'b???}:
           begin
             tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};

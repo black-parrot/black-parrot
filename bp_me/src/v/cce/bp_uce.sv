@@ -589,7 +589,7 @@ module bp_uce
                             ? e_flush_read
                             : clear_v_li
                               ? e_clear
-                              : uc_hit_v_li
+                              : (uc_hit_v_li & (l1_writethrough_p == 0))
                                 ? e_uc_writeback_evict
                                 : e_send_critical
                           : e_ready;
@@ -598,24 +598,24 @@ module bp_uce
 
         e_uc_writeback_evict:
           begin
-            if (cache_req_metadata_v_r)
-              if (cache_req_metadata_r.dirty)
-                begin
-                  data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
-                  data_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-                  data_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
-                  data_mem_pkt_v_o = 1'b1;
-                  data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
+            data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
+            data_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+            data_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
+            data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
+            data_mem_pkt_v_o = cache_req_metadata_v_r & cache_req_metadata_r.dirty;
 
-                  stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
-                  stat_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-                  stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
-                  stat_mem_pkt_v_o = 1'b1;
+            stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
+            stat_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+            stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
+            stat_mem_pkt_v_o = cache_req_metadata_v_r & cache_req_metadata_r.dirty;
 
-                  state_n = (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_uc_writeback_write_req : e_uc_writeback_evict;
-                end
-              else
-                state_n = e_send_critical;
+            state_n = cache_req_metadata_v_r
+                      ? cache_req_metadata_r.dirty
+                        ? (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
+                          ? e_uc_writeback_write_req
+                          : e_uc_writeback_evict
+                        : e_send_critical
+                      : e_uc_writeback_evict;
           end
 
         e_uc_writeback_write_req:
@@ -800,6 +800,9 @@ always_ff @(negedge clk_i)
   begin
     assert((metadata_latency_p < 2))
       else $error("metadata needs to arrive within one cycle of the request");
+
+    assert((l1_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
+      else $error("writethrough cache should not be in writeback states");
   end
 
 endmodule
