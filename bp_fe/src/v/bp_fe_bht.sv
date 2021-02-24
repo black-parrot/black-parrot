@@ -79,19 +79,28 @@ module bp_fe_bht
   wire                          r_v_li = r_v_i & ~rw_same_addr;
   wire [bht_idx_width_p-1:0] r_addr_li = idx_r_i;
   logic [1:0] r_data_lo;
-  bsg_mem_1r1w_sync
-   #(.width_p(2), .els_p(2**bht_idx_width_p))
+  logic conflict_lo;
+  bsg_mem_1r1w_sync_mask_write_bit_reshape
+   #(.skinny_width_p(2)
+     ,.skinny_els_p(2**bht_idx_width_p)
+     ,.fat_width_p(2)
+     ,.fat_els_p(2**bht_idx_width_p)
+     ,.drop_write_not_read_p(1)
+     )
    bht_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.w_v_i(w_v_li)
+     ,.w_mask_i('1)
      ,.w_addr_i(w_addr_li)
      ,.w_data_i(w_data_li)
 
      ,.r_v_i(r_v_li)
      ,.r_addr_i(r_addr_li)
      ,.r_data_o(r_data_lo)
+
+     ,.conflict_o(conflict_lo)
      );
 
   logic r_v_r;
