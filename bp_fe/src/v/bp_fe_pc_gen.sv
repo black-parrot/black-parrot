@@ -149,12 +149,13 @@ module bp_fe_pc_gen
   wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_r_li =
     {next_pc_o[2+:bht_idx_width_p], pred_if1_n.ghist};
   wire bht_w_v_li =
-    (redirect_br_v_i & redirect_br_metadata_fwd.is_br) | (attaboy_yumi_o & attaboy_br_metadata_fwd.is_br);
+    (redirect_br_v_i & redirect_br_metadata_fwd.is_br) | (attaboy_v_i & attaboy_br_metadata_fwd.is_br);
   wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_w_li = redirect_br_v_i
     ? {redirect_br_metadata_fwd.bht_idx, redirect_br_metadata_fwd.ghist}
     : {attaboy_br_metadata_fwd.bht_idx, attaboy_br_metadata_fwd.ghist};
   wire [1:0] bht_val_li = redirect_br_v_i ? redirect_br_metadata_fwd.bht_val : attaboy_br_metadata_fwd.bht_val;
   logic [1:0] bht_val_lo;
+  logic bht_w_yumi_lo;
   bp_fe_bht
    #(.vaddr_width_p(vaddr_width_p)
      ,.bht_idx_width_p(bht_idx_width_p+ghist_width_p)
@@ -171,6 +172,7 @@ module bp_fe_pc_gen
      ,.idx_w_i(bht_idx_w_li)
      ,.correct_i(attaboy_yumi_o)
      ,.val_i(bht_val_li)
+     ,.w_yumi_o(bht_w_yumi_lo)
      );
   assign btb_taken = btb_br_tgt_v_lo & (bht_val_lo[1] | btb_br_tgt_jmp_lo);
 
@@ -188,7 +190,7 @@ module bp_fe_pc_gen
      );
   assign ras_tgt_lo = return_addr_r;
 
-  assign attaboy_yumi_o = attaboy_v_i & ~redirect_br_v_i;
+  assign attaboy_yumi_o = attaboy_v_i & ~redirect_br_v_i & ~(bht_w_v_li & ~bht_w_yumi_lo);
 
   /////////////////
   // IF2

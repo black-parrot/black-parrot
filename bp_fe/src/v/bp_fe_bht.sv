@@ -26,10 +26,11 @@ module bp_fe_bht
    , input [bht_idx_width_p-1:0] idx_w_i
    , input [1:0]                 val_i
    , input                       correct_i
+   , output logic                w_yumi_o
 
    , input                       r_v_i
    , input [bht_idx_width_p-1:0] idx_r_i
-   , output [1:0]                val_o
+   , output logic [1:0]          val_o
    );
 
   // Initialization state machine
@@ -68,15 +69,11 @@ module bp_fe_bht
     else
       state_r <= state_n;
 
-  /* TODO: We should fold this tall, narrow RAM */
   wire                          w_v_li = is_clear | w_v_i;
   wire [bht_idx_width_p-1:0] w_addr_li = is_clear ? init_cnt : idx_w_i;
   wire [1:0]                 w_data_li = is_clear ? bht_init_lp : correct_i ? {val_i[1], 1'b0} : {val_i[1]^val_i[0], 1'b1};
 
-  // We could technically forward, but instead we'll bank the memory in
-  //   the future, so won't waste effort here
-  wire                    rw_same_addr = r_v_i & w_v_i & (w_addr_li == idx_r_i);
-  wire                          r_v_li = r_v_i & ~rw_same_addr;
+  wire                          r_v_li = r_v_i;
   wire [bht_idx_width_p-1:0] r_addr_li = idx_r_i;
   logic [1:0] r_data_lo;
   logic conflict_lo;
@@ -102,6 +99,7 @@ module bp_fe_bht
 
      ,.conflict_o(conflict_lo)
      );
+  assign w_yumi_o = w_v_i & ~conflict_lo;
 
   logic r_v_r;
   bsg_dff_reset
