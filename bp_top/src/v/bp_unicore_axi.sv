@@ -1,4 +1,4 @@
-module bp_unicore_with_axi_wrapper
+module bp_unicore_axi
 
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;

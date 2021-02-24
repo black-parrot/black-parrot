@@ -1,4 +1,4 @@
-module bp_mem_to_axi_master
+module bp_burst_to_axi_master
 
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;

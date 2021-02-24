@@ -21,6 +21,8 @@ module axi_lite_to_bp_lite_client
    , input aresetn_i
 
    //==================== BP-LITE SIGNALS ======================
+   , input [lce_id_width_p-1:0]                 lce_id_i
+
    , output logic [bp_out_mem_msg_width_lp-1:0] io_cmd_o
    , output logic                               io_cmd_v_o
    , input                                      io_cmd_yumi_i
@@ -130,7 +132,7 @@ module axi_lite_to_bp_lite_client
 
           if (s_axi_lite_arvalid_i) 
             begin
-              io_cmd_cast_o.header.payload  = bp_out_mem_payload_width_lp'('h0010);
+              io_cmd_cast_o.header.payload  = '{lce_id: lce_id_i, default: '0};
               io_cmd_cast_o.header.addr     = s_axi_lite_araddr_i;
               io_cmd_cast_o.header.msg_type = e_bedrock_mem_uc_rd;
               io_cmd_v_o                    = axi_lite_r_v;
@@ -142,7 +144,7 @@ module axi_lite_to_bp_lite_client
 
           else if (s_axi_lite_awvalid_i) 
             begin
-              io_cmd_cast_o.header.payload             = bp_out_mem_payload_width_lp'('h0010);
+              io_cmd_cast_o.header.payload             = '{lce_id: lce_id_i, default: '0};
               io_cmd_cast_o.header.addr                = s_axi_lite_awaddr_i;
               io_cmd_cast_o.header.msg_type            = e_bedrock_mem_uc_wr;
               io_cmd_cast_o.data[axi_data_width_p-1:0] = io_cmd_data_lo;
