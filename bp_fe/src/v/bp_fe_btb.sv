@@ -24,6 +24,8 @@ module bp_fe_btb
   (input                              clk_i
    , input                            reset_i
 
+   , output logic                     init_done_o
+
    // Synchronous read
    , input [vaddr_width_p-1:0]        r_addr_i
    , input                            r_v_i
@@ -47,6 +49,8 @@ module bp_fe_btb
   wire is_reset = (state_r == e_reset);
   wire is_clear = (state_r == e_clear);
   wire is_run   = (state_r == e_run);
+
+  assign init_done_o = is_run;
 
   localparam btb_els_lp = 2**btb_idx_width_p;
   logic [`BSG_WIDTH(btb_els_lp)-1:0] init_cnt;

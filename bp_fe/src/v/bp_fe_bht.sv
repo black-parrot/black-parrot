@@ -23,6 +23,8 @@ module bp_fe_bht
   (input                         clk_i
    , input                       reset_i
 
+   , output logic                init_done_o
+
    , input                       w_v_i
    , input [idx_width_lp-1:0]    idx_w_i
    , input [1:0]                 val_i
@@ -39,6 +41,8 @@ module bp_fe_bht
   wire is_reset = (state_r == e_reset);
   wire is_clear = (state_r == e_clear);
   wire is_run   = (state_r == e_run);
+
+  assign init_done_o = is_run;
 
   localparam bht_els_lp = 2**idx_width_lp;
   localparam bht_init_lp = 2'b01;

@@ -19,6 +19,8 @@ module bp_fe_pc_gen
   (input                                             clk_i
    , input                                           reset_i
 
+   , output logic                                    init_done_o
+
    , input                                           redirect_v_i
    , input [vaddr_width_p-1:0]                       redirect_pc_i
    , input                                           redirect_br_v_i
@@ -32,7 +34,7 @@ module bp_fe_pc_gen
 
    , output logic                                    ovr_o
 
-   , input [instr_width_gp-1:0]                       fetch_i
+   , input [instr_width_gp-1:0]                      fetch_i
    , input                                           fetch_instr_v_i
    , input                                           fetch_exception_v_i
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
@@ -119,6 +121,7 @@ module bp_fe_pc_gen
   wire [btb_idx_width_p-1:0] btb_idx_li = redirect_br_v_i ? redirect_br_metadata_fwd.btb_idx : attaboy_br_metadata_fwd.btb_idx;
   wire [vaddr_width_p-1:0]   btb_tgt_li = redirect_br_v_i ? redirect_pc_i : attaboy_pc_i;
 
+  logic btb_init_done_lo;
   logic btb_br_tgt_v_lo;
   logic btb_br_tgt_jmp_lo;
   logic btb_w_yumi_lo;
@@ -127,6 +130,8 @@ module bp_fe_pc_gen
    btb
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+
+     ,.init_done_o(btb_init_done_lo)
 
      ,.r_addr_i(next_pc_o)
      ,.r_v_i(btb_r_v_li)
@@ -155,11 +160,14 @@ module bp_fe_pc_gen
   wire [1:0] bht_val_li = redirect_br_v_i ? redirect_br_metadata_fwd.bht_val : attaboy_br_metadata_fwd.bht_val;
   logic [1:0] bht_val_lo;
   logic bht_w_yumi_lo;
+  logic bht_init_done_lo;
   bp_fe_bht
    #(.bp_params_p(bp_params_p))
    bht
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+
+     ,.init_done_o(bht_init_done_lo)
 
      ,.r_v_i(bht_r_v_li)
      ,.idx_r_i(bht_idx_r_li)
@@ -271,6 +279,8 @@ module bp_fe_pc_gen
      ,.data_i(ghistory_n)
      ,.data_o(ghistory_r)
      );
+
+  assign init_done_o = bht_init_done_lo & btb_init_done_lo;
 
 endmodule
 
