@@ -147,6 +147,7 @@ module bp_be_pipe_sys
       retire_instr_r  <= retire_ninstr_r;
     end
 
+  wire instret_li = retire_v_i & ~|retire_exception_i;
   assign retire_pkt =
     '{v          : retire_v_i
       ,queue_v   : retire_queue_v_i
@@ -157,7 +158,7 @@ module bp_be_pipe_sys
       ,instr     : retire_instr_r
       // Could do a preemptive onehot decode here
       ,exception : retire_v_i ? retire_exception_i : '0
-      ,special   : retire_v_i ? retire_special_i   : '0
+      ,special   : instret_li ? retire_special_i   : '0
       };
 
 endmodule

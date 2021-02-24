@@ -461,7 +461,7 @@ module bp_be_calculator_top
 
           exc_stage_n[2].exc.dcache_miss        |= pipe_mem_dcache_miss_lo;
           exc_stage_n[2].spec.fencei            |= pipe_mem_fencei_lo;
-          exc_stage_n[2].exc.cmd_full           |= |exc_stage_r[2].exc & cmd_full_n_i;
+          exc_stage_n[2].exc.cmd_full           |= |{exc_stage_r[2].exc, exc_stage_r[2].spec} & cmd_full_n_i;
     end
 
   // Exception pipeline
