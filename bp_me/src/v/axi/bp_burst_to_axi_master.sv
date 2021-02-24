@@ -1,23 +1,23 @@
+
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_burst_to_axi_master
-
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+  `declare_bp_proc_params(bp_params_p)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, bp_in)
 
-  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-   `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, bp_in)
+  // AXI WRITE DATA CHANNEL PARAMS
+  , parameter  axi_data_width_p             = 64
+  , localparam axi_strb_width_lp            = axi_data_width_p/8
+  , localparam lg_axi_data_width_in_byte_lp = `BSG_SAFE_CLOG2(axi_data_width_p/8)
 
-   // AXI WRITE DATA CHANNEL PARAMS
-   , parameter  axi_data_width_p             = 64
-   , localparam axi_strb_width_lp            = axi_data_width_p/8
-   , localparam lg_axi_data_width_in_byte_lp = `BSG_SAFE_CLOG2(axi_data_width_p/8)
-
-   // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
-   , parameter axi_id_width_p                = 1
-   , parameter axi_addr_width_p              = 64
-   , parameter axi_burst_type_p              = 2'b01 //INCR type
-   )
+  // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
+  , parameter axi_id_width_p                = 1
+  , parameter axi_addr_width_p              = 64
+  )
 
   ( //==================== GLOBAL SIGNALS =======================
    input aclk_i  
@@ -46,17 +46,14 @@ module bp_burst_to_axi_master
    // WRITE ADDRESS CHANNEL SIGNALS
    , output logic [axi_id_width_p-1:0]       m_axi_awid_o     //write addr ID    
    , output logic [axi_addr_width_p-1:0]     m_axi_awaddr_o   //write address
-   , output logic [7:0]                      m_axi_awlen_o    //burst length (# of transfers 0-256)
-   , output logic [2:0]                      m_axi_awsize_o   //burst size (# of bytes in transfer 0-128)
-   , output logic [1:0]                      m_axi_awburst_o  //burst type (FIXED, INCR, or WRAP)
-   , output logic [3:0]                      m_axi_awcache_o  //memory type (write-through, write-back, etc.)
-   , output logic [2:0]                      m_axi_awprot_o   //protection type (unpriv, secure, etc)
-   , output logic [3:0]                      m_axi_awqos_o    //QoS (use default 0000 if no QoS scheme)
+   , output logic axi_len_e                  m_axi_awlen_o    //burst length (# of transfers 0-256)
+   , output logic axi_size_e                 m_axi_awsize_o   //burst size (# of bytes in transfer 0-128)
+   , output logic axi_burst_type_e           m_axi_awburst_o  //burst type (FIXED, INCR, or WRAP)
+   , output logic axi_cache_type_e           m_axi_awcache_o  //memory type (write-through, write-back, etc.)
+   , output logic axi_prot_type_e            m_axi_awprot_o   //protection type (unpriv, secure, etc)
+   , output logic axi_qos_type_e             m_axi_awqos_o    //QoS (use default 0000 if no QoS scheme)
    , output logic                            m_axi_awvalid_o  //master device write addr validity
    , input                                   m_axi_awready_i  //slave device readiness
-   //, output logic                          m_axi_awlock_o   //lock type (not supported by AXI-4)
-   //, output logic [axi_user_width_lp-1:0]  m_axi_awuser_o   //user-defined signals (optional, recommended for interconnect)
-   //, output logic [3:0]                    m_axi_awregion_o //region identifier (optional)
  
    // WRITE DATA CHANNEL SIGNALS
    , output logic [axi_id_width_p-1:0]       m_axi_wid_o      //write data ID
@@ -65,34 +62,29 @@ module bp_burst_to_axi_master
    , output logic                            m_axi_wlast_o    //write last (indicates last transfer in a write burst)
    , output logic                            m_axi_wvalid_o   //master device write validity
    , input                                   m_axi_wready_i   //slave device readiness
-   //, output logic [axi_user_width_lp-1:0]  m_axi_wuser_o    //user-defined signals (optional)
  
    // WRITE RESPONSE CHANNEL SIGNALS
    , input [axi_id_width_p-1:0]              m_axi_bid_i      //slave response ID
-   , input [1:0]                             m_axi_bresp_i    //status of the write transaction (OKAY, EXOKAY, SLVERR, or DECERR)
+   , input axi_resp_type_e                   m_axi_bresp_i    //status of the write transaction (OKAY, EXOKAY, SLVERR, or DECERR)
    , input                                   m_axi_bvalid_i   //slave device write reponse validity
    , output logic                            m_axi_bready_o   //master device write response readiness 
-    //, input [axi_user_width_lp-1:0]        m_axi_buser_i    //user-defined signals (optional)
    
    // READ ADDRESS CHANNEL SIGNALS
    , output logic [axi_id_width_p-1:0]       m_axi_arid_o     //read addr ID
    , output logic [axi_addr_width_p-1:0]     m_axi_araddr_o   //read address
-   , output logic [7:0]                      m_axi_arlen_o    //burst length (# of transfers 0-256)
-   , output logic [2:0]                      m_axi_arsize_o   //burst size (# of bytes in transfer 0-128)
-   , output logic [1:0]                      m_axi_arburst_o  //burst type (FIXED, INCR, or WRAP)
-   , output logic [3:0]                      m_axi_arcache_o  //memory type (write-through, write-back, etc.)
-   , output logic [2:0]                      m_axi_arprot_o   //protection type (unpriv, secure, etc)
-   , output logic [3:0]                      m_axi_arqos_o    //QoS (use default 0000 if no QoS scheme)
+   , output logic axi_len_e                  m_axi_arlen_o    //burst length (# of transfers 0-256)
+   , output logic axi_size_e                 m_axi_arsize_o   //burst size (# of bytes in transfer 0-128)
+   , output logic axi_burst_type_e           m_axi_arburst_o  //burst type (FIXED, INCR, or WRAP)
+   , output logic axi_cache_type_e           m_axi_arcache_o  //memory type (write-through, write-back, etc.)
+   , output logic axi_prot_type_e            m_axi_arprot_o   //protection type (unpriv, secure, etc)
+   , output logic axi_qos_type_e             m_axi_arqos_o    //QoS (use default 0000 if no QoS scheme)
    , output logic                            m_axi_arvalid_o  //master device read addr validity
    , input                                   m_axi_arready_i  //slave device readiness
-   //, output logic                          m_axi_arlock_o   //lock type (not supported by AXI-4)
-   //, output logic [axi_user_width_lp-1:0]  m_axi_aruser_o   //user-defined signals (optional)
-   //, output logic [3:0]                    m_axi_arregion_o //region identifier (optional)
  
    // READ DATA CHANNEL SIGNALS
    , input [axi_id_width_p-1:0]              m_axi_rid_i      //read data ID
    , input [axi_data_width_p-1:0]            m_axi_rdata_i    //read data
-   , input [1:0]                             m_axi_rresp_i    //read response
+   , input axi_resp_type_e                   m_axi_rresp_i    //read response
    , input                                   m_axi_rlast_i    //read last
    , input                                   m_axi_rvalid_i   //slave device read data validity
    , output logic                            m_axi_rready_o   //master device read data readiness
@@ -183,7 +175,7 @@ module bp_burst_to_axi_master
       m_axi_araddr_o  = mem_cmd_header_cast_i.addr;
       m_axi_arlen_o   = len_calc(mem_cmd_header_cast_i.size);
       m_axi_arsize_o  = size_calc(mem_cmd_header_cast_i.size);              
-      m_axi_arburst_o = axi_burst_type_p;
+      m_axi_arburst_o = e_axi_burst_incr;
       m_axi_arvalid_o = mem_cmd_header_read_v & mem_cmd_header_ready_o;
       m_axi_arid_o    = '0;      //device ID default to 0
       m_axi_arcache_o = 4'b0011; //normal non-cacheable bufferable (recommended for Xilinx IP)
@@ -197,7 +189,7 @@ module bp_burst_to_axi_master
       m_axi_awaddr_o  = awaddr_temp;
       m_axi_awlen_o   = len_calc(mem_cmd_header_cast_i.size);
       m_axi_awsize_o  = size_calc(mem_cmd_header_cast_i.size);
-      m_axi_awburst_o = axi_burst_type_p;
+      m_axi_awburst_o = e_axi_burst_incr;
       m_axi_awvalid_o = mem_cmd_header_write_v;
       m_axi_awid_o    = '0;
       m_axi_awcache_o = 4'b0011; 
@@ -307,3 +299,4 @@ module bp_burst_to_axi_master
         assert (m_axi_bresp_i == '0) else $warning("DRAM has an error response to memory writes");
     end
 endmodule
+

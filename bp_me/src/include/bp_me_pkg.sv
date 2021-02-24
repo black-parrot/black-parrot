@@ -13,6 +13,7 @@ package bp_me_pkg;
   localparam mem_resp_payload_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd);
 
   `include "bp_me_cce_inst_pkgdef.svh"
+  `include "bp_me_axi_pkgdef.sv"
 
 endpackage
 

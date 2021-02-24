@@ -1,40 +1,41 @@
+
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module axi_lite_to_bp_lite_client
-
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+  `declare_bp_proc_params(bp_params_p)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-   `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, bp_out)
+  // AXI WRITE DATA CHANNEL PARAMS
+  , parameter  axi_data_width_p             = 64
+  , localparam axi_strb_width_lp            = axi_data_width_p/8
 
-   // AXI WRITE DATA CHANNEL PARAMS
-   , parameter  axi_data_width_p             = 64
-   , localparam axi_strb_width_lp            = axi_data_width_p/8
-
-   // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
-   , parameter axi_addr_width_p              = 64
-   )
+  // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
+  , parameter axi_addr_width_p              = 64
+  )
 
   (//==================== GLOBAL SIGNALS =======================
-   input aclk_i  
-   , input aresetn_i
+   input clk_i  
+   , input reset_i
 
    //==================== BP-LITE SIGNALS ======================
    , input [lce_id_width_p-1:0]                 lce_id_i
 
-   , output logic [bp_out_mem_msg_width_lp-1:0] io_cmd_o
+   , output logic [cce_mem_msg_width_lp-1:0]    io_cmd_o
    , output logic                               io_cmd_v_o
    , input                                      io_cmd_yumi_i
 
-   , input [bp_out_mem_msg_width_lp-1:0]        io_resp_i
+   , input [cce_mem_msg_width_lp-1:0]           io_resp_i
    , input                                      io_resp_v_i
    , output logic                               io_resp_ready_o
 
    //====================== AXI-4 LITE =========================
    // WRITE ADDRESS CHANNEL SIGNALS
    , input [axi_addr_width_p-1:0]               s_axi_lite_awaddr_i
-   , input [2:0]                                s_axi_lite_awprot_i
+   , input axi_prot_type_e                      s_axi_lite_awprot_i
    , input                                      s_axi_lite_awvalid_i
    , output logic                               s_axi_lite_awready_o
 
@@ -45,19 +46,19 @@ module axi_lite_to_bp_lite_client
    , output logic                               s_axi_lite_wready_o
 
    // WRITE RESPONSE CHANNEL SIGNALS
-   , output logic [1:0]                         s_axi_lite_bresp_o   
+   , output axi_resp_type_e                     s_axi_lite_bresp_o   
    , output logic                               s_axi_lite_bvalid_o   
    , input                                      s_axi_lite_bready_i
 
    // READ ADDRESS CHANNEL SIGNALS
    , input [axi_addr_width_p-1:0]               s_axi_lite_araddr_i
-   , input [2:0]                                s_axi_lite_arprot_i
+   , input axi_prot_type_e                      s_axi_lite_arprot_i
    , input                                      s_axi_lite_arvalid_i
    , output logic                               s_axi_lite_arready_o
 
    // READ DATA CHANNEL SIGNALS
    , output logic [axi_data_width_p-1:0]        s_axi_lite_rdata_o
-   , output logic [1:0]                         s_axi_lite_rresp_o
+   , output logic axi_resp_type_e               s_axi_lite_rresp_o
    , output logic                               s_axi_lite_rvalid_o
    , input                                      s_axi_lite_rready_i
   );
@@ -66,9 +67,9 @@ module axi_lite_to_bp_lite_client
   wire [2:0] unused_1 = s_axi_lite_arprot_i;
 
   // declaring i/o command and response struct type and size
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, bp_out);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  bp_bedrock_bp_out_mem_msg_s io_cmd_cast_o, io_resp_cast_i;
+  bp_bedrock_cce_mem_msg_s io_cmd_cast_o, io_resp_cast_i;
   assign io_cmd_o       = io_cmd_cast_o;
   assign io_resp_cast_i = io_resp_i;
 
@@ -174,9 +175,9 @@ module axi_lite_to_bp_lite_client
       endcase
     end
 
-  always_ff @(posedge aclk_i) 
+  always_ff @(posedge clk_i) 
     begin
-      if (~aresetn_i)
+      if (reset_i)
         state_r <= e_wait;
       else
         state_r <= state_n;

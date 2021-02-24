@@ -1,87 +1,82 @@
+
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_lite_to_axi_lite_master
-
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
- import bp_be_pkg::*;
- import bp_common_rv64_pkg::*;
- import bp_cce_pkg::*;
  import bp_me_pkg::*;
- import bp_common_cfg_link_pkg::*;
- import bsg_noc_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+  `declare_bp_proc_params(bp_params_p)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-   `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, bp_in)
+  // AXI WRITE DATA CHANNEL PARAMS
+  , parameter  axi_data_width_p             = 64
+  , localparam axi_strb_width_lp            = axi_data_width_p/8
 
-   // AXI WRITE DATA CHANNEL PARAMS
-   , parameter  axi_data_width_p             = 64
-   , localparam axi_strb_width_lp            = axi_data_width_p/8
+  // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
+  , parameter axi_addr_width_p              = 64
+  )
+ (//==================== GLOBAL SIGNALS =======================
+  input                                       clk_i
+  , input                                     reset_i
 
-   // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
-   , parameter axi_addr_width_p              = 64
-   )
+  //==================== BP-LITE SIGNALS ======================
+  , input [cce_mem_msg_width_lp-1:0]          io_cmd_i
+  , input                                     io_cmd_v_i
+  , output logic                              io_cmd_ready_o
 
-  (//==================== GLOBAL SIGNALS =======================
-   input aclk_i  
-   , input aresetn_i
+  , output logic [cce_mem_msg_width_lp-1:0]   io_resp_o
+  , output logic                              io_resp_v_o
+  , input                                     io_resp_yumi_i
 
-   //==================== BP-LITE SIGNALS ======================
-   , input [bp_in_mem_msg_width_lp-1:0]        io_cmd_i
-   , input                                     io_cmd_v_i
-   , output logic                              io_cmd_ready_o
+  //====================== AXI-4 LITE =========================
+  // WRITE ADDRESS CHANNEL SIGNALS
+  , output logic [axi_addr_width_p-1:0]       m_axi_lite_awaddr_o
+  , output logic axi_prot_type_e              m_axi_lite_awprot_o
+  , output logic                              m_axi_lite_awvalid_o
+  , input                                     m_axi_lite_awready_i
 
-   , output logic [bp_in_mem_msg_width_lp-1:0] io_resp_o
-   , output logic                              io_resp_v_o
-   , input                                     io_resp_yumi_i
+  // WRITE DATA CHANNEL SIGNALS
+  , output logic [axi_data_width_p-1:0]       m_axi_lite_wdata_o
+  , output logic [axi_strb_width_lp-1:0]      m_axi_lite_wstrb_o
+  , output logic                              m_axi_lite_wvalid_o
+  , input                                     m_axi_lite_wready_i
 
-   //====================== AXI-4 LITE =========================
-   // WRITE ADDRESS CHANNEL SIGNALS
-   , output logic [axi_addr_width_p-1:0]       m_axi_lite_awaddr_o
-   , output logic [2:0]                        m_axi_lite_awprot_o
-   , output logic                              m_axi_lite_awvalid_o
-   , input                                     m_axi_lite_awready_i
+  // WRITE RESPONSE CHANNEL SIGNALS
+  , input axi_resp_type_e                     m_axi_lite_bresp_i   
+  , input                                     m_axi_lite_bvalid_i   
+  , output logic                              m_axi_lite_bready_o
 
-   // WRITE DATA CHANNEL SIGNALS
-   , output logic [axi_data_width_p-1:0]       m_axi_lite_wdata_o
-   , output logic [axi_strb_width_lp-1:0]      m_axi_lite_wstrb_o
-   , output logic                              m_axi_lite_wvalid_o
-   , input                                     m_axi_lite_wready_i
+  // READ ADDRESS CHANNEL SIGNALS
+  , output logic [axi_addr_width_p-1:0]       m_axi_lite_araddr_o
+  , output logic axi_prot_type_e              m_axi_lite_arprot_o
+  , output logic                              m_axi_lite_arvalid_o
+  , input                                     m_axi_lite_arready_i
 
-   // WRITE RESPONSE CHANNEL SIGNALS
-   , input [1:0]                               m_axi_lite_bresp_i   
-   , input                                     m_axi_lite_bvalid_i   
-   , output logic                              m_axi_lite_bready_o
-
-   // READ ADDRESS CHANNEL SIGNALS
-   , output logic [axi_addr_width_p-1:0]       m_axi_lite_araddr_o
-   , output logic [2:0]                        m_axi_lite_arprot_o
-   , output logic                              m_axi_lite_arvalid_o
-   , input                                     m_axi_lite_arready_i
-
-   // READ DATA CHANNEL SIGNALS
-   , input [axi_data_width_p-1:0]              m_axi_lite_rdata_i
-   , input [1:0]                               m_axi_lite_rresp_i
-   , input                                     m_axi_lite_rvalid_i
-   , output logic                              m_axi_lite_rready_o
+  // READ DATA CHANNEL SIGNALS
+  , input [axi_data_width_p-1:0]              m_axi_lite_rdata_i
+  , input axi_resp_type_e                     m_axi_lite_rresp_i
+  , input                                     m_axi_lite_rvalid_i
+  , output logic                              m_axi_lite_rready_o
   );
 
   // declaring i/o command and response struct type and size
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, bp_in);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // io cmd and resp structure cast
-  bp_bedrock_bp_in_mem_msg_s io_cmd_cast_i, io_resp_cast_o;
+  bp_bedrock_cce_mem_msg_s io_cmd_cast_i, io_resp_cast_o;
 
   assign io_cmd_cast_i = io_cmd_i;
   assign io_resp_o     = io_resp_cast_o;
 
   // storing io cmd header
-  bp_bedrock_bp_in_mem_msg_header_s io_cmd_header_r;
+  bp_bedrock_cce_mem_msg_header_s io_cmd_header_r;
 
   bsg_dff_reset_en
-   #(.width_p(bp_in_mem_msg_header_width_lp))
+   #(.width_p(cce_mem_msg_header_width_lp))
    mem_header_reg
-    (.clk_i(aclk_i)
-    ,.reset_i(~aresetn_i)
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
     ,.en_i(io_cmd_v_i)
     ,.data_i(io_cmd_cast_i.header)
     ,.data_o(io_cmd_header_r)
@@ -179,9 +174,9 @@ module bp_lite_to_axi_lite_master
     end
 
   // Sequential Logic
-  always_ff @(posedge aclk_i) 
+  always_ff @(posedge clk_i) 
     begin
-      if (~aresetn_i)
+      if (reset_i)
         state_r <= e_wait;
       else
         state_r <= state_n;
@@ -199,3 +194,4 @@ module bp_lite_to_axi_lite_master
     end
   //synopsys translate_on
 endmodule
+
