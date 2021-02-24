@@ -28,38 +28,38 @@ module bp_be_pipe_sys
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
    , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    )
-  (input                                  clk_i
-   , input                                reset_i
+  (input                                     clk_i
+   , input                                   reset_i
 
-   , input [cfg_bus_width_lp-1:0]         cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]            cfg_bus_i
 
-   , input [dispatch_pkt_width_lp-1:0]    reservation_i
-   , input                                flush_i
+   , input [dispatch_pkt_width_lp-1:0]       reservation_i
+   , input                                   flush_i
 
-   , input                                retire_v_i
-   , input                                retire_queue_v_i
-   , input [dpath_width_gp-1:0]           retire_data_i
-   , input [exception_width_lp-1:0]       retire_exception_i
-   , input [special_width_lp-1:0]         retire_special_i
+   , input                                   retire_v_i
+   , input                                   retire_queue_v_i
+   , input [dpath_width_gp-1:0]              retire_data_i
+   , input [exception_width_lp-1:0]          retire_exception_i
+   , input [special_width_lp-1:0]            retire_special_i
 
-   , output logic [dpath_width_gp-1:0]    data_o
-   , output logic                         satp_o
-   , output logic                         illegal_instr_o
-   , output logic                         v_o
+   , output logic [dpath_width_gp-1:0]       data_o
+   , output logic                            satp_o
+   , output logic                            illegal_instr_o
+   , output logic                            v_o
 
-   , input [wb_pkt_width_lp-1:0]          iwb_pkt_i
-   , input [wb_pkt_width_lp-1:0]          fwb_pkt_i
-   , output [commit_pkt_width_lp-1:0]     commit_pkt_o
+   , input [wb_pkt_width_lp-1:0]             iwb_pkt_i
+   , input [wb_pkt_width_lp-1:0]             fwb_pkt_i
+   , output logic [commit_pkt_width_lp-1:0]  commit_pkt_o
 
-   , input                                timer_irq_i
-   , input                                software_irq_i
-   , input                                external_irq_i
-   , output logic                         irq_pending_o
-   , output logic                         irq_waiting_o
+   , input                                   timer_irq_i
+   , input                                   software_irq_i
+   , input                                   external_irq_i
+   , output logic                            irq_pending_o
+   , output logic                            irq_waiting_o
 
-   , output [decode_info_width_lp-1:0]    decode_info_o
-   , output [trans_info_width_lp-1:0]     trans_info_o
-   , output rv64_frm_e                    frm_dyn_o
+   , output logic [decode_info_width_lp-1:0] decode_info_o
+   , output logic [trans_info_width_lp-1:0]  trans_info_o
+   , output rv64_frm_e                       frm_dyn_o
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
