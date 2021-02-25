@@ -772,14 +772,18 @@ module bp_be_dcache
   `bp_cast_o(bp_dcache_req_s, cache_req);
   `bp_cast_o(bp_dcache_req_metadata_s, cache_req_metadata);
 
-  wire cached_req         = v_tv_r & (store_miss_tv | load_miss_tv | lr_miss_tv);
-  wire fencei_req         = v_tv_r & decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
-  wire uncached_load_req  = v_tv_r & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_pending_r;
-  wire uncached_store_req = v_tv_r & decode_tv_r.store_op & uncached_op_tv_r;
-  wire wt_req             = v_tv_r & decode_tv_r.store_op & ~sc_fail & ~uncached_op_tv_r & (writethrough_p == 1);
-  wire l2_amo_req         = v_tv_r & decode_tv_r.l2_op & ~uncached_pending_r;
+  wire cached_req          = v_tv_r & (store_miss_tv | load_miss_tv | lr_miss_tv);
+  wire fencei_req          = v_tv_r & decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
+  wire l2_amo_req          = v_tv_r & decode_tv_r.l2_op & ~uncached_pending_r & (decode_tv_r.rd_addr != '0);
+  wire uncached_load_req   = v_tv_r & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_pending_r;
+                             // Regular uncached store
+  wire uncached_store_req  = (v_tv_r & decode_tv_r.store_op & uncached_op_tv_r)
+                             // Writethrough uncached store
+                             || (v_tv_r & decode_tv_r.store_op & ~sc_fail & ~uncached_op_tv_r & (writethrough_p == 1))
+                             // L2 amo uncached store
+                             || (v_tv_r & decode_tv_r.l2_op & ~uncached_pending_r & (decode_tv_r.rd_addr == '0));
 
-  assign cache_req_v_o = ~flush_i & |{cached_req, uncached_load_req, fencei_req, uncached_store_req, wt_req, l2_amo_req};
+  assign cache_req_v_o = ~flush_i & |{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req};
 
   always_comb
     begin
@@ -789,7 +793,7 @@ module bp_be_dcache
       cache_req_cast_o.hit = load_hit_tv;
 
       // Assigning sizes to cache miss packet
-      if (uncached_load_req | uncached_store_req | wt_req | l2_amo_req)
+      if (uncached_load_req | uncached_store_req | l2_amo_req)
         begin
           unique if (decode_tv_r.double_op)
             cache_req_cast_o.size = e_size_8B;
@@ -805,38 +809,34 @@ module bp_be_dcache
             cache_req_cast_o.size = block_req_size;
         end
 
+      unique casez ({decode_tv_r.amo_op, decode_tv_r.amo_subop})
+        {1'b1, e_dcache_subop_lr     }: cache_req_cast_o.subop = e_req_amolr;
+        {1'b1, e_dcache_subop_sc     }: cache_req_cast_o.subop = e_req_amosc;
+        {1'b1, e_dcache_subop_amoadd }: cache_req_cast_o.subop = e_req_amoadd;
+        {1'b1, e_dcache_subop_amoxor }: cache_req_cast_o.subop = e_req_amoxor;
+        {1'b1, e_dcache_subop_amoand }: cache_req_cast_o.subop = e_req_amoand;
+        {1'b1, e_dcache_subop_amoor  }: cache_req_cast_o.subop = e_req_amoor;
+        {1'b1, e_dcache_subop_amomin }: cache_req_cast_o.subop = e_req_amomin;
+        {1'b1, e_dcache_subop_amomax }: cache_req_cast_o.subop = e_req_amomax;
+        {1'b1, e_dcache_subop_amominu}: cache_req_cast_o.subop = e_req_amominu;
+        {1'b1, e_dcache_subop_amomaxu}: cache_req_cast_o.subop = e_req_amomaxu;
+        default: cache_req_cast_o.subop = e_req_amoswap;
+      endcase
+
       if (load_miss_tv)
         cache_req_cast_o.msg_type = e_miss_load;
       else if (lr_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
       else if (store_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
-      else if (uncached_load_req)
-        cache_req_cast_o.msg_type = e_uc_load;
       else if (fencei_req)
         cache_req_cast_o.msg_type = e_cache_flush;
-      else if (uncached_store_req | wt_req)
-        begin
-          cache_req_cast_o.msg_type = e_uc_store;
-          cache_req_cast_o.subop = e_req_amoswap;
-        end
-      else
-        begin
-          cache_req_cast_o.msg_type = (decode_tv_r.rd_addr == '0) ? e_uc_store : e_amo;
-          unique casez (decode_tv_r.amo_subop)
-            e_dcache_subop_lr     : cache_req_cast_o.subop = e_req_amolr;
-            e_dcache_subop_sc     : cache_req_cast_o.subop = e_req_amosc;
-            e_dcache_subop_amoadd : cache_req_cast_o.subop = e_req_amoadd;
-            e_dcache_subop_amoxor : cache_req_cast_o.subop = e_req_amoxor;
-            e_dcache_subop_amoand : cache_req_cast_o.subop = e_req_amoand;
-            e_dcache_subop_amoor  : cache_req_cast_o.subop = e_req_amoor;
-            e_dcache_subop_amomin : cache_req_cast_o.subop = e_req_amomin;
-            e_dcache_subop_amomax : cache_req_cast_o.subop = e_req_amomax;
-            e_dcache_subop_amominu: cache_req_cast_o.subop = e_req_amominu;
-            e_dcache_subop_amomaxu: cache_req_cast_o.subop = e_req_amomaxu;
-            default : cache_req_cast_o.subop = e_req_amoswap;
-          endcase
-        end
+      else if (l2_amo_req)
+        cache_req_cast_o.msg_type = e_amo;
+      else if (uncached_load_req)
+        cache_req_cast_o.msg_type = e_uc_load;
+      else if (uncached_store_req)
+        cache_req_cast_o.msg_type = e_uc_store;
     end
 
   // Cache metadata is valid after the request goes out,
@@ -877,7 +877,7 @@ module bp_be_dcache
       e_ready: state_n = (cache_req_yumi_i & decode_tv_r.fencei_op)
                          ? e_fence
                            // Uncached stores and writethrough requests are non-blocking
-                         : (cache_req_yumi_i & ~uncached_store_req & ~wt_req)
+                         : (cache_req_yumi_i & ~uncached_store_req)
                            ? e_miss
                            : e_ready;
       e_miss : state_n = cache_req_complete_i ? e_ready : e_miss;
@@ -893,7 +893,7 @@ module bp_be_dcache
       state_r <= state_n;
 
   assign ready_o = ~cache_req_busy_i & is_ready;
-  assign miss_request_flush = cache_req_yumi_i & ~uncached_store_req & ~wt_req;
+  assign miss_request_flush = cache_req_yumi_i & ~uncached_store_req;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control

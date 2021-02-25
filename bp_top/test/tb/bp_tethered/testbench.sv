@@ -326,7 +326,7 @@ module testbench
            ,.v_o(early_v_o)
            ,.load_data(early_data_o[0+:65])
            ,.cache_miss_o('0)
-           ,.wt_req(wt_req)
+           ,.wt_req('0)
            ,.store_data(st_data_tv_r[0+:dword_width_gp])
 
            ,.data_mem_v_i(data_mem_v_li)
