@@ -192,6 +192,8 @@ module bp_be_dcache
   logic gdirty_r, cache_lock;
   logic uncached_pending_r;
   logic [dword_width_gp-1:0] uncached_load_data_r;
+  logic sram_hazard_flush, miss_request_flush;
+  wire flush_self = flush_i | sram_hazard_flush | miss_request_flush;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
@@ -282,7 +284,7 @@ module bp_be_dcache
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(tl_we & ~flush_i)
+     ,.set_i(tl_we & ~flush_self)
      // We always advance in this non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_tl_r)
@@ -346,6 +348,8 @@ module bp_be_dcache
   logic [assoc_p-1:0] load_hit_tv_r, store_hit_tv_r, way_v_tv_r, bank_sel_one_hot_tv_r;
   bp_be_dcache_decode_s decode_tv_r;
   logic load_reservation_match_tv;
+  wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
+  wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
 
   // fencei does not require a ptag
   assign tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
@@ -354,7 +358,7 @@ module bp_be_dcache
    v_tv_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(tv_we & ~flush_i)
+     ,.set_i(tv_we & ~flush_self)
      // We always advance in the non-stalling D$
      ,.clear_i(1'b1)
      ,.data_o(v_tv_r)
@@ -782,6 +786,7 @@ module bp_be_dcache
       cache_req_cast_o = '0;
       cache_req_cast_o.addr = paddr_tv_r;
       cache_req_cast_o.data = wbuf_entry_in.data;
+      cache_req_cast_o.hit = load_hit_tv;
 
       // Assigning sizes to cache miss packet
       if (uncached_load_req | uncached_store_req | wt_req | l2_amo_req)
@@ -806,36 +811,37 @@ module bp_be_dcache
         cache_req_cast_o.msg_type = e_miss_store;
       else if (store_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
-      else if (wt_req)
-        cache_req_cast_o.msg_type = e_wt_store;
       else if (uncached_load_req)
         cache_req_cast_o.msg_type = e_uc_load;
-      else if (uncached_store_req)
-        cache_req_cast_o.msg_type = e_uc_store;
       else if (fencei_req)
         cache_req_cast_o.msg_type = e_cache_flush;
+      else if (uncached_store_req | wt_req)
+        begin
+          cache_req_cast_o.msg_type = e_uc_store;
+          cache_req_cast_o.subop = e_req_amoswap;
+        end
       else
         begin
+          cache_req_cast_o.msg_type = e_uc_store;
           unique casez (decode_tv_r.amo_subop)
-            e_dcache_subop_lr     : cache_req_cast_o.msg_type = e_amo_lr;
-            e_dcache_subop_sc     : cache_req_cast_o.msg_type = e_amo_sc;
-            e_dcache_subop_amoswap: cache_req_cast_o.msg_type = e_amo_swap;
-            e_dcache_subop_amoadd : cache_req_cast_o.msg_type = e_amo_add;
-            e_dcache_subop_amoxor : cache_req_cast_o.msg_type = e_amo_xor;
-            e_dcache_subop_amoand : cache_req_cast_o.msg_type = e_amo_and;
-            e_dcache_subop_amoor  : cache_req_cast_o.msg_type = e_amo_or;
-            e_dcache_subop_amomin : cache_req_cast_o.msg_type = e_amo_min;
-            e_dcache_subop_amomax : cache_req_cast_o.msg_type = e_amo_max;
-            e_dcache_subop_amominu: cache_req_cast_o.msg_type = e_amo_minu;
-            //e_dcache_subop_amomaxu
-            default               : cache_req_cast_o.msg_type = e_amo_maxu;
+            e_dcache_subop_lr     : cache_req_cast_o.subop = e_req_amolr;
+            e_dcache_subop_sc     : cache_req_cast_o.subop = e_req_amosc;
+            e_dcache_subop_amoadd : cache_req_cast_o.subop = e_req_amoadd;
+            e_dcache_subop_amoxor : cache_req_cast_o.subop = e_req_amoxor;
+            e_dcache_subop_amoand : cache_req_cast_o.subop = e_req_amoand;
+            e_dcache_subop_amoor  : cache_req_cast_o.subop = e_req_amoor;
+            e_dcache_subop_amomin : cache_req_cast_o.subop = e_req_amomin;
+            e_dcache_subop_amomax : cache_req_cast_o.subop = e_req_amomax;
+            e_dcache_subop_amominu: cache_req_cast_o.subop = e_req_amominu;
+            e_dcache_subop_amomaxu: cache_req_cast_o.subop = e_req_amomaxu;
+            default : cache_req_cast_o.subop = e_req_amoswap;
           endcase
         end
     end
 
   // Cache metadata is valid after the request goes out,
-  //   but no metadata for uncached stores, writethroughs, or flushes
-  wire cache_req_metadata_v = (cache_req_yumi_i & ~uncached_store_req & ~wt_req & ~fencei_req);
+  //   but no metadata for flushes
+  wire cache_req_metadata_v = (cache_req_yumi_i & ~fencei_req);
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
@@ -846,8 +852,19 @@ module bp_be_dcache
      ,.data_o(cache_req_metadata_v_o)
      );
 
-  assign cache_req_metadata_cast_o.repl_way = lru_way_li;
-  assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[lru_way_li];
+  logic metadata_hit_r;
+  logic [lg_dcache_assoc_lp-1:0] metadata_hit_index_r;
+  bsg_dff
+   #(.width_p(1+lg_dcache_assoc_lp))
+   cached_hit_reg
+    (.clk_i(clk_i)
+     ,.data_i({load_hit_tv, load_hit_way_tv})
+     ,.data_o({metadata_hit_r, metadata_hit_index_r})
+     );
+
+  wire [assoc_p-1:0] hit_or_repl_way = metadata_hit_r ? metadata_hit_index_r : lru_way_li;
+  assign cache_req_metadata_cast_o.hit_or_repl_way = hit_or_repl_way;
+  assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[hit_or_repl_way];
 
   /////////////////////////////////////////////////////////////////////////////
   // State machine
@@ -876,6 +893,7 @@ module bp_be_dcache
       state_r <= state_n;
 
   assign ready_o = ~cache_req_busy_i & is_ready;
+  assign miss_request_flush = cache_req_yumi_i & ~uncached_store_req & ~wt_req;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control
@@ -887,12 +905,18 @@ module bp_be_dcache
   wire tag_mem_fast_read = (tl_we & ~decode_lo.fencei_op & ~decode_lo.l2_op);
   wire tag_mem_slow_read = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
-  assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write;
-  assign tag_mem_w_li = tag_mem_slow_write;
+  // TODO: This will produce spurious invalidations if flush_i goes high while this invalidation is occuring
+  wire tag_mem_fast_write = v_tv_r & uncached_op_tv_r & load_hit_tv;
+  assign sram_hazard_flush = tag_mem_fast_write;
+
+  assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_fast_write;
+  assign tag_mem_w_li = tag_mem_slow_write | tag_mem_fast_write;
   assign tag_mem_addr_li = tag_mem_fast_read
     ? vaddr_index
-    : tag_mem_pkt_cast_i.index;
-  assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read;
+    : tag_mem_fast_write
+      ? paddr_index_tv
+      : tag_mem_pkt_cast_i.index;
+  assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_fast_write;
 
   logic [assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode
@@ -904,15 +928,22 @@ module bp_be_dcache
 
   always_comb
     for (integer i = 0; i < assoc_p; i++)
-      case (tag_mem_pkt_cast_i.opcode)
-        e_cache_tag_mem_set_tag:
+      casez ({tag_mem_fast_write, tag_mem_pkt_cast_i.opcode})
+        {1'b1, 3'b???}:
+          begin
+            tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
+            tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){load_hit_tv_r[i]}}
+                                   ,tag : {ctag_width_p{load_hit_tv_r[i]}}
+                                   };
+          end
+       {1'b0,  e_cache_tag_mem_set_tag}:
           begin
             tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
             tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
                                    ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
                                    };
           end
-        e_cache_tag_mem_set_state:
+        {1'b0, e_cache_tag_mem_set_state}:
           begin
             tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: '0};
             tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
@@ -1046,7 +1077,7 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read = ~flush_i & (v_tv_r & ~early_v_o & ~uncached_op_tv_r);
+  wire stat_mem_fast_read = ~flush_i & ((v_tv_r & ~early_v_o) | (v_tv_r & load_hit_tv & uncached_op_tv_r));
   wire stat_mem_fast_write = ~flush_i & (v_tv_r & early_v_o & ~uncached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
@@ -1170,8 +1201,6 @@ module bp_be_dcache
          ,.data_o(load_reserved_v_r)
          );
 
-      wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
-      wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
       bsg_dff_en
        #(.width_p(ctag_width_p+sindex_width_lp))
        load_reserved_addr

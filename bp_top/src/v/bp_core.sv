@@ -172,6 +172,7 @@ module bp_core
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)
      ,.non_excl_reads_p(1)
+     ,.metadata_latency_p(1)
      )
    fe_lce
     (.clk_i(clk_i)
@@ -233,6 +234,7 @@ module bp_core
      ,.credits_p(coh_noc_max_credits_p)
      ,.data_mem_invert_clk_p(1)
      ,.tag_mem_invert_clk_p(1)
+     ,.metadata_latency_p(1)
      )
    be_lce
     (.clk_i(clk_i)

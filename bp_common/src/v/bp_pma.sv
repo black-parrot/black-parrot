@@ -9,6 +9,7 @@ module bp_pma
   (input                          clk_i
    , input                        reset_i
 
+   , input                        uncached_mode_i
    , input                        ptag_v_i
    , input [ptag_width_p-1:0]     ptag_i
 
@@ -18,7 +19,7 @@ module bp_pma
   wire is_local_addr = (ptag_i < (dram_base_addr_gp >> page_offset_width_gp));
   wire is_io_addr    = (ptag_i[ptag_width_p-1-:domain_width_p] != '0);
 
-  assign uncached_o = ptag_v_i & (is_local_addr | is_io_addr);
+  assign uncached_o = uncached_mode_i | (ptag_v_i & (is_local_addr | is_io_addr));
 
 endmodule
 
