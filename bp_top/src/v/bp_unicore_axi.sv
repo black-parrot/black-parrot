@@ -18,6 +18,9 @@ module bp_unicore_axi
    , parameter axi_full_data_width_p   = 64
    , parameter axi_full_id_width_p     = 1
    , localparam axi_full_strb_width_lp = axi_full_data_width_p/8
+
+   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
    )
 
   (input clk_i
@@ -25,7 +28,7 @@ module bp_unicore_axi
   
   //========================Outgoing I/O==========================
   , output logic [axi_lite_addr_width_p-1:0]  m_axi_lite_awaddr_o
-  , output logic axi_prot_type_e              m_axi_lite_awprot_o
+  , output axi_prot_type_e                    m_axi_lite_awprot_o
   , output logic                              m_axi_lite_awvalid_o
   , input                                     m_axi_lite_awready_i
   
@@ -39,7 +42,7 @@ module bp_unicore_axi
   , output logic                              m_axi_lite_bready_o
 
   , output logic [axi_lite_addr_width_p-1:0]  m_axi_lite_araddr_o
-  , output logic axi_prot_type_e              m_axi_lite_arprot_o
+  , output axi_prot_type_e                    m_axi_lite_arprot_o
   , output logic                              m_axi_lite_arvalid_o
   , input                                     m_axi_lite_arready_i
 
@@ -59,7 +62,7 @@ module bp_unicore_axi
   , input                                     s_axi_lite_wvalid_i
   , output logic                              s_axi_lite_wready_o
 
-  , output logic axi_resp_type_e              s_axi_lite_bresp_o 
+  , output axi_resp_type_e                    s_axi_lite_bresp_o 
   , output logic                              s_axi_lite_bvalid_o
   , input                                     s_axi_lite_bready_i
 
@@ -69,19 +72,19 @@ module bp_unicore_axi
   , output logic                              s_axi_lite_arready_o
 
   , output logic [axi_lite_data_width_p-1:0]  s_axi_lite_rdata_o
-  , output logic axi_resp_type_e              s_axi_lite_rresp_o
+  , output axi_resp_type_e                    s_axi_lite_rresp_o
   , output logic                              s_axi_lite_rvalid_o
   , input                                     s_axi_lite_rready_i
 
   //======================Memory Requests======================
   , output logic [axi_full_id_width_p-1:0]    m_axi_awid_o   
   , output logic [axi_full_addr_width_p-1:0]  m_axi_awaddr_o 
-  , output logic axi_len_e                    m_axi_awlen_o  
-  , output logic axi_size_e                   m_axi_awsize_o 
-  , output logic axi_burst_type_e             m_axi_awburst_o
-  , output logic axi_cache_type_e             m_axi_awcache_o
-  , output logic axi_prot_type_e              m_axi_awprot_o 
-  , output logic axi_qos_type_e               m_axi_awqos_o  
+  , output axi_len_e                          m_axi_awlen_o  
+  , output axi_size_e                         m_axi_awsize_o 
+  , output axi_burst_type_e                   m_axi_awburst_o
+  , output axi_cache_type_e                   m_axi_awcache_o
+  , output axi_prot_type_e                    m_axi_awprot_o 
+  , output axi_qos_type_e                     m_axi_awqos_o  
   , output logic                              m_axi_awvalid_o
   , input                                     m_axi_awready_i
 
@@ -99,9 +102,9 @@ module bp_unicore_axi
 
   , output logic [axi_full_id_width_p-1:0]    m_axi_arid_o   
   , output logic [axi_full_addr_width_p-1:0]  m_axi_araddr_o 
-  , output logic axi_len_e                    m_axi_arlen_o  
-  , output logic axi_size_e                   m_axi_arsize_o 
-  , output logic axi_burst_type_e             m_axi_arburst_o
+  , output axi_len_e                          m_axi_arlen_o  
+  , output axi_size_e                         m_axi_arsize_o 
+  , output axi_burst_type_e                   m_axi_arburst_o
   , output axi_cache_type_e                   m_axi_arcache_o
   , output axi_prot_type_e                    m_axi_arprot_o
   , output axi_qos_type_e                     m_axi_arqos_o  
@@ -125,12 +128,12 @@ module bp_unicore_axi
   
   bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
   logic mem_cmd_header_v_lo, mem_cmd_header_ready_li;
-  logic [dword_width_p-1:0] mem_cmd_data_lo;
+  logic [dword_width_gp-1:0] mem_cmd_data_lo;
   logic mem_cmd_data_v_lo, mem_cmd_data_ready_li;
   
   bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
   logic mem_resp_header_v_li, mem_resp_header_yumi_lo;
-  logic [dword_width_p-1:0] mem_resp_data_li;
+  logic [dword_width_gp-1:0] mem_resp_data_li;
   logic mem_resp_data_v_li, mem_resp_data_yumi_lo;
   
   bp_unicore
@@ -222,7 +225,6 @@ module bp_unicore_axi
    #(.bp_params_p(bp_params_p)
      ,.axi_data_width_p(axi_full_data_width_p)
      ,.axi_addr_width_p(axi_full_addr_width_p)
-     ,.axi_burst_type_p(axi_full_burst_type_p)
      ,.axi_id_width_p(axi_full_id_width_p)
      )
    mem2axi

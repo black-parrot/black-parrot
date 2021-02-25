@@ -58,7 +58,7 @@ module axi_lite_to_bp_lite_client
 
    // READ DATA CHANNEL SIGNALS
    , output logic [axi_data_width_p-1:0]        s_axi_lite_rdata_o
-   , output logic axi_resp_type_e               s_axi_lite_rresp_o
+   , output axi_resp_type_e                     s_axi_lite_rresp_o
    , output logic                               s_axi_lite_rvalid_o
    , input                                      s_axi_lite_rready_i
   );
@@ -187,7 +187,7 @@ module axi_lite_to_bp_lite_client
   initial 
     begin
       assert (axi_data_width_p==64 || axi_data_width_p==32) else $error("AXI4-LITE only supports a data width of 32 or 64bits.");
-      assert (s_axi_lite_awprot_i == 3'b000) else $info("AXI4-LITE access permission mode is not supported.")
+      assert (s_axi_lite_awprot_i == 3'b000) else $info("AXI4-LITE access permission mode is not supported.");
     end
   //synopsys translate_on
 endmodule

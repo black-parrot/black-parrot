@@ -32,7 +32,7 @@ module bp_lite_to_axi_lite_master
   //====================== AXI-4 LITE =========================
   // WRITE ADDRESS CHANNEL SIGNALS
   , output logic [axi_addr_width_p-1:0]       m_axi_lite_awaddr_o
-  , output logic axi_prot_type_e              m_axi_lite_awprot_o
+  , output axi_prot_type_e                    m_axi_lite_awprot_o
   , output logic                              m_axi_lite_awvalid_o
   , input                                     m_axi_lite_awready_i
 
@@ -49,7 +49,7 @@ module bp_lite_to_axi_lite_master
 
   // READ ADDRESS CHANNEL SIGNALS
   , output logic [axi_addr_width_p-1:0]       m_axi_lite_araddr_o
-  , output logic axi_prot_type_e              m_axi_lite_arprot_o
+  , output axi_prot_type_e                    m_axi_lite_arprot_o
   , output logic                              m_axi_lite_arvalid_o
   , input                                     m_axi_lite_arready_i
 

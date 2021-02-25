@@ -1,7 +1,7 @@
 `ifndef BP_ME_AXI_PKGDEF_SVH
 `define BP_ME_AXI_PKGDEF_SVH
 
-  typedef logic [1:0]
+  typedef enum logic [1:0]
   {
     e_axi_resp_okay    = 2'b00
 

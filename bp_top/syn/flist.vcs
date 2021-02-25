@@ -270,6 +270,10 @@ $BP_ME_DIR/src/v/wormhole/bp_lite_to_stream.sv
 $BP_ME_DIR/src/v/wormhole/bp_stream_to_lite.sv
 $BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
 $BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
+# AXI
+$BP_ME_DIR/src/v/axi/axi_lite_to_bp_lite_client.sv
+$BP_ME_DIR/src/v/axi/bp_lite_to_axi_lite_master.sv
+$BP_ME_DIR/src/v/axi/bp_lite_to_axi_lite_master.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
@@ -294,6 +298,7 @@ $BP_TOP_DIR/src/v/bp_io_tile_node.sv
 $BP_TOP_DIR/src/v/bp_mem_complex.sv
 $BP_TOP_DIR/src/v/bp_multicore.sv
 $BP_TOP_DIR/src/v/bp_unicore.sv
+$BP_TOP_DIR/src/v/bp_unicore_axi.sv
 $BP_TOP_DIR/src/v/bp_tile.sv
 $BP_TOP_DIR/src/v/bp_tile_node.sv
 
