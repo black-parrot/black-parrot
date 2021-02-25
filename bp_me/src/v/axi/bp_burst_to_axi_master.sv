@@ -20,8 +20,8 @@ module bp_burst_to_axi_master
   )
 
   ( //==================== GLOBAL SIGNALS =======================
-   input aclk_i  
-   , input aresetn_i
+   input clk_i
+   , input reset_i
  
    //======================== BP SIDE ==========================
    // memory commands
@@ -112,8 +112,8 @@ module bp_burst_to_axi_master
   bsg_dff_reset_en
    #(.width_p(bp_in_mem_msg_header_width_lp))
    mem_header_reg
-    (.clk_i(aclk_i)
-    ,.reset_i(~aresetn_i)
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
     ,.en_i(mem_cmd_header_v_i & (state_r == e_wait))
     ,.data_i(mem_cmd_header_i)
     ,.data_o(mem_cmd_header_r)
@@ -273,9 +273,9 @@ module bp_burst_to_axi_master
   end
 
   // Sequential Logic
-  always_ff @(posedge aclk_i) 
+  always_ff @(posedge clk_i) 
     begin
-     if (~aresetn_i) 
+     if (reset_i) 
        begin
          state_r       <= e_wait;
          awburst_cnt_r <= '0;
