@@ -779,7 +779,7 @@ module bp_be_dcache
   wire wt_req             = v_tv_r & decode_tv_r.store_op & ~sc_fail & ~uncached_op_tv_r & (writethrough_p == 1);
   wire l2_amo_req         = v_tv_r & decode_tv_r.l2_op & ~uncached_pending_r;
 
-  assign cache_req_v_o = ~flush_i & |{cached_req, uncached_load_req, uncached_store_req, fencei_req, l2_amo_req, wt_req};
+  assign cache_req_v_o = ~flush_i & |{cached_req, uncached_load_req, fencei_req, uncached_store_req, wt_req, l2_amo_req};
 
   always_comb
     begin
@@ -822,7 +822,7 @@ module bp_be_dcache
         end
       else
         begin
-          cache_req_cast_o.msg_type = e_uc_store;
+          cache_req_cast_o.msg_type = (decode_tv_r.rd_addr == '0) ? e_uc_store : e_amo;
           unique casez (decode_tv_r.amo_subop)
             e_dcache_subop_lr     : cache_req_cast_o.subop = e_req_amolr;
             e_dcache_subop_sc     : cache_req_cast_o.subop = e_req_amosc;
