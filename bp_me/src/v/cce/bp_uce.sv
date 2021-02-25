@@ -268,7 +268,6 @@ module bp_uce
   wire flush_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
   wire clear_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clear};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
-  wire wt_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
 
   wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
   wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd};
@@ -575,16 +574,6 @@ module bp_uce
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o                          = cache_req_yumi_o;
               end
-            else if (wt_store_v_li)
-              begin
-                mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_wr;
-                mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;
-                mem_cmd_cast_o.header.size           = bp_bedrock_msg_size_e'(cache_req_cast_i.size);
-                mem_cmd_cast_payload.lce_id          = lce_id_i;
-                mem_cmd_cast_o.header.payload        = mem_cmd_cast_payload;
-                mem_cmd_cast_o.data                  = cache_req_cast_i.data;
-                mem_cmd_v_o                          = cache_req_yumi_o;
-              end
             else
               begin
                 state_n = cache_req_yumi_o
@@ -602,7 +591,7 @@ module bp_uce
               mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_rd;
               mem_cmd_cast_o.header.addr           = critical_addr;
               mem_cmd_cast_o.header.size           = block_msg_size_lp;
-              mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.repl_way);
+              mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
               mem_cmd_cast_payload.lce_id          = lce_id_i;
               mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
               mem_cmd_v_o = mem_cmd_ready_i & cache_req_metadata_v_r;
@@ -628,18 +617,18 @@ module bp_uce
           begin
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
             data_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-            data_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
+            data_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
             data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
             data_mem_pkt_v_o = 1'b1;
 
             tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_read;
             tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-            tag_mem_pkt_cast_o.way_id  = cache_req_metadata_r.repl_way;
+            tag_mem_pkt_cast_o.way_id  = cache_req_metadata_r.hit_or_repl_way;
             tag_mem_pkt_v_o = 1'b1;
 
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
             stat_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-            stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
+            stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
             stat_mem_pkt_v_o = 1'b1;
 
             state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_writeback_read_req : e_writeback_evict;
@@ -668,7 +657,7 @@ module bp_uce
             mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_rd;
             mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size           = block_msg_size_lp;
-            mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.repl_way);
+            mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
             mem_cmd_cast_payload.lce_id          = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
             mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r & ~cache_req_credits_full_o;
@@ -715,7 +704,7 @@ module bp_uce
             mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_rd;
             mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size           = block_msg_size_lp;
-            mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.repl_way);
+            mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
             mem_cmd_cast_payload.lce_id          = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
             mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r & ~cache_req_credits_full_o;

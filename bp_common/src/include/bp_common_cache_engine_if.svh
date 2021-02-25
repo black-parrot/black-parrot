@@ -5,26 +5,15 @@
 `ifndef BP_COMMON_CACHE_ENGINE_SVH
 `define BP_COMMON_CACHE_ENGINE_SVH
 
-  typedef enum logic [4:0]
+  typedef enum logic [3:0]
   {
-    e_miss_load         = 5'b00000
-    ,e_miss_store       = 5'b00001
-    ,e_uc_load          = 5'b00010
-    ,e_uc_store         = 5'b00011
-    ,e_wt_store         = 5'b00100
-    ,e_cache_flush      = 5'b00101
-    ,e_cache_clear      = 5'b00110
-    ,e_amo_lr           = 5'b00111
-    ,e_amo_sc           = 5'b01000
-    ,e_amo_swap         = 5'b01001
-    ,e_amo_add          = 5'b01010
-    ,e_amo_xor          = 5'b01011
-    ,e_amo_and          = 5'b01100
-    ,e_amo_or           = 5'b01101
-    ,e_amo_min          = 5'b01110
-    ,e_amo_max          = 5'b01111
-    ,e_amo_minu         = 5'b10000
-    ,e_amo_maxu         = 5'b10001
+    e_miss_load         = 4'b0000
+    ,e_miss_store       = 4'b0001
+    ,e_uc_load          = 4'b0010
+    ,e_uc_store         = 4'b0011
+    ,e_cache_flush      = 4'b0101
+    ,e_cache_clear      = 4'b0110
+    ,e_amo              = 4'b0111
   } bp_cache_req_msg_type_e;
 
   typedef enum logic [2:0]
@@ -38,23 +27,40 @@
     ,e_size_64B  = 3'b110
   } bp_cache_req_size_e;
 
+  typedef enum logic [3:0]
+  {
+    e_req_amoswap  = 4'b0000
+    ,e_req_amolr   = 4'b0001
+    ,e_req_amosc   = 4'b0010
+    ,e_req_amoadd  = 4'b0011
+    ,e_req_amoxor  = 4'b0100
+    ,e_req_amoand  = 4'b0101
+    ,e_req_amoor   = 4'b0110
+    ,e_req_amomin  = 4'b0111
+    ,e_req_amomax  = 4'b1000
+    ,e_req_amominu = 4'b1001
+    ,e_req_amomaxu = 4'b1010
+  } bp_cache_req_wr_subop_e;
+
   `define declare_bp_cache_req_s(data_width_mp, paddr_width_mp, cache_name_mp) \
     typedef struct packed                             \
     {                                                 \
+      logic hit;                                      \
       logic [data_width_mp-1:0] data;                 \
       bp_cache_req_size_e size;                       \
       logic [paddr_width_mp-1:0] addr;                \
       bp_cache_req_msg_type_e msg_type;               \
+      bp_cache_req_wr_subop_e subop;                  \
     }  bp_``cache_name_mp``_req_s
 
   `define bp_cache_req_width(data_width_mp, paddr_width_mp) \
-    (data_width_mp+$bits(bp_cache_req_size_e) +paddr_width_mp+$bits(bp_cache_req_msg_type_e))
+    (1+data_width_mp+$bits(bp_cache_req_size_e)+paddr_width_mp+$bits(bp_cache_req_msg_type_e)+$bits(bp_cache_req_wr_subop_e))
 
   `define declare_bp_cache_req_metadata_s(ways_mp, cache_name_mp) \
-    typedef struct packed                              \
-    {                                                  \
-      logic [`BSG_SAFE_CLOG2(ways_mp)-1:0] repl_way;   \
-      logic dirty;                                     \
+    typedef struct packed                                   \
+    {                                                       \
+      logic [`BSG_SAFE_CLOG2(ways_mp)-1:0] hit_or_repl_way; \
+      logic dirty;                                          \
     }  bp_``cache_name_mp``_req_metadata_s
 
   `define bp_cache_req_metadata_width(ways_mp) \

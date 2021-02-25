@@ -60,6 +60,7 @@
       logic [payload_width_mp-1:0]                 payload;                                 \
       bp_bedrock_msg_size_e                        size;                                    \
       logic [addr_width_mp-1:0]                    addr;                                    \
+      bp_bedrock_wr_subop_e                        subop;                                   \
       bp_bedrock_msg_u                             msg_type;                                \
     } bp_bedrock_``name_mp``_msg_header_s;                                                  \
                                                                                             \
@@ -88,6 +89,7 @@
     {                                                                                  \
       logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    lru_way_id;                         \
       bp_bedrock_req_non_excl_e                    non_exclusive;                      \
+      bp_bedrock_wr_subop_e                        subop;                              \
       logic [lce_id_width_mp-1:0]                  src_id;                             \
       logic [cce_id_width_mp-1:0]                  dst_id;                             \
     } bp_bedrock_``name_mp``_req_payload_s;                                            \
@@ -129,7 +131,7 @@
    */
 
   `define bp_bedrock_req_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
-    (cce_id_width_mp+lce_id_width_mp+$bits(bp_bedrock_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp))
+    (cce_id_width_mp+lce_id_width_mp+$bits(bp_bedrock_req_non_excl_e)+$bits(bp_bedrock_wr_subop_e)+`BSG_SAFE_CLOG2(lce_assoc_mp))
 
   `define bp_bedrock_cmd_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
     ((2*lce_id_width_mp)+cce_id_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+(2*$bits(bp_coh_states_e)))
@@ -156,7 +158,7 @@
    */
 
   `define bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp) \
-    ($bits(bp_bedrock_msg_u)+addr_width_mp+$bits(bp_bedrock_msg_size_e)+payload_width_mp)
+    ($bits(bp_bedrock_msg_u)+$bits(bp_bedrock_wr_subop_e)+addr_width_mp+$bits(bp_bedrock_msg_size_e)+payload_width_mp)
 
   `define bp_bedrock_msg_width(addr_width_mp, payload_width_mp, data_width_mp) \
     (`bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp)+data_width_mp)

@@ -45,6 +45,7 @@
     ,e_bedrock_mem_uc_rd   = 4'b0010  // Uncached load (uncached in L2/LLC)
     ,e_bedrock_mem_uc_wr   = 4'b0011  // Uncached store (uncached in L2/LLC)
     ,e_bedrock_mem_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
+    ,e_bedrock_mem_amo     = 4'b0101  // Atomic operation in L2/LLC
     // 4'b0101 - 4'b1111 reserved // custom
   } bp_bedrock_mem_type_e;
 
@@ -58,8 +59,28 @@
     ,e_bedrock_req_wr        = 4'b0001 // Write-miss
     ,e_bedrock_req_uc_rd     = 4'b0010 // Uncached Read-miss
     ,e_bedrock_req_uc_wr     = 4'b0011 // Uncached Write-miss
+    ,e_bedrock_req_amo       = 4'b0100 // AMO
     // 4'b0100 - 4'b1111 reserved / custom
   } bp_bedrock_req_type_e;
+
+  /*
+   * bp_bedrock_wr_subop_e specifies the type of store
+   */
+  typedef enum logic [3:0]
+  {
+      e_bedrock_amoswap          = 4'b0000
+      ,e_bedrock_amolr           = 4'b0001
+      ,e_bedrock_amosc           = 4'b0010
+      ,e_bedrock_amoadd          = 4'b0011
+      ,e_bedrock_amoxor          = 4'b0100
+      ,e_bedrock_amoand          = 4'b0101
+      ,e_bedrock_amoor           = 4'b0110
+      ,e_bedrock_amomin          = 4'b0111
+      ,e_bedrock_amomax          = 4'b1000
+      ,e_bedrock_amominu         = 4'b1001
+      ,e_bedrock_amomaxu         = 4'b1010
+  } bp_bedrock_wr_subop_e;
+
 
   /*
    * bp_bedrock_cmd_type_e defines the various commands that an CCE may issue to an LCE
