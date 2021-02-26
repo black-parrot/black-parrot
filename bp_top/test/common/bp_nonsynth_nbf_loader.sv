@@ -101,6 +101,7 @@ module bp_nonsynth_nbf_loader
     io_cmd.header.payload = io_cmd_payload;
     io_cmd.header.addr = curr_nbf.addr;
     io_cmd.header.msg_type.mem = e_bedrock_mem_uc_wr;
+    io_cmd.header.subop = e_bedrock_store;
 
     case (curr_nbf.opcode)
       2: io_cmd.header.size = e_bedrock_msg_size_4;

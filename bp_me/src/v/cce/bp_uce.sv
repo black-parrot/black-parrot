@@ -275,16 +275,18 @@ module bp_uce
   wire wt_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
   wire uc_load_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
-  wire uc_hit_v_li        = cache_req_cast_i.hit & (uc_load_v_li | uc_store_v_li);
+  wire uc_amo_v_li        = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
+  wire uc_hit_v_li        = cache_req_cast_i.hit & (uc_load_v_li | uc_store_v_li | uc_amo_v_li);
 
   wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
-  wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd};
+  wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_amo};
 
   wire miss_load_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_r = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
   wire miss_v_r       = miss_load_v_r | miss_store_v_r;
   wire uc_load_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire uc_store_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
+  wire uc_amo_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
 
   // When fill_width_p < block_width_p, multicycle fill and writeback is implemented in cache flush write,
   // cache miss load with and without dirty data writeback.
@@ -443,6 +445,27 @@ module bp_uce
      );
   assign cache_req_critical_o = critical_pending & critical_recv;
 
+  bp_cache_req_wr_subop_e cache_wr_subop;
+  bp_bedrock_wr_subop_e mem_wr_subop;
+  always_comb
+    begin
+      cache_wr_subop = cache_req_v_i ? cache_req_cast_i.subop : cache_req_r.subop;
+      unique case (cache_wr_subop)
+        e_req_amolr  : mem_wr_subop = e_bedrock_amolr;
+        e_req_amosc  : mem_wr_subop = e_bedrock_amosc;
+        e_req_amoswap: mem_wr_subop = e_bedrock_amoswap;
+        e_req_amoadd : mem_wr_subop = e_bedrock_amoadd;
+        e_req_amoxor : mem_wr_subop = e_bedrock_amoxor;
+        e_req_amoand : mem_wr_subop = e_bedrock_amoand;
+        e_req_amoor  : mem_wr_subop = e_bedrock_amoor;
+        e_req_amomin : mem_wr_subop = e_bedrock_amomin;
+        e_req_amomax : mem_wr_subop = e_bedrock_amomax;
+        e_req_amominu: mem_wr_subop = e_bedrock_amominu;
+        e_req_amomaxu: mem_wr_subop = e_bedrock_amomaxu;
+        default : mem_wr_subop = e_bedrock_store;
+      endcase
+    end
+
   // We ack mem_resps for uncached stores no matter what, so mem_resp_yumi_lo is for other responses
   logic mem_resp_yumi_lo;
   assign mem_resp_yumi_o = mem_resp_yumi_lo | store_resp_v_li;
@@ -571,7 +594,7 @@ module bp_uce
         e_ready:
           begin
             cache_req_yumi_o = cache_req_v_i & mem_cmd_ready_i & ~cache_req_credits_full_o;
-            if ((uc_store_v_li & (~uc_hit_v_li || (l1_writethrough_p == 1))) || wt_store_v_li)
+            if (((uc_store_v_li || uc_amo_v_li) && (~uc_hit_v_li || (l1_writethrough_p == 1))) || wt_store_v_li)
               begin
                 mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_uc_wr;
                 mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;
@@ -647,28 +670,18 @@ module bp_uce
                           : e_read_req
                         : e_send_critical;
             end
-          else if (uc_load_v_r)
+          else if (uc_load_v_r | uc_amo_v_r | uc_store_v_r)
             begin
-              mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_uc_rd;
-              mem_cmd_cast_o.header.addr           = cache_req_r.addr;
-              mem_cmd_cast_o.header.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
-              mem_cmd_cast_payload.lce_id          = lce_id_i;
-              mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
-              mem_cmd_v_o = mem_cmd_ready_i;
-
-              state_n = mem_cmd_v_o ? e_uc_read_wait : e_send_critical;
-            end
-          else if (uc_store_v_r)
-            begin
-              mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_uc_wr;
+              mem_cmd_cast_o.header.msg_type       = uc_load_v_r ? e_bedrock_mem_uc_rd : uc_amo_v_r ? e_bedrock_mem_amo : e_bedrock_mem_uc_wr;
               mem_cmd_cast_o.header.addr           = cache_req_r.addr;
               mem_cmd_cast_o.header.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
               mem_cmd_cast_payload.lce_id          = lce_id_i;
               mem_cmd_cast_o.header.payload        = mem_cmd_cast_payload;
+              mem_cmd_cast_o.header.subop          = mem_wr_subop;
               mem_cmd_cast_o.data                  = cache_req_r.data;
               mem_cmd_v_o                          = mem_cmd_ready_i;
 
-              state_n = mem_cmd_v_o ? e_ready : e_send_critical;
+              state_n = mem_cmd_v_o ? uc_store_v_r ? e_ready: e_uc_read_wait : e_send_critical;
             end
 
         e_writeback_evict:
