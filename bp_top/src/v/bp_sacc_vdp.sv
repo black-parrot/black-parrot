@@ -84,6 +84,7 @@ module bp_sacc_vdp
   assign resp_header   =  '{msg_type       : resp_msg
                             ,addr          : resp_addr
                             ,payload       : resp_payload
+                            ,subop         : e_bedrock_store
                             ,size          : resp_size  };
 
   assign io_resp_cast_o = '{header         : resp_header
