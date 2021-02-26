@@ -168,6 +168,7 @@ bp_bedrock_xce_mem_msg_s mem_resp_lo;
 assign mem_resp_lo =
   '{header : '{
     msg_type       : mem_cmd_lo.header.msg_type
+    ,subop         : e_bedrock_amoswap
     ,addr          : mem_cmd_lo.header.addr
     ,payload       : mem_cmd_lo.header.payload
     ,size          : mem_cmd_lo.header.size
