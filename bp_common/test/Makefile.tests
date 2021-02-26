@@ -12,6 +12,7 @@ coremark_dir    := $(BP_TEST_SRC_DIR)/coremark
 spec_dir        := $(BP_TEST_SRC_DIR)/spec
 riscvdv_dir     := $(BP_TEST_SRC_DIR)/riscv-dv
 demos_dir       := $(BP_TEST_SRC_DIR)/demos
+lfs_dir         := $(BP_TEST_SRC_DIR)/littlefs_newlib_test
 
 define submodule_test_template
 $(1)_tag := $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
@@ -51,6 +52,9 @@ spec_build:
 
 riscvdv_build:
 	$(MAKE) -C $(riscvdv_dir)
+
+lfs_build:
+	$(MAKE) -C $(lfs_dir)
 
 linux: linux_build
 linux_build:

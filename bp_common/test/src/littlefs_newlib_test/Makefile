@@ -1,6 +1,6 @@
 
-RISCV_GCC = $(CROSS_COMPILE)gcc -mabi=lp64 -march=rv64ima -mcmodel=medany -fno-builtin-printf -I$(TEST_DIR)/include
-RISCV_LINK = -O2 -static -nostartfiles -nostdlib -Wl,--start-group -lgloss -lperch -lc -lg -lm -lgcc -Wl,--end-group -T riscv.ld -L$(TEST_DIR)/lib
+RISCV_GCC = $(CROSS_COMPILE)gcc -mabi=lp64 -march=rv64ima -mcmodel=medany -fno-builtin-printf -I$(BP_TEST_DIR)/include
+RISCV_LINK = -O2 -static -nostartfiles -nostdlib -Wl,--start-group -lgloss -lperch -lc -lg -lm -lgcc -Wl,--end-group -T riscv.ld -L$(BP_TEST_DIR)/lib
 MKLFS = dramfs_mklfs
 
 .PHONY: fs
