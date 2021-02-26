@@ -6,12 +6,12 @@
   {
     e_miss_load         = 4'b0000
     ,e_miss_store       = 4'b0001
-    ,e_uc_load          = 4'b0010
-    ,e_uc_store         = 4'b0011
-    ,e_wt_store         = 4'b0100
-    ,e_cache_flush      = 4'b0101
-    ,e_cache_clear      = 4'b0110
-    ,e_amo              = 4'b0111
+    ,e_wt_store         = 4'b0010
+    ,e_uc_load          = 4'b0011
+    ,e_uc_store         = 4'b0100
+    ,e_uc_amo           = 4'b0101
+    ,e_cache_flush      = 4'b0110
+    ,e_cache_clear      = 4'b0111
   } bp_cache_req_msg_type_e;
 
   typedef enum logic [2:0]
@@ -25,6 +25,7 @@
     ,e_size_64B  = 3'b110
   } bp_cache_req_size_e;
 
+  // Relevant for uc_store and uc_amo
   typedef enum logic [3:0]
   {
     // Return value of e_req_store is undefined, clients should not

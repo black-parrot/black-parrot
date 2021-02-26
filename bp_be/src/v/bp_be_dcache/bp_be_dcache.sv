@@ -835,7 +835,7 @@ module bp_be_dcache
       else if (fencei_req)
         cache_req_cast_o.msg_type = e_cache_flush;
       else if (l2_amo_req)
-        cache_req_cast_o.msg_type = e_amo;
+        cache_req_cast_o.msg_type = e_uc_amo;
       else if (uncached_load_req)
         cache_req_cast_o.msg_type = e_uc_load;
       else if (uncached_store_req)
