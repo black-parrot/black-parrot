@@ -540,11 +540,11 @@ module bp_tile
    #(.width_p($bits(bp_bedrock_cce_mem_msg_s)), .els_p(4))
    resp_select
     (.data_i({loopback_mem_resp_lo, clint_mem_resp_lo, cfg_mem_resp_lo, cache_mem_resp_lo})
-     ,.sel_one_hot_i({loopback_mem_resp_v_lo, clint_mem_resp_v_lo, cfg_mem_resp_v_lo, cache_mem_resp_v_lo})
+     ,.sel_one_hot_i({loopback_mem_resp_yumi_li, clint_mem_resp_yumi_li, cfg_mem_resp_yumi_li, cache_mem_resp_yumi_li})
      ,.data_o(mem_resp_selected_li)
      );
 
-  assign mem_resp_selected_v_li = loopback_mem_resp_yumi_li | cache_mem_resp_yumi_li | cfg_mem_resp_yumi_li | clint_mem_resp_yumi_li;
+  assign mem_resp_selected_v_li = loopback_mem_resp_yumi_li | clint_mem_resp_yumi_li | cfg_mem_resp_yumi_li | cache_mem_resp_yumi_li;
   bsg_two_fifo
    #(.width_p($bits(bp_bedrock_cce_mem_msg_s)))
    resp_fifo
