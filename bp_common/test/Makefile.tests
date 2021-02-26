@@ -53,9 +53,10 @@ riscvdv_build:
 	$(MAKE) -C $(riscvdv_dir)
 
 linux: linux_build
-linux_build: $(fw_payload)
+linux_build:
+	$(MAKE) $(fw_payload) OPENSBI_NCPUS=1 WITH_SHELL=$(BP_TEST_CFG_DIR)/test.sh
 	mkdir -p $(BP_TEST_MEM_DIR)/linux
-	cp $< $(BP_TEST_MEM_DIR)/linux/linux.riscv
+	cp $(fw_payload) $(BP_TEST_MEM_DIR)/linux/linux.riscv
 
 perch: $(BP_TEST_DIR)/lib/libperch.a
 $(BP_TEST_DIR)/lib/libperch.a:

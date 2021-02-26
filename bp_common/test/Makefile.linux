@@ -4,6 +4,9 @@ include $(TOP)/Makefile.common
 
 export LINUX_TARGET ?= riscv64-unknown-linux-gnu
 
+OPENSBI_NCPUS ?= 1
+GENDTS_PY ?= $(BP_COMMON_DIR)/software/py/gendts.py
+
 opensbi_srcdir   := $(BP_TEST_SRC_DIR)/opensbi
 linux_srcdir     := $(BP_TEST_SRC_DIR)/linux
 buildroot_srcdir := $(BP_TEST_SRC_DIR)/buildroot
@@ -37,8 +40,10 @@ $(buildroot_tar): $(buildroot_srcdir) $(buildroot_wrkdir)/.config
 $(buildroot_sysroot_stamp): $(buildroot_tar)
 	mkdir -p $(buildroot_sysroot)
 	tar -xpf $< -C $(buildroot_sysroot) --exclude ./dev --exclude ./usr/share/locale
-	cp $(BP_TEST_CFG_DIR)/inittab $(buildroot_sysroot)/etc/inittab
-	cp $(BP_TEST_CFG_DIR)/test.sh $(buildroot_sysroot)/test.sh
+ifdef WITH_SHELL
+	sed "s/INITSHELL/$(notdir $(WITH_SHELL))/g" $(BP_TEST_CFG_DIR)/inittab > $(buildroot_sysroot)/etc/inittab
+	cp $(WITH_SHELL) $(buildroot_sysroot)/$(notdir $(WITH_SHELL))
+endif
 	touch $@
 
 $(linux_wrkdir)/.config: $(linux_srcdir)
@@ -63,13 +68,15 @@ $(vmlinux_binary): $(vmlinux_stripped)
 	$(LINUX_TARGET)-objcopy -O binary $< $@
 
 $(fw_payload): $(opensbi_srcdir) $(vmlinux_binary)
+	mkdir -p $(opensbi_wrkdir)/platform/blackparrot
+	python $(GENDTS_PY) --ncpus=$(OPENSBI_NCPUS) | dtc -O dtb -o $(opensbi_wrkdir)/platform/blackparrot/blackparrot.dtb
 	$(MAKE) -C $< O=$(opensbi_wrkdir) \
 		PLATFORM=blackparrot \
 		PLATFORM_RISCV_ISA=rv64imafd \
+		PLATFORM_HART_COUNT=$(OPENSBI_NCPUS) \
 		CROSS_COMPILE=$(LINUX_TARGET)- \
 		FW_PAYLOAD_PATH=$(vmlinux_binary)
 
 buildroot: $(buildroot_sysroot_stamp)
 vmlinux: $(vmlinux_stripped)
 fw_payload: $(fw_payload)
-

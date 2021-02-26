@@ -14,7 +14,7 @@ null::sysinit:/bin/ln -sf /proc/self/fd/2 /dev/stderr
 
 # Put a getty on the serial port
 #ttyS0::respawn:/sbin/getty -L ttyS0 115200 vt100 # GENERIC_SERIAL
-::respawn:-/bin/sh test.sh
+::respawn:-/bin/sh INITSHELL
 
 # Stuff to do for the 3-finger salute
 #::ctrlaltdel:/sbin/reboot
