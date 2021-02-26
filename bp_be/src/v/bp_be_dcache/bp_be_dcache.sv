@@ -778,12 +778,14 @@ module bp_be_dcache
   wire uncached_load_req   = v_tv_r & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_pending_r;
                              // Regular uncached store
   wire uncached_store_req  = (v_tv_r & decode_tv_r.store_op & uncached_op_tv_r)
-                             // Writethrough uncached store
-                             || (v_tv_r & decode_tv_r.store_op & ~sc_fail & ~uncached_op_tv_r & (writethrough_p == 1))
                              // L2 amo uncached store
                              || (v_tv_r & decode_tv_r.l2_op & ~uncached_pending_r & (decode_tv_r.rd_addr == '0));
+  wire wt_req              = (v_tv_r & decode_tv_r.store_op & ~sc_fail & ~uncached_op_tv_r & (writethrough_p == 1));
 
-  assign cache_req_v_o = ~flush_i & |{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req};
+  // Uncached stores and writethrough requests are non-blocking
+  wire nonblocking_req     = uncached_store_req | wt_req;
+
+  assign cache_req_v_o = ~flush_i & |{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req};
 
   always_comb
     begin
@@ -793,7 +795,11 @@ module bp_be_dcache
       cache_req_cast_o.hit = load_hit_tv;
 
       // Assigning sizes to cache miss packet
-      if (uncached_load_req | uncached_store_req | l2_amo_req)
+      if (cached_req)
+        begin
+            cache_req_cast_o.size = block_req_size;
+        end
+      else
         begin
           unique if (decode_tv_r.double_op)
             cache_req_cast_o.size = e_size_8B;
@@ -803,10 +809,6 @@ module bp_be_dcache
             cache_req_cast_o.size = e_size_2B;
           else if (decode_tv_r.byte_op)
             cache_req_cast_o.size = e_size_1B;
-        end
-      else
-        begin
-            cache_req_cast_o.size = block_req_size;
         end
 
       unique casez ({decode_tv_r.amo_op, decode_tv_r.amo_subop})
@@ -824,7 +826,7 @@ module bp_be_dcache
         default: cache_req_cast_o.subop = e_req_store;
       endcase
 
-      if (load_miss_tv)
+      unique if (load_miss_tv)
         cache_req_cast_o.msg_type = e_miss_load;
       else if (lr_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
@@ -838,6 +840,8 @@ module bp_be_dcache
         cache_req_cast_o.msg_type = e_uc_load;
       else if (uncached_store_req)
         cache_req_cast_o.msg_type = e_uc_store;
+      else if (wt_req)
+        cache_req_cast_o.msg_type = e_wt_store;
     end
 
   // Cache metadata is valid after the request goes out,
@@ -877,8 +881,7 @@ module bp_be_dcache
     case (state_r)
       e_ready: state_n = (cache_req_yumi_i & decode_tv_r.fencei_op)
                          ? e_fence
-                           // Uncached stores and writethrough requests are non-blocking
-                         : (cache_req_yumi_i & ~uncached_store_req)
+                         : (cache_req_yumi_i & ~nonblocking_req)
                            ? e_miss
                            : e_ready;
       e_miss : state_n = cache_req_complete_i ? e_ready : e_miss;
@@ -894,7 +897,7 @@ module bp_be_dcache
       state_r <= state_n;
 
   assign ready_o = ~cache_req_busy_i & is_ready;
-  assign miss_request_flush = cache_req_yumi_i & ~uncached_store_req;
+  assign miss_request_flush = cache_req_yumi_i & ~nonblocking_req;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control

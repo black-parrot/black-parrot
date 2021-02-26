@@ -272,6 +272,7 @@ module bp_uce
   // We check for uncached stores ealier than other requests, because they get sent out in ready
   wire flush_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
   wire clear_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clear};
+  wire wt_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
   wire uc_load_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
   wire uc_hit_v_li        = cache_req_cast_i.hit & (uc_load_v_li | uc_store_v_li);
@@ -569,10 +570,8 @@ module bp_uce
           end
         e_ready:
           begin
-            // TODO: ready shouldn't depend on credits, the cache should
-            //   handle the flow control
             cache_req_yumi_o = cache_req_v_i & mem_cmd_ready_i & ~cache_req_credits_full_o;
-            if (uc_store_v_li & (~uc_hit_v_li || (l1_writethrough_p == 1)))
+            if ((uc_store_v_li & (~uc_hit_v_li || (l1_writethrough_p == 1))) || wt_store_v_li)
               begin
                 mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_uc_wr;
                 mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;
@@ -609,13 +608,11 @@ module bp_uce
             stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
             stat_mem_pkt_v_o = cache_req_metadata_v_r & cache_req_metadata_r.dirty;
 
-            state_n = cache_req_metadata_v_r
-                      ? cache_req_metadata_r.dirty
-                        ? (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
-                          ? e_uc_writeback_write_req
-                          : e_uc_writeback_evict
-                        : e_send_critical
-                      : e_uc_writeback_evict;
+            state_n = (cache_req_metadata_v_r & ~cache_req_metadata_r.dirty)
+                      ? e_send_critical
+                      : (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
+                        ? e_uc_writeback_write_req
+                        : e_uc_writeback_evict;
           end
 
         e_uc_writeback_write_req:
