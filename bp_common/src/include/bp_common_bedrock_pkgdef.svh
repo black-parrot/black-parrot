@@ -68,17 +68,18 @@
    */
   typedef enum logic [3:0]
   {
-      e_bedrock_amoswap          = 4'b0000
+      e_bedrock_store            = 4'b0000
       ,e_bedrock_amolr           = 4'b0001
       ,e_bedrock_amosc           = 4'b0010
-      ,e_bedrock_amoadd          = 4'b0011
-      ,e_bedrock_amoxor          = 4'b0100
-      ,e_bedrock_amoand          = 4'b0101
-      ,e_bedrock_amoor           = 4'b0110
-      ,e_bedrock_amomin          = 4'b0111
-      ,e_bedrock_amomax          = 4'b1000
-      ,e_bedrock_amominu         = 4'b1001
-      ,e_bedrock_amomaxu         = 4'b1010
+      ,e_bedrock_amoswap         = 4'b0011
+      ,e_bedrock_amoadd          = 4'b0100
+      ,e_bedrock_amoxor          = 4'b0101
+      ,e_bedrock_amoand          = 4'b0110
+      ,e_bedrock_amoor           = 4'b0111
+      ,e_bedrock_amomin          = 4'b1000
+      ,e_bedrock_amomax          = 4'b1001
+      ,e_bedrock_amominu         = 4'b1010
+      ,e_bedrock_amomaxu         = 4'b1011
   } bp_bedrock_wr_subop_e;
 
 

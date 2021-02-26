@@ -812,6 +812,7 @@ module bp_be_dcache
       unique casez ({decode_tv_r.amo_op, decode_tv_r.amo_subop})
         {1'b1, e_dcache_subop_lr     }: cache_req_cast_o.subop = e_req_amolr;
         {1'b1, e_dcache_subop_sc     }: cache_req_cast_o.subop = e_req_amosc;
+        {1'b1, e_dcache_subop_amoswap}: cache_req_cast_o.subop = e_req_amoswap;
         {1'b1, e_dcache_subop_amoadd }: cache_req_cast_o.subop = e_req_amoadd;
         {1'b1, e_dcache_subop_amoxor }: cache_req_cast_o.subop = e_req_amoxor;
         {1'b1, e_dcache_subop_amoand }: cache_req_cast_o.subop = e_req_amoand;
@@ -820,7 +821,7 @@ module bp_be_dcache
         {1'b1, e_dcache_subop_amomax }: cache_req_cast_o.subop = e_req_amomax;
         {1'b1, e_dcache_subop_amominu}: cache_req_cast_o.subop = e_req_amominu;
         {1'b1, e_dcache_subop_amomaxu}: cache_req_cast_o.subop = e_req_amomaxu;
-        default: cache_req_cast_o.subop = e_req_amoswap;
+        default: cache_req_cast_o.subop = e_req_store;
       endcase
 
       if (load_miss_tv)

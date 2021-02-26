@@ -26,17 +26,18 @@
 
   typedef enum logic [3:0]
   {
-    e_req_amoswap  = 4'b0000
+    e_req_store    = 4'b0000
     ,e_req_amolr   = 4'b0001
     ,e_req_amosc   = 4'b0010
-    ,e_req_amoadd  = 4'b0011
-    ,e_req_amoxor  = 4'b0100
-    ,e_req_amoand  = 4'b0101
-    ,e_req_amoor   = 4'b0110
-    ,e_req_amomin  = 4'b0111
-    ,e_req_amomax  = 4'b1000
-    ,e_req_amominu = 4'b1001
-    ,e_req_amomaxu = 4'b1010
+    ,e_req_amoswap = 4'b0011
+    ,e_req_amoadd  = 4'b0100
+    ,e_req_amoxor  = 4'b0101
+    ,e_req_amoand  = 4'b0110
+    ,e_req_amoor   = 4'b0111
+    ,e_req_amomin  = 4'b1000
+    ,e_req_amomax  = 4'b1001
+    ,e_req_amominu = 4'b1010
+    ,e_req_amomaxu = 4'b1011
   } bp_cache_req_wr_subop_e;
 
 `endif
