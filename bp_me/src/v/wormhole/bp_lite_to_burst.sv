@@ -64,7 +64,7 @@ module bp_lite_to_burst
   bsg_dff_reset_set_clear
    #(.width_p(1)
    ,.clear_over_set_p(1))
-    header_v_loeg
+    header_v_reg
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
     ,.set_i(in_msg_ready_and_o & in_msg_v_i)
