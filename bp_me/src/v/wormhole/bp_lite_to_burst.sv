@@ -2,6 +2,10 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
+// There is no header and data buffer within the lite_to_burst, therefore,
+// in_msg_i and in_msg_v_i should be on hold until data burst is done.
+// Therefore, the input site of thie conversion module should be connected
+// to a ready_valid_and link, but not a ready_then_valid link.
 module bp_lite_to_burst
  import bp_common_pkg::*;
  import bp_me_pkg::*;
@@ -50,45 +54,50 @@ module bp_lite_to_burst
   localparam burst_words_lp = in_data_width_p/out_data_width_p;
   localparam burst_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
-  // We could make this a two fifo to get more throughput
-  bp_bedrock_in_msg_header_s header_lo;
-  bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_in_msg_header_s)))
-   header_fifo
+  // This keeps out_msg_header_v_o low after the header is acked
+  logic header_sent_r, head_sent_set, header_sent_clear;
+  bsg_dff_reset_set_clear
+   #(.width_p(1)
+   ,.clear_over_set_p(1))
+    header_sent_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    ,.reset_i(reset_i)
 
-     ,.data_i(in_msg_cast_i.header)
-     ,.v_i(in_msg_v_i)
-     ,.ready_o(in_msg_ready_and_o)
+    ,.set_i(head_sent_set)
+    ,.clear_i(header_sent_clear)
+    ,.data_o(header_sent_r)
+    );
+  assign head_sent_set     = out_msg_header_ready_and_i & out_msg_header_v_o;   // set when the header is acked
+  assign header_sent_clear = in_msg_v_i & in_msg_ready_and_o; // clear when the lite packet is acked
 
-     ,.data_o(out_msg_header_o)
-     ,.v_o(out_msg_header_v_o)
-     ,.yumi_i(out_msg_header_ready_and_i & out_msg_header_v_o)
-     );
+  assign out_msg_header_o   = in_msg_cast_i.header;
+  assign out_msg_header_v_o = in_msg_v_i & ~header_sent_r; 
 
   wire has_data = payload_mask_p[in_msg_cast_i.header.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
   wire [data_len_width_lp-1:0] num_burst_cmds = `BSG_MAX(1, (1'b1 << in_msg_cast_i.header.size) / out_data_bytes_lp);
-  logic [out_data_width_p-1:0] data_lo;
-  bsg_parallel_in_serial_out_dynamic
+
+  logic data_ready_and_lo;
+  bsg_parallel_in_serial_out_passthrough_dynamic
    #(.width_p(out_data_width_p), .max_els_p(burst_words_lp))
-   piso
+   piso_passthrough
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    ,.reset_i(reset_i)
 
-     ,.data_i(in_msg_cast_i.data)
-     ,.len_i(num_burst_cmds - 1'b1)
-     ,.v_i(in_msg_ready_and_o & in_msg_v_i & has_data)
+    ,.ready_and_o(data_ready_and_lo)
+    ,.v_i(in_msg_v_i & has_data)
+    ,.data_i(in_msg_cast_i.data)
+    ,.len_i(num_burst_cmds - 1'b1)
 
-     ,.data_o(out_msg_data_o)
-     ,.v_o(out_msg_data_v_o)
-     ,.yumi_i(out_msg_data_ready_and_i & out_msg_data_v_o)
+    ,.data_o(out_msg_data_o)
+    ,.v_o(out_msg_data_v_o)
+    ,.ready_and_i(out_msg_data_ready_and_i)
+    ,.first_o(/* unused */)  
+    );
 
-     // We rely on the header fifo to handle ready/valid handshaking
-     ,.len_v_o(/* Unused */)
-     ,.ready_o(/* Unused */)
-     );
+  // If has data, data takes the control of the upstream handshake due to multi-cycle burst,
+  // otherwise, simply pass through the header
+  assign in_msg_ready_and_o = has_data ? data_ready_and_lo : out_msg_header_ready_and_i;
 
   //synopsys translate_off
   initial
