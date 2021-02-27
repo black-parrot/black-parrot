@@ -252,8 +252,8 @@ module bp_lce_req
         lce_req.header.size = req_block_size_lp;
         lce_req.header.addr = cache_req_r.addr;
         lce_req.header.msg_type = (cache_req_r.msg_type == e_miss_load)
-          ? e_bedrock_req_rd
-          : e_bedrock_req_wr;
+          ? e_bedrock_req_rd_miss
+          : e_bedrock_req_wr_miss;
 
         lce_req_payload.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.hit_or_repl_way);
         lce_req_payload.non_exclusive = (cache_req_r.msg_type == e_miss_load)

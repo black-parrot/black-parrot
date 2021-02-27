@@ -126,6 +126,7 @@ module bp_me_cache_slice
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `bp_cast_o(bp_bedrock_cce_mem_msg_header_s, mem_cmd_header);
   assign mem_cmd_header_cast_o = '{msg_type : dma_pkt_lo.write_not_read ? e_bedrock_mem_wr : e_bedrock_mem_rd
+                                   ,subop   : e_bedrock_store
                                    ,size    : mem_cmd_block_size
                                    ,addr    : dma_pkt_lo.addr
                                    ,payload : '0
