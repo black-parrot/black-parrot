@@ -82,5 +82,8 @@ module bp_nonsynth_if_verif
   if (dram_max_size_p != (1 << 31))
     $warning("Warning: dram size != 4GB");
 
+  if ((multicore_p == 1) && ((amo_swap_p != e_none) || (amo_fetch_logic_p != e_none) || (amo_fetch_arithmetic_p != e_none)))
+    $fatal("Error: L2 atomics are not currently supported in bp_multicore");
+
 endmodule
 
