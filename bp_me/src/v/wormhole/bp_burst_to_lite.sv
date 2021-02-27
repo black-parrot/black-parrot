@@ -69,7 +69,7 @@ module bp_burst_to_lite
     ,.data_o(header_v_r) 
     );
 
-  assign header_v_lo = in_msg_header_v_i | header_v_r;
+  assign header_v_lo  = in_msg_header_v_i | header_v_r;
   assign header_clear = out_msg_v_o & out_msg_ready_and_i;
 
   // Accept no new header as long as a valid header exists
@@ -102,8 +102,9 @@ module bp_burst_to_lite
 
   bp_bedrock_out_msg_s msg_cast_o;
   assign msg_cast_o = '{header: header_lo, data: data_lo};
-  assign out_msg_o = msg_cast_o;
-  wire has_data_out = payload_mask_p[header_lo.msg_type];
+  assign out_msg_o  = msg_cast_o;
+  
+  wire has_data_out  = payload_mask_p[header_lo.msg_type];
   assign out_msg_v_o = header_v_lo & (data_v_lo | ~has_data_out);
 
   //synopsys translate_off

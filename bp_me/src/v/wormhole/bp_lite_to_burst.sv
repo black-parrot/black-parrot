@@ -68,7 +68,7 @@ module bp_lite_to_burst
   assign head_sent_set     = out_msg_header_ready_and_i & out_msg_header_v_o;   // set when the header is acked
   assign header_sent_clear = in_msg_v_i & in_msg_ready_and_o; // clear when the lite packet is acked
 
-  assign out_msg_header_o = in_msg_cast_i.header;
+  assign out_msg_header_o   = in_msg_cast_i.header;
   assign out_msg_header_v_o = in_msg_v_i & ~header_sent_r; 
 
   wire has_data = payload_mask_p[in_msg_cast_i.header.msg_type];
