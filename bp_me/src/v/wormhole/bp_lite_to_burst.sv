@@ -1,4 +1,5 @@
 
+
 module bp_lite_to_burst
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -48,49 +49,30 @@ module bp_lite_to_burst
   localparam burst_words_lp = in_data_width_p/out_data_width_p;
   localparam burst_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
-  // Hold the header for burst
-  bp_bedrock_in_msg_header_s header_lo;
-  bsg_dff_en_bypass
-   #(.width_p($bits(bp_bedrock_in_msg_header_s)))
-   header_reg
-    (.clk_i(clk_i)
-    ,.en_i(in_msg_ready_and_o & in_msg_v_i)
-    ,.data_i(in_msg_cast_i.header)
-    ,.data_o(header_lo) 
-    );
-  
-  // header valid logic
-  logic header_v_r, header_clear;
+  // This keeps out_msg_header_v_o low after the header is acked
+  logic header_sent_r, head_sent_set, header_sent_clear;
   bsg_dff_reset_set_clear
    #(.width_p(1)
    ,.clear_over_set_p(1))
-    header_v_reg
+    header_sent_reg
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
-    ,.set_i(in_msg_ready_and_o & in_msg_v_i)
-    ,.clear_i(header_clear)
-    ,.data_o(header_v_r)
-    );
-  assign out_msg_header_o = header_lo;
-  assign out_msg_header_v_o = in_msg_v_i | header_v_r;
-  assign header_clear = out_msg_header_ready_and_i & out_msg_header_v_o; // clear when the header is acked
 
-  wire has_data = payload_mask_p[header_lo.msg_type];
+    ,.set_i(head_sent_set)
+    ,.clear_i(header_sent_clear)
+    ,.data_o(header_sent_r)
+    );
+  assign head_sent_set     = out_msg_header_ready_and_i & out_msg_header_v_o;   // set when the header is acked
+  assign header_sent_clear = in_msg_v_i & in_msg_ready_and_o; // clear when the lite packet is acked
+
+  assign out_msg_header_o = in_msg_cast_i.header;
+  assign out_msg_header_v_o = in_msg_v_i & ~header_sent_r; 
+
+  wire has_data = payload_mask_p[in_msg_cast_i.header.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
-  wire [data_len_width_lp-1:0] num_burst_cmds = `BSG_MAX(1, (1'b1 << header_lo.size) / out_data_bytes_lp);
+  wire [data_len_width_lp-1:0] num_burst_cmds = `BSG_MAX(1, (1'b1 << in_msg_cast_i.header.size) / out_data_bytes_lp);
 
-  logic data_bursting_r, data_burst_clear, data_ready_and_lo;
-  // Hold the data for burst
-  logic [in_data_width_p-1:0] data_lo;
-  bsg_dff_en_bypass
-   #(.width_p(in_data_width_p))
-   data_reg
-    (.clk_i(clk_i)
-    ,.en_i(in_msg_ready_and_o & in_msg_v_i)
-    ,.data_i(in_msg_cast_i.data)
-    ,.data_o(data_lo)
-    );
-
+  logic data_ready_and_lo;
   bsg_parallel_in_serial_out_passthrough_dynamic
    #(.width_p(out_data_width_p), .max_els_p(burst_words_lp))
    piso_passthrough
@@ -98,8 +80,8 @@ module bp_lite_to_burst
     ,.reset_i(reset_i)
 
     ,.ready_and_o(data_ready_and_lo)
-    ,.v_i((in_msg_v_i & has_data) | data_bursting_r)
-    ,.data_i(data_lo)
+    ,.v_i(in_msg_v_i & has_data)
+    ,.data_i(in_msg_cast_i.data)
     ,.len_i(num_burst_cmds - 1'b1)
 
     ,.data_o(out_msg_data_o)
@@ -108,24 +90,9 @@ module bp_lite_to_burst
     ,.first_o(/* unused */)  
     );
 
-  // indicates pending burst data & keep v_i high during burst
-  bsg_dff_reset_set_clear
-   #(.width_p(1)
-   ,.clear_over_set_p(1))
-    data_bursting_reg
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-    ,.set_i(in_msg_ready_and_o & in_msg_v_i & has_data)
-    ,.clear_i(data_burst_clear)
-    ,.data_o(data_bursting_r)
-    );
-
-  assign data_burst_clear = data_ready_and_lo;
-
-  // Accept no new lite pkt with: 
-  // 1. pending header in the register
-  // 2. pending burst data 
-  assign in_msg_ready_and_o = ~header_v_r & ~data_bursting_r;
+  // If has data, data takes the control of the upstream handshake due to multi-cycle burst,
+  // otherwise, simply pass through the header
+  assign in_msg_ready_and_o = has_data ? data_ready_and_lo : out_msg_header_ready_and_i;
 
   //synopsys translate_off
   initial

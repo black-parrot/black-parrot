@@ -545,6 +545,24 @@ module bp_unicore
     end
   else
     begin : no_l2
+      // The fifo here is a temporary fifo to hold the data for lite2burst
+      bp_bedrock_cce_mem_msg_s cache_cmd_lo;
+      logic cache_cmd_v_lo, cache_cmd_ready_and_li;
+      bsg_two_fifo 
+       #(.width_p($bits(bp_bedrock_cce_mem_msg_s)))
+       cache_cmd_fifo
+        (.clk_i(clk_i)
+        ,.reset_i(reset_i)
+
+        ,.ready_o(cache_cmd_ready_lo) 
+        ,.data_i(cache_cmd)
+        ,.v_i(cache_cmd_v_li)
+
+        ,.v_o(cache_cmd_v_lo)
+        ,.data_o(cache_cmd_lo)
+        ,.yumi_i(cache_cmd_v_lo & cache_cmd_ready_and_li)
+        );
+
       bp_lite_to_burst
        #(.bp_params_p(bp_params_p)
          ,.in_data_width_p(cce_block_width_p)
@@ -556,9 +574,9 @@ module bp_unicore
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.in_msg_i(cache_cmd)
-         ,.in_msg_v_i(cache_cmd_v_li)
-         ,.in_msg_ready_and_o(cache_cmd_ready_lo)
+         ,.in_msg_i(cache_cmd_lo)
+         ,.in_msg_v_i(cache_cmd_v_lo)
+         ,.in_msg_ready_and_o(cache_cmd_ready_and_li)
 
          ,.out_msg_header_o(mem_cmd_header_o)
          ,.out_msg_header_v_o(mem_cmd_header_v_o)
