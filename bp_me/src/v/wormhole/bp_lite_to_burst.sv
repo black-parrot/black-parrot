@@ -1,5 +1,8 @@
 
-
+// There is no header and data buffer within the lite_to_burst, therefore,
+// in_msg_i and in_msg_v_i should be on hold until data burst is done.
+// Therefore, the input site of thie conversion module should be connected
+// to a ready_valid_and link, but not a ready_then_valid link.
 module bp_lite_to_burst
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
