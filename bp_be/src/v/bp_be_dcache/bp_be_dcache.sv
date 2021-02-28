@@ -518,20 +518,27 @@ module bp_be_dcache
 
   wire load_miss_tv   = v_tv_r & decode_tv_r.load_op & ~load_hit_tv & ~uncached_op_tv_r;
   wire store_miss_tv  = v_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & ~uncached_op_tv_r & (writethrough_p == 0);
-  wire lr_miss_tv     = v_tv_r & decode_tv_r.lr_op & ~store_hit_tv & ~decode_tv_r.l2_op;
+  wire lr_miss_tv     = v_tv_r & decode_tv_r.lr_op & ~store_hit_tv & ~uncached_op_tv_r;
   wire engine_miss_tv = v_tv_r & (cache_req_v_o & ~cache_req_yumi_i);
 
   wire any_miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | engine_miss_tv;
 
-  assign early_data_o = (decode_tv_r.sc_op & ~decode_tv_r.l2_op)
+  assign early_data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
     ? (sc_success != 1'b1)
     : early_data;
 
-  assign early_v_o = v_tv_r & ( (uncached_op_tv_r & (decode_tv_r.load_op & uncached_pending_r))
-                              | (uncached_op_tv_r & (decode_tv_r.store_op & ~decode_tv_r.load_op & cache_req_yumi_i))
-                              | (decode_tv_r.fencei_op & (~gdirty_r | (coherent_p == 1)))
-                              | (cached_op_tv_r & ~any_miss_tv)
-                              );
+  assign early_v_o = v_tv_r
+      // Uncached Load
+    & ((uncached_op_tv_r & (decode_tv_r.load_op & uncached_pending_r))
+      // Uncached Store
+       | (uncached_op_tv_r & (decode_tv_r.store_op & ~decode_tv_r.amo_op & cache_req_yumi_i))
+      // Uncached AMO
+       | (uncached_op_tv_r & (decode_tv_r.amo_op & (decode_tv_r.rd_addr == '0) & cache_req_yumi_i))
+      // Fencei
+       | (decode_tv_r.fencei_op & (~gdirty_r | (coherent_p == 1)))
+      // Cached load / store
+       | (cached_op_tv_r & ~any_miss_tv)
+       );
 
   ///////////////////////////
   // Stat Mem Storage
@@ -774,12 +781,12 @@ module bp_be_dcache
 
   wire cached_req          = v_tv_r & (store_miss_tv | load_miss_tv | lr_miss_tv);
   wire fencei_req          = v_tv_r & decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
-  wire l2_amo_req          = v_tv_r & decode_tv_r.l2_op & ~uncached_pending_r & (decode_tv_r.rd_addr != '0);
+  wire l2_amo_req          = v_tv_r & decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_pending_r & (decode_tv_r.rd_addr != '0);
   wire uncached_load_req   = v_tv_r & ~decode_tv_r.amo_op & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_pending_r;
                              // Regular uncached store
   wire uncached_store_req  = (v_tv_r & ~decode_tv_r.amo_op & decode_tv_r.store_op & uncached_op_tv_r)
                              // L2 amo uncached store
-                             || (v_tv_r & decode_tv_r.amo_op & decode_tv_r.l2_op & ~uncached_pending_r & (decode_tv_r.rd_addr == '0));
+                             || (v_tv_r & decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_pending_r & (decode_tv_r.rd_addr == '0));
   wire wt_req              = (v_tv_r & decode_tv_r.store_op & ~sc_fail & ~uncached_op_tv_r & (writethrough_p == 1));
 
   // Uncached stores and writethrough requests are non-blocking
@@ -1245,13 +1252,13 @@ module bp_be_dcache
   ///////////////////////////
   // Uncached Load Storage
   ///////////////////////////
-  wire uncached_pending_set = cache_req_yumi_i & (uncached_load_req | l2_amo_req);
+  wire uncached_pending_set = cache_req_yumi_i & uncached_load_req;
   // Invalidate uncached data if the cache when we successfully complete the request
   // TODO: We currently block interrupts until we have replayed a cache miss or
   //   uncached load. We should decouple the cache writeback from replay in the future
   wire uncached_pending_clear = early_v_o;
   bsg_dff_reset_set_clear
-   #(.width_p(1))
+   #(.width_p(1), .clear_over_set_p(1))
    uncached_pending_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

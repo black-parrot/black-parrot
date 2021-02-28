@@ -593,7 +593,6 @@ module bp_uce
           end
         e_ready:
           begin
-            cache_req_yumi_o = cache_req_v_i & mem_cmd_ready_i & ~cache_req_credits_full_o;
             if (((uc_store_v_li || uc_amo_v_li) && (~uc_hit_v_li || (l1_writethrough_p == 1))) || wt_store_v_li)
               begin
                 mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_uc_wr;
@@ -602,10 +601,15 @@ module bp_uce
                 mem_cmd_cast_payload.lce_id          = lce_id_i;
                 mem_cmd_cast_o.header.payload        = mem_cmd_cast_payload;
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
-                mem_cmd_v_o                          = mem_cmd_ready_i;
+                mem_cmd_v_o                          = mem_cmd_ready_i & ~cache_req_credits_full_o;
+
+                cache_req_complete_o = mem_cmd_v_o;
+                cache_req_yumi_o = cache_req_complete_o;
               end
             else
               begin
+                cache_req_yumi_o = cache_req_v_i;
+
                 state_n = cache_req_yumi_o
                           ? flush_v_li
                             ? e_flush_read
