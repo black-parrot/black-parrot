@@ -76,6 +76,7 @@ module bp_fe_top
   wire is_run      = (state_r == e_run);
   wire is_stall    = (state_r == e_stall);
 
+  logic pc_gen_init_done_lo;
   logic redirect_v_li;
   logic [vaddr_width_p-1:0] redirect_pc_li;
   logic redirect_br_v_li, redirect_br_taken_li, redirect_br_ntaken_li, redirect_br_nonbr_li;
@@ -95,6 +96,8 @@ module bp_fe_top
    pc_gen
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+
+     ,.init_done_o(pc_gen_init_done_lo)
 
      ,.redirect_v_i(redirect_v_li)
      ,.redirect_pc_i(redirect_pc_li)
@@ -349,7 +352,7 @@ module bp_fe_top
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
   assign icache_poison_tv = fe_exception_v | cmd_nonattaboy_v;
 
-  assign fe_cmd_yumi_o = cmd_nonattaboy_v | attaboy_yumi_lo;
+  assign fe_cmd_yumi_o = pc_gen_init_done_lo & (cmd_nonattaboy_v | attaboy_yumi_lo);
   assign next_pc_yumi_li = (state_n == e_run);
 
   assign fetch_instr_v_li     = fe_queue_v_o & fe_instr_v;
