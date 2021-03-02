@@ -21,7 +21,7 @@ int main(int arc, char** argv) {
   bp_cprint('r');
   bp_cprint('e');
   bp_cprint(' ');
-  bp_cprint(' ' + core_id);
+  bp_hprint(core_id);
 
   bp_finish(core_id);
   return 0;

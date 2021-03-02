@@ -12,7 +12,7 @@ coremark_dir    := $(BP_TEST_SRC_DIR)/coremark
 spec_dir        := $(BP_TEST_SRC_DIR)/spec
 riscvdv_dir     := $(BP_TEST_SRC_DIR)/riscv-dv
 demos_dir       := $(BP_TEST_SRC_DIR)/demos
-lfs_dir         := $(BP_TEST_SRC_DIR)/littlefs_newlib_test
+cpp_dir         := $(BP_TEST_SRC_DIR)/cpp-tests
 
 define submodule_test_template
 $(1)_tag := $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
@@ -45,7 +45,7 @@ beebs_build:
 	@find $(beebs_dir)/src -type f -executable -exec cp {} {}.riscv \;
 
 coremark_build:
-	$(MAKE) -C $(coremark_dir)/barebones
+	$(MAKE) -C $(coremark_dir)/barebones clean all
 
 spec_build:
 	$(MAKE) -C $(spec_dir)
@@ -53,8 +53,15 @@ spec_build:
 riscvdv_build:
 	$(MAKE) -C $(riscvdv_dir)
 
-lfs_build:
-	$(MAKE) -C $(lfs_dir)
+cpp_tests:
+	$(MAKE) -C $(cpp_dir) clean all
+	mkdir -p $(BP_TEST_MEM_DIR)/cpp-tests
+	find $(cpp_dir) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/cpp-tests/ \;
+
+demos:
+	$(MAKE) -C $(demos_dir) clean all
+	mkdir -p $(BP_TEST_MEM_DIR)/demos
+	find $(demos_dir) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/demos/ \;
 
 linux: linux_build
 linux_build:
@@ -62,22 +69,17 @@ linux_build:
 	mkdir -p $(BP_TEST_MEM_DIR)/linux
 	cp $(fw_payload) $(BP_TEST_MEM_DIR)/linux/linux.riscv
 
-perch: $(BP_TEST_DIR)/lib/libperch.a
-$(BP_TEST_DIR)/lib/libperch.a:
-	$(MAKE) -C $(perch_dir)
+perch:
+	$(MAKE) -C $(perch_dir) clean all
 	mkdir -p $(BP_TEST_DIR)/lib
 	mkdir -p $(BP_TEST_DIR)/include
 	cp $(BP_TEST_DIR)/src/perch/libperch.a $(BP_TEST_DIR)/lib
+	cp $(BP_TEST_DIR)/src/perch/crt0.o $(BP_TEST_DIR)/lib
 	cp $(BP_TEST_DIR)/src/perch/*.h $(BP_TEST_DIR)/include
 
 bootrom: $(bootrom_dir)/bootrom
 %/bootrom:
 	$(MAKE) -C $(bootrom_dir) $(@D)/bootrom.riscv
-
-demos:
-	$(MAKE) -C $(demos_dir)
-	mkdir -p $(BP_TEST_MEM_DIR)/demos
-	find $(demos_dir) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/demos/ \;
 
 $(eval $(call submodule_test_template,bp_tests,$(bp_tests_dir)))
 $(eval $(call submodule_test_template,riscv_tests,$(riscv_tests_dir)))
