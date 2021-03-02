@@ -1,3 +1,4 @@
 BP_DEMOS = \
-  sample
+  sample   \
+  lfs
 

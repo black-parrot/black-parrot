@@ -1,5 +1,10 @@
 #ifndef BP_UTILS_H
 #define BP_UTILS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include "bsg_newlib_intf.h"
 
@@ -20,5 +25,9 @@ void bp_cprint(uint8_t ch);
 void bp_finish(uint8_t code);
 
 #define BP_CFG_BASE_ADDR ((char *)(0x00200000))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
