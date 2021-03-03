@@ -101,6 +101,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_down.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_en.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_overflow_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down_variable.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_crossbar_o_by_i.v
@@ -249,6 +250,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.sv
+$BP_ME_DIR/src/v/cce/bp_pce.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_bidir.sv
@@ -291,6 +293,7 @@ $BP_TOP_DIR/src/v/bp_mem_complex.sv
 $BP_TOP_DIR/src/v/bp_multicore.sv
 $BP_TOP_DIR/src/v/bp_unicore.sv
 $BP_TOP_DIR/src/v/bp_unicore_lite.sv
+$BP_TOP_DIR/src/v/bp_piton_top.sv
 $BP_TOP_DIR/src/v/bp_tile.sv
 $BP_TOP_DIR/src/v/bp_tile_node.sv
 
@@ -299,3 +302,6 @@ $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_dff_reset_half.v
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
+$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_mask_write_bit_reshape.v
+$BP_TOP_DIR/src/v/bsg_async_noc_link.sv
+$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
