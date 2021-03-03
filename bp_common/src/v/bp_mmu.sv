@@ -127,7 +127,6 @@ module bp_mmu
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.uncached_mode_i(uncached_mode_i)
      ,.ptag_v_i(ptag_v_lo)
      ,.ptag_i(ptag_lo)
      ,.uncached_mode_i(uncached_mode_i)
