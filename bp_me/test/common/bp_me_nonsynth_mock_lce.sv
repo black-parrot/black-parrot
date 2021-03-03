@@ -1203,7 +1203,7 @@ module bp_me_nonsynth_mock_lce
         lce_req_v_o = lce_req_ready_i;
 
         lce_req_payload.dst_id = mshr_r.cce;
-        lce_req.header.msg_type.req = e_bedrock_req_rd;
+        lce_req.header.msg_type.req = e_bedrock_req_rd_miss;
         lce_req_payload.src_id = lce_id_i;
         lce_req.header.addr = mshr_r.paddr & addr_mask;
         lce_req_payload.non_exclusive = e_bedrock_req_excl;
@@ -1274,7 +1274,7 @@ module bp_me_nonsynth_mock_lce
         lce_req_v_o = lce_req_ready_i;
 
         lce_req_payload.dst_id = mshr_r.cce;
-        lce_req.header.msg_type.req = e_bedrock_req_wr;
+        lce_req.header.msg_type.req = e_bedrock_req_wr_miss;
         lce_req_payload.src_id = lce_id_i;
         lce_req.header.addr = mshr_r.paddr & addr_mask;
         lce_req_payload.non_exclusive = e_bedrock_req_excl;

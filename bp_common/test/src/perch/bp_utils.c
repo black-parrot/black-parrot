@@ -43,6 +43,7 @@ void bp_finish(uint8_t code) {
   __asm__ volatile("csrr %0, mhartid": "=r"(core_id): :);
 
   *(FINISH_BASE_ADDR+core_id*8) = code;
+  __asm__ volatile("fence");
 }
 
 void bp_hprint(uint8_t hex) {

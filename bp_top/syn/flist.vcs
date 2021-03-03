@@ -194,6 +194,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_sys.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_ptw.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_rec_to_fp.sv
 # Checker
+$BP_BE_DIR/src/v/bp_be_checker/bp_be_cmd_queue.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_instr_decoder.sv

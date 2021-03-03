@@ -142,8 +142,6 @@ module bp_nonsynth_cache_tracer
       op = "[load]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_load)
       op = "[uncached load]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_wt_store)
-      op = "[writethrough store]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_store)
       op = "[uncached store]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_flush)
@@ -208,7 +206,7 @@ module bp_nonsynth_cache_tracer
       end
 
       if (cache_req_metadata_v_o)
-        $fwrite(file, "[%t] lru_way: %x dirty: %x \n", $time, cache_req_metadata_cast_o.repl_way, cache_req_metadata_cast_o.dirty);
+        $fwrite(file, "[%t] lru_way: %x dirty: %x \n", $time, cache_req_metadata_cast_o.hit_or_repl_way, cache_req_metadata_cast_o.dirty);
 
       if (cache_req_complete_i)
         $fwrite(file, "[%t] Cache request completed \n", $time);

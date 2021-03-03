@@ -33,6 +33,8 @@ module bp_lce
     // issue non-exclusive read requests
     , parameter non_excl_reads_p = 0
 
+    , parameter metadata_latency_p = 0
+
     , localparam block_size_in_bytes_lp = (block_width_p/8)
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
@@ -133,6 +135,7 @@ module bp_lce
       ,.fill_width_p(fill_width_p)
       ,.credits_p(credits_p)
       ,.non_excl_reads_p(non_excl_reads_p)
+      ,.metadata_latency_p(metadata_latency_p)
       )
     request
       (.clk_i(clk_i)

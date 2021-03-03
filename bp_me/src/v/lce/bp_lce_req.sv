@@ -31,6 +31,8 @@ module bp_lce_req
     // issue non-exclusive read requests
     , parameter non_excl_reads_p = 0
 
+    , parameter metadata_latency_p = 0
+
     , localparam block_size_in_bytes_lp = (block_width_p/8)
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
@@ -138,7 +140,9 @@ module bp_lce_req
 
   logic cache_req_metadata_v_r;
   bsg_dff_reset_set_clear
-   #(.width_p(1))
+   #(.width_p(1)
+     ,.clear_over_set_p((metadata_latency_p == 1))
+     )
    metadata_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -248,10 +252,10 @@ module bp_lce_req
         lce_req.header.size = req_block_size_lp;
         lce_req.header.addr = cache_req_r.addr;
         lce_req.header.msg_type = (cache_req_r.msg_type == e_miss_load)
-          ? e_bedrock_req_rd
-          : e_bedrock_req_wr;
+          ? e_bedrock_req_rd_miss
+          : e_bedrock_req_wr_miss;
 
-        lce_req_payload.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.repl_way);
+        lce_req_payload.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.hit_or_repl_way);
         lce_req_payload.non_exclusive = (cache_req_r.msg_type == e_miss_load)
           ? (non_excl_reads_p == 1)
             ? e_bedrock_req_non_excl
@@ -300,5 +304,11 @@ module bp_lce_req
       state_r <= state_n;
     end
   end
+
+  always_ff @(negedge clk_i)
+    begin
+      assert ((metadata_latency_p < 2))
+        else $error("metadata needs to arrive within one cycle of the request");
+    end
 
 endmodule
