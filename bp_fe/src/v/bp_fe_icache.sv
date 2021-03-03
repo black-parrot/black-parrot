@@ -277,6 +277,7 @@ module bp_fe_icache
      ,.w_i(stat_mem_w_li)
      ,.data_o(stat_mem_data_lo.lru)
      );
+  assign stat_mem_data_lo.dirty = '0;
 
   /////////////////////////////////////////////////////////////////////////////
   // TV stage
@@ -325,6 +326,16 @@ module bp_fe_icache
                ,bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r, cached_hit_tv_r, uncached_hit_tv_r
                ,fill_tv_r, fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r
                })
+     );
+
+
+  logic [lg_icache_assoc_lp-1:0] hit_index_tv;
+  bsg_encode_one_hot
+   #(.width_p(assoc_p), .lo_to_hi_p(1))
+   hit_index_encoder
+    (.i(hit_v_tv_r)
+     ,.addr_o(hit_index_tv)
+     ,.v_o()
      );
 
   // One-hot data muxing
@@ -379,7 +390,9 @@ module bp_fe_icache
    '{addr     : paddr_tv_r
      ,size    : cached_req ? block_req_size : uncached_req_size
      ,msg_type: cached_req ? e_miss_load : uncached_req ? e_uc_load : e_cache_clear
+     ,subop   : e_req_amoswap
      ,data    : '0
+     ,hit     : cached_hit_tv_r
      };
 
   // The cache pipeline is designed to always send metadata a cycle after the request
@@ -411,8 +424,18 @@ module bp_fe_icache
      ,.addr_o(way_invalid_index)
      );
 
-  // invalid way takes priority over LRU way
-  assign cache_req_metadata_cast_o.repl_way = invalid_exist ? way_invalid_index : lru_encode;
+  logic metadata_hit_r;
+  logic [lg_icache_assoc_lp-1:0] metadata_hit_index_r;
+  bsg_dff
+   #(.width_p(1+lg_icache_assoc_lp))
+   cached_hit_reg
+    (.clk_i(clk_i)
+     ,.data_i({cached_hit_tv_r, hit_index_tv})
+     ,.data_o({metadata_hit_r, metadata_hit_index_r})
+     );
+
+  wire [assoc_p-1:0] hit_or_repl_way = metadata_hit_r ? metadata_hit_index_r : lru_encode;
+  assign cache_req_metadata_cast_o.hit_or_repl_way = hit_or_repl_way;
   assign cache_req_metadata_cast_o.dirty = '0;
 
   /////////////////////////////////////////////////////////////////////////////
@@ -613,15 +636,6 @@ module bp_fe_icache
     ? paddr_tv_r[block_offset_width_lp+:sindex_width_lp]
     : stat_mem_pkt_cast_i.index;
 
-  logic [lg_icache_assoc_lp-1:0] hit_index_tv;
-  bsg_encode_one_hot
-   #(.width_p(assoc_p), .lo_to_hi_p(1))
-   hit_index_encoder
-    (.i(hit_v_tv_r)
-     ,.addr_o(hit_index_tv)
-     ,.v_o()
-     );
-
   logic [`BSG_SAFE_MINUS(assoc_p, 2):0] lru_decode_data_lo, lru_decode_mask_lo;
   bsg_lru_pseudo_tree_decode
    #(.ways_p(assoc_p))
@@ -634,7 +648,7 @@ module bp_fe_icache
   assign stat_mem_data_li.lru = stat_mem_fast_write ? lru_decode_data_lo : '0;
   assign stat_mem_mask_li.lru = stat_mem_fast_write ? lru_decode_mask_lo : '1;
 
-  assign stat_mem_o = {stat_mem_data_lo.lru, assoc_p'(0)};
+  assign stat_mem_o = stat_mem_data_lo;
 
   ///////////////////////////
   // Uncached data storage
@@ -668,4 +682,3 @@ module bp_fe_icache
   //synopsys translate_on
 
 endmodule
-

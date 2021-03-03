@@ -126,8 +126,8 @@ module bp_cce_reg
     if (~reset_i) begin
       // Cacheable requests must target cacheable memory
       assert(!(lce_req_v_i && ~req_pma_coherent_addr_lo
-               && ((lce_req_hdr.msg_type.req == e_bedrock_req_rd)
-                   || (lce_req_hdr.msg_type.req == e_bedrock_req_wr))
+               && ((lce_req_hdr.msg_type.req == e_bedrock_req_rd_miss)
+                   || (lce_req_hdr.msg_type.req == e_bedrock_req_wr_miss))
               )
             ) else
       $error("CCE PMA violation - cacheable requests must target cacheable memory");
@@ -147,7 +147,7 @@ module bp_cce_reg
   wire queue_op      = (decoded_inst_i.op == e_op_queue);
 
   // Flag next values
-  wire lce_req_rqf   = (lce_req_hdr.msg_type.req == e_bedrock_req_wr)
+  wire lce_req_rqf   = (lce_req_hdr.msg_type.req == e_bedrock_req_wr_miss)
                        | (lce_req_hdr.msg_type.req == e_bedrock_req_uc_wr);
   wire lce_req_ucf   = (lce_req_hdr.msg_type.req == e_bedrock_req_uc_rd)
                        | (lce_req_hdr.msg_type.req == e_bedrock_req_uc_wr);

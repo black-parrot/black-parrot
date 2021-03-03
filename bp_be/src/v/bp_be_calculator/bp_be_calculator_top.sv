@@ -48,6 +48,7 @@ module bp_be_calculator_top
   , output logic                                    ptw_busy_o
   , output logic                                    replay_pending_o
   , output logic [decode_info_width_lp-1:0]         decode_info_o
+  , input                                           cmd_full_n_i
 
   , output logic [commit_pkt_width_lp-1:0]          commit_pkt_o
   , output logic [branch_pkt_width_lp-1:0]          br_pkt_o
@@ -460,6 +461,7 @@ module bp_be_calculator_top
 
           exc_stage_n[2].exc.dcache_miss        |= pipe_mem_dcache_miss_lo;
           exc_stage_n[2].spec.fencei            |= pipe_mem_fencei_lo;
+          exc_stage_n[2].exc.cmd_full           |= |{exc_stage_r[2].exc, exc_stage_r[2].spec} & cmd_full_n_i;
     end
 
   // Exception pipeline

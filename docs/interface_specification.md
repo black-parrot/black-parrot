@@ -147,7 +147,7 @@ routed through a FIFO. BlackParrot provides 3 types of Cache Engines:
 More details are provided about the LCE and CCE interface in the following section.
 
 A UCE implementation must support the following operations:
-- Engine loads, stores and optionally amo operations
+- Engine loads, stores and amo operations
 - Handle remote invalidations
 - Handle both uncached and cached requests
 - Support both write-through and write-back protocols
@@ -160,14 +160,18 @@ bp_cache_req_s, which contains the following fields.
   - Store Miss
   - Uncached Load
   - Uncached Store
-  - Writethrough Store
+  - Cache flush
+  - Cache clear
+  - Atomic
 - Physical address
 - Size (1B-64B)
 - Data (For uncached stores or writethroughs)
+- Hit
+- Subop type (amoswap, amolr, amosc, amoadd, amoxor, amoand, amoor, amomin, amomax, amominu, amomaxu)
 
-Additionally, the Cache Engine may require some metadata in order to service cache misses. This metadata may not be available at the same time as the request, due to the nature of high performance caches. The handshake here is valid-only. If a Cache Engines needs metadata in order to service the miss, it needs to be ready to accept metadata at any cycle later than or equal to the original cache miss. The cache is required to eventually provide this data, although not in any particular cycle. The current metadata fields are:
+Additionally, the Cache Engine may require some metadata in order to service cache misses. This metadata may not be available at the same time as the request, due to the nature of high performance caches. The handshake here is valid-only. If a Cache Engine needs metadata in order to service the miss, it needs to be ready to accept metadata at any cycle later than or equal to the original cache miss. The cache is required to eventually provide this data, although not in any particular cycle. The latency between a cache request and its metadata must be a known constant for all message types, under all backpressure conditions. The current metadata fields are:
 - Dirty
-- Replacement way
+- Hit or Replacement way
 
 The fill interface is implemented as a set of ready-valid connections that provide read/write access
 to memory structures in a typical cache. A single cache request may trigger a set of fill responses. To decouple cache logic from any particular fill strategy, there is an additional signal which is raised when a request is
@@ -213,8 +217,9 @@ A memory command or response packet is composed of:
   - Write request
   - Uncached read request
   - Uncached write request
-  - Writeback
   - Prefetch
+  - Atomic operation
+- Subop type (amoswap, amolr, amosc, amoadd, amoxor, amoand, amoor, amomin, amomax, amominu, amomaxu)
 - Physical address
 - Request Size
 - Payload (A black-box to the command receiver, this is returned as-is along with the memory response)

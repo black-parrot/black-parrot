@@ -8,20 +8,22 @@
   `define declare_bp_cache_req_s(data_width_mp, paddr_width_mp, cache_name_mp) \
     typedef struct packed                             \
     {                                                 \
+      logic hit;                                      \
       logic [data_width_mp-1:0] data;                 \
       bp_cache_req_size_e size;                       \
       logic [paddr_width_mp-1:0] addr;                \
       bp_cache_req_msg_type_e msg_type;               \
+      bp_cache_req_wr_subop_e subop;                  \
     }  bp_``cache_name_mp``_req_s
 
   `define bp_cache_req_width(data_width_mp, paddr_width_mp) \
-    (data_width_mp+$bits(bp_cache_req_size_e) +paddr_width_mp+$bits(bp_cache_req_msg_type_e))
+    (1+data_width_mp+$bits(bp_cache_req_size_e)+paddr_width_mp+$bits(bp_cache_req_msg_type_e)+$bits(bp_cache_req_wr_subop_e))
 
   `define declare_bp_cache_req_metadata_s(ways_mp, cache_name_mp) \
-    typedef struct packed                              \
-    {                                                  \
-      logic [`BSG_SAFE_CLOG2(ways_mp)-1:0] repl_way;   \
-      logic dirty;                                     \
+    typedef struct packed                                   \
+    {                                                       \
+      logic [`BSG_SAFE_CLOG2(ways_mp)-1:0] hit_or_repl_way; \
+      logic dirty;                                          \
     }  bp_``cache_name_mp``_req_metadata_s
 
   `define bp_cache_req_metadata_width(ways_mp) \

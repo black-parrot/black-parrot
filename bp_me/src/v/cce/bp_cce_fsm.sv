@@ -278,8 +278,8 @@ module bp_cce_fsm
     if (~reset_i) begin
       // Cacheable requests must target cacheable memory
       assert(!(lce_req_v_i && ~req_pma_coherent_addr_lo
-               && ((lce_req.header.msg_type.req == e_bedrock_req_rd)
-                   || (lce_req.header.msg_type.req == e_bedrock_req_wr))
+               && ((lce_req.header.msg_type.req == e_bedrock_req_rd_miss)
+                   || (lce_req.header.msg_type.req == e_bedrock_req_wr_miss))
               )
             ) else
       $error("CCE PMA violation - cacheable requests must target cacheable memory");
@@ -850,8 +850,8 @@ module bp_cce_fsm
         // cached requests will stall on the input port
         end else if (lce_req_v_i) begin
           // cached requests not allowed, go to error state and stall
-          if ((lce_req.header.msg_type.req == e_bedrock_req_rd)
-              | (lce_req.header.msg_type.req == e_bedrock_req_wr)) begin
+          if ((lce_req.header.msg_type.req == e_bedrock_req_rd_miss)
+              | (lce_req.header.msg_type.req == e_bedrock_req_wr_miss)) begin
               state_n = e_error;
 
           // uncached load/store
@@ -934,13 +934,13 @@ module bp_cce_fsm
           mshr_n.lce_id = lce_req_payload.src_id;
           state_n = e_error;
           // cached request
-          if (lce_req.header.msg_type.req == e_bedrock_req_rd
-              | lce_req.header.msg_type.req == e_bedrock_req_wr) begin
+          if (lce_req.header.msg_type.req == e_bedrock_req_rd_miss
+              | lce_req.header.msg_type.req == e_bedrock_req_wr_miss) begin
 
             mshr_n.paddr = lce_req.header.addr;
             mshr_n.msg_size = lce_req.header.size;
             mshr_n.lru_way_id = lce_req_payload.lru_way_id;
-            mshr_n.flags[e_opd_rqf] = (lce_req.header.msg_type.req == e_bedrock_req_wr);
+            mshr_n.flags[e_opd_rqf] = (lce_req.header.msg_type.req == e_bedrock_req_wr_miss);
             mshr_n.flags[e_opd_nerf] = lce_req_payload.non_exclusive;
 
             // query PMA for coherence property - it is a violation for a cached request

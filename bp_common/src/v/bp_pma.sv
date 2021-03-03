@@ -9,6 +9,7 @@ module bp_pma
   (input                          clk_i
    , input                        reset_i
 
+   , input                        uncached_mode_i
    , input                        ptag_v_i
    , input [ptag_width_p-1:0]     ptag_i
    , input                        uncached_mode_i
