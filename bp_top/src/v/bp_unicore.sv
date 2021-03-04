@@ -238,6 +238,7 @@ module bp_unicore
     ,.fill_width_p(dcache_fill_width_p)
     ,.data_mem_invert_clk_p(1)
     ,.tag_mem_invert_clk_p(1)
+    ,.metadata_latency_p(1)
     )
    dcache_uce
    (.clk_i(clk_i)
@@ -287,6 +288,7 @@ module bp_unicore
      ,.sets_p(icache_sets_p)
      ,.block_width_p(icache_block_width_p)
      ,.fill_width_p(icache_fill_width_p)
+     ,.metadata_latency_p(1)
      )
    icache_uce
     (.clk_i(clk_i)

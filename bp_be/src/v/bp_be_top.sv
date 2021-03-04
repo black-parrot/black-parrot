@@ -93,7 +93,7 @@ module bp_be_top
   logic poison_isd_lo, suppress_iss_lo;
   logic waiting_for_irq_lo;
 
-  logic fe_cmd_full_lo;
+  logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_lo;
   logic mem_ready_lo, long_ready_lo, ptw_busy_lo;
 
   bp_be_director
@@ -110,11 +110,13 @@ module bp_be_top
      ,.fe_cmd_o(fe_cmd_o)
      ,.fe_cmd_v_o(fe_cmd_v_o)
      ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
-     ,.fe_cmd_full_o(fe_cmd_full_lo)
 
      ,.suppress_iss_o(suppress_iss_lo)
      ,.poison_isd_o(poison_isd_lo)
      ,.irq_waiting_i(irq_waiting_lo)
+     ,.cmd_empty_o()
+     ,.cmd_full_n_o(cmd_full_n_lo)
+     ,.cmd_full_r_o(cmd_full_r_lo)
 
      ,.br_pkt_i(br_pkt)
      ,.commit_pkt_i(commit_pkt)
@@ -129,7 +131,7 @@ module bp_be_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.isd_status_i(isd_status)
-     ,.fe_cmd_full_i(fe_cmd_full_lo)
+     ,.cmd_full_i(cmd_full_r_lo)
      ,.credits_full_i(cache_req_credits_full_i)
      ,.credits_empty_i(cache_req_credits_empty_i)
      ,.mem_ready_i(mem_ready_lo)
@@ -225,6 +227,7 @@ module bp_be_top
      ,.irq_pending_o(irq_pending_lo)
      ,.irq_waiting_o(irq_waiting_lo)
      ,.replay_pending_o(replay_pending_lo)
+     ,.cmd_full_n_i(cmd_full_n_lo)
      );
 
 endmodule

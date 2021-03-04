@@ -34,7 +34,7 @@ module bp_be_detector
 
    // Dependency information
    , input [isd_status_width_lp-1:0]   isd_status_i
-   , input                             fe_cmd_full_i
+   , input                             cmd_full_i
    , input                             credits_full_i
    , input                             credits_empty_i
    , input                             long_ready_i
@@ -174,20 +174,20 @@ module bp_be_detector
       // Detect integer and float data hazards for EX2
       irs1_data_haz_v[1] = (isd_status_cast_i.irs1_v & rs1_match_vector[1])
                            & (isd_status_cast_i.rs1_addr != '0)
-                           & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
+                           & (dep_status_r[1].aux_iwb_v | dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
       irs2_data_haz_v[1] = (isd_status_cast_i.irs2_v & rs2_match_vector[1])
                            & (isd_status_cast_i.rs2_addr != '0)
-                           & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
+                           & (dep_status_r[1].aux_iwb_v | dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
       frs1_data_haz_v[1] = (isd_status_cast_i.frs1_v & rs1_match_vector[1])
-                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
+                           & (dep_status_r[1].aux_fwb_v | dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       frs2_data_haz_v[1] = (isd_status_cast_i.frs2_v & rs2_match_vector[1])
-                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
+                           & (dep_status_r[1].aux_fwb_v | dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       frs3_data_haz_v[1] = (isd_status_cast_i.frs3_v & rs3_match_vector[1])
-                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
+                           & (dep_status_r[1].aux_fwb_v | dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       irs1_data_haz_v[2] = (isd_status_cast_i.irs1_v & rs1_match_vector[2])
                            & (isd_status_cast_i.rs1_addr != '0)
@@ -218,7 +218,7 @@ module bp_be_detector
       mem_in_pipe_v      = (dep_status_r[0].mem_v) | (dep_status_r[1].mem_v);
       fence_haz_v        = (isd_status_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v))
                            | (isd_status_cast_i.mem_v & credits_full_i);
-      cmd_haz_v          = fe_cmd_full_i;
+      cmd_haz_v          = cmd_full_i;
 
       fflags_haz_v = isd_status_cast_i.csr_w_v
                      & ((dep_status_r[0].fflags_w_v)
