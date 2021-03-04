@@ -218,7 +218,7 @@ module bp_lce_req
           unique case (cache_req.msg_type)
             e_miss_store
             ,e_miss_load: begin
-              cache_req_yumi_o = cache_req_v_i & (lce_mode_i == e_lce_mode_normal) & sync_done_i;
+              cache_req_yumi_o = cache_req_v_i & (lce_mode_i inside {e_lce_mode_normal, e_lce_mode_nonspec}) & sync_done_i;
               state_n = cache_req_yumi_o ? e_send_cached_req : e_ready;
             end
             e_uc_store: begin
