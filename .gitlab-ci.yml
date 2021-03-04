@@ -300,6 +300,24 @@ top-riscv-tests-vcs:
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCV_TESTLIST $CI_CORES
 
+# LRSC test hangs
+top-amo-tests-verilator:
+  <<: *job_definition
+  when: manual
+  stage: test-short
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/single_core_atomics.sh verilator $CI_CORES
+
+top-amo-tests-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/single_core_atomics.sh vcs $CI_CORES
+
 dcache-vcs:
   <<: *job_definition
   stage: test-short
