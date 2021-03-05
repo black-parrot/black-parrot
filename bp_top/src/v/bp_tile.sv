@@ -560,85 +560,121 @@ module bp_tile
      ,.yumi_i(cce_mem_resp_yumi_lo)
      );
 
-  if (l2_en_p)
-    begin : l2s
-      import bsg_cache_pkg::*;
-      `declare_bsg_cache_dma_pkt_s(caddr_width_p);
-      bsg_cache_dma_pkt_s dma_pkt_lo;
-      logic dma_pkt_v_lo, dma_pkt_yumi_li;
-      logic [mem_noc_flit_width_p-1:0] dma_data_li;
-      logic dma_data_v_li, dma_data_ready_lo;
-      logic [mem_noc_flit_width_p-1:0] dma_data_lo;
-      logic dma_data_v_lo, dma_data_yumi_li;
+  import bsg_cache_pkg::*;
+  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
+  bsg_cache_pkt_s cache_pkt_li;
+  logic cache_pkt_v_li, cache_pkt_ready_lo;
+  logic [dword_width_gp-1:0] cache_data_lo;
+  logic cache_data_v_lo, cache_data_yumi_li;
+  bp_me_cce_to_cache
+   #(.bp_params_p(bp_params_p))
+   cce_to_cache
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
+     ,.mem_cmd_i(cache_mem_cmd_li)
+     ,.mem_cmd_v_i(cache_mem_cmd_v_li)
+     ,.mem_cmd_ready_o(cache_mem_cmd_ready_lo)
 
-      bp_me_cache_slice
-       #(.bp_params_p(bp_params_p))
-       l2s
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+     ,.mem_resp_o(cache_mem_resp_lo)
+     ,.mem_resp_v_o(cache_mem_resp_v_lo)
+     ,.mem_resp_yumi_i(cache_mem_resp_yumi_li)
 
-         ,.mem_cmd_i(cache_mem_cmd_li)
-         ,.mem_cmd_v_i(cache_mem_cmd_v_li)
-         ,.mem_cmd_ready_o(cache_mem_cmd_ready_lo)
+     ,.cache_pkt_o(cache_pkt_li)
+     ,.v_o(cache_pkt_v_li)
+     ,.ready_i(cache_pkt_ready_lo)
 
-         ,.mem_resp_o(cache_mem_resp_lo)
-         ,.mem_resp_v_o(cache_mem_resp_v_lo)
-         ,.mem_resp_yumi_i(cache_mem_resp_yumi_li)
+     ,.data_i(cache_data_lo)
+     ,.v_i(cache_data_v_lo)
+     ,.yumi_o(cache_data_yumi_li)
+     );
 
-         ,.dma_pkt_o(dma_pkt_lo)
-         ,.dma_pkt_v_o(dma_pkt_v_lo)
-         ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
+  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  bsg_cache_dma_pkt_s dma_pkt_lo;
+  logic dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [mem_noc_flit_width_p-1:0] dma_data_li;
+  logic dma_data_v_li, dma_data_ready_lo;
+  logic [mem_noc_flit_width_p-1:0] dma_data_lo;
+  logic dma_data_v_lo, dma_data_yumi_li;
+  bsg_cache
+   #(.addr_width_p(caddr_width_p)
+     ,.data_width_p(dword_width_gp)
+     ,.block_size_in_words_p(cce_block_width_p/dword_width_gp)
+     ,.sets_p(l2_en_p ? l2_sets_p : 2)
+     ,.ways_p(l2_en_p ? l2_assoc_p : 2)
+     ,.amo_support_p(((amo_swap_p == e_l2) << e_cache_amo_swap)
+                     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_xor)
+                     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_and)
+                     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_or)
+                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_add)
+                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_min)
+                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_max)
+                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_minu)
+                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_maxu)
+                     )
+    )
+   cache
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-         ,.dma_data_i(dma_data_li)
-         ,.dma_data_v_i(dma_data_v_li)
-         ,.dma_data_ready_o(dma_data_ready_lo)
+     ,.cache_pkt_i(cache_pkt_li)
+     ,.v_i(cache_pkt_v_li)
+     ,.ready_o(cache_pkt_ready_lo)
 
-         ,.dma_data_o(dma_data_lo)
-         ,.dma_data_v_o(dma_data_v_lo)
-         ,.dma_data_yumi_i(dma_data_yumi_li)
-         );
+     ,.data_o(cache_data_lo)
+     ,.v_o(cache_data_v_lo)
+     ,.yumi_i(cache_data_yumi_li)
 
-      bsg_cache_dma_to_wormhole
-       #(.addr_width_p(caddr_width_p)
-         ,.data_width_p(mem_noc_flit_width_p)
-         ,.dma_data_width_p(mem_noc_flit_width_p)
-         ,.block_size_in_words_p(cce_block_width_p/mem_noc_flit_width_p)
+     ,.dma_pkt_o(dma_pkt_lo)
+     ,.dma_pkt_v_o(dma_pkt_v_lo)
+     ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
 
-         ,.wh_flit_width_p(mem_noc_flit_width_p)
-         ,.wh_cid_width_p(mem_noc_cid_width_p)
-         ,.wh_len_width_p(mem_noc_len_width_p)
-         ,.wh_cord_width_p(mem_noc_cord_width_p)
-         )
-       bsg_cache_dma_to_wormhole
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+     ,.dma_data_i(dma_data_li)
+     ,.dma_data_v_i(dma_data_v_li)
+     ,.dma_data_ready_o(dma_data_ready_lo)
 
-         ,.dma_pkt_i(dma_pkt_lo)
-         ,.dma_pkt_v_i(dma_pkt_v_lo)
-         ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
+     ,.dma_data_o(dma_data_lo)
+     ,.dma_data_v_o(dma_data_v_lo)
+     ,.dma_data_yumi_i(dma_data_yumi_li)
 
-         ,.dma_data_o(dma_data_li)
-         ,.dma_data_v_o(dma_data_v_li)
-         ,.dma_data_ready_i(dma_data_ready_lo)
+     ,.v_we_o()
+     );
 
-         ,.dma_data_i(dma_data_lo)
-         ,.dma_data_v_i(dma_data_v_lo)
-         ,.dma_data_yumi_o(dma_data_yumi_li)
+  bsg_cache_dma_to_wormhole
+   #(.addr_width_p(caddr_width_p)
+     ,.data_width_p(mem_noc_flit_width_p)
+     ,.dma_data_width_p(mem_noc_flit_width_p)
+     ,.block_size_in_words_p(cce_block_width_p/mem_noc_flit_width_p)
 
-         ,.wh_link_sif_i(mem_resp_link_i)
-         ,.wh_link_sif_o(mem_cmd_link_o)
+     ,.wh_flit_width_p(mem_noc_flit_width_p)
+     ,.wh_cid_width_p(mem_noc_cid_width_p)
+     ,.wh_len_width_p(mem_noc_len_width_p)
+     ,.wh_cord_width_p(mem_noc_cord_width_p)
+     )
+   bsg_cache_dma_to_wormhole
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-         // TODO: Think about
-         ,.my_wh_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
-         ,.dest_wh_cord_i('1)
-         ,.my_wh_cid_i(my_cord_i[0+:mem_noc_cid_width_p]-sac_x_dim_p[0+:mem_noc_cid_width_p])
-         );
-    end
-  else
-    begin : no_l2s
-      $error("Not currently supported");
-    end
+     ,.dma_pkt_i(dma_pkt_lo)
+     ,.dma_pkt_v_i(dma_pkt_v_lo)
+     ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
+
+     ,.dma_data_o(dma_data_li)
+     ,.dma_data_v_o(dma_data_v_li)
+     ,.dma_data_ready_i(dma_data_ready_lo)
+
+     ,.dma_data_i(dma_data_lo)
+     ,.dma_data_v_i(dma_data_v_lo)
+     ,.dma_data_yumi_o(dma_data_yumi_li)
+
+     ,.wh_link_sif_i(mem_resp_link_i)
+     ,.wh_link_sif_o(mem_cmd_link_o)
+
+     // TODO: Think about
+     ,.my_wh_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
+     ,.my_wh_cid_i(my_cord_i[0+:mem_noc_cid_width_p]-sac_x_dim_p[0+:mem_noc_cid_width_p])
+     ,.dest_wh_cord_i('1)
+     );
 
   bp_cce_loopback
    #(.bp_params_p(bp_params_p))
