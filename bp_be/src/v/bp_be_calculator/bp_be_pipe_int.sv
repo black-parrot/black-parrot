@@ -24,15 +24,15 @@ module bp_be_pipe_int
    , input                             reset_i
 
    , input [dispatch_pkt_width_lp-1:0] reservation_i
+   , input                             flush_i
 
    // Pipeline results
-   , output [dpath_width_gp-1:0]       data_o
-   , output                            v_o
+   , output logic [dpath_width_gp-1:0] data_o
+   , output logic                      v_o
    );
 
   // Suppress unused signal warning
-  wire unused0 = clk_i;
-  wire unused1 = reset_i;
+  wire unused = &{clk_i, reset_i, flush_i};
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_dispatch_pkt_s reservation;
@@ -87,7 +87,7 @@ module bp_be_pipe_int
   // Shift back the ALU result from the top field for word width operations
   wire [dword_width_gp-1:0] opw_result = $signed(alu_result) >>> word_width_gp;
   assign data_o = decode.opw_v ? opw_result : alu_result;
-  assign v_o    = reservation.v & ~reservation.poison & reservation.decode.pipe_int_v;
+  assign v_o    = reservation.v & reservation.decode.pipe_int_v;
 
 endmodule
 

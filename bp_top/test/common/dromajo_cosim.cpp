@@ -10,7 +10,7 @@ using namespace std;
 dromajo_cosim_state_t* dromajo_pointer;
 vector<bool>* finish;
 
-extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory_size, bool checkpoint) {
+extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory_size, bool checkpoint, bool amo_en) {
 
   if(hartid == 0) {
     cout << "Running with Dromajo cosimulation" << endl;
@@ -27,16 +27,30 @@ extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory
     sprintf(mmio_str, "--mmio_range=0x20000:0x80000000");
     char load_str[50];
     sprintf(load_str, "--load=prog");
+    char amo_str[50];
+    sprintf(amo_str, "--enable_amo");
     char prog_str[50];
     sprintf(prog_str, "prog.elf");
 
     if(checkpoint) {
-      char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, load_str, prog_str};
-      dromajo_pointer = dromajo_cosim_init(6, argv);
+      if(amo_en) {
+        char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, amo_str, load_str, prog_str};
+        dromajo_pointer = dromajo_cosim_init(7, argv);
+      }
+      else {
+        char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, load_str, prog_str};
+        dromajo_pointer = dromajo_cosim_init(6, argv);
+      }
     }
     else {
-      char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, prog_str};
-      dromajo_pointer = dromajo_cosim_init(5, argv);
+      if(amo_en) {
+        char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, amo_str, prog_str};
+        dromajo_pointer = dromajo_cosim_init(6, argv);
+      }
+      else {
+        char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, prog_str};
+        dromajo_pointer = dromajo_cosim_init(5, argv);
+      }
     }
   }
 }

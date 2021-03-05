@@ -72,10 +72,11 @@ module bp_fe_top
   enum logic [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
 
   // Decoded state signals
-  wire is_wait  = (state_r == e_wait);
-  wire is_run   = (state_r == e_run);
-  wire is_stall = (state_r == e_stall);
+  wire is_wait     = (state_r == e_wait);
+  wire is_run      = (state_r == e_run);
+  wire is_stall    = (state_r == e_stall);
 
+  logic pc_gen_init_done_lo;
   logic redirect_v_li;
   logic [vaddr_width_p-1:0] redirect_pc_li;
   logic redirect_br_v_li, redirect_br_taken_li, redirect_br_ntaken_li, redirect_br_nonbr_li;
@@ -95,6 +96,8 @@ module bp_fe_top
    pc_gen
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+
+     ,.init_done_o(pc_gen_init_done_lo)
 
      ,.redirect_v_i(redirect_v_li)
      ,.redirect_pc_i(redirect_pc_li)
@@ -123,13 +126,17 @@ module bp_fe_top
      ,.attaboy_yumi_o(attaboy_yumi_lo)
      );
 
-  wire state_reset_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
-  wire pc_redirect_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
-  wire itlb_fill_v       = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
-  wire icache_fence_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
-  wire itlb_fence_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
-  wire attaboy_v         = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
-  wire cmd_nonattaboy_v  = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
+  wire state_reset_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
+  wire pc_redirect_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
+  wire itlb_fill_v            = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
+  wire icache_fence_v         = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
+  wire icache_fill_response_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fill_response);
+  wire itlb_fence_v           = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
+  wire wait_v                 = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_wait);
+  wire attaboy_v              = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
+  wire cmd_nonattaboy_v       = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
+  wire cmd_complex_v          = (state_reset_v | itlb_fill_v | icache_fence_v | itlb_fence_v);
+  wire cmd_immediate_v        = (pc_redirect_v | icache_fill_response_v);
 
   wire br_miss_v = pc_redirect_v
     & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
@@ -140,11 +147,12 @@ module bp_fe_top
   wire br_miss_nonbr = br_miss_v
     & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
 
-  wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+  wire trap_v        = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+  wire eret_v        = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_eret);
   wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 
   logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
-  wire shadow_priv_w = state_reset_v | trap_v;
+  wire shadow_priv_w = state_reset_v | trap_v | eret_v;
   assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
   bsg_dff_reset_en_bypass
    #(.width_p(rv64_priv_width_gp))
@@ -158,8 +166,8 @@ module bp_fe_top
      );
 
   logic shadow_translation_en_n, shadow_translation_en_r;
-  wire shadow_translation_en_w = state_reset_v | trap_v | translation_v;
-  assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_enabled;
+  wire shadow_translation_en_w = state_reset_v | trap_v | eret_v | translation_v;
+  assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_en;
   bsg_dff_reset_en_bypass
    #(.width_p(1))
    shadow_translation_en_reg
@@ -187,7 +195,7 @@ module bp_fe_top
      ,.data_i({br_miss_v, br_miss_nonbr, br_miss_taken, br_miss_ntaken, br_metadata_fwd_resume_n, pc_resume_n})
      ,.data_o({br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r, br_metadata_fwd_resume_r, pc_resume_r})
      );
-  assign redirect_v_li               = (is_stall & next_pc_yumi_li) | pc_redirect_v;
+  assign redirect_v_li               = (is_stall & next_pc_yumi_li) | cmd_immediate_v;
   assign redirect_pc_li              = pc_resume_r;
   assign redirect_br_v_li            = redirect_v_li & br_miss_r;
   assign redirect_br_metadata_fwd_li = br_metadata_fwd_resume_r;
@@ -202,13 +210,12 @@ module bp_fe_top
   assign attaboy_pc_li              = fe_cmd_cast_i.vaddr;
 
   logic instr_access_fault_v, instr_page_fault_v;
-  logic ptag_v_li, ptag_uncached_li, ptag_miss_li;
+  logic ptag_v_li, ptag_uncached_li, ptag_nonidem_li, ptag_miss_li;
   logic [ptag_width_p-1:0] ptag_li;
 
-  bp_pte_entry_leaf_s w_tlb_entry_li;
+  bp_pte_leaf_s w_tlb_entry_li;
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
-  assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf;
-  wire w_gigapage_li = fe_cmd_cast_i.operands.itlb_fill_response.gigapage;
+  assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
   wire [dword_width_gp-1:0] r_eaddr_li = dword_width_gp'($signed(next_pc_lo));
   bp_mmu
@@ -226,12 +233,12 @@ module bp_fe_top
      // Supervisor use of user memory is always disabled for immu
      ,.sum_i('0)
      ,.uncached_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_uncached))
+     ,.nonspec_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_nonspec))
      ,.domain_mask_i(cfg_bus_cast_i.domain_mask)
 
      ,.w_v_i(itlb_fill_v)
      ,.w_vtag_i(w_vtag_li)
      ,.w_entry_i(w_tlb_entry_li)
-     ,.w_gigapage_i(w_gigapage_li)
 
      ,.r_v_i(next_pc_yumi_li)
      ,.r_instr_i(1'b1)
@@ -243,6 +250,7 @@ module bp_fe_top
      ,.r_ptag_o(ptag_li)
      ,.r_miss_o(ptag_miss_li)
      ,.r_uncached_o(ptag_uncached_li)
+     ,.r_nonidem_o(ptag_nonidem_li)
      ,.r_instr_access_fault_o(instr_access_fault_v)
      ,.r_load_access_fault_o()
      ,.r_store_access_fault_o()
@@ -254,12 +262,12 @@ module bp_fe_top
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = '{vaddr: next_pc_lo
-                        ,op  : icache_fence_v ? e_icache_fencei : e_icache_fetch
+                        ,op  : icache_fence_v ? e_icache_fencei : icache_fill_response_v ? e_icache_fill : e_icache_fetch
                         };
   // TODO: Should only ack icache fence when icache_ready
   wire icache_v_li = next_pc_yumi_li | icache_fence_v;
   logic [instr_width_gp-1:0] icache_data_lo;
-  logic icache_ready_lo, icache_data_v_lo;
+  logic icache_ready_lo, icache_data_v_lo, icache_miss_v_lo;
   logic icache_poison_tl, icache_poison_tv;
   bp_fe_icache
    #(.bp_params_p(bp_params_p))
@@ -276,10 +284,12 @@ module bp_fe_top
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(ptag_v_li)
      ,.uncached_i(ptag_uncached_li)
+     ,.nonidem_i(ptag_nonidem_li)
      ,.poison_tl_i(icache_poison_tl)
 
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
+     ,.miss_v_o(icache_miss_v_lo)
      ,.poison_tv_i(icache_poison_tv)
 
      ,.cache_req_o(cache_req_o)
@@ -335,14 +345,14 @@ module bp_fe_top
 
   wire icache_miss    = v_if2_r & ~icache_data_v_lo;
   wire queue_miss     = v_if2_r & ~fe_queue_ready_i;
-  wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r);
+  wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
   wire fe_instr_v     = v_if2_r & icache_data_v_lo;
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
 
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
   assign icache_poison_tv = fe_exception_v | cmd_nonattaboy_v;
 
-  assign fe_cmd_yumi_o = cmd_nonattaboy_v | attaboy_yumi_lo;
+  assign fe_cmd_yumi_o = pc_gen_init_done_lo & (cmd_nonattaboy_v | attaboy_yumi_lo);
   assign next_pc_yumi_li = (state_n == e_run);
 
   assign fetch_instr_v_li     = fe_queue_v_o & fe_instr_v;
@@ -362,7 +372,9 @@ module bp_fe_top
                                                        ? e_itlb_miss
                                                        : instr_page_fault_r
                                                          ? e_instr_page_fault
-                                                         : e_instr_access_fault;
+                                                         : instr_access_fault_r
+                                                           ? e_instr_access_fault
+                                                           : e_icache_miss;
       end
     else
       begin
@@ -377,20 +389,20 @@ module bp_fe_top
   always_comb
     case (state_r)
       // Wait for FE cmd
-      e_wait : state_n = pc_redirect_v ? e_run : cmd_nonattaboy_v ? e_stall : e_wait;
+      e_wait : state_n = cmd_immediate_v ? e_run : cmd_nonattaboy_v ? e_stall : e_wait;
       // Stall until we can start valid fetch
       e_stall: state_n = unstall ? e_run : e_stall;
       // Run state -- PCs are actually being fetched
       // Stay in run if there's an incoming cmd, the next pc will automatically be valid
       // Transition to wait if there's a TLB miss while we wait for fill
       // Transition to stall if we don't successfully complete the fetch for whatever reason
-      e_run  : state_n = pc_redirect_v
+      e_run  : state_n = cmd_immediate_v
                          ? e_run
-                         : stall
+                         : (stall || cmd_complex_v)
                            ? e_stall
                            : fetch_exception_v_li
                              ? e_wait
-                              : e_run;
+                             : e_run;
       default: state_n = e_wait;
     endcase
 

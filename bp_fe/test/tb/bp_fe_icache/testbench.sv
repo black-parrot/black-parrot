@@ -71,9 +71,10 @@ module testbench
     cfg_bus_cast_li.cce_mode = e_cce_mode_normal;
   end
 
-  assign ptag_li = trace_data_lo[0+:(ptag_width_p)];
-  assign vaddr_li = trace_data_lo[ptag_width_p+:vaddr_width_p];
-  assign uncached_li = trace_data_lo[(ptag_width_p+vaddr_width_p)+:1];
+  assign ptag_li       = trace_data_lo[0+:(ptag_width_p)];
+  assign vaddr_li      = trace_data_lo[ptag_width_p+:vaddr_width_p];
+  assign uncached_li   = trace_data_lo[(ptag_width_p+vaddr_width_p)+:1];
+  assign nonidem_li    = '0;
   assign trace_yumi_li = trace_v_lo & dut_ready_lo;
 
   // Trace replay
@@ -179,6 +180,7 @@ module testbench
      ,.ptag_v_i(trace_v_lo)
 
      ,.uncached_i(uncached_li)
+     ,.nonidem_i(nonidem_li)
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
 

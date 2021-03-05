@@ -33,7 +33,7 @@ module bp_clint_slice
    );
 
 `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
-`declare_bp_memory_map(paddr_width_p, caddr_width_p)
+`declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
 bp_bedrock_xce_mem_msg_s mem_cmd_li, mem_cmd_lo;
 assign mem_cmd_li = mem_cmd_i;
@@ -168,7 +168,7 @@ bp_bedrock_xce_mem_msg_s mem_resp_lo;
 assign mem_resp_lo =
   '{header : '{
     msg_type       : mem_cmd_lo.header.msg_type
-    ,subop         : e_bedrock_amoswap
+    ,subop         : e_bedrock_store
     ,addr          : mem_cmd_lo.header.addr
     ,payload       : mem_cmd_lo.header.payload
     ,size          : mem_cmd_lo.header.size

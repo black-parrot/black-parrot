@@ -2,7 +2,7 @@
 `ifndef BP_BE_DCACHE_PKGDEF_SVH
 `define BP_BE_DCACHE_PKGDEF_SVH
 
-  typedef enum logic [4:0]
+  typedef enum logic [3:0]
   {
     e_dcache_subop_none
     ,e_dcache_subop_lr

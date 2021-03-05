@@ -5,6 +5,7 @@
   {
     e_icache_fetch
     ,e_icache_fencei
+    ,e_icache_fill
   } bp_fe_icache_op_e;
 
 `endif

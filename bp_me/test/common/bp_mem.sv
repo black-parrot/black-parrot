@@ -5,7 +5,7 @@
 
 // Set default DRAM package
 `ifndef dram_pkg
-`define dram_pkg bsg_dramsim2_hmb2_4gb_x128_pkg
+`define dram_pkg bsg_dramsim3_hbm2_4gb_x128_pkg
 `endif
 
 `include "bp_common_defines.svh"

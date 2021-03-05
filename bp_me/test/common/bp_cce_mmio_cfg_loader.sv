@@ -52,7 +52,7 @@ module bp_cce_mmio_cfg_loader
   assign io_resp_ready_o = 1'b1;
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p)
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
   bp_bedrock_cce_mem_msg_s io_cmd_cast_o;
   bp_bedrock_cce_mem_msg_s io_resp_cast_i;
@@ -177,6 +177,7 @@ module bp_cce_mmio_cfg_loader
 
       // uncached store
       io_cmd_cast_o.header.msg_type      = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+      io_cmd_cast_o.header.subop         = e_bedrock_store; 
       io_cmd_cast_o.header.addr          = local_addr_lo;
       io_cmd_payload                     = '0;
       io_cmd_payload.lce_id              = lce_id_i;

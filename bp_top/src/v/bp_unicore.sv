@@ -64,7 +64,7 @@ module bp_unicore
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p)
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
   bp_icache_req_s icache_req_lo;
   logic icache_req_v_lo, icache_req_yumi_li, icache_req_busy_li;
@@ -238,6 +238,7 @@ module bp_unicore
     ,.fill_width_p(dcache_fill_width_p)
     ,.data_mem_invert_clk_p(1)
     ,.tag_mem_invert_clk_p(1)
+    ,.metadata_latency_p(1)
     )
    dcache_uce
    (.clk_i(clk_i)
@@ -287,6 +288,7 @@ module bp_unicore
      ,.sets_p(icache_sets_p)
      ,.block_width_p(icache_block_width_p)
      ,.fill_width_p(icache_fill_width_p)
+     ,.metadata_latency_p(1)
      )
    icache_uce
     (.clk_i(clk_i)

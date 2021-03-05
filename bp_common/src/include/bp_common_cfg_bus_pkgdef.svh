@@ -2,9 +2,15 @@
 `ifndef BP_COMMON_CFG_BUS_PKGDEF_SVH
 `define BP_COMMON_CFG_BUS_PKGDEF_SVH
 
-  typedef enum logic {
+  // LCE Operating Mode
+  // e_lce_mode_uncached: Cache treats all requests as uncached
+  // e_lce_mode_normal: Cache acts normally
+  // e_lce_mode_nonspec: Cache acts mostly normally, but will not send a speculative miss
+  typedef enum logic [1:0]
+  {
     e_lce_mode_uncached = 0
     ,e_lce_mode_normal  = 1
+    ,e_lce_mode_nonspec = 2
   } bp_lce_mode_e;
 
   // CCE Operating Mode
@@ -42,7 +48,6 @@
   localparam cfg_reg_dcache_mode_gp    = 'h0043;
   localparam cfg_reg_cce_id_gp         = 'h0080;
   localparam cfg_reg_cce_mode_gp       = 'h0081;
-  localparam cfg_reg_num_lce_gp        = 'h0082;
   localparam cfg_mem_base_cce_ucode_gp = 'h8000;
 
 `endif

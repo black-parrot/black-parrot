@@ -18,6 +18,7 @@ module bp_nonsynth_watchdog
     , input                                   reset_i
 
     , input                                   freeze_i
+    , input                                   wfi_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
@@ -42,7 +43,7 @@ module bp_nonsynth_watchdog
    #(.max_val_p(timeout_cycles_p), .init_val_p(0))
    stall_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i)
+     ,.reset_i(reset_i | freeze_i | wfi_i)
 
      ,.clear_i(npc_change)
      ,.up_i(1'b1)

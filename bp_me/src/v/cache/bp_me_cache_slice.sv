@@ -76,12 +76,26 @@ module bp_me_cache_slice
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
+
+  localparam [31:0] l2_amo_support_lp =
+    (((amo_swap_p == e_l2) << e_cache_amo_swap)
+     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_xor)
+     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_and)
+     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_or)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_add)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_min)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_max)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_minu)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_maxu)
+     );
+
   bsg_cache
    #(.addr_width_p(caddr_width_p)
      ,.data_width_p(dword_width_gp)
      ,.block_size_in_words_p(cce_block_width_p/dword_width_gp)
      ,.sets_p(l2_sets_p)
      ,.ways_p(l2_assoc_p)
+     ,.amo_support_p(l2_amo_support_lp)
      )
    cache
     (.clk_i(clk_i)
