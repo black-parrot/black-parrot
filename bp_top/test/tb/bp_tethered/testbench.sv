@@ -129,7 +129,24 @@ module testbench
   `endif
   if (dram_type_p == "dmc")
     begin : dmc
-      $error("DRAM controller not currently supported");
+      bp_ddr
+       #(.bp_params_p(bp_params_p))
+       ddr
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.dma_pkt_i(dma_pkt_lo)
+         ,.dma_pkt_v_i(dma_pkt_v_lo)
+         ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
+
+         ,.dma_data_o(dma_data_li)
+         ,.dma_data_v_o(dma_data_v_li)
+         ,.dma_data_ready_i(dma_data_ready_lo)
+
+         ,.dma_data_i(dma_data_lo)
+         ,.dma_data_v_i(dma_data_v_lo)
+         ,.dma_data_yumi_o(dma_data_yumi_li)
+         );
     end
   else if (dram_type_p == "dramsim3")
     begin : dramsim3
@@ -375,7 +392,7 @@ module testbench
     end
   else
     begin : no_mem
-      //$error("Must select dram_type as either dramsim3, dmc, or axi");
+      $error("Must select dram_type as either dramsim3, dmc, or axi");
     end
 
   bp_nonsynth_nbf_loader
