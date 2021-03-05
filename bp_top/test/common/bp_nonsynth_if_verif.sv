@@ -85,5 +85,8 @@ module bp_nonsynth_if_verif
   if ((multicore_p == 1) && ((amo_swap_p != e_none) || (amo_fetch_logic_p != e_none) || (amo_fetch_arithmetic_p != e_none)))
     $fatal("Error: L2 atomics are not currently supported in bp_multicore");
 
+  if (mem_noc_flit_width_p % dword_width_gp != 0)
+    $fatal("Memory NoC flit width must be a multiple of 64");
+
 endmodule
 

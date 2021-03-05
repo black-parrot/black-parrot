@@ -45,11 +45,11 @@ module bp_unicore
    , output logic                                      dma_pkt_v_o
    , input                                             dma_pkt_yumi_i
 
-   , input [dword_width_gp-1:0]                        dma_data_i
+   , input [mem_noc_flit_width_p-1:0]                  dma_data_i
    , input                                             dma_data_v_i
    , output logic                                      dma_data_ready_o
 
-   , output logic [dword_width_gp-1:0]                 dma_data_o
+   , output logic [mem_noc_flit_width_p-1:0]           dma_data_o
    , output logic                                      dma_data_v_o
    , input                                             dma_data_yumi_i
    );
@@ -555,6 +555,7 @@ module bp_unicore
                      | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_minu)
                      | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_maxu)
                      )
+     ,.dma_data_width_p(mem_noc_flit_width_p)
     )
    cache
     (.clk_i(clk_i)
