@@ -123,6 +123,8 @@ module bp_me_cce_to_cache
   bp_local_addr_s local_addr_cast;
   assign local_addr_cast = mem_cmd_lo.header.addr;
 
+  wire cmd_word_op = (mem_cmd_lo.header.size == e_bedrock_msg_size_4);
+
   always_comb begin
     cache_pkt.mask = '0;
     cache_pkt.data = '0;
@@ -202,13 +204,26 @@ module bp_me_cce_to_cache
               default: cache_pkt.opcode = LB;
             endcase
           e_bedrock_mem_uc_wr
-          ,e_bedrock_mem_wr   :
+          ,e_bedrock_mem_wr
+          ,e_bedrock_mem_amo:
             case (mem_cmd_lo.header.size)
               e_bedrock_msg_size_1: cache_pkt.opcode = SB;
               e_bedrock_msg_size_2: cache_pkt.opcode = SH;
-              e_bedrock_msg_size_4: cache_pkt.opcode = SW;
-              e_bedrock_msg_size_8
-              ,e_bedrock_msg_size_16
+              e_bedrock_msg_size_4, e_bedrock_msg_size_8:
+                case (mem_cmd_lo.header.subop)
+                  e_bedrock_store  : cache_pkt.opcode = cmd_word_op ? SW : SD;
+                  e_bedrock_amoswap: cache_pkt.opcode = cmd_word_op ? AMOSWAP_W : AMOSWAP_D;
+                  e_bedrock_amoadd : cache_pkt.opcode = cmd_word_op ? AMOADD_W : AMOADD_D;
+                  e_bedrock_amoxor : cache_pkt.opcode = cmd_word_op ? AMOXOR_W : AMOXOR_D;
+                  e_bedrock_amoand : cache_pkt.opcode = cmd_word_op ? AMOAND_W : AMOAND_D;
+                  e_bedrock_amoor  : cache_pkt.opcode = cmd_word_op ? AMOOR_W : AMOOR_D;
+                  e_bedrock_amomin : cache_pkt.opcode = cmd_word_op ? AMOMIN_W : AMOMIN_D;
+                  e_bedrock_amomax : cache_pkt.opcode = cmd_word_op ? AMOMAX_W : AMOMAX_D;
+                  e_bedrock_amominu: cache_pkt.opcode = cmd_word_op ? AMOMINU_W : AMOMINU_D;
+                  e_bedrock_amomaxu: cache_pkt.opcode = cmd_word_op ? AMOMAXU_W : AMOMAXU_D;
+                  default : begin end
+                endcase
+              e_bedrock_msg_size_16
               ,e_bedrock_msg_size_32
               ,e_bedrock_msg_size_64: cache_pkt.opcode = SM;
               default: cache_pkt.opcode = LB;
@@ -350,6 +365,15 @@ module bp_me_cce_to_cache
       end
     endcase
   end
+
+  //synopsys translate_off
+  always_ff @(negedge clk_i)
+    begin
+      if (mem_cmd_v_lo & mem_cmd_lo.header.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr})
+        assert (~(mem_cmd_lo.header.subop inside {e_bedrock_amolr, e_bedrock_amosc}))
+          else $error("LR/SC not supported in bsg_cache");
+    end
+  //synopsys translate_on
 
 
 endmodule

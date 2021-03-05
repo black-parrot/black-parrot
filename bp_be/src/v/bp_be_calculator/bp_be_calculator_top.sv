@@ -48,6 +48,7 @@ module bp_be_calculator_top
   , output logic                                    ptw_busy_o
   , output logic                                    replay_pending_o
   , output logic [decode_info_width_lp-1:0]         decode_info_o
+  , input                                           cmd_full_n_i
 
   , output logic [commit_pkt_width_lp-1:0]          commit_pkt_o
   , output logic [branch_pkt_width_lp-1:0]          br_pkt_o
@@ -251,7 +252,7 @@ module bp_be_calculator_top
 
   // Aux pipe: 2 cycle latency
   bp_be_pipe_aux
-   #(.bp_params_p(bp_params_p), .latency_p(2))
+   #(.bp_params_p(bp_params_p), .latency_p(3))
    pipe_aux
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -391,12 +392,12 @@ module bp_be_calculator_top
       comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo        : '0;
       comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo        : '0;
       comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo  : '0;
-      comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo        : '0;
+      comp_stage_n[3].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo        : '0;
       comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo  : '0;
       comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo        : '0;
       comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo        : '0;
 
-      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo      : '0;
+      comp_stage_n[3].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo      : '0;
       comp_stage_n[5].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo      : '0;
 
       comp_stage_n[0].ird_w_v    &= exc_stage_n[0].v;
@@ -460,6 +461,7 @@ module bp_be_calculator_top
 
           exc_stage_n[2].exc.dcache_miss        |= pipe_mem_dcache_miss_lo;
           exc_stage_n[2].spec.fencei            |= pipe_mem_fencei_lo;
+          exc_stage_n[2].exc.cmd_full           |= |{exc_stage_r[2].exc, exc_stage_r[2].spec} & cmd_full_n_i;
     end
 
   // Exception pipeline

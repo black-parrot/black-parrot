@@ -26,6 +26,7 @@ else
 	export NCPUS ?= $(_NCPUS)
 endif
 
+e_bp_unicore_l2_atomic_cfg_amoen       := 1
 e_bp_unicore_l1_atomic_cfg_amoen       := 1
 
 e_bp_default_cfg_amoen                 := 0

@@ -238,6 +238,7 @@ bp_lce
 
   assign local_addr_li = io_cmd_cast_i.header.addr;
   assign resp_header   =  '{msg_type       : resp_msg
+                            ,subop         : e_bedrock_store
                             ,addr          : resp_addr
                             ,payload       : resp_payload
                             ,size          : resp_size  };

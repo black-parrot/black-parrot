@@ -76,8 +76,8 @@ module bp_me_wormhole_packet_encode_lce_req
 
     unique case (header_cast_i.msg_type)
       // read, write, and uncached read requests have no data
-      e_bedrock_req_rd
-      ,e_bedrock_req_wr
+      e_bedrock_req_rd_miss
+      ,e_bedrock_req_wr_miss
       ,e_bedrock_req_uc_rd: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_req_req_len_lp);
       // uncached write (store) has data
       e_bedrock_req_uc_wr:
