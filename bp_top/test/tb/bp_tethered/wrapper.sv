@@ -21,39 +21,39 @@ module wrapper
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
    )
-  (input                                                 clk_i
-   , input                                               reset_i
+  (input                                                     clk_i
+   , input                                                   reset_i
 
    // Outgoing I/O
-   , output [cce_mem_msg_width_lp-1:0]                   io_cmd_o
-   , output                                              io_cmd_v_o
-   , input                                               io_cmd_ready_i
+   , output [cce_mem_msg_width_lp-1:0]                       io_cmd_o
+   , output                                                  io_cmd_v_o
+   , input                                                   io_cmd_ready_i
 
-   , input [cce_mem_msg_width_lp-1:0]                    io_resp_i
-   , input                                               io_resp_v_i
-   , output                                              io_resp_yumi_o
+   , input [cce_mem_msg_width_lp-1:0]                        io_resp_i
+   , input                                                   io_resp_v_i
+   , output                                                  io_resp_yumi_o
 
    // Incoming I/O
-   , input [cce_mem_msg_width_lp-1:0]                    io_cmd_i
-   , input                                               io_cmd_v_i
-   , output                                              io_cmd_yumi_o
+   , input [cce_mem_msg_width_lp-1:0]                        io_cmd_i
+   , input                                                   io_cmd_v_i
+   , output                                                  io_cmd_yumi_o
 
-   , output [cce_mem_msg_width_lp-1:0]                   io_resp_o
-   , output                                              io_resp_v_o
-   , input                                               io_resp_ready_i
+   , output [cce_mem_msg_width_lp-1:0]                       io_resp_o
+   , output                                                  io_resp_v_o
+   , input                                                   io_resp_ready_i
 
    // DRAM interface
-   , output logic [cc_x_dim_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [cc_x_dim_p-1:0]                       dma_pkt_v_o
-   , input [cc_x_dim_p-1:0]                              dma_pkt_yumi_i
+   , output logic [cc_x_dim_p-1:0][dma_pkt_width_lp-1:0]     dma_pkt_o
+   , output logic [cc_x_dim_p-1:0]                           dma_pkt_v_o
+   , input [cc_x_dim_p-1:0]                                  dma_pkt_yumi_i
 
-   , input [cc_x_dim_p-1:0][dword_width_gp-1:0]          dma_data_i
-   , input [cc_x_dim_p-1:0]                              dma_data_v_i
-   , output logic [cc_x_dim_p-1:0]                       dma_data_ready_o
+   , input [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0]        dma_data_i
+   , input [cc_x_dim_p-1:0]                                  dma_data_v_i
+   , output logic [cc_x_dim_p-1:0]                           dma_data_ready_o
 
-   , output logic [cc_x_dim_p-1:0][dword_width_gp-1:0]   dma_data_o
-   , output logic [cc_x_dim_p-1:0]                       dma_data_v_o
-   , input [cc_x_dim_p-1:0]                              dma_data_yumi_i
+   , output logic [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_o
+   , output logic [cc_x_dim_p-1:0]                           dma_data_v_o
+   , input [cc_x_dim_p-1:0]                                  dma_data_yumi_i
    );
 
   if (multicore_p)
@@ -150,7 +150,7 @@ module wrapper
          ,.wh_len_width_p(mem_noc_len_width_p)
          ,.wh_cord_width_p(mem_noc_cord_width_p)
 
-         ,.num_dma_p(1)
+         ,.num_dma_p(cc_x_dim_p)
          ,.addr_width_p(caddr_width_p)
          ,.data_width_p(mem_noc_flit_width_p)
          ,.dma_data_width_p(mem_noc_flit_width_p)

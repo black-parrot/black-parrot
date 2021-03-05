@@ -86,12 +86,12 @@ module testbench
   logic load_resp_v_li, load_resp_ready_lo;
 
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
-  bsg_cache_dma_pkt_s dma_pkt_lo;
-  logic dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [dword_width_gp-1:0] dma_data_lo;
-  logic dma_data_v_lo, dma_data_yumi_li;
-  logic [dword_width_gp-1:0] dma_data_li;
-  logic dma_data_v_li, dma_data_ready_lo;
+  bsg_cache_dma_pkt_s [cc_x_dim_p-1:0] dma_pkt_lo;
+  logic [cc_x_dim_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_lo;
+  logic [cc_x_dim_p-1:0] dma_data_v_lo, dma_data_yumi_li;
+  logic [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_li;
+  logic [cc_x_dim_p-1:0] dma_data_v_li, dma_data_ready_lo;
   wrapper
    #(.bp_params_p(bp_params_p))
    wrapper
@@ -127,105 +127,108 @@ module testbench
      ,.dma_data_yumi_i(dma_data_yumi_li)
      );
 
+  `ifndef dram_pkg
+  `define dram_pkg bsg_dramsim3_lpddr3_8gb_x32_1600_pkg
+  `endif
   if (use_ddr_p)
     begin
       $error("DRAM controller not currently supported");
     end
   else
     begin : dramsim3
-      `ifndef dram_pkg
-      `define dram_pkg bsg_dramsim3_lpddr3_8gb_x32_1600_pkg
-      `endif
-      `dram_pkg::dram_ch_addr_s dram_read_done_ch_addr_lo;
+      for (genvar i = 0; i < cc_x_dim_p; i++)
+        begin : channel
+          `dram_pkg::dram_ch_addr_s dram_read_done_ch_addr_lo;
 
-      logic [`dram_pkg::channel_addr_width_p-1:0] dram_ch_addr_li;
-      logic dram_write_not_read_li, dram_v_li, dram_yumi_lo;
-      logic [`dram_pkg::data_width_p-1:0] dram_data_li;
-      logic dram_data_v_li, dram_data_yumi_lo;
-      logic [`dram_pkg::data_width_p-1:0] dram_data_lo;
-      logic dram_data_v_lo;
+          logic [`dram_pkg::channel_addr_width_p-1:0] dram_ch_addr_li;
+          logic dram_write_not_read_li, dram_v_li, dram_yumi_lo;
+          logic [`dram_pkg::data_width_p-1:0] dram_data_li;
+          logic dram_data_v_li, dram_data_yumi_lo;
+          logic [`dram_pkg::data_width_p-1:0] dram_data_lo;
+          logic dram_data_v_lo;
 
-      localparam cache_block_size_in_words_lp = cce_block_width_p/dword_width_gp;
-      localparam cache_bank_addr_width_lp = `BSG_SAFE_CLOG2(2**29/1*4);
-      bsg_cache_to_test_dram
-       #(.num_cache_p(1)
-         ,.addr_width_p(caddr_width_p)
-         ,.data_width_p(dword_width_gp)
-         ,.block_size_in_words_p(cache_block_size_in_words_lp)
-         ,.cache_bank_addr_width_p(cache_bank_addr_width_lp)
-         ,.dma_data_width_p(dword_width_gp)
-      
-         ,.dram_channel_addr_width_p(`dram_pkg::channel_addr_width_p)
-         ,.dram_data_width_p(`dram_pkg::data_width_p)
-         )
-       cache_to_tram
-       (.core_clk_i(clk_i)
-        ,.core_reset_i(reset_i)
-
-        ,.dma_pkt_i(dma_pkt_lo)
-        ,.dma_pkt_v_i(dma_pkt_v_lo)
-        ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
-
-        ,.dma_data_o(dma_data_li)
-        ,.dma_data_v_o(dma_data_v_li)
-        ,.dma_data_ready_i(dma_data_ready_lo)
-
-        ,.dma_data_i(dma_data_lo)
-        ,.dma_data_v_i(dma_data_v_lo)
-        ,.dma_data_yumi_o(dma_data_yumi_li)
-
-        ,.dram_clk_i(dram_clk_i)
-        ,.dram_reset_i(dram_reset_i)
-      
-        ,.dram_req_v_o(dram_v_li)
-        ,.dram_write_not_read_o(dram_write_not_read_li)
-        ,.dram_ch_addr_o(dram_ch_addr_li)
-        ,.dram_req_yumi_i(dram_yumi_lo)
-        ,.dram_data_v_o(dram_data_v_li)
-        ,.dram_data_o(dram_data_li)
-        ,.dram_data_yumi_i(dram_data_yumi_lo)
-
-        ,.dram_data_v_i(dram_data_v_lo)
-        ,.dram_data_i(dram_data_lo)
-        ,.dram_ch_addr_i(dram_read_done_ch_addr_lo)
-        );
-
-      bsg_nonsynth_dramsim3
-       #(.channel_addr_width_p(`dram_pkg::channel_addr_width_p)
-         ,.data_width_p(`dram_pkg::data_width_p)
-         ,.num_channels_p(`dram_pkg::num_channels_p)
-         ,.num_columns_p(`dram_pkg::num_columns_p)
-         ,.num_rows_p(`dram_pkg::num_rows_p)
-         ,.num_ba_p(`dram_pkg::num_ba_p)
-         ,.num_bg_p(`dram_pkg::num_bg_p)
-         ,.num_ranks_p(`dram_pkg::num_ranks_p)
-         ,.address_mapping_p(`dram_pkg::address_mapping_p)
-         ,.size_in_bits_p(`dram_pkg::size_in_bits_p)
-         ,.config_p(`dram_pkg::config_p)
-         ,.init_mem_p(1)
-         ,.base_id_p(0)
-         )
-       dram
-        (.clk_i(dram_clk_i)
-         ,.reset_i(dram_reset_i)
+          localparam cache_block_size_in_words_lp = cce_block_width_p/dword_width_gp;
+          localparam cache_bank_addr_width_lp = `BSG_SAFE_CLOG2(2**29/1*4);
+          bsg_cache_to_test_dram
+           #(.num_cache_p(1)
+             ,.addr_width_p(caddr_width_p)
+             ,.data_width_p(dword_width_gp)
+             ,.block_size_in_words_p(cache_block_size_in_words_lp)
+             ,.cache_bank_addr_width_p(cache_bank_addr_width_lp)
+             ,.dma_data_width_p(mem_noc_flit_width_p)
           
-         ,.v_i(dram_v_li)
-         ,.write_not_read_i(dram_write_not_read_li)
-         ,.ch_addr_i(dram_ch_addr_li)
-         ,.mask_i('1)
-         ,.yumi_o(dram_yumi_lo)
+             ,.dram_channel_addr_width_p(`dram_pkg::channel_addr_width_p)
+             ,.dram_data_width_p(`dram_pkg::data_width_p)
+             )
+           cache_to_tram
+           (.core_clk_i(clk_i)
+            ,.core_reset_i(reset_i)
 
-         ,.data_v_i(dram_data_v_li)
-         ,.data_i(dram_data_li)
-         ,.data_yumi_o(dram_data_yumi_lo)
+            ,.dma_pkt_i(dma_pkt_lo[i])
+            ,.dma_pkt_v_i(dma_pkt_v_lo[i])
+            ,.dma_pkt_yumi_o(dma_pkt_yumi_li[i])
 
-         ,.data_v_o(dram_data_v_lo)
-         ,.data_o(dram_data_lo)
-         ,.read_done_ch_addr_o(dram_read_done_ch_addr_lo)
+            ,.dma_data_o(dma_data_li[i])
+            ,.dma_data_v_o(dma_data_v_li[i])
+            ,.dma_data_ready_i(dma_data_ready_lo[i])
 
-         ,.write_done_o()
-         ,.write_done_ch_addr_o()
-         );
+            ,.dma_data_i(dma_data_lo[i])
+            ,.dma_data_v_i(dma_data_v_lo[i])
+            ,.dma_data_yumi_o(dma_data_yumi_li[i])
+
+            ,.dram_clk_i(dram_clk_i)
+            ,.dram_reset_i(dram_reset_i)
+          
+            ,.dram_req_v_o(dram_v_li)
+            ,.dram_write_not_read_o(dram_write_not_read_li)
+            ,.dram_ch_addr_o(dram_ch_addr_li)
+            ,.dram_req_yumi_i(dram_yumi_lo)
+            ,.dram_data_v_o(dram_data_v_li)
+            ,.dram_data_o(dram_data_li)
+            ,.dram_data_yumi_i(dram_data_yumi_lo)
+
+            ,.dram_data_v_i(dram_data_v_lo)
+            ,.dram_data_i(dram_data_lo)
+            ,.dram_ch_addr_i(dram_read_done_ch_addr_lo)
+            );
+
+          bsg_nonsynth_dramsim3
+           #(.channel_addr_width_p(`dram_pkg::channel_addr_width_p)
+             ,.data_width_p(`dram_pkg::data_width_p)
+             ,.num_channels_p(`dram_pkg::num_channels_p)
+             ,.num_columns_p(`dram_pkg::num_columns_p)
+             ,.num_rows_p(`dram_pkg::num_rows_p)
+             ,.num_ba_p(`dram_pkg::num_ba_p)
+             ,.num_bg_p(`dram_pkg::num_bg_p)
+             ,.num_ranks_p(`dram_pkg::num_ranks_p)
+             ,.address_mapping_p(`dram_pkg::address_mapping_p)
+             ,.size_in_bits_p(`dram_pkg::size_in_bits_p)
+             ,.config_p(`dram_pkg::config_p)
+             ,.init_mem_p(1)
+             ,.base_id_p(0)
+             )
+           dram
+            (.clk_i(dram_clk_i)
+             ,.reset_i(dram_reset_i)
+              
+             ,.v_i(dram_v_li)
+             ,.write_not_read_i(dram_write_not_read_li)
+             ,.ch_addr_i(dram_ch_addr_li)
+             ,.mask_i('1)
+             ,.yumi_o(dram_yumi_lo)
+
+             ,.data_v_i(dram_data_v_li)
+             ,.data_i(dram_data_li)
+             ,.data_yumi_o(dram_data_yumi_lo)
+
+             ,.data_v_o(dram_data_v_lo)
+             ,.data_o(dram_data_lo)
+             ,.read_done_ch_addr_o(dram_read_done_ch_addr_lo)
+
+             ,.write_done_o()
+             ,.write_done_ch_addr_o()
+             );
+        end
     end
 
   bp_nonsynth_nbf_loader
