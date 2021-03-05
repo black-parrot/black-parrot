@@ -39,9 +39,6 @@ module testbench
 
    // DRAM parameters
    , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
-   , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-   , parameter mem_cap_in_bytes_p = 2**27
-   , parameter mem_file_p         = "prog.mem"
 
    // Synthesis parameters
    , parameter no_bind_p                   = 0

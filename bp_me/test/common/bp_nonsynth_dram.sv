@@ -3,10 +3,7 @@
  * bp_nonsynth_dram.v
  */
 
-// Set default DRAM package
-`ifndef dram_pkg
-`define dram_pkg bsg_dramsim3_hbm2_4gb_x128_pkg
-`endif
+`define dram_pkg bsg_dramsim3_lpddr3_8gb_x32_1600_pkg
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"

@@ -14,6 +14,7 @@ export TOUCH_PATH   := $(BP_FE_DIR)/syn/touchfiles
 
 export TB    ?= bp_fe_icache
 export CFG   ?= e_bp_unicore_half_cfg
+export DRAM  ?= dramsim3
 export SUITE ?= none
 export PROG  ?= test_load
 export TAG   ?= none

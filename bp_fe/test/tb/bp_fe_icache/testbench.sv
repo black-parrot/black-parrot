@@ -15,10 +15,8 @@ module testbench
 
    , parameter trace_file_p = "test.tr"
 
-   , parameter dram_fixed_latency_p = 0
-   , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-   , parameter mem_cap_in_bytes_p = 2**25
-   , parameter mem_file_p = "prog.mem"
+   // DRAM parameters
+   , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
 
   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   , localparam trace_replay_data_width_lp = ptag_width_p + vaddr_width_p + 1
@@ -194,16 +192,8 @@ module testbench
     );
 
   // Memory
-  bp_mem
-   #(.bp_params_p(bp_params_p)
-     ,.mem_offset_p(mem_offset_p)
-     ,.mem_load_p(1)
-     ,.mem_file_p(mem_file_p)
-     ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-     ,.use_ddr_p(0)
-     ,.use_dramsim3_p(0)
-     ,.dram_fixed_latency_p(dram_fixed_latency_p)
-     )
+  bp_nonsynth_mem
+   #(.bp_params_p(bp_params_p), .dram_type_p(dram_type_p))
     mem
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
