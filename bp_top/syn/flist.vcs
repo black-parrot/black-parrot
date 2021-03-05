@@ -41,6 +41,8 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_miss.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_decode.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf_queue.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma_to_wormhole.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_wormhole_to_cache_dma.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel_in.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel_out.v
@@ -91,6 +93,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_cin.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_ripple_carry.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_arb_fixed.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_arb_round_robin.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_array_concentrate_static.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_buf.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_buf_ctrl.v

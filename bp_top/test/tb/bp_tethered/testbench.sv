@@ -129,58 +129,6 @@ module testbench
 
   if (use_ddr_p)
     begin
-      logic app_en, app_rdy;
-      logic [2:0] app_cmd;
-      logic [dram_ctrl_addr_width_p-1:0] app_addr;
-      logic app_wdf_wren, app_wdf_rdy, app_wdf_end;
-      logic [dword_width_gp-1:0] app_wdf_data;
-      logic [dword_width_gp>>3-1:0] app_wdf_mask;
-      logic app_rd_data_valid, app_rd_data_end;
-      logic [dword_width_gp-1:0] app_rd_data;
-
-      localparam cache_block_size_in_words_lp = cce_block_width_p/dword_width_gp;
-      bsg_cache_to_dram_ctrl
-       #(.num_cache_p(1)
-         ,.addr_width_p(caddr_width_p)
-         ,.data_width_p(dword_width_gp)
-         ,.block_size_in_words_p(cache_block_size_in_words_lp)
-         ,.dram_ctrl_burst_len_p(cache_block_size_in_words_lp)
-         ,.dram_ctrl_addr_width_p(29) // 512 MB
-         )
-      cache_to_dram_ctrl
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-
-         ,.dram_size_i(3'b100) // 4Gb
-    
-         ,.dma_pkt_i(dma_pkt_lo)
-         ,.dma_pkt_v_i(dma_pkt_v_lo)
-         ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
-
-         ,.dma_data_o(dma_data_li)
-         ,.dma_data_v_o(dma_data_v_li)
-         ,.dma_data_ready_i(dma_data_ready_lo)
-
-         ,.dma_data_i(dma_data_lo)
-         ,.dma_data_v_i(dma_data_v_lo)
-         ,.dma_data_yumi_o(dma_data_yumi_li)
-
-         ,.app_en_o(app_en)
-         ,.app_rdy_i(app_rdy)
-         ,.app_cmd_o(app_cmd)
-         ,.app_addr_o(app_addr)
-  
-         ,.app_wdf_wren_o(app_wdf_wren)
-         ,.app_wdf_rdy_i(app_wdf_rdy)
-         ,.app_wdf_data_o(app_wdf_data)
-         ,.app_wdf_mask_o(app_wdf_mask)
-         ,.app_wdf_end_o(app_wdf_end)
-
-         ,.app_rd_data_valid_i(app_rd_data_valid)
-         ,.app_rd_data_i(app_rd_data)
-         ,.app_rd_data_end_i(app_rd_data_end)
-         );
-
       $error("DRAM controller not currently supported");
     end
   else
