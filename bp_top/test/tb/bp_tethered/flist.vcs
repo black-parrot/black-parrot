@@ -57,3 +57,4 @@ $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_controller.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_phy.v
 # me files
+$BP_ME_DIR/test/common/bp_nonsynth_dram.sv

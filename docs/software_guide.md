@@ -28,11 +28,11 @@ To add a new test suite, add a submodule containing the suite to bp_common/test/
 ## Building a Checkpoint Test
 BlackParrot can use Dromajo to generate checkpoints for certain tests. It runs the test on Dromajo for a certain number of instructions and then generates a memory image and a bootrom image which loads the internal architectural state of the cores(PC, registers, CSRs, privilege mode, ...). We use the `sim_sample` target to create a checkpoint at `SAMPLE_START_P=<n>` for RTL simulation. We have to run it with `NBF_CONFIG_P=1` to load the processor configuration using the nbf loader and also use a bootrom configuration to load the internal state of the cores.
 
-Optionally we can use `PRELOAD_MEM_P=1` to preload the memory image instead of writing it using the nbf loader and `SAMPLE_MEMSIZE=<k in MB>` to specify the size of memory image(default is 128MB).
+Optionally we can use `SAMPLE_MEMSIZE=<k in MB>` to specify the size of memory image(default is 128MB).
 
 ### Example:
     cd <TOP>/bp_top/syn
-    make build.v sim_sample.v PROG=bubblesort_demo CFG=e_bp_unicore_bootrom_cfg NBF_CONFIG_P=1 PRELOAD_MEM_P=1 SAMPLE_START_P=1000
+    make build.v sim_sample.v PROG=bubblesort_demo CFG=e_bp_unicore_bootrom_cfg NBF_CONFIG_P=1 SAMPLE_START_P=1000
 
 ## Cosimulation
 BlackParrot also uses Dromajo to verify the correct execution of the program. It is done through comparing the commit information with the ideal C model in Dromajo using DPI calls in RTL in simulation runtime. To enable cosimulation simply run the RTL simulation  with `COSIM_P=1` flag. If the program is a checkpoint also add the `CHECKPOINT_P=1` flag.
@@ -50,7 +50,7 @@ Tests can be broken into multiple checkpoints to be simulated in parallel in ord
 
 ### Example:
     cd <TOP>/bp_top/syn
-    make -j5 build.v run_psample.v CFG=e_bp_unicore_bootrom_cfg PROG=bubblesort_demo COSIM_P=1 PRELOAD_MEM_P=1 SAMPLE_INSTR_P=5000
+    make -j5 build.v run_psample.v CFG=e_bp_unicore_bootrom_cfg PROG=bubblesort_demo COSIM_P=1 SAMPLE_INSTR_P=5000
 
 ## Test Libraries
 ### libperch

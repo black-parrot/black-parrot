@@ -19,7 +19,7 @@ module bp_unicore
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
    )
-  (  input                                             clk_i
+  (input                                               clk_i
    , input                                             reset_i
 
    // Outgoing I/O
