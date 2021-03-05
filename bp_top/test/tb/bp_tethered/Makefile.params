@@ -29,7 +29,7 @@ export BP_SIM_CLK_PERIOD  ?= 5000
 export USE_DDR            ?= 0
 export USE_DRAMSIM3       ?= 0
 export DRAM_FIXED_LATENCY ?= 10
-export DRAM_PKG           ?= bp_dramsim3_lpddr_2Gb_x16_pkg
+export DRAM_PKG           ?= bsg_dramsim3_lpddr3_8gb_x32_1600_pkg
 export DRAM_MODEL         ?= den2048Mb+sg5+x16+FULL_MEM
 
 export DUT_PARAMS = 

@@ -16,6 +16,8 @@ module bp_unicore
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
+
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
    )
   (  input                                             clk_i
    , input                                             reset_i
@@ -39,21 +41,17 @@ module bp_unicore
    , input                                             io_resp_ready_i
 
    // DRAM interface
-   , output logic [cce_mem_msg_header_width_lp-1:0]    mem_cmd_header_o
-   , output logic                                      mem_cmd_header_v_o
-   , input                                             mem_cmd_header_ready_i
+   , output logic [dma_pkt_width_lp-1:0]               dma_pkt_o
+   , output logic                                      dma_pkt_v_o
+   , input                                             dma_pkt_yumi_i
 
-   , output logic [dword_width_gp-1:0]                  mem_cmd_data_o
-   , output logic                                      mem_cmd_data_v_o
-   , input                                             mem_cmd_data_ready_i
+   , input [dword_width_gp-1:0]                        dma_data_i
+   , input                                             dma_data_v_i
+   , output logic                                      dma_data_ready_o
 
-   , input [cce_mem_msg_header_width_lp-1:0]           mem_resp_header_i
-   , input                                             mem_resp_header_v_i
-   , output logic                                      mem_resp_header_yumi_o
-
-   , input [dword_width_gp-1:0]                         mem_resp_data_i
-   , input                                             mem_resp_data_v_i
-   , output logic                                      mem_resp_data_yumi_o
+   , output logic [dword_width_gp-1:0]                 dma_data_o
+   , output logic                                      dma_data_v_o
+   , input                                             dma_data_yumi_i
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -514,7 +512,6 @@ module bp_unicore
 
   if (l2_en_p)
     begin : l2
-      logic mem_resp_header_ready_lo, mem_resp_data_ready_lo;
       bp_me_cache_slice
        #(.bp_params_p(bp_params_p))
        l2s
@@ -529,75 +526,22 @@ module bp_unicore
          ,.mem_resp_v_o(cache_resp_v_lo)
          ,.mem_resp_yumi_i(cache_resp_yumi_li)
 
-         ,.mem_cmd_header_o(mem_cmd_header_o)
-         ,.mem_cmd_header_v_o(mem_cmd_header_v_o)
-         ,.mem_cmd_header_yumi_i(mem_cmd_header_ready_i & mem_cmd_header_v_o)
+         ,.dma_pkt_o(dma_pkt_o)
+         ,.dma_pkt_v_o(dma_pkt_v_o)
+         ,.dma_pkt_yumi_i(dma_pkt_yumi_i)
 
-         ,.mem_cmd_data_o(mem_cmd_data_o)
-         ,.mem_cmd_data_v_o(mem_cmd_data_v_o)
-         ,.mem_cmd_data_yumi_i(mem_cmd_data_ready_i & mem_cmd_data_v_o)
+         ,.dma_data_i(dma_data_i)
+         ,.dma_data_v_i(dma_data_v_i)
+         ,.dma_data_ready_o(dma_data_ready_o)
 
-         ,.mem_resp_header_i(mem_resp_header_i)
-         ,.mem_resp_header_v_i(mem_resp_header_v_i)
-         ,.mem_resp_header_ready_o(mem_resp_header_ready_lo)
-
-         ,.mem_resp_data_i(mem_resp_data_i)
-         ,.mem_resp_data_v_i(mem_resp_data_v_i)
-         ,.mem_resp_data_ready_o(mem_resp_data_ready_lo)
+         ,.dma_data_o(dma_data_o)
+         ,.dma_data_v_o(dma_data_v_o)
+         ,.dma_data_yumi_i(dma_data_yumi_i)
          );
-      assign mem_resp_header_yumi_o = mem_resp_header_ready_lo & mem_resp_header_v_i;
-      assign mem_resp_data_yumi_o = mem_resp_data_ready_lo & mem_resp_data_v_i;
     end
   else
     begin : no_l2
-      bp_lite_to_burst
-       #(.bp_params_p(bp_params_p)
-         ,.in_data_width_p(cce_block_width_p)
-         ,.out_data_width_p(dword_width_gp)
-         ,.payload_mask_p(mem_cmd_payload_mask_gp)
-         )
-       lite2burst
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-
-         ,.mem_i(cache_cmd)
-         ,.mem_v_i(cache_cmd_v_li)
-         ,.mem_ready_and_o(cache_cmd_ready_lo)
-
-         ,.mem_header_o(mem_cmd_header_o)
-         ,.mem_header_v_o(mem_cmd_header_v_o)
-         ,.mem_header_ready_and_i(mem_cmd_header_ready_i)
-
-         ,.mem_data_o(mem_cmd_data_o)
-         ,.mem_data_v_o(mem_cmd_data_v_o)
-         ,.mem_data_ready_and_i(mem_cmd_data_ready_i)
-         );
-
-      logic mem_resp_header_ready_lo, mem_resp_data_ready_lo;
-      bp_burst_to_lite
-       #(.bp_params_p(bp_params_p)
-         ,.in_data_width_p(dword_width_gp)
-         ,.out_data_width_p(cce_block_width_p)
-         ,.payload_mask_p(mem_resp_payload_mask_gp)
-         )
-       burst2lite
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-
-         ,.mem_header_i(mem_resp_header_i)
-         ,.mem_header_v_i(mem_resp_header_v_i)
-         ,.mem_header_ready_and_o(mem_resp_header_ready_lo)
-
-         ,.mem_data_i(mem_resp_data_i)
-         ,.mem_data_v_i(mem_resp_data_v_i)
-         ,.mem_data_ready_and_o(mem_resp_data_ready_lo)
-
-         ,.mem_o(cache_resp)
-         ,.mem_v_o(cache_resp_v_lo)
-         ,.mem_ready_and_i(cache_resp_yumi_li)
-         );
-       assign mem_resp_header_yumi_o = mem_resp_header_ready_lo & mem_resp_header_v_i;
-       assign mem_resp_data_yumi_o = mem_resp_data_ready_lo & mem_resp_data_v_i;
+      $error("Not currently supported");
     end
 
 endmodule

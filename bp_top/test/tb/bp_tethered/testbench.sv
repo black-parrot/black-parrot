@@ -70,11 +70,6 @@ module testbench
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  bp_bedrock_cce_mem_msg_s proc_mem_cmd_lo;
-  logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;
-  bp_bedrock_cce_mem_msg_s proc_mem_resp_li;
-  logic proc_mem_resp_v_li, proc_mem_resp_yumi_lo;
-
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_li;
   bp_bedrock_cce_mem_msg_s proc_io_resp_li;
@@ -90,7 +85,13 @@ module testbench
   bp_bedrock_cce_mem_msg_s load_resp_li;
   logic load_resp_v_li, load_resp_ready_lo;
 
-
+  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  bsg_cache_dma_pkt_s dma_pkt_lo;
+  logic dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [dword_width_gp-1:0] dma_data_lo;
+  logic dma_data_v_lo, dma_data_yumi_li;
+  logic [dword_width_gp-1:0] dma_data_li;
+  logic dma_data_v_li, dma_data_ready_lo;
   wrapper
    #(.bp_params_p(bp_params_p))
    wrapper
@@ -113,40 +114,171 @@ module testbench
      ,.io_resp_v_o(load_resp_v_li)
      ,.io_resp_ready_i(load_resp_ready_lo)
 
-     ,.mem_cmd_o(proc_mem_cmd_lo)
-     ,.mem_cmd_v_o(proc_mem_cmd_v_lo)
-     ,.mem_cmd_ready_i(proc_mem_cmd_ready_li)
+     ,.dma_pkt_o(dma_pkt_lo)
+     ,.dma_pkt_v_o(dma_pkt_v_lo)
+     ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
 
-     ,.mem_resp_i(proc_mem_resp_li)
-     ,.mem_resp_v_i(proc_mem_resp_v_li)
-     ,.mem_resp_yumi_o(proc_mem_resp_yumi_lo)
+     ,.dma_data_i(dma_data_li)
+     ,.dma_data_v_i(dma_data_v_li)
+     ,.dma_data_ready_o(dma_data_ready_lo)
+
+     ,.dma_data_o(dma_data_lo)
+     ,.dma_data_v_o(dma_data_v_lo)
+     ,.dma_data_yumi_i(dma_data_yumi_li)
      );
 
-  bp_mem
-   #(.bp_params_p(bp_params_p)
-     ,.mem_offset_p(mem_offset_p)
-     ,.mem_load_p(preload_mem_p)
-     ,.mem_file_p(mem_file_p)
-     ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-     ,.use_ddr_p(use_ddr_p)
-     ,.use_dramsim3_p(use_dramsim3_p)
-     ,.dram_fixed_latency_p(dram_fixed_latency_p)
-     )
-   mem
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  if (use_ddr_p)
+    begin
+      logic app_en, app_rdy;
+      logic [2:0] app_cmd;
+      logic [dram_ctrl_addr_width_p-1:0] app_addr;
+      logic app_wdf_wren, app_wdf_rdy, app_wdf_end;
+      logic [dword_width_gp-1:0] app_wdf_data;
+      logic [dword_width_gp>>3-1:0] app_wdf_mask;
+      logic app_rd_data_valid, app_rd_data_end;
+      logic [dword_width_gp-1:0] app_rd_data;
 
-     ,.mem_cmd_i(proc_mem_cmd_lo)
-     ,.mem_cmd_v_i(proc_mem_cmd_ready_li & proc_mem_cmd_v_lo)
-     ,.mem_cmd_ready_o(proc_mem_cmd_ready_li)
+      localparam cache_block_size_in_words_lp = cce_block_width_p/dword_width_gp;
+      bsg_cache_to_dram_ctrl
+       #(.num_cache_p(1)
+         ,.addr_width_p(caddr_width_p)
+         ,.data_width_p(dword_width_gp)
+         ,.block_size_in_words_p(cache_block_size_in_words_lp)
+         ,.dram_ctrl_burst_len_p(cache_block_size_in_words_lp)
+         ,.dram_ctrl_addr_width_p(29) // 512 MB
+         )
+      cache_to_dram_ctrl
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
 
-     ,.mem_resp_o(proc_mem_resp_li)
-     ,.mem_resp_v_o(proc_mem_resp_v_li)
-     ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
+         ,.dram_size_i(3'b100) // 4Gb
+    
+         ,.dma_pkt_i(dma_pkt_lo)
+         ,.dma_pkt_v_i(dma_pkt_v_lo)
+         ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
 
-     ,.dram_clk_i(dram_clk_i)
-     ,.dram_reset_i(dram_reset_i)
-     );
+         ,.dma_data_o(dma_data_li)
+         ,.dma_data_v_o(dma_data_v_li)
+         ,.dma_data_ready_i(dma_data_ready_lo)
+
+         ,.dma_data_i(dma_data_lo)
+         ,.dma_data_v_i(dma_data_v_lo)
+         ,.dma_data_yumi_o(dma_data_yumi_li)
+
+         ,.app_en_o(app_en)
+         ,.app_rdy_i(app_rdy)
+         ,.app_cmd_o(app_cmd)
+         ,.app_addr_o(app_addr)
+  
+         ,.app_wdf_wren_o(app_wdf_wren)
+         ,.app_wdf_rdy_i(app_wdf_rdy)
+         ,.app_wdf_data_o(app_wdf_data)
+         ,.app_wdf_mask_o(app_wdf_mask)
+         ,.app_wdf_end_o(app_wdf_end)
+
+         ,.app_rd_data_valid_i(app_rd_data_valid)
+         ,.app_rd_data_i(app_rd_data)
+         ,.app_rd_data_end_i(app_rd_data_end)
+         );
+
+      $error("DRAM controller not currently supported");
+    end
+  else
+    begin : dramsim3
+      `ifndef dram_pkg
+      `define dram_pkg bsg_dramsim3_lpddr3_8gb_x32_1600_pkg
+      `endif
+      `dram_pkg::dram_ch_addr_s dram_read_done_ch_addr_lo;
+
+      logic [`dram_pkg::channel_addr_width_p-1:0] dram_ch_addr_li;
+      logic dram_write_not_read_li, dram_v_li, dram_yumi_lo;
+      logic [`dram_pkg::data_width_p-1:0] dram_data_li;
+      logic dram_data_v_li, dram_data_yumi_lo;
+      logic [`dram_pkg::data_width_p-1:0] dram_data_lo;
+      logic dram_data_v_lo;
+
+      localparam cache_block_size_in_words_lp = cce_block_width_p/dword_width_gp;
+      localparam cache_bank_addr_width_lp = `BSG_SAFE_CLOG2(2**29/1*4);
+      bsg_cache_to_test_dram
+       #(.num_cache_p(1)
+         ,.addr_width_p(caddr_width_p)
+         ,.data_width_p(dword_width_gp)
+         ,.block_size_in_words_p(cache_block_size_in_words_lp)
+         ,.cache_bank_addr_width_p(cache_bank_addr_width_lp)
+         ,.dma_data_width_p(dword_width_gp)
+      
+         ,.dram_channel_addr_width_p(`dram_pkg::channel_addr_width_p)
+         ,.dram_data_width_p(`dram_pkg::data_width_p)
+         )
+       cache_to_tram
+       (.core_clk_i(clk_i)
+        ,.core_reset_i(reset_i)
+
+        ,.dma_pkt_i(dma_pkt_lo)
+        ,.dma_pkt_v_i(dma_pkt_v_lo)
+        ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
+
+        ,.dma_data_o(dma_data_li)
+        ,.dma_data_v_o(dma_data_v_li)
+        ,.dma_data_ready_i(dma_data_ready_lo)
+
+        ,.dma_data_i(dma_data_lo)
+        ,.dma_data_v_i(dma_data_v_lo)
+        ,.dma_data_yumi_o(dma_data_yumi_li)
+
+        ,.dram_clk_i(dram_clk_i)
+        ,.dram_reset_i(dram_reset_i)
+      
+        ,.dram_req_v_o(dram_v_li)
+        ,.dram_write_not_read_o(dram_write_not_read_li)
+        ,.dram_ch_addr_o(dram_ch_addr_li)
+        ,.dram_req_yumi_i(dram_yumi_lo)
+        ,.dram_data_v_o(dram_data_v_li)
+        ,.dram_data_o(dram_data_li)
+        ,.dram_data_yumi_i(dram_data_yumi_lo)
+
+        ,.dram_data_v_i(dram_data_v_lo)
+        ,.dram_data_i(dram_data_lo)
+        ,.dram_ch_addr_i(dram_read_done_ch_addr_lo)
+        );
+
+      bsg_nonsynth_dramsim3
+       #(.channel_addr_width_p(`dram_pkg::channel_addr_width_p)
+         ,.data_width_p(`dram_pkg::data_width_p)
+         ,.num_channels_p(`dram_pkg::num_channels_p)
+         ,.num_columns_p(`dram_pkg::num_columns_p)
+         ,.num_rows_p(`dram_pkg::num_rows_p)
+         ,.num_ba_p(`dram_pkg::num_ba_p)
+         ,.num_bg_p(`dram_pkg::num_bg_p)
+         ,.num_ranks_p(`dram_pkg::num_ranks_p)
+         ,.address_mapping_p(`dram_pkg::address_mapping_p)
+         ,.size_in_bits_p(`dram_pkg::size_in_bits_p)
+         ,.config_p(`dram_pkg::config_p)
+         ,.init_mem_p(1)
+         ,.base_id_p(0)
+         )
+       dram
+        (.clk_i(dram_clk_i)
+         ,.reset_i(dram_reset_i)
+          
+         ,.v_i(dram_v_li)
+         ,.write_not_read_i(dram_write_not_read_li)
+         ,.ch_addr_i(dram_ch_addr_li)
+         ,.mask_i('1)
+         ,.yumi_o(dram_yumi_lo)
+
+         ,.data_v_i(dram_data_v_li)
+         ,.data_i(dram_data_li)
+         ,.data_yumi_o(dram_data_yumi_lo)
+
+         ,.data_v_o(dram_data_v_lo)
+         ,.data_o(dram_data_lo)
+         ,.read_done_ch_addr_o(dram_read_done_ch_addr_lo)
+
+         ,.write_done_o()
+         ,.write_done_ch_addr_o()
+         );
+    end
 
   bp_nonsynth_nbf_loader
    #(.bp_params_p(bp_params_p))
@@ -472,21 +604,6 @@ module testbench
            ,.reservation(be.calculator.reservation_n)
            ,.commit_pkt(be.calculator.commit_pkt_cast_o)
            );
-
-      bp_mem_nonsynth_tracer
-       #(.bp_params_p(bp_params_p))
-       bp_mem_tracer
-        (.clk_i(clk_i & testbench.dram_trace_en_lo)
-         ,.reset_i(reset_i)
-
-         ,.mem_cmd_i(proc_mem_cmd_lo)
-         ,.mem_cmd_v_i(proc_mem_cmd_v_lo & proc_mem_cmd_ready_li)
-         ,.mem_cmd_ready_i(proc_mem_cmd_ready_li)
-
-         ,.mem_resp_i(proc_mem_resp_li)
-         ,.mem_resp_v_i(proc_mem_resp_v_li)
-         ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
-         );
 
       bind bp_be_top
         bp_nonsynth_pc_profiler
