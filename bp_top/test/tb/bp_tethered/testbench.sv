@@ -38,17 +38,14 @@ module testbench
    , parameter amo_en_p                    = 0
 
    // DRAM parameters
-   , parameter preload_mem_p               = 0
-   , parameter use_ddr_p                   = 0
-   , parameter use_dramsim3_p              = 0
-   , parameter use_axi_p                   = 0
+   , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
+   , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
+   , parameter mem_cap_in_bytes_p = 2**27
+   , parameter mem_file_p         = "prog.mem"
 
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-   , parameter mem_cap_in_bytes_p = 2**27
-   , parameter mem_file_p         = "prog.mem"
    )
   (input clk_i
    , input reset_i
@@ -130,11 +127,11 @@ module testbench
   `ifndef dram_pkg
   `define dram_pkg bsg_dramsim3_lpddr3_8gb_x32_1600_pkg
   `endif
-  if (use_ddr_p)
-    begin
+  if (dram_type_p == "dmc")
+    begin : dmc
       $error("DRAM controller not currently supported");
     end
-  else if (use_dramsim3_p)
+  else if (dram_type_p == "dramsim3")
     begin : dramsim3
       for (genvar i = 0; i < cc_x_dim_p; i++)
         begin : channel
@@ -230,7 +227,7 @@ module testbench
              );
         end
     end
-  else if (use_axi_p)
+  else if (dram_type_p == "axi")
     begin : axi
       localparam axi_id_width_p = 6;
       localparam axi_addr_width_p = 64;
@@ -378,7 +375,7 @@ module testbench
     end
   else
     begin : no_mem
-      $error("Must select either dramsim3 or ddr");
+      //$error("Must select dram_type as either dramsim3, dmc, or axi");
     end
 
   bp_nonsynth_nbf_loader
