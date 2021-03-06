@@ -158,7 +158,9 @@ module wrapper
          ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
 
          ,.mem_resp_i(mem_resp_i)
-         ,.mem_resp_v_i(mem_resp_v_i)
+         // TODO: FIX THIS HANDSHAKE!! (clarify naming)
+         // removing the & mem_resp_ready_lo causes this to break
+         ,.mem_resp_v_i(mem_resp_v_i & mem_resp_ready_lo)
          ,.mem_resp_ready_o(mem_resp_ready_lo)
 
          ,.cmd_link_i(dram_cmd_link_lo)
