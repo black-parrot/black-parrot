@@ -222,7 +222,11 @@ module testbench
 
   // Memory
   bp_nonsynth_mem
-   #(.bp_params_p(bp_params_p), .dram_type_p(dram_type_p))
+   #(.bp_params_p(bp_params_p)
+     ,.preload_mem_p(0)
+     ,.dram_type_p(dram_type_p)
+     ,.mem_els_p(2**20)
+     )
    mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
