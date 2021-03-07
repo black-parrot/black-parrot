@@ -144,6 +144,10 @@ module wrapper
          ,.resp_link_o(proc_resp_link_li)
          );
 
+      `declare_bsg_cache_wh_header_flit_s(wh_flit_width_p, wh_cord_width_p, wh_len_width_p, wh_cid_width_p);
+      bsg_cache_wh_header_flit_s header_filt;
+      assign header_filt = dram_cmd_link_lo;
+
       bsg_wormhole_to_cache_dma
        #(.wh_flit_width_p(mem_noc_flit_width_p)
          ,.wh_cid_width_p(mem_noc_cid_width_p)
@@ -160,7 +164,7 @@ module wrapper
          ,.reset_i(reset_i)
 
          ,.wh_link_sif_i(dram_cmd_link_lo)
-         ,.wh_dma_id_i('0)
+         ,.wh_dma_id_i(header_flit.cid)
          ,.wh_link_sif_o(dram_resp_link_li)
 
          ,.dma_pkt_o(dma_pkt_o)
