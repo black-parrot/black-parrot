@@ -39,6 +39,7 @@ module testbench
 
    // DRAM parameters
    , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
+   , parameter preload_mem_p               = 0
 
    // Synthesis parameters
    , parameter no_bind_p                   = 0
@@ -122,7 +123,11 @@ module testbench
      );
 
   bp_nonsynth_dram
-   #(.bp_params_p(bp_params_p), .dram_type_p(dram_type_p))
+   #(.bp_params_p(bp_params_p)
+     ,.preload_mem_p(preload_mem_p)
+     ,.dram_type_p(dram_type_p)
+     ,.mem_els_p(2**28)
+     )
    dram
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

@@ -13,7 +13,9 @@ module bp_nonsynth_mem
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , parameter dram_type_p = "inv"
+   , parameter preload_mem_p = 0
+   , parameter mem_els_p = 0
+   , parameter dram_type_p = ""
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -113,7 +115,11 @@ module bp_nonsynth_mem
      );
 
   bp_nonsynth_dram
-   #(.bp_params_p(bp_params_p), .dram_type_p(dram_type_p))
+   #(.bp_params_p(bp_params_p)
+     ,.preload_mem_p(preload_mem_p)
+     ,.dram_type_p(dram_type_p)
+     ,.mem_els_p(mem_els_p)
+     )
    dram
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

@@ -43,6 +43,7 @@ export TB_PARAMS  = \
                     -pvalue+cosim_instr_p=$(SAMPLE_INSTR_P) \
                     -pvalue+warmup_instr_p=$(SAMPLE_WARMUP_P) \
                     -pvalue+amo_en_p=$(AMOEN) \
+					-pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
                     -pvalue+no_bind_p=$(NO_BIND_P)
 
 export DUT_DEFINES = 

@@ -15,7 +15,9 @@ module bp_nonsynth_dram
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , parameter dram_type_p = "inv"
+   , parameter preload_mem_p = 0
+   , parameter mem_els_p = 0
+   , parameter dram_type_p = ""
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
    )
   (input                                                     clk_i
@@ -57,6 +59,11 @@ module bp_nonsynth_dram
          ,.dma_data_v_i(dma_data_v_i)
          ,.dma_data_yumi_o(dma_data_yumi_o)
          );
+
+      if (preload_mem_p)
+        begin : preload
+          $error("Preloading is not supported for DDR");
+        end
     end
   else if (dram_type_p == "dramsim3")
     begin : dramsim3
@@ -72,7 +79,7 @@ module bp_nonsynth_dram
           logic dram_data_v_lo;
 
           localparam cache_block_size_in_words_lp = cce_block_width_p/dword_width_gp;
-          localparam cache_bank_addr_width_lp = `BSG_SAFE_CLOG2(2**29/1*4);
+          localparam cache_bank_addr_width_lp = `BSG_SAFE_CLOG2(dram_max_size_p/num_cce_p);
           bsg_cache_to_test_dram
            #(.num_cache_p(1)
              ,.addr_width_p(caddr_width_p)
@@ -152,6 +159,28 @@ module bp_nonsynth_dram
              ,.write_done_o()
              ,.write_done_ch_addr_o()
              );
+
+
+        if (preload_mem_p)
+          begin : preload
+            // Preloading is not supported in Verilator due to heirarchical reference and clk
+            //   delay statement.
+            `ifndef VERILATOR
+            // This whole segment is unoptimized because it's storing this memory even though it's
+            //   only used for initialization. We could read byte-by-byte to avoid this
+            logic [7:0] preload_mem [*];
+            initial
+              begin
+                $readmemh("prog.mem", preload_mem);
+                @(posedge clk_i)
+                for (integer i = 0; i < mem_els_p; i++)
+                  dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, preload_mem[i]);
+                preload_mem.delete();
+              end
+            `else
+              $error("Preloading is not supported in Verilator");
+            `endif
+          end
         end
     end
   else if (dram_type_p == "axi")
@@ -264,7 +293,7 @@ module bp_nonsynth_dram
          ,.axi_addr_width_p(axi_addr_width_p)
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_burst_len_p(axi_burst_len_p)
-         ,.mem_els_p(2**31/(axi_data_width_p>>3))
+         ,.mem_els_p(mem_els_p)
          )
        axi_mem
         (.clk_i(clk_i)
@@ -298,6 +327,11 @@ module bp_nonsynth_dram
          ,.axi_rvalid_o(axi_rvalid)
          ,.axi_rready_i(axi_rready)
          );
+
+      if (preload_mem_p)
+        begin : preload
+          $error("Preloading is not supported for AXI");
+        end
     end
   else
     begin : no_mem

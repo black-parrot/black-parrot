@@ -193,13 +193,17 @@ module testbench
 
   // Memory
   bp_nonsynth_mem
-   #(.bp_params_p(bp_params_p), .dram_type_p(dram_type_p))
+   #(.bp_params_p(bp_params_p)
+     ,.preload_mem_p(1)
+     ,.dram_type_p(dram_type_p)
+     ,.mem_els_p(2**20)
+     )
     mem
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
     ,.mem_cmd_i(mem_cmd_lo)
-    ,.mem_cmd_v_i(mem_cmd_v_lo)
+    ,.mem_cmd_v_i(mem_cmd_ready_lo & mem_cmd_v_lo)
     ,.mem_cmd_ready_o(mem_cmd_ready_lo)
 
     ,.mem_resp_o(mem_resp_lo)
@@ -330,7 +334,7 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.mem_cmd_i(mem_cmd_lo)
-     ,.mem_cmd_v_i(mem_cmd_v_lo)
+     ,.mem_cmd_v_i(mem_cmd_ready_lo & mem_cmd_v_lo)
      ,.mem_cmd_ready_i(mem_cmd_ready_lo)
 
      ,.mem_resp_i(mem_resp_lo)
