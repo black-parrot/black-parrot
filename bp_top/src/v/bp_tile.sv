@@ -642,6 +642,7 @@ module bp_tile
 
   bsg_cache_dma_to_wormhole
    #(.addr_width_p(caddr_width_p)
+     ,.data_len_p(cce_block_width_p/mem_noc_flit_width_p)
 
      ,.wh_flit_width_p(mem_noc_flit_width_p)
      ,.wh_cid_width_p(mem_noc_cid_width_p)

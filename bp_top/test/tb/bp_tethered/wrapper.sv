@@ -152,6 +152,7 @@ module wrapper
 
          ,.num_dma_p(cc_x_dim_p)
          ,.addr_width_p(caddr_width_p)
+         ,.data_len_p(cce_block_width_p/mem_noc_flit_width_p)
          ,.in_fifo_els_p(2)
          )
        wh_to_cache_dma
