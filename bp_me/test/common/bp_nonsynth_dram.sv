@@ -21,8 +21,8 @@ module bp_nonsynth_dram
    , parameter dram_type_p = ""
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
    )
-  (input                                                     clk_i
-   , input                                                   reset_i
+  (input                                                    clk_i
+   , input                                                  reset_i
 
    , input [num_dma_p-1:0][dma_pkt_width_lp-1:0]            dma_pkt_i
    , input [num_dma_p-1:0]                                  dma_pkt_v_i
