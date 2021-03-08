@@ -1,6 +1,6 @@
 
 /**
- * bp_nonsynth_dram.v
+ * bp_nonsynth_mem.v
  */
 
 `include "bp_common_defines.svh"

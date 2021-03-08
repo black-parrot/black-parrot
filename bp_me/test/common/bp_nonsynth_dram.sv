@@ -170,7 +170,7 @@ module bp_nonsynth_dram
         begin
           $readmemh("prog.mem", preload_mem);
           @(posedge clk_i)
-          for (integer i = 0; i < mem_els_p; i++)
+          for (integer i = 0; i < preload_mem.num(); i++)
             if (preload_mem_p)
               dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, preload_mem[i]);
           preload_mem.delete();
