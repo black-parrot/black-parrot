@@ -202,10 +202,24 @@ module wrapper
     end
   else
     begin : unicore
+      `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p,
+uce);
+      bp_bedrock_uce_mem_msg_s io_cmd_lo, io_cmd_li;
+      bp_bedrock_uce_mem_msg_s io_resp_lo, io_resp_li;
       bp_unicore
        #(.bp_params_p(bp_params_p))
        dut
-        (.*);
+        (.io_cmd_o(io_cmd_lo)
+         ,.io_cmd_i(io_cmd_li)
+         ,.io_resp_o(io_resp_lo)
+         ,.io_resp_i(io_resp_li)
+         ,.*
+         );
+
+      assign io_cmd_o = io_cmd_lo;
+      assign io_cmd_li = io_cmd_i;
+      assign io_resp_o = io_resp_lo;
+      assign io_resp_li = io_resp_i;
     end
 
 endmodule
