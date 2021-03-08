@@ -10,7 +10,6 @@
 module bp_tile
  import bp_common_pkg::*;
  import bp_be_pkg::*;
- import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
  import bp_me_pkg::*;
@@ -669,8 +668,9 @@ module bp_tile
      ,.wh_link_sif_o(mem_cmd_link_o)
 
      ,.my_wh_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
-     ,.my_wh_cid_i(my_cord_i[0+:mem_noc_cid_width_p]-sac_x_dim_p[0+:mem_noc_cid_width_p])
+     ,.my_wh_cid_i(my_cord_i[0+:`BSG_MAX(coh_noc_x_cord_width_p, mem_noc_cid_width_p)])
      ,.dest_wh_cord_i('1)
+     ,.dest_wh_cid_i(my_cord_i[0+:`BSG_MAX(coh_noc_x_cord_width_p, mem_noc_cid_width_p)])
      );
 
   bp_cce_loopback

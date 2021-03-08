@@ -144,10 +144,9 @@ module wrapper
          ,.resp_link_o(proc_resp_link_li)
          );
 
-      `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
-      bsg_cache_wh_header_flit_s header_flit;
-      assign header_flit = dram_cmd_link_lo;
-
+      logic [mem_noc_cord_width_p-1:0] header_src_cord_lo;
+      logic [mem_noc_cid_width_p-1:0] header_src_cid_lo;
+      wire [`BSG_SAFE_CLOG2(cc_x_dim_p)-1:0] dma_id_li = header_src_cid_lo;
       bsg_wormhole_to_cache_dma
        #(.wh_flit_width_p(mem_noc_flit_width_p)
          ,.wh_cid_width_p(mem_noc_cid_width_p)
@@ -164,8 +163,11 @@ module wrapper
          ,.reset_i(reset_i)
 
          ,.wh_link_sif_i(dram_cmd_link_lo)
-         ,.wh_dma_id_i(header_flit.cid)
          ,.wh_link_sif_o(dram_resp_link_li)
+
+         ,.wh_header_src_cord_o(header_src_cord_lo)
+         ,.wh_header_src_cid_o(header_src_cid_lo)
+         ,.wh_dma_id_i(dma_id_li)
 
          ,.dma_pkt_o(dma_pkt_o)
          ,.dma_pkt_v_o(dma_pkt_v_o)
