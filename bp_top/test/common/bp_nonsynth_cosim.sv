@@ -179,8 +179,8 @@ module bp_nonsynth_cosim
                                                    | (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr])
                                                    | (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr])
                                                    );
-  assign commit_ird_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
-  assign commit_frd_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);
+  wire commit_ird_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
+  wire commit_frd_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);
 
   logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
   bsg_counter_clear_up
