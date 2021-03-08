@@ -10,22 +10,23 @@ module bp_ddr
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
+   , parameter num_dma_p = 1
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
    )
   (input                                                     clk_i
    , input                                                   reset_i
 
-   , input [cc_x_dim_p-1:0][dma_pkt_width_lp-1:0]            dma_pkt_i
-   , input [cc_x_dim_p-1:0]                                  dma_pkt_v_i
-   , output logic [cc_x_dim_p-1:0]                           dma_pkt_yumi_o
+   , input [num_dma_p-1:0][dma_pkt_width_lp-1:0]            dma_pkt_i
+   , input [num_dma_p-1:0]                                  dma_pkt_v_i
+   , output logic [num_dma_p-1:0]                           dma_pkt_yumi_o
 
-   , output logic [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_o
-   , output logic [cc_x_dim_p-1:0]                           dma_data_v_o
-   , input [cc_x_dim_p-1:0]                                  dma_data_ready_i
+   , output logic [num_dma_p-1:0][mem_noc_flit_width_p-1:0] dma_data_o
+   , output logic [num_dma_p-1:0]                           dma_data_v_o
+   , input [num_dma_p-1:0]                                  dma_data_ready_i
 
-   , input [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0]        dma_data_i
-   , input [cc_x_dim_p-1:0]                                  dma_data_v_i
-   , output logic [cc_x_dim_p-1:0]                           dma_data_yumi_o
+   , input [num_dma_p-1:0][mem_noc_flit_width_p-1:0]        dma_data_i
+   , input [num_dma_p-1:0]                                  dma_data_v_i
+   , output logic [num_dma_p-1:0]                           dma_data_yumi_o
    );
 
 `ifdef VERILATOR
@@ -177,11 +178,11 @@ module bp_ddr
   end
 
   bsg_cache_to_dram_ctrl
-   #(.num_cache_p(cc_x_dim_p)
+   #(.num_cache_p(num_dma_p)
      ,.addr_width_p(caddr_width_p)
-     ,.data_width_p(dword_width_gp)
-     ,.block_size_in_words_p(cce_block_width_p/dword_width_gp)
-     ,.dram_ctrl_burst_len_p(cce_block_width_p/dword_width_gp)
+     ,.data_width_p(mem_noc_flit_width_p)
+     ,.block_size_in_words_p(cce_block_width_p/mem_noc_flit_width_p)
+     ,.dram_ctrl_burst_len_p(cce_block_width_p/mem_noc_flit_width_p)
      ,.dram_ctrl_addr_width_p(dmc_addr_width_lp)
      )
    cache2dmc

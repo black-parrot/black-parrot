@@ -21,39 +21,39 @@ module wrapper
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
    )
-  (input                                                     clk_i
-   , input                                                   reset_i
+  (input                                     clk_i
+   , input                                   reset_i
 
    // Outgoing I/O
-   , output [cce_mem_msg_width_lp-1:0]                       io_cmd_o
-   , output                                                  io_cmd_v_o
-   , input                                                   io_cmd_ready_i
+   , output [cce_mem_msg_width_lp-1:0]       io_cmd_o
+   , output                                  io_cmd_v_o
+   , input                                   io_cmd_ready_i
 
-   , input [cce_mem_msg_width_lp-1:0]                        io_resp_i
-   , input                                                   io_resp_v_i
-   , output                                                  io_resp_yumi_o
+   , input [cce_mem_msg_width_lp-1:0]        io_resp_i
+   , input                                   io_resp_v_i
+   , output                                  io_resp_yumi_o
 
    // Incoming I/O
-   , input [cce_mem_msg_width_lp-1:0]                        io_cmd_i
-   , input                                                   io_cmd_v_i
-   , output                                                  io_cmd_yumi_o
+   , input [cce_mem_msg_width_lp-1:0]        io_cmd_i
+   , input                                   io_cmd_v_i
+   , output                                  io_cmd_yumi_o
 
-   , output [cce_mem_msg_width_lp-1:0]                       io_resp_o
-   , output                                                  io_resp_v_o
-   , input                                                   io_resp_ready_i
+   , output [cce_mem_msg_width_lp-1:0]       io_resp_o
+   , output                                  io_resp_v_o
+   , input                                   io_resp_ready_i
 
    // DRAM interface
-   , output logic [cc_x_dim_p-1:0][dma_pkt_width_lp-1:0]     dma_pkt_o
-   , output logic [cc_x_dim_p-1:0]                           dma_pkt_v_o
-   , input [cc_x_dim_p-1:0]                                  dma_pkt_yumi_i
+   , output logic [dma_pkt_width_lp-1:0]     dma_pkt_o
+   , output logic                            dma_pkt_v_o
+   , input                                   dma_pkt_yumi_i
 
-   , input [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0]        dma_data_i
-   , input [cc_x_dim_p-1:0]                                  dma_data_v_i
-   , output logic [cc_x_dim_p-1:0]                           dma_data_ready_o
+   , input [mem_noc_flit_width_p-1:0]        dma_data_i
+   , input                                   dma_data_v_i
+   , output logic                            dma_data_ready_o
 
-   , output logic [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_o
-   , output logic [cc_x_dim_p-1:0]                           dma_data_v_o
-   , input [cc_x_dim_p-1:0]                                  dma_data_yumi_i
+   , output logic [mem_noc_flit_width_p-1:0] dma_data_o
+   , output logic                            dma_data_v_o
+   , input                                   dma_data_yumi_i
    );
 
   if (multicore_p)
@@ -63,7 +63,7 @@ module wrapper
 
       bp_io_noc_ral_link_s proc_cmd_link_li, proc_cmd_link_lo;
       bp_io_noc_ral_link_s proc_resp_link_li, proc_resp_link_lo;
-      bp_mem_noc_ral_link_s dram_cmd_link_lo, dram_resp_link_li;
+      bp_mem_noc_ral_link_s [mc_x_dim_p-1:0] dram_cmd_link_lo, dram_resp_link_li;
       bp_io_noc_ral_link_s stub_cmd_link_li, stub_resp_link_li;
       bp_io_noc_ral_link_s stub_cmd_link_lo, stub_resp_link_lo;
 
@@ -144,26 +144,44 @@ module wrapper
          ,.resp_link_o(proc_resp_link_li)
          );
 
+      bp_mem_noc_ral_link_s concentrated_dram_link_lo, concentrated_dram_link_li;
+      bsg_wormhole_concentrator
+       #(.flit_width_p(mem_noc_flit_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         ,.cid_width_p(mem_noc_cid_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.num_in_p(mc_x_dim_p)
+         )
+       concentrator
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+   
+         ,.links_i(dram_cmd_link_lo)
+         ,.links_o(dram_resp_link_li)
+   
+         ,.concentrated_link_o(concentrated_dram_link_lo)
+         ,.concentrated_link_i(concentrated_dram_link_li)
+         );
+
       logic [mem_noc_cord_width_p-1:0] header_src_cord_lo;
       logic [mem_noc_cid_width_p-1:0] header_src_cid_lo;
-      wire [`BSG_SAFE_CLOG2(cc_x_dim_p)-1:0] dma_id_li = header_src_cid_lo;
+      wire dma_id_li = '0;
       bsg_wormhole_to_cache_dma
        #(.wh_flit_width_p(mem_noc_flit_width_p)
          ,.wh_cid_width_p(mem_noc_cid_width_p)
          ,.wh_len_width_p(mem_noc_len_width_p)
          ,.wh_cord_width_p(mem_noc_cord_width_p)
 
-         ,.num_dma_p(cc_x_dim_p)
+         ,.num_dma_p(1)
          ,.addr_width_p(caddr_width_p)
          ,.data_len_p(cce_block_width_p/mem_noc_flit_width_p)
-         ,.in_fifo_els_p(2)
          )
        wh_to_cache_dma
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.wh_link_sif_i(dram_cmd_link_lo)
-         ,.wh_link_sif_o(dram_resp_link_li)
+         ,.wh_link_sif_i(concentrated_dram_link_lo)
+         ,.wh_link_sif_o(concentrated_dram_link_li)
 
          ,.wh_header_src_cord_o(header_src_cord_lo)
          ,.wh_header_src_cid_o(header_src_cid_lo)

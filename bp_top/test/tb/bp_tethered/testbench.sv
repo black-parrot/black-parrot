@@ -81,12 +81,12 @@ module testbench
   logic load_resp_v_li, load_resp_ready_lo;
 
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
-  bsg_cache_dma_pkt_s [cc_x_dim_p-1:0] dma_pkt_lo;
-  logic [cc_x_dim_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_lo;
-  logic [cc_x_dim_p-1:0] dma_data_v_lo, dma_data_yumi_li;
-  logic [cc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_li;
-  logic [cc_x_dim_p-1:0] dma_data_v_li, dma_data_ready_lo;
+  bsg_cache_dma_pkt_s dma_pkt_lo;
+  logic dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [mem_noc_flit_width_p-1:0] dma_data_lo;
+  logic dma_data_v_lo, dma_data_yumi_li;
+  logic [mem_noc_flit_width_p-1:0] dma_data_li;
+  logic dma_data_v_li, dma_data_ready_lo;
   wrapper
    #(.bp_params_p(bp_params_p))
    wrapper
@@ -124,6 +124,7 @@ module testbench
 
   bp_nonsynth_dram
    #(.bp_params_p(bp_params_p)
+     ,.num_dma_p(1)
      ,.preload_mem_p(preload_mem_p)
      ,.dram_type_p(dram_type_p)
      ,.mem_els_p(2**28)
