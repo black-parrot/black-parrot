@@ -37,16 +37,9 @@ bleach_all:
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/bp_common/test/mem
-      - $CI_PROJECT_DIR/external/bin
-      - $CI_PROJECT_DIR/external/lib
-      - $CI_PROJECT_DIR/external/lib64
-      - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/include
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
-      - $CI_PROJECT_DIR/external/share
-      - $CI_PROJECT_DIR/external/touchfiles
+      - $CI_PROJECT_DIR/tools
+      - $CI_PROJECT_DIR/sdk
+      - $CI_PROJECT_DIR/hdk
     policy: push
 
 update-cache: &update-cache-manual
@@ -62,16 +55,9 @@ update-cache: &update-cache-manual
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/bp_common/test/mem
-      - $CI_PROJECT_DIR/external/bin
-      - $CI_PROJECT_DIR/external/lib
-      - $CI_PROJECT_DIR/external/lib64
-      - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/include
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
-      - $CI_PROJECT_DIR/external/share
-      - $CI_PROJECT_DIR/external/touchfiles
+      - $CI_PROJECT_DIR/sdk
+      - $CI_PROJECT_DIR/hdk
+      - $CI_PROJECT_DIR/tools
     policy: push
 
 .job_template: &job_definition
@@ -83,12 +69,11 @@ update-cache: &update-cache-manual
     - me_dev
     - top_dev
     - sw_dev
+    - refactor_repos
   before_script:
     - echo "Updating hardware libraries"
     - git submodule update --init --recursive external/basejump_stl
     - git submodule update --init --recursive external/HardFloat
-    - echo "Making CCE ucode"
-    - make ucode > make_ucode.log
   artifacts:
     when: always
     paths:
@@ -98,16 +83,9 @@ update-cache: &update-cache-manual
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/bp_common/test/mem
-      - $CI_PROJECT_DIR/external/bin
-      - $CI_PROJECT_DIR/external/lib
-      - $CI_PROJECT_DIR/external/lib64
-      - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/include
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
-      - $CI_PROJECT_DIR/external/share
-      - $CI_PROJECT_DIR/external/touchfiles
+      - $CI_PROJECT_DIR/sdk
+      - $CI_PROJECT_DIR/hdk
+      - $CI_PROJECT_DIR/tools
     policy: pull
   dependencies: []
   retry:
@@ -116,8 +94,16 @@ update-cache: &update-cache-manual
       - script_failure
 
 prep:
-  <<: *job_definition
   stage: prep
+  only:
+    - master
+    - dev
+    - fe_dev
+    - be_dev
+    - me_dev
+    - top_dev
+    - sw_dev
+    - refactor_repos
   tags:
     - bsg
   script:
@@ -125,42 +111,10 @@ prep:
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/bp_common/test/mem
-      - $CI_PROJECT_DIR/external/bin
-      - $CI_PROJECT_DIR/external/lib
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/lib64
-      - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/include
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
-      - $CI_PROJECT_DIR/external/share
-      - $CI_PROJECT_DIR/external/touchfiles
+      - $CI_PROJECT_DIR/sdk
+      - $CI_PROJECT_DIR/hdk
+      - $CI_PROJECT_DIR/tools
     policy: pull-push
-
-## This job runs on fix branches only. We generally assume fix branches do not have major
-#    architectural changes that need to be thoroughly tested. Simply checking synthesizability
-#    susses out most typos.
-# TODO: This target is not super useful, but consumes a lot of CI cycles...
-#fix_job:
-#  only:
-#    - /^.*fix.*$/
-#  stage: check
-#  tags:
-#    - bsg
-#    - vcs
-#  script:
-#    - $CI_PROJECT_DIR/ci/check_design.sh
-#    - make -C bp_top/syn clean
-#  cache:
-#    key: "dev"
-#    paths:
-#      - $CI_PROJECT_DIR/external/
-#    policy: pull
-#  artifacts:
-#    when: always
-#    paths:
-#      - "bp_top/syn/reports/"
 
 check-design:
   <<: *job_definition

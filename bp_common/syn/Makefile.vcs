@@ -22,7 +22,7 @@ LINT_VCS_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 VCS_OPTIONS  = +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
-VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
+#VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
 
 VCS_BUILD_OPTS  = -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -notice
@@ -33,11 +33,11 @@ VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += +noportcoerce
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 VCS_BUILD_OPTS += -diag timescale
-VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++14"
-VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+VCS_BUILD_OPTS += -CFLAGS "-I$(BP_SDK_DIR)/install/include -std=c++14"
+VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save
-VCS_BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
+VCS_BUILD_OPTS += $(BP_SDK_DIR)/install/lib/libdromajo_cosim.a
 VCS_BUILD_OPTS += -top test_bp
 VCS_BUILD_OPTS += -f flist.vcs 
 

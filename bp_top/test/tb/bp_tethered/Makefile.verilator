@@ -31,19 +31,14 @@ VBUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv t
 $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
 	@ln -nsf $</simsc $@
 
-$(SIM_DIR)/prog.riscv: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
+$(SIM_DIR)/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
 	@cp $^ $@
 
-$(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
+$(SIM_DIR)/prog.elf: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
 	cp $^ $@
 
-$(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
+$(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
 	cp $< $@
-
-UCODE2BOOT ?= $(BP_COMMON_DIR)/software/py/ucode2boot.py
-XXD ?= xxd
-$(SIM_DIR)/cce_ucode.bin: $(SIM_DIR)/cce_ucode.mem
-	cd $(@D); python3 $(UCODE2BOOT) --ucode=$< --path=$(@D) | $(XXD) -r -p > $@
 
 NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
 ifeq ($(PRELOAD_MEM_P), 0)
@@ -56,11 +51,11 @@ endif
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
 
-$(SIM_DIR)/bootrom.riscv: $(SIM_DIR)/cce_ucode.bin
-	$(MAKE) -C $(BP_COMMON_DIR)/test/src/bootrom $@
+$(SIM_DIR)/bootrom.riscv: $(BP_SDK_DIR)/bootrom/bootrom.riscv
+	cp $< $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
-	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=8 --verilog-data-width=8 $< $@
+	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=4 --verilog-data-width=4 $< $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
@@ -101,13 +96,13 @@ tire_kick: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).
 tire_kick: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_DIR)/tire_kick: $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 	$(MAKE) $(@D)/simsc
-	cp $(BP_TEST_MEM_DIR)/hello_world.mem  $(@D)/prog.mem
+	cp $(BP_SDK_PROG_DIR)/hello_world.mem  $(@D)/prog.mem
 	sed -i "s/@8/@0/g" $(@D)/prog.mem
-	cp $(BP_TEST_MEM_DIR)/hello_world.dump $(@D)/prog.dump
-	cp $(BP_TEST_MEM_DIR)/bootrom.mem  $(@D)/bootrom.mem
+	cp $(BP_SDK_PROG_DIR)/hello_world.dump $(@D)/prog.dump
+	cp $(BP_SDK_PROG_DIR)/bootrom.mem  $(@D)/bootrom.mem
 	sed -i "s/@8/@0/g" $(@D)/bootrom.mem
-	cp $(BP_TEST_MEM_DIR)/bootrom.dump $(@D)/bootrom.dump
-	cp $(CCE_MEM_PATH)/$(CCE_MEM) $(@D)/cce_ucode.mem
+	cp $(BP_SDK_PROG_DIR)/bootrom.dump $(@D)/bootrom.dump
+	cp $(BP_SDK_UCODE_DIR)/$(CCE_MEM) $(@D)/cce_ucode.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $(@D)/prog.nbf
 	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)

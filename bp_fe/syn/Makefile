@@ -18,7 +18,6 @@ export SUITE ?= none
 export PROG  ?= test_load
 export TAG   ?= none
 
-include $(BP_TEST_DIR)/Makefile.tests
 include $(TB_PATH)/$(TB)/Makefile.cfgs
 include $(TB_PATH)/$(TB)/Makefile.params
 include $(TB_PATH)/$(TB)/Makefile.testlist

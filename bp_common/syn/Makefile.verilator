@@ -29,8 +29,13 @@ VV_OPTS += -Wno-timescalemod
 
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module $(TOP_MODULE) -f flist.vcs config.vlt
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++14
-BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
-BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim3 -ldromajo_cosim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+BUILD_OPTS += -I$(BP_SDK_DIR)/install/include
+BUILD_OPTS += -I$(BP_TOOLS_DIR)/install/share/verilator/include/vltstd/
+BUILD_OPTS += -LDFLAGS "-lpthread"
+BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib"
+BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib-linux64 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib-linux64"
+BUILD_OPTS += -LDFLAGS "-L$(BP_SDK_DIR)/install/lib -ldromajo_cosim -Wl,-rpath=$(BP_SDK_DIR)/install/lib"
+BUILD_OPTS += -CFLAGS "-I$(BP_SDK_DIR)/install/include"
 
 VERILATOR_OPTIONS =
 
