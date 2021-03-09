@@ -15,9 +15,10 @@ module bp_unicore_axi
    
    // AXI4-FULL PARAMS
    , parameter axi_full_addr_width_p   = 64
-   , parameter axi_full_data_width_p   = 64
-   , parameter axi_full_id_width_p     = 1
-   , localparam axi_full_strb_width_lp = axi_full_data_width_p/8
+   , parameter axi_full_data_width_p   = 512
+   , parameter axi_full_id_width_p     = 6
+   , localparam axi_full_strb_width_lp = axi_full_data_width_p>>8
+   , localparam axi_full_burst_len_p   = `BSG_CDIV(cce_block_width_p, axi_full_data_width_p)
 
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
@@ -126,16 +127,14 @@ module bp_unicore_axi
   logic io_cmd_v_lo, io_cmd_v_li, io_cmd_ready_li, io_cmd_yumi_lo;
   logic io_resp_v_li, io_resp_v_lo, io_resp_yumi_lo, io_resp_ready_li;
   
-  bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
-  logic mem_cmd_header_v_lo, mem_cmd_header_ready_li;
-  logic [dword_width_gp-1:0] mem_cmd_data_lo;
-  logic mem_cmd_data_v_lo, mem_cmd_data_ready_li;
-  
-  bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
-  logic mem_resp_header_v_li, mem_resp_header_yumi_lo;
-  logic [dword_width_gp-1:0] mem_resp_data_li;
-  logic mem_resp_data_v_li, mem_resp_data_yumi_lo;
-  
+  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  bsg_cache_dma_pkt_s dma_pkt_lo;
+  logic dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [mem_noc_flit_width_p-1:0] dma_data_li;
+  logic dma_data_v_li, dma_data_ready_lo;
+  logic [mem_noc_flit_width_p-1:0] dma_data_lo;
+  logic dma_data_v_lo, dma_data_yumi_li;
+
   bp_unicore
    #(.bp_params_p(bp_params_p))
    unicore
@@ -143,39 +142,34 @@ module bp_unicore_axi
     ,.reset_i(reset_i)
 
     // Outgoing I/O
-    ,.io_cmd_o               (io_cmd_lo)
-    ,.io_cmd_v_o             (io_cmd_v_lo)
-    ,.io_cmd_ready_i         (io_cmd_ready_li)
+    ,.io_cmd_o(io_cmd_lo)
+    ,.io_cmd_v_o(io_cmd_v_lo)
+    ,.io_cmd_ready_i(io_cmd_ready_li)
 
-    ,.io_resp_i              (io_resp_li)
-    ,.io_resp_v_i            (io_resp_v_li)
-    ,.io_resp_yumi_o         (io_resp_yumi_lo)
+    ,.io_resp_i(io_resp_li)
+    ,.io_resp_v_i(io_resp_v_li)
+    ,.io_resp_yumi_o(io_resp_yumi_lo)
 
     // Incoming I/O
-    ,.io_cmd_i               (io_cmd_li)
-    ,.io_cmd_v_i             (io_cmd_v_li)
-    ,.io_cmd_yumi_o          (io_cmd_yumi_lo)
+    ,.io_cmd_i(io_cmd_li)
+    ,.io_cmd_v_i(io_cmd_v_li)
+    ,.io_cmd_yumi_o(io_cmd_yumi_lo)
 
-    ,.io_resp_o              (io_resp_lo) 
-    ,.io_resp_v_o            (io_resp_v_lo)
-    ,.io_resp_ready_i        (io_resp_ready_li)
+    ,.io_resp_o(io_resp_lo) 
+    ,.io_resp_v_o(io_resp_v_lo)
+    ,.io_resp_ready_i(io_resp_ready_li)
 
-    // DRAM interface
-    ,.mem_cmd_header_o       (mem_cmd_header_lo)
-    ,.mem_cmd_header_v_o     (mem_cmd_header_v_lo)
-    ,.mem_cmd_header_ready_i (mem_cmd_header_ready_li)
+    ,.dma_pkt_o(dma_pkt_lo)
+    ,.dma_pkt_v_o(dma_pkt_v_lo)
+    ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
 
-    ,.mem_cmd_data_o         (mem_cmd_data_lo)
-    ,.mem_cmd_data_v_o       (mem_cmd_data_v_lo)
-    ,.mem_cmd_data_ready_i   (mem_cmd_data_ready_li)
+    ,.dma_data_i(dma_data_li)
+    ,.dma_data_v_i(dma_data_v_li)
+    ,.dma_data_ready_o(dma_data_ready_lo)
 
-    ,.mem_resp_header_i      (mem_resp_header_li)
-    ,.mem_resp_header_v_i    (mem_resp_header_v_li)
-    ,.mem_resp_header_yumi_o (mem_resp_header_yumi_lo)
-
-    ,.mem_resp_data_i        (mem_resp_data_li)
-    ,.mem_resp_data_v_i      (mem_resp_data_v_li)
-    ,.mem_resp_data_yumi_o   (mem_resp_data_yumi_lo)
+    ,.dma_data_o(dma_data_lo)
+    ,.dma_data_v_o(dma_data_v_lo)
+    ,.dma_data_yumi_i(dma_data_yumi_li)
     );
   
   // outgoing io wrapper
@@ -185,19 +179,19 @@ module bp_unicore_axi
      ,.axi_addr_width_p(axi_lite_addr_width_p)
      )
    io2axil
-   (.aclk_i               (clk_i)
-    ,.aresetn_i           (~reset_i)
+    (.aclk_i(clk_i)
+     ,.aresetn_i(~reset_i)
 
-    ,.io_cmd_i            (io_cmd_lo)
-    ,.io_cmd_v_i          (io_cmd_v_lo & io_cmd_ready_li)
-    ,.io_cmd_ready_o      (io_cmd_ready_li)
+     ,.io_cmd_i(io_cmd_lo)
+     ,.io_cmd_v_i(io_cmd_v_lo & io_cmd_ready_li)
+     ,.io_cmd_ready_o(io_cmd_ready_li)
 
-    ,.io_resp_o           (io_resp_li)
-    ,.io_resp_v_o         (io_resp_v_li)
-    ,.io_resp_yumi_i      (io_resp_yumi_lo)
+     ,.io_resp_o(io_resp_li)
+     ,.io_resp_v_o(io_resp_v_li)
+     ,.io_resp_yumi_i(io_resp_yumi_lo)
 
-    ,.*
-    );
+     ,.*
+     );
   
   // incoming io wrapper
   axi_lite_to_bp_lite_client
@@ -206,49 +200,85 @@ module bp_unicore_axi
      ,.axi_addr_width_p(axi_lite_addr_width_p)
      )
    axil2io
-   (.aclk_i               (clk_i)
-    ,.aresetn_i           (~reset_i)
+    (.aclk_i(clk_i)
+     ,.aresetn_i(~reset_i)
 
-    ,.io_cmd_o            (io_cmd_li)
-    ,.io_cmd_v_o          (io_cmd_v_li)
-    ,.io_cmd_yumi_i       (io_cmd_yumi_lo)
+     ,.io_cmd_o(io_cmd_li)
+     ,.io_cmd_v_o(io_cmd_v_li)
+     ,.io_cmd_yumi_i(io_cmd_yumi_lo)
 
-    ,.io_resp_i           (io_resp_lo)
-    ,.io_resp_v_i         (io_resp_v_lo)
-    ,.io_resp_ready_o     (io_resp_ready_li)
+     ,.io_resp_i(io_resp_lo)
+     ,.io_resp_v_i(io_resp_v_lo)
+     ,.io_resp_ready_o(io_resp_ready_li)
 
-    ,.*
-    );
-  
-  // dram interface wrapper
-  bp_mem_to_axi_master
-   #(.bp_params_p(bp_params_p)
-     ,.axi_data_width_p(axi_full_data_width_p)
-     ,.axi_addr_width_p(axi_full_addr_width_p)
+     ,.*
+     );
+
+  bsg_cache_to_axi
+   #(.addr_width_p(caddr_width_p)
+     ,.block_size_in_words_p(cce_block_width_p/dword_width_gp)
+     ,.data_width_p(dword_width_gp)
+     ,.num_cache_p(1)
      ,.axi_id_width_p(axi_full_id_width_p)
+     ,.axi_addr_width_p(axi_full_addr_width_p)
+     ,.axi_data_width_p(axi_full_data_width_p)
+     ,.axi_burst_len_p(axi_full_burst_len_p)
      )
-   mem2axi
-   (.aclk_i               (clk_i)
-    ,.aresetn_i           (~reset_i)
+   cache2axi
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.dma_pkt_i(dma_pkt_i)
+     ,.dma_pkt_v_i(dma_pkt_v_i)
+     ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
+
+     ,.dma_data_o(dma_data_o)
+     ,.dma_data_v_o(dma_data_v_o)
+     ,.dma_data_ready_i(dma_data_ready_i)
+
+     ,.dma_data_i(dma_data_i)
+     ,.dma_data_v_i(dma_data_v_i)
+     ,.dma_data_yumi_o(dma_data_yumi_o)
+
+     ,.axi_awid_o(axi_awid)
+     ,.axi_awaddr_o(axi_awaddr)
+     ,.axi_awlen_o(axi_awlen)
+     ,.axi_awsize_o(axi_awsize)
+     ,.axi_awburst_o(axi_awburst)
+     ,.axi_awcache_o(axi_awcache)
+     ,.axi_awprot_o(axi_awprot)
+     ,.axi_awlock_o(axi_awlock)
+     ,.axi_awvalid_o(axi_awvalid)
+     ,.axi_awready_i(axi_awready)
+
+     ,.axi_wdata_o(axi_wdata)
+     ,.axi_wstrb_o(axi_wstrb)
+     ,.axi_wlast_o(axi_wlast)
+     ,.axi_wvalid_o(axi_wvalid)
+     ,.axi_wready_i(axi_wready)
+
+     ,.axi_bid_i(axi_bid)
+     ,.axi_bresp_i(axi_bresp)
+     ,.axi_bvalid_i(axi_bvalid)
+     ,.axi_bready_o(axi_bready)
+     ,.axi_arid_o(axi_arid)
+     ,.axi_araddr_o(axi_araddr)
+     ,.axi_arlen_o(axi_arlen)
+     ,.axi_arsize_o(axi_arsize)
+     ,.axi_arburst_o(axi_arburst)
+     ,.axi_arcache_o(axi_arcache)
+     ,.axi_arprot_o(axi_arprot)
+     ,.axi_arlock_o(axi_arlock)
+     ,.axi_arvalid_o(axi_arvalid)
+     ,.axi_arready_i(axi_arready)
+
+     ,.axi_rid_i(axi_rid)
+     ,.axi_rdata_i(axi_rdata)
+     ,.axi_rresp_i(axi_rresp)
+     ,.axi_rlast_i(axi_rlast)
+     ,.axi_rvalid_i(axi_rvalid)
+     ,.axi_rready_o(axi_rready)
+     );
   
-    ,.mem_cmd_header_i        (mem_cmd_header_lo)
-    ,.mem_cmd_header_v_i      (mem_cmd_header_v_lo)
-    ,.mem_cmd_header_ready_o  (mem_cmd_header_ready_li)  
-  
-    ,.mem_cmd_data_i          (mem_cmd_data_lo)      
-    ,.mem_cmd_data_v_i        (mem_cmd_data_v_lo)
-    ,.mem_cmd_data_ready_o    (mem_cmd_data_ready_li)
-
-    ,.mem_resp_header_o       (mem_resp_header_li)
-    ,.mem_resp_header_v_o     (mem_resp_header_v_li)
-    ,.mem_resp_header_ready_i (mem_resp_header_yumi_lo)
-
-    ,.mem_resp_data_o         (mem_resp_data_li)
-    ,.mem_resp_data_v_o       (mem_resp_data_v_li)
-    ,.mem_resp_data_ready_i   (mem_resp_data_yumi_lo)
-
-    ,.*
-    );
-
 endmodule
 

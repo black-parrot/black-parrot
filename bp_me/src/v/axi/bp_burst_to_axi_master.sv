@@ -1,4 +1,10 @@
 
+/*
+ * This module is currently deprecated with the shift to bsg_cache_dma,
+ *   but is left as a reference in case anyone wants to try burst I/O...
+ */
+
+
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 

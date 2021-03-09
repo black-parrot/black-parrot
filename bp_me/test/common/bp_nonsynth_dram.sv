@@ -221,6 +221,7 @@ module bp_nonsynth_dram
       bsg_cache_to_axi
        #(.addr_width_p(caddr_width_p)
          ,.block_size_in_words_p(cce_block_width_p/dword_width_gp)
+         // TODO: DMA data width > dword_width?
          ,.data_width_p(dword_width_gp)
          ,.num_cache_p(num_dma_p)
          ,.axi_id_width_p(axi_id_width_p)
