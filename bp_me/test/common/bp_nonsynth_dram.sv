@@ -176,7 +176,10 @@ module bp_nonsynth_dram
           preload_mem.delete();
         end
       `else
-        $error("Preloading is not supported in Verilator");
+        if (preload_mem_p)
+          begin : preload
+            $error("Preloading is not supported in Verilator");
+          end
       `endif
     end
   else if (dram_type_p == "axi")
