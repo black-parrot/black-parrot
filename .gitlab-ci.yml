@@ -59,6 +59,10 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/hdk
       - $CI_PROJECT_DIR/tools
     policy: push
+  artifacts:
+    when: always
+    paths:
+      - "*.log"
 
 .job_template: &job_definition
   only:
@@ -115,6 +119,10 @@ prep:
       - $CI_PROJECT_DIR/hdk
       - $CI_PROJECT_DIR/tools
     policy: pull-push
+  artifacts:
+    when: always
+    paths:
+      - "*.log"
 
 check-design:
   <<: *job_definition
