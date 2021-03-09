@@ -37,9 +37,10 @@ bleach_all:
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/tools
-      - $CI_PROJECT_DIR/sdk
-      - $CI_PROJECT_DIR/hdk
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/progs
+      - $CI_PROJECT_DIR/sdk/ucode
     policy: push
 
 update-cache: &update-cache-manual
@@ -55,9 +56,10 @@ update-cache: &update-cache-manual
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/sdk
-      - $CI_PROJECT_DIR/hdk
-      - $CI_PROJECT_DIR/tools
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/progs
+      - $CI_PROJECT_DIR/sdk/ucode
     policy: push
   artifacts:
     when: always
@@ -87,9 +89,10 @@ update-cache: &update-cache-manual
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/sdk
-      - $CI_PROJECT_DIR/hdk
-      - $CI_PROJECT_DIR/tools
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/progs
+      - $CI_PROJECT_DIR/sdk/ucode
     policy: pull
   dependencies: []
   retry:
@@ -112,12 +115,14 @@ prep:
     - bsg
   script:
     - make prep -j $CI_CORES > make_prep.log
+    - make tidy_tools > make_tidy_tools.log
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/sdk
-      - $CI_PROJECT_DIR/hdk
-      - $CI_PROJECT_DIR/tools
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/progs
+      - $CI_PROJECT_DIR/sdk/ucode
     policy: pull-push
   artifacts:
     when: always
