@@ -90,7 +90,6 @@
                                                        `BSG_MAX(icache_block_width_p,              \
                                                          acache_block_width_p))                    \
                                                                                                    \
-                                                                                                   \
     , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                           \
     , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                    \
     , localparam cce_way_groups_p           = `BSG_MAX(dcache_sets_p, icache_sets_p)               \
@@ -99,6 +98,7 @@
     , localparam l2_en_p    = proc_param_lp.l2_en                                                  \
     , localparam l2_sets_p  = proc_param_lp.l2_sets                                                \
     , localparam l2_assoc_p = proc_param_lp.l2_assoc                                               \
+    , localparam l2_block_width_p = proc_param_lp.l2_block_width                                   \
     , localparam l2_outstanding_reqs_p = proc_param_lp.l2_outstanding_reqs                         \
                                                                                                    \
     , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                             \
@@ -234,6 +234,7 @@
           ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                   \
           ,`bp_aviary_parameter_override(l2_sets, override_cfg_mp, default_cfg_mp)                 \
           ,`bp_aviary_parameter_override(l2_assoc, override_cfg_mp, default_cfg_mp)                \
+          ,`bp_aviary_parameter_override(l2_block_width, override_cfg_mp, default_cfg_mp)          \
           ,`bp_aviary_parameter_override(l2_outstanding_reqs, override_cfg_mp, default_cfg_mp)     \
                                                                                                    \
           ,`bp_aviary_parameter_override(async_coh_clk, override_cfg_mp, default_cfg_mp)           \

@@ -214,7 +214,6 @@ $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 # Cache
-$BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.sv
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.sv
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.sv

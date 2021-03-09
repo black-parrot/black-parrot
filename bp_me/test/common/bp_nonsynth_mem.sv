@@ -72,7 +72,7 @@ module bp_nonsynth_mem
   bsg_cache
    #(.addr_width_p(caddr_width_p)
      ,.data_width_p(dword_width_gp)
-     ,.block_size_in_words_p(cce_block_width_p/dword_width_gp)
+     ,.block_size_in_words_p(l2_block_width_p/dword_width_gp)
      ,.sets_p(l2_sets_p)
      ,.ways_p(l2_assoc_p)
      ,.amo_support_p(((amo_swap_p == e_l2) << e_cache_amo_swap)

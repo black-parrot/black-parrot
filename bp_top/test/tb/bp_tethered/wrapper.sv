@@ -174,7 +174,7 @@ module wrapper
 
          ,.num_dma_p(1)
          ,.addr_width_p(caddr_width_p)
-         ,.data_len_p(cce_block_width_p/mem_noc_flit_width_p)
+         ,.data_len_p(l2_block_width_p/mem_noc_flit_width_p)
          )
        wh_to_cache_dma
         (.clk_i(clk_i)

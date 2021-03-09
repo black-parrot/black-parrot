@@ -16,7 +16,7 @@ module bp_me_cce_to_cache
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-    , localparam block_size_in_words_lp=cce_block_width_p/dword_width_gp
+    , localparam block_size_in_words_lp=l2_block_width_p/dword_width_gp
     , localparam lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
     , localparam lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
@@ -25,7 +25,7 @@ module bp_me_cce_to_cache
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
 
     , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(caddr_width_p,dword_width_gp)
-    , localparam counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_gp)
+    , localparam counter_width_lp=`BSG_SAFE_CLOG2(l2_block_width_p/dword_width_gp)
   )
   (
     input clk_i
@@ -297,10 +297,11 @@ module bp_me_cce_to_cache
      ,.data_o(mem_resp_cast_o.header)
      );
 
+  wire [cce_block_width_p-1:0] resp_data_slice = resp_data_r;
   bsg_bus_pack
    #(.width_p(cce_block_width_p))
    repl_mux
-    (.data_i(resp_data_r)
+    (.data_i(resp_data_slice)
      // Response data is always aggregated from zero in this module
      ,.sel_i('0)
      ,.size_i(mem_resp_cast_o.header.size)

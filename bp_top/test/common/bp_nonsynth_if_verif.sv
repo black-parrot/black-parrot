@@ -75,6 +75,9 @@ module bp_nonsynth_if_verif
   if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0) || (dcache_fill_width_p % (dcache_block_width_p / dcache_assoc_p) != 0))
     $fatal("Error: Cache fill width should be a multiple of cache bank width");
 
+  if (l2_block_width_p != 512)
+    $error("L2 block width must be 512");
+
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
   if (paddr_width_p < 40)
