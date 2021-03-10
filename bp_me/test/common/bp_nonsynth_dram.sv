@@ -77,7 +77,7 @@ module bp_nonsynth_dram
        logic [`dram_pkg::data_width_p-1:0] dram_data_lo;
        logic dram_data_v_lo;
 
-       if (2**`BSG_SAFE_CLOG2(num_dma_p) != num_dma_p)
+       if (num_dma_p & (num_dma_p-1) != 0)
          begin : npot
            $error("bsg_cache_to_test_dram doesn't support NPOT number of caches. Use AXI mem instead");
          end
