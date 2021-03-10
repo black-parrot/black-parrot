@@ -77,7 +77,7 @@ module bp_nonsynth_dram
        logic [`dram_pkg::data_width_p-1:0] dram_data_lo;
        logic dram_data_v_lo;
 
-       localparam cache_bank_addr_width_lp = `BSG_SAFE_CLOG2(dram_max_size_p/mc_x_dim_p);
+       localparam cache_bank_addr_width_lp = `BSG_SAFE_CLOG2(dram_max_size_p/num_dma_p);
        bsg_cache_to_test_dram
         #(.num_cache_p(num_dma_p)
           ,.addr_width_p(caddr_width_p)
@@ -222,9 +222,8 @@ module bp_nonsynth_dram
 
       bsg_cache_to_axi
        #(.addr_width_p(caddr_width_p)
-         ,.data_width_p(l2_data_width_p)
+         ,.data_width_p(l2_fill_width_p)
          ,.block_size_in_words_p(l2_block_size_in_fill_p)
-         ,.dma_data_width_p(l2_fill_width_p)
          ,.num_cache_p(num_dma_p)
          ,.axi_id_width_p(axi_id_width_p)
          ,.axi_addr_width_p(axi_addr_width_p)
