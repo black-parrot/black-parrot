@@ -47,11 +47,11 @@ module wrapper
    , output logic [mc_x_dim_p-1:0]                           dma_pkt_v_o
    , input [mc_x_dim_p-1:0]                                  dma_pkt_yumi_i
 
-   , input [mc_x_dim_p-1:0][mem_noc_flit_width_p-1:0]        dma_data_i
+   , input [mc_x_dim_p-1:0][l2_fill_width_p-1:0]             dma_data_i
    , input [mc_x_dim_p-1:0]                                  dma_data_v_i
    , output logic [mc_x_dim_p-1:0]                           dma_data_ready_o
 
-   , output logic [mc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_o
+   , output logic [mc_x_dim_p-1:0][l2_fill_width_p-1:0]      dma_data_o
    , output logic [mc_x_dim_p-1:0]                           dma_data_v_o
    , input [mc_x_dim_p-1:0]                                  dma_data_yumi_i
    );
@@ -160,7 +160,7 @@ module wrapper
 
              ,.num_dma_p(cc_y_dim_p+mc_y_dim_p)
              ,.addr_width_p(caddr_width_p)
-             ,.data_len_p(l2_block_width_p/mem_noc_flit_width_p)
+             ,.data_len_p(l2_block_size_in_fill_p)
              )
            wh_to_cache_dma
             (.clk_i(clk_i)

@@ -64,15 +64,15 @@ module bp_nonsynth_mem
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [mem_noc_flit_width_p-1:0] dma_data_li;
+  logic [l2_fill_width_p-1:0] dma_data_li;
   logic dma_data_v_li, dma_data_ready_lo;
-  logic [mem_noc_flit_width_p-1:0] dma_data_lo;
+  logic [l2_fill_width_p-1:0] dma_data_lo;
   logic dma_data_v_lo, dma_data_yumi_li;
 
   bsg_cache
    #(.addr_width_p(caddr_width_p)
-     ,.data_width_p(dword_width_gp)
-     ,.block_size_in_words_p(l2_block_width_p/dword_width_gp)
+     ,.data_width_p(l2_data_width_p)
+     ,.block_size_in_words_p(l2_block_size_in_words_p)
      ,.sets_p(l2_sets_p)
      ,.ways_p(l2_assoc_p)
      ,.amo_support_p(((amo_swap_p == e_l2) << e_cache_amo_swap)
@@ -85,7 +85,7 @@ module bp_nonsynth_mem
                      | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_minu)
                      | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_maxu)
                      )
-     ,.dma_data_width_p(mem_noc_flit_width_p)
+     ,.dma_data_width_p(l2_fill_width_p)
     )
    cache
     (.clk_i(clk_i)

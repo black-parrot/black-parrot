@@ -77,6 +77,8 @@ module bp_nonsynth_if_verif
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");
+  if (l2_data_width_p != 64)
+    $error("L2 data width must be 64");
 
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
@@ -88,8 +90,8 @@ module bp_nonsynth_if_verif
   if ((multicore_p == 1) && ((amo_swap_p != e_none) || (amo_fetch_logic_p != e_none) || (amo_fetch_arithmetic_p != e_none)))
     $fatal("Error: L2 atomics are not currently supported in bp_multicore");
 
-  if (mem_noc_flit_width_p % dword_width_gp != 0)
-    $fatal("Memory NoC flit width must be a multiple of 64");
+  if (mem_noc_flit_width_p % l2_fill_width_p != 0)
+    $fatal("Memory NoC flit width must match l2 fill width");
 
 endmodule
 

@@ -45,11 +45,11 @@ module bp_unicore
    , output logic                                      dma_pkt_v_o
    , input                                             dma_pkt_yumi_i
 
-   , input [mem_noc_flit_width_p-1:0]                  dma_data_i
+   , input [l2_fill_width_p-1:0]                       dma_data_i
    , input                                             dma_data_v_i
    , output logic                                      dma_data_ready_o
 
-   , output logic [mem_noc_flit_width_p-1:0]           dma_data_o
+   , output logic [l2_fill_width_p-1:0]                dma_data_o
    , output logic                                      dma_data_v_o
    , input                                             dma_data_yumi_i
    );
@@ -541,8 +541,8 @@ module bp_unicore
   
   bsg_cache
    #(.addr_width_p(caddr_width_p)
-     ,.data_width_p(dword_width_gp)
-     ,.block_size_in_words_p(l2_block_width_p/dword_width_gp)
+     ,.data_width_p(l2_data_width_p)
+     ,.block_size_in_words_p(l2_block_size_in_words_p)
      ,.sets_p(l2_en_p ? l2_sets_p : 2)
      ,.ways_p(l2_en_p ? l2_assoc_p : 2)
      ,.amo_support_p(((amo_swap_p == e_l2) << e_cache_amo_swap)
@@ -555,7 +555,7 @@ module bp_unicore
                      | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_minu)
                      | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_maxu)
                      )
-     ,.dma_data_width_p(mem_noc_flit_width_p)
+     ,.dma_data_width_p(l2_fill_width_p)
     )
    cache
     (.clk_i(clk_i)

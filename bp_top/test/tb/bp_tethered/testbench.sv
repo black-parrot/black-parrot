@@ -83,9 +83,9 @@ module testbench
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s [mc_x_dim_p-1:0] dma_pkt_lo;
   logic [mc_x_dim_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [mc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_lo;
+  logic [mc_x_dim_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
   logic [mc_x_dim_p-1:0] dma_data_v_lo, dma_data_yumi_li;
-  logic [mc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_li;
+  logic [mc_x_dim_p-1:0][l2_fill_width_p-1:0] dma_data_li;
   logic [mc_x_dim_p-1:0] dma_data_v_li, dma_data_ready_lo;
   wrapper
    #(.bp_params_p(bp_params_p))

@@ -560,10 +560,10 @@ module bp_tile
      );
 
   import bsg_cache_pkg::*;
-  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
+  `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
-  logic [dword_width_gp-1:0] cache_data_lo;
+  logic [l2_data_width_p-1:0] cache_data_lo;
   logic cache_data_v_lo, cache_data_yumi_li;
   bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p))
@@ -591,14 +591,15 @@ module bp_tile
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [mem_noc_flit_width_p-1:0] dma_data_li;
+  logic [l2_fill_width_p-1:0] dma_data_li;
   logic dma_data_v_li, dma_data_ready_lo;
-  logic [mem_noc_flit_width_p-1:0] dma_data_lo;
+  logic [l2_fill_width_p-1:0] dma_data_lo;
   logic dma_data_v_lo, dma_data_yumi_li;
   bsg_cache
    #(.addr_width_p(caddr_width_p)
-     ,.data_width_p(dword_width_gp)
-     ,.block_size_in_words_p(l2_block_width_p/dword_width_gp)
+     ,.data_width_p(l2_data_width_p)
+     ,.dma_data_width_p(l2_fill_width_p)
+     ,.block_size_in_words_p(l2_block_size_in_words_p)
      ,.sets_p(l2_en_p ? l2_sets_p : 2)
      ,.ways_p(l2_en_p ? l2_assoc_p : 2)
      ,.amo_support_p(((amo_swap_p == e_l2) << e_cache_amo_swap)
@@ -641,7 +642,7 @@ module bp_tile
 
   bsg_cache_dma_to_wormhole
    #(.addr_width_p(caddr_width_p)
-     ,.data_len_p(l2_block_width_p/mem_noc_flit_width_p)
+     ,.data_len_p(l2_block_size_in_fill_p)
 
      ,.wh_flit_width_p(mem_noc_flit_width_p)
      ,.wh_cid_width_p(mem_noc_cid_width_p)

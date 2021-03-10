@@ -135,9 +135,11 @@
 
     // L2 slice parameters (per core)
     integer unsigned l2_en;
+    integer unsigned l2_data_width;
     integer unsigned l2_sets;
     integer unsigned l2_assoc;
     integer unsigned l2_block_width;
+    integer unsigned l2_fill_width;
     integer unsigned l2_outstanding_reqs;
 
     // Size of the issue queue
@@ -246,9 +248,11 @@
       ,cce_pc_width         : 8
 
       ,l2_en               : 1
+      ,l2_data_width       : 64
       ,l2_sets             : 128
       ,l2_assoc            : 8
       ,l2_block_width      : 512
+      ,l2_fill_width       : 64
       ,l2_outstanding_reqs : 8
 
       ,fe_queue_fifo_els : 8
@@ -809,9 +813,11 @@
       ,`bp_aviary_define_override(cce_pc_width, BP_CCE_PC_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(l2_en, BP_L2_EN, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(l2_data_width, BP_L2_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_sets, BP_L2_SETS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_assoc, BP_L2_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_block_width, BP_L2_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(l2_fill_width, BP_L2_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_outstanding_reqs, BP_L2_OUTSTANDING_REQS, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(async_coh_clk, BP_ASYNC_COH_CLK, `BP_CUSTOM_BASE_CFG)

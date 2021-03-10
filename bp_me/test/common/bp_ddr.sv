@@ -20,11 +20,11 @@ module bp_ddr
    , input [num_dma_p-1:0]                                  dma_pkt_v_i
    , output logic [num_dma_p-1:0]                           dma_pkt_yumi_o
 
-   , output logic [num_dma_p-1:0][mem_noc_flit_width_p-1:0] dma_data_o
+   , output logic [num_dma_p-1:0][l2_fill_width_p-1:0] dma_data_o
    , output logic [num_dma_p-1:0]                           dma_data_v_o
    , input [num_dma_p-1:0]                                  dma_data_ready_i
 
-   , input [num_dma_p-1:0][mem_noc_flit_width_p-1:0]        dma_data_i
+   , input [num_dma_p-1:0][l2_fill_width_p-1:0]        dma_data_i
    , input [num_dma_p-1:0]                                  dma_data_v_i
    , output logic [num_dma_p-1:0]                           dma_data_yumi_o
    );
@@ -148,8 +148,8 @@ module bp_ddr
   // DRAM Link
   logic app_en_lo, app_rdy_li, app_wdf_wren_lo, app_wdf_end_lo, app_wdf_rdy_li, app_rd_data_valid_li, app_rd_data_end_li;
   logic [dmc_addr_width_lp-1:0] app_addr_lo;
-  logic [mem_noc_flit_width_p-1:0] app_wdf_data_lo, app_rd_data_li;
-  logic [(mem_noc_flit_width_p>>3)-1:0] app_wdf_mask_lo;
+  logic [l2_fill_width_p-1:0] app_wdf_data_lo, app_rd_data_li;
+  logic [(l2_fill_width_p>>3)-1:0] app_wdf_mask_lo;
   app_cmd_e app_cmd_lo;
 
   // DMC
@@ -180,9 +180,9 @@ module bp_ddr
   bsg_cache_to_dram_ctrl
    #(.num_cache_p(num_dma_p)
      ,.addr_width_p(caddr_width_p)
-     ,.data_width_p(mem_noc_flit_width_p)
-     ,.block_size_in_words_p(l2_block_width_p/mem_noc_flit_width_p)
-     ,.dram_ctrl_burst_len_p(l2_block_width_p/mem_noc_flit_width_p)
+     ,.data_width_p(l2_fill_width_p)
+     ,.block_size_in_words_p(l2_block_size_in_fill_p)
+     ,.dram_ctrl_burst_len_p(l2_block_size_in_fill_p)
      ,.dram_ctrl_addr_width_p(dmc_addr_width_lp)
      )
    cache2dmc
@@ -223,7 +223,7 @@ module bp_ddr
   bsg_dmc
     #(.num_adgs_p ()
       ,.ui_addr_width_p(dmc_addr_width_lp)
-      ,.ui_data_width_p(mem_noc_flit_width_p)
+      ,.ui_data_width_p(l2_fill_width_p)
       ,.burst_data_width_p(l2_block_width_p)
       ,.dq_data_width_p(dmc_data_width_lp)
       ,.cmd_afifo_depth_p(dmc_cmd_afifo_depth_lp)
