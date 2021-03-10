@@ -73,6 +73,8 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_tag_array.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_one_hot.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_mask_write_bit.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_mask_write_bit_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync.v
@@ -294,3 +296,4 @@ $BP_TOP_DIR/src/v/bp_tile_node.sv
 
 # BSG Staging area
 $BP_TOP_DIR/src/v/bsg_async_noc_link.sv
+$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_mask_write_bit_reshape.v
