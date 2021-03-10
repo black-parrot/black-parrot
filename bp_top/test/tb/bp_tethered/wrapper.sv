@@ -43,17 +43,17 @@ module wrapper
    , input                                   io_resp_ready_i
 
    // DRAM interface
-   , output logic [dma_pkt_width_lp-1:0]     dma_pkt_o
-   , output logic                            dma_pkt_v_o
-   , input                                   dma_pkt_yumi_i
+   , output logic [mc_x_dim_p-1:0][dma_pkt_width_lp-1:0]     dma_pkt_o
+   , output logic [mc_x_dim_p-1:0]                           dma_pkt_v_o
+   , input [mc_x_dim_p-1:0]                                  dma_pkt_yumi_i
 
-   , input [mem_noc_flit_width_p-1:0]        dma_data_i
-   , input                                   dma_data_v_i
-   , output logic                            dma_data_ready_o
+   , input [mc_x_dim_p-1:0][mem_noc_flit_width_p-1:0]        dma_data_i
+   , input [mc_x_dim_p-1:0]                                  dma_data_v_i
+   , output logic [mc_x_dim_p-1:0]                           dma_data_ready_o
 
-   , output logic [mem_noc_flit_width_p-1:0] dma_data_o
-   , output logic                            dma_data_v_o
-   , input                                   dma_data_yumi_i
+   , output logic [mc_x_dim_p-1:0][mem_noc_flit_width_p-1:0] dma_data_o
+   , output logic [mc_x_dim_p-1:0]                           dma_data_v_o
+   , input [mc_x_dim_p-1:0]                                  dma_data_yumi_i
    );
 
   if (multicore_p)
@@ -144,61 +144,48 @@ module wrapper
          ,.resp_link_o(proc_resp_link_li)
          );
 
-      bp_mem_noc_ral_link_s concentrated_dram_link_lo, concentrated_dram_link_li;
-      bsg_wormhole_concentrator
-       #(.flit_width_p(mem_noc_flit_width_p)
-         ,.len_width_p(mem_noc_len_width_p)
-         ,.cid_width_p(mem_noc_cid_width_p)
-         ,.cord_width_p(mem_noc_cord_width_p)
-         ,.num_in_p(mc_x_dim_p)
-         )
-       concentrator
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-   
-         ,.links_i(dram_cmd_link_lo)
-         ,.links_o(dram_resp_link_li)
-   
-         ,.concentrated_link_o(concentrated_dram_link_lo)
-         ,.concentrated_link_i(concentrated_dram_link_li)
-         );
+      `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
+      for (genvar i = 0; i < mc_x_dim_p; i++)
+        begin : column
+          bsg_cache_wh_header_flit_s header_flit;
+          assign header_flit = dram_cmd_link_lo[i];
+          logic [mem_noc_cord_width_p-1:0] header_src_cord_lo;
+          logic [mem_noc_cid_width_p-1:0] header_src_cid_lo;
+          wire dma_id_li = header_src_cord_lo-ic_y_dim_p;
+          bsg_wormhole_to_cache_dma
+           #(.wh_flit_width_p(mem_noc_flit_width_p)
+             ,.wh_cid_width_p(mem_noc_cid_width_p)
+             ,.wh_len_width_p(mem_noc_len_width_p)
+             ,.wh_cord_width_p(mem_noc_cord_width_p)
 
-      logic [mem_noc_cord_width_p-1:0] header_src_cord_lo;
-      logic [mem_noc_cid_width_p-1:0] header_src_cid_lo;
-      wire dma_id_li = '0;
-      bsg_wormhole_to_cache_dma
-       #(.wh_flit_width_p(mem_noc_flit_width_p)
-         ,.wh_cid_width_p(mem_noc_cid_width_p)
-         ,.wh_len_width_p(mem_noc_len_width_p)
-         ,.wh_cord_width_p(mem_noc_cord_width_p)
+             ,.num_dma_p(cc_y_dim_p+mc_y_dim_p)
+             ,.addr_width_p(caddr_width_p)
+             ,.data_len_p(l2_block_width_p/mem_noc_flit_width_p)
+             )
+           wh_to_cache_dma
+            (.clk_i(clk_i)
+             ,.reset_i(reset_i)
 
-         ,.num_dma_p(1)
-         ,.addr_width_p(caddr_width_p)
-         ,.data_len_p(l2_block_width_p/mem_noc_flit_width_p)
-         )
-       wh_to_cache_dma
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+             ,.wh_link_sif_i(dram_cmd_link_lo[i])
+             ,.wh_link_sif_o(dram_resp_link_li[i])
 
-         ,.wh_link_sif_i(concentrated_dram_link_lo)
-         ,.wh_link_sif_o(concentrated_dram_link_li)
+             ,.wh_header_src_cord_o(header_src_cord_lo)
+             ,.wh_header_src_cid_o(header_src_cid_lo)
+             ,.wh_dma_id_i(dma_id_li)
 
-         ,.wh_header_src_cord_o(header_src_cord_lo)
-         ,.wh_header_src_cid_o(header_src_cid_lo)
-         ,.wh_dma_id_i(dma_id_li)
+             ,.dma_pkt_o(dma_pkt_o[i])
+             ,.dma_pkt_v_o(dma_pkt_v_o[i])
+             ,.dma_pkt_yumi_i(dma_pkt_yumi_i[i])
 
-         ,.dma_pkt_o(dma_pkt_o)
-         ,.dma_pkt_v_o(dma_pkt_v_o)
-         ,.dma_pkt_yumi_i(dma_pkt_yumi_i)
+             ,.dma_data_i(dma_data_i[i])
+             ,.dma_data_v_i(dma_data_v_i[i])
+             ,.dma_data_ready_o(dma_data_ready_o[i])
 
-         ,.dma_data_i(dma_data_i)
-         ,.dma_data_v_i(dma_data_v_i)
-         ,.dma_data_ready_o(dma_data_ready_o)
-
-         ,.dma_data_o(dma_data_o)
-         ,.dma_data_v_o(dma_data_v_o)
-         ,.dma_data_yumi_i(dma_data_yumi_i)
-         );
+             ,.dma_data_o(dma_data_o[i])
+             ,.dma_data_v_o(dma_data_v_o[i])
+             ,.dma_data_yumi_i(dma_data_yumi_i[i])
+             );
+        end
     end
   else
     begin : unicore

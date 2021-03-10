@@ -668,9 +668,9 @@ module bp_tile
      ,.wh_link_sif_o(mem_cmd_link_o)
 
      ,.my_wh_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
-     ,.my_wh_cid_i(my_cord_i[0+:`BSG_MAX(coh_noc_x_cord_width_p, mem_noc_cid_width_p)])
+     ,.my_wh_cid_i('0)
      ,.dest_wh_cord_i('1)
-     ,.dest_wh_cid_i(my_cord_i[0+:`BSG_MAX(coh_noc_x_cord_width_p, mem_noc_cid_width_p)])
+     ,.dest_wh_cid_i('0)
      );
 
   bp_cce_loopback
