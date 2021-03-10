@@ -1,6 +1,6 @@
 variables:
   GIT_STRATEGY: clone
-  GIT_SUBMODULE_STRATEGY: none
+  GIT_SUBMODULE_STRATEGY: normal
 
 ## CI Stages:
 #    manual: Manual jobs used to do CI maintainance, like wiping the directory or clearing cache
@@ -52,7 +52,7 @@ update-cache: &update-cache-manual
     - git submodule deinit -f .
     - git submodule sync
     - make prep -j $CI_CORES > make_prep.log
-    - make tidy_tools > make_tidy_tools.log
+    - make -C sdk tidy > make_tidy.log
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
@@ -115,7 +115,7 @@ prep:
     - bsg
   script:
     - make prep -j $CI_CORES > make_prep.log
-    - make tidy_tools > make_tidy_tools.log
+    - make tidy > make_tidy.log
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:

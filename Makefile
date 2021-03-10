@@ -31,6 +31,11 @@ prep_bsg: prep
 bsg_cadenv:
 	cd $(BP_SDK_DIR); git clone git@github.com:bespoke-silicon-group/bsg_cadenv.git bsg_cadenv
 
+tidy:
+	$(MAKE) -C $(BP_TOOLS_DIR) tidy
+	$(MAKE) -C $(BP_SDK_DIR) tidy
+	$(MAKE) -C $(BP_HDK_DIR) tidy
+
 ## This target just wipes the whole repo clean.
 #  Use with caution.
 bleach_all:
