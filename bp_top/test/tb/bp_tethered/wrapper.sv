@@ -150,29 +150,24 @@ module wrapper
         begin : column
           bsg_cache_wh_header_flit_s header_flit;
           assign header_flit = dram_cmd_link_lo[i];
-          logic [mem_noc_cord_width_p-1:0] header_src_cord_lo;
-          logic [mem_noc_cid_width_p-1:0] header_src_cid_lo;
-          wire [`BSG_SAFE_CLOG2(cce_per_col_lp)-1:0] dma_id_li = (header_src_cord_lo-1'b1);
-          bsg_wormhole_to_cache_dma
+          wire [`BSG_SAFE_CLOG2(cce_per_col_lp)-1:0] dma_id_li = header_flit.src_cord-1'b1;
+          bsg_wormhole_to_cache_dma_fanout
            #(.wh_flit_width_p(mem_noc_flit_width_p)
              ,.wh_cid_width_p(mem_noc_cid_width_p)
              ,.wh_len_width_p(mem_noc_len_width_p)
              ,.wh_cord_width_p(mem_noc_cord_width_p)
 
              ,.num_dma_p(cce_per_col_lp)
-             ,.addr_width_p(caddr_width_p)
-             ,.data_len_p(l2_block_size_in_fill_p)
+             ,.dma_addr_width_p(caddr_width_p)
+             ,.dma_burst_len_p(l2_block_size_in_fill_p)
              )
            wh_to_cache_dma
             (.clk_i(clk_i)
              ,.reset_i(reset_i)
 
              ,.wh_link_sif_i(dram_cmd_link_lo[i])
-             ,.wh_link_sif_o(dram_resp_link_li[i])
-
-             ,.wh_header_src_cord_o(header_src_cord_lo)
-             ,.wh_header_src_cid_o(header_src_cid_lo)
              ,.wh_dma_id_i(dma_id_li)
+             ,.wh_link_sif_o(dram_resp_link_li[i])
 
              ,.dma_pkt_o(dma_pkt_o[i*cce_per_col_lp+:cce_per_col_lp])
              ,.dma_pkt_v_o(dma_pkt_v_o[i*cce_per_col_lp+:cce_per_col_lp])

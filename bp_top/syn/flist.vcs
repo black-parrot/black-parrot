@@ -42,7 +42,6 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_decode.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf_queue.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma_to_wormhole.v
-$BASEJUMP_STL_DIR/bsg_cache/bsg_wormhole_to_cache_dma.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel_in.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel_out.v
