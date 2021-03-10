@@ -4,7 +4,7 @@ variables:
 
 ## CI Stages:
 #    manual: Manual jobs used to do CI maintainance, like wiping the directory or clearing cache
-#    prep  : Jobs to ensure the repo is up to date with tools and progs
+#    prep  : Jobs to ensure the repo is up to date with tools, prog and ucode
 #    check : Sanity checks of RTL quality
 #    test-short :
 #    test-medium:
@@ -39,7 +39,7 @@ bleach_all:
     paths:
       - $CI_PROJECT_DIR/tools/install
       - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/progs
+      - $CI_PROJECT_DIR/sdk/prog
       - $CI_PROJECT_DIR/sdk/ucode
     policy: push
 
@@ -58,7 +58,7 @@ update-cache: &update-cache-manual
     paths:
       - $CI_PROJECT_DIR/tools/install
       - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/progs
+      - $CI_PROJECT_DIR/sdk/prog
       - $CI_PROJECT_DIR/sdk/ucode
     policy: push
   artifacts:
@@ -91,7 +91,7 @@ update-cache: &update-cache-manual
     paths:
       - $CI_PROJECT_DIR/tools/install
       - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/progs
+      - $CI_PROJECT_DIR/sdk/prog
       - $CI_PROJECT_DIR/sdk/ucode
     policy: pull
   dependencies: []
@@ -121,7 +121,7 @@ prep:
     paths:
       - $CI_PROJECT_DIR/tools/install
       - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/progs
+      - $CI_PROJECT_DIR/sdk/prog
       - $CI_PROJECT_DIR/sdk/ucode
     policy: pull-push
   artifacts:
