@@ -77,7 +77,13 @@ module bp_nonsynth_dram
        logic [`dram_pkg::data_width_p-1:0] dram_data_lo;
        logic dram_data_v_lo;
 
-       localparam cache_bank_addr_width_lp = `BSG_SAFE_CLOG2(dram_max_size_p/num_dma_p);
+       if (2**`BSG_SAFE_CLOG2(num_dma_p) != num_dma_p)
+         begin : npot
+           $error("bsg_cache_to_test_dram doesn't support NPOT number of caches. Use AXI mem instead");
+         end
+
+        // TODO: May need to use actual hash function 
+       localparam cache_bank_addr_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV(dram_max_size_p, num_dma_p));
        bsg_cache_to_test_dram
         #(.num_cache_p(num_dma_p)
           ,.addr_width_p(caddr_width_p)
@@ -292,6 +298,7 @@ module bp_nonsynth_dram
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_burst_len_p(axi_burst_len_p)
          ,.mem_els_p(mem_els_p)
+         ,.init_data_p('0)
          )
        axi_mem
         (.clk_i(clk_i)
