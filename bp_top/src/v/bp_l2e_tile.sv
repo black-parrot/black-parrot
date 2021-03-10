@@ -398,8 +398,8 @@ module bp_l2e_tile
      );
 
   bsg_cache_dma_to_wormhole
-   #(.addr_width_p(caddr_width_p)
-     ,.data_len_p(l2_block_size_in_fill_p)
+   #(.dma_addr_width_p(caddr_width_p)
+     ,.dma_burst_len_p(l2_block_size_in_fill_p)
 
      ,.wh_flit_width_p(mem_noc_flit_width_p)
      ,.wh_cid_width_p(mem_noc_cid_width_p)
