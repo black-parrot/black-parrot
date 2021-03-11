@@ -52,7 +52,7 @@ update-cache: &update-cache-manual
     - git submodule deinit -f .
     - git submodule sync
     - make prep -j $CI_CORES > make_prep.log
-    - make prog -j $CI_CORES > make_prog.log
+    - make -C sdk prog -j $CI_CORES > make_prog.log
     - make -C sdk tidy > make_tidy.log
   cache:
     key: $CI_COMMIT_REF_SLUG
@@ -116,7 +116,7 @@ prep:
     - bsg
   script:
     - make prep -j $CI_CORES > make_prep.log
-    - make prog -j $CI_CORES > make_prog.log
+    - make -C sdk prog -j $CI_CORES > make_prog.log
     - make tidy > make_tidy.log
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
