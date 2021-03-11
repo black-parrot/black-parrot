@@ -62,7 +62,7 @@ module bp_cce_mmio_cfg_loader
   assign io_cmd_o = io_cmd_cast_o;
   assign io_resp_cast_i = io_resp_i;
 
-  logic [inst_width_p-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
+  logic [dword_width_gp-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
   logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
   logic [inst_width_p-1:0]    cce_inst_boot_rom_data;
 
@@ -74,7 +74,7 @@ module bp_cce_mmio_cfg_loader
   logic [dword_width_gp-1:0] cfg_data_lo;
 
   assign cce_inst_boot_rom_addr = cfg_addr_lo[0+:inst_ram_addr_width_p];
-  assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
+  assign cce_inst_boot_rom_data = {<<{cce_inst_boot_rom[cce_inst_boot_rom_addr]}};
 
   enum logic [5:0] {
     RESET
