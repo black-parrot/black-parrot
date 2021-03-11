@@ -173,12 +173,17 @@ module bp_nonsynth_dram
       logic [7:0] preload_mem [*];
       initial
         begin
-          $readmemh("prog.mem", preload_mem);
-          @(posedge clk_i)
-          for (integer i = 0; i < preload_mem.num(); i++)
-            if (preload_mem_p)
-              dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, preload_mem[i]);
-          preload_mem.delete();
+          automatic integer h = $fopen("prog.mem", "r");
+          if (h)
+            begin
+              $readmemh("prog.mem", preload_mem);
+              @(posedge clk_i)
+              for (integer i = 0; i < preload_mem.num(); i++)
+                if (preload_mem_p)
+                  dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, preload_mem[i]);
+              preload_mem.delete();
+              $fclose(h);
+            end
         end
       `else
         if (preload_mem_p)
