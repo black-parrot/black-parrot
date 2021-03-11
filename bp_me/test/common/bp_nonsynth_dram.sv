@@ -30,7 +30,7 @@ module bp_nonsynth_dram
 
    , output logic [num_dma_p-1:0][l2_fill_width_p-1:0]      dma_data_o
    , output logic [num_dma_p-1:0]                           dma_data_v_o
-   , input [num_dma_p-1:0]                                  dma_data_ready_i
+   , input [num_dma_p-1:0]                                  dma_data_ready_and_i
 
    , input [num_dma_p-1:0][l2_fill_width_p-1:0]             dma_data_i
    , input [num_dma_p-1:0]                                  dma_data_v_i
@@ -54,7 +54,7 @@ module bp_nonsynth_dram
 
          ,.dma_data_o(dma_data_o)
          ,.dma_data_v_o(dma_data_v_o)
-         ,.dma_data_ready_i(dma_data_ready_i)
+         ,.dma_data_ready_i(dma_data_ready_and_i)
 
          ,.dma_data_i(dma_data_i)
          ,.dma_data_v_i(dma_data_v_i)
@@ -105,7 +105,7 @@ module bp_nonsynth_dram
 
          ,.dma_data_o(dma_data_o)
          ,.dma_data_v_o(dma_data_v_o)
-         ,.dma_data_ready_i(dma_data_ready_i)
+         ,.dma_data_ready_i(dma_data_ready_and_i)
 
          ,.dma_data_i(dma_data_i)
          ,.dma_data_v_i(dma_data_v_i)
@@ -246,7 +246,7 @@ module bp_nonsynth_dram
 
          ,.dma_data_o(dma_data_o)
          ,.dma_data_v_o(dma_data_v_o)
-         ,.dma_data_ready_i(dma_data_ready_i)
+         ,.dma_data_ready_i(dma_data_ready_and_i)
 
          ,.dma_data_i(dma_data_i)
          ,.dma_data_v_i(dma_data_v_i)

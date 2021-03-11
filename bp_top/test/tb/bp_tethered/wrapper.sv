@@ -49,7 +49,7 @@ module wrapper
 
    , input [num_cce_p-1:0][l2_fill_width_p-1:0]             dma_data_i
    , input [num_cce_p-1:0]                                  dma_data_v_i
-   , output logic [num_cce_p-1:0]                           dma_data_ready_o
+   , output logic [num_cce_p-1:0]                           dma_data_ready_and_o
 
    , output logic [num_cce_p-1:0][l2_fill_width_p-1:0]      dma_data_o
    , output logic [num_cce_p-1:0]                           dma_data_v_o
@@ -175,7 +175,7 @@ module wrapper
 
              ,.dma_data_i(dma_data_i[i*cce_per_col_lp+:cce_per_col_lp])
              ,.dma_data_v_i(dma_data_v_i[i*cce_per_col_lp+:cce_per_col_lp])
-             ,.dma_data_ready_o(dma_data_ready_o[i*cce_per_col_lp+:cce_per_col_lp])
+             ,.dma_data_ready_and_o(dma_data_ready_and_o[i*cce_per_col_lp+:cce_per_col_lp])
 
              ,.dma_data_o(dma_data_o[i*cce_per_col_lp+:cce_per_col_lp])
              ,.dma_data_v_o(dma_data_v_o[i*cce_per_col_lp+:cce_per_col_lp])

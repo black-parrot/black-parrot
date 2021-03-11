@@ -592,7 +592,7 @@ module bp_tile
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [l2_fill_width_p-1:0] dma_data_li;
-  logic dma_data_v_li, dma_data_ready_lo;
+  logic dma_data_v_li, dma_data_ready_and_lo;
   logic [l2_fill_width_p-1:0] dma_data_lo;
   logic dma_data_v_lo, dma_data_yumi_li;
   bsg_cache
@@ -631,7 +631,7 @@ module bp_tile
 
      ,.dma_data_i(dma_data_li)
      ,.dma_data_v_i(dma_data_v_li)
-     ,.dma_data_ready_o(dma_data_ready_lo)
+     ,.dma_data_ready_o(dma_data_ready_and_lo)
 
      ,.dma_data_o(dma_data_lo)
      ,.dma_data_v_o(dma_data_v_lo)
@@ -659,7 +659,7 @@ module bp_tile
 
      ,.dma_data_o(dma_data_li)
      ,.dma_data_v_o(dma_data_v_li)
-     ,.dma_data_ready_i(dma_data_ready_lo)
+     ,.dma_data_ready_and_i(dma_data_ready_and_lo)
 
      ,.dma_data_i(dma_data_lo)
      ,.dma_data_v_i(dma_data_v_lo)
