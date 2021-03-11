@@ -95,16 +95,11 @@ tire_kick: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
 tire_kick: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
 tire_kick: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_DIR)/tire_kick: $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
-	$(MAKE) $(@D)/simsc
-	cp $(BP_SDK_PROG_DIR)/hello_world.mem  $(@D)/prog.mem
-	sed -i "s/@8/@0/g" $(@D)/prog.mem
-	cp $(BP_SDK_PROG_DIR)/hello_world.dump $(@D)/prog.dump
-	cp $(BP_SDK_PROG_DIR)/bootrom.mem  $(@D)/bootrom.mem
-	sed -i "s/@8/@0/g" $(@D)/bootrom.mem
-	cp $(BP_SDK_PROG_DIR)/bootrom.dump $(@D)/bootrom.dump
-	cp $(BP_SDK_UCODE_DIR)/$(CCE_MEM) $(@D)/cce_ucode.mem
-	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $(@D)/prog.nbf
-	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
-	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
+	$(MAKE) build.sc
+	sed "s/@8/@0/g" $(TB_PATH)/$(TB)/hello_world.mem > $(@D)/prog.mem
+	cp $(TB_PATH)/$(TB)/hello_world.dump $(@D)/prog.dump
+	## Stub out cce_ucode and bootrom since they're unused by this example
+	touch $(@D)/cce_ucode.mem
+	touch $(@D)/bootrom.mem
+	$(MAKE) sim.sc
 
