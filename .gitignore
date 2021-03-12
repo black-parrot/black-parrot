@@ -5,3 +5,4 @@ DVEfiles/
 *.tr
 *.pyc
 external/
+regress_logs/
