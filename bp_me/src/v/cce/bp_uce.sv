@@ -600,6 +600,7 @@ module bp_uce
                 mem_cmd_cast_o.header.size           = bp_bedrock_msg_size_e'(cache_req_cast_i.size);
                 mem_cmd_cast_payload.lce_id          = lce_id_i;
                 mem_cmd_cast_o.header.payload        = mem_cmd_cast_payload;
+                mem_cmd_cast_o.header.subop          = mem_wr_subop;
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o                          = mem_cmd_ready_i & ~cache_req_credits_full_o;
 
