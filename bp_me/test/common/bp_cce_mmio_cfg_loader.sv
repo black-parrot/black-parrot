@@ -64,7 +64,7 @@ module bp_cce_mmio_cfg_loader
 
   logic [dword_width_gp-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
   logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
-  logic [inst_width_p-1:0]    cce_inst_boot_rom_data;
+  logic [dword_width_gp-1:0]    cce_inst_boot_rom_data;
 
   initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
 
