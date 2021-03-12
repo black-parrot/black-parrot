@@ -53,7 +53,7 @@ update-cache: &update-cache-manual
     - git submodule sync
     - make prep -j $CI_CORES > make_prep.log
     - make -C sdk prog -j $CI_CORES > make_prog.log
-    - make -C sdk tidy > make_tidy.log
+    - make tidy > make_tidy.log
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
