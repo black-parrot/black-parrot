@@ -1,5 +1,5 @@
 variables:
-  GIT_STRATEGY: fetch
+  GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: none
 
 ## CI Stages:
