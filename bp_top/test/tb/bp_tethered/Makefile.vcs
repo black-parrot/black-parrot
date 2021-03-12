@@ -75,43 +75,25 @@ NBF_INPUTS += --addr_width=$(PADDR_WIDTH)
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
 
-$(SIM_DIR)/bootrom.riscv: $(BP_SDK_DIR)/bootrom/bootrom.riscv
+$(SIM_DIR)/bootrom.riscv: $(BP_SDK_PROG_DIR)/bootrom/bootrom.riscv
 	cp $< $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
-	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=4 --verilog-data-width=4 $< $@
+	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=8 --verilog-data-width=8 $< $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem cce_ucode.bin)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.mem bootrom.dump)
 
-SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
-SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.dump)
-SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem cce_ucode.bin)
-
-sim_sample.v: build.v
 sim_sample.v: $(SIM_DIR)/run_samplev
-sim_sample.v: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
-sim_sample.v: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
-sim_sample.v: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
-$(SIM_DIR)/run_samplev: $(SAMPLE_COLLATERAL)
+$(SIM_DIR)/run_samplev: $(filter-out $(addprefix $(SIM_DIR)/,bootrom.%),$(SIM_COLLATERAL))
 	cd $(@D); \
 		$(DROMAJO) $(@D)/prog.riscv --host $(if $(AMOEN),--enable_amo) --ncpus=$(NCPUS) --maxinsn=$(SAMPLE_START_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
 	mv $(@D)/dromajo.mainram $(@D)/prog.mainram
 	mv $(@D)/dromajo.bootram $(@D)/prog.bootram
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
-	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
-	$(SED) -i "s/@8/@0/g" $(@D)/prog.mem
 	$(RISCV_OBJCOPY) -I binary -O elf64-littleriscv -B riscv $(@D)/prog.bootram $(@D)/bootrom.riscv
-	$(RISCV_OBJDUMP) -D $(@D)/bootrom.riscv > $(@D)/bootrom.dump
-	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 --reverse-bytes=8 $(@D)/bootrom.riscv $(@D)/bootrom.mem
-	$(RISCV_OBJCOPY) -O binary $(@D)/bootrom.riscv $(@D)/bootrom.bin
-	cd $(@D); \
-		python $(MEM2NBF) $(NBF_INPUTS) > prog.nbf
-	cd $(@D); \
-		./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) | tee $(SIM_LOG)
-	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
+	$(MAKE) sim.v
 

@@ -219,15 +219,15 @@ module bp_nonsynth_host
         end
     end
 
-  localparam bootrom_els_p = 2048;
+  localparam bootrom_els_p = 1024;
   localparam lg_bootrom_els_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
   // bit helps with x pessimism with undersized bootrom
   bit [lg_bootrom_els_lp-1:0] bootrom_addr_li;
-  bit [word_width_gp-1:0] bootrom_data_lo;
-  assign bootrom_addr_li = io_cmd_lo.header.addr[2+:lg_bootrom_els_lp];
+  bit [dword_width_gp-1:0] bootrom_data_lo;
+  assign bootrom_addr_li = io_cmd_lo.header.addr[3+:lg_bootrom_els_lp];
   bsg_nonsynth_test_rom
    #(.filename_p("bootrom.mem")
-     ,.data_width_p(word_width_gp)
+     ,.data_width_p(dword_width_gp)
      ,.addr_width_p(lg_bootrom_els_lp)
      ,.hex_not_bin_p(1)
      )
@@ -235,7 +235,16 @@ module bp_nonsynth_host
     (.addr_i(bootrom_addr_li)
      ,.data_o(bootrom_data_lo)
      );
-  wire [dword_width_gp-1:0] bootrom_final_lo = {bootrom_data_lo, bootrom_data_lo};
+
+  logic [dword_width_gp-1:0] bootrom_final_lo;
+  bsg_bus_pack
+   #(.width_p(dword_width_gp))
+   bootrom_pack
+    (.data_i(bootrom_data_lo)
+     ,.size_i(io_cmd_lo.header.size[0+:2])
+     ,.sel_i(io_cmd_lo.header.addr[0+:3])
+     ,.data_o(bootrom_final_lo)
+     );
 
   bp_bedrock_cce_mem_msg_s host_io_resp_lo, domain_io_resp_lo, bootrom_io_resp_lo;
 
