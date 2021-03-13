@@ -34,7 +34,7 @@ $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
 $(SIM_DIR)/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
 	cp $^ $@
 
-$(SIM_DIR)/prog.elf: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
+$(SIM_DIR)/prog.elf: $(SIM_DIR)/prog.riscv
 	cp $^ $@
 
 $(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
@@ -63,16 +63,34 @@ SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.mem bootrom.dump)
 
+SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
+SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.elf prog.mem prog.dump)
+SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
+
+sim_sample.sc: build.sc
 sim_sample.sc: $(SIM_DIR)/run_samplesc
-$(SIM_DIR)/run_samplesc: $(filter-out $(addprefix $(SIM_DIR)/,bootrom.%),$(SIM_COLLATERAL))
+sim_sample.sc: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
+sim_sample.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
+sim_sample.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
+$(SIM_DIR)/run_samplesc: $(SAMPLE_COLLATERAL)
 	cd $(@D); \
 		$(DROMAJO) $(@D)/prog.riscv --host $(if $(AMOEN),--enable_amo) --ncpus=$(NCPUS) --maxinsn=$(SAMPLE_START_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
 	mv $(@D)/dromajo.mainram $(@D)/prog.mainram
 	mv $(@D)/dromajo.bootram $(@D)/prog.bootram
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
+	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
+	$(SED) -i "s/@8/@0/g" $(@D)/prog.mem
 	$(RISCV_OBJCOPY) -I binary -O elf64-littleriscv -B riscv $(@D)/prog.bootram $(@D)/bootrom.riscv
-	$(MAKE) sim.sc
+	$(RISCV_OBJDUMP) -D $(@D)/bootrom.riscv > $(@D)/bootrom.dump
+	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 --reverse-bytes=8 $(@D)/bootrom.riscv $(@D)/bootrom.mem
+	$(RISCV_OBJCOPY) -O binary $(@D)/bootrom.riscv $(@D)/bootrom.bin
+	cd $(@D); \
+		python $(MEM2NBF) $(NBF_INPUTS) > prog.nbf
+	cd $(@D); \
+		./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
+	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
+	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
 tire_kick: $(SIM_DIR)/tire_kick
 tire_kick: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log

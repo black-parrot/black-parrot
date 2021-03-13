@@ -36,7 +36,7 @@ prep_lite: tools
 	$(MAKE) -C sdk sdk_lite
 
 bsg_cadenv:
-	-cd $(BP_SDK_DIR); git clone git@github.com:bespoke-silicon-group/bsg_cadenv.git bsg_cadenv
+	-cd $(TOP); git clone git@github.com:bespoke-silicon-group/bsg_cadenv.git external/bsg_cadenv
 
 tidy:
 	$(MAKE) -C $(BP_TOOLS_DIR) tidy
