@@ -14,7 +14,7 @@ module bp_pce
    ,parameter sets_p = 256
    ,parameter pce_id_p = 1 // 0 = I$, 1 = D$
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
    `declare_bp_pce_l15_if_widths(paddr_width_p, dword_width_gp)
 
    // Cache parameters
@@ -89,8 +89,8 @@ module bp_pce
 
   logic cache_req_v_r;
   always_ff @(posedge clk_i) begin
-    if (cache_req_v_i | pce_l15_req_v_o)
-      cache_req_v_r <= cache_req_v_i;
+    if (cache_req_yumi_o | pce_l15_req_v_o)
+      cache_req_v_r <= cache_req_yumi_o;
   end
 
   bp_cache_req_s cache_req_r;
@@ -124,8 +124,8 @@ module bp_pce
 
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store} & cache_req_cast_i.subop inside {e_req_store};
   wire wt_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
-  wire no_return_amo_v_li = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store} & cache_req_cast_i.subop inside {e_req_amoswap, e_req_amoadd, e_req_amoxor, e_req_amoand, e_req_amoor
-                                                                                                                              ,e_req_amomin, e_req_amomax, e_req_amominu, e_req_amomaxu};
+  wire no_return_amo_v_li = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store} & cache_req_cast_i.subop inside {e_req_amosc, e_req_amoswap, e_req_amoadd, e_req_amoxor, e_req_amoand
+                                                                                                                           , e_req_amoor, e_req_amomin, e_req_amomax, e_req_amominu, e_req_amomaxu};
 
   wire store_resp_v_li = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_st_ack);
   wire load_resp_v_li  = l15_pce_ret_v_i & l15_pce_ret_cast_i.rtntype inside {e_load_ret, e_ifill_ret};
@@ -134,7 +134,7 @@ module bp_pce
   wire is_load_ret_nc  = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_load_ret) & l15_pce_ret_cast_i.noncacheable;
   wire is_ifill_ret    = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_ifill_ret) & ~l15_pce_ret_cast_i.noncacheable;
   wire is_load_ret     = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_load_ret) & ~l15_pce_ret_cast_i.noncacheable;
-  wire is_amo_lrsc_ret = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_atomic_ret) & l15_pce_ret_cast_i.atomic & (no_return_count_lo == '0);
+  wire is_amo_lrsc_ret = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_atomic_ret) & l15_pce_ret_cast_i.atomic;
   // Fetch + Op atomics also set the noncacheable bit as 1
   wire is_amo_op_ret   = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_atomic_ret) & l15_pce_ret_cast_i.atomic & l15_pce_ret_cast_i.noncacheable;
 
@@ -192,7 +192,7 @@ module bp_pce
   assign cache_req_busy_o = is_reset | is_clear | cache_req_credits_full_o;
 
   logic l15_pce_ret_yumi_lo, no_return_ret_yumi_lo;
-  assign l15_pce_ret_yumi_o = l15_pce_ret_yumi_lo | store_resp_v_li | no_return_ret_yumi_lo;
+  assign l15_pce_ret_yumi_o = l15_pce_ret_yumi_lo | store_resp_v_li;
 
   // Assigning PCE->$ packets
   assign cache_data_mem_pkt_o = cache_data_mem_pkt_cast_o;
@@ -204,19 +204,6 @@ module bp_pce
 
   logic [15:0] max_val;
 
-  //assign max_val = core_idx * core_idy * 50;
-  //assign overflow_lo = (count_lo == max_val);
-
-  //always_ff @(posedge clk_i) begin
-  //  if (reset_i | overflow_lo) begin
-  //    count_lo <= '0;
-  //  end
-  //  else begin
-  //    if (count_start_r) begin
-  //      count_lo <= count_lo + 1'b1;
-  //    end
-  //  end
-  //end
   bsg_counter_overflow_en
    #(.max_val_p(500)
      ,.init_val_p(0)
@@ -244,31 +231,6 @@ module bp_pce
      ,.data_o(count_start_r)
      );
 
-  // Need to check if incoming response is for a no return amo
-  // Counter is incremented when a no return amo is accepted
-  // Counter is decremented when the response is an amo_ret and the counter is not zero
-  // since the response for a blocking request would arrive after the responses for all 
-  // the previous non blocking requests
-
-  wire up_li   = no_return_amo_v_li & cache_req_yumi_o;
-  wire down_li = is_amo_op_ret & (no_return_count_lo != '0);
-  bsg_counter_up_down
-   #(.max_val_p(coh_noc_max_credits_p)
-     ,.init_val_p(0)
-     ,.max_step_p(1)
-     )
-   no_return_req_count
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.up_i(up_li)
-     ,.down_i(down_li)
-     ,.count_o(no_return_count_lo)
-     );
-
-  // Accept the response immediately if the counter is not zero and it is an amo_ret
-  assign no_return_ret_yumi_lo = is_amo_op_ret & (no_return_count_lo != '0);
-  
   always_comb
     begin
       cache_req_yumi_o = '0;
@@ -350,7 +312,7 @@ module bp_pce
                                             cache_req_cast_i.data[32+:8], cache_req_cast_i.data[40+:8],
                                             cache_req_cast_i.data[48+:8], cache_req_cast_i.data[56+:8]};
               pce_l15_req_v_o = cache_req_yumi_o;
-              state_n = e_ready;
+              state_n = cache_req_yumi_o ? e_uc_store_wait : e_ready;
             end
             else if (wt_store_v_li) begin
               pce_l15_req_cast_o.rqtype = e_store_req;
@@ -399,6 +361,8 @@ module bp_pce
                                                                   ? e_amo_op_maxu
                                                                   : (cache_req_cast_i.subop == e_req_amominu)
                                                                   ? e_amo_op_minu
+                                                                  : (cache_req_cast_i.subop == e_req_amosc)
+                                                                  ? e_amo_op_sc
                                                                   : e_amo_op_none);
               pce_l15_req_cast_o.address = cache_req_cast_i.addr;
               pce_l15_req_cast_o.size = (cache_req_cast_i.size == e_size_1B)
@@ -421,7 +385,7 @@ module bp_pce
                                             cache_req_cast_i.data[32+:8], cache_req_cast_i.data[40+:8],
                                             cache_req_cast_i.data[48+:8], cache_req_cast_i.data[56+:8]};
               pce_l15_req_v_o = cache_req_yumi_o;
-              state_n = e_ready;
+              state_n = cache_req_yumi_o ? e_uc_store_wait : e_ready;
             end
             else begin
               state_n = cache_req_yumi_o 
@@ -432,8 +396,7 @@ module bp_pce
 
         e_uc_store_wait:
           begin
-            l15_pce_ret_yumi_lo = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_st_ack) & l15_pce_ret_cast_i.noncacheable;
-            cache_req_complete_o = l15_pce_ret_yumi_lo;
+            l15_pce_ret_yumi_lo = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype inside {e_st_ack, e_atomic_ret}) & l15_pce_ret_cast_i.noncacheable;
 
             state_n = l15_pce_ret_yumi_lo
                       ? e_ready
@@ -454,7 +417,6 @@ module bp_pce
               pce_l15_req_cast_o.address = (pce_id_p == 1)
                                            ? {cache_req_r.addr[paddr_width_p-1:4], 4'b0}
                                            : {cache_req_r.addr[paddr_width_p-1:5], 5'b0};
-              //pce_l15_req_cast_o.address = cache_req_r.addr;
               pce_l15_req_cast_o.l1rplway = (pce_id_p == 1)
                                             ? {cache_req_r.addr[11], cache_req_metadata_r.hit_or_repl_way}
                                             : cache_req_metadata_r.hit_or_repl_way;
@@ -744,7 +706,7 @@ module bp_pce
           begin
             // Checking for the return type here since we could be in this
             // state when we receive an invalidation
-            if (is_amo_op_ret & (no_return_count_lo == '0)) begin
+            if (is_amo_op_ret) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
               // TODO: This might need some work based on how OP does this. 
               cache_data_mem_pkt_cast_o.data = (cache_req_r.addr[3] == 1'b1)
