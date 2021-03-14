@@ -1,18 +1,35 @@
-[submodule "tools"]
-	path = tools
-	url = https://github.com/black-parrot/black-parrot-tools.git
-    branch = master
-    update = checkout
+
 [submodule "sdk"]
 	path = sdk
     url = https://github.com/black-parrot-sdk/black-parrot-sdk
     branch = master
     update = checkout
+
 [submodule "hdk"]
 	path = hdk
 	url = https://github.com/black-parrot-hdk/black-parrot-hdk
     branch = master
     update = checkout
+
+[submodule "tools/systemc"]
+    path = tools/systemc
+    url = https://github.com/bsg-external/systemc
+    branch = master
+    ignore = dirty
+    update = none
+[submodule "tools/verilator"]
+    path = tools/verilator
+    url = https://github.com/verilator/verilator
+    branch = master
+    ignore = untracked
+    update = none
+[submodule "tools/bsg_sv2v"]
+    path = tools/bsg_sv2v
+    url = https://github.com/bespoke-silicon-group/bsg_sv2v
+    branch = master
+    ignore = untracked
+    update = none
+
 [submodule "external/basejump_stl"]
 	path = external/basejump_stl
     url = https://github.com/bespoke-silicon-group/basejump_stl.git

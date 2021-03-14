@@ -9,7 +9,6 @@ libs:
 	cd $(TOP); git submodule update --init --recursive --checkout $(HARDFLOAT_DIR)
 
 tools: libs
-	cd $(TOP); git submodule update --init --checkout $(BP_TOOLS_DIR)
 	$(MAKE) -C $(BP_TOOLS_DIR) tools
 
 sdk: tools
@@ -29,7 +28,6 @@ prep_bsg: prep
 	$(MAKE) -C $(BP_HDK_DIR) bsg_cadenv
 
 prep_lite: tools
-	cd $(TOP); git submodule update --init --checkout $(BP_TOOLS_DIR)
 	cd $(TOP); git submodule update --init --checkout $(BP_SDK_DIR)
 	cd $(TOP); git submodule update --init --checkout $(BP_HDK_DIR)
 	$(MAKE) -C tools tools_lite
