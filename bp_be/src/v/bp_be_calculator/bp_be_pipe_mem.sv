@@ -178,6 +178,7 @@ module bp_be_pipe_mem
      ,.sum_i(trans_info.mstatus_sum)
      ,.trans_en_i(trans_info.translation_en)
      ,.uncached_mode_i((cfg_bus.dcache_mode == e_lce_mode_uncached))
+     ,.nonspec_mode_i((cfg_bus.dcache_mode == e_lce_mode_nonspec))
      ,.domain_mask_i(cfg_bus.domain_mask)
 
      ,.w_v_i(dtlb_w_v)
@@ -194,6 +195,7 @@ module bp_be_pipe_mem
      ,.r_ptag_o(dtlb_ptag_lo)
      ,.r_miss_o(dtlb_miss_v)
      ,.r_uncached_o(dcache_uncached)
+     ,.r_nonidem_o(/* All D$ misses are non-speculative */)
      ,.r_instr_access_fault_o()
      ,.r_load_access_fault_o(load_access_fault_v)
      ,.r_store_access_fault_o(store_access_fault_v)
