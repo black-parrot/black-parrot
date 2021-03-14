@@ -236,9 +236,8 @@ module bp_nonsynth_host
      ,.data_o(bootrom_data_lo)
      );
 
-  //wire [dword_width_gp-1:0] bootrom_data_reverse = {<<{bootrom_data_lo}};
-  //wire [dword_width_gp-1:0] bootrom_data_reverse = {<<8{bootrom_data_lo}};
-  wire [dword_width_gp-1:0] bootrom_data_reverse = bootrom_data_lo;
+  // Convert to little endian
+  wire [dword_width_gp-1:0] bootrom_data_reverse = {<<8{bootrom_data_lo}};
 
   logic [dword_width_gp-1:0] bootrom_final_lo;
   bsg_bus_pack
