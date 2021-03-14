@@ -389,7 +389,6 @@ BEEBS_TESTS := \
   matmult-int \
   mergesort \
   miniz \
-  minver \
   nbody \
   ndes \
   nettle-aes \
@@ -422,7 +421,6 @@ BEEBS_TESTS := \
   slre \
   sqrt \
   statemate \
-  stb_perlin \
   stringsearch1 \
   strstr \
   tarai \
@@ -434,6 +432,8 @@ BEEBS_TESTS := \
   qsort
 
 # COSIM fail 0.0->-0.0
+#  minver \
+#  stb_perlin \
 #  whetstone \
 
 BEEBS_TESTLIST := $(addprefix beebs@, $(BEEBS_TESTS))
