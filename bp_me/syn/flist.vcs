@@ -172,3 +172,8 @@ $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.sv
 ## TOP Files
 $BP_TOP_DIR/src/v/bp_cfg.sv
+
+# BSG Staging area
+$BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
+$BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
+$BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
