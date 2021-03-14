@@ -44,10 +44,10 @@ module testbench
    , localparam tr_rom_addr_width_p = 20
 
    )
-  (input clk_i
-   , input reset_i
-   , input dram_clk_i
-   , input dram_reset_i
+  (input   bit clk_i
+   , input bit reset_i
+   , input bit dram_clk_i
+   , input bit dram_reset_i
    );
 
 export "DPI-C" function get_dram_period;

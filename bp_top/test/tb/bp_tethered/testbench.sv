@@ -50,10 +50,11 @@ module testbench
    , parameter mem_cap_in_bytes_p = 2**27
    , parameter mem_file_p         = "prog.mem"
    )
-  (input clk_i
-   , input reset_i
-   , input dram_clk_i
-   , input dram_reset_i
+  (// Bit to deal with initial X->0 transition detection
+   input bit clk_i
+   , input bit reset_i
+   , input bit dram_clk_i
+   , input bit dram_reset_i
    );
 
   import "DPI-C" context function bit get_finish(int hartid);
