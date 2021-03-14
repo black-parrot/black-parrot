@@ -41,7 +41,5 @@ echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
 # Check for failures in the report directory
-echo "Removing lrsc tests, expected to fail"
-rm */syn/reports/$1/*lrsc*.err
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
 echo "[CI CHECK] $0: PASSED" && exit 0
