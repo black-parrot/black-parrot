@@ -337,7 +337,7 @@ top-riscvdv-vcs:
   tags:
     - vcs
   script:
-    - make -C sdk riscvdv
+    - make -C sdk riscv-dv
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCVDV_TESTLIST $CI_CORES
 
 # Verilator 4.104 "internal error"
