@@ -13,6 +13,7 @@ export TOUCH_PATH   := $(BP_BE_DIR)/syn/touchfiles
 
 export TB    ?= bp_be_dcache
 export CFG   ?= e_bp_unicore_half_cfg
+export DRAM  ?= dramsim3
 export SUITE ?= none
 export PROG  ?= double_word_test
 export TAG   ?= none

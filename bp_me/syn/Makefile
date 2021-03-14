@@ -14,6 +14,7 @@ export TOUCH_PATH   := $(BP_ME_DIR)/syn/touchfiles
 ## End specific flags and variables
 export TB    ?= bp_cce
 export CFG   ?= e_bp_multicore_half_cfg
+export DRAM  ?= dramsim3
 export SUITE ?= cce
 export PROG  ?= none
 export TAG   ?= none

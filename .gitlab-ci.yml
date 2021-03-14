@@ -86,6 +86,7 @@ update-cache: &update-cache-manual
   before_script:
     - echo "Forcefully updating submodules"
     - git submodule update --init --force
+    - git submodule update --init --recursive $CI_PROJECT_DIR/external/basejump_stl
     - echo "Making CCE ucode"
     - make ucode > make_ucode.log
   artifacts:

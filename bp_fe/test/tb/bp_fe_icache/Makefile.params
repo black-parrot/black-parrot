@@ -4,10 +4,6 @@ DRAM_TRACE_P   ?= 0
 ICACHE_TRACE_P ?= 0
 UCE_P          ?= 0
 
-export DRAM_PKG ?= bsg_dramsim3_hbm2_4gb_x128_pkg
-export DRAM_MODEL ?= den2048Mb+sg5+x16+FULL_MEM
-
-export DRAM_FIXED_LATENCY ?= 10
 export BP_SIM_CLK_PERIOD ?= 1000
 
 export DUT_PARAMS = 
@@ -20,8 +16,7 @@ export TB_PARAMS  = -pvalue+uce_p=$(UCE_P) \
 
 export DUT_DEFINES =
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
-                     +define+dram_pkg=$(DRAM_PKG) \
-                     +define+$(DRAM_MODEL)
+                     +define+den2048Mb+sg5+x16+FULL_MEM
 
 export HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)
 export HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)

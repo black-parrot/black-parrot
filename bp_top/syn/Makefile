@@ -13,6 +13,7 @@ export TOUCH_PATH   := $(BP_TOP_DIR)/syn/touchfiles
 
 export TB    ?= bp_tethered
 export CFG   ?= e_bp_default_cfg
+export DRAM  ?= dramsim3
 export SUITE ?= bp_tests
 export PROG  ?= hello_world
 export TAG   ?= none
