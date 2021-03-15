@@ -316,31 +316,33 @@ module bp_uce
       logic [fill_cnt_width_lp-1:0] fill_cnt;
       bsg_counter_clear_up
        #(.max_val_p(block_size_in_fill_lp-1)
-        ,.init_val_p(0)
-        ,.disable_overflow_warning_p(1))
-      fill_counter
+         ,.init_val_p(0)
+         ,.disable_overflow_warning_p(1)
+         )
+       fill_counter
         (.clk_i(clk_i)
-        ,.reset_i(reset_i)
+         ,.reset_i(reset_i)
 
-        ,.clear_i('0)
-        ,.up_i(fill_up)
+         ,.clear_i('0)
+         ,.up_i(fill_up)
 
-        ,.count_o(fill_cnt)
-        );
+         ,.count_o(fill_cnt)
+         );
       assign fill_done = (fill_cnt == block_size_in_fill_lp-1);
 
       bsg_counter_set_en
        #(.max_val_p(block_size_in_fill_lp-1)
-        ,.reset_val_p(0))
+         ,.reset_val_p(0)
+         )
        mem_cmd_counter
         (.clk_i(clk_i)
-        ,.reset_i(reset_i)
+         ,.reset_i(reset_i)
 
-        ,.set_i(cache_req_yumi_o)
-        ,.en_i(mem_cmd_up)
-        ,.val_i(first_cmd_cnt)
-        ,.count_o(mem_cmd_cnt)
-        );
+         ,.set_i(cache_req_yumi_o)
+         ,.en_i(mem_cmd_up)
+         ,.val_i(first_cmd_cnt)
+         ,.count_o(mem_cmd_cnt)
+         );
 
       assign first_cmd_cnt = cache_req_cast_i.addr[block_offset_width_lp-1-:fill_cnt_width_lp];
       assign last_cmd_cnt = (cache_req_r.addr[fill_offset_width_lp+:fill_cnt_width_lp] - fill_cnt_width_lp'(1));
@@ -353,7 +355,8 @@ module bp_uce
   bsg_counter_clear_up
    #(.max_val_p(sets_p-1)
      ,.init_val_p(0)
-     ,.disable_overflow_warning_p(1))
+     ,.disable_overflow_warning_p(1)
+     )
    index_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -370,7 +373,8 @@ module bp_uce
   bsg_counter_clear_up
    #(.max_val_p(assoc_p-1)
      ,.init_val_p(0)
-     ,.disable_overflow_warning_p(1))
+     ,.disable_overflow_warning_p(1)
+     )
    way_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -419,9 +423,7 @@ module bp_uce
 
   logic [fill_width_p-1:0] writeback_data;
   bsg_mux
-   #(.width_p(fill_width_p)
-     ,.els_p(block_size_in_fill_lp)
-     )
+   #(.width_p(fill_width_p), .els_p(block_size_in_fill_lp))
    writeback_mux
     (.data_i(dirty_data_r)
      ,.sel_i(mem_cmd_cnt)
@@ -593,13 +595,14 @@ module bp_uce
           end
         e_ready:
           begin
-            if (((uc_store_v_li || uc_amo_v_li) && (~uc_hit_v_li || (l1_writethrough_p == 1))) || wt_store_v_li)
+            if ((uc_store_v_li && (~uc_hit_v_li || (l1_writethrough_p == 1))) || wt_store_v_li)
               begin
                 mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_uc_wr;
                 mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;
                 mem_cmd_cast_o.header.size           = bp_bedrock_msg_size_e'(cache_req_cast_i.size);
                 mem_cmd_cast_payload.lce_id          = lce_id_i;
                 mem_cmd_cast_o.header.payload        = mem_cmd_cast_payload;
+                mem_cmd_cast_o.header.subop          = mem_wr_subop;
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o                          = mem_cmd_ready_i & ~cache_req_credits_full_o;
 

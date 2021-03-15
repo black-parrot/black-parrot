@@ -1,5 +1,5 @@
 variables:
-  GIT_STRATEGY: fetch
+  GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: none
 
 ## CI Stages:
@@ -84,22 +84,17 @@ update-cache: &update-cache-manual
     - top_dev
     - sw_dev
   before_script:
-    - echo "Forcefully updating submodules"
-    - git submodule update --init --force
+    - echo "Updating hardware libraries"
+    - git submodule update --init --recursive external/basejump_stl
+    - git submodule update --init --recursive external/HardFloat
     - echo "Making CCE ucode"
     - make ucode > make_ucode.log
   artifacts:
     when: always
     paths:
       - "*.log"
-      - "bp_fe/syn/reports/"
-      - "bp_be/syn/reports/"
-      - "bp_me/syn/reports/"
-      - "bp_top/syn/reports/"
-      - "bp_fe/syn/logs/"
-      - "bp_be/syn/logs/"
-      - "bp_me/syn/logs/"
-      - "bp_top/syn/logs/"
+      - "*/syn/reports/"
+      - "*/syn/logs/"
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
@@ -116,7 +111,7 @@ update-cache: &update-cache-manual
     policy: pull
   dependencies: []
   retry:
-    max: 2
+    max: 1
     when:
       - script_failure
 
@@ -299,6 +294,23 @@ top-riscv-tests-vcs:
     - vcs
   script:
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCV_TESTLIST $CI_CORES
+
+top-amo-tests-verilator:
+  <<: *job_definition
+  when: manual
+  stage: test-short
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/single_core_atomics.sh verilator $CI_CORES
+
+top-amo-tests-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/single_core_atomics.sh vcs $CI_CORES
 
 dcache-vcs:
   <<: *job_definition

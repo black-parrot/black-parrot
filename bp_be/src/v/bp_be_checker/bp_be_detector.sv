@@ -260,11 +260,12 @@ module bp_be_detector
                      | ptw_busy_i
                      | (~mem_ready_i & isd_status_cast_i.mem_v)
                      | (~long_ready_i & isd_status_cast_i.long_v)
+                     | (irq_pending_i & ~replay_pending_i)
                      | cmd_haz_v;
     end
 
   // Generate calculator control signals
-  assign dispatch_v_o  = ~(control_haz_v | data_haz_v | struct_haz_v) & ~irq_pending_i;
+  assign dispatch_v_o  = ~(control_haz_v | data_haz_v | struct_haz_v);
   assign interrupt_v_o = irq_pending_i & ~replay_pending_i & ~ptw_busy_i & ~cfg_bus_cast_i.freeze;
 
   bp_be_dep_status_s dep_status_n;

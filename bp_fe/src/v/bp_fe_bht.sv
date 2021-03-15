@@ -74,40 +74,29 @@ module bp_fe_bht
     else
       state_r <= state_n;
 
-  wire                       w_v_li = is_clear | w_v_i;
+  wire rw_same_addr = r_v_i & w_v_i & (idx_r_i == idx_w_i);
+  wire                       w_v_li = is_clear | (w_v_i & ~rw_same_addr);
   wire [idx_width_lp-1:0] w_addr_li = is_clear ? init_cnt : idx_w_i;
   wire [1:0]              w_data_li = is_clear ? bht_init_lp : correct_i ? {val_i[1], 1'b0} : {val_i[1]^val_i[0], 1'b1};
 
   wire                       r_v_li = r_v_i;
   wire [idx_width_lp-1:0] r_addr_li = idx_r_i;
   logic [1:0] r_data_lo;
-  logic conflict_lo;
-  // 64 is a reasonable value, but there's an optimization space here
-  localparam fat_width_lp = 64;
-  localparam skinny_width_lp = 2;
-  bsg_mem_1r1w_sync_mask_write_bit_reshape
-   #(.skinny_width_p(skinny_width_lp)
-     ,.skinny_els_p(bht_els_lp)
-     ,.fat_width_p(fat_width_lp)
-     ,.fat_els_p(bht_els_lp/(fat_width_lp/skinny_width_lp))
-     ,.drop_write_not_read_p(1)
-     )
+  bsg_mem_1r1w_sync
+   #(.width_p(2), .els_p(bht_els_lp))
    bht_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.w_v_i(w_v_li)
-     ,.w_mask_i('1)
      ,.w_addr_i(w_addr_li)
      ,.w_data_i(w_data_li)
 
      ,.r_v_i(r_v_li)
      ,.r_addr_i(r_addr_li)
      ,.r_data_o(r_data_lo)
-
-     ,.conflict_o(conflict_lo)
      );
-  assign w_yumi_o = is_run & w_v_i & ~conflict_lo;
+  assign w_yumi_o = is_run & w_v_i & ~rw_same_addr;
 
   logic r_v_r;
   bsg_dff_reset
