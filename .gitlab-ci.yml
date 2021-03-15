@@ -39,6 +39,8 @@ bleach_all:
     paths:
       - $CI_PROJECT_DIR/tools/install
       - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/include
+      - $CI_PROJECT_DIR/sdk/lib
       - $CI_PROJECT_DIR/sdk/prog
       - $CI_PROJECT_DIR/sdk/ucode
     policy: push
@@ -59,6 +61,8 @@ update-cache: &update-cache-manual
     paths:
       - $CI_PROJECT_DIR/tools/install
       - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/include
+      - $CI_PROJECT_DIR/sdk/lib
       - $CI_PROJECT_DIR/sdk/prog
       - $CI_PROJECT_DIR/sdk/ucode
     policy: push
@@ -92,6 +96,8 @@ update-cache: &update-cache-manual
     paths:
       - $CI_PROJECT_DIR/tools/install
       - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/include
+      - $CI_PROJECT_DIR/sdk/lib
       - $CI_PROJECT_DIR/sdk/prog
       - $CI_PROJECT_DIR/sdk/ucode
     policy: pull
@@ -123,6 +129,8 @@ prep:
     paths:
       - $CI_PROJECT_DIR/tools/install
       - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/include
+      - $CI_PROJECT_DIR/sdk/lib
       - $CI_PROJECT_DIR/sdk/prog
       - $CI_PROJECT_DIR/sdk/ucode
     policy: pull-push
