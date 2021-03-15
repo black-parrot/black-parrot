@@ -105,9 +105,9 @@ bp_top/test/tb/bp_tethered/Makefile.testlist. `make prog` builds the bp-tests, r
 - *\_TRACE\_P: Enable a specific tracer (tracer list can be found in the [SW Developer Guide](software_guide.md))
 
 ### Example Commands
-    make build_dump.v sim_dump.v SUITE=bp_tests PROG=hello_world  # Run hello_world in VCS with dumping
-    make wave.v SUITE=bp_tests PROG=hello_world              # Open hello_world waveform in dve
-    make build_cov.sc sim.sc SUITE=riscv_tests PROG=rsort    # Run hello_world in Verilator with coverage
+    make build_dump.v sim_dump.v SUITE=bp-tests PROG=hello_world  # Run hello_world in VCS with dumping
+    make wave.v SUITE=bp-tests PROG=hello_world              # Open hello_world waveform in dve
+    make build_cov.sc sim.sc SUITE=riscv-tests PROG=rsort    # Run hello_world in Verilator with coverage
 
     make run_testlist.sc -j 10 TESTLIST=BEEBS_TESTLIST    # Run beebs suite in Verilator with 10 threads
     make run_testlist.v -j 5   TESTLIST=RISCV_TESTLIST    # Run riscv-tests suite in VCS with 5 threads
