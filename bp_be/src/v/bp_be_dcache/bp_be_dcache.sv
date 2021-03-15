@@ -1252,7 +1252,7 @@ module bp_be_dcache
   ///////////////////////////
   // Uncached Load Storage
   ///////////////////////////
-  wire uncached_pending_set = cache_req_yumi_i & uncached_load_req;
+  wire uncached_pending_set = cache_req_yumi_i & (uncached_load_req | l2_amo_req);
   // Invalidate uncached data if the cache when we successfully complete the request
   // TODO: We currently block interrupts until we have replayed a cache miss or
   //   uncached load. We should decouple the cache writeback from replay in the future
