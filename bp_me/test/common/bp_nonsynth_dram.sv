@@ -162,6 +162,8 @@ module bp_nonsynth_dram
 
           ,.write_done_o()
           ,.write_done_ch_addr_o()
+          ,.print_stat_v_i('0)
+          ,.print_stat_tag_i('0)
           );
 
 
