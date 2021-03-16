@@ -93,7 +93,7 @@ mem_blocks = cache_blocks * args.mem_size
 #eprint('memory bytes: {0}'.format(mem_bytes))
 
 # base memory address
-mem_base = 0 if skip_init else args.dram_offset
+mem_base = args.dram_offset
 mem_high = mem_base + mem_bytes
 #eprint('memory base: 0x{0:010x}'.format(mem_base))
 #eprint('memory high: 0x{0:010x}'.format(mem_high))
@@ -160,10 +160,8 @@ for i in range(args.num_instr):
   elif lce_uncached:
     uncached_req = 1
 
-  # adjust request address depending on CCE mode
-  # normal CCE mode expects memory requests to DRAM region of memory
-  if not skip_init:
-    addr = addr + mem_base
+  # adjust request address to dram base
+  addr = addr + mem_base
 
   check_valid_addr(addr)
 

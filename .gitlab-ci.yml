@@ -37,12 +37,9 @@ bleach_all:
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/tools/install
-      - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/include
-      - $CI_PROJECT_DIR/sdk/lib
-      - $CI_PROJECT_DIR/sdk/prog
-      - $CI_PROJECT_DIR/sdk/ucode
+      - $CI_PROJECT_DIR/tools/
+      - $CI_PROJECT_DIR/sdk/
+      - $CI_PROJECT_DIR/hdk/
     policy: push
 
 update-cache: &update-cache-manual
@@ -59,12 +56,9 @@ update-cache: &update-cache-manual
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/tools/install
-      - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/include
-      - $CI_PROJECT_DIR/sdk/lib
-      - $CI_PROJECT_DIR/sdk/prog
-      - $CI_PROJECT_DIR/sdk/ucode
+      - $CI_PROJECT_DIR/tools/
+      - $CI_PROJECT_DIR/sdk/
+      - $CI_PROJECT_DIR/hdk/
     policy: push
   artifacts:
     when: always
@@ -88,17 +82,20 @@ update-cache: &update-cache-manual
     when: always
     paths:
       - "*.log"
-      - "*/syn/reports/"
-      - "*/syn/logs/"
+      - "bp_fe/syn/reports/"
+      - "bp_be/syn/reports/"
+      - "bp_me/syn/reports/"
+      - "bp_top/syn/reports/"
+      - "bp_fe/syn/logs/"
+      - "bp_be/syn/logs/"
+      - "bp_me/syn/logs/"
+      - "bp_top/syn/logs/"
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/tools/install
-      - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/include
-      - $CI_PROJECT_DIR/sdk/lib
-      - $CI_PROJECT_DIR/sdk/prog
-      - $CI_PROJECT_DIR/sdk/ucode
+      - $CI_PROJECT_DIR/tools/
+      - $CI_PROJECT_DIR/sdk/
+      - $CI_PROJECT_DIR/hdk/
     policy: pull
   dependencies: []
   retry:
@@ -125,12 +122,9 @@ prep:
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/tools/install
-      - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/include
-      - $CI_PROJECT_DIR/sdk/lib
-      - $CI_PROJECT_DIR/sdk/prog
-      - $CI_PROJECT_DIR/sdk/ucode
+      - $CI_PROJECT_DIR/tools/
+      - $CI_PROJECT_DIR/sdk/
+      - $CI_PROJECT_DIR/hdk/
     policy: pull-push
   artifacts:
     when: always

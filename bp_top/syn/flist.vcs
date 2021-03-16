@@ -91,6 +91,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_cin.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_ripple_carry.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_arb_fixed.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_arb_round_robin.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_array_concentrate_static.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_buf.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_buf_ctrl.v
@@ -122,9 +123,9 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank_reverse.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative_controller.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
-$BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_bitwise.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_butterfly.v
@@ -222,8 +223,6 @@ $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 # Cache
-$BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.sv
-$BP_ME_DIR/src/v/cache/bp_me_cache_slice.sv
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.sv
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.sv
@@ -295,5 +294,7 @@ $BP_TOP_DIR/src/v/bp_tile.sv
 $BP_TOP_DIR/src/v/bp_tile_node.sv
 
 # BSG Staging area
-$BP_TOP_DIR/src/v/bsg_async_noc_link.sv
+$BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
+$BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
+$BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
 $BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_mask_write_bit_reshape.v

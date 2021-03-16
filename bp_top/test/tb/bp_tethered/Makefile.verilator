@@ -1,5 +1,6 @@
 $(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv $(LINT_DIR)/test_bp.cpp:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
@@ -15,6 +16,7 @@ LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv tes
 
 $(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.cpp:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
@@ -41,9 +43,7 @@ $(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
 	cp $< $@
 
 NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
-ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem --skip_zeros
-endif
 ifeq ($(NBF_CONFIG_P), 1)
 NBF_INPUTS += --config
 endif

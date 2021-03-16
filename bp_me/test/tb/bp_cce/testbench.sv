@@ -26,13 +26,9 @@ module testbench
    , parameter dram_trace_p = 0
    , parameter dram_fixed_latency_p=0
 
-   // memory params
-   , parameter mem_load_p         = 0
-   , parameter mem_file_p         = "inv"
-   , parameter mem_cap_in_bytes_p = 2**20
-   // CCE testing uses any address it wants, no DRAM offset required
-   , parameter mem_offset_p       = '0
-
+   // DRAM parameters
+   , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
+   
    // size of CCE-Memory buffers for cmd/resp messages
    // for this testbench (one LCE, one CCE, one memory) only need enough space to hold as many
    // cmds/responses can be generated for a single LCE request
@@ -409,15 +405,11 @@ mem_resp_buffer
   );
 
 // DRAM
-bp_mem
+bp_nonsynth_mem
 #(.bp_params_p(bp_params_p)
-  ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-  ,.mem_load_p(0)
-  ,.mem_file_p(mem_file_p)
-  ,.mem_offset_p(mem_offset_p)
-  ,.use_ddr_p(0)
-  ,.use_dramsim3_p(0)
-  ,.dram_fixed_latency_p(dram_fixed_latency_p)
+  ,.dram_type_p(dram_type_p)
+  ,.mem_els_p(2**20)
+  ,.preload_mem_p(1)
   )
 mem
  (.clk_i(clk_i)
