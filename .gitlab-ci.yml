@@ -80,7 +80,6 @@ update-cache: &update-cache-manual
     - me_dev
     - top_dev
     - sw_dev
-    - refactor_repos
   before_script:
     - echo "Updating hardware libraries"
     - git submodule update --init --recursive external/basejump_stl
@@ -117,7 +116,6 @@ prep:
     - me_dev
     - top_dev
     - sw_dev
-    - refactor_repos
   tags:
     - bsg
   script:
