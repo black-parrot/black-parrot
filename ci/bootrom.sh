@@ -28,7 +28,7 @@ cfgs=(\
     )
 
 # The base command to append the configuration to
-cmd_base="make -C bp_top/syn build.${SUFFIX} sim.${SUFFIX} NBF_CONFIG_P=0 COSIM_P=1 SUITE=bp_tests PROG=cache_hammer"
+cmd_base="make -C bp_top/syn build.${SUFFIX} sim.${SUFFIX} NBF_CONFIG_P=0 COSIM_P=1 SUITE=bp-tests PROG=cache_hammer"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"

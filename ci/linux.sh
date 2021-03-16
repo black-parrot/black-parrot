@@ -30,7 +30,7 @@ let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Build linux binary
-make -C bp_common/test linux
+make -C sdk linux
 
 # The base command to append the configuration to
 cmd_base="make -j ${CORES_PER_JOB} -C bp_top/syn run_psample.v SUITE=linux PROG=linux SAMPLE_INSTR_P=10000000 SAMPLE_MEMSIZE=256 COSIM_P=1"

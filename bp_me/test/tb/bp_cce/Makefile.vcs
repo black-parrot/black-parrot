@@ -52,8 +52,8 @@ BUILD_COLLATERAL += $(addprefix $(BUILD_DIR)/, bsg_trace_rom_0.v)
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
 	@ln -nsf $(<D)/$(@F) $@
 
-$(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
-	@cp $^ $@
+$(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
+	cp $< $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)

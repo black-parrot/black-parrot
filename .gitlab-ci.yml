@@ -1,10 +1,10 @@
 variables:
   GIT_STRATEGY: clone
-  GIT_SUBMODULE_STRATEGY: none
+  GIT_SUBMODULE_STRATEGY: normal
 
 ## CI Stages:
 #    manual: Manual jobs used to do CI maintainance, like wiping the directory or clearing cache
-#    prep  : Jobs to ensure the repo is up to date with tools and progs
+#    prep  : Jobs to ensure the repo is up to date with tools, prog and ucode
 #    check : Sanity checks of RTL quality
 #    test-short :
 #    test-medium:
@@ -37,16 +37,12 @@ bleach_all:
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/bp_common/test/mem
-      - $CI_PROJECT_DIR/external/bin
-      - $CI_PROJECT_DIR/external/lib
-      - $CI_PROJECT_DIR/external/lib64
-      - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/include
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
-      - $CI_PROJECT_DIR/external/share
-      - $CI_PROJECT_DIR/external/touchfiles
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/include
+      - $CI_PROJECT_DIR/sdk/lib
+      - $CI_PROJECT_DIR/sdk/prog
+      - $CI_PROJECT_DIR/sdk/ucode
     policy: push
 
 update-cache: &update-cache-manual
@@ -58,21 +54,22 @@ update-cache: &update-cache-manual
     - git submodule deinit -f .
     - git submodule sync
     - make prep -j $CI_CORES > make_prep.log
-    - make tidy_tools > make_tidy_tools.log
+    - make -C sdk prog -j $CI_CORES > make_prog.log
+    - make tidy > make_tidy.log
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/bp_common/test/mem
-      - $CI_PROJECT_DIR/external/bin
-      - $CI_PROJECT_DIR/external/lib
-      - $CI_PROJECT_DIR/external/lib64
-      - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/include
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
-      - $CI_PROJECT_DIR/external/share
-      - $CI_PROJECT_DIR/external/touchfiles
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/include
+      - $CI_PROJECT_DIR/sdk/lib
+      - $CI_PROJECT_DIR/sdk/prog
+      - $CI_PROJECT_DIR/sdk/ucode
     policy: push
+  artifacts:
+    when: always
+    paths:
+      - "*.log"
 
 .job_template: &job_definition
   only:
@@ -87,8 +84,6 @@ update-cache: &update-cache-manual
     - echo "Updating hardware libraries"
     - git submodule update --init --recursive external/basejump_stl
     - git submodule update --init --recursive external/HardFloat
-    - echo "Making CCE ucode"
-    - make ucode > make_ucode.log
   artifacts:
     when: always
     paths:
@@ -98,16 +93,12 @@ update-cache: &update-cache-manual
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/bp_common/test/mem
-      - $CI_PROJECT_DIR/external/bin
-      - $CI_PROJECT_DIR/external/lib
-      - $CI_PROJECT_DIR/external/lib64
-      - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/include
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
-      - $CI_PROJECT_DIR/external/share
-      - $CI_PROJECT_DIR/external/touchfiles
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/include
+      - $CI_PROJECT_DIR/sdk/lib
+      - $CI_PROJECT_DIR/sdk/prog
+      - $CI_PROJECT_DIR/sdk/ucode
     policy: pull
   dependencies: []
   retry:
@@ -116,51 +107,35 @@ update-cache: &update-cache-manual
       - script_failure
 
 prep:
-  <<: *job_definition
   stage: prep
+  only:
+    - master
+    - dev
+    - fe_dev
+    - be_dev
+    - me_dev
+    - top_dev
+    - sw_dev
   tags:
     - bsg
   script:
     - make prep -j $CI_CORES > make_prep.log
+    - make -C sdk prog -j $CI_CORES > make_prog.log
+    - make tidy > make_tidy.log
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/bp_common/test/mem
-      - $CI_PROJECT_DIR/external/bin
-      - $CI_PROJECT_DIR/external/lib
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/lib64
-      - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/libexec
-      - $CI_PROJECT_DIR/external/include
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
-      - $CI_PROJECT_DIR/external/share
-      - $CI_PROJECT_DIR/external/touchfiles
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/include
+      - $CI_PROJECT_DIR/sdk/lib
+      - $CI_PROJECT_DIR/sdk/prog
+      - $CI_PROJECT_DIR/sdk/ucode
     policy: pull-push
-
-## This job runs on fix branches only. We generally assume fix branches do not have major
-#    architectural changes that need to be thoroughly tested. Simply checking synthesizability
-#    susses out most typos.
-# TODO: This target is not super useful, but consumes a lot of CI cycles...
-#fix_job:
-#  only:
-#    - /^.*fix.*$/
-#  stage: check
-#  tags:
-#    - bsg
-#    - vcs
-#  script:
-#    - $CI_PROJECT_DIR/ci/check_design.sh
-#    - make -C bp_top/syn clean
-#  cache:
-#    key: "dev"
-#    paths:
-#      - $CI_PROJECT_DIR/external/
-#    policy: pull
-#  artifacts:
-#    when: always
-#    paths:
-#      - "bp_top/syn/reports/"
+  artifacts:
+    when: always
+    paths:
+      - "*.log"
 
 check-design:
   <<: *job_definition
@@ -363,11 +338,12 @@ top-misc-verilator:
 
 top-riscvdv-vcs:
   <<: *job_definition
+  when: manual
   stage: test-medium
-  allow_failure: true
   tags:
     - vcs
   script:
+    - make -C sdk riscv-dv
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCVDV_TESTLIST $CI_CORES
 
 # Verilator 4.104 "internal error"

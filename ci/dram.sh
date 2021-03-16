@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SUITE=bp_tests
+SUITE=bp-tests
 PROG=cache_hammer
 
 # Run a test with DRAMsim3

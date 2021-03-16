@@ -124,6 +124,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative_controller.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_bitwise.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_butterfly.v
@@ -177,7 +178,6 @@ $HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
-$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_mask_write_bit_reshape.v
 $BP_COMMON_DIR/src/v/bp_mmu.sv
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
@@ -296,3 +296,4 @@ $BP_TOP_DIR/src/v/bp_tile_node.sv
 
 # BSG Staging area
 $BP_TOP_DIR/src/v/bsg_async_noc_link.sv
+$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_mask_write_bit_reshape.v
