@@ -25,10 +25,10 @@ module testbench
   , localparam yumi_min_delay_lp = 0
   , localparam yumi_max_delay_lp = 15
   )
-  ( input clk_i
-  , input reset_i
-  , input dram_clk_i
-  , input dram_reset_i
+  ( input bit clk_i
+  , input bit reset_i
+  , input bit dram_clk_i
+  , input bit dram_reset_i
   );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)

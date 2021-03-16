@@ -45,10 +45,11 @@ module testbench
    , parameter no_bind_p                   = 0
 
    )
-  (input clk_i
-   , input reset_i
-   , input dram_clk_i
-   , input dram_reset_i
+  (// Bit to deal with initial X->0 transition detection
+   input bit clk_i
+   , input bit reset_i
+   , input bit dram_clk_i
+   , input bit dram_reset_i
    );
 
   import "DPI-C" context function bit get_finish(int hartid);
