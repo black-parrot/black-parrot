@@ -42,29 +42,6 @@ bleach_all:
       - $CI_PROJECT_DIR/hdk/
     policy: push
 
-update-cache: &update-cache-manual
-  when: manual
-  stage: manual
-  tags:
-    - bsg
-  script:
-    - git submodule deinit -f .
-    - git submodule sync
-    - make prep -j $CI_CORES > make_prep.log
-    - make -C sdk prog -j $CI_CORES > make_prog.log
-    - make tidy > make_tidy.log
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - $CI_PROJECT_DIR/tools/
-      - $CI_PROJECT_DIR/sdk/
-      - $CI_PROJECT_DIR/hdk/
-    policy: push
-  artifacts:
-    when: always
-    paths:
-      - "*.log"
-
 .job_template: &job_definition
   only:
     - master
@@ -103,7 +80,7 @@ update-cache: &update-cache-manual
     when:
       - script_failure
 
-prep:
+prep: &job_definition
   stage: prep
   only:
     - master
@@ -115,21 +92,25 @@ prep:
     - sw_dev
   tags:
     - bsg
+  before_script:
+    - echo "Prepping cache"
   script:
+    - git submodule deinit -f .
+    - git submodule sync
     - make prep -j $CI_CORES > make_prep.log
     - make -C sdk prog -j $CI_CORES > make_prog.log
     - make tidy > make_tidy.log
-  cache: &global_cache
+  artifacts:
+    when: always
+    paths:
+      - "*.log"
+  cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
       - $CI_PROJECT_DIR/tools/
       - $CI_PROJECT_DIR/sdk/
       - $CI_PROJECT_DIR/hdk/
     policy: pull-push
-  artifacts:
-    when: always
-    paths:
-      - "*.log"
 
 check-design:
   <<: *job_definition
