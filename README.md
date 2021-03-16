@@ -96,6 +96,22 @@ A key feature of using BlackParrot is that it has been heavily validated in both
 ## Continuous Integration
 Upon commit to the listed branch, a functional regression consisting of full-system tests and module level tests is run and checked for correctness. Additionally, the design is checked with Synopsys DC to verify synthesizability. Work is in progress to continuously monitor PPA.
 
+## Help us out
+
+Our goal with BlackParrot is to bootstrap a community-maintained RISC-V core, and we would love for you to get involved. Here are a few starter projects you could do to get your feet wet! Contact us more for details.
+
+- Our integer divider could be parameterized to do 2 or more cycles per iteration. (Note: Currently somebody is working on this.)
+- Add a parameter to enable / disable FPU logic (including register file, bypass paths, FP divider and FMAC, etc.)
+- Improve the mapping to FPGA 
+  - We use a [portability layer for FPGA](https://github.com/bespoke-silicon-group/basejump_stl/blob/master/hard/ultrascale_plus) that can be optimized, e.g.,
+  - BlackParrot uses some SRAMs that use write bit-masks, which are commonly used in ASICs. Our [current mapping for FPGA](https://github.com/bespoke-silicon-group/basejump_stl/blob/master/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v) could be made more efficient, reducing LUT usage.
+  - Other mappings, such the multiplier to DSP48, could be improved.
+  - We have not looked at frequency tuning BP for FPGA at all. The ideal changes would not result in much ASIC/FPGA code bifurcation.
+- We always appreciate pull requests to fix bugs in the documentation, or bug reports that instructions don't work correctly.
+- The RISC-V GCC compiler has some inefficiencies that we have identified, if you have compiler experience you could raise the benchmark numbers for all RISC-V cores versus other ISA's!
+- Our current L2 cache implementation (bsg_cache) is blocking. We would like a non-blocking implementation that supports the same interface and features as the current one, so that can be a configuration option for BlackParrot. It may even be possible to reuse the current code. Contact us to discuss possible implementation approaches!
+- Build a cool demonstration platform with interesting I/O devices using the $129 Arty S7-50 FPGA. 
+
 ## Attribution
 If used for academic research, please cite:
 

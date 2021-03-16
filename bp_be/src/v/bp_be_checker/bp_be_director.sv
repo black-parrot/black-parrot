@@ -38,12 +38,14 @@ module bp_be_director
    , output logic                       poison_isd_o
    , output logic                       suppress_iss_o
    , input                              irq_waiting_i
+   , output logic                       cmd_empty_o
+   , output logic                       cmd_full_n_o
+   , output logic                       cmd_full_r_o
 
    // FE-BE interface
    , output logic [fe_cmd_width_lp-1:0] fe_cmd_o
    , output logic                       fe_cmd_v_o
    , input                              fe_cmd_yumi_i
-   , output logic                       fe_cmd_full_o
 
    , input [branch_pkt_width_lp-1:0]    br_pkt_i
    , input [commit_pkt_width_lp-1:0]    commit_pkt_i
@@ -264,24 +266,24 @@ module bp_be_director
         end
     end
 
-  bsg_fifo_1r1w_small
-   #(.width_p(fe_cmd_width_lp)
-     ,.els_p(fe_cmd_fifo_els_p)
-     ,.ready_THEN_valid_p(1)
-     )
+  bp_be_cmd_queue
+   #(.bp_params_p(bp_params_p))
    fe_cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(fe_cmd_li)
-     ,.v_i(fe_cmd_v_li)
-     ,.ready_o(fe_cmd_ready_lo)
+     ,.fe_cmd_i(fe_cmd_li)
+     ,.fe_cmd_v_i(fe_cmd_v_li)
+     ,.fe_cmd_ready_o(fe_cmd_ready_lo)
 
-     ,.data_o(fe_cmd_o)
-     ,.v_o(fe_cmd_v_o)
-     ,.yumi_i(fe_cmd_yumi_i)
+     ,.fe_cmd_o(fe_cmd_o)
+     ,.fe_cmd_v_o(fe_cmd_v_o)
+     ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
+
+     ,.empty_o(cmd_empty_o)
+     ,.full_n_o(cmd_full_n_o)
+     ,.full_r_o(cmd_full_r_o)
      );
-  assign fe_cmd_full_o = ~fe_cmd_ready_lo;
 
 endmodule
 

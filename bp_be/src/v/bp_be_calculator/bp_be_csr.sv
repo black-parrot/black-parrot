@@ -211,7 +211,6 @@ module bp_be_csr
      ,.v_o(s_interrupt_icode_v_li)
      );
 
-
   wire csr_w_v_li = csr_cmd_v_i & (csr_cmd_cast_i.csr_op != e_csrr);
   wire csr_r_v_li = csr_cmd_v_i; // For now, all CSRs read, since we have no side-effects
   wire csr_fany_li = csr_cmd_cast_i.csr_addr inside {`CSR_ADDR_FCSR, `CSR_ADDR_FFLAGS, `CSR_ADDR_FRM};

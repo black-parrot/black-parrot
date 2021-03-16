@@ -177,6 +177,7 @@ module bp_cce_mmio_cfg_loader
 
       // uncached store
       io_cmd_cast_o.header.msg_type      = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+      io_cmd_cast_o.header.subop         = e_bedrock_store; 
       io_cmd_cast_o.header.addr          = local_addr_lo;
       io_cmd_payload                     = '0;
       io_cmd_payload.lce_id              = lce_id_i;
