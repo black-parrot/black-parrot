@@ -1,7 +1,0 @@
-*.swp
-*.dump
-*.mem
-*.mainram
-*.bootram
-*.cfg
-test/work/*

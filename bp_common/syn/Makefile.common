@@ -1,8 +1,8 @@
 ## Set common environment variables
 TOP ?= $(shell git rev-parse --show-toplevel)
 
-export SYSTEMC_INCLUDE := $(BP_EXTERNAL_DIR)/include
-export SYSTEMC_LIBDIR  := $(BP_EXTERNAL_DIR)/lib-linux64
+export SYSTEMC_INCLUDE := $(BP_TOOLS_DIR)/install/include
+export SYSTEMC_LIBDIR  := $(BP_TOOLS_DIR)/install/lib-linux64
 export LD_LIBRARY_PATH := $(SYSTEMC_LIBDIR):$(LD_LIBRARY_PATH)
 
 include $(TOP)/Makefile.common
@@ -11,11 +11,11 @@ include $(TOP)/Makefile.common
 
 .DEFAULT: help
 
-clean:
-	@rm -rf results/
-	@rm -rf logs/
-	@rm -rf reports/
-	@rm -rf touchfiles/
+RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -d -t
+RISCV_OBJCOPY ?= $(CROSS_COMPILE)objcopy
+MEM2NBF       ?= $(BP_COMMON_DIR)/software/py/nbf.py
+DROMAJO       ?= dromajo
+SED           ?= sed
 
 report:
 	$(eval REPORT_LIST := $(shell find $(REPORT_PATH) -type f -name "*.rpt"))
@@ -31,3 +31,20 @@ report:
 	@printf "============================ Summary ===============================\n"
 	@echo "Reports: $(words $(REPORT_LIST))"
 	@echo "Errors: $(words $(ERROR_LIST))"
+
+%.mem: %.riscv
+	$(RISCV_OBJCOPY) -O verilog $*.riscv $@
+	$(SED) -i "s/@8/@0/g" $@
+
+%.bin: %.riscv
+	$(RISCV_OBJCOPY) -O binary $*.riscv $@
+
+%.dump: %.riscv
+	$(RISCV_OBJDUMP) $*.riscv > $@
+
+clean:
+	@rm -rf results/
+	@rm -rf logs/
+	@rm -rf reports/
+	@rm -rf touchfiles/
+

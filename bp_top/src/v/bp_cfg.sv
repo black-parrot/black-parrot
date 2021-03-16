@@ -97,6 +97,7 @@ module bp_cfg
   wire did_r_v_li       = cfg_r_v_li & (cfg_addr_li == cfg_reg_did_gp);
   wire host_did_r_v_li  = cfg_r_v_li & (cfg_addr_li == cfg_reg_host_did_gp);
   wire cord_r_v_li      = cfg_r_v_li & (cfg_addr_li == cfg_reg_cord_gp);
+  wire domain_r_v_li    = cfg_r_v_li & (cfg_addr_li == cfg_reg_domain_mask_gp);
 
   assign cce_ucode_v_o    = (cfg_r_v_li | cfg_w_v_li) & (cfg_addr_li >= 16'h8000);
   assign cce_ucode_w_o    = cfg_w_v_li & (cfg_addr_li >= 16'h8000);
@@ -153,23 +154,24 @@ module bp_cfg
      ,.data_o(rdata_v_r)
      );
 
-  logic [3:0] read_sel_one_hot_r;
+  logic [4:0] read_sel_one_hot_r;
   bsg_dff_reset_en
-   #(.width_p(4))
+   #(.width_p(5))
    read_reg_one_hot
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(mem_cmd_v_lo)
 
-     ,.data_i({host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_v_o})
+     ,.data_i({domain_r_v_li, host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_v_o})
      ,.data_o(read_sel_one_hot_r)
      );
 
   logic [dword_width_gp-1:0] read_data;
   bsg_mux_one_hot
-   #(.width_p(dword_width_gp), .els_p(4))
+   #(.width_p(dword_width_gp), .els_p(5))
    read_mux_one_hot
-    (.data_i({dword_width_gp'(host_did_i)
+    (.data_i({dword_width_gp'(domain_mask_r)
+              ,dword_width_gp'(host_did_i)
               ,dword_width_gp'(did_i)
               ,dword_width_gp'(cord_i)
               ,dword_width_gp'(cce_ucode_data_i)

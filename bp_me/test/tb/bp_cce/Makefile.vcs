@@ -2,6 +2,7 @@ VCS_TIMEOUT = 5ms
 
 $(LINT_DIR)/wrapper.sv $(LINT_DIR)/testbench.sv $(LINT_DIR)/test_bp.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
@@ -26,6 +27,7 @@ LINT_COLLATERAL += $(addprefix $(LINT_DIR)/, bsg_trace_rom_0.v)
 
 $(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
 # TODO: This target will only build for trace rom 0 at the moment
 $(BUILD_DIR)/flist.vcs:
@@ -52,8 +54,8 @@ BUILD_COLLATERAL += $(addprefix $(BUILD_DIR)/, bsg_trace_rom_0.v)
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
 	@ln -nsf $(<D)/$(@F) $@
 
-$(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
-	@cp $^ $@
+$(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
+	cp $< $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)

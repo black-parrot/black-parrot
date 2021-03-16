@@ -31,7 +31,7 @@ cmd_base="make -C bp_top/syn build_vivado.v"
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
-cmd_base="make -C bp_top/syn sim_vivado.v SUITE=bp_tests PROG=cache_hammer"
+cmd_base="make -C bp_top/syn sim_vivado.v SUITE=bp-tests PROG=cache_hammer"
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"

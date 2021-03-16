@@ -13,11 +13,11 @@ export TOUCH_PATH   := $(BP_TOP_DIR)/syn/touchfiles
 
 export TB    ?= bp_tethered
 export CFG   ?= e_bp_default_cfg
-export SUITE ?= bp_tests
+export DRAM  ?= dramsim3
+export SUITE ?= bp-tests
 export PROG  ?= hello_world
 export TAG   ?= none
 
-include $(BP_TEST_DIR)/Makefile.tests
 include $(TB_PATH)/$(TB)/Makefile.cfgs
 include $(TB_PATH)/$(TB)/Makefile.params
 include $(TB_PATH)/$(TB)/Makefile.testlist

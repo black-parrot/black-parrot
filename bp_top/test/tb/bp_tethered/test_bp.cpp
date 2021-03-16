@@ -6,8 +6,7 @@
 #include "Vtestbench.h"
 #include "Vtestbench__Dpi.h"
 
-int sc_main(int argc, char **argv)
-{
+int sc_main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
   Verilated::traceEverOn(VM_TRACE);
   Verilated::assertOn(false);
@@ -65,3 +64,4 @@ int sc_main(int argc, char **argv)
   std::cout << "Exiting" << std::endl;
   exit(EXIT_SUCCESS);
 }
+

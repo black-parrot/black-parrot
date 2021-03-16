@@ -38,22 +38,18 @@ module testbench
    , parameter amo_en_p                    = 0
 
    // DRAM parameters
+   , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
    , parameter preload_mem_p               = 0
-   , parameter use_ddr_p                   = 0
-   , parameter use_dramsim3_p              = 0
-   , parameter dram_fixed_latency_p        = 0
 
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-   , parameter mem_cap_in_bytes_p = 2**27
-   , parameter mem_file_p         = "prog.mem"
    )
-  (input clk_i
-   , input reset_i
-   , input dram_clk_i
-   , input dram_reset_i
+  (// Bit to deal with initial X->0 transition detection
+   input bit clk_i
+   , input bit reset_i
+   , input bit dram_clk_i
+   , input bit dram_reset_i
    );
 
   import "DPI-C" context function bit get_finish(int hartid);
@@ -70,11 +66,6 @@ module testbench
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  bp_bedrock_cce_mem_msg_s proc_mem_cmd_lo;
-  logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;
-  bp_bedrock_cce_mem_msg_s proc_mem_resp_li;
-  logic proc_mem_resp_v_li, proc_mem_resp_yumi_lo;
-
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_li;
   bp_bedrock_cce_mem_msg_s proc_io_resp_li;
@@ -90,7 +81,13 @@ module testbench
   bp_bedrock_cce_mem_msg_s load_resp_li;
   logic load_resp_v_li, load_resp_ready_lo;
 
-
+  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  bsg_cache_dma_pkt_s [num_cce_p-1:0] dma_pkt_lo;
+  logic [num_cce_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [num_cce_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
+  logic [num_cce_p-1:0] dma_data_v_lo, dma_data_yumi_li;
+  logic [num_cce_p-1:0][l2_fill_width_p-1:0] dma_data_li;
+  logic [num_cce_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
   wrapper
    #(.bp_params_p(bp_params_p))
    wrapper
@@ -113,36 +110,41 @@ module testbench
      ,.io_resp_v_o(load_resp_v_li)
      ,.io_resp_ready_i(load_resp_ready_lo)
 
-     ,.mem_cmd_o(proc_mem_cmd_lo)
-     ,.mem_cmd_v_o(proc_mem_cmd_v_lo)
-     ,.mem_cmd_ready_i(proc_mem_cmd_ready_li)
+     ,.dma_pkt_o(dma_pkt_lo)
+     ,.dma_pkt_v_o(dma_pkt_v_lo)
+     ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
 
-     ,.mem_resp_i(proc_mem_resp_li)
-     ,.mem_resp_v_i(proc_mem_resp_v_li)
-     ,.mem_resp_yumi_o(proc_mem_resp_yumi_lo)
+     ,.dma_data_i(dma_data_li)
+     ,.dma_data_v_i(dma_data_v_li)
+     ,.dma_data_ready_and_o(dma_data_ready_and_lo)
+
+     ,.dma_data_o(dma_data_lo)
+     ,.dma_data_v_o(dma_data_v_lo)
+     ,.dma_data_yumi_i(dma_data_yumi_li)
      );
 
-  bp_mem
+  bp_nonsynth_dram
    #(.bp_params_p(bp_params_p)
-     ,.mem_offset_p(mem_offset_p)
-     ,.mem_load_p(preload_mem_p)
-     ,.mem_file_p(mem_file_p)
-     ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-     ,.use_ddr_p(use_ddr_p)
-     ,.use_dramsim3_p(use_dramsim3_p)
-     ,.dram_fixed_latency_p(dram_fixed_latency_p)
+     ,.num_dma_p(num_cce_p)
+     ,.preload_mem_p(preload_mem_p)
+     ,.dram_type_p(dram_type_p)
+     ,.mem_els_p(2**28)
      )
-   mem
+   dram
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(proc_mem_cmd_lo)
-     ,.mem_cmd_v_i(proc_mem_cmd_ready_li & proc_mem_cmd_v_lo)
-     ,.mem_cmd_ready_o(proc_mem_cmd_ready_li)
+     ,.dma_pkt_i(dma_pkt_lo)
+     ,.dma_pkt_v_i(dma_pkt_v_lo)
+     ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
 
-     ,.mem_resp_o(proc_mem_resp_li)
-     ,.mem_resp_v_o(proc_mem_resp_v_li)
-     ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
+     ,.dma_data_o(dma_data_li)
+     ,.dma_data_v_o(dma_data_v_li)
+     ,.dma_data_ready_and_i(dma_data_ready_and_lo)
+
+     ,.dma_data_i(dma_data_lo)
+     ,.dma_data_v_i(dma_data_v_lo)
+     ,.dma_data_yumi_o(dma_data_yumi_li)
 
      ,.dram_clk_i(dram_clk_i)
      ,.dram_reset_i(dram_reset_i)
@@ -472,21 +474,6 @@ module testbench
            ,.reservation(be.calculator.reservation_n)
            ,.commit_pkt(be.calculator.commit_pkt_cast_o)
            );
-
-      bp_mem_nonsynth_tracer
-       #(.bp_params_p(bp_params_p))
-       bp_mem_tracer
-        (.clk_i(clk_i & testbench.dram_trace_en_lo)
-         ,.reset_i(reset_i)
-
-         ,.mem_cmd_i(proc_mem_cmd_lo)
-         ,.mem_cmd_v_i(proc_mem_cmd_v_lo & proc_mem_cmd_ready_li)
-         ,.mem_cmd_ready_i(proc_mem_cmd_ready_li)
-
-         ,.mem_resp_i(proc_mem_resp_li)
-         ,.mem_resp_v_i(proc_mem_resp_v_li)
-         ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
-         );
 
       bind bp_be_top
         bp_nonsynth_pc_profiler
