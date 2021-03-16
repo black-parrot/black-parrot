@@ -179,8 +179,8 @@ module bp_nonsynth_cosim
                                                    | (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr])
                                                    | (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr])
                                                    );
-  assign commit_ird_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
-  assign commit_frd_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);
+  wire commit_ird_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
+  wire commit_frd_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);
 
   logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
   bsg_counter_clear_up
@@ -206,15 +206,9 @@ module bp_nonsynth_cosim
      ,.data_o(finish_r)
      );
 
-  logic init_done_r;
-  always_ff @(posedge clk_i) begin
-    if (reset_i)
-      init_done_r <= 1'b0;
-    else if (cosim_en_i & ~init_done_r) begin
+  always_ff @(negedge reset_i)
+    if (cosim_en_i)
       dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
-      init_done_r <= 1'b1;
-    end
-  end
 
   always_ff @(negedge clk_i)
     if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)
