@@ -1,0 +1,6 @@
+# if RAND_SEED == 0, mkrandfile will randomly pick a seed for you
+RAND_SEED = 0
+RAND_SIZE = 128
+
+RAND_TXT_FILE = rand_txt
+RAND_DATA_FILE = rand_data
