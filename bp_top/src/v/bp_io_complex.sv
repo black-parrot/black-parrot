@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_io_complex
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;

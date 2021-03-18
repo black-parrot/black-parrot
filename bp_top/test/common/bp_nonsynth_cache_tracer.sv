@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_nonsynth_cache_tracer
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #( parameter bp_params_e bp_params_p = e_bp_default_cfg
   , parameter assoc_p = 8
@@ -10,20 +12,19 @@ module bp_nonsynth_cache_tracer
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
    , localparam block_size_in_words_lp=assoc_p
    , localparam bank_width_lp = block_width_p / assoc_p
-   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
+   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
    , localparam data_mem_mask_width_lp=(bank_width_lp>>3)
-   , localparam bypass_data_width_lp = (dword_width_p >> 3)
+   , localparam bypass_data_width_lp = (dword_width_gp >> 3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp>>3)
    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-   , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
 
    )
@@ -56,10 +57,10 @@ module bp_nonsynth_cache_tracer
 
    // Cache data
    , input                                                 v_o
-   , input [dpath_width_p-2:0]                             load_data
+   , input [dpath_width_gp-2:0]                             load_data
    , input                                                 cache_miss_o
    , input                                                 wt_req
-   , input [dword_width_p-1:0]                             store_data
+   , input [dword_width_gp-1:0]                             store_data
 
    // Fill Packets
    , input                                                 data_mem_pkt_v_i
@@ -79,7 +80,7 @@ module bp_nonsynth_cache_tracer
    , input [assoc_p-1:0]                                   data_mem_v_i
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   // Input Casting
   bp_cache_req_s cache_req_cast_o;
@@ -141,8 +142,6 @@ module bp_nonsynth_cache_tracer
       op = "[load]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_load)
       op = "[uncached load]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_wt_store)
-      op = "[writethrough store]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_store)
       op = "[uncached store]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_flush)
@@ -207,7 +206,7 @@ module bp_nonsynth_cache_tracer
       end
 
       if (cache_req_metadata_v_o)
-        $fwrite(file, "[%t] lru_way: %x dirty: %x \n", $time, cache_req_metadata_cast_o.repl_way, cache_req_metadata_cast_o.dirty);
+        $fwrite(file, "[%t] lru_way: %x dirty: %x \n", $time, cache_req_metadata_cast_o.hit_or_repl_way, cache_req_metadata_cast_o.dirty);
 
       if (cache_req_complete_i)
         $fwrite(file, "[%t] Cache request completed \n", $time);

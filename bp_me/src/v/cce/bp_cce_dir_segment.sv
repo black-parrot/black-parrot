@@ -15,6 +15,9 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_dir_segment
   import bp_common_pkg::*;
   import bp_me_pkg::*;
@@ -24,6 +27,7 @@ module bp_cce_dir_segment
     , parameter sets_p                    = "inv" // number of cache sets
     , parameter assoc_p                   = "inv" // associativity of each set
     , parameter paddr_width_p             = "inv" // physical address width
+    , parameter tag_width_p               = "inv" // tag width of cacheable memory
     , parameter block_size_in_bytes_p     = "inv" // size of cache blocks in bytes
 
     , parameter num_cce_p                 = "inv" // number of CCEs that blocks are banked across
@@ -46,13 +50,13 @@ module bp_cce_dir_segment
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
     , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
 
+    // For VIPT L1 caches, should be equivalent to page_offset_width
     , localparam tag_offset_lp             = (lg_sets_lp+lg_block_size_in_bytes_lp)
-    , localparam tag_width_lp              = (paddr_width_p-tag_offset_lp)
 
     , localparam hash_index_width_lp      = $clog2((2**lg_sets_lp+num_cce_p-1)/num_cce_p)
 
     // Directory information widths
-    , localparam entry_width_lp           = (tag_width_lp+$bits(bp_coh_states_e))
+    , localparam entry_width_lp           = (tag_width_p+$bits(bp_coh_states_e))
     , localparam tag_set_width_lp         = (entry_width_lp*assoc_p)
     , localparam row_width_lp             = (tag_set_width_lp*tag_sets_per_row_lp)
 
@@ -161,7 +165,7 @@ module bp_cce_dir_segment
   wire [lg_rows_lp-1:0] entry_row_addr = addr_offset + set_id;
 
   // Struct for directory entries
-  `declare_bp_cce_dir_entry_s(tag_width_lp);
+  `declare_bp_cce_dir_entry_s(tag_width_p);
 
   // Directory signals
   // read / write valid signals
@@ -195,7 +199,7 @@ module bp_cce_dir_segment
   logic [lg_assoc_lp-1:0]         way_r, way_n;
   logic [lg_assoc_lp-1:0]         lru_way_r, lru_way_n;
   logic [paddr_width_p-1:0]       addr_r, addr_n;
-  wire [tag_width_lp-1:0] addr_r_tag = addr_r[tag_offset_lp +: tag_width_lp];
+  wire [tag_width_p-1:0] addr_r_tag = addr_r[tag_offset_lp +: tag_width_p];
   logic [tag_sets_per_row_lp-1:0] dir_data_o_v_r, dir_data_o_v_n;
   bp_cce_inst_opd_gpr_e           addr_dst_gpr_r, addr_dst_gpr_n;
   // this registers is set when a rdw operation occurs and this segment must output the LRU
@@ -401,7 +405,7 @@ module bp_cce_dir_segment
             dir_ram_w_mask = '1;
           end else if (cmd_i == e_wde_op) begin
             dir_ram_w_mask[lce_i[0]][way_i] = '1;
-            dir_ram_w_data[lce_i[0]][way_i].tag = addr_i[tag_offset_lp+:tag_width_lp];
+            dir_ram_w_data[lce_i[0]][way_i].tag = addr_i[tag_offset_lp+:tag_width_p];
             dir_ram_w_data[lce_i[0]][way_i].state = coh_state_i;
           end else if (cmd_i == e_wds_op) begin
             dir_ram_w_mask[lce_i[0]][way_i].state = bp_coh_states_e'('1);
@@ -496,7 +500,7 @@ module bp_cce_dir_segment
     #(.tag_sets_per_row_p(tag_sets_per_row_lp)
       ,.row_width_p(row_width_lp)
       ,.assoc_p(assoc_p)
-      ,.tag_width_p(tag_width_lp)
+      ,.tag_width_p(tag_width_p)
      )
     tag_checker
      (.row_i(dir_row_entries)
@@ -508,14 +512,14 @@ module bp_cce_dir_segment
      );
 
   logic lru_v_lo;
-  logic [tag_width_lp-1:0] lru_tag_lo;
+  logic [tag_width_p-1:0] lru_tag_lo;
   bp_cce_dir_lru_extract
     #(.tag_sets_per_row_p(tag_sets_per_row_lp)
       ,.rows_per_set_p(rows_per_set_lp)
       ,.row_width_p(row_width_lp)
       ,.assoc_p(assoc_p)
       ,.num_lce_p(num_lce_p)
-      ,.tag_width_p(tag_width_lp)
+      ,.tag_width_p(tag_width_p)
      )
     lru_extract
      (.row_i(dir_row_entries)

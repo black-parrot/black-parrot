@@ -52,20 +52,25 @@ This document is intended to provide more rigid structure for coding style and f
     - foobar_ex1_lo
     - barbaz_tv_n
 - ‘0’, ‘1’, ‘2’, and ‘8’ (when used as byte width) are the only allowable magic numbers. Else, consider strongly the use of a localparam.
-- Prefer packages over \`includes. 
-    - \`defines are scoped globally, so defining them within packages makes no functional difference, as long as proper include guards are used.
-    - BlackParrot flist style is to compile all packages first, so most tools will be forced to include definitions in the correct order.
+- Modules and packages are named *.sv, headers are named *.svh
 - Import packages within modules (not other headers) to avoid global ($root) package imports
-- Modules are named *.v, headers and packages are named *.vh
+- All defines should ultimately be included by including <end>_defines.svh. Suitably large and related groups of defines should be sub-included within those files.
+- All parameters and typedefs should ultimately be compiled with <end>_pkg.sv. Suitably large and related groups of parameters and typedefs should be included within a _pkgdef.svh file, which is not intended to be compiled directly, but instead as part of a larger package.
 
-        foo_pkg.vh:
+        foo_pkg.sv:
     
         package foo_pkg;
-          localparam baz_gp = 1’b0;
+
+        `include "bar_pkgdef.svh"
     
-          `include “foo_defines.vh”
-          `include “bar_defines.vh”
         endpackage;
+
+        bar_pkgdef.svh:
+
+            `ifndef BAR_PKGDEF_SVH
+            `define BAR_PKGDEF_SVH
+            localparam bar_width_gp = 42;
+            `endif
         
         foo.v:
     
@@ -79,6 +84,7 @@ This document is intended to provide more rigid structure for coding style and f
 - 2 spaces per indent.
 - Code inside of a module should be idented once.
 - Newline at end of file (helps some old unix tools).
+- No whitespace at ends of lines
 
 -Space between type and width e.g. logic [1:0], not logic[1:0].
 

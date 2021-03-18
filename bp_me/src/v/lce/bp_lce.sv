@@ -8,9 +8,11 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_lce
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
@@ -31,12 +33,14 @@ module bp_lce
     // issue non-exclusive read requests
     , parameter non_excl_reads_p = 0
 
+    , parameter metadata_latency_p = 0
+
     , localparam block_size_in_bytes_lp = (block_width_p/8)
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
   (
     input                                            clk_i
@@ -131,6 +135,7 @@ module bp_lce
       ,.fill_width_p(fill_width_p)
       ,.credits_p(credits_p)
       ,.non_excl_reads_p(non_excl_reads_p)
+      ,.metadata_latency_p(metadata_latency_p)
       )
     request
       (.clk_i(clk_i)

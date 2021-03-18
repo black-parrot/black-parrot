@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_rec_to_fp
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -9,7 +11,7 @@ module bp_be_rec_to_fp
   (input [dp_rec_width_gp-1:0]    rec_i
 
    , input                        raw_sp_not_dp_i
-   , output [dword_width_p-1:0]   raw_o
+   , output [dword_width_gp-1:0]   raw_o
    );
 
   // The control bits control tininess, which is fixed in RISC-V
@@ -26,10 +28,10 @@ module bp_be_rec_to_fp
 
   assign dp2sp_rec = '{sign  : dp_rec.sign
                        ,exp  : special ? {exp_code, adjusted_exp[0+:sp_exp_width_gp-2]} : adjusted_exp
-                       ,fract: dp_rec.fract >> (dp_sig_width_gp-sp_sig_width_gp)
+                       ,fract: dp_rec.fract[dp_sig_width_gp-2:dp_sig_width_gp-sp_sig_width_gp]
                        };
 
-  logic [word_width_p-1:0] sp_raw_lo;
+  logic [word_width_gp-1:0] sp_raw_lo;
   recFNToFN
    #(.expWidth(sp_exp_width_gp)
      ,.sigWidth(sp_sig_width_gp)
@@ -39,7 +41,7 @@ module bp_be_rec_to_fp
      ,.out(sp_raw_lo)
      );
 
-  logic [dword_width_p-1:0] dp_raw_lo;
+  logic [dword_width_gp-1:0] dp_raw_lo;
   recFNToFN
    #(.expWidth(dp_exp_width_gp)
      ,.sigWidth(dp_sig_width_gp)

@@ -16,9 +16,11 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_fsm
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -30,12 +32,10 @@ module bp_cce_fsm
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam ptag_width_lp              = (paddr_width_p-lg_lce_sets_lp
-                                              -lg_block_size_in_bytes_lp)
     , localparam num_way_groups_lp         = `BSG_CDIV(cce_way_groups_p, num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
-    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
     // maximal number of tag sets stored in the directory for all LCE types
     , localparam max_tag_sets_lp           = `BSG_CDIV(lce_sets_p, num_cce_p)
@@ -118,7 +118,7 @@ module bp_cce_fsm
   assign lce_req_payload = lce_req.header.payload;
 
   // Config bus
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
   wire cce_normal_mode_li = (cfg_bus_cast_i.cce_mode == e_cce_mode_normal);
@@ -278,8 +278,8 @@ module bp_cce_fsm
     if (~reset_i) begin
       // Cacheable requests must target cacheable memory
       assert(!(lce_req_v_i && ~req_pma_coherent_addr_lo
-               && ((lce_req.header.msg_type.req == e_bedrock_req_rd)
-                   || (lce_req.header.msg_type.req == e_bedrock_req_wr))
+               && ((lce_req.header.msg_type.req == e_bedrock_req_rd_miss)
+                   || (lce_req.header.msg_type.req == e_bedrock_req_wr_miss))
               )
             ) else
       $error("CCE PMA violation - cacheable requests must target cacheable memory");
@@ -850,8 +850,8 @@ module bp_cce_fsm
         // cached requests will stall on the input port
         end else if (lce_req_v_i) begin
           // cached requests not allowed, go to error state and stall
-          if ((lce_req.header.msg_type.req == e_bedrock_req_rd)
-              | (lce_req.header.msg_type.req == e_bedrock_req_wr)) begin
+          if ((lce_req.header.msg_type.req == e_bedrock_req_rd_miss)
+              | (lce_req.header.msg_type.req == e_bedrock_req_wr_miss)) begin
               state_n = e_error;
 
           // uncached load/store
@@ -934,13 +934,13 @@ module bp_cce_fsm
           mshr_n.lce_id = lce_req_payload.src_id;
           state_n = e_error;
           // cached request
-          if (lce_req.header.msg_type.req == e_bedrock_req_rd
-              | lce_req.header.msg_type.req == e_bedrock_req_wr) begin
+          if (lce_req.header.msg_type.req == e_bedrock_req_rd_miss
+              | lce_req.header.msg_type.req == e_bedrock_req_wr_miss) begin
 
             mshr_n.paddr = lce_req.header.addr;
             mshr_n.msg_size = lce_req.header.size;
             mshr_n.lru_way_id = lce_req_payload.lru_way_id;
-            mshr_n.flags[e_opd_rqf] = (lce_req.header.msg_type.req == e_bedrock_req_wr);
+            mshr_n.flags[e_opd_rqf] = (lce_req.header.msg_type.req == e_bedrock_req_wr_miss);
             mshr_n.flags[e_opd_nerf] = lce_req_payload.non_exclusive;
 
             // query PMA for coherence property - it is a violation for a cached request
@@ -1027,7 +1027,7 @@ module bp_cce_fsm
           pending_w_v =  ~(mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]);
           pending_w_addr = lce_req.header.addr;
           pending_li = 1'b1;
- 
+
           // skip speculative memory access if amo/uncached
           state_n = (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
                     ? e_read_dir

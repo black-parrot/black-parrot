@@ -22,7 +22,7 @@ LINT_VCS_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 VCS_OPTIONS  = +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
-VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
+#VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
 
 VCS_BUILD_OPTS  = -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -notice
@@ -33,11 +33,11 @@ VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += +noportcoerce
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 VCS_BUILD_OPTS += -diag timescale
-VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++14"
-VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+VCS_BUILD_OPTS += -CFLAGS "-I$(BP_SDK_DIR)/install/include -std=c++14"
+VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save
-VCS_BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
+VCS_BUILD_OPTS += $(BP_SDK_DIR)/install/lib/libdromajo_cosim.a
 VCS_BUILD_OPTS += -top test_bp
 VCS_BUILD_OPTS += -f flist.vcs 
 
@@ -54,9 +54,9 @@ lint.v: LINT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).lint.log
 lint.v: LINT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.rpt
 lint.v: LINT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
 $(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
-$(LINT_DIR)/lintv: $(LINT_COLLATERAL)
+$(LINT_DIR)/lintv: | $(LINT_COLLATERAL)
 	cd $(@D); \
-		$(VCS) $(VCS_BUILD_OPTS) $(LINT_VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ | tee $(LINT_LOG)
+		$(VCS) $(VCS_BUILD_OPTS) $(LINT_VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee $(LINT_LOG)
 	-@grep -A5 "Lint" $(LINT_LOG) > $(LINT_REPORT)
 
 build.v: $(BUILD_DIR)/simv
@@ -64,9 +64,9 @@ build.v: BUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).build.log
 build.v: BUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.rpt
 build.v: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
 $(BUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
-$(BUILD_DIR)/simv: $(BUILD_COLLATERAL)
+$(BUILD_DIR)/simv: | $(BUILD_COLLATERAL)
 	cd $(@D); \
-		$(VCS) $(VCS_BUILD_OPTS) $(VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ | tee $(BUILD_LOG)
+		$(VCS) $(VCS_BUILD_OPTS) $(VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee $(BUILD_LOG)
 	-@grep "Error" -A5 $(BUILD_LOG) > $(BUILD_ERROR)
 	-@tail -n3 $(BUILD_LOG) > $(BUILD_REPORT)
 	-@test -s $(BUILD_ERROR) && echo "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
@@ -90,10 +90,32 @@ sim.v: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
 sim.v: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
 sim.v: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
-$(SIM_DIR)/run_simv: $(SIM_COLLATERAL)
-	cd $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) | tee $(SIM_LOG)
+$(SIM_DIR)/run_simv: | $(SIM_COLLATERAL)
+	cd $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) 2>&1 | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
+
+## Need the next build option as mentioned in this link for vivado post synth netlist simulation using VCS
+## https://forums.xilinx.com/t5/Simulation-and-Verification/VCS-error-regarding-the-glbl-cross-module-reference-resolution/td-p/735596
+build_vivado.v: VCS_BUILD_OPTS += -top glbl
+build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src
+build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unisims
+build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unimacro
+build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/retarget
+build_vivado.v: VCS_BUILD_OPTS += +incdir+$(XILINX_VIVADO)/data/verilog/src +libext+.v
+build_vivado.v: SIM_SYNTH_VIVADO_P := 1
+build_vivado.v: NO_BIND_P          := 1
+build_vivado.v: build.v
+
+sim_vivado.v: SIM_SYNTH_VIVADO_P := 1
+sim_vivado.v: NO_BIND_P          := 1
+sim_vivado.v: sim.v
+
+sim_vivado_dump.v: VCS_OPTIONS += +memcbk
+sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdpluson
+sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon
+sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_vivado_dump.v: sim_vivado.v
 
 sim_dump.v: VCS_OPTIONS += +memcbk
 sim_dump.v: VCS_OPTIONS += +vcs+vcdpluson
@@ -111,7 +133,7 @@ cov.v: COV_HREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.hier.rpt
 cov.v: COV_TREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.test.rpt
 cov.v: COV_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.err
 $(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(COV_DIR)
-$(COV_DIR)/covv: $(COV_COLLATERAL)
+$(COV_DIR)/covv: | $(COV_COLLATERAL)
 	cd $(@D); $(URG) $(URG_OPTIONS) -log $(COV_LOG) -report $(COV_REPORT)
 	@cp $(COV_REPORT)/tests.txt $(COV_TREPORT)
 	@cp $(COV_REPORT)/hierarchy.txt $(COV_HREPORT) 

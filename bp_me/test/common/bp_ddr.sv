@@ -1,26 +1,32 @@
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_ddr
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
   import bsg_tag_pkg::*;
   import bsg_dmc_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , parameter mem_offset_p         = "inv"
+   , parameter num_dma_p = 1
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
    )
-  (input                                 clk_i
-   , input                               reset_i
+  (input                                                     clk_i
+   , input                                                   reset_i
 
-   , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
-   , input                               mem_cmd_v_i
-   , output                              mem_cmd_ready_o
+   , input [num_dma_p-1:0][dma_pkt_width_lp-1:0]            dma_pkt_i
+   , input [num_dma_p-1:0]                                  dma_pkt_v_i
+   , output logic [num_dma_p-1:0]                           dma_pkt_yumi_o
 
-   , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
-   , output                              mem_resp_v_o
-   , input                               mem_resp_yumi_i
+   , output logic [num_dma_p-1:0][l2_fill_width_p-1:0] dma_data_o
+   , output logic [num_dma_p-1:0]                           dma_data_v_o
+   , input [num_dma_p-1:0]                                  dma_data_ready_i
+
+   , input [num_dma_p-1:0][l2_fill_width_p-1:0]        dma_data_i
+   , input [num_dma_p-1:0]                                  dma_data_v_i
+   , output logic [num_dma_p-1:0]                           dma_data_yumi_o
    );
 
 `ifdef VERILATOR
@@ -90,7 +96,7 @@ module bp_ddr
       ,.valid_o(tag_trace_valid_lo)
       ,.en_r_o(tag_trace_en_r_lo)
       ,.tag_data_o(tag_trace_data_lo)
-      ,.yumi_i(1'b1)
+      ,.yumi_i(tag_trace_valid_lo)
 
       ,.done_o()
       ,.error_o()
@@ -140,11 +146,10 @@ module bp_ddr
   assign dmc_p.init_cycles  = {dmc_cfg_tag_data_lo[11], dmc_cfg_tag_data_lo[10]};
 
   // DRAM Link
-  logic mem_cmd_ready_lo, mem_resp_v_lo;
   logic app_en_lo, app_rdy_li, app_wdf_wren_lo, app_wdf_end_lo, app_wdf_rdy_li, app_rd_data_valid_li, app_rd_data_end_li;
-  logic [paddr_width_p-1:0] app_addr_lo;
-  logic [cce_block_width_p-1:0] app_wdf_data_lo, app_rd_data_li;
-  logic [(cce_block_width_p>>3)-1:0] app_wdf_mask_lo;
+  logic [dmc_addr_width_lp-1:0] app_addr_lo;
+  logic [l2_fill_width_p-1:0] app_wdf_data_lo, app_rd_data_li;
+  logic [(l2_fill_width_p>>3)-1:0] app_wdf_mask_lo;
   app_cmd_e app_cmd_lo;
 
   // DMC
@@ -154,6 +159,7 @@ module bp_ddr
   logic [15:0] ddr_addr_lo;
   logic [dmc_mask_width_lp-1:0] ddr_dm_oen_lo, ddr_dm_lo, ddr_dqs_p_oen_lo, ddr_dqs_p_ien_lo, ddr_dqs_p_lo, ddr_dqs_p_li, ddr_dqs_n_oen_lo, ddr_dqs_n_ien_lo, ddr_dqs_n_lo, ddr_dqs_n_li;
   logic [dmc_data_width_lp-1:0] ddr_dq_oen_lo, ddr_dq_lo, ddr_dq_li;
+  logic init_calib_complete_lo;
 
   // DDR IO
   wire [dmc_data_width_lp-1:0] ddr_dq_io;
@@ -171,56 +177,54 @@ module bp_ddr
     assign ddr_dqs_n_li[i] = (ddr_dqs_n_oen_lo[i] ? ddr_dqs_n_io[i] : 1'bz) & ~ddr_dqs_n_ien_lo[i];
   end
 
-  logic reset_done;
-  always_ff @(posedge clk_i) begin
-    if(reset_i)
-      reset_done <= 1'b0;
-    else if(ui_reset_lo)
-      reset_done <= 1'b1;
-  end
-
-  assign mem_cmd_ready_o = mem_cmd_ready_lo & reset_done;
-  assign mem_resp_v_o = mem_resp_v_lo & reset_done;
-
-  bp_me_cce_to_xui
-    #(.bp_params_p(bp_params_p)
-      ,.flit_width_p(mem_noc_flit_width_p)
-      ,.cord_width_p(mem_noc_cord_width_p)
-      ,.cid_width_p(mem_noc_cid_width_p)
-      ,.len_width_p(mem_noc_len_width_p)
+  bsg_cache_to_dram_ctrl
+   #(.num_cache_p(num_dma_p)
+     ,.addr_width_p(caddr_width_p)
+     ,.data_width_p(l2_fill_width_p)
+     ,.block_size_in_words_p(l2_block_size_in_fill_p)
+     ,.dram_ctrl_burst_len_p(l2_block_size_in_fill_p)
+     ,.dram_ctrl_addr_width_p(dmc_addr_width_lp)
      )
-    dram_link
-     (.clk_i(clk_i)
-      ,.reset_i(ui_reset_lo)
+   cache2dmc
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i | ui_reset_lo)
 
-      ,.mem_cmd_i(mem_cmd_i)
-      ,.mem_cmd_v_i(mem_cmd_v_i)
-      ,.mem_cmd_ready_o(mem_cmd_ready_lo)
+     ,.dram_size_i(3'b100) // 4Gb
 
-      ,.mem_resp_o(mem_resp_o)
-      ,.mem_resp_v_o(mem_resp_v_lo)
-      ,.mem_resp_yumi_i(mem_resp_yumi_i)
+     ,.dma_pkt_i(dma_pkt_i)
+     ,.dma_pkt_v_i(dma_pkt_v_i & init_calib_complete_lo)
+     ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 
-      ,.app_addr_o(app_addr_lo)
-      ,.app_cmd_o(app_cmd_lo)
-      ,.app_en_o(app_en_lo)
-      ,.app_rdy_i(app_rdy_li)
-      ,.app_wdf_wren_o(app_wdf_wren_lo)
-      ,.app_wdf_data_o(app_wdf_data_lo)
-      ,.app_wdf_mask_o(app_wdf_mask_lo)
-      ,.app_wdf_end_o(app_wdf_end_lo)
-      ,.app_wdf_rdy_i(app_wdf_rdy_li)
-      ,.app_rd_data_valid_i(app_rd_data_valid_li)
-      ,.app_rd_data_i(app_rd_data_li)
-      ,.app_rd_data_end_i(app_rd_data_end_li)
-      );
+     ,.dma_data_o(dma_data_o)
+     ,.dma_data_v_o(dma_data_v_o)
+     ,.dma_data_ready_i(dma_data_ready_i)
 
-  wire [dmc_addr_width_lp-1:0] app_addr_li = (app_addr_lo - mem_offset_p) >> 2;
+     ,.dma_data_i(dma_data_i)
+     ,.dma_data_v_i(dma_data_v_i)
+     ,.dma_data_yumi_o(dma_data_yumi_o)
+
+     ,.app_en_o(app_en_lo)
+     ,.app_rdy_i(app_rdy_li)
+     ,.app_cmd_o(app_cmd_lo)
+     ,.app_addr_o(app_addr_lo)
+
+     ,.app_wdf_wren_o(app_wdf_wren_lo)
+     ,.app_wdf_rdy_i(app_wdf_rdy_li)
+     ,.app_wdf_data_o(app_wdf_data_lo)
+     ,.app_wdf_mask_o(app_wdf_mask_lo)
+     ,.app_wdf_end_o(app_wdf_end_lo)
+
+     ,.app_rd_data_valid_i(app_rd_data_valid_li)
+     ,.app_rd_data_i(app_rd_data_li)
+     ,.app_rd_data_end_i(app_rd_data_end_li)
+     );
+
+  wire [dmc_addr_width_lp-1:0] app_addr_li = (app_addr_lo >> 2);
   bsg_dmc
     #(.num_adgs_p ()
       ,.ui_addr_width_p(dmc_addr_width_lp)
-      ,.ui_data_width_p(cce_block_width_p)
-      ,.burst_data_width_p(cce_block_width_p)
+      ,.ui_data_width_p(l2_fill_width_p)
+      ,.burst_data_width_p(l2_block_width_p)
       ,.dq_data_width_p(dmc_data_width_lp)
       ,.cmd_afifo_depth_p(dmc_cmd_afifo_depth_lp)
       ,.cmd_sfifo_depth_p(dmc_cmd_sfifo_depth_lp)
@@ -257,7 +261,7 @@ module bp_ddr
     ,.app_sr_req_i(1'b0)
     ,.app_sr_active_o()
 
-    ,.init_calib_complete_o ()
+    ,.init_calib_complete_o (init_calib_complete_lo)
 
     ,.ddr_ck_p_o            (ddr_ck_p_lo)
     ,.ddr_ck_n_o            (ddr_ck_n_lo)

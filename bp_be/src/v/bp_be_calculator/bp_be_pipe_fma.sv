@@ -11,9 +11,11 @@
  *     good QoR
  *
  */
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_pipe_fma
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -27,14 +29,15 @@ module bp_be_pipe_fma
    , input                             reset_i
 
    , input [dispatch_pkt_width_lp-1:0] reservation_i
+   , input                             flush_i
    , input rv64_frm_e                  frm_dyn_i
 
    // Pipeline results
-   , output [dpath_width_p-1:0]        imul_data_o
-   , output                            imul_v_o
-   , output [dpath_width_p-1:0]        fma_data_o
+   , output logic [dpath_width_gp-1:0] imul_data_o
+   , output logic                      imul_v_o
+   , output logic [dpath_width_gp-1:0] fma_data_o
    , output rv64_fflags_s              fma_fflags_o
-   , output                            fma_v_o
+   , output logic                      fma_v_o
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -49,8 +52,8 @@ module bp_be_pipe_fma
   assign frs1 = reservation.rs1;
   assign frs2 = reservation.rs2;
   assign frs3 = reservation.imm;
-  wire [dword_width_p-1:0] rs1 = reservation.rs1[0+:dword_width_p];
-  wire [dword_width_p-1:0] rs2 = reservation.rs2[0+:dword_width_p];
+  wire [dword_width_gp-1:0] rs1 = reservation.rs1[0+:dword_width_gp];
+  wire [dword_width_gp-1:0] rs2 = reservation.rs2[0+:dword_width_gp];
 
   //
   // Control bits for the FPU
@@ -101,7 +104,7 @@ module bp_be_pipe_fma
   logic fma_out_sign;
   logic [dp_exp_width_gp+1:0] fma_out_sexp;
   logic [dp_sig_width_gp+2:0] fma_out_sig;
-  logic [dword_width_p-1:0] imul_out;
+  logic [dword_width_gp-1:0] imul_out;
   mulAddRecFNToRaw
    #(.expWidth(dp_exp_width_gp)
      ,.sigWidth(dp_sig_width_gp)
@@ -180,17 +183,17 @@ module bp_be_pipe_fma
 
   assign fma_sp2dp_final = '{sign  : fma_sp_final.sign
                              ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                             ,fract: fma_sp_final.fract << (dp_sig_width_gp-sp_sig_width_gp)
+                             ,fract: {fma_sp_final.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                              };
 
   assign fma_result = '{sp_not_dp: decode.ops_v, rec: decode.ops_v ? fma_sp2dp_final : fma_dp_final};
   assign fma_fflags = decode.ops_v ? fma_sp_fflags : fma_dp_fflags;
 
-  wire [dpath_width_p-1:0] imulw_out = {{word_width_p{imul_out[word_width_p-1]}}, imul_out[0+:word_width_p]};
-  wire [dpath_width_p-1:0] imul_result = decode.opw_v ? imulw_out : imul_out;
-  wire imul_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_mul_v;
+  wire [dpath_width_gp-1:0] imulw_out = {{word_width_gp{imul_out[word_width_gp-1]}}, imul_out[0+:word_width_gp]};
+  wire [dpath_width_gp-1:0] imul_result = decode.opw_v ? imulw_out : imul_out;
+  wire imul_v_li = reservation.v & reservation.decode.pipe_mul_v;
   bsg_dff_chain
-   #(.width_p(1+dpath_width_p), .num_stages_p(imul_latency_p-1))
+   #(.width_p(1+dpath_width_gp), .num_stages_p(imul_latency_p-1))
    retiming_chain
     (.clk_i(clk_i)
 
@@ -198,7 +201,7 @@ module bp_be_pipe_fma
      ,.data_o({imul_v_o, imul_data_o})
      );
 
-  wire fma_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_fma_v;
+  wire fma_v_li = reservation.v & reservation.decode.pipe_fma_v;
   bsg_dff_chain
    #(.width_p(1+$bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(fma_latency_p-1))
    fma_retiming_chain

@@ -54,4 +54,8 @@ To achieve reasonable timing closure, the following blocks MUST be retimed. We f
 ## FPGA Tips and Tricks
 ### Hardened Memories
 For the Ultrascale+, it is important to signify in your RAM model that you wish to use distributed BRAM for bitmasked memory. Otherwise, the tool will not infer a BRAM, even for a large bitmasked array. In BaseJump STL, using the hardened flow this looks like: [Distributed BRAM](https://github.com/bespoke-silicon-group/basejump_stl/blob/master/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v#L36)
+### Retiming
+We have not found a reliable way to force Vivado to retime the deeply pipelined FMA unit. Having
+tried all the usual pragma suspects, we suggest manually pipelining the FMA and AUX units. Please
+contribute back if you do!
 

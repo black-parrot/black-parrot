@@ -1,4 +1,3 @@
-+define+DRAMSIM2
 ## Includes
 # BaseJump STL includes
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
@@ -24,7 +23,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 # Interface packages
 $BP_COMMON_DIR/src/include/bp_common_pkg.sv
-$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.sv
 # FE packages
 $BP_FE_DIR/src/include/bp_fe_pkg.sv
 # BE packages
@@ -109,6 +107,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank_reverse.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux.v
@@ -173,3 +172,8 @@ $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.sv
 ## TOP Files
 $BP_TOP_DIR/src/v/bp_cfg.sv
+
+# BSG Staging area
+$BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
+$BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
+$BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v

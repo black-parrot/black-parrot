@@ -1,15 +1,17 @@
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_cacc_vdp
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache)
 
-    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     )
    (
     input                                     clk_i
@@ -42,18 +44,16 @@ module bp_cacc_vdp
     , input                                   io_resp_yumi_i
     );
 
-
- `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dpath_width_p);
-  bp_be_dcache_pkt_s        dcache_pkt;   
+  bp_be_dcache_pkt_s        dcache_pkt;
   logic                     dcache_ready, dcache_v;
-  logic [dpath_width_p-1:0] dcache_data;
+  logic [dpath_width_gp-1:0] dcache_data;
   logic                     dcache_tlb_miss, dcache_poison;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_uncached;
   logic                     dcache_miss_v;
   logic                     dcache_pkt_v;
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
 
@@ -65,7 +65,8 @@ module bp_cacc_vdp
   cache_req_complete_lo, cache_req_critical_lo,
   cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;
@@ -89,8 +90,13 @@ bp_pma
     );
 
 bp_be_dcache
-  #(.bp_params_p(bp_params_p))
-  dcache
+  #(.bp_params_p(bp_params_p)
+    ,.sets_p(acache_sets_p)
+    ,.assoc_p(acache_assoc_p)
+    ,.block_width_p(acache_block_width_p)
+    ,.fill_width_p(acache_fill_width_p)
+    )
+  acache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
@@ -232,6 +238,7 @@ bp_lce
 
   assign local_addr_li = io_cmd_cast_i.header.addr;
   assign resp_header   =  '{msg_type       : resp_msg
+                            ,subop         : e_bedrock_store
                             ,addr          : resp_addr
                             ,payload       : resp_payload
                             ,size          : resp_size  };
@@ -365,7 +372,7 @@ bp_lce
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
         res_status = '0;
         dcache_pkt_v = '1;
         done = 0;
@@ -375,7 +382,7 @@ bp_lce
         res_status = '0;
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
-        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt_v = '0;
         done = 0;
@@ -390,7 +397,7 @@ bp_lce
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
         dcache_pkt_v = '0;
         done = 0;
       end
@@ -400,7 +407,7 @@ bp_lce
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
         dcache_pkt_v = '0;
         done = 0;
       end
@@ -410,7 +417,7 @@ bp_lce
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
         dcache_pkt_v = '0;
         second_operand= 1;
         done = 0;
@@ -421,7 +428,7 @@ bp_lce
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.page_offset = v_addr[0+:page_offset_width_p];
+        dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
         dcache_pkt_v = '0;
         second_operand= 1;
         done = 0;

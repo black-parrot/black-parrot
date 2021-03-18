@@ -57,9 +57,11 @@
 
 // The BlackParrot core pipeline is a mostly non-stalling pipeline, decoupled between the front-end
 // and back-end.
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_nonsynth_core_profiler
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_be_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -67,7 +69,7 @@ module bp_nonsynth_core_profiler
     , parameter stall_trace_file_p = "stall"
 
     , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
-    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p)
+    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
     )
    (input clk_i
     , input reset_i

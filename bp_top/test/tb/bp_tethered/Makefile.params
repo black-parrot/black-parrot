@@ -14,8 +14,11 @@ export PC_PROFILE_P   ?= 0
 export BR_PROFILE_P   ?= 0
 export CHECKPOINT_P   ?= 0
 export COSIM_P        ?= 0
-export PRELOAD_MEM_P  ?= 0
 export NBF_CONFIG_P   ?= 1
+
+export PRELOAD_MEM_P  ?= 0
+
+export NO_BIND_P ?= 0
 
 export SAMPLE_MEMSIZE   ?= 128
 export SAMPLE_START_P   ?= 0
@@ -23,12 +26,6 @@ export SAMPLE_WARMUP_P  ?= 0
 export SAMPLE_INSTR_P   ?= 0
 
 export BP_SIM_CLK_PERIOD  ?= 5000
-
-export USE_DDR            ?= 0
-export USE_DRAMSIM3       ?= 0
-export DRAM_FIXED_LATENCY ?= 10
-export DRAM_PKG           ?= bp_dramsim3_lpddr_2Gb_x16_pkg
-export DRAM_MODEL         ?= den2048Mb+sg5+x16+FULL_MEM
 
 export DUT_PARAMS = 
 export TB_PARAMS  = \
@@ -47,15 +44,13 @@ export TB_PARAMS  = \
                     -pvalue+cosim_memsize_p=$(SAMPLE_MEMSIZE) \
                     -pvalue+cosim_instr_p=$(SAMPLE_INSTR_P) \
                     -pvalue+warmup_instr_p=$(SAMPLE_WARMUP_P) \
-                    -pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
-                    -pvalue+use_ddr_p=$(USE_DDR) \
-                    -pvalue+use_dramsim3_p=$(USE_DRAMSIM3) \
-                    -pvalue+dram_fixed_latency_p=$(DRAM_FIXED_LATENCY)
+                    -pvalue+amo_en_p=$(AMOEN) \
+					-pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
+                    -pvalue+no_bind_p=$(NO_BIND_P)
 
 export DUT_DEFINES = 
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
-                     +define+dram_pkg=$(DRAM_PKG) \
-                     +define+$(DRAM_MODEL)
+                     +define+den2048Mb+sg5+x16+FULL_MEM
 
 export HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)
 export HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)

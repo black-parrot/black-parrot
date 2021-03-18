@@ -12,9 +12,11 @@
  *   coherence for a single type of LCE (I$, D$, A$, etc.).
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_cce_dir
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -104,6 +106,7 @@ module bp_cce_dir
       ,.sets_p(icache_sets_p)
       ,.assoc_p(icache_assoc_p)
       ,.paddr_width_p(paddr_width_p)
+      ,.tag_width_p(ctag_width_p)
       ,.num_cce_p(num_cce_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_lp)
       )
@@ -167,6 +170,7 @@ module bp_cce_dir
         ,.sets_p(dcache_sets_p)
         ,.assoc_p(dcache_assoc_p)
         ,.paddr_width_p(paddr_width_p)
+        ,.tag_width_p(ctag_width_p)
         ,.num_cce_p(num_cce_p)
         ,.block_size_in_bytes_p(block_size_in_bytes_lp)
         )
@@ -252,6 +256,7 @@ module bp_cce_dir
         ,.sets_p(acache_sets_p)
         ,.assoc_p(acache_assoc_p)
         ,.paddr_width_p(paddr_width_p)
+        ,.tag_width_p(ctag_width_p)
         ,.num_cce_p(num_cce_p)
         ,.block_size_in_bytes_p(block_size_in_bytes_lp)
         )

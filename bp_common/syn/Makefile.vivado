@@ -5,8 +5,8 @@ override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
 override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
 override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
 
-override BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
-$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR):
+override SYNTH_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
+$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SYNTH_DIR):
 	mkdir -p $@
 
 .PHONY: synth.vivado
@@ -15,19 +15,19 @@ include $(TB_PATH)/$(TB)/Makefile.vivado
 
 PART ?= xc7k325tffg900-2
 
-synth.vivado: $(BUILD_DIR)/synth
+synth.vivado: $(SYNTH_DIR)/synth
 synth.vivado: SYNTH_LOG   := $(LOG_DIR)/$(TB).$(CFG).$(TAG).synth.log
 synth.vivado: SYNTH_REPORT:= $(REPORT_DIR)/$(TB).$(CFG).$(TAG).synth.rpt
 synth.vivado: SYNTH_ERROR := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).synth.err
 
-$(SYNTH_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
-$(BUILD_DIR)/synth: $(SYNTH_COLLATERAL)
+$(SYNTH_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SYNTH_DIR)
+$(SYNTH_DIR)/synth: $(SYNTH_COLLATERAL)
 	$(eval export REPORT_DIR)
 	$(eval export PART)
 	cd $(@D); \
-		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/tcl/vivado_synth.tcl | tee -i $(SYNTH_LOG)
-		-@grep --color      "ERROR"                                $(SYNTH_LOG) | tee -a $(SYNTH_ERROR)
+		$(VIVADO) -mode batch -source $(BP_COMMON_DIR)/syn/tcl/vivado_synth.tcl 2>&1 | tee -i $(SYNTH_LOG)
+		-@grep --color      "ERROR"                                $(SYNTH_LOG) 2>&1 | tee -a $(SYNTH_ERROR)
 		-@test -s $(SYNTH_ERROR) && echo "Vivado synthesis: FAILED" > $(SYNTH_REPORT) && exit 1
-		-@grep --color      "WARNING"                              $(SYNTH_LOG) | tee -a $(SYNTH_REPORT)
-		-@tail -n5                                                 $(SYNTH_LOG) | tee -a $(SYNTH_REPORT)
+		-@grep --color      "WARNING"                              $(SYNTH_LOG) 2>&1 | tee -a $(SYNTH_REPORT)
+		-@tail -n5                                                 $(SYNTH_LOG) 2>&1 | tee -a $(SYNTH_REPORT)
 

@@ -29,8 +29,13 @@ VV_OPTS += -Wno-timescalemod
 
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module $(TOP_MODULE) -f flist.vcs config.vlt
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++14
-BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
-BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim3 -ldromajo_cosim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+BUILD_OPTS += -I$(BP_SDK_DIR)/install/include
+BUILD_OPTS += -I$(BP_TOOLS_DIR)/install/share/verilator/include/vltstd/
+BUILD_OPTS += -LDFLAGS "-lpthread"
+BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib"
+BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib-linux64 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib-linux64"
+BUILD_OPTS += -LDFLAGS "-L$(BP_SDK_DIR)/install/lib -ldromajo_cosim -Wl,-rpath=$(BP_SDK_DIR)/install/lib"
+BUILD_OPTS += -CFLAGS "-I$(BP_SDK_DIR)/install/include"
 
 VERILATOR_OPTIONS =
 
@@ -52,7 +57,7 @@ lint.sc: LINT_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).lint.log
 lint.sc: LINT_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.rpt
 lint.sc: LINT_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
 $(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
-$(LINT_DIR)/lintsc: $(LINT_COLLATERAL)
+$(LINT_DIR)/lintsc: | $(LINT_COLLATERAL)
 	cd $(@D); $(VV) $(LINT_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | tee $(LINT_LOG)
 	-@grep -E "Exiting due to .* error\(s\)" -A 5 $(LINT_LOG) > $(LINT_ERROR)
 	-@test -s $(LINT_ERROR) && echo "FAILED" >> $(LINT_REPORT) \
@@ -63,9 +68,9 @@ build.sc: VBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).vbuild.log
 build.sc: VBUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.rpt
 build.sc: VBUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.err
 $(VBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
-$(BUILD_DIR)/obj_dir: $(VBUILD_COLLATERAL)
+$(BUILD_DIR)/obj_dir: | $(VBUILD_COLLATERAL)
 	cd $(@D); \
-		$(VV) $(VV_OPTS) $(BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) | tee $(VBUILD_LOG)
+		$(VV) $(VV_OPTS) $(BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | tee $(VBUILD_LOG)
 	-@grep "Error" -A 5 $(VBUILD_LOG) > $(VBUILD_ERROR)
 	-@tail -n 3 $(VBUILD_LOG) > $(VBUILD_REPORT)
 	-@test -s $(VBUILD_ERROR) && echo "FAILED" >> $(VBUILD_REPORT) || rm $(VBUILD_ERROR)
@@ -85,8 +90,8 @@ sim.sc: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
 sim.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
 sim.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
-$(SIM_DIR)/run_simsc: $(SIM_COLLATERAL)
-	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
+$(SIM_DIR)/run_simsc: | $(SIM_COLLATERAL)
+	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) 2>&1 | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
@@ -100,8 +105,8 @@ cov.sc: COV_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cov.log
 cov.sc: COV_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.rpt
 cov.sc: COV_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.err
 $(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
-$(RESULTS_DIR)/covsc: $(COV_COLLATERAL)
-	cd $(@D); verilator_coverage */*.dat --rank --annotate $(COV_REPORT) | tee $(COV_LOG)
+$(RESULTS_DIR)/covsc: | $(COV_COLLATERAL)
+	cd $(@D); verilator_coverage */*.dat --rank --annotate $(COV_REPORT) 2>&1 | tee $(COV_LOG)
 
 wave.sc: $(SIM_DIR)/wavesc
 $(SIM_DIR)/wavesc:

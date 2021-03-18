@@ -2,6 +2,9 @@
  *  bp_fe_icache_axe_trace_gen.v
  */
 
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+
 module bp_fe_icache_axe_trace_gen
   #(parameter id_p="inv"
     ,parameter addr_width_p="inv"

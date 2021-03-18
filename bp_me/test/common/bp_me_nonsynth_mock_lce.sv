@@ -11,9 +11,11 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_nonsynth_mock_lce
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_nonsynth_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_unicore_half_cfg
     `declare_bp_proc_params(bp_params_p)
@@ -25,7 +27,7 @@ module bp_me_nonsynth_mock_lce
     , localparam block_idx_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p)
 
     , localparam lce_opcode_width_lp=$bits(bp_me_nonsynth_lce_opcode_e)
-    , localparam tr_ring_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_p)
+    , localparam tr_ring_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_gp)
 
     , localparam block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
@@ -84,8 +86,8 @@ module bp_me_nonsynth_mock_lce
   );
 
   initial begin
-    assert(dword_width_p == 64) else
-      $error("dword_width_p must be 64");
+    assert(dword_width_gp == 64) else
+      $error("dword_width_gp must be 64");
     assert(cce_block_width_p >= 64) else $error("cce_block_width_p must be at least 64-bits");
     assert(`BSG_IS_POW2(cce_block_width_p)) else $error("cce_block_width_p must be a power of two");
   end
@@ -94,7 +96,7 @@ module bp_me_nonsynth_mock_lce
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 
   // LCE TR Packet struct
-  `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_p);
+  `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_gp);
 
   // Tag+State struct
   `declare_bp_cce_dir_entry_s(ptag_width_lp);
@@ -228,8 +230,8 @@ module bp_me_nonsynth_mock_lce
   assign byte_offset = cmd.paddr[2:0];
 
   // Data word (64-bit) targeted by current trace replay command
-  logic [dword_width_p-1:0] load_dword;
-  assign load_dword = data_lo[mshr_r.lru_way][block_idx_width_lp'(dword_width_p*dword_offset) +: dword_width_p];
+  logic [dword_width_gp-1:0] load_dword;
+  assign load_dword = data_lo[mshr_r.lru_way][block_idx_width_lp'(dword_width_gp*dword_offset) +: dword_width_gp];
   logic word_sigext, half_sigext, byte_sigext;
   logic [31:0] load_word;
   logic [15:0] load_half;
@@ -424,7 +426,7 @@ module bp_me_nonsynth_mock_lce
           : e_bedrock_msg_size_8;
 
   // uncached load data extraction
-  wire [dword_width_p-1:0] uc_load_dword = lce_cmd.data[0 +: dword_width_p];
+  wire [dword_width_gp-1:0] uc_load_dword = lce_cmd.data[0 +: dword_width_gp];
   logic [31:0] uc_load_word;
   logic [15:0] uc_load_half;
   logic [7:0] uc_load_byte;
@@ -598,7 +600,7 @@ module bp_me_nonsynth_mock_lce
               ? e_bedrock_msg_size_2
               : e_bedrock_msg_size_1;
 
-        lce_req.data[0+:dword_width_p] = (mshr_r.store_op) ? cmd.data : '0;
+        lce_req.data[0+:dword_width_gp] = (mshr_r.store_op) ? cmd.data : '0;
 
         // wait for LCE req outbound to be ready (r&v), then wait for responses
         lce_state_n = (lce_req_ready_i)
@@ -1201,7 +1203,7 @@ module bp_me_nonsynth_mock_lce
         lce_req_v_o = lce_req_ready_i;
 
         lce_req_payload.dst_id = mshr_r.cce;
-        lce_req.header.msg_type.req = e_bedrock_req_rd;
+        lce_req.header.msg_type.req = e_bedrock_req_rd_miss;
         lce_req_payload.src_id = lce_id_i;
         lce_req.header.addr = mshr_r.paddr & addr_mask;
         lce_req_payload.non_exclusive = e_bedrock_req_excl;
@@ -1272,7 +1274,7 @@ module bp_me_nonsynth_mock_lce
         lce_req_v_o = lce_req_ready_i;
 
         lce_req_payload.dst_id = mshr_r.cce;
-        lce_req.header.msg_type.req = e_bedrock_req_wr;
+        lce_req.header.msg_type.req = e_bedrock_req_wr_miss;
         lce_req_payload.src_id = lce_id_i;
         lce_req.header.addr = mshr_r.paddr & addr_mask;
         lce_req_payload.non_exclusive = e_bedrock_req_excl;
@@ -1295,7 +1297,7 @@ module bp_me_nonsynth_mock_lce
    * LCE AXE / Memory Consistency Tracing
    */
 
-  localparam lg_dword_bytes_lp=`BSG_SAFE_CLOG2(dword_width_p/8);
+  localparam lg_dword_bytes_lp=`BSG_SAFE_CLOG2(dword_width_gp/8);
 
   always_ff @(posedge clk_i) begin
     if (axe_trace_p) begin

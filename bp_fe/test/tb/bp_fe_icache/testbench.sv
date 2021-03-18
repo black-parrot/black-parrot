@@ -1,6 +1,5 @@
 module testbench
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_fe_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
@@ -16,28 +15,24 @@ module testbench
 
    , parameter trace_file_p = "test.tr"
 
-   , parameter dram_fixed_latency_p = 0
-   , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-   , parameter mem_cap_in_bytes_p = 2**25
-   , parameter mem_file_p = "prog.mem"
+   // DRAM parameters
+   , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
 
-  , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-  , localparam page_offset_width_lp = bp_page_offset_width_gp
-  , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
-  , localparam trace_replay_data_width_lp = ptag_width_lp + vaddr_width_p + 1
+  , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+  , localparam trace_replay_data_width_lp = ptag_width_p + vaddr_width_p + 1
   , localparam trace_rom_addr_width_lp = 7
 
   , localparam yumi_min_delay_lp = 0
   , localparam yumi_max_delay_lp = 15
   )
-  ( input clk_i
-  , input reset_i
-  , input dram_clk_i
-  , input dram_reset_i
+  ( input bit clk_i
+  , input bit reset_i
+  , input bit dram_clk_i
+  , input bit dram_reset_i
   );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_li;
   logic [cfg_bus_width_lp-1:0] cfg_bus_li;
@@ -54,14 +49,14 @@ module testbench
   logic [trace_replay_data_width_lp-1:0] trace_data_li;
   logic trace_v_li, trace_ready_lo;
 
-  logic [instr_width_p-1:0] icache_data_lo;
+  logic [instr_width_gp-1:0] icache_data_lo;
   logic icache_data_v_lo;
 
   logic [trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
   logic [trace_replay_data_width_lp+3:0] trace_rom_data_li;
 
   logic [vaddr_width_p-1:0] vaddr_li;
-  logic [ptag_width_lp-1:0] ptag_li;
+  logic [ptag_width_p-1:0] ptag_li;
   logic uncached_li;
 
   logic switch_cce_mode;
@@ -74,9 +69,10 @@ module testbench
     cfg_bus_cast_li.cce_mode = e_cce_mode_normal;
   end
 
-  assign ptag_li = trace_data_lo[0+:(ptag_width_lp)];
-  assign vaddr_li = trace_data_lo[ptag_width_lp+:vaddr_width_p];
-  assign uncached_li = trace_data_lo[(ptag_width_lp+vaddr_width_p)+:1];
+  assign ptag_li       = trace_data_lo[0+:(ptag_width_p)];
+  assign vaddr_li      = trace_data_lo[ptag_width_p+:vaddr_width_p];
+  assign uncached_li   = trace_data_lo[(ptag_width_p+vaddr_width_p)+:1];
+  assign nonidem_li    = '0;
   assign trace_yumi_li = trace_v_lo & dut_ready_lo;
 
   // Trace replay
@@ -125,7 +121,7 @@ module testbench
 
   // Output FIFO
   logic fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
-  logic [instr_width_p-1:0] fifo_data_lo;
+  logic [instr_width_gp-1:0] fifo_data_lo;
   assign fifo_yumi_li = fifo_random_yumi_lo & trace_ready_lo;
   assign trace_v_li = fifo_yumi_li;
   assign trace_data_li = {'0, fifo_data_lo};
@@ -145,7 +141,7 @@ module testbench
   // This fifo has 16 elements since maximum number of streaming hits is 16
   // Probably a side effect of the testing strategy.  Open for debate
   bsg_fifo_1r1w_small
-    #(.width_p(instr_width_p)
+    #(.width_p(instr_width_gp)
      ,.els_p(16)
     )
     output_fifo
@@ -182,6 +178,7 @@ module testbench
      ,.ptag_v_i(trace_v_lo)
 
      ,.uncached_i(uncached_li)
+     ,.nonidem_i(nonidem_li)
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
 
@@ -195,22 +192,18 @@ module testbench
     );
 
   // Memory
-  bp_mem
+  bp_nonsynth_mem
    #(.bp_params_p(bp_params_p)
-     ,.mem_offset_p(mem_offset_p)
-     ,.mem_load_p(1)
-     ,.mem_file_p(mem_file_p)
-     ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-     ,.use_ddr_p(0)
-     ,.use_dramsim3_p(0)
-     ,.dram_fixed_latency_p(dram_fixed_latency_p)
+     ,.preload_mem_p(1)
+     ,.dram_type_p(dram_type_p)
+     ,.mem_els_p(2**20)
      )
     mem
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
     ,.mem_cmd_i(mem_cmd_lo)
-    ,.mem_cmd_v_i(mem_cmd_v_lo)
+    ,.mem_cmd_v_i(mem_cmd_ready_lo & mem_cmd_v_lo)
     ,.mem_cmd_ready_o(mem_cmd_ready_lo)
 
     ,.mem_resp_o(mem_resp_lo)
@@ -341,7 +334,7 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.mem_cmd_i(mem_cmd_lo)
-     ,.mem_cmd_v_i(mem_cmd_v_lo)
+     ,.mem_cmd_v_i(mem_cmd_ready_lo & mem_cmd_v_lo)
      ,.mem_cmd_ready_i(mem_cmd_ready_lo)
 
      ,.mem_resp_i(mem_resp_lo)

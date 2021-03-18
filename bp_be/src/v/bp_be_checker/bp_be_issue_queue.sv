@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_issue_queue
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_multicore_1_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -151,16 +153,17 @@ module bp_be_issue_queue
       issue_pkt_li = '0;
 
       // Pre-decode
-      issue_pkt_li.csr_v = instr.opcode inside {`RV64_SYSTEM_OP};
+      issue_pkt_li.csr_w_v = (instr inside {`RV64_CSRRW, `RV64_CSRRWI})
+        || (instr.opcode inside {`RV64_SYSTEM_OP} && (instr.rs1_addr != '0));
       issue_pkt_li.mem_v = instr.opcode inside {`RV64_FLOAD_OP, `RV64_FSTORE_OP
                                                 ,`RV64_LOAD_OP, `RV64_STORE_OP
                                                 ,`RV64_AMO_OP, `RV64_SYSTEM_OP
                                                 };
       issue_pkt_li.fence_v = instr inside {`RV64_FENCE, `RV64_FENCE_I, `RV64_SFENCE_VMA};
       issue_pkt_li.long_v = instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
-                                       ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
-                                       ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D
-                                       };
+                                          ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
+                                          ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D
+                                          };
 
       // Decide whether to read from integer regfile (saves power)
       casez (instr.opcode)

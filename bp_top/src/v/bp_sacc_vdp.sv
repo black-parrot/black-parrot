@@ -1,12 +1,14 @@
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_sacc_vdp
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     )
    (
     input                                     clk_i
@@ -35,6 +37,7 @@ module bp_sacc_vdp
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
   bp_bedrock_cce_mem_msg_header_s resp_header;
@@ -81,6 +84,7 @@ module bp_sacc_vdp
   assign resp_header   =  '{msg_type       : resp_msg
                             ,addr          : resp_addr
                             ,payload       : resp_payload
+                            ,subop         : e_bedrock_store
                             ,size          : resp_size  };
 
   assign io_resp_cast_o = '{header         : resp_header

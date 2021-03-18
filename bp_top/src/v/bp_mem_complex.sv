@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_mem_complex
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_me_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
@@ -34,8 +36,8 @@ module bp_mem_complex
    , input  [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_i
    , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_o
 
-   , output [mem_noc_ral_link_width_lp-1:0]                  dram_cmd_link_o
-   , input [mem_noc_ral_link_width_lp-1:0]                   dram_resp_link_i
+   , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  dram_cmd_link_o
+   , input [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]   dram_resp_link_i
    );
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -198,23 +200,8 @@ module bp_mem_complex
       assign mem_resp_link_o = mem_ver_link_li[S];
     end
 
-  bsg_wormhole_concentrator
-   #(.flit_width_p(mem_noc_flit_width_p)
-     ,.len_width_p(mem_noc_len_width_p)
-     ,.cid_width_p(mem_noc_cid_width_p)
-     ,.cord_width_p(mem_noc_cord_width_p)
-     ,.num_in_p(mc_x_dim_p)
-     )
-   concentrator
-    (.clk_i(mem_clk_i)
-     ,.reset_i(mem_reset_i)
-
-     ,.links_i(mem_ver_link_lo[S])
-     ,.links_o(mem_ver_link_li[S])
-
-     ,.concentrated_link_o(dram_cmd_link_o)
-     ,.concentrated_link_i(dram_resp_link_i)
-     );
+  assign dram_cmd_link_o = mem_ver_link_lo[S];
+  assign mem_ver_link_li[S] = dram_resp_link_i;
 
 endmodule
 

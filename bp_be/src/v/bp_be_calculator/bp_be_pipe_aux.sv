@@ -9,9 +9,11 @@
  * Notes:
  *
  */
+`include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+
 module bp_be_pipe_aux
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -24,12 +26,13 @@ module bp_be_pipe_aux
    , input                             reset_i
 
    , input [dispatch_pkt_width_lp-1:0] reservation_i
+   , input                             flush_i
    , input rv64_frm_e                  frm_dyn_i
 
    // Pipeline results
-   , output [dpath_width_p-1:0]        data_o
+   , output logic [dpath_width_gp-1:0] data_o
    , output rv64_fflags_s              fflags_o
-   , output                            v_o
+   , output logic                      v_o
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -54,7 +57,7 @@ module bp_be_pipe_aux
   //
   // Convert recoded registers to raw
   //
-  logic [dword_width_p-1:0] frs1_raw;
+  logic [dword_width_gp-1:0] frs1_raw;
   bp_be_rec_to_fp
    #(.bp_params_p(bp_params_p))
    frs1_rec2raw
@@ -64,7 +67,7 @@ module bp_be_pipe_aux
      ,.raw_o(frs1_raw)
      );
 
-  logic [dword_width_p-1:0] frs2_raw;
+  logic [dword_width_gp-1:0] frs2_raw;
   bp_be_rec_to_fp
    #(.bp_params_p(bp_params_p))
    frs2_rec2raw
@@ -77,12 +80,12 @@ module bp_be_pipe_aux
   //
   // Move Float -> Int
   //
-  logic [dword_width_p-1:0] fmvi_result;
+  logic [dword_width_gp-1:0] fmvi_result;
   rv64_fflags_s fmvi_fflags;
 
   assign fmvi_result =
       decode.opw_v
-      ? {{word_width_p{frs1_raw[word_width_p-1]}}, frs1_raw[0+:word_width_p]}
+      ? {{word_width_gp{frs1_raw[word_width_gp-1]}}, frs1_raw[0+:word_width_gp]}
       : frs1_raw;
   assign fmvi_fflags = '0;
 
@@ -90,8 +93,8 @@ module bp_be_pipe_aux
   // FMV Int -> Float
   //
   wire signed_i2f = (decode.fu_op inside {e_aux_op_i2f, e_aux_op_imvf});
-  wire i2f_sigext = signed_i2f & frs1[word_width_p-1];
-  wire [dword_width_p-1:0] imvf_src = decode.opw_v ? ({{word_width_p{i2f_sigext}}, frs1[0+:word_width_p]}) : frs1;
+  wire i2f_sigext = signed_i2f & frs1[word_width_gp-1];
+  wire [dword_width_gp-1:0] imvf_src = decode.opw_v ? ({{word_width_gp{i2f_sigext}}, frs1[0+:word_width_gp]}) : frs1;
 
   bp_be_fp_reg_s imvf_result;
   rv64_fflags_s imvf_fflags;
@@ -109,7 +112,7 @@ module bp_be_pipe_aux
   //
   // FCVT Int -> Float
   //
-  wire [dword_width_p-1:0] i2f_src = decode.opw_v ? ({{word_width_p{i2f_sigext}}, frs1[0+:word_width_p]}) : frs1;
+  wire [dword_width_gp-1:0] i2f_src = decode.opw_v ? ({{word_width_gp{i2f_sigext}}, frs1[0+:word_width_gp]}) : frs1;
 
   bp_be_fp_reg_s i2f_result;
   rv64_fflags_s i2f_fflags;
@@ -117,7 +120,7 @@ module bp_be_pipe_aux
   logic [dp_rec_width_gp-1:0] i2d_out;
   rv64_fflags_s i2d_fflags;
   iNToRecFN
-   #(.intWidth(dword_width_p)
+   #(.intWidth(dword_width_gp)
      ,.expWidth(dp_exp_width_gp)
      ,.sigWidth(dp_sig_width_gp)
      )
@@ -135,7 +138,7 @@ module bp_be_pipe_aux
   logic [sp_rec_width_gp-1:0] i2s_out;
   rv64_fflags_s i2s_fflags;
   iNToRecFN
-   #(.intWidth(dword_width_p)
+   #(.intWidth(dword_width_gp)
      ,.expWidth(sp_exp_width_gp)
      ,.sigWidth(sp_sig_width_gp)
      )
@@ -169,15 +172,15 @@ module bp_be_pipe_aux
   //
   // FCVT Float -> Int
   //
-  logic [dword_width_p-1:0] f2i_result;
+  logic [dword_width_gp-1:0] f2i_result;
   rv64_fflags_s f2i_fflags;
 
   // Double -> dword conversion
-  logic [dword_width_p-1:0] f2dw_out;
+  logic [dword_width_gp-1:0] f2dw_out;
   rv64_iflags_s f2dw_iflags;
   wire signed_f2i = (decode.fu_op inside {e_aux_op_f2i, e_aux_op_fmvi});
   recFNToIN
-   #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp), .intWidth(dword_width_p))
+   #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp), .intWidth(dword_width_gp))
    f2dw
     (.control(control_li)
      ,.in(frs1.rec)
@@ -189,10 +192,10 @@ module bp_be_pipe_aux
 
   // It's possible we can do away with this int converter and manually
   //   check for inexact exceptions.
-  logic [word_width_p-1:0] f2w_out;
+  logic [word_width_gp-1:0] f2w_out;
   rv64_iflags_s f2w_iflags;
   recFNToIN
-   #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp), .intWidth(word_width_p))
+   #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp), .intWidth(word_width_gp))
    f2w
     (.control(control_li)
      ,.in(frs1.rec)
@@ -203,7 +206,7 @@ module bp_be_pipe_aux
      );
 
   assign f2i_result = decode.opw_v
-                      ? {{word_width_p{f2w_out[word_width_p-1]}}, f2w_out}
+                      ? {{word_width_gp{f2w_out[word_width_gp-1]}}, f2w_out}
                       : f2dw_out;
   assign f2i_fflags = decode.opw_v
                       ? '{nv: f2w_iflags.nv | f2w_iflags.of, nx: f2w_iflags.nx, default: '0}
@@ -218,11 +221,11 @@ module bp_be_pipe_aux
   //
   wire frs1_raw_v_li = ~decode.ops_v | frs1.sp_not_dp;
   wire [dp_rec_width_gp-1:0] frs1_rec_li = frs1_raw_v_li ? frs1.rec : dp_canonical_rec;
-  wire [dword_width_p-1:0] frs1_raw_li = frs1_raw_v_li ? frs1_raw : sp_canonical_nan;
+  wire [dword_width_gp-1:0] frs1_raw_li = frs1_raw_v_li ? frs1_raw : sp_canonical_nan;
 
   wire frs2_raw_v_li = ~decode.ops_v | frs2.sp_not_dp;
   wire [dp_rec_width_gp-1:0] frs2_rec_li = frs2_raw_v_li ? frs2.rec : dp_canonical_rec;
-  wire [dword_width_p-1:0] frs2_raw_li = frs2_raw_v_li ? frs2_raw : sp_canonical_nan;
+  wire [dword_width_gp-1:0] frs2_raw_li = frs2_raw_v_li ? frs2_raw : sp_canonical_nan;
 
   logic frs1_is_nan, frs1_is_inf, frs1_is_zero;
   logic frs1_sign;
@@ -335,7 +338,7 @@ module bp_be_pipe_aux
 
   assign d2s2d_final = '{sign  : d2s_round.sign
                          ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                         ,fract: d2s_round.fract << (dp_sig_width_gp-sp_sig_width_gp)
+                         ,fract: {d2s_round.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                          };
 
   // SP->DP conversion is a NOP, except for canonicalizing NaNs
@@ -350,9 +353,9 @@ module bp_be_pipe_aux
   bp_be_fp_reg_s fsgnj_result;
   rv64_fflags_s fsgnj_fflags;
 
-  logic [dword_width_p-1:0] fsgnj_raw;
+  logic [dword_width_gp-1:0] fsgnj_raw;
   logic sgn_lo;
-  wire [`BSG_SAFE_CLOG2(dword_width_p)-1:0] signbit = decode.ops_v ? (word_width_p-1) : (dword_width_p-1);
+  wire [`BSG_SAFE_CLOG2(dword_width_gp)-1:0] signbit = decode.ops_v ? (word_width_gp-1) : (dword_width_gp-1);
   always_comb
     begin
       unique case (decode.fu_op)
@@ -491,7 +494,7 @@ module bp_be_pipe_aux
       endcase
     end
 
-  wire faux_v_li = reservation.v & ~reservation.poison & reservation.decode.pipe_aux_v;
+  wire faux_v_li = reservation.v & reservation.decode.pipe_aux_v;
   bsg_dff_chain
    #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)+1), .num_stages_p(latency_p-1))
    retiming_chain

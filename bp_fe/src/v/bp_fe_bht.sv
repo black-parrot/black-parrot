@@ -9,24 +9,31 @@
  * native to this design.
  * 2-bit saturating counter(high_bit:prediction direction,low_bit:strong/weak prediction)
  */
-module bp_fe_bht
- import bp_fe_pkg::*;
- #(parameter vaddr_width_p     = "inv"
-   , parameter bht_idx_width_p = "inv"
+`include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
 
-   , localparam els_lp = 2**bht_idx_width_p
+module bp_fe_bht
+ import bp_common_pkg::*;
+ import bp_fe_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
+
+   , localparam idx_width_lp = bht_idx_width_p+ghist_width_p
    )
   (input                         clk_i
    , input                       reset_i
 
+   , output logic                init_done_o
+
    , input                       w_v_i
-   , input [bht_idx_width_p-1:0] idx_w_i
+   , input [idx_width_lp-1:0]    idx_w_i
    , input [1:0]                 val_i
    , input                       correct_i
+   , output logic                w_yumi_o
 
    , input                       r_v_i
-   , input [bht_idx_width_p-1:0] idx_r_i
-   , output [1:0]                val_o
+   , input [idx_width_lp-1:0]    idx_r_i
+   , output logic [1:0]          val_o
    );
 
   // Initialization state machine
@@ -35,7 +42,9 @@ module bp_fe_bht
   wire is_clear = (state_r == e_clear);
   wire is_run   = (state_r == e_run);
 
-  localparam bht_els_lp = 2**bht_idx_width_p;
+  assign init_done_o = is_run;
+
+  localparam bht_els_lp = 2**idx_width_lp;
   localparam bht_init_lp = 2'b01;
   logic [`BSG_WIDTH(bht_els_lp)-1:0] init_cnt;
   bsg_counter_clear_up
@@ -65,19 +74,16 @@ module bp_fe_bht
     else
       state_r <= state_n;
 
-  /* TODO: We should fold this tall, narrow RAM */
-  wire                          w_v_li = is_clear | w_v_i;
-  wire [bht_idx_width_p-1:0] w_addr_li = is_clear ? init_cnt : idx_w_i;
-  wire [1:0]                 w_data_li = is_clear ? bht_init_lp : correct_i ? {val_i[1], 1'b0} : {val_i[1]^val_i[0], 1'b1};
+  wire rw_same_addr = r_v_i & w_v_i & (idx_r_i == idx_w_i);
+  wire                       w_v_li = is_clear | (w_v_i & ~rw_same_addr);
+  wire [idx_width_lp-1:0] w_addr_li = is_clear ? init_cnt : idx_w_i;
+  wire [1:0]              w_data_li = is_clear ? bht_init_lp : correct_i ? {val_i[1], 1'b0} : {val_i[1]^val_i[0], 1'b1};
 
-  // We could technically forward, but instead we'll bank the memory in
-  //   the future, so won't waste effort here
-  wire                    rw_same_addr = r_v_i & w_v_i & (w_addr_li == idx_r_i);
-  wire                          r_v_li = r_v_i & ~rw_same_addr;
-  wire [bht_idx_width_p-1:0] r_addr_li = idx_r_i;
+  wire                       r_v_li = r_v_i;
+  wire [idx_width_lp-1:0] r_addr_li = idx_r_i;
   logic [1:0] r_data_lo;
   bsg_mem_1r1w_sync
-   #(.width_p(2), .els_p(2**bht_idx_width_p))
+   #(.width_p(2), .els_p(bht_els_lp))
    bht_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -90,6 +96,7 @@ module bp_fe_bht
      ,.r_addr_i(r_addr_li)
      ,.r_data_o(r_data_lo)
      );
+  assign w_yumi_o = is_run & w_v_i & ~rw_same_addr;
 
   logic r_v_r;
   bsg_dff_reset

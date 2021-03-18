@@ -1,5 +1,6 @@
 $(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv $(LINT_DIR)/test_bp.cpp:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
@@ -15,6 +16,7 @@ LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv tes
 
 $(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.cpp:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
@@ -31,36 +33,30 @@ VBUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv t
 $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
 	@ln -nsf $</simsc $@
 
-$(SIM_DIR)/prog.riscv: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
-	@cp $^ $@
-
-$(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
+$(SIM_DIR)/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
 	cp $^ $@
 
-$(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
+$(SIM_DIR)/prog.elf: $(SIM_DIR)/prog.riscv
+	cp $^ $@
+
+$(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
 	cp $< $@
 
-UCODE2BOOT ?= $(BP_COMMON_DIR)/software/py/ucode2boot.py
-XXD ?= xxd
-$(SIM_DIR)/cce_ucode.bin: $(SIM_DIR)/cce_ucode.mem
-	cd $(@D); python3 $(UCODE2BOOT) --ucode=$< --path=$(@D) | $(XXD) -r -p > $@
-
 NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
-ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem --skip_zeros
-endif
 ifeq ($(NBF_CONFIG_P), 1)
 NBF_INPUTS += --config
 endif
+NBF_INPUTS += --addr_width=$(PADDR_WIDTH)
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
 
-$(SIM_DIR)/bootrom.riscv: $(SIM_DIR)/cce_ucode.bin
-	$(MAKE) -C $(BP_COMMON_DIR)/test/src/bootrom $@
+$(SIM_DIR)/bootrom.riscv: $(BP_SDK_PROG_DIR)/bootrom/bootrom.riscv
+	cp $< $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
-	$(RISCV_OBJCOPY) -O verilog --reverse-bytes=8 --verilog-data-width=8 $< $@
+	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 $< $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
@@ -68,7 +64,7 @@ SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.mem bootrom.dump)
 
 SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
-SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
+SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.elf prog.mem prog.dump)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 
 sim_sample.sc: build.sc
@@ -78,19 +74,19 @@ sim_sample.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PR
 sim_sample.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_DIR)/run_samplesc: $(SAMPLE_COLLATERAL)
 	cd $(@D); \
-		$(DROMAJO) $(@D)/prog.riscv --host --ncpus=$(NCPUS) --maxinsn=$(SAMPLE_START_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
-	mv $(@D)/dromajo.*.mainram $(@D)/prog.mainram
-	mv $(@D)/dromajo.*.bootram $(@D)/prog.bootram
-	mv $(@D)/dromajo.*.bp_regs $(@D)/prog.bp_regs
+		$(DROMAJO) $(@D)/prog.riscv --host $(if $(AMOEN),--enable_amo) --ncpus=$(NCPUS) --maxinsn=$(SAMPLE_START_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
+	mv $(@D)/dromajo.mainram $(@D)/prog.mainram
+	mv $(@D)/dromajo.bootram $(@D)/prog.bootram
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 -I binary -O elf64-littleriscv -B riscv \
 		$(@D)/prog.mainram $(@D)/prog.riscv
 	$(RISCV_OBJCOPY) -O verilog $(@D)/prog.riscv $(@D)/prog.mem
 	$(SED) -i "s/@8/@0/g" $(@D)/prog.mem
 	$(RISCV_OBJCOPY) -I binary -O elf64-littleriscv -B riscv $(@D)/prog.bootram $(@D)/bootrom.riscv
-	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 --reverse-bytes=8 $(@D)/bootrom.riscv $(@D)/bootrom.mem
+	$(RISCV_OBJDUMP) -D $(@D)/bootrom.riscv > $(@D)/bootrom.dump
+	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 $(@D)/bootrom.riscv $(@D)/bootrom.mem
 	$(RISCV_OBJCOPY) -O binary $(@D)/bootrom.riscv $(@D)/bootrom.bin
 	cd $(@D); \
-		python $(MEM2NBF) $(NBF_INPUTS) --checkpoint=prog.bp_regs > prog.nbf
+		python $(MEM2NBF) $(NBF_INPUTS) > prog.nbf
 	cd $(@D); \
 		./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
@@ -102,15 +98,12 @@ tire_kick: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).
 tire_kick: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_DIR)/tire_kick: $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 	$(MAKE) $(@D)/simsc
-	cp $(BP_TEST_MEM_DIR)/hello_world.mem  $(@D)/prog.mem
-	sed -i "s/@8/@0/g" $(@D)/prog.mem
-	cp $(BP_TEST_MEM_DIR)/hello_world.dump $(@D)/prog.dump
-	cp $(BP_TEST_MEM_DIR)/bootrom.mem  $(@D)/bootrom.mem
-	sed -i "s/@8/@0/g" $(@D)/bootrom.mem
-	cp $(BP_TEST_MEM_DIR)/bootrom.dump $(@D)/bootrom.dump
-	cp $(CCE_MEM_PATH)/$(CCE_MEM) $(@D)/cce_ucode.mem
+	touch $(@D)/bootrom.mem
+	cp $(TB_PATH)/$(TB)/hello_world.mem $(@D)/prog.mem
+	## Stub out cce_ucode and bootrom since they're unused by this example
+	touch $(@D)/cce_ucode.mem $(@D)/bootrom.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $(@D)/prog.nbf
-	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
+	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) 2>&1 | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 

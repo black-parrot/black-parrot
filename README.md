@@ -20,6 +20,8 @@ Development of BlackParrot continues, and we are very excited about what we are 
 A 12nm BlackParrot multicore chip was taped out in July 2019.
 
 ## Press
+We presented BlackParrot at the December 2020 RISC-V Summit! [slides](https://drive.google.com/file/d/1JPIidbk4pTuCgfV8uXorm-SdgOlQ0gTM/view?usp=sharing)
+
 We presented BlackParrot at the ICS 2020 Workshop on RISC-V and OpenPOWER! [slides](https://ics2020.bsc.es/sites/default/files/uploaded/DAN%20PETRISKO%20BlackParrot%20ISC%202020.pdf)
 
 We first announced BlackParrot at FOSDEM 2020! [slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) [video](https://video.fosdem.org/2020/K.3.401/riscv_blackparrot.mp4) [pdf](https://drive.google.com/file/d/16BXCT1kK3gQ0XKfZPR-K8Zs2E648qFp9/view?usp=sharing)
@@ -71,8 +73,19 @@ We welcome external contributions! Please join our mailing list at [Google Group
 ## Coding Style
 BlackParrot is written in standard SystemVerilog, using a subset of the language known to be both synthesizable and compatible with a wide variety of vendor tools. Details of these style choices both functional and aesthetic can be found in our [Style Guide](docs/style_guide.md)
 
+## Software Development Kit
+BlackParrot is Linux-capable, so it is possible to run all programs which run on BusyBox. However,
+for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long
+Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some
+platform-specific features are only available at the firmware level. Developers looking to write
+low-level BlackParrot code, or optimize for the BlackParrot platform should look at our [SDK](sdk)
+
 ## Software Developer Guide
-BlackParrot is Linux-capable, so it is possible to run all programs which run on BusyBox. However, for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some platform-specific features are only available at the firmware level. Developers looking to write low-level BlackParrot code, or optimize for the BlackParrot platform should look at our [SW Developer Guide](docs/software_guide.md)
+Once you've built and validate your BlackParrot program and are ready to run on RTL, look at our
+[TestBench Guide](docs/testbench_guide.md)
+
+## Hardware Development Kit
+Coming Soon!
 
 ## Interface Specification
 BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow, latency-insensitive interfaces. The interfaces are designed to allow implementations of the various system components to change independently of one another, without worrying about cascading functional or timing effects. Read more about BlackParrot's standardized interfaces here: [Interface Specification](docs/interface_specification.md)

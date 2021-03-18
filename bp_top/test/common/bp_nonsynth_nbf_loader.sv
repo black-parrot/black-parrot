@@ -3,10 +3,12 @@
  *
  */
 
+`include "bp_common_defines.svh"
+`include "bp_top_defines.svh"
+
 module bp_nonsynth_nbf_loader
 
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_be_pkg::*;
   import bp_me_pkg::*;
 
@@ -17,7 +19,7 @@ module bp_nonsynth_nbf_loader
   ,parameter nbf_filename_p = "prog.nbf"
   ,parameter nbf_opcode_width_p = 8
   ,parameter nbf_addr_width_p = paddr_width_p
-  ,parameter nbf_data_width_p = dword_width_p
+  ,parameter nbf_data_width_p = dword_width_gp
 
   ,localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
   ,localparam max_nbf_index_lp = 2**26
@@ -99,6 +101,7 @@ module bp_nonsynth_nbf_loader
     io_cmd.header.payload = io_cmd_payload;
     io_cmd.header.addr = curr_nbf.addr;
     io_cmd.header.msg_type.mem = e_bedrock_mem_uc_wr;
+    io_cmd.header.subop = e_bedrock_store;
 
     case (curr_nbf.opcode)
       2: io_cmd.header.size = e_bedrock_msg_size_4;
