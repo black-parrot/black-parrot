@@ -1,6 +1,6 @@
 # Debugging Your BlackParrot Boot
 
-## What do I do if Nothing Happens?
+## What Do I Do If Nothing Happens?
 
 When integrating any IP into your project, the most common error is "nothing happens!". When dealing with a large, complex codebase, this is an intimidating blocker. This section details what to look for in your BlackParrot boot to smoke test the environment.
 
