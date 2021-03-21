@@ -523,41 +523,27 @@ module bp_tile
 
   assign {loopback_mem_cmd_li, cache_mem_cmd_li, clint_mem_cmd_li, cfg_mem_cmd_li} = {4{cce_mem_cmd_lo}};
 
-  bp_bedrock_cce_mem_msg_s mem_resp_selected_li;
-  logic mem_resp_selected_v_li, mem_resp_selected_ready_lo;
+  logic loopback_mem_resp_grant_li, clint_mem_resp_grant_li, cfg_mem_resp_grant_li, cache_mem_resp_grant_li;
   bsg_arb_fixed
-   #(.inputs_p(4)
-     ,.lo_to_hi_p(1)
-     )
+   #(.inputs_p(4), .lo_to_hi_p(1))
    resp_arb
-    (.ready_i(mem_resp_selected_ready_lo)
+    (.ready_i(1'b1)
      ,.reqs_i({loopback_mem_resp_v_lo, clint_mem_resp_v_lo, cfg_mem_resp_v_lo, cache_mem_resp_v_lo})
-     ,.grants_o({loopback_mem_resp_yumi_li, clint_mem_resp_yumi_li, cfg_mem_resp_yumi_li, cache_mem_resp_yumi_li})
+     ,.grants_o({loopback_mem_resp_grant_li, clint_mem_resp_grant_li, cfg_mem_resp_grant_li, cache_mem_resp_grant_li})
      );
 
   bsg_mux_one_hot
    #(.width_p($bits(bp_bedrock_cce_mem_msg_s)), .els_p(4))
    resp_select
     (.data_i({loopback_mem_resp_lo, clint_mem_resp_lo, cfg_mem_resp_lo, cache_mem_resp_lo})
-     ,.sel_one_hot_i({loopback_mem_resp_yumi_li, clint_mem_resp_yumi_li, cfg_mem_resp_yumi_li, cache_mem_resp_yumi_li})
-     ,.data_o(mem_resp_selected_li)
-     );
-
-  assign mem_resp_selected_v_li = loopback_mem_resp_yumi_li | clint_mem_resp_yumi_li | cfg_mem_resp_yumi_li | cache_mem_resp_yumi_li;
-  bsg_two_fifo
-   #(.width_p($bits(bp_bedrock_cce_mem_msg_s)))
-   resp_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_r)
-
-     ,.data_i(mem_resp_selected_li)
-     ,.v_i(mem_resp_selected_v_li)
-     ,.ready_o(mem_resp_selected_ready_lo)
-
+     ,.sel_one_hot_i({loopback_mem_resp_grant_li, clint_mem_resp_grant_li, cfg_mem_resp_grant_li, cache_mem_resp_grant_li})
      ,.data_o(cce_mem_resp_li)
-     ,.v_o(cce_mem_resp_v_li)
-     ,.yumi_i(cce_mem_resp_yumi_lo)
      );
+  assign cce_mem_resp_v_li = |{loopback_mem_resp_v_lo, clint_mem_resp_v_lo, cfg_mem_resp_v_lo, cache_mem_resp_v_lo};
+  assign cache_mem_resp_yumi_li    = cce_mem_resp_yumi_lo & cache_mem_resp_grant_li;
+  assign cfg_mem_resp_yumi_li      = cce_mem_resp_yumi_lo & cfg_mem_resp_grant_li;
+  assign clint_mem_resp_yumi_li    = cce_mem_resp_yumi_lo & clint_mem_resp_grant_li;
+  assign loopback_mem_resp_yumi_li = cce_mem_resp_yumi_lo & loopback_mem_resp_grant_li;
 
   import bsg_cache_pkg::*;
   `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
@@ -569,7 +555,7 @@ module bp_tile
    #(.bp_params_p(bp_params_p))
    cce_to_cache
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.mem_cmd_i(cache_mem_cmd_li)
      ,.mem_cmd_v_i(cache_mem_cmd_v_li)
@@ -615,7 +601,7 @@ module bp_tile
     )
    cache
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.cache_pkt_i(cache_pkt_li)
      ,.v_i(cache_pkt_v_li)
@@ -651,7 +637,7 @@ module bp_tile
      )
    bsg_cache_dma_to_wormhole
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.dma_pkt_i(dma_pkt_lo)
      ,.dma_pkt_v_i(dma_pkt_v_lo)
