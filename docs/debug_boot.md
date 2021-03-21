@@ -10,7 +10,7 @@ If you're working in RTL simulation, simply add these signals to the waveform en
 
 ## FPGA System Bringup Best Practices
 
-It is often very tempting to try to bring up your system on FPGA by trying to write Verilog and then directly run on FPGA, and then try to guess why it is not working. While it seems like this would be the fastest path to get thing running, it will lead you down a path of countless wasted days. Here are best practices for FPGA bringup on a system where you have your own components that you are adding to BlackParrot:
+It is often very tempting to try to bring up your system on FPGA by trying to write Verilog and then directly run on FPGA, and then try to guess why it is not working. While it seems like this would be the least effort path to get things running, it will lead you down a path of countless wasted days. Here are best practices for FPGA bringup on a system where you have your own components that you are adding to BlackParrot:
 
 - Debug the Software
     1. Start with the smallest subset of your software. Consider using Panic Room to start with instead of Linux, since it boots much faster in simulation. As you get things working, include more and more of the software.
