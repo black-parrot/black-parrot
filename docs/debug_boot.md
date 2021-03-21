@@ -43,27 +43,34 @@ The first method of boot involves a host tether (i.e. a connection to a host mac
 The default NBF boot sequence is as follows (waveforms shown from executing the "hello world" program):
 - reset is lowered. This must be lowered for 10 or more cycles. reset is raised.
 - The freeze register is set. This prevents BlackParrot from fetching or executing instructions.
-- I/O writes begin happening. There should be a single response for each request. These should look like the following:
+- I/O writes begin happening. There should be a single response for each request. These should look
+  like the following: (signals relative to: test_bp.tb.wrapper.unicore.dut.cache)
 
 ![I/O Writes](debug_io.png)
 
-- Configuration registers are set as seen below:
+- Configuration registers are set as seen below: (signals relative to:
+  test_bp.tb.wrapper.unicore.dut.cfg)
 
 ![Configuration Registers](debug_cfgbus.png)
 
-- The program is loaded into the L2 cache:
+- The program is loaded into the L2 cache: (signals relative to:
+  test_bp.tb.wrapper.unicore.dut.cache)
 
 ![Cache Transactions](debug_cache.png)
 
-- The cache will fetch allocated lines from the DRAM. (In simulation this will be zero, but in hardware this may be an arbitrary uninitialized value):
+- The cache will fetch allocated lines from the DRAM. (In simulation this will be zero, but in
+  hardware this may be an arbitrary uninitialized value) (signals relative to
+test_bp.tb.wrapper.unicore.dut.cache):
 
 ![DMA Transactions](debug_dma.png)
 
-- The freeze register is lowered. Instructions begin to be fetched:
+- The freeze register is lowered. Instructions begin to be fetched (signals relative to
+  test_bp.tb.wrapper.unicore.dut.core_minimal.be.director):
 
 ![Begin Fetch](debug_freeze.png)
 
-- The register file should begin to see reads and writes:
+- The register file should begin to see reads and writes (signals relative to
+  test_bp.tb.wrapper.unicore.dut.core_minimal.be.scheduler.int_regfile):
 
 ![Regfile](debug_rf.png)
 
