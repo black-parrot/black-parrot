@@ -31,16 +31,16 @@ It is often very tempting to try to bring up your system on FPGA by trying to wr
 
 - If you encounter an issue with FPGA and want feedback, we expect you to have performed these steps before contacting us, and to be able to produce the minimal intermediate subsystem, at the earliest step in the above sequence, that does not work; and to provide the relevant waveforms of signals inside BlackParrot, and a diagnosis of the observed problem with BlackParrot. This is exactly the same bar that we have internally on our team. If somebody on our team has a problem, this is what we would expect them to have done, and we would not look at the problem until they have completed these steps. Even when you provide this information, we will provide what advice we can, but our focus (and greatest level of expertise) is to chase down and kill bugs in the BlackParrot RTL; unfortunately, we do not have the resources to chase down bugs in other people's FPGA platforms.
 
-## Boot Process (Method 1: NBF)
+## Boot Process (Method 1: NBF and Host Tether)
 
-The first method of boot involves a host tether which sets up BlackParrot for execution. The BlackParrot NBF boot happens in several steps. An NBF (network boot format) loader in the testbench takes in an NBF file, and converts it into a series of I/O writes into the core. This I/O fills the DRAM, cce microcode, and sets configuration registers within BlackParrot. Usage of nbf.py is shown below:
+The first method of boot involves a host tether (i.e. a connection to a host machine) which sets up BlackParrot for execution. The BlackParrot NBF boot happens in several steps. An NBF (network boot format) loader in the testbench takes in an NBF file, and converts it into a series of I/O writes into the core. This I/O fills the DRAM, cce microcode, and sets configuration registers within BlackParrot. Usage of nbf.py is shown below:
 
 
     usage: nbf.py [-h] [--ncpus NCPUS] [--ucode ucode.mem] [--mem prog.mem]
               [--config] [--checkpoint sample.nbf] [--skip_zeros]
               [--addr_width ADDR_WIDTH]
 
-The default NPF boot sequence is as follows (waveforms shown from executing the "hello world" program):
+The default NBF boot sequence is as follows (waveforms shown from executing the "hello world" program):
 - reset is lowered. This must be lowered for 10 or more cycles. reset is raised.
 - The freeze register is set. This prevents BlackParrot from fetching or executing instructions.
 - I/O writes begin happening. There should be a single response for each request. These should look like the following:
