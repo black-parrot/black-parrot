@@ -110,6 +110,13 @@ BlackParrot has a configurable physical address width as well as maximum DRAM si
   * Striped by tile
   * Off-chip region
 
+For a BlackParrot Unicore, an "off-chip" address goes out the io_cmd/io_resp ports. An "on-chip"
+address goes to a local device if below the DRAM base address, and to the L2 if in DRAM space.
+
+For a BlackParrot Multicore, an "off-chip" device is routed to the I/O complex. The I/O complex will
+either send it east or west depending on the destination "domain ID" (upper uncached bits) of the
+address compared to the domain ID of the chip itself (set statically at the toplevel).
+
 ### Local Address Map
 * 0x00_0000_0000 - 0x00_0(nnnN)(D)(A_AAAA)
   * nnnN -> 7 bits = 128 max tiles
