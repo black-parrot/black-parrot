@@ -32,6 +32,8 @@ $BP_BE_DIR/src/include/bp_be_pkg.sv
 # ME packages
 $BP_ME_DIR/src/include/bp_me_pkg.sv
 ## BaseJump STL files
+$BASEJUMP_STL_DIR/bsg_misc/bsg_defines.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_ptr_gray.v

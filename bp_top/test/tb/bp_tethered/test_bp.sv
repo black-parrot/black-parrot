@@ -16,7 +16,7 @@ module test_bp
   bit clk, reset;
   bit dram_clk, dram_reset;
   
-  bsg_nonsynth_clock_gen
+  bsg_nonsynth_dpi_clock_gen
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
    clock_gen
     (.o(clk));
@@ -31,7 +31,7 @@ module test_bp
      ,.async_reset_o(reset)
      );
   
-  bsg_nonsynth_clock_gen
+  bsg_nonsynth_dpi_clock_gen
    #(.cycle_time_p(`dram_pkg::tck_ps))
    dram_clock_gen
     (.o(dram_clk));

@@ -1,12 +1,13 @@
 #include <stdlib.h>
-#include <systemc.h>
-#include <verilated_vcd_sc.h>
+#include <verilated_fst_c.h>
 #include <verilated_cov.h>
 
 #include "Vtestbench.h"
 #include "Vtestbench__Dpi.h"
+#include "bsg_nonsynth_dpi_clock_gen.hpp"
+using namespace bsg_nonsynth_dpi;
 
-int sc_main(int argc, char **argv) {
+int main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
   Verilated::traceEverOn(VM_TRACE);
   Verilated::assertOn(false);
@@ -16,40 +17,41 @@ int sc_main(int argc, char **argv) {
   svScope g_scope = svGetScopeFromName("test_bp.testbench");
   svSetScope(g_scope);
 
-  int sim_period = get_sim_period();
-  int dram_period = get_dram_period();
+  // Let clock generators register themselves.
+  tb->eval();
+
   // Use me to find the correct scope of your DPI functions
   //Verilated::scopesDump();
 
-  sc_clock clock("clk", sc_time(sim_period, SC_PS));
-  sc_clock dram_clock("dram_clk", sc_time(dram_period, SC_PS));
-  sc_signal <bool> reset("reset");
-
-  tb->clk_i(clock);
-  tb->reset_i(reset);
-  tb->dram_clk_i(dram_clock);
-  tb->dram_reset_i(reset);
-
-#if VM_TRACE
+#if VM_TRACE_FST
+  std::cout << "Opening dump file" << std::endl;
+  VerilatedFstC* wf = new VerilatedFstC;
+  tb->trace(wf, 10);
+  wf->open("dump.fst");
+#elif VM_TRACE
   std::cout << "Opening dump file" << std::endl;
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   tb->trace(wf, 10);
   wf->open("dump.vcd");
 #endif
 
-  reset = 1;
+  tb->reset_i = 1;
+  tb->dram_reset_i = 1;
 
   std::cout << "Raising reset" << std::endl;
   for (int i = 0; i < 20; i++) {
-    sc_start(std::max(sim_period, dram_period), SC_PS);
+    bsg_timekeeper::next();
+    tb->eval();
   }
   std::cout << "Lowering reset" << std::endl;
 
-  reset = 0;
+  tb->reset_i = 0;
+  tb->dram_reset_i = 0;
   Verilated::assertOn(true);
 
   while (!Verilated::gotFinish()) {
-    sc_start(sim_period, SC_PS);
+    bsg_timekeeper::next();
+    tb->eval();
   }
   std::cout << "Finishing test" << std::endl;
 
