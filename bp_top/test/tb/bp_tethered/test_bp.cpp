@@ -30,9 +30,6 @@ int main(int argc, char **argv) {
   wf->open("dump.fst");
 #endif
 
-  tb->reset_i = 1;
-  tb->dram_reset_i = 1;
-
   std::cout << "Raising reset" << std::endl;
   for (int i = 0; i < 20; i++) {
     bsg_timekeeper::next();
@@ -40,8 +37,6 @@ int main(int argc, char **argv) {
   }
   std::cout << "Lowering reset" << std::endl;
 
-  tb->reset_i = 0;
-  tb->dram_reset_i = 0;
   Verilated::assertOn(true);
 
   while (!Verilated::gotFinish()) {

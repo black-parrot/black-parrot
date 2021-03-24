@@ -49,12 +49,7 @@ module testbench
    , parameter no_bind_p                   = 0
 
    )
-  (// Bit to deal with initial X->0 transition detection
-   input bit clk_i
-   , input bit reset_i
-   , input bit dram_clk_i
-   , input bit dram_reset_i
-   );
+  ();
 
   import "DPI-C" context function bit get_finish(int hartid);
   export "DPI-C" function get_dram_period;
@@ -70,8 +65,9 @@ module testbench
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  bit clk, reset;
-  bit dram_clk, dram_reset;
+// Bit to deal with initial X->0 transition detection
+  bit clk_i, reset_i;
+  bit dram_clk_i, dram_reset_i;
   
   `ifdef VERILATOR
     bsg_nonsynth_dpi_clock_gen
@@ -80,7 +76,7 @@ module testbench
   `endif
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
    clock_gen
-    (.o(clk));
+    (.o(clk_i));
   
   bsg_nonsynth_reset_gen
    #(.num_clocks_p(1)
@@ -88,8 +84,8 @@ module testbench
      ,.reset_cycles_hi_p(20)
      )
    reset_gen
-    (.clk_i(clk)
-     ,.async_reset_o(reset)
+    (.clk_i(clk_i)
+     ,.async_reset_o(reset_i)
      );
   
   `ifdef VERILATOR
@@ -99,7 +95,7 @@ module testbench
   `endif
    #(.cycle_time_p(`dram_pkg::tck_ps))
    dram_clock_gen
-    (.o(dram_clk));
+    (.o(dram_clk_i));
   
   bsg_nonsynth_reset_gen
    #(.num_clocks_p(1)
@@ -107,8 +103,8 @@ module testbench
      ,.reset_cycles_hi_p(10)
      )
    dram_reset_gen
-    (.clk_i(dram_clk)
-     ,.async_reset_o(dram_reset)
+    (.clk_i(dram_clk_i)
+     ,.async_reset_o(dram_reset_i)
      );
 
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
