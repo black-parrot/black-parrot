@@ -8,7 +8,8 @@
 * RV64M instructions have a 4-cycle latency, except for division, which is iterative
 * Rv64FD instructions have a 5-cycle latency, exception for fdiv/fsqrt, which are iterative
 * BlackParrot has a load-to-use time of 2 cycles for dwords, 3 cycles for words, halfs, and bytes
-* BlackParrot has a 2-cycle L1 hit latency
+* BlackParrot has a 2-cycle L1 hit latency for integer loads
+* BlackParrot has a 3-cycle L1 hit latency for floating point loads 
 * BlackParrot has a 2-cycle L2 hit latency, plus possible network interaction
 
 BlackParrot has full forwarding for integer instructions
@@ -42,19 +43,13 @@ TODO: update config map
   * Contains memory-mapped registers which provide system-level configuration options and debug access
   * Freeze - prevents the processor from executing instructions
   * Core id (read-only) - identifies the core among all cores
-  * Domain id (read-only) - 3 bits identifying the ASIC group this core belongs to
-  * Coordinate (read-only) - identifies the tile physical location on the NoC
   * Icache id (read-only) - the LCE id of the icache
-  * Icache mode - Uncached only, or fully coherent
-  * NPC - sets the PC of the next instruction to be executed
+  * Icache mode - Uncached only, fully coherent, or nonspeculative mode
   * Dcache id (read-only) - the LCE id of the dcache
   * Dcache mode - Uncached only, or fully coherent
-  * Privilege mode - the current privilege mode of the core
-  * Integer registers - read / write access to the integer registers
   * CCE id (read-only) - the CCE id of the tile
   * CCE mode - Uncached only, or fully coherent
-  * CSRs - read / write access to the CSR regfile
-  * CCE ucode - read / write access to the CCE microcode
+  * Domain mask - Enable bits for addresses higher than cacheable address space
 
 ## Fencing
 There are two types of fence instructions defined by RISC-V: FENCE.I (instruction fence) and FENCE
@@ -67,7 +62,7 @@ For the unicore version of BlackParrot, the caches are not coherent. Therefore, 
 D$ goes through a flush routine, then the I$ goes through an invalidate routine.
 
 ## Emulated Instructions
-BlackParrot implements the A extension partially in hardware and partially via emulation.
+BlackParrot can implement the A extension instructions in L2, L1 or partially in hardware and partially via emulation.
 Specifically, LR (Load Reserved) and SC (Store Conditional) are implemented in hardware. For
 instance, this is the emulation routine for amo_swap.w
 
@@ -95,6 +90,9 @@ A typical execution for an atomic instruction is therefore:
 Similarly, BlackParrot emulates MULH, MULHSU, MULHU using hardware supported MUL instructions.
 
 ## Platform Address Maps
+
+BlackParrot has a configurable physical address width as well as maximum DRAM size. The below configuration is shown for the default value with a 40-bit physical address with and a 4GB DRAM size.
+
 ### Global Address Memory Map
 * 0x00_0000_0000 - 0x00_7FFF_FFFF
   * Uncached, local memory
@@ -118,8 +116,7 @@ Similarly, BlackParrot emulates MULH, MULHSU, MULHU using hardware supported MUL
   * D -> 4 bits = 16 max devices
   * A_AAAA -> 20 bits = 1 MB address space per device
 * Examples
-  * Devices: Configuration Link, CLINT, scratchpad
-  * 0x00_0101_2345 -> tile 1, device 1, address 2345 -> configuration register
-  * 0x00_0200_1111 -> tile 0, device 0, address 1111 -> CLINT mtimecmp
-  * 0x00_0402_0000 -> tile 2, device 2, address 0000 -> accelerator scratchpad
+  * Devices: Configuration Link, CLINT
+  * 0x00_0420_0001 -> tile 2, device 2, address 0001 -> Freeze register
+  * 0x00_0030_bff8 -> tile 0, device 3, address bff8 -> CLINT mtime
 

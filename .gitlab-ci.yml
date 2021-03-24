@@ -78,13 +78,19 @@ prep:
   stage: prep
   tags:
     - bsg
+  before_script:
+    - echo "Prepping cache"
   script:
     - git submodule deinit -f .
     - git submodule sync
     - make prep -j $CI_CORES > make_prep.log
     - make -C sdk prog -j $CI_CORES > make_prog.log
     - make tidy > make_tidy.log
-  cache: &global_cache
+  artifacts:
+    when: always
+    paths:
+      - "*.log"
+  cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
       - $CI_PROJECT_DIR/tools/install
@@ -93,10 +99,6 @@ prep:
       - $CI_PROJECT_DIR/sdk/prog
       - $CI_PROJECT_DIR/sdk/ucode
     policy: pull-push
-  artifacts:
-    when: always
-    paths:
-      - "*.log"
 
 check-design:
   <<: *job_definition
