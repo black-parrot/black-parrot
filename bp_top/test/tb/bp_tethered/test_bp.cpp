@@ -9,7 +9,7 @@ using namespace bsg_nonsynth_dpi;
 
 int main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
-  Verilated::traceEverOn(VM_TRACE);
+  Verilated::traceEverOn(VM_TRACE_FST);
   Verilated::assertOn(false);
 
   Vtestbench *tb = new Vtestbench("test_bp");
@@ -28,11 +28,6 @@ int main(int argc, char **argv) {
   VerilatedFstC* wf = new VerilatedFstC;
   tb->trace(wf, 10);
   wf->open("dump.fst");
-#elif VM_TRACE
-  std::cout << "Opening dump file" << std::endl;
-  VerilatedVcdSc* wf = new VerilatedVcdSc;
-  tb->trace(wf, 10);
-  wf->open("dump.vcd");
 #endif
 
   tb->reset_i = 1;

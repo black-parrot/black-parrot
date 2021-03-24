@@ -6,6 +6,10 @@
 
 `include "bsg_noc_links.vh"
 
+`ifndef BP_SIM_CLK_PERIOD
+`define BP_SIM_CLK_PERIOD 10
+`endif
+
 module testbench
  import bp_common_pkg::*;
  import bp_be_pkg::*;
@@ -65,6 +69,47 @@ module testbench
   endfunction
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+
+  bit clk, reset;
+  bit dram_clk, dram_reset;
+  
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
+   #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
+   clock_gen
+    (.o(clk));
+  
+  bsg_nonsynth_reset_gen
+   #(.num_clocks_p(1)
+     ,.reset_cycles_lo_p(0)
+     ,.reset_cycles_hi_p(20)
+     )
+   reset_gen
+    (.clk_i(clk)
+     ,.async_reset_o(reset)
+     );
+  
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
+   #(.cycle_time_p(`dram_pkg::tck_ps))
+   dram_clock_gen
+    (.o(dram_clk));
+  
+  bsg_nonsynth_reset_gen
+   #(.num_clocks_p(1)
+     ,.reset_cycles_lo_p(0)
+     ,.reset_cycles_hi_p(10)
+     )
+   dram_reset_gen
+    (.clk_i(dram_clk)
+     ,.async_reset_o(dram_reset)
+     );
 
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_li;
@@ -571,5 +616,15 @@ module testbench
    #(.bp_params_p(bp_params_p))
    if_verif
     ();
+  
+  initial
+    begin
+      `ifndef VERILATOR
+        $assertoff();
+        @(posedge clk_i);
+        @(negedge reset_i);
+        $asserton();
+      `endif
+    end
 
 endmodule

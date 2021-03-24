@@ -36,8 +36,6 @@ BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP
 BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib-linux64 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib-linux64"
 BUILD_OPTS += -LDFLAGS "-L$(BP_SDK_DIR)/install/lib -ldromajo_cosim -Wl,-rpath=$(BP_SDK_DIR)/install/lib"
 BUILD_OPTS += -CFLAGS "-I$(BP_SDK_DIR)/install/include -I$(BP_EXTERNAL_DIR)/basejump_stl/bsg_test/"
-CXXSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
-VINCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_misc/
 
 VERILATOR_OPTIONS =
 
@@ -72,7 +70,7 @@ build.sc: VBUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.err
 $(VBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/obj_dir: | $(VBUILD_COLLATERAL)
 	cd $(@D); \
-		$(VV) $(VV_OPTS) $(BUILD_OPTS) $(VINCLUDES) $(CXXSOURCES) $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | tee $(VBUILD_LOG)
+		$(VV) $(VV_OPTS) $(BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | tee $(VBUILD_LOG)
 	-@grep "Error" -A 5 $(VBUILD_LOG) > $(VBUILD_ERROR)
 	-@tail -n 3 $(VBUILD_LOG) > $(VBUILD_REPORT)
 	-@test -s $(VBUILD_ERROR) && echo "FAILED" >> $(VBUILD_REPORT) || rm $(VBUILD_ERROR)

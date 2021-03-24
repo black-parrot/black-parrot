@@ -16,7 +16,11 @@ module test_bp
   bit clk, reset;
   bit dram_clk, dram_reset;
   
-  bsg_nonsynth_dpi_clock_gen
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
    clock_gen
     (.o(clk));
@@ -31,7 +35,11 @@ module test_bp
      ,.async_reset_o(reset)
      );
   
-  bsg_nonsynth_dpi_clock_gen
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
    #(.cycle_time_p(`dram_pkg::tck_ps))
    dram_clock_gen
     (.o(dram_clk));
@@ -56,10 +64,12 @@ module test_bp
   
   initial
     begin
-      $assertoff();
-      @(posedge clk);
-      @(negedge reset);
-      $asserton();
+      `if VERILATOR
+        $assertoff();
+        @(posedge clk);
+        @(negedge reset);
+        $asserton();
+      `endif
     end
 
 endmodule
