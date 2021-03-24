@@ -132,8 +132,8 @@ module bp_fe_icache
   logic v_tl_r, v_tv_r;
 
   // Uncached storage
-  logic [paddr_width_p-1:0] uncached_paddr_r;
   logic [dword_width_gp-1:0] uncached_data_r;
+  logic uncached_pending_r;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode stage
@@ -651,27 +651,30 @@ module bp_fe_icache
   assign stat_mem_o = stat_mem_data_lo;
 
   ///////////////////////////
-  // Uncached data storage
+  // Uncached Load Storage
   ///////////////////////////
-  // TODO: This goes away with the I$ fill op
-  bsg_dff_reset_en
-   #(.width_p(paddr_width_p))
-   uncached_paddr_reg
+  wire uncached_pending_set = cache_req_yumi_i & uncached_req;
+  // Invalidate uncached data if the cache when we successfully complete the request
+  wire uncached_pending_clear = data_v_o;
+  bsg_dff_reset_set_clear
+   #(.width_p(1), .clear_over_set_p(1))
+   uncached_pending_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(uncached_req)
-     ,.data_i(paddr_tv_r)
-     ,.data_o(uncached_paddr_r)
+
+     ,.set_i(uncached_pending_set)
+     ,.clear_i(uncached_pending_clear)
+     ,.data_o(uncached_pending_r)
      );
 
-  wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
-  wire [dword_width_gp-1:0] uncached_data = data_mem_pkt_cast_i.data[0+:dword_width_gp];
+  wire uncached_data_set = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
   bsg_dff_en
    #(.width_p(dword_width_gp))
    uncached_data_reg
     (.clk_i(clk_i)
-     ,.en_i(uncached_load_set)
-     ,.data_i(uncached_data)
+     ,.en_i(uncached_data_set)
+
+     ,.data_i(data_mem_pkt_cast_i.data[0+:dword_width_gp])
      ,.data_o(uncached_data_r)
      );
 
