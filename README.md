@@ -126,5 +126,5 @@ Our goal with BlackParrot is to bootstrap a community-maintained RISC-V core, an
 ## Attribution
 If used for academic research, please cite:
 
-D. Petrisko, F. Gilani, M. Wyse, D. C. Jung, S. Davidson, P. Gao, C. Zhao, Z. Azad, S. Canakci, B. Veluri, T. Guarino, A. J. Joshi, M. Oskin, M. B. Taylor, "BlackParrot: An Agile Open Source RISC-V Multicore for Accelerator SoCs," in *IEEE Micro Special Issue on Agile and Open-Source Hardware*, July/August, 2020. doi: 10.1109/MM.2020.2996145
+D. Petrisko, F. Gilani, M. Wyse, D. C. Jung, S. Davidson, P. Gao, C. Zhao, Z. Azad, S. Canakci, B. Veluri, T. Guarino, A. J. Joshi, M. Oskin, M. B. Taylor, ["BlackParrot: An Agile Open Source RISC-V Multicore for Accelerator SoCs"](https://taylor-bsg.github.io/papers/BlackParrot_IEEE_Micro_2020.pdf), in *IEEE Micro Special Issue on Agile and Open-Source Hardware*, July/August, 2020. doi: 10.1109/MM.2020.2996145
 
