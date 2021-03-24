@@ -312,6 +312,7 @@ module bp_be_pipe_mem
         dcache_ptag_v   = ptw_dcache_ptag_v;
       end
       else begin
+        // On flush_i, we flush the cache including including incoming requests
         dcache_pkt_v = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
         dcache_pkt.rd_addr     = instr.t.rtype.rd_addr;
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
