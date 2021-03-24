@@ -89,12 +89,12 @@ module bp_lce
     // Req: ready->valid
     , output logic [lce_req_msg_width_lp-1:0]        lce_req_o
     , output logic                                   lce_req_v_o
-    , input                                          lce_req_ready_then_i
+    , input                                          lce_req_ready_and_i
 
     // Resp: ready->valid
     , output logic [lce_resp_msg_width_lp-1:0]       lce_resp_o
     , output logic                                   lce_resp_v_o
-    , input                                          lce_resp_ready_then_i
+    , input                                          lce_resp_ready_and_i
 
     // CCE-LCE interface
     // Cmd_i: valid->yumi
@@ -106,8 +106,8 @@ module bp_lce
     // Cmd_o: ready->valid
     , output logic [lce_cmd_msg_width_lp-1:0]        lce_cmd_o
     , output logic                                   lce_cmd_v_o
-    , input                                          lce_cmd_ready_then_i
-  );
+    , input                                          lce_cmd_ready_and_i
+    );
 
   //synopsys translate_off
   initial begin
@@ -162,7 +162,7 @@ module bp_lce
 
       ,.lce_req_o(lce_req_o)
       ,.lce_req_v_o(lce_req_v_o)
-      ,.lce_req_ready_then_i(lce_req_ready_then_i)
+      ,.lce_req_ready_and_i(lce_req_ready_and_i)
       );
 
   // LCE Command Module
@@ -212,11 +212,11 @@ module bp_lce
 
       ,.lce_resp_o(lce_resp_o)
       ,.lce_resp_v_o(lce_resp_v_o)
-      ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
+      ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
 
       ,.lce_cmd_o(lce_cmd_o)
       ,.lce_cmd_v_o(lce_cmd_v_o)
-      ,.lce_cmd_ready_then_i(lce_cmd_ready_then_i)
+      ,.lce_cmd_ready_and_i(lce_cmd_ready_and_i)
       );
 
 

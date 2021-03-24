@@ -71,7 +71,7 @@ module bp_tile
 
   // Proc-side connections network connections
   bp_bedrock_lce_req_msg_s [1:0] lce_req_lo;
-  logic [1:0] lce_req_v_lo, lce_req_ready_li;
+  logic [1:0] lce_req_v_lo, lce_req_ready_and_li;
   bp_bedrock_lce_resp_msg_s [1:0] lce_resp_lo;
   logic [1:0] lce_resp_v_lo, lce_resp_ready_li;
   bp_bedrock_lce_cmd_msg_s [1:0] lce_cmd_li;
@@ -202,7 +202,7 @@ module bp_tile
 
      ,.lce_req_o(lce_req_lo)
      ,.lce_req_v_o(lce_req_v_lo)
-     ,.lce_req_ready_then_i(lce_req_ready_li)
+     ,.lce_req_ready_and_i(lce_req_ready_and_li)
 
      ,.lce_cmd_i(lce_cmd_li)
      ,.lce_cmd_v_i(lce_cmd_v_li)
@@ -210,11 +210,11 @@ module bp_tile
 
      ,.lce_cmd_o(lce_cmd_lo)
      ,.lce_cmd_v_o(lce_cmd_v_lo)
-     ,.lce_cmd_ready_then_i(lce_cmd_ready_li)
+     ,.lce_cmd_ready_and_i(lce_cmd_ready_li)
 
      ,.lce_resp_o(lce_resp_lo)
      ,.lce_resp_v_o(lce_resp_v_lo)
-     ,.lce_resp_ready_then_i(lce_resp_ready_li)
+     ,.lce_resp_ready_and_i(lce_resp_ready_li)
 
      ,.timer_irq_i(timer_irq_li)
      ,.software_irq_i(software_irq_li)
@@ -302,7 +302,7 @@ module bp_tile
 
          ,.packet_i(lce_req_packet_lo[i])
          ,.v_i(lce_req_v_lo[i])
-         ,.ready_o(lce_req_ready_li[i])
+         ,.ready_o(lce_req_ready_and_li[i])
 
          ,.link_i(lce_req_link_li[i])
          ,.link_o(lce_req_link_lo[i])

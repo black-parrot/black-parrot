@@ -547,64 +547,64 @@ module testbench
 
       if (multicore_p)
         begin
-          bind bp_cce_wrapper
-            bp_me_nonsynth_cce_tracer
-             #(.bp_params_p(bp_params_p))
-             cce_tracer
-              (.clk_i(clk_i & testbench.cce_trace_en_lo)
-              ,.reset_i(reset_i)
-              ,.freeze_i(cfg_bus_cast_i.freeze)
+          //bind bp_cce_wrapper
+          //  bp_me_nonsynth_cce_tracer
+          //   #(.bp_params_p(bp_params_p))
+          //   cce_tracer
+          //    (.clk_i(clk_i & testbench.cce_trace_en_lo)
+          //    ,.reset_i(reset_i)
+          //    ,.freeze_i(cfg_bus_cast_i.freeze)
 
-              ,.cce_id_i(cfg_bus_cast_i.cce_id)
+          //    ,.cce_id_i(cfg_bus_cast_i.cce_id)
 
-              // To CCE
-              ,.lce_req_i(lce_req_i)
-              ,.lce_req_v_i(lce_req_v_i)
-              ,.lce_req_yumi_i(lce_req_yumi_o)
-              ,.lce_resp_i(lce_resp_i)
-              ,.lce_resp_v_i(lce_resp_v_i)
-              ,.lce_resp_yumi_i(lce_resp_yumi_o)
+          //    // To CCE
+          //    ,.lce_req_i(lce_req_i)
+          //    ,.lce_req_v_i(lce_req_v_i)
+          //    ,.lce_req_yumi_i(lce_req_yumi_o)
+          //    ,.lce_resp_i(lce_resp_i)
+          //    ,.lce_resp_v_i(lce_resp_v_i)
+          //    ,.lce_resp_yumi_i(lce_resp_yumi_o)
 
-              // From CCE
-              ,.lce_cmd_i(lce_cmd_o)
-              ,.lce_cmd_v_i(lce_cmd_v_o)
-              ,.lce_cmd_ready_i(lce_cmd_ready_i)
+          //    // From CCE
+          //    ,.lce_cmd_i(lce_cmd_o)
+          //    ,.lce_cmd_v_i(lce_cmd_v_o)
+          //    ,.lce_cmd_ready_i(lce_cmd_ready_i)
 
-              // To CCE
-              ,.mem_resp_i(mem_resp_i)
-              ,.mem_resp_v_i(mem_resp_v_i)
-              ,.mem_resp_yumi_i(mem_resp_yumi_o)
+          //    // To CCE
+          //    ,.mem_resp_i(mem_resp_i)
+          //    ,.mem_resp_v_i(mem_resp_v_i)
+          //    ,.mem_resp_yumi_i(mem_resp_yumi_o)
 
-              // From CCE
-              ,.mem_cmd_i(mem_cmd_o)
-              ,.mem_cmd_v_i(mem_cmd_v_o)
-              ,.mem_cmd_ready_i(mem_cmd_ready_i)
-              );
+          //    // From CCE
+          //    ,.mem_cmd_i(mem_cmd_o)
+          //    ,.mem_cmd_v_i(mem_cmd_v_o)
+          //    ,.mem_cmd_ready_i(mem_cmd_ready_i)
+          //    );
 
-          bind bp_lce
-            bp_me_nonsynth_lce_tracer
-              #(.bp_params_p(bp_params_p)
-                ,.sets_p(sets_p)
-                ,.assoc_p(assoc_p)
-                ,.block_width_p(block_width_p)
-                )
-              lce_tracer
-              (.clk_i(clk_i & testbench.lce_trace_en_lo)
-              ,.reset_i(reset_i)
-              ,.lce_id_i(lce_id_i)
-              ,.lce_req_i(lce_req_o)
-              ,.lce_req_v_i(lce_req_v_o)
-              ,.lce_req_ready_then_i(lce_req_ready_then_i)
-              ,.lce_resp_i(lce_resp_o)
-              ,.lce_resp_v_i(lce_resp_v_o)
-              ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
-              ,.lce_cmd_i(lce_cmd_i)
-              ,.lce_cmd_v_i(lce_cmd_v_i)
-              ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
-              ,.lce_cmd_o_i(lce_cmd_o)
-              ,.lce_cmd_o_v_i(lce_cmd_v_o)
-              ,.lce_cmd_o_ready_then_i(lce_cmd_ready_then_i)
-              );
+          //bind bp_lce
+          //  bp_me_nonsynth_lce_tracer
+          //    #(.bp_params_p(bp_params_p)
+          //      ,.sets_p(sets_p)
+          //      ,.assoc_p(assoc_p)
+          //      ,.block_width_p(block_width_p)
+          //      )
+          //    lce_tracer
+          //    (.clk_i(clk_i & testbench.lce_trace_en_lo)
+          //    ,.reset_i(reset_i)
+          //    ,.lce_id_i(lce_id_i)
+          //    ,.lce_req_i(lce_req_o)
+          //    ,.lce_req_v_i(lce_req_v_o)
+          //    ,.lce_req_ready_i(lce_req_yumi_i)
+          //    ,.lce_resp_i(lce_resp_o)
+          //    ,.lce_resp_v_i(lce_resp_v_o)
+          //    ,.lce_resp_ready_i(lce_resp_yumi_i)
+          //    ,.lce_cmd_i(lce_cmd_i)
+          //    ,.lce_cmd_v_i(lce_cmd_v_i)
+          //    ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
+          //    ,.lce_cmd_o_i(lce_cmd_o)
+          //    ,.lce_cmd_o_v_i(lce_cmd_v_o)
+          //    ,.lce_cmd_o_ready_i(lce_cmd_yumi_i)
+          //    );
         end
     end
 
