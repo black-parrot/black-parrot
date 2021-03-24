@@ -178,7 +178,7 @@ module bp_be_director
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end
-      else if (commit_pkt_cast_i.satp)
+      else if (commit_pkt_cast_i.csrw)
         begin
           fe_cmd_pc_redirect_operands = '0;
 

@@ -121,7 +121,7 @@ module bp_be_calculator_top
   logic pipe_mem_store_access_fault_lo;
   logic pipe_mem_store_page_fault_lo;
 
-  logic pipe_sys_illegal_instr_lo, pipe_sys_satp_lo;
+  logic pipe_sys_illegal_instr_lo, pipe_sys_csrw_lo;
 
   logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
   logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
@@ -226,7 +226,7 @@ module bp_be_calculator_top
      ,.irq_waiting_o(irq_waiting_o)
 
      ,.illegal_instr_o(pipe_sys_illegal_instr_lo)
-     ,.satp_o(pipe_sys_satp_lo)
+     ,.csrw_o(pipe_sys_csrw_lo)
      ,.data_o(pipe_sys_data_lo)
      ,.v_o(pipe_sys_data_lo_v)
 
@@ -448,7 +448,7 @@ module bp_be_calculator_top
           exc_stage_n[0].exc                    |= reservation_n.exception;
 
           exc_stage_n[1].exc.illegal_instr      |= pipe_sys_illegal_instr_lo;
-          exc_stage_n[1].spec.satp              |= pipe_sys_satp_lo;
+          exc_stage_n[1].spec.csrw              |= pipe_sys_csrw_lo;
 
           exc_stage_n[1].exc.dtlb_store_miss    |= pipe_mem_dtlb_store_miss_lo;
           exc_stage_n[1].exc.dtlb_load_miss     |= pipe_mem_dtlb_load_miss_lo;
