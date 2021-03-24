@@ -529,7 +529,7 @@ run_test@%:
 	$(MAKE) sim.$(TS) SUITE=$(SUITE) PROG=$(PROG)
 
 dromajo_dump:
-	$(DROMAJO) $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv --host $(if $(AMOEN),--enable_amo) --ncpus=$(NCPUS) \
+	$(DROMAJO) $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv --host $(if $(AMOEN),--enable_amo) --ncpus=$(NCPUS) \
 		--checkpoint_period=$(SAMPLE_INSTR_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
 
 # Run an entire benchmark in parallel
