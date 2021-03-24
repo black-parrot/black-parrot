@@ -181,7 +181,7 @@ module wrapper
      ,.ptag_v_i(ptag_v_r)
      ,.uncached_i(uncached_r)
      ,.nonidem_i(nonidem_r)
-     ,.poison_tl_i(poison_li)
+     ,.poison_tl_i(1'b0)
 
      ,.data_o(data_o)
      ,.data_v_o(data_v_o)
