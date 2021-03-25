@@ -24,3 +24,4 @@ Steps to verify the feature.
 
 **Additional context:**
 Add any other context about the feature request here.
+Logs, screenshots or videos that relate to the feature request are very helpful.
