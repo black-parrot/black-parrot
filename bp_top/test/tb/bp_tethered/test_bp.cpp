@@ -12,9 +12,9 @@ int main(int argc, char **argv) {
   Verilated::traceEverOn(VM_TRACE_FST);
   Verilated::assertOn(false);
 
-  Vtestbench *tb = new Vtestbench("test_bp");
+  Vtestbench *tb = new Vtestbench("testbench");
 
-  svScope g_scope = svGetScopeFromName("test_bp.testbench");
+  svScope g_scope = svGetScopeFromName("testbench");
   svSetScope(g_scope);
 
   // Let clock generators register themselves.
@@ -30,18 +30,22 @@ int main(int argc, char **argv) {
   wf->open("dump.fst");
 #endif
 
-  std::cout << "Raising reset" << std::endl;
-  for (int i = 0; i < 20; i++) {
+  while(tb->reset_i == 1) {
     bsg_timekeeper::next();
     tb->eval();
+    #if VM_TRACE_FST
+      wf->dump(sc_time_stamp());
+    #endif
   }
-  std::cout << "Lowering reset" << std::endl;
 
   Verilated::assertOn(true);
 
   while (!Verilated::gotFinish()) {
     bsg_timekeeper::next();
     tb->eval();
+    #if VM_TRACE_FST
+      wf->dump(sc_time_stamp());
+    #endif
   }
   std::cout << "Finishing test" << std::endl;
 
@@ -52,6 +56,10 @@ int main(int argc, char **argv) {
 
   std::cout << "Executing final" << std::endl;
   tb->final();
+
+  #if VM_TRACE_FST
+    wf->close();
+  #endif
 
   std::cout << "Exiting" << std::endl;
   exit(EXIT_SUCCESS);

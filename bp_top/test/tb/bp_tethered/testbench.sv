@@ -47,9 +47,8 @@ module testbench
 
    // Synthesis parameters
    , parameter no_bind_p                   = 0
-
    )
-  ();
+  (output bit reset_i);
 
   import "DPI-C" context function bit get_finish(int hartid);
   export "DPI-C" function get_dram_period;
@@ -66,7 +65,7 @@ module testbench
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
 // Bit to deal with initial X->0 transition detection
-  bit clk_i, reset_i;
+  bit clk_i;
   bit dram_clk_i, dram_reset_i;
   
   `ifdef VERILATOR
@@ -612,6 +611,21 @@ module testbench
    #(.bp_params_p(bp_params_p))
    if_verif
     ();
+
+  /*int cycle = 0;
+  int dramcycle = 0;
+
+  always @(posedge clk_i) begin
+    cycle <= cycle +1;
+    $display("BSG DBGINFO: top -- cycle %d", cycle);
+    $display("BSG DBGINFO: top -- dramCycle %d", dramcycle);
+    $display("BSG DBGINFO: top -- reset %d", reset_i);
+    $display("BSG DBGINFO: top -- dramReset %d", dram_reset_i);
+  end
+
+  always @(posedge dram_clk_i) begin
+    dramcycle <= dramcycle +1;
+  end*/
   
   initial
     begin
