@@ -15,7 +15,7 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Proposed solution:**
-If applicable, add screenshots to help explain your problem.
+Potential solution(s) including scope of work and affected modules.
 
 **Analysis:**
 Potential impact of the bugfix.
