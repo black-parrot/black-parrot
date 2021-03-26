@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
   tb->final();
 
   #if VM_TRACE_FST
+    std::cout << "Closing dump file" << std::endl;
     wf->close();
   #endif
 
