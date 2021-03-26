@@ -611,21 +611,6 @@ module testbench
    #(.bp_params_p(bp_params_p))
    if_verif
     ();
-
-  /*int cycle = 0;
-  int dramcycle = 0;
-
-  always @(posedge clk_i) begin
-    cycle <= cycle +1;
-    $display("BSG DBGINFO: top -- cycle %d", cycle);
-    $display("BSG DBGINFO: top -- dramCycle %d", dramcycle);
-    $display("BSG DBGINFO: top -- reset %d", reset_i);
-    $display("BSG DBGINFO: top -- dramReset %d", dram_reset_i);
-  end
-
-  always @(posedge dram_clk_i) begin
-    dramcycle <= dramcycle +1;
-  end*/
   
   initial
     begin
