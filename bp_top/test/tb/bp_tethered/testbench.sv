@@ -612,14 +612,14 @@ module testbench
    if_verif
     ();
   
-  initial
-    begin
-      `ifndef VERILATOR
+  `ifndef VERILATOR
+    initial
+      begin      
         $assertoff();
         @(posedge clk_i);
         @(negedge reset_i);
         $asserton();
-      `endif
-    end
+      end
+  `endif
 
 endmodule
