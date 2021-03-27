@@ -2,7 +2,6 @@
 `define BP_COMMON_DEFINES_SVH
 
   `include "bsg_defines.v"
-  `include "bp_common_defines.svh"
   `include "bp_common_core_if.svh"
   `include "bp_common_bedrock_if.svh"
   `include "bp_common_cache_engine_if.svh"

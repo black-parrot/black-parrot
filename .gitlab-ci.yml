@@ -18,13 +18,6 @@ stages:
   - test-long
   - test-ultralong
 
-clean_all:
-  when: manual
-  stage: manual
-  tags:
-    - bsg
-  script:
-      - git clean -fdx
 
 bleach_all:
   when: manual
@@ -37,33 +30,8 @@ bleach_all:
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/tools/
-      - $CI_PROJECT_DIR/sdk/
-      - $CI_PROJECT_DIR/hdk/
+      - $CI_PROJECT_DIR
     policy: push
-
-update-cache: &update-cache-manual
-  when: manual
-  stage: manual
-  tags:
-    - bsg
-  script:
-    - git submodule deinit -f .
-    - git submodule sync
-    - make prep -j $CI_CORES > make_prep.log
-    - make -C sdk prog -j $CI_CORES > make_prog.log
-    - make tidy > make_tidy.log
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - $CI_PROJECT_DIR/tools/
-      - $CI_PROJECT_DIR/sdk/
-      - $CI_PROJECT_DIR/hdk/
-    policy: push
-  artifacts:
-    when: always
-    paths:
-      - "*.log"
 
 .job_template: &job_definition
   only:
@@ -93,43 +61,44 @@ update-cache: &update-cache-manual
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/tools/
-      - $CI_PROJECT_DIR/sdk/
-      - $CI_PROJECT_DIR/hdk/
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/lib
+      - $CI_PROJECT_DIR/sdk/prog
+      - $CI_PROJECT_DIR/sdk/ucode
     policy: pull
   dependencies: []
   retry:
-    max: 1
+    max: 2
     when:
       - script_failure
 
 prep:
+  <<: *job_definition
   stage: prep
-  only:
-    - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
   tags:
     - bsg
+  before_script:
+    - echo "Prepping cache"
   script:
+    - git submodule deinit -f .
+    - git submodule sync
     - make prep -j $CI_CORES > make_prep.log
     - make -C sdk prog -j $CI_CORES > make_prog.log
     - make tidy > make_tidy.log
-  cache: &global_cache
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - $CI_PROJECT_DIR/tools/
-      - $CI_PROJECT_DIR/sdk/
-      - $CI_PROJECT_DIR/hdk/
-    policy: pull-push
   artifacts:
     when: always
     paths:
       - "*.log"
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - $CI_PROJECT_DIR/tools/install
+      - $CI_PROJECT_DIR/sdk/install
+      - $CI_PROJECT_DIR/sdk/lib
+      - $CI_PROJECT_DIR/sdk/prog
+      - $CI_PROJECT_DIR/sdk/ucode
+    policy: pull-push
 
 check-design:
   <<: *job_definition

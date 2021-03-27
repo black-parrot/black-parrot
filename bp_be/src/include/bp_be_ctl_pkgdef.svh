@@ -257,7 +257,7 @@
     logic mret;
     logic sret;
     logic wfi;
-    logic satp;
+    logic csrw;
   }  bp_be_special_s;
 
   typedef struct packed
