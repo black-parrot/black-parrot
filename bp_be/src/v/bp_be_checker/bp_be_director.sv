@@ -94,7 +94,7 @@ module bp_be_director
   assign expected_npc_o = npc_w_v ? npc_n : npc_r;
 
   assign npc_mismatch_v = isd_status_cast_i.v & (expected_npc_o != isd_status_cast_i.pc);
-  assign poison_isd_o = npc_mismatch_v;
+  assign poison_isd_o = commit_pkt_cast_i.npc_w_v | npc_mismatch_v;
 
   logic btaken_pending, attaboy_pending;
   bsg_dff_reset_set_clear
@@ -178,7 +178,7 @@ module bp_be_director
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end
-      else if (commit_pkt_cast_i.satp)
+      else if (commit_pkt_cast_i.csrw)
         begin
           fe_cmd_pc_redirect_operands = '0;
 
