@@ -35,7 +35,6 @@
   localparam cfg_data_width_gp = 64;
 
   localparam cfg_base_addr_gp          = 'h0200_0000;
-  localparam cfg_reg_reset_gp          = 'h0001;
   localparam cfg_reg_freeze_gp         = 'h0002;
   localparam cfg_reg_core_id_gp        = 'h0005;
   localparam cfg_reg_did_gp            = 'h0006;

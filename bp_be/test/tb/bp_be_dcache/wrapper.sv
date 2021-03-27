@@ -419,7 +419,7 @@ module wrapper
 
              ,.mem_cmd_o(mem_cmd_o)
              ,.mem_cmd_v_o(mem_cmd_v_o)
-             ,.mem_cmd_ready_i(mem_cmd_ready_i)
+             ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
 
              ,.mem_resp_i(mem_resp_i)
              ,.mem_resp_v_i(mem_resp_v_i)

@@ -101,6 +101,9 @@ for more details on the coherence protocol and system.
 ## Platform Guide
 [Platform Guide](docs/platform_guide.md)
 
+## Boot Debugging Guide
+[Boot Debug Guide](docs/debug_boot.md)
+
 ## CAD Backend Guide
 A key feature of using BlackParrot is that it has been heavily validated in both silicon and FPGA implementations.  All BlackParrot tapeouts and FPGA environments can be found at [BlackParrot Examples](https://github.com/black-parrot-examples/). Taped out BlackParrot yourself and want to share tips and tricks? Let us know and we can add it to the collection! Looking to implement BlackParrot in a physical system? Take a look at our [CAD Backend Guide](docs/backend_guide.md).
 
@@ -120,7 +123,7 @@ Our goal with BlackParrot is to bootstrap a community-maintained RISC-V core, an
   - We have not looked at frequency tuning BP for FPGA at all. The ideal changes would not result in much ASIC/FPGA code bifurcation.
 - We always appreciate pull requests to fix bugs in the documentation, or bug reports that instructions don't work correctly.
 - The RISC-V GCC compiler has some inefficiencies that we have identified, if you have compiler experience you could raise the benchmark numbers for all RISC-V cores versus other ISA's!
-- Our current L2 cache implementation (bsg_cache) is blocking. We would like a non-blocking implementation that supports the same interface and features as the current one, so that can be a configuration option for BlackParrot. It may even be possible to reuse the current code. Contact us to discuss possible implementation approaches!
+- Our current L2 cache implementation (bsg\_cache) is blocking. We would like a non-blocking implementation that supports the same interface and features as the current one, so that can be a configuration option for BlackParrot. It may even be possible to reuse the current code. Contact us to discuss possible implementation approaches!
 - Build a cool demonstration platform with interesting I/O devices using the $129 Arty S7-50 FPGA. 
 
 ## Attribution

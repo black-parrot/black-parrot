@@ -27,7 +27,7 @@ module bp_be_csr
    , input                                   csr_cmd_v_i
    , output logic [dword_width_gp-1:0]       csr_data_o
    , output logic                            csr_illegal_instr_o
-   , output logic                            csr_satp_o
+   , output logic                            csr_csrw_o
 
    // Misc interface
    , input [retire_pkt_width_lp-1:0]         retire_pkt_i
@@ -353,7 +353,7 @@ module bp_be_csr
       interrupt_v_lo    = '0;
 
       csr_illegal_instr_o  = '0;
-      csr_satp_o           = '0;
+      csr_csrw_o           = '0;
       csr_data_lo          = '0;
 
       // Accumulate FFLAGS
@@ -446,7 +446,7 @@ module bp_be_csr
                 // Time must be done by trapping, since we can't stall at this point
                 {1'b1, `CSR_ADDR_INSTRET      }: minstret_li = csr_data_li;
                 // SSTATUS subset of MSTATUS
-                {1'b1, `CSR_ADDR_SSTATUS      }: mstatus_li = (mstatus_lo & ~sstatus_wmask_li) | (csr_data_li & sstatus_wmask_li);
+                {1'b1, `CSR_ADDR_SSTATUS      }: begin mstatus_li = (mstatus_lo & ~sstatus_wmask_li) | (csr_data_li & sstatus_wmask_li); csr_csrw_o = 1'b1; end
                 // Read-only because we don't support N-extension
                 // Read-only because we don't support N-extension
                 {1'b1, `CSR_ADDR_SEDELEG      }: begin end
@@ -460,12 +460,12 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_STVAL        }: stval_li = csr_data_li;
                 // SIP subset of MIP
                 {1'b1, `CSR_ADDR_SIP          }: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
-                {1'b1, `CSR_ADDR_SATP         }: begin satp_li = csr_data_li; csr_satp_o = 1'b1; end
+                {1'b1, `CSR_ADDR_SATP         }: begin satp_li = csr_data_li; csr_csrw_o = 1'b1; end
                 {1'b1, `CSR_ADDR_MVENDORID    }: begin end
                 {1'b1, `CSR_ADDR_MARCHID      }: begin end
                 {1'b1, `CSR_ADDR_MIMPID       }: begin end
                 {1'b1, `CSR_ADDR_MHARTID      }: begin end
-                {1'b1, `CSR_ADDR_MSTATUS      }: mstatus_li = csr_data_li;
+                {1'b1, `CSR_ADDR_MSTATUS      }: begin mstatus_li = csr_data_li; csr_csrw_o = 1'b1; end
                 {1'b1, `CSR_ADDR_MISA         }: begin end
                 {1'b1, `CSR_ADDR_MEDELEG      }: medeleg_li = csr_data_li;
                 {1'b1, `CSR_ADDR_MIDELEG      }: mideleg_li = csr_data_li;
@@ -632,7 +632,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi              = retire_pkt_cast_i.special.wfi;
   assign commit_pkt_cast_o.eret             = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};
-  assign commit_pkt_cast_o.satp             = retire_pkt_cast_i.special.satp;
+  assign commit_pkt_cast_o.csrw             = retire_pkt_cast_i.special.csrw;
   assign commit_pkt_cast_o.itlb_miss        = retire_pkt_cast_i.exception.itlb_miss;
   assign commit_pkt_cast_o.icache_miss      = retire_pkt_cast_i.exception.icache_miss;
   assign commit_pkt_cast_o.dtlb_store_miss  = retire_pkt_cast_i.exception.dtlb_store_miss;

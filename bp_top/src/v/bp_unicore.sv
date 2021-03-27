@@ -105,7 +105,7 @@ module bp_unicore
   logic timer_irq_li, software_irq_li, external_irq_li;
 
   bp_bedrock_uce_mem_msg_s [2:0] proc_cmd_lo;
-  logic [2:0] proc_cmd_v_lo, proc_cmd_ready_li;
+  logic [2:0] proc_cmd_v_lo, proc_cmd_yumi_li;
   bp_bedrock_uce_mem_msg_s [2:0] proc_resp_li;
   logic [2:0] proc_resp_v_li, proc_resp_yumi_lo;
 
@@ -272,7 +272,7 @@ module bp_unicore
 
     ,.mem_cmd_o(proc_cmd_lo[1])
     ,.mem_cmd_v_o(proc_cmd_v_lo[1])
-    ,.mem_cmd_ready_i(proc_cmd_ready_li[1])
+    ,.mem_cmd_yumi_i(proc_cmd_yumi_li[1])
 
     ,.mem_resp_i(proc_resp_li[1])
     ,.mem_resp_v_i(proc_resp_v_li[1])
@@ -322,7 +322,7 @@ module bp_unicore
 
      ,.mem_cmd_o(proc_cmd_lo[0])
      ,.mem_cmd_v_o(proc_cmd_v_lo[0])
-     ,.mem_cmd_ready_i(proc_cmd_ready_li[0])
+     ,.mem_cmd_yumi_i(proc_cmd_yumi_li[0])
 
      ,.mem_resp_i(proc_resp_li[0])
      ,.mem_resp_v_i(proc_resp_v_li[0])
@@ -377,51 +377,11 @@ module bp_unicore
   // Assign incoming I/O as basically another UCE interface
   assign proc_cmd_lo[2] = io_cmd_i[0+:uce_mem_msg_width_lp];
   assign proc_cmd_v_lo[2] = io_cmd_v_i;
-  assign io_cmd_yumi_o = proc_cmd_ready_li[2] & proc_cmd_v_lo[2];
+  assign io_cmd_yumi_o = proc_cmd_yumi_li[2];
 
   assign io_resp_o = uce_mem_msg_width_lp'(proc_resp_li[2]);
   assign io_resp_v_o = proc_resp_v_li[2];
   assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
-
-  // Command/response FIFOs for timing and helpfulness
-  bp_bedrock_uce_mem_msg_s [2:0] cmd_fifo_lo;
-  logic [2:0] cmd_fifo_v_lo, cmd_fifo_yumi_li;
-
-  bp_bedrock_uce_mem_msg_s [2:0] resp_fifo_li;
-  logic [2:0] resp_fifo_v_li, resp_fifo_ready_lo;
-
-  for (genvar i = 0; i < 3; i++)
-    begin : fifo
-      bsg_two_fifo
-       #(.width_p($bits(bp_bedrock_uce_mem_msg_s)))
-       cmd_fifo
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-
-         ,.data_i(proc_cmd_lo[i])
-         ,.v_i(proc_cmd_v_lo[i])
-         ,.ready_o(proc_cmd_ready_li[i])
-
-         ,.data_o(cmd_fifo_lo[i])
-         ,.v_o(cmd_fifo_v_lo[i])
-         ,.yumi_i(cmd_fifo_yumi_li[i])
-         );
-
-      bsg_two_fifo
-       #(.width_p($bits(bp_bedrock_uce_mem_msg_s)))
-       resp_fifo
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-
-         ,.data_i(resp_fifo_li[i])
-         ,.v_i(resp_fifo_v_li[i])
-         ,.ready_o(resp_fifo_ready_lo[i])
-
-         ,.data_o(proc_resp_li[i])
-         ,.v_o(proc_resp_v_li[i])
-         ,.yumi_i(proc_resp_yumi_lo[i])
-         );
-    end
 
   // Command arbitration logic
   // This is suboptimal for performance, because a blocked I/O channel will put backpressure on the
@@ -431,16 +391,16 @@ module bp_unicore
    #(.inputs_p(3), .lo_to_hi_p(0))
    cmd_arbiter
     (.ready_i(cmd_arb_ready_li)
-     ,.reqs_i(cmd_fifo_v_lo)
-     ,.grants_o(cmd_fifo_yumi_li)
+     ,.reqs_i(proc_cmd_v_lo)
+     ,.grants_o(proc_cmd_yumi_li)
      );
 
   bp_bedrock_uce_mem_msg_s cmd_fifo_selected_lo;
   bsg_mux_one_hot
    #(.width_p($bits(bp_bedrock_uce_mem_msg_s)), .els_p(3))
    cmd_select
-    (.data_i(cmd_fifo_lo)
-     ,.sel_one_hot_i(cmd_fifo_yumi_li)
+    (.data_i(proc_cmd_lo)
+     ,.sel_one_hot_i(proc_cmd_yumi_li)
      ,.data_o(cmd_fifo_selected_lo)
      );
   assign {loopback_cmd_li, cache_cmd_li, io_cmd_o, clint_cmd_li, cfg_cmd_li} = {5{cmd_fifo_selected_lo}};
@@ -450,32 +410,36 @@ module bp_unicore
   //   arbitrary orders, especially when considering CLINT or I/O responses
   // This is also suboptimal. Theoretically, we could dequeue into each fifo at once, but this
   //   would require more complex arbitration logic
-  wire resp_arb_ready_li = &resp_fifo_ready_lo;
+  logic loopback_resp_grant_li, cache_resp_grant_li, io_resp_grant_lo, clint_resp_grant_li, cfg_resp_grant_li;
   bsg_arb_fixed
    #(.inputs_p(5), .lo_to_hi_p(0))
    resp_arbiter
-    (.ready_i(resp_arb_ready_li)
+    (.ready_i(1'b1)
      ,.reqs_i({loopback_resp_v_lo, cache_resp_v_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo})
-     ,.grants_o({loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
+     ,.grants_o({loopback_resp_grant_li, cache_resp_grant_li, io_resp_grant_lo, clint_resp_grant_li, cfg_resp_grant_li})
      );
 
   for (genvar i = 0; i < 3; i++)
     begin : resp_match
       bp_bedrock_uce_mem_msg_s resp_fifo_selected_li;
-      bp_bedrock_uce_mem_payload_s resp_fifo_selected_payload_li;
-      assign resp_fifo_selected_payload_li = resp_fifo_selected_li.header.payload;
+      bp_bedrock_uce_mem_payload_s resp_selected_payload_li;
+      assign resp_selected_payload_li = proc_resp_li[i].header.payload;
       bsg_mux_one_hot
        #(.width_p($bits(bp_bedrock_uce_mem_msg_s)), .els_p(5))
        resp_select
         (.data_i({loopback_resp_lo, cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
-         ,.sel_one_hot_i({loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
-         ,.data_o(resp_fifo_selected_li)
+         ,.sel_one_hot_i({loopback_resp_grant_li, cache_resp_grant_li, io_resp_grant_lo, clint_resp_grant_li, cfg_resp_grant_li})
+         ,.data_o(proc_resp_li[i])
          );
-      wire resp_selected_v_li = |{loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li};
+      wire any_resp_v_li = |{loopback_resp_v_lo, cache_resp_v_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo};
 
-      assign resp_fifo_v_li[i] = resp_selected_v_li & (resp_fifo_selected_payload_li.lce_id == i);
-      assign resp_fifo_li[i] = resp_fifo_selected_li;
+      assign proc_resp_v_li[i] = any_resp_v_li & (resp_selected_payload_li.lce_id == i);
     end
+  assign cfg_resp_yumi_li      = |proc_resp_yumi_lo & cfg_resp_grant_li;
+  assign clint_resp_yumi_li    = |proc_resp_yumi_lo & clint_resp_grant_li;
+  assign io_resp_yumi_o        = |proc_resp_yumi_lo & io_resp_grant_lo;
+  assign cache_resp_yumi_li    = |proc_resp_yumi_lo & cache_resp_grant_li;
+  assign loopback_resp_yumi_li = |proc_resp_yumi_lo & loopback_resp_grant_li;
 
   bp_local_addr_s local_addr_cast;
   assign local_addr_cast = cmd_fifo_selected_lo.header.addr;
@@ -489,11 +453,11 @@ module bp_unicore
   wire is_cache_cmd        = (~local_cmd_li & ~is_other_domain) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_cache_cmd;
 
-  assign cfg_cmd_v_li      = is_cfg_cmd   & |cmd_fifo_yumi_li;
-  assign clint_cmd_v_li    = is_clint_cmd & |cmd_fifo_yumi_li;
-  assign io_cmd_v_o        = is_io_cmd    & |cmd_fifo_yumi_li;
-  assign cache_cmd_v_li    = is_cache_cmd & |cmd_fifo_yumi_li;
-  assign loopback_cmd_v_li = is_loopback_cmd & |cmd_fifo_yumi_li;
+  assign cfg_cmd_v_li      = is_cfg_cmd   & |proc_cmd_yumi_li;
+  assign clint_cmd_v_li    = is_clint_cmd & |proc_cmd_yumi_li;
+  assign io_cmd_v_o        = is_io_cmd    & |proc_cmd_yumi_li;
+  assign cache_cmd_v_li    = is_cache_cmd & |proc_cmd_yumi_li;
+  assign loopback_cmd_v_li = is_loopback_cmd & |proc_cmd_yumi_li;
 
   bp_cce_loopback
    #(.bp_params_p(bp_params_p))

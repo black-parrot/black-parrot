@@ -3,13 +3,13 @@ verilator_dir := $(BP_TOOLS_DIR)/verilator
 bsg_sv2v_dir  := $(BP_TOOLS_DIR)/bsg_sv2v
 
 define submodule_tool_template
-$(1)_tag := $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
+$(1)_tag ?= $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
 $(BP_TOOLS_TOUCH_DIR)/$$($(1)_tag):
 	rm -rf $(BP_TOOLS_TOUCH_DIR)/$(1).*
-	cd $(BP_TOOLS_DIR); git submodule update --init --recursive --checkout $$($(1)_dir)
+	cd $(BP_TOOLS_DIR); git submodule update --init --recursive $(SHALLOW_SUB) --checkout $$($(1)_dir)
 	+$(MAKE) $(1)_build
 	touch $(BP_TOOLS_TOUCH_DIR)/$$($(1)_tag)
-$(1): $(BP_TOOLS_TOUCH_DIR)/$$($(1)_tag)
+$(1): | $(BP_TOOLS_TOUCH_DIR)/$$($(1)_tag)
 $(1)_manual:
 	+$(MAKE) $(1)_build
 endef
@@ -17,7 +17,7 @@ endef
 systemc_build:
 	cd $(systemc_dir); \
 		autoreconf; \
-		./configure --prefix=$(BP_TOOLS_INSTALL_DIR) CXXFLAGS="-std=c++14"
+		./configure --prefix=$(BP_TOOLS_INSTALL_DIR)
 	$(MAKE) -C $(systemc_dir)
 	$(MAKE) -C $(systemc_dir) install
 

@@ -30,13 +30,16 @@ package bp_common_pkg;
   localparam page_offset_width_gp = 12;
 
   `include "bp_common_addr_pkgdef.svh"
-  `include "bp_common_cfg_bus_pkgdef.svh"
-  `include "bp_common_aviary_pkgdef.svh"
   `include "bp_common_bedrock_pkgdef.svh"
-  `include "bp_common_cfg_bus_pkgdef.svh"
-  `include "bp_common_rv64_pkgdef.svh"
-  `include "bp_common_core_pkgdef.svh"
+  `include "bp_common_cache_pkgdef.svh"
   `include "bp_common_cache_engine_pkgdef.svh"
+  `include "bp_common_cfg_bus_pkgdef.svh"
+  `include "bp_common_clint_pkgdef.svh"
+  `include "bp_common_core_pkgdef.svh"
+  `include "bp_common_host_pkgdef.svh"
+  `include "bp_common_rv64_pkgdef.svh"
+
+  `include "bp_common_aviary_pkgdef.svh"
 
 endpackage
 

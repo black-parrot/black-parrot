@@ -79,7 +79,7 @@ module bp_uce
 
     , output [uce_mem_msg_width_lp-1:0]              mem_cmd_o
     , output logic                                   mem_cmd_v_o
-    , input                                          mem_cmd_ready_i
+    , input                                          mem_cmd_yumi_i
 
     , input [uce_mem_msg_width_lp-1:0]               mem_resp_i
     , input                                          mem_resp_v_i
@@ -392,7 +392,7 @@ module bp_uce
    mem_cmd_done_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(mem_cmd_done & mem_cmd_v_o)
+     ,.set_i(mem_cmd_done & mem_cmd_yumi_i)
      ,.clear_i(cache_req_complete_o | way_up | writeback_complete)
      ,.data_o(mem_cmd_done_r)
      );
@@ -401,7 +401,7 @@ module bp_uce
   //
   logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
   wire credit_v_li = mem_cmd_v_o;
-  wire credit_ready_li = mem_cmd_ready_i;
+  wire credit_ready_li = mem_cmd_yumi_i;
   // credit is returned when request completes
   // UC store done for UC Store, UC Data for UC Load, Set Tag Wakeup for
   // a miss that is actually an upgrade, and data and tag for normal requests.
@@ -434,7 +434,7 @@ module bp_uce
   //   start waiting when we enter the sending state, and then we'll
   //   know the next non-write response will be critical
   logic critical_pending;
-  wire critical_sent = is_send_critical & mem_cmd_v_o;
+  wire critical_sent = is_send_critical & mem_cmd_yumi_i;
   wire critical_recv = mem_resp_yumi_o & load_resp_v_li;
   bsg_dff_reset_set_clear
    #(.width_p(1))
@@ -573,13 +573,13 @@ module bp_uce
             mem_cmd_cast_payload.lce_id    = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
             mem_cmd_cast_o.data                  = writeback_data;
-            mem_cmd_v_o = mem_cmd_ready_i & dirty_data_v_r & dirty_tag_v_r;
-            mem_cmd_up = mem_cmd_v_o;
+            mem_cmd_v_o = dirty_data_v_r & dirty_tag_v_r & ~cache_req_credits_full_o;
+            mem_cmd_up = mem_cmd_yumi_i;
 
-            way_up = mem_cmd_done & mem_cmd_v_o;
-            index_up = way_done & mem_cmd_done & mem_cmd_v_o;
+            way_up = mem_cmd_done & mem_cmd_up;
+            index_up = way_done & way_up;
 
-            state_n = (mem_cmd_done & mem_cmd_v_o & index_done & way_done)
+            state_n = (mem_cmd_done & index_done & way_done & mem_cmd_yumi_i)
                       ? e_flush_fence
                       : index_up
                         ? e_flush_read
@@ -604,9 +604,9 @@ module bp_uce
                 mem_cmd_cast_o.header.payload        = mem_cmd_cast_payload;
                 mem_cmd_cast_o.header.subop          = mem_wr_subop;
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
-                mem_cmd_v_o                          = mem_cmd_ready_i & ~cache_req_credits_full_o;
+                mem_cmd_v_o                          = ~cache_req_credits_full_o;
 
-                cache_req_complete_o = mem_cmd_v_o;
+                cache_req_complete_o = mem_cmd_yumi_i;
                 cache_req_yumi_o = cache_req_complete_o;
               end
             else
@@ -653,10 +653,10 @@ module bp_uce
             mem_cmd_cast_payload.lce_id    = lce_id_i;
             mem_cmd_cast_o.header.payload  = mem_cmd_cast_payload;
             mem_cmd_cast_o.data            = writeback_data;
-            mem_cmd_v_o = mem_cmd_ready_i;
-            mem_cmd_up = mem_cmd_v_o;
+            mem_cmd_v_o = ~cache_req_credits_full_o;
+            mem_cmd_up = mem_cmd_yumi_i;
 
-            writeback_complete = mem_cmd_done & mem_cmd_v_o;
+            writeback_complete = mem_cmd_done & mem_cmd_yumi_i;
             state_n = writeback_complete ? e_send_critical : e_uc_writeback_write_req;
           end
 
@@ -669,9 +669,9 @@ module bp_uce
               mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
               mem_cmd_cast_payload.lce_id          = lce_id_i;
               mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
-              mem_cmd_v_o = mem_cmd_ready_i & cache_req_metadata_v_r;
-              mem_cmd_up = mem_cmd_v_o;
-              state_n = mem_cmd_v_o
+              mem_cmd_v_o = cache_req_metadata_v_r & ~cache_req_credits_full_o;
+              mem_cmd_up = mem_cmd_yumi_i;
+              state_n = mem_cmd_up
                         ? cache_req_metadata_r.dirty
                           ? e_writeback_evict
                           : e_read_req
@@ -686,9 +686,9 @@ module bp_uce
               mem_cmd_cast_o.header.payload        = mem_cmd_cast_payload;
               mem_cmd_cast_o.header.subop          = mem_wr_subop;
               mem_cmd_cast_o.data                  = cache_req_r.data;
-              mem_cmd_v_o                          = mem_cmd_ready_i;
+              mem_cmd_v_o                          = ~cache_req_credits_full_o;
 
-              state_n = mem_cmd_v_o ? uc_store_v_r ? e_ready: e_uc_read_wait : e_send_critical;
+              state_n = mem_cmd_yumi_i ? uc_store_v_r ? e_ready: e_uc_read_wait : e_send_critical;
             end
 
         e_writeback_evict:
@@ -732,14 +732,14 @@ module bp_uce
             fill_up = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             mem_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             // request next sub-block
-            mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_rd;
-            mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
-            mem_cmd_cast_o.header.size           = block_msg_size_lp;
-            mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
-            mem_cmd_cast_payload.lce_id          = lce_id_i;
-            mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
-            mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r & ~cache_req_credits_full_o;
-            mem_cmd_up = mem_cmd_v_o;
+            mem_cmd_cast_o.header.msg_type = e_bedrock_mem_rd;
+            mem_cmd_cast_o.header.addr     = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
+            mem_cmd_cast_o.header.size     = block_msg_size_lp;
+            mem_cmd_cast_payload.way_id    = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
+            mem_cmd_cast_payload.lce_id    = lce_id_i;
+            mem_cmd_cast_o.header.payload  = mem_cmd_cast_payload;
+            mem_cmd_v_o = ~mem_cmd_done_r & ~cache_req_credits_full_o;
+            mem_cmd_up = mem_cmd_yumi_i;
 
             cache_req_complete_o = fill_done & mem_cmd_done_r & tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             state_n = cache_req_complete_o ? e_writeback_write_req : e_writeback_read_req;
@@ -750,12 +750,12 @@ module bp_uce
             mem_cmd_cast_o.header.addr     = {dirty_tag_r.tag, cache_req_r.addr[block_offset_width_lp+:index_width_lp], {assoc_p > 1{bank_index}}, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = block_msg_size_lp;
             mem_cmd_cast_payload.lce_id    = lce_id_i;
-            mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
-            mem_cmd_cast_o.data                  = writeback_data;
-            mem_cmd_v_o = mem_cmd_ready_i & dirty_data_v_r & dirty_tag_v_r;
-            mem_cmd_up = mem_cmd_v_o;
+            mem_cmd_cast_o.header.payload  = mem_cmd_cast_payload;
+            mem_cmd_cast_o.data            = writeback_data;
+            mem_cmd_v_o = dirty_data_v_r & dirty_tag_v_r & ~cache_req_credits_full_o;
+            mem_cmd_up = mem_cmd_yumi_i;
 
-            writeback_complete = mem_cmd_done & mem_cmd_v_o;
+            writeback_complete = mem_cmd_done & mem_cmd_up;
             state_n = writeback_complete ? e_ready : e_writeback_write_req;
           end
         e_read_req:
@@ -785,8 +785,8 @@ module bp_uce
             mem_cmd_cast_payload.way_id          = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
             mem_cmd_cast_payload.lce_id          = lce_id_i;
             mem_cmd_cast_o.header.payload = mem_cmd_cast_payload;
-            mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r & ~cache_req_credits_full_o;
-            mem_cmd_up = mem_cmd_v_o;
+            mem_cmd_v_o = ~mem_cmd_done_r & ~cache_req_credits_full_o;
+            mem_cmd_up = mem_cmd_yumi_i;
 
             cache_req_complete_o = fill_done & mem_cmd_done_r & tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             state_n = cache_req_complete_o ? e_ready : e_read_req;

@@ -33,7 +33,7 @@ module bp_cce_loopback
   assign mem_cmd_cast_i = mem_cmd_i;
   assign mem_resp_o = mem_resp_cast_o;
 
-  bsg_two_fifo
+  bsg_one_fifo
    #(.width_p($bits(mem_cmd_cast_i.header)))
    loopback_buffer
     (.clk_i(clk_i)
