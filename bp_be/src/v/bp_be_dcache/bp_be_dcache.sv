@@ -180,11 +180,9 @@ module bp_be_dcache
   localparam block_offset_width_lp    = (assoc_p > 1)
     ? (bindex_width_lp+byte_offset_width_lp)
     : byte_offset_width_lp;
-  localparam bank_size_in_fill_lp = bank_width_lp / fill_width_p;
-  localparam sub_fills_per_bank_lp    = `BSG_SAFE_CLOG2(bank_size_in_fill_lp);
-  localparam banks_per_block_lp = (fill_width_p >= bank_width_lp)
-                  ? block_size_in_fill_lp
-                  : block_size_in_fill_lp / bank_size_in_fill_lp;
+  localparam num_subbanks_lp          = (fill_size_in_bank_lp != 0) ? 0 : block_size_in_fill_lp / assoc_p;
+  localparam lg_num_subbanks_lp       = `BSG_SAFE_CLOG2(num_subbanks_lp);
+  localparam bank_fill_index_width_lp = $clog2(block_size_in_fill_lp) - lg_num_subbanks_lp;
 
   // State machine declaration
   enum logic [2:0] {e_ready, e_miss, e_fence, e_req} state_n, state_r;
@@ -986,18 +984,31 @@ module bp_be_dcache
   ///////////////////////////
   // Data Mem Control
   ///////////////////////////
-  logic [banks_per_block_lp-1:0][`BSG_MAX(fill_size_in_bank_lp, 1)-1:0] data_mem_pkt_fill_mask_expanded;
-  for (genvar i = 0; i < banks_per_block_lp; i++)
-    begin : fill_mask
-      if (fill_size_in_bank_lp != 0)
-       begin
-         assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt_cast_i.fill_index[i]}};
-       end
-      else 
-       begin
-         assign data_mem_pkt_fill_mask_expanded[i] = data_mem_pkt_cast_i.fill_index[i];
-       end  
-    end
+  // Using BSG_MAX gets rid of illegal part select errors
+  logic [`BSG_SAFE_MINUS(bank_fill_index_width_lp, 1):0] bank_fill_index;
+  assign bank_fill_index = (assoc_p > 1) ? data_mem_pkt_cast_i.fill_index[lg_num_subbanks_lp+:`BSG_MAX(bank_fill_index_width_lp, 1)] : '0;
+
+  // Using BSG_MAX gets rid of illegal part select errors
+  logic [`BSG_SAFE_MINUS(lg_num_subbanks_lp, 1):0] sub_bank_fill_index;
+  assign sub_bank_fill_index = data_mem_pkt_cast_i.fill_index[0+:`BSG_MAX(lg_num_subbanks_lp, 1)];
+
+  logic [(2**bank_fill_index_width_lp)-1:0] bank_fill_index_dec;
+    bsg_decode
+      #(.num_out_p(2**bank_fill_index_width_lp))
+      bank_fill_index_decoder
+      (.i(bank_fill_index)
+      ,.o(bank_fill_index_dec)
+      );
+
+  logic [(2**bank_fill_index_width_lp)-1:0][`BSG_MAX(fill_size_in_bank_lp, 1)-1:0] data_mem_pkt_fill_mask_expanded;
+  bsg_expand_bitmask
+    #(.in_width_p(2**bank_fill_index_width_lp)
+    ,.expand_p(`BSG_MAX(1, fill_size_in_bank_lp))
+    )
+    fill_mask_expander
+    (.i(bank_fill_index_dec)
+    ,.o(data_mem_pkt_fill_mask_expanded)
+    );
 
   logic [data_mem_mask_width_lp-1:0] bank_mask;
   if (fill_size_in_bank_lp != 0)
@@ -1006,16 +1017,16 @@ module bp_be_dcache
    end
   else 
    begin : sub_bank
-    logic [bank_size_in_fill_lp-1:0] sub_fill_index_dec;
+    logic [num_subbanks_lp-1:0] sub_fill_index_dec;
     bsg_decode
-      #(.num_out_p(bank_size_in_fill_lp))
-      sub_index_dec
-      (.i(data_mem_pkt_cast_i.sub_fill_index)
+      #(.num_out_p(num_subbanks_lp))
+      sub_bank_fill_index_decoder
+      (.i(sub_bank_fill_index)
       ,.o(sub_fill_index_dec)
       );
 
     bsg_expand_bitmask
-      #(.in_width_p(bank_size_in_fill_lp)
+      #(.in_width_p(num_subbanks_lp)
       ,.expand_p(fill_width_p >> 3)
       )
       sub_bank_mask

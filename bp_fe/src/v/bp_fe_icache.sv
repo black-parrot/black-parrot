@@ -122,6 +122,9 @@ module bp_fe_icache
     : byte_offset_width_lp;
   localparam block_size_in_fill_lp  = block_width_p / fill_width_p;
   localparam fill_size_in_bank_lp   = fill_width_p / bank_width_lp;
+  localparam num_subbanks_lp          = (fill_size_in_bank_lp != 0) ? 0 : block_size_in_fill_lp / assoc_p;
+  localparam lg_num_subbanks_lp       = `BSG_SAFE_CLOG2(num_subbanks_lp);
+  localparam bank_fill_index_width_lp = $clog2(block_size_in_fill_lp) - lg_num_subbanks_lp;
 
   // State machine declaration
   enum logic [1:0] {e_ready, e_miss} state_n, state_r;
@@ -572,12 +575,27 @@ module bp_fe_icache
      );
   wire [assoc_p-1:0][bank_width_lp-1:0] data_mem_pkt_data_li = {block_size_in_fill_lp{data_mem_pkt_fill_data_li}};
 
-  logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
-  // use fill_index to generate bank write mask
-  for (genvar i = 0; i < block_size_in_fill_lp; i++)
-    begin : fill_mask
-      assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt_cast_i.fill_index[i]}};
-    end
+  // Using BSG_MAX gets rid of illegal part select errors
+  logic [`BSG_SAFE_MINUS(bank_fill_index_width_lp, 1):0] bank_fill_index;
+  assign bank_fill_index  = (assoc_p > 1) ? data_mem_pkt_cast_i.fill_index[lg_num_subbanks_lp+:`BSG_MAX(bank_fill_index_width_lp, 1)] : '0;
+
+  logic [(2**bank_fill_index_width_lp)-1:0] bank_fill_index_dec;
+    bsg_decode
+      #(.num_out_p(2**bank_fill_index_width_lp))
+      bank_fill_index_decoder
+      (.i(bank_fill_index)
+      ,.o(bank_fill_index_dec)
+      );
+
+  logic [(2**bank_fill_index_width_lp)-1:0][`BSG_MAX(fill_size_in_bank_lp, 1)-1:0] data_mem_pkt_fill_mask_expanded;
+  bsg_expand_bitmask
+    #(.in_width_p(2**bank_fill_index_width_lp)
+    ,.expand_p(`BSG_MAX(1, fill_size_in_bank_lp))
+    )
+    fill_mask_expander
+    (.i(bank_fill_index_dec)
+    ,.o(data_mem_pkt_fill_mask_expanded)
+    );
 
   logic [assoc_p-1:0] data_mem_write_bank_mask;
   wire [`BSG_SAFE_CLOG2(assoc_p)-1:0] write_mask_rot_li = data_mem_pkt_cast_i.way_id;
