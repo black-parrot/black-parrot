@@ -132,8 +132,8 @@ module bp_fe_icache
   logic v_tl_r, v_tv_r;
 
   // Uncached storage
-  logic [paddr_width_p-1:0] uncached_paddr_r;
   logic [dword_width_gp-1:0] uncached_data_r;
+  logic uncached_pending_r;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode stage
@@ -206,14 +206,14 @@ module bp_fe_icache
   logic fill_op_tl_r, fetch_op_tl_r, fencei_op_tl_r;
 
   // Valid when we accept new data, clear when we advance to tv
-  assign tl_we = ready_o & v_i & ~cache_req_yumi_i;
+  assign tl_we = ready_o & v_i;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_tl_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(tl_we)
+     ,.set_i(tl_we & ~cache_req_yumi_i)
      // We always advance in the non-stalling I$
      ,.clear_i(1'b1)
      ,.data_o(v_tl_r)
@@ -241,7 +241,6 @@ module bp_fe_icache
     assign hit_v_tl[i] = (tag_mem_data_lo[i].tag == ptag_i) && way_v_tl[i];
   end
   wire cached_hit_tl     = |hit_v_tl;
-  wire uncached_hit_tl   = (paddr_tl[paddr_width_p-1:2] == uncached_paddr_r[paddr_width_p-1:2]);
   wire fetch_uncached_tl = (fetch_op_tl_r &  uncached_i);
   wire fetch_cached_tl   = (fetch_op_tl_r & ~uncached_i);
   wire fill_tl           = (fill_op_tl_r | ~nonidem_i);
@@ -285,18 +284,18 @@ module bp_fe_icache
   logic [paddr_width_p-1:0]              paddr_tv_r;
   logic [assoc_p-1:0]                    bank_sel_one_hot_tv_r;
   logic [assoc_p-1:0]                    way_v_tv_r, hit_v_tv_r;
-  logic                                  cached_hit_tv_r, uncached_hit_tv_r;
+  logic                                  cached_hit_tv_r;
   logic                                  fill_tv_r, fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r;
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
 
   // fence.i does not check tags
-  assign tv_we = v_tl_r & (ptag_v_i | fencei_op_tl_r) & ~poison_tl_i & ~cache_req_yumi_i;
+  assign tv_we = v_tl_r & (ptag_v_i | fencei_op_tl_r);
   bsg_dff_reset_set_clear
    #(.width_p(1))
    v_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(tv_we)
+     ,.set_i(tv_we & ~poison_tl_i & ~cache_req_yumi_i)
      // We always advance in the non-stalling I$
      ,.clear_i(1'b1)
      ,.data_o(v_tv_r)
@@ -314,16 +313,16 @@ module bp_fe_icache
      );
 
   bsg_dff_en
-   #(.width_p(paddr_width_p+3*assoc_p+6))
+   #(.width_p(paddr_width_p+3*assoc_p+5))
    tv_stage_reg
     (.clk_i(clk_i)
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
-               ,bank_sel_one_hot_tl, way_v_tl, hit_v_tl, cached_hit_tl, uncached_hit_tl
+               ,bank_sel_one_hot_tl, way_v_tl, hit_v_tl, cached_hit_tl
                ,fill_tl, fencei_op_tl_r, fetch_uncached_tl, fetch_cached_tl
                })
      ,.data_o({paddr_tv_r
-               ,bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r, cached_hit_tv_r, uncached_hit_tv_r
+               ,bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r, cached_hit_tv_r
                ,fill_tv_r, fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r
                })
      );
@@ -367,7 +366,7 @@ module bp_fe_icache
      );
 
   assign data_o = uncached_op_tv_r ? uncached_data_r : final_data;
-  assign data_v_o = v_tv_r & ((uncached_op_tv_r & uncached_hit_tv_r)
+  assign data_v_o = v_tv_r & ((uncached_op_tv_r & uncached_pending_r)
                               | (cached_op_tv_r & cached_hit_tv_r)
                               );
   assign miss_v_o = v_tv_r & ~fill_tv_r & ~data_v_o;
@@ -382,7 +381,7 @@ module bp_fe_icache
   localparam bp_cache_req_size_e uncached_req_size = e_size_4B;
 
   wire cached_req   = v_tv_r & cached_op_tv_r & fill_tv_r & ~cached_hit_tv_r;
-  wire uncached_req = v_tv_r & uncached_op_tv_r & fill_tv_r & ~uncached_hit_tv_r;
+  wire uncached_req = v_tv_r & uncached_op_tv_r & fill_tv_r & ~uncached_pending_r;
   wire fencei_req   = v_tv_r & fencei_op_tv_r & !coherent_p;
 
   assign cache_req_v_o = |{uncached_req, cached_req, fencei_req} & ~poison_tv_i;
@@ -651,27 +650,30 @@ module bp_fe_icache
   assign stat_mem_o = stat_mem_data_lo;
 
   ///////////////////////////
-  // Uncached data storage
+  // Uncached Load Storage
   ///////////////////////////
-  // TODO: This goes away with the I$ fill op
-  bsg_dff_reset_en
-   #(.width_p(paddr_width_p))
-   uncached_paddr_reg
+  wire uncached_pending_set = cache_req_yumi_i & uncached_req;
+  // Invalidate uncached data if the cache when we successfully complete the request
+  wire uncached_pending_clear = poison_tl_i | poison_tv_i | data_v_o;
+  bsg_dff_reset_set_clear
+   #(.width_p(1), .clear_over_set_p(1))
+   uncached_pending_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(uncached_req)
-     ,.data_i(paddr_tv_r)
-     ,.data_o(uncached_paddr_r)
+
+     ,.set_i(uncached_pending_set)
+     ,.clear_i(uncached_pending_clear)
+     ,.data_o(uncached_pending_r)
      );
 
-  wire uncached_load_set = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
-  wire [dword_width_gp-1:0] uncached_data = data_mem_pkt_cast_i.data[0+:dword_width_gp];
+  wire uncached_data_set = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
   bsg_dff_en
    #(.width_p(dword_width_gp))
    uncached_data_reg
     (.clk_i(clk_i)
-     ,.en_i(uncached_load_set)
-     ,.data_i(uncached_data)
+     ,.en_i(uncached_data_set)
+
+     ,.data_i(data_mem_pkt_cast_i.data[0+:dword_width_gp])
      ,.data_o(uncached_data_r)
      );
 

@@ -452,7 +452,7 @@ module testbench
            ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
            ,.dcache_rollback(be.scheduler.commit_pkt_cast_i.rollback)
            ,.long_haz(be.detector.long_haz_v)
-           ,.exception(be.director.commit_pkt_cast_i.exception | be.director.commit_pkt_cast_i.satp)
+           ,.exception(be.director.commit_pkt_cast_i.exception)
            ,.eret(be.director.commit_pkt_cast_i.eret)
            ,._interrupt(be.director.commit_pkt_cast_i._interrupt)
            ,.control_haz(be.detector.control_haz_v)

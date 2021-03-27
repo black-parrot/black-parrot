@@ -171,6 +171,7 @@ $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 # NETWORK
 $BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.sv
 ## TOP Files
+$BP_TOP_DIR/src/v/bp_loopback.sv
 $BP_TOP_DIR/src/v/bp_cfg.sv
 
 # BSG Staging area

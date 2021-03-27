@@ -143,7 +143,7 @@
       logic                           eret;                                                        \
       logic                           fencei;                                                      \
       logic                           sfence;                                                      \
-      logic                           satp;                                                        \
+      logic                           csrw;                                                        \
       logic                           wfi;                                                         \
       logic                           itlb_miss;                                                   \
       logic                           icache_miss;                                                 \
