@@ -60,21 +60,19 @@
      ,e_cache_stat_mem_clear_dirty
     } bp_cache_stat_mem_opcode_e;
 
-  `define declare_bp_cache_data_mem_pkt_s(sets_mp, ways_mp, block_data_width_mp, fill_width_mp, cache_name_mp) \
-    typedef struct packed                                                                     \
-    {                                                                                         \
-      logic [`BSG_SAFE_CLOG2(sets_mp)-1:0]            index;                                  \
-      logic [`BSG_SAFE_CLOG2(ways_mp)-1:0]            way_id;                                 \
-      logic [fill_width_mp-1:0]                       data;                                   \
-      logic [(block_data_width_mp/fill_width_mp)-1:0] fill_index;                             \
-      logic [`BSG_MAX(1, `BSG_SAFE_CLOG2((block_data_width_mp/fill_width_mp)/ways_mp))-1:0] sub_fill_index; \
-      bp_cache_data_mem_opcode_e                      opcode;                                 \
+  `define declare_bp_cache_data_mem_pkt_s(sets_mp, ways_mp, block_data_width_mp, fill_width_mp, cache_name_mp)   \
+    typedef struct packed                                                        \
+    {                                                                            \
+      logic [`BSG_SAFE_CLOG2(sets_mp)-1:0]            index;                     \
+      logic [`BSG_SAFE_CLOG2(ways_mp)-1:0]            way_id;                    \
+      logic [fill_width_mp-1:0]                       data;                      \
+      logic [`BSG_SAFE_CLOG2(block_data_width_mp/fill_width_mp)-1:0] fill_index; \
+      bp_cache_data_mem_opcode_e                      opcode;                    \
     }  bp_``cache_name_mp``_data_mem_pkt_s
 
   `define bp_cache_data_mem_pkt_width(sets_mp, ways_mp, block_data_width_mp, fill_width_mp)   \
     (`BSG_SAFE_CLOG2(sets_mp)+`BSG_SAFE_CLOG2(ways_mp)+fill_width_mp                          \
-     +(block_data_width_mp/fill_width_mp)+`BSG_MAX(1, `BSG_SAFE_CLOG2((block_data_width_mp/fill_width_mp)/ways_mp)) \
-     +$bits(bp_cache_data_mem_opcode_e))
+     +`BSG_SAFE_CLOG2(block_data_width_mp/fill_width_mp) + $bits(bp_cache_data_mem_opcode_e))
 
   `define declare_bp_cache_tag_mem_pkt_s(sets_mp, ways_mp, tag_width_mp, cache_name_mp) \
     typedef struct packed                                                          \
