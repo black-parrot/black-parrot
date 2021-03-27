@@ -4,6 +4,10 @@
   *
   */
 
+`ifndef BP_SIM_CLK_PERIOD
+`define BP_SIM_CLK_PERIOD 10
+`endif
+
 module testbench
  import bp_common_pkg::*;
  import bp_me_pkg::*;
@@ -35,11 +39,7 @@ module testbench
    , localparam tr_rom_addr_width_p = 20
 
    )
-  (input   bit clk_i
-   , input bit reset_i
-   , input bit dram_clk_i
-   , input bit dram_reset_i
-   );
+  (output bit reset_i);
 
 export "DPI-C" function get_dram_period;
 export "DPI-C" function get_sim_period;
@@ -56,6 +56,48 @@ endfunction
 `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
+
+// Bit to deal with initial X->0 transition detection
+bit clk_i;
+bit dram_clk_i, dram_reset_i;
+
+`ifdef VERILATOR
+  bsg_nonsynth_dpi_clock_gen
+`else
+  bsg_nonsynth_clock_gen
+`endif
+  #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
+  clock_gen
+  (.o(clk_i));
+
+bsg_nonsynth_reset_gen
+  #(.num_clocks_p(1)
+    ,.reset_cycles_lo_p(0)
+    ,.reset_cycles_hi_p(20)
+    )
+  reset_gen
+  (.clk_i(clk_i)
+    ,.async_reset_o(reset_i)
+    );
+
+`ifdef VERILATOR
+  bsg_nonsynth_dpi_clock_gen
+`else
+  bsg_nonsynth_clock_gen
+`endif
+  #(.cycle_time_p(`dram_pkg::tck_ps))
+  dram_clock_gen
+  (.o(dram_clk_i));
+
+bsg_nonsynth_reset_gen
+  #(.num_clocks_p(1)
+    ,.reset_cycles_lo_p(0)
+    ,.reset_cycles_hi_p(10)
+    )
+  dram_reset_gen
+  (.clk_i(dram_clk_i)
+    ,.async_reset_o(dram_reset_i)
+    );
 
 // CFG IF
 bp_cfg_bus_s             cfg_bus_lo;
@@ -543,6 +585,16 @@ always_ff @(negedge clk_i) begin
     $finish(0);
   end
 end
+
+`ifndef VERILATOR
+  initial
+    begin      
+      $assertoff();
+      @(posedge clk_i);
+      @(negedge reset_i);
+      $asserton();
+    end
+`endif
 
 endmodule : testbench
 
