@@ -239,7 +239,6 @@ $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
 # Network
-$BP_ME_DIR/src/v/cce/bp_cce_loopback.sv
 $BP_ME_DIR/src/v/cce/bp_uce.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.sv
@@ -254,6 +253,7 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.sv
 ## TOP
+$BP_TOP_DIR/src/v/bp_loopback.sv
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
 $BP_TOP_DIR/src/v/bp_cacc_tile.sv

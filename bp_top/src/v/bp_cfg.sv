@@ -10,8 +10,6 @@ module bp_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
 
-   // TODO: Should I be a global param
-   , localparam cfg_max_outstanding_p = 1
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                clk_i
@@ -48,8 +46,8 @@ module bp_cfg
   assign mem_cmd_li = mem_cmd_i;
 
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
-  bsg_fifo_1r1w_small
-   #(.width_p($bits(bp_bedrock_xce_mem_msg_s)), .els_p(cfg_max_outstanding_p))
+  bsg_one_fifo
+   #(.width_p($bits(bp_bedrock_xce_mem_msg_s)))
    small_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

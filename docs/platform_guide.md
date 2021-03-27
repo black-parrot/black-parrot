@@ -110,6 +110,13 @@ BlackParrot has a configurable physical address width as well as maximum DRAM si
   * Striped by tile
   * Off-chip region
 
+For a BlackParrot Unicore, an "off-chip" address goes out the io_cmd/io_resp ports. An "on-chip"
+address goes to a local device if below the DRAM base address, and to the L2 if in DRAM space.
+
+For a BlackParrot Multicore, an "off-chip" device is routed to the I/O complex. The I/O complex will
+either send it east or west depending on the destination "domain ID" (upper uncached bits) of the
+address compared to the domain ID of the chip itself (set statically at the toplevel).
+
 ### Local Address Map
 * 0x00_0000_0000 - 0x00_0(nnnN)(D)(A_AAAA)
   * nnnN -> 7 bits = 128 max tiles
@@ -117,6 +124,37 @@ BlackParrot has a configurable physical address width as well as maximum DRAM si
   * A_AAAA -> 20 bits = 1 MB address space per device
 * Examples
   * Devices: Configuration Link, CLINT
-  * 0x00_0420_0001 -> tile 2, device 2, address 0001 -> Freeze register
+  * 0x00_0420_0002 -> tile 2, device 2, address 0002 -> Freeze register
   * 0x00_0030_bff8 -> tile 0, device 3, address bff8 -> CLINT mtime
 
+### Full Listing of BlackParrot Configuration Registers
+Following is a list of the memory-mapped registers contained within a BlackParrot Unicore or BlackParrot Multicore Tile.
+
+These addresses are per-tile. To access them on a tile N, prepend N to the address as shown above.
+
+| Device   | Name        | Address         | Description                                                                                                                       |
+|----------|-------------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| Bootrom* | Bootrom     | 01_0000-01_ffff | The bootrom which bootstraps BlackParrot in bootrom configurations                                                                |
+| Host*    | getchar     | 10_0000         | A polling implementation to get a single char from a tethered host                                                                |
+|          | putchar     | 10_1000         | Puts a character onto the terminal of a tethered host                                                                             |
+|          | finish      | 10_2000-10_2fff | Terminates a multicore BlackParrot simulation, when finish[x] is received for each core x in the system                           |
+|          | putch       | 10_3000-10_3fff | putch[x] puts a character into a private terminal for core x. This is useful for debugging multicore simulations                  |
+| CFG      | freeze      | 20_0001         | Freezes the core, preventing all fetch operations. Will drain the pipeline if set during runtime.                                 |
+|          | core_id     | 20_0005         | Read-only. This tile's core id. This is a local id within the chip                                                                |
+|          | did         | 20_0006         | Read-only. This tile's domain id. This is an chip-wide identifier                                                                 |
+|          | cord        | 20_0007         | Read-only. This tile's coordinate. In {y,x} format                                                                                |
+|          | host_did    | 20_0008         | Host domain id. This identifies which direction to send host packets, relative to our own domain id                               |
+|          | domain_mask | 20_0009         | A mask of the upper uncached bits of an address. If an address width an unset domain bit is loaded, it will cause an access fault |
+|          | icache_id   | 20_0021         | Read-only. The I$ Engine ID.                                                                                                      |
+|          | icache_mode | 20_0022         | The I$ mode. Either uncached, cached, or nonspec (will not send a speculative miss)                                               |
+|          | dcache_id   | 20_0042         | Read-only. The D$ Engine ID.                                                                                                      |
+|          | dcache_mode | 20_0043         | The D$ mode. Either uncached or cached. (D$ will never send speculative misses)                                                   |
+|          | cce_id      | 20_0080         | Read-only. The CCE Engine ID.                                                                                                     |
+|          | cce_mode    | 20_0081         | The CCE mode. Either uncached or cached. Undefined behavior results when sending cached requests to a CCE in uncached mode        |
+|          | cce_ucode   | 20_8000-20_8fff | The CCE instruction RAM. Must be written before enabling cached mode in a microcoded CCE                                          |
+| CLINT    | mipi        | 30_0000         | mip (software interrupt) bit                                                                                                      |
+|          | mtimecmp    | 30_4000         | Timer compare register. When mtime > mtimecmp, a timer irq is raised in the core                                                  |
+|          | mtime       | 30_bff8         | A real-time counter. Currently implemented as mcycle/8                                                                            |
+|          | plic        | 30_b000         | A fake PLIC implementation. Effectively a redundant implementation of mipi                                                        |
+
+* This lives outside of the unicore/tile, residing in the tethered host. Implementations must map this correctly for full software support

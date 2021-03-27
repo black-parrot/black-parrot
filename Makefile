@@ -4,19 +4,22 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
+# Makes clones much faster. Comment out if you see "fatal: reference is not a tree"
+SHALLOW_SUB ?= --depth=1
+
 libs:
-	cd $(TOP); git submodule update --init --recursive --checkout $(BASEJUMP_STL_DIR)
-	cd $(TOP); git submodule update --init --recursive --checkout $(HARDFLOAT_DIR)
+	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(BASEJUMP_STL_DIR)
+	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(HARDFLOAT_DIR)
 
 tools: libs
 	$(MAKE) -C $(BP_TOOLS_DIR) tools
 
 sdk: tools
-	cd $(TOP); git submodule update --init --checkout $(BP_SDK_DIR)
+	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_SDK_DIR)
 	$(MAKE) -C $(BP_SDK_DIR) sdk
 
 hdk: sdk
-	cd $(TOP); git submodule update --init --checkout $(BP_HDK_DIR)
+	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_HDK_DIR)
 	$(MAKE) -C $(BP_HDK_DIR) hdk
 
 prep: hdk
@@ -28,8 +31,8 @@ prep_bsg: prep
 	$(MAKE) -C $(BP_HDK_DIR) bsg_cadenv
 
 prep_lite: tools
-	cd $(TOP); git submodule update --init --checkout $(BP_SDK_DIR)
-	cd $(TOP); git submodule update --init --checkout $(BP_HDK_DIR)
+	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_SDK_DIR)
+	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_HDK_DIR)
 	$(MAKE) -C tools tools_lite
 	$(MAKE) -C sdk sdk_lite
 
