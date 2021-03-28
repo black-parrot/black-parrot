@@ -986,7 +986,7 @@ module bp_be_dcache
   ///////////////////////////
   // Using BSG_MAX gets rid of illegal part select errors
   logic [`BSG_SAFE_MINUS(bank_fill_index_width_lp, 1):0] bank_fill_index;
-  assign bank_fill_index = (assoc_p > 1) ? data_mem_pkt_cast_i.fill_index[lg_num_subbanks_lp+:`BSG_MAX(bank_fill_index_width_lp, 1)] : '0;
+  assign bank_fill_index = data_mem_pkt_cast_i.fill_index[lg_num_subbanks_lp+:`BSG_MAX(bank_fill_index_width_lp, 1)];
 
   // Using BSG_MAX gets rid of illegal part select errors
   logic [`BSG_SAFE_MINUS(lg_num_subbanks_lp, 1):0] sub_bank_fill_index;
@@ -1000,7 +1000,7 @@ module bp_be_dcache
       ,.o(bank_fill_index_dec)
       );
 
-  logic [(2**bank_fill_index_width_lp)-1:0][`BSG_MAX(fill_size_in_bank_lp, 1)-1:0] data_mem_pkt_fill_mask_expanded;
+  logic [assoc_p-1:0] data_mem_pkt_fill_mask_expanded;
   bsg_expand_bitmask
     #(.in_width_p(2**bank_fill_index_width_lp)
     ,.expand_p(`BSG_MAX(1, fill_size_in_bank_lp))
