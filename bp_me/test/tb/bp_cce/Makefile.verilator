@@ -54,7 +54,7 @@ CBUILD_COLLATERAL  = none
 $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
 	@ln -nsf $</simsc $@
 
-$(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
+$(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
 	@cp $^ $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
