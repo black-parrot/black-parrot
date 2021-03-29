@@ -446,7 +446,6 @@ bp_nonsynth_mem
 #(.bp_params_p(bp_params_p)
   ,.dram_type_p(dram_type_p)
   ,.mem_els_p(2**20)
-  ,.preload_mem_p(1)
   )
 mem
  (.clk_i(clk_i)
