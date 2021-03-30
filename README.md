@@ -88,7 +88,10 @@ Once you've built and validate your BlackParrot program and are ready to run on 
 Coming Soon!
 
 ## Interface Specification
-BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow, latency-insensitive interfaces. The interfaces are designed to allow implementations of the various system components to change independently of one another, without worrying about cascading functional or timing effects. Read more about BlackParrot's standardized interfaces here: [Interface Specification](docs/interface_specification.md)
+
+BlackParrot heavily leverages the [BaseJump STL](https://github.com/bespoke-silicon-group/basejump_stl) library and builds upon many of the hardware design conventions from the corresponding [BSG SystemVerilog Coding Guidelines](https://docs.google.com/document/d/1xA5XUzBtz_D6aSyIBQUwFk_kSUdckrfxa2uzGjMgmCU/edit#) which can aid in understanding how BlackParrot source code works.
+
+BlackParrot is an aggressively modular design: communication between the components is performed over a set of narrow, latency-insensitive interfaces. The interfaces are designed to allow implementations of the various system components to change independently of one another, without worrying about cascading functional or timing effects. Read more about BlackParrot's standardized interfaces here: [Interface Specification](docs/interface_specification.md)
 
 ## BedRock Coherence System Guide
 The BedRock coherence system maintains cache coherence between the BlackParrot processor cores and attached
