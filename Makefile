@@ -4,9 +4,6 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-# Makes clones much faster. Comment out if you see "fatal: reference is not a tree"
-SHALLOW_SUB ?= --depth=1
-
 libs:
 	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(BASEJUMP_STL_DIR)
 	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(HARDFLOAT_DIR)
