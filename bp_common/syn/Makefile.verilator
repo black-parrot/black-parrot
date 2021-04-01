@@ -15,7 +15,7 @@ TOP_MODULE ?= testbench
 # TODO: Increase, higher threads currently break CI though
 VERILATOR_THREADS ?= 1
 ## Tool options
-VV_OPTS  = --sc                 # Output in SystemC rather than C++
+VV_OPTS  = --cc                 # Output in C++
 #VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
 VV_OPTS += -O1
 VV_OPTS += --x-assign fast --x-initial fast
@@ -35,7 +35,7 @@ BUILD_OPTS += -LDFLAGS "-lpthread"
 BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib"
 BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib-linux64 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib-linux64"
 BUILD_OPTS += -LDFLAGS "-L$(BP_SDK_DIR)/install/lib -ldromajo_cosim -Wl,-rpath=$(BP_SDK_DIR)/install/lib"
-BUILD_OPTS += -CFLAGS "-I$(BP_SDK_DIR)/install/include"
+BUILD_OPTS += -CFLAGS "-I$(BP_SDK_DIR)/install/include -I$(BP_EXTERNAL_DIR)/basejump_stl/bsg_test/"
 
 VERILATOR_OPTIONS =
 
@@ -75,7 +75,7 @@ $(BUILD_DIR)/obj_dir: | $(VBUILD_COLLATERAL)
 	-@tail -n 3 $(VBUILD_LOG) > $(VBUILD_REPORT)
 	-@test -s $(VBUILD_ERROR) && echo "FAILED" >> $(VBUILD_REPORT) || rm $(VBUILD_ERROR)
 
-build_dump.sc: VV_OPTS += --trace
+build_dump.sc: VV_OPTS += --trace-fst
 build_dump.sc: VV_OPTS += --trace-structs
 build_dump.sc: VV_OPTS += --trace-depth 15
 build_dump.sc: build.sc
@@ -95,7 +95,7 @@ $(SIM_DIR)/run_simsc: | $(SIM_COLLATERAL)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
-sim_dump.sc: VV_OPTS += --trace
+sim_dump.sc: VV_OPTS += --trace-fst
 sim_dump.sc: VV_OPTS += --trace-structs
 sim_dump.sc: VV_OPTS += --trace-depth 15
 sim_dump.sc: sim.sc
@@ -110,12 +110,12 @@ $(RESULTS_DIR)/covsc: | $(COV_COLLATERAL)
 
 wave.sc: $(SIM_DIR)/wavesc
 $(SIM_DIR)/wavesc:
-	$(GTKWAVE) -f $(@D)/dump.vcd &
+	$(GTKWAVE) -f $(@D)/dump.fst &
 
 # TODO: Make compatible with multi-core
 blood.sc: $(SIM_DIR)/bloodsc
 $(SIM_DIR)/bloodsc:
-	cd $(@D); $(PYTHON) $(BLOODGRAPH) --trace stall_0.trace
+	cd $(@D); $(PYTHON) $(BLOODGRAPH) --trace-fst stall_0.trace
 
 clean.sc:
 	@rm -rf results/verilator
