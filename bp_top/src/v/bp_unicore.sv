@@ -108,7 +108,7 @@ module bp_unicore
   bp_bedrock_uce_mem_msg_s [2:0] proc_cmd_lo;
   logic [2:0] proc_cmd_v_lo, proc_cmd_yumi_li, proc_cmd_last_lo;
   bp_bedrock_uce_mem_msg_s [2:0] proc_resp_li;
-  logic [2:0] proc_resp_v_li, proc_resp_ready_lo, proc_resp_last_li;
+  logic [2:0] proc_resp_v_li, proc_resp_ready_lo, proc_resp_last_li, proc_resp_yumi_lo;
 
   bp_bedrock_uce_mem_msg_s cfg_cmd_li;
   bp_bedrock_xce_mem_msg_s cfg_cmd;
@@ -422,19 +422,19 @@ module bp_unicore
   // This is also suboptimal. Theoretically, we could dequeue into each fifo at once, but this
   //   would require more complex arbitration logic
   logic resp_selected_last_lo;
-  wire resp_arb_ready_li = &proc_resp_ready_lo;
-  wire resp_arb_unlock = |({loopback_resp_yumi_li, cache_resp_ready_and_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li} & {loopback_resp_v_lo, cache_resp_last_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo});
+  logic loopback_resp_grant_li, cache_resp_grant_li, io_resp_grant_lo, clint_resp_grant_li, cfg_resp_grant_li;
+  wire resp_arb_unlock = |{loopback_resp_yumi_li, (cache_resp_ready_and_li & cache_resp_last_lo), io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li};
   bsg_locking_arb_fixed
    #(.inputs_p(5)
    ,.lo_to_hi_p(0))
    resp_arb
     (.clk_i(clk_i)
-    ,.ready_i(resp_arb_ready_li)
+    ,.ready_i(1'b1)
 
     ,.unlock_i(reset_i | resp_arb_unlock)
 
     ,.reqs_i({loopback_resp_v_lo, cache_resp_v_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo})
-    ,.grants_o({loopback_resp_yumi_li, cache_resp_ready_and_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
+    ,.grants_o({loopback_resp_grant_li, cache_resp_grant_li, io_resp_grant_lo, clint_resp_grant_li, cfg_resp_grant_li})
     ); 
   assign resp_selected_last_lo = resp_arb_unlock;
 
@@ -446,13 +446,20 @@ module bp_unicore
        #(.width_p($bits(bp_bedrock_uce_mem_msg_s)), .els_p(5))
        resp_select
         (.data_i({loopback_resp_lo, cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
-         ,.sel_one_hot_i({loopback_resp_yumi_li, cache_resp_ready_and_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
-         ,.data_o(proc_resp_li[i])
-         );
-      wire resp_selected_v_li = |{loopback_resp_yumi_li, cache_resp_ready_and_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li};
-      assign proc_resp_v_li[i] = resp_selected_v_li & (proc_resp_selected_payload_li.lce_id == i);
+        ,.sel_one_hot_i({loopback_resp_grant_li, cache_resp_grant_li, io_resp_grant_lo, clint_resp_grant_li, cfg_resp_grant_li})
+        ,.data_o(proc_resp_li[i])
+        );
+
+      wire any_resp_v_li = |{loopback_resp_v_lo, cache_resp_v_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo};
+      assign proc_resp_v_li[i] = any_resp_v_li & (proc_resp_selected_payload_li.lce_id == i);
+      assign proc_resp_yumi_lo[i] = proc_resp_v_li[i] & proc_resp_ready_lo[i];
       assign proc_resp_last_li[i] = resp_selected_last_lo;
     end
+  assign cfg_resp_yumi_li        = |proc_resp_yumi_lo & cfg_resp_grant_li;
+  assign clint_resp_yumi_li      = |proc_resp_yumi_lo & clint_resp_grant_li;
+  assign io_resp_yumi_o          = |proc_resp_yumi_lo & io_resp_grant_lo;
+  assign cache_resp_ready_and_li = |proc_resp_yumi_lo & cache_resp_grant_li;
+  assign loopback_resp_yumi_li   = |proc_resp_yumi_lo & loopback_resp_grant_li;
 
   bp_local_addr_s local_addr_cast;
   assign local_addr_cast = proc_cmd_selected_lo.header.addr;
