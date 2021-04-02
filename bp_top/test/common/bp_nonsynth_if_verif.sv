@@ -79,8 +79,7 @@ module bp_nonsynth_if_verif
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");
-  if ((l2_data_width_p < icache_fill_width_p) || (l2_data_width_p < dcache_fill_width_p))
-    $error("L2 data width must larger than l1 fill width");
+  // Pending verification here: for unicore cfgs, l2 data width should be larger than or equal to l1 fill width.
 
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
