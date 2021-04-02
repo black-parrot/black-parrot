@@ -30,11 +30,10 @@ prep_bsg: prep
 	$(MAKE) -C $(BP_SDK_DIR) bsg_cadenv
 	$(MAKE) -C $(BP_HDK_DIR) bsg_cadenv
 
-prep_lite: tools
+prep_lite: tools_lite
 	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_SDK_DIR)
 	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_HDK_DIR)
-	$(MAKE) -C tools tools_lite
-	$(MAKE) -C sdk sdk_lite
+	$(MAKE) -C $(BP_SDK_DIR) sdk_lite
 
 bsg_cadenv:
 	-cd $(TOP); git clone git@github.com:bespoke-silicon-group/bsg_cadenv.git external/bsg_cadenv
