@@ -32,7 +32,7 @@ module bp_uce
     , localparam block_size_in_fill_lp = block_width_p / fill_width_p
     , localparam fill_size_in_bank_lp = fill_width_p / bank_width_lp
     , localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp)
-    , localparam fill_offset_width_lp = (block_offset_width_lp - fill_cnt_width_lp)
+    , localparam fill_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p>>3)
     , localparam bank_sub_offset_width_lp = $clog2(fill_size_in_bank_lp)
 
     // Block size parameterisations -
@@ -103,7 +103,7 @@ module bp_uce
   bp_bedrock_uce_mem_payload_s resp_payload;
   assign resp_payload = resp_header_li.payload;
 
-  enum logic [3:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_uc_writeback_evict, e_uc_writeback_write_req, e_send_critical, e_writeback_evict, e_writeback_read_req, e_writeback_write_req, e_write_wait, e_read_req, e_uc_read_wait} state_n, state_r;
+  enum logic [3:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_uc_writeback_evict, e_uc_writeback_write_req, e_send_critical, e_writeback_evict, e_writeback_read_wait, e_writeback_write_req, e_write_wait, e_read_wait, e_uc_read_wait} state_n, state_r;
   wire is_reset           = (state_r == e_reset);
   wire is_clear           = (state_r == e_clear);
   wire is_flush_read      = (state_r == e_flush_read);
@@ -113,10 +113,10 @@ module bp_uce
   wire is_ready           = (state_r == e_ready);
   wire is_send_critical   = (state_r == e_send_critical);
   wire is_writeback_evict = (state_r == e_writeback_evict); // read dirty data from cache to UCE
-  wire is_writeback_read  = (state_r == e_writeback_read_req); // read data from L2 to cache
+  wire is_writeback_read  = (state_r == e_writeback_read_wait); // read data from L2 to cache
   wire is_writeback_wb    = (state_r == e_writeback_write_req); // send dirty data from UCE to L2
   wire is_write_request   = (state_r == e_write_wait);
-  wire is_read_request    = (state_r == e_read_req);
+  wire is_read_wait       = (state_r == e_read_wait);
 
   logic cache_req_v_r;
   bsg_dff_reset_set_clear
@@ -665,7 +665,7 @@ module bp_uce
               state_n = (cmd_v_lo & cmd_ready_and_li)
                         ? cache_req_metadata_r.dirty
                           ? e_writeback_evict
-                          : e_read_req
+                          : e_read_wait
                         : e_send_critical;
             end
           else if (uc_load_v_r | uc_amo_v_r | uc_store_v_r)
@@ -700,9 +700,9 @@ module bp_uce
             stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
             stat_mem_pkt_v_o = 1'b1;
 
-            state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_writeback_read_req : e_writeback_evict;
+            state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_writeback_read_wait : e_writeback_evict;
           end
-        e_writeback_read_req:
+        e_writeback_read_wait:
           begin
             // send the sub-block from L2 to cache
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
@@ -722,7 +722,7 @@ module bp_uce
 
             load_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             cache_req_complete_o = mem_resp_done & load_resp_v_li;
-            state_n = cache_req_complete_o ? e_writeback_write_req : e_writeback_read_req;
+            state_n = cache_req_complete_o ? e_writeback_write_req : e_writeback_read_wait;
           end
         e_writeback_write_req:
           begin
@@ -736,7 +736,7 @@ module bp_uce
         
             state_n = mem_cmd_done ? e_ready : e_writeback_write_req;
           end
-        e_read_req:
+        e_read_wait:
           begin
             // send the sub-block from L2 to cache
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
@@ -757,7 +757,7 @@ module bp_uce
             load_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
 
             cache_req_complete_o = mem_resp_done & load_resp_v_li;
-            state_n = cache_req_complete_o ? e_ready : e_read_req;
+            state_n = cache_req_complete_o ? e_ready : e_read_wait;
           end
         e_uc_read_wait:
           begin
@@ -786,7 +786,7 @@ always_ff @(negedge clk_i)
     assert((metadata_latency_p < 2))
       else $error("metadata needs to arrive within one cycle of the request");
 
-    assert((l1_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
+    assert((l1_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_wait, e_writeback_write_req}))
       else $error("writethrough cache should not be in writeback states");
   end
 
