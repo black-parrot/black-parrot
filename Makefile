@@ -8,6 +8,9 @@ libs:
 	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(BASEJUMP_STL_DIR)
 	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(HARDFLOAT_DIR)
 
+tools_lite: libs
+	$(MAKE) -C $(BP_TOOLS_DIR) tools_lite
+
 tools: libs
 	$(MAKE) -C $(BP_TOOLS_DIR) tools
 
