@@ -241,7 +241,7 @@ module bp_nonsynth_host
 
   logic [dword_width_gp-1:0] bootrom_final_lo;
   bsg_bus_pack
-   #(.width_p(dword_width_gp))
+   #(.in_width_p(dword_width_gp))
    bootrom_pack
     (.data_i(bootrom_data_reverse)
      ,.size_i(io_cmd_lo.header.size[0+:2])
