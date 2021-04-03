@@ -1,6 +1,15 @@
 /*
  * bp_me_cce_to_cache.v
  *
+ * 
+  Data width conversion diagram
+                    -----------------------------------------
+      mem_cmd_i -->| --> pump_in --->  cache_pkt_sel --->    |--> cache_pkt_p
+                   |                       |                 |
+  (mem_data_width) |   (mem_data_width)    | (l2_data_width) |  (l2_data_width)
+                   |                       |                 |
+     mem_resp_o <--| <-- pump_out <--  bsg_bus_pack <----    |<-- data_i
+                    -----------------------------------------
  */
 
 `include "bp_common_defines.svh"
@@ -23,11 +32,11 @@ module bp_me_cce_to_cache
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(l2_block_size_in_words_p)
     , localparam data_mask_width_lp=(l2_data_width_p>>3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(l2_data_width_p>>3)
-    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+    , localparam block_offset_width_lp= (l2_block_size_in_words_p>1) ? (word_offset_width_lp+byte_offset_width_lp) : byte_offset_width_lp
     
     , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(caddr_width_p, l2_data_width_p)
 
-    , localparam min_fill_width_lp = l2_data_width_p  //TODO REPLACE WITH MEM DATA WIDTH HERE?
+    , localparam min_fill_width_lp = `BSG_MIN(`BSG_MIN(icache_fill_width_p, dcache_fill_width_p), `BSG_MIN(acache_fill_width_p, mem_data_width_p)) 
   )
   (
     input clk_i
@@ -85,7 +94,7 @@ module bp_me_cce_to_cache
   logic [lg_sets_lp+lg_ways_lp:0] tagst_received_r, tagst_received_n;
 
   bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo;
-  logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li; //TODO change width here?
+  logic [mem_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
   logic [l2_data_width_p-1:0] cache_pkt_data_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   logic mem_cmd_stream_new_lo, mem_cmd_done_lo;
@@ -93,7 +102,7 @@ module bp_me_cce_to_cache
   logic [data_mask_width_lp-1:0] cache_pkt_mask_lo;
   bp_stream_pump_in
    #(.bp_params_p(bp_params_p)
-   ,.stream_data_width_p(l2_data_width_p)
+   ,.stream_data_width_p(mem_data_width_p)
    ,.block_width_p(cce_block_width_p)
    ,.stream_mask_p(mem_stream_wr_mask_gp | mem_stream_rd_mask_gp))
    cce_to_cache_pump_in
@@ -130,8 +139,7 @@ module bp_me_cce_to_cache
 
   // Replicate data & Generate mask for partial SM
   // cache_pkt_data_lo = '1 & cache_pkt_mask_lo = ‘1 when min_fill_width_lp == l2_data_width_p
-  localparam fill_size_in_bytes_lp = min_fill_width_lp >> 3;
-  localparam fill_offset_lp = `BSG_SAFE_CLOG2(fill_size_in_bytes_lp);
+  localparam fill_offset_lp = `BSG_SAFE_CLOG2(min_fill_width_lp >> 3);
   localparam cache_size_in_fill_lp = l2_data_width_p/min_fill_width_lp;
   localparam lg_cache_size_in_fill_lp = (cache_size_in_fill_lp > 1) ? $clog2(cache_size_in_fill_lp) : 0;
   localparam data_sel_mux_els_lp = lg_cache_size_in_fill_lp+1;
@@ -213,7 +221,7 @@ module bp_me_cce_to_cache
   
   bp_stream_pump_out
    #(.bp_params_p(bp_params_p)
-   ,.stream_data_width_p(l2_data_width_p)
+   ,.stream_data_width_p(mem_data_width_p)
    ,.block_width_p(cce_block_width_p)
    ,.payload_mask_p(mem_resp_payload_mask_gp)
    ,.stream_mask_p(mem_stream_wr_mask_gp | mem_stream_rd_mask_gp))
@@ -228,7 +236,7 @@ module bp_me_cce_to_cache
     ,.mem_ready_and_i(mem_resp_ready_and_i)
     
     ,.fsm_base_header_i(mem_resp_header_lo)
-    ,.fsm_data_i(mem_resp_data_li)
+    ,.fsm_data_i(mem_resp_data_lo)
     ,.fsm_v_i(mem_resp_v_lo & cache_v_i)
     ,.fsm_ready_and_o(mem_resp_ready_and_lo)
 
@@ -237,29 +245,21 @@ module bp_me_cce_to_cache
     );
   assign cache_yumi_o = mem_resp_ready_and_lo | (is_clear & cache_v_i);
 
-  wire [`BSG_WIDTH(`BSG_SAFE_CLOG2(l2_data_width_p>>3))-1:0] mem_resp_size_li = `BSG_MIN(mem_resp_header_lo.size, `BSG_SAFE_CLOG2(l2_data_width_p>>3));
-  logic [l2_data_width_p-1:0] cache_data_lo; // FOR LM data
+  // For B/H/W/D ops, returned data is aligned to the LSB, but it may not for M op
+  wire [byte_offset_width_lp-1:0] resp_data_sel_li = (mem_resp_header_lo.size inside {e_bedrock_msg_size_1, e_bedrock_msg_size_2, e_bedrock_msg_size_4, e_bedrock_msg_size_8})
+                                                     ? byte_offset_width_lp'(0)
+                                                     : mem_resp_header_lo.addr[0+:byte_offset_width_lp];
+  wire [`BSG_WIDTH(byte_offset_width_lp)-1:0] mem_resp_size_li = `BSG_MIN(mem_resp_header_lo.size, `BSG_SAFE_CLOG2(l2_data_width_p>>3)); //TODO
   bsg_bus_pack
-   #(.width_p(l2_data_width_p))
+   #(.in_width_p(l2_data_width_p)
+   ,.out_width_p(mem_data_width_p))
    resp_data_bus_pack
     (.data_i(cache_data_i)
-    ,.sel_i(mem_resp_header_lo.addr[0+:`BSG_SAFE_CLOG2(l2_data_width_p>>3)])
+    ,.sel_i(resp_data_sel_li)
     ,.size_i(mem_resp_size_li)
-    ,.data_o(cache_data_lo)
+    ,.data_o(mem_resp_data_lo)
     );
 
-  assign mem_resp_data_li = (mem_resp_header_lo.size inside {e_bedrock_msg_size_1, e_bedrock_msg_size_2, e_bedrock_msg_size_4, e_bedrock_msg_size_8})
-                            ? cache_data_i
-                            : cache_data_lo;
-  // logic [cce_block_width_p-1:0] mem_resp_data_li_new; // TODO: PENDING WIDTH FIX HERE
-  // bsg_bus_pack
-  //  #(.width_p(cce_block_width_p))
-  //  resp_data_bus_pack_new
-  //   (.data_i(cache_data_i)
-  //   ,.sel_i(mem_resp_header_lo.addr[0+:block_offset_width_lp])
-  //   ,.size_i(mem_resp_header_lo.size)
-  //   ,.data_o(mem_resp_data_li_new)
-  //   );
   //   At the reset, this module intializes all the tags and valid bits to zero.
   //   After all the tags are completedly initialized, this module starts
   //   accepting incoming commands
@@ -351,7 +351,7 @@ module bp_me_cce_to_cache
               end
             else
               begin
-                cache_pkt.addr = mem_cmd_header_lo.addr;
+                cache_pkt.addr = mem_cmd_header_lo.addr[0+:caddr_width_p];
                 cache_pkt.data = cache_pkt_data_lo;
                 // This mask is only used for the LM/SM operations for >64 bit mask operations
                 cache_pkt.mask = cache_pkt_mask_lo;
