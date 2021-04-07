@@ -115,7 +115,7 @@ $(SIM_DIR)/wavesc:
 # TODO: Make compatible with multi-core
 blood.sc: $(SIM_DIR)/bloodsc
 $(SIM_DIR)/bloodsc:
-	cd $(@D); $(PYTHON) $(BLOODGRAPH) --trace-fst stall_0.trace
+	cd $(@D); $(PYTHON) $(BLOODGRAPH) --trace stall_0.trace
 
 clean.sc:
 	@rm -rf results/verilator
