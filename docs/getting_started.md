@@ -18,6 +18,8 @@ BlackParrot has been tested extensively on CentOS 7. We have many users who have
 development. If not on these versions of these OSes, we suggest using a
 Docker image.
 
+Ubuntu on Windows WSL 2.0 seems to work for most things, but you may encounter errors with more complex operations. For instance, compiling Linux is known not to work in this environment. This is considered an experimental build.
+
 ## Build the toolchains
     # Clone the latest repo
     git clone https://github.com/black-parrot/black-parrot.git
