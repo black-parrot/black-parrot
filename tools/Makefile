@@ -10,7 +10,6 @@ $(TARGET_DIRS):
 	mkdir -p $@
 
 tools_lite: | $(TARGET_DIRS)
-	$(MAKE) systemc
 	$(MAKE) verilator
 	$(MAKE) -C $(BASEJUMP_STL_DIR)/bsg_test -f libdramsim3.mk
 	cp $(BASEJUMP_STL_DIR)/bsg_test/libdramsim3.so $(BP_TOOLS_LIB_DIR)/libdramsim3.so
