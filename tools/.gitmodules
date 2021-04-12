@@ -1,9 +1,3 @@
-[submodule "systemc"]
-	path = systemc
-    url = https://github.com/bsg-external/systemc
-    branch = master
-    ignore = dirty
-    update = none
 [submodule "verilator"]
 	path = verilator
 	url = https://github.com/verilator/verilator

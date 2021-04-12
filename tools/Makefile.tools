@@ -13,7 +13,7 @@ $(1)_manual:
 	+$(MAKE) $(1)_build
 endef
 
-verilator_build: systemc
+verilator_build:
 	cd $(verilator_dir); \
 		autoconf; \
 		./configure --prefix=$(BP_TOOLS_INSTALL_DIR)
