@@ -11,12 +11,6 @@
     branch = master
     update = checkout
 
-[submodule "tools/systemc"]
-    path = tools/systemc
-    url = https://github.com/bsg-external/systemc
-    branch = master
-    ignore = dirty
-    update = none
 [submodule "tools/verilator"]
     path = tools/verilator
     url = https://github.com/verilator/verilator
