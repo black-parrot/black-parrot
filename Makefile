@@ -1,6 +1,6 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 
-.PHONY: bleach_all libs tools sdk hdk prep prep_bsg
+.PHONY: bleach_all libs tools sdk hdk prep prep_bsg sdk_checkout hdk_checkout
 
 include $(TOP)/Makefile.common
 

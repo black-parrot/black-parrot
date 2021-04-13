@@ -3,14 +3,14 @@ export BP_TOOLS_DIR ?= $(TOP)/tools
 export BP_EXTERNAL_DIR  ?= $(TOP)/external
 export BASEJUMP_STL_DIR ?= $(BP_EXTERNAL_DIR)/basejump_stl
 
-.PHONY: bleach_all tools bsg_cadenv
-.DEFAULT: echo
+.PHONY: bleach_all tools bsg_cadenv help
+.DEFAULT: help
 
 include $(BP_TOOLS_DIR)/Makefile.common
 include $(BP_TOOLS_DIR)/Makefile.tools
 
-echo:
-	echo "build tools using the tools or tools_lite targets"
+help:
+	@echo "usage: make [tools, tools_lite]"
 
 ## This is the list of target directories that tools and libraries will be installed into
 TARGET_DIRS := $(BP_TOOLS_BIN_DIR) $(BP_TOOLS_LIB_DIR) $(BP_TOOLS_INCLUDE_DIR) $(BP_TOOLS_TOUCH_DIR)

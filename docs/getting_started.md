@@ -10,12 +10,6 @@ CentOS 7 requires a more modern gcc to build Linux. If you receive an error such
 
 ### Ubuntu (18.04 or 20.04)
 
-For Ubuntu, we recommend updating existing pacakges before installing the prerequisites.
-
-    sudo apt update; sudo apt upgrade
-
-Then, install the prerequisites.
-
     sudo apt-get install autoconf automake autotools-dev cmake curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev wget byacc device-tree-compiler python gtkwave vim-common virtualenv python-yaml
 
 cmake3 is required. This is the default on newer versions of Ubuntu, but not necessarily on old versions. 
@@ -25,12 +19,6 @@ development. If not on these versions of these OSes, we suggest using a
 Docker image.
 
 Ubuntu on Windows WSL 2.0 seems to work for most things, but you may encounter errors with more complex operations. For instance, compiling Linux is known not to work in this environment. This is considered an experimental build.
-
-If you are using a newer version of Ubuntu (e.g., 20.04 LTS), you will want to update `setuptools`
-in Python if you plan to install the sdk (which is installed by `make prep` below).
-
-    sudo apt-get install python3 python3-pip
-    pip3 install -U setuptools
 
 ## Build the toolchains
     # Clone the latest repo
