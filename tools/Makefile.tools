@@ -1,4 +1,3 @@
-systemc_dir   := $(BP_TOOLS_DIR)/systemc
 verilator_dir := $(BP_TOOLS_DIR)/verilator
 bsg_sv2v_dir  := $(BP_TOOLS_DIR)/bsg_sv2v
 
@@ -14,14 +13,7 @@ $(1)_manual:
 	+$(MAKE) $(1)_build
 endef
 
-systemc_build:
-	cd $(systemc_dir); \
-		autoreconf; \
-		./configure --prefix=$(BP_TOOLS_INSTALL_DIR)
-	$(MAKE) -C $(systemc_dir)
-	$(MAKE) -C $(systemc_dir) install
-
-verilator_build: systemc
+verilator_build:
 	cd $(verilator_dir); \
 		autoconf; \
 		./configure --prefix=$(BP_TOOLS_INSTALL_DIR)
@@ -31,7 +23,6 @@ verilator_build: systemc
 bsg_sv2v_build:
 	$(MAKE) -j1 -C $(bsg_sv2v_dir) tools
 
-$(eval $(call submodule_tool_template,systemc,$(systemc_dir)))
 $(eval $(call submodule_tool_template,verilator,$(verilator_dir)))
 $(eval $(call submodule_tool_template,bsg_sv2v,$(bsg_sv2v_dir)))
 

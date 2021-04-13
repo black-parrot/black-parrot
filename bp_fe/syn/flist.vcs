@@ -155,6 +155,8 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
 # HardFloat files
 $HARDFLOAT_DIR/source/addRecFN.v
 $HARDFLOAT_DIR/source/compareRecFN.v

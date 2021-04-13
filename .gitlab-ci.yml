@@ -43,6 +43,8 @@ bleach_all:
     - top_dev
     - sw_dev
   before_script:
+    - echo "Sourcing bashrc"
+    - source ~/.bashrc
     - echo "Updating hardware libraries"
     - git submodule update --init --recursive external/basejump_stl
     - git submodule update --init --recursive external/HardFloat
@@ -78,11 +80,9 @@ prep:
   stage: prep
   tags:
     - bsg
-  before_script:
-    - echo "Prepping cache"
   script:
     - git submodule deinit -f .
-    - git submodule sync
+    - git submodule sync --recursive
     - make prep -j $CI_CORES > make_prep.log
     - make -C sdk prog -j $CI_CORES > make_prog.log
     - make tidy > make_tidy.log

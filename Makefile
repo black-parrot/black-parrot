@@ -4,12 +4,12 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-# Makes clones much faster. Comment out if you see "fatal: reference is not a tree"
-SHALLOW_SUB ?= --depth=1
-
 libs:
 	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(BASEJUMP_STL_DIR)
 	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(HARDFLOAT_DIR)
+
+tools_lite: libs
+	$(MAKE) -C $(BP_TOOLS_DIR) tools_lite
 
 tools: libs
 	$(MAKE) -C $(BP_TOOLS_DIR) tools
@@ -30,11 +30,10 @@ prep_bsg: prep
 	$(MAKE) -C $(BP_SDK_DIR) bsg_cadenv
 	$(MAKE) -C $(BP_HDK_DIR) bsg_cadenv
 
-prep_lite: tools
+prep_lite: tools_lite
 	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_SDK_DIR)
 	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_HDK_DIR)
-	$(MAKE) -C tools tools_lite
-	$(MAKE) -C sdk sdk_lite
+	$(MAKE) -C $(BP_SDK_DIR) sdk_lite
 
 bsg_cadenv:
 	-cd $(TOP); git clone git@github.com:bespoke-silicon-group/bsg_cadenv.git external/bsg_cadenv
