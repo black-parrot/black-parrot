@@ -23,7 +23,7 @@ module bp_unicore
    // Outgoing I/O
    , output logic [uce_mem_msg_width_lp-1:0]           io_cmd_o
    , output logic                                      io_cmd_v_o
-   , input                                             io_cmd_ready_i
+   , input                                             io_cmd_ready_then_i
 
    , input [uce_mem_msg_width_lp-1:0]                  io_resp_i
    , input                                             io_resp_v_i
@@ -36,7 +36,7 @@ module bp_unicore
 
    , output logic [uce_mem_msg_width_lp-1:0]           io_resp_o
    , output logic                                      io_resp_v_o
-   , input                                             io_resp_ready_i
+   , input                                             io_resp_ready_and_i
 
    // DRAM interface
    , output logic [dma_pkt_width_lp-1:0]               dma_pkt_o
@@ -58,7 +58,7 @@ module bp_unicore
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
 
   bp_bedrock_uce_mem_msg_s mem_cmd_lo;
-  logic mem_cmd_v_lo, mem_cmd_ready_li;
+  logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   bp_bedrock_uce_mem_msg_s mem_resp_li;
   logic mem_resp_v_li, mem_resp_yumi_lo;
 
@@ -70,7 +70,7 @@ module bp_unicore
 
      ,.io_cmd_o(io_cmd_o)
      ,.io_cmd_v_o(io_cmd_v_o)
-     ,.io_cmd_ready_i(io_cmd_ready_i)
+     ,.io_cmd_ready_then_i(io_cmd_ready_then_i)
 
      ,.io_resp_i(io_resp_i)
      ,.io_resp_v_i(io_resp_v_i)
@@ -82,11 +82,13 @@ module bp_unicore
 
      ,.io_resp_o(io_resp_o)
      ,.io_resp_v_o(io_resp_v_o)
-     ,.io_resp_ready_i(io_resp_ready_i)
+     ,.io_resp_ready_and_i(io_resp_ready_and_i)
 
      ,.mem_cmd_o(mem_cmd_lo)
      ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_ready_i(mem_cmd_ready_li)
+     // TODO: handshake mismatch!!
+     // Unicore lite uses as ready->valid, but me_cce_to_cache uses ready&valid
+     ,.mem_cmd_ready_then_i(mem_cmd_ready_and_li)
 
      ,.mem_resp_i(mem_resp_li)
      ,.mem_resp_v_i(mem_resp_v_li)
@@ -107,7 +109,7 @@ module bp_unicore
   
      ,.mem_cmd_i(mem_cmd_lo)
      ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_o(mem_cmd_ready_li)
+     ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
 
      ,.mem_resp_o(mem_resp_li)
      ,.mem_resp_v_o(mem_resp_v_li)
