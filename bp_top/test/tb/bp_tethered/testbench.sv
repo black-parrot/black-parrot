@@ -119,7 +119,7 @@ module testbench
   bp_bedrock_cce_mem_msg_s load_cmd_lo;
   logic load_cmd_v_lo, load_cmd_yumi_li;
   bp_bedrock_cce_mem_msg_s load_resp_li;
-  logic load_resp_v_li, load_resp_ready_lo;
+  logic load_resp_v_li, load_resp_ready_and_lo;
 
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0] dma_pkt_lo;
@@ -136,7 +136,9 @@ module testbench
 
      ,.io_cmd_o(proc_io_cmd_lo)
      ,.io_cmd_v_o(proc_io_cmd_v_lo)
-     ,.io_cmd_ready_i(proc_io_cmd_ready_li)
+     // TODO: verify handshake
+     // wrapper (unicore) uses this signal as ready->valid 
+     ,.io_cmd_ready_then_i(proc_io_cmd_ready_li)
 
      ,.io_resp_i(proc_io_resp_li)
      ,.io_resp_v_i(proc_io_resp_v_li)
@@ -148,7 +150,7 @@ module testbench
 
      ,.io_resp_o(load_resp_li)
      ,.io_resp_v_o(load_resp_v_li)
-     ,.io_resp_ready_i(load_resp_ready_lo)
+     ,.io_resp_ready_and_i(load_resp_ready_and_lo)
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
@@ -202,9 +204,10 @@ module testbench
      ,.io_cmd_v_o(load_cmd_v_lo)
      ,.io_cmd_yumi_i(load_cmd_yumi_li)
 
+     // NOTE: IO response ready_o is always high - acts as sink
      ,.io_resp_i(load_resp_li)
      ,.io_resp_v_i(load_resp_v_li)
-     ,.io_resp_ready_o(load_resp_ready_lo)
+     ,.io_resp_ready_and_o(load_resp_ready_and_lo)
 
      ,.done_o()
      );

@@ -33,7 +33,7 @@ module bp_me_cce_to_cache
     // manycore-side
     , input  [cce_mem_msg_width_lp-1:0]   mem_cmd_i
     , input                               mem_cmd_v_i
-    , output logic                        mem_cmd_ready_o
+    , output logic                        mem_cmd_ready_and_o
 
     , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
     , output logic                        mem_resp_v_o
@@ -79,7 +79,7 @@ module bp_me_cce_to_cache
   assign mem_cmd_cast_i = mem_cmd_i;
   assign mem_resp_o = mem_resp_cast_o;
 
-  logic mem_cmd_ready_lo;
+  logic mem_cmd_ready_and_lo;
   bp_bedrock_cce_mem_msg_s mem_cmd_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
   bsg_fifo_1r1w_small
@@ -90,7 +90,7 @@ module bp_me_cce_to_cache
 
     ,.data_i(mem_cmd_i)
     ,.v_i(mem_cmd_v_i)
-    ,.ready_o(mem_cmd_ready_lo)
+    ,.ready_o(mem_cmd_ready_and_lo)
 
     ,.data_o(mem_cmd_lo)
     ,.v_o(mem_cmd_v_lo)
@@ -133,7 +133,7 @@ module bp_me_cce_to_cache
     tagst_received_n = tagst_received_r;
     v_o = 1'b0;
 
-    mem_cmd_ready_o = mem_cmd_ready_lo;
+    mem_cmd_ready_and_o = mem_cmd_ready_and_lo;
     mem_cmd_yumi_li = 1'b0;
 
     cmd_state_n = cmd_state_r;
@@ -142,12 +142,12 @@ module bp_me_cce_to_cache
 
     case (cmd_state_r)
       RESET: begin
-        mem_cmd_ready_o = 1'b0;
+        mem_cmd_ready_and_o = 1'b0;
 
         cmd_state_n = CLEAR_TAG;
       end
       CLEAR_TAG: begin
-        mem_cmd_ready_o = 1'b0;
+        mem_cmd_ready_and_o = 1'b0;
 
         v_o = tagst_sent_r != (l2_assoc_p*l2_sets_p);
 

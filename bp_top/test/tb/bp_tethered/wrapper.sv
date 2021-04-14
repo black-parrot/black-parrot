@@ -27,7 +27,7 @@ module wrapper
    // Outgoing I/O
    , output [cce_mem_msg_width_lp-1:0]                      io_cmd_o
    , output                                                 io_cmd_v_o
-   , input                                                  io_cmd_ready_i
+   , input                                                  io_cmd_ready_then_i
 
    , input [cce_mem_msg_width_lp-1:0]                       io_resp_i
    , input                                                  io_resp_v_i
@@ -40,7 +40,7 @@ module wrapper
 
    , output [cce_mem_msg_width_lp-1:0]                      io_resp_o
    , output                                                 io_resp_v_o
-   , input                                                  io_resp_ready_i
+   , input                                                  io_resp_ready_and_i
 
    // DRAM interface
    , output logic [num_cce_p-1:0][dma_pkt_width_lp-1:0]     dma_pkt_o
@@ -123,7 +123,7 @@ module wrapper
 
          ,.mem_resp_o(io_resp_o)
          ,.mem_resp_v_o(io_resp_v_o)
-         ,.mem_resp_yumi_i(io_resp_ready_i & io_resp_v_o)
+         ,.mem_resp_yumi_i(io_resp_ready_and_i & io_resp_v_o)
 
          ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
          ,.my_cid_i('0)
@@ -132,7 +132,9 @@ module wrapper
 
          ,.mem_cmd_o(io_cmd_o)
          ,.mem_cmd_v_o(io_cmd_v_o)
-         ,.mem_cmd_yumi_i(io_cmd_ready_i & io_cmd_v_o)
+         // TODO: handshake mismatch. Should work because ready_then is early
+         // and it is being & with v_o to create yumi_i
+         ,.mem_cmd_yumi_i(io_cmd_ready_then_i & io_cmd_v_o)
 
          ,.mem_resp_i(io_resp_i)
          ,.mem_resp_v_i(io_resp_v_i)
