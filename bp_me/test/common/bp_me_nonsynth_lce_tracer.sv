@@ -42,11 +42,11 @@ module bp_me_nonsynth_lce_tracer
     // LCE-CCE Interface
     ,input [lce_req_msg_width_lp-1:0]                       lce_req_i
     ,input                                                  lce_req_v_i
-    ,input                                                  lce_req_ready_i
+    ,input                                                  lce_req_ready_then_i
 
     ,input [lce_resp_msg_width_lp-1:0]                      lce_resp_i
     ,input                                                  lce_resp_v_i
-    ,input                                                  lce_resp_ready_i
+    ,input                                                  lce_resp_ready_then_i
 
     ,input [lce_cmd_msg_width_lp-1:0]                       lce_cmd_i
     ,input                                                  lce_cmd_v_i
@@ -54,7 +54,7 @@ module bp_me_nonsynth_lce_tracer
 
     ,input [lce_cmd_msg_width_lp-1:0]                       lce_cmd_o_i
     ,input                                                  lce_cmd_o_v_i
-    ,input                                                  lce_cmd_o_ready_i
+    ,input                                                  lce_cmd_o_ready_then_i
   );
 
   // LCE-CCE interface structs
@@ -91,7 +91,7 @@ module bp_me_nonsynth_lce_tracer
       // LCE-CCE Interface
 
       // request to CCE
-      if (lce_req_v_i & lce_req_ready_i) begin
+      if (lce_req_v_i & lce_req_ready_then_i) begin
         assert(lce_req_payload.src_id == lce_id_i) else $error("Bad LCE Request - source mismatch");
         $fdisplay(file, "[%t]: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] ne[%b] lru[%0d] size[%b] %H"
                   , $time, lce_req_payload.src_id, lce_req.header.addr, lce_req_payload.dst_id, lce_req.header.msg_type
@@ -101,7 +101,7 @@ module bp_me_nonsynth_lce_tracer
       end
 
       // response to CCE
-      if (lce_resp_v_i & lce_resp_ready_i) begin
+      if (lce_resp_v_i & lce_resp_ready_then_i) begin
         assert(lce_resp_payload.src_id == lce_id_i) else $error("Bad LCE Response - source mismatch");
         $fdisplay(file, "[%t]: LCE[%0d] RESP addr[%H] cce[%0d] msg[%b] len[%b] %H"
                   , $time, lce_resp_payload.src_id, lce_resp.header.addr, lce_resp_payload.dst_id, lce_resp.header.msg_type
@@ -120,7 +120,7 @@ module bp_me_nonsynth_lce_tracer
       end
 
       // command from LCE
-      if (lce_cmd_o_v_i & lce_cmd_o_ready_i) begin
+      if (lce_cmd_o_v_i & lce_cmd_o_ready_then_i) begin
         $fdisplay(file, "[%t]: LCE[%0d] CMD OUT dst[%0d] addr[%H] CCE[%0d] msg[%b] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
                   , $time, lce_id_i, lce_cmd_lo_payload.dst_id, lce_cmd_lo.header.addr, lce_cmd_lo_payload.src_id, lce_cmd_lo.header.msg_type
                   , lce_cmd_lo_payload.way_id, lce_cmd_lo_payload.state, lce_cmd_lo_payload.target, lce_cmd_lo_payload.target_way_id
