@@ -51,7 +51,7 @@ module wrapper
 
    , output logic [cce_mem_msg_width_lp-1:0] mem_cmd_o
    , output                                  mem_cmd_v_o
-   , input                                   mem_cmd_ready_i
+   , input                                   mem_cmd_ready_and_i
    );
 
   `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -268,11 +268,11 @@ module wrapper
 
        ,.lce_req_o(lce_req_lo)
        ,.lce_req_v_o(lce_req_v_lo)
-       ,.lce_req_ready_i(lce_req_ready_li)
+       ,.lce_req_ready_then_i(lce_req_ready_li)
 
        ,.lce_resp_o(lce_resp_lo)
        ,.lce_resp_v_o(lce_resp_v_lo)
-       ,.lce_resp_ready_i(lce_resp_ready_li)
+       ,.lce_resp_ready_then_i(lce_resp_ready_li)
 
        ,.lce_cmd_i(fifo_lce_cmd_lo)
        ,.lce_cmd_v_i(fifo_lce_cmd_v_lo)
@@ -280,7 +280,7 @@ module wrapper
 
        ,.lce_cmd_o()
        ,.lce_cmd_v_o()
-       ,.lce_cmd_ready_i(1'b1)
+       ,.lce_cmd_ready_then_i(1'b1)
        );
 
 
@@ -329,7 +329,7 @@ module wrapper
 
        ,.mem_cmd_o(mem_cmd_o)
        ,.mem_cmd_v_o(mem_cmd_v_o)
-       ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
+       ,.mem_cmd_yumi_i(mem_cmd_ready_and_i & mem_cmd_v_o)
        );
 
       assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
@@ -381,7 +381,7 @@ module wrapper
 
        ,.mem_cmd_o(mem_cmd_o)
        ,.mem_cmd_v_o(mem_cmd_v_o)
-       ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
+       ,.mem_cmd_yumi_i(mem_cmd_ready_and_i & mem_cmd_v_o)
 
        ,.mem_resp_i(fifo_mem_resp_lo)
        ,.mem_resp_v_i(fifo_mem_resp_v_lo)
