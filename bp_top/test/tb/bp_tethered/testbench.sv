@@ -596,16 +596,16 @@ module testbench
               ,.lce_id_i(lce_id_i)
               ,.lce_req_i(lce_req_o)
               ,.lce_req_v_i(lce_req_v_o)
-              ,.lce_req_ready_i(lce_req_ready_then_i)
+              ,.lce_req_ready_then_i(lce_req_ready_then_i)
               ,.lce_resp_i(lce_resp_o)
               ,.lce_resp_v_i(lce_resp_v_o)
-              ,.lce_resp_ready_i(lce_resp_ready_then_i)
+              ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
               ,.lce_cmd_i(lce_cmd_i)
               ,.lce_cmd_v_i(lce_cmd_v_i)
               ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
               ,.lce_cmd_o_i(lce_cmd_o)
               ,.lce_cmd_o_v_i(lce_cmd_v_o)
-              ,.lce_cmd_o_ready_i(lce_cmd_ready_then_i)
+              ,.lce_cmd_o_ready_then_i(lce_cmd_ready_then_i)
               );
         end
     end
