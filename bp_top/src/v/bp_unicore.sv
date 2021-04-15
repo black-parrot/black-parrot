@@ -23,7 +23,7 @@ module bp_unicore
    // Outgoing I/O
    , output logic [uce_mem_msg_width_lp-1:0]           io_cmd_o
    , output logic                                      io_cmd_v_o
-   , input                                             io_cmd_ready_then_i
+   , input                                             io_cmd_ready_and_i
 
    , input [uce_mem_msg_width_lp-1:0]                  io_resp_i
    , input                                             io_resp_v_i
@@ -70,7 +70,7 @@ module bp_unicore
 
      ,.io_cmd_o(io_cmd_o)
      ,.io_cmd_v_o(io_cmd_v_o)
-     ,.io_cmd_ready_then_i(io_cmd_ready_then_i)
+     ,.io_cmd_ready_and_i(io_cmd_ready_and_i)
 
      ,.io_resp_i(io_resp_i)
      ,.io_resp_v_i(io_resp_v_i)
@@ -86,9 +86,7 @@ module bp_unicore
 
      ,.mem_cmd_o(mem_cmd_lo)
      ,.mem_cmd_v_o(mem_cmd_v_lo)
-     // TODO: handshake mismatch!!
-     // Unicore lite uses as ready->valid, but me_cce_to_cache uses ready&valid
-     ,.mem_cmd_ready_then_i(mem_cmd_ready_and_li)
+     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
 
      ,.mem_resp_i(mem_resp_li)
      ,.mem_resp_v_i(mem_resp_v_li)

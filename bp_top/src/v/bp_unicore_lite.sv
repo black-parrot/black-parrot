@@ -22,7 +22,7 @@ module bp_unicore_lite
    // Outgoing I/O
    , output logic [uce_mem_msg_width_lp-1:0]           io_cmd_o
    , output logic                                      io_cmd_v_o
-   , input                                             io_cmd_ready_then_i
+   , input                                             io_cmd_ready_and_i
 
    , input [uce_mem_msg_width_lp-1:0]                  io_resp_i
    , input                                             io_resp_v_i
@@ -40,7 +40,7 @@ module bp_unicore_lite
    // Outgoing DRAM
    , output logic [uce_mem_msg_width_lp-1:0]           mem_cmd_o
    , output logic                                      mem_cmd_v_o
-   , input                                             mem_cmd_ready_then_i
+   , input                                             mem_cmd_ready_and_i
 
    , input [uce_mem_msg_width_lp-1:0]                  mem_resp_i
    , input                                             mem_resp_v_i
@@ -389,8 +389,10 @@ module bp_unicore_lite
   assign cfg_cmd_v_li      = |proc_cmd_grant_lo & cfg_cmd_ready_and_lo & is_cfg_cmd;
   // TODO: handshake violation! clint slice is R&V
   assign clint_cmd_v_li    = |proc_cmd_grant_lo & clint_cmd_ready_and_lo & is_clint_cmd;
-  assign io_cmd_v_o        = |proc_cmd_grant_lo & io_cmd_ready_then_i & is_io_cmd;
-  assign mem_cmd_v_o       = |proc_cmd_grant_lo & mem_cmd_ready_then_i & is_mem_cmd;
+  // TODO: handshake violation! input ports are R&V
+  assign io_cmd_v_o        = |proc_cmd_grant_lo & io_cmd_ready_and_i & is_io_cmd;
+  // TODO: handshake violation! input ports are R&V
+  assign mem_cmd_v_o       = |proc_cmd_grant_lo & mem_cmd_ready_and_i & is_mem_cmd;
   // TODO: handshake violation! loopback is R&V
   assign loopback_cmd_v_li = |proc_cmd_grant_lo & loopback_cmd_ready_and_lo & is_loopback_cmd;
 
