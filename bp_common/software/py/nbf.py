@@ -3,6 +3,21 @@
 #
 #   MEM (.mem) to Network Boot Format (.nbf)
 #
+#   NBF format is
+#   opcode_addr_data
+#   opcode map:
+#     8'h00: 1 byte write 
+#     8'h01: 2 byte write
+#     8'h02: 4 byte write
+#     8'h03: 8 byte write
+#
+#     8'h04: 1 byte read
+#     8'h05: 2 byte read
+#     8'h06: 4 byte read
+#     8'h07: 8 byte read
+#
+#     8'hfe: fence, waits for outgoing commands to finish before progressing
+#     8'hff: finish, terminates the nbf sequence
 
 
 import sys
