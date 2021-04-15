@@ -240,9 +240,7 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.io_cmd_i(proc_io_cmd_lo)
-     // TODO: verify works
      ,.io_cmd_v_i(proc_io_cmd_v_lo)
-     //,.io_cmd_v_i(proc_io_cmd_v_lo & proc_io_cmd_ready_and_li)
      ,.io_cmd_ready_and_o(proc_io_cmd_ready_and_li)
 
      ,.io_resp_o(proc_io_resp_li)

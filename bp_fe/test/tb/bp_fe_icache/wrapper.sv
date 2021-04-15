@@ -217,11 +217,11 @@ module wrapper
 
   if (uce_p == 0) begin : CCE
     logic lce_req_v_lo, lce_resp_v_lo, lce_cmd_v_lo, fifo_lce_cmd_v_lo;
-    logic lce_req_ready_li, lce_resp_ready_li, lce_cmd_ready_li, fifo_lce_cmd_yumi_li;
+    logic lce_req_ready_then_li, lce_resp_ready_then_li, lce_cmd_ready_then_li, fifo_lce_cmd_yumi_li;
     bp_bedrock_lce_req_msg_s lce_req_lo;
     bp_bedrock_lce_resp_msg_s lce_resp_lo;
     bp_bedrock_lce_cmd_msg_s lce_cmd_lo, fifo_lce_cmd_lo;
-    logic mem_resp_ready_lo;
+    logic mem_resp_ready_and_lo;
 
     // I-Cache LCE
     bp_lce
@@ -268,11 +268,11 @@ module wrapper
 
        ,.lce_req_o(lce_req_lo)
        ,.lce_req_v_o(lce_req_v_lo)
-       ,.lce_req_ready_then_i(lce_req_ready_li)
+       ,.lce_req_ready_then_i(lce_req_ready_then_li)
 
        ,.lce_resp_o(lce_resp_lo)
        ,.lce_resp_v_o(lce_resp_v_lo)
-       ,.lce_resp_ready_then_i(lce_resp_ready_li)
+       ,.lce_resp_ready_then_i(lce_resp_ready_then_li)
 
        ,.lce_cmd_i(fifo_lce_cmd_lo)
        ,.lce_cmd_v_i(fifo_lce_cmd_v_lo)
@@ -293,7 +293,9 @@ module wrapper
 
        // from CCE
        ,.v_i(lce_cmd_v_lo)
-       ,.ready_o(lce_cmd_ready_li)
+       // TODO: mismatch, but okay
+       // FIFO provides ready_and but it is used ready_then by CCE
+       ,.ready_o(lce_cmd_ready_then_li)
        ,.data_i(lce_cmd_lo)
 
        // to LCE
@@ -313,29 +315,29 @@ module wrapper
 
        ,.lce_req_i(lce_req_lo)
        ,.lce_req_v_i(lce_req_v_lo)
-       ,.lce_req_ready_o(lce_req_ready_li)
+       ,.lce_req_ready_o(lce_req_ready_then_li)
 
        ,.lce_resp_i(lce_resp_lo)
        ,.lce_resp_v_i(lce_resp_v_lo)
-       ,.lce_resp_ready_o(lce_resp_ready_li)
+       ,.lce_resp_ready_o(lce_resp_ready_then_li)
 
        ,.lce_cmd_o(lce_cmd_lo)
        ,.lce_cmd_v_o(lce_cmd_v_lo)
-       ,.lce_cmd_ready_i(lce_cmd_ready_li)
+       ,.lce_cmd_ready_i(lce_cmd_ready_then_li)
 
        ,.mem_resp_i(mem_resp_i)
        ,.mem_resp_v_i(mem_resp_v_i)
-       ,.mem_resp_ready_o(mem_resp_ready_lo)
+       ,.mem_resp_ready_o(mem_resp_ready_and_lo)
 
        ,.mem_cmd_o(mem_cmd_o)
        ,.mem_cmd_v_o(mem_cmd_v_o)
        ,.mem_cmd_yumi_i(mem_cmd_ready_and_i & mem_cmd_v_o)
        );
 
-      assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
+      assign mem_resp_yumi_o = mem_resp_ready_and_lo & mem_resp_v_i;
   end
   else begin: UCE
-    logic mem_resp_ready_lo;
+    logic mem_resp_ready_and_lo;
     logic fifo_mem_resp_v_lo, fifo_mem_resp_yumi_li;
     bp_bedrock_cce_mem_msg_s fifo_mem_resp_lo;
 
@@ -398,14 +400,14 @@ module wrapper
 
        ,.v_i(mem_resp_v_i)
        ,.data_i(mem_resp_i)
-       ,.ready_o(mem_resp_ready_lo)
+       ,.ready_o(mem_resp_ready_and_lo)
 
        ,.v_o(fifo_mem_resp_v_lo)
        ,.data_o(fifo_mem_resp_lo)
        ,.yumi_i(fifo_mem_resp_yumi_li)
        );
 
-    assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
+    assign mem_resp_yumi_o = mem_resp_ready_and_lo & mem_resp_v_i;
   end
 endmodule
 
