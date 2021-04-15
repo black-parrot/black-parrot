@@ -1,22 +1,29 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 
-.PHONY: bleach_all libs tools sdk hdk prep prep_bsg
+.PHONY: bleach_all libs tools sdk hdk prep prep_bsg sdk_checkout hdk_checkout
 
 include $(TOP)/Makefile.common
 
 libs:
-	cd $(TOP); git submodule update --init --recursive --checkout $(BASEJUMP_STL_DIR)
-	cd $(TOP); git submodule update --init --recursive --checkout $(HARDFLOAT_DIR)
+	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(BASEJUMP_STL_DIR)
+	cd $(TOP); git submodule update --init --recursive --checkout $(SHALLOW_SUB) $(HARDFLOAT_DIR)
+
+tools_lite: libs
+	$(MAKE) -C $(BP_TOOLS_DIR) tools_lite
 
 tools: libs
 	$(MAKE) -C $(BP_TOOLS_DIR) tools
 
-sdk: tools
-	cd $(TOP); git submodule update --init --checkout $(BP_SDK_DIR)
+sdk_checkout:
+	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_SDK_DIR)
+
+sdk: tools sdk_checkout
 	$(MAKE) -C $(BP_SDK_DIR) sdk
 
-hdk: sdk
-	cd $(TOP); git submodule update --init --checkout $(BP_HDK_DIR)
+hdk_checkout:
+	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_HDK_DIR)
+
+hdk: sdk hdk_checkout
 	$(MAKE) -C $(BP_HDK_DIR) hdk
 
 prep: hdk
@@ -27,11 +34,8 @@ prep_bsg: prep
 	$(MAKE) -C $(BP_SDK_DIR) bsg_cadenv
 	$(MAKE) -C $(BP_HDK_DIR) bsg_cadenv
 
-prep_lite: tools
-	cd $(TOP); git submodule update --init --checkout $(BP_SDK_DIR)
-	cd $(TOP); git submodule update --init --checkout $(BP_HDK_DIR)
-	$(MAKE) -C tools tools_lite
-	$(MAKE) -C sdk sdk_lite
+prep_lite: tools_lite sdk_checkout hdk_checkout
+	$(MAKE) -C $(BP_SDK_DIR) sdk_lite
 
 bsg_cadenv:
 	-cd $(TOP); git clone git@github.com:bespoke-silicon-group/bsg_cadenv.git external/bsg_cadenv

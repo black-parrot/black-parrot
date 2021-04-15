@@ -33,12 +33,12 @@ VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += +noportcoerce
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 VCS_BUILD_OPTS += -diag timescale
-VCS_BUILD_OPTS += -CFLAGS "-I$(BP_SDK_DIR)/install/include -std=c++14"
+VCS_BUILD_OPTS += -CFLAGS "-I$(BP_SDK_DIR)/install/include -std=c++14 -I $(BASEJUMP_STL_DIR)/bsg_test"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save
 VCS_BUILD_OPTS += $(BP_SDK_DIR)/install/lib/libdromajo_cosim.a
-VCS_BUILD_OPTS += -top test_bp
+VCS_BUILD_OPTS += -top testbench
 VCS_BUILD_OPTS += -f flist.vcs 
 
 VCS_PLUSARGS  =

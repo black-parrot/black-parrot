@@ -155,6 +155,8 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
 # HardFloat files
 $HARDFLOAT_DIR/source/addRecFN.v
 $HARDFLOAT_DIR/source/compareRecFN.v
@@ -239,7 +241,6 @@ $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
 # Network
-$BP_ME_DIR/src/v/cce/bp_cce_loopback.sv
 $BP_ME_DIR/src/v/cce/bp_uce.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.sv
@@ -254,6 +255,7 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.sv
 ## TOP
+$BP_TOP_DIR/src/v/bp_loopback.sv
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
 $BP_TOP_DIR/src/v/bp_cacc_tile.sv

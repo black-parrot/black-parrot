@@ -43,7 +43,7 @@ module bp_be_pipe_sys
    , input [special_width_lp-1:0]            retire_special_i
 
    , output logic [dpath_width_gp-1:0]       data_o
-   , output logic                            satp_o
+   , output logic                            csrw_o
    , output logic                            illegal_instr_o
    , output logic                            v_o
 
@@ -111,7 +111,7 @@ module bp_be_pipe_sys
      ,.csr_cmd_v_i(csr_cmd_v_li)
      ,.csr_data_o(csr_data_lo)
      ,.csr_illegal_instr_o(illegal_instr_o)
-     ,.csr_satp_o(satp_o)
+     ,.csr_csrw_o(csrw_o)
 
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
      ,.frf_w_v_i(fwb_pkt.frd_w_v)

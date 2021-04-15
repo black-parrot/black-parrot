@@ -22,7 +22,6 @@
     ,e_cce_mode_normal  = 1
   } bp_cce_mode_e;
 
-  // TODO: This is out of date.  The actual map shouldn't matter much, but we should decide...
   // The overall memory map of the config link is:
   //   16'h0000 - 16'h001f: chip level config
   //   16'h0020 - 16'h003f: fe config
@@ -35,7 +34,7 @@
   localparam cfg_data_width_gp = 64;
 
   localparam cfg_base_addr_gp          = 'h0200_0000;
-  localparam cfg_reg_reset_gp          = 'h0001;
+  localparam cfg_reg_reset_gp          = 'h0001; // Unused
   localparam cfg_reg_freeze_gp         = 'h0002;
   localparam cfg_reg_core_id_gp        = 'h0005;
   localparam cfg_reg_did_gp            = 'h0006;
