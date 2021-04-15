@@ -89,11 +89,12 @@ module bp_cacc_tile
 
      ,.lce_cmd_o(cce_lce_cmd_lo)
      ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-     ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
+     // TODO: mismatch, but okay. ready_and used as ready_then
+     ,.lce_cmd_ready_then_i(cce_lce_cmd_ready_li)
 
      ,.io_cmd_o(cce_io_cmd_lo)
      ,.io_cmd_v_o(cce_io_cmd_v_lo)
-     ,.io_cmd_ready_i(cce_io_cmd_ready_li)
+     ,.io_cmd_ready_then_i(cce_io_cmd_ready_li)
 
      ,.io_resp_i(cce_io_resp_li)
      ,.io_resp_v_i(cce_io_resp_v_li)

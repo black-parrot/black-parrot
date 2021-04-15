@@ -75,11 +75,11 @@ module bp_sacc_tile
 
      ,.io_resp_o(lce_io_resp_lo)
      ,.io_resp_v_o(lce_io_resp_v_lo)
-     ,.io_resp_ready_i(lce_io_resp_ready_li)
+     ,.io_resp_ready_then_i(lce_io_resp_ready_li)
 
      ,.lce_req_o(lce_lce_req_lo)
      ,.lce_req_v_o(lce_lce_req_v_lo)
-     ,.lce_req_ready_i(lce_req_ready_li)
+     ,.lce_req_ready_then_i(lce_req_ready_li)
 
      ,.lce_cmd_i(lce_lce_cmd_li)
      ,.lce_cmd_v_i(lce_lce_cmd_v_li)
@@ -100,11 +100,13 @@ module bp_sacc_tile
 
      ,.lce_cmd_o(cce_lce_cmd_lo)
      ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-     ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
+     // TODO: mismatch, but okay. ready_and used as ready_then
+     ,.lce_cmd_ready_then_i(cce_lce_cmd_ready_li)
 
      ,.io_cmd_o(cce_io_cmd_lo)
      ,.io_cmd_v_o(cce_io_cmd_v_lo)
-     ,.io_cmd_ready_i(cce_io_cmd_ready_li)
+     // TODO: mismatch, but okay. ready_and used as ready_then
+     ,.io_cmd_ready_then_i(cce_io_cmd_ready_li)
 
      ,.io_resp_i(cce_io_resp_li)
      ,.io_resp_v_i(cce_io_resp_v_li)

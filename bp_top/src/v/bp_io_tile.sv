@@ -79,11 +79,13 @@ module bp_io_tile
 
      ,.io_resp_o(lce_io_resp_lo)
      ,.io_resp_v_o(lce_io_resp_v_lo)
-     ,.io_resp_ready_i(lce_io_resp_ready_li)
+     // TODO: mismatch, but okay. ready_and used as ready_then
+     ,.io_resp_ready_then_i(lce_io_resp_ready_li)
 
      ,.lce_req_o(lce_lce_req_lo)
      ,.lce_req_v_o(lce_lce_req_v_lo)
-     ,.lce_req_ready_i(lce_lce_req_ready_li)
+     // TODO: mismatch, but okay. ready_and used as ready_then
+     ,.lce_req_ready_then_i(lce_lce_req_ready_li)
 
      ,.lce_cmd_i(lce_lce_cmd_li)
      ,.lce_cmd_v_i(lce_lce_cmd_v_li)
@@ -104,11 +106,13 @@ module bp_io_tile
 
      ,.lce_cmd_o(cce_lce_cmd_lo)
      ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-     ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
+     // TODO: mismatch, but okay. ready_and used as ready_then
+     ,.lce_cmd_ready_then_i(cce_lce_cmd_ready_li)
 
      ,.io_cmd_o(cce_io_cmd_lo)
      ,.io_cmd_v_o(cce_io_cmd_v_lo)
-     ,.io_cmd_ready_i(cce_io_cmd_ready_li)
+     // TODO: mismatch, but okay. ready_and used as ready_then
+     ,.io_cmd_ready_then_i(cce_io_cmd_ready_li)
 
      ,.io_resp_i(cce_io_resp_li)
      ,.io_resp_v_i(cce_io_resp_v_li)
@@ -213,7 +217,7 @@ module bp_io_tile
 
      ,.mem_cmd_i(cce_io_cmd_lo)
      ,.mem_cmd_v_i(cce_io_cmd_v_lo)
-     ,.mem_cmd_ready_o(cce_io_cmd_ready_li)
+     ,.mem_cmd_ready_and_o(cce_io_cmd_ready_li)
 
      ,.mem_resp_o(cce_io_resp_li)
      ,.mem_resp_v_o(cce_io_resp_v_li)
@@ -225,7 +229,7 @@ module bp_io_tile
 
      ,.mem_resp_i(lce_io_resp_lo)
      ,.mem_resp_v_i(lce_io_resp_v_lo)
-     ,.mem_resp_ready_o(lce_io_resp_ready_li)
+     ,.mem_resp_ready_and_o(lce_io_resp_ready_li)
 
      ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
      ,.my_cid_i('0)
