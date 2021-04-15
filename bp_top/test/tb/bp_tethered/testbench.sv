@@ -107,7 +107,7 @@ module testbench
      );
 
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
-  logic proc_io_cmd_v_lo, proc_io_cmd_ready_li;
+  logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li;
   bp_bedrock_cce_mem_msg_s proc_io_resp_li;
   logic proc_io_resp_v_li, proc_io_resp_yumi_lo;
 
@@ -136,9 +136,7 @@ module testbench
 
      ,.io_cmd_o(proc_io_cmd_lo)
      ,.io_cmd_v_o(proc_io_cmd_v_lo)
-     // TODO: verify handshake
-     // wrapper (unicore) uses this signal as ready->valid
-     ,.io_cmd_ready_then_i(proc_io_cmd_ready_li)
+     ,.io_cmd_ready_and_i(proc_io_cmd_ready_and_li)
 
      ,.io_resp_i(proc_io_resp_li)
      ,.io_resp_v_i(proc_io_resp_v_li)
@@ -242,8 +240,10 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.io_cmd_i(proc_io_cmd_lo)
-     ,.io_cmd_v_i(proc_io_cmd_v_lo & proc_io_cmd_ready_li)
-     ,.io_cmd_ready_o(proc_io_cmd_ready_li)
+     // TODO: verify works
+     ,.io_cmd_v_i(proc_io_cmd_v_lo)
+     //,.io_cmd_v_i(proc_io_cmd_v_lo & proc_io_cmd_ready_and_li)
+     ,.io_cmd_ready_and_o(proc_io_cmd_ready_and_li)
 
      ,.io_resp_o(proc_io_resp_li)
      ,.io_resp_v_o(proc_io_resp_v_li)
