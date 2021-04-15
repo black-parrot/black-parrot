@@ -113,7 +113,7 @@ bp_be_dcache
 
     ,.ptag_v_i(1'b1)
     ,.ptag_i(dcache_ptag)
-    ,.uncached_i(dcache_uncached)
+    ,.ptag_uncached_i(dcache_uncached)
 
     ,.flush_i(1'b0)
 

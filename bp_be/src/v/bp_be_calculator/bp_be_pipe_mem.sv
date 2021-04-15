@@ -44,7 +44,8 @@ module bp_be_pipe_mem
    , output logic                         tlb_load_miss_v_o
    , output logic                         tlb_store_miss_v_o
    , output logic                         cache_miss_v_o
-   , output logic                         fencei_v_o
+   , output logic                         fencei_clean_v_o
+   , output logic                         fencei_dirty_v_o
    , output logic                         load_misaligned_v_o
    , output logic                         load_access_fault_v_o
    , output logic                         load_page_fault_v_o
@@ -137,7 +138,7 @@ module bp_be_pipe_mem
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_early_v, dcache_final_v, dcache_pkt_v;
   logic                     dcache_ptag_v;
-  logic                     dcache_uncached;
+  logic                     dcache_ptag_uncached;
   logic                     dcache_ready_lo;
 
   logic load_access_fault_v, store_access_fault_v;
@@ -152,7 +153,7 @@ module bp_be_pipe_mem
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
   wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
-  wire is_req    = is_store | is_load | is_fencei;
+  wire is_req    = is_store | is_load;
 
   // Calculate cache access eaddr
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
@@ -194,7 +195,7 @@ module bp_be_pipe_mem
      ,.r_v_o(dtlb_v_lo)
      ,.r_ptag_o(dtlb_ptag_lo)
      ,.r_miss_o(dtlb_miss_v)
-     ,.r_uncached_o(dcache_uncached)
+     ,.r_uncached_o(dcache_ptag_uncached)
      ,.r_nonidem_o(/* All D$ misses are non-speculative */)
      ,.r_instr_access_fault_o()
      ,.r_load_access_fault_o(load_access_fault_v)
@@ -250,7 +251,7 @@ module bp_be_pipe_mem
 
       ,.ptag_i(dcache_ptag)
       ,.ptag_v_i(dcache_ptag_v)
-      ,.uncached_i(dcache_uncached)
+      ,.ptag_uncached_i(dcache_ptag_uncached)
 
       ,.early_v_o(dcache_early_v)
       ,.early_data_o(dcache_early_data)
@@ -326,7 +327,8 @@ module bp_be_pipe_mem
   assign tlb_store_miss_v_o     = is_store_mem1 & dtlb_miss_v;
   assign tlb_load_miss_v_o      = ~is_store_mem1 & dtlb_miss_v;
   assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v;
-  assign fencei_v_o             = is_fencei_mem2 & dcache_early_v;
+  assign fencei_clean_v_o       = is_fencei_mem2 & dcache_early_v;
+  assign fencei_dirty_v_o       = is_fencei_mem2 & ~dcache_early_v;
   assign store_page_fault_v_o   = store_page_fault_v;
   assign load_page_fault_v_o    = load_page_fault_v;
   assign store_access_fault_v_o = store_access_fault_v;

@@ -214,7 +214,7 @@ module bp_lce_req
       e_ready: begin
         ready_o = ~credits_full_o & lce_req_ready_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
 
-        if (ready_o)
+        if (ready_o & cache_req_v_i)
           unique case (cache_req.msg_type)
             e_miss_store
             ,e_miss_load: begin

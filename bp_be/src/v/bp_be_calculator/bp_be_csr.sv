@@ -628,7 +628,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;
   assign commit_pkt_cast_o._interrupt       = interrupt_v_lo;
-  assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei;
+  assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;
   assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi              = retire_pkt_cast_i.special.wfi;
   assign commit_pkt_cast_o.eret             = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};

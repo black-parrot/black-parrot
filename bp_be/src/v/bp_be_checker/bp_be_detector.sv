@@ -174,20 +174,20 @@ module bp_be_detector
       // Detect integer and float data hazards for EX2
       irs1_data_haz_v[1] = (isd_status_cast_i.irs1_v & rs1_match_vector[1])
                            & (isd_status_cast_i.rs1_addr != '0)
-                           & (dep_status_r[1].aux_iwb_v | dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
+                           & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
       irs2_data_haz_v[1] = (isd_status_cast_i.irs2_v & rs2_match_vector[1])
                            & (isd_status_cast_i.rs2_addr != '0)
-                           & (dep_status_r[1].aux_iwb_v | dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
+                           & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
       frs1_data_haz_v[1] = (isd_status_cast_i.frs1_v & rs1_match_vector[1])
-                           & (dep_status_r[1].aux_fwb_v | dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
+                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       frs2_data_haz_v[1] = (isd_status_cast_i.frs2_v & rs2_match_vector[1])
-                           & (dep_status_r[1].aux_fwb_v | dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
+                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       frs3_data_haz_v[1] = (isd_status_cast_i.frs3_v & rs3_match_vector[1])
-                           & (dep_status_r[1].aux_fwb_v | dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
+                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       irs1_data_haz_v[2] = (isd_status_cast_i.irs1_v & rs1_match_vector[2])
                            & (isd_status_cast_i.rs1_addr != '0)

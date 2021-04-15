@@ -217,7 +217,7 @@ module wrapper
 
        ,.ptag_v_i(1'b1)
        ,.ptag_i(rolly_ptag_r[i])
-       ,.uncached_i(rolly_uncached_r[i])
+       ,.ptag_uncached_i(rolly_uncached_r[i])
 
        ,.flush_i(poison_li[i])
        ,.replay_pending_o()
