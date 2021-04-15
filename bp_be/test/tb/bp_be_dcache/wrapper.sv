@@ -300,12 +300,10 @@ module wrapper
 
               ,.lce_req_o(lce_req_lo[i])
               ,.lce_req_v_o(lce_req_v_lo[i])
-              // TODO: mismatch, but okay - connects to ready_and_rev on link
               ,.lce_req_ready_then_i(lce_req_ready_and_li[i])
 
               ,.lce_resp_o(lce_resp_lo[i])
               ,.lce_resp_v_o(lce_resp_v_lo[i])
-              // TODO: mismatch, but okay - connects to ready_and_rev on link
               ,.lce_resp_ready_then_i(lce_resp_ready_and_li[i])
 
               ,.lce_cmd_i(lce_cmd_li[i])
@@ -314,7 +312,6 @@ module wrapper
 
               ,.lce_cmd_o(lce_cmd_lo[i])
               ,.lce_cmd_v_o(lce_cmd_v_lo[i])
-              // TODO: mismatch, but okay - connects to ready_and_rev on link
               ,.lce_cmd_ready_then_i(lce_cmd_ready_and_li[i])
               );
 
@@ -586,7 +583,6 @@ module wrapper
 
           ,.lce_cmd_o(cce_lce_cmd_lo)
           ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-          // TODO: mismatch, but okay - ready_i used ready->valid by FSM CCE
           ,.lce_cmd_ready_i(cce_lce_cmd_ready_and_li)
 
           ,.mem_resp_i(mem_resp_to_cce)
@@ -595,7 +591,6 @@ module wrapper
 
           ,.mem_cmd_o(mem_cmd_o)
           ,.mem_cmd_v_o(mem_cmd_v_o)
-          // TODO: mismatch, but okay - ready_i used ready->valid by FSM CCE
           ,.mem_cmd_ready_i(mem_cmd_ready_and_i)
           );
 

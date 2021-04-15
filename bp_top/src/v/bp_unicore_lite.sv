@@ -385,15 +385,10 @@ module bp_unicore_lite
   wire is_mem_cmd          = (~local_cmd_li & ~is_other_domain) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_mem_cmd;
 
-  // TODO: handshake violation! CFG is R&V
   assign cfg_cmd_v_li      = |proc_cmd_grant_lo & cfg_cmd_ready_and_lo & is_cfg_cmd;
-  // TODO: handshake violation! clint slice is R&V
   assign clint_cmd_v_li    = |proc_cmd_grant_lo & clint_cmd_ready_and_lo & is_clint_cmd;
-  // TODO: handshake violation! input ports are R&V
   assign io_cmd_v_o        = |proc_cmd_grant_lo & io_cmd_ready_and_i & is_io_cmd;
-  // TODO: handshake violation! input ports are R&V
   assign mem_cmd_v_o       = |proc_cmd_grant_lo & mem_cmd_ready_and_i & is_mem_cmd;
-  // TODO: handshake violation! loopback is R&V
   assign loopback_cmd_v_li = |proc_cmd_grant_lo & loopback_cmd_ready_and_lo & is_loopback_cmd;
 
   wire any_cmd_li = |{mem_cmd_v_o, io_cmd_v_o, loopback_cmd_v_li, clint_cmd_v_li, cfg_cmd_v_li};

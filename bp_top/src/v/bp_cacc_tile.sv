@@ -89,7 +89,6 @@ module bp_cacc_tile
 
      ,.lce_cmd_o(cce_lce_cmd_lo)
      ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-     // TODO: mismatch, but okay. ready_and used as ready_then
      ,.lce_cmd_ready_then_i(cce_lce_cmd_ready_li)
 
      ,.io_cmd_o(cce_io_cmd_lo)

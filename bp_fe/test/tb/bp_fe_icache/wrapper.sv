@@ -217,7 +217,7 @@ module wrapper
 
   if (uce_p == 0) begin : CCE
     logic lce_req_v_lo, lce_resp_v_lo, lce_cmd_v_lo, fifo_lce_cmd_v_lo;
-    logic lce_req_ready_then_li, lce_resp_ready_then_li, lce_cmd_ready_then_li, fifo_lce_cmd_yumi_li;
+    logic lce_req_ready_then_li, lce_resp_ready_then_li, lce_cmd_ready_and_li, fifo_lce_cmd_yumi_li;
     bp_bedrock_lce_req_msg_s lce_req_lo;
     bp_bedrock_lce_resp_msg_s lce_resp_lo;
     bp_bedrock_lce_cmd_msg_s lce_cmd_lo, fifo_lce_cmd_lo;
@@ -293,9 +293,7 @@ module wrapper
 
        // from CCE
        ,.v_i(lce_cmd_v_lo)
-       // TODO: mismatch, but okay
-       // FIFO provides ready_and but it is used ready_then by CCE
-       ,.ready_o(lce_cmd_ready_then_li)
+       ,.ready_o(lce_cmd_ready_and_li)
        ,.data_i(lce_cmd_lo)
 
        // to LCE
@@ -323,7 +321,7 @@ module wrapper
 
        ,.lce_cmd_o(lce_cmd_lo)
        ,.lce_cmd_v_o(lce_cmd_v_lo)
-       ,.lce_cmd_ready_i(lce_cmd_ready_then_li)
+       ,.lce_cmd_ready_i(lce_cmd_ready_and_li)
 
        ,.mem_resp_i(mem_resp_i)
        ,.mem_resp_v_i(mem_resp_v_i)
