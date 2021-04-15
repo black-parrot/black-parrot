@@ -62,8 +62,8 @@ module bp_nonsynth_nbf_loader
 
   wire is_fence_packet  = (curr_nbf.opcode == 8'hFE);
   wire is_finish_packet = (curr_nbf.opcode == 8'hFF);
-  wire is_read_packet   = (curr_nbf.opcode[2] == 1'b1) & ~is_fence_packet & ~is_finish_packet;
-  wire is_store_packet  = (curr_nbf.opcode[2] == 1'b0) & ~is_fence_packet & ~is_finish_packet;
+  wire is_read_packet   = (curr_nbf.opcode[5] == 1'b1) & ~is_fence_packet & ~is_finish_packet;
+  wire is_store_packet  = (curr_nbf.opcode[5] == 1'b0) & ~is_fence_packet & ~is_finish_packet;
 
   wire next_nbf = (is_send_nbf && (io_cmd_yumi_i || is_fence_packet || is_finish_packet));
   bsg_counter_clear_up
@@ -118,7 +118,7 @@ module bp_nonsynth_nbf_loader
       io_cmd_payload.lce_id = lce_id_i;
       io_cmd.header.payload = io_cmd_payload;
       io_cmd.header.addr = curr_nbf.addr;
-      io_cmd.header.msg_type.mem = curr_nbf.opcode[2] ? e_bedrock_mem_uc_rd : e_bedrock_mem_uc_wr;
+      io_cmd.header.msg_type.mem = curr_nbf.opcode[5] ? e_bedrock_mem_uc_rd : e_bedrock_mem_uc_wr;
       io_cmd.header.subop = e_bedrock_store;
 
       case (curr_nbf.opcode[1:0])

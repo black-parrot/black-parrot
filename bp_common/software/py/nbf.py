@@ -11,10 +11,10 @@
 #     8'h02: 4 byte write
 #     8'h03: 8 byte write
 #
-#     8'h04: 1 byte read
-#     8'h05: 2 byte read
-#     8'h06: 4 byte read
-#     8'h07: 8 byte read
+#     8'h10: 1 byte read
+#     8'h11: 2 byte read
+#     8'h12: 4 byte read
+#     8'h13: 8 byte read
 #
 #     8'hfe: fence, waits for outgoing commands to finish before progressing
 #     8'hff: finish, terminates the nbf sequence
@@ -208,9 +208,9 @@ class NBF:
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
 
       # Read back I$, D$ and CCE modes for verification
-      self.print_nbf(6, cfg_base_addr + cfg_reg_icache_mode, 1)
-      self.print_nbf(6, cfg_base_addr + cfg_reg_dcache_mode, 1)
-      self.print_nbf(6, cfg_base_addr + cfg_reg_cce_mode, 1)
+      self.print_nbf(0x12, cfg_base_addr + cfg_reg_icache_mode, 1)
+      self.print_nbf(0x12, cfg_base_addr + cfg_reg_dcache_mode, 1)
+      self.print_nbf(0x12, cfg_base_addr + cfg_reg_cce_mode, 1)
 
     self.print_fence()
 
