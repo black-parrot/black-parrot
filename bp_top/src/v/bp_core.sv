@@ -24,30 +24,30 @@ module bp_core
  (input                                          clk_i
   , input                                        reset_i
 
-    , input [cfg_bus_width_lp-1:0]                 cfg_bus_i
+  , input [cfg_bus_width_lp-1:0]                 cfg_bus_i
 
-    // LCE-CCE interface
-    , output [1:0][lce_req_msg_width_lp-1:0]       lce_req_o
-    , output [1:0]                                 lce_req_v_o
-    , input [1:0]                                  lce_req_ready_then_i
+  // LCE-CCE interface
+  , output [1:0][lce_req_msg_width_lp-1:0]       lce_req_o
+  , output [1:0]                                 lce_req_v_o
+  , input [1:0]                                  lce_req_ready_then_i
 
-    , output [1:0][lce_resp_msg_width_lp-1:0]      lce_resp_o
-    , output [1:0]                                 lce_resp_v_o
-    , input [1:0]                                  lce_resp_ready_then_i
+  , output [1:0][lce_resp_msg_width_lp-1:0]      lce_resp_o
+  , output [1:0]                                 lce_resp_v_o
+  , input [1:0]                                  lce_resp_ready_then_i
 
-    // CCE-LCE interface
-    , input [1:0][lce_cmd_msg_width_lp-1:0]        lce_cmd_i
-    , input [1:0]                                  lce_cmd_v_i
-    , output [1:0]                                 lce_cmd_yumi_o
+  // CCE-LCE interface
+  , input [1:0][lce_cmd_msg_width_lp-1:0]        lce_cmd_i
+  , input [1:0]                                  lce_cmd_v_i
+  , output [1:0]                                 lce_cmd_yumi_o
 
-    , output [1:0][lce_cmd_msg_width_lp-1:0]       lce_cmd_o
-    , output [1:0]                                 lce_cmd_v_o
-    , input [1:0]                                  lce_cmd_ready_then_i
+  , output [1:0][lce_cmd_msg_width_lp-1:0]       lce_cmd_o
+  , output [1:0]                                 lce_cmd_v_o
+  , input [1:0]                                  lce_cmd_ready_then_i
 
-    , input                                        timer_irq_i
-    , input                                        software_irq_i
-    , input                                        external_irq_i
-    );
+  , input                                        timer_irq_i
+  , input                                        software_irq_i
+  , input                                        external_irq_i
+  );
 
   `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
