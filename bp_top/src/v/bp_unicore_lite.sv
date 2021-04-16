@@ -22,7 +22,7 @@ module bp_unicore_lite
    // Outgoing I/O
    , output logic [uce_mem_msg_width_lp-1:0]           io_cmd_o
    , output logic                                      io_cmd_v_o
-   , input                                             io_cmd_ready_i
+   , input                                             io_cmd_ready_and_i
 
    , input [uce_mem_msg_width_lp-1:0]                  io_resp_i
    , input                                             io_resp_v_i
@@ -35,12 +35,12 @@ module bp_unicore_lite
 
    , output logic [uce_mem_msg_width_lp-1:0]           io_resp_o
    , output logic                                      io_resp_v_o
-   , input                                             io_resp_ready_i
+   , input                                             io_resp_ready_and_i
 
    // Outgoing DRAM
    , output logic [uce_mem_msg_width_lp-1:0]           mem_cmd_o
    , output logic                                      mem_cmd_v_o
-   , input                                             mem_cmd_ready_i
+   , input                                             mem_cmd_ready_and_i
 
    , input [uce_mem_msg_width_lp-1:0]                  mem_resp_i
    , input                                             mem_resp_v_i
@@ -101,7 +101,7 @@ module bp_unicore_lite
 
   bp_bedrock_uce_mem_msg_s cfg_cmd_li;
   bp_bedrock_xce_mem_msg_s cfg_cmd;
-  logic cfg_cmd_v_li, cfg_cmd_ready_lo;
+  logic cfg_cmd_v_li, cfg_cmd_ready_and_lo;
   bp_bedrock_uce_mem_msg_s cfg_resp_lo;
   bp_bedrock_xce_mem_msg_s cfg_resp;
   logic cfg_resp_v_lo, cfg_resp_yumi_li;
@@ -114,7 +114,7 @@ module bp_unicore_lite
 
   bp_bedrock_uce_mem_msg_s clint_cmd_li;
   bp_bedrock_xce_mem_msg_s clint_cmd;
-  logic clint_cmd_v_li, clint_cmd_ready_lo;
+  logic clint_cmd_v_li, clint_cmd_ready_and_lo;
   bp_bedrock_uce_mem_msg_s clint_resp_lo;
   bp_bedrock_xce_mem_msg_s clint_resp;
   logic clint_resp_v_lo, clint_resp_yumi_li;
@@ -127,7 +127,7 @@ module bp_unicore_lite
 
   bp_bedrock_uce_mem_msg_s loopback_cmd_li;
   bp_bedrock_xce_mem_msg_s loopback_cmd;
-  logic loopback_cmd_v_li, loopback_cmd_ready_lo;
+  logic loopback_cmd_v_li, loopback_cmd_ready_and_lo;
   bp_bedrock_uce_mem_msg_s loopback_resp_lo;
   bp_bedrock_xce_mem_msg_s loopback_resp;
   logic loopback_resp_v_lo, loopback_resp_yumi_li;
@@ -313,7 +313,7 @@ module bp_unicore_lite
 
   assign io_resp_o = uce_mem_msg_width_lp'(proc_resp_li[2]);
   assign io_resp_v_o = proc_resp_v_li[2];
-  assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
+  assign proc_resp_yumi_lo[2] = io_resp_ready_and_i & io_resp_v_o;
 
   // Command arbitration logic
   // This is suboptimal. We could have an arbiter for each of I$ D$ and I/O, to get higher
@@ -385,11 +385,11 @@ module bp_unicore_lite
   wire is_mem_cmd          = (~local_cmd_li & ~is_other_domain) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_mem_cmd;
 
-  assign cfg_cmd_v_li      = |proc_cmd_grant_lo & cfg_cmd_ready_lo & is_cfg_cmd;
-  assign clint_cmd_v_li    = |proc_cmd_grant_lo & clint_cmd_ready_lo & is_clint_cmd;
-  assign io_cmd_v_o        = |proc_cmd_grant_lo & io_cmd_ready_i & is_io_cmd;
-  assign mem_cmd_v_o       = |proc_cmd_grant_lo & mem_cmd_ready_i & is_mem_cmd;
-  assign loopback_cmd_v_li = |proc_cmd_grant_lo & loopback_cmd_ready_lo & is_loopback_cmd;
+  assign cfg_cmd_v_li      = |proc_cmd_grant_lo & cfg_cmd_ready_and_lo & is_cfg_cmd;
+  assign clint_cmd_v_li    = |proc_cmd_grant_lo & clint_cmd_ready_and_lo & is_clint_cmd;
+  assign io_cmd_v_o        = |proc_cmd_grant_lo & io_cmd_ready_and_i & is_io_cmd;
+  assign mem_cmd_v_o       = |proc_cmd_grant_lo & mem_cmd_ready_and_i & is_mem_cmd;
+  assign loopback_cmd_v_li = |proc_cmd_grant_lo & loopback_cmd_ready_and_lo & is_loopback_cmd;
 
   wire any_cmd_li = |{mem_cmd_v_o, io_cmd_v_o, loopback_cmd_v_li, clint_cmd_v_li, cfg_cmd_v_li};
 
@@ -403,7 +403,7 @@ module bp_unicore_lite
 
      ,.mem_cmd_i(clint_cmd)
      ,.mem_cmd_v_i(clint_cmd_v_li)
-     ,.mem_cmd_ready_o(clint_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(clint_cmd_ready_and_lo)
 
      ,.mem_resp_o(clint_resp)
      ,.mem_resp_v_o(clint_resp_v_lo)
@@ -422,7 +422,7 @@ module bp_unicore_lite
 
      ,.mem_cmd_i(cfg_cmd)
      ,.mem_cmd_v_i(cfg_cmd_v_li)
-     ,.mem_cmd_ready_o(cfg_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(cfg_cmd_ready_and_lo)
 
      ,.mem_resp_o(cfg_resp)
      ,.mem_resp_v_o(cfg_resp_v_lo)
@@ -448,7 +448,7 @@ module bp_unicore_lite
 
      ,.mem_cmd_i(loopback_cmd)
      ,.mem_cmd_v_i(loopback_cmd_v_li)
-     ,.mem_cmd_ready_o(loopback_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(loopback_cmd_ready_and_lo)
 
      ,.mem_resp_o(loopback_resp)
      ,.mem_resp_v_o(loopback_resp_v_lo)

@@ -107,7 +107,7 @@ module testbench
      );
 
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
-  logic proc_io_cmd_v_lo, proc_io_cmd_ready_li;
+  logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li;
   bp_bedrock_cce_mem_msg_s proc_io_resp_li;
   logic proc_io_resp_v_li, proc_io_resp_yumi_lo;
 
@@ -119,7 +119,7 @@ module testbench
   bp_bedrock_cce_mem_msg_s load_cmd_lo;
   logic load_cmd_v_lo, load_cmd_yumi_li;
   bp_bedrock_cce_mem_msg_s load_resp_li;
-  logic load_resp_v_li, load_resp_ready_lo;
+  logic load_resp_v_li, load_resp_ready_and_lo;
 
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0] dma_pkt_lo;
@@ -136,7 +136,7 @@ module testbench
 
      ,.io_cmd_o(proc_io_cmd_lo)
      ,.io_cmd_v_o(proc_io_cmd_v_lo)
-     ,.io_cmd_ready_i(proc_io_cmd_ready_li)
+     ,.io_cmd_ready_and_i(proc_io_cmd_ready_and_li)
 
      ,.io_resp_i(proc_io_resp_li)
      ,.io_resp_v_i(proc_io_resp_v_li)
@@ -148,7 +148,7 @@ module testbench
 
      ,.io_resp_o(load_resp_li)
      ,.io_resp_v_o(load_resp_v_li)
-     ,.io_resp_ready_i(load_resp_ready_lo)
+     ,.io_resp_ready_and_i(load_resp_ready_and_lo)
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
@@ -202,9 +202,10 @@ module testbench
      ,.io_cmd_v_o(load_cmd_v_lo)
      ,.io_cmd_yumi_i(load_cmd_yumi_li)
 
+     // NOTE: IO response ready_o is always high - acts as sink
      ,.io_resp_i(load_resp_li)
      ,.io_resp_v_i(load_resp_v_li)
-     ,.io_resp_ready_o(load_resp_ready_lo)
+     ,.io_resp_ready_and_o(load_resp_ready_and_lo)
 
      ,.done_o()
      );
@@ -239,8 +240,8 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.io_cmd_i(proc_io_cmd_lo)
-     ,.io_cmd_v_i(proc_io_cmd_v_lo & proc_io_cmd_ready_li)
-     ,.io_cmd_ready_o(proc_io_cmd_ready_li)
+     ,.io_cmd_v_i(proc_io_cmd_v_lo)
+     ,.io_cmd_ready_and_o(proc_io_cmd_ready_and_li)
 
      ,.io_resp_o(proc_io_resp_li)
      ,.io_resp_v_o(proc_io_resp_v_li)
@@ -593,16 +594,16 @@ module testbench
               ,.lce_id_i(lce_id_i)
               ,.lce_req_i(lce_req_o)
               ,.lce_req_v_i(lce_req_v_o)
-              ,.lce_req_ready_i(lce_req_ready_i)
+              ,.lce_req_ready_then_i(lce_req_ready_then_i)
               ,.lce_resp_i(lce_resp_o)
               ,.lce_resp_v_i(lce_resp_v_o)
-              ,.lce_resp_ready_i(lce_resp_ready_i)
+              ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
               ,.lce_cmd_i(lce_cmd_i)
               ,.lce_cmd_v_i(lce_cmd_v_i)
               ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
               ,.lce_cmd_o_i(lce_cmd_o)
               ,.lce_cmd_o_v_i(lce_cmd_v_o)
-              ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+              ,.lce_cmd_o_ready_then_i(lce_cmd_ready_then_i)
               );
         end
     end

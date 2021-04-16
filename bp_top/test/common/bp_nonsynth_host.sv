@@ -30,7 +30,7 @@ module bp_nonsynth_host
 
    , input [cce_mem_msg_width_lp-1:0]        io_cmd_i
    , input                                   io_cmd_v_i
-   , output logic                            io_cmd_ready_o
+   , output logic                            io_cmd_ready_and_o
 
    , output logic [cce_mem_msg_width_lp-1:0] io_resp_o
    , output logic                            io_resp_v_o
@@ -104,7 +104,7 @@ module bp_nonsynth_host
 
      ,.data_i(io_cmd_li)
      ,.v_i(io_cmd_v_i)
-     ,.ready_o(io_cmd_ready_o)
+     ,.ready_o(io_cmd_ready_and_o)
 
      ,.data_o(io_cmd_lo)
      ,.v_o(io_cmd_v_lo)
