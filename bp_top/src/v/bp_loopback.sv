@@ -33,10 +33,6 @@ module bp_cce_loopback
   assign mem_cmd_cast_i = mem_cmd_i;
   assign mem_resp_o = mem_resp_cast_o;
 
-  // NOTE: one fifo comments imply that input is ready->valid, but implementation
-  // is actually ready&valid. Ready comes directly from current state of full_r
-  // register. Valid_i is ignored if fifo is full. Data captured on v_i & ready_o.
-  // Interface can be used ready->valid though, but penalty is cycle time limit
   bsg_one_fifo
    #(.width_p($bits(mem_cmd_cast_i.header)))
    loopback_buffer
