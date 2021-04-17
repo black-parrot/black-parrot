@@ -44,7 +44,7 @@ module bp_me_cce_to_cache
     , output logic                        v_o
     , input                               ready_i
 
-    , input [l2_data_width_p-1:0]          data_i
+    , input [l2_data_width_p-1:0]         data_i
     , input                               v_i
     , output logic                        yumi_o
   );
@@ -320,7 +320,10 @@ module bp_me_cce_to_cache
 
     case (resp_state_r)
       RESP_RESET: begin
-        resp_state_n = RESP_READY;
+        // hold in RESP_RESET until command FSM finishes clearing cache tags
+        resp_state_n = (cmd_state_n == READY) ? RESP_READY : RESP_RESET;
+        // cache "acks" TAGST commands with zero-data responses
+        yumi_o = v_i;
       end
       RESP_READY: begin
         is_resp_ready = 1'b1;
