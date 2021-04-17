@@ -272,8 +272,7 @@ module bp_be_csr
   // This currently depends on specific offsets in the debug module which are
   //   compatible with the pulp-platform debug rom:
   // https://github.com/pulp-platform/riscv-dbg/blob/64f48cd8ef3ed4269ab3dfcc32e8a137a871e3e1/src/dm_pkg.sv#L28
-  // For now, assume that unfreeze_pc is 16 byte aligned to avoid another mux
-  wire [vaddr_width_p-1:0] unfreeze_pc        = {cfg_npc_r[vaddr_width_p-1:4], 4'b0000};
+  // For now, assume that debug_halt_pc is 16 byte aligned to avoid another mux
   wire [vaddr_width_p-1:0] debug_halt_pc      = {cfg_npc_r[vaddr_width_p-1:4], 4'b0000};
   wire [vaddr_width_p-1:0] debug_resume_pc    = {cfg_npc_r[vaddr_width_p-1:4], 4'b0100};
   wire [vaddr_width_p-1:0] debug_exception_pc = {cfg_npc_r[vaddr_width_p-1:4], 4'b1000};
@@ -518,14 +517,7 @@ module bp_be_csr
 
       if (retire_pkt_cast_i.exception._interrupt)
         begin
-          if (d_interrupt_icode_v_li & dgie)
-            begin
-              enter_debug    = 1'b1;
-              dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
-              dcsr_li.cause  = 3; // Debugger
-              dcsr_li.prv    = priv_mode_r;
-            end
-          else if (m_interrupt_icode_v_li & mgie)
+          if (m_interrupt_icode_v_li & mgie)
             begin
               priv_mode_n          = `PRIV_MODE_M;
 
@@ -601,18 +593,39 @@ module bp_be_csr
             end
         end
 
-      if (retire_pkt_cast_i.special.dbreak)
+      // Re-enter debug mode if ebreaking during debug sequence
+      if (is_debug_mode)
+        begin
+          enter_debug = retire_pkt_cast_i.special.dbreak;
+        end
+      else if (retire_pkt_cast_i.exception._interrupt & d_interrupt_icode_v_li & dgie)
+        begin
+          enter_debug    = 1'b1;
+          dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
+          dcsr_li.cause  = 3; // Debugger
+          dcsr_li.prv    = priv_mode_r;
+        end
+      else if (retire_pkt_cast_i.special.dbreak)
         begin
           enter_debug    = 1'b1;
           dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
           dcsr_li.cause  = 1; // Ebreak
           dcsr_li.prv    = priv_mode_r;
         end
+      // Always break in single step mode
+      else if (retire_pkt_cast_i.queue_v & dcsr_lo.step)
+        begin
+          enter_debug    = 1'b1;
+          dpc_li         = `BSG_SIGN_EXTEND(core_npc, dword_width_gp);
+          dcsr_li.cause  = 4;
+          dcsr_li.prv    = priv_mode_r;
+        end
 
+      // Only exit debug mode through dret
       if (retire_pkt_cast_i.special.dret)
         begin
-          exit_debug       = 1'b1;
-          priv_mode_n      = dcsr_lo.prv;
+          exit_debug     = 1'b1;
+          priv_mode_n    = dcsr_lo.prv;
         end
 
       if (retire_pkt_cast_i.special.mret)
@@ -633,15 +646,6 @@ module bp_be_csr
           mstatus_li.spie  = 1'b1;
           mstatus_li.sie   = mstatus_lo.spie;
           mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
-        end
-
-      // Always break in single step mode
-      if (~is_debug_mode & retire_pkt_cast_i.queue_v & dcsr_lo.step)
-        begin
-          enter_debug   = 1'b1;
-          dpc_li        = `BSG_SIGN_EXTEND(core_npc, dword_width_gp);
-          dcsr_li.cause = 4;
-          dcsr_li.prv   = priv_mode_r;
         end
 
       // Accumulate interrupts

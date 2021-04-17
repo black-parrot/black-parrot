@@ -154,7 +154,7 @@ module bp_be_director
       if (commit_pkt_cast_i.unfreeze)
         begin
           fe_cmd_li.opcode = e_op_state_reset;
-          fe_cmd_li.npc = npc_r;
+          fe_cmd_li.npc = npc_n;
 
           fe_cmd_pc_redirect_operands.priv           = commit_pkt_cast_i.priv_n;
           fe_cmd_pc_redirect_operands.translation_en = commit_pkt_cast_i.translation_en_n;
@@ -245,7 +245,7 @@ module bp_be_director
                                                              : e_not_a_branch;
           fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
-          fe_cmd_v_li = is_run;
+          fe_cmd_v_li = ~cmd_full_r_o & is_run;
         end
       // Send an attaboy if there's a correct prediction
       else if (npc_match_v & last_instr_was_branch)
@@ -255,7 +255,7 @@ module bp_be_director
           fe_cmd_li.operands.attaboy.taken               = last_instr_was_btaken;
           fe_cmd_li.operands.attaboy.branch_metadata_fwd = issue_pkt_cast_i.branch_metadata_fwd;
 
-          fe_cmd_v_li = is_run;
+          fe_cmd_v_li = ~cmd_full_r_o & is_run;
         end
     end
 

@@ -257,15 +257,17 @@ module bp_nonsynth_cosim
   wire [dword_width_gp-1:0] cosim_frd_li    = frd_raw_li[commit_instr_r.rd_addr];
   wire [dword_width_gp-1:0] cosim_rd_li     = commit_fwb_li ? cosim_frd_li : cosim_ird_li;
   wire [dword_width_gp-1:0] cosim_status_li = mstatus_r;
-  integer ret_code = '0;
+  integer ret_code;
   always_ff @(posedge cosim_clk_i)
-    if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)
+    if (cosim_reset_i)
+      ret_code <= 0;
+    else if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)
       dromajo_trap(mhartid_i, cosim_cause_li);
     else if (~commit_debug_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
       ret_code <= dromajo_step(mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li);
 
    // ret_code: {exit_code, terminate}
-   always_ff @(posedge cosim_clk_i)
+   always_ff @(negedge cosim_clk_i)
      if (ret_code >> 1)
        begin
          // Successful termination
