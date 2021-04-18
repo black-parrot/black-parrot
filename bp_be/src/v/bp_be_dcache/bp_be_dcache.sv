@@ -406,14 +406,6 @@ module bp_be_dcache
                })
      );
 
-  logic [lg_dcache_assoc_lp-1:0] lru_encode;
-  bsg_lru_pseudo_tree_encode
-   #(.ways_p(assoc_p))
-   lru_encoder
-    (.lru_i(stat_mem_data_lo.lru)
-     ,.way_id_o(lru_encode)
-     );
-
   logic invalid_exist;
   logic [lg_dcache_assoc_lp-1:0] invalid_way;
   bsg_priority_encode
@@ -425,6 +417,7 @@ module bp_be_dcache
      );
 
   // If there is invalid way, then it take prioirty over LRU way.
+  logic [lg_dcache_assoc_lp-1:0] lru_encode;
   wire [lg_dcache_assoc_lp-1:0] lru_way_li = invalid_exist ? invalid_way : lru_encode;
 
   wire [3:0] byte_offset_tv = paddr_tv_r[0+:4];
@@ -570,6 +563,13 @@ module bp_be_dcache
     ,.w_mask_i(stat_mem_mask_li)
     ,.data_o(stat_mem_data_lo)
     );
+
+  bsg_lru_pseudo_tree_encode
+   #(.ways_p(assoc_p))
+   lru_encoder
+    (.lru_i(stat_mem_data_lo.lru)
+     ,.way_id_o(lru_encode)
+     );
 
   /////////////////////////////////////////////////////////////////////////////
   // DM Stage
