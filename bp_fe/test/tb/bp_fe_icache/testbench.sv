@@ -81,7 +81,7 @@ module testbench
   assign cfg_bus_li = cfg_bus_cast_li;
 
   logic mem_cmd_v_lo, mem_resp_v_lo;
-  logic mem_cmd_ready_and_lo, mem_resp_yumi_li;
+  logic mem_cmd_yumi_li, mem_cmd_ready_and_lo, mem_resp_yumi_li;
   bp_bedrock_cce_mem_msg_s mem_cmd_lo, mem_resp_lo;
 
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
@@ -230,8 +230,9 @@ module testbench
 
      ,.mem_cmd_o(mem_cmd_lo)
      ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_lo)
+     ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
     );
+  assign mem_cmd_yumi_li = mem_cmd_ready_and_lo & mem_cmd_v_lo;
 
   // Memory
   bp_nonsynth_mem
