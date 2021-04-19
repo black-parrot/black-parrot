@@ -83,7 +83,8 @@ module bp_fe_icache
    , input                                            cache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
-   , input                                            cache_req_critical_i
+   , input                                            cache_req_critical_tag_i
+   , input                                            cache_req_critical_data_i
    , input                                            cache_req_complete_i
    , input                                            cache_req_credits_full_i
    , input                                            cache_req_credits_empty_i

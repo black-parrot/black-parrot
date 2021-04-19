@@ -57,7 +57,8 @@ module bp_uce
     , output logic                                   cache_req_busy_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
-    , output logic                                   cache_req_critical_o
+    , output logic                                   cache_req_critical_tag_o
+    , output logic                                   cache_req_critical_data_o
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_credits_full_o
     , output logic                                   cache_req_credits_empty_o
@@ -445,7 +446,9 @@ module bp_uce
      ,.clear_i(critical_recv)
      ,.data_o(critical_pending)
      );
-  assign cache_req_critical_o = critical_pending & critical_recv;
+  // This is sufficient for UCE because we only set tags on requests, not invalidation
+  assign cache_req_critical_tag_o = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_set_tag);
+  assign cache_req_critical_data_o = critical_pending & critical_recv;
 
   bp_cache_req_wr_subop_e cache_wr_subop;
   bp_bedrock_wr_subop_e mem_wr_subop;
