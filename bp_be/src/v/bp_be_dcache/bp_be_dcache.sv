@@ -142,7 +142,8 @@ module bp_be_dcache
    , input                                           cache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
-   , input                                           cache_req_critical_i
+   , input                                           cache_req_critical_tag_i
+   , input                                           cache_req_critical_data_i
    , input                                           cache_req_complete_i
    // Unused
    , input                                           cache_req_credits_full_i
