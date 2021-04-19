@@ -27,7 +27,7 @@ module bp_me_cce_to_mem_link_master
    // CCE-MEM Interface
    , input  [cce_mem_msg_width_lp-1:0]            mem_cmd_i
    , input                                        mem_cmd_v_i
-   , output                                       mem_cmd_ready_o
+   , output                                       mem_cmd_ready_and_o
 
    , output [cce_mem_msg_width_lp-1:0]            mem_resp_o
    , output                                       mem_resp_v_o
@@ -88,7 +88,7 @@ bsg_wormhole_router_adapter
 
    ,.packet_i(mem_cmd_packet_li)
    ,.v_i(mem_cmd_v_i)
-   ,.ready_o(mem_cmd_ready_o)
+   ,.ready_o(mem_cmd_ready_and_o)
 
    ,.link_o(cmd_link_o)
    ,.link_i(resp_link_i)

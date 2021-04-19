@@ -31,3 +31,5 @@ export LM_LICENSE_FILE ?=
 
 export PATH := $(BP_TOOLS_INSTALL_DIR)/bin:$(PATH)
 
+# Makes clones much faster. Comment out if you see "fatal: reference is not a tree"
+SHALLOW_SUB ?= --depth=1

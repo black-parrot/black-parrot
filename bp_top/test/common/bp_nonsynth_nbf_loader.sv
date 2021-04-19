@@ -37,7 +37,7 @@ module bp_nonsynth_nbf_loader
 
   ,input  [cce_mem_msg_width_lp-1:0]       io_resp_i
   ,input                                   io_resp_v_i
-  ,output                                  io_resp_ready_o
+  ,output                                  io_resp_ready_and_o
 
   ,output                                  done_o
   );
@@ -53,7 +53,7 @@ module bp_nonsynth_nbf_loader
 
   // response network not used
   wire unused_resp = &{io_resp_i, io_resp_v_i};
-  assign io_resp_ready_o = 1'b1;
+  assign io_resp_ready_and_o = 1'b1;
 
   logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
   bsg_flow_counter

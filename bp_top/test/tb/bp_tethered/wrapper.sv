@@ -27,7 +27,7 @@ module wrapper
    // Outgoing I/O
    , output [cce_mem_msg_width_lp-1:0]                      io_cmd_o
    , output                                                 io_cmd_v_o
-   , input                                                  io_cmd_ready_i
+   , input                                                  io_cmd_ready_and_i
 
    , input [cce_mem_msg_width_lp-1:0]                       io_resp_i
    , input                                                  io_resp_v_i
@@ -40,7 +40,7 @@ module wrapper
 
    , output [cce_mem_msg_width_lp-1:0]                      io_resp_o
    , output                                                 io_resp_v_o
-   , input                                                  io_resp_ready_i
+   , input                                                  io_resp_ready_and_i
 
    // DRAM interface
    , output logic [num_cce_p-1:0][dma_pkt_width_lp-1:0]     dma_pkt_o
@@ -101,9 +101,9 @@ module wrapper
          ,.dram_resp_link_i(dram_resp_link_li)
          );
 
-      logic io_cmd_ready_lo, io_resp_ready_lo;
-      assign io_cmd_yumi_o = io_cmd_ready_lo & io_cmd_v_i;
-      assign io_resp_yumi_o = io_resp_ready_lo & io_resp_v_i;
+      logic io_cmd_ready_and_lo, io_resp_ready_and_lo;
+      assign io_cmd_yumi_o = io_cmd_ready_and_lo & io_cmd_v_i;
+      assign io_resp_yumi_o = io_resp_ready_and_lo & io_resp_v_i;
       wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
       bp_me_cce_to_mem_link_bidir
        #(.bp_params_p(bp_params_p)
@@ -119,11 +119,11 @@ module wrapper
 
          ,.mem_cmd_i(io_cmd_i)
          ,.mem_cmd_v_i(io_cmd_v_i)
-         ,.mem_cmd_ready_o(io_cmd_ready_lo)
+         ,.mem_cmd_ready_and_o(io_cmd_ready_and_lo)
 
          ,.mem_resp_o(io_resp_o)
          ,.mem_resp_v_o(io_resp_v_o)
-         ,.mem_resp_yumi_i(io_resp_ready_i & io_resp_v_o)
+         ,.mem_resp_yumi_i(io_resp_ready_and_i & io_resp_v_o)
 
          ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
          ,.my_cid_i('0)
@@ -132,11 +132,11 @@ module wrapper
 
          ,.mem_cmd_o(io_cmd_o)
          ,.mem_cmd_v_o(io_cmd_v_o)
-         ,.mem_cmd_yumi_i(io_cmd_ready_i & io_cmd_v_o)
+         ,.mem_cmd_yumi_i(io_cmd_ready_and_i & io_cmd_v_o)
 
          ,.mem_resp_i(io_resp_i)
          ,.mem_resp_v_i(io_resp_v_i)
-         ,.mem_resp_ready_o(io_resp_ready_lo)
+         ,.mem_resp_ready_and_o(io_resp_ready_and_lo)
 
          ,.cmd_link_i(proc_cmd_link_lo)
          ,.cmd_link_o(proc_cmd_link_li)

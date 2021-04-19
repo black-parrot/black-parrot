@@ -1,6 +1,6 @@
 # Getting started (Full)
 ## Prerequisites
-### Centos
+### Centos (7 or 8)
 
     yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel expat-devel dtc gtkwave vim-common virtualenv
 
@@ -8,13 +8,17 @@ CentOS 7 requires a more modern gcc to build Linux. If you receive an error such
 
     scl enable devtoolset-8 bash
 
-### Ubuntu
+### Ubuntu (18.04 or 20.04)
 
     sudo apt-get install autoconf automake autotools-dev cmake curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev wget byacc device-tree-compiler python gtkwave vim-common virtualenv python-yaml
 
+cmake3 is required. This is the default on newer versions of Ubuntu, but not necessarily on old versions. 
+
 BlackParrot has been tested extensively on CentOS 7. We have many users who have used Ubuntu for
-development. If not on a relatively recent version of these OSes, we suggest using a
+development. If not on these versions of these OSes, we suggest using a
 Docker image.
+
+Ubuntu on Windows WSL 2.0 seems to work for most things, but you may encounter errors with more complex operations. For instance, compiling Linux is known not to work in this environment. This is considered an experimental build.
 
 ## Build the toolchains
     # Clone the latest repo

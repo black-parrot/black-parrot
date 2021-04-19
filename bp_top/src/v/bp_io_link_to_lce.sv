@@ -26,11 +26,11 @@ module bp_io_link_to_lce
 
    , output [cce_mem_msg_width_lp-1:0]   io_resp_o
    , output                              io_resp_v_o
-   , input                               io_resp_ready_i
+   , input                               io_resp_ready_then_i
 
    , output [lce_req_msg_width_lp-1:0]   lce_req_o
    , output                              lce_req_v_o
-   , input                               lce_req_ready_i
+   , input                               lce_req_ready_then_i
 
    , input [lce_cmd_msg_width_lp-1:0]    lce_cmd_i
    , input                               lce_cmd_v_i
@@ -53,10 +53,10 @@ module bp_io_link_to_lce
   assign lce_req_o  = lce_req_lo;
   assign lce_cmd_li = lce_cmd_i;
 
-  assign lce_req_v_o    = lce_req_ready_i & io_cmd_v_i;
+  assign lce_req_v_o    = lce_req_ready_then_i & io_cmd_v_i;
   assign io_cmd_yumi_o  = lce_req_v_o;
 
-  assign io_resp_v_o    = io_resp_ready_i & lce_cmd_v_i;
+  assign io_resp_v_o    = io_resp_ready_then_i & lce_cmd_v_i;
   assign lce_cmd_yumi_o = io_resp_v_o;
 
   logic [cce_id_width_p-1:0] cce_id_lo;

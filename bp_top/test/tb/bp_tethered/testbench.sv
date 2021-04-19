@@ -6,6 +6,10 @@
 
 `include "bsg_noc_links.vh"
 
+`ifndef BP_SIM_CLK_PERIOD
+`define BP_SIM_CLK_PERIOD 10
+`endif
+
 module testbench
  import bp_common_pkg::*;
  import bp_be_pkg::*;
@@ -43,14 +47,8 @@ module testbench
 
    // Synthesis parameters
    , parameter no_bind_p                   = 0
-
    )
-  (// Bit to deal with initial X->0 transition detection
-   input bit clk_i
-   , input bit reset_i
-   , input bit dram_clk_i
-   , input bit dram_reset_i
-   );
+  (output bit reset_i);
 
   import "DPI-C" context function bit get_finish(int hartid);
   export "DPI-C" function get_dram_period;
@@ -66,8 +64,50 @@ module testbench
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
+// Bit to deal with initial X->0 transition detection
+  bit clk_i;
+  bit dram_clk_i, dram_reset_i;
+  
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
+   #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
+   clock_gen
+    (.o(clk_i));
+  
+  bsg_nonsynth_reset_gen
+   #(.num_clocks_p(1)
+     ,.reset_cycles_lo_p(0)
+     ,.reset_cycles_hi_p(20)
+     )
+   reset_gen
+    (.clk_i(clk_i)
+     ,.async_reset_o(reset_i)
+     );
+  
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
+   #(.cycle_time_p(`dram_pkg::tck_ps))
+   dram_clock_gen
+    (.o(dram_clk_i));
+  
+  bsg_nonsynth_reset_gen
+   #(.num_clocks_p(1)
+     ,.reset_cycles_lo_p(0)
+     ,.reset_cycles_hi_p(10)
+     )
+   dram_reset_gen
+    (.clk_i(dram_clk_i)
+     ,.async_reset_o(dram_reset_i)
+     );
+
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
-  logic proc_io_cmd_v_lo, proc_io_cmd_ready_li;
+  logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li;
   bp_bedrock_cce_mem_msg_s proc_io_resp_li;
   logic proc_io_resp_v_li, proc_io_resp_yumi_lo;
 
@@ -79,7 +119,7 @@ module testbench
   bp_bedrock_cce_mem_msg_s load_cmd_lo;
   logic load_cmd_v_lo, load_cmd_yumi_li;
   bp_bedrock_cce_mem_msg_s load_resp_li;
-  logic load_resp_v_li, load_resp_ready_lo;
+  logic load_resp_v_li, load_resp_ready_and_lo;
 
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0] dma_pkt_lo;
@@ -96,7 +136,7 @@ module testbench
 
      ,.io_cmd_o(proc_io_cmd_lo)
      ,.io_cmd_v_o(proc_io_cmd_v_lo)
-     ,.io_cmd_ready_i(proc_io_cmd_ready_li)
+     ,.io_cmd_ready_and_i(proc_io_cmd_ready_and_li)
 
      ,.io_resp_i(proc_io_resp_li)
      ,.io_resp_v_i(proc_io_resp_v_li)
@@ -108,7 +148,7 @@ module testbench
 
      ,.io_resp_o(load_resp_li)
      ,.io_resp_v_o(load_resp_v_li)
-     ,.io_resp_ready_i(load_resp_ready_lo)
+     ,.io_resp_ready_and_i(load_resp_ready_and_lo)
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
@@ -162,9 +202,10 @@ module testbench
      ,.io_cmd_v_o(load_cmd_v_lo)
      ,.io_cmd_yumi_i(load_cmd_yumi_li)
 
+     // NOTE: IO response ready_o is always high - acts as sink
      ,.io_resp_i(load_resp_li)
      ,.io_resp_v_i(load_resp_v_li)
-     ,.io_resp_ready_o(load_resp_ready_lo)
+     ,.io_resp_ready_and_o(load_resp_ready_and_lo)
 
      ,.done_o()
      );
@@ -199,8 +240,8 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.io_cmd_i(proc_io_cmd_lo)
-     ,.io_cmd_v_i(proc_io_cmd_v_lo & proc_io_cmd_ready_li)
-     ,.io_cmd_ready_o(proc_io_cmd_ready_li)
+     ,.io_cmd_v_i(proc_io_cmd_v_lo)
+     ,.io_cmd_ready_and_o(proc_io_cmd_ready_and_li)
 
      ,.io_resp_o(proc_io_resp_li)
      ,.io_resp_v_o(proc_io_resp_v_li)
@@ -553,16 +594,16 @@ module testbench
               ,.lce_id_i(lce_id_i)
               ,.lce_req_i(lce_req_o)
               ,.lce_req_v_i(lce_req_v_o)
-              ,.lce_req_ready_i(lce_req_ready_i)
+              ,.lce_req_ready_then_i(lce_req_ready_then_i)
               ,.lce_resp_i(lce_resp_o)
               ,.lce_resp_v_i(lce_resp_v_o)
-              ,.lce_resp_ready_i(lce_resp_ready_i)
+              ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
               ,.lce_cmd_i(lce_cmd_i)
               ,.lce_cmd_v_i(lce_cmd_v_i)
               ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
               ,.lce_cmd_o_i(lce_cmd_o)
               ,.lce_cmd_o_v_i(lce_cmd_v_o)
-              ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+              ,.lce_cmd_o_ready_then_i(lce_cmd_ready_then_i)
               );
         end
     end
@@ -571,5 +612,15 @@ module testbench
    #(.bp_params_p(bp_params_p))
    if_verif
     ();
+  
+  `ifndef VERILATOR
+    initial
+      begin      
+        $assertoff();
+        @(posedge clk_i);
+        @(negedge reset_i);
+        $asserton();
+      end
+  `endif
 
 endmodule
