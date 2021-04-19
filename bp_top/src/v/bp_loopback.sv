@@ -18,7 +18,7 @@ module bp_cce_loopback
 
     , input [cce_mem_msg_width_lp-1:0]              mem_cmd_i
     , input                                         mem_cmd_v_i
-    , output                                        mem_cmd_ready_o
+    , output                                        mem_cmd_ready_and_o
 
     , output [cce_mem_msg_width_lp-1:0]             mem_resp_o
     , output                                        mem_resp_v_o
@@ -41,7 +41,7 @@ module bp_cce_loopback
 
      ,.data_i(mem_cmd_cast_i.header)
      ,.v_i(mem_cmd_v_i)
-     ,.ready_o(mem_cmd_ready_o)
+     ,.ready_o(mem_cmd_ready_and_o)
 
      ,.data_o(mem_resp_cast_o.header)
      ,.v_o(mem_resp_v_o)

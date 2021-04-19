@@ -112,7 +112,7 @@ assign cfg_mem_cmd = '{header: cfg_mem_cmd_lo.header
 bp_bedrock_cce_mem_msg_s mem_resp;
 logic                    mem_resp_v, mem_resp_yumi;
 bp_bedrock_cce_mem_msg_s mem_cmd;
-logic                    mem_cmd_v, mem_cmd_ready;
+logic                    mem_cmd_v, mem_cmd_ready_then;
 
 // LCE-CCE IF
 bp_bedrock_lce_req_msg_s  lce_req_lo, lce_req;
@@ -176,11 +176,11 @@ bp_me_nonsynth_mock_lce #(
 
   ,.lce_req_o(lce_req_lo)
   ,.lce_req_v_o(lce_req_v_lo)
-  ,.lce_req_ready_i(lce_req_ready_li)
+  ,.lce_req_ready_then_i(lce_req_ready_li)
 
   ,.lce_resp_o(lce_resp_lo)
   ,.lce_resp_v_o(lce_resp_v_lo)
-  ,.lce_resp_ready_i(lce_resp_ready_li)
+  ,.lce_resp_ready_then_i(lce_resp_ready_li)
 
   ,.lce_cmd_i(lce_cmd)
   ,.lce_cmd_v_i(lce_cmd_v)
@@ -188,7 +188,7 @@ bp_me_nonsynth_mock_lce #(
 
   ,.lce_cmd_o(lce_cmd_out_lo)
   ,.lce_cmd_v_o(lce_cmd_out_v_lo)
-  ,.lce_cmd_ready_i(lce_cmd_out_ready_li)
+  ,.lce_cmd_ready_then_i(lce_cmd_out_ready_li)
 );
 
 bind bp_me_nonsynth_mock_lce
@@ -204,16 +204,16 @@ bind bp_me_nonsynth_mock_lce
       ,.lce_id_i(lce_id_i)
       ,.lce_req_i(lce_req_o)
       ,.lce_req_v_i(lce_req_v_o)
-      ,.lce_req_ready_i(lce_req_ready_i)
+      ,.lce_req_ready_then_i(lce_req_ready_then_i)
       ,.lce_resp_i(lce_resp_o)
       ,.lce_resp_v_i(lce_resp_v_o)
-      ,.lce_resp_ready_i(lce_resp_ready_i)
+      ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
       ,.lce_cmd_i(lce_cmd_i)
       ,.lce_cmd_v_i(lce_cmd_v_i)
       ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
       ,.lce_cmd_o_i(lce_cmd_o)
       ,.lce_cmd_o_v_i(lce_cmd_v_o)
-      ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+      ,.lce_cmd_o_ready_then_i(lce_cmd_ready_then_i)
       );
 
 bind bp_me_nonsynth_mock_lce
@@ -389,7 +389,7 @@ wrapper
 
   ,.mem_cmd_o(mem_cmd)
   ,.mem_cmd_v_o(mem_cmd_v)
-  ,.mem_cmd_ready_i(mem_cmd_ready)
+  ,.mem_cmd_ready_i(mem_cmd_ready_then)
 );
 
 
@@ -414,7 +414,7 @@ mem_cmd_buffer
   // from CCE
   ,.v_i(mem_cmd_v)
   ,.data_i(mem_cmd)
-  ,.ready_o(mem_cmd_ready)
+  ,.ready_o(mem_cmd_ready_then)
   // to memory
   ,.v_o(mem_cmd_v_lo)
   ,.data_o(mem_cmd_lo)
@@ -453,7 +453,7 @@ mem
 
   ,.mem_cmd_i(mem_cmd_lo)
   ,.mem_cmd_v_i(mem_cmd_v_lo & mem_cmd_ready_lo)
-  ,.mem_cmd_ready_o(mem_cmd_ready_lo)
+  ,.mem_cmd_ready_and_o(mem_cmd_ready_lo)
 
   ,.mem_resp_o(mem_resp_lo)
   ,.mem_resp_v_o(mem_resp_v_lo)
@@ -471,7 +471,7 @@ bp_mem_nonsynth_tracer
 
    ,.mem_cmd_i(mem_cmd)
    ,.mem_cmd_v_i(mem_cmd_v)
-   ,.mem_cmd_ready_i(mem_cmd_ready)
+   ,.mem_cmd_ready_and_i(mem_cmd_ready_then)
 
    ,.mem_resp_i(mem_resp)
    ,.mem_resp_v_i(mem_resp_v)
@@ -488,7 +488,7 @@ bp_cfg
 
    ,.mem_cmd_i(cfg_mem_cmd)
    ,.mem_cmd_v_i(cfg_mem_cmd_v_lo)
-   ,.mem_cmd_ready_o(cfg_mem_cmd_ready_li)
+   ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_li)
 
    ,.mem_resp_o()
    ,.mem_resp_v_o(cfg_resp_v_lo)
