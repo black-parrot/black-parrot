@@ -81,7 +81,7 @@ double ran()
 
 int spec_init () {
     int i, j;
-    debug(3,"spec_init\n");
+    //    debug(3,"spec_init\n");
 
     /* Clear the spec_fd structure */
 
@@ -132,7 +132,8 @@ int spec_random_load (int fd) {
 }
 
 int spec_load (int num, char *filename, int size) {
-#define FILE_CHUNK (128*1024)
+  //#define FILE_CHUNK (128*1024)
+  int FILE_CHUNK = (size < (128*1024)) ? size : (128*1024);
     int fd, rc, i;
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -158,7 +159,7 @@ int spec_load (int num, char *filename, int size) {
     while (spec_fd[num].len < size) {
 	int tmp = size - spec_fd[num].len;
 	if (tmp > spec_fd[num].len) tmp = spec_fd[num].len;
-	debug1(3,"Duplicating %d bytes\n", tmp);
+  //	debug1(3,"Duplicating %d bytes\n", tmp);
 	memcpy(spec_fd[num].buf+spec_fd[num].len, spec_fd[num].buf, tmp);
 	spec_fd[num].len += tmp;
     }
@@ -276,54 +277,23 @@ int main (int argc, char *argv[]) {
     spec_fd[2].limit=input_size*MB;
     spec_init();
 
-    //debug_time();
-    //debug(2, "Loading Input Data\n");
-
-    char before[6] = "before";
-    for (i=0; i<6; i++)
-      bp_cprint(before[i]);
 
     spec_load(0, input_name, input_size*MB);
 
-    char after[5] = "after";
-    for (i=0; i<5; i++)
-      bp_cprint(after[i]);
-    ////    spec_fd[0].buf
-
-      /////////////////////////////////////////////////////////////
-
-
-    //debug1(3, "Input data %d bytes in length\n", spec_fd[0].len);
-    //debug1(2, " @@@@@@@@@@@@@@@@@@@@ \n Input size  %d  \n", input_size);
-    
-    //validate_array = (unsigned char *)malloc(input_size/**MB*//1024);
-    //if (validate_array == NULL) {
-    //printf ("main: Error mallocing memory!\n");
-    //exit (1);
-    // }
-//Save off one byte every ~1k for validation
-    //for (i = 0; i*VALIDATE_SKIP < input_size/**MB*/; i++) {
-    //validate_array[i] = spec_fd[0].buf[i*VALIDATE_SKIP];
-    // }
-
-    
-    //#ifdef DEBUG_DUMP
-    /*fd = open ("out.uncompressed", O_RDWR|O_CREAT, 0644);
-    write(fd, spec_fd[0].buf, spec_fd[0].len);
-    close(fd);*/
-    //#endif
-
-  spec_initbufs();
+    spec_initbufs();
     //for (level=1; level <= 9; level += 2) {
-  level = 1;
-	//debug_time();
-	//debug1(2, "Compressing Input Data, level %d\n", level);
+    level = 1;
 
-  
-  //cceip code-hardware gzip
-  /*  
+    spec_compress(0,1, level);
+
+  //zipline- cceip code-hardware gzip
+  /*
+  uint64_t mstatus_val = 0x0000000000000008;
+  uint64_t mie_val = 0x0000000000000800;
+  __asm__ volatile("csrw mstatus, %0":: "rK"(mstatus_val));
+  __asm__ volatile("csrw mie, %0":: "rK"(mie_val));
+   
   struct Zipline_CSR zipline_csr;
-  size_t len = 0;
 
   struct dma_cfg dma_tlv_header [5];
   uint64_t tlv_headers [14];
@@ -358,16 +328,9 @@ int main (int argc, char *argv[]) {
   dma_tlv_header[3].type = 3;
   dma_tlv_header[3].part = 1;
 
-  char aa[4] = "zero";
-  for (i=0; i<4; i++)
-    bp_cprint(aa[i]);
   
-  
-  for (i=0; i<4; i++)
-    bp_cprint(aa[i]);  
-
   dma_tlv_header[4].data_ptr = (uint64_t *) spec_fd[0].buf;
-  dma_tlv_header[4].length = input_size*MB/8;
+  dma_tlv_header[4].length = input_size*MB/8;//input_size/8; //input_size*MB/8;
   dma_tlv_header[4].type = 3;
   dma_tlv_header[4].part = 2;
 
@@ -379,26 +342,16 @@ int main (int argc, char *argv[]) {
   dma_tlv_header[5].type = 4;
  
   
-  char e[5] = "third";
-  for (i=0; i<5; i++)
-    bp_cprint(e[i]);
-  
+    
   //type:1, streaming
   zipline_csr.input_ptr = dma_tlv_header;
   zipline_csr.resp_ptr =  (uint64_t *) spec_fd[1].buf;
-  uint64_t tlv_num, comp_size;
+  uint64_t tlv_num;//, comp_size;
     
-  char f[6] = "fourth";
-  for (i=0; i<6; i++)
-    bp_cprint(f[i]);
-    
+      
   tlv_num = bp_call_zipline_accelerator(1, zipline_csr, 6);
-    
-    
-  char g[5] = "fifth";
-  for (i=0; i<5; i++)
-    bp_cprint(g[i]);
-  */   
+  */        
+
   /*
   comp_size = (tlv_num-1) * 8;
     
@@ -413,59 +366,13 @@ int main (int argc, char *argv[]) {
       bp_cprint(TO_HEX((uint8_t)((spec_fd[1].buf[j]>>i*4) & 0x0F)));
   
   */
-  
 
-
-
+  /*      bp_finish(0);
+          __asm__ volatile("fence": : :); */
   //software compress
-  spec_compress(0,1, level);
 
-	//debug_time();
-	//debug1(3, "Compressed data %d bytes in length\n", spec_fd[1].len);
-  
-//#ifdef DEBUG_DUMP
-	//{
-  /*  char buf[256];
-	    sprintf(buf, "/project/risc-v/software/black-parrot/out.compress.%d", level);
-	    fd = open (buf, O_RDWR|O_CREAT, 0644);
-	    write(fd, spec_fd[1].buf, spec_fd[1].len);
-	    close(fd);*/
-      //	}
-  //#endif
-  /*
-	spec_reset(0);
-	spec_rewind(1);
 
-	debug_time();
-	debug(2, "Uncompressing Data\n");
-	spec_uncompress(1,0, level);
-	debug_time();
-	debug1(3, "Uncompressed data %d bytes in length\n", spec_fd[0].len);
-
-#ifdef DEBUG_DUMP
-	{
-	    char buf[256];
-	    sprintf(buf, "out.uncompress.%d", level);
-	    fd = open (buf, O_RDWR|O_CREAT, 0644);
-	    write(fd, spec_fd[0].buf, spec_fd[0].len);
-	    close(fd);
-	}
-#endif
-
-	for (i = 0; i*VALIDATE_SKIP < input_size*MB; i++) {
-	    if (validate_array[i] != spec_fd[0].buf[i*VALIDATE_SKIP]) {
-		printf ("Tested %dMB buffer: Miscompared!!\n", input_size);
-		exit (1);
-	    }
-	}
-	debug_time();
-	debug(3, "Uncompressed data compared correctly\n");
-	spec_reset(1);
-	spec_rewind(0);*/
-  //} for loop
-  //    printf ("Tested %dMB buffer: OK!\n", input_size);
-
-    timeend();
+  timeend();
 
     return 0;
 }
