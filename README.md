@@ -76,6 +76,9 @@ BlackParrot is written in standard SystemVerilog, using a subset of the language
 ## Software Developer Guide
 BlackParrot is Linux-capable, so it is possible to run all programs which run on BusyBox. However, for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some platform-specific features are only available at the firmware level. Developers looking to write low-level BlackParrot code, or optimize for the BlackParrot platform should look at our [SW Developer Guide](docs/software_guide.md)
 
+## Accelerator Developer Guide
+https://docs.google.com/document/d/1Kyg9ZbOFwrvJM_SAT5E9NbDdH90fLNpFBq-gggwMW4U/edit?usp=sharing
+
 ## Interface Specification
 BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow, latency-insensitive interfaces. The interfaces are designed to allow implementations of the various system components to change independently of one another, without worrying about cascading functional or timing effects. Read more about BlackParrot's standardized interfaces here: [Interface Specification](docs/interface_specification.md)
 
