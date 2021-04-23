@@ -68,7 +68,8 @@ module bp_be_calculator_top
   , input                                           cache_req_busy_i
   , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
   , output logic                                    cache_req_metadata_v_o
-  , input                                           cache_req_critical_i
+  , input                                           cache_req_critical_tag_i
+  , input                                           cache_req_critical_data_i
   , input                                           cache_req_complete_i
   , input                                           cache_req_credits_full_i
   , input                                           cache_req_credits_empty_i
@@ -113,7 +114,7 @@ module bp_be_calculator_top
   logic pipe_mem_dtlb_store_miss_lo;
   logic pipe_mem_dtlb_load_miss_lo;
   logic pipe_mem_dcache_miss_lo;
-  logic pipe_mem_fencei_lo;
+  logic pipe_mem_fencei_clean_lo, pipe_mem_fencei_dirty_lo;
   logic pipe_mem_load_misaligned_lo;
   logic pipe_mem_load_access_fault_lo;
   logic pipe_mem_load_page_fault_lo;
@@ -199,7 +200,7 @@ module bp_be_calculator_top
      );
 
   // Computation pipelines
-  // System pipe: 3 cycle latency
+  // System pipe: 1 cycle latency
   bp_be_pipe_sys
    #(.bp_params_p(bp_params_p))
    pipe_sys
@@ -252,7 +253,7 @@ module bp_be_calculator_top
 
   // Aux pipe: 2 cycle latency
   bp_be_pipe_aux
-   #(.bp_params_p(bp_params_p), .latency_p(3))
+   #(.bp_params_p(bp_params_p), .latency_p(2))
    pipe_aux
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -291,7 +292,8 @@ module bp_be_calculator_top
      ,.cache_req_busy_i(cache_req_busy_i)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-     ,.cache_req_critical_i(cache_req_critical_i)
+     ,.cache_req_critical_tag_i(cache_req_critical_tag_i)
+     ,.cache_req_critical_data_i(cache_req_critical_data_i)
      ,.cache_req_complete_i(cache_req_complete_i)
      ,.cache_req_credits_full_i(cache_req_credits_full_i)
      ,.cache_req_credits_empty_i(cache_req_credits_empty_i)
@@ -314,7 +316,8 @@ module bp_be_calculator_top
      ,.tlb_store_miss_v_o(pipe_mem_dtlb_store_miss_lo)
      ,.tlb_load_miss_v_o(pipe_mem_dtlb_load_miss_lo)
      ,.cache_miss_v_o(pipe_mem_dcache_miss_lo)
-     ,.fencei_v_o(pipe_mem_fencei_lo)
+     ,.fencei_clean_v_o(pipe_mem_fencei_clean_lo)
+     ,.fencei_dirty_v_o(pipe_mem_fencei_dirty_lo)
      ,.load_misaligned_v_o(pipe_mem_load_misaligned_lo)
      ,.load_access_fault_v_o(pipe_mem_load_access_fault_lo)
      ,.load_page_fault_v_o(pipe_mem_load_page_fault_lo)
@@ -392,12 +395,12 @@ module bp_be_calculator_top
       comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo        : '0;
       comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo        : '0;
       comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo  : '0;
-      comp_stage_n[3].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo        : '0;
+      comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo        : '0;
       comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo  : '0;
       comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo        : '0;
       comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo        : '0;
 
-      comp_stage_n[3].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo      : '0;
+      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo      : '0;
       comp_stage_n[5].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo      : '0;
 
       comp_stage_n[0].ird_w_v    &= exc_stage_n[0].v;
@@ -460,7 +463,8 @@ module bp_be_calculator_top
           exc_stage_n[1].exc.store_page_fault   |= pipe_mem_store_page_fault_lo;
 
           exc_stage_n[2].exc.dcache_miss        |= pipe_mem_dcache_miss_lo;
-          exc_stage_n[2].spec.fencei            |= pipe_mem_fencei_lo;
+          exc_stage_n[2].exc.fencei_dirty       |= pipe_mem_fencei_dirty_lo;
+          exc_stage_n[2].spec.fencei_clean      |= pipe_mem_fencei_clean_lo;
           exc_stage_n[2].exc.cmd_full           |= |{exc_stage_r[2].exc, exc_stage_r[2].spec} & cmd_full_n_i;
     end
 

@@ -58,7 +58,7 @@ module bp_unicore_lite
   logic icache_req_v_lo, icache_req_yumi_li, icache_req_busy_li;
   bp_icache_req_metadata_s icache_req_metadata_lo;
   logic icache_req_metadata_v_lo;
-  logic icache_req_critical_li, icache_req_complete_li;
+  logic icache_req_critical_tag_li, icache_req_critical_data_li, icache_req_complete_li;
   logic icache_req_credits_full_li, icache_req_credits_empty_li;
 
   bp_icache_tag_mem_pkt_s icache_tag_mem_pkt_li;
@@ -77,7 +77,7 @@ module bp_unicore_lite
   logic dcache_req_v_lo, dcache_req_yumi_li, dcache_req_busy_li;
   bp_dcache_req_metadata_s dcache_req_metadata_lo;
   logic dcache_req_metadata_v_lo;
-  logic dcache_req_critical_li, dcache_req_complete_li;
+  logic dcache_req_critical_tag_li, dcache_req_critical_data_li, dcache_req_complete_li;
   logic dcache_req_credits_full_li, dcache_req_credits_empty_li;
 
   bp_dcache_tag_mem_pkt_s dcache_tag_mem_pkt_li;
@@ -152,8 +152,9 @@ module bp_unicore_lite
      ,.icache_req_busy_i(icache_req_busy_li)
      ,.icache_req_metadata_o(icache_req_metadata_lo)
      ,.icache_req_metadata_v_o(icache_req_metadata_v_lo)
+     ,.icache_req_critical_tag_i(icache_req_critical_tag_li)
+     ,.icache_req_critical_data_i(icache_req_critical_data_li)
      ,.icache_req_complete_i(icache_req_complete_li)
-     ,.icache_req_critical_i(icache_req_critical_li)
      ,.icache_req_credits_full_i(icache_req_credits_full_li)
      ,.icache_req_credits_empty_i(icache_req_credits_empty_li)
 
@@ -178,8 +179,9 @@ module bp_unicore_lite
      ,.dcache_req_busy_i(dcache_req_busy_li)
      ,.dcache_req_metadata_o(dcache_req_metadata_lo)
      ,.dcache_req_metadata_v_o(dcache_req_metadata_v_lo)
+     ,.dcache_req_critical_tag_i(dcache_req_critical_tag_li)
+     ,.dcache_req_critical_data_i(dcache_req_critical_data_li)
      ,.dcache_req_complete_i(dcache_req_complete_li)
-     ,.dcache_req_critical_i(dcache_req_critical_li)
      ,.dcache_req_credits_full_i(dcache_req_credits_full_li)
      ,.dcache_req_credits_empty_i(dcache_req_credits_empty_li)
 
@@ -227,7 +229,8 @@ module bp_unicore_lite
     ,.cache_req_busy_o(dcache_req_busy_li)
     ,.cache_req_metadata_i(dcache_req_metadata_lo)
     ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
-    ,.cache_req_critical_o(dcache_req_critical_li)
+    ,.cache_req_critical_tag_o(dcache_req_critical_tag_li)
+    ,.cache_req_critical_data_o(dcache_req_critical_data_li)
     ,.cache_req_complete_o(dcache_req_complete_li)
     ,.cache_req_credits_full_o(dcache_req_credits_full_li)
     ,.cache_req_credits_empty_o(dcache_req_credits_empty_li)
@@ -277,7 +280,8 @@ module bp_unicore_lite
      ,.cache_req_busy_o(icache_req_busy_li)
      ,.cache_req_metadata_i(icache_req_metadata_lo)
      ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
-     ,.cache_req_critical_o(icache_req_critical_li)
+     ,.cache_req_critical_tag_o(icache_req_critical_tag_li)
+     ,.cache_req_critical_data_o(icache_req_critical_data_li)
      ,.cache_req_complete_o(icache_req_complete_li)
      ,.cache_req_credits_full_o(icache_req_credits_full_li)
      ,.cache_req_credits_empty_o(icache_req_credits_empty_li)

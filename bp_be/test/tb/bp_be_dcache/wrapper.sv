@@ -72,7 +72,7 @@ module wrapper
    // Miss, Management Interfaces
    logic [num_caches_p-1:0] cache_req_v_lo, cache_req_metadata_v_lo;
    logic [num_caches_p-1:0] cache_req_yumi_lo, cache_req_busy_lo;
-   logic [num_caches_p-1:0] cache_req_complete_lo, cache_req_critical_lo;
+   logic [num_caches_p-1:0] cache_req_complete_lo, cache_req_critical_tag_lo, cache_req_critical_data_lo;
    logic [num_caches_p-1:0][dcache_req_width_lp-1:0] cache_req_lo;
    logic [num_caches_p-1:0][dcache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
 
@@ -217,7 +217,7 @@ module wrapper
 
        ,.ptag_v_i(1'b1)
        ,.ptag_i(rolly_ptag_r[i])
-       ,.uncached_i(rolly_uncached_r[i])
+       ,.ptag_uncached_i(rolly_uncached_r[i])
 
        ,.flush_i(poison_li[i])
        ,.replay_pending_o()
@@ -229,7 +229,8 @@ module wrapper
        ,.cache_req_yumi_i(cache_req_yumi_lo[i])
        ,.cache_req_busy_i(cache_req_busy_lo[i])
        ,.cache_req_complete_i(cache_req_complete_lo[i])
-       ,.cache_req_critical_i(cache_req_critical_lo[i])
+       ,.cache_req_critical_tag_i(cache_req_critical_tag_lo[i])
+       ,.cache_req_critical_data_i(cache_req_critical_data_lo[i])
        ,.cache_req_credits_full_i(cache_req_credits_full_lo[i])
        ,.cache_req_credits_empty_i(cache_req_credits_empty_lo[i])
 
@@ -278,7 +279,8 @@ module wrapper
               ,.cache_req_busy_o(cache_req_busy_lo[i])
               ,.cache_req_metadata_i(cache_req_metadata_lo[i])
               ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
-              ,.cache_req_critical_o(cache_req_critical_lo[i])
+              ,.cache_req_critical_tag_o(cache_req_critical_tag_lo[i])
+              ,.cache_req_critical_data_o(cache_req_critical_data_lo[i])
               ,.cache_req_complete_o(cache_req_complete_lo[i])
               ,.cache_req_credits_full_o(cache_req_credits_full_lo[i])
               ,.cache_req_credits_empty_o(cache_req_credits_empty_lo[i])
@@ -397,7 +399,8 @@ module wrapper
              ,.cache_req_busy_o(cache_req_busy_lo)
              ,.cache_req_metadata_i(cache_req_metadata_lo)
              ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-             ,.cache_req_critical_o(cache_req_critical_lo)
+             ,.cache_req_critical_tag_o(cache_req_critical_tag_lo)
+             ,.cache_req_critical_data_o(cache_req_critical_data_lo)
              ,.cache_req_complete_o(cache_req_complete_lo)
              ,.cache_req_credits_full_o(cache_req_credits_full_lo)
              ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
