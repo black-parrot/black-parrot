@@ -28,5 +28,6 @@ BSG_CADENV_DIR ?= $(TOP)/external/bsg_cadenv
 -include $(BP_HDK_DIR)/Makefile.common
 -include $(BP_SDK_DIR)/Makefile.common
 
-# Makes clones much faster. Comment out if you see "fatal: reference is not a tree"
-SHALLOW_SUB ?= --depth=1
+# Makes clones much faster. Try setting to --depth=1, otherwise leave
+# unset if you see "fatal: reference is not a tree"
+export SHALLOW_SUB ?=
