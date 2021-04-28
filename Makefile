@@ -10,6 +10,7 @@ libs:
 
 sdk_checkout:
 	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_SDK_DIR)
+	$(MAKE) -C $(BP_SDK_DIR) checkout
 
 hdk_checkout:
 	cd $(TOP); git submodule update --init --checkout $(SHALLOW_SUB) $(BP_HDK_DIR)
