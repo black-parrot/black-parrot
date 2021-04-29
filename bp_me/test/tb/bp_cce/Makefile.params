@@ -19,7 +19,6 @@ export LCE_MODE_P ?= 0
 export ME_TEST_P ?= 0
 
 COH_PROTO   ?= mesi
-CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms
 CCE_MEM      = $(COH_PROTO).mem
 
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
