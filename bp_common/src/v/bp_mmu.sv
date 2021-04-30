@@ -22,7 +22,7 @@ module bp_mmu
    , input                                            sum_i
    , input                                            uncached_mode_i
    , input                                            nonspec_mode_i
-   , input [domain_width_p-1:0]                       domain_mask_i
+   , input [hio_width_p-1:0]                       hio_mask_i
 
    , input                                            w_v_i
    , input [vtag_width_p-1:0]                         w_vtag_i
@@ -138,14 +138,14 @@ module bp_mmu
 
   // Fault if higher bits of eaddr do not match vaddr MSB
   wire eaddr_fault_v = ~&r_etag_r[etag_width_p-1:vtag_width_p-1] & |r_etag_r[etag_width_p-1:vtag_width_p-1];
-  // Fault if domain bit is not enabled and we're accessing that domain
-  wire domain_fault_v = (r_instr_r & ptag_lo[ptag_width_p-1-:domain_width_p] != '0)
-    || (ptag_lo[ptag_width_p-1-:domain_width_p] & ~domain_mask_i);
+  // Fault if hio bit is not enabled and we're accessing that hio
+  wire hio_fault_v = (r_instr_r & ptag_lo[ptag_width_p-1-:hio_width_p] != '0)
+    || (ptag_lo[ptag_width_p-1-:hio_width_p] & ~hio_mask_i);
 
   // Access faults
-  wire instr_access_fault_v = r_instr_r & domain_fault_v;
-  wire load_access_fault_v  = r_load_r  & domain_fault_v;
-  wire store_access_fault_v = r_store_r & domain_fault_v;
+  wire instr_access_fault_v = r_instr_r & hio_fault_v;
+  wire load_access_fault_v  = r_load_r  & hio_fault_v;
+  wire store_access_fault_v = r_store_r & hio_fault_v;
   wire any_access_fault_v   = |{instr_access_fault_v, load_access_fault_v, store_access_fault_v};
 
   // Page faults
