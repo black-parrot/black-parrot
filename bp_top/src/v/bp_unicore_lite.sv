@@ -47,7 +47,7 @@ module bp_unicore_lite
    , output logic                                      mem_resp_yumi_o
    );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
@@ -382,11 +382,11 @@ module bp_unicore_lite
   wire [dev_id_width_gp-1:0] device_cmd_li = local_addr_cast.dev;
 
   wire local_cmd_li        = (proc_cmd_selected_lo.header.addr < dram_base_addr_gp);
-  wire is_other_domain     = (proc_cmd_selected_lo.header.addr[paddr_width_p-1-:domain_width_p] != 0);
+  wire is_other_hio     = (proc_cmd_selected_lo.header.addr[paddr_width_p-1-:hio_width_p] != 0);
   wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
   wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
-  wire is_io_cmd           = (local_cmd_li & (device_cmd_li inside {boot_dev_gp, host_dev_gp})) | is_other_domain;
-  wire is_mem_cmd          = (~local_cmd_li & ~is_other_domain) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
+  wire is_io_cmd           = (local_cmd_li & (device_cmd_li inside {boot_dev_gp, host_dev_gp})) | is_other_hio;
+  wire is_mem_cmd          = (~local_cmd_li & ~is_other_hio) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_mem_cmd;
 
   assign cfg_cmd_v_li      = |proc_cmd_grant_lo & cfg_cmd_ready_and_lo & is_cfg_cmd;
