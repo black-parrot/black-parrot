@@ -51,7 +51,10 @@ else
 	export PADDR_WIDTH ?= $(_PADDR_WIDTH)
 endif
 
-_UCODE_CFG :=$(findstring cce_ucode,$(CFG))
+e_bp_custom_cfg_ucode := 1
+$(CFG)_ucode ?= $(findstring cce_ucode,$(CFG))
+
+_UCODE_CFG ?= $($(CFG)_ucode)
 ifeq ($(_UCODE_CFG),)
 	export UCODE_CFG ?= 0
 else
