@@ -40,7 +40,7 @@
   localparam cfg_reg_did_gp            = 'h0006;
   localparam cfg_reg_cord_gp           = 'h0007;
   localparam cfg_reg_host_did_gp       = 'h0008;
-  localparam cfg_reg_domain_mask_gp    = 'h0009;
+  localparam cfg_reg_hio_mask_gp       = 'h0009;
   localparam cfg_reg_icache_id_gp      = 'h0021;
   localparam cfg_reg_icache_mode_gp    = 'h0022;
   localparam cfg_reg_dcache_id_gp      = 'h0042;

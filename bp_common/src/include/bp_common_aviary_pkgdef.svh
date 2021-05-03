@@ -69,7 +69,8 @@
     //   Only tested for 40-bit physical address
     integer unsigned paddr_width;
     // The max size of the connected DRAM i.e. cached address space
-    integer unsigned dram_max_size;
+    //   Only tested for 32-bit cacheable address (4 GB space, with 2 GB local I/O)
+    integer unsigned caddr_width;
     // Address space ID width
     //   Currently unused, so set to 1 bit
     integer unsigned asid_width;
@@ -206,8 +207,7 @@
 
       ,vaddr_width: 39
       ,paddr_width: 40
-      // 4 GB
-      ,dram_max_size : (1 << 31)
+      ,caddr_width: 32
       ,asid_width : 1
 
       ,boot_pc       : dram_base_addr_gp
@@ -766,7 +766,7 @@
 
       ,`bp_aviary_define_override(vaddr_width, BP_VADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(paddr_width, BP_PADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(dram_max_size, BP_DRAM_MAX_SIZE, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(caddr_width, BP_CADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(asid_width, BP_ASID_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(boot_pc, BP_BOOT_PC, `BP_CUSTOM_BASE_CFG)

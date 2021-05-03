@@ -45,7 +45,7 @@ export TB_PARAMS  = \
     -pvalue+lce_tr_trace_p=$(LCE_TR_TRACE_P) \
     -pvalue+dram_trace_p=$(DRAM_TRACE_P) \
 
-export DUT_DEFINES =
+export DUT_DEFINES = $(foreach def,$(DEFINES),+define+$(def))
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
 					 +define+den2048Mb+sg5+x16+FULL_MEM
 

@@ -24,9 +24,9 @@ module bp_cce_mmio_cfg_loader
     , parameter cce_ucode_filename_p  = "cce_ucode.mem"
     , parameter skip_ram_init_p       = 0
     , parameter clear_freeze_p        = 0
-    // Change the last 8 bits of the data below to indicate the domains
+    // Change the last 8 bits of the data below to indicate the hios
     // to be enabled.
-    , parameter domain_mask_p         = 64'h0000_0000_0000_0001
+    , parameter hio_mask_p         = 64'h0000_0000_0000_0001
 
     , localparam bp_pc_entry_point_gp=39'h10_3000
     )
@@ -308,8 +308,8 @@ module bp_cce_mmio_cfg_loader
           core_cnt_clr = core_prog_done & credits_empty_lo;
 
           cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_reg_domain_mask_gp;
-          cfg_data_lo = domain_mask_p;
+          cfg_addr_lo = cfg_reg_hio_mask_gp;
+          cfg_data_lo = hio_mask_p;
         end
         BP_FREEZE_CLR: begin
           state_n = core_prog_done ? WAIT_FOR_CREDITS : BP_FREEZE_CLR;
