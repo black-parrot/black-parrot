@@ -421,8 +421,6 @@ module bp_be_dcache
   logic [lg_dcache_assoc_lp-1:0] lru_encode;
   wire [lg_dcache_assoc_lp-1:0] lru_way_li = invalid_exist ? invalid_way : lru_encode;
 
-  wire [3:0] byte_offset_tv = paddr_tv_r[0+:4];
-
   logic [lg_dcache_assoc_lp-1:0] store_hit_way_tv;
   logic store_hit_tv;
   bsg_encode_one_hot
@@ -576,9 +574,8 @@ module bp_be_dcache
   // DM Stage
   /////////////////////////////////////////////////////////////////////////////
   logic [dword_width_gp-1:0] data_dm_r;
-  logic [3:0] byte_offset_dm_r;
-  logic double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r;
-  logic signed_op_dm_r, float_op_dm_r;
+  logic [paddr_width_p-1:0] paddr_dm_r;
+  bp_be_dcache_decode_s decode_dm_r;
 
   assign safe_dm_we = early_v_o;
   assign dm_we = safe_dm_we & ~flush_i;
@@ -594,20 +591,12 @@ module bp_be_dcache
      );
 
   bsg_dff_en
-   #(.width_p(dword_width_gp+4+6))
+   #(.width_p(dword_width_gp+paddr_width_p+$bits(bp_be_dcache_decode_s)))
    dm_stage_reg
     (.clk_i(clk_i)
      ,.en_i(dm_we)
-     ,.data_i({result_data, byte_offset_tv
-               ,decode_tv_r.double_op, decode_tv_r.word_op
-               ,decode_tv_r.half_op, decode_tv_r.byte_op
-               ,decode_tv_r.signed_op, decode_tv_r.float_op
-               })
-     ,.data_o({data_dm_r, byte_offset_dm_r
-               ,double_op_dm_r, word_op_dm_r
-               ,half_op_dm_r, byte_op_dm_r
-               ,signed_op_dm_r, float_op_dm_r
-               })
+     ,.data_i({result_data, paddr_tv_r, decode_tv_r})
+     ,.data_o({data_dm_r, paddr_dm_r, decode_dm_r})
      );
 
   logic [3:0][dword_width_gp-1:0] sigext_byte;
@@ -620,11 +609,11 @@ module bp_be_dcache
        #(.width_p(slice_width_lp), .els_p(dword_width_gp/slice_width_lp))
        align_mux
         (.data_i(data_dm_r)
-         ,.sel_i(byte_offset_dm_r[i+:`BSG_MAX(1, 3-i)])
+         ,.sel_i(paddr_dm_r[i+:`BSG_MAX(1, 3-i)])
          ,.data_o(slice_data)
          );
 
-      wire sigext = signed_op_dm_r & slice_data[slice_width_lp-1];
+      wire sigext = decode_dm_r.signed_op & slice_data[slice_width_lp-1];
       assign sigext_byte[i] = {{(dword_width_gp-slice_width_lp){sigext}}, slice_data};
     end
 
@@ -633,7 +622,7 @@ module bp_be_dcache
    #(.width_p(dword_width_gp), .els_p(4))
    byte_mux
     (.data_i(sigext_byte)
-     ,.sel_one_hot_i({double_op_dm_r, word_op_dm_r, half_op_dm_r, byte_op_dm_r})
+     ,.sel_one_hot_i({decode_dm_r.double_op, decode_dm_r.word_op, decode_dm_r.half_op, decode_dm_r.byte_op})
      ,.data_o(final_int_data)
      );
 
@@ -642,13 +631,13 @@ module bp_be_dcache
    #(.bp_params_p(bp_params_p))
    fp_to_rec
     (.raw_i(final_int_data)
-     ,.raw_sp_not_dp_i(word_op_dm_r)
+     ,.raw_sp_not_dp_i(decode_dm_r.word_op)
 
      ,.rec_sp_not_dp_o(final_float_data.sp_not_dp)
      ,.rec_o(final_float_data.rec)
      );
 
-  assign final_data_o = float_op_dm_r ? final_float_data : final_int_data;
+  assign final_data_o = decode_dm_r.float_op ? final_float_data : final_int_data;
   assign final_v_o = v_dm_r;
 
   ///////////////////////////
