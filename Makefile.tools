@@ -1,11 +1,15 @@
+
+.PHONY: verilator bsg_sv2v dromajo
+
 verilator_dir := $(BP_TOOLS_DIR)/verilator
+dromajo_dir   := $(BP_TOOLS_DIR)/dromajo
 bsg_sv2v_dir  := $(BP_TOOLS_DIR)/bsg_sv2v
 
 define submodule_tool_template
 $(1)_tag ?= $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
 $(BP_TOOLS_TOUCH_DIR)/$$($(1)_tag):
 	rm -rf $(BP_TOOLS_TOUCH_DIR)/$(1).*
-	cd $(BP_TOOLS_DIR); git submodule update --init --recursive $(SHALLOW_SUB) --checkout $$($(1)_dir)
+	cd $(BP_TOOLS_DIR); git submodule update --init --recursive --checkout $$($(1)_dir)
 	+$(MAKE) $(1)_build
 	touch $(BP_TOOLS_TOUCH_DIR)/$$($(1)_tag)
 $(1): | $(BP_TOOLS_TOUCH_DIR)/$$($(1)_tag)
@@ -20,9 +24,18 @@ verilator_build:
 	$(MAKE) -C $(verilator_dir)
 	$(MAKE) -C $(verilator_dir) install
 
+dromajo_build:
+	mkdir -p $(dromajo_dir)/build
+	$(CMAKE) -S $(dromajo_dir) -B $(dromajo_dir)/build
+	$(MAKE) -C $(dromajo_dir)/build
+	cp $(dromajo_dir)/build/dromajo $(BP_TOOLS_BIN_DIR)
+	cp $(dromajo_dir)/build/libdromajo_cosim.a $(BP_TOOLS_LIB_DIR)
+	cp $(dromajo_dir)/include/dromajo_cosim.h $(BP_TOOLS_INCLUDE_DIR)
+
 bsg_sv2v_build:
 	$(MAKE) -j1 -C $(bsg_sv2v_dir) tools
 
 $(eval $(call submodule_tool_template,verilator,$(verilator_dir)))
 $(eval $(call submodule_tool_template,bsg_sv2v,$(bsg_sv2v_dir)))
+$(eval $(call submodule_tool_template,dromajo,$(dromajo_dir)))
 

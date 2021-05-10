@@ -27,47 +27,20 @@ We presented BlackParrot at the ICS 2020 Workshop on RISC-V and OpenPOWER! [slid
 We first announced BlackParrot at FOSDEM 2020! [slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) [video](https://video.fosdem.org/2020/K.3.401/riscv_blackparrot.mp4) [pdf](https://drive.google.com/file/d/16BXCT1kK3gQ0XKfZPR-K8Zs2E648qFp9/view?usp=sharing)
 
 ## Getting Started
-### Tire Kick
-Users who just want to test their setup and run a minimal BlackParrot test should run the following:
+This RTL repo is intended to be used with a specific SDK and HDK depending on the simulation / FPGA /
+ASIC environment desired. For first-time users of BlackParrot, we recommend starting from the [BlackParrot
+Simulation Environment](https://github.com:black-parrot/black-parrot-sim), which packages the
+BlackParrot RTL and SDK in a compatible manner. We intend to release several examples of BlackParrot
+environments which package the RTL, SDK and HDK together for evaluation.
 
-    # Clone the latest repo
-    git clone https://github.com/black-parrot/black-parrot.git
-    cd black-parrot
+To set up your own BlackParrot environment, cloning a version of the [BlackParrot SDK](https://github.com/black-parrot-sdk/black-parrot-sdk) as 'sdk' in the same directory as the BlackParrot RTL is all that is strictly required, although the repositories are not guaranteed to be in sync after pulling from master of each.
 
-    # Install a minimal set of tools and libraries
-    # For faster builds, make prep_lite -j is parallelizable!
-    make prep_lite
-
-    # Running your first test
-    make -C bp_top/syn tire_kick
-
-This should output (roughly)
-
-    Hello world!
-    [CORE0 FSH] PASS
-    [CORE0 STATS]
-        clk   :                  220
-        instr :                   66
-        mIPC  :                  300
-    All cores finished! Terminating...
-
-### Docker build
-For a painless Ubuntu build, download and install [Docker Desktop](https://www.docker.com/products/docker-desktop) then run the following:
-
-    git clone https://github.com/black-parrot/black-parrot.git
-    cd black-parrot
-    docker-compose build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) bp
-    docker-compose up -d
-    docker-compose exec bp su - build
-    
-Then follow the [Tire Kick](#-tire-kick) directions above starting with "cd black-parrot" or the "Full" directions below.  The repo directory will be mounted inside the container.
-
-### Getting Started for Real
-Users who want to fully evaluate BlackParrot, or develop hardware or software using it should follow [Getting Started (Full)](docs/getting_started.md).
-
-Although the information in collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
+Once you have a BlackParrot environment set up, you can follow the RTL simulation guide here to
+test the core RTL: [Simulation Guide](docs/sim_guide.md)
 
 ## How to Contribute
+Although the information in collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
+
 We welcome external contributions! Please join our mailing list at [Google Groups](https://groups.google.com/forum/#!forum/black-parrot) and follow us on [Twitter](https://twitter.com/BlackParrotCore) to discuss, ask questions or just tell us how you're using BlackParrot! For a smooth contribution experience, take a look at our [Contribution Guide](CONTRIBUTING.md).
 
 ## Coding Style
