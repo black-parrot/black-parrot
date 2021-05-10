@@ -4,7 +4,7 @@
   `define declare_bp_memory_map(paddr_width_mp, caddr_width_mp) \
     typedef struct packed                                           \
     {                                                               \
-      logic [paddr_width_mp-caddr_width_mp-1:0] domain;             \
+      logic [paddr_width_mp-caddr_width_mp-1:0] hio;                \
       logic [caddr_width_mp-1:0]                caddr;              \
     }  bp_global_addr_s;                                            \
                                                                     \

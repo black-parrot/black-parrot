@@ -22,7 +22,7 @@ module testbench
    // DRAM parameters
    , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
 
-  , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+  , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   , localparam trace_replay_data_width_lp = ptag_width_p + vaddr_width_p + 1
   , localparam trace_rom_addr_width_lp = 7
 
@@ -32,7 +32,7 @@ module testbench
   (output bit reset_i);
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   // Bit to deal with initial X->0 transition detection
   bit clk_i;
@@ -81,7 +81,7 @@ module testbench
   assign cfg_bus_li = cfg_bus_cast_li;
 
   logic mem_cmd_v_lo, mem_resp_v_lo;
-  logic mem_cmd_ready_lo, mem_resp_yumi_li;
+  logic mem_cmd_yumi_li, mem_cmd_ready_and_lo, mem_resp_yumi_li;
   bp_bedrock_cce_mem_msg_s mem_cmd_lo, mem_resp_lo;
 
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
@@ -206,7 +206,7 @@ module testbench
    #(.bp_params_p(bp_params_p)
     ,.uce_p(uce_p)
    )
-   dut
+   wrapper
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -230,8 +230,9 @@ module testbench
 
      ,.mem_cmd_o(mem_cmd_lo)
      ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_ready_i(mem_cmd_ready_lo)
+     ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
     );
+  assign mem_cmd_yumi_li = mem_cmd_ready_and_lo & mem_cmd_v_lo;
 
   // Memory
   bp_nonsynth_mem
@@ -245,8 +246,8 @@ module testbench
     ,.reset_i(reset_i)
 
     ,.mem_cmd_i(mem_cmd_lo)
-    ,.mem_cmd_v_i(mem_cmd_ready_lo & mem_cmd_v_lo)
-    ,.mem_cmd_ready_o(mem_cmd_ready_lo)
+    ,.mem_cmd_v_i(mem_cmd_v_lo)
+    ,.mem_cmd_ready_and_o(mem_cmd_ready_and_lo)
 
     ,.mem_resp_o(mem_resp_lo)
     ,.mem_resp_v_o(mem_resp_v_lo)
@@ -324,16 +325,16 @@ module testbench
           ,.lce_id_i(lce_id_i)
           ,.lce_req_i(lce_req_o)
           ,.lce_req_v_i(lce_req_v_o)
-          ,.lce_req_ready_i(lce_req_ready_i)
+          ,.lce_req_ready_then_i(lce_req_ready_then_i)
           ,.lce_resp_i(lce_resp_o)
           ,.lce_resp_v_i(lce_resp_v_o)
-          ,.lce_resp_ready_i(lce_resp_ready_i)
+          ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
           ,.lce_cmd_i(lce_cmd_i)
           ,.lce_cmd_v_i(lce_cmd_v_i)
           ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
           ,.lce_cmd_o_i(lce_cmd_o)
           ,.lce_cmd_o_v_i(lce_cmd_v_o)
-          ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+          ,.lce_cmd_o_ready_then_i(lce_cmd_ready_then_i)
           );
 
     bind bp_cce_fsm
@@ -376,8 +377,8 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.mem_cmd_i(mem_cmd_lo)
-     ,.mem_cmd_v_i(mem_cmd_ready_lo & mem_cmd_v_lo)
-     ,.mem_cmd_ready_i(mem_cmd_ready_lo)
+     ,.mem_cmd_v_i(mem_cmd_v_lo)
+     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_lo)
 
      ,.mem_resp_i(mem_resp_lo)
      ,.mem_resp_v_i(mem_resp_v_lo)

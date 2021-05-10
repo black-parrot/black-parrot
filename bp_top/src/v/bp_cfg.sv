@@ -11,14 +11,14 @@ module bp_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
 
    , input [xce_mem_msg_width_lp-1:0]        mem_cmd_i
    , input                                   mem_cmd_v_i
-   , output logic                            mem_cmd_ready_o
+   , output                                  mem_cmd_ready_and_o
 
    , output logic [xce_mem_msg_width_lp-1:0] mem_resp_o
    , output logic                            mem_resp_v_o
@@ -37,7 +37,7 @@ module bp_cfg
    , input [cce_instr_width_gp-1:0]          cce_ucode_data_i
    );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
 
   bp_cfg_bus_s cfg_bus_cast_o;
@@ -55,7 +55,7 @@ module bp_cfg
 
      ,.data_i(mem_cmd_li)
      ,.v_i(mem_cmd_v_i)
-     ,.ready_o(mem_cmd_ready_o)
+     ,.ready_o(mem_cmd_ready_and_o)
 
      ,.data_o(mem_cmd_lo)
      ,.v_o(mem_cmd_v_lo)
@@ -96,30 +96,30 @@ module bp_cfg
   wire cord_r_v_li        = cfg_r_v_li & (cfg_addr_li == cfg_reg_cord_gp);
   wire did_r_v_li         = cfg_r_v_li & (cfg_addr_li == cfg_reg_did_gp);
   wire host_did_r_v_li    = cfg_r_v_li & (cfg_addr_li == cfg_reg_host_did_gp);
-  wire domain_r_v_li      = cfg_r_v_li & (cfg_addr_li == cfg_reg_domain_mask_gp);
+  wire hio_r_v_li         = cfg_r_v_li & (cfg_addr_li == cfg_reg_hio_mask_gp);
   wire freeze_r_v_li      = cfg_r_v_li & (cfg_addr_li == cfg_reg_freeze_gp);
   wire icache_mode_r_v_li = cfg_r_v_li & (cfg_addr_li == cfg_reg_icache_mode_gp);
   wire dcache_mode_r_v_li = cfg_r_v_li & (cfg_addr_li == cfg_reg_dcache_mode_gp);
   wire cce_mode_r_v_li    = cfg_r_v_li & (cfg_addr_li == cfg_reg_cce_mode_gp);
 
-  assign cce_ucode_v_o    = (cfg_r_v_li | cfg_w_v_li) & (cfg_addr_li >= 16'h8000);
-  assign cce_ucode_w_o    = cfg_w_v_li & (cfg_addr_li >= 16'h8000);
+  assign cce_ucode_v_o    = (cfg_r_v_li | cfg_w_v_li) & (cfg_addr_li >= cfg_mem_base_cce_ucode_gp);
+  assign cce_ucode_w_o    = cfg_w_v_li & (cfg_addr_li >= cfg_mem_base_cce_ucode_gp);
   assign cce_ucode_addr_o = cfg_addr_li[0+:cce_pc_width_p];
   assign cce_ucode_data_o = cfg_data_li[0+:cce_instr_width_gp];
 
-  wire domain_w_v_li = cfg_w_v_li & (cfg_addr_li == cfg_reg_domain_mask_gp);
-  wire [domain_width_p-1:0] domain_li = cfg_data_li[domain_width_p-1:0];
+  wire hio_w_v_li = cfg_w_v_li & (cfg_addr_li == cfg_reg_hio_mask_gp);
+  wire [hio_width_p-1:0] hio_li = cfg_data_li[hio_width_p-1:0];
 
   // Enabled DIDs
-  logic [domain_width_p-1:0] domain_mask_r;
+  logic [hio_width_p-1:0] hio_mask_r;
   bsg_dff_reset_en
-   #(.width_p(domain_width_p))
-   domain_mask_reg
+   #(.width_p(hio_width_p))
+   hio_mask_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(domain_w_v_li)
-     ,.data_i(domain_li)
-     ,.data_o(domain_mask_r)
+     ,.en_i(hio_w_v_li)
+     ,.data_i(hio_li)
+     ,.data_o(hio_mask_r)
      );
 
   logic [core_id_width_p-1:0] core_id_li;
@@ -143,7 +143,7 @@ module bp_cfg
                             ,dcache_mode: dcache_mode_r
                             ,cce_id: cce_id_li
                             ,cce_mode: cce_mode_r
-                            ,domain_mask: domain_mask_r
+                            ,hio_mask: hio_mask_r
                             };
 
   logic rdata_v_r;
@@ -165,7 +165,7 @@ module bp_cfg
      ,.reset_i(reset_i)
      ,.en_i(mem_cmd_v_lo)
 
-     ,.data_i({freeze_r_v_li, domain_r_v_li, host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_v_o, icache_mode_r_v_li, dcache_mode_r_v_li, cce_mode_r_v_li})
+     ,.data_i({freeze_r_v_li, hio_r_v_li, host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_v_o, icache_mode_r_v_li, dcache_mode_r_v_li, cce_mode_r_v_li})
      ,.data_o(read_sel_one_hot_r)
      );
 
@@ -175,7 +175,7 @@ module bp_cfg
    #(.width_p(dword_width_gp), .els_p(9))
    read_mux_one_hot
     (.data_i({dword_width_gp'(freeze_r)
-              ,dword_width_gp'(domain_mask_r)
+              ,dword_width_gp'(hio_mask_r)
               ,dword_width_gp'(host_did_i)
               ,dword_width_gp'(did_i)
               ,dword_width_gp'(cord_i)

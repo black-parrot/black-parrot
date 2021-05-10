@@ -13,14 +13,14 @@ module bp_nonsynth_if_verif
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   ();
 
   bp_proc_param_s proc_param;
   assign proc_param = all_cfgs_gp[bp_params_p];
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
@@ -84,8 +84,8 @@ module bp_nonsynth_if_verif
     $warning("Warning: VM will not work without 39 bit vaddr");
   if (paddr_width_p < 40)
     $warning("Warning: paddr < 40 has not been tested");
-  if (dram_max_size_p != (1 << 31))
-    $warning("Warning: dram size != 4GB");
+  if (caddr_width_p != 32)
+    $warning("Warning: caddr != 32 has not been tested");
 
   if ((multicore_p == 1) && ((amo_swap_p != e_none) || (amo_fetch_logic_p != e_none) || (amo_fetch_arithmetic_p != e_none)))
     $fatal("Error: L2 atomics are not currently supported in bp_multicore");

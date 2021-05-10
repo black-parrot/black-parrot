@@ -31,7 +31,7 @@ module bp_nonsynth_nbf_loader
 
    , input  [cce_mem_msg_width_lp-1:0]       io_resp_i
    , input                                   io_resp_v_i
-   , output logic                            io_resp_ready_o
+   , output logic                            io_resp_ready_and_o
 
    , output logic                            done_o
    );
@@ -109,7 +109,7 @@ module bp_nonsynth_nbf_loader
      );
   wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
   wire credits_empty_lo = (credit_count_lo == '0);
-  assign io_resp_ready_o = 1'b1;
+  assign io_resp_ready_and_o = 1'b1;
 
   always_comb
     begin

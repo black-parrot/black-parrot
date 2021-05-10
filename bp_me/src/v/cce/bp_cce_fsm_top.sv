@@ -32,7 +32,7 @@ module bp_cce_fsm_top
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
-    , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
     , localparam lg_num_cce_lp          = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam wg_per_cce_lp          = (lce_sets_p / num_cce_p)

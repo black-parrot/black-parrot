@@ -23,7 +23,7 @@ module bp_unicore
    // Outgoing I/O
    , output logic [uce_mem_msg_width_lp-1:0]           io_cmd_o
    , output logic                                      io_cmd_v_o
-   , input                                             io_cmd_ready_i
+   , input                                             io_cmd_ready_and_i
 
    , input [uce_mem_msg_width_lp-1:0]                  io_resp_i
    , input                                             io_resp_v_i
@@ -36,7 +36,7 @@ module bp_unicore
 
    , output logic [uce_mem_msg_width_lp-1:0]           io_resp_o
    , output logic                                      io_resp_v_o
-   , input                                             io_resp_ready_i
+   , input                                             io_resp_ready_and_i
 
    // DRAM interface
    , output logic [dma_pkt_width_lp-1:0]               dma_pkt_o
@@ -52,13 +52,13 @@ module bp_unicore
    , input                                             dma_data_yumi_i
    );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
 
   bp_bedrock_uce_mem_msg_s mem_cmd_lo;
-  logic mem_cmd_v_lo, mem_cmd_ready_li;
+  logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   bp_bedrock_uce_mem_msg_s mem_resp_li;
   logic mem_resp_v_li, mem_resp_yumi_lo;
 
@@ -70,7 +70,7 @@ module bp_unicore
 
      ,.io_cmd_o(io_cmd_o)
      ,.io_cmd_v_o(io_cmd_v_o)
-     ,.io_cmd_ready_i(io_cmd_ready_i)
+     ,.io_cmd_ready_and_i(io_cmd_ready_and_i)
 
      ,.io_resp_i(io_resp_i)
      ,.io_resp_v_i(io_resp_v_i)
@@ -82,11 +82,11 @@ module bp_unicore
 
      ,.io_resp_o(io_resp_o)
      ,.io_resp_v_o(io_resp_v_o)
-     ,.io_resp_ready_i(io_resp_ready_i)
+     ,.io_resp_ready_and_i(io_resp_ready_and_i)
 
      ,.mem_cmd_o(mem_cmd_lo)
      ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_ready_i(mem_cmd_ready_li)
+     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
 
      ,.mem_resp_i(mem_resp_li)
      ,.mem_resp_v_i(mem_resp_v_li)
@@ -107,7 +107,7 @@ module bp_unicore
   
      ,.mem_cmd_i(mem_cmd_lo)
      ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_o(mem_cmd_ready_li)
+     ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
 
      ,.mem_resp_o(mem_resp_li)
      ,.mem_resp_v_o(mem_resp_v_li)

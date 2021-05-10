@@ -95,7 +95,7 @@ module bp_lce_req
     // Req: ready->valid
     , output logic [lce_req_msg_width_lp-1:0]        lce_req_o
     , output logic                                   lce_req_v_o
-    , input                                          lce_req_ready_i
+    , input                                          lce_req_ready_then_i
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
@@ -166,7 +166,7 @@ module bp_lce_req
   // Outstanding request credit counter
   logic [`BSG_WIDTH(credits_p)-1:0] credit_count_lo;
   wire credit_v_li = lce_req_v_o;
-  wire credit_ready_li = lce_req_ready_i;
+  wire credit_ready_li = lce_req_ready_then_i;
   wire credit_returned_li = cache_req_complete_i | uc_store_req_complete_i;
   bsg_flow_counter
     #(.els_p(credits_p))
@@ -212,9 +212,9 @@ module bp_lce_req
 
       // Ready for new request
       e_ready: begin
-        ready_o = ~credits_full_o & lce_req_ready_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
+        ready_o = ~credits_full_o & lce_req_ready_then_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
 
-        if (ready_o)
+        if (ready_o & cache_req_v_i)
           unique case (cache_req.msg_type)
             e_miss_store
             ,e_miss_load: begin
@@ -222,7 +222,7 @@ module bp_lce_req
               state_n = cache_req_yumi_o ? e_send_cached_req : e_ready;
             end
             e_uc_store: begin
-              lce_req_v_o = lce_req_ready_i & cache_req_v_i;
+              lce_req_v_o = lce_req_ready_then_i & cache_req_v_i;
 
               lce_req.data[0+:dword_width_gp] = cache_req.data[0+:dword_width_gp];
               lce_req.header.size = bp_bedrock_msg_size_e'(cache_req.size);
@@ -247,7 +247,7 @@ module bp_lce_req
         // valid cache request arrived last cycle (or earlier) and is held in cache_req_r
 
         // send when port is ready and metadata has arrived
-        lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
+        lce_req_v_o = lce_req_ready_then_i & cache_req_metadata_v_r;
 
         lce_req.header.size = req_block_size_lp;
         lce_req.header.addr = cache_req_r.addr;
@@ -275,7 +275,7 @@ module bp_lce_req
         // valid cache request arrived last cycle (or earlier) and is held in cache_req_r
 
         // send when port is ready and metadata has arrived
-        lce_req_v_o = lce_req_ready_i;
+        lce_req_v_o = lce_req_ready_then_i;
 
         lce_req.header.size = bp_bedrock_msg_size_e'(cache_req_r.size);
         lce_req.header.addr = cache_req_r.addr;

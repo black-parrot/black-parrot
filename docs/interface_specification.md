@@ -144,6 +144,9 @@ routed through a FIFO. BlackParrot provides 3 types of Cache Engines:
   memory. In this way, a UCE is a combination of an LCE and a CCE, optimized for size and complexity
   in order to service a single cache.
 
+Additionally, the BlackParrot HDK provides additional cache engines for connecting to external
+memory systems.
+
 More details are provided about the LCE and CCE interface in the following section.
 
 A UCE implementation must support the following operations:
@@ -205,7 +208,13 @@ The stat memory contains LRU and dirty data for a block, and the packet format i
 - Replacement way
 - Replacement index
 
+When the critical data of a transaction is being sent, cache_req_critical_data_o will go high.
+When the critical tag of a transaction is being sent, cache_req_critical_tag_o will go high.
 When a transaction is completed, cache_req_complete_o will go high for one cycle.
+
+There are additional signals for available credits in the engine, used for fencing. Empty credits
+signify all downstream transactions have completed, whereas full credits signify no more
+transactions may be sent to the network.
 
 ## Memory Interface
 

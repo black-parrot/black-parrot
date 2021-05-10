@@ -19,15 +19,14 @@ module testbench
    , parameter cce_dir_trace_p = 0
    , parameter axe_trace_p = 0
    , parameter instr_count = 1
-   , parameter skip_init_p = 0
+   , parameter cce_mode_p = 0
    , parameter lce_trace_p = 0
    , parameter lce_tr_trace_p = 0
    , parameter dram_trace_p = 0
-   , parameter dram_fixed_latency_p=0
 
    // DRAM parameters
    , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
-   
+
    // size of CCE-Memory buffers for cmd/resp messages
    // for this testbench (one LCE, one CCE, one memory) only need enough space to hold as many
    // cmds/responses can be generated for a single LCE request
@@ -52,7 +51,7 @@ function int get_sim_period();
   return (`BP_SIM_CLK_PERIOD);
 endfunction
 
-`declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+`declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
@@ -112,7 +111,7 @@ assign cfg_mem_cmd = '{header: cfg_mem_cmd_lo.header
 bp_bedrock_cce_mem_msg_s mem_resp;
 logic                    mem_resp_v, mem_resp_yumi;
 bp_bedrock_cce_mem_msg_s mem_cmd;
-logic                    mem_cmd_v, mem_cmd_ready;
+logic                    mem_cmd_v, mem_cmd_ready_then;
 
 // LCE-CCE IF
 bp_bedrock_lce_req_msg_s  lce_req_lo, lce_req;
@@ -158,7 +157,7 @@ bsg_trace_node_master #(
 bp_me_nonsynth_mock_lce #(
   .bp_params_p(bp_params_p)
   ,.axe_trace_p(axe_trace_p)
-  ,.skip_init_p(skip_init_p)
+  ,.skip_init_p(cce_mode_p)
 ) lce (
   .clk_i(clk_i)
   ,.reset_i(reset_i)
@@ -176,11 +175,11 @@ bp_me_nonsynth_mock_lce #(
 
   ,.lce_req_o(lce_req_lo)
   ,.lce_req_v_o(lce_req_v_lo)
-  ,.lce_req_ready_i(lce_req_ready_li)
+  ,.lce_req_ready_then_i(lce_req_ready_li)
 
   ,.lce_resp_o(lce_resp_lo)
   ,.lce_resp_v_o(lce_resp_v_lo)
-  ,.lce_resp_ready_i(lce_resp_ready_li)
+  ,.lce_resp_ready_then_i(lce_resp_ready_li)
 
   ,.lce_cmd_i(lce_cmd)
   ,.lce_cmd_v_i(lce_cmd_v)
@@ -188,7 +187,7 @@ bp_me_nonsynth_mock_lce #(
 
   ,.lce_cmd_o(lce_cmd_out_lo)
   ,.lce_cmd_v_o(lce_cmd_out_v_lo)
-  ,.lce_cmd_ready_i(lce_cmd_out_ready_li)
+  ,.lce_cmd_ready_then_i(lce_cmd_out_ready_li)
 );
 
 bind bp_me_nonsynth_mock_lce
@@ -204,16 +203,16 @@ bind bp_me_nonsynth_mock_lce
       ,.lce_id_i(lce_id_i)
       ,.lce_req_i(lce_req_o)
       ,.lce_req_v_i(lce_req_v_o)
-      ,.lce_req_ready_i(lce_req_ready_i)
+      ,.lce_req_ready_then_i(lce_req_ready_then_i)
       ,.lce_resp_i(lce_resp_o)
       ,.lce_resp_v_i(lce_resp_v_o)
-      ,.lce_resp_ready_i(lce_resp_ready_i)
+      ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
       ,.lce_cmd_i(lce_cmd_i)
       ,.lce_cmd_v_i(lce_cmd_v_i)
       ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
       ,.lce_cmd_o_i(lce_cmd_o)
       ,.lce_cmd_o_v_i(lce_cmd_v_o)
-      ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+      ,.lce_cmd_o_ready_then_i(lce_cmd_ready_then_i)
       );
 
 bind bp_me_nonsynth_mock_lce
@@ -389,7 +388,7 @@ wrapper
 
   ,.mem_cmd_o(mem_cmd)
   ,.mem_cmd_v_o(mem_cmd_v)
-  ,.mem_cmd_ready_i(mem_cmd_ready)
+  ,.mem_cmd_ready_i(mem_cmd_ready_then)
 );
 
 
@@ -414,7 +413,7 @@ mem_cmd_buffer
   // from CCE
   ,.v_i(mem_cmd_v)
   ,.data_i(mem_cmd)
-  ,.ready_o(mem_cmd_ready)
+  ,.ready_o(mem_cmd_ready_then)
   // to memory
   ,.v_o(mem_cmd_v_lo)
   ,.data_o(mem_cmd_lo)
@@ -453,7 +452,7 @@ mem
 
   ,.mem_cmd_i(mem_cmd_lo)
   ,.mem_cmd_v_i(mem_cmd_v_lo & mem_cmd_ready_lo)
-  ,.mem_cmd_ready_o(mem_cmd_ready_lo)
+  ,.mem_cmd_ready_and_o(mem_cmd_ready_lo)
 
   ,.mem_resp_o(mem_resp_lo)
   ,.mem_resp_v_o(mem_resp_v_lo)
@@ -471,7 +470,7 @@ bp_mem_nonsynth_tracer
 
    ,.mem_cmd_i(mem_cmd)
    ,.mem_cmd_v_i(mem_cmd_v)
-   ,.mem_cmd_ready_i(mem_cmd_ready)
+   ,.mem_cmd_ready_and_i(mem_cmd_ready_then)
 
    ,.mem_resp_i(mem_resp)
    ,.mem_resp_v_i(mem_resp_v)
@@ -488,7 +487,7 @@ bp_cfg
 
    ,.mem_cmd_i(cfg_mem_cmd)
    ,.mem_cmd_v_i(cfg_mem_cmd_v_lo)
-   ,.mem_cmd_ready_o(cfg_mem_cmd_ready_li)
+   ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_li)
 
    ,.mem_resp_o()
    ,.mem_resp_v_o(cfg_resp_v_lo)
@@ -525,7 +524,7 @@ bp_cce_mmio_cfg_loader
     ,.inst_width_p($bits(bp_cce_inst_s))
     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)
-    ,.skip_ram_init_p(skip_init_p)
+    ,.skip_ram_init_p(cce_mode_p)
     ,.clear_freeze_p(1'b1)
   )
   cfg_loader
@@ -587,7 +586,7 @@ end
 
 `ifndef VERILATOR
   initial
-    begin      
+    begin
       $assertoff();
       @(posedge clk_i);
       @(negedge reset_i);

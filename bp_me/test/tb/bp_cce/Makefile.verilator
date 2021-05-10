@@ -9,10 +9,10 @@ $(LINT_DIR)/flist.vcs:
 	@echo wrapper.sv                             >> $@
 	@echo bsg_trace_rom_0.v                      >> $@
 
-# TODO: NUM_INSTR_P, SEED_P, SKIP_INIT_P should be part of the rom name to help enable
+# TODO: NUM_INSTR_P, SEED_P, CCE_MODE_P should be part of the rom name to help enable
 #   dependency chaining / parallelism
 $(LINT_DIR)/bsg_trace_rom_%.tr:
-	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(SKIP_INIT_P) > $@
+	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) --test $(ME_TEST_P) > $@
 
 $(LINT_DIR)/bsg_trace_rom_%.v: $(LINT_DIR)/bsg_trace_rom_%.tr
 	$(PYTHON) $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
@@ -36,10 +36,10 @@ $(BUILD_DIR)/flist.vcs:
 	@echo test_bp.cpp                            >> $@
 	@echo bsg_trace_rom_0.v                      >> $@
 
-# TODO: NUM_INSTR_P, SEED_P, SKIP_INIT_P should be part of the rom name to help enable
+# TODO: NUM_INSTR_P, SEED_P, CCE_MODE_P should be part of the rom name to help enable
 #   dependency chaining / parallelism
 $(BUILD_DIR)/bsg_trace_rom_%.tr:
-	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(SKIP_INIT_P) > $@
+	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) --test $(ME_TEST_P) > $@
 
 $(BUILD_DIR)/bsg_trace_rom_%.v: $(BUILD_DIR)/bsg_trace_rom_%.tr
 	$(PYTHON) $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
