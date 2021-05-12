@@ -282,15 +282,13 @@ module bp_be_dcache
 
   assign safe_tl_we = ready_o & v_i;
   assign tl_we = safe_tl_we & ~flush_self;
-  bsg_dff_reset_set_clear
+  bsg_dff_reset
    #(.width_p(1))
    v_tl_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(tl_we)
-     // We always advance in this non-stalling D$
-     ,.clear_i(1'b1)
+     ,.data_i(tl_we)
      ,.data_o(v_tl_r)
      );
 
@@ -358,40 +356,49 @@ module bp_be_dcache
   // fencei does not require a ptag
   assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
   assign tv_we = safe_tv_we & ~flush_self;
-  logic _v_tv_r;
-  bsg_dff_reset_set_clear
+  bsg_dff_reset_half
    #(.width_p(1))
-   _v_tv_reg
+   v_tv_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(tv_we)
-     // We always advance in the non-stalling D$
-     ,.clear_i(1'b1)
-     ,.data_o(_v_tv_r)
+     ,.data_i(tv_we)
+     ,.data_o(v_tv_r)
      );
 
-  logic _v_tv_pr;
-  bsg_dff_reset
-   #(.width_p(1))
-   _v_tv_pr_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i(_v_tv_r)
-     ,.data_o(_v_tv_pr)
-     );
-
-  logic _v_tv_nr;
-  bsg_dff_reset
-   #(.width_p(1))
-   _v_tv_nr_reg
-    (.clk_i(~clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i(_v_tv_r)
-     ,.data_o(_v_tv_nr)
-     );
-
-  // Need to cut off the negative edge
-  assign v_tv_r = _v_tv_r & (_v_tv_r ^ _v_tv_pr ^ _v_tv_nr);
+//  logic _v_tv_r;
+//  bsg_dff_reset_set_clear
+//   #(.width_p(1))
+//   _v_tv_reg
+//    (.clk_i(~clk_i)
+//     ,.reset_i(reset_i)
+//     ,.set_i(tv_we)
+//     // We always advance in the non-stalling D$
+//     ,.clear_i(1'b1)
+//     ,.data_o(_v_tv_r)
+//     );
+//
+//  logic _v_tv_pr;
+//  bsg_dff_reset
+//   #(.width_p(1))
+//   _v_tv_pr_reg
+//    (.clk_i(clk_i)
+//     ,.reset_i(reset_i)
+//     ,.data_i(_v_tv_r)
+//     ,.data_o(_v_tv_pr)
+//     );
+//
+//  logic _v_tv_nr;
+//  bsg_dff_reset
+//   #(.width_p(1))
+//   _v_tv_nr_reg
+//    (.clk_i(~clk_i)
+//     ,.reset_i(reset_i)
+//     ,.data_i(_v_tv_r)
+//     ,.data_o(_v_tv_nr)
+//     );
+//
+//  // Need to cut off the negative edge
+//  assign v_tv_r = _v_tv_r & (_v_tv_r ^ _v_tv_pr ^ _v_tv_nr);
 
   logic [block_width_p-1:0] ld_data_tv_n;
   assign ld_data_tv_n = data_mem_data_lo;
@@ -587,7 +594,7 @@ module bp_be_dcache
   logic [paddr_width_p-1:0] paddr_dm_r;
   bp_be_dcache_decode_s decode_dm_r;
   logic uncached_op_dm_r, store_hit_dm_r, load_hit_dm_r;
-  logic load_miss_dm_r, store_miss_dm_r, lr_miss_dm_r, fencei_miss_dm_r;
+  logic load_miss_dm_r, store_miss_dm_r, lr_miss_dm_r, fencei_miss_dm_r, sc_fail_dm_r;
   logic [lg_dcache_assoc_lp-1:0] store_hit_way_dm_r, load_hit_way_dm_r;
   logic [assoc_p-1:0] way_v_dm_r;
   logic complete_dm_r;
@@ -596,14 +603,12 @@ module bp_be_dcache
 
   assign safe_dm_we = v_tv_r;
   assign dm_we = safe_dm_we & ~flush_self;
-  bsg_dff_reset_set_clear
+  bsg_dff_reset
    #(.width_p(1))
    v_dm_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(dm_we)
-     // We always advance in the non-stalling D$
-     ,.clear_i(1'b1)
+     ,.data_i(dm_we)
      ,.data_o(v_dm_r)
      );
 
