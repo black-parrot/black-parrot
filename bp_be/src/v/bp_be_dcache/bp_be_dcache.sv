@@ -358,16 +358,40 @@ module bp_be_dcache
   // fencei does not require a ptag
   assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
   assign tv_we = safe_tv_we & ~flush_self;
+  logic _v_tv_r;
   bsg_dff_reset_set_clear
    #(.width_p(1))
-   v_tv_reg
+   _v_tv_reg
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
      ,.set_i(tv_we)
      // We always advance in the non-stalling D$
      ,.clear_i(1'b1)
-     ,.data_o(v_tv_r)
+     ,.data_o(_v_tv_r)
      );
+
+  logic _v_tv_pr;
+  bsg_dff_reset
+   #(.width_p(1))
+   _v_tv_pr_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i(_v_tv_r)
+     ,.data_o(_v_tv_pr)
+     );
+
+  logic _v_tv_nr;
+  bsg_dff_reset
+   #(.width_p(1))
+   _v_tv_nr_reg
+    (.clk_i(~clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i(_v_tv_r)
+     ,.data_o(_v_tv_nr)
+     );
+
+  // Need to cut off the negative edge
+  assign v_tv_r = _v_tv_r & (_v_tv_r ^ _v_tv_pr ^ _v_tv_nr);
 
   logic [block_width_p-1:0] ld_data_tv_n;
   assign ld_data_tv_n = data_mem_data_lo;
@@ -493,9 +517,9 @@ module bp_be_dcache
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
   wire lr_hit_tv = v_tv_r & decode_tv_r.lr_op & store_hit_tv & (lr_sc_p == e_l1);
   // Succeed if the address matches and we have a store hit
-  wire sc_success  = v_tv_r & decode_tv_r.sc_op & store_hit_tv & load_reservation_match_tv & (lr_sc_p == e_l1);
+  wire sc_success_tv  = v_tv_r & decode_tv_r.sc_op & store_hit_tv & load_reservation_match_tv & (lr_sc_p == e_l1);
   // Fail if we have a store conditional without success
-  wire sc_fail = v_tv_r & decode_tv_r.sc_op & ~sc_success;
+  wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
 
   wire load_miss_tv   = v_tv_r & decode_tv_r.load_op & ~load_hit_tv & ~uncached_op_tv_r;
   wire store_miss_tv  = v_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & ~uncached_op_tv_r & (writethrough_p == 0);
@@ -505,7 +529,7 @@ module bp_be_dcache
   wire any_miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | fencei_miss_tv;
 
   assign early_data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
-    ? (sc_success != 1'b1)
+    ? (sc_success_tv != 1'b1)
     : early_data;
 
   assign early_v_o = v_tv_r
@@ -585,17 +609,17 @@ module bp_be_dcache
 
   wire [dword_width_gp-1:0] data_dm_n = decode_tv_r.load_op ? result_data : st_data_tv_r;
   bsg_dff_en
-   #(.width_p(2*dword_width_gp+paddr_width_p+$bits(bp_be_dcache_decode_s)+8+assoc_p+2*lg_dcache_assoc_lp))
+   #(.width_p(2*dword_width_gp+paddr_width_p+$bits(bp_be_dcache_decode_s)+9+assoc_p+2*lg_dcache_assoc_lp))
    dm_stage_reg
     (.clk_i(clk_i)
      ,.en_i(dm_we)
      ,.data_i({st_data_tv_r, result_data, paddr_tv_r, decode_tv_r
-               ,load_miss_tv, store_miss_tv, lr_miss_tv, fencei_miss_tv
+               ,load_miss_tv, store_miss_tv, lr_miss_tv, fencei_miss_tv, sc_fail_tv
                ,uncached_op_tv_r, store_hit_tv, store_hit_way_tv, load_hit_tv, load_hit_way_tv
                , way_v_tv_r, early_v_o
                })
      ,.data_o({st_data_dm_r, ld_data_dm_r, paddr_dm_r, decode_dm_r
-               ,load_miss_dm_r, store_miss_dm_r, lr_miss_dm_r, fencei_miss_dm_r
+               ,load_miss_dm_r, store_miss_dm_r, lr_miss_dm_r, fencei_miss_dm_r, sc_fail_dm_r
                ,uncached_op_dm_r, store_hit_dm_r, store_hit_way_dm_r, load_hit_dm_r, load_hit_way_dm_r
                ,way_v_dm_r, complete_dm_r
                })
@@ -662,7 +686,7 @@ module bp_be_dcache
   bp_be_dcache_wbuf_entry_s wbuf_entry_in, wbuf_entry_out;
   logic wbuf_v_li, wbuf_v_lo, wbuf_yumi_li;
 
-  assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail & ~uncached_op_tv_r & ~flush_i;
+  assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail_tv & ~uncached_op_tv_r & ~flush_self;
 
   //
   // Atomic operations
@@ -795,7 +819,7 @@ module bp_be_dcache
   wire uncached_store_req  = (~decode_dm_r.amo_op & decode_dm_r.store_op & uncached_op_dm_r)
                              // L2 amo uncached store
                              || (decode_dm_r.amo_op & uncached_op_dm_r & (decode_dm_r.rd_addr == '0));
-  wire wt_req              = (decode_dm_r.store_op & ~sc_fail & ~uncached_op_dm_r & (writethrough_p == 1));
+  wire wt_req              = (decode_dm_r.store_op & ~sc_fail_dm_r & ~uncached_op_dm_r & (writethrough_p == 1));
 
   // Uncached stores and writethrough requests are non-blocking
   wire nonblocking_req     = uncached_store_req | wt_req;
@@ -1210,12 +1234,11 @@ module bp_be_dcache
       logic load_reserved_v_r;
 
       // Set reservation on successful LR, without a cache miss or upgrade request
-      wire set_reservation = decode_tv_r.lr_op & early_v_o;
+      wire set_reservation = lr_hit_tv & ~flush_self;
       // All SCs clear the reservation (regardless of success)
       // Invalidates from other harts which match the reservation address clear the reservation
       // Also invalidate on trap
       wire clear_reservation = decode_tv_r.sc_op
-        || flush_i
         || (tag_mem_pkt_yumi_o
             & load_reserved_v_r
             & (tag_mem_pkt_cast_i.index == load_reserved_index_r)
@@ -1248,7 +1271,7 @@ module bp_be_dcache
         // Linear backoff
         localparam lock_max_limit_lp = 8;
         logic [`BSG_SAFE_CLOG2(lock_max_limit_lp+1)-1:0] lock_cnt_r;
-        wire lock_clr = early_v_o || (lock_cnt_r == lock_max_limit_lp);
+        wire lock_clr = sc_success_tv || (lock_cnt_r == lock_max_limit_lp);
         wire lock_inc = ~lock_clr & (lr_hit_tv || (lock_cnt_r > 0));
         bsg_counter_clear_up
          #(.max_val_p(lock_max_limit_lp), .init_val_p(0))

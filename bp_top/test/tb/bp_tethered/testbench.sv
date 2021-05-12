@@ -356,7 +356,7 @@ module testbench
            ,.addr_tv_r(paddr_tv_r)
            ,.lr_miss_tv(lr_miss_tv)
            ,.sc_op_tv_r(decode_tv_r.sc_op)
-           ,.sc_success(sc_success)
+           ,.sc_success(sc_success_tv)
 
            ,.cache_req_v_o(cache_req_v_o)
            ,.cache_req_o(cache_req_o)
