@@ -31,9 +31,9 @@ stages:
     - source ~/.bashrc
     - echo "Cloning RTL Repo"
     - rm -rf rtl
-    - git clone --recursive -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot rtl
+    - git clone --recursive --depth 1000 -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot rtl
     - echo "Linking tools"
-    - ln -nsf rtl_tools_install rtl/tools/install
+    - ln -nsf ./rtl_tools_install rtl/tools/install
     - cd rtl
   artifacts:
     when: always
@@ -74,8 +74,8 @@ update_cache:
     - echo "Clearing out local directory"
     - rm -rf *
     - echo "Cloning RTL Repo"
-    - git clone --recursive -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot rtl
-    - git clone --recursive -b $SDK_COMMIT_REF_NAME https://github.com/black-parrot-sdk/black-parrot-sdk sdk
+    - git clone --recursive --depth 1000 -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot rtl
+    - git clone --recursive --depth 1000 -b $SDK_COMMIT_REF_NAME https://github.com/black-parrot-sdk/black-parrot-sdk sdk
     - echo "Making sdk"
     - make -C sdk sdk -j $CI_CORES > make_sdk.log
     - echo "Making programs"
