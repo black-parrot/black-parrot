@@ -29,6 +29,8 @@ stages:
   before_script:
     - echo "Sourcing bashrc"
     - source ~/.bashrc
+    - echo "Clearing old stuff"
+    - find ! -name . ! -name sdk ! -name rtl_tools_install -maxdepth 1 -type d -exec rm -rf {} \;
     - echo "Cloning RTL Repo"
     - rm -rf rtl
     - git clone --recursive --depth 1000 -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot rtl
