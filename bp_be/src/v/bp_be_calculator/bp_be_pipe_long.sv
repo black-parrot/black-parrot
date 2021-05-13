@@ -47,7 +47,7 @@ module bp_be_pipe_long
   wire [dword_width_gp-1:0] rs2 = reservation.rs2[0+:dword_width_gp];
   wire [dword_width_gp-1:0] imm = reservation.imm[0+:dword_width_gp];
 
-  wire v_li = reservation.v & reservation.decode.pipe_long_v;
+  wire v_li = reservation.v & reservation.decode.pipe_long_v & (reservation.decode.late_iwb_v | reservation.decode.late_fwb_v);
 
   wire signed_div_li = decode.fu_op inside {e_mul_op_div, e_mul_op_rem};
   wire rem_not_div_li = decode.fu_op inside {e_mul_op_rem, e_mul_op_remu};

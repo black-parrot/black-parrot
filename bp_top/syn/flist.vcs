@@ -296,6 +296,7 @@ $BP_TOP_DIR/src/v/bp_tile_node.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
+$BP_COMMON_DIR/src/v/bsg_dff_reset_half.v
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
 $BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_mask_write_bit_reshape.v
