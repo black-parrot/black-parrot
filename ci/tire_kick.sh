@@ -7,9 +7,9 @@ N=${1:-1}
 echo "Bleaching all"
 make bleach_all
 echo "Making tools"
-make tools -j ${N}
+make tools_lite -j ${N}
 echo "Running tire_kick"
-make -C bp_top/syn tire_kick
+make -C bp_top/syn tire_kick -j ${N}
 
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1

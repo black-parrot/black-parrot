@@ -140,7 +140,7 @@ tire_kick:
   tags:
     - verilator
   script:
-    - $CI_PROJECT_DIR/rtl/ci/tire_kick.sh
+    - $CI_PROJECT_DIR/rtl/ci/tire_kick.sh $CI_CORES
 
 bloodgraph-vcs:
   <<: *job_definition
