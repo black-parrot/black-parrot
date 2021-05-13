@@ -52,11 +52,7 @@ stages:
     key: $CI_COMMIT_REF_SLUG
     paths:
       - $CI_PROJECT_DIR/rtl_tools_install
-      - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/prog
-      - $CI_PROJECT_DIR/sdk/ucode
-      - $CI_PROJECT_DIR/sdk/include
-      - $CI_PROJECT_DIR/sdk/lib
+      - $CI_PROJECT_DIR/sdk
     policy: pull
   dependencies: []
   retry:
@@ -93,11 +89,7 @@ update_cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
       - $CI_PROJECT_DIR/rtl_tools_install
-      - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/prog
-      - $CI_PROJECT_DIR/sdk/ucode
-      - $CI_PROJECT_DIR/sdk/include
-      - $CI_PROJECT_DIR/sdk/lib
+      - $CI_PROJECT_DIR/sdk
     policy: push
 
 check-design:
