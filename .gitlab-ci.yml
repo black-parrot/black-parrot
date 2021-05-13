@@ -30,13 +30,16 @@ stages:
     - echo "Sourcing bashrc"
     - source ~/.bashrc
     - echo "Clearing old stuff"
-    - find ! -name . ! -name sdk ! -name rtl_tools_install -maxdepth 1 -type d -exec rm -rf {} \;
+    - find ! -name . ! -name sdk ! -name rtl_tools -maxdepth 1 -type d -exec rm -rf {} \;
     - echo "Cloning RTL Repo"
-    - rm -rf rtl
-    - git clone --recursive --depth 1000 -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot rtl
+    - rm -rf $CI_PROJECT_DIR/rtl
+    - git clone -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot $CI_PROJECT_DIR/rtl
     - echo "Linking tools"
-    - ln -nsf $CI_PROJECT_DIR/rtl_tools_install $CI_PROJECT_DIR/rtl/tools/install
-    - cd rtl
+    - rm -rf $CI_PROJECT_DIR/rtl/tools
+    - mv $CI_PROJECT_DIR/rtl_tools $CI_PROJECT_DIR/rtl/tools
+    - echo "Making libs"
+    - make -C rtl libs
+    - cd $CI_PROJECT_DIR/rtl
   artifacts:
     when: always
     paths:
@@ -51,7 +54,7 @@ stages:
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/rtl_tools_install
+      - $CI_PROJECT_DIR/rtl_tools
       - $CI_PROJECT_DIR/sdk
     policy: pull
   dependencies: []
@@ -72,16 +75,16 @@ update_cache:
     - echo "Clearing out local directory"
     - rm -rf *
     - echo "Cloning RTL Repo"
-    - git clone --recursive --depth 1000 -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot rtl
-    - git clone --recursive --depth 1000 -b $SDK_COMMIT_REF_NAME https://github.com/black-parrot-sdk/black-parrot-sdk sdk
+    - git clone -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot $CI_PROJECT_DIR/rtl
+    - git clone -b $SDK_COMMIT_REF_NAME https://github.com/black-parrot-sdk/black-parrot-sdk $CI_PROJECT_DIR/sdk
     - echo "Making sdk"
-    - make -C sdk sdk -j $CI_CORES > make_sdk.log
+    - make -C sdk sdk -j 30 > make_sdk.log
     - echo "Making programs"
-    - make -C sdk prog -j $CI_CORES > make_prog.log
+    - make -C sdk prog -j 30 > make_prog.log
     - cd sdk; git submodule deinit -f . ; cd ..
     - echo "Making tools"
-    - make -C rtl tools -j $CI_CORES > make_tools.log
-    - mv rtl/tools/install rtl_tools_install
+    - make -C rtl tools -j 30 > make_tools.log
+    - mv $CI_PROJECT_DIR/rtl/tools $CI_PROJECT_DIR/rtl_tools
   artifacts:
     when: always
     paths:
@@ -89,7 +92,7 @@ update_cache:
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/rtl_tools_install
+      - $CI_PROJECT_DIR/rtl_tools
       - $CI_PROJECT_DIR/sdk
     policy: push
 
