@@ -78,6 +78,7 @@ update_cache:
     - make -C sdk sdk -j $CI_CORES > make_sdk.log
     - echo "Making programs"
     - make -C sdk prog -j $CI_CORES > make_prog.log
+    - cd sdk; git submodule deinit -f . ; cd ..
     - echo "Making tools"
     - make -C rtl tools -j $CI_CORES > make_tools.log
     - mv rtl/tools/install rtl_tools_install
