@@ -33,7 +33,7 @@ stages:
     - rm -rf rtl
     - git clone --recursive --depth 1000 -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot rtl
     - echo "Linking tools"
-    - ln -nsf ./rtl_tools_install rtl/tools/install
+    - ln -nsf $CI_PROJECT_DIR/rtl_tools_install $CI_PROJECT_DIR/rtl/tools/install
     - cd rtl
   artifacts:
     when: always
@@ -58,7 +58,7 @@ stages:
     policy: pull
   dependencies: []
   retry:
-    max: 2
+    max: 1
     when:
       - script_failure
 

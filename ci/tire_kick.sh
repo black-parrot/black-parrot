@@ -6,8 +6,8 @@ N=${1:-1}
 # Any setup needed for the job
 echo "Bleaching all"
 make bleach_all
-echo "Running prep_lite"
-make prep_lite -j ${N}
+echo "Making tools"
+make tools -j ${N}
 echo "Running tire_kick"
 make -C bp_top/syn tire_kick
 
