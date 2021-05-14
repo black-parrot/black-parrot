@@ -71,7 +71,7 @@ module bp_be_pipe_long
      ,.divisor_i(op_b)
      ,.signed_div_i(signed_div_li)
      ,.v_i(idiv_v_li | irem_v_li)
-     ,.ready_o(idiv_ready_lo)
+     ,.ready_and_o(idiv_ready_lo)
 
      ,.quotient_o(quotient_lo)
      ,.remainder_o(remainder_lo)

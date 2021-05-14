@@ -691,7 +691,7 @@ module bp_be_dcache
   bp_be_dcache_wbuf_entry_s wbuf_entry_in, wbuf_entry_out;
   logic wbuf_v_li, wbuf_v_lo, wbuf_yumi_li;
 
-  assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail_tv & ~uncached_op_tv_r & ~flush_self;
+  assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail_tv & ~uncached_op_tv_r;
 
   //
   // Atomic operations
@@ -796,6 +796,7 @@ module bp_be_dcache
      ,.reset_i(reset_i)
 
      ,.v_i(wbuf_v_li)
+     ,.poison_i(flush_self)
      ,.wbuf_entry_i(wbuf_entry_in)
 
      ,.v_o(wbuf_v_lo)
@@ -1178,7 +1179,7 @@ module bp_be_dcache
       //   1) If dirty bit is set, we force a miss and send off a flush request to the CE
       //   2) If dirty bit is not set, we do not send a request and simply return valid flush.
       //        The CSR unit is now responsible for sending the clear request to the I$.
-      wire set_dirty = wbuf_v_li;
+      wire set_dirty = wbuf_v_li & ~flush_self;
       wire clear_dirty = (is_fence & cache_req_complete_i);
       bsg_dff_reset_set_clear
        #(.width_p(1))
