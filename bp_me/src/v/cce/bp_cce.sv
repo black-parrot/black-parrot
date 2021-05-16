@@ -260,6 +260,7 @@ module bp_cce
       ,.fetch_pc_o(fetch_pc_lo)
       ,.inst_o(fetch_inst_lo)
       ,.inst_v_o(fetch_inst_v_lo)
+      ,.traffic_i(lce_req_v_i | lce_resp_v_i)
       );
 
   // Inst Pre-decode
