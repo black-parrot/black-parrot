@@ -71,6 +71,13 @@ module bp_cce_inst_ram
   assign inst_v_o = inst_v_r;
 
   logic ram_v_li;
+  
+  bp_cce_inst_s ram_out;
+  bp_cce_inst_s last_ram_data;
+  
+  logic [1:0] stall_counter;
+  logic mem_freeze, memory_read_enable, last_re;
+  
   bsg_mem_1rw_sync
     #(.width_p(cce_instr_width_gp)
       ,.els_p(num_cce_instr_ram_els_p)
@@ -78,12 +85,31 @@ module bp_cce_inst_ram
     inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.v_i(ucode_v_i | ram_v_li)
+      ,.v_i(memory_read_enable)
       ,.data_i(ucode_data_i)
       ,.addr_i(ucode_v_i ? ucode_addr_i : fetch_pc_n)
       ,.w_i(ucode_w_i)
-      ,.data_o(inst_o)
+      ,.data_o(ram_out)
       );
+  
+  always_ff @(posedge clk_i) begin
+    if(memory_read_enable) last_ram_data <= ram_out;
+    last_re <= memory_read_enable;
+    
+      if(reset_i) begin
+          stall_counter <= 2'b0;
+      end else begin
+          if(stall_i && !traffic_i) begin
+            if(stall_counter < STALL_THRES) stall_counter <= stall_counter + 1'b1;
+          end else begin
+            stall_counter <= 2'b0;
+          end
+      end //else
+  end //always_ff
+  
+  assign mem_freeze = ((stall_counter >= STALL_THRES) && stall_i && !traffic_i);
+  assign inst_o = (last_re && memory_read_enable) ? ram_out : last_ram_data;
+  assign memory_read_enable = ucode_v_i | (ram_v_li & !mem_freeze);
 
   // Configuration Bus Microcode Data output
   assign ucode_data_o = inst_o;
