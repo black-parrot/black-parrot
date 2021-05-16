@@ -21,6 +21,7 @@ export BP_SDK_DIR       ?= $(TOP)/../sdk
 BSG_CADENV_DIR ?= $(TOP)/external/bsg_cadenv
 -include $(BSG_CADENV_DIR)/cadenv.mk
 
-include $(BP_TOOLS_DIR)/Makefile.common
-include $(BP_SDK_DIR)/Makefile.common
+-include $(BP_TOOLS_DIR)/Makefile.common
+-include $(BP_SDK_DIR)/Makefile.common
+-include $(BP_HDK_DIR)/Makefile.common
 
