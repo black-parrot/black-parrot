@@ -7,11 +7,11 @@ export BP_FE_DIR        := $(TOP)/bp_fe
 export BP_BE_DIR        := $(TOP)/bp_be
 export BP_ME_DIR        := $(TOP)/bp_me
 export BP_TOP_DIR       := $(TOP)/bp_top
-export BP_TOOLS_DIR     := $(TOP)/tools
 export BP_EXTERNAL_DIR  := $(TOP)/external
 export BASEJUMP_STL_DIR := $(BP_EXTERNAL_DIR)/basejump_stl
 export HARDFLOAT_DIR    := $(BP_EXTERNAL_DIR)/HardFloat
 
+export BP_TOOLS_DIR     ?= $(TOP)/tools
 export BP_HDK_DIR       ?= $(TOP)/../hdk
 export BP_SDK_DIR       ?= $(TOP)/../sdk
 
