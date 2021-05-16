@@ -30,15 +30,12 @@ stages:
     - echo "Sourcing bashrc"
     - source ~/.bashrc
     - echo "Clearing old stuff"
-    - find ! -name . ! -name sdk ! -name rtl_tools -maxdepth 1 -type d -exec rm -rf {} \;
+    - find ! -name . ! -name sdk ! -maxdepth 1 -type d -exec rm -rf {} \;
     - echo "Cloning RTL Repo"
     - rm -rf $CI_PROJECT_DIR/rtl
     - git clone -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot $CI_PROJECT_DIR/rtl
-    - echo "Linking tools"
-    - rm -rf $CI_PROJECT_DIR/rtl/tools
-    - mv $CI_PROJECT_DIR/rtl_tools $CI_PROJECT_DIR/rtl/tools
-    - echo "Making libs"
-    - make -C rtl libs
+    - echo "Making tools and libs"
+    - make -C tools_lite -j $CI_NUM_CORES > make_tools.log
     - cd $CI_PROJECT_DIR/rtl
   artifacts:
     when: always
@@ -54,7 +51,6 @@ stages:
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/rtl_tools
       - $CI_PROJECT_DIR/sdk
     policy: pull
   dependencies: []
@@ -74,17 +70,13 @@ update_cache:
     - source ~/.bashrc
     - echo "Clearing out local directory"
     - rm -rf *
-    - echo "Cloning RTL Repo"
-    - git clone -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot $CI_PROJECT_DIR/rtl
     - git clone -b $SDK_COMMIT_REF_NAME https://github.com/black-parrot-sdk/black-parrot-sdk $CI_PROJECT_DIR/sdk
     - echo "Making sdk"
     - make -C sdk sdk -j 30 > make_sdk.log
     - echo "Making programs"
     - make -C sdk prog -j 30 > make_prog.log
-    - cd sdk; git submodule deinit -f . ; cd ..
-    - echo "Making tools"
-    - make -C rtl tools -j 30 > make_tools.log
-    - mv $CI_PROJECT_DIR/rtl/tools $CI_PROJECT_DIR/rtl_tools
+    - echo "Tidying sdk"
+    - make -C sdk tidy > make_tidy.log
   artifacts:
     when: always
     paths:
@@ -92,7 +84,6 @@ update_cache:
   cache: &global_cache
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/rtl_tools
       - $CI_PROJECT_DIR/sdk
     policy: push
 
