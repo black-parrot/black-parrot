@@ -55,7 +55,7 @@ stages:
 #    policy: pull
   dependencies: []
   retry:
-    max: 1
+    max: 2
     when:
       - script_failure
 
