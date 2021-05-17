@@ -82,10 +82,12 @@ module bp_nonsynth_if_verif
 
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
-  if (paddr_width_p < 40)
-    $warning("Warning: paddr < 40 has not been tested");
-  if (caddr_width_p != 32)
-    $warning("Warning: caddr != 32 has not been tested");
+  if (paddr_width_p < 33)
+    $warning("Warning: paddr < 33 has not been tested");
+  if (caddr_width_p < 32)
+    $warning("Warning: caddr < 32 has not been tested");
+  if (caddr_width_p >= paddr_width_p)
+    $fatal("Error: caddr cannot exceed paddr_width_p-1");
 
   if ((multicore_p == 1) && ((amo_swap_p != e_none) || (amo_fetch_logic_p != e_none) || (amo_fetch_arithmetic_p != e_none)))
     $fatal("Error: L2 atomics are not currently supported in bp_multicore");

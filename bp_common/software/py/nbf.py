@@ -51,7 +51,7 @@ class NBF:
     self.config = config
     self.checkpoint_file = checkpoint_file
     self.skip_zeros = skip_zeros
-    self.addr_width = addr_width
+    self.addr_width = (addr_width+3)/4*4
     self.data_width = data_width
 
     # Grab various files

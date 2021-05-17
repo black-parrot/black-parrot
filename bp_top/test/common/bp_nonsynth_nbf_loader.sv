@@ -16,7 +16,7 @@ module bp_nonsynth_nbf_loader
 
    , parameter nbf_filename_p = "prog.nbf"
    , parameter nbf_opcode_width_p = 8
-   , parameter nbf_addr_width_p = paddr_width_p
+   , parameter nbf_addr_width_p = (paddr_width_p+3)/4*4
    , parameter nbf_data_width_p = dword_width_gp
    , localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
    )
