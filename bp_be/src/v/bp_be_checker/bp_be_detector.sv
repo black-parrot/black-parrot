@@ -215,7 +215,7 @@ module bp_be_detector
       frs3_data_haz_v[3] = (isd_status_cast_i.frs3_v & rs3_match_vector[3])
                            & (dep_status_r[3].fma_fwb_v);
 
-      mem_in_pipe_v      = (dep_status_r[0].mem_v) | (dep_status_r[1].mem_v);
+      mem_in_pipe_v      = dep_status_r[0].mem_v | dep_status_r[1].mem_v | dep_status_r[2].mem_v;
       fence_haz_v        = (isd_status_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v))
                            | (isd_status_cast_i.mem_v & credits_full_i);
       cmd_haz_v          = cmd_full_i;
