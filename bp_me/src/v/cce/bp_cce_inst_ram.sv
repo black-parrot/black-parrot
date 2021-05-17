@@ -48,6 +48,7 @@ module bp_cce_inst_ram
    , output logic [cce_pc_width_p-1:0]           fetch_pc_o
    , output bp_cce_inst_s                        inst_o
    , output logic                                inst_v_o
+   , input  logic                                traffic_i
   );
 
   //synopsys translate_off
