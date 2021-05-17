@@ -25,6 +25,8 @@ module bp_cce_inst_ram
     `declare_bp_proc_params(bp_params_p)
     // Derived parameters
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , parameter STALL_THRES = 3
   )
   (input                                         clk_i
    , input                                       reset_i
