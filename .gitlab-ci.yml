@@ -1,5 +1,5 @@
 variables:
-  GIT_STRATEGY: none
+  GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: none
 
 ## CI Stages:
@@ -27,13 +27,6 @@ stages:
     - top_dev
     - sw_dev
   before_script:
-    - echo "Sourcing bashrc"
-    - source ~/.bashrc
-    - echo "Clearing old stuff"
-    - find ! -name . ! -name sdk ! -maxdepth 1 -type d -exec rm -rf {} \;
-    - echo "Cloning RTL Repo"
-    - rm -rf $CI_PROJECT_DIR/rtl
-    - git clone -b $CI_COMMIT_REF_NAME https://github.com/black-parrot/black-parrot $CI_PROJECT_DIR/rtl
     - echo "Making libs"
     - make -C rtl libs
     - cd $CI_PROJECT_DIR/rtl
@@ -55,37 +48,9 @@ stages:
 #    policy: pull
   dependencies: []
   retry:
-    max: 2
+    max: 3
     when:
       - script_failure
-
-#update_cache:
-#  stage: manual
-#  tags:
-#    - bsg
-#    - vcs
-#  when: manual
-#  script:
-#    - echo "Sourcing bashrc"
-#    - source ~/.bashrc
-#    - echo "Clearing out local directory"
-#    - rm -rf *
-#    - git clone -b $SDK_COMMIT_REF_NAME https://github.com/black-parrot-sdk/black-parrot-sdk $CI_PROJECT_DIR/sdk
-#    - echo "Making sdk"
-#    - make -C sdk sdk -j 30 > make_sdk.log
-#    - echo "Making programs"
-#    - make -C sdk prog -j 30 > make_prog.log
-#    - echo "Tidying sdk"
-#    - make -C sdk tidy > make_tidy.log
-#  artifacts:
-#    when: always
-#    paths:
-#      - "*.log"
-#  cache: &global_cache
-#    key: $CI_COMMIT_REF_SLUG
-#    paths:
-#      - $CI_PROJECT_DIR/sdk
-#    policy: push
 
 check-design:
   <<: *job_definition
