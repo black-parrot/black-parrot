@@ -1,16 +1,4 @@
 
-[submodule "sdk"]
-	path = sdk
-    url = https://github.com/black-parrot-sdk/black-parrot-sdk
-    branch = master
-    update = checkout
-
-[submodule "hdk"]
-	path = hdk
-	url = https://github.com/black-parrot-hdk/black-parrot-hdk
-    branch = master
-    update = checkout
-
 [submodule "tools/verilator"]
     path = tools/verilator
     url = https://github.com/verilator/verilator
@@ -25,17 +13,22 @@
     update = none
 
 [submodule "external/basejump_stl"]
-	path = external/basejump_stl
+    path = external/basejump_stl
     url = https://github.com/bespoke-silicon-group/basejump_stl.git
     branch = master
     update = checkout
 [submodule "external/HardFloat"]
-	path = external/HardFloat
-	url = https://github.com/bsg-external/HardFloat.git
+    path = external/HardFloat
+    url = https://github.com/bsg-external/HardFloat.git
     branch = master
     update = checkout
 [submodule "external/bsg_cadenv"]
-	path = external/bsg_cadenv
-	url = https://github.com/bespoke-silicon-group/bsg_cadenv
+    path = external/bsg_cadenv
+    url = https://github.com/bespoke-silicon-group/bsg_cadenv
     branch = master
     update = none
+[submodule "tools/dromajo"]
+	path = tools/dromajo
+	url = https://github.com/bsg-external/dromajo
+    branch = blackparrot_mods
+    update = checkout

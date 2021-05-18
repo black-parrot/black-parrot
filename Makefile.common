@@ -10,12 +10,10 @@ export BP_TOP_DIR       := $(TOP)/bp_top
 export BP_EXTERNAL_DIR  := $(TOP)/external
 export BASEJUMP_STL_DIR := $(BP_EXTERNAL_DIR)/basejump_stl
 export HARDFLOAT_DIR    := $(BP_EXTERNAL_DIR)/HardFloat
-export BP_TOOLS_DIR     := $(TOP)/tools
-export BP_SDK_DIR       := $(TOP)/sdk
-export BP_HDK_DIR       := $(TOP)/hdk
 
-export BP_SDK_PROG_DIR  := $(TOP)/sdk/prog
-export BP_SDK_UCODE_DIR := $(TOP)/sdk/ucode
+export BP_TOOLS_DIR     ?= $(TOP)/tools
+export BP_HDK_DIR       ?= $(TOP)/../hdk
+export BP_SDK_DIR       ?= $(TOP)/../sdk
 
 ## Setup CAD tools
 # If the machine you are working on is bsg_cadenv compliant, then you do not
@@ -23,11 +21,7 @@ export BP_SDK_UCODE_DIR := $(TOP)/sdk/ucode
 BSG_CADENV_DIR ?= $(TOP)/external/bsg_cadenv
 -include $(BSG_CADENV_DIR)/cadenv.mk
 
-## Don't fail in case we cloned non-recursively
 -include $(BP_TOOLS_DIR)/Makefile.common
--include $(BP_HDK_DIR)/Makefile.common
 -include $(BP_SDK_DIR)/Makefile.common
+-include $(BP_HDK_DIR)/Makefile.common
 
-# Makes clones much faster. Try setting to --depth=1, otherwise leave
-# unset if you see "fatal: reference is not a tree"
-export SHALLOW_SUB ?=
