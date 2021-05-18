@@ -62,16 +62,17 @@ module bp_cce_inst_ram
   end
   //synopsys translate_on
 
-`declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
-  
+
   // Fetch PC Register
   // This register has the same value as the instruction RAM's internal address register
   logic [cce_pc_width_p-1:0] fetch_pc_r, fetch_pc_n;
   assign fetch_pc_o = fetch_pc_r;
   logic inst_v_r, inst_v_n;
   assign inst_v_o = inst_v_r;
+
   logic ram_v_li;
   
   logic [`BSG_SAFE_CLOG2(stall_threshold_p+1)-1:0] stall_count_o;
@@ -111,6 +112,7 @@ module bp_cce_inst_ram
   
   // Configuration Bus Microcode Data output
   assign ucode_data_o = inst_o;
+
 
   typedef enum logic [1:0] {
     RESET
