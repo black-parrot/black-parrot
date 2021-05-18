@@ -26,7 +26,7 @@ module bp_cce_inst_ram
     // Derived parameters
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-    , parameter STALL_THRES = 3
+    , parameter stall_threshold = 3
   )
   (input                                         clk_i
    , input                                       reset_i
@@ -62,28 +62,29 @@ module bp_cce_inst_ram
   end
   //synopsys translate_on
 
+<<<<<<< HEAD
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+=======
+`declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+>>>>>>> d3c97524... Switch to basejump STL components
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
-
+  
   // Fetch PC Register
   // This register has the same value as the instruction RAM's internal address register
   logic [cce_pc_width_p-1:0] fetch_pc_r, fetch_pc_n;
   assign fetch_pc_o = fetch_pc_r;
   logic inst_v_r, inst_v_n;
   assign inst_v_o = inst_v_r;
-
   logic ram_v_li;
   
-  bp_cce_inst_s ram_out;
-  bp_cce_inst_s last_ram_data;
-  
-  logic [1:0] stall_counter;
-  logic mem_freeze, memory_read_enable, last_re;
+  logic [`BSG_SAFE_CLOG2(stall_threshold+1)-1:0] stall_count_o;
+  logic mem_freeze, memory_read_enable;
   
   bsg_mem_1rw_sync
     #(.width_p(cce_instr_width_gp)
       ,.els_p(num_cce_instr_ram_els_p)
+      ,.latch_last_read_p(1)
       )
     inst_ram
      (.clk_i(clk_i)
@@ -92,31 +93,27 @@ module bp_cce_inst_ram
       ,.data_i(ucode_data_i)
       ,.addr_i(ucode_v_i ? ucode_addr_i : fetch_pc_n)
       ,.w_i(ucode_w_i)
-      ,.data_o(ram_out)
+      ,.data_o(inst_o)
       );
   
-  always_ff @(posedge clk_i) begin
-    if(memory_read_enable) last_ram_data <= ram_out;
-    last_re <= memory_read_enable;
-    
-      if(reset_i) begin
-          stall_counter <= 2'b0;
-      end else begin
-          if(stall_i && !traffic_i) begin
-            if(stall_counter < STALL_THRES) stall_counter <= stall_counter + 1'b1;
-          end else begin
-            stall_counter <= 2'b0;
-          end
-      end //else
-  end //always_ff
+  //Disable instruction RAM after stalling for stall_threshold cycles
+  bsg_counter_clear_up 
+    #(.max_val_p(stall_threshold)
+      ,.disable_overflow_warning_p(1)
+     )
+    mem_freeze_counter
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.clear_i(traffic_i || !stall)
+      ,.up_i(stall_i && !mem_freeze)
+      ,.count_o(stall_count_o)
+    );
   
-  assign mem_freeze = ((stall_counter >= STALL_THRES) && stall_i && !traffic_i);
-  assign inst_o = (last_re && memory_read_enable) ? ram_out : last_ram_data;
+  assign mem_freeze = ((stall_count_o == stall_threshold) && stall_i && !traffic_i);
   assign memory_read_enable = ucode_v_i | (ram_v_li & !mem_freeze);
-
+  
   // Configuration Bus Microcode Data output
   assign ucode_data_o = inst_o;
-
 
   typedef enum logic [1:0] {
     RESET
