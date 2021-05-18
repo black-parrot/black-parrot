@@ -26,7 +26,7 @@ module bp_cce_inst_ram
     // Derived parameters
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-    , parameter stall_threshold = 3
+    , parameter stall_threshold_p = 3
   )
   (input                                         clk_i
    , input                                       reset_i
@@ -74,7 +74,7 @@ module bp_cce_inst_ram
   assign inst_v_o = inst_v_r;
   logic ram_v_li;
   
-  logic [`BSG_SAFE_CLOG2(stall_threshold+1)-1:0] stall_count_o;
+  logic [`BSG_SAFE_CLOG2(stall_threshold_p+1)-1:0] stall_count_o;
   logic mem_freeze, memory_read_enable;
   
   bsg_mem_1rw_sync
@@ -92,9 +92,10 @@ module bp_cce_inst_ram
       ,.data_o(inst_o)
       );
   
-  //Disable instruction RAM after stalling for stall_threshold cycles
+  
+  //Disable instruction RAM after stalling for stall_threshold_p cycles
   bsg_counter_clear_up 
-    #(.max_val_p(stall_threshold)
+  #(.max_val_p(stall_threshold_p)
       ,.disable_overflow_warning_p(1)
      )
     mem_freeze_counter
@@ -105,7 +106,7 @@ module bp_cce_inst_ram
       ,.count_o(stall_count_o)
     );
   
-  assign mem_freeze = ((stall_count_o == stall_threshold) && stall_i && !traffic_i);
+  assign mem_freeze = ((stall_count_o == stall_threshold_p) && stall_i && !traffic_i);
   assign memory_read_enable = ucode_v_i | (ram_v_li & !mem_freeze);
   
   // Configuration Bus Microcode Data output
