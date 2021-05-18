@@ -78,9 +78,7 @@ module bp_cce_mmio_cfg_loader
 
   enum logic [5:0] {
     RESET
-    ,BP_RESET_SET
     ,BP_FREEZE_SET
-    ,BP_RESET_CLR
     ,SEND_RAM
     ,SEND_ICACHE_NORMAL
     ,SEND_DCACHE_NORMAL
@@ -211,24 +209,14 @@ module bp_cce_mmio_cfg_loader
 
       case (state_r)
         RESET: begin
-          state_n = skip_ram_init_p ? BP_FREEZE_CLR : BP_RESET_SET;
+          state_n = skip_ram_init_p ? BP_FREEZE_CLR : BP_FREEZE_SET;
 
           sync_cnt_clr = 1'b1;
           ucode_cnt_clr = 1'b1;
           core_cnt_clr = 1'b1;
         end
-        BP_RESET_SET: begin
-          state_n = core_prog_done ? BP_FREEZE_SET : BP_RESET_SET;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_reg_reset_gp;
-          cfg_data_lo = dword_width_gp'(1);
-        end
         BP_FREEZE_SET: begin
-          state_n = core_prog_done ? BP_RESET_CLR : BP_FREEZE_SET;
+          state_n = core_prog_done ? SEND_RAM : BP_FREEZE_SET;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
@@ -236,16 +224,6 @@ module bp_cce_mmio_cfg_loader
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_reg_freeze_gp;
           cfg_data_lo = dword_width_gp'(1);
-        end
-        BP_RESET_CLR: begin
-          state_n = core_prog_done ? SEND_RAM : BP_RESET_CLR;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_reg_reset_gp;
-          cfg_data_lo = dword_width_gp'(0);
         end
         SEND_RAM: begin
           state_n = (core_prog_done & ucode_prog_done) ? SEND_ICACHE_NORMAL : SEND_RAM;
