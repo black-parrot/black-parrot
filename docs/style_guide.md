@@ -6,7 +6,7 @@ This document is intended to provide more rigid structure for coding style and f
 ## References
 [BSG SystemVerilog Coding Guidelines](https://docs.google.com/document/d/1xA5XUzBtz_D6aSyIBQUwFk_kSUdckrfxa2uzGjMgmCU)
 
-[Freescale Verilog Guidelines](https://people.ece.cornell.edu/land/courses/ece5760/Verilog/FreescaleVerilog.pdf)
+[Freescale Verilog Guidelines](https://michaeltaylor.org/edu/papers/FreescaleVerilog.pdf)
 
 [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
 

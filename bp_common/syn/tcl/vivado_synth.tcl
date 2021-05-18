@@ -23,7 +23,7 @@ foreach x $f {
       set temp [string trimleft $x $trimchars]
       set expanded [subst $temp]
       lappend dir_list $expanded
-    } elseif {[string match "*bsg_mem_1rw_sync_mask_write_bit.v" $x]} {
+    } elseif {[string match "*bsg_mem_1rw_sync_mask_write_bit*.v" $x]} {
       # bitmasked memories are incorrectly inferred in Kintex 7 and Ultrascale+ FPGAs, this version maps into lutram correctly
       set replace_hard "$BASEJUMP_STL_DIR/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v"
       set expanded [subst $replace_hard]
