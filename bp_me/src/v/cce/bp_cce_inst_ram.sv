@@ -50,7 +50,6 @@ module bp_cce_inst_ram
    , output logic [cce_pc_width_p-1:0]           fetch_pc_o
    , output bp_cce_inst_s                        inst_o
    , output logic                                inst_v_o
-   , input  logic                                traffic_i
   );
 
   //synopsys translate_off
@@ -102,12 +101,12 @@ module bp_cce_inst_ram
     mem_freeze_counter
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.clear_i(traffic_i || !stall)
+      ,.clear_i(!stall_i)
       ,.up_i(stall_i && !mem_freeze)
       ,.count_o(stall_count_o)
     );
   
-  assign mem_freeze = ((stall_count_o == stall_threshold_p) && stall_i && !traffic_i);
+  assign mem_freeze = ((stall_count_o == stall_threshold_p) && stall_i);
   assign memory_read_enable = ucode_v_i | (ram_v_li & !mem_freeze);
   
   // Configuration Bus Microcode Data output
