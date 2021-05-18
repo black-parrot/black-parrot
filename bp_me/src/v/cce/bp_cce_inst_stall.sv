@@ -109,6 +109,9 @@ module bp_cce_inst_stall
     stall_o |= (decoded_inst_i.dir_w_v & msg_dir_w_busy_i);
     stall_o |= (decoded_inst_i.dir_r_v & msg_dir_w_busy_i);
 
+    // only stall on valid instruction
+    stall_o &= decoded_inst_i.v;
+
   end
 
 endmodule
