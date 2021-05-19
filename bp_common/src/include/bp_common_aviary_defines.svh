@@ -203,6 +203,7 @@
           ,`bp_aviary_parameter_override(btb_idx_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(bht_idx_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(ghist_width, override_cfg_mp, default_cfg_mp)             \
+          ,`bp_aviary_parameter_override(ras_num_entries, override_cfg_mp, default_cfg_mp)         \
                                                                                                    \
           ,`bp_aviary_parameter_override(itlb_els_4k, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(itlb_els_1g, override_cfg_mp, default_cfg_mp)             \
