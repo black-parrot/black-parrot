@@ -73,7 +73,7 @@ module bp_cce_mmio_cfg_loader
   logic [cfg_addr_width_gp-1:0] cfg_addr_lo;
   logic [dword_width_gp-1:0] cfg_data_lo;
 
-  assign cce_inst_boot_rom_addr = cfg_addr_lo[0+:inst_ram_addr_width_p];
+  assign cce_inst_boot_rom_addr = cfg_addr_lo[3+:inst_ram_addr_width_p];
   assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
 
   enum logic [5:0] {
