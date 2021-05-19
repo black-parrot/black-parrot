@@ -234,7 +234,7 @@ module bp_cce_mmio_cfg_loader
           ucode_cnt_clr = ucode_prog_done;
 
           cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_gp'(cfg_mem_base_cce_ucode_gp) + ucode_cnt_r;
+          cfg_addr_lo = cfg_addr_width_gp'(cfg_mem_base_cce_ucode_gp) + (ucode_cnt_r << 3);
           cfg_data_lo = cce_inst_boot_rom_data;
           // TODO: This is nonsynth, won't work on FPGA
           cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
