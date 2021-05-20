@@ -10,6 +10,7 @@
 module bp_tile
  import bp_common_pkg::*;
  import bp_be_pkg::*;
+ import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
  import bp_me_pkg::*;
@@ -80,16 +81,35 @@ module bp_tile
   logic [1:0] lce_cmd_v_lo, lce_cmd_ready_li;
 
   // CCE connections
-  bp_bedrock_lce_req_msg_s cce_lce_req_li;
-  logic cce_lce_req_v_li, cce_lce_req_yumi_lo;
-  bp_bedrock_lce_cmd_msg_s cce_lce_cmd_lo;
-  logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
-  bp_bedrock_lce_resp_msg_s cce_lce_resp_li;
-  logic cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
+  logic cce_lce_req_header_v, cce_lce_req_header_ready_and;
+  logic cce_lce_req_data_v, cce_lce_req_data_ready_and;
+  logic cce_lce_req_has_data, cce_lce_req_last;
+  logic cce_lce_resp_header_v, cce_lce_resp_header_ready_and;
+  logic cce_lce_resp_data_v, cce_lce_resp_data_ready_and;
+  logic cce_lce_resp_has_data, cce_lce_resp_last;
+  logic cce_lce_cmd_header_v, cce_lce_cmd_header_ready_and;
+  logic cce_lce_cmd_data_v, cce_lce_cmd_data_ready_and;
+  logic cce_lce_cmd_has_data, cce_lce_cmd_last;
+  bp_bedrock_lce_req_msg_header_s cce_lce_req_header;
+  bp_bedrock_lce_resp_msg_header_s cce_lce_resp_header;
+  bp_bedrock_lce_cmd_msg_header_s cce_lce_cmd_header;
+  logic [dword_width_gp-1:0] cce_lce_req_data, cce_lce_resp_data, cce_lce_cmd_data;
 
   // Mem connections
+
+  // to/from CCE
+  logic cce_mem_resp_header_v, cce_mem_resp_header_ready_and;
+  logic cce_mem_resp_data_v, cce_mem_resp_data_ready_and;
+  logic cce_mem_resp_has_data, cce_mem_resp_last;
+  logic cce_mem_cmd_header_v, cce_mem_cmd_header_ready_and;
+  logic cce_mem_cmd_data_v, cce_mem_cmd_data_ready_and;
+  logic cce_mem_cmd_has_data, cce_mem_cmd_last;
+  bp_bedrock_cce_mem_msg_header_s cce_mem_resp_header, cce_mem_cmd_header;
+  logic [dword_width_gp-1:0] cce_mem_cmd_data, cce_mem_resp_data;
+
+  // to/from Burst-Lite converters
   bp_bedrock_cce_mem_msg_s cce_mem_cmd_lo;
-  logic cce_mem_cmd_v_lo, cce_mem_cmd_ready_li;
+  logic cce_mem_cmd_v_lo, cce_mem_cmd_ready_and_li;
   bp_bedrock_cce_mem_msg_s cce_mem_resp_li;
   logic cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
 
@@ -113,7 +133,7 @@ module bp_tile
 
   bp_bedrock_cce_mem_msg_s cfg_mem_cmd_li;
   bp_bedrock_xce_mem_msg_s cfg_mem_cmd;
-  logic cfg_mem_cmd_v_li, cfg_mem_cmd_ready_lo;
+  logic cfg_mem_cmd_v_li, cfg_mem_cmd_ready_and_lo;
   bp_bedrock_cce_mem_msg_s cfg_mem_resp_lo;
   bp_bedrock_xce_mem_msg_s cfg_mem_resp;
   logic cfg_mem_resp_v_lo, cfg_mem_resp_yumi_li;
@@ -154,7 +174,7 @@ module bp_tile
 
      ,.mem_cmd_i(cfg_mem_cmd)
      ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
-     ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_and_lo)
 
      ,.mem_resp_o(cfg_mem_resp)
      ,.mem_resp_v_o(cfg_mem_resp_v_lo)
@@ -235,25 +255,54 @@ module bp_tile
      ,.ucode_data_i(cce_ucode_data_lo)
      ,.ucode_data_o(cce_ucode_data_li)
 
-     ,.lce_req_i(cce_lce_req_li)
-     ,.lce_req_v_i(cce_lce_req_v_li)
-     ,.lce_req_yumi_o(cce_lce_req_yumi_lo)
+     // LCE-CCE Interface
+     // BedRock Burst protocol: ready&valid
+     ,.lce_req_header_i(cce_lce_req_header)
+     ,.lce_req_header_v_i(cce_lce_req_header_v)
+     ,.lce_req_header_ready_and_o(cce_lce_req_header_ready_and)
+     ,.lce_req_has_data_i(cce_lce_req_has_data)
+     ,.lce_req_data_i(cce_lce_req_data)
+     ,.lce_req_data_v_i(cce_lce_req_data_v)
+     ,.lce_req_data_ready_and_o(cce_lce_req_data_ready_and)
+     ,.lce_req_last_i(cce_lce_req_last)
 
-     ,.lce_cmd_o(cce_lce_cmd_lo)
-     ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-     ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
+     ,.lce_resp_header_i(cce_lce_resp_header)
+     ,.lce_resp_header_v_i(cce_lce_resp_header_v)
+     ,.lce_resp_header_ready_and_o(cce_lce_resp_header_ready_and)
+     ,.lce_resp_has_data_i(cce_lce_resp_has_data)
+     ,.lce_resp_data_i(cce_lce_resp_data)
+     ,.lce_resp_data_v_i(cce_lce_resp_data_v)
+     ,.lce_resp_data_ready_and_o(cce_lce_resp_data_ready_and)
+     ,.lce_resp_last_i(cce_lce_resp_last)
 
-     ,.lce_resp_i(cce_lce_resp_li)
-     ,.lce_resp_v_i(cce_lce_resp_v_li)
-     ,.lce_resp_yumi_o(cce_lce_resp_yumi_lo)
+     ,.lce_cmd_header_o(cce_lce_cmd_header)
+     ,.lce_cmd_header_v_o(cce_lce_cmd_header_v)
+     ,.lce_cmd_header_ready_and_i(cce_lce_cmd_header_ready_and)
+     ,.lce_cmd_has_data_o(cce_lce_cmd_has_data)
+     ,.lce_cmd_data_o(cce_lce_cmd_data)
+     ,.lce_cmd_data_v_o(cce_lce_cmd_data_v)
+     ,.lce_cmd_data_ready_and_i(cce_lce_cmd_data_ready_and)
+     ,.lce_cmd_last_o(cce_lce_cmd_last)
 
-     ,.mem_cmd_o(cce_mem_cmd_lo)
-     ,.mem_cmd_v_o(cce_mem_cmd_v_lo)
-     ,.mem_cmd_ready_i(cce_mem_cmd_ready_li)
+     // CCE-MEM Interface
+     // BedRock Burst protocol: ready&valid
+     ,.mem_resp_header_i(cce_mem_resp_header)
+     ,.mem_resp_header_v_i(cce_mem_resp_header_v)
+     ,.mem_resp_header_ready_and_o(cce_mem_resp_header_ready_and)
+     ,.mem_resp_has_data_i(cce_mem_resp_has_data)
+     ,.mem_resp_data_i(cce_mem_resp_data)
+     ,.mem_resp_data_v_i(cce_mem_resp_data_v)
+     ,.mem_resp_data_ready_and_o(cce_mem_resp_data_ready_and)
+     ,.mem_resp_last_i(cce_mem_resp_last)
 
-     ,.mem_resp_i(cce_mem_resp_li)
-     ,.mem_resp_v_i(cce_mem_resp_v_li)
-     ,.mem_resp_yumi_o(cce_mem_resp_yumi_lo)
+     ,.mem_cmd_header_o(cce_mem_cmd_header)
+     ,.mem_cmd_header_v_o(cce_mem_cmd_header_v)
+     ,.mem_cmd_header_ready_and_i(cce_mem_cmd_header_ready_and)
+     ,.mem_cmd_has_data_o(cce_mem_cmd_has_data)
+     ,.mem_cmd_data_o(cce_mem_cmd_data)
+     ,.mem_cmd_data_v_o(cce_mem_cmd_data_v)
+     ,.mem_cmd_data_ready_and_i(cce_mem_cmd_data_ready_and)
+     ,.mem_cmd_last_o(cce_mem_cmd_last)
      );
 
   `declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_msg_header_s, cce_block_width_p);
@@ -263,6 +312,7 @@ module bp_tile
 
   `declare_bp_lce_cmd_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_msg_header_s, cce_block_width_p);
   localparam lce_cmd_wh_payload_width_lp = `bp_coh_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_msg_header_s), cce_block_width_p);
+  localparam lce_cmd_wh_pad_width_lp = `bp_coh_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_msg_header_s));
   bp_lce_cmd_wormhole_packet_s [1:0] lce_cmd_packet_lo, lce_cmd_packet_li;
   bp_lce_cmd_wormhole_header_s [1:0] lce_cmd_header_lo, lce_cmd_header_li;
 
@@ -275,12 +325,20 @@ module bp_tile
   bp_coh_ready_and_link_s [1:0] lce_cmd_link_li, lce_cmd_link_lo;
   bp_coh_ready_and_link_s [1:0] lce_resp_link_li, lce_resp_link_lo;
 
-  bp_coh_ready_and_link_s cce_lce_req_link_li, cce_lce_req_link_lo;
+  bp_coh_ready_and_link_s cce_lce_req_link_lo;
   bp_coh_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;
-  bp_coh_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
+  bp_coh_ready_and_link_s cce_lce_resp_link_lo;
+
+  // stub unused LCE-CCE connections
+  assign cce_lce_req_link_lo.v = '0;
+  assign cce_lce_req_link_lo.data = '0;
+  assign cce_lce_cmd_link_lo.ready_and_rev = '0;
+  assign cce_lce_resp_link_lo.v = '0;
+  assign cce_lce_resp_link_lo.data = '0;
 
   for (genvar i = 0; i < 2; i++)
     begin : lce
+      // outputs a header with [msg_hdr, cid, len, cord] fields
       bp_me_wormhole_packet_encode_lce_req
        #(.bp_params_p(bp_params_p)
          )
@@ -366,73 +424,191 @@ module bp_tile
          );
     end
 
-  bp_lce_req_wormhole_packet_s cce_lce_req_packet_li;
-  bsg_wormhole_router_adapter_out
-   #(.max_payload_width_p(lce_req_wh_payload_width_lp)
-     ,.len_width_p(coh_noc_len_width_p)
-     ,.cord_width_p(coh_noc_cord_width_p)
-     ,.flit_width_p(coh_noc_flit_width_p)
+  // CCE wormhole connections
+
+  // LCE to CCE request
+  localparam pr_len_width_lp = 8;
+
+  logic [pr_len_width_lp-1:0] cce_lce_req_pr_len;
+  bp_bedrock_size_to_len
+   #(.len_width_p(pr_len_width_lp)
+     ,.beat_width_p(dword_width_gp)
      )
-   cce_req_adapter_out
+   cce_lce_req_size_to_len
+   (.size_i(cce_lce_req_header.size)
+    ,.len_o(cce_lce_req_pr_len)
+   );
+
+  bp_wormhole_to_burst
+   #(.flit_width_p(coh_noc_flit_width_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cid_width_p(coh_noc_cid_width_p)
+     ,.pr_hdr_width_p(lce_req_msg_header_width_lp)
+     ,.pr_data_width_p(dword_width_gp)
+     ,.pr_len_width_p(pr_len_width_lp)
+     )
+   cce_lce_req_wh_to_burst
    (.clk_i(clk_i)
-    ,.reset_i(reset_r)
+    ,.reset_i(reset_i)
 
-    ,.link_i(lce_req_link_cast_i)
-    ,.link_o(cce_lce_req_link_lo)
+    ,.link_data_i(lce_req_link_cast_i.data)
+    ,.link_v_i(lce_req_link_cast_i.v)
+    ,.link_ready_and_o(cce_lce_req_link_lo.ready_and_rev)
 
-    ,.packet_o(cce_lce_req_packet_li)
-    ,.v_o(cce_lce_req_v_li)
-    ,.yumi_i(cce_lce_req_yumi_lo)
+    ,.pr_hdr_o(cce_lce_req_header)
+    ,.pr_hdr_v_o(cce_lce_req_header_v)
+    ,.pr_hdr_ready_and_i(cce_lce_req_header_ready_and)
+    ,.pr_has_data_o(cce_lce_req_has_data)
+    ,.pr_data_beats_i(cce_lce_req_pr_len)
+
+    ,.pr_data_o(cce_lce_req_data)
+    ,.pr_data_v_o(cce_lce_req_data_v)
+    ,.pr_data_ready_and_i(cce_lce_req_data_ready_and)
+    ,.pr_last_o(cce_lce_req_last)
     );
-  assign cce_lce_req_li = '{header: cce_lce_req_packet_li.header.msg_hdr, data: cce_lce_req_packet_li.data};
 
-  bp_lce_cmd_wormhole_packet_s cce_lce_cmd_packet_lo;
-  bp_lce_cmd_wormhole_header_s cce_lce_cmd_header_lo;
+  // CCE to LCE command
+  // encode the header into WH format
+  bp_lce_cmd_wormhole_header_s cce_lce_cmd_wh_header_lo;
   bp_me_wormhole_packet_encode_lce_cmd
    #(.bp_params_p(bp_params_p))
    cmd_encode
-    (.lce_cmd_header_i(cce_lce_cmd_lo.header)
-     ,.wh_header_o(cce_lce_cmd_header_lo)
-     );
-  assign cce_lce_cmd_packet_lo = '{header: cce_lce_cmd_header_lo, data: cce_lce_cmd_lo.data};
-
-  bsg_wormhole_router_adapter_in
-   #(.max_payload_width_p(lce_cmd_wh_payload_width_lp)
-     ,.len_width_p(coh_noc_len_width_p)
-     ,.cord_width_p(coh_noc_cord_width_p)
-     ,.flit_width_p(coh_noc_flit_width_p)
-     )
-   cmd_adapter_in
-    (.clk_i(clk_i)
-     ,.reset_i(reset_r)
-
-     ,.packet_i(cce_lce_cmd_packet_lo)
-     ,.v_i(cce_lce_cmd_v_lo)
-     ,.ready_o(cce_lce_cmd_ready_li)
-
-     ,.link_i(cce_lce_cmd_link_li)
-     ,.link_o(cce_lce_cmd_link_lo)
+    (.lce_cmd_header_i(cce_lce_cmd_header)
+     ,.wh_header_o(cce_lce_cmd_wh_header_lo)
      );
 
-  bp_lce_resp_wormhole_packet_s cce_lce_resp_packet_li;
-  bsg_wormhole_router_adapter_out
-   #(.max_payload_width_p(lce_resp_wh_payload_width_lp)
-     ,.len_width_p(coh_noc_len_width_p)
+  bp_burst_to_wormhole
+   #(.flit_width_p(coh_noc_flit_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
-     ,.flit_width_p(coh_noc_flit_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cid_width_p(coh_noc_cid_width_p)
+     ,.pr_hdr_width_p(lce_cmd_msg_header_width_lp)
+     ,.pr_data_width_p(dword_width_gp)
      )
-   cce_resp_adapter_out
+   cce_lce_cmd_burst_to_wh
    (.clk_i(clk_i)
-    ,.reset_i(reset_r)
+    ,.reset_i(reset_i)
 
-    ,.link_i(lce_resp_link_cast_i)
-    ,.link_o(cce_lce_resp_link_lo)
+    ,.pr_hdr_i(cce_lce_cmd_wh_header_lo[0+:($bits(bp_lce_cmd_wormhole_header_s)-lce_cmd_wh_pad_width_lp)])
+    ,.pr_hdr_v_i(cce_lce_cmd_header_v)
+    ,.pr_hdr_ready_and_o(cce_lce_cmd_header_ready_and)
+    ,.pr_has_data_i(cce_lce_cmd_has_data)
 
-    ,.packet_o(cce_lce_resp_packet_li)
-    ,.v_o(cce_lce_resp_v_li)
-    ,.yumi_i(cce_lce_resp_yumi_lo)
+    ,.pr_data_i(cce_lce_cmd_data)
+    ,.pr_data_v_i(cce_lce_cmd_data_v)
+    ,.pr_data_ready_and_o(cce_lce_cmd_data_ready_and)
+    ,.pr_last_i(cce_lce_cmd_last)
+
+    ,.link_data_o(cce_lce_cmd_link_lo.data)
+    ,.link_v_o(cce_lce_cmd_link_lo.v)
+    ,.link_ready_and_i(cce_lce_cmd_link_li.ready_and_rev)
     );
-  assign cce_lce_resp_li = '{header: cce_lce_resp_packet_li.header.msg_hdr, data: cce_lce_resp_packet_li.data};
+
+  // LCE to CCE response
+  logic [pr_len_width_lp-1:0] cce_lce_resp_pr_len;
+  bp_bedrock_size_to_len
+   #(.len_width_p(pr_len_width_lp)
+     ,.beat_width_p(dword_width_gp)
+     )
+   cce_lce_resp_size_to_len
+   (.size_i(cce_lce_resp_header.size)
+    ,.len_o(cce_lce_resp_pr_len)
+   );
+
+  bp_wormhole_to_burst
+   #(.flit_width_p(coh_noc_flit_width_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cid_width_p(coh_noc_cid_width_p)
+     ,.pr_hdr_width_p(lce_resp_msg_header_width_lp)
+     ,.pr_data_width_p(dword_width_gp)
+     ,.pr_len_width_p(pr_len_width_lp)
+     )
+   cce_lce_resp_wh_to_burst
+   (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.link_data_i(lce_resp_link_cast_i.data)
+    ,.link_v_i(lce_resp_link_cast_i.v)
+    ,.link_ready_and_o(cce_lce_resp_link_lo.ready_and_rev)
+
+    ,.pr_hdr_o(cce_lce_resp_header)
+    ,.pr_hdr_v_o(cce_lce_resp_header_v)
+    ,.pr_hdr_ready_and_i(cce_lce_resp_header_ready_and)
+    ,.pr_has_data_o(cce_lce_resp_has_data)
+    ,.pr_data_beats_i(cce_lce_resp_pr_len)
+
+    ,.pr_data_o(cce_lce_resp_data)
+    ,.pr_data_v_o(cce_lce_resp_data_v)
+    ,.pr_data_ready_and_i(cce_lce_resp_data_ready_and)
+    ,.pr_last_o(cce_lce_resp_last)
+    );
+
+  // Mem Command
+  logic cce_mem_cmd_v_and_lo;
+  bp_burst_to_lite
+   #(.bp_params_p(bp_params_p)
+     ,.in_data_width_p(dword_width_gp)
+     ,.out_data_width_p(cce_block_width_p)
+     ,.payload_width_p(cce_mem_payload_width_lp)
+     ,.payload_mask_p(mem_cmd_payload_mask_gp)
+     )
+   mem_cmd_burst2lite
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.in_msg_header_i(cce_mem_cmd_header)
+     ,.in_msg_header_v_i(cce_mem_cmd_header_v)
+     ,.in_msg_header_ready_and_o(cce_mem_cmd_header_ready_and)
+     ,.in_msg_has_data_i(cce_mem_cmd_has_data)
+
+     ,.in_msg_data_i(cce_mem_cmd_data)
+     ,.in_msg_data_v_i(cce_mem_cmd_data_v)
+     ,.in_msg_data_ready_and_o(cce_mem_cmd_data_ready_and)
+     ,.in_msg_last_i(cce_mem_cmd_last)
+
+     ,.out_msg_o(cce_mem_cmd_lo)
+     ,.out_msg_v_o(cce_mem_cmd_v_and_lo)
+     ,.out_msg_ready_and_i(cce_mem_cmd_ready_and_li)
+     );
+
+  // TODO: convert loopback/cache/cfg/clint to use BedRock Burst interfaces and arbitrate
+  // on the burst protocol
+  // gate the valid out signal sent to loopback/cache/cfg/clint
+  // without the gate, it is possible for the client to consume the message
+  // while the converter does not handshake because one of the other three non-target
+  // clients isn't ready
+  assign cce_mem_cmd_v_lo = cce_mem_cmd_v_and_lo & cce_mem_cmd_ready_and_li;
+
+  // Mem Response
+  logic cce_mem_resp_ready_lo;
+  assign cce_mem_resp_yumi_lo = cce_mem_resp_v_li & cce_mem_resp_ready_lo;
+  bp_lite_to_burst
+   #(.bp_params_p(bp_params_p)
+     ,.in_data_width_p(cce_block_width_p)
+     ,.out_data_width_p(dword_width_gp)
+     ,.payload_width_p(cce_mem_payload_width_lp)
+     ,.payload_mask_p(mem_resp_payload_mask_gp)
+     )
+   mem_resp_lite2burst
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.in_msg_i(cce_mem_resp_li)
+     ,.in_msg_v_i(cce_mem_resp_v_li)
+     ,.in_msg_ready_and_o(cce_mem_resp_ready_lo)
+
+     ,.out_msg_header_o(cce_mem_resp_header)
+     ,.out_msg_header_v_o(cce_mem_resp_header_v)
+     ,.out_msg_header_ready_and_i(cce_mem_resp_header_ready_and)
+     ,.out_msg_has_data_o(cce_mem_resp_has_data)
+
+     ,.out_msg_data_o(cce_mem_resp_data)
+     ,.out_msg_data_v_o(cce_mem_resp_data_v)
+     ,.out_msg_data_ready_and_i(cce_mem_resp_data_ready_and)
+     ,.out_msg_last_o(cce_mem_resp_last)
+     );
 
   bp_coh_ready_and_link_s req_concentrated_link_li, req_concentrated_link_lo;
   bp_coh_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo;
@@ -514,12 +690,18 @@ module bp_tile
   wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_cache_cmd;
 
+  // TODO: fix me!
+  // BUG: it is possible for the cce_mem_cmd_v_lo signal to be high, cce_mem_cmd_ready_and_li
+  // to be low, but one of loopback/cache/cfg/clint_mem_cmd_ready_lo to be high and
+  // the cce_mem_cmd targets the module that is ready. This results in the burst2lite
+  // converter failing to handshake, but the receiver consuming the message
+  // This is currently solved by gating the cce_mem_cmd_v_lo signal with cce_mem_cmd_ready_and_li
   assign cfg_mem_cmd_v_li      = is_cfg_cmd   & cce_mem_cmd_v_lo;
   assign clint_mem_cmd_v_li    = is_clint_cmd & cce_mem_cmd_v_lo;
   assign cache_mem_cmd_v_li    = is_cache_cmd & cce_mem_cmd_v_lo;
   assign loopback_mem_cmd_v_li = is_loopback_cmd & cce_mem_cmd_v_lo;
 
-  assign cce_mem_cmd_ready_li = &{loopback_mem_cmd_ready_lo, cache_mem_cmd_ready_lo, cfg_mem_cmd_ready_lo, clint_mem_cmd_ready_lo};
+  assign cce_mem_cmd_ready_and_li = &{loopback_mem_cmd_ready_lo, cache_mem_cmd_ready_lo, cfg_mem_cmd_ready_and_lo, clint_mem_cmd_ready_lo};
 
   assign {loopback_mem_cmd_li, cache_mem_cmd_li, clint_mem_cmd_li, cfg_mem_cmd_li} = {4{cce_mem_cmd_lo}};
 
@@ -545,7 +727,6 @@ module bp_tile
   assign clint_mem_resp_yumi_li    = cce_mem_resp_yumi_lo & clint_mem_resp_grant_li;
   assign loopback_mem_resp_yumi_li = cce_mem_resp_yumi_lo & loopback_mem_resp_grant_li;
 
-  import bsg_cache_pkg::*;
   `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
