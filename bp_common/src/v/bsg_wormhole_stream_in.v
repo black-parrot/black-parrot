@@ -3,7 +3,7 @@
 
 //
 // Converts a higher level protocol into a wormhole router without deserializing
-//   the data. This module can be used for converting various DMA formats to 
+//   the data. This module can be used for converting various DMA formats to
 //   wormhole flits efficently and with minimal buffering. It can also be used to
 //   forward data between wormholes on different networks, or to convert between
 //   multiple protocol formats.
@@ -84,7 +84,7 @@ module bsg_wormhole_stream_in
    , input                       link_ready_and_i
    );
 
-  wire is_hdr, is_data;
+  wire is_hdr, is_data, wh_has_data, wh_last_data;
 
   localparam [len_width_p-1:0] hdr_len_lp = `BSG_CDIV(hdr_width_p, flit_width_p);
 
@@ -209,7 +209,7 @@ module bsg_wormhole_stream_in
     end
 
   assign data_ready_and_li = is_data & link_ready_and_i;
-  
+
   // Identifies which flits are header vs data flits
   bsg_wormhole_stream_control
    #(.len_width_p(len_width_p)
@@ -223,7 +223,9 @@ module bsg_wormhole_stream_in
      ,.link_accept_i(link_ready_and_i & link_v_o)
 
      ,.is_hdr_o(is_hdr)
+     ,.has_data_o(wh_has_data)
      ,.is_data_o(is_data)
+     ,.last_data_o(wh_last_data)
      );
 
   assign link_data_o = is_hdr ? hdr_lo   : data_lo;
