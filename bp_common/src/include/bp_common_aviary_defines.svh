@@ -36,8 +36,8 @@
     , localparam num_lce_p = proc_param_lp.num_lce                                                 \
                                                                                                    \
     , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                          \
-    , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))              \
-    , localparam lce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*2+2)*(cc_y_dim_p*2+2))              \
+    , localparam cce_id_width_p  = `BSG_SAFE_CLOG2(((cc_x_dim_p*1)+2)*((cc_y_dim_p*1)+2))              \
+    , localparam lce_id_width_p  = `BSG_SAFE_CLOG2(((cc_x_dim_p*2)+2)*((cc_y_dim_p*2)+2))              \
                                                                                                    \
     , localparam vaddr_width_p   = proc_param_lp.vaddr_width                                       \
     , localparam paddr_width_p   = proc_param_lp.paddr_width                                       \
