@@ -15,7 +15,7 @@
 +incdir+$BP_FE_DIR/src/include
 # be includes
 +incdir+$BP_BE_DIR/src/include
-# me includes 
+# me includes
 +incdir+$BP_ME_DIR/src/include
 # top includes
 +incdir+$BP_TOP_DIR/src/include
@@ -33,6 +33,10 @@ $BP_BE_DIR/src/include/bp_be_pkg.sv
 # ME packages
 $BP_ME_DIR/src/include/bp_me_pkg.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
 ## BaseJump STL files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
@@ -144,8 +148,8 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 ## ME files
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce_alu.sv
@@ -172,6 +176,8 @@ $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 # NETWORK
 $BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.sv
+$BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
+$BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
 ## TOP Files
 $BP_TOP_DIR/src/v/bp_loopback.sv
 $BP_TOP_DIR/src/v/bp_cfg.sv

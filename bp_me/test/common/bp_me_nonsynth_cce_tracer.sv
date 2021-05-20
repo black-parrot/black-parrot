@@ -30,69 +30,85 @@ module bp_me_nonsynth_cce_tracer
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
   )
-  (input                                        clk_i
-   , input                                      reset_i
-   , input                                      freeze_i
+  (input                                            clk_i
+   , input                                          reset_i
+   , input                                          freeze_i
 
    // LCE-CCE Interface
-   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
-   // outbound: ready&valid (connects directly to ME network)
+   // BedRock Burst protocol: ready&valid
+   , input [lce_req_msg_header_width_lp-1:0]        lce_req_header_i
+   , input                                          lce_req_header_v_i
+   , input                                          lce_req_header_ready_and_i
+   , input [dword_width_gp-1:0]                     lce_req_data_i
+   , input                                          lce_req_data_v_i
+   , input                                          lce_req_data_ready_and_i
 
-   // inbound: valid->yumi (to CCE)
-   , input [lce_req_msg_width_lp-1:0]           lce_req_i
-   , input                                      lce_req_v_i
-   , input                                      lce_req_yumi_i
+   , input [lce_resp_msg_header_width_lp-1:0]       lce_resp_header_i
+   , input                                          lce_resp_header_v_i
+   , input                                          lce_resp_header_ready_and_i
+   , input [dword_width_gp-1:0]                     lce_resp_data_i
+   , input                                          lce_resp_data_v_i
+   , input                                          lce_resp_data_ready_and_i
 
-   , input [lce_resp_msg_width_lp-1:0]          lce_resp_i
-   , input                                      lce_resp_v_i
-   , input                                      lce_resp_yumi_i
-
-   // outbound: ready&valid (from CCE)
-   , input [lce_cmd_msg_width_lp-1:0]           lce_cmd_i
-   , input                                      lce_cmd_v_i
-   , input                                      lce_cmd_ready_i
+   , input [lce_cmd_msg_header_width_lp-1:0]        lce_cmd_header_i
+   , input                                          lce_cmd_header_v_i
+   , input                                          lce_cmd_header_ready_and_i
+   , input [dword_width_gp-1:0]                     lce_cmd_data_i
+   , input                                          lce_cmd_data_v_i
+   , input                                          lce_cmd_data_ready_and_i
 
    // CCE-MEM Interface
-   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
-   // outbound: ready&valid (connects to FIFO)
+   // BedRock Burst protocol: ready&valid
+   , input [cce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
+   , input                                          mem_resp_header_v_i
+   , input                                          mem_resp_header_ready_and_i
+   , input [dword_width_gp-1:0]                     mem_resp_data_i
+   , input                                          mem_resp_data_v_i
+   , input                                          mem_resp_data_ready_and_i
 
-   // inbound: valid->yumi (to CCE)
-   , input [cce_mem_msg_width_lp-1:0]           mem_resp_i
-   , input                                      mem_resp_v_i
-   , input                                      mem_resp_yumi_i
+   , input [cce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
+   , input                                          mem_cmd_header_v_i
+   , input                                          mem_cmd_header_ready_and_i
+   , input [dword_width_gp-1:0]                     mem_cmd_data_i
+   , input                                          mem_cmd_data_v_i
+   , input                                          mem_cmd_data_ready_and_i
 
-   // outbound: ready&valid (from CCE)
-   , input [cce_mem_msg_width_lp-1:0]           mem_cmd_i
-   , input                                      mem_cmd_v_i
-   , input                                      mem_cmd_ready_i
-
-   , input [cce_id_width_p-1:0]                 cce_id_i
+   , input [cce_id_width_p-1:0]                     cce_id_i
   );
+
+  wire unused = &{lce_req_data_i, lce_req_data_v_i, lce_req_data_ready_and_i
+                  , lce_resp_data_i, lce_resp_data_v_i, lce_req_data_ready_and_i
+                  , lce_cmd_data_i, lce_cmd_data_v_i, lce_cmd_data_ready_and_i
+                  , mem_cmd_data_i, mem_cmd_data_v_i, mem_cmd_data_ready_and_i
+                  , mem_resp_data_i, mem_resp_data_v_i, mem_resp_data_ready_and_i};
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  bp_bedrock_lce_req_msg_s  lce_req;
-  bp_bedrock_lce_resp_msg_s lce_resp;
-  bp_bedrock_lce_cmd_msg_s  lce_cmd;
-  bp_bedrock_cce_mem_msg_s  mem_cmd, mem_resp;
-  bp_bedrock_lce_req_payload_s  lce_req_payload;
-  bp_bedrock_lce_resp_payload_s lce_resp_payload;
-  bp_bedrock_lce_cmd_payload_s  lce_cmd_payload;
-  bp_bedrock_cce_mem_payload_s  mem_resp_payload, mem_cmd_payload;
+  // LCE-CCE Interface structs
+  bp_bedrock_lce_req_msg_header_s  lce_req;
+  bp_bedrock_lce_resp_msg_header_s lce_resp;
+  bp_bedrock_lce_cmd_msg_header_s  lce_cmd;
+  bp_bedrock_lce_req_payload_s     lce_req_payload;
+  bp_bedrock_lce_cmd_payload_s     lce_cmd_payload;
+  bp_bedrock_lce_resp_payload_s    lce_resp_payload;
 
-  assign lce_req             = lce_req_i;
-  assign lce_resp            = lce_resp_i;
-  assign lce_cmd             = lce_cmd_i;
-  assign mem_cmd             = mem_cmd_i;
-  assign mem_resp            = mem_resp_i;
+  // CCE-MEM Interface structs
+  bp_bedrock_cce_mem_msg_header_s  mem_cmd, mem_resp;
+  bp_bedrock_cce_mem_payload_s     mem_cmd_payload, mem_resp_payload;
 
-  assign lce_req_payload = lce_req.header.payload;
-  assign lce_resp_payload = lce_resp.header.payload;
-  assign lce_cmd_payload = lce_cmd.header.payload;
-  assign mem_resp_payload = mem_resp.header.payload;
-  assign mem_cmd_payload = mem_cmd.header.payload;
+  assign lce_req             = lce_req_header_i;
+  assign lce_resp            = lce_resp_header_i;
+  assign lce_cmd             = lce_cmd_header_i;
+  assign mem_cmd             = mem_cmd_header_i;
+  assign mem_resp            = mem_resp_header_i;
+
+  assign lce_req_payload = lce_req.payload;
+  assign lce_resp_payload = lce_resp.payload;
+  assign lce_cmd_payload = lce_cmd.payload;
+  assign mem_resp_payload = mem_resp.payload;
+  assign mem_cmd_payload = mem_cmd.payload;
 
   integer file;
   string file_name;
@@ -106,115 +122,123 @@ module bp_me_nonsynth_cce_tracer
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       // inbound messages
-      if (lce_req_v_i & lce_req_yumi_i) begin
-        if (lce_req.header.msg_type.req == e_bedrock_req_rd_miss | lce_req.header.msg_type.req == e_bedrock_req_wr_miss) begin
+      if (lce_req_header_v_i & lce_req_header_ready_and_i) begin
+        if (lce_req.msg_type.req == e_bedrock_req_rd_miss | lce_req.msg_type.req == e_bedrock_req_wr_miss) begin
         $fdisplay(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wg[%0d] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d]"
-                 , $time, lce_req_payload.dst_id, lce_req_payload.src_id, lce_req.header.addr
-                 , lce_req.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
-                 , (lce_req.header.msg_type.req == e_bedrock_req_wr_miss)
+                 , $time, lce_req_payload.dst_id, lce_req_payload.src_id, lce_req.addr
+                 , lce_req.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , (lce_req.msg_type.req == e_bedrock_req_wr_miss)
                  , lce_req_payload.non_exclusive
                  , 1'b0
                  , lce_req_payload.lru_way_id
                  );
         end
-        if (lce_req.header.msg_type.req == e_bedrock_req_uc_rd) begin
+        if (lce_req.msg_type.req == e_bedrock_req_uc_rd) begin
         $fdisplay(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b]"
-                 , $time, lce_req_payload.dst_id, lce_req_payload.src_id, lce_req.header.addr, (lce_req.header.msg_type.req == e_bedrock_req_uc_wr)
+                 , $time, lce_req_payload.dst_id, lce_req_payload.src_id, lce_req.addr, (lce_req.msg_type.req == e_bedrock_req_uc_wr)
                  , 1'b0
                  , 1'b1
                  , '0, '0
                  );
         end
-        if (lce_req.header.msg_type.req == e_bedrock_req_uc_wr) begin
-        $fdisplay(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b] %H"
-                 , $time, lce_req_payload.dst_id, lce_req_payload.src_id, lce_req.header.addr, (lce_req.header.msg_type.req == e_bedrock_req_uc_wr)
+        if (lce_req.msg_type.req == e_bedrock_req_uc_wr) begin
+        $fdisplay(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b]"
+                 , $time, lce_req_payload.dst_id, lce_req_payload.src_id, lce_req.addr, (lce_req.msg_type.req == e_bedrock_req_uc_wr)
                  , 1'b0
                  , 1'b1
                  , '0, '0
-                 , lce_req.data
                  );
+        // TODO: data for LCE request UC WR
         end
       end
-      if (lce_resp_v_i & lce_resp_yumi_i) begin
-        if ((lce_resp.header.msg_type.resp == e_bedrock_resp_sync_ack)
-            | (lce_resp.header.msg_type.resp == e_bedrock_resp_inv_ack)
-            | (lce_resp.header.msg_type.resp == e_bedrock_resp_coh_ack)) begin
+      if (lce_resp_header_v_i & lce_resp_header_ready_and_i) begin
+        if ((lce_resp.msg_type.resp == e_bedrock_resp_sync_ack)
+            | (lce_resp.msg_type.resp == e_bedrock_resp_inv_ack)
+            | (lce_resp.msg_type.resp == e_bedrock_resp_coh_ack)) begin
         $fdisplay(file, "[%t]: CCE[%0d] RESP LCE[%0d] addr[%H] wg[%0d] ack[%4b]"
-                 , $time, lce_resp_payload.dst_id, lce_resp_payload.src_id, lce_resp.header.addr
-                 , lce_resp.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
-                 , lce_resp.header.msg_type.resp);
+                 , $time, lce_resp_payload.dst_id, lce_resp_payload.src_id, lce_resp.addr
+                 , lce_resp.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , lce_resp.msg_type.resp
+                 );
         end
-        if ((lce_resp.header.msg_type.resp == e_bedrock_resp_wb)
-            | (lce_resp.header.msg_type.resp == e_bedrock_resp_null_wb)) begin
-        $fdisplay(file, "[%t]: CCE[%0d] DATA RESP LCE[%0d] addr[%H] wg[%0d] null_wb[%0b] %H"
-                 , $time, lce_resp_payload.dst_id, lce_resp_payload.src_id, lce_resp.header.addr
-                 , lce_resp.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
-                 , (lce_resp.header.msg_type.resp == e_bedrock_resp_null_wb)
-                 , lce_resp.data);
+        if ((lce_resp.msg_type.resp == e_bedrock_resp_wb)
+            | (lce_resp.msg_type.resp == e_bedrock_resp_null_wb)) begin
+        $fdisplay(file, "[%t]: CCE[%0d] DATA RESP LCE[%0d] addr[%H] wg[%0d] null_wb[%0b]"
+                 , $time, lce_resp_payload.dst_id, lce_resp_payload.src_id, lce_resp.addr
+                 , lce_resp.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , (lce_resp.msg_type.resp == e_bedrock_resp_null_wb)
+                 );
+        // TODO: data
         end
       end
-      if (mem_resp_v_i & mem_resp_yumi_i) begin
-        if (mem_resp.header.msg_type.mem == e_bedrock_mem_wr | mem_resp.header.msg_type.mem == e_bedrock_mem_uc_wr) begin
+      if (mem_resp_header_v_i & mem_resp_header_ready_and_i) begin
+        if (mem_resp.msg_type.mem == e_bedrock_mem_wr | mem_resp.msg_type.mem == e_bedrock_mem_uc_wr) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d]"
-                 , $time, cce_id_i, (mem_resp.header.msg_type.mem == e_bedrock_mem_wr)
-                 , (mem_resp.header.msg_type.mem == e_bedrock_mem_uc_wr)
-                 , mem_resp.header.addr
-                 , mem_resp.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
-                 , mem_resp_payload.lce_id, mem_resp_payload.way_id);
+                 , $time, cce_id_i, (mem_resp.msg_type.mem == e_bedrock_mem_wr)
+                 , (mem_resp.msg_type.mem == e_bedrock_mem_uc_wr)
+                 , mem_resp.addr
+                 , mem_resp.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , mem_resp_payload.lce_id, mem_resp_payload.way_id
+                 );
         end
-        if (mem_resp.header.msg_type.mem == e_bedrock_mem_rd | mem_resp.header.msg_type.mem == e_bedrock_mem_uc_rd) begin
-        $fdisplay(file, "[%t]: CCE[%0d] MEM DATA RESP addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b] %H"
-                 , $time, cce_id_i, mem_resp.header.addr
-                 , mem_resp.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+        if (mem_resp.msg_type.mem == e_bedrock_mem_rd | mem_resp.msg_type.mem == e_bedrock_mem_uc_rd) begin
+        $fdisplay(file, "[%t]: CCE[%0d] MEM DATA RESP addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b]"
+                 , $time, cce_id_i, mem_resp.addr
+                 , mem_resp.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_resp_payload.lce_id, mem_resp_payload.way_id, mem_resp_payload.state
                  , mem_resp_payload.speculative
-                 , (mem_resp.header.msg_type.mem == e_bedrock_mem_uc_rd), mem_resp.data);
+                 , (mem_resp.msg_type.mem == e_bedrock_mem_uc_rd)
+                 );
+        // TODO: data
         end
       end
       // outbound messages
-      if (lce_cmd_v_i & lce_cmd_ready_i) begin
-        if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_data) begin
-        $fdisplay(file, "[%t]: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] wg[%0d] st[%3b] way[%0d] %H"
-                 , $time, lce_cmd_payload.src_id, lce_cmd_payload.dst_id, lce_cmd.header.msg_type.cmd, lce_cmd.header.addr
-                 , lce_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+      if (lce_cmd_header_v_i & lce_cmd_header_ready_and_i) begin
+        if (lce_cmd.msg_type.cmd == e_bedrock_cmd_data) begin
+        $fdisplay(file, "[%t]: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] wg[%0d] st[%3b] way[%0d]"
+                 , $time, lce_cmd_payload.src_id, lce_cmd_payload.dst_id, lce_cmd.msg_type.cmd, lce_cmd.addr
+                 , lce_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , lce_cmd_payload.state, lce_cmd_payload.way_id
-                 , lce_cmd.data
                  );
+        // TODO: data
         end
-        else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_uc_data) begin
-        $fdisplay(file, "[%t]: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] wg[%0d] st[%3b] way[%0d] %H"
-                 , $time, lce_cmd_payload.src_id, lce_cmd_payload.dst_id, lce_cmd.header.msg_type.cmd, lce_cmd.header.addr
-                 , lce_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+        else if (lce_cmd.msg_type.cmd == e_bedrock_cmd_uc_data) begin
+        $fdisplay(file, "[%t]: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] wg[%0d] st[%3b] way[%0d]"
+                 , $time, lce_cmd_payload.src_id, lce_cmd_payload.dst_id, lce_cmd.msg_type.cmd, lce_cmd.addr
+                 , lce_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , lce_cmd_payload.state, lce_cmd_payload.way_id
-                 , lce_cmd.data
                  );
+        // TODO: data
         end
 
         else begin
         $fdisplay(file, "[%t]: CCE[%0d] CMD LCE[%0d] addr[%H] wg[%0d] cmd[%4b] way[%0d] st[%3b] tgt[%0d] tgtWay[%0d] tgtSt[%3b]"
-                 , $time, lce_cmd_payload.src_id, lce_cmd_payload.dst_id, lce_cmd.header.addr
-                 , lce_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
-                 , lce_cmd.header.msg_type.cmd, lce_cmd_payload.way_id
+                 , $time, lce_cmd_payload.src_id, lce_cmd_payload.dst_id, lce_cmd.addr
+                 , lce_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , lce_cmd.msg_type.cmd, lce_cmd_payload.way_id
                  , lce_cmd_payload.state, lce_cmd_payload.target, lce_cmd_payload.target_way_id
                  , lce_cmd_payload.target_state
                  );
         end
       end
-      if (mem_cmd_v_i & mem_cmd_ready_i) begin
-        if (mem_cmd.header.msg_type.mem == e_bedrock_mem_rd | mem_cmd.header.msg_type.mem == e_bedrock_mem_uc_rd) begin
+      if (mem_cmd_header_v_i & mem_cmd_header_ready_and_i) begin
+        if (mem_cmd.msg_type.mem == e_bedrock_mem_rd | mem_cmd.msg_type.mem == e_bedrock_mem_uc_rd) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM CMD addr[%H] wg[%0d] lce[%0d] way[%0d] spec[%0b] uc[%0b]"
-                 , $time, cce_id_i, mem_cmd.header.addr
-                 , mem_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , $time, cce_id_i, mem_cmd.addr
+                 , mem_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_cmd_payload.lce_id
                  , mem_cmd_payload.way_id, mem_cmd_payload.speculative
-                 , (mem_cmd.header.msg_type.mem == e_bedrock_mem_uc_rd));
+                 , (mem_cmd.msg_type.mem == e_bedrock_mem_uc_rd)
+                 );
         end
-        if (mem_cmd.header.msg_type.mem == e_bedrock_mem_uc_wr | mem_cmd.header.msg_type.mem == e_bedrock_mem_wr) begin
-        $fdisplay(file, "[%t]: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b] %H"
-                 , $time, cce_id_i, (mem_cmd.header.msg_type.mem == e_bedrock_mem_wr), mem_cmd.header.addr
-                 , mem_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+        if (mem_cmd.msg_type.mem == e_bedrock_mem_uc_wr | mem_cmd.msg_type.mem == e_bedrock_mem_wr) begin
+        $fdisplay(file, "[%t]: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b]"
+                 , $time, cce_id_i, (mem_cmd.msg_type.mem == e_bedrock_mem_wr), mem_cmd.addr
+                 , mem_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_cmd_payload.lce_id, mem_cmd_payload.way_id, mem_cmd_payload.state
-                 , (mem_cmd.header.msg_type.mem == e_bedrock_mem_uc_wr), mem_cmd.data);
+                 , (mem_cmd.msg_type.mem == e_bedrock_mem_uc_wr)
+                 );
+        // TODO: data
         end
       end
     end // reset & trace
