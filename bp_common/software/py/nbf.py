@@ -26,14 +26,47 @@ import math
 import os
 import subprocess
 
+#  // The overall memory map of the config link is:
+#  //   16'h0000 - 16'h01ff: chip level config
+#  //   16'h0200 - 16'h03ff: fe config
+#  //   16'h0400 - 16'h05ff: be config
+#  //   16'h0600 - 16'h06ff: me config
+#  //   16'h0800 - 16'h7fff: reserved
+#  //   16'h8000 - 16'h8fff: cce ucode
+#
+#  localparam cfg_addr_width_gp = 20;
+#  localparam cfg_data_width_gp = 64;
+#
+#  localparam cfg_base_addr_gp          = 'h0200_0000;
+#  localparam cfg_reg_unused_gp         = 'h0004;
+#  localparam cfg_reg_freeze_gp         = 'h0008;
+#  localparam cfg_reg_core_id_gp        = 'h000c;
+#  localparam cfg_reg_did_gp            = 'h0010;
+#  localparam cfg_reg_cord_gp           = 'h0014;
+#  localparam cfg_reg_host_did_gp       = 'h0018;
+#  localparam cfg_reg_hio_mask_gp       = 'h001c;
+#  localparam cfg_reg_icache_id_gp      = 'h0200;
+#  localparam cfg_reg_icache_mode_gp    = 'h0204;
+#  localparam cfg_reg_dcache_id_gp      = 'h0400;
+#  localparam cfg_reg_dcache_mode_gp    = 'h0404;
+#  localparam cfg_reg_cce_id_gp         = 'h0600;
+#  localparam cfg_reg_cce_mode_gp       = 'h0604;
+#  localparam cfg_mem_base_cce_ucode_gp = 'h8000;
+
 cfg_base_addr          = 0x200000
-cfg_reg_reset          = 0x01
-cfg_reg_freeze         = 0x02
-cfg_hio_mask           = 0x09
-cfg_reg_icache_mode    = 0x22
-cfg_reg_npc            = 0x40
-cfg_reg_dcache_mode    = 0x43
-cfg_reg_cce_mode       = 0x81
+cfg_reg_unused         = 0x0004
+cfg_reg_freeze         = 0x0008
+cfg_reg_core_id        = 0x000c
+cfg_reg_did            = 0x0010
+cfg_reg_cord           = 0x0014
+cfg_reg_host_did       = 0x0018
+cfg_reg_hio_mask       = 0x001c
+cfg_reg_icache_id      = 0x0200
+cfg_reg_icache_mode    = 0x0204
+cfg_reg_dcache_id      = 0x0400
+cfg_reg_dcache_mode    = 0x0404
+cfg_reg_cce_id         = 0x0600
+cfg_reg_cce_mode       = 0x0604
 cfg_mem_base_cce_ucode = 0x8000
 
 cfg_core_offset = 24
@@ -184,12 +217,8 @@ class NBF:
   # users only have to call this function.
   def dump(self):
 
-    # Reset set
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_reset, 1)
     # Freeze set
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
-    # Reset clear
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_reset, 0)
     
     self.print_fence()
 
@@ -199,7 +228,7 @@ class NBF:
       if self.ucode_file:
         for core in range(self.ncpus):
           for i in range(len(self.ucode)):
-            full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i
+            full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i*8
             self.print_nbf(3, full_addr, self.ucode[i])
        
       # Write I$, D$, and CCE modes
