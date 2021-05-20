@@ -57,7 +57,6 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_flow_counter.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.v
-$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_passthrough.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_1_to_n.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
@@ -179,6 +178,14 @@ $HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough.v
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
+$BP_COMMON_DIR/src/v/bsg_wormhole_stream_control.v
+$BP_COMMON_DIR/src/v/bsg_wormhole_stream_in.v
+$BP_COMMON_DIR/src/v/bsg_wormhole_stream_out.v
 $BP_COMMON_DIR/src/v/bp_mmu.sv
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
@@ -247,6 +254,8 @@ $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
+# BedRock
+$BP_ME_DIR/src/v/cce/bp_bedrock_size_to_len.sv
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.sv
@@ -265,6 +274,8 @@ $BP_ME_DIR/src/v/wormhole/bp_lite_to_stream.sv
 $BP_ME_DIR/src/v/wormhole/bp_stream_to_lite.sv
 $BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
 $BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
+$BP_ME_DIR/src/v/wormhole/bp_wormhole_to_burst.sv
+$BP_ME_DIR/src/v/wormhole/bp_burst_to_wormhole.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_loopback.sv
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
