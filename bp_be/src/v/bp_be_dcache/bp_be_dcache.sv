@@ -191,7 +191,7 @@ module bp_be_dcache
   // Global signals
   logic tl_we, tv_we, dm_we;
   logic safe_tl_we, safe_tv_we, safe_dm_we;
-  logic v_tl_r, v_tv_r, v_dm_r;
+  logic v_tl_r, _v_tv_r, v_tv_r, v_dm_r;
   logic gdirty_r, cache_lock;
   logic uncached_pending_r;
   logic [dword_width_gp-1:0] uncached_load_data_r;
@@ -362,7 +362,8 @@ module bp_be_dcache
     (.clk_i(~clk_i)
      ,.reset_i(reset_i)
      ,.data_i(tv_we)
-     ,.data_o(v_tv_r)
+     ,.data_half_o(v_tv_r)
+     ,.data_full_o(_v_tv_r)
      );
 
 //  logic _v_tv_r;
@@ -436,6 +437,20 @@ module bp_be_dcache
                ,decode_tv_r
                })
      );
+
+  logic invalid_exist_tv;
+  logic [lg_dcache_assoc_lp-1:0] invalid_way_tv;
+  bsg_priority_encode
+   #(.width_p(assoc_p), .lo_to_hi_p(1))
+    pe_invalid
+    (.i(~way_v_tv_r)
+     ,.v_o(invalid_exist_tv)
+     ,.addr_o(invalid_way_tv)
+     );
+
+  // If there is invalid way, then it take priority over LRU way.
+  logic [lg_dcache_assoc_lp-1:0] lru_encode;
+  wire [lg_dcache_assoc_lp-1:0] lru_way_li = invalid_exist_tv ? invalid_way_tv : lru_encode;
 
   logic [lg_dcache_assoc_lp-1:0] store_hit_way_tv;
   logic store_hit_tv;
@@ -579,7 +594,6 @@ module bp_be_dcache
     ,.data_o(stat_mem_data_lo)
     );
 
-  logic [lg_dcache_assoc_lp-1:0] lru_encode;
   bsg_lru_pseudo_tree_encode
    #(.ways_p(assoc_p))
    lru_encoder
@@ -593,11 +607,6 @@ module bp_be_dcache
   logic [dword_width_gp-1:0] st_data_dm_r, ld_data_dm_r;
   logic [paddr_width_p-1:0] paddr_dm_r;
   bp_be_dcache_decode_s decode_dm_r;
-  logic uncached_op_dm_r, store_hit_dm_r, load_hit_dm_r;
-  logic load_miss_dm_r, store_miss_dm_r, lr_miss_dm_r, fencei_miss_dm_r, sc_fail_dm_r;
-  logic [lg_dcache_assoc_lp-1:0] store_hit_way_dm_r, load_hit_way_dm_r;
-  logic [assoc_p-1:0] way_v_dm_r;
-  logic complete_dm_r;
   wire [sindex_width_lp-1:0] paddr_index_dm = paddr_dm_r[block_offset_width_lp+:sindex_width_lp];
   wire [ctag_width_p-1:0]    paddr_tag_dm   = paddr_dm_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
 
@@ -614,20 +623,12 @@ module bp_be_dcache
 
   wire [dword_width_gp-1:0] data_dm_n = decode_tv_r.load_op ? result_data : st_data_tv_r;
   bsg_dff_en
-   #(.width_p(2*dword_width_gp+paddr_width_p+$bits(bp_be_dcache_decode_s)+9+assoc_p+2*lg_dcache_assoc_lp))
+   #(.width_p(2*dword_width_gp+paddr_width_p+$bits(bp_be_dcache_decode_s)))
    dm_stage_reg
     (.clk_i(clk_i)
      ,.en_i(dm_we)
-     ,.data_i({st_data_tv_r, result_data, paddr_tv_r, decode_tv_r
-               ,load_miss_tv, store_miss_tv, lr_miss_tv, fencei_miss_tv, sc_fail_tv
-               ,uncached_op_tv_r, store_hit_tv, store_hit_way_tv, load_hit_tv, load_hit_way_tv
-               , way_v_tv_r, early_v_o
-               })
-     ,.data_o({st_data_dm_r, ld_data_dm_r, paddr_dm_r, decode_dm_r
-               ,load_miss_dm_r, store_miss_dm_r, lr_miss_dm_r, fencei_miss_dm_r, sc_fail_dm_r
-               ,uncached_op_dm_r, store_hit_dm_r, store_hit_way_dm_r, load_hit_dm_r, load_hit_way_dm_r
-               ,way_v_dm_r, complete_dm_r
-               })
+     ,.data_i({st_data_tv_r, result_data, paddr_tv_r, decode_tv_r})
+     ,.data_o({st_data_dm_r, ld_data_dm_r, paddr_dm_r, decode_dm_r})
      );
 
   logic [3:0][dword_width_gp-1:0] sigext_byte;
@@ -669,20 +670,7 @@ module bp_be_dcache
      );
 
   assign final_data_o = decode_dm_r.float_op ? final_float_data : final_int_data;
-  assign final_v_o = v_dm_r & complete_dm_r;
-
-  logic invalid_exist_dm;
-  logic [lg_dcache_assoc_lp-1:0] invalid_way_dm;
-  bsg_priority_encode
-   #(.width_p(assoc_p), .lo_to_hi_p(1))
-    pe_invalid
-    (.i(~way_v_dm_r)
-     ,.v_o(invalid_exist_dm)
-     ,.addr_o(invalid_way_dm)
-     );
-
-  // If there is invalid way, then it take priority over LRU way.
-  wire [lg_dcache_assoc_lp-1:0] lru_way_li = invalid_exist_dm ? invalid_way_dm : lru_encode;
+  assign final_v_o = v_dm_r;
 
   ///////////////////////////
   // Write buffer
@@ -816,28 +804,28 @@ module bp_be_dcache
   `bp_cast_o(bp_dcache_req_s, cache_req);
   `bp_cast_o(bp_dcache_req_metadata_s, cache_req_metadata);
 
-  wire cached_req          = (store_miss_dm_r | load_miss_dm_r | lr_miss_dm_r);
-  wire fencei_req          = fencei_miss_dm_r;
-  wire l2_amo_req          = decode_dm_r.amo_op & uncached_op_dm_r & ~complete_dm_r & (decode_dm_r.rd_addr != '0);
-  wire uncached_load_req   = ~decode_dm_r.amo_op & decode_dm_r.load_op & uncached_op_dm_r & ~complete_dm_r;
+  wire cached_req          = (store_miss_tv | load_miss_tv | lr_miss_tv);
+  wire fencei_req          = fencei_miss_tv;
+  wire l2_amo_req          = decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_pending_r & (decode_tv_r.rd_addr != '0);
+  wire uncached_load_req   = ~decode_tv_r.amo_op & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_pending_r;
                              // Regular uncached store
-  wire uncached_store_req  = (~decode_dm_r.amo_op & decode_dm_r.store_op & uncached_op_dm_r)
+  wire uncached_store_req  = (~decode_tv_r.amo_op & decode_tv_r.store_op & uncached_op_tv_r)
                              // L2 amo uncached store
-                             || (decode_dm_r.amo_op & uncached_op_dm_r & (decode_dm_r.rd_addr == '0));
-  wire wt_req              = (decode_dm_r.store_op & ~sc_fail_dm_r & ~uncached_op_dm_r & (writethrough_p == 1));
+                             || (decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_pending_r & (decode_tv_r.rd_addr == '0));
+  wire wt_req              = (decode_tv_r.store_op & ~sc_fail_tv & ~uncached_op_tv_r & (writethrough_p == 1));
 
   // Uncached stores and writethrough requests are non-blocking
   wire nonblocking_req     = uncached_store_req | wt_req;
 
   assign cache_req_v_o = is_req
-    | v_dm_r & (|{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req});
+    | (~flush_i & v_tv_r & (|{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req}));
 
   always_comb
     begin
       cache_req_cast_o = '0;
-      cache_req_cast_o.addr = paddr_dm_r;
-      cache_req_cast_o.data = st_data_dm_r;
-      cache_req_cast_o.hit = load_hit_dm_r;
+      cache_req_cast_o.addr = paddr_tv_r;
+      cache_req_cast_o.data = wbuf_entry_in.data;
+      cache_req_cast_o.hit = load_hit_tv;
 
       // Assigning sizes to cache miss packet
       if (cached_req)
@@ -846,17 +834,17 @@ module bp_be_dcache
         end
       else
         begin
-          if (decode_dm_r.double_op)
+          if (decode_tv_r.double_op)
             cache_req_cast_o.size = e_size_8B;
-          else if (decode_dm_r.word_op)
+          else if (decode_tv_r.word_op)
             cache_req_cast_o.size = e_size_4B;
-          else if (decode_dm_r.half_op)
+          else if (decode_tv_r.half_op)
             cache_req_cast_o.size = e_size_2B;
-          else if (decode_dm_r.byte_op)
+          else if (decode_tv_r.byte_op)
             cache_req_cast_o.size = e_size_1B;
         end
 
-      unique casez ({decode_dm_r.amo_op, decode_dm_r.amo_subop})
+      unique casez ({decode_tv_r.amo_op, decode_tv_r.amo_subop})
         {1'b1, e_dcache_subop_lr     }: cache_req_cast_o.subop = e_req_amolr;
         {1'b1, e_dcache_subop_sc     }: cache_req_cast_o.subop = e_req_amosc;
         {1'b1, e_dcache_subop_amoswap}: cache_req_cast_o.subop = e_req_amoswap;
@@ -871,13 +859,13 @@ module bp_be_dcache
         default: cache_req_cast_o.subop = e_req_store;
       endcase
 
-      if (load_miss_dm_r)
+      if (load_miss_tv)
         cache_req_cast_o.msg_type = e_miss_load;
-      else if (lr_miss_dm_r)
+      else if (lr_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
-      else if (store_miss_dm_r)
+      else if (store_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
-      else if (fencei_miss_dm_r)
+      else if (fencei_miss_tv)
         cache_req_cast_o.msg_type = e_cache_flush;
       else if (l2_amo_req)
         cache_req_cast_o.msg_type = e_uc_amo;
@@ -908,7 +896,7 @@ module bp_be_dcache
    #(.width_p(1+lg_dcache_assoc_lp))
    cached_hit_reg
     (.clk_i(clk_i)
-     ,.data_i({load_hit_dm_r, load_hit_way_dm_r})
+     ,.data_i({load_hit_tv, load_hit_way_tv})
      ,.data_o({metadata_hit_r, metadata_hit_index_r})
      );
 
@@ -925,7 +913,7 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_ready: state_n = (cache_req_yumi_i & decode_dm_r.fencei_op)
+      e_ready: state_n = (cache_req_yumi_i & decode_tv_r.fencei_op)
                          ? e_fence
                          : (cache_req_yumi_i & ~nonblocking_req)
                            ? e_miss
@@ -963,15 +951,16 @@ module bp_be_dcache
   wire tag_mem_fast_read = (safe_tl_we & ~decode_lo.fencei_op);
   wire tag_mem_slow_read = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
-  wire tag_mem_fast_write = v_dm_r & uncached_op_dm_r & load_hit_dm_r;
-  assign sram_hazard_flush = tag_mem_fast_write;
+  // This is a path to the negedge, so we need _v_tv_r here
+  wire tag_mem_fast_write = _v_tv_r & uncached_op_tv_r & load_hit_tv;
+  assign sram_hazard_flush = tag_mem_fast_write & ~flush_i;
 
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_fast_write;
   assign tag_mem_w_li = tag_mem_slow_write | tag_mem_fast_write;
   assign tag_mem_addr_li = tag_mem_fast_read
     ? vaddr_index
     : tag_mem_fast_write
-      ? paddr_index_dm
+      ? paddr_index_tv
       : tag_mem_pkt_cast_i.index;
   assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_fast_write;
 
@@ -989,7 +978,7 @@ module bp_be_dcache
         {1'b1, 3'b???}:
           begin
             tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
-            tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){(load_hit_way_dm_r == i)}}
+            tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){(load_hit_way_tv == i)}}
                                    ,tag : '0
                                    };
           end
@@ -1135,22 +1124,22 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read  = (v_dm_r & ~complete_dm_r) | (v_dm_r & load_hit_dm_r & uncached_op_dm_r);
-  wire stat_mem_fast_write = (v_dm_r & store_hit_dm_r & ~uncached_op_dm_r);
+  wire stat_mem_fast_read  = ~flush_i & ((v_tv_r & ~early_v_o) | (v_tv_r & load_hit_tv & uncached_op_tv_r));
+  wire stat_mem_fast_write = ~flush_i & (v_tv_r & early_v_o & cached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
   assign stat_mem_v_li = stat_mem_fast_read | stat_mem_fast_write
       | (stat_mem_slow_write | stat_mem_slow_read);
   assign stat_mem_w_li = stat_mem_fast_write | stat_mem_slow_write;
   assign stat_mem_addr_li = (stat_mem_fast_write | stat_mem_fast_read)
-    ? paddr_dm_r[block_offset_width_lp+:sindex_width_lp]
+    ? paddr_tv_r[block_offset_width_lp+:sindex_width_lp]
     : stat_mem_pkt_cast_i.index;
   assign stat_mem_pkt_yumi_o = ~cache_lock & stat_mem_pkt_v_i & ~stat_mem_fast_read & ~stat_mem_fast_write;
 
   logic [`BSG_SAFE_MINUS(assoc_p, 2):0] lru_decode_data_lo;
   logic [`BSG_SAFE_MINUS(assoc_p, 2):0] lru_decode_mask_lo;
   wire [lg_dcache_assoc_lp-1:0] lru_decode_way_li =
-    v_dm_r ? decode_dm_r.store_op ? store_hit_way_dm_r : load_hit_way_dm_r : stat_mem_pkt_cast_i.way_id;
+    v_tv_r ? decode_tv_r.store_op ? store_hit_way_tv : load_hit_way_tv : stat_mem_pkt_cast_i.way_id;
   bsg_lru_pseudo_tree_decode
    #(.ways_p(assoc_p))
    lru_decode
@@ -1162,8 +1151,8 @@ module bp_be_dcache
   logic [assoc_p-1:0] dirty_mask_lo;
   if (writethrough_p == 0)
     begin : td
-      wire dirty_mask_v_li = stat_mem_slow_write || (v_dm_r & decode_dm_r.store_op);
-      wire [lg_dcache_assoc_lp-1:0] dirty_mask_way_li = v_dm_r ? store_hit_way_dm_r : stat_mem_pkt_cast_i.way_id;
+      wire dirty_mask_v_li = stat_mem_slow_write || (v_tv_r & decode_tv_r.store_op);
+      wire [lg_dcache_assoc_lp-1:0] dirty_mask_way_li = v_tv_r ? store_hit_way_tv : stat_mem_pkt_cast_i.way_id;
       bsg_decode_with_v
        #(.num_out_p(assoc_p))
        dirty_mask_decode
@@ -1178,7 +1167,7 @@ module bp_be_dcache
       //   1) If dirty bit is set, we force a miss and send off a flush request to the CE
       //   2) If dirty bit is not set, we do not send a request and simply return valid flush.
       //        The CSR unit is now responsible for sending the clear request to the I$.
-      wire set_dirty = wbuf_v_li;
+      wire set_dirty = wbuf_v_li & ~flush_i;
       wire clear_dirty = (is_fence & cache_req_complete_i);
       bsg_dff_reset_set_clear
        #(.width_p(1))
@@ -1200,7 +1189,7 @@ module bp_be_dcache
     end
 
   always_comb
-    case ({v_dm_r, stat_mem_pkt_cast_i.opcode})
+    case ({v_tv_r, stat_mem_pkt_cast_i.opcode})
       {1'b0, e_cache_stat_mem_set_clear}:
         begin
           stat_mem_data_li = '0;
@@ -1211,7 +1200,7 @@ module bp_be_dcache
           stat_mem_data_li = '0;
           stat_mem_mask_li = '{lru: '0, dirty: dirty_mask_lo};
         end
-      default : // v_dm_r
+      default : // v_tv_r
         begin
           stat_mem_data_li = '{lru: lru_decode_data_lo, dirty: '1};
           stat_mem_mask_li = '{lru: lru_decode_mask_lo, dirty: dirty_mask_lo};
