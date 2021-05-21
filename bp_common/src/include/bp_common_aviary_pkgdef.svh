@@ -1,6 +1,7 @@
 `ifndef BP_COMMON_AVIARY_PKGDEF_SVH
 `define BP_COMMON_AVIARY_PKGDEF_SVH
 
+  `include "bsg_defines.v"
   `include "bp_common_aviary_defines.svh"
 
   // Suitably high enough to not run out of configs.
