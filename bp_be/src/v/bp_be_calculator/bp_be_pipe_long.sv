@@ -244,7 +244,7 @@ module bp_be_pipe_long
       rd_data_lo = remainder_lo;
 
   // Actually a busy signal
-  assign ready_o = fdiv_ready_lo & idiv_ready_lo & ~rd_w_v_r & ~v_li;
+  assign ready_o = fdiv_ready_lo & idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
 
   assign iwb_pkt.ird_w_v    = rd_w_v_r;
   assign iwb_pkt.frd_w_v    = 1'b0;

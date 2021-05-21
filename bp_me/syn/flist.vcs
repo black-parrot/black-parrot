@@ -6,13 +6,15 @@
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
 +incdir+$BASEJUMP_STL_DIR/bsg_test
 +incdir+$BASEJUMP_STL_DIR/bsg_noc
+# HardFloat includes
++incdir+$HARDFLOAT_DIR/source
++incdir+$HARDFLOAT_DIR/source/RISCV
 # common includes
 +incdir+$BP_COMMON_DIR/src/include
 # fe includes
 +incdir+$BP_FE_DIR/src/include
 # be includes
 +incdir+$BP_BE_DIR/src/include
-+incdir+$BP_BE_DIR/src/include/bp_be_dcache
 # me includes 
 +incdir+$BP_ME_DIR/src/include
 # top includes
