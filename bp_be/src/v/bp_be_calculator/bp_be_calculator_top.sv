@@ -46,7 +46,6 @@ module bp_be_calculator_top
   , output logic                                    long_ready_o
   , output logic                                    mem_ready_o
   , output logic                                    ptw_busy_o
-  , output logic                                    replay_pending_o
   , output logic [decode_info_width_lp-1:0]         decode_info_o
   , input                                           cmd_full_n_i
 
@@ -113,7 +112,7 @@ module bp_be_calculator_top
 
   logic pipe_mem_dtlb_store_miss_lo;
   logic pipe_mem_dtlb_load_miss_lo;
-  logic pipe_mem_dcache_miss_lo;
+  logic pipe_mem_dcache_miss_lo, pipe_mem_dcache_fail_lo;
   logic pipe_mem_fencei_clean_lo, pipe_mem_fencei_dirty_lo;
   logic pipe_mem_load_misaligned_lo;
   logic pipe_mem_load_access_fault_lo;
@@ -128,6 +127,11 @@ module bp_be_calculator_top
   logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
   logic [dpath_width_gp-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
   rv64_fflags_s pipe_aux_fflags_lo, pipe_fma_fflags_lo;
+
+  bp_be_wb_pkt_s pipe_mem_late_iwb_pkt;
+  logic pipe_mem_late_iwb_pkt_v, pipe_mem_late_iwb_pkt_yumi;
+  bp_be_wb_pkt_s pipe_mem_late_fwb_pkt;
+  logic pipe_mem_late_fwb_pkt_v, pipe_mem_late_fwb_pkt_yumi;
 
   // Generating match vector for bypass
   logic [2:0][pipe_stage_els_lp-1:0] match_rs;
@@ -315,6 +319,7 @@ module bp_be_calculator_top
 
      ,.tlb_store_miss_v_o(pipe_mem_dtlb_store_miss_lo)
      ,.tlb_load_miss_v_o(pipe_mem_dtlb_load_miss_lo)
+     ,.cache_fail_v_o(pipe_mem_dcache_fail_lo)
      ,.cache_miss_v_o(pipe_mem_dcache_miss_lo)
      ,.fencei_clean_v_o(pipe_mem_fencei_clean_lo)
      ,.fencei_dirty_v_o(pipe_mem_fencei_dirty_lo)
@@ -324,13 +329,21 @@ module bp_be_calculator_top
      ,.store_misaligned_v_o(pipe_mem_store_misaligned_lo)
      ,.store_access_fault_v_o(pipe_mem_store_access_fault_lo)
      ,.store_page_fault_v_o(pipe_mem_store_page_fault_lo)
+
      ,.early_data_o(pipe_mem_early_data_lo)
-     ,.final_data_o(pipe_mem_final_data_lo)
      ,.early_v_o(pipe_mem_early_data_lo_v)
+
+     ,.final_data_o(pipe_mem_final_data_lo)
      ,.final_v_o(pipe_mem_final_data_lo_v)
 
+     ,.late_iwb_pkt_o(pipe_mem_late_iwb_pkt)
+     ,.late_iwb_pkt_v_o(pipe_mem_late_iwb_pkt_v)
+     ,.late_iwb_pkt_yumi_i(pipe_mem_late_iwb_pkt_yumi)
+     ,.late_fwb_pkt_o(pipe_mem_late_fwb_pkt)
+     ,.late_fwb_pkt_v_o(pipe_mem_late_fwb_pkt_v)
+     ,.late_fwb_pkt_yumi_i(pipe_mem_late_fwb_pkt_yumi)
+
      ,.trans_info_i(trans_info_lo)
-     ,.replay_pending_o(replay_pending_o)
      );
 
   // Floating point pipe: 4/5 cycle latency
@@ -417,6 +430,10 @@ module bp_be_calculator_top
       comp_stage_n[1].fflags_w_v &= exc_stage_n[1].v;
       comp_stage_n[2].fflags_w_v &= exc_stage_n[2].v;
       comp_stage_n[3].fflags_w_v &= exc_stage_n[3].v;
+
+      // Inject D$ miss so we don't accidentally write back the data
+      comp_stage_n[2].ird_w_v    &= ~pipe_mem_dcache_miss_lo;
+      comp_stage_n[2].frd_w_v    &= ~pipe_mem_dcache_miss_lo;
     end
 
   bsg_dff
@@ -462,9 +479,10 @@ module bp_be_calculator_top
           exc_stage_n[1].exc.store_access_fault |= pipe_mem_store_access_fault_lo;
           exc_stage_n[1].exc.store_page_fault   |= pipe_mem_store_page_fault_lo;
 
-          exc_stage_n[2].exc.dcache_miss        |= pipe_mem_dcache_miss_lo;
-          exc_stage_n[2].exc.fencei_dirty       |= pipe_mem_fencei_dirty_lo;
+          exc_stage_n[2].exc.dcache_fail        |= pipe_mem_dcache_fail_lo;
+          exc_stage_n[2].spec.dcache_miss       |= pipe_mem_dcache_miss_lo;
           exc_stage_n[2].spec.fencei_clean      |= pipe_mem_fencei_clean_lo;
+          exc_stage_n[2].exc.fencei_dirty       |= pipe_mem_fencei_dirty_lo;
           exc_stage_n[2].exc.cmd_full           |= |{exc_stage_r[2].exc, exc_stage_r[2].spec} & cmd_full_n_i;
     end
 
@@ -477,11 +495,14 @@ module bp_be_calculator_top
      ,.data_o(exc_stage_r)
      );
 
-  assign pipe_long_idata_lo_yumi = pipe_long_idata_lo_v & ~comp_stage_r[4].ird_w_v;
-  assign pipe_long_fdata_lo_yumi = pipe_long_fdata_lo_v & ~comp_stage_r[5].frd_w_v & ~comp_stage_r[5].fflags_w_v;
+  assign pipe_mem_late_iwb_pkt_yumi = pipe_mem_late_iwb_pkt_v & ~comp_stage_r[4].ird_w_v;
+  assign pipe_mem_late_fwb_pkt_yumi = pipe_mem_late_fwb_pkt_v & ~comp_stage_r[5].frd_w_v;
 
-  assign iwb_pkt_o = pipe_long_idata_lo_yumi ? long_iwb_pkt : comp_stage_r[4];
-  assign fwb_pkt_o = pipe_long_fdata_lo_yumi ? long_fwb_pkt : comp_stage_r[5];
+  assign pipe_long_idata_lo_yumi = pipe_long_idata_lo_v & ~pipe_mem_late_iwb_pkt_v & ~comp_stage_r[4].ird_w_v;
+  assign pipe_long_fdata_lo_yumi = pipe_long_fdata_lo_v & ~pipe_mem_late_fwb_pkt_v & ~comp_stage_r[5].frd_w_v & ~comp_stage_r[5].fflags_w_v;
+
+  assign iwb_pkt_o = pipe_mem_late_iwb_pkt_yumi ? pipe_mem_late_iwb_pkt : pipe_long_idata_lo_yumi ? long_iwb_pkt : comp_stage_r[4];
+  assign fwb_pkt_o = pipe_mem_late_fwb_pkt_yumi ? pipe_mem_late_fwb_pkt : pipe_long_fdata_lo_yumi ? long_fwb_pkt : comp_stage_r[5];
 
 endmodule
 

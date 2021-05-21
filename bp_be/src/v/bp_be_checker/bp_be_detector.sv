@@ -41,7 +41,6 @@ module bp_be_detector
    , input                             mem_ready_i
    , input                             ptw_busy_i
    , input                             irq_pending_i
-   , input                             replay_pending_i
 
    // Pipeline control signals from the checker to the calculator
    , output logic                      dispatch_v_o
@@ -79,7 +78,9 @@ module bp_be_detector
   logic long_haz_v;
   logic mem_in_pipe_v;
 
-  wire [reg_addr_width_gp-1:0] score_rd_li = dispatch_pkt_cast_i.instr.t.fmatype.rd_addr;
+  wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.dcache_miss
+    ? commit_pkt_cast_i.instr.t.fmatype.rd_addr
+    : dispatch_pkt_cast_i.instr.t.fmatype.rd_addr;
   wire [reg_addr_width_gp-1:0] score_rs1_li = dispatch_pkt_cast_i.instr.t.fmatype.rs1_addr;
   wire [reg_addr_width_gp-1:0] score_rs2_li = dispatch_pkt_cast_i.instr.t.fmatype.rs2_addr;
   wire [reg_addr_width_gp-1:0] score_rs3_li = dispatch_pkt_cast_i.instr.t.fmatype.rs3_addr;
@@ -88,7 +89,8 @@ module bp_be_detector
 
   logic [1:0] irs_match_lo;
   logic       ird_match_lo;
-  wire score_int_v_li = dispatch_pkt_cast_i.v & dispatch_pkt_cast_i.decode.late_iwb_v;
+  wire score_int_v_li = (dispatch_pkt_cast_i.v & dispatch_pkt_cast_i.decode.late_iwb_v)
+    || (commit_pkt_cast_i.dcache_miss & commit_pkt_cast_i.instr.t.fmatype.opcode inside {`RV64_LOAD_OP, `RV64_AMO_OP});
   wire clear_int_v_li = iwb_pkt_cast_i.ird_w_v & iwb_pkt_cast_i.late;
   bp_be_scoreboard
    #(.bp_params_p(bp_params_p), .num_rs_p(2))
@@ -110,7 +112,8 @@ module bp_be_detector
 
   logic [2:0] frs_match_lo;
   logic       frd_match_lo;
-  wire score_fp_v_li = dispatch_pkt_cast_i.v & dispatch_pkt_cast_i.decode.late_fwb_v;
+  wire score_fp_v_li = (dispatch_pkt_cast_i.v & dispatch_pkt_cast_i.decode.late_fwb_v)
+    || (commit_pkt_cast_i.dcache_miss & commit_pkt_cast_i.instr.t.fmatype.opcode == `RV64_FLOAD_OP);
   wire clear_fp_v_li = fwb_pkt_cast_i.frd_w_v & fwb_pkt_cast_i.late;
   bp_be_scoreboard
    #(.bp_params_p(bp_params_p), .num_rs_p(3))
@@ -260,13 +263,12 @@ module bp_be_detector
                      | ptw_busy_i
                      | (~mem_ready_i & isd_status_cast_i.mem_v)
                      | (~long_ready_i & isd_status_cast_i.long_v)
-                     | (irq_pending_i & ~replay_pending_i)
                      | cmd_haz_v;
     end
 
   // Generate calculator control signals
   assign dispatch_v_o  = ~(control_haz_v | data_haz_v | struct_haz_v);
-  assign interrupt_v_o = irq_pending_i & ~replay_pending_i & ~ptw_busy_i & ~cfg_bus_cast_i.freeze;
+  assign interrupt_v_o = irq_pending_i & ~ptw_busy_i & ~cfg_bus_cast_i.freeze;
 
   bp_be_dep_status_s dep_status_n;
   always_comb

@@ -70,7 +70,7 @@ module bp_be_scheduler
   bp_fe_queue_s fe_queue_lo;
   logic fe_queue_v_lo, fe_queue_yumi_li;
   wire fe_queue_clr_li  = suppress_iss_i;
-  wire fe_queue_deq_li  = commit_pkt_cast_i.queue_v & ~commit_pkt_cast_i.rollback;
+  wire fe_queue_deq_li  = commit_pkt_cast_i.queue_v;
   wire fe_queue_roll_li = commit_pkt_cast_i.rollback;
   bp_be_issue_pkt_s preissue_pkt, issue_pkt;
   bp_be_issue_queue
