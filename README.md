@@ -51,7 +51,7 @@ BlackParrot is Linux-capable, so it is possible to run all programs which run on
 for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long
 Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some
 platform-specific features are only available at the firmware level. Developers looking to write
-low-level BlackParrot code, or optimize for the BlackParrot platform should look at our [SDK](sdk)
+low-level BlackParrot code, or optimize for the BlackParrot platform should look at our [SDK](https://github.com/black-parrot-sdk/black-parrot-sdk).
 
 ## Software Developer Guide
 Once you've built and validate your BlackParrot program and are ready to run on RTL, look at our
@@ -68,8 +68,8 @@ BlackParrot is an aggressively modular design: communication between the compone
 
 ## BedRock Coherence System Guide
 The BedRock coherence system maintains cache coherence between the BlackParrot processor cores and attached
-coherent accelerators in a BlackParrot multicore system. Please see the [BedRock Guide](docs/bedrock_guide.md)
-for more details on the coherence protocol and system.
+coherent accelerators in a BlackParrot multicore system. Please see the [BedRock Coherence Protocol](docs/bedrock_coherence_protocol.md)
+page for more details on the coherence protocol and system.
 
 ## Microarchitecture Guide
 [Microarchitecture Guide](docs/microarchitecture_guide.md)
