@@ -75,7 +75,7 @@ class NBF:
 
   # constructor
   def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file, config, skip_zeros, addr_width,
-          data_width):
+          data_width, validate):
 
     # input parameters
     self.ncpus = ncpus
@@ -86,6 +86,7 @@ class NBF:
     self.skip_zeros = skip_zeros
     self.addr_width = (addr_width+3)/4*4
     self.data_width = data_width
+    self.validate = validate
 
     # Grab various files
     if self.mem_file:
@@ -282,5 +283,5 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file, args.config,
-          args.skip_zeros, args.addr_width, args.data_width)
+          args.skip_zeros, args.addr_width, args.data_width, args.validate)
   converter.dump()
