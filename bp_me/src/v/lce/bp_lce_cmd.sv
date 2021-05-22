@@ -423,8 +423,8 @@ module bp_lce_cmd
 
               // TODO: This is sufficient for the critical signal when only
               //   line width fills
-              cache_req_critical_tag_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
-              cache_req_critical_data_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+              cache_req_critical_tag_o = tag_mem_pkt_yumi_i;
+              cache_req_critical_data_o = data_mem_pkt_yumi_i;
 
               // send coherence ack after updating tag and data memories
               state_n = (tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i)
@@ -442,6 +442,8 @@ module bp_lce_cmd
               tag_mem_pkt.tag = lce_cmd_addr_tag;
               tag_mem_pkt.opcode = e_cache_tag_mem_set_state;
               tag_mem_pkt_v_o = lce_cmd_v_i;
+
+              cache_req_critical_tag_o = tag_mem_pkt_yumi_i;
 
               state_n = tag_mem_pkt_yumi_i
                         ? e_coh_ack
@@ -556,6 +558,7 @@ module bp_lce_cmd
 
               lce_cmd_yumi_o = data_mem_pkt_yumi_i;
 
+              cache_req_critical_tag_o = lce_cmd_yumi_o;
               cache_req_critical_data_o = lce_cmd_yumi_o;
               cache_req_complete_o = lce_cmd_yumi_o;
             end

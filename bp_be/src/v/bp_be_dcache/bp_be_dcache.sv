@@ -827,7 +827,7 @@ module bp_be_dcache
   wire nonblocking_req     = uncached_store_req | wt_req;
 
   assign cache_req_v_o = is_req
-    | (~flush_i & v_tv_r & (|{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req}));
+    | (is_ready & v_tv_r & ~flush_i & (|{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req}));
 
   always_comb
     begin
