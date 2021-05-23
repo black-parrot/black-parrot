@@ -202,7 +202,7 @@ module bp_fe_pc_gen
      ,.pop_pc_v_o  (ras_pred_tgt_pc_v_lo)
      );
   // TODO: we use the RAS result regardless of whether it was valid
-  assign ras_tgt_lo = ras_pred_tgt_pc_lo;
+  assign ras_tgt_lo = ras_pred_tgt_pc_v_lo ? ras_pred_tgt_pc_lo : 0;
 
   assign attaboy_yumi_o = attaboy_v_i & ~(bht_w_v_li & ~bht_w_yumi_lo) & ~(btb_w_v_li & ~btb_w_yumi_lo);
 
