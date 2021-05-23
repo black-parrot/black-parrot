@@ -53,6 +53,7 @@
     , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                         \
     , localparam bht_idx_width_p             = proc_param_lp.bht_idx_width                         \
     , localparam ghist_width_p               = proc_param_lp.ghist_width                           \
+    , localparam ras_num_entries_p           = proc_param_lp.ras_num_entries                       \
                                                                                                    \
     , localparam itlb_els_4k_p              = proc_param_lp.itlb_els_4k                            \
     , localparam itlb_els_1g_p              = proc_param_lp.itlb_els_1g                            \
