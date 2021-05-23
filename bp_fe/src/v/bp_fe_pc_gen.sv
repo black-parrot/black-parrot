@@ -112,10 +112,12 @@ module bp_fe_pc_gen
 
   // BTB
   wire btb_r_v_li = next_pc_yumi_i & ~ovr_taken & ~ovr_ret;
-  wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
-    | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb)
-    | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
-  wire btb_clr_li = redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb;
+  wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i) // we mispredicted, and the BE tells us a branch is being taken
+    | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb) // or we mispredicted, the prediction was from the btb, and that prediction predicted a branch where there was none
+    | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb); // or we predicted correctly, the BE tells us a branch is being taken, and it *wasn't* the BTB that provided the prediction
+  wire btb_clr_li = redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb; // in the middle case above, we will be *clearing* the entry
+  // TODO: aren't the below using potentially invalid attaboy data?
+  //   No, btb_w_v_li can only be true if at least one of them is valid
   wire btb_jmp_li = redirect_br_v_i ? (redirect_br_metadata_fwd.is_jal | redirect_br_metadata_fwd.is_jalr) : (attaboy_br_metadata_fwd.is_jal | attaboy_br_metadata_fwd.is_jalr);
   wire [btb_tag_width_p-1:0] btb_tag_li = redirect_br_v_i ? redirect_br_metadata_fwd.btb_tag : attaboy_br_metadata_fwd.btb_tag;
   wire [btb_idx_width_p-1:0] btb_idx_li = redirect_br_v_i ? redirect_br_metadata_fwd.btb_idx : attaboy_br_metadata_fwd.btb_idx;
@@ -182,18 +184,25 @@ module bp_fe_pc_gen
   assign btb_taken = btb_br_tgt_v_lo & (bht_val_lo[1] | btb_br_tgt_jmp_lo);
 
   // RAS
-  logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
-  bsg_dff_reset_en
-   #(.width_p(vaddr_width_p))
+  logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo; 
+  logic ras_pred_tgt_pc_v_lo;
+  wire ras_pred_tgt_pc_ready_and_li = is_ret;
+  // TODO: this is purely speculative and easily-corrupted
+  bp_fe_ras
+   #(.bp_params_p(bp_params_p))
    ras
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(is_call)
+    (.clk_i        (clk_i)
+     ,.reset_i     (reset_i)
+    
+     ,.push_pc_v_i (is_call)
+     ,.push_pc_i   (ras_next_instruction_addr_li)
 
-     ,.data_i(return_addr_n)
-     ,.data_o(return_addr_r)
+     ,.pop_pc_ready_and_i(ras_pred_tgt_pc_ready_and_li)
+     ,.pop_pc_o    (ras_pred_tgt_pc_lo)
+     ,.pop_pc_v_o  (ras_pred_tgt_pc_v_lo)
      );
-  assign ras_tgt_lo = return_addr_r;
+  // TODO: we use the RAS result regardless of whether it was valid
+  assign ras_tgt_lo = ras_pred_tgt_pc_lo;
 
   assign attaboy_yumi_o = attaboy_v_i & ~(bht_w_v_li & ~bht_w_yumi_lo) & ~(btb_w_v_li & ~btb_w_yumi_lo);
 
@@ -225,7 +234,7 @@ module bp_fe_pc_gen
      ,.data_i({pred_if2_n, pc_if1_r})
      ,.data_o({pred_if2_r, pc_if2_r})
      );
-  assign return_addr_n = pc_if2_r + vaddr_width_p'(4);
+  assign ras_next_instruction_addr_li = pc_if2_r + vaddr_width_p'(4);
 
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
