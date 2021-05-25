@@ -366,41 +366,6 @@ module bp_be_dcache
      ,.data_full_o(_v_tv_r)
      );
 
-//  logic _v_tv_r;
-//  bsg_dff_reset_set_clear
-//   #(.width_p(1))
-//   _v_tv_reg
-//    (.clk_i(~clk_i)
-//     ,.reset_i(reset_i)
-//     ,.set_i(tv_we)
-//     // We always advance in the non-stalling D$
-//     ,.clear_i(1'b1)
-//     ,.data_o(_v_tv_r)
-//     );
-//
-//  logic _v_tv_pr;
-//  bsg_dff_reset
-//   #(.width_p(1))
-//   _v_tv_pr_reg
-//    (.clk_i(clk_i)
-//     ,.reset_i(reset_i)
-//     ,.data_i(_v_tv_r)
-//     ,.data_o(_v_tv_pr)
-//     );
-//
-//  logic _v_tv_nr;
-//  bsg_dff_reset
-//   #(.width_p(1))
-//   _v_tv_nr_reg
-//    (.clk_i(~clk_i)
-//     ,.reset_i(reset_i)
-//     ,.data_i(_v_tv_r)
-//     ,.data_o(_v_tv_nr)
-//     );
-//
-//  // Need to cut off the negative edge
-//  assign v_tv_r = _v_tv_r & (_v_tv_r ^ _v_tv_pr ^ _v_tv_nr);
-
   logic [block_width_p-1:0] ld_data_tv_n;
   assign ld_data_tv_n = data_mem_data_lo;
   bsg_dff_en
