@@ -40,7 +40,7 @@ module bp_fe_ras
   always_ff @(posedge clk_i) begin
     if (reset_i)
       begin
-        ras_entries             <= ras_entries;
+        ras_entries             <= '0;
         ras_num_valid_entries_r <= 0;
       end
     else if (is_push && !is_pop)
@@ -50,7 +50,10 @@ module bp_fe_ras
       end
     else if (!is_push && is_pop)
       begin
-        ras_entries             <= { ras_entries[1:ras_num_entries_p-1], vaddr_width_p'('0) };
+        if (ras_num_valid_entries_r <= 1)
+          ras_entries <= ras_entries;
+        else
+          ras_entries             <= { ras_entries[1:ras_num_entries_p-1], vaddr_width_p'('0) };
         ras_num_valid_entries_r <= ras_num_valid_entries_r - 1;
       end
     else if (is_push && is_pop)
