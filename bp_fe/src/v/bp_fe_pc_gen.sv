@@ -184,7 +184,7 @@ module bp_fe_pc_gen
   assign btb_taken = btb_br_tgt_v_lo & (bht_val_lo[1] | btb_br_tgt_jmp_lo);
 
   // RAS
-  logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo; 
+  logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo, ras_backup_pred_tgt_pc_lo;
   logic ras_pred_tgt_pc_v_lo;
   wire ras_pred_tgt_pc_ready_and_li = is_ret;
   // TODO: this is purely speculative and easily-corrupted
@@ -201,8 +201,20 @@ module bp_fe_pc_gen
      ,.pop_pc_o    (ras_pred_tgt_pc_lo)
      ,.pop_pc_v_o  (ras_pred_tgt_pc_v_lo)
      );
-  // TODO: we use the RAS result regardless of whether it was valid
-  assign ras_tgt_lo = ras_pred_tgt_pc_lo;
+
+  // TODO: backup reg is temporary, drop when checkpointing is implemented
+  bsg_dff_reset_en
+   #(.width_p(vaddr_width_p))
+   ras_backup_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(is_call)
+
+     ,.data_i(ras_next_instruction_addr_li)
+     ,.data_o(ras_backup_pred_tgt_pc_lo)
+     );
+
+  assign ras_tgt_lo = ras_pred_tgt_pc_v_lo ? ras_pred_tgt_pc_lo : ras_backup_pred_tgt_pc_lo;
 
   assign attaboy_yumi_o = attaboy_v_i & ~(bht_w_v_li & ~bht_w_yumi_lo) & ~(btb_w_v_li & ~btb_w_yumi_lo);
 
