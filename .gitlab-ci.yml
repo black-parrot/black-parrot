@@ -1,6 +1,6 @@
 variables:
-  GIT_STRATEGY: clone
-  GIT_SUBMODULE_STRATEGY: normal
+  GIT_STRATEGY: fetch
+  GIT_SUBMODULE_STRATEGY: none
 
 ## CI Stages:
 #    manual: Manual jobs used to do CI maintainance, like wiping the directory or clearing cache
@@ -11,27 +11,11 @@ variables:
 #    test-long  : Functional RTL tests
 stages:
   - manual
-  - prep
   - check
   - test-short
   - test-medium
   - test-long
   - test-ultralong
-
-
-bleach_all:
-  when: manual
-  stage: manual
-  tags:
-    - bsg
-  script:
-    - git submodule deinit -f .
-    - git clean -fdx
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - $CI_PROJECT_DIR
-    policy: push
 
 .job_template: &job_definition
   only:
@@ -43,15 +27,11 @@ bleach_all:
     - top_dev
     - sw_dev
   before_script:
-    - echo "Sourcing bashrc"
-    - source ~/.bashrc
-    - echo "Updating hardware libraries"
-    - git submodule update --init --recursive external/basejump_stl
-    - git submodule update --init --recursive external/HardFloat
+    - echo "Making libs"
+    - make libs
   artifacts:
     when: always
     paths:
-      - "*.log"
       - "bp_fe/syn/reports/"
       - "bp_be/syn/reports/"
       - "bp_me/syn/reports/"
@@ -60,45 +40,16 @@ bleach_all:
       - "bp_be/syn/logs/"
       - "bp_me/syn/logs/"
       - "bp_top/syn/logs/"
-  cache: &global_cache
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - $CI_PROJECT_DIR/tools/install
-      - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/lib
-      - $CI_PROJECT_DIR/sdk/prog
-      - $CI_PROJECT_DIR/sdk/ucode
-    policy: pull
+#  cache: &global_cache
+#    key: $CI_COMMIT_REF_SLUG
+#    paths:
+#      - $CI_PROJECT_DIR/sdk
+#    policy: pull
   dependencies: []
   retry:
     max: 2
     when:
       - script_failure
-
-prep:
-  <<: *job_definition
-  stage: prep
-  tags:
-    - bsg
-  script:
-    - git submodule deinit -f .
-    - git submodule sync --recursive
-    - make prep -j $CI_CORES > make_prep.log
-    - make -C sdk prog -j $CI_CORES > make_prog.log
-    - make tidy > make_tidy.log
-  artifacts:
-    when: always
-    paths:
-      - "*.log"
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - $CI_PROJECT_DIR/tools/install
-      - $CI_PROJECT_DIR/sdk/install
-      - $CI_PROJECT_DIR/sdk/lib
-      - $CI_PROJECT_DIR/sdk/prog
-      - $CI_PROJECT_DIR/sdk/ucode
-    policy: pull-push
 
 check-design:
   <<: *job_definition
@@ -140,7 +91,7 @@ tire_kick:
   tags:
     - verilator
   script:
-    - $CI_PROJECT_DIR/ci/tire_kick.sh
+    - $CI_PROJECT_DIR/ci/tire_kick.sh $CI_CORES
 
 bloodgraph-vcs:
   <<: *job_definition
@@ -306,7 +257,6 @@ top-riscvdv-vcs:
   tags:
     - vcs
   script:
-    - make -C sdk riscv-dv
     - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCVDV_TESTLIST $CI_CORES
 
 # Verilator 4.104 "internal error"

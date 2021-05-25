@@ -79,7 +79,6 @@ module bp_me_cce_to_cache
   assign mem_cmd_cast_i = mem_cmd_i;
   assign mem_resp_o = mem_resp_cast_o;
 
-  logic mem_cmd_ready_and_lo;
   bp_bedrock_cce_mem_msg_s mem_cmd_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
   bsg_fifo_1r1w_small
@@ -90,13 +89,13 @@ module bp_me_cce_to_cache
 
     ,.data_i(mem_cmd_i)
     ,.v_i(mem_cmd_v_i)
-    ,.ready_o(mem_cmd_ready_and_lo)
+    ,.ready_o(mem_cmd_ready_and_o)
 
     ,.data_o(mem_cmd_lo)
     ,.v_o(mem_cmd_v_lo)
     ,.yumi_i(mem_cmd_yumi_li)
     );
-  wire [caddr_width_p-1:0] cmd_addr = mem_cmd_lo.header.addr;
+  wire [caddr_width_p-1:0] cmd_addr = mem_cmd_lo.header.addr[0+:caddr_width_p];
   wire [l2_block_size_in_words_p-1:0][l2_data_width_p-1:0] cmd_data = mem_cmd_lo.data;
 
   // synopsys sync_set_reset "reset_i"
@@ -133,7 +132,6 @@ module bp_me_cce_to_cache
     tagst_received_n = tagst_received_r;
     v_o = 1'b0;
 
-    mem_cmd_ready_and_o = mem_cmd_ready_and_lo;
     mem_cmd_yumi_li = 1'b0;
 
     cmd_state_n = cmd_state_r;
@@ -142,13 +140,9 @@ module bp_me_cce_to_cache
 
     case (cmd_state_r)
       RESET: begin
-        mem_cmd_ready_and_o = 1'b0;
-
         cmd_state_n = CLEAR_TAG;
       end
       CLEAR_TAG: begin
-        mem_cmd_ready_and_o = 1'b0;
-
         v_o = tagst_sent_r != (l2_assoc_p*l2_sets_p);
 
         cache_pkt.opcode = TAGST;

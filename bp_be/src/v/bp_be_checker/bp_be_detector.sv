@@ -21,7 +21,7 @@ module bp_be_detector
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
@@ -52,7 +52,7 @@ module bp_be_detector
    , input [wb_pkt_width_lp-1:0]       fwb_pkt_i
    );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
@@ -174,20 +174,20 @@ module bp_be_detector
       // Detect integer and float data hazards for EX2
       irs1_data_haz_v[1] = (isd_status_cast_i.irs1_v & rs1_match_vector[1])
                            & (isd_status_cast_i.rs1_addr != '0)
-                           & (dep_status_r[1].aux_iwb_v | dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
+                           & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
       irs2_data_haz_v[1] = (isd_status_cast_i.irs2_v & rs2_match_vector[1])
                            & (isd_status_cast_i.rs2_addr != '0)
-                           & (dep_status_r[1].aux_iwb_v | dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
+                           & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
       frs1_data_haz_v[1] = (isd_status_cast_i.frs1_v & rs1_match_vector[1])
-                           & (dep_status_r[1].aux_fwb_v | dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
+                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       frs2_data_haz_v[1] = (isd_status_cast_i.frs2_v & rs2_match_vector[1])
-                           & (dep_status_r[1].aux_fwb_v | dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
+                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       frs3_data_haz_v[1] = (isd_status_cast_i.frs3_v & rs3_match_vector[1])
-                           & (dep_status_r[1].aux_fwb_v | dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
+                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       irs1_data_haz_v[2] = (isd_status_cast_i.irs1_v & rs1_match_vector[2])
                            & (isd_status_cast_i.rs1_addr != '0)
@@ -215,7 +215,7 @@ module bp_be_detector
       frs3_data_haz_v[3] = (isd_status_cast_i.frs3_v & rs3_match_vector[3])
                            & (dep_status_r[3].fma_fwb_v);
 
-      mem_in_pipe_v      = (dep_status_r[0].mem_v) | (dep_status_r[1].mem_v);
+      mem_in_pipe_v      = dep_status_r[0].mem_v | dep_status_r[1].mem_v | dep_status_r[2].mem_v;
       fence_haz_v        = (isd_status_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v))
                            | (isd_status_cast_i.mem_v & credits_full_i);
       cmd_haz_v          = cmd_full_i;

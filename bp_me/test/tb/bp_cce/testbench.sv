@@ -19,15 +19,14 @@ module testbench
    , parameter cce_dir_trace_p = 0
    , parameter axe_trace_p = 0
    , parameter instr_count = 1
-   , parameter skip_init_p = 0
+   , parameter cce_mode_p = 0
    , parameter lce_trace_p = 0
    , parameter lce_tr_trace_p = 0
    , parameter dram_trace_p = 0
-   , parameter dram_fixed_latency_p=0
 
    // DRAM parameters
    , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
-   
+
    // size of CCE-Memory buffers for cmd/resp messages
    // for this testbench (one LCE, one CCE, one memory) only need enough space to hold as many
    // cmds/responses can be generated for a single LCE request
@@ -52,7 +51,7 @@ function int get_sim_period();
   return (`BP_SIM_CLK_PERIOD);
 endfunction
 
-`declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+`declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
@@ -158,7 +157,7 @@ bsg_trace_node_master #(
 bp_me_nonsynth_mock_lce #(
   .bp_params_p(bp_params_p)
   ,.axe_trace_p(axe_trace_p)
-  ,.skip_init_p(skip_init_p)
+  ,.skip_init_p(cce_mode_p)
 ) lce (
   .clk_i(clk_i)
   ,.reset_i(reset_i)
@@ -525,7 +524,7 @@ bp_cce_mmio_cfg_loader
     ,.inst_width_p($bits(bp_cce_inst_s))
     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)
-    ,.skip_ram_init_p(skip_init_p)
+    ,.skip_ram_init_p(cce_mode_p)
     ,.clear_freeze_p(1'b1)
   )
   cfg_loader
@@ -587,7 +586,7 @@ end
 
 `ifndef VERILATOR
   initial
-    begin      
+    begin
       $assertoff();
       @(posedge clk_i);
       @(negedge reset_i);

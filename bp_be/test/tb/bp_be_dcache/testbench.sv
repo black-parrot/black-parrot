@@ -32,7 +32,7 @@ module testbench
    , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
 
    // Derived parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
    , localparam trace_replay_data_width_lp = ptag_width_p + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
    , localparam trace_rom_addr_width_lp = 8
@@ -43,7 +43,7 @@ module testbench
   (output bit reset_i);
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   // Bit to deal with initial X->0 transition detection
   bit clk_i;
@@ -307,7 +307,7 @@ module testbench
        ,.addr_tv_r(paddr_tv_r)
        ,.lr_miss_tv(lr_miss_tv)
        ,.sc_op_tv_r(decode_tv_r.sc_op)
-       ,.sc_success(sc_success)
+       ,.sc_success(sc_success_tv)
 
        ,.cache_req_v_o(cache_req_v_o)
        ,.cache_req_o(cache_req_o)

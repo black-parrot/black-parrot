@@ -10,7 +10,7 @@ module bp_be_csr
 
    , localparam csr_cmd_width_lp = $bits(bp_be_csr_cmd_s)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam decode_info_width_lp = `bp_be_decode_info_width
@@ -51,7 +51,7 @@ module bp_be_csr
    );
 
   // Declare parameterizable structs
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `declare_csr_structs(vaddr_width_p, paddr_width_p);
@@ -628,7 +628,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;
   assign commit_pkt_cast_o._interrupt       = interrupt_v_lo;
-  assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei;
+  assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;
   assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi              = retire_pkt_cast_i.special.wfi;
   assign commit_pkt_cast_o.eret             = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};

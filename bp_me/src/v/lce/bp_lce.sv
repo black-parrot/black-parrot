@@ -60,7 +60,8 @@ module bp_lce
     , output logic                                   cache_req_busy_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
-    , output logic                                   cache_req_critical_o
+    , output logic                                   cache_req_critical_tag_o
+    , output logic                                   cache_req_critical_data_o
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_credits_full_o
     , output logic                                   cache_req_credits_empty_o
@@ -186,7 +187,8 @@ module bp_lce
       ,.ready_o(cmd_ready_lo)
       ,.sync_done_o(sync_done_lo)
       ,.cache_req_complete_o(cache_req_complete_o)
-      ,.cache_req_critical_o(cache_req_critical_o)
+      ,.cache_req_critical_tag_o(cache_req_critical_tag_o)
+      ,.cache_req_critical_data_o(cache_req_critical_data_o)
       ,.uc_store_req_complete_o(uc_store_req_complete_lo)
 
       ,.data_mem_pkt_o(data_mem_pkt_o)

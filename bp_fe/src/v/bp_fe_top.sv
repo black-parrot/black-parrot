@@ -14,7 +14,7 @@ module bp_fe_top
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -35,7 +35,8 @@ module bp_fe_top
    , input                                            cache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
-   , input                                            cache_req_critical_i
+   , input                                            cache_req_critical_tag_i
+   , input                                            cache_req_critical_data_i
    , input                                            cache_req_complete_i
    , input                                            cache_req_credits_full_i
    , input                                            cache_req_credits_empty_i
@@ -57,7 +58,7 @@ module bp_fe_top
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
   bp_fe_cmd_s fe_cmd_cast_i;
   assign fe_cmd_cast_i = fe_cmd_i;
@@ -234,7 +235,7 @@ module bp_fe_top
      ,.sum_i('0)
      ,.uncached_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_uncached))
      ,.nonspec_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_nonspec))
-     ,.domain_mask_i(cfg_bus_cast_i.domain_mask)
+     ,.hio_mask_i(cfg_bus_cast_i.hio_mask)
 
      ,.w_v_i(itlb_fill_v)
      ,.w_vtag_i(w_vtag_li)
@@ -298,7 +299,8 @@ module bp_fe_top
      ,.cache_req_busy_i(cache_req_busy_i)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-     ,.cache_req_critical_i(cache_req_critical_i)
+     ,.cache_req_critical_tag_i(cache_req_critical_tag_i)
+     ,.cache_req_critical_data_i(cache_req_critical_data_i)
      ,.cache_req_complete_i(cache_req_complete_i)
      ,.cache_req_credits_full_i(cache_req_credits_full_i)
      ,.cache_req_credits_empty_i(cache_req_credits_empty_i)

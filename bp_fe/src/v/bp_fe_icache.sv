@@ -43,7 +43,7 @@ module bp_fe_icache
    , parameter fill_width_p  = icache_fill_width_p
 
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
-   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
   (input                                              clk_i
@@ -83,7 +83,8 @@ module bp_fe_icache
    , input                                            cache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
-   , input                                            cache_req_critical_i
+   , input                                            cache_req_critical_tag_i
+   , input                                            cache_req_critical_data_i
    , input                                            cache_req_complete_i
    , input                                            cache_req_credits_full_i
    , input                                            cache_req_credits_empty_i
@@ -105,7 +106,7 @@ module bp_fe_icache
    );
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Various localparameters

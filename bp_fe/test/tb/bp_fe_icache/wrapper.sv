@@ -14,7 +14,7 @@ module wrapper
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
    , localparam lg_icache_assoc_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
@@ -54,7 +54,7 @@ module wrapper
    , input                                   mem_cmd_yumi_i
    );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
@@ -68,7 +68,7 @@ module wrapper
   logic cache_req_v_lo;
   logic [icache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
   logic cache_req_metadata_v_lo;
-  logic cache_req_critical_li, cache_req_complete_li;
+  logic cache_req_critical_tag_li, cache_req_critical_data_li, cache_req_complete_li;
   logic cache_req_credits_full_li, cache_req_credits_empty_li;
 
   // Fill Interfaces
@@ -194,7 +194,8 @@ module wrapper
      ,.cache_req_busy_i(cache_req_busy_li)
      ,.cache_req_metadata_o(cache_req_metadata_lo)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
-     ,.cache_req_critical_i(cache_req_critical_li)
+     ,.cache_req_critical_tag_i(cache_req_critical_tag_li)
+     ,.cache_req_critical_data_i(cache_req_critical_data_li)
      ,.cache_req_complete_i(cache_req_complete_li)
      ,.cache_req_credits_full_i(cache_req_credits_full_li)
      ,.cache_req_credits_empty_i(cache_req_credits_empty_li)
@@ -246,7 +247,8 @@ module wrapper
        ,.cache_req_busy_o(cache_req_busy_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-       ,.cache_req_critical_o(cache_req_critical_li)
+       ,.cache_req_critical_tag_o(cache_req_critical_tag_li)
+       ,.cache_req_critical_data_o(cache_req_critical_data_li)
        ,.cache_req_complete_o(cache_req_complete_li)
        ,.cache_req_credits_full_o(cache_req_credits_full_li)
        ,.cache_req_credits_empty_o(cache_req_credits_empty_li)
@@ -359,7 +361,8 @@ module wrapper
        ,.cache_req_busy_o(cache_req_busy_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-       ,.cache_req_critical_o(cache_req_critical_li)
+       ,.cache_req_critical_tag_o(cache_req_critical_tag_li)
+       ,.cache_req_critical_data_o(cache_req_critical_data_li)
        ,.cache_req_complete_o(cache_req_complete_li)
        ,.cache_req_credits_full_o(cache_req_credits_full_li)
        ,.cache_req_credits_empty_o(cache_req_credits_empty_li)

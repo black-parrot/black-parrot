@@ -30,6 +30,7 @@ protos=(
 cmd_base="make -C bp_me/syn run_testlist.${SUFFIX}"
 
 # Any setup needed for the job
+make -C bp_me/syn clean
 
 let JOBS=${#protos[@]}
 
