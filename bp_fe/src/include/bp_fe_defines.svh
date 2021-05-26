@@ -44,7 +44,7 @@
       logic [1:0]                     bht_val;                                                    \
       logic [ghist_width_mp-1:0]      ghist;                                                      \
       logic [vaddr_width_mp-1:0]      ras_top_pc;                                                 \
-      logic [`BSG_WIDTH(ras_num_entries_mp-1)-1:0] ras_top_ptr, ras_num_valid_entries;            \
+      logic [`BSG_WIDTH(ras_num_entries_mp-1)-1:0] ras_top_ptr;                                   \
     }  bp_fe_branch_metadata_fwd_s;
 
   `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp, ghist_width_mp) \
