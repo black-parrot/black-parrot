@@ -20,6 +20,7 @@ module bp_fe_ras
 
    , input logic  pop_pc_ready_and_i
    , output logic [vaddr_width_p-1:0] pop_pc_o
+   // TODO: don't need "valid" out or num_valid_entries. just return whatever is there.
    , output logic pop_pc_v_o
 
    , output logic [ptr_width_lp] ckpt_top_ptr_o
