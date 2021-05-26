@@ -1,5 +1,8 @@
 /*
  * bp_fe_ras.v
+ *
+ * A configurable-depth Return Address Stack, with support for checkpointing of
+ * the "top" pointer and topmost element.
  */
 `include "bp_common_defines.svh"
 `include "bp_fe_defines.svh"
@@ -22,7 +25,7 @@ module bp_fe_ras
    , output logic [vaddr_width_p-1:0] pop_pc_o
 
    , output logic [ptr_width_lp] ckpt_top_ptr_o
-   
+
    , input logic restore_ckpt_v_i
    , input logic [ptr_width_lp] restore_ckpt_top_ptr_i
    , input logic [vaddr_width_p-1:0] restore_ckpt_top_pc_i
@@ -36,7 +39,7 @@ module bp_fe_ras
   //synopsys translate_on
 
   // we can't use bsg_circular_ptr because we need to be able to a) decrement the pointer and b) checkpoint the pointer.
-  // top_ptr_r points to the current element on the top of the stack.
+  // top_ptr_r points to the current topmost element on the stack.
   logic [ptr_width_lp-1:0] top_ptr_r, top_ptr_n;
 
   assign ckpt_top_ptr_o = top_ptr_r;
@@ -50,10 +53,10 @@ module bp_fe_ras
      ,.data_o(top_ptr_r)
      );
 
-  wire is_pop = pop_pc_en_i;
+  wire is_pop  = pop_pc_en_i;
   wire is_push = push_pc_en_i;
 
-  // TODO: zero out top value on reset?
+  // TODO: zero out all entries on reset?
   bsg_mem_1r1w
     #(.width_p(vaddr_width_p)
       ,.els_p(ras_num_entries_p)
