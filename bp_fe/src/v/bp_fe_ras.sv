@@ -21,6 +21,14 @@ module bp_fe_ras
    , input logic  pop_pc_ready_and_i
    , output logic [vaddr_width_p-1:0] pop_pc_o
    , output logic pop_pc_v_o
+
+   , output logic [ptr_width_lp] ckpt_top_ptr_o
+   , output logic [ptr_width_lp] ckpt_num_valid_entries_o
+   
+   , input logic restore_ckpt_v_i
+   , input logic [ptr_width_lp] restore_ckpt_top_ptr_i
+   , input logic [ptr_width_lp] restore_ckpt_num_valid_entries_i
+   , input logic [vaddr_width_p-1:0] restore_ckpt_top_pc_i
    );
 
   //synopsys translate_off
@@ -33,6 +41,9 @@ module bp_fe_ras
   // we can't use bsg_circular_ptr because we need to be able to a) decrement the pointer and b) checkpoint the pointer.
   // top_ptr_r points to the current element on the top of the stack.
   logic [ptr_width_lp-1:0] num_valid_entries_r, num_valid_entries_n, top_ptr_r, top_ptr_n;
+
+  assign ckpt_top_ptr_o = top_ptr_r;
+  assign ckpt_num_valid_entries_o = num_valid_entries_r;
 
   bsg_dff
    #(.width_p(ptr_width_lp))
@@ -68,11 +79,11 @@ module bp_fe_ras
      (.w_clk_i(clk_i)
       ,.w_reset_i(reset_i)
 
-      ,.w_v_i(is_push)
+      ,.w_v_i(is_push || restore_ckpt_v_i)
       ,.w_addr_i(top_ptr_n)
-      ,.w_data_i(push_pc_i)
+      ,.w_data_i(restore_ckpt_v_i ? restore_ckpt_top_pc_i : push_pc_i)
 
-      ,.r_v_i(pop_pc_ready_and_i)
+      ,.r_v_i(1'b1)
       ,.r_addr_i(top_ptr_r)
       ,.r_data_o(pop_pc_o)
       );
@@ -82,7 +93,13 @@ module bp_fe_ras
       begin
         num_valid_entries_n = '0;
         // reset to end of memory for readability in sim; first pushed element will be at address 0
+        // TODO: there's a redirect immediately on start which overwrites this to 0
         top_ptr_n           = ras_num_entries_p-1;
+      end
+    else if (restore_ckpt_v_i)
+      begin
+        num_valid_entries_n = restore_ckpt_num_valid_entries_i;
+        top_ptr_n           = restore_ckpt_top_ptr_i;
       end
     else
       begin

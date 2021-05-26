@@ -24,7 +24,7 @@ module bp_nonsynth_branch_profiler
     );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, ras_num_entries_p, vaddr_width_p);
   bp_fe_cmd_s fe_cmd;
   bp_fe_branch_metadata_fwd_s branch_metadata;
   assign fe_cmd = fe_cmd_o;

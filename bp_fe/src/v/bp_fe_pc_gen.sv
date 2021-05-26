@@ -49,7 +49,7 @@ module bp_fe_pc_gen
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, ras_num_entries_p, vaddr_width_p);
   `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p);
 
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd;
@@ -185,6 +185,7 @@ module bp_fe_pc_gen
 
   // RAS
   logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo, ras_backup_pred_tgt_pc_lo;
+  logic [`BSG_WIDTH(ras_num_entries_p-1)-1:0] ras_ckpt_top_ptr_lo, ras_ckpt_num_valid_entries_lo;
   logic ras_pred_tgt_pc_v_lo;
   wire ras_pred_tgt_pc_ready_and_li = is_ret;
   // TODO: this is purely speculative and easily-corrupted
@@ -200,21 +201,30 @@ module bp_fe_pc_gen
      ,.pop_pc_ready_and_i(ras_pred_tgt_pc_ready_and_li)
      ,.pop_pc_o    (ras_pred_tgt_pc_lo)
      ,.pop_pc_v_o  (ras_pred_tgt_pc_v_lo)
+     
+     ,.ckpt_top_ptr_o(ras_ckpt_top_ptr_lo)
+     ,.ckpt_num_valid_entries_o(ras_ckpt_num_valid_entries_lo)
+   
+     ,.restore_ckpt_v_i(redirect_br_v_i)
+     ,.restore_ckpt_top_ptr_i(redirect_br_metadata_fwd.ras_top_ptr)
+     ,.restore_ckpt_num_valid_entries_i(redirect_br_metadata_fwd.ras_num_valid_entries)
+     ,.restore_ckpt_top_pc_i(redirect_br_metadata_fwd.ras_top_pc)
      );
 
   // TODO: backup reg is temporary, drop when checkpointing is implemented
-  bsg_dff_reset_en
-   #(.width_p(vaddr_width_p))
-   ras_backup_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(is_call)
+  // bsg_dff_reset_en
+  //  #(.width_p(vaddr_width_p))
+  //  ras_backup_reg
+  //   (.clk_i(clk_i)
+  //    ,.reset_i(reset_i)
+  //    ,.en_i(is_call || redirect_br_v_i)
 
-     ,.data_i(ras_next_instruction_addr_li)
-     ,.data_o(ras_backup_pred_tgt_pc_lo)
-     );
+  //    ,.data_i(redirect_br_v_i ? ras_next_instruction_addr_li : )
+  //    ,.data_o(ras_backup_pred_tgt_pc_lo)
+  //    );
 
-  assign ras_tgt_lo = ras_pred_tgt_pc_v_lo ? ras_pred_tgt_pc_lo : ras_backup_pred_tgt_pc_lo;
+  // assign ras_tgt_lo = ras_pred_tgt_pc_v_lo ? ras_pred_tgt_pc_lo : ras_backup_pred_tgt_pc_lo;
+  assign ras_tgt_lo = ras_pred_tgt_pc_lo;
 
   assign attaboy_yumi_o = attaboy_v_i & ~(bht_w_v_li & ~bht_w_yumi_lo) & ~(btb_w_v_li & ~btb_w_yumi_lo);
 
@@ -268,6 +278,9 @@ module bp_fe_pc_gen
           ,btb_tag : pc_if2_r[2+btb_idx_width_p+:btb_tag_width_p]
           ,btb_idx : pc_if2_r[2+:btb_idx_width_p]
           ,bht_idx : pc_if2_r[2+:bht_idx_width_p]
+          ,ras_top_pc : ras_pred_tgt_pc_lo
+          ,ras_top_ptr : ras_ckpt_top_ptr_lo
+          ,ras_num_valid_entries : ras_ckpt_num_valid_entries_lo
           ,is_br   : is_br
           ,is_jal  : is_jal
           ,is_jalr : is_jalr
