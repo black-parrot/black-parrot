@@ -112,12 +112,10 @@ module bp_fe_pc_gen
 
   // BTB
   wire btb_r_v_li = next_pc_yumi_i & ~ovr_taken & ~ovr_ret;
-  wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i) // we mispredicted, and the BE tells us a branch is being taken
-    | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb) // or we mispredicted, the prediction was from the btb, and that prediction predicted a branch where there was none
-    | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb); // or we predicted correctly, the BE tells us a branch is being taken, and it *wasn't* the BTB that provided the prediction
-  wire btb_clr_li = redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb; // in the middle case above, we will be *clearing* the entry
-  // TODO: aren't the below using potentially invalid attaboy data?
-  //   No, btb_w_v_li can only be true if at least one of them is valid
+  wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
+    | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb)
+    | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
+  wire btb_clr_li = redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb;
   wire btb_jmp_li = redirect_br_v_i ? (redirect_br_metadata_fwd.is_jal | redirect_br_metadata_fwd.is_jalr) : (attaboy_br_metadata_fwd.is_jal | attaboy_br_metadata_fwd.is_jalr);
   wire [btb_tag_width_p-1:0] btb_tag_li = redirect_br_v_i ? redirect_br_metadata_fwd.btb_tag : attaboy_br_metadata_fwd.btb_tag;
   wire [btb_idx_width_p-1:0] btb_idx_li = redirect_br_v_i ? redirect_br_metadata_fwd.btb_idx : attaboy_br_metadata_fwd.btb_idx;
@@ -184,24 +182,25 @@ module bp_fe_pc_gen
   assign btb_taken = btb_br_tgt_v_lo & (bht_val_lo[1] | btb_br_tgt_jmp_lo);
 
   // RAS
-  logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo, ras_backup_pred_tgt_pc_lo;
+  logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo;
   logic [`BSG_WIDTH(ras_num_entries_p-1)-1:0] ras_ckpt_top_ptr_lo;
-  wire ras_pred_tgt_pc_ready_and_li = is_ret;
-  // TODO: this is purely speculative and easily-corrupted
+  wire ras_pred_tgt_pc_pop_en_li = is_ret;
+
   bp_fe_ras
    #(.bp_params_p(bp_params_p))
    ras
     (.clk_i        (clk_i)
      ,.reset_i     (reset_i)
-    
+
+     // if currently redirecting, the checkpoint restore will trump a push or pop
      ,.push_pc_en_i (is_call)
      ,.push_pc_i    (ras_next_instruction_addr_li)
 
-     ,.pop_pc_en_i  (ras_pred_tgt_pc_ready_and_li)
+     ,.pop_pc_en_i  (ras_pred_tgt_pc_pop_en_li)
      ,.pop_pc_o     (ras_pred_tgt_pc_lo)
-     
+
      ,.ckpt_top_ptr_o(ras_ckpt_top_ptr_lo)
-   
+
      ,.restore_ckpt_v_i(redirect_br_v_i)
      ,.restore_ckpt_top_ptr_i(redirect_br_metadata_fwd.ras_top_ptr)
      ,.restore_ckpt_top_pc_i(redirect_br_metadata_fwd.ras_top_pc)
