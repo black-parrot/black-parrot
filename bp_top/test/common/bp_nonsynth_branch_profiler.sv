@@ -91,6 +91,7 @@ module bp_nonsynth_branch_profiler
             ras_use_cnt <= ras_use_cnt + branch_metadata.src_ret;
 
             btb_hit_cnt <= btb_hit_cnt + branch_metadata.src_btb;
+            // TODO: src_ret reporting is clearly wrong somehow, under-reports usage. might be using wrong pipeline stage.
             ras_hit_cnt <= ras_hit_cnt + branch_metadata.src_ret;
             bht_hit_cnt <= bht_hit_cnt + branch_metadata.is_br;
             ret_hit_cnt <= ret_hit_cnt + branch_metadata.is_ret;
