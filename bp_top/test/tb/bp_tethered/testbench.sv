@@ -338,10 +338,10 @@ module testbench
       bind bp_be_dcache
         bp_nonsynth_cache_tracer
          #(.bp_params_p(bp_params_p)
-          ,.assoc_p(dcache_assoc_p)
-          ,.sets_p(dcache_sets_p)
-          ,.block_width_p(dcache_block_width_p)
-          ,.fill_width_p(dcache_fill_width_p)
+          ,.assoc_p(assoc_p)
+          ,.sets_p(sets_p)
+          ,.block_width_p(block_width_p)
+          ,.fill_width_p(fill_width_p)
           ,.trace_file_p("dcache"))
          dcache_tracer
           (.clk_i(clk_i & testbench.dcache_trace_en_lo)
@@ -390,10 +390,10 @@ module testbench
       bind bp_fe_icache
         bp_nonsynth_cache_tracer
          #(.bp_params_p(bp_params_p)
-          ,.assoc_p(icache_assoc_p)
-          ,.sets_p(icache_sets_p)
-          ,.block_width_p(icache_block_width_p)
-          ,.fill_width_p(icache_fill_width_p)
+          ,.assoc_p(assoc_p)
+          ,.sets_p(sets_p)
+          ,.block_width_p(block_width_p)
+          ,.fill_width_p(fill_width_p)
           ,.trace_file_p("icache"))
          icache_tracer
           (.clk_i(clk_i & testbench.icache_trace_en_lo)

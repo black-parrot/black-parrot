@@ -18,10 +18,11 @@ module bsg_dff_reset_half
   (input                        clk_i
    , input                      reset_i
    , input  [width_p-1:0]       data_i
-   , output logic [width_p-1:0] data_o
+   , output logic [width_p-1:0] data_half_o
+   , output logic [width_p-1:0] data_full_o
    );
 
-   logic [width_p-1:0] data_r, data_r_nr, data_r_pr;
+   logic [width_p-1:0] data_r, data_r_nr, data_r_pr, data_r_nrr;
 
    always_ff @(posedge clk_i)
      if (reset_i)
@@ -35,7 +36,11 @@ module bsg_dff_reset_half
    always_ff @(posedge clk_i)
      data_r_pr <= data_r;
 
-   assign data_o = data_r & (data_r ^ data_r_nr ^ data_r_pr);
+   always_ff @(negedge clk_i)
+     data_r_nrr <= data_r_nr;
+
+   assign data_half_o = data_r & (data_r ^ data_r_nr ^ data_r_pr ^ data_r_nrr);
+   assign data_full_o = data_r;
 
 endmodule
 
