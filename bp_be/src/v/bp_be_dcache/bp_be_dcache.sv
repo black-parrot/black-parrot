@@ -1042,16 +1042,16 @@ module bp_be_dcache
      ,.o(data_mem_write_bank_mask)
      );
 
-  logic [assoc_p-1:0][bank_width_lp-1:0] data_mem_pkt_data_li;
-  wire [`BSG_SAFE_CLOG2(block_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
-  wire [block_width_p-1:0] data_mem_pkt_data_expanded = {block_size_in_fill_lp{data_mem_pkt_cast_i.data}};
+  wire [`BSG_SAFE_CLOG2(fill_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
+  logic [fill_width_p-1:0] data_mem_pkt_fill_data_li;
   bsg_rotate_left
-   #(.width_p(block_width_p))
+   #(.width_p(fill_width_p))
    write_data_rotate
-    (.data_i(data_mem_pkt_data_expanded)
+    (.data_i(data_mem_pkt_cast_i.data)
      ,.rot_i(write_data_rot_li)
-     ,.o(data_mem_pkt_data_li)
+     ,.o(data_mem_pkt_fill_data_li)
      );
+  wire [assoc_p-1:0][bank_width_lp-1:0] data_mem_pkt_data_li = {block_size_in_fill_lp{data_mem_pkt_fill_data_li}};
 
   logic [assoc_p-1:0] wbuf_bank_sel_one_hot;
   wire [bindex_width_lp-1:0] wbuf_data_mem_offset =
