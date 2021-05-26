@@ -29,7 +29,7 @@ module bp_nonsynth_branch_profiler
   bp_fe_branch_metadata_fwd_s branch_metadata;
   assign fe_cmd = fe_cmd_o;
 
-  wire pc_redirect_v    = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_pc_redirection);
+  wire pc_redirect_v    = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_pc_redirection) & (fe_cmd.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
   wire attaboy_v        = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_attaboy);
 
   assign branch_metadata = pc_redirect_v
@@ -130,11 +130,11 @@ module bp_nonsynth_branch_profiler
   final
     begin
       $fwrite(file, "Branch statistics\n");
-      $fwrite(file, "MPKI: %d\n", redirect_cnt / (instr_cnt / 1000));
-      $fwrite(file, "BTB hit%%: %d\n", (btb_hit_cnt * 100) / (attaboy_cnt + redirect_cnt));
-      $fwrite(file, "BHT hit%%: %d\n", (bht_hit_cnt * 100) / (br_cnt));
-      $fwrite(file, "RAS hit%%: %d\n", (ras_hit_cnt * 100) / (ras_use_cnt));
-      $fwrite(file, "ret hit%%: %d\n", (ret_hit_cnt * 100) / (ret_cnt));
+      $fwrite(file, "MPKI: \t\t%.2f\n", redirect_cnt / (instr_cnt / 1000.0));
+      $fwrite(file, "BTB hit%%: \t%.2f (%d / %d)\n", (btb_hit_cnt * 100.0) / (attaboy_cnt + redirect_cnt), btb_hit_cnt, attaboy_cnt + redirect_cnt);
+      $fwrite(file, "BHT hit%%: \t%.2f (%d / %d)\n", (bht_hit_cnt * 100.0) / (br_cnt),                     bht_hit_cnt, br_cnt);
+      $fwrite(file, "RAS hit%%: \t%.2f (%d / %d)\n", (ras_hit_cnt * 100.0) / (ras_use_cnt),                ras_hit_cnt, ras_use_cnt);
+      $fwrite(file, "ret hit%%: \t%.2f (%d / %d)\n", (ret_hit_cnt * 100.0) / (ret_cnt),                    ret_hit_cnt, ret_cnt);
       $fwrite(file, "==================================== Branches ======================================\n");
       $fwrite(file, "[target\t]\t\toccurances\t\tmisses\t\tmiss%%]\n");
       foreach (branch_histo[key])
