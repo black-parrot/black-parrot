@@ -132,7 +132,7 @@ module bp_nonsynth_nbf_loader
 
   assign io_cmd_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
 
-  assign read_return = is_read & io_resp_v_i & (io_resp.header.msg_type == e_bedrock_mem_uc_rd);
+  wire read_return = is_read & io_resp_v_i & (io_resp.header.msg_type == e_bedrock_mem_uc_rd);
   always_comb
     unique casez (state_r)
       e_reset       : state_n = reset_i ? e_reset : e_send;

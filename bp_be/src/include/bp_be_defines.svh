@@ -10,6 +10,8 @@
   `include "bsg_defines.v"
   `include "bp_common_core_if.svh"
   `include "bp_be_dcache_defines.svh"
+  `include "HardFloat_consts.vi"
+  `include "HardFloat_specialize.vi"
 
   /*
    * Clients need only use this macro to declare all parameterized structs for FE<->BE interface.

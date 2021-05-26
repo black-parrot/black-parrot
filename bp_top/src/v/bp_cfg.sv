@@ -104,7 +104,7 @@ module bp_cfg
 
   assign cce_ucode_v_o    = (cfg_r_v_li | cfg_w_v_li) & (cfg_addr_li >= cfg_mem_base_cce_ucode_gp);
   assign cce_ucode_w_o    = cfg_w_v_li & (cfg_addr_li >= cfg_mem_base_cce_ucode_gp);
-  assign cce_ucode_addr_o = cfg_addr_li[0+:cce_pc_width_p];
+  assign cce_ucode_addr_o = cfg_addr_li[3+:cce_pc_width_p];
   assign cce_ucode_data_o = cfg_data_li[0+:cce_instr_width_gp];
 
   wire hio_w_v_li = cfg_w_v_li & (cfg_addr_li == cfg_reg_hio_mask_gp);

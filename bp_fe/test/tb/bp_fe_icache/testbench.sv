@@ -261,10 +261,10 @@ module testbench
   bind bp_fe_icache
     bp_nonsynth_cache_tracer
     #(.bp_params_p(bp_params_p)
-     ,.assoc_p(icache_assoc_p)
-     ,.sets_p(icache_sets_p)
-     ,.block_width_p(icache_block_width_p)
-     ,.fill_width_p(icache_fill_width_p)
+     ,.assoc_p(assoc_p)
+     ,.sets_p(sets_p)
+     ,.block_width_p(block_width_p)
+     ,.fill_width_p(fill_width_p)
      ,.trace_file_p("icache"))
     icache_tracer
       (.clk_i(clk_i & (testbench.icache_trace_p == 1))
@@ -314,9 +314,9 @@ module testbench
     bind bp_lce
       bp_me_nonsynth_lce_tracer
        #(.bp_params_p(bp_params_p)
-         ,.sets_p(icache_sets_p)
-         ,.assoc_p(icache_assoc_p)
-         ,.block_width_p(icache_block_width_p)
+         ,.sets_p(sets_p)
+         ,.assoc_p(assoc_p)
+         ,.block_width_p(block_width_p)
          )
        bp_lce_tracer
          (.clk_i(clk_i & (testbench.lce_trace_p == 1))
