@@ -11,6 +11,9 @@
 
   /*
    * bp_bedrock_msg_size_e specifies the amount of data in the message, after the header
+   *
+   * Note: these enum values are fixed and should not be changed. This allows easily computing
+   *  number of bytes in message = N bytes = (1 << e_bedrock_msg_size_N)
    */
   typedef enum logic [2:0]
   {

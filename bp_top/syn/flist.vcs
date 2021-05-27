@@ -1,5 +1,6 @@
 ## Includes
-# BSG_IP_CORES includes
+# BASEJUMP_STL includes
++incdir+$BASEJUMP_STL_DIR/bsg_cache
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
 +incdir+$BASEJUMP_STL_DIR/bsg_mem
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
@@ -66,7 +67,6 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_full.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_passthrough.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_replacement.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_tag_array.v
@@ -299,4 +299,3 @@ $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_dff_reset_half.v
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
-$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_mask_write_bit_reshape.v

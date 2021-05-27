@@ -1,15 +1,24 @@
 /**
  *
  * Name:
- *   bp_me_wormhole.svh
+ *   bp_me_wormhole_defines.svh
+ *
+ * Note: standard bsg_wormhole messages are {payload, len, cord}
+ *       The messages defined here contain extra "header" fields specific
+ *       to the networks that are considered part of the payload by the regular
+ *       bsg_wormhole networks and routers.
  *
  */
 
-`ifndef BP_ME_WORMHOLE_SVH
-`define BP_ME_WORMHOLE_SVH
+`ifndef BP_ME_WORMHOLE_DEFINES_SVH
+`define BP_ME_WORMHOLE_DEFINES_SVH
 
 `include "bsg_noc_links.vh"
 `include "bsg_wormhole_router.vh"
+
+  /*
+   * BedRock Memory Network Wormhole Packet Definitions
+   */
 
   `define declare_bp_mem_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, data_width_mp) \
     typedef struct packed                 \
@@ -53,6 +62,10 @@
      - len_width_mp - cord_width_mp \
      )
 
+  /*
+   * BedRock LCE Coherence Network Wormhole Packet Definitions
+   */
+
   `define declare_bp_coh_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, struct_name_mp, data_width_mp) \
     typedef struct packed                     \
     {                                         \
@@ -88,6 +101,8 @@
      + `bp_coh_wormhole_header_width(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_width_mp) \
      )
 
+  // note: cid_width_mp is counted as part of the payload for a standard wormhole message
+  // wormhole message = {payload, len, cord}
   `define bp_coh_wormhole_payload_width(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_width_mp, data_width_mp) \
     (`bp_coh_wormhole_packet_width(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_width_mp, data_width_mp) \
      - len_width_mp - cord_width_mp \

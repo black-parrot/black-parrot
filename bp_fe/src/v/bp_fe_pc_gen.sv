@@ -49,8 +49,8 @@ module bp_fe_pc_gen
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
-  `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
+  `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p, bht_row_width_p);
 
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd;
   assign redirect_br_metadata_fwd = redirect_br_metadata_fwd_i;
@@ -59,11 +59,13 @@ module bp_fe_pc_gen
 
   logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
 
+  logic [vaddr_width_p-1:0] pc_if1_n, pc_if1_r;
+  logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
+
   /////////////////
   // IF1
   /////////////////
   bp_fe_pred_s pred_if1_n, pred_if1_r;
-  logic [vaddr_width_p-1:0] pc_if1_n, pc_if1_r;
   logic ovr_ret, ovr_taken, btb_taken;
   logic [vaddr_width_p-1:0] btb_br_tgt_lo;
   logic [vaddr_width_p-1:0] ras_tgt_lo;
@@ -150,17 +152,18 @@ module bp_fe_pc_gen
 
   // BHT
   wire bht_r_v_li = next_pc_yumi_i & ~ovr_taken & ~ovr_ret;
-  wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_r_li =
-    {next_pc_o[2+:bht_idx_width_p], pred_if1_n.ghist};
+  wire [vaddr_width_p-1:0] bht_r_addr_li = next_pc_o;
+  wire [ghist_width_p-1:0] bht_r_ghist_li = pred_if1_n.ghist;
   wire bht_w_v_li =
     (redirect_br_v_i & redirect_br_metadata_fwd.is_br) | (attaboy_v_i & attaboy_br_metadata_fwd.is_br);
-  wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_w_li = redirect_br_v_i
-    ? {redirect_br_metadata_fwd.bht_idx, redirect_br_metadata_fwd.ghist}
-    : {attaboy_br_metadata_fwd.bht_idx, attaboy_br_metadata_fwd.ghist};
-  wire [1:0] bht_val_li = redirect_br_v_i ? redirect_br_metadata_fwd.bht_val : attaboy_br_metadata_fwd.bht_val;
-  logic [1:0] bht_val_lo;
-  logic bht_w_yumi_lo;
-  logic bht_init_done_lo;
+  wire [bht_idx_width_p-1:0] bht_w_idx_li =
+    redirect_br_v_i ? redirect_br_metadata_fwd.bht_idx : attaboy_br_metadata_fwd.bht_idx;
+  wire [ghist_width_p-1:0] bht_w_ghist_li =
+    redirect_br_v_i ? redirect_br_metadata_fwd.ghist : attaboy_br_metadata_fwd.ghist;
+  wire [bht_row_width_p-1:0] bht_row_li =
+    redirect_br_v_i ? redirect_br_metadata_fwd.bht_row : attaboy_br_metadata_fwd.bht_row;
+  logic [bht_row_width_p-1:0] bht_row_lo;
+  logic bht_pred_lo, bht_w_yumi_lo, bht_init_done_lo;
   bp_fe_bht
    #(.bp_params_p(bp_params_p))
    bht
@@ -170,16 +173,19 @@ module bp_fe_pc_gen
      ,.init_done_o(bht_init_done_lo)
 
      ,.r_v_i(bht_r_v_li)
-     ,.idx_r_i(bht_idx_r_li)
-     ,.val_o(bht_val_lo)
+     ,.r_addr_i(bht_r_addr_li)
+     ,.r_ghist_i(bht_r_ghist_li)
+     ,.val_o(bht_row_lo)
+     ,.pred_o(bht_pred_lo)
 
      ,.w_v_i(bht_w_v_li)
-     ,.idx_w_i(bht_idx_w_li)
+     ,.w_idx_i(bht_w_idx_li)
+     ,.w_ghist_i(bht_w_ghist_li)
      ,.correct_i(attaboy_yumi_o)
-     ,.val_i(bht_val_li)
+     ,.val_i(bht_row_li)
      ,.w_yumi_o(bht_w_yumi_lo)
      );
-  assign btb_taken = btb_br_tgt_v_lo & (bht_val_lo[1] | btb_br_tgt_jmp_lo);
+  assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
 
   // RAS
   logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
@@ -201,36 +207,35 @@ module bp_fe_pc_gen
   // IF2
   /////////////////
   bp_fe_pred_s pred_if2_n, pred_if2_r;
-  logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
   always_comb
-    begin
-      if (~pred_if1_r.redir)
-        begin
-          pred_if2_n = pred_if1_r;
-          pred_if2_n.taken = btb_taken;
-          pred_if2_n.btb   = btb_br_tgt_v_lo;
-          pred_if2_n.bht   = bht_val_lo;
-        end
-      else
-        begin
-          pred_if2_n = pred_if1_r;
-        end
-    end
+    if (~pred_if1_r.redir)
+      begin
+        pred_if2_n = pred_if1_r;
+        pred_if2_n.pred    = bht_pred_lo;
+        pred_if2_n.taken   = btb_taken;
+        pred_if2_n.btb     = btb_br_tgt_v_lo;
+        pred_if2_n.bht_row = bht_row_lo;
+      end
+    else
+      begin
+        pred_if2_n = pred_if1_r;
+      end
+  assign pc_if2_n = pc_if1_r;
 
   bsg_dff
    #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p))
    pred_if2_reg
     (.clk_i(clk_i)
 
-     ,.data_i({pred_if2_n, pc_if1_r})
+     ,.data_i({pred_if2_n, pc_if2_n})
      ,.data_o({pred_if2_r, pc_if2_r})
      );
   assign return_addr_n = pc_if2_r + vaddr_width_p'(4);
 
-  wire btb_miss_ras = ~pred_if1_r.btb | (pc_if1_r != ras_tgt_lo);
-  wire btb_miss_br  = ~pred_if1_r.btb | (pc_if1_r != br_tgt_lo);
+  wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
+  wire btb_miss_br  = pc_if1_r != br_tgt_lo;
   assign ovr_ret    = btb_miss_ras & is_ret;
-  assign ovr_taken  = btb_miss_br & ((is_br & pred_if1_r.bht[1]) | is_jal);
+  assign ovr_taken  = btb_miss_br & ((is_br & pred_if2_r.pred) | is_jal);
   assign ovr_o      = ovr_taken | ovr_ret;
   assign br_tgt_lo  = pc_if2_r + scan_instr.imm;
   assign fetch_pc_o = pc_if2_r;
@@ -243,7 +248,7 @@ module bp_fe_pc_gen
         '{src_btb  : pred_if2_r.btb
           ,src_ret : pred_if2_r.ret
           ,ghist   : pred_if2_r.ghist
-          ,bht_val : pred_if2_r.bht
+          ,bht_row : pred_if2_r.bht_row
           ,btb_tag : pc_if2_r[2+btb_idx_width_p+:btb_tag_width_p]
           ,btb_idx : pc_if2_r[2+:btb_idx_width_p]
           ,bht_idx : pc_if2_r[2+:bht_idx_width_p]

@@ -289,10 +289,10 @@ module testbench
   bind bp_be_dcache
     bp_nonsynth_cache_tracer
      #(.bp_params_p(bp_params_p)
-      ,.sets_p(dcache_sets_p)
-      ,.assoc_p(dcache_assoc_p)
-      ,.block_width_p(dcache_block_width_p)
-      ,.fill_width_p(dcache_fill_width_p)
+      ,.sets_p(sets_p)
+      ,.assoc_p(assoc_p)
+      ,.block_width_p(block_width_p)
+      ,.fill_width_p(fill_width_p)
       ,.trace_file_p("dcache"))
      dcache_tracer
       (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
@@ -340,9 +340,9 @@ module testbench
     bind bp_lce
       bp_me_nonsynth_lce_tracer
        #(.bp_params_p(bp_params_p)
-         ,.sets_p(dcache_sets_p)
-         ,.assoc_p(dcache_assoc_p)
-         ,.block_width_p(dcache_block_width_p)
+         ,.sets_p(sets_p)
+         ,.assoc_p(assoc_p)
+         ,.block_width_p(block_width_p)
          )
        bp_lce_tracer
          (.clk_i(clk_i & (testbench.lce_trace_p == 1))

@@ -95,7 +95,7 @@ module bp_me_cce_to_cache
     ,.v_o(mem_cmd_v_lo)
     ,.yumi_i(mem_cmd_yumi_li)
     );
-  wire [caddr_width_p-1:0] cmd_addr = mem_cmd_lo.header.addr;
+  wire [caddr_width_p-1:0] cmd_addr = mem_cmd_lo.header.addr[0+:caddr_width_p];
   wire [l2_block_size_in_words_p-1:0][l2_data_width_p-1:0] cmd_data = mem_cmd_lo.data;
 
   // synopsys sync_set_reset "reset_i"

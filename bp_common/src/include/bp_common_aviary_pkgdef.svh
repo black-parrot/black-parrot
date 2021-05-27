@@ -1,6 +1,7 @@
 `ifndef BP_COMMON_AVIARY_PKGDEF_SVH
 `define BP_COMMON_AVIARY_PKGDEF_SVH
 
+  `include "bsg_defines.v"
   `include "bp_common_aviary_defines.svh"
 
   // Suitably high enough to not run out of configs.
@@ -86,7 +87,15 @@
     integer unsigned branch_metadata_fwd_width;
     integer unsigned btb_tag_width;
     integer unsigned btb_idx_width;
+    // bht_row_els is a physically-derived parameter. It describes the number
+    //   of entries in a single row of the BHT RAM.  There are 2 bits per entry.
+    //   The tradeoff here is a wider RAM is most likely higher performance,
+    //   but we need to carry that extra metadata throughout the pipeline to
+    //   maintain 1r1w throughput without a RMW.
+    // Ghist is the global history width, which in our gselect
+    // Thus, the true BHT dimensions are (bht_idx_width+ghist_width)x(2*bht_row_els)
     integer unsigned bht_idx_width;
+    integer unsigned bht_row_els;
     integer unsigned ghist_width;
 
     // Capacity of the Instruction/Data TLBs
@@ -213,10 +222,11 @@
       ,boot_pc       : dram_base_addr_gp
       ,boot_in_debug : 0
 
-      ,branch_metadata_fwd_width: 35
+      ,branch_metadata_fwd_width: 36
       ,btb_tag_width            : 9
       ,btb_idx_width            : 6
-      ,bht_idx_width            : 9
+      ,bht_idx_width            : 8
+      ,bht_row_els              : 2
       ,ghist_width              : 2
 
       ,itlb_els_4k : 8
@@ -831,6 +841,7 @@
       ,`bp_aviary_define_override(btb_tag_width, BP_BTB_TAG_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(btb_idx_width, BP_BTB_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(bht_idx_width, BP_BHT_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(bht_row_els, BP_BHT_ROW_ELS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(ghist_width, BP_GHIST_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(itlb_els_4k, BP_ITLB_ELS_4K, `BP_CUSTOM_BASE_CFG)

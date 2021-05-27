@@ -74,6 +74,7 @@ module bp_cce_inst_ram
   bsg_mem_1rw_sync
     #(.width_p(cce_instr_width_gp)
       ,.els_p(num_cce_instr_ram_els_p)
+      ,.latch_last_read_p(1)
       )
     inst_ram
      (.clk_i(clk_i)
@@ -137,8 +138,9 @@ module bp_cce_inst_ram
         inst_v_n = 1'b1;
       end
       FETCH: begin
-        // Always continue fetching instructions
-        ram_v_li = 1'b1;
+        // fetch as long as current instruction in execute stage is not stalling
+        // RAM will hold last read
+        ram_v_li = ~stall_i;
 
         // Select the next instruction to fetch
         // If the currently executing instruction is stalling, re-fetch the same instruction as

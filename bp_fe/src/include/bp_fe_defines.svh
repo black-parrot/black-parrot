@@ -28,7 +28,7 @@
       logic [vaddr_width_mp-1:0] imm;        \
     }  bp_fe_instr_scan_s;
 
-  `define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp) \
+  `define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp, bht_row_width_mp) \
     typedef struct packed                                                                         \
     {                                                                                             \
       logic                           is_br;                                                      \
@@ -41,26 +41,27 @@
       logic [btb_tag_width_mp-1:0]    btb_tag;                                                    \
       logic [btb_idx_width_mp-1:0]    btb_idx;                                                    \
       logic [bht_idx_width_mp-1:0]    bht_idx;                                                    \
-      logic [1:0]                     bht_val;                                                    \
+      logic [bht_row_width_mp-1:0]    bht_row;                                                    \
       logic [ghist_width_mp-1:0]      ghist;                                                      \
     }  bp_fe_branch_metadata_fwd_s;
 
-  `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp, ghist_width_mp) \
-    typedef struct packed               \
-    {                                   \
-      logic taken;                      \
-      logic redir;                      \
-      logic ret;                        \
-      logic btb;                        \
-      logic [1:0] bht;                  \
-      logic [ghist_width_mp-1:0] ghist; \
+  `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp, ghist_width_mp, bht_row_width_mp) \
+    typedef struct packed                   \
+    {                                       \
+      logic pred;                           \
+      logic taken;                          \
+      logic redir;                          \
+      logic ret;                            \
+      logic btb;                            \
+      logic [bht_row_width_mp-1:0] bht_row; \
+      logic [ghist_width_mp-1:0] ghist;     \
     }  bp_fe_pred_s
 
   `define bp_fe_instr_scan_width(vaddr_width_mp) \
     (5 + vaddr_width_mp)
 
-  `define bp_fe_pred_width(vaddr_width_mp, ghist_width_mp) \
-    (6 + ghist_width_mp)
+  `define bp_fe_pred_width(vaddr_width_mp, ghist_width_mp, bht_row_width_mp) \
+    (5 + bht_row_width_mp + ghist_width_mp)
 
   `include "bp_fe_icache_pkgdef.svh"
 

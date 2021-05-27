@@ -18,22 +18,25 @@ module bp_fe_bht
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam idx_width_lp = bht_idx_width_p+ghist_width_p
+   , localparam entry_width_lp = 2*bht_row_els_p
    )
-  (input                         clk_i
-   , input                       reset_i
+  (input                                  clk_i
+   , input                                reset_i
 
-   , output logic                init_done_o
+   , output logic                         init_done_o
 
-   , input                       w_v_i
-   , input [idx_width_lp-1:0]    idx_w_i
-   , input [1:0]                 val_i
-   , input                       correct_i
-   , output logic                w_yumi_o
+   , input                                w_v_i
+   , input [bht_idx_width_p-1:0]          w_idx_i
+   , input [ghist_width_p-1:0]            w_ghist_i
+   , input [bht_row_width_p-1:0]          val_i
+   , input                                correct_i
+   , output logic                         w_yumi_o
 
-   , input                       r_v_i
-   , input [idx_width_lp-1:0]    idx_r_i
-   , output logic [1:0]          val_o
+   , input                                r_v_i
+   , input [vaddr_width_p-1:0]            r_addr_i
+   , input [ghist_width_p-1:0]            r_ghist_i
+   , output logic [bht_row_width_p-1:0]   val_o
+   , output logic                         pred_o
    );
 
   // Initialization state machine
@@ -44,6 +47,7 @@ module bp_fe_bht
 
   assign init_done_o = is_run;
 
+  localparam idx_width_lp = bht_idx_width_p+ghist_width_p;
   localparam bht_els_lp = 2**idx_width_lp;
   localparam bht_init_lp = 2'b01;
   logic [`BSG_WIDTH(bht_els_lp)-1:0] init_cnt;
@@ -74,29 +78,57 @@ module bp_fe_bht
     else
       state_r <= state_n;
 
-  wire rw_same_addr = r_v_i & w_v_i & (idx_r_i == idx_w_i);
-  wire                       w_v_li = is_clear | (w_v_i & ~rw_same_addr);
-  wire [idx_width_lp-1:0] w_addr_li = is_clear ? init_cnt : idx_w_i;
-  wire [1:0]              w_data_li = is_clear ? bht_init_lp : correct_i ? {val_i[1], 1'b0} : {val_i[1]^val_i[0], 1'b1};
+  logic rw_same_addr;
 
-  wire                       r_v_li = r_v_i;
-  wire [idx_width_lp-1:0] r_addr_li = idx_r_i;
-  logic [1:0] r_data_lo;
+  wire                           w_v_li  = is_clear | (w_v_i & ~rw_same_addr);
+  wire [idx_width_lp-1:0]       w_idx_li = is_clear ? init_cnt : {w_idx_i, w_ghist_i};
+  logic [bht_row_width_p-1:0] w_data_li;
+  for (genvar i = 0; i < bht_row_width_p; i+=2)
+    begin : wval
+      assign w_data_li[i]   = is_clear ? bht_init_lp[0] : ~correct_i;
+      assign w_data_li[i+1] = is_clear ? bht_init_lp[1] : val_i[i+1] ^ (~correct_i & val_i[i]);
+    end
+
+  // GSELECT
+  wire                            r_v_li = r_v_i;
+  wire [idx_width_lp-1:0]       r_idx_li = {r_addr_i[2+:bht_idx_width_p], r_ghist_i};
+  logic [bht_row_width_p-1:0] r_data_lo;
+
+  assign rw_same_addr = r_v_i & w_v_i & (r_idx_li == w_idx_li);
+
   bsg_mem_1r1w_sync
-   #(.width_p(2), .els_p(bht_els_lp))
+   #(.width_p(bht_row_width_p), .els_p(bht_els_lp))
    bht_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.w_v_i(w_v_li)
-     ,.w_addr_i(w_addr_li)
+     ,.w_addr_i(w_idx_li)
      ,.w_data_i(w_data_li)
 
      ,.r_v_i(r_v_li)
-     ,.r_addr_i(r_addr_li)
+     ,.r_addr_i(r_idx_li)
      ,.r_data_o(r_data_lo)
      );
   assign w_yumi_o = is_run & w_v_i & ~rw_same_addr;
+
+  logic [`BSG_SAFE_CLOG2(bht_row_els_p)-1:0] pred_idx_r;
+  if (bht_row_els_p > 1)
+    begin : fold
+      wire [`BSG_SAFE_CLOG2(bht_row_els_p)-1:0] pred_idx_n =
+        1'b1 + (r_addr_i[2+bht_idx_width_p+:`BSG_SAFE_CLOG2(bht_row_els_p)] << 1'b1);
+      bsg_dff
+       #(.width_p(1))
+       pred_idx_reg
+        (.clk_i(clk_i)
+         ,.data_i(pred_idx_n)
+         ,.data_o(pred_idx_r)
+         );
+    end
+  else
+    begin : no_fold
+      assign pred_idx_r = 1'b1;
+    end
 
   logic r_v_r;
   bsg_dff_reset
@@ -104,21 +136,20 @@ module bp_fe_bht
    r_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
      ,.data_i(r_v_li)
      ,.data_o(r_v_r)
      );
 
   bsg_dff_reset_en_bypass
-   #(.width_p(2))
+   #(.width_p(bht_row_width_p))
    bypass_reg
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
     ,.en_i(r_v_r)
-
     ,.data_i(r_data_lo)
     ,.data_o(val_o)
     );
+  assign pred_o = val_o[pred_idx_r];
 
 endmodule
 

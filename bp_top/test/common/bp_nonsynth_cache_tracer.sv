@@ -112,7 +112,7 @@ module bp_nonsynth_cache_tracer
   integer dmem_bank;
   integer i;
   logic [63:0] tag_mem_v_count_r;
-  logic [icache_assoc_p-1:0][63:0] data_mem_v_count_r;
+  logic [assoc_p-1:0][63:0] data_mem_v_count_r;
 
   always_ff @(posedge clk_i)
     begin
@@ -124,7 +124,7 @@ module bp_nonsynth_cache_tracer
       else
         begin
           tag_mem_v_count_r <= tag_mem_v_count_r + tag_mem_v_i;
-          for (dmem_bank = 0; dmem_bank < icache_assoc_p; dmem_bank++)
+          for (dmem_bank = 0; dmem_bank < assoc_p; dmem_bank++)
             begin
               data_mem_v_count_r[dmem_bank] <= data_mem_v_count_r[dmem_bank] + data_mem_v_i[dmem_bank];
             end
