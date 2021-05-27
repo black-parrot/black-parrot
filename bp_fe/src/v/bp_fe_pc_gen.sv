@@ -185,12 +185,15 @@ module bp_fe_pc_gen
   logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo;
   logic [`BSG_WIDTH(ras_num_entries_p-1)-1:0] ras_ckpt_top_ptr_lo;
   wire ras_pred_tgt_pc_pop_en_li = is_ret;
+  logic ras_init_done_lo;
 
   bp_fe_ras
    #(.bp_params_p(bp_params_p))
    ras
     (.clk_i        (clk_i)
      ,.reset_i     (reset_i)
+
+     ,.init_done_o(ras_init_done_lo)
 
      // if currently redirecting, the checkpoint restore will trump a push or pop
      ,.push_pc_en_i (is_call)
@@ -295,7 +298,7 @@ module bp_fe_pc_gen
      ,.data_o(ghistory_r)
      );
 
-  assign init_done_o = bht_init_done_lo & btb_init_done_lo;
+  assign init_done_o = bht_init_done_lo & btb_init_done_lo & ras_init_done_lo;
 
 endmodule
 
