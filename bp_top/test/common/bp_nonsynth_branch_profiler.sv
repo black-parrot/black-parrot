@@ -46,9 +46,7 @@ module bp_nonsynth_branch_profiler
   integer jal_cnt;
   integer jalr_cnt;
   integer ret_cnt;
-  integer ras_use_cnt;
   integer btb_hit_cnt;
-  integer ras_hit_cnt;
   integer ret_hit_cnt;
   integer bht_hit_cnt;
 
@@ -71,9 +69,7 @@ module bp_nonsynth_branch_profiler
         jal_cnt      <= 0;
         jalr_cnt     <= 0;
         ret_cnt      <= 0;
-        ras_use_cnt  <= 0;
         btb_hit_cnt  <= 0;
-        ras_hit_cnt  <= 0;
         bht_hit_cnt  <= 0;
         ret_hit_cnt  <= 0;
       end
@@ -88,11 +84,8 @@ module bp_nonsynth_branch_profiler
             jal_cnt     <= jal_cnt + branch_metadata.is_jal;
             jalr_cnt    <= jalr_cnt + branch_metadata.is_jalr;
             ret_cnt     <= ret_cnt + branch_metadata.is_ret;
-            ras_use_cnt <= ras_use_cnt + branch_metadata.src_ret;
 
             btb_hit_cnt <= btb_hit_cnt + branch_metadata.src_btb;
-            // TODO: src_ret reporting is clearly wrong somehow, under-reports usage. might be using wrong pipeline stage.
-            ras_hit_cnt <= ras_hit_cnt + branch_metadata.src_ret;
             bht_hit_cnt <= bht_hit_cnt + branch_metadata.is_br;
             ret_hit_cnt <= ret_hit_cnt + branch_metadata.is_ret;
 
@@ -113,7 +106,6 @@ module bp_nonsynth_branch_profiler
             jal_cnt  <= jal_cnt + branch_metadata.is_jal;
             jalr_cnt <= jalr_cnt + branch_metadata.is_jalr;
             ret_cnt  <= ret_cnt + branch_metadata.is_ret;
-            ras_use_cnt <= ras_use_cnt + branch_metadata.src_ret;
 
             if (branch_histo.exists(fe_cmd.vaddr))
               begin
@@ -134,7 +126,6 @@ module bp_nonsynth_branch_profiler
       $fwrite(file, "MPKI: \t\t%.2f\n", redirect_cnt / (instr_cnt / 1000.0));
       $fwrite(file, "BTB hit%%: \t%.2f (%d / %d)\n", (btb_hit_cnt * 100.0) / (attaboy_cnt + redirect_cnt), btb_hit_cnt, attaboy_cnt + redirect_cnt);
       $fwrite(file, "BHT hit%%: \t%.2f (%d / %d)\n", (bht_hit_cnt * 100.0) / (br_cnt),                     bht_hit_cnt, br_cnt);
-      $fwrite(file, "RAS hit%%: \t%.2f (%d / %d)\n", (ras_hit_cnt * 100.0) / (ras_use_cnt),                ras_hit_cnt, ras_use_cnt);
       $fwrite(file, "ret hit%%: \t%.2f (%d / %d)\n", (ret_hit_cnt * 100.0) / (ret_cnt),                    ret_hit_cnt, ret_cnt);
       $fwrite(file, "==================================== Branches ======================================\n");
       $fwrite(file, "[target\t]\t\toccurances\t\tmisses\t\tmiss%%]\n");

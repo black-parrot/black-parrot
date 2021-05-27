@@ -184,8 +184,9 @@ module bp_fe_pc_gen
   // RAS
   logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo;
   logic [`BSG_WIDTH(ras_num_entries_p-1)-1:0] ras_ckpt_top_ptr_lo;
-  wire ras_pred_tgt_pc_pop_en_li = is_ret;
   logic ras_init_done_lo;
+
+  wire ras_pred_tgt_pc_pop_en_li = is_ret;
 
   bp_fe_ras
    #(.bp_params_p(bp_params_p))
