@@ -512,8 +512,9 @@ module bp_be_dcache
   wire store_miss_tv  = v_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & ~uncached_op_tv_r & (writethrough_p == 0);
   wire lr_miss_tv     = v_tv_r & decode_tv_r.lr_op & ~store_hit_tv & ~uncached_op_tv_r;
   wire fencei_miss_tv = v_tv_r & decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
+  wire engine_miss_tv = v_tv_r & cache_req_v_o & ~cache_req_yumi_i;
 
-  wire any_miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | fencei_miss_tv;
+  wire any_miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | fencei_miss_tv | engine_miss_tv;
 
   assign early_data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
     ? (sc_success_tv != 1'b1)
@@ -996,16 +997,16 @@ module bp_be_dcache
      ,.o(data_mem_write_bank_mask)
      );
 
-  logic [assoc_p-1:0][bank_width_lp-1:0] data_mem_pkt_data_li;
-  wire [`BSG_SAFE_CLOG2(block_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
-  wire [block_width_p-1:0] data_mem_pkt_data_expanded = {block_size_in_fill_lp{data_mem_pkt_cast_i.data}};
+  wire [`BSG_SAFE_CLOG2(fill_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
+  logic [fill_width_p-1:0] data_mem_pkt_fill_data_li;
   bsg_rotate_left
-   #(.width_p(block_width_p))
+   #(.width_p(fill_width_p))
    write_data_rotate
-    (.data_i(data_mem_pkt_data_expanded)
+    (.data_i(data_mem_pkt_cast_i.data)
      ,.rot_i(write_data_rot_li)
-     ,.o(data_mem_pkt_data_li)
+     ,.o(data_mem_pkt_fill_data_li)
      );
+  wire [assoc_p-1:0][bank_width_lp-1:0] data_mem_pkt_data_li = {block_size_in_fill_lp{data_mem_pkt_fill_data_li}};
 
   logic [assoc_p-1:0] wbuf_bank_sel_one_hot;
   wire [bindex_width_lp-1:0] wbuf_data_mem_offset =

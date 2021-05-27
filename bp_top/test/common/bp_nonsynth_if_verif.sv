@@ -1,9 +1,11 @@
 
 `include "bp_common_defines.svh"
 `include "bp_top_defines.svh"
+`include "bp_fe_defines.svh"
 
 module bp_nonsynth_if_verif
  import bp_common_pkg::*;
+ import bp_fe_pkg::*;
  import bp_be_pkg::*;
  import bsg_noc_pkg::*;
  import bp_me_pkg::*;
@@ -24,6 +26,7 @@ module bp_nonsynth_if_verif
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
 
   initial
     begin
@@ -80,6 +83,9 @@ module bp_nonsynth_if_verif
   if (l2_data_width_p != 64)
     $error("L2 data width must be 64");
 
+  //if (bht_entry_width_p/2 < 2 || bht_entry_width_p/2*2 != bht_entry_width_p)
+  //  $warning("BHT fold width must be power of 2 greater than 2");
+
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
   if (paddr_width_p < 33)
@@ -88,6 +94,9 @@ module bp_nonsynth_if_verif
     $warning("Warning: caddr < 32 has not been tested");
   if (caddr_width_p >= paddr_width_p)
     $fatal("Error: caddr cannot exceed paddr_width_p-1");
+
+  if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
+    $fatal("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
 
   if ((multicore_p == 1) && ((amo_swap_p != e_none) || (amo_fetch_logic_p != e_none) || (amo_fetch_arithmetic_p != e_none)))
     $fatal("Error: L2 atomics are not currently supported in bp_multicore");
