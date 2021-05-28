@@ -15,7 +15,6 @@ module bp_piton_top
  #(parameter bp_params_e bp_params_p = e_bp_piton_cfg // Warning: Change this at your own peril!
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, icache_fill_width_p, lce_id_width_p, lce_assoc_p, pce)
-   //`declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
    `declare_bp_pce_l15_if_widths(paddr_width_p, dword_width_gp)
 
    , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
@@ -67,12 +66,11 @@ module bp_piton_top
    );
 
   `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  //`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
-  `declare_bp_bedrock_mem_if(paddr_width_p, icache_fill_width_p, lce_id_width_p, lce_assoc_p, pce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, pce);
   `declare_bp_pce_l15_if(paddr_width_p, dword_width_gp);
 
   bp_dcache_req_s dcache_req_lo;
@@ -88,7 +86,8 @@ module bp_piton_top
   bp_icache_tag_mem_pkt_s icache_tag_mem_pkt_li;
   logic dcache_tag_mem_pkt_v_li, dcache_tag_mem_pkt_yumi_lo;
   logic icache_tag_mem_pkt_v_li, icache_tag_mem_pkt_yumi_lo;
-  logic [ptag_width_p-1:0] dcache_tag_mem_lo, icache_tag_mem_lo;
+  bp_dcache_tag_info_s dcache_tag_mem_lo;
+  bp_icache_tag_info_s icache_tag_mem_lo;
 
   bp_dcache_data_mem_pkt_s dcache_data_mem_pkt_li;
   bp_icache_data_mem_pkt_s icache_data_mem_pkt_li;
@@ -113,10 +112,8 @@ module bp_piton_top
   logic [1:0] l15_pce_ret_v_li, l15_pce_ret_yumi_lo;
 
   bp_bedrock_pce_mem_msg_s cfg_cmd_li;
-  //bp_cce_mem_msg_s cfg_cmd_li;
   logic cfg_cmd_v_li, cfg_cmd_ready_lo;
   bp_bedrock_pce_mem_msg_s cfg_resp_lo;
-  //bp_cce_mem_msg_s cfg_resp_lo;
   logic cfg_resp_v_lo, cfg_resp_yumi_li;
 
   bp_cfg_bus_s cfg_bus_lo;
@@ -234,9 +231,6 @@ module bp_piton_top
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.core_idx(config_coreid_x)
-    ,.core_idy(config_coreid_y)
-
     ,.cache_req_i(dcache_req_lo)
     ,.cache_req_v_i(dcache_req_v_lo)
     ,.cache_req_yumi_o(dcache_req_yumi_li)
@@ -280,9 +274,6 @@ module bp_piton_top
     icache_pce
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
-
-    ,.core_idx(config_coreid_x)
-    ,.core_idy(config_coreid_y)
 
     ,.cache_req_i(icache_req_lo)
     ,.cache_req_v_i(icache_req_v_lo)
