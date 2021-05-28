@@ -25,7 +25,6 @@ module bp_be_dcache_wbuf
 
    , input [wbuf_entry_width_lp-1:0]        wbuf_entry_i
    , input                                  v_i
-   , input                                  poison_i
 
    , output logic [wbuf_entry_width_lp-1:0] wbuf_entry_o
    , output logic                           v_o
@@ -40,9 +39,6 @@ module bp_be_dcache_wbuf
   bp_be_dcache_wbuf_entry_s wbuf_entry_in;
   assign wbuf_entry_in = wbuf_entry_i;
 
-  // v_li is the "true" valid signal
-  wire v_li = v_i & ~poison_i;
-
   logic [1:0] num_els_r;
   bsg_counter_up_down
    #(.max_val_p(3), .init_val_p(0), .max_step_p(1))
@@ -50,7 +46,7 @@ module bp_be_dcache_wbuf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.up_i(v_li)
+     ,.up_i(v_i)
      ,.down_i(yumi_i)
      ,.count_o(num_els_r)
      );
@@ -65,7 +61,7 @@ module bp_be_dcache_wbuf
         el0_valid = 1'b0;
         el1_valid = 1'b0;
         el0_enable = 1'b0;
-        el1_enable = v_li;
+        el1_enable = v_i;
         mux0_sel = 1'b0;
         mux1_sel = 1'b0;
       end
@@ -73,8 +69,8 @@ module bp_be_dcache_wbuf
         v_o = 1'b1;
         el0_valid = 1'b0;
         el1_valid = 1'b1;
-        el0_enable = v_li & ~yumi_i;
-        el1_enable = v_li & yumi_i;
+        el0_enable = v_i & ~yumi_i;
+        el1_enable = v_i & yumi_i;
         mux0_sel = 1'b0;
         mux1_sel = 1'b1;
       end
@@ -83,7 +79,7 @@ module bp_be_dcache_wbuf
         v_o = 1'b1;
         el0_valid = 1'b1;
         el1_valid = 1'b1;
-        el0_enable = v_li & yumi_i;
+        el0_enable = v_i & yumi_i;
         el1_enable = yumi_i;
         mux0_sel = 1'b1;
         mux1_sel = 1'b1;
