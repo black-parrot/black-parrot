@@ -112,13 +112,13 @@ module bp_fe_bht
      );
   assign w_yumi_o = is_run & w_v_i & ~rw_same_addr;
 
-  logic [`BSG_SAFE_CLOG2(bht_row_els_p)-1:0] pred_idx_r;
+  logic [`BSG_SAFE_CLOG2(bht_row_width_p)-1:0] pred_idx_r;
   if (bht_row_els_p > 1)
     begin : fold
-      wire [`BSG_SAFE_CLOG2(bht_row_els_p)-1:0] pred_idx_n =
+      wire [`BSG_SAFE_CLOG2(bht_row_width_p)-1:0] pred_idx_n =
         1'b1 + (r_addr_i[2+bht_idx_width_p+:`BSG_SAFE_CLOG2(bht_row_els_p)] << 1'b1);
       bsg_dff
-       #(.width_p(1))
+       #(.width_p(`BSG_SAFE_CLOG2(bht_row_width_p)))
        pred_idx_reg
         (.clk_i(clk_i)
          ,.data_i(pred_idx_n)

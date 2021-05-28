@@ -792,6 +792,10 @@
       ,acache_fill_width    : 64
       ,paddr_width          : 42
       ,caddr_width          : 36
+      ,branch_metadata_fwd_width: 39
+      ,bht_idx_width        : 7
+      ,bht_row_els          : 4
+      ,ghist_width          : 2
       ,l2_en                : 0
       ,itlb_els_4k          : 8
       ,itlb_els_1g          : 0
