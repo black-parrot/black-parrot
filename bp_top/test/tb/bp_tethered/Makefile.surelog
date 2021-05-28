@@ -1,0 +1,10 @@
+
+$(PARSE_DIR)/flist.vcs:
+	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
+	@echo wrapper.sv                                >> $@
+
+$(PARSE_DIR)/wrapper.sv:
+	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+
+PARSE_COLLATERAL = $(addprefix $(PARSE_DIR)/, flist.vcs wrapper.sv)
+

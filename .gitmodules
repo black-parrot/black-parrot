@@ -11,6 +11,17 @@
     branch = master
     ignore = untracked
     update = none
+[submodule "tools/dromajo"]
+	path = tools/dromajo
+	url = https://github.com/bsg-external/dromajo
+    branch = blackparrot_mods
+    update = checkout
+[submodule "tools/Surelog"]
+    path = tools/Surelog
+    url = https://github.com/alainmarcel/Surelog
+    branch = master
+    ignore = untracked
+    update = checkout
 
 [submodule "external/basejump_stl"]
     path = external/basejump_stl
@@ -27,8 +38,4 @@
     url = https://github.com/bespoke-silicon-group/bsg_cadenv
     branch = master
     update = none
-[submodule "tools/dromajo"]
-	path = tools/dromajo
-	url = https://github.com/bsg-external/dromajo
-    branch = blackparrot_mods
-    update = checkout
+
