@@ -213,7 +213,6 @@ module bp_fe_pc_gen
 
      ,.restore_ckpt_v_i(redirect_br_v_i)
      ,.restore_ckpt_top_ptr_i(redirect_br_metadata_fwd.ras_top_ptr)
-     ,.restore_ckpt_top_pc_i(redirect_br_metadata_fwd.ras_top_pc)
      );
 
   assign ras_tgt_lo = ras_pred_tgt_pc_lo;
@@ -269,7 +268,6 @@ module bp_fe_pc_gen
           ,btb_tag : pc_if2_r[2+btb_idx_width_p+:btb_tag_width_p]
           ,btb_idx : pc_if2_r[2+:btb_idx_width_p]
           ,bht_idx : pc_if2_r[2+:bht_idx_width_p]
-          ,ras_top_pc : ras_pred_tgt_pc_lo
           ,ras_top_ptr : ras_ckpt_top_ptr_lo
           ,is_br   : is_br
           ,is_jal  : is_jal

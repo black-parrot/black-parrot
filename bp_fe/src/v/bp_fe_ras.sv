@@ -30,7 +30,6 @@ module bp_fe_ras
 
    , input logic restore_ckpt_v_i
    , input logic [ptr_width_lp] restore_ckpt_top_ptr_i
-   , input logic [vaddr_width_p-1:0] restore_ckpt_top_pc_i
    );
 
   //synopsys translate_off
@@ -131,9 +130,9 @@ module bp_fe_ras
       begin
         top_ptr_n = restore_ckpt_top_ptr_i;
 
-        mem_w_v_li    = 1'b1;
-        mem_w_addr_li = top_ptr_n;
-        mem_w_data_li = restore_ckpt_top_pc_i;
+        mem_w_v_li    = 1'b0;
+        mem_w_addr_li = '0;
+        mem_w_data_li = '0;
       end
     else
       begin

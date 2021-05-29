@@ -43,7 +43,6 @@
       logic [bht_idx_width_mp-1:0]    bht_idx;                                                    \
       logic [bht_row_width_mp-1:0]    bht_row;                                                    \
       logic [ghist_width_mp-1:0]      ghist;                                                      \
-      logic [vaddr_width_mp-1:0]      ras_top_pc;                                                 \
       logic [`BSG_WIDTH(ras_num_entries_mp-1)-1:0] ras_top_ptr;                                   \
     }  bp_fe_branch_metadata_fwd_s;
 

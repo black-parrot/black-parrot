@@ -223,7 +223,7 @@
       ,boot_pc       : dram_base_addr_gp
       ,boot_in_debug : 0
 
-      ,branch_metadata_fwd_width: 77
+      ,branch_metadata_fwd_width: 38
       ,btb_tag_width            : 9
       ,btb_idx_width            : 6
       ,bht_idx_width            : 8
