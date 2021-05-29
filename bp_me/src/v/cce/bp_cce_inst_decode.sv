@@ -416,7 +416,7 @@ module bp_cce_inst_decode
               decoded_inst_o.src_a_sel = e_src_sel_flag;
               decoded_inst_o.src_a.flag = op_type_u.rtype.src_a.flag;
               decoded_inst_o.src_b_sel = e_src_sel_flag;
-              decoded_inst_o.src_b.flag = op_type_u.rtype.src_a.flag;
+              decoded_inst_o.src_b.flag = op_type_u.rtype.src_b.flag;
               decoded_inst_o.dst_sel = e_dst_sel_gpr;
               decoded_inst_o.dst.gpr = op_type_u.rtype.dst.gpr;
               decoded_inst_o.gpr_w_v[op_type_u.rtype.dst.gpr[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
@@ -426,7 +426,7 @@ module bp_cce_inst_decode
               decoded_inst_o.src_a_sel = e_src_sel_flag;
               decoded_inst_o.src_a.flag = op_type_u.rtype.src_a.flag;
               decoded_inst_o.src_b_sel = e_src_sel_flag;
-              decoded_inst_o.src_b.flag = op_type_u.rtype.src_a.flag;
+              decoded_inst_o.src_b.flag = op_type_u.rtype.src_b.flag;
               decoded_inst_o.dst_sel = e_dst_sel_gpr;
               decoded_inst_o.dst.gpr = op_type_u.rtype.dst.gpr;
               decoded_inst_o.gpr_w_v[op_type_u.rtype.dst.gpr[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
@@ -436,7 +436,7 @@ module bp_cce_inst_decode
               decoded_inst_o.src_a_sel = e_src_sel_flag;
               decoded_inst_o.src_a.flag = op_type_u.rtype.src_a.flag;
               decoded_inst_o.src_b_sel = e_src_sel_flag;
-              decoded_inst_o.src_b.flag = op_type_u.rtype.src_a.flag;
+              decoded_inst_o.src_b.flag = op_type_u.rtype.src_b.flag;
               decoded_inst_o.dst_sel = e_dst_sel_gpr;
               decoded_inst_o.dst.gpr = op_type_u.rtype.dst.gpr;
               decoded_inst_o.gpr_w_v[op_type_u.rtype.dst.gpr[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
@@ -446,7 +446,7 @@ module bp_cce_inst_decode
               decoded_inst_o.src_a_sel = e_src_sel_flag;
               decoded_inst_o.src_a.flag = op_type_u.rtype.src_a.flag;
               decoded_inst_o.src_b_sel = e_src_sel_flag;
-              decoded_inst_o.src_b.flag = op_type_u.rtype.src_a.flag;
+              decoded_inst_o.src_b.flag = op_type_u.rtype.src_b.flag;
               decoded_inst_o.dst_sel = e_dst_sel_gpr;
               decoded_inst_o.dst.gpr = op_type_u.rtype.dst.gpr;
               decoded_inst_o.gpr_w_v[op_type_u.rtype.dst.gpr[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
