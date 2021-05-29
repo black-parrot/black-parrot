@@ -49,7 +49,7 @@ module bp_fe_pc_gen
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p, ras_num_entries_p, vaddr_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p, ras_idx_width_p, vaddr_width_p);
   `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p, bht_row_width_p);
 
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd;
@@ -189,7 +189,7 @@ module bp_fe_pc_gen
 
   // RAS
   logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo;
-  logic [`BSG_WIDTH(ras_num_entries_p-1)-1:0] ras_ckpt_top_ptr_lo;
+  logic [ras_idx_width_p-1:0] ras_ckpt_top_ptr_lo;
   logic ras_init_done_lo;
 
   wire ras_pred_tgt_pc_pop_en_li = is_ret;

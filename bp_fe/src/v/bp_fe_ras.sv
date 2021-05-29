@@ -2,7 +2,7 @@
  * bp_fe_ras.v
  *
  * A configurable-depth Return Address Stack, with support for checkpointing of
- * the "top" pointer and topmost element.
+ * the "top" pointer to restore upon misspeculation.
  */
 `include "bp_common_defines.svh"
 `include "bp_fe_defines.svh"
@@ -13,7 +13,7 @@ module bp_fe_ras
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   ,localparam ptr_width_lp = `BSG_WIDTH(ras_num_entries_p-1)
+   , localparam ras_num_entries_lp = 2**ras_idx_width_p
    )
   (  input        clk_i
    , input        reset_i
@@ -26,26 +26,19 @@ module bp_fe_ras
    , input logic  pop_pc_en_i
    , output logic [vaddr_width_p-1:0] pop_pc_o
 
-   , output logic [ptr_width_lp] ckpt_top_ptr_o
+   , output logic [ras_idx_width_p] ckpt_top_ptr_o
 
    , input logic restore_ckpt_v_i
-   , input logic [ptr_width_lp] restore_ckpt_top_ptr_i
+   , input logic [ras_idx_width_p] restore_ckpt_top_ptr_i
    );
-
-  //synopsys translate_off
-  initial begin
-    assert(`BSG_IS_POW2(ras_num_entries_p))
-      else $error("Number of entries in the RAS must be a power of two");
-  end
-  //synopsys translate_on
 
   // Initialization (zeroing) logic
   // Not necessary for proper operation in hardware, but prevents X propagation in sim
-  logic [ptr_width_lp-1:0] init_ptr;
-  wire finished_init_n = (init_ptr == ras_num_entries_p - 1);
+  logic [ras_idx_width_p-1:0] init_ptr;
+  wire finished_init_n = (init_ptr == ras_num_entries_lp - 1);
   logic finished_init_r;
   bsg_counter_clear_up
-    #(.max_val_p(ras_num_entries_p-1), .init_val_p(0))
+    #(.max_val_p(ras_num_entries_lp-1), .init_val_p(0))
     init_counter
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -69,12 +62,12 @@ module bp_fe_ras
   // Stack top pointer
   // we can't use bsg_circular_ptr because we need to be able to a) decrement the pointer and b) checkpoint the pointer.
   // top_ptr_r points to the current topmost element on the stack.
-  logic [ptr_width_lp-1:0] top_ptr_r, top_ptr_n;
+  logic [ras_idx_width_p-1:0] top_ptr_r, top_ptr_n;
 
   assign ckpt_top_ptr_o = top_ptr_r;
 
   bsg_dff
-    #(.width_p(ptr_width_lp))
+    #(.width_p(ras_idx_width_p))
     top_ptr_reg
       (.clk_i(clk_i)
 
@@ -87,11 +80,11 @@ module bp_fe_ras
 
   // RAS memory
   logic mem_w_v_li;
-  logic [ptr_width_lp-1:0] mem_w_addr_li;
+  logic [ras_idx_width_p-1:0] mem_w_addr_li;
   logic [vaddr_width_p-1:0] mem_w_data_li;
   bsg_mem_1r1w
     #(.width_p(vaddr_width_p)
-      ,.els_p(ras_num_entries_p)
+      ,.els_p(ras_num_entries_lp)
       ,.read_write_same_addr_p(1)
      )
     ras_mem
