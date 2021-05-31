@@ -712,7 +712,9 @@ module bp_be_dcache
 
       if ((i == 2'b10) || (i == 2'b11))
         begin : atomic
-          assign slice_data = decode_tv_r.amo_op
+          // Make wbuf data atomic result as long as it's not destined
+          //   to be a remote atomic
+          assign slice_data = (decode_tv_r.amo_op & ~uncached_op_tv_r)
             ? atomic_result[0+:slice_width_lp]
             : st_data_tv_r[0+:slice_width_lp];
         end
