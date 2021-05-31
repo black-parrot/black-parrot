@@ -12,28 +12,45 @@ BlackParrot is designed as a set of modular processor building blocks connected 
 
 The Front End and Back End communicate using FIFO queues. There will be an unambiguous and uniform policy for priority between queues. The number of queues is minimized subject to correct functionality, to reduce the complexity of the interface. The Front End Queue sends information from the Front End to the Back End. The Command Queue sends information from the Back End to the Front End. All “true” architectural state lives in the backend, but the front end may have shadow state.
 
-Logically, the BE controls the FE and may command the FE to flush all state, redirect the PC, etc. The FE uses its queue to supply the BE with (possibly speculative) instruction/PC pairs and inform the BE of any exceptions that have occurred within the unit (e.g., misaligned instruction fetch) so the BE may ensure all exceptions are taken precisely. The BE checks the PC in the instruction/PC pairs to make sure that the FE’s predictions correspond to correct architectural execution.  On reset, the FE shall be in a quiescent state; not fetching.
+Logically, the BE controls the FE and may command the FE to flush all state, redirect the PC, etc. The FE uses its queue to supply the BE with (possibly speculative) instruction/PC pairs and inform the BE of any exceptions that have occurred within the unit (e.g., misaligned instruction fetch) so the BE may ensure all exceptions are taken precisely. The BE checks the PC in the instruction/PC pairs to make sure that the FE’s predictions correspond to correct architectural execution. On reset, the FE shall be in a quiescent state; not fetching.
 
 If a queue is full, the unit wishing to send data should stall until a new entry can be enqueued in the appropriate queue to prevent information loss. The handshake shall conform to one of the three [BaseJump STL](http://cseweb.ucsd.edu/~mbtaylor/papers/Taylor\_DAC\_BaseJump\_STL\_2018.pdf) handshakes, most likely valid->ready on the consumer side, and ready->valid on the input. The queues shall be implemented with one of the BaseJump STL queue implementations. Each block is responsible for only issuing operations (e.g., translation requests, cache access, instruction execution, etc.) if it is capable of storing any possible exception information for that operation.
 
 ### FE->BE (fe\_queue)
-- Description: Front End Queue (FIFO) passes bp\_fe\_queue\_s comprising a message type and the message data:
-  - bp\_fe\_fetch\_s
-  - bp\_fe\_exception\_s
-- Interface:
-  - BaseJump STL valid->ready on consumer and ready->valid on producer
-  - The FE Queue must support a clear operation (to support mispredicts)
-- bp\_fe\_fetch\_s
-  - 39-bit PC (virtual address)
+Description: Front End Queue (FIFO) passes bp\_fe\_queue\_s comprising a message type and the message data:
+- `bp_fe_fetch_s`
+- `bp_fe_exception_s`
+
+Interface:
+- BaseJump STL valid->ready on consumer and ready->valid on producer
+- The FE Queue must support a "clear" operation (to support mispredicts)
+
+Structures:
+- `bp_fe_fetch_s`
+  - 39-bit PC (virtual address) of the instruction to fetch
   - 32-bit instruction data
-    - Invariant; although the PC may be speculative, the value of _instruction_ is correct for that PC. We make similar assertions for the itlb; the itlb mappings made by the FE are not speculative; they are required to be correct at all times.
-  - branch prediction metadata bp\_fe\_branch\_metadata\_fwd\_s.
-    - This structure is for the branch predictor to update its internal data structures based on feedback from the BE as to whether this particular PC/instruction pair was correct. The BE does not look at the metadata, since this would mean that the BE implementation is tightly coupled to the front end implementation. This would be the opposite of our intended separation of the three components (BE,FE,ME) via a clean interface. The backend knows that the frontend has made a incorrect prediction because it was sent an incorrect PC in the FE queue.
-  - Typically this structure includes a pointer back to the original state that made the prediction; for example an index into a branch history table; or a field indicating whether the prediction came from BTB, BHT, or RAS (return address stack). All of these are private to the predictor and forwarded along by the BE.
-  - An example two-bit saturating counter branch prediction implementation, where high bit indicates the predicted direction, and the low bit indicates if the prediction is weak:
-    - bp\_fe\_branch\_metadata\_fwd\_s (only defined in FE)
-    - oldval: 2-bit state bits read from the branch history table (BHT)
-    - index: index of entry in branch history table
+
+    Invariant. Although the PC may be speculative, the value of _instruction_ is correct for that PC. We make similar assertions for the itlb -- the itlb mappings made by the FE are not speculative, and are required to be correct at all times.
+  - Branch prediction metadata (`bp_fe_branch_metadata_fwd_s`)
+
+    This structure is for the branch predictor to update its internal data structures based on feedback from the BE as to whether this particular PC/instruction pair was correct. The "forward packet" capturing this data is included in "attaboy" and "redirect" commands from the backend, which notify the frontend of a correct and incorrect prediction respectively.
+
+    The branch prediction metadata for our current frontend implementation contains:
+
+    - Flags indicating what type of jump triggered this prediction (branch, JAL or JALR) as well as whether it appeared to be a call or return
+    - Flags noting which internal branch prediction structures (BTB or RAS) were used to make this prediction
+    - The global history vector and BTB/BHT pointers from the time this prediction was made, to roll back to before this jump was predicted and undo any speculative updates
+
+    The BE does not look at the metadata, since this would violate our intended separation of the three components (BE,FE,ME) via a clean interface. The BE implementation must not be tightly coupled to the front end implementation. The bit pattern of the packet is blindly forwarded, and the above data is considered private to the frontend.
+
+    The backend knows that the frontend has made a incorrect prediction because it was sent an incorrect PC in the FE queue.
+
+    ---
+
+    An example two-bit saturating counter branch prediction implementation, where high bit indicates the predicted direction, and the low bit indicates if the prediction is weak:
+    - `bp_fe_branch_metadata_fwd_s` (only defined in FE)
+      - oldval: 2-bit state bits read from the branch history table (BHT)
+      - index: index of entry in branch history table
     - If the FE cmd queue receives an attaboy, then it will perform the following operation :   
     - BHT[index] <= { oldval[1], 1’b0 };
     - We write back the predicted direction, and make it a strong prediction.
@@ -45,9 +62,11 @@ If a queue is full, the unit wishing to send data should stall until a new entry
     - K-bit HART ID for multithreading. For now, we hold off on this, as we generally don’t want to add interfaces we don’t support. 
     - Process ID, Address Space ID, or thread ID (is this needed?) 
     - If any of these things are actually ISA concepts, seems like the best thing is to just say that the fetch unit must be flushed to prevent co-existence of these items, eliminating the need to disambiguate between them.
-- bp\_fe\_exception\_s
-  - Exceptions should be serviced inline with instructions. Otherwise we have no way of knowing if this exception is eclipsed by a preceding branch mispredict. Every instruction has a PC so that field can be reused. We can carry a bit-vector along inside bp\_fe\_fetch\_s to indicate these exceptions and/or other status information. FE does not receive interrupts, but may raise exceptions.
-  - 39-bit virtual PC causing the exception (should be aligned with PC bp\_fe\_queue\_s)
+- `bp_fe_exception_s`
+
+  Exceptions should be serviced inline with instructions. Otherwise we have no way of knowing if this exception is eclipsed by a preceding branch mispredict. Every instruction has a PC so that field can be reused. We can carry a bit-vector along inside `bp_fe_fetch_s` to indicate these exceptions and/or other status information. FE does not receive interrupts, but may raise exceptions.
+
+  - 39-bit virtual PC causing the exception (should be aligned with PC `bp_fe_queue_s`)
     - Specifies the PC of the illegal instruction, or the address (PC) causing exceptions.
   - Exception Code (cause)
     - In order of priority:
@@ -62,71 +81,78 @@ Illegal Instruction
     - Support for multiple fetch entries in a single packet. Only useful for multiple-issue BE implementations.
 
 ### BE->FE (fe\_cmd)
-- Description: FE Command Queue (fe\_cmd) sends the following commands from the Back End to the Front End, using a single command queue containing structures of type bp\_fe\_cmd\_s. From the perspective of architectural and microarchitectural state, enqueuing a command onto the command queue is beyond the point of no return, although the side-effects are not guaranteed until after the fence line goes high. With the exception of the attaboy commands, the BE will not enqueue additional commands until all prior commands have been processed. The FE must dequeue attaboys immediately upon reception and should process other commands as quickly as possible. However, due to the fence line it is not an invariant that the FE processes other instructions within a single cycle. The Command Queue shall transmit a union data structure, bp\_fe\_cmd\_s which contains opcodes and operands.
-- Interface
-  - The FIFO should not need to support a clear operation (except for via a full reset), all things enqueued must be processed.
-  - The FIFO should have a fence wire to indicate if all items have been absorbed from the FIFO, & all commands have been processed. Depending on implementation, the fence wire may be asserted multiple cycles after the FIFO is actually empty.
-  - Commands that feature PC redirection or shadow state change will flush the FE Queue. The BE of the processor will wait on the FE cmd queue’s fence wire before reading new items from the FE queue or enqueing new items on the command queue.
-- Available Commands
-  - State reset
-    - Standard operands
-      - PC virtual address
-    - Used after reset, or after coming out of power gating
-    - Flush / invalidate all state
-      - Instruction/Exception pipeline
-      - itlb
-      - L1 I$
-      - Shadow U/S/M bit
-      - ASIDs
-    - Reset PC to X
-  - PC redirection
-    - Standard operands
-      - PC virtual address
-    - Subopcodes
-      - URET, SRET, MRET
-        - These return from a trap and will contain the PC to return to. They set the shadow privilege mode in the FE.  This is done because the EPC is architectural state and lives in the BE, but we want to track this to avoid speculative access of state (instruction cache line) that is guarded by a protection boundary.
-      - Interrupt (no-fault PC redirection)
-      - Branch mispredict (at-fault PC redirection)
-        - In this case, the PC is the corrected target PC, not the PC of the branch
-        - bp_fe_branch_metadata_fwd_s
-        - Misprection reason (not a branch, wrong direction)
-      - Trap (at-fault PC redirection, with potential change of permissions)
-      - Context switch (no-fault PC redirection to new address space; see satp register)
-        - ASID
-        - Translation enabled / disabled
-      - Simple FE implementations which do not track the ASID for each TLB entry will also perform an itlb fence operation, flushing the itlb.
-      - More complex FE implementations will register the new ASID and not perform an itlb fence.
-  - Icache fence
-    - If icache is coherent with dcache, flush the icache pipeline.
-    - Else, flush the icache pipeline and the icache as well.
-  - Attaboy (no PC redirection, contains branch pred feedback information corresponding to correct prediction
-    - bp\_fe\_branch\_metadata\_fwd\_s
-  - Itlb fill response
-    - Contains the information necessary to populate an itlb translation.
-    - Standard operands:
-      - PC virtual address
-        - If translation is disabled, this will actually be a physical address
-      - Page table entry leaf subfields
-        - Physical address
-        - Extent
-        - U bit (user or supervisor)
-          - Each page is executable by user or supervisor, but not both
-        - G bit (global bit)
-          - Protects entries from invalidation by sfence.VMA if they have ASID=0
-        - L,X bits (PMP metadata)
-      - Non-operands
-        - D,W,R,V bits. The RSW field is unused.
-    - Notes
-      - The FE uses its own heuristics to decide what to evict
-      - Eviction does not require writeback of information
-  - Itlb fence
-    - Issued upon sfence.VMA commit or when PMA/PMP bits are modified
-    - Standard operands:
-      - Virtual address
-      - asid
-      - All addresses flag
-      - All asid flag
-    - A simple implementation will flush the entire itlb
+Description: FE Command Queue (fe\_cmd) sends the following commands from the Back End to the Front End, using a single command queue containing structures of type bp\_fe\_cmd\_s. From the perspective of architectural and microarchitectural state, enqueuing a command onto the command queue is beyond the point of no return, although the side-effects are not guaranteed until after the fence line goes high. With the exception of the attaboy commands, the BE will not enqueue additional commands until all prior commands have been processed. The FE must dequeue attaboys immediately upon reception and should process other commands as quickly as possible. However, due to the fence line it is not an invariant that the FE processes other instructions within a single cycle. The Command Queue shall transmit a union data structure, bp\_fe\_cmd\_s which contains opcodes and operands.
+
+Interface:
+- The FIFO should not need to support a clear operation (except for via a full reset), all things enqueued must be processed.
+- The FIFO should have a fence wire to indicate if all items have been absorbed from the FIFO, & all commands have been processed. Depending on implementation, the fence wire may be asserted multiple cycles after the FIFO is actually empty.
+- Commands that feature PC redirection or shadow state change will flush the FE Queue. The BE of the processor will wait on the FE cmd queue’s fence wire before reading new items from the FE queue or enqueing new items on the command queue.
+
+Available commands and associated data:
+- State reset
+  - Standard operands
+    - PC virtual address
+  - Used after reset, or after coming out of power gating
+  - Flush / invalidate all state
+    - Instruction/Exception pipeline
+    - itlb
+    - L1 I$
+    - Shadow U/S/M bit
+    - ASIDs
+  - Reset PC to X
+- PC redirection
+
+  A redirection indicates an incorrect prediction ("at-fault") or an exceptional change of control flow due to interrupts or architectural state changes ("no-fault"). It requests that the frontend fetch the specified instruction and continue from there. 
+
+  - Standard operands
+    - PC virtual address of the _next_ instruction to be fetched
+  - Subopcodes
+    - URET, SRET, MRET
+      - These return from a trap and will contain the PC to return to. They set the shadow privilege mode in the FE.  This is done because the EPC is architectural state and lives in the BE, but we want to track this to avoid speculative access of state (instruction cache line) that is guarded by a protection boundary.
+    - Interrupt (no-fault PC redirection)
+    - Branch mispredict (at-fault PC redirection)
+      - The PC is the corrected target PC, not the PC of the branch
+      - `bp_fe_branch_metadata_fwd_s` as described above, containing branch prediction metadata to correct predictor state
+      - Misprection reason ("not a branch", "wrong direction")
+    - Trap (at-fault PC redirection, with potential change of permissions)
+    - Context switch (no-fault PC redirection to new address space; see satp register)
+      - ASID
+      - Translation enabled / disabled
+    - Simple FE implementations which do not track the ASID for each TLB entry will also perform an itlb fence operation, flushing the itlb.
+    - More complex FE implementations will register the new ASID and not perform an itlb fence.
+- Attaboy
+
+  An attaboy signals a _correct_ prediction to the frontend, and thus there is no PC redirection expected. The provided PC is the address of the instruction following a correctly-predicted jump. The message contains branch prediction feedback information (`bp_fe_branch_metadata_fwd_s`) which was provided by the frontend when it originaly made this prediction.
+
+- Icache fence
+  - If icache is coherent with dcache, flush the icache pipeline.
+  - Else, flush the icache pipeline and the icache as well.
+- Itlb fill response
+  - Contains the information necessary to populate an itlb translation.
+  - Standard operands:
+    - PC virtual address
+      - If translation is disabled, this will actually be a physical address
+    - Page table entry leaf subfields
+      - Physical address
+      - Extent
+      - U bit (user or supervisor)
+        - Each page is executable by user or supervisor, but not both
+      - G bit (global bit)
+        - Protects entries from invalidation by sfence.VMA if they have ASID=0
+      - L,X bits (PMP metadata)
+    - Non-operands
+      - D,W,R,V bits. The RSW field is unused.
+  - Notes
+    - The FE uses its own heuristics to decide what to evict
+    - Eviction does not require writeback of information
+- Itlb fence
+  - Issued upon sfence.VMA commit or when PMA/PMP bits are modified
+  - Standard operands:
+    - Virtual address
+    - asid
+    - All addresses flag
+    - All asid flag
+  - A simple implementation will flush the entire itlb
 
 ## Cache Engine Interface
 
