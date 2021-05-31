@@ -39,25 +39,14 @@ Structures:
 
     - Flags indicating what type of jump triggered this prediction (branch, JAL or JALR) as well as whether it appeared to be a call or return
     - Flags noting which internal branch prediction structures (BTB or RAS) were used to make this prediction
-    - The global history vector and BTB/BHT pointers from the time this prediction was made, to roll back to before this jump was predicted and undo any speculative updates
+    - The global history vector and BTB/BHT pointers from the time this prediction was made, to enable rolling back to before this jump was predicted, undoing any speculative updates, or applying new updates in response to feedback
 
     The BE does not look at the metadata, since this would violate our intended separation of the three components (BE,FE,ME) via a clean interface. The BE implementation must not be tightly coupled to the front end implementation. The bit pattern of the packet is blindly forwarded, and the above data is considered private to the frontend.
 
-    The backend knows that the frontend has made a incorrect prediction because it was sent an incorrect PC in the FE queue.
+    Branch predictor structures are often large and critical. For efficiency, they are often implemented as hardened RAMs, for which RMW cycles are expensive. Additionally, attaboys are allowed to be speculatively sent by the BE through early branch resolution. In certain implementations, this may result in redundant attaboys. One flexible way to prevent both of these behaviors from affecting predictor accuracy or throughput is to guarantee that branch metadata updates are idempotent, and more generally that resolution direction and branch metadata together are sufficient to construct the next written predictor value.
 
-    ---
+    For example, a two-bit saturating counter BHT implementation may store the index within the table used for a prediction and the old value from that entry in the table in the `bp_fe_branch_metadata_fwd_s` struct. In the event of an attaboy, it would use the index and old value to write a "strong" prediction of the same direction as used to be present back into the source BHT slot. In the case of a redirect (misprediction), it would overwrite that entry with a "weak" prediction, with direction flipped if the old value was already weak. In this case, the writes are performed in response to the attaboy or redirect, rather than at prediction time.
 
-    An example two-bit saturating counter branch prediction implementation, where high bit indicates the predicted direction, and the low bit indicates if the prediction is weak:
-    - `bp_fe_branch_metadata_fwd_s` (only defined in FE)
-      - oldval: 2-bit state bits read from the branch history table (BHT)
-      - index: index of entry in branch history table
-    - If the FE cmd queue receives an attaboy, then it will perform the following operation :   
-    - BHT[index] <= { oldval[1], 1’b0 };
-    - We write back the predicted direction, and make it a strong prediction.
-    - If the FE cmd queue receives a mispredict, then it will perform the following operation:
-    - BHT[index] =  { oldval[1] ^ oldval[0], 1’b1 }
-    - We flip the predicted direction if it was a weak prediction last time. Any prediction after a misprediction is a weak prediction. 
-    - The branch prediction metadata should be associated with an incorrect PC that has been presented to the front end, rather than the instruction that generated that PC, since these could be arbitrarily separated in microarchitectural time (via icache or TLB) and will increase complexity.
   - Future possible extensions (or non-features for this version.)
     - K-bit HART ID for multithreading. For now, we hold off on this, as we generally don’t want to add interfaces we don’t support. 
     - Process ID, Address Space ID, or thread ID (is this needed?) 
@@ -88,7 +77,7 @@ Interface:
 - The FIFO should have a fence wire to indicate if all items have been absorbed from the FIFO, & all commands have been processed. Depending on implementation, the fence wire may be asserted multiple cycles after the FIFO is actually empty.
 - Commands that feature PC redirection or shadow state change will flush the FE Queue. The BE of the processor will wait on the FE cmd queue’s fence wire before reading new items from the FE queue or enqueing new items on the command queue.
 
-Available commands and associated data:
+Available commands and their payloads:
 - State reset
   - Standard operands
     - PC virtual address
@@ -113,16 +102,16 @@ Available commands and associated data:
     - Branch mispredict (at-fault PC redirection)
       - The PC is the corrected target PC, not the PC of the branch
       - `bp_fe_branch_metadata_fwd_s` as described above, containing branch prediction metadata to correct predictor state
-      - Misprection reason ("not a branch", "wrong direction")
+      - Misprediction reason ("not a branch", "wrong direction")
     - Trap (at-fault PC redirection, with potential change of permissions)
-    - Context switch (no-fault PC redirection to new address space; see satp register)
+    - Context switch (no-fault PC redirection to new address space; see `satp` register)
       - ASID
       - Translation enabled / disabled
     - Simple FE implementations which do not track the ASID for each TLB entry will also perform an itlb fence operation, flushing the itlb.
     - More complex FE implementations will register the new ASID and not perform an itlb fence.
 - Attaboy
 
-  An attaboy signals a _correct_ prediction to the frontend, and thus there is no PC redirection expected. The provided PC is the address of the instruction following a correctly-predicted jump. The message contains branch prediction feedback information (`bp_fe_branch_metadata_fwd_s`) which was provided by the frontend when it originaly made this prediction.
+  An attaboy signals a _correct_ prediction to the frontend, and thus there is no PC redirection expected. The provided PC is the address of the instruction following a correctly-predicted jump. The message contains branch prediction feedback information (`bp_fe_branch_metadata_fwd_s`) which was provided by the frontend when it originally made this prediction.
 
 - Icache fence
   - If icache is coherent with dcache, flush the icache pipeline.
