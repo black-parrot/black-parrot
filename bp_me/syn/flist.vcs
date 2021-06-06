@@ -185,4 +185,6 @@ $BP_TOP_DIR/src/v/bp_cfg.sv
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
+$BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
+
