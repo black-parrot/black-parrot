@@ -109,13 +109,13 @@ module bp_tile
 
   // to/from Burst-Lite converters
   bp_bedrock_cce_mem_msg_s cce_mem_cmd_lo;
-  logic cce_mem_cmd_v_lo, cce_mem_cmd_ready_and_li;
+  logic cce_mem_cmd_v_lo, cce_mem_cmd_yumi_li;
   bp_bedrock_cce_mem_msg_s cce_mem_resp_li;
   logic cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
 
   bp_bedrock_cce_mem_msg_s loopback_mem_cmd_li;
   bp_bedrock_xce_mem_msg_s loopback_mem_cmd;
-  logic loopback_mem_cmd_v_li, loopback_mem_cmd_ready_lo;
+  logic loopback_mem_cmd_v_li, loopback_mem_cmd_ready_and_lo;
   bp_bedrock_cce_mem_msg_s loopback_mem_resp_lo;
   bp_bedrock_xce_mem_msg_s loopback_mem_resp;
   logic loopback_mem_resp_v_lo, loopback_mem_resp_yumi_li;
@@ -127,7 +127,7 @@ module bp_tile
                                  };
 
   bp_bedrock_cce_mem_msg_s cache_mem_cmd_li;
-  logic cache_mem_cmd_v_li, cache_mem_cmd_ready_lo;
+  logic cache_mem_cmd_v_li, cache_mem_cmd_ready_and_lo;
   bp_bedrock_cce_mem_msg_s cache_mem_resp_lo;
   logic cache_mem_resp_v_lo, cache_mem_resp_yumi_li;
 
@@ -146,7 +146,7 @@ module bp_tile
 
   bp_bedrock_cce_mem_msg_s clint_mem_cmd_li;
   bp_bedrock_xce_mem_msg_s clint_mem_cmd;
-  logic clint_mem_cmd_v_li, clint_mem_cmd_ready_lo;
+  logic clint_mem_cmd_v_li, clint_mem_cmd_ready_and_lo;
   bp_bedrock_cce_mem_msg_s clint_mem_resp_lo;
   bp_bedrock_xce_mem_msg_s clint_mem_resp;
   logic clint_mem_resp_v_lo, clint_mem_resp_yumi_li;
@@ -200,7 +200,7 @@ module bp_tile
 
      ,.mem_cmd_i(clint_mem_cmd)
      ,.mem_cmd_v_i(clint_mem_cmd_v_li)
-     ,.mem_cmd_ready_and_o(clint_mem_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(clint_mem_cmd_ready_and_lo)
 
      ,.mem_resp_o(clint_mem_resp)
      ,.mem_resp_v_o(clint_mem_resp_v_lo)
@@ -450,7 +450,7 @@ module bp_tile
      )
    cce_lce_req_wh_to_burst
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
 
     ,.link_data_i(lce_req_link_cast_i.data)
     ,.link_v_i(lce_req_link_cast_i.v)
@@ -488,7 +488,7 @@ module bp_tile
      )
    cce_lce_cmd_burst_to_wh
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
 
     ,.pr_hdr_i(cce_lce_cmd_wh_header_lo[0+:($bits(bp_lce_cmd_wormhole_header_s)-lce_cmd_wh_pad_width_lp)])
     ,.pr_hdr_v_i(cce_lce_cmd_header_v)
@@ -527,7 +527,7 @@ module bp_tile
      )
    cce_lce_resp_wh_to_burst
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
 
     ,.link_data_i(lce_resp_link_cast_i.data)
     ,.link_v_i(lce_resp_link_cast_i.v)
@@ -556,7 +556,7 @@ module bp_tile
      )
    mem_cmd_burst2lite
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.in_msg_header_i(cce_mem_cmd_header)
      ,.in_msg_header_v_i(cce_mem_cmd_header_v)
@@ -569,17 +569,9 @@ module bp_tile
      ,.in_msg_last_i(cce_mem_cmd_last)
 
      ,.out_msg_o(cce_mem_cmd_lo)
-     ,.out_msg_v_o(cce_mem_cmd_v_and_lo)
-     ,.out_msg_ready_and_i(cce_mem_cmd_ready_and_li)
+     ,.out_msg_v_o(cce_mem_cmd_v_lo)
+     ,.out_msg_ready_and_i(cce_mem_cmd_yumi_li)
      );
-
-  // TODO: convert loopback/cache/cfg/clint to use BedRock Burst interfaces and arbitrate
-  // on the burst protocol
-  // gate the valid out signal sent to loopback/cache/cfg/clint
-  // without the gate, it is possible for the client to consume the message
-  // while the converter does not handshake because one of the other three non-target
-  // clients isn't ready
-  assign cce_mem_cmd_v_lo = cce_mem_cmd_v_and_lo & cce_mem_cmd_ready_and_li;
 
   // Mem Response
   logic cce_mem_resp_ready_lo;
@@ -593,7 +585,7 @@ module bp_tile
      )
    mem_resp_lite2burst
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.in_msg_i(cce_mem_resp_li)
      ,.in_msg_v_i(cce_mem_resp_v_li)
@@ -690,18 +682,16 @@ module bp_tile
   wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_cache_cmd;
 
-  // TODO: fix me!
-  // BUG: it is possible for the cce_mem_cmd_v_lo signal to be high, cce_mem_cmd_ready_and_li
-  // to be low, but one of loopback/cache/cfg/clint_mem_cmd_ready_lo to be high and
-  // the cce_mem_cmd targets the module that is ready. This results in the burst2lite
-  // converter failing to handshake, but the receiver consuming the message
-  // This is currently solved by gating the cce_mem_cmd_v_lo signal with cce_mem_cmd_ready_and_li
-  assign cfg_mem_cmd_v_li      = is_cfg_cmd   & cce_mem_cmd_v_lo;
-  assign clint_mem_cmd_v_li    = is_clint_cmd & cce_mem_cmd_v_lo;
-  assign cache_mem_cmd_v_li    = is_cache_cmd & cce_mem_cmd_v_lo;
-  assign loopback_mem_cmd_v_li = is_loopback_cmd & cce_mem_cmd_v_lo;
+  wire cmd_grant_li = cce_mem_cmd_v_lo;
 
-  assign cce_mem_cmd_ready_and_li = &{loopback_mem_cmd_ready_lo, cache_mem_cmd_ready_lo, cfg_mem_cmd_ready_and_lo, clint_mem_cmd_ready_lo};
+  assign cfg_mem_cmd_v_li      = cmd_grant_li & cfg_mem_cmd_ready_and_lo & is_cfg_cmd;
+  assign clint_mem_cmd_v_li    = cmd_grant_li & clint_mem_cmd_ready_and_lo & is_clint_cmd;
+  assign cache_mem_cmd_v_li    = cmd_grant_li & cache_mem_cmd_ready_and_lo & is_cache_cmd;
+  assign loopback_mem_cmd_v_li = cmd_grant_li & loopback_mem_cmd_ready_and_lo & is_loopback_cmd;
+
+  assign any_cmd_li = |{cfg_mem_cmd_v_li, clint_mem_cmd_v_li, cache_mem_cmd_v_li, loopback_mem_cmd_v_li};
+
+  assign cce_mem_cmd_yumi_li = cmd_grant_li & any_cmd_li;
 
   assign {loopback_mem_cmd_li, cache_mem_cmd_li, clint_mem_cmd_li, cfg_mem_cmd_li} = {4{cce_mem_cmd_lo}};
 
@@ -740,7 +730,7 @@ module bp_tile
 
      ,.mem_cmd_i(cache_mem_cmd_li)
      ,.mem_cmd_v_i(cache_mem_cmd_v_li)
-     ,.mem_cmd_ready_and_o(cache_mem_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(cache_mem_cmd_ready_and_lo)
 
      ,.mem_resp_o(cache_mem_resp_lo)
      ,.mem_resp_v_o(cache_mem_resp_v_lo)
@@ -849,7 +839,7 @@ module bp_tile
 
      ,.mem_cmd_i(loopback_mem_cmd)
      ,.mem_cmd_v_i(loopback_mem_cmd_v_li)
-     ,.mem_cmd_ready_and_o(loopback_mem_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(loopback_mem_cmd_ready_and_lo)
 
      ,.mem_resp_o(loopback_mem_resp)
      ,.mem_resp_v_o(loopback_mem_resp_v_lo)
