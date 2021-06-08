@@ -29,8 +29,8 @@ module bp_cce_msg
     , localparam num_way_groups_lp         = `BSG_CDIV(cce_way_groups_p, num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
 
-    // counter width (used for e.g., stall and performance counters)
-    , localparam counter_width_lp          = 64
+    // counter width for memory command/response data packet counters
+    , localparam counter_width_lp          = 8
 
     // Interface Widths
     , localparam mshr_width_lp             = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
@@ -38,11 +38,8 @@ module bp_cce_msg
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-    , localparam burst_packets_128_lp = (((8*128) / dword_width_gp) - 1)
-    , localparam burst_packets_64_lp = (((8*64) / dword_width_gp) - 1)
-    , localparam burst_packets_32_lp = (((8*32) / dword_width_gp) - 1)
-    , localparam burst_packets_16_lp = (((8*16) / dword_width_gp) - 1)
-    , localparam burst_packets_8_lp = (((8*8) / dword_width_gp) - 1)
+    // log2 of dword width bytes
+    , localparam lg_dword_width_bytes_lp = `BSG_SAFE_CLOG2(dword_width_gp/8)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -235,39 +232,21 @@ module bp_cce_msg
 
   // Memory response data packets
   wire [counter_width_lp-1:0] mem_resp_size_in_packets =
-    (mem_resp.size == e_bedrock_msg_size_128)
-    ? counter_width_lp'(burst_packets_128_lp)
-    : (mem_resp.size == e_bedrock_msg_size_64)
-      ? counter_width_lp'(burst_packets_64_lp)
-      : (mem_resp.size == e_bedrock_msg_size_32)
-        ? counter_width_lp'(burst_packets_32_lp)
-        : (mem_resp.size == e_bedrock_msg_size_16)
-          ? counter_width_lp'(burst_packets_16_lp)
-          : counter_width_lp'(burst_packets_8_lp);
+    (mem_resp.size > bp_bedrock_msg_size_e'(lg_dword_width_bytes_lp))
+    ? counter_width_lp'((1 << mem_resp.size) >> lg_dword_width_bytes_lp)
+    : 'd1;
 
   // LCE request data packets
   wire [counter_width_lp-1:0] lce_req_size_in_packets =
-    (lce_req.size == e_bedrock_msg_size_128)
-    ? counter_width_lp'(burst_packets_128_lp)
-    : (lce_req.size == e_bedrock_msg_size_64)
-      ? counter_width_lp'(burst_packets_64_lp)
-      : (lce_req.size == e_bedrock_msg_size_32)
-        ? counter_width_lp'(burst_packets_32_lp)
-        : (lce_req.size == e_bedrock_msg_size_16)
-          ? counter_width_lp'(burst_packets_16_lp)
-          : counter_width_lp'(burst_packets_8_lp);
+    (lce_req.size > bp_bedrock_msg_size_e'(lg_dword_width_bytes_lp))
+    ? counter_width_lp'((1 << lce_req.size) >> lg_dword_width_bytes_lp)
+    : 'd1;
 
   // LCE response data packets
   wire [counter_width_lp-1:0] lce_resp_size_in_packets =
-    (lce_resp.size == e_bedrock_msg_size_128)
-    ? counter_width_lp'(burst_packets_128_lp)
-    : (lce_resp.size == e_bedrock_msg_size_64)
-      ? counter_width_lp'(burst_packets_64_lp)
-      : (lce_resp.size == e_bedrock_msg_size_32)
-        ? counter_width_lp'(burst_packets_32_lp)
-        : (lce_resp.size == e_bedrock_msg_size_16)
-          ? counter_width_lp'(burst_packets_16_lp)
-          : counter_width_lp'(burst_packets_8_lp);
+    (lce_resp.size > bp_bedrock_msg_size_e'(lg_dword_width_bytes_lp))
+    ? counter_width_lp'((1 << lce_resp.size) >> lg_dword_width_bytes_lp)
+    : 'd1;
 
   // Memory Response Data Forwarding Counter
   logic [counter_width_lp-1:0] mrdc_val, mrdc_cnt;
@@ -741,15 +720,15 @@ module bp_cce_msg
         end
         e_mem_resp_send_data: begin
           // send data
-          // last send occurs when cnt is zero
+          // last send occurs when cnt is one
           lce_cmd_busy_o = 1'b1;
           mem_resp_busy_o = 1'b1;
           lce_cmd_data_o = mem_resp_data_i;
           lce_cmd_data_v_o = mem_resp_data_v_i;
           lce_cmd_last_o = mem_resp_last_i;
           mem_resp_data_ready_and_o = lce_cmd_data_ready_and_i;
-          mrdc_down = mem_resp_data_v_i & mem_resp_data_ready_and_o & !(mrdc_cnt == '0);
-          mem_resp_state_n = (mem_resp_data_v_i & mem_resp_data_ready_and_o & (mrdc_cnt == '0))
+          mrdc_down = mem_resp_data_v_i & mem_resp_data_ready_and_o;
+          mem_resp_state_n = (mem_resp_data_v_i & mem_resp_data_ready_and_o & (mrdc_cnt == 'd1))
                              ? e_mem_resp_ready
                              : e_mem_resp_send_data;
 
@@ -758,8 +737,8 @@ module bp_cce_msg
           // when a speculative read is squashed, its data must be drained
           mem_resp_busy_o = 1'b1;
           mem_resp_data_ready_and_o = 1'b1;
-          mrdc_down = mem_resp_data_v_i & mem_resp_data_ready_and_o & !(mrdc_cnt == '0);
-          mem_resp_state_n = (mem_resp_data_v_i & mem_resp_data_ready_and_o & (mrdc_cnt == '0))
+          mrdc_down = mem_resp_data_v_i & mem_resp_data_ready_and_o;
+          mem_resp_state_n = (mem_resp_data_v_i & mem_resp_data_ready_and_o & (mrdc_cnt == 'd1))
                              ? e_mem_resp_ready
                              : e_mem_resp_drain_data;
 
@@ -859,7 +838,7 @@ module bp_cce_msg
 
       e_uncached_only_data: begin
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         // r&v on mem cmd data
         // r&v on lce req data
         mem_cmd_data_o = lce_req_data_i;
@@ -867,8 +846,8 @@ module bp_cce_msg
         mem_cmd_last_o = lce_req_last_i;
         lce_req_data_ready_and_o = mem_cmd_data_ready_and_i;
 
-        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o & !(mcdc_cnt == '0);
-        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == '0))
+        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o;
+        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == 'd1))
                   ? e_uncached_only
                   : e_uncached_only_data;
 
@@ -1171,7 +1150,7 @@ module bp_cce_msg
         // stall ucode engine while sending data
         busy_o = 1'b1;
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         // r&v on mem cmd data
         // r&v on lce req data
         mem_cmd_data_o = lce_req_data_i;
@@ -1179,8 +1158,8 @@ module bp_cce_msg
         mem_cmd_last_o = lce_req_last_i;
         lce_req_data_ready_and_o = mem_cmd_data_ready_and_i;
 
-        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o & !(mcdc_cnt == '0);
-        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == '0))
+        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o;
+        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == 'd1))
                   ? e_ready
                   : state_r;
 
@@ -1190,7 +1169,7 @@ module bp_cce_msg
         // stall ucode engine while sending data
         busy_o = 1'b1;
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         // r&v on mem cmd data
         // r&v on lce resp data
         mem_cmd_data_o = lce_resp_data_i;
@@ -1198,8 +1177,8 @@ module bp_cce_msg
         mem_cmd_last_o = lce_resp_last_i;
         lce_resp_data_ready_and_o = mem_cmd_data_ready_and_i;
 
-        mcdc_down = lce_resp_data_v_i & lce_resp_data_ready_and_o & !(mcdc_cnt == '0);
-        state_n = (lce_resp_data_v_i & lce_resp_data_ready_and_o & (mcdc_cnt == '0))
+        mcdc_down = lce_resp_data_v_i & lce_resp_data_ready_and_o;
+        state_n = (lce_resp_data_v_i & lce_resp_data_ready_and_o & (mcdc_cnt == 'd1))
                   ? e_ready
                   : state_r;
 

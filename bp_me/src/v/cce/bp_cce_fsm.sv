@@ -55,12 +55,8 @@ module bp_cce_fsm
 
     , localparam counter_width_lp = `BSG_SAFE_CLOG2(counter_max+1)
 
-    , localparam burst_packets_128_lp = (((8*128) / dword_width_gp) - 1)
-    , localparam burst_packets_64_lp = (((8*64) / dword_width_gp) - 1)
-    , localparam burst_packets_32_lp = (((8*32) / dword_width_gp) - 1)
-    , localparam burst_packets_16_lp = (((8*16) / dword_width_gp) - 1)
-    , localparam burst_packets_8_lp = (((8*8) / dword_width_gp) - 1)
-
+    // log2 of dword width bytes
+    , localparam lg_dword_width_bytes_lp = `BSG_SAFE_CLOG2(dword_width_gp/8)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -201,40 +197,21 @@ module bp_cce_fsm
 
   // Memory response data packets
   wire [counter_width_lp-1:0] mem_resp_size_in_packets =
-    (mem_resp.size == e_bedrock_msg_size_128)
-    ? counter_width_lp'(burst_packets_128_lp)
-    : (mem_resp.size == e_bedrock_msg_size_64)
-      ? counter_width_lp'(burst_packets_64_lp)
-      : (mem_resp.size == e_bedrock_msg_size_32)
-        ? counter_width_lp'(burst_packets_32_lp)
-        : (mem_resp.size == e_bedrock_msg_size_16)
-          ? counter_width_lp'(burst_packets_16_lp)
-          : counter_width_lp'(burst_packets_8_lp);
+    (mem_resp.size > bp_bedrock_msg_size_e'(lg_dword_width_bytes_lp))
+    ? counter_width_lp'((1 << mem_resp.size) >> lg_dword_width_bytes_lp)
+    : 'd1;
 
   // LCE request data packets
   wire [counter_width_lp-1:0] lce_req_size_in_packets =
-    (lce_req.size == e_bedrock_msg_size_128)
-    ? counter_width_lp'(burst_packets_128_lp)
-    : (lce_req.size == e_bedrock_msg_size_64)
-      ? counter_width_lp'(burst_packets_64_lp)
-      : (lce_req.size == e_bedrock_msg_size_32)
-        ? counter_width_lp'(burst_packets_32_lp)
-        : (lce_req.size == e_bedrock_msg_size_16)
-          ? counter_width_lp'(burst_packets_16_lp)
-          : counter_width_lp'(burst_packets_8_lp);
+    (lce_req.size > bp_bedrock_msg_size_e'(lg_dword_width_bytes_lp))
+    ? counter_width_lp'((1 << lce_req.size) >> lg_dword_width_bytes_lp)
+    : 'd1;
 
   // LCE response data packets
   wire [counter_width_lp-1:0] lce_resp_size_in_packets =
-    (lce_resp.size == e_bedrock_msg_size_128)
-    ? counter_width_lp'(burst_packets_128_lp)
-    : (lce_resp.size == e_bedrock_msg_size_64)
-      ? counter_width_lp'(burst_packets_64_lp)
-      : (lce_resp.size == e_bedrock_msg_size_32)
-        ? counter_width_lp'(burst_packets_32_lp)
-        : (lce_resp.size == e_bedrock_msg_size_16)
-          ? counter_width_lp'(burst_packets_16_lp)
-          : counter_width_lp'(burst_packets_8_lp);
-
+    (lce_resp.size > bp_bedrock_msg_size_e'(lg_dword_width_bytes_lp))
+    ? counter_width_lp'((1 << lce_resp.size) >> lg_dword_width_bytes_lp)
+    : 'd1;
 
   // Config bus
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -1007,14 +984,14 @@ module bp_cce_fsm
       end
       e_mem_resp_send_data: begin
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         lce_cmd_busy = 1'b1;
         lce_cmd_data_o = mem_resp_data_i;
         lce_cmd_data_v_o = mem_resp_data_v_i;
         lce_cmd_last_o = mem_resp_last_i;
         mem_resp_data_ready_and_o = lce_cmd_data_ready_and_i;
-        mrdc_down = mem_resp_data_v_i & mem_resp_data_ready_and_o & !(mrdc_cnt == '0);
-        mem_resp_state_n = (mem_resp_data_v_i & mem_resp_data_ready_and_o & (mrdc_cnt == '0))
+        mrdc_down = mem_resp_data_v_i & mem_resp_data_ready_and_o;
+        mem_resp_state_n = (mem_resp_data_v_i & mem_resp_data_ready_and_o & (mrdc_cnt == 'd1))
                            ? e_mem_resp_ready
                            : e_mem_resp_send_data;
 
@@ -1022,8 +999,8 @@ module bp_cce_fsm
       e_mem_resp_drain_data: begin
         // when a speculative read is squashed, its data must be drained
         mem_resp_data_ready_and_o = 1'b1;
-        mrdc_down = mem_resp_data_v_i & mem_resp_data_ready_and_o & !(mrdc_cnt == '0);
-        mem_resp_state_n = (mem_resp_data_v_i & mem_resp_data_ready_and_o & (mrdc_cnt == '0))
+        mrdc_down = mem_resp_data_v_i & mem_resp_data_ready_and_o;
+        mem_resp_state_n = (mem_resp_data_v_i & mem_resp_data_ready_and_o & (mrdc_cnt == 'd1))
                            ? e_mem_resp_ready
                            : e_mem_resp_drain_data;
 
@@ -1160,7 +1137,7 @@ module bp_cce_fsm
 
       e_uncached_only_data: begin
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         // r&v on mem cmd data
         // r&v on lce req data
         mem_cmd_data_o = lce_req_data_i;
@@ -1168,8 +1145,8 @@ module bp_cce_fsm
         mem_cmd_last_o = lce_req_last_i;
         lce_req_data_ready_and_o = mem_cmd_data_ready_and_i;
 
-        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o & !(mcdc_cnt == '0);
-        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == '0))
+        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o;
+        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == 'd1))
                   ? e_uncached_only
                   : e_uncached_only_data;
 
@@ -1303,7 +1280,7 @@ module bp_cce_fsm
 
       e_uncached_data: begin
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         // r&v on mem cmd data
         // r&v on lce req data
         mem_cmd_data_o = lce_req_data_i;
@@ -1311,8 +1288,8 @@ module bp_cce_fsm
         mem_cmd_last_o = lce_req_last_i;
         lce_req_data_ready_and_o = mem_cmd_data_ready_and_i;
 
-        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o & !(mcdc_cnt == '0);
-        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == '0))
+        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o;
+        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == 'd1))
                   ? e_ready
                   : e_uncached_data;
       end
@@ -1635,7 +1612,7 @@ module bp_cce_fsm
 
       e_replacement_wb_resp_data: begin
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         // r&v on mem cmd data
         // r&v on lce resp data
         mem_cmd_data_o = lce_resp_data_i;
@@ -1643,8 +1620,8 @@ module bp_cce_fsm
         mem_cmd_last_o = lce_resp_last_i;
         lce_resp_data_ready_and_o = mem_cmd_data_ready_and_i;
 
-        mcdc_down = lce_resp_data_v_i & lce_resp_data_ready_and_o & !(mcdc_cnt == '0);
-        state_n = (lce_resp_data_v_i & lce_resp_data_ready_and_o & (mcdc_cnt == '0))
+        mcdc_down = lce_resp_data_v_i & lce_resp_data_ready_and_o;
+        state_n = (lce_resp_data_v_i & lce_resp_data_ready_and_o & (mcdc_cnt == 'd1))
                   ? (invalidate_flag)
                     ? e_inv_cmd
                     : (transfer_flag)
@@ -1826,7 +1803,7 @@ module bp_cce_fsm
 
       e_uc_coherent_resp_data: begin
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         // r&v on mem cmd data
         // r&v on lce resp data
         mem_cmd_data_o = lce_resp_data_i;
@@ -1834,8 +1811,8 @@ module bp_cce_fsm
         mem_cmd_last_o = lce_resp_last_i;
         lce_resp_data_ready_and_o = mem_cmd_data_ready_and_i;
 
-        mcdc_down = lce_resp_data_v_i & lce_resp_data_ready_and_o & !(mcdc_cnt == '0);
-        state_n = (lce_resp_data_v_i & lce_resp_data_ready_and_o & (mcdc_cnt == '0))
+        mcdc_down = lce_resp_data_v_i & lce_resp_data_ready_and_o;
+        state_n = (lce_resp_data_v_i & lce_resp_data_ready_and_o & (mcdc_cnt == 'd1))
                   ? e_uc_coherent_mem_cmd
                   : e_uc_coherent_resp_data;
 
@@ -1907,7 +1884,7 @@ module bp_cce_fsm
 
       e_uc_coherent_mem_cmd_data: begin
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         // r&v on mem cmd data
         // r&v on lce req data
         mem_cmd_data_o = lce_req_data_i;
@@ -1915,8 +1892,8 @@ module bp_cce_fsm
         mem_cmd_last_o = lce_req_last_i;
         lce_req_data_ready_and_o = mem_cmd_data_ready_and_i;
 
-        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o & !(mcdc_cnt == '0);
-        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == '0))
+        mcdc_down = lce_req_data_v_i & lce_req_data_ready_and_o;
+        state_n = (lce_req_data_v_i & lce_req_data_ready_and_o & (mcdc_cnt == 'd1))
                   ? e_ready
                   : e_uc_coherent_mem_cmd_data;
 
@@ -2009,7 +1986,7 @@ module bp_cce_fsm
 
       e_transfer_wb_resp_data: begin
         // send data
-        // last send occurs when cnt is zero
+        // last send occurs when cnt is one
         // r&v on mem cmd data
         // r&v on lce resp data
         mem_cmd_data_o = lce_resp_data_i;
@@ -2017,8 +1994,8 @@ module bp_cce_fsm
         mem_cmd_last_o = lce_resp_last_i;
         lce_resp_data_ready_and_o = mem_cmd_data_ready_and_i;
 
-        mcdc_down = lce_resp_data_v_i & lce_resp_data_ready_and_o & !(mcdc_cnt == '0);
-        state_n = (lce_resp_data_v_i & lce_resp_data_ready_and_o & (mcdc_cnt == '0))
+        mcdc_down = lce_resp_data_v_i & lce_resp_data_ready_and_o;
+        state_n = (lce_resp_data_v_i & lce_resp_data_ready_and_o & (mcdc_cnt == 'd1))
                   ? e_resolve_speculation
                   : e_transfer_wb_resp_data;
       end // e_transfer_wb_resp_data
