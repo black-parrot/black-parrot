@@ -13,7 +13,7 @@
  * Otherwise, the output becomes valid in the cycle that the last input
  * arrives.
  *
- * This module passes throught he last input data word directly to the output
+ * This module passes through the last input data word directly to the output
  * and can handle transactions with fewer than max_els_p input words.
  *
  */
@@ -57,19 +57,15 @@ module bsg_serial_in_parallel_out_passthrough_dynamic_last
     wire last_word_received = word_received & last_i;
 
     // data_dff enable generation
-    // start with enable on for word 0, shift to next word as each input word arrives
-    // reset to initial mask when output sends
     logic [max_els_p-1:0] data_en_li;
-    bsg_dff_reset_en
-    #(.width_p(max_els_p)
-      ,.reset_val_p(1)
-      )
-    data_en_dff
+    bsg_counter_clear_up_one_hot
+    #(.max_val_p(max_els_p-1))
+    data_en_counter
      (.clk_i(clk_i)
-      ,.reset_i(reset_i | transaction_done)
-      ,.en_i(word_received)
-      ,.data_i(data_en_li << 1)
-      ,.data_o(data_en_li)
+      ,.reset_i(reset_i)
+      ,.clear_i(transaction_done)
+      ,.up_i(word_received & ~transaction_done)
+      ,.count_r_o(data_en_li)
       );
 
     // Registered data words (all but final word of full message will be registered)
@@ -97,7 +93,7 @@ module bsg_serial_in_parallel_out_passthrough_dynamic_last
     last_dff
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.set_i(last_word_received)
+      ,.set_i(last_word_received & ~transaction_done)
       ,.clear_i(transaction_done)
       ,.data_o(last_r)
       );
