@@ -30,8 +30,6 @@ module bp_mem_nonsynth_tracer
 
 `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-wire unused = &{mem_resp_v_i};
-
 integer file;
 always_ff @(negedge reset_i) begin
   file = $fopen(trace_file_p, "w");
@@ -58,7 +56,7 @@ always_ff @(posedge clk_i) begin
         $fwrite(file, "[%t] CMD  ERROR: unknown cmd_type %x received!", $time, mem_resp_cast_i.header.msg_type.mem);
     endcase
 
-  if (mem_resp_yumi_i)
+  if (mem_resp_v_i & mem_resp_yumi_i)
     case (mem_resp_cast_i.header.msg_type.mem)
       e_bedrock_mem_rd:
         $fwrite(file, "[%t] RESP RD  : (%x) %b %x\n", $time, mem_resp_cast_i.header.addr, mem_resp_cast_i.header.size, mem_resp_cast_i.data);

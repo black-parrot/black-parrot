@@ -23,18 +23,20 @@ module bp_burst_to_lite
   (input                                     clk_i
    , input                                   reset_i
 
-   // Master BP Burst
+   // Input channel: BedRock Burst
    // ready-valid-and
    , input [in_msg_header_width_lp-1:0]      in_msg_header_i
    , input                                   in_msg_header_v_i
    , output logic                            in_msg_header_ready_and_o
+   , input                                   in_msg_has_data_i
 
    // ready-valid-and
    , input [in_data_width_p-1:0]             in_msg_data_i
    , input                                   in_msg_data_v_i
    , output logic                            in_msg_data_ready_and_o
+   , input                                   in_msg_last_i
 
-   // Client BP Lite
+   // Output channel BedRock Lite
    // ready-valid-and
    , output logic [out_msg_width_lp-1:0]     out_msg_o
    , output logic                            out_msg_v_o
@@ -50,77 +52,73 @@ module bp_burst_to_lite
   localparam burst_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
   bp_bedrock_in_msg_header_s header_lo;
-  logic header_v_lo;
-  bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_in_msg_header_s)))
-   header_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i(in_msg_header_i)
-     ,.ready_o(in_msg_header_ready_and_o)
-     ,.v_i(in_msg_header_v_i)
-
-     ,.data_o(header_lo)
-     ,.v_o(header_v_lo)
-     ,.yumi_i(out_msg_ready_and_i & out_msg_v_o)
-     );
-
-  bp_bedrock_in_msg_header_s msg_header_cast_i;
-  assign msg_header_cast_i = in_msg_header_i;
-  localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
-  wire [data_len_width_lp-1:0] incoming_burst_cmds = `BSG_MAX(1, ((1'b1 << msg_header_cast_i.size) / in_data_bytes_lp));
-  logic [data_len_width_lp-1:0] num_burst_cmds;
+  logic header_v_r, header_clear, header_v_lo, has_data;
   bsg_dff_en_bypass
-   #(.width_p(data_len_width_lp))
-   burst_len_reg
+   #(.width_p($bits(bp_bedrock_in_msg_header_s)+1))
+   header_reg
     (.clk_i(clk_i)
-     ,.en_i(in_msg_header_ready_and_o & in_msg_header_v_i)
-     ,.data_i(incoming_burst_cmds)
-     ,.data_o(num_burst_cmds)
-     );
+    ,.en_i(in_msg_header_ready_and_o & in_msg_header_v_i)
+    ,.data_i({in_msg_has_data_i, in_msg_header_i})
+    ,.data_o({has_data, header_lo})
+    );
+
+  bsg_dff_reset_set_clear
+   #(.width_p(1)
+   ,.clear_over_set_p(1))
+    header_v_reg
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+    ,.set_i(in_msg_header_v_i)
+    ,.clear_i(header_clear)
+    ,.data_o(header_v_r)
+    );
+
+  assign header_v_lo  = in_msg_header_v_i | header_v_r;
+  assign header_clear = out_msg_v_o & out_msg_ready_and_i;
+
+  // Accept no new header as long as a valid header exists
+  assign in_msg_header_ready_and_o = ~header_v_r;
+
+  localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
 
   logic [out_data_width_p-1:0] data_lo;
   logic data_v_lo;
-  bsg_serial_in_parallel_out_dynamic
-   #(.width_p(in_data_width_p), .max_els_p(burst_words_lp))
-   sipo
+  bsg_serial_in_parallel_out_passthrough_dynamic_last
+   #(.width_p(in_data_width_p)
+   ,.max_els_p(burst_words_lp))
+   sipo_passthrough
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    ,.reset_i(reset_i)
 
-     ,.data_i(in_msg_data_i)
-     ,.len_i(num_burst_cmds-1'b1)
-     ,.ready_o(in_msg_data_ready_and_o)
-     ,.v_i(in_msg_data_v_i)
+    ,.data_i(in_msg_data_i)
+    ,.v_i(in_msg_data_v_i)
+    ,.ready_and_o(in_msg_data_ready_and_o)
+    ,.last_i(in_msg_last_i)
 
-     ,.data_o(data_lo)
-     ,.v_o(data_v_lo)
-     // We gate the yumi signal since reads will not produce data
-     ,.yumi_i(data_v_lo & out_msg_ready_and_i & out_msg_v_o)
-
-     // We rely on fifo ready signal
-     ,.len_ready_o(/* Unused */)
-     );
+    ,.data_o(data_lo)
+    ,.v_o(data_v_lo)
+    ,.ready_and_i(out_msg_ready_and_i)
+    );
 
   bp_bedrock_out_msg_s msg_cast_o;
   assign msg_cast_o = '{header: header_lo, data: data_lo};
-  assign out_msg_o = msg_cast_o;
-  wire has_data_out = payload_mask_p[header_lo.msg_type];
-  assign out_msg_v_o = header_v_lo & (data_v_lo | ~has_data_out);
+  assign out_msg_o  = msg_cast_o;
+
+  assign out_msg_v_o = header_v_lo & (data_v_lo | ~has_data);
 
   //synopsys translate_off
   initial
     begin
       assert (in_data_width_p < out_data_width_p)
-        else $error("Master data cannot be larger than client");
+        else $error("input burst data cannot be larger than output lite data");
       assert (out_data_width_p % in_data_width_p == 0)
-        else $error("Client data must be a multiple of master data");
+        else $error("output lite data must be a multiple of input burst data");
     end
 
   always_ff @(negedge clk_i)
     begin
     //  if (in_msg_header_ready_and_o & in_msg_header_v_i)
-    //    $display("[%t] Stream received: %p %x", $time, msg_header_cast_i, in_msg_data_i);
+    //    $display("[%t] Burst received: %p %x", $time, header_lo, in_msg_data_i);
 
     //  if (out_msg_ready_and_i & out_msg_v_o)
     //    $display("[%t] Msg sent: %p", $time, msg_cast_o);

@@ -149,7 +149,7 @@ module wrapper
       for (genvar i = 0; i < mc_x_dim_p; i++)
         begin : column
           bsg_cache_wh_header_flit_s header_flit;
-          assign header_flit = dram_cmd_link_lo[i];
+          assign header_flit = dram_cmd_link_lo[i].data;
           wire [`BSG_SAFE_CLOG2(cce_per_col_lp)-1:0] dma_id_li = header_flit.src_cord-1'b1;
           bsg_wormhole_to_cache_dma_fanout
            #(.wh_flit_width_p(mem_noc_flit_width_p)
