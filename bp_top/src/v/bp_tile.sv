@@ -689,7 +689,7 @@ module bp_tile
   assign cache_mem_cmd_v_li    = cmd_grant_li & cache_mem_cmd_ready_and_lo & is_cache_cmd;
   assign loopback_mem_cmd_v_li = cmd_grant_li & loopback_mem_cmd_ready_and_lo & is_loopback_cmd;
 
-  assign any_cmd_li = |{cfg_mem_cmd_v_li, clint_mem_cmd_v_li, cache_mem_cmd_v_li, loopback_mem_cmd_v_li};
+  wire any_cmd_li = |{cfg_mem_cmd_v_li, clint_mem_cmd_v_li, cache_mem_cmd_v_li, loopback_mem_cmd_v_li};
 
   assign cce_mem_cmd_yumi_li = cmd_grant_li & any_cmd_li;
 
