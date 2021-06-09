@@ -12,7 +12,7 @@ module bp_me_bedrock_register
    , parameter reg_width_p = dword_width_gp
    , parameter reg_addr_width_p = paddr_width_p
    , parameter els_p = 1
-   , parameter integer base_addr_p [els_p-1:0] = '0
+   , parameter integer base_addr_p [els_p-1:0] = '{0}
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -78,7 +78,7 @@ module bp_me_bedrock_register
       wire wr_not_rd  = (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
   for (genvar i = 0; i < els_p; i++)
     begin : dec
-      wire addr_match = mem_cmd_v_li & (mem_cmd_header_li.addr inside {base_addr_p[i]});
+      wire addr_match = mem_cmd_v_li & (mem_cmd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
       assign r_v_o[i] = addr_match & ~wr_not_rd;
       assign w_v_o[i] = addr_match &  wr_not_rd;
     end
