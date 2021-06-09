@@ -405,13 +405,15 @@ module bp_unicore_lite
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(clint_cmd)
+     ,.mem_cmd_header_i(clint_cmd.header)
+     ,.mem_cmd_data_i(clint_cmd.data)
      ,.mem_cmd_v_i(clint_cmd_v_li)
      ,.mem_cmd_ready_and_o(clint_cmd_ready_and_lo)
 
-     ,.mem_resp_o(clint_resp)
+     ,.mem_resp_header_o(clint_resp.header)
+     ,.mem_resp_data_o(clint_resp.data)
      ,.mem_resp_v_o(clint_resp_v_lo)
-     ,.mem_resp_yumi_i(clint_resp_yumi_li)
+     ,.mem_resp_ready_and_i(clint_resp_yumi_li)
 
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
