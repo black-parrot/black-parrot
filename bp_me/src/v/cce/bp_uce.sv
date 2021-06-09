@@ -166,108 +166,58 @@ module bp_uce
      ,.data_o(cache_req_metadata_r)
      );
 
-  logic dirty_data_read_en;
+  logic [block_width_p-1:0] dirty_data_r;
+  logic dirty_data_v_r;
   wire dirty_data_read = data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
   wire data_mem_clk = (data_mem_invert_clk_p ? ~clk_i : clk_i);
-  bsg_dff
-   #(.width_p(1))
-   dirty_data_read_en_reg
-    (.clk_i(data_mem_clk)
-
-     ,.data_i(dirty_data_read)
-     ,.data_o(dirty_data_read_en)
-     );
-
-  logic dirty_data_v_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   dirty_data_v_reg
-    (.clk_i(data_mem_clk)
-     ,.reset_i(reset_i)
-
-     ,.set_i(dirty_data_read_en)
-     ,.clear_i(dirty_data_read)
-     ,.data_o(dirty_data_v_r)
-     );
-
-  logic [block_width_p-1:0] dirty_data_r;
-  bsg_dff_en
+  bsg_dff_sync_read
    #(.width_p(block_width_p))
    dirty_data_reg
     (.clk_i(data_mem_clk)
-     ,.en_i(dirty_data_read_en)
-     ,.data_i(data_mem_i)
-     ,.data_o(dirty_data_r)
-     );
-
-  logic dirty_tag_read_en;
-  wire dirty_tag_read = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
-  wire tag_mem_clk = (tag_mem_invert_clk_p ? ~clk_i : clk_i);
-  bsg_dff
-   #(.width_p(1))
-   dirty_tag_read_en_reg
-    (.clk_i(tag_mem_clk)
-
-     ,.data_i(dirty_tag_read)
-     ,.data_o(dirty_tag_read_en)
-     );
-
-  logic dirty_tag_v_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   dirty_tag_v_reg
-    (.clk_i(tag_mem_clk)
      ,.reset_i(reset_i)
 
-     ,.set_i(dirty_tag_read_en)
-     ,.clear_i(dirty_tag_read)
-     ,.data_o(dirty_tag_v_r)
+     ,.data_i(data_mem_i)
+     ,.v_n_i(dirty_data_read)
+
+     ,.data_o(dirty_data_r)
+     ,.v_o(dirty_data_v_r)
+     ,.yumi_i(dirty_data_read)
      );
 
   bp_cache_tag_info_s dirty_tag_r;
-  bsg_dff_en
+  logic dirty_tag_v_r;
+  wire dirty_tag_read = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
+  wire tag_mem_clk = (tag_mem_invert_clk_p ? ~clk_i : clk_i);
+  bsg_dff_sync_read
    #(.width_p($bits(bp_cache_tag_info_s)))
    dirty_tag_reg
     (.clk_i(tag_mem_clk)
-
-    ,.en_i(dirty_tag_read_en)
-    ,.data_i(tag_mem_i)
-    ,.data_o(dirty_tag_r)
-    );
-
-  logic dirty_stat_read_en;
-  wire dirty_stat_read = stat_mem_pkt_yumi_i & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
-  wire stat_mem_clk = (stat_mem_invert_clk_p ? ~clk_i : clk_i);
-  bsg_dff
-   #(.width_p(1))
-   dirty_stat_read_en_reg
-    (.clk_i(stat_mem_clk)
-
-     ,.data_i(dirty_stat_read)
-     ,.data_o(dirty_stat_read_en)
-     );
-
-  logic dirty_stat_v_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   dirty_stat_v_reg
-    (.clk_i(stat_mem_clk)
      ,.reset_i(reset_i)
 
-     ,.set_i(dirty_stat_read_en)
-     ,.clear_i(dirty_stat_read)
-     ,.data_o(dirty_stat_v_r)
+     ,.data_i(tag_mem_i)
+     ,.v_n_i(dirty_tag_read)
+
+     ,.data_o(dirty_tag_r)
+     ,.v_o(dirty_tag_v_r)
+     ,.yumi_i(dirty_tag_read)
      );
 
   bp_cache_stat_info_s dirty_stat_r;
-  bsg_dff_en
+  logic dirty_stat_v_r;
+  wire dirty_stat_read = stat_mem_pkt_yumi_i & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
+  wire stat_mem_clk = (stat_mem_invert_clk_p ? ~clk_i : clk_i);
+  bsg_dff_sync_read
    #(.width_p($bits(bp_cache_stat_info_s)))
    dirty_stat_reg
     (.clk_i(stat_mem_clk)
+     ,.reset_i(reset_i)
 
-     ,.en_i(dirty_stat_read_en)
      ,.data_i(stat_mem_i)
+     ,.v_n_i(dirty_stat_read)
+
      ,.data_o(dirty_stat_r)
+     ,.v_o(dirty_stat_v_r)
+     ,.yumi_i(dirty_stat_read)
      );
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
@@ -277,17 +227,19 @@ module bp_uce
   wire uc_load_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
   wire uc_amo_v_li        = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
-  wire uc_hit_v_li        = cache_req_cast_i.hit & (uc_load_v_li | uc_store_v_li | uc_amo_v_li);
+  wire uc_hit_v_li        = cache_req_v_i & cache_req_cast_i.hit & (uc_load_v_li | uc_store_v_li | uc_amo_v_li);
 
   wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
   wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_amo};
 
   wire miss_load_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_r = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
-  wire miss_v_r       = miss_load_v_r | miss_store_v_r;
+  wire miss_v_r       = cache_req_v_r & miss_load_v_r | miss_store_v_r;
+  wire wt_store_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_wt_store};
   wire uc_load_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire uc_store_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
   wire uc_amo_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
+  wire uc_hit_v_r     = cache_req_v_r & cache_req_r.hit & (uc_load_v_r | uc_store_v_r | uc_amo_v_r);
 
   // When fill_width_p < block_width_p, multicycle fill and writeback is implemented in cache flush write,
   // cache miss load with and without dirty data writeback.
@@ -454,7 +406,7 @@ module bp_uce
   bp_bedrock_wr_subop_e mem_wr_subop;
   always_comb
     begin
-      cache_wr_subop = cache_req_v_i ? cache_req_cast_i.subop : cache_req_r.subop;
+      cache_wr_subop = cache_req_r.subop;
       unique case (cache_wr_subop)
         e_req_amolr  : mem_wr_subop = e_bedrock_amolr;
         e_req_amosc  : mem_wr_subop = e_bedrock_amosc;
@@ -598,34 +550,33 @@ module bp_uce
           end
         e_ready:
           begin
-            if ((uc_store_v_li && (~uc_hit_v_li || (l1_writethrough_p == 1))) || wt_store_v_li)
+            // Fire off a non-blocking request if we have one
+            if ((uc_store_v_r && (~uc_hit_v_r || (l1_writethrough_p == 1))) || wt_store_v_r)
               begin
                 mem_cmd_cast_o.header.msg_type       = e_bedrock_mem_uc_wr;
-                mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;
-                mem_cmd_cast_o.header.size           = bp_bedrock_msg_size_e'(cache_req_cast_i.size);
+                mem_cmd_cast_o.header.addr           = cache_req_r.addr;
+                mem_cmd_cast_o.header.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
                 mem_cmd_cast_payload.lce_id          = lce_id_i;
                 mem_cmd_cast_o.header.payload        = mem_cmd_cast_payload;
                 mem_cmd_cast_o.header.subop          = mem_wr_subop;
-                mem_cmd_cast_o.data                  = cache_req_cast_i.data;
+                mem_cmd_cast_o.data                  = cache_req_r.data;
                 mem_cmd_v_o                          = ~cache_req_credits_full_o;
 
                 cache_req_complete_o = mem_cmd_yumi_i;
-                cache_req_yumi_o = cache_req_complete_o;
               end
-            else
-              begin
-                cache_req_yumi_o = cache_req_v_i;
 
-                state_n = cache_req_yumi_o
-                          ? flush_v_li
-                            ? e_flush_read
-                            : clear_v_li
-                              ? e_clear
-                              : (uc_hit_v_li & (l1_writethrough_p == 0))
-                                ? e_uc_writeback_evict
-                                : e_send_critical
-                          : e_ready;
-              end
+            // We can accept a new request as long as we send out an old one this cycle
+            cache_req_yumi_o = cache_req_v_i & (~cache_req_v_r | cache_req_complete_o);
+
+            state_n = cache_req_yumi_o
+                      ? flush_v_li
+                        ? e_flush_read
+                        : clear_v_li
+                          ? e_clear
+                          : (uc_hit_v_li & (l1_writethrough_p == 0))
+                            ? e_uc_writeback_evict
+                            : e_send_critical
+                      : e_ready;
           end
 
         e_uc_writeback_evict:
@@ -680,7 +631,7 @@ module bp_uce
                           : e_read_req
                         : e_send_critical;
             end
-          else if (uc_load_v_r | uc_amo_v_r | uc_store_v_r)
+          else if (uc_load_v_r | uc_amo_v_r | uc_store_v_r | wt_store_v_r)
             begin
               mem_cmd_cast_o.header.msg_type       = uc_load_v_r ? e_bedrock_mem_uc_rd : uc_amo_v_r ? e_bedrock_mem_amo : e_bedrock_mem_uc_wr;
               mem_cmd_cast_o.header.addr           = cache_req_r.addr;
@@ -691,7 +642,9 @@ module bp_uce
               mem_cmd_cast_o.data                  = cache_req_r.data;
               mem_cmd_v_o                          = ~cache_req_credits_full_o;
 
-              state_n = mem_cmd_yumi_i ? uc_store_v_r ? e_ready: e_uc_read_wait : e_send_critical;
+              cache_req_complete_o = mem_cmd_yumi_i & (uc_store_v_r | wt_store_v_r);
+
+              state_n = mem_cmd_yumi_i ? (uc_store_v_r | wt_store_v_r) ? e_ready: e_uc_read_wait : e_send_critical;
             end
 
         e_writeback_evict:
