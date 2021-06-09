@@ -107,7 +107,7 @@ module bsg_parallel_in_serial_out_passthrough_dynamic_last
     // Zero length means the upcoming new transaction has single data word
     assign is_zero_cnt = (count_r == (lg_max_els_lp)'(0));
     assign is_last_cnt = ~is_zero_cnt & (count_r == len_r);
-    assign is_zero_len = ready_and_i & (len_i == (lg_max_els_lp)'(0));
+    assign is_zero_len = is_zero_cnt & (len_i == (lg_max_els_lp)'(0));
 
     // Update length when sending the first data word of new transaction
     // Count up when sending out data words
@@ -121,7 +121,7 @@ module bsg_parallel_in_serial_out_passthrough_dynamic_last
     assign v_o         = v_i;
     // Dequeue incoming parallel data at the end of each transaction.
     // When incoming data is single-word, dequeue immediately.
-    assign ready_and_o = (ready_and_i & is_last_cnt) | is_zero_len;
+    assign ready_and_o = ready_and_i & (is_last_cnt | is_zero_len);
     assign first_o     = is_zero_cnt;
     // last_o is raised on last data word being output
     assign last_o      = is_zero_len | is_last_cnt;
