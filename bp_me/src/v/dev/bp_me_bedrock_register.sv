@@ -83,15 +83,19 @@ module bp_me_bedrock_register
      ,.yumi_i(mem_cmd_yumi_li)
      );
 
+  wire wr_not_rd  = mem_cmd_v_li & (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
+  wire rd_not_wr  = mem_cmd_v_li & (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
+  logic v_r;
   logic [els_p-1:0] r_v_r;
   bsg_dff_reset_set_clear
-   #(.width_p(els_p), .clear_over_set_p(1))
+   #(.width_p(1+els_p), .clear_over_set_p(1))
    v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(r_v_o)
-     ,.clear_i({els_p{mem_cmd_yumi_li}})
-     ,.data_o(r_v_r)
+     // We also track reads which don't match to prevent deadlock
+     ,.set_i({rd_not_wr, r_v_o})
+     ,.clear_i({(els_p+1){mem_cmd_yumi_li}})
+     ,.data_o({v_r, r_v_r})
      );
 
   logic [reg_width_p-1:0] rdata_lo;
@@ -103,7 +107,6 @@ module bp_me_bedrock_register
      ,.data_o(rdata_lo)
      );
 
-      wire wr_not_rd  = (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
   for (genvar i = 0; i < els_p; i++)
     begin : dec
       wire addr_match = mem_cmd_v_li & (mem_cmd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
@@ -116,9 +119,17 @@ module bp_me_bedrock_register
 
   assign mem_resp_header_o = mem_cmd_header_li;
   assign mem_resp_data_o = rdata_lo;
-  assign mem_resp_v_o = |(r_v_r | w_v_o);
+  assign mem_resp_v_o = v_r | wr_not_rd;
   assign mem_resp_last_o = mem_resp_v_o;
   assign mem_cmd_yumi_li = mem_resp_ready_and_i & mem_resp_v_o;
+
+  //synopsys translate_off
+  always_ff @(negedge clk_i)
+    begin
+      assert (~mem_cmd_v_li | (~wr_not_rd | |w_v_o) | (~rd_not_wr | |r_v_o))
+        else $display("Command to non-existent register: %x", addr_o);
+    end
+  //synopsys translate_on
 
 endmodule
 
