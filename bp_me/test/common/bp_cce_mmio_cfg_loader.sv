@@ -64,7 +64,8 @@ module bp_cce_mmio_cfg_loader
 
   logic [dword_width_gp-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
   logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
-  logic [dword_width_gp-1:0]    cce_inst_boot_rom_data;
+  // To prevent x-prop
+  bit [dword_width_gp-1:0]    cce_inst_boot_rom_data;
 
   initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
 
@@ -236,8 +237,6 @@ module bp_cce_mmio_cfg_loader
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = dev_addr_width_gp'(cfg_mem_cce_ucode_base_gp) + (ucode_cnt_r << 3);
           cfg_data_lo = cce_inst_boot_rom_data;
-          // TODO: This is nonsynth, won't work on FPGA
-          cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
         end
         SEND_ICACHE_NORMAL: begin
           state_n = core_prog_done ? SEND_DCACHE_NORMAL : SEND_ICACHE_NORMAL;

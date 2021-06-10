@@ -147,7 +147,7 @@ module bp_l2e_tile
   logic cce_ucode_w_lo;
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
-  bp_cfg
+  bp_me_cfg
    #(.bp_params_p(bp_params_p))
    cfg
     (.clk_i(clk_i)
