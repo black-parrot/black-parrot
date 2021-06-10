@@ -409,11 +409,13 @@ module bp_unicore_lite
      ,.mem_cmd_data_i(clint_cmd.data)
      ,.mem_cmd_v_i(clint_cmd_v_li)
      ,.mem_cmd_ready_and_o(clint_cmd_ready_and_lo)
+     ,.mem_cmd_last_i(clint_cmd_v_li)
 
      ,.mem_resp_header_o(clint_resp.header)
      ,.mem_resp_data_o(clint_resp.data)
      ,.mem_resp_v_o(clint_resp_v_lo)
      ,.mem_resp_ready_and_i(clint_resp_yumi_li)
+     ,.mem_resp_last_o()
 
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
@@ -430,11 +432,13 @@ module bp_unicore_lite
      ,.mem_cmd_data_i(cfg_cmd.data)
      ,.mem_cmd_v_i(cfg_cmd_v_li)
      ,.mem_cmd_ready_and_o(cfg_cmd_ready_and_lo)
+     ,.mem_cmd_last_i(cfg_cmd_v_li)
 
      ,.mem_resp_header_o(cfg_resp.header)
      ,.mem_resp_data_o(cfg_resp.data)
      ,.mem_resp_v_o(cfg_resp_v_lo)
      ,.mem_resp_ready_and_i(cfg_resp_yumi_li)
+     ,.mem_resp_last_o()
 
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i('0)
@@ -458,11 +462,13 @@ module bp_unicore_lite
      ,.mem_cmd_data_i(loopback_cmd.data)
      ,.mem_cmd_v_i(loopback_cmd_v_li)
      ,.mem_cmd_ready_and_o(loopback_cmd_ready_and_lo)
+     ,.mem_cmd_last_i(loopback_cmd_v_li)
 
      ,.mem_resp_header_o(loopback_resp.header)
      ,.mem_resp_data_o(loopback_resp.data)
      ,.mem_resp_v_o(loopback_resp_v_lo)
      ,.mem_resp_ready_and_i(loopback_resp_yumi_li)
+     ,.mem_resp_last_o()
      );
 
 endmodule

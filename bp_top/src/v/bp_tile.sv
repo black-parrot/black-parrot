@@ -176,11 +176,13 @@ module bp_tile
      ,.mem_cmd_data_i(cfg_mem_cmd.data)
      ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_and_lo)
+     ,.mem_cmd_last_i(cfg_mem_cmd_v_li)
 
      ,.mem_resp_header_o(cfg_mem_resp.header)
      ,.mem_resp_data_o(cfg_mem_resp.data)
      ,.mem_resp_v_o(cfg_mem_resp_v_lo)
      ,.mem_resp_ready_and_i(cfg_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
 
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i(my_did_i)
@@ -204,11 +206,13 @@ module bp_tile
      ,.mem_cmd_data_i(clint_mem_cmd.data)
      ,.mem_cmd_v_i(clint_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(clint_mem_cmd_ready_and_lo)
+     ,.mem_cmd_last_i(clint_mem_cmd_v_li)
 
      ,.mem_resp_header_o(clint_mem_resp.header)
      ,.mem_resp_data_o(clint_mem_resp.data)
      ,.mem_resp_v_o(clint_mem_resp_v_lo)
      ,.mem_resp_ready_and_i(clint_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
 
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
@@ -845,11 +849,13 @@ module bp_tile
      ,.mem_cmd_data_i(loopback_mem_cmd.data)
      ,.mem_cmd_v_i(loopback_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(loopback_mem_cmd_ready_and_lo)
+     ,.mem_cmd_last_i(loopback_mem_cmd_v_li)
 
      ,.mem_resp_header_o(loopback_mem_resp.header)
      ,.mem_resp_data_o(loopback_mem_resp.data)
      ,.mem_resp_v_o(loopback_mem_resp_v_lo)
      ,.mem_resp_ready_and_i(loopback_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
      );
 
 endmodule
