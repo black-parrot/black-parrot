@@ -53,6 +53,9 @@ module bp_me_bedrock_register
 
    // Synchronous register read/write interface.
    // Actually 1rw, but expose both ports to prevent unnecessary and gates
+   // Assume latch last read behavior at registers, and do not have
+   //   unnecessary read/writes. This could be parameterizable, but requires
+   //   a read register in this module to do and maintain helpfulness
    , output logic [els_p-1:0]                       r_v_o
    , output logic [els_p-1:0]                       w_v_o
    , output logic [reg_addr_width_p-1:0]            addr_o
@@ -83,9 +86,10 @@ module bp_me_bedrock_register
      ,.yumi_i(mem_cmd_yumi_li)
      );
 
-  wire wr_not_rd  = mem_cmd_v_li & (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
-  wire rd_not_wr  = mem_cmd_v_li & (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
   logic v_r;
+  wire wr_not_rd  = (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
+  wire rd_not_wr  = (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
+  wire v_n = mem_cmd_v_li & ~v_r;
   logic [els_p-1:0] r_v_r;
   bsg_dff_reset_set_clear
    #(.width_p(1+els_p), .clear_over_set_p(1))
@@ -93,7 +97,7 @@ module bp_me_bedrock_register
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      // We also track reads which don't match to prevent deadlock
-     ,.set_i({rd_not_wr, r_v_o})
+     ,.set_i({v_n, r_v_o})
      ,.clear_i({(els_p+1){mem_cmd_yumi_li}})
      ,.data_o({v_r, r_v_r})
      );
@@ -110,8 +114,8 @@ module bp_me_bedrock_register
   for (genvar i = 0; i < els_p; i++)
     begin : dec
       wire addr_match = mem_cmd_v_li & (mem_cmd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
-      assign r_v_o[i] = addr_match & ~wr_not_rd;
-      assign w_v_o[i] = addr_match &  wr_not_rd;
+      assign r_v_o[i] = ~v_r & addr_match & ~wr_not_rd;
+      assign w_v_o[i] = ~v_r & addr_match &  wr_not_rd;
     end
       assign addr_o = (mem_cmd_header_li.addr);
       assign size_o = (mem_cmd_header_li.size);
@@ -119,14 +123,14 @@ module bp_me_bedrock_register
 
   assign mem_resp_header_o = mem_cmd_header_li;
   assign mem_resp_data_o = rdata_lo;
-  assign mem_resp_v_o = v_r | wr_not_rd;
+  assign mem_resp_v_o = v_r;
   assign mem_resp_last_o = mem_resp_v_o;
   assign mem_cmd_yumi_li = mem_resp_ready_and_i & mem_resp_v_o;
 
   //synopsys translate_off
   always_ff @(negedge clk_i)
     begin
-      assert (~mem_cmd_v_li | (~wr_not_rd | |w_v_o) | (~rd_not_wr | |r_v_o))
+      assert (~mem_cmd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
         else $display("Command to non-existent register: %x", addr_o);
     end
   //synopsys translate_on
