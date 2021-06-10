@@ -665,13 +665,17 @@ bp_cfg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.mem_cmd_i(cfg_mem_cmd)
+   ,.mem_cmd_header_i(cfg_mem_cmd.header)
+   ,.mem_cmd_data_i(cfg_mem_cmd.data)
    ,.mem_cmd_v_i(cfg_mem_cmd_v_lo)
    ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_and_li)
+   ,.mem_cmd_last_i(cfg_mem_cmd_v_lo)
 
-   ,.mem_resp_o()
+   ,.mem_resp_header_o()
+   ,.mem_resp_data_o()
    ,.mem_resp_v_o(cfg_resp_v_lo)
-   ,.mem_resp_yumi_i(cfg_resp_v_lo)
+   ,.mem_resp_ready_and_i(cfg_resp_v_lo)
+   ,.mem_resp_last_o()
 
    ,.cfg_bus_o(cfg_bus_lo)
    ,.did_i('0)
