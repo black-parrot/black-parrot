@@ -153,13 +153,17 @@ module bp_l2e_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(cfg_mem_cmd)
+     ,.mem_cmd_header_i(cfg_mem_cmd.header)
+     ,.mem_cmd_data_i(cfg_mem_cmd.data)
      ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_lo)
+     ,.mem_cmd_last_i(cfg_mem_cmd_v_li)
 
-     ,.mem_resp_o(cfg_mem_resp)
+     ,.mem_resp_header_o(cfg_mem_resp.header)
+     ,.mem_resp_data_o(cfg_mem_resp.data)
      ,.mem_resp_v_o(cfg_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(cfg_mem_resp_yumi_li)
+     ,.mem_resp_ready_and_i(cfg_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
 
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i(my_did_i)
@@ -277,7 +281,7 @@ module bp_l2e_tile
      )
    cce_lce_req_wh_to_burst
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
 
     ,.link_data_i(lce_req_link_cast_i.data)
     ,.link_v_i(lce_req_link_cast_i.v)
@@ -315,7 +319,7 @@ module bp_l2e_tile
      )
    cce_lce_cmd_burst_to_wh
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
 
     ,.pr_hdr_i(cce_lce_cmd_wh_header_lo[0+:($bits(bp_lce_cmd_wormhole_header_s)-lce_cmd_wh_pad_width_lp)])
     ,.pr_hdr_v_i(cce_lce_cmd_header_v)
@@ -354,7 +358,7 @@ module bp_l2e_tile
      )
    cce_lce_resp_wh_to_burst
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
 
     ,.link_data_i(lce_resp_link_cast_i.data)
     ,.link_v_i(lce_resp_link_cast_i.v)
@@ -383,7 +387,7 @@ module bp_l2e_tile
      )
    mem_cmd_burst2lite
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.in_msg_header_i(cce_mem_cmd_header)
      ,.in_msg_header_v_i(cce_mem_cmd_header_v)
@@ -413,7 +417,7 @@ module bp_l2e_tile
      )
    mem_resp_lite2burst
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.in_msg_i(cce_mem_resp_li)
      ,.in_msg_v_i(cce_mem_resp_v_li)
@@ -478,7 +482,7 @@ module bp_l2e_tile
    #(.bp_params_p(bp_params_p))
    cce_to_cache
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.mem_cmd_i(cache_mem_cmd_li)
      ,.mem_cmd_v_i(cache_mem_cmd_v_li)
@@ -524,7 +528,7 @@ module bp_l2e_tile
     )
    cache
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.cache_pkt_i(cache_pkt_li)
      ,.v_i(cache_pkt_v_li)
@@ -560,7 +564,7 @@ module bp_l2e_tile
      )
    bsg_cache_dma_to_wormhole
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.dma_pkt_i(dma_pkt_lo)
      ,.dma_pkt_v_i(dma_pkt_v_lo)
@@ -589,13 +593,17 @@ module bp_l2e_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(loopback_mem_cmd)
+     ,.mem_cmd_header_i(loopback_mem_cmd.header)
+     ,.mem_cmd_data_i(loopback_mem_cmd.data)
      ,.mem_cmd_v_i(loopback_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(loopback_mem_cmd_ready_lo)
+     ,.mem_cmd_last_i(loopback_mem_cmd_v_li)
 
-     ,.mem_resp_o(loopback_mem_resp)
+     ,.mem_resp_header_o(loopback_mem_resp.header)
+     ,.mem_resp_data_o(loopback_mem_resp.data)
      ,.mem_resp_v_o(loopback_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(loopback_mem_resp_yumi_li)
+     ,.mem_resp_ready_and_i(loopback_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
      );
 
 endmodule

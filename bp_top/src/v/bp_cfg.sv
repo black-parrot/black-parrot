@@ -52,18 +52,15 @@ module bp_cfg
   logic [cfg_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
   logic [8:0][dword_width_gp-1:0] data_li;
-
-  localparam integer base_addr_lp [8:0] =
-    '{cfg_reg_cord_gp, cfg_reg_did_gp, cfg_reg_host_did_gp, cfg_reg_hio_mask_gp
-      ,cfg_reg_cce_mode_gp, cfg_reg_dcache_mode_gp, cfg_reg_icache_mode_gp
-      ,cfg_mem_cce_ucode_gp
-      ,cfg_reg_freeze_gp
-      };
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
      ,.els_p(9)
      ,.reg_addr_width_p(cfg_addr_width_gp)
-     ,.base_addr_p(base_addr_lp)
+     ,.base_addr_p({cfg_reg_cord_gp, cfg_reg_did_gp, cfg_reg_host_did_gp, cfg_reg_hio_mask_gp
+                    ,cfg_reg_cce_mode_gp, cfg_reg_dcache_mode_gp, cfg_reg_icache_mode_gp
+                    ,cfg_mem_cce_ucode_gp
+                    ,cfg_reg_freeze_gp
+                    })
      )
    register
     (.*

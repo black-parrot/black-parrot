@@ -40,12 +40,11 @@ module bp_clint_slice
   logic [dword_width_gp-1:0] data_lo;
   logic [3:0][dword_width_gp-1:0] data_li;
   logic plic_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
-  localparam integer base_addr_lp [3:0] = '{plic_reg_base_addr_gp, mtime_reg_addr_gp, mtimecmp_reg_base_addr_gp, mipi_reg_base_addr_gp};
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
      ,.els_p(4)
      ,.reg_addr_width_p(cfg_addr_width_gp)
-     ,.base_addr_p(base_addr_lp)
+     ,.base_addr_p({plic_reg_base_addr_gp, mtime_reg_addr_gp, mtimecmp_reg_base_addr_gp, mipi_reg_base_addr_gp})
      )
    register
     (.*

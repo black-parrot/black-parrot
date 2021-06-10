@@ -84,11 +84,11 @@ module bp_nonsynth_host
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  localparam bootrom_base_addr_gp = paddr_width_p'(64'h0001_????);
-  localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
-  localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
-  localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
-  localparam putch_core_base_addr_gp  = paddr_width_p'(64'h0010_3???);
+  //localparam bootrom_base_addr_gp = paddr_width_p'(64'h0001_????);
+  //localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
+  //localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
+  //localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
+  //localparam putch_core_base_addr_gp  = paddr_width_p'(64'h0010_3???);
   bp_bedrock_cce_mem_msg_s io_cmd_li, io_cmd_lo;
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
 

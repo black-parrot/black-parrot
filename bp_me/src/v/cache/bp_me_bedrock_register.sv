@@ -23,10 +23,14 @@ module bp_me_bedrock_register
    , parameter reg_addr_width_p = paddr_width_p
    // The number of registers to control
    , parameter els_p = 1
-   // An unpacked array of integer register base addresses
-   //   e.g. localparam integer base_addr_lp [1:0] = '{0xf00bad, 0x00cafe}
-   // Can also accept pattern matches such as 0x8???
-   , parameter integer base_addr_p [els_p-1:0] = '{0}
+
+   // We would like to use unpacked here, but Verilator 4.202 does not support it
+   // Unsupported tristate construct: INITITEM
+   //// An unpacked array of integer register base addresses
+   ////   e.g. localparam integer base_addr_lp [1:0] = '{0xf00bad, 0x00cafe}
+   //// Can also accept pattern matches such as 0x8???
+   //, parameter integer base_addr_p [els_p-1:0] = '{0}
+   , parameter [els_p-1:0][reg_addr_width_p-1:0] base_addr_p = '{0}
    )
   (input                                            clk_i
    , input                                          reset_i
