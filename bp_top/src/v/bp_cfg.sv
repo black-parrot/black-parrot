@@ -49,16 +49,16 @@ module bp_cfg
   logic cord_w_v_li, did_w_v_li, host_did_w_v_li, hio_mask_w_v_li;
   logic cce_ucode_r_v_li, cce_mode_r_v_li, dcache_mode_r_v_li, icache_mode_r_v_li, freeze_r_v_li;
   logic cce_ucode_w_v_li, cce_mode_w_v_li, dcache_mode_w_v_li, icache_mode_w_v_li, freeze_w_v_li;
-  logic [cfg_addr_width_gp-1:0] addr_lo;
+  logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
   logic [8:0][dword_width_gp-1:0] data_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
      ,.els_p(9)
-     ,.reg_addr_width_p(cfg_addr_width_gp)
+     ,.reg_addr_width_p(dev_addr_width_gp)
      ,.base_addr_p({cfg_reg_cord_gp, cfg_reg_did_gp, cfg_reg_host_did_gp, cfg_reg_hio_mask_gp
                     ,cfg_reg_cce_mode_gp, cfg_reg_dcache_mode_gp, cfg_reg_icache_mode_gp
-                    ,cfg_mem_cce_ucode_gp
+                    ,cfg_mem_cce_ucode_match_gp
                     ,cfg_reg_freeze_gp
                     })
      )
@@ -75,6 +75,7 @@ module bp_cfg
               ,freeze_w_v_li
               })
      ,.addr_o(addr_lo)
+     ,.size_o()
      ,.data_o(data_lo)
      ,.data_i(data_li)
      );

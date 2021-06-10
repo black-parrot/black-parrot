@@ -36,15 +36,15 @@ module bp_clint_slice
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
   `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
-  logic [cfg_addr_width_gp-1:0] addr_lo;
+  logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
   logic [3:0][dword_width_gp-1:0] data_li;
   logic plic_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
      ,.els_p(4)
-     ,.reg_addr_width_p(cfg_addr_width_gp)
-     ,.base_addr_p({plic_reg_base_addr_gp, mtime_reg_addr_gp, mtimecmp_reg_base_addr_gp, mipi_reg_base_addr_gp})
+     ,.reg_addr_width_p(dev_addr_width_gp)
+     ,.base_addr_p({plic_reg_addr_gp, mtime_reg_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
      )
    register
     (.*
@@ -52,6 +52,7 @@ module bp_clint_slice
      ,.r_v_o()
      ,.w_v_o({plic_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li})
      ,.addr_o(addr_lo)
+     ,.size_o()
      ,.data_o(data_lo)
      ,.data_i(data_li)
      );

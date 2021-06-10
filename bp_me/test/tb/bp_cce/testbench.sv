@@ -690,19 +690,8 @@ bp_cfg
    );
 
 // CFG loader
-localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
-
-logic cfg_loader_resp_v;
-always_ff @(posedge clk_i) begin
-  if (reset_i) begin
-    cfg_loader_resp_v <= '0;
-  end else begin
-    cfg_loader_resp_v <= cfg_mem_cmd_v_lo & cfg_mem_cmd_ready_and_li;
-  end
-end
-
 logic cfg_loader_done_lo;
-
+localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
   #(.bp_params_p(bp_params_p)
     ,.inst_width_p($bits(bp_cce_inst_s))
@@ -721,12 +710,8 @@ bp_cce_mmio_cfg_loader
    ,.io_cmd_v_o(cfg_mem_cmd_v_lo)
    ,.io_cmd_yumi_i(cfg_mem_cmd_ready_and_li & cfg_mem_cmd_v_lo)
 
-   // Response port not used by module, except for flow control counter.
-   // cfg_loader_resp_v is cfg_mem_cmd_yumi_li delayed one cycle through a
-   // register. Every io_cmd sent out will be responded to the next cycle,
-   // to keep the flow control counter correct.
    ,.io_resp_i('0)
-   ,.io_resp_v_i(cfg_loader_resp_v)
+   ,.io_resp_v_i(cfg_resp_v_lo)
    ,.io_resp_ready_o()
 
    ,.done_o(cfg_loader_done_lo)

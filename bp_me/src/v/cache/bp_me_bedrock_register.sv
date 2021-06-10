@@ -30,7 +30,9 @@ module bp_me_bedrock_register
    ////   e.g. localparam integer base_addr_lp [1:0] = '{0xf00bad, 0x00cafe}
    //// Can also accept pattern matches such as 0x8???
    //, parameter integer base_addr_p [els_p-1:0] = '{0}
-   , parameter [els_p-1:0][reg_addr_width_p-1:0] base_addr_p = '{0}
+   , parameter [els_p-1:0][reg_addr_width_p-1:0] base_addr_p = '0
+
+   , localparam lg_reg_width_lp = `BSG_WIDTH(`BSG_SAFE_CLOG2(reg_width_p/8))
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -54,6 +56,7 @@ module bp_me_bedrock_register
    , output logic [els_p-1:0]                       r_v_o
    , output logic [els_p-1:0]                       w_v_o
    , output logic [reg_addr_width_p-1:0]            addr_o
+   , output logic [lg_reg_width_lp-1:0]             size_o
    , output logic [reg_width_p-1:0]                 data_o
    , input [els_p-1:0][reg_width_p-1:0]             data_i
    );
@@ -80,15 +83,15 @@ module bp_me_bedrock_register
      ,.yumi_i(mem_cmd_yumi_li)
      );
 
-  logic [els_p-1:0] v_r;
+  logic [els_p-1:0] r_v_r;
   bsg_dff_reset_set_clear
    #(.width_p(els_p), .clear_over_set_p(1))
    v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(w_v_o | r_v_o)
+     ,.set_i(r_v_o)
      ,.clear_i({els_p{mem_cmd_yumi_li}})
-     ,.data_o(v_r)
+     ,.data_o(r_v_r)
      );
 
   logic [reg_width_p-1:0] rdata_lo;
@@ -96,7 +99,7 @@ module bp_me_bedrock_register
    #(.width_p(reg_width_p), .els_p(els_p))
    rmux_oh
     (.data_i(data_i)
-     ,.sel_one_hot_i(v_r)
+     ,.sel_one_hot_i(r_v_r)
      ,.data_o(rdata_lo)
      );
 
@@ -108,12 +111,13 @@ module bp_me_bedrock_register
       assign w_v_o[i] = addr_match &  wr_not_rd;
     end
       assign addr_o = (mem_cmd_header_li.addr);
+      assign size_o = (mem_cmd_header_li.size);
       assign data_o = (mem_cmd_data_li);
 
   assign mem_resp_header_o = mem_cmd_header_li;
   assign mem_resp_data_o = rdata_lo;
-  assign mem_resp_v_o = |v_r;
-  assign mem_resp_last_o = 1'b1;
+  assign mem_resp_v_o = |(r_v_r | w_v_o);
+  assign mem_resp_last_o = mem_resp_v_o;
   assign mem_cmd_yumi_li = mem_resp_ready_and_i & mem_resp_v_o;
 
 endmodule

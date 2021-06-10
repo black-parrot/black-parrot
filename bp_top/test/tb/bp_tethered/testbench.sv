@@ -239,13 +239,17 @@ module testbench
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.io_cmd_i(proc_io_cmd_lo)
-     ,.io_cmd_v_i(proc_io_cmd_v_lo)
-     ,.io_cmd_ready_and_o(proc_io_cmd_ready_and_li)
+     ,.mem_cmd_header_i(proc_io_cmd_lo.header)
+     ,.mem_cmd_data_i(proc_io_cmd_lo.data[0+:dword_width_gp])
+     ,.mem_cmd_v_i(proc_io_cmd_v_lo)
+     ,.mem_cmd_ready_and_o(proc_io_cmd_ready_and_li)
+     ,.mem_cmd_last_i(proc_io_cmd_v_lo)
 
-     ,.io_resp_o(proc_io_resp_li)
-     ,.io_resp_v_o(proc_io_resp_v_li)
-     ,.io_resp_yumi_i(proc_io_resp_yumi_lo)
+     ,.mem_resp_header_o(proc_io_resp_li.header)
+     ,.mem_resp_data_o(proc_io_resp_li.data[0+:dword_width_gp])
+     ,.mem_resp_v_o(proc_io_resp_v_li)
+     ,.mem_resp_ready_and_i(proc_io_resp_yumi_lo)
+     ,.mem_resp_last_o()
 
      ,.icache_trace_en_o(icache_trace_en_lo)
      ,.dcache_trace_en_o(dcache_trace_en_lo)
