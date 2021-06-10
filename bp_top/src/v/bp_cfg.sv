@@ -105,9 +105,11 @@ module bp_cfg
         hio_mask_r <= hio_mask_w_v_li ? data_lo : hio_mask_r;
       end
 
+  // Access to CCE ucode memory must be aligned
+  localparam cce_pc_offset_width_lp = `BSG_SAFE_CLOG2(cce_pc_width_p>>3);
   assign cce_ucode_v_o    = cce_ucode_r_v_li | cce_ucode_w_v_li;
   assign cce_ucode_w_o    = cce_ucode_w_v_li;
-  assign cce_ucode_addr_o = addr_lo[3+:cce_pc_width_p];
+  assign cce_ucode_addr_o = addr_lo[cce_pc_offset_width_lp+:cce_pc_width_p];
   assign cce_ucode_data_o = data_lo[0+:cce_instr_width_gp];
 
   logic [core_id_width_p-1:0] core_id_li;

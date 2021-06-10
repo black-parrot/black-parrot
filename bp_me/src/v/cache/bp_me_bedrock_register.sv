@@ -2,6 +2,13 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
+//
+// This module is used to interface a BP Stream interface to a general-purpose
+//   register read/write interface. The data is stored externally so that
+//   control/status registers can be controlled by this interface while
+//   retaining special semantics. Registers are assumed to be synchronous
+//   read/write which is compatible (although suboptimal) for asynchronous
+//   registers.
 module bp_me_bedrock_register
  import bp_common_pkg::*;
  import bp_me_pkg::*;
@@ -9,14 +16,22 @@ module bp_me_bedrock_register
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
 
+   // The width of the registers. Currently, must all be the same.
    , parameter reg_width_p = dword_width_gp
+   // The address width of the registers. For addresses less than paddr_width_p,
+   //   the upper bits of the paddr are ignored for matching purposes
    , parameter reg_addr_width_p = paddr_width_p
+   // The number of registers to control
    , parameter els_p = 1
+   // An unpacked array of integer register base addresses
+   //   e.g. localparam integer base_addr_lp [1:0] = '{0xf00bad, 0x00cafe}
+   // Can also accept pattern matches such as 0x8???
    , parameter integer base_addr_p [els_p-1:0] = '{0}
    )
   (input                                            clk_i
    , input                                          reset_i
 
+   // Network-side BP-Stream interface
    , input [xce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
@@ -30,7 +45,7 @@ module bp_me_bedrock_register
    , output logic                                   mem_resp_last_o
 
 
-   // Synchronous read/write interface.
+   // Synchronous register read/write interface.
    // Actually 1rw, but expose both ports to prevent unnecessary and gates
    , output logic [els_p-1:0]                       r_v_o
    , output logic [els_p-1:0]                       w_v_o
@@ -48,7 +63,7 @@ module bp_me_bedrock_register
   logic mem_cmd_v_li, mem_cmd_yumi_li;
   bsg_one_fifo
    #(.width_p($bits(bp_bedrock_xce_mem_msg_s)))
-   header_fifo
+   cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
   
