@@ -166,7 +166,7 @@ module bp_tile
   logic cce_ucode_w_lo;
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
-  bp_cfg
+  bp_me_cfg
    #(.bp_params_p(bp_params_p))
    cfg
     (.clk_i(clk_i)
@@ -196,7 +196,7 @@ module bp_tile
      ,.cce_ucode_data_i(cce_ucode_data_li)
      );
 
-  bp_clint_slice
+  bp_me_clint_slice
    #(.bp_params_p(bp_params_p))
    clint
     (.clk_i(clk_i)
@@ -839,7 +839,7 @@ module bp_tile
      ,.dest_wh_cid_i('0)
      );
 
-  bp_cce_loopback
+  bp_me_loopback
    #(.bp_params_p(bp_params_p))
    loopback
     (.clk_i(clk_i)

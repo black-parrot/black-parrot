@@ -587,7 +587,7 @@ module bp_l2e_tile
      ,.dest_wh_cid_i('0)
      );
 
-  bp_cce_loopback
+  bp_me_loopback
    #(.bp_params_p(bp_params_p))
    loopback
     (.clk_i(clk_i)

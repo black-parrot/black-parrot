@@ -176,14 +176,12 @@ $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 # CACHE
-$BP_ME_DIR/src/v/cache/bp_me_bedrock_register.sv
+$BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
+$BP_ME_DIR/src/v/dev/bp_me_cfg.sv
 # NETWORK
 $BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
 $BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
-## TOP Files
-$BP_TOP_DIR/src/v/bp_loopback.sv
-$BP_TOP_DIR/src/v/bp_cfg.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv

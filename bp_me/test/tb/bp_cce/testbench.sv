@@ -659,7 +659,7 @@ bp_mem_nonsynth_tracer
 
 logic [coh_noc_cord_width_p-1:0] cord_li = {{coh_noc_y_cord_width_p'(1'b1)}, {coh_noc_x_cord_width_p'('0)}};
 logic cfg_resp_v_lo;
-bp_cfg
+bp_me_cfg
  #(.bp_params_p(bp_params_p))
  cfg
   (.clk_i(clk_i)

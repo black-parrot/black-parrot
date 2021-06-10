@@ -219,7 +219,7 @@ $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 # Cache
-$BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_alu.sv
@@ -259,32 +259,6 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.sv
 $BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
 $BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
-## TOP
-$BP_TOP_DIR/src/v/bp_loopback.sv
-$BP_TOP_DIR/src/v/bp_nd_socket.sv
-$BP_TOP_DIR/src/v/bp_cacc_vdp.sv
-$BP_TOP_DIR/src/v/bp_cacc_tile.sv
-$BP_TOP_DIR/src/v/bp_cacc_tile_node.sv
-$BP_TOP_DIR/src/v/bp_cacc_complex.sv
-$BP_TOP_DIR/src/v/bp_sacc_vdp.sv
-$BP_TOP_DIR/src/v/bp_sacc_tile.sv
-$BP_TOP_DIR/src/v/bp_sacc_tile_node.sv
-$BP_TOP_DIR/src/v/bp_sacc_complex.sv
-$BP_TOP_DIR/src/v/bp_cfg.sv
-$BP_TOP_DIR/src/v/bp_core.sv
-$BP_TOP_DIR/src/v/bp_core_complex.sv
-$BP_TOP_DIR/src/v/bp_clint_slice.sv
-$BP_TOP_DIR/src/v/bp_l2e_tile.sv
-$BP_TOP_DIR/src/v/bp_l2e_tile_node.sv
-$BP_TOP_DIR/src/v/bp_io_complex.sv
-$BP_TOP_DIR/src/v/bp_io_link_to_lce.sv
-$BP_TOP_DIR/src/v/bp_io_tile.sv
-$BP_TOP_DIR/src/v/bp_io_tile_node.sv
-$BP_TOP_DIR/src/v/bp_mem_complex.sv
-$BP_TOP_DIR/src/v/bp_multicore.sv
-$BP_TOP_DIR/src/v/bp_unicore.sv
-$BP_TOP_DIR/src/v/bp_tile.sv
-$BP_TOP_DIR/src/v/bp_tile_node.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv

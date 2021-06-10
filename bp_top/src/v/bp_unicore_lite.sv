@@ -399,7 +399,7 @@ module bp_unicore_lite
 
   assign proc_cmd_yumi_li = proc_cmd_grant_lo & {3{any_cmd_li}};
 
-  bp_clint_slice
+  bp_me_clint_slice
    #(.bp_params_p(bp_params_p))
    clint
     (.clk_i(clk_i)
@@ -422,7 +422,7 @@ module bp_unicore_lite
      ,.external_irq_o(external_irq_li)
      );
 
-  bp_cfg
+  bp_me_cfg
    #(.bp_params_p(bp_params_p))
    cfg
     (.clk_i(clk_i)
@@ -452,7 +452,7 @@ module bp_unicore_lite
      ,.cce_ucode_data_i('0)
      );
 
-  bp_cce_loopback
+  bp_me_loopback
    #(.bp_params_p(bp_params_p))
    loopback
     (.clk_i(clk_i)
