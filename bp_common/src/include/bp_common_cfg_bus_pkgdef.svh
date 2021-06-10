@@ -47,7 +47,7 @@
   localparam cfg_reg_dcache_mode_gp    = 'h0404;
   localparam cfg_reg_cce_id_gp         = 'h0600;
   localparam cfg_reg_cce_mode_gp       = 'h0604;
-  localparam cfg_mem_base_cce_ucode_gp = 'h8000;
+  localparam cfg_mem_cce_ucode_gp      = 'h8???;
 
 `endif
 

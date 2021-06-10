@@ -15,75 +15,49 @@ module bp_clint_slice
   (input                                                clk_i
    , input                                              reset_i
 
-   , input [xce_mem_msg_width_lp-1:0]                   mem_cmd_i
+   , input [xce_mem_msg_header_width_lp-1:0]            mem_cmd_header_i
+   , input [dword_width_gp-1:0]                         mem_cmd_data_i
    , input                                              mem_cmd_v_i
-   , output                                             mem_cmd_ready_and_o
+   , output logic                                       mem_cmd_ready_and_o
+   , input                                              mem_cmd_last_i
 
-   , output [xce_mem_msg_width_lp-1:0]                  mem_resp_o
-   , output                                             mem_resp_v_o
-   , input                                              mem_resp_yumi_i
+   , output logic [xce_mem_msg_header_width_lp-1:0]     mem_resp_header_o
+   , output logic [dword_width_gp-1:0]                  mem_resp_data_o
+   , output logic                                       mem_resp_v_o
+   , input                                              mem_resp_ready_and_i
+   , output logic                                       mem_resp_last_o
 
    // Local interrupts
-   , output                                             software_irq_o
-   , output                                             timer_irq_o
-   , output                                             external_irq_o
+   , output logic                                       software_irq_o
+   , output logic                                       timer_irq_o
+   , output logic                                       external_irq_o
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
   `declare_bp_memory_map(paddr_width_p, caddr_width_p);
-  
-  bp_bedrock_xce_mem_msg_s mem_cmd_li, mem_cmd_lo;
-  assign mem_cmd_li = mem_cmd_i;
-  
-  logic small_fifo_v_lo, small_fifo_yumi_li;
-  bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_xce_mem_msg_s)))
-   small_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-  
-     ,.data_i(mem_cmd_li)
-     ,.v_i(mem_cmd_v_i)
-     ,.ready_o(mem_cmd_ready_and_o)
-  
-     ,.data_o(mem_cmd_lo)
-     ,.v_o(small_fifo_v_lo)
-     ,.yumi_i(small_fifo_yumi_li)
+
+  logic [cfg_addr_width_gp-1:0] addr_lo;
+  logic [dword_width_gp-1:0] data_lo;
+  logic [3:0][dword_width_gp-1:0] data_li;
+  logic plic_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
+  localparam integer base_addr_lp [3:0] = '{plic_reg_base_addr_gp, mtime_reg_addr_gp, mtimecmp_reg_base_addr_gp, mipi_reg_base_addr_gp};
+  bp_me_bedrock_register
+   #(.bp_params_p(bp_params_p)
+     ,.els_p(4)
+     ,.reg_addr_width_p(cfg_addr_width_gp)
+     ,.base_addr_p(base_addr_lp)
+     )
+   register
+    (.*
+     // We ignore reads because these are all asynchronous registers
+     ,.r_v_o()
+     ,.w_v_o({plic_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li})
+     ,.addr_o(addr_lo)
+     ,.data_o(data_lo)
+     ,.data_i(data_li)
      );
-  
-  logic mipi_cmd_v;
-  logic mtimecmp_cmd_v;
-  logic mtime_cmd_v;
-  logic plic_cmd_v;
-  logic wr_not_rd;
-  
-  bp_local_addr_s local_addr;
-  assign local_addr = mem_cmd_lo.header.addr;
-  
-  always_comb
-    begin
-      mtime_cmd_v    = 1'b0;
-      mtimecmp_cmd_v = 1'b0;
-      mipi_cmd_v     = 1'b0;
-      plic_cmd_v     = 1'b0;
-  
-      wr_not_rd = mem_cmd_lo.header.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
-  
-      unique
-      casez ({local_addr.dev, local_addr.addr})
-        mtime_reg_addr_gp        : mtime_cmd_v    = small_fifo_v_lo;
-        mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = small_fifo_v_lo;
-        mipi_reg_base_addr_gp    : mipi_cmd_v     = small_fifo_v_lo;
-        plic_reg_base_addr_gp    : plic_cmd_v     = small_fifo_v_lo;
-        default: begin end
-      endcase
-    end
-  
-  logic [dword_width_gp-1:0] mtime_r, mtime_val_li, mtimecmp_n, mtimecmp_r;
-  logic                     mipi_n, mipi_r;
-  logic                     plic_n, plic_r;
-  
-  // TODO: Should be actual RTC
+
+  // TODO: Should be actual RTC, or at least programmable
   localparam ds_width_lp = 5;
   localparam [ds_width_lp-1:0] ds_ratio_li = 8;
   logic mtime_inc_li;
@@ -95,24 +69,22 @@ module bp_clint_slice
      ,.init_val_r_i(ds_ratio_li)
      ,.strobe_r_o(mtime_inc_li)
      );
-  assign mtime_val_li = mem_cmd_lo.data[0+:dword_width_gp];
-  wire mtime_w_v_li = wr_not_rd & mtime_cmd_v;
+  logic [dword_width_gp-1:0] mtime_r;
+  wire [dword_width_gp-1:0] mtime_n = data_lo;
   bsg_counter_set_en
-   #(.lg_max_val_lp(dword_width_gp)
-     ,.reset_val_p(0)
-     )
+   #(.lg_max_val_lp(dword_width_gp), .reset_val_p(0))
    mtime_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
   
      ,.set_i(mtime_w_v_li)
      ,.en_i(mtime_inc_li)
-     ,.val_i(mtime_val_li)
+     ,.val_i(mtime_n)
      ,.count_o(mtime_r)
      );
   
-  assign mtimecmp_n = mem_cmd_lo.data[0+:dword_width_gp];
-  wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
+  logic [dword_width_gp-1:0] mtimecmp_r;
+  wire [dword_width_gp-1:0] mtimecmp_n = data_lo;
   bsg_dff_reset_en
    #(.width_p(dword_width_gp))
    mtimecmp_reg
@@ -125,8 +97,8 @@ module bp_clint_slice
      );
   assign timer_irq_o = (mtime_r >= mtimecmp_r);
   
-  assign mipi_n = mem_cmd_lo.data[0];
-  wire mipi_w_v_li = wr_not_rd & mipi_cmd_v;
+  logic mipi_r;
+  wire mipi_n = data_lo[0];
   bsg_dff_reset_en
    #(.width_p(1))
    mipi_reg
@@ -139,8 +111,8 @@ module bp_clint_slice
      );
   assign software_irq_o = mipi_r;
   
-  assign plic_n = mem_cmd_lo.data[0];
-  wire plic_w_v_li = wr_not_rd & plic_cmd_v;
+  logic plic_r;
+  wire plic_n = data_lo[0];
   bsg_dff_reset_en
    #(.width_p(1))
    plic_reg
@@ -152,29 +124,11 @@ module bp_clint_slice
      ,.data_o(plic_r)
      );
   assign external_irq_o = plic_r;
-  
-  wire [dword_width_gp-1:0] rdata_lo = plic_cmd_v
-                                      ? dword_width_gp'(plic_r)
-                                      : mipi_cmd_v
-                                        ? dword_width_gp'(mipi_r)
-                                        : mtimecmp_cmd_v
-                                          ? dword_width_gp'(mtimecmp_r)
-                                          : mtime_r;
-  
-  bp_bedrock_xce_mem_msg_s mem_resp_lo;
-  assign mem_resp_lo =
-    '{header : '{
-      msg_type       : mem_cmd_lo.header.msg_type
-      ,subop         : e_bedrock_store
-      ,addr          : mem_cmd_lo.header.addr
-      ,payload       : mem_cmd_lo.header.payload
-      ,size          : mem_cmd_lo.header.size
-      }
-      ,data          : dword_width_gp'(rdata_lo)
-      };
-  assign mem_resp_o = mem_resp_lo;
-  assign mem_resp_v_o = small_fifo_v_lo;
-  assign small_fifo_yumi_li = mem_resp_yumi_i;
-
+ 
+  assign data_li[0] = mipi_r;
+  assign data_li[1] = mtimecmp_r;
+  assign data_li[2] = mtime_r;
+  assign data_li[3] = plic_r;
+ 
 endmodule
 

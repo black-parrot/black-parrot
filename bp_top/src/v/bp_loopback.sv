@@ -13,41 +13,38 @@ module bp_cce_loopback
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, cce)
     )
-   (input                                           clk_i
-    , input                                         reset_i
+   (input                                            clk_i
+    , input                                          reset_i
 
-    , input [cce_mem_msg_width_lp-1:0]              mem_cmd_i
-    , input                                         mem_cmd_v_i
-    , output                                        mem_cmd_ready_and_o
+    , input [cce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
+    , input [dword_width_gp-1:0]                     mem_cmd_data_i
+    , input                                          mem_cmd_v_i
+    , output logic                                   mem_cmd_ready_and_o
+    , input logic                                    mem_cmd_last_i
 
-    , output [cce_mem_msg_width_lp-1:0]             mem_resp_o
-    , output                                        mem_resp_v_o
-    , input                                         mem_resp_yumi_i
+    , output logic [cce_mem_msg_header_width_lp-1:0] mem_resp_header_o
+    , output logic [dword_width_gp-1:0]              mem_resp_data_o
+    , output logic                                   mem_resp_v_o
+    , input                                          mem_resp_ready_and_i
+    , output logic                                   mem_resp_last_o
     );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, cce);
-
-  bp_bedrock_cce_mem_msg_s mem_cmd_cast_i;
-  bp_bedrock_cce_mem_msg_s mem_resp_cast_o;
-
-  assign mem_cmd_cast_i = mem_cmd_i;
-  assign mem_resp_o = mem_resp_cast_o;
-
+  // Used to decouple to help prevent deadlock
   bsg_one_fifo
-   #(.width_p($bits(mem_cmd_cast_i.header)))
+   #(.width_p(1+cce_mem_msg_header_width_lp))
    loopback_buffer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(mem_cmd_cast_i.header)
+     ,.data_i({mem_cmd_last_i, mem_cmd_header_i})
      ,.v_i(mem_cmd_v_i)
      ,.ready_o(mem_cmd_ready_and_o)
 
-     ,.data_o(mem_resp_cast_o.header)
+     ,.data_o({mem_resp_last_o, mem_resp_header_o})
      ,.v_o(mem_resp_v_o)
-     ,.yumi_i(mem_resp_yumi_i)
+     ,.yumi_i(mem_resp_ready_and_i & mem_resp_v_o)
      );
-  assign mem_resp_cast_o.data = '0;
+  assign mem_resp_data_o = '0;
 
 endmodule
 
