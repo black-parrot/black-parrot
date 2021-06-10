@@ -21,11 +21,13 @@ module bp_me_bedrock_register
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
+   , input                                          mem_cmd_last_i
 
    , output logic [xce_mem_msg_header_width_lp-1:0] mem_resp_header_o
    , output logic [dword_width_gp-1:0]              mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
+   , output logic                                   mem_resp_last_o
 
 
    // Synchronous read/write interface.
@@ -36,6 +38,8 @@ module bp_me_bedrock_register
    , output logic [reg_width_p-1:0]                 data_o
    , input [els_p-1:0][reg_width_p-1:0]             data_i
    );
+
+  wire unused = &{mem_cmd_last_i};
 
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
 
@@ -57,13 +61,15 @@ module bp_me_bedrock_register
      ,.yumi_i(mem_cmd_yumi_li)
      );
 
-  logic [els_p-1:0] r_v_r;
-  bsg_dff
-   #(.width_p(els_p))
+  logic [els_p-1:0] v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(els_p), .clear_over_set_p(1))
    v_reg
     (.clk_i(clk_i)
-     ,.data_i(r_v_o)
-     ,.data_o(r_v_r)
+     ,.reset_i(reset_i)
+     ,.set_i(w_v_o | r_v_o)
+     ,.clear_i({els_p{mem_cmd_yumi_li}})
+     ,.data_o(v_r)
      );
 
   logic [reg_width_p-1:0] rdata_lo;
@@ -71,7 +77,7 @@ module bp_me_bedrock_register
    #(.width_p(reg_width_p), .els_p(els_p))
    rmux_oh
     (.data_i(data_i)
-     ,.sel_one_hot_i(r_v_r)
+     ,.sel_one_hot_i(v_r)
      ,.data_o(rdata_lo)
      );
 
@@ -87,7 +93,8 @@ module bp_me_bedrock_register
 
   assign mem_resp_header_o = mem_cmd_header_li;
   assign mem_resp_data_o = rdata_lo;
-  assign mem_resp_v_o = mem_cmd_v_li & (|r_v_r | wr_not_rd);
+  assign mem_resp_v_o = |v_r;
+  assign mem_resp_last_o = 1'b1;
   assign mem_cmd_yumi_li = mem_resp_ready_and_i & mem_resp_v_o;
 
 endmodule

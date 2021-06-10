@@ -60,7 +60,8 @@ The BedRock Stream protocol comprises the following signals:
 * Last
 
 Each message is sent as one or more header plus data beats using a shared ready&valid handshake.
-The last signal is raised with valid when the sender is transmitting the last header plus data beat.
+The last signal is raised along with valid when the sender is transmitting the last header plus data beat.
+Last must not be raised if there is no valid data available.
 The data field is typically 64-bits, but may be any 512/N-bits wide that is at least 64-bits.
 
 When sending multiple beat messages, the sender must increment the address in the header by
@@ -71,7 +72,7 @@ is smaller than the data channel size,
 the requested data is repeated to fill the channel. For example the data response for a 16-bit
 request using a 64-bit channel for some data value A has a 64-bit data response of [A, A, A, A].
 
-## BedRock Lite
+## BedRock Lite (Deprecated)
 
 BedRock Lite is a wide variant of BedRock Stream. BedRock Lite does not use the Last signal as
 every message is a single header plus data beat. The data channel width is equal to the cache or
@@ -81,6 +82,8 @@ so the critical word is placed in the least significant bits.
 
 Requests for data that smaller than the data channel width result in responses where the returned
 data is replicated to fill the data channel width.
+
+BedRock Lite is deprecated and should be replaced by Stream interfaces wherever found.
 
 ## BedRock Burst
 
@@ -99,7 +102,8 @@ zero or more data beats. The BedRock Burst protocol has the following signals:
 In this protocol, the header and data channels have independent ready&valid handshakes. The header
 is accompanied by a has\_data signal that is raised if the message has at least one data beats.
 The data channel is accompanied by a last signal that is raised with data\_valid on the last data
-beat. As with BedRock Stream, the data channel may is typically 64-bits wide, but may be any
+beat. Last must not be raised if there is no valid data available.
+As with BedRock Stream, the data channel may is typically 64-bits wide, but may be any
 512/N-bits wide that is at least 64-bits.
 
 The sender contract is:

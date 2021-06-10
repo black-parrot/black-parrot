@@ -20,25 +20,27 @@ module bp_cce_loopback
     , input [dword_width_gp-1:0]                     mem_cmd_data_i
     , input                                          mem_cmd_v_i
     , output logic                                   mem_cmd_ready_and_o
+    , input logic                                    mem_cmd_last_i
 
     , output logic [cce_mem_msg_header_width_lp-1:0] mem_resp_header_o
     , output logic [dword_width_gp-1:0]              mem_resp_data_o
     , output logic                                   mem_resp_v_o
     , input                                          mem_resp_ready_and_i
+    , output logic                                   mem_resp_last_o
     );
 
   // Used to decouple to help prevent deadlock
   bsg_one_fifo
-   #(.width_p(cce_mem_msg_header_width_lp))
+   #(.width_p(1+cce_mem_msg_header_width_lp))
    loopback_buffer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(mem_cmd_header_i)
+     ,.data_i({mem_cmd_last_i, mem_cmd_header_i})
      ,.v_i(mem_cmd_v_i)
      ,.ready_o(mem_cmd_ready_and_o)
 
-     ,.data_o(mem_resp_header_o)
+     ,.data_o({mem_resp_last_o, mem_resp_header_o})
      ,.v_o(mem_resp_v_o)
      ,.yumi_i(mem_resp_ready_and_i & mem_resp_v_o)
      );
