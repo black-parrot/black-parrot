@@ -107,25 +107,20 @@ As with BedRock Stream, the data channel may is typically 64-bits wide, but may 
 512/N-bits wide that is at least 64-bits.
 
 The sender contract is:
-* May not wait for both header\_ready\_and and data\_ready\_and before sending header
-* May wait for header\_ready\_and before starting a transaction
-* May send data before header, but is not required to
-* A minimal implementation may send header before data. More sophisticated implementations may
-support sending data with or before header.
+* Data may be sent before, with, or after header.
+* Minimal implementations may wait to send data until after header sends.
+* Header and data channels must conform to ready&valid handshaking.
 
 The receiver contract is:
-* May not wait for both header\_valid and data\_valid before processing an incoming message
-* May wait for header\_valid before processing an incoming message
-* May consume data before header, but is not required to
-* A minimal implementation may consume header before data. More sophisticated implementations may
-consume data before or with header.
+* May consume data before, with, or after header.
+* Minimal implementations may wait to receive data (i.e., wait to raise data\_ready\_and) until
+after the header arrives and is processed.
+* Header and data channels must conform to ready&valid handshaking.
 
 Sophisticated implementations of BedRock Burst channels may support overlapping transactions where
 the sender may send a second header prior to sending all data associated with the first header.
-The receiver must also support receiving additional headers prior to all data from prior transactions,
-but is not required to support this feature. A sender or receiver that supports these features
-will still be compatible with receivers/senders that support only the minimal contracts defined
-above.
+The receiver must also support this behavior. If either send or receiver does not support overlapping
+transactions, then transactions will necessarily be non-overlapping.
 
 As with BedRock Stream, requests for data smaller than the data channel width result in a response
 with data replicated to fill the data channel width.
