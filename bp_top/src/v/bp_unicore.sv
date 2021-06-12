@@ -16,6 +16,7 @@ module bp_unicore
  import bp_top_pkg::*;
  import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;
+ import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
@@ -75,10 +76,10 @@ module bp_unicore
 
   bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
   logic [uce_mem_data_width_lp-1:0] mem_cmd_data_lo;
-  logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_resp_last_lo;
+  logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
   bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
   logic [uce_mem_data_width_lp-1:0] mem_resp_data_li;
-  logic mem_resp_v_li, mem_resp_yumi_lo, mem_resp_last_li;
+  logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
 
   bp_unicore_lite
    #(.bp_params_p(bp_params_p))
@@ -95,17 +96,17 @@ module bp_unicore
      ,.mem_resp_header_i(mem_resp_header_li)
      ,.mem_resp_data_i(mem_resp_data_li)
      ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_yumi_o(mem_resp_yumi_lo)
-     ,.mem_resp_last_i(mem_resp_v_li) // stub
+     ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
+     ,.mem_resp_last_i(mem_resp_last_li)
 
      // I/O
      ,.*
      );
 
-  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
+  `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
-  logic [dword_width_gp-1:0] cache_data_lo;
+  logic [l2_data_width_p-1:0] cache_data_lo;
   logic cache_data_v_lo, cache_data_yumi_li;
 
   // This is a temporary hack to fix width mismatches in configurations with sub-cacheblock fills
@@ -121,23 +122,27 @@ module bp_unicore
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     // TODO: Make stream
-     ,.mem_cmd_i({mem_cmd_data_lo, mem_cmd_header_lo})
+     ,.mem_cmd_header_i(mem_cmd_header_lo)
+     ,.mem_cmd_data_i(mem_cmd_data_lo)
+     ,.mem_cmd_last_i(mem_cmd_last_lo)
      ,.mem_cmd_v_i(mem_cmd_v_lo)
      ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
 
-     ,.mem_resp_o({mem_resp_data_li, mem_resp_header_li})
+     ,.mem_resp_header_o(mem_resp_header_li)
+     ,.mem_resp_data_o(mem_resp_data_li)
+     ,.mem_resp_last_o(mem_resp_last_li)
      ,.mem_resp_v_o(mem_resp_v_li)
-     ,.mem_resp_yumi_i(mem_resp_yumi_lo)
+     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
 
      ,.cache_pkt_o(cache_pkt_li)
-     ,.v_o(cache_pkt_v_li)
-     ,.ready_i(cache_pkt_ready_lo)
+     ,.cache_pkt_v_o(cache_pkt_v_li)
+     ,.cache_pkt_ready_i(cache_pkt_ready_lo)
 
-     ,.data_i(cache_data_lo)
-     ,.v_i(cache_data_v_lo)
-     ,.yumi_o(cache_data_yumi_li)
+     ,.cache_data_i(cache_data_lo)
+     ,.cache_v_i(cache_data_v_lo)
+     ,.cache_yumi_o(cache_data_yumi_li)
      );
+
 
   bsg_cache
    #(.addr_width_p(caddr_width_p)

@@ -128,6 +128,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_locking_arb_fixed.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_locking_arb_fixed.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_bitwise.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_butterfly.v
@@ -192,6 +193,8 @@ $BP_COMMON_DIR/src/v/bsg_wormhole_stream_out.v
 $BP_COMMON_DIR/src/v/bp_mmu.sv
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.sv
 # Calculator
@@ -284,6 +287,10 @@ $BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_wormhole.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
+$BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
