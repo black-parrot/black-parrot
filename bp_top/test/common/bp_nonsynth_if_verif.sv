@@ -77,11 +77,11 @@ module bp_nonsynth_if_verif
     $fatal("Error: Cache fill width should be less or equal to L1 cache block width");
   if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0) || (dcache_fill_width_p % (dcache_block_width_p / dcache_assoc_p) != 0))
     $fatal("Error: Cache fill width should be a multiple of cache bank width");
+  if (icache_fill_width_p != dcache_fill_width_p)
+    $fatal("Error: L1-Cache fill width should be the same");
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");
-  if (l2_data_width_p != 64)
-    $error("L2 data width must be 64");
 
   //if (bht_entry_width_p/2 < 2 || bht_entry_width_p/2*2 != bht_entry_width_p)
   //  $warning("BHT fold width must be power of 2 greater than 2");

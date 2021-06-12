@@ -44,7 +44,7 @@ module bp_unicore_lite
    , input                                             io_resp_ready_and_i
    , output logic                                      io_resp_last_o
 
-   // Outgoing DRAM
+   // Outgoing BP Stream Mem Bus
    , output logic [uce_mem_msg_header_width_lp-1:0]    mem_cmd_header_o
    , output logic [uce_mem_data_width_lp-1:0]          mem_cmd_data_o
    , output logic                                      mem_cmd_v_o
@@ -54,7 +54,7 @@ module bp_unicore_lite
    , input [uce_mem_msg_header_width_lp-1:0]           mem_resp_header_i
    , input [uce_mem_data_width_lp-1:0]                 mem_resp_data_i
    , input                                             mem_resp_v_i
-   , output logic                                      mem_resp_yumi_o
+   , output logic                                      mem_resp_ready_and_o
    , input                                             mem_resp_last_i
    );
 
@@ -110,6 +110,7 @@ module bp_unicore_lite
 
   logic timer_irq_li, software_irq_li, external_irq_li;
 
+  // proc_cmd[2:0] = {IO cmd, BE UCE, FE UCE}
   bp_bedrock_uce_mem_msg_header_s [2:0] proc_cmd_header_lo;
   logic [2:0][uce_mem_data_width_lp-1:0] proc_cmd_data_lo;
   logic [2:0] proc_cmd_v_lo, proc_cmd_yumi_li, proc_cmd_last_lo;
@@ -117,6 +118,7 @@ module bp_unicore_lite
   logic [2:0][uce_mem_data_width_lp-1:0] proc_resp_data_li;
   logic [2:0] proc_resp_v_li, proc_resp_yumi_lo, proc_resp_last_li;
 
+  // dev_cmd[4:0] = {CCE loopback, Mem cmd, IO cmd, CLINT, CFG}
   bp_bedrock_uce_mem_msg_header_s [4:0] dev_cmd_header_li;
   logic [4:0][uce_mem_data_width_lp-1:0] dev_cmd_data_li;
   logic [4:0] dev_cmd_v_li, dev_cmd_ready_and_lo, dev_cmd_last_li;
@@ -339,7 +341,7 @@ module bp_unicore_lite
   assign dev_resp_header_lo[3] = mem_resp_header_cast_i;
   assign dev_resp_data_lo[3] = mem_resp_data_i;
   assign dev_resp_v_lo[3] = mem_resp_v_i;
-  assign mem_resp_yumi_o = dev_resp_ready_and_li[3] & dev_resp_v_lo[3];
+  assign mem_resp_ready_and_o = dev_resp_ready_and_li[3];
   assign dev_resp_last_lo[3] = mem_resp_last_i;
 
   // Select destination of commands
@@ -374,12 +376,12 @@ module bp_unicore_lite
   assign dev_resp_dst_lo[2] = dev_resp_header_lo[2].payload.lce_id;
   assign dev_resp_dst_lo[1] = dev_resp_header_lo[1].payload.lce_id;
   assign dev_resp_dst_lo[0] = dev_resp_header_lo[0].payload.lce_id;
-    
+
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(uce_mem_data_width_lp)
-     ,.num_masters_p(3)
-     ,.num_clients_p(5)
+     ,.num_source_p(3)
+     ,.num_sink_p(5)
      )
    stream_arb
     (.clk_i(clk_i)
