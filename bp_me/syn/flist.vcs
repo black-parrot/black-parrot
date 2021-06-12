@@ -182,6 +182,13 @@ $BP_ME_DIR/src/v/dev/bp_me_cfg.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
+$BP_ME_DIR/src/v/network/bp_me_lite_to_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_to_lite.sv
+$BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
+$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
+$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
