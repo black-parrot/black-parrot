@@ -243,11 +243,11 @@
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
-      ,dcache_fill_width    : 512
+      ,dcache_fill_width    : 64
       ,icache_sets          : 64
       ,icache_assoc         : 8
       ,icache_block_width   : 512
-      ,icache_fill_width    : 512
+      ,icache_fill_width    : 64
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
@@ -288,7 +288,18 @@
       };
 
   // Default configuration is unicore
-  localparam bp_proc_param_s bp_unicore_cfg_p = bp_default_cfg_p;
+  localparam bp_proc_param_s bp_unicore_override_p =
+    '{dcache_fill_width     : 512
+      ,icache_fill_width    : 512
+      ,l2_data_width        : 512
+      ,l2_fill_width        : 512
+      ,mem_noc_flit_width   : 512
+      ,default       : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_unicore_cfg_p
+                        ,bp_unicore_override_p
+                        ,bp_default_cfg_p
+                        );
 
   localparam bp_proc_param_s bp_unicore_bootrom_override_p =
     '{boot_pc        : bootrom_base_addr_gp
@@ -365,6 +376,9 @@
       ,dcache_assoc       : 4
       ,dcache_block_width : 256
       ,dcache_fill_width  : 256
+      ,l2_data_width      : 256
+      ,l2_fill_width      : 256
+      ,mem_noc_flit_width : 256
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_medium_cfg_p
@@ -381,6 +395,9 @@
       ,dcache_assoc       : 2
       ,dcache_block_width : 128
       ,dcache_fill_width  : 128
+      ,l2_data_width      : 128
+      ,l2_fill_width      : 128
+      ,mem_noc_flit_width : 128
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_small_cfg_p
@@ -397,6 +414,9 @@
       ,dcache_assoc       : 1
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
+      ,l2_data_width      : 64 
+      ,l2_fill_width      : 64
+      ,mem_noc_flit_width : 64
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_tiny_cfg_p
@@ -412,7 +432,10 @@
       ,dcache_sets        : 128
       ,dcache_assoc       : 4
       ,dcache_block_width : 256
-      ,dcache_fill_width  : 256
+      ,dcache_fill_width  : 128
+      ,l2_data_width      : 128
+      ,l2_fill_width      : 128
+      ,mem_noc_flit_width : 128
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_hetero_cfg_p
@@ -429,6 +452,9 @@
       ,dcache_assoc       : 4
       ,dcache_block_width : 512
       ,dcache_fill_width  : 512
+      ,l2_data_width      : 512
+      ,l2_fill_width      : 512
+      ,mem_noc_flit_width : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_wide_cfg_p
@@ -474,11 +500,13 @@
       ,num_cce       : 1
       ,num_lce       : 2
       ,l1_coherent   : 1
+      ,dcache_fill_width : 512
+      ,icache_fill_width : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
                         ,bp_multicore_1_override_p
-                        ,bp_unicore_cfg_p
+                        ,bp_default_cfg_p
                         );
 
   localparam bp_proc_param_s bp_multicore_1_paddr_large_override_p =
@@ -786,11 +814,13 @@
   // Half core configs
   localparam bp_proc_param_s bp_unicore_half_override_p =
     '{num_lce  : 1
+      ,dcache_fill_width    : 512
+      ,icache_fill_width    : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_half_cfg_p
                         ,bp_unicore_half_override_p
-                        ,bp_unicore_cfg_p
+                        ,bp_default_cfg_p
                         );
 
   localparam bp_proc_param_s bp_multicore_half_override_p =
