@@ -24,3 +24,6 @@ $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.sv
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv
 $BP_ME_DIR/test/common/bp_nonsynth_mem.sv
+# common files
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
