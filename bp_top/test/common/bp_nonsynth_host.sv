@@ -127,7 +127,7 @@ module bp_nonsynth_host
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.set_i(finish_set)
-     ,.clear_i(1'b0)
+     ,.clear_i('0)
      ,.data_o(finish_r)
      );
 
