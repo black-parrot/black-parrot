@@ -761,6 +761,9 @@ module bp_uce
       endcase
     end
 
+  // TEMP: hardcoded last
+  assign mem_cmd_last_o = mem_cmd_v_o;
+
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)

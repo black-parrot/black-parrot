@@ -30,6 +30,7 @@ module bp_me_loopback
     );
 
   // Used to decouple to help prevent deadlock
+  logic mem_resp_last_lo;
   bsg_one_fifo
    #(.width_p(1+cce_mem_msg_header_width_lp))
    loopback_buffer
@@ -40,11 +41,12 @@ module bp_me_loopback
      ,.v_i(mem_cmd_v_i)
      ,.ready_o(mem_cmd_ready_and_o)
 
-     ,.data_o({mem_resp_last_o, mem_resp_header_o})
+     ,.data_o({mem_resp_last_lo, mem_resp_header_o})
      ,.v_o(mem_resp_v_o)
      ,.yumi_i(mem_resp_ready_and_i & mem_resp_v_o)
      );
   assign mem_resp_data_o = '0;
+  assign mem_resp_last_o = mem_resp_v_o & mem_resp_last_lo;
 
 endmodule
 
