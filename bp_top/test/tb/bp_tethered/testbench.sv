@@ -107,7 +107,7 @@ module testbench
      );
 
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
-  logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li;
+  logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li, proc_io_cmd_last_lo;
   bp_bedrock_cce_mem_msg_s proc_io_resp_li;
   logic proc_io_resp_v_li, proc_io_resp_yumi_lo;
 
@@ -119,7 +119,7 @@ module testbench
   bp_bedrock_cce_mem_msg_s load_cmd_lo;
   logic load_cmd_v_lo, load_cmd_yumi_li;
   bp_bedrock_cce_mem_msg_s load_resp_li;
-  logic load_resp_v_li, load_resp_ready_and_lo;
+  logic load_resp_v_li, load_resp_ready_and_lo, load_resp_last_li;
 
   `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0] dma_pkt_lo;
@@ -134,21 +134,29 @@ module testbench
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.io_cmd_o(proc_io_cmd_lo)
+     ,.io_cmd_header_o(proc_io_cmd_lo.header)
+     ,.io_cmd_data_o(proc_io_cmd_lo.data)
      ,.io_cmd_v_o(proc_io_cmd_v_lo)
      ,.io_cmd_ready_and_i(proc_io_cmd_ready_and_li)
+     ,.io_cmd_last_o(proc_io_cmd_last_lo)
 
-     ,.io_resp_i(proc_io_resp_li)
+     ,.io_resp_header_i(proc_io_resp_li.header)
+     ,.io_resp_data_i(proc_io_resp_li.data)
      ,.io_resp_v_i(proc_io_resp_v_li)
      ,.io_resp_yumi_o(proc_io_resp_yumi_lo)
+     ,.io_resp_last_i(proc_io_resp_v_li) // stub
 
-     ,.io_cmd_i(load_cmd_lo)
+     ,.io_cmd_header_i(load_cmd_lo.header)
+     ,.io_cmd_data_i(load_cmd_lo.data)
      ,.io_cmd_v_i(load_cmd_v_lo)
      ,.io_cmd_yumi_o(load_cmd_yumi_li)
+     ,.io_cmd_last_i(load_cmd_v_lo) // stub
 
-     ,.io_resp_o(load_resp_li)
+     ,.io_resp_header_o(load_resp_li.header)
+     ,.io_resp_data_o(load_resp_li.data)
      ,.io_resp_v_o(load_resp_v_li)
      ,.io_resp_ready_and_i(load_resp_ready_and_lo)
+     ,.io_resp_last_o(load_resp_last_li)
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
