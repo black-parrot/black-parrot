@@ -113,21 +113,21 @@ module bp_unicore_lite
 
   bp_bedrock_uce_mem_msg_header_s cfg_cmd_header_li;
   logic [dword_width_gp-1:0] cfg_cmd_data_li;
-  logic cfg_cmd_v_li, cfg_cmd_ready_and_lo;
+  logic cfg_cmd_v_li, cfg_cmd_ready_and_lo, cfg_cmd_last_li;
   bp_bedrock_uce_mem_msg_header_s cfg_resp_header_lo;
   logic [dword_width_gp-1:0] cfg_resp_data_lo;
   logic cfg_resp_v_lo, cfg_resp_yumi_li, cfg_resp_last_lo;
 
   bp_bedrock_uce_mem_msg_header_s clint_cmd_header_li;
   logic [dword_width_gp-1:0] clint_cmd_data_li;
-  logic clint_cmd_v_li, clint_cmd_ready_and_lo;
+  logic clint_cmd_v_li, clint_cmd_ready_and_lo, clint_cmd_last_li;
   bp_bedrock_uce_mem_msg_header_s clint_resp_header_lo;
   logic [dword_width_gp-1:0] clint_resp_data_lo;
   logic clint_resp_v_lo, clint_resp_yumi_li, clint_resp_last_lo;
 
   bp_bedrock_uce_mem_msg_header_s loopback_cmd_header_li;
   logic [dword_width_gp-1:0] loopback_cmd_data_li;
-  logic loopback_cmd_v_li, loopback_cmd_ready_and_lo;
+  logic loopback_cmd_v_li, loopback_cmd_ready_and_lo, loopback_cmd_last_li;
   bp_bedrock_uce_mem_msg_header_s loopback_resp_header_lo;
   logic [dword_width_gp-1:0] loopback_resp_data_lo;
   logic loopback_resp_v_lo, loopback_resp_yumi_li, loopback_resp_last_lo;
@@ -329,10 +329,14 @@ module bp_unicore_lite
   // This is suboptimal. We could have an arbiter for each of I$ D$ and I/O, to get higher
   //   throughput. So far this isn't a bottle neck, and this approach is less hardware.
   logic [2:0] proc_cmd_grant_lo;
-  bsg_arb_fixed
+  wire cmd_arb_unlock_li = |{proc_cmd_yumi_li & proc_cmd_last_lo} | reset_i;
+  bsg_locking_arb_fixed
    #(.inputs_p(3), .lo_to_hi_p(0))
    cmd_arbiter
-    (.ready_i(1'b1)
+    (.clk_i(clk_i)
+     ,.ready_i(1'b1)
+
+     ,.unlock_i(cmd_arb_unlock_li)
      ,.reqs_i(proc_cmd_v_lo)
      ,.grants_o(proc_cmd_grant_lo)
      );
@@ -365,10 +369,20 @@ module bp_unicore_lite
   // This is also suboptimal. Theoretically, we could dequeue into each fifo at once, but this
   //   would require more complex arbitration logic
   logic loopback_resp_grant_li, mem_resp_grant_li, io_resp_grant_li, clint_resp_grant_li, cfg_resp_grant_li;
-  bsg_arb_fixed
+  wire resp_arb_unlock_li = reset_i |
+    |{loopback_resp_yumi_li & loopback_resp_last_lo
+      ,mem_resp_yumi_o & mem_resp_last_i
+      ,io_resp_yumi_o & io_resp_last_i
+      ,clint_resp_yumi_li & clint_resp_last_lo
+      ,cfg_resp_yumi_li & cfg_resp_last_lo
+      };
+  bsg_locking_arb_fixed
    #(.inputs_p(5), .lo_to_hi_p(0))
    resp_arbiter
-    (.ready_i(1'b1)
+    (.clk_i(clk_i)
+     ,.ready_i(1'b1)
+
+     ,.unlock_i(resp_arb_unlock_li)
      ,.reqs_i({loopback_resp_v_lo, mem_resp_v_i, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo})
      ,.grants_o({loopback_resp_grant_li, mem_resp_grant_li, io_resp_grant_li, clint_resp_grant_li, cfg_resp_grant_li})
      );
@@ -400,6 +414,7 @@ module bp_unicore_lite
       wire any_resp_v_li = |{loopback_resp_v_lo, mem_resp_v_i, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo};
 
       assign proc_resp_v_li[i] = any_resp_v_li & (resp_selected_payload_li.lce_id == i);
+      assign proc_resp_last_li[i] = proc_resp_v_li[i] & resp_arb_unlock_li;
     end
   assign cfg_resp_yumi_li      = |proc_resp_yumi_lo & cfg_resp_grant_li;
   assign clint_resp_yumi_li    = |proc_resp_yumi_lo & clint_resp_grant_li;
@@ -419,38 +434,20 @@ module bp_unicore_lite
   wire is_mem_cmd          = (~local_cmd_li & ~is_other_hio) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
   wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_mem_cmd;
 
-  assign cfg_cmd_v_li      = |proc_cmd_grant_lo & cfg_cmd_ready_and_lo & is_cfg_cmd;
-  assign clint_cmd_v_li    = |proc_cmd_grant_lo & clint_cmd_ready_and_lo & is_clint_cmd;
-  assign io_cmd_v_o        = |proc_cmd_grant_lo & io_cmd_ready_and_i & is_io_cmd;
-  assign mem_cmd_v_o       = |proc_cmd_grant_lo & mem_cmd_ready_and_i & is_mem_cmd;
-  assign loopback_cmd_v_li = |proc_cmd_grant_lo & loopback_cmd_ready_and_lo & is_loopback_cmd;
+  assign cfg_cmd_v_li         = |proc_cmd_grant_lo & cfg_cmd_ready_and_lo & is_cfg_cmd;
+  assign cfg_cmd_last_li      = cfg_cmd_v_li & cmd_arb_unlock_li;
+  assign clint_cmd_v_li       = |proc_cmd_grant_lo & clint_cmd_ready_and_lo & is_clint_cmd;
+  assign clint_cmd_last_li    = clint_cmd_v_li & cmd_arb_unlock_li;
+  assign io_cmd_v_o           = |proc_cmd_grant_lo & io_cmd_ready_and_i & is_io_cmd;
+  assign io_cmd_last_o        = io_cmd_v_o & cmd_arb_unlock_li;
+  assign mem_cmd_v_o          = |proc_cmd_grant_lo & mem_cmd_ready_and_i & is_mem_cmd;
+  assign mem_cmd_last_o       = mem_cmd_v_o & cmd_arb_unlock_li;
+  assign loopback_cmd_v_li    = |proc_cmd_grant_lo & loopback_cmd_ready_and_lo & is_loopback_cmd;
+  assign loopback_cmd_last_li = loopback_cmd_v_li & cmd_arb_unlock_li;
 
   wire any_cmd_li = |{mem_cmd_v_o, io_cmd_v_o, loopback_cmd_v_li, clint_cmd_v_li, cfg_cmd_v_li};
 
   assign proc_cmd_yumi_li = proc_cmd_grant_lo & {3{any_cmd_li}};
-
-  bp_me_clint_slice
-   #(.bp_params_p(bp_params_p))
-   clint
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.mem_cmd_header_i(clint_cmd_header_li)
-     ,.mem_cmd_data_i(clint_cmd_data_li)
-     ,.mem_cmd_v_i(clint_cmd_v_li)
-     ,.mem_cmd_ready_and_o(clint_cmd_ready_and_lo)
-     ,.mem_cmd_last_i(clint_cmd_v_li)
-
-     ,.mem_resp_header_o(clint_resp_header_lo)
-     ,.mem_resp_data_o(clint_resp_data_lo)
-     ,.mem_resp_v_o(clint_resp_v_lo)
-     ,.mem_resp_ready_and_i(clint_resp_yumi_li)
-     ,.mem_resp_last_o(clint_resp_last_lo)
-
-     ,.timer_irq_o(timer_irq_li)
-     ,.software_irq_o(software_irq_li)
-     ,.external_irq_o(external_irq_li)
-     );
 
   bp_me_cfg
    #(.bp_params_p(bp_params_p))
@@ -462,7 +459,7 @@ module bp_unicore_lite
      ,.mem_cmd_data_i(cfg_cmd_data_li)
      ,.mem_cmd_v_i(cfg_cmd_v_li)
      ,.mem_cmd_ready_and_o(cfg_cmd_ready_and_lo)
-     ,.mem_cmd_last_i(cfg_cmd_v_li)
+     ,.mem_cmd_last_i(cfg_cmd_last_li)
 
      ,.mem_resp_header_o(cfg_resp_header_lo)
      ,.mem_resp_data_o(cfg_resp_data_lo)
@@ -482,6 +479,29 @@ module bp_unicore_lite
      ,.cce_ucode_data_i('0)
      );
 
+  bp_me_clint_slice
+   #(.bp_params_p(bp_params_p))
+   clint
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_header_i(clint_cmd_header_li)
+     ,.mem_cmd_data_i(clint_cmd_data_li)
+     ,.mem_cmd_v_i(clint_cmd_v_li)
+     ,.mem_cmd_ready_and_o(clint_cmd_ready_and_lo)
+     ,.mem_cmd_last_i(clint_cmd_last_li)
+
+     ,.mem_resp_header_o(clint_resp_header_lo)
+     ,.mem_resp_data_o(clint_resp_data_lo)
+     ,.mem_resp_v_o(clint_resp_v_lo)
+     ,.mem_resp_ready_and_i(clint_resp_yumi_li)
+     ,.mem_resp_last_o(clint_resp_last_lo)
+
+     ,.timer_irq_o(timer_irq_li)
+     ,.software_irq_o(software_irq_li)
+     ,.external_irq_o(external_irq_li)
+     );
+
   bp_me_loopback
    #(.bp_params_p(bp_params_p))
    loopback
@@ -492,7 +512,7 @@ module bp_unicore_lite
      ,.mem_cmd_data_i(loopback_cmd_data_li)
      ,.mem_cmd_v_i(loopback_cmd_v_li)
      ,.mem_cmd_ready_and_o(loopback_cmd_ready_and_lo)
-     ,.mem_cmd_last_i(loopback_cmd_v_li)
+     ,.mem_cmd_last_i(loopback_cmd_last_li)
 
      ,.mem_resp_header_o(loopback_resp_header_lo)
      ,.mem_resp_data_o(loopback_resp_data_lo)
