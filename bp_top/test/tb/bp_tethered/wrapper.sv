@@ -191,10 +191,20 @@ module wrapper
       bp_unicore
        #(.bp_params_p(bp_params_p))
        dut
-        (.io_cmd_o(io_cmd_lo)
-         ,.io_cmd_i(io_cmd_li)
-         ,.io_resp_o(io_resp_lo)
-         ,.io_resp_i(io_resp_li)
+        (.io_cmd_header_o(io_cmd_lo.header)
+         ,.io_cmd_data_o(io_cmd_lo.data)
+         ,.io_cmd_last_o()
+         ,.io_resp_header_i(io_resp_li.header)
+         ,.io_resp_data_i(io_resp_li.data)
+         ,.io_resp_last_i(io_resp_v_i)
+
+         ,.io_cmd_header_i(io_cmd_li.header)
+         ,.io_cmd_data_i(io_cmd_li.data)
+         ,.io_cmd_last_i(io_cmd_v_i)
+         ,.io_resp_header_o(io_resp_lo.header)
+         ,.io_resp_data_o(io_resp_lo.data)
+         ,.io_resp_last_o()
+
          ,.*
          );
 
