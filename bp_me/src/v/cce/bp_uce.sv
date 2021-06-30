@@ -509,8 +509,8 @@ module bp_uce
           end
         e_flush_write:
           begin
-            fsm_cmd_header_lo.msg_type = e_bedrock_mem_wr;
-            fsm_cmd_header_lo.addr   = {dirty_tag_r.tag, index_cnt, {assoc_p>1{bank_index}}, byte_offset_width_lp'(0)};
+            fsm_cmd_header_lo.msg_type       = e_bedrock_mem_wr;
+            fsm_cmd_header_lo.addr           = {dirty_tag_r.tag, index_cnt, {assoc_p>1{bank_index}}, byte_offset_width_lp'(0)};
             fsm_cmd_header_lo.size           = block_msg_size_lp;
             fsm_cmd_header_lo.payload.lce_id = lce_id_i;
             fsm_cmd_data_lo                  = writeback_data;
@@ -585,11 +585,11 @@ module bp_uce
 
         e_uc_writeback_write_req:
           begin
-            fsm_cmd_header_lo.msg_type = e_bedrock_mem_wr;
-            fsm_cmd_header_lo.addr     = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p>1{bank_index}, byte_offset_width_lp'(0)};
-            fsm_cmd_header_lo.size     = block_msg_size_lp;
-            fsm_cmd_header_lo.payload.lce_id     = lce_id_i;
-            fsm_cmd_data_lo            = writeback_data;
+            fsm_cmd_header_lo.msg_type       = e_bedrock_mem_wr;
+            fsm_cmd_header_lo.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p>1{bank_index}}, byte_offset_width_lp'(0)};
+            fsm_cmd_header_lo.size           = block_msg_size_lp;
+            fsm_cmd_header_lo.payload.lce_id = lce_id_i;
+            fsm_cmd_data_lo                  = writeback_data;
             fsm_cmd_v_lo = ~cache_req_credits_full_o;
 
             state_n = fsm_cmd_done ? e_send_critical : e_uc_writeback_write_req;
@@ -671,7 +671,7 @@ module bp_uce
         e_writeback_write_req:
           begin
             fsm_cmd_header_lo.msg_type       = e_bedrock_mem_wr;
-            fsm_cmd_header_lo.addr           = {dirty_tag_r.tag, cache_req_r.addr[block_offset_width_lp+:index_width_lp], {{assoc_p>1}bank_index}, byte_offset_width_lp'(0)};
+            fsm_cmd_header_lo.addr           = {dirty_tag_r.tag, cache_req_r.addr[block_offset_width_lp+:index_width_lp], {assoc_p>1{bank_index}}, byte_offset_width_lp'(0)};
             fsm_cmd_header_lo.size           = block_msg_size_lp;
             fsm_cmd_header_lo.payload.lce_id = lce_id_i;
             fsm_cmd_data_lo                  = writeback_data;
