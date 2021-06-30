@@ -27,7 +27,7 @@ module bp_me_xbar_stream
    , input [num_source_p-1:0]                                         cmd_v_i
    , output logic [num_source_p-1:0]                                  cmd_yumi_o
    , input [num_source_p-1:0]                                         cmd_last_i
-   , input [num_source_p-1:0][lg_num_sink_lp-1:0]                    cmd_dst_i
+   , input [num_source_p-1:0][lg_num_sink_lp-1:0]                     cmd_dst_i
 
    , output logic [num_source_p-1:0][uce_mem_msg_header_width_lp-1:0] resp_header_o
    , output logic [num_source_p-1:0][data_width_p-1:0]                resp_data_o
@@ -46,7 +46,7 @@ module bp_me_xbar_stream
    , input [num_sink_p-1:0]                                           resp_v_i
    , output logic [num_sink_p-1:0]                                    resp_yumi_o
    , input [num_sink_p-1:0]                                           resp_last_i
-   , input [num_sink_p-1:0][lg_num_source_lp-1:0]                    resp_dst_i
+   , input [num_sink_p-1:0][lg_num_source_lp-1:0]                     resp_dst_i
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, data_width_p, lce_id_width_p, lce_assoc_p, uce);
@@ -94,7 +94,7 @@ module bp_me_xbar_stream
   assign cmd_data_o   = {num_sink_p{cmd_data_selected_lo}};
   assign cmd_v_o      = cmd_grants_v_li ? (1'b1 << cmd_dst_i[cmd_grants_sel_li]) : '0;
   assign cmd_yumi_o   = cmd_grants_lo & {num_source_p{|{cmd_v_o & cmd_ready_and_i}}};
-  assign cmd_last_o   = cmd_v_o & cmd_last_i[cmd_grants_sel_li];
+  assign cmd_last_o   = cmd_v_o & {num_sink_p{cmd_last_i[cmd_grants_sel_li]}};
 
   // Response arbitration logic
   logic [num_sink_p-1:0] resp_grant_li;

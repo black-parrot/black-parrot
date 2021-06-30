@@ -70,7 +70,7 @@ module bp_unicore
   logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
   bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
   logic [uce_mem_data_width_lp-1:0] mem_resp_data_li;
-  logic mem_resp_v_li, mem_resp_yumi_lo, mem_resp_last_li;
+  logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
 
   bp_unicore_lite
    #(.bp_params_p(bp_params_p))
@@ -87,8 +87,8 @@ module bp_unicore
      ,.mem_resp_header_i(mem_resp_header_li)
      ,.mem_resp_data_i(mem_resp_data_li)
      ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_yumi_o(mem_resp_yumi_lo)
-     ,.mem_resp_last_i(mem_resp_v_li) // stub
+     ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
+     ,.mem_resp_last_i(mem_resp_last_li)
 
      // I/O
      ,.*
@@ -106,22 +106,25 @@ module bp_unicore
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
   
-     // TODO: Make stream
-     ,.mem_cmd_i({mem_cmd_data_lo, mem_cmd_header_lo})
+     ,.mem_cmd_header_i(mem_cmd_header_lo)
+     ,.mem_cmd_data_i(mem_cmd_data_lo)
      ,.mem_cmd_v_i(mem_cmd_v_lo)
      ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
+     ,.mem_cmd_last_i(mem_cmd_last_lo)
 
-     ,.mem_resp_o({mem_resp_data_li, mem_resp_header_li})
+     ,.mem_resp_header_o(mem_resp_header_li)
+     ,.mem_resp_data_o(mem_resp_data_li)
      ,.mem_resp_v_o(mem_resp_v_li)
-     ,.mem_resp_yumi_i(mem_resp_yumi_lo)
+     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
+     ,.mem_resp_last_o(mem_resp_last_li)
   
      ,.cache_pkt_o(cache_pkt_li)
-     ,.v_o(cache_pkt_v_li)
-     ,.ready_i(cache_pkt_ready_lo)
+     ,.cache_pkt_v_o(cache_pkt_v_li)
+     ,.cache_pkt_ready_i(cache_pkt_ready_lo)
   
-     ,.data_i(cache_data_lo)
-     ,.v_i(cache_data_v_lo)
-     ,.yumi_o(cache_data_yumi_li)
+     ,.cache_data_i(cache_data_lo)
+     ,.cache_v_i(cache_data_v_lo)
+     ,.cache_yumi_o(cache_data_yumi_li)
      );
   
   bsg_cache

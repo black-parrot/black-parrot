@@ -1,8 +1,18 @@
+/**
+ *
+ * Name:
+ *   bp_me_stream_pump_in.sv
+ *
+ * Description:
+ *   Provides an FSM with control signals for an inbound BedRock Stream interface.
+ *   This module buffers the inbound BedRock Stream channel and exposes it to the FSM.
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_stream_pump_in
+module bp_me_stream_pump_in
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
@@ -11,37 +21,62 @@ module bp_stream_pump_in
    , parameter stream_data_width_p = dword_width_gp
    , parameter block_width_p = cce_block_width_p
 
-   // Bitmask which determines which message types have a data payload
-   // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
-   , parameter payload_mask_p = 0
+   // Bitmasks that specify which message types may have multiple beats on either
+   // the memory input side or FSM output side.
+   // Each mask is constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
+   // There are three cases:
+   // 1. Message types that are set in mem_stream_mask_p but not in
+   //    fsm_stream_mask_p will result in N:1 conversion from mem->FSM ports.
+   //    This is rarely used.
+   // 2. Message types that are set as part of fsm_stream_mask_p but not set in
+   //    mem_stream_mask_p result in a 1:N conversion from mem->FSM ports.
+   //    For example, in BlackParrot a read command for 64B to the
+   //    cache arriving on the BedRock Stream input can be decomposed into a stream of
+   //    8B reads on the FSM output port.
+   // 3. Message types set in both will have N:N beats. Every beat on the input
+   //    will produce a beat on the output. This is commonly used for all messages
+   //    with data payloads.
+   // Constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
+   , parameter mem_stream_mask_p = 0
+   , parameter fsm_stream_mask_p = mem_stream_mask_p
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
+
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
    , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p >> 3)
    , localparam stream_words_lp = block_width_p / stream_data_width_p
    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
    )
-  (input                                            clk_i
-   , input                                          reset_i
- 
-   // bus side
-   , input [xce_mem_msg_header_width_lp-1:0]        mem_header_i
-   , input [stream_data_width_p-1:0]                mem_data_i
-   , input                                          mem_v_i
-   , input                                          mem_last_i
-   , output logic                                   mem_ready_and_o
- 
-   // FSM side
-   , output logic [xce_mem_msg_header_width_lp-1:0] fsm_base_header_o
-   , output logic [paddr_width_p-1:0]               fsm_addr_o
-   , output logic [stream_data_width_p-1:0]         fsm_data_o
-   , output logic                                   fsm_v_o
-   , input                                          fsm_yumi_i
- 
-   // control signals
-   , output logic                                   fsm_new_o
-   , output logic                                   fsm_done_o
-   );
+  ( input                                          clk_i
+  , input                                          reset_i
+
+  // Input BedRock Stream
+  , input [xce_mem_msg_header_width_lp-1:0]        mem_header_i
+  , input [stream_data_width_p-1:0]                mem_data_i
+  , input                                          mem_v_i
+  , input                                          mem_last_i
+  , output logic                                   mem_ready_and_o
+
+  // FSM consumer side
+  , output logic [xce_mem_msg_header_width_lp-1:0] fsm_base_header_o
+  , output logic [paddr_width_p-1:0]               fsm_addr_o
+  , output logic [stream_data_width_p-1:0]         fsm_data_o
+  , output logic                                   fsm_v_o
+  , input                                          fsm_yumi_i
+  // FSM control signals
+  // fsm_new and fsm_done are raised on first and last beats of each message
+  , output logic                                   fsm_new_o
+  , output logic                                   fsm_done_o
+  );
+
+  //synopsys translate_off
+  initial begin
+    assert((block_width_p % stream_data_width_p == 0)) else
+      $error("block_width_p must be evenly divisible by stream_data_width_p");
+    assert((block_width_p >= stream_data_width_p == 0)) else
+      $error("block_width_p must be at least as large as stream_data_width_p");
+  end
+  //synopsys translate_on
 
   `declare_bp_bedrock_mem_if(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
 
@@ -66,14 +101,18 @@ module bp_stream_pump_in
       ,.yumi_i(mem_yumi_li)
       );
 
-  wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << mem_header_lo.size) / (stream_data_width_p / 8), 1'b1);
+  wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << mem_header_lo.size) / (stream_data_width_p / 8), 1'b1) - 1'b1;
 
-  logic cnt_up, is_last_cnt, is_stream, streaming_r;
+  logic cnt_up, is_last_cnt, streaming_r;
+  logic is_fsm_stream, is_mem_stream;
+  wire any_stream_new = (is_fsm_stream | is_mem_stream) & ~streaming_r;
   // store this addr for stream state
   logic [block_offset_width_lp-1:0] critical_addr_r;
+
   if (stream_words_lp == 1)
     begin: full_block_stream
-      assign is_stream = '0;
+      assign is_fsm_stream = '0;
+      assign is_mem_stream = '0;
       assign streaming_r = '0;
       assign critical_addr_r = mem_header_lo.addr[0+:block_offset_width_lp];
       assign is_last_cnt = 1'b1;
@@ -88,7 +127,7 @@ module bp_stream_pump_in
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
 
-        ,.set_i(fsm_new_o & cnt_up)
+        ,.set_i(any_stream_new & cnt_up)
         ,.en_i(cnt_up | fsm_done_o)
         ,.val_i(first_cnt + cnt_up)
         ,.count_o(current_cnt)
@@ -117,11 +156,13 @@ module bp_stream_pump_in
       always_comb
         begin
           first_cnt = critical_addr_r[stream_offset_width_lp+:data_len_width_lp];
-          last_cnt  = first_cnt + num_stream - 1'b1;
+          last_cnt  = first_cnt + num_stream;
 
-          is_stream = payload_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
-          stream_cnt = fsm_new_o ? first_cnt : current_cnt;
-          is_last_cnt = (stream_cnt == last_cnt) | ~is_stream;
+          is_fsm_stream = fsm_stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
+          is_mem_stream = mem_stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
+
+          stream_cnt = any_stream_new ? first_cnt : current_cnt;
+          is_last_cnt = (stream_cnt == last_cnt) | (~is_fsm_stream & ~is_mem_stream);
         end
 
       // Generate proper wrap-around address for different incoming msg size dynamically.
@@ -136,17 +177,13 @@ module bp_stream_pump_in
       // size = 512: a wrapped around seq: 2, 3, 4, 5, 6, 7, 0, 1  all 3-bit of cnt is used
       // size = 256: a wrapped around seq: 2, 3, 0, 1              only lower 2-bit of cnt is used
 
-      // sel_mask is generated to determined how many bits of counter is used.
-      // For num_stream = x, (x-1) denotes the bits using the counter
-      logic [data_len_width_lp-1:0] sel_mask, wrap_around_cnt;
-      assign sel_mask = num_stream - 1'b1;
-
+      logic [data_len_width_lp-1:0] wrap_around_cnt;
       bsg_mux_bitwise
        #(.width_p(data_len_width_lp))
        sub_block_addr_mux
         (.data0_i(mem_header_lo.addr[stream_offset_width_lp+:data_len_width_lp])
         ,.data1_i(stream_cnt)
-        ,.sel_i(sel_mask)
+        ,.sel_i(num_stream)
         ,.data_o(wrap_around_cnt)
       );
 
@@ -161,15 +198,32 @@ module bp_stream_pump_in
       // keep the address to be the critical word address
       fsm_base_header_cast_o.addr[0+:block_offset_width_lp] = critical_addr_r;
       fsm_data_o = mem_data_lo;
-      fsm_v_o = mem_v_lo;
 
-      cnt_up = fsm_yumi_i & ~is_last_cnt;
-      // also used for credits return
+      if (~is_mem_stream & is_fsm_stream)
+        begin
+          // 1:N
+          fsm_v_o = mem_v_lo;
+          mem_yumi_li = is_last_cnt & mem_last_lo & fsm_yumi_i;
+          cnt_up = fsm_yumi_i & ~is_last_cnt;
+        end
+      else if (is_mem_stream & ~is_fsm_stream)
+        begin
+          // N:1
+          // consume all but last mem input beat silently, then FSM consumes last beat
+          fsm_v_o = mem_v_lo & is_last_cnt;
+          mem_yumi_li = ~is_last_cnt ? mem_v_lo : (mem_last_lo & fsm_yumi_i);
+          cnt_up = mem_v_lo & ~is_last_cnt;
+        end
+      else
+        begin
+          // 1:1
+          fsm_v_o = mem_v_lo;
+          mem_yumi_li = fsm_yumi_i;
+          cnt_up = fsm_yumi_i & ~is_last_cnt;
+        end
+
+      fsm_new_o = ~streaming_r & fsm_v_o;
       fsm_done_o = is_last_cnt & fsm_yumi_i;
-      fsm_new_o = is_stream & ~streaming_r;
-
-      // Only dequeue when stream is done, or if stream is single beat
-      mem_yumi_li = (is_stream & mem_last_lo & mem_v_lo) ? fsm_done_o : fsm_yumi_i;
     end
 
 endmodule

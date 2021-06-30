@@ -36,13 +36,13 @@ module bp_uce
     , localparam bank_sub_offset_width_lp = $clog2(fill_size_in_bank_lp)
 
     // Fill size parameterisations -
-    , localparam bp_bedrock_msg_size_e block_msg_size_lp = (fill_width_p == 512)
+    , localparam bp_bedrock_msg_size_e block_msg_size_lp = (block_width_p == 512)
                                                            ? e_bedrock_msg_size_64
-                                                           : (fill_width_p == 256)
+                                                           : (block_width_p == 256)
                                                              ? e_bedrock_msg_size_32
-                                                             : (fill_width_p == 128)
+                                                             : (block_width_p == 128)
                                                                ? e_bedrock_msg_size_16
-                                                               : (fill_width_p == 64)
+                                                               : (block_width_p == 64)
                                                                  ? e_bedrock_msg_size_8
                                                                  : e_bedrock_msg_size_64
     )
@@ -223,11 +223,12 @@ module bp_uce
   logic fsm_cmd_v_lo, fsm_cmd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt;
   logic fsm_cmd_done;
-  bp_stream_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
-     ,.payload_mask_p(mem_cmd_payload_mask_gp)
+     ,.mem_stream_mask_p(mem_cmd_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
      )
    uce_pump_out
     (.clk_i(clk_i)
@@ -253,11 +254,12 @@ module bp_uce
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
   logic fsm_resp_new, fsm_resp_done;
   logic mem_resp_ready_and_lo;
-  bp_stream_pump_in
+  bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
-     ,.payload_mask_p(mem_resp_payload_mask_gp)
+     ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
      )
    uce_pump_in
     (.clk_i(clk_i)
