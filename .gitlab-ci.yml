@@ -26,6 +26,7 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
+    - me_dev_fix_streamif
   before_script:
       - git submodule update --init --checkout --recursive external/
   artifacts:
