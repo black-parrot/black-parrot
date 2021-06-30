@@ -1,5 +1,5 @@
 /**
- * bp_me_cce_to_wormhole_link_recv.v
+ * bp_me_cce_to_wormhole_link_recv.sv
  */
 
 `include "bp_common_defines.svh"
