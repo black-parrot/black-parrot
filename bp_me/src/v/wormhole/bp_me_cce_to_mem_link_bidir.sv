@@ -63,8 +63,8 @@ module bp_me_cce_to_mem_link_bidir
 
   `declare_bsg_ready_and_link_sif_s(flit_width_p, bsg_ready_and_link_sif_s);
   bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o, resp_link_cast_i, resp_link_cast_o;
-  bsg_ready_and_link_sif_s master_cmd_link_lo, master_resp_link_li;
-  bsg_ready_and_link_sif_s client_cmd_link_li, client_resp_link_lo;
+  bsg_ready_and_link_sif_s send_cmd_link_lo, send_resp_link_li;
+  bsg_ready_and_link_sif_s recv_cmd_link_li, recv_resp_link_lo;
   
   assign cmd_link_cast_i = cmd_link_i;
   assign resp_link_cast_i = resp_link_i;
@@ -72,33 +72,33 @@ module bp_me_cce_to_mem_link_bidir
   assign resp_link_o = resp_link_cast_o;
   
   // Swizzle ready_and_rev
-  assign client_cmd_link_li  = '{data          : cmd_link_cast_i.data
+  assign recv_cmd_link_li  = '{data          : cmd_link_cast_i.data
                                  ,v            : cmd_link_cast_i.v
                                  ,ready_and_rev: resp_link_cast_i.ready_and_rev
                                  };
-  assign cmd_link_cast_o     = '{data          : master_cmd_link_lo.data
-                                 ,v            : master_cmd_link_lo.v
-                                 ,ready_and_rev: client_resp_link_lo.ready_and_rev
+  assign cmd_link_cast_o     = '{data          : send_cmd_link_lo.data
+                                 ,v            : send_cmd_link_lo.v
+                                 ,ready_and_rev: recv_resp_link_lo.ready_and_rev
                                  };
   
-  assign master_resp_link_li = '{data          : resp_link_cast_i.data
+  assign send_resp_link_li = '{data          : resp_link_cast_i.data
                                  ,v            : resp_link_cast_i.v
                                  ,ready_and_rev: cmd_link_cast_i.ready_and_rev
                                  };
-  assign resp_link_cast_o    = '{data          : client_resp_link_lo.data
-                                 ,v            : client_resp_link_lo.v
-                                 ,ready_and_rev: master_cmd_link_lo.ready_and_rev
+  assign resp_link_cast_o    = '{data          : recv_resp_link_lo.data
+                                 ,v            : recv_resp_link_lo.v
+                                 ,ready_and_rev: send_cmd_link_lo.ready_and_rev
                                  };
   
   
-  bp_me_cce_to_mem_link_master
+  bp_me_cce_to_mem_link_send
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
      ,.cord_width_p(cord_width_p)
      ,.cid_width_p(cid_width_p)
      ,.len_width_p(len_width_p)
      )
-   master_link
+   send_link
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
   
@@ -120,11 +120,11 @@ module bp_me_cce_to_mem_link_bidir
      ,.mem_resp_yumi_i(mem_resp_yumi_i)
      ,.mem_resp_last_o(mem_resp_last_o)  
 
-     ,.cmd_link_o(master_cmd_link_lo)
-     ,.resp_link_i(master_resp_link_li)
+     ,.cmd_link_o(send_cmd_link_lo)
+     ,.resp_link_i(send_resp_link_li)
      );
   
-  bp_me_cce_to_mem_link_client
+  bp_me_cce_to_mem_link_recv
    #(.bp_params_p(bp_params_p)
      ,.num_outstanding_req_p(num_outstanding_req_p)
      ,.flit_width_p(flit_width_p)
@@ -132,7 +132,7 @@ module bp_me_cce_to_mem_link_bidir
      ,.cid_width_p(cid_width_p)
      ,.len_width_p(len_width_p)
      )
-   client_link
+   recv_link
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
   
@@ -148,8 +148,8 @@ module bp_me_cce_to_mem_link_bidir
      ,.mem_resp_ready_and_o(mem_resp_ready_and_o)
      ,.mem_resp_last_i(mem_resp_last_i)  
 
-     ,.cmd_link_i(client_cmd_link_li)
-     ,.resp_link_o(client_resp_link_lo)
+     ,.cmd_link_i(recv_cmd_link_li)
+     ,.resp_link_o(recv_resp_link_lo)
      );
 
 endmodule

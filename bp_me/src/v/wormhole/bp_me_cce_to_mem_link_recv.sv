@@ -1,11 +1,11 @@
 /**
- * bp_me_cce_to_wormhole_link_client.v
+ * bp_me_cce_to_wormhole_link_recv.sv
  */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_me_cce_to_mem_link_client
+module bp_me_cce_to_mem_link_recv
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg

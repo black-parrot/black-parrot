@@ -378,8 +378,8 @@ module bp_unicore_lite
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(uce_mem_data_width_lp)
-     ,.num_masters_p(3)
-     ,.num_clients_p(5)
+     ,.num_source_p(3)
+     ,.num_sink_p(5)
      )
    stream_arb
     (.clk_i(clk_i)
