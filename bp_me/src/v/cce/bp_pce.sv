@@ -39,7 +39,8 @@ module bp_pce
   , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
   , input                                          cache_req_metadata_v_i
   , output logic                                   cache_req_complete_o
-  , output logic                                   cache_req_critical_o
+  , output logic                                   cache_req_critical_tag_o
+  , output logic                                   cache_req_critical_data_o
   , output logic                                   cache_req_credits_full_o
   , output logic                                   cache_req_credits_empty_o
 
@@ -183,7 +184,8 @@ module bp_pce
 
   assign cache_req_credits_full_o  = (state_r != e_ready);
   assign cache_req_credits_empty_o = (state_r == e_ready);
-  assign cache_req_critical_o      = '0;
+  assign cache_req_critical_tag_o  = '0;
+  assign cache_req_critical_data_o = '0;
   assign cache_req_busy_o          = cache_req_credits_full_o;
 
   logic l15_pce_ret_yumi_lo;

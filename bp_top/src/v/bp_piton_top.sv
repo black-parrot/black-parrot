@@ -65,7 +65,7 @@ module bp_piton_top
    , output logic                                      transducer_l15_req_ack
    );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
@@ -104,7 +104,8 @@ module bp_piton_top
   bp_icache_stat_info_s icache_stat_mem_lo;
 
   logic dcache_req_complete_li, icache_req_complete_li;
-  logic dcache_req_critical_li, icache_req_critical_li;
+  logic dcache_req_critical_tag_li, icache_req_critical_tag_li;
+  logic dcache_req_critical_data_li, icache_req_critical_data_li;
 
   bp_pce_l15_req_s [1:0] pce_l15_req_lo;
   logic [1:0] pce_l15_req_v_lo, pce_l15_req_ready_li;
@@ -150,8 +151,9 @@ module bp_piton_top
      ,.cache_req_busy_i(icache_req_busy_li)
      ,.cache_req_metadata_o(icache_req_metadata_lo)
      ,.cache_req_metadata_v_o(icache_req_metadata_v_lo)
+     ,.cache_req_critical_tag_i(icache_req_critical_tag_li)
+     ,.cache_req_critical_data_i(icache_req_critical_data_li)
      ,.cache_req_complete_i(icache_req_complete_li)
-     ,.cache_req_critical_i(icache_req_critical_li)
      ,.cache_req_credits_full_i(icache_req_credits_full_li)
      ,.cache_req_credits_empty_i(icache_req_credits_empty_li)
 
@@ -193,9 +195,10 @@ module bp_piton_top
      ,.cache_req_busy_i(dcache_req_busy_li)
      ,.cache_req_metadata_o(dcache_req_metadata_lo)
      ,.cache_req_metadata_v_o(dcache_req_metadata_v_lo)
+     ,.cache_req_critical_tag_i(dcache_req_critical_tag_li)
+     ,.cache_req_critical_data_i(dcache_req_critical_data_li)
 
      ,.cache_req_complete_i(dcache_req_complete_li)
-     ,.cache_req_critical_i(dcache_req_critical_li)
      ,.cache_req_credits_full_i(dcache_req_credits_full_li)
      ,.cache_req_credits_empty_i(dcache_req_credits_empty_li)
 
@@ -237,8 +240,9 @@ module bp_piton_top
     ,.cache_req_busy_o(dcache_req_busy_li)
     ,.cache_req_metadata_i(dcache_req_metadata_lo)
     ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
+    ,.cache_req_critical_tag_o(dcache_req_critical_tag_li)
+    ,.cache_req_critical_data_o(dcache_req_critical_data_li)
     ,.cache_req_complete_o(dcache_req_complete_li)
-    ,.cache_req_critical_o(dcache_req_critical_li)
     ,.cache_req_credits_full_o(dcache_req_credits_full_li)
     ,.cache_req_credits_empty_o(dcache_req_credits_empty_li)
 
@@ -281,8 +285,9 @@ module bp_piton_top
     ,.cache_req_busy_o(icache_req_busy_li)
     ,.cache_req_metadata_i(icache_req_metadata_lo)
     ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
+    ,.cache_req_critical_tag_o(icache_req_critical_tag_li)
+    ,.cache_req_critical_data_o(icache_req_critical_data_li)
     ,.cache_req_complete_o(icache_req_complete_li)
-    ,.cache_req_critical_o(icache_req_critical_li)
     ,.cache_req_credits_full_o(icache_req_credits_full_li)
     ,.cache_req_credits_empty_o(icache_req_credits_empty_li)
 
@@ -317,7 +322,7 @@ module bp_piton_top
      ,.skip_ram_init_p(0)
      ,.clear_freeze_p(1)
      // Enabling all domains for parrotpiton
-     ,.domain_mask_p(64'hff)
+     ,.hio_mask_p(64'hff)
      )
      cfg_loader
      (.clk_i(clk_i)
@@ -344,7 +349,7 @@ module bp_piton_top
 
      ,.mem_cmd_i(cfg_cmd_li)
      ,.mem_cmd_v_i(cfg_cmd_v_li)
-     ,.mem_cmd_ready_o(cfg_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(cfg_cmd_ready_lo)
 
      ,.mem_resp_o(cfg_resp_lo)
      ,.mem_resp_v_o(cfg_resp_v_lo)
@@ -354,6 +359,11 @@ module bp_piton_top
      ,.did_i('0)
      ,.host_did_i('0)
      ,.cord_i({coh_noc_y_cord_width_p'(config_coreid_y), coh_noc_x_cord_width_p'(config_coreid_x)})
+
+     ,.cce_ucode_v_o()
+     ,.cce_ucode_w_o()
+     ,.cce_ucode_addr_o()
+     ,.cce_ucode_data_o()
      ,.cce_ucode_data_i('0)
      );
 
@@ -365,7 +375,7 @@ module bp_piton_top
     begin : fifo
       bsg_fifo_1r1w_small
        #(.width_p($bits(bp_pce_l15_req_s))
-         ,.els_p(2)
+         ,.els_p(4)
          )
        mem_fifo
         (.clk_i(clk_i)
