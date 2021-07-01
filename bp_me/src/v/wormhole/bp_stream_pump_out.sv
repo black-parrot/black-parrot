@@ -39,9 +39,10 @@ module bp_stream_pump_out
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
 
+   , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
+   , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p >> 3)
    , localparam stream_words_lp = block_width_p / stream_data_width_p
    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
-   , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p >> 3)
    )
   ( input clk_i
   , input reset_i
@@ -172,6 +173,7 @@ module bp_stream_pump_out
         ,.data1_i(stream_cnt_o)
         ,.sel_i(sel_mask)
         ,.data_o(wrap_around_cnt)
+        );
     end
 
   logic [stream_offset_width_lp+data_len_width_lp-1:0] sub_block_adddr, sub_block_adddr_tuned;
