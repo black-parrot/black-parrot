@@ -17,8 +17,5 @@ package bp_me_pkg;
 
   `include "bp_me_cce_inst_pkgdef.svh"
 
-  localparam mem_stream_wr_mask_gp = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr);
-  localparam mem_stream_rd_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd);
-
 endpackage
 
