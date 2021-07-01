@@ -774,7 +774,6 @@ module bp_tile
      ,.out_msg_ready_and_i(cache_mem_resp_yumi_li)
      );
 
-  import bsg_cache_pkg::*;
   `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
