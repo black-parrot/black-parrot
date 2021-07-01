@@ -100,7 +100,7 @@ module bp_me_cce_to_cache
   logic mem_cmd_stream_new_lo, mem_cmd_done_lo;
   logic [paddr_width_p-1:0] mem_cmd_stream_addr_lo;
   logic [data_mask_width_lp-1:0] cache_pkt_mask_lo;
-  bp_stream_pump_in
+  bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
    ,.stream_data_width_p(mem_data_width_p)
    ,.block_width_p(cce_block_width_p)
@@ -219,7 +219,7 @@ module bp_me_cce_to_cache
     ,.yumi_i(mem_resp_done_lo)
     );
 
-  bp_stream_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
    ,.stream_data_width_p(mem_data_width_p)
    ,.block_width_p(cce_block_width_p)
