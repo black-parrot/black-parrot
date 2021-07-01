@@ -104,7 +104,7 @@ module bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p)
    ,.stream_data_width_p(mem_data_width_p)
    ,.block_width_p(cce_block_width_p)
-   ,.stream_mask_p(mem_stream_wr_mask_gp | mem_stream_rd_mask_gp))
+   ,.mem_stream_mask_p(mem_stream_wr_mask_gp | mem_stream_rd_mask_gp))
    cce_to_cache_pump_in
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -223,8 +223,8 @@ module bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p)
    ,.stream_data_width_p(mem_data_width_p)
    ,.block_width_p(cce_block_width_p)
-   ,.payload_mask_p(mem_resp_payload_mask_gp)
-   ,.stream_mask_p(mem_stream_wr_mask_gp | mem_stream_rd_mask_gp))
+   ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
+   ,.fsm_stream_mask_p(mem_stream_wr_mask_gp | mem_stream_rd_mask_gp))
    cce_to_cache_pump_out
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
