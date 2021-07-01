@@ -21,10 +21,21 @@ module bp_stream_pump_in
    , parameter stream_data_width_p = dword_width_gp
    , parameter block_width_p = cce_block_width_p
 
-   // Bitmask which determines which message types may have multiple beats and
-   // should get streamed by the FSM.
+   // Bitmask which determines which message types have data and may require multiple
+   // beats. Messages with multiple beats will have N input beats from the BedRock
+   // Stream interface and generate N output beats on the FSM side.
    // Constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
-   , parameter stream_mask_p = 0
+   , parameter mem_payload_mask_p = 0
+
+   // Bitmask which determines which message types will have a single beat on the
+   // input BedRock Stream interface but may generate multiple beats on the FSM
+   // output port. This is used when a read message arrives with size greater than
+   // stream_data_width_p. For example, in BlackParrot a read command for 64B to the
+   // cache arriving on the BedRock Stream input can be decomposed into a stream of
+   // 8B reads on the FSM output port.
+   // Constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
+   // This parameter should be mutually exclusive from mem_payload_mask_p.
+   , parameter fsm_stream_mask_p = 0
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
@@ -132,7 +143,7 @@ module bp_stream_pump_in
           first_cnt = critical_addr_r[stream_offset_width_lp+:data_len_width_lp];
           last_cnt  = first_cnt + num_stream - 1'b1;
 
-          is_stream = stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
+          is_stream = fsm_stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
           stream_cnt = stream_new_o ? first_cnt : current_cnt;
           is_last_cnt = (stream_cnt == last_cnt) | ~is_stream;
         end
@@ -168,6 +179,8 @@ module bp_stream_pump_in
                           , mem_header_lo.addr[0+:stream_offset_width_lp]};
     end
 
+  wire has_data = mem_payload_mask_p[mem_header_lo];
+
   always_comb
     begin
       fsm_base_header_cast_o = mem_header_lo;
@@ -176,13 +189,29 @@ module bp_stream_pump_in
       fsm_data_o = mem_data_lo;
       fsm_v_o = mem_v_lo;
 
-      cnt_up = fsm_yumi_i & ~is_last_cnt;
-      // also used for credits return
-      stream_done_o = is_last_cnt & fsm_yumi_i;
-      stream_new_o = is_stream & ~streaming_r;
+      if (~is_stream | has_data)
+        begin
+          // handle BedRock Stream input messages with data payload (one or multiple beats)
+          // and messages without data that are not streamed (single beat FSM output).
+          mem_yumi_li = fsm_yumi_i;
+        end
+      else
+        begin
+          // handle FSM streaming - single beat BedRock Stream input to multi-beat
+          // FSM output. Dequeue input when FSM streaming finishes.
+          mem_yumi_li = is_last_cnt & mem_last_lo & fsm_yumi_i;
+        end
 
-      // Only dequeue when stream is done, or if stream is single beat
-      mem_yumi_li = (is_stream & mem_last_lo & mem_v_lo) ? stream_done_o : fsm_yumi_i;
+      cnt_up = fsm_yumi_i & ~is_last_cnt;
+      stream_done_o = is_last_cnt & fsm_yumi_i;
+      stream_new_o = (is_stream | has_data) & ~streaming_r;
     end
+
+  //synopsys translate_off
+  initial begin
+    assert((mem_payload_mask_p & fsm_stream_mask_p) == 0) else
+      $error("mem_payload_mask_p and fsm_stream_mask_p must be mutually exclusive");
+  end
+  //synopsys translate_on
 
 endmodule
