@@ -116,7 +116,8 @@ module bp_unicore
      ,.mem_resp_data_o(mem_resp_data_li)
      ,.mem_resp_last_o(mem_resp_last_li)
      ,.mem_resp_v_o(mem_resp_v_li)
-     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
+     // TODO: yumi connected to ready_and
+     ,.mem_resp_ready_and_i(mem_resp_yumi_lo)
 
      ,.cache_pkt_o(cache_pkt_li)
      ,.cache_pkt_v_o(cache_pkt_v_li)
