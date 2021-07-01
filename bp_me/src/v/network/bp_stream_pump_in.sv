@@ -41,6 +41,7 @@ module bp_stream_pump_in
    , parameter fsm_stream_mask_p = mem_stream_mask_p
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
+
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
    , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p >> 3)
    , localparam stream_words_lp = block_width_p / stream_data_width_p

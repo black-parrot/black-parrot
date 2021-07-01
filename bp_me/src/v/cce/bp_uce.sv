@@ -246,7 +246,7 @@ module bp_uce
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.mem_stream_mask_p(mem_cmd_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_stream_wr_mask_gp)
      )
    uce_pump_out
     (.clk_i(clk_i)
@@ -276,8 +276,7 @@ module bp_uce
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
-     ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
+     ,.mem_stream_mask_p(mem_stream_rd_mask_gp)
      )
    uce_pump_in
     (.clk_i(clk_i)
