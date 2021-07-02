@@ -111,11 +111,6 @@ module testbench
   bp_bedrock_cce_mem_msg_s proc_io_resp_li;
   logic proc_io_resp_v_li, proc_io_resp_yumi_lo;
 
-  bp_bedrock_cce_mem_msg_s io_cmd_lo;
-  logic io_cmd_v_lo, io_cmd_ready_li;
-  bp_bedrock_cce_mem_msg_s io_resp_li;
-  logic io_resp_v_li, io_resp_yumi_lo;
-
   bp_bedrock_cce_mem_msg_s load_cmd_lo;
   logic load_cmd_v_lo, load_cmd_yumi_li;
   bp_bedrock_cce_mem_msg_s load_resp_li;
