@@ -19,15 +19,15 @@ module bp_me_xbar_stream
    , localparam lg_num_source_lp = `BSG_SAFE_CLOG2(num_source_p)
    , localparam lg_num_sink_lp   = `BSG_SAFE_CLOG2(num_sink_p)
    )
-  (input                                                               clk_i
-   , input                                                             reset_i
+  (input                                                              clk_i
+   , input                                                            reset_i
 
    , input [num_source_p-1:0][uce_mem_msg_header_width_lp-1:0]        cmd_header_i
    , input [num_source_p-1:0][data_width_p-1:0]                       cmd_data_i
    , input [num_source_p-1:0]                                         cmd_v_i
    , output logic [num_source_p-1:0]                                  cmd_yumi_o
    , input [num_source_p-1:0]                                         cmd_last_i
-   , input [num_source_p-1:0][lg_num_sink_lp-1:0]                    cmd_dst_i
+   , input [num_source_p-1:0][lg_num_sink_lp-1:0]                     cmd_dst_i
 
    , output logic [num_source_p-1:0][uce_mem_msg_header_width_lp-1:0] resp_header_o
    , output logic [num_source_p-1:0][data_width_p-1:0]                resp_data_o
@@ -46,7 +46,7 @@ module bp_me_xbar_stream
    , input [num_sink_p-1:0]                                           resp_v_i
    , output logic [num_sink_p-1:0]                                    resp_yumi_o
    , input [num_sink_p-1:0]                                           resp_last_i
-   , input [num_sink_p-1:0][lg_num_source_lp-1:0]                    resp_dst_i
+   , input [num_sink_p-1:0][lg_num_source_lp-1:0]                     resp_dst_i
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, data_width_p, lce_id_width_p, lce_assoc_p, uce);
