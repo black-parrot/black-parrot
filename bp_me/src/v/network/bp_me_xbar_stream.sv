@@ -94,7 +94,7 @@ module bp_me_xbar_stream
   assign cmd_data_o   = {num_sink_p{cmd_data_selected_lo}};
   assign cmd_v_o      = cmd_grants_v_li ? (1'b1 << cmd_dst_i[cmd_grants_sel_li]) : '0;
   assign cmd_yumi_o   = cmd_grants_lo & {num_source_p{|{cmd_v_o & cmd_ready_and_i}}};
-  assign cmd_last_o   = cmd_v_o & cmd_last_i[cmd_grants_sel_li];
+  assign cmd_last_o   = cmd_v_o & {num_sink_p{cmd_last_i[cmd_grants_sel_li]}};
 
   // Response arbitration logic
   logic [num_sink_p-1:0] resp_grant_li;
