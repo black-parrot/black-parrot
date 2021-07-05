@@ -133,10 +133,10 @@ module bp_tile
 
   bp_bedrock_cce_mem_msg_s cfg_mem_cmd_li;
   bp_bedrock_xce_mem_msg_s cfg_mem_cmd;
-  logic cfg_mem_cmd_v_li, cfg_mem_cmd_ready_and_lo;
+  logic cfg_mem_cmd_v_li, cfg_mem_cmd_ready_and_lo, cfg_mem_cmd_last_li;
   bp_bedrock_cce_mem_msg_s cfg_mem_resp_lo;
   bp_bedrock_xce_mem_msg_s cfg_mem_resp;
-  logic cfg_mem_resp_v_lo, cfg_mem_resp_yumi_li;
+  logic cfg_mem_resp_v_lo, cfg_mem_resp_yumi_li, cfg_mem_resp_last_lo;
   assign cfg_mem_cmd = '{header: cfg_mem_cmd_li.header
                         ,data: cfg_mem_cmd_li.data[0+:dword_width_gp]
                         };
@@ -176,13 +176,13 @@ module bp_tile
      ,.mem_cmd_data_i(cfg_mem_cmd.data)
      ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_and_lo)
-     ,.mem_cmd_last_i(cfg_mem_cmd_v_li)
+     ,.mem_cmd_last_i(cfg_mem_cmd_last_li)
 
      ,.mem_resp_header_o(cfg_mem_resp.header)
      ,.mem_resp_data_o(cfg_mem_resp.data)
      ,.mem_resp_v_o(cfg_mem_resp_v_lo)
      ,.mem_resp_ready_and_i(cfg_mem_resp_yumi_li)
-     ,.mem_resp_last_o()
+     ,.mem_resp_last_o(cfg_mem_resp_last_lo)
 
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i(my_did_i)
