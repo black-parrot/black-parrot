@@ -24,33 +24,32 @@ module bp_stream_pump_in
   (input                                            clk_i
    , input                                          reset_i
  
-   // bus side
+   // Input BedRock Stream
    , input [xce_mem_msg_header_width_lp-1:0]        mem_header_i
    , input [stream_data_width_p-1:0]                mem_data_i
    , input                                          mem_v_i
    , input                                          mem_last_i
    , output logic                                   mem_ready_and_o
  
-   // FSM side
+   // FSM consumer side
    , output logic [xce_mem_msg_header_width_lp-1:0] fsm_base_header_o
    , output logic [paddr_width_p-1:0]               fsm_addr_o
    , output logic [stream_data_width_p-1:0]         fsm_data_o
    , output logic                                   fsm_v_o
    , input                                          fsm_yumi_i
- 
-   // control signals
+   // FSM control signals
+   // stream_new is raised on first beat of a multi-beat message
    , output logic                                   fsm_new_o
+   // stream_done is raised on last beat of every message
    , output logic                                   fsm_done_o
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
-
   `bp_cast_o(bp_bedrock_xce_mem_msg_header_s, fsm_base_header);
 
   bp_bedrock_xce_mem_msg_header_s mem_header_lo;
   logic [stream_data_width_p-1:0] mem_data_lo;
   logic mem_v_lo, mem_yumi_li, mem_last_lo;
-
   bsg_two_fifo
    #(.width_p($bits(bp_bedrock_xce_mem_msg_s)+1))
    input_fifo
@@ -172,4 +171,14 @@ module bp_stream_pump_in
       mem_yumi_li = (is_stream & mem_last_lo & mem_v_lo) ? fsm_done_o : fsm_yumi_i;
     end
 
+  //synopsys translate_off
+  if (block_width_p % stream_data_width_p != 0)
+    $fatal("block_width_p must be evenly divisible by stream_data_width_p");
+
+  if (block_width_p < stream_data_width_p)
+    $fatal("block_width_p must be at least as large as stream_data_width_p");
+  end
+  //synopsys translate_on
+
 endmodule
+
