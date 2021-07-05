@@ -21,24 +21,29 @@ module bp_stream_pump_out
    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
    , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p >> 3)
    )
+<<<<<<< HEAD
   (input                                            clk_i
    , input                                          reset_i
  
-   // bus side
+   // Output BedRock Stream
    , output logic [xce_mem_msg_header_width_lp-1:0] mem_header_o
    , output logic [stream_data_width_p-1:0]         mem_data_o
    , output logic                                   mem_v_o
    , output logic                                   mem_last_o
    , input                                          mem_ready_and_i
  
-   // FSM side
-   , input        [xce_mem_msg_header_width_lp-1:0] fsm_base_header_i
-   , input        [stream_data_width_p-1:0]         fsm_data_i
+   // FSM producer side
+   // FSM must hold fsm_base_header_i constant throughout the transaction
+   // (i.e., through cycle stream_done_o is raised)
+   , input [xce_mem_msg_header_width_lp-1:0]        fsm_base_header_i
+   , input [stream_data_width_p-1:0]                fsm_data_i
    , input                                          fsm_v_i
    , output logic                                   fsm_ready_and_o
  
-   // control signals
+   // FSM control signals
+   // stream_cnt is the current stream word being sent
    , output logic [data_len_width_lp-1:0]           fsm_cnt_o
+   // stream_done is raised when last beat sends
    , output logic                                   fsm_done_o
    );
 
@@ -159,4 +164,14 @@ module bp_stream_pump_out
       fsm_done_o = mem_ready_and_i & mem_v_o & is_last_cnt;
     end
 
+  //synopsys translate_off
+  if (block_width_p % stream_data_width_p != 0)
+    $fatal("block_width_p must be evenly divisible by stream_data_width_p");
+
+  if (block_width_p < stream_data_width_p)
+    $fatal("block_width_p must be at least as large as stream_data_width_p");
+  end
+  //synopsys translate_on
+
 endmodule
+
