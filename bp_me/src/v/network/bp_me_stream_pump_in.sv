@@ -80,16 +80,18 @@ module bp_stream_pump_in
     end
   else
     begin: sub_block_stream
-      logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt;
+      logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt, cnt_val_li;
+      wire cnt_set = (any_stream_new & cnt_up) | stream_done_o;
+      wire cnt_en = (cnt_up | stream_done_o);
       bsg_counter_set_en
        #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
        data_counter
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
 
-        ,.set_i(fsm_new_o & cnt_up)
-        ,.en_i(cnt_up | fsm_done_o)
-        ,.val_i(first_cnt + cnt_up)
+        ,.set_i(cnt_set)
+        ,.en_i(cnt_en)
+        ,.val_i(cnt_val_li)
         ,.count_o(current_cnt)
         );
 
@@ -118,9 +120,12 @@ module bp_stream_pump_in
           first_cnt = critical_addr_r[stream_offset_width_lp+:data_len_width_lp];
           last_cnt  = first_cnt + num_stream - 1'b1;
 
-          is_stream = payload_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
-          stream_cnt = fsm_new_o ? first_cnt : current_cnt;
-          is_last_cnt = (stream_cnt == last_cnt) | ~is_stream;
+          is_fsm_stream = fsm_stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
+          is_mem_stream = mem_stream_mask_p[mem_header_lo.msg_type] & ~(first_cnt == last_cnt);
+
+          stream_cnt = any_stream_new ? first_cnt : current_cnt;
+          is_last_cnt = (stream_cnt == last_cnt) | (~is_fsm_stream & ~is_mem_stream);
+          cnt_val_li = stream_done_o ? '0 : (first_cnt + cnt_up);
         end
 
       // Generate proper wrap-around address for different incoming msg size dynamically.
