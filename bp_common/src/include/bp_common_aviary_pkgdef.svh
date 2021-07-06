@@ -252,7 +252,7 @@
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
-      ,acache_fill_width    : 512
+      ,acache_fill_width    : 64
 
       ,cce_ucode            : 0
       ,cce_pc_width         : 8

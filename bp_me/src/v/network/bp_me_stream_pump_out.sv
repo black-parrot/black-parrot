@@ -38,11 +38,10 @@ module bp_stream_pump_out
    , input [stream_data_width_p-1:0]                fsm_data_i
    , input                                          fsm_v_i
    , output logic                                   fsm_ready_and_o
- 
    // FSM control signals
-   // stream_cnt is the current stream word being sent
+   // fsm_cnt is the current stream word being sent
    , output logic [data_len_width_lp-1:0]           fsm_cnt_o
-   // stream_done is raised when last beat sends
+   // fsm_done is raised when last beat sends
    , output logic                                   fsm_done_o
    );
 
@@ -51,7 +50,7 @@ module bp_stream_pump_out
   `bp_cast_i(bp_bedrock_xce_mem_msg_header_s, fsm_base_header);
   `bp_cast_o(bp_bedrock_xce_mem_msg_header_s, mem_header);
 
-  wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << fsm_base_header_cast_i.size) / (stream_data_width_p / 8), 1'b1);
+  wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << fsm_base_header_cast_i.size) / (stream_data_width_p / 8), 1'b1) - 1'b1;
 
   logic set_cnt, cnt_up, is_last_cnt, is_stream, streaming_r;
   logic [data_len_width_lp-1:0] wrap_around_cnt;
@@ -95,7 +94,7 @@ module bp_stream_pump_out
       always_comb
         begin
           first_cnt = fsm_base_header_cast_i.addr[stream_offset_width_lp+:data_len_width_lp];
-          last_cnt  = first_cnt + num_stream - 1'b1;
+          last_cnt  = first_cnt + num_stream;
 
           is_fsm_stream = fsm_stream_mask_p[fsm_base_header_cast_i.msg_type] & ~(first_cnt == last_cnt);
           is_mem_stream = mem_stream_mask_p[fsm_base_header_cast_i.msg_type] & ~(first_cnt == last_cnt);
@@ -117,17 +116,12 @@ module bp_stream_pump_out
       // size = 512: a wrapped around seq: 2, 3, 4, 5, 6, 7, 0, 1  all 3-bit of cnt is used
       // size = 256: a wrapped around seq: 2, 3, 0, 1              only lower 2-bit of cnt is used
 
-      // sel_mask is generated to determined how many bits of counter is used.
-      // For num_stream = x, (x-1) denotes the bits using the counter
-      logic [data_len_width_lp-1:0] sel_mask;
-      assign sel_mask = num_stream - 1'b1;
-
       bsg_mux_bitwise
        #(.width_p(data_len_width_lp))
        sub_block_addr_mux
         (.data0_i(fsm_base_header_cast_i.addr[stream_offset_width_lp+:data_len_width_lp])
         ,.data1_i(fsm_cnt_o)
-        ,.sel_i(sel_mask)
+        ,.sel_i(num_stream)
         ,.data_o(wrap_around_cnt)
         );
     end

@@ -102,29 +102,29 @@ module bp_me_cce_to_cache
   logic [data_mask_width_lp-1:0] cache_pkt_mask_lo;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-   ,.stream_data_width_p(mem_data_width_p)
-   ,.block_width_p(cce_block_width_p)
-   ,.mem_stream_mask_p(mem_cmd_payload_mask_gp)
-   ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp))
+     ,.stream_data_width_p(mem_data_width_p)
+     ,.block_width_p(cce_block_width_p)
+     ,.mem_stream_mask_p(mem_cmd_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp)
+     )
    cce_to_cache_pump_in
     (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+     ,.reset_i(reset_i)
 
-    ,.mem_header_i(mem_cmd_header_i)
-    ,.mem_data_i(mem_cmd_data_i)
-    ,.mem_v_i(mem_cmd_v_i)
-    ,.mem_last_i(mem_cmd_last_i)
-    ,.mem_ready_and_o(mem_cmd_ready_and_o)
+     ,.mem_header_i(mem_cmd_header_i)
+     ,.mem_data_i(mem_cmd_data_i)
+     ,.mem_v_i(mem_cmd_v_i)
+     ,.mem_last_i(mem_cmd_last_i)
+     ,.mem_ready_and_o(mem_cmd_ready_and_o)
 
-    ,.fsm_base_header_o(mem_cmd_header_lo)
-    ,.fsm_addr_o(mem_cmd_stream_addr_lo)
-    ,.fsm_data_o(mem_cmd_data_lo)
-    ,.fsm_v_o(mem_cmd_v_lo)
-    ,.fsm_yumi_i(mem_cmd_yumi_li)
-
-    ,.stream_new_o(mem_cmd_stream_new_lo)
-    ,.stream_done_o(mem_cmd_done_lo)
-    );
+     ,.fsm_base_header_o(mem_cmd_header_lo)
+     ,.fsm_addr_o(mem_cmd_stream_addr_lo)
+     ,.fsm_data_o(mem_cmd_data_lo)
+     ,.fsm_v_o(mem_cmd_v_lo)
+     ,.fsm_yumi_i(mem_cmd_yumi_li)
+     ,.fsm_new_o(mem_cmd_stream_new_lo)
+     ,.fsm_done_o(mem_cmd_done_lo)
+     );
 
   bp_local_addr_s local_addr_cast;
   assign local_addr_cast = mem_cmd_header_lo.addr;
@@ -209,41 +209,42 @@ module bp_me_cce_to_cache
    #(.width_p($bits(bp_bedrock_cce_mem_msg_header_s)), .els_p(4))
    stream_fifo
     (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+     ,.reset_i(reset_i)
 
-    ,.data_i(mem_resp_header_li)
-    ,.v_i(mem_resp_v_li)
-    ,.ready_o(mem_resp_ready_lo)
+     ,.data_i(mem_resp_header_li)
+     ,.v_i(mem_resp_v_li)
+     ,.ready_o(mem_resp_ready_lo)
 
-    ,.data_o(mem_resp_header_lo)
-    ,.v_o(mem_resp_v_lo)
-    ,.yumi_i(mem_resp_done_lo)
-    );
+     ,.data_o(mem_resp_header_lo)
+     ,.v_o(mem_resp_v_lo)
+     ,.yumi_i(mem_resp_done_lo)
+     );
 
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-   ,.stream_data_width_p(mem_data_width_p)
-   ,.block_width_p(cce_block_width_p)
-   ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
-   ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp))
+     ,.stream_data_width_p(mem_data_width_p)
+     ,.block_width_p(cce_block_width_p)
+     ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp)
+     )
    cce_to_cache_pump_out
     (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+     ,.reset_i(reset_i)
 
-    ,.mem_header_o(mem_resp_header_o)
-    ,.mem_data_o(mem_resp_data_o)
-    ,.mem_v_o(mem_resp_v_o)
-    ,.mem_last_o(mem_resp_last_o)
-    ,.mem_ready_and_i(mem_resp_ready_and_i)
+     ,.mem_header_o(mem_resp_header_o)
+     ,.mem_data_o(mem_resp_data_o)
+     ,.mem_v_o(mem_resp_v_o)
+     ,.mem_last_o(mem_resp_last_o)
+     ,.mem_ready_and_i(mem_resp_ready_and_i)
 
-    ,.fsm_base_header_i(mem_resp_header_lo)
-    ,.fsm_data_i(mem_resp_data_lo)
-    ,.fsm_v_i(mem_resp_v_lo & cache_v_i)
-    ,.fsm_ready_and_o(mem_resp_ready_and_lo)
+     ,.fsm_base_header_i(mem_resp_header_lo)
+     ,.fsm_data_i(mem_resp_data_lo)
+     ,.fsm_v_i(mem_resp_v_lo & cache_v_i)
+     ,.fsm_ready_and_o(mem_resp_ready_and_lo)
 
-    ,.stream_cnt_o(/* unused */)
-    ,.stream_done_o(mem_resp_done_lo)
-    );
+     ,.fsm_cnt_o(/* unused */)
+     ,.fsm_done_o(mem_resp_done_lo)
+     );
   assign cache_yumi_o = mem_resp_ready_and_lo | (is_clear & cache_v_i);
 
   // For B/H/W/D ops, returned data is aligned to the LSB, but it may not for M op
