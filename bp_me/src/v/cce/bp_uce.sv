@@ -262,8 +262,8 @@ module bp_uce
      ,.fsm_data_i(fsm_cmd_data_lo)
      ,.fsm_v_i(fsm_cmd_v_lo)
      ,.fsm_ready_and_o(fsm_cmd_ready_and_li)
-     ,.stream_cnt_o(fsm_cmd_cnt)
-     ,.stream_done_o(fsm_cmd_done)
+     ,.fsm_cnt_o(fsm_cmd_cnt)
+     ,.fsm_done_o(fsm_cmd_done)
      );
 
   bp_bedrock_uce_mem_msg_header_s fsm_resp_header_li;
@@ -278,6 +278,7 @@ module bp_uce
      ,.block_width_p(block_width_p)
      ,.fsm_stream_mask_p(mem_stream_rd_mask_gp)
      ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
      )
    uce_pump_in
     (.clk_i(clk_i)
