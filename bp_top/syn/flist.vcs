@@ -122,7 +122,6 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank_reverse.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative_controller.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
-$BASEJUMP_STL_DIR/bsg_misc/bsg_locking_arb_fixed.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
@@ -191,8 +190,6 @@ $BP_COMMON_DIR/src/v/bsg_wormhole_stream_out.v
 $BP_COMMON_DIR/src/v/bp_mmu.sv
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.sv
 # Calculator
