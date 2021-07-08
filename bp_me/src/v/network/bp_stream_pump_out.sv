@@ -75,15 +75,6 @@ module bp_stream_pump_out
   , output logic                                   stream_done_o
   );
 
-  //synopsys translate_off
-  initial begin
-    assert((block_width_p % stream_data_width_p == 0)) else
-      $error("block_width_p must be evenly divisible by stream_data_width_p");
-    assert(block_width_p >= stream_data_width_p) else
-      $error("block_width_p must be at least as large as stream_data_width_p");
-  end
-  //synopsys translate_on
-
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
 
   `bp_cast_i(bp_bedrock_xce_msg_header_s, fsm_base_header);
@@ -225,4 +216,13 @@ module bp_stream_pump_out
       stream_done_o = msg_ready_and_i & msg_v_o & is_last_cnt;
     end
 
+  //synopsys translate_off
+  if ((block_width_p % stream_data_width_p != 0)
+    $fatal("block_width_p must be evenly divisible by stream_data_width_p");
+
+  if (block_width_p < stream_data_width_p)
+    $fatal("block_width_p must be at least as large as stream_data_width_p");
+  //synopsys translate_on
+
 endmodule
+
