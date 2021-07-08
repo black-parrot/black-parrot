@@ -241,10 +241,11 @@ module bp_uce
   logic fsm_cmd_v_lo, fsm_cmd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt;
   logic fsm_cmd_done;
-  bp_me_stream_pump_out
+  bp_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
+     ,.payload_width_p(uce_mem_payload_width_lp)
      ,.mem_stream_mask_p(mem_cmd_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_stream_wr_mask_gp)
      )
@@ -272,13 +273,13 @@ module bp_uce
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
   logic fsm_resp_new, fsm_resp_done;
   logic mem_resp_ready_and_lo;
-  bp_me_stream_pump_in
+  bp_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
-     ,.fsm_stream_mask_p(mem_stream_rd_mask_gp)
+     ,.payload_width_p(uce_mem_payload_width_lp)
      ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_stream_rd_mask_gp)
      )
    uce_pump_in
     (.clk_i(clk_i)
