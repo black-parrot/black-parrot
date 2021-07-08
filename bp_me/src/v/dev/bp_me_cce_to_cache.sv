@@ -97,7 +97,7 @@ module bp_me_cce_to_cache
   logic [mem_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
   logic [l2_data_width_p-1:0] cache_pkt_data_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
-  logic mem_cmd_stream_new_lo, mem_cmd_done_lo;
+  logic mem_cmd_new_lo, mem_cmd_done_lo, mem_cmd_last_lo;
   logic [paddr_width_p-1:0] mem_cmd_stream_addr_lo;
   logic [data_mask_width_lp-1:0] cache_pkt_mask_lo;
   bp_me_stream_pump_in
@@ -105,7 +105,7 @@ module bp_me_cce_to_cache
      ,.stream_data_width_p(mem_data_width_p)
      ,.block_width_p(cce_block_width_p)
      ,.payload_width_p(cce_mem_payload_width_lp)
-     ,.mem_stream_mask_p(mem_cmd_payload_mask_gp)
+     ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp)
      )
    cce_to_cache_pump_in
@@ -124,6 +124,7 @@ module bp_me_cce_to_cache
      ,.fsm_v_o(mem_cmd_v_lo)
      ,.fsm_yumi_i(mem_cmd_yumi_li)
      ,.fsm_new_o(mem_cmd_stream_new_lo)
+     ,.fsm_last_o(mem_cmd_last_lo)
      ,.fsm_done_o(mem_cmd_done_lo)
      );
 
@@ -226,7 +227,7 @@ module bp_me_cce_to_cache
      ,.stream_data_width_p(mem_data_width_p)
      ,.block_width_p(cce_block_width_p)
      ,.payload_width_p(cce_mem_payload_width_lp)
-     ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
+     ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp)
      )
    cce_to_cache_pump_out
@@ -370,7 +371,7 @@ module bp_me_cce_to_cache
             mem_resp_header_li = mem_cmd_header_lo; // return the same critical addr back to stream_fifo
             mem_resp_v_li      = cache_pkt_v_o & cache_pkt_ready_i;
 
-            cmd_state_n = (mem_cmd_stream_new_lo & mem_cmd_yumi_li) ? STREAM : READY;
+            cmd_state_n = (mem_cmd_new_lo & mem_cmd_yumi_li) ? STREAM : READY;
           end
         STREAM:
           begin

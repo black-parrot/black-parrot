@@ -241,23 +241,23 @@ module bp_uce
   logic fsm_cmd_v_lo, fsm_cmd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt;
   logic fsm_cmd_done;
-  bp_stream_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(uce_mem_payload_width_lp)
-     ,.mem_stream_mask_p(mem_cmd_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_stream_wr_mask_gp)
+     ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
      )
    uce_pump_out
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_header_o(mem_cmd_header_o)
-     ,.mem_data_o(mem_cmd_data_o)
-     ,.mem_v_o(mem_cmd_v_o)
-     ,.mem_last_o(mem_cmd_last_o)
-     ,.mem_ready_and_i(mem_cmd_yumi_i)
+     ,.msg_header_o(mem_cmd_header_o)
+     ,.msg_data_o(mem_cmd_data_o)
+     ,.msg_v_o(mem_cmd_v_o)
+     ,.msg_last_o(mem_cmd_last_o)
+     ,.msg_ready_and_i(mem_cmd_yumi_i)
 
      ,.fsm_base_header_i(fsm_cmd_header_lo)
      ,.fsm_data_i(fsm_cmd_data_lo)
@@ -271,25 +271,25 @@ module bp_uce
   logic [paddr_width_p-1:0] fsm_resp_addr_li;
   logic [fill_width_p-1:0] fsm_resp_data_li;
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
-  logic fsm_resp_new, fsm_resp_done;
+  logic fsm_resp_new, fsm_resp_done, fsm_resp_last;
   logic mem_resp_ready_and_lo;
-  bp_stream_pump_in
+  bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(uce_mem_payload_width_lp)
-     ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_stream_rd_mask_gp)
+     ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
      )
    uce_pump_in
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_header_i(mem_resp_header_i)
-     ,.mem_data_i(mem_resp_data_i)
-     ,.mem_v_i(mem_resp_v_i)
-     ,.mem_last_i(mem_resp_last_i)
-     ,.mem_ready_and_o(mem_resp_ready_and_lo)
+     ,.msg_header_i(mem_resp_header_i)
+     ,.msg_data_i(mem_resp_data_i)
+     ,.msg_v_i(mem_resp_v_i)
+     ,.msg_last_i(mem_resp_last_i)
+     ,.msg_ready_and_o(mem_resp_ready_and_lo)
 
      ,.fsm_base_header_o(fsm_resp_header_li)
      ,.fsm_addr_o(fsm_resp_addr_li)
@@ -297,6 +297,7 @@ module bp_uce
      ,.fsm_v_o(fsm_resp_v_li)
      ,.fsm_yumi_i(fsm_resp_yumi_lo)
      ,.stream_new_o(fsm_resp_new)
+     ,.stream_last_o(fsm_resp_last)
      ,.stream_done_o(fsm_resp_done)
      );
   assign mem_resp_yumi_o = mem_resp_ready_and_lo & mem_resp_v_i;
