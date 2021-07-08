@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_stream_pump_in.sv
+ *   bp_me_stream_pump_in.sv
  *
  * Description:
  *   Provides an FSM with control signals for an inbound BedRock Stream interface.
@@ -12,7 +12,7 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_stream_pump_in
+module bp_me_stream_pump_in
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
@@ -65,24 +65,15 @@ module bp_stream_pump_in
   , output logic [stream_data_width_p-1:0]         fsm_data_o
   , output logic                                   fsm_v_o
   , input                                          fsm_yumi_i
-
   // FSM control signals
-  // stream_new is raised on first beat of every message
-  , output logic                                   stream_new_o
-  // stream_last is raised on last beat of every message
-  , output logic                                   stream_last_o
-  // stream_done is raised when last beat of every message is acked
-  , output logic                                   stream_done_o
+  // fsm_new is raised on first beat of every message
+  , output logic                                   fsm_new_o
+  // fsm_last is raised on last beat of every message
+  , output logic                                   fsm_last_o
+  // fsm_done is raised when last beat of every message is acked
+  , output logic                                   fsm_done_o
   );
 
-  //synopsys translate_off
-  initial begin
-    assert((block_width_p % stream_data_width_p == 0)) else
-      $error("block_width_p must be evenly divisible by stream_data_width_p");
-    assert(block_width_p >= stream_data_width_p) else
-      $error("block_width_p must be at least as large as stream_data_width_p");
-  end
-  //synopsys translate_on
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
 
@@ -238,4 +229,13 @@ module bp_stream_pump_in
       stream_done_o = is_last_cnt & fsm_yumi_i;
     end
 
+  //synopsys translate_off
+  if ((block_width_p % stream_data_width_p != 0)
+    $fatal("block_width_p must be evenly divisible by stream_data_width_p");
+
+  if (block_width_p < stream_data_width_p)
+    $fatal("block_width_p must be at least as large as stream_data_width_p");
+  //synopsys translate_on
+
 endmodule
+
