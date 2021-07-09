@@ -207,7 +207,7 @@ module bp_me_cce_to_cache
   bp_bedrock_cce_mem_msg_header_s mem_resp_header_li, mem_resp_header_lo;
   logic mem_resp_v_li, mem_resp_ready_lo;
   logic mem_resp_v_lo, mem_resp_ready_and_lo;
-  logic mem_resp_done_lo;
+  logic mem_resp_new_lo, mem_resp_last_lo, mem_resp_done_lo;
   bsg_fifo_1r1w_small
    #(.width_p($bits(bp_bedrock_cce_mem_msg_header_s)), .els_p(4))
    stream_fifo
@@ -245,8 +245,9 @@ module bp_me_cce_to_cache
      ,.fsm_data_i(mem_resp_data_lo)
      ,.fsm_v_i(mem_resp_v_lo & cache_v_i)
      ,.fsm_ready_and_o(mem_resp_ready_and_lo)
-
      ,.fsm_cnt_o(/* unused */)
+     ,.fsm_new_o(mem_resp_new_lo)
+     ,.fsm_last_o(mem_resp_last_lo)
      ,.fsm_done_o(mem_resp_done_lo)
      );
   assign cache_yumi_o = mem_resp_ready_and_lo | (is_clear & cache_v_i);

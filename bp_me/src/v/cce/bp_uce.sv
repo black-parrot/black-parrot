@@ -240,7 +240,7 @@ module bp_uce
   logic [fill_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt;
-  logic fsm_cmd_done;
+  logic fsm_cmd_new, fsm_cmd_last, fsm_cmd_done;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
@@ -264,6 +264,8 @@ module bp_uce
      ,.fsm_v_i(fsm_cmd_v_lo)
      ,.fsm_ready_and_o(fsm_cmd_ready_and_li)
      ,.fsm_cnt_o(fsm_cmd_cnt)
+     ,.fsm_new_o(fsm_cmd_new)
+     ,.fsm_last_o(fsm_cmd_last)
      ,.fsm_done_o(fsm_cmd_done)
      );
 
