@@ -81,13 +81,13 @@ module bp_uce
     , output logic [uce_mem_msg_header_width_lp-1:0] mem_cmd_header_o
     , output logic [uce_mem_data_width_p-1:0]        mem_cmd_data_o
     , output logic                                   mem_cmd_v_o
-    , input                                          mem_cmd_yumi_i
+    , input                                          mem_cmd_ready_and_i
     , output logic                                   mem_cmd_last_o
 
     , input [uce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
     , input [uce_mem_data_width_p-1:0]               mem_resp_data_i
     , input                                          mem_resp_v_i
-    , output logic                                   mem_resp_yumi_o
+    , output logic                                   mem_resp_ready_and_o
     , input                                          mem_resp_last_i
     );
 
@@ -257,7 +257,7 @@ module bp_uce
      ,.msg_data_o(mem_cmd_data_o)
      ,.msg_v_o(mem_cmd_v_o)
      ,.msg_last_o(mem_cmd_last_o)
-     ,.msg_ready_and_i(mem_cmd_yumi_i)
+     ,.msg_ready_and_i(mem_cmd_ready_and_i)
 
      ,.fsm_base_header_i(fsm_cmd_header_lo)
      ,.fsm_data_i(fsm_cmd_data_lo)
@@ -273,7 +273,6 @@ module bp_uce
   logic [fill_width_p-1:0] fsm_resp_data_li;
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
   logic fsm_resp_new, fsm_resp_done;
-  logic mem_resp_ready_and_lo;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
@@ -290,7 +289,7 @@ module bp_uce
      ,.msg_data_i(mem_resp_data_i)
      ,.msg_v_i(mem_resp_v_i)
      ,.msg_last_i(mem_resp_last_i)
-     ,.msg_ready_and_o(mem_resp_ready_and_lo)
+     ,.msg_ready_and_o(mem_resp_ready_and_o)
 
      ,.fsm_base_header_o(fsm_resp_header_li)
      ,.fsm_addr_o(fsm_resp_addr_li)
@@ -300,7 +299,6 @@ module bp_uce
      ,.fsm_new_o(fsm_resp_new)
      ,.fsm_done_o(fsm_resp_done)
      );
-  assign mem_resp_yumi_o = mem_resp_ready_and_lo & mem_resp_v_i;
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
   wire flush_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
@@ -569,7 +567,7 @@ module bp_uce
                 fsm_cmd_data_lo                  = cache_req_r.data;
                 fsm_cmd_v_lo = ~cache_req_credits_full_o;
 
-                cache_req_complete_o = mem_cmd_yumi_i;
+                cache_req_complete_o = mem_cmd_ready_and_i & mem_cmd_v_o;
               end
 
             // We can accept a new request as long as we send out an old one this cycle
