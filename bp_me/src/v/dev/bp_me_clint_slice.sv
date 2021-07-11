@@ -75,13 +75,13 @@ module bp_me_clint_slice
    mtime_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.set_i(mtime_w_v_li)
      ,.en_i(mtime_inc_li)
      ,.val_i(mtime_n)
      ,.count_o(mtime_r)
      );
-  
+
   logic [dword_width_gp-1:0] mtimecmp_r;
   wire [dword_width_gp-1:0] mtimecmp_n = data_lo;
   bsg_dff_reset_en
@@ -89,13 +89,13 @@ module bp_me_clint_slice
    mtimecmp_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.en_i(mtimecmp_w_v_li)
      ,.data_i(mtimecmp_n)
      ,.data_o(mtimecmp_r)
      );
   assign timer_irq_o = (mtime_r >= mtimecmp_r);
-  
+
   logic mipi_r;
   wire mipi_n = data_lo[0];
   bsg_dff_reset_en
@@ -104,12 +104,12 @@ module bp_me_clint_slice
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(mipi_w_v_li)
-  
+
      ,.data_i(mipi_n)
      ,.data_o(mipi_r)
      );
   assign software_irq_o = mipi_r;
-  
+
   logic plic_r;
   wire plic_n = data_lo[0];
   bsg_dff_reset_en
@@ -118,16 +118,16 @@ module bp_me_clint_slice
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(plic_w_v_li)
-  
+
      ,.data_i(plic_n)
      ,.data_o(plic_r)
      );
   assign external_irq_o = plic_r;
- 
+
   assign data_li[0] = mipi_r;
   assign data_li[1] = mtimecmp_r;
   assign data_li[2] = mtime_r;
   assign data_li[3] = plic_r;
- 
+
 endmodule
 

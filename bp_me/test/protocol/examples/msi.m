@@ -14,7 +14,7 @@ const
   QMax: 2;
   NumVCs: VC3 - VC0 + 1;
   NetMax: ProcCount+2;
-  
+
 
 ----------------------------------------------------------------------
 -- Types
@@ -34,14 +34,14 @@ type
   MessageType: enum { GetS,         	-- request for data / exclusivity
 											GetM,						-- get data with permission to modify
                       Data, 					-- data reply with or without acks
-                              
+
 											FwdGetS,
 											FwdGetM,
 											PutS,						-- Clean evict notification
 								      PutM,           -- writeback request (w/ data)
-								      PutAck,         -- writeback ack 
+								      PutAck,         -- writeback ack
 								      PutAckWait,     -- writeback ack but wait until a FwdGet* reaches which is stale
-                           
+
                       Inv,						-- Request & invalidate a valid copy
 											InvAck					-- Ack for invalidation
                     };
@@ -61,9 +61,9 @@ type
     Record
       state: enum { H_S, H_I, H_M, 					--stable states
       							H_SD, H_MA, H_MD }; 		--transient states during recall
-      owner: Node;	
+      owner: Node;
       sharers: multiset [ProcCount] of Node;    --No need for sharers in this protocol, but this is a good way to represent them
-      val: Value; 
+      val: Value;
 			ackCntr: CntrType;
     End;
 
@@ -105,7 +105,7 @@ Begin
   msg.src   	:= src;
   msg.vc    	:= vc;
   msg.val   	:= val;
-	msg.acks		:= numAcks; 
+	msg.acks		:= numAcks;
 	msg.rplyTo := rplyTo;
   MultiSetAdd(msg, Net[dst]);
 End;
@@ -152,7 +152,7 @@ Begin
         MultiSetCount(i:HomeNode.sharers, HomeNode.sharers[i] = n) != 0)  -- for each node n that is a sharer
     then
       if n != rqst -- and the node n must not be the requester
-      then 
+      then
         -- Send invalidation message --
 				Send(Inv, n, HomeType, VC2, UNDEFINED, -1, rqst);
 				--put "Sending Inv to "; put n; put ".\n";
@@ -167,7 +167,7 @@ Begin
 -- Debug output may be helpful:
   --put "Receiving "; put msg.mtype; put " on VC"; put msg.vc; put " at home from "; put msg.src; put "; "; put HomeNode.state;
 
-  -- The line below is not needed in Valid/Invalid protocol.  However, the 
+  -- The line below is not needed in Valid/Invalid protocol.  However, the
   -- compiler barfs if we put this inside a switch, so it is useful to
   -- pre-calculate the sharer count here
   cnt := MultiSetCount(i:HomeNode.sharers, true);
@@ -185,7 +185,7 @@ Begin
       HomeNode.state := H_S;
 			AddToSharersList(msg.src);
       Send(Data, msg.src, HomeType, VC1, HomeNode.val,0, HomeType);
-			
+
 		-- Send data to req, set owner to req --
 		case GetM:
 			HomeNode.state := H_M;
@@ -259,7 +259,7 @@ Begin
 */
     else
       ErrorUnhandledMsg(msg, HomeType);
-		
+
 		endswitch;
 
 	-- HomeNode in Modified state --
@@ -621,7 +621,7 @@ Begin
     ErrorUnhandledState();
 
   endswitch;
-  
+
   endalias;
   endalias;
   endalias;
@@ -655,7 +655,7 @@ ruleset n:Proc Do
 	rule "Processor store in S"
 	 	(p.state = P_S)
 	==>
-		Send(GetM, HomeType, n, VC0, UNDEFINED,-1, n); 
+		Send(GetM, HomeType, n, VC0, UNDEFINED,-1, n);
 		p.state := P_SMAD;
 	endrule;
 
@@ -671,7 +671,7 @@ ruleset n:Proc Do
   	rule "Processor store in M"
    	 (p.state = P_M)
     	==>
- 		   p.val := v;      
+ 		   p.val := v;
  		   LastWrite := v;  --We use LastWrite to sanity check that reads receive the value of the last write
   	endrule;
 	endruleset;
@@ -679,7 +679,7 @@ ruleset n:Proc Do
   rule "Processor evict in M"
     (p.state = P_M)
   ==>
-    Send(PutM, HomeType, n, VC1, p.val,-1, n); 
+    Send(PutM, HomeType, n, VC1, p.val,-1, n);
     p.state := P_MIA;
   endrule;
 
@@ -710,15 +710,15 @@ ruleset n:Node do
 				-- The node refused the message, stick it in the InBox to block the VC.
 	  		box[msg.vc] := msg;
 			endif;
-	  
+
 		  MultiSetRemove(midx, chan);
-	  
+
     endrule;
-  
+
     endalias
     endalias;
     endalias;
-  endchoose;  
+  endchoose;
 
 	-- Try to deliver a message from a blocked VC; perhaps the node can handle it now
 	ruleset vc:VCType do
@@ -737,7 +737,7 @@ ruleset n:Node do
 				-- Message has been handled, forget it
 	  		undefine InBox[n][vc];
 			endif;
-	  
+
     endrule;
   endruleset;
 
@@ -756,7 +756,7 @@ startstate
 	endfor;
 	LastWrite := HomeNode.val;
 	HomeNode.ackCntr := 0;
-  
+
   -- processor initialization
   for i:Proc do
     Procs[i].state := P_I;
@@ -783,24 +783,24 @@ invariant "Must have an owner when home is in M!"
 			!IsUndefined(HomeNode.owner);
 
 invariant "Value in memory must match the value of the last write, in Invalid state!"
-     HomeNode.state = H_I 
+     HomeNode.state = H_I
     ->
 			HomeNode.val = LastWrite;
 
 invariant "Processor must have the last written value in Shared state!"
-  Forall n : Proc Do	
+  Forall n : Proc Do
      Procs[n].state = P_S
     ->
-			Procs[n].val = LastWrite --LastWrite is updated whenever a new value is created 
+			Procs[n].val = LastWrite --LastWrite is updated whenever a new value is created
 	end;
-	
+
 invariant "value is undefined while invalid"
-  Forall n : Proc Do	
+  Forall n : Proc Do
      Procs[n].state = P_I
     ->
 			IsUndefined(Procs[n].val)
 	end;
-	
+
 -- Here are some invariants that are helpful for validating shared state.
 
 invariant "Shared implies non-empty sharers list!"
@@ -819,14 +819,14 @@ invariant "Invalid implies empty sharer list!"
       MultiSetCount(i:HomeNode.sharers, true) = 0;
 
 invariant "values in memory matches value of last write, when shared or invalid"
-  Forall n : Proc Do	
+  Forall n : Proc Do
      HomeNode.state = H_S | HomeNode.state = H_I
     ->
 			HomeNode.val = LastWrite
 	end;
 
 invariant "values in shared state match memory"
-  Forall n : Proc Do	
+  Forall n : Proc Do
      HomeNode.state = H_S & Procs[n].state = P_S
     ->
 			HomeNode.val = Procs[n].val

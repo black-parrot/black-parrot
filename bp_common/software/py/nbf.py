@@ -6,7 +6,7 @@
 #   NBF format is
 #   opcode_addr_data
 #   opcode map:
-#     8'h00: 1 byte write 
+#     8'h00: 1 byte write
 #     8'h01: 2 byte write
 #     8'h02: 4 byte write
 #     8'h03: 8 byte write
@@ -153,7 +153,7 @@ class NBF:
   # read dram dumped in 'verilog' format.
   # returns [addr : data] dictionary
   def read_dram(self, mem_file):
-  
+
     addr_val = {}
     curr_addr = 0
     addr_step = 0
@@ -185,7 +185,7 @@ class NBF:
               addr_step = 1 << self.get_size(curr_addr)
               assembled_hex = ""
               count = 0
-              
+
     if count != 0:
       addr_val[base_addr+curr_addr] = int(assembled_hex, 16)
 
@@ -213,14 +213,14 @@ class NBF:
   def print_finish(self):
     self.print_nbf(0xff, 0x0, 0x0)
 
-  ##### LOADER ROUTINES END  #####  
+  ##### LOADER ROUTINES END  #####
 
   # users only have to call this function.
   def dump(self):
 
     # Freeze set
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
-    
+
     self.print_fence()
 
     # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
@@ -231,7 +231,7 @@ class NBF:
           for i in range(len(self.ucode)):
             full_addr = cfg_base_addr + cfg_mem_base_cce_ucode + (core << cfg_core_offset) + i*8
             self.print_nbf(3, full_addr, self.ucode[i])
-       
+
       # Write I$, D$, and CCE modes
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)

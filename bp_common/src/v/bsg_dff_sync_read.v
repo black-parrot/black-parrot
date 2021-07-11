@@ -4,7 +4,7 @@
 module bsg_dff_sync_read
  #(parameter width_p = "inv"
 
-   // Whether to bypass the read data so that it doesn't create a bubble 
+   // Whether to bypass the read data so that it doesn't create a bubble
    , parameter bypass_p = 0
    )
   (input clk_i
