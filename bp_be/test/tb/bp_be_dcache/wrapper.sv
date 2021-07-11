@@ -442,7 +442,7 @@ module wrapper
 
           if (dcache_fill_width_p < cce_block_width_p)
             begin
-              bp_stream_to_lite
+              bp_me_stream_to_lite
                #(.bp_params_p(bp_params_p)
                ,.in_data_width_p(dcache_fill_width_p)
                ,.out_data_width_p(cce_block_width_p)
@@ -463,7 +463,7 @@ module wrapper
                 ,.out_msg_ready_and_i(mem_cmd_ready_and_i)
                 );
 
-              bp_lite_to_stream
+              bp_me_lite_to_stream
                #(.bp_params_p(bp_params_p)
                ,.in_data_width_p(cce_block_width_p)
                ,.out_data_width_p(dcache_fill_width_p)

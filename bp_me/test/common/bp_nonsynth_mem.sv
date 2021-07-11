@@ -37,7 +37,7 @@ module bp_nonsynth_mem
   bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
-  bp_lite_to_stream
+  bp_me_lite_to_stream
    #(.bp_params_p(bp_params_p)
    ,.in_data_width_p(cce_block_width_p)
    ,.out_data_width_p(l2_data_width_p)
@@ -61,7 +61,7 @@ module bp_nonsynth_mem
   bp_bedrock_cce_mem_msg_header_s mem_resp_header_li;
   logic [l2_data_width_p-1:0] mem_resp_data_li;
   logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
-  bp_stream_to_lite
+  bp_me_stream_to_lite
    #(.bp_params_p(bp_params_p)
    ,.in_data_width_p(l2_data_width_p)
    ,.out_data_width_p(cce_block_width_p)
