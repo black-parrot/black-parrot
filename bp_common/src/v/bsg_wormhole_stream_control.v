@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_wormhole_stream_control.sv
+ *   bp_me_wormhole_stream_control.sv
  *
  * Description:
  *   Handles flow control for a bsg_wormhole packet. Given a length of

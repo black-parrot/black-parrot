@@ -270,7 +270,7 @@ module bp_l2e_tile
     ,.len_o(cce_lce_req_pr_len)
    );
 
-  bp_wormhole_to_burst
+  bp_me_wormhole_to_burst
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.len_width_p(coh_noc_len_width_p)
@@ -309,7 +309,7 @@ module bp_l2e_tile
      ,.wh_header_o(cce_lce_cmd_wh_header_lo)
      );
 
-  bp_burst_to_wormhole
+  bp_me_burst_to_wormhole
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.len_width_p(coh_noc_len_width_p)
@@ -347,7 +347,7 @@ module bp_l2e_tile
     ,.len_o(cce_lce_resp_pr_len)
    );
 
-  bp_wormhole_to_burst
+  bp_me_wormhole_to_burst
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.len_width_p(coh_noc_len_width_p)
@@ -378,7 +378,7 @@ module bp_l2e_tile
 
   // Mem Command
   logic cce_mem_cmd_v_and_lo;
-  bp_burst_to_lite
+  bp_me_burst_to_lite
    #(.bp_params_p(bp_params_p)
      ,.in_data_width_p(dword_width_gp)
      ,.out_data_width_p(cce_block_width_p)
@@ -408,7 +408,7 @@ module bp_l2e_tile
   // Mem Response
   logic cce_mem_resp_ready_lo;
   assign cce_mem_resp_yumi_lo = cce_mem_resp_v_li & cce_mem_resp_ready_lo;
-  bp_lite_to_burst
+  bp_me_lite_to_burst
    #(.bp_params_p(bp_params_p)
      ,.in_data_width_p(cce_block_width_p)
      ,.out_data_width_p(dword_width_gp)

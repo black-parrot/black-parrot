@@ -490,7 +490,7 @@ module wrapper
        // LCE Request
        logic cce_lce_req_ready_and_lo;
        assign cce_lce_req_yumi_lo = cce_lce_req_v_li & cce_lce_req_ready_and_lo;
-       bp_lite_to_burst
+       bp_me_lite_to_burst
         #(.bp_params_p(bp_params_p)
           ,.in_data_width_p(cce_block_width_p)
           ,.out_data_width_p(dword_width_gp)
@@ -517,7 +517,7 @@ module wrapper
           );
 
        // LCE Command
-       bp_burst_to_lite
+       bp_me_burst_to_lite
         #(.bp_params_p(bp_params_p)
           ,.in_data_width_p(dword_width_gp)
           ,.out_data_width_p(cce_block_width_p)
@@ -582,7 +582,7 @@ module wrapper
        // LCE Response
        logic cce_lce_resp_ready_and_lo;
        assign cce_lce_resp_yumi_lo = cce_lce_resp_v_li & cce_lce_resp_ready_and_lo;
-       bp_lite_to_burst
+       bp_me_lite_to_burst
         #(.bp_params_p(bp_params_p)
           ,.in_data_width_p(cce_block_width_p)
           ,.out_data_width_p(dword_width_gp)
@@ -762,7 +762,7 @@ module wrapper
        // Mem Response
        logic mem_resp_ready_and_lo;
        assign mem_resp_yumi_from_cce = mem_resp_v_to_cce & mem_resp_ready_and_lo;
-       bp_lite_to_burst
+       bp_me_lite_to_burst
         #(.bp_params_p(bp_params_p)
           ,.in_data_width_p(cce_block_width_p)
           ,.out_data_width_p(dword_width_gp)
@@ -793,7 +793,7 @@ module wrapper
        // Mem Command
        bp_bedrock_cce_mem_msg_s mem_cmd_lo;
        assign mem_cmd_o = mem_cmd_lo;
-       bp_burst_to_lite
+       bp_me_burst_to_lite
         #(.bp_params_p(bp_params_p)
           ,.in_data_width_p(dword_width_gp)
           ,.out_data_width_p(cce_block_width_p)

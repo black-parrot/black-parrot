@@ -359,7 +359,7 @@ lce_req_buffer
   );
 
 // LCE Request
-bp_lite_to_burst
+bp_me_lite_to_burst
  #(.bp_params_p(bp_params_p)
    ,.in_data_width_p(cce_block_width_p)
    ,.out_data_width_p(dword_width_gp)
@@ -404,7 +404,7 @@ lce_resp_buffer
   );
 
 // LCE Response
-bp_lite_to_burst
+bp_me_lite_to_burst
  #(.bp_params_p(bp_params_p)
    ,.in_data_width_p(cce_block_width_p)
    ,.out_data_width_p(dword_width_gp)
@@ -431,7 +431,7 @@ bp_lite_to_burst
    );
 
 // LCE Command
-bp_burst_to_lite
+bp_me_burst_to_lite
  #(.bp_params_p(bp_params_p)
    ,.in_data_width_p(dword_width_gp)
    ,.out_data_width_p(cce_block_width_p)
@@ -525,7 +525,7 @@ wrapper
 );
 
 // MEM Command
-bp_burst_to_lite
+bp_me_burst_to_lite
  #(.bp_params_p(bp_params_p)
    ,.in_data_width_p(dword_width_gp)
    ,.out_data_width_p(cce_block_width_p)
@@ -594,7 +594,7 @@ mem_resp_buffer
 // MEM Response
 logic mem_resp_ready_and;
 assign mem_resp_yumi = mem_resp_v & mem_resp_ready_and;
-bp_lite_to_burst
+bp_me_lite_to_burst
  #(.bp_params_p(bp_params_p)
    ,.in_data_width_p(cce_block_width_p)
    ,.out_data_width_p(dword_width_gp)

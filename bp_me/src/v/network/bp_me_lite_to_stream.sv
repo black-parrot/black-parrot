@@ -2,7 +2,7 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_lite_to_stream
+module bp_me_lite_to_stream
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg

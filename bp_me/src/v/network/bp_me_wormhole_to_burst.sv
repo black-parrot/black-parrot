@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_wormhole_to_burst.sv
+ *   bp_me_wormhole_to_burst.sv
  *
  * Description:
  *   Converts a wormhole router stream to BedRock Burst protocol without
@@ -32,7 +32,7 @@
 
 `include "bsg_defines.v"
 
-module bp_wormhole_to_burst
+module bp_me_wormhole_to_burst
  #(// The wormhole router protocol information
    // flit_width_p: number of physical data wires between links
    // cord_width_p: the width of the {y,x} coordinate of the destination

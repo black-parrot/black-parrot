@@ -6,7 +6,7 @@
 // in_msg_i and in_msg_v_i should be on hold until data burst is done.
 // Therefore, the input site of this conversion module should be connected
 // to a ready_valid_and link, but not a ready_then_valid link.
-module bp_lite_to_burst
+module bp_me_lite_to_burst
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
