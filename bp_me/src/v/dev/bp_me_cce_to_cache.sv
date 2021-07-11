@@ -95,7 +95,7 @@ module bp_me_cce_to_cache
   logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
   logic [l2_data_width_p-1:0] cache_pkt_data_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
-  logic mem_cmd_new_lo, mem_cmd_done_lo, mem_cmd_last_lo;
+  logic mem_cmd_new_lo, mem_cmd_done_lo;
   logic [paddr_width_p-1:0] mem_cmd_stream_addr_lo;
   logic [data_mask_width_lp-1:0] cache_pkt_mask_lo;
   bp_me_stream_pump_in
@@ -121,8 +121,7 @@ module bp_me_cce_to_cache
      ,.fsm_data_o(mem_cmd_data_lo)
      ,.fsm_v_o(mem_cmd_v_lo)
      ,.fsm_yumi_i(mem_cmd_yumi_li)
-     ,.fsm_new_o(mem_cmd_stream_new_lo)
-     ,.fsm_last_o(mem_cmd_last_lo)
+     ,.fsm_new_o(mem_cmd_new_lo)
      ,.fsm_done_o(mem_cmd_done_lo)
      );
 
@@ -201,19 +200,19 @@ module bp_me_cce_to_cache
     ,.data_o(cache_pkt_data_lo)
     );
 
-  bp_bedrock_cce_mem_msg_header_s mem_resp_header_li, mem_resp_header_lo;
-  logic mem_resp_v_li, mem_resp_ready_lo;
+  bp_bedrock_cce_mem_msg_header_s mem_resp_header_lo;
   logic mem_resp_v_lo, mem_resp_ready_and_lo;
-  logic mem_resp_new_lo, mem_resp_last_lo, mem_resp_done_lo;
+  logic mem_resp_new_lo, mem_resp_done_lo;
   bsg_fifo_1r1w_small
    #(.width_p($bits(bp_bedrock_cce_mem_msg_header_s)), .els_p(4))
    stream_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(mem_resp_header_li)
-     ,.v_i(mem_resp_v_li)
-     ,.ready_o(mem_resp_ready_lo)
+     ,.data_i(mem_cmd_header_lo)
+     ,.v_i(mem_cmd_new_lo)
+     // unused because large enough by construction
+     ,.ready_o()
 
      ,.data_o(mem_resp_header_lo)
      ,.v_o(mem_resp_v_lo)
@@ -244,7 +243,6 @@ module bp_me_cce_to_cache
      ,.fsm_ready_and_o(mem_resp_ready_and_lo)
      ,.fsm_cnt_o(/* unused */)
      ,.fsm_new_o(mem_resp_new_lo)
-     ,.fsm_last_o(mem_resp_last_lo)
      ,.fsm_done_o(mem_resp_done_lo)
      );
   assign cache_yumi_o = mem_resp_ready_and_lo | (is_clear & cache_v_i);
@@ -272,9 +270,6 @@ module bp_me_cce_to_cache
       cache_pkt_v_o = 1'b0;
 
       mem_cmd_yumi_li = 1'b0;
-
-      mem_resp_header_li = '0;
-      mem_resp_v_li      = 1'b0;
 
       tagst_sent_n     = tagst_sent_r;
       tagst_received_n = tagst_received_r;
@@ -357,7 +352,7 @@ module bp_me_cce_to_cache
               end
             else
               begin
-                cache_pkt.addr = mem_cmd_header_lo.addr[0+:caddr_width_p];
+                cache_pkt.addr = mem_cmd_stream_addr_lo[0+:caddr_width_p];
                 cache_pkt.data = cache_pkt_data_lo;
                 // This mask is only used for the LM/SM operations for >64 bit mask operations
                 cache_pkt.mask = cache_pkt_mask_lo;
@@ -366,10 +361,7 @@ module bp_me_cce_to_cache
             // send ready_and signal back to pump_out
             mem_cmd_yumi_li = cache_pkt_ready_i & cache_pkt_v_o;
 
-            mem_resp_header_li = mem_cmd_header_lo; // return the same critical addr back to stream_fifo
-            mem_resp_v_li      = cache_pkt_v_o & cache_pkt_ready_i;
-
-            cmd_state_n = (mem_cmd_new_lo & mem_cmd_yumi_li) ? STREAM : READY;
+            //cmd_state_n = (mem_cmd_new_lo & mem_cmd_yumi_li) ? STREAM : READY;
           end
         STREAM:
           begin

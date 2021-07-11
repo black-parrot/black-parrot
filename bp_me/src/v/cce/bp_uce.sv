@@ -240,7 +240,7 @@ module bp_uce
   logic [fill_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt;
-  logic fsm_cmd_new, fsm_cmd_last, fsm_cmd_done;
+  logic fsm_cmd_new, fsm_cmd_done;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
@@ -265,7 +265,6 @@ module bp_uce
      ,.fsm_ready_and_o(fsm_cmd_ready_and_li)
      ,.fsm_cnt_o(fsm_cmd_cnt)
      ,.fsm_new_o(fsm_cmd_new)
-     ,.fsm_last_o(fsm_cmd_last)
      ,.fsm_done_o(fsm_cmd_done)
      );
 
@@ -273,7 +272,7 @@ module bp_uce
   logic [paddr_width_p-1:0] fsm_resp_addr_li;
   logic [fill_width_p-1:0] fsm_resp_data_li;
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
-  logic fsm_resp_new, fsm_resp_done, fsm_resp_last;
+  logic fsm_resp_new, fsm_resp_done;
   logic mem_resp_ready_and_lo;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
@@ -299,7 +298,6 @@ module bp_uce
      ,.fsm_v_o(fsm_resp_v_li)
      ,.fsm_yumi_i(fsm_resp_yumi_lo)
      ,.fsm_new_o(fsm_resp_new)
-     ,.fsm_last_o(fsm_resp_last)
      ,.fsm_done_o(fsm_resp_done)
      );
   assign mem_resp_yumi_o = mem_resp_ready_and_lo & mem_resp_v_i;

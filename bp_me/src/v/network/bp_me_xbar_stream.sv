@@ -139,7 +139,7 @@ module bp_me_xbar_stream
   assign resp_data_o   = {num_source_p{resp_data_lo}};
   assign resp_v_o      = resp_grant_v_li ? (1'b1 << resp_dst_i[resp_grant_sel_li]) : '0;
   assign resp_yumi_o   = resp_grant_li & {num_sink_p{|{resp_v_o & resp_ready_and_i}}};
-  assign resp_last_o   = resp_v_o & resp_last_i[resp_grant_sel_li];
+  assign resp_last_o   = resp_v_o & {num_source_p{resp_last_i[resp_grant_sel_li]}};
 
 endmodule
 

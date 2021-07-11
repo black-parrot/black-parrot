@@ -49,30 +49,28 @@ module bp_me_stream_pump_in
    , localparam stream_words_lp = block_width_p / stream_data_width_p
    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
    )
-  ( input                                          clk_i
-  , input                                          reset_i
+  (input                                            clk_i
+   , input                                          reset_i
 
-  // Input BedRock Stream
-  , input [xce_msg_header_width_lp-1:0]            msg_header_i
-  , input [stream_data_width_p-1:0]                msg_data_i
-  , input                                          msg_v_i
-  , input                                          msg_last_i
-  , output logic                                   msg_ready_and_o
+   // Input BedRock Stream
+   , input [xce_msg_header_width_lp-1:0]            msg_header_i
+   , input [stream_data_width_p-1:0]                msg_data_i
+   , input                                          msg_v_i
+   , input                                          msg_last_i
+   , output logic                                   msg_ready_and_o
 
-  // FSM consumer side
-  , output logic [xce_msg_header_width_lp-1:0]     fsm_base_header_o
-  , output logic [paddr_width_p-1:0]               fsm_addr_o
-  , output logic [stream_data_width_p-1:0]         fsm_data_o
-  , output logic                                   fsm_v_o
-  , input                                          fsm_yumi_i
-  // FSM control signals
-  // fsm_new is raised on first beat of every message
-  , output logic                                   fsm_new_o
-  // fsm_last is raised on last beat of every message
-  , output logic                                   fsm_last_o
-  // fsm_done is raised when last beat of every message is acked
-  , output logic                                   fsm_done_o
-  );
+   // FSM consumer side
+   , output logic [xce_msg_header_width_lp-1:0]     fsm_base_header_o
+   , output logic [paddr_width_p-1:0]               fsm_addr_o
+   , output logic [stream_data_width_p-1:0]         fsm_data_o
+   , output logic                                   fsm_v_o
+   , input                                          fsm_yumi_i
+   // FSM control signals
+   // fsm_new is raised on first beat of every message
+   , output logic                                   fsm_new_o
+   // fsm_done is raised on last beat of every message
+   , output logic                                   fsm_done_o
+   );
 
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
@@ -224,9 +222,8 @@ module bp_me_stream_pump_in
           cnt_up = fsm_yumi_i & ~is_last_cnt;
         end
 
-      fsm_new_o = fsm_v_o & ~streaming_r;
-      fsm_last_o = fsm_v_o & is_last_cnt;
-      fsm_done_o = is_last_cnt & fsm_yumi_i;
+      fsm_new_o  = fsm_yumi_i & ~streaming_r;
+      fsm_done_o = fsm_yumi_i & is_last_cnt;
     end
 
   //synopsys translate_off
