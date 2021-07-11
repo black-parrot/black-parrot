@@ -25,7 +25,7 @@ module wrapper
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
 
-   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam block_size_in_words_lp=assoc_p
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
 
@@ -57,7 +57,7 @@ module wrapper
 
    , output logic                                      mem_cmd_v_o
    , output logic [cce_mem_msg_width_lp-1:0]           mem_cmd_o
-   , input                                             mem_cmd_ready_i
+   , input                                             mem_cmd_ready_and_i
    );
 
    // Cache to Rolly FIFO signals
@@ -72,7 +72,7 @@ module wrapper
    // Miss, Management Interfaces
    logic [num_caches_p-1:0] cache_req_v_lo, cache_req_metadata_v_lo;
    logic [num_caches_p-1:0] cache_req_yumi_lo, cache_req_busy_lo;
-   logic [num_caches_p-1:0] cache_req_complete_lo, cache_req_critical_lo;
+   logic [num_caches_p-1:0] cache_req_complete_lo, cache_req_critical_tag_lo, cache_req_critical_data_lo;
    logic [num_caches_p-1:0][dcache_req_width_lp-1:0] cache_req_lo;
    logic [num_caches_p-1:0][dcache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
 
@@ -100,10 +100,10 @@ module wrapper
 
    logic [num_caches_p-1:0] lce_req_v_lo, lce_resp_v_lo;
    logic cce_lce_req_v_li, cce_lce_req_yumi_lo;
-   logic [num_caches_p-1:0] lce_req_ready_li, lce_resp_ready_li, fifo_lce_cmd_ready_lo;
+   logic [num_caches_p-1:0] lce_req_ready_and_li, lce_resp_ready_and_li, fifo_lce_cmd_ready_lo;
    logic cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
-   logic [num_caches_p-1:0] lce_cmd_v_li, lce_cmd_yumi_lo, lce_cmd_v_lo, lce_cmd_ready_li;
-   logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
+   logic [num_caches_p-1:0] lce_cmd_v_li, lce_cmd_yumi_lo, lce_cmd_v_lo, lce_cmd_ready_and_li;
+   logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_and_li;
 
    `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
    `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
@@ -117,7 +117,7 @@ module wrapper
    bp_bedrock_lce_resp_msg_s [num_caches_p-1:0] lce_resp_lo;
    bp_bedrock_lce_resp_msg_s cce_lce_resp_li;
 
-   `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
    bp_cfg_bus_s cfg_bus_cast_i;
    assign cfg_bus_cast_i = cfg_bus_i;
 
@@ -217,7 +217,7 @@ module wrapper
 
        ,.ptag_v_i(1'b1)
        ,.ptag_i(rolly_ptag_r[i])
-       ,.uncached_i(rolly_uncached_r[i])
+       ,.ptag_uncached_i(rolly_uncached_r[i])
 
        ,.flush_i(poison_li[i])
        ,.replay_pending_o()
@@ -229,7 +229,8 @@ module wrapper
        ,.cache_req_yumi_i(cache_req_yumi_lo[i])
        ,.cache_req_busy_i(cache_req_busy_lo[i])
        ,.cache_req_complete_i(cache_req_complete_lo[i])
-       ,.cache_req_critical_i(cache_req_critical_lo[i])
+       ,.cache_req_critical_tag_i(cache_req_critical_tag_lo[i])
+       ,.cache_req_critical_data_i(cache_req_critical_data_lo[i])
        ,.cache_req_credits_full_i(cache_req_credits_full_lo[i])
        ,.cache_req_credits_empty_i(cache_req_credits_empty_lo[i])
 
@@ -278,7 +279,8 @@ module wrapper
               ,.cache_req_busy_o(cache_req_busy_lo[i])
               ,.cache_req_metadata_i(cache_req_metadata_lo[i])
               ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
-              ,.cache_req_critical_o(cache_req_critical_lo[i])
+              ,.cache_req_critical_tag_o(cache_req_critical_tag_lo[i])
+              ,.cache_req_critical_data_o(cache_req_critical_data_lo[i])
               ,.cache_req_complete_o(cache_req_complete_lo[i])
               ,.cache_req_credits_full_o(cache_req_credits_full_lo[i])
               ,.cache_req_credits_empty_o(cache_req_credits_empty_lo[i])
@@ -300,11 +302,11 @@ module wrapper
 
               ,.lce_req_o(lce_req_lo[i])
               ,.lce_req_v_o(lce_req_v_lo[i])
-              ,.lce_req_ready_i(lce_req_ready_li[i])
+              ,.lce_req_ready_then_i(lce_req_ready_and_li[i])
 
               ,.lce_resp_o(lce_resp_lo[i])
               ,.lce_resp_v_o(lce_resp_v_lo[i])
-              ,.lce_resp_ready_i(lce_resp_ready_li[i])
+              ,.lce_resp_ready_then_i(lce_resp_ready_and_li[i])
 
               ,.lce_cmd_i(lce_cmd_li[i])
               ,.lce_cmd_v_i(lce_cmd_v_li[i])
@@ -312,7 +314,7 @@ module wrapper
 
               ,.lce_cmd_o(lce_cmd_lo[i])
               ,.lce_cmd_v_o(lce_cmd_v_lo[i])
-              ,.lce_cmd_ready_i(lce_cmd_ready_li[i])
+              ,.lce_cmd_ready_then_i(lce_cmd_ready_and_li[i])
               );
 
            // Request out
@@ -325,7 +327,7 @@ module wrapper
            assign lce_req_link_lo[i].data = lce_req_packet_lo[i];
            assign lce_req_link_lo[i].v = lce_req_v_lo[i];
            assign lce_req_link_lo[i].ready_and_rev = 1'b0;
-           assign lce_req_ready_li[i] = lce_req_link_li[i].ready_and_rev;
+           assign lce_req_ready_and_li[i] = lce_req_link_li[i].ready_and_rev;
 
            // Command out
            assign lce_cmd_packet_lo[i].payload = lce_cmd_lo[i];
@@ -342,7 +344,7 @@ module wrapper
            // Conversion from command packet to link format
            assign lce_cmd_link_lo[i].data = lce_cmd_packet_lo[i];
            assign lce_cmd_link_lo[i].v = lce_cmd_v_lo[i];
-           assign lce_cmd_ready_li[i] = lce_cmd_link_li[i].ready_and_rev;
+           assign lce_cmd_ready_and_li[i] = lce_cmd_link_li[i].ready_and_rev;
 
            // LCE cmd demanding -> demanding conversion
            bsg_two_fifo
@@ -370,7 +372,7 @@ module wrapper
            assign lce_resp_link_lo[i].data = lce_resp_packet_lo[i];
            assign lce_resp_link_lo[i].v = lce_resp_v_lo[i];
            assign lce_resp_link_lo[i].ready_and_rev = 1'b0;
-           assign lce_resp_ready_li[i] = lce_resp_link_li[i].ready_and_rev;
+           assign lce_resp_ready_and_li[i] = lce_resp_link_li[i].ready_and_rev;
 
          end
        else if (uce_p == 1)
@@ -397,7 +399,8 @@ module wrapper
              ,.cache_req_busy_o(cache_req_busy_lo)
              ,.cache_req_metadata_i(cache_req_metadata_lo)
              ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-             ,.cache_req_critical_o(cache_req_critical_lo)
+             ,.cache_req_critical_tag_o(cache_req_critical_tag_lo)
+             ,.cache_req_critical_data_o(cache_req_critical_data_lo)
              ,.cache_req_complete_o(cache_req_complete_lo)
              ,.cache_req_credits_full_o(cache_req_credits_full_lo)
              ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
@@ -419,7 +422,7 @@ module wrapper
 
              ,.mem_cmd_o(mem_cmd_o)
              ,.mem_cmd_v_o(mem_cmd_v_o)
-             ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
+             ,.mem_cmd_yumi_i(mem_cmd_ready_and_i & mem_cmd_v_o)
 
              ,.mem_resp_i(mem_resp_i)
              ,.mem_resp_v_i(mem_resp_v_i)
@@ -468,7 +471,7 @@ module wrapper
        assign cce_lce_cmd_link_lo.data = cce_lce_cmd_packet_lo;
        assign cce_lce_cmd_link_lo.v = cce_lce_cmd_v_lo;
        assign cce_lce_cmd_link_lo.ready_and_rev = '0;
-       assign cce_lce_cmd_ready_li = cce_lce_cmd_link_li.ready_and_rev;
+       assign cce_lce_cmd_ready_and_li = cce_lce_cmd_link_li.ready_and_rev;
 
        // Response adapter to convert from the link format to the CCE
        // response input  format
@@ -583,7 +586,7 @@ module wrapper
 
           ,.lce_cmd_o(cce_lce_cmd_lo)
           ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-          ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
+          ,.lce_cmd_ready_i(cce_lce_cmd_ready_and_li)
 
           ,.mem_resp_i(mem_resp_to_cce)
           ,.mem_resp_v_i(mem_resp_v_to_cce)
@@ -591,7 +594,7 @@ module wrapper
 
           ,.mem_cmd_o(mem_cmd_o)
           ,.mem_cmd_v_o(mem_cmd_v_o)
-          ,.mem_cmd_ready_i(mem_cmd_ready_i)
+          ,.mem_cmd_ready_i(mem_cmd_ready_and_i)
           );
 
        // Inbound Mem to CCE

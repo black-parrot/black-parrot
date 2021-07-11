@@ -1,6 +1,6 @@
 VCS_TIMEOUT = 5ms
 
-$(LINT_DIR)/wrapper.sv $(LINT_DIR)/testbench.sv $(LINT_DIR)/test_bp.sv:
+$(LINT_DIR)/wrapper.sv $(LINT_DIR)/testbench.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
@@ -9,13 +9,12 @@ $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
 	@echo wrapper.sv                             >> $@
 	@echo testbench.sv                           >> $@
-	@echo test_bp.sv                             >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
-LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, flist.vcs testbench.sv wrapper.sv test_bp.sv)
+LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, flist.vcs testbench.sv wrapper.sv)
 
-$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.sv:
+$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
@@ -24,11 +23,10 @@ $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
 	@echo wrapper.sv                             >> $@
 	@echo testbench.sv                           >> $@
-	@echo test_bp.sv                             >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
-BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv testbench.sv test_bp.sv)
+BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv testbench.sv)
 
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
 	@ln -nsf $(<D)/$(@F) $@

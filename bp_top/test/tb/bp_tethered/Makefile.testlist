@@ -384,8 +384,6 @@ BEEBS_TESTS := \
   jfdctint \
   lcdnum \
   levenshtein \
-  ludcmp \
-  matmult-float \
   matmult-int \
   mergesort \
   miniz \
@@ -435,6 +433,10 @@ BEEBS_TESTS := \
 #  minver \
 #  stb_perlin \
 #  whetstone \
+#
+# COSIM fail LFS init
+#  ludcmp \
+#  matmult-float \
 
 BEEBS_TESTLIST := $(addprefix beebs@, $(BEEBS_TESTS))
 

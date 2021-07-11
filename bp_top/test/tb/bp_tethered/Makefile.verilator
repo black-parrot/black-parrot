@@ -39,10 +39,21 @@ $(SIM_DIR)/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/prog.elf: $(SIM_DIR)/prog.riscv
 	cp $^ $@
 
-$(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
-	cp $< $@
+ifeq ($(UCODE_CFG), 1)
+CCE_UCODE_FILE ?= $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
+else
+CCE_UCODE_FILE ?=
+endif
 
-NBF_INPUTS ?= --ncpus=$(NCPUS) --ucode=cce_ucode.mem
+$(SIM_DIR)/cce_ucode.mem: $(CCE_UCODE_FILE)
+ifeq ($(UCODE_CFG), 1)
+	cp $< $@
+endif
+
+NBF_INPUTS ?= --ncpus=$(NCPUS)
+ifeq ($(UCODE_CFG), 1)
+NBF_INPUTS += --ucode=cce_ucode.mem
+endif
 NBF_INPUTS += --mem=prog.mem --skip_zeros
 ifeq ($(NBF_CONFIG_P), 1)
 NBF_INPUTS += --config

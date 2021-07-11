@@ -14,7 +14,7 @@ module wrapper
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
    , localparam lg_icache_assoc_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
@@ -51,10 +51,10 @@ module wrapper
 
    , output logic [cce_mem_msg_width_lp-1:0] mem_cmd_o
    , output                                  mem_cmd_v_o
-   , input                                   mem_cmd_ready_i
+   , input                                   mem_cmd_yumi_i
    );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
@@ -68,7 +68,7 @@ module wrapper
   logic cache_req_v_lo;
   logic [icache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
   logic cache_req_metadata_v_lo;
-  logic cache_req_critical_li, cache_req_complete_li;
+  logic cache_req_critical_tag_li, cache_req_critical_data_li, cache_req_complete_li;
   logic cache_req_credits_full_li, cache_req_credits_empty_li;
 
   // Fill Interfaces
@@ -194,7 +194,8 @@ module wrapper
      ,.cache_req_busy_i(cache_req_busy_li)
      ,.cache_req_metadata_o(cache_req_metadata_lo)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
-     ,.cache_req_critical_i(cache_req_critical_li)
+     ,.cache_req_critical_tag_i(cache_req_critical_tag_li)
+     ,.cache_req_critical_data_i(cache_req_critical_data_li)
      ,.cache_req_complete_i(cache_req_complete_li)
      ,.cache_req_credits_full_i(cache_req_credits_full_li)
      ,.cache_req_credits_empty_i(cache_req_credits_empty_li)
@@ -217,11 +218,11 @@ module wrapper
 
   if (uce_p == 0) begin : CCE
     logic lce_req_v_lo, lce_resp_v_lo, lce_cmd_v_lo, fifo_lce_cmd_v_lo;
-    logic lce_req_ready_li, lce_resp_ready_li, lce_cmd_ready_li, fifo_lce_cmd_yumi_li;
+    logic lce_req_ready_then_li, lce_resp_ready_then_li, lce_cmd_ready_and_li, fifo_lce_cmd_yumi_li;
     bp_bedrock_lce_req_msg_s lce_req_lo;
     bp_bedrock_lce_resp_msg_s lce_resp_lo;
     bp_bedrock_lce_cmd_msg_s lce_cmd_lo, fifo_lce_cmd_lo;
-    logic mem_resp_ready_lo;
+    logic mem_resp_ready_and_lo;
 
     // I-Cache LCE
     bp_lce
@@ -246,7 +247,8 @@ module wrapper
        ,.cache_req_busy_o(cache_req_busy_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-       ,.cache_req_critical_o(cache_req_critical_li)
+       ,.cache_req_critical_tag_o(cache_req_critical_tag_li)
+       ,.cache_req_critical_data_o(cache_req_critical_data_li)
        ,.cache_req_complete_o(cache_req_complete_li)
        ,.cache_req_credits_full_o(cache_req_credits_full_li)
        ,.cache_req_credits_empty_o(cache_req_credits_empty_li)
@@ -268,11 +270,11 @@ module wrapper
 
        ,.lce_req_o(lce_req_lo)
        ,.lce_req_v_o(lce_req_v_lo)
-       ,.lce_req_ready_i(lce_req_ready_li)
+       ,.lce_req_ready_then_i(lce_req_ready_then_li)
 
        ,.lce_resp_o(lce_resp_lo)
        ,.lce_resp_v_o(lce_resp_v_lo)
-       ,.lce_resp_ready_i(lce_resp_ready_li)
+       ,.lce_resp_ready_then_i(lce_resp_ready_then_li)
 
        ,.lce_cmd_i(fifo_lce_cmd_lo)
        ,.lce_cmd_v_i(fifo_lce_cmd_v_lo)
@@ -280,7 +282,7 @@ module wrapper
 
        ,.lce_cmd_o()
        ,.lce_cmd_v_o()
-       ,.lce_cmd_ready_i(1'b1)
+       ,.lce_cmd_ready_then_i(1'b1)
        );
 
 
@@ -293,7 +295,7 @@ module wrapper
 
        // from CCE
        ,.v_i(lce_cmd_v_lo)
-       ,.ready_o(lce_cmd_ready_li)
+       ,.ready_o(lce_cmd_ready_and_li)
        ,.data_i(lce_cmd_lo)
 
        // to LCE
@@ -313,29 +315,29 @@ module wrapper
 
        ,.lce_req_i(lce_req_lo)
        ,.lce_req_v_i(lce_req_v_lo)
-       ,.lce_req_ready_o(lce_req_ready_li)
+       ,.lce_req_ready_o(lce_req_ready_then_li)
 
        ,.lce_resp_i(lce_resp_lo)
        ,.lce_resp_v_i(lce_resp_v_lo)
-       ,.lce_resp_ready_o(lce_resp_ready_li)
+       ,.lce_resp_ready_o(lce_resp_ready_then_li)
 
        ,.lce_cmd_o(lce_cmd_lo)
        ,.lce_cmd_v_o(lce_cmd_v_lo)
-       ,.lce_cmd_ready_i(lce_cmd_ready_li)
+       ,.lce_cmd_ready_i(lce_cmd_ready_and_li)
 
        ,.mem_resp_i(mem_resp_i)
        ,.mem_resp_v_i(mem_resp_v_i)
-       ,.mem_resp_ready_o(mem_resp_ready_lo)
+       ,.mem_resp_ready_o(mem_resp_ready_and_lo)
 
        ,.mem_cmd_o(mem_cmd_o)
        ,.mem_cmd_v_o(mem_cmd_v_o)
-       ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
+       ,.mem_cmd_yumi_i(mem_cmd_yumi_i)
        );
 
-      assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
+      assign mem_resp_yumi_o = mem_resp_ready_and_lo & mem_resp_v_i;
   end
   else begin: UCE
-    logic mem_resp_ready_lo;
+    logic mem_resp_ready_and_lo;
     logic fifo_mem_resp_v_lo, fifo_mem_resp_yumi_li;
     bp_bedrock_cce_mem_msg_s fifo_mem_resp_lo;
 
@@ -359,7 +361,8 @@ module wrapper
        ,.cache_req_busy_o(cache_req_busy_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-       ,.cache_req_critical_o(cache_req_critical_li)
+       ,.cache_req_critical_tag_o(cache_req_critical_tag_li)
+       ,.cache_req_critical_data_o(cache_req_critical_data_li)
        ,.cache_req_complete_o(cache_req_complete_li)
        ,.cache_req_credits_full_o(cache_req_credits_full_li)
        ,.cache_req_credits_empty_o(cache_req_credits_empty_li)
@@ -381,7 +384,7 @@ module wrapper
 
        ,.mem_cmd_o(mem_cmd_o)
        ,.mem_cmd_v_o(mem_cmd_v_o)
-       ,.mem_cmd_yumi_i(mem_cmd_ready_i & mem_cmd_v_o)
+       ,.mem_cmd_yumi_i(mem_cmd_yumi_i)
 
        ,.mem_resp_i(fifo_mem_resp_lo)
        ,.mem_resp_v_i(fifo_mem_resp_v_lo)
@@ -398,14 +401,14 @@ module wrapper
 
        ,.v_i(mem_resp_v_i)
        ,.data_i(mem_resp_i)
-       ,.ready_o(mem_resp_ready_lo)
+       ,.ready_o(mem_resp_ready_and_lo)
 
        ,.v_o(fifo_mem_resp_v_lo)
        ,.data_o(fifo_mem_resp_lo)
        ,.yumi_i(fifo_mem_resp_yumi_li)
        );
 
-    assign mem_resp_yumi_o = mem_resp_ready_lo & mem_resp_v_i;
+    assign mem_resp_yumi_o = mem_resp_ready_and_lo & mem_resp_v_i;
   end
 endmodule
 

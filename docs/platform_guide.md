@@ -31,25 +31,10 @@ BlackParrot supports the following CSRs:
 ## Memory-mapped Devices
 BlackParrot supports having a number of devices in each tile. In a standard BlackParrot tile there is:
 * CLINT (Core Local Interrupt Controller)
-  * Contains memory-mapped registers used to control interrupts in a tile
-  * mtime: 0x30_bff8
-  * mtimecmp: 0x30_4000
-  * mipi: 0x30_0000
-  * mtime increments at a frequency much lower than the clock speed
-  * When mtimecmp >= mtime, a timer irq is raised
-  * When mipi is set, a software irq is raised
-TODO: update config map
 * CFG (Tile Configuration Controller)
-  * Contains memory-mapped registers which provide system-level configuration options and debug access
-  * Freeze - prevents the processor from executing instructions
-  * Core id (read-only) - identifies the core among all cores
-  * Icache id (read-only) - the LCE id of the icache
-  * Icache mode - Uncached only, fully coherent, or nonspeculative mode
-  * Dcache id (read-only) - the LCE id of the dcache
-  * Dcache mode - Uncached only, or fully coherent
-  * CCE id (read-only) - the CCE id of the tile
-  * CCE mode - Uncached only, or fully coherent
-  * Domain mask - Enable bits for addresses higher than cacheable address space
+* L2S (L2 cache slice)
+
+The map for configuration registers within these devices is shown below.
 
 ## Fencing
 There are two types of fence instructions defined by RISC-V: FENCE.I (instruction fence) and FENCE
@@ -139,18 +124,18 @@ These addresses are per-tile. To access them on a tile N, prepend N to the addre
 |          | putchar     | 10_1000         | Puts a character onto the terminal of a tethered host                                                                             |
 |          | finish      | 10_2000-10_2fff | Terminates a multicore BlackParrot simulation, when finish[x] is received for each core x in the system                           |
 |          | putch       | 10_3000-10_3fff | putch[x] puts a character into a private terminal for core x. This is useful for debugging multicore simulations                  |
-| CFG      | freeze      | 20_0001         | Freezes the core, preventing all fetch operations. Will drain the pipeline if set during runtime.                                 |
-|          | core_id     | 20_0005         | Read-only. This tile's core id. This is a local id within the chip                                                                |
-|          | did         | 20_0006         | Read-only. This tile's domain id. This is an chip-wide identifier                                                                 |
-|          | cord        | 20_0007         | Read-only. This tile's coordinate. In {y,x} format                                                                                |
-|          | host_did    | 20_0008         | Host domain id. This identifies which direction to send host packets, relative to our own domain id                               |
-|          | domain_mask | 20_0009         | A mask of the upper uncached bits of an address. If an address width an unset domain bit is loaded, it will cause an access fault |
-|          | icache_id   | 20_0021         | Read-only. The I$ Engine ID.                                                                                                      |
-|          | icache_mode | 20_0022         | The I$ mode. Either uncached, cached, or nonspec (will not send a speculative miss)                                               |
-|          | dcache_id   | 20_0042         | Read-only. The D$ Engine ID.                                                                                                      |
-|          | dcache_mode | 20_0043         | The D$ mode. Either uncached or cached. (D$ will never send speculative misses)                                                   |
-|          | cce_id      | 20_0080         | Read-only. The CCE Engine ID.                                                                                                     |
-|          | cce_mode    | 20_0081         | The CCE mode. Either uncached or cached. Undefined behavior results when sending cached requests to a CCE in uncached mode        |
+| CFG      | freeze      | 20_0008         | Freezes the core, preventing all fetch operations. Will drain the pipeline if set during runtime.                                 |
+|          | core_id     | 20_000c         | Read-only. This tile's core id. This is a local id within the chip                                                                |
+|          | did         | 20_0010         | Read-only. This tile's domain id. This is an chip-wide identifier                                                                 |
+|          | cord        | 20_0014         | Read-only. This tile's coordinate. In {y,x} format                                                                                |
+|          | host_did    | 20_0018         | Host domain id. This identifies which direction to send host packets, relative to our own domain id                               |
+|          | hio_mask    | 20_001c         | A mask of the upper uncached bits of an address. If an address width an unset domain bit is loaded, it will cause an access fault |
+|          | icache_id   | 20_0200         | Read-only. The I$ Engine ID.                                                                                                      |
+|          | icache_mode | 20_0204         | The I$ mode. Either uncached, cached, or nonspec (will not send a speculative miss)                                               |
+|          | dcache_id   | 20_0400         | Read-only. The D$ Engine ID.                                                                                                      |
+|          | dcache_mode | 20_0404         | The D$ mode. Either uncached or cached. (D$ will never send speculative misses)                                                   |
+|          | cce_id      | 20_0600         | Read-only. The CCE Engine ID.                                                                                                     |
+|          | cce_mode    | 20_0604         | The CCE mode. Either uncached or cached. Undefined behavior results when sending cached requests to a CCE in uncached mode        |
 |          | cce_ucode   | 20_8000-20_8fff | The CCE instruction RAM. Must be written before enabling cached mode in a microcoded CCE                                          |
 | CLINT    | mipi        | 30_0000         | mip (software interrupt) bit                                                                                                      |
 |          | mtimecmp    | 30_4000         | Timer compare register. When mtime > mtimecmp, a timer irq is raised in the core                                                  |

@@ -42,6 +42,10 @@ e_bp_unicore_paddr_large_cfg_paddr_width               := 44
 e_bp_multicore_1_paddr_large_cfg_paddr_width           := 44
 e_bp_multicore_1_cce_ucode_paddr_large_cfg_paddr_width := 44
 
+e_bp_unicore_paddr_small_cfg_paddr_width               := 33
+e_bp_multicore_1_paddr_small_cfg_paddr_width           := 33
+e_bp_multicore_1_cce_ucode_paddr_small_cfg_paddr_width := 33
+
 e_bp_default_cfg_paddr_width                           := 40
 
 _PADDR_WIDTH :=$($(CFG)_paddr_width)
@@ -51,3 +55,12 @@ else
 	export PADDR_WIDTH ?= $(_PADDR_WIDTH)
 endif
 
+e_bp_custom_cfg_ucode := 1
+$(CFG)_ucode ?= $(findstring cce_ucode,$(CFG))
+
+_UCODE_CFG ?= $($(CFG)_ucode)
+ifeq ($(_UCODE_CFG),)
+	export UCODE_CFG ?= 0
+else
+	export UCODE_CFG ?= 1
+endif

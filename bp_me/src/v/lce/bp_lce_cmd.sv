@@ -93,8 +93,9 @@ module bp_lce_cmd
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
     // cache_req_complete_o is routed to the cache to indicate a blocking request is complete
+    , output logic                                   cache_req_critical_tag_o
+    , output logic                                   cache_req_critical_data_o
     , output logic                                   cache_req_complete_o
-    , output logic                                   cache_req_critical_o
     // uncached store request complete is used by the LCE to decrement the request credit counter
     // when an uncached store complete, but is not routed to the cache because the caches do not
     // block (miss) on uncached stores
@@ -104,7 +105,7 @@ module bp_lce_cmd
     // Resp: ready->valid
     , output logic [lce_resp_msg_width_lp-1:0]       lce_resp_o
     , output logic                                   lce_resp_v_o
-    , input                                          lce_resp_ready_i
+    , input                                          lce_resp_ready_then_i
 
     // CCE-LCE interface
     // Cmd_i: valid->yumi
@@ -116,7 +117,7 @@ module bp_lce_cmd
     // Cmd_o: ready->valid
     , output logic [lce_cmd_msg_width_lp-1:0]        lce_cmd_o
     , output logic                                   lce_cmd_v_o
-    , input                                          lce_cmd_ready_i
+    , input                                          lce_cmd_ready_then_i
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
@@ -272,7 +273,8 @@ module bp_lce_cmd
 
     cache_req_complete_o = 1'b0;
     //TODO: support partial fill, currently not supported
-    cache_req_critical_o = 1'b0;
+    cache_req_critical_tag_o = 1'b0;
+    cache_req_critical_data_o = 1'b0;
 
     // LCE-CCE Interface signals
     lce_cmd_yumi_o = 1'b0;
@@ -342,7 +344,7 @@ module bp_lce_cmd
               lce_resp_payload.src_id = lce_id_i;
               lce_resp.header.payload = lce_resp_payload;
               lce_resp.header.msg_type.resp = e_bedrock_resp_sync_ack;
-              lce_resp_v_o = lce_resp_ready_i;
+              lce_resp_v_o = lce_resp_ready_then_i;
               lce_cmd_yumi_o = lce_resp_v_o;
 
               // reset the counter when last sync is received and ack is sent
@@ -377,7 +379,7 @@ module bp_lce_cmd
               tag_mem_pkt.opcode = e_cache_tag_mem_set_state;
               tag_mem_pkt_v_o = lce_cmd_v_i;
 
-              lce_resp_v_o = tag_mem_pkt_yumi_i & lce_resp_ready_i;
+              lce_resp_v_o = tag_mem_pkt_yumi_i & lce_resp_ready_then_i;
               lce_resp.header.addr = lce_cmd.header.addr;
               lce_resp.header.msg_type.resp = e_bedrock_resp_inv_ack;
               lce_resp_payload.src_id = lce_id_i;
@@ -421,7 +423,8 @@ module bp_lce_cmd
 
               // TODO: This is sufficient for the critical signal when only
               //   line width fills
-              cache_req_critical_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+              cache_req_critical_tag_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+              cache_req_critical_data_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
 
               // send coherence ack after updating tag and data memories
               state_n = (tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i)
@@ -553,7 +556,7 @@ module bp_lce_cmd
 
               lce_cmd_yumi_o = data_mem_pkt_yumi_i;
 
-              cache_req_critical_o = lce_cmd_yumi_o;
+              cache_req_critical_data_o = lce_cmd_yumi_o;
               cache_req_complete_o = lce_cmd_yumi_o;
             end
 
@@ -573,7 +576,7 @@ module bp_lce_cmd
         lce_resp_payload.src_id = lce_id_i;
         lce_resp_payload.dst_id = lce_cmd_payload.src_id;
         lce_resp.header.payload = lce_resp_payload;
-        lce_resp_v_o = lce_cmd_v_i & lce_resp_ready_i;
+        lce_resp_v_o = lce_cmd_v_i & lce_resp_ready_then_i;
 
         lce_cmd_yumi_o = lce_resp_v_o;
 
@@ -606,7 +609,7 @@ module bp_lce_cmd
         // handshakes
         // outbound command is ready->valid
         // inbound is valid->yumi, but only dequeue when outbound sends
-        lce_cmd_v_o = lce_cmd_ready_i & lce_cmd_v_i & data_buf_v_r;
+        lce_cmd_v_o = lce_cmd_ready_then_i & lce_cmd_v_i & data_buf_v_r;
 
         // dequeue the command if transfer is last action
         lce_cmd_yumi_o = lce_cmd_v_o & (lce_cmd.header.msg_type.cmd != e_bedrock_cmd_st_tr_wb);
@@ -648,7 +651,7 @@ module bp_lce_cmd
         lce_resp_payload.src_id = lce_id_i;
         lce_resp_payload.dst_id = lce_cmd_payload.src_id;
         lce_resp.header.payload = lce_resp_payload;
-        lce_resp_v_o = lce_resp_ready_i & stat_buf_v_r & ~stat_buf_r.dirty[lce_cmd_way_id];
+        lce_resp_v_o = lce_resp_ready_then_i & stat_buf_v_r & ~stat_buf_r.dirty[lce_cmd_way_id];
         // dequeue command only if sending null writeback
         lce_cmd_yumi_o = lce_resp_v_o;
 
@@ -693,7 +696,7 @@ module bp_lce_cmd
         lce_resp_payload.dst_id = lce_cmd_payload.src_id;
         lce_resp.header.payload = lce_resp_payload;
         lce_resp.header.size = cmd_block_size_lp;
-        lce_resp_v_o = lce_resp_ready_i & data_buf_v_r;
+        lce_resp_v_o = lce_resp_ready_then_i & data_buf_v_r;
 
         lce_cmd_yumi_o = lce_resp_v_o;
 

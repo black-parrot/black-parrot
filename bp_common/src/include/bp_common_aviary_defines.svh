@@ -36,15 +36,14 @@
     , localparam num_lce_p = proc_param_lp.num_lce                                                 \
                                                                                                    \
     , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                          \
-    , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))              \
-    , localparam lce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*2+2)*(cc_y_dim_p*2+2))              \
+    , localparam cce_id_width_p  = `BSG_SAFE_CLOG2(((cc_x_dim_p*1)+2)*((cc_y_dim_p*1)+2))          \
+    , localparam lce_id_width_p  = `BSG_SAFE_CLOG2(((cc_x_dim_p*2)+2)*((cc_y_dim_p*2)+2))          \
                                                                                                    \
     , localparam vaddr_width_p   = proc_param_lp.vaddr_width                                       \
     , localparam paddr_width_p   = proc_param_lp.paddr_width                                       \
-    , localparam dram_max_size_p = proc_param_lp.dram_max_size                                     \
+    , localparam caddr_width_p   = proc_param_lp.caddr_width                                       \
     , localparam asid_width_p    = proc_param_lp.asid_width                                        \
-    , localparam caddr_width_p   = `BSG_SAFE_CLOG2(dram_base_addr_gp+dram_max_size_p)              \
-    , localparam domain_width_p  = paddr_width_p - caddr_width_p                                   \
+    , localparam hio_width_p     = paddr_width_p - caddr_width_p                                   \
                                                                                                    \
     , localparam boot_pc_p       = proc_param_lp.boot_pc                                           \
     , localparam boot_in_debug_p = proc_param_lp.boot_in_debug                                     \
@@ -53,7 +52,9 @@
     , localparam btb_tag_width_p             = proc_param_lp.btb_tag_width                         \
     , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                         \
     , localparam bht_idx_width_p             = proc_param_lp.bht_idx_width                         \
+    , localparam bht_row_els_p               = proc_param_lp.bht_row_els                           \
     , localparam ghist_width_p               = proc_param_lp.ghist_width                           \
+    , localparam bht_row_width_p             = 2*bht_row_els_p                                     \
                                                                                                    \
     , localparam itlb_els_4k_p              = proc_param_lp.itlb_els_4k                            \
     , localparam itlb_els_1g_p              = proc_param_lp.itlb_els_1g                            \
@@ -190,7 +191,7 @@
                                                                                                    \
           ,`bp_aviary_parameter_override(vaddr_width, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(paddr_width, override_cfg_mp, default_cfg_mp)             \
-          ,`bp_aviary_parameter_override(dram_max_size, override_cfg_mp, default_cfg_mp)           \
+          ,`bp_aviary_parameter_override(caddr_width, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(asid_width, override_cfg_mp, default_cfg_mp)              \
                                                                                                    \
           ,`bp_aviary_parameter_override(boot_pc, override_cfg_mp, default_cfg_mp)                 \
@@ -203,6 +204,7 @@
           ,`bp_aviary_parameter_override(btb_tag_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(btb_idx_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(bht_idx_width, override_cfg_mp, default_cfg_mp)           \
+          ,`bp_aviary_parameter_override(bht_row_els, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(ghist_width, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(itlb_els_4k, override_cfg_mp, default_cfg_mp)             \

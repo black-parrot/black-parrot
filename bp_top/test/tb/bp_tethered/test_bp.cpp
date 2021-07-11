@@ -1,55 +1,51 @@
 #include <stdlib.h>
-#include <systemc.h>
-#include <verilated_vcd_sc.h>
+#include <verilated_fst_c.h>
 #include <verilated_cov.h>
 
 #include "Vtestbench.h"
 #include "Vtestbench__Dpi.h"
+#include "bsg_nonsynth_dpi_clock_gen.hpp"
+using namespace bsg_nonsynth_dpi;
 
-int sc_main(int argc, char **argv) {
+int main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
-  Verilated::traceEverOn(VM_TRACE);
+  Verilated::traceEverOn(VM_TRACE_FST);
   Verilated::assertOn(false);
 
-  Vtestbench *tb = new Vtestbench("test_bp");
+  Vtestbench *tb = new Vtestbench("testbench");
 
-  svScope g_scope = svGetScopeFromName("test_bp.testbench");
+  svScope g_scope = svGetScopeFromName("testbench");
   svSetScope(g_scope);
 
-  int sim_period = get_sim_period();
-  int dram_period = get_dram_period();
+  // Let clock generators register themselves.
+  tb->eval();
+
   // Use me to find the correct scope of your DPI functions
   //Verilated::scopesDump();
 
-  sc_clock clock("clk", sc_time(sim_period, SC_PS));
-  sc_clock dram_clock("dram_clk", sc_time(dram_period, SC_PS));
-  sc_signal <bool> reset("reset");
-
-  tb->clk_i(clock);
-  tb->reset_i(reset);
-  tb->dram_clk_i(dram_clock);
-  tb->dram_reset_i(reset);
-
-#if VM_TRACE
+#if VM_TRACE_FST
   std::cout << "Opening dump file" << std::endl;
-  VerilatedVcdSc* wf = new VerilatedVcdSc;
+  VerilatedFstC* wf = new VerilatedFstC;
   tb->trace(wf, 10);
-  wf->open("dump.vcd");
+  wf->open("dump.fst");
 #endif
 
-  reset = 1;
-
-  std::cout << "Raising reset" << std::endl;
-  for (int i = 0; i < 20; i++) {
-    sc_start(std::max(sim_period, dram_period), SC_PS);
+  while(tb->reset_i == 1) {
+    bsg_timekeeper::next();
+    tb->eval();
+    #if VM_TRACE_FST
+      wf->dump(sc_time_stamp());
+    #endif
   }
-  std::cout << "Lowering reset" << std::endl;
 
-  reset = 0;
   Verilated::assertOn(true);
 
   while (!Verilated::gotFinish()) {
-    sc_start(sim_period, SC_PS);
+    bsg_timekeeper::next();
+    tb->eval();
+    #if VM_TRACE_FST
+      wf->dump(sc_time_stamp());
+    #endif
   }
   std::cout << "Finishing test" << std::endl;
 
@@ -60,6 +56,11 @@ int sc_main(int argc, char **argv) {
 
   std::cout << "Executing final" << std::endl;
   tb->final();
+
+  #if VM_TRACE_FST
+    std::cout << "Closing dump file" << std::endl;
+    wf->close();
+  #endif
 
   std::cout << "Exiting" << std::endl;
   exit(EXIT_SUCCESS);

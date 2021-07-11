@@ -1,17 +1,20 @@
 ## Includes
-# BaseJump STL includes
+# BASEJUMP_STL includes
++incdir+$BASEJUMP_STL_DIR/bsg_cache
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
 +incdir+$BASEJUMP_STL_DIR/bsg_mem
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
 +incdir+$BASEJUMP_STL_DIR/bsg_test
 +incdir+$BASEJUMP_STL_DIR/bsg_noc
+# HardFloat includes
++incdir+$HARDFLOAT_DIR/source
++incdir+$HARDFLOAT_DIR/source/RISCV
 # common includes
 +incdir+$BP_COMMON_DIR/src/include
 # fe includes
 +incdir+$BP_FE_DIR/src/include
 # be includes
 +incdir+$BP_BE_DIR/src/include
-+incdir+$BP_BE_DIR/src/include/bp_be_dcache
 # me includes 
 +incdir+$BP_ME_DIR/src/include
 # top includes
@@ -63,7 +66,6 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_dynamic.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_full.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_replacement.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_tag_array.v

@@ -3,10 +3,14 @@
  *    bp_me_wormhole_packet_encode_lce_resp.v
  *
  *  Description:
- *    It takes bp_lce_cce_resp_s as a payload, parses, and forms it into a wormhole
- *    packet that goes into the adapter.
+ *    It takes bp_lce_cmd_s as a payload, parses, and forms it into a wormhole
+ *    header that can be fed to a wormhole adapter.
  *
- *    packet = {payload, length, cord}
+ *    header = {pad, pr_hdr, cid, length, cord}
+ *
+ *    pad may be 0 bits and is only required if wormhole header field widths plus
+ *    pr_hdr width is not a perfect multiple of flit_width_p
+ *
  */
 
 

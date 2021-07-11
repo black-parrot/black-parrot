@@ -34,7 +34,7 @@ module bp_me_cce_to_mem_link_client
 
   , input [cce_mem_msg_width_lp-1:0]             mem_resp_i
   , input                                        mem_resp_v_i
-  , output                                       mem_resp_ready_o
+  , output                                       mem_resp_ready_and_o
 
   // bsg_noc_wormhole interface
   , input [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
@@ -73,7 +73,7 @@ module bp_me_cce_to_mem_link_client
 
       ,.packet_i(mem_resp_packet_lo)
       ,.v_i(mem_resp_v_i)
-      ,.ready_o(mem_resp_ready_o)
+      ,.ready_o(mem_resp_ready_and_o)
       );
   assign mem_cmd_o = {mem_cmd_packet_lo.data, mem_cmd_packet_lo.header.msg_hdr};
   assign mem_cmd_v_o = mem_cmd_packet_v_lo & fifo_ready_lo;

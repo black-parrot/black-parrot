@@ -30,6 +30,7 @@ protos=(
 cmd_base="make -C bp_me/syn run_testlist.${SUFFIX}"
 
 # Any setup needed for the job
+make -C bp_me/syn clean
 
 let JOBS=${#protos[@]}
 
@@ -42,5 +43,5 @@ parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO={
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=mesi CFG={}" ::: e_bp_multicore_half_cfg
 
 # Check for failures in the report directory
-grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
+grep -cr "FAIL" bp_me/syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
 echo "[CI CHECK] $0: PASSED" && exit 0

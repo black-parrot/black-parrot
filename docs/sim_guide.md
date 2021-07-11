@@ -1,31 +1,13 @@
-# Getting started (Full)
-## Prerequisites
-### Centos
-
-    yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel expat-devel dtc gtkwave vim-common virtualenv
-
-CentOS 7 requires a more modern gcc to build Linux. If you receive an error such as "These critical programs are missing or too old: make" try
-
-    scl enable devtoolset-8 bash
-
-### Ubuntu
-
-    sudo apt-get install autoconf automake autotools-dev cmake curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev wget byacc device-tree-compiler python gtkwave vim-common virtualenv python-yaml
-
-BlackParrot has been tested extensively on CentOS 7. We have many users who have used Ubuntu for
-development. If not on a relatively recent version of these OSes, we suggest using a
-Docker image.
-
-## Build the toolchains
+# Simulation Guide (Full)
+## Build the simulation tools
     # Clone the latest repo
     git clone https://github.com/black-parrot/black-parrot.git
     cd black-parrot
-    # make prep is a meta-target which will build the RISC-V toolchains, programs and microcode
-    #   needed for a full BlackParrot evaluation setup.
-    # Users who are changing code can use the 'libs' 'progs' or 'ucode' targets as appropriate
-    # For faster builds, make prep -j is parallelizable!
-    # BSG users should instead use 'make prep_bsg', which sets up the bsg CAD environment
-    make prep
+    # make tools is a target which will build Verilator, Dromajo and our DRAMSim simulation library
+    # For faster builds, make tools -j is parallelizable!
+    # BSG users should instead use 'make tools_bsg', which sets up the bsg CAD environment
+    # Other users should set up Synopsys VCS or DC and put the binaries on their PATH
+    make tools
 
 The *master* branch contains most recent stable version. This is the recommended branch for someone wishing to try out BlackParrot.
 
@@ -149,7 +131,5 @@ The reports directory contains very brief summaries of tool runs. For example, w
 - **docs/** contains documentation, images, guides and links to document Blackparrot.
 - **docker/** contains Dockerfiles and scripts used for virtualization.
 - **external/** contains submodules corresponding to tooling that BlackParrot depends upon, such as the Verilator.
-- **sdk/** contains the BlackParrot Software Development Kit. More details can be found in the SDK
-  README.md
-- **hdk/** contains the BlackParrot Hardware Development Kit. More details can be found in the HDK
-  README.md
+- **tools/** contains tools needed for RTL simulation and manipulation.
+

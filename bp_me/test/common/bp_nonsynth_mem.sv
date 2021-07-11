@@ -22,7 +22,7 @@ module bp_nonsynth_mem
 
    , input [cce_mem_msg_width_lp-1:0]        mem_cmd_i
    , input                                   mem_cmd_v_i
-   , output logic                            mem_cmd_ready_o
+   , output logic                            mem_cmd_ready_and_o
 
    , output logic [cce_mem_msg_width_lp-1:0] mem_resp_o
    , output logic                            mem_resp_v_o
@@ -46,7 +46,7 @@ module bp_nonsynth_mem
 
      ,.mem_cmd_i(mem_cmd_i)
      ,.mem_cmd_v_i(mem_cmd_v_i)
-     ,.mem_cmd_ready_o(mem_cmd_ready_o)
+     ,.mem_cmd_ready_and_o(mem_cmd_ready_and_o)
 
      ,.mem_resp_o(mem_resp_o)
      ,.mem_resp_v_o(mem_resp_v_o)

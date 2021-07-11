@@ -36,6 +36,8 @@ module bp_tlb
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  // Signals must be 1 width
+  localparam els_1g_lp = `BSG_MAX(els_1g_p, 1);
 
   localparam r_entry_low_bits_lp  = (sv39_levels_gp-1)*sv39_page_idx_width_gp;
   localparam r_entry_high_bits_lp = $bits(bp_pte_leaf_s) - r_entry_low_bits_lp;
@@ -105,10 +107,10 @@ module bp_tlb
      ,.alloc_v_o(repl_way_4k_lo)
      );
 
-  logic [els_1g_p-1:0] tag_r_match_1g_lo;
-  logic [els_1g_p-1:0] tag_empty_1g_lo;
-  logic [els_1g_p-1:0] repl_way_1g_lo;
-  wire [els_1g_p-1:0] tag_1g_w_v_li = ({els_1g_p{w_v_li & entry.gigapage}} & repl_way_1g_lo) | {els_1g_p{flush_1g_li}};
+  logic [els_1g_lp-1:0] tag_r_match_1g_lo;
+  logic [els_1g_lp-1:0] tag_empty_1g_lo;
+  logic [els_1g_lp-1:0] repl_way_1g_lo;
+  wire [els_1g_lp-1:0] tag_1g_w_v_li = ({els_1g_lp{w_v_li & entry.gigapage}} & repl_way_1g_lo) | {els_1g_lp{flush_1g_li}};
   bsg_cam_1r1w_tag_array
    #(.width_p(vtag_width_p), .els_p(els_1g_p))
    tag_array_1g
@@ -154,8 +156,8 @@ module bp_tlb
           );
     end
 
-  logic [els_1g_p-1:0][r_entry_high_bits_lp-1:0] data_1g_high_r;
-  wire [els_1g_p-1:0] mem_1g_w_v_li = ({els_1g_p{w_v_li & entry.gigapage}} & repl_way_1g_lo);
+  logic [els_1g_lp-1:0][r_entry_high_bits_lp-1:0] data_1g_high_r;
+  wire [els_1g_lp-1:0] mem_1g_w_v_li = ({els_1g_lp{w_v_li & entry.gigapage}} & repl_way_1g_lo);
   for (genvar i = 0; i < els_1g_p; i++)
     begin : mem_array_1g
       bsg_dff_en
@@ -178,7 +180,7 @@ module bp_tlb
      );
 
   bsg_mux_one_hot
-   #(.width_p(r_entry_high_bits_lp), .els_p(els_4k_p+els_1g_p))
+   #(.width_p(r_entry_high_bits_lp), .els_p(els_4k_p+els_1g_lp))
    one_hot_sel_high
     (.data_i({data_1g_high_r, data_4k_high_r})
      ,.sel_one_hot_i({tag_r_match_1g_lo, tag_r_match_4k_lo})

@@ -17,7 +17,7 @@ module bp_clint_slice
 
    , input [xce_mem_msg_width_lp-1:0]                   mem_cmd_i
    , input                                              mem_cmd_v_i
-   , output                                             mem_cmd_ready_o
+   , output                                             mem_cmd_ready_and_o
 
    , output [xce_mem_msg_width_lp-1:0]                  mem_resp_o
    , output                                             mem_resp_v_o
@@ -44,7 +44,7 @@ module bp_clint_slice
   
      ,.data_i(mem_cmd_li)
      ,.v_i(mem_cmd_v_i)
-     ,.ready_o(mem_cmd_ready_o)
+     ,.ready_o(mem_cmd_ready_and_o)
   
      ,.data_o(mem_cmd_lo)
      ,.v_o(small_fifo_v_lo)

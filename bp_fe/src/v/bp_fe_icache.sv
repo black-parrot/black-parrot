@@ -43,7 +43,7 @@ module bp_fe_icache
    , parameter fill_width_p  = icache_fill_width_p
 
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
-   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
   (input                                              clk_i
@@ -83,7 +83,8 @@ module bp_fe_icache
    , input                                            cache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
-   , input                                            cache_req_critical_i
+   , input                                            cache_req_critical_tag_i
+   , input                                            cache_req_critical_data_i
    , input                                            cache_req_complete_i
    , input                                            cache_req_credits_full_i
    , input                                            cache_req_credits_empty_i
@@ -105,7 +106,7 @@ module bp_fe_icache
    );
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Various localparameters
@@ -559,16 +560,17 @@ module bp_fe_icache
      ,.o(data_mem_bypass_select)
      );
 
-  wire [`BSG_SAFE_CLOG2(block_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
+  wire [`BSG_SAFE_CLOG2(fill_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
   // Expand the bank write mask to bank width
-  wire [block_width_p-1:0] data_mem_pkt_data_expanded = {block_size_in_fill_lp{data_mem_pkt_cast_i.data}};
+  logic [fill_width_p-1:0] data_mem_pkt_fill_data_li;
   bsg_rotate_left
-   #(.width_p(block_width_p))
+   #(.width_p(fill_width_p))
    write_data_rotate
-    (.data_i(data_mem_pkt_data_expanded)
+    (.data_i(data_mem_pkt_cast_i.data)
      ,.rot_i(write_data_rot_li)
-     ,.o(data_mem_data_li)
+     ,.o(data_mem_pkt_fill_data_li)
      );
+  wire [assoc_p-1:0][bank_width_lp-1:0] data_mem_pkt_data_li = {block_size_in_fill_lp{data_mem_pkt_fill_data_li}};
 
   logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
   // use fill_index to generate bank write mask
@@ -601,6 +603,7 @@ module bp_fe_icache
       assign data_mem_addr_li[i] = data_mem_fast_read[i]
         ? {vaddr_index, {(assoc_p > 1){vaddr_bank}}}
         : {data_mem_pkt_cast_i.index, {(assoc_p > 1){data_mem_pkt_offset}}};
+      assign data_mem_data_li[i] = data_mem_pkt_data_li[i];
     end
   assign data_mem_pkt_yumi_o = data_mem_pkt_v_i & (~|data_mem_fast_read | data_mem_slow_uncached);
 

@@ -40,5 +40,5 @@ parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=1 WT_
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=1 WT_P=1 CFG={}" ::: "${cfgs[@]}"
 
 # Check for failures in the report directory
-grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
+grep -cr "FAIL" bp_be/syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
 echo "[CI CHECK] $0: PASSED" && exit 0

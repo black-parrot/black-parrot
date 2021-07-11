@@ -1,5 +1,4 @@
 export COH_PROTO   ?= mesi
-export CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms
 export CCE_MEM      = $(COH_PROTO).mem
 
 export CCE_TRACE_P    ?= 0
@@ -20,7 +19,7 @@ export PRELOAD_MEM_P  ?= 0
 
 export NO_BIND_P ?= 0
 
-export SAMPLE_MEMSIZE   ?= 128
+export SAMPLE_MEMSIZE   ?= 256
 export SAMPLE_START_P   ?= 0
 export SAMPLE_WARMUP_P  ?= 0
 export SAMPLE_INSTR_P   ?= 0
@@ -48,7 +47,7 @@ export TB_PARAMS  = \
 					-pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
                     -pvalue+no_bind_p=$(NO_BIND_P)
 
-export DUT_DEFINES = 
+export DUT_DEFINES = $(foreach def,$(DEFINES),+define+$(def))
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
                      +define+den2048Mb+sg5+x16+FULL_MEM
 

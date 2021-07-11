@@ -28,7 +28,7 @@ module bp_me_addr_to_cce_id
   localparam max_sac_cce_lp = max_cac_cce_lp + num_sacc_p;
   localparam max_ioc_cce_lp = max_sac_cce_lp + num_io_p;
 
-  wire external_io_v_li = (global_addr_li.domain > 1'b1);
+  wire external_io_v_li = (global_addr_li.hio > 1'b1);
   wire local_addr_v_li = (paddr_i < dram_base_addr_gp);
   wire dram_addr_v_li = (paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp);
   wire core_local_addr_v_li = local_addr_v_li && (local_addr_li.tile < num_core_p);
@@ -69,7 +69,7 @@ module bp_me_addr_to_cce_id
         cce_id_o[0+:lg_num_cce_lp] = cce_dst_id_lo;
       else
         cce_id_o = (num_sacc_p > 1)
-                   ? max_cac_cce_lp + paddr_i[paddr_width_p-domain_width_p-1-: (num_sacc_p > 1 ? `BSG_SAFE_CLOG2(num_sacc_p) : 1)]
+                   ? max_cac_cce_lp + paddr_i[paddr_width_p-hio_width_p-1-: (num_sacc_p > 1 ? `BSG_SAFE_CLOG2(num_sacc_p) : 1)]
                    : max_cac_cce_lp;
     end
 

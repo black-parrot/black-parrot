@@ -42,10 +42,10 @@ module bp_cacc_tile
   bp_bedrock_lce_req_msg_s  cce_lce_req_li;
   logic cce_lce_req_v_li, cce_lce_req_yumi_lo;
   bp_bedrock_lce_cmd_msg_s cce_lce_cmd_lo;
-  logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
+  logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_and_li;
 
   bp_bedrock_cce_mem_msg_s cce_io_cmd_lo;
-  logic cce_io_cmd_v_lo, cce_io_cmd_ready_li;
+  logic cce_io_cmd_v_lo, cce_io_cmd_ready_and_li;
   bp_bedrock_cce_mem_msg_s cce_io_resp_li;
   logic cce_io_resp_v_li, cce_io_resp_yumi_lo;
 
@@ -89,11 +89,11 @@ module bp_cacc_tile
 
      ,.lce_cmd_o(cce_lce_cmd_lo)
      ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-     ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
+     ,.lce_cmd_ready_then_i(cce_lce_cmd_ready_and_li)
 
      ,.io_cmd_o(cce_io_cmd_lo)
      ,.io_cmd_v_o(cce_io_cmd_v_lo)
-     ,.io_cmd_ready_i(cce_io_cmd_ready_li)
+     ,.io_cmd_ready_then_i(cce_io_cmd_ready_and_li)
 
      ,.io_resp_i(cce_io_resp_li)
      ,.io_resp_v_i(cce_io_resp_v_li)
@@ -229,7 +229,7 @@ module bp_cacc_tile
 
      ,.packet_i(cce_lce_cmd_packet_lo)
      ,.v_i(cce_lce_cmd_v_lo)
-     ,.ready_o(cce_lce_cmd_ready_li)
+     ,.ready_o(cce_lce_cmd_ready_and_li)
 
      ,.link_i(cce_lce_cmd_link_li)
      ,.link_o(cce_lce_cmd_link_lo)
@@ -274,7 +274,7 @@ module bp_cacc_tile
 
          ,.io_cmd_i(cce_io_cmd_lo)
          ,.io_cmd_v_i(cce_io_cmd_v_lo)
-         ,.io_cmd_ready_o(cce_io_cmd_ready_li)
+         ,.io_cmd_ready_o(cce_io_cmd_ready_and_li)
 
          ,.io_resp_o(cce_io_resp_li)
          ,.io_resp_v_o(cce_io_resp_v_li)

@@ -3,7 +3,6 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_tx.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
-$BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
 $BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_set_clear.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_arb_round_robin.v
@@ -13,6 +12,8 @@ $BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_map.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv

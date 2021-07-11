@@ -24,7 +24,7 @@ module bp_cce_inst_ram
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     // Derived parameters
-    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   )
   (input                                         clk_i
    , input                                       reset_i
@@ -59,7 +59,7 @@ module bp_cce_inst_ram
   end
   //synopsys translate_on
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
@@ -74,6 +74,7 @@ module bp_cce_inst_ram
   bsg_mem_1rw_sync
     #(.width_p(cce_instr_width_gp)
       ,.els_p(num_cce_instr_ram_els_p)
+      ,.latch_last_read_p(1)
       )
     inst_ram
      (.clk_i(clk_i)
@@ -137,8 +138,9 @@ module bp_cce_inst_ram
         inst_v_n = 1'b1;
       end
       FETCH: begin
-        // Always continue fetching instructions
-        ram_v_li = 1'b1;
+        // fetch as long as current instruction in execute stage is not stalling
+        // RAM will hold last read
+        ram_v_li = ~stall_i;
 
         // Select the next instruction to fetch
         // If the currently executing instruction is stalling, re-fetch the same instruction as

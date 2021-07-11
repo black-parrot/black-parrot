@@ -20,7 +20,7 @@ module bp_l2e_tile
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
 
-    , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    // Wormhole parameters
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
@@ -45,7 +45,7 @@ module bp_l2e_tile
    , input [mem_noc_ral_link_width_lp-1:0]                    mem_resp_link_i
    );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
@@ -129,7 +129,7 @@ module bp_l2e_tile
 
      ,.mem_cmd_i(cfg_mem_cmd)
      ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
-     ,.mem_cmd_ready_o(cfg_mem_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_lo)
 
      ,.mem_resp_o(cfg_mem_resp)
      ,.mem_resp_v_o(cfg_mem_resp_v_lo)
@@ -302,7 +302,6 @@ module bp_l2e_tile
   assign cfg_mem_resp_yumi_li      = cce_mem_resp_yumi_lo & cfg_mem_resp_grant_li;
   assign loopback_mem_resp_yumi_li = cce_mem_resp_yumi_lo & loopback_mem_resp_grant_li;
 
-  import bsg_cache_pkg::*;
   `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
@@ -316,7 +315,7 @@ module bp_l2e_tile
 
      ,.mem_cmd_i(cache_mem_cmd_li)
      ,.mem_cmd_v_i(cache_mem_cmd_v_li)
-     ,.mem_cmd_ready_o(cache_mem_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(cache_mem_cmd_ready_lo)
 
      ,.mem_resp_o(cache_mem_resp_lo)
      ,.mem_resp_v_o(cache_mem_resp_v_lo)
@@ -425,7 +424,7 @@ module bp_l2e_tile
 
      ,.mem_cmd_i(loopback_mem_cmd)
      ,.mem_cmd_v_i(loopback_mem_cmd_v_li)
-     ,.mem_cmd_ready_o(loopback_mem_cmd_ready_lo)
+     ,.mem_cmd_ready_and_o(loopback_mem_cmd_ready_lo)
 
      ,.mem_resp_o(loopback_mem_resp)
      ,.mem_resp_v_o(loopback_mem_resp_v_lo)

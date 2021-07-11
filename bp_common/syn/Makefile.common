@@ -1,10 +1,6 @@
 ## Set common environment variables
 TOP ?= $(shell git rev-parse --show-toplevel)
 
-export SYSTEMC_INCLUDE := $(BP_TOOLS_DIR)/install/include
-export SYSTEMC_LIBDIR  := $(BP_TOOLS_DIR)/install/lib-linux64
-export LD_LIBRARY_PATH := $(SYSTEMC_LIBDIR):$(LD_LIBRARY_PATH)
-
 include $(TOP)/Makefile.common
 
 .PHONY: clean

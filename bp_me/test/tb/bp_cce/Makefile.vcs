@@ -1,6 +1,6 @@
 VCS_TIMEOUT = 5ms
 
-$(LINT_DIR)/wrapper.sv $(LINT_DIR)/testbench.sv $(LINT_DIR)/test_bp.sv:
+$(LINT_DIR)/wrapper.sv $(LINT_DIR)/testbench.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
@@ -9,23 +9,22 @@ $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
 	@echo wrapper.sv                             >> $@
 	@echo testbench.sv                           >> $@
-	@echo test_bp.sv                             >> $@
 	@echo bsg_trace_rom_0.v                      >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
-# TODO: NUM_INSTR_P, SEED_P, SKIP_INIT_P should be part of the rom name to help enable
+# TODO: NUM_INSTR_P, SEED_P, CCE_MODE_P should be part of the rom name to help enable
 #   dependency chaining / parallelism
 $(LINT_DIR)/bsg_trace_rom_%.tr:
-	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(SKIP_INIT_P) > $@
+	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) --test $(ME_TEST_P) > $@
 
 $(LINT_DIR)/bsg_trace_rom_%.v: $(LINT_DIR)/bsg_trace_rom_%.tr
 	$(PYTHON) $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
-LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, flist.vcs testbench.sv wrapper.sv test_bp.sv)
+LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, flist.vcs testbench.sv wrapper.sv)
 LINT_COLLATERAL += $(addprefix $(LINT_DIR)/, bsg_trace_rom_0.v)
 
-$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.sv:
+$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
@@ -35,20 +34,19 @@ $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
 	@echo wrapper.sv                             >> $@
 	@echo testbench.sv                           >> $@
-	@echo test_bp.sv                             >> $@
 	@echo bsg_trace_rom_0.v                      >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
-# TODO: NUM_INSTR_P, SEED_P, SKIP_INIT_P should be part of the rom name to help enable
+# TODO: NUM_INSTR_P, SEED_P, CCE_MODE_P should be part of the rom name to help enable
 #   dependency chaining / parallelism
 $(BUILD_DIR)/bsg_trace_rom_%.tr:
-	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(SKIP_INIT_P) > $@
+	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) --test $(ME_TEST_P) > $@
 
 $(BUILD_DIR)/bsg_trace_rom_%.v: $(BUILD_DIR)/bsg_trace_rom_%.tr
 	$(PYTHON) $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
-BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv testbench.sv test_bp.sv)
+BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv testbench.sv)
 BUILD_COLLATERAL += $(addprefix $(BUILD_DIR)/, bsg_trace_rom_0.v)
 
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir

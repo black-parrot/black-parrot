@@ -19,7 +19,7 @@ module bp_core
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   )
  (input                                          clk_i
   , input                                        reset_i
@@ -29,11 +29,11 @@ module bp_core
   // LCE-CCE interface
   , output [1:0][lce_req_msg_width_lp-1:0]       lce_req_o
   , output [1:0]                                 lce_req_v_o
-  , input [1:0]                                  lce_req_ready_i
+  , input [1:0]                                  lce_req_ready_then_i
 
   , output [1:0][lce_resp_msg_width_lp-1:0]      lce_resp_o
   , output [1:0]                                 lce_resp_v_o
-  , input [1:0]                                  lce_resp_ready_i
+  , input [1:0]                                  lce_resp_ready_then_i
 
   // CCE-LCE interface
   , input [1:0][lce_cmd_msg_width_lp-1:0]        lce_cmd_i
@@ -42,14 +42,14 @@ module bp_core
 
   , output [1:0][lce_cmd_msg_width_lp-1:0]       lce_cmd_o
   , output [1:0]                                 lce_cmd_v_o
-  , input [1:0]                                  lce_cmd_ready_i
+  , input [1:0]                                  lce_cmd_ready_then_i
 
   , input                                        timer_irq_i
   , input                                        software_irq_i
   , input                                        external_irq_i
   );
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
 
@@ -59,14 +59,14 @@ module bp_core
   logic icache_req_v_lo, icache_req_yumi_li, icache_req_busy_li;
   bp_icache_req_metadata_s icache_req_metadata_lo;
   logic icache_req_metadata_v_lo;
-  logic icache_req_critical_li, icache_req_complete_li;
+  logic icache_req_critical_tag_li, icache_req_critical_data_li, icache_req_complete_li;
   logic icache_req_credits_full_li, icache_req_credits_empty_li;
 
   bp_dcache_req_s dcache_req_lo;
   logic dcache_req_v_lo, dcache_req_yumi_li, dcache_req_busy_li;
   bp_dcache_req_metadata_s dcache_req_metadata_lo;
   logic dcache_req_metadata_v_lo;
-  logic dcache_req_critical_li, dcache_req_complete_li;
+  logic dcache_req_critical_tag_li, dcache_req_critical_data_li, dcache_req_complete_li;
   logic dcache_req_credits_full_li, dcache_req_credits_empty_li;
 
   bp_icache_tag_mem_pkt_s icache_tag_mem_pkt_li;
@@ -113,7 +113,8 @@ module bp_core
      ,.icache_req_metadata_o(icache_req_metadata_lo)
      ,.icache_req_metadata_v_o(icache_req_metadata_v_lo)
      ,.icache_req_complete_i(icache_req_complete_li)
-     ,.icache_req_critical_i(icache_req_critical_li)
+     ,.icache_req_critical_tag_i(icache_req_critical_tag_li)
+     ,.icache_req_critical_data_i(icache_req_critical_data_li)
      ,.icache_req_credits_full_i(icache_req_credits_full_li)
      ,.icache_req_credits_empty_i(icache_req_credits_empty_li)
 
@@ -139,7 +140,8 @@ module bp_core
      ,.dcache_req_metadata_o(dcache_req_metadata_lo)
      ,.dcache_req_metadata_v_o(dcache_req_metadata_v_lo)
      ,.dcache_req_complete_i(dcache_req_complete_li)
-     ,.dcache_req_critical_i(dcache_req_critical_li)
+     ,.dcache_req_critical_tag_i(dcache_req_critical_tag_li)
+     ,.dcache_req_critical_data_i(dcache_req_critical_data_li)
      ,.dcache_req_credits_full_i(dcache_req_credits_full_li)
      ,.dcache_req_credits_empty_i(dcache_req_credits_empty_li)
 
@@ -187,7 +189,8 @@ module bp_core
      ,.cache_req_busy_o(icache_req_busy_li)
      ,.cache_req_metadata_i(icache_req_metadata_lo)
      ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
-     ,.cache_req_critical_o(icache_req_critical_li)
+     ,.cache_req_critical_tag_o(icache_req_critical_tag_li)
+     ,.cache_req_critical_data_o(icache_req_critical_data_li)
      ,.cache_req_complete_o(icache_req_complete_li)
      ,.cache_req_credits_full_o(icache_req_credits_full_li)
      ,.cache_req_credits_empty_o(icache_req_credits_empty_li)
@@ -209,11 +212,11 @@ module bp_core
 
      ,.lce_req_o(lce_req_o[0])
      ,.lce_req_v_o(lce_req_v_o[0])
-     ,.lce_req_ready_i(lce_req_ready_i[0])
+     ,.lce_req_ready_then_i(lce_req_ready_then_i[0])
 
      ,.lce_resp_o(lce_resp_o[0])
      ,.lce_resp_v_o(lce_resp_v_o[0])
-     ,.lce_resp_ready_i(lce_resp_ready_i[0])
+     ,.lce_resp_ready_then_i(lce_resp_ready_then_i[0])
 
      ,.lce_cmd_i(lce_cmd_i[0])
      ,.lce_cmd_v_i(lce_cmd_v_i[0])
@@ -221,7 +224,7 @@ module bp_core
 
      ,.lce_cmd_o(lce_cmd_o[0])
      ,.lce_cmd_v_o(lce_cmd_v_o[0])
-     ,.lce_cmd_ready_i(lce_cmd_ready_i[0])
+     ,.lce_cmd_ready_then_i(lce_cmd_ready_then_i[0])
      );
 
   bp_lce
@@ -249,7 +252,8 @@ module bp_core
      ,.cache_req_busy_o(dcache_req_busy_li)
      ,.cache_req_metadata_i(dcache_req_metadata_lo)
      ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
-     ,.cache_req_critical_o(dcache_req_critical_li)
+     ,.cache_req_critical_tag_o(dcache_req_critical_tag_li)
+     ,.cache_req_critical_data_o(dcache_req_critical_data_li)
      ,.cache_req_complete_o(dcache_req_complete_li)
      ,.cache_req_credits_full_o(dcache_req_credits_full_li)
      ,.cache_req_credits_empty_o(dcache_req_credits_empty_li)
@@ -271,11 +275,11 @@ module bp_core
 
      ,.lce_req_o(lce_req_o[1])
      ,.lce_req_v_o(lce_req_v_o[1])
-     ,.lce_req_ready_i(lce_req_ready_i[1])
+     ,.lce_req_ready_then_i(lce_req_ready_then_i[1])
 
      ,.lce_resp_o(lce_resp_o[1])
      ,.lce_resp_v_o(lce_resp_v_o[1])
-     ,.lce_resp_ready_i(lce_resp_ready_i[1])
+     ,.lce_resp_ready_then_i(lce_resp_ready_then_i[1])
 
      ,.lce_cmd_i(lce_cmd_i[1])
      ,.lce_cmd_v_i(lce_cmd_v_i[1])
@@ -283,7 +287,7 @@ module bp_core
 
      ,.lce_cmd_o(lce_cmd_o[1])
      ,.lce_cmd_v_o(lce_cmd_v_o[1])
-     ,.lce_cmd_ready_i(lce_cmd_ready_i[1])
+     ,.lce_cmd_ready_then_i(lce_cmd_ready_then_i[1])
      );
 
 endmodule

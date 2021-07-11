@@ -11,7 +11,7 @@ module bp_cacc_vdp
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
     `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache)
 
-    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     )
    (
     input                                     clk_i
@@ -53,7 +53,7 @@ module bp_cacc_vdp
   logic                     dcache_miss_v;
   logic                     dcache_pkt_v;
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
 
@@ -62,7 +62,7 @@ module bp_cacc_vdp
   data_mem_pkt_v_i, data_mem_pkt_yumi_o,
   tag_mem_pkt_v_i, tag_mem_pkt_yumi_o,
   stat_mem_pkt_v_i, stat_mem_pkt_yumi_o,
-  cache_req_complete_lo, cache_req_critical_lo,
+  cache_req_complete_lo, cache_req_critical_tag_lo, cache_req_critical_data_lo,
   cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
   `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
@@ -113,13 +113,14 @@ bp_be_dcache
 
     ,.ptag_v_i(1'b1)
     ,.ptag_i(dcache_ptag)
-    ,.uncached_i(dcache_uncached)
+    ,.ptag_uncached_i(dcache_uncached)
 
     ,.flush_i(1'b0)
 
     // D$-LCE Interface
     ,.cache_req_complete_i(cache_req_complete_lo)
-    ,.cache_req_critical_i(cache_req_critical_lo)
+    ,.cache_req_critical_tag_i(cache_req_critical_tag_lo)
+    ,.cache_req_critical_data_i(cache_req_critical_data_lo)
     ,.cache_req_o(cache_req_cast_o)
     ,.cache_req_v_o(cache_req_v_o)
     ,.cache_req_yumi_i(cache_req_yumi_i)
@@ -168,7 +169,8 @@ bp_lce
     ,.cache_req_busy_o(cache_req_busy_i)
     ,.cache_req_metadata_i(cache_req_metadata_o)
     ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
-    ,.cache_req_critical_o(cache_req_critical_lo)
+    ,.cache_req_critical_tag_o(cache_req_critical_tag_lo)
+    ,.cache_req_critical_data_o(cache_req_critical_data_lo)
     ,.cache_req_complete_o(cache_req_complete_lo)
     ,.cache_req_credits_full_o(cache_req_credits_full_lo)
     ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
@@ -190,11 +192,11 @@ bp_lce
 
     ,.lce_req_o(lce_req_o)
     ,.lce_req_v_o(lce_req_v_o)
-    ,.lce_req_ready_i(lce_req_ready_i)
+    ,.lce_req_ready_then_i(lce_req_ready_i)
 
     ,.lce_resp_o(lce_resp_o)
     ,.lce_resp_v_o(lce_resp_v_o)
-    ,.lce_resp_ready_i(lce_resp_ready_i)
+    ,.lce_resp_ready_then_i(lce_resp_ready_i)
 
     ,.lce_cmd_i(lce_cmd_i)
     ,.lce_cmd_v_i(lce_cmd_v_i)
@@ -202,7 +204,7 @@ bp_lce
 
     ,.lce_cmd_o(lce_cmd_o)
     ,.lce_cmd_v_o(lce_cmd_v_o)
-    ,.lce_cmd_ready_i(lce_cmd_ready_i)
+    ,.lce_cmd_ready_then_i(lce_cmd_ready_i)
     );
 
 

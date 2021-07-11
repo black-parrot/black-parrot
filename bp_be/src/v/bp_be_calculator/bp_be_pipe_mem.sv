@@ -20,7 +20,7 @@ module bp_be_pipe_mem
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
    // Generated parameters
-   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dispatch_pkt_width_lp  = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
@@ -44,7 +44,8 @@ module bp_be_pipe_mem
    , output logic                         tlb_load_miss_v_o
    , output logic                         tlb_store_miss_v_o
    , output logic                         cache_miss_v_o
-   , output logic                         fencei_v_o
+   , output logic                         fencei_clean_v_o
+   , output logic                         fencei_dirty_v_o
    , output logic                         load_misaligned_v_o
    , output logic                         load_access_fault_v_o
    , output logic                         load_page_fault_v_o
@@ -68,7 +69,8 @@ module bp_be_pipe_mem
    , input                                           cache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
-   , input                                           cache_req_critical_i
+   , input                                           cache_req_critical_tag_i
+   , input                                           cache_req_critical_data_i
    , input                                           cache_req_complete_i
    , input                                           cache_req_credits_full_i
    , input                                           cache_req_credits_empty_i
@@ -92,7 +94,7 @@ module bp_be_pipe_mem
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  `declare_bp_cfg_bus_s(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
 
   // Cast input and output ports
@@ -137,7 +139,7 @@ module bp_be_pipe_mem
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_early_v, dcache_final_v, dcache_pkt_v;
   logic                     dcache_ptag_v;
-  logic                     dcache_uncached;
+  logic                     dcache_ptag_uncached;
   logic                     dcache_ready_lo;
 
   logic load_access_fault_v, store_access_fault_v;
@@ -152,7 +154,7 @@ module bp_be_pipe_mem
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
   wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
-  wire is_req    = is_store | is_load | is_fencei;
+  wire is_req    = reservation.v & (is_store | is_load);
 
   // Calculate cache access eaddr
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
@@ -179,7 +181,7 @@ module bp_be_pipe_mem
      ,.trans_en_i(trans_info.translation_en)
      ,.uncached_mode_i((cfg_bus.dcache_mode == e_lce_mode_uncached))
      ,.nonspec_mode_i((cfg_bus.dcache_mode == e_lce_mode_nonspec))
-     ,.domain_mask_i(cfg_bus.domain_mask)
+     ,.hio_mask_i(cfg_bus.hio_mask)
 
      ,.w_v_i(dtlb_w_v)
      ,.w_vtag_i(dtlb_w_vtag)
@@ -194,7 +196,7 @@ module bp_be_pipe_mem
      ,.r_v_o(dtlb_v_lo)
      ,.r_ptag_o(dtlb_ptag_lo)
      ,.r_miss_o(dtlb_miss_v)
-     ,.r_uncached_o(dcache_uncached)
+     ,.r_uncached_o(dcache_ptag_uncached)
      ,.r_nonidem_o(/* All D$ misses are non-speculative */)
      ,.r_instr_access_fault_o()
      ,.r_load_access_fault_o(load_access_fault_v)
@@ -250,7 +252,7 @@ module bp_be_pipe_mem
 
       ,.ptag_i(dcache_ptag)
       ,.ptag_v_i(dcache_ptag_v)
-      ,.uncached_i(dcache_uncached)
+      ,.ptag_uncached_i(dcache_ptag_uncached)
 
       ,.early_v_o(dcache_early_v)
       ,.early_data_o(dcache_early_data)
@@ -267,7 +269,8 @@ module bp_be_pipe_mem
       ,.cache_req_busy_i(cache_req_busy_i)
       ,.cache_req_metadata_o(cache_req_metadata_o)
       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-      ,.cache_req_critical_i(cache_req_critical_i)
+      ,.cache_req_critical_tag_i(cache_req_critical_tag_i)
+      ,.cache_req_critical_data_i(cache_req_critical_data_i)
       ,.cache_req_complete_i(cache_req_complete_i)
       ,.cache_req_credits_full_i(cache_req_credits_full_i)
       ,.cache_req_credits_empty_i(cache_req_credits_empty_i)
@@ -326,7 +329,8 @@ module bp_be_pipe_mem
   assign tlb_store_miss_v_o     = is_store_mem1 & dtlb_miss_v;
   assign tlb_load_miss_v_o      = ~is_store_mem1 & dtlb_miss_v;
   assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v;
-  assign fencei_v_o             = is_fencei_mem2 & dcache_early_v;
+  assign fencei_clean_v_o       = is_fencei_mem2 & dcache_early_v;
+  assign fencei_dirty_v_o       = is_fencei_mem2 & ~dcache_early_v;
   assign store_page_fault_v_o   = store_page_fault_v;
   assign load_page_fault_v_o    = load_page_fault_v;
   assign store_access_fault_v_o = store_access_fault_v;
