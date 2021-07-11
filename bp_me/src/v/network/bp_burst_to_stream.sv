@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_burst_to_stream.sv
+ *   bp_me_burst_to_stream.sv
  *
  * Description:
  *   Converts BedRock Burst to Stream
@@ -15,7 +15,7 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_burst_to_stream
+module bp_me_burst_to_stream
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
@@ -87,7 +87,7 @@ module bp_burst_to_stream
   // Stream pump to handle all the details of properly forming the output BedRock stream message
   logic fsm_ready_and_lo, fsm_v_li;
   logic stream_cnt_lo, stream_done_lo;
-  bp_stream_pump_out
+  bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(data_width_p)
       ,.block_width_p(block_width_p)

@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_stream_to_burst.sv
+ *   bp_me_stream_to_burst.sv
  *
  * Description:
  *   Converts BedRock Stream to Burst.
@@ -15,7 +15,7 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_stream_to_burst
+module bp_me_stream_to_burst
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
