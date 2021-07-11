@@ -55,10 +55,10 @@
    *
    */
   // placed here for search: this macro defines types like bp_bedrock_cce_mem_msg_s
-  `define declare_bp_bedrock_msg_s(addr_width_mp, payload_width_mp, data_width_mp, name_mp) \
+  `define declare_bp_bedrock_msg_s(addr_width_mp, payload_mp, data_width_mp, name_mp) \
     typedef struct packed                                                                   \
     {                                                                                       \
-      logic [payload_width_mp-1:0]                 payload;                                 \
+      payload_mp                                   payload;                                 \
       bp_bedrock_msg_size_e                        size;                                    \
       logic [addr_width_mp-1:0]                    addr;                                    \
       bp_bedrock_wr_subop_e                        subop;                                   \
@@ -185,9 +185,9 @@
 
   `define declare_bp_bedrock_lce_if(addr_width_mp, data_width_mp, lce_id_width_mp, cce_id_width_mp, lce_assoc_mp, name_mp) \
     `declare_bp_bedrock_lce_payload_s(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp, name_mp);                            \
-    `declare_bp_bedrock_msg_s(addr_width_mp, $bits(bp_bedrock_``name_mp``_req_payload_s), data_width_mp, ``name_mp``_req); \
-    `declare_bp_bedrock_msg_s(addr_width_mp, $bits(bp_bedrock_``name_mp``_cmd_payload_s), data_width_mp, ``name_mp``_cmd); \
-    `declare_bp_bedrock_msg_s(addr_width_mp, $bits(bp_bedrock_``name_mp``_resp_payload_s), data_width_mp, ``name_mp``_resp);
+    `declare_bp_bedrock_msg_s(addr_width_mp, bp_bedrock_``name_mp``_req_payload_s, data_width_mp, ``name_mp``_req); \
+    `declare_bp_bedrock_msg_s(addr_width_mp, bp_bedrock_``name_mp``_cmd_payload_s, data_width_mp, ``name_mp``_cmd); \
+    `declare_bp_bedrock_msg_s(addr_width_mp, bp_bedrock_``name_mp``_resp_payload_s, data_width_mp, ``name_mp``_resp);
 
   `define declare_bp_bedrock_mem_if_widths(addr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp)       \
     `declare_bp_bedrock_mem_payload_width(lce_id_width_mp, lce_assoc_mp, name_mp)                                      \
@@ -201,10 +201,10 @@
 
   `define declare_bp_bedrock_mem_if(addr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
     `declare_bp_bedrock_mem_payload_s(lce_id_width_mp, lce_assoc_mp, name_mp);                                         \
-    `declare_bp_bedrock_msg_s(addr_width_mp, $bits(bp_bedrock_``name_mp``_mem_payload_s), data_width_mp, ``name_mp``_mem);
+    `declare_bp_bedrock_msg_s(addr_width_mp, bp_bedrock_``name_mp``_mem_payload_s, data_width_mp, ``name_mp``_mem);
 
   `define declare_bp_bedrock_if(addr_width_mp, payload_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
-    `declare_bp_bedrock_msg_s(addr_width_mp, payload_width_mp, data_width_mp, ``name_mp``);
+    `declare_bp_bedrock_msg_s(addr_width_mp, logic [payload_width_mp-1:0], data_width_mp, ``name_mp``);
 
 `endif
 

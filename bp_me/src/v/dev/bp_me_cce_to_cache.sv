@@ -292,7 +292,7 @@ module bp_me_cce_to_cache
 
   wire [cce_block_width_p-1:0] resp_data_slice = resp_data_r;
   bsg_bus_pack
-   #(.width_p(cce_block_width_p))
+   #(.in_width_p(cce_block_width_p))
    repl_mux
     (.data_i(resp_data_slice)
      // Response data is always aggregated from zero in this module

@@ -76,11 +76,11 @@ module bp_me_bedrock_register
    cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.data_i({mem_cmd_data_i, mem_cmd_header_i})
      ,.v_i(mem_cmd_v_i)
      ,.ready_o(mem_cmd_ready_and_o)
-  
+
      ,.data_o({mem_cmd_data_li, mem_cmd_header_li})
      ,.v_o(mem_cmd_v_li)
      ,.yumi_i(mem_cmd_yumi_li)
@@ -131,7 +131,7 @@ module bp_me_bedrock_register
   always_ff @(negedge clk_i)
     begin
       assert (~mem_cmd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
-        else $display("Command to non-existent register: %x", addr_o);
+        else $error("Command to non-existent register: %x", addr_o);
     end
   //synopsys translate_on
 
