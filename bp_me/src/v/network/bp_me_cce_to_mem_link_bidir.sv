@@ -84,7 +84,7 @@ assign resp_link_cast_o    = '{data          : client_resp_link_lo.data
                                };
 
 
-bp_me_cce_to_mem_link_master
+bp_me_cce_to_mem_link_send
  #(.bp_params_p(bp_params_p)
    ,.flit_width_p(flit_width_p)
    ,.cord_width_p(cord_width_p)
@@ -112,7 +112,7 @@ bp_me_cce_to_mem_link_master
   ,.resp_link_i(master_resp_link_li)
   );
 
-bp_me_cce_to_mem_link_client
+bp_me_cce_to_mem_link_recv
  #(.bp_params_p(bp_params_p)
    ,.num_outstanding_req_p(num_outstanding_req_p)
    ,.flit_width_p(flit_width_p)

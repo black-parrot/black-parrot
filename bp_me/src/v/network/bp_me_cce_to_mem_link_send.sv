@@ -1,5 +1,5 @@
 /**
- * bp_me_cce_to_wormhole_link_master.v
+ * bp_me_cce_to_wormhole_link_send.v
  */
 
 `include "bp_me_defines.svh"
@@ -7,7 +7,7 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_me_cce_to_mem_link_master
+module bp_me_cce_to_mem_link_send
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
