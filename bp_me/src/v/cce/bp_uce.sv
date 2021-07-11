@@ -298,9 +298,9 @@ module bp_uce
      ,.fsm_data_o(fsm_resp_data_li)
      ,.fsm_v_o(fsm_resp_v_li)
      ,.fsm_yumi_i(fsm_resp_yumi_lo)
-     ,.stream_new_o(fsm_resp_new)
-     ,.stream_last_o(fsm_resp_last)
-     ,.stream_done_o(fsm_resp_done)
+     ,.fsm_new_o(fsm_resp_new)
+     ,.fsm_last_o(fsm_resp_last)
+     ,.fsm_done_o(fsm_resp_done)
      );
   assign mem_resp_yumi_o = mem_resp_ready_and_lo & mem_resp_v_i;
 
