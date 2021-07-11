@@ -116,7 +116,7 @@ module bp_unicore_lite
   logic [2:0] proc_cmd_v_lo, proc_cmd_yumi_li, proc_cmd_last_lo;
   bp_bedrock_uce_mem_msg_header_s [2:0] proc_resp_header_li;
   logic [2:0][uce_mem_data_width_lp-1:0] proc_resp_data_li;
-  logic [2:0] proc_resp_v_li, proc_resp_yumi_lo, proc_resp_last_li;
+  logic [2:0] proc_resp_v_li, proc_resp_ready_and_lo, proc_resp_last_li;
 
   // dev_cmd[4:0] = {CCE loopback, Mem cmd, IO cmd, CLINT, CFG}
   bp_bedrock_uce_mem_msg_header_s [4:0] dev_cmd_header_li;
@@ -241,13 +241,13 @@ module bp_unicore_lite
     ,.mem_cmd_header_o(proc_cmd_header_lo[1])
     ,.mem_cmd_data_o(proc_cmd_data_lo[1])
     ,.mem_cmd_v_o(proc_cmd_v_lo[1])
-    ,.mem_cmd_yumi_i(proc_cmd_yumi_li[1])
+    ,.mem_cmd_ready_and_i(proc_cmd_yumi_li[1])
     ,.mem_cmd_last_o(proc_cmd_last_lo[1])
 
     ,.mem_resp_header_i(proc_resp_header_li[1])
     ,.mem_resp_data_i(proc_resp_data_li[1])
     ,.mem_resp_v_i(proc_resp_v_li[1])
-    ,.mem_resp_yumi_o(proc_resp_yumi_lo[1])
+    ,.mem_resp_ready_and_o(proc_resp_ready_and_lo[1])
     ,.mem_resp_last_i(proc_resp_last_li[1])
     );
 
@@ -296,13 +296,13 @@ module bp_unicore_lite
      ,.mem_cmd_header_o(proc_cmd_header_lo[0])
      ,.mem_cmd_data_o(proc_cmd_data_lo[0])
      ,.mem_cmd_v_o(proc_cmd_v_lo[0])
-     ,.mem_cmd_yumi_i(proc_cmd_yumi_li[0])
+     ,.mem_cmd_ready_and_i(proc_cmd_yumi_li[0])
      ,.mem_cmd_last_o(proc_cmd_last_lo[0])
 
      ,.mem_resp_header_i(proc_resp_header_li[0])
      ,.mem_resp_data_i(proc_resp_data_li[0])
      ,.mem_resp_v_i(proc_resp_v_li[0])
-     ,.mem_resp_yumi_o(proc_resp_yumi_lo[0])
+     ,.mem_resp_ready_and_o(proc_resp_ready_and_lo[0])
      ,.mem_resp_last_i(proc_resp_last_li[0])
      );
 
@@ -316,7 +316,7 @@ module bp_unicore_lite
   assign io_resp_header_cast_o = proc_resp_header_li[2];
   assign io_resp_data_o = proc_resp_data_li[2];
   assign io_resp_v_o = proc_resp_v_li[2];
-  assign proc_resp_yumi_lo[2] = io_resp_ready_and_i & io_resp_v_o;
+  assign proc_resp_ready_and_lo[2] = io_resp_ready_and_i & io_resp_v_o;
   assign io_resp_last_o = proc_resp_last_li[2];
 
   // Assign I/O and mem as another device
@@ -397,7 +397,7 @@ module bp_unicore_lite
      ,.resp_header_o(proc_resp_header_li)
      ,.resp_data_o(proc_resp_data_li)
      ,.resp_v_o(proc_resp_v_li)
-     ,.resp_ready_and_i(proc_resp_yumi_lo)
+     ,.resp_ready_and_i(proc_resp_ready_and_lo)
      ,.resp_last_o(proc_resp_last_li)
 
      ,.cmd_header_o(dev_cmd_header_li)
