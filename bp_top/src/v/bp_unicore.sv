@@ -67,10 +67,10 @@ module bp_unicore
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
 
   bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
-  logic [uce_mem_data_width_lp-1:0] mem_cmd_data_lo;
+  logic [l2_data_width_p-1:0] mem_cmd_data_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
   bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
-  logic [uce_mem_data_width_lp-1:0] mem_resp_data_li;
+  logic [l2_data_width_p-1:0] mem_resp_data_li;
   logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
 
   bp_unicore_lite

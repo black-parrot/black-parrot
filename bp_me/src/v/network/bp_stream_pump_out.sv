@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_stream_pump_out.sv
+ *   bp_me_stream_pump_out.sv
  *
  * Description:
  *   Generates a BedRock Stream protocol output message from an FSM that provides
@@ -13,7 +13,7 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_stream_pump_out
+module bp_me_stream_pump_out
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
@@ -58,7 +58,7 @@ module bp_stream_pump_out
 
   // FSM producer side
   // FSM must hold fsm_base_header_i constant throughout the transaction
-  // (i.e., through cycle stream_done_o is raised)
+  // (i.e., through cycle fsm_done_o is raised)
   , input        [xce_msg_header_width_lp-1:0]     fsm_base_header_i
   , input        [stream_data_width_p-1:0]         fsm_data_i
   , input                                          fsm_v_i
@@ -66,13 +66,13 @@ module bp_stream_pump_out
 
   // FSM control signals
   // stream_cnt is the current stream word being sent
-  , output logic [data_len_width_lp-1:0]           stream_cnt_o
+  , output logic [data_len_width_lp-1:0]           fsm_cnt_o
   // stream_new is raised on first beat of every message
-  , output logic                                   stream_new_o
+  , output logic                                   fsm_new_o
   // stream_last is raised on last beat of every message
-  , output logic                                   stream_last_o
+  , output logic                                   fsm_last_o
   // stream_done is raised when last beat sends
-  , output logic                                   stream_done_o
+  , output logic                                   fsm_done_o
   );
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
@@ -94,16 +94,16 @@ module bp_stream_pump_out
       assign is_fsm_stream = '0;
       assign is_msg_stream = '0;
       assign streaming_r = '0;
-      assign stream_cnt_o = fsm_base_header_cast_i.addr[stream_offset_width_lp+:data_len_width_lp];
-      assign wrap_around_cnt = stream_cnt_o;
+      assign fsm_cnt_o = fsm_base_header_cast_i.addr[stream_offset_width_lp+:data_len_width_lp];
+      assign wrap_around_cnt = fsm_cnt_o;
       assign critical_addr_r = fsm_base_header_cast_i.addr[0+:block_offset_width_lp];
       assign is_last_cnt = 1'b1;
     end
   else
     begin: sub_block_stream
       logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, cnt_val_li;
-      wire cnt_set = (any_stream_new & cnt_up) | stream_done_o;
-      wire cnt_en = (cnt_up | stream_done_o);
+      wire cnt_set = (any_stream_new & cnt_up) | fsm_done_o;
+      wire cnt_en = (cnt_up | fsm_done_o);
       bsg_counter_set_en
        #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
        data_counter
@@ -123,7 +123,7 @@ module bp_stream_pump_out
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
         ,.set_i(cnt_up)
-        ,.clear_i(stream_done_o)
+        ,.clear_i(fsm_done_o)
         ,.data_o(streaming_r)
         );
 
@@ -144,9 +144,9 @@ module bp_stream_pump_out
           is_fsm_stream = fsm_stream_mask_p[fsm_base_header_cast_i.msg_type] & ~(first_cnt == last_cnt);
           is_msg_stream = msg_stream_mask_p[fsm_base_header_cast_i.msg_type] & ~(first_cnt == last_cnt);
 
-          stream_cnt_o = (any_stream_new & cnt_up) ? first_cnt : current_cnt;
-          is_last_cnt = (stream_cnt_o == last_cnt) | (~is_fsm_stream & ~is_msg_stream);
-          cnt_val_li = stream_done_o ? '0 : (first_cnt + cnt_up);
+          fsm_cnt_o = (any_stream_new & cnt_up) ? first_cnt : current_cnt;
+          is_last_cnt = (fsm_cnt_o == last_cnt) | (~is_fsm_stream & ~is_msg_stream);
+          cnt_val_li = fsm_done_o ? '0 : (first_cnt + cnt_up);
         end
 
       // Generate proper wrap-around address for different incoming msg size dynamically.
@@ -165,7 +165,7 @@ module bp_stream_pump_out
        #(.width_p(data_len_width_lp))
        sub_block_addr_mux
         (.data0_i(fsm_base_header_cast_i.addr[stream_offset_width_lp+:data_len_width_lp])
-        ,.data1_i(stream_cnt_o)
+        ,.data1_i(fsm_cnt_o)
         ,.sel_i(num_stream)
         ,.data_o(wrap_around_cnt)
         );
@@ -211,13 +211,13 @@ module bp_stream_pump_out
       msg_data_o = fsm_data_i;
       msg_last_o = is_last_cnt & msg_v_o;
 
-      stream_new_o = fsm_v_i & ~streaming_r;
-      stream_last_o = fsm_v_i & is_last_cnt;
-      stream_done_o = msg_ready_and_i & msg_v_o & is_last_cnt;
+      fsm_new_o = fsm_v_i & ~streaming_r;
+      fsm_last_o = fsm_v_i & is_last_cnt;
+      fsm_done_o = msg_ready_and_i & msg_v_o & is_last_cnt;
     end
 
   //synopsys translate_off
-  if ((block_width_p % stream_data_width_p != 0)
+  if (block_width_p % stream_data_width_p != 0)
     $fatal("block_width_p must be evenly divisible by stream_data_width_p");
 
   if (block_width_p < stream_data_width_p)

@@ -780,8 +780,7 @@ module bp_tile
   logic [l2_data_width_p-1:0] cache_data_lo;
   logic cache_data_v_lo, cache_data_yumi_li;
   bp_me_cce_to_cache
-   #(.bp_params_p(bp_params_p)
-   ,.mem_data_width_p(l2_data_width_p))
+   #(.bp_params_p(bp_params_p))
    cce_to_cache
     (.clk_i(clk_i)
      ,.reset_i(reset_r)

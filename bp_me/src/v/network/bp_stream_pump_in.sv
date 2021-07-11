@@ -102,7 +102,7 @@ module bp_me_stream_pump_in
 
   logic cnt_up, is_last_cnt, streaming_r;
   logic is_fsm_stream, is_msg_stream;
-  wire any_stream_new = (is_fsm_stream | is_msg_stream) & ~streaming_r;
+  wire any_fsm_new = (is_fsm_stream | is_msg_stream) & ~streaming_r;
   // store this addr for stream state
   logic [block_offset_width_lp-1:0] critical_addr_r;
 
@@ -118,8 +118,8 @@ module bp_me_stream_pump_in
   else
     begin: sub_block_stream
       logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt, cnt_val_li;
-      wire cnt_set = (any_stream_new & cnt_up) | stream_done_o;
-      wire cnt_en = (cnt_up | stream_done_o);
+      wire cnt_set = (any_fsm_new & cnt_up) | fsm_done_o;
+      wire cnt_en = (cnt_up | fsm_done_o);
       bsg_counter_set_en
        #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
        data_counter
@@ -139,7 +139,7 @@ module bp_me_stream_pump_in
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
         ,.set_i(cnt_up)
-        ,.clear_i(stream_done_o)
+        ,.clear_i(fsm_done_o)
         ,.data_o(streaming_r)
         );
 
@@ -160,9 +160,9 @@ module bp_me_stream_pump_in
           is_fsm_stream = fsm_stream_mask_p[msg_header_lo.msg_type] & ~(first_cnt == last_cnt);
           is_msg_stream = msg_stream_mask_p[msg_header_lo.msg_type] & ~(first_cnt == last_cnt);
 
-          stream_cnt = any_stream_new ? first_cnt : current_cnt;
+          stream_cnt = any_fsm_new ? first_cnt : current_cnt;
           is_last_cnt = (stream_cnt == last_cnt) | (~is_fsm_stream & ~is_msg_stream);
-          cnt_val_li = stream_done_o ? '0 : (first_cnt + cnt_up);
+          cnt_val_li = fsm_done_o ? '0 : (first_cnt + cnt_up);
         end
 
       // Generate proper wrap-around address for different incoming msg size dynamically.
@@ -224,13 +224,13 @@ module bp_me_stream_pump_in
           cnt_up = fsm_yumi_i & ~is_last_cnt;
         end
 
-      stream_new_o = fsm_v_o & ~streaming_r;
-      stream_last_o = fsm_v_o & is_last_cnt;
-      stream_done_o = is_last_cnt & fsm_yumi_i;
+      fsm_new_o = fsm_v_o & ~streaming_r;
+      fsm_last_o = fsm_v_o & is_last_cnt;
+      fsm_done_o = is_last_cnt & fsm_yumi_i;
     end
 
   //synopsys translate_off
-  if ((block_width_p % stream_data_width_p != 0)
+  if (block_width_p % stream_data_width_p != 0)
     $fatal("block_width_p must be evenly divisible by stream_data_width_p");
 
   if (block_width_p < stream_data_width_p)

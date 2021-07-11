@@ -25,8 +25,6 @@ module bp_me_cce_to_cache
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-    , parameter mem_data_width_p = cce_block_width_p
-
     , localparam lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
     , localparam lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(l2_block_size_in_words_p)
@@ -36,7 +34,7 @@ module bp_me_cce_to_cache
 
     , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(caddr_width_p, l2_data_width_p)
 
-    , localparam min_fill_width_lp = `BSG_MIN(`BSG_MIN(icache_fill_width_p, dcache_fill_width_p), `BSG_MIN(acache_fill_width_p, mem_data_width_p))
+    , localparam min_fill_width_lp = `BSG_MIN(`BSG_MIN(icache_fill_width_p, dcache_fill_width_p), `BSG_MIN(acache_fill_width_p, l2_data_width_p))
   )
   (
     input clk_i
@@ -44,13 +42,13 @@ module bp_me_cce_to_cache
 
     // Stream interface
     , input  [cce_mem_msg_header_width_lp-1:0] mem_cmd_header_i
-    , input  [mem_data_width_p-1:0]            mem_cmd_data_i
+    , input  [l2_data_width_p-1:0]             mem_cmd_data_i
     , input                                    mem_cmd_v_i
     , output logic                             mem_cmd_ready_and_o
     , input                                    mem_cmd_last_i
 
     , output [cce_mem_msg_header_width_lp-1:0] mem_resp_header_o
-    , output [mem_data_width_p-1:0]            mem_resp_data_o
+    , output [l2_data_width_p-1:0]             mem_resp_data_o
     , output logic                             mem_resp_v_o
     , input                                    mem_resp_ready_and_i
     , output logic                             mem_resp_last_o
@@ -94,7 +92,7 @@ module bp_me_cce_to_cache
   logic [lg_sets_lp+lg_ways_lp:0] tagst_received_r, tagst_received_n;
 
   bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo;
-  logic [mem_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
+  logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
   logic [l2_data_width_p-1:0] cache_pkt_data_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
   logic mem_cmd_new_lo, mem_cmd_done_lo, mem_cmd_last_lo;
@@ -102,7 +100,7 @@ module bp_me_cce_to_cache
   logic [data_mask_width_lp-1:0] cache_pkt_mask_lo;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(mem_data_width_p)
+     ,.stream_data_width_p(l2_data_width_p)
      ,.block_width_p(cce_block_width_p)
      ,.payload_width_p(cce_mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
@@ -112,11 +110,11 @@ module bp_me_cce_to_cache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_header_i(mem_cmd_header_i)
-     ,.mem_data_i(mem_cmd_data_i)
-     ,.mem_v_i(mem_cmd_v_i)
-     ,.mem_last_i(mem_cmd_last_i)
-     ,.mem_ready_and_o(mem_cmd_ready_and_o)
+     ,.msg_header_i(mem_cmd_header_i)
+     ,.msg_data_i(mem_cmd_data_i)
+     ,.msg_v_i(mem_cmd_v_i)
+     ,.msg_last_i(mem_cmd_last_i)
+     ,.msg_ready_and_o(mem_cmd_ready_and_o)
 
      ,.fsm_base_header_o(mem_cmd_header_lo)
      ,.fsm_addr_o(mem_cmd_stream_addr_lo)
@@ -224,7 +222,7 @@ module bp_me_cce_to_cache
 
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(mem_data_width_p)
+     ,.stream_data_width_p(l2_data_width_p)
      ,.block_width_p(cce_block_width_p)
      ,.payload_width_p(cce_mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
@@ -234,11 +232,11 @@ module bp_me_cce_to_cache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_header_o(mem_resp_header_o)
-     ,.mem_data_o(mem_resp_data_o)
-     ,.mem_v_o(mem_resp_v_o)
-     ,.mem_last_o(mem_resp_last_o)
-     ,.mem_ready_and_i(mem_resp_ready_and_i)
+     ,.msg_header_o(mem_resp_header_o)
+     ,.msg_data_o(mem_resp_data_o)
+     ,.msg_v_o(mem_resp_v_o)
+     ,.msg_last_o(mem_resp_last_o)
+     ,.msg_ready_and_i(mem_resp_ready_and_i)
 
      ,.fsm_base_header_i(mem_resp_header_lo)
      ,.fsm_data_i(mem_resp_data_lo)
@@ -257,8 +255,7 @@ module bp_me_cce_to_cache
                                                      : mem_resp_header_lo.addr[0+:byte_offset_width_lp];
   wire [`BSG_WIDTH(byte_offset_width_lp)-1:0] mem_resp_size_li = `BSG_MIN(mem_resp_header_lo.size, `BSG_SAFE_CLOG2(l2_data_width_p>>3)); //TODO
   bsg_bus_pack
-   #(.in_width_p(l2_data_width_p)
-   ,.out_width_p(mem_data_width_p))
+   #(.in_width_p(l2_data_width_p))
    resp_data_bus_pack
     (.data_i(cache_data_i)
     ,.sel_i(resp_data_sel_li)
@@ -412,12 +409,6 @@ module bp_me_cce_to_cache
       if (mem_cmd_v_lo & mem_cmd_header_lo.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr})
         assert (~(mem_cmd_header_lo.subop inside {e_bedrock_amolr, e_bedrock_amosc}))
           else $error("LR/SC not supported in bsg_cache");
-    end
-
-  initial
-    begin
-        if (mem_data_width_p > l2_data_width_p)
-          $error("Mem bus data with should be leass than or equal to L2 data width");
     end
   //synopsys translate_on
 
