@@ -737,7 +737,7 @@ module bp_tile
   logic [l2_data_width_p-1:0] cache_mem_resp_data_li;
   logic cache_mem_resp_v_li, cache_mem_resp_ready_and_lo, cache_mem_resp_last_li;
 
-  bp_lite_to_stream
+  bp_me_lite_to_stream
    #(.bp_params_p(bp_params_p)
    ,.in_data_width_p(cce_block_width_p)
    ,.out_data_width_p(l2_data_width_p)
@@ -758,7 +758,7 @@ module bp_tile
      ,.out_msg_last_o(cache_mem_cmd_last_lo)
      );
 
-  bp_stream_to_lite
+  bp_me_stream_to_lite
    #(.bp_params_p(bp_params_p)
    ,.in_data_width_p(l2_data_width_p)
    ,.out_data_width_p(cce_block_width_p)
