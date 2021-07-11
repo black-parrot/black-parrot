@@ -24,24 +24,24 @@ module bp_me_cce_to_mem_link_recv
 
   (input                                                clk_i
    , input                                              reset_i
- 
+
    , output logic [cce_mem_msg_header_width_lp-1:0]     mem_cmd_header_o
    , output logic [cce_block_width_p-1:0]               mem_cmd_data_o
    , output logic                                       mem_cmd_v_o
    , input                                              mem_cmd_yumi_i
    , output logic                                       mem_cmd_last_o
- 
+
    , input [cce_mem_msg_header_width_lp-1:0]            mem_resp_header_i
    , input [cce_block_width_p-1:0]                      mem_resp_data_i
    , input                                              mem_resp_v_i
    , output logic                                       mem_resp_ready_and_o
    , input                                              mem_resp_last_i
- 
+
    // bsg_noc_wormhole interface
    , input [bsg_ready_and_link_sif_width_lp-1:0]        cmd_link_i
    , output logic [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
    );
- 
+
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, cce_block_width_p);
   localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_cce_mem_msg_header_s), cce_block_width_p);
