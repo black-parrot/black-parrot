@@ -73,13 +73,14 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_tag_array.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_one_hot.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_mask_write_bit.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_mask_write_bit_synth.v
+#$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_mask_write_bit.v
+#$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_mask_write_bit_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v
+#$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v
+$BASEJUMP_STL_DIR/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_synth.v
@@ -302,6 +303,6 @@ $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_dff_reset_half.v
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
-$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_mask_write_bit_reshape.v
-$BP_TOP_DIR/src/v/bsg_async_noc_link.sv
 $BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
+$BP_TOP_DIR/test/common/bp_nonsynth_cosim.sv
+$BP_TOP_DIR/test/common/dromajo_cosim.cpp
