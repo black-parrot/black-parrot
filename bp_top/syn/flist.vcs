@@ -288,7 +288,6 @@ $BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
-$BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
