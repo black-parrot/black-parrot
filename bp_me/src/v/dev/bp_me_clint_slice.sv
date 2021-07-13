@@ -71,7 +71,10 @@ module bp_me_clint_slice
   logic [dword_width_gp-1:0] mtime_r;
   wire [dword_width_gp-1:0] mtime_n = data_lo;
   bsg_counter_set_en
-   #(.lg_max_val_lp(dword_width_gp), .reset_val_p(0))
+   #(.max_val_p(0) // max_val_p is unused but must be set
+     ,.lg_max_val_lp(dword_width_gp) // Use lg_max_val_lp because of 64-bit parameter restriction
+     ,.reset_val_p(0)
+     )
    mtime_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
