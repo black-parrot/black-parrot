@@ -10,50 +10,51 @@
  */
 
 `include "bsg_noc_links.vh"
-
+`include "bsg_cache.vh"
 
 module bsg_cache_dma_to_wormhole
-  import bsg_cache_pkg::*;
-  #(parameter dma_addr_width_p="inv" // cache addr width (byte addr)
-    , parameter dma_burst_len_p="inv" // num of data beats in dma transfer
+ import bsg_noc_pkg::*;
+ import bsg_cache_pkg::*;
+ #(parameter dma_addr_width_p="inv" // cache addr width (byte addr)
+   , parameter dma_burst_len_p="inv" // num of data beats in dma transfer
 
-    // flit width should match the cache dma width.
-    , parameter wh_flit_width_p="inv"
-    , parameter wh_cid_width_p="inv"
-    , parameter wh_len_width_p="inv"
-    , parameter wh_cord_width_p="inv"
+   // flit width should match the cache dma width.
+   , parameter wh_flit_width_p="inv"
+   , parameter wh_cid_width_p="inv"
+   , parameter wh_len_width_p="inv"
+   , parameter wh_cord_width_p="inv"
 
-    , parameter dma_pkt_width_lp=`bsg_cache_dma_pkt_width(dma_addr_width_p)
-    , parameter wh_link_sif_width_lp=`bsg_ready_and_link_sif_width(wh_flit_width_p)
-    , parameter dma_data_width_lp=wh_flit_width_p
+   , parameter dma_pkt_width_lp=`bsg_cache_dma_pkt_width(dma_addr_width_p)
+   , parameter wh_link_sif_width_lp=`bsg_ready_and_link_sif_width(wh_flit_width_p)
+   , parameter dma_data_width_lp=wh_flit_width_p
 
-    // Whether to buffer the returning data flits. May be necessary for timing purposes
-    , parameter buffer_return_p = 1
-  )
+   // Whether to buffer the returning data flits. May be necessary for timing purposes
+   , parameter buffer_return_p = 1
+   )
   (
-    input clk_i
-    , input reset_i
+   input clk_i
+   , input reset_i
 
-    , input [dma_pkt_width_lp-1:0] dma_pkt_i
-    , input dma_pkt_v_i
-    , output dma_pkt_yumi_o
+   , input [dma_pkt_width_lp-1:0] dma_pkt_i
+   , input dma_pkt_v_i
+   , output dma_pkt_yumi_o
 
-    , output logic [dma_data_width_lp-1:0] dma_data_o
-    , output logic dma_data_v_o
-    , input dma_data_ready_and_i
+   , output logic [dma_data_width_lp-1:0] dma_data_o
+   , output logic dma_data_v_o
+   , input dma_data_ready_and_i
 
-    , input [dma_data_width_lp-1:0] dma_data_i
-    , input dma_data_v_i
-    , output logic dma_data_yumi_o
+   , input [dma_data_width_lp-1:0] dma_data_i
+   , input dma_data_v_i
+   , output logic dma_data_yumi_o
 
-    , input [wh_link_sif_width_lp-1:0] wh_link_sif_i
-    , output logic [wh_link_sif_width_lp-1:0] wh_link_sif_o
+   , input [wh_link_sif_width_lp-1:0] wh_link_sif_i
+   , output logic [wh_link_sif_width_lp-1:0] wh_link_sif_o
 
-    , input [wh_cord_width_p-1:0] my_wh_cord_i
-    , input [wh_cord_width_p-1:0] dest_wh_cord_i
-    , input [wh_cid_width_p-1:0] my_wh_cid_i
-    , input [wh_cid_width_p-1:0] dest_wh_cid_i
-  );
+   , input [wh_cord_width_p-1:0] my_wh_cord_i
+   , input [wh_cord_width_p-1:0] dest_wh_cord_i
+   , input [wh_cid_width_p-1:0] my_wh_cid_i
+   , input [wh_cid_width_p-1:0] dest_wh_cid_i
+   );
 
   `declare_bsg_cache_dma_pkt_s(dma_addr_width_p);
   `declare_bsg_ready_and_link_sif_s(wh_flit_width_p, wh_link_sif_s);
