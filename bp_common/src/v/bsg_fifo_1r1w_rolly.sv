@@ -1,7 +1,7 @@
 
 module bsg_fifo_1r1w_rolly
-  #(parameter width_p              = "inv"
-    , parameter els_p              = "inv"
+  #(parameter `BSG_INV_PARAM(width_p              )
+    , parameter `BSG_INV_PARAM(els_p              )
     , parameter ready_THEN_valid_p = 0
 
     , localparam ptr_width_lp = `BSG_SAFE_CLOG2(els_p)
@@ -100,4 +100,6 @@ module bsg_fifo_1r1w_rolly
     );
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bsg_fifo_1r1w_rolly)
 

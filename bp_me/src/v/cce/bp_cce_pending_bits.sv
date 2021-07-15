@@ -24,11 +24,11 @@
 
 module bp_cce_pending_bits
   import bp_common_pkg::*;
-  #(parameter num_way_groups_p            = "inv"
-    , parameter cce_way_groups_p          = "inv"
-    , parameter num_cce_p                 = "inv"
-    , parameter paddr_width_p             = "inv"
-    , parameter addr_offset_p             = "inv"
+  #(parameter `BSG_INV_PARAM(num_way_groups_p            )
+    , parameter `BSG_INV_PARAM(cce_way_groups_p          )
+    , parameter `BSG_INV_PARAM(num_cce_p                 )
+    , parameter `BSG_INV_PARAM(paddr_width_p             )
+    , parameter `BSG_INV_PARAM(addr_offset_p             )
 
     // Default parameters
     , parameter width_p                   = 3  // pending bit counter width
@@ -122,3 +122,5 @@ module bp_cce_pending_bits
     : ~(pending_bits_r[r_wg] == 0);
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_cce_pending_bits)
