@@ -8,6 +8,7 @@
   localparam putchar_base_addr_gp      = 32'h0010_1000;
   localparam finish_base_addr_gp       = 32'h0010_2000;
   localparam putch_core_base_addr_gp   = 32'h0010_3000;
+  localparam finish_all_addr_gp        = 32'h0010_4000;
 
 `endif
 
