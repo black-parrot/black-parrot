@@ -159,7 +159,7 @@ class NBF:
     addr_step = 0
     count = 0
     assembled_hex = ""
-    base_addr = 0x0
+    base_addr = 0x80000000
 
     f = open(mem_file, "r")
     lines = f.readlines()
