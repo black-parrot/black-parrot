@@ -239,9 +239,9 @@
     // BP "exceptions"
     logic itlb_miss;
     logic icache_miss;
+    logic dcache_fail;
     logic dtlb_load_miss;
     logic dtlb_store_miss;
-    logic dcache_miss;
     logic fencei_dirty;
     logic itlb_fill;
     logic dtlb_fill;
@@ -251,6 +251,7 @@
 
   typedef struct packed
   {
+    logic dcache_miss;
     logic fencei_clean;
     logic sfence_vma;
     logic dbreak;

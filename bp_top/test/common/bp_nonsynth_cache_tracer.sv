@@ -5,34 +5,20 @@
 module bp_nonsynth_cache_tracer
  import bp_common_pkg::*;
  import bp_be_pkg::*;
- #( parameter bp_params_e bp_params_p = e_bp_default_cfg
-  , parameter assoc_p = 8
-  , parameter sets_p = 64
-  , parameter block_width_p = 512
-  , parameter fill_width_p = 512
-  , parameter trace_file_p = "dcache"
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+   , parameter assoc_p = 8
+   , parameter sets_p = 64
+   , parameter block_width_p = 512
+   , parameter fill_width_p = 512
+   , parameter trace_file_p = ""
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
-
-   // Calculated parameters
-   , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
-   , localparam block_size_in_words_lp=assoc_p
-   , localparam bank_width_lp = block_width_p / assoc_p
-   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
-   , localparam data_mem_mask_width_lp=(bank_width_lp>>3)
-   , localparam bypass_data_width_lp = (dword_width_gp >> 3)
-   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp>>3)
-   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-   , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
-
    )
   (  input                                                 clk_i
    , input                                                 reset_i
 
    , input                                                 freeze_i
-   , input [mhartid_width_lp-1:0]                          mhartid_i
+   , input [`BSG_SAFE_CLOG2(num_core_p)-1:0]               mhartid_i
 
    // Tag lookup
    , input                                                 v_tl_r
@@ -45,7 +31,7 @@ module bp_nonsynth_cache_tracer
    , input                                                 sc_success
 
    // Miss Packet
-   , input                                                 cache_req_v_o
+   , input                                                 cache_req_yumi_i
    , input [cache_req_width_lp-1:0]                        cache_req_o
 
    // Cache Metadata
@@ -53,14 +39,15 @@ module bp_nonsynth_cache_tracer
    , input                                                 cache_req_metadata_v_o
 
    , input                                                 cache_req_complete_i
-   // , input                                                 cache_req_critical_i
+   , input                                                 cache_req_critical_data_i
+   , input                                                 cache_req_critical_tag_i
 
    // Cache data
    , input                                                 v_o
-   , input [dpath_width_gp-2:0]                             load_data
+   , input [dpath_width_gp-2:0]                            load_data
    , input                                                 cache_miss_o
    , input                                                 wt_req
-   , input [dword_width_gp-1:0]                             store_data
+   , input [dword_width_gp-1:0]                            store_data
 
    // Fill Packets
    , input                                                 data_mem_pkt_v_i
@@ -132,22 +119,22 @@ module bp_nonsynth_cache_tracer
     end
 
   always_comb begin
-    if (lr_miss_tv & cache_req_v_o)
+    if (lr_miss_tv & cache_req_yumi_i)
       op = "[lr]";
     else if(sc_op_tv_r)
       op = "[sc]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_miss_store)
+    else if (cache_req_yumi_i & cache_req_cast_o.msg_type == e_miss_store)
       op = "[store]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_miss_load)
+    else if (cache_req_yumi_i & cache_req_cast_o.msg_type == e_miss_load)
       op = "[load]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_load)
+    else if (cache_req_yumi_i & cache_req_cast_o.msg_type == e_uc_load)
       op = "[uncached load]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_store)
+    else if (cache_req_yumi_i & cache_req_cast_o.msg_type == e_uc_store)
       op = "[uncached store]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_flush)
-      op = "[fencei req]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_clear)
-      op = "[fencei req]";
+    else if (cache_req_yumi_i & cache_req_cast_o.msg_type == e_cache_flush)
+      op = "[flush req]";
+    else if (cache_req_yumi_i & cache_req_cast_o.msg_type == e_cache_clear)
+      op = "[clear req]";
     else
       op = "[null]";
   end
@@ -185,46 +172,42 @@ module bp_nonsynth_cache_tracer
 
   always_ff @(posedge clk_i) begin
 
-      if(v_tl_r)
-        $fwrite(file, "[%t] tag_lookup: %x \n", $time, v_tl_r);
-
-      if(v_tv_r) begin
-        $fwrite(file, "[%t] tag_verify: %x \n", $time, v_tv_r);
-        $fwrite(file, "[%t] addr: %x \n", $time, addr_tv_r);
-      end
-
       if(sc_success)
-        $fwrite(file, "SC SUCCESS! \n");
+        $fwrite(file, "[%t] SC success\n", $time);
 
       if(wt_req)
         $fwrite(file, "[%t] Writethrough incoming\n", $time);
 
-
-      if (cache_req_v_o) begin
-        $fwrite(file, "[%t] valid cache_req: %x \n", $time, cache_req_v_o);
-        $fwrite(file, "[%t] %s addr: %x data: %x cache_miss: %x \n", $time, op, cache_req_cast_o.addr, cache_req_cast_o.data, cache_miss_o);
+      if (cache_req_yumi_i) begin
+        $fwrite(file, "[%t] cache_req: %p\n", $time, cache_req_cast_o);
       end
 
       if (cache_req_metadata_v_o)
         $fwrite(file, "[%t] lru_way: %x dirty: %x \n", $time, cache_req_metadata_cast_o.hit_or_repl_way, cache_req_metadata_cast_o.dirty);
 
+      if (cache_req_critical_tag_i)
+        $fwrite(file, "[%t] Cache request critical tag\n", $time);
+
+      if (cache_req_critical_data_i)
+        $fwrite(file, "[%t] Cache request critical data\n", $time);
+
       if (cache_req_complete_i)
         $fwrite(file, "[%t] Cache request completed \n", $time);
 
-      if (data_mem_pkt_v_i)
+      if (data_mem_pkt_yumi_o)
         $fwrite(file, "[%t] Data Mem: op: %s index: %x way: %x  data: %x \n", $time, data_op, data_mem_pkt_cast_i.index, data_mem_pkt_cast_i.way_id, data_mem_pkt_cast_i.data);
 
-      if (tag_mem_pkt_v_i)
+      if (tag_mem_pkt_yumi_o)
         $fwrite(file, "[%t] Tag Mem: op: %s index: %x way: %x tag: %x state: %x \n", $time, tag_op, tag_mem_pkt_cast_i.index, tag_mem_pkt_cast_i.way_id, tag_mem_pkt_cast_i.tag, tag_mem_pkt_cast_i.state);
 
-      if (stat_mem_pkt_v_i)
+      if (stat_mem_pkt_yumi_o)
         $fwrite(file, "[%t] Stat Mem: op: %s, index: %x way: %x\n", $time, stat_op, stat_mem_pkt_cast_i.index, stat_mem_pkt_cast_i.way_id);
 
       if (v_o)
         $fwrite(file, "[%t] load data: %x \n", $time, load_data);
 
-      if (cache_req_v_o & (cache_req_cast_o.msg_type == e_miss_store || cache_req_cast_o.msg_type == e_uc_store))
-        $fwrite(file, "[%t] store data: %x \n", $time, store_data);
+      //if (wbuf_v_li)
+      //  $fwrite(file, "[%t] store data: %x \n", $time, store_data);
     end
 
   final

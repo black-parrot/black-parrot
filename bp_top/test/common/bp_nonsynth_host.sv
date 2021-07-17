@@ -141,7 +141,7 @@ module bp_nonsynth_host
         finish_base_addr_gp : finish_data_cmd_v = io_cmd_yumi_li;
         bootrom_base_addr_gp: bootrom_data_cmd_v = io_cmd_yumi_li;
         putch_core_base_addr_gp: putch_core_data_cmd_v = io_cmd_yumi_li;
-        finish_all_base_addr_gp: finish_all_data_cmd_v = io_cmd_yumi_li;
+        finish_all_addr_gp  : finish_all_data_cmd_v = io_cmd_yumi_li;
         default: begin end
       endcase
     end
