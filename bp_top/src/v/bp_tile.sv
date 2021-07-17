@@ -152,19 +152,23 @@ module bp_tile
   logic cce_ucode_w_lo;
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
-  bp_cfg
+  bp_me_cfg
    #(.bp_params_p(bp_params_p))
    cfg
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(cfg_mem_cmd)
+     ,.mem_cmd_header_i(cfg_mem_cmd.header)
+     ,.mem_cmd_data_i(cfg_mem_cmd.data)
      ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_lo)
+     ,.mem_cmd_last_i(cfg_mem_cmd_v_li) // stub
 
-     ,.mem_resp_o(cfg_mem_resp)
+     ,.mem_resp_header_o(cfg_mem_resp.header)
+     ,.mem_resp_data_o(cfg_mem_resp.data)
      ,.mem_resp_v_o(cfg_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(cfg_mem_resp_yumi_li)
+     ,.mem_resp_ready_and_i(cfg_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
 
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i(my_did_i)
@@ -178,19 +182,23 @@ module bp_tile
      ,.cce_ucode_data_i(cce_ucode_data_li)
      );
 
-  bp_clint_slice
+  bp_me_clint_slice
    #(.bp_params_p(bp_params_p))
    clint
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(clint_mem_cmd)
+     ,.mem_cmd_header_i(clint_mem_cmd.header)
+     ,.mem_cmd_data_i(clint_mem_cmd.data)
      ,.mem_cmd_v_i(clint_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(clint_mem_cmd_ready_lo)
+     ,.mem_cmd_last_i(clint_mem_cmd_last_li)
 
-     ,.mem_resp_o(clint_mem_resp)
+     ,.mem_resp_header_o(clint_mem_resp.header)
+     ,.mem_resp_data_o(clint_mem_resp.data)
      ,.mem_resp_v_o(clint_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(clint_mem_resp_yumi_li)
+     ,.mem_resp_ready_and_i(clint_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
 
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
@@ -665,19 +673,23 @@ module bp_tile
      ,.dest_wh_cid_i('0)
      );
 
-  bp_cce_loopback
+  bp_me_loopback
    #(.bp_params_p(bp_params_p))
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(loopback_mem_cmd)
+     ,.mem_cmd_header_i(loopback_mem_cmd.header)
+     ,.mem_cmd_data_i(loopback_mem_cmd.data)
      ,.mem_cmd_v_i(loopback_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(loopback_mem_cmd_ready_lo)
+     ,.mem_cmd_last_i() //stub
 
-     ,.mem_resp_o(loopback_mem_resp)
+     ,.mem_resp_header_o(loopback_mem_resp.header)
+     ,.mem_resp_data_o(loopback_mem_resp.data)
      ,.mem_resp_v_o(loopback_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(loopback_mem_resp_yumi_li)
+     ,.mem_resp_ready_and_i(loopback_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
      );
 
 endmodule

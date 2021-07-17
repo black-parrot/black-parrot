@@ -218,7 +218,7 @@ $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 # Cache
-$BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_alu.sv
@@ -242,6 +242,11 @@ $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
+# Dev
+$BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
+$BP_ME_DIR/src/v/dev/bp_me_cfg.sv
+$BP_ME_DIR/src/v/dev/bp_me_clint_slice.sv
+$BP_ME_DIR/src/v/dev/bp_me_loopback.sv
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.sv
@@ -257,7 +262,6 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.sv
 ## TOP
-$BP_TOP_DIR/src/v/bp_loopback.sv
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
 $BP_TOP_DIR/src/v/bp_cacc_tile.sv
@@ -267,10 +271,8 @@ $BP_TOP_DIR/src/v/bp_sacc_vdp.sv
 $BP_TOP_DIR/src/v/bp_sacc_tile.sv
 $BP_TOP_DIR/src/v/bp_sacc_tile_node.sv
 $BP_TOP_DIR/src/v/bp_sacc_complex.sv
-$BP_TOP_DIR/src/v/bp_cfg.sv
 $BP_TOP_DIR/src/v/bp_core.sv
 $BP_TOP_DIR/src/v/bp_core_complex.sv
-$BP_TOP_DIR/src/v/bp_clint_slice.sv
 $BP_TOP_DIR/src/v/bp_l2e_tile.sv
 $BP_TOP_DIR/src/v/bp_l2e_tile_node.sv
 $BP_TOP_DIR/src/v/bp_io_complex.sv
