@@ -26,9 +26,9 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
+    - be_dev_dcachetemptemptmep
   before_script:
-    - echo "Making libs"
-    - make libs
+      - git submodule update --init --checkout --recursive external/
   artifacts:
     when: always
     paths:

@@ -13,7 +13,7 @@
 
 module bp_cce_dir_nonsynth_tracer
   import bp_common_pkg::*;
-  #(parameter cce_id_width_p            = "inv"
+  #(parameter `BSG_INV_PARAM(cce_id_width_p            )
     , localparam cce_dir_trace_file_p   = "cce_dir"
   )
   (input                                                          clk_i

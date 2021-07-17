@@ -21,10 +21,10 @@ module bp_me_wormhole_packet_encode_mem_resp
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-    , parameter flit_width_p = "inv"
-    , parameter cord_width_p = "inv"
-    , parameter cid_width_p = "inv"
-    , parameter len_width_p = "inv"
+    , parameter `BSG_INV_PARAM(flit_width_p )
+    , parameter `BSG_INV_PARAM(cord_width_p )
+    , parameter `BSG_INV_PARAM(cid_width_p )
+    , parameter `BSG_INV_PARAM(len_width_p )
 
     , localparam mem_resp_wormhole_header_width_lp =
         `bp_mem_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_header_width_lp)
@@ -100,4 +100,6 @@ module bp_me_wormhole_packet_encode_mem_resp
   end
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_me_wormhole_packet_encode_mem_resp)
 

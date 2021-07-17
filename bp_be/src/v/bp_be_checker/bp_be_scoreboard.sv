@@ -8,7 +8,7 @@ module bp_be_scoreboard
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter num_rs_p = "inv"
+   , parameter `BSG_INV_PARAM(num_rs_p )
    )
   (input                                        clk_i
    , input                                      reset_i
@@ -65,4 +65,6 @@ module bp_be_scoreboard
   assign rd_match_o = scoreboard_r[rd_i];
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_be_scoreboard)
 

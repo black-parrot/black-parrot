@@ -20,8 +20,8 @@ module bp_be_pipe_fma
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter imul_latency_p = "inv"
-   , parameter fma_latency_p  = "inv"
+   , parameter `BSG_INV_PARAM(imul_latency_p )
+   , parameter `BSG_INV_PARAM(fma_latency_p  )
 
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    )
@@ -212,4 +212,6 @@ module bp_be_pipe_fma
      );
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_be_pipe_fma)
 

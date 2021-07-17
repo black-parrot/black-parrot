@@ -1,13 +1,20 @@
 
 `include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+`include "bp_be_defines.svh"
+`include "bp_me_defines.svh"
 `include "bp_top_defines.svh"
+`include "bsg_cache.vh"
+`include "bsg_noc_links.vh"
 
 module bp_unicore
  import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;
- import bp_be_pkg::*;
  import bp_fe_pkg::*;
+ import bp_be_pkg::*;
  import bp_me_pkg::*;
+ import bp_top_pkg::*;
+ import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -93,7 +100,6 @@ module bp_unicore
      ,.mem_resp_yumi_o(mem_resp_yumi_lo)
      );
 
-  import bsg_cache_pkg::*;
   `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;

@@ -560,16 +560,17 @@ module bp_fe_icache
      ,.o(data_mem_bypass_select)
      );
 
-  wire [`BSG_SAFE_CLOG2(block_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
+  wire [`BSG_SAFE_CLOG2(fill_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
   // Expand the bank write mask to bank width
-  wire [block_width_p-1:0] data_mem_pkt_data_expanded = {block_size_in_fill_lp{data_mem_pkt_cast_i.data}};
+  logic [fill_width_p-1:0] data_mem_pkt_fill_data_li;
   bsg_rotate_left
-   #(.width_p(block_width_p))
+   #(.width_p(fill_width_p))
    write_data_rotate
-    (.data_i(data_mem_pkt_data_expanded)
+    (.data_i(data_mem_pkt_cast_i.data)
      ,.rot_i(write_data_rot_li)
-     ,.o(data_mem_data_li)
+     ,.o(data_mem_pkt_fill_data_li)
      );
+  wire [assoc_p-1:0][bank_width_lp-1:0] data_mem_pkt_data_li = {block_size_in_fill_lp{data_mem_pkt_fill_data_li}};
 
   logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
   // use fill_index to generate bank write mask
@@ -602,6 +603,7 @@ module bp_fe_icache
       assign data_mem_addr_li[i] = data_mem_fast_read[i]
         ? {vaddr_index, {(assoc_p > 1){vaddr_bank}}}
         : {data_mem_pkt_cast_i.index, {(assoc_p > 1){data_mem_pkt_offset}}};
+      assign data_mem_data_li[i] = data_mem_pkt_data_li[i];
     end
   assign data_mem_pkt_yumi_o = data_mem_pkt_v_i & (~|data_mem_fast_read | data_mem_slow_uncached);
 

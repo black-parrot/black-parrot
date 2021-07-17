@@ -8,7 +8,8 @@ include $(TOP)/Makefile.tools
 help:
 	@echo "usage: make [libs, tools, tools_lite, tools_bsg, tidy, bleach_all]"
 
-libs:
+libs: $(BP_TOOLS_LIB_DIR)/libdramsim3.so
+$(BP_TOOLS_LIB_DIR)/libdramsim3.so:
 	cd $(TOP); git submodule update --init --recursive --checkout $(BASEJUMP_STL_DIR)
 	cd $(TOP); git submodule update --init --recursive --checkout $(HARDFLOAT_DIR)
 	$(MAKE) -C $(BASEJUMP_STL_DIR)/bsg_test -f libdramsim3.mk

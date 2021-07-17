@@ -1,7 +1,7 @@
 
 module bsg_bus_pack
  #(// Width of the entire bus
-   parameter width_p = "inv"
+   parameter `BSG_INV_PARAM(width_p )
 
    // Selection granularity of the bus, default to byte width
    , parameter unit_width_p       = 8
@@ -51,4 +51,6 @@ module bsg_bus_pack
   //synopsys translate_on
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bsg_bus_pack)
 
