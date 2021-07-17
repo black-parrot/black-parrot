@@ -260,7 +260,7 @@ module testbench
      ,.cosim_en_o(cosim_en_lo)
      );
 
-  if (1)
+  if (no_bind_p == 0)
     begin : do_bind
       bind bp_be_top
         bp_nonsynth_perf
