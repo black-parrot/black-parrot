@@ -459,10 +459,10 @@ module bp_be_calculator_top
           exc_stage_n[3].v                      &= commit_pkt_cast_o.instret;
 
           exc_stage_n[0].queue_v                 = reservation_n.queue_v;
-          exc_stage_n[0].queue_v                &= ~commit_pkt_cast_o.rollback;
-          exc_stage_n[1].queue_v                &= ~commit_pkt_cast_o.rollback;
-          exc_stage_n[2].queue_v                &= ~commit_pkt_cast_o.rollback;
-          exc_stage_n[3].queue_v                &= ~commit_pkt_cast_o.rollback;
+          exc_stage_n[0].queue_v                &= ~commit_pkt_cast_o.npc_w_v;
+          exc_stage_n[1].queue_v                &= ~commit_pkt_cast_o.npc_w_v;
+          exc_stage_n[2].queue_v                &= ~commit_pkt_cast_o.npc_w_v;
+          exc_stage_n[3].queue_v                &= ~commit_pkt_cast_o.npc_w_v;
 
           exc_stage_n[0].spec                   |= reservation_n.special;
           exc_stage_n[0].exc                    |= reservation_n.exception;

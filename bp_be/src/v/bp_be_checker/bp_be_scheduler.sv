@@ -71,7 +71,7 @@ module bp_be_scheduler
   logic fe_queue_v_lo, fe_queue_yumi_li;
   wire fe_queue_clr_li  = suppress_iss_i;
   wire fe_queue_deq_li  = commit_pkt_cast_i.queue_v;
-  wire fe_queue_roll_li = commit_pkt_cast_i.rollback;
+  wire fe_queue_roll_li = commit_pkt_cast_i.npc_w_v;
   bp_be_issue_pkt_s preissue_pkt, issue_pkt;
   bp_be_issue_queue
    #(.bp_params_p(bp_params_p))
