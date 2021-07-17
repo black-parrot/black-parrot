@@ -20,9 +20,9 @@ module bp_lce_req
    `declare_bp_proc_params(bp_params_p)
 
     // parameters specific to this LCE
-    , parameter assoc_p = "inv"
-    , parameter sets_p = "inv"
-    , parameter block_width_p = "inv"
+    , parameter `BSG_INV_PARAM(assoc_p )
+    , parameter `BSG_INV_PARAM(sets_p )
+    , parameter `BSG_INV_PARAM(block_width_p )
     , parameter fill_width_p = block_width_p
 
     // maximum number of outstanding transactions
@@ -312,3 +312,5 @@ module bp_lce_req
     end
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_lce_req)
