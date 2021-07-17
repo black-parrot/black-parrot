@@ -33,6 +33,8 @@ extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory
       sprintf(amo_str, "--enable_amo");
       char prog_str[50];
       sprintf(prog_str, "prog.elf");
+      char bootrom_str[150];
+      sprintf(bootrom_str, "--bootrom=bootrom.img");
 
       if (checkpoint) {
         if (amo_en) {
@@ -46,12 +48,12 @@ extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory
       }
       else {
         if (amo_en) {
-          char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, amo_str, prog_str};
-          dromajo_pointer = dromajo_cosim_init(6, argv);
+          char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, load_str, amo_str, prog_str, bootrom_str};
+          dromajo_pointer = dromajo_cosim_init(8, argv);
         }
         else {
-          char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, prog_str};
-          dromajo_pointer = dromajo_cosim_init(5, argv);
+          char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, load_str, prog_str, bootrom_str};
+          dromajo_pointer = dromajo_cosim_init(7, argv);
         }
       }
     }
