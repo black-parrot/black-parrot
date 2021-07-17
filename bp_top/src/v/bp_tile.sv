@@ -192,7 +192,7 @@ module bp_tile
      ,.mem_cmd_data_i(clint_mem_cmd.data)
      ,.mem_cmd_v_i(clint_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(clint_mem_cmd_ready_lo)
-     ,.mem_cmd_last_i(clint_mem_cmd_last_li)
+     ,.mem_cmd_last_i(clint_mem_cmd_v_li)
 
      ,.mem_resp_header_o(clint_mem_resp.header)
      ,.mem_resp_data_o(clint_mem_resp.data)
