@@ -32,7 +32,8 @@ module bp_me_bedrock_register
    //, parameter integer base_addr_p [els_p-1:0] = '{0}
    , parameter [els_p-1:0][reg_addr_width_p-1:0] base_addr_p = '0
 
-   , localparam lg_reg_width_lp = `BSG_WIDTH(`BSG_SAFE_CLOG2(reg_width_p/8))
+   , localparam sel_width_lp  = `BSG_SAFE_CLOG2(reg_width_p/8)
+   , localparam size_width_lp = `BSG_WIDTH(`BSG_SAFE_CLOG2(reg_width_p/8))
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -59,7 +60,7 @@ module bp_me_bedrock_register
    , output logic [els_p-1:0]                       r_v_o
    , output logic [els_p-1:0]                       w_v_o
    , output logic [reg_addr_width_p-1:0]            addr_o
-   , output logic [lg_reg_width_lp-1:0]             size_o
+   , output logic [size_width_lp-1:0]               size_o
    , output logic [reg_width_p-1:0]                 data_o
    , input [els_p-1:0][reg_width_p-1:0]             data_i
    );
@@ -111,6 +112,17 @@ module bp_me_bedrock_register
      ,.data_o(rdata_lo)
      );
 
+  wire [sel_width_lp-1:0]   sel_lo = mem_cmd_header_li.addr[0+:sel_width_lp];
+  wire [size_width_lp-1:0] size_lo = mem_cmd_header_li.size[0+:size_width_lp];
+  bsg_bus_pack
+   #(.width_p(dword_width_gp))
+   rbp
+    (.data_i(rdata_lo)
+     ,.sel_i(sel_lo)
+     ,.size_i(size_lo)
+     ,.data_o(mem_resp_data_o)
+     );
+
   for (genvar i = 0; i < els_p; i++)
     begin : dec
       wire addr_match = mem_cmd_v_li & (mem_cmd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
@@ -122,7 +134,6 @@ module bp_me_bedrock_register
       assign data_o = (mem_cmd_data_li);
 
   assign mem_resp_header_o = mem_cmd_header_li;
-  assign mem_resp_data_o = rdata_lo;
   assign mem_resp_v_o = v_r;
   assign mem_resp_last_o = mem_resp_v_o;
   assign mem_cmd_yumi_li = mem_resp_ready_and_i & mem_resp_v_o;
