@@ -309,11 +309,13 @@ module testbench
        ,.sc_op_tv_r(decode_tv_r.sc_op)
        ,.sc_success(sc_success_tv)
 
-       ,.cache_req_v_o(cache_req_v_o)
+       ,.cache_req_yumi_i(cache_req_yumi_i)
        ,.cache_req_o(cache_req_o)
        ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
        ,.cache_req_metadata_o(cache_req_metadata_o)
        ,.cache_req_complete_i(cache_req_complete_i)
+       ,.cache_req_critical_tag_i(cache_req_critical_tag_i)
+       ,.cache_req_critical_data_i(cache_req_critical_data_i)
 
        ,.v_o(early_v_o)
        ,.load_data(early_data_o[0+:65])

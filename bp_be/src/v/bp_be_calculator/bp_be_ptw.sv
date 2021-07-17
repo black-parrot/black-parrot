@@ -197,7 +197,7 @@ module bp_be_ptw
                              ? (page_fault_v
                                 ? eIdle
                                 : (pte_is_leaf ? eWriteBack : eSendLoad))
-                             : eSendLoad);
+                             : eRecvLoad);
       eWriteBack: state_n = eIdle;
       default: state_n = eIdle;
     endcase

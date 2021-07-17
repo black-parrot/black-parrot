@@ -91,12 +91,14 @@ module wrapper
 
    logic [num_caches_p-1:0][ptag_width_p-1:0] rolly_ptag_r;
    logic [num_caches_p-1:0] rolly_uncached_r;
-   logic [num_caches_p-1:0] is_store, is_store_rr, dcache_v_rr, poison_li;
+   logic [num_caches_p-1:0] is_store, is_store_rr, dcache_v_rr;
 
    logic [num_caches_p-1:0][dpath_width_gp-1:0] early_data_lo;
    logic [num_caches_p-1:0] early_v_lo;
    logic [num_caches_p-1:0][dpath_width_gp-1:0] final_data_lo;
    logic [num_caches_p-1:0] final_v_lo;
+   logic [num_caches_p-1:0][dpath_width_gp-1:0] late_data_lo;
+   logic [num_caches_p-1:0] late_v_lo;
 
    logic [num_caches_p-1:0] lce_req_v_lo, lce_resp_v_lo;
    logic cce_lce_req_v_li, cce_lce_req_yumi_lo;
@@ -153,7 +155,7 @@ module wrapper
 
         ,.roll_v_i(rollback_li[i])
         ,.clr_v_i(1'b0)
-        ,.deq_v_i(v_o[i])
+        ,.deq_v_i(dcache_v_rr[i])
 
         ,.data_i({uncached_i[i], ptag_i[i], dcache_pkt_i[i]})
         ,.v_i(v_i[i])
@@ -189,8 +191,7 @@ module wrapper
         ,.data_o({is_store_rr[i], dcache_v_rr[i]})
         );
 
-       assign poison_li[i] = dcache_v_rr[i] & ~v_o[i];
-       assign rollback_li[i] = poison_li[i];
+       assign rollback_li[i] = dcache_v_rr[i] & ~v_o[i];
 
        bp_be_dcache
        #(.bp_params_p(bp_params_p)
@@ -214,13 +215,17 @@ module wrapper
        ,.early_v_o(early_v_lo[i])
        ,.final_data_o(final_data_lo[i])
        ,.final_v_o(final_v_lo[i])
+       ,.late_rd_addr_o()
+       ,.late_float_o()
+       ,.late_data_o(late_data_lo[i])
+       ,.late_v_o(late_v_lo[i])
+       ,.late_yumi_i(late_v_lo[i])
 
        ,.ptag_v_i(1'b1)
        ,.ptag_i(rolly_ptag_r[i])
        ,.ptag_uncached_i(rolly_uncached_r[i])
 
-       ,.flush_i(poison_li[i])
-       ,.replay_pending_o()
+       ,.flush_i('0)
 
        ,.cache_req_v_o(cache_req_v_lo[i])
        ,.cache_req_o(cache_req_lo[i])
@@ -251,8 +256,8 @@ module wrapper
        );
 
        // Stores "return" 0 to the trace replay module
-       assign data_o[i] = is_store_rr[i] ? '0 : final_data_lo[i];
-       assign v_o[i] = final_v_lo[i];
+       assign data_o[i] = late_v_lo[i] ? late_data_lo : is_store_rr[i] ? '0 : final_data_lo[i];
+       assign v_o[i] = late_v_lo[i] | final_v_lo[i];
 
        if (uce_p == 0)
          begin : lce

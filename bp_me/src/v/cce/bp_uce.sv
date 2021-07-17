@@ -28,7 +28,6 @@ module bp_uce
     , localparam bank_offset_width_lp  = `BSG_SAFE_CLOG2(assoc_p)
     , localparam block_offset_width_lp = (assoc_p > 1) ? (bank_offset_width_lp + byte_offset_width_lp) : byte_offset_width_lp
     , localparam index_width_lp = `BSG_SAFE_CLOG2(sets_p)
-    , localparam way_width_lp = `BSG_SAFE_CLOG2(assoc_p)
     , localparam block_size_in_fill_lp = block_width_p / fill_width_p
     , localparam fill_size_in_bank_lp = fill_width_p / bank_width_lp
     , localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp)
@@ -116,6 +115,7 @@ module bp_uce
   wire is_writeback_wb    = (state_r == e_writeback_write_req); // send dirty data from UCE to L2
   wire is_write_request   = (state_r == e_write_wait);
   wire is_read_request    = (state_r == e_read_req);
+  wire is_uc_read_wait    = (state_r == e_uc_read_wait);
 
   logic cache_req_v_r;
   bsg_dff_reset_set_clear
@@ -369,7 +369,7 @@ module bp_uce
      );
   wire index_done = (index_cnt == sets_p-1);
 
-  logic [way_width_lp-1:0] way_cnt;
+  logic [`BSG_SAFE_CLOG2(assoc_p)-1:0] way_cnt;
   logic way_up;
   bsg_counter_clear_up
    #(.max_val_p(assoc_p-1)
@@ -447,7 +447,9 @@ module bp_uce
      ,.data_o(critical_pending)
      );
   // This is sufficient for UCE because we only set tags on requests, not invalidation
-  assign cache_req_critical_tag_o = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_set_tag);
+  assign cache_req_critical_tag_o =
+    (tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_set_tag))
+    || (is_uc_read_wait & data_mem_pkt_yumi_i);
   assign cache_req_critical_data_o = critical_pending & critical_recv;
 
   bp_cache_req_wr_subop_e cache_wr_subop;

@@ -282,10 +282,12 @@ module testbench
       ,.sc_success(1'b0)
 
       ,.cache_req_o(cache_req_o)
-      ,.cache_req_v_o(cache_req_v_o)
+      ,.cache_req_yumi_i(cache_req_yumi_i)
       ,.cache_req_metadata_o(cache_req_metadata_o)
       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
       ,.cache_req_complete_i(cache_req_complete_i)
+      ,.cache_req_critical_data_i(cache_req_critical_data_i)
+      ,.cache_req_critical_data_i(cache_req_critical_data_i)
 
       ,.wt_req()
 
