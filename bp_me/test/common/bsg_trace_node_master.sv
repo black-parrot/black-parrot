@@ -14,9 +14,9 @@
 `endif
 
 module bsg_trace_node_master
-  #(parameter id_p="inv"
-    ,parameter ring_width_p="inv"
-    ,parameter rom_addr_width_p="inv"
+  #(parameter `BSG_INV_PARAM(id_p)
+    ,parameter `BSG_INV_PARAM(ring_width_p)
+    ,parameter `BSG_INV_PARAM(rom_addr_width_p)
   )
   (
     input clk_i

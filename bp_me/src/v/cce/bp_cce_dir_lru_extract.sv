@@ -13,12 +13,12 @@
 
 module bp_cce_dir_lru_extract
   import bp_common_pkg::*;
-  #(parameter tag_sets_per_row_p          = "inv"
-    , parameter row_width_p               = "inv"
-    , parameter num_lce_p                 = "inv"
-    , parameter assoc_p                   = "inv"
-    , parameter rows_per_set_p            = "inv"
-    , parameter tag_width_p               = "inv"
+  #(parameter `BSG_INV_PARAM(tag_sets_per_row_p          )
+    , parameter `BSG_INV_PARAM(row_width_p               )
+    , parameter `BSG_INV_PARAM(num_lce_p                 )
+    , parameter `BSG_INV_PARAM(assoc_p                   )
+    , parameter `BSG_INV_PARAM(rows_per_set_p            )
+    , parameter `BSG_INV_PARAM(tag_width_p               )
 
     , localparam lg_num_lce_lp            = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_assoc_lp              = `BSG_SAFE_CLOG2(assoc_p)
@@ -62,4 +62,6 @@ module bp_cce_dir_lru_extract
   assign lru_tag_o = row[lce_i[0]][lru_way_i].tag;
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_cce_dir_lru_extract)
 

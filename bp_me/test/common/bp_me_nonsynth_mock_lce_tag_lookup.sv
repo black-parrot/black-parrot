@@ -9,8 +9,8 @@
 
 module bp_me_nonsynth_mock_lce_tag_lookup
   import bp_common_pkg::*;
-  #(parameter assoc_p="inv"
-    , parameter ptag_width_p="inv"
+  #(parameter `BSG_INV_PARAM(assoc_p)
+    , parameter `BSG_INV_PARAM(ptag_width_p)
     , localparam dir_entry_width_lp=`bp_cce_dir_entry_width(ptag_width_p)
     , localparam lg_assoc_lp=`BSG_SAFE_CLOG2(assoc_p)
    )
