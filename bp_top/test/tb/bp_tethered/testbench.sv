@@ -333,6 +333,9 @@ module testbench
            ,.frd_w_v_i(scheduler.fwb_pkt_cast_i.frd_w_v)
            ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
+
+           ,.wbuf_v(calculator.pipe_mem.dcache.wbuf_v_li)
+           ,.uc_st_v(calculator.pipe_mem.dcache.uncached_store_req & calculator.pipe_mem.dcache.cache_req_yumi_i)
            );
 
       bind bp_be_dcache
