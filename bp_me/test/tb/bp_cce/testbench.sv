@@ -24,6 +24,8 @@ module testbench
    , parameter lce_tr_trace_p = 0
    , parameter dram_trace_p = 0
 
+   , parameter trace_file_p = "test"
+
    // DRAM parameters
    , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
 
@@ -37,8 +39,8 @@ module testbench
 
    // LCE Trace Replay Width
    , localparam lce_opcode_width_lp=$bits(bp_me_nonsynth_lce_opcode_e)
-   , localparam tr_ring_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_gp)
-   , localparam tr_rom_addr_width_p = 20
+   , localparam trace_replay_data_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_gp)
+   , localparam trace_rom_addr_width_lp = 20
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
@@ -59,6 +61,7 @@ module testbench
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_gp);
 
   // Bit to deal with initial X->0 transition detection
   bit clk_i;
@@ -121,10 +124,11 @@ module testbench
 
   // LCE trace replay interface
   logic [num_lce_p-1:0]                       tr_v_li, tr_ready_lo;
-  logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_data_li;
+  bp_me_nonsynth_lce_tr_pkt_s [num_lce_p-1:0] tr_data_li, tr_data_lo;
   logic [num_lce_p-1:0]                       tr_v_lo, tr_yumi_li;
-  logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_data_lo;
   logic [num_lce_p-1:0]tr_done_lo;
+  logic [num_lce_p-1:0][trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
+  logic [num_lce_p-1:0][trace_replay_data_width_lp+3:0] trace_rom_data_li;
 
   // LCE-CCE request interface (from LCE to buffer) - BedRock Lite
   bp_bedrock_lce_req_msg_s  [num_lce_p-1:0] lce_req_lo;
@@ -308,10 +312,10 @@ module testbench
 
   for (genvar i = 0; i < num_lce_p; i++) begin : lce
     // Trace Replay Driver
-    bsg_trace_node_master
-     #(.id_p(i)
-       ,.ring_width_p(tr_ring_width_lp)
-       ,.rom_addr_width_p(tr_rom_addr_width_p)
+    bsg_trace_replay
+     #(.payload_width_p(trace_replay_data_width_lp)
+       ,.rom_addr_width_p(trace_rom_addr_width_lp)
+       ,.debug_p(2)
        )
      trace_replay
       (.clk_i(clk_i)
@@ -326,7 +330,25 @@ module testbench
        ,.yumi_i(tr_yumi_li[i])
        ,.data_o(tr_data_lo[i])
 
+       ,.rom_addr_o(trace_rom_addr_lo[i])
+       ,.rom_data_i(trace_rom_data_li[i])
+
        ,.done_o(tr_done_lo[i])
+       ,.error_o()
+       );
+
+    // ugly hack to construct the test ROM filename_p input based on the genvar
+    // seems to work in both vcs and verilator...
+    localparam logic [7:0] id_lp = i;
+    localparam string trace_file_lp = {trace_file_p, "_", id_lp+8'h30, ".tr"};
+    bsg_nonsynth_test_rom
+     #(.data_width_p(trace_replay_data_width_lp+4)
+       ,.addr_width_p(trace_rom_addr_width_lp)
+       ,.filename_p(trace_file_lp)
+       )
+     ROM
+      (.addr_i(trace_rom_addr_lo[i])
+       ,.data_o(trace_rom_data_li[i])
        );
 
     // Mock LCE
@@ -699,6 +721,8 @@ module testbench
         ,.lce_cmd_o_i(lce_cmd_o)
         ,.lce_cmd_o_v_i(lce_cmd_v_o)
         ,.lce_cmd_o_ready_and_i(lce_cmd_ready_and_i)
+        ,.cache_req_complete_i(testbench.tr_v_li[lce_id_i] & testbench.tr_ready_lo[lce_id_i])
+        ,.uc_store_req_complete_i('0)
         );
 
   bind bp_me_nonsynth_mock_lce
@@ -797,6 +821,69 @@ module testbench
         ,.addr_dst_gpr_o_i(addr_dst_gpr_o)
         );
 
+  // CCE instruction tracer
+  // this is connected to the instruction registered in the EX stage
+  if (cce_ucode_p) begin
+    bind bp_cce
+      bp_me_nonsynth_cce_inst_tracer
+        #(.bp_params_p(bp_params_p)
+          )
+        cce_inst_tracer
+        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
+         ,.reset_i(reset_i)
+         ,.cce_id_i(cfg_bus_cast_i.cce_id)
+         ,.pc_i(inst_decode.ex_pc_r)
+         ,.instruction_v_i(inst_decode.inst_v_r)
+         ,.instruction_i(inst_decode.inst_r)
+         ,.stall_i(stall_lo)
+         );
+
+    bind bp_cce
+      bp_me_nonsynth_cce_perf
+        #(.bp_params_p(bp_params_p))
+        cce_perf
+        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
+         ,.reset_i(reset_i)
+         ,.cce_id_i(cfg_bus_cast_i.cce_id)
+         ,.req_start_i('0)
+         ,.req_end_i('0)
+         ,.lce_req_header_i(lce_req)
+         ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
+         ,.lce_cmd_header_i(lce_cmd)
+         ,.resp_receive_i(lce_resp_yumi)
+         ,.lce_resp_header_i(lce_resp)
+         ,.mem_resp_receive_i(mem_resp_stream_done_li)
+         ,.mem_resp_squash_i(mem_resp_yumi_lo & spec_bits_lo.squash & mem_resp_stream_last_li)
+         ,.mem_resp_header_i(mem_resp_base_header_li)
+         ,.mem_cmd_send_i(mem_cmd_stream_new_li)
+         ,.mem_cmd_header_i(mem_cmd_base_header_lo)
+         );
+
+  end
+  else begin
+    bind bp_cce_fsm
+      bp_me_nonsynth_cce_perf
+        #(.bp_params_p(bp_params_p))
+        cce_perf
+        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
+         ,.reset_i(reset_i)
+         ,.cce_id_i(cfg_bus_cast_i.cce_id)
+         ,.req_start_i(lce_req_v & (state_r == e_ready))
+         ,.req_end_i(state_r == e_ready)
+         ,.lce_req_header_i(lce_req)
+         ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
+         ,.lce_cmd_header_i(lce_cmd)
+         ,.resp_receive_i(lce_resp_yumi)
+         ,.lce_resp_header_i(lce_resp)
+         ,.mem_resp_receive_i(mem_resp_stream_done_li)
+         ,.mem_resp_squash_i(mem_resp_yumi_lo & spec_bits_lo.squash & mem_resp_stream_last_li)
+         ,.mem_resp_header_i(mem_resp_base_header_li)
+         ,.mem_cmd_send_i(mem_cmd_stream_new_li)
+         ,.mem_cmd_header_i(mem_cmd_base_header_lo)
+         );
+  end
+
+
   // Config
   bp_bedrock_cce_mem_msg_header_s cfg_mem_cmd_lo;
   logic [dword_width_gp-1:0] cfg_mem_cmd_data_lo;
@@ -812,7 +899,7 @@ module testbench
       ,.inst_ram_els_p(num_cce_instr_ram_els_p)
       ,.skip_ram_init_p(cce_mode_p)
       ,.clear_freeze_p(1'b1)
-    )
+      )
     cfg_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

@@ -94,15 +94,15 @@ module bp_cce
     $fatal(0,"D$ sets and assoc must be power of two");
   if (!(`BSG_IS_POW2(icache_assoc_p) && `BSG_IS_POW2(icache_sets_p)))
     $fatal(0,"I$ sets and assoc must be power of two");
-  if (!(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0))
+  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0))
     $fatal(0,"A$ assoc must be power of two or 0");
-  if (!(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0))
+  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0))
     $fatal(0,"A$ sets must be power of two or 0");
   if (icache_block_width_p != cce_block_width_p)
     $fatal(0,"icache block width must match cce block width");
   if (dcache_block_width_p != cce_block_width_p)
     $fatal(0,"dcache block width must match cce block width");
-  if (acache_block_width_p != cce_block_width_p)
+  if ((num_cacc_p > 0) && (acache_block_width_p != cce_block_width_p))
     $fatal(0,"acache block width must match cce block width");
   if (!(`BSG_IS_POW2(cce_block_width_p) || cce_block_width_p < 64 || cce_block_width_p > 1024))
     $fatal(0, "invalid CCE block width");
@@ -844,5 +844,13 @@ module bp_cce
 
       ,.stall_o(stall_lo)
       );
+
+
+  // Debug and tracing signals
+  //synopsys translate_off
+  wire req_start = lce_req_v & decoded_inst_lo.v & decoded_inst_lo.poph
+                   & (decoded_inst_lo.popq_qsel == e_src_q_sel_lce_req);
+  wire req_end = 1'b1;
+  //synopsys translate_on
 
 endmodule

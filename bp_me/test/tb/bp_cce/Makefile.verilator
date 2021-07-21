@@ -7,49 +7,33 @@ $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
 	@echo testbench.sv                           >> $@
 	@echo wrapper.sv                             >> $@
-	@echo bsg_trace_rom_0.v                      >> $@
-
-# TODO: NUM_INSTR_P, SEED_P, CCE_MODE_P should be part of the rom name to help enable
-#   dependency chaining / parallelism
-$(LINT_DIR)/bsg_trace_rom_%.tr:
-	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) --test $(ME_TEST_P) > $@
-
-$(LINT_DIR)/bsg_trace_rom_%.v: $(LINT_DIR)/bsg_trace_rom_%.tr
-	$(PYTHON) $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
 $(LINT_DIR)/config.vlt:
 	touch $@
 
 LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv)
-LINT_COLLATERAL += $(addprefix $(LINT_DIR)/, bsg_trace_rom_0.v)
 
 $(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.cpp:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
-# TODO: This target will only build for trace rom 0 at the moment
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
 	@echo wrapper.sv                             >> $@
 	@echo testbench.sv                           >> $@
 	@echo test_bp.cpp                            >> $@
-	@echo bsg_trace_rom_0.v                      >> $@
-
-# TODO: NUM_INSTR_P, SEED_P, CCE_MODE_P should be part of the rom name to help enable
-#   dependency chaining / parallelism
-$(BUILD_DIR)/bsg_trace_rom_%.tr:
-	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) --test $(ME_TEST_P) > $@
-
-$(BUILD_DIR)/bsg_trace_rom_%.v: $(BUILD_DIR)/bsg_trace_rom_%.tr
-	$(PYTHON) $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
 $(BUILD_DIR)/config.vlt:
 	touch $@
 
 VBUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv test_bp.cpp)
-VBUILD_COLLATERAL += $(addprefix $(BUILD_DIR)/, bsg_trace_rom_0.v)
 CBUILD_COLLATERAL  = none
+
+TRACE_TOUCH = test$(ME_TEST_P)_s$(SEED_P)_l$(NUM_LCE_P)_n$(NUM_INSTR_P)_m$(LCE_MODE_P)$(CCE_MODE_P).touch
+$(SIM_DIR)/$(TRACE_TOUCH):
+	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py --dir $(@D) --file-name test -n $(NUM_INSTR_P) -l $(NUM_LCE_P) --seed $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) --test $(ME_TEST_P)
+	touch $@
 
 $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
 	@ln -nsf $</simsc $@
@@ -59,3 +43,5 @@ $(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, $(TRACE_TOUCH))
+

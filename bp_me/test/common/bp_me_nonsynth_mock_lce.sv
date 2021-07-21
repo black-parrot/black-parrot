@@ -91,6 +91,8 @@ module bp_me_nonsynth_mock_lce
     assert(`BSG_IS_POW2(cce_block_width_p)) else $error("cce_block_width_p must be a power of two");
   end
 
+  wire axe_trace_en = !(axe_trace_p == 0);
+
   // LCE-CCE interface structs
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 
@@ -644,14 +646,15 @@ module bp_me_nonsynth_mock_lce
           // Extract the desired bits from the returned 64-bit dword
           tr_pkt_lo.paddr = lce_cmd.header.addr;
           tr_pkt_lo.uncached = 1'b1;
-          tr_pkt_lo.data =
-            double_op
-            ? uc_load_dword
-            : word_op
-              ? {{32{1'b0}}, uc_load_word}
-              : half_op
-                ? {{48{1'b0}}, uc_load_half}
-                : {{56{1'b0}}, uc_load_byte};
+          tr_pkt_lo.data = axe_trace_en
+            ? '0
+            : double_op
+              ? uc_load_dword
+              : word_op
+                ? {{32{1'b0}}, uc_load_word}
+                : half_op
+                  ? {{48{1'b0}}, uc_load_half}
+                  : {{56{1'b0}}, uc_load_byte};
 
           lce_state_n = (tr_pkt_ready_i)
                         ? (lce_init_r)
@@ -1081,7 +1084,7 @@ module bp_me_nonsynth_mock_lce
 
         tr_pkt_lo.paddr = mshr_r.paddr;
         tr_pkt_lo.data = '0;
-        if (load_op) begin
+        if (load_op & ~axe_trace_en) begin
           tr_pkt_lo.data = double_op
             ? load_dword
             : (word_op
@@ -1194,13 +1197,15 @@ module bp_me_nonsynth_mock_lce
         tr_pkt_lo.paddr = mshr_r.paddr;
 
         // select data to return
-        tr_pkt_lo.data = double_op
-          ? load_dword
-          : (word_op
-            ? {{32{word_sigext}}, load_word}
-            : (half_op
-              ? {{48{half_sigext}}, load_half}
-              : {{56{byte_sigext}}, load_byte}));
+        tr_pkt_lo.data = axe_trace_en
+          ? '0
+          : double_op
+            ? load_dword
+            : (word_op
+              ? {{32{word_sigext}}, load_word}
+              : (half_op
+                ? {{48{half_sigext}}, load_half}
+                : {{56{byte_sigext}}, load_byte}));
 
         lce_state_n = (tr_pkt_ready_i) ? READY : TR_CMD_LD_HIT_RESP;
         mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
@@ -1311,23 +1316,24 @@ module bp_me_nonsynth_mock_lce
 
   localparam lg_dword_bytes_lp=`BSG_SAFE_CLOG2(dword_width_gp/8);
 
+  wire [paddr_width_p-1:0] axe_paddr = cmd.paddr - dram_base_addr_gp;
   always_ff @(posedge clk_i) begin
     if (axe_trace_p) begin
     case (lce_state_r)
       TR_CMD_LD_HIT_RESP: begin
         if (tr_pkt_ready_i) begin
-          $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_dword);
+          $display("### AXE %0d: M[%0d] == %0d", lce_id_i, (axe_paddr >> lg_dword_bytes_lp), load_dword);
         end
       end
       TR_CMD_ST_HIT: begin
-        $display("#AXE %0d: M[%0d] := %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), cmd.data);
+        $display("### AXE %0d: M[%0d] := %0d", lce_id_i, (axe_paddr >> lg_dword_bytes_lp), cmd.data);
       end
       FINISH_MISS_SEND: begin
         if (tr_pkt_ready_i) begin
           if (mshr_r.store_op) begin
-            $display("#AXE %0d: M[%0d] := %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), cmd.data);
+            $display("### AXE %0d: M[%0d] := %0d", lce_id_i, (axe_paddr >> lg_dword_bytes_lp), cmd.data);
           end else begin
-            $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_dword);
+            $display("### AXE %0d: M[%0d] == %0d", lce_id_i, (axe_paddr >> lg_dword_bytes_lp), load_dword);
           end
         end
       end

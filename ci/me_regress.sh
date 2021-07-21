@@ -38,7 +38,7 @@ let JOBS=${#protos[@]}
 echo "Running ${JOBS} jobs with 1 core per job"
 
 # ucode CCE (EI, MSI, MESI, MSI-nonspec, MESI-nonspec)
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO={} CFG=e_bp_multicore_cce_ucode_half_cfg" ::: ${protos[@]}
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO={} CFG=e_bp_multicore_half_cce_ucode_cfg" ::: ${protos[@]}
 # FSM CCE (MESI)
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=mesi CFG={}" ::: e_bp_multicore_half_cfg
 

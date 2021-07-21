@@ -30,7 +30,7 @@ parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" :::
 
 echo "Running check_loops on bp_me"
 make -C bp_me/syn CFG=e_bp_multicore_half_cfg &
-make -C bp_me/syn CFG=e_bp_multicore_cce_ucode_half_cfg &
+make -C bp_me/syn CFG=e_bp_multicore_half_cce_ucode_cfg &
 wait
 
 # Check for failures in the report directory

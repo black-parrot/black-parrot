@@ -890,13 +890,67 @@
                         ,bp_multicore_1_cfg_p
                         );
 
-  localparam bp_proc_param_s bp_multicore_cce_ucode_half_override_p =
+  localparam bp_proc_param_s bp_multicore_2x1_override_p =
+    '{num_lce  : 2
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_2x1_cfg_p
+                        ,bp_multicore_2x1_override_p
+                        ,bp_multicore_half_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_4x1_override_p =
+    '{num_lce  : 4
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_4x1_cfg_p
+                        ,bp_multicore_4x1_override_p
+                        ,bp_multicore_half_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_8x1_override_p =
+    '{num_lce  : 8
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_8x1_cfg_p
+                        ,bp_multicore_8x1_override_p
+                        ,bp_multicore_half_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_half_cce_ucode_override_p =
     '{num_lce  : 1
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_cce_ucode_half_cfg_p
-                        ,bp_multicore_cce_ucode_half_override_p
+  `bp_aviary_derive_cfg(bp_multicore_half_cce_ucode_cfg_p
+                        ,bp_multicore_half_cce_ucode_override_p
                         ,bp_multicore_1_cce_ucode_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_2x1_cce_ucode_override_p =
+    '{num_lce  : 2
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_2x1_cce_ucode_cfg_p
+                        ,bp_multicore_2x1_cce_ucode_override_p
+                        ,bp_multicore_half_cce_ucode_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_4x1_cce_ucode_override_p =
+    '{num_lce  : 4
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_4x1_cce_ucode_cfg_p
+                        ,bp_multicore_4x1_cce_ucode_override_p
+                        ,bp_multicore_half_cce_ucode_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_8x1_cce_ucode_override_p =
+    '{num_lce  : 8
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_8x1_cce_ucode_cfg_p
+                        ,bp_multicore_8x1_cce_ucode_override_p
+                        ,bp_multicore_half_cce_ucode_cfg_p
                         );
 
   `ifndef BP_CUSTOM_BASE_CFG
@@ -999,7 +1053,13 @@
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =
   {
     // Various testing configs
-    bp_multicore_cce_ucode_half_cfg_p
+    bp_multicore_8x1_cce_ucode_cfg_p
+    ,bp_multicore_8x1_cfg_p
+    ,bp_multicore_4x1_cce_ucode_cfg_p
+    ,bp_multicore_4x1_cfg_p
+    ,bp_multicore_2x1_cce_ucode_cfg_p
+    ,bp_multicore_2x1_cfg_p
+    ,bp_multicore_half_cce_ucode_cfg_p
     ,bp_multicore_half_cfg_p
     ,bp_unicore_half_cfg_p
 
@@ -1007,7 +1067,7 @@
     ,bp_multicore_4_l2e_cfg_p
     ,bp_multicore_2_l2e_cfg_p
     ,bp_multicore_1_l2e_cfg_p
-  
+
     // Accelerator configurations
     ,bp_multicore_4_acc_vdp_cfg_p
     ,bp_multicore_4_acc_loopback_cfg_p
@@ -1070,7 +1130,13 @@
   typedef enum bit [lg_max_cfgs-1:0]
   {
     // Various testing config
-    e_bp_multicore_cce_ucode_half_cfg               = 50
+    e_bp_multicore_8x1_cce_ucode_cfg                = 56
+    ,e_bp_multicore_8x1_cfg                         = 55
+    ,e_bp_multicore_4x1_cce_ucode_cfg               = 54
+    ,e_bp_multicore_4x1_cfg                         = 53
+    ,e_bp_multicore_2x1_cce_ucode_cfg               = 52
+    ,e_bp_multicore_2x1_cfg                         = 51
+    ,e_bp_multicore_half_cce_ucode_cfg              = 50
     ,e_bp_multicore_half_cfg                        = 49
     ,e_bp_unicore_half_cfg                          = 48
 
@@ -1084,7 +1150,7 @@
     ,e_bp_multicore_4_acc_loopback_cfg              = 43
     ,e_bp_multicore_1_acc_vdp_cfg                   = 42
     ,e_bp_multicore_1_acc_loopback_cfg              = 41
-   
+
     // Ucode configurations
     ,e_bp_multicore_16_cce_ucode_cfg                = 40
     ,e_bp_multicore_12_cce_ucode_cfg                = 39

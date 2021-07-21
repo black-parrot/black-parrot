@@ -32,6 +32,9 @@ module bp_me_nonsynth_lce_tracer
     , localparam lce_req_data_width_lp = dword_width_gp
 
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+
+    , localparam integer cnt_max_lp = 1<<31
+    , localparam cnt_ptr_width_lp = `BSG_SAFE_CLOG2(cnt_max_lp+1)
   )
   (
     input                                                   clk_i
@@ -55,6 +58,9 @@ module bp_me_nonsynth_lce_tracer
     ,input [lce_cmd_msg_width_lp-1:0]                       lce_cmd_o_i
     ,input                                                  lce_cmd_o_v_i
     ,input                                                  lce_cmd_o_ready_and_i
+
+    ,input                                                  cache_req_complete_i
+    ,input                                                  uc_store_req_complete_i
   );
 
   // LCE-CCE interface structs
@@ -85,8 +91,25 @@ module bp_me_nonsynth_lce_tracer
     file      = $fopen(file_name, "w");
   end
 
+  logic cnt_up;
+  wire req_cnt_clr = lce_req_v_i & lce_req_ready_and_i;
+  logic [cnt_ptr_width_lp-1:0] req_cnt;
+  bsg_counter_clear_up
+    #(.max_val_p(cnt_max_lp)
+      ,.init_val_p('0)
+      )
+  req_latency_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.clear_i(req_cnt_clr)
+     ,.up_i(cnt_up)
+     ,.count_o(req_cnt)
+     );
+
   always_ff @(posedge clk_i) begin
-    if (~reset_i) begin
+    if (reset_i) begin
+      cnt_up <= 1'b0;
+    end else begin
 
       // LCE-CCE Interface
 
@@ -99,6 +122,7 @@ module bp_me_nonsynth_lce_tracer
                   , lce_req_payload.non_exclusive, lce_req_payload.lru_way_id
                   , lce_req.header.size, lce_req.data
                   );
+        cnt_up <= 1'b1;
       end
 
       // response to CCE
@@ -129,6 +153,11 @@ module bp_me_nonsynth_lce_tracer
                   , lce_cmd_lo_payload.way_id, lce_cmd_lo_payload.state, lce_cmd_lo_payload.target, lce_cmd_lo_payload.target_way_id
                   , lce_cmd_lo.header.size, lce_cmd_lo.data
                   );
+      end
+
+      if (cache_req_complete_i) begin
+        cnt_up <= 1'b0;
+        $fdisplay(file, "ReqLat: %d", req_cnt);
       end
 
     end // ~reset_i
