@@ -40,7 +40,7 @@ module bp_lce
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, dtag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
   (
     input                                            clk_i

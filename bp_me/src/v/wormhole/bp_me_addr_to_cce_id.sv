@@ -13,7 +13,7 @@ module bp_me_addr_to_cce_id
    , output logic [cce_id_width_p-1:0] cce_id_o
    );
 
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_global_addr_s global_addr_li;
   bp_local_addr_s  local_addr_li;

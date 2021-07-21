@@ -41,9 +41,10 @@
                                                                                                    \
     , localparam vaddr_width_p   = proc_param_lp.vaddr_width                                       \
     , localparam paddr_width_p   = proc_param_lp.paddr_width                                       \
+    , localparam daddr_width_p   = proc_param_lp.daddr_width                                       \
     , localparam caddr_width_p   = proc_param_lp.caddr_width                                       \
     , localparam asid_width_p    = proc_param_lp.asid_width                                        \
-    , localparam hio_width_p     = paddr_width_p - caddr_width_p                                   \
+    , localparam hio_width_p     = paddr_width_p - daddr_width_p                                   \
                                                                                                    \
     , localparam boot_pc_p       = proc_param_lp.boot_pc                                           \
     , localparam boot_in_debug_p = proc_param_lp.boot_in_debug                                     \
@@ -157,9 +158,10 @@
         : '{io_noc_y_cord_width_p+io_noc_x_cord_width_p, io_noc_x_cord_width_p, 0}                 \
     , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]               \
                                                                                                    \
-    , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_gp                  \
-    , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_gp                  \
     , localparam etag_width_p  = dword_width_gp - page_offset_width_gp                             \
+    , localparam vtag_width_p  = vaddr_width_p - page_offset_width_gp                              \
+    , localparam ptag_width_p  = paddr_width_p - page_offset_width_gp                              \
+    , localparam dtag_width_p  = daddr_width_p - page_offset_width_gp                              \
     , localparam ctag_width_p  = caddr_width_p - page_offset_width_gp
 
     `define bp_aviary_parameter_override(parameter_mp, override_cfg_mp, default_cfg_mp) \
@@ -191,6 +193,7 @@
                                                                                                    \
           ,`bp_aviary_parameter_override(vaddr_width, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(paddr_width, override_cfg_mp, default_cfg_mp)             \
+          ,`bp_aviary_parameter_override(daddr_width, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(caddr_width, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(asid_width, override_cfg_mp, default_cfg_mp)              \
                                                                                                    \

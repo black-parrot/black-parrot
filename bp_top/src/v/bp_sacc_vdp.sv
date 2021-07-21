@@ -37,7 +37,7 @@ module bp_sacc_vdp
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
   bp_bedrock_cce_mem_msg_header_s resp_header;

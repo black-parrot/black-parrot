@@ -22,7 +22,7 @@ module bp_unicore
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                               clk_i
    , input                                             reset_i
@@ -60,8 +60,8 @@ module bp_unicore
    );
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
+  `declare_bp_cache_engine_if(paddr_width_p, dtag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
+  `declare_bp_cache_engine_if(paddr_width_p, dtag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
@@ -101,7 +101,7 @@ module bp_unicore
      ,.mem_resp_yumi_o(mem_resp_yumi_lo)
      );
 
-  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
+  `declare_bsg_cache_pkt_s(daddr_width_p, dword_width_gp);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [dword_width_gp-1:0] cache_data_lo;
@@ -138,7 +138,7 @@ module bp_unicore
      );
   
   bsg_cache
-   #(.addr_width_p(caddr_width_p)
+   #(.addr_width_p(daddr_width_p)
      ,.data_width_p(l2_data_width_p)
      ,.block_size_in_words_p(l2_block_size_in_words_p)
      ,.sets_p(l2_en_p ? l2_sets_p : 2)

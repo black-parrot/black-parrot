@@ -13,7 +13,7 @@ module bp_uce
     , parameter sets_p = 64
     , parameter block_width_p = 512
     , parameter fill_width_p = 512
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, dtag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
     , parameter tag_mem_invert_clk_p  = 0
     , parameter data_mem_invert_clk_p = 0
@@ -88,7 +88,7 @@ module bp_uce
     );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, dtag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_i(bp_cache_req_metadata_s, cache_req_metadata);
@@ -722,7 +722,7 @@ module bp_uce
             // We fill in M because we don't want to trigger additional coherence traffic
             tag_mem_pkt_cast_o.way_id = mem_resp_cast_payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
-            tag_mem_pkt_cast_o.tag    = mem_resp_cast_i.header.addr[block_offset_width_lp+index_width_lp+:ctag_width_p];
+            tag_mem_pkt_cast_o.tag    = mem_resp_cast_i.header.addr[block_offset_width_lp+index_width_lp+:dtag_width_p];
             tag_mem_pkt_v_o = load_resp_v_li;
 
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
@@ -769,7 +769,7 @@ module bp_uce
             // We fill in M because we don't want to trigger additional coherence traffic
             tag_mem_pkt_cast_o.way_id = mem_resp_cast_payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
-            tag_mem_pkt_cast_o.tag    = mem_resp_cast_i.header.addr[block_offset_width_lp+index_width_lp+:ctag_width_p];
+            tag_mem_pkt_cast_o.tag    = mem_resp_cast_i.header.addr[block_offset_width_lp+index_width_lp+:dtag_width_p];
             tag_mem_pkt_v_o = load_resp_v_li;
 
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;

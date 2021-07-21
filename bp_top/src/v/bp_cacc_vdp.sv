@@ -66,7 +66,7 @@ module bp_cacc_vdp
   cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
   `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;

@@ -90,9 +90,9 @@ module bp_nonsynth_if_verif
     $warning("Warning: VM will not work without 39 bit vaddr");
   if (paddr_width_p < 33)
     $warning("Warning: paddr < 33 has not been tested");
-  if (caddr_width_p < 32)
+  if (daddr_width_p < 32)
     $warning("Warning: caddr < 32 has not been tested");
-  if (caddr_width_p >= paddr_width_p)
+  if (daddr_width_p >= paddr_width_p)
     $fatal("Error: caddr cannot exceed paddr_width_p-1");
 
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))

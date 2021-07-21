@@ -68,8 +68,12 @@
     // Physical address width
     //   Only tested for 40-bit physical address
     integer unsigned paddr_width;
+    // DRAM address width
     // The max size of the connected DRAM i.e. cached address space
     //   Only tested for 32-bit cacheable address (4 GB space, with 2 GB local I/O)
+    integer unsigned daddr_width;
+    // Cacheable address width
+    // The max size cached by the L1 caches of the system
     integer unsigned caddr_width;
     // Address space ID width
     //   Currently unused, so set to 1 bit
@@ -215,7 +219,8 @@
 
       ,vaddr_width: 39
       ,paddr_width: 40
-      ,caddr_width: 32
+      ,daddr_width: 32
+      ,caddr_width: 31
       ,asid_width : 1
 
       ,boot_pc       : dram_base_addr_gp
@@ -310,7 +315,7 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_paddr_large_override_p =
-    '{paddr_width   : 44
+    '{paddr_width : 44
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_paddr_large_cfg_p
@@ -319,7 +324,7 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_paddr_small_override_p =
-    '{paddr_width   : 33
+    '{paddr_width : 33
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_paddr_small_cfg_p
@@ -831,6 +836,7 @@
 
       ,`bp_aviary_define_override(vaddr_width, BP_VADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(paddr_width, BP_PADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(daddr_width, BP_DADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(caddr_width, BP_CADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(asid_width, BP_ASID_WIDTH, `BP_CUSTOM_BASE_CFG)
 

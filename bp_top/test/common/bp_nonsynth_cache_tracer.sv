@@ -12,7 +12,7 @@ module bp_nonsynth_cache_tracer
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, dtag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
@@ -80,7 +80,7 @@ module bp_nonsynth_cache_tracer
    , input [assoc_p-1:0]                                   data_mem_v_i
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, dtag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   // Input Casting
   bp_cache_req_s cache_req_cast_o;
