@@ -219,8 +219,8 @@
 
       ,vaddr_width: 39
       ,paddr_width: 40
-      ,daddr_width: 32
-      ,caddr_width: 31
+      ,daddr_width: 33
+      ,caddr_width: 32
       ,asid_width : 1
 
       ,boot_pc       : dram_base_addr_gp
