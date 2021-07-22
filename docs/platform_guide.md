@@ -106,6 +106,12 @@ For a BlackParrot Multicore, an "off-chip" device is routed to the I/O complex. 
 either send it east or west depending on the destination "domain ID" (upper uncached bits) of the
 address compared to the domain ID of the chip itself (set statically at the toplevel).
 
+The uncached region in this scheme is rather large, fully half of the available DRAM at first
+glance. However, this is only the view from BlackParrot. System designers are free to remap those
+addresses as they see fit. For instance, aliasing some of the DRAM space between cached and uncached
+(and manually handling the coherence issues). Another scheme is to relocate some of the memory such
+that both cached and uncached are physically contiguous on the same DRAM.
+
 ### Local Address Map
 * 0x00_0000_0000 - 0x00_0(nnnN)(D)(A_AAAA)
   * nnnN -> 7 bits = 128 max tiles
