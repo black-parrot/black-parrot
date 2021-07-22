@@ -26,6 +26,7 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
+    - top_dev_feature_l2uncached
   before_script:
       - git submodule update --init --checkout --recursive external/
   artifacts:
