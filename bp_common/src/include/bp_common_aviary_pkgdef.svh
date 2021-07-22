@@ -680,7 +680,7 @@
       ,sac_x_dim: 1
       ,cacc_type: e_cacc_vdp
       ,sacc_type: e_sacc_vdp
-      ,num_lce  : 4
+      ,num_lce  : 3
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_accelerator_cfg_p
