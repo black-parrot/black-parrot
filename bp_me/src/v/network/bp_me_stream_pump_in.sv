@@ -42,6 +42,8 @@ module bp_me_stream_pump_in
    , parameter msg_stream_mask_p = 0
    , parameter fsm_stream_mask_p = msg_stream_mask_p
 
+   , parameter buffer_els_p = 2
+
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
 
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
@@ -66,10 +68,12 @@ module bp_me_stream_pump_in
    , output logic                                   fsm_v_o
    , input                                          fsm_yumi_i
    // FSM control signals
-   // fsm_new is raised on first beat of every message
+   // fsm_new is raised when first beat of every message is acked
    , output logic                                   fsm_new_o
-   // fsm_done is raised on last beat of every message
+   // fsm_done is raised when last beat of every message is acked
    , output logic                                   fsm_done_o
+   // fsm_last is raised on last beat of every message
+   , output logic                                   fsm_last_o
    );
 
 
@@ -81,8 +85,10 @@ module bp_me_stream_pump_in
   logic [stream_data_width_p-1:0] msg_data_lo;
   logic msg_v_lo, msg_yumi_li, msg_last_lo;
 
-  bsg_two_fifo
-   #(.width_p($bits(bp_bedrock_xce_msg_s)+1))
+  bsg_fifo_1r1w_small
+   #(.width_p($bits(bp_bedrock_xce_msg_s)+1)
+     ,.els_p(buffer_els_p)
+     )
    input_fifo
     (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -211,7 +217,7 @@ module bp_me_stream_pump_in
           // N:1
           // consume all but last msg input beat silently, then FSM consumes last beat
           fsm_v_o = msg_v_lo & is_last_cnt;
-          msg_yumi_li = ~is_last_cnt ? msg_v_lo : (msg_last_lo & fsm_yumi_i);
+          msg_yumi_li = (~is_last_cnt & msg_v_lo) | (is_last_cnt & msg_v_lo & msg_last_lo & fsm_yumi_i);
           cnt_up = msg_v_lo & ~is_last_cnt;
         end
       else
@@ -224,6 +230,7 @@ module bp_me_stream_pump_in
 
       fsm_new_o  = fsm_yumi_i & ~streaming_r;
       fsm_done_o = fsm_yumi_i & is_last_cnt;
+      fsm_last_o = fsm_v_o & is_last_cnt;
     end
 
   //synopsys translate_off
