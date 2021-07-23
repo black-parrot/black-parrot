@@ -282,6 +282,7 @@ $BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_wormhole.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_xbar_stream_bidir.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
