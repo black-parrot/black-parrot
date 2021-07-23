@@ -32,6 +32,10 @@ module bp_cce
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+
+    // stream pump
+    , localparam stream_words_lp = cce_block_width_p / dword_width_gp
+    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -76,23 +80,17 @@ module bp_cce
    , output logic                                   lce_cmd_last_o
 
    // CCE-MEM Interface
-   // BedRock Burst protocol: ready&valid
+   // BedRock Stream protocol: ready&valid
    , input [cce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
-   , input                                          mem_resp_header_v_i
-   , output logic                                   mem_resp_header_ready_and_o
-   , input                                          mem_resp_has_data_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
-   , input                                          mem_resp_data_v_i
-   , output logic                                   mem_resp_data_ready_and_o
+   , input                                          mem_resp_v_i
+   , output logic                                   mem_resp_ready_and_o
    , input                                          mem_resp_last_i
 
    , output logic [cce_mem_msg_header_width_lp-1:0] mem_cmd_header_o
-   , output logic                                   mem_cmd_header_v_o
-   , input                                          mem_cmd_header_ready_and_i
-   , output logic                                   mem_cmd_has_data_o
    , output logic [dword_width_gp-1:0]              mem_cmd_data_o
-   , output logic                                   mem_cmd_data_v_o
-   , input                                          mem_cmd_data_ready_and_i
+   , output logic                                   mem_cmd_v_o
+   , input                                          mem_cmd_ready_and_i
    , output logic                                   mem_cmd_last_o
   );
 
@@ -131,10 +129,6 @@ module bp_cce
   bp_bedrock_lce_resp_msg_header_s lce_resp;
   bp_bedrock_lce_cmd_msg_header_s  lce_cmd;
   assign lce_cmd_header_o = lce_cmd;
-
-  // CCE-MEM Interface structs
-  bp_bedrock_cce_mem_msg_header_s  mem_cmd, mem_resp;
-  assign mem_cmd_header_o = mem_cmd;
 
   // Config bus
   bp_cfg_bus_s cfg_bus_cast_i;
@@ -247,6 +241,21 @@ module bp_cce
   logic                                      msg_mem_resp_busy_lo;
   logic                                      msg_busy_lo;
   logic                                      msg_mem_credits_empty_lo;
+  logic                                      msg_mem_cmd_stall_lo;
+
+  // From memory response stream pump to CCE
+  bp_bedrock_cce_mem_msg_header_s mem_resp_base_header_li;
+  logic mem_resp_v_li, mem_resp_yumi_lo;
+  logic mem_resp_stream_new_li, mem_resp_stream_last_li, mem_resp_stream_done_li;
+  logic [paddr_width_p-1:0] mem_resp_addr_li;
+  logic [dword_width_gp-1:0] mem_resp_data_li;
+
+  // From CCE to memory command stream pump
+  bp_bedrock_cce_mem_msg_header_s mem_cmd_base_header_lo;
+  logic mem_cmd_v_lo, mem_cmd_ready_and_li;
+  logic mem_cmd_stream_new_li, mem_cmd_stream_done_li;
+  logic [dword_width_gp-1:0] mem_cmd_data_lo;
+  logic [data_len_width_lp-1:0] mem_cmd_stream_cnt_li;
 
   /*
    * Fetch Stage
@@ -288,6 +297,74 @@ module bp_cce
       );
 
   /*
+   * Stream pumps
+   *
+   * The CCE logic interacts with the FSM side of the stream pumps, including all signals used
+   * for arbitration, data routing, stall detection, etc.
+   *
+   * The FSM side of the stream pumps is considered part of the CCE's execute stage.
+   */
+
+  // Memory Response Stream Pump
+  bp_me_stream_pump_in
+    #(.bp_params_p(bp_params_p)
+      ,.stream_data_width_p(dword_width_gp)
+      ,.block_width_p(cce_block_width_p)
+      ,.payload_width_p(cce_mem_payload_width_lp)
+      ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
+      ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
+      // provide buffer space for two 8-beat long data carrying messages
+      ,.buffer_els_p(16)
+      )
+    mem_resp_stream_pump
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      // from memory response input
+      ,.msg_header_i(mem_resp_header_i)
+      ,.msg_data_i(mem_resp_data_i)
+      ,.msg_v_i(mem_resp_v_i)
+      ,.msg_last_i(mem_resp_last_i)
+      ,.msg_ready_and_o(mem_resp_ready_and_o)
+      // to FSM CCE
+      ,.fsm_base_header_o(mem_resp_base_header_li)
+      ,.fsm_addr_o(mem_resp_addr_li)
+      ,.fsm_data_o(mem_resp_data_li)
+      ,.fsm_v_o(mem_resp_v_li)
+      ,.fsm_yumi_i(mem_resp_yumi_lo)
+      ,.fsm_new_o(mem_resp_stream_new_li)
+      ,.fsm_last_o(mem_resp_stream_last_li)
+      ,.fsm_done_o(mem_resp_stream_done_li)
+      );
+
+  // Memory Command Stream Pump
+  bp_me_stream_pump_out
+    #(.bp_params_p(bp_params_p)
+      ,.stream_data_width_p(dword_width_gp)
+      ,.block_width_p(cce_block_width_p)
+      ,.payload_width_p(cce_mem_payload_width_lp)
+      ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
+      ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
+      )
+    mem_cmd_stream_pump
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      // to memory command output
+      ,.msg_header_o(mem_cmd_header_o)
+      ,.msg_data_o(mem_cmd_data_o)
+      ,.msg_v_o(mem_cmd_v_o)
+      ,.msg_last_o(mem_cmd_last_o)
+      ,.msg_ready_and_i(mem_cmd_ready_and_i)
+      // from FSM CCE
+      ,.fsm_base_header_i(mem_cmd_base_header_lo)
+      ,.fsm_data_i(mem_cmd_data_lo)
+      ,.fsm_v_i(mem_cmd_v_lo)
+      ,.fsm_ready_and_o(mem_cmd_ready_and_li)
+      ,.fsm_cnt_o(mem_cmd_stream_cnt_li)
+      ,.fsm_new_o(mem_cmd_stream_new_li)
+      ,.fsm_done_o(mem_cmd_stream_done_li)
+      );
+
+  /*
    * Decode/Execute Stage
    */
 
@@ -321,22 +398,6 @@ module bp_cce
       ,.v_o(lce_resp_v)
       ,.data_o({lce_resp_has_data, lce_resp})
       ,.yumi_i(lce_resp_yumi)
-      );
-
-  // memory response header buffer
-  logic mem_resp_v, mem_resp_yumi;
-  logic mem_resp_has_data;
-  bsg_two_fifo
-    #(.width_p(cce_mem_msg_header_width_lp+1))
-    mem_resp_buffer
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.ready_o(mem_resp_header_ready_and_o)
-      ,.data_i({mem_resp_has_data_i, mem_resp_header_i})
-      ,.v_i(mem_resp_header_v_i)
-      ,.v_o(mem_resp_v)
-      ,.data_o({mem_resp_has_data, mem_resp})
-      ,.yumi_i(mem_resp_yumi)
       );
 
   // Instruction Decode
@@ -406,15 +467,15 @@ module bp_cce
       ,.sharers_hits_i(sharers_hits_lo)
       ,.sharers_ways_i(sharers_ways_lo)
       ,.sharers_coh_states_i(sharers_coh_states_lo)
-      ,.mem_resp_header_v_i(mem_resp_v)
+      ,.mem_resp_v_i(mem_resp_v_li)
       ,.lce_resp_header_v_i(lce_resp_v)
       ,.lce_req_header_v_i(lce_req_v)
-      ,.lce_req_i(lce_req)
-      ,.lce_resp_i(lce_resp)
-      ,.mem_resp_i(mem_resp)
+      ,.lce_req_header_i(lce_req)
+      ,.lce_resp_header_i(lce_resp)
+      ,.mem_resp_header_i(mem_resp_base_header_li)
       ,.lce_req_data_i(lce_req_data_i)
       ,.lce_resp_data_i(lce_resp_data_i)
-      ,.mem_resp_data_i(mem_resp_data_i)
+      ,.mem_resp_data_i(mem_resp_data_li)
       ,.src_a_o(src_a)
       ,.src_b_o(src_b)
       ,.addr_o(addr_lo)
@@ -587,7 +648,7 @@ module bp_cce
       ,.lce_req_header_i(lce_req)
       ,.lce_req_v_i(lce_req_v)
       ,.lce_resp_header_i(lce_resp)
-      ,.mem_resp_header_i(mem_resp)
+      ,.mem_resp_header_i(mem_resp_base_header_li)
 
       ,.pending_i(pending_lo)
 
@@ -661,23 +722,22 @@ module bp_cce
       // CCE-MEM Interface
       // BedRock Burst protocol: ready&valid
       // inbound headers use valid->yumi
-      ,.mem_resp_header_i(mem_resp)
-      ,.mem_resp_header_v_i(mem_resp_v)
-      ,.mem_resp_header_yumi_o(mem_resp_yumi)
-      ,.mem_resp_has_data_i(mem_resp_has_data)
-      ,.mem_resp_data_i(mem_resp_data_i)
-      ,.mem_resp_data_v_i(mem_resp_data_v_i)
-      ,.mem_resp_data_ready_and_o(mem_resp_data_ready_and_o)
-      ,.mem_resp_last_i(mem_resp_last_i)
+      ,.mem_resp_header_i(mem_resp_base_header_li)
+      ,.mem_resp_addr_i(mem_resp_addr_li)
+      ,.mem_resp_data_i(mem_resp_data_li)
+      ,.mem_resp_v_i(mem_resp_v_li)
+      ,.mem_resp_yumi_o(mem_resp_yumi_lo)
+      ,.mem_resp_stream_new_i(mem_resp_stream_new_li)
+      ,.mem_resp_stream_last_i(mem_resp_stream_last_li)
+      ,.mem_resp_stream_done_i(mem_resp_stream_done_li)
 
-      ,.mem_cmd_header_o(mem_cmd)
-      ,.mem_cmd_header_v_o(mem_cmd_header_v_o)
-      ,.mem_cmd_header_ready_and_i(mem_cmd_header_ready_and_i)
-      ,.mem_cmd_has_data_o(mem_cmd_has_data_o)
-      ,.mem_cmd_data_o(mem_cmd_data_o)
-      ,.mem_cmd_data_v_o(mem_cmd_data_v_o)
-      ,.mem_cmd_data_ready_and_i(mem_cmd_data_ready_and_i)
-      ,.mem_cmd_last_o(mem_cmd_last_o)
+      ,.mem_cmd_header_o(mem_cmd_base_header_lo)
+      ,.mem_cmd_data_o(mem_cmd_data_lo)
+      ,.mem_cmd_v_o(mem_cmd_v_lo)
+      ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
+      ,.mem_cmd_stream_cnt_i(mem_cmd_stream_cnt_li)
+      ,.mem_cmd_stream_new_i(mem_cmd_stream_new_li)
+      ,.mem_cmd_stream_done_i(mem_cmd_stream_done_li)
 
       // Inputs
       ,.lce_i(lce_lo)
@@ -725,7 +785,8 @@ module bp_cce
       ,.busy_o(msg_busy_lo)
       // memory credits empty
       ,.mem_credits_empty_o(msg_mem_credits_empty_lo)
-
+      // memory command send stall
+      ,.mem_cmd_stall_o(msg_mem_cmd_stall_lo)
       );
 
   // Speculative Access Bits
@@ -765,11 +826,11 @@ module bp_cce
 
       ,.lce_req_header_v_i(lce_req_v)
       ,.lce_resp_header_v_i(lce_resp_v)
-      ,.mem_resp_header_v_i(mem_resp_v)
+      ,.mem_resp_v_i(mem_resp_v_li)
       ,.pending_v_i('0)
 
+      ,.lce_cmd_header_v_i(lce_cmd_header_v_o)
       ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_i)
-      ,.mem_cmd_header_ready_and_i(mem_cmd_header_ready_and_i)
       ,.mem_credits_empty_i(msg_mem_credits_empty_lo)
 
       // From Messague Unit
@@ -780,6 +841,7 @@ module bp_cce
       ,.msg_mem_resp_busy_i(msg_mem_resp_busy_lo)
       ,.msg_spec_r_busy_i(msg_spec_r_v_lo)
       ,.msg_dir_w_busy_i(msg_dir_w_v_lo)
+      ,.msg_mem_cmd_stall_i(msg_mem_cmd_stall_lo)
 
       // From Directory
       ,.dir_busy_i(dir_busy_lo)

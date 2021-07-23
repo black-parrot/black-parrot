@@ -298,6 +298,7 @@ module bp_uce
      ,.fsm_yumi_i(fsm_resp_yumi_lo)
      ,.fsm_new_o(fsm_resp_new)
      ,.fsm_done_o(fsm_resp_done)
+     ,.fsm_last_o(/* unused */)
      );
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
@@ -364,19 +365,21 @@ module bp_uce
   //
   logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
   wire credit_v_li = fsm_cmd_done;
-  wire credit_ready_li = fsm_cmd_ready_and_li;
   // credit is returned when request completes
   // UC store done for UC Store, UC Data for UC Load, Set Tag Wakeup for
   // a miss that is actually an upgrade, and data and tag for normal requests.
   wire credit_returned_li = fsm_resp_done;
   bsg_flow_counter
-   #(.els_p(coh_noc_max_credits_p))
+   #(.els_p(coh_noc_max_credits_p)
+      // memory command increments on done singal from stream pump
+      ,.ready_THEN_valid_p(1)
+      )
    credit_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.v_i(credit_v_li)
-     ,.ready_i(credit_ready_li)
+     ,.ready_i(1'b0) // unused due to ready_then_valid param
 
      ,.yumi_i(credit_returned_li)
      ,.count_o(credit_count_lo)
