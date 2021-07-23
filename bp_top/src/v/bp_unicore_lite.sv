@@ -377,9 +377,10 @@ module bp_unicore_lite
   assign dev_resp_dst_lo[1] = dev_resp_header_lo[1].payload.lce_id;
   assign dev_resp_dst_lo[0] = dev_resp_header_lo[0].payload.lce_id;
 
-  bp_me_xbar_stream
+  bp_me_xbar_stream_bidir
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(uce_mem_data_width_lp)
+     ,.payload_width_p(uce_mem_payload_width_lp)
      ,.num_source_p(3)
      ,.num_sink_p(5)
      )
