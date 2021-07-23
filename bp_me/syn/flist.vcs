@@ -119,6 +119,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_locking_arb_fixed.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_bitwise.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_butterfly.v
@@ -155,25 +156,25 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 ## ME files
 # CCE
-$BP_ME_DIR/src/v/cce/bp_cce_alu.sv
-$BP_ME_DIR/src/v/cce/bp_cce_arbitrate.sv
-$BP_ME_DIR/src/v/cce/bp_cce_branch.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_alu.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_arbitrate.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_branch.sv
 $BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.sv
 $BP_ME_DIR/src/v/cce/bp_cce_dir_segment.sv
 $BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.sv
 $BP_ME_DIR/src/v/cce/bp_cce_dir.sv
 $BP_ME_DIR/src/v/cce/bp_cce_gad.sv
-$BP_ME_DIR/src/v/cce/bp_cce_inst_decode.sv
-$BP_ME_DIR/src/v/cce/bp_cce_inst_predecode.sv
-$BP_ME_DIR/src/v/cce/bp_cce_inst_ram.sv
-$BP_ME_DIR/src/v/cce/bp_cce_inst_stall.sv
-$BP_ME_DIR/src/v/cce/bp_cce_msg.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_inst_decode.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_inst_predecode.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_inst_ram.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_inst_stall.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_msg.sv
 $BP_ME_DIR/src/v/cce/bp_cce_pending_bits.sv
 $BP_ME_DIR/src/v/cce/bp_cce_pma.sv
-$BP_ME_DIR/src/v/cce/bp_cce_reg.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_reg.sv
 $BP_ME_DIR/src/v/cce/bp_cce_spec_bits.sv
-$BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
-$BP_ME_DIR/src/v/cce/bp_cce.sv
+#$BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
+#$BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
@@ -188,6 +189,7 @@ $BP_ME_DIR/src/v/network/bp_me_stream_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
+$BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
