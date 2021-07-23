@@ -20,8 +20,8 @@ $(PARSE_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(PA
 
 TOP_MODULE ?= wrapper
 
-#SURELOG_OPTS += -DVERILATOR=1
 SURELOG_OPTS += -sverilog
+SURELOG_OPTS += -fileunit
 SURELOG_OPTS += -parse
 SURELOG_OPTS += -timescale=1ps/1ps
 SURELOG_OPTS += -elabuhdm

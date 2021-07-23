@@ -8,21 +8,25 @@
  */
 
 
+`include "bsg_defines.v"
 `include "bsg_noc_links.vh"
 `include "bsg_cache.vh"
+
+// TODO: Should be part of basejump stl
+`include "bp_me_cache_defines.svh"
 
 module bsg_wormhole_to_cache_dma_fanout
  import bsg_noc_pkg::*;
  import bsg_cache_pkg::*;
- #(parameter num_dma_p="inv"
-   , parameter dma_addr_width_p="inv" // cache addr width (in bytes)
-   , parameter dma_burst_len_p="inv" // num of data beats in dma transfer
+ #(parameter `BSG_INV_PARAM(num_dma_p)
+   , parameter `BSG_INV_PARAM(dma_addr_width_p) // cache addr width (in bytes)
+   , parameter `BSG_INV_PARAM(dma_burst_len_p) // num of data beats in dma transfer
 
    // flit width must match the cache dma width.
-   , parameter wh_flit_width_p="inv"
-   , parameter wh_cid_width_p="inv"
-   , parameter wh_len_width_p="inv"
-   , parameter wh_cord_width_p="inv"
+   , parameter `BSG_INV_PARAM(wh_flit_width_p)
+   , parameter `BSG_INV_PARAM(wh_cid_width_p)
+   , parameter `BSG_INV_PARAM(wh_len_width_p)
+   , parameter `BSG_INV_PARAM(wh_cord_width_p)
 
    // FIFO parameters
    , parameter lg_num_dma_lp=`BSG_SAFE_CLOG2(num_dma_p)
@@ -364,3 +368,6 @@ module bsg_wormhole_to_cache_dma_fanout
   //synopsys translate_on
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bsg_wormhole_to_cache_dma_fanout)
+

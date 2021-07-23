@@ -13,8 +13,8 @@
 //   remaining four flits are data flits
 //
 module bsg_wormhole_stream_control
- #(parameter len_width_p = "inv"
-   , parameter [len_width_p-1:0] hdr_len_p = "inv"
+ #(parameter `BSG_INV_PARAM(len_width_p)
+   , parameter [len_width_p-1:0] `BSG_INV_PARAM(hdr_len_p)
    )
   (input                     clk_i
    , input                   reset_i
@@ -121,4 +121,6 @@ module bsg_wormhole_stream_control
       state_r <= state_n;
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bsg_wormhole_stream_control)
 
