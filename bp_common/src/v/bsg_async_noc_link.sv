@@ -1,4 +1,5 @@
 
+`include "bsg_defines.v"
 `include "bsg_noc_links.vh"
 
 module bsg_async_noc_link
