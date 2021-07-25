@@ -11,18 +11,20 @@
   typedef enum logic [1:0]
   {
     e_none = 0
-    , e_l1 = 1
-    , e_l2 = 2
+    ,e_l1  = 1
+    ,e_l2  = 2
   } bp_atomic_op_e;
 
   typedef enum logic [15:0]
   {
-    e_sacc_vdp = 0
+    e_sacc_none = 0
+    ,e_sacc_vdp = 1
   } bp_sacc_type_e;
 
   typedef enum logic [15:0]
   {
-    e_cacc_vdp = 0
+    e_cacc_none = 0
+    ,e_cacc_vdp = 1
   } bp_cacc_type_e;
 
   typedef struct packed
@@ -211,8 +213,8 @@
       ,mc_y_dim : 0
       ,cac_x_dim: 0
       ,sac_x_dim: 0
-      ,cacc_type: e_cacc_vdp
-      ,sacc_type: e_sacc_vdp
+      ,cacc_type: e_cacc_none
+      ,sacc_type: e_sacc_none
 
       ,num_cce: 1
       ,num_lce: 2

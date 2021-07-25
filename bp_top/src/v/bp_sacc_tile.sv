@@ -216,6 +216,15 @@ module bp_sacc_tile
          ,.io_resp_ready_o(lce_io_resp_ready_and_li)
          );
     end
+  else
+    begin : none
+      assign cce_io_cmd_ready_and_li = '0;
+      assign cce_io_resp_li = '0;
+      assign cce_io_resp_v_li = '0;
+      assign lce_io_cmd_li = '0;
+      assign lce_io_cmd_v_li = '0;
+      assign lce_io_resp_ready_and_li = '0;
+    end
 
 endmodule
 
