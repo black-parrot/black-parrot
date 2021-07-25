@@ -16,8 +16,8 @@
 `include "bsg_defines.v"
 
 module bsg_wormhole_stream_control
- #(`BSG_INV_PARAM(len_width_p )
-   , `BSG_INV_PARAM([len_width_p-1:0] hdr_len_p )
+ #(parameter `BSG_INV_PARAM(len_width_p)
+   , parameter [len_width_p-1:0] `BSG_INV_PARAM(hdr_len_p)
    )
   (input                     clk_i
    , input                   reset_i

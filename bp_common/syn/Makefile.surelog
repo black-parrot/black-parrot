@@ -1,0 +1,52 @@
+override TOOL := surelog
+
+override LOG_DIR     := $(LOG_PATH)/$(TOOL)
+override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
+
+## Tools
+SURELOG ?= surelog
+
+PARSE_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).parse
+$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(PARSE_DIR):
+	mkdir -p $@
+
+.PHONY: clean.surelog parse.surelog
+
+include $(TB_PATH)/$(TB)/Makefile.surelog
+
+$(PARSE_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(PARSE_DIR)
+
+SURELOG_OPTS += -sverilog
+SURELOG_OPTS += -fileunit
+SURELOG_OPTS += -parse
+SURELOG_OPTS += -timescale=1ps/1ps
+SURELOG_OPTS += -elabuhdm
+SURELOG_OPTS += -d coveruhdm
+SURELOG_OPTS += -verbose
+SURELOG_OPTS += -lowmem
+SURELOG_OPTS += -nobuiltin
+SURELOG_OPTS += --top-module wrapper
+SURELOG_OPTS += -f flist.vcs
+
+parse.surelog: $(PARSE_DIR)/surelog
+parse.surelog: PARSE_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).parse.log
+parse.surelog: PARSE_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).parse.rpt
+parse.surelog: PARSE_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).parse.err
+$(PARSE_DIR)/surelog: $(PARSE_COLLATERAL)
+	cd $(@D); \
+		$(SURELOG) $(SURELOG_OPTS) $(HDL_DEFINES) $(HDL_PARAMS) -o out | tee $(PARSE_LOG)
+		-@grep --color "\[  FATAL\] : [^0]" $(PARSE_LOG) 2>&1 | tee $(PARSE_ERROR)
+		-@grep --color "\[ SYNTAX\] : [^0]" $(PARSE_LOG) 2>&1 | tee -a $(PARSE_ERROR)
+		-@grep --color "\[  ERROR\] : [^0]" $(PARSE_LOG) 2>&1 | tee -a $(PARSE_ERROR)
+		-@grep --color "\[WARNING\] : [^0]" $(PARSE_LOG) 2>&1 | tee $(PARSE_REPORT)
+		-@grep --color "\[   NOTE\] : [^0]" $(PARSE_LOG) 2>&1 | tee -a $(PARSE_REPORT)
+		-@test -s $(PARSE_ERROR) && echo "SureLog Parse: FAILED" > $(PARSE_REPORT) \
+			|| (echo "SureLog: PASSED" >> $(PARSE_REPORT) && rm $(PARSE_ERROR))
+
+clean.surelog:
+	@rm -rf results/surelog
+	@rm -rf reports/surelog
+	@rm -rf logs/surelog
+

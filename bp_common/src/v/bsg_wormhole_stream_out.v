@@ -42,15 +42,15 @@ module bsg_wormhole_stream_out
    // cid_width   : the width of the concentrator id of the destination
    // Default to 0 for cord and cid, so that this module can be used either
    //   for concentrator or router
-   `BSG_INV_PARAM(flit_width_p      )
-   , parameter cord_width_p    = 0
-   , `BSG_INV_PARAM(len_width_p     )
-   , parameter cid_width_p     = 0
+   parameter `BSG_INV_PARAM(flit_width_p)
+   , parameter cord_width_p = 0
+   , parameter `BSG_INV_PARAM(len_width_p)
+   , parameter cid_width_p = 0
 
    // Higher level protocol information
-   , `BSG_INV_PARAM(pr_hdr_width_p  )
-   , `BSG_INV_PARAM(pr_data_width_p )
-   , `BSG_INV_PARAM(pr_len_width_p  )
+   , parameter `BSG_INV_PARAM(pr_hdr_width_p)
+   , parameter `BSG_INV_PARAM(pr_data_width_p)
+   , parameter `BSG_INV_PARAM(pr_len_width_p)
 
    // Size of the wormhole header + the protocol header. The data starts afterwards.
    // Users may set this directly rather than relying on the protocol header derived default

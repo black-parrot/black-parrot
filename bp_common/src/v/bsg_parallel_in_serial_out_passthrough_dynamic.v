@@ -24,8 +24,8 @@
 
 module bsg_parallel_in_serial_out_passthrough_dynamic
 
- #(`BSG_INV_PARAM(width_p       )
-  ,`BSG_INV_PARAM(max_els_p     )
+ #(parameter `BSG_INV_PARAM(width_p)
+  ,parameter `BSG_INV_PARAM(max_els_p)
   ,parameter lg_max_els_lp = `BSG_SAFE_CLOG2(max_els_p)
   )
 
@@ -160,8 +160,13 @@ module bsg_parallel_in_serial_out_passthrough_dynamic
 /*
 module bsg_parallel_in_serial_out_passthrough_dynamic
 
+<<<<<<< HEAD
  #(`BSG_INV_PARAM(width_p       )
   ,`BSG_INV_PARAM(max_els_p     )
+=======
+ #(parameter `BSG_INV_PARAM(width_p)
+  ,parameter `BSG_INV_PARAM(max_els_p)
+>>>>>>> dev
   ,parameter lg_max_els_lp = `BSG_SAFE_CLOG2(max_els_p)
   )
 
@@ -253,3 +258,7 @@ module bsg_parallel_in_serial_out_passthrough_dynamic
 endmodule
 
 `BSG_ABSTRACT_MODULE(bsg_parallel_in_serial_out_passthrough_dynamic)
+<<<<<<< HEAD
+=======
+
+>>>>>>> dev

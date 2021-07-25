@@ -13,17 +13,20 @@
 `include "bsg_noc_links.vh"
 `include "bsg_cache.vh"
 
+// TODO: Should be part of basejump stl
+`include "bp_me_cache_defines.svh"
+
 module bsg_cache_dma_to_wormhole
  import bsg_noc_pkg::*;
  import bsg_cache_pkg::*;
- #(`BSG_INV_PARAM(dma_addr_width_p) // cache addr width (byte addr)
-   , `BSG_INV_PARAM(dma_burst_len_p) // num of data beats in dma transfer
+ #(parameter `BSG_INV_PARAM(dma_addr_width_p) // cache addr width (byte addr)
+   , parameter `BSG_INV_PARAM(dma_burst_len_p) // num of data beats in dma transfer
 
    // flit width should match the cache dma width.
-   , `BSG_INV_PARAM(wh_flit_width_p)
-   , `BSG_INV_PARAM(wh_cid_width_p)
-   , `BSG_INV_PARAM(wh_len_width_p)
-   , `BSG_INV_PARAM(wh_cord_width_p)
+   , parameter `BSG_INV_PARAM(wh_flit_width_p)
+   , parameter `BSG_INV_PARAM(wh_cid_width_p)
+   , parameter `BSG_INV_PARAM(wh_len_width_p)
+   , parameter `BSG_INV_PARAM(wh_cord_width_p)
 
    , parameter dma_pkt_width_lp=`bsg_cache_dma_pkt_width(dma_addr_width_p)
    , parameter wh_link_sif_width_lp=`bsg_ready_and_link_sif_width(wh_flit_width_p)
