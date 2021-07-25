@@ -293,7 +293,7 @@
   localparam bp_proc_param_s bp_unicore_bootrom_override_p =
     '{boot_pc        : bootrom_base_addr_gp
       ,boot_in_debug : 1
-      ,default       : "inv"
+      ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_bootrom_cfg_p
                         ,bp_unicore_bootrom_override_p
@@ -434,7 +434,7 @@
 
   localparam bp_proc_param_s bp_unicore_writethrough_override_p =
     '{l1_writethrough: 1
-      ,default       : "inv"
+      ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_writethrough_cfg_p
                         ,bp_unicore_writethrough_override_p
