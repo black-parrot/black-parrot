@@ -111,7 +111,7 @@ module bp_nonsynth_cosim
   wire [instr_width_gp-1:0] commit_instr_li = commit_pkt_r.instr;
   wire commit_ird_w_v_li = instret_v_li & (decode_r.irf_w_v | decode_r.late_iwb_v);
   wire commit_frd_w_v_li = instret_v_li & (decode_r.frf_w_v | decode_r.late_fwb_v);
-  wire commit_st_v_li    = instret_v_li & decode_r.dcache_w_v & ~uc_st_r & ~commit_ird_w_v_li & ~commit_frd_w_v_li;
+  wire commit_st_v_li    = instret_v_li & decode_r.dcache_w_v & ~uc_st_r & ~commit_ird_w_v_li & ~commit_frd_w_v_li & (l1_writethrough_p == 1'b0);
   wire trap_v_li = commit_pkt_r.exception | commit_pkt_r._interrupt;
   wire [dword_width_gp-1:0] cause_li = (priv_mode_i == `PRIV_MODE_M) ? mcause_i : scause_i;
   wire [dword_width_gp-1:0] mstatus_li = mstatus_i;
