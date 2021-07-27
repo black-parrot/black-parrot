@@ -43,7 +43,7 @@
       logic [bht_idx_width_mp-1:0]    bht_idx;                                                    \
       logic [bht_row_width_mp-1:0]    bht_row;                                                    \
       logic [ghist_width_mp-1:0]      ghist;                                                      \
-      logic [ras_idx_width_mp-1:0] ras_top_ptr;                                                   \
+      logic [ras_idx_width_mp-1:0] ras_idx;                                                   \
     }  bp_fe_branch_metadata_fwd_s;
 
   `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp, ghist_width_mp, bht_row_width_mp) \
