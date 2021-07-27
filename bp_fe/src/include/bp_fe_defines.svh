@@ -28,7 +28,7 @@
       logic [vaddr_width_mp-1:0] imm;        \
     }  bp_fe_instr_scan_s;
 
-  `define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp, bht_row_width_mp, ras_idx_width_mp, vaddr_width_mp) \
+  `define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp, bht_row_width_mp, ras_idx_width_mp) \
     typedef struct packed                                                                         \
     {                                                                                             \
       logic                           is_br;                                                      \
