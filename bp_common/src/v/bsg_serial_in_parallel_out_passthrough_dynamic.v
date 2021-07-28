@@ -150,9 +150,5 @@ module bsg_serial_in_parallel_out_passthrough_dynamic
 
 endmodule
 
-<<<<<<< HEAD
 `BSG_ABSTRACT_MODULE(bsg_serial_in_parallel_out_passthrough_dynamic)
-=======
-`BSG_ABSTRACT_PARAM(bsg_serial_in_parallel_out_passthrough_dynamic)
 
->>>>>>> dev
