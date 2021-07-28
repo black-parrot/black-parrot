@@ -1,5 +1,18 @@
 
-`include "bsg_mem_1rw_sync_macros.vh"
+`define bsg_mem_1rw_sync_macro(words,bits)      \
+  if (els_p == words && width_p == bits)        \
+    begin: macro                                \
+      hard_mem_1rw_d``words``_w``bits``_wrapper \
+        mem                                     \
+          (.clk_i  (clk_i)                      \
+          ,.reset_i(reset_i)                    \
+          ,.data_i (data_i)                     \
+          ,.addr_i (addr_i)                     \
+          ,.v_i    (v_i)                        \
+          ,.w_i    (w_i)                        \
+          ,.data_o (data_o)                     \
+          );                                    \
+    end: macro
 
 module bsg_mem_1rw_sync #( parameter `BSG_INV_PARAM(width_p )
                          , parameter `BSG_INV_PARAM(els_p )
