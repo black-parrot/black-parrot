@@ -35,8 +35,8 @@ environments which package the RTL, SDK and HDK together for evaluation.
 
 To set up your own BlackParrot environment, cloning a version of the [BlackParrot SDK](https://github.com/black-parrot-sdk/black-parrot-sdk) as 'sdk' in the same directory as the BlackParrot RTL is all that is strictly required, although the repositories are not guaranteed to be in sync after pulling from master of each.
 
-Once you have a BlackParrot environment set up, you can follow the RTL simulation guide here to
-test the core RTL: [Simulation Guide](docs/sim_guide.md)
+Once you have a BlackParrot environment set up, you can follow the RTL evaluation guide here to
+test the core RTL: [Evaluation Guide](docs/eval_guide.md)
 
 ## How to Contribute
 Although the information in collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
