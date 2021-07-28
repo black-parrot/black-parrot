@@ -85,6 +85,7 @@ module bp_nonsynth_host
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   localparam bootrom_base_addr_gp = paddr_width_p'(64'h0001_????);
+  localparam paramrom_base_addr_gp = paddr_width_p'(64'h0002_????);
   localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
   localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
   localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
@@ -114,11 +115,11 @@ module bp_nonsynth_host
   assign io_cmd_yumi_li = io_resp_yumi_i;
   wire [2:0] hio_id = io_cmd_lo.header.addr[paddr_width_p-1-:3];
 
-
   logic putchar_data_cmd_v;
   logic getchar_data_cmd_v;
   logic finish_data_cmd_v;
   logic bootrom_data_cmd_v;
+  logic paramrom_data_cmd_v;
   logic hio_data_cmd_v;
   logic putch_core_data_cmd_v;
 
@@ -128,6 +129,7 @@ module bp_nonsynth_host
       getchar_data_cmd_v = 1'b0;
       finish_data_cmd_v = 1'b0;
       bootrom_data_cmd_v = 1'b0;
+      paramrom_data_cmd_v = 1'b0;
       hio_data_cmd_v = io_cmd_yumi_li & (hio_id != '0);
       putch_core_data_cmd_v = 1'b0;
 
@@ -137,6 +139,7 @@ module bp_nonsynth_host
         getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_yumi_li;
         finish_base_addr_gp : finish_data_cmd_v = io_cmd_yumi_li;
         bootrom_base_addr_gp: bootrom_data_cmd_v = io_cmd_yumi_li;
+        paramrom_base_addr_gp: paramrom_data_cmd_v = io_cmd_yumi_li;
         putch_core_base_addr_gp: putch_core_data_cmd_v = io_cmd_yumi_li;
         default: begin end
       endcase
@@ -249,17 +252,38 @@ module bp_nonsynth_host
      ,.data_o(bootrom_final_lo)
      );
 
-  bp_bedrock_cce_mem_msg_s host_io_resp_lo, hio_io_resp_lo, bootrom_io_resp_lo;
+  localparam param_els_lp = `BSG_CDIV($bits(proc_param_lp),word_width_gp);
+  localparam lg_param_els_lp = `BSG_SAFE_CLOG2(param_els_lp);
+  logic [lg_param_els_lp-1:0] paramrom_addr_li;
+  logic [word_width_gp-1:0] paramrom_data_lo;
+  // Reverse address to index in reverse struct order
+  assign paramrom_addr_li = param_els_lp-1'b1-io_cmd_lo.header.addr[2+:lg_bootrom_els_lp];
+  bsg_rom_param
+   #(.data_p(proc_param_lp)
+     ,.data_width_p($bits(proc_param_lp))
+     ,.width_p(word_width_gp)
+     ,.els_p(param_els_lp)
+     )
+   param_rom
+    (.addr_i(paramrom_addr_li)
+     ,.data_o(paramrom_data_lo)
+     );
+  wire [cce_block_width_p-1:0] paramrom_final_lo = {cce_block_width_p/word_width_gp{paramrom_data_lo}};
+
+  bp_bedrock_cce_mem_msg_s host_io_resp_lo, hio_io_resp_lo, bootrom_io_resp_lo, paramrom_io_resp_lo;
 
   assign host_io_resp_lo = '{header: io_cmd_lo.header, data: ch};
   assign hio_io_resp_lo = '{header: io_cmd_lo.header, data: '0};
   assign bootrom_io_resp_lo = '{header: io_cmd_lo.header, data: bootrom_final_lo};
+  assign paramrom_io_resp_lo = '{header: io_cmd_lo.header, data: paramrom_final_lo};
 
   assign io_resp_cast_o = bootrom_data_cmd_v
                           ? bootrom_io_resp_lo
-                          : hio_data_cmd_v
-                            ? hio_io_resp_lo
-                            : host_io_resp_lo;
+                          : paramrom_data_cmd_v
+                            ? paramrom_io_resp_lo
+                            : hio_data_cmd_v
+                              ? hio_io_resp_lo
+                              : host_io_resp_lo;
 
   // TODO: Add dynamic enable
   assign icache_trace_en_o   = icache_trace_p;

@@ -30,24 +30,24 @@
   //   16'h0800 - 16'h7fff: reserved
   //   16'h8000 - 16'h8fff: cce ucode
 
-  localparam cfg_addr_width_gp = 20;
-  localparam cfg_data_width_gp = 64;
+  localparam cfg_base_addr_gp           = (dev_id_width_gp+dev_addr_width_gp)'('h0020_0000);
+  localparam cfg_match_addr_gp          = (dev_id_width_gp+dev_addr_width_gp)'('h002?_????);
 
-  localparam cfg_base_addr_gp          = 'h0200_0000;
-  localparam cfg_reg_unused_gp         = 'h0004;
-  localparam cfg_reg_freeze_gp         = 'h0008;
-  localparam cfg_reg_core_id_gp        = 'h000c;
-  localparam cfg_reg_did_gp            = 'h0010;
-  localparam cfg_reg_cord_gp           = 'h0014;
-  localparam cfg_reg_host_did_gp       = 'h0018;
-  localparam cfg_reg_hio_mask_gp       = 'h001c;
-  localparam cfg_reg_icache_id_gp      = 'h0200;
-  localparam cfg_reg_icache_mode_gp    = 'h0204;
-  localparam cfg_reg_dcache_id_gp      = 'h0400;
-  localparam cfg_reg_dcache_mode_gp    = 'h0404;
-  localparam cfg_reg_cce_id_gp         = 'h0600;
-  localparam cfg_reg_cce_mode_gp       = 'h0604;
-  localparam cfg_mem_base_cce_ucode_gp = 'h8000;
+  localparam cfg_reg_unused_gp          = (dev_addr_width_gp)'('h0_0004);
+  localparam cfg_reg_freeze_gp          = (dev_addr_width_gp)'('h0_0008);
+  localparam cfg_reg_core_id_gp         = (dev_addr_width_gp)'('h0_000c);
+  localparam cfg_reg_did_gp             = (dev_addr_width_gp)'('h0_0010);
+  localparam cfg_reg_cord_gp            = (dev_addr_width_gp)'('h0_0014);
+  localparam cfg_reg_host_did_gp        = (dev_addr_width_gp)'('h0_0018);
+  localparam cfg_reg_hio_mask_gp        = (dev_addr_width_gp)'('h0_001c);
+  localparam cfg_reg_icache_id_gp       = (dev_addr_width_gp)'('h0_0200);
+  localparam cfg_reg_icache_mode_gp     = (dev_addr_width_gp)'('h0_0204);
+  localparam cfg_reg_dcache_id_gp       = (dev_addr_width_gp)'('h0_0400);
+  localparam cfg_reg_dcache_mode_gp     = (dev_addr_width_gp)'('h0_0404);
+  localparam cfg_reg_cce_id_gp          = (dev_addr_width_gp)'('h0_0600);
+  localparam cfg_reg_cce_mode_gp        = (dev_addr_width_gp)'('h0_0604);
+  localparam cfg_mem_cce_ucode_base_gp  = (dev_addr_width_gp)'('h0_8000);
+  localparam cfg_mem_cce_ucode_match_gp = (dev_addr_width_gp)'('h0_8???);
 
 `endif
 

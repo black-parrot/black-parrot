@@ -12,6 +12,9 @@
 // where (in this example) the first 2 flits are header flits and the
 //   remaining four flits are data flits
 //
+
+`include "bsg_defines.v"
+
 module bsg_wormhole_stream_control
  #(parameter `BSG_INV_PARAM(len_width_p)
    , parameter [len_width_p-1:0] `BSG_INV_PARAM(hdr_len_p)
