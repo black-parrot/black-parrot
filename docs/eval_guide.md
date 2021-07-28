@@ -1,4 +1,4 @@
-# Simulation Guide (Full)
+# Evaluation Guide (Full)
 ## Build the simulation tools
     # Clone the latest repo
     git clone https://github.com/black-parrot/black-parrot.git
@@ -58,6 +58,7 @@ support all targets, however. These targets include:
 - convert.bsg_sv2v (Creates a "pickled" verilog-2005 file out of the top level blackparrot)
   - NOTE: this target requires Synopsys Design Compiler to be installed. A fully open-source version of
     sv2v is in progress at https://github.com/zachjs/sv2v
+- parse.surelog (Builds a UHDM model of BlackParrot for evaluation and integration with other tools)
 
 ### Supported TOOLs
 BlackParrot supports these tools for simulation and design checking. We welcome contributions for additional tool support, especially for open-source tools.
@@ -65,18 +66,22 @@ BlackParrot supports these tools for simulation and design checking. We welcome 
 - Synopsys VCS (.v suffix)
 - Synopsys DC (.syn suffix)
 - Vivado (.vivado suffix)
+- BSG SV2V (.bsg_sv2v suffix)
+- SureLog (.surelog suffix)
 
 NOTE: Verilator is the free, open-source tool used to evaluate BlackParrot.  VCS, DC, and Vivado are used for simulation and synthesis. If you wish to use these tools, set up the appropriate environment variables in Makefile.common
 
 ### Supported Programs
 More details about BlackParrot software can be found in the [Software Developer Guide](software_guide.md).
 Notably, BlackParrot has been tested with:
-- riscvitests (a set of unit tests for RISC-V functionality)
+- riscv-tests (a set of unit tests for RISC-V functionality)
 - BEEBS (Embedded core test suite)
 - Coremark (Standard benchmark for core performance)
 - bp-tests (one-off tests which are used to test various aspects of the system)
 - bp-demos (demo programs showing off special features of BlackParrot firmware)
 - spec2000, requires a copy of the proprietary spec2000 benchmark suite
+- spec2006, requires a copy of the proprietary spec2006 benchmark suite
+- spec2017, requires a copy of the proprietary spec2017 benchmark suite
 - Linux (A finite test of RISC-V Linux+BusyBox boot)
 
 Each program belongs to a test suite. The list of supported programs for each suite can be found in
@@ -129,7 +134,6 @@ The reports directory contains very brief summaries of tool runs. For example, w
 - **bp_common/** contains the interface components which connect FE, BE and ME. FE, BE, ME may depend on bp\_common, but not each other.
 - **ci/** contains scripts used to run Continuous Integration jobs, mostly using the same Makefile commands but with additional data collection.
 - **docs/** contains documentation, images, guides and links to document Blackparrot.
-- **docker/** contains Dockerfiles and scripts used for virtualization.
 - **external/** contains submodules corresponding to tooling that BlackParrot depends upon, such as the Verilator.
 - **tools/** contains tools needed for RTL simulation and manipulation.
 
