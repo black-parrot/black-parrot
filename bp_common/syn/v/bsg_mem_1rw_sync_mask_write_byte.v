@@ -42,14 +42,14 @@ module bsg_mem_1rw_sync_mask_write_byte #( parameter `BSG_INV_PARAM(els_p )
                                          , parameter latch_last_read_p = 0
                                          )
 
-  ( input                           clk_i
-  , input                           reset_i
-  , input                           v_i
-  , input                           w_i
-  , input [addr_width_lp-1:0]       addr_i
-  , input [data_width_p-1:0]        data_i
-  , input [write_mask_width_lp-1:0] write_mask_i
-  , output logic [data_width_p-1:0] data_o
+  ( input                                            clk_i
+  , input                                            reset_i
+  , input                                            v_i
+  , input                                            w_i
+  , input [addr_width_lp-1:0]                        addr_i
+  , input [`BSG_SAFE_MINUS(data_width_p,1):0]        data_i
+  , input [write_mask_width_lp-1:0]                  write_mask_i
+  , output logic [`BSG_SAFE_MINUS(data_width_p,1):0] data_o
   );
 
   wire unused = reset_i;

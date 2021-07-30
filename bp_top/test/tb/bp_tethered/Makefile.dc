@@ -1,6 +1,22 @@
+
 $(BUILD_DIR)/flist.vcs:
-	grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@ 
-	echo wrapper.sv                             >> $@
+	grep -v -e "^\#" $(SYN_PATH)/flist.vcs                                        > $@
+	echo $(@D)/wrapper.sv                                                        >> $@
+	echo "$(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1rw_sync_banked.v"                 >> $@
+	echo "$(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_banked.v"  >> $@
+	echo "$(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_banked.v" >> $@
+	sed -i "/bsg_mem_3r1w_sync.v/d"                                                 $@
+	sed -i "/bsg_mem_2r1w_sync.v/d"                                                 $@
+	sed -i "/bsg_mem_1r1w_sync.v/d"                                                 $@
+	sed -i "/bsg_mem_1rw_sync.v/d"                                                  $@
+	sed -i "/bsg_mem_1rw_sync_mask_write_byte.v/d"                                  $@
+	sed -i "/bsg_mem_1rw_sync_mask_write_bit.v/d"                                   $@
+	echo "$(BP_COMMON_DIR)/syn/v/bsg_mem_3r1w_sync.v"                            >> $@
+	echo "$(BP_COMMON_DIR)/syn/v/bsg_mem_2r1w_sync.v"                            >> $@
+	echo "$(BP_COMMON_DIR)/syn/v/bsg_mem_1r1w_sync.v"                            >> $@
+	echo "$(BP_COMMON_DIR)/syn/v/bsg_mem_1rw_sync.v"                             >> $@
+	echo "$(BP_COMMON_DIR)/syn/v/bsg_mem_1rw_sync_mask_write_byte.v"             >> $@
+	echo "$(BP_COMMON_DIR)/syn/v/bsg_mem_1rw_sync_mask_write_bit.v"              >> $@
 
 $(BUILD_DIR)/wrapper.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@

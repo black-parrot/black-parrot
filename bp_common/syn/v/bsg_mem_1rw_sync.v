@@ -20,16 +20,17 @@ module bsg_mem_1rw_sync #( parameter `BSG_INV_PARAM(width_p )
                          , parameter latch_last_read_p = 0
                          // NOTE: unused
                          , parameter substitute_1r1w_p = 0
+                         , parameter verbose_if_synth_p = 0
                          )
-  ( input                     clk_i
-  , input                     reset_i
+  ( input                                       clk_i
+  , input                                       reset_i
 
-  , input [width_p-1:0]       data_i
-  , input [addr_width_lp-1:0] addr_i
-  , input                     v_i
-  , input                     w_i
+  , input [`BSG_SAFE_MINUS(width_p,1):0]        data_i
+  , input [addr_width_lp-1:0]                   addr_i
+  , input                                       v_i
+  , input                                       w_i
 
-  , output logic [width_p-1:0]  data_o
+  , output logic [`BSG_SAFE_MINUS(width_p,1):0] data_o
   );
 
   wire unused = reset_i;
