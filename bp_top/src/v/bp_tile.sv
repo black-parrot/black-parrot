@@ -656,10 +656,22 @@ module bp_tile
      ,.mem_cmd_header_o(cce_mem_cmd_header_lo)
      ,.mem_cmd_data_o(cce_mem_cmd_data_lo)
      ,.mem_cmd_v_o(cce_mem_cmd_v_lo)
-     // TODO: should this be fixed?
      ,.mem_cmd_ready_and_i(cce_mem_cmd_yumi_li)
      ,.mem_cmd_last_o(cce_mem_cmd_last_lo)
      );
+
+
+  //synopsys translate_off
+  // This assertion guarantees that the data width of CCE-Mem interface is consistent in the system
+  // for all devices. Clint, CFG, ME Loopback and CCE all use dword_width_gp for the data width, but
+  // bp_me_cce_to_cache uses l2_data_width_p. This assertion could be removed if an adapter was
+  // attached to the mem_cmd/resp ports of bp_me_cce_to_cache, or the module itself was parameterized
+  // to support a different data width on the mem_cmd/resp interface.
+  initial begin
+    assert(l2_data_width_p == dword_width_gp) else
+      $fatal("multicore setup requires l2_data_width_p to be same as dword_width_gp");
+  end
+  //synopsys translate_on
 
   // CCE-Mem network to L2 Cache adapter
   `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
