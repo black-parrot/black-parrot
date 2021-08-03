@@ -28,7 +28,6 @@ module bp_unicore
  import bp_be_pkg::*;
  import bp_me_pkg::*;
  import bp_top_pkg::*;
- import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
@@ -129,13 +128,6 @@ module bp_unicore
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [l2_data_width_p-1:0] cache_data_lo;
   logic cache_data_v_lo, cache_data_yumi_li;
-
-  // This is a temporary hack to fix width mismatches in configurations with sub-cacheblock fills
-  bp_bedrock_cce_mem_msg_s mem_cmd_wide_lo;
-  bp_bedrock_cce_mem_msg_s mem_resp_wide_li;
-
-  assign mem_cmd_wide_lo = mem_cmd_lo;
-  assign mem_resp_li = mem_resp_wide_li;
 
   bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p))
