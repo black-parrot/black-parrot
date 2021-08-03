@@ -79,8 +79,10 @@ module bp_nonsynth_if_verif
     $fatal("Error: Cache fill width should be a multiple of cache bank width");
   if (icache_fill_width_p != dcache_fill_width_p)
     $fatal("Error: L1-Cache fill width should be the same");
-  if ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p))
-    $fatal("Error: L2-Cache data width must match L1-Cache fill width");
+  if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
+    $fatal("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
+  if ((multicore_p == 1) && (l2_data_width_p != dword_width_p))
+    $fatal("Error: multicore requires L2 data width same as dword width");
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");
