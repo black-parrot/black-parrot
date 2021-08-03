@@ -204,7 +204,7 @@ module bp_nonsynth_dram
 
       logic [axi_id_width_p-1:0] axi_awid;
       logic [caddr_width_p-1:0] axi_awaddr_addr;
-      logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_awaddr_tag;
+      logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_awaddr_cache_id;
       logic [7:0] axi_awlen;
       logic [2:0] axi_awsize;
       logic [1:0] axi_awburst;
@@ -222,7 +222,7 @@ module bp_nonsynth_dram
 
       logic [axi_id_width_p-1:0] axi_arid;
       logic [caddr_width_p-1:0] axi_araddr_addr;
-      logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_araddr_tag;
+      logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_araddr_cache_id;
       logic [7:0] axi_arlen;
       logic [2:0] axi_arsize;
       logic [1:0] axi_arburst;
