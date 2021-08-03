@@ -9,8 +9,6 @@ override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
 CC ?= $(GCC)
 VV ?= $(VERILATOR)
 
-TOP_MODULE ?= testbench
-
 # Max number of threads to run verilated model with
 # TODO: Increase, higher threads currently break CI though
 VERILATOR_THREADS ?= 1
@@ -20,14 +18,14 @@ VV_OPTS  = --cc                 # Output in C++
 VV_OPTS += -O1
 VV_OPTS += --x-assign fast --x-initial fast
 VV_OPTS += --threads $(VERILATOR_THREADS)
-VV_OPTS += --top-module $(TOP_MODULE)
+VV_OPTS += --top-module testbench
 VV_OPTS += -f flist.vcs
 VV_OPTS += config.vlt
 VV_OPTS += --build --exe
 VV_OPTS += -o simsc
 VV_OPTS += -Wno-timescalemod
 
-LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module $(TOP_MODULE) -f flist.vcs config.vlt
+LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module testbench -f flist.vcs config.vlt
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++14
 BUILD_OPTS += -I$(BP_TOOLS_DIR)/install/include
 BUILD_OPTS += -I$(BP_TOOLS_DIR)/install/share/verilator/include/vltstd/
@@ -43,9 +41,9 @@ VERILATOR_PLUSARGS =
 
 LINT_DIR  := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
 BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
-SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
+COV_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
 SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
-$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(SIM_DIR):
+$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(SIM_DIR) $(COV_DIR):
 	mkdir -p $@
 
 .PHONY: clean.sc lint.sc build.sc cov.sc

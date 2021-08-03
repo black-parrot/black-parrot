@@ -6,7 +6,7 @@ module bp_uce
   import bp_common_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    , parameter uce_mem_data_width_p = "inv"
+    , parameter `BSG_INV_PARAM(uce_mem_data_width_p )
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce)
     , parameter assoc_p = 8
@@ -779,3 +779,5 @@ always_ff @(negedge clk_i)
   end
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_uce)

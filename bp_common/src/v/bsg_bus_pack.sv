@@ -1,7 +1,9 @@
 
+`include "bsg_defines.v"
+
 module bsg_bus_pack
  #(// Width of the bus
-   parameter in_width_p = "inv"
+   parameter `BSG_INV_PARAM(in_width_p)
    , parameter out_width_p = in_width_p
 
    // Selection granularity of the bus, default to byte width
@@ -61,4 +63,6 @@ module bsg_bus_pack
   //synopsys translate_on
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bsg_bus_pack)
 

@@ -5,6 +5,7 @@
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
+`include "bsg_cache.vh"
 
 module bp_me_cce_to_cache
 

@@ -24,3 +24,4 @@ $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.sv
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv
 $BP_ME_DIR/test/common/bp_nonsynth_mem.sv
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp

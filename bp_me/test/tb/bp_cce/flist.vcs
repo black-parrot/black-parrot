@@ -28,3 +28,4 @@ $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.sv
 $BP_ME_DIR/test/common/bsg_trace_node_master.sv
 $BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.sv
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp

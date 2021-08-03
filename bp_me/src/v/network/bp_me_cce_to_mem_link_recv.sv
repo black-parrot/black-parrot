@@ -14,12 +14,12 @@ module bp_me_cce_to_mem_link_recv
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , parameter num_outstanding_req_p = "inv"
+   , parameter `BSG_INV_PARAM(num_outstanding_req_p )
 
-   , parameter flit_width_p = "inv"
-   , parameter cord_width_p = "inv"
-   , parameter cid_width_p  = "inv"
-   , parameter len_width_p  = "inv"
+   , parameter `BSG_INV_PARAM(flit_width_p )
+   , parameter `BSG_INV_PARAM(cord_width_p )
+   , parameter `BSG_INV_PARAM(cid_width_p  )
+   , parameter `BSG_INV_PARAM(len_width_p  )
 
   // wormhole parameters
   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(flit_width_p)
@@ -127,4 +127,6 @@ module bp_me_cce_to_mem_link_recv
   assign mem_resp_packet_lo = '{header: mem_resp_header_lo, data: mem_resp_cast_i.data};
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_me_cce_to_mem_link_client)
 

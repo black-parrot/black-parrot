@@ -18,7 +18,7 @@ module bp_be_pipe_aux
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter latency_p = "inv"
+   , parameter `BSG_INV_PARAM(latency_p )
 
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    )
@@ -505,4 +505,6 @@ module bp_be_pipe_aux
      );
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_be_pipe_aux)
 
