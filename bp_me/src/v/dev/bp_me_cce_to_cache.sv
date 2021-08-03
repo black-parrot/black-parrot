@@ -80,14 +80,12 @@ module bp_me_cce_to_cache
     RESET
     ,CLEAR_TAG
     ,READY
-    ,STREAM
   } cmd_state_e;
 
   cmd_state_e cmd_state_r, cmd_state_n;
   wire is_reset  = (cmd_state_r == RESET);
   wire is_clear  = (cmd_state_r == CLEAR_TAG);
   wire is_ready  = (cmd_state_r == READY);
-  wire is_stream = (cmd_state_r == STREAM);
 
   logic [lg_sets_lp+lg_ways_lp:0] tagst_sent_r, tagst_sent_n;
   logic [lg_sets_lp+lg_ways_lp:0] tagst_received_r, tagst_received_n;
@@ -363,20 +361,6 @@ module bp_me_cce_to_cache
             // send ready_and signal back to pump_out
             mem_cmd_yumi_li = cache_pkt_ready_i & cache_pkt_v_o;
 
-            //cmd_state_n = (mem_cmd_new_lo & mem_cmd_yumi_li) ? STREAM : READY;
-          end
-        STREAM:
-          begin
-            cache_pkt.opcode = is_read ? LM : SM;
-            cache_pkt.addr = mem_cmd_stream_addr_lo[0+:caddr_width_p];
-            cache_pkt.mask = cache_pkt_mask_lo;
-            cache_pkt.data = cache_pkt_data_lo;
-            cache_pkt_v_o = mem_cmd_v_lo;
-            // send ready_and signal back to pump_out
-            mem_cmd_yumi_li = cache_pkt_ready_i & cache_pkt_v_o;
-
-            // Transition back to ready once we've completely sent out the stream
-            cmd_state_n = mem_cmd_done_lo ? READY : STREAM;
           end
         default: begin end
       endcase
