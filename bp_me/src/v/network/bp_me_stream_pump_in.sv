@@ -85,22 +85,33 @@ module bp_me_stream_pump_in
   logic [stream_data_width_p-1:0] msg_data_lo;
   logic msg_v_lo, msg_yumi_li, msg_last_lo;
 
-  bsg_fifo_1r1w_small
-   #(.width_p($bits(bp_bedrock_xce_msg_s)+1)
-     ,.els_p(buffer_els_p)
-     )
-   input_fifo
-    (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+  if (buffer_els_p == 0)
+    begin: passthrough
+      assign msg_header_lo = msg_header_i;
+      assign msg_data_lo = msg_data_i;
+      assign msg_v_lo = msg_v_i;
+      assign msg_last_lo = msg_last_i;
+      assign msg_ready_and_o = msg_yumi_li;
+    end
+  else
+    begin: buffered
+      bsg_fifo_1r1w_small
+       #(.width_p($bits(bp_bedrock_xce_msg_s)+1)
+         ,.els_p(buffer_els_p)
+         )
+       input_fifo
+        (.clk_i(clk_i)
+          ,.reset_i(reset_i)
 
-      ,.data_i({msg_last_i, msg_header_i, msg_data_i})
-      ,.v_i(msg_v_i)
-      ,.ready_o(msg_ready_and_o)
+          ,.data_i({msg_last_i, msg_header_i, msg_data_i})
+          ,.v_i(msg_v_i)
+          ,.ready_o(msg_ready_and_o)
 
-      ,.data_o({msg_last_lo, msg_header_lo, msg_data_lo})
-      ,.v_o(msg_v_lo)
-      ,.yumi_i(msg_yumi_li)
-      );
+          ,.data_o({msg_last_lo, msg_header_lo, msg_data_lo})
+          ,.v_o(msg_v_lo)
+          ,.yumi_i(msg_yumi_li)
+          );
+    end
 
   wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << msg_header_lo.size) / (stream_data_width_p / 8), 1'b1) - 1'b1;
 
