@@ -32,10 +32,6 @@ module bp_cce
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-
-    // stream pump
-    , localparam stream_words_lp = cce_block_width_p / dword_width_gp
-    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -251,6 +247,8 @@ module bp_cce
   logic [dword_width_gp-1:0] mem_resp_data_li;
 
   // From CCE to memory command stream pump
+  localparam stream_words_lp = cce_block_width_p / dword_width_gp;
+  localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
   bp_bedrock_cce_mem_msg_header_s mem_cmd_base_header_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   logic mem_cmd_stream_new_li, mem_cmd_stream_done_li;

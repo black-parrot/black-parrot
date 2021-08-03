@@ -54,10 +54,6 @@ module bp_cce_fsm
 
     // log2 of dword width bytes
     , localparam lg_dword_width_bytes_lp = `BSG_SAFE_CLOG2(dword_width_gp/8)
-
-    // stream pump
-    , localparam stream_words_lp = cce_block_width_p / dword_width_gp
-    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -188,6 +184,8 @@ module bp_cce_fsm
       );
 
   // Memory Command Stream Pump
+  localparam stream_words_lp = cce_block_width_p / dword_width_gp;
+  localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
   bp_bedrock_cce_mem_msg_header_s mem_cmd_base_header_lo;
   bp_bedrock_cce_mem_payload_s mem_cmd_payload_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li;
