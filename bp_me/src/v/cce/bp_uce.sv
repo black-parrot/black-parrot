@@ -9,10 +9,10 @@ module bp_uce
     , parameter `BSG_INV_PARAM(uce_mem_data_width_p)
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce)
-    , parameter assoc_p = 8
-    , parameter sets_p = 64
-    , parameter block_width_p = 512
-    , parameter fill_width_p = 512
+    , parameter `BSG_INV_PARAM(assoc_p)
+    , parameter `BSG_INV_PARAM(sets_p)
+    , parameter `BSG_INV_PARAM(block_width_p)
+    , parameter `BSG_INV_PARAM(fill_width_p)
     `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
     , parameter tag_mem_invert_clk_p  = 0
@@ -20,31 +20,6 @@ module bp_uce
     , parameter stat_mem_invert_clk_p = 0
 
     , parameter metadata_latency_p    = 0
-
-    , localparam bank_width_lp = block_width_p / assoc_p
-    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
-    , localparam byte_offset_width_lp  = `BSG_SAFE_CLOG2(bank_width_lp>>3)
-    // Words per line == associativity
-    , localparam bank_offset_width_lp  = `BSG_SAFE_CLOG2(assoc_p)
-    , localparam block_offset_width_lp = (assoc_p > 1) ? (bank_offset_width_lp + byte_offset_width_lp) : byte_offset_width_lp
-    , localparam index_width_lp = `BSG_SAFE_CLOG2(sets_p)
-    , localparam way_width_lp = `BSG_SAFE_CLOG2(assoc_p)
-    , localparam block_size_in_fill_lp = block_width_p / fill_width_p
-    , localparam fill_size_in_bank_lp = fill_width_p / bank_width_lp
-    , localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp)
-    , localparam fill_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p>>3)
-    , localparam bank_sub_offset_width_lp = $clog2(fill_size_in_bank_lp)
-
-    // Block size parameterisations -
-    , localparam bp_bedrock_msg_size_e block_msg_size_lp = (block_width_p == 512)
-                                                           ? e_bedrock_msg_size_64
-                                                           : (block_width_p == 256)
-                                                             ? e_bedrock_msg_size_32
-                                                             : (block_width_p == 128)
-                                                               ? e_bedrock_msg_size_16
-                                                               : (block_width_p == 64)
-                                                                 ? e_bedrock_msg_size_8
-                                                                 : e_bedrock_msg_size_64
     )
    (input                                            clk_i
     , input                                          reset_i
@@ -90,6 +65,32 @@ module bp_uce
     , output logic                                   mem_resp_ready_and_o
     , input                                          mem_resp_last_i
     );
+
+
+  localparam bank_width_lp = block_width_p / assoc_p;
+  localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp;
+  localparam byte_offset_width_lp  = `BSG_SAFE_CLOG2(bank_width_lp>>3);
+  // Words per line == associativity
+  localparam bank_offset_width_lp  = `BSG_SAFE_CLOG2(assoc_p);
+  localparam block_offset_width_lp = (assoc_p > 1) ? (bank_offset_width_lp + byte_offset_width_lp) : byte_offset_width_lp;
+  localparam index_width_lp = `BSG_SAFE_CLOG2(sets_p);
+  localparam way_width_lp = `BSG_SAFE_CLOG2(assoc_p);
+  localparam block_size_in_fill_lp = block_width_p / fill_width_p;
+  localparam fill_size_in_bank_lp = fill_width_p / bank_width_lp;
+  localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
+  localparam fill_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p>>3);
+  localparam bank_sub_offset_width_lp = $clog2(fill_size_in_bank_lp);
+
+  // Block size parameterisations
+  localparam bp_bedrock_msg_size_e block_msg_size_lp = (block_width_p == 512)
+                                                       ? e_bedrock_msg_size_64
+                                                       : (block_width_p == 256)
+                                                         ? e_bedrock_msg_size_32
+                                                         : (block_width_p == 128)
+                                                           ? e_bedrock_msg_size_16
+                                                           : (block_width_p == 64)
+                                                             ? e_bedrock_msg_size_8
+                                                             : e_bedrock_msg_size_64;
 
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
@@ -322,7 +323,6 @@ module bp_uce
   wire uc_amo_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
   wire uc_hit_v_r     = cache_req_v_r & cache_req_r.hit & (uc_load_v_r | uc_store_v_r | uc_amo_v_r);
 
-  wire [bank_offset_width_lp-1:0] bank_index = fsm_cmd_cnt << bank_sub_offset_width_lp;
   wire [block_size_in_fill_lp-1:0] fill_index_shift = {{(assoc_p != 1){fsm_resp_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp}}, {(assoc_p == 1){'0}}};
 
   logic [index_width_lp-1:0] index_cnt;
@@ -534,7 +534,7 @@ module bp_uce
         e_flush_write:
           begin
             fsm_cmd_header_lo.msg_type       = e_bedrock_mem_wr;
-            fsm_cmd_header_lo.addr           = {dirty_tag_r.tag, index_cnt, {assoc_p>1{bank_index}}, byte_offset_width_lp'(0)};
+            fsm_cmd_header_lo.addr           = {dirty_tag_r.tag, index_cnt, block_offset_width_lp'(0)};
             fsm_cmd_header_lo.size           = block_msg_size_lp;
             fsm_cmd_header_lo.payload.lce_id = lce_id_i;
             fsm_cmd_data_lo                  = writeback_data;
@@ -610,7 +610,7 @@ module bp_uce
         e_uc_writeback_write_req:
           begin
             fsm_cmd_header_lo.msg_type       = e_bedrock_mem_wr;
-            fsm_cmd_header_lo.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], {assoc_p>1{bank_index}}, byte_offset_width_lp'(0)};
+            fsm_cmd_header_lo.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
             fsm_cmd_header_lo.size           = block_msg_size_lp;
             fsm_cmd_header_lo.payload.lce_id = lce_id_i;
             fsm_cmd_data_lo                  = writeback_data;
@@ -695,7 +695,7 @@ module bp_uce
         e_writeback_write_req:
           begin
             fsm_cmd_header_lo.msg_type       = e_bedrock_mem_wr;
-            fsm_cmd_header_lo.addr           = {dirty_tag_r.tag, cache_req_r.addr[block_offset_width_lp+:index_width_lp], {assoc_p>1{bank_index}}, byte_offset_width_lp'(0)};
+            fsm_cmd_header_lo.addr           = {dirty_tag_r.tag, cache_req_r.addr[block_offset_width_lp+:index_width_lp], block_offset_width_lp'(0)};
             fsm_cmd_header_lo.size           = block_msg_size_lp;
             fsm_cmd_header_lo.payload.lce_id = lce_id_i;
             fsm_cmd_data_lo                  = writeback_data;
