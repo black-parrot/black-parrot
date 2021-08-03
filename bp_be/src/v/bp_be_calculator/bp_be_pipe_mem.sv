@@ -95,7 +95,7 @@ module bp_be_pipe_mem
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
 
   // Cast input and output ports
   bp_be_dispatch_pkt_s   reservation;
@@ -140,6 +140,7 @@ module bp_be_pipe_mem
   logic                     dcache_early_v, dcache_final_v, dcache_pkt_v;
   logic                     dcache_ptag_v;
   logic                     dcache_ptag_uncached;
+  logic                     dcache_ptag_dram;
   logic                     dcache_ready_lo;
 
   logic load_access_fault_v, store_access_fault_v;
@@ -198,6 +199,7 @@ module bp_be_pipe_mem
      ,.r_miss_o(dtlb_miss_v)
      ,.r_uncached_o(dcache_ptag_uncached)
      ,.r_nonidem_o(/* All D$ misses are non-speculative */)
+     ,.r_dram_o(dcache_ptag_dram)
      ,.r_instr_access_fault_o()
      ,.r_load_access_fault_o(load_access_fault_v)
      ,.r_store_access_fault_o(store_access_fault_v)
@@ -253,6 +255,7 @@ module bp_be_pipe_mem
       ,.ptag_i(dcache_ptag)
       ,.ptag_v_i(dcache_ptag_v)
       ,.ptag_uncached_i(dcache_ptag_uncached)
+      ,.ptag_dram_i(dcache_ptag_dram)
 
       ,.early_v_o(dcache_early_v)
       ,.early_data_o(dcache_early_data)

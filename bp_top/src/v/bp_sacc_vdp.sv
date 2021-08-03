@@ -5,45 +5,40 @@ module bp_sacc_vdp
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-    )
-   (
-    input                                     clk_i
-    , input                                   reset_i
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   )
+  (input                                     clk_i
+   , input                                   reset_i
 
-    , input [lce_id_width_p-1:0]              lce_id_i
+   , input [lce_id_width_p-1:0]              lce_id_i
 
-    , input  [cce_mem_msg_width_lp-1:0]       io_cmd_i
-    , input                                   io_cmd_v_i
-    , output                                  io_cmd_ready_o
+   , input  [cce_mem_msg_width_lp-1:0]       io_cmd_i
+   , input                                   io_cmd_v_i
+   , output                                  io_cmd_ready_o
 
-    , output [cce_mem_msg_width_lp-1:0]       io_resp_o
-    , output logic                            io_resp_v_o
-    , input                                   io_resp_yumi_i
+   , output [cce_mem_msg_width_lp-1:0]       io_resp_o
+   , output logic                            io_resp_v_o
+   , input                                   io_resp_yumi_i
 
-    , output [cce_mem_msg_width_lp-1:0]       io_cmd_o
-    , output logic                            io_cmd_v_o
-    , input                                   io_cmd_yumi_i
+   , output [cce_mem_msg_width_lp-1:0]       io_cmd_o
+   , output logic                            io_cmd_v_o
+   , input                                   io_cmd_yumi_i
 
-    , input [cce_mem_msg_width_lp-1:0]        io_resp_i
-    , input                                   io_resp_v_i
-    , output                                  io_resp_ready_o
-    );
-
-
+   , input [cce_mem_msg_width_lp-1:0]        io_resp_i
+   , input                                   io_resp_v_i
+   , output                                  io_resp_ready_o
+   );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
   bp_bedrock_cce_mem_msg_header_s resp_header;
   bp_bedrock_cce_mem_msg_s io_cmd_cast_i;
- // bp_cce_mem_msg_s io_resp_cast_i;
- // bp_cce_mem_msg_s io_cmd_cast_o;
 
   assign io_cmd_ready_o = 1'b1;
   assign io_resp_ready_o = 1'b1;
@@ -148,7 +143,7 @@ module bp_sacc_vdp
       spm_external_write_v_li <= '0;
       spm_external_read_v_li  <= '0;
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.did == '0))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.hio == '0))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -170,7 +165,7 @@ module bp_sacc_vdp
       endcase
 
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) &  (global_addr_li.did == '0))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == '0))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -192,7 +187,7 @@ module bp_sacc_vdp
         default : begin end
       endcase
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.did == 1))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.hio == 1))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -204,7 +199,7 @@ module bp_sacc_vdp
       spm_external_data_li  <= io_cmd_cast_i.data;
       spm_external_addr <= io_cmd_cast_i.header.addr;
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) &  (global_addr_li.did == 1))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == 1))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -316,22 +311,19 @@ module bp_sacc_vdp
 
    assign dot_product_temp = sum_l2[0] + sum_l2[1];
 
-//SPM
-wire [`BSG_SAFE_CLOG2(20)-1:0] spm_addr_li = spm_addr >> 3;
-bsg_mem_1rw_sync
-  #(.width_p(64)
-    ,.els_p(20)
-  )
-  accel_spm
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.data_i(spm_data_li)
-   ,.addr_i(spm_addr_li)
-   ,.v_i(spm_internal_read_v_li | spm_external_read_v_li | spm_internal_write_v_li | spm_external_write_v_li)
-   ,.w_i(spm_internal_write_v_li | spm_external_write_v_li)
-   ,.data_o(spm_data_lo)
-   );
-
+  //SPM
+  wire [`BSG_SAFE_CLOG2(20)-1:0] spm_addr_li = spm_addr >> 3;
+  bsg_mem_1rw_sync
+    #(.width_p(64), .els_p(20))
+    accel_spm
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.data_i(spm_data_li)
+      ,.addr_i(spm_addr_li)
+      ,.v_i(spm_internal_read_v_li | spm_external_read_v_li | spm_internal_write_v_li | spm_external_write_v_li)
+      ,.w_i(spm_internal_write_v_li | spm_external_write_v_li)
+      ,.data_o(spm_data_lo)
+      );
 
 endmodule
 
