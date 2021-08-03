@@ -211,7 +211,8 @@ module testbench
 
   // Req Crossbar
   bp_me_xbar_burst
-   #(.data_width_p(dword_width_gp)
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
      ,.payload_width_p(lce_req_payload_width_lp)
      ,.num_source_p(num_lce_p)
      ,.num_sink_p(num_cce_p)
@@ -242,7 +243,8 @@ module testbench
 
   // Resp Crossbar
   bp_me_xbar_burst
-   #(.data_width_p(dword_width_gp)
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
      ,.payload_width_p(lce_resp_payload_width_lp)
      ,.num_source_p(num_lce_p)
      ,.num_sink_p(num_cce_p)
@@ -274,7 +276,8 @@ module testbench
   // Cmd Crossbar
   // from CCE and LCE cmd out to LCE cmd in
   bp_me_xbar_burst
-   #(.data_width_p(dword_width_gp)
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.num_source_p(num_cce_p+num_lce_p)
      ,.num_sink_p(num_lce_p)

@@ -563,42 +563,54 @@ module bp_tile
   // All CCE-Mem network responses go to the CCE on this tile (id = 0 in xbar)
   logic [3:0] dev_resp_dst_lo = '0;
 
-  bp_me_xbar_stream_bidir
+  bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(dword_width_gp)
      ,.payload_width_p(cce_mem_payload_width_lp)
      ,.num_source_p(1)
      ,.num_sink_p(4)
      )
-   stream_arb
+   cmd_xbar
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.cmd_header_i(cce_mem_cmd_header_lo)
-     ,.cmd_data_i(cce_mem_cmd_data_lo)
-     ,.cmd_v_i(cce_mem_cmd_v_lo)
-     ,.cmd_yumi_o(cce_mem_cmd_yumi_li)
-     ,.cmd_last_i(cce_mem_cmd_last_lo)
-     ,.cmd_dst_i(cce_mem_cmd_dst_lo)
+     ,.msg_header_i(cce_mem_cmd_header_lo)
+     ,.msg_data_i(cce_mem_cmd_data_lo)
+     ,.msg_v_i(cce_mem_cmd_v_lo)
+     ,.msg_yumi_o(cce_mem_cmd_yumi_li)
+     ,.msg_last_i(cce_mem_cmd_last_lo)
+     ,.msg_dst_i(cce_mem_cmd_dst_lo)
 
-     ,.resp_header_o(cce_mem_resp_header_li)
-     ,.resp_data_o(cce_mem_resp_data_li)
-     ,.resp_v_o(cce_mem_resp_v_li)
-     ,.resp_ready_and_i(cce_mem_resp_ready_and_lo)
-     ,.resp_last_o(cce_mem_resp_last_li)
+     ,.msg_header_o(dev_cmd_header_li)
+     ,.msg_data_o(dev_cmd_data_li)
+     ,.msg_v_o(dev_cmd_v_li)
+     ,.msg_ready_and_i(dev_cmd_ready_and_lo)
+     ,.msg_last_o(dev_cmd_last_li)
+     );
 
-     ,.cmd_header_o(dev_cmd_header_li)
-     ,.cmd_data_o(dev_cmd_data_li)
-     ,.cmd_v_o(dev_cmd_v_li)
-     ,.cmd_ready_and_i(dev_cmd_ready_and_lo)
-     ,.cmd_last_o(dev_cmd_last_li)
+  bp_me_xbar_stream
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
+     ,.payload_width_p(cce_mem_payload_width_lp)
+     ,.num_source_p(4)
+     ,.num_sink_p(1)
+     )
+   resp_xbar
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-     ,.resp_header_i(dev_resp_header_lo)
-     ,.resp_data_i(dev_resp_data_lo)
-     ,.resp_v_i(dev_resp_v_lo)
-     ,.resp_yumi_o(dev_resp_ready_and_li)
-     ,.resp_last_i(dev_resp_last_lo)
-     ,.resp_dst_i(dev_resp_dst_lo)
+     ,.msg_header_i(dev_resp_header_lo)
+     ,.msg_data_i(dev_resp_data_lo)
+     ,.msg_v_i(dev_resp_v_lo)
+     ,.msg_yumi_o(dev_resp_ready_and_li)
+     ,.msg_last_i(dev_resp_last_lo)
+     ,.msg_dst_i(dev_resp_dst_lo)
+
+     ,.msg_header_o(cce_mem_resp_header_li)
+     ,.msg_data_o(cce_mem_resp_data_li)
+     ,.msg_v_o(cce_mem_resp_v_li)
+     ,.msg_ready_and_i(cce_mem_resp_ready_and_lo)
+     ,.msg_last_o(cce_mem_resp_last_li)
      );
 
   // CCE: Cache Coherence Engine
