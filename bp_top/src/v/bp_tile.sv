@@ -29,9 +29,6 @@ module bp_tile
    // Wormhole parameters
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
-
-   // LCE-CCE network wormhole adapter length input/output field size
-   , localparam pr_len_width_lp = 8
    )
   (input                                                      clk_i
    , input                                                    reset_i
@@ -225,6 +222,7 @@ module bp_tile
     end
 
   // LCE to CCE request
+  localparam pr_len_width_lp = 8;
   logic [pr_len_width_lp-1:0] cce_lce_req_pr_len;
   bp_bedrock_size_to_len
    #(.len_width_p(pr_len_width_lp)
