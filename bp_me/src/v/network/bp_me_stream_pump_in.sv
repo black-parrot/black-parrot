@@ -49,7 +49,7 @@ module bp_me_stream_pump_in
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
    , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p >> 3)
    , localparam stream_words_lp = block_width_p / stream_data_width_p
-   , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
+   , localparam stream_cnt_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -76,9 +76,16 @@ module bp_me_stream_pump_in
    , output logic                                   fsm_last_o
    );
 
+  //synopsys translate_off
+  initial begin
+    assert(block_width_p % stream_data_width_p == 0) else
+      $error("block width must be evenly divisible by stream data width");
+  end
+  //synopsys translate_on
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
 
+  `bp_cast_i(bp_bedrock_xce_msg_header_s, msg_header);
   `bp_cast_o(bp_bedrock_xce_msg_header_s, fsm_base_header);
 
   bp_bedrock_xce_msg_header_s msg_header_lo;
@@ -87,7 +94,7 @@ module bp_me_stream_pump_in
 
   if (buffer_els_p == 0)
     begin: passthrough
-      assign msg_header_lo = msg_header_i;
+      assign msg_header_lo = msg_header_cast_i;
       assign msg_data_lo = msg_data_i;
       assign msg_v_lo = msg_v_i;
       assign msg_last_lo = msg_last_i;
@@ -95,25 +102,78 @@ module bp_me_stream_pump_in
     end
   else
     begin: buffered
+      // register to track input message header arrival
+      // only buffer first header of each message
+      logic input_streaming_r;
+      bsg_dff_reset_set_clear
+       #(.width_p(1)
+         ,.clear_over_set_p(1))
+       input_streaming_reg
+        (.clk_i(clk_i)
+        ,.reset_i(reset_i)
+        ,.set_i(msg_v_i & msg_ready_and_o & ~input_streaming_r)
+        ,.clear_i(msg_v_i & msg_ready_and_o & msg_last_i)
+        ,.data_o(input_streaming_r)
+        );
+
+      // header and data buffers
+      // every arriving beat's data is buffered (regardless of whether data is valid)
+      // header is only buffered on first beat of each message
+
+      logic msg_header_v_lo, msg_header_yumi_li, msg_header_ready_and_lo;
+      logic msg_data_v_lo, msg_data_yumi_li, msg_data_ready_and_lo;
+
       bsg_fifo_1r1w_small
-       #(.width_p($bits(bp_bedrock_xce_msg_s)+1)
+       #(.width_p($bits(bp_bedrock_xce_msg_header_s))
          ,.els_p(buffer_els_p)
          )
-       input_fifo
+       header_fifo
         (.clk_i(clk_i)
           ,.reset_i(reset_i)
 
-          ,.data_i({msg_last_i, msg_header_i, msg_data_i})
-          ,.v_i(msg_v_i)
-          ,.ready_o(msg_ready_and_o)
+          ,.data_i(msg_header_cast_i)
+          // buffer header if not streaming and data buffer is also ready
+          ,.v_i(msg_v_i & ~input_streaming_r & msg_data_ready_and_lo)
+          ,.ready_o(msg_header_ready_and_lo)
 
-          ,.data_o({msg_last_lo, msg_header_lo, msg_data_lo})
-          ,.v_o(msg_v_lo)
-          ,.yumi_i(msg_yumi_li)
+          ,.data_o(msg_header_lo)
+          ,.v_o(msg_header_v_lo)
+          ,.yumi_i(msg_header_yumi_li)
           );
+
+      bsg_fifo_1r1w_small
+       #(.width_p(stream_data_width_p+1)
+         ,.els_p(buffer_els_p*stream_words_lp)
+         )
+       data_fifo
+        (.clk_i(clk_i)
+          ,.reset_i(reset_i)
+
+          ,.data_i({msg_last_i, msg_data_i})
+          // buffer data if streaming or on first beat if header buffer is also ready
+          ,.v_i(msg_v_i & (input_streaming_r | (~input_streaming_r & msg_header_ready_and_lo)))
+          ,.ready_o(msg_data_ready_and_lo)
+
+          ,.data_o({msg_last_lo, msg_data_lo})
+          ,.v_o(msg_data_v_lo)
+          ,.yumi_i(msg_data_yumi_li)
+          );
+
+      // ack inbound message
+      // when streaming, only data buffer needs to be available, otherwise need ready from
+      // both header and data buffers
+      assign msg_ready_and_o = input_streaming_r
+                               ? msg_data_ready_and_lo
+                               : (msg_data_ready_and_lo & msg_header_ready_and_lo);
+      // beat is valid if both header and data are valid
+      assign msg_v_lo = msg_header_v_lo & msg_data_v_lo;
+      // dequeue header only when consuming last beat
+      assign msg_header_yumi_li = msg_yumi_li & msg_last_lo;
+      // dequeue data on every yumi
+      assign msg_data_yumi_li = msg_yumi_li;
     end
 
-  wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << msg_header_lo.size) / (stream_data_width_p / 8), 1'b1) - 1'b1;
+  wire [stream_cnt_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << msg_header_lo.size) / (stream_data_width_p / 8), 1'b1) - 1'b1;
 
   logic cnt_up, is_last_cnt, streaming_r;
   logic is_fsm_stream, is_msg_stream;
@@ -132,7 +192,7 @@ module bp_me_stream_pump_in
     end
   else
     begin: sub_block_stream
-      logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt, cnt_val_li;
+      logic [stream_cnt_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt, cnt_val_li;
       wire cnt_set = (any_fsm_new & cnt_up) | fsm_done_o;
       wire cnt_en = (cnt_up | fsm_done_o);
       bsg_counter_set_en
@@ -169,7 +229,7 @@ module bp_me_stream_pump_in
 
       always_comb
         begin
-          first_cnt = critical_addr_r[stream_offset_width_lp+:data_len_width_lp];
+          first_cnt = critical_addr_r[stream_offset_width_lp+:stream_cnt_width_lp];
           last_cnt  = first_cnt + num_stream;
 
           is_fsm_stream = fsm_stream_mask_p[msg_header_lo.msg_type] & ~(first_cnt == last_cnt);
@@ -192,18 +252,18 @@ module bp_me_stream_pump_in
       // size = 512: a wrapped around seq: 2, 3, 4, 5, 6, 7, 0, 1  all 3-bit of cnt is used
       // size = 256: a wrapped around seq: 2, 3, 0, 1              only lower 2-bit of cnt is used
 
-      logic [data_len_width_lp-1:0] wrap_around_cnt;
+      logic [stream_cnt_width_lp-1:0] wrap_around_cnt;
 
       bsg_mux_bitwise
-       #(.width_p(data_len_width_lp))
+       #(.width_p(stream_cnt_width_lp))
        sub_block_addr_mux
-        (.data0_i(msg_header_lo.addr[stream_offset_width_lp+:data_len_width_lp])
+        (.data0_i(msg_header_lo.addr[stream_offset_width_lp+:stream_cnt_width_lp])
         ,.data1_i(stream_cnt)
         ,.sel_i(num_stream)
         ,.data_o(wrap_around_cnt)
       );
 
-      assign fsm_addr_o = { msg_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
+      assign fsm_addr_o = { msg_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+stream_cnt_width_lp]
                           , wrap_around_cnt
                           , msg_header_lo.addr[0+:stream_offset_width_lp]};
     end
