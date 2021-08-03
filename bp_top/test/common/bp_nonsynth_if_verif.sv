@@ -79,6 +79,8 @@ module bp_nonsynth_if_verif
     $fatal("Error: Cache fill width should be a multiple of cache bank width");
   if (icache_fill_width_p != dcache_fill_width_p)
     $fatal("Error: L1-Cache fill width should be the same");
+  if ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p))
+    $fatal("Error: L2-Cache data width must match L1-Cache fill width");
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");

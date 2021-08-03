@@ -85,15 +85,6 @@ module bp_unicore
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  //synopsys translate_off
-  // This assertion guarantees that the data widths of bp_unicore_lite and bp_me_cce_to_cache match.
-  // bp_me_cce_to_cache use l2_data_width_p while bp_unicore_lite uses uce_mem_data_width_lp.
-  initial begin
-    assert(l2_data_width_p == uce_mem_data_width_lp) else
-      $fatal("unicore setup requires l2_data_width_p to be same as uce_mem_data_width_lp");
-  end
-  //synopsys translate_on
-
   bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
