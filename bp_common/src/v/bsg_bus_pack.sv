@@ -46,20 +46,20 @@ module bsg_bus_pack
      );
 
   if (out_width_p > in_width_p)
-    begin:duplicating
+    begin : duplicating
       assign data_o = {out_width_p/in_width_p{data_lo}};
     end
   else
-    begin:slicing
+    begin : slicing
       assign data_o = data_lo[0+:out_width_p];
     end
 
   //synopsys translate_off
-  initial
-    begin
-      assert (`BSG_IS_POW2(in_width_p) && `BSG_IS_POW2(out_width_p)) else $error("Bus width must be a power of 2");
-      assert (unit_width_p > 1) else $error("Bit width replication unsupported");
-    end
+  if (!`BSG_IS_POW2(in_width_p) || !`BSG_IS_POW2(out_width_p))
+    $fatal("Bus width must be a power of 2");
+
+  if (unit_width_p < 2)
+    $fatal("Bit width replication unsupported");
   //synopsys translate_on
 
 endmodule

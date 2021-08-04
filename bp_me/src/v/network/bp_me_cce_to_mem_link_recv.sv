@@ -1,45 +1,46 @@
 /**
- * bp_me_cce_to_wormhole_link_recv.v
+ * bp_me_cce_to_wormhole_link_recv.sv
  */
-
-`include "bp_me_defines.svh"
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
 module bp_me_cce_to_mem_link_recv
-  import bp_common_pkg::*;
-  import bp_me_pkg::*;
+ import bp_common_pkg::*;
+ import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , parameter `BSG_INV_PARAM(num_outstanding_req_p )
-
-   , parameter `BSG_INV_PARAM(flit_width_p )
-   , parameter `BSG_INV_PARAM(cord_width_p )
-   , parameter `BSG_INV_PARAM(cid_width_p  )
-   , parameter `BSG_INV_PARAM(len_width_p  )
+   , parameter `BSG_INV_PARAM(num_outstanding_req_p)
+   , parameter `BSG_INV_PARAM(flit_width_p)
+   , parameter `BSG_INV_PARAM(cord_width_p)
+   , parameter `BSG_INV_PARAM(cid_width_p)
+   , parameter `BSG_INV_PARAM(len_width_p)
 
   // wormhole parameters
   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(flit_width_p)
   )
 
-  (input                                         clk_i
-  , input                                        reset_i
+  (input                                                clk_i
+   , input                                              reset_i
 
-  , output [cce_mem_msg_width_lp-1:0]            mem_cmd_o
-  , output                                       mem_cmd_v_o
-  , input                                        mem_cmd_yumi_i
+   , output logic [cce_mem_msg_header_width_lp-1:0]     mem_cmd_header_o
+   , output logic [cce_block_width_p-1:0]               mem_cmd_data_o
+   , output logic                                       mem_cmd_v_o
+   , input                                              mem_cmd_yumi_i
+   , output logic                                       mem_cmd_last_o
 
-  , input [cce_mem_msg_width_lp-1:0]             mem_resp_i
-  , input                                        mem_resp_v_i
-  , output                                       mem_resp_ready_and_o
+   , input [cce_mem_msg_header_width_lp-1:0]            mem_resp_header_i
+   , input [cce_block_width_p-1:0]                      mem_resp_data_i
+   , input                                              mem_resp_v_i
+   , output logic                                       mem_resp_ready_and_o
+   , input                                              mem_resp_last_i
 
-  // bsg_noc_wormhole interface
-  , input [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
-  , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
-  );
+   // bsg_noc_wormhole interface
+   , input [bsg_ready_and_link_sif_width_lp-1:0]        cmd_link_i
+   , output logic [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
+   );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, cce_block_width_p);
@@ -75,7 +76,8 @@ module bp_me_cce_to_mem_link_recv
       ,.v_i(mem_resp_v_i)
       ,.ready_o(mem_resp_ready_and_o)
       );
-  assign mem_cmd_o = {mem_cmd_packet_lo.data, mem_cmd_packet_lo.header.msg_hdr};
+  assign mem_cmd_header_o = mem_cmd_packet_lo.header.msg_hdr;
+  assign mem_cmd_data_o = mem_cmd_packet_lo.data;
   assign mem_cmd_v_o = mem_cmd_packet_v_lo & fifo_ready_lo;
   assign mem_cmd_packet_yumi_li = mem_cmd_yumi_i;
 
@@ -107,8 +109,6 @@ module bp_me_cce_to_mem_link_recv
   wire [cord_width_p-1:0] dst_cord_lo = src_cord_lo;
   wire [cid_width_p-1:0]  dst_cid_lo  = src_cid_lo;
 
-  bp_bedrock_cce_mem_msg_s mem_resp_cast_i;
-  assign mem_resp_cast_i = mem_resp_i;
   bp_me_wormhole_packet_encode_mem_resp
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
@@ -117,14 +117,14 @@ module bp_me_cce_to_mem_link_recv
      ,.len_width_p(len_width_p)
      )
    mem_resp_encode
-    (.mem_resp_header_i(mem_resp_cast_i.header)
+    (.mem_resp_header_i(mem_resp_header_i)
      ,.src_cord_i(src_cord_lo)
      ,.src_cid_i(src_cid_lo)
      ,.dst_cord_i(dst_cord_lo)
      ,.dst_cid_i(dst_cid_lo)
      ,.wh_header_o(mem_resp_header_lo)
      );
-  assign mem_resp_packet_lo = '{header: mem_resp_header_lo, data: mem_resp_cast_i.data};
+  assign mem_resp_packet_lo = '{header: mem_resp_header_lo, data: mem_resp_data_i};
 
 endmodule
 

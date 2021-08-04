@@ -80,9 +80,10 @@ module testbench
   logic [cfg_bus_width_lp-1:0] cfg_bus_li;
   assign cfg_bus_li = cfg_bus_cast_li;
 
-  logic mem_cmd_v_lo, mem_resp_v_lo;
-  logic mem_cmd_yumi_li, mem_cmd_ready_and_lo, mem_resp_yumi_li;
-  bp_bedrock_cce_mem_msg_s mem_cmd_lo, mem_resp_lo;
+  logic mem_cmd_v_lo, mem_resp_v_li;
+  logic mem_cmd_ready_and_li, mem_resp_ready_and_lo, mem_cmd_last_lo, mem_resp_last_li;
+  bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo, mem_resp_header_li;
+  logic [l2_fill_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
 
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
   logic trace_v_lo;
@@ -92,8 +93,7 @@ module testbench
   logic trace_v_li, trace_ready_lo;
 
   logic [instr_width_gp-1:0] icache_data_lo;
-  logic icache_data_v_lo;
-  logic icache_ready_li;
+  logic icache_data_v_lo, icache_ready_li;
 
   logic [trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
   logic [trace_replay_data_width_lp+3:0] trace_rom_data_li;
@@ -223,15 +223,18 @@ module testbench
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
 
-     ,.mem_resp_i(mem_resp_lo)
-     ,.mem_resp_v_i(mem_resp_v_lo)
-     ,.mem_resp_yumi_o(mem_resp_yumi_li)
-
-     ,.mem_cmd_o(mem_cmd_lo)
+     ,.mem_cmd_header_o(mem_cmd_header_lo)
+     ,.mem_cmd_data_o(mem_cmd_data_lo)
      ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
-    );
-  assign mem_cmd_yumi_li = mem_cmd_ready_and_lo & mem_cmd_v_lo;
+     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
+     ,.mem_cmd_last_o(mem_cmd_last_lo)
+
+     ,.mem_resp_header_i(mem_resp_header_li)
+     ,.mem_resp_data_i(mem_resp_data_li)
+     ,.mem_resp_v_i(mem_resp_v_li)
+     ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
+     ,.mem_resp_last_i(mem_resp_last_li)
+     );
 
   // Memory
   bp_nonsynth_mem
@@ -242,19 +245,23 @@ module testbench
      )
     mem
     (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+     ,.reset_i(reset_i)
 
-    ,.mem_cmd_i(mem_cmd_lo)
-    ,.mem_cmd_v_i(mem_cmd_v_lo)
-    ,.mem_cmd_ready_and_o(mem_cmd_ready_and_lo)
+     ,.mem_cmd_header_i(mem_cmd_header_lo)
+     ,.mem_cmd_data_i(mem_cmd_data_lo)
+     ,.mem_cmd_v_i(mem_cmd_v_lo)
+     ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
+     ,.mem_cmd_last_i(mem_cmd_last_lo)
 
-    ,.mem_resp_o(mem_resp_lo)
-    ,.mem_resp_v_o(mem_resp_v_lo)
-    ,.mem_resp_yumi_i(mem_resp_yumi_li)
+     ,.mem_resp_header_o(mem_resp_header_li)
+     ,.mem_resp_data_o(mem_resp_data_li)
+     ,.mem_resp_v_o(mem_resp_v_li)
+     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
+     ,.mem_resp_last_o(mem_resp_last_li)
 
-    ,.dram_clk_i(dram_clk_i)
-    ,.dram_reset_i(dram_reset_i)
-    );
+     ,.dram_clk_i(dram_clk_i)
+     ,.dram_reset_i(dram_reset_i)
+     );
 
   // I$ tracer
   bind bp_fe_icache
@@ -342,7 +349,6 @@ module testbench
         bp_cce_tracer
          (.clk_i(clk_i & (testbench.cce_trace_p == 1))
           ,.reset_i(reset_i)
-          ,.freeze_i(cfg_bus_cast_i.freeze)
 
           ,.cce_id_i(cfg_bus_cast_i.cce_id)
 
@@ -370,41 +376,41 @@ module testbench
           ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_i)
 
           // CCE-MEM Interface
-          // BedRock Burst protocol: ready&valid
+          // BedRock Stream protocol: ready&valid
           ,.mem_resp_header_i(mem_resp_header_i)
-          ,.mem_resp_header_v_i(mem_resp_header_v_i)
-          ,.mem_resp_header_ready_and_i(mem_resp_header_ready_and_o)
           ,.mem_resp_data_i(mem_resp_data_i)
-          ,.mem_resp_data_v_i(mem_resp_data_v_i)
-          ,.mem_resp_data_ready_and_i(mem_resp_data_ready_and_o)
+          ,.mem_resp_v_i(mem_resp_v_i)
+          ,.mem_resp_ready_and_i(mem_resp_ready_and_o)
+          ,.mem_resp_last_i(mem_resp_last_i)
 
           ,.mem_cmd_header_i(mem_cmd_header_o)
-          ,.mem_cmd_header_v_i(mem_cmd_header_v_o)
-          ,.mem_cmd_header_ready_and_i(mem_cmd_header_ready_and_i)
           ,.mem_cmd_data_i(mem_cmd_data_o)
-          ,.mem_cmd_data_v_i(mem_cmd_data_v_o)
-          ,.mem_cmd_data_ready_and_i(mem_cmd_data_ready_and_i)
-
+          ,.mem_cmd_v_i(mem_cmd_v_o)
+          ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i)
+          ,.mem_cmd_last_i(mem_cmd_last_o)
           );
   end
 
-  // Memory tracer
   bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))
    bp_mem_tracer
     (.clk_i(clk_i & (testbench.dram_trace_p == 1))
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(mem_cmd_lo)
+     ,.mem_cmd_header_i(mem_cmd_header_lo)
+     ,.mem_cmd_data_i(mem_cmd_data_lo)
      ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_lo)
+     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
+     ,.mem_cmd_last_i(mem_cmd_last_lo)
 
-     ,.mem_resp_i(mem_resp_lo)
-     ,.mem_resp_v_i(mem_resp_v_lo)
-     ,.mem_resp_yumi_i(mem_resp_yumi_li)
+     ,.mem_resp_header_i(mem_resp_header_li)
+     ,.mem_resp_data_i(mem_resp_data_li)
+     ,.mem_resp_v_i(mem_resp_v_li)
+     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
+     ,.mem_resp_last_i(mem_resp_last_li)
      );
 
-  if(cce_block_width_p != icache_block_width_p)
+  if (cce_block_width_p != icache_block_width_p)
     $error("Memory fetch block width does not match icache block width");
 
   `ifndef VERILATOR

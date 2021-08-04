@@ -83,14 +83,12 @@
    * speculative is set if the request was issued speculatively by the CCE
    */
 
-
   `define declare_bp_bedrock_lce_payload_s(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp, name_mp) \
                                                                                        \
     typedef struct packed                                                              \
     {                                                                                  \
       logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    lru_way_id;                         \
       bp_bedrock_req_non_excl_e                    non_exclusive;                      \
-      bp_bedrock_wr_subop_e                        subop;                              \
       logic [lce_id_width_mp-1:0]                  src_id;                             \
       logic [cce_id_width_mp-1:0]                  dst_id;                             \
     } bp_bedrock_``name_mp``_req_payload_s;                                            \
@@ -132,7 +130,7 @@
    */
 
   `define bp_bedrock_req_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
-    (cce_id_width_mp+lce_id_width_mp+$bits(bp_bedrock_req_non_excl_e)+$bits(bp_bedrock_wr_subop_e)+`BSG_SAFE_CLOG2(lce_assoc_mp))
+    (cce_id_width_mp+lce_id_width_mp+$bits(bp_bedrock_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp))
 
   `define bp_bedrock_cmd_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
     ((2*lce_id_width_mp)+cce_id_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+(2*$bits(bp_coh_states_e)))

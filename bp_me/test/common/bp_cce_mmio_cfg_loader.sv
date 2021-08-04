@@ -35,32 +35,36 @@ module bp_cce_mmio_cfg_loader
 
    , input [lce_id_width_p-1:0]                      lce_id_i
 
-   // Config channel
-   , output logic [cce_mem_msg_width_lp-1:0]         io_cmd_o
+   // BedRock Stream
+   // TODO: convert yumi_i to ready_and_i
+   , output logic [cce_mem_msg_header_width_lp-1:0]  io_cmd_header_o
+   , output logic [dword_width_gp-1:0]               io_cmd_data_o
    , output logic                                    io_cmd_v_o
    , input                                           io_cmd_yumi_i
+   , output logic                                    io_cmd_last_o
 
-   // We don't need a response from the cfg network
-   , input [cce_mem_msg_width_lp-1:0]                io_resp_i
+   // BedRock Stream
+   , input [cce_mem_msg_header_width_lp-1:0]         io_resp_header_i
+   , input [dword_width_gp-1:0]                      io_resp_data_i
    , input                                           io_resp_v_i
-   , output                                          io_resp_ready_o
+   , output logic                                    io_resp_ready_and_o
+   , input                                           io_resp_last_i
 
-   , output                                          done_o
+   , output logic                                    done_o
    );
 
-  wire unused0 = &{io_resp_i, io_resp_v_i};
-  assign io_resp_ready_o = 1'b1;
+  wire unused0 = &{io_resp_header_i, io_resp_data_i, io_resp_last_i};
+  assign io_resp_ready_and_o = 1'b1;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
-  bp_bedrock_cce_mem_msg_s io_cmd_cast_o;
-  bp_bedrock_cce_mem_msg_s io_resp_cast_i;
+  bp_bedrock_cce_mem_msg_header_s io_cmd_cast_o;
+  bp_bedrock_cce_mem_msg_header_s io_resp_cast_i;
   bp_bedrock_cce_mem_payload_s io_cmd_payload;
-  assign io_cmd_cast_o.header.payload = io_cmd_payload;
 
-  assign io_cmd_o = io_cmd_cast_o;
-  assign io_resp_cast_i = io_resp_i;
+  assign io_cmd_header_o = io_cmd_cast_o;
+  assign io_resp_cast_i = io_resp_header_i;
 
   logic [dword_width_gp-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
   logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
@@ -175,13 +179,15 @@ module bp_cce_mmio_cfg_loader
       io_cmd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
-      io_cmd_cast_o.header.msg_type      = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
-      io_cmd_cast_o.header.subop         = e_bedrock_store;
-      io_cmd_cast_o.header.addr          = local_addr_lo;
+      io_cmd_cast_o.msg_type             = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+      io_cmd_cast_o.subop                = e_bedrock_store;
+      io_cmd_cast_o.addr                 = local_addr_lo;
       io_cmd_payload                     = '0;
       io_cmd_payload.lce_id              = lce_id_i;
-      io_cmd_cast_o.header.size          = e_bedrock_msg_size_8;
-      io_cmd_cast_o.data                 = cfg_data_lo;
+      io_cmd_cast_o.size                 = e_bedrock_msg_size_8;
+      io_cmd_data_o                      = cfg_data_lo;
+      io_cmd_last_o                      = 1'b1;
+      io_cmd_cast_o.payload              = io_cmd_payload;
     end
 
   always_comb

@@ -127,6 +127,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_locking_arb_fixed.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_bitwise.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_butterfly.v
@@ -282,6 +283,11 @@ $BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_wormhole.sv
+$BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
+$BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
