@@ -76,13 +76,6 @@ module bp_me_stream_pump_in
    , output logic                                   fsm_last_o
    );
 
-  //synopsys translate_off
-  initial begin
-    assert(block_width_p % stream_data_width_p == 0) else
-      $error("block width must be evenly divisible by stream data width");
-  end
-  //synopsys translate_on
-
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
 
   `bp_cast_i(bp_bedrock_xce_msg_header_s, msg_header);
