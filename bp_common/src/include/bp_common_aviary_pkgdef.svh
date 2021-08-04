@@ -803,10 +803,10 @@
   // Half core configs
   localparam bp_proc_param_s bp_unicore_half_override_p =
     '{num_lce  : 1
-      ,dcache_fill_width    : 512
-      ,icache_fill_width    : 512
-      ,l2_data_width        : 512
-      ,l2_fill_width        : 512
+      ,dcache_fill_width    : 64
+      ,icache_fill_width    : 64
+      ,l2_data_width        : 64
+      ,l2_fill_width        : 64
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_half_cfg_p

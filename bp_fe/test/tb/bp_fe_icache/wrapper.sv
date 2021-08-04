@@ -12,14 +12,14 @@ module wrapper
    , parameter fill_width_p = icache_fill_width_p
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, uce)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, block_width_p, icache_fill_width_p, icache)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
    , localparam lg_icache_assoc_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam block_size_in_words_lp=icache_assoc_p
-   , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
+   , localparam bank_width_lp = block_width_p / icache_assoc_p
    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
    , localparam data_mem_mask_width_lp=(bank_width_lp>>3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp>>3)
@@ -46,13 +46,13 @@ module wrapper
    , output                                  data_v_o
 
    , output logic [uce_mem_msg_header_width_lp-1:0]    mem_cmd_header_o
-   , output logic [icache_fill_width_p-1:0]            mem_cmd_data_o
+   , output logic [l2_fill_width_p-1:0]                mem_cmd_data_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_and_i
    , output logic                                      mem_cmd_last_o
 
    , input [uce_mem_msg_header_width_lp-1:0]           mem_resp_header_i
-   , input [icache_fill_width_p-1:0]                   mem_resp_data_i
+   , input [l2_fill_width_p-1:0]                       mem_resp_data_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_ready_and_o
    , input                                             mem_resp_last_i
@@ -81,7 +81,7 @@ module wrapper
   logic [icache_data_mem_pkt_width_lp-1:0] data_mem_pkt_li;
   logic [icache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_li;
   logic [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
-  logic [icache_block_width_p-1:0] data_mem_lo;
+  logic [block_width_p-1:0] data_mem_lo;
   logic [icache_tag_info_width_lp-1:0] tag_mem_lo;
   logic [icache_stat_info_width_lp-1:0] stat_mem_lo;
 
@@ -262,7 +262,8 @@ module wrapper
      #(.bp_params_p(bp_params_p)
        ,.assoc_p(icache_assoc_p)
        ,.sets_p(icache_sets_p)
-       ,.block_width_p(icache_block_width_p)
+       ,.block_width_p(block_width_p)
+       ,.fill_width_p(fill_width_p)
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
        ,.non_excl_reads_p(1)
@@ -455,92 +456,29 @@ module wrapper
        ,.lce_cmd_last_o(cce_lce_cmd_last)
 
        // CCE-MEM Interface
-       // BedRock Burst protocol: ready&valid
-       ,.mem_resp_header_i(cce_mem_resp_header)
-       ,.mem_resp_header_v_i(cce_mem_resp_header_v)
-       ,.mem_resp_header_ready_and_o(cce_mem_resp_header_ready_and)
-       ,.mem_resp_has_data_i(cce_mem_resp_has_data)
-       ,.mem_resp_data_i(cce_mem_resp_data)
-       ,.mem_resp_data_v_i(cce_mem_resp_data_v)
-       ,.mem_resp_data_ready_and_o(cce_mem_resp_data_ready_and)
-       ,.mem_resp_last_i(cce_mem_resp_last)
+       // BedRock Stream protocol: ready&valid
+       // TODO: match data widths with top-level
+       ,.mem_resp_header_i(mem_resp_header_i)
+       ,.mem_resp_data_i(mem_resp_data_i)
+       ,.mem_resp_v_i(mem_resp_v_i)
+       ,.mem_resp_ready_and_o(mem_resp_ready_and_o)
+       ,.mem_resp_last_i(mem_resp_last_i)
 
-       ,.mem_cmd_header_o(cce_mem_cmd_header)
-       ,.mem_cmd_header_v_o(cce_mem_cmd_header_v)
-       ,.mem_cmd_header_ready_and_i(cce_mem_cmd_header_ready_and)
-       ,.mem_cmd_has_data_o(cce_mem_cmd_has_data)
-       ,.mem_cmd_data_o(cce_mem_cmd_data)
-       ,.mem_cmd_data_v_o(cce_mem_cmd_data_v)
-       ,.mem_cmd_data_ready_and_i(cce_mem_cmd_data_ready_and)
-       ,.mem_cmd_last_o(cce_mem_cmd_last)
-       );
-
-    // Mem Command
-    bp_me_burst_to_stream
-     #(.bp_params_p(bp_params_p)
-       // TODO: convert widths properly
-       ,.data_width_p(cce_block_width_p)
-       ,.payload_width_p(uce_mem_payload_width_lp)
-       ,.msg_payload_mask_p(mem_cmd_payload_mask_gp)
-       )
-     mem_cmd_burst2stream
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-
-       ,.in_msg_header_i(cce_mem_cmd_header)
-       ,.in_msg_header_v_i(cce_mem_cmd_header_v)
-       ,.in_msg_header_ready_and_o(cce_mem_cmd_header_ready_and)
-       ,.in_msg_has_data_i(cce_mem_cmd_has_data)
-
-       ,.in_msg_data_i(cce_mem_cmd_data)
-       ,.in_msg_data_v_i(cce_mem_cmd_data_v)
-       ,.in_msg_data_ready_and_o(cce_mem_cmd_data_ready_and)
-       ,.in_msg_last_i(cce_mem_cmd_last)
-
-       ,.out_msg_header_o(mem_cmd_header_o)
-       ,.out_msg_data_o(mem_cmd_data_o)
-       ,.out_msg_v_o(mem_cmd_v_o)
-       ,.out_msg_ready_and_i(mem_cmd_ready_and_i)
-       ,.out_msg_last_o(mem_cmd_last_o)
-       );
-
-    // Mem Response
-    bp_me_stream_to_burst
-     #(.bp_params_p(bp_params_p)
-       // TODO: convert widths properly
-       ,.data_width_p(cce_block_width_p)
-       ,.payload_width_p(uce_mem_payload_width_lp)
-       ,.payload_mask_p(mem_resp_payload_mask_gp)
-       )
-     mem_resp_stream2burst
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-
-       ,.in_msg_header_i(mem_resp_header_i)
-       ,.in_msg_data_i(mem_resp_data_i)
-       ,.in_msg_v_i(mem_resp_v_i)
-       ,.in_msg_ready_and_o(mem_resp_ready_and_o)
-       ,.in_msg_last_i(mem_resp_last_i)
-
-       ,.out_msg_header_o(cce_mem_resp_header)
-       ,.out_msg_header_v_o(cce_mem_resp_header_v)
-       ,.out_msg_header_ready_and_i(cce_mem_resp_header_ready_and)
-       ,.out_msg_has_data_o(cce_mem_resp_has_data)
-
-       ,.out_msg_data_o(cce_mem_resp_data)
-       ,.out_msg_data_v_o(cce_mem_resp_data_v)
-       ,.out_msg_data_ready_and_i(cce_mem_resp_data_ready_and)
-       ,.out_msg_last_o(cce_mem_resp_last)
+       ,.mem_cmd_header_o(mem_cmd_header_o)
+       ,.mem_cmd_data_o(mem_cmd_data_o)
+       ,.mem_cmd_v_o(mem_cmd_v_o)
+       ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i)
+       ,.mem_cmd_last_o(mem_cmd_last_o)
        );
 
   end
   else begin: UCE
     bp_uce
      #(.bp_params_p(bp_params_p)
-       ,.uce_mem_data_width_p(cce_block_width_p)
+       ,.uce_mem_data_width_p(l2_fill_width_p)
        ,.assoc_p(icache_assoc_p)
        ,.sets_p(icache_sets_p)
-       ,.block_width_p(icache_block_width_p)
+       ,.block_width_p(block_width_p)
        ,.fill_width_p(icache_fill_width_p)
        )
      icache_uce
