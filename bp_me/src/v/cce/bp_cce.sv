@@ -329,7 +329,7 @@ module bp_cce
       ,.fsm_addr_o(mem_resp_addr_li)
       ,.fsm_data_o(mem_resp_data_li)
       ,.fsm_v_o(mem_resp_v_li)
-      ,.fsm_yumi_i(mem_resp_yumi_lo)
+      ,.fsm_ready_and_i(mem_resp_yumi_lo)
       ,.fsm_new_o(mem_resp_stream_new_li)
       ,.fsm_last_o(mem_resp_stream_last_li)
       ,.fsm_done_o(mem_resp_stream_done_li)

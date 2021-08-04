@@ -297,7 +297,7 @@ module bp_uce
      ,.fsm_addr_o(fsm_resp_addr_li)
      ,.fsm_data_o(fsm_resp_data_li)
      ,.fsm_v_o(fsm_resp_v_li)
-     ,.fsm_yumi_i(fsm_resp_yumi_lo)
+     ,.fsm_ready_and_i(fsm_resp_yumi_lo)
      ,.fsm_new_o(fsm_resp_new)
      ,.fsm_done_o(fsm_resp_done)
      ,.fsm_last_o(/* unused */)

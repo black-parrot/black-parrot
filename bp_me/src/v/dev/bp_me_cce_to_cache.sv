@@ -121,7 +121,7 @@ module bp_me_cce_to_cache
      ,.fsm_addr_o(mem_cmd_stream_addr_lo)
      ,.fsm_data_o(mem_cmd_data_lo)
      ,.fsm_v_o(mem_cmd_v_lo)
-     ,.fsm_yumi_i(mem_cmd_yumi_li)
+     ,.fsm_ready_and_i(mem_cmd_yumi_li)
      ,.fsm_new_o(mem_cmd_new_lo)
      ,.fsm_done_o(mem_cmd_done_lo)
      ,.fsm_last_o(/* unused */)

@@ -68,7 +68,7 @@ module bp_me_stream_pump_in
    , output logic [paddr_width_p-1:0]               fsm_addr_o
    , output logic [stream_data_width_p-1:0]         fsm_data_o
    , output logic                                   fsm_v_o
-   , input                                          fsm_yumi_i
+   , input                                          fsm_ready_and_i
    // FSM control signals
    // fsm_new is raised when first beat of every message is acked
    , output logic                                   fsm_new_o
@@ -85,7 +85,7 @@ module bp_me_stream_pump_in
 
   bp_bedrock_xce_msg_header_s msg_header_lo;
   logic [stream_data_width_p-1:0] msg_data_lo;
-  logic msg_v_lo, msg_yumi_li, msg_last_lo;
+  logic msg_v_lo, msg_ready_and_li, msg_last_lo;
 
   if (buffer_els_p == 0)
     begin: passthrough
@@ -93,7 +93,7 @@ module bp_me_stream_pump_in
       assign msg_data_lo = msg_data_i;
       assign msg_v_lo = msg_v_i;
       assign msg_last_lo = msg_last_i;
-      assign msg_ready_and_o = msg_yumi_li;
+      assign msg_ready_and_o = msg_ready_and_li;
     end
   else
     begin: buffered
@@ -117,6 +117,8 @@ module bp_me_stream_pump_in
 
       logic msg_header_v_lo, msg_header_yumi_li, msg_header_ready_and_lo;
       logic msg_data_v_lo, msg_data_yumi_li, msg_data_ready_and_lo;
+      logic msg_yumi_li;
+      assign msg_yumi_li = msg_ready_and_li & msg_v_lo;
 
       bsg_fifo_1r1w_small
        #(.width_p($bits(bp_bedrock_xce_msg_header_s))
@@ -275,27 +277,27 @@ module bp_me_stream_pump_in
           // 1:N
           // convert one msg message into stream of N FSM messages
           fsm_v_o = msg_v_lo;
-          msg_yumi_li = is_last_cnt & msg_last_lo & fsm_yumi_i;
-          cnt_up = fsm_yumi_i & ~is_last_cnt;
+          msg_ready_and_li = is_last_cnt & fsm_ready_and_i;
+          cnt_up = fsm_v_o & fsm_ready_and_i & ~is_last_cnt;
         end
       else if (is_msg_stream & ~is_fsm_stream)
         begin
           // N:1
           // consume all but last msg input beat silently, then FSM consumes last beat
           fsm_v_o = msg_v_lo & is_last_cnt;
-          msg_yumi_li = (~is_last_cnt & msg_v_lo) | (is_last_cnt & msg_v_lo & msg_last_lo & fsm_yumi_i);
-          cnt_up = msg_v_lo & ~is_last_cnt;
+          msg_ready_and_li = (~is_last_cnt) | (is_last_cnt & fsm_ready_and_i);
+          cnt_up = msg_v_lo & msg_ready_and_li & ~is_last_cnt;
         end
       else
         begin
           // 1:1
           fsm_v_o = msg_v_lo;
-          msg_yumi_li = fsm_yumi_i;
-          cnt_up = fsm_yumi_i & ~is_last_cnt;
+          msg_ready_and_li = fsm_ready_and_i;
+          cnt_up = fsm_v_o & fsm_ready_and_i & ~is_last_cnt;
         end
 
-      fsm_new_o  = fsm_yumi_i & ~streaming_r;
-      fsm_done_o = fsm_yumi_i & is_last_cnt;
+      fsm_new_o  = fsm_v_o & fsm_ready_and_i & ~streaming_r;
+      fsm_done_o = fsm_v_o & fsm_ready_and_i & is_last_cnt;
       fsm_last_o = fsm_v_o & is_last_cnt;
     end
 
