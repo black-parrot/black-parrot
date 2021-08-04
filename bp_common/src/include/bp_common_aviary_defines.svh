@@ -43,6 +43,7 @@
     , localparam paddr_width_p   = proc_param_lp.paddr_width                                       \
     , localparam daddr_width_p   = proc_param_lp.daddr_width                                       \
     , localparam caddr_width_p   = proc_param_lp.caddr_width                                       \
+    , localparam laddr_width_p   = daddr_width_p - $clog2(num_cce_p)                               \
     , localparam asid_width_p    = proc_param_lp.asid_width                                        \
     , localparam hio_width_p     = paddr_width_p - daddr_width_p                                   \
                                                                                                    \

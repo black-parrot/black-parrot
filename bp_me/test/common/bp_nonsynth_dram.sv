@@ -19,7 +19,7 @@ module bp_nonsynth_dram
    , parameter preload_mem_p = 0
    , parameter mem_els_p = 0
    , parameter dram_type_p = ""
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(laddr_width_p)
    )
   (input                                                    clk_i
    , input                                                  reset_i
@@ -83,10 +83,10 @@ module bp_nonsynth_dram
          end
 
        // TODO: May need to use actual hash function 
-       localparam cache_bank_addr_width_lp = `dram_pkg::channel_addr_width_p - `BSG_SAFE_CLOG2(num_dma_p);
+       localparam cache_bank_addr_width_lp = `dram_pkg::channel_addr_width_p - $clog2(num_dma_p);
        bsg_cache_to_test_dram
         #(.num_cache_p(num_dma_p)
-          ,.addr_width_p(daddr_width_p)
+          ,.addr_width_p(laddr_width_p)
           ,.data_width_p(l2_data_width_p)
           ,.block_size_in_words_p(l2_block_size_in_words_p)
           ,.cache_bank_addr_width_p(cache_bank_addr_width_lp)
@@ -203,7 +203,7 @@ module bp_nonsynth_dram
       localparam axi_burst_len_p = 1;
 
       logic [axi_id_width_p-1:0] axi_awid;
-      logic [caddr_width_p-1:0] axi_awaddr_addr;
+      logic [laddr_width_p-1:0] axi_awaddr_addr;
       logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_awaddr_cache_id;
       logic [7:0] axi_awlen;
       logic [2:0] axi_awsize;
@@ -221,7 +221,7 @@ module bp_nonsynth_dram
       logic axi_bvalid, axi_bready;
 
       logic [axi_id_width_p-1:0] axi_arid;
-      logic [caddr_width_p-1:0] axi_araddr_addr;
+      logic [laddr_width_p-1:0] axi_araddr_addr;
       logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_araddr_cache_id;
       logic [7:0] axi_arlen;
       logic [2:0] axi_arsize;
@@ -236,7 +236,7 @@ module bp_nonsynth_dram
       logic axi_rlast, axi_rvalid, axi_rready;
 
       bsg_cache_to_axi
-       #(.addr_width_p(daddr_width_p)
+       #(.addr_width_p(laddr_width_p)
          ,.data_width_p(l2_fill_width_p)
          ,.block_size_in_words_p(l2_block_size_in_fill_p)
          ,.num_cache_p(num_dma_p)

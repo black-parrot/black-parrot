@@ -11,7 +11,7 @@ module bp_ddr
    `declare_bp_proc_params(bp_params_p)
 
    , parameter num_dma_p = 1
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(laddr_width_p)
    )
   (input                                                     clk_i
    , input                                                   reset_i
@@ -20,11 +20,11 @@ module bp_ddr
    , input [num_dma_p-1:0]                                  dma_pkt_v_i
    , output logic [num_dma_p-1:0]                           dma_pkt_yumi_o
 
-   , output logic [num_dma_p-1:0][l2_fill_width_p-1:0] dma_data_o
+   , output logic [num_dma_p-1:0][l2_fill_width_p-1:0]      dma_data_o
    , output logic [num_dma_p-1:0]                           dma_data_v_o
    , input [num_dma_p-1:0]                                  dma_data_ready_i
 
-   , input [num_dma_p-1:0][l2_fill_width_p-1:0]        dma_data_i
+   , input [num_dma_p-1:0][l2_fill_width_p-1:0]             dma_data_i
    , input [num_dma_p-1:0]                                  dma_data_v_i
    , output logic [num_dma_p-1:0]                           dma_data_yumi_o
    );
@@ -114,11 +114,10 @@ module bp_ddr
       );
 
   for(genvar i=0; i<13; i++) begin
-    bsg_tag_client #(.width_p(8), .default_p(0))
+    bsg_tag_client #(.width_p(8))
       btc
         (.bsg_tag_i     (dmc_cfg_tag_lines_lo[i])
         ,.recv_clk_i    (clk_i)
-        ,.recv_reset_i  (1'b0)
         ,.recv_new_r_o  ()
         ,.recv_data_r_o (dmc_cfg_tag_data_lo[i])
         );
@@ -179,7 +178,7 @@ module bp_ddr
 
   bsg_cache_to_dram_ctrl
    #(.num_cache_p(num_dma_p)
-     ,.addr_width_p(daddr_width_p)
+     ,.addr_width_p(laddr_width_p)
      ,.data_width_p(l2_fill_width_p)
      ,.block_size_in_words_p(l2_block_size_in_fill_p)
      ,.dram_ctrl_burst_len_p(l2_block_size_in_fill_p)

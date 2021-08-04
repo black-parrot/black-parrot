@@ -62,7 +62,7 @@ module bp_nonsynth_mem
      ,.yumi_o(cache_data_yumi_li)
      );
 
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(laddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [l2_fill_width_p-1:0] dma_data_li;
