@@ -156,25 +156,25 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 ## ME files
 # CCE
-#$BP_ME_DIR/src/v/cce/bp_cce_alu.sv
-#$BP_ME_DIR/src/v/cce/bp_cce_arbitrate.sv
-#$BP_ME_DIR/src/v/cce/bp_cce_branch.sv
+$BP_ME_DIR/src/v/cce/bp_cce_alu.sv
+$BP_ME_DIR/src/v/cce/bp_cce_arbitrate.sv
+$BP_ME_DIR/src/v/cce/bp_cce_branch.sv
 $BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.sv
 $BP_ME_DIR/src/v/cce/bp_cce_dir_segment.sv
 $BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.sv
 $BP_ME_DIR/src/v/cce/bp_cce_dir.sv
 $BP_ME_DIR/src/v/cce/bp_cce_gad.sv
-#$BP_ME_DIR/src/v/cce/bp_cce_inst_decode.sv
-#$BP_ME_DIR/src/v/cce/bp_cce_inst_predecode.sv
-#$BP_ME_DIR/src/v/cce/bp_cce_inst_ram.sv
-#$BP_ME_DIR/src/v/cce/bp_cce_inst_stall.sv
-#$BP_ME_DIR/src/v/cce/bp_cce_msg.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_decode.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_predecode.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_ram.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_stall.sv
+$BP_ME_DIR/src/v/cce/bp_cce_msg.sv
 $BP_ME_DIR/src/v/cce/bp_cce_pending_bits.sv
 $BP_ME_DIR/src/v/cce/bp_cce_pma.sv
-#$BP_ME_DIR/src/v/cce/bp_cce_reg.sv
+$BP_ME_DIR/src/v/cce/bp_cce_reg.sv
 $BP_ME_DIR/src/v/cce/bp_cce_spec_bits.sv
-#$BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
-#$BP_ME_DIR/src/v/cce/bp_cce.sv
+$BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
+$BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv

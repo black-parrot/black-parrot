@@ -52,13 +52,13 @@ module wrapper
    , output logic [num_caches_p-1:0]                     v_o
 
    , output logic [cce_mem_msg_header_width_lp-1:0]    mem_cmd_header_o
-   , output logic [dcache_fill_width_p-1:0]            mem_cmd_data_o
+   , output logic [l2_fill_width_p-1:0]                mem_cmd_data_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_and_i
    , output logic                                      mem_cmd_last_o
 
    , input [cce_mem_msg_header_width_lp-1:0]           mem_resp_header_i
-   , input [dcache_fill_width_p-1:0]                   mem_resp_data_i
+   , input [l2_fill_width_p-1:0]                       mem_resp_data_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_ready_and_o
    , input                                             mem_resp_last_i
@@ -267,6 +267,7 @@ module wrapper
               ,.assoc_p(assoc_p)
               ,.sets_p(sets_p)
               ,.block_width_p(block_width_p)
+              ,.fill_width_p(fill_width_p)
               ,.timeout_max_limit_p(4)
               ,.credits_p(coh_noc_max_credits_p)
               ,.data_mem_invert_clk_p(1)
@@ -385,7 +386,7 @@ module wrapper
          begin : uce
           bp_uce
            #(.bp_params_p(bp_params_p)
-             ,.uce_mem_data_width_p(cce_block_width_p)
+             ,.uce_mem_data_width_p(l2_fill_width_p)
              ,.assoc_p(assoc_p)
              ,.sets_p(sets_p)
              ,.block_width_p(block_width_p)
@@ -461,16 +462,6 @@ module wrapper
        bp_bedrock_lce_resp_msg_header_s cce_lce_resp_header;
        bp_bedrock_lce_cmd_msg_header_s cce_lce_cmd_header;
        logic [dword_width_gp-1:0] cce_lce_req_data, cce_lce_resp_data, cce_lce_cmd_data;
-
-       // CCE-Mem connections - BedRock Burst - to/from CCE
-       logic cce_mem_resp_header_v, cce_mem_resp_header_ready_and;
-       logic cce_mem_resp_data_v, cce_mem_resp_data_ready_and;
-       logic cce_mem_resp_has_data, cce_mem_resp_last;
-       logic cce_mem_cmd_header_v, cce_mem_cmd_header_ready_and;
-       logic cce_mem_cmd_data_v, cce_mem_cmd_data_ready_and;
-       logic cce_mem_cmd_has_data, cce_mem_cmd_last;
-       bp_bedrock_cce_mem_msg_header_s cce_mem_resp_header, cce_mem_cmd_header;
-       logic [dword_width_gp-1:0] cce_mem_cmd_data, cce_mem_resp_data;
 
        // Request adapter to convert the link format to the CCE request input
        // format
@@ -689,7 +680,6 @@ module wrapper
           ,.concentrated_link_o(resp_concentrated_link_lo)
           );
 
-
        bp_cce_fsm
         #(.bp_params_p(bp_params_p))
         cce
@@ -728,87 +718,20 @@ module wrapper
           ,.lce_cmd_last_o(cce_lce_cmd_last)
 
           // CCE-MEM Interface
-          // BedRock Burst protocol: ready&valid
-          ,.mem_resp_header_i(cce_mem_resp_header)
-          ,.mem_resp_header_v_i(cce_mem_resp_header_v)
-          ,.mem_resp_header_ready_and_o(cce_mem_resp_header_ready_and)
-          ,.mem_resp_has_data_i(cce_mem_resp_has_data)
-          ,.mem_resp_data_i(cce_mem_resp_data)
-          ,.mem_resp_data_v_i(cce_mem_resp_data_v)
-          ,.mem_resp_data_ready_and_o(cce_mem_resp_data_ready_and)
-          ,.mem_resp_last_i(cce_mem_resp_last)
+          // BedRock Stream protocol: ready&valid
+          // TODO: match data widths with top-level
+          ,.mem_resp_header_i(mem_resp_header_i)
+          ,.mem_resp_data_i(mem_resp_data_i)
+          ,.mem_resp_v_i(mem_resp_v_i)
+          ,.mem_resp_ready_and_o(mem_resp_ready_and_o)
+          ,.mem_resp_last_i(mem_resp_last_i)
 
-          ,.mem_cmd_header_o(cce_mem_cmd_header)
-          ,.mem_cmd_header_v_o(cce_mem_cmd_header_v)
-          ,.mem_cmd_header_ready_and_i(cce_mem_cmd_header_ready_and)
-          ,.mem_cmd_has_data_o(cce_mem_cmd_has_data)
-          ,.mem_cmd_data_o(cce_mem_cmd_data)
-          ,.mem_cmd_data_v_o(cce_mem_cmd_data_v)
-          ,.mem_cmd_data_ready_and_i(cce_mem_cmd_data_ready_and)
-          ,.mem_cmd_last_o(cce_mem_cmd_last)
+          ,.mem_cmd_header_o(mem_cmd_header_o)
+          ,.mem_cmd_data_o(mem_cmd_data_o)
+          ,.mem_cmd_v_o(mem_cmd_v_o)
+          ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i)
+          ,.mem_cmd_last_o(mem_cmd_last_o)
           );
-
-       // Mem Response
-       bp_me_stream_to_burst
-        #(.bp_params_p(bp_params_p)
-          ,.data_width_p(cce_block_width_p)
-          ,.payload_width_p(cce_mem_payload_width_lp)
-          ,.payload_mask_p(mem_resp_payload_mask_gp)
-          )
-        mem_resp_lite2burst
-         (.clk_i(clk_i)
-          ,.reset_i(reset_i)
-
-          // from mem response fifo
-          ,.in_msg_header_i(mem_resp_header_i)
-          ,.in_msg_data_i(mem_resp_data_i)
-          ,.in_msg_v_i(mem_resp_v_i)
-          ,.in_msg_ready_and_o(mem_resp_ready_and_o)
-          ,.in_msg_last_i(mem_resp_last_i)
-
-          // to CCE
-          ,.out_msg_header_o(cce_mem_resp_header)
-          ,.out_msg_header_v_o(cce_mem_resp_header_v)
-          ,.out_msg_header_ready_and_i(cce_mem_resp_header_ready_and)
-          ,.out_msg_has_data_o(cce_mem_resp_has_data)
-
-          ,.out_msg_data_o(cce_mem_resp_data)
-          ,.out_msg_data_v_o(cce_mem_resp_data_v)
-          ,.out_msg_data_ready_and_i(cce_mem_resp_data_ready_and)
-          ,.out_msg_last_o(cce_mem_resp_last)
-          );
-
-       // Mem Command
-       bp_me_burst_to_stream
-        #(.bp_params_p(bp_params_p)
-          // TODO: Match widths
-          ,.data_width_p(cce_block_width_p)
-          ,.payload_width_p(cce_mem_payload_width_lp)
-          ,.payload_mask_p(mem_cmd_payload_mask_gp)
-          )
-        mem_cmd_burst2stream
-         (.clk_i(clk_i)
-          ,.reset_i(reset_i)
-
-          // from CCE
-          ,.in_msg_header_i(cce_mem_cmd_header)
-          ,.in_msg_header_v_i(cce_mem_cmd_header_v)
-          ,.in_msg_header_ready_and_o(cce_mem_cmd_header_ready_and)
-          ,.in_msg_has_data_i(cce_mem_cmd_has_data)
-
-          ,.in_msg_data_i(cce_mem_cmd_data)
-          ,.in_msg_data_v_i(cce_mem_cmd_data_v)
-          ,.in_msg_data_ready_and_o(cce_mem_cmd_data_ready_and)
-          ,.in_msg_last_i(cce_mem_cmd_last)
-
-          // to top-level output
-          ,.out_msg_header_o(mem_cmd_header_o)
-          ,.out_msg_data_o(mem_cmd_data_o)
-          ,.out_msg_v_o(mem_cmd_v_o)
-          ,.out_msg_ready_and_i(mem_cmd_ready_and_i)
-          ,.out_msg_last_o(mem_cmd_last_o)
-          );
-
      end
 
 endmodule

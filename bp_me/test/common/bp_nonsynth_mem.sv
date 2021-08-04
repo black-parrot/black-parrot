@@ -38,7 +38,7 @@ module bp_nonsynth_mem
    , input                                          dram_reset_i
    );
 
-  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
+  `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [l2_data_width_p-1:0] cache_data_lo;
