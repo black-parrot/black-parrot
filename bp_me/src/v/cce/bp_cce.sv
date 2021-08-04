@@ -304,7 +304,7 @@ module bp_cce
    */
 
   // Memory Response Stream Pump
-  // provide buffer space for two stream messages with data
+  // provide buffer space for two stream messages with data (for coherence protocol)
   localparam mem_resp_buffer_els_lp = 2;
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)

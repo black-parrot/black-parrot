@@ -42,6 +42,8 @@ module bp_me_stream_pump_in
    , parameter msg_stream_mask_p = 0
    , parameter fsm_stream_mask_p = msg_stream_mask_p
 
+   // number of full-payload messages that can be buffered
+   // buffer_els_p headers and buffer_els_p*stream_words_lp data beats will be buffered
    , parameter buffer_els_p = 0
 
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
