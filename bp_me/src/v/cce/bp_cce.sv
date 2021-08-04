@@ -305,7 +305,7 @@ module bp_cce
 
   // Memory Response Stream Pump
   // provide buffer space for two stream messages with data
-  localparam mem_resp_buffer_els_lp = 2*stream_words_lp;
+  localparam mem_resp_buffer_els_lp = 2;
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(dword_width_gp)
