@@ -319,7 +319,7 @@ module bp_l2e_tile
      );
 
   // All CCE-Mem network responses go to the CCE on this tile (id = 0 in xbar)
-  logic [2:0] dev_resp_dst_lo = '0;
+  wire [2:0] dev_resp_dst_lo = '0;
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
