@@ -1,6 +1,6 @@
 /**
  *  Name:
- *    bp_lce_req.v
+ *    bp_lce_req.sv
  *
  *  Description:
  *    LCE request handler.
@@ -97,6 +97,10 @@ module bp_lce_req
     , output logic                                   lce_req_v_o
     , input                                          lce_req_ready_then_i
   );
+
+  // parameter checks
+  if (metadata_latency_p >= 2)
+    $fatal(0,"metadata needs to arrive within one cycle of the request");
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
@@ -304,12 +308,6 @@ module bp_lce_req
       state_r <= state_n;
     end
   end
-
-  always_ff @(negedge clk_i)
-    begin
-      assert ((metadata_latency_p < 2))
-        else $error("metadata needs to arrive within one cycle of the request");
-    end
 
 endmodule
 

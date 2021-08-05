@@ -77,6 +77,14 @@ module bp_me_stream_pump_out
    , output logic                                   fsm_done_o
    );
 
+  // parameter checks
+  if (block_width_p % stream_data_width_p != 0)
+    $fatal(0,"block_width_p must be evenly divisible by stream_data_width_p");
+  if (block_width_p < stream_data_width_p)
+    $fatal(0,"block_width_p must be at least as large as stream_data_width_p");
+  if (buffer_els_p != 0)
+    $fatal(0,"buffering not yet supported in stream pump out");
+
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
 
   `bp_cast_i(bp_bedrock_xce_msg_header_s, fsm_base_header);
@@ -237,17 +245,6 @@ module bp_me_stream_pump_out
       msg_data_o = fsm_data_li;
       msg_last_o = is_last_cnt & msg_v_o;
     end
-
-  //synopsys translate_off
-  if (block_width_p % stream_data_width_p != 0)
-    $fatal("block_width_p must be evenly divisible by stream_data_width_p");
-
-  if (block_width_p < stream_data_width_p)
-    $fatal("block_width_p must be at least as large as stream_data_width_p");
-
-  if (buffer_els_p != 0)
-    $fatal("buffering not yet supported in stream pump out");
-  //synopsys translate_on
 
 endmodule
 

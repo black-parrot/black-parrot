@@ -1,6 +1,6 @@
 /**
  *  Name:
- *    bp_lce_cmd.v
+ *    bp_lce_cmd.sv
  *
  *  Description:
  *    LCE command handler

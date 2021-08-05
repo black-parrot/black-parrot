@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_dir_tag_checker.v
+ *   bp_cce_dir_tag_checker.sv
  *
  * Description:
  *   This module performs the parallel tag comparison on a row of tag sets from the directory.
@@ -31,10 +31,9 @@ module bp_cce_dir_tag_checker
    , output bp_coh_states_e [tag_sets_per_row_p-1:0]              sharers_coh_states_o
   );
 
-  initial begin
-    assert(tag_sets_per_row_p == 2) else
-      $error("unsupported configuration: number of sets per row must equal 2");
-  end
+  // parameter checks
+  if (tag_sets_per_row_p != 2)
+    $fatal(0,"unsupported configuration: number of sets per row must equal 2");
 
   `declare_bp_cce_dir_entry_s(tag_width_p);
 

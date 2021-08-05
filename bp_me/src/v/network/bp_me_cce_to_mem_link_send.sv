@@ -1,8 +1,11 @@
 /**
- * bp_me_cce_to_wormhole_link_send.v
+ *
+ * Name:
+ *   bp_me_cce_to_mem_link_send.sv
+ *
+ * Description:
+ *
  */
-
-`include "bp_me_defines.svh"
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"

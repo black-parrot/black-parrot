@@ -1,3 +1,11 @@
+/**
+ *
+ * Name:
+ *   bp_me_stream_to_lite.sv
+ *
+ * Description:
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
@@ -37,6 +45,12 @@ module bp_me_stream_to_lite
    , output logic                            out_msg_v_o
    , input                                   out_msg_ready_and_i
    );
+
+  // parameter checks
+  if (in_data_width_p >= out_data_width_p)
+    $fatal(0,"stream data cannot be larger than lite data");
+  if (out_data_width_p % in_data_width_p != 0)
+    $fatal(0,"lite data must be a multiple of stream data");
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in);
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out);
@@ -96,14 +110,6 @@ module bp_me_stream_to_lite
   assign out_msg_o = msg_cast_o;
 
   //synopsys translate_off
-  initial
-    begin
-      assert (in_data_width_p < out_data_width_p)
-        else $error("burst data cannot be larger than lite data");
-      assert (out_data_width_p % in_data_width_p == 0)
-        else $error("lite data must be a multiple of burst data");
-    end
-
   always_ff @(negedge clk_i)
     begin
     //  if (in_msg_v_i)

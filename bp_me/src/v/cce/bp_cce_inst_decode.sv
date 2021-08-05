@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_inst_decode.v
+ *   bp_cce_inst_decode.sv
  *
  * Description:
  *   The decoder holds the decode+execute stage PC, instruction, and valid bit. The decoder also
@@ -50,7 +50,6 @@ module bp_cce_inst_decode
 
   );
 
-
   // Execute Stage Instruction Register and PC
   bp_cce_inst_s inst_r, inst_n;
   logic [cce_pc_width_p-1:0] ex_pc_r, ex_pc_n;
@@ -66,7 +65,6 @@ module bp_cce_inst_decode
       inst_v_r <= inst_v_n;
     end
   end
-
 
   // Instruction Fields
   bp_cce_inst_op_e             op;

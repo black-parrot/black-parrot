@@ -1,6 +1,6 @@
 /**
  *  Name:
- *    bp_me_wormhole_packet_encode_mem_cmd.v
+ *    bp_me_wormhole_packet_encode_mem_cmd.sv
  *
  *  Description:
  *    It takes bp_mem_cmd_s as a payload, parses, and forms it into a wormhole
@@ -8,8 +8,6 @@
  *
  *    packet = {payload, length, cord}
  */
-
-`include "bp_me_defines.svh"
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"

@@ -1,6 +1,12 @@
+/**
+ *
+ * Name:
+ *   bp_me_lce_id_to_cord.sv
+ *
+ * Description:
+ *   TODO: Should be replaced by a lookup table.  Programmable?
+ */
 
-
-/* TODO: Should be replaced by a lookup table.  Programmable? */
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 

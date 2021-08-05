@@ -90,6 +90,10 @@ module bp_me_burst_to_wormhole
    , input                           link_ready_and_i
    );
 
+  // parameter checks
+  if ((pr_data_width_p % flit_width_p != 0) && (flit_width_p % pr_data_width_p != 0))
+    $fatal(0,"Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
+
   // wormhole stream control determines if data exists based on input
   // protocol header that is already formatted as a wormhole header
   wire unused = pr_has_data_i;
@@ -205,11 +209,6 @@ module bp_me_burst_to_wormhole
 
   assign link_data_o = is_hdr ? hdr_lo   : data_lo;
   assign link_v_o    = is_hdr ? hdr_v_lo : data_v_lo;
-
-  //synopsys translate_off
-  if ((pr_data_width_p % flit_width_p != 0) && (flit_width_p % pr_data_width_p != 0))
-    $fatal("Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
-  //synopsys translate_on
 
 endmodule
 

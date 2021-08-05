@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_src_sel.v
+ *   bp_cce_src_sel.sv
  *
  * Description:
  *   Source select module for inputs to ALU, Branch unit, directory, GAD, messages, etc.
@@ -81,12 +81,11 @@ module bp_cce_src_sel
    , output bp_coh_states_e                      state_o
   );
 
-  //synopsys translate_off
+  // parameter checks
   initial begin
-    assert(cce_block_width_p >= `bp_cce_inst_gpr_width)
-      else $error("CCE block width must be greater than CCE GPR width");
+    if (cce_block_width_p < `bp_cce_inst_gpr_width)
+      $fatal(0,"CCE block width must be greater than CCE GPR width");
   end
-  //synopsys translate_on
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast;

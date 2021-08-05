@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_fsm.v
+ *   bp_cce_fsm.sv
  *
  * Description:
  *   This is an FSM based CCE
@@ -47,10 +47,10 @@ module bp_cce_fsm
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-    , localparam counter_max = 256
+    , localparam counter_max_lp = 256
     , localparam hash_index_width_lp=$clog2((2**lg_lce_sets_lp+num_cce_p-1)/num_cce_p)
 
-    , localparam counter_width_lp = `BSG_SAFE_CLOG2(counter_max+1)
+    , localparam counter_width_lp = `BSG_SAFE_CLOG2(counter_max_lp+1)
 
     // log2 of dword width bytes
     , localparam lg_dword_width_bytes_lp = `BSG_SAFE_CLOG2(dword_width_gp/8)
@@ -104,6 +104,17 @@ module bp_cce_fsm
    , input                                          mem_cmd_ready_and_i
    , output logic                                   mem_cmd_last_o
    );
+
+  // parameter checks
+  if (lce_sets_p <= 1) $fatal(0,"Number of LCE sets must be greater than 1");
+  if (counter_max_lp < num_way_groups_lp) $fatal(0,"Counter max value not large enough");
+  if (counter_max_lp < max_tag_sets_lp) $fatal(0,"Counter max value not large enough");
+  if (icache_block_width_p != cce_block_width_p) $fatal(0,"icache block width must match cce block width");
+  if (dcache_block_width_p != cce_block_width_p) $fatal(0,"dcache block width must match cce block width");
+  if (acache_block_width_p != cce_block_width_p) $fatal(0,"acache block width must match cce block width");
+  if (dword_width_gp != 64) $fatal(0,"FSM CCE requires dword width of 64-bits");
+  if (!(`BSG_IS_POW2(cce_block_width_p) || cce_block_width_p < 64 || cce_block_width_p > 1024))
+    $fatal(0, "invalid CCE block width");
 
   // Define structure variables for output queues
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
@@ -473,9 +484,9 @@ module bp_cce_fsm
 
   // General use counter
   logic cnt_0_clr, cnt_0_inc;
-  logic [`BSG_SAFE_CLOG2(counter_max+1)-1:0] cnt_0;
+  logic [`BSG_SAFE_CLOG2(counter_max_lp+1)-1:0] cnt_0;
   bsg_counter_clear_up
-    #(.max_val_p(counter_max)
+    #(.max_val_p(counter_max_lp)
       ,.init_val_p(0)
      )
     counter_0
@@ -488,9 +499,9 @@ module bp_cce_fsm
 
   // General use counter
   logic cnt_1_clr, cnt_1_inc;
-  logic [`BSG_SAFE_CLOG2(counter_max+1)-1:0] cnt_1;
+  logic [`BSG_SAFE_CLOG2(counter_max_lp+1)-1:0] cnt_1;
   bsg_counter_clear_up
-    #(.max_val_p(counter_max)
+    #(.max_val_p(counter_max_lp)
       ,.init_val_p(0)
      )
     counter_1
@@ -1964,18 +1975,5 @@ module bp_cce_fsm
       cce_normal_mode_r <= cce_normal_mode_n;
     end
   end
-
-  //synopsys translate_off
-  initial begin
-    assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
-    assert (counter_max > num_way_groups_lp) else $error("Counter max value not large enough");
-    assert (counter_max > max_tag_sets_lp) else $error("Counter max value not large enough");
-    assert (icache_block_width_p == cce_block_width_p) else $error("icache block width must match cce block width");
-    assert (dcache_block_width_p == cce_block_width_p) else $error("dcache block width must match cce block width");
-    assert (acache_block_width_p == cce_block_width_p) else $error("acache block width must match cce block width");
-    assert (block_size_in_bytes_lp inside {8, 16, 32, 64, 128}) else $error("invalid CCE block width");
-    assert (dword_width_gp == 64) else $error("FSM CCE requires dword width of 64-bits");
-  end
-  //synopsys translate_on
 
 endmodule

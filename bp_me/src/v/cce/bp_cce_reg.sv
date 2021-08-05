@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_reg.v
+ *   bp_cce_reg.sv
  *
  * Description:
  *

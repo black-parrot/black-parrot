@@ -37,6 +37,14 @@ module bp_bedrock_size_to_len
   localparam msg_size_64_beats_lp = `BSG_CDIV((1 << e_bedrock_msg_size_64)*8, beat_width_p) - 1;
   localparam msg_size_128_beats_lp = `BSG_CDIV((1 << e_bedrock_msg_size_128)*8, beat_width_p) - 1;
 
+  // parameter checks
+  if (len_width_p < `BSG_SAFE_CLOG2(msg_size_128_beats_lp))
+    $fatal(0,"len_width_p must be large enough to ");
+  if (!(`BSG_IS_POW2(beat_width_p)))
+    $fatal(0,"beat_width_p must be a power of two");
+  if (beat_width_p < 8)
+    $fatal(0,"beat_width_p must be at least 8 bits wide");
+
   always_comb begin
     unique case (size_i)
       e_bedrock_msg_size_1: len_o = len_width_p'(msg_size_1_beats_lp);
@@ -50,18 +58,6 @@ module bp_bedrock_size_to_len
       default: len_o = '0;
     endcase
   end
-
-  //synopsys translate_off
-  initial begin
-    assert(len_width_p >= `BSG_SAFE_CLOG2(msg_size_128_beats_lp)) else
-      $error("len_width_p must be large enough to ");
-    assert(`BSG_IS_POW2(beat_width_p)) else
-      $error("beat_width_p must be a power of two");
-    assert(beat_width_p >= 8) else
-      $error("beat_width_p must be at least 8 bits wide");
-  end
-  //synopsys translate_on
-
 
 endmodule
 

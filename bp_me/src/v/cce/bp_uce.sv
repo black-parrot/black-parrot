@@ -1,3 +1,12 @@
+/**
+ *
+ * Name:
+ *   bp_uce.sv
+ *
+ * Description:
+ *   This is the top level module for the UCE
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
@@ -66,6 +75,9 @@ module bp_uce
     , input                                          mem_resp_last_i
     );
 
+  // parameter checks
+  if ((metadata_latency_p >= 2))
+    $fatal(0,"metadata needs to arrive within one cycle of the request");
 
   localparam bank_width_lp = block_width_p / assoc_p;
   localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp;
@@ -748,14 +760,13 @@ module bp_uce
     else
       state_r <= state_n;
 
-always_ff @(negedge clk_i)
-  begin
-    assert((metadata_latency_p < 2))
-      else $error("metadata needs to arrive within one cycle of the request");
-
-    assert((l1_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
-      else $error("writethrough cache should not be in writeback states");
-  end
+  //synopsys translate_off
+  always_ff @(negedge clk_i)
+    begin
+      assert ((l1_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
+        else $error("writethrough cache should not be in writeback states");
+    end
+  //synopsys translate_on
 
 endmodule
 

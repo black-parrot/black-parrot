@@ -1,5 +1,10 @@
 /**
- * bp_me_cce_to_wormhole_link_recv.sv
+ *
+ * Name:
+ *   bp_me_cce_to_mem_link_recv.sv
+ *
+ * Description:
+ *
  */
 
 `include "bp_common_defines.svh"

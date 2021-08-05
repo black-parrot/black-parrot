@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_inst_stall.v
+ *   bp_cce_inst_stall.sv
  *
  * Description:
  *   The stall unit collects the current instruction and status of other functional units to

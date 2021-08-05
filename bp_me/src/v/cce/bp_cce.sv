@@ -1,14 +1,12 @@
 /**
  *
  * Name:
- *   bp_cce.v
+ *   bp_cce.sv
  *
  * Description:
- *   This is the top level module for the CCE.
+ *   This is the top level module for the microcoded CCE.
  *
  */
-
-`include "bp_me_defines.svh"
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
@@ -90,25 +88,24 @@ module bp_cce
    , output logic                                   mem_cmd_last_o
   );
 
-  // CCE Parameter Assertions
-  //synopsys translate_off
-  initial begin
-    assert(`BSG_IS_POW2(cce_way_groups_p))
-      else $error("Number of way groups must be a power of two");
-    assert(`BSG_IS_POW2(dcache_assoc_p) && `BSG_IS_POW2(dcache_sets_p))
-      else $error("D$ sets and assoc must be power of two");
-    assert(`BSG_IS_POW2(icache_assoc_p) && `BSG_IS_POW2(icache_sets_p))
-      else $error("I$ sets and assoc must be power of two");
-    assert(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0)
-      else $error("A$ assoc must be power of two or 0");
-    assert(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0)
-      else $error("A$ sets must be power of two or 0");
-    assert (icache_block_width_p == cce_block_width_p) else $error("icache block width must match cce block width");
-    assert (dcache_block_width_p == cce_block_width_p) else $error("dcache block width must match cce block width");
-    assert (acache_block_width_p == cce_block_width_p) else $error("acache block width must match cce block width");
-    assert (block_size_in_bytes_lp inside {8, 16, 32, 64, 128}) else $error("invalid CCE block width");
-  end
-  //synopsys translate_on
+  // parameter checks
+  if (!(`BSG_IS_POW2(cce_way_groups_p))) $fatal(0,"Number of way groups must be a power of two");
+  if (!(`BSG_IS_POW2(dcache_assoc_p) && `BSG_IS_POW2(dcache_sets_p)))
+    $fatal(0,"D$ sets and assoc must be power of two");
+  if (!(`BSG_IS_POW2(icache_assoc_p) && `BSG_IS_POW2(icache_sets_p)))
+    $fatal(0,"I$ sets and assoc must be power of two");
+  if (!(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0))
+    $fatal(0,"A$ assoc must be power of two or 0");
+  if (!(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0))
+    $fatal(0,"A$ sets must be power of two or 0");
+  if (icache_block_width_p != cce_block_width_p)
+    $fatal(0,"icache block width must match cce block width");
+  if (dcache_block_width_p != cce_block_width_p)
+    $fatal(0,"dcache block width must match cce block width");
+  if (acache_block_width_p != cce_block_width_p)
+    $fatal(0,"acache block width must match cce block width");
+  if (!(`BSG_IS_POW2(cce_block_width_p) || cce_block_width_p < 64 || cce_block_width_p > 1024))
+    $fatal(0, "invalid CCE block width");
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);

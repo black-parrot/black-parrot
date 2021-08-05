@@ -1,3 +1,11 @@
+/**
+ *
+ * Name:
+ *   bp_me_lite_to_burst.sv
+ *
+ * Description:
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
@@ -46,6 +54,12 @@ module bp_me_lite_to_burst
 
    , output logic                                   out_msg_last_o
    );
+
+  // parameter checks
+  if (in_data_width_p < out_data_width_p)
+    $fatal(0,"lite data cannot be smaller than burst data");
+  if (in_data_width_p % out_data_width_p != 0)
+    $fatal(0,"lite data must be a multiple of burst data");
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in);
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out);
@@ -106,14 +120,6 @@ module bp_me_lite_to_burst
   assign in_msg_ready_and_o = has_data ? data_ready_and_lo : out_msg_header_ready_and_i;
 
   //synopsys translate_off
-  initial
-    begin
-      assert (in_data_width_p >= out_data_width_p)
-        else $error("lite data cannot be smaller than burst data");
-      assert (in_data_width_p % out_data_width_p == 0)
-        else $error("lite data must be a multiple of burst data");
-    end
-
   always_ff @(negedge clk_i)
     begin
       //if (in_msg_ready_and_o & in_msg_v_i)

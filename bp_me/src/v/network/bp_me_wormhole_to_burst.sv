@@ -88,6 +88,10 @@ module bp_me_wormhole_to_burst
    , output logic                       pr_last_o
    );
 
+  // parameter checks
+  if ((pr_data_width_p % flit_width_p != 0) && (flit_width_p % pr_data_width_p != 0))
+    $fatal(0,"Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
+
   logic is_hdr, is_data, wh_has_data, wh_last_data;
   logic hdr_v_li, hdr_ready_lo;
 
@@ -235,11 +239,6 @@ module bp_me_wormhole_to_burst
      );
 
   assign link_ready_and_o = is_hdr ? hdr_ready_lo : data_ready_lo;
-
-  //synopsys translate_off
-  if ((pr_data_width_p % flit_width_p != 0) && (flit_width_p % pr_data_width_p != 0))
-    $fatal("Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
-  //synopsys translate_on
 
 endmodule
 

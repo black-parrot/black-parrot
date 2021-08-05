@@ -1,4 +1,12 @@
-
+/**
+ *
+ * Name:
+ *   bp_me_addr_to_cce_id.sv
+ *
+ * Description:
+ *   Computes ID of CCE that is responsible for managing a physical address.
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"

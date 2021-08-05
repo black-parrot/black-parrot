@@ -1,5 +1,5 @@
 /*
- * bp_me_cce_to_cache.v
+ * bp_me_cce_to_cache.sv
  *
  *
   Data width conversion diagram
