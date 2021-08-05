@@ -9,12 +9,11 @@ module bp_cacc_vdp
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache)
 
-    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     )
-   (
-    input                                     clk_i
+   (input                                     clk_i
     , input                                   reset_i
 
     , input [lce_id_width_p-1:0]              lce_id_i
@@ -50,13 +49,14 @@ module bp_cacc_vdp
   logic                     dcache_tlb_miss, dcache_poison;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_uncached;
+  logic                     dcache_dram;
   logic                     dcache_miss_v;
   logic                     dcache_pkt_v;
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
-
+  assign cfg_bus_cast_i.dcache_mode = e_lce_mode_normal;
 
   logic cache_req_v_o, cache_req_yumi_i, cache_req_busy_i, cache_req_metadata_v_o,
   data_mem_pkt_v_i, data_mem_pkt_yumi_o,
@@ -65,151 +65,156 @@ module bp_cacc_vdp
   cache_req_complete_lo, cache_req_critical_tag_lo, cache_req_critical_data_lo,
   cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
-  `declare_bp_cache_engine_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;
   logic [cce_block_width_p-1:0] data_mem_o;
   bp_cache_tag_mem_pkt_s tag_mem_pkt_i;
-  logic [ptag_width_p-1:0] tag_mem_o;
+  logic [cache_tag_info_width_lp-1:0] tag_mem_o;
   bp_cache_stat_mem_pkt_s stat_mem_pkt_i;
   logic [cache_stat_info_width_lp-1:0] stat_mem_o;
   bp_cache_req_metadata_s cache_req_metadata_o;
 
-bp_pma
- #(.bp_params_p(bp_params_p))
-  pma
-   (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+  bp_pma
+   #(.bp_params_p(bp_params_p))
+   pma
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+  
+     ,.ptag_v_i(dcache_pkt_v)
+     ,.ptag_i(dcache_ptag)
+     ,.uncached_mode_i('0)
+     ,.nonspec_mode_i('0)
+  
+     ,.uncached_o(dcache_uncached)
+     ,.nonidem_o()
+     ,.dram_o(dcache_dram)
+     );
 
-    ,.ptag_v_i(dcache_pkt_v)
-    ,.ptag_i(dcache_ptag)
+  bp_be_dcache
+   #(.bp_params_p(bp_params_p)
+     ,.sets_p(acache_sets_p)
+     ,.assoc_p(acache_assoc_p)
+     ,.block_width_p(acache_block_width_p)
+     ,.fill_width_p(acache_fill_width_p)
+     )
+   acache
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-    ,.uncached_o(dcache_uncached)
-    );
+     ,.cfg_bus_i(cfg_bus_cast_i)
 
-bp_be_dcache
-  #(.bp_params_p(bp_params_p)
-    ,.sets_p(acache_sets_p)
-    ,.assoc_p(acache_assoc_p)
-    ,.block_width_p(acache_block_width_p)
-    ,.fill_width_p(acache_fill_width_p)
-    )
-  acache
-   (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+     ,.dcache_pkt_i(dcache_pkt)
+     ,.v_i(dcache_pkt_v)
+     ,.ready_o(dcache_ready)
 
-    ,.cfg_bus_i(cfg_bus_cast_i)
+     ,.early_v_o(dcache_v)
+     ,.early_data_o(dcache_data)
+     ,.final_v_o()
+     ,.final_data_o()
 
-    ,.dcache_pkt_i(dcache_pkt)
-    ,.v_i(dcache_pkt_v)
-    ,.ready_o(dcache_ready)
+     ,.ptag_v_i(1'b1)
+     ,.ptag_i(dcache_ptag)
+     ,.ptag_uncached_i(dcache_uncached)
+     ,.ptag_dram_i(dcache_dram)
 
-    ,.early_v_o(dcache_v)
-    ,.early_data_o(dcache_data)
-    ,.final_v_o()
-    ,.final_data_o()
+     ,.flush_i(1'b0)
+     ,.replay_pending_o()
 
-    ,.ptag_v_i(1'b1)
-    ,.ptag_i(dcache_ptag)
-    ,.ptag_uncached_i(dcache_uncached)
+     // D$-LCE Interface
+     ,.cache_req_complete_i(cache_req_complete_lo)
+     ,.cache_req_critical_tag_i(cache_req_critical_tag_lo)
+     ,.cache_req_critical_data_i(cache_req_critical_data_lo)
+     ,.cache_req_o(cache_req_cast_o)
+     ,.cache_req_v_o(cache_req_v_o)
+     ,.cache_req_yumi_i(cache_req_yumi_i)
+     ,.cache_req_busy_i(cache_req_busy_i)
+     ,.cache_req_metadata_o(cache_req_metadata_o)
+     ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+     ,.cache_req_credits_full_i(cache_req_credits_full_lo)
+     ,.cache_req_credits_empty_i(cache_req_credits_empty_lo)
 
-    ,.flush_i(1'b0)
-
-    // D$-LCE Interface
-    ,.cache_req_complete_i(cache_req_complete_lo)
-    ,.cache_req_critical_tag_i(cache_req_critical_tag_lo)
-    ,.cache_req_critical_data_i(cache_req_critical_data_lo)
-    ,.cache_req_o(cache_req_cast_o)
-    ,.cache_req_v_o(cache_req_v_o)
-    ,.cache_req_yumi_i(cache_req_yumi_i)
-    ,.cache_req_busy_i(cache_req_busy_i)
-    ,.cache_req_metadata_o(cache_req_metadata_o)
-    ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-    ,.cache_req_credits_full_i(cache_req_credits_full_lo)
-    ,.cache_req_credits_empty_i(cache_req_credits_empty_lo)
-
-    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-    ,.data_mem_pkt_i(data_mem_pkt_i)
-    ,.data_mem_o(data_mem_o)
-    ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-    ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-    ,.tag_mem_pkt_i(tag_mem_pkt_i)
-    ,.tag_mem_o(tag_mem_o)
-    ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
-    ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-    ,.stat_mem_pkt_i(stat_mem_pkt_i)
-    ,.stat_mem_o(stat_mem_o)
-    ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-    );
+     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+     ,.data_mem_pkt_i(data_mem_pkt_i)
+     ,.data_mem_o(data_mem_o)
+     ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+     ,.tag_mem_pkt_i(tag_mem_pkt_i)
+     ,.tag_mem_o(tag_mem_o)
+     ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+     ,.stat_mem_pkt_i(stat_mem_pkt_i)
+     ,.stat_mem_o(stat_mem_o)
+     ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+     );
 
 
-bp_lce
- #(.bp_params_p(bp_params_p)
-   ,.assoc_p(dcache_assoc_p)
-   ,.sets_p(dcache_sets_p)
-   ,.block_width_p(dcache_block_width_p)
-   ,.fill_width_p(dcache_fill_width_p)
-   ,.timeout_max_limit_p(4)
-   ,.credits_p(coh_noc_max_credits_p)
-   ,.data_mem_invert_clk_p(1)
-   ,.tag_mem_invert_clk_p(1)
-   )
-  be_lce
-   (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-
-    ,.lce_id_i(cfg_bus_cast_i.dcache_id)
-    ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
-
-    ,.cache_req_i(cache_req_cast_o)
-    ,.cache_req_v_i(cache_req_v_o)
-    ,.cache_req_yumi_o(cache_req_yumi_i)
-    ,.cache_req_busy_o(cache_req_busy_i)
-    ,.cache_req_metadata_i(cache_req_metadata_o)
-    ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
-    ,.cache_req_critical_tag_o(cache_req_critical_tag_lo)
-    ,.cache_req_critical_data_o(cache_req_critical_data_lo)
-    ,.cache_req_complete_o(cache_req_complete_lo)
-    ,.cache_req_credits_full_o(cache_req_credits_full_lo)
-    ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
-
-    ,.data_mem_pkt_o(data_mem_pkt_i)
-    ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
-    ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_o)
-    ,.data_mem_i(data_mem_o)
-
-    ,.tag_mem_pkt_o(tag_mem_pkt_i)
-    ,.tag_mem_pkt_v_o(tag_mem_pkt_v_i)
-    ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_o)
-    ,.tag_mem_i(tag_mem_o)
-
-    ,.stat_mem_pkt_v_o(stat_mem_pkt_v_i)
-    ,.stat_mem_pkt_o(stat_mem_pkt_i)
-    ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_o)
-    ,.stat_mem_i(stat_mem_o)
-
-    ,.lce_req_o(lce_req_o)
-    ,.lce_req_v_o(lce_req_v_o)
-    ,.lce_req_ready_then_i(lce_req_ready_i)
-
-    ,.lce_resp_o(lce_resp_o)
-    ,.lce_resp_v_o(lce_resp_v_o)
-    ,.lce_resp_ready_then_i(lce_resp_ready_i)
-
-    ,.lce_cmd_i(lce_cmd_i)
-    ,.lce_cmd_v_i(lce_cmd_v_i)
-    ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-
-    ,.lce_cmd_o(lce_cmd_o)
-    ,.lce_cmd_v_o(lce_cmd_v_o)
-    ,.lce_cmd_ready_then_i(lce_cmd_ready_i)
-    );
-
+  bp_lce
+   #(.bp_params_p(bp_params_p)
+     ,.assoc_p(dcache_assoc_p)
+     ,.sets_p(dcache_sets_p)
+     ,.block_width_p(dcache_block_width_p)
+     ,.fill_width_p(dcache_fill_width_p)
+     ,.timeout_max_limit_p(4)
+     ,.credits_p(coh_noc_max_credits_p)
+     ,.data_mem_invert_clk_p(1)
+     ,.tag_mem_invert_clk_p(1)
+     )
+   be_lce
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+  
+     ,.lce_id_i(cfg_bus_cast_i.dcache_id)
+     ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
+  
+     ,.cache_req_i(cache_req_cast_o)
+     ,.cache_req_v_i(cache_req_v_o)
+     ,.cache_req_yumi_o(cache_req_yumi_i)
+     ,.cache_req_busy_o(cache_req_busy_i)
+     ,.cache_req_metadata_i(cache_req_metadata_o)
+     ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
+     ,.cache_req_critical_tag_o(cache_req_critical_tag_lo)
+     ,.cache_req_critical_data_o(cache_req_critical_data_lo)
+     ,.cache_req_complete_o(cache_req_complete_lo)
+     ,.cache_req_credits_full_o(cache_req_credits_full_lo)
+     ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
+  
+     ,.data_mem_pkt_o(data_mem_pkt_i)
+     ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
+     ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_o)
+     ,.data_mem_i(data_mem_o)
+  
+     ,.tag_mem_pkt_o(tag_mem_pkt_i)
+     ,.tag_mem_pkt_v_o(tag_mem_pkt_v_i)
+     ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_o)
+     ,.tag_mem_i(tag_mem_o)
+  
+     ,.stat_mem_pkt_v_o(stat_mem_pkt_v_i)
+     ,.stat_mem_pkt_o(stat_mem_pkt_i)
+     ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_o)
+     ,.stat_mem_i(stat_mem_o)
+  
+     ,.lce_req_o(lce_req_o)
+     ,.lce_req_v_o(lce_req_v_o)
+     ,.lce_req_ready_then_i(lce_req_ready_i)
+  
+     ,.lce_resp_o(lce_resp_o)
+     ,.lce_resp_v_o(lce_resp_v_o)
+     ,.lce_resp_ready_then_i(lce_resp_ready_i)
+  
+     ,.lce_cmd_i(lce_cmd_i)
+     ,.lce_cmd_v_i(lce_cmd_v_i)
+     ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
+  
+     ,.lce_cmd_o(lce_cmd_o)
+     ,.lce_cmd_v_o(lce_cmd_v_o)
+     ,.lce_cmd_ready_then_i(lce_cmd_ready_i)
+     );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
   bp_bedrock_cce_mem_msg_s io_cmd_cast_i;

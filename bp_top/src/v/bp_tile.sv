@@ -55,7 +55,7 @@ module bp_tile
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   // Cast the routing links
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -559,7 +559,7 @@ module bp_tile
   assign clint_mem_resp_yumi_li    = cce_mem_resp_yumi_lo & clint_mem_resp_grant_li;
   assign loopback_mem_resp_yumi_li = cce_mem_resp_yumi_lo & loopback_mem_resp_grant_li;
 
-  `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
+  `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [l2_data_width_p-1:0] cache_data_lo;
@@ -587,7 +587,7 @@ module bp_tile
      ,.yumi_o(cache_data_yumi_li)
      );
 
-  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [l2_fill_width_p-1:0] dma_data_li;
@@ -595,7 +595,7 @@ module bp_tile
   logic [l2_fill_width_p-1:0] dma_data_lo;
   logic dma_data_v_lo, dma_data_yumi_li;
   bsg_cache
-   #(.addr_width_p(caddr_width_p)
+   #(.addr_width_p(daddr_width_p)
      ,.data_width_p(l2_data_width_p)
      ,.dma_data_width_p(l2_fill_width_p)
      ,.block_size_in_words_p(l2_block_size_in_words_p)
@@ -640,7 +640,7 @@ module bp_tile
      );
 
   bsg_cache_dma_to_wormhole
-   #(.dma_addr_width_p(caddr_width_p)
+   #(.dma_addr_width_p(daddr_width_p)
      ,.dma_burst_len_p(l2_block_size_in_fill_p)
 
      ,.wh_flit_width_p(mem_noc_flit_width_p)

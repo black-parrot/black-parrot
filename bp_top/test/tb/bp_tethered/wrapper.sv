@@ -22,7 +22,7 @@ module wrapper
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                                    clk_i
    , input                                                  reset_i
@@ -161,7 +161,7 @@ module wrapper
              ,.wh_cord_width_p(mem_noc_cord_width_p)
 
              ,.num_dma_p(cce_per_col_lp)
-             ,.dma_addr_width_p(caddr_width_p)
+             ,.dma_addr_width_p(daddr_width_p)
              ,.dma_burst_len_p(l2_block_size_in_fill_p)
              )
            wh_to_cache_dma

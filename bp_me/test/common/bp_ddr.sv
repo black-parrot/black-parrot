@@ -11,7 +11,7 @@ module bp_ddr
    `declare_bp_proc_params(bp_params_p)
 
    , parameter num_dma_p = 1
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                                     clk_i
    , input                                                   reset_i
@@ -179,7 +179,7 @@ module bp_ddr
 
   bsg_cache_to_dram_ctrl
    #(.num_cache_p(num_dma_p)
-     ,.addr_width_p(caddr_width_p)
+     ,.addr_width_p(daddr_width_p)
      ,.data_width_p(l2_fill_width_p)
      ,.block_size_in_words_p(l2_block_size_in_fill_p)
      ,.dram_ctrl_burst_len_p(l2_block_size_in_fill_p)

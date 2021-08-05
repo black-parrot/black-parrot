@@ -11,18 +11,20 @@
   typedef enum logic [1:0]
   {
     e_none = 0
-    , e_l1 = 1
-    , e_l2 = 2
+    ,e_l1  = 1
+    ,e_l2  = 2
   } bp_atomic_op_e;
 
   typedef enum logic [15:0]
   {
-    e_sacc_vdp = 0
+    e_sacc_none = 0
+    ,e_sacc_vdp = 1
   } bp_sacc_type_e;
 
   typedef enum logic [15:0]
   {
-    e_cacc_vdp = 0
+    e_cacc_none = 0
+    ,e_cacc_vdp = 1
   } bp_cacc_type_e;
 
   typedef struct packed
@@ -68,8 +70,12 @@
     // Physical address width
     //   Only tested for 40-bit physical address
     integer unsigned paddr_width;
+    // DRAM address width
     // The max size of the connected DRAM i.e. cached address space
     //   Only tested for 32-bit cacheable address (4 GB space, with 2 GB local I/O)
+    integer unsigned daddr_width;
+    // Cacheable address width
+    // The max size cached by the L1 caches of the system
     integer unsigned caddr_width;
     // Address space ID width
     //   Currently unused, so set to 1 bit
@@ -207,14 +213,15 @@
       ,mc_y_dim : 0
       ,cac_x_dim: 0
       ,sac_x_dim: 0
-      ,cacc_type: e_cacc_vdp
-      ,sacc_type: e_sacc_vdp
+      ,cacc_type: e_cacc_none
+      ,sacc_type: e_sacc_none
 
       ,num_cce: 1
       ,num_lce: 2
 
       ,vaddr_width: 39
       ,paddr_width: 40
+      ,daddr_width: 33
       ,caddr_width: 32
       ,asid_width : 1
 
@@ -310,7 +317,7 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_paddr_large_override_p =
-    '{paddr_width   : 44
+    '{paddr_width : 44
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_paddr_large_cfg_p
@@ -319,7 +326,7 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_paddr_small_override_p =
-    '{paddr_width   : 33
+    '{paddr_width : 33
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_paddr_small_cfg_p
@@ -675,7 +682,7 @@
       ,sac_x_dim: 1
       ,cacc_type: e_cacc_vdp
       ,sacc_type: e_sacc_vdp
-      ,num_lce  : 4
+      ,num_lce  : 3
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_accelerator_cfg_p
@@ -831,6 +838,7 @@
 
       ,`bp_aviary_define_override(vaddr_width, BP_VADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(paddr_width, BP_PADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(daddr_width, BP_DADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(caddr_width, BP_CADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(asid_width, BP_ASID_WIDTH, `BP_CUSTOM_BASE_CFG)
 

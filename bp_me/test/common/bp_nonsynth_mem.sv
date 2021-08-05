@@ -34,7 +34,7 @@ module bp_nonsynth_mem
    , input                                   dram_reset_i
    );
 
-  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
+  `declare_bsg_cache_pkt_s(daddr_width_p, dword_width_gp);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [dword_width_gp-1:0] cache_data_lo;
@@ -62,7 +62,7 @@ module bp_nonsynth_mem
      ,.yumi_o(cache_data_yumi_li)
      );
 
-  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [l2_fill_width_p-1:0] dma_data_li;
@@ -71,7 +71,7 @@ module bp_nonsynth_mem
   logic dma_data_v_lo, dma_data_yumi_li;
 
   bsg_cache
-   #(.addr_width_p(caddr_width_p)
+   #(.addr_width_p(daddr_width_p)
      ,.data_width_p(l2_data_width_p)
      ,.block_size_in_words_p(l2_block_size_in_words_p)
      ,.sets_p(l2_sets_p)
