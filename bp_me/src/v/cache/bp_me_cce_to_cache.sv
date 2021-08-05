@@ -96,7 +96,15 @@ module bp_me_cce_to_cache
     ,.v_o(mem_cmd_v_lo)
     ,.yumi_i(mem_cmd_yumi_li)
     );
-  wire [daddr_width_p-1:0] cmd_addr = mem_cmd_lo.header.addr[0+:daddr_width_p];
+  localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
+  localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(lce_sets_p);
+  localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
+  wire [daddr_width_p-1:0] cmd_addr =
+    {mem_cmd_lo.header.addr[daddr_width_p-1:block_offset_lp+lg_lce_sets_lp]
+     ,mem_cmd_lo.header.addr[block_offset_lp+lg_num_cce_lp-1:block_offset_lp]
+     ,mem_cmd_lo.header.addr[block_offset_lp+lg_lce_sets_lp-1:block_offset_lp+lg_num_cce_lp]
+     ,mem_cmd_lo.header.addr[block_offset_lp-1:0]
+     };
   wire [l2_block_size_in_words_p-1:0][l2_data_width_p-1:0] cmd_data = mem_cmd_lo.data;
 
   // synopsys sync_set_reset "reset_i"
