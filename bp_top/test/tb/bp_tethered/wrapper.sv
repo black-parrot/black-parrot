@@ -210,6 +210,7 @@ module wrapper
     end
   else
     begin : unicore
+      // TODO: data width mismatch between unicore and wrapper io ports
       `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
       bp_bedrock_uce_mem_msg_s io_cmd_lo, io_cmd_li;
       bp_bedrock_uce_mem_msg_s io_resp_lo, io_resp_li;

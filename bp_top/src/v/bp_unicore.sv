@@ -151,6 +151,7 @@ module bp_unicore
   bsg_cache
    #(.addr_width_p(caddr_width_p)
      ,.data_width_p(l2_data_width_p)
+     ,.dma_data_width_p(l2_fill_width_p)
      ,.block_size_in_words_p(l2_block_size_in_words_p)
      ,.sets_p(l2_en_p ? l2_sets_p : 2)
      ,.ways_p(l2_en_p ? l2_assoc_p : 2)
@@ -164,7 +165,6 @@ module bp_unicore
                      | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_minu)
                      | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_maxu)
                      )
-     ,.dma_data_width_p(l2_fill_width_p)
     )
    cache
     (.clk_i(clk_i)

@@ -345,7 +345,8 @@ module bp_unicore_lite
   assign dev_resp_last_lo[3] = mem_resp_last_i;
 
   // Select destination of commands
-  logic [2:0][`BSG_SAFE_CLOG2(5)-1:0] proc_cmd_dst_lo;
+  localparam lg_num_dev_lp = `BSG_SAFE_CLOG2(5);
+  logic [2:0][lg_num_dev_lp-1:0] proc_cmd_dst_lo;
   for (genvar i = 0; i < 3; i++)
     begin : cmd_dest
       bp_local_addr_s local_addr;
@@ -370,12 +371,13 @@ module bp_unicore_lite
     end
 
   // Select destination of responses. Were there a way to transpose structs...
-  logic [4:0][`BSG_SAFE_CLOG2(3)-1:0] dev_resp_dst_lo;
-  assign dev_resp_dst_lo[4] = dev_resp_header_lo[4].payload.lce_id;
-  assign dev_resp_dst_lo[3] = dev_resp_header_lo[3].payload.lce_id;
-  assign dev_resp_dst_lo[2] = dev_resp_header_lo[2].payload.lce_id;
-  assign dev_resp_dst_lo[1] = dev_resp_header_lo[1].payload.lce_id;
-  assign dev_resp_dst_lo[0] = dev_resp_header_lo[0].payload.lce_id;
+  localparam lg_num_proc_lp = `BSG_SAFE_CLOG2(3);
+  logic [4:0][lg_num_proc_lp-1:0] dev_resp_dst_lo;
+  assign dev_resp_dst_lo[4] = dev_resp_header_lo[4].payload.lce_id[0+:lg_num_proc_lp];
+  assign dev_resp_dst_lo[3] = dev_resp_header_lo[3].payload.lce_id[0+:lg_num_proc_lp];
+  assign dev_resp_dst_lo[2] = dev_resp_header_lo[2].payload.lce_id[0+:lg_num_proc_lp];
+  assign dev_resp_dst_lo[1] = dev_resp_header_lo[1].payload.lce_id[0+:lg_num_proc_lp];
+  assign dev_resp_dst_lo[0] = dev_resp_header_lo[0].payload.lce_id[0+:lg_num_proc_lp];
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
