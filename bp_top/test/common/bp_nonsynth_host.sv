@@ -9,7 +9,8 @@ module bp_nonsynth_host
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   , parameter io_data_width_p = dword_width_gp
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io)
 
    , parameter icache_trace_p         = 0
    , parameter dcache_trace_p         = 0
@@ -28,13 +29,13 @@ module bp_nonsynth_host
   (input                                            clk_i
    , input                                          reset_i
 
-   , input [cce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
+   , input [io_mem_msg_header_width_lp-1:0]         mem_cmd_header_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
-   , output logic [cce_mem_msg_header_width_lp-1:0] mem_resp_header_o
+   , output logic [io_mem_msg_header_width_lp-1:0]  mem_resp_header_o
    , output logic [dword_width_gp-1:0]              mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
@@ -111,13 +112,23 @@ module bp_nonsynth_host
   localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
   wire [lg_num_core_lp-1:0] addr_core_enc = addr_lo[byte_offset_width_lp+:lg_num_core_lp];
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  bp_bedrock_cce_mem_msg_header_s mem_cmd_header_li;
+  `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io);
+  bp_bedrock_io_mem_msg_header_s mem_cmd_header_li;
   assign mem_cmd_header_li = mem_cmd_header_i;
   wire [2:0] hio_id = mem_cmd_header_li.addr[paddr_width_p-1-:3];
   always_comb
     if (mem_cmd_v_i & (hio_id != '0))
       $display("Warning: Accesing illegal hio %0h. Sending loopback message!", hio_id);
+
+  always_ff @(negedge clk_i)
+    begin
+      if (~reset_i & mem_cmd_v_i & mem_cmd_ready_and_o)
+        if (~mem_cmd_last_i)
+          $error("Error: multi-beat mem cmd detected in nonsynth host");
+      if (~reset_i & mem_resp_v_o & mem_resp_ready_and_i)
+        if (~mem_resp_last_o)
+          $error("Error: multi-beat mem resp detected in nonsynth host");
+    end
 
   wire [num_core_p-1:0] finish_set = finish_w_v_li << addr_core_enc;
   logic [num_core_p-1:0] finish_r;
