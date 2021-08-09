@@ -51,6 +51,9 @@ module bp_me_cce_to_mem_link_send
    , input [bsg_ready_and_link_sif_width_lp-1:0]        resp_link_i
    );
 
+  wire unused = &{mem_cmd_last_i};
+  assign mem_resp_last_o = mem_resp_v_o;
+
   // CCE-MEM interface packets
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
@@ -104,5 +107,5 @@ module bp_me_cce_to_mem_link_send
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bp_me_cce_to_mem_link_master)
+`BSG_ABSTRACT_MODULE(bp_me_cce_to_mem_link_send)
 

@@ -47,6 +47,9 @@ module bp_me_cce_to_mem_link_recv
    , output logic [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
    );
 
+  wire unused = &{mem_resp_last_i};
+  assign mem_cmd_last_o = mem_cmd_v_o;
+
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, cce_block_width_p);
   localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_cce_mem_msg_header_s), cce_block_width_p);
@@ -133,5 +136,5 @@ module bp_me_cce_to_mem_link_recv
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bp_me_cce_to_mem_link_client)
+`BSG_ABSTRACT_MODULE(bp_me_cce_to_mem_link_recv)
 
