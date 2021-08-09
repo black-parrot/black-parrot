@@ -403,7 +403,7 @@
       ,dcache_assoc       : 1
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
-      ,l2_data_width      : 64 
+      ,l2_data_width      : 64
       ,l2_fill_width      : 64
       ,mem_noc_flit_width : 64
       ,default : "inv"
