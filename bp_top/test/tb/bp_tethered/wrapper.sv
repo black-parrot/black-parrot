@@ -69,6 +69,10 @@ module wrapper
 
   if (multicore_p)
     begin : multicore
+
+      if (io_data_width_p != cce_block_width_p)
+        $fatal(0, "io_data_width_p must be same as cce_block_width_p in multicore");
+
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
 
