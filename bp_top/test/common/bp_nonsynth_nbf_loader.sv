@@ -128,6 +128,7 @@ module bp_nonsynth_nbf_loader
     begin
       io_cmd_data_o = '0;
       io_cmd_data_o[0+:nbf_data_width_p] = curr_nbf.data;
+      io_cmd = '0;
       io_cmd.payload.lce_id = lce_id_i;
       io_cmd.addr = curr_nbf.addr;
       io_cmd.msg_type.mem = curr_nbf.opcode[5] ? e_bedrock_mem_uc_rd : e_bedrock_mem_uc_wr;
