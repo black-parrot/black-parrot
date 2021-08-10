@@ -1,15 +1,16 @@
 /*
- * bp_me_cce_to_cache.sv
+ * Name:
+ *   bp_me_cce_to_cache.sv
  *
+ * Description:
+ *   This module converts an arriving BedRock Stream message into a bsg_cache message, and
+ *   converts bsg_cache responses to outgoing BedRock Stream messages.
  *
-  Data width conversion diagram
-                    -----------------------------------------
-      mem_cmd_i -->| --> pump_in --->  cache_pkt_sel --->    |--> cache_pkt_p
-                   |                       |                 |
-   (l2_data_width) |   (l2_data_width)     | (l2_data_width) |  (l2_data_width)
-                   |                       |                 |
-     mem_resp_o <--| <-- pump_out <--  bsg_bus_pack <----    |<-- data_i
-                    -----------------------------------------
+ *   After reset lowers, this module initializes all of the connected cache's tags and valid bits
+ *   by clearing them and making all lines invalid.
+ *
+ *   The data width is l2_data_width_p on both the BedRock Stream and cache interfaces.
+ *
  */
 
 `include "bp_common_defines.svh"
@@ -24,18 +25,19 @@ module bp_me_cce_to_cache
 
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, l2_data_width_p, lce_id_width_p, lce_assoc_p, cce)
 
+    // L2 organization and interface
+    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(caddr_width_p, l2_data_width_p)
     , localparam lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
     , localparam lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(l2_block_size_in_words_p)
-    , localparam data_mask_width_lp=(l2_data_width_p>>3)
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(l2_data_width_p>>3)
-    , localparam block_offset_width_lp= (l2_block_size_in_words_p>1) ? (word_offset_width_lp+byte_offset_width_lp) : byte_offset_width_lp
-
-    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(caddr_width_p, l2_data_width_p)
-
-    , localparam min_fill_width_lp = `BSG_MIN(`BSG_MIN(icache_fill_width_p, dcache_fill_width_p), `BSG_MIN(acache_fill_width_p, l2_data_width_p))
+    , localparam l2_blocks_lp=(l2_assoc_p*l2_sets_p)
+    // l2_block_width_p derived params
+    , localparam block_bytes_lp=(l2_block_width_p/8)
+    , localparam block_byte_offset_width_lp=`BSG_SAFE_CLOG2(block_bytes_lp)
+    // l2_data_width_p derived params (l2_data_width is size of L2 data words)
+    , localparam data_bytes_lp=(l2_data_width_p/8)
+    , localparam data_byte_offset_width_lp=`BSG_SAFE_CLOG2(data_bytes_lp)
   )
   (
     input clk_i
@@ -64,13 +66,12 @@ module bp_me_cce_to_cache
     , output logic                             cache_yumi_o
   );
 
-  // at the reset, this module intializes all the tags and valid bits to zero.
-  // After all the tags are completedly initialized, this module starts
-  // accepting packets from manycore network.
-  `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
+  // requirement from BedRock Stream interface
+  if (!(`BSG_IS_POW2(l2_data_width_p) || l2_data_width_p < 64 || l2_data_width_p > 512))
+    $fatal(0, "l2 data width must be 64, 128, 256, or 512");
 
-  // cce logics
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, l2_data_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
   bsg_cache_pkt_s cache_pkt;
@@ -83,20 +84,16 @@ module bp_me_cce_to_cache
   } cmd_state_e;
 
   cmd_state_e cmd_state_r, cmd_state_n;
-  wire is_reset  = (cmd_state_r == RESET);
   wire is_clear  = (cmd_state_r == CLEAR_TAG);
-  wire is_ready  = (cmd_state_r == READY);
 
   logic [lg_sets_lp+lg_ways_lp:0] tagst_sent_r, tagst_sent_n;
   logic [lg_sets_lp+lg_ways_lp:0] tagst_received_r, tagst_received_n;
 
   bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
-  logic [l2_data_width_p-1:0] cache_pkt_data_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
-  logic mem_cmd_new_lo, mem_cmd_done_lo;
+  logic mem_cmd_new_lo, mem_cmd_done_lo, mem_cmd_last_lo;
   logic [paddr_width_p-1:0] mem_cmd_stream_addr_lo;
-  logic [data_mask_width_lp-1:0] cache_pkt_mask_lo;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(l2_data_width_p)
@@ -124,33 +121,42 @@ module bp_me_cce_to_cache
      ,.fsm_ready_and_i(mem_cmd_yumi_li)
      ,.fsm_new_o(mem_cmd_new_lo)
      ,.fsm_done_o(mem_cmd_done_lo)
-     ,.fsm_last_o(/* unused */)
+     ,.fsm_last_o(mem_cmd_last_lo)
      );
 
   bp_local_addr_s local_addr_cast;
   assign local_addr_cast = mem_cmd_header_lo.addr;
 
-  wire cmd_word_op = (mem_cmd_header_lo.size == e_bedrock_msg_size_4);
-
-  wire is_read  = mem_cmd_header_lo.msg_type inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd};
-  wire is_write = mem_cmd_header_lo.msg_type inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr};
+  wire is_word_op = (mem_cmd_header_lo.size == e_bedrock_msg_size_4);
   wire is_csr   = (mem_cmd_header_lo.addr < dram_base_addr_gp);
   wire is_tagfl = is_csr && (local_addr_cast.dev == cache_tagfl_base_addr_gp);
-  wire [caddr_width_p-1:0] tagfl_addr = {mem_cmd_data_lo[0+:lg_sets_lp+lg_ways_lp], block_offset_width_lp'(0)};
+  localparam tagfl_addr_pad_lp = (caddr_width_p-(lg_sets_lp+lg_ways_lp+block_byte_offset_width_lp));
+  wire [caddr_width_p-1:0] tagfl_addr = {{tagfl_addr_pad_lp{1'b0}}
+                                         , mem_cmd_data_lo[0+:lg_sets_lp+lg_ways_lp]
+                                         , {block_byte_offset_width_lp{1'b0}}
+                                         };
 
+  // cache packet data and mask mux elements
+  // each mux has one element per power of 2 in [1, N] where N is log2(L2 data width bytes)
+  // e.g.: 64-bit data width = 8B = 2^3 -> 4 muxes for 1B, 2B, 4B, 8B
+  // e.g.: 128-bit data width = 16B = 2^4 -> 5 muxes for 1B, 2B, 4B, 8B, 16B
+  // e.g.: 256-bit data width = 32B = 2^5 -> 6 muxes for 1B, 2B, 4B, 8B, 16B, 32B
+  // e.g.: 512-bit data width = 64B = 2^6 -> 7 muxes for 1B, 2B, 4B, 8B, 16B, 32B, 64B
+  // e.g.: 1024-bit data width = 128B = 2^7 -> 8 muxes for 1B, 2B, 4B, 8B, 16B, 32B, 64B, 128B
+  localparam mux_els_lp = data_byte_offset_width_lp+1;
+  localparam lg_mux_els_lp = `BSG_SAFE_CLOG2(mux_els_lp);
+  logic [mux_els_lp-1:0][data_bytes_lp-1:0] cache_pkt_mask_mux_li;
+  logic [mux_els_lp-1:0][l2_data_width_p-1:0] cache_pkt_data_mux_li;
 
-  // Replicate data & Generate mask for partial SM
-  // cache_pkt_data_lo = '1 & cache_pkt_mask_lo = ‘1 when min_fill_width_lp == l2_data_width_p
-  localparam fill_offset_lp = `BSG_SAFE_CLOG2(min_fill_width_lp >> 3);
-  localparam cache_size_in_fill_lp = l2_data_width_p/min_fill_width_lp;
-  localparam lg_cache_size_in_fill_lp = (cache_size_in_fill_lp > 1) ? $clog2(cache_size_in_fill_lp) : 0;
-  localparam data_sel_mux_els_lp = lg_cache_size_in_fill_lp+1;
-
-  logic [data_sel_mux_els_lp-1:0][data_mask_width_lp-1:0] cache_pkt_mask_mux_li;
-  logic [data_sel_mux_els_lp-1:0][l2_data_width_p-1:0] cache_pkt_data_mux_li;
-  for (genvar i = 0; i < data_sel_mux_els_lp; i++)
+  for (genvar i = 0; i < mux_els_lp; i++)
     begin:cache_pkt_sel
-      localparam slice_width_lp = (min_fill_width_lp*(2**i));
+      // width of slice, in bits
+      // smallest granularity is 1 byte = 8 bits
+      localparam slice_width_bytes_lp = (2**i);
+      localparam slice_width_lp = (slice_width_bytes_lp << 3);
+      // number of slice_width_lp parts that comprise in/out data
+      localparam num_slices_lp = (l2_data_width_p/slice_width_lp);
+      localparam lg_num_slices_lp = `BSG_SAFE_CLOG2(num_slices_lp);
 
       // Data
       logic [slice_width_lp-1:0] slice_data;
@@ -158,47 +164,60 @@ module bp_me_cce_to_cache
       assign cache_pkt_data_mux_li[i] = {(l2_data_width_p/slice_width_lp){slice_data}};
 
       // Mask
-      if (i == data_sel_mux_els_lp-1)
+      if (i == mux_els_lp-1)
         begin: max_size
-          assign cache_pkt_mask_mux_li[i] = {data_mask_width_lp{1'b1}};
+          assign cache_pkt_mask_mux_li[i] = {data_bytes_lp{1'b1}};
         end
       else
         begin: non_max_size
 
-          logic [(l2_data_width_p/slice_width_lp)-1:0] decode_lo;
-          bsg_decode
-           #(.num_out_p(l2_data_width_p/slice_width_lp))
-           mask_decode
-            (.i(mem_cmd_stream_addr_lo[(i+fill_offset_lp)+:`BSG_MAX(lg_cache_size_in_fill_lp-i,1)])
-            ,.o(decode_lo)
-            );
+          // determine which slice being used based on the mem_cmd address
+          // i = 0, slices are 1B wide
+          // i = 1, slices are 2B wide
+          // i = 2, slices are 4B wide
+          // etc.
+          wire [lg_num_slices_lp-1:0] slice_index = mem_cmd_stream_addr_lo[i+:lg_num_slices_lp];
+          // one-hot decoded slice index - bit n is set when targeting slice n
+          wire [num_slices_lp-1:0] decoded_slice_index = (1'b1 << slice_index);
 
+          // expand the one-hot decoded slice index into a bit-mask for the cache packet
           bsg_expand_bitmask
-           #(.in_width_p(l2_data_width_p/slice_width_lp)
-           ,.expand_p(2**(i+fill_offset_lp)))
+           #(.in_width_p(num_slices_lp)
+             ,.expand_p(slice_width_bytes_lp))
            mask_expand
-            (.i(decode_lo)
+            (.i(decoded_slice_index)
             ,.o(cache_pkt_mask_mux_li[i])
           );
         end
     end
 
-  wire [`BSG_SAFE_CLOG2(data_sel_mux_els_lp)-1:0] cache_pkt_data_sel_li = `BSG_MAX(mem_cmd_header_lo.size - fill_offset_lp, 1'b0);
+  // cache mask has one entry per byte in l2_data_width_p
+  logic [data_bytes_lp-1:0] cache_pkt_mask_lo;
+  logic [l2_data_width_p-1:0] cache_pkt_data_lo;
+
+  // mem_cmd size field is 3-bits
+  // There will always be between 4 and 8 muxes, since l2_data_width_p must be between 64 and
+  // 512 bits, thus mux select bits will always be 2 or 3.
+  // If mem_cmd size is larger than data channel width, select the full mask and data, else
+  // use the size field to pick correct slice of data and its mask.
+  wire [lg_mux_els_lp-1:0] cache_pkt_sel_li = (1'b1 << mem_cmd_header_lo.size) > data_bytes_lp
+                                              ? lg_mux_els_lp'(mux_els_lp-1)
+                                              : mem_cmd_header_lo.size[0+:lg_mux_els_lp];
   bsg_mux
-   #(.width_p(data_mask_width_lp)
-   ,.els_p(data_sel_mux_els_lp))
+   #(.width_p(data_bytes_lp)
+   ,.els_p(mux_els_lp))
    cache_pkt_mask_mux
     (.data_i(cache_pkt_mask_mux_li)
-    ,.sel_i(cache_pkt_data_sel_li)
+    ,.sel_i(cache_pkt_sel_li)
     ,.data_o(cache_pkt_mask_lo)
     );
 
   bsg_mux
    #(.width_p(l2_data_width_p)
-   ,.els_p(data_sel_mux_els_lp))
+   ,.els_p(mux_els_lp))
    cache_pkt_data_mux
     (.data_i(cache_pkt_data_mux_li)
-    ,.sel_i(cache_pkt_data_sel_li)
+    ,.sel_i(cache_pkt_sel_li)
     ,.data_o(cache_pkt_data_lo)
     );
 
@@ -249,23 +268,49 @@ module bp_me_cce_to_cache
      );
   assign cache_yumi_o = mem_resp_ready_and_lo | (is_clear & cache_v_i);
 
-  // For B/H/W/D ops, returned data is aligned to the LSB, but it may not for M op
-  wire [byte_offset_width_lp-1:0] resp_data_sel_li = (mem_resp_header_lo.size inside {e_bedrock_msg_size_1, e_bedrock_msg_size_2, e_bedrock_msg_size_4, e_bedrock_msg_size_8})
-                                                     ? byte_offset_width_lp'(0)
-                                                     : mem_resp_header_lo.addr[0+:byte_offset_width_lp];
-  wire [`BSG_WIDTH(byte_offset_width_lp)-1:0] mem_resp_size_li = `BSG_MIN(mem_resp_header_lo.size, `BSG_SAFE_CLOG2(l2_data_width_p>>3)); //TODO
+  // mem_resp data selection
+  // For B/H/W/D ops, data returned from cache is at the LSB, but it may not for M ops
+  // on bsg_bus_pack:
+  // sel_i = which unit (byte) to start selection at from cache_data_i
+  // size_i = log2(size in bytes) of selection to make
+  // bus pack has log2(l2_data_width_p/8) = log2(l2 data width bytes) mux elements
+  //   == data_byte_offset_width_lp
+  localparam bus_pack_size_width_lp = `BSG_WIDTH(data_byte_offset_width_lp);
+  logic [bus_pack_size_width_lp-1:0] mem_resp_size_li;
+  wire [bus_pack_size_width_lp-1:0] mem_resp_max_size_li = bus_pack_size_width_lp'(data_byte_offset_width_lp);
+  logic [data_byte_offset_width_lp-1:0] mem_resp_data_sel_li;
+
+  always_comb begin
+    // size to use is set to max size if response is larger than data width (indicating a multi-beat
+    // message will be sent and therefore each data beat will be full and valid),
+    // otherwise extract size from memory response header
+    mem_resp_size_li = (1'b1 << mem_resp_header_lo.size) > data_bytes_lp
+                       ? mem_resp_max_size_li
+                       : mem_resp_header_lo.size[0+:bus_pack_size_width_lp];
+    // B/H/W/D response data is at LSB, but larger responses should use byte offset bits of
+    // address to pick correct data
+    mem_resp_data_sel_li = '0;
+    case (mem_resp_header_lo.size)
+      e_bedrock_msg_size_1
+      ,e_bedrock_msg_size_2
+      ,e_bedrock_msg_size_4
+      ,e_bedrock_msg_size_8:
+        mem_resp_data_sel_li = '0;
+      default:
+        mem_resp_data_sel_li = mem_resp_header_lo.addr[0+:data_byte_offset_width_lp];
+    endcase
+  end
+
   bsg_bus_pack
    #(.in_width_p(l2_data_width_p))
-   resp_data_bus_pack
+   mem_resp_data_bus_pack
     (.data_i(cache_data_i)
-    ,.sel_i(resp_data_sel_li)
+    ,.sel_i(mem_resp_data_sel_li)
     ,.size_i(mem_resp_size_li)
     ,.data_o(mem_resp_data_lo)
     );
 
-  //   At the reset, this module intializes all the tags and valid bits to zero.
-  //   After all the tags are completedly initialized, this module starts
-  //   accepting incoming commands
+  // FSM
   always_comb
     begin
       cache_pkt     = '0;
@@ -284,14 +329,13 @@ module bp_me_cce_to_cache
             cmd_state_n = CLEAR_TAG;
           end
         CLEAR_TAG: begin
-          cache_pkt_v_o = tagst_sent_r != (l2_assoc_p*l2_sets_p);
+          cache_pkt_v_o = tagst_sent_r != (l2_blocks_lp);
           cache_pkt.opcode = TAGST;
           cache_pkt.data = '0;
-          cache_pkt.addr = {
-            {(caddr_width_p-lg_sets_lp-lg_ways_lp-block_offset_width_lp){1'b0}},
-            tagst_sent_r[0+:lg_sets_lp+lg_ways_lp],
-            {(block_offset_width_lp){1'b0}}
-          };
+          cache_pkt.addr = {{tagfl_addr_pad_lp{1'b0}}
+                            , tagst_sent_r[0+:lg_sets_lp+lg_ways_lp]
+                            , {block_byte_offset_width_lp{1'b0}}
+                            };
 
           tagst_sent_n = (cache_pkt_v_o & cache_pkt_ready_i)
             ? tagst_sent_r + 1
@@ -300,7 +344,7 @@ module bp_me_cce_to_cache
             ? tagst_received_r + 1
             : tagst_received_r;
 
-          cmd_state_n = (tagst_sent_r == l2_assoc_p*l2_sets_p) & (tagst_received_r == l2_assoc_p*l2_sets_p)
+          cmd_state_n = (tagst_sent_r == l2_blocks_lp) & (tagst_received_r == l2_blocks_lp)
             ? READY
             : CLEAR_TAG;
         end
@@ -327,16 +371,16 @@ module bp_me_cce_to_cache
                   e_bedrock_msg_size_2: cache_pkt.opcode = SH;
                   e_bedrock_msg_size_4, e_bedrock_msg_size_8:
                     case (mem_cmd_header_lo.subop)
-                      e_bedrock_store  : cache_pkt.opcode = cmd_word_op ? SW : SD;
-                      e_bedrock_amoswap: cache_pkt.opcode = cmd_word_op ? AMOSWAP_W : AMOSWAP_D;
-                      e_bedrock_amoadd : cache_pkt.opcode = cmd_word_op ? AMOADD_W : AMOADD_D;
-                      e_bedrock_amoxor : cache_pkt.opcode = cmd_word_op ? AMOXOR_W : AMOXOR_D;
-                      e_bedrock_amoand : cache_pkt.opcode = cmd_word_op ? AMOAND_W : AMOAND_D;
-                      e_bedrock_amoor  : cache_pkt.opcode = cmd_word_op ? AMOOR_W : AMOOR_D;
-                      e_bedrock_amomin : cache_pkt.opcode = cmd_word_op ? AMOMIN_W : AMOMIN_D;
-                      e_bedrock_amomax : cache_pkt.opcode = cmd_word_op ? AMOMAX_W : AMOMAX_D;
-                      e_bedrock_amominu: cache_pkt.opcode = cmd_word_op ? AMOMINU_W : AMOMINU_D;
-                      e_bedrock_amomaxu: cache_pkt.opcode = cmd_word_op ? AMOMAXU_W : AMOMAXU_D;
+                      e_bedrock_store  : cache_pkt.opcode = is_word_op ? SW : SD;
+                      e_bedrock_amoswap: cache_pkt.opcode = is_word_op ? AMOSWAP_W : AMOSWAP_D;
+                      e_bedrock_amoadd : cache_pkt.opcode = is_word_op ? AMOADD_W : AMOADD_D;
+                      e_bedrock_amoxor : cache_pkt.opcode = is_word_op ? AMOXOR_W : AMOXOR_D;
+                      e_bedrock_amoand : cache_pkt.opcode = is_word_op ? AMOAND_W : AMOAND_D;
+                      e_bedrock_amoor  : cache_pkt.opcode = is_word_op ? AMOOR_W : AMOOR_D;
+                      e_bedrock_amomin : cache_pkt.opcode = is_word_op ? AMOMIN_W : AMOMIN_D;
+                      e_bedrock_amomax : cache_pkt.opcode = is_word_op ? AMOMAX_W : AMOMAX_D;
+                      e_bedrock_amominu: cache_pkt.opcode = is_word_op ? AMOMINU_W : AMOMINU_D;
+                      e_bedrock_amomaxu: cache_pkt.opcode = is_word_op ? AMOMAXU_W : AMOMAXU_D;
                       default : begin end
                     endcase
                   e_bedrock_msg_size_16
@@ -356,7 +400,8 @@ module bp_me_cce_to_cache
               begin
                 cache_pkt.addr = mem_cmd_stream_addr_lo[0+:caddr_width_p];
                 cache_pkt.data = cache_pkt_data_lo;
-                // This mask is only used for the LM/SM operations for >64 bit mask operations
+                // This mask is only used for the LM/SM operations for >64 bit mask operations,
+                // but it gets set regardless of operation
                 cache_pkt.mask = cache_pkt_mask_lo;
               end
             cache_pkt_v_o = mem_cmd_v_lo;
