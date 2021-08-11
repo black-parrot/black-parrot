@@ -177,7 +177,7 @@ module bp_me_stream_pump_out
           is_fsm_stream = fsm_stream_mask_p[fsm_base_header_cast_li.msg_type] & ~(first_cnt == last_cnt);
           is_msg_stream = msg_stream_mask_p[fsm_base_header_cast_li.msg_type] & ~(first_cnt == last_cnt);
 
-          fsm_cnt_lo = (any_stream_new & cnt_up) ? first_cnt : current_cnt;
+          fsm_cnt_lo = (any_stream_new) ? first_cnt : current_cnt;
           is_last_cnt = (fsm_cnt_lo == last_cnt) | (~is_fsm_stream & ~is_msg_stream);
           cnt_val_li = fsm_done_o ? '0 : (first_cnt + cnt_up);
         end
