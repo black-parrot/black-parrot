@@ -219,6 +219,11 @@ $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
+# Dev
+$BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
+$BP_ME_DIR/src/v/dev/bp_me_clint_slice.sv
+$BP_ME_DIR/src/v/dev/bp_me_cfg.sv
+$BP_ME_DIR/src/v/dev/bp_me_loopback.sv
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.sv
 $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
