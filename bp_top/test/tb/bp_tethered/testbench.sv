@@ -124,7 +124,7 @@ module testbench
   logic [io_data_width_p-1:0] load_resp_data_li;
   logic load_resp_v_li, load_resp_ready_and_lo, load_resp_last_li;
 
-  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0] dma_pkt_lo;
   logic [num_cce_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [num_cce_p-1:0][l2_fill_width_p-1:0] dma_data_lo;

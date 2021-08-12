@@ -28,7 +28,7 @@ module bp_me_cce_to_cache
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, l2_data_width_p, lce_id_width_p, lce_assoc_p, cce)
 
     // L2 organization and interface
-    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(caddr_width_p, l2_data_width_p)
+    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(daddr_width_p, l2_data_width_p)
     , localparam lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
     , localparam lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
     , localparam l2_blocks_lp=(l2_assoc_p*l2_sets_p)
@@ -70,9 +70,9 @@ module bp_me_cce_to_cache
   if (!(`BSG_IS_POW2(l2_data_width_p) || l2_data_width_p < 64 || l2_data_width_p > 512))
     $fatal(0, "l2 data width must be 64, 128, 256, or 512");
 
-  `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
+  `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, l2_data_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = cache_pkt;
@@ -130,8 +130,8 @@ module bp_me_cce_to_cache
   wire is_word_op = (mem_cmd_header_lo.size == e_bedrock_msg_size_4);
   wire is_csr   = (mem_cmd_header_lo.addr < dram_base_addr_gp);
   wire is_tagfl = is_csr && (local_addr_cast.dev == cache_tagfl_base_addr_gp);
-  localparam tagfl_addr_pad_lp = (caddr_width_p-(lg_sets_lp+lg_ways_lp+block_byte_offset_width_lp));
-  wire [caddr_width_p-1:0] tagfl_addr = {{tagfl_addr_pad_lp{1'b0}}
+  localparam tagfl_addr_pad_lp = (daddr_width_p-(lg_sets_lp+lg_ways_lp+block_byte_offset_width_lp));
+  wire [daddr_width_p-1:0] tagfl_addr = {{tagfl_addr_pad_lp{1'b0}}
                                          , mem_cmd_data_lo[0+:lg_sets_lp+lg_ways_lp]
                                          , {block_byte_offset_width_lp{1'b0}}
                                          };
@@ -398,7 +398,7 @@ module bp_me_cce_to_cache
               end
             else
               begin
-                cache_pkt.addr = mem_cmd_stream_addr_lo[0+:caddr_width_p];
+                cache_pkt.addr = mem_cmd_stream_addr_lo[0+:daddr_width_p];
                 cache_pkt.data = cache_pkt_data_lo;
                 // This mask is only used for the LM/SM operations for >64 bit mask operations,
                 // but it gets set regardless of operation

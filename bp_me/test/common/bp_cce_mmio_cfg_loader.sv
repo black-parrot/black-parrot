@@ -57,7 +57,7 @@ module bp_cce_mmio_cfg_loader
   assign io_resp_ready_and_o = 1'b1;
 
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_bedrock_cce_mem_msg_header_s io_cmd_cast_o;
   bp_bedrock_cce_mem_msg_header_s io_resp_cast_i;

@@ -53,7 +53,7 @@ module bp_l2e_tile
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
 
   // Reset
@@ -431,7 +431,7 @@ module bp_l2e_tile
      );
 
   // CCE-Mem network to L2 Cache adapter
-  `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
+  `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [l2_data_width_p-1:0] cache_data_lo;
@@ -464,7 +464,7 @@ module bp_l2e_tile
      );
 
   // L2 Cache
-  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [l2_fill_width_p-1:0] dma_data_li;
@@ -472,7 +472,7 @@ module bp_l2e_tile
   logic [l2_fill_width_p-1:0] dma_data_lo;
   logic dma_data_v_lo, dma_data_yumi_li;
   bsg_cache
-   #(.addr_width_p(caddr_width_p)
+   #(.addr_width_p(daddr_width_p)
      ,.data_width_p(l2_data_width_p)
      ,.dma_data_width_p(l2_fill_width_p)
      ,.block_size_in_words_p(l2_block_size_in_words_p)
@@ -518,7 +518,7 @@ module bp_l2e_tile
 
   // L2 Cache to Memory Links adapter
   bsg_cache_dma_to_wormhole
-   #(.dma_addr_width_p(caddr_width_p)
+   #(.dma_addr_width_p(daddr_width_p)
      ,.dma_burst_len_p(l2_block_size_in_fill_p)
 
      ,.wh_flit_width_p(mem_noc_flit_width_p)
