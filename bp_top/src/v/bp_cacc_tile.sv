@@ -304,6 +304,17 @@ module bp_cacc_tile
 
          );
     end
+  else
+    begin : none
+      assign cce_io_cmd_ready_and_li = '0;
+      assign cce_io_resp_li = '0;
+      assign cce_io_resp_v_li = '0;
+      assign lce_req_lo = '0;
+      assign lce_req_v_lo = '0;
+      assign lce_cmd_lo = '0;
+      assign lce_cmd_v_lo = '0;
+      assign lce_cmd_yumi_lo = '0;
+    end
 
 endmodule
 
