@@ -310,6 +310,17 @@ module bp_me_cce_to_cache
     ,.data_o(mem_resp_data_lo)
     );
 
+  // Swizzle address bits for L2 cache command
+  localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
+  localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(lce_sets_p);
+  localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
+  wire [daddr_width_p-1:0] cache_pkt_addr_lo =
+    {mem_cmd_stream_addr_lo[daddr_width_p-1:block_offset_lp+lg_lce_sets_lp]
+     ,mem_cmd_stream_addr_lo[block_offset_lp+lg_num_cce_lp-1:block_offset_lp]
+     ,mem_cmd_stream_addr_lo[block_offset_lp+lg_lce_sets_lp-1:block_offset_lp+lg_num_cce_lp]
+     ,mem_cmd_stream_addr_lo[block_offset_lp-1:0]
+     };
+
   // FSM
   always_comb
     begin
@@ -398,7 +409,7 @@ module bp_me_cce_to_cache
               end
             else
               begin
-                cache_pkt.addr = mem_cmd_stream_addr_lo[0+:daddr_width_p];
+                cache_pkt.addr = cache_pkt_addr_lo;
                 cache_pkt.data = cache_pkt_data_lo;
                 // This mask is only used for the LM/SM operations for >64 bit mask operations,
                 // but it gets set regardless of operation
