@@ -21,6 +21,8 @@
   localparam bootrom_base_addr_gp      = (dev_addr_width_gp)'('h1_0000);
   localparam bootrom_match_addr_gp     = (dev_addr_width_gp)'('h1_????);
 
+  localparam paramrom_base_addr_gp     = (dev_addr_width_gp)'('h2_0000);
+  localparam paramrom_match_addr_gp    = (dev_addr_width_gp)'('h2_????);
 
 `endif
 

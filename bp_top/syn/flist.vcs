@@ -320,4 +320,5 @@ $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
 $BP_COMMON_DIR/src/v/bsg_dff_reset_half.v
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
+$BP_COMMON_DIR/src/v/bsg_rom_param.v
 

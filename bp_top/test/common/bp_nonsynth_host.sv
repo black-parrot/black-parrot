@@ -87,22 +87,23 @@ module bp_nonsynth_host
     if (do_scan)
       ch = scan();
 
-  logic bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li;
-  logic bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li;
+  localparam bedrock_reg_els_lp = 6;
+  logic paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li;
+  logic paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li;
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [`BSG_WIDTH(`BSG_SAFE_CLOG2(dword_width_gp/8))-1:0] size_lo;
   logic [dword_width_gp-1:0] data_lo;
-  logic [4:0][dword_width_gp-1:0] data_li;
+  logic [bedrock_reg_els_lp-1:0][dword_width_gp-1:0] data_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.els_p(5)
+     ,.els_p(bedrock_reg_els_lp)
      ,.reg_addr_width_p(dev_addr_width_gp)
-     ,.base_addr_p({bootrom_match_addr_gp, finish_match_addr_gp, getchar_match_addr_gp, putchar_match_addr_gp, putch_core_match_addr_gp})
+     ,.base_addr_p({paramrom_match_addr_gp, bootrom_match_addr_gp, finish_match_addr_gp, getchar_match_addr_gp, putchar_match_addr_gp, putch_core_match_addr_gp})
      )
    register
     (.*
-     ,.r_v_o({bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li})
-     ,.w_v_o({bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li})
+     ,.r_v_o({paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li})
+     ,.w_v_o({paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li})
      ,.addr_o(addr_lo)
      ,.size_o(size_lo)
      ,.data_o(data_lo)
@@ -208,6 +209,24 @@ module bp_nonsynth_host
      ,.data_o(bootrom_final_lo)
      );
 
+  localparam param_els_lp = `BSG_CDIV($bits(proc_param_lp),word_width_gp);
+  localparam lg_param_els_lp = `BSG_SAFE_CLOG2(param_els_lp);
+  logic [lg_param_els_lp-1:0] paramrom_addr_li;
+  logic [word_width_gp-1:0] paramrom_data_lo;
+  // Reverse address to index in reverse struct order
+  assign paramrom_addr_li = param_els_lp-1'b1-addr_lo[2+:lg_bootrom_els_lp];
+  bsg_rom_param
+   #(.data_p(proc_param_lp)
+     ,.data_width_p($bits(proc_param_lp))
+     ,.width_p(word_width_gp)
+     ,.els_p(param_els_lp)
+     )
+   param_rom
+    (.addr_i(paramrom_addr_li)
+     ,.data_o(paramrom_data_lo)
+     );
+  wire [cce_block_width_p-1:0] paramrom_final_lo = {cce_block_width_p/word_width_gp{paramrom_data_lo}};
+
   // TODO: Add dynamic enable
   assign icache_trace_en_o   = icache_trace_p;
   assign dcache_trace_en_o   = dcache_trace_p;
@@ -226,6 +245,7 @@ module bp_nonsynth_host
   assign data_li[2] = ch;
   assign data_li[3] = finish_r;
   assign data_li[4] = bootrom_final_lo;
+  assign data_li[5] = paramrom_final_lo;
 
 endmodule
 
