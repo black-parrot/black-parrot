@@ -11,15 +11,15 @@ parser.add_argument('-n', '--num-instr', dest='num_instr', type=int, default=8,
                     help='Number of memory operations to execute')
 parser.add_argument('-s', '--seed', dest='seed', type=int, default=1,
                     help='random number generator seed')
-parser.add_argument('--test', dest='test', type=int, default=0,
-                    help='Test selector: 0 = random, 1 = store test, 2 = load test, 3 = set test')
+parser.add_argument('--test', dest='test', type=int, default=0, choices=range(0,6), metavar='[0-5]',
+                    help="""0 = random, 1 = store test, 2 = load test, 3 = set test,
+                    4 = block test, 5 = cache hammer test""")
 
 # operating mode
 parser.add_argument('--lce-mode', dest='lce_mode', type=int, default=0,
                     help='0 = cached requests, 1 = uncached requests, 2 = mixed (only if cce-mode == 0)')
 parser.add_argument('--cce-mode', dest='cce_mode', type=int, default=0,
                     help='0 = normal, 1 = uncached only (requires lce-mode == 1)')
-
 
 # system, memory, and cache parameters
 parser.add_argument('-m', dest='paddr_width', type=int, default=40,
