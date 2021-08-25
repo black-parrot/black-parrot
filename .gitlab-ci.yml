@@ -121,6 +121,7 @@ weird-verilator:
 weird-vcs:
   <<: *job_definition
   stage: test-short
+  allow_failure: true
   tags:
     - vcs
   script:

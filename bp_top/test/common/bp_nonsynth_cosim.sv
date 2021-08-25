@@ -49,6 +49,7 @@ module bp_nonsynth_cosim
     , input                                   cache_req_v_o
     , input                                   cache_req_yumi_i
     , input                                   cache_req_complete_i
+    , input                                   cache_req_nonblocking_i
 
     , input                                   cosim_clk_i
     , input                                   cosim_reset_i
@@ -89,14 +90,14 @@ module bp_nonsynth_cosim
      ,.data_o({is_debug_mode_r, commit_pkt_r})
      );
 
-  logic cache_req_v_r, cache_req_yumi_r;
+  logic cache_req_complete_r, cache_req_v_r, cache_req_yumi_r;
   bsg_dff_chain
-   #(.width_p(2), .num_stages_p(2))
+   #(.width_p(3), .num_stages_p(2))
    cache_req_reg
     (.clk_i(clk_i)
 
-     ,.data_i({cache_req_v_o, cache_req_yumi_i})
-     ,.data_o({cache_req_v_r, cache_req_yumi_r})
+     ,.data_i({cache_req_complete_i, cache_req_v_o & ~cache_req_nonblocking_i, cache_req_yumi_i & ~cache_req_nonblocking_i})
+     ,.data_o({cache_req_complete_r, cache_req_v_r, cache_req_yumi_r})
      );
 
   logic                     commit_fifo_full_lo;
@@ -202,10 +203,10 @@ module bp_nonsynth_cosim
    #(.max_val_p(128), .init_val_p(0), .max_step_p(1))
    req_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_i | freeze_i)
 
      ,.up_i(cache_req_yumi_r)
-     ,.down_i(cache_req_complete_i)
+     ,.down_i(cache_req_complete_r)
 
      ,.count_o(req_cnt_lo)
      );
@@ -300,12 +301,12 @@ module bp_nonsynth_cosim
         $fwrite(file, "\n");
       end
 
-//  always_ff @(posedge cosim_clk_i)
-//    if (commit_fifo_v_li & commit_fifo_full_lo)
-//      begin
-//        $display("COSIM_FAIL: commit fifo overrun, core %x", mhartid_i);
-//        $finish();
-//      end
+  always_ff @(posedge cosim_clk_i)
+    if (commit_fifo_v_li & commit_fifo_full_lo)
+      begin
+        $display("COSIM_FAIL: commit fifo overrun, core %x", mhartid_i);
+        $finish();
+      end
 
 endmodule
 

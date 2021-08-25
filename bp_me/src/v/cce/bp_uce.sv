@@ -611,8 +611,7 @@ module bp_uce
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o                          = ~cache_req_credits_full_o;
 
-                cache_req_complete_o = mem_cmd_yumi_i;
-                cache_req_yumi_o = cache_req_complete_o;
+                cache_req_yumi_o = mem_cmd_yumi_i;
               end
             else
               begin

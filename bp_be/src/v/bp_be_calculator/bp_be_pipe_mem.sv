@@ -150,7 +150,7 @@ module bp_be_pipe_mem
   logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data, dcache_late_data;
   logic [reg_addr_width_gp-1:0] dcache_late_rd_addr;
   logic [ptag_width_p-1:0]  dcache_ptag;
-  logic                     dcache_early_v, dcache_final_v, dcache_pkt_v;
+  logic                     dcache_early_v, dcache_miss_v, dcache_final_v, dcache_pkt_v;
   logic                     dcache_late_float, dcache_late_v, dcache_late_yumi;
   logic                     dcache_ptag_v;
   logic                     dcache_ptag_uncached;
@@ -269,6 +269,7 @@ module bp_be_pipe_mem
       ,.ptag_uncached_i(dcache_ptag_uncached)
 
       ,.early_v_o(dcache_early_v)
+      ,.miss_v_o(dcache_miss_v)
       ,.early_data_o(dcache_early_data)
       ,.final_data_o(dcache_final_data)
       ,.final_v_o(dcache_final_v)
@@ -308,17 +309,24 @@ module bp_be_pipe_mem
       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
       );
 
-  // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
-  // We latch the dcache miss signal
-  always_ff @(negedge clk_i)
-    begin
-      is_req_mem1 <= is_req;
-      is_req_mem2 <= is_req_mem1;
-      is_store_mem1 <= is_store;
-      is_store_mem2 <= is_store_mem1;
-      is_fencei_mem1 <= is_fencei;
-      is_fencei_mem2 <= is_fencei_mem1;
-    end
+  bsg_dff_reset
+   #(.width_p(3))
+   mem1_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i({is_req, is_store, is_fencei})
+     ,.data_o({is_req_mem1, is_store_mem1, is_fencei_mem1})
+     );
+
+  bsg_dff_reset_half
+   #(.width_p(3))
+   mem2_reg
+    (.clk_i(~clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i({is_req_mem1, is_store_mem1, is_fencei_mem1})
+     ,.data_half_o({is_req_mem2, is_store_mem2, is_fencei_mem2})
+     ,.data_full_o()
+     );
 
   // Check instruction accesses
   assign load_misaligned_v = 1'b0; // TODO: detect
@@ -347,8 +355,8 @@ module bp_be_pipe_mem
 
   assign tlb_store_miss_v_o     = is_store_mem1 & dtlb_miss_v;
   assign tlb_load_miss_v_o      = ~is_store_mem1 & dtlb_miss_v;
-  assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v & cache_req_v_o;
-  assign cache_fail_v_o         = is_req_mem2 & ~dcache_early_v & ~cache_req_v_o;
+  assign cache_miss_v_o         = is_req_mem2 & dcache_miss_v;
+  assign cache_fail_v_o         = is_req_mem2 & ~dcache_early_v & ~dcache_miss_v;
   assign fencei_clean_v_o       = is_fencei_mem2 & dcache_early_v;
   assign fencei_dirty_v_o       = is_fencei_mem2 & ~dcache_early_v;
   assign store_page_fault_v_o   = store_page_fault_v;
