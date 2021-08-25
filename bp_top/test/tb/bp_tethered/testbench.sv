@@ -301,7 +301,7 @@ module testbench
       bind bp_be_top
         bp_nonsynth_watchdog
          #(.bp_params_p(bp_params_p)
-           ,.timeout_cycles_p(100000)
+           ,.timeout_cycles_p(1000000)
            ,.heartbeat_instr_p(100000)
            )
          watchdog
