@@ -312,7 +312,7 @@ module bp_be_pipe_mem
   bsg_dff_reset
    #(.width_p(3))
    mem1_reg
-    (.clk_i(clk_i)
+    (.clk_i(~clk_i)
      ,.reset_i(reset_i)
      ,.data_i({is_req, is_store, is_fencei})
      ,.data_o({is_req_mem1, is_store_mem1, is_fencei_mem1})
