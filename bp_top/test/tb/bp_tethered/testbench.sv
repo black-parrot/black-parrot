@@ -106,6 +106,27 @@ module testbench
      ,.async_reset_o(dram_reset_i)
      );
 
+  bit cosim_clk_i, cosim_reset_i;
+
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
+   #(.cycle_time_p(`BP_SIM_CLK_PERIOD/10))
+   cosim_clock_gen
+    (.o(cosim_clk_i));
+
+  bsg_nonsynth_reset_gen
+   #(.num_clocks_p(1)
+     ,.reset_cycles_lo_p(0)
+     ,.reset_cycles_hi_p(100)
+     )
+   cosim_reset_gen
+    (.clk_i(cosim_clk_i)
+     ,.async_reset_o(cosim_reset_i)
+     );
+
   bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li;
   bp_bedrock_cce_mem_msg_s proc_io_resp_li;
@@ -334,8 +355,12 @@ module testbench
            ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
 
-           ,.wbuf_v(calculator.pipe_mem.dcache.wbuf_v_li)
-           ,.uc_st_v(calculator.pipe_mem.dcache.uncached_store_req & calculator.pipe_mem.dcache.cache_req_yumi_i)
+           ,.cache_req_v_o(calculator.pipe_mem.dcache.cache_req_v_o)
+           ,.cache_req_yumi_i(calculator.pipe_mem.dcache.cache_req_yumi_i)
+           ,.cache_req_complete_i(calculator.pipe_mem.dcache.cache_req_complete_i)
+
+           ,.cosim_clk_i(testbench.cosim_clk_i)
+           ,.cosim_reset_i(testbench.cosim_reset_i)
            );
 
       bind bp_be_dcache

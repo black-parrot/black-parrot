@@ -347,8 +347,8 @@ module bp_be_pipe_mem
 
   assign tlb_store_miss_v_o     = is_store_mem1 & dtlb_miss_v;
   assign tlb_load_miss_v_o      = ~is_store_mem1 & dtlb_miss_v;
-  assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v & cache_req_yumi_i;
-  assign cache_fail_v_o         = is_req_mem2 & ~dcache_early_v & ~cache_req_yumi_i;
+  assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v & cache_req_v_o;
+  assign cache_fail_v_o         = is_req_mem2 & ~dcache_early_v & ~cache_req_v_o;
   assign fencei_clean_v_o       = is_fencei_mem2 & dcache_early_v;
   assign fencei_dirty_v_o       = is_fencei_mem2 & ~dcache_early_v;
   assign store_page_fault_v_o   = store_page_fault_v;
