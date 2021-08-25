@@ -16,6 +16,8 @@ export LCE_MODE_P ?= 0
 # 1 = cached store test
 # 2 = cached store->load test
 # 3 = cached set test
+# 4 = cached block test
+# 5 = cache hammer test
 export ME_TEST_P ?= 0
 
 COH_PROTO   ?= mesi
