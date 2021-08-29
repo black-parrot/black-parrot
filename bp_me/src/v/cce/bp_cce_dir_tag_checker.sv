@@ -13,10 +13,10 @@
 
 module bp_cce_dir_tag_checker
   import bp_common_pkg::*;
-  #(parameter tag_sets_per_row_p          = "inv"
-    , parameter row_width_p               = "inv"
-    , parameter assoc_p                   = "inv"
-    , parameter tag_width_p               = "inv"
+  #(parameter `BSG_INV_PARAM(tag_sets_per_row_p          )
+    , parameter `BSG_INV_PARAM(row_width_p               )
+    , parameter `BSG_INV_PARAM(assoc_p                   )
+    , parameter `BSG_INV_PARAM(tag_width_p               )
 
     , localparam lg_assoc_lp              = `BSG_SAFE_CLOG2(assoc_p)
   )
@@ -72,4 +72,6 @@ module bp_cce_dir_tag_checker
   end
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_cce_dir_tag_checker)
 

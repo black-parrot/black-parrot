@@ -85,12 +85,16 @@ BlackParrot has a configurable physical address width as well as maximum DRAM si
 * 0x00_8000_0000 - 0x0F_FFFF_FFFF
   * Cached, global memory
   * Striped by cache line
-  * DRAM region
+  * Cached DRAM region
 * 0x10_0000_0000 - 0x1F_FFFF_FFFF
+  * Uncached, global memory
+  * Striped by cache line
+  * Uncached DRAM region
+* 0x20_0000_0000 - 0x2F_FFFF_FFFF
   * Uncached, global memory
   * Striped by tile
   * Streaming accelerator region
-* 0x20_0000_0000 - 0xFF_FFFF_FFFF
+* 0x30_0000_0000 - 0xFF_FFFF_FFFF
   * Uncached, ASIC-global memory
   * Striped by tile
   * Off-chip region
@@ -102,6 +106,12 @@ For a BlackParrot Multicore, an "off-chip" device is routed to the I/O complex. 
 either send it east or west depending on the destination "domain ID" (upper uncached bits) of the
 address compared to the domain ID of the chip itself (set statically at the toplevel).
 
+The uncached region in this scheme is rather large, fully half of the available DRAM at first
+glance. However, this is only the view from BlackParrot. System designers are free to remap those
+addresses as they see fit. For instance, aliasing some of the DRAM space between cached and uncached
+(and manually handling the coherence issues). Another scheme is to relocate some of the memory such
+that both cached and uncached are physically contiguous on the same DRAM.
+
 ### Local Address Map
 * 0x00_0000_0000 - 0x00_0(nnnN)(D)(A_AAAA)
   * nnnN -> 7 bits = 128 max tiles
@@ -109,7 +119,7 @@ address compared to the domain ID of the chip itself (set statically at the topl
   * A_AAAA -> 20 bits = 1 MB address space per device
 * Examples
   * Devices: Configuration Link, CLINT
-  * 0x00_0420_0002 -> tile 2, device 2, address 0002 -> Freeze register
+  * 0x00_0420_0002 -> tile 2, device 2, address 0008 -> Freeze register
   * 0x00_0030_bff8 -> tile 0, device 3, address bff8 -> CLINT mtime
 
 ### Full Listing of BlackParrot Configuration Registers

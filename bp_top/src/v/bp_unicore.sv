@@ -1,13 +1,20 @@
 
 `include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+`include "bp_be_defines.svh"
+`include "bp_me_defines.svh"
 `include "bp_top_defines.svh"
+`include "bsg_cache.vh"
+`include "bsg_noc_links.vh"
 
 module bp_unicore
  import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;
- import bp_be_pkg::*;
  import bp_fe_pkg::*;
+ import bp_be_pkg::*;
  import bp_me_pkg::*;
+ import bp_top_pkg::*;
+ import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -15,7 +22,7 @@ module bp_unicore
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                               clk_i
    , input                                             reset_i
@@ -56,6 +63,7 @@ module bp_unicore
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   bp_bedrock_uce_mem_msg_s mem_cmd_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li;
@@ -93,23 +101,30 @@ module bp_unicore
      ,.mem_resp_yumi_o(mem_resp_yumi_lo)
      );
 
-  import bsg_cache_pkg::*;
-  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
+  `declare_bsg_cache_pkt_s(daddr_width_p, dword_width_gp);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [dword_width_gp-1:0] cache_data_lo;
   logic cache_data_v_lo, cache_data_yumi_li;
+
+  // This is a temporary hack to fix width mismatches in configurations with sub-cacheblock fills
+  bp_bedrock_cce_mem_msg_s mem_cmd_wide_lo;
+  bp_bedrock_cce_mem_msg_s mem_resp_wide_li;
+
+  assign mem_cmd_wide_lo = mem_cmd_lo;
+  assign mem_resp_li = mem_resp_wide_li;
+
   bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p))
    cce_to_cache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
   
-     ,.mem_cmd_i(mem_cmd_lo)
+     ,.mem_cmd_i(mem_cmd_wide_lo)
      ,.mem_cmd_v_i(mem_cmd_v_lo)
      ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
 
-     ,.mem_resp_o(mem_resp_li)
+     ,.mem_resp_o(mem_resp_wide_li)
      ,.mem_resp_v_o(mem_resp_v_li)
      ,.mem_resp_yumi_i(mem_resp_yumi_lo)
   
@@ -123,7 +138,7 @@ module bp_unicore
      );
   
   bsg_cache
-   #(.addr_width_p(caddr_width_p)
+   #(.addr_width_p(daddr_width_p)
      ,.data_width_p(l2_data_width_p)
      ,.block_size_in_words_p(l2_block_size_in_words_p)
      ,.sets_p(l2_en_p ? l2_sets_p : 2)

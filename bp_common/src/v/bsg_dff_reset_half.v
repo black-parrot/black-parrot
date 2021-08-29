@@ -14,7 +14,7 @@
 //
 
 module bsg_dff_reset_half
- #(parameter width_p = "inv")
+ #(parameter `BSG_INV_PARAM(width_p))
   (input                        clk_i
    , input                      reset_i
    , input  [width_p-1:0]       data_i
@@ -54,4 +54,6 @@ module bsg_dff_reset_half
    assign data_full_o = data_r;
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bsg_dff_reset_half)
 

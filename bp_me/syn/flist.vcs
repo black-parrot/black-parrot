@@ -32,7 +32,8 @@ $BP_FE_DIR/src/include/bp_fe_pkg.sv
 $BP_BE_DIR/src/include/bp_be_pkg.sv
 # ME packages
 $BP_ME_DIR/src/include/bp_me_pkg.sv
-$BP_COMMON_DIR/src/v/bsg_bus_pack.sv
+# TOP packages
+$BP_TOP_DIR/src/include/bp_top_pkg.sv
 ## BaseJump STL files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
@@ -172,11 +173,13 @@ $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 # NETWORK
 $BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.sv
-## TOP Files
-$BP_TOP_DIR/src/v/bp_loopback.sv
-$BP_TOP_DIR/src/v/bp_cfg.sv
+## Dev Files
+$BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
+$BP_ME_DIR/src/v/dev/bp_me_loopback.sv
+$BP_ME_DIR/src/v/dev/bp_me_cfg.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
+$BP_COMMON_DIR/src/v/bsg_bus_pack.sv

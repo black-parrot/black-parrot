@@ -58,5 +58,6 @@ $BP_TOP_DIR/test/common/bp_nonsynth_perf.sv
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_controller.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_phy.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp
 # me files
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv

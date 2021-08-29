@@ -218,9 +218,9 @@ module testbench
 
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(trace_v_lo)
-
-     ,.uncached_i(uncached_li)
-     ,.nonidem_i(nonidem_li)
+     ,.ptag_uncached_i(uncached_li)
+     ,.ptag_nonidem_i(nonidem_li)
+     ,.ptag_dram_i(~uncached_li)
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
 

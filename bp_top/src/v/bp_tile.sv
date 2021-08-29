@@ -5,14 +5,20 @@
  */
 
 `include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+`include "bp_me_defines.svh"
 `include "bp_top_defines.svh"
+`include "bsg_cache.vh"
+`include "bsg_noc_links.vh"
 
 module bp_tile
  import bp_common_pkg::*;
  import bp_be_pkg::*;
+ import bp_me_pkg::*;
+ import bp_top_pkg::*;
+ import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
- import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
@@ -49,7 +55,7 @@ module bp_tile
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
-  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   // Cast the routing links
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -146,19 +152,23 @@ module bp_tile
   logic cce_ucode_w_lo;
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
-  bp_cfg
+  bp_me_cfg
    #(.bp_params_p(bp_params_p))
    cfg
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(cfg_mem_cmd)
+     ,.mem_cmd_header_i(cfg_mem_cmd.header)
+     ,.mem_cmd_data_i(cfg_mem_cmd.data)
      ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(cfg_mem_cmd_ready_lo)
+     ,.mem_cmd_last_i(cfg_mem_cmd_v_li) // stub
 
-     ,.mem_resp_o(cfg_mem_resp)
+     ,.mem_resp_header_o(cfg_mem_resp.header)
+     ,.mem_resp_data_o(cfg_mem_resp.data)
      ,.mem_resp_v_o(cfg_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(cfg_mem_resp_yumi_li)
+     ,.mem_resp_ready_and_i(cfg_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
 
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i(my_did_i)
@@ -172,19 +182,23 @@ module bp_tile
      ,.cce_ucode_data_i(cce_ucode_data_li)
      );
 
-  bp_clint_slice
+  bp_me_clint_slice
    #(.bp_params_p(bp_params_p))
    clint
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(clint_mem_cmd)
+     ,.mem_cmd_header_i(clint_mem_cmd.header)
+     ,.mem_cmd_data_i(clint_mem_cmd.data)
      ,.mem_cmd_v_i(clint_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(clint_mem_cmd_ready_lo)
+     ,.mem_cmd_last_i(clint_mem_cmd_v_li)
 
-     ,.mem_resp_o(clint_mem_resp)
+     ,.mem_resp_header_o(clint_mem_resp.header)
+     ,.mem_resp_data_o(clint_mem_resp.data)
      ,.mem_resp_v_o(clint_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(clint_mem_resp_yumi_li)
+     ,.mem_resp_ready_and_i(clint_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
 
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
@@ -545,8 +559,7 @@ module bp_tile
   assign clint_mem_resp_yumi_li    = cce_mem_resp_yumi_lo & clint_mem_resp_grant_li;
   assign loopback_mem_resp_yumi_li = cce_mem_resp_yumi_lo & loopback_mem_resp_grant_li;
 
-  import bsg_cache_pkg::*;
-  `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
+  `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
   logic [l2_data_width_p-1:0] cache_data_lo;
@@ -574,7 +587,7 @@ module bp_tile
      ,.yumi_o(cache_data_yumi_li)
      );
 
-  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [l2_fill_width_p-1:0] dma_data_li;
@@ -582,7 +595,7 @@ module bp_tile
   logic [l2_fill_width_p-1:0] dma_data_lo;
   logic dma_data_v_lo, dma_data_yumi_li;
   bsg_cache
-   #(.addr_width_p(caddr_width_p)
+   #(.addr_width_p(daddr_width_p)
      ,.data_width_p(l2_data_width_p)
      ,.dma_data_width_p(l2_fill_width_p)
      ,.block_size_in_words_p(l2_block_size_in_words_p)
@@ -627,7 +640,7 @@ module bp_tile
      );
 
   bsg_cache_dma_to_wormhole
-   #(.dma_addr_width_p(caddr_width_p)
+   #(.dma_addr_width_p(daddr_width_p)
      ,.dma_burst_len_p(l2_block_size_in_fill_p)
 
      ,.wh_flit_width_p(mem_noc_flit_width_p)
@@ -660,19 +673,23 @@ module bp_tile
      ,.dest_wh_cid_i('0)
      );
 
-  bp_cce_loopback
+  bp_me_loopback
    #(.bp_params_p(bp_params_p))
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(loopback_mem_cmd)
+     ,.mem_cmd_header_i(loopback_mem_cmd.header)
+     ,.mem_cmd_data_i(loopback_mem_cmd.data)
      ,.mem_cmd_v_i(loopback_mem_cmd_v_li)
      ,.mem_cmd_ready_and_o(loopback_mem_cmd_ready_lo)
+     ,.mem_cmd_last_i() //stub
 
-     ,.mem_resp_o(loopback_mem_resp)
+     ,.mem_resp_header_o(loopback_mem_resp.header)
+     ,.mem_resp_data_o(loopback_mem_resp.data)
      ,.mem_resp_v_o(loopback_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(loopback_mem_resp_yumi_li)
+     ,.mem_resp_ready_and_i(loopback_mem_resp_yumi_li)
+     ,.mem_resp_last_o()
      );
 
 endmodule

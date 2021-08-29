@@ -32,6 +32,8 @@ $BP_FE_DIR/src/include/bp_fe_pkg.sv
 $BP_BE_DIR/src/include/bp_be_pkg.sv
 # ME packages
 $BP_ME_DIR/src/include/bp_me_pkg.sv
+# TOP packages
+$BP_TOP_DIR/src/include/bp_top_pkg.sv
 ## BaseJump STL files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
@@ -223,7 +225,7 @@ $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 # Cache
-$BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_alu.sv
@@ -247,6 +249,11 @@ $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
+# Dev
+$BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
+$BP_ME_DIR/src/v/dev/bp_me_clint_slice.sv
+$BP_ME_DIR/src/v/dev/bp_me_cfg.sv
+$BP_ME_DIR/src/v/dev/bp_me_loopback.sv
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.sv
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.sv
@@ -266,7 +273,6 @@ $BP_ME_DIR/src/v/wormhole/bp_stream_to_lite.sv
 $BP_ME_DIR/src/v/wormhole/bp_lite_to_burst.sv
 $BP_ME_DIR/src/v/wormhole/bp_burst_to_lite.sv
 ## TOP
-$BP_TOP_DIR/src/v/bp_loopback.sv
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
 $BP_TOP_DIR/src/v/bp_cacc_tile.sv
@@ -276,11 +282,9 @@ $BP_TOP_DIR/src/v/bp_sacc_vdp.sv
 $BP_TOP_DIR/src/v/bp_sacc_tile.sv
 $BP_TOP_DIR/src/v/bp_sacc_tile_node.sv
 $BP_TOP_DIR/src/v/bp_sacc_complex.sv
-$BP_TOP_DIR/src/v/bp_cfg.sv
 $BP_TOP_DIR/src/v/bp_core.sv
 $BP_TOP_DIR/src/v/bp_core_minimal.sv
 $BP_TOP_DIR/src/v/bp_core_complex.sv
-$BP_TOP_DIR/src/v/bp_clint_slice.sv
 $BP_TOP_DIR/src/v/bp_l2e_tile.sv
 $BP_TOP_DIR/src/v/bp_l2e_tile_node.sv
 $BP_TOP_DIR/src/v/bp_io_complex.sv
@@ -299,3 +303,4 @@ $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_dff_reset_half.v
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
+$BP_COMMON_DIR/src/v/bsg_rom_param.v

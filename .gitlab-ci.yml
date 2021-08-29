@@ -26,7 +26,6 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
-    - be_dev_dcachetemptemptmep
   before_script:
       - git submodule update --init --checkout --recursive external/
   artifacts:
@@ -58,6 +57,14 @@ check-design:
     - dc
   script:
     - $CI_PROJECT_DIR/ci/check_design.sh $CI_CORES
+
+surelog:
+  <<: *job_definition
+  stage: check
+  tags:
+    - bsg
+  script:
+    - $CI_PROJECT_DIR/ci/surelog.sh $CI_CORES
 
 # Some licensing issue as of 02/10/21
 synth-vivado:

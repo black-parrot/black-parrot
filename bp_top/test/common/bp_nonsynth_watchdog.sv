@@ -8,8 +8,8 @@ module bp_nonsynth_watchdog
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
-    , parameter timeout_cycles_p   = "inv"
-    , parameter heartbeat_instr_p  = "inv"
+    , parameter `BSG_INV_PARAM(timeout_cycles_p   )
+    , parameter `BSG_INV_PARAM(heartbeat_instr_p  )
 
     // Something super big
     , parameter max_instr_lp = 2**30
