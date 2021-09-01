@@ -235,6 +235,8 @@ $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 # Cache
 $BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
 $BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_dram_hash_decode.sv
+$BP_ME_DIR/src/v/dev/bp_me_dram_hash_encode.sv
 $BP_ME_DIR/src/v/dev/bp_me_cfg.sv
 $BP_ME_DIR/src/v/dev/bp_me_clint_slice.sv
 $BP_ME_DIR/src/v/dev/bp_me_loopback.sv
