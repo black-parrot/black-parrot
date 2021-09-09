@@ -33,7 +33,7 @@ module bp_me_clint_slice
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
-  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
@@ -43,7 +43,7 @@ module bp_me_clint_slice
    #(.bp_params_p(bp_params_p)
      ,.els_p(4)
      ,.reg_addr_width_p(dev_addr_width_gp)
-     ,.base_addr_p({plic_reg_addr_gp, mtime_reg_match_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
+     ,.base_addr_p({plic_reg_addr_gp, mtime_reg_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
      )
    register
     (.*

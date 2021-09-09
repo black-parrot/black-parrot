@@ -1,9 +1,9 @@
 /* This module implements a FIFO connected to
-*  AXI-Lite interfaces on both ends. 
-*  
+*  AXI-Lite interfaces on both ends.
+*
 *  The input side is write-only, a read returns 0
 *  and does not hang.
-*  
+*
 *  The output side is read-only, a write is dropped
 *  and does not hang.
 */
@@ -14,12 +14,12 @@ module axi_fifo
   , parameter  axi_data_width_p             = 32
   , localparam axi_strb_width_lp            = axi_data_width_p/8
 
-  // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
+  // AXI WRITE/READ ADDRESS CHANNEL PARAMS
   , parameter  axi_addr_width_p             = 32
   )
 
   (//==================== GLOBAL SIGNALS =======================
-   input clk_i  
+   input clk_i
    , input reset_i
 
    //=================== AXI-4 LITE INPUT =======================
@@ -36,8 +36,8 @@ module axi_fifo
    , output logic                               in_axi_lite_wready_o
 
    // WRITE RESPONSE CHANNEL SIGNALS
-   , output [1:0]                               in_axi_lite_bresp_o   
-   , output logic                               in_axi_lite_bvalid_o   
+   , output [1:0]                               in_axi_lite_bresp_o
+   , output logic                               in_axi_lite_bvalid_o
    , input                                      in_axi_lite_bready_i
 
    // READ ADDRESS CHANNEL SIGNALS
@@ -66,8 +66,8 @@ module axi_fifo
    , output logic                               out_axi_lite_wready_o
 
    // WRITE RESPONSE CHANNEL SIGNALS
-   , output [1:0]                               out_axi_lite_bresp_o   
-   , output logic                               out_axi_lite_bvalid_o   
+   , output [1:0]                               out_axi_lite_bresp_o
+   , output logic                               out_axi_lite_bvalid_o
    , input                                      out_axi_lite_bready_i
 
    // READ ADDRESS CHANNEL SIGNALS
@@ -182,7 +182,7 @@ module axi_fifo
   enum logic [1:0] {e_read_wait, e_count_resp, e_fifo_resp} out_state_r, out_state_n;
 
   // Input combinational logic
-  always_comb 
+  always_comb
     begin
       // WRITE ADDRESS CHANNEL SIGNALS
       in_axi_lite_awready_o = '0;
@@ -197,7 +197,7 @@ module axi_fifo
       fifo_v_li             = '0;
       in_state_n            = in_state_r;
 
-      case (in_state_r) 
+      case (in_state_r)
         e_write_wait : begin
           // The AXI interface is ready if FIFO is not full
           in_axi_lite_awready_o = fifo_ready_lo;
@@ -272,7 +272,7 @@ module axi_fifo
       endcase
     end
 
-  always_ff @(posedge clk_i) 
+  always_ff @(posedge clk_i)
     begin
       if (reset_i)
 	begin
@@ -287,7 +287,7 @@ module axi_fifo
     end
 
   //synopsys translate_off
-  initial 
+  initial
     begin
       assert (axi_data_width_p==64 || axi_data_width_p==32) else $error("AXI4-LITE only supports a data width of 32 or 64bits.");
       assert (in_axi_lite_awprot_i == 3'b000) else $info("AXI4-LITE access permission mode is not supported.");

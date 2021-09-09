@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_arbitrate.v
+ *   bp_cce_arbitrate.sv
  *
  * Description:
  *   The arbitration unit controls access to the directory, pending bits, and

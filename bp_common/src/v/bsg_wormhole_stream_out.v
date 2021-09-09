@@ -3,9 +3,9 @@
 
 //
 // Converts a wormhole router stream into a higher level protocol without
-//   deserializing the data. This module can be used for converting various 
-//   DMA formats to wormhole flits efficently and with minimal buffering. 
-//   It can also be used to forward data between wormholes on different 
+//   deserializing the data. This module can be used for converting various
+//   DMA formats to wormhole flits efficently and with minimal buffering.
+//   It can also be used to forward data between wormholes on different
 //   networks, or to convert between multiple protocol formats.
 //
 // Example use cases:
@@ -30,7 +30,7 @@
 //   - header flits do not contain any data
 //
 //  Header will arrive at or before data and either can be acked at any time.
-//    Typical users of this module will simply ack the header to learn the 
+//    Typical users of this module will simply ack the header to learn the
 //    protocol information of the impending transaction, begin the transaction,
 //    and then forward or accept all of the data serially.
 //
@@ -79,8 +79,8 @@ module bsg_wormhole_stream_out
    , input                        data_ready_and_i
    );
 
-  wire is_hdr, is_data;
-  
+  wire is_hdr, is_data, wh_has_data, wh_last_data;
+
   localparam [len_width_p-1:0] hdr_len_lp = `BSG_CDIV(hdr_width_p, flit_width_p);
 
   logic hdr_v_li, hdr_ready_lo;
@@ -171,7 +171,7 @@ module bsg_wormhole_stream_out
          );
     end
   else
-    // Protocol data is 1 or multiple flit-sized. We aggregate wormhole data 
+    // Protocol data is 1 or multiple flit-sized. We aggregate wormhole data
     //   until we have a full protocol data and then let the client process it
     begin : wide
       localparam [len_width_p-1:0] data_len_lp = `BSG_CDIV(pr_data_width_p, flit_width_p);
@@ -206,7 +206,9 @@ module bsg_wormhole_stream_out
      ,.link_accept_i(link_ready_and_o & link_v_i)
 
      ,.is_hdr_o(is_hdr)
+     ,.has_data_o(wh_has_data)
      ,.is_data_o(is_data)
+     ,.last_data_o(wh_last_data)
      );
 
   assign link_ready_and_o = is_hdr ? hdr_ready_lo : data_ready_lo;

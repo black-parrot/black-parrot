@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_dir_segment.v
+ *   bp_cce_dir_segment.sv
  *
  * Description:
  *   A directory segment stores the coherence state and tags for a set of cache blocks tracked
@@ -113,16 +113,15 @@ module bp_cce_dir_segment
    , output bp_cce_inst_opd_gpr_e                                 addr_dst_gpr_o
   );
 
+  // parameter checks
   // If value of tag_sets_per_row_lp changes (is no longer 2) the directory logic
   // needs to be re-written.
-  initial begin
-    assert(tag_sets_per_row_lp == 2) else
-      $error("Unsupported configuration: number of sets per row must equal 2");
-    assert(sets_p > 1) else
-      $error("Number of cache sets must be greater than 1; direct-mapped caches not supported");
-    assert(tag_sets_p >= 1) else
-      $error("Number of tag sets must be at least 1");
-  end
+  if (tag_sets_per_row_lp != 2)
+    $fatal(0,"Unsupported configuration: number of sets per row must equal 2");
+  if (sets_p <= 1)
+    $fatal(0,"Number of cache sets must be greater than 1; direct-mapped caches not supported");
+  if (tag_sets_p < 1)
+    $fatal(0,"Number of tag sets must be at least 1");
 
   // input address hashing
   logic [lg_num_cce_lp-1:0] cce_id_lo;

@@ -13,7 +13,7 @@ module bp_lite_to_axi_lite_master
   , parameter  axi_data_width_p             = 32
   , localparam axi_strb_width_lp            = axi_data_width_p/8
 
-  // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
+  // AXI WRITE/READ ADDRESS CHANNEL PARAMS
   , parameter axi_addr_width_p              = 32
   )
  (//==================== GLOBAL SIGNALS =======================
@@ -43,8 +43,8 @@ module bp_lite_to_axi_lite_master
   , input                                     m_axi_lite_wready_i
 
   // WRITE RESPONSE CHANNEL SIGNALS
-  , input axi_resp_type_e                     m_axi_lite_bresp_i   
-  , input                                     m_axi_lite_bvalid_i   
+  , input axi_resp_type_e                     m_axi_lite_bresp_i
+  , input                                     m_axi_lite_bvalid_i
   , output logic                              m_axi_lite_bready_o
 
   // READ ADDRESS CHANNEL SIGNALS
@@ -90,7 +90,7 @@ module bp_lite_to_axi_lite_master
   enum {e_wait, e_read_data_tx, e_write_resp_rx} state_r, state_n;
 
   // combinational Logic
-  always_comb 
+  always_comb
     begin
 
       // BP IO
@@ -129,18 +129,18 @@ module bp_lite_to_axi_lite_master
         default              : m_axi_lite_wstrb_o = axi_strb_width_lp'('h0);
       endcase
 
-      case(state_r) 
+      case(state_r)
         e_wait : begin
-          // if the client device is ready to receive, send the data along with the address   
+          // if the client device is ready to receive, send the data along with the address
 
           if (io_cmd_w_v & m_axi_lite_awready_i)
             state_n        = e_write_resp_rx;
 
           // if the io_cmd read is valid and client device read address channel is ready to receive
           // pass the valid read data to io_resp channel if io_resp is ready
-          else if (io_cmd_r_v & m_axi_lite_arready_i) 
+          else if (io_cmd_r_v & m_axi_lite_arready_i)
             begin
-              io_resp_v_o                               = m_axi_lite_rvalid_i;	
+              io_resp_v_o                               = m_axi_lite_rvalid_i;
               io_resp_cast_o.data[axi_data_width_p-1:0] = (m_axi_lite_rresp_i == '0)
                                                         ? m_axi_lite_rdata_i
                                                         : '0;
@@ -160,7 +160,7 @@ module bp_lite_to_axi_lite_master
         end
 
        e_read_data_tx : begin
-         io_resp_v_o                               = m_axi_lite_rvalid_i;	
+         io_resp_v_o                               = m_axi_lite_rvalid_i;
          io_resp_cast_o.data[axi_data_width_p-1:0] = (m_axi_lite_rresp_i == '0)
                                                    ? m_axi_lite_rdata_i
                                                    : '0;
@@ -174,7 +174,7 @@ module bp_lite_to_axi_lite_master
     end
 
   // Sequential Logic
-  always_ff @(posedge clk_i) 
+  always_ff @(posedge clk_i)
     begin
       if (reset_i)
         state_r <= e_wait;
@@ -183,11 +183,11 @@ module bp_lite_to_axi_lite_master
     end
 
   //synopsys translate_off
-  initial 
+  initial
     begin
       assert (axi_data_width_p==64 || axi_data_width_p==32) else $error("AXI4-LITE only supports a data width of 32 or 64bits");
       // give a warning if the client device has an error response
-      if (m_axi_lite_rvalid_i) 
+      if (m_axi_lite_rvalid_i)
         assert (m_axi_lite_rresp_i == '0) else $warning("Client device has an error response to reads");
       if (m_axi_lite_bvalid_i)
         assert (m_axi_lite_bresp_i == '0) else $warning("Client device has an error response to writes");

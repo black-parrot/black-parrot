@@ -1,3 +1,12 @@
+/**
+ *
+ * Name:
+ *   bp_me_cce_id_to_cord.sv
+ *
+ * Description:
+ *   Computes network coordinates from CCE ID
+ *
+ */
 
 // TODO: Configure to handle network configurations more flexibly
 `include "bp_common_defines.svh"

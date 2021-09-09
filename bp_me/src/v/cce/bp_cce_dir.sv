@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_dir.v
+ *   bp_cce_dir.sv
  *
  * Description:
  *   The directory stores the coherence state and tags for all cache blocks tracked by
@@ -70,6 +70,12 @@ module bp_cce_dir
    , input [cce_id_width_p-1:0]                                   cce_id_i
   );
 
+  // Number of CCEs must be at least as large as the minimal number of sets in any of the
+  // LCE types (dcache, icache, acache). This ensures that every tag set is wholly stored
+  // in a *single* CCE (equivalently, tag sets are not split across LCEs).
+  // LCEs and CCEs use the set index bits from the physical address to map address to CCE.
+  if (lce_min_sets_lp < num_cce_p)
+    $fatal(0,"Number of CCEs must be at least as large as the minimal number of LCE sets");
 
   wire lce_is_icache = (~lce_i[0] && (lce_i < acc_lce_id_offset_lp));
   wire lce_is_dcache = (lce_i[0] && (lce_i < acc_lce_id_offset_lp));
@@ -359,17 +365,7 @@ module bp_cce_dir
                               ? acache_addr_dst_gpr_lo
                               : e_opd_r0;
 
-  // Nonsynth assertions
   //synopsys translate_off
-  initial begin
-    // Number of CCEs must be at least as large as the minimal number of sets in any of the
-    // LCE types (dcache, icache, acache). This ensures that every tag set is wholly stored
-    // in a *single* CCE (equivalently, tag sets are not split across LCEs).
-    // LCEs and CCEs use the set index bits from the physical address to map address to CCE.
-    assert(lce_min_sets_lp >= num_cce_p)
-      else $error("Number of CCEs must be at least as large as the minimal number of LCE sets");
-  end
-
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       assert($countones({icache_lru_v, dcache_lru_v, acache_lru_v}) <= 1)
