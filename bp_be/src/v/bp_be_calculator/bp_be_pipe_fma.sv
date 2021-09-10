@@ -10,29 +10,18 @@
  *   This module relies on cross-boundary flattening and retiming to achieve
  *     good QoR
  *   
- *   pipeline_stages_p is used to insert pipelining registers in rawMul for some devices, 
- *   where automatic backwards retiming from the retiming_chain doesn't help. 
- *     - No pipelining (default)   : '{0,0}
- *     - 64 bit, Zynq 7020 @ 50 MHz: '{3,1} (distributed as in the below figure)
+ *   ASIC tools prefer to have retiming chains be pure register chains at the end of
+ *   a combinational logic cloud, whereas FPGA tools prefer explicitly instantiated registers.
+ *   With this FPGA optimization, we've achieved 50MHz on a Zynq 7020
  *
  *   This module:
  *            ...
- *            fma         -> takes pipeline_p[0]
- *           /   \
- *     pre_round  \       -> takes pipeline_p[1]
- *      round_*p   \      -> ideally, some x should cross here
- *         |        |
- *         x        y     -> remaining pipeline (retiming_chain)
- *     fma_out   imul_out
+ *            fma 4 cycles     reservation
+ *           /   \                 |
+ *        round  imul_out      meta_info
+ *          |
+ *       fma_out
  *
- *   fma: (internally)
- *         preMul
- *          /  \
- *         0    0        -> 1 pipeline stage
- *         | (mulAdd)    -> Integer MulAdd (uses DSP on Zynq 7020)
- *         1    1        -> 2 pipeline stages
- *          \  /
- *         postMul
  */
 `include "bp_common_defines.svh"
 `include "bp_be_defines.svh"
@@ -42,10 +31,6 @@ module bp_be_pipe_fma
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter int pipeline_stages_p[0:1] = {0,0},
-   , parameter imul_latency_p = "inv"
-   , parameter fma_latency_p  = "inv"
-
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    )
   (input                               clk_i
@@ -75,17 +60,15 @@ module bp_be_pipe_fma
   assign frs1 = reservation.rs1;
   assign frs2 = reservation.rs2;
   assign frs3 = reservation.imm;
-  wire [dword_width_gp-1:0] rs1 = reservation.rs1[0+:dword_width_gp];
-  wire [dword_width_gp-1:0] rs2 = reservation.rs2[0+:dword_width_gp];
+  wire [dword_width_gp-1:0] rs1 = decode.opw_v ? (frs1 << word_width_gp) : frs1;
+  wire [dword_width_gp-1:0] rs2 = frs2;
 
   //
   // Control bits for the FPU
   //   The control bits control tininess, which is fixed in RISC-V
   rv64_frm_e frm_li;
-  rv64_frm_e frm_r;
   assign frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
-  wire [`floatControlWidth-1:0] control_r;
 
   wire is_fadd_li    = (decode.fu_op == e_fma_op_fadd);
   wire is_fsub_li    = (decode.fu_op == e_fma_op_fsub);
@@ -122,24 +105,42 @@ module bp_be_pipe_fma
   wire [dp_rec_width_gp-1:0] fma_b_li = is_imul_li ? rs2 : is_faddsub_li ? dp_rec_1_0 : frs2.rec;
   wire [dp_rec_width_gp-1:0] fma_c_li = is_faddsub_li ? frs2.rec : is_fmul_li ? dp_rec_0_0 : frs3.rec;
 
-  bp_be_fp_reg_s fma_result;
-  rv64_fflags_s fma_fflags;
+  // Here, we switch the implementation based on synthesizing for Vivado or not. If this is
+  //   a knob you'd like to turn yourself, consider modifying the define yourself. With this
+  localparam fma_latency_lp  = 5;
+  localparam imul_latency_lp = 4;
+  `ifdef SYNTHESIS
+    `ifdef DC
+      localparam muladd_latency_lp = 0;
+    `elsif CDS_TOOL_DEFINE
+      localparam muladd_latency_lp = 0;
+    `else
+      localparam muladd_latency_lp = 3;
+    `endif
+  `else
+      localparam muladd_latency_lp = 0;
+  `endif
+  localparam imul_retime_latency_lp = imul_latency_lp - muladd_latency_lp;
+  localparam fma_retime_latency_lp  = fma_latency_lp - muladd_latency_lp;
 
-  logic invalid_exc, is_nan, is_inf, is_zero;
-  logic fma_out_sign;
+  rv64_frm_e frm_preround_r;
+  logic opw_preround_r, ops_preround_r;
+  bsg_dff_chain
+   #(.width_p($bits(rv64_frm_e)+2), .num_stages_p(muladd_latency_lp))
+   preround_chain
+    (.clk_i(clk_i)
+     ,.data_i({frm_li, decode.opw_v, decode.ops_v})
+     ,.data_o({frm_preround_r, opw_preround_r, ops_preround_r})
+     );
+
+  logic invalid_exc, is_nan, is_inf, is_zero, fma_out_sign;
   logic [dp_exp_width_gp+1:0] fma_out_sexp;
   logic [dp_sig_width_gp+2:0] fma_out_sig;
   logic [dword_width_gp-1:0] imul_out;
-
-  logic invalid_exc_r, is_nan_r, is_inf_r, is_zero_r;
-  logic fma_out_sign_r;
-  logic [dp_exp_width_gp+1:0] fma_out_sexp_r;
-  logic [dp_sig_width_gp+2:0] fma_out_sig_r;
-
   mulAddRecFNToRaw
    #(.expWidth(dp_exp_width_gp)
      ,.sigWidth(dp_sig_width_gp)
-     ,.pipelineStages(pipeline_stages_p[0])
+     ,.pipelineStages(muladd_latency_lp)
      ,.imulEn(1)
      )
    fma
@@ -160,37 +161,8 @@ module bp_be_pipe_fma
      ,.out_sig(fma_out_sig)
      ,.out_imul(imul_out)
      );
-
-  logic reservation_v_imul_r, decode_pipe_mul_v_r, decode_opw_v_r;
-
-  bsg_dff_chain
-   #(.width_p($bits({control_li, frm_li, reservation.v, decode.pipe_mul_v, decode.opw_v}))
-     ,.num_stages_p(pipeline_stages_p[0]))
-    imul_shunt
-    (.clk_i(clk_i)
-     ,.data_i({control_li, frm_li, reservation.v, decode.pipe_mul_v, decode.opw_v})
-     ,.data_o({control_r, frm_r, reservation_v_imul_r, decode_pipe_mul_v_r, decode_opw_v_r})
-    );
-
-  logic reservation_v_fma_r, decode_pipe_fma_v_r, decode_ops_v_r;
-
-  bsg_dff_chain
-   #(.width_p($bits({reservation.v, decode.pipe_fma_v, decode.ops_v}))
-     ,.num_stages_p(pipeline_stages_p[0]+pipeline_stages_p[1]))
-    fma_shunt
-    (.clk_i(clk_i)
-     ,.data_i({reservation.v, decode.pipe_fma_v, decode.ops_v})
-     ,.data_o({reservation_v_fma_r, decode_pipe_fma_v_r, decode_ops_v_r})
-    );
-
-  bsg_dff_chain
-   #(.width_p($bits({invalid_exc, is_nan, is_inf, is_zero, fma_out_sign, fma_out_sexp, fma_out_sig}))
-     ,.num_stages_p(pipeline_stages_p[1]))
-   pre_round
-    (.clk_i(clk_i)
-     ,.data_i({invalid_exc, is_nan, is_inf, is_zero, fma_out_sign, fma_out_sexp, fma_out_sig})
-     ,.data_o({invalid_exc_r, is_nan_r, is_inf_r, is_zero_r, fma_out_sign_r, fma_out_sexp_r, fma_out_sig_r})
-    );
+  wire [dpath_width_gp-1:0] imulw_out    = $signed(imul_out) >>> word_width_gp;
+  wire [dpath_width_gp-1:0] imul_result = opw_preround_r ? imulw_out : imul_out;
 
   logic [dp_rec_width_gp-1:0] fma_dp_final;
   rv64_fflags_s fma_dp_fflags;
@@ -201,16 +173,16 @@ module bp_be_pipe_fma
      ,.outSigWidth(dp_sig_width_gp)
      )
    round_dp
-    (.control(control_r) //constant; but nonetheless
-     ,.invalidExc(invalid_exc_r)
+    (.control(control_li)
+     ,.invalidExc(invalid_exc)
      ,.infiniteExc('0)
-     ,.in_isNaN(is_nan_r)
-     ,.in_isInf(is_inf_r)
-     ,.in_isZero(is_zero_r)
-     ,.in_sign(fma_out_sign_r)
-     ,.in_sExp(fma_out_sexp_r)
-     ,.in_sig(fma_out_sig_r)
-     ,.roundingMode(frm_r)
+     ,.in_isNaN(is_nan)
+     ,.in_isInf(is_inf)
+     ,.in_isZero(is_zero)
+     ,.in_sign(fma_out_sign)
+     ,.in_sExp(fma_out_sexp)
+     ,.in_sig(fma_out_sig)
+     ,.roundingMode(frm_preround_r)
      ,.out(fma_dp_final)
      ,.exceptionFlags(fma_dp_fflags)
      );
@@ -224,20 +196,21 @@ module bp_be_pipe_fma
      ,.outSigWidth(sp_sig_width_gp)
      )
    round_sp
-    (.control(control_r)
-     ,.invalidExc(invalid_exc_r)
+    (.control(control_li)
+     ,.invalidExc(invalid_exc)
      ,.infiniteExc('0)
-     ,.in_isNaN(is_nan_r)
-     ,.in_isInf(is_inf_r)
-     ,.in_isZero(is_zero_r)
-     ,.in_sign(fma_out_sign_r)
-     ,.in_sExp(fma_out_sexp_r)
-     ,.in_sig(fma_out_sig_r)
-     ,.roundingMode(frm_r)
+     ,.in_isNaN(is_nan)
+     ,.in_isInf(is_inf)
+     ,.in_isZero(is_zero)
+     ,.in_sign(fma_out_sign)
+     ,.in_sExp(fma_out_sexp)
+     ,.in_sig(fma_out_sig)
+     ,.roundingMode(frm_preround_r)
      ,.out(fma_sp_final)
      ,.exceptionFlags(fma_sp_fflags)
      );
 
+  // TODO: Is it cheaper to do a single round, then unsafe rec-to-rec conversion?
   localparam bias_adj_lp = (1 << dp_exp_width_gp) - (1 << sp_exp_width_gp);
   bp_hardfloat_rec_dp_s fma_sp2dp_final;
 
@@ -250,32 +223,48 @@ module bp_be_pipe_fma
                              ,fract: {fma_sp_final.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                              };
 
-  assign fma_result = '{sp_not_dp: decode_ops_v_r, rec: decode_ops_v_r ? fma_sp2dp_final : fma_dp_final};
-  assign fma_fflags = decode_ops_v_r ? fma_sp_fflags : fma_dp_fflags;
+  bp_be_fp_reg_s fma_result;
+  rv64_fflags_s fma_fflags;
+  assign fma_result = '{sp_not_dp: ops_preround_r, rec: ops_preround_r ? fma_sp2dp_final : fma_dp_final};
+  assign fma_fflags = ops_preround_r ? fma_sp_fflags : fma_dp_fflags;
 
-  wire [dpath_width_gp-1:0] imulw_out = {{word_width_gp{imul_out[word_width_gp-1]}}, imul_out[0+:word_width_gp]};
-  wire [dpath_width_gp-1:0] imul_result = decode_opw_v_r ? imulw_out : imul_out;
-  wire imul_v_li = reservation_v_imul_r & decode_pipe_mul_v_r;
-
+  // TODO: Can combine the registers here if DC doesn't do it automatically
   bsg_dff_chain
-   #(.width_p(1+dpath_width_gp) 
-     ,.num_stages_p(imul_latency_p-pipeline_stages_p[0]))
+   #(.width_p(dpath_width_gp), .num_stages_p(imul_retime_latency_lp-1))
    imul_retiming_chain
     (.clk_i(clk_i)
 
-     ,.data_i({imul_v_li, imul_result})
-     ,.data_o({imul_v_o, imul_data_o})
+     ,.data_i({imul_result})
+     ,.data_o({imul_data_o})
      );
 
-  wire fma_v_li = reservation_v_fma_r & decode_pipe_fma_v_r;
   bsg_dff_chain
-   #(.width_p(1+$bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s))
-     ,.num_stages_p(fma_latency_p-pipeline_stages_p[0]-pipeline_stages_p[1]))
+   #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(fma_retime_latency_lp-1))
    fma_retiming_chain
     (.clk_i(clk_i)
 
-     ,.data_i({fma_v_li, fma_fflags, fma_result})
-     ,.data_o({fma_v_o, fma_fflags_o, fma_data_o})
+     ,.data_i({fma_fflags, fma_result})
+     ,.data_o({fma_fflags_o, fma_data_o})
+     );
+
+  wire imul_v_li = reservation.v & reservation.decode.pipe_mul_v;
+  bsg_dff_chain
+   #(.width_p(1), .num_stages_p(imul_latency_lp-1))
+   imul_v_chain
+    (.clk_i(clk_i)
+
+     ,.data_i(imul_v_li)
+     ,.data_o(imul_v_o)
+     );
+
+  wire fma_v_li = reservation.v & reservation.decode.pipe_fma_v;
+  bsg_dff_chain
+   #(.width_p(1), .num_stages_p(fma_latency_lp-1))
+   fma_v_chain
+    (.clk_i(clk_i)
+
+     ,.data_i(fma_v_li)
+     ,.data_o(fma_v_o)
      );
 
 endmodule

@@ -18,8 +18,6 @@ module bp_be_pipe_aux
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter `BSG_INV_PARAM(latency_p )
-
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    )
   (input                               clk_i
@@ -496,7 +494,7 @@ module bp_be_pipe_aux
 
   wire faux_v_li = reservation.v & reservation.decode.pipe_aux_v;
   bsg_dff_chain
-   #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)+1), .num_stages_p(latency_p-1))
+   #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)+1), .num_stages_p(1))
    retiming_chain
     (.clk_i(clk_i)
 
