@@ -42,12 +42,13 @@ module bp_io_tile
   bp_bedrock_lce_req_msg_s  cce_lce_req_li, lce_lce_req_lo;
   logic cce_lce_req_v_li, cce_lce_req_yumi_lo, lce_lce_req_v_lo, lce_lce_req_ready_and_li;
   bp_bedrock_lce_cmd_msg_s cce_lce_cmd_lo, lce_lce_cmd_li;
-  logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li, lce_lce_cmd_v_li, lce_lce_cmd_yumi_lo;
+  logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_and_li, lce_lce_cmd_v_li, lce_lce_cmd_yumi_lo;
 
   bp_bedrock_cce_mem_msg_s cce_io_cmd_lo, lce_io_cmd_li;
-  logic cce_io_cmd_v_lo, cce_io_cmd_ready_li, lce_io_cmd_v_li, lce_io_cmd_yumi_lo;
+  logic cce_io_cmd_v_lo, cce_io_cmd_ready_and_li, lce_io_cmd_v_li, lce_io_cmd_yumi_lo;
   bp_bedrock_cce_mem_msg_s cce_io_resp_li, lce_io_resp_lo;
   logic cce_io_resp_v_li, cce_io_resp_yumi_lo, lce_io_resp_v_lo, lce_io_resp_ready_and_li;
+  logic cce_io_resp_last_li, lce_io_cmd_last_li;
 
   logic reset_r;
   always_ff @(posedge clk_i)
@@ -105,11 +106,11 @@ module bp_io_tile
 
      ,.lce_cmd_o(cce_lce_cmd_lo)
      ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-     ,.lce_cmd_ready_then_i(cce_lce_cmd_ready_li)
+     ,.lce_cmd_ready_then_i(cce_lce_cmd_ready_and_li)
 
      ,.io_cmd_o(cce_io_cmd_lo)
      ,.io_cmd_v_o(cce_io_cmd_v_lo)
-     ,.io_cmd_ready_then_i(cce_io_cmd_ready_li)
+     ,.io_cmd_ready_then_i(cce_io_cmd_ready_and_li)
 
      ,.io_resp_i(cce_io_resp_li)
      ,.io_resp_v_i(cce_io_resp_v_li)
@@ -176,7 +177,7 @@ module bp_io_tile
 
      ,.packet_i(lce_cmd_packet_lo)
      ,.v_i(cce_lce_cmd_v_lo)
-     ,.ready_o(cce_lce_cmd_ready_li)
+     ,.ready_o(cce_lce_cmd_ready_and_li)
 
      ,.link_i(lce_cmd_link_i)
      ,.link_o(lce_cmd_link_o)
@@ -212,21 +213,29 @@ module bp_io_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(cce_io_cmd_lo)
+     ,.mem_cmd_header_i(cce_io_cmd_lo.header)
+     ,.mem_cmd_data_i(cce_io_cmd_lo.data)
      ,.mem_cmd_v_i(cce_io_cmd_v_lo)
-     ,.mem_cmd_ready_and_o(cce_io_cmd_ready_li)
+     ,.mem_cmd_ready_and_o(cce_io_cmd_ready_and_li)
+     ,.mem_cmd_last_i(cce_io_cmd_v_lo) // stub
 
-     ,.mem_resp_o(cce_io_resp_li)
+     ,.mem_resp_header_o(cce_io_resp_li.header)
+     ,.mem_resp_data_o(cce_io_resp_li.data)
      ,.mem_resp_v_o(cce_io_resp_v_li)
      ,.mem_resp_yumi_i(cce_io_resp_yumi_lo)
+     ,.mem_resp_last_o(cce_io_resp_last_li)
 
-     ,.mem_cmd_o(lce_io_cmd_li)
+     ,.mem_cmd_header_o(lce_io_cmd_li.header)
+     ,.mem_cmd_data_o(lce_io_cmd_li.data)
      ,.mem_cmd_v_o(lce_io_cmd_v_li)
      ,.mem_cmd_yumi_i(lce_io_cmd_yumi_lo)
+     ,.mem_cmd_last_o(lce_io_cmd_last_li)
 
-     ,.mem_resp_i(lce_io_resp_lo)
+     ,.mem_resp_header_i(lce_io_resp_lo.header)
+     ,.mem_resp_data_i(lce_io_resp_lo.data)
      ,.mem_resp_v_i(lce_io_resp_v_lo)
      ,.mem_resp_ready_and_o(lce_io_resp_ready_and_li)
+     ,.mem_resp_last_i(lce_io_resp_v_lo)
 
      ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
      ,.my_cid_i('0)

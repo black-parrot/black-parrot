@@ -213,7 +213,9 @@ a single cycle to execute. Microcode instructions are 32-bits wide and tagged wi
 bits to enable fast branch detection and prediction in the fetch state, which are the branch
 and predict taken bit.
 
-The microcode instructions and formats are defined in [bp\_cce\_inst.vh](../bp_me/src/include/v/bp_cce_inst.vh).
+The microcode instructions and formats are defined in
+[bp\_me\_cce\_inst\_defines.svh](../bp_me/src/include/bp_cce_inst_defines.svh) and
+[bp\_me\_cce\_inst\_pkgdef.svh](../bp_me/src/include/bp_cce_inst_pkgdef.svh).
 
 ### Microcode Instruction Classes
 There are six different classes of instructions in BedRock's ISA.
@@ -304,6 +306,6 @@ Please see [this document](bedrock_microcode_table.pdf) for a detailed table lis
 the microcode assembly instructions for BedRock. Currently, BedRock is programmed at the assembly
 level.
 
-The microcode source files in the assembler source directory tree provide examples of
-source code implementing the EI, MSI, MESI, and MOESIF coherence protocols. You can find them in
-the bp\_me/src/asm/src/microcode/cce/ directory of the repository.
+The microcode source files that implement EI, MSI, MESI, and MOESIF coherence protocols
+can be found in the [BedRock](https://github.com/black-parrot-sdk/bedrock) repository, that is part of the
+[BlackParrot SDK](https://github.com/black-parrot-sdk/black-parrot-sdk).

@@ -1,6 +1,6 @@
 /**
  *  Name:
- *    bp_lce_req.v
+ *    bp_lce_req.sv
  *
  *  Description:
  *    LCE request handler.
@@ -97,6 +97,10 @@ module bp_lce_req
     , output logic                                   lce_req_v_o
     , input                                          lce_req_ready_then_i
   );
+
+  // parameter checks
+  if (metadata_latency_p >= 2)
+    $fatal(0,"metadata needs to arrive within one cycle of the request");
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
@@ -212,34 +216,34 @@ module bp_lce_req
 
       // Ready for new request
       e_ready: begin
-        ready_o = ~credits_full_o & lce_req_ready_then_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
+        ready_o = lce_req_ready_then_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
 
-        if (ready_o & cache_req_v_i)
-          unique case (cache_req.msg_type)
-            e_miss_store
-            ,e_miss_load: begin
-              cache_req_yumi_o = cache_req_v_i & (lce_mode_i inside {e_lce_mode_normal, e_lce_mode_nonspec}) & sync_done_i;
-              state_n = cache_req_yumi_o ? e_send_cached_req : e_ready;
-            end
-            e_uc_store: begin
-              lce_req_v_o = lce_req_ready_then_i & cache_req_v_i;
+        // Send off a non-blocking request if we have one
+        if (cache_req_v_r & (cache_req_r.msg_type == e_uc_store))
+          begin
+            lce_req_v_o = lce_req_ready_then_i & cache_req_v_r;
 
-              lce_req.data[0+:dword_width_gp] = cache_req.data[0+:dword_width_gp];
-              lce_req.header.size = bp_bedrock_msg_size_e'(cache_req.size);
-              lce_req.header.addr = cache_req.addr;
-              lce_req.header.msg_type.req = e_bedrock_req_uc_wr;
-              lce_req.header.payload = lce_req_payload;
+            lce_req.data[0+:dword_width_gp] = cache_req_r.data[0+:dword_width_gp];
+            lce_req.header.size = bp_bedrock_msg_size_e'(cache_req_r.size);
+            lce_req.header.addr = cache_req_r.addr;
+            lce_req.header.msg_type.req = e_bedrock_req_uc_wr;
+            lce_req.header.payload = lce_req_payload;
+          end
 
-              cache_req_yumi_o = lce_req_v_o;
-              state_n = e_ready;
-            end
-            e_uc_load: begin
-              cache_req_yumi_o = cache_req_v_i;
-              state_n = e_send_uncached_req;
-            end
-            default: begin
-            end
-          endcase
+        cache_req_yumi_o = cache_req_v_i
+          && ((~cache_req_v_r | lce_req_v_o)
+              || (ready_o & cache_req_v_i & cache_req.msg_type inside {e_uc_load})
+              || (ready_o & cache_req_v_i & cache_req.msg_type inside {e_miss_store, e_miss_load}
+                  & (lce_mode_i inside {e_lce_mode_normal, e_lce_mode_nonspec})
+                  & sync_done_i
+                  )
+              );
+
+        state_n = (cache_req_yumi_o & cache_req.msg_type inside {e_miss_store, e_miss_load})
+          ? e_send_cached_req
+          : (cache_req_yumi_o & cache_req.msg_type inside {e_uc_load})
+            ? e_send_uncached_req
+            : e_ready;
       end
 
       // Cached Request
@@ -304,12 +308,6 @@ module bp_lce_req
       state_r <= state_n;
     end
   end
-
-  always_ff @(negedge clk_i)
-    begin
-      assert ((metadata_latency_p < 2))
-        else $error("metadata needs to arrive within one cycle of the request");
-    end
 
 endmodule
 

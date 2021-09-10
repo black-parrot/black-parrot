@@ -31,9 +31,9 @@ Branch History Table (BHT) records a history of branch prediction results, and p
   branch should be taken or not. After each prediction, the back-end (BE) informs the front-end (FE)
   whether the previous prediction is  correct or not. The BHT will update the corresponding entry
   according to the  previous results. The two bits in each entry of the BHT follows the rule in the
-  table. 
+  table.
 
-| Bit 1              | Bit 0         | 
+| Bit 1              | Bit 0         |
 |--------------------|---------------|
 | taken or not taken | strong or weak|
 

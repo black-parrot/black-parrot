@@ -24,7 +24,7 @@ $(CONVERT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(
 $(CONVERT_DIR)/convert_bsg_sv2v: $(CONVERT_COLLATERAL)
 	$(MAKE) -C $(BP_TOOLS_DIR)/bsg_sv2v convert_sv2v \
 		DESIGN_FILELIST=$(@D)/flist.vcs DESIGN_NAME=wrapper OUTPUT_DIR=$(@D) 2>&1 | tee $(CONVERT_LOG)
-	
+
 clean.sv2v:
 	@-rm -rf touchfiles/sv2v
 	@-rm -rf results/sv2v

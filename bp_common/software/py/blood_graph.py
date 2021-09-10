@@ -2,7 +2,7 @@
 #   blood_graph.py
 #
 #   vanilla_core execution visualizer.
-# 
+#
 #   input: vanilla_operation_trace.csv.log
 #          vanilla_stats.csv (for timing)
 #   output: blood graph file (blood_abstrat/detailed.png)
@@ -50,7 +50,7 @@ class BloodGraph:
     _KEY_HEIGHT = 512
 
 
-    # List of types of stalls incurred by the core 
+    # List of types of stalls incurred by the core
     _STALLS_LIST   = [
                       "fe_queue_stall",
                       "fe_wait_stall",
@@ -80,7 +80,7 @@ class BloodGraph:
 
 
     # Coloring scheme for different types of operations
-    # For detailed mode 
+    # For detailed mode
     # i_cache miss is treated the same is stall_ifetch_wait
     _DETAILED_STALL_BUBBLE_COLOR = {
                                    "fe_queue_stall"               : rand_color(),
@@ -113,9 +113,9 @@ class BloodGraph:
 
 
     # Coloring scheme for different types of operations
-    # For abstract mode 
+    # For abstract mode
     # i_cache miss is treated the same is stall_ifetch_wait
-    _ABSTRACT_STALL_BUBBLE_COLOR = { 
+    _ABSTRACT_STALL_BUBBLE_COLOR = {
                                    "stall_depend_remote_load_dram"          : (0xff, 0x00, 0x00), ## red
                                    "stall_depend_local_remote_load_dram"    : (0xff, 0x00, 0x00), ## red
 
@@ -187,8 +187,8 @@ class BloodGraph:
                     break
 
                 trace = {}
-                trace["x"] = int(row["x"])  
-                trace["y"] = int(row["y"])  
+                trace["x"] = int(row["x"])
+                trace["y"] = int(row["y"])
                 trace["operation"] = row["operation"]
                 trace["cycle"] = int(row["cycle"])
                 traces.append(trace)
@@ -222,17 +222,17 @@ class BloodGraph:
         self.xmax = max(xs)
         self.ymin = min(ys)
         self.ymax = max(ys)
-    
+
         self.xdim = self.xmax-self.xmin+1
         self.ydim = self.ymax-self.ymin+1
         return
 
 
-    # Determine the timing window (start and end) cycle of graph 
+    # Determine the timing window (start and end) cycle of graph
     # The timing window will be calculated using:
     # Custom input: if custom start cycle is given by using the --cycle argument
     # Vanilla stats file: otherwise if vanilla stats file is given as input
-    # Traces: otherwise the entire course of simulation 
+    # Traces: otherwise the entire course of simulation
     def __get_timing_window(self, traces, stats, cycle):
         custom_start, custom_end = cycle.split('@')
 
@@ -258,7 +258,7 @@ class BloodGraph:
 
     # main public method
     def generate(self):
-  
+
 
         # init image
         self.__init_image()
@@ -315,8 +315,8 @@ class BloodGraph:
         self.img_height = (((self.end_cycle-self.start_cycle)+self.img_width)//self.img_width)*(2+(self.xdim*self.ydim))
         self.img = Image.new("RGB", (self.img_width, self.img_height), "black")
         self.pixel = self.img.load()
-        return  
-  
+        return
+
     # mark the trace on output image
     def __mark_trace(self, trace):
 
@@ -328,7 +328,7 @@ class BloodGraph:
         cycle = (trace["cycle"] - self.start_cycle)
         col = cycle % self.img_width
         floor = cycle // self.img_width
-        tg_x = trace["x"] - self.xmin 
+        tg_x = trace["x"] - self.xmin
         tg_y = trace["y"] - self.ymin
         row = floor*((self.xdim*self.ydim)) + (tg_x+(tg_y*self.xdim))
 
@@ -344,8 +344,8 @@ class BloodGraph:
 
 
 
-# Parse input arguments and options 
-def parse_args():  
+# Parse input arguments and options
+def parse_args():
     parser = argparse.ArgumentParser(description="Argument parser for blood_graph.py")
     parser.add_argument("--trace", default="vanilla_operation_trace.csv", type=str,
                         help="Vanilla operation log file")
@@ -368,7 +368,7 @@ def parse_args():
 # main()
 if __name__ == "__main__":
     args = parse_args()
-  
+
     bg = BloodGraph(args.trace, args.stats, args.cycle, args.abstract)
     if not args.no_blood_graph:
         bg.generate()

@@ -39,7 +39,7 @@ VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save
 VCS_BUILD_OPTS += $(BP_TOOLS_DIR)/install/lib/libdromajo_cosim.a
 VCS_BUILD_OPTS += -top testbench
-VCS_BUILD_OPTS += -f flist.vcs 
+VCS_BUILD_OPTS += -f flist.vcs
 
 VCS_PLUSARGS  =
 
@@ -136,7 +136,7 @@ $(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(COV_
 $(COV_DIR)/covv: | $(COV_COLLATERAL)
 	cd $(@D); $(URG) $(URG_OPTIONS) -log $(COV_LOG) -report $(COV_REPORT)
 	@cp $(COV_REPORT)/tests.txt $(COV_TREPORT)
-	@cp $(COV_REPORT)/hierarchy.txt $(COV_HREPORT) 
+	@cp $(COV_REPORT)/hierarchy.txt $(COV_HREPORT)
 
 wave.v: $(SIM_DIR)/wavev
 $(SIM_DIR)/wavev:

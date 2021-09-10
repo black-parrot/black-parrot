@@ -7,3 +7,4 @@ DVEfiles/
 external/
 tools/install/
 regress_logs/
+stack.info.*

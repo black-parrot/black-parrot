@@ -389,7 +389,7 @@ module bp_be_calculator_top
                 }
             : comp_stage_r[i-1];
         end
-      // Injected instructions can carry a payload in rs2 
+      // Injected instructions can carry a payload in rs2
       comp_stage_n[0].rd_data    |= injection                ? dispatch_pkt_cast_i.rs2 : '0;
       comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo        : '0;
       comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo        : '0;

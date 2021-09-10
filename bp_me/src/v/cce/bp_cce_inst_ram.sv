@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_inst_ram.v
+ *   bp_cce_inst_ram.sv
  *
  * Description:
  *   Fetch PC register, next PC logic, and instruction memory
@@ -36,8 +36,8 @@ module bp_cce_inst_ram
    , input                                       ucode_v_i
    , input                                       ucode_w_i
    , input [cce_pc_width_p-1:0]                  ucode_addr_i
-   , input [cce_instr_width_gp-1:0]               ucode_data_i
-   , output [cce_instr_width_gp-1:0]              ucode_data_o
+   , input [cce_instr_width_gp-1:0]              ucode_data_i
+   , output [cce_instr_width_gp-1:0]             ucode_data_o
 
    , input [cce_pc_width_p-1:0]                  predicted_fetch_pc_i
    , input [cce_pc_width_p-1:0]                  branch_resolution_pc_i
@@ -50,14 +50,9 @@ module bp_cce_inst_ram
    , output logic                                inst_v_o
   );
 
-  //synopsys translate_off
-  always_ff @(negedge clk_i) begin
-    if (~reset_i) begin
-      assert($bits(bp_cce_inst_s) == cce_instr_width_gp)
-        else $error("Param cce_instr_width_gp does not match width of bp_cce_inst_s");
-    end
-  end
-  //synopsys translate_on
+  // parameter checks
+  if ($bits(bp_cce_inst_s) != cce_instr_width_gp)
+    $fatal(0,"Param cce_instr_width_gp does not match width of bp_cce_inst_s");
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;

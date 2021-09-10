@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_pending_bits.v
+ *   bp_cce_pending_bits.sv
  *
  * Description:
  *   This module contains the pending bits. Pending bits are actually small counters.

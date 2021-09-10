@@ -1,7 +1,14 @@
+/**
+ *
+ * Name:
+ *   bp_me_cord_to_id.sv
+ *
+ * Description:
+ *   This is helper module to convert a coordinate into a set of ids. It assumes that
+ *   the SoC topology is a fixed 2d mesh with a set mapping.  Should be made more flexible
+ *
+ */
 
-
-// This is helper module to convert a coordinate into a set of ids. It assumes that
-//   the SoC topology is a fixed 2d mesh with a set mapping.  Should be made more flexible
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 

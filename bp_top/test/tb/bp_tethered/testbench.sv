@@ -18,7 +18,6 @@ module testbench
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    // TRACE enable parameters
    , parameter icache_trace_p              = 0
@@ -47,6 +46,10 @@ module testbench
 
    // Synthesis parameters
    , parameter no_bind_p                   = 0
+
+   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
+   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_mem_data_width_lp
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io)
    )
   (output bit reset_i);
 
@@ -62,12 +65,12 @@ module testbench
     return (`BP_SIM_CLK_PERIOD);
   endfunction
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io);
 
 // Bit to deal with initial X->0 transition detection
   bit clk_i;
   bit dram_clk_i, dram_reset_i;
-  
+
   `ifdef VERILATOR
     bsg_nonsynth_dpi_clock_gen
   `else
@@ -76,7 +79,7 @@ module testbench
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
    clock_gen
     (.o(clk_i));
-  
+
   bsg_nonsynth_reset_gen
    #(.num_clocks_p(1)
      ,.reset_cycles_lo_p(0)
@@ -86,7 +89,7 @@ module testbench
     (.clk_i(clk_i)
      ,.async_reset_o(reset_i)
      );
-  
+
   `ifdef VERILATOR
     bsg_nonsynth_dpi_clock_gen
   `else
@@ -95,7 +98,7 @@ module testbench
    #(.cycle_time_p(`dram_pkg::tck_ps))
    dram_clock_gen
     (.o(dram_clk_i));
-  
+
   bsg_nonsynth_reset_gen
    #(.num_clocks_p(1)
      ,.reset_cycles_lo_p(0)
@@ -106,20 +109,20 @@ module testbench
      ,.async_reset_o(dram_reset_i)
      );
 
-  bp_bedrock_cce_mem_msg_s proc_io_cmd_lo;
-  logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li;
-  bp_bedrock_cce_mem_msg_s proc_io_resp_li;
+  bp_bedrock_io_mem_msg_header_s proc_io_cmd_lo;
+  logic [io_data_width_p-1:0] proc_io_cmd_data_lo;
+  logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li, proc_io_cmd_last_lo;
+  bp_bedrock_io_mem_msg_header_s proc_io_resp_li;
+  logic [io_data_width_p-1:0] proc_io_resp_data_li;
   logic proc_io_resp_v_li, proc_io_resp_yumi_lo;
+  logic proc_io_resp_last_li;
 
-  bp_bedrock_cce_mem_msg_s io_cmd_lo;
-  logic io_cmd_v_lo, io_cmd_ready_li;
-  bp_bedrock_cce_mem_msg_s io_resp_li;
-  logic io_resp_v_li, io_resp_yumi_lo;
-
-  bp_bedrock_cce_mem_msg_s load_cmd_lo;
-  logic load_cmd_v_lo, load_cmd_yumi_li;
-  bp_bedrock_cce_mem_msg_s load_resp_li;
-  logic load_resp_v_li, load_resp_ready_and_lo;
+  bp_bedrock_io_mem_msg_header_s load_cmd_lo;
+  logic [io_data_width_p-1:0] load_cmd_data_lo;
+  logic load_cmd_v_lo, load_cmd_yumi_li, load_cmd_last_lo;
+  bp_bedrock_io_mem_msg_header_s load_resp_li;
+  logic [io_data_width_p-1:0] load_resp_data_li;
+  logic load_resp_v_li, load_resp_ready_and_lo, load_resp_last_li;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0] dma_pkt_lo;
@@ -134,21 +137,29 @@ module testbench
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.io_cmd_o(proc_io_cmd_lo)
+     ,.io_cmd_header_o(proc_io_cmd_lo)
+     ,.io_cmd_data_o(proc_io_cmd_data_lo)
      ,.io_cmd_v_o(proc_io_cmd_v_lo)
      ,.io_cmd_ready_and_i(proc_io_cmd_ready_and_li)
+     ,.io_cmd_last_o(proc_io_cmd_last_lo)
 
-     ,.io_resp_i(proc_io_resp_li)
+     ,.io_resp_header_i(proc_io_resp_li)
+     ,.io_resp_data_i(proc_io_resp_data_li)
      ,.io_resp_v_i(proc_io_resp_v_li)
      ,.io_resp_yumi_o(proc_io_resp_yumi_lo)
+     ,.io_resp_last_i(proc_io_resp_last_li)
 
-     ,.io_cmd_i(load_cmd_lo)
+     ,.io_cmd_header_i(load_cmd_lo)
+     ,.io_cmd_data_i(load_cmd_data_lo)
      ,.io_cmd_v_i(load_cmd_v_lo)
      ,.io_cmd_yumi_o(load_cmd_yumi_li)
+     ,.io_cmd_last_i(load_cmd_last_lo)
 
-     ,.io_resp_o(load_resp_li)
+     ,.io_resp_header_o(load_resp_li)
+     ,.io_resp_data_o(load_resp_data_li)
      ,.io_resp_v_o(load_resp_v_li)
      ,.io_resp_ready_and_i(load_resp_ready_and_lo)
+     ,.io_resp_last_o(load_resp_last_li)
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
@@ -191,21 +202,26 @@ module testbench
      );
 
   bp_nonsynth_nbf_loader
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.io_data_width_p(io_data_width_p))
    nbf_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.lce_id_i(lce_id_width_p'('b10))
 
-     ,.io_cmd_o(load_cmd_lo)
+     ,.io_cmd_header_o(load_cmd_lo)
+     ,.io_cmd_data_o(load_cmd_data_lo)
      ,.io_cmd_v_o(load_cmd_v_lo)
      ,.io_cmd_yumi_i(load_cmd_yumi_li)
+     ,.io_cmd_last_o(load_cmd_last_lo)
 
      // NOTE: IO response ready_o is always high - acts as sink
-     ,.io_resp_i(load_resp_li)
+     ,.io_resp_header_i(load_resp_li)
+     ,.io_resp_data_i(load_resp_data_li)
      ,.io_resp_v_i(load_resp_v_li)
      ,.io_resp_ready_and_o(load_resp_ready_and_lo)
+     ,.io_resp_last_i(load_resp_last_li)
 
      ,.done_o()
      );
@@ -239,13 +255,18 @@ module testbench
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.io_cmd_i(proc_io_cmd_lo)
-     ,.io_cmd_v_i(proc_io_cmd_v_lo)
-     ,.io_cmd_ready_and_o(proc_io_cmd_ready_and_li)
+     // data width = dword_width_gp on mem_cmd/resp ports
+     ,.mem_cmd_header_i(proc_io_cmd_lo)
+     ,.mem_cmd_data_i(proc_io_cmd_data_lo[0+:dword_width_gp])
+     ,.mem_cmd_v_i(proc_io_cmd_v_lo)
+     ,.mem_cmd_ready_and_o(proc_io_cmd_ready_and_li)
+     ,.mem_cmd_last_i(proc_io_cmd_last_lo)
 
-     ,.io_resp_o(proc_io_resp_li)
-     ,.io_resp_v_o(proc_io_resp_v_li)
-     ,.io_resp_yumi_i(proc_io_resp_yumi_lo)
+     ,.mem_resp_header_o(proc_io_resp_li)
+     ,.mem_resp_data_o(proc_io_resp_data_li[0+:dword_width_gp])
+     ,.mem_resp_v_o(proc_io_resp_v_li)
+     ,.mem_resp_ready_and_i(proc_io_resp_yumi_lo)
+     ,.mem_resp_last_o(proc_io_resp_last_li)
 
      ,.icache_trace_en_o(icache_trace_en_lo)
      ,.dcache_trace_en_o(dcache_trace_en_lo)
@@ -553,32 +574,45 @@ module testbench
              cce_tracer
               (.clk_i(clk_i & testbench.cce_trace_en_lo)
               ,.reset_i(reset_i)
-              ,.freeze_i(cfg_bus_cast_i.freeze)
 
               ,.cce_id_i(cfg_bus_cast_i.cce_id)
 
-              // To CCE
-              ,.lce_req_i(lce_req_i)
-              ,.lce_req_v_i(lce_req_v_i)
-              ,.lce_req_yumi_i(lce_req_yumi_o)
-              ,.lce_resp_i(lce_resp_i)
-              ,.lce_resp_v_i(lce_resp_v_i)
-              ,.lce_resp_yumi_i(lce_resp_yumi_o)
+              // LCE-CCE Interface
+              // BedRock Burst protocol: ready&valid
+              ,.lce_req_header_i(lce_req_header_i)
+              ,.lce_req_header_v_i(lce_req_header_v_i)
+              ,.lce_req_header_ready_and_i(lce_req_header_ready_and_o)
+              ,.lce_req_data_i(lce_req_data_i)
+              ,.lce_req_data_v_i(lce_req_data_v_i)
+              ,.lce_req_data_ready_and_i(lce_req_data_ready_and_o)
 
-              // From CCE
-              ,.lce_cmd_i(lce_cmd_o)
-              ,.lce_cmd_v_i(lce_cmd_v_o)
-              ,.lce_cmd_ready_i(lce_cmd_ready_i)
+              ,.lce_resp_header_i(lce_resp_header_i)
+              ,.lce_resp_header_v_i(lce_resp_header_v_i)
+              ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_o)
+              ,.lce_resp_data_i(lce_resp_data_i)
+              ,.lce_resp_data_v_i(lce_resp_data_v_i)
+              ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_o)
 
-              // To CCE
-              ,.mem_resp_i(mem_resp_i)
+              ,.lce_cmd_header_i(lce_cmd_header_o)
+              ,.lce_cmd_header_v_i(lce_cmd_header_v_o)
+              ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_i)
+              ,.lce_cmd_data_i(lce_cmd_data_o)
+              ,.lce_cmd_data_v_i(lce_cmd_data_v_o)
+              ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_i)
+
+              // CCE-MEM Interface
+              // BedRock Stream protocol: ready&valid
+              ,.mem_resp_header_i(mem_resp_header_i)
+              ,.mem_resp_data_i(mem_resp_data_i)
               ,.mem_resp_v_i(mem_resp_v_i)
-              ,.mem_resp_yumi_i(mem_resp_yumi_o)
+              ,.mem_resp_ready_and_i(mem_resp_ready_and_o)
+              ,.mem_resp_last_i(mem_resp_last_i)
 
-              // From CCE
-              ,.mem_cmd_i(mem_cmd_o)
+              ,.mem_cmd_header_i(mem_cmd_header_o)
+              ,.mem_cmd_data_i(mem_cmd_data_o)
               ,.mem_cmd_v_i(mem_cmd_v_o)
-              ,.mem_cmd_ready_i(mem_cmd_ready_i)
+              ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i)
+              ,.mem_cmd_last_i(mem_cmd_last_o)
               );
 
           bind bp_lce
@@ -594,17 +628,18 @@ module testbench
               ,.lce_id_i(lce_id_i)
               ,.lce_req_i(lce_req_o)
               ,.lce_req_v_i(lce_req_v_o)
-              ,.lce_req_ready_then_i(lce_req_ready_then_i)
+              ,.lce_req_ready_and_i(lce_req_ready_then_i)
               ,.lce_resp_i(lce_resp_o)
               ,.lce_resp_v_i(lce_resp_v_o)
-              ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
+              ,.lce_resp_ready_and_i(lce_resp_ready_then_i)
               ,.lce_cmd_i(lce_cmd_i)
               ,.lce_cmd_v_i(lce_cmd_v_i)
-              ,.lce_cmd_yumi_i(lce_cmd_yumi_o)
+              ,.lce_cmd_ready_and_i(lce_cmd_yumi_o)
               ,.lce_cmd_o_i(lce_cmd_o)
               ,.lce_cmd_o_v_i(lce_cmd_v_o)
-              ,.lce_cmd_o_ready_then_i(lce_cmd_ready_then_i)
+              ,.lce_cmd_o_ready_and_i(lce_cmd_ready_then_i)
               );
+
         end
     end
 
@@ -612,10 +647,10 @@ module testbench
    #(.bp_params_p(bp_params_p))
    if_verif
     ();
-  
+
   `ifndef VERILATOR
     initial
-      begin      
+      begin
         $assertoff();
         @(posedge clk_i);
         @(negedge reset_i);
