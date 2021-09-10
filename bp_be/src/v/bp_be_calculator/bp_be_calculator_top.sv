@@ -253,7 +253,7 @@ module bp_be_calculator_top
 
   // Aux pipe: 2 cycle latency
   bp_be_pipe_aux
-   #(.bp_params_p(bp_params_p), .latency_p(2))
+   #(.bp_params_p(bp_params_p))
    pipe_aux
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -335,7 +335,7 @@ module bp_be_calculator_top
 
   // Floating point pipe: 4/5 cycle latency
   bp_be_pipe_fma
-   #(.bp_params_p(bp_params_p), .imul_latency_p(4), .fma_latency_p(5))
+   #(.bp_params_p(bp_params_p))
    pipe_fma
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
