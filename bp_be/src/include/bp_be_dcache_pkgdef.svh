@@ -32,6 +32,7 @@
     logic                         l2_op;
     logic                         lr_op;
     logic                         sc_op;
+    logic                         ptw_op;
     logic                         amo_op;
     bp_be_amo_subop_e             amo_subop;
     logic [reg_addr_width_gp-1:0] rd_addr;

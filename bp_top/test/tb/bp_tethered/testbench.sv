@@ -366,7 +366,7 @@ module testbench
 
            ,.cache_req_complete_i(cache_req_complete_i)
 
-           ,.v_o(early_v_o)
+           ,.v_o(early_hit_v_o)
            ,.load_data(early_data_o[0+:65])
            ,.cache_miss_o('0)
            ,.wt_req(wt_req)
