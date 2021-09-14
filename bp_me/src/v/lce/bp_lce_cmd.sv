@@ -512,7 +512,7 @@ module bp_lce_cmd
                                 & (lce_cmd_payload.state == e_COH_I);
 
               // for both of these commands, do the transfer next
-              state_n = data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i
+              state_n = data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & (~stat_mem_pkt_v_o | stat_mem_pkt_yumi_i)
                 ? e_tr
                 : e_ready;
 
