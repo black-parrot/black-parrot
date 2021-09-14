@@ -117,9 +117,9 @@ module bp_me_bedrock_register
       assign r_v_o[i] = ~v_r & addr_match & ~wr_not_rd;
       assign w_v_o[i] = ~v_r & addr_match &  wr_not_rd;
     end
-      assign addr_o = (mem_cmd_header_li.addr);
-      assign size_o = (mem_cmd_header_li.size);
-      assign data_o = (mem_cmd_data_li);
+      assign addr_o = mem_cmd_v_li ? (mem_cmd_header_li.addr) : '0;
+      assign size_o = mem_cmd_v_li ? (mem_cmd_header_li.size) : '0;
+      assign data_o = mem_cmd_v_li ? (mem_cmd_data_li) : '0;
 
   assign mem_resp_header_o = mem_cmd_header_li;
   assign mem_resp_data_o = rdata_lo;
