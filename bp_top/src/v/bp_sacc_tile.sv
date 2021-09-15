@@ -216,6 +216,33 @@ module bp_sacc_tile
          ,.io_resp_ready_o(lce_io_resp_ready_and_li)
          );
     end
+  else if (sacc_type_p == e_sacc_loopback)
+    begin: sacc_loopback
+      bp_sacc_loopback
+       #(.bp_params_p(bp_params_p))
+       accelerator_link
+        (.clk_i(clk_i)
+         ,.reset_i(reset_r)
+
+         ,.lce_id_i(lce_id_li)
+
+         ,.io_cmd_i(cce_io_cmd_lo)
+         ,.io_cmd_v_i(cce_io_cmd_v_lo)
+         ,.io_cmd_ready_o(cce_io_cmd_ready_and_li)
+
+         ,.io_resp_o(cce_io_resp_li)
+         ,.io_resp_v_o(cce_io_resp_v_li)
+         ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
+
+         ,.io_cmd_o(lce_io_cmd_li)
+         ,.io_cmd_v_o(lce_io_cmd_v_li)
+         ,.io_cmd_yumi_i(lce_io_cmd_yumi_lo)
+
+         ,.io_resp_i(lce_io_resp_lo)
+         ,.io_resp_v_i(lce_io_resp_v_lo)
+         ,.io_resp_ready_o(lce_io_resp_ready_and_li)
+         );
+    end
   else
     begin : none
       assign cce_io_cmd_ready_and_li = '0;

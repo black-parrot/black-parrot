@@ -155,12 +155,12 @@ module bp_sacc_vdp
       unique
       case (local_addr_li.addr)
         20'h00000 : input_a_ptr <= io_cmd_cast_i.data;
-        20'h00040 : input_b_ptr <= io_cmd_cast_i.data;
-        20'h00080 : input_len  <= io_cmd_cast_i.data;
-        20'h000c0 : start_cmd  <= io_cmd_cast_i.data;
-        20'h00140 : res_ptr    <= io_cmd_cast_i.data;
-        20'h00180 : res_len    <= io_cmd_cast_i.data;
-        20'h00200 : operation  <= io_cmd_cast_i.data;
+        20'h00008 : input_b_ptr <= io_cmd_cast_i.data;
+        20'h00010 : input_len  <= io_cmd_cast_i.data;
+        20'h00018 : start_cmd  <= io_cmd_cast_i.data;
+        20'h00028 : res_ptr    <= io_cmd_cast_i.data;
+        20'h00030 : res_len    <= io_cmd_cast_i.data;
+        20'h00038 : operation  <= io_cmd_cast_i.data;
         default : begin end
       endcase
 
@@ -177,17 +177,17 @@ module bp_sacc_vdp
       unique
       case (local_addr_li.addr)
         20'h00000 : csr_data <= input_a_ptr;
-        20'h00040 : csr_data <= input_b_ptr;
-        20'h00080 : csr_data <= input_len;
-        20'h000c0 : csr_data <= start_cmd;
-        20'h00100 : csr_data <= res_status;
-        20'h00140 : csr_data <= res_ptr;
-        20'h00180 : csr_data <= res_len;
-        20'h00200 : csr_data <= operation;
+        20'h00008 : csr_data <= input_b_ptr;
+        20'h00010 : csr_data <= input_len;
+        20'h00018 : csr_data <= start_cmd;
+        20'h00020 : csr_data <= res_status;
+        20'h00028 : csr_data <= res_ptr;
+        20'h00030 : csr_data <= res_len;
+        20'h00038 : csr_data <= operation;
         default : begin end
       endcase
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.hio == 1))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.hio == 2))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
@@ -199,7 +199,7 @@ module bp_sacc_vdp
       spm_external_data_li  <= io_cmd_cast_i.data;
       spm_external_addr <= io_cmd_cast_i.header.addr;
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == 1))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == 2))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;

@@ -19,6 +19,7 @@
   {
     e_sacc_none = 0
     ,e_sacc_vdp = 1
+    ,e_sacc_loopback = 2
   } bp_sacc_type_e;
 
   typedef enum logic [15:0]
@@ -698,7 +699,7 @@
     '{cac_x_dim : 1
       ,sac_x_dim: 1
       ,cacc_type: e_cacc_vdp
-      ,sacc_type: e_sacc_vdp
+      ,sacc_type: e_sacc_loopback
       ,num_lce  : 3
       ,default : "inv"
       };
