@@ -143,7 +143,7 @@ module bp_mmu
   // Fault if hio bit is not enabled and we're accessing that hio
   wire hio_fault_v = (r_instr_r & ptag_lo[ptag_width_p-1-:hio_width_p] != '0)
     || (ptag_lo[ptag_width_p-1-:hio_width_p] & ~hio_mask_i);
-
+   
   // Access faults
   wire instr_access_fault_v = r_instr_r & hio_fault_v;
   wire load_access_fault_v  = r_load_r  & hio_fault_v;

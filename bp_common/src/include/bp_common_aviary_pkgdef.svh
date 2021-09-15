@@ -19,6 +19,7 @@
   {
     e_sacc_none = 0
     ,e_sacc_vdp = 1
+    ,e_sacc_loopback = 2
   } bp_sacc_type_e;
 
   typedef enum logic [15:0]
@@ -481,6 +482,7 @@
       ,num_cce       : 1
       ,num_lce       : 2
       ,l1_coherent   : 1
+
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
@@ -681,8 +683,9 @@
     '{cac_x_dim : 1
       ,sac_x_dim: 1
       ,cacc_type: e_cacc_vdp
-      ,sacc_type: e_sacc_vdp
+      ,sacc_type: e_sacc_loopback
       ,num_lce  : 3
+      ,daddr_width : 36
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_accelerator_cfg_p
