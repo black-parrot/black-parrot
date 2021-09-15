@@ -248,17 +248,17 @@
 
       ,l1_writethrough      : 0
       ,l1_coherent          : 0
-      ,dcache_sets          : 64
-      ,dcache_assoc         : 8
-      ,dcache_block_width   : 512
+      ,dcache_sets          : 512
+      ,dcache_assoc         : 1
+      ,dcache_block_width   : 64
       ,dcache_fill_width    : 64
-      ,icache_sets          : 64
-      ,icache_assoc         : 8
-      ,icache_block_width   : 512
+      ,icache_sets          : 512
+      ,icache_assoc         : 1
+      ,icache_block_width   : 64
       ,icache_fill_width    : 64
-      ,acache_sets          : 64
-      ,acache_assoc         : 8
-      ,acache_block_width   : 512
+      ,acache_sets          : 512
+      ,acache_assoc         : 1
+      ,acache_block_width   : 64
       ,acache_fill_width    : 64
 
       ,cce_ucode            : 0
