@@ -8,22 +8,22 @@ def help():
 
 def int2hex(num, width):
   return "{0:#0{1}x}".format(num,width/4 + 2)
-  
+
 def checkAddr(vpn, as_start_vpn, as_size, page_pte_num, level, pt_depth):
   for i in xrange(len(as_start_vpn)):
     as_start = as_start_vpn[i]
     as_end = as_start_vpn[i] + as_size[i] - 1
-    
+
     page_start = vpn
     page_end = vpn + page_pte_num**(pt_depth-level-1) - 1
-    
+
     if not(as_start > page_end or as_end < page_start):
-      return 1   
+      return 1
   return 0
 
 #######################################
 try:
-  fileName = str(sys.argv[1])  
+  fileName = str(sys.argv[1])
   root_table_addr = sys.argv[2]
   as_start = sys.argv[3].split(',')
   as_size = map(int, sys.argv[4].split(','))
@@ -34,7 +34,7 @@ except:
 #print root_table_addr
 #print as_start
 #print as_size
-  
+
 page_offset_width = 12
 vaddr_width = 39
 paddr_width = 55
@@ -59,7 +59,7 @@ pt_depth = int(vpn_width/lg_page_pte_num)
 
 #print lg_page_pte_num
 
-pt_table_num = [0] * pt_depth 
+pt_table_num = [0] * pt_depth
 pt_roots = []
 page_table = []
 
@@ -82,12 +82,12 @@ for level in xrange(pt_depth):
   pt_roots.append([])
   for tableNum in xrange(pt_table_num[level]):
     pt_roots[level].append(last_ppn)
-    last_ppn += 1 
-    
+    last_ppn += 1
+
 #print pt_table_num
 #print pt_roots
 #print table_vpns
-    
+
 for level in xrange(pt_depth):
   page_table.append([])
   #print "---------"
@@ -95,9 +95,9 @@ for level in xrange(pt_depth):
     page_table[level].append([])
     target_tableNum = 0
     for offset in xrange(page_pte_num):
-    
-      vpn = table_vpns[level][tableNum] + (offset << ((pt_depth-level-1)*lg_page_pte_num))  
-            
+
+      vpn = table_vpns[level][tableNum] + (offset << ((pt_depth-level-1)*lg_page_pte_num))
+
       if checkAddr(vpn, as_start_vpn, as_size, page_pte_num, level, pt_depth):
         #print "table vpn: " + hex(table_vpns[level][tableNum])
         #print "offset: " + hex(offset)
@@ -112,7 +112,7 @@ for level in xrange(pt_depth):
           ppn = vpn
       else:
         valid = 0
-      
+
       if(valid):
         d = 1
         a = 1
@@ -122,7 +122,7 @@ for level in xrange(pt_depth):
         #print "ppn: " + hex(ppn)
         page_table[level][tableNum].append(pte)
       else:
-        page_table[level][tableNum].append(0)  
+        page_table[level][tableNum].append(0)
 
 #######################################
 

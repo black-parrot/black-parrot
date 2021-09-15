@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_alu.v
+ *   bp_cce_alu.sv
  *
  * Description:
  *   A simple ALU for the CCE implementing addition, subtraction, logical shift, and bitwise

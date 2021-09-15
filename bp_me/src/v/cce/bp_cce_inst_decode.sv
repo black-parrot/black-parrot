@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_inst_decode.v
+ *   bp_cce_inst_decode.sv
  *
  * Description:
  *   The decoder holds the decode+execute stage PC, instruction, and valid bit. The decoder also
@@ -50,7 +50,6 @@ module bp_cce_inst_decode
 
   );
 
-
   // Execute Stage Instruction Register and PC
   bp_cce_inst_s inst_r, inst_n;
   logic [cce_pc_width_p-1:0] ex_pc_r, ex_pc_n;
@@ -66,7 +65,6 @@ module bp_cce_inst_decode
       inst_v_r <= inst_v_n;
     end
   end
-
 
   // Instruction Fields
   bp_cce_inst_op_e             op;
@@ -416,7 +414,7 @@ module bp_cce_inst_decode
               decoded_inst_o.src_a_sel = e_src_sel_flag;
               decoded_inst_o.src_a.flag = op_type_u.rtype.src_a.flag;
               decoded_inst_o.src_b_sel = e_src_sel_flag;
-              decoded_inst_o.src_b.flag = op_type_u.rtype.src_a.flag;
+              decoded_inst_o.src_b.flag = op_type_u.rtype.src_b.flag;
               decoded_inst_o.dst_sel = e_dst_sel_gpr;
               decoded_inst_o.dst.gpr = op_type_u.rtype.dst.gpr;
               decoded_inst_o.gpr_w_v[op_type_u.rtype.dst.gpr[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
@@ -426,7 +424,7 @@ module bp_cce_inst_decode
               decoded_inst_o.src_a_sel = e_src_sel_flag;
               decoded_inst_o.src_a.flag = op_type_u.rtype.src_a.flag;
               decoded_inst_o.src_b_sel = e_src_sel_flag;
-              decoded_inst_o.src_b.flag = op_type_u.rtype.src_a.flag;
+              decoded_inst_o.src_b.flag = op_type_u.rtype.src_b.flag;
               decoded_inst_o.dst_sel = e_dst_sel_gpr;
               decoded_inst_o.dst.gpr = op_type_u.rtype.dst.gpr;
               decoded_inst_o.gpr_w_v[op_type_u.rtype.dst.gpr[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
@@ -436,7 +434,7 @@ module bp_cce_inst_decode
               decoded_inst_o.src_a_sel = e_src_sel_flag;
               decoded_inst_o.src_a.flag = op_type_u.rtype.src_a.flag;
               decoded_inst_o.src_b_sel = e_src_sel_flag;
-              decoded_inst_o.src_b.flag = op_type_u.rtype.src_a.flag;
+              decoded_inst_o.src_b.flag = op_type_u.rtype.src_b.flag;
               decoded_inst_o.dst_sel = e_dst_sel_gpr;
               decoded_inst_o.dst.gpr = op_type_u.rtype.dst.gpr;
               decoded_inst_o.gpr_w_v[op_type_u.rtype.dst.gpr[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
@@ -446,7 +444,7 @@ module bp_cce_inst_decode
               decoded_inst_o.src_a_sel = e_src_sel_flag;
               decoded_inst_o.src_a.flag = op_type_u.rtype.src_a.flag;
               decoded_inst_o.src_b_sel = e_src_sel_flag;
-              decoded_inst_o.src_b.flag = op_type_u.rtype.src_a.flag;
+              decoded_inst_o.src_b.flag = op_type_u.rtype.src_b.flag;
               decoded_inst_o.dst_sel = e_dst_sel_gpr;
               decoded_inst_o.dst.gpr = op_type_u.rtype.dst.gpr;
               decoded_inst_o.gpr_w_v[op_type_u.rtype.dst.gpr[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;

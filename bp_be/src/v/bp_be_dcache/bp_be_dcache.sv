@@ -308,7 +308,7 @@ module bp_be_dcache
   wire [sindex_width_lp-1:0] vaddr_index_tl = page_offset_tl_r[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0]  vaddr_bank_tl = page_offset_tl_r[byte_offset_width_lp+:bindex_width_lp];
 
-  logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl, hit_tl;
+  logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
     wire tag_match_tl      = (ptag_i == tag_mem_data_lo[i].tag);
     assign way_v_tl[i]     = (tag_mem_data_lo[i].state != e_COH_I);
@@ -1290,7 +1290,7 @@ module bp_be_dcache
 
   always_ff @(negedge clk_i)
     begin
-      assert(~v_tv_r || $countones(hit_tl) <= 1)
+      assert(~v_tv_r || $countones(load_hit_tl) <= 1)
         else $error("multiple hit: %b. id = %0d. addr = %H", load_hit_tl, cfg_bus_cast_i.dcache_id, ptag_i);
     end
 

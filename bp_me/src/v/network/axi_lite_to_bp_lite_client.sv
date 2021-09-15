@@ -13,12 +13,12 @@ module axi_lite_to_bp_lite_client
   , parameter  axi_data_width_p             = 32
   , localparam axi_strb_width_lp            = axi_data_width_p/8
 
-  // AXI WRITE/READ ADDRESS CHANNEL PARAMS  
+  // AXI WRITE/READ ADDRESS CHANNEL PARAMS
   , parameter axi_addr_width_p              = 32
   )
 
   (//==================== GLOBAL SIGNALS =======================
-   input clk_i  
+   input clk_i
    , input reset_i
 
    //==================== BP-LITE SIGNALS ======================
@@ -84,7 +84,7 @@ module axi_lite_to_bp_lite_client
   enum {e_wait, e_read_resp, e_write_resp} state_r, state_n;
 
   bp_bedrock_cce_mem_payload_s io_cmd_cast_payload, io_resp_cast_payload;
-  always_comb 
+  always_comb
     begin
       // BP side
       io_cmd_cast_o        = '0;
@@ -132,31 +132,31 @@ module axi_lite_to_bp_lite_client
               $warning("%m: received unhandled strobe pattern %b\n",s_axi_lite_wstrb_i);
       endcase
 
-      unique casez (state_r) 
+      unique casez (state_r)
         e_wait:
           begin
             s_axi_lite_arready_o = 1'b1;
             s_axi_lite_awready_o = 1'b1;
             s_axi_lite_wready_o  = 1'b1;
 
-            if (s_axi_lite_arvalid_i) 
+            if (s_axi_lite_arvalid_i)
               begin
                 io_cmd_cast_o.header.addr     = s_axi_lite_araddr_i;
                 io_cmd_cast_o.header.msg_type = e_bedrock_mem_uc_rd;
                 io_cmd_cast_o.header.payload  = io_cmd_cast_payload;
                 io_cmd_v_o                    = s_axi_lite_arvalid_i;
-            
+
                 state_n = io_cmd_yumi_i ? e_read_resp : e_wait;
               end
 
-            else if (s_axi_lite_awvalid_i & s_axi_lite_wvalid_i) 
+            else if (s_axi_lite_awvalid_i & s_axi_lite_wvalid_i)
               begin
                 io_cmd_cast_o.header.addr                = s_axi_lite_awaddr_i;
                 io_cmd_cast_o.header.msg_type            = e_bedrock_mem_uc_wr;
                 io_cmd_cast_o.header.payload             = io_cmd_cast_payload;
                 io_cmd_cast_o.data[axi_data_width_p-1:0] = s_axi_lite_wdata_i;
                 io_cmd_v_o                               = (s_axi_lite_awvalid_i & s_axi_lite_wvalid_i);
-            
+
                 state_n = io_cmd_yumi_i ? e_write_resp : e_wait;
               end
           end
@@ -182,7 +182,7 @@ module axi_lite_to_bp_lite_client
       endcase
     end
 
-  always_ff @(posedge clk_i) 
+  always_ff @(posedge clk_i)
     if (reset_i)
       state_r <= e_wait;
     else

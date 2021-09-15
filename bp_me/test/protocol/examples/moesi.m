@@ -13,7 +13,7 @@ const
   QMax: 2;
   NumVCs: VC2 - VC0 + 1;
   NetMax: ProcCount+1;
- 
+
 
 ----------------------------------------------------------------------
 -- Types
@@ -24,7 +24,7 @@ type
   Home: enum { HomeType };      -- need enumeration for IsMember calls
 
   Node: union { Home , Proc };
-    Count: (1-ProcCount)..(ProcCount-1); -- integer range of number of sharers  
+    Count: (1-ProcCount)..(ProcCount-1); -- integer range of number of sharers
 
   VCType: VC0..NumVCs-1;
 
@@ -34,7 +34,7 @@ type
                       Fwd_GetM, -- fwd req to owner for exclusive copy
                       DataDir, -- resp with value of line and num of inv-acks
                       DataCache, -- resp with data and serviced by a cache
-                      Fwd_Ack, --fwd req serviced by remote proc                             
+                      Fwd_Ack, --fwd req serviced by remote proc
                       DataExclusive , -- data serviced by dir exclusive
                       Inv, -- invalidation request
                       Inv_Ack, -- acknowledgement of invalidation
@@ -62,8 +62,8 @@ type
       state: enum { H_M, H_S, H_I, H_E, H_O,   --stable states
                     HT_M_A, HT_O_A };                 --transient states
       owner: Node;
-      sharers: multiset [ProcCount] of Node;  
-      val: Value; 
+      sharers: multiset [ProcCount] of Node;
+      val: Value;
     End;
 
   ProcState:
@@ -109,7 +109,7 @@ End;
 
 Procedure ErrorUnhandledMsg(msg:Message; n:Node);
 Begin
-  put "Unhandled msg "; put msg.mtype; put " from proc "; put n; 
+  put "Unhandled msg "; put msg.mtype; put " from proc "; put n;
   error "Unhandled message type!";
 End;
 
@@ -144,7 +144,7 @@ Begin
         MultiSetCount(i:HomeNode.sharers, HomeNode.sharers[i] = n) != 0)
     then
       if n != rqst
-      then 
+      then
         Send(Inv, n, rqst, VC1, UNDEFINED, UNDEFINED);
             endif;
     endif;
@@ -156,7 +156,7 @@ Procedure HomeReceive(msg:Message);
 var cnt:0..ProcCount;  -- for counting sharers
 Begin
 -- Debug output may be helpful:
-  put "Receiving "; put msg.mtype; put " on VC"; put msg.vc; 
+  put "Receiving "; put msg.mtype; put " on VC"; put msg.vc;
   put " at home -- "; put HomeNode.state;
 
   -- compiler barfs if we put this inside a switch, so it is useful to
@@ -211,14 +211,14 @@ Begin
           if (cnt = 1 & IsSharer(msg.src))
           then
               HomeNode.state := H_I;
-          endif;              
+          endif;
           RemoveFromSharersList(msg.src);
           Send(PutAck, msg.src, HomeType, VC1, UNDEFINED, UNDEFINED);
         case PutM, PutE, PutO:
           RemoveFromSharersList(msg.src);
           Send(PutAck, msg.src, HomeType, VC1, UNDEFINED, UNDEFINED);
         else
-          ErrorUnhandledMsg(msg, HomeType);   
+          ErrorUnhandledMsg(msg, HomeType);
       endswitch;
 
     case H_I:
@@ -258,7 +258,7 @@ Begin
               HomeNode.val := msg.val;
             endif;
             undefine HomeNode.owner;
-            HomeNode.state := H_I;  
+            HomeNode.state := H_I;
           endif;
         else
           ErrorUnhandledMsg(msg, HomeType);
@@ -337,7 +337,7 @@ End;
 
 Procedure ProcReceive(msg:Message; p:Proc);
 Begin
-  put "Receiving "; put msg.mtype; put " on VC"; put msg.vc; 
+  put "Receiving "; put msg.mtype; put " on VC"; put msg.vc;
   put " at proc "; put p; put " in state "; put Procs[p].state;
 
   -- default to 'processing' message.  set to false otherwise
@@ -370,7 +370,7 @@ Begin
         else
           ErrorUnhandledMsg(msg, p);
       endswitch;
-    
+
     case P_S:
       switch msg.mtype
         case Inv:
@@ -407,7 +407,7 @@ Begin
           ps := P_I;
         else
           ErrorUnhandledMsg(msg, p);
-      endswitch;  
+      endswitch;
 
     case PT_IS_D:
       switch msg.mtype
@@ -422,7 +422,7 @@ Begin
         else
           ErrorUnhandledMsg(msg, p);
       endswitch;
-    
+
     case PT_IM_AD:
       switch msg.mtype
         case Fwd_GetS, Fwd_GetM:
@@ -441,7 +441,7 @@ Begin
             Send(Fwd_Ack, HomeType, p, VC2, UNDEFINED, UNDEFINED);
           endif;
        -- case DataCache:
-				--	pv := msg.val; 
+				--	pv := msg.val;
 					--if (pa = 0)
 					--then
 					--	ps := P_M;
@@ -458,7 +458,7 @@ Begin
           ErrorUnhandledMsg(msg, p);
       endswitch;
 
-            
+
 
     case PT_SM_AD:
       switch msg.mtype
@@ -472,7 +472,7 @@ Begin
         case DataDir:
           pa := pa + msg.ack;
           if (pa = 0)
-          then 
+          then
               ps := P_M;
               Send(Fwd_Ack, HomeType, p, VC2, UNDEFINED, UNDEFINED);
           endif;
@@ -577,7 +577,7 @@ Begin
     case PT_II_A:
       if (msg.mtype = PutAck)
         then
-          ps := P_I;  
+          ps := P_I;
           undefine pv;
         else
           ErrorUnhandledMsg(msg, p);
@@ -590,7 +590,7 @@ Begin
 
   endswitch;
 
-    endalias;  
+    endalias;
   endalias;
   endalias;
 End;
@@ -608,13 +608,13 @@ ruleset n:Proc Do
     rule "store new value"
      (p.state = P_M)
         ==>
-           p.val := v;      
+           p.val := v;
            LastWrite := v;  --We use LastWrite to sanity check that reads receive the value of the last write
     endrule;
     endruleset;
 
   rule "read request"
-    p.state = P_I 
+    p.state = P_I
   ==>
     Send(GetS, HomeType, n, VC0, UNDEFINED, UNDEFINED);
     p.state := PT_IS_D;
@@ -650,7 +650,7 @@ ruleset n:Proc Do
   rule "evict shared"
     (p.state = P_S)
   ==>
-    Send(PutS, HomeType, n, VC0, UNDEFINED, UNDEFINED); 
+    Send(PutS, HomeType, n, VC0, UNDEFINED, UNDEFINED);
     p.state := PT_SI_A;
     undefine p.val;
   endrule;
@@ -661,7 +661,7 @@ ruleset n:Proc Do
         Send(PutM, HomeType, n, VC0, p.val, UNDEFINED);
         p.state := PT_MI_A;
     endrule;
-        
+
   rule "evict exclusive"
         p.state = P_E
     ==>
@@ -703,15 +703,15 @@ ruleset n:Node do
                 -- The node refused the message, stick it in the InBox to block the VC.
             box[msg.vc] := msg;
             endif;
-      
+
           MultiSetRemove(midx, chan);
-      
+
     endrule;
-  
+
     endalias
     endalias;
     endalias;
-  endchoose;  
+  endchoose;
 
     -- Try to deliver a message from a blocked VC; perhaps the node can handle it now
     ruleset vc:VCType do
@@ -730,7 +730,7 @@ ruleset n:Node do
                 -- Message has been handled, forget it
             undefine InBox[n][vc];
             endif;
-      
+
     endrule;
   endruleset;
 
@@ -748,7 +748,7 @@ startstate
   HomeNode.val := v;
     endfor;
     LastWrite := HomeNode.val;
-  
+
   -- processor initialization
   for i:Proc do
     Procs[i].state := P_I;
@@ -770,19 +770,19 @@ invariant "Invalid implies empty owner"
       IsUndefined(HomeNode.owner);
 
 invariant "values in shared state match last write"
-  Forall n : Proc Do    
+  Forall n : Proc Do
      Procs[n].state = P_S
     ->
-            Procs[n].val = LastWrite --LastWrite is updated whenever a new value is created 
+            Procs[n].val = LastWrite --LastWrite is updated whenever a new value is created
     end;
-    
+
 invariant "value is undefined while invalid"
-  Forall n : Proc Do    
+  Forall n : Proc Do
      Procs[n].state = P_I
     ->
             IsUndefined(Procs[n].val)
     end;
-    
+
 -- Here are some invariants that are helpful for validating shared state.
 
 invariant "modified implies empty sharers list"
@@ -797,7 +797,7 @@ invariant "Invalid implies empty sharer list"
 
 invariant "values in memory matches value of last write, when shared or invalid"
    	Forall n : Proc Do
-      HomeNode.state = H_S | HomeNode.state = H_I 
+      HomeNode.state = H_S | HomeNode.state = H_I
       ->
     		HomeNode.val = LastWrite
 		end;

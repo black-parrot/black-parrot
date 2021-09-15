@@ -1,6 +1,6 @@
 /**
  *  Name:
- *    bp_me_wormhole_packet_encode_lce_resp.v
+ *    bp_me_wormhole_packet_encode_lce_resp.sv
  *
  *  Description:
  *    It takes bp_lce_cmd_s as a payload, parses, and forms it into a wormhole
@@ -12,7 +12,6 @@
  *    pr_hdr width is not a perfect multiple of flit_width_p
  *
  */
-
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"

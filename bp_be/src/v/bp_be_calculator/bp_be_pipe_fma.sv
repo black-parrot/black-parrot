@@ -111,7 +111,8 @@ module bp_be_pipe_fma
      ,.imulEn(1)
      )
    fma
-    (.control(control_li)
+    (.clock(clk_i)
+     ,.control(control_li)
      ,.op(fma_op_li)
      ,.a(fma_a_li)
      ,.b(fma_b_li)

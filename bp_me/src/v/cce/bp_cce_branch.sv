@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_branch.v
+ *   bp_cce_branch.sv
  *
  * Description:
  *   Branch evaluation logic for the CCE implementing equality/inequality and less than comparison.

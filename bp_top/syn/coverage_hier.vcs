@@ -17,7 +17,7 @@
 //-node test_bp.dut.rof1[0].be.be_checker.detector frs*
 //-node test_bp.dut.rof1[0].be.be_checker.detector calc_status.isd_frs*
 //-node test_bp.dut.rof1[0].be.be_checker.director calc_status.isd_frs*
-//-node test_bp.dut.rof1[0].be.be_checker.director fe_cmd.operands.itlb* 
+//-node test_bp.dut.rof1[0].be.be_checker.director fe_cmd.operands.itlb*
 //-node test_bp.dut.rof1[0].be.be_checker.director *padding*
 //-node test_bp.dut.rof1[0].fe *padding*
 //-node test_bp.dut.rof1[0].fe *itlb*
@@ -32,6 +32,6 @@
 -moduletree bsg_nonsynth_clock_gen
 -moduletree bsg_nonsynth_reset_gen
 -moduletree bp_cce_inst_rom
--moduletree bp_cce_nonsynth_cfg_loader 
+-moduletree bp_cce_nonsynth_cfg_loader
 -moduletree bp_mem_dramsim2
 
