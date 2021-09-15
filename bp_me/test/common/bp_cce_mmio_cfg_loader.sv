@@ -26,7 +26,7 @@ module bp_cce_mmio_cfg_loader
     , parameter clear_freeze_p        = 0
     // Change the last 8 bits of the data below to indicate the hios
     // to be enabled.
-    , parameter hio_mask_p         = 64'h1111_1111_0000_0001
+    , parameter hio_mask_p         = 64'h0000_0000_0000_0001
     , localparam bp_pc_entry_point_gp=39'h10_3000
     )
   (input                                             clk_i
