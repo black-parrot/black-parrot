@@ -17,10 +17,10 @@ module bp_me_xbar_stream
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter data_width_p    = "inv"
-   , parameter payload_width_p = "inv"
-   , parameter num_source_p    = "inv"
-   , parameter num_sink_p      = "inv"
+   , parameter `BSG_INV_PARAM(data_width_p    )
+   , parameter `BSG_INV_PARAM(payload_width_p )
+   , parameter `BSG_INV_PARAM(num_source_p    )
+   , parameter `BSG_INV_PARAM(num_sink_p      )
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, xbar)
 
    , localparam lg_num_source_lp = `BSG_SAFE_CLOG2(num_source_p)
@@ -91,4 +91,6 @@ module bp_me_xbar_stream
   assign msg_last_o   = msg_v_o & {num_sink_p{msg_last_i[msg_grants_sel_li]}};
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_me_xbar_stream)
 

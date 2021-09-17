@@ -898,7 +898,7 @@ module testbench
                , (instr_count*64*1000) / clock_cnt
                );
       $display("Test PASSed");
-      $finish(0);
+      $finish();
     end
   end
 

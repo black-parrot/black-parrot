@@ -23,11 +23,10 @@
 `include "bsg_defines.v"
 
 module bsg_parallel_in_serial_out_passthrough_dynamic_last
-
- #(parameter width_p       = "inv"
-  ,parameter max_els_p     = "inv"
-  ,parameter lg_max_els_lp = `BSG_SAFE_CLOG2(max_els_p)
-  )
+ #(parameter `BSG_INV_PARAM(width_p       )
+   , parameter `BSG_INV_PARAM(max_els_p     )
+   , parameter lg_max_els_lp = `BSG_SAFE_CLOG2(max_els_p)
+   )
 
   (input                               clk_i
   ,input                               reset_i
@@ -160,3 +159,6 @@ module bsg_parallel_in_serial_out_passthrough_dynamic_last
   end
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bsg_parallel_in_serial_out_passthrough_dynamic_last)
+

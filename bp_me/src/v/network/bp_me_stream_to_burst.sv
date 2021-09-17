@@ -20,8 +20,8 @@ module bp_me_stream_to_burst
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter data_width_p  = "inv"
-   , parameter payload_width_p  = "inv"
+   , parameter `BSG_INV_PARAM(data_width_p  )
+   , parameter `BSG_INV_PARAM(payload_width_p  )
 
    // Bitmask which determines which message types have a data payload
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
@@ -99,3 +99,6 @@ module bp_me_stream_to_burst
                                 : '0;
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_me_stream_to_burst)
+
