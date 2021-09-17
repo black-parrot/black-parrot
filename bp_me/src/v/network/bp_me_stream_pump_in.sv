@@ -21,7 +21,7 @@ module bp_me_stream_pump_in
    , parameter stream_data_width_p = dword_width_gp
    , parameter block_width_p = cce_block_width_p
    // width of BedRock message payload
-   , parameter payload_width_p = "inv"
+   , parameter `BSG_INV_PARAM(payload_width_p )
 
    // Bitmasks that specify which message types may have multiple beats on either
    // the msg input side or FSM output side.
@@ -308,4 +308,6 @@ module bp_me_stream_pump_in
     end
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_me_stream_pump_in)
 
