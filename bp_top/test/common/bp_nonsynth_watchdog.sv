@@ -25,6 +25,7 @@ module bp_nonsynth_watchdog
 
     , input [vaddr_width_p-1:0]               npc_i
     , input                                   instret_i
+    , input [num_core_p-1:0]                  finish_i
     );
 
   enum logic {e_run, e_halt} state_n, state_r;
@@ -60,7 +61,7 @@ module bp_nonsynth_watchdog
    #(.max_val_p(stall_cycles_p), .init_val_p(0))
    halt_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i | wfi_i | is_halt)
+     ,.reset_i(reset_i | freeze_i | wfi_i | is_halt | ~finish_i[mhartid_i])
 
      ,.clear_i(npc_change)
      ,.up_i(instret_i)
@@ -81,7 +82,7 @@ module bp_nonsynth_watchdog
 
   always_comb
     case (state_r)
-      e_run: state_n = (halt_cnt >= halt_cycles_p) ? e_halt : e_run;
+      e_run: state_n = (halt_cnt == halt_cycles_p) ? e_halt : e_run;
       default: state_n = state_r;
     endcase
 
@@ -93,9 +94,9 @@ module bp_nonsynth_watchdog
 
   always_ff @(negedge clk_i)
     begin
-      assert (reset_i !== '0 || is_halt || (halt_cnt < halt_cycles_p)) else
+      if (reset_i === '0 && is_halt && halt_cnt >= halt_cycles_p)
         begin
-          $display("Warning! Core %x halt detected!", mhartid_i);
+          $display("Core %x halt detected!", mhartid_i);
         end
       assert (reset_i !== '0 || (stall_cnt < stall_cycles_p)) else
         begin

@@ -226,6 +226,7 @@ module testbench
      ,.done_o()
      );
 
+  logic [num_core_p-1:0] finish_lo;
   logic cosim_en_lo;
   logic icache_trace_en_lo;
   logic dcache_trace_en_lo;
@@ -279,6 +280,7 @@ module testbench
      ,.branch_profile_en_o(branch_profile_en_lo)
      ,.pc_profile_en_o(pc_profile_en_lo)
      ,.cosim_en_o(cosim_en_lo)
+     ,.finish_o(finish_lo)
      );
 
   if (no_bind_p == 0)
@@ -302,7 +304,7 @@ module testbench
         bp_nonsynth_watchdog
          #(.bp_params_p(bp_params_p)
            ,.stall_cycles_p(1000000)
-           ,.halt_cycles_p(100000)
+           ,.halt_cycles_p(10000)
            ,.heartbeat_instr_p(100000)
            )
          watchdog
@@ -315,6 +317,7 @@ module testbench
 
            ,.npc_i(calculator.pipe_sys.csr.apc_r)
            ,.instret_i(calculator.commit_pkt_cast_o.instret)
+           ,.finish_i(testbench.finish_lo)
            );
 
 
