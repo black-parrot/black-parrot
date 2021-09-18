@@ -42,16 +42,16 @@ module bp_me_stream_pump_in
    , parameter msg_stream_mask_p = 0
    , parameter fsm_stream_mask_p = msg_stream_mask_p
 
-   // number of full-payload messages that can be buffered
-   // buffer_els_p headers and buffer_els_p*stream_words_lp data beats will be buffered
-   , parameter buffer_els_p = 0
-
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
 
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
    , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p >> 3)
    , localparam stream_words_lp = block_width_p / stream_data_width_p
    , localparam stream_cnt_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
+
+   // number of messages that can be buffered
+   , parameter header_els_p = 0
+   , parameter data_els_p   = header_els_p * stream_words_lp
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -89,109 +89,46 @@ module bp_me_stream_pump_in
   `bp_cast_i(bp_bedrock_xce_msg_header_s, msg_header);
   `bp_cast_o(bp_bedrock_xce_msg_header_s, fsm_base_header);
 
-  bp_bedrock_xce_msg_header_s msg_header_lo;
+  bp_bedrock_xce_msg_header_s msg_base_header_lo;
   logic [stream_data_width_p-1:0] msg_data_lo;
   logic msg_v_lo, msg_ready_and_li, msg_last_lo;
 
-  if (buffer_els_p == 0)
-    begin: passthrough
-      assign msg_header_lo = msg_header_cast_i;
-      assign msg_data_lo = msg_data_i;
-      assign msg_v_lo = msg_v_i;
-      assign msg_last_lo = msg_last_i;
-      assign msg_ready_and_o = msg_ready_and_li;
-    end
-  else
-    begin: buffered
-      // register to track input message header arrival
-      // only buffer first header of each message
-      logic input_streaming_r;
-      bsg_dff_reset_set_clear
-       #(.width_p(1)
-         ,.clear_over_set_p(1))
-       input_streaming_reg
-        (.clk_i(clk_i)
-        ,.reset_i(reset_i)
-        ,.set_i(msg_v_i & msg_ready_and_o & ~input_streaming_r)
-        ,.clear_i(msg_v_i & msg_ready_and_o & msg_last_i)
-        ,.data_o(input_streaming_r)
-        );
+  bp_me_stream_fifo
+   #(.header_width_p($bits(bp_bedrock_xce_msg_header_s))
+     ,.data_width_p(stream_data_width_p)
+     ,.header_els_p(header_els_p)
+     ,.data_els_p(data_els_p)
+     )
+   fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-      // header and data buffers
-      // every arriving beat's data is buffered (regardless of whether data is valid)
-      // header is only buffered on first beat of each message
+     ,.msg_header_i(msg_header_i)
+     ,.msg_data_i(msg_data_i)
+     ,.msg_v_i(msg_v_i)
+     ,.msg_last_i(msg_last_i)
+     ,.msg_ready_and_o(msg_ready_and_o)
 
-      logic msg_header_v_lo, msg_header_yumi_li, msg_header_ready_and_lo;
-      logic msg_data_v_lo, msg_data_yumi_li, msg_data_ready_and_lo;
-      logic msg_yumi_li;
-      assign msg_yumi_li = msg_ready_and_li & msg_v_lo;
+     ,.msg_base_header_o(msg_base_header_lo)
+     ,.msg_data_o(msg_data_lo)
+     ,.msg_v_o(msg_v_lo)
+     ,.msg_last_o(msg_last_lo)
+     ,.msg_ready_and_i(msg_ready_and_li)
+     );
 
-      bsg_fifo_1r1w_small
-       #(.width_p($bits(bp_bedrock_xce_msg_header_s))
-         ,.els_p(buffer_els_p)
-         )
-       header_fifo
-        (.clk_i(clk_i)
-          ,.reset_i(reset_i)
-
-          ,.data_i(msg_header_cast_i)
-          // buffer header if not streaming and data buffer is also ready
-          ,.v_i(msg_v_i & ~input_streaming_r & msg_data_ready_and_lo)
-          ,.ready_o(msg_header_ready_and_lo)
-
-          ,.data_o(msg_header_lo)
-          ,.v_o(msg_header_v_lo)
-          ,.yumi_i(msg_header_yumi_li)
-          );
-
-      bsg_fifo_1r1w_small
-       #(.width_p(stream_data_width_p+1)
-         ,.els_p(buffer_els_p*stream_words_lp)
-         )
-       data_fifo
-        (.clk_i(clk_i)
-          ,.reset_i(reset_i)
-
-          ,.data_i({msg_last_i, msg_data_i})
-          // buffer data if streaming or on first beat if header buffer is also ready
-          ,.v_i(msg_v_i & (input_streaming_r | (~input_streaming_r & msg_header_ready_and_lo)))
-          ,.ready_o(msg_data_ready_and_lo)
-
-          ,.data_o({msg_last_lo, msg_data_lo})
-          ,.v_o(msg_data_v_lo)
-          ,.yumi_i(msg_data_yumi_li)
-          );
-
-      // ack inbound message
-      // when streaming, only data buffer needs to be available, otherwise need ready from
-      // both header and data buffers
-      assign msg_ready_and_o = input_streaming_r
-                               ? msg_data_ready_and_lo
-                               : (msg_data_ready_and_lo & msg_header_ready_and_lo);
-      // beat is valid if both header and data are valid
-      assign msg_v_lo = msg_header_v_lo & msg_data_v_lo;
-      // dequeue header only when consuming last beat
-      assign msg_header_yumi_li = msg_yumi_li & msg_last_lo;
-      // dequeue data on every yumi
-      assign msg_data_yumi_li = msg_yumi_li;
-    end
-
-  wire [stream_cnt_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << msg_header_lo.size) / (stream_data_width_p / 8), 1'b1) - 1'b1;
+  wire [stream_cnt_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << msg_base_header_lo.size) / (stream_data_width_p / 8), 1'b1) - 1'b1;
 
   logic cnt_up, is_last_cnt, streaming_r;
   logic is_fsm_stream, is_msg_stream;
   wire any_fsm_new = (is_fsm_stream | is_msg_stream) & ~streaming_r;
-  // store this addr for stream state
-  logic [block_offset_width_lp-1:0] critical_addr_r;
 
   if (stream_words_lp == 1)
     begin: full_block_stream
       assign is_fsm_stream = '0;
       assign is_msg_stream = '0;
       assign streaming_r = '0;
-      assign critical_addr_r = msg_header_lo.addr[0+:block_offset_width_lp];
       assign is_last_cnt = 1'b1;
-      assign fsm_addr_o = msg_header_lo.addr;
+      assign fsm_addr_o = msg_base_header_lo.addr;
     end
   else
     begin: sub_block_stream
@@ -202,17 +139,16 @@ module bp_me_stream_pump_in
        #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
        data_counter
         (.clk_i(clk_i)
-        ,.reset_i(reset_i)
+         ,.reset_i(reset_i)
 
-        ,.set_i(cnt_set)
-        ,.en_i(cnt_en)
-        ,.val_i(cnt_val_li)
-        ,.count_o(current_cnt)
-        );
+         ,.set_i(cnt_set)
+         ,.en_i(cnt_en)
+         ,.val_i(cnt_val_li)
+         ,.count_o(current_cnt)
+         );
 
       bsg_dff_reset_set_clear
-       #(.width_p(1)
-       ,.clear_over_set_p(1))
+       #(.width_p(1), .clear_over_set_p(1))
        streaming_reg
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
@@ -221,22 +157,13 @@ module bp_me_stream_pump_in
         ,.data_o(streaming_r)
         );
 
-      bsg_dff_en_bypass
-       #(.width_p(block_offset_width_lp))
-       critical_addr_reg
-        (.clk_i(clk_i)
-        ,.data_i(msg_header_lo.addr[0+:block_offset_width_lp])
-        ,.en_i(~streaming_r)
-        ,.data_o(critical_addr_r)
-        );
-
       always_comb
         begin
-          first_cnt = critical_addr_r[stream_offset_width_lp+:stream_cnt_width_lp];
+          first_cnt = msg_base_header_lo.addr[stream_offset_width_lp+:stream_cnt_width_lp];
           last_cnt  = first_cnt + num_stream;
 
-          is_fsm_stream = fsm_stream_mask_p[msg_header_lo.msg_type] & ~(first_cnt == last_cnt);
-          is_msg_stream = msg_stream_mask_p[msg_header_lo.msg_type] & ~(first_cnt == last_cnt);
+          is_fsm_stream = fsm_stream_mask_p[msg_base_header_lo.msg_type] & ~(first_cnt == last_cnt);
+          is_msg_stream = msg_stream_mask_p[msg_base_header_lo.msg_type] & ~(first_cnt == last_cnt);
 
           stream_cnt = any_fsm_new ? first_cnt : current_cnt;
           is_last_cnt = (stream_cnt == last_cnt) | (~is_fsm_stream & ~is_msg_stream);
@@ -260,22 +187,22 @@ module bp_me_stream_pump_in
       bsg_mux_bitwise
        #(.width_p(stream_cnt_width_lp))
        sub_block_addr_mux
-        (.data0_i(msg_header_lo.addr[stream_offset_width_lp+:stream_cnt_width_lp])
+        (.data0_i(msg_base_header_lo.addr[stream_offset_width_lp+:stream_cnt_width_lp])
         ,.data1_i(stream_cnt)
         ,.sel_i(num_stream)
         ,.data_o(wrap_around_cnt)
       );
 
-      assign fsm_addr_o = { msg_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+stream_cnt_width_lp]
+      assign fsm_addr_o = { msg_base_header_lo.addr[paddr_width_p-1:stream_offset_width_lp+stream_cnt_width_lp]
                           , wrap_around_cnt
-                          , msg_header_lo.addr[0+:stream_offset_width_lp]};
+                          , msg_base_header_lo.addr[0+:stream_offset_width_lp]};
     end
 
   always_comb
     begin
-      fsm_base_header_cast_o = msg_header_lo;
+      fsm_base_header_cast_o = msg_base_header_lo;
       // keep the address to be the critical word address
-      fsm_base_header_cast_o.addr[0+:block_offset_width_lp] = critical_addr_r;
+      fsm_base_header_cast_o.addr[0+:block_offset_width_lp] = msg_base_header_lo.addr;
       fsm_data_o = msg_data_lo;
 
       if (~is_msg_stream & is_fsm_stream)
@@ -291,7 +218,7 @@ module bp_me_stream_pump_in
           // N:1
           // consume all but last msg input beat silently, then FSM consumes last beat
           fsm_v_o = msg_v_lo & is_last_cnt;
-          msg_ready_and_li = (~is_last_cnt) | (is_last_cnt & fsm_ready_and_i);
+          msg_ready_and_li = ~is_last_cnt | fsm_ready_and_i;
           cnt_up = msg_v_lo & msg_ready_and_li & ~is_last_cnt;
         end
       else

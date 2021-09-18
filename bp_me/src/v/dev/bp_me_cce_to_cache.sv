@@ -101,8 +101,8 @@ module bp_me_cce_to_cache
      ,.payload_width_p(cce_mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp)
-     // needs buffer space for 1 full message
-     ,.buffer_els_p(1)
+     ,.header_els_p(2)
+     ,.data_els_p(cce_block_width_p/l2_data_width_p)
      )
    cce_to_cache_pump_in
     (.clk_i(clk_i)

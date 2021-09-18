@@ -293,7 +293,7 @@ module bp_uce
      ,.payload_width_p(uce_mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
-     ,.buffer_els_p(0)
+     ,.header_els_p(0)
      )
    uce_pump_in
     (.clk_i(clk_i)

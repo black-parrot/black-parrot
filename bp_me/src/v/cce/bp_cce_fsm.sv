@@ -157,9 +157,6 @@ module bp_cce_fsm
       );
 
   // Memory Response Stream Pump
-  // provide buffer space for two stream messages with data (for coherence protocol)
-  localparam stream_words_lp = cce_block_width_p / dword_width_gp;
-  localparam mem_resp_buffer_els_lp = 2;
   bp_bedrock_cce_mem_msg_header_s mem_resp_base_header_li;
   bp_bedrock_cce_mem_payload_s mem_resp_payload_li;
   assign mem_resp_payload_li = mem_resp_base_header_li.payload;
@@ -174,7 +171,8 @@ module bp_cce_fsm
       ,.payload_width_p(cce_mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
-      ,.buffer_els_p(mem_resp_buffer_els_lp)
+      // provide buffer space for two stream messages with data (for coherence protocol)
+      ,.header_els_p(2)
       )
     mem_resp_stream_pump
      (.clk_i(clk_i)
@@ -197,6 +195,7 @@ module bp_cce_fsm
       );
 
   // Memory Command Stream Pump
+  localparam stream_words_lp = cce_block_width_p / dword_width_gp;
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
   bp_bedrock_cce_mem_msg_header_s mem_cmd_base_header_lo;
   bp_bedrock_cce_mem_payload_s mem_cmd_payload_lo;
