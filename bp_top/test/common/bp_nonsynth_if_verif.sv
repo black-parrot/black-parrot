@@ -65,19 +65,21 @@ module bp_nonsynth_if_verif
     $fatal("Error: Must have <= 1 column of streaming accelerators");
   if (cac_x_dim_p > 1)
     $fatal("Error: Must have <= 1 column of coherent accelerators");
-  if (multicore_p == 1 && !((dcache_block_width_p == icache_block_width_p) && (dcache_block_width_p ==  acache_block_width_p)))
+  if (multicore_p == 1 && ((dcache_block_width_p != icache_block_width_p) || (num_cacc_p > 0 && (dcache_block_width_p != acache_block_width_p))))
     $fatal("Error: We don't currently support different block widths for multicore configurations");
-  if ((cce_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
+  if ((cce_block_width_p == 256) && (dcache_assoc_p > 4 || icache_assoc_p > 4 || (num_cacc_p > 0 && acache_assoc_p > 4)))
     $fatal("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
-  if ((cce_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))
+  if ((cce_block_width_p == 128) && (dcache_assoc_p > 2 || icache_assoc_p > 2 || (num_cacc_p > 0 && acache_assoc_p > 2)))
     $fatal("Error: We can't maintain 64-bit dwords with a 128-bit cache block size and 4-way or 8-way cache associativity");
+  if ((cce_block_width_p == 64) && (dcache_assoc_p > 1 || icache_assoc_p > 1 || (num_cacc_p > 0 && acache_assoc_p > 1)))
+    $fatal("Error: We can't maintain 64-bit dwords with a 64-bit cache block size and 2-way, 4-way or 8-way cache associativity");
   if ((l1_writethrough_p == 1) && (l1_coherent_p == 1))
     $fatal("Error: Writethrough with coherent_l1 is unsupported");
-  if ((icache_fill_width_p > icache_block_width_p) || (dcache_fill_width_p > dcache_block_width_p))
+  if ((icache_fill_width_p > icache_block_width_p) || (dcache_fill_width_p > dcache_block_width_p) || (num_cacc_p > 0 && (acache_fill_width_p > acache_block_width_p)))
     $fatal("Error: Cache fill width should be less or equal to L1 cache block width");
-  if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0) || (dcache_fill_width_p % (dcache_block_width_p / dcache_assoc_p) != 0))
+  if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0) || (dcache_fill_width_p % (dcache_block_width_p / dcache_assoc_p) != 0) || (num_cacc_p > 0 && (acache_block_width_p / acache_assoc_p) != 0))
     $fatal("Error: Cache fill width should be a multiple of cache bank width");
-  if (icache_fill_width_p != dcache_fill_width_p)
+  if (icache_fill_width_p != dcache_fill_width_p || (num_cacc_p > 0 && icache_fill_width_p != acache_fill_width_p))
     $fatal("Error: L1-Cache fill width should be the same");
   if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
     $fatal("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
@@ -88,9 +90,6 @@ module bp_nonsynth_if_verif
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");
-
-  //if (bht_entry_width_p/2 < 2 || bht_entry_width_p/2*2 != bht_entry_width_p)
-  //  $warning("BHT fold width must be power of 2 greater than 2");
 
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
