@@ -13,31 +13,35 @@ module bp_nonsynth_mem
  import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, l2_fill_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter preload_mem_p = 0
    , parameter mem_els_p = 0
    , parameter dram_type_p = ""
    )
-  (input                                     clk_i
-   , input                                   reset_i
+  (input                                            clk_i
+   , input                                          reset_i
 
-   , input [cce_mem_msg_width_lp-1:0]        mem_cmd_i
-   , input                                   mem_cmd_v_i
-   , output logic                            mem_cmd_ready_and_o
+   , input [cce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
+   , input [l2_fill_width_p-1:0]                    mem_cmd_data_i
+   , input                                          mem_cmd_v_i
+   , output logic                                   mem_cmd_ready_and_o
+   , input                                          mem_cmd_last_i
 
-   , output logic [cce_mem_msg_width_lp-1:0] mem_resp_o
-   , output logic                            mem_resp_v_o
-   , input                                   mem_resp_yumi_i
+   , output logic [cce_mem_msg_header_width_lp-1:0] mem_resp_header_o
+   , output logic [l2_fill_width_p-1:0]             mem_resp_data_o
+   , output logic                                   mem_resp_v_o
+   , input                                          mem_resp_ready_and_i
+   , output logic                                   mem_resp_last_o
 
-   , input                                   dram_clk_i
-   , input                                   dram_reset_i
+   , input                                          dram_clk_i
+   , input                                          dram_reset_i
    );
 
-  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
+  `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
-  logic [dword_width_gp-1:0] cache_data_lo;
+  logic [l2_data_width_p-1:0] cache_data_lo;
   logic cache_data_v_lo, cache_data_yumi_li;
   bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p))
@@ -45,24 +49,28 @@ module bp_nonsynth_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(mem_cmd_i)
+     ,.mem_cmd_header_i(mem_cmd_header_i)
+     ,.mem_cmd_data_i(mem_cmd_data_i)
      ,.mem_cmd_v_i(mem_cmd_v_i)
      ,.mem_cmd_ready_and_o(mem_cmd_ready_and_o)
+     ,.mem_cmd_last_i(mem_cmd_last_i)
 
-     ,.mem_resp_o(mem_resp_o)
+     ,.mem_resp_header_o(mem_resp_header_o)
+     ,.mem_resp_data_o(mem_resp_data_o)
      ,.mem_resp_v_o(mem_resp_v_o)
-     ,.mem_resp_yumi_i(mem_resp_yumi_i)
+     ,.mem_resp_ready_and_i(mem_resp_ready_and_i)
+     ,.mem_resp_last_o(mem_resp_last_o)
 
      ,.cache_pkt_o(cache_pkt_li)
-     ,.v_o(cache_pkt_v_li)
-     ,.ready_i(cache_pkt_ready_lo)
+     ,.cache_pkt_v_o(cache_pkt_v_li)
+     ,.cache_pkt_ready_i(cache_pkt_ready_lo)
 
-     ,.data_i(cache_data_lo)
-     ,.v_i(cache_data_v_lo)
-     ,.yumi_o(cache_data_yumi_li)
+     ,.cache_data_i(cache_data_lo)
+     ,.cache_v_i(cache_data_v_lo)
+     ,.cache_yumi_o(cache_data_yumi_li)
      );
 
-  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [l2_fill_width_p-1:0] dma_data_li;
@@ -71,7 +79,7 @@ module bp_nonsynth_mem
   logic dma_data_v_lo, dma_data_yumi_li;
 
   bsg_cache
-   #(.addr_width_p(caddr_width_p)
+   #(.addr_width_p(daddr_width_p)
      ,.data_width_p(l2_data_width_p)
      ,.block_size_in_words_p(l2_block_size_in_words_p)
      ,.sets_p(l2_sets_p)

@@ -14,7 +14,7 @@
 
 using namespace std;
 
-queue<int> getchar_queue;  
+queue<int> getchar_queue;
 
 void monitor() {
   int c = -1;

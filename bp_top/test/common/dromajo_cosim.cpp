@@ -63,7 +63,7 @@ extern "C" bool dromajo_step(int      hartid,
                              uint32_t insn,
                              uint64_t wdata,
                              uint64_t mstatus) {
-  int exit_code = dromajo_cosim_step(dromajo_pointer, 
+  int exit_code = dromajo_cosim_step(dromajo_pointer,
                                      hartid,
                                      pc,
                                      insn,

@@ -11,18 +11,20 @@
   typedef enum logic [1:0]
   {
     e_none = 0
-    , e_l1 = 1
-    , e_l2 = 2
+    ,e_l1  = 1
+    ,e_l2  = 2
   } bp_atomic_op_e;
 
   typedef enum logic [15:0]
   {
-    e_sacc_vdp = 0
+    e_sacc_none = 0
+    ,e_sacc_vdp = 1
   } bp_sacc_type_e;
 
   typedef enum logic [15:0]
   {
-    e_cacc_vdp = 0
+    e_cacc_none = 0
+    ,e_cacc_vdp = 1
   } bp_cacc_type_e;
 
   typedef struct packed
@@ -68,8 +70,12 @@
     // Physical address width
     //   Only tested for 40-bit physical address
     integer unsigned paddr_width;
+    // DRAM address width
     // The max size of the connected DRAM i.e. cached address space
     //   Only tested for 32-bit cacheable address (4 GB space, with 2 GB local I/O)
+    integer unsigned daddr_width;
+    // Cacheable address width
+    // The max size cached by the L1 caches of the system
     integer unsigned caddr_width;
     // Address space ID width
     //   Currently unused, so set to 1 bit
@@ -207,14 +213,15 @@
       ,mc_y_dim : 0
       ,cac_x_dim: 0
       ,sac_x_dim: 0
-      ,cacc_type: e_cacc_vdp
-      ,sacc_type: e_sacc_vdp
+      ,cacc_type: e_cacc_none
+      ,sacc_type: e_sacc_none
 
       ,num_cce: 1
       ,num_lce: 2
 
       ,vaddr_width: 39
       ,paddr_width: 40
+      ,daddr_width: 33
       ,caddr_width: 32
       ,asid_width : 1
 
@@ -243,15 +250,15 @@
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
-      ,dcache_fill_width    : 512
+      ,dcache_fill_width    : 64
       ,icache_sets          : 64
       ,icache_assoc         : 8
       ,icache_block_width   : 512
-      ,icache_fill_width    : 512
+      ,icache_fill_width    : 64
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
-      ,acache_fill_width    : 512
+      ,acache_fill_width    : 64
 
       ,cce_ucode            : 0
       ,cce_pc_width         : 8
@@ -268,23 +275,23 @@
       ,fe_cmd_fifo_els   : 4
 
       ,async_coh_clk       : 0
-      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
+      ,coh_noc_max_credits : 8
 
       ,async_mem_clk         : 0
-      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
+      ,mem_noc_max_credits   : 8
 
       ,async_io_clk         : 0
-      ,io_noc_did_width     : 3
-      ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
       ,io_noc_cid_width     : 2
+      ,io_noc_did_width     : 3
       ,io_noc_len_width     : 4
+      ,io_noc_max_credits   : 16
       };
 
   // Default configuration is unicore
@@ -310,7 +317,7 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_paddr_large_override_p =
-    '{paddr_width   : 44
+    '{paddr_width : 44
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_paddr_large_cfg_p
@@ -319,7 +326,7 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_paddr_small_override_p =
-    '{paddr_width   : 33
+    '{paddr_width : 33
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_paddr_small_cfg_p
@@ -365,6 +372,9 @@
       ,dcache_assoc       : 4
       ,dcache_block_width : 256
       ,dcache_fill_width  : 256
+      ,l2_data_width      : 256
+      ,l2_fill_width      : 256
+      ,mem_noc_flit_width : 256
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_medium_cfg_p
@@ -381,6 +391,9 @@
       ,dcache_assoc       : 2
       ,dcache_block_width : 128
       ,dcache_fill_width  : 128
+      ,l2_data_width      : 128
+      ,l2_fill_width      : 128
+      ,mem_noc_flit_width : 128
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_small_cfg_p
@@ -397,6 +410,9 @@
       ,dcache_assoc       : 1
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
+      ,l2_data_width      : 64
+      ,l2_fill_width      : 64
+      ,mem_noc_flit_width : 64
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_tiny_cfg_p
@@ -412,7 +428,10 @@
       ,dcache_sets        : 128
       ,dcache_assoc       : 4
       ,dcache_block_width : 256
-      ,dcache_fill_width  : 256
+      ,dcache_fill_width  : 128
+      ,l2_data_width      : 128
+      ,l2_fill_width      : 128
+      ,mem_noc_flit_width : 128
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_hetero_cfg_p
@@ -429,6 +448,9 @@
       ,dcache_assoc       : 4
       ,dcache_block_width : 512
       ,dcache_fill_width  : 512
+      ,l2_data_width      : 512
+      ,l2_fill_width      : 512
+      ,mem_noc_flit_width : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l1_wide_cfg_p
@@ -474,6 +496,8 @@
       ,num_cce       : 1
       ,num_lce       : 2
       ,l1_coherent   : 1
+      ,dcache_fill_width : 512
+      ,icache_fill_width : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
@@ -675,7 +699,7 @@
       ,sac_x_dim: 1
       ,cacc_type: e_cacc_vdp
       ,sacc_type: e_sacc_vdp
-      ,num_lce  : 4
+      ,num_lce  : 3
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_accelerator_cfg_p
@@ -786,6 +810,10 @@
   // Half core configs
   localparam bp_proc_param_s bp_unicore_half_override_p =
     '{num_lce  : 1
+      ,dcache_fill_width    : 64
+      ,icache_fill_width    : 64
+      ,l2_data_width        : 64
+      ,l2_fill_width        : 64
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_half_cfg_p
@@ -831,6 +859,7 @@
 
       ,`bp_aviary_define_override(vaddr_width, BP_VADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(paddr_width, BP_PADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(daddr_width, BP_DADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(caddr_width, BP_CADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(asid_width, BP_ASID_WIDTH, `BP_CUSTOM_BASE_CFG)
 

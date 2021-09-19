@@ -19,31 +19,39 @@ module wrapper
    `declare_bp_proc_params(bp_params_p)
 
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
+   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_mem_data_width_lp
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                                    clk_i
    , input                                                  reset_i
 
    // Outgoing I/O
-   , output [cce_mem_msg_width_lp-1:0]                      io_cmd_o
-   , output                                                 io_cmd_v_o
+   , output logic [io_mem_msg_header_width_lp-1:0]          io_cmd_header_o
+   , output logic [io_data_width_p-1:0]                     io_cmd_data_o
+   , output logic                                           io_cmd_v_o
    , input                                                  io_cmd_ready_and_i
+   , output logic                                           io_cmd_last_o
 
-   , input [cce_mem_msg_width_lp-1:0]                       io_resp_i
+   , input [io_mem_msg_header_width_lp-1:0]                 io_resp_header_i
+   , input [io_data_width_p-1:0]                            io_resp_data_i
    , input                                                  io_resp_v_i
-   , output                                                 io_resp_yumi_o
+   , output logic                                           io_resp_yumi_o
+   , input                                                  io_resp_last_i
 
    // Incoming I/O
-   , input [cce_mem_msg_width_lp-1:0]                       io_cmd_i
+   , input [io_mem_msg_header_width_lp-1:0]                 io_cmd_header_i
+   , input [io_data_width_p-1:0]                            io_cmd_data_i
    , input                                                  io_cmd_v_i
-   , output                                                 io_cmd_yumi_o
+   , output logic                                           io_cmd_yumi_o
+   , input                                                  io_cmd_last_i
 
-   , output [cce_mem_msg_width_lp-1:0]                      io_resp_o
-   , output                                                 io_resp_v_o
+   , output logic [io_mem_msg_header_width_lp-1:0]          io_resp_header_o
+   , output logic [io_data_width_p-1:0]                     io_resp_data_o
+   , output logic                                           io_resp_v_o
    , input                                                  io_resp_ready_and_i
+   , output logic                                           io_resp_last_o
 
    // DRAM interface
    , output logic [num_cce_p-1:0][dma_pkt_width_lp-1:0]     dma_pkt_o
@@ -61,6 +69,10 @@ module wrapper
 
   if (multicore_p)
     begin : multicore
+
+      if (io_data_width_p != cce_block_width_p)
+        $fatal(0, "io_data_width_p must be same as cce_block_width_p in multicore");
+
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
 
@@ -108,6 +120,12 @@ module wrapper
       assign io_cmd_yumi_o = io_cmd_ready_and_lo & io_cmd_v_i;
       assign io_resp_yumi_o = io_resp_ready_and_lo & io_resp_v_i;
       wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
+
+      `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io);
+      bp_bedrock_io_mem_msg_header_s io_cmd_header_li;
+      logic [io_data_width_p-1:0] io_cmd_data_li;
+      bp_bedrock_io_mem_msg_header_s io_resp_header_lo;
+      logic [io_data_width_p-1:0] io_resp_data_lo;
       bp_me_cce_to_mem_link_bidir
        #(.bp_params_p(bp_params_p)
          ,.num_outstanding_req_p(io_noc_max_credits_p)
@@ -120,26 +138,34 @@ module wrapper
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.mem_cmd_i(io_cmd_i)
+         ,.mem_cmd_header_i(io_cmd_header_i)
+         ,.mem_cmd_data_i(io_cmd_data_i)
          ,.mem_cmd_v_i(io_cmd_v_i)
          ,.mem_cmd_ready_and_o(io_cmd_ready_and_lo)
+         ,.mem_cmd_last_i(io_cmd_last_i)
 
-         ,.mem_resp_o(io_resp_o)
+         ,.mem_resp_header_o(io_resp_header_o)
+         ,.mem_resp_data_o(io_resp_data_o)
          ,.mem_resp_v_o(io_resp_v_o)
          ,.mem_resp_yumi_i(io_resp_ready_and_i & io_resp_v_o)
+         ,.mem_resp_last_o(io_resp_last_o)
 
          ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
          ,.my_cid_i('0)
          ,.dst_cord_i(dst_cord_lo)
          ,.dst_cid_i('0)
 
-         ,.mem_cmd_o(io_cmd_o)
+         ,.mem_cmd_header_o(io_cmd_header_o)
+         ,.mem_cmd_data_o(io_cmd_data_o)
          ,.mem_cmd_v_o(io_cmd_v_o)
          ,.mem_cmd_yumi_i(io_cmd_ready_and_i & io_cmd_v_o)
+         ,.mem_cmd_last_o(io_cmd_last_o)
 
-         ,.mem_resp_i(io_resp_i)
+         ,.mem_resp_header_i(io_resp_header_i)
+         ,.mem_resp_data_i(io_resp_data_i)
          ,.mem_resp_v_i(io_resp_v_i)
          ,.mem_resp_ready_and_o(io_resp_ready_and_lo)
+         ,.mem_resp_last_i(io_resp_last_i)
 
          ,.cmd_link_i(proc_cmd_link_lo)
          ,.cmd_link_o(proc_cmd_link_li)
@@ -152,7 +178,7 @@ module wrapper
       for (genvar i = 0; i < mc_x_dim_p; i++)
         begin : column
           bsg_cache_wh_header_flit_s header_flit;
-          assign header_flit = dram_cmd_link_lo[i];
+          assign header_flit = dram_cmd_link_lo[i].data;
           wire [`BSG_SAFE_CLOG2(cce_per_col_lp)-1:0] dma_id_li = header_flit.src_cord-1'b1;
           bsg_wormhole_to_cache_dma_fanout
            #(.wh_flit_width_p(mem_noc_flit_width_p)
@@ -161,7 +187,7 @@ module wrapper
              ,.wh_cord_width_p(mem_noc_cord_width_p)
 
              ,.num_dma_p(cce_per_col_lp)
-             ,.dma_addr_width_p(caddr_width_p)
+             ,.dma_addr_width_p(daddr_width_p)
              ,.dma_burst_len_p(l2_block_size_in_fill_p)
              )
            wh_to_cache_dma
@@ -188,23 +214,10 @@ module wrapper
     end
   else
     begin : unicore
-      `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
-      bp_bedrock_uce_mem_msg_s io_cmd_lo, io_cmd_li;
-      bp_bedrock_uce_mem_msg_s io_resp_lo, io_resp_li;
       bp_unicore
        #(.bp_params_p(bp_params_p))
        dut
-        (.io_cmd_o(io_cmd_lo)
-         ,.io_cmd_i(io_cmd_li)
-         ,.io_resp_o(io_resp_lo)
-         ,.io_resp_i(io_resp_li)
-         ,.*
-         );
-
-      assign io_cmd_o = io_cmd_lo;
-      assign io_cmd_li = io_cmd_i;
-      assign io_resp_o = io_resp_lo;
-      assign io_resp_li = io_resp_i;
+        (.*);
     end
 
 endmodule

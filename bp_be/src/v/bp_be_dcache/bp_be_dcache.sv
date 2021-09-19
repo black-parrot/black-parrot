@@ -125,6 +125,7 @@ module bp_be_dcache
    , input [ptag_width_p-1:0]         ptag_i
    , input                            ptag_v_i
    , input                            ptag_uncached_i
+   , input                            ptag_dram_i
 
    , output logic [dpath_width_gp-1:0] early_data_o
    , output logic                      early_v_o
@@ -307,7 +308,7 @@ module bp_be_dcache
   wire [sindex_width_lp-1:0] vaddr_index_tl = page_offset_tl_r[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0]  vaddr_bank_tl = page_offset_tl_r[byte_offset_width_lp+:bindex_width_lp];
 
-  logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl, hit_tl;
+  logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
     wire tag_match_tl      = (ptag_i == tag_mem_data_lo[i].tag);
     assign way_v_tl[i]     = (tag_mem_data_lo[i].state != e_COH_I);
@@ -339,11 +340,12 @@ module bp_be_dcache
 
   wire cached_op_tl   = ~ptag_uncached_i & ~decode_tl_r.fencei_op & ~decode_tl_r.l2_op;
   wire uncached_op_tl =  ptag_uncached_i | decode_tl_r.l2_op;
+  wire dram_op_tl     =  ptag_dram_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // TV Stage
   /////////////////////////////////////////////////////////////////////////////
-  logic uncached_op_tv_r, cached_op_tv_r;
+  logic uncached_op_tv_r, cached_op_tv_r, dram_op_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
   logic [dword_width_gp-1:0] st_data_tv_r;
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
@@ -387,18 +389,18 @@ module bp_be_dcache
      );
 
   bsg_dff_en
-   #(.width_p(paddr_width_p+4*assoc_p+2+$bits(bp_be_dcache_decode_s)))
+   #(.width_p(paddr_width_p+4*assoc_p+3+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
     (.clk_i(~clk_i)
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
                ,bank_sel_one_hot_tl, way_v_tl, load_hit_tl, store_hit_tl
-               ,uncached_op_tl, cached_op_tl
+               ,uncached_op_tl, cached_op_tl, dram_op_tl
                ,decode_tl_r
                })
      ,.data_o({paddr_tv_r
                ,bank_sel_one_hot_tv_r, way_v_tv_r, load_hit_tv_r, store_hit_tv_r
-               ,uncached_op_tv_r, cached_op_tv_r
+               ,uncached_op_tv_r, cached_op_tv_r, dram_op_tv_r
                ,decode_tv_r
                })
      );
@@ -918,7 +920,7 @@ module bp_be_dcache
   wire tag_mem_slow_read = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
   // This is a path to the negedge, so we need _v_tv_r here
-  wire tag_mem_fast_write = _v_tv_r & uncached_op_tv_r & load_hit_tv;
+  wire tag_mem_fast_write = _v_tv_r & uncached_op_tv_r & dram_op_tv_r & load_hit_tv;
   assign sram_hazard_flush = tag_mem_fast_write & ~flush_i;
 
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_fast_write;
@@ -1288,7 +1290,7 @@ module bp_be_dcache
 
   always_ff @(negedge clk_i)
     begin
-      assert(~v_tv_r || $countones(hit_tl) <= 1)
+      assert(~v_tv_r || $countones(load_hit_tl) <= 1)
         else $error("multiple hit: %b. id = %0d. addr = %H", load_hit_tl, cfg_bus_cast_i.dcache_id, ptag_i);
     end
 

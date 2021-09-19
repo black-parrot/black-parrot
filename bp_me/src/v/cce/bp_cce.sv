@@ -1,14 +1,12 @@
 /**
  *
  * Name:
- *   bp_cce.v
+ *   bp_cce.sv
  *
  * Description:
- *   This is the top level module for the CCE.
+ *   This is the top level module for the microcoded CCE.
  *
  */
-
-`include "bp_me_defines.svh"
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
@@ -28,99 +26,106 @@ module bp_cce
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam lg_cce_way_groups_lp      = `BSG_SAFE_CLOG2(cce_way_groups_p)
 
-    // counter max (used for e.g., stall and performance counters)
-    , localparam max_counter_val_lp        = ((2**16)-1)
-    , localparam counter_width_lp          = `BSG_SAFE_CLOG2(max_counter_val_lp)
-
     // Interface Widths
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
   )
-  (input                                               clk_i
-   , input                                             reset_i
+  (input                                            clk_i
+   , input                                          reset_i
 
    // Configuration Interface
-   , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]                   cfg_bus_i
 
    // ucode programming interface, synchronous read, direct connection to RAM
-   , input                                             ucode_v_i
-   , input                                             ucode_w_i
-   , input [cce_pc_width_p-1:0]                        ucode_addr_i
-   , input [cce_instr_width_gp-1:0]                     ucode_data_i
-   , output [cce_instr_width_gp-1:0]                    ucode_data_o
+   , input                                          ucode_v_i
+   , input                                          ucode_w_i
+   , input [cce_pc_width_p-1:0]                     ucode_addr_i
+   , input [cce_instr_width_gp-1:0]                 ucode_data_i
+   , output [cce_instr_width_gp-1:0]                ucode_data_o
 
    // LCE-CCE Interface
-   , input [lce_req_msg_width_lp-1:0]                  lce_req_i
-   , input                                             lce_req_v_i
-   , output logic                                      lce_req_yumi_o
+   // BedRock Burst protocol: ready&valid
+   , input [lce_req_msg_header_width_lp-1:0]        lce_req_header_i
+   , input                                          lce_req_header_v_i
+   , output logic                                   lce_req_header_ready_and_o
+   , input                                          lce_req_has_data_i
+   , input [dword_width_gp-1:0]                     lce_req_data_i
+   , input                                          lce_req_data_v_i
+   , output logic                                   lce_req_data_ready_and_o
+   , input                                          lce_req_last_i
 
-   , input [lce_resp_msg_width_lp-1:0]                 lce_resp_i
-   , input                                             lce_resp_v_i
-   , output logic                                      lce_resp_yumi_o
+   , input [lce_resp_msg_header_width_lp-1:0]       lce_resp_header_i
+   , input                                          lce_resp_header_v_i
+   , output logic                                   lce_resp_header_ready_and_o
+   , input                                          lce_resp_has_data_i
+   , input [dword_width_gp-1:0]                     lce_resp_data_i
+   , input                                          lce_resp_data_v_i
+   , output logic                                   lce_resp_data_ready_and_o
+   , input                                          lce_resp_last_i
 
-   // ready->valid
-   , output logic [lce_cmd_msg_width_lp-1:0]           lce_cmd_o
-   , output logic                                      lce_cmd_v_o
-   , input                                             lce_cmd_ready_i
+   , output logic [lce_cmd_msg_header_width_lp-1:0] lce_cmd_header_o
+   , output logic                                   lce_cmd_header_v_o
+   , input                                          lce_cmd_header_ready_and_i
+   , output logic                                   lce_cmd_has_data_o
+   , output logic [dword_width_gp-1:0]              lce_cmd_data_o
+   , output logic                                   lce_cmd_data_v_o
+   , input                                          lce_cmd_data_ready_and_i
+   , output logic                                   lce_cmd_last_o
 
    // CCE-MEM Interface
-   , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
-   , input                                             mem_resp_v_i
-   , output logic                                      mem_resp_yumi_o
+   // BedRock Stream protocol: ready&valid
+   , input [cce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
+   , input [dword_width_gp-1:0]                     mem_resp_data_i
+   , input                                          mem_resp_v_i
+   , output logic                                   mem_resp_ready_and_o
+   , input                                          mem_resp_last_i
 
-   // ready->valid
-   , output logic [cce_mem_msg_width_lp-1:0]           mem_cmd_o
-   , output logic                                      mem_cmd_v_o
-   , input                                             mem_cmd_ready_i
-
+   , output logic [cce_mem_msg_header_width_lp-1:0] mem_cmd_header_o
+   , output logic [dword_width_gp-1:0]              mem_cmd_data_o
+   , output logic                                   mem_cmd_v_o
+   , input                                          mem_cmd_ready_and_i
+   , output logic                                   mem_cmd_last_o
   );
 
-  // CCE Parameter Assertions
-  //synopsys translate_off
-  initial begin
-    assert(`BSG_IS_POW2(cce_way_groups_p))
-      else $error("Number of way groups must be a power of two");
-    assert(`BSG_IS_POW2(dcache_assoc_p) && `BSG_IS_POW2(dcache_sets_p))
-      else $error("D$ sets and assoc must be power of two");
-    assert(`BSG_IS_POW2(icache_assoc_p) && `BSG_IS_POW2(icache_sets_p))
-      else $error("I$ sets and assoc must be power of two");
-    assert(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0)
-      else $error("A$ assoc must be power of two or 0");
-    assert(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0)
-      else $error("A$ sets must be power of two or 0");
-    assert (icache_block_width_p == cce_block_width_p) else $error("icache block width must match cce block width");
-    assert (dcache_block_width_p == cce_block_width_p) else $error("dcache block width must match cce block width");
-    assert (acache_block_width_p == cce_block_width_p) else $error("acache block width must match cce block width");
-    assert (block_size_in_bytes_lp inside {8, 16, 32, 64, 128}) else $error("invalid CCE block width");
-  end
-  //synopsys translate_on
+  // parameter checks
+  if (!(`BSG_IS_POW2(cce_way_groups_p))) $fatal(0,"Number of way groups must be a power of two");
+  if (!(`BSG_IS_POW2(dcache_assoc_p) && `BSG_IS_POW2(dcache_sets_p)))
+    $fatal(0,"D$ sets and assoc must be power of two");
+  if (!(`BSG_IS_POW2(icache_assoc_p) && `BSG_IS_POW2(icache_sets_p)))
+    $fatal(0,"I$ sets and assoc must be power of two");
+  if (!(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0))
+    $fatal(0,"A$ assoc must be power of two or 0");
+  if (!(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0))
+    $fatal(0,"A$ sets must be power of two or 0");
+  if (icache_block_width_p != cce_block_width_p)
+    $fatal(0,"icache block width must match cce block width");
+  if (dcache_block_width_p != cce_block_width_p)
+    $fatal(0,"dcache block width must match cce block width");
+  if (acache_block_width_p != cce_block_width_p)
+    $fatal(0,"acache block width must match cce block width");
+  if (!(`BSG_IS_POW2(cce_block_width_p) || cce_block_width_p < 64 || cce_block_width_p > 1024))
+    $fatal(0, "invalid CCE block width");
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  // Config Interface
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-
   // MSHR
   `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
 
-  // Config bus casting
+  // Config Interface
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+
+  // LCE-CCE Interface structs
+  bp_bedrock_lce_req_msg_header_s  lce_req;
+  bp_bedrock_lce_resp_msg_header_s lce_resp;
+  bp_bedrock_lce_cmd_msg_header_s  lce_cmd;
+  assign lce_cmd_header_o = lce_cmd;
+
+  // Config bus
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
-
-  // Message casting
-  bp_bedrock_lce_req_msg_s  lce_req;
-  bp_bedrock_lce_resp_msg_s lce_resp;
-  bp_bedrock_lce_cmd_msg_s  lce_cmd;
-  bp_bedrock_cce_mem_msg_s  mem_cmd, mem_resp;
-  assign lce_req   = lce_req_i;
-  assign lce_resp  = lce_resp_i;
-  assign lce_cmd_o = lce_cmd;
-  assign mem_cmd_o = mem_cmd;
-  assign mem_resp  = mem_resp_i;
-
 
   // Inter-module signals
 
@@ -229,9 +234,23 @@ module bp_cce
   logic                                      msg_mem_resp_busy_lo;
   logic                                      msg_busy_lo;
   logic                                      msg_mem_credits_empty_lo;
+  logic                                      msg_mem_cmd_stall_lo;
 
-  // From Stall Unit
-  //logic [counter_width_lp-1:0]               stall_count_lo;
+  // From memory response stream pump to CCE
+  bp_bedrock_cce_mem_msg_header_s mem_resp_base_header_li;
+  logic mem_resp_v_li, mem_resp_yumi_lo;
+  logic mem_resp_stream_new_li, mem_resp_stream_last_li, mem_resp_stream_done_li;
+  logic [paddr_width_p-1:0] mem_resp_addr_li;
+  logic [dword_width_gp-1:0] mem_resp_data_li;
+
+  // From CCE to memory command stream pump
+  localparam stream_words_lp = cce_block_width_p / dword_width_gp;
+  localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
+  bp_bedrock_cce_mem_msg_header_s mem_cmd_base_header_lo;
+  logic mem_cmd_v_lo, mem_cmd_ready_and_li;
+  logic mem_cmd_stream_new_li, mem_cmd_stream_done_li;
+  logic [dword_width_gp-1:0] mem_cmd_data_lo;
+  logic [data_len_width_lp-1:0] mem_cmd_stream_cnt_li;
 
   /*
    * Fetch Stage
@@ -273,8 +292,109 @@ module bp_cce
       );
 
   /*
+   * Stream pumps
+   *
+   * The CCE logic interacts with the FSM side of the stream pumps, including all signals used
+   * for arbitration, data routing, stall detection, etc.
+   *
+   * The FSM side of the stream pumps is considered part of the CCE's execute stage.
+   */
+
+  // Memory Response Stream Pump
+  // provide buffer space for two stream messages with data (for coherence protocol)
+  localparam mem_resp_buffer_els_lp = 2;
+  bp_me_stream_pump_in
+    #(.bp_params_p(bp_params_p)
+      ,.stream_data_width_p(dword_width_gp)
+      ,.block_width_p(cce_block_width_p)
+      ,.payload_width_p(cce_mem_payload_width_lp)
+      ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
+      ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
+      ,.buffer_els_p(mem_resp_buffer_els_lp)
+      )
+    mem_resp_stream_pump
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      // from memory response input
+      ,.msg_header_i(mem_resp_header_i)
+      ,.msg_data_i(mem_resp_data_i)
+      ,.msg_v_i(mem_resp_v_i)
+      ,.msg_last_i(mem_resp_last_i)
+      ,.msg_ready_and_o(mem_resp_ready_and_o)
+      // to FSM CCE
+      ,.fsm_base_header_o(mem_resp_base_header_li)
+      ,.fsm_addr_o(mem_resp_addr_li)
+      ,.fsm_data_o(mem_resp_data_li)
+      ,.fsm_v_o(mem_resp_v_li)
+      ,.fsm_ready_and_i(mem_resp_yumi_lo)
+      ,.fsm_new_o(mem_resp_stream_new_li)
+      ,.fsm_last_o(mem_resp_stream_last_li)
+      ,.fsm_done_o(mem_resp_stream_done_li)
+      );
+
+  // Memory Command Stream Pump
+  bp_me_stream_pump_out
+    #(.bp_params_p(bp_params_p)
+      ,.stream_data_width_p(dword_width_gp)
+      ,.block_width_p(cce_block_width_p)
+      ,.payload_width_p(cce_mem_payload_width_lp)
+      ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
+      ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
+      )
+    mem_cmd_stream_pump
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      // to memory command output
+      ,.msg_header_o(mem_cmd_header_o)
+      ,.msg_data_o(mem_cmd_data_o)
+      ,.msg_v_o(mem_cmd_v_o)
+      ,.msg_last_o(mem_cmd_last_o)
+      ,.msg_ready_and_i(mem_cmd_ready_and_i)
+      // from FSM CCE
+      ,.fsm_base_header_i(mem_cmd_base_header_lo)
+      ,.fsm_data_i(mem_cmd_data_lo)
+      ,.fsm_v_i(mem_cmd_v_lo)
+      ,.fsm_ready_and_o(mem_cmd_ready_and_li)
+      ,.fsm_cnt_o(mem_cmd_stream_cnt_li)
+      ,.fsm_new_o(mem_cmd_stream_new_li)
+      ,.fsm_done_o(mem_cmd_stream_done_li)
+      );
+
+  /*
    * Decode/Execute Stage
    */
+
+  // lce request header buffer
+  logic lce_req_v, lce_req_yumi;
+  logic lce_req_has_data;
+  bsg_two_fifo
+    #(.width_p(lce_req_msg_header_width_lp+1))
+    lce_req_buffer
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.ready_o(lce_req_header_ready_and_o)
+      ,.data_i({lce_req_has_data_i, lce_req_header_i})
+      ,.v_i(lce_req_header_v_i)
+      ,.v_o(lce_req_v)
+      ,.data_o({lce_req_has_data, lce_req})
+      ,.yumi_i(lce_req_yumi)
+      );
+
+  // lce response header buffer
+  logic lce_resp_v, lce_resp_yumi;
+  logic lce_resp_has_data;
+  bsg_two_fifo
+    #(.width_p(lce_resp_msg_header_width_lp+1))
+    lce_resp_buffer
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.ready_o(lce_resp_header_ready_and_o)
+      ,.data_i({lce_resp_has_data_i, lce_resp_header_i})
+      ,.v_i(lce_resp_header_v_i)
+      ,.v_o(lce_resp_v)
+      ,.data_o({lce_resp_has_data, lce_resp})
+      ,.yumi_i(lce_resp_yumi)
+      );
 
   // Instruction Decode
   bp_cce_inst_decode
@@ -343,12 +463,15 @@ module bp_cce
       ,.sharers_hits_i(sharers_hits_lo)
       ,.sharers_ways_i(sharers_ways_lo)
       ,.sharers_coh_states_i(sharers_coh_states_lo)
-      ,.mem_resp_v_i(mem_resp_v_i)
-      ,.lce_resp_v_i(lce_resp_v_i)
-      ,.lce_req_v_i(lce_req_v_i)
-      ,.lce_req_i(lce_req)
-      ,.lce_resp_i(lce_resp)
-      ,.mem_resp_i(mem_resp)
+      ,.mem_resp_v_i(mem_resp_v_li)
+      ,.lce_resp_header_v_i(lce_resp_v)
+      ,.lce_req_header_v_i(lce_req_v)
+      ,.lce_req_header_i(lce_req)
+      ,.lce_resp_header_i(lce_resp)
+      ,.mem_resp_header_i(mem_resp_base_header_li)
+      ,.lce_req_data_i(lce_req_data_i)
+      ,.lce_resp_data_i(lce_resp_data_i)
+      ,.mem_resp_data_i(mem_resp_data_li)
       ,.src_a_o(src_a)
       ,.src_b_o(src_b)
       ,.addr_o(addr_lo)
@@ -518,10 +641,10 @@ module bp_cce
       ,.src_a_i(src_a)
       ,.alu_res_i(alu_res_lo)
 
-      ,.lce_req_header_i(lce_req.header)
-      ,.lce_req_v_i(lce_req_v_i)
-      ,.lce_resp_header_i(lce_resp.header)
-      ,.mem_resp_header_i(mem_resp.header)
+      ,.lce_req_header_i(lce_req)
+      ,.lce_req_v_i(lce_req_v)
+      ,.lce_resp_header_i(lce_resp)
+      ,.mem_resp_header_i(mem_resp_base_header_li)
 
       ,.pending_i(pending_lo)
 
@@ -562,29 +685,55 @@ module bp_cce
 
       ,.cfg_bus_i(cfg_bus_i)
 
-      // To CCE
-      ,.lce_req_i(lce_req)
-      ,.lce_req_v_i(lce_req_v_i)
-      ,.lce_req_yumi_o(lce_req_yumi_o)
+      // LCE-CCE Interface
+      // BedRock Burst protocol: ready&valid
+      // inbound headers use valid->yumi
+      ,.lce_req_header_i(lce_req)
+      ,.lce_req_header_v_i(lce_req_v)
+      ,.lce_req_header_yumi_o(lce_req_yumi)
+      ,.lce_req_has_data_i(lce_req_has_data)
+      ,.lce_req_data_i(lce_req_data_i)
+      ,.lce_req_data_v_i(lce_req_data_v_i)
+      ,.lce_req_data_ready_and_o(lce_req_data_ready_and_o)
+      ,.lce_req_last_i(lce_req_last_i)
 
-      ,.lce_resp_i(lce_resp)
-      ,.lce_resp_v_i(lce_resp_v_i)
-      ,.lce_resp_yumi_o(lce_resp_yumi_o)
+      ,.lce_resp_header_i(lce_resp)
+      ,.lce_resp_header_v_i(lce_resp_v)
+      ,.lce_resp_header_yumi_o(lce_resp_yumi)
+      ,.lce_resp_has_data_i(lce_resp_has_data)
+      ,.lce_resp_data_i(lce_resp_data_i)
+      ,.lce_resp_data_v_i(lce_resp_data_v_i)
+      ,.lce_resp_data_ready_and_o(lce_resp_data_ready_and_o)
+      ,.lce_resp_last_i(lce_resp_last_i)
 
-      // From CCE
-      ,.lce_cmd_o(lce_cmd)
-      ,.lce_cmd_v_o(lce_cmd_v_o)
-      ,.lce_cmd_ready_i(lce_cmd_ready_i)
+      ,.lce_cmd_header_o(lce_cmd)
+      ,.lce_cmd_header_v_o(lce_cmd_header_v_o)
+      ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_i)
+      ,.lce_cmd_has_data_o(lce_cmd_has_data_o)
+      ,.lce_cmd_data_o(lce_cmd_data_o)
+      ,.lce_cmd_data_v_o(lce_cmd_data_v_o)
+      ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_i)
+      ,.lce_cmd_last_o(lce_cmd_last_o)
 
-      // To CCE
-      ,.mem_resp_i(mem_resp)
-      ,.mem_resp_v_i(mem_resp_v_i)
-      ,.mem_resp_yumi_o(mem_resp_yumi_o)
+      // CCE-MEM Interface
+      // BedRock Burst protocol: ready&valid
+      // inbound headers use valid->yumi
+      ,.mem_resp_header_i(mem_resp_base_header_li)
+      ,.mem_resp_addr_i(mem_resp_addr_li)
+      ,.mem_resp_data_i(mem_resp_data_li)
+      ,.mem_resp_v_i(mem_resp_v_li)
+      ,.mem_resp_yumi_o(mem_resp_yumi_lo)
+      ,.mem_resp_stream_new_i(mem_resp_stream_new_li)
+      ,.mem_resp_stream_last_i(mem_resp_stream_last_li)
+      ,.mem_resp_stream_done_i(mem_resp_stream_done_li)
 
-      // From CCE
-      ,.mem_cmd_o(mem_cmd)
-      ,.mem_cmd_v_o(mem_cmd_v_o)
-      ,.mem_cmd_ready_i(mem_cmd_ready_i)
+      ,.mem_cmd_header_o(mem_cmd_base_header_lo)
+      ,.mem_cmd_data_o(mem_cmd_data_lo)
+      ,.mem_cmd_v_o(mem_cmd_v_lo)
+      ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
+      ,.mem_cmd_stream_cnt_i(mem_cmd_stream_cnt_li)
+      ,.mem_cmd_stream_new_i(mem_cmd_stream_new_li)
+      ,.mem_cmd_stream_done_i(mem_cmd_stream_done_li)
 
       // Inputs
       ,.lce_i(lce_lo)
@@ -632,7 +781,8 @@ module bp_cce
       ,.busy_o(msg_busy_lo)
       // memory credits empty
       ,.mem_credits_empty_o(msg_mem_credits_empty_lo)
-
+      // memory command send stall
+      ,.mem_cmd_stall_o(msg_mem_cmd_stall_lo)
       );
 
   // Speculative Access Bits
@@ -670,13 +820,13 @@ module bp_cce
     inst_stall
      (.decoded_inst_i(decoded_inst_lo)
 
-      ,.lce_req_v_i(lce_req_v_i)
-      ,.lce_resp_v_i(lce_resp_v_i)
-      ,.mem_resp_v_i(mem_resp_v_i)
+      ,.lce_req_header_v_i(lce_req_v)
+      ,.lce_resp_header_v_i(lce_resp_v)
+      ,.mem_resp_v_i(mem_resp_v_li)
       ,.pending_v_i('0)
 
-      ,.lce_cmd_ready_i(lce_cmd_ready_i)
-      ,.mem_cmd_ready_i(mem_cmd_ready_i)
+      ,.lce_cmd_header_v_i(lce_cmd_header_v_o)
+      ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_i)
       ,.mem_credits_empty_i(msg_mem_credits_empty_lo)
 
       // From Messague Unit
@@ -687,6 +837,7 @@ module bp_cce
       ,.msg_mem_resp_busy_i(msg_mem_resp_busy_lo)
       ,.msg_spec_r_busy_i(msg_spec_r_v_lo)
       ,.msg_dir_w_busy_i(msg_dir_w_v_lo)
+      ,.msg_mem_cmd_stall_i(msg_mem_cmd_stall_lo)
 
       // From Directory
       ,.dir_busy_i(dir_busy_lo)

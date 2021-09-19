@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_spec_bits.v
+ *   bp_cce_spec_bits.sv
  *
  * Description:
  *   This module contains the metadata required for speculative memory accesses.

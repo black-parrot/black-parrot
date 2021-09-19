@@ -4,7 +4,6 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_tx.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
-$BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_arb_round_robin.v
@@ -18,7 +17,6 @@ $BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.v
 # top files
 $BP_TOP_DIR/test/common/bp_nonsynth_cache_tracer.sv
 # me files
-$BP_ME_DIR/src/v/cce/bp_cce_fsm_top.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
 $BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv

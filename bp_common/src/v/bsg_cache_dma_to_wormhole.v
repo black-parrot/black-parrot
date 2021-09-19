@@ -305,3 +305,5 @@ module bsg_cache_dma_to_wormhole
   //synopsys translate_on
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bsg_cache_dma_to_wormhole)

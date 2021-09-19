@@ -7,7 +7,6 @@
  *    Caution: large fanouts may struggle with timing
  */
 
-
 `include "bsg_defines.v"
 `include "bsg_noc_links.vh"
 `include "bsg_cache.vh"

@@ -95,6 +95,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_buf_ctrl.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_circular_ptr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_concentrate_static.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_down.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down.v
@@ -177,6 +178,8 @@ $HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
 ## FE files
@@ -192,7 +195,9 @@ $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 # Cache
-$BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_dram_hash_decode.sv
+$BP_ME_DIR/src/v/dev/bp_me_dram_hash_encode.sv
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_alu.sv
@@ -216,48 +221,34 @@ $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
+# Dev
+$BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
+$BP_ME_DIR/src/v/dev/bp_me_clint_slice.sv
+$BP_ME_DIR/src/v/dev/bp_me_cfg.sv
+$BP_ME_DIR/src/v/dev/bp_me_loopback.sv
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_bidir.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_client.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_master.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_lce_id_to_cord.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_cmd.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.sv
-$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.sv
-## TOP
-$BP_TOP_DIR/src/v/bp_loopback.sv
-$BP_TOP_DIR/src/v/bp_nd_socket.sv
-$BP_TOP_DIR/src/v/bp_cacc_vdp.sv
-$BP_TOP_DIR/src/v/bp_cacc_tile.sv
-$BP_TOP_DIR/src/v/bp_cacc_tile_node.sv
-$BP_TOP_DIR/src/v/bp_cacc_complex.sv
-$BP_TOP_DIR/src/v/bp_sacc_vdp.sv
-$BP_TOP_DIR/src/v/bp_sacc_tile.sv
-$BP_TOP_DIR/src/v/bp_sacc_tile_node.sv
-$BP_TOP_DIR/src/v/bp_sacc_complex.sv
-$BP_TOP_DIR/src/v/bp_cfg.sv
-$BP_TOP_DIR/src/v/bp_core.sv
-$BP_TOP_DIR/src/v/bp_core_complex.sv
-$BP_TOP_DIR/src/v/bp_clint_slice.sv
-$BP_TOP_DIR/src/v/bp_l2e_tile.sv
-$BP_TOP_DIR/src/v/bp_l2e_tile_node.sv
-$BP_TOP_DIR/src/v/bp_io_complex.sv
-$BP_TOP_DIR/src/v/bp_io_link_to_lce.sv
-$BP_TOP_DIR/src/v/bp_io_tile.sv
-$BP_TOP_DIR/src/v/bp_io_tile_node.sv
-$BP_TOP_DIR/src/v/bp_mem_complex.sv
-$BP_TOP_DIR/src/v/bp_multicore.sv
-$BP_TOP_DIR/src/v/bp_unicore.sv
-$BP_TOP_DIR/src/v/bp_tile.sv
-$BP_TOP_DIR/src/v/bp_tile_node.sv
+$BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
+$BP_ME_DIR/src/v/network/bp_me_cce_id_to_cord.sv
+$BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
+$BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_cmd.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_req.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_resp.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem_cmd.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem_resp.sv
+$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
+$BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
+$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
+$BP_ME_DIR/src/v/network/bp_me_lite_to_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_to_lite.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
+$BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
+

@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_pma.v
+ *   bp_cce_pma.sv
  *
  * Description:
  *   This module defines the physical memory attributes (PMAs) obeyed by the CCE.

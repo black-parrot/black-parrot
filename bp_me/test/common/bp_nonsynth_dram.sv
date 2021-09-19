@@ -19,7 +19,7 @@ module bp_nonsynth_dram
    , parameter preload_mem_p = 0
    , parameter mem_els_p = 0
    , parameter dram_type_p = ""
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(caddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                                    clk_i
    , input                                                  reset_i
@@ -40,6 +40,32 @@ module bp_nonsynth_dram
    , input                                                  dram_reset_i
    );
 
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  bsg_cache_dma_pkt_s [num_dma_p-1:0] dma_pkt_li, dma_pkt;
+  assign dma_pkt_li = dma_pkt_i;
+  localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
+  localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(lce_sets_p);
+  localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
+  localparam int hash_offset_widths_lp[2:0] = '{(lg_lce_sets_lp-lg_num_cce_lp), lg_num_cce_lp, block_offset_lp};
+  genvar i;
+  for (i = 0; i < num_dma_p; i++) begin : address_hash
+    logic [daddr_width_p-1:0] addr_lo;
+    bp_me_dram_hash_decode
+      #(.bp_params_p(bp_params_p)
+        ,.offset_widths_p(hash_offset_widths_lp)
+        ,.addr_width_p(daddr_width_p)
+        )
+      dma_addr_hash
+      (.addr_i(dma_pkt_li[i].addr)
+       ,.addr_o(addr_lo)
+       );
+
+    always_comb begin
+      dma_pkt[i] = dma_pkt_li[i];
+      dma_pkt[i].addr = addr_lo;
+    end
+  end
+
   if (dram_type_p == "dmc")
     begin : ddr
       bp_ddr
@@ -48,7 +74,7 @@ module bp_nonsynth_dram
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.dma_pkt_i(dma_pkt_i)
+         ,.dma_pkt_i(dma_pkt)
          ,.dma_pkt_v_i(dma_pkt_v_i)
          ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 
@@ -82,11 +108,11 @@ module bp_nonsynth_dram
            $error("bsg_cache_to_test_dram doesn't support NPOT number of caches. Use AXI mem instead");
          end
 
-       // TODO: May need to use actual hash function 
+       // TODO: May need to use actual hash function
        localparam cache_bank_addr_width_lp = `dram_pkg::channel_addr_width_p - `BSG_SAFE_CLOG2(num_dma_p);
        bsg_cache_to_test_dram
         #(.num_cache_p(num_dma_p)
-          ,.addr_width_p(caddr_width_p)
+          ,.addr_width_p(daddr_width_p)
           ,.data_width_p(l2_data_width_p)
           ,.block_size_in_words_p(l2_block_size_in_words_p)
           ,.cache_bank_addr_width_p(cache_bank_addr_width_lp)
@@ -99,7 +125,7 @@ module bp_nonsynth_dram
         (.core_clk_i(clk_i)
          ,.core_reset_i(reset_i)
 
-         ,.dma_pkt_i(dma_pkt_i)
+         ,.dma_pkt_i(dma_pkt)
          ,.dma_pkt_v_i(dma_pkt_v_i)
          ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 
@@ -203,7 +229,8 @@ module bp_nonsynth_dram
       localparam axi_burst_len_p = 1;
 
       logic [axi_id_width_p-1:0] axi_awid;
-      logic [axi_addr_width_p-1:0] axi_awaddr;
+      logic [caddr_width_p-1:0] axi_awaddr_addr;
+      logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_awaddr_cache_id;
       logic [7:0] axi_awlen;
       logic [2:0] axi_awsize;
       logic [1:0] axi_awburst;
@@ -220,7 +247,8 @@ module bp_nonsynth_dram
       logic axi_bvalid, axi_bready;
 
       logic [axi_id_width_p-1:0] axi_arid;
-      logic [axi_addr_width_p-1:0] axi_araddr;
+      logic [caddr_width_p-1:0] axi_araddr_addr;
+      logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_araddr_cache_id;
       logic [7:0] axi_arlen;
       logic [2:0] axi_arsize;
       logic [1:0] axi_arburst;
@@ -234,12 +262,11 @@ module bp_nonsynth_dram
       logic axi_rlast, axi_rvalid, axi_rready;
 
       bsg_cache_to_axi
-       #(.addr_width_p(caddr_width_p)
+       #(.addr_width_p(daddr_width_p)
          ,.data_width_p(l2_fill_width_p)
          ,.block_size_in_words_p(l2_block_size_in_fill_p)
          ,.num_cache_p(num_dma_p)
          ,.axi_id_width_p(axi_id_width_p)
-         ,.axi_addr_width_p(axi_addr_width_p)
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_burst_len_p(axi_burst_len_p)
          )
@@ -247,7 +274,7 @@ module bp_nonsynth_dram
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.dma_pkt_i(dma_pkt_i)
+         ,.dma_pkt_i(dma_pkt)
          ,.dma_pkt_v_i(dma_pkt_v_i)
          ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 
@@ -260,7 +287,8 @@ module bp_nonsynth_dram
          ,.dma_data_yumi_o(dma_data_yumi_o)
 
          ,.axi_awid_o(axi_awid)
-         ,.axi_awaddr_o(axi_awaddr)
+         ,.axi_awaddr_addr_o(axi_awaddr_addr)
+         ,.axi_awaddr_cache_id_o(axi_awaddr_cache_id)
          ,.axi_awlen_o(axi_awlen)
          ,.axi_awsize_o(axi_awsize)
          ,.axi_awburst_o(axi_awburst)
@@ -281,7 +309,8 @@ module bp_nonsynth_dram
          ,.axi_bvalid_i(axi_bvalid)
          ,.axi_bready_o(axi_bready)
          ,.axi_arid_o(axi_arid)
-         ,.axi_araddr_o(axi_araddr)
+         ,.axi_araddr_addr_o(axi_araddr_addr)
+         ,.axi_araddr_cache_id_o(axi_araddr_cache_id)
          ,.axi_arlen_o(axi_arlen)
          ,.axi_arsize_o(axi_arsize)
          ,.axi_arburst_o(axi_arburst)
@@ -298,6 +327,9 @@ module bp_nonsynth_dram
          ,.axi_rvalid_i(axi_rvalid)
          ,.axi_rready_o(axi_rready)
          );
+
+      wire [axi_addr_width_p-1:0] axi_araddr = {axi_araddr_cache_id, (axi_araddr_addr-dram_base_addr_gp)};
+      wire [axi_addr_width_p-1:0] axi_awaddr = {axi_awaddr_cache_id, (axi_awaddr_addr-dram_base_addr_gp)};
 
       bsg_nonsynth_axi_mem
        #(.axi_id_width_p(axi_id_width_p)

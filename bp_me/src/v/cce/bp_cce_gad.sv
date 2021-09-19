@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_gad.v
+ *   bp_cce_gad.sv
  *
  * Description:
  *   The GAD (Generate Auxiliary Directory Information) module computes the values of a number of

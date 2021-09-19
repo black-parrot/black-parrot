@@ -77,11 +77,17 @@ module bp_nonsynth_if_verif
     $fatal("Error: Cache fill width should be less or equal to L1 cache block width");
   if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0) || (dcache_fill_width_p % (dcache_block_width_p / dcache_assoc_p) != 0))
     $fatal("Error: Cache fill width should be a multiple of cache bank width");
+  if (icache_fill_width_p != dcache_fill_width_p)
+    $fatal("Error: L1-Cache fill width should be the same");
+  if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
+    $fatal("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
+  if ((multicore_p == 1) && (l2_data_width_p != dword_width_gp))
+    $fatal("Error: multicore requires L2 data width same as dword width");
+  if (l2_data_width_p < l2_fill_width_p)
+    $fatal("Error: L2 fill width must be at least as large as L2 data width");
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");
-  if (l2_data_width_p != 64)
-    $error("L2 data width must be 64");
 
   //if (bht_entry_width_p/2 < 2 || bht_entry_width_p/2*2 != bht_entry_width_p)
   //  $warning("BHT fold width must be power of 2 greater than 2");
@@ -90,9 +96,13 @@ module bp_nonsynth_if_verif
     $warning("Warning: VM will not work without 39 bit vaddr");
   if (paddr_width_p < 33)
     $warning("Warning: paddr < 33 has not been tested");
-  if (caddr_width_p < 32)
-    $warning("Warning: caddr < 32 has not been tested");
-  if (caddr_width_p >= paddr_width_p)
+  if (daddr_width_p < 32)
+    $warning("Warning: daddr < 32 has not been tested");
+  if (caddr_width_p < 31)
+    $warning("Warning: caddr < 31 has not been tested");
+  if (caddr_width_p >= daddr_width_p)
+    $warning("Warning: caddr must <= daddr");
+  if (daddr_width_p >= paddr_width_p)
     $fatal("Error: caddr cannot exceed paddr_width_p-1");
 
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))

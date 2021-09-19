@@ -1,6 +1,6 @@
 /**
  *  Name:
- *    bp_lce.v
+ *    bp_lce.sv
  *
  *
  *  Description:
@@ -109,20 +109,17 @@ module bp_lce
     , input                                          lce_cmd_ready_then_i
   );
 
-  //synopsys translate_off
-  initial begin
-    assert((sets_p > 1) && `BSG_IS_POW2(sets_p)) else
-      $error("LCE sets must be greater than 1 and power of two");
-    assert((block_width_p % 8 == 0) && `BSG_IS_POW2(block_width_p)) else
-      $error("LCE block width must be a whole number of bytes and power of two");
-    assert(block_width_p <= 1024) else
-      $error("LCE block width must be no greater than 128 bytes");
-    assert(fill_width_p == block_width_p) else
-      $error("LCE block width must be equal to fill width. Partial fill is not supported");
-    assert(`BSG_IS_POW2(assoc_p)) else
-      $error("LCE assoc must be power of two");
-  end
-  //synopsys translate_on
+  // parameter checks
+  if ((sets_p <= 1) || !(`BSG_IS_POW2(sets_p)))
+    $fatal(0,"LCE sets must be greater than 1 and power of two");
+  if ((block_width_p % 8 != 0) || !(`BSG_IS_POW2(block_width_p)))
+    $fatal(0,"LCE block width must be a whole number of bytes and power of two");
+  if (block_width_p > 1024)
+    $fatal(0,"LCE block width must be no greater than 128 bytes");
+  if (fill_width_p != block_width_p)
+    $fatal(0,"LCE block width must be equal to fill width. Partial fill is not supported");
+  if (!(`BSG_IS_POW2(assoc_p)))
+    $fatal(0,"LCE assoc must be power of two");
 
   // LCE Request Module
   logic req_ready_lo;

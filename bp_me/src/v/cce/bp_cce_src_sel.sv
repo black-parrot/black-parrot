@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_src_sel.v
+ *   bp_cce_src_sel.sv
  *
  * Description:
  *   Source select module for inputs to ALU, Branch unit, directory, GAD, messages, etc.
@@ -58,11 +58,15 @@ module bp_cce_src_sel
    , input [num_lce_p-1:0][lce_assoc_width_p-1:0]                   sharers_ways_i
    , input bp_coh_states_e [num_lce_p-1:0]                          sharers_coh_states_i
    , input                                                          mem_resp_v_i
-   , input                                                          lce_resp_v_i
-   , input                                                          lce_req_v_i
-   , input [lce_req_msg_width_lp-1:0]                               lce_req_i
-   , input [lce_resp_msg_width_lp-1:0]                              lce_resp_i
-   , input [cce_mem_msg_width_lp-1:0]                               mem_resp_i
+   , input                                                          lce_resp_header_v_i
+   , input                                                          lce_req_header_v_i
+   , input [lce_req_msg_header_width_lp-1:0]                        lce_req_header_i
+   , input [lce_resp_msg_header_width_lp-1:0]                       lce_resp_header_i
+   , input [cce_mem_msg_header_width_lp-1:0]                        mem_resp_header_i
+   // TODO: data inputs are not guarded by valid
+   , input [dword_width_gp-1:0]                                     lce_req_data_i
+   , input [dword_width_gp-1:0]                                     lce_resp_data_i
+   , input [dword_width_gp-1:0]                                     mem_resp_data_i
 
    // Source A and B outputs
    , output logic [`bp_cce_inst_gpr_width-1:0]   src_a_o
@@ -77,12 +81,11 @@ module bp_cce_src_sel
    , output bp_coh_states_e                      state_o
   );
 
-  //synopsys translate_off
+  // parameter checks
   initial begin
-    assert(cce_block_width_p >= `bp_cce_inst_gpr_width)
-      else $error("CCE block width must be greater than CCE GPR width");
+    if (cce_block_width_p < `bp_cce_inst_gpr_width)
+      $fatal(0,"CCE block width must be greater than CCE GPR width");
   end
-  //synopsys translate_on
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast;
@@ -97,19 +100,13 @@ module bp_cce_src_sel
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // Message casting
-  bp_bedrock_lce_req_msg_s  lce_req;
-  bp_bedrock_lce_resp_msg_s lce_resp;
-  bp_bedrock_cce_mem_msg_s  mem_resp;
-  bp_bedrock_lce_req_payload_s  lce_req_payload;
-  bp_bedrock_lce_resp_payload_s lce_resp_payload;
-  bp_bedrock_cce_mem_payload_s  mem_resp_payload;
+  bp_bedrock_lce_req_msg_header_s  lce_req_header_li;
+  bp_bedrock_lce_resp_msg_header_s lce_resp_header_li;
+  bp_bedrock_cce_mem_msg_header_s  mem_resp_header_li;
 
-  assign lce_req   = lce_req_i;
-  assign lce_resp  = lce_resp_i;
-  assign mem_resp  = mem_resp_i;
-  assign lce_req_payload = lce_req.header.payload;
-  assign lce_resp_payload = lce_resp.header.payload;
-  assign mem_resp_payload = mem_resp.header.payload;
+  assign lce_req_header_li   = lce_req_header_i;
+  assign lce_resp_header_li  = lce_resp_header_i;
+  assign mem_resp_header_li  = mem_resp_header_i;
 
   always_comb begin
     src_a_o = '0;
@@ -179,14 +176,14 @@ module bp_cce_src_sel
       e_src_sel_queue: begin
         unique case (src_a_i.q)
           e_opd_mem_resp_v:    src_a_o[0] = mem_resp_v_i;
-          e_opd_lce_resp_v:    src_a_o[0] = lce_resp_v_i;
+          e_opd_lce_resp_v:    src_a_o[0] = lce_resp_header_v_i;
           e_opd_pending_v:     src_a_o = '0;
-          e_opd_lce_req_v:     src_a_o[0] = lce_req_v_i;
-          e_opd_lce_resp_type: src_a_o[0+:$bits(bp_bedrock_resp_type_e)] = lce_resp.header.msg_type.resp;
-          e_opd_mem_resp_type: src_a_o[0+:$bits(bp_bedrock_mem_type_e)] = mem_resp.header.msg_type.mem;
-          e_opd_lce_resp_data: src_a_o = lce_resp.data[0+:`bp_cce_inst_gpr_width];
-          e_opd_mem_resp_data: src_a_o = mem_resp.data[0+:`bp_cce_inst_gpr_width];
-          e_opd_lce_req_data:  src_a_o = lce_req.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_lce_req_v:     src_a_o[0] = lce_req_header_v_i;
+          e_opd_lce_resp_type: src_a_o[0+:$bits(bp_bedrock_resp_type_e)] = lce_resp_header_li.msg_type.resp;
+          e_opd_mem_resp_type: src_a_o[0+:$bits(bp_bedrock_mem_type_e)] = mem_resp_header_li.msg_type.mem;
+          e_opd_lce_resp_data: src_a_o = lce_resp_data_i[0+:`bp_cce_inst_gpr_width];
+          e_opd_mem_resp_data: src_a_o = mem_resp_data_i[0+:`bp_cce_inst_gpr_width];
+          e_opd_lce_req_data:  src_a_o = lce_req_data_i[0+:`bp_cce_inst_gpr_width];
           default:             src_a_o = '0;
         endcase
       end
@@ -269,14 +266,14 @@ module bp_cce_src_sel
       e_src_sel_queue: begin
         unique case (src_b_i.q)
           e_opd_mem_resp_v:    src_b_o[0] = mem_resp_v_i;
-          e_opd_lce_resp_v:    src_b_o[0] = lce_resp_v_i;
+          e_opd_lce_resp_v:    src_b_o[0] = lce_resp_header_v_i;
           e_opd_pending_v:     src_b_o = '0;
-          e_opd_lce_req_v:     src_b_o[0] = lce_req_v_i;
-          e_opd_lce_resp_type: src_b_o[0+:$bits(bp_bedrock_resp_type_e)] = lce_resp.header.msg_type.resp;
-          e_opd_mem_resp_type: src_b_o[0+:$bits(bp_bedrock_mem_type_e)] = mem_resp.header.msg_type.mem;
-          e_opd_lce_resp_data: src_b_o = lce_resp.data[0+:`bp_cce_inst_gpr_width];
-          e_opd_mem_resp_data: src_b_o = mem_resp.data[0+:`bp_cce_inst_gpr_width];
-          e_opd_lce_req_data:  src_b_o = lce_req.data[0+:`bp_cce_inst_gpr_width];
+          e_opd_lce_req_v:     src_b_o[0] = lce_req_header_v_i;
+          e_opd_lce_resp_type: src_b_o[0+:$bits(bp_bedrock_resp_type_e)] = lce_resp_header_li.msg_type.resp;
+          e_opd_mem_resp_type: src_b_o[0+:$bits(bp_bedrock_mem_type_e)] = mem_resp_header_li.msg_type.mem;
+          e_opd_lce_resp_data: src_b_o = lce_resp_data_i[0+:`bp_cce_inst_gpr_width];
+          e_opd_mem_resp_data: src_b_o = mem_resp_data_i[0+:`bp_cce_inst_gpr_width];
+          e_opd_lce_req_data:  src_b_o = lce_req_data_i[0+:`bp_cce_inst_gpr_width];
           default:             src_b_o = '0;
         endcase
       end
@@ -301,9 +298,9 @@ module bp_cce_src_sel
       e_mux_sel_addr_r7:       addr_o = gpr_i[e_opd_r7][0+:paddr_width_p];
       e_mux_sel_addr_mshr_req: addr_o = mshr.paddr;
       e_mux_sel_addr_mshr_lru: addr_o = mshr.lru_paddr;
-      e_mux_sel_addr_lce_req:  addr_o = lce_req.header.addr;
-      e_mux_sel_addr_lce_resp: addr_o = lce_resp.header.addr;
-      e_mux_sel_addr_mem_resp: addr_o = mem_resp.header.addr;
+      e_mux_sel_addr_lce_req:  addr_o = lce_req_header_li.addr;
+      e_mux_sel_addr_lce_resp: addr_o = lce_resp_header_li.addr;
+      e_mux_sel_addr_mem_resp: addr_o = mem_resp_header_li.addr;
       e_mux_sel_addr_pending:  addr_o = '0;
       e_mux_sel_addr_0:        addr_o = '0;
       default:                 addr_o = '0;
@@ -329,9 +326,9 @@ module bp_cce_src_sel
       e_mux_sel_lce_r7:         lce_o = gpr_i[e_opd_r7][0+:lce_id_width_p];
       e_mux_sel_lce_mshr_req:   lce_o = mshr.lce_id;
       e_mux_sel_lce_mshr_owner: lce_o = mshr.owner_lce_id;
-      e_mux_sel_lce_lce_req:    lce_o = lce_req_payload.src_id;
-      e_mux_sel_lce_lce_resp:   lce_o = lce_resp_payload.src_id;
-      e_mux_sel_lce_mem_resp:   lce_o = mem_resp_payload.lce_id;
+      e_mux_sel_lce_lce_req:    lce_o = lce_req_header_li.payload.src_id;
+      e_mux_sel_lce_lce_resp:   lce_o = lce_resp_header_li.payload.src_id;
+      e_mux_sel_lce_mem_resp:   lce_o = mem_resp_header_li.payload.lce_id;
       e_mux_sel_lce_pending:    lce_o = '0;
       e_mux_sel_lce_0:          lce_o = '0;
       default:                  lce_o = '0;
