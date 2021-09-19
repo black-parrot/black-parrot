@@ -47,11 +47,11 @@ module bp_sacc_loopback
   assign io_cmd_cast_i = io_cmd_i;
   assign io_resp_o = io_resp_cast_o;
 
-  logic [63:0] spm_data_lo, spm_data_li;
+  logic [63:0] spm_data_lo, spm_data_li, csr_data, spm_write_cnt;
   logic [paddr_width_p-1:0]  resp_addr;
 
 
-  logic [vaddr_width_p-1:0] spm_addr, spm_addr;
+  logic [vaddr_width_p-1:0] spm_addr;
   logic spm_read_v_li, spm_write_v_li, spm_v_lo, resp_v_lo;
 
   bp_bedrock_cce_mem_payload_s  resp_payload;
@@ -70,7 +70,7 @@ module bp_sacc_loopback
                             ,size          : resp_size};
 
   assign io_resp_cast_o = '{header         : resp_header
-                            ,data          : spm_data_lo};
+                            ,data          : spm_v_lo ? spm_data_lo : csr_data};
 
 
   assign io_resp_v_o = spm_v_lo | resp_v_lo;
@@ -82,20 +82,37 @@ module bp_sacc_loopback
       resp_v_lo <= 0;
       spm_read_v_li  <= '0;
       spm_write_v_li <= '0;
+      spm_write_cnt  <= '0;
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.hio == 2))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == '0))
+    begin
+      resp_size    <= io_cmd_cast_i.header.size;
+      resp_payload <= io_cmd_cast_i.header.payload;
+      resp_addr    <= io_cmd_cast_i.header.addr;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
+      spm_read_v_li  <= '0;
+      spm_write_v_li <= '0;
+      resp_v_lo <= 1;
+      unique
+      case (local_addr_li.addr)
+        20'h00000 : csr_data <= spm_write_cnt;
+        default : begin end
+      endcase
+    end
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.hio == 1))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
       resp_addr    <= io_cmd_cast_i.header.addr;
       resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
       spm_write_v_li <= '1;
+      spm_write_cnt  <= spm_write_cnt + 1;
       spm_read_v_li  <= '0;
       resp_v_lo <= 1;
       spm_data_li  <= io_cmd_cast_i.data;
       spm_addr <= io_cmd_cast_i.header.addr;
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == 2))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == 1))
     begin
       resp_size    <= io_cmd_cast_i.header.size;
       resp_payload <= io_cmd_cast_i.header.payload;
