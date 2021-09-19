@@ -64,7 +64,7 @@ module bp_sacc_vdp
   logic [vaddr_width_p-1:0] spm_addr, spm_internal_addr, spm_external_addr;
   logic                     spm_internal_read_v_li, spm_internal_write_v_li,
                             spm_external_read_v_li, spm_external_write_v_li,
-                            spm_internal_v_lo, spm_ext_v_lo, resp_v_lo;
+                            spm_internal_v_lo, spm_external_v_lo, resp_v_lo;
 
   bp_bedrock_cce_mem_payload_s  resp_payload;
   bp_bedrock_msg_size_e         resp_size;
@@ -74,7 +74,7 @@ module bp_sacc_vdp
 
   assign global_addr_li = io_cmd_cast_i.header.addr;
   assign local_addr_li = io_cmd_cast_i.header.addr;
-  assign resp_data = spm_ext_v_lo ? spm_data_lo : csr_data;
+  assign resp_data = spm_external_v_lo ? spm_data_lo : csr_data;
 
   assign resp_header   =  '{msg_type       : resp_msg
                             ,addr          : resp_addr
@@ -104,10 +104,10 @@ module bp_sacc_vdp
   } state_e;
   state_e state_r, state_n;
 
-  assign io_resp_v_o = spm_ext_v_lo | resp_v_lo;
+  assign io_resp_v_o = spm_external_v_lo | resp_v_lo;
   always_ff @(posedge clk_i) begin
     spm_internal_v_lo <= spm_internal_read_v_li;
-    spm_ext_v_lo <= spm_external_read_v_li;
+    spm_external_v_lo <= spm_external_read_v_li;
     vector_a[len_a_cnt] <= (spm_internal_v_lo & load & ~second_operand) ? spm_data_lo : vector_a[len_a_cnt];
     len_a_cnt <= (spm_internal_v_lo & load & ~second_operand) ? len_a_cnt + 1'b1 : len_a_cnt;
     vector_b[len_b_cnt]  <= (spm_internal_v_lo & load & second_operand) ? spm_data_lo : vector_b[len_b_cnt];
@@ -120,7 +120,7 @@ module bp_sacc_vdp
 
     if (reset_i || done) begin
       spm_internal_v_lo <= '0;
-      spm_ext_v_lo <= '0;
+      spm_external_v_lo <= '0;
       resp_v_lo <= 0;
       spm_external_read_v_li  <= '0;
       spm_external_write_v_li <= '0;
