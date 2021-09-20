@@ -280,8 +280,6 @@ $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_req.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_resp.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem_cmd.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem_resp.sv
-$BP_ME_DIR/src/v/network/bp_me_lite_to_stream.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_to_burst.sv
@@ -293,6 +291,7 @@ $BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv

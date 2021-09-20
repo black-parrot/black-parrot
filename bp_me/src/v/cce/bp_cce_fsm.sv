@@ -227,6 +227,7 @@ module bp_cce_fsm
       ,.fsm_ready_and_o(mem_cmd_ready_and_li)
       ,.fsm_cnt_o(mem_cmd_stream_cnt_li)
       ,.fsm_new_o(mem_cmd_stream_new_li)
+      ,.fsm_last_o(/* unused */)
       ,.fsm_done_o(mem_cmd_stream_done_li)
       );
 

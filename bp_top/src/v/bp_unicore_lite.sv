@@ -307,72 +307,36 @@ module bp_unicore_lite
      );
 
   // Assign incoming I/O as basically another UCE interface
-  bsg_two_fifo
-   #(.width_p(1+uce_mem_msg_header_width_lp+uce_mem_data_width_lp))
-   io_cmd_in_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  assign proc_cmd_header_lo[2] = io_cmd_header_cast_i;
+  assign proc_cmd_data_lo[2] = io_cmd_data_i;
+  assign proc_cmd_v_lo[2] = io_cmd_v_i;
+  assign io_cmd_ready_and_o = proc_cmd_ready_and_li[2];
+  assign proc_cmd_last_lo[2] = io_cmd_last_i;
 
-     ,.data_i({io_cmd_last_i, io_cmd_data_i, io_cmd_header_i})
-     ,.v_i(io_cmd_v_i)
-     ,.ready_o(io_cmd_ready_and_o)
-
-     ,.data_o({proc_cmd_last_lo[2], proc_cmd_data_lo[2], proc_cmd_header_lo[2]})
-     ,.v_o(proc_cmd_v_lo[2])
-     ,.yumi_i(proc_cmd_yumi_li[2])
-     );
-
-  bsg_two_fifo
-   #(.width_p(1+uce_mem_msg_header_width_lp+uce_mem_data_width_lp))
-   io_resp_out_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i({proc_resp_last_li[2], proc_resp_data_li[2], proc_resp_header_li[2]})
-     ,.v_i(proc_resp_v_li[2])
-     ,.ready_o(proc_resp_ready_and_lo[2])
-
-     ,.data_o({io_resp_last_o, io_resp_data_o, io_resp_header_cast_o})
-     ,.v_o(io_resp_v_o)
-     ,.yumi_i(io_resp_ready_and_i & io_resp_v_o)
-     );
+  assign io_resp_header_cast_o = proc_resp_header_li[2];
+  assign io_resp_data_o = proc_resp_data_li[2];
+  assign io_resp_v_o = proc_resp_v_li[2];
+  assign proc_resp_ready_and_lo[2] = io_resp_ready_and_i & io_resp_v_o;
+  assign io_resp_last_o = proc_resp_last_li[2];
 
   // Assign I/O and mem as another device
-  bsg_two_fifo
-   #(.width_p(1+uce_mem_msg_header_width_lp+uce_mem_data_width_lp))
-   io_cmd_out_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i({dev_cmd_last_li[2], dev_cmd_data_li[2], dev_cmd_header_li[2]})
-     ,.v_i(dev_cmd_v_li[2])
-     ,.ready_o(dev_cmd_ready_and_lo[2])
-
-     ,.data_o({io_cmd_last_o, io_cmd_data_o, io_cmd_header_cast_o})
-     ,.v_o(io_cmd_v_o)
-     ,.yumi_i(io_cmd_ready_and_i & io_cmd_v_o)
-     );
-
-  bsg_two_fifo
-   #(.width_p(1+uce_mem_msg_header_width_lp+uce_mem_data_width_lp))
-   io_resp_in_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i({io_resp_last_i, io_resp_data_i, io_resp_header_i})
-     ,.v_i(io_resp_v_i)
-     ,.ready_o(io_resp_ready_and_o)
-
-     ,.data_o({dev_resp_last_lo[2], dev_resp_data_lo[2], dev_resp_header_lo[2]})
-     ,.v_o(dev_resp_v_lo[2])
-     ,.yumi_i(dev_resp_ready_and_li[2] & dev_resp_v_lo[2])
-     );
+  assign io_cmd_header_cast_o = dev_cmd_header_li[2];
+  assign io_cmd_data_o = dev_cmd_data_li[2];
+  assign io_cmd_v_o = dev_cmd_v_li[2];
+  assign dev_cmd_ready_and_lo[2] = io_cmd_ready_and_i;
+  assign io_cmd_last_o = dev_cmd_last_li[2];
 
   assign mem_cmd_header_cast_o = dev_cmd_header_li[3];
   assign mem_cmd_data_o = dev_cmd_data_li[3];
   assign mem_cmd_v_o = dev_cmd_v_li[3];
   assign dev_cmd_ready_and_lo[3] = mem_cmd_ready_and_i;
   assign mem_cmd_last_o = dev_cmd_last_li[3];
+
+  assign dev_resp_header_lo[2] = io_resp_header_cast_i;
+  assign dev_resp_data_lo[2] = io_resp_data_i;
+  assign dev_resp_v_lo[2] = io_resp_v_i;
+  assign io_resp_ready_and_o = dev_resp_ready_and_li[2];
+  assign dev_resp_last_lo[2] = io_resp_last_i;
 
   assign dev_resp_header_lo[3] = mem_resp_header_cast_i;
   assign dev_resp_data_lo[3] = mem_resp_data_i;

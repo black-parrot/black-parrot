@@ -18,45 +18,41 @@
 `include "bsg_cache.vh"
 
 module bp_me_cce_to_cache
+ import bp_common_pkg::*;
+ import bp_me_pkg::*;
+ import bsg_cache_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, l2_data_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-  import bp_common_pkg::*;
-  import bp_me_pkg::*;
-  import bsg_cache_pkg::*;
+   // L2 organization and interface
+   , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(daddr_width_p, l2_data_width_p)
+   )
+  (input clk_i
+   , input reset_i
 
-  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, l2_data_width_p, lce_id_width_p, lce_assoc_p, cce)
+   // BedRock Stream interface
+   , input  [cce_mem_msg_header_width_lp-1:0] mem_cmd_header_i
+   , input  [l2_data_width_p-1:0]             mem_cmd_data_i
+   , input                                    mem_cmd_v_i
+   , output logic                             mem_cmd_ready_and_o
+   , input                                    mem_cmd_last_i
 
-    // L2 organization and interface
-    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(daddr_width_p, l2_data_width_p)
-  )
-  (
-    input clk_i
-    , input reset_i
+   , output [cce_mem_msg_header_width_lp-1:0] mem_resp_header_o
+   , output [l2_data_width_p-1:0]             mem_resp_data_o
+   , output logic                             mem_resp_v_o
+   , input                                    mem_resp_ready_and_i
+   , output logic                             mem_resp_last_o
 
-    // BedRock Stream interface
-    , input  [cce_mem_msg_header_width_lp-1:0] mem_cmd_header_i
-    , input  [l2_data_width_p-1:0]             mem_cmd_data_i
-    , input                                    mem_cmd_v_i
-    , output logic                             mem_cmd_ready_and_o
-    , input                                    mem_cmd_last_i
+   // cache-side
+   , output [bsg_cache_pkt_width_lp-1:0]      cache_pkt_o
+   , output logic                             cache_pkt_v_o
+   , input                                    cache_pkt_ready_i
 
-    , output [cce_mem_msg_header_width_lp-1:0] mem_resp_header_o
-    , output [l2_data_width_p-1:0]             mem_resp_data_o
-    , output logic                             mem_resp_v_o
-    , input                                    mem_resp_ready_and_i
-    , output logic                             mem_resp_last_o
-
-    // cache-side
-    , output [bsg_cache_pkt_width_lp-1:0]      cache_pkt_o
-    , output logic                             cache_pkt_v_o
-    , input                                    cache_pkt_ready_i
-
-    , input [l2_data_width_p-1:0]              cache_data_i
-    , input                                    cache_v_i
-    , output logic                             cache_yumi_o
-  );
-
+   , input [l2_data_width_p-1:0]              cache_data_i
+   , input                                    cache_v_i
+   , output logic                             cache_yumi_o
+   );
 
   // L2 derived params
   localparam lg_l2_sets_lp             = `BSG_SAFE_CLOG2(l2_sets_p);
@@ -264,9 +260,10 @@ module bp_me_cce_to_cache
      ,.fsm_ready_and_o(mem_resp_ready_and_lo)
      ,.fsm_cnt_o(/* unused */)
      ,.fsm_new_o(mem_resp_new_lo)
+     ,.fsm_last_o(/* unused */)
      ,.fsm_done_o(mem_resp_done_lo)
      );
-  assign cache_yumi_o = mem_resp_ready_and_lo | (is_clear & cache_v_i);
+  assign cache_yumi_o = (mem_resp_v_lo & mem_resp_ready_and_lo & cache_v_i) | (is_clear & cache_v_i);
 
   // mem_resp data selection
   // For B/H/W/D ops, data returned from cache is at the LSB, but it may not for M ops
@@ -452,6 +449,9 @@ module bp_me_cce_to_cache
     end
   //synopsys translate_on
 
+  // requirement from BedRock Stream interface
+  if (!(`BSG_IS_POW2(l2_data_width_p) || l2_data_width_p < 64 || l2_data_width_p > 512))
+    $error("l2 data width must be 64, 128, 256, or 512");
 
 endmodule
 

@@ -42,13 +42,10 @@ module bp_me_stream_pump_out
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
 
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
-   , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_data_width_p >> 3)
+   , localparam stream_bytes_lp = stream_data_width_p >> 3
+   , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_bytes_lp)
    , localparam stream_words_lp = block_width_p / stream_data_width_p
-   , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
-
-   // number of messages that can be buffered
-   , parameter header_els_p = 0
-   , parameter data_els_p   = header_els_p * stream_words_lp
+   , localparam stream_cnt_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -70,185 +67,120 @@ module bp_me_stream_pump_out
 
    // FSM control signals
    // fsm_cnt is the current stream word being sent
-   , output logic [data_len_width_lp-1:0]           fsm_cnt_o
+   , output logic [stream_cnt_width_lp-1:0]         fsm_cnt_o
    // fsm_new is raised when first beat of every message is acked
    , output logic                                   fsm_new_o
+   // fsm_last is raised on last beat of every message
+   , output logic                                   fsm_last_o
    // fsm_done is raised when last beat of every message sends
    , output logic                                   fsm_done_o
    );
+
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `bp_cast_i(bp_bedrock_xce_msg_header_s, fsm_base_header);
+  `bp_cast_o(bp_bedrock_xce_msg_header_s, msg_header);
+
+  enum logic {e_ready, e_stream} state_n, state_r;
+  wire is_ready  = (state_r == e_ready);
+  wire is_stream = (state_r == e_stream);
+
+  wire [stream_cnt_width_lp-1:0] stream_size =
+    `BSG_MAX((1'b1 << fsm_base_header_cast_i.size) / stream_bytes_lp, 1'b1) - 1'b1;
+  wire nz_stream  = stream_size > '0;
+  wire fsm_stream = fsm_stream_mask_p[fsm_base_header_cast_i.msg_type] & nz_stream;
+  wire msg_stream = msg_stream_mask_p[fsm_base_header_cast_i.msg_type] & nz_stream;
+  wire any_stream = fsm_stream | msg_stream;
+
+  logic [stream_cnt_width_lp-1:0] stream_cnt, wrap_cnt;
+  logic cnt_up;
+  wire cnt_set = fsm_new_o;
+  wire [stream_cnt_width_lp-1:0] cnt_max = fsm_stream ? stream_size : '0;
+  wire [stream_cnt_width_lp-1:0] cnt_val = fsm_base_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
+  bp_me_stream_wraparound
+   #(.max_val_p(stream_words_lp-1))
+   wraparound_cnt
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.max_i(cnt_max)
+     ,.set_i(cnt_set)
+     ,.val_i(cnt_val)
+     ,.en_i(cnt_up)
+
+     ,.full_o(stream_cnt)
+     ,.wrap_o(wrap_cnt)
+     );
+
+  wire [stream_cnt_width_lp-1:0] first_cnt = fsm_base_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
+  wire [stream_cnt_width_lp-1:0] last_cnt  = first_cnt + stream_size;
+  wire is_last_cnt = (is_stream & (stream_cnt == last_cnt)) | (~fsm_stream & ~msg_stream);
+
+  assign fsm_new_o = fsm_ready_and_o & fsm_v_i & is_ready;
+  assign fsm_last_o = fsm_v_i & is_last_cnt;
+  assign fsm_done_o = fsm_ready_and_o & fsm_v_i & is_last_cnt;
+  assign fsm_cnt_o = is_stream ? stream_cnt : cnt_val;
+
+  wire [paddr_width_p-1:0] wrap_addr =
+    {fsm_base_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp+stream_cnt_width_lp]
+     ,{stream_words_lp>0{wrap_cnt}}
+     ,fsm_base_header_cast_i.addr[0+:stream_offset_width_lp]
+     };
+
+  always_comb
+    begin
+      msg_header_cast_o = fsm_base_header_cast_i;
+      msg_data_o = fsm_data_i;
+
+      if (~fsm_stream & msg_stream)
+        begin
+          // 1:N
+          // send N msg beats, and ack single FSM beat on last msg beat
+          msg_v_o = fsm_v_i;
+          fsm_ready_and_o = is_last_cnt & msg_ready_and_i;
+          cnt_up = msg_v_o & msg_ready_and_i & ~is_last_cnt;
+          msg_header_cast_o.addr = is_stream ? wrap_addr : fsm_base_header_cast_i.addr;
+        end
+      else if (fsm_stream & ~msg_stream)
+        begin
+          // N:1
+          // only send msg on last FSM beat
+          msg_v_o = is_last_cnt & fsm_v_i;
+          // ack all but last FSM beat silently, then ack last FSM beat when msg beat sends
+          fsm_ready_and_o = ~is_last_cnt | msg_ready_and_i;
+          cnt_up = fsm_ready_and_o & fsm_v_i & ~is_last_cnt;
+          // hold address constant at critical address
+          msg_header_cast_o.addr = fsm_base_header_cast_i.addr;
+        end
+      else
+        begin
+          // 1:1
+          msg_v_o = fsm_v_i;
+          fsm_ready_and_o = msg_ready_and_i;
+          cnt_up  = fsm_ready_and_o & fsm_v_i & ~is_last_cnt;
+          msg_header_cast_o.addr = is_stream ? wrap_addr : fsm_base_header_cast_i.addr;
+        end
+
+      msg_last_o = is_last_cnt & msg_v_o;
+    end
+
+  always_comb
+    case (state_r)
+      e_stream: state_n = fsm_done_o ? e_ready : e_stream;
+      default : state_n = (fsm_new_o & any_stream) ? e_stream : e_ready;
+    endcase
+
+  //synopsys sync_set_reset "reset_i"
+  always_ff @(posedge clk_i)
+    if (reset_i)
+      state_r <= e_ready;
+    else
+      state_r <= state_n;
 
   // parameter checks
   if (block_width_p % stream_data_width_p != 0)
     $fatal(0,"block_width_p must be evenly divisible by stream_data_width_p");
   if (block_width_p < stream_data_width_p)
     $fatal(0,"block_width_p must be at least as large as stream_data_width_p");
-
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
-
-  `bp_cast_i(bp_bedrock_xce_msg_header_s, fsm_base_header);
-  `bp_cast_o(bp_bedrock_xce_msg_header_s, msg_header);
-
-  bp_bedrock_xce_msg_header_s fsm_base_header_li;
-  logic [stream_data_width_p-1:0] fsm_data_li;
-  logic fsm_v_li, fsm_ready_and_lo;
-  logic [data_len_width_lp-1:0] fsm_cnt_lo;
-
-  logic is_last_cnt, streaming_r;
-
-  bp_me_stream_fifo
-   #(.header_width_p($bits(bp_bedrock_xce_msg_header_s))
-     ,.data_width_p(stream_data_width_p)
-     ,.header_els_p(header_els_p)
-     ,.data_els_p(data_els_p)
-     )
-   fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.msg_header_i(fsm_base_header_i)
-     ,.msg_data_i(fsm_data_i)
-     ,.msg_v_i(fsm_v_i)
-     ,.msg_ready_and_o(fsm_ready_and_o)
-
-     ,.msg_base_header_o(fsm_base_header_li)
-     ,.msg_data_o(fsm_data_li)
-     ,.msg_v_o(fsm_v_li)
-     ,.msg_ready_and_i(fsm_ready_and_lo)
-
-     // We ignore the last signal buffering here, because the header is already base
-     ,.msg_last_i(1'b1)
-     ,.msg_last_o()
-     );
-
-  assign fsm_new_o = fsm_ready_and_lo & fsm_v_li & ~streaming_r;
-  assign fsm_done_o = fsm_ready_and_lo & fsm_v_li & is_last_cnt;
-  assign fsm_cnt_o = fsm_cnt_lo;
-
-  wire [data_len_width_lp-1:0] num_stream = `BSG_MAX((1'b1 << fsm_base_header_li.size) / (stream_data_width_p / 8), 1'b1) - 1'b1;
-
-  logic cnt_up;
-  logic is_fsm_stream, is_msg_stream;
-  logic [data_len_width_lp-1:0] wrap_around_cnt;
-  wire any_stream_new = (is_fsm_stream | is_msg_stream) & ~streaming_r;
-
-  if (stream_words_lp == 1)
-    begin: full_block_stream
-      assign is_fsm_stream = '0;
-      assign is_msg_stream = '0;
-      assign streaming_r = '0;
-      assign fsm_cnt_lo = fsm_base_header_li.addr[stream_offset_width_lp+:data_len_width_lp];
-      assign wrap_around_cnt = fsm_cnt_lo;
-      assign is_last_cnt = 1'b1;
-    end
-  else
-    begin: sub_block_stream
-      logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, cnt_val_li;
-      wire cnt_set = (any_stream_new & cnt_up) | fsm_done_o;
-      wire cnt_en = (cnt_up | fsm_done_o);
-      bsg_counter_set_en
-       #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
-       data_counter
-        (.clk_i(clk_i)
-        ,.reset_i(reset_i)
-
-        ,.set_i(cnt_set)
-        ,.en_i(cnt_en)
-        ,.val_i(cnt_val_li)
-        ,.count_o(current_cnt)
-        );
-
-      bsg_dff_reset_set_clear
-       #(.width_p(1)
-       ,.clear_over_set_p(1))
-       streaming_reg
-        (.clk_i(clk_i)
-        ,.reset_i(reset_i)
-        ,.set_i(cnt_up)
-        ,.clear_i(fsm_done_o)
-        ,.data_o(streaming_r)
-        );
-
-      always_comb
-        begin
-          first_cnt = fsm_base_header_li.addr[stream_offset_width_lp+:data_len_width_lp];
-          last_cnt  = first_cnt + num_stream;
-
-          is_fsm_stream = fsm_stream_mask_p[fsm_base_header_li.msg_type] & ~(first_cnt == last_cnt);
-          is_msg_stream = msg_stream_mask_p[fsm_base_header_li.msg_type] & ~(first_cnt == last_cnt);
-
-          fsm_cnt_lo = any_stream_new ? first_cnt : current_cnt;
-          is_last_cnt = (fsm_cnt_lo == last_cnt) | (~is_fsm_stream & ~is_msg_stream);
-          cnt_val_li = fsm_done_o ? '0 : (first_cnt + cnt_up);
-        end
-
-      // Generate proper wrap-around address for different incoming msg size dynamically.
-      // __________________________________________________________
-      // |                |            block offset                | input address
-      // |  upper address |________________________________________|
-      // |                |         stream cnt |  stream offset    | output address (req_size == block_width)
-      // |________________|____________________|___________________|
-      // |  upper address | * |     stream cnt |  stream offset    | output address (req_size == block_width/2)
-      // |________________|___|___ ____________|___________________|
-      // |  upper address | * | * | stream cnt |  stream offset    | output address (req_size == block_width/4)
-      // |________________|___|___|____________|___________________|
-      // Block size = stream count * stream size, with a request smaller than block_width_p,
-      // a narrower stream_cnt is required to generate address for each sub-stream pkt.
-      // Eg. block_width_p = 512, stream_data_width_p = 64, then counter width = log2(512/64) = 3
-      // size = 512: a wrapped around seq: 2, 3, 4, 5, 6, 7, 0, 1  all 3-bit of cnt is used
-      // size = 256: a wrapped around seq: 2, 3, 0, 1              only lower 2-bit of cnt is used
-
-      bsg_mux_bitwise
-       #(.width_p(data_len_width_lp))
-       sub_block_addr_mux
-        (.data0_i(fsm_base_header_li.addr[stream_offset_width_lp+:data_len_width_lp])
-        ,.data1_i(fsm_cnt_lo)
-        ,.sel_i(num_stream)
-        ,.data_o(wrap_around_cnt)
-        );
-    end
-
-  logic [stream_offset_width_lp+data_len_width_lp-1:0] sub_block_adddr, sub_block_adddr_tuned;
-  always_comb
-    begin
-      msg_header_cast_o = fsm_base_header_li;
-      msg_data_o = fsm_data_li;
-      msg_last_o = is_last_cnt & msg_v_o;
-
-      if (~is_fsm_stream & is_msg_stream)
-        begin
-          // 1:N
-          // send N msg beats, and ack single FSM beat on last msg beat
-          msg_v_o = fsm_v_li;
-          fsm_ready_and_lo = msg_ready_and_i & is_last_cnt;
-          cnt_up = msg_v_o & msg_ready_and_i & ~is_last_cnt;
-          msg_header_cast_o.addr = {fsm_base_header_li.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
-                                    ,wrap_around_cnt
-                                    ,fsm_base_header_li.addr[0+:stream_offset_width_lp]
-                                    };
-        end
-      else if (is_fsm_stream & ~is_msg_stream)
-        begin
-          // N:1
-          // only send msg on last FSM beat
-          msg_v_o = is_last_cnt & fsm_v_li;
-          // ack all but last FSM beat silently, then ack last FSM beat when msg beat sends
-          fsm_ready_and_lo = ~is_last_cnt | msg_ready_and_i;
-          cnt_up = fsm_ready_and_lo & fsm_v_li & ~is_last_cnt;
-          // hold address constant at critical address
-          msg_header_cast_o.addr[0+:block_offset_width_lp] = fsm_base_header_li.addr[0+:block_offset_width_lp];
-        end
-      else
-        begin
-          // 1:1
-          msg_v_o = fsm_v_li;
-          fsm_ready_and_lo = msg_ready_and_i;
-          cnt_up  = fsm_ready_and_lo & fsm_v_li & ~is_last_cnt;
-          msg_header_cast_o.addr = {fsm_base_header_li.addr[paddr_width_p-1:stream_offset_width_lp+data_len_width_lp]
-                                    ,wrap_around_cnt
-                                    ,fsm_base_header_li.addr[0+:stream_offset_width_lp]
-                                    };
-        end
-    end
 
 endmodule
 
