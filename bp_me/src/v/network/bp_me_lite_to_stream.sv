@@ -173,10 +173,10 @@ module bp_me_lite_to_stream
   always_ff @(negedge clk_i)
     begin
       //if (in_msg_ready_and_o & in_msg_v_i)
-      //  $display("[%t] Msg received: %p", $time, msg_cast_i);
+      //  $display("%12t | Msg received: %p", $time, msg_cast_i);
 
       //if (out_msg_ready_and_i & out_msg_v_o)
-      //  $display("[%t] Stream sent: %p %x CNT: %x", $time, msg_header_cast_o, out_msg_data_o, current_cnt);
+      //  $display("%12t | Stream sent: %p %x CNT: %x", $time, msg_header_cast_o, out_msg_data_o, current_cnt);
     end
   //synopsys translate_on
 

@@ -63,9 +63,9 @@ module bp_nonsynth_vm_tracer
   always_ff @(negedge clk_i)
     begin
       if (itlb_clear_i)
-        $fwrite(file, "[%t] ITLB Clear\n", $time);
+        $fwrite(file, "%12t | ITLB Clear\n", $time);
       if (itlb_fill_v_i)
-        $fwrite(file, "[%t] ITLB map %x -> %x [R:%x W:%x X:%x] GP: %x\n" //A:%x D:%x]"
+        $fwrite(file, "%12t | ITLB map %x -> %x [R:%x W:%x X:%x] GP: %x\n" //A:%x D:%x]"
                 ,$time
                 ,itlb_vtag_i
                 ,itlb_w_entry.ptag
@@ -77,9 +77,9 @@ module bp_nonsynth_vm_tracer
                 //,itlb_w_entry.d
                 );
       if (dtlb_clear_i)
-        $fwrite(file, "[%t] DTLB Clear\n", $time);
+        $fwrite(file, "%12t | DTLB Clear\n", $time);
       if (dtlb_fill_v_i)
-        $fwrite(file, "[%t] DTLB map %x -> %x [R:%x W:%x X:%x] GP: %x\n" //A:%x D:%x]"
+        $fwrite(file, "%12t | DTLB map %x -> %x [R:%x W:%x X:%x] GP: %x\n" //A:%x D:%x]"
                 ,$time
                 ,dtlb_vtag_i
                 ,dtlb_w_entry.ptag
@@ -120,8 +120,8 @@ module bp_nonsynth_vm_tracer
 
   final
     begin
-      $fwrite(file, "[%t] Total ITLB read access count is %0d.\n", $time, itlb_read_count_r);
-      $fwrite(file, "[%t] Total DTLB read access count is %0d.\n", $time, dtlb_read_count_r);
+      $fwrite(file, "%12t | Total ITLB read access count is %0d.\n", $time, itlb_read_count_r);
+      $fwrite(file, "%12t | Total DTLB read access count is %0d.\n", $time, dtlb_read_count_r);
     end
 
 endmodule

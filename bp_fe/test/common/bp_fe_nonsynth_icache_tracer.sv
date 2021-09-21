@@ -115,42 +115,42 @@ module bp_fe_nonsynth_icache_tracer
   always_ff @(posedge clk_i)
     begin
       if (ready_o & v_i)
-        $fwrite(file, "[%t] access: %p\n", $time, icache_pkt_cast_i);
+        $fwrite(file, "%12t | access: %p\n", $time, icache_pkt_cast_i);
 
       if (data_mem_pkt_yumi_o)
-        $fwrite(file, "[%t] data_mem_pkt: %p\n", $time, data_mem_pkt_cast_i);
+        $fwrite(file, "%12t | data_mem_pkt: %p\n", $time, data_mem_pkt_cast_i);
       if (data_mem_read_r)
-        $fwrite(file, "[%t] data_mem_read: %x\n", $time, data_mem_cast_o);
+        $fwrite(file, "%12t | data_mem_read: %x\n", $time, data_mem_cast_o);
 
       if (tag_mem_pkt_yumi_o)
-        $fwrite(file, "[%t] tag_mem_pkt: %p\n", $time, tag_mem_pkt_cast_i);
+        $fwrite(file, "%12t | tag_mem_pkt: %p\n", $time, tag_mem_pkt_cast_i);
       if (tag_mem_read_r)
-        $fwrite(file, "[%t] tag_mem_read: %x\n", $time, tag_mem_info_cast_o);
+        $fwrite(file, "%12t | tag_mem_read: %x\n", $time, tag_mem_info_cast_o);
 
       if (stat_mem_pkt_yumi_o)
-        $fwrite(file, "[%t] stat_mem_pkt: %p\n", $time, stat_mem_pkt_cast_i);
+        $fwrite(file, "%12t | stat_mem_pkt: %p\n", $time, stat_mem_pkt_cast_i);
       if (stat_mem_read_r)
-        $fwrite(file, "[%t] stat_mem_read: %x\n", $time, stat_mem_info_cast_o);
+        $fwrite(file, "%12t | stat_mem_read: %x\n", $time, stat_mem_info_cast_o);
 
       if (data_v_o)
-        $fwrite(file, "[%t] fetch: [%x]->%x\n", $time, paddr_tv_r, data_o);
+        $fwrite(file, "%12t | fetch: [%x]->%x\n", $time, paddr_tv_r, data_o);
       if (miss_v_o)
-        $fwrite(file, "[%t] spec miss: [%x]\n", $time, paddr_tv_r);
+        $fwrite(file, "%12t | spec miss: [%x]\n", $time, paddr_tv_r);
 
       if (cache_req_yumi_i)
-        $fwrite(file, "[%t] cache_req: %p\n", $time, cache_req_cast_o);
+        $fwrite(file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);
 
       if (cache_req_metadata_v_o)
-        $fwrite(file, "[%t] cache_req_metadata: %p\n", $time, cache_req_metadata_cast_o);
+        $fwrite(file, "%12t | cache_req_metadata: %p\n", $time, cache_req_metadata_cast_o);
 
       if (cache_req_critical_tag_i)
-        $fwrite(file, "[%t] cache_req_critical_tag_i raised\n", $time);
+        $fwrite(file, "%12t | cache_req_critical_tag_i raised\n", $time);
 
       if (cache_req_critical_data_i)
-        $fwrite(file, "[%t] cache_req_critical_data_i raised\n", $time);
+        $fwrite(file, "%12t | cache_req_critical_data_i raised\n", $time);
 
       if (cache_req_complete_i)
-        $fwrite(file, "[%t] cache_req_complete_i raised\n", $time);
+        $fwrite(file, "%12t | cache_req_complete_i raised\n", $time);
     end
 
 endmodule

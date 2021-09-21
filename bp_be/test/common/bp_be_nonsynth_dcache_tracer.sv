@@ -71,6 +71,21 @@ module bp_be_nonsynth_dcache_tracer
    , input [paddr_width_p-1:0]                            paddr_tv_r
    , input [dword_width_gp-1:0]                           st_data_tv_r
    , input bp_be_dcache_decode_s                          decode_dm_r
+
+   , input [assoc_p-1:0]                                  data_mem_slow_read
+   , input [assoc_p-1:0]                                  data_mem_slow_write
+   , input [assoc_p-1:0]                                  data_mem_fast_read
+   , input [assoc_p-1:0]                                  data_mem_fast_write
+
+   , input                                                tag_mem_slow_read
+   , input                                                tag_mem_slow_write
+   , input                                                tag_mem_fast_read
+   , input                                                tag_mem_fast_write
+
+   , input                                                stat_mem_slow_read
+   , input                                                stat_mem_slow_write
+   , input                                                stat_mem_fast_read
+   , input                                                stat_mem_fast_write
    );
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
@@ -100,14 +115,23 @@ module bp_be_nonsynth_dcache_tracer
   bp_be_dcache_wbuf_entry_s wbuf_entry_out_cast;
   assign wbuf_entry_out_cast = wbuf_entry_out;
 
-  integer file;
-  string file_name;
+  integer info_file, eng_file, mem_file, acc_file;
+  string info_file_name, eng_file_name, mem_file_name, acc_file_name;
   wire delay_li = reset_i | freeze_i;
   always_ff @(negedge delay_li)
    begin
-     file_name = $sformatf("%s_%x.trace", trace_file_p, mhartid_i);
-     file      = $fopen(file_name, "w");
-     $fwrite(file, "Coherent L1: %x\n", l1_coherent_p);
+     info_file_name = $sformatf("%s_%x.info.trace", trace_file_p, mhartid_i);
+     info_file      = $fopen(info_file_name, "w");
+     $fwrite(info_file, "Coherent L1: %x\n", l1_coherent_p);
+
+     eng_file_name = $sformatf("%s_%x.eng.trace", trace_file_p, mhartid_i);
+     eng_file      = $fopen(eng_file_name, "w");
+
+     mem_file_name = $sformatf("%s_%x.mem.trace", trace_file_p, mhartid_i);
+     mem_file      = $fopen(mem_file_name, "w");
+
+     acc_file_name = $sformatf("%s_%x.acc.trace", trace_file_p, mhartid_i);
+     acc_file      = $fopen(acc_file_name, "w");
    end
 
   logic data_mem_read_r, tag_mem_read_r, stat_mem_read_r;
@@ -128,48 +152,68 @@ module bp_be_nonsynth_dcache_tracer
   always_ff @(posedge clk_i)
     begin
       if (ready_o & v_i)
-        $fwrite(file, "[%t] access: %p\n", $time, dcache_pkt_cast_i);
-
-      if (data_mem_pkt_yumi_o)
-        $fwrite(file, "[%t] data_mem_pkt: %p\n", $time, data_mem_pkt_cast_i);
-      if (data_mem_read_r)
-        $fwrite(file, "[%t] data_mem_read: %x\n", $time, data_mem_cast_o);
-
-      if (tag_mem_pkt_yumi_o)
-        $fwrite(file, "[%t] tag_mem_pkt: %p\n", $time, tag_mem_pkt_cast_i);
-      if (tag_mem_read_r)
-        $fwrite(file, "[%t] tag_mem_read: %x\n", $time, tag_mem_info_cast_o);
-
-      if (stat_mem_pkt_yumi_o)
-        $fwrite(file, "[%t] stat_mem_pkt: %p\n", $time, stat_mem_pkt_cast_i);
-      if (stat_mem_read_r)
-        $fwrite(file, "[%t] stat_mem_read: %x\n", $time, stat_mem_info_cast_o);
-
+        $fwrite(acc_file, "%12t | access: %p\n", $time, dcache_pkt_cast_i);
       if (early_v_o & decode_tv_r.load_op)
-        $fwrite(file, "[%t] early load: [%x]->%x\n", $time, paddr_tv_r, early_data_o);
+        $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, early_data_o);
       if (early_v_o & decode_tv_r.store_op)
-        $fwrite(file, "[%t] early store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
-
+        $fwrite(acc_file, "%12t | early store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
       if (final_v_o & decode_dm_r.load_op)
-        $fwrite(file, "[%t] final load: %x\n", $time, final_data_o);
+        $fwrite(acc_file, "%12t | final load: %x\n", $time, final_data_o);
+      if (wbuf_yumi_li)
+        $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_out_cast);
 
       if (cache_req_yumi_i)
-        $fwrite(file, "[%t] cache_req: %p\n", $time, cache_req_cast_o);
-
+        $fwrite(eng_file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);
       if (cache_req_metadata_v_o)
-        $fwrite(file, "[%t] cache_req_metadata: %p\n", $time, cache_req_metadata_cast_o);
-
+        $fwrite(eng_file, "%12t | cache_req_metadata: %p\n", $time, cache_req_metadata_cast_o);
       if (cache_req_critical_tag_i)
-        $fwrite(file, "[%t] cache_req_critical_tag_i raised\n", $time);
-
+        $fwrite(eng_file, "%12t | cache_req_critical_tag_i: %b \n", $time, cache_req_critical_tag_i);
       if (cache_req_critical_data_i)
-        $fwrite(file, "[%t] cache_req_critical_data_i raised\n", $time);
-
+        $fwrite(eng_file, "%12t | cache_req_critical_data_i: %b \n", $time, cache_req_critical_data_i);
       if (cache_req_complete_i)
-        $fwrite(file, "[%t] cache_req_complete_i raised\n", $time);
+        $fwrite(eng_file, "%12t | cache_req_complete_i: %b \n", $time, cache_req_complete_i);
 
-      if (wbuf_yumi_li)
-        $fwrite(file, "[%t] wbuf: %p\n", $time, wbuf_entry_out_cast);
+      if (data_mem_pkt_yumi_o)
+        $fwrite(eng_file, "%12t | data_mem_pkt: %p\n", $time, data_mem_pkt_cast_i);
+      if (data_mem_read_r)
+        $fwrite(eng_file, "%12t | data_mem_read: %x\n", $time, data_mem_cast_o);
+
+      if (tag_mem_pkt_yumi_o)
+        $fwrite(eng_file, "%12t | tag_mem_pkt: %p\n", $time, tag_mem_pkt_cast_i);
+      if (tag_mem_read_r)
+        $fwrite(eng_file, "%12t | tag_mem_read: %x\n", $time, tag_mem_info_cast_o);
+
+      if (stat_mem_pkt_yumi_o)
+        $fwrite(eng_file, "%12t | stat_mem_pkt: %p\n", $time, stat_mem_pkt_cast_i);
+      if (stat_mem_read_r)
+        $fwrite(eng_file, "%12t | stat_mem_read: %x\n", $time, stat_mem_info_cast_o);
+
+      if (|data_mem_fast_read)
+        $fwrite(mem_file, "%12t | data_mem_fast_read: %b\n", $time, data_mem_fast_read);
+      if (|data_mem_fast_write)
+        $fwrite(mem_file, "%12t | data_mem_fast_read: %b\n", $time, data_mem_fast_write);
+      if (|data_mem_slow_read)
+        $fwrite(mem_file, "%12t | data_mem_slow_read: %b\n", $time, data_mem_slow_read);
+      if (|data_mem_slow_write)
+        $fwrite(mem_file, "%12t | data_mem_slow_read: %b\n", $time, data_mem_slow_write);
+
+      if (tag_mem_fast_read)
+        $fwrite(mem_file, "%12t | tag_mem_fast_read : %b\n", $time, tag_mem_fast_read);
+      if (tag_mem_fast_write)
+        $fwrite(mem_file, "%12t | tag_mem_fast_read : %b\n", $time, tag_mem_fast_write);
+      if (tag_mem_slow_read)
+        $fwrite(mem_file, "%12t | tag_mem_slow_read : %b\n", $time, tag_mem_slow_read);
+      if (tag_mem_slow_write)
+        $fwrite(mem_file, "%12t | tag_mem_slow_read : %b\n", $time, tag_mem_slow_write);
+
+      if (stat_mem_fast_read)
+        $fwrite(mem_file, "%12t | stat_mem_fast_read: %b\n", $time, stat_mem_fast_read);
+      if (stat_mem_fast_write)
+        $fwrite(mem_file, "%12t | stat_mem_fast_read: %b\n", $time, stat_mem_fast_write);
+      if (stat_mem_slow_read)
+        $fwrite(mem_file, "%12t | stat_mem_slow_read: %b\n", $time, stat_mem_slow_read);
+      if (stat_mem_slow_write)
+        $fwrite(mem_file, "%12t | stat_mem_slow_read: %b\n", $time, stat_mem_slow_write);
     end
 
 endmodule
