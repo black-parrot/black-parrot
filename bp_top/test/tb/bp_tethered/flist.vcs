@@ -38,6 +38,8 @@ $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
+$BP_BE_DIR/test/common/bp_be_nonsynth_dcache_tracer.sv
+$BP_FE_DIR/test/common/bp_fe_nonsynth_icache_tracer.sv
 # top files
 $BP_TOP_DIR/test/common/bp_nonsynth_watchdog.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_vm_tracer.sv

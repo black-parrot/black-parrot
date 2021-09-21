@@ -45,29 +45,29 @@ module bp_mem_nonsynth_tracer
     if (mem_cmd_v_i & mem_cmd_ready_and_i)
       case (mem_cmd_header_cast_i.msg_type.mem)
         e_bedrock_mem_rd:
-          $fwrite(file, "[%t] CMD  RD  : (%x) %b\n", $time, mem_cmd_header_cast_i.addr, mem_cmd_header_cast_i.size);
+          $fwrite(file, "%12t | CMD  RD  : (%x) %b\n", $time, mem_cmd_header_cast_i.addr, mem_cmd_header_cast_i.size);
         e_bedrock_mem_wr:
-          $fwrite(file, "[%t] CMD  WR  : (%x) %b %x\n", $time, mem_cmd_header_cast_i.addr, mem_cmd_header_cast_i.size, mem_cmd_data_i);
+          $fwrite(file, "%12t | CMD  WR  : (%x) %b %x\n", $time, mem_cmd_header_cast_i.addr, mem_cmd_header_cast_i.size, mem_cmd_data_i);
         e_bedrock_mem_uc_rd:
-          $fwrite(file, "[%t] CMD  UCRD: (%x) %b\n", $time, mem_cmd_header_cast_i.addr, mem_cmd_header_cast_i.size);
+          $fwrite(file, "%12t | CMD  UCRD: (%x) %b\n", $time, mem_cmd_header_cast_i.addr, mem_cmd_header_cast_i.size);
         e_bedrock_mem_uc_wr:
-          $fwrite(file, "[%t] CMD  UCWR: (%x) %b %x\n", $time, mem_cmd_header_cast_i.addr, mem_cmd_header_cast_i.size, mem_cmd_data_i);
+          $fwrite(file, "%12t | CMD  UCWR: (%x) %b %x\n", $time, mem_cmd_header_cast_i.addr, mem_cmd_header_cast_i.size, mem_cmd_data_i);
         default:
-          $fwrite(file, "[%t] CMD  ERROR: unknown cmd_type %x received!", $time, mem_resp_header_cast_i.msg_type.mem);
+          $fwrite(file, "%12t | CMD  ERROR: unknown cmd_type %x received!", $time, mem_resp_header_cast_i.msg_type.mem);
       endcase
   
     if (mem_resp_v_i & mem_resp_ready_and_i)
       case (mem_resp_header_cast_i.msg_type.mem)
         e_bedrock_mem_rd:
-          $fwrite(file, "[%t] RESP RD  : (%x) %b %x\n", $time, mem_resp_header_cast_i.addr, mem_resp_header_cast_i.size, mem_resp_data_i);
+          $fwrite(file, "%12t | RESP RD  : (%x) %b %x\n", $time, mem_resp_header_cast_i.addr, mem_resp_header_cast_i.size, mem_resp_data_i);
         e_bedrock_mem_wr:
-          $fwrite(file, "[%t] RESP WR  : (%x) %b\n", $time, mem_resp_header_cast_i.addr, mem_resp_header_cast_i.size);
+          $fwrite(file, "%12t | RESP WR  : (%x) %b\n", $time, mem_resp_header_cast_i.addr, mem_resp_header_cast_i.size);
         e_bedrock_mem_uc_rd:
-          $fwrite(file, "[%t] RESP UCRD: (%x) %b %x\n", $time, mem_resp_header_cast_i.addr, mem_resp_header_cast_i.size, mem_resp_data_i);
+          $fwrite(file, "%12t | RESP UCRD: (%x) %b %x\n", $time, mem_resp_header_cast_i.addr, mem_resp_header_cast_i.size, mem_resp_data_i);
         e_bedrock_mem_uc_wr:
-          $fwrite(file, "[%t] RESP UCWR: (%x) %b\n", $time, mem_resp_header_cast_i.addr, mem_resp_header_cast_i.size);
+          $fwrite(file, "%12t | RESP UCWR: (%x) %b\n", $time, mem_resp_header_cast_i.addr, mem_resp_header_cast_i.size);
         default:
-          $fwrite(file, "[%t] ERROR: unknown resp_type %x received!", $time, mem_resp_header_cast_i.msg_type.mem);
+          $fwrite(file, "%12t | ERROR: unknown resp_type %x received!", $time, mem_resp_header_cast_i.msg_type.mem);
       endcase
   end
 

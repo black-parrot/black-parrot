@@ -115,7 +115,7 @@ module bp_me_nonsynth_cce_tracer
       // inbound messages
       if (lce_req_header_v_i & lce_req_header_ready_and_i) begin
         if (lce_req.msg_type.req == e_bedrock_req_rd_miss | lce_req.msg_type.req == e_bedrock_req_wr_miss) begin
-        $fdisplay(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wg[%0d] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d]"
+        $fdisplay(file, "%12t |: CCE[%0d] REQ LCE[%0d] addr[%H] wg[%0d] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d]"
                  , $time, lce_req_payload.dst_id, lce_req_payload.src_id, lce_req.addr
                  , lce_req.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , (lce_req.msg_type.req == e_bedrock_req_wr_miss)
@@ -125,7 +125,7 @@ module bp_me_nonsynth_cce_tracer
                  );
         end
         if (lce_req.msg_type.req == e_bedrock_req_uc_rd) begin
-        $fdisplay(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b]"
+        $fdisplay(file, "%12t |: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b]"
                  , $time, lce_req_payload.dst_id, lce_req_payload.src_id, lce_req.addr, (lce_req.msg_type.req == e_bedrock_req_uc_wr)
                  , 1'b0
                  , 1'b1
@@ -133,7 +133,7 @@ module bp_me_nonsynth_cce_tracer
                  );
         end
         if (lce_req.msg_type.req == e_bedrock_req_uc_wr) begin
-        $fdisplay(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b]"
+        $fdisplay(file, "%12t |: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b]"
                  , $time, lce_req_payload.dst_id, lce_req_payload.src_id, lce_req.addr, (lce_req.msg_type.req == e_bedrock_req_uc_wr)
                  , 1'b0
                  , 1'b1
@@ -142,7 +142,7 @@ module bp_me_nonsynth_cce_tracer
         end
       end
       if (lce_req_data_v_i & lce_req_data_ready_and_i) begin
-        $fdisplay(file, "[%t]: LCE REQ DATA %H"
+        $fdisplay(file, "%12t |: LCE REQ DATA %H"
                   , $time, lce_req_data_i
                   );
       end
@@ -150,7 +150,7 @@ module bp_me_nonsynth_cce_tracer
         if ((lce_resp.msg_type.resp == e_bedrock_resp_sync_ack)
             | (lce_resp.msg_type.resp == e_bedrock_resp_inv_ack)
             | (lce_resp.msg_type.resp == e_bedrock_resp_coh_ack)) begin
-        $fdisplay(file, "[%t]: CCE[%0d] RESP LCE[%0d] addr[%H] wg[%0d] ack[%4b]"
+        $fdisplay(file, "%12t |: CCE[%0d] RESP LCE[%0d] addr[%H] wg[%0d] ack[%4b]"
                  , $time, lce_resp_payload.dst_id, lce_resp_payload.src_id, lce_resp.addr
                  , lce_resp.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , lce_resp.msg_type.resp
@@ -158,7 +158,7 @@ module bp_me_nonsynth_cce_tracer
         end
         if ((lce_resp.msg_type.resp == e_bedrock_resp_wb)
             | (lce_resp.msg_type.resp == e_bedrock_resp_null_wb)) begin
-        $fdisplay(file, "[%t]: CCE[%0d] DATA RESP LCE[%0d] addr[%H] wg[%0d] null_wb[%0b]"
+        $fdisplay(file, "%12t |: CCE[%0d] DATA RESP LCE[%0d] addr[%H] wg[%0d] null_wb[%0b]"
                  , $time, lce_resp_payload.dst_id, lce_resp_payload.src_id, lce_resp.addr
                  , lce_resp.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , (lce_resp.msg_type.resp == e_bedrock_resp_null_wb)
@@ -166,13 +166,13 @@ module bp_me_nonsynth_cce_tracer
         end
       end
       if (lce_resp_data_v_i & lce_resp_data_ready_and_i) begin
-        $fdisplay(file, "[%t]: LCE RESP DATA %H"
+        $fdisplay(file, "%12t |: LCE RESP DATA %H"
                   , $time, lce_resp_data_i
                   );
       end
       if (mem_resp_v_i & mem_resp_ready_and_i) begin
         if (mem_resp.msg_type.mem == e_bedrock_mem_wr | mem_resp.msg_type.mem == e_bedrock_mem_uc_wr) begin
-        $fdisplay(file, "[%t]: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d]"
+        $fdisplay(file, "%12t |: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d]"
                  , $time, cce_id_i, (mem_resp.msg_type.mem == e_bedrock_mem_wr)
                  , (mem_resp.msg_type.mem == e_bedrock_mem_uc_wr)
                  , mem_resp.addr
@@ -181,7 +181,7 @@ module bp_me_nonsynth_cce_tracer
                  );
         end
         if (mem_resp.msg_type.mem == e_bedrock_mem_rd | mem_resp.msg_type.mem == e_bedrock_mem_uc_rd) begin
-        $fdisplay(file, "[%t]: CCE[%0d] MEM DATA RESP addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b] last[%0b] %H"
+        $fdisplay(file, "%12t |: CCE[%0d] MEM DATA RESP addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b] last[%0b] %H"
                  , $time, cce_id_i, mem_resp.addr
                  , mem_resp.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_resp_payload.lce_id, mem_resp_payload.way_id, mem_resp_payload.state
@@ -195,21 +195,21 @@ module bp_me_nonsynth_cce_tracer
       // outbound messages
       if (lce_cmd_header_v_i & lce_cmd_header_ready_and_i) begin
         if (lce_cmd.msg_type.cmd == e_bedrock_cmd_data) begin
-        $fdisplay(file, "[%t]: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] wg[%0d] st[%3b] way[%0d]"
+        $fdisplay(file, "%12t |: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] wg[%0d] st[%3b] way[%0d]"
                  , $time, lce_cmd_payload.src_id, lce_cmd_payload.dst_id, lce_cmd.msg_type.cmd, lce_cmd.addr
                  , lce_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , lce_cmd_payload.state, lce_cmd_payload.way_id
                  );
         end
         else if (lce_cmd.msg_type.cmd == e_bedrock_cmd_uc_data) begin
-        $fdisplay(file, "[%t]: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] wg[%0d] st[%3b] way[%0d]"
+        $fdisplay(file, "%12t |: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] wg[%0d] st[%3b] way[%0d]"
                  , $time, lce_cmd_payload.src_id, lce_cmd_payload.dst_id, lce_cmd.msg_type.cmd, lce_cmd.addr
                  , lce_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , lce_cmd_payload.state, lce_cmd_payload.way_id
                  );
         end
         else begin
-        $fdisplay(file, "[%t]: CCE[%0d] CMD LCE[%0d] addr[%H] wg[%0d] cmd[%4b] way[%0d] st[%3b] tgt[%0d] tgtWay[%0d] tgtSt[%3b]"
+        $fdisplay(file, "%12t |: CCE[%0d] CMD LCE[%0d] addr[%H] wg[%0d] cmd[%4b] way[%0d] st[%3b] tgt[%0d] tgtWay[%0d] tgtSt[%3b]"
                  , $time, lce_cmd_payload.src_id, lce_cmd_payload.dst_id, lce_cmd.addr
                  , lce_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , lce_cmd.msg_type.cmd, lce_cmd_payload.way_id
@@ -219,13 +219,13 @@ module bp_me_nonsynth_cce_tracer
         end
       end
       if (lce_cmd_data_v_i & lce_cmd_data_ready_and_i) begin
-        $fdisplay(file, "[%t]: LCE CMD DATA %H"
+        $fdisplay(file, "%12t |: LCE CMD DATA %H"
                   , $time, lce_cmd_data_i
                   );
       end
       if (mem_cmd_v_i & mem_cmd_ready_and_i) begin
         if (mem_cmd.msg_type.mem == e_bedrock_mem_rd | mem_cmd.msg_type.mem == e_bedrock_mem_uc_rd) begin
-        $fdisplay(file, "[%t]: CCE[%0d] MEM CMD addr[%H] wg[%0d] lce[%0d] way[%0d] spec[%0b] uc[%0b]"
+        $fdisplay(file, "%12t |: CCE[%0d] MEM CMD addr[%H] wg[%0d] lce[%0d] way[%0d] spec[%0b] uc[%0b]"
                  , $time, cce_id_i, mem_cmd.addr
                  , mem_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_cmd_payload.lce_id
@@ -234,7 +234,7 @@ module bp_me_nonsynth_cce_tracer
                  );
         end
         if (mem_cmd.msg_type.mem == e_bedrock_mem_uc_wr | mem_cmd.msg_type.mem == e_bedrock_mem_wr) begin
-        $fdisplay(file, "[%t]: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b] last[%0b] %H"
+        $fdisplay(file, "%12t |: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b] last[%0b] %H"
                  , $time, cce_id_i, (mem_cmd.msg_type.mem == e_bedrock_mem_wr), mem_cmd.addr
                  , mem_cmd.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_cmd_payload.lce_id, mem_cmd_payload.way_id, mem_cmd_payload.state

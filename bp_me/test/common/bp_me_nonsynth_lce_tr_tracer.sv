@@ -83,14 +83,14 @@ module bp_me_nonsynth_lce_tr_tracer
       // Trace Replay
       if (tr_pkt_v_i & tr_pkt_yumi_i) begin
         tr_start_t <= $time;
-        $fdisplay(file, "[%t]: LCE[%0d] TR cmd %s op[%b] uc[%b] addr[%H] set[%d] %H"
+        $fdisplay(file, "%12t |: LCE[%0d] TR cmd %s op[%b] uc[%b] addr[%H] set[%d] %H"
                   , $time, lce_id_i, s, tr_cmd.cmd, tr_cmd.uncached, tr_cmd.paddr
                   , tr_cmd.paddr[block_offset_bits_lp +: lg_sets_lp], tr_cmd.data
                   );
       end
 
       if (tr_pkt_v_o_i & tr_pkt_ready_i) begin
-        $fdisplay(file, "[%t]: LCE[%0d] TR resp cmd[%b] uc[%b] addr[%H] set[%d] %H time[%0t]"
+        $fdisplay(file, "%12t |: LCE[%0d] TR resp cmd[%b] uc[%b] addr[%H] set[%d] %H time[%0t]"
                   , $time, lce_id_i, tr_resp.cmd, tr_resp.uncached, tr_resp.paddr
                   , tr_resp.paddr[block_offset_bits_lp +: lg_sets_lp]
                   , tr_resp.data, $time-tr_start_t
