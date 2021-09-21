@@ -1,4 +1,4 @@
-#BlackParrot Accelerator Developer's Guide
+# BlackParrot Accelerator Developer's Guide
 
 ## Accelerator Complex High Level Block Diagram
 
@@ -11,18 +11,20 @@ A typical accelerator design includes the following components:
 
 ![Accelerator Complex](accelerator_complex.png)
 
-The detailed schematic of accelerator tile node and accelerator tile can be found in the following link:
-https://docs.google.com/presentation/d/1I8RHFAAT-yERvWZpmGOr8IMzqYVs5tThM_jM6fuXKqs/edit?usp=sharing
+The detailed schematic of accelerator tile node and accelerator tile can be found [here](https://docs.google.com/presentation/d/1I8RHFAAT-yERvWZpmGOr8IMzqYVs5tThM_jM6fuXKqs/edit?usp=sharing).
 
 
 ## Bare-metal Environment
-Commands to Run Accelerator Demos:
+**Commands to Run Accelerator Demos**
+
 Clone the latest repo and follow the getting started page to run the general tests. For accelerator tests, to run vector_dot_product example, run the following command in bp_top/syn:
  
+```
 make build_dump.v sim_dump.v  SUITE=bp-tests PROG=streaming_accelerator_demo CFG=e_bp_multicore_1_accelerator_cfg
+```
 
+**Accelerator API**
 
-Accelerator API:
 Considering BlackParrot memory address map, defined in the [platform guide](platform_guide.md), accelerators CSRs can be mapped into MMIO space (16 MB of MMIO space for each coherent and streaming accelerator).
 
 Some basic APIs such as bp_set_mmio_csr, bp_get_mmio_csr, and dma_cpy functions are defined in the BlackParrot bare-metal library, lib_perch, located at bp_common/test/src/perch. Other required functions can be added to the library based on the accelerator functionality. The base address for each accelerator, accelerator ID, and also a list of each accelerator CSRs can be defined in the library. 
@@ -52,9 +54,10 @@ Call accelerator function sets the corresponding CSRs, sends start command to ac
 All the required hardware and software modifications have already been implemented for example coherent and streaming accelerators (vector dot_product). They can be used as a reference for adding new accelerators to the BlackParrot SoC.
 
  
-##Linux Environment
+## Linux Environment
 
-Commands to Run Accelerator Demos:
+**Commands to Run Accelerator Demos**
+
 Clone bp_accelerator_mods branch of https://github.com/bsg-external/freedom-u-sdk.git repo and run make in the top level directory to create the bbl image. Then clone the accelerator_dromajo branch of BlackParrot repo and follow the getting started page to build the tools.  
 To boot up linux on dromajo, run the following command in black-parrot/external/dromajo/src/.
 
@@ -68,7 +71,8 @@ Once you get the login prompt, enter "root" username and "blackparrot" password 
 
 To make it easier to add new local programs to the generated rootfs, we created a separate buildroot package at freedom-u-sdk/buildroot/package/localprog. To add a new program, you just need to copy the source files in the src directory of the package and modify the available makefile to build the programs, the output binaries are placed in the bin folder of the package, and get automatically added to rootfs in /usr/bin directory.
 
-Accelerator Kernel Driver:
+**Accelerator Kernel Driver**
+
 After adding a new accelerator to BlackParrot SoC, you need to provide a kernel driver to let the user program communicate with the accelerator. All the example drivers are in linux/drivers/ directory. The bp_dummy driver can be used as a tutorial to develop drivers for the accelerators added to BlackParrot SoC. This driver installs a character device that the user process can write to in order to initialize the settings of the accelerator. Adding a new driver is as easy as replacing "dummy" with the accelerator name and modifying the ioctl function to configure the corresponding accelerator using SBI calls. The basic SBI calls such as sbi_set_mmio_csr, sbi_get_mmio_csr, and sbi_dma are already implemented. If needed, new SBI calls can be added to both Linux (linux/arch/riscv/include/asm/sbi.h) and riscv-pk (riscv-pk/machine/mtrap.c).
 
 To use the accelerator in the user program, you first need to open its corresponding device file.
@@ -98,4 +102,4 @@ cfg_param.resp_ptr= &result;
 ioctl(fd, IOCTL_CFG_VDP, &cfg_param );
 ```
 
-You can find example user programs in the Buildroot localprog package for both coherent and streaming vector_dot_product accelerators. 
+You can find example user programs in the Buildroot localprog package for both coherent and streaming vector_dot_product accelerators.
