@@ -57,8 +57,8 @@ low-level BlackParrot code, or optimize for the BlackParrot platform should look
 Once you've built and validate your BlackParrot program and are ready to run on RTL, look at our
 [TestBench Guide](docs/testbench_guide.md)
 
-## Accelerator developer's Guide
-[Platform Guide](docs/accelerator_guide.md)
+## Accelerator Developer Guide
+[Accelerator Guide](docs/accelerator_guide.md)
 
 ## Hardware Development Kit
 Coming Soon!
