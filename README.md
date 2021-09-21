@@ -77,6 +77,9 @@ page for more details on the coherence protocol and system.
 ## Platform Guide
 [Platform Guide](docs/platform_guide.md)
 
+## Accelerator developer's Guide
+[Platform Guide](docs/accelerator_guide.md)
+
 ## Boot Debugging Guide
 [Boot Debug Guide](docs/debug_boot.md)
 
