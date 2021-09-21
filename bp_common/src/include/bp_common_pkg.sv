@@ -38,7 +38,7 @@ package bp_common_pkg;
   `include "bp_common_core_pkgdef.svh"
   `include "bp_common_host_pkgdef.svh"
   `include "bp_common_rv64_pkgdef.svh"
-
+  `include "bp_common_accelerator_pkgdef.svh"
   `include "bp_common_aviary_pkgdef.svh"
 
 endpackage

@@ -95,7 +95,7 @@ module bp_sacc_loopback
       resp_v_lo <= 1;
       unique
       case (local_addr_li.addr)
-        20'h00000 : csr_data <= spm_write_cnt;
+        accel_wr_cnt_csr_idx_gp : csr_data <= spm_write_cnt;
         default : begin end
       endcase
     end

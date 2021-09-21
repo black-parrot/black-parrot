@@ -311,13 +311,13 @@ module bp_cacc_vdp
       resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
       unique
       case (local_addr_li.addr)
-        20'h00000 : input_a_ptr <= io_cmd_cast_i.data;
-        20'h00040 : input_b_ptr <= io_cmd_cast_i.data;
-        20'h00080 : input_len  <= io_cmd_cast_i.data;
-        20'h000c0 : start_cmd  <= io_cmd_cast_i.data;
-        20'h00140 : res_ptr    <= io_cmd_cast_i.data;
-        20'h00180 : res_len    <= io_cmd_cast_i.data;
-        20'h00200 : operation  <= io_cmd_cast_i.data;
+        inputa_ptr_csr_idx_gp : input_a_ptr <= io_cmd_cast_i.data;
+        inputb_ptr_csr_idx_gp : input_b_ptr <= io_cmd_cast_i.data;
+        input_len_csr_idx_gp  : input_len  <= io_cmd_cast_i.data;
+        start_cmd_csr_idx_gp  : start_cmd  <= io_cmd_cast_i.data;
+        res_ptr_csr_idx_gp    : res_ptr    <= io_cmd_cast_i.data;
+        res_len_csr_idx_gp    : res_len    <= io_cmd_cast_i.data;
+        operation_csr_idx_gp  : operation  <= io_cmd_cast_i.data;
         default : begin end
       endcase
     end
@@ -329,14 +329,14 @@ module bp_cacc_vdp
       resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
       unique
       case (local_addr_li.addr)
-        20'h00000 : resp_data <= input_a_ptr;
-        20'h00040 : resp_data <= input_b_ptr;
-        20'h00080 : resp_data <= input_len;
-        20'h000c0 : resp_data <= start_cmd;
-        20'h00100 : resp_data <= res_status;
-        20'h00140 : resp_data <= res_ptr;
-        20'h00180 : resp_data <= res_len;
-        20'h00200 : resp_data <= operation;
+        inputa_ptr_csr_idx_gp : csr_data <= input_a_ptr;
+        inputb_ptr_csr_idx_gp : csr_data <= input_b_ptr;
+        input_len_csr_idx_gp  : csr_data <= input_len;
+        start_cmd_csr_idx_gp  : csr_data <= start_cmd;
+        res_status_csr_idx_gp : csr_data <= res_status;
+        res_ptr_csr_idx_gp    : csr_data <= res_ptr;
+        res_len_csr_idx_gp    : csr_data <= res_len;
+        operation_csr_idx_gp  : csr_data <= operation;
         default : begin end
       endcase
     end
