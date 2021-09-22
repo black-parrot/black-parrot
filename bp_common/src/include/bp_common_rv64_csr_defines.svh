@@ -699,7 +699,7 @@
     '{word_addr: data_cast_mp.base[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2]}
 
   `define decompress_stvec_s(data_comp_mp) \
-    '{base : 62'($signed(data_comp_mp.word_addr)) \
+    '{base : `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 62) \
       ,mode: 2'b00                           \
       }
 
@@ -728,7 +728,7 @@
     bp_sepc_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_sepc_s(data_comp_mp) \
-    64'($signed(data_comp_mp))
+    `BSG_SIGN_EXTEND(data_comp_mp, 64)
 
   `define compress_scause_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{_interrupt: data_cast_mp._interrupt \
@@ -744,7 +744,7 @@
     bp_stval_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_stval_s(data_comp_mp) \
-    64'($signed(data_comp_mp))
+    `BSG_SIGN_EXTEND(data_comp_mp, 64)
 
   `define bp_satp_width ($bits(bp_satp_s))
 
@@ -851,7 +851,7 @@
     '{word_addr: data_cast_mp.base[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2]}
 
   `define decompress_mtvec_s(data_comp_mp) \
-    '{base : 62'($signed(data_comp_mp.word_addr)) \
+    '{base : `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 62) \
       ,mode: 2'b00                                \
       }
 
@@ -901,13 +901,13 @@
     bp_mtval_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_mtval_s(data_comp_mp) \
-    64'($signed(data_comp_mp))
+    `BSG_SIGN_EXTEND(data_comp_mp, 64)
 
   `define compress_mepc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     bp_mepc_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_mepc_s(data_comp_mp) \
-    64'($signed(data_comp_mp))
+    `BSG_SIGN_EXTEND(data_comp_mp, 64)
 
   `define compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{pmpcfg: data_cast_mp.pmpcfg[0+:4]}
@@ -1012,7 +1012,7 @@
     bp_dpc_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
 
   `define decompress_dpc_s(data_comp_mp) \
-    64'($signed(data_comp_mp))
+    `BSG_SIGN_EXTEND(data_comp_mp, 64)
 
   `define compress_dscratch0_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     data_cast_mp[0+:64]
