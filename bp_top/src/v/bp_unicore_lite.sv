@@ -28,14 +28,14 @@ module bp_unicore_lite
    , input [uce_mem_msg_header_width_lp-1:0]           io_resp_header_i
    , input [uce_mem_data_width_lp-1:0]                 io_resp_data_i
    , input                                             io_resp_v_i
-   , output logic                                      io_resp_yumi_o
+   , output logic                                      io_resp_ready_and_o
    , input                                             io_resp_last_i
 
    // Incoming I/O
    , input [uce_mem_msg_header_width_lp-1:0]           io_cmd_header_i
    , input [uce_mem_data_width_lp-1:0]                 io_cmd_data_i
    , input                                             io_cmd_v_i
-   , output logic                                      io_cmd_yumi_o
+   , output logic                                      io_cmd_ready_and_o
    , input                                             io_cmd_last_i
 
    , output logic [uce_mem_msg_header_width_lp-1:0]    io_resp_header_o
@@ -113,7 +113,7 @@ module bp_unicore_lite
   // proc_cmd[2:0] = {IO cmd, BE UCE, FE UCE}
   bp_bedrock_uce_mem_msg_header_s [2:0] proc_cmd_header_lo;
   logic [2:0][uce_mem_data_width_lp-1:0] proc_cmd_data_lo;
-  logic [2:0] proc_cmd_v_lo, proc_cmd_yumi_li, proc_cmd_last_lo;
+  logic [2:0] proc_cmd_v_lo, proc_cmd_ready_and_li, proc_cmd_last_lo;
   bp_bedrock_uce_mem_msg_header_s [2:0] proc_resp_header_li;
   logic [2:0][uce_mem_data_width_lp-1:0] proc_resp_data_li;
   logic [2:0] proc_resp_v_li, proc_resp_ready_and_lo, proc_resp_last_li;
@@ -241,7 +241,7 @@ module bp_unicore_lite
     ,.mem_cmd_header_o(proc_cmd_header_lo[1])
     ,.mem_cmd_data_o(proc_cmd_data_lo[1])
     ,.mem_cmd_v_o(proc_cmd_v_lo[1])
-    ,.mem_cmd_ready_and_i(proc_cmd_yumi_li[1])
+    ,.mem_cmd_ready_and_i(proc_cmd_ready_and_li[1])
     ,.mem_cmd_last_o(proc_cmd_last_lo[1])
 
     ,.mem_resp_header_i(proc_resp_header_li[1])
@@ -296,7 +296,7 @@ module bp_unicore_lite
      ,.mem_cmd_header_o(proc_cmd_header_lo[0])
      ,.mem_cmd_data_o(proc_cmd_data_lo[0])
      ,.mem_cmd_v_o(proc_cmd_v_lo[0])
-     ,.mem_cmd_ready_and_i(proc_cmd_yumi_li[0])
+     ,.mem_cmd_ready_and_i(proc_cmd_ready_and_li[0])
      ,.mem_cmd_last_o(proc_cmd_last_lo[0])
 
      ,.mem_resp_header_i(proc_resp_header_li[0])
@@ -310,7 +310,7 @@ module bp_unicore_lite
   assign proc_cmd_header_lo[2] = io_cmd_header_cast_i;
   assign proc_cmd_data_lo[2] = io_cmd_data_i;
   assign proc_cmd_v_lo[2] = io_cmd_v_i;
-  assign io_cmd_yumi_o = proc_cmd_yumi_li[2];
+  assign io_cmd_ready_and_o = proc_cmd_ready_and_li[2];
   assign proc_cmd_last_lo[2] = io_cmd_last_i;
 
   assign io_resp_header_cast_o = proc_resp_header_li[2];
@@ -335,7 +335,7 @@ module bp_unicore_lite
   assign dev_resp_header_lo[2] = io_resp_header_cast_i;
   assign dev_resp_data_lo[2] = io_resp_data_i;
   assign dev_resp_v_lo[2] = io_resp_v_i;
-  assign io_resp_yumi_o = dev_resp_ready_and_li[2] & dev_resp_v_lo[2];
+  assign io_resp_ready_and_o = dev_resp_ready_and_li[2];
   assign dev_resp_last_lo[2] = io_resp_last_i;
 
   assign dev_resp_header_lo[3] = mem_resp_header_cast_i;
@@ -379,7 +379,7 @@ module bp_unicore_lite
   assign dev_resp_dst_lo[1] = dev_resp_header_lo[1].payload.lce_id[0+:lg_num_proc_lp];
   assign dev_resp_dst_lo[0] = dev_resp_header_lo[0].payload.lce_id[0+:lg_num_proc_lp];
 
-  bp_me_xbar_stream
+  bp_me_xbar_stream_buffered
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(uce_mem_data_width_lp)
      ,.payload_width_p(uce_mem_payload_width_lp)
@@ -393,7 +393,7 @@ module bp_unicore_lite
      ,.msg_header_i(proc_cmd_header_lo)
      ,.msg_data_i(proc_cmd_data_lo)
      ,.msg_v_i(proc_cmd_v_lo)
-     ,.msg_yumi_o(proc_cmd_yumi_li)
+     ,.msg_ready_and_o(proc_cmd_ready_and_li)
      ,.msg_last_i(proc_cmd_last_lo)
      ,.msg_dst_i(proc_cmd_dst_lo)
 
@@ -404,7 +404,7 @@ module bp_unicore_lite
      ,.msg_last_o(dev_cmd_last_li)
      );
 
-  bp_me_xbar_stream
+  bp_me_xbar_stream_buffered
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(uce_mem_data_width_lp)
      ,.payload_width_p(uce_mem_payload_width_lp)
@@ -418,7 +418,7 @@ module bp_unicore_lite
      ,.msg_header_i(dev_resp_header_lo)
      ,.msg_data_i(dev_resp_data_lo)
      ,.msg_v_i(dev_resp_v_lo)
-     ,.msg_yumi_o(dev_resp_ready_and_li)
+     ,.msg_ready_and_o(dev_resp_ready_and_li)
      ,.msg_last_i(dev_resp_last_lo)
      ,.msg_dst_i(dev_resp_dst_lo)
 
