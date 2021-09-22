@@ -51,14 +51,14 @@ module bp_unicore
    , input [uce_mem_msg_header_width_lp-1:0]           io_resp_header_i
    , input [uce_mem_data_width_lp-1:0]                 io_resp_data_i
    , input                                             io_resp_v_i
-   , output logic                                      io_resp_yumi_o
+   , output logic                                      io_resp_ready_and_o
    , input                                             io_resp_last_i
 
    // Incoming I/O
    , input [uce_mem_msg_header_width_lp-1:0]           io_cmd_header_i
    , input [uce_mem_data_width_lp-1:0]                 io_cmd_data_i
    , input                                             io_cmd_v_i
-   , output logic                                      io_cmd_yumi_o
+   , output logic                                      io_cmd_ready_and_o
    , input                                             io_cmd_last_i
 
    , output logic [uce_mem_msg_header_width_lp-1:0]    io_resp_header_o
