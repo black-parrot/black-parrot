@@ -37,14 +37,14 @@ module wrapper
    , input [io_mem_msg_header_width_lp-1:0]                 io_resp_header_i
    , input [io_data_width_p-1:0]                            io_resp_data_i
    , input                                                  io_resp_v_i
-   , output logic                                           io_resp_yumi_o
+   , output logic                                           io_resp_ready_and_o
    , input                                                  io_resp_last_i
 
    // Incoming I/O
    , input [io_mem_msg_header_width_lp-1:0]                 io_cmd_header_i
    , input [io_data_width_p-1:0]                            io_cmd_data_i
    , input                                                  io_cmd_v_i
-   , output logic                                           io_cmd_yumi_o
+   , output logic                                           io_cmd_ready_and_o
    , input                                                  io_cmd_last_i
 
    , output logic [io_mem_msg_header_width_lp-1:0]          io_resp_header_o
@@ -116,9 +116,6 @@ module wrapper
          ,.dram_resp_link_i(dram_resp_link_li)
          );
 
-      logic io_cmd_ready_and_lo, io_resp_ready_and_lo;
-      assign io_cmd_yumi_o = io_cmd_ready_and_lo & io_cmd_v_i;
-      assign io_resp_yumi_o = io_resp_ready_and_lo & io_resp_v_i;
       wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
       `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io);
@@ -141,7 +138,7 @@ module wrapper
          ,.mem_cmd_header_i(io_cmd_header_i)
          ,.mem_cmd_data_i(io_cmd_data_i)
          ,.mem_cmd_v_i(io_cmd_v_i)
-         ,.mem_cmd_ready_and_o(io_cmd_ready_and_lo)
+         ,.mem_cmd_ready_and_o(io_cmd_ready_and_o)
          ,.mem_cmd_last_i(io_cmd_last_i)
 
          ,.mem_resp_header_o(io_resp_header_o)
@@ -164,7 +161,7 @@ module wrapper
          ,.mem_resp_header_i(io_resp_header_i)
          ,.mem_resp_data_i(io_resp_data_i)
          ,.mem_resp_v_i(io_resp_v_i)
-         ,.mem_resp_ready_and_o(io_resp_ready_and_lo)
+         ,.mem_resp_ready_and_o(io_resp_ready_and_o)
          ,.mem_resp_last_i(io_resp_last_i)
 
          ,.cmd_link_i(proc_cmd_link_lo)

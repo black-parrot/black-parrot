@@ -186,53 +186,53 @@ module bp_nonsynth_cache_tracer
   always_ff @(posedge clk_i) begin
 
       if(v_tl_r)
-        $fwrite(file, "[%t] tag_lookup: %x \n", $time, v_tl_r);
+        $fwrite(file, "%12t | tag_lookup: %x \n", $time, v_tl_r);
 
       if(v_tv_r) begin
-        $fwrite(file, "[%t] tag_verify: %x \n", $time, v_tv_r);
-        $fwrite(file, "[%t] addr: %x \n", $time, addr_tv_r);
+        $fwrite(file, "%12t | tag_verify: %x \n", $time, v_tv_r);
+        $fwrite(file, "%12t | addr: %x \n", $time, addr_tv_r);
       end
 
       if(sc_success)
         $fwrite(file, "SC SUCCESS! \n");
 
       if(wt_req)
-        $fwrite(file, "[%t] Writethrough incoming\n", $time);
+        $fwrite(file, "%12t | Writethrough incoming\n", $time);
 
 
       if (cache_req_v_o) begin
-        $fwrite(file, "[%t] valid cache_req: %x \n", $time, cache_req_v_o);
-        $fwrite(file, "[%t] %s addr: %x data: %x cache_miss: %x \n", $time, op, cache_req_cast_o.addr, cache_req_cast_o.data, cache_miss_o);
+        $fwrite(file, "%12t | valid cache_req: %x \n", $time, cache_req_v_o);
+        $fwrite(file, "%12t | %s addr: %x data: %x cache_miss: %x \n", $time, op, cache_req_cast_o.addr, cache_req_cast_o.data, cache_miss_o);
       end
 
       if (cache_req_metadata_v_o)
-        $fwrite(file, "[%t] lru_way: %x dirty: %x \n", $time, cache_req_metadata_cast_o.hit_or_repl_way, cache_req_metadata_cast_o.dirty);
+        $fwrite(file, "%12t | lru_way: %x dirty: %x \n", $time, cache_req_metadata_cast_o.hit_or_repl_way, cache_req_metadata_cast_o.dirty);
 
       if (cache_req_complete_i)
-        $fwrite(file, "[%t] Cache request completed \n", $time);
+        $fwrite(file, "%12t | Cache request completed \n", $time);
 
       if (data_mem_pkt_v_i)
-        $fwrite(file, "[%t] Data Mem: op: %s index: %x way: %x  data: %x \n", $time, data_op, data_mem_pkt_cast_i.index, data_mem_pkt_cast_i.way_id, data_mem_pkt_cast_i.data);
+        $fwrite(file, "%12t | Data Mem: op: %s index: %x way: %x  data: %x \n", $time, data_op, data_mem_pkt_cast_i.index, data_mem_pkt_cast_i.way_id, data_mem_pkt_cast_i.data);
 
       if (tag_mem_pkt_v_i)
-        $fwrite(file, "[%t] Tag Mem: op: %s index: %x way: %x tag: %x state: %x \n", $time, tag_op, tag_mem_pkt_cast_i.index, tag_mem_pkt_cast_i.way_id, tag_mem_pkt_cast_i.tag, tag_mem_pkt_cast_i.state);
+        $fwrite(file, "%12t | Tag Mem: op: %s index: %x way: %x tag: %x state: %x \n", $time, tag_op, tag_mem_pkt_cast_i.index, tag_mem_pkt_cast_i.way_id, tag_mem_pkt_cast_i.tag, tag_mem_pkt_cast_i.state);
 
       if (stat_mem_pkt_v_i)
-        $fwrite(file, "[%t] Stat Mem: op: %s, index: %x way: %x\n", $time, stat_op, stat_mem_pkt_cast_i.index, stat_mem_pkt_cast_i.way_id);
+        $fwrite(file, "%12t | Stat Mem: op: %s, index: %x way: %x\n", $time, stat_op, stat_mem_pkt_cast_i.index, stat_mem_pkt_cast_i.way_id);
 
       if (v_o)
-        $fwrite(file, "[%t] load data: %x \n", $time, load_data);
+        $fwrite(file, "%12t | load data: %x \n", $time, load_data);
 
       if (cache_req_v_o & (cache_req_cast_o.msg_type == e_miss_store || cache_req_cast_o.msg_type == e_uc_store))
-        $fwrite(file, "[%t] store data: %x \n", $time, store_data);
+        $fwrite(file, "%12t | store data: %x \n", $time, store_data);
     end
 
   final
     begin
-      $fwrite(file,"[%t] Tag Mem valid count: %0d \n", $time, tag_mem_v_count_r);
+      $fwrite(file,"%12t | Tag Mem valid count: %0d \n", $time, tag_mem_v_count_r);
       for (i = 0; i < assoc_p; i++)
         begin
-          $fwrite(file,"[%t] Data Mem%0d valid count: %0d \n", $time, i, data_mem_v_count_r[i]);
+          $fwrite(file,"%12t | Data Mem%0d valid count: %0d \n", $time, i, data_mem_v_count_r[i]);
         end
     end
 

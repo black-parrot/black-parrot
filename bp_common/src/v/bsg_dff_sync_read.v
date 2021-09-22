@@ -1,8 +1,10 @@
 
+`include "bsg_defines.v"
+
 // This module buffers data on a synchronous read, useful for buffering
 //   things like an synchronous SRAM read
 module bsg_dff_sync_read
- #(parameter width_p = "inv"
+ #(parameter `BSG_INV_PARAM(width_p)
 
    // Whether to bypass the read data so that it doesn't create a bubble
    , parameter bypass_p = 0
@@ -69,4 +71,6 @@ module bsg_dff_sync_read
     end
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bsg_dff_sync_read)
 
