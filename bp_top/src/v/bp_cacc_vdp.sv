@@ -46,11 +46,9 @@ module bp_cacc_vdp
   bp_be_dcache_pkt_s        dcache_pkt;
   logic                     dcache_ready, dcache_v;
   logic [dpath_width_gp-1:0] dcache_data;
-  logic                     dcache_tlb_miss, dcache_poison;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_uncached;
   logic                     dcache_dram;
-  logic                     dcache_miss_v;
   logic                     dcache_pkt_v;
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -153,10 +151,10 @@ module bp_cacc_vdp
 
   bp_lce
    #(.bp_params_p(bp_params_p)
-     ,.assoc_p(dcache_assoc_p)
-     ,.sets_p(dcache_sets_p)
-     ,.block_width_p(dcache_block_width_p)
-     ,.fill_width_p(dcache_fill_width_p)
+     ,.assoc_p(acache_assoc_p)
+     ,.sets_p(acache_sets_p)
+     ,.block_width_p(acache_block_width_p)
+     ,.fill_width_p(acache_fill_width_p)
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)
      ,.data_mem_invert_clk_p(1)
@@ -241,7 +239,7 @@ module bp_cacc_vdp
   bp_bedrock_cce_mem_payload_s  resp_payload;
   bp_bedrock_msg_size_e         resp_size;
   bp_bedrock_mem_type_e         resp_msg;
-  bp_local_addr_s          local_addr_li;
+  bp_local_addr_s               local_addr_li;
 
   assign local_addr_li = io_cmd_cast_i.header.addr;
   assign resp_header   =  '{msg_type       : resp_msg
@@ -380,16 +378,18 @@ module bp_cacc_vdp
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
+        dcache_pkt.rd_addr = '0; 
         res_status = '0;
         dcache_pkt_v = '1;
         done = 0;
       end
       WAIT_DCACHE_C1: begin
-        state_n = WAIT_DCACHE_C2;
+        state_n = dcache_v ? (load ? (second_operand ? CHECK_VEC2_LEN : CHECK_VEC1_LEN) : DONE) : WAIT_DCACHE_C2;
         res_status = '0;
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
+        dcache_pkt.rd_addr = '0; 
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt_v = '0;
         done = 0;
@@ -397,14 +397,13 @@ module bp_cacc_vdp
       WAIT_DCACHE_C2: begin
         //if load: load both input vectors
         //if store: go to DONE after store
-        state_n = dcache_miss_v ? WAIT_DCACHE_C2 :
-                  (dcache_v ? (load ? (second_operand ? CHECK_VEC2_LEN : CHECK_VEC1_LEN) : DONE)
-                            : WAIT_FETCH);
+        state_n = ~lce_cmd_v_i ? WAIT_DCACHE_C2 : WAIT_FETCH;
         res_status = '0;
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
+        dcache_pkt.rd_addr = '0; 
         dcache_pkt_v = '0;
         done = 0;
       end
@@ -415,6 +414,7 @@ module bp_cacc_vdp
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
+        dcache_pkt.rd_addr = '0; 
         dcache_pkt_v = '0;
         done = 0;
       end
@@ -425,6 +425,7 @@ module bp_cacc_vdp
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
+        dcache_pkt.rd_addr = '0; 
         dcache_pkt_v = '0;
         second_operand= 1;
         done = 0;
@@ -436,6 +437,7 @@ module bp_cacc_vdp
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.page_offset = v_addr[0+:page_offset_width_gp];
+        dcache_pkt.rd_addr = '0; 
         dcache_pkt_v = '0;
         second_operand= 1;
         done = 0;

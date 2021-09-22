@@ -701,6 +701,9 @@
       ,cacc_type: e_cacc_vdp
       ,sacc_type: e_sacc_loopback
       ,num_lce  : 3
+      ,dcache_fill_width : 512
+      ,icache_fill_width : 512
+      ,acache_fill_width : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_accelerator_cfg_p
