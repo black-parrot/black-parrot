@@ -224,7 +224,7 @@ module bp_cacc_vdp
   assign io_cmd_cast_i = io_cmd_i;
   assign io_resp_o = io_resp_cast_o;
 
-  logic [63:0] resp_data, start_cmd, input_a_ptr, input_b_ptr, input_len,
+  logic [63:0] csr_data, start_cmd, input_a_ptr, input_b_ptr, input_len,
                res_status, res_ptr, res_len, operation, dot_product_res;
   logic [63:0] vector_a [0:7];
   logic [63:0] vector_b [0:7];
@@ -251,7 +251,7 @@ module bp_cacc_vdp
                             ,size          : resp_size  };
 
   assign io_resp_cast_o = '{header         : resp_header
-                            ,data          : resp_data  };
+                            ,data          : csr_data  };
 
 
   logic [vaddr_width_p-1:0] v_addr;
