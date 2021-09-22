@@ -216,7 +216,7 @@ module bp_nonsynth_cosim
         dromajo_trap(mhartid_i, cause_r);
       end
     else if (~commit_debug_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
-      if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, commit_frd_li ? frd_raw_li[commit_instr_r.rd_addr] : ird_data_r[commit_instr_r.rd_addr], mstatus_r))
+      if (dromajo_step(mhartid_i, `BSG_SIGN_EXTEND(commit_pc_r, dword_width_gp), commit_instr_r, commit_frd_li ? frd_raw_li[commit_instr_r.rd_addr] : ird_data_r[commit_instr_r.rd_addr], mstatus_r))
         begin
           $display("COSIM_FAIL");
           $finish();
