@@ -114,12 +114,12 @@ module testbench
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li, proc_io_cmd_last_lo;
   bp_bedrock_io_mem_msg_header_s proc_io_resp_li;
   logic [io_data_width_p-1:0] proc_io_resp_data_li;
-  logic proc_io_resp_v_li, proc_io_resp_yumi_lo;
+  logic proc_io_resp_v_li, proc_io_resp_ready_and_lo;
   logic proc_io_resp_last_li;
 
   bp_bedrock_io_mem_msg_header_s load_cmd_lo;
   logic [io_data_width_p-1:0] load_cmd_data_lo;
-  logic load_cmd_v_lo, load_cmd_yumi_li, load_cmd_last_lo;
+  logic load_cmd_v_lo, load_cmd_ready_and_li, load_cmd_last_lo;
   bp_bedrock_io_mem_msg_header_s load_resp_li;
   logic [io_data_width_p-1:0] load_resp_data_li;
   logic load_resp_v_li, load_resp_ready_and_lo, load_resp_last_li;
@@ -146,13 +146,13 @@ module testbench
      ,.io_resp_header_i(proc_io_resp_li)
      ,.io_resp_data_i(proc_io_resp_data_li)
      ,.io_resp_v_i(proc_io_resp_v_li)
-     ,.io_resp_yumi_o(proc_io_resp_yumi_lo)
+     ,.io_resp_ready_and_o(proc_io_resp_ready_and_lo)
      ,.io_resp_last_i(proc_io_resp_last_li)
 
      ,.io_cmd_header_i(load_cmd_lo)
      ,.io_cmd_data_i(load_cmd_data_lo)
      ,.io_cmd_v_i(load_cmd_v_lo)
-     ,.io_cmd_yumi_o(load_cmd_yumi_li)
+     ,.io_cmd_ready_and_o(load_cmd_ready_and_li)
      ,.io_cmd_last_i(load_cmd_last_lo)
 
      ,.io_resp_header_o(load_resp_li)
@@ -213,7 +213,7 @@ module testbench
      ,.io_cmd_header_o(load_cmd_lo)
      ,.io_cmd_data_o(load_cmd_data_lo)
      ,.io_cmd_v_o(load_cmd_v_lo)
-     ,.io_cmd_yumi_i(load_cmd_yumi_li)
+     ,.io_cmd_yumi_i(load_cmd_ready_and_li & load_cmd_v_lo)
      ,.io_cmd_last_o(load_cmd_last_lo)
 
      // NOTE: IO response ready_o is always high - acts as sink
@@ -226,6 +226,7 @@ module testbench
      ,.done_o()
      );
 
+  logic [num_core_p-1:0] finish_lo;
   logic cosim_en_lo;
   logic icache_trace_en_lo;
   logic dcache_trace_en_lo;
@@ -265,7 +266,7 @@ module testbench
      ,.mem_resp_header_o(proc_io_resp_li)
      ,.mem_resp_data_o(proc_io_resp_data_li[0+:dword_width_gp])
      ,.mem_resp_v_o(proc_io_resp_v_li)
-     ,.mem_resp_ready_and_i(proc_io_resp_yumi_lo)
+     ,.mem_resp_ready_and_i(proc_io_resp_ready_and_lo)
      ,.mem_resp_last_o(proc_io_resp_last_li)
 
      ,.icache_trace_en_o(icache_trace_en_lo)
@@ -279,6 +280,7 @@ module testbench
      ,.branch_profile_en_o(branch_profile_en_lo)
      ,.pc_profile_en_o(pc_profile_en_lo)
      ,.cosim_en_o(cosim_en_lo)
+     ,.finish_o(finish_lo)
      );
 
   if (no_bind_p == 0)
@@ -301,7 +303,8 @@ module testbench
       bind bp_be_top
         bp_nonsynth_watchdog
          #(.bp_params_p(bp_params_p)
-           ,.timeout_cycles_p(100000)
+           ,.stall_cycles_p(1000000)
+           ,.halt_cycles_p(10000)
            ,.heartbeat_instr_p(100000)
            )
          watchdog
@@ -314,6 +317,7 @@ module testbench
 
            ,.npc_i(calculator.pipe_sys.csr.apc_r)
            ,.instret_i(calculator.commit_pkt_cast_o.instret)
+           ,.finish_i(testbench.finish_lo)
            );
 
 
@@ -356,108 +360,34 @@ module testbench
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
            );
 
-      bind bp_be_dcache
-        bp_nonsynth_cache_tracer
-         #(.bp_params_p(bp_params_p)
-          ,.assoc_p(assoc_p)
-          ,.sets_p(sets_p)
-          ,.block_width_p(block_width_p)
-          ,.fill_width_p(fill_width_p)
-          ,.trace_file_p("dcache"))
-         dcache_tracer
-          (.clk_i(clk_i & testbench.dcache_trace_en_lo)
-           ,.reset_i(reset_i)
-           ,.freeze_i(cfg_bus_cast_i.freeze)
-
-           ,.mhartid_i(cfg_bus_cast_i.core_id)
-
-           ,.v_tl_r(v_tl_r)
-
-           ,.v_tv_r(v_tv_r)
-           ,.addr_tv_r(paddr_tv_r)
-           ,.lr_miss_tv(lr_miss_tv)
-           ,.sc_op_tv_r(decode_tv_r.sc_op)
-           ,.sc_success(sc_success_tv)
-
-           ,.cache_req_v_o(cache_req_v_o)
-           ,.cache_req_o(cache_req_o)
-
-           ,.cache_req_metadata_o(cache_req_metadata_o)
-           ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-
-           ,.cache_req_complete_i(cache_req_complete_i)
-
-           ,.v_o(early_hit_v_o)
-           ,.load_data(early_data_o[0+:65])
-           ,.cache_miss_o('0)
-           ,.wt_req(wt_req)
-           ,.store_data(st_data_tv_r[0+:dword_width_gp])
-
-           ,.data_mem_v_i(data_mem_v_li)
-           ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-           ,.data_mem_pkt_i(data_mem_pkt_i)
-           ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-
-           ,.tag_mem_v_i(tag_mem_v_li)
-           ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-           ,.tag_mem_pkt_i(tag_mem_pkt_i)
-           ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
-
-           ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-           ,.stat_mem_pkt_i(stat_mem_pkt_i)
-           ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-           );
-
       bind bp_fe_icache
-        bp_nonsynth_cache_tracer
+        bp_fe_nonsynth_icache_tracer
          #(.bp_params_p(bp_params_p)
-          ,.assoc_p(assoc_p)
-          ,.sets_p(sets_p)
-          ,.block_width_p(block_width_p)
-          ,.fill_width_p(fill_width_p)
-          ,.trace_file_p("icache"))
+           ,.assoc_p(assoc_p)
+           ,.sets_p(sets_p)
+           ,.block_width_p(block_width_p)
+           ,.fill_width_p(fill_width_p)
+           )
          icache_tracer
           (.clk_i(clk_i & testbench.icache_trace_en_lo)
-           ,.reset_i(reset_i)
-
            ,.freeze_i(cfg_bus_cast_i.freeze)
            ,.mhartid_i(cfg_bus_cast_i.core_id)
+           ,.*
+           );
 
-           ,.v_tl_r(v_tl_r)
-
-           ,.v_tv_r(v_tv_r)
-           ,.addr_tv_r(paddr_tv_r)
-           ,.lr_miss_tv(1'b0)
-           ,.sc_op_tv_r(1'b0)
-           ,.sc_success(1'b0)
-
-           ,.cache_req_v_o(cache_req_v_o)
-           ,.cache_req_o(cache_req_o)
-
-           ,.cache_req_metadata_o(cache_req_metadata_o)
-           ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-
-           ,.cache_req_complete_i(cache_req_complete_i)
-
-           ,.v_o(data_v_o)
-           ,.load_data(65'(data_o))
-           ,.cache_miss_o('0)
-           ,.wt_req()
-           ,.store_data(dword_width_gp'(0))
-
-           ,.data_mem_v_i(data_mem_v_li)
-           ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-           ,.data_mem_pkt_i(data_mem_pkt_i)
-           ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-
-           ,.tag_mem_v_i(tag_mem_v_li)
-           ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-           ,.tag_mem_pkt_i(tag_mem_pkt_i)
-           ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
-
-           ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-           ,.stat_mem_pkt_i(stat_mem_pkt_i)
-           ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+      bind bp_be_dcache
+        bp_be_nonsynth_dcache_tracer
+         #(.bp_params_p(bp_params_p)
+           ,.assoc_p(assoc_p)
+           ,.sets_p(sets_p)
+           ,.block_width_p(block_width_p)
+           ,.fill_width_p(fill_width_p)
+           )
+         dcache_tracer
+          (.clk_i(clk_i & testbench.dcache_trace_en_lo)
+           ,.freeze_i(cfg_bus_cast_i.freeze)
+           ,.mhartid_i(cfg_bus_cast_i.core_id)
+           ,.*
            );
 
       bind bp_core_minimal

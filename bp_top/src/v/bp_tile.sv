@@ -444,7 +444,7 @@ module bp_tile
   // CCE-side CCE-Mem network connections
   bp_bedrock_cce_mem_msg_header_s cce_mem_cmd_header_lo;
   logic [dword_width_gp-1:0] cce_mem_cmd_data_lo;
-  logic cce_mem_cmd_v_lo, cce_mem_cmd_last_lo, cce_mem_cmd_yumi_li;
+  logic cce_mem_cmd_v_lo, cce_mem_cmd_last_lo, cce_mem_cmd_ready_and_li;
   bp_bedrock_cce_mem_msg_header_s cce_mem_resp_header_li;
   logic [dword_width_gp-1:0] cce_mem_resp_data_li;
   logic cce_mem_resp_v_li, cce_mem_resp_ready_and_lo, cce_mem_resp_last_li;
@@ -561,7 +561,7 @@ module bp_tile
   // All CCE-Mem network responses go to the CCE on this tile (id = 0 in xbar)
   wire [3:0] dev_resp_dst_lo = '0;
 
-  bp_me_xbar_stream
+  bp_me_xbar_stream_buffered
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(dword_width_gp)
      ,.payload_width_p(cce_mem_payload_width_lp)
@@ -575,7 +575,7 @@ module bp_tile
      ,.msg_header_i(cce_mem_cmd_header_lo)
      ,.msg_data_i(cce_mem_cmd_data_lo)
      ,.msg_v_i(cce_mem_cmd_v_lo)
-     ,.msg_yumi_o(cce_mem_cmd_yumi_li)
+     ,.msg_ready_and_o(cce_mem_cmd_ready_and_li)
      ,.msg_last_i(cce_mem_cmd_last_lo)
      ,.msg_dst_i(cce_mem_cmd_dst_lo)
 
@@ -586,7 +586,7 @@ module bp_tile
      ,.msg_last_o(dev_cmd_last_li)
      );
 
-  bp_me_xbar_stream
+  bp_me_xbar_stream_buffered
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(dword_width_gp)
      ,.payload_width_p(cce_mem_payload_width_lp)
@@ -600,7 +600,7 @@ module bp_tile
      ,.msg_header_i(dev_resp_header_lo)
      ,.msg_data_i(dev_resp_data_lo)
      ,.msg_v_i(dev_resp_v_lo)
-     ,.msg_yumi_o(dev_resp_ready_and_li)
+     ,.msg_ready_and_o(dev_resp_ready_and_li)
      ,.msg_last_i(dev_resp_last_lo)
      ,.msg_dst_i(dev_resp_dst_lo)
 
@@ -666,7 +666,7 @@ module bp_tile
      ,.mem_cmd_header_o(cce_mem_cmd_header_lo)
      ,.mem_cmd_data_o(cce_mem_cmd_data_lo)
      ,.mem_cmd_v_o(cce_mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(cce_mem_cmd_yumi_li)
+     ,.mem_cmd_ready_and_i(cce_mem_cmd_ready_and_li)
      ,.mem_cmd_last_o(cce_mem_cmd_last_lo)
      );
 

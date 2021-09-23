@@ -93,7 +93,7 @@ module bp_me_nonsynth_lce_tracer
       // request to CCE
       if (lce_req_v_i & lce_req_ready_and_i) begin
         assert(lce_req_payload.src_id == lce_id_i) else $error("Bad LCE Request - source mismatch");
-        $fdisplay(file, "[%t]: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] set[%0d] ne[%b] lru[%0d] size[%b] %H"
+        $fdisplay(file, "%12t |: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] set[%0d] ne[%b] lru[%0d] size[%b] %H"
                   , $time, lce_req_payload.src_id, lce_req.header.addr, lce_req_payload.dst_id, lce_req.header.msg_type
                   , lce_req.header.addr[block_offset_bits_lp+:lg_sets_lp]
                   , lce_req_payload.non_exclusive, lce_req_payload.lru_way_id
@@ -104,7 +104,7 @@ module bp_me_nonsynth_lce_tracer
       // response to CCE
       if (lce_resp_v_i & lce_resp_ready_and_i) begin
         assert(lce_resp_payload.src_id == lce_id_i) else $error("Bad LCE Response - source mismatch");
-        $fdisplay(file, "[%t]: LCE[%0d] RESP addr[%H] cce[%0d] msg[%b] set[%0d] len[%b] %H"
+        $fdisplay(file, "%12t |: LCE[%0d] RESP addr[%H] cce[%0d] msg[%b] set[%0d] len[%b] %H"
                   , $time, lce_resp_payload.src_id, lce_resp.header.addr, lce_resp_payload.dst_id, lce_resp.header.msg_type
                   , lce_resp.header.addr[block_offset_bits_lp+:lg_sets_lp]
                   , lce_resp.header.size, lce_resp.data
@@ -114,7 +114,7 @@ module bp_me_nonsynth_lce_tracer
       // command to LCE
       if (lce_cmd_v_i & lce_cmd_ready_and_i) begin
         assert(lce_cmd_payload.dst_id == lce_id_i) else $error("Bad LCE Command - destination mismatch");
-        $fdisplay(file, "[%t]: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
+        $fdisplay(file, "%12t |: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
                   , $time, lce_cmd_payload.dst_id, lce_cmd.header.addr, lce_cmd_payload.src_id, lce_cmd.header.msg_type
                   , lce_cmd.header.addr[block_offset_bits_lp+:lg_sets_lp], lce_cmd_payload.way_id, lce_cmd_payload.state, lce_cmd_payload.target
                   , lce_cmd_payload.target_way_id, lce_cmd.header.size, lce_cmd.data
@@ -123,7 +123,7 @@ module bp_me_nonsynth_lce_tracer
 
       // command from LCE
       if (lce_cmd_o_v_i & lce_cmd_o_ready_and_i) begin
-        $fdisplay(file, "[%t]: LCE[%0d] CMD OUT dst[%0d] addr[%H] CCE[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
+        $fdisplay(file, "%12t |: LCE[%0d] CMD OUT dst[%0d] addr[%H] CCE[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
                   , $time, lce_id_i, lce_cmd_lo_payload.dst_id, lce_cmd_lo.header.addr, lce_cmd_lo_payload.src_id, lce_cmd_lo.header.msg_type
                   , lce_cmd_lo.header.addr[block_offset_bits_lp+:lg_sets_lp]
                   , lce_cmd_lo_payload.way_id, lce_cmd_lo_payload.state, lce_cmd_lo_payload.target, lce_cmd_lo_payload.target_way_id

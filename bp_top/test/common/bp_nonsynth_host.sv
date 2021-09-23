@@ -52,6 +52,7 @@ module bp_nonsynth_host
    , output logic                                   pc_profile_en_o
    , output logic                                   branch_profile_en_o
    , output logic                                   cosim_en_o
+   , output logic [num_core_p-1:0]                  finish_o
    );
 
   import "DPI-C" context function void start();
@@ -131,7 +132,8 @@ module bp_nonsynth_host
           $error("Error: multi-beat mem resp detected in nonsynth host");
     end
 
-  wire [num_core_p-1:0] finish_set = finish_w_v_li << addr_core_enc;
+  // for some reason, VCS doesn't like finish_w_v_li << addr_core_enc
+  wire [num_core_p-1:0] finish_set = finish_w_v_li ? (1'b1 << addr_core_enc) : 1'b0;
   logic [num_core_p-1:0] finish_r;
   bsg_dff_reset_set_clear
    #(.width_p(num_core_p))
@@ -142,6 +144,7 @@ module bp_nonsynth_host
      ,.clear_i('0)
      ,.data_o(finish_r)
      );
+  assign finish_o = finish_r;
 
   always_ff @(negedge clk_i)
     begin

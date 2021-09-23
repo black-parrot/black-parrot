@@ -123,10 +123,10 @@ module bp_me_lite_to_burst
   always_ff @(negedge clk_i)
     begin
       //if (in_msg_ready_and_o & in_msg_v_i)
-      //  $display("[%t] Msg received: %p", $time, in_msg_cast_i);
+      //  $display("%12t | Msg received: %p", $time, in_msg_cast_i);
 
       //if (out_msg_header_ready_and_i & out_msg_header_v_o)
-      //  $display("[%t] Stream sent: %p %x CNT: %x", $time, msg_header_cast_o, out_msg_data_o, num_burst_cmds);
+      //  $display("%12t | Stream sent: %p %x CNT: %x", $time, msg_header_cast_o, out_msg_data_o, num_burst_cmds);
     end
   //synopsys translate_on
 
