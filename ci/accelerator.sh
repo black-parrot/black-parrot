@@ -1,9 +1,23 @@
 #!/bin/bash
 
 # Command line arguments
+if [ "$ne" == '1' ]
+then
+  echo "Usage: $0 <verilator, vcs> [num_cores]"
+  exit 1
+elif [ $1 == "vcs" ]
+then
+    SUFFIX=v
+elif [ $1 == "verilator" ]
+then
+    SUFFIX=sc
+else
+  echo "Usage: $0 <verilator, vcs> [num_cores]"
+  exit 1
+fi
 
 # Default to 1 core
-N=${1:-1}
+N=${2:-1}
 
 cfgs=(\
     "e_bp_multicore_1_accelerator_cfg"

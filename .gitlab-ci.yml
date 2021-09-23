@@ -26,6 +26,7 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
+    - accelerator_fix
   before_script:
       - git submodule update --init --checkout --recursive external/
   artifacts:
@@ -354,11 +355,11 @@ top-linux-vcs:
   script:
     $CI_PROJECT_DIR/ci/linux.sh vcs $CI_CORES
 
-accelerator:
+top-accelerator-vcs:
   <<: *job_definition
-  stage: check
+  stage: test-medium
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/accelerator.sh $CI_CORES
+    - $CI_PROJECT_DIR/ci/accelerator.sh vcs $CI_CORES
 
