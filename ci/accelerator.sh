@@ -20,12 +20,19 @@ fi
 N=${2:-1}
 
 cfgs=(\
-    "e_bp_multicore_1_accelerator_cfg"
+    "e_bp_multicore_1_acc_loopback_cfg"
+    "e_bp_multicore_1_acc_vdp_cfg" 
+    "e_bp_multicore_1_acc_vdp_cfg"
+    "e_bp_multicore_4_acc_loopback_cfg"
+    "e_bp_multicore_4_acc_vdp_cfg"
     )
 
 progs=(
     "streaming_accelerator_loopback"
-    "coherent_accelerator_demo"
+    "streaming_accelerator_vdp"
+    "coherent_accelerator_vdp"
+    "accelerator_loopback_multicore_4"
+    "accelerator_vdp_multicore_4"
     )
 
 # The base command to append the configuration to
@@ -38,12 +45,9 @@ make -C bp_top/syn clean
 
 # run simulations
 sims=()
-for cfg in "${cfgs[@]}"
+for i in "${!cfgs[@]}"
 do
-  for prog in "${progs[@]}"
-  do
-    sims+=("make -C bp_top/syn build_dump.v sim_dump.v CFG=$cfg SUITE=bp-tests PROG=$prog")
-  done
+    sims+=("make -C bp_top/syn build_dump.v sim_dump.v CFG=${cfgs[$i]} SUITE=bp-tests PROG=${progs[$i]}")
 done
 
 # build required configs
