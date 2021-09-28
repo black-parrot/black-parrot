@@ -1004,13 +1004,15 @@
     ,bp_unicore_half_cfg_p
 
     // L2 extension configurations
+    ,bp_multicore_4_l2e_cfg_p
+    ,bp_multicore_2_l2e_cfg_p
+    ,bp_multicore_1_l2e_cfg_p
+  
+    // Accelerator configurations
     ,bp_multicore_4_acc_vdp_cfg_p
     ,bp_multicore_4_acc_loopback_cfg_p
     ,bp_multicore_1_acc_vdp_cfg_p
     ,bp_multicore_1_acc_loopback_cfg_p
-
-    // Accelerator configurations
-    ,bp_multicore_1_accelerator_cfg_p
 
     // Ucode configurations
     ,bp_multicore_16_cce_ucode_cfg_p
