@@ -43,7 +43,7 @@ module bp_nonsynth_dram
   `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s [num_dma_p-1:0] dma_pkt_li, dma_pkt;
   assign dma_pkt_li = dma_pkt_i;
-  localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
+  localparam block_offset_lp = `BSG_SAFE_CLOG2(l2_block_width_p/8);
   localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(lce_sets_p);
   localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
   localparam int hash_offset_widths_lp[2:0] = '{(lg_lce_sets_lp-lg_num_cce_lp), lg_num_cce_lp, block_offset_lp};
