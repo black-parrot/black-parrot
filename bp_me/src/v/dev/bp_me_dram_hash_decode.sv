@@ -22,10 +22,7 @@ module bp_me_dram_hash_decode
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8)
-   , localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(lce_sets_p)
-   , localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p)
-   , parameter int offset_widths_p[2:0] = '{ (lg_lce_sets_lp-lg_num_cce_lp), lg_num_cce_lp, block_offset_lp }
+   , parameter int offset_widths_p[2:0] = '{-1, -1, -1}
    , parameter addr_width_p = paddr_width_p
    )
   (input [addr_width_p-1:0]         addr_i
