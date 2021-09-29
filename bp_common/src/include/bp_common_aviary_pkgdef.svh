@@ -19,6 +19,7 @@
   {
     e_sacc_none = 0
     ,e_sacc_vdp = 1
+    ,e_sacc_loopback = 2
   } bp_sacc_type_e;
 
   typedef enum logic [15:0]
@@ -694,18 +695,77 @@
                         ,bp_multicore_1_cfg_p
                         );
 
-  localparam bp_proc_param_s bp_multicore_1_accelerator_override_p =
+  localparam bp_proc_param_s bp_multicore_1_acc_loopback_override_p =
+    '{cac_x_dim : 1
+      ,sac_x_dim: 1
+      ,cacc_type: e_cacc_vdp
+      ,sacc_type: e_sacc_loopback
+      ,num_lce  : 3
+      ,dcache_fill_width : 512
+      ,icache_fill_width : 512
+      ,acache_fill_width : 512
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_1_acc_loopback_cfg_p
+                        ,bp_multicore_1_acc_loopback_override_p
+                        ,bp_multicore_1_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_1_acc_vdp_override_p =
     '{cac_x_dim : 1
       ,sac_x_dim: 1
       ,cacc_type: e_cacc_vdp
       ,sacc_type: e_sacc_vdp
       ,num_lce  : 3
+      ,dcache_fill_width : 512
+      ,icache_fill_width : 512
+      ,acache_fill_width : 512
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_1_accelerator_cfg_p
-                        ,bp_multicore_1_accelerator_override_p
+  `bp_aviary_derive_cfg(bp_multicore_1_acc_vdp_cfg_p
+                        ,bp_multicore_1_acc_vdp_override_p
                         ,bp_multicore_1_cfg_p
                         );
+
+
+ localparam bp_proc_param_s bp_multicore_4_acc_loopback_override_p =
+    '{cc_x_dim : 2
+      ,cc_y_dim: 2
+      ,cac_x_dim : 1
+      ,sac_x_dim: 1
+      ,cacc_type: e_cacc_vdp
+      ,sacc_type: e_sacc_loopback
+      ,num_cce : 4
+      ,num_lce  : 10
+      ,dcache_fill_width : 512
+      ,icache_fill_width : 512
+      ,acache_fill_width : 512
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_4_acc_loopback_cfg_p
+                        ,bp_multicore_4_acc_loopback_override_p
+                        ,bp_multicore_1_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_4_acc_vdp_override_p =
+    '{cc_x_dim : 2
+      ,cc_y_dim: 2
+      ,cac_x_dim : 1
+      ,sac_x_dim: 1
+      ,cacc_type: e_cacc_vdp
+      ,sacc_type: e_sacc_vdp
+      ,num_cce : 4
+      ,num_lce  : 10
+      ,dcache_fill_width : 512
+      ,icache_fill_width : 512
+      ,acache_fill_width : 512
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_4_acc_vdp_cfg_p
+                        ,bp_multicore_4_acc_vdp_override_p
+                        ,bp_multicore_1_cfg_p
+                        );
+
 
   localparam bp_proc_param_s bp_multicore_1_cce_ucode_override_p =
     '{cce_ucode: 1
@@ -947,9 +1007,12 @@
     ,bp_multicore_4_l2e_cfg_p
     ,bp_multicore_2_l2e_cfg_p
     ,bp_multicore_1_l2e_cfg_p
-
+  
     // Accelerator configurations
-    ,bp_multicore_1_accelerator_cfg_p
+    ,bp_multicore_4_acc_vdp_cfg_p
+    ,bp_multicore_4_acc_loopback_cfg_p
+    ,bp_multicore_1_acc_vdp_cfg_p
+    ,bp_multicore_1_acc_loopback_cfg_p
 
     // Ucode configurations
     ,bp_multicore_16_cce_ucode_cfg_p
@@ -1007,18 +1070,21 @@
   typedef enum bit [lg_max_cfgs-1:0]
   {
     // Various testing config
-    e_bp_multicore_cce_ucode_half_cfg               = 47
-    ,e_bp_multicore_half_cfg                        = 46
-    ,e_bp_unicore_half_cfg                          = 45
+    e_bp_multicore_cce_ucode_half_cfg               = 50
+    ,e_bp_multicore_half_cfg                        = 49
+    ,e_bp_unicore_half_cfg                          = 48
 
     // L2 extension configurations
-    ,e_bp_multicore_4_l2e_cfg                       = 44
-    ,e_bp_multicore_2_l2e_cfg                       = 43
-    ,e_bp_multicore_1_l2e_cfg                       = 42
+    ,e_bp_multicore_4_l2e_cfg                       = 47
+    ,e_bp_multicore_2_l2e_cfg                       = 46
+    ,e_bp_multicore_1_l2e_cfg                       = 45
 
     // Accelerator configurations
-    ,e_bp_multicore_1_accelerator_cfg               = 41
-
+    ,e_bp_multicore_4_acc_vdp_cfg                   = 44
+    ,e_bp_multicore_4_acc_loopback_cfg              = 43
+    ,e_bp_multicore_1_acc_vdp_cfg                   = 42
+    ,e_bp_multicore_1_acc_loopback_cfg              = 41
+   
     // Ucode configurations
     ,e_bp_multicore_16_cce_ucode_cfg                = 40
     ,e_bp_multicore_12_cce_ucode_cfg                = 39
