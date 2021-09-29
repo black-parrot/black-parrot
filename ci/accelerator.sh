@@ -36,23 +36,23 @@ progs=(
     )
 
 # The base command to append the configuration to
-build_base="make -C bp_top/syn build_dump.v sim_dump.v SUITE=bp-tests"
+build_base="make -C bp_top/syn build_dump.v SUITE=bp-tests"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
 make -C bp_top/syn clean
 
-
 # run simulations
 sims=()
 for i in "${!cfgs[@]}"
 do
-    sims+=("make -C bp_top/syn build_dump.v sim_dump.v CFG=${cfgs[$i]} SUITE=bp-tests PROG=${progs[$i]}")
+    sims+=("make -C bp_top/syn sim_dump.v CFG=${cfgs[$i]} SUITE=bp-tests PROG=${progs[$i]}")
 done
 
 # build required configs
+build_cfgs=($(echo ${cfgs[*]} | tr ' ' '\012' | uniq))
 echo "Building: ${N} jobs with 1 core per job"
-parallel --jobs ${N} --results regress_logs --progress "$build_base CFG={}" ::: "${cfgs[@]}"
+parallel --jobs ${N} --results regress_logs --progress "$build_base CFG={}" ::: "${build_cfgs[@]}"
 
 # simulate
 echo "Simulating: running parallel with ${N} jobs"
