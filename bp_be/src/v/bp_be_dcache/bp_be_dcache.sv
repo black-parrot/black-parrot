@@ -351,7 +351,7 @@ module bp_be_dcache
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
   logic [assoc_p-1:0] load_hit_tv_r, store_hit_tv_r, way_v_tv_r, bank_sel_one_hot_tv_r;
   bp_be_dcache_decode_s decode_tv_r;
-  logic load_reservation_match_tv;
+  logic load_reservation_match_tv, wbuf_fail_tv;
   wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
   wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
 
@@ -515,8 +515,9 @@ module bp_be_dcache
   wire lr_miss_tv     = v_tv_r & decode_tv_r.lr_op & ~store_hit_tv & ~uncached_op_tv_r;
   wire fencei_miss_tv = v_tv_r & decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
   wire engine_miss_tv = v_tv_r & cache_req_v_o & ~cache_req_yumi_i;
+  wire wbuf_miss_tv   = v_tv_r & wbuf_fail_tv;
 
-  wire any_miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | fencei_miss_tv | engine_miss_tv;
+  wire any_miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | fencei_miss_tv | engine_miss_tv | wbuf_miss_tv;
 
   assign early_data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
     ? (sc_success_tv != 1'b1)
@@ -645,9 +646,10 @@ module bp_be_dcache
   ///////////////////////////
   `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, assoc_p);
   bp_be_dcache_wbuf_entry_s wbuf_entry_in, wbuf_entry_out;
-  logic wbuf_v_li, wbuf_v_lo, wbuf_yumi_li;
+  logic wbuf_ready_and_lo, wbuf_v_li, wbuf_v_lo, wbuf_yumi_li;
 
   assign wbuf_v_li = v_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail_tv & ~uncached_op_tv_r & ~flush_self;
+  assign wbuf_fail_tv = wbuf_v_li & ~wbuf_ready_and_lo;
 
   //
   // Atomic operations
@@ -753,6 +755,7 @@ module bp_be_dcache
 
      ,.v_i(wbuf_v_li)
      ,.wbuf_entry_i(wbuf_entry_in)
+     ,.ready_and_o(wbuf_ready_and_lo)
 
      ,.v_o(wbuf_v_lo)
      ,.yumi_i(wbuf_yumi_li)
@@ -1068,8 +1071,7 @@ module bp_be_dcache
   // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
   assign data_mem_pkt_yumi_o = (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached)
     ? ~cache_lock & data_mem_pkt_v_i
-    : ~cache_lock & data_mem_pkt_v_i & ~|data_mem_fast_read & ~wbuf_v_lo & ~(v_tv_r & decode_tv_r.store_op);
-
+    : ~cache_lock & data_mem_pkt_v_i & ~|data_mem_fast_read & ~wbuf_v_lo & ~(v_tv_r & decode_tv_r.store_op) & ~(v_tl_r & decode_tl_r.store_op);
 
   logic [lg_dcache_assoc_lp-1:0] data_mem_pkt_way_r;
   bsg_dff
