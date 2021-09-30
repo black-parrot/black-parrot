@@ -29,15 +29,6 @@ module bp_me_cce_to_cache
 
     // L2 organization and interface
     , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(daddr_width_p, l2_data_width_p)
-    , localparam lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
-    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
-    , localparam l2_blocks_lp=(l2_assoc_p*l2_sets_p)
-    // l2_block_width_p derived params
-    , localparam block_bytes_lp=(l2_block_width_p/8)
-    , localparam block_byte_offset_width_lp=`BSG_SAFE_CLOG2(block_bytes_lp)
-    // l2_data_width_p derived params (l2_data_width is size of L2 data words)
-    , localparam data_bytes_lp=(l2_data_width_p/8)
-    , localparam data_byte_offset_width_lp=`BSG_SAFE_CLOG2(data_bytes_lp)
   )
   (
     input clk_i
@@ -66,6 +57,15 @@ module bp_me_cce_to_cache
     , output logic                             cache_yumi_o
   );
 
+
+  // L2 derived params
+  localparam lg_l2_sets_lp             = `BSG_SAFE_CLOG2(l2_sets_p);
+  localparam lg_l2_ways_lp             = `BSG_SAFE_CLOG2(l2_assoc_p);
+  localparam l2_blocks_lp              = (l2_assoc_p*l2_sets_p);
+  localparam l2_block_offset_width_lp  = `BSG_SAFE_CLOG2(l2_block_width_p/8);
+  localparam data_bytes_lp             = (l2_data_width_p/8);
+  localparam data_byte_offset_width_lp = `BSG_SAFE_CLOG2(data_bytes_lp);
+
   // requirement from BedRock Stream interface
   if (!(`BSG_IS_POW2(l2_data_width_p) || l2_data_width_p < 64 || l2_data_width_p > 512))
     $fatal(0, "l2 data width must be 64, 128, 256, or 512");
@@ -86,8 +86,8 @@ module bp_me_cce_to_cache
   cmd_state_e cmd_state_r, cmd_state_n;
   wire is_clear  = (cmd_state_r == CLEAR_TAG);
 
-  logic [lg_sets_lp+lg_ways_lp:0] tagst_sent_r, tagst_sent_n;
-  logic [lg_sets_lp+lg_ways_lp:0] tagst_received_r, tagst_received_n;
+  logic [lg_l2_sets_lp+lg_l2_ways_lp:0] tagst_sent_r, tagst_sent_n;
+  logic [lg_l2_sets_lp+lg_l2_ways_lp:0] tagst_received_r, tagst_received_n;
 
   bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
@@ -130,10 +130,10 @@ module bp_me_cce_to_cache
   wire is_word_op = (mem_cmd_header_lo.size == e_bedrock_msg_size_4);
   wire is_csr   = (mem_cmd_header_lo.addr < dram_base_addr_gp);
   wire is_tagfl = is_csr && (local_addr_cast.dev == cache_tagfl_base_addr_gp);
-  localparam tagfl_addr_pad_lp = (daddr_width_p-(lg_sets_lp+lg_ways_lp+block_byte_offset_width_lp));
+  localparam tagfl_addr_pad_lp = (daddr_width_p-(lg_l2_sets_lp+lg_l2_ways_lp+l2_block_offset_width_lp));
   wire [daddr_width_p-1:0] tagfl_addr = {{tagfl_addr_pad_lp{1'b0}}
-                                         , mem_cmd_data_lo[0+:lg_sets_lp+lg_ways_lp]
-                                         , {block_byte_offset_width_lp{1'b0}}
+                                         , mem_cmd_data_lo[0+:lg_l2_sets_lp+lg_l2_ways_lp]
+                                         , {l2_block_offset_width_lp{1'b0}}
                                          };
 
   // cache packet data and mask mux elements
@@ -312,10 +312,8 @@ module bp_me_cce_to_cache
 
   // Swizzle address bits for L2 cache command
   // Note: the upper paddr_width_p-daddr_width_p bits of the mem_cmd address are dropped
-  localparam block_offset_lp = `BSG_SAFE_CLOG2(l2_block_width_p/8);
-  localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(l2_sets_p);
   localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
-  localparam int hash_offset_widths_lp[2:0] = '{(lg_lce_sets_lp-lg_num_cce_lp), lg_num_cce_lp, block_offset_lp};
+  localparam int hash_offset_widths_lp[2:0] = '{(lg_l2_sets_lp-lg_num_cce_lp), lg_num_cce_lp, l2_block_offset_width_lp};
   logic [daddr_width_p-1:0] cache_pkt_addr_lo;
   bp_me_dram_hash_encode
     #(.bp_params_p(bp_params_p)
@@ -350,8 +348,8 @@ module bp_me_cce_to_cache
           cache_pkt.opcode = TAGST;
           cache_pkt.data = '0;
           cache_pkt.addr = {{tagfl_addr_pad_lp{1'b0}}
-                            , tagst_sent_r[0+:lg_sets_lp+lg_ways_lp]
-                            , {block_byte_offset_width_lp{1'b0}}
+                            , tagst_sent_r[0+:lg_l2_sets_lp+lg_l2_ways_lp]
+                            , {l2_block_offset_width_lp{1'b0}}
                             };
 
           tagst_sent_n = (cache_pkt_v_o & cache_pkt_ready_i)
