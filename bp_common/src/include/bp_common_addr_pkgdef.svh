@@ -21,10 +21,12 @@
   localparam clint_dev_base_addr_gp    = 32'h0030_0000;
   localparam cache_dev_base_addr_gp    = 32'h0040_0000;
 
+  // TODO: This is hardcoded for a 32-bit DRAM address, will need to be adjusted
+  //   for a different address space
   localparam dram_base_addr_gp         = 40'h00_8000_0000;
-  localparam dram_uc_base_addr_gp      = 40'h10_0000_0000;
-  localparam coproc_base_addr_gp       = 40'h20_0000_0000;
-  localparam global_base_addr_gp       = 40'h30_0000_0000;
+  localparam dram_uc_base_addr_gp      = 40'h01_0000_0000;
+  localparam coproc_base_addr_gp       = 40'h02_0000_0000;
+  localparam global_base_addr_gp       = 40'h03_0000_0000;
 
 `endif
 
