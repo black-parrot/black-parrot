@@ -41,6 +41,10 @@ module bp_unicore
   (input                                               clk_i
    , input                                             reset_i
 
+   , input [io_noc_did_width_p-1:0]                    my_did_i
+   , input [io_noc_did_width_p-1:0]                    host_did_i
+   , input [coh_noc_cord_width_p-1:0]                  my_cord_i
+
    // Outgoing I/O
    , output logic [uce_mem_msg_header_width_lp-1:0]    io_cmd_header_o
    , output logic [uce_mem_data_width_lp-1:0]          io_cmd_data_o
@@ -97,6 +101,10 @@ module bp_unicore
    unicore_lite
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+
+     ,.my_did_i(my_did_i)
+     ,.host_did_i(host_did_i)
+     ,.my_cord_i(my_cord_i)
 
      ,.mem_cmd_header_o(mem_cmd_header_lo)
      ,.mem_cmd_data_o(mem_cmd_data_lo)

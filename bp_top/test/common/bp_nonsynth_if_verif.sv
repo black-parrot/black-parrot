@@ -57,8 +57,8 @@ module bp_nonsynth_if_verif
 
     end
 
-  if (ic_y_dim_p != 1)
-    $fatal("Error: Must have exactly 1 row of I/O routers");
+  if (ic_y_dim_p != 1 && multicore_p == 1)
+    $fatal("Error: Must have exactly 1 row of I/O routers for multicore");
   if (mc_y_dim_p > 2)
     $fatal("Error: Multi-row L2 expansion nodes not yet supported");
   if (sac_x_dim_p > 1)

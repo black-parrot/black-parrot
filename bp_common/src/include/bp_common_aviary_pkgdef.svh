@@ -210,7 +210,7 @@
     '{multicore : 0
       ,cc_x_dim : 1
       ,cc_y_dim : 1
-      ,ic_y_dim : 1
+      ,ic_y_dim : 0
       ,mc_y_dim : 0
       ,cac_x_dim: 0
       ,sac_x_dim: 0
@@ -494,6 +494,7 @@
 
   localparam bp_proc_param_s bp_multicore_1_override_p =
     '{multicore      : 1
+      ,ic_y_dim      : 1
       ,num_cce       : 1
       ,num_lce       : 2
       ,l1_coherent   : 1
