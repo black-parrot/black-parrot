@@ -192,7 +192,7 @@ module bp_be_dcache
   // Global signals
   logic tl_we, tv_we, dm_we;
   logic safe_tl_we, safe_tv_we, safe_dm_we;
-  logic v_tl_r, _v_tv_r, v_tv_r, v_dm_r;
+  logic v_tl_r, v_tv_r, v_dm_r;
   logic gdirty_r, cache_lock;
   logic uncached_pending_r;
   logic [dword_width_gp-1:0] uncached_load_data_r;
@@ -233,7 +233,7 @@ module bp_be_dcache
       ,.latch_last_read_p(1)
       )
     tag_mem
-     (.clk_i(~clk_i)
+     (.clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.v_i(tag_mem_v_li)
       ,.w_i(tag_mem_w_li)
@@ -263,7 +263,7 @@ module bp_be_dcache
          ,.latch_last_read_p(1)
          )
        data_mem
-        (.clk_i(~clk_i)
+        (.clk_i(clk_i)
          ,.reset_i(reset_i)
          ,.v_i(data_mem_v_li[i])
          ,.w_i(data_mem_w_li[i])
@@ -286,7 +286,7 @@ module bp_be_dcache
   bsg_dff_reset
    #(.width_p(1))
    v_tl_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.data_i(tl_we)
@@ -297,7 +297,7 @@ module bp_be_dcache
   bsg_dff_reset_en
    #(.width_p(dpath_width_gp+page_offset_width_gp+$bits(bp_be_dcache_decode_s)))
    tl_stage_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tl_we)
      ,.data_i({dcache_pkt_cast_i.data, page_offset, decode_lo})
@@ -358,14 +358,13 @@ module bp_be_dcache
   // fencei does not require a ptag
   assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
   assign tv_we = safe_tv_we & ~flush_self;
-  bsg_dff_reset_half
+  bsg_dff_reset
    #(.width_p(1))
    v_tv_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.data_i(tv_we)
-     ,.data_half_o(v_tv_r)
-     ,.data_full_o(_v_tv_r)
+     ,.data_o(v_tv_r)
      );
 
   logic [block_width_p-1:0] ld_data_tv_n;
@@ -373,7 +372,7 @@ module bp_be_dcache
   bsg_dff_en
    #(.width_p(block_width_p))
    ld_data_tv_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.en_i(tv_we)
      ,.data_i(ld_data_tv_n)
      ,.data_o(ld_data_tv_r)
@@ -382,7 +381,7 @@ module bp_be_dcache
   bsg_dff_en
    #(.width_p(dword_width_gp))
    st_data_tv_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.en_i(tv_we & decode_tl_r.store_op)
      ,.data_i(st_data_tl)
      ,.data_o(st_data_tv_r)
@@ -391,7 +390,7 @@ module bp_be_dcache
   bsg_dff_en
    #(.width_p(paddr_width_p+4*assoc_p+3+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
                ,bank_sel_one_hot_tl, way_v_tl, load_hit_tl, store_hit_tl
@@ -786,7 +785,7 @@ module bp_be_dcache
   wire nonblocking_req     = uncached_store_req | wt_req;
 
   assign cache_req_v_o = is_req
-    | (~flush_i & v_tv_r & (|{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req}));
+    | (v_tv_r & (|{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req}));
 
   always_comb
     begin
@@ -919,8 +918,7 @@ module bp_be_dcache
   wire tag_mem_fast_read = (safe_tl_we & ~decode_lo.fencei_op);
   wire tag_mem_slow_read = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
-  // This is a path to the negedge, so we need _v_tv_r here
-  wire tag_mem_fast_write = _v_tv_r & uncached_op_tv_r & dram_op_tv_r & load_hit_tv;
+  wire tag_mem_fast_write = v_tv_r & uncached_op_tv_r & dram_op_tv_r & load_hit_tv;
   assign sram_hazard_flush = tag_mem_fast_write & ~flush_i;
 
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_fast_write;
@@ -973,7 +971,7 @@ module bp_be_dcache
   bsg_dff
    #(.width_p(lg_dcache_assoc_lp))
    tag_mem_pkt_way_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.data_i(tag_mem_pkt_cast_i.way_id)
      ,.data_o(tag_mem_pkt_way_r)
      );
@@ -1075,7 +1073,7 @@ module bp_be_dcache
   bsg_dff
    #(.width_p(lg_dcache_assoc_lp))
    data_mem_pkt_way_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.data_i(data_mem_pkt_cast_i.way_id)
      ,.data_o(data_mem_pkt_way_r)
      );
@@ -1092,8 +1090,8 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read  = ~flush_i & ((v_tv_r & ~early_v_o) | (v_tv_r & load_hit_tv & uncached_op_tv_r));
-  wire stat_mem_fast_write = ~flush_i & (v_tv_r & early_v_o & cached_op_tv_r);
+  wire stat_mem_fast_read  = ((v_tv_r &  early_v_o) | (v_tv_r & load_hit_tv & uncached_op_tv_r));
+  wire stat_mem_fast_write = ((v_tv_r & ~early_v_o) & cached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
   assign stat_mem_v_li = stat_mem_fast_read | stat_mem_fast_write

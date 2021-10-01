@@ -26,7 +26,7 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
-    - me_dev_feature_stream_fifo
+    - be_dev_fix_negedgece
   before_script:
       - git submodule update --init --checkout --recursive external/
   artifacts:

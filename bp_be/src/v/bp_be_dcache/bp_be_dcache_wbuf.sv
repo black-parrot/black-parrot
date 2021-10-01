@@ -158,7 +158,7 @@ module bp_be_dcache_wbuf
   bsg_dff_reset
    #(.width_p(dword_width_gp+data_mask_width_lp))
    bypass_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.data_i({bypass_mask_n, bypass_data_n})
      ,.data_o({bypass_mask_r, bypass_data_r})

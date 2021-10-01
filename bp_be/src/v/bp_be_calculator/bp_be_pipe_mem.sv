@@ -243,7 +243,7 @@ module bp_be_pipe_mem
   bp_be_dcache
     #(.bp_params_p(bp_params_p))
     dcache
-     (.clk_i(clk_i)
+     (.clk_i(~clk_i)
       ,.reset_i(reset_i)
 
       ,.cfg_bus_i(cfg_bus_i)
