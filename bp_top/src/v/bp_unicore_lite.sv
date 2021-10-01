@@ -453,7 +453,7 @@ module bp_unicore_lite
      ,.mem_resp_last_o(dev_resp_last_lo[0])
 
      ,.cfg_bus_o(cfg_bus_lo)
-     ,.did_i(my_did)
+     ,.did_i(my_did_i)
      ,.host_did_i(host_did_i)
      ,.cord_i(my_cord_i)
 
