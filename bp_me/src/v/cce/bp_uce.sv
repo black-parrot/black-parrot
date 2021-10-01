@@ -162,7 +162,7 @@ module bp_uce
   bsg_dff_reset_en
    #(.width_p($bits(bp_cache_req_s)))
    cache_req_reg
-    (.clk_i(clk_i)
+    (.clk_i(~clk_i)
      ,.reset_i(reset_i)
 
      ,.en_i(cache_req_yumi_o)
@@ -293,7 +293,7 @@ module bp_uce
      ,.payload_width_p(uce_mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
-     ,.buffer_els_p(0)
+     ,.buffer_els_p(2)
      )
    uce_pump_in
     (.clk_i(clk_i)

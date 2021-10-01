@@ -203,6 +203,7 @@ module bp_unicore_lite
      ,.fill_width_p(dcache_fill_width_p)
      ,.data_mem_invert_clk_p(1)
      ,.tag_mem_invert_clk_p(1)
+     ,.stat_mem_invert_clk_p(1)
      ,.metadata_latency_p(1)
      )
    dcache_uce

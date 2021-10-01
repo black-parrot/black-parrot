@@ -575,7 +575,7 @@ module bp_be_dcache
      ,.latch_last_read_p(1)
      )
    stat_mem
-    (.clk_i(clk_i)
+    (.clk_i(~clk_i)
     ,.reset_i(reset_i)
     ,.v_i(stat_mem_v_li)
     ,.w_i(stat_mem_w_li)
@@ -794,7 +794,7 @@ module bp_be_dcache
   bsg_deff_reset
    #(.width_p(1))
    wbuf_v_reg
-    (.clk_i(clk_i)
+    (.clk_i(~clk_i)
      ,.reset_i(reset_i)
      ,.data_i(_wbuf_v_lo & ~wbuf_v_lo)
      ,.data_o(wbuf_v_lo)
@@ -821,7 +821,7 @@ module bp_be_dcache
   wire nonblocking_req     = uncached_store_req | wt_req;
 
   assign cache_req_v_o = is_req
-    | (~flush_i & v_tv_r & (|{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req}));
+    | (v_tv_r & (|{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req}));
 
   always_comb
     begin
@@ -955,7 +955,7 @@ module bp_be_dcache
   wire tag_mem_slow_read = tag_mem_pkt_yumi_lo & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_lo & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
   wire tag_mem_fast_write = v_tv_r & uncached_op_tv_r & dram_op_tv_r & load_hit_tv;
-  assign sram_hazard_flush = tag_mem_fast_write & ~flush_i;
+  assign sram_hazard_flush = tag_mem_fast_write;
 
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_fast_write;
   assign tag_mem_w_li = tag_mem_slow_write | tag_mem_fast_write;
@@ -1125,8 +1125,8 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read  = ~flush_i & (early_miss_v_o | (v_tv_r & load_hit_tv & uncached_op_tv_r));
-  wire stat_mem_fast_write = ~flush_i & (early_hit_v_o & cached_op_tv_r);
+  wire stat_mem_fast_read  = (early_miss_v_o | (v_tv_r & load_hit_tv & uncached_op_tv_r));
+  wire stat_mem_fast_write = (early_hit_v_o & cached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_lo & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_lo & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
   assign stat_mem_v_li = stat_mem_fast_read | stat_mem_fast_write
@@ -1168,7 +1168,7 @@ module bp_be_dcache
       //   1) If dirty bit is set, we force a miss and send off a flush request to the CE
       //   2) If dirty bit is not set, we do not send a request and simply return valid flush.
       //        The CSR unit is now responsible for sending the clear request to the I$.
-      wire set_dirty = wbuf_v_li & ~flush_i;
+      wire set_dirty = wbuf_v_li;
       wire clear_dirty = (is_fence & cache_req_complete_i);
       bsg_dff_reset_set_clear
        #(.width_p(1))
@@ -1297,7 +1297,7 @@ module bp_be_dcache
   bsg_dff_reset_set_clear
    #(.width_p(1))
    uncached_pending_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.set_i(uncached_pending_set)
@@ -1310,7 +1310,7 @@ module bp_be_dcache
   bsg_dff_en
    #(.width_p(dword_width_gp))
    uncached_load_data_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.en_i(uncached_load_data_set)
 
      ,.data_i(data_mem_pkt_cast_i.data[0+:dword_width_gp])
