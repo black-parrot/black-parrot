@@ -47,7 +47,7 @@ module bp_be_dcache_wbuf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.up_i(v_i)
+     ,.up_i(v_i & ready_and_o)
      ,.down_i(yumi_i)
      ,.count_o(num_els_r)
      );
