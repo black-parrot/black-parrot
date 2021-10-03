@@ -79,7 +79,6 @@ module bp_be_top
   // Top-level interface connections
   bp_be_dispatch_pkt_s dispatch_pkt;
   bp_be_branch_pkt_s   br_pkt;
-  bp_be_ptw_miss_pkt_s ptw_miss_pkt;
 
   logic dispatch_v, interrupt_v;
   logic irq_pending_lo, irq_waiting_lo, replay_pending_lo;

@@ -48,7 +48,7 @@ module bp_be_pipe_int
   wire [dword_width_gp-1:0] imm = reservation.imm[0+:dword_width_gp];
 
   // Sign-extend PC for calculation
-  wire [dword_width_gp-1:0] pc_sext_li = dword_width_gp'($signed(pc));
+  wire [dword_width_gp-1:0] pc_sext_li = `BSG_SIGN_EXTEND(pc, dword_width_gp);
   wire [dword_width_gp-1:0] pc_plus4   = pc_sext_li + dword_width_gp'(4);
 
   wire [dword_width_gp-1:0] src1  = decode.src1_sel  ? pc_sext_li : rs1;

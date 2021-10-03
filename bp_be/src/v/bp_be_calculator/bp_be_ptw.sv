@@ -7,15 +7,14 @@ module bp_be_ptw
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter pte_width_p         = sv39_pte_width_gp
-   , parameter page_table_depth_p  = sv39_levels_gp
-   , parameter pte_size_in_bytes_p = sv39_pte_size_in_bytes_gp
-   , parameter page_idx_width_p    = sv39_page_idx_width_gp
+   , parameter `BSG_INV_PARAM(pte_width_p)
+   , parameter `BSG_INV_PARAM(page_table_depth_p)
+   , parameter `BSG_INV_PARAM(pte_size_in_bytes_p)
+   , parameter `BSG_INV_PARAM(page_idx_width_p)
 
-   , localparam dcache_pkt_width_lp     = $bits(bp_be_dcache_pkt_s)
-   , localparam tlb_entry_width_lp      = `bp_be_pte_leaf_width(paddr_width_p)
-   , localparam ptw_miss_pkt_width_lp   = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
-   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
+   , localparam dcache_pkt_width_lp   = $bits(bp_be_dcache_pkt_s)
+   , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
+   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                                    clk_i
    , input                                  reset_i
@@ -38,17 +37,20 @@ module bp_be_ptw
    , output logic                           dcache_ptag_v_o
    , input                                  dcache_ready_i
 
-   , input                                  dcache_v_i
-   , input [dpath_width_gp-1:0]             dcache_data_i
+   , input                                  dcache_early_v_i
+   , input [dpath_width_gp-1:0]             dcache_early_data_i
   );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `bp_cast_o(bp_be_dcache_pkt_s, dcache_pkt);
 
-  enum logic [2:0] { eIdle, eSendLoad, eWaitLoad, eRecvLoad, eWriteBack } state_n, state_r;
+  enum logic [2:0] {eIdle, eSendLoad, eWaitLoad, eRecvLoad, eWriteBack} state_n, state_r;
+  wire is_idle  = (state_r == eIdle);
+  wire is_send  = (state_r == eSendLoad);
+  wire is_wait  = (state_r == eWaitLoad);
+  wire is_recv  = (state_r == eRecvLoad);
+  wire is_write = (state_r == eWriteBack);
 
-  bp_be_dcache_pkt_s   dcache_pkt_cast_o;
-  sv39_pte_s           dcache_data;
-  bp_be_pte_leaf_s     tlb_w_entry;
   bp_be_ptw_miss_pkt_s ptw_miss_pkt_cast_i;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt_cast_o;
 
@@ -70,23 +72,21 @@ module bp_be_ptw
 
   logic tlb_miss_v, page_fault_v;
 
-  logic [dword_width_gp-1:0] dcache_data_r;
-  logic dcache_v_r;
+  sv39_pte_s dcache_pte_r;
+  logic dcache_pte_v_r;
 
    for(genvar i=0; i<page_table_depth_p; i++) begin : rof1
       assign partial_vpn[i] = vpn[page_idx_width_p*i +: page_idx_width_p];
     end
    for(genvar i=0; i<page_table_depth_p-1; i++) begin : rof2
       assign partial_ppn[i] = ppn_r[page_idx_width_p*i +: page_idx_width_p];
-      assign partial_pte_misaligned[i] = (level_cntr > i)? |dcache_data.ppn[page_idx_width_p*i +: page_idx_width_p] : 1'b0;
+      assign partial_pte_misaligned[i] = (level_cntr > i)? |dcache_pte_r.ppn[page_idx_width_p*i +: page_idx_width_p] : 1'b0;
       assign writeback_ppn[page_idx_width_p*i +: page_idx_width_p] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
     end
     assign writeback_ppn[ptag_width_p-1 : (page_table_depth_p-1)*page_idx_width_p] = ppn_r[ptag_width_p-1 : (page_table_depth_p-1)*page_idx_width_p];
 
-  assign dcache_pkt_o           = dcache_pkt_cast_o;
   assign dcache_ptag_o          = ppn_r;
   assign dcache_ptag_v_o        = (state_r == eWaitLoad);
-  assign dcache_data            = dcache_data_r;
 
   // PMA attributes
   localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_p);
@@ -100,45 +100,46 @@ module bp_be_ptw
 
   assign start                  = (state_r == eIdle) & tlb_miss_v;
 
-  wire pte_is_leaf              = dcache_data.x | dcache_data.w | dcache_data.r;
+  wire pte_is_leaf              = dcache_pte_r.x | dcache_pte_r.w | dcache_pte_r.r;
   wire pte_is_megapage          = (level_cntr == 2'd1);
   wire pte_is_gigapage          = (level_cntr == 2'd2);
 
-  assign level_cntr_en          = busy_o & dcache_v_r & ~pte_is_leaf & ~page_fault_v;
+  assign level_cntr_en          = busy_o & dcache_pte_v_r & ~pte_is_leaf & ~page_fault_v;
 
-  assign ppn_en                 = start | (busy_o & dcache_v_r);
-  assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn[0+:ptag_width_p];
+  assign ppn_en                 = start | (busy_o & dcache_pte_v_r);
+  assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_pte_r.ppn[0+:ptag_width_p];
 
-  wire pte_invalid              = (~dcache_data.v) | (~dcache_data.r & dcache_data.w);
+  wire pte_invalid              = (~dcache_pte_r.v) | (~dcache_pte_r.r & dcache_pte_r.w);
   wire leaf_not_found           = (level_cntr == '0) & (~pte_is_leaf);
-  wire priv_fault               = pte_is_leaf & ((dcache_data.u & (priv_mode_i == `PRIV_MODE_S) & (ptw_miss_pkt_r.instr_miss_v | ~mstatus_sum_i)) | (~dcache_data.u & (priv_mode_i == `PRIV_MODE_U)));
+  wire priv_fault               = pte_is_leaf & ((dcache_pte_r.u & (priv_mode_i == `PRIV_MODE_S) & (ptw_miss_pkt_r.instr_miss_v | ~mstatus_sum_i)) | (~dcache_pte_r.u & (priv_mode_i == `PRIV_MODE_U)));
   wire misaligned_superpage     = pte_is_leaf & (|partial_pte_misaligned);
-  wire ad_fault                 = pte_is_leaf & (~dcache_data.a | (ptw_miss_pkt_r.store_miss_v & ~dcache_data.d));
+  wire ad_fault                 = pte_is_leaf & (~dcache_pte_r.a | (ptw_miss_pkt_r.store_miss_v & ~dcache_pte_r.d));
   wire common_faults            = pte_invalid | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
+
+  bp_be_pte_leaf_s tlb_w_entry;
+  assign tlb_w_entry.ptag       = writeback_ppn;
+  assign tlb_w_entry.gigapage   = pte_is_gigapage;
+  assign tlb_w_entry.a          = dcache_pte_r.a;
+  assign tlb_w_entry.d          = dcache_pte_r.d;
+  assign tlb_w_entry.u          = dcache_pte_r.u;
+  assign tlb_w_entry.x          = dcache_pte_r.x;
+  assign tlb_w_entry.w          = dcache_pte_r.w;
+  assign tlb_w_entry.r          = dcache_pte_r.r;
 
   assign ptw_fill_pkt_cast_o.v                  = (state_r == eWriteBack) || page_fault_v;
   assign ptw_fill_pkt_cast_o.itlb_fill_v        = (state_r == eWriteBack) &  ptw_miss_pkt_r.instr_miss_v;
   assign ptw_fill_pkt_cast_o.dtlb_fill_v        = (state_r == eWriteBack) & ~ptw_miss_pkt_r.instr_miss_v;
   assign ptw_fill_pkt_cast_o.instr_page_fault_v = busy_o
-    & dcache_v_r & ptw_miss_pkt_r.instr_miss_v
-    & (common_faults | (pte_is_leaf & ~dcache_data.x));
+    & dcache_pte_v_r & ptw_miss_pkt_r.instr_miss_v
+    & (common_faults | (pte_is_leaf & ~dcache_pte_r.x));
   assign ptw_fill_pkt_cast_o.load_page_fault_v  = busy_o
-    & dcache_v_r & ptw_miss_pkt_r.load_miss_v
-    & (common_faults | (pte_is_leaf & ~(dcache_data.r | (dcache_data.x & mstatus_mxr_i))));
+    & dcache_pte_v_r & ptw_miss_pkt_r.load_miss_v
+    & (common_faults | (pte_is_leaf & ~(dcache_pte_r.r | (dcache_pte_r.x & mstatus_mxr_i))));
   assign ptw_fill_pkt_cast_o.store_page_fault_v = busy_o
-    & dcache_v_r & ptw_miss_pkt_r.store_miss_v
-    & (common_faults | (pte_is_leaf & ~dcache_data.w));
+    & dcache_pte_v_r & ptw_miss_pkt_r.store_miss_v
+    & (common_faults | (pte_is_leaf & ~dcache_pte_r.w));
   assign ptw_fill_pkt_cast_o.vaddr              = ptw_miss_pkt_r.vaddr;
   assign ptw_fill_pkt_cast_o.entry              = tlb_w_entry;
-
-  assign tlb_w_entry.ptag       = writeback_ppn;
-  assign tlb_w_entry.gigapage   = pte_is_gigapage;
-  assign tlb_w_entry.a          = dcache_data.a;
-  assign tlb_w_entry.d          = dcache_data.d;
-  assign tlb_w_entry.u          = dcache_data.u;
-  assign tlb_w_entry.x          = dcache_data.x;
-  assign tlb_w_entry.w          = dcache_data.w;
-  assign tlb_w_entry.r          = dcache_data.r;
 
   assign tlb_miss_v   = ptw_miss_pkt_cast_i.instr_miss_v
                         | ptw_miss_pkt_cast_i.load_miss_v
@@ -160,12 +161,12 @@ module bp_be_ptw
      );
 
   bsg_dff_reset #(.width_p(1+dword_width_gp))
-    dcache_data_reg
+    dcache_pte_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i({dcache_v_i, dcache_data_i[0+:dword_width_gp]})
-     ,.data_o({dcache_v_r, dcache_data_r})
-    );
+     ,.data_i({dcache_early_v_i, dcache_early_data_i[0+:dword_width_gp]})
+     ,.data_o({dcache_pte_v_r, dcache_pte_r})
+     );
 
   bsg_dff_reset_en
    #(.width_p($bits(bp_be_ptw_miss_pkt_s)))
@@ -193,7 +194,7 @@ module bp_be_ptw
       eIdle:      state_n = tlb_miss_v ? eSendLoad : eIdle;
       eSendLoad:  state_n = dcache_ready_i ? eWaitLoad : eSendLoad;
       eWaitLoad:  state_n = eRecvLoad;
-      eRecvLoad:  state_n = (dcache_v_r
+      eRecvLoad:  state_n = (dcache_pte_v_r
                              ? (page_fault_v
                                 ? eIdle
                                 : (pte_is_leaf ? eWriteBack : eSendLoad))
@@ -214,4 +215,6 @@ module bp_be_ptw
   end
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_be_ptw)
 

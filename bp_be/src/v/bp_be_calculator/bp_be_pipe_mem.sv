@@ -137,7 +137,7 @@ module bp_be_pipe_mem
   bp_be_dcache_pkt_s        dcache_pkt;
   logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data;
   logic [ptag_width_p-1:0]  dcache_ptag;
-  logic                     dcache_early_v, dcache_final_v, dcache_pkt_v;
+  logic                     dcache_early_miss_v, dcache_early_hit_v, dcache_final_v, dcache_pkt_v;
   logic                     dcache_ptag_v;
   logic                     dcache_ptag_uncached;
   logic                     dcache_ptag_dram;
@@ -148,9 +148,9 @@ module bp_be_pipe_mem
   logic load_misaligned_v, store_misaligned_v;
 
   /* Control signals */
-  logic is_req_mem1, is_req_mem2;
-  logic is_fencei_mem1, is_fencei_mem2;
-  logic is_store_mem1, is_store_mem2;
+  logic is_req_mem2, is_req_mem3;
+  logic is_fencei_mem2, is_fencei_mem3;
+  logic is_store_mem2, is_store_mem3;
 
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
@@ -217,28 +217,33 @@ module bp_be_pipe_mem
       };
 
   bp_be_ptw
-   #(.bp_params_p(bp_params_p))
-    ptw
+   #(.bp_params_p(bp_params_p)
+     ,.pte_width_p(sv39_pte_width_gp)
+     ,.page_table_depth_p(sv39_levels_gp)
+     ,.pte_size_in_bytes_p(sv39_pte_size_in_bytes_gp)
+     ,.page_idx_width_p(sv39_page_idx_width_gp)
+     )
+   ptw
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.base_ppn_i(trans_info.satp_ppn)
      ,.priv_mode_i(trans_info.priv_mode)
      ,.mstatus_sum_i(trans_info.mstatus_sum)
      ,.mstatus_mxr_i(trans_info.mstatus_mxr)
-     ,.busy_o(ptw_busy)
 
+     ,.busy_o(ptw_busy)
      ,.ptw_miss_pkt_i(ptw_miss_pkt)
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
-
-     ,.dcache_v_i(dcache_early_v)
-     ,.dcache_data_i(dcache_early_data)
 
      ,.dcache_v_o(ptw_dcache_v)
      ,.dcache_pkt_o(ptw_dcache_pkt)
      ,.dcache_ptag_o(ptw_dcache_ptag)
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
      ,.dcache_ready_i(dcache_ready_lo)
-    );
+
+     ,.dcache_early_v_i(dcache_early_hit_v)
+     ,.dcache_early_data_i(dcache_early_data)
+     );
 
   bp_be_dcache
     #(.bp_params_p(bp_params_p))
@@ -257,7 +262,8 @@ module bp_be_pipe_mem
       ,.ptag_uncached_i(dcache_ptag_uncached)
       ,.ptag_dram_i(dcache_ptag_dram)
 
-      ,.early_v_o(dcache_early_v)
+      ,.early_hit_v_o(dcache_early_hit_v)
+      ,.early_miss_v_o(dcache_early_miss_v)
       ,.early_data_o(dcache_early_data)
       ,.final_data_o(dcache_final_data)
       ,.final_v_o(dcache_final_v)
@@ -292,17 +298,23 @@ module bp_be_pipe_mem
       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
       );
 
-  // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
-  // We latch the dcache miss signal
-  always_ff @(negedge clk_i)
-    begin
-      is_req_mem1 <= is_req;
-      is_req_mem2 <= is_req_mem1;
-      is_store_mem1 <= is_store;
-      is_store_mem2 <= is_store_mem1;
-      is_fencei_mem1 <= is_fencei;
-      is_fencei_mem2 <= is_fencei_mem1;
-    end
+  bsg_dff_reset
+   #(.width_p(3))
+   mem2_reg
+    (.clk_i(~clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i({is_req, is_store, is_fencei})
+     ,.data_o({is_req_mem2, is_store_mem2, is_fencei_mem2})
+     );
+
+  bsg_dff_reset
+   #(.width_p(3))
+   mem3_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i({is_req_mem2, is_store_mem2, is_fencei_mem2})
+     ,.data_o({is_req_mem3, is_store_mem3, is_fencei_mem3})
+     );
 
   // Check instruction accesses
   assign load_misaligned_v = 1'b0; // TODO: detect
@@ -310,30 +322,30 @@ module bp_be_pipe_mem
 
   // D-Cache connections
   always_comb
-    begin
-      if(ptw_busy) begin
+    if (ptw_busy)
+      begin
         dcache_pkt_v    = ptw_dcache_v;
         dcache_pkt      = ptw_dcache_pkt;
         dcache_ptag     = ptw_dcache_ptag;
         dcache_ptag_v   = ptw_dcache_ptag_v;
       end
-      else begin
-        // On flush_i, we flush the cache including including incoming requests
-        dcache_pkt_v = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
+    else
+      begin
+        dcache_pkt_v           = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
         dcache_pkt.rd_addr     = instr.t.rtype.rd_addr;
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
         dcache_pkt.page_offset = eaddr[0+:page_offset_width_gp];
         dcache_pkt.data        = rs2;
-        dcache_ptag = dtlb_ptag_lo;
-        dcache_ptag_v = dtlb_v_lo;
+        dcache_ptag            = dtlb_ptag_lo;
+        dcache_ptag_v          = dtlb_v_lo;
       end
-  end
 
-  assign tlb_store_miss_v_o     = is_store_mem1 & dtlb_miss_v;
-  assign tlb_load_miss_v_o      = ~is_store_mem1 & dtlb_miss_v;
-  assign cache_miss_v_o         = is_req_mem2 & ~dcache_early_v;
-  assign fencei_clean_v_o       = is_fencei_mem2 & dcache_early_v;
-  assign fencei_dirty_v_o       = is_fencei_mem2 & ~dcache_early_v;
+  assign tlb_store_miss_v_o     = is_store_mem2 & dtlb_miss_v;
+  assign tlb_load_miss_v_o      = ~is_store_mem2 & dtlb_miss_v;
+  // Need to make early_miss when cache_fail is implemented
+  assign cache_miss_v_o         = is_req_mem3 & ~dcache_early_hit_v;
+  assign fencei_clean_v_o       = is_fencei_mem3 & dcache_early_hit_v;
+  assign fencei_dirty_v_o       = is_fencei_mem3 & ~dcache_early_hit_v;
   assign store_page_fault_v_o   = store_page_fault_v;
   assign load_page_fault_v_o    = load_page_fault_v;
   assign store_access_fault_v_o = store_access_fault_v;
