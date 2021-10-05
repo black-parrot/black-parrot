@@ -220,6 +220,8 @@ module bp_lce_req
       e_ready: begin
         ready_o = lce_req_ready_then_i & ((lce_mode_i == e_lce_mode_uncached) || sync_done_i);
 
+        // TODO: This could drop uncached stores, if we accept but lce is not ready
+        //   in the next cycle
         // Send off a non-blocking request if we have one
         if (cache_req_v_r & (cache_req_r.msg_type == e_uc_store))
           begin

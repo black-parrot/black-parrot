@@ -160,6 +160,17 @@ module bp_uce
      ,.data_o(cache_req_v_r)
      );
 
+  // Handshakes that are consumed at posedge are extended to the next negedge
+  logic cache_req_yumi_r;
+  bsg_deff_reset
+   #(.width_p(1))
+   cache_req_yumi_extend
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i(cache_req_yumi_o)
+     ,.data_o(cache_req_yumi_r)
+     );
+
   wire req_clk = (req_invert_clk_p ? ~clk_i : clk_i);
   bp_cache_req_s cache_req_r;
   bsg_dff_reset_en
@@ -168,7 +179,7 @@ module bp_uce
     (.clk_i(req_clk)
      ,.reset_i(reset_i)
 
-     ,.en_i(cache_req_v_i)
+     ,.en_i(cache_req_yumi_r)
      ,.data_i(cache_req_cast_i)
      ,.data_o(cache_req_r)
      );
@@ -662,9 +673,14 @@ module bp_uce
               fsm_cmd_data_lo            = cache_req_r.data;
               fsm_cmd_v_lo = ~cache_req_credits_full_o;
 
+              // We filter cache_req_complete here
               cache_req_complete_o = (fsm_cmd_ready_and_li & fsm_cmd_v_lo) & (uc_store_v_r | wt_store_v_r);
 
-              state_n = (fsm_cmd_ready_and_li & fsm_cmd_v_lo) ? (uc_store_v_r | wt_store_v_r) ? e_ready : e_uc_read_wait : e_send_critical;
+              state_n = (fsm_cmd_ready_and_li & fsm_cmd_v_lo)
+                        ? (uc_store_v_r | wt_store_v_r)
+                          ? e_ready
+                          : e_uc_read_wait
+                        : e_send_critical;
             end
 
         e_writeback_evict:
