@@ -31,6 +31,7 @@ module bp_lce_req
     // issue non-exclusive read requests
     , parameter non_excl_reads_p = 0
 
+    , parameter req_invert_clk_p = 0
     , parameter metadata_latency_p = 0
 
     , localparam block_size_in_bytes_lp = (block_width_p/8)
@@ -132,11 +133,12 @@ module bp_lce_req
      ,.data_o(cache_req_v_r)
      );
 
+  wire req_clk = (req_invert_clk_p ? ~clk_i : clk_i);
   bp_cache_req_s cache_req_r;
   bsg_dff_en
     #(.width_p($bits(bp_cache_req_s)))
     req_reg
-     (.clk_i(clk_i)
+     (.clk_i(req_clk)
       ,.en_i(cache_req_yumi_o)
       ,.data_i(cache_req_i)
       ,.data_o(cache_req_r)
@@ -160,7 +162,7 @@ module bp_lce_req
   bsg_dff_en
    #(.width_p($bits(bp_cache_req_metadata_s)))
    metadata_reg
-    (.clk_i(clk_i)
+    (.clk_i(req_clk)
 
      ,.en_i(cache_req_metadata_v_i)
      ,.data_i(cache_req_metadata_i)

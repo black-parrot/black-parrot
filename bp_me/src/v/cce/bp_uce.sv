@@ -24,6 +24,8 @@ module bp_uce
     , parameter `BSG_INV_PARAM(fill_width_p)
     `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
+    , parameter req_invert_clk_p      = 0
+    , parameter metadata_invert_clk_p = 0
     , parameter tag_mem_invert_clk_p  = 0
     , parameter data_mem_invert_clk_p = 0
     , parameter stat_mem_invert_clk_p = 0
@@ -158,14 +160,15 @@ module bp_uce
      ,.data_o(cache_req_v_r)
      );
 
+  wire req_clk = (req_invert_clk_p ? ~clk_i : clk_i);
   bp_cache_req_s cache_req_r;
   bsg_dff_reset_en
    #(.width_p($bits(bp_cache_req_s)))
    cache_req_reg
-    (.clk_i(~clk_i)
+    (.clk_i(req_clk)
      ,.reset_i(reset_i)
 
-     ,.en_i(cache_req_yumi_o)
+     ,.en_i(cache_req_v_i)
      ,.data_i(cache_req_cast_i)
      ,.data_o(cache_req_r)
      );
@@ -184,11 +187,12 @@ module bp_uce
      ,.data_o(cache_req_metadata_v_r)
      );
 
+  wire metadata_clk = (metadata_invert_clk_p ? ~clk_i : clk_i);
   bp_cache_req_metadata_s cache_req_metadata_r;
   bsg_dff_en
    #(.width_p($bits(bp_cache_req_metadata_s)))
    metadata_reg
-    (.clk_i(clk_i)
+    (.clk_i(metadata_clk)
 
      ,.en_i(cache_req_metadata_v_i)
      ,.data_i(cache_req_metadata_i)
@@ -197,7 +201,7 @@ module bp_uce
 
   logic [block_width_p-1:0] dirty_data_r;
   logic dirty_data_v_r;
-  wire dirty_data_read = data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
+  wire dirty_data_read = data_mem_pkt_v_o & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
   wire data_mem_clk = (data_mem_invert_clk_p ? ~clk_i : clk_i);
   bsg_dff_sync_read
    #(.width_p(block_width_p))
@@ -215,7 +219,7 @@ module bp_uce
 
   bp_cache_tag_info_s dirty_tag_r;
   logic dirty_tag_v_r;
-  wire dirty_tag_read = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
+  wire dirty_tag_read = tag_mem_pkt_v_o & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
   wire tag_mem_clk = (tag_mem_invert_clk_p ? ~clk_i : clk_i);
   bsg_dff_sync_read
    #(.width_p($bits(bp_cache_tag_info_s)))
@@ -233,7 +237,7 @@ module bp_uce
 
   bp_cache_stat_info_s dirty_stat_r;
   logic dirty_stat_v_r;
-  wire dirty_stat_read = stat_mem_pkt_yumi_i & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
+  wire dirty_stat_read = stat_mem_pkt_v_o & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
   wire stat_mem_clk = (stat_mem_invert_clk_p ? ~clk_i : clk_i);
   bsg_dff_sync_read
    #(.width_p($bits(bp_cache_stat_info_s)))

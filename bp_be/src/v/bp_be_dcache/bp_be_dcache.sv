@@ -336,6 +336,7 @@ module bp_be_dcache
     assign load_hit_tl[i]  = tag_match_tl & (tag_mem_data_lo[i].state != e_COH_I);
     assign store_hit_tl[i] = tag_match_tl & (tag_mem_data_lo[i].state inside {e_COH_M, e_COH_E});
   end
+    wire uncached_hit_tl = uncached_pending_r;
 
   logic [assoc_p-1:0] bank_sel_one_hot_tl;
   bsg_decode
@@ -366,7 +367,7 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   // TV Stage
   /////////////////////////////////////////////////////////////////////////////
-  logic uncached_op_tv_r, cached_op_tv_r, dram_op_tv_r;
+  logic uncached_hit_tv_r, uncached_op_tv_r, cached_op_tv_r, dram_op_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
   logic [dword_width_gp-1:0] st_data_tv_r;
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
@@ -409,18 +410,18 @@ module bp_be_dcache
      );
 
   bsg_dff_en
-   #(.width_p(paddr_width_p+4*assoc_p+3+$bits(bp_be_dcache_decode_s)))
+   #(.width_p(paddr_width_p+4*assoc_p+4+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
     (.clk_i(~clk_i)
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
                ,bank_sel_one_hot_tl, way_v_tl, load_hit_tl, store_hit_tl
-               ,uncached_op_tl, cached_op_tl, dram_op_tl
+               ,uncached_hit_tl, uncached_op_tl, cached_op_tl, dram_op_tl
                ,decode_tl_r
                })
      ,.data_o({paddr_tv_r
                ,bank_sel_one_hot_tv_r, way_v_tv_r, load_hit_tv_r, store_hit_tv_r
-               ,uncached_op_tv_r, cached_op_tv_r, dram_op_tv_r
+               ,uncached_hit_tv_r, uncached_op_tv_r, cached_op_tv_r, dram_op_tv_r
                ,decode_tv_r
                })
      );
@@ -545,7 +546,7 @@ module bp_be_dcache
 
   assign early_hit_v_o = v_tv_r
       // Uncached Load
-    & ((uncached_op_tv_r & (decode_tv_r.load_op & uncached_pending_r))
+    & ((uncached_op_tv_r & (decode_tv_r.load_op & uncached_hit_tv_r))
       // Uncached Store
        | (uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.amo_op)
       // Uncached AMO
@@ -575,7 +576,7 @@ module bp_be_dcache
      ,.latch_last_read_p(1)
      )
    stat_mem
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
     ,.reset_i(reset_i)
     ,.v_i(stat_mem_v_li)
     ,.w_i(stat_mem_w_li)
@@ -809,12 +810,12 @@ module bp_be_dcache
 
   wire cached_req          = (store_miss_tv | load_miss_tv | lr_miss_tv);
   wire fencei_req          = fencei_miss_tv;
-  wire l2_amo_req          = decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_pending_r & (decode_tv_r.rd_addr != '0);
-  wire uncached_load_req   = ~decode_tv_r.amo_op & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_pending_r;
+  wire l2_amo_req          = decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_hit_tv_r & (decode_tv_r.rd_addr != '0);
+  wire uncached_load_req   = ~decode_tv_r.amo_op & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_hit_tv_r;
                              // Regular uncached store
   wire uncached_store_req  = (~decode_tv_r.amo_op & decode_tv_r.store_op & uncached_op_tv_r)
                              // L2 amo uncached store
-                             || (decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_pending_r & (decode_tv_r.rd_addr == '0));
+                             || (decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_hit_tv_r & (decode_tv_r.rd_addr == '0));
   wire wt_req              = (decode_tv_r.store_op & ~sc_fail_tv & ~uncached_op_tv_r & (writethrough_p == 1));
 
   // Uncached stores and writethrough requests are non-blocking
@@ -882,7 +883,7 @@ module bp_be_dcache
 
   // Cache metadata is valid after the request goes out,
   //   but no metadata for flushes
-  wire cache_req_metadata_v = cache_req_yumi_li & ~fencei_req;
+  wire cache_req_metadata_v = cache_req_yumi_i;
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
@@ -1100,6 +1101,7 @@ module bp_be_dcache
   //   in the write buffer, so that the write buffer will only drain if it is full, or if there is
   //   a snoop match. However, this is a critical path, so we drain the write buffer on invalidations.
   // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
+  // TODO: With blocking TL and TV, we really should implement snooping for performance
   assign data_mem_pkt_yumi_lo = (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached)
     ? ~cache_lock & data_mem_pkt_v_i
     : ~cache_lock & data_mem_pkt_v_i & ~|data_mem_fast_read & ~_wbuf_v_lo & ~(v_tl_r & decode_tl_r.store_op) & ~(v_tv_r & decode_tv_r.store_op);
