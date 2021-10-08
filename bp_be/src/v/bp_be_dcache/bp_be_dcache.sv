@@ -209,16 +209,17 @@ module bp_be_dcache
      ,.data_o({data_mem_pkt_yumi_o, tag_mem_pkt_yumi_o})
      );
 
-  wire _flush_self = flush_i | sram_hazard_flush | miss_request_flush | engine_flush;
-  logic stat_mem_pkt_yumi_lo, cache_req_yumi_li, flush_self;
+  logic stat_mem_pkt_yumi_lo, cache_req_yumi_li;
   // Handshakes that are consumed at posedge are extended to the next negedge
   bsg_dlatch
-   #(.width_p(3), .i_know_this_is_a_bad_idea_p(1))
+   #(.width_p(2), .i_know_this_is_a_bad_idea_p(1))
    negedge_extend
     (.clk_i(~clk_i)
-     ,.data_i({stat_mem_pkt_yumi_lo, cache_req_yumi_i, _flush_self})
-     ,.data_o({stat_mem_pkt_yumi_o, cache_req_yumi_li, flush_self})
+     ,.data_i({stat_mem_pkt_yumi_lo, cache_req_yumi_i})
+     ,.data_o({stat_mem_pkt_yumi_o, cache_req_yumi_li})
      );
+
+  wire flush_self = flush_i | sram_hazard_flush | miss_request_flush | engine_flush;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
