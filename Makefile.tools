@@ -5,6 +5,7 @@ verilator_dir := $(BP_TOOLS_DIR)/verilator
 dromajo_dir   := $(BP_TOOLS_DIR)/dromajo
 bsg_sv2v_dir  := $(BP_TOOLS_DIR)/bsg_sv2v
 surelog_dir   := $(BP_TOOLS_DIR)/Surelog
+axe_dir   := $(BP_TOOLS_DIR)/axe
 
 define submodule_tool_template
 $(1)_tag ?= $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
@@ -40,8 +41,13 @@ surelog_build:
 	$(MAKE) -C $(surelog_dir)
 	$(MAKE) -C $(surelog_dir) PREFIX=$(BP_TOOLS_INSTALL_DIR) install
 
+axe_build:
+	cd $(axe_dir)/src; ./make.sh
+	cp $(axe_dir)/src/axe $(BP_TOOLS_BIN_DIR)
+
 $(eval $(call submodule_tool_template,verilator,$(verilator_dir)))
 $(eval $(call submodule_tool_template,bsg_sv2v,$(bsg_sv2v_dir)))
 $(eval $(call submodule_tool_template,dromajo,$(dromajo_dir)))
 $(eval $(call submodule_tool_template,surelog,$(surelog_dir)))
+$(eval $(call submodule_tool_template,axe,$(axe_dir)))
 

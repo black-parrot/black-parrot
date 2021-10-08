@@ -28,6 +28,7 @@ tools_lite: libs | $(TOOL_TARGET_DIRS)
 tools: tools_lite
 	$(MAKE) bsg_sv2v
 	$(MAKE) surelog
+	$(MAKE) axe
 
 tools_bsg: tools bsg_cadenv
 
