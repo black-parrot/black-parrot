@@ -901,6 +901,7 @@
 
   localparam bp_proc_param_s bp_multicore_4x1_override_p =
     '{num_lce  : 4
+      ,cc_x_dim : 2
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_4x1_cfg_p
@@ -910,6 +911,8 @@
 
   localparam bp_proc_param_s bp_multicore_8x1_override_p =
     '{num_lce  : 8
+      ,cc_x_dim : 2
+      ,cc_y_dim : 2
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_8x1_cfg_p
@@ -937,6 +940,7 @@
 
   localparam bp_proc_param_s bp_multicore_4x1_cce_ucode_override_p =
     '{num_lce  : 4
+      ,cc_x_dim : 2
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_4x1_cce_ucode_cfg_p
@@ -946,6 +950,8 @@
 
   localparam bp_proc_param_s bp_multicore_8x1_cce_ucode_override_p =
     '{num_lce  : 8
+      ,cc_x_dim : 2
+      ,cc_y_dim : 2
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_8x1_cce_ucode_cfg_p
