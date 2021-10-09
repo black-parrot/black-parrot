@@ -38,7 +38,6 @@ $(BUILD_DIR)/check: $(CHK_COLLATERAL)
 		-@grep --color      "unresolved references."               $(CHK_LOG) 2>&1 | tee -a $(CHK_ERROR)
 		-@grep --color      "Cannot find the design"               $(CHK_LOG) 2>&1 | tee -a $(CHK_ERROR)
 		-@grep --color      "undeclared symbol"                    $(CHK_LOG) 2>&1 | tee -a $(CHK_ERROR)
-		-@grep --color      "(ELAB-395)"                           $(CHK_LOG) 2>&1 | tee -a $(CHK_ERROR)
 		-@grep --color      "(OPT-150)"                            $(CHK_LOG) 2>&1 | tee -a $(CHK_ERROR)
 		-@grep --color      "declaration initial"                  $(CHK_LOG) 2>&1 | tee -a $(CHK_ERROR)
 		-@test -s $(CHK_ERROR) && echo "Design Compiler check_synth: FAILED" > $(CHK_REPORT) \

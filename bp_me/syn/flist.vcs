@@ -111,6 +111,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_chain.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dlatch.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_encode_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
