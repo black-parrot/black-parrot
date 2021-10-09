@@ -5,8 +5,8 @@
  *  Description:
  *    L1 Data Cache. Features:
  *    - Virtually-indexed, physically-tagged
- *    - 2-8 way set-associative
- *    - 128-512 bit block size (minimum 64-bit data mem bank size)
+ *    - 1-8 way set-associative
+ *    - 64-512 bit block size (minimum 64-bit data mem bank size)
  *
  *    There are three large 1rw memory blocks: data_mem, tag_mem, stat_mem:
  *    - data_mem is divided into 1 bank per way, and cache blocks are
@@ -20,6 +20,12 @@
  *
  *    There are three pipeline stages: tag lookup (TL), tag verity (TV), and
  *      data mux (DM) stages. Signals and registers are suffixed by stage name.
+ *
+ *    The cache operates on the posedge and negedge as follows:
+ *       _____       _____       _____       _____
+ *    __|     |_____|     |_____|     |_____|
+ *   
+ *      |-req-|-----TL----|-TV--|----DM-----|
  *
  *    - Before TL, a dcache_pkt containing opcode, address and store data arrives
  *        at the cache. It is decoded and latched on the NEGATIVE edge of the clock.
@@ -41,7 +47,7 @@
  *
  *    There is a write buffer which allows holding write data from tv stage, delaying the
  *      physical write until data_mem becomes from from incoming loads. To prevent data
- *      hazards, it also supports bypassing from TL to TV if there is an address match in
+ *      hazards, it also supports bypassing from TV to TL if there is an address match in
  *      the write buffer
  *
  *    An address is broken down as follows:
@@ -199,22 +205,35 @@ module bp_be_dcache
   logic [dword_width_gp-1:0] uncached_load_data_r;
   logic sram_hazard_flush, miss_request_flush, engine_flush;
 
+  wire posedge_clk =  clk_i;
+  wire negedge_clk = ~clk_i;
+
+  //
+  // In order to handle posedge/negedge handshakes, it's important to note the
+  //   instant that the handshake "commits". This is the moment that the
+  //   handshake is observed from some non-speculative action similar to the
+  //   processor definition. For the cache, that happens when memories are
+  //   accessed, either by the fast or slow paths. Because the memories are
+  //   accessed on the negedge, we need to extend their handshakes to the positive edge
+  // Similar logic requires us to extend the request handshake as it's latched by the
+  //   consumer cache engine earlier.
+
   // Handshakes that are consumed at negedge are extended to the next posedge
   logic data_mem_pkt_yumi_lo, tag_mem_pkt_yumi_lo;
   bsg_dlatch
    #(.width_p(2), .i_know_this_is_a_bad_idea_p(1))
    posedge_extend
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.data_i({data_mem_pkt_yumi_lo, tag_mem_pkt_yumi_lo})
      ,.data_o({data_mem_pkt_yumi_o, tag_mem_pkt_yumi_o})
      );
 
-  logic stat_mem_pkt_yumi_lo, cache_req_yumi_li;
   // Handshakes that are consumed at posedge are extended to the next negedge
+  logic stat_mem_pkt_yumi_lo, cache_req_yumi_li;
   bsg_dlatch
    #(.width_p(2), .i_know_this_is_a_bad_idea_p(1))
    negedge_extend
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.data_i({stat_mem_pkt_yumi_lo, cache_req_yumi_i})
      ,.data_o({stat_mem_pkt_yumi_o, cache_req_yumi_li})
      );
@@ -255,7 +274,7 @@ module bp_be_dcache
       ,.latch_last_read_p(1)
       )
     tag_mem
-     (.clk_i(~clk_i)
+     (.clk_i(negedge_clk)
       ,.reset_i(reset_i)
       ,.v_i(tag_mem_v_li)
       ,.w_i(tag_mem_w_li)
@@ -285,7 +304,7 @@ module bp_be_dcache
          ,.latch_last_read_p(1)
          )
        data_mem
-        (.clk_i(~clk_i)
+        (.clk_i(negedge_clk)
          ,.reset_i(reset_i)
          ,.v_i(data_mem_v_li[i])
          ,.w_i(data_mem_w_li[i])
@@ -308,7 +327,7 @@ module bp_be_dcache
   bsg_dff_reset
    #(.width_p(1))
    v_tl_reg
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
 
      ,.data_i(tl_we)
@@ -319,7 +338,7 @@ module bp_be_dcache
   bsg_dff_reset_en
    #(.width_p(dpath_width_gp+page_offset_width_gp+$bits(bp_be_dcache_decode_s)))
    tl_stage_reg
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
      ,.en_i(tl_we)
      ,.data_i({dcache_pkt_cast_i.data, page_offset, decode_lo})
@@ -384,7 +403,7 @@ module bp_be_dcache
   bsg_dff_reset
    #(.width_p(1))
    v_tv_reg
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
      ,.data_i(tv_we)
      ,.data_o(v_tv_r)
@@ -395,7 +414,7 @@ module bp_be_dcache
   bsg_dff_en
    #(.width_p(block_width_p))
    ld_data_tv_reg
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.en_i(tv_we)
      ,.data_i(ld_data_tv_n)
      ,.data_o(ld_data_tv_r)
@@ -404,7 +423,7 @@ module bp_be_dcache
   bsg_dff_en
    #(.width_p(dword_width_gp))
    st_data_tv_reg
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.en_i(tv_we & decode_tl_r.store_op)
      ,.data_i(st_data_tl)
      ,.data_o(st_data_tv_r)
@@ -413,7 +432,7 @@ module bp_be_dcache
   bsg_dff_en
    #(.width_p(paddr_width_p+4*assoc_p+4+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
                ,bank_sel_one_hot_tl, way_v_tl, load_hit_tl, store_hit_tl
@@ -577,7 +596,7 @@ module bp_be_dcache
      ,.latch_last_read_p(1)
      )
    stat_mem
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
     ,.reset_i(reset_i)
     ,.v_i(stat_mem_v_li)
     ,.w_i(stat_mem_w_li)
@@ -608,7 +627,7 @@ module bp_be_dcache
   bsg_dff_reset
    #(.width_p(1))
    v_dm_reg
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
      ,.data_i(dm_we)
      ,.data_o(v_dm_r)
@@ -618,7 +637,7 @@ module bp_be_dcache
   bsg_dff_en
    #(.width_p(2*dword_width_gp+paddr_width_p+$bits(bp_be_dcache_decode_s)))
    dm_stage_reg
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.en_i(dm_we)
      ,.data_i({st_data_tv_r, result_data, paddr_tv_r, decode_tv_r})
      ,.data_o({st_data_dm_r, ld_data_dm_r, paddr_dm_r, decode_dm_r})
@@ -775,7 +794,7 @@ module bp_be_dcache
   bp_be_dcache_wbuf
    #(.bp_params_p(bp_params_p))
    wbuf
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
 
      ,.v_i(wbuf_v_li)
@@ -796,7 +815,7 @@ module bp_be_dcache
   bsg_deff_reset
    #(.width_p(1))
    wbuf_v_reg
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
      ,.data_i(_wbuf_v_lo & ~wbuf_v_lo)
      ,.data_o(wbuf_v_lo)
@@ -888,7 +907,7 @@ module bp_be_dcache
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
 
      ,.data_i(cache_req_metadata_v)
@@ -900,7 +919,7 @@ module bp_be_dcache
   bsg_dff
    #(.width_p(1+lg_dcache_assoc_lp))
    cached_hit_reg
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.data_i({load_hit_tv, load_hit_way_tv})
      ,.data_o({metadata_hit_r, metadata_hit_index_r})
      );
@@ -1009,7 +1028,7 @@ module bp_be_dcache
   bsg_dff
    #(.width_p(lg_dcache_assoc_lp))
    tag_mem_pkt_way_reg
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.data_i(tag_mem_pkt_cast_i.way_id)
      ,.data_o(tag_mem_pkt_way_r)
      );
@@ -1111,7 +1130,7 @@ module bp_be_dcache
   bsg_dff
    #(.width_p(lg_dcache_assoc_lp))
    data_mem_pkt_way_reg
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.data_i(data_mem_pkt_cast_i.way_id)
      ,.data_o(data_mem_pkt_way_r)
      );
@@ -1176,7 +1195,7 @@ module bp_be_dcache
       bsg_dff_reset_set_clear
        #(.width_p(1))
        gdirty_reg
-       (.clk_i(~clk_i)
+       (.clk_i(negedge_clk)
         ,.reset_i(reset_i)
         ,.set_i(set_dirty)
         ,.clear_i(clear_dirty)
@@ -1215,7 +1234,7 @@ module bp_be_dcache
   bsg_dff
    #(.width_p(lg_dcache_assoc_lp))
    stat_mem_pkt_way_reg
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.data_i(stat_mem_pkt_cast_i.way_id)
      ,.data_o(stat_mem_pkt_way_r)
      );
@@ -1245,7 +1264,7 @@ module bp_be_dcache
       bsg_dff_reset_set_clear
        #(.width_p(1), .clear_over_set_p(1))
        load_reserved_v_reg
-        (.clk_i(~clk_i)
+        (.clk_i(negedge_clk)
          ,.reset_i(reset_i)
 
          ,.set_i(set_reservation)
@@ -1256,7 +1275,7 @@ module bp_be_dcache
       bsg_dff_en
        #(.width_p(ctag_width_p+sindex_width_lp))
        load_reserved_addr
-        (.clk_i(~clk_i)
+        (.clk_i(negedge_clk)
          ,.en_i(set_reservation)
          ,.data_i({paddr_tag_tv, paddr_index_tv})
          ,.data_o({load_reserved_tag_r, load_reserved_index_r})
@@ -1274,7 +1293,7 @@ module bp_be_dcache
         bsg_counter_clear_up
          #(.max_val_p(lock_max_limit_lp), .init_val_p(0))
          lock_counter
-          (.clk_i(~clk_i)
+          (.clk_i(negedge_clk)
            ,.reset_i(reset_i)
 
            ,.clear_i(lock_clr)
@@ -1300,7 +1319,7 @@ module bp_be_dcache
   bsg_dff_reset_set_clear
    #(.width_p(1))
    uncached_pending_reg
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
 
      ,.set_i(uncached_pending_set)
@@ -1313,7 +1332,7 @@ module bp_be_dcache
   bsg_dff_en
    #(.width_p(dword_width_gp))
    uncached_load_data_reg
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.en_i(uncached_load_data_set)
 
      ,.data_i(data_mem_pkt_cast_i.data[0+:dword_width_gp])
