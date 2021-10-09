@@ -25,6 +25,7 @@ module bp_be_pipe_mem
    , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
    , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
+   , localparam wb_pkt_width_lp        = `bp_be_wb_pkt_width(vaddr_width_p)
    )
   (input                                  clk_i
    , input                                reset_i
@@ -44,6 +45,7 @@ module bp_be_pipe_mem
    , output logic                         tlb_load_miss_v_o
    , output logic                         tlb_store_miss_v_o
    , output logic                         cache_miss_v_o
+   , output logic                         cache_fail_v_o
    , output logic                         fencei_clean_v_o
    , output logic                         fencei_dirty_v_o
    , output logic                         load_misaligned_v_o
@@ -58,8 +60,14 @@ module bp_be_pipe_mem
    , output logic [dpath_width_gp-1:0]    final_data_o
    , output logic                         final_v_o
 
+   , output logic [wb_pkt_width_lp-1:0]   late_iwb_pkt_o
+   , output logic                         late_iwb_pkt_v_o
+   , input                                late_iwb_pkt_yumi_i
+   , output logic [wb_pkt_width_lp-1:0]   late_fwb_pkt_o
+   , output logic                         late_fwb_pkt_v_o
+   , input                                late_fwb_pkt_yumi_i
+
    , input [trans_info_width_lp-1:0]      trans_info_i
-   , output logic                         replay_pending_o
 
    // D$-LCE Interface
    // signals to LCE
@@ -106,12 +114,16 @@ module bp_be_pipe_mem
   bp_be_ptw_fill_pkt_s   ptw_fill_pkt;
   bp_be_trans_info_s     trans_info;
   bp_dcache_req_s        cache_req_cast_o;
+  bp_be_wb_pkt_s         late_iwb_pkt;
+  bp_be_wb_pkt_s         late_fwb_pkt;
 
   assign cfg_bus = cfg_bus_i;
   assign ptw_fill_pkt_o = ptw_fill_pkt;
   assign commit_pkt = commit_pkt_i;
   assign trans_info = trans_info_i;
   assign cache_req_o = cache_req_cast_o;
+  assign late_iwb_pkt_o = late_iwb_pkt;
+  assign late_fwb_pkt_o = late_fwb_pkt;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
@@ -135,9 +147,11 @@ module bp_be_pipe_mem
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data;
+  logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data, dcache_late_data;
+  logic [reg_addr_width_gp-1:0] dcache_late_rd_addr;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_early_miss_v, dcache_early_hit_v, dcache_final_v, dcache_pkt_v;
+  logic                     dcache_late_float, dcache_late_v, dcache_late_yumi;
   logic                     dcache_ptag_v;
   logic                     dcache_ptag_uncached;
   logic                     dcache_ptag_dram;
@@ -224,7 +238,7 @@ module bp_be_pipe_mem
      ,.page_idx_width_p(sv39_page_idx_width_gp)
      )
    ptw
-    (.clk_i(clk_i)
+    (.clk_i(~clk_i)
      ,.reset_i(reset_i)
      ,.base_ppn_i(trans_info.satp_ppn)
      ,.priv_mode_i(trans_info.priv_mode)
@@ -241,7 +255,8 @@ module bp_be_pipe_mem
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
      ,.dcache_ready_i(dcache_ready_lo)
 
-     ,.dcache_early_v_i(dcache_early_hit_v)
+     ,.dcache_early_hit_v_i(dcache_early_hit_v)
+     ,.dcache_early_miss_v_i(dcache_early_miss_v)
      ,.dcache_early_data_i(dcache_early_data)
      );
 
@@ -268,8 +283,13 @@ module bp_be_pipe_mem
       ,.final_data_o(dcache_final_data)
       ,.final_v_o(dcache_final_v)
 
+      ,.late_rd_addr_o(dcache_late_rd_addr)
+      ,.late_float_o(dcache_late_float)
+      ,.late_data_o(dcache_late_data)
+      ,.late_v_o(dcache_late_v)
+      ,.late_yumi_i(dcache_late_yumi)
+
       ,.flush_i(flush_i)
-      ,.replay_pending_o(replay_pending_o)
 
       // D$-LCE Interface
       ,.cache_req_o(cache_req_cast_o)
@@ -310,7 +330,7 @@ module bp_be_pipe_mem
   bsg_dff_reset
    #(.width_p(3))
    mem3_reg
-    (.clk_i(clk_i)
+    (.clk_i(~clk_i)
      ,.reset_i(reset_i)
      ,.data_i({is_req_mem2, is_store_mem2, is_fencei_mem2})
      ,.data_o({is_req_mem3, is_store_mem3, is_fencei_mem3})
@@ -342,10 +362,11 @@ module bp_be_pipe_mem
 
   assign tlb_store_miss_v_o     = is_store_mem2 & dtlb_miss_v;
   assign tlb_load_miss_v_o      = ~is_store_mem2 & dtlb_miss_v;
-  // Need to make early_miss when cache_fail is implemented
-  assign cache_miss_v_o         = is_req_mem3 & ~dcache_early_hit_v;
+  assign cache_miss_v_o         = is_req_mem3 & dcache_early_miss_v;
+  assign cache_fail_v_o         = is_req_mem3 & ~dcache_early_hit_v & ~dcache_early_miss_v;
   assign fencei_clean_v_o       = is_fencei_mem3 & dcache_early_hit_v;
   assign fencei_dirty_v_o       = is_fencei_mem3 & ~dcache_early_hit_v;
+
   assign store_page_fault_v_o   = store_page_fault_v;
   assign load_page_fault_v_o    = load_page_fault_v;
   assign store_access_fault_v_o = store_access_fault_v;
@@ -357,6 +378,22 @@ module bp_be_pipe_mem
   assign ptw_busy_o             = ptw_busy;
   assign early_data_o           = dcache_early_data;
   assign final_data_o           = dcache_final_data;
+
+  assign late_iwb_pkt = '{ird_w_v    : 1'b1
+                          ,late      : 1'b1
+                          ,rd_addr   : dcache_late_rd_addr
+                          ,rd_data   : dcache_late_data
+                          ,default: '0
+                          };
+  assign late_fwb_pkt = '{frd_w_v    : 1'b1
+                          ,late      : 1'b1
+                          ,rd_addr   : dcache_late_rd_addr
+                          ,rd_data   : dcache_late_data
+                          ,default: '0
+                          };
+  assign late_iwb_pkt_v_o = dcache_late_v & ~dcache_late_float;
+  assign late_fwb_pkt_v_o = dcache_late_v &  dcache_late_float;
+  assign dcache_late_yumi = late_fwb_pkt_yumi_i | late_iwb_pkt_yumi_i;
 
   wire early_v_li = reservation.v & reservation.decode.pipe_mem_early_v;
   bsg_dff_chain

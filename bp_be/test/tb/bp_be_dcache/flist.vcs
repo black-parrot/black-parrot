@@ -15,7 +15,7 @@ $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.v
 $BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.v
 # top files
-$BP_TOP_DIR/test/common/bp_nonsynth_cache_tracer.sv
+$BP_BE_DIR/test/common/bp_be_nonsynth_dcache_tracer.sv
 # me files
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
 $BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
