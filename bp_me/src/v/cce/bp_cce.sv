@@ -850,6 +850,7 @@ module bp_cce
   //synopsys translate_off
   wire req_start = lce_req_v & decoded_inst_lo.v & decoded_inst_lo.poph
                    & (decoded_inst_lo.popq_qsel == e_src_q_sel_lce_req);
+  // TODO: determine request end condition for ucode CCE
   wire req_end = 1'b1;
   //synopsys translate_on
 

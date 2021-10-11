@@ -40,7 +40,7 @@
     update = none
 
 [submodule "tools/axe"]
-	path = tools/axe
-	url = https://github.com/black-parrot/axe.git
-  branch = blackparrot_mods
-  update = checkout
+    path = tools/axe
+    url = https://github.com/black-parrot/axe.git
+    branch = blackparrot_mods
+    update = checkout

@@ -5,7 +5,7 @@ verilator_dir := $(BP_TOOLS_DIR)/verilator
 dromajo_dir   := $(BP_TOOLS_DIR)/dromajo
 bsg_sv2v_dir  := $(BP_TOOLS_DIR)/bsg_sv2v
 surelog_dir   := $(BP_TOOLS_DIR)/Surelog
-axe_dir   := $(BP_TOOLS_DIR)/axe
+axe_dir       := $(BP_TOOLS_DIR)/axe
 
 define submodule_tool_template
 $(1)_tag ?= $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))

@@ -1,12 +1,12 @@
-e_bp_multicore_8x1_cce_ucode_cfg_lces  := 8
-e_bp_multicore_8x1_cfg_lces            := 8
-e_bp_multicore_4x1_cce_ucode_cfg_lces  := 4
-e_bp_multicore_4x1_cfg_lces            := 4
-e_bp_multicore_2x1_cce_ucode_cfg_lces  := 2
-e_bp_multicore_2x1_cfg_lces            := 2
-e_bp_multicore_half_cce_ucode_cfg_lces := 1
-e_bp_multicore_half_cfg_lces           := 1
-e_bp_unicore_half_cfg_lces             := 1
+e_bp_test_multicore_8x1_cce_ucode_cfg_lces  := 8
+e_bp_test_multicore_8x1_cfg_lces            := 8
+e_bp_test_multicore_4x1_cce_ucode_cfg_lces  := 4
+e_bp_test_multicore_4x1_cfg_lces            := 4
+e_bp_test_multicore_2x1_cce_ucode_cfg_lces  := 2
+e_bp_test_multicore_2x1_cfg_lces            := 2
+e_bp_test_multicore_half_cce_ucode_cfg_lces := 1
+e_bp_test_multicore_half_cfg_lces           := 1
+e_bp_test_unicore_half_cfg_lces             := 1
 
 e_bp_multicore_16_cce_ucode_cfg_lces   := 32
 e_bp_multicore_16_cfg_lces             := 32
