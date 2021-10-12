@@ -157,7 +157,7 @@ module bp_me_nonsynth_lce_tracer
 
       if (cache_req_complete_i) begin
         cnt_up <= 1'b0;
-        $fdisplay(file, "ReqLat: %d", req_cnt);
+        $fdisplay(file, "%12t |: LCE[%0d] ReqLat: %d", $time, lce_id_i, req_cnt);
       end
 
     end // ~reset_i

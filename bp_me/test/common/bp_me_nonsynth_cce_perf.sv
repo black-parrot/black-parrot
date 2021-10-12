@@ -50,7 +50,7 @@ module bp_me_nonsynth_cce_perf
   always_ff @(negedge reset_i) begin
     file_name = $sformatf("%s_%x.trace", cce_trace_file_p, cce_id_i);
     file      = $fopen(file_name, "w");
-    $fdisplay(file, "simtime,current_cycle,cce,op,latency");
+    $fdisplay(file, "Time |: Cycle,CCE,Op,Latency");
   end
 
   logic req_started_r;
@@ -138,15 +138,15 @@ module bp_me_nonsynth_cce_perf
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       if (req_started_r & req_end_i) begin
-        $fdisplay(file, "%0t,%0d,%0d,%s,%0d", $time, total_cycles, cce_id_i, op, cnt+'d1);
+        $fdisplay(file, "%12t |: %0d,%0d,%s,%0d", $time, total_cycles, cce_id_i, op, cnt+'d1);
       end
     end // reset
   end // always_ff
 
   final begin
-    $fdisplay(file, "total:%0d", total_cycles);
-    $fdisplay(file, "busy:%0d", total_cycles - idle_cycles);
-    $fdisplay(file, "idle:%0d", idle_cycles);
+    $fdisplay(file, "%12t |: total: %0d", $time, total_cycles);
+    $fdisplay(file, "%12t |: busy: %0d", $time, total_cycles - idle_cycles);
+    $fdisplay(file, "%12t |: idle: %0d", $time, idle_cycles);
   end
 
 endmodule
