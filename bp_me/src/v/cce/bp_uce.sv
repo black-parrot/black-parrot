@@ -372,7 +372,7 @@ module bp_uce
      ,.count_o(credit_count_lo)
      );
   assign cache_req_credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
-  assign cache_req_credits_empty_o = (credit_count_lo == 0);
+  assign cache_req_credits_empty_o = (credit_count_lo == 0) && (cache_req_v_r == 1'b0);
 
   logic [fill_width_p-1:0] writeback_data;
   bsg_mux
@@ -539,7 +539,7 @@ module bp_uce
           end
         e_flush_fence:
           begin
-            cache_req_done = cache_req_credits_empty_o;
+            cache_req_done = (credit_count_lo == '0);
 
             state_n = cache_req_done ? e_ready : e_flush_fence;
           end

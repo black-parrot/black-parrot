@@ -77,7 +77,6 @@ module bp_be_detector
   logic fence_haz_v, cmd_haz_v, fflags_haz_v, csr_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
   logic long_haz_v;
-  logic mem_in_pipe_v;
 
   wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.dcache_miss
     ? commit_pkt_cast_i.instr.t.fmatype.rd_addr
@@ -132,6 +131,21 @@ module bp_be_detector
      ,.rd_i(score_rd_li)
      ,.rs_match_o(frs_match_lo)
      ,.rd_match_o(frd_match_lo)
+     );
+
+  // This may be pessimistic, since mem could be not ready for other reasons.
+  // But realistically, a few cycles on a fence isn't going to hurt
+  logic acquire_r;
+  wire mem_in_pipe_v = dep_status_r[0].mem_v | dep_status_r[1].mem_v | dep_status_r[2].mem_v;
+  wire credits_totally_empty = credits_empty_i & ~mem_in_pipe_v & mem_ready_i;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   acquire_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(dispatch_pkt_cast_i.decode.acquire_v)
+     ,.clear_i(credits_totally_empty)
+     ,.data_o(acquire_r)
      );
 
   always_comb
@@ -206,9 +220,9 @@ module bp_be_detector
       frs3_data_haz_v[2] = (isd_status_cast_i.frs3_v & rs3_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      mem_in_pipe_v      = dep_status_r[0].mem_v | dep_status_r[1].mem_v | dep_status_r[2].mem_v;
-      fence_haz_v        = (isd_status_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v | ~mem_ready_i))
-                           | (isd_status_cast_i.mem_v & credits_full_i);
+      fence_haz_v        = (isd_status_cast_i.release_v & ~credits_totally_empty)
+                           | (isd_status_cast_i.mem_v & credits_full_i)
+                           | (isd_status_cast_i.mem_v & acquire_r);
       cmd_haz_v          = cmd_full_i;
 
       // TODO: Pessimistic, could have a separate fflags r/w_v

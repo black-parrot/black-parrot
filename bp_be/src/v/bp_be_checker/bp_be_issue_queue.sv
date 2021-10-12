@@ -159,7 +159,7 @@ module bp_be_issue_queue
                                                   ,`RV64_LOAD_OP, `RV64_STORE_OP
                                                   ,`RV64_AMO_OP, `RV64_SYSTEM_OP
                                                   };
-        issue_pkt_li.fence_v = instr inside {`RV64_FENCE, `RV64_FENCE_I, `RV64_SFENCE_VMA};
+        issue_pkt_li.release_v = instr inside {`RV64_FENCE, `RV64_FENCE_I, `RV64_SFENCE_VMA, `RV64_AMORL};
         issue_pkt_li.long_v = instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
                                             ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
                                             ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D

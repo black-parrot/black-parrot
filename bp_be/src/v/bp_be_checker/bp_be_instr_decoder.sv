@@ -252,8 +252,9 @@ module bp_be_instr_decoder
             end
           `RV64_MISC_MEM_OP:
             begin
+              decode_cast_o.acquire_v = 1'b1;
               unique casez (instr)
-                `RV64_FENCE   : begin end
+                `RV64_FENCE   : begin  end
                 `RV64_FENCE_I :
                   begin
                     decode_cast_o.pipe_mem_early_v = 1'b1;
@@ -307,6 +308,7 @@ module bp_be_instr_decoder
                     illegal_instr_o = (decode_info_cast_i.tvm & (decode_info_cast_i.priv_mode == `PRIV_MODE_S))
                       | (~decode_info_cast_i.debug_mode & (decode_info_cast_i.priv_mode < `PRIV_MODE_S));
                     sfence_vma_o = ~illegal_instr_o;
+                    decode_cast_o.acquire_v = ~illegal_instr_o;
                   end
                 default:
                   begin
@@ -537,7 +539,6 @@ module bp_be_instr_decoder
               endcase
             end
 
-
           `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FNMADD_OP:
             begin
               decode_cast_o.pipe_fma_v = 1'b1;
@@ -563,6 +564,7 @@ module bp_be_instr_decoder
               decode_cast_o.dcache_r_v = ~(instr inside {`RV64_SCD, `RV64_SCW});
               decode_cast_o.dcache_w_v = ~(instr inside {`RV64_LRD, `RV64_LRW});
               decode_cast_o.mem_v      = 1'b1;
+              decode_cast_o.acquire_v   = (instr inside {`RV64_AMOAQ});
               // Note: could do a more efficent decoding here by having atomic be a flag
               //   And having the op simply taken from funct3
               unique casez (instr)

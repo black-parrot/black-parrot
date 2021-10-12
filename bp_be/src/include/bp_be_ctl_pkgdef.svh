@@ -211,6 +211,7 @@
     logic                             csr_w_v;
     logic                             csr_r_v;
     logic                             mem_v;
+    logic                             acquire_v;
     logic                             opw_v;
     logic                             ops_v;
 

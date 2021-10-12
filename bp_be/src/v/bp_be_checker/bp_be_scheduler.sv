@@ -183,7 +183,7 @@ module bp_be_scheduler
       isd_status_cast_o.v        = fe_queue_yumi_li;
       isd_status_cast_o.pc       = fe_queue_lo.pc;
       isd_status_cast_o.branch_metadata_fwd = fe_queue_lo.branch_metadata_fwd;
-      isd_status_cast_o.fence_v  = fe_queue_v_lo & issue_pkt.fence_v;
+      isd_status_cast_o.release_v  = fe_queue_v_lo & issue_pkt.release_v;
       isd_status_cast_o.csr_v    = fe_queue_v_lo & issue_pkt.csr_v;
       isd_status_cast_o.mem_v    = fe_queue_v_lo & issue_pkt.mem_v;
       isd_status_cast_o.long_v   = fe_queue_v_lo & issue_pkt.long_v;

@@ -22,7 +22,7 @@
     {                                                                                              \
       logic                                    csr_v;                                              \
       logic                                    mem_v;                                              \
-      logic                                    fence_v;                                            \
+      logic                                    release_v;                                          \
       logic                                    long_v;                                             \
       logic                                    irs1_v;                                             \
       logic                                    irs2_v;                                             \
@@ -78,7 +78,7 @@
       logic                                    v;                                                  \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                \
-      logic                                    fence_v;                                            \
+      logic                                    release_v;                                          \
       logic                                    mem_v;                                              \
       logic                                    long_v;                                             \
       logic                                    csr_v;                                              \
