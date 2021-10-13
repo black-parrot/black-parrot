@@ -69,13 +69,9 @@ module testbench
 
 // Bit to deal with initial X->0 transition detection
   bit clk_i;
-  bit dram_clk_i, dram_reset_i;
+  bit cosim_clk_i, cosim_reset_i, dram_clk_i, dram_reset_i;
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
    clock_gen
     (.o(clk_i));
@@ -90,11 +86,7 @@ module testbench
      ,.async_reset_o(reset_i)
      );
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`dram_pkg::tck_ps))
    dram_clock_gen
     (.o(dram_clk_i));
@@ -107,6 +99,21 @@ module testbench
    dram_reset_gen
     (.clk_i(dram_clk_i)
      ,.async_reset_o(dram_reset_i)
+     );
+
+   bsg_nonsynth_clock_gen
+    #(.cycle_time_p(`BP_SIM_CLK_PERIOD/5))
+    cosim_clk_gen
+     (.o(cosim_clk_i));
+
+  bsg_nonsynth_reset_gen
+   #(.num_clocks_p(1)
+     ,.reset_cycles_lo_p(0)
+     ,.reset_cycles_hi_p(10)
+     )
+   cosim_reset_gen
+    (.clk_i(cosim_clk_i)
+     ,.async_reset_o(cosim_reset_i)
      );
 
   bp_bedrock_io_mem_msg_header_s proc_io_cmd_lo;
@@ -358,6 +365,9 @@ module testbench
            ,.frd_w_v_i(scheduler.fwb_pkt_cast_i.frd_w_v)
            ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
+
+           ,.cosim_clk_i(testbench.cosim_clk_i)
+           ,.cosim_reset_i(testbench.cosim_reset_i)
            );
 
       bind bp_fe_icache

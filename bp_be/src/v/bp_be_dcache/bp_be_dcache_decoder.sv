@@ -72,10 +72,13 @@ module bp_be_dcache_decoder
       {e_dcache_op_flw, e_dcache_op_fld
        ,e_dcache_op_ld, e_dcache_op_lw, e_dcache_op_lh, e_dcache_op_lb
        ,e_dcache_op_lwu, e_dcache_op_lhu, e_dcache_op_lbu
+       ,e_dcache_op_ptw_ld
        };
 
     decode_cast_o.store_op = (decode_cast_o.amo_op & ~decode_cast_o.lr_op) || dcache_pkt.opcode inside
       {e_dcache_op_sd, e_dcache_op_sw, e_dcache_op_sh, e_dcache_op_sb, e_dcache_op_fsw, e_dcache_op_fsd};
+
+    decode_cast_o.ptw_op = dcache_pkt.opcode inside {e_dcache_op_ptw_ld};
 
     // Size decoding
     unique case (dcache_pkt.opcode)

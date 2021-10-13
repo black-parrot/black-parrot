@@ -128,7 +128,8 @@ module bp_be_dcache
    , input                            ptag_dram_i
 
    , output logic [dpath_width_gp-1:0] early_data_o
-   , output logic                      early_v_o
+   , output logic                      early_miss_v_o
+   , output logic                      early_hit_v_o
    , output logic [dpath_width_gp-1:0] final_data_o
    , output logic                      final_v_o
 
@@ -522,7 +523,7 @@ module bp_be_dcache
     ? (sc_success_tv != 1'b1)
     : early_data;
 
-  assign early_v_o = v_tv_r
+  assign early_hit_v_o = v_tv_r
       // Uncached Load
     & ((uncached_op_tv_r & (decode_tv_r.load_op & uncached_pending_r))
       // Uncached Store
@@ -534,6 +535,8 @@ module bp_be_dcache
       // Cached load / store
        | (cached_op_tv_r & ~any_miss_tv)
        );
+
+  assign early_miss_v_o = v_tv_r & miss_request_flush;
 
   ///////////////////////////
   // Stat Mem Storage
@@ -1092,8 +1095,8 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read  = ~flush_i & ((v_tv_r & ~early_v_o) | (v_tv_r & load_hit_tv & uncached_op_tv_r));
-  wire stat_mem_fast_write = ~flush_i & (v_tv_r & early_v_o & cached_op_tv_r);
+  wire stat_mem_fast_read  = ~flush_i & (early_miss_v_o | (v_tv_r & load_hit_tv & uncached_op_tv_r));
+  wire stat_mem_fast_write = ~flush_i & (early_hit_v_o & cached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
   assign stat_mem_v_li = stat_mem_fast_read | stat_mem_fast_write
@@ -1260,7 +1263,7 @@ module bp_be_dcache
   // Invalidate uncached data if the cache when we successfully complete the request
   // TODO: We currently block interrupts until we have replayed a cache miss or
   //   uncached load. We should decouple the cache writeback from replay in the future
-  wire uncached_pending_clear = early_v_o;
+  wire uncached_pending_clear = early_hit_v_o;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    uncached_pending_reg
