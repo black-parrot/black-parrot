@@ -135,7 +135,7 @@ module bp_be_dcache
 
    // ctrl
    , input                             flush_i
-   , output                            replay_pending_o
+   , output logic                      replay_pending_o
 
    // D$ Engine Interface
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
