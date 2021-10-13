@@ -1,6 +1,12 @@
 
 `include "bsg_defines.v"
 
+// This module efficiently buffers a bedrock stream, by storing one header
+//   per stream. The data elements can be configured as >= header els.
+// Two common configurations would be 2&2, which provides timing isolation
+//   without impacting throughput, and 2&16 which provides two full messages
+//   worth of buffering (for a 512-bit block system).
+
 module bp_me_stream_fifo
  #(// Size of fifos
    parameter `BSG_INV_PARAM(header_els_p)
@@ -57,7 +63,7 @@ module bp_me_stream_fifo
     begin : buffered
       // Only save headers after last signals
       bsg_fifo_1r1w_small
-       #(.width_p(header_width_p), .els_p(header_els_p))
+       #(.width_p(header_width_p), .els_p(header_els_p), .ready_THEN_valid_p(1))
        header_fifo
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
@@ -73,7 +79,7 @@ module bp_me_stream_fifo
 
       // Every arriving beat's data is buffered (regardless of whether data is valid)
       bsg_fifo_1r1w_small
-       #(.width_p(1+data_width_p), .els_p(data_els_p))
+       #(.width_p(1+data_width_p), .els_p(data_els_p), .ready_THEN_valid_p(1))
        data_fifo
         (.clk_i(clk_i)
           ,.reset_i(reset_i)
