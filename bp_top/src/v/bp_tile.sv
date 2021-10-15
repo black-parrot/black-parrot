@@ -5,14 +5,20 @@
  */
 
 `include "bp_common_defines.svh"
+`include "bp_be_defines.svh"
+`include "bp_me_defines.svh"
 `include "bp_top_defines.svh"
+`include "bsg_cache.vh"
+`include "bsg_noc_links.vh"
 
 module bp_tile
  import bp_common_pkg::*;
  import bp_be_pkg::*;
+ import bp_me_pkg::*;
+ import bp_top_pkg::*;
+ import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
- import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
@@ -545,7 +551,6 @@ module bp_tile
   assign clint_mem_resp_yumi_li    = cce_mem_resp_yumi_lo & clint_mem_resp_grant_li;
   assign loopback_mem_resp_yumi_li = cce_mem_resp_yumi_lo & loopback_mem_resp_grant_li;
 
-  import bsg_cache_pkg::*;
   `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;

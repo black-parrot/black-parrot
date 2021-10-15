@@ -23,7 +23,7 @@
 
 module bp_cce_inst_predecode
   import bp_me_pkg::*;
-  #(parameter width_p = "inv")
+  #(parameter `BSG_INV_PARAM(width_p ))
   (input bp_cce_inst_s                              inst_i
    , input [width_p-1:0]                            pc_i
    , output logic [width_p-1:0]                     predicted_next_pc_o
@@ -43,3 +43,5 @@ module bp_cce_inst_predecode
   assign predicted_next_pc_o = predict_taken ? branch_target : pc_plus_one;
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_cce_inst_predecode)

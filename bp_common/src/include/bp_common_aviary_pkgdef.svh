@@ -1,12 +1,11 @@
 `ifndef BP_COMMON_AVIARY_PKGDEF_SVH
 `define BP_COMMON_AVIARY_PKGDEF_SVH
 
-  `include "bsg_defines.v"
   `include "bp_common_aviary_defines.svh"
 
   // Suitably high enough to not run out of configs.
   localparam max_cfgs    = 128;
-  localparam lg_max_cfgs = `BSG_SAFE_CLOG2(max_cfgs);
+  localparam lg_max_cfgs = $clog2(max_cfgs);
 
   // Configuration enums
   typedef enum logic [1:0]
@@ -296,7 +295,7 @@
   localparam bp_proc_param_s bp_unicore_bootrom_override_p =
     '{boot_pc        : bootrom_base_addr_gp
       ,boot_in_debug : 1
-      ,default       : "inv"
+      ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_bootrom_cfg_p
                         ,bp_unicore_bootrom_override_p
@@ -437,7 +436,7 @@
 
   localparam bp_proc_param_s bp_unicore_writethrough_override_p =
     '{l1_writethrough: 1
-      ,default       : "inv"
+      ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_writethrough_cfg_p
                         ,bp_unicore_writethrough_override_p

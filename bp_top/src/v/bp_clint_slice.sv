@@ -98,7 +98,8 @@ module bp_clint_slice
   assign mtime_val_li = mem_cmd_lo.data[0+:dword_width_gp];
   wire mtime_w_v_li = wr_not_rd & mtime_cmd_v;
   bsg_counter_set_en
-   #(.lg_max_val_lp(dword_width_gp)
+   #(.max_val_p(0) // Unused but must be set to override default
+     ,.lg_max_val_lp(dword_width_gp)
      ,.reset_val_p(0)
      )
    mtime_counter

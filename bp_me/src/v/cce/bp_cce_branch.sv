@@ -21,8 +21,8 @@
 
 module bp_cce_branch
   import bp_me_pkg::*;
-  #(parameter width_p          = "inv"
-    , parameter cce_pc_width_p = "inv"
+  #(parameter `BSG_INV_PARAM(width_p          )
+    , parameter `BSG_INV_PARAM(cce_pc_width_p )
   )
   (input [width_p-1:0]                       opd_a_i
    , input [width_p-1:0]                     opd_b_i
@@ -66,3 +66,5 @@ module bp_cce_branch
   end
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_cce_branch)
