@@ -31,7 +31,7 @@ module bp_cce_src_sel
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
   )
   (// Select signals for src_a and src_b - from decoded instruction
@@ -97,7 +97,7 @@ module bp_cce_src_sel
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // Message casting
   bp_bedrock_lce_req_msg_header_s  lce_req_header_li;

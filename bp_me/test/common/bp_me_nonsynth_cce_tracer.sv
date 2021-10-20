@@ -28,7 +28,7 @@ module bp_me_nonsynth_cce_tracer
     , localparam lg_cce_way_groups_lp      = `BSG_SAFE_CLOG2(cce_way_groups_p)
 
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -75,7 +75,7 @@ module bp_me_nonsynth_cce_tracer
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // LCE-CCE Interface structs
   bp_bedrock_lce_req_msg_header_s  lce_req;

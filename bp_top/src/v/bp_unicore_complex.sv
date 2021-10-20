@@ -14,7 +14,7 @@ module bp_unicore_complex
    `declare_bp_proc_params(bp_params_p)
 
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_lp, did_width_p, lce_id_width_p, lce_assoc_p, uce)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )

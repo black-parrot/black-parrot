@@ -42,7 +42,7 @@ module bp_me_stream_pump_in
    , parameter msg_stream_mask_p = 0
    , parameter fsm_stream_mask_p = msg_stream_mask_p
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, xce)
 
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
    , localparam stream_bytes_lp = stream_data_width_p >> 3

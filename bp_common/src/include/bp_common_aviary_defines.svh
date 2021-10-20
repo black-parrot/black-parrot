@@ -158,6 +158,8 @@
         : '{io_noc_y_cord_width_p+io_noc_x_cord_width_p, io_noc_x_cord_width_p, 0}                 \
     , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]               \
                                                                                                    \
+    , localparam did_width_p  = io_noc_did_width_p                                                 \
+                                                                                                   \
     , localparam etag_width_p  = dword_width_gp - page_offset_width_gp                             \
     , localparam vtag_width_p  = vaddr_width_p - page_offset_width_gp                              \
     , localparam ptag_width_p  = paddr_width_p - page_offset_width_gp                              \

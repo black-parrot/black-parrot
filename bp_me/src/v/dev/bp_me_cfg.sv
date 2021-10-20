@@ -7,7 +7,7 @@ module bp_me_cfg
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, did_width_p, lce_id_width_p, lce_assoc_p, xce)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
@@ -27,8 +27,8 @@ module bp_me_cfg
    , output logic                                   mem_resp_last_o
 
    , output logic [cfg_bus_width_lp-1:0]            cfg_bus_o
-   , input [io_noc_did_width_p-1:0]                 did_i
-   , input [io_noc_did_width_p-1:0]                 host_did_i
+   , input [did_width_p-1:0]                        did_i
+   , input [did_width_p-1:0]                        host_did_i
    , input [coh_noc_cord_width_p-1:0]               cord_i
 
    // ucode programming interface, synchronous read, direct connection to RAM
@@ -40,7 +40,7 @@ module bp_me_cfg
    );
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, did_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_o(bp_cfg_bus_s, cfg_bus);
 
   logic cord_r_v_li, did_r_v_li, host_did_r_v_li, hio_mask_r_v_li;

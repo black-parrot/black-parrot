@@ -15,7 +15,7 @@ module bp_me_cce_to_mem_link_recv
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter `BSG_INV_PARAM(num_outstanding_req_p)
    , parameter `BSG_INV_PARAM(flit_width_p)
@@ -50,7 +50,7 @@ module bp_me_cce_to_mem_link_recv
   wire unused = &{mem_resp_last_i};
   assign mem_cmd_last_o = mem_cmd_v_o;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, cce_block_width_p);
   localparam payload_width_lp = `bp_mem_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_cce_mem_msg_header_s), cce_block_width_p);
 

@@ -27,7 +27,7 @@ module bp_me_stream_to_burst
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, bp)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, bp)
    )
   (input                                            clk_i
    , input                                          reset_i

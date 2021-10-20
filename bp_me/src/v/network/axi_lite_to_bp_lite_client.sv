@@ -7,7 +7,7 @@ module axi_lite_to_bp_lite_client
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
   // AXI WRITE DATA CHANNEL PARAMS
   , parameter  axi_data_width_p             = 32
@@ -76,7 +76,7 @@ module axi_lite_to_bp_lite_client
   wire [2:0] unused_1 = s_axi_lite_arprot_i;
 
   // declaring i/o command and response struct type and size
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `bp_cast_o(bp_bedrock_cce_mem_msg_s, io_cmd);
   `bp_cast_i(bp_bedrock_cce_mem_msg_s, io_resp);
 

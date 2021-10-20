@@ -49,7 +49,7 @@ module testbench
 
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
    , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_mem_data_width_lp
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
    )
   (output bit reset_i);
 
@@ -65,7 +65,7 @@ module testbench
     return (`BP_SIM_CLK_PERIOD);
   endfunction
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io);
+  `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
 
 // Bit to deal with initial X->0 transition detection
   bit clk_i;
@@ -215,7 +215,9 @@ module testbench
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
+     // TODO: Set appropriately for multicore
      ,.lce_id_i(lce_id_width_p'('b10))
+     ,.did_i(did_width_p'('1))
 
      ,.io_cmd_header_o(load_cmd_lo)
      ,.io_cmd_data_o(load_cmd_data_lo)

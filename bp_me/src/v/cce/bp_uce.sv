@@ -17,7 +17,7 @@ module bp_uce
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     , parameter `BSG_INV_PARAM(uce_mem_data_width_p)
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
     , parameter `BSG_INV_PARAM(assoc_p)
     , parameter `BSG_INV_PARAM(sets_p)
     , parameter `BSG_INV_PARAM(block_width_p)
@@ -104,7 +104,7 @@ module bp_uce
                                                              ? e_bedrock_msg_size_8
                                                              : e_bedrock_msg_size_64;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
@@ -580,7 +580,7 @@ module bp_uce
                 fsm_cmd_header_lo.msg_type       = e_bedrock_mem_uc_wr;
                 fsm_cmd_header_lo.addr           = cache_req_r.addr;
                 fsm_cmd_header_lo.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
-                fsm_cmd_header_lo.payload.lce_id           = lce_id_i;
+                fsm_cmd_header_lo.payload.lce_id = lce_id_i;
                 fsm_cmd_header_lo.subop          = mem_wr_subop;
                 fsm_cmd_data_lo                  = cache_req_r.data;
                 fsm_cmd_v_lo = ~cache_req_credits_full_o;
@@ -640,8 +640,8 @@ module bp_uce
               fsm_cmd_header_lo.msg_type = e_bedrock_mem_rd;
               fsm_cmd_header_lo.addr     = {cache_req_r.addr[paddr_width_p-1:fill_offset_width_lp], (fill_offset_width_lp)'(0)};
               fsm_cmd_header_lo.size     = block_msg_size_lp;
-              fsm_cmd_header_lo.payload.way_id     = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
-              fsm_cmd_header_lo.payload.lce_id     = lce_id_i;
+              fsm_cmd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
+              fsm_cmd_header_lo.payload.lce_id = lce_id_i;
               fsm_cmd_v_lo = cache_req_metadata_v_r & ~cache_req_credits_full_o;
 
               state_n = (fsm_cmd_v_lo & fsm_cmd_ready_and_li)
@@ -655,7 +655,7 @@ module bp_uce
               fsm_cmd_header_lo.msg_type = uc_load_v_r ? e_bedrock_mem_uc_rd : uc_amo_v_r ? e_bedrock_mem_amo : e_bedrock_mem_uc_wr;
               fsm_cmd_header_lo.addr     = cache_req_r.addr;
               fsm_cmd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
-              fsm_cmd_header_lo.payload.lce_id     = lce_id_i;
+              fsm_cmd_header_lo.payload.lce_id = lce_id_i;
               fsm_cmd_header_lo.subop    = mem_wr_subop;
               fsm_cmd_data_lo            = cache_req_r.data;
               fsm_cmd_v_lo = ~cache_req_credits_full_o;

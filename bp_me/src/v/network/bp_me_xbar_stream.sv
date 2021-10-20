@@ -21,7 +21,7 @@ module bp_me_xbar_stream
    , parameter `BSG_INV_PARAM(payload_width_p)
    , parameter `BSG_INV_PARAM(num_source_p)
    , parameter `BSG_INV_PARAM(num_sink_p)
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, xbar)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, xbar)
 
    , localparam lg_num_source_lp = `BSG_SAFE_CLOG2(num_source_p)
    , localparam lg_num_sink_lp   = `BSG_SAFE_CLOG2(num_sink_p)

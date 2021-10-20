@@ -8,7 +8,7 @@ module testbench
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    // Tracing parameters
    , parameter cce_trace_p                 = 0
@@ -31,7 +31,7 @@ module testbench
   )
   (output bit reset_i);
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   // Bit to deal with initial X->0 transition detection

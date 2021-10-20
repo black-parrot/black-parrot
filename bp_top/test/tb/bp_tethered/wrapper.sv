@@ -20,7 +20,7 @@ module wrapper
 
    , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
    , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_mem_data_width_lp
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
@@ -118,7 +118,7 @@ module wrapper
 
       wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
-      `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io);
+      `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
       bp_bedrock_io_mem_msg_header_s io_cmd_header_li;
       logic [io_data_width_p-1:0] io_cmd_data_li;
       bp_bedrock_io_mem_msg_header_s io_resp_header_lo;
