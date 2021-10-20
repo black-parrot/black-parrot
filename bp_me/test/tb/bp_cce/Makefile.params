@@ -18,18 +18,19 @@ export LCE_MODE_P ?= 0
 # 3 = cached set test
 # 4 = cached block test
 # 5 = cache hammer test
+# 6 = AXE test
 export ME_TEST_P ?= 0
 
 COH_PROTO   ?= mesi
 CCE_MEM      = $(COH_PROTO).mem
 
-NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
-BASE = bsg_trace_rom_
-TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
-
 export BP_SIM_CLK_PERIOD ?= 1000
 
-export AXE_TRACE_P ?= 0
+ifeq ($(ME_TEST_P),6)
+export AXE_TRACE_P = 1
+else
+export AXE_TRACE_P = 0
+endif
 export CCE_TRACE_P ?= 0
 export CCE_DIR_TRACE_P ?= 0
 export LCE_TRACE_P ?= 0
