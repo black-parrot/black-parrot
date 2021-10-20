@@ -213,12 +213,11 @@ module wrapper
     begin : unicore
       wire [io_noc_did_width_p-1:0] proc_did_li = 1;
       wire [io_noc_did_width_p-1:0] dram_did_li = '1;
-      bp_unicore
+      bp_unicore_complex
        #(.bp_params_p(bp_params_p))
        dut
         (.my_did_i(proc_did_li)
          ,.host_did_i(dram_did_li)
-         ,.my_cord_i({coh_noc_y_cord_width_p'(0), coh_noc_x_cord_width_p'(0)})
          ,.*
          );
     end

@@ -114,5 +114,8 @@ module bp_nonsynth_if_verif
   if (mem_noc_flit_width_p % l2_fill_width_p != 0)
     $fatal("Memory NoC flit width must match l2 fill width");
 
+  if (multicore_p == 0 && num_core_p != 0)
+    $fatal("Unicore only supports a single core configuration in the tethered testbench");
+
 endmodule
 
