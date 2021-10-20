@@ -32,7 +32,7 @@ module bp_cce_dir
 
     // minimal number of sets across all LCE types
     , localparam lce_min_sets_lp = `BSG_MIN(dcache_sets_p,
-                                            `BSG_MIN(icache_sets_p, acache_sets_p))
+                                            `BSG_MIN(icache_sets_p, num_cacc_p ? acache_sets_p : icache_sets_p))
 
   )
   (input                                                          clk_i

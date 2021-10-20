@@ -94,15 +94,15 @@ module bp_cce
     $fatal(0,"D$ sets and assoc must be power of two");
   if (!(`BSG_IS_POW2(icache_assoc_p) && `BSG_IS_POW2(icache_sets_p)))
     $fatal(0,"I$ sets and assoc must be power of two");
-  if (!(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0))
+  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0))
     $fatal(0,"A$ assoc must be power of two or 0");
-  if (!(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0))
+  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0))
     $fatal(0,"A$ sets must be power of two or 0");
   if (icache_block_width_p != cce_block_width_p)
     $fatal(0,"icache block width must match cce block width");
   if (dcache_block_width_p != cce_block_width_p)
     $fatal(0,"dcache block width must match cce block width");
-  if (acache_block_width_p != cce_block_width_p)
+  if ((num_cacc_p > 0) && (acache_block_width_p != cce_block_width_p))
     $fatal(0,"acache block width must match cce block width");
   if (!(`BSG_IS_POW2(cce_block_width_p) || cce_block_width_p < 64 || cce_block_width_p > 1024))
     $fatal(0, "invalid CCE block width");
@@ -301,8 +301,6 @@ module bp_cce
    */
 
   // Memory Response Stream Pump
-  // provide buffer space for two stream messages with data (for coherence protocol)
-  localparam mem_resp_buffer_els_lp = 2;
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(dword_width_gp)
@@ -310,7 +308,8 @@ module bp_cce
       ,.payload_width_p(cce_mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
-      ,.buffer_els_p(mem_resp_buffer_els_lp)
+      // provide buffer space for two stream messages with data (for coherence protocol)
+      ,.header_els_p(2)
       )
     mem_resp_stream_pump
      (.clk_i(clk_i)
@@ -357,6 +356,7 @@ module bp_cce
       ,.fsm_ready_and_o(mem_cmd_ready_and_li)
       ,.fsm_cnt_o(mem_cmd_stream_cnt_li)
       ,.fsm_new_o(mem_cmd_stream_new_li)
+      ,.fsm_last_o()
       ,.fsm_done_o(mem_cmd_stream_done_li)
       );
 
@@ -844,5 +844,16 @@ module bp_cce
 
       ,.stall_o(stall_lo)
       );
+
+
+  // Debug and tracing signals
+  //synopsys translate_off
+  wire req_start = lce_req_v & decoded_inst_lo.v & decoded_inst_lo.poph
+                   & (decoded_inst_lo.popq_qsel == e_src_q_sel_lce_req);
+  // current microcode has clm instruction at ready label
+  wire req_end = decoded_inst_lo.v
+                 & (decoded_inst_lo.op == e_op_reg_data)
+                 & (decoded_inst_lo.minor_op_u.reg_data_minor_op == e_clm_op);
+  //synopsys translate_on
 
 endmodule

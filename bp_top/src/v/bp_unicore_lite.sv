@@ -18,6 +18,10 @@ module bp_unicore_lite
   (input                                               clk_i
    , input                                             reset_i
 
+   , input [io_noc_did_width_p-1:0]                    my_did_i
+   , input [io_noc_did_width_p-1:0]                    host_did_i
+   , input [coh_noc_cord_width_p-1:0]                  my_cord_i
+
    // Outgoing I/O
    , output logic [uce_mem_msg_header_width_lp-1:0]    io_cmd_header_o
    , output logic [uce_mem_data_width_lp-1:0]          io_cmd_data_o
@@ -450,10 +454,9 @@ module bp_unicore_lite
      ,.mem_resp_last_o(dev_resp_last_lo[0])
 
      ,.cfg_bus_o(cfg_bus_lo)
-     ,.did_i('0)
-     ,.host_did_i('0)
-     // TODO: Bring in top level from multi-unicore setup
-     ,.cord_i({coh_noc_y_cord_width_p'(1), coh_noc_x_cord_width_p'(0)})
+     ,.did_i(my_did_i)
+     ,.host_did_i(host_did_i)
+     ,.cord_i(my_cord_i)
 
      ,.cce_ucode_v_o()
      ,.cce_ucode_w_o()

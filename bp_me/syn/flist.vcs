@@ -112,6 +112,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dlatch.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en_bypass.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_encode_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
@@ -185,8 +186,8 @@ $BP_ME_DIR/src/v/dev/bp_me_cfg.sv
 # NETWORK
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
-$BP_ME_DIR/src/v/network/bp_me_lite_to_stream.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_to_lite.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
@@ -197,4 +198,3 @@ $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
-$BP_COMMON_DIR/src/v/bsg_bus_pack.sv

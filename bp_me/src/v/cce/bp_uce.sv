@@ -293,6 +293,7 @@ module bp_uce
      ,.fsm_ready_and_o(fsm_cmd_ready_and_li)
      ,.fsm_cnt_o(fsm_cmd_cnt)
      ,.fsm_new_o(fsm_cmd_new)
+     ,.fsm_last_o(/* unused */)
      ,.fsm_done_o(fsm_cmd_done)
      );
 
@@ -308,7 +309,8 @@ module bp_uce
      ,.payload_width_p(uce_mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
-     ,.buffer_els_p(2)
+     ,.header_els_p(2)
+     ,.data_els_p(2)
      )
    uce_pump_in
     (.clk_i(clk_i)

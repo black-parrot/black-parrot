@@ -123,13 +123,14 @@ module bp_lce_req
   assign lce_req_o = lce_req;
 
   logic cache_req_v_r;
-  bsg_dff_reset
+  bsg_dff_reset_set_clear
    #(.width_p(1))
-   req_v_reg
+   cache_req_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(cache_req_yumi_o)
+     ,.set_i(cache_req_yumi_o)
+     ,.clear_i(lce_req_v_o & lce_req_ready_then_i)
      ,.data_o(cache_req_v_r)
      );
 
@@ -171,8 +172,8 @@ module bp_lce_req
 
   // Outstanding request credit counter
   logic [`BSG_WIDTH(credits_p)-1:0] credit_count_lo;
-  wire credit_v_li = lce_req_v_o;
-  wire credit_ready_li = lce_req_ready_then_i;
+  wire credit_v_li = cache_req_v_i;
+  wire credit_ready_li = cache_req_yumi_o;
   wire credit_returned_li = cache_req_complete_i | uc_store_req_complete_i;
   bsg_flow_counter
     #(.els_p(credits_p))
@@ -195,6 +196,15 @@ module bp_lce_req
     (.paddr_i(lce_req.header.addr)
      ,.cce_id_o(req_cce_id_lo)
      );
+
+  //synopsys translate_off
+  always_ff @(negedge clk_i) begin
+    if (~reset_i & cache_req_v_r & cache_req_yumi_o
+                 & ~(lce_req_v_o & lce_req_ready_then_i)
+       )
+      $fatal("Cache request overwritten before sending");
+  end
+  //synopsys translate_on
 
   always_comb begin
     state_n = state_r;

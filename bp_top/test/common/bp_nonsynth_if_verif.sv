@@ -57,8 +57,8 @@ module bp_nonsynth_if_verif
 
     end
 
-  if (ic_y_dim_p != 1)
-    $fatal("Error: Must have exactly 1 row of I/O routers");
+  if (ic_y_dim_p != 1 && multicore_p == 1)
+    $fatal("Error: Must have exactly 1 row of I/O routers for multicore");
   if (mc_y_dim_p > 2)
     $fatal("Error: Multi-row L2 expansion nodes not yet supported");
   if (sac_x_dim_p > 1)
@@ -113,6 +113,9 @@ module bp_nonsynth_if_verif
 
   if (mem_noc_flit_width_p % l2_fill_width_p != 0)
     $fatal("Memory NoC flit width must match l2 fill width");
+
+  if (multicore_p == 0 && num_core_p != 1)
+    $fatal("Unicore only supports a single core configuration in the tethered testbench");
 
 endmodule
 

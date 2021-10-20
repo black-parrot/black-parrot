@@ -2,11 +2,7 @@ from __future__ import print_function
 import sys
 import random
 import math
-# import trace generator for $
-# Note: this path is relative to bp_me/syn directory
-# it would be nice to simply add the directory that TraceGen source lives in to the path
-# that python will search for files in, then remove the sys.path.append call
-sys.path.append("../software/py/")
+import os
 from trace_gen import TraceGen
 from test_memory import TestMemory
 
@@ -18,29 +14,35 @@ from test_memory import TestMemory
 # If uncached=1, op is an uncached access, else it is a cached access
 # value is the store value or expected load value
 class TestGenerator(object):
-  def __init__(self, paddr_width=40, data_width=64, debug=False):
+  def __init__(self, paddr_width=40, data_width=64, num_lce=1, out_dir='.', trace_file='test', debug=False):
     self.paddr_width = paddr_width
     self.data_width = data_width
     self.tg = TraceGen(addr_width_p=self.paddr_width, data_width_p=self.data_width)
+    self.num_lce = num_lce
+    self.out_dir = out_dir
+    self.trace_file = trace_file
     self.debug = debug
 
   def eprint(self, *args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
   def generateTrace(self, ops):
-    # preamble
-    self.tg.print_header()
-    self.tg.wait(100)
-    for (st,addr,size,uc,val) in ops:
-      if st:
-        self.tg.send_store(size=size, addr=addr, data=val, uc=uc)
-        self.tg.recv_data(addr=addr, data=0, uc=uc)
-      else:
-        # TODO: signed operations
-        self.tg.send_load(signed=0, size=size, addr=addr, uc=uc)
-        self.tg.recv_data(addr=addr, data=val, uc=uc)
-    # test end
-    self.tg.test_done()
+    for lce in ops:
+      file_name = '{0}_{1}.tr'.format(self.trace_file, lce)
+      with open(os.path.join(self.out_dir, file_name), 'w') as lce_trace_file:
+        # preamble
+        lce_trace_file.write(self.tg.print_header())
+        lce_trace_file.write(self.tg.wait(100))
+        for (st,addr,size,uc,val) in ops[lce]:
+          if st:
+            lce_trace_file.write(self.tg.send_store(size=size, addr=addr, data=val, uc=uc))
+            lce_trace_file.write(self.tg.recv_data(addr=addr, data=0, uc=uc))
+          else:
+            # TODO: signed operations
+            lce_trace_file.write(self.tg.send_load(signed=0, size=size, addr=addr, uc=uc))
+            lce_trace_file.write(self.tg.recv_data(addr=addr, data=val, uc=uc))
+        # test end
+        lce_trace_file.write(self.tg.test_done())
 
   # single cached store
   def storeTest(self, mem_base=0):
@@ -164,6 +166,57 @@ class TestGenerator(object):
         val = mem.read_memory(addr, size)
 
       ops.append((store, addr, size, uncached_req, val))
+
+    # return the test operations
+    return ops
+
+  # AXE Test generator
+  # N is number of operations per LCE
+  # lce_mode = 0, 1, or 2 -> 0 = cached only, 1 = uncached only, 2 = mixed
+  def axeTest(self, lce=1, N=16, mem_base=0, mem_bytes=1024, mem_block_size=64, seed=0, lce_mode=0):
+    # test begin
+    random.seed(seed)
+    ops = {i:[] for i in range(lce)}
+    mem = TestMemory(mem_base, mem_bytes, mem_block_size, self.debug)
+    mem_blocks = mem_bytes / mem_block_size
+    b = int(math.log(mem_block_size, 2))
+    store_val = 1
+    for i in range(N):
+      for l in range(lce):
+        # pick access parameters
+        store = random.choice([True, False])
+        # all accesses are size 8B for AXE tracing
+        size = 8
+        size_shift = int(math.log(size, 2))
+        # determine type of request (cached or uncached)
+        uncached_req = 0
+        if lce_mode == 2:
+          uncached_req = random.choice([0,1])
+        elif lce_mode == 1:
+          uncached_req = 1
+
+        # choose which cache block in memory to target
+        block = random.randint(0, mem_blocks-1)
+        # choose offset in cache block based on size of access ("word" size for this access)
+        words = mem_block_size / size
+        word = random.randint(0, words-1)
+        # build the address
+        addr = (block << b) + (word << size_shift) + mem_base
+        mem.check_valid_addr(addr)
+
+        val = 0
+        if store:
+          # NOTE: the value being stored will be truncated to size number of bytes
+          store_val_trunc = store_val
+          if (size < 8):
+            store_val_trunc = store_val_trunc & ~(~0 << (size*8))
+          val = store_val_trunc
+          store_val += 1
+        else:
+          # loads return 0 for AXE tracing
+          val = 0
+
+        ops[l].append((store, addr, size, uncached_req, val))
 
     # return the test operations
     return ops
