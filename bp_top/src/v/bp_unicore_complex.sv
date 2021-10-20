@@ -4,14 +4,12 @@
  *
  */
 
-`include "bsg_noc_links.vh"
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
 
 module bp_unicore_complex
- import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;
- import bp_be_pkg::*;
  import bp_me_pkg::*;
- import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
