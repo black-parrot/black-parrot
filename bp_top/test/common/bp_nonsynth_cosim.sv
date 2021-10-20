@@ -46,6 +46,11 @@ module bp_nonsynth_cosim
     , input [rv64_reg_addr_width_gp-1:0]      frd_addr_i
     , input [dpath_width_gp-1:0]              frd_data_i
 
+    , input                                   cache_req_v_i
+    , input                                   cache_req_ready_i
+    , input                                   cache_req_complete_i
+    , input                                   cache_req_nonblocking_i
+
     , input                                   cosim_clk_i
     , input                                   cosim_reset_i
     );
@@ -85,6 +90,18 @@ module bp_nonsynth_cosim
      ,.data_o({is_debug_mode_r, commit_pkt_r})
      );
 
+  logic cache_req_complete_r, cache_req_v_r;
+  // We filter out for ready so that the request only tracks once
+  wire cache_req_v_li = cache_req_v_i & cache_req_ready_i & ~cache_req_nonblocking_i;
+  bsg_dff_chain
+   #(.width_p(2), .num_stages_p(2))
+   cache_req_reg
+    (.clk_i(clk_i)
+
+     ,.data_i({cache_req_complete_i, cache_req_v_li})
+     ,.data_o({cache_req_complete_r, cache_req_v_r})
+     );
+
   logic                     commit_fifo_full_lo;
   logic                     commit_debug_r;
   logic                     instret_v_r;
@@ -93,6 +110,7 @@ module bp_nonsynth_cosim
   rv64_instr_fmatype_s      commit_instr, commit_instr_r;
   logic                     commit_ird_w_v_r;
   logic                     commit_frd_w_v_r;
+  logic                     commit_req_v_r;
   logic [dword_width_gp-1:0] cause_r, mstatus_r;
   logic commit_fifo_v_lo, commit_fifo_yumi_li;
   wire instret_v_li = commit_pkt_r.instret;
@@ -100,23 +118,24 @@ module bp_nonsynth_cosim
   wire [instr_width_gp-1:0] commit_instr_li = commit_pkt_r.instr;
   wire commit_ird_w_v_li = instret_v_li & (decode_r.irf_w_v | decode_r.late_iwb_v);
   wire commit_frd_w_v_li = instret_v_li & (decode_r.frf_w_v | decode_r.late_fwb_v);
+  wire commit_req_v_li   = instret_v_li & cache_req_v_r;
   wire trap_v_li = commit_pkt_r.exception | commit_pkt_r._interrupt;
   wire [dword_width_gp-1:0] cause_li = (priv_mode_i == `PRIV_MODE_M) ? mcause_i : scause_i;
   wire [dword_width_gp-1:0] mstatus_li = mstatus_i;
   wire commit_fifo_v_li = instret_v_li | trap_v_li;
   bsg_async_fifo
-   #(.width_p(3+vaddr_width_p+instr_width_gp+2+2*dword_width_gp), .lg_size_p(10))
+   #(.width_p(3+vaddr_width_p+instr_width_gp+3+2*dword_width_gp), .lg_size_p(10))
    commit_fifo
     (.w_clk_i(clk_i)
      ,.w_reset_i(reset_i)
      ,.w_enq_i(commit_fifo_v_li & ~commit_fifo_full_lo)
-     ,.w_data_i({is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, cause_li, mstatus_li})
+     ,.w_data_i({is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, commit_req_v_li, cause_li, mstatus_li})
      ,.w_full_o(commit_fifo_full_lo)
 
      ,.r_clk_i(cosim_clk_i)
      ,.r_reset_i(cosim_reset_i)
      ,.r_deq_i(commit_fifo_v_lo & commit_fifo_yumi_li)
-     ,.r_data_o({commit_debug_r, instret_v_r, trap_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, cause_r, mstatus_r})
+     ,.r_data_o({commit_debug_r, instret_v_r, trap_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, commit_req_v_r, cause_r, mstatus_r})
      ,.r_valid_o(commit_fifo_v_lo)
      );
 
@@ -131,7 +150,7 @@ module bp_nonsynth_cosim
       wire fill       = ird_w_v_i & (ird_addr_i == i);
       wire deallocate = commit_ird_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
       bsg_async_fifo
-       #(.width_p(dword_width_gp), .lg_size_p(6))
+       #(.width_p(dword_width_gp), .lg_size_p(10))
        ird_fifo
         (.w_clk_i(clk_i)
          ,.w_reset_i(reset_i)
@@ -152,7 +171,7 @@ module bp_nonsynth_cosim
       wire fill       = frd_w_v_i & (frd_addr_i == i);
       wire deallocate = commit_frd_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
       bsg_async_fifo
-       #(.width_p(dpath_width_gp), .lg_size_p(6))
+       #(.width_p(dpath_width_gp), .lg_size_p(10))
        ird_fifo
         (.w_clk_i(clk_i)
          ,.w_reset_i(reset_i)
@@ -180,8 +199,24 @@ module bp_nonsynth_cosim
          );
     end
 
+  // We don't need to cross domains explicitly here, because using the slower clock is conservative
+  logic [`BSG_WIDTH(128)-1:0] req_cnt_lo;
+  wire req_v_lo = (req_cnt_lo == '0);
+  bsg_counter_up_down
+   #(.max_val_p(128), .init_val_p(0), .max_step_p(1))
+   req_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i | freeze_i)
+
+     ,.up_i(cache_req_v_r)
+     ,.down_i(cache_req_complete_r)
+
+     ,.count_o(req_cnt_lo)
+     );
+
   assign commit_fifo_yumi_li = commit_fifo_v_lo & ((~commit_ird_w_v_r | ird_fifo_v_lo[commit_instr_r.rd_addr])
                                                    & (~commit_frd_w_v_r | frd_fifo_v_lo[commit_instr_r.rd_addr])
+                                                   & (~commit_req_v_r | req_v_lo)
                                                    );
   wire commit_ird_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
   wire commit_frd_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);

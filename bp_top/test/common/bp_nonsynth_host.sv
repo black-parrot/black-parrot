@@ -165,6 +165,8 @@ module bp_nonsynth_host
       if (getchar_r_v_li)
         pop();
 
+      if (mem_cmd_ready_and_o & mem_cmd_v_i & (hio_id != '0))
+        $error("Warning: Accesing illegal hio %0h. Sending loopback message!", hio_id);
       for (integer i = 0; i < num_core_p; i++)
         begin
           // PASS when returned value in finish packet is zero

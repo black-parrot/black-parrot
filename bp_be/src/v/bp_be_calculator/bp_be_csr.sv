@@ -617,7 +617,7 @@ module bp_be_csr
   assign csr_data_o = dword_width_gp'(csr_data_lo);
 
   assign commit_pkt_cast_o.npc_w_v          = |{retire_pkt_cast_i.special, retire_pkt_cast_i.exception};
-  assign commit_pkt_cast_o.queue_v          = retire_pkt_cast_i.queue_v;
+  assign commit_pkt_cast_o.queue_v          = retire_pkt_cast_i.queue_v & ~|retire_pkt_cast_i.exception;
   assign commit_pkt_cast_o.instret          = retire_pkt_cast_i.instret;
   assign commit_pkt_cast_o.pc               = apc_r;
   assign commit_pkt_cast_o.npc              = apc_n;
@@ -637,10 +637,9 @@ module bp_be_csr
   assign commit_pkt_cast_o.icache_miss      = retire_pkt_cast_i.exception.icache_miss;
   assign commit_pkt_cast_o.dtlb_store_miss  = retire_pkt_cast_i.exception.dtlb_store_miss;
   assign commit_pkt_cast_o.dtlb_load_miss   = retire_pkt_cast_i.exception.dtlb_load_miss;
-  assign commit_pkt_cast_o.dcache_miss      = retire_pkt_cast_i.exception.dcache_miss;;
+  assign commit_pkt_cast_o.dcache_miss      = retire_pkt_cast_i.special.dcache_miss;
   assign commit_pkt_cast_o.itlb_fill_v      = retire_pkt_cast_i.exception.itlb_fill;
   assign commit_pkt_cast_o.dtlb_fill_v      = retire_pkt_cast_i.exception.dtlb_fill;
-  assign commit_pkt_cast_o.rollback         = |retire_pkt_cast_i.exception;
 
   assign trans_info_cast_o.priv_mode = priv_mode_r;
   assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
