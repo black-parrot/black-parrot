@@ -119,21 +119,47 @@ module wrapper
       wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
       `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
+      `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
       bp_bedrock_io_mem_msg_header_s io_cmd_header_li;
       logic [io_data_width_p-1:0] io_cmd_data_li;
       bp_bedrock_io_mem_msg_header_s io_resp_header_lo;
       logic [io_data_width_p-1:0] io_resp_data_lo;
-      bp_me_cce_to_mem_link_bidir
+
+      bsg_ready_and_link_sif_s send_cmd_link_lo, send_resp_link_li;
+      bsg_ready_and_link_sif_s recv_cmd_link_li, recv_resp_link_lo;
+      assign recv_cmd_link_li   = '{data          : proc_cmd_link_lo.data
+                                    ,v            : proc_cmd_link_lo.v
+                                    ,ready_and_rev: proc_resp_link_lo.ready_and_rev
+                                    };
+      assign proc_cmd_link_li   = '{data          : send_cmd_link_lo.data
+                                    ,v            : send_cmd_link_lo.v
+                                    ,ready_and_rev: recv_resp_link_lo.ready_and_rev
+                                    };
+    
+      assign send_resp_link_li  = '{data          : proc_resp_link_lo.data
+                                    ,v            : proc_resp_link_lo.v
+                                    ,ready_and_rev: proc_cmd_link_lo.ready_and_rev
+                                    };
+      assign proc_resp_link_li  = '{data          : recv_resp_link_lo.data
+                                    ,v            : recv_resp_link_lo.v
+                                    ,ready_and_rev: send_cmd_link_lo.ready_and_rev
+                                    };
+ 
+      bp_me_cce_to_mem_link_send
        #(.bp_params_p(bp_params_p)
-         ,.num_outstanding_req_p(io_noc_max_credits_p)
          ,.flit_width_p(io_noc_flit_width_p)
          ,.cord_width_p(io_noc_cord_width_p)
          ,.cid_width_p(io_noc_cid_width_p)
          ,.len_width_p(io_noc_len_width_p)
          )
-       host_link
+       send_link
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
+
+         ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
+         ,.my_cid_i('0)
+         ,.dst_cord_i(dst_cord_lo)
+         ,.dst_cid_i('0)
 
          ,.mem_cmd_header_i(io_cmd_header_i)
          ,.mem_cmd_data_i(io_cmd_data_i)
@@ -147,10 +173,22 @@ module wrapper
          ,.mem_resp_yumi_i(io_resp_ready_and_i & io_resp_v_o)
          ,.mem_resp_last_o(io_resp_last_o)
 
-         ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
-         ,.my_cid_i('0)
-         ,.dst_cord_i(dst_cord_lo)
-         ,.dst_cid_i('0)
+
+         ,.cmd_link_o(send_cmd_link_lo)
+         ,.resp_link_i(send_resp_link_li)
+         );
+
+      bp_me_cce_to_mem_link_recv
+       #(.bp_params_p(bp_params_p)
+         ,.num_outstanding_req_p(io_noc_max_credits_p)
+         ,.flit_width_p(io_noc_flit_width_p)
+         ,.cord_width_p(io_noc_cord_width_p)
+         ,.cid_width_p(io_noc_cid_width_p)
+         ,.len_width_p(io_noc_len_width_p)
+         )
+       recv_link
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
 
          ,.mem_cmd_header_o(io_cmd_header_o)
          ,.mem_cmd_data_o(io_cmd_data_o)
@@ -164,11 +202,9 @@ module wrapper
          ,.mem_resp_ready_and_o(io_resp_ready_and_o)
          ,.mem_resp_last_i(io_resp_last_i)
 
-         ,.cmd_link_i(proc_cmd_link_lo)
-         ,.cmd_link_o(proc_cmd_link_li)
-         ,.resp_link_i(proc_resp_link_lo)
-         ,.resp_link_o(proc_resp_link_li)
-         );
+         ,.cmd_link_i(recv_cmd_link_li)
+         ,.resp_link_o(recv_resp_link_lo)
+         );   
 
       `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
       localparam cce_per_col_lp = num_cce_p/mc_x_dim_p;

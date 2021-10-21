@@ -99,6 +99,7 @@ module bp_io_tile
      ,.reset_i(reset_r)
 
      ,.cce_id_i(cce_id_li)
+     ,.did_i(my_did_i)
 
      ,.lce_req_i(cce_lce_req_li)
      ,.lce_req_v_i(cce_lce_req_v_li)
@@ -201,17 +202,48 @@ module bp_io_tile
   assign dst_did_lo  = is_host_addr ? host_did_i : global_addr_lo.hio;
   assign dst_cord_lo = dst_did_lo;
 
-  bp_me_cce_to_mem_link_bidir
+  // INSERT
+  // Swizzle ready_and_rev
+  `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
+  `bp_cast_i(bsg_ready_and_link_sif_s, io_cmd_link);
+  `bp_cast_o(bsg_ready_and_link_sif_s, io_resp_link);
+  `bp_cast_o(bsg_ready_and_link_sif_s, io_cmd_link);
+  `bp_cast_i(bsg_ready_and_link_sif_s, io_resp_link);
+  bsg_ready_and_link_sif_s send_cmd_link_lo, send_resp_link_li;
+  bsg_ready_and_link_sif_s recv_cmd_link_li, recv_resp_link_lo;
+  assign recv_cmd_link_li     = '{data          : io_cmd_link_cast_i.data
+                                  ,v            : io_cmd_link_cast_i.v
+                                  ,ready_and_rev: io_resp_link_cast_i.ready_and_rev
+                                  };
+  assign io_cmd_link_cast_o   = '{data          : send_cmd_link_lo.data
+                                  ,v            : send_cmd_link_lo.v
+                                  ,ready_and_rev: recv_resp_link_lo.ready_and_rev
+                                  };
+
+  assign send_resp_link_li    = '{data          : io_resp_link_cast_i.data
+                                  ,v            : io_resp_link_cast_i.v
+                                  ,ready_and_rev: io_cmd_link_cast_i.ready_and_rev
+                                  };
+  assign io_resp_link_cast_o  = '{data          : recv_resp_link_lo.data
+                                  ,v            : recv_resp_link_lo.v
+                                  ,ready_and_rev: send_cmd_link_lo.ready_and_rev
+                                  };
+
+  bp_me_cce_to_mem_link_send
    #(.bp_params_p(bp_params_p)
-     ,.num_outstanding_req_p(io_noc_max_credits_p)
      ,.flit_width_p(io_noc_flit_width_p)
      ,.cord_width_p(io_noc_cord_width_p)
      ,.cid_width_p(io_noc_cid_width_p)
      ,.len_width_p(io_noc_len_width_p)
      )
-   mem_link
+   send_link
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
+
+     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
+     ,.my_cid_i('0)
+     ,.dst_cord_i(dst_cord_lo)
+     ,.dst_cid_i('0)
 
      ,.mem_cmd_header_i(cce_io_cmd_lo.header)
      ,.mem_cmd_data_i(cce_io_cmd_lo.data)
@@ -225,6 +257,22 @@ module bp_io_tile
      ,.mem_resp_yumi_i(cce_io_resp_yumi_lo)
      ,.mem_resp_last_o(cce_io_resp_last_li)
 
+     ,.cmd_link_o(send_cmd_link_lo)
+     ,.resp_link_i(send_resp_link_li)
+     );
+
+  bp_me_cce_to_mem_link_recv
+   #(.bp_params_p(bp_params_p)
+     ,.num_outstanding_req_p(io_noc_max_credits_p)
+     ,.flit_width_p(io_noc_flit_width_p)
+     ,.cord_width_p(io_noc_cord_width_p)
+     ,.cid_width_p(io_noc_cid_width_p)
+     ,.len_width_p(io_noc_len_width_p)
+     )
+   recv_link
+    (.clk_i(clk_i)
+     ,.reset_i(reset_r)
+
      ,.mem_cmd_header_o(lce_io_cmd_li.header)
      ,.mem_cmd_data_o(lce_io_cmd_li.data)
      ,.mem_cmd_v_o(lce_io_cmd_v_li)
@@ -237,15 +285,8 @@ module bp_io_tile
      ,.mem_resp_ready_and_o(lce_io_resp_ready_and_li)
      ,.mem_resp_last_i(lce_io_resp_v_lo)
 
-     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
-     ,.my_cid_i('0)
-     ,.dst_cord_i(dst_cord_lo)
-     ,.dst_cid_i('0)
-
-     ,.cmd_link_i(io_cmd_link_i)
-     ,.cmd_link_o(io_cmd_link_o)
-     ,.resp_link_i(io_resp_link_i)
-     ,.resp_link_o(io_resp_link_o)
+     ,.cmd_link_i(recv_cmd_link_li)
+     ,.resp_link_o(recv_resp_link_lo)
      );
 
 endmodule
