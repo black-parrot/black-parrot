@@ -75,19 +75,25 @@ module bp_io_tile
 
      ,.lce_id_i(lce_id_li)
 
-     ,.io_cmd_i(lce_io_cmd_li)
+     ,.io_cmd_header_i(lce_io_cmd_li.header)
+     ,.io_cmd_data_i(lce_io_cmd_li.data)
      ,.io_cmd_v_i(lce_io_cmd_v_li)
+     ,.io_cmd_last_i(lce_io_cmd_v_li) // stub
      ,.io_cmd_yumi_o(lce_io_cmd_yumi_lo)
 
-     ,.io_resp_o(lce_io_resp_lo)
+     ,.io_resp_header_o(lce_io_resp_lo.header)
+     ,.io_resp_data_o(lce_io_resp_lo.data)
      ,.io_resp_v_o(lce_io_resp_v_lo)
+     ,.io_resp_last_o()
      ,.io_resp_ready_then_i(lce_io_resp_ready_and_li)
 
-     ,.lce_req_o(lce_lce_req_lo)
+     ,.lce_req_header_o(lce_lce_req_lo.header)
+     ,.lce_req_data_o(lce_lce_req_lo.data)
      ,.lce_req_v_o(lce_lce_req_v_lo)
      ,.lce_req_ready_then_i(lce_lce_req_ready_and_li)
 
-     ,.lce_cmd_i(lce_lce_cmd_li)
+     ,.lce_cmd_header_i(lce_lce_cmd_li.header)
+     ,.lce_cmd_data_i(lce_lce_cmd_li.data)
      ,.lce_cmd_v_i(lce_lce_cmd_v_li)
      ,.lce_cmd_yumi_o(lce_lce_cmd_yumi_lo)
      );
@@ -202,8 +208,6 @@ module bp_io_tile
   assign dst_did_lo  = is_host_addr ? host_did_i : global_addr_lo.hio;
   assign dst_cord_lo = dst_did_lo;
 
-  // INSERT
-  // Swizzle ready_and_rev
   `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
   `bp_cast_i(bsg_ready_and_link_sif_s, io_cmd_link);
   `bp_cast_o(bsg_ready_and_link_sif_s, io_resp_link);
@@ -272,6 +276,11 @@ module bp_io_tile
    recv_link
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
+
+     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
+     ,.my_cid_i('0)
+     ,.dst_cord_i(lce_io_resp_lo.header.payload.did)
+     ,.dst_cid_i('0)
 
      ,.mem_cmd_header_o(lce_io_cmd_li.header)
      ,.mem_cmd_data_o(lce_io_cmd_li.data)

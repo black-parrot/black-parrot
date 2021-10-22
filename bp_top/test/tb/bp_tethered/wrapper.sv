@@ -120,10 +120,10 @@ module wrapper
 
       `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
-      bp_bedrock_io_mem_msg_header_s io_cmd_header_li;
-      logic [io_data_width_p-1:0] io_cmd_data_li;
-      bp_bedrock_io_mem_msg_header_s io_resp_header_lo;
-      logic [io_data_width_p-1:0] io_resp_data_lo;
+      `bp_cast_i(bp_bedrock_io_mem_msg_header_s, io_cmd_header);
+      `bp_cast_o(bp_bedrock_io_mem_msg_header_s, io_resp_header);
+      `bp_cast_o(bp_bedrock_io_mem_msg_header_s, io_cmd_header);
+      `bp_cast_i(bp_bedrock_io_mem_msg_header_s, io_resp_header);
 
       bsg_ready_and_link_sif_s send_cmd_link_lo, send_resp_link_li;
       bsg_ready_and_link_sif_s recv_cmd_link_li, recv_resp_link_lo;
@@ -161,13 +161,13 @@ module wrapper
          ,.dst_cord_i(dst_cord_lo)
          ,.dst_cid_i('0)
 
-         ,.mem_cmd_header_i(io_cmd_header_i)
+         ,.mem_cmd_header_i(io_cmd_header_cast_i)
          ,.mem_cmd_data_i(io_cmd_data_i)
          ,.mem_cmd_v_i(io_cmd_v_i)
          ,.mem_cmd_ready_and_o(io_cmd_ready_and_o)
          ,.mem_cmd_last_i(io_cmd_last_i)
 
-         ,.mem_resp_header_o(io_resp_header_o)
+         ,.mem_resp_header_o(io_resp_header_cast_o)
          ,.mem_resp_data_o(io_resp_data_o)
          ,.mem_resp_v_o(io_resp_v_o)
          ,.mem_resp_yumi_i(io_resp_ready_and_i & io_resp_v_o)
@@ -190,13 +190,18 @@ module wrapper
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.mem_cmd_header_o(io_cmd_header_o)
+         ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
+         ,.my_cid_i('0)
+         ,.dst_cord_i(io_resp_header_cast_i.payload.did)
+         ,.dst_cid_i('0)
+
+         ,.mem_cmd_header_o(io_cmd_header_cast_o)
          ,.mem_cmd_data_o(io_cmd_data_o)
          ,.mem_cmd_v_o(io_cmd_v_o)
          ,.mem_cmd_yumi_i(io_cmd_ready_and_i & io_cmd_v_o)
          ,.mem_cmd_last_o(io_cmd_last_o)
 
-         ,.mem_resp_header_i(io_resp_header_i)
+         ,.mem_resp_header_i(io_resp_header_cast_i)
          ,.mem_resp_data_i(io_resp_data_i)
          ,.mem_resp_v_i(io_resp_v_i)
          ,.mem_resp_ready_and_o(io_resp_ready_and_o)

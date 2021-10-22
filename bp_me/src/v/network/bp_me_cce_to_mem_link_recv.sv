@@ -30,6 +30,11 @@ module bp_me_cce_to_mem_link_recv
   (input                                                clk_i
    , input                                              reset_i
 
+   , input [cord_width_p-1:0]                           my_cord_i
+   , input [cid_width_p-1:0]                            my_cid_i
+   , input [cord_width_p-1:0]                           dst_cord_i
+   , input [cid_width_p-1:0]                            dst_cid_i
+
    , output logic [cce_mem_msg_header_width_lp-1:0]     mem_cmd_header_o
    , output logic [cce_block_width_p-1:0]               mem_cmd_data_o
    , output logic                                       mem_cmd_v_o
@@ -111,12 +116,6 @@ module bp_me_cce_to_mem_link_recv
     );
   assign fifo_yumi_li = fifo_v_lo & mem_resp_v_i;
 
-  wire [cord_width_p-1:0] src_cord_lo = bypass_fifo ? mem_cmd_packet_lo.header.wh_hdr.src_cord : fifo_cord_lo;
-  wire [cid_width_p-1:0]  src_cid_lo  = bypass_fifo ? mem_cmd_packet_lo.header.wh_hdr.src_cid  : fifo_cid_lo;
-
-  wire [cord_width_p-1:0] dst_cord_lo = src_cord_lo;
-  wire [cid_width_p-1:0]  dst_cid_lo  = src_cid_lo;
-
   bp_me_wormhole_packet_encode_mem_resp
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
@@ -126,10 +125,10 @@ module bp_me_cce_to_mem_link_recv
      )
    mem_resp_encode
     (.mem_resp_header_i(mem_resp_header_i)
-     ,.src_cord_i(src_cord_lo)
-     ,.src_cid_i(src_cid_lo)
-     ,.dst_cord_i(dst_cord_lo)
-     ,.dst_cid_i(dst_cid_lo)
+     ,.src_cord_i(dst_cord_i)
+     ,.src_cid_i(dst_cid_i)
+     ,.dst_cord_i(dst_cord_i)
+     ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(mem_resp_header_lo)
      );
   assign mem_resp_packet_lo = '{header: mem_resp_header_lo, data: mem_resp_data_i};
