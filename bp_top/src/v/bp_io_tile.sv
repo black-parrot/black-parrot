@@ -244,8 +244,6 @@ module bp_io_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
-     ,.my_cid_i('0)
      ,.dst_cord_i(dst_cord_lo)
      ,.dst_cid_i('0)
 
@@ -277,8 +275,6 @@ module bp_io_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
-     ,.my_cid_i('0)
      ,.dst_cord_i(lce_io_resp_lo.header.payload.did)
      ,.dst_cid_i('0)
 

@@ -156,8 +156,6 @@ module wrapper
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
-         ,.my_cid_i('0)
          ,.dst_cord_i(dst_cord_lo)
          ,.dst_cid_i('0)
 
@@ -190,8 +188,6 @@ module wrapper
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
-         ,.my_cid_i('0)
          ,.dst_cord_i(io_resp_header_cast_i.payload.did)
          ,.dst_cid_i('0)
 

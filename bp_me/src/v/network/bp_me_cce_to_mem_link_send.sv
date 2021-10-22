@@ -28,8 +28,6 @@ module bp_me_cce_to_mem_link_send
    , input                                              reset_i
 
    // Configuration
-   , input [cord_width_p-1:0]                           my_cord_i
-   , input [cid_width_p-1:0]                            my_cid_i
    , input [cord_width_p-1:0]                           dst_cord_i
    , input [cid_width_p-1:0]                            dst_cid_i
 
@@ -72,8 +70,6 @@ module bp_me_cce_to_mem_link_send
      )
    mem_cmd_encode
     (.mem_cmd_header_i(mem_cmd_header_i)
-     ,.src_cord_i(my_cord_i)
-     ,.src_cid_i(my_cid_i)
      ,.dst_cord_i(dst_cord_i)
      ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(mem_cmd_header_li)
