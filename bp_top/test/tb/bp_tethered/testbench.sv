@@ -138,11 +138,17 @@ module testbench
   logic [num_cce_p-1:0] dma_data_v_lo, dma_data_yumi_li;
   logic [num_cce_p-1:0][l2_fill_width_p-1:0] dma_data_li;
   logic [num_cce_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+
+  wire [io_noc_did_width_p-1:0] proc_did_li = 1;
+  wire [io_noc_did_width_p-1:0] host_did_li = '1;
   wrapper
    #(.bp_params_p(bp_params_p))
    wrapper
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+
+     ,.my_did_i(proc_did_li)
+     ,.host_did_i(host_did_li)
 
      ,.io_cmd_header_o(proc_io_cmd_lo)
      ,.io_cmd_data_o(proc_io_cmd_data_lo)
@@ -208,6 +214,7 @@ module testbench
      ,.dram_reset_i(dram_reset_i)
      );
 
+  wire [lce_id_width_p-1:0] io_lce_id_li = num_core_p*2+num_cacc_p+num_l2e_p+num_sacc_p+num_io_p;
   bp_nonsynth_nbf_loader
    #(.bp_params_p(bp_params_p)
      ,.io_data_width_p(io_data_width_p))
@@ -216,8 +223,9 @@ module testbench
      ,.reset_i(reset_i)
 
      // TODO: Set appropriately for multicore
-     ,.lce_id_i(lce_id_width_p'('b10))
-     ,.did_i(did_width_p'('1))
+
+     ,.lce_id_i(io_lce_id_li)
+     ,.did_i(host_did_li)
 
      ,.io_cmd_header_o(load_cmd_lo)
      ,.io_cmd_data_o(load_cmd_data_lo)

@@ -27,6 +27,9 @@ module wrapper
   (input                                                    clk_i
    , input                                                  reset_i
 
+   , input [did_width_p-1:0]                                my_did_i
+   , input [did_width_p-1:0]                                host_did_i
+
    // Outgoing I/O
    , output logic [io_mem_msg_header_width_lp-1:0]          io_cmd_header_o
    , output logic [io_data_width_p-1:0]                     io_cmd_data_o
@@ -82,9 +85,6 @@ module wrapper
       bp_io_noc_ral_link_s stub_cmd_link_li, stub_resp_link_li;
       bp_io_noc_ral_link_s stub_cmd_link_lo, stub_resp_link_lo;
 
-      wire [io_noc_did_width_p-1:0] proc_did_li = 1;
-      wire [io_noc_did_width_p-1:0] dram_did_li = '1;
-
       assign stub_cmd_link_li  = '0;
       assign stub_resp_link_li = '0;
 
@@ -103,8 +103,8 @@ module wrapper
          ,.mem_clk_i(clk_i)
          ,.mem_reset_i(reset_i)
 
-         ,.my_did_i(proc_did_li)
-         ,.host_did_i(dram_did_li)
+         ,.my_did_i(my_did_i)
+         ,.host_did_i(host_did_i)
 
          ,.io_cmd_link_i({proc_cmd_link_li, stub_cmd_link_li})
          ,.io_cmd_link_o({proc_cmd_link_lo, stub_cmd_link_lo})
@@ -248,15 +248,10 @@ module wrapper
     end
   else
     begin : unicore
-      wire [io_noc_did_width_p-1:0] proc_did_li = 1;
-      wire [io_noc_did_width_p-1:0] dram_did_li = '1;
       bp_unicore_complex
        #(.bp_params_p(bp_params_p))
        dut
-        (.my_did_i(proc_did_li)
-         ,.host_did_i(dram_did_li)
-         ,.*
-         );
+        (.*);
     end
 
 endmodule
