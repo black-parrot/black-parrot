@@ -22,7 +22,7 @@ module bp_me_wormhole_packet_encode_lce_cmd
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
 
-    , localparam lce_cmd_wormhole_header_lp = `bp_wormhole_header_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_msg_header_width_lp)
+    , localparam lce_cmd_wormhole_header_lp = `bp_bedrock_wormhole_header_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_msg_header_width_lp)
     )
    (input [lce_cmd_msg_header_width_lp-1:0]   lce_cmd_header_i
     , output [lce_cmd_wormhole_header_lp-1:0] wh_header_o
@@ -72,9 +72,9 @@ module bp_me_wormhole_packet_encode_lce_cmd
   always_comb begin
     header_cast_o = '0;
 
-    header_cast_o.msg_hdr     = header_cast_i;
-    header_cast_o.wh_hdr.cid  = lce_cid_li;
-    header_cast_o.wh_hdr.cord = lce_cord_li;
+    header_cast_o.msg_hdr      = header_cast_i;
+    header_cast_o.rtr_hdr.cid  = lce_cid_li;
+    header_cast_o.rtr_hdr.cord = lce_cord_li;
 
     unique case (header_cast_i.msg_type)
       // most commands have no data
@@ -88,19 +88,19 @@ module bp_me_wormhole_packet_encode_lce_cmd
       ,e_bedrock_cmd_tr
       ,e_bedrock_cmd_st_tr
       ,e_bedrock_cmd_st_tr_wb
-      ,e_bedrock_cmd_uc_st_done: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cmd_cmd_len_lp);
+      ,e_bedrock_cmd_uc_st_done: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_cmd_len_lp);
       // data and uncached data commands have data
       e_bedrock_cmd_data
       ,e_bedrock_cmd_uc_data:
         unique case (header_cast_i.size)
-          e_bedrock_msg_size_1: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_1_lp);
-          e_bedrock_msg_size_2: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_2_lp);
-          e_bedrock_msg_size_4: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_4_lp);
-          e_bedrock_msg_size_8: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_8_lp);
-          e_bedrock_msg_size_16: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_16_lp);
-          e_bedrock_msg_size_32: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_32_lp);
-          e_bedrock_msg_size_64: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_64_lp);
-          e_bedrock_msg_size_128: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_128_lp);
+          e_bedrock_msg_size_1: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_1_lp);
+          e_bedrock_msg_size_2: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_2_lp);
+          e_bedrock_msg_size_4: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_4_lp);
+          e_bedrock_msg_size_8: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_8_lp);
+          e_bedrock_msg_size_16: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_16_lp);
+          e_bedrock_msg_size_32: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_32_lp);
+          e_bedrock_msg_size_64: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_64_lp);
+          e_bedrock_msg_size_128: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_128_lp);
           default: begin end
         endcase
       default: begin end

@@ -54,8 +54,8 @@ module bp_me_cce_to_mem_link_recv
   assign mem_cmd_last_o = mem_cmd_v_o;
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, mem, cce_block_width_p);
-  localparam payload_width_lp = `bp_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_cce_mem_msg_header_s), cce_block_width_p);
+  `declare_bp_bedrock_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, mem, cce_block_width_p);
+  localparam payload_width_lp = `bp_bedrock_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_cce_mem_msg_header_s), cce_block_width_p);
 
   bp_mem_wormhole_packet_s mem_cmd_packet_lo;
   bp_mem_wormhole_packet_s mem_resp_packet_lo;
@@ -84,15 +84,15 @@ module bp_me_cce_to_mem_link_recv
   assign mem_cmd_header_o = mem_cmd_packet_lo.header.msg_hdr;
   assign mem_cmd_data_o = mem_cmd_packet_lo.data;
 
-  bp_me_wormhole_packet_encode_mem_resp
+  bp_me_wormhole_packet_encode_mem
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
      ,.cord_width_p(cord_width_p)
      ,.cid_width_p(cid_width_p)
      ,.len_width_p(len_width_p)
      )
-   mem_resp_encode
-    (.mem_resp_header_i(mem_resp_header_i)
+   mem_encode
+    (.mem_header_i(mem_resp_header_i)
      ,.dst_cord_i(dst_cord_i)
      ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(mem_resp_header_lo)

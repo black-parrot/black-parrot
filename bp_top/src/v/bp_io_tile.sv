@@ -136,7 +136,7 @@ module bp_io_tile
      );
   assign lce_req_packet_lo = '{header: lce_req_header_lo, data: lce_lce_req_lo.data};
 
-  localparam lce_req_wh_payload_width_lp = `bp_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_msg_header_s), cce_block_width_p);
+  localparam lce_req_wh_payload_width_lp = `bp_bedrock_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_msg_header_s), cce_block_width_p);
   bsg_wormhole_router_adapter
    #(.max_payload_width_p(lce_req_wh_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
@@ -171,7 +171,7 @@ module bp_io_tile
      );
   assign lce_cmd_packet_lo = '{header: lce_cmd_header_lo, data: cce_lce_cmd_lo.data};
 
-  localparam lce_cmd_wh_payload_width_lp = `bp_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_msg_header_s), cce_block_width_p);
+  localparam lce_cmd_wh_payload_width_lp = `bp_bedrock_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_msg_header_s), cce_block_width_p);
   bsg_wormhole_router_adapter
    #(.max_payload_width_p(lce_cmd_wh_payload_width_lp)
      ,.len_width_p(coh_noc_len_width_p)
