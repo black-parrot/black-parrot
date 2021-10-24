@@ -41,10 +41,10 @@ module bp_cce_reg
    , input [`bp_cce_inst_gpr_width-1:0]                                    src_a_i
    , input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
 
-   , input [lce_req_msg_header_width_lp-1:0]                               lce_req_header_i
+   , input [lce_req_header_width_lp-1:0]                                   lce_req_header_i
    , input                                                                 lce_req_v_i
-   , input [lce_resp_msg_header_width_lp-1:0]                              lce_resp_header_i
-   , input [cce_mem_msg_header_width_lp-1:0]                               mem_resp_header_i
+   , input [lce_resp_header_width_lp-1:0]                                  lce_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]                                   mem_resp_header_i
 
    // For RDP, output state of pending bits from read operation
    , input                                                                 pending_i
@@ -84,9 +84,9 @@ module bp_cce_reg
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  bp_bedrock_lce_req_msg_header_s  lce_req_hdr;
-  bp_bedrock_lce_resp_msg_header_s lce_resp_hdr;
-  bp_bedrock_cce_mem_msg_header_s  mem_resp_hdr;
+  bp_bedrock_lce_req_header_s  lce_req_hdr;
+  bp_bedrock_lce_resp_header_s lce_resp_hdr;
+  bp_bedrock_cce_mem_header_s  mem_resp_hdr;
 
   assign lce_req_hdr  = lce_req_header_i;
   assign lce_resp_hdr = lce_resp_header_i;

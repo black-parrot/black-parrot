@@ -20,13 +20,13 @@ module bp_mem_nonsynth_tracer
    , input                                      reset_i
 
    // BP side
-   , input [cce_mem_msg_header_width_lp-1:0]    mem_cmd_header_i
+   , input [cce_mem_header_width_lp-1:0]        mem_cmd_header_i
    , input [data_width_p-1:0]                   mem_cmd_data_i
    , input                                      mem_cmd_v_i
    , input                                      mem_cmd_ready_and_i
    , input                                      mem_cmd_last_i
 
-   , input [cce_mem_msg_header_width_lp-1:0]    mem_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]        mem_resp_header_i
    , input [data_width_p-1:0]                   mem_resp_data_i
    , input                                      mem_resp_v_i
    , input                                      mem_resp_ready_and_i
@@ -34,8 +34,8 @@ module bp_mem_nonsynth_tracer
    );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `bp_cast_i(bp_bedrock_cce_mem_msg_header_s, mem_cmd_header);
-  `bp_cast_i(bp_bedrock_cce_mem_msg_header_s, mem_resp_header);
+  `bp_cast_i(bp_bedrock_cce_mem_header_s, mem_cmd_header);
+  `bp_cast_i(bp_bedrock_cce_mem_header_s, mem_resp_header);
 
   integer file;
   always_ff @(negedge reset_i)

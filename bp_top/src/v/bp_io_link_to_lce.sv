@@ -21,24 +21,24 @@ module bp_io_link_to_lce
 
    , input [lce_id_width_p-1:0]                     lce_id_i
 
-   , input [cce_mem_msg_header_width_lp-1:0]        io_cmd_header_i
+   , input [cce_mem_header_width_lp-1:0]            io_cmd_header_i
    , input [cce_block_width_p-1:0]                  io_cmd_data_i
    , input                                          io_cmd_v_i
    , input                                          io_cmd_last_i
    , output logic                                   io_cmd_yumi_o
 
-   , output logic [cce_mem_msg_header_width_lp-1:0] io_resp_header_o
+   , output logic [cce_mem_header_width_lp-1:0]     io_resp_header_o
    , output logic [cce_block_width_p-1:0]           io_resp_data_o
    , output logic                                   io_resp_v_o
    , output logic                                   io_resp_last_o
    , input                                          io_resp_ready_then_i
 
-   , output logic [lce_req_msg_header_width_lp-1:0] lce_req_header_o
+   , output logic [lce_req_header_width_lp-1:0]     lce_req_header_o
    , output logic [cce_block_width_p-1:0]           lce_req_data_o
    , output logic                                   lce_req_v_o
    , input                                          lce_req_ready_then_i
 
-   , input [lce_cmd_msg_header_width_lp-1:0]        lce_cmd_header_i
+   , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
    , input [cce_block_width_p-1:0]                  lce_cmd_data_i
    , input                                          lce_cmd_v_i
    , output                                         lce_cmd_yumi_o
@@ -48,10 +48,10 @@ module bp_io_link_to_lce
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `bp_cast_i(bp_bedrock_cce_mem_msg_header_s, io_cmd_header);
-  `bp_cast_o(bp_bedrock_cce_mem_msg_header_s, io_resp_header);
-  `bp_cast_o(bp_bedrock_lce_req_msg_header_s, lce_req_header);
-  `bp_cast_i(bp_bedrock_lce_req_msg_header_s, lce_cmd_header);
+  `bp_cast_i(bp_bedrock_cce_mem_header_s, io_cmd_header);
+  `bp_cast_o(bp_bedrock_cce_mem_header_s, io_resp_header);
+  `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
+  `bp_cast_i(bp_bedrock_lce_req_header_s, lce_cmd_header);
 
   // TODO: This implementation only works for burst length == 1, like the
   //   rest of this module

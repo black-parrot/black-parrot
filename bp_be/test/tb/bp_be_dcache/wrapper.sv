@@ -51,13 +51,13 @@ module wrapper
    , output logic [num_caches_p-1:0][dword_width_gp-1:0] data_o
    , output logic [num_caches_p-1:0]                     v_o
 
-   , output logic [cce_mem_msg_header_width_lp-1:0]    mem_cmd_header_o
+   , output logic [cce_mem_header_width_lp-1:0]        mem_cmd_header_o
    , output logic [l2_fill_width_p-1:0]                mem_cmd_data_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_and_i
    , output logic                                      mem_cmd_last_o
 
-   , input [cce_mem_msg_header_width_lp-1:0]           mem_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]               mem_resp_header_i
    , input [l2_fill_width_p-1:0]                       mem_resp_data_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_ready_and_o
@@ -460,9 +460,9 @@ module wrapper
        logic cce_lce_cmd_header_v, cce_lce_cmd_header_ready_and;
        logic cce_lce_cmd_data_v, cce_lce_cmd_data_ready_and;
        logic cce_lce_cmd_has_data, cce_lce_cmd_last;
-       bp_bedrock_lce_req_msg_header_s cce_lce_req_header;
-       bp_bedrock_lce_resp_msg_header_s cce_lce_resp_header;
-       bp_bedrock_lce_cmd_msg_header_s cce_lce_cmd_header;
+       bp_bedrock_lce_req_header_s cce_lce_req_header;
+       bp_bedrock_lce_resp_header_s cce_lce_resp_header;
+       bp_bedrock_lce_cmd_header_s cce_lce_cmd_header;
        logic [dword_width_gp-1:0] cce_lce_req_data, cce_lce_resp_data, cce_lce_cmd_data;
 
        // Request adapter to convert the link format to the CCE request input

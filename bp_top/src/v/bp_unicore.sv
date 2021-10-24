@@ -46,26 +46,26 @@ module bp_unicore
    , input [coh_noc_cord_width_p-1:0]                  my_cord_i
 
    // Outgoing I/O
-   , output logic [uce_mem_msg_header_width_lp-1:0]    io_cmd_header_o
+   , output logic [uce_mem_header_width_lp-1:0]        io_cmd_header_o
    , output logic [uce_mem_data_width_lp-1:0]          io_cmd_data_o
    , output logic                                      io_cmd_v_o
    , input                                             io_cmd_ready_and_i
    , output logic                                      io_cmd_last_o
 
-   , input [uce_mem_msg_header_width_lp-1:0]           io_resp_header_i
+   , input [uce_mem_header_width_lp-1:0]               io_resp_header_i
    , input [uce_mem_data_width_lp-1:0]                 io_resp_data_i
    , input                                             io_resp_v_i
    , output logic                                      io_resp_ready_and_o
    , input                                             io_resp_last_i
 
    // Incoming I/O
-   , input [uce_mem_msg_header_width_lp-1:0]           io_cmd_header_i
+   , input [uce_mem_header_width_lp-1:0]               io_cmd_header_i
    , input [uce_mem_data_width_lp-1:0]                 io_cmd_data_i
    , input                                             io_cmd_v_i
    , output logic                                      io_cmd_ready_and_o
    , input                                             io_cmd_last_i
 
-   , output logic [uce_mem_msg_header_width_lp-1:0]    io_resp_header_o
+   , output logic [uce_mem_header_width_lp-1:0]        io_resp_header_o
    , output logic [uce_mem_data_width_lp-1:0]          io_resp_data_o
    , output logic                                      io_resp_v_o
    , input                                             io_resp_ready_and_i
@@ -89,10 +89,10 @@ module bp_unicore
   `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, did_width_p, lce_id_width_p, lce_assoc_p, uce);
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
-  bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
+  bp_bedrock_uce_mem_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
-  bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
+  bp_bedrock_uce_mem_header_s mem_resp_header_li;
   logic [l2_data_width_p-1:0] mem_resp_data_li;
   logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
 

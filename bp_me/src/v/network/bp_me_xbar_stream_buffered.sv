@@ -29,14 +29,14 @@ module bp_me_xbar_stream_buffered
   (input                                                              clk_i
    , input                                                            reset_i
 
-   , input [num_source_p-1:0][xbar_msg_header_width_lp-1:0]           msg_header_i
+   , input [num_source_p-1:0][xbar_header_width_lp-1:0]               msg_header_i
    , input [num_source_p-1:0][data_width_p-1:0]                       msg_data_i
    , input [num_source_p-1:0]                                         msg_v_i
    , output logic [num_source_p-1:0]                                  msg_ready_and_o
    , input [num_source_p-1:0]                                         msg_last_i
    , input [num_source_p-1:0][lg_num_sink_lp-1:0]                     msg_dst_i
 
-   , output logic [num_sink_p-1:0][xbar_msg_header_width_lp-1:0]      msg_header_o
+   , output logic [num_sink_p-1:0][xbar_header_width_lp-1:0]          msg_header_o
    , output logic [num_sink_p-1:0][data_width_p-1:0]                  msg_data_o
    , output logic [num_sink_p-1:0]                                    msg_v_o
    , input [num_sink_p-1:0]                                           msg_ready_and_i
@@ -44,7 +44,7 @@ module bp_me_xbar_stream_buffered
    );
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, xbar);
-  bp_bedrock_xbar_msg_header_s [num_source_p-1:0] msg_header_li;
+  bp_bedrock_xbar_header_s [num_source_p-1:0] msg_header_li;
   logic [num_source_p-1:0][data_width_p-1:0] msg_data_li;
   logic [num_source_p-1:0] msg_v_li, msg_yumi_lo, msg_last_li;
   logic [num_source_p-1:0][lg_num_sink_lp-1:0] msg_dst_li;
@@ -52,7 +52,7 @@ module bp_me_xbar_stream_buffered
   for (genvar i = 0; i < num_source_p; i++)
     begin : buffer
       bsg_two_fifo
-       #(.width_p(lg_num_sink_lp+1+data_width_p+xbar_msg_header_width_lp))
+       #(.width_p(lg_num_sink_lp+1+data_width_p+xbar_header_width_lp))
        in_fifo
         (.clk_i(clk_i)
          ,.reset_i(reset_i)

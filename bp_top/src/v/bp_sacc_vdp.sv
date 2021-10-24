@@ -37,7 +37,7 @@ module bp_sacc_vdp
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
-  bp_bedrock_cce_mem_msg_header_s resp_header;
+  bp_bedrock_cce_mem_header_s resp_header;
   bp_bedrock_cce_mem_msg_s io_cmd_cast_i;
 
   assign io_cmd_ready_o = 1'b1;

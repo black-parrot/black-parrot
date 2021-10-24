@@ -217,7 +217,7 @@ module bp_cacc_vdp
 
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
   bp_bedrock_cce_mem_msg_s io_cmd_cast_i;
-  bp_bedrock_cce_mem_msg_header_s resp_header;
+  bp_bedrock_cce_mem_header_s resp_header;
 
   assign io_cmd_ready_o = 1'b1;
   assign io_cmd_cast_i = io_cmd_i;

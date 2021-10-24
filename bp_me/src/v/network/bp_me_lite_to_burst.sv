@@ -42,7 +42,7 @@ module bp_me_lite_to_burst
 
    // Output channel: BedRock Burst
    // ready-valid-and
-   , output logic [out_msg_header_width_lp-1:0]     out_msg_header_o
+   , output logic [out_header_width_lp-1:0]         out_msg_header_o
    , output logic                                   out_msg_header_v_o
    , input                                          out_msg_header_ready_and_i
    , output logic                                   out_msg_has_data_o

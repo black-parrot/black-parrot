@@ -23,19 +23,17 @@ module bp_nonsynth_host
    , parameter pc_profile_p           = 0
    , parameter br_profile_p           = 0
    , parameter cosim_p                = 0
-
-   , parameter host_max_outstanding_p = 32
    )
   (input                                            clk_i
    , input                                          reset_i
 
-   , input [io_mem_msg_header_width_lp-1:0]         mem_cmd_header_i
+   , input [io_mem_header_width_lp-1:0]             mem_cmd_header_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
-   , output logic [io_mem_msg_header_width_lp-1:0]  mem_resp_header_o
+   , output logic [io_mem_header_width_lp-1:0]      mem_resp_header_o
    , output logic [dword_width_gp-1:0]              mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
@@ -115,7 +113,7 @@ module bp_nonsynth_host
   wire [lg_num_core_lp-1:0] addr_core_enc = addr_lo[byte_offset_width_lp+:lg_num_core_lp];
 
   `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
-  bp_bedrock_io_mem_msg_header_s mem_cmd_header_li;
+  bp_bedrock_io_mem_header_s mem_cmd_header_li;
   assign mem_cmd_header_li = mem_cmd_header_i;
   wire [2:0] hio_id = mem_cmd_header_li.addr[paddr_width_p-1-:3];
   always_comb

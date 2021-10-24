@@ -116,18 +116,18 @@ module testbench
      ,.async_reset_o(cosim_reset_i)
      );
 
-  bp_bedrock_io_mem_msg_header_s proc_io_cmd_lo;
+  bp_bedrock_io_mem_header_s proc_io_cmd_lo;
   logic [io_data_width_p-1:0] proc_io_cmd_data_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li, proc_io_cmd_last_lo;
-  bp_bedrock_io_mem_msg_header_s proc_io_resp_li;
+  bp_bedrock_io_mem_header_s proc_io_resp_li;
   logic [io_data_width_p-1:0] proc_io_resp_data_li;
   logic proc_io_resp_v_li, proc_io_resp_ready_and_lo;
   logic proc_io_resp_last_li;
 
-  bp_bedrock_io_mem_msg_header_s load_cmd_lo;
+  bp_bedrock_io_mem_header_s load_cmd_lo;
   logic [io_data_width_p-1:0] load_cmd_data_lo;
   logic load_cmd_v_lo, load_cmd_ready_and_li, load_cmd_last_lo;
-  bp_bedrock_io_mem_msg_header_s load_resp_li;
+  bp_bedrock_io_mem_header_s load_resp_li;
   logic [io_data_width_p-1:0] load_resp_data_li;
   logic load_resp_v_li, load_resp_ready_and_lo, load_resp_last_li;
 

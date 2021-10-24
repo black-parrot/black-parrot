@@ -34,7 +34,7 @@ module bp_me_burst_to_lite
 
    // Input channel: BedRock Burst
    // ready-valid-and
-   , input [in_msg_header_width_lp-1:0]      in_msg_header_i
+   , input [in_header_width_lp-1:0]          in_msg_header_i
    , input                                   in_msg_header_v_i
    , output logic                            in_msg_header_ready_and_o
    , input                                   in_msg_has_data_i
@@ -66,10 +66,10 @@ module bp_me_burst_to_lite
   localparam burst_words_lp = out_data_width_p/in_data_width_p;
   localparam burst_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
-  bp_bedrock_in_msg_header_s header_lo;
+  bp_bedrock_in_header_s header_lo;
   logic header_v_r, header_clear, header_v_lo, has_data;
   bsg_dff_en_bypass
-   #(.width_p($bits(bp_bedrock_in_msg_header_s)+1))
+   #(.width_p($bits(bp_bedrock_in_header_s)+1))
    header_reg
     (.clk_i(clk_i)
     ,.en_i(in_msg_header_ready_and_o & in_msg_header_v_i)

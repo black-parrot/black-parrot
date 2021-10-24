@@ -32,13 +32,13 @@ module bp_me_cce_to_mem_link_send
    , input [cid_width_p-1:0]                            dst_cid_i
 
    // CCE-MEM Interface
-   , input [cce_mem_msg_header_width_lp-1:0]            mem_cmd_header_i
+   , input [cce_mem_header_width_lp-1:0]                mem_cmd_header_i
    , input [cce_block_width_p-1:0]                      mem_cmd_data_i
    , input                                              mem_cmd_v_i
    , output logic                                       mem_cmd_ready_and_o
    , input                                              mem_cmd_last_i
 
-   , output logic [cce_mem_msg_header_width_lp-1:0]     mem_resp_header_o
+   , output logic [cce_mem_header_width_lp-1:0]         mem_resp_header_o
    , output logic [cce_block_width_p-1:0]               mem_resp_data_o
    , output                                             mem_resp_v_o
    , input                                              mem_resp_yumi_i
@@ -56,8 +56,8 @@ module bp_me_cce_to_mem_link_send
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // CCE-MEM IF to Wormhole routed interface
-  `declare_bp_bedrock_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, mem, cce_block_width_p);
-  localparam payload_width_lp = `bp_bedrock_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_cce_mem_msg_header_s), cce_block_width_p);
+  `declare_bp_bedrock_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_header_s, mem, cce_block_width_p);
+  localparam payload_width_lp = `bp_bedrock_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_cce_mem_header_s), cce_block_width_p);
 
   bp_mem_wormhole_packet_s mem_cmd_packet_li;
   bp_mem_wormhole_header_s mem_cmd_header_li;

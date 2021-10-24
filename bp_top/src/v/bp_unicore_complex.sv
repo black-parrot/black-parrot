@@ -25,26 +25,26 @@ module bp_unicore_complex
    , input [io_noc_did_width_p-1:0]                                 host_did_i
 
    // Outgoing I/O
-   , output logic [num_core_p-1:0][uce_mem_msg_header_width_lp-1:0] io_cmd_header_o
+   , output logic [num_core_p-1:0][uce_mem_header_width_lp-1:0]     io_cmd_header_o
    , output logic [num_core_p-1:0][uce_mem_data_width_lp-1:0]       io_cmd_data_o
    , output logic [num_core_p-1:0]                                  io_cmd_v_o
    , input [num_core_p-1:0]                                         io_cmd_ready_and_i
    , output logic [num_core_p-1:0]                                  io_cmd_last_o
 
-   , input [num_core_p-1:0][uce_mem_msg_header_width_lp-1:0]        io_resp_header_i
+   , input [num_core_p-1:0][uce_mem_header_width_lp-1:0]            io_resp_header_i
    , input [num_core_p-1:0][uce_mem_data_width_lp-1:0]              io_resp_data_i
    , input [num_core_p-1:0]                                         io_resp_v_i
    , output logic [num_core_p-1:0]                                  io_resp_ready_and_o
    , input [num_core_p-1:0]                                         io_resp_last_i
 
    // Incoming I/O
-   , input [num_core_p-1:0][uce_mem_msg_header_width_lp-1:0]        io_cmd_header_i
+   , input [num_core_p-1:0][uce_mem_header_width_lp-1:0]            io_cmd_header_i
    , input [num_core_p-1:0][uce_mem_data_width_lp-1:0]              io_cmd_data_i
    , input [num_core_p-1:0]                                         io_cmd_v_i
    , output logic [num_core_p-1:0]                                  io_cmd_ready_and_o
    , input [num_core_p-1:0]                                         io_cmd_last_i
 
-   , output logic [num_core_p-1:0][uce_mem_msg_header_width_lp-1:0] io_resp_header_o
+   , output logic [num_core_p-1:0][uce_mem_header_width_lp-1:0]     io_resp_header_o
    , output logic [num_core_p-1:0][uce_mem_data_width_lp-1:0]       io_resp_data_o
    , output logic [num_core_p-1:0]                                  io_resp_v_o
    , input        [num_core_p-1:0]                                  io_resp_ready_and_i

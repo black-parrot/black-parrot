@@ -70,10 +70,10 @@ module bp_lite_to_axi_lite_master
   assign io_resp_o     = io_resp_cast_o;
 
   // storing io cmd header
-  bp_bedrock_cce_mem_msg_header_s io_cmd_header_r;
+  bp_bedrock_cce_mem_header_s io_cmd_header_r;
 
   bsg_dff_reset_en
-   #(.width_p(cce_mem_msg_header_width_lp))
+   #(.width_p(cce_mem_header_width_lp))
    mem_header_reg
     (.clk_i(clk_i)
     ,.reset_i(reset_i)

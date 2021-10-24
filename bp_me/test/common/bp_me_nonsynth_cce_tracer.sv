@@ -35,21 +35,21 @@ module bp_me_nonsynth_cce_tracer
 
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid
-   , input [lce_req_msg_header_width_lp-1:0]        lce_req_header_i
+   , input [lce_req_header_width_lp-1:0]            lce_req_header_i
    , input                                          lce_req_header_v_i
    , input                                          lce_req_header_ready_and_i
    , input [dword_width_gp-1:0]                     lce_req_data_i
    , input                                          lce_req_data_v_i
    , input                                          lce_req_data_ready_and_i
 
-   , input [lce_resp_msg_header_width_lp-1:0]       lce_resp_header_i
+   , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
    , input                                          lce_resp_header_v_i
    , input                                          lce_resp_header_ready_and_i
    , input [dword_width_gp-1:0]                     lce_resp_data_i
    , input                                          lce_resp_data_v_i
    , input                                          lce_resp_data_ready_and_i
 
-   , input [lce_cmd_msg_header_width_lp-1:0]        lce_cmd_header_i
+   , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
    , input                                          lce_cmd_header_v_i
    , input                                          lce_cmd_header_ready_and_i
    , input [dword_width_gp-1:0]                     lce_cmd_data_i
@@ -58,13 +58,13 @@ module bp_me_nonsynth_cce_tracer
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [cce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]            mem_resp_header_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
    , input                                          mem_resp_v_i
    , input                                          mem_resp_ready_and_i
    , input                                          mem_resp_last_i
 
-   , input [cce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
+   , input [cce_mem_header_width_lp-1:0]            mem_cmd_header_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , input                                          mem_cmd_ready_and_i
@@ -78,15 +78,15 @@ module bp_me_nonsynth_cce_tracer
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // LCE-CCE Interface structs
-  bp_bedrock_lce_req_msg_header_s  lce_req;
-  bp_bedrock_lce_resp_msg_header_s lce_resp;
-  bp_bedrock_lce_cmd_msg_header_s  lce_cmd;
+  bp_bedrock_lce_req_header_s  lce_req;
+  bp_bedrock_lce_resp_header_s lce_resp;
+  bp_bedrock_lce_cmd_header_s  lce_cmd;
   bp_bedrock_lce_req_payload_s     lce_req_payload;
   bp_bedrock_lce_cmd_payload_s     lce_cmd_payload;
   bp_bedrock_lce_resp_payload_s    lce_resp_payload;
 
   // CCE-MEM Interface structs
-  bp_bedrock_cce_mem_msg_header_s  mem_cmd, mem_resp;
+  bp_bedrock_cce_mem_header_s  mem_cmd, mem_resp;
   bp_bedrock_cce_mem_payload_s     mem_cmd_payload, mem_resp_payload;
 
   assign lce_req             = lce_req_header_i;

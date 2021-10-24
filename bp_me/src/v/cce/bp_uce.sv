@@ -62,13 +62,13 @@ module bp_uce
     , input                                          stat_mem_pkt_yumi_i
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
-    , output logic [uce_mem_msg_header_width_lp-1:0] mem_cmd_header_o
+    , output logic [uce_mem_header_width_lp-1:0]     mem_cmd_header_o
     , output logic [uce_mem_data_width_p-1:0]        mem_cmd_data_o
     , output logic                                   mem_cmd_v_o
     , input                                          mem_cmd_ready_and_i
     , output logic                                   mem_cmd_last_o
 
-    , input [uce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
+    , input [uce_mem_header_width_lp-1:0]            mem_resp_header_i
     , input [uce_mem_data_width_p-1:0]               mem_resp_data_i
     , input                                          mem_resp_v_i
     , output logic                                   mem_resp_ready_and_o
@@ -249,7 +249,7 @@ module bp_uce
      ,.yumi_i(dirty_stat_read)
      );
 
-  bp_bedrock_uce_mem_msg_header_s fsm_cmd_header_lo;
+  bp_bedrock_uce_mem_header_s fsm_cmd_header_lo;
   logic [fill_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt;
@@ -282,7 +282,7 @@ module bp_uce
      ,.fsm_done_o(fsm_cmd_done)
      );
 
-  bp_bedrock_uce_mem_msg_header_s fsm_resp_header_li;
+  bp_bedrock_uce_mem_header_s fsm_resp_header_li;
   logic [paddr_width_p-1:0] fsm_resp_addr_li;
   logic [fill_width_p-1:0] fsm_resp_data_li;
   logic fsm_resp_v_li, fsm_resp_yumi_lo;

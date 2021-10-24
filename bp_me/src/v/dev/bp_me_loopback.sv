@@ -16,13 +16,13 @@ module bp_me_loopback
    (input                                            clk_i
     , input                                          reset_i
 
-    , input [cce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
+    , input [cce_mem_header_width_lp-1:0]            mem_cmd_header_i
     , input [dword_width_gp-1:0]                     mem_cmd_data_i
     , input                                          mem_cmd_v_i
     , output logic                                   mem_cmd_ready_and_o
     , input logic                                    mem_cmd_last_i
 
-    , output logic [cce_mem_msg_header_width_lp-1:0] mem_resp_header_o
+    , output logic [cce_mem_header_width_lp-1:0]     mem_resp_header_o
     , output logic [dword_width_gp-1:0]              mem_resp_data_o
     , output logic                                   mem_resp_v_o
     , input                                          mem_resp_ready_and_i
@@ -32,7 +32,7 @@ module bp_me_loopback
   // Used to decouple to help prevent deadlock
   logic mem_resp_last_lo;
   bsg_one_fifo
-   #(.width_p(1+cce_mem_msg_header_width_lp))
+   #(.width_p(1+cce_mem_header_width_lp))
    loopback_buffer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

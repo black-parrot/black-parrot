@@ -22,13 +22,13 @@ module bp_nonsynth_mem
   (input                                            clk_i
    , input                                          reset_i
 
-   , input [cce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
+   , input [cce_mem_header_width_lp-1:0]            mem_cmd_header_i
    , input [l2_fill_width_p-1:0]                    mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
-   , output logic [cce_mem_msg_header_width_lp-1:0] mem_resp_header_o
+   , output logic [cce_mem_header_width_lp-1:0]     mem_resp_header_o
    , output logic [l2_fill_width_p-1:0]             mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i

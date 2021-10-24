@@ -93,7 +93,7 @@ module testbench
 
   logic mem_cmd_v_lo, mem_resp_v_li;
   logic mem_cmd_ready_and_lo, mem_resp_ready_and_li;
-  bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo, mem_resp_header_li;
+  bp_bedrock_cce_mem_header_s mem_cmd_header_lo, mem_resp_header_li;
   logic [l2_fill_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
 
   logic [num_caches_p-1:0][trace_replay_data_width_lp-1:0] trace_data_lo;

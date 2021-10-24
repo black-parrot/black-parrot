@@ -37,14 +37,14 @@ module bp_cce_mmio_cfg_loader
 
    // BedRock Stream
    // TODO: convert yumi_i to ready_and_i
-   , output logic [cce_mem_msg_header_width_lp-1:0]  io_cmd_header_o
+   , output logic [cce_mem_header_width_lp-1:0]      io_cmd_header_o
    , output logic [dword_width_gp-1:0]               io_cmd_data_o
    , output logic                                    io_cmd_v_o
    , input                                           io_cmd_yumi_i
    , output logic                                    io_cmd_last_o
 
    // BedRock Stream
-   , input [cce_mem_msg_header_width_lp-1:0]         io_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]             io_resp_header_i
    , input [dword_width_gp-1:0]                      io_resp_data_i
    , input                                           io_resp_v_i
    , output logic                                    io_resp_ready_and_o
@@ -59,8 +59,8 @@ module bp_cce_mmio_cfg_loader
   `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
-  bp_bedrock_cce_mem_msg_header_s io_cmd_cast_o;
-  bp_bedrock_cce_mem_msg_header_s io_resp_cast_i;
+  bp_bedrock_cce_mem_header_s io_cmd_cast_o;
+  bp_bedrock_cce_mem_header_s io_resp_cast_i;
   bp_bedrock_cce_mem_payload_s io_cmd_payload;
 
   assign io_cmd_header_o = io_cmd_cast_o;
