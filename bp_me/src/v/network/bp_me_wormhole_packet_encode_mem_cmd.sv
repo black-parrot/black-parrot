@@ -25,7 +25,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
     , parameter `BSG_INV_PARAM(len_width_p )
 
     , localparam mem_cmd_wormhole_header_lp =
-        `bp_coh_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_header_width_lp)
+        `bp_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_header_width_lp)
     )
    (input [cce_mem_msg_header_width_lp-1:0]   mem_cmd_header_i
 
@@ -36,7 +36,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
     );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_coh_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, mem, cce_block_width_p);
+  `declare_bp_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_msg_header_s, mem, cce_block_width_p);
 
   bp_bedrock_cce_mem_msg_header_s header_cast_i;
   bp_mem_wormhole_header_s header_cast_o;
