@@ -47,8 +47,7 @@ module testbench
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
-   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_mem_data_width_lp
+   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
    )
   (output bit reset_i);

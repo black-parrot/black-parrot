@@ -89,7 +89,9 @@
     , localparam lce_sets_width_p           = `BSG_SAFE_CLOG2(lce_sets_p)                          \
                                                                                                    \
     , localparam cce_block_width_p          =                                                      \
-        `BSG_MAX(dcache_block_width_p, `BSG_MAX(icache_block_width_p, num_cacc_p ? acache_block_width_p : '0))       \
+        `BSG_MAX(dcache_block_width_p, `BSG_MAX(icache_block_width_p, num_cacc_p ? acache_block_width_p : '0)) \
+    , localparam uce_fill_width_p           =                                                      \
+        `BSG_MAX(dcache_fill_width_p, `BSG_MAX(icache_fill_width_p, num_cacc_p ? acache_fill_width_p : '0)) \
                                                                                                    \
     , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                           \
     , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                    \

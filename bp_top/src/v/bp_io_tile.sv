@@ -265,7 +265,6 @@ module bp_io_tile
 
   bp_me_cce_to_mem_link_recv
    #(.bp_params_p(bp_params_p)
-     ,.num_outstanding_req_p(io_noc_max_credits_p)
      ,.flit_width_p(io_noc_flit_width_p)
      ,.cord_width_p(io_noc_cord_width_p)
      ,.cid_width_p(io_noc_cid_width_p)

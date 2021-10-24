@@ -18,8 +18,7 @@ module wrapper
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
-   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_mem_data_width_lp
+   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
@@ -178,7 +177,6 @@ module wrapper
 
       bp_me_cce_to_mem_link_recv
        #(.bp_params_p(bp_params_p)
-         ,.num_outstanding_req_p(io_noc_max_credits_p)
          ,.flit_width_p(io_noc_flit_width_p)
          ,.cord_width_p(io_noc_cord_width_p)
          ,.cid_width_p(io_noc_cid_width_p)
