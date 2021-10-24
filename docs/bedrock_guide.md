@@ -27,7 +27,8 @@ for unordered or ordered networks.
 
 BedRock sends and receives messages on three networks, called Request, Command, and Response.
 The messages carried on the BedRock networks are fully defined in the
-[ME Interface](../bp_common/src/include/bp_common_me_if.vh) file of the BlackParrot repository.
+[ME Interface](../bp_common/src/include/bp_common_bedrock_if.svh) file of the BlackParrot repository.
+
 The [BlackParrot Interface Specification](interface_specification.md) contains a more detailed
 overview of the messages carried by the BedRock coherence networks, which are briefly overviewed
 here.
