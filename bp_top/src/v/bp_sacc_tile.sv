@@ -75,19 +75,25 @@ module bp_sacc_tile
 
      ,.lce_id_i(lce_id_li)
 
-     ,.io_cmd_i(lce_io_cmd_li)
+     ,.io_cmd_header_i(lce_io_cmd_li.header)
+     ,.io_cmd_data_i(lce_io_cmd_li.data)
      ,.io_cmd_v_i(lce_io_cmd_v_li)
      ,.io_cmd_yumi_o(lce_io_cmd_yumi_lo)
+     ,.io_cmd_last_i(lce_io_cmd_v_li) // stub
 
-     ,.io_resp_o(lce_io_resp_lo)
+     ,.io_resp_header_o(lce_io_resp_lo.header)
+     ,.io_resp_data_o(lce_io_resp_lo.data)
      ,.io_resp_v_o(lce_io_resp_v_lo)
      ,.io_resp_ready_then_i(lce_io_resp_ready_and_li)
+     ,.io_resp_last_o()
 
-     ,.lce_req_o(lce_lce_req_lo)
+     ,.lce_req_header_o(lce_lce_req_lo.header)
+     ,.lce_req_data_o(lce_lce_req_lo.data)
      ,.lce_req_v_o(lce_lce_req_v_lo)
      ,.lce_req_ready_then_i(lce_req_ready_li)
 
-     ,.lce_cmd_i(lce_lce_cmd_li)
+     ,.lce_cmd_header_i(lce_lce_cmd_li.header)
+     ,.lce_cmd_data_i(lce_lce_cmd_li.data)
      ,.lce_cmd_v_i(lce_lce_cmd_v_li)
      ,.lce_cmd_yumi_o(lce_lce_cmd_yumi_lo)
      );
@@ -99,6 +105,7 @@ module bp_sacc_tile
      ,.reset_i(reset_r)
 
      ,.cce_id_i(cce_id_li)
+     ,.did_i('0)
 
      ,.lce_req_i(cce_lce_req_li)
      ,.lce_req_v_i(cce_lce_req_v_li)

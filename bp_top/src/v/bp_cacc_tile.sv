@@ -87,6 +87,7 @@ module bp_cacc_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
+     ,.did_i('0)
      ,.cce_id_i(cce_id_li)
 
      ,.lce_req_i(cce_lce_req_li)
