@@ -67,6 +67,7 @@ module bp_me_cce_to_mem_link_send
      ,.cord_width_p(cord_width_p)
      ,.cid_width_p(cid_width_p)
      ,.len_width_p(len_width_p)
+     ,.payload_mask_p(mem_cmd_payload_mask_gp)
      )
    mem_cmd_encode
     (.mem_header_i(mem_cmd_header_i)

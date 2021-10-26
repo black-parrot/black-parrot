@@ -24,6 +24,9 @@ module bp_me_wormhole_packet_encode_mem
    , parameter `BSG_INV_PARAM(cid_width_p)
    , parameter `BSG_INV_PARAM(len_width_p)
 
+   // Constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
+   , parameter payload_mask_p = 0
+
    , localparam mem_wormhole_header_lp =
        `bp_bedrock_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_header_width_lp)
    )
@@ -84,14 +87,10 @@ module bp_me_wormhole_packet_encode_mem
       default: data_cmd_len_li = '0;
     endcase
 
-    case (header_cast_i.msg_type)
-      e_bedrock_mem_rd
-      ,e_bedrock_mem_uc_rd
-      ,e_bedrock_mem_pre  : header_cast_o.rtr_hdr.len = len_width_p'(mem_req_len_lp);
-      e_bedrock_mem_uc_wr
-      ,e_bedrock_mem_wr   : header_cast_o.rtr_hdr.len = data_cmd_len_li;
-      default: header_cast_o.rtr_hdr.len = '0;
-    endcase
+    if (payload_mask_p[header_cast_i.msg_type])
+      header_cast_o.rtr_hdr.len = data_cmd_len_li;
+    else
+      header_cast_o.rtr_hdr.len = len_width_p'(mem_req_len_lp);
   end
 
 endmodule
