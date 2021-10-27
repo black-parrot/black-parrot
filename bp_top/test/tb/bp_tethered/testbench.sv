@@ -47,9 +47,8 @@ module testbench
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
-   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_mem_data_width_lp
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io)
+   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
    )
   (output bit reset_i);
 
@@ -65,7 +64,7 @@ module testbench
     return (`BP_SIM_CLK_PERIOD);
   endfunction
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io);
+  `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
 
 // Bit to deal with initial X->0 transition detection
   bit clk_i;
@@ -116,18 +115,18 @@ module testbench
      ,.async_reset_o(cosim_reset_i)
      );
 
-  bp_bedrock_io_mem_msg_header_s proc_io_cmd_lo;
+  bp_bedrock_io_mem_header_s proc_io_cmd_lo;
   logic [io_data_width_p-1:0] proc_io_cmd_data_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li, proc_io_cmd_last_lo;
-  bp_bedrock_io_mem_msg_header_s proc_io_resp_li;
+  bp_bedrock_io_mem_header_s proc_io_resp_li;
   logic [io_data_width_p-1:0] proc_io_resp_data_li;
   logic proc_io_resp_v_li, proc_io_resp_ready_and_lo;
   logic proc_io_resp_last_li;
 
-  bp_bedrock_io_mem_msg_header_s load_cmd_lo;
+  bp_bedrock_io_mem_header_s load_cmd_lo;
   logic [io_data_width_p-1:0] load_cmd_data_lo;
   logic load_cmd_v_lo, load_cmd_ready_and_li, load_cmd_last_lo;
-  bp_bedrock_io_mem_msg_header_s load_resp_li;
+  bp_bedrock_io_mem_header_s load_resp_li;
   logic [io_data_width_p-1:0] load_resp_data_li;
   logic load_resp_v_li, load_resp_ready_and_lo, load_resp_last_li;
 
@@ -138,11 +137,17 @@ module testbench
   logic [num_cce_p-1:0] dma_data_v_lo, dma_data_yumi_li;
   logic [num_cce_p-1:0][l2_fill_width_p-1:0] dma_data_li;
   logic [num_cce_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+
+  wire [io_noc_did_width_p-1:0] proc_did_li = 1;
+  wire [io_noc_did_width_p-1:0] host_did_li = '1;
   wrapper
    #(.bp_params_p(bp_params_p))
    wrapper
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+
+     ,.my_did_i(proc_did_li)
+     ,.host_did_i(host_did_li)
 
      ,.io_cmd_header_o(proc_io_cmd_lo)
      ,.io_cmd_data_o(proc_io_cmd_data_lo)
@@ -208,6 +213,7 @@ module testbench
      ,.dram_reset_i(dram_reset_i)
      );
 
+  wire [lce_id_width_p-1:0] io_lce_id_li = num_core_p*2+num_cacc_p+num_l2e_p+num_sacc_p+num_io_p;
   bp_nonsynth_nbf_loader
    #(.bp_params_p(bp_params_p)
      ,.io_data_width_p(io_data_width_p))
@@ -215,7 +221,10 @@ module testbench
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.lce_id_i(lce_id_width_p'('b10))
+     // TODO: Set appropriately for multicore
+
+     ,.lce_id_i(io_lce_id_li)
+     ,.did_i(host_did_li)
 
      ,.io_cmd_header_o(load_cmd_lo)
      ,.io_cmd_data_o(load_cmd_data_lo)

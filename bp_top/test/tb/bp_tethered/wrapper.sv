@@ -18,36 +18,38 @@ module wrapper
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam uce_mem_data_width_lp = `BSG_MAX(icache_fill_width_p, dcache_fill_width_p)
-   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_mem_data_width_lp
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io)
+   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                                    clk_i
    , input                                                  reset_i
 
+   , input [did_width_p-1:0]                                my_did_i
+   , input [did_width_p-1:0]                                host_did_i
+
    // Outgoing I/O
-   , output logic [io_mem_msg_header_width_lp-1:0]          io_cmd_header_o
+   , output logic [io_mem_header_width_lp-1:0]              io_cmd_header_o
    , output logic [io_data_width_p-1:0]                     io_cmd_data_o
    , output logic                                           io_cmd_v_o
    , input                                                  io_cmd_ready_and_i
    , output logic                                           io_cmd_last_o
 
-   , input [io_mem_msg_header_width_lp-1:0]                 io_resp_header_i
+   , input [io_mem_header_width_lp-1:0]                     io_resp_header_i
    , input [io_data_width_p-1:0]                            io_resp_data_i
    , input                                                  io_resp_v_i
    , output logic                                           io_resp_ready_and_o
    , input                                                  io_resp_last_i
 
    // Incoming I/O
-   , input [io_mem_msg_header_width_lp-1:0]                 io_cmd_header_i
+   , input [io_mem_header_width_lp-1:0]                     io_cmd_header_i
    , input [io_data_width_p-1:0]                            io_cmd_data_i
    , input                                                  io_cmd_v_i
    , output logic                                           io_cmd_ready_and_o
    , input                                                  io_cmd_last_i
 
-   , output logic [io_mem_msg_header_width_lp-1:0]          io_resp_header_o
+   , output logic [io_mem_header_width_lp-1:0]              io_resp_header_o
    , output logic [io_data_width_p-1:0]                     io_resp_data_o
    , output logic                                           io_resp_v_o
    , input                                                  io_resp_ready_and_i
@@ -82,9 +84,6 @@ module wrapper
       bp_io_noc_ral_link_s stub_cmd_link_li, stub_resp_link_li;
       bp_io_noc_ral_link_s stub_cmd_link_lo, stub_resp_link_lo;
 
-      wire [io_noc_did_width_p-1:0] proc_did_li = 1;
-      wire [io_noc_did_width_p-1:0] dram_did_li = '1;
-
       assign stub_cmd_link_li  = '0;
       assign stub_resp_link_li = '0;
 
@@ -103,8 +102,8 @@ module wrapper
          ,.mem_clk_i(clk_i)
          ,.mem_reset_i(reset_i)
 
-         ,.my_did_i(proc_did_li)
-         ,.host_did_i(dram_did_li)
+         ,.my_did_i(my_did_i)
+         ,.host_did_i(host_did_i)
 
          ,.io_cmd_link_i({proc_cmd_link_li, stub_cmd_link_li})
          ,.io_cmd_link_o({proc_cmd_link_lo, stub_cmd_link_lo})
@@ -118,57 +117,93 @@ module wrapper
 
       wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
-      `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, lce_id_width_p, lce_assoc_p, io);
-      bp_bedrock_io_mem_msg_header_s io_cmd_header_li;
-      logic [io_data_width_p-1:0] io_cmd_data_li;
-      bp_bedrock_io_mem_msg_header_s io_resp_header_lo;
-      logic [io_data_width_p-1:0] io_resp_data_lo;
-      bp_me_cce_to_mem_link_bidir
+      `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
+      `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
+      `bp_cast_i(bp_bedrock_io_mem_header_s, io_cmd_header);
+      `bp_cast_o(bp_bedrock_io_mem_header_s, io_resp_header);
+      `bp_cast_o(bp_bedrock_io_mem_header_s, io_cmd_header);
+      `bp_cast_i(bp_bedrock_io_mem_header_s, io_resp_header);
+
+      bsg_ready_and_link_sif_s send_cmd_link_lo, send_resp_link_li;
+      bsg_ready_and_link_sif_s recv_cmd_link_li, recv_resp_link_lo;
+      assign recv_cmd_link_li   = '{data          : proc_cmd_link_lo.data
+                                    ,v            : proc_cmd_link_lo.v
+                                    ,ready_and_rev: proc_resp_link_lo.ready_and_rev
+                                    };
+      assign proc_cmd_link_li   = '{data          : send_cmd_link_lo.data
+                                    ,v            : send_cmd_link_lo.v
+                                    ,ready_and_rev: recv_resp_link_lo.ready_and_rev
+                                    };
+    
+      assign send_resp_link_li  = '{data          : proc_resp_link_lo.data
+                                    ,v            : proc_resp_link_lo.v
+                                    ,ready_and_rev: proc_cmd_link_lo.ready_and_rev
+                                    };
+      assign proc_resp_link_li  = '{data          : recv_resp_link_lo.data
+                                    ,v            : recv_resp_link_lo.v
+                                    ,ready_and_rev: send_cmd_link_lo.ready_and_rev
+                                    };
+ 
+      bp_me_cce_to_mem_link_send
        #(.bp_params_p(bp_params_p)
-         ,.num_outstanding_req_p(io_noc_max_credits_p)
          ,.flit_width_p(io_noc_flit_width_p)
          ,.cord_width_p(io_noc_cord_width_p)
          ,.cid_width_p(io_noc_cid_width_p)
          ,.len_width_p(io_noc_len_width_p)
          )
-       host_link
+       send_link
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.mem_cmd_header_i(io_cmd_header_i)
+         ,.dst_cord_i(dst_cord_lo)
+         ,.dst_cid_i('0)
+
+         ,.mem_cmd_header_i(io_cmd_header_cast_i)
          ,.mem_cmd_data_i(io_cmd_data_i)
          ,.mem_cmd_v_i(io_cmd_v_i)
          ,.mem_cmd_ready_and_o(io_cmd_ready_and_o)
          ,.mem_cmd_last_i(io_cmd_last_i)
 
-         ,.mem_resp_header_o(io_resp_header_o)
+         ,.mem_resp_header_o(io_resp_header_cast_o)
          ,.mem_resp_data_o(io_resp_data_o)
          ,.mem_resp_v_o(io_resp_v_o)
          ,.mem_resp_yumi_i(io_resp_ready_and_i & io_resp_v_o)
          ,.mem_resp_last_o(io_resp_last_o)
 
-         ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
-         ,.my_cid_i('0)
-         ,.dst_cord_i(dst_cord_lo)
+
+         ,.cmd_link_o(send_cmd_link_lo)
+         ,.resp_link_i(send_resp_link_li)
+         );
+
+      bp_me_cce_to_mem_link_recv
+       #(.bp_params_p(bp_params_p)
+         ,.flit_width_p(io_noc_flit_width_p)
+         ,.cord_width_p(io_noc_cord_width_p)
+         ,.cid_width_p(io_noc_cid_width_p)
+         ,.len_width_p(io_noc_len_width_p)
+         )
+       recv_link
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.dst_cord_i(io_resp_header_cast_i.payload.did)
          ,.dst_cid_i('0)
 
-         ,.mem_cmd_header_o(io_cmd_header_o)
+         ,.mem_cmd_header_o(io_cmd_header_cast_o)
          ,.mem_cmd_data_o(io_cmd_data_o)
          ,.mem_cmd_v_o(io_cmd_v_o)
          ,.mem_cmd_yumi_i(io_cmd_ready_and_i & io_cmd_v_o)
          ,.mem_cmd_last_o(io_cmd_last_o)
 
-         ,.mem_resp_header_i(io_resp_header_i)
+         ,.mem_resp_header_i(io_resp_header_cast_i)
          ,.mem_resp_data_i(io_resp_data_i)
          ,.mem_resp_v_i(io_resp_v_i)
          ,.mem_resp_ready_and_o(io_resp_ready_and_o)
          ,.mem_resp_last_i(io_resp_last_i)
 
-         ,.cmd_link_i(proc_cmd_link_lo)
-         ,.cmd_link_o(proc_cmd_link_li)
-         ,.resp_link_i(proc_resp_link_lo)
-         ,.resp_link_o(proc_resp_link_li)
-         );
+         ,.cmd_link_i(recv_cmd_link_li)
+         ,.resp_link_o(recv_resp_link_lo)
+         );   
 
       `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
       localparam cce_per_col_lp = num_cce_p/mc_x_dim_p;
@@ -211,15 +246,10 @@ module wrapper
     end
   else
     begin : unicore
-      wire [io_noc_did_width_p-1:0] proc_did_li = 1;
-      wire [io_noc_did_width_p-1:0] dram_did_li = '1;
       bp_unicore_complex
        #(.bp_params_p(bp_params_p))
        dut
-        (.my_did_i(proc_did_li)
-         ,.host_did_i(dram_did_li)
-         ,.*
-         );
+        (.*);
     end
 
 endmodule

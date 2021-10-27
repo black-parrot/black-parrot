@@ -21,7 +21,7 @@ module bp_me_xbar_stream
    , parameter `BSG_INV_PARAM(payload_width_p)
    , parameter `BSG_INV_PARAM(num_source_p)
    , parameter `BSG_INV_PARAM(num_sink_p)
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, xbar)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, xbar)
 
    , localparam lg_num_source_lp = `BSG_SAFE_CLOG2(num_source_p)
    , localparam lg_num_sink_lp   = `BSG_SAFE_CLOG2(num_sink_p)
@@ -29,14 +29,14 @@ module bp_me_xbar_stream
   (input                                                              clk_i
    , input                                                            reset_i
 
-   , input [num_source_p-1:0][xbar_msg_header_width_lp-1:0]           msg_header_i
+   , input [num_source_p-1:0][xbar_header_width_lp-1:0]               msg_header_i
    , input [num_source_p-1:0][data_width_p-1:0]                       msg_data_i
    , input [num_source_p-1:0]                                         msg_v_i
    , output logic [num_source_p-1:0]                                  msg_yumi_o
    , input [num_source_p-1:0]                                         msg_last_i
    , input [num_source_p-1:0][lg_num_sink_lp-1:0]                     msg_dst_i
 
-   , output logic [num_sink_p-1:0][xbar_msg_header_width_lp-1:0]      msg_header_o
+   , output logic [num_sink_p-1:0][xbar_header_width_lp-1:0]          msg_header_o
    , output logic [num_sink_p-1:0][data_width_p-1:0]                  msg_data_o
    , output logic [num_sink_p-1:0]                                    msg_v_o
    , input [num_sink_p-1:0]                                           msg_ready_and_i
@@ -68,13 +68,13 @@ module bp_me_xbar_stream
      ,.v_o(msg_grants_v_li)
      );
 
-  bp_bedrock_xbar_msg_header_s msg_header_selected_lo;
+  bp_bedrock_xbar_header_s header_selected_lo;
   bsg_mux_one_hot
-   #(.width_p($bits(bp_bedrock_xbar_msg_header_s)), .els_p(num_source_p))
-   msg_header_select
+   #(.width_p($bits(bp_bedrock_xbar_header_s)), .els_p(num_source_p))
+   header_select
     (.data_i(msg_header_i)
      ,.sel_one_hot_i(msg_grants_lo)
-     ,.data_o(msg_header_selected_lo)
+     ,.data_o(header_selected_lo)
      );
   logic [data_width_p-1:0] msg_data_selected_lo;
   bsg_mux_one_hot
@@ -84,7 +84,7 @@ module bp_me_xbar_stream
      ,.sel_one_hot_i(msg_grants_lo)
      ,.data_o(msg_data_selected_lo)
      );
-  assign msg_header_o = {num_sink_p{msg_header_selected_lo}};
+  assign msg_header_o = {num_sink_p{header_selected_lo}};
   assign msg_data_o   = {num_sink_p{msg_data_selected_lo}};
   assign msg_v_o      = msg_grants_v_li ? (1'b1 << msg_dst_i[msg_grants_sel_li]) : '0;
   assign msg_yumi_o   = msg_grants_lo & {num_source_p{|{msg_v_o & msg_ready_and_i}}};

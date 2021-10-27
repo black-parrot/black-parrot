@@ -63,12 +63,12 @@
       logic [addr_width_mp-1:0]                    addr;                                    \
       bp_bedrock_wr_subop_e                        subop;                                   \
       bp_bedrock_msg_u                             msg_type;                                \
-    } bp_bedrock_``name_mp``_msg_header_s;                                                  \
+    } bp_bedrock_``name_mp``_header_s;                                                      \
                                                                                             \
     typedef struct packed                                                                   \
     {                                                                                       \
       logic [data_width_mp-1:0]                    data;                                    \
-      bp_bedrock_``name_mp``_msg_header_s          header;                                  \
+      bp_bedrock_``name_mp``_header_s              header;                                  \
     } bp_bedrock_``name_mp``_msg_s;                                                         \
 
   /*
@@ -110,13 +110,14 @@
       logic [cce_id_width_mp-1:0]                  dst_id;                             \
     } bp_bedrock_``name_mp``_resp_payload_s;                                           \
 
-  `define declare_bp_bedrock_mem_payload_s(lce_id_width_mp, lce_assoc_mp, name_mp)     \
+  `define declare_bp_bedrock_mem_payload_s(did_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
                                                                                        \
     typedef struct packed                                                              \
     {                                                                                  \
       bp_coh_states_e                              state;                              \
       logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;                             \
       logic [lce_id_width_mp-1:0]                  lce_id;                             \
+      logic [did_width_mp-1:0]                     did;                                \
       logic                                        prefetch;                           \
       logic                                        uncached;                           \
       logic                                        speculative;                        \
@@ -138,16 +139,16 @@
   `define bp_bedrock_resp_payload_width(lce_id_width_mp, cce_id_width_mp) \
     (cce_id_width_mp+lce_id_width_mp)
 
-  `define bp_bedrock_mem_payload_width(lce_id_width_mp, lce_assoc_mp) \
-    (3+lce_id_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp)+$bits(bp_coh_states_e))
+  `define bp_bedrock_mem_payload_width(did_width_mp, lce_id_width_mp, lce_assoc_mp) \
+    (3+lce_id_width_mp+did_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp)+$bits(bp_coh_states_e))
 
   `define declare_bp_bedrock_lce_payload_widths(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp, name_mp) \
     , localparam ``name_mp``_req_payload_width_lp = `bp_bedrock_req_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
     , localparam ``name_mp``_cmd_payload_width_lp = `bp_bedrock_cmd_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
     , localparam ``name_mp``_resp_payload_width_lp = `bp_bedrock_resp_payload_width(lce_id_width_mp, cce_id_width_mp)
 
-  `define declare_bp_bedrock_mem_payload_width(lce_id_width_mp, lce_assoc_mp, name_mp) \
-    , localparam ``name_mp``_mem_payload_width_lp = `bp_bedrock_mem_payload_width(lce_id_width_mp, lce_assoc_mp)
+  `define declare_bp_bedrock_mem_payload_width(did_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
+    , localparam ``name_mp``_mem_payload_width_lp = `bp_bedrock_mem_payload_width(did_width_mp, lce_id_width_mp, lce_assoc_mp)
 
   /*
    * BedRock Message width macros
@@ -156,14 +157,14 @@
    * that are defined further below.
    */
 
-  `define bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp) \
+  `define bp_bedrock_header_width(addr_width_mp, payload_width_mp) \
     ($bits(bp_bedrock_msg_u)+$bits(bp_bedrock_wr_subop_e)+addr_width_mp+$bits(bp_bedrock_msg_size_e)+payload_width_mp)
 
   `define bp_bedrock_msg_width(addr_width_mp, payload_width_mp, data_width_mp) \
-    (`bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp)+data_width_mp)
+    (`bp_bedrock_header_width(addr_width_mp, payload_width_mp)+data_width_mp)
 
-  `define declare_bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp, name_mp) \
-    , localparam ``name_mp``_msg_header_width_lp = `bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp)
+  `define declare_bp_bedrock_header_width(addr_width_mp, payload_width_mp, name_mp) \
+    , localparam ``name_mp``_header_width_lp = `bp_bedrock_header_width(addr_width_mp, payload_width_mp)
 
   `define declare_bp_bedrock_msg_width(addr_width_mp, payload_width_mp, data_width_mp, name_mp) \
     , localparam ``name_mp``_msg_width_lp = `bp_bedrock_msg_width(addr_width_mp, payload_width_mp, data_width_mp)
@@ -174,9 +175,9 @@
 
   `define declare_bp_bedrock_lce_if_widths(addr_width_mp, data_width_mp, lce_id_width_mp, cce_id_width_mp, lce_assoc_mp, name_mp) \
     `declare_bp_bedrock_lce_payload_widths(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp, name_mp)                               \
-    `declare_bp_bedrock_msg_header_width(addr_width_mp, ``name_mp``_req_payload_width_lp, ``name_mp``_req)             \
-    `declare_bp_bedrock_msg_header_width(addr_width_mp, ``name_mp``_cmd_payload_width_lp, ``name_mp``_cmd)             \
-    `declare_bp_bedrock_msg_header_width(addr_width_mp, ``name_mp``_resp_payload_width_lp, ``name_mp``_resp)           \
+    `declare_bp_bedrock_header_width(addr_width_mp, ``name_mp``_req_payload_width_lp, ``name_mp``_req)             \
+    `declare_bp_bedrock_header_width(addr_width_mp, ``name_mp``_cmd_payload_width_lp, ``name_mp``_cmd)             \
+    `declare_bp_bedrock_header_width(addr_width_mp, ``name_mp``_resp_payload_width_lp, ``name_mp``_resp)           \
     `declare_bp_bedrock_msg_width(addr_width_mp, ``name_mp``_req_payload_width_lp, data_width_mp, ``name_mp``_req)     \
     `declare_bp_bedrock_msg_width(addr_width_mp, ``name_mp``_cmd_payload_width_lp, data_width_mp, ``name_mp``_cmd)     \
     `declare_bp_bedrock_msg_width(addr_width_mp, ``name_mp``_resp_payload_width_lp, data_width_mp, ``name_mp``_resp)
@@ -187,18 +188,18 @@
     `declare_bp_bedrock_msg_s(addr_width_mp, bp_bedrock_``name_mp``_cmd_payload_s, data_width_mp, ``name_mp``_cmd); \
     `declare_bp_bedrock_msg_s(addr_width_mp, bp_bedrock_``name_mp``_resp_payload_s, data_width_mp, ``name_mp``_resp);
 
-  `define declare_bp_bedrock_mem_if_widths(addr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp)       \
-    `declare_bp_bedrock_mem_payload_width(lce_id_width_mp, lce_assoc_mp, name_mp)                                      \
-    `declare_bp_bedrock_msg_header_width(addr_width_mp, ``name_mp``_mem_payload_width_lp, ``name_mp``_mem)  \
+  `define declare_bp_bedrock_mem_if_widths(addr_width_mp, data_width_mp, did_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp)       \
+    `declare_bp_bedrock_mem_payload_width(did_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp)                                      \
+    `declare_bp_bedrock_header_width(addr_width_mp, ``name_mp``_mem_payload_width_lp, ``name_mp``_mem)  \
     `declare_bp_bedrock_msg_width(addr_width_mp, ``name_mp``_mem_payload_width_lp, data_width_mp, ``name_mp``_mem)
 
-  `define declare_bp_bedrock_if_widths(addr_width_mp, payload_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
+  `define declare_bp_bedrock_if_widths(addr_width_mp, payload_width_mp, data_width_mp, name_mp) \
     , localparam ``name_mp``_msg_payload_width_lp = payload_width_mp                                                   \
-    `declare_bp_bedrock_msg_header_width(addr_width_mp, ``name_mp``_msg_payload_width_lp, ``name_mp``)                 \
+    `declare_bp_bedrock_header_width(addr_width_mp, ``name_mp``_msg_payload_width_lp, ``name_mp``)                 \
     `declare_bp_bedrock_msg_width(addr_width_mp, ``name_mp``_msg_payload_width_lp, data_width_mp, ``name_mp``)
 
-  `define declare_bp_bedrock_mem_if(addr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
-    `declare_bp_bedrock_mem_payload_s(lce_id_width_mp, lce_assoc_mp, name_mp);                                         \
+  `define declare_bp_bedrock_mem_if(addr_width_mp, data_width_mp, did_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
+    `declare_bp_bedrock_mem_payload_s(did_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp);                            \
     `declare_bp_bedrock_msg_s(addr_width_mp, bp_bedrock_``name_mp``_mem_payload_s, data_width_mp, ``name_mp``_mem);
 
   `define declare_bp_bedrock_if(addr_width_mp, payload_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \

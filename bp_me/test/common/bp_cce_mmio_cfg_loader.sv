@@ -16,7 +16,7 @@ module bp_cce_mmio_cfg_loader
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
     , parameter `BSG_INV_PARAM(inst_width_p          )
     , parameter `BSG_INV_PARAM(inst_ram_addr_width_p )
@@ -37,14 +37,14 @@ module bp_cce_mmio_cfg_loader
 
    // BedRock Stream
    // TODO: convert yumi_i to ready_and_i
-   , output logic [cce_mem_msg_header_width_lp-1:0]  io_cmd_header_o
+   , output logic [cce_mem_header_width_lp-1:0]      io_cmd_header_o
    , output logic [dword_width_gp-1:0]               io_cmd_data_o
    , output logic                                    io_cmd_v_o
    , input                                           io_cmd_yumi_i
    , output logic                                    io_cmd_last_o
 
    // BedRock Stream
-   , input [cce_mem_msg_header_width_lp-1:0]         io_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]             io_resp_header_i
    , input [dword_width_gp-1:0]                      io_resp_data_i
    , input                                           io_resp_v_i
    , output logic                                    io_resp_ready_and_o
@@ -56,11 +56,11 @@ module bp_cce_mmio_cfg_loader
   wire unused0 = &{io_resp_header_i, io_resp_data_i, io_resp_last_i};
   assign io_resp_ready_and_o = 1'b1;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
-  bp_bedrock_cce_mem_msg_header_s io_cmd_cast_o;
-  bp_bedrock_cce_mem_msg_header_s io_resp_cast_i;
+  bp_bedrock_cce_mem_header_s io_cmd_cast_o;
+  bp_bedrock_cce_mem_header_s io_resp_cast_i;
   bp_bedrock_cce_mem_payload_s io_cmd_payload;
 
   assign io_cmd_header_o = io_cmd_cast_o;

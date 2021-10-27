@@ -16,11 +16,12 @@ module bp_io_cce
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
    )
   (input                                      clk_i
    , input                                    reset_i
 
+   , input [did_width_p-1:0]                  did_i
    , input [cce_id_width_p-1:0]               cce_id_i
 
    , input [lce_req_msg_width_lp-1:0]         lce_req_i
@@ -42,7 +43,7 @@ module bp_io_cce
    );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   bp_bedrock_lce_req_msg_s        lce_req_cast_i;
   bp_bedrock_lce_cmd_msg_s        lce_cmd_cast_o;
@@ -71,6 +72,7 @@ module bp_io_cce
     io_cmd_cast_o.header.addr             = lce_req_cast_i.header.addr;
     io_cmd_cast_o.header.size             = lce_req_cast_i.header.size;
     io_cmd_cast_payload.lce_id            = lce_req_payload.src_id;
+    io_cmd_cast_payload.did               = did_i;
     io_cmd_cast_payload.uncached          = 1'b1;
     io_cmd_cast_o.header.payload          = io_cmd_cast_payload;
     io_cmd_cast_o.data                    = lce_req_cast_i.data;

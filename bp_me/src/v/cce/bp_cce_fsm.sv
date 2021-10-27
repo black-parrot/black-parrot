@@ -45,7 +45,7 @@ module bp_cce_fsm
 
     // interface widths
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
     , localparam counter_max_lp = 256
     , localparam hash_index_width_lp=$clog2((2**lg_lce_sets_lp+num_cce_p-1)/num_cce_p)
@@ -63,7 +63,7 @@ module bp_cce_fsm
 
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid
-   , input [lce_req_msg_header_width_lp-1:0]        lce_req_header_i
+   , input [lce_req_header_width_lp-1:0]            lce_req_header_i
    , input                                          lce_req_header_v_i
    , output logic                                   lce_req_header_ready_and_o
    , input                                          lce_req_has_data_i
@@ -72,7 +72,7 @@ module bp_cce_fsm
    , output logic                                   lce_req_data_ready_and_o
    , input                                          lce_req_last_i
 
-   , input [lce_resp_msg_header_width_lp-1:0]       lce_resp_header_i
+   , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
    , input                                          lce_resp_header_v_i
    , output logic                                   lce_resp_header_ready_and_o
    , input                                          lce_resp_has_data_i
@@ -81,7 +81,7 @@ module bp_cce_fsm
    , output logic                                   lce_resp_data_ready_and_o
    , input                                          lce_resp_last_i
 
-   , output logic [lce_cmd_msg_header_width_lp-1:0] lce_cmd_header_o
+   , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
    , output logic                                   lce_cmd_header_v_o
    , input                                          lce_cmd_header_ready_and_i
    , output logic                                   lce_cmd_has_data_o
@@ -92,13 +92,13 @@ module bp_cce_fsm
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [cce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]            mem_resp_header_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
    , input                                          mem_resp_v_i
    , output logic                                   mem_resp_ready_and_o
    , input                                          mem_resp_last_i
 
-   , output logic [cce_mem_msg_header_width_lp-1:0] mem_cmd_header_o
+   , output logic [cce_mem_header_width_lp-1:0]     mem_cmd_header_o
    , output logic [dword_width_gp-1:0]              mem_cmd_data_o
    , output logic                                   mem_cmd_v_o
    , input                                          mem_cmd_ready_and_i
@@ -118,18 +118,18 @@ module bp_cce_fsm
 
   // Define structure variables for output queues
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // LCE-CCE Interface structs
-  bp_bedrock_lce_req_msg_header_s  lce_req;
-  bp_bedrock_lce_resp_msg_header_s lce_resp;
-  bp_bedrock_lce_cmd_msg_header_s  lce_cmd;
+  bp_bedrock_lce_req_header_s  lce_req;
+  bp_bedrock_lce_resp_header_s lce_resp;
+  bp_bedrock_lce_cmd_header_s  lce_cmd;
   assign lce_cmd_header_o = lce_cmd;
 
   // lce request header buffer
   logic lce_req_v, lce_req_yumi;
   bsg_two_fifo
-    #(.width_p(lce_req_msg_header_width_lp))
+    #(.width_p(lce_req_header_width_lp))
     lce_req_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -144,7 +144,7 @@ module bp_cce_fsm
   // lce response header buffer
   logic lce_resp_v, lce_resp_yumi;
   bsg_two_fifo
-    #(.width_p(lce_resp_msg_header_width_lp))
+    #(.width_p(lce_resp_header_width_lp))
     lce_resp_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -157,7 +157,7 @@ module bp_cce_fsm
       );
 
   // Memory Response Stream Pump
-  bp_bedrock_cce_mem_msg_header_s mem_resp_base_header_li;
+  bp_bedrock_cce_mem_header_s mem_resp_base_header_li;
   logic mem_resp_v_li, mem_resp_yumi_lo;
   logic mem_resp_stream_new_li, mem_resp_stream_last_li, mem_resp_stream_done_li;
   logic [paddr_width_p-1:0] mem_resp_addr_li;
@@ -195,7 +195,7 @@ module bp_cce_fsm
   // Memory Command Stream Pump
   localparam stream_words_lp = cce_block_width_p / dword_width_gp;
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
-  bp_bedrock_cce_mem_msg_header_s mem_cmd_base_header_lo;
+  bp_bedrock_cce_mem_header_s mem_cmd_base_header_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   logic mem_cmd_stream_new_li, mem_cmd_stream_done_li;
   logic [dword_width_gp-1:0] mem_cmd_data_lo;

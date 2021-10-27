@@ -31,7 +31,7 @@ module bp_cce_src_sel
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
   )
   (// Select signals for src_a and src_b - from decoded instruction
@@ -60,9 +60,9 @@ module bp_cce_src_sel
    , input                                                          mem_resp_v_i
    , input                                                          lce_resp_header_v_i
    , input                                                          lce_req_header_v_i
-   , input [lce_req_msg_header_width_lp-1:0]                        lce_req_header_i
-   , input [lce_resp_msg_header_width_lp-1:0]                       lce_resp_header_i
-   , input [cce_mem_msg_header_width_lp-1:0]                        mem_resp_header_i
+   , input [lce_req_header_width_lp-1:0]                            lce_req_header_i
+   , input [lce_resp_header_width_lp-1:0]                           lce_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]                            mem_resp_header_i
    // TODO: data inputs are not guarded by valid
    , input [dword_width_gp-1:0]                                     lce_req_data_i
    , input [dword_width_gp-1:0]                                     lce_resp_data_i
@@ -97,12 +97,12 @@ module bp_cce_src_sel
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // Message casting
-  bp_bedrock_lce_req_msg_header_s  lce_req_header_li;
-  bp_bedrock_lce_resp_msg_header_s lce_resp_header_li;
-  bp_bedrock_cce_mem_msg_header_s  mem_resp_header_li;
+  bp_bedrock_lce_req_header_s  lce_req_header_li;
+  bp_bedrock_lce_resp_header_s lce_resp_header_li;
+  bp_bedrock_cce_mem_header_s  mem_resp_header_li;
 
   assign lce_req_header_li   = lce_req_header_i;
   assign lce_resp_header_li  = lce_resp_header_i;

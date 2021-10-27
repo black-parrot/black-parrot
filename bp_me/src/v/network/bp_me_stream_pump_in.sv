@@ -42,7 +42,7 @@ module bp_me_stream_pump_in
    , parameter msg_stream_mask_p = 0
    , parameter fsm_stream_mask_p = msg_stream_mask_p
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, xce)
 
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
    , localparam stream_bytes_lp = stream_data_width_p >> 3
@@ -58,14 +58,14 @@ module bp_me_stream_pump_in
    , input                                          reset_i
 
    // Input BedRock Stream
-   , input [xce_msg_header_width_lp-1:0]            msg_header_i
+   , input [xce_header_width_lp-1:0]                msg_header_i
    , input [stream_data_width_p-1:0]                msg_data_i
    , input                                          msg_v_i
    , input                                          msg_last_i
    , output logic                                   msg_ready_and_o
 
    // FSM consumer side
-   , output logic [xce_msg_header_width_lp-1:0]     fsm_base_header_o
+   , output logic [xce_header_width_lp-1:0]         fsm_base_header_o
    , output logic [paddr_width_p-1:0]               fsm_addr_o
    , output logic [stream_data_width_p-1:0]         fsm_data_o
    , output logic                                   fsm_v_o
@@ -80,18 +80,18 @@ module bp_me_stream_pump_in
    );
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
-  `bp_cast_i(bp_bedrock_xce_msg_header_s, msg_header);
-  `bp_cast_o(bp_bedrock_xce_msg_header_s, fsm_base_header);
+  `bp_cast_i(bp_bedrock_xce_header_s, msg_header);
+  `bp_cast_o(bp_bedrock_xce_header_s, fsm_base_header);
 
   enum logic {e_ready, e_stream} state_n, state_r;
   wire is_ready  = (state_r == e_ready);
   wire is_stream = (state_r == e_stream);
 
-  bp_bedrock_xce_msg_header_s msg_base_header_li;
+  bp_bedrock_xce_header_s msg_base_header_li;
   logic [stream_data_width_p-1:0] msg_data_li;
   logic msg_v_li, msg_ready_and_lo, msg_last_li;
   bp_me_stream_fifo
-   #(.header_width_p($bits(bp_bedrock_xce_msg_header_s))
+   #(.header_width_p($bits(bp_bedrock_xce_header_s))
      ,.data_width_p(stream_data_width_p)
      ,.header_els_p(header_els_p)
      ,.data_els_p(data_els_p)

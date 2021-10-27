@@ -22,16 +22,16 @@ module bp_me_wormhole_packet_encode_lce_resp
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
 
-    , localparam lce_cce_resp_wormhole_header_lp = `bp_coh_wormhole_header_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_resp_msg_header_width_lp)
+    , localparam lce_cce_resp_wormhole_header_lp = `bp_bedrock_wormhole_header_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_resp_header_width_lp)
     )
-   (input [lce_resp_msg_header_width_lp-1:0]       lce_resp_header_i
+   (input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
     , output [lce_cce_resp_wormhole_header_lp-1:0] wh_header_o
     );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_lce_resp_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_resp_msg_header_s, cce_block_width_p);
+  `declare_bp_lce_resp_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_resp_header_s, cce_block_width_p);
 
-  bp_bedrock_lce_resp_msg_header_s header_cast_i;
+  bp_bedrock_lce_resp_header_s header_cast_i;
   bp_bedrock_lce_resp_payload_s header_cast_payload_i;
   bp_lce_resp_wormhole_header_s header_cast_o;
   assign header_cast_i = lce_resp_header_i;
@@ -72,27 +72,27 @@ module bp_me_wormhole_packet_encode_lce_resp
   always_comb begin
     header_cast_o = '0;
 
-    header_cast_o.msg_hdr     = header_cast_i;
-    header_cast_o.wh_hdr.cid  = cce_cid_li;
-    header_cast_o.wh_hdr.cord = cce_cord_li;
+    header_cast_o.msg_hdr      = header_cast_i;
+    header_cast_o.rtr_hdr.cid  = cce_cid_li;
+    header_cast_o.rtr_hdr.cord = cce_cord_li;
 
     unique case (header_cast_i.msg_type)
       // acks and null wb send no data
       e_bedrock_resp_sync_ack
       ,e_bedrock_resp_inv_ack
       ,e_bedrock_resp_coh_ack
-      ,e_bedrock_resp_null_wb: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_resp_ack_len_lp);
+      ,e_bedrock_resp_null_wb: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cce_resp_ack_len_lp);
       // writeback sends data
       e_bedrock_resp_wb:
         unique case (header_cast_i.size)
-          e_bedrock_msg_size_1: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_1_lp);
-          e_bedrock_msg_size_2: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_2_lp);
-          e_bedrock_msg_size_4: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_4_lp);
-          e_bedrock_msg_size_8: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_8_lp);
-          e_bedrock_msg_size_16: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_16_lp);
-          e_bedrock_msg_size_32: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_32_lp);
-          e_bedrock_msg_size_64: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_64_lp);
-          e_bedrock_msg_size_128: header_cast_o.wh_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_128_lp);
+          e_bedrock_msg_size_1: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_1_lp);
+          e_bedrock_msg_size_2: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_2_lp);
+          e_bedrock_msg_size_4: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_4_lp);
+          e_bedrock_msg_size_8: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_8_lp);
+          e_bedrock_msg_size_16: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_16_lp);
+          e_bedrock_msg_size_32: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_32_lp);
+          e_bedrock_msg_size_64: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_64_lp);
+          e_bedrock_msg_size_128: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cce_resp_data_len_128_lp);
           default: begin end
         endcase
       default: begin end

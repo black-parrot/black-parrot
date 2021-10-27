@@ -27,14 +27,14 @@ module bp_me_stream_to_burst
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, bp)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, bp)
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Input BedRock Stream
    // ready-valid-and
-   , input [bp_msg_header_width_lp-1:0]             in_msg_header_i
+   , input [bp_header_width_lp-1:0]                 in_msg_header_i
    , input [data_width_p-1:0]                       in_msg_data_i
    , input                                          in_msg_v_i
    , input                                          in_msg_last_i
@@ -42,7 +42,7 @@ module bp_me_stream_to_burst
 
    // Output BedRock Burst
    // ready-valid-and
-   , output logic [bp_msg_header_width_lp-1:0]      out_msg_header_o
+   , output logic [bp_header_width_lp-1:0]          out_msg_header_o
    , output logic                                   out_msg_header_v_o
    , output logic                                   out_msg_has_data_o
    , input                                          out_msg_header_ready_and_i
@@ -56,7 +56,7 @@ module bp_me_stream_to_burst
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, bp);
 
-  bp_bedrock_bp_msg_header_s in_msg_header_li;
+  bp_bedrock_bp_header_s in_msg_header_li;
   assign in_msg_header_li = in_msg_header_i;
 
   // has_data is raised when input stream message has one or more beats of data. It is valid

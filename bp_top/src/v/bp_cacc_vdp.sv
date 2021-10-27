@@ -8,7 +8,7 @@ module bp_cacc_vdp
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
     `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
@@ -213,11 +213,11 @@ module bp_cacc_vdp
      );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
   bp_bedrock_cce_mem_msg_s io_cmd_cast_i;
-  bp_bedrock_cce_mem_msg_header_s resp_header;
+  bp_bedrock_cce_mem_header_s resp_header;
 
   assign io_cmd_ready_o = 1'b1;
   assign io_cmd_cast_i = io_cmd_i;

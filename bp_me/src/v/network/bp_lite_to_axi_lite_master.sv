@@ -7,7 +7,7 @@ module bp_lite_to_axi_lite_master
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
   // AXI WRITE DATA CHANNEL PARAMS
   , parameter  axi_data_width_p             = 32
@@ -61,7 +61,7 @@ module bp_lite_to_axi_lite_master
   );
 
   // declaring i/o command and response struct type and size
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
 
   // io cmd and resp structure cast
   bp_bedrock_cce_mem_msg_s io_cmd_cast_i, io_resp_cast_o;
@@ -70,10 +70,10 @@ module bp_lite_to_axi_lite_master
   assign io_resp_o     = io_resp_cast_o;
 
   // storing io cmd header
-  bp_bedrock_cce_mem_msg_header_s io_cmd_header_r;
+  bp_bedrock_cce_mem_header_s io_cmd_header_r;
 
   bsg_dff_reset_en
-   #(.width_p(cce_mem_msg_header_width_lp))
+   #(.width_p(cce_mem_header_width_lp))
    mem_header_reg
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
