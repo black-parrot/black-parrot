@@ -94,7 +94,7 @@ module bp_sacc_tile
      ,.lce_req_header_o(lce_lce_req_header_lo)
      ,.lce_req_data_o(lce_lce_req_data_lo)
      ,.lce_req_v_o(lce_lce_req_v_lo)
-     ,.lce_req_ready_and_i(lce_req_ready_and_li)
+     ,.lce_req_ready_then_i(lce_req_ready_and_li)
 
      ,.lce_cmd_header_i(lce_lce_cmd_header_li)
      ,.lce_cmd_data_i(lce_lce_cmd_data_li)
@@ -164,14 +164,15 @@ module bp_sacc_tile
 
      ,.packet_o(lce_req_packet_li)
      ,.v_o(cce_lce_req_v_li)
-     ,.yumi_i(cce_lce_req_yumi_lo)
+     ,.yumi_i(cce_lce_req_ready_and_lo & cce_lce_req_v_li)
      );
-   assign cce_lce_req_li = '{header: lce_req_packet_li.header.msg_hdr, data: lce_req_packet_li.data};
+   assign cce_lce_req_header_li = lce_req_packet_li.header.msg_hdr;
+   assign cce_lce_req_data_li = lce_req_packet_li.data;
 
   `declare_bp_lce_cmd_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_header_s, cce_block_width_p);
   localparam lce_cmd_wh_payload_width_lp = `bp_bedrock_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_header_s), cce_block_width_p);
   bp_lce_cmd_wormhole_packet_s lce_cmd_packet_li, cce_lce_cmd_packet_lo;
-  bp_lce_cmd_wormhole_header_s lce_cmd_header_li, cce_lce_cmd_header_lo;
+  bp_lce_cmd_wormhole_header_s lce_cmd_wh_header_li, cce_lce_cmd_wh_header_lo;
 
   bp_me_wormhole_packet_encode_lce_cmd
    #(.bp_params_p(bp_params_p))
@@ -223,7 +224,7 @@ module bp_sacc_tile
          ,.io_resp_header_o(cce_io_resp_header_li)
          ,.io_resp_data_o(cce_io_resp_data_li)
          ,.io_resp_v_o(cce_io_resp_v_li)
-         ,.io_resp_yumi_i(cce_io_resp_ready_and_o & cce_io_resp_v_li)
+         ,.io_resp_yumi_i(cce_io_resp_ready_and_lo & cce_io_resp_v_li)
 
          ,.io_cmd_header_o(lce_io_cmd_header_li)
          ,.io_cmd_data_o(lce_io_cmd_data_li)
@@ -254,7 +255,7 @@ module bp_sacc_tile
          ,.io_resp_header_o(cce_io_resp_header_li)
          ,.io_resp_data_o(cce_io_resp_data_li)
          ,.io_resp_v_o(cce_io_resp_v_li)
-         ,.io_resp_yumi_i(cce_io_resp_ready_and_o & cce_io_resp_v_li)
+         ,.io_resp_yumi_i(cce_io_resp_ready_and_lo & cce_io_resp_v_li)
 
          ,.io_cmd_header_o(lce_io_cmd_header_li)
          ,.io_cmd_data_o(lce_io_cmd_data_li)

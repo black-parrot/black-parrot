@@ -201,19 +201,23 @@ module bp_cacc_vdp
      ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_o)
      ,.stat_mem_i(stat_mem_o)
   
-     ,.lce_req_o(lce_req_o)
+     ,.lce_req_header_o(lce_req_header_o)
+     ,.lce_req_data_o(lce_req_data_o)
      ,.lce_req_v_o(lce_req_v_o)
      ,.lce_req_ready_then_i(lce_req_ready_i)
   
-     ,.lce_resp_o(lce_resp_o)
+     ,.lce_resp_header_o(lce_resp_header_o)
+     ,.lce_resp_data_o(lce_resp_data_o)
      ,.lce_resp_v_o(lce_resp_v_o)
      ,.lce_resp_ready_then_i(lce_resp_ready_i)
   
-     ,.lce_cmd_i(lce_cmd_i)
+     ,.lce_cmd_header_i(lce_cmd_header_i)
+     ,.lce_cmd_data_i(lce_cmd_data_i)
      ,.lce_cmd_v_i(lce_cmd_v_i)
      ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
   
-     ,.lce_cmd_o(lce_cmd_o)
+     ,.lce_cmd_header_o(lce_cmd_header_o)
+     ,.lce_cmd_data_o(lce_cmd_data_o)
      ,.lce_cmd_v_o(lce_cmd_v_o)
      ,.lce_cmd_ready_then_i(lce_cmd_ready_i)
      );

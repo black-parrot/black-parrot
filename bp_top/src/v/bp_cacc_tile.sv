@@ -55,7 +55,7 @@ module bp_cacc_tile
   bp_bedrock_cce_mem_header_s cce_io_cmd_header_lo;
   logic [cce_block_width_p-1:0] cce_io_cmd_data_lo;
   logic cce_io_cmd_v_lo, cce_io_cmd_ready_and_li;
-  bp_bedrock_cce_mem_header_s cce_io_resp_li;
+  bp_bedrock_cce_mem_header_s cce_io_resp_header_li;
   logic [cce_block_width_p-1:0] cce_io_resp_data_li;
   logic cce_io_resp_v_li, cce_io_resp_ready_and_lo;
 
@@ -108,13 +108,13 @@ module bp_cacc_tile
      ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
      ,.lce_cmd_ready_and_i(cce_lce_cmd_ready_and_li)
 
-     ,.io_cmd_header_o(cce_io_cmd_lo.header)
-     ,.io_cmd_data_o(cce_io_cmd_lo.data)
+     ,.io_cmd_header_o(cce_io_cmd_header_lo)
+     ,.io_cmd_data_o(cce_io_cmd_data_lo)
      ,.io_cmd_v_o(cce_io_cmd_v_lo)
      ,.io_cmd_ready_and_i(cce_io_cmd_ready_and_li)
 
-     ,.io_resp_header_i(cce_io_resp_li.header)
-     ,.io_resp_data_i(cce_io_resp_li.data)
+     ,.io_resp_header_i(cce_io_resp_header_li)
+     ,.io_resp_data_i(cce_io_resp_data_li)
      ,.io_resp_v_i(cce_io_resp_v_li)
      ,.io_resp_ready_and_o(cce_io_resp_ready_and_lo)
      );
@@ -167,9 +167,10 @@ module bp_cacc_tile
 
      ,.packet_o(lce_req_packet_li)
      ,.v_o(cce_lce_req_v_li)
-     ,.yumi_i(cce_lce_req_yumi_lo)
+     ,.yumi_i(cce_lce_req_ready_and_lo & cce_lce_req_v_li)
      );
-   assign cce_lce_req_li = '{header: lce_req_packet_li.header.msg_hdr, data: lce_req_packet_li.data};
+   assign cce_lce_req_header_li = lce_req_packet_li.header.msg_hdr;
+   assign cce_lce_req_data_li = lce_req_packet_li.data;
 
   bp_me_wormhole_packet_encode_lce_resp
     #(.bp_params_p(bp_params_p))
@@ -226,7 +227,8 @@ module bp_cacc_tile
      ,.v_o(lce_cmd_v_li)
      ,.yumi_i(lce_cmd_yumi_lo)
      );
-  assign lce_cmd_li = '{header: lce_cmd_packet_li.header.msg_hdr, data: lce_cmd_packet_li.data};
+  assign lce_cmd_header_li = lce_cmd_packet_li.header.msg_hdr;
+  assign lce_cmd_data_li = lce_cmd_packet_li.data;
 
   bp_me_wormhole_packet_encode_lce_cmd
    #(.bp_params_p(bp_params_p))
