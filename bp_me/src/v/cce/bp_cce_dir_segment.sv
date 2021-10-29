@@ -21,16 +21,16 @@
 module bp_cce_dir_segment
   import bp_common_pkg::*;
   import bp_me_pkg::*;
-  #(parameter `BSG_INV_PARAM(tag_sets_p                  ) // number of tag sets tracked by this directory
-    , parameter `BSG_INV_PARAM(num_lce_p                 ) // number of LCEs tracked in this directory
+  #(parameter `BSG_INV_PARAM(tag_sets_p)              // number of tag sets tracked by this directory
+    , parameter `BSG_INV_PARAM(num_lce_p)             // number of LCEs tracked in this directory
     // parameters of cache type being tracked
-    , parameter `BSG_INV_PARAM(sets_p                    ) // number of cache sets
-    , parameter `BSG_INV_PARAM(assoc_p                   ) // associativity of each set
-    , parameter `BSG_INV_PARAM(paddr_width_p             ) // physical address width
-    , parameter `BSG_INV_PARAM(tag_width_p               ) // tag width of cacheable memory
-    , parameter `BSG_INV_PARAM(block_size_in_bytes_p     ) // size of cache blocks in bytes
+    , parameter `BSG_INV_PARAM(sets_p)                // number of cache sets
+    , parameter `BSG_INV_PARAM(assoc_p)               // associativity of each set
+    , parameter `BSG_INV_PARAM(paddr_width_p)         // physical address width
+    , parameter `BSG_INV_PARAM(tag_width_p)           // tag width of cacheable memory
+    , parameter `BSG_INV_PARAM(block_size_in_bytes_p) // size of cache blocks in bytes
 
-    , parameter `BSG_INV_PARAM(num_cce_p                 ) // number of CCEs that blocks are banked across
+    , parameter `BSG_INV_PARAM(num_cce_p)             // number of CCEs that blocks are banked across
 
     // Default parameters
 

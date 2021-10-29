@@ -18,9 +18,9 @@ module bp_cce_mmio_cfg_loader
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-    , parameter `BSG_INV_PARAM(inst_width_p          )
-    , parameter `BSG_INV_PARAM(inst_ram_addr_width_p )
-    , parameter `BSG_INV_PARAM(inst_ram_els_p        )
+    , parameter `BSG_INV_PARAM(inst_width_p)
+    , parameter `BSG_INV_PARAM(inst_ram_addr_width_p)
+    , parameter `BSG_INV_PARAM(inst_ram_els_p)
     , parameter cce_ucode_filename_p  = "cce_ucode.mem"
     , parameter skip_ram_init_p       = 0
     , parameter clear_freeze_p        = 0

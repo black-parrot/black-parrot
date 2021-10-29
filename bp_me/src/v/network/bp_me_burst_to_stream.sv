@@ -21,7 +21,7 @@ module bp_me_burst_to_stream
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    , parameter data_width_p = dword_width_gp
-   , parameter `BSG_INV_PARAM(payload_width_p )
+   , parameter `BSG_INV_PARAM(payload_width_p)
    , parameter block_width_p = cce_block_width_p
 
    // Bitmask which determines which message types have a data payload

@@ -2,8 +2,8 @@
 `include "bsg_defines.v"
 
 module bsg_fifo_1r1w_rolly
-  #(parameter `BSG_INV_PARAM(width_p              )
-    , parameter `BSG_INV_PARAM(els_p              )
+  #(parameter `BSG_INV_PARAM(width_p)
+    , parameter `BSG_INV_PARAM(els_p)
     , parameter ready_THEN_valid_p = 0
 
     , localparam ptr_width_lp = `BSG_SAFE_CLOG2(els_p)

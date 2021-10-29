@@ -40,17 +40,17 @@ module bp_me_wormhole_to_burst
    // cid_width   : the width of the concentrator id of the destination
    // Default to 0 for cord and cid, so that this module can be used either
    //   for concentrator or router
-   parameter `BSG_INV_PARAM(flit_width_p      )
+   parameter `BSG_INV_PARAM(flit_width_p)
    , parameter cord_width_p    = 0
-   , parameter `BSG_INV_PARAM(len_width_p     )
+   , parameter `BSG_INV_PARAM(len_width_p)
    , parameter cid_width_p     = 0
 
    // Higher level protocol information
-   , parameter `BSG_INV_PARAM(pr_hdr_width_p  )
-   , parameter `BSG_INV_PARAM(pr_data_width_p )
+   , parameter `BSG_INV_PARAM(pr_hdr_width_p)
+   , parameter `BSG_INV_PARAM(pr_data_width_p)
 
    // width of protocol message length input
-   , parameter `BSG_INV_PARAM(pr_len_width_p  )
+   , parameter `BSG_INV_PARAM(pr_len_width_p)
 
    // Computed wormhole header parameters. These can be overridden directly if desired.
    // Size of the wormhole header + the protocol header

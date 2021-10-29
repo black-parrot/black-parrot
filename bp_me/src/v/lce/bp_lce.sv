@@ -17,9 +17,9 @@ module bp_lce
    `declare_bp_proc_params(bp_params_p)
 
     // parameters specific to this LCE
-    , parameter `BSG_INV_PARAM(assoc_p )
-    , parameter `BSG_INV_PARAM(sets_p )
-    , parameter `BSG_INV_PARAM(block_width_p )
+    , parameter `BSG_INV_PARAM(assoc_p)
+    , parameter `BSG_INV_PARAM(sets_p)
+    , parameter `BSG_INV_PARAM(block_width_p)
     , parameter fill_width_p = block_width_p
     , parameter data_mem_invert_clk_p = 0
     , parameter tag_mem_invert_clk_p = 0

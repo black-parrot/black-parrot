@@ -22,8 +22,8 @@
 
 module bsg_serial_in_parallel_out_passthrough_dynamic_last
 
- #(parameter `BSG_INV_PARAM(width_p       )
-  ,parameter `BSG_INV_PARAM(max_els_p     )
+ #(parameter `BSG_INV_PARAM(width_p)
+  ,parameter `BSG_INV_PARAM(max_els_p)
   ,parameter lg_max_els_lp = `BSG_SAFE_CLOG2(max_els_p)
   )
 

@@ -28,7 +28,7 @@
 module bp_cce_inst_decode
   import bp_common_pkg::*;
   import bp_me_pkg::*;
-  #(parameter `BSG_INV_PARAM(cce_pc_width_p )
+  #(parameter `BSG_INV_PARAM(cce_pc_width_p)
   )
   (input                                         clk_i
    , input                                       reset_i
