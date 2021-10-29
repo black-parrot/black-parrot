@@ -141,8 +141,7 @@ module bp_tile
     begin : lce
       // outputs a header with [msg_hdr, cid, len, cord] fields
       bp_me_wormhole_packet_encode_lce_req
-       #(.bp_params_p(bp_params_p)
-         )
+       #(.bp_params_p(bp_params_p))
        req_encode
         (.lce_req_header_i(lce_req_header_lo[i])
          ,.wh_header_o(lce_req_wh_header_lo[i])

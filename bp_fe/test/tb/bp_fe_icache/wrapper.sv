@@ -225,40 +225,48 @@ module wrapper
 
   if (uce_p == 0) begin : CCE
     // CCE-LCE connections - BedRock Burst - to/from CCE
+    bp_bedrock_lce_req_header_s cce_lce_req_header;
+    logic [dword_width_gp-1:0] cce_lce_req_data;
     logic cce_lce_req_header_v, cce_lce_req_header_ready_and;
     logic cce_lce_req_data_v, cce_lce_req_data_ready_and;
     logic cce_lce_req_has_data, cce_lce_req_last;
-    logic cce_lce_resp_header_v, cce_lce_resp_header_ready_and;
-    logic cce_lce_resp_data_v, cce_lce_resp_data_ready_and;
-    logic cce_lce_resp_has_data, cce_lce_resp_last;
+    bp_bedrock_lce_cmd_header_s cce_lce_cmd_header;
+    logic [dword_width_gp-1:0] cce_lce_cmd_data;
     logic cce_lce_cmd_header_v, cce_lce_cmd_header_ready_and;
     logic cce_lce_cmd_data_v, cce_lce_cmd_data_ready_and;
     logic cce_lce_cmd_has_data, cce_lce_cmd_last;
-    bp_bedrock_lce_req_header_s cce_lce_req_header;
     bp_bedrock_lce_resp_header_s cce_lce_resp_header;
-    bp_bedrock_lce_cmd_header_s cce_lce_cmd_header;
-    logic [dword_width_gp-1:0] cce_lce_req_data, cce_lce_resp_data, cce_lce_cmd_data;
+    logic [dword_width_gp-1:0] cce_lce_resp_data;
+    logic cce_lce_resp_header_v, cce_lce_resp_header_ready_and;
+    logic cce_lce_resp_data_v, cce_lce_resp_data_ready_and;
+    logic cce_lce_resp_has_data, cce_lce_resp_last;
 
     // CCE-LCE connections - BedRock Lite - to/from LCE
+    bp_bedrock_lce_req_header_s lce_req_header_lo;
+    logic [cce_block_width_p-1:0] lce_req_data_lo;
     logic lce_req_v_lo, lce_req_ready_li;
+    bp_bedrock_lce_resp_header_s lce_resp_header_lo;
+    logic [cce_block_width_p-1:0] lce_resp_data_lo;
     logic lce_resp_v_lo, lce_resp_ready_li;
-    bp_bedrock_lce_req_msg_s lce_req_lo;
-    bp_bedrock_lce_resp_msg_s lce_resp_lo;
 
+    bp_bedrock_lce_cmd_header_s fifo_lce_cmd_header_lo;
+    logic [cce_block_width_p-1:0] fifo_lce_cmd_data_lo;
     logic fifo_lce_cmd_v_lo, fifo_lce_cmd_yumi_li;
-    bp_bedrock_lce_cmd_msg_s fifo_lce_cmd_lo;
+    bp_bedrock_lce_cmd_header_s fifo_lce_cmd_header_li;
+    logic [cce_block_width_p-1:0] fifo_lce_cmd_data_li;
     logic fifo_lce_cmd_v_li, fifo_lce_cmd_ready_and_lo;
-    bp_bedrock_lce_cmd_msg_s fifo_lce_cmd_li;
 
     // CCE-Mem connections - BedRock Burst - to/from CCE
-    logic cce_mem_resp_header_v, cce_mem_resp_header_ready_and;
-    logic cce_mem_resp_data_v, cce_mem_resp_data_ready_and;
-    logic cce_mem_resp_has_data, cce_mem_resp_last;
-    logic cce_mem_cmd_header_v, cce_mem_cmd_header_ready_and;
-    logic cce_mem_cmd_data_v, cce_mem_cmd_data_ready_and;
-    logic cce_mem_cmd_has_data, cce_mem_cmd_last;
-    bp_bedrock_cce_mem_header_s cce_mem_resp_header, cce_mem_cmd_header;
-    logic [dword_width_gp-1:0] cce_mem_cmd_data, cce_mem_resp_data;
+    //bp_bedrock_cce_mem_header_s cce_mem_cmd_header;
+    //logic [dword_width_gp-1:0] cce_mem_cmd_data;
+    //logic cce_mem_cmd_header_v, cce_mem_cmd_header_ready_and;
+    //logic cce_mem_cmd_data_v, cce_mem_cmd_data_ready_and;
+    //logic cce_mem_cmd_has_data, cce_mem_cmd_last;
+    //bp_bedrock_cce_mem_header_s cce_mem_resp_header;
+    //logic [dword_width_gp-1:0] cce_mem_resp_data;
+    //logic cce_mem_resp_header_v, cce_mem_resp_header_ready_and;
+    //logic cce_mem_resp_data_v, cce_mem_resp_data_ready_and;
+    //logic cce_mem_resp_has_data, cce_mem_resp_last;
 
     // I-Cache LCE
     bp_lce
@@ -305,19 +313,23 @@ module wrapper
        ,.stat_mem_pkt_v_o(stat_mem_pkt_v_li)
        ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo)
 
-       ,.lce_req_o(lce_req_lo)
+       ,.lce_req_header_o(lce_req_header_lo)
+       ,.lce_req_data_o(lce_req_data_lo)
        ,.lce_req_v_o(lce_req_v_lo)
        ,.lce_req_ready_then_i(lce_req_ready_li)
 
-       ,.lce_resp_o(lce_resp_lo)
+       ,.lce_resp_header_o(lce_resp_header_lo)
+       ,.lce_resp_data_o(lce_resp_data_lo)
        ,.lce_resp_v_o(lce_resp_v_lo)
        ,.lce_resp_ready_then_i(lce_resp_ready_li)
 
-       ,.lce_cmd_i(fifo_lce_cmd_lo)
+       ,.lce_cmd_header_i(fifo_lce_cmd_header_lo)
+       ,.lce_cmd_data_i(fifo_lce_cmd_data_lo)
        ,.lce_cmd_v_i(fifo_lce_cmd_v_lo)
        ,.lce_cmd_yumi_o(fifo_lce_cmd_yumi_li)
 
-       ,.lce_cmd_o()
+       ,.lce_cmd_header_o()
+       ,.lce_cmd_data_o()
        ,.lce_cmd_v_o()
        ,.lce_cmd_ready_then_i(1'b1)
       );
@@ -334,8 +346,8 @@ module wrapper
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.in_msg_header_i(lce_req_lo.header)
-       ,.in_msg_data_i(lce_req_lo.data)
+       ,.in_msg_header_i(lce_req_header_lo)
+       ,.in_msg_data_i(lce_req_data_lo)
        ,.in_msg_v_i(lce_req_v_lo)
        ,.in_msg_ready_and_o(lce_req_ready_li)
 
@@ -362,8 +374,8 @@ module wrapper
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.in_msg_header_i(lce_resp_lo.header)
-       ,.in_msg_data_i(lce_resp_lo.data)
+       ,.in_msg_header_i(lce_resp_header_lo)
+       ,.in_msg_data_i(lce_resp_data_lo)
        ,.in_msg_v_i(lce_resp_v_lo)
        ,.in_msg_ready_and_o(lce_resp_ready_li)
 
@@ -400,8 +412,8 @@ module wrapper
        ,.in_msg_data_ready_and_o(cce_lce_cmd_data_ready_and)
        ,.in_msg_last_i(cce_lce_cmd_last)
 
-       ,.out_msg_header_o(fifo_lce_cmd_li.header)
-       ,.out_msg_data_o(fifo_lce_cmd_li.data)
+       ,.out_msg_header_o(fifo_lce_cmd_header_li)
+       ,.out_msg_data_o(fifo_lce_cmd_data_li)
        ,.out_msg_v_o(fifo_lce_cmd_v_li)
        ,.out_msg_ready_and_i(fifo_lce_cmd_ready_and_lo)
        );
@@ -414,13 +426,13 @@ module wrapper
 
        // from CCE
        ,.v_i(fifo_lce_cmd_v_li)
-       ,.data_i(fifo_lce_cmd_li)
+       ,.data_i({fifo_lce_cmd_data_li, fifo_lce_cmd_header_li})
        ,.ready_o(fifo_lce_cmd_ready_and_lo)
 
        // to LCE
        ,.v_o(fifo_lce_cmd_v_lo)
        ,.yumi_i(fifo_lce_cmd_yumi_li)
-       ,.data_o(fifo_lce_cmd_lo)
+       ,.data_o({fifo_lce_cmd_data_lo, fifo_lce_cmd_header_lo})
        );
 
     // FSM CCE

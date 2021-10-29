@@ -45,7 +45,7 @@
 
 
   /*
-   * bp_bedrock_***_msg_s is the generic message struct for BedRock messages
+   * bp_bedrock_***_header_s is the generic message struct for BedRock messages
    *
    * msg_type is a union of the LCE-CCE Req, Cmd, and Resp message types and the Mem messages
    * addr is the address used by the message
