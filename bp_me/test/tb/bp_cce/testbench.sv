@@ -372,19 +372,23 @@ module testbench
        ,.tr_pkt_o(tr_data_li[i])
        ,.tr_pkt_ready_i(tr_ready_lo[i])
 
-       ,.lce_req_o(lce_req_lo[i])
+       ,.lce_req_header_o(lce_req_lo[i].header)
+       ,.lce_req_data_o(lce_req_lo[i].data)
        ,.lce_req_v_o(lce_req_v_lo[i])
        ,.lce_req_ready_and_i(lce_req_ready_and_li[i])
 
-       ,.lce_resp_o(lce_resp_lo[i])
+       ,.lce_resp_header_o(lce_resp_lo[i].header)
+       ,.lce_resp_data_o(lce_resp_lo[i].data)
        ,.lce_resp_v_o(lce_resp_v_lo[i])
        ,.lce_resp_ready_and_i(lce_resp_ready_and_li[i])
 
-       ,.lce_cmd_i(lce_cmd_li[i])
+       ,.lce_cmd_header_i(lce_cmd_li[i].header)
+       ,.lce_cmd_data_i(lce_cmd_li[i].data)
        ,.lce_cmd_v_i(lce_cmd_v_li[i])
        ,.lce_cmd_ready_and_o(lce_cmd_ready_and_lo[i])
 
-       ,.lce_cmd_o(lce_cmd_out_lo[i])
+       ,.lce_cmd_header_o(lce_cmd_out_lo[i].header)
+       ,.lce_cmd_data_o(lce_cmd_out_lo[i].data)
        ,.lce_cmd_v_o(lce_cmd_out_v_lo[i])
        ,.lce_cmd_ready_and_i(lce_cmd_out_ready_and_li[i])
        );
@@ -417,7 +421,8 @@ module testbench
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.in_msg_i(lce_req_l2b[i])
+       ,.in_msg_header_i(lce_req_l2b[i].header)
+       ,.in_msg_data_i(lce_req_l2b[i].data)
        ,.in_msg_v_i(lce_req_l2b_v[i])
        ,.in_msg_ready_and_o(lce_req_l2b_ready_and[i])
 
@@ -460,7 +465,8 @@ module testbench
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.in_msg_i(lce_resp_l2b[i])
+       ,.in_msg_header_i(lce_resp_l2b[i].header)
+       ,.in_msg_data_i(lce_resp_l2b[i].data)
        ,.in_msg_v_i(lce_resp_l2b_v[i])
        ,.in_msg_ready_and_o(lce_resp_l2b_ready_and[i])
 
@@ -497,7 +503,8 @@ module testbench
        ,.in_msg_data_ready_and_o(lce_cmd_data_ready_and_lo[i])
        ,.in_msg_last_i(lce_cmd_last_li[i])
 
-       ,.out_msg_o(lce_cmd_li[i])
+       ,.out_msg_header_o(lce_cmd_li[i].header)
+       ,.out_msg_data_o(lce_cmd_li[i].data)
        ,.out_msg_v_o(lce_cmd_v_li[i])
        ,.out_msg_ready_and_i(lce_cmd_ready_and_lo[i])
        );
@@ -530,13 +537,16 @@ module testbench
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.in_msg_i(lce_cmd_out_l2b[i])
+       ,.in_msg_header_i(lce_cmd_out_l2b[i].header)
+       ,.in_msg_data_i(lce_cmd_out_l2b[i].data)
        ,.in_msg_v_i(lce_cmd_out_l2b_v[i])
        ,.in_msg_ready_and_o(lce_cmd_out_l2b_ready_and[i])
+
        ,.out_msg_header_o(lce_cmd_out_header[i])
        ,.out_msg_header_v_o(lce_cmd_out_header_v[i])
        ,.out_msg_header_ready_and_i(lce_cmd_out_header_ready_and[i])
        ,.out_msg_has_data_o(lce_cmd_out_has_data[i])
+
        ,.out_msg_data_o(lce_cmd_out_data[i])
        ,.out_msg_data_v_o(lce_cmd_out_data_v[i])
        ,.out_msg_data_ready_and_i(lce_cmd_out_data_ready_and[i])
@@ -709,16 +719,20 @@ module testbench
        (.clk_i(clk_i & (testbench.lce_trace_p == 1))
         ,.reset_i(reset_i)
         ,.lce_id_i(lce_id_i)
-        ,.lce_req_i(lce_req_o)
+        ,.lce_req_header_i(lce_req_header_o)
+        ,.lce_req_data_i(lce_req_data_o)
         ,.lce_req_v_i(lce_req_v_o)
         ,.lce_req_ready_and_i(lce_req_ready_and_i)
-        ,.lce_resp_i(lce_resp_o)
+        ,.lce_resp_header_i(lce_resp_header_o)
+        ,.lce_resp_data_i(lce_resp_data_o)
         ,.lce_resp_v_i(lce_resp_v_o)
         ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
-        ,.lce_cmd_i(lce_cmd_i)
+        ,.lce_cmd_header_i(lce_cmd_header_i)
+        ,.lce_cmd_data_i(lce_cmd_data_i)
         ,.lce_cmd_v_i(lce_cmd_v_i)
         ,.lce_cmd_ready_and_i(lce_cmd_ready_and_o)
-        ,.lce_cmd_o_i(lce_cmd_o)
+        ,.lce_cmd_header_o_i(lce_cmd_header_o)
+        ,.lce_cmd_data_o_i(lce_cmd_data_o)
         ,.lce_cmd_o_v_i(lce_cmd_v_o)
         ,.lce_cmd_o_ready_and_i(lce_cmd_ready_and_i)
         ,.cache_req_complete_i(testbench.tr_v_li[lce_id_i] & testbench.tr_ready_lo[lce_id_i])

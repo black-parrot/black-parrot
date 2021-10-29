@@ -46,14 +46,14 @@ module bp_cacc_tile
 
   //io-cce-side connections
   bp_bedrock_lce_req_msg_s  cce_lce_req_li;
-  logic cce_lce_req_v_li, cce_lce_req_yumi_lo;
+  logic cce_lce_req_v_li, cce_lce_req_ready_and_lo;
   bp_bedrock_lce_cmd_msg_s cce_lce_cmd_lo;
   logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_and_li;
 
   bp_bedrock_cce_mem_msg_s cce_io_cmd_lo;
   logic cce_io_cmd_v_lo, cce_io_cmd_ready_and_li;
   bp_bedrock_cce_mem_msg_s cce_io_resp_li;
-  logic cce_io_resp_v_li, cce_io_resp_yumi_lo;
+  logic cce_io_resp_v_li, cce_io_resp_ready_and_lo;
 
   // accelerator-side connections network connections
   bp_bedrock_lce_req_msg_s  lce_req_lo;
@@ -90,21 +90,25 @@ module bp_cacc_tile
      ,.did_i('0)
      ,.cce_id_i(cce_id_li)
 
-     ,.lce_req_i(cce_lce_req_li)
+     ,.lce_req_header_i(cce_lce_req_li.header)
+     ,.lce_req_data_i(cce_lce_req_li.data)
      ,.lce_req_v_i(cce_lce_req_v_li)
-     ,.lce_req_yumi_o(cce_lce_req_yumi_lo)
+     ,.lce_req_ready_and_o(cce_lce_req_ready_and_lo)
 
-     ,.lce_cmd_o(cce_lce_cmd_lo)
+     ,.lce_cmd_header_o(cce_lce_cmd_lo.header)
+     ,.lce_cmd_data_o(cce_lce_cmd_lo.data)
      ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-     ,.lce_cmd_ready_then_i(cce_lce_cmd_ready_and_li)
+     ,.lce_cmd_ready_and_i(cce_lce_cmd_ready_and_li)
 
-     ,.io_cmd_o(cce_io_cmd_lo)
+     ,.io_cmd_header_o(cce_io_cmd_lo.header)
+     ,.io_cmd_data_o(cce_io_cmd_lo.data)
      ,.io_cmd_v_o(cce_io_cmd_v_lo)
-     ,.io_cmd_ready_then_i(cce_io_cmd_ready_and_li)
+     ,.io_cmd_ready_and_i(cce_io_cmd_ready_and_li)
 
-     ,.io_resp_i(cce_io_resp_li)
+     ,.io_resp_header_i(cce_io_resp_li.header)
+     ,.io_resp_data_i(cce_io_resp_li.data)
      ,.io_resp_v_i(cce_io_resp_v_li)
-     ,.io_resp_yumi_o(cce_io_resp_yumi_lo)
+     ,.io_resp_ready_and_o(cce_io_resp_ready_and_lo)
      );
 
 
@@ -285,7 +289,7 @@ module bp_cacc_tile
 
          ,.io_resp_o(cce_io_resp_li)
          ,.io_resp_v_o(cce_io_resp_v_li)
-         ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
+         ,.io_resp_yumi_i(cce_io_resp_ready_and_lo & cce_io_resp_v_li)
 
          ,.lce_req_o(lce_req_lo)
          ,.lce_req_v_o(lce_req_v_lo)
@@ -302,7 +306,6 @@ module bp_cacc_tile
          ,.lce_cmd_i(lce_cmd_li)
          ,.lce_cmd_v_i(lce_cmd_v_li)
          ,.lce_cmd_yumi_o(lce_cmd_yumi_lo)
-
          );
     end
   else

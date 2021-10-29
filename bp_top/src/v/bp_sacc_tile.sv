@@ -43,13 +43,13 @@ module bp_sacc_tile
 
   //io-cce-side connections
   bp_bedrock_lce_req_msg_s  cce_lce_req_li, lce_lce_req_lo;
-  logic cce_lce_req_v_li, cce_lce_req_yumi_lo, lce_lce_req_v_lo, lce_req_ready_li;
+  logic cce_lce_req_v_li, cce_lce_req_ready_and_lo, lce_lce_req_v_lo, lce_req_ready_and_li;
   bp_bedrock_lce_cmd_msg_s cce_lce_cmd_lo, lce_lce_cmd_li;
   logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_and_li, lce_lce_cmd_v_li, lce_lce_cmd_yumi_lo;
   bp_bedrock_cce_mem_msg_s cce_io_cmd_lo, lce_io_cmd_li;
   logic cce_io_cmd_v_lo, cce_io_cmd_ready_and_li, lce_io_cmd_v_li, lce_io_cmd_yumi_lo;
   bp_bedrock_cce_mem_msg_s cce_io_resp_li, lce_io_resp_lo;
-  logic cce_io_resp_v_li, cce_io_resp_yumi_lo, lce_io_resp_v_lo, lce_io_resp_ready_and_li;
+  logic cce_io_resp_v_li, cce_io_resp_ready_and_lo, lce_io_resp_v_lo, lce_io_resp_ready_and_li;
 
   logic reset_r;
   always_ff @(posedge clk_i)
@@ -90,7 +90,7 @@ module bp_sacc_tile
      ,.lce_req_header_o(lce_lce_req_lo.header)
      ,.lce_req_data_o(lce_lce_req_lo.data)
      ,.lce_req_v_o(lce_lce_req_v_lo)
-     ,.lce_req_ready_then_i(lce_req_ready_li)
+     ,.lce_req_ready_and_i(lce_req_ready_and_li)
 
      ,.lce_cmd_header_i(lce_lce_cmd_li.header)
      ,.lce_cmd_data_i(lce_lce_cmd_li.data)
@@ -107,21 +107,25 @@ module bp_sacc_tile
      ,.cce_id_i(cce_id_li)
      ,.did_i('0)
 
-     ,.lce_req_i(cce_lce_req_li)
+     ,.lce_req_header_i(cce_lce_req_li.header)
+     ,.lce_req_data_i(cce_lce_req_li.data)
      ,.lce_req_v_i(cce_lce_req_v_li)
-     ,.lce_req_yumi_o(cce_lce_req_yumi_lo)
+     ,.lce_req_ready_and_o(cce_lce_req_ready_and_lo)
 
-     ,.lce_cmd_o(cce_lce_cmd_lo)
+     ,.lce_cmd_header_o(cce_lce_cmd_lo.header)
+     ,.lce_cmd_data_o(cce_lce_cmd_lo.data)
      ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
-     ,.lce_cmd_ready_then_i(cce_lce_cmd_ready_and_li)
+     ,.lce_cmd_ready_and_i(cce_lce_cmd_ready_and_li)
 
-     ,.io_cmd_o(cce_io_cmd_lo)
+     ,.io_cmd_header_o(cce_io_cmd_lo.header)
+     ,.io_cmd_data_o(cce_io_cmd_lo.data)
      ,.io_cmd_v_o(cce_io_cmd_v_lo)
-     ,.io_cmd_ready_then_i(cce_io_cmd_ready_and_li)
+     ,.io_cmd_ready_and_i(cce_io_cmd_ready_and_li)
 
-     ,.io_resp_i(cce_io_resp_li)
+     ,.io_resp_header_i(cce_io_resp_li.header)
+     ,.io_resp_data_i(cce_io_resp_li.data)
      ,.io_resp_v_i(cce_io_resp_v_li)
-     ,.io_resp_yumi_o(cce_io_resp_yumi_lo)
+     ,.io_resp_ready_and_o(cce_io_resp_ready_and_lo)
      );
 
   `declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_header_s, cce_block_width_p);
@@ -149,7 +153,7 @@ module bp_sacc_tile
 
      ,.packet_i(lce_req_packet_lo)
      ,.v_i(lce_lce_req_v_lo)
-     ,.ready_o(lce_req_ready_li)
+     ,.ready_o(lce_req_ready_and_li)
 
      ,.link_i(lce_req_link_i)
      ,.link_o(lce_req_link_o)
@@ -212,7 +216,7 @@ module bp_sacc_tile
 
          ,.io_resp_o(cce_io_resp_li)
          ,.io_resp_v_o(cce_io_resp_v_li)
-         ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
+         ,.io_resp_yumi_i(cce_io_resp_ready_and_o & cce_io_resp_v_li)
 
          ,.io_cmd_o(lce_io_cmd_li)
          ,.io_cmd_v_o(lce_io_cmd_v_li)
@@ -239,7 +243,7 @@ module bp_sacc_tile
 
          ,.io_resp_o(cce_io_resp_li)
          ,.io_resp_v_o(cce_io_resp_v_li)
-         ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
+         ,.io_resp_yumi_i(cce_io_resp_ready_and_o & cce_io_resp_v_li)
 
          ,.io_cmd_o(lce_io_cmd_li)
          ,.io_cmd_v_o(lce_io_cmd_v_li)

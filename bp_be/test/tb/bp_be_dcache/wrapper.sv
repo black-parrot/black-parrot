@@ -502,7 +502,8 @@ module wrapper
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
 
-          ,.in_msg_i(cce_lce_req_li)
+          ,.in_msg_header_i(cce_lce_req_li.header)
+          ,.in_msg_data_i(cce_lce_req_li.data)
           ,.in_msg_v_i(cce_lce_req_v_li)
           ,.in_msg_ready_and_o(cce_lce_req_ready_and_lo)
 
@@ -539,7 +540,8 @@ module wrapper
           ,.in_msg_data_ready_and_o(cce_lce_cmd_data_ready_and)
           ,.in_msg_last_i(cce_lce_cmd_last)
 
-          ,.out_msg_o(cce_lce_cmd_lo)
+          ,.out_msg_header_o(cce_lce_cmd_lo.header)
+          ,.out_msg_data_o(cce_lce_cmd_lo.data)
           ,.out_msg_v_o(cce_lce_cmd_v_lo)
           ,.out_msg_ready_and_i(cce_lce_cmd_ready_and_li)
           );
