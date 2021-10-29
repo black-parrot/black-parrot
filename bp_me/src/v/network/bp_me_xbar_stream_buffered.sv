@@ -21,7 +21,7 @@ module bp_me_xbar_stream_buffered
    , parameter `BSG_INV_PARAM(payload_width_p)
    , parameter `BSG_INV_PARAM(num_source_p)
    , parameter `BSG_INV_PARAM(num_sink_p)
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, xbar)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xbar)
 
    , localparam lg_num_source_lp = `BSG_SAFE_CLOG2(num_source_p)
    , localparam lg_num_sink_lp   = `BSG_SAFE_CLOG2(num_sink_p)
@@ -43,7 +43,7 @@ module bp_me_xbar_stream_buffered
    , output logic [num_sink_p-1:0]                                    msg_last_o
    );
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, xbar);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xbar);
   bp_bedrock_xbar_header_s [num_source_p-1:0] msg_header_li;
   logic [num_source_p-1:0][data_width_p-1:0] msg_data_li;
   logic [num_source_p-1:0] msg_v_li, msg_yumi_lo, msg_last_li;

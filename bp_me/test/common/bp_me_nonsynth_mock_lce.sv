@@ -46,7 +46,7 @@ module bp_me_nonsynth_mock_lce
     , localparam counter_max_p = 512
     , localparam counter_width_p=`BSG_WIDTH(counter_max_p+1)
 
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
 
   )
   (
@@ -98,7 +98,7 @@ module bp_me_nonsynth_mock_lce
   wire axe_trace_en = !(axe_trace_p == 0);
 
   // LCE-CCE interface structs
-  `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 
   // LCE TR Packet struct
   `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_gp);

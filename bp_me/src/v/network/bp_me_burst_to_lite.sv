@@ -25,8 +25,8 @@ module bp_me_burst_to_lite
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter int payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, in_data_width_p, in)
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, out_data_width_p, out)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, in)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, out)
 
    )
   (input                                     clk_i
@@ -59,8 +59,8 @@ module bp_me_burst_to_lite
   if (out_data_width_p % in_data_width_p != 0)
     $fatal(0,"lite data must be a multiple of burst data");
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in);
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, in);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, out);
 
   localparam in_data_bytes_lp = in_data_width_p/8;
   localparam out_data_bytes_lp = out_data_width_p/8;

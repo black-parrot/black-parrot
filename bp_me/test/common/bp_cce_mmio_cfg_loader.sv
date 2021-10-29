@@ -16,7 +16,7 @@ module bp_cce_mmio_cfg_loader
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
     , parameter `BSG_INV_PARAM(inst_width_p          )
     , parameter `BSG_INV_PARAM(inst_ram_addr_width_p )
@@ -56,7 +56,7 @@ module bp_cce_mmio_cfg_loader
   wire unused0 = &{io_resp_header_i, io_resp_data_i, io_resp_last_i};
   assign io_resp_ready_and_o = 1'b1;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_bedrock_cce_mem_header_s io_cmd_cast_o;

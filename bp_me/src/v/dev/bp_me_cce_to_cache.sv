@@ -23,7 +23,7 @@ module bp_me_cce_to_cache
  import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, l2_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    // L2 organization and interface
    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(daddr_width_p, l2_data_width_p)
@@ -67,7 +67,7 @@ module bp_me_cce_to_cache
     $fatal(0, "l2 data width must be 64, 128, 256, or 512");
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, l2_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bsg_cache_pkt_s cache_pkt;

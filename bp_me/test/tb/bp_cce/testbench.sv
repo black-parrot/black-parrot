@@ -42,8 +42,8 @@ module testbench
    , localparam trace_replay_data_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_gp)
    , localparam trace_rom_addr_width_lp = 20
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
    )
   (output bit reset_i);
 
@@ -59,8 +59,8 @@ module testbench
   endfunction
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_gp);
 
   // Bit to deal with initial X->0 transition detection
@@ -384,7 +384,7 @@ module testbench
 
     // LCE Request Buffer
     bsg_two_fifo
-    #(.width_p($bits(bp_bedrock_lce_req_msg_s)))
+    #(.width_p($bits(bp_bedrock_lce_req_header_s)+cce_block_width_p))
     lce_req_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -428,7 +428,7 @@ module testbench
 
     // LCE Response Buffer
     bsg_two_fifo
-    #(.width_p($bits(bp_bedrock_lce_resp_msg_s)))
+    #(.width_p($bits(bp_bedrock_lce_resp_header_s)+cce_block_width_p))
     lce_resp_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -500,7 +500,7 @@ module testbench
 
     // LCE Command Out Buffer
     bsg_two_fifo
-    #(.width_p($bits(bp_bedrock_lce_cmd_msg_s)))
+    #(.width_p($bits(bp_bedrock_lce_cmd_header_s)+cce_block_width_p))
     lce_cmd_out_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)

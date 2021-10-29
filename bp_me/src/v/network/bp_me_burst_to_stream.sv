@@ -28,7 +28,7 @@ module bp_me_burst_to_stream
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, bp)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, bp)
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -55,7 +55,7 @@ module bp_me_burst_to_stream
    , output logic                                   out_msg_last_o
    );
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, bp);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, bp);
 
   bp_bedrock_bp_header_s msg_header_li;
   logic msg_has_data_li;

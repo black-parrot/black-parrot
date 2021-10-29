@@ -14,7 +14,7 @@ module bp_me_bedrock_register
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, did_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce)
 
    // The width of the registers. Currently, must all be the same.
    , parameter reg_width_p = dword_width_gp
@@ -66,13 +66,13 @@ module bp_me_bedrock_register
 
   wire unused = &{mem_cmd_last_i};
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, did_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce);
 
   bp_bedrock_xce_mem_header_s mem_cmd_header_li;
   logic [dword_width_gp-1:0] mem_cmd_data_li;
   logic mem_cmd_v_li, mem_cmd_yumi_li;
   bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_xce_mem_msg_s)))
+   #(.width_p($bits(bp_bedrock_xce_mem_header_s)+dword_width_gp))
    cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

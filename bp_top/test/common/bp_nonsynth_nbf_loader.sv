@@ -20,7 +20,7 @@ module bp_nonsynth_nbf_loader
    , parameter io_data_width_p = nbf_data_width_p
    , localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
 
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -103,7 +103,7 @@ module bp_nonsynth_nbf_loader
      ,.data_o(read_data_r)
      );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
   bp_bedrock_io_mem_header_s io_cmd, io_resp;
   assign io_cmd_header_o = io_cmd;
   assign io_resp = io_resp_header_i;

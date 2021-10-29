@@ -38,7 +38,7 @@ module bp_lce_req
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
@@ -103,7 +103,7 @@ module bp_lce_req
   if (metadata_latency_p >= 2)
     $fatal(0,"metadata needs to arrive within one cycle of the request");
 
-  `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_cache_req_s, cache_req);
