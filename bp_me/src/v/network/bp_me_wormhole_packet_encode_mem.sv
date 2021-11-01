@@ -17,7 +17,7 @@ module bp_me_wormhole_packet_encode_mem
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter `BSG_INV_PARAM(flit_width_p)
    , parameter `BSG_INV_PARAM(cord_width_p)
@@ -38,7 +38,7 @@ module bp_me_wormhole_packet_encode_mem
    , output [mem_wormhole_header_lp-1:0] wh_header_o
    );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_bedrock_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_header_s, mem, cce_block_width_p);
 
   bp_bedrock_cce_mem_header_s header_cast_i;

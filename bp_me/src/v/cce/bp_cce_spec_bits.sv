@@ -21,11 +21,11 @@
 module bp_cce_spec_bits
   import bp_common_pkg::*;
   import bp_me_pkg::*;
-  #(parameter `BSG_INV_PARAM(num_way_groups_p            )
-    , parameter `BSG_INV_PARAM(cce_way_groups_p          )
-    , parameter `BSG_INV_PARAM(num_cce_p                 )
-    , parameter `BSG_INV_PARAM(paddr_width_p             )
-    , parameter `BSG_INV_PARAM(addr_offset_p             )
+  #(parameter `BSG_INV_PARAM(num_way_groups_p)
+    , parameter `BSG_INV_PARAM(cce_way_groups_p)
+    , parameter `BSG_INV_PARAM(num_cce_p)
+    , parameter `BSG_INV_PARAM(paddr_width_p)
+    , parameter `BSG_INV_PARAM(addr_offset_p)
 
     // Derived parameters
     , localparam lg_num_way_groups_lp     = `BSG_SAFE_CLOG2(num_way_groups_p)

@@ -48,7 +48,7 @@ module testbench
    , parameter no_bind_p                   = 0
 
    , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
    )
   (output bit reset_i);
 
@@ -64,7 +64,7 @@ module testbench
     return (`BP_SIM_CLK_PERIOD);
   endfunction
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, io_data_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
 
 // Bit to deal with initial X->0 transition detection
   bit clk_i;
@@ -575,16 +575,20 @@ module testbench
               (.clk_i(clk_i & testbench.lce_trace_en_lo)
               ,.reset_i(reset_i)
               ,.lce_id_i(lce_id_i)
-              ,.lce_req_i(lce_req_o)
+              ,.lce_req_header_i(lce_req_header_o)
+              ,.lce_req_data_i(lce_req_data_o)
               ,.lce_req_v_i(lce_req_v_o)
               ,.lce_req_ready_and_i(lce_req_ready_then_i)
-              ,.lce_resp_i(lce_resp_o)
+              ,.lce_resp_header_i(lce_resp_header_o)
+              ,.lce_resp_data_i(lce_resp_data_o)
               ,.lce_resp_v_i(lce_resp_v_o)
               ,.lce_resp_ready_and_i(lce_resp_ready_then_i)
-              ,.lce_cmd_i(lce_cmd_i)
+              ,.lce_cmd_header_i(lce_cmd_header_i)
+              ,.lce_cmd_data_i(lce_cmd_data_i)
               ,.lce_cmd_v_i(lce_cmd_v_i)
               ,.lce_cmd_ready_and_i(lce_cmd_yumi_o)
-              ,.lce_cmd_o_i(lce_cmd_o)
+              ,.lce_cmd_header_o_i(lce_cmd_header_o)
+              ,.lce_cmd_data_o_i(lce_cmd_data_o)
               ,.lce_cmd_o_v_i(lce_cmd_v_o)
               ,.lce_cmd_o_ready_and_i(lce_cmd_ready_then_i)
               ,.cache_req_complete_i(cache_req_complete_o)

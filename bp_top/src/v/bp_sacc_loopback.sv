@@ -7,49 +7,49 @@ module bp_sacc_loopback
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
-  (input                                     clk_i
-   , input                                   reset_i
+  (input                                        clk_i
+   , input                                      reset_i
 
-   , input [lce_id_width_p-1:0]              lce_id_i
+   , input [lce_id_width_p-1:0]                 lce_id_i
 
-   , input  [cce_mem_msg_width_lp-1:0]       io_cmd_i
-   , input                                   io_cmd_v_i
-   , output                                  io_cmd_ready_o
+   , input [cce_mem_header_width_lp-1:0]        io_cmd_header_i
+   , input [cce_block_width_p-1:0]              io_cmd_data_i
+   , input                                      io_cmd_v_i
+   , output logic                               io_cmd_ready_o
 
-   , output [cce_mem_msg_width_lp-1:0]       io_resp_o
-   , output logic                            io_resp_v_o
-   , input                                   io_resp_yumi_i
+   , output logic [cce_mem_header_width_lp-1:0] io_resp_header_o
+   , output logic [cce_block_width_p-1:0]       io_resp_data_o
+   , output logic                               io_resp_v_o
+   , input                                      io_resp_yumi_i
 
-   , output [cce_mem_msg_width_lp-1:0]       io_cmd_o
-   , output logic                            io_cmd_v_o
-   , input                                   io_cmd_yumi_i
+   , output logic [cce_mem_header_width_lp-1:0] io_cmd_header_o
+   , output logic [cce_block_width_p-1:0]       io_cmd_data_o
+   , output logic                               io_cmd_v_o
+   , input                                      io_cmd_yumi_i
 
-   , input [cce_mem_msg_width_lp-1:0]        io_resp_i
-   , input                                   io_resp_v_i
-   , output                                  io_resp_ready_o
+   , input [cce_mem_header_width_lp-1:0]        io_resp_header_i
+   , input [cce_block_width_p-1:0]              io_resp_data_i
+   , input                                      io_resp_v_i
+   , output logic                               io_resp_ready_o
    );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
-
-  bp_bedrock_cce_mem_msg_s io_resp_cast_o;
-  bp_bedrock_cce_mem_header_s resp_header;
-  bp_bedrock_cce_mem_msg_s io_cmd_cast_i;
+  `bp_cast_o(bp_bedrock_cce_mem_header_s, io_cmd_header);
+  `bp_cast_i(bp_bedrock_cce_mem_header_s, io_resp_header);
+  `bp_cast_i(bp_bedrock_cce_mem_header_s, io_cmd_header);
+  `bp_cast_o(bp_bedrock_cce_mem_header_s, io_resp_header);
 
   assign io_cmd_ready_o = 1'b1;
   assign io_resp_ready_o = 1'b1;
   assign io_cmd_v_o = 1'b0;
 
-  assign io_cmd_cast_i = io_cmd_i;
-  assign io_resp_o = io_resp_cast_o;
-
   logic [63:0] spm_data_lo, spm_data_li, csr_data, spm_write_cnt;
   logic [paddr_width_p-1:0]  resp_addr;
-
 
   logic [vaddr_width_p-1:0] spm_addr;
   logic spm_read_v_li, spm_write_v_li, spm_v_lo, resp_v_lo;
@@ -60,18 +60,16 @@ module bp_sacc_loopback
   bp_local_addr_s           local_addr_li;
   bp_global_addr_s          global_addr_li;
 
-  assign global_addr_li = io_cmd_cast_i.header.addr;
-  assign local_addr_li = io_cmd_cast_i.header.addr;
+  assign global_addr_li = io_cmd_header_cast_i.addr;
+  assign local_addr_li = io_cmd_header_cast_i.addr;
 
-  assign resp_header   =  '{msg_type       : resp_msg
-                            ,addr          : resp_addr
-                            ,payload       : resp_payload
-                            ,subop         : e_bedrock_store
-                            ,size          : resp_size};
-
-  assign io_resp_cast_o = '{header         : resp_header
-                            ,data          : spm_v_lo ? spm_data_lo : csr_data};
-
+  assign io_resp_header_cast_o = '{msg_type       : resp_msg
+                                   ,addr          : resp_addr
+                                   ,payload       : resp_payload
+                                   ,subop         : e_bedrock_store
+                                   ,size          : resp_size
+                                   };
+  assign io_resp_data_o = spm_v_lo ? spm_data_lo : csr_data;
 
   assign io_resp_v_o = spm_v_lo | resp_v_lo;
   always_ff @(posedge clk_i) begin
@@ -84,12 +82,12 @@ module bp_sacc_loopback
       spm_write_v_li <= '0;
       spm_write_cnt  <= '0;
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == '0))
+    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == '0))
     begin
-      resp_size    <= io_cmd_cast_i.header.size;
-      resp_payload <= io_cmd_cast_i.header.payload;
-      resp_addr    <= io_cmd_cast_i.header.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
+      resp_size    <= io_cmd_header_cast_i.size;
+      resp_payload <= io_cmd_header_cast_i.payload;
+      resp_addr    <= io_cmd_header_cast_i.addr;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_header_cast_i.msg_type);
       spm_read_v_li  <= '0;
       spm_write_v_li <= '0;
       resp_v_lo <= 1;
@@ -99,29 +97,29 @@ module bp_sacc_loopback
         default : begin end
       endcase
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.hio == 1))
+    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.hio == 1))
     begin
-      resp_size    <= io_cmd_cast_i.header.size;
-      resp_payload <= io_cmd_cast_i.header.payload;
-      resp_addr    <= io_cmd_cast_i.header.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
+      resp_size    <= io_cmd_header_cast_i.size;
+      resp_payload <= io_cmd_header_cast_i.payload;
+      resp_addr    <= io_cmd_header_cast_i.addr;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_header_cast_i.msg_type);
       spm_write_v_li <= '1;
       spm_write_cnt  <= spm_write_cnt + 1;
       spm_read_v_li  <= '0;
       resp_v_lo <= 1;
-      spm_data_li  <= io_cmd_cast_i.data;
-      spm_addr <= io_cmd_cast_i.header.addr;
+      spm_data_li  <= io_cmd_data_i;
+      spm_addr <= io_cmd_header_cast_i.addr;
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == 1))
+    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == 1))
     begin
-      resp_size    <= io_cmd_cast_i.header.size;
-      resp_payload <= io_cmd_cast_i.header.payload;
-      resp_addr    <= io_cmd_cast_i.header.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_cast_i.header.msg_type);
+      resp_size    <= io_cmd_header_cast_i.size;
+      resp_payload <= io_cmd_header_cast_i.payload;
+      resp_addr    <= io_cmd_header_cast_i.addr;
+      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_header_cast_i.msg_type);
       spm_read_v_li  <= '1;
       spm_write_v_li <= '0;
       resp_v_lo <= 0;
-      spm_addr <= io_cmd_cast_i.header.addr;
+      spm_addr <= io_cmd_header_cast_i.addr;
     end
     else
     begin

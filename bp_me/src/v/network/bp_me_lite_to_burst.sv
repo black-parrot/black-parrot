@@ -20,23 +20,24 @@ module bp_me_lite_to_burst
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter `BSG_INV_PARAM(in_data_width_p  )
-   , parameter `BSG_INV_PARAM(out_data_width_p )
-   , parameter `BSG_INV_PARAM(payload_width_p  )
+   , parameter `BSG_INV_PARAM(in_data_width_p)
+   , parameter `BSG_INV_PARAM(out_data_width_p)
+   , parameter `BSG_INV_PARAM(payload_width_p)
 
    // Bitmask which determines which message types have a data payload
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter int payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, in_data_width_p, in)
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, out_data_width_p, out)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, in)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, out)
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Input channel: BedRock Lite
    // ready-valid-and
-   , input [in_msg_width_lp-1:0]                    in_msg_i
+   , input [in_header_width_lp-1:0]                 in_msg_header_i
+   , input [in_data_width_p-1:0]                    in_msg_data_i
    , input                                          in_msg_v_i
    , output logic                                   in_msg_ready_and_o
 
@@ -61,10 +62,9 @@ module bp_me_lite_to_burst
   if (in_data_width_p % out_data_width_p != 0)
     $fatal(0,"lite data must be a multiple of burst data");
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in);
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out);
-  bp_bedrock_in_msg_s in_msg_cast_i;
-  assign in_msg_cast_i = in_msg_i;
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, in);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, out);
+  `bp_cast_i(bp_bedrock_in_header_s, in_msg_header);
 
   localparam in_data_bytes_lp = in_data_width_p/8;
   localparam out_data_bytes_lp = out_data_width_p/8;
@@ -87,12 +87,12 @@ module bp_me_lite_to_burst
   assign head_sent_set     = out_msg_header_ready_and_i & out_msg_header_v_o;   // set when the header is acked
   assign header_sent_clear = in_msg_v_i & in_msg_ready_and_o; // clear when the lite packet is acked
 
-  assign out_msg_header_o   = in_msg_cast_i.header;
+  assign out_msg_header_o   = in_msg_header_i;
   assign out_msg_header_v_o = in_msg_v_i & ~header_sent_r;
 
-  wire has_data = payload_mask_p[in_msg_cast_i.header.msg_type];
+  wire has_data = payload_mask_p[in_msg_header_cast_i.msg_type];
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(burst_words_lp);
-  wire [data_len_width_lp-1:0] num_burst_cmds = `BSG_MAX(1, (1'b1 << in_msg_cast_i.header.size) / out_data_bytes_lp);
+  wire [data_len_width_lp-1:0] num_burst_cmds = `BSG_MAX(1, (1'b1 << in_msg_header_cast_i.size) / out_data_bytes_lp);
 
   assign out_msg_has_data_o = in_msg_v_i & ~header_sent_r & has_data;
 
@@ -105,7 +105,7 @@ module bp_me_lite_to_burst
 
     ,.ready_and_o(data_ready_and_lo)
     ,.v_i(in_msg_v_i & has_data)
-    ,.data_i(in_msg_cast_i.data)
+    ,.data_i(in_msg_data_i)
     ,.len_i(num_burst_cmds - 1'b1)
 
     ,.data_o(out_msg_data_o)

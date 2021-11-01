@@ -8,8 +8,8 @@ module bp_mmu
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter `BSG_INV_PARAM(tlb_els_4k_p )
-   , parameter `BSG_INV_PARAM(tlb_els_1g_p )
+   , parameter `BSG_INV_PARAM(tlb_els_4k_p)
+   , parameter `BSG_INV_PARAM(tlb_els_1g_p)
 
    , localparam entry_width_lp = `bp_pte_leaf_width(paddr_width_p)
    )

@@ -13,12 +13,12 @@
 
 module bp_cce_dir_lru_extract
   import bp_common_pkg::*;
-  #(parameter `BSG_INV_PARAM(tag_sets_per_row_p          )
-    , parameter `BSG_INV_PARAM(row_width_p               )
-    , parameter `BSG_INV_PARAM(num_lce_p                 )
-    , parameter `BSG_INV_PARAM(assoc_p                   )
-    , parameter `BSG_INV_PARAM(rows_per_set_p            )
-    , parameter `BSG_INV_PARAM(tag_width_p               )
+  #(parameter `BSG_INV_PARAM(tag_sets_per_row_p)
+    , parameter `BSG_INV_PARAM(row_width_p)
+    , parameter `BSG_INV_PARAM(num_lce_p)
+    , parameter `BSG_INV_PARAM(assoc_p)
+    , parameter `BSG_INV_PARAM(rows_per_set_p)
+    , parameter `BSG_INV_PARAM(tag_width_p)
 
     , localparam lg_num_lce_lp            = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_assoc_lp              = `BSG_SAFE_CLOG2(assoc_p)

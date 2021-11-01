@@ -21,8 +21,8 @@
 
 module bp_bedrock_size_to_len
   import bp_common_pkg::*;
-  #(parameter `BSG_INV_PARAM(beat_width_p )
-    , parameter `BSG_INV_PARAM(len_width_p    )
+  #(parameter `BSG_INV_PARAM(beat_width_p)
+    , parameter `BSG_INV_PARAM(len_width_p)
   )
   (input bp_bedrock_msg_size_e  size_i
    , output logic [len_width_p-1:0] len_o

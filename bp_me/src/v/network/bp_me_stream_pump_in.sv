@@ -21,7 +21,7 @@ module bp_me_stream_pump_in
    , parameter stream_data_width_p = dword_width_gp
    , parameter block_width_p = cce_block_width_p
    // width of BedRock message payload
-   , parameter `BSG_INV_PARAM(payload_width_p )
+   , parameter `BSG_INV_PARAM(payload_width_p)
 
    // Bitmasks that specify which message types may have multiple beats on either
    // the msg input side or FSM output side.
@@ -42,7 +42,7 @@ module bp_me_stream_pump_in
    , parameter msg_stream_mask_p = 0
    , parameter fsm_stream_mask_p = msg_stream_mask_p
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, xce)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xce)
 
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
    , localparam stream_bytes_lp = stream_data_width_p >> 3
@@ -79,7 +79,7 @@ module bp_me_stream_pump_in
    , output logic                                   fsm_done_o
    );
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, msg_header);
   `bp_cast_o(bp_bedrock_xce_header_s, fsm_base_header);
 
