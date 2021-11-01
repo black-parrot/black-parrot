@@ -314,7 +314,6 @@ module bp_lce_cmd
             e_bedrock_cmd_sync: begin
               lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;
               lce_resp_header_cast_o.payload.src_id = lce_id_i;
-              lce_resp_header_cast_o.payload = lce_resp_header_cast_o.payload;
               lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_sync_ack;
               lce_resp_v_o = lce_resp_ready_then_i;
               lce_cmd_yumi_o = lce_resp_v_o;
@@ -356,7 +355,6 @@ module bp_lce_cmd
               lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_inv_ack;
               lce_resp_header_cast_o.payload.src_id = lce_id_i;
               lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;
-              lce_resp_header_cast_o.payload = lce_resp_header_cast_o.payload;
 
               lce_cmd_yumi_o = lce_resp_v_o;
 
@@ -547,7 +545,6 @@ module bp_lce_cmd
         lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_coh_ack;
         lce_resp_header_cast_o.payload.src_id = lce_id_i;
         lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;
-        lce_resp_header_cast_o.payload = lce_resp_header_cast_o.payload;
         lce_resp_v_o = lce_cmd_v_i & lce_resp_ready_then_i;
 
         lce_cmd_yumi_o = lce_resp_v_o;
@@ -664,7 +661,6 @@ module bp_lce_cmd
         lce_resp_header_cast_o.msg_type = e_bedrock_resp_wb;
         lce_resp_header_cast_o.payload.src_id = lce_id_i;
         lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;
-        lce_resp_header_cast_o.payload = lce_resp_header_cast_o.payload;
         lce_resp_header_cast_o.size = cmd_block_size_lp;
         lce_resp_v_o = lce_resp_ready_then_i & dirty_data_v_r;
 
