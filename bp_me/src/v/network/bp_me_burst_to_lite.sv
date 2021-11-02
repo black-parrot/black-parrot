@@ -17,16 +17,16 @@ module bp_me_burst_to_lite
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter `BSG_INV_PARAM(in_data_width_p  )
-   , parameter `BSG_INV_PARAM(out_data_width_p )
-   , parameter `BSG_INV_PARAM(payload_width_p  )
+   , parameter `BSG_INV_PARAM(in_data_width_p)
+   , parameter `BSG_INV_PARAM(out_data_width_p)
+   , parameter `BSG_INV_PARAM(payload_width_p)
 
    // Bitmask which determines which message types have a data payload
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter int payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in)
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, in)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, out)
 
    )
   (input                                     clk_i
@@ -34,7 +34,7 @@ module bp_me_burst_to_lite
 
    // Input channel: BedRock Burst
    // ready-valid-and
-   , input [in_msg_header_width_lp-1:0]      in_msg_header_i
+   , input [in_header_width_lp-1:0]          in_msg_header_i
    , input                                   in_msg_header_v_i
    , output logic                            in_msg_header_ready_and_o
    , input                                   in_msg_has_data_i
@@ -47,7 +47,8 @@ module bp_me_burst_to_lite
 
    // Output channel BedRock Lite
    // ready-valid-and
-   , output logic [out_msg_width_lp-1:0]     out_msg_o
+   , output logic [out_header_width_lp-1:0]  out_msg_header_o
+   , output logic [out_data_width_p-1:0]     out_msg_data_o
    , output logic                            out_msg_v_o
    , input                                   out_msg_ready_and_i
    );
@@ -58,18 +59,18 @@ module bp_me_burst_to_lite
   if (out_data_width_p % in_data_width_p != 0)
     $fatal(0,"lite data must be a multiple of burst data");
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, in_data_width_p, lce_id_width_p, lce_assoc_p, in);
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, out_data_width_p, lce_id_width_p, lce_assoc_p, out);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, in);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, out);
 
   localparam in_data_bytes_lp = in_data_width_p/8;
   localparam out_data_bytes_lp = out_data_width_p/8;
   localparam burst_words_lp = out_data_width_p/in_data_width_p;
   localparam burst_offset_width_lp = `BSG_SAFE_CLOG2(out_data_bytes_lp);
 
-  bp_bedrock_in_msg_header_s header_lo;
+  bp_bedrock_in_header_s header_lo;
   logic header_v_r, header_clear, header_v_lo, has_data;
   bsg_dff_en_bypass
-   #(.width_p($bits(bp_bedrock_in_msg_header_s)+1))
+   #(.width_p($bits(bp_bedrock_in_header_s)+1))
    header_reg
     (.clk_i(clk_i)
     ,.en_i(in_msg_header_ready_and_o & in_msg_header_v_i)
@@ -115,9 +116,9 @@ module bp_me_burst_to_lite
     ,.ready_and_i(out_msg_ready_and_i)
     );
 
-  bp_bedrock_out_msg_s msg_cast_o;
-  assign msg_cast_o = '{header: header_lo, data: data_lo};
-  assign out_msg_o  = msg_cast_o;
+  `bp_cast_o(bp_bedrock_out_header_s, out_msg_header);
+  assign out_msg_header_cast_o = header_lo;
+  assign out_msg_data_o = data_lo;
 
   assign out_msg_v_o = header_v_lo & (data_v_lo | ~has_data);
 

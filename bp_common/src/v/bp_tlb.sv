@@ -11,8 +11,8 @@ module bp_tlb
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter `BSG_INV_PARAM(els_1g_p )
-   , parameter `BSG_INV_PARAM(els_4k_p )
+   , parameter `BSG_INV_PARAM(els_1g_p)
+   , parameter `BSG_INV_PARAM(els_4k_p)
 
    , parameter pte_width_p         = sv39_pte_width_gp
    , parameter page_table_depth_p  = sv39_levels_gp

@@ -17,7 +17,7 @@ module bp_uce
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     , parameter `BSG_INV_PARAM(uce_mem_data_width_p)
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
     , parameter `BSG_INV_PARAM(assoc_p)
     , parameter `BSG_INV_PARAM(sets_p)
     , parameter `BSG_INV_PARAM(block_width_p)
@@ -62,13 +62,13 @@ module bp_uce
     , input                                          stat_mem_pkt_yumi_i
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
-    , output logic [uce_mem_msg_header_width_lp-1:0] mem_cmd_header_o
+    , output logic [uce_mem_header_width_lp-1:0]     mem_cmd_header_o
     , output logic [uce_mem_data_width_p-1:0]        mem_cmd_data_o
     , output logic                                   mem_cmd_v_o
     , input                                          mem_cmd_ready_and_i
     , output logic                                   mem_cmd_last_o
 
-    , input [uce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
+    , input [uce_mem_header_width_lp-1:0]            mem_resp_header_i
     , input [uce_mem_data_width_p-1:0]               mem_resp_data_i
     , input                                          mem_resp_v_i
     , output logic                                   mem_resp_ready_and_o
@@ -104,7 +104,7 @@ module bp_uce
                                                              ? e_bedrock_msg_size_8
                                                              : e_bedrock_msg_size_64;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
@@ -249,7 +249,7 @@ module bp_uce
      ,.yumi_i(dirty_stat_read)
      );
 
-  bp_bedrock_uce_mem_msg_header_s fsm_cmd_header_lo;
+  bp_bedrock_uce_mem_header_s fsm_cmd_header_lo;
   logic [fill_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt;
@@ -282,7 +282,7 @@ module bp_uce
      ,.fsm_done_o(fsm_cmd_done)
      );
 
-  bp_bedrock_uce_mem_msg_header_s fsm_resp_header_li;
+  bp_bedrock_uce_mem_header_s fsm_resp_header_li;
   logic [paddr_width_p-1:0] fsm_resp_addr_li;
   logic [fill_width_p-1:0] fsm_resp_data_li;
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
@@ -580,7 +580,7 @@ module bp_uce
                 fsm_cmd_header_lo.msg_type       = e_bedrock_mem_uc_wr;
                 fsm_cmd_header_lo.addr           = cache_req_r.addr;
                 fsm_cmd_header_lo.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
-                fsm_cmd_header_lo.payload.lce_id           = lce_id_i;
+                fsm_cmd_header_lo.payload.lce_id = lce_id_i;
                 fsm_cmd_header_lo.subop          = mem_wr_subop;
                 fsm_cmd_data_lo                  = cache_req_r.data;
                 fsm_cmd_v_lo = ~cache_req_credits_full_o;
@@ -640,8 +640,8 @@ module bp_uce
               fsm_cmd_header_lo.msg_type = e_bedrock_mem_rd;
               fsm_cmd_header_lo.addr     = {cache_req_r.addr[paddr_width_p-1:fill_offset_width_lp], (fill_offset_width_lp)'(0)};
               fsm_cmd_header_lo.size     = block_msg_size_lp;
-              fsm_cmd_header_lo.payload.way_id     = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
-              fsm_cmd_header_lo.payload.lce_id     = lce_id_i;
+              fsm_cmd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
+              fsm_cmd_header_lo.payload.lce_id = lce_id_i;
               fsm_cmd_v_lo = cache_req_metadata_v_r & ~cache_req_credits_full_o;
 
               state_n = (fsm_cmd_v_lo & fsm_cmd_ready_and_li)
@@ -655,7 +655,7 @@ module bp_uce
               fsm_cmd_header_lo.msg_type = uc_load_v_r ? e_bedrock_mem_uc_rd : uc_amo_v_r ? e_bedrock_mem_amo : e_bedrock_mem_uc_wr;
               fsm_cmd_header_lo.addr     = cache_req_r.addr;
               fsm_cmd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
-              fsm_cmd_header_lo.payload.lce_id     = lce_id_i;
+              fsm_cmd_header_lo.payload.lce_id = lce_id_i;
               fsm_cmd_header_lo.subop    = mem_wr_subop;
               fsm_cmd_data_lo            = cache_req_r.data;
               fsm_cmd_v_lo = ~cache_req_credits_full_o;

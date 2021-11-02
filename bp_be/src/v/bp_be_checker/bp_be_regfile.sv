@@ -22,9 +22,9 @@ module bp_be_regfile
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
-   , parameter `BSG_INV_PARAM(data_width_p )
-   , parameter `BSG_INV_PARAM(read_ports_p )
-   , parameter `BSG_INV_PARAM(zero_x0_p    )
+   , parameter `BSG_INV_PARAM(data_width_p)
+   , parameter `BSG_INV_PARAM(read_ports_p)
+   , parameter `BSG_INV_PARAM(zero_x0_p)
    )
   (input                                            clk_i
    , input                                          reset_i
