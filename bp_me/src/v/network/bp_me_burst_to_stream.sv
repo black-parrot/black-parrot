@@ -21,21 +21,21 @@ module bp_me_burst_to_stream
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    , parameter data_width_p = dword_width_gp
-   , parameter `BSG_INV_PARAM(payload_width_p )
+   , parameter `BSG_INV_PARAM(payload_width_p)
    , parameter block_width_p = cce_block_width_p
 
    // Bitmask which determines which message types have a data payload
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, bp)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, bp)
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Input BedRock Burst
    // ready-valid-and
-   , input [bp_msg_header_width_lp-1:0]             in_msg_header_i
+   , input [bp_header_width_lp-1:0]                 in_msg_header_i
    , input                                          in_msg_header_v_i
    , input                                          in_msg_has_data_i
    , output logic                                   in_msg_header_ready_and_o
@@ -48,19 +48,19 @@ module bp_me_burst_to_stream
 
    // Output BedRock Stream
    // ready-valid-and
-   , output logic [bp_msg_header_width_lp-1:0]      out_msg_header_o
+   , output logic [bp_header_width_lp-1:0]          out_msg_header_o
    , output logic [data_width_p-1:0]                out_msg_data_o
    , output logic                                   out_msg_v_o
    , input                                          out_msg_ready_and_i
    , output logic                                   out_msg_last_o
    );
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, bp);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, bp);
 
-  bp_bedrock_bp_msg_header_s msg_header_li;
+  bp_bedrock_bp_header_s msg_header_li;
   logic msg_has_data_li;
   bsg_dff_en_bypass
-   #(.width_p($bits(bp_bedrock_bp_msg_header_s)+1))
+   #(.width_p($bits(bp_bedrock_bp_header_s)+1))
    header_reg
     (.clk_i(clk_i)
     ,.en_i(in_msg_header_ready_and_o & in_msg_header_v_i)

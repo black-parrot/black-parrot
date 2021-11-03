@@ -12,8 +12,8 @@ module bp_me_nonsynth_lce_tr_tracer
   #(parameter bp_params_e bp_params_p = e_bp_test_multicore_half_cfg
     `declare_bp_proc_params(bp_params_p)
 
-    , parameter `BSG_INV_PARAM(sets_p )
-    , parameter `BSG_INV_PARAM(block_width_p )
+    , parameter `BSG_INV_PARAM(sets_p)
+    , parameter `BSG_INV_PARAM(block_width_p)
 
     , localparam lce_trace_file_p = "lce_tr"
 

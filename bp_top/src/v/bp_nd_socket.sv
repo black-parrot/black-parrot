@@ -11,7 +11,7 @@
 module bp_nd_socket
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
- #(parameter `BSG_INV_PARAM(flit_width_p )
+ #(parameter `BSG_INV_PARAM(flit_width_p)
    , parameter len_width_p = 1
    , parameter dims_p = 2
    , parameter cord_dims_p = dims_p

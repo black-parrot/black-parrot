@@ -8,7 +8,7 @@ module testbench
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    // Tracing parameters
    , parameter cce_trace_p                 = 0
@@ -31,7 +31,7 @@ module testbench
   )
   (output bit reset_i);
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   // Bit to deal with initial X->0 transition detection
@@ -82,7 +82,7 @@ module testbench
 
   logic mem_cmd_v_lo, mem_resp_v_li;
   logic mem_cmd_ready_and_li, mem_resp_ready_and_lo, mem_cmd_last_lo, mem_resp_last_li;
-  bp_bedrock_cce_mem_msg_header_s mem_cmd_header_lo, mem_resp_header_li;
+  bp_bedrock_cce_mem_header_s mem_cmd_header_lo, mem_resp_header_li;
   logic [l2_fill_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
 
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
@@ -293,18 +293,24 @@ module testbench
           ,.reset_i(reset_i)
 
           ,.lce_id_i(lce_id_i)
-          ,.lce_req_i(lce_req_o)
+          ,.lce_req_header_i(lce_req_header_o)
+          ,.lce_req_data_i(lce_req_data_o)
           ,.lce_req_v_i(lce_req_v_o)
           ,.lce_req_ready_and_i(lce_req_ready_then_i)
-          ,.lce_resp_i(lce_resp_o)
+          ,.lce_resp_header_i(lce_resp_header_o)
+          ,.lce_resp_data_i(lce_resp_data_o)
           ,.lce_resp_v_i(lce_resp_v_o)
           ,.lce_resp_ready_and_i(lce_resp_ready_then_i)
-          ,.lce_cmd_i(lce_cmd_i)
+          ,.lce_cmd_header_i(lce_cmd_header_i)
+          ,.lce_cmd_data_i(lce_cmd_data_i)
           ,.lce_cmd_v_i(lce_cmd_v_i)
           ,.lce_cmd_ready_and_i(lce_cmd_yumi_o)
-          ,.lce_cmd_o_i(lce_cmd_o)
+          ,.lce_cmd_header_o_i(lce_cmd_header_o)
+          ,.lce_cmd_data_o_i(lce_cmd_data_o)
           ,.lce_cmd_o_v_i(lce_cmd_v_o)
           ,.lce_cmd_o_ready_and_i(lce_cmd_ready_then_i)
+          ,.cache_req_complete_i(cache_req_complete_o)
+          ,.uc_store_req_complete_i(uc_store_req_complete_lo)
           );
 
     bind bp_cce_fsm

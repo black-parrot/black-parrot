@@ -11,7 +11,7 @@ module bp_mem_nonsynth_tracer
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter data_width_p = l2_fill_width_p
    , parameter trace_file_p = "dram.trace"
@@ -20,22 +20,22 @@ module bp_mem_nonsynth_tracer
    , input                                      reset_i
 
    // BP side
-   , input [cce_mem_msg_header_width_lp-1:0]    mem_cmd_header_i
+   , input [cce_mem_header_width_lp-1:0]        mem_cmd_header_i
    , input [data_width_p-1:0]                   mem_cmd_data_i
    , input                                      mem_cmd_v_i
    , input                                      mem_cmd_ready_and_i
    , input                                      mem_cmd_last_i
 
-   , input [cce_mem_msg_header_width_lp-1:0]    mem_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]        mem_resp_header_i
    , input [data_width_p-1:0]                   mem_resp_data_i
    , input                                      mem_resp_v_i
    , input                                      mem_resp_ready_and_i
    , input                                      mem_resp_last_i
    );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `bp_cast_i(bp_bedrock_cce_mem_msg_header_s, mem_cmd_header);
-  `bp_cast_i(bp_bedrock_cce_mem_msg_header_s, mem_resp_header);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `bp_cast_i(bp_bedrock_cce_mem_header_s, mem_cmd_header);
+  `bp_cast_i(bp_bedrock_cce_mem_header_s, mem_resp_header);
 
   integer file;
   always_ff @(negedge reset_i)
