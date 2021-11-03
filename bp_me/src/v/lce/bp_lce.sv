@@ -21,6 +21,7 @@ module bp_lce
     , parameter `BSG_INV_PARAM(sets_p)
     , parameter `BSG_INV_PARAM(block_width_p)
     , parameter fill_width_p = block_width_p
+    , parameter req_invert_clk_p = 0
     , parameter data_mem_invert_clk_p = 0
     , parameter tag_mem_invert_clk_p = 0
     , parameter stat_mem_invert_clk_p = 0

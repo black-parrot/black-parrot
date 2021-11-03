@@ -265,55 +265,19 @@ module testbench
 
   // I$ tracer
   bind bp_fe_icache
-    bp_nonsynth_cache_tracer
-    #(.bp_params_p(bp_params_p)
-     ,.assoc_p(assoc_p)
-     ,.sets_p(sets_p)
-     ,.block_width_p(block_width_p)
-     ,.fill_width_p(fill_width_p)
-     ,.trace_file_p("icache"))
-    icache_tracer
+    bp_fe_nonsynth_icache_tracer
+     #(.bp_params_p(bp_params_p)
+       ,.assoc_p(assoc_p)
+       ,.sets_p(sets_p)
+       ,.block_width_p(block_width_p)
+       ,.fill_width_p(fill_width_p)
+       )
+     icache_tracer
       (.clk_i(clk_i & (testbench.icache_trace_p == 1))
-      ,.reset_i(reset_i)
-
-      ,.freeze_i(cfg_bus_cast_i.freeze)
-      ,.mhartid_i(cfg_bus_cast_i.core_id)
-
-      ,.v_tl_r(v_tl_r)
-
-      ,.v_tv_r(v_tv_r)
-      ,.addr_tv_r(paddr_tv_r)
-      ,.lr_miss_tv(1'b0)
-      ,.sc_op_tv_r(1'b0)
-      ,.sc_success(1'b0)
-
-      ,.cache_req_o(cache_req_o)
-      ,.cache_req_v_o(cache_req_v_o)
-      ,.cache_req_metadata_o(cache_req_metadata_o)
-      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-      ,.cache_req_complete_i(cache_req_complete_i)
-
-      ,.wt_req()
-
-      ,.v_o(data_v_o)
-      ,.load_data(65'(data_o))
-      ,.store_data(64'(0))
-      ,.cache_miss_o('0)
-
-      ,.data_mem_v_i(data_mem_v_li)
-      ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-      ,.data_mem_pkt_i(data_mem_pkt_i)
-      ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-
-      ,.tag_mem_v_i(tag_mem_v_li)
-      ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-      ,.tag_mem_pkt_i(tag_mem_pkt_i)
-      ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
-
-      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-      ,.stat_mem_pkt_i(stat_mem_pkt_i)
-      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-      );
+       ,.freeze_i(cfg_bus_cast_i.freeze)
+       ,.mhartid_i(cfg_bus_cast_i.core_id)
+       ,.*
+       );
 
   // CCE tracer
   if (uce_p == 0) begin

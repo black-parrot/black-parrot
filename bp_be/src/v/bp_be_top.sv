@@ -81,7 +81,7 @@ module bp_be_top
   bp_be_branch_pkt_s   br_pkt;
 
   logic dispatch_v, interrupt_v;
-  logic irq_pending_lo, irq_waiting_lo, replay_pending_lo;
+  logic irq_pending_lo, irq_waiting_lo;
 
   bp_be_commit_pkt_s commit_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
@@ -138,7 +138,6 @@ module bp_be_top
      ,.long_ready_i(long_ready_lo)
      ,.ptw_busy_i(ptw_busy_lo)
      ,.irq_pending_i(irq_pending_lo)
-     ,.replay_pending_i(replay_pending_lo)
 
      ,.dispatch_v_o(dispatch_v)
      ,.interrupt_v_o(interrupt_v)
@@ -227,7 +226,6 @@ module bp_be_top
      ,.external_irq_i(external_irq_i)
      ,.irq_pending_o(irq_pending_lo)
      ,.irq_waiting_o(irq_waiting_lo)
-     ,.replay_pending_o(replay_pending_lo)
      ,.cmd_full_n_i(cmd_full_n_lo)
      );
 

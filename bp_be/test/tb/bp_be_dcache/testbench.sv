@@ -296,53 +296,18 @@ module testbench
 
   // Tracers
   bind bp_be_dcache
-    bp_nonsynth_cache_tracer
+    bp_be_nonsynth_dcache_tracer
      #(.bp_params_p(bp_params_p)
-      ,.sets_p(sets_p)
-      ,.assoc_p(assoc_p)
-      ,.block_width_p(block_width_p)
-      ,.fill_width_p(fill_width_p)
-      ,.trace_file_p("dcache"))
+       ,.assoc_p(assoc_p)
+       ,.sets_p(sets_p)
+       ,.block_width_p(block_width_p)
+       ,.fill_width_p(fill_width_p)
+       )
      dcache_tracer
       (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
-       ,.reset_i(reset_i)
-
        ,.freeze_i(cfg_bus_cast_i.freeze)
        ,.mhartid_i(cfg_bus_cast_i.core_id)
-
-       ,.v_tl_r(v_tl_r)
-
-       ,.v_tv_r(v_tv_r)
-       ,.addr_tv_r(paddr_tv_r)
-       ,.lr_miss_tv(lr_miss_tv)
-       ,.sc_op_tv_r(decode_tv_r.sc_op)
-       ,.sc_success(sc_success_tv)
-
-       ,.cache_req_v_o(cache_req_v_o)
-       ,.cache_req_o(cache_req_o)
-       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-       ,.cache_req_metadata_o(cache_req_metadata_o)
-       ,.cache_req_complete_i(cache_req_complete_i)
-
-       ,.v_o(early_hit_v_o)
-       ,.load_data(early_data_o[0+:65])
-       ,.store_data(st_data_tv_r[0+:64])
-       ,.wt_req(wt_req)
-       ,.cache_miss_o('0)
-
-       ,.data_mem_v_i(data_mem_v_li)
-       ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-       ,.data_mem_pkt_i(data_mem_pkt_i)
-       ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-
-       ,.tag_mem_v_i(tag_mem_v_li)
-       ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-       ,.tag_mem_pkt_i(tag_mem_pkt_i)
-       ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
-
-       ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-       ,.stat_mem_pkt_i(stat_mem_pkt_i)
-       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+       ,.*
        );
 
   if (uce_p == 0) begin

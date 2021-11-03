@@ -193,7 +193,6 @@ module wrapper
      ,.data_o(data_o)
      ,.data_v_o(data_v_o)
      ,.miss_v_o()
-     ,.poison_tv_i(1'b0)
 
      ,.cache_req_o(cache_req_lo)
      ,.cache_req_v_o(cache_req_v_lo)

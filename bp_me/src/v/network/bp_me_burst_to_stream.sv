@@ -108,6 +108,7 @@ module bp_me_burst_to_stream
        ,.fsm_ready_and_o(fsm_ready_and_lo)
        ,.fsm_new_o(stream_new_lo)
        ,.fsm_cnt_o()
+       ,.fsm_last_o()
        ,.fsm_done_o(stream_done_lo)
        );
 

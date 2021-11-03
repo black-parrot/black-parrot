@@ -122,7 +122,7 @@ if { ![analyze -format sverilog -vcs "-f flist.vcs"] } {
 #========================
 
 # Add a warning ELAB-395 if memory devices are inferred as latches.
-set_app_var hdlin_check_no_latch true
+#set_app_var hdlin_check_no_latch true
 
 if { ![elaborate ${DESIGN_NAME} -param ${param_str}] } {
   exit_failed

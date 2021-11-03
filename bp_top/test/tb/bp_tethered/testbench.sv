@@ -70,7 +70,11 @@ module testbench
   bit clk_i;
   bit cosim_clk_i, cosim_reset_i, dram_clk_i, dram_reset_i;
 
-  bsg_nonsynth_clock_gen
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
    clock_gen
     (.o(clk_i));
@@ -85,7 +89,11 @@ module testbench
      ,.async_reset_o(reset_i)
      );
 
-  bsg_nonsynth_clock_gen
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
    #(.cycle_time_p(`dram_pkg::tck_ps))
    dram_clock_gen
     (.o(dram_clk_i));
@@ -100,10 +108,14 @@ module testbench
      ,.async_reset_o(dram_reset_i)
      );
 
-   bsg_nonsynth_clock_gen
-    #(.cycle_time_p(`BP_SIM_CLK_PERIOD/5))
-    cosim_clk_gen
-     (.o(cosim_clk_i));
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
+   #(.cycle_time_p(`BP_SIM_CLK_PERIOD/5))
+   cosim_clk_gen
+    (.o(cosim_clk_i));
 
   bsg_nonsynth_reset_gen
    #(.num_clocks_p(1)
@@ -115,10 +127,10 @@ module testbench
      ,.async_reset_o(cosim_reset_i)
      );
 
-  bp_bedrock_io_mem_header_s proc_io_cmd_lo;
+  bp_bedrock_io_mem_header_s proc_io_cmd_header_lo;
   logic [io_data_width_p-1:0] proc_io_cmd_data_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li, proc_io_cmd_last_lo;
-  bp_bedrock_io_mem_header_s proc_io_resp_li;
+  bp_bedrock_io_mem_header_s proc_io_resp_header_li;
   logic [io_data_width_p-1:0] proc_io_resp_data_li;
   logic proc_io_resp_v_li, proc_io_resp_ready_and_lo;
   logic proc_io_resp_last_li;
@@ -149,13 +161,13 @@ module testbench
      ,.my_did_i(proc_did_li)
      ,.host_did_i(host_did_li)
 
-     ,.io_cmd_header_o(proc_io_cmd_lo)
+     ,.io_cmd_header_o(proc_io_cmd_header_lo)
      ,.io_cmd_data_o(proc_io_cmd_data_lo)
      ,.io_cmd_v_o(proc_io_cmd_v_lo)
      ,.io_cmd_ready_and_i(proc_io_cmd_ready_and_li)
      ,.io_cmd_last_o(proc_io_cmd_last_lo)
 
-     ,.io_resp_header_i(proc_io_resp_li)
+     ,.io_resp_header_i(proc_io_resp_header_li)
      ,.io_resp_data_i(proc_io_resp_data_li)
      ,.io_resp_v_i(proc_io_resp_v_li)
      ,.io_resp_ready_and_o(proc_io_resp_ready_and_lo)
@@ -273,13 +285,13 @@ module testbench
      ,.reset_i(reset_i)
 
      // data width = dword_width_gp on mem_cmd/resp ports
-     ,.mem_cmd_header_i(proc_io_cmd_lo)
+     ,.mem_cmd_header_i(proc_io_cmd_header_lo)
      ,.mem_cmd_data_i(proc_io_cmd_data_lo[0+:dword_width_gp])
      ,.mem_cmd_v_i(proc_io_cmd_v_lo)
      ,.mem_cmd_ready_and_o(proc_io_cmd_ready_and_li)
      ,.mem_cmd_last_i(proc_io_cmd_last_lo)
 
-     ,.mem_resp_header_o(proc_io_resp_li)
+     ,.mem_resp_header_o(proc_io_resp_header_li)
      ,.mem_resp_data_o(proc_io_resp_data_li[0+:dword_width_gp])
      ,.mem_resp_v_o(proc_io_resp_v_li)
      ,.mem_resp_ready_and_i(proc_io_resp_ready_and_lo)
@@ -319,7 +331,7 @@ module testbench
       bind bp_be_top
         bp_nonsynth_watchdog
          #(.bp_params_p(bp_params_p)
-           ,.stall_cycles_p(1000000)
+           ,.stall_cycles_p(100000)
            ,.halt_cycles_p(10000)
            ,.heartbeat_instr_p(100000)
            )
@@ -374,6 +386,11 @@ module testbench
            ,.frd_w_v_i(scheduler.fwb_pkt_cast_i.frd_w_v)
            ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
+
+           ,.cache_req_v_i(calculator.pipe_mem.dcache.cache_req_v_o)
+           ,.cache_req_ready_i(calculator.pipe_mem.dcache.is_ready)
+           ,.cache_req_complete_i(calculator.pipe_mem.dcache.cache_req_complete_i)
+           ,.cache_req_nonblocking_i(calculator.pipe_mem.dcache.nonblocking_req)
 
            ,.cosim_clk_i(testbench.cosim_clk_i)
            ,.cosim_reset_i(testbench.cosim_reset_i)
@@ -461,7 +478,7 @@ module testbench
 
            ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)
            ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
-           ,.dcache_rollback(be.scheduler.commit_pkt_cast_i.rollback)
+           ,.dcache_rollback(be.scheduler.commit_pkt_cast_i.npc_w_v)
            ,.long_haz(be.detector.long_haz_v)
            ,.exception(be.director.commit_pkt_cast_i.exception)
            ,.eret(be.director.commit_pkt_cast_i.eret)
