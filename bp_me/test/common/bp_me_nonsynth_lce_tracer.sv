@@ -75,14 +75,6 @@ module bp_me_nonsynth_lce_tracer
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header_o);
 
   // Structs for output messages
-  bp_bedrock_lce_req_payload_s  lce_req_payload;
-  bp_bedrock_lce_resp_payload_s lce_resp_payload;
-  bp_bedrock_lce_cmd_payload_s  lce_cmd_payload, lce_cmd_lo_payload;
-
-  assign lce_req_payload = lce_req_header_cast_i.payload;
-  assign lce_resp_payload = lce_resp_header_cast_i.payload;
-  assign lce_cmd_payload = lce_cmd_header_cast_i.payload;
-  assign lce_cmd_lo_payload = lce_cmd_header_o_cast_i.payload;
 
   integer file;
   string file_name;
@@ -116,44 +108,68 @@ module bp_me_nonsynth_lce_tracer
 
       // request to CCE
       if (lce_req_v_i & lce_req_ready_and_i) begin
-        assert(lce_req_payload.src_id == lce_id_i) else $error("Bad LCE Request - source mismatch");
-        $fdisplay(file, "%12t |: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] set[%0d] ne[%b] lru[%0d] size[%b] %H"
-                  , $time, lce_req_payload.src_id, lce_req_header_cast_i.addr, lce_req_payload.dst_id, lce_req_header_cast_i.msg_type
+        assert(lce_req_header_cast_i.payload.src_id == lce_id_i) else $error("Bad LCE Request - source mismatch");
+        $fdisplay(file, "%12t |: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] set[%0d] ne[%b] lru[%0d] size[%b]"
+                  , $time, lce_req_header_cast_i.payload.src_id, lce_req_header_cast_i.addr, lce_req_header_cast_i.payload.dst_id, lce_req_header_cast_i.msg_type
                   , lce_req_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp]
-                  , lce_req_payload.non_exclusive, lce_req_payload.lru_way_id
-                  , lce_req_header_cast_i.size, lce_req_data_i
+                  , lce_req_header_cast_i.payload.non_exclusive, lce_req_header_cast_i.payload.lru_way_id
+                  , lce_req_header_cast_i.size
                   );
+        if (lce_req_header_cast_i.msg_type.req inside {e_bedrock_req_uc_wr, e_bedrock_req_uc_amo}) begin
+          $fdisplay(file, "%12t |: LCE[%0d] REQ DATA %H"
+                    , $time, lce_req_header_cast_i.payload.src_id
+                    , lce_req.data
+                    );
+        end
         cnt_up <= 1'b1;
       end
 
       // response to CCE
       if (lce_resp_v_i & lce_resp_ready_and_i) begin
-        assert(lce_resp_payload.src_id == lce_id_i) else $error("Bad LCE Response - source mismatch");
-        $fdisplay(file, "%12t |: LCE[%0d] RESP addr[%H] cce[%0d] msg[%b] set[%0d] len[%b] %H"
-                  , $time, lce_resp_payload.src_id, lce_resp_header_cast_i.addr, lce_resp_payload.dst_id, lce_resp_header_cast_i.msg_type
+        assert(lce_resp_header_cast_i.payload.src_id == lce_id_i) else $error("Bad LCE Response - source mismatch");
+        $fdisplay(file, "%12t |: LCE[%0d] RESP addr[%H] cce[%0d] msg[%b] set[%0d] len[%b]"
+                  , $time, lce_resp_header_cast_i.payload.src_id, lce_resp_header_cast_i.addr, lce_resp_header_cast_i.payload.dst_id, lce_resp_header_cast_i.msg_type
                   , lce_resp_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp]
-                  , lce_resp_header_cast_i.size, lce_resp_data_i
+                  , lce_resp_header_cast_i.size
                   );
+        if (lce_resp_header_cast_i.msg_type.resp inside {e_bedrock_resp_wb}) begin
+          $fdisplay(file, "%12t |: LCE[%0d] RESP DATA %H"
+                    , $time, lce_resp_header_cast_i.payload.src_id
+                    , lce_resp.data
+                    );
+        end
       end
 
       // command to LCE
       if (lce_cmd_v_i & lce_cmd_ready_and_i) begin
-        assert(lce_cmd_payload.dst_id == lce_id_i) else $error("Bad LCE Command - destination mismatch");
-        $fdisplay(file, "%12t |: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
-                  , $time, lce_cmd_payload.dst_id, lce_cmd_header_cast_i.addr, lce_cmd_payload.src_id, lce_cmd_header_cast_i.msg_type
-                  , lce_cmd_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp], lce_cmd_payload.way_id, lce_cmd_payload.state, lce_cmd_payload.target
-                  , lce_cmd_payload.target_way_id, lce_cmd_header_cast_i.size, lce_cmd_data_i
+        assert(lce_cmd_header_cast_i.payload.dst_id == lce_id_i) else $error("Bad LCE Command - destination mismatch");
+        $fdisplay(file, "%12t |: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b]"
+                  , $time, lce_cmd_header_cast_i.payload.dst_id, lce_cmd_header_cast_i.addr, lce_cmd_header_cast_i.payload.src_id, lce_cmd_header_cast_i.msg_type
+                  , lce_cmd_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp], lce_cmd_header_cast_i.payload.way_id, lce_cmd_header_cast_i.payload.state, lce_cmd_header_cast_i.payload.target
+                  , lce_cmd_header_cast_i.payload.target_way_id, lce_cmd_header_cast_i.size
                   );
+        if (lce_cmd_header_cast_i.msg_type.cmd inside {e_bedrock_cmd_data, e_bedrock_cmd_uc_data}) begin
+          $fdisplay(file, "%12t |: LCE[%0d] CMD DATA %H"
+                    , $time, lce_cmd_header_cast_i.payload.dst_id
+                    , lce_cmd.data
+                    );
+        end
       end
 
       // command from LCE
       if (lce_cmd_o_v_i & lce_cmd_o_ready_and_i) begin
-        $fdisplay(file, "%12t |: LCE[%0d] CMD OUT dst[%0d] addr[%H] CCE[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
-                  , $time, lce_id_i, lce_cmd_lo_payload.dst_id, lce_cmd_header_o_cast_i.addr, lce_cmd_lo_payload.src_id, lce_cmd_header_o_cast_i.msg_type
+        $fdisplay(file, "%12t |: LCE[%0d] CMD OUT dst[%0d] addr[%H] CCE[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b]"
+                  , $time, lce_id_i, lce_cmd_header_o_cast_i.payload.dst_id, lce_cmd_header_o_cast_i.addr, lce_cmd_header_o_cast_i.payload.src_id, lce_cmd_header_o_cast_i.msg_type
                   , lce_cmd_header_o_cast_i.addr[block_offset_bits_lp+:lg_sets_lp]
-                  , lce_cmd_lo_payload.way_id, lce_cmd_lo_payload.state, lce_cmd_lo_payload.target, lce_cmd_lo_payload.target_way_id
-                  , lce_cmd_header_o_cast_i.size, lce_cmd_data_o_i
+                  , lce_cmd_header_o_cast_i.payload.way_id, lce_cmd_header_o_cast_i.payload.state, lce_cmd_header_o_cast_i.payload.target, lce_cmd_header_o_cast_i.payload.target_way_id
+                  , lce_cmd_header_o_cast_i.size
                   );
+        if (lce_cmd_header_o_cast_i.msg_type.cmd inside {e_bedrock_cmd_data}) begin
+          $fdisplay(file, "%12t |: LCE[%0d] CMD OUT DATA %H"
+                    , $time, lce_id_i
+                    , lce_cmd_lo.data
+                    );
+        end
       end
 
       if (cache_req_complete_i) begin

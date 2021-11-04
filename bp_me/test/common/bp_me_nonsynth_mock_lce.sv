@@ -365,6 +365,7 @@ module bp_me_nonsynth_mock_lce
 
     ,FINISH_MISS
     ,FINISH_MISS_SEND
+    ,ERROR
   } lce_state_e;
 
   lce_state_e lce_state_r, lce_state_n;
@@ -802,9 +803,14 @@ module bp_me_nonsynth_mock_lce
             lce_state_n = LCE_CMD_ST;
           end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_st_tr_wb) begin
             lce_state_n = LCE_CMD_ST;
+          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_sync) begin
+            lce_state_n = ERROR;
+            $error("sync LCE command received from CCE[%d]", lce_cmd.header.payload.src_id);
           end else begin
-            lce_state_n = RESET;
-            $error("unrecognized LCE command received");
+            lce_state_n = ERROR;
+            $error("unrecognized LCE command received from CCE[%d]: %d"
+                   , lce_cmd.header.payload.src_id
+                   , lce_cmd.header.msg_type.cmd);
           end
 
         end else if (tr_pkt_v_i & ~mshr_r.miss) begin
@@ -1170,9 +1176,9 @@ module bp_me_nonsynth_mock_lce
         end else begin
           if (mshr_r.miss) begin
             lce_state_n = TR_CMD_ST_MISS;
-          end else if (~mshr_r.miss && ((tag_hit_state_r == e_COH_M) || (tag_hit_state_r == e_COH_E))) begin
+          end else if (~mshr_r.miss && (tag_hit_state_r inside {e_COH_M, e_COH_E})) begin
             lce_state_n = TR_CMD_ST_HIT;
-          end else if (~mshr_r.miss && (tag_hit_state_r == e_COH_S)) begin
+          end else if (~mshr_r.miss && (tag_hit_state_r inside {e_COH_S, e_COH_F, e_COH_O})) begin
             // upgrade counts as a miss - update the mshr
             mshr_n.miss = 1'b1;
             mshr_n.upgrade = 1'b1;
@@ -1292,8 +1298,11 @@ module bp_me_nonsynth_mock_lce
         lce_state_n = (lce_req_ready_and_i) ? READY : TR_CMD_ST_MISS;
 
       end
+      ERROR: begin
+        lce_state_n = lce_state_r;
+      end
       default: begin
-        lce_state_n = RESET;
+        lce_state_n = ERROR;
       end
     endcase
   end

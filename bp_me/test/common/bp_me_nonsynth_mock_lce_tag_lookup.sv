@@ -50,7 +50,8 @@ module bp_me_nonsynth_mock_lce_tag_lookup
   // hit_o is set if tag matched and coherence state was any valid state
   assign hit_o = |hits;
   assign way_o = way_lo;
-  assign dirty_o = (tags[way_o].state == e_COH_M);
+  // MOESIF states: M and O are dirty
+  assign dirty_o = (tags[way_o].state inside {e_COH_M, e_COH_O});
   assign state_o = tags[way_o].state;
 
 endmodule
