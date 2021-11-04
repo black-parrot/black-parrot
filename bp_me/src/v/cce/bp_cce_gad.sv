@@ -117,7 +117,8 @@ module bp_cce_gad
 
   // Upgrade from read-only to read-write
   // Requesting LCE has block cached in read-only state and request is a store-miss
-  assign upgrade_flag_o = (req_type_flag_i & req_lce_ro);
+  // Only for cached access
+  assign upgrade_flag_o = req_type_flag_i & req_lce_ro & ~uncached_req_flag_i;
 
   // Replace the LRU block if not doing an upgrade and the lru block might be dirty
   // also set replacement flag when the block is cached (in any state) by the requesting
