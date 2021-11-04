@@ -803,14 +803,14 @@ module bp_me_nonsynth_mock_lce
             lce_state_n = LCE_CMD_ST;
           end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_st_tr_wb) begin
             lce_state_n = LCE_CMD_ST;
-          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_sync) begin
+          end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_sync) begin
             lce_state_n = ERROR;
-            $error("sync LCE command received from CCE[%d]", lce_cmd.header.payload.src_id);
+            $error("sync LCE command received from CCE[%d]", lce_cmd_header_lo.payload.src_id);
           end else begin
             lce_state_n = ERROR;
             $error("unrecognized LCE command received from CCE[%d]: %d"
-                   , lce_cmd.header.payload.src_id
-                   , lce_cmd.header.msg_type.cmd);
+                   , lce_cmd_header_lo.payload.src_id
+                   , lce_cmd_header_lo.msg_type.cmd);
           end
 
         end else if (tr_pkt_v_i & ~mshr_r.miss) begin

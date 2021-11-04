@@ -118,7 +118,7 @@ module bp_me_nonsynth_lce_tracer
         if (lce_req_header_cast_i.msg_type.req inside {e_bedrock_req_uc_wr, e_bedrock_req_uc_amo}) begin
           $fdisplay(file, "%12t |: LCE[%0d] REQ DATA %H"
                     , $time, lce_req_header_cast_i.payload.src_id
-                    , lce_req.data
+                    , lce_req_data_i
                     );
         end
         cnt_up <= 1'b1;
@@ -135,7 +135,7 @@ module bp_me_nonsynth_lce_tracer
         if (lce_resp_header_cast_i.msg_type.resp inside {e_bedrock_resp_wb}) begin
           $fdisplay(file, "%12t |: LCE[%0d] RESP DATA %H"
                     , $time, lce_resp_header_cast_i.payload.src_id
-                    , lce_resp.data
+                    , lce_resp_data_i
                     );
         end
       end
@@ -151,7 +151,7 @@ module bp_me_nonsynth_lce_tracer
         if (lce_cmd_header_cast_i.msg_type.cmd inside {e_bedrock_cmd_data, e_bedrock_cmd_uc_data}) begin
           $fdisplay(file, "%12t |: LCE[%0d] CMD DATA %H"
                     , $time, lce_cmd_header_cast_i.payload.dst_id
-                    , lce_cmd.data
+                    , lce_cmd_data_i
                     );
         end
       end
@@ -167,7 +167,7 @@ module bp_me_nonsynth_lce_tracer
         if (lce_cmd_header_o_cast_i.msg_type.cmd inside {e_bedrock_cmd_data}) begin
           $fdisplay(file, "%12t |: LCE[%0d] CMD OUT DATA %H"
                     , $time, lce_id_i
-                    , lce_cmd_lo.data
+                    , lce_cmd_data_o_i
                     );
         end
       end
