@@ -140,6 +140,7 @@ module bp_lce_req
       ,.data_i(cache_req_i)
       ,.data_o(cache_req_r)
       );
+  wire [paddr_width_p-1:0] req_addr = (cache_req_r.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
 
   logic cache_req_metadata_v_r;
   bsg_dff_reset_set_clear
@@ -263,8 +264,9 @@ module bp_lce_req
         lce_req_v_o = lce_req_ready_then_i & cache_req_metadata_v_r;
 
         lce_req_header_cast_o.size = req_block_size_lp;
-        lce_req_header_cast_o.addr = cache_req_r.addr;
-        lce_req_header_cast_o.msg_type = (cache_req_r.msg_type == e_miss_load)
+        // align address to cache block size
+        lce_req_header_cast_o.addr = req_addr;
+        lce_req_header_cast_o.msg_type.req = (cache_req_r.msg_type == e_miss_load)
           ? e_bedrock_req_rd_miss
           : e_bedrock_req_wr_miss;
 
@@ -290,7 +292,7 @@ module bp_lce_req
 
         lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
         lce_req_header_cast_o.addr = cache_req_r.addr;
-        lce_req_header_cast_o.msg_type = e_bedrock_req_uc_rd;
+        lce_req_header_cast_o.msg_type.req = e_bedrock_req_uc_rd;
 
         state_n = lce_req_v_o
           ? e_ready
