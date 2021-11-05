@@ -97,7 +97,7 @@
     , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                    \
     , localparam cce_way_groups_p           =                                                      \
         `BSG_MAX(dcache_sets_p, `BSG_MAX(icache_sets_p, num_cacc_p ? acache_sets_p : '0))          \
-    , localparam cce_ucode_p                = proc_param_lp.cce_ucode                              \
+    , localparam cce_type_p                 = proc_param_lp.cce_type                               \
                                                                                                    \
     , localparam l2_en_p                  = proc_param_lp.l2_en                                    \
     , localparam l2_data_width_p          = proc_param_lp.l2_data_width                            \
@@ -241,7 +241,7 @@
           ,`bp_aviary_parameter_override(acache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(acache_fill_width, override_cfg_mp, default_cfg_mp)       \
                                                                                                    \
-          ,`bp_aviary_parameter_override(cce_ucode, override_cfg_mp, default_cfg_mp)               \
+          ,`bp_aviary_parameter_override(cce_type, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)            \
                                                                                                    \
           ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                   \

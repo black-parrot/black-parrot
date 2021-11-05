@@ -15,7 +15,7 @@
 
   // CCE Operating Mode
   // e_cce_mode_uncached: CCE supports uncached requests only
-  // e_cce_mode_normal: CCE operates as a microcoded engine, features depend on microcode provided
+  // e_cce_mode_normal: CCE supports cacheable requests
   typedef enum logic
   {
     e_cce_mode_uncached = 0
