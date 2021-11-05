@@ -36,7 +36,9 @@ $(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
 
 TRACE_TOUCH = test$(ME_TEST_P)_s$(SEED_P)_l$(NUM_LCE_P)_n$(NUM_INSTR_P)_m$(LCE_MODE_P)$(CCE_MODE_P).touch
 $(SIM_DIR)/$(TRACE_TOUCH):
-	$(PYTHON) $(TB_PATH)/$(TB)/bsg_trace_rom.py --dir $(@D) --file-name test -n $(NUM_INSTR_P) -l $(NUM_LCE_P) --seed $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) --test $(ME_TEST_P)
+	$(PYTHON) $(TB_PATH)/$(TB)/me_test.py --dir $(@D) --file-name test -n $(NUM_INSTR_P) \
+		-l $(NUM_LCE_P) --seed $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) \
+		--test $(ME_TEST_P) --mem-blocks $(MEM_BLOCKS_P) $(ME_DEBUG_FLAG)
 	touch $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)

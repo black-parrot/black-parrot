@@ -71,13 +71,19 @@ class TestGenerator(object):
     return ops
 
   # Random loads and stores to a single set (set 0)
-  def setHammerTest(self, N=16, mem_base=0, mem_bytes=1024, mem_block_size=64, mem_size=2, assoc=8, sets=64, seed=0, lce_mode=0):
+  def setHammerTest(self, N=16, mem_base=0, mem_bytes=1024, mem_block_size=64, mem_blocks=16, assoc=8, sets=64, seed=0, lce_mode=0, target_set=None):
     # test begin
     random.seed(seed)
     ops = []
     mem = TestMemory(mem_base, mem_bytes, mem_block_size, self.debug)
-    # compute block addresses for all blocks mapping to set 0
-    blocks = [i*sets*mem_block_size for i in range(assoc*mem_size)]
+    # compute block addresses for all blocks mapping to chosen set
+    set_stride = sets*mem_block_size
+    # randomly pick a set to target if valid set not provided
+    if (target_set is None) or (target_set < 0) or (target_set >= sets):
+      target_set = random.choice([i for i in range(sets)])
+    target_set_offset = target_set*mem_block_size
+    # generate addresses of blocks residing in chosen set
+    blocks = [(i*set_stride)+target_set_offset for i in range(mem_blocks)]
 
     store_val = 1
     for i in range(N):

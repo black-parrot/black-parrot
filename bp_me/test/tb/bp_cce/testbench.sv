@@ -197,10 +197,10 @@ module testbench
 
   // LCE-CCE command interface (from CCE to xbar)
   bp_bedrock_lce_cmd_header_s cce_lce_cmd_header_lo;
-  logic cce_lce_cmd_header_v_Lo, cce_lce_cmd_header_ready_and_li, cce_lce_cmd_has_data_lo;
+  logic cce_lce_cmd_header_v_lo, cce_lce_cmd_header_ready_and_li, cce_lce_cmd_has_data_lo;
   logic [dword_width_gp-1:0] cce_lce_cmd_data_lo;
   logic cce_lce_cmd_data_v_lo, cce_lce_cmd_data_ready_and_li, cce_lce_cmd_last_lo;
-  wire [lg_num_lce_lp-1:0] lce_cmd_dst_lo = cce_lce_cmd_header_lo.payload.dst_id;
+  wire [lg_num_lce_lp-1:0] lce_cmd_dst_lo = cce_lce_cmd_header_lo.payload.dst_id[0+:lg_num_lce_lp];
 
   // Req Crossbar
   bp_me_xbar_burst
@@ -280,7 +280,7 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.msg_header_i({cce_lce_cmd_header_lo, lce_cmd_out_header})
-     ,.msg_header_v_i({cce_lce_cmd_header_v_Lo, lce_cmd_out_header_v})
+     ,.msg_header_v_i({cce_lce_cmd_header_v_lo, lce_cmd_out_header_v})
      ,.msg_header_yumi_o({cce_lce_cmd_header_ready_and_li, lce_cmd_out_header_ready_and})
      ,.msg_has_data_i({cce_lce_cmd_has_data_lo, lce_cmd_out_has_data})
      ,.msg_data_i({cce_lce_cmd_data_lo, lce_cmd_out_data})
@@ -542,7 +542,7 @@ module testbench
        ,.out_msg_last_o(lce_cmd_out_last[i])
        );
 
-    assign lce_cmd_out_dst[i] = lce_cmd_out_header[i].payload.dst_id;
+    assign lce_cmd_out_dst[i] = lce_cmd_out_header[i].payload.dst_id[0+:lg_num_lce_lp];
   end
 
   // CCE
@@ -583,7 +583,7 @@ module testbench
     ,.lce_resp_last_i(cce_lce_resp_last_li)
 
     ,.lce_cmd_header_o(cce_lce_cmd_header_lo)
-    ,.lce_cmd_header_v_o(cce_lce_cmd_header_v_Lo)
+    ,.lce_cmd_header_v_o(cce_lce_cmd_header_v_lo)
     ,.lce_cmd_header_ready_and_i(cce_lce_cmd_header_ready_and_li)
     ,.lce_cmd_has_data_o(cce_lce_cmd_has_data_lo)
     ,.lce_cmd_data_o(cce_lce_cmd_data_lo)
@@ -826,7 +826,7 @@ module testbench
 
   // CCE instruction tracer
   // this is connected to the instruction registered in the EX stage
-  if (cce_ucode_p) begin
+  if (cce_type_p == e_cce_ucode) begin
     bind bp_cce
       bp_me_nonsynth_cce_inst_tracer
         #(.bp_params_p(bp_params_p)
@@ -863,7 +863,7 @@ module testbench
          );
 
   end
-  else begin
+  else if (cce_type_p == e_cce_fsm) begin
     bind bp_cce_fsm
       bp_me_nonsynth_cce_perf
         #(.bp_params_p(bp_params_p))
