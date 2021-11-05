@@ -614,7 +614,7 @@ module testbench
 
           // CCE instruction tracer
           // this is connected to the instruction registered in the EX stage
-          if (cce_ucode_p) begin
+          if (cce_type_p == e_cce_ucode) begin
             bind bp_cce
               bp_me_nonsynth_cce_inst_tracer
                 #(.bp_params_p(bp_params_p)
@@ -650,7 +650,7 @@ module testbench
                  ,.mem_cmd_header_i(mem_cmd_base_header_lo)
                  );
 
-          end else begin
+          end else if (cce_type_p == e_cce_fsm) begin
             bind bp_cce_fsm
               bp_me_nonsynth_cce_perf
                 #(.bp_params_p(bp_params_p))
