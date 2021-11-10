@@ -354,10 +354,10 @@ module bp_cce_fsm
       ,.sharers_coh_states_i(sharers_coh_states_lo)
 
       ,.req_lce_i(mshr_r.lce_id)
-      ,.req_type_flag_i(mshr_r.flags[e_opd_rqf])
+      ,.req_type_flag_i(mshr_r.flags.write_not_read)
       ,.lru_coh_state_i(mshr_r.lru_coh_state)
-      ,.atomic_req_flag_i(mshr_r.flags[e_opd_arf])
-      ,.uncached_req_flag_i(mshr_r.flags[e_opd_ucf])
+      ,.atomic_req_flag_i(mshr_r.flags.atomic)
+      ,.uncached_req_flag_i(mshr_r.flags.uncached)
 
       ,.req_addr_way_o(gad_req_addr_way_lo)
       ,.owner_lce_o(gad_owner_lce_lo)
@@ -615,11 +615,11 @@ module bp_cce_fsm
   wire lce_resp_coh_ack_yumi = lce_resp_v & (lce_resp.msg_type.resp == e_bedrock_resp_coh_ack) & ~pending_busy;
 
   // transfer occurs if any cache has block in E, M, O, or F (ownerhsip states)
-  wire transfer_flag = (mshr_r.flags[e_opd_cef] | mshr_r.flags[e_opd_cmf]
-                        | mshr_r.flags[e_opd_cof] | mshr_r.flags[e_opd_cff]);
+  wire transfer_flag = (mshr_r.flags.cached_exclusive | mshr_r.flags.cached_modified
+                        | mshr_r.flags.cached_owned | mshr_r.flags.cached_forward);
   // invalidations occur if write request and any blcok in S state (shared, not owner)
   // owner does not need to be invalidated; owner state is changed by the st_tr or st_tr_wb command
-  wire invalidate_flag = (mshr_r.flags[e_opd_rqf] & mshr_r.flags[e_opd_csf]);
+  wire invalidate_flag = (mshr_r.flags.write_not_read & mshr_r.flags.cached_shared);
 
   always_comb begin
     state_n = state_r;
@@ -1156,12 +1156,12 @@ module bp_cce_fsm
             mshr_n.paddr = lce_req.addr;
             mshr_n.msg_size = lce_req.size;
             mshr_n.lru_way_id = lce_req.payload.lru_way_id;
-            mshr_n.flags[e_opd_rqf] = (lce_req.msg_type.req == e_bedrock_req_wr_miss);
-            mshr_n.flags[e_opd_nerf] = lce_req.payload.non_exclusive;
+            mshr_n.flags.write_not_read = (lce_req.msg_type.req == e_bedrock_req_wr_miss);
+            mshr_n.flags.non_exclusive = lce_req.payload.non_exclusive;
 
             // query PMA for coherence property - it is a violation for a cached request
             // to be incoherent.
-            mshr_n.flags[e_opd_rcf] = req_pma_cacheable_addr_lo;
+            mshr_n.flags.cacheable_address = req_pma_cacheable_addr_lo;
 
             state_n = ~req_pma_cacheable_addr_lo
                       ? e_error
@@ -1173,12 +1173,12 @@ module bp_cce_fsm
 
             mshr_n.paddr = lce_req.addr;
             mshr_n.msg_size = lce_req.size;
-            mshr_n.flags[e_opd_ucf] = 1'b1;
-            mshr_n.flags[e_opd_rqf] = (lce_req.msg_type.req == e_bedrock_req_uc_wr);
+            mshr_n.flags.uncached = 1'b1;
+            mshr_n.flags.write_not_read = (lce_req.msg_type.req == e_bedrock_req_uc_wr);
 
             // query PMA for coherence property
             // uncached requests can be made to coherent or incoherent memory regions
-            mshr_n.flags[e_opd_rcf] = req_pma_cacheable_addr_lo;
+            mshr_n.flags.cacheable_address = req_pma_cacheable_addr_lo;
 
             // a coherent, but uncached request must serialize with other coherent operations
             // using the pending bits
@@ -1198,7 +1198,7 @@ module bp_cce_fsm
       e_uncached_req: begin
 
         // uncached store
-        if (mshr_r.flags[e_opd_rqf]) begin
+        if (mshr_r.flags.write_not_read) begin
           // first beat of memory command must include data
           // handshake is r&v on both LCE request header and memory command stream, and
           // valid->yumi on LCE request data
@@ -1284,17 +1284,17 @@ module bp_cce_fsm
         if (lce_req_v & ~pending_busy) begin
           // write the pending bit if not amo or uncached to coherent memory
           // because those ops do not send coh_ack back to CCE after request completes
-          pending_w_v =  ~(mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]);
+          pending_w_v =  ~(mshr_r.flags.atomic | mshr_r.flags.uncached);
           pending_w_addr = lce_req.addr;
           pending_li = 1'b1;
 
           // skip speculative memory access if amo/uncached
-          state_n = (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+          state_n = (mshr_r.flags.atomic | mshr_r.flags.uncached)
                     ? e_read_dir
                     : e_read_mem_spec;
 
           // only dequeue the request now if it is a normal cached request
-          lce_req_yumi = ~(mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]);
+          lce_req_yumi = ~(mshr_r.flags.atomic | mshr_r.flags.uncached);
 
         end else begin
           // pending bit write port is busy, stay in e_ready state and try to consume request
@@ -1366,13 +1366,13 @@ module bp_cce_fsm
 
           mshr_n.way_id = gad_req_addr_way_lo;
 
-          mshr_n.flags[e_opd_rf] = gad_replacement_flag_lo;
-          mshr_n.flags[e_opd_uf] = gad_upgrade_flag_lo;
-          mshr_n.flags[e_opd_csf] = gad_cached_shared_flag_lo;
-          mshr_n.flags[e_opd_cef] = gad_cached_exclusive_flag_lo;
-          mshr_n.flags[e_opd_cmf] = gad_cached_modified_flag_lo;
-          mshr_n.flags[e_opd_cof] = gad_cached_owned_flag_lo;
-          mshr_n.flags[e_opd_cff] = gad_cached_forward_flag_lo;
+          mshr_n.flags.replacement = gad_replacement_flag_lo;
+          mshr_n.flags.upgrade = gad_upgrade_flag_lo;
+          mshr_n.flags.cached_shared = gad_cached_shared_flag_lo;
+          mshr_n.flags.cached_exclusive = gad_cached_exclusive_flag_lo;
+          mshr_n.flags.cached_modified = gad_cached_modified_flag_lo;
+          mshr_n.flags.cached_owned = gad_cached_owned_flag_lo;
+          mshr_n.flags.cached_forward = gad_cached_forward_flag_lo;
 
           mshr_n.owner_lce_id = gad_owner_lce_lo;
           mshr_n.owner_way_id = gad_owner_lce_way_lo;
@@ -1383,11 +1383,11 @@ module bp_cce_fsm
           // atomic or uncached requests to coherent memory will set block to Invalid if it is
           // present in the requesting LCE
           mshr_n.next_coh_state =
-            (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+            (mshr_r.flags.atomic | mshr_r.flags.uncached)
             ? e_COH_I
-            : (mshr_r.flags[e_opd_rqf])
+            : (mshr_r.flags.write_not_read)
               ? e_COH_M
-              : (mshr_r.flags[e_opd_nerf])
+              : (mshr_r.flags.non_exclusive)
                 ? e_COH_S
                 : (gad_cached_shared_flag_lo | gad_cached_exclusive_flag_lo | gad_cached_modified_flag_lo
                    | gad_cached_owned_flag_lo | gad_cached_forward_flag_lo)
@@ -1409,7 +1409,7 @@ module bp_cce_fsm
         dir_coh_state_li = mshr_r.next_coh_state;
 
         // upgrade detected, only change state
-        if (mshr_r.flags[e_opd_uf]) begin
+        if (mshr_r.flags.upgrade) begin
           dir_w_v = 1'b1;
           dir_cmd = e_wds_op;
           dir_way_li = mshr_r.way_id;
@@ -1417,8 +1417,8 @@ module bp_cce_fsm
         // amo or uncached to coherent memory
         // only write directory if replacement flag is set indicating the requsting LCE has
         // the block cached already
-        end else if (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]) begin
-          dir_w_v = mshr_r.flags[e_opd_rf];
+        end else if (mshr_r.flags.atomic | mshr_r.flags.uncached) begin
+          dir_w_v = mshr_r.flags.replacement;
           dir_cmd = e_wds_op;
           // the block, if cached at the LCE, is in the way indicated by the way_id field of
           // the MSHR as produced by the GAD module
@@ -1438,13 +1438,13 @@ module bp_cce_fsm
         // Invalidations, if needed
         // Upgrade, Transfer, or Memory access (resolve speculative access)
         state_n =
-          (mshr_r.flags[e_opd_rf])
+          (mshr_r.flags.replacement)
           ? e_replacement
           : (invalidate_flag)
             ? e_inv_cmd
-            : (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+            : (mshr_r.flags.atomic | mshr_r.flags.uncached)
               ? e_uc_coherent_cmd
-              : (mshr_r.flags[e_opd_uf])
+              : (mshr_r.flags.upgrade)
                 ? e_upgrade_stw_cmd
                 : (transfer_flag)
                   ? e_transfer
@@ -1452,7 +1452,7 @@ module bp_cce_fsm
 
         // setup required state for sending invalidations
         // only if next state is invalidations (i.e., not doing a replacement)
-        if (~mshr_r.flags[e_opd_rf] & invalidate_flag) begin
+        if (~mshr_r.flags.replacement & invalidate_flag) begin
           // don't invalidate the requesting LCE
           pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
           // if doing a transfer, also remove owner LCE since transfer
@@ -1475,7 +1475,7 @@ module bp_cce_fsm
           lce_cmd.msg_type.cmd = e_bedrock_cmd_st_wb;
           // for an uc/amo request, the mshr way_id field indicates the way in which the requesting
           // LCE's copy of the cache block is stored at the LCE
-          if (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]) begin
+          if (mshr_r.flags.atomic | mshr_r.flags.uncached) begin
             lce_cmd.payload.way_id = mshr_r.way_id;
             lce_cmd.addr = mshr_r.paddr;
           end else begin
@@ -1501,16 +1501,14 @@ module bp_cce_fsm
             // the speculative memory access
             state_n = (invalidate_flag)
                       ? e_inv_cmd
-                      : (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+                      : (mshr_r.flags.atomic | mshr_r.flags.uncached)
                         ? e_uc_coherent_cmd
                         : (transfer_flag)
                           ? e_transfer
                           : e_resolve_speculation;
 
             // clear the replacement flag
-            mshr_n.flags[e_opd_rf] = 1'b0;
-            // set null writeback flag
-            mshr_n.flags[e_opd_nwbf] = 1'b1;
+            mshr_n.flags.replacement = 1'b0;
 
             // setup required state for sending invalidations
             if (invalidate_flag) begin
@@ -1562,9 +1560,7 @@ module bp_cce_fsm
             pending_w_addr = lce_resp.addr;
 
             // clear the replacement flag
-            mshr_n.flags[e_opd_rf] = 1'b0;
-            // clear null writeback flag
-            mshr_n.flags[e_opd_nwbf] = 1'b0;
+            mshr_n.flags.replacement = 1'b0;
 
             // setup required state for sending invalidations
             if (mem_cmd_stream_done_li & invalidate_flag) begin
@@ -1636,9 +1632,9 @@ module bp_cce_fsm
 
       e_inv_ack: begin
         if (cnt == '0) begin
-          state_n = (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+          state_n = (mshr_r.flags.atomic | mshr_r.flags.uncached)
                     ? e_uc_coherent_cmd
-                    : (mshr_r.flags[e_opd_uf])
+                    : (mshr_r.flags.upgrade)
                       ? e_upgrade_stw_cmd
                       : (transfer_flag)
                         ? e_transfer
@@ -1650,9 +1646,9 @@ module bp_cce_fsm
             lce_resp_yumi = lce_resp_v;
             cnt_dec = lce_resp_yumi;
             if (cnt == 'd1) begin
-              state_n = (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+              state_n = (mshr_r.flags.atomic | mshr_r.flags.uncached)
                         ? e_uc_coherent_cmd
-                        : (mshr_r.flags[e_opd_uf])
+                        : (mshr_r.flags.upgrade)
                           ? e_upgrade_stw_cmd
                           : (transfer_flag)
                             ? e_transfer
@@ -1682,7 +1678,7 @@ module bp_cce_fsm
             // either invalidate or set tag and writeback
             // if owner is in F state, block is clean, so only need to invalidate
             // else, block in E, M, or O, need to invalidate and writeback
-            lce_cmd.msg_type.cmd = mshr_r.flags[e_opd_cff]
+            lce_cmd.msg_type.cmd = mshr_r.flags.cached_forward
                                    ? e_bedrock_cmd_inv
                                    : e_bedrock_cmd_st_wb;
 
@@ -1770,7 +1766,7 @@ module bp_cce_fsm
           mem_cmd_base_header_lo.addr = mshr_r.paddr;
           mem_cmd_base_header_lo.size = mshr_r.msg_size;
           // TODO: uncomment/modify when implementing atomics
-          //mem_cmd_base_header_lo.amo_no_return = mshr_r.flags[e_opd_anrf];
+          //mem_cmd_base_header_lo.amo_no_return = mshr_r.flags.atomic_no_return;
           mem_cmd_base_header_lo.payload.lce_id = mshr_r.lce_id;
           mem_cmd_base_header_lo.payload.way_id = '0;
           // this op is uncached in LCE for both amo or uncached requests
@@ -1803,14 +1799,14 @@ module bp_cce_fsm
           lce_cmd.payload.dst_id = mshr_r.owner_lce_id;
           lce_cmd.payload.way_id = mshr_r.owner_way_id;
 
-          lce_cmd.msg_type.cmd = mshr_r.flags[e_opd_rqf]
+          lce_cmd.msg_type.cmd = mshr_r.flags.write_not_read
                                         ? e_bedrock_cmd_st_tr
                                         : e_bedrock_cmd_st_tr_wb;
 
           lce_cmd.addr = mshr_r.paddr;
 
           // either Invalidate or Downgrade Owner, depending on request type
-          lce_cmd.payload.state = mshr_r.flags[e_opd_rqf] ? e_COH_I : e_COH_S;
+          lce_cmd.payload.state = mshr_r.flags.write_not_read ? e_COH_I : e_COH_S;
 
           // transfer information
           lce_cmd.payload.target = mshr_r.lce_id;
@@ -1823,10 +1819,10 @@ module bp_cce_fsm
           dir_addr_li = mshr_r.paddr;
           dir_lce_li = mshr_r.owner_lce_id;
           dir_way_li = mshr_r.owner_way_id;
-          dir_coh_state_li = mshr_r.flags[e_opd_rqf] ? e_COH_I : e_COH_S;
+          dir_coh_state_li = mshr_r.flags.write_not_read ? e_COH_I : e_COH_S;
 
           state_n = (lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
-                    ? mshr_r.flags[e_opd_rqf]
+                    ? mshr_r.flags.write_not_read
                       ? e_resolve_speculation
                       : e_transfer_wb_resp
                     : e_transfer;
@@ -1893,7 +1889,7 @@ module bp_cce_fsm
 
       e_resolve_speculation: begin
         // Resolve speculation
-        if (transfer_flag | mshr_r.flags[e_opd_uf]) begin
+        if (transfer_flag | mshr_r.flags.upgrade) begin
           // squash speculative memory request if transfer or upgrade
           spec_w_v = 1'b1;
           // no longer speculative
@@ -1902,7 +1898,7 @@ module bp_cce_fsm
           // squash the response
           squash_v_li = 1'b1;
           spec_bits_li.squash = 1'b1;
-        end else if (mshr_r.flags[e_opd_rqf]) begin
+        end else if (mshr_r.flags.write_not_read) begin
           // forward with M state
           spec_w_v = 1'b1;
           spec_v_li = 1'b1;
@@ -1911,7 +1907,7 @@ module bp_cce_fsm
           spec_bits_li.spec = 1'b0;
           spec_bits_li.state = e_COH_M;
           spec_bits_li.fwd_mod = 1'b1;
-        end else if (mshr_r.flags[e_opd_csf] | mshr_r.flags[e_opd_nerf]) begin
+        end else if (mshr_r.flags.cached_shared | mshr_r.flags.non_exclusive) begin
           // forward with S state
           spec_w_v = 1'b1;
           spec_v_li = 1'b1;

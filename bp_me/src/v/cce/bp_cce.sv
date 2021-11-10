@@ -606,10 +606,10 @@ module bp_cce
       ,.sharers_coh_states_i(sharers_coh_states_lo)
 
       ,.req_lce_i(mshr_lo.lce_id)
-      ,.req_type_flag_i(mshr_lo.flags[e_opd_rqf])
+      ,.req_type_flag_i(mshr_lo.flags.write_not_read)
       ,.lru_coh_state_i(mshr_lo.lru_coh_state)
-      ,.atomic_req_flag_i(mshr_lo.flags[e_opd_arf])
-      ,.uncached_req_flag_i(mshr_lo.flags[e_opd_ucf])
+      ,.atomic_req_flag_i(mshr_lo.flags.atomic)
+      ,.uncached_req_flag_i(mshr_lo.flags.uncached)
 
       ,.req_addr_way_o(gad_req_addr_way_lo)
       ,.owner_lce_o(gad_owner_lce_lo)

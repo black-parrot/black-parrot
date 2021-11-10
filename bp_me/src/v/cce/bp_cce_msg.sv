@@ -798,7 +798,7 @@ module bp_cce_msg
           // Requesting LCE and the owner LCE (if present) are excluded
           // Thus, only LCE's with the block in Shared (S) state are invalidated
           pe_sharers_n = sharers_hits_i & ~req_lce_id_one_hot;
-          pe_sharers_n = (mshr.flags[e_opd_cof] | mshr.flags[e_opd_cff])
+          pe_sharers_n = (mshr.flags.cached_owned | mshr.flags.cached_forward)
                          ? pe_sharers_n & ~owner_lce_id_one_hot
                          : pe_sharers_n;
           sharers_ways_n = sharers_ways_i;
@@ -882,7 +882,7 @@ module bp_cce_msg
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
-                mem_cmd_base_header_lo.payload.uncached = mshr.flags[e_opd_ucf];
+                mem_cmd_base_header_lo.payload.uncached = mshr.flags.uncached;
                 // stall if single beat doesn't send
                 mem_cmd_stall_o = ~(mem_cmd_v_o & mem_cmd_ready_and_i);
               end
@@ -920,7 +920,7 @@ module bp_cce_msg
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
-                mem_cmd_base_header_lo.payload.uncached = mshr.flags[e_opd_ucf];
+                mem_cmd_base_header_lo.payload.uncached = mshr.flags.uncached;
 
                 // only need to send more data if stream pump doesn't indicate stream is done
                 state_n = (mem_cmd_v_o & mem_cmd_ready_and_i & ~mem_cmd_stream_done_i)

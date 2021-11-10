@@ -234,16 +234,16 @@ module bp_cce_reg
             mshr_n.lru_way_id = lce_req_hdr.payload.lru_way_id;
             mshr_n.msg_size = lce_req_hdr.size;
             // flags written here must have their flag_w_v bit set by the decoder
-            mshr_n.flags[e_opd_rqf] = lce_req_rqf;
-            mshr_n.flags[e_opd_ucf] = lce_req_ucf;
-            mshr_n.flags[e_opd_nerf] = lce_req_nerf;
-            mshr_n.flags[e_opd_rcf] = req_pma_cacheable_addr_lo;
+            mshr_n.flags.write_not_read = lce_req_rqf;
+            mshr_n.flags.uncached = lce_req_ucf;
+            mshr_n.flags.non_exclusive = lce_req_nerf;
+            mshr_n.flags.cacheable_address = req_pma_cacheable_addr_lo;
           end
           e_src_q_sel_lce_resp: begin
             //mshr_n.lce_id = lce_resp_hdr.src_id;
             //mshr_n.paddr = lce_resp_hdr.addr;
             //mshr_n.msg_size = lce_resp_hdr.size;
-            mshr_n.flags[e_opd_nwbf] = lce_resp_nwbf;
+            mshr_n.flags.null_writeback = lce_resp_nwbf;
           end
           e_src_q_sel_mem_resp: begin
             //mshr_n.lce_id = mem_resp_hdr.payload.lce_id;
@@ -251,7 +251,7 @@ module bp_cce_reg
             //mshr_n.paddr = mem_resp_hdr.addr;
             //mshr_n.next_coh_state = mem_resp_hdr.payload.state;
             //mshr_n.msg_size = mem_resp_hdr.size;
-            mshr_n.flags[e_opd_sf] = mem_resp_hdr.payload.speculative;
+            mshr_n.flags.speculative = mem_resp_hdr.payload.speculative;
           end
           default: begin
           end
@@ -264,13 +264,13 @@ module bp_cce_reg
         mshr_n.owner_lce_id = gad_owner_lce_i;
         mshr_n.owner_way_id = gad_owner_way_i;
         mshr_n.owner_coh_state = gad_owner_coh_state_i;
-        mshr_n.flags[e_opd_rf] = gad_replacement_flag_i;
-        mshr_n.flags[e_opd_uf] = gad_upgrade_flag_i;
-        mshr_n.flags[e_opd_csf] = gad_cached_shared_flag_i;
-        mshr_n.flags[e_opd_cef] = gad_cached_exclusive_flag_i;
-        mshr_n.flags[e_opd_cmf] = gad_cached_modified_flag_i;
-        mshr_n.flags[e_opd_cof] = gad_cached_owned_flag_i;
-        mshr_n.flags[e_opd_cff] = gad_cached_forward_flag_i;
+        mshr_n.flags.replacement = gad_replacement_flag_i;
+        mshr_n.flags.upgrade = gad_upgrade_flag_i;
+        mshr_n.flags.cached_shared = gad_cached_shared_flag_i;
+        mshr_n.flags.cached_exclusive = gad_cached_exclusive_flag_i;
+        mshr_n.flags.cached_modified = gad_cached_modified_flag_i;
+        mshr_n.flags.cached_owned = gad_cached_owned_flag_i;
+        mshr_n.flags.cached_forward = gad_cached_forward_flag_i;
       end
 
       // Overrides from defaults - Directory
@@ -279,14 +279,14 @@ module bp_cce_reg
         mshr_n.lru_coh_state = dir_lru_coh_state_i;
       end
 
-      // RDP instruction writes pending flag
+      // RDP instruction writes pending flag from pending bit read
       if (decoded_inst_i.pending_r_v) begin
-        mshr_n.flags[e_opd_pf] = pending_i;
+        mshr_n.flags.pending = pending_i;
       end
 
-      // Spec Bits Read
+      // Spec Bits Read writes speculative flag from spec bit read
       if (decoded_inst_i.spec_r_v) begin
-        mshr_n.flags[e_opd_sf] = spec_sf_i;
+        mshr_n.flags.speculative = spec_sf_i;
       end
 
       // Flag operation - ldflags, ldflagsi, or clf
