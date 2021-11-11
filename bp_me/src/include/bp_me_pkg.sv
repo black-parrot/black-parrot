@@ -11,7 +11,7 @@ package bp_me_pkg;
 
   `include "bp_me_cce_pkgdef.svh"
   `include "bp_me_cce_inst_pkgdef.svh"
-  `include "bp_me_axi_pkgdef.sv"
+  `include "bp_me_axi_pkgdef.svh"
 
 endpackage
 
