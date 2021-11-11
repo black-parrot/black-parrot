@@ -16,7 +16,7 @@ package bp_me_pkg;
   localparam lce_resp_payload_mask_gp = (1 << e_bedrock_resp_wb);
 
   `include "bp_me_cce_inst_pkgdef.svh"
-  `include "bp_me_axi_pkgdef.sv"
+  `include "bp_me_axi_pkgdef.svh"
 
 endpackage
 
