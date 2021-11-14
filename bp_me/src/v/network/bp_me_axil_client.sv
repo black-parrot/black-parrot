@@ -2,7 +2,7 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module axi_lite_to_bp_lite_client
+module bp_me_axil_client
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
@@ -27,12 +27,12 @@ module axi_lite_to_bp_lite_client
    , output logic [cce_mem_header_width_lp-1:0] io_cmd_header_o
    , output logic [cce_block_width_p-1:0]       io_cmd_data_o
    , output logic                               io_cmd_v_o
-   , input                                      io_cmd_yumi_i
+   , input                                      io_cmd_ready_and_i
 
-   , input [cce_mem_header_width_lp-1:0]    io_resp_header_i
+   , input [cce_mem_header_width_lp-1:0]        io_resp_header_i
    , input [cce_block_width_p-1:0]              io_resp_data_i
    , input                                      io_resp_v_i
-   , output logic                               io_resp_ready_o
+   , output logic                               io_resp_ready_and_o
 
    //====================== AXI-4 LITE =========================
    // WRITE ADDRESS CHANNEL SIGNALS
@@ -101,7 +101,7 @@ module axi_lite_to_bp_lite_client
              );
 
       io_cmd_v_o           = '0;
-      io_resp_ready_o      = '0;
+      io_resp_ready_and_o  = '0;
 
       // WRITE ADDRESS CHANNEL SIGNALS
       s_axi_lite_awready_o = '0;
@@ -136,9 +136,11 @@ module axi_lite_to_bp_lite_client
       unique casez (state_r)
         e_wait:
           begin
-            s_axi_lite_arready_o = 1'b1;
+            // TODO: This assumes that we can either get a read/write, but not both.
+            //   Generally this is a good assumption, but is non-compliant with AXI
             s_axi_lite_awready_o = 1'b1;
             s_axi_lite_wready_o  = 1'b1;
+            s_axi_lite_arready_o = 1'b1;
 
             if (s_axi_lite_arvalid_i)
               begin
@@ -147,7 +149,7 @@ module axi_lite_to_bp_lite_client
                 io_cmd_header_cast_o.payload  = '{lce_id: lce_id_i, default: '0};
                 io_cmd_v_o                    = s_axi_lite_arvalid_i;
 
-                state_n = io_cmd_yumi_i ? e_read_resp : e_wait;
+                state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_read_resp : e_wait;
               end
 
             else if (s_axi_lite_awvalid_i & s_axi_lite_wvalid_i)
@@ -158,25 +160,25 @@ module axi_lite_to_bp_lite_client
                 io_cmd_data_o[axi_data_width_p-1:0]      = s_axi_lite_wdata_i;
                 io_cmd_v_o                               = (s_axi_lite_awvalid_i & s_axi_lite_wvalid_i);
 
-                state_n = io_cmd_yumi_i ? e_write_resp : e_wait;
+                state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_write_resp : e_wait;
               end
           end
 
         e_write_resp:
           begin
             s_axi_lite_bvalid_o = io_resp_v_i;
-            io_resp_ready_o     = s_axi_lite_bready_i;
+            io_resp_ready_and_o = s_axi_lite_bready_i;
 
-            state_n = (s_axi_lite_bready_i & s_axi_lite_bvalid_o) ? e_wait : state_r;
+            state_n = (io_resp_ready_and_o & io_resp_v_i) ? e_wait : state_r;
           end
 
         e_read_resp:
           begin
             s_axi_lite_rdata_o  = io_resp_data_i[0+:axi_data_width_p];
             s_axi_lite_rvalid_o = io_resp_v_i;
-            io_resp_ready_o     = s_axi_lite_rready_i;
+            io_resp_ready_and_o = s_axi_lite_rready_i;
 
-            state_n = (s_axi_lite_rready_i & s_axi_lite_rvalid_o) ? e_wait : state_r;
+            state_n = (io_resp_ready_and_o & io_resp_v_i) ? e_wait : state_r;
           end
 
         default: state_n = state_r;
