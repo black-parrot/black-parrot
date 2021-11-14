@@ -24,11 +24,13 @@ module axi_lite_to_bp_lite_client
    //==================== BP-LITE SIGNALS ======================
    , input [lce_id_width_p-1:0]                 lce_id_i
 
-   , output logic [cce_mem_msg_width_lp-1:0]    io_cmd_o
+   , output logic [cce_mem_header_width_lp-1:0] io_cmd_header_o
+   , output logic [cce_block_width_p-1:0]       io_cmd_data_o
    , output logic                               io_cmd_v_o
    , input                                      io_cmd_yumi_i
 
-   , input [cce_mem_msg_width_lp-1:0]           io_resp_i
+   , input [cce_mem_header_width_lp-1:0]    io_resp_header_i
+   , input [cce_block_width_p-1:0]              io_resp_data_i
    , input                                      io_resp_v_i
    , output logic                               io_resp_ready_o
 
@@ -77,20 +79,20 @@ module axi_lite_to_bp_lite_client
 
   // declaring i/o command and response struct type and size
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `bp_cast_o(bp_bedrock_cce_mem_msg_s, io_cmd);
-  `bp_cast_i(bp_bedrock_cce_mem_msg_s, io_resp);
+  `bp_cast_o(bp_bedrock_cce_mem_header_s, io_cmd_header);
+  `bp_cast_i(bp_bedrock_cce_mem_header_s, io_resp_header);
 
   // Declaring all possible states
   enum {e_wait, e_read_resp, e_write_resp} state_r, state_n;
 
-  bp_bedrock_cce_mem_payload_s io_cmd_cast_payload, io_resp_cast_payload;
   always_comb
     begin
       // BP side
-      io_cmd_cast_o        = '0;
+      io_cmd_header_cast_o = '0;
+      io_cmd_data_o = '0;
 
       // set default header size for reads
-      io_cmd_cast_o.header.size
+      io_cmd_header_cast_o.size
         = (axi_data_width_p == 32)
           ? e_bedrock_msg_size_4
           : ((axi_data_width_p == 64)
@@ -98,7 +100,6 @@ module axi_lite_to_bp_lite_client
              : `BSG_UNDEFINED_IN_SIM(e_bedrock_msg_size_4)
              );
 
-      io_cmd_cast_payload  = '{lce_id: lce_id_i, default: '0};
       io_cmd_v_o           = '0;
       io_resp_ready_o      = '0;
 
@@ -121,10 +122,10 @@ module axi_lite_to_bp_lite_client
       s_axi_lite_bvalid_o  = '0;
 
       case (s_axi_lite_wstrb_i)
-        axi_strb_width_lp'('h1)  : io_cmd_cast_o.header.size = e_bedrock_msg_size_1;
-        axi_strb_width_lp'('h3)  : io_cmd_cast_o.header.size = e_bedrock_msg_size_2;
-        axi_strb_width_lp'('hF)  : io_cmd_cast_o.header.size = e_bedrock_msg_size_4;
-        axi_strb_width_lp'('hFF) : io_cmd_cast_o.header.size = e_bedrock_msg_size_8;
+        axi_strb_width_lp'('h1)  : io_cmd_header_cast_o.size = e_bedrock_msg_size_1;
+        axi_strb_width_lp'('h3)  : io_cmd_header_cast_o.size = e_bedrock_msg_size_2;
+        axi_strb_width_lp'('hF)  : io_cmd_header_cast_o.size = e_bedrock_msg_size_4;
+        axi_strb_width_lp'('hFF) : io_cmd_header_cast_o.size = e_bedrock_msg_size_8;
         default:
           // does nothing in verilator 4.202
           `BSG_HIDE_FROM_VERILATOR(assert final (reset_i !== '0 || s_axi_lite_wvalid_i == 0) else)
@@ -141,9 +142,9 @@ module axi_lite_to_bp_lite_client
 
             if (s_axi_lite_arvalid_i)
               begin
-                io_cmd_cast_o.header.addr     = s_axi_lite_araddr_i;
-                io_cmd_cast_o.header.msg_type = e_bedrock_mem_uc_rd;
-                io_cmd_cast_o.header.payload  = io_cmd_cast_payload;
+                io_cmd_header_cast_o.addr     = s_axi_lite_araddr_i;
+                io_cmd_header_cast_o.msg_type = e_bedrock_mem_uc_rd;
+                io_cmd_header_cast_o.payload  = '{lce_id: lce_id_i, default: '0};
                 io_cmd_v_o                    = s_axi_lite_arvalid_i;
 
                 state_n = io_cmd_yumi_i ? e_read_resp : e_wait;
@@ -151,10 +152,10 @@ module axi_lite_to_bp_lite_client
 
             else if (s_axi_lite_awvalid_i & s_axi_lite_wvalid_i)
               begin
-                io_cmd_cast_o.header.addr                = s_axi_lite_awaddr_i;
-                io_cmd_cast_o.header.msg_type            = e_bedrock_mem_uc_wr;
-                io_cmd_cast_o.header.payload             = io_cmd_cast_payload;
-                io_cmd_cast_o.data[axi_data_width_p-1:0] = s_axi_lite_wdata_i;
+                io_cmd_header_cast_o.addr                = s_axi_lite_awaddr_i;
+                io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
+                io_cmd_header_cast_o.payload             = '{lce_id: lce_id_i, default: '0};
+                io_cmd_data_o[axi_data_width_p-1:0]      = s_axi_lite_wdata_i;
                 io_cmd_v_o                               = (s_axi_lite_awvalid_i & s_axi_lite_wvalid_i);
 
                 state_n = io_cmd_yumi_i ? e_write_resp : e_wait;
@@ -171,7 +172,7 @@ module axi_lite_to_bp_lite_client
 
         e_read_resp:
           begin
-            s_axi_lite_rdata_o  = io_resp_cast_i.data[0+:axi_data_width_p];
+            s_axi_lite_rdata_o  = io_resp_data_i[0+:axi_data_width_p];
             s_axi_lite_rvalid_o = io_resp_v_i;
             io_resp_ready_o     = s_axi_lite_rready_i;
 
