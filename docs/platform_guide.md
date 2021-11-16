@@ -30,8 +30,8 @@ BlackParrot supports the following CSRs:
 
 ## Memory-mapped Devices
 BlackParrot supports having a number of devices in each tile. In a standard BlackParrot tile there is:
-* CLINT (Core Local Interrupt Controller)
 * CFG (Tile Configuration Controller)
+* CLINT (Core Local Interrupt Controller)
 * L2S (L2 cache slice)
 
 The map for configuration registers within these devices is shown below.
@@ -116,6 +116,9 @@ addresses as they see fit. For instance, aliasing some of the DRAM space between
 that both cached and uncached are physically contiguous on the same DRAM.
 
 ### Local Address Map
+For a BlackParrots in a multicore, the local address space is sliced among all the tiles as shown
+below.
+
 * 0x00_0000_0000 - 0x00_0(nnnN)(D)(A_AAAA)
   * nnnN -> 7 bits = 128 max tiles
   * D -> 4 bits = 16 max devices
@@ -124,6 +127,10 @@ that both cached and uncached are physically contiguous on the same DRAM.
   * Devices: Configuration Link, CLINT
   * 0x00_0420_0002 -> tile 2, device 2, address 0008 -> Freeze register
   * 0x00_0030_bff8 -> tile 0, device 3, address bff8 -> CLINT mtime
+
+For a BlackParrot unicore, all addresses outside of N=k in this scheme are considered as I/O. This
+local space is useful for address-space constrained systems where this local space can be reused for
+accelerators, co-processors, etc.
 
 ### Full Listing of BlackParrot Configuration Registers
 Following is a list of the memory-mapped registers contained within a BlackParrot Unicore or BlackParrot Multicore Tile.
