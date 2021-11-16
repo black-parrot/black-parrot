@@ -356,11 +356,13 @@ module bp_unicore_lite
       assign local_addr = proc_cmd_header_lo[i].addr;
       wire [dev_id_width_gp-1:0] device_cmd_li = local_addr.dev;
       wire local_cmd_li    = (proc_cmd_header_lo[i].addr < dram_base_addr_gp);
+      wire is_other_core   = local_cmd_li & (local_addr.tile != cfg_bus_lo.core_id);
       wire is_other_hio    = (proc_cmd_header_lo[i].addr[paddr_width_p-1-:hio_width_p] != 0);
 
       wire is_cfg_cmd      = local_cmd_li & (device_cmd_li == cfg_dev_gp);
       wire is_clint_cmd    = local_cmd_li & (device_cmd_li == clint_dev_gp);
-      wire is_io_cmd       = (local_cmd_li & (device_cmd_li inside {boot_dev_gp, host_dev_gp})) | is_other_hio;
+      wire is_io_cmd       = (local_cmd_li & (device_cmd_li inside {boot_dev_gp, host_dev_gp}))
+                             | is_other_hio | is_other_core;
       wire is_mem_cmd      = (~local_cmd_li & ~is_other_hio) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
       wire is_loopback_cmd = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_mem_cmd;
 
