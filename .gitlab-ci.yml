@@ -354,3 +354,11 @@ top-linux-vcs:
   script:
     $CI_PROJECT_DIR/ci/linux.sh vcs $CI_CORES
 
+top-accelerator-vcs:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/accelerator.sh vcs $CI_CORES
+

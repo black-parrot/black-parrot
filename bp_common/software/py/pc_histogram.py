@@ -2,9 +2,9 @@
 #   pc_histogram.py
 #
 #   Black Parrot  PC execution count profiler
-# 
+#
 #   input: operation_trace.csv
-#   output: PC Histogram stats pc_stats/bp_pc_histogram.log 
+#   output: PC Histogram stats pc_stats/bp_pc_histogram.log
 #
 #   @author Borna behsani@cs.washington.edu
 #
@@ -51,7 +51,7 @@ class PCHistogram:
 
         self.per_tile_stat = per_tile_stat
 
-        # Parse operation trace file and extract traces 
+        # Parse operation trace file and extract traces
         self.traces, self.bp_dim_y, self.bp_dim_x = self.__parse_traces (trace_file)
 
         # Generate per tile PC count dictionary
@@ -78,7 +78,7 @@ class PCHistogram:
             for row in csv_reader:
                 trace = {}
                 trace["x"] = int(row["x"])
-                trace["y"] = int(row["y"])  
+                trace["y"] = int(row["y"])
                 trace["operation"] = row["operation"]
                 trace["cycle"] = int(row["cycle"])
                 trace["pc"] = int(row["pc"], 16)
@@ -99,10 +99,10 @@ class PCHistogram:
 
 
 
-    # Go through input file traces and count 
+    # Go through input file traces and count
     # how many times each pc has been executed for each tile
     def __generate_tile_pc_cnt(self, traces):
-   
+
         tile_pc_cnt = [[Counter() for x in range(self.bp_dim_x)] for y in range(self.bp_dim_y)]
         for trace in traces:
             x = trace["x"]
@@ -139,15 +139,15 @@ class PCHistogram:
         return tile_pc_histogram
 
 
-        
+
 
 
     # Iterate over the dictionary of {PC : # of execution}
-    # and create basic blocks of adjacent PC's with the 
-    # same number of execution 
+    # and create basic blocks of adjacent PC's with the
+    # same number of execution
     # Return a dictionary of {(start PC, end PC): # of execution}
     def __generate_pc_histogram(self, pc_cnt):
-        # Create a sorted list of all PC's executed 
+        # Create a sorted list of all PC's executed
         pc_list = sorted(pc_cnt.keys())
         histogram = Counter()
 
@@ -156,20 +156,20 @@ class PCHistogram:
 
         # Sliding Window
         # Iterate over all PC's in order
-        # Continue adding to a basic block as long as the current PC is immediately after 
-        # the previous one, and the number of times current PC has been executed is 
+        # Continue adding to a basic block as long as the current PC is immediately after
+        # the previous one, and the number of times current PC has been executed is
         # equal to that of previous PC
         # Once this condition no longer holds, add basic block to histogram and repeat
         while (end < len(pc_list)):
             if (not (pc_cnt[pc_list[start]] == pc_cnt[pc_list[end]]
                      and pc_list[end] - pc_list[end-1] == self._BSG_PC_ADDR_STEP) ):
-                
+
                 block_pc_cnt = pc_cnt[pc_list[start]]
                 histogram[(pc_list[start], pc_list[end-1])] = block_pc_cnt
                 start = end
             end += 1
 
-        # Repeat once more for the last basic block 
+        # Repeat once more for the last basic block
         block_pc_cnt = pc_cnt[pc_list[start]]
         histogram[(pc_list[start], pc_list[end-1])] = block_pc_cnt
 
@@ -180,23 +180,23 @@ class PCHistogram:
 
 
     # Given a PC histogram dictionary and an output file,
-    # traverse the dictionary and print out every range of PC 
-    # and it's number of execution in order 
+    # traverse the dictionary and print out every range of PC
+    # and it's number of execution in order
     def __print_pc_histogram(self, stat_file, pc_histogram):
 
         self.__print_stat(stat_file, "pc_header", "PC Block", "Exe Cnt", "Block Size", "Total Intrs Exe Cnt");
         self.__print_stat(stat_file, "lbreak");
-       
+
         range_list = sorted(pc_histogram.keys())
 
         for range in range_list:
-            # Print once more for the last basic block 
+            # Print once more for the last basic block
             start = range[0]
             end = range[1]
             pc_cnt = pc_histogram[range]
             block_size = ((end - start) >> self._BSG_PC_ADDR_SHIFT) + 1
             exe_cnt = pc_cnt * block_size
-    
+
             self.__print_stat(stat_file, "pc_data"
                                        , start
                                        , end
@@ -223,7 +223,7 @@ class PCHistogram:
 
 
 
-    # Prints the pc histogram for the entire black parrot 
+    # Prints the pc histogram for the entire black parrot
     def print_bp_stats_all(self):
         stats_path = os.getcwd() + "/pc_stats/"
         if not os.path.exists(stats_path):
@@ -236,8 +236,8 @@ class PCHistogram:
 
 
 
-# Parse input arguments and options 
-def parse_args():  
+# Parse input arguments and options
+def parse_args():
     parser = argparse.ArgumentParser(description="Argument parser for vanilla_pc_histogram.py")
     parser.add_argument("--trace", default="vanilla_operation_trace.csv.log", type=str,
                         help="Vanilla operation log file")
@@ -258,7 +258,7 @@ if __name__ == "__main__":
     # Print PC histogram for the entire network
     pch.print_bp_stats_all()
 
-    # Print PC histogram for each tile in a separate file 
+    # Print PC histogram for each tile in a separate file
     if(args.tile):
         pch.print_per_tile_stats_all()
 

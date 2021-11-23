@@ -25,6 +25,7 @@ module bp_be_dcache_wbuf
 
    , input [wbuf_entry_width_lp-1:0]        wbuf_entry_i
    , input                                  v_i
+   , output logic                           ready_and_o
 
    , output logic [wbuf_entry_width_lp-1:0] wbuf_entry_o
    , output logic                           v_o
@@ -40,16 +41,22 @@ module bp_be_dcache_wbuf
   assign wbuf_entry_in = wbuf_entry_i;
 
   logic [1:0] num_els_r;
-  bsg_counter_up_down
-   #(.max_val_p(3), .init_val_p(0), .max_step_p(1))
-   num_els_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  // Negedge shenanigans cause this counter to fire a faulty assertion
+  //bsg_counter_up_down
+  // #(.max_val_p(3), .init_val_p(0), .max_step_p(1))
+  // num_els_counter
+  //  (.clk_i(clk_i)
+  //   ,.reset_i(reset_i)
 
-     ,.up_i(v_i)
-     ,.down_i(yumi_i)
-     ,.count_o(num_els_r)
-     );
+  //   ,.up_i(v_i)
+  //   ,.down_i(yumi_i)
+  //   ,.count_o(num_els_r)
+  //   );
+  always_ff @(posedge clk_i)
+    if (reset_i)
+      num_els_r <= '0;
+    else
+      num_els_r <= num_els_r + (ready_and_o & v_i) - yumi_i;
 
   logic el0_valid, el1_valid;
   logic el0_enable, el1_enable;
@@ -158,7 +165,7 @@ module bp_be_dcache_wbuf
   bsg_dff_reset
    #(.width_p(dword_width_gp+data_mask_width_lp))
    bypass_reg
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.data_i({bypass_mask_n, bypass_data_n})
      ,.data_o({bypass_mask_r, bypass_data_r})
@@ -173,6 +180,8 @@ module bp_be_dcache_wbuf
      ,.sel_i(bypass_mask_r)
      ,.data_o(data_merged_o)
      );
+
+  assign ready_and_o = num_els_r < 2'd2;
 
   //synopsys translate_off
   always_ff @(negedge clk_i) begin

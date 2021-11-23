@@ -1,7 +1,9 @@
 /**
  * bp_me_nonsynth_mock_lce.v
  *
- * This mock LCE behaves like a mock D$. It connects to a trace replay module and to the BP ME.
+ * This module acts as a simulated cache and LCE. It connects to a trace replay module
+ * on the "core" side that provides a series of cache access. On the LCE side it
+ * connects to the coherence system using the BedRock Lite interface.
  * The trace replay format is defined in bp_me_nonsynth_pkg.svh.
  *
  * Allowable startup sequences:
@@ -17,8 +19,11 @@
 module bp_me_nonsynth_mock_lce
   import bp_common_pkg::*;
   import bp_me_nonsynth_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_unicore_half_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_test_multicore_half_cfg
     `declare_bp_proc_params(bp_params_p)
+
+    , parameter sets_p = icache_sets_p
+    , parameter assoc_p = icache_assoc_p
 
     , parameter axe_trace_p = 0
     , parameter skip_init_p = 0
@@ -31,9 +36,6 @@ module bp_me_nonsynth_mock_lce
 
     , localparam block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
-    , localparam sets_p = icache_sets_p
-    , localparam assoc_p = icache_assoc_p
-
     , localparam lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
     , localparam lg_assoc_lp=`BSG_SAFE_CLOG2(assoc_p)
 
@@ -44,7 +46,7 @@ module bp_me_nonsynth_mock_lce
     , localparam counter_max_p = 512
     , localparam counter_width_p=`BSG_WIDTH(counter_max_p+1)
 
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
 
   )
   (
@@ -64,25 +66,26 @@ module bp_me_nonsynth_mock_lce
     ,input                                                  tr_pkt_ready_i
 
     // LCE-CCE Interface
-    // ready->valid
-    ,output logic [lce_req_msg_width_lp-1:0]                lce_req_o
+    // BedRock Lite, ready&valid
+    ,output logic [lce_req_header_width_lp-1:0]             lce_req_header_o
+    ,output logic [cce_block_width_p-1:0]                   lce_req_data_o
     ,output logic                                           lce_req_v_o
-    ,input                                                  lce_req_ready_then_i
+    ,input                                                  lce_req_ready_and_i
 
-    // ready->valid
-    ,output logic [lce_resp_msg_width_lp-1:0]               lce_resp_o
+    ,output logic [lce_resp_header_width_lp-1:0]            lce_resp_header_o
+    ,output logic [cce_block_width_p-1:0]                   lce_resp_data_o
     ,output logic                                           lce_resp_v_o
-    ,input                                                  lce_resp_ready_then_i
+    ,input                                                  lce_resp_ready_and_i
 
-    // valid->yumi
-    ,input [lce_cmd_msg_width_lp-1:0]                       lce_cmd_i
+    ,input [lce_cmd_header_width_lp-1:0]                    lce_cmd_header_i
+    ,input [cce_block_width_p-1:0]                          lce_cmd_data_i
     ,input                                                  lce_cmd_v_i
-    ,output logic                                           lce_cmd_yumi_o
+    ,output logic                                           lce_cmd_ready_and_o
 
-    // ready->valid
-    ,output logic [lce_cmd_msg_width_lp-1:0]                lce_cmd_o
+    ,output logic [lce_cmd_header_width_lp-1:0]             lce_cmd_header_o
+    ,output logic [cce_block_width_p-1:0]                   lce_cmd_data_o
     ,output logic                                           lce_cmd_v_o
-    ,input                                                  lce_cmd_ready_then_i
+    ,input                                                  lce_cmd_ready_and_i
   );
 
   initial begin
@@ -92,8 +95,10 @@ module bp_me_nonsynth_mock_lce
     assert(`BSG_IS_POW2(cce_block_width_p)) else $error("cce_block_width_p must be a power of two");
   end
 
+  wire axe_trace_en = !(axe_trace_p == 0);
+
   // LCE-CCE interface structs
-  `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
 
   // LCE TR Packet struct
   `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_gp);
@@ -102,24 +107,30 @@ module bp_me_nonsynth_mock_lce
   `declare_bp_cce_dir_entry_s(ptag_width_lp);
 
   // Structs for messages
-  bp_bedrock_lce_req_msg_s  lce_req;
-  bp_bedrock_lce_resp_msg_s lce_resp;
-  bp_bedrock_lce_cmd_msg_s  lce_cmd, lce_cmd_lo;
-  bp_bedrock_lce_req_payload_s  lce_req_payload;
-  bp_bedrock_lce_resp_payload_s lce_resp_payload;
-  bp_bedrock_lce_cmd_payload_s  lce_cmd_payload, lce_cmd_lo_payload;
+  `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
+  `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
+  `bp_cast_o(bp_bedrock_lce_req_header_s, lce_resp_header);
+  `bp_cast_o(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
 
-  assign lce_req_o = lce_req;
-  assign lce_resp_o = lce_resp;
-  assign lce_cmd_o = lce_cmd_lo;
-
-  assign lce_cmd = lce_cmd_i;
-  assign lce_cmd_payload = lce_cmd.header.payload;
+  bp_bedrock_lce_cmd_header_s lce_cmd_header_lo;
+  logic [cce_block_width_p-1:0] lce_cmd_data_lo;
+  logic lce_cmd_v, lce_cmd_yumi;
+  bsg_two_fifo
+    #(.width_p($bits(bp_bedrock_lce_cmd_header_s)+cce_block_width_p))
+    lce_cmd_fifo
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.data_i({lce_cmd_data_i, lce_cmd_header_i})
+      ,.v_i(lce_cmd_v_i)
+      ,.ready_o(lce_cmd_ready_and_o)
+      ,.data_o({lce_cmd_data_lo, lce_cmd_header_lo})
+      ,.v_o(lce_cmd_v)
+      ,.yumi_i(lce_cmd_yumi)
+      );
 
   // LCE command register
-  bp_bedrock_lce_cmd_msg_s lce_cmd_r, lce_cmd_n;
-  bp_bedrock_lce_cmd_payload_s  lce_cmd_r_payload, lce_cmd_n_payload;
-  assign lce_cmd_r_payload = lce_cmd_r.header.payload;
+  bp_bedrock_lce_cmd_header_s lce_cmd_header_r, lce_cmd_header_n;
+  logic [cce_block_width_p-1:0] lce_cmd_data_r, lce_cmd_data_n;
 
   // Tags
   dir_entry_s [assoc_p-1:0] tag_data_li, tag_w_mask_li, tag_data_lo;
@@ -381,12 +392,14 @@ module bp_me_nonsynth_mock_lce
     if (reset_i) begin
       lce_state_r <= RESET;
       lce_init_r <= '0;
-      lce_cmd_r <= '0;
+      lce_cmd_header_r <= '0;
+      lce_cmd_data_r <= '0;
 
     end else begin
       lce_state_r <= lce_state_n;
       lce_init_r <= lce_init_n;
-      lce_cmd_r <= lce_cmd_n;
+      lce_cmd_header_r <= lce_cmd_header_n;
+      lce_cmd_data_r <= lce_cmd_data_n;
 
     end
   end
@@ -426,7 +439,7 @@ module bp_me_nonsynth_mock_lce
           : e_bedrock_msg_size_8;
 
   // uncached load data extraction
-  wire [dword_width_gp-1:0] uc_load_dword = lce_cmd.data[0 +: dword_width_gp];
+  wire [dword_width_gp-1:0] uc_load_dword = lce_cmd_data_lo[0 +: dword_width_gp];
   logic [31:0] uc_load_word;
   logic [15:0] uc_load_half;
   logic [7:0] uc_load_byte;
@@ -476,20 +489,19 @@ module bp_me_nonsynth_mock_lce
 
     // outbound queues
     lce_req_v_o = '0;
-    lce_req = '0;
+    lce_req_header_cast_o = '0;
+    lce_req_data_o = '0;
     lce_resp_v_o = '0;
-    lce_resp = '0;
+    lce_resp_header_cast_o = '0;
+    lce_resp_data_o = '0;
     lce_cmd_v_o = '0;
-    lce_cmd_lo = '0;
-    lce_req_payload = '0;
-    lce_resp_payload = '0;
-    lce_cmd_lo_payload ='0;
+    lce_cmd_header_cast_o = '0;
+    lce_cmd_data_o = '0;
 
     // inbound queues
-    lce_cmd_n = lce_cmd_r;
-    lce_cmd_yumi_o = '0;
-    lce_cmd_n_payload = lce_cmd_r_payload;
-    lce_cmd_n.header.payload = lce_cmd_n_payload;
+    lce_cmd_header_n = lce_cmd_header_r;
+    lce_cmd_data_n = lce_cmd_data_r;
+    lce_cmd_yumi = '0;
 
     // miss handling
     mshr_n = mshr_r;
@@ -551,7 +563,7 @@ module bp_me_nonsynth_mock_lce
       end
       // Until all syncs occur, all requests will be uncached
       UNCACHED_ONLY: begin
-        if (freeze_i & lce_cmd_v_i & lce_cmd.header.msg_type.cmd == e_bedrock_cmd_sync) begin
+        if (freeze_i & lce_cmd_v & lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_sync) begin
           // CCE will be used in normal mode, wait for all syncs, then transition to normal mode.
           lce_state_n = INIT;
         end else if (~freeze_i & tr_pkt_v_i & ~mshr_r.miss) begin
@@ -583,15 +595,14 @@ module bp_me_nonsynth_mock_lce
       end
       UNCACHED_SEND_REQ: begin
         // uncached access - send LCE request
-        lce_req_v_o = lce_req_ready_then_i;
+        lce_req_v_o = 1'b1;
 
-        lce_req_payload.dst_id = mshr_r.cce;
-        lce_req.header.msg_type.req = (mshr_r.store_op) ? e_bedrock_req_uc_wr : e_bedrock_req_uc_rd;
-        lce_req_payload.src_id = lce_id_i;
-        lce_req.header.addr = mshr_r.paddr;
-        lce_req.header.payload = lce_req_payload;
+        lce_req_header_cast_o.payload.dst_id = mshr_r.cce;
+        lce_req_header_cast_o.msg_type.req = mshr_r.store_op ? e_bedrock_req_uc_wr : e_bedrock_req_uc_rd;
+        lce_req_header_cast_o.payload.src_id = lce_id_i;
+        lce_req_header_cast_o.addr = mshr_r.paddr;
 
-        lce_req.header.size =
+        lce_req_header_cast_o.size =
           (double_op)
           ? e_bedrock_msg_size_8
           : (word_op)
@@ -600,20 +611,20 @@ module bp_me_nonsynth_mock_lce
               ? e_bedrock_msg_size_2
               : e_bedrock_msg_size_1;
 
-        lce_req.data[0+:dword_width_gp] = (mshr_r.store_op) ? cmd.data : '0;
+        lce_req_data_o[0+:dword_width_gp] = mshr_r.store_op ? cmd.data : '0;
 
         // wait for LCE req outbound to be ready (r&v), then wait for responses
-        lce_state_n = (lce_req_ready_then_i)
+        lce_state_n = lce_req_ready_and_i
                       ? UNCACHED_SEND_TR_RESP
                       : UNCACHED_SEND_REQ; // not accepted, try again next cycle
 
       end
       UNCACHED_SEND_TR_RESP: begin
         // send return packet to TR
-        if (lce_cmd_v_i & lce_cmd.header.msg_type.cmd == e_bedrock_cmd_uc_st_done) begin
+        if (lce_cmd_v & lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_uc_st_done) begin
           // store sends back null packet when it receives lce_cmd back
           tr_pkt_v_o = tr_pkt_ready_i;
-          tr_pkt_lo.paddr = lce_cmd.header.addr;
+          tr_pkt_lo.paddr = lce_cmd_header_lo.addr;
           tr_pkt_lo.uncached = 1'b1;
           lce_state_n = (tr_pkt_ready_i)
                         ? (lce_init_r)
@@ -621,25 +632,26 @@ module bp_me_nonsynth_mock_lce
                           : UNCACHED_ONLY
                         : UNCACHED_SEND_TR_RESP;
 
-          lce_cmd_yumi_o = lce_cmd_v_i & tr_pkt_ready_i;
+          lce_cmd_yumi = lce_cmd_v & tr_pkt_ready_i;
 
           // clear miss handling state
-          mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+          mshr_n = tr_pkt_ready_i ? '0 : mshr_r;
 
-        end else if (lce_cmd_v_i & lce_cmd.header.msg_type.cmd == e_bedrock_cmd_uc_data) begin
+        end else if (lce_cmd_v & lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_uc_data) begin
           // load returns the data, and must wait for lce_data_cmd to return
           tr_pkt_v_o = tr_pkt_ready_i;
           // Extract the desired bits from the returned 64-bit dword
-          tr_pkt_lo.paddr = lce_cmd.header.addr;
+          tr_pkt_lo.paddr = lce_cmd_header_lo.addr;
           tr_pkt_lo.uncached = 1'b1;
-          tr_pkt_lo.data =
-            double_op
-            ? uc_load_dword
-            : word_op
-              ? {{32{1'b0}}, uc_load_word}
-              : half_op
-                ? {{48{1'b0}}, uc_load_half}
-                : {{56{1'b0}}, uc_load_byte};
+          tr_pkt_lo.data = axe_trace_en
+            ? '0
+            : double_op
+              ? uc_load_dword
+              : word_op
+                ? {{32{1'b0}}, uc_load_word}
+                : half_op
+                  ? {{48{1'b0}}, uc_load_half}
+                  : {{56{1'b0}}, uc_load_byte};
 
           lce_state_n = (tr_pkt_ready_i)
                         ? (lce_init_r)
@@ -648,77 +660,76 @@ module bp_me_nonsynth_mock_lce
                         : UNCACHED_SEND_TR_RESP;
 
           // dequeue data cmd if TR accepts the outbound packet
-          lce_cmd_yumi_o = lce_cmd_v_i & tr_pkt_ready_i;
+          lce_cmd_yumi = lce_cmd_v & tr_pkt_ready_i;
 
           // clear miss handling state
-          mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+          mshr_n = tr_pkt_ready_i ? '0 : mshr_r;
 
-        end else if (lce_cmd_v_i & lce_cmd.header.msg_type.cmd == e_bedrock_cmd_st_wb) begin
+        end else if (lce_cmd_v & lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_st_wb) begin
           // Set Tag command, write tags based on command, do not send any response
           tag_v_li = 1'b1;
           tag_w_li = 1'b1;
-          tag_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
-          tag_data_li[lce_cmd_payload.way_id] = '{tag: lce_cmd.header.addr[paddr_width_p-1 -: ptag_width_lp]
-                                                   , state: lce_cmd_payload.state};
-          tag_w_mask_li[lce_cmd_payload.way_id] = '{tag: '1, state: e_COH_O};
+          tag_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
+          tag_data_li[lce_cmd_header_lo.payload.way_id] = '{tag: lce_cmd_header_lo.addr[paddr_width_p-1 -: ptag_width_lp]
+                                                   , state: lce_cmd_header_lo.payload.state};
+          tag_w_mask_li[lce_cmd_header_lo.payload.way_id] = '{tag: '1, state: e_COH_O};
 
           lce_state_n = UNCACHED_WB_RD;
         end
       end
       UNCACHED_WB_RD: begin
         tag_v_li = 1'b1;
-        tag_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
         data_v_li = 1'b1;
-        data_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        data_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
         dirty_bits_v_li = 1'b1;
-        dirty_bits_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        dirty_bits_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
         lce_state_n = UNCACHED_WB;
       end
       UNCACHED_WB: begin
 
         // handshake
-        lce_resp_v_o = lce_resp_ready_then_i & lce_cmd_v_i;
-        lce_cmd_yumi_o = lce_resp_v_o;
+        lce_resp_v_o = lce_cmd_v;
+        lce_cmd_yumi = lce_resp_v_o & lce_resp_ready_and_i;
 
         // reread tag, data, dirty bits if response does not send
-        tag_v_li = ~lce_resp_v_o;
-        tag_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_v_li = ~(lce_resp_v_o & lce_resp_ready_and_i);
+        tag_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
 
-        data_v_li = ~lce_resp_v_o;
-        data_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        data_v_li = ~(lce_resp_v_o & lce_resp_ready_and_i);
+        data_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
 
         // dirty bits are always used; either re-read or they are being written because response
         // message was sent
         dirty_bits_v_li = 1'b1;
-        dirty_bits_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        dirty_bits_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
 
         // writeback cmd
 
-        lce_resp_payload.dst_id = lce_cmd_payload.src_id;
-        lce_resp_payload.src_id = lce_id_i;
-        lce_resp.header.payload = lce_resp_payload;
-        lce_resp.header.addr = lce_cmd.header.addr;
+        lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_lo.payload.src_id;
+        lce_resp_header_cast_o.payload.src_id = lce_id_i;
+        lce_resp_header_cast_o.addr = lce_cmd_header_lo.addr;
 
-        if (dirty_bits_data_lo[lce_cmd_payload.way_id]) begin
-          lce_resp.data = data_lo[lce_cmd_payload.way_id];
-          lce_resp.header.msg_type.resp = e_bedrock_resp_wb;
-          lce_resp.header.size = msg_block_size;
+        if (dirty_bits_data_lo[lce_cmd_header_lo.payload.way_id]) begin
+          lce_resp_data_o = data_lo[lce_cmd_header_lo.payload.way_id];
+          lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_wb;
+          lce_resp_header_cast_o.size = msg_block_size;
 
           // clear the dirty bit - but only do the write if the data response is accepted
           // (this prevents the dirty bit from being cleared before the response is sent, which
           //  could result in a null_wb being sent when an actual wb should have been)
           dirty_bits_w_li = lce_resp_v_o;
-          dirty_bits_w_mask_li[lce_cmd_payload.way_id] = 1'b1;
-          dirty_bits_data_li[lce_cmd_payload.way_id] = 1'b0;
+          dirty_bits_w_mask_li[lce_cmd_header_lo.payload.way_id] = 1'b1;
+          dirty_bits_data_li[lce_cmd_header_lo.payload.way_id] = 1'b0;
 
         end else begin
-          lce_resp.data = '0;
-          lce_resp.header.msg_type.resp = e_bedrock_resp_null_wb;
-          lce_resp.header.size = e_bedrock_msg_size_1;
+          lce_resp_data_o = '0;
+          lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_null_wb;
+          lce_resp_header_cast_o.size = e_bedrock_msg_size_1;
 
         end
 
-        lce_state_n = (lce_resp_v_o) ? UNCACHED_SEND_TR_RESP : UNCACHED_WB;
+        lce_state_n = (lce_resp_v_o & lce_resp_ready_and_i) ? UNCACHED_SEND_TR_RESP : UNCACHED_WB;
 
       end
       INIT: begin
@@ -729,10 +740,11 @@ module bp_me_nonsynth_mock_lce
         // register that LCE is initialized after sending all sync acks
         lce_init_n = (cnt == counter_width_p'(num_cce_p)) ? 1'b1 : 1'b0;
 
-        if (lce_cmd_v_i & lce_cmd.header.msg_type.cmd == e_bedrock_cmd_sync) begin
+        if (lce_cmd_v & lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_sync) begin
           // dequeue the command, go to SEND_SYNC
-          lce_cmd_yumi_o = lce_cmd_v_i;
-          lce_cmd_n = lce_cmd;
+          lce_cmd_yumi = lce_cmd_v;
+          lce_cmd_header_n = lce_cmd_header_lo;
+          lce_cmd_data_n = lce_cmd_data_lo;
           lce_state_n = SEND_SYNC;
           cnt_inc = 1'b1;
         end
@@ -741,54 +753,54 @@ module bp_me_nonsynth_mock_lce
         // create the LCE response and make it valid for output
 
         // Common LCE Resp fields
-        lce_resp_payload.dst_id = lce_cmd_r_payload.src_id;
-        lce_resp_payload.src_id = lce_id_i;
-        lce_resp.header.payload = lce_resp_payload;
-        lce_resp.header.msg_type.resp = e_bedrock_resp_sync_ack;
+        lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_r.payload.src_id;
+        lce_resp_header_cast_o.payload.src_id = lce_id_i;
+        lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_sync_ack;
 
-        lce_resp_v_o = lce_resp_ready_then_i;
+        lce_resp_v_o = 1'b1;
 
-        lce_state_n = (lce_resp_ready_then_i) ? INIT : SEND_SYNC;
+        lce_state_n = (lce_resp_ready_and_i) ? INIT : SEND_SYNC;
       end
       READY: begin
         lce_state_n = READY;
 
-        if (lce_cmd_v_i) begin
+        if (lce_cmd_v) begin
           // dequeue the command and save
-          lce_cmd_yumi_o = lce_cmd_v_i;
-          lce_cmd_n = lce_cmd;
+          lce_cmd_yumi = lce_cmd_v;
+          lce_cmd_header_n = lce_cmd_header_lo;
+          lce_cmd_data_n = lce_cmd_data_lo;
 
-          assert(lce_cmd_payload.dst_id == lce_id_i) else $error("[%0d]: command delivered to wrong LCE", lce_id_i);
+          assert(lce_cmd_header_lo.payload.dst_id == lce_id_i) else $error("[%0d]: command delivered to wrong LCE", lce_id_i);
 
           // uncached data or data command
-          if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_data | lce_cmd.header.msg_type.cmd == e_bedrock_cmd_uc_data) begin
+          if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_data | lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_uc_data) begin
             lce_state_n = LCE_DATA_CMD;
 
           // non-data command
-          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_inv) begin
+          end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_inv) begin
             lce_state_n = LCE_CMD_INV;
-          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_st) begin
+          end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_st) begin
             lce_state_n = LCE_CMD_ST;
-          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_st_wakeup) begin
+          end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_st_wakeup) begin
             lce_state_n = LCE_CMD_STW;
-          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_wb) begin
+          end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_wb) begin
             tag_v_li = 1'b1;
-            tag_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+            tag_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
             data_v_li = 1'b1;
-            data_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+            data_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
             dirty_bits_v_li = 1'b1;
-            dirty_bits_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+            dirty_bits_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
             lce_state_n = LCE_CMD_WB;
-          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_st_wb) begin
+          end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_st_wb) begin
             lce_state_n = LCE_CMD_ST;
-          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_tr) begin
+          end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_tr) begin
             // Read data array
             data_v_li = 1'b1;
-            data_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+            data_addr_li = lce_cmd_header_lo.addr[block_offset_bits_lp +: lg_sets_lp];
             lce_state_n = LCE_CMD_TR;
-          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_st_tr) begin
+          end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_st_tr) begin
             lce_state_n = LCE_CMD_ST;
-          end else if (lce_cmd.header.msg_type.cmd == e_bedrock_cmd_st_tr_wb) begin
+          end else if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_st_tr_wb) begin
             lce_state_n = LCE_CMD_ST;
           end else begin
             lce_state_n = RESET;
@@ -816,20 +828,20 @@ module bp_me_nonsynth_mock_lce
 
         tag_v_li = 1'b1;
         tag_w_li = 1'b1;
-        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        tag_data_li[lce_cmd_r_payload.way_id[0+:lg_assoc_lp]].tag = lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp];
-        tag_data_li[lce_cmd_r_payload.way_id[0+:lg_assoc_lp]].state = lce_cmd_r_payload.state;
-        tag_w_mask_li[lce_cmd_r_payload.way_id[0+:lg_assoc_lp]] = '{ tag : '1, state: e_COH_O};
+        tag_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_data_li[lce_cmd_header_r.payload.way_id[0+:lg_assoc_lp]].tag = lce_cmd_header_r.addr[paddr_width_p-1 -: ptag_width_lp];
+        tag_data_li[lce_cmd_header_r.payload.way_id[0+:lg_assoc_lp]].state = lce_cmd_header_r.payload.state;
+        tag_w_mask_li[lce_cmd_header_r.payload.way_id[0+:lg_assoc_lp]] = '{ tag : '1, state: e_COH_O};
 
         data_v_li = 1'b1;
         data_w_li = 1'b1;
-        data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        data_li[lce_cmd_r_payload.way_id[0+:lg_assoc_lp]] = lce_cmd_r.data;
+        data_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
+        data_li[lce_cmd_header_r.payload.way_id[0+:lg_assoc_lp]] = lce_cmd_data_r;
         // write the full cache block on data command
-        data_w_mask_li[lce_cmd_r_payload.way_id[0+:lg_assoc_lp]] = '1;
+        data_w_mask_li[lce_cmd_header_r.payload.way_id[0+:lg_assoc_lp]] = '1;
 
-        assert (mshr_r.paddr[paddr_width_p-1 : block_offset_bits_lp] == lce_cmd_r.header.addr[paddr_width_p-1 : block_offset_bits_lp]) else
-          $error("[%0d]: DATA_CMD address mismatch [%H] != [%H]", lce_id_i, mshr_r.paddr, lce_cmd_r.header.addr);
+        assert (mshr_r.paddr[paddr_width_p-1 : block_offset_bits_lp] == lce_cmd_header_r.addr[paddr_width_p-1 : block_offset_bits_lp]) else
+          $error("[%0d]: DATA_CMD address mismatch [%H] != [%H]", lce_id_i, mshr_r.paddr, lce_cmd_header_r.addr);
 
         // update mshr
         mshr_n.data_received = 1'b1;
@@ -844,10 +856,10 @@ module bp_me_nonsynth_mock_lce
 
         tag_v_li = 1'b1;
         tag_w_li = 1'b1;
-        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        tag_data_li[lce_cmd_r_payload.way_id[0+:lg_assoc_lp]].tag = lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp];
-        tag_data_li[lce_cmd_r_payload.way_id[0+:lg_assoc_lp]].state = e_COH_I;
-        tag_w_mask_li[lce_cmd_r_payload.way_id[0+:lg_assoc_lp]] = '{ tag : '1, state: e_COH_O};
+        tag_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_data_li[lce_cmd_header_r.payload.way_id[0+:lg_assoc_lp]].tag = lce_cmd_header_r.addr[paddr_width_p-1 -: ptag_width_lp];
+        tag_data_li[lce_cmd_header_r.payload.way_id[0+:lg_assoc_lp]].state = e_COH_I;
+        tag_w_mask_li[lce_cmd_header_r.payload.way_id[0+:lg_assoc_lp]] = '{ tag : '1, state: e_COH_O};
 
         // send inv_ack next
         lce_state_n = LCE_CMD_INV_RESP;
@@ -856,40 +868,38 @@ module bp_me_nonsynth_mock_lce
       LCE_CMD_INV_RESP: begin
 
         // Common LCE Resp fields
-        lce_resp_payload.dst_id = lce_cmd_r_payload.src_id;
-        lce_resp_payload.src_id = lce_id_i;
-        lce_resp.header.payload = lce_resp_payload;
-        lce_resp.header.msg_type.resp = e_bedrock_resp_inv_ack;
-        lce_resp.header.addr = lce_cmd_r.header.addr;
+        lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_r.payload.src_id;
+        lce_resp_header_cast_o.payload.src_id = lce_id_i;
+        lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_inv_ack;
+        lce_resp_header_cast_o.addr = lce_cmd_header_r.addr;
 
-        lce_resp_v_o = lce_resp_ready_then_i;
+        lce_resp_v_o = 1'b1;
 
-        lce_state_n = (lce_resp_ready_then_i) ? READY : LCE_CMD_INV_RESP;
+        lce_state_n = (lce_resp_ready_and_i) ? READY : LCE_CMD_INV_RESP;
 
       end
       LCE_CMD_TR: begin
         // Common LCE Command fields
-        lce_cmd_lo_payload.dst_id = lce_cmd_r_payload.target;
-        lce_cmd_lo.header.msg_type.cmd = e_bedrock_cmd_data;
-        lce_cmd_lo_payload.way_id = lce_cmd_r_payload.target_way_id;
+        lce_cmd_header_cast_o.payload.dst_id = lce_cmd_header_r.payload.target;
+        lce_cmd_header_cast_o.msg_type.cmd = e_bedrock_cmd_data;
+        lce_cmd_header_cast_o.payload.way_id = lce_cmd_header_r.payload.target_way_id;
 
         // Assign data command to msg field of LCE Cmd
-        lce_cmd_lo.data = data_lo[lce_cmd_r_payload.way_id];
-        lce_cmd_lo_payload.state = lce_cmd_r_payload.state;
-        lce_cmd_lo.header.payload = lce_cmd_lo_payload;
-        lce_cmd_lo.header.addr = lce_cmd_r.header.addr;
-        lce_cmd_lo.header.size = msg_block_size;
+        lce_cmd_data_o = data_lo[lce_cmd_header_r.payload.way_id];
+        lce_cmd_header_cast_o.payload.state = lce_cmd_header_r.payload.target_state;
+        lce_cmd_header_cast_o.addr = lce_cmd_header_r.addr;
+        lce_cmd_header_cast_o.size = msg_block_size;
 
         // re-read data if LCE Command does not send this cycle
-        data_v_li = ~lce_cmd_ready_then_i;
-        data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        data_v_li = ~lce_cmd_ready_and_i;
+        data_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
 
-        lce_cmd_v_o = lce_cmd_ready_then_i;
+        lce_cmd_v_o = 1'b1;
 
         // go to LCE_CMD_ST_WB if writeback is needed to read the rams for the writeback
         // else, go to READY when transfer sends
-        lce_state_n = (lce_cmd_ready_then_i)
-                      ? (lce_cmd_r.header.msg_type.cmd == e_bedrock_cmd_st_tr_wb)
+        lce_state_n = (lce_cmd_ready_and_i)
+                      ? (lce_cmd_header_r.msg_type.cmd == e_bedrock_cmd_st_tr_wb)
                         ? LCE_CMD_ST_WB
                         : READY
                       : LCE_CMD_TR;
@@ -897,47 +907,46 @@ module bp_me_nonsynth_mock_lce
       end
       LCE_CMD_WB: begin
 
-        // reread tag, data, dirty bits if response does not send
-        tag_v_li = ~lce_resp_ready_then_i;
-        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        lce_resp_v_o = 1'b1;
 
-        data_v_li = ~lce_resp_ready_then_i;
-        data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        // reread tag, data, dirty bits if response does not send
+        tag_v_li = ~lce_resp_ready_and_i;
+        tag_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
+
+        data_v_li = ~lce_resp_ready_and_i;
+        data_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
 
         // dirty bits are always used; either re-read or they are being written because response
         // message was sent
         dirty_bits_v_li = 1'b1;
-        dirty_bits_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        dirty_bits_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
 
         // writeback cmd
 
-        lce_resp_payload.dst_id = lce_cmd_r_payload.src_id;
-        lce_resp_payload.src_id = lce_id_i;
-        lce_resp.header.payload = lce_resp_payload;
-        lce_resp.header.addr = lce_cmd_r.header.addr;
+        lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_r.payload.src_id;
+        lce_resp_header_cast_o.payload.src_id = lce_id_i;
+        lce_resp_header_cast_o.addr = lce_cmd_header_r.addr;
 
-        if (dirty_bits_data_lo[lce_cmd_r_payload.way_id]) begin
-          lce_resp.data = data_lo[lce_cmd_r_payload.way_id];
-          lce_resp.header.msg_type.resp = e_bedrock_resp_wb;
-          lce_resp.header.size = msg_block_size;
+        if (dirty_bits_data_lo[lce_cmd_header_r.payload.way_id]) begin
+          lce_resp_data_o = data_lo[lce_cmd_header_r.payload.way_id];
+          lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_wb;
+          lce_resp_header_cast_o.size = msg_block_size;
 
           // clear the dirty bit - but only do the write if the data response is accepted
           // (this prevents the dirty bit from being cleared before the response is sent, which
           //  could result in a null_wb being sent when an actual wb should have been)
-          dirty_bits_w_li = lce_resp_ready_then_i;
-          dirty_bits_w_mask_li[lce_cmd_r_payload.way_id] = 1'b1;
-          dirty_bits_data_li[lce_cmd_r_payload.way_id] = 1'b0;
+          dirty_bits_w_li = lce_resp_ready_and_i;
+          dirty_bits_w_mask_li[lce_cmd_header_r.payload.way_id] = 1'b1;
+          dirty_bits_data_li[lce_cmd_header_r.payload.way_id] = 1'b0;
 
         end else begin
-          lce_resp.data = '0;
-          lce_resp.header.msg_type.resp = e_bedrock_resp_null_wb;
-          lce_resp.header.size = e_bedrock_msg_size_1;
+          lce_resp_data_o = '0;
+          lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_null_wb;
+          lce_resp_header_cast_o.size = e_bedrock_msg_size_1;
 
         end
 
-        lce_resp_v_o = lce_resp_ready_then_i;
-
-        lce_state_n = (lce_resp_ready_then_i) ? READY : LCE_CMD_WB;
+        lce_state_n = (lce_resp_ready_and_i) ? READY : LCE_CMD_WB;
 
       end
       LCE_CMD_ST: begin
@@ -945,20 +954,20 @@ module bp_me_nonsynth_mock_lce
 
         tag_v_li = 1'b1;
         tag_w_li = 1'b1;
-        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        tag_data_li[lce_cmd_r_payload.way_id] = '{tag: lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp]
-                                                 , state: lce_cmd_r_payload.state};
-        tag_w_mask_li[lce_cmd_r_payload.way_id] = '{tag: '1, state: e_COH_O};
+        tag_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_data_li[lce_cmd_header_r.payload.way_id] = '{tag: lce_cmd_header_r.addr[paddr_width_p-1 -: ptag_width_lp]
+                                                 , state: lce_cmd_header_r.payload.state};
+        tag_w_mask_li[lce_cmd_header_r.payload.way_id] = '{tag: '1, state: e_COH_O};
 
         lce_state_n = READY;
 
-        if ((lce_cmd_r.header.msg_type.cmd == e_bedrock_cmd_st_tr)
-            || (lce_cmd_r.header.msg_type.cmd == e_bedrock_cmd_st_tr_wb)) begin
+        if ((lce_cmd_header_r.msg_type.cmd == e_bedrock_cmd_st_tr)
+            || (lce_cmd_header_r.msg_type.cmd == e_bedrock_cmd_st_tr_wb)) begin
           // Read data array
           data_v_li = 1'b1;
-          data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+          data_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
           lce_state_n = LCE_CMD_TR;
-        end else if (lce_cmd_r.header.msg_type.cmd == e_bedrock_cmd_st_wb) begin
+        end else if (lce_cmd_header_r.msg_type.cmd == e_bedrock_cmd_st_wb) begin
           // go to next state to read tag mem (since it is busy writing with the ST command)
           // this cycle and to read data and dirty bits memory in preparation for writeback.
           lce_state_n = LCE_CMD_ST_WB;
@@ -967,11 +976,11 @@ module bp_me_nonsynth_mock_lce
       LCE_CMD_ST_WB: begin
         // read tag, data, and dirty bit memories to determine if writeback is required
         tag_v_li = 1'b1;
-        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
         data_v_li = 1'b1;
-        data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        data_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
         dirty_bits_v_li = 1'b1;
-        dirty_bits_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        dirty_bits_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
 
         lce_state_n = LCE_CMD_WB;
       end
@@ -980,17 +989,16 @@ module bp_me_nonsynth_mock_lce
         // all information needed to respond is stored in mshr
 
         // Common LCE Resp fields
-        lce_resp_payload.dst_id = lce_cmd_r_payload.src_id;
-        lce_resp_payload.src_id = lce_id_i;
-        lce_resp.header.payload = lce_resp_payload;
-        lce_resp.header.msg_type.resp = e_bedrock_resp_coh_ack;
-        lce_resp.header.addr = lce_cmd_r.header.addr;
+        lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_r.payload.src_id;
+        lce_resp_header_cast_o.payload.src_id = lce_id_i;
+        lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_coh_ack;
+        lce_resp_header_cast_o.addr = lce_cmd_header_r.addr;
 
-        lce_resp_v_o = lce_resp_ready_then_i;
+        lce_resp_v_o = 1'b1;
 
         // send ack in response to tag and data both received
         // then, send response back to trace replay
-        lce_state_n = (lce_resp_ready_then_i) ? FINISH_MISS : LCE_CMD_DATA_RESP;
+        lce_state_n = (lce_resp_ready_and_i) ? FINISH_MISS : LCE_CMD_DATA_RESP;
       end
       LCE_CMD_STW: begin
         // set tag and wakeup command - response to a miss
@@ -998,10 +1006,10 @@ module bp_me_nonsynth_mock_lce
         // update tag array
         tag_v_li = 1'b1;
         tag_w_li = 1'b1;
-        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        tag_data_li[lce_cmd_r_payload.way_id] = '{tag: lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp]
-                                                 , state: lce_cmd_r_payload.state};
-        tag_w_mask_li[lce_cmd_r_payload.way_id] = '{tag: '1, state: e_COH_O};
+        tag_addr_li = lce_cmd_header_r.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_data_li[lce_cmd_header_r.payload.way_id] = '{tag: lce_cmd_header_r.addr[paddr_width_p-1 -: ptag_width_lp]
+                                                 , state: lce_cmd_header_r.payload.state};
+        tag_w_mask_li[lce_cmd_header_r.payload.way_id] = '{tag: '1, state: e_COH_O};
 
         // send coh_ack next cycle
         lce_state_n = LCE_CMD_STW_RESP;
@@ -1011,15 +1019,14 @@ module bp_me_nonsynth_mock_lce
         // Send coherence ack in response to set tag and wakeup
 
         // Common LCE Resp fields
-        lce_resp_payload.dst_id = lce_cmd_r_payload.src_id;
-        lce_resp_payload.src_id = lce_id_i;
-        lce_resp.header.payload = lce_resp_payload;
-        lce_resp.header.msg_type.resp = e_bedrock_resp_coh_ack;
-        lce_resp.header.addr = lce_cmd_r.header.addr;
+        lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_r.payload.src_id;
+        lce_resp_header_cast_o.payload.src_id = lce_id_i;
+        lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_coh_ack;
+        lce_resp_header_cast_o.addr = lce_cmd_header_r.addr;
 
-        lce_resp_v_o = lce_resp_ready_then_i;
+        lce_resp_v_o = 1'b1;
 
-        lce_state_n = (lce_resp_ready_then_i) ? FINISH_MISS : LCE_CMD_STW_RESP;
+        lce_state_n = (lce_resp_ready_and_i) ? FINISH_MISS : LCE_CMD_STW_RESP;
 
       end
       FINISH_MISS: begin
@@ -1069,7 +1076,7 @@ module bp_me_nonsynth_mock_lce
 
         tr_pkt_lo.paddr = mshr_r.paddr;
         tr_pkt_lo.data = '0;
-        if (load_op) begin
+        if (load_op & ~axe_trace_en) begin
           tr_pkt_lo.data = double_op
             ? load_dword
             : (word_op
@@ -1182,13 +1189,15 @@ module bp_me_nonsynth_mock_lce
         tr_pkt_lo.paddr = mshr_r.paddr;
 
         // select data to return
-        tr_pkt_lo.data = double_op
-          ? load_dword
-          : (word_op
-            ? {{32{word_sigext}}, load_word}
-            : (half_op
-              ? {{48{half_sigext}}, load_half}
-              : {{56{byte_sigext}}, load_byte}));
+        tr_pkt_lo.data = axe_trace_en
+          ? '0
+          : double_op
+            ? load_dword
+            : (word_op
+              ? {{32{word_sigext}}, load_word}
+              : (half_op
+                ? {{48{half_sigext}}, load_half}
+                : {{56{byte_sigext}}, load_byte}));
 
         lce_state_n = (tr_pkt_ready_i) ? READY : TR_CMD_LD_HIT_RESP;
         mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
@@ -1200,20 +1209,19 @@ module bp_me_nonsynth_mock_lce
       end
       TR_CMD_LD_MISS: begin
         // load miss, send lce request
-        lce_req_v_o = lce_req_ready_then_i;
+        lce_req_v_o = 1'b1;
 
-        lce_req_payload.dst_id = mshr_r.cce;
-        lce_req.header.msg_type.req = e_bedrock_req_rd_miss;
-        lce_req_payload.src_id = lce_id_i;
-        lce_req.header.addr = mshr_r.paddr & addr_mask;
-        lce_req_payload.non_exclusive = e_bedrock_req_excl;
-        lce_req_payload.lru_way_id[0+:lg_assoc_lp] = mshr_r.lru_way;
-        lce_req.header.payload = lce_req_payload;
+        lce_req_header_cast_o.payload.dst_id = mshr_r.cce;
+        lce_req_header_cast_o.msg_type.req = e_bedrock_req_rd_miss;
+        lce_req_header_cast_o.payload.src_id = lce_id_i;
+        lce_req_header_cast_o.addr = mshr_r.paddr & addr_mask;
+        lce_req_header_cast_o.payload.non_exclusive = e_bedrock_req_excl;
+        lce_req_header_cast_o.payload.lru_way_id[0+:lg_assoc_lp] = mshr_r.lru_way;
 
-        lce_req.header.size = msg_block_size;
+        lce_req_header_cast_o.size = msg_block_size;
 
         // wait for LCE req outbound to be ready (r&v), then wait for responses
-        lce_state_n = (lce_req_ready_then_i) ? READY : TR_CMD_LD_MISS;
+        lce_state_n = (lce_req_ready_and_i) ? READY : TR_CMD_LD_MISS;
 
       end
       TR_CMD_ST_HIT: begin
@@ -1271,18 +1279,17 @@ module bp_me_nonsynth_mock_lce
       end
       TR_CMD_ST_MISS: begin
         // store miss - block present, not writable
-        lce_req_v_o = lce_req_ready_then_i;
+        lce_req_v_o = 1'b1;
 
-        lce_req_payload.dst_id = mshr_r.cce;
-        lce_req.header.msg_type.req = e_bedrock_req_wr_miss;
-        lce_req_payload.src_id = lce_id_i;
-        lce_req.header.addr = mshr_r.paddr & addr_mask;
-        lce_req_payload.non_exclusive = e_bedrock_req_excl;
-        lce_req_payload.lru_way_id[0+:lg_assoc_lp] = mshr_r.lru_way;
-        lce_req.header.size = msg_block_size;
-        lce_req.header.payload = lce_req_payload;
+        lce_req_header_cast_o.payload.dst_id = mshr_r.cce;
+        lce_req_header_cast_o.msg_type.req = e_bedrock_req_wr_miss;
+        lce_req_header_cast_o.payload.src_id = lce_id_i;
+        lce_req_header_cast_o.addr = mshr_r.paddr & addr_mask;
+        lce_req_header_cast_o.payload.non_exclusive = e_bedrock_req_excl;
+        lce_req_header_cast_o.payload.lru_way_id[0+:lg_assoc_lp] = mshr_r.lru_way;
+        lce_req_header_cast_o.size = msg_block_size;
 
-        lce_state_n = (lce_req_ready_then_i) ? READY : TR_CMD_ST_MISS;
+        lce_state_n = (lce_req_ready_and_i) ? READY : TR_CMD_ST_MISS;
 
       end
       default: begin
@@ -1299,23 +1306,24 @@ module bp_me_nonsynth_mock_lce
 
   localparam lg_dword_bytes_lp=`BSG_SAFE_CLOG2(dword_width_gp/8);
 
+  wire [paddr_width_p-1:0] axe_paddr = cmd.paddr - dram_base_addr_gp;
   always_ff @(posedge clk_i) begin
     if (axe_trace_p) begin
     case (lce_state_r)
       TR_CMD_LD_HIT_RESP: begin
         if (tr_pkt_ready_i) begin
-          $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_dword);
+          $display("### AXE %0d: M[%0d] == %0d", lce_id_i, (axe_paddr >> lg_dword_bytes_lp), load_dword);
         end
       end
       TR_CMD_ST_HIT: begin
-        $display("#AXE %0d: M[%0d] := %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), cmd.data);
+        $display("### AXE %0d: M[%0d] := %0d", lce_id_i, (axe_paddr >> lg_dword_bytes_lp), cmd.data);
       end
       FINISH_MISS_SEND: begin
         if (tr_pkt_ready_i) begin
           if (mshr_r.store_op) begin
-            $display("#AXE %0d: M[%0d] := %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), cmd.data);
+            $display("### AXE %0d: M[%0d] := %0d", lce_id_i, (axe_paddr >> lg_dword_bytes_lp), cmd.data);
           end else begin
-            $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_dword);
+            $display("### AXE %0d: M[%0d] == %0d", lce_id_i, (axe_paddr >> lg_dword_bytes_lp), load_dword);
           end
         end
       end

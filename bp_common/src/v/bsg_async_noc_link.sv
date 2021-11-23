@@ -4,8 +4,8 @@
 
 module bsg_async_noc_link
  import bsg_noc_pkg::*;
- #(parameter `BSG_INV_PARAM(  width_p   )
-   , parameter `BSG_INV_PARAM(lg_size_p )
+ #(parameter `BSG_INV_PARAM(width_p)
+   , parameter `BSG_INV_PARAM(lg_size_p)
 
    , parameter bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(width_p)
    )

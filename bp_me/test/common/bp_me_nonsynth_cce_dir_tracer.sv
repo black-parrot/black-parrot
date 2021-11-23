@@ -76,30 +76,30 @@ module bp_me_nonsynth_cce_dir_tracer
     if (~reset_i) begin
       if (r_v_i) begin
         if (cmd_i == e_rdw_op) begin
-          $fdisplay(file, "[%t]: CCE[%0d] RDW addr[%H] LCE[%0d] lruWay[%0d]"
+          $fdisplay(file, "%12t |: CCE[%0d] RDW addr[%H] LCE[%0d] lruWay[%0d]"
                    ,  $time, cce_id_i, addr_i, lce_i, lru_way_i
                    );
         end
         if (cmd_i == e_rde_op) begin
-          $fdisplay(file, "[%t]: CCE[%0d] RDE addr[%H] LCE[%0d] way[%0d]"
+          $fdisplay(file, "%12t |: CCE[%0d] RDE addr[%H] LCE[%0d] way[%0d]"
                    ,  $time, cce_id_i, addr_i, lce_i, way_i
                    );
         end
       end
       if (w_v_i) begin
         if (cmd_i == e_wde_op) begin
-          $fdisplay(file, "[%t]: CCE[%0d] WDE addr[%H] LCE[%0d] way[%0d] state[%3b]"
+          $fdisplay(file, "%12t |: CCE[%0d] WDE addr[%H] LCE[%0d] way[%0d] state[%3b]"
                    ,  $time, cce_id_i, addr_i, lce_i, way_i, coh_state_i
                    );
         end
         if (cmd_i == e_wds_op) begin
-          $fdisplay(file, "[%t]: CCE[%0d] WDS addr[%H] LCE[%0d] way[%0d] state[%3b]"
+          $fdisplay(file, "%12t |: CCE[%0d] WDS addr[%H] LCE[%0d] way[%0d] state[%3b]"
                    ,  $time, cce_id_i, addr_i, lce_i, way_i, coh_state_i
                    );
         end
       end
       if (r_v_i & w_v_i) begin
-        $fdisplay(file, "[%t]: CCE[%0d] ERROR: concurrent read and write"
+        $fdisplay(file, "%12t |: CCE[%0d] ERROR: concurrent read and write"
                  ,  $time, cce_id_i
                  );
       end

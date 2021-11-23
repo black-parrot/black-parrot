@@ -15,7 +15,7 @@ class TestMemory(object):
     print(*args, file=sys.stderr, **kwargs)
 
   def check_valid_addr(self, addr):
-    assert ((addr >= self.base) and (addr < self.high)), 'illegal address 0x{0:010x}'.format(addr)
+    assert ((addr >= self.base) and (addr < self.high)), '[TestMemory]: illegal address 0x{0:010x}'.format(addr)
 
   def reset(self):
     self.mem.clear()
@@ -27,7 +27,7 @@ class TestMemory(object):
     val = 0
     for i in range(size):
       if self.debug:
-        self.eprint('read: mem[{0}] == {1:x}'.format(addr+i, data[size-1-i]))
+        self.eprint('[TestMemory]: mem[{0}] -> {1:x}'.format(addr+i, data[size-1-i]))
       val = (val << 8) + data[i]
     return val
 
@@ -37,6 +37,6 @@ class TestMemory(object):
     for i in range(size):
       v = (value >> (i*8)) & 0xff
       if self.debug:
-        self.eprint('write: mem[{0}] := {1:x}'.format(addr+i, v))
+        self.eprint('[TestMemory]: mem[{0}] <- {1:x}'.format(addr+i, v))
       self.mem[addr+i] = v
 

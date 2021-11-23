@@ -218,7 +218,7 @@ module bp_fe_top
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
-  wire [dword_width_gp-1:0] r_eaddr_li = dword_width_gp'($signed(next_pc_lo));
+  wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(itlb_els_4k_p)
@@ -270,7 +270,7 @@ module bp_fe_top
   wire icache_v_li = next_pc_yumi_li | icache_fence_v;
   logic [instr_width_gp-1:0] icache_data_lo;
   logic icache_ready_lo, icache_data_v_lo, icache_miss_v_lo;
-  logic icache_poison_tl, icache_poison_tv;
+  logic icache_poison_tl;
   bp_fe_icache
    #(.bp_params_p(bp_params_p))
    icache
@@ -293,7 +293,6 @@ module bp_fe_top
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
      ,.miss_v_o(icache_miss_v_lo)
-     ,.poison_tv_i(icache_poison_tv)
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_v_o(cache_req_v_o)
@@ -354,7 +353,6 @@ module bp_fe_top
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
 
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
-  assign icache_poison_tv = fe_exception_v | cmd_nonattaboy_v;
 
   assign fe_cmd_yumi_o = pc_gen_init_done_lo & (cmd_nonattaboy_v | attaboy_yumi_lo);
   assign next_pc_yumi_li = (state_n == e_run);

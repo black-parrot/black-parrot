@@ -81,20 +81,22 @@
     , localparam acache_assoc_p             = proc_param_lp.acache_assoc                           \
     , localparam acache_block_width_p       = proc_param_lp.acache_block_width                     \
     , localparam acache_fill_width_p        = proc_param_lp.acache_fill_width                      \
-    , localparam lce_assoc_p                = `BSG_MAX(dcache_assoc_p,                             \
-                                                       `BSG_MAX(icache_assoc_p, acache_assoc_p))   \
+    , localparam lce_assoc_p                =                                                      \
+        `BSG_MAX(dcache_assoc_p, `BSG_MAX(icache_assoc_p, num_cacc_p ? acache_assoc_p : '0))       \
     , localparam lce_assoc_width_p          = `BSG_SAFE_CLOG2(lce_assoc_p)                         \
-    , localparam lce_sets_p                 = `BSG_MAX(dcache_sets_p,                              \
-                                                       `BSG_MAX(icache_sets_p, acache_sets_p))     \
+    , localparam lce_sets_p                 =                                                      \
+        `BSG_MAX(dcache_sets_p, `BSG_MAX(icache_sets_p, num_cacc_p ? acache_sets_p : '0))          \
     , localparam lce_sets_width_p           = `BSG_SAFE_CLOG2(lce_sets_p)                          \
                                                                                                    \
-    , localparam cce_block_width_p          =  `BSG_MAX(dcache_block_width_p,                      \
-                                                       `BSG_MAX(icache_block_width_p,              \
-                                                         acache_block_width_p))                    \
+    , localparam cce_block_width_p          =                                                      \
+        `BSG_MAX(dcache_block_width_p, `BSG_MAX(icache_block_width_p, num_cacc_p ? acache_block_width_p : '0)) \
+    , localparam uce_fill_width_p           =                                                      \
+        `BSG_MAX(dcache_fill_width_p, `BSG_MAX(icache_fill_width_p, num_cacc_p ? acache_fill_width_p : '0)) \
                                                                                                    \
     , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                           \
     , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                    \
-    , localparam cce_way_groups_p           = `BSG_MAX(dcache_sets_p, icache_sets_p)               \
+    , localparam cce_way_groups_p           =                                                      \
+        `BSG_MAX(dcache_sets_p, `BSG_MAX(icache_sets_p, num_cacc_p ? acache_sets_p : '0))          \
     , localparam cce_ucode_p                = proc_param_lp.cce_ucode                              \
                                                                                                    \
     , localparam l2_en_p                  = proc_param_lp.l2_en                                    \
@@ -157,6 +159,8 @@
         ? '{io_noc_x_cord_width_p+io_noc_y_cord_width_p, io_noc_y_cord_width_p, 0}                 \
         : '{io_noc_y_cord_width_p+io_noc_x_cord_width_p, io_noc_x_cord_width_p, 0}                 \
     , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]               \
+                                                                                                   \
+    , localparam did_width_p  = io_noc_did_width_p                                                 \
                                                                                                    \
     , localparam etag_width_p  = dword_width_gp - page_offset_width_gp                             \
     , localparam vtag_width_p  = vaddr_width_p - page_offset_width_gp                              \

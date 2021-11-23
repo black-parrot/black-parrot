@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_alu.v
+ *   bp_cce_alu.sv
  *
  * Description:
  *   A simple ALU for the CCE implementing addition, subtraction, logical shift, and bitwise
@@ -21,7 +21,7 @@
 
 module bp_cce_alu
   import bp_me_pkg::*;
-  #(parameter `BSG_INV_PARAM(width_p ))
+  #(parameter `BSG_INV_PARAM(width_p))
   (input [width_p-1:0]                       opd_a_i
    , input [width_p-1:0]                     opd_b_i
    , input bp_cce_inst_alu_op_e              alu_op_i

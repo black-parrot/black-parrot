@@ -9,18 +9,18 @@ module bp_me_clint_slice
  import bsg_wormhole_router_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce)
    )
   (input                                                clk_i
    , input                                              reset_i
 
-   , input [xce_mem_msg_header_width_lp-1:0]            mem_cmd_header_i
+   , input [xce_mem_header_width_lp-1:0]                mem_cmd_header_i
    , input [dword_width_gp-1:0]                         mem_cmd_data_i
    , input                                              mem_cmd_v_i
    , output logic                                       mem_cmd_ready_and_o
    , input                                              mem_cmd_last_i
 
-   , output logic [xce_mem_msg_header_width_lp-1:0]     mem_resp_header_o
+   , output logic [xce_mem_header_width_lp-1:0]         mem_resp_header_o
    , output logic [dword_width_gp-1:0]                  mem_resp_data_o
    , output logic                                       mem_resp_v_o
    , input                                              mem_resp_ready_and_i
@@ -32,8 +32,8 @@ module bp_me_clint_slice
    , output logic                                       external_irq_o
    );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
-  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
@@ -43,7 +43,7 @@ module bp_me_clint_slice
    #(.bp_params_p(bp_params_p)
      ,.els_p(4)
      ,.reg_addr_width_p(dev_addr_width_gp)
-     ,.base_addr_p({plic_reg_addr_gp, mtime_reg_match_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
+     ,.base_addr_p({plic_reg_addr_gp, mtime_reg_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
      )
    register
     (.*

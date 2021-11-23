@@ -30,8 +30,8 @@ BlackParrot supports the following CSRs:
 
 ## Memory-mapped Devices
 BlackParrot supports having a number of devices in each tile. In a standard BlackParrot tile there is:
-* CLINT (Core Local Interrupt Controller)
 * CFG (Tile Configuration Controller)
+* CLINT (Core Local Interrupt Controller)
 * L2S (L2 cache slice)
 
 The map for configuration registers within these devices is shown below.
@@ -82,19 +82,19 @@ BlackParrot has a configurable physical address width as well as maximum DRAM si
 * 0x00_0000_0000 - 0x00_7FFF_FFFF
   * Uncached, local memory
   * (See local address map for further breakdown)
-* 0x00_8000_0000 - 0x0F_FFFF_FFFF
+* 0x00_8000_0000 - 0x00_FFFF_FFFF
   * Cached, global memory
   * Striped by cache line
   * Cached DRAM region
-* 0x10_0000_0000 - 0x1F_FFFF_FFFF
+* 0x01_0000_0000 - 0x01_FFFF_FFFF
   * Uncached, global memory
   * Striped by cache line
   * Uncached DRAM region
-* 0x20_0000_0000 - 0x2F_FFFF_FFFF
+* 0x02_0000_0000 - 0x03_FFFF_FFFF
   * Uncached, global memory
   * Striped by tile
   * Streaming accelerator region
-* 0x30_0000_0000 - 0xFF_FFFF_FFFF
+* 0x04_0000_0000 - 0xFF_FFFF_FFFF
   * Uncached, ASIC-global memory
   * Striped by tile
   * Off-chip region
@@ -104,7 +104,10 @@ address goes to a local device if below the DRAM base address, and to the L2 if 
 
 For a BlackParrot Multicore, an "off-chip" device is routed to the I/O complex. The I/O complex will
 either send it east or west depending on the destination "domain ID" (upper uncached bits) of the
-address compared to the domain ID of the chip itself (set statically at the toplevel).
+address compared to the domain ID of the chip itself (set statically at the toplevel). Additionally,
+addreses in the host address space are routed to the static host domain ID set at the top level. Absolute
+domain IDs are irrelevant, only relative domain IDs determine routing. However, domain ID 0 is
+reserved to mean "on this local chip".
 
 The uncached region in this scheme is rather large, fully half of the available DRAM at first
 glance. However, this is only the view from BlackParrot. System designers are free to remap those
@@ -113,6 +116,9 @@ addresses as they see fit. For instance, aliasing some of the DRAM space between
 that both cached and uncached are physically contiguous on the same DRAM.
 
 ### Local Address Map
+For a BlackParrots in a multicore, the local address space is sliced among all the tiles as shown
+below.
+
 * 0x00_0000_0000 - 0x00_0(nnnN)(D)(A_AAAA)
   * nnnN -> 7 bits = 128 max tiles
   * D -> 4 bits = 16 max devices
@@ -121,6 +127,10 @@ that both cached and uncached are physically contiguous on the same DRAM.
   * Devices: Configuration Link, CLINT
   * 0x00_0420_0002 -> tile 2, device 2, address 0008 -> Freeze register
   * 0x00_0030_bff8 -> tile 0, device 3, address bff8 -> CLINT mtime
+
+For a BlackParrot unicore, all addresses outside of N=k in this scheme are considered as I/O. This
+local space is useful for address-space constrained systems where this local space can be reused for
+accelerators, co-processors, etc.
 
 ### Full Listing of BlackParrot Configuration Registers
 Following is a list of the memory-mapped registers contained within a BlackParrot Unicore or BlackParrot Multicore Tile.

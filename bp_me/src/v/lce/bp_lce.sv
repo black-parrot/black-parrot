@@ -1,6 +1,6 @@
 /**
  *  Name:
- *    bp_lce.v
+ *    bp_lce.sv
  *
  *
  *  Description:
@@ -17,10 +17,11 @@ module bp_lce
    `declare_bp_proc_params(bp_params_p)
 
     // parameters specific to this LCE
-    , parameter `BSG_INV_PARAM(assoc_p )
-    , parameter `BSG_INV_PARAM(sets_p )
-    , parameter `BSG_INV_PARAM(block_width_p )
+    , parameter `BSG_INV_PARAM(assoc_p)
+    , parameter `BSG_INV_PARAM(sets_p)
+    , parameter `BSG_INV_PARAM(block_width_p)
     , parameter fill_width_p = block_width_p
+    , parameter req_invert_clk_p = 0
     , parameter data_mem_invert_clk_p = 0
     , parameter tag_mem_invert_clk_p = 0
     , parameter stat_mem_invert_clk_p = 0
@@ -39,7 +40,7 @@ module bp_lce
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
   (
@@ -87,42 +88,43 @@ module bp_lce
 
     // LCE-CCE interface
     // Req: ready->valid
-    , output logic [lce_req_msg_width_lp-1:0]        lce_req_o
+    , output logic [lce_req_header_width_lp-1:0]     lce_req_header_o
+    , output logic [cce_block_width_p-1:0]           lce_req_data_o
     , output logic                                   lce_req_v_o
     , input                                          lce_req_ready_then_i
 
     // Resp: ready->valid
-    , output logic [lce_resp_msg_width_lp-1:0]       lce_resp_o
+    , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
+    , output logic [cce_block_width_p-1:0]           lce_resp_data_o
     , output logic                                   lce_resp_v_o
     , input                                          lce_resp_ready_then_i
 
     // CCE-LCE interface
     // Cmd_i: valid->yumi
-    , input [lce_cmd_msg_width_lp-1:0]               lce_cmd_i
+    , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
+    , input [cce_block_width_p-1:0]                  lce_cmd_data_i
     , input                                          lce_cmd_v_i
     , output logic                                   lce_cmd_yumi_o
 
     // LCE-LCE interface
     // Cmd_o: ready->valid
-    , output logic [lce_cmd_msg_width_lp-1:0]        lce_cmd_o
+    , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
+    , output logic [cce_block_width_p-1:0]           lce_cmd_data_o
     , output logic                                   lce_cmd_v_o
     , input                                          lce_cmd_ready_then_i
   );
 
-  //synopsys translate_off
-  initial begin
-    assert((sets_p > 1) && `BSG_IS_POW2(sets_p)) else
-      $error("LCE sets must be greater than 1 and power of two");
-    assert((block_width_p % 8 == 0) && `BSG_IS_POW2(block_width_p)) else
-      $error("LCE block width must be a whole number of bytes and power of two");
-    assert(block_width_p <= 1024) else
-      $error("LCE block width must be no greater than 128 bytes");
-    assert(fill_width_p == block_width_p) else
-      $error("LCE block width must be equal to fill width. Partial fill is not supported");
-    assert(`BSG_IS_POW2(assoc_p)) else
-      $error("LCE assoc must be power of two");
-  end
-  //synopsys translate_on
+  // parameter checks
+  if ((sets_p <= 1) || !(`BSG_IS_POW2(sets_p)))
+    $fatal(0,"LCE sets must be greater than 1 and power of two");
+  if ((block_width_p % 8 != 0) || !(`BSG_IS_POW2(block_width_p)))
+    $fatal(0,"LCE block width must be a whole number of bytes and power of two");
+  if (block_width_p > 1024)
+    $fatal(0,"LCE block width must be no greater than 128 bytes");
+  if (fill_width_p != block_width_p)
+    $fatal(0,"LCE block width must be equal to fill width. Partial fill is not supported");
+  if (!(`BSG_IS_POW2(assoc_p)))
+    $fatal(0,"LCE assoc must be power of two");
 
   // LCE Request Module
   logic req_ready_lo;
@@ -160,7 +162,8 @@ module bp_lce
 
       ,.uc_store_req_complete_i(uc_store_req_complete_lo)
 
-      ,.lce_req_o(lce_req_o)
+      ,.lce_req_header_o(lce_req_header_o)
+      ,.lce_req_data_o(lce_req_data_o)
       ,.lce_req_v_o(lce_req_v_o)
       ,.lce_req_ready_then_i(lce_req_ready_then_i)
       );
@@ -206,15 +209,18 @@ module bp_lce
       ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
       ,.stat_mem_i(stat_mem_i)
 
-      ,.lce_cmd_i(lce_cmd_i)
+      ,.lce_cmd_header_i(lce_cmd_header_i)
+      ,.lce_cmd_data_i(lce_cmd_data_i)
       ,.lce_cmd_v_i(lce_cmd_v_i)
       ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
 
-      ,.lce_resp_o(lce_resp_o)
+      ,.lce_resp_header_o(lce_resp_header_o)
+      ,.lce_resp_data_o(lce_resp_data_o)
       ,.lce_resp_v_o(lce_resp_v_o)
       ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
 
-      ,.lce_cmd_o(lce_cmd_o)
+      ,.lce_cmd_header_o(lce_cmd_header_o)
+      ,.lce_cmd_data_o(lce_cmd_data_o)
       ,.lce_cmd_v_o(lce_cmd_v_o)
       ,.lce_cmd_ready_then_i(lce_cmd_ready_then_i)
       );

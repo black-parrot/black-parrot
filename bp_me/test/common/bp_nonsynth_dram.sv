@@ -13,7 +13,7 @@ module bp_nonsynth_dram
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter num_dma_p = 1
    , parameter preload_mem_p = 0
@@ -40,6 +40,31 @@ module bp_nonsynth_dram
    , input                                                  dram_reset_i
    );
 
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  bsg_cache_dma_pkt_s [num_dma_p-1:0] dma_pkt_li, dma_pkt;
+  assign dma_pkt_li = dma_pkt_i;
+  localparam l2_block_offset_width_lp = `BSG_SAFE_CLOG2(l2_block_width_p/8);
+  localparam lg_l2_sets_lp            = `BSG_SAFE_CLOG2(l2_sets_p);
+  localparam lg_num_cce_lp            = `BSG_SAFE_CLOG2(num_cce_p);
+  localparam int hash_offset_widths_lp[2:0] = '{(lg_l2_sets_lp-lg_num_cce_lp), lg_num_cce_lp, l2_block_offset_width_lp};
+  for (genvar i = 0; i < num_dma_p; i++) begin : address_hash
+    logic [daddr_width_p-1:0] addr_lo;
+    bp_me_dram_hash_decode
+      #(.bp_params_p(bp_params_p)
+        ,.offset_widths_p(hash_offset_widths_lp)
+        ,.addr_width_p(daddr_width_p)
+        )
+      dma_addr_hash
+      (.addr_i(dma_pkt_li[i].addr)
+       ,.addr_o(addr_lo)
+       );
+
+    always_comb begin
+      dma_pkt[i] = dma_pkt_li[i];
+      dma_pkt[i].addr = addr_lo;
+    end
+  end
+
   if (dram_type_p == "dmc")
     begin : ddr
       bp_ddr
@@ -48,7 +73,7 @@ module bp_nonsynth_dram
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.dma_pkt_i(dma_pkt_i)
+         ,.dma_pkt_i(dma_pkt)
          ,.dma_pkt_v_i(dma_pkt_v_i)
          ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 
@@ -82,7 +107,7 @@ module bp_nonsynth_dram
            $error("bsg_cache_to_test_dram doesn't support NPOT number of caches. Use AXI mem instead");
          end
 
-       // TODO: May need to use actual hash function 
+       // TODO: May need to use actual hash function
        localparam cache_bank_addr_width_lp = `dram_pkg::channel_addr_width_p - `BSG_SAFE_CLOG2(num_dma_p);
        bsg_cache_to_test_dram
         #(.num_cache_p(num_dma_p)
@@ -99,7 +124,7 @@ module bp_nonsynth_dram
         (.core_clk_i(clk_i)
          ,.core_reset_i(reset_i)
 
-         ,.dma_pkt_i(dma_pkt_i)
+         ,.dma_pkt_i(dma_pkt)
          ,.dma_pkt_v_i(dma_pkt_v_i)
          ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 
@@ -248,7 +273,7 @@ module bp_nonsynth_dram
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.dma_pkt_i(dma_pkt_i)
+         ,.dma_pkt_i(dma_pkt)
          ,.dma_pkt_v_i(dma_pkt_v_i)
          ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 

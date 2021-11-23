@@ -12,8 +12,8 @@ module bp_nonsynth_if_verif
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
@@ -24,8 +24,8 @@ module bp_nonsynth_if_verif
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
 
   initial
@@ -44,12 +44,12 @@ module bp_nonsynth_if_verif
       $display("bp_fe_cmd_s            bits: struct %d width %d", $bits(bp_fe_cmd_s), fe_cmd_width_lp);
 
       $display("########### LCE-CCE IF ##############");
-      $display("bp_bedrock_lce_req_msg_s       bits: struct %d width %d", $bits(bp_bedrock_lce_req_msg_s), lce_req_msg_width_lp);
-      $display("bp_bedrock_lce_cmd_msg_s       bits: struct %d width %d", $bits(bp_bedrock_lce_cmd_msg_s), lce_cmd_msg_width_lp);
-      $display("bp_bedrock_lce_resp_msg_s      bits: struct %d width %d", $bits(bp_bedrock_lce_resp_msg_s), lce_resp_msg_width_lp);
+      $display("bp_bedrock_lce_req_header_s       bits: struct %d width %d", $bits(bp_bedrock_lce_req_header_s), lce_req_header_width_lp);
+      $display("bp_bedrock_lce_cmd_header_s       bits: struct %d width %d", $bits(bp_bedrock_lce_cmd_header_s), lce_cmd_header_width_lp);
+      $display("bp_bedrock_lce_resp_header_s      bits: struct %d width %d", $bits(bp_bedrock_lce_resp_header_s), lce_resp_header_width_lp);
 
       $display("########### CCE-MEM IF ##############");
-      $display("bp_bedrock_cce_mem_msg_s       bits: struct %d width %d", $bits(bp_bedrock_cce_mem_msg_s), cce_mem_msg_width_lp);
+      $display("bp_bedrock_cce_mem_header_s       bits: struct %d width %d", $bits(bp_bedrock_cce_mem_header_s), cce_mem_header_width_lp);
 
       if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
         $fatal("Error: unsupported number of CCE's");
@@ -57,8 +57,8 @@ module bp_nonsynth_if_verif
 
     end
 
-  if (ic_y_dim_p != 1)
-    $fatal("Error: Must have exactly 1 row of I/O routers");
+  if (ic_y_dim_p != 1 && multicore_p == 1)
+    $fatal("Error: Must have exactly 1 row of I/O routers for multicore");
   if (mc_y_dim_p > 2)
     $fatal("Error: Multi-row L2 expansion nodes not yet supported");
   if (sac_x_dim_p > 1)
@@ -77,11 +77,17 @@ module bp_nonsynth_if_verif
     $fatal("Error: Cache fill width should be less or equal to L1 cache block width");
   if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0) || (dcache_fill_width_p % (dcache_block_width_p / dcache_assoc_p) != 0))
     $fatal("Error: Cache fill width should be a multiple of cache bank width");
+  if (icache_fill_width_p != dcache_fill_width_p)
+    $fatal("Error: L1-Cache fill width should be the same");
+  if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
+    $fatal("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
+  if ((multicore_p == 1) && (l2_data_width_p != dword_width_gp))
+    $fatal("Error: multicore requires L2 data width same as dword width");
+  if (l2_data_width_p < l2_fill_width_p)
+    $fatal("Error: L2 fill width must be at least as large as L2 data width");
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");
-  if (l2_data_width_p != 64)
-    $error("L2 data width must be 64");
 
   //if (bht_entry_width_p/2 < 2 || bht_entry_width_p/2*2 != bht_entry_width_p)
   //  $warning("BHT fold width must be power of 2 greater than 2");
@@ -107,6 +113,9 @@ module bp_nonsynth_if_verif
 
   if (mem_noc_flit_width_p % l2_fill_width_p != 0)
     $fatal("Memory NoC flit width must match l2 fill width");
+
+  if (multicore_p == 0 && num_core_p != 1)
+    $fatal("Unicore only supports a single core configuration in the tethered testbench");
 
 endmodule
 

@@ -5,7 +5,7 @@
     typedef struct packed                                           \
     {                                                               \
       logic [paddr_width_mp-daddr_width_mp-1:0] hio;                \
-      logic [daddr_width_mp-1:0]                caddr;              \
+      logic [daddr_width_mp-1:0]                daddr;              \
     }  bp_global_addr_s;                                            \
                                                                     \
     typedef struct packed                                           \

@@ -3,7 +3,6 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_tx.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
-$BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_set_clear.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_arb_round_robin.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
@@ -14,10 +13,16 @@ $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_map.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_trace_replay.v
 $BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_dram_hash_decode.sv
+$BP_ME_DIR/src/v/dev/bp_me_dram_hash_encode.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_dir_tracer.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_cce_inst_tracer.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_cce_perf.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tr_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_mock_lce_tag_lookup.sv
@@ -25,7 +30,6 @@ $BP_ME_DIR/test/common/bp_me_nonsynth_mock_lce.sv
 $BP_ME_DIR/test/common/bp_nonsynth_mem.sv
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.sv
-$BP_ME_DIR/test/common/bsg_trace_node_master.sv
 $BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.sv
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp

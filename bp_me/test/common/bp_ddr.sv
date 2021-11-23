@@ -13,18 +13,18 @@ module bp_ddr
    , parameter num_dma_p = 1
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
-  (input                                                     clk_i
-   , input                                                   reset_i
+  (input                                                    clk_i
+   , input                                                  reset_i
 
    , input [num_dma_p-1:0][dma_pkt_width_lp-1:0]            dma_pkt_i
    , input [num_dma_p-1:0]                                  dma_pkt_v_i
    , output logic [num_dma_p-1:0]                           dma_pkt_yumi_o
 
-   , output logic [num_dma_p-1:0][l2_fill_width_p-1:0] dma_data_o
+   , output logic [num_dma_p-1:0][l2_fill_width_p-1:0]      dma_data_o
    , output logic [num_dma_p-1:0]                           dma_data_v_o
    , input [num_dma_p-1:0]                                  dma_data_ready_i
 
-   , input [num_dma_p-1:0][l2_fill_width_p-1:0]        dma_data_i
+   , input [num_dma_p-1:0][l2_fill_width_p-1:0]             dma_data_i
    , input [num_dma_p-1:0]                                  dma_data_v_i
    , output logic [num_dma_p-1:0]                           dma_data_yumi_o
    );

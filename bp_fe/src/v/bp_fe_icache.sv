@@ -72,7 +72,6 @@ module bp_fe_icache
    , output logic [instr_width_gp-1:0]                data_o
    , output logic                                     data_v_o
    , output logic                                     miss_v_o
-   , input                                            poison_tv_i
 
    // Cache Engine Interface
    // This is considered the "slow path", handling uncached requests
@@ -387,7 +386,7 @@ module bp_fe_icache
   wire uncached_req = v_tv_r & uncached_op_tv_r & fill_tv_r & ~uncached_pending_r;
   wire fencei_req   = v_tv_r & fencei_op_tv_r & !coherent_p;
 
-  assign cache_req_v_o = |{uncached_req, cached_req, fencei_req} & ~poison_tv_i;
+  assign cache_req_v_o = |{uncached_req, cached_req, fencei_req};
   assign cache_req_cast_o =
    '{addr     : paddr_tv_r
      ,size    : cached_req ? block_req_size : uncached_req_size
@@ -659,7 +658,7 @@ module bp_fe_icache
   ///////////////////////////
   wire uncached_pending_set = cache_req_yumi_i & uncached_req;
   // Invalidate uncached data if the cache when we successfully complete the request
-  wire uncached_pending_clear = poison_tl_i | poison_tv_i | data_v_o;
+  wire uncached_pending_clear = poison_tl_i | data_v_o;
   bsg_dff_reset_set_clear
    #(.width_p(1), .clear_over_set_p(1))
    uncached_pending_reg

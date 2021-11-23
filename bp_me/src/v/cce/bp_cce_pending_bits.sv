@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_pending_bits.v
+ *   bp_cce_pending_bits.sv
  *
  * Description:
  *   This module contains the pending bits. Pending bits are actually small counters.
@@ -24,14 +24,14 @@
 
 module bp_cce_pending_bits
   import bp_common_pkg::*;
-  #(parameter `BSG_INV_PARAM(num_way_groups_p            )
-    , parameter `BSG_INV_PARAM(cce_way_groups_p          )
-    , parameter `BSG_INV_PARAM(num_cce_p                 )
-    , parameter `BSG_INV_PARAM(paddr_width_p             )
-    , parameter `BSG_INV_PARAM(addr_offset_p             )
+  #(parameter `BSG_INV_PARAM(num_way_groups_p)
+    , parameter `BSG_INV_PARAM(cce_way_groups_p)
+    , parameter `BSG_INV_PARAM(num_cce_p)
+    , parameter `BSG_INV_PARAM(paddr_width_p)
+    , parameter `BSG_INV_PARAM(addr_offset_p)
 
     // Default parameters
-    , parameter width_p                   = 3  // pending bit counter width
+    , parameter width_p = 3  // pending bit counter width
 
     // Derived parameters
     , localparam lg_num_way_groups_lp     = `BSG_SAFE_CLOG2(num_way_groups_p)

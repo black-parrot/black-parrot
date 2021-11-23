@@ -12,29 +12,44 @@ module bp_nonsynth_nbf_loader
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter nbf_filename_p = "prog.nbf"
    , parameter nbf_opcode_width_p = 8
    , parameter nbf_addr_width_p = (paddr_width_p+3)/4*4
    , parameter nbf_data_width_p = dword_width_gp
+   , parameter io_data_width_p = nbf_data_width_p
    , localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
+
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
    )
-  (input                                     clk_i
-   , input                                   reset_i
+  (input                                            clk_i
+   , input                                          reset_i
 
-   , input [lce_id_width_p-1:0]              lce_id_i
+   , input [lce_id_width_p-1:0]                     lce_id_i
+   , input [did_width_p-1:0]                        did_i
 
-   , output logic [cce_mem_msg_width_lp-1:0] io_cmd_o
-   , output logic                            io_cmd_v_o
-   , input                                   io_cmd_yumi_i
+   , output logic [io_mem_header_width_lp-1:0]      io_cmd_header_o
+   , output logic [io_data_width_p-1:0]             io_cmd_data_o
+   , output logic                                   io_cmd_v_o
+   , input                                          io_cmd_yumi_i
+   , output logic                                   io_cmd_last_o
 
-   , input  [cce_mem_msg_width_lp-1:0]       io_resp_i
-   , input                                   io_resp_v_i
-   , output logic                            io_resp_ready_and_o
+   , input  [io_mem_header_width_lp-1:0]            io_resp_header_i
+   , input  [io_data_width_p-1:0]                   io_resp_data_i
+   , input                                          io_resp_v_i
+   , output logic                                   io_resp_ready_and_o
+   , input                                          io_resp_last_i
 
-   , output logic                            done_o
+   , output logic                                   done_o
    );
+
+  if (nbf_data_width_p != dword_width_gp)
+    $fatal(0, "NBF data width must be same as dword_width_gp");
+  if (io_data_width_p < nbf_data_width_p)
+    $fatal(0, "NBF IO data width must be as large as NBF data width");
+
+  // all messages are single beat
+  wire unused = &{io_resp_data_i, io_resp_last_i};
 
   enum logic [2:0] { e_reset, e_send, e_fence, e_read, e_done} state_n, state_r;
   wire is_reset    = (state_r == e_reset);
@@ -88,11 +103,10 @@ module bp_nonsynth_nbf_loader
      ,.data_o(read_data_r)
      );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
-  bp_bedrock_cce_mem_msg_s io_cmd, io_resp;
-  bp_bedrock_cce_mem_payload_s io_cmd_payload;
-  assign io_cmd_o = io_cmd;
-  assign io_resp = io_resp_i;
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
+  bp_bedrock_io_mem_header_s io_cmd, io_resp;
+  assign io_cmd_header_o = io_cmd;
+  assign io_resp = io_resp_header_i;
 
   logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
   bsg_flow_counter
@@ -113,26 +127,28 @@ module bp_nonsynth_nbf_loader
 
   always_comb
     begin
-      io_cmd.data = curr_nbf.data;
-      io_cmd_payload = '0;
-      io_cmd_payload.lce_id = lce_id_i;
-      io_cmd.header.payload = io_cmd_payload;
-      io_cmd.header.addr = curr_nbf.addr;
-      io_cmd.header.msg_type.mem = curr_nbf.opcode[5] ? e_bedrock_mem_uc_rd : e_bedrock_mem_uc_wr;
-      io_cmd.header.subop = e_bedrock_store;
+      io_cmd_data_o = '0;
+      io_cmd_data_o[0+:nbf_data_width_p] = curr_nbf.data;
+      io_cmd = '0;
+      io_cmd.payload.lce_id = lce_id_i;
+      io_cmd.payload.did = did_i;
+      io_cmd.addr = curr_nbf.addr;
+      io_cmd.msg_type.mem = curr_nbf.opcode[5] ? e_bedrock_mem_uc_rd : e_bedrock_mem_uc_wr;
+      io_cmd.subop = e_bedrock_store;
 
       case (curr_nbf.opcode[1:0])
-        2'b00: io_cmd.header.size = e_bedrock_msg_size_1;
-        2'b01: io_cmd.header.size = e_bedrock_msg_size_2;
-        2'b10: io_cmd.header.size = e_bedrock_msg_size_4;
-        2'b11: io_cmd.header.size = e_bedrock_msg_size_8;
-        default: io_cmd.header.size = e_bedrock_msg_size_4;
+        2'b00: io_cmd.size = e_bedrock_msg_size_1;
+        2'b01: io_cmd.size = e_bedrock_msg_size_2;
+        2'b10: io_cmd.size = e_bedrock_msg_size_4;
+        2'b11: io_cmd.size = e_bedrock_msg_size_8;
+        default: io_cmd.size = e_bedrock_msg_size_4;
       endcase
     end
 
   assign io_cmd_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
+  assign io_cmd_last_o = io_cmd_v_o;
 
-  wire read_return = is_read & io_resp_v_i & (io_resp.header.msg_type == e_bedrock_mem_uc_rd);
+  wire read_return = is_read & io_resp_v_i & (io_resp.msg_type == e_bedrock_mem_uc_rd);
   always_comb
     unique casez (state_r)
       e_reset       : state_n = reset_i ? e_reset : e_send;
@@ -162,8 +178,12 @@ module bp_nonsynth_nbf_loader
     begin
       if (state_r != e_done && state_n == e_done)
         $display("NBF loader done!");
-      assert (~read_return || read_data_r == io_resp.data[0+:dword_width_gp])
-        else $error("Validation mismatch: addr: %d %d %d", io_resp.header.addr, io_resp.data, read_data_r);
+      assert (~read_return || read_data_r == io_resp_data_i[0+:dword_width_gp])
+        else $error("Validation mismatch: addr: %d %d %d", io_resp.addr, io_resp_data_i, read_data_r);
+
+      if (io_resp_v_i & io_resp_ready_and_o)
+        assert(io_resp_last_i)
+          else $error("Multi-beat IO response detected");
     end
   //synopsys translate_on
 

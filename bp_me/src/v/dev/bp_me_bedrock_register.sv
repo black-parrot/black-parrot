@@ -14,7 +14,7 @@ module bp_me_bedrock_register
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce)
 
    // The width of the registers. Currently, must all be the same.
    , parameter reg_width_p = dword_width_gp
@@ -32,20 +32,19 @@ module bp_me_bedrock_register
    //, parameter integer base_addr_p [els_p-1:0] = '{0}
    , parameter [els_p-1:0][reg_addr_width_p-1:0] base_addr_p = '0
 
-   , localparam sel_width_lp  = `BSG_SAFE_CLOG2(reg_width_p/8)
-   , localparam size_width_lp = `BSG_WIDTH(`BSG_SAFE_CLOG2(reg_width_p/8))
+   , localparam lg_reg_width_lp = `BSG_WIDTH(`BSG_SAFE_CLOG2(reg_width_p/8))
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Network-side BP-Stream interface
-   , input [xce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
+   , input [xce_mem_header_width_lp-1:0]            mem_cmd_header_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
-   , output logic [xce_mem_msg_header_width_lp-1:0] mem_resp_header_o
+   , output logic [xce_mem_header_width_lp-1:0]     mem_resp_header_o
    , output logic [dword_width_gp-1:0]              mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
@@ -60,20 +59,20 @@ module bp_me_bedrock_register
    , output logic [els_p-1:0]                       r_v_o
    , output logic [els_p-1:0]                       w_v_o
    , output logic [reg_addr_width_p-1:0]            addr_o
-   , output logic [size_width_lp-1:0]               size_o
+   , output logic [lg_reg_width_lp-1:0]             size_o
    , output logic [reg_width_p-1:0]                 data_o
    , input [els_p-1:0][reg_width_p-1:0]             data_i
    );
 
   wire unused = &{mem_cmd_last_i};
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce);
 
-  bp_bedrock_xce_mem_msg_header_s mem_cmd_header_li;
+  bp_bedrock_xce_mem_header_s mem_cmd_header_li;
   logic [dword_width_gp-1:0] mem_cmd_data_li;
   logic mem_cmd_v_li, mem_cmd_yumi_li;
   bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_xce_mem_msg_s)))
+   #(.width_p($bits(bp_bedrock_xce_mem_header_s)+dword_width_gp))
    cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -112,17 +111,6 @@ module bp_me_bedrock_register
      ,.data_o(rdata_lo)
      );
 
-  wire [sel_width_lp-1:0]   sel_lo = mem_cmd_header_li.addr[0+:sel_width_lp];
-  wire [size_width_lp-1:0] size_lo = mem_cmd_header_li.size[0+:size_width_lp];
-  bsg_bus_pack
-   #(.width_p(dword_width_gp))
-   rbp
-    (.data_i(rdata_lo)
-     ,.sel_i(sel_lo)
-     ,.size_i(size_lo)
-     ,.data_o(mem_resp_data_o)
-     );
-
   for (genvar i = 0; i < els_p; i++)
     begin : dec
       wire addr_match = mem_cmd_v_li & (mem_cmd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
@@ -134,6 +122,7 @@ module bp_me_bedrock_register
       assign data_o = (mem_cmd_data_li);
 
   assign mem_resp_header_o = mem_cmd_header_li;
+  assign mem_resp_data_o = rdata_lo;
   assign mem_resp_v_o = v_r;
   assign mem_resp_last_o = mem_resp_v_o;
   assign mem_cmd_yumi_li = mem_resp_ready_and_i & mem_resp_v_o;
@@ -142,7 +131,10 @@ module bp_me_bedrock_register
   always_ff @(negedge clk_i)
     begin
       assert (~mem_cmd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
-        else $error("Command to non-existent register: %x", addr_o);
+        else $fatal("Command to non-existent register: %x", addr_o);
+
+      assert (~(mem_cmd_v_i & mem_cmd_ready_and_o) || mem_cmd_last_i)
+        else $fatal("Multi-beat memory command detected");
     end
   //synopsys translate_on
 
