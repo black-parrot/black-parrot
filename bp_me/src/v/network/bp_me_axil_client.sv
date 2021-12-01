@@ -74,6 +74,8 @@ module bp_me_axil_client
 
   always_comb
     begin
+      state_n = state_r;
+
       // BP side
       io_cmd_header_cast_o = '0;
       io_cmd_data_o        = '0;
