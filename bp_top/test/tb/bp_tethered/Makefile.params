@@ -1,4 +1,4 @@
-export COH_PROTO   ?= mesi
+export COH_PROTO   ?= moesif
 export CCE_MEM      = $(COH_PROTO).mem
 
 export CCE_TRACE_P    ?= 0
