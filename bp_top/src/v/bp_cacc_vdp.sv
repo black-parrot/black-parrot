@@ -357,7 +357,7 @@ module bp_cacc_vdp
     case (state_r)
       RESET: begin
         state_n = reset_i ? RESET : WAIT_START;
-        res_status = io_resp_v_o;
+        res_status = '0;
         dcache_ptag = '0;
         dcache_pkt = '0;
         dcache_pkt_v = '0;
