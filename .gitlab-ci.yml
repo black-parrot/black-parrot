@@ -357,6 +357,7 @@ top-linux-vcs:
 
 top-accelerator-vcs:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - vcs
