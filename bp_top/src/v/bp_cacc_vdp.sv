@@ -307,15 +307,12 @@ module bp_cacc_vdp
       res_ptr       <= '0;
       res_len       <= '0;
       operation     <= '0;
-      io_resp_v_o   <= '0;
       len_a_cnt     <= '0;
       len_b_cnt     <= '0;
       vector_a      <= '{default:64'd0};
       vector_b      <= '{default:64'd0};
     end
-    if (state_r == DONE)
-      start_cmd  <= '0;
-    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr))
+    if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr))
     begin
       resp_size    <= io_cmd_header_cast_i.size;
       resp_payload <= io_cmd_header_cast_i.payload;
