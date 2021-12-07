@@ -1362,7 +1362,7 @@ module bp_be_dcache
 
   always_ff @(negedge clk_i)
     begin
-      assert(~v_tv_r || $countones(load_hit_tl) <= 1)
+      assert(reset_i !== '0 || ~v_tv_r || $countones(load_hit_tl) <= 1)
         else $error("multiple hit: %b. id = %0d. addr = %H", load_hit_tl, cfg_bus_cast_i.dcache_id, ptag_i);
     end
 

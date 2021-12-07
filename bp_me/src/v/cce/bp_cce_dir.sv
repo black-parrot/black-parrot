@@ -368,9 +368,9 @@ module bp_cce_dir
   //synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
-      assert($countones({icache_lru_v, dcache_lru_v, acache_lru_v}) <= 1)
+      assert(reset_i !== '0 || $countones({icache_lru_v, dcache_lru_v, acache_lru_v}) <= 1)
         else $error("Multiple directory segments attempting to output LRU information in same cycle");
-      assert($countones({icache_addr_v, dcache_addr_v, acache_addr_v}) <= 1)
+      assert(reset_i !== '0 || $countones({icache_addr_v, dcache_addr_v, acache_addr_v}) <= 1)
         else $error("Multiple directory segments attempting to output addr information in same cycle");
     end
   end

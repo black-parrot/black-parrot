@@ -286,11 +286,13 @@ module axi_fifo
 	end
     end
 
+  if (axi_data_width_p != 32 && axi_data_width_p != 64)
+    $error("AXI4-LITE only supports a data width of 32 or 64bits.");
+
   //synopsys translate_off
   initial
     begin
-      assert (axi_data_width_p==64 || axi_data_width_p==32) else $error("AXI4-LITE only supports a data width of 32 or 64bits.");
-      assert (in_axi_lite_awprot_i == 3'b000) else $info("AXI4-LITE access permission mode is not supported.");
+      assert(reset_i !== '0 || in_axi_lite_awprot_i == 3'b000) else $info("AXI4-LITE access permission mode is not supported.");
     end
   //synopsys translate_on
 endmodule

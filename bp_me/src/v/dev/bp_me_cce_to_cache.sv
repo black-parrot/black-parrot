@@ -444,7 +444,7 @@ module bp_me_cce_to_cache
   always_ff @(negedge clk_i)
     begin
       if (mem_cmd_v_lo & mem_cmd_header_lo.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr})
-        assert (~(mem_cmd_header_lo.subop inside {e_bedrock_amolr, e_bedrock_amosc}))
+        assert(reset_i !== '0 || ~(mem_cmd_header_lo.subop inside {e_bedrock_amolr, e_bedrock_amosc}))
           else $error("LR/SC not supported in bsg_cache");
     end
   //synopsys translate_on
