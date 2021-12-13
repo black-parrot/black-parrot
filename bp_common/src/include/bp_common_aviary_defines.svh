@@ -96,7 +96,7 @@
     , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                           \
     , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                    \
     , localparam cce_way_groups_p           =                                                      \
-        `BSG_MAX(dcache_sets_p, `BSG_MAX(icache_sets_p, num_cacc_p ? acache_sets_p : '0))          \
+        `BSG_MIN(dcache_sets_p, `BSG_MIN(icache_sets_p, num_cacc_p ? acache_sets_p : icache_sets_p)) \
     , localparam cce_type_p                 = proc_param_lp.cce_type                               \
                                                                                                    \
     , localparam l2_en_p                  = proc_param_lp.l2_en                                    \
