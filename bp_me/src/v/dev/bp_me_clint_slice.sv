@@ -14,6 +14,8 @@ module bp_me_clint_slice
   (input                                                clk_i
    , input                                              reset_i
 
+   , input [core_id_width_p-1:0]                        id_i
+
    , input [xce_mem_header_width_lp-1:0]                mem_cmd_header_i
    , input [dword_width_gp-1:0]                         mem_cmd_data_i
    , input                                              mem_cmd_v_i

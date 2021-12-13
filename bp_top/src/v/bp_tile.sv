@@ -508,6 +508,7 @@ module bp_tile
    clint
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
+     ,.id_i(cfg_bus_lo.core_id)
 
      ,.mem_cmd_header_i(dev_cmd_header_li[2])
      ,.mem_cmd_data_i(dev_cmd_data_li[2])
