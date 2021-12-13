@@ -473,6 +473,7 @@ module bp_unicore_lite
    clint
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.id_i(cfg_bus_lo.core_id)
 
      ,.mem_cmd_header_i(dev_cmd_header_li[1])
      ,.mem_cmd_data_i(clint_data_li)

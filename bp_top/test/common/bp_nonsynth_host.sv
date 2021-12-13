@@ -23,6 +23,7 @@ module bp_nonsynth_host
    , parameter pc_profile_p           = 0
    , parameter br_profile_p           = 0
    , parameter cosim_p                = 0
+   , parameter dev_trace_p            = 0
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -50,6 +51,7 @@ module bp_nonsynth_host
    , output logic                                   pc_profile_en_o
    , output logic                                   branch_profile_en_o
    , output logic                                   cosim_en_o
+   , output logic                                   dev_trace_en_o
    , output logic [num_core_p-1:0]                  finish_o
    );
 
@@ -242,6 +244,7 @@ module bp_nonsynth_host
   assign pc_profile_en_o     = pc_profile_p;
   assign branch_profile_en_o = br_profile_p;
   assign cosim_en_o          = cosim_p;
+  assign dev_trace_en_o      = dev_trace_p;
 
   assign data_li[0] = '0;
   assign data_li[1] = '0;

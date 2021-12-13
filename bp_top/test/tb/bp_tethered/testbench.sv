@@ -31,6 +31,7 @@ module testbench
    , parameter pc_profile_p                = 0
    , parameter br_profile_p                = 0
    , parameter cosim_p                     = 0
+   , parameter dev_trace_p                 = 0
 
    // COSIM parameters
    , parameter checkpoint_p                = 0
@@ -266,6 +267,7 @@ module testbench
   logic core_profile_en_lo;
   logic pc_profile_en_lo;
   logic branch_profile_en_lo;
+  logic dev_trace_en_lo;
   bp_nonsynth_host
    #(.bp_params_p(bp_params_p)
      ,.icache_trace_p(icache_trace_p)
@@ -279,6 +281,7 @@ module testbench
      ,.pc_profile_p(pc_profile_p)
      ,.br_profile_p(br_profile_p)
      ,.cosim_p(cosim_p)
+     ,.dev_trace_p(dev_trace_p)
      )
    host
     (.clk_i(clk_i)
@@ -308,6 +311,7 @@ module testbench
      ,.branch_profile_en_o(branch_profile_en_lo)
      ,.pc_profile_en_o(pc_profile_en_lo)
      ,.cosim_en_o(cosim_en_lo)
+     ,.dev_trace_en_o(dev_trace_en_lo)
      ,.finish_o(finish_lo)
      );
 
@@ -530,6 +534,31 @@ module testbench
            ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)
 
            ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
+           );
+
+      // note: the device tracer could be specialized to trace bp_me_bedrock_register, but
+      // requires passing a unique ID to each instance of the module/tracer
+      bind bp_me_clint_slice
+        bp_me_nonsynth_dev_tracer
+         #(.bp_params_p(bp_params_p)
+           ,.trace_file_p("clint")
+           )
+         clint_tracer
+          (.clk_i(clk_i & testbench.dev_trace_en_lo)
+           ,.reset_i(reset_i)
+           ,.id_i(id_i)
+
+           ,.mem_cmd_header_i(mem_cmd_header_i)
+           ,.mem_cmd_data_i(mem_cmd_data_i)
+           ,.mem_cmd_v_i(mem_cmd_v_i)
+           ,.mem_cmd_ready_and_i(mem_cmd_ready_and_o)
+           ,.mem_cmd_last_i(mem_cmd_last_i)
+
+           ,.mem_resp_header_i(mem_resp_header_o)
+           ,.mem_resp_data_i(mem_resp_data_o)
+           ,.mem_resp_v_i(mem_resp_v_o)
+           ,.mem_resp_ready_and_i(mem_resp_ready_and_i)
+           ,.mem_resp_last_i(mem_resp_last_o)
            );
 
       if (multicore_p)
