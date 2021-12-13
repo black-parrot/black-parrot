@@ -94,31 +94,30 @@ module bp_me_stream_pump_out
   logic [stream_cnt_width_lp-1:0] stream_cnt, wrap_cnt;
   logic cnt_up;
   wire cnt_set = fsm_new_o;
-  wire [stream_cnt_width_lp-1:0] cnt_max = fsm_stream ? stream_size : '0;
-  wire [stream_cnt_width_lp-1:0] cnt_val = fsm_base_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
+  wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
+  wire [stream_cnt_width_lp-1:0] first_cnt = fsm_base_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
   bp_me_stream_wraparound
    #(.max_val_p(stream_words_lp-1))
    wraparound_cnt
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.max_i(cnt_max)
+     ,.size_i(size_li)
      ,.set_i(cnt_set)
-     ,.val_i(cnt_val)
+     ,.val_i(first_cnt)
      ,.en_i(cnt_up)
 
      ,.full_o(stream_cnt)
      ,.wrap_o(wrap_cnt)
      );
 
-  wire [stream_cnt_width_lp-1:0] first_cnt = fsm_base_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
   wire [stream_cnt_width_lp-1:0] last_cnt  = first_cnt + stream_size;
   wire is_last_cnt = (is_stream & (stream_cnt == last_cnt)) | (~fsm_stream & ~msg_stream);
 
   assign fsm_new_o = fsm_ready_and_o & fsm_v_i & is_ready;
   assign fsm_last_o = fsm_v_i & is_last_cnt;
   assign fsm_done_o = fsm_ready_and_o & fsm_v_i & is_last_cnt;
-  assign fsm_cnt_o = is_stream ? stream_cnt : cnt_val;
+  assign fsm_cnt_o = is_stream ? stream_cnt : first_cnt;
 
   wire [paddr_width_p-1:0] wrap_addr =
     {fsm_base_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp+stream_cnt_width_lp]

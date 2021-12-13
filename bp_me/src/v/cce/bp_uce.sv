@@ -397,10 +397,9 @@ module bp_uce
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
   logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
+  // credit consumed when memory command sends
   wire credit_v_li = fsm_cmd_done;
-  // credit is returned when request completes
-  // UC store done for UC Store, UC Data for UC Load, Set Tag Wakeup for
-  // a miss that is actually an upgrade, and data and tag for normal requests.
+  // credit returned when memory response fully consumed
   wire credit_returned_li = fsm_resp_done;
   bsg_flow_counter
    #(.els_p(coh_noc_max_credits_p)
