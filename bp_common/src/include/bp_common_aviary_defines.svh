@@ -112,6 +112,8 @@
     , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                             \
     , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                               \
                                                                                                    \
+    , localparam bedrock_data_width_p   = proc_param_lp.bedrock_data_width                         \
+                                                                                                   \
     , localparam async_coh_clk_p        = proc_param_lp.async_coh_clk                              \
     , localparam coh_noc_max_credits_p  = proc_param_lp.coh_noc_max_credits                        \
     , localparam coh_noc_flit_width_p   = proc_param_lp.coh_noc_flit_width                         \
@@ -251,6 +253,8 @@
           ,`bp_aviary_parameter_override(l2_block_width, override_cfg_mp, default_cfg_mp)          \
           ,`bp_aviary_parameter_override(l2_fill_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(l2_outstanding_reqs, override_cfg_mp, default_cfg_mp)     \
+                                                                                                   \
+          ,`bp_aviary_parameter_override(bedrock_data_width, override_cfg_mp, default_cfg_mp)      \
                                                                                                    \
           ,`bp_aviary_parameter_override(async_coh_clk, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(coh_noc_max_credits, override_cfg_mp, default_cfg_mp)     \

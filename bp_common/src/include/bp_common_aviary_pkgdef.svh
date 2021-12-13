@@ -169,6 +169,9 @@
     // Size of the cmd queue
     integer unsigned fe_cmd_fifo_els;
 
+    // width of LCE-CCE and CCE-Mem BedRock network data channels
+    integer unsigned bedrock_data_width;
+
     // Whether the coherence network is on the core clock or on its own clock
     integer unsigned async_coh_clk;
     // Flit width of the coherence network. Has major impact on latency / area of the network
@@ -280,6 +283,8 @@
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
+
+      ,bedrock_data_width : 64
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 128
@@ -877,10 +882,6 @@
   // Half core configs
   localparam bp_proc_param_s bp_test_unicore_half_override_p =
     '{num_lce  : 1
-      ,dcache_fill_width    : 64
-      ,icache_fill_width    : 64
-      ,l2_data_width        : 64
-      ,l2_fill_width        : 64
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_test_unicore_half_cfg_p
@@ -1041,6 +1042,8 @@
       ,`bp_aviary_define_override(l2_block_width, BP_L2_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_fill_width, BP_L2_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_outstanding_reqs, BP_L2_OUTSTANDING_REQS, `BP_CUSTOM_BASE_CFG)
+
+      ,`bp_aviary_define_override(bedrock_data_width, BP_BEDROCK_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(async_coh_clk, BP_ASYNC_COH_CLK, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(coh_noc_max_credits, BP_COH_NOC_MAX_CREDITS, `BP_CUSTOM_BASE_CFG)
