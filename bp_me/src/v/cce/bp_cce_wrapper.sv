@@ -119,12 +119,11 @@ module bp_cce_wrapper
   if (dcache_block_width_p != cce_block_width_p) $fatal(0, "dcache block width must match cce block width");
   if (!(`BSG_IS_POW2(dcache_assoc_p) && `BSG_IS_POW2(dcache_sets_p)))
     $fatal(0, "D$ sets and assoc must be power of two");
+  // acclereator caches
   if ((num_cacc_p) > 0 && (acache_block_width_p != cce_block_width_p)) $fatal(0, "acache block width must match cce block width");
-  // TODO: what is the 0 case?
-  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0))
+  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_assoc_p)))
     $fatal(0, "A$ assoc must be power of two or 0");
-  // TODO: what is the 0 case?
-  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0))
+  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_sets_p)))
     $fatal(0, "A$ sets must be power of two or 0");
 
   // coherence system block width is pow2 and between 64 and 1024 bits
@@ -135,14 +134,9 @@ module bp_cce_wrapper
   if (!(`BSG_IS_POW2(cce_way_groups_p))) $fatal(0, "Number of way groups must be a power of two");
   if (cce_way_groups_p < 1) $fatal(0, "There must be at least one way group");
 
-  // TODO: verify this params function
-  // direct-mapped caches not supported?
-  if (lce_sets_p <= 1) $fatal(0, "Number of LCE sets must be greater than 1");
-
   // bedrock data width must be pow2 between 64-bits and CCE block size
   if (bedrock_data_width_p < 64 || bedrock_data_width_p > cce_block_width_p
-      || !(`BSG_IS_POW2(bedrock_data_width_p))
-      )
+      || !(`BSG_IS_POW2(bedrock_data_width_p)))
       $fatal(0, "CCE requires bedrock data width of between 64-bits and block width and power of 2 bits");
 
 endmodule

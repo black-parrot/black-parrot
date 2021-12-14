@@ -106,6 +106,8 @@ module bp_cce_fsm
    , output logic                                   mem_cmd_last_o
    );
 
+  wire unused = &{lce_req_has_data_i, lce_req_last_i, lce_resp_has_data_i, lce_resp_last_i};
+
   // parameter checks
   if (counter_max_lp < num_way_groups_lp) $fatal(0, "Counter max value not large enough");
   if (counter_max_lp < max_tag_sets_lp) $fatal(0, "Counter max value not large enough");
@@ -1059,14 +1061,13 @@ module bp_cce_fsm
         // uncached store
         end else if (lce_req_v & (lce_req.msg_type.req == e_bedrock_req_uc_wr)) begin
           // first beat of memory command must include data
-          // handshake is r&v on both LCE request header and memory command stream, and
-          // valid->yumi on LCE request data
+          // handshake is r&v on both LCE request data and memory command stream, and
+          // valid->yumi on LCE request header
           mem_cmd_v_lo = lce_req_v & lce_req_data_v_i & ~mem_credits_empty;
           lce_req_data_ready_and_o = mem_cmd_ready_and_li;
           // LCE request header is only dequeued if stream pump indicates stream is done
           lce_req_yumi = mem_cmd_v_lo & mem_cmd_ready_and_li & mem_cmd_stream_done_li;
 
-          // form message
           mem_cmd_base_header_lo.addr = lce_req.addr;
           mem_cmd_base_header_lo.size = lce_req.size;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_wr;
@@ -1221,8 +1222,8 @@ module bp_cce_fsm
         // uncached store
         if (mshr_r.flags.write_not_read) begin
           // first beat of memory command must include data
-          // handshake is r&v on both LCE request header and memory command stream, and
-          // valid->yumi on LCE request data
+          // handshake is r&v on both LCE request data and memory command stream, and
+          // valid->yumi on LCE request header
           mem_cmd_v_lo = lce_req_v & lce_req_data_v_i & ~mem_credits_empty;
           lce_req_data_ready_and_o = mem_cmd_ready_and_li;
           // LCE request header is only dequeued if stream pump indicates stream is done

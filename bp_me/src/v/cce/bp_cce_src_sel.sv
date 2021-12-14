@@ -63,7 +63,10 @@ module bp_cce_src_sel
    , input [lce_req_header_width_lp-1:0]                            lce_req_header_i
    , input [lce_resp_header_width_lp-1:0]                           lce_resp_header_i
    , input [mem_header_width_lp-1:0]                                mem_resp_header_i
-   // TODO: data inputs are not guarded by valid
+   // note: data inputs are not guarded by valid
+   // software must ensure data is valid before use
+   // note: if data width > cce gpr width, only least significant cce gpr width bits of
+   // data input are used and sent to src_a|b_o
    , input [bedrock_data_width_p-1:0]                               lce_req_data_i
    , input [bedrock_data_width_p-1:0]                               lce_resp_data_i
    , input [bedrock_data_width_p-1:0]                               mem_resp_data_i
