@@ -1558,7 +1558,7 @@ module bp_cce_fsm
             lce_resp_yumi = mem_cmd_stream_done_li;
 
             mem_cmd_base_header_lo.msg_type = e_bedrock_mem_wr;
-            mem_cmd_base_header_lo.addr = (lce_resp.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
+            mem_cmd_base_header_lo.addr = lce_resp.addr;
             mem_cmd_base_header_lo.size = lce_resp.size;
             mem_cmd_base_header_lo.payload.lce_id = mshr_r.lce_id;
             mem_cmd_base_header_lo.payload.way_id = '0;
@@ -1826,7 +1826,7 @@ module bp_cce_fsm
                                    // transfer & not cached in M, O, or F -> cached in E
                                    : e_bedrock_cmd_st_tr_wb;
 
-          lce_cmd.addr = mshr_r.paddr;
+          lce_cmd.addr = paddr_aligned;
 
           // either Invalidate or Downgrade Owner, depending on request type
           // write request invalidates owner (can only have 1 writer!)
@@ -1850,7 +1850,7 @@ module bp_cce_fsm
           dir_w_v = lce_cmd_header_v_o & lce_cmd_header_ready_and_i
                     & (mshr_r.flags.write_not_read | mshr_r.flags.cached_modified | mshr_r.flags.cached_exclusive);
           dir_cmd = e_wds_op;
-          dir_addr_li = mshr_r.paddr;
+          dir_addr_li = paddr_aligned;
           dir_lce_li = mshr_r.owner_lce_id;
           dir_way_li = mshr_r.owner_way_id;
           dir_coh_state_li = mshr_r.flags.write_not_read
