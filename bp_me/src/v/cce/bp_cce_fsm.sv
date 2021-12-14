@@ -1816,9 +1816,9 @@ module bp_cce_fsm
           lce_cmd.payload.dst_id = mshr_r.owner_lce_id;
           lce_cmd.payload.way_id = mshr_r.owner_way_id;
 
-          // TODO: should transfer commands set size field of command message to block size?
-          // burst and stream protocols indicate if data exists / last beat
-          // other converters should use payload masks to determine which messages have data
+          // note: transfer command causes a block-sized transfer from one LCE to another.
+          // the msg_size field is not set to the block size since the transfer command itself
+          // carries no data. The LCE sets the size of the data command it sends to the block size.
           lce_cmd.msg_type.cmd = mshr_r.flags.write_not_read | mshr_r.flags.cached_modified
                                  ? e_bedrock_cmd_st_tr
                                  : mshr_r.flags.cached_owned | mshr_r.flags.cached_forward
