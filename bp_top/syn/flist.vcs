@@ -105,6 +105,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down_variable.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_crossbar_o_by_i.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_crossbar_control_locking_o_by_i.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_cycle_counter.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_decode_with_v.v
