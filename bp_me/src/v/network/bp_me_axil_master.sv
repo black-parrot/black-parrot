@@ -82,6 +82,8 @@ module bp_me_axil_master
   // combinational Logic
   always_comb
     begin
+      state_n = state_r;
+
       io_cmd_ready_and_o    = 1'b0;
       io_resp_header_cast_o = io_cmd_header_r;
       io_resp_data_o        = m_axil_rdata_i;
@@ -186,15 +188,15 @@ module bp_me_axil_master
         state_r <= state_n;
     end
 
+  if (axil_data_width_p != 32 && axil_data_width_p != 64)
+    $error("AXI4-LITE only supports a data width of 32 or 64bits");
+
   //synopsys translate_off
   initial
     begin
-      assert (axil_data_width_p==64 || axil_data_width_p==32) else $error("AXI4-LITE only supports a data width of 32 or 64bits");
       // give a warning if the client device has an error response
-      if (m_axil_rvalid_i)
-        assert (m_axil_rresp_i == '0) else $warning("Client device has an error response to reads");
-      if (m_axil_bvalid_i)
-        assert (m_axil_bresp_i == '0) else $warning("Client device has an error response to writes");
+      assert(reset_i !== '0 || ~m_axil_rvalid_i || m_axil_rresp_i == '0) else $warning("Client device has an error response to reads");
+      assert(reset_i !== '0 || ~m_axil_bvalid_i || m_axil_bresp_i == '0) else $warning("Client device has an error response to writes");
     end
   //synopsys translate_on
 

@@ -108,7 +108,6 @@ module bp_me_nonsynth_lce_tracer
 
       // request to CCE
       if (lce_req_v_i & lce_req_ready_and_i) begin
-        assert(lce_req_header_cast_i.payload.src_id == lce_id_i) else $error("Bad LCE Request - source mismatch");
         $fdisplay(file, "%12t |: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] set[%0d] ne[%b] lru[%0d] size[%b]"
                   , $time, lce_req_header_cast_i.payload.src_id, lce_req_header_cast_i.addr, lce_req_header_cast_i.payload.dst_id, lce_req_header_cast_i.msg_type
                   , lce_req_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp]
@@ -126,7 +125,6 @@ module bp_me_nonsynth_lce_tracer
 
       // response to CCE
       if (lce_resp_v_i & lce_resp_ready_and_i) begin
-        assert(lce_resp_header_cast_i.payload.src_id == lce_id_i) else $error("Bad LCE Response - source mismatch");
         $fdisplay(file, "%12t |: LCE[%0d] RESP addr[%H] cce[%0d] msg[%b] set[%0d] len[%b]"
                   , $time, lce_resp_header_cast_i.payload.src_id, lce_resp_header_cast_i.addr, lce_resp_header_cast_i.payload.dst_id, lce_resp_header_cast_i.msg_type
                   , lce_resp_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp]
@@ -142,7 +140,6 @@ module bp_me_nonsynth_lce_tracer
 
       // command to LCE
       if (lce_cmd_v_i & lce_cmd_ready_and_i) begin
-        assert(lce_cmd_header_cast_i.payload.dst_id == lce_id_i) else $error("Bad LCE Command - destination mismatch");
         $fdisplay(file, "%12t |: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b]"
                   , $time, lce_cmd_header_cast_i.payload.dst_id, lce_cmd_header_cast_i.addr, lce_cmd_header_cast_i.payload.src_id, lce_cmd_header_cast_i.msg_type
                   , lce_cmd_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp], lce_cmd_header_cast_i.payload.way_id, lce_cmd_header_cast_i.payload.state, lce_cmd_header_cast_i.payload.target

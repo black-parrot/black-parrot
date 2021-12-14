@@ -185,7 +185,7 @@ module bp_be_dcache_wbuf
 
   //synopsys translate_off
   always_ff @(negedge clk_i) begin
-    assert (~reset_i || num_els_r < 2'd3) else $error("Write buffer overflow\n");
+    assert(reset_i !== '0 || num_els_r < 2'd3) else $error("Write buffer overflow\n");
   end
   //synopsys translate_on
 

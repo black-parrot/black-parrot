@@ -88,12 +88,15 @@ module bp_me_nonsynth_mock_lce
     ,input                                                  lce_cmd_ready_and_i
   );
 
-  initial begin
-    assert(dword_width_gp == 64) else
-      $error("dword_width_gp must be 64");
-    assert(cce_block_width_p >= 64) else $error("cce_block_width_p must be at least 64-bits");
-    assert(`BSG_IS_POW2(cce_block_width_p)) else $error("cce_block_width_p must be a power of two");
-  end
+
+  if (dword_width_gp != 64)
+    $error("dword_width_gp must be 64");
+
+  if (cce_block_width_p < 64)
+    $error("cce_block_width_p must be at least 64-bits");
+
+  if (!`BSG_IS_POW2(cce_block_width_p))
+    $error("cce_block_width_p must be a power of two");
 
   wire axe_trace_en = !(axe_trace_p == 0);
 
@@ -569,7 +572,7 @@ module bp_me_nonsynth_mock_lce
           lce_state_n = INIT;
         end else if (~freeze_i & tr_pkt_v_i & ~mshr_r.miss) begin
           // Freeze went low without receiving any syncs. Operate in uncached only mode.
-          assert(tr_cmd_pkt.uncached) else $error("LCE in uncached only mode but received cached TR request.");
+          assert(reset_i !== '0 || tr_cmd_pkt.uncached) else $error("LCE in uncached only mode but received cached TR request.");
           tr_pkt_yumi_o = tr_pkt_v_i;
           cmd_n = tr_cmd_pkt;
           lce_state_n = UNCACHED_TR_CMD;
@@ -581,7 +584,7 @@ module bp_me_nonsynth_mock_lce
         // uncached access - treat as miss
         mshr_n.miss = 1'b1;
         mshr_n.uncached = cmd.uncached;
-        assert(cmd.uncached) else $error("LCE received cached access command while uncached only");
+        assert(reset_i !== '0 || cmd.uncached) else $error("LCE received cached access command while uncached only");
         mshr_n.cce[0+:lg_num_cce_lp] = cce_dst_id_lo;
         mshr_n.paddr = cmd.paddr;
         mshr_n.dirty = '0;
@@ -771,7 +774,7 @@ module bp_me_nonsynth_mock_lce
           lce_cmd_header_n = lce_cmd_header_lo;
           lce_cmd_data_n = lce_cmd_data_lo;
 
-          assert(lce_cmd_header_lo.payload.dst_id == lce_id_i) else $error("[%0d]: command delivered to wrong LCE", lce_id_i);
+          assert(reset_i !== '0 || lce_cmd_header_lo.payload.dst_id == lce_id_i) else $error("[%0d]: command delivered to wrong LCE", lce_id_i);
 
           // uncached data or data command
           if (lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_data | lce_cmd_header_lo.msg_type.cmd == e_bedrock_cmd_uc_data) begin
@@ -846,7 +849,7 @@ module bp_me_nonsynth_mock_lce
         // write the full cache block on data command
         data_w_mask_li[lce_cmd_header_r.payload.way_id[0+:lg_assoc_lp]] = '1;
 
-        assert (mshr_r.paddr[paddr_width_p-1 : block_offset_bits_lp] == lce_cmd_header_r.addr[paddr_width_p-1 : block_offset_bits_lp]) else
+        assert(reset_i !== '0 || mshr_r.paddr[paddr_width_p-1 : block_offset_bits_lp] == lce_cmd_header_r.addr[paddr_width_p-1 : block_offset_bits_lp]) else
           $error("[%0d]: DATA_CMD address mismatch [%H] != [%H]", lce_id_i, mshr_r.paddr, lce_cmd_header_r.addr);
 
         // update mshr

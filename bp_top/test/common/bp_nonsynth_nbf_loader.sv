@@ -178,11 +178,11 @@ module bp_nonsynth_nbf_loader
     begin
       if (state_r != e_done && state_n == e_done)
         $display("NBF loader done!");
-      assert (~read_return || read_data_r == io_resp_data_i[0+:dword_width_gp])
+      assert(reset_i !== '0 || ~read_return || read_data_r == io_resp_data_i[0+:dword_width_gp])
         else $error("Validation mismatch: addr: %d %d %d", io_resp.addr, io_resp_data_i, read_data_r);
 
       if (io_resp_v_i & io_resp_ready_and_o)
-        assert(io_resp_last_i)
+        assert(reset_i !== '0 || ~(io_resp_v_i & io_resp_ready_and_o & ~io_resp_last_i))
           else $error("Multi-beat IO response detected");
     end
   //synopsys translate_on
