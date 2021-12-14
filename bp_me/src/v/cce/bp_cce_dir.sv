@@ -75,7 +75,7 @@ module bp_cce_dir
   // in a *single* CCE (equivalently, tag sets are not split across LCEs).
   // LCEs and CCEs use the set index bits from the physical address to map address to CCE.
   if (lce_min_sets_lp < num_cce_p)
-    $fatal(0,"Number of CCEs must be at least as large as the minimal number of LCE sets");
+    $fatal(0, "Number of CCEs must be at least as large as the minimal number of LCE sets");
 
   wire lce_is_icache = (~lce_i[0] && (lce_i < acc_lce_id_offset_lp));
   wire lce_is_dcache = (lce_i[0] && (lce_i < acc_lce_id_offset_lp));

@@ -64,9 +64,9 @@ module bp_cce_src_sel
    , input [lce_resp_header_width_lp-1:0]                           lce_resp_header_i
    , input [mem_header_width_lp-1:0]                                mem_resp_header_i
    // TODO: data inputs are not guarded by valid
-   , input [dword_width_gp-1:0]                                     lce_req_data_i
-   , input [dword_width_gp-1:0]                                     lce_resp_data_i
-   , input [dword_width_gp-1:0]                                     mem_resp_data_i
+   , input [bedrock_data_width_p-1:0]                               lce_req_data_i
+   , input [bedrock_data_width_p-1:0]                               lce_resp_data_i
+   , input [bedrock_data_width_p-1:0]                               mem_resp_data_i
 
    // Source A and B outputs
    , output logic [`bp_cce_inst_gpr_width-1:0]   src_a_o
@@ -80,12 +80,6 @@ module bp_cce_src_sel
    , output logic [lce_assoc_width_p-1:0]        lru_way_o
    , output bp_coh_states_e                      state_o
   );
-
-  // parameter checks
-  initial begin
-    if (cce_block_width_p < `bp_cce_inst_gpr_width)
-      $fatal(0,"CCE block width must be greater than CCE GPR width");
-  end
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast;
