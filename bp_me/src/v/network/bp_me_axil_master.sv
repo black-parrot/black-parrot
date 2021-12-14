@@ -82,6 +82,8 @@ module bp_me_axil_master
   // combinational Logic
   always_comb
     begin
+      state_n = state_r;
+
       io_cmd_ready_and_o    = 1'b0;
       io_resp_header_cast_o = io_cmd_header_r;
       io_resp_data_o        = m_axil_rdata_i;
