@@ -387,7 +387,8 @@ module bp_cce_fsm
   always @(negedge clk_i) begin
     if (~reset_i) begin
       // Cacheable requests must target cacheable memory
-      assert(!(lce_req_v && ~req_pma_cacheable_addr_lo
+      assert(reset_i !== '0 ||
+             !(lce_req_v && ~req_pma_cacheable_addr_lo
                && ((lce_req.msg_type.req == e_bedrock_req_rd_miss)
                    || (lce_req.msg_type.req == e_bedrock_req_wr_miss))
               )
