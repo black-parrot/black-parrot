@@ -40,10 +40,6 @@ module bp_cce_dir_lru_extract
 
   );
 
-  // parameter checks
-  if (tag_sets_per_row_p != 2)
-    $fatal(0,"unsupported configuration: number of sets per row must equal 2");
-
   `declare_bp_cce_dir_entry_s(tag_width_p);
 
   // Directory RAM row cast
