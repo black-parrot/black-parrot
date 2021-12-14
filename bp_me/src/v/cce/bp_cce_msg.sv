@@ -180,10 +180,16 @@ module bp_cce_msg
   // memory command header register used to complete pushq mem_cmd
   bp_bedrock_mem_header_s mem_cmd_base_header_r, mem_cmd_base_header_n;
 
-  // align address to bedrock data width for critical word first behavior
-  wire [paddr_width_p-1:0] addr_mask =
+  // address mask for bedrock data width aligned, critical word first operations
+  wire [paddr_width_p-1:0] addr_bedrock_mask =
     {{(paddr_width_p-lg_bedrock_data_bytes_lp){1'b1}}
      , {(lg_bedrock_data_bytes_lp){1'b0}}
+    };
+
+  // address mask for block-aligned operations
+  wire [paddr_width_p-1:0] addr_block_mask =
+    {{(paddr_width_p-lg_block_size_in_bytes_lp){1'b1}}
+     , {(lg_block_size_in_bytes_lp){1'b0}}
     };
 
   // Counter for message send/receive
@@ -877,7 +883,7 @@ module bp_cce_msg
               // cached read - send single beat, no data
               e_bedrock_mem_rd: begin
                 mem_cmd_v_o = ~mem_credits_empty;
-                mem_cmd_base_header_lo.addr = addr_i;
+                mem_cmd_base_header_lo.addr = addr_i & addr_bedrock_mask;
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
@@ -914,7 +920,7 @@ module bp_cce_msg
                 // patch through data
                 mem_cmd_data_o = lce_resp_data_i;
 
-                mem_cmd_base_header_lo.addr = addr_i;
+                mem_cmd_base_header_lo.addr = addr_i & addr_bedrock_mask;
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
@@ -964,7 +970,7 @@ module bp_cce_msg
             // defaults provided here, but may be overridden below
             lce_cmd.payload.dst_id = lce_i;
             lce_cmd.msg_type.cmd = decoded_inst_i.lce_cmd;
-            lce_cmd.addr = addr_i;
+            lce_cmd.addr = addr_i & addr_bedrock_mask;
 
             if (decoded_inst_i.pushq_custom) begin
               // TODO: implement custom push
@@ -1025,12 +1031,12 @@ module bp_cce_msg
           lce_cmd.payload.dst_id = pe_lce_id;
           lce_cmd.payload.way_id = sharers_ways_r[pe_lce_id];
 
-          lce_cmd.addr = addr_r & addr_mask;
+          lce_cmd.addr = addr_r & addr_block_mask;
 
           // Directory write command
           dir_w_v_o = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
           dir_w_cmd_o = e_wds_op;
-          dir_addr_o = addr_r & addr_mask;
+          dir_addr_o = addr_r & addr_block_mask;
           dir_addr_bypass_o = '0;
           dir_lce_o = {'0, pe_lce_id};
           dir_way_o = sharers_ways_r[pe_lce_id];
