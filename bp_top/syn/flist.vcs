@@ -2,6 +2,7 @@
 # BASEJUMP_STL includes
 +incdir+$BASEJUMP_STL_DIR/bsg_cache
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
++incdir+$BASEJUMP_STL_DIR/bsg_dmc
 +incdir+$BASEJUMP_STL_DIR/bsg_mem
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
 +incdir+$BASEJUMP_STL_DIR/bsg_test
@@ -325,5 +326,6 @@ $BP_COMMON_DIR/src/v/bsg_deff_reset.v
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
 $BP_COMMON_DIR/src/v/bsg_rom_param.v
+$BP_COMMON_DIR/src/v/bsg_crossbar_control_locking_o_by_i.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dlatch.v
 
