@@ -126,6 +126,9 @@ module bp_nonsynth_if_verif
   if (mem_noc_flit_width_p % l2_fill_width_p != 0)
     $error("Memory NoC flit width must match l2 fill width");
 
+  if (!`BSG_IS_POW2(l2_downclock_p))
+    $error("L2 downclock ratio must be a power of two");
+
   if (multicore_p == 0 && num_core_p != 1)
     $error("Unicore only supports a single core configuration in the tethered testbench");
 

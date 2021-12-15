@@ -138,5 +138,67 @@ module bp_me_cache_slice
          );
     end
 
+  // TODO: Wrap
+  logic l2_clk_lo, l2_reset_lo;
+  localparam l2_ds_width_lp = `BSG_WIDTH(l2_downclock_p/2);
+  if (l2_downclock_p > 1)
+    begin : dc
+      bsg_counter_clock_downsample
+       #(.width_p(l2_ds_width_lp))
+       l2_ds
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.val_i(l2_ds_width_lp'(l2_downclock_p/2-1))
+         ,.clk_r_o(l2_clk_lo)
+         );
+
+      bsg_dff_chain
+       #(.width_p(1), .num_stages_p(2*l2_downclock_p-1))
+       l2_reset_chain
+        (.clk_i(clk_i)
+         ,.data_i(reset_i)
+         ,.data_o(l2_reset_lo)
+         );
+    end
+  else
+    begin : ndc
+      assign l2_clk_lo = clk_i;
+      assign l2_reset_lo = reset_i;
+    end
+
+  logic l2_pkt_v_li, l2_pkt_ready_lo;
+  logic l2_dma_data_v_li, l2_dma_data_ready_lo;
+  bsg_fifo_1r1w_periodic
+   #(.a_period_p(1), .b_period_p(l2_downclock_p), .num_hs_p(2))
+   cache_downclock
+    (.a_clk_i(clk_i)
+     ,.a_reset_i(reset_i)
+     ,.a_v_i({cache_pkt_v_li, dma_data_v_i})
+     ,.a_ready_and_o({cache_pkt_ready_and_lo, dma_data_ready_and_o})
+
+     ,.b_clk_i(l2_clk_lo)
+     ,.b_reset_i(l2_reset_lo)
+     ,.b_v_o({l2_pkt_v_li, l2_dma_data_v_li})
+     ,.b_ready_and_i({l2_pkt_ready_lo, l2_dma_data_ready_lo})
+     );
+
+  logic l2_data_v_lo, l2_data_ready_and_li;
+  logic l2_dma_pkt_v_lo, l2_dma_pkt_ready_and_li;
+  logic l2_dma_data_v_lo, l2_dma_data_ready_and_li;
+  bsg_fifo_1r1w_periodic
+   #(.a_period_p(l2_downclock_p), .b_period_p(1), .num_hs_p(3))
+   cache_upclock
+    (.a_clk_i(l2_clk_lo)
+     ,.a_reset_i(l2_reset_lo)
+     ,.a_v_i({l2_data_v_lo, l2_dma_pkt_v_lo, l2_dma_data_v_lo})
+     ,.a_ready_and_o({l2_data_ready_and_li, l2_dma_pkt_ready_and_li, l2_dma_data_ready_and_li})
+
+     ,.b_clk_i(clk_i)
+     ,.b_reset_i(reset_i)
+     ,.b_v_o({cache_data_v_lo, dma_pkt_v_o, dma_data_v_o})
+     ,.b_ready_and_i({cache_data_ready_and_li, dma_pkt_yumi_i, dma_data_yumi_i})
+     );
+
 endmodule
 

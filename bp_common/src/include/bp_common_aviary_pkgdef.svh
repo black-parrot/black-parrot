@@ -162,6 +162,8 @@
     // L2 slice parameters (per core)
     // Whether an L2 is present in the system
     integer unsigned l2_en;
+    // How much to downclock the L2
+    integer unsigned l2_downclock;
     // Number of L2 banks present in the slice
     integer unsigned l2_banks;
     // Atomic support in L2
@@ -295,14 +297,15 @@
       ,cce_ucode            : 0
       ,cce_pc_width         : 8
 
+      ,l2_downclock        : 4
       ,l2_en               : 1
       ,l2_banks            : 2
       ,l2_amo_support      : (1 << e_amo_swap)
                              | (1 << e_amo_fetch_logic)
                              | (1 << e_amo_fetch_arithmetic)
       ,l2_data_width       : 64
-      ,l2_sets             : 128
-      ,l2_assoc            : 8
+      ,l2_sets             : 512
+      ,l2_assoc            : 16
       ,l2_block_width      : 512
       ,l2_fill_width       : 64
       ,l2_outstanding_reqs : 6
@@ -1060,6 +1063,7 @@
       ,`bp_aviary_define_override(cce_ucode, BP_CCE_UCODE, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(cce_pc_width, BP_CCE_PC_WIDTH, `BP_CUSTOM_BASE_CFG)
 
+      ,`bp_aviary_define_override(l2_downclock, BP_L2_DOWNCLOCK, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_en, BP_L2_EN, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_amo_support, BP_L2_AMO_SUPPORT, `BP_CUSTOM_BASE_CFG)

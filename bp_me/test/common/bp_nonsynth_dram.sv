@@ -187,6 +187,8 @@ module bp_nonsynth_dram
           ,.print_stat_reset_i('0)
           ,.print_stat_v_i('0)
           ,.print_stat_tag_i('0)
+          ,.print_stat_clk_i('0)
+          ,.print_stat_reset_i('0)
           );
 
 

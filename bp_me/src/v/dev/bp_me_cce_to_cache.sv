@@ -414,7 +414,7 @@ module bp_me_cce_to_cache
                 cache_pkt.mask = cache_pkt_mask_lo;
               end
             cache_pkt_v_o[cache_cmd_bank_lo] = stream_fifo_ready_lo & mem_cmd_v_lo;
-            mem_cmd_yumi_li = mem_cmd_v_lo & stream_fifo_ready_lo & cache_pkt_ready_and_i[cache_cmd_bank_lo];
+            mem_cmd_yumi_li = cache_pkt_v_o[cache_cmd_bank_lo] & cache_pkt_ready_and_i[cache_cmd_bank_lo];
 
             mem_resp_v_li = mem_header_v_lo & cache_data_v_i[cache_resp_bank_lo];
             cache_data_yumi_o[cache_resp_bank_lo] = mem_resp_v_li & mem_resp_ready_and_lo;

@@ -95,6 +95,7 @@
         `BSG_MAX(dcache_sets_p, `BSG_MAX(icache_sets_p, num_cacc_p ? acache_sets_p : '0))          \
     , localparam cce_ucode_p                = proc_param_lp.cce_ucode                              \
                                                                                                    \
+    , localparam l2_downclock_p           = proc_param_lp.l2_downclock                             \
     , localparam l2_en_p                  = proc_param_lp.l2_en                                    \
     , localparam l2_banks_p               = proc_param_lp.l2_banks                                 \
     , localparam l2_amo_support_p         = proc_param_lp.l2_amo_support                           \
@@ -243,6 +244,7 @@
           ,`bp_aviary_parameter_override(cce_ucode, override_cfg_mp, default_cfg_mp)               \
           ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)            \
                                                                                                    \
+          ,`bp_aviary_parameter_override(l2_downclock, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                   \
           ,`bp_aviary_parameter_override(l2_banks, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(l2_amo_support, override_cfg_mp, default_cfg_mp)          \
