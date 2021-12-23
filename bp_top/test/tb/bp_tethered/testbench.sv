@@ -453,54 +453,81 @@ module testbench
       bind bp_core_minimal
         bp_nonsynth_core_profiler
          #(.bp_params_p(bp_params_p))
-         core_profiler
+          core_profiler
           (.clk_i(clk_i & testbench.core_profile_en_lo)
-           ,.reset_i(reset_i)
-           ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
+          ,.reset_i(reset_i)
+          ,.freeze_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.freeze)
 
-           ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
+          ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-           ,.fe_wait_stall(fe.is_wait)
-           ,.fe_queue_stall(~fe.fe_queue_ready_i)
+          ,.fe_state_n_i(fe.state_n)
+          ,.fe_queue_ready_i(fe.fe_queue_ready_i)
+          ,.fe_icache_ready_i(fe.icache.ready_o)
+     
+          ,.if2_v_i(fe.v_if2_r)
+          ,.br_ovr_i(fe.pc_gen.ovr_taken)
+          ,.ret_ovr_i(fe.pc_gen.ovr_ret)
+          ,.itlb_miss_r_i(fe.itlb_miss_r)
+          ,.icache_data_v_i(fe.icache.data_v_o)
 
-           ,.itlb_miss(fe.itlb_miss_r)
-           ,.icache_miss(~fe.icache.ready_o)
-           ,.icache_rollback(fe.icache_miss)
-           ,.icache_fence(fe.icache.fencei_req)
-           ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
-           ,.ret_override(fe.pc_gen.ovr_ret)
+          ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.attaboy_v) 
+          ,.fe_cmd_fence_i(be.director.suppress_iss_o)
+          ,.fe_queue_empty_i(~be.scheduler.fe_queue_fifo.fe_queue_v_o)
 
-           ,.fe_cmd(fe.fe_cmd_yumi_o & ~fe.attaboy_v)
-           ,.fe_cmd_fence(be.director.suppress_iss_o)
-
-           ,.mispredict(be.director.npc_mismatch_v)
-
-           ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)
-           ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)
-           ,.dcache_rollback(be.scheduler.commit_pkt_cast_i.npc_w_v)
-           ,.long_haz(be.detector.long_haz_v)
-           ,.exception(be.director.commit_pkt_cast_i.exception)
-           ,.eret(be.director.commit_pkt_cast_i.eret)
-           ,._interrupt(be.director.commit_pkt_cast_i._interrupt)
-           ,.control_haz(be.detector.control_haz_v)
-           ,.data_haz(be.detector.data_haz_v)
-           ,.load_dep((be.detector.dep_status_r[0].emem_iwb_v
-                       | be.detector.dep_status_r[0].fmem_iwb_v
-                       | be.detector.dep_status_r[1].fmem_iwb_v
-                       | be.detector.dep_status_r[0].emem_fwb_v
-                       | be.detector.dep_status_r[0].fmem_fwb_v
-                       | be.detector.dep_status_r[1].fmem_fwb_v
+          ,.mispredict_i(be.director.npc_mismatch_v)
+          ,.long_haz_i(be.detector.long_haz_v)
+          ,.control_haz_i(be.detector.control_haz_v)
+          ,.data_haz_i(be.detector.data_haz_v)
+          ,.aux_dep_i((be.detector.dep_status_r[0].aux_iwb_v
+                     | be.detector.dep_status_r[0].aux_fwb_v
+                     ) & be.detector.data_haz_v
+                    )
+          ,.load_dep_i((be.detector.dep_status_r[0].emem_iwb_v
+                        | be.detector.dep_status_r[0].fmem_iwb_v
+                        | be.detector.dep_status_r[1].fmem_iwb_v
+                        | be.detector.dep_status_r[0].emem_fwb_v
+                        | be.detector.dep_status_r[0].fmem_fwb_v
+                        | be.detector.dep_status_r[1].fmem_fwb_v
+                        ) & be.detector.data_haz_v
+                       )
+          ,.mul_dep_i((be.detector.dep_status_r[0].mul_iwb_v
+                       | be.detector.dep_status_r[1].mul_iwb_v
+                       | be.detector.dep_status_r[2].mul_iwb_v
                        ) & be.detector.data_haz_v
                       )
-           ,.mul_dep((be.detector.dep_status_r[0].mul_iwb_v
-                      | be.detector.dep_status_r[1].mul_iwb_v
-                      | be.detector.dep_status_r[2].mul_iwb_v
-                      ) & be.detector.data_haz_v
-                     )
-           ,.struct_haz(be.detector.struct_haz_v)
-           ,.reservation(be.calculator.reservation_n)
-           ,.commit_pkt(be.calculator.commit_pkt_cast_o)
-           );
+          ,.fma_dep_i((be.detector.dep_status_r[0].fma_fwb_v
+                     | be.detector.dep_status_r[1].fma_fwb_v
+                     | be.detector.dep_status_r[2].fma_fwb_v
+                     | be.detector.dep_status_r[3].fma_fwb_v
+                     ) & be.detector.data_haz_v
+                    )
+          ,.sb_iraw_dep_i((be.detector.irs1_sb_raw_haz_v
+                         | be.detector.irs2_sb_raw_haz_v
+                         ) & be.detector.data_haz_v
+                        )
+          ,.sb_fraw_dep_i((be.detector.frs1_sb_raw_haz_v
+                         | be.detector.frs2_sb_raw_haz_v
+                         | be.detector.frs3_sb_raw_haz_v
+                         ) & be.detector.data_haz_v
+                        )
+          ,.sb_iwaw_dep_i(be.detector.ird_sb_waw_haz_v & be.detector.data_haz_v)
+          ,.sb_fwaw_dep_i(be.detector.frd_sb_waw_haz_v & be.detector.data_haz_v)
+          ,.struct_haz_i(be.detector.struct_haz_v)
+          ,.long_busy_i(~be.detector.long_ready_i & be.detector.isd_status_cast_i.long_v)
+          ,.long_i_busy_i((~be.calculator.pipe_long.idiv_ready_and_lo
+                          | (be.calculator.pipe_long.v_li & be.calculator.pipe_long.decode.late_iwb_v)
+                         ) & be.detector.dispatch_pkt_cast_i.decode.late_iwb_v
+                        )
+          ,.long_f_busy_i((~be.calculator.pipe_long.fdiv_ready_lo
+                          | (be.calculator.pipe_long.v_li & be.calculator.pipe_long.decode.late_fwb_v)
+                         ) & be.detector.dispatch_pkt_cast_i.decode.late_fwb_v
+                        )
+
+          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_o)
+          ,.dcache_fail_i(be.calculator.pipe_sys.csr.retire_pkt_cast_i.exception.dcache_fail)
+
+          ,.commit_pkt_i(be.calculator.commit_pkt_cast_o)
+          );
 
       bind bp_be_top
         bp_nonsynth_pc_profiler
