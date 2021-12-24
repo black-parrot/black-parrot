@@ -51,6 +51,7 @@ $BP_TOP_DIR/test/common/bp_nonsynth_nbf_loader.sv
 $BP_TOP_DIR/test/common/bp_monitor.cpp
 $BP_TOP_DIR/test/common/dromajo_cosim.cpp
 $BP_TOP_DIR/test/common/bp_nonsynth_core_profiler.sv
+$BP_TOP_DIR/test/common/bp_nonsynth_pc_gen_tracer.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_pc_profiler.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_branch_profiler.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_perf.sv
