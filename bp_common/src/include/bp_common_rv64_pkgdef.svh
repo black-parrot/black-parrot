@@ -3,6 +3,7 @@
 
   localparam rv64_rf_els_gp         = 32;
   localparam rv64_instr_width_gp    = 32;
+  localparam rv64_instr_width_bytes_gp = instr_width_gp / 8;
   localparam rv64_eaddr_width_gp    = 64;
   localparam rv64_byte_width_gp     = 8;
   localparam rv64_hword_width_gp    = 16;

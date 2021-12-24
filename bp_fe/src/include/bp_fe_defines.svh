@@ -45,7 +45,8 @@
       logic [ghist_width_mp-1:0]      ghist;                                                      \
     }  bp_fe_branch_metadata_fwd_s;
 
-  `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp, ghist_width_mp, bht_row_width_mp) \
+  // TODO: consider splitting this into multiple structs. some are only used for IF1 pred mux. others are used in metadata fwd above.
+  `define declare_bp_fe_pred_s(vaddr_width_mp, ghist_width_mp, bht_row_width_mp) \
     typedef struct packed                   \
     {                                       \
       logic pred;                           \
@@ -53,6 +54,8 @@
       logic redir;                          \
       logic ret;                            \
       logic btb;                            \
+      logic btb_jmp;                        \
+      logic [vaddr_width_mp-1:0] btb_tgt;   \
       logic [bht_row_width_mp-1:0] bht_row; \
       logic [ghist_width_mp-1:0] ghist;     \
     }  bp_fe_pred_s
@@ -62,6 +65,13 @@
 
   `define bp_fe_pred_width(vaddr_width_mp, ghist_width_mp, bht_row_width_mp) \
     (5 + bht_row_width_mp + ghist_width_mp)
+
+  `define bp_addr_is_aligned(addr_mp, num_bytes_mp) \
+    (!(|{ addr_mp[$clog2(num_bytes_mp)-1:0] }))
+
+  `define bp_align_addr(addr_mp, vaddr_width_mp, num_bytes_mp) \
+    ({addr_mp[vaddr_width_mp-1:$clog2(num_bytes_mp)], 2'b0})
+    // ({addr_mp[vaddr_width_mp-1:$clog2(num_bytes_mp)], {($clog2(num_bytes_mp))'b0}})
 
   `include "bp_fe_icache_pkgdef.svh"
 

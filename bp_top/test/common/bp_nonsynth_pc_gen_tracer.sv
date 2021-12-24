@@ -47,10 +47,12 @@ module bp_nonsynth_pc_gen_tracer
    , input src_override_ras_i
    , input src_override_branch_i
    , input src_btb_taken_branch_i
+   // TODO: explicitly indicate double-fetch
 
    // IF1
    , input                     if1_top_v_i
    , input [vaddr_width_p-1:0] if1_pc_i
+   , input [vaddr_width_p-1:0] if1_fetch_addr_i
 
     // IF2
    , input                     if2_top_v_i
@@ -93,6 +95,19 @@ module bp_nonsynth_pc_gen_tracer
         pc_src_if1_n = e_pc_src_last_fetch_plus_four;
     end
 
+  logic [vaddr_width_p-1:0] if2_fetch_addr_n, if2_fetch_addr_r;
+  bsg_dff_reset
+   #(.width_p(vaddr_width_p))
+   if2_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i | freeze_i)
+
+     ,.data_i(if2_fetch_addr_n)
+     ,.data_o(if2_fetch_addr_r)
+     );
+
+  assign if2_fetch_addr_n = if1_fetch_addr_i;
+
   function string render_addr_with_validity(logic [vaddr_width_p-1:0] addr, logic valid);
     if (valid)
       return $sformatf(" %x ", addr);
@@ -107,7 +122,7 @@ module bp_nonsynth_pc_gen_tracer
     begin
       file_name = $sformatf("%s_%x.trace", fe_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
-      $fwrite(file, "%s,%s,%s,%s,%s,%s,\n", "cycle", "IF1 PC", "IF2 PC", "IF1 PC src", "state", "events");
+      $fwrite(file, "%s,%s,%s,%s,%s,%s,%s,%s\n", "cycle", "IF1 fetch", "IF1 PC", "IF2 fetch", "IF2 PC", "IF1 PC src", "state", "events");
     end
 
   string padded_pc_src_if1_name;
@@ -119,9 +134,11 @@ module bp_nonsynth_pc_gen_tracer
 
       $fwrite
         (file
-        ,"%0d,%s,%s,%s,%s,"
+        ,"%0d,%s,%s,%s,%s,%s,%s,"
         ,cycle_cnt
+        ,render_addr_with_validity(if1_fetch_addr_i, if1_top_v_i)
         ,render_addr_with_validity(if1_pc_i,         if1_top_v_i)
+        ,render_addr_with_validity(if2_fetch_addr_r, if2_top_v_i)
         ,render_addr_with_validity(if2_pc_i,         if2_top_v_i)
         ,padded_pc_src_if1_name.substr(pc_src_enum_name_prefix_length_lp, pc_src_enum_max_length_lp-1)
         ,state_stall_i ? "stall" : (state_wait_i ? "wait" : "run"));

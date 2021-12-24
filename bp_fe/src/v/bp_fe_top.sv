@@ -85,12 +85,12 @@ module bp_fe_top
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
   logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
-  logic [instr_width_gp-1:0] fetch_li;
+  logic [instr_width_gp-1:0] fetch_li, fetch_instr_lo;
   logic [vaddr_width_p-1:0] fetch_pc_lo;
-  logic fetch_instr_v_li, fetch_exception_v_li, fetch_fail_v_li;
+  logic fetch_exception_v_li, fetch_fail_v_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
-  logic [vaddr_width_p-1:0] next_pc_lo;
-  logic next_pc_yumi_li;
+  logic [vaddr_width_p-1:0] next_fetch_lo;
+  logic next_pc_yumi_li, fetch_v_li, fetch_instr_v_lo, fetch_instr_fill_v_lo, fetch_instr_ready_li;
   logic ovr_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
@@ -108,16 +108,19 @@ module bp_fe_top
      ,.redirect_br_ntaken_i(redirect_br_ntaken_li)
      ,.redirect_br_nonbr_i(redirect_br_nonbr_li)
 
-     ,.next_pc_o(next_pc_lo)
+     ,.next_fetch_o(next_fetch_lo)
      ,.next_pc_yumi_i(next_pc_yumi_li)
 
      ,.ovr_o(ovr_lo)
 
      ,.fetch_i(fetch_li)
-     ,.fetch_instr_v_i(fetch_instr_v_li)
-     ,.fetch_exception_v_i(fetch_exception_v_li)
+     ,.fetch_v_i(fetch_v_li)
      ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
      ,.fetch_pc_o(fetch_pc_lo)
+     ,.fetch_instr_o(fetch_instr_lo)
+     ,.fetch_instr_v_o(fetch_instr_v_lo)
+     ,.fetch_instr_progress_o(fetch_instr_fill_v_lo)
+     ,.fetch_instr_ready_i(fetch_instr_ready_li)
 
      ,.attaboy_pc_i(attaboy_pc_li)
      ,.attaboy_br_metadata_fwd_i(attaboy_br_metadata_fwd_li)
@@ -218,7 +221,7 @@ module bp_fe_top
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
-  wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
+  wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_fetch_lo, dword_width_gp);
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(itlb_els_4k_p)
@@ -263,7 +266,7 @@ module bp_fe_top
 
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
-  assign icache_pkt = '{vaddr: next_pc_lo
+  assign icache_pkt = '{vaddr: next_fetch_lo
                         ,op  : icache_fence_v ? e_icache_fencei : icache_fill_response_v ? e_icache_fill : e_icache_fetch
                         };
   // TODO: Should only ack icache fence when icache_ready
@@ -323,6 +326,9 @@ module bp_fe_top
      ,.stat_mem_o(stat_mem_o)
      );
 
+  assign fetch_li   = icache_data_lo;
+  assign fetch_v_li = icache_data_v_lo;
+
   logic itlb_miss_r, instr_access_fault_r, instr_page_fault_r;
   bsg_dff_reset
    #(.width_p(3))
@@ -347,11 +353,15 @@ module bp_fe_top
      ,.data_o({v_if2_r, v_if1_r})
      );
 
+  // Frontend is fixed-latency; if we get to IF2 and the I$ hasn't produced a valid load, this is a miss and we need to
+  // stall and retry later.
   wire icache_miss    = v_if2_r & ~icache_data_v_lo;
   wire queue_miss     = v_if2_r & ~fe_queue_ready_i;
   wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
-  wire fe_instr_v     = v_if2_r & icache_data_v_lo;
-  assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
+  wire fe_instr_v     = v_if2_r & fetch_instr_v_lo;
+
+  wire fe_progress    = fe_queue_ready_i & (fe_instr_v | fe_exception_v | fetch_instr_fill_v_lo) & ~cmd_nonattaboy_v;
+  assign fe_queue_v_o = fe_progress      & (fe_instr_v | fe_exception_v);
 
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
   assign icache_poison_tv = fe_exception_v | cmd_nonattaboy_v;
@@ -359,10 +369,11 @@ module bp_fe_top
   assign fe_cmd_yumi_o = pc_gen_init_done_lo & (cmd_nonattaboy_v | attaboy_yumi_lo);
   assign next_pc_yumi_li = (state_n == e_run);
 
-  assign fetch_instr_v_li     = fe_queue_v_o & fe_instr_v;
   assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;
-  assign fetch_fail_v_li      = v_if2_r & ~fe_queue_v_o;
-  assign fetch_li             = icache_data_lo;
+  assign fetch_fail_v_li      = v_if2_r & ~fe_progress;
+
+  // Suppress implicit modification of predictor state unless we actually intend to use the result
+  assign fetch_instr_ready_li = fe_queue_ready_i & !fe_exception_v & !cmd_nonattaboy_v;
 
   wire stall   = fetch_fail_v_li | cmd_nonattaboy_v;
   wire unstall = icache_ready_lo & fe_queue_ready_i & ~cmd_nonattaboy_v;
@@ -371,7 +382,7 @@ module bp_fe_top
       begin
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type                     = e_fe_exception;
-        fe_queue_cast_o.msg.exception.vaddr          = fetch_pc_lo;
+        fe_queue_cast_o.msg.exception.vaddr          = fetch_pc_lo; // TODO: on exception triggered by second half, should this point to the start or the end?
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss
                                                        : instr_page_fault_r
@@ -385,7 +396,7 @@ module bp_fe_top
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type                      = e_fe_fetch;
         fe_queue_cast_o.msg.fetch.pc                  = fetch_pc_lo;
-        fe_queue_cast_o.msg.fetch.instr               = fetch_li;
+        fe_queue_cast_o.msg.fetch.instr               = fetch_instr_lo;
         fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fetch_br_metadata_fwd_lo;
       end
 

@@ -25,6 +25,7 @@ package bp_common_pkg;
   localparam half_width_gp        = 16;
   localparam byte_width_gp        = 8;
   localparam instr_width_gp       = 32;
+  localparam instr_half_width_gp  = 16;
   localparam csr_addr_width_gp    = 12;
   localparam reg_addr_width_gp    = 5;
   localparam page_offset_width_gp = 12;

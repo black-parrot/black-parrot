@@ -9,6 +9,7 @@
     logic icache_fence;
     logic branch_override;
     logic ret_override;
+    logic misaligned_fetch;
     logic fe_cmd;
     logic fe_cmd_fence;
     logic mispredict;
@@ -29,14 +30,15 @@
 
   typedef enum logic [4:0]
   {
-    fe_queue_stall       = 5'd23
-    ,fe_wait_stall       = 5'd22
-    ,itlb_miss           = 5'd21
-    ,icache_miss         = 5'd20
-    ,icache_rollback     = 5'd19
-    ,icache_fence        = 5'd18
-    ,branch_override     = 5'd17
-    ,ret_override        = 5'd16
+    fe_queue_stall       = 5'd24
+    ,fe_wait_stall       = 5'd23
+    ,itlb_miss           = 5'd22
+    ,icache_miss         = 5'd21
+    ,icache_rollback     = 5'd20
+    ,icache_fence        = 5'd19
+    ,branch_override     = 5'd18
+    ,ret_override        = 5'd17
+    ,misaligned_fetch    = 5'd16
     ,fe_cmd              = 5'd15
     ,fe_cmd_fence        = 5'd14
     ,mispredict          = 5'd13
@@ -88,6 +90,7 @@ module bp_nonsynth_core_profiler
     , input icache_fence
     , input branch_override
     , input ret_override
+    , input misaligned_fetch
 
     // Backwards ISS events
     // TODO: Differentiate between different FE cmds
@@ -193,6 +196,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[1].itlb_miss         |= itlb_miss;
       stall_stage_n[1].icache_rollback   |= icache_rollback;
       stall_stage_n[1].icache_fence      |= icache_fence;
+      stall_stage_n[1].misaligned_fetch  |= misaligned_fetch;
       stall_stage_n[1].fe_cmd            |= fe_cmd;
       stall_stage_n[1].mispredict        |= mispredict;
       stall_stage_n[1].exception         |= exception;

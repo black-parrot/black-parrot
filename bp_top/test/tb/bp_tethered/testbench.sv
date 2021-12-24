@@ -448,6 +448,7 @@ module testbench
            ,.icache_fence(fe.icache.fencei_req)
            ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
            ,.ret_override(fe.pc_gen.ovr_ret)
+           ,.misaligned_fetch(!fe.fe_queue_v_o & fe.fe_progress)
 
            ,.fe_cmd(fe.fe_cmd_yumi_o & ~fe.attaboy_v)
            ,.fe_cmd_fence(be.director.suppress_iss_o)
@@ -507,6 +508,7 @@ module testbench
 
            ,.if1_top_v_i           (v_if1_r)
            ,.if1_pc_i              (pc_gen.pc_if1_r)
+           ,.if1_fetch_addr_i      (pc_gen.fetch_addr_if1_r)
 
            ,.if2_top_v_i           (v_if2_r)
            ,.if2_pc_i              (pc_gen.pc_if2_r)
