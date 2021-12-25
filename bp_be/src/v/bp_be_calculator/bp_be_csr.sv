@@ -356,13 +356,6 @@ module bp_be_csr
       csr_csrw_o           = '0;
       csr_data_lo          = '0;
 
-      // Accumulate FFLAGS
-      fcsr_li.fflags |= fflags_acc_i;
-
-      // Set FS to dirty if: fflags set, frf written, fcsr written
-      mstatus_li.fs |= {2{(csr_w_v_li & csr_fany_li)}};
-      mstatus_li.fs |= {2{(retire_pkt_cast_i.instret & instr_fany_li)}};
-
       if (csr_cmd_v_i)
         begin
           // Check for access violations
@@ -461,10 +454,6 @@ module bp_be_csr
                 // SIP subset of MIP
                 {1'b1, `CSR_ADDR_SIP          }: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
                 {1'b1, `CSR_ADDR_SATP         }: begin satp_li = csr_data_li; csr_csrw_o = 1'b1; end
-                {1'b1, `CSR_ADDR_MVENDORID    }: begin end
-                {1'b1, `CSR_ADDR_MARCHID      }: begin end
-                {1'b1, `CSR_ADDR_MIMPID       }: begin end
-                {1'b1, `CSR_ADDR_MHARTID      }: begin end
                 {1'b1, `CSR_ADDR_MSTATUS      }: begin mstatus_li = csr_data_li; csr_csrw_o = 1'b1; end
                 {1'b1, `CSR_ADDR_MISA         }: begin end
                 {1'b1, `CSR_ADDR_MEDELEG      }: medeleg_li = csr_data_li;
@@ -606,9 +595,17 @@ module bp_be_csr
           dcsr_li.prv   = priv_mode_r;
         end
 
+      // Accumulate interrupts
       mip_li.mtip = timer_irq_i;
       mip_li.msip = software_irq_i;
       mip_li.meip = external_irq_i;
+
+      // Accumulate FFLAGS
+      fcsr_li.fflags |= fflags_acc_i;
+
+      // Set FS to dirty if: fflags set, frf written, fcsr written
+      mstatus_li.fs |= {2{(csr_w_v_li & csr_fany_li & ~csr_illegal_instr_o)}};
+      mstatus_li.fs |= {2{(retire_pkt_cast_i.instret & instr_fany_li)}};
     end
 
   // Debug Mode masks all interrupts
