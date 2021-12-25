@@ -514,14 +514,8 @@ module testbench
           ,.sb_fwaw_dep_i(be.detector.frd_sb_waw_haz_v & be.detector.data_haz_v)
           ,.struct_haz_i(be.detector.struct_haz_v)
           ,.long_busy_i(~be.detector.long_ready_i & be.detector.isd_status_cast_i.long_v)
-          ,.long_i_busy_i((~be.calculator.pipe_long.idiv_ready_and_lo
-                          | (be.calculator.pipe_long.v_li & be.calculator.pipe_long.decode.late_iwb_v)
-                         ) & be.detector.dispatch_pkt_cast_i.decode.late_iwb_v
-                        )
-          ,.long_f_busy_i((~be.calculator.pipe_long.fdiv_ready_lo
-                          | (be.calculator.pipe_long.v_li & be.calculator.pipe_long.decode.late_fwb_v)
-                         ) & be.detector.dispatch_pkt_cast_i.decode.late_fwb_v
-                        )
+          ,.ilong_ready_i(be.calculator.pipe_long.idiv_ready_and_lo)
+          ,.flong_ready_i(be.calculator.pipe_long.fdiv_ready_lo)
 
           ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_o)
           ,.dcache_fail_i(be.calculator.pipe_sys.csr.retire_pkt_cast_i.exception.dcache_fail)

@@ -23,9 +23,9 @@
     logic sb_iwaw_dep;
     logic sb_fwaw_dep;
     logic struct_haz;
-    logic long_i_busy;
-    logic long_f_busy;
-    logic long_if_busy;
+    logic ilong_busy;
+    logic flong_busy;
+    logic long_wb;
     logic dtlb_miss;
     logic dcache_miss;
     logic dcache_rollback;
@@ -60,9 +60,9 @@
     ,sb_iwaw_dep         = 6'd13
     ,sb_fwaw_dep         = 6'd12
     ,struct_haz          = 6'd11
-    ,long_i_busy         = 6'd10
-    ,long_f_busy         = 6'd9
-    ,long_if_busy        = 6'd8
+    ,ilong_busy          = 6'd10
+    ,flong_busy          = 6'd9
+    ,long_wb             = 6'd8
     ,dtlb_miss           = 6'd7
     ,dcache_miss         = 6'd6
     ,dcache_rollback     = 6'd5
@@ -128,8 +128,8 @@ module bp_nonsynth_core_profiler
     , input sb_fwaw_dep_i
     , input struct_haz_i
     , input long_busy_i
-    , input long_i_busy_i
-    , input long_f_busy_i
+    , input ilong_ready_i
+    , input flong_ready_i
 
     // ALU events
 
@@ -215,9 +215,9 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3].sb_iwaw_dep       |= sb_iwaw_dep_i;
       stall_stage_n[3].sb_fwaw_dep       |= sb_fwaw_dep_i;
       stall_stage_n[3].struct_haz        |= struct_haz_i;
-      stall_stage_n[3].long_i_busy       |= long_busy_i & long_i_busy_i;
-      stall_stage_n[3].long_f_busy       |= long_busy_i & long_f_busy_i;
-      stall_stage_n[3].long_if_busy      |= long_busy_i & ~(long_i_busy_i | long_f_busy_i);
+      stall_stage_n[3].ilong_busy        |= long_busy_i & ~ilong_ready_i;
+      stall_stage_n[3].flong_busy        |= long_busy_i & ~flong_ready_i;
+      stall_stage_n[3].long_wb           |= long_busy_i & ilong_ready_i & flong_ready_i;
       stall_stage_n[3].control_haz       |= control_haz_i;
       stall_stage_n[3].long_haz          |= long_haz_i;
       stall_stage_n[3].dtlb_miss         |= commit_pkt.dtlb_load_miss | commit_pkt.dtlb_store_miss;
