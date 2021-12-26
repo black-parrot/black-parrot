@@ -39,6 +39,9 @@ $(BP_EXTERNAL_DIR)/bsg_cadenv:
 tidy:
 	echo "BlackParrot RTL is tidy enough"
 
+clean.tools:
+	rm -rf $(BP_TOOLS_TOUCH_DIR)
+
 ## This target just wipes the whole repo clean.
 #  Use with caution.
 bleach_all:

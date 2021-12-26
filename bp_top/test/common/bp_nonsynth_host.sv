@@ -115,10 +115,10 @@ module bp_nonsynth_host
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
   bp_bedrock_io_mem_header_s mem_cmd_header_li;
   assign mem_cmd_header_li = mem_cmd_header_i;
-  wire [2:0] hio_id = mem_cmd_header_li.addr[paddr_width_p-1-:3];
+  wire [hio_width_p-1:0] hio_id = mem_cmd_header_li.addr[paddr_width_p-1-:hio_width_p];
   always_comb
     if (mem_cmd_v_i & (hio_id != '0))
-      $display("Warning: Accesing illegal hio %0h. Sending loopback message!", hio_id);
+      $display("Warning: Accessing hio %0h. Sending loopback message!", hio_id);
 
   always_ff @(negedge clk_i)
     begin
