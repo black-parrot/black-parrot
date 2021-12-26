@@ -242,9 +242,9 @@
       ,dtlb_els_1g : 0
 
       ,lr_sc                : e_l1
-      ,amo_swap             : e_none
-      ,amo_fetch_logic      : e_none
-      ,amo_fetch_arithmetic : e_none
+      ,amo_swap             : e_l1
+      ,amo_fetch_logic      : e_l1
+      ,amo_fetch_arithmetic : e_l1
 
       ,l1_writethrough      : 0
       ,l1_coherent          : 0
@@ -355,7 +355,12 @@
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
 
-      ,l2_en              : 0
+      ,lr_sc                : e_l1
+      ,amo_swap             : e_none
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
+
+      ,l2_en : 0
 
       ,default : "inv"
       };
@@ -500,6 +505,10 @@
       ,l1_coherent   : 1
       ,dcache_fill_width : 512
       ,icache_fill_width : 512
+      ,lr_sc                : e_l1
+      ,amo_swap             : e_none
+      ,amo_fetch_logic      : e_none
+      ,amo_fetch_arithmetic : e_none
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p

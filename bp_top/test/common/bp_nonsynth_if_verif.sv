@@ -52,39 +52,39 @@ module bp_nonsynth_if_verif
       $display("bp_bedrock_cce_mem_header_s       bits: struct %d width %d", $bits(bp_bedrock_cce_mem_header_s), cce_mem_header_width_lp);
 
       if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
-        $fatal("Error: unsupported number of CCE's");
+        $error("Error: unsupported number of CCE's");
       end
 
     end
 
   if (ic_y_dim_p != 1 && multicore_p == 1)
-    $fatal("Error: Must have exactly 1 row of I/O routers for multicore");
+    $error("Error: Must have exactly 1 row of I/O routers for multicore");
   if (mc_y_dim_p > 2)
-    $fatal("Error: Multi-row L2 expansion nodes not yet supported");
+    $error("Error: Multi-row L2 expansion nodes not yet supported");
   if (sac_x_dim_p > 1)
-    $fatal("Error: Must have <= 1 column of streaming accelerators");
+    $error("Error: Must have <= 1 column of streaming accelerators");
   if (cac_x_dim_p > 1)
-    $fatal("Error: Must have <= 1 column of coherent accelerators");
+    $error("Error: Must have <= 1 column of coherent accelerators");
   if (multicore_p == 1 && !((dcache_block_width_p == icache_block_width_p) && (dcache_block_width_p ==  acache_block_width_p)))
-    $fatal("Error: We don't currently support different block widths for multicore configurations");
+    $error("Error: We don't currently support different block widths for multicore configurations");
   if ((cce_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
-    $fatal("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
+    $error("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
   if ((cce_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))
-    $fatal("Error: We can't maintain 64-bit dwords with a 128-bit cache block size and 4-way or 8-way cache associativity");
+    $error("Error: We can't maintain 64-bit dwords with a 128-bit cache block size and 4-way or 8-way cache associativity");
   if ((l1_writethrough_p == 1) && (l1_coherent_p == 1))
-    $fatal("Error: Writethrough with coherent_l1 is unsupported");
+    $error("Error: Writethrough with coherent_l1 is unsupported");
   if ((icache_fill_width_p > icache_block_width_p) || (dcache_fill_width_p > dcache_block_width_p))
-    $fatal("Error: Cache fill width should be less or equal to L1 cache block width");
+    $error("Error: Cache fill width should be less or equal to L1 cache block width");
   if ((icache_fill_width_p % (icache_block_width_p/icache_assoc_p) != 0) || (dcache_fill_width_p % (dcache_block_width_p / dcache_assoc_p) != 0))
-    $fatal("Error: Cache fill width should be a multiple of cache bank width");
+    $error("Error: Cache fill width should be a multiple of cache bank width");
   if (icache_fill_width_p != dcache_fill_width_p)
-    $fatal("Error: L1-Cache fill width should be the same");
+    $error("Error: L1-Cache fill width should be the same");
   if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
-    $fatal("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
+    $error("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
   if ((multicore_p == 1) && (l2_data_width_p != dword_width_gp))
-    $fatal("Error: multicore requires L2 data width same as dword width");
+    $error("Error: multicore requires L2 data width same as dword width");
   if (l2_data_width_p < l2_fill_width_p)
-    $fatal("Error: L2 fill width must be at least as large as L2 data width");
+    $error("Error: L2 fill width must be at least as large as L2 data width");
 
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512");
@@ -103,19 +103,22 @@ module bp_nonsynth_if_verif
   if (caddr_width_p >= daddr_width_p)
     $warning("Warning: caddr must <= daddr");
   if (daddr_width_p >= paddr_width_p)
-    $fatal("Error: caddr cannot exceed paddr_width_p-1");
+    $error("Error: caddr cannot exceed paddr_width_p-1");
 
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
-    $fatal("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
+    $error("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
 
-  if ((multicore_p == 1) && ((amo_swap_p != e_none) || (amo_fetch_logic_p != e_none) || (amo_fetch_arithmetic_p != e_none)))
-    $fatal("Error: L2 atomics are not currently supported in bp_multicore");
+  if ((multicore_p == 1) && ((amo_swap_p == e_l2) || (amo_fetch_logic_p == e_l2) || (amo_fetch_arithmetic_p == e_l2)))
+    $error("Error: L2 atomics are not currently supported in bp_multicore");
+
+  if (lr_sc_p == e_none)
+    $error("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
 
   if (mem_noc_flit_width_p % l2_fill_width_p != 0)
-    $fatal("Memory NoC flit width must match l2 fill width");
+    $error("Memory NoC flit width must match l2 fill width");
 
   if (multicore_p == 0 && num_core_p != 1)
-    $fatal("Unicore only supports a single core configuration in the tethered testbench");
+    $error("Unicore only supports a single core configuration in the tethered testbench");
 
 endmodule
 
