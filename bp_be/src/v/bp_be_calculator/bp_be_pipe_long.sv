@@ -15,7 +15,8 @@ module bp_be_pipe_long
    , input                              reset_i
 
    , input [dispatch_pkt_width_lp-1:0]  reservation_i
-   , output logic                       ready_o
+   , output logic                       iready_o
+   , output logic                       fready_o
    , input rv64_frm_e                   frm_dyn_i
 
    , input                              flush_i
@@ -182,7 +183,7 @@ module bp_be_pipe_long
    round_dp
     (.control(control_li)
      ,.invalidExc(invalid_exc)
-     ,.infiniteExc('0)
+     ,.infiniteExc(infinite_exc)
      ,.in_isNaN(is_nan)
      ,.in_isInf(is_inf)
      ,.in_isZero(is_zero)
@@ -205,7 +206,7 @@ module bp_be_pipe_long
    round_sp
     (.control(control_li)
      ,.invalidExc(invalid_exc)
-     ,.infiniteExc('0)
+     ,.infiniteExc(infinite_exc)
      ,.in_isNaN(is_nan)
      ,.in_isInf(is_inf)
      ,.in_isZero(is_zero)
@@ -246,7 +247,8 @@ module bp_be_pipe_long
       rd_data_lo = remainder_lo;
 
   // Actually a busy signal
-  assign ready_o = fdiv_ready_lo & idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
+  assign iready_o = idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
+  assign fready_o = fdiv_ready_lo & ~rd_w_v_r & ~v_li;
 
   assign iwb_pkt.ird_w_v    = rd_w_v_r;
   assign iwb_pkt.frd_w_v    = 1'b0;
