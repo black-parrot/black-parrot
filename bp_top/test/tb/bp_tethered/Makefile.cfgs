@@ -28,6 +28,7 @@ else
 endif
 
 e_bp_unicore_tinyparrot_cfg_amoen      := 0
+$(CFG)_amoen ?= $(if $(findstring multicore,$(CFG)),0,1)
 
 _AMOEN :=$($(CFG)_amoen)
 ifeq ($(_AMOEN),)
