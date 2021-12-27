@@ -587,7 +587,7 @@ module bp_be_dcache
   // Fail if we have a store conditional without success
   wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
 
-  wire load_miss_tv   = decode_tv_r.load_op & ~load_hit_tv & ~uncached_op_tv_r;
+  wire load_miss_tv   = decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv & ~uncached_op_tv_r;
   wire store_miss_tv  = decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & ~uncached_op_tv_r & (writethrough_p == 0);
   wire lr_miss_tv     = decode_tv_r.lr_op & ~store_hit_tv & ~uncached_op_tv_r;
   wire fencei_miss_tv = decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
@@ -607,6 +607,8 @@ module bp_be_dcache
        | (uncached_op_tv_r & decode_tv_r.amo_op & (decode_tv_r.rd_addr == '0))
       // Fencei
        | (decode_tv_r.fencei_op & ~fencei_miss_tv)
+      // SC
+       | (decode_tv_r.sc_op)
       // Cached load / store
        | (cached_op_tv_r & ~any_miss_tv)
        );
@@ -889,7 +891,7 @@ module bp_be_dcache
       cache_req_cast_o.hit = load_hit_tv;
 
       // Assigning sizes to cache miss packet
-      if (cached_req & ~wt_req)
+      if (cached_req)
         begin
             cache_req_cast_o.size = block_req_size;
         end
@@ -924,7 +926,7 @@ module bp_be_dcache
         cache_req_cast_o.msg_type = e_miss_load;
       else if (lr_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
-      else if (store_miss_tv & (writethrough_p == 0))
+      else if (store_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
       else if (fencei_miss_tv)
         cache_req_cast_o.msg_type = e_cache_flush;
