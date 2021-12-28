@@ -1139,7 +1139,7 @@
     ,e_bp_test_multicore_half_cfg                   = 48
     ,e_bp_test_unicore_half_cfg                     = 47
 
-    // L2 extension configuration
+    // L2 extension configurations
     ,e_bp_multicore_4_l2e_cfg                       = 46
     ,e_bp_multicore_2_l2e_cfg                       = 45
     ,e_bp_multicore_1_l2e_cfg                       = 44
