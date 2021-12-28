@@ -133,7 +133,8 @@ module bp_cacc_vdp
      ,.ptag_uncached_i(dcache_uncached)
      ,.ptag_dram_i(dcache_dram)
 
-     ,.flush_i(1'b0)
+     ,.poison_req_i(1'b0)
+     ,.poison_tl_i(1'b0)
 
      // D$-LCE Interface
      ,.cache_req_complete_i(cache_req_complete_lo)

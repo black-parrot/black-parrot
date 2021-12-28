@@ -271,11 +271,13 @@ module bp_be_pipe_mem
       ,.dcache_pkt_i(dcache_pkt)
       ,.v_i(dcache_pkt_v)
       ,.ready_o(dcache_ready_lo)
+      ,.poison_req_i(flush_i)
 
       ,.ptag_i(dcache_ptag)
       ,.ptag_v_i(dcache_ptag_v)
       ,.ptag_uncached_i(dcache_ptag_uncached)
       ,.ptag_dram_i(dcache_ptag_dram)
+      ,.poison_tl_i(flush_i)
 
       ,.early_hit_v_o(dcache_early_hit_v)
       ,.early_miss_v_o(dcache_early_miss_v)
@@ -288,8 +290,6 @@ module bp_be_pipe_mem
       ,.late_data_o(dcache_late_data)
       ,.late_v_o(dcache_late_v)
       ,.late_yumi_i(dcache_late_yumi)
-
-      ,.flush_i(flush_i)
 
       // D$-LCE Interface
       ,.cache_req_o(cache_req_cast_o)

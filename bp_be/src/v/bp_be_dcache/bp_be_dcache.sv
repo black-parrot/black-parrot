@@ -118,36 +118,53 @@ module bp_be_dcache
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
    )
-  (input                              clk_i
-   , input                            reset_i
+  (input                                             clk_i
+   , input                                           reset_i
 
-   , input [cfg_bus_width_lp-1:0]     cfg_bus_i
+   // Unused except for tracers
+   , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
 
-   , input [dcache_pkt_width_lp-1:0]  dcache_pkt_i
-   , input                            v_i
-   , output logic                     ready_o
+   // Cycle 0: "Decode"
+   // New D$ packet comes in
+   , input [dcache_pkt_width_lp-1:0]                 dcache_pkt_i
+   , input                                           v_i
+   , output logic                                    ready_o
+   , input                                           poison_req_i
 
-   // TLB interface
-   , input [ptag_width_p-1:0]         ptag_i
-   , input                            ptag_v_i
-   , input                            ptag_uncached_i
-   , input                            ptag_dram_i
+   // Cycle 1: "Tag Lookup"
+   // TLB and PMA information comes in this cycle
+   , input [ptag_width_p-1:0]                        ptag_i
+   , input                                           ptag_v_i
+   , input                                           ptag_uncached_i
+   , input                                           ptag_dram_i
+   , input                                           poison_tl_i 
 
-   , output logic [dpath_width_gp-1:0]    early_data_o
-   , output logic                         early_miss_v_o
-   , output logic                         early_hit_v_o
-   , output logic [dpath_width_gp-1:0]    final_data_o
-   , output logic                         final_v_o
-   , output logic [reg_addr_width_gp-1:0] late_rd_addr_o
-   , output logic                         late_float_o
-   , output logic [dpath_width_gp-1:0]    late_data_o
-   , output logic                         late_v_o
-   , input                                late_yumi_i
+   // Cycle 2: "Tag Verify"
+   // Data (or miss result) comes out of the cache
+   , output logic [dpath_width_gp-1:0]               early_data_o
+   , output logic                                    early_miss_v_o
+   , output logic                                    early_hit_v_o
 
-   // ctrl
-   , input                                flush_i
+   // Cycle 3: "Data Mux"
+   // Data comes out this cycle for operations which require additional
+   //   processing (half, byte and FP loads)
+   , output logic [dpath_width_gp-1:0]               final_data_o
+   , output logic                                    final_v_o
 
-   // D$ Engine Interface
+   // Cycle N: "Late Data"
+   // Data comes out-of-band to the pipeline here. Currently, there is
+   //   only 1 outstanding miss allowed, but in the future this could
+   //   be out of order as well.
+   , output logic [reg_addr_width_gp-1:0]            late_rd_addr_o
+   , output logic                                    late_float_o
+   , output logic [dpath_width_gp-1:0]               late_data_o
+   , output logic                                    late_v_o
+   , input                                           late_yumi_i
+
+   // Cache Engine Interface
+   // This is considered the "slow path", handling uncached requests
+   //   and fill DMAs. It also handles coherence transactions for
+   //   configurations which support that behavior
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
    , output logic                                    cache_req_v_o
    , input                                           cache_req_yumi_i
@@ -206,7 +223,7 @@ module bp_be_dcache
   logic safe_tl_we, safe_tv_we, safe_dm_we;
   logic v_tl_r, v_tv_r, v_dm_r;
   logic gdirty_r, cache_lock;
-  logic sram_hazard_flush, wbuf_hazard;
+  logic tag_write_hazard, wbuf_force_hazard;
 
   wire posedge_clk =  clk_i;
   wire negedge_clk = ~clk_i;
@@ -240,8 +257,6 @@ module bp_be_dcache
      ,.data_i({stat_mem_pkt_yumi_lo, cache_req_yumi_i})
      ,.data_o({stat_mem_pkt_yumi_o, cache_req_yumi_li})
      );
-
-  wire flush_self = flush_i | sram_hazard_flush;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
@@ -326,7 +341,7 @@ module bp_be_dcache
   logic [dpath_width_gp-1:0] data_tl_r;
 
   assign safe_tl_we = ready_o & v_i;
-  assign tl_we = safe_tl_we & ~flush_self & ~wbuf_hazard;
+  assign tl_we = safe_tl_we & ~poison_req_i & ~wbuf_force_hazard;
   bsg_dff_reset
    #(.width_p(1))
    v_tl_reg
@@ -402,7 +417,7 @@ module bp_be_dcache
 
   // fencei does not require a ptag
   assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
-  assign tv_we = safe_tv_we & ~flush_self;
+  assign tv_we = safe_tv_we & ~poison_tl_i & ~tag_write_hazard;
   bsg_dff_reset
    #(.width_p(1))
    v_tv_reg
@@ -858,7 +873,7 @@ module bp_be_dcache
      ,.data_o({wbuf_v_lo})
      );
 
-  assign wbuf_hazard = wbuf_force_lo;
+  assign wbuf_force_hazard = wbuf_force_lo;
 
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
@@ -1010,7 +1025,7 @@ module bp_be_dcache
   wire tag_mem_slow_read = tag_mem_pkt_yumi_lo & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_lo & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
   wire tag_mem_fast_write = v_tv_r & (uncached_op_tv_r & dram_op_tv_r & ~uncached_hit_tv_r & load_hit_tv);
-  assign sram_hazard_flush = tag_mem_fast_write;
+  assign tag_write_hazard = tag_mem_fast_write;
 
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_fast_write;
   assign tag_mem_w_li = tag_mem_slow_write | tag_mem_fast_write;
@@ -1123,7 +1138,7 @@ module bp_be_dcache
         & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write) & data_mem_write_bank_mask[i];
       assign data_mem_slow_read[i] = data_mem_pkt_yumi_lo
         & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_read);
-      assign data_mem_fast_read[i] = safe_tl_we & decode_lo.load_op & ~wbuf_hazard;
+      assign data_mem_fast_read[i] = safe_tl_we & decode_lo.load_op & ~wbuf_force_hazard;
       assign data_mem_fast_write[i] = wbuf_yumi_li & wbuf_bank_sel_one_hot[i];
 
       assign data_mem_v_li[i] = data_mem_fast_read[i]
