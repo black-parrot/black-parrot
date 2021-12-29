@@ -36,13 +36,18 @@ module bp_mmu
 
    , output logic                                     r_v_o
    , output logic [ptag_width_p-1:0]                  r_ptag_o
-   , output logic                                     r_miss_o
+   , output logic                                     r_instr_miss_o
+   , output logic                                     r_load_miss_o
+   , output logic                                     r_store_miss_o
    , output logic                                     r_uncached_o
    , output logic                                     r_nonidem_o
    , output logic                                     r_dram_o
    , output logic                                     r_instr_access_fault_o
    , output logic                                     r_load_access_fault_o
    , output logic                                     r_store_access_fault_o
+   , output logic                                     r_instr_misaligned_o
+   , output logic                                     r_load_misaligned_o
+   , output logic                                     r_store_misaligned_o
    , output logic                                     r_instr_page_fault_o
    , output logic                                     r_load_page_fault_o
    , output logic                                     r_store_page_fault_o
@@ -166,10 +171,15 @@ module bp_mmu
 
   assign r_v_o                   = r_v_r &  tlb_v_lo & ~any_access_fault_v & ~any_page_fault_v;
   assign r_ptag_o                = ptag_lo;
-  assign r_miss_o                = r_v_r & ~tlb_v_lo & ~any_access_fault_v & ~any_page_fault_v;;
+  assign r_instr_miss_o          = r_v_r & ~tlb_v_lo & r_instr_r & ~any_access_fault_v & ~any_page_fault_v;;
+  assign r_load_miss_o           = r_v_r & ~tlb_v_lo & r_load_r  & ~any_access_fault_v & ~any_page_fault_v;;
+  assign r_store_miss_o          = r_v_r & ~tlb_v_lo & r_store_r & ~any_access_fault_v & ~any_page_fault_v;;
   assign r_uncached_o            = r_v_r &  tlb_v_lo & ptag_uncached_lo;
   assign r_nonidem_o             = r_v_r &  tlb_v_lo & ptag_nonidem_lo;
   assign r_dram_o                = r_v_r &  tlb_v_lo & ptag_dram_lo;
+  assign r_instr_misaligned_o    = '0;
+  assign r_load_misaligned_o     = '0;
+  assign r_store_misaligned_o    = '0;
   assign r_instr_access_fault_o  = r_v_r & instr_access_fault_v;
   assign r_load_access_fault_o   = r_v_r & load_access_fault_v;
   assign r_store_access_fault_o  = r_v_r & store_access_fault_v;

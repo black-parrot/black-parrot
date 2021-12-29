@@ -150,7 +150,8 @@ module bp_be_pipe_mem
   logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data, dcache_late_data;
   logic [reg_addr_width_gp-1:0] dcache_late_rd_addr;
   logic [ptag_width_p-1:0]  dcache_ptag;
-  logic                     dcache_early_miss_v, dcache_early_hit_v, dcache_final_v, dcache_pkt_v;
+  logic                     dcache_pkt_v;
+  logic                     dcache_early_miss_v, dcache_early_fencei, dcache_early_hit_v, dcache_final_v;
   logic                     dcache_late_float, dcache_late_v, dcache_late_yumi;
   logic                     dcache_ptag_v;
   logic                     dcache_ptag_uncached;
@@ -162,10 +163,6 @@ module bp_be_pipe_mem
   logic load_misaligned_v, store_misaligned_v;
 
   /* Control signals */
-  logic is_req_mem2, is_req_mem3;
-  logic is_fencei_mem2, is_fencei_mem3;
-  logic is_store_mem2, is_store_mem3;
-
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
   wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
@@ -210,13 +207,18 @@ module bp_be_pipe_mem
 
      ,.r_v_o(dtlb_v_lo)
      ,.r_ptag_o(dtlb_ptag_lo)
-     ,.r_miss_o(dtlb_miss_v)
+     ,.r_instr_miss_o()
+     ,.r_load_miss_o(tlb_load_miss_v_o)
+     ,.r_store_miss_o(tlb_store_miss_v_o)
      ,.r_uncached_o(dcache_ptag_uncached)
      ,.r_nonidem_o(/* All D$ misses are non-speculative */)
      ,.r_dram_o(dcache_ptag_dram)
      ,.r_instr_access_fault_o()
      ,.r_load_access_fault_o(load_access_fault_v)
      ,.r_store_access_fault_o(store_access_fault_v)
+     ,.r_instr_misaligned_o()
+     ,.r_load_misaligned_o(load_misaligned_v)
+     ,.r_store_misaligned_o(store_misaligned_v)
      ,.r_instr_page_fault_o()
      ,.r_load_page_fault_o(load_page_fault_v)
      ,.r_store_page_fault_o(store_page_fault_v)
@@ -281,6 +283,7 @@ module bp_be_pipe_mem
 
       ,.early_hit_v_o(dcache_early_hit_v)
       ,.early_miss_v_o(dcache_early_miss_v)
+      ,.early_fencei_o(dcache_early_fencei)
       ,.early_data_o(dcache_early_data)
       ,.final_data_o(dcache_final_data)
       ,.final_v_o(dcache_final_v)
@@ -318,28 +321,6 @@ module bp_be_pipe_mem
       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
       );
 
-  bsg_dff_reset
-   #(.width_p(3))
-   mem2_reg
-    (.clk_i(~clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i({is_req, is_store, is_fencei})
-     ,.data_o({is_req_mem2, is_store_mem2, is_fencei_mem2})
-     );
-
-  bsg_dff_reset
-   #(.width_p(3))
-   mem3_reg
-    (.clk_i(~clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i({is_req_mem2, is_store_mem2, is_fencei_mem2})
-     ,.data_o({is_req_mem3, is_store_mem3, is_fencei_mem3})
-     );
-
-  // Check instruction accesses
-  assign load_misaligned_v = 1'b0; // TODO: detect
-  assign store_misaligned_v = 1'b0; // TODO: detect
-
   // D-Cache connections
   always_comb
     if (ptw_busy)
@@ -360,12 +341,10 @@ module bp_be_pipe_mem
         dcache_ptag_v          = dtlb_v_lo;
       end
 
-  assign tlb_store_miss_v_o     = is_store_mem2 & dtlb_miss_v;
-  assign tlb_load_miss_v_o      = ~is_store_mem2 & dtlb_miss_v;
-  assign cache_miss_v_o         = is_req_mem3 & dcache_early_miss_v;
-  assign cache_fail_v_o         = is_req_mem3 & ~dcache_early_hit_v & ~dcache_early_miss_v;
-  assign fencei_clean_v_o       = is_fencei_mem3 & dcache_early_hit_v;
-  assign fencei_dirty_v_o       = is_fencei_mem3 & ~dcache_early_hit_v;
+  assign cache_fail_v_o         = early_v_o & ~dcache_early_hit_v  & ~dcache_early_miss_v;
+  assign cache_miss_v_o         = early_v_o & ~dcache_early_fencei &  dcache_early_miss_v;
+  assign fencei_clean_v_o       = early_v_o &  dcache_early_fencei &  dcache_early_hit_v;
+  assign fencei_dirty_v_o       = early_v_o &  dcache_early_fencei & ~dcache_early_hit_v;
 
   assign store_page_fault_v_o   = store_page_fault_v;
   assign load_page_fault_v_o    = load_page_fault_v;

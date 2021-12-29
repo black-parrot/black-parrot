@@ -118,6 +118,7 @@ module bp_be_dcache
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
    )
+<<<<<<< HEAD
   (input                                             clk_i
    , input                                           reset_i
 
@@ -627,6 +628,8 @@ module bp_be_dcache
       // Cached load / store
        | (cached_op_tv_r & ~any_miss_tv)
        );
+  // fence.i
+  assign early_fencei_o = decode_tv_r.fencei_op;
 
   assign early_miss_v_o = v_tv_r & cache_req_yumi_i & ~early_hit_v_o;
 

@@ -210,7 +210,7 @@ module bp_fe_top
   assign attaboy_v_li               = attaboy_v;
   assign attaboy_pc_li              = fe_cmd_cast_i.vaddr;
 
-  logic instr_access_fault_v, instr_page_fault_v;
+  logic instr_misaligned_v, instr_access_fault_v, instr_page_fault_v;
   logic ptag_v_li, ptag_uncached_li, ptag_nonidem_li, ptag_dram_li, ptag_miss_li;
   logic [ptag_width_p-1:0] ptag_li;
 
@@ -249,10 +249,15 @@ module bp_fe_top
 
      ,.r_v_o(ptag_v_li)
      ,.r_ptag_o(ptag_li)
-     ,.r_miss_o(ptag_miss_li)
+     ,.r_instr_miss_o(ptag_miss_li)
+     ,.r_load_miss_o()
+     ,.r_store_miss_o()
      ,.r_uncached_o(ptag_uncached_li)
      ,.r_nonidem_o(ptag_nonidem_li)
      ,.r_dram_o(ptag_dram_li)
+     ,.r_instr_misaligned_o(instr_misaligned_v)
+     ,.r_load_misaligned_o()
+     ,.r_store_misaligned_o()
      ,.r_instr_access_fault_o(instr_access_fault_v)
      ,.r_load_access_fault_o()
      ,.r_store_access_fault_o()
@@ -322,15 +327,15 @@ module bp_fe_top
      ,.stat_mem_o(stat_mem_o)
      );
 
-  logic itlb_miss_r, instr_access_fault_r, instr_page_fault_r;
+  logic itlb_miss_r, instr_misaligned_r, instr_access_fault_r, instr_page_fault_r;
   bsg_dff_reset
-   #(.width_p(3))
+   #(.width_p(4))
    fault_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({ptag_miss_li, instr_access_fault_v, instr_page_fault_v})
-     ,.data_o({itlb_miss_r, instr_access_fault_r, instr_page_fault_r})
+     ,.data_i({ptag_miss_li, instr_misaligned_v, instr_access_fault_v, instr_page_fault_v})
+     ,.data_o({itlb_miss_r, instr_misaligned_r, instr_access_fault_r, instr_page_fault_r})
      );
 
   logic v_if1_r, v_if2_r;
@@ -348,7 +353,7 @@ module bp_fe_top
 
   wire icache_miss    = v_if2_r & ~icache_data_v_lo;
   wire queue_miss     = v_if2_r & ~fe_queue_ready_i;
-  wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
+  wire fe_exception_v = v_if2_r & (instr_misaligned_r | instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
   wire fe_instr_v     = v_if2_r & icache_data_v_lo;
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
 
@@ -372,11 +377,13 @@ module bp_fe_top
         fe_queue_cast_o.msg.exception.vaddr          = fetch_pc_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss
-                                                       : instr_page_fault_r
-                                                         ? e_instr_page_fault
-                                                         : instr_access_fault_r
-                                                           ? e_instr_access_fault
-                                                           : e_icache_miss;
+                                                       : instr_misaligned_r
+                                                         ? e_instr_misaligned
+                                                           : instr_page_fault_r
+                                                             ? e_instr_page_fault
+                                                             : instr_access_fault_r
+                                                               ? e_instr_access_fault
+                                                                 : e_icache_miss;
       end
     else
       begin
