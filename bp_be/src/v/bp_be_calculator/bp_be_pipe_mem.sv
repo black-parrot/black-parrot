@@ -104,6 +104,7 @@ module bp_be_pipe_mem
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
+  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
 
   // Cast input and output ports
   bp_be_dispatch_pkt_s   reservation;
@@ -177,6 +178,22 @@ module bp_be_pipe_mem
   assign dtlb_w_vtag     = commit_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign dtlb_w_entry    = commit_pkt.pte_leaf;
 
+  // Some duplicated decode logic from dcache_decoder. Can send this information
+  //   as part of dcache_pkt to reduce overhead
+  logic [1:0] size;
+  always_comb
+    unique case (decode.fu_op)
+      e_dcache_op_lb, e_dcache_op_lbu, e_dcache_op_sb: size = 2'b00;
+      e_dcache_op_lh, e_dcache_op_lhu, e_dcache_op_sh: size = 2'b01;
+      e_dcache_op_amoswapw, e_dcache_op_amoaddw, e_dcache_op_amoxorw
+      ,e_dcache_op_amoandw, e_dcache_op_amoorw, e_dcache_op_amominw
+      ,e_dcache_op_amomaxw, e_dcache_op_amominuw, e_dcache_op_amomaxuw
+      ,e_dcache_op_lw, e_dcache_op_lwu, e_dcache_op_sw
+      ,e_dcache_op_flw, e_dcache_op_fsw
+      ,e_dcache_op_lrw, e_dcache_op_scw:               size = 2'b10;
+      default: size = 2'b11;
+    endcase
+
   logic [ptag_width_p-1:0] dtlb_ptag_lo;
   bp_mmu
    #(.bp_params_p(bp_params_p)
@@ -204,6 +221,7 @@ module bp_be_pipe_mem
      ,.r_load_i(is_load)
      ,.r_store_i(is_store)
      ,.r_eaddr_i(eaddr)
+     ,.r_size_i(size)
 
      ,.r_v_o(dtlb_v_lo)
      ,.r_ptag_o(dtlb_ptag_lo)
@@ -335,7 +353,7 @@ module bp_be_pipe_mem
         dcache_pkt_v           = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
         dcache_pkt.rd_addr     = instr.t.rtype.rd_addr;
         dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
-        dcache_pkt.page_offset = eaddr[0+:page_offset_width_gp];
+        dcache_pkt.vaddr       = eaddr[0+:vaddr_width_p];
         dcache_pkt.data        = rs2;
         dcache_ptag            = dtlb_ptag_lo;
         dcache_ptag_v          = dtlb_v_lo;
