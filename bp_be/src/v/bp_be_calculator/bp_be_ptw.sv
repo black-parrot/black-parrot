@@ -12,7 +12,7 @@ module bp_be_ptw
    , parameter `BSG_INV_PARAM(pte_size_in_bytes_p)
    , parameter `BSG_INV_PARAM(page_idx_width_p)
 
-   , localparam dcache_pkt_width_lp   = $bits(bp_be_dcache_pkt_s)
+   , localparam dcache_pkt_width_lp   = `bp_be_dcache_pkt_width(vaddr_width_p)
    , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    )
@@ -43,6 +43,7 @@ module bp_be_ptw
   );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   `bp_cast_o(bp_be_dcache_pkt_s, dcache_pkt);
 
   enum logic [2:0] {e_idle, e_send_load, e_send_tag, e_wait_load, e_recv_load, e_writeback} state_n, state_r;
@@ -94,7 +95,7 @@ module bp_be_ptw
   localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_p);
   assign dcache_v_o                    = (state_r == e_send_load);
   assign dcache_pkt_cast_o.opcode      = e_dcache_op_ptw_ld;
-  assign dcache_pkt_cast_o.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
+  assign dcache_pkt_cast_o.vaddr       = vaddr_width_p'({partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)});
   assign dcache_pkt_cast_o.data        = '0;
   assign dcache_pkt_cast_o.rd_addr     = '0;
 

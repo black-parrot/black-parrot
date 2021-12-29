@@ -116,7 +116,7 @@ module bp_be_dcache
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
 
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    )
 <<<<<<< HEAD
   (input                                             clk_i
@@ -262,6 +262,7 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
   /////////////////////////////////////////////////////////////////////////////
+  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   `bp_cast_i(bp_be_dcache_pkt_s, dcache_pkt);
 
   bp_be_dcache_decode_s decode_lo;
@@ -272,9 +273,10 @@ module bp_be_dcache
      ,.decode_o(decode_lo)
      );
 
-  wire [page_offset_width_gp-1:0]  page_offset = dcache_pkt_cast_i.page_offset;
+  wire [page_offset_width_gp-1:0]  page_offset = dcache_pkt_cast_i.vaddr[0+:page_offset_width_gp];
   wire [sindex_width_lp-1:0]       vaddr_index = page_offset[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0]       vaddr_bank  = page_offset[byte_offset_width_lp+:bindex_width_lp];
+  wire [vtag_width_p-1:0]          vaddr_tag   = dcache_pkt_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
 
   ///////////////////////////
   // Tag Mem Storage

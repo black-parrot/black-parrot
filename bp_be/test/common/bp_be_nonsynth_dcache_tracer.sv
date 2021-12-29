@@ -17,7 +17,7 @@ module bp_be_nonsynth_dcache_tracer
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
    , localparam bank_width_lp = block_width_p / assoc_p
-   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    , localparam wbuf_entry_width_lp = `bp_be_dcache_wbuf_entry_width(paddr_width_p, assoc_p)
    )
   (  input                                                clk_i
@@ -90,31 +90,18 @@ module bp_be_nonsynth_dcache_tracer
    );
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
-  bp_be_dcache_pkt_s dcache_pkt_cast_i;
-  assign dcache_pkt_cast_i = dcache_pkt_i;
-
-  bp_cache_req_s cache_req_cast_o;
-  bp_cache_req_metadata_s cache_req_metadata_cast_o;
-  assign cache_req_cast_o = cache_req_o;
-  assign cache_req_metadata_cast_o = cache_req_metadata_o;
-
-  bp_cache_data_mem_pkt_s data_mem_pkt_cast_i;
-  bp_cache_tag_mem_pkt_s tag_mem_pkt_cast_i;
-  bp_cache_stat_mem_pkt_s stat_mem_pkt_cast_i;
-  assign data_mem_pkt_cast_i = data_mem_pkt_i;
-  assign tag_mem_pkt_cast_i = tag_mem_pkt_i;
-  assign stat_mem_pkt_cast_i = stat_mem_pkt_i;
-
-  logic [assoc_p-1:0][bank_width_lp-1:0] data_mem_cast_o;
-  bp_cache_tag_info_s tag_mem_info_cast_o;
-  bp_cache_tag_info_s stat_mem_info_cast_o;
-  assign data_mem_cast_o = data_mem_o;
-  assign tag_mem_info_cast_o = tag_mem_o;
-  assign stat_mem_info_cast_o = stat_mem_o;
-
+  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
+  `bp_cast_i(bp_be_dcache_pkt_s, dcache_pkt);
+  `bp_cast_o(bp_cache_req_s, cache_req);
+  `bp_cast_o(bp_cache_req_metadata_s, cache_req_metadata);
+  `bp_cast_i(bp_cache_data_mem_pkt_s, data_mem_pkt);
+  `bp_cast_i(bp_cache_tag_mem_pkt_s, tag_mem_pkt);
+  `bp_cast_i(bp_cache_stat_mem_pkt_s, stat_mem_pkt);
+  `bp_cast_o(logic [assoc_p-1:0][bank_width_lp-1:0], data_mem);
+  `bp_cast_o(bp_cache_tag_info_s, tag_mem_info);
+  `bp_cast_o(bp_cache_stat_info_s, stat_mem_info);
   `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, assoc_p);
-  bp_be_dcache_wbuf_entry_s wbuf_entry_out_cast;
-  assign wbuf_entry_out_cast = wbuf_entry_out;
+  `bp_cast_o(bp_be_dcache_wbuf_entry_s, wbuf_entry);
 
   integer info_file, eng_file, mem_file, acc_file;
   string info_file_name, eng_file_name, mem_file_name, acc_file_name;
@@ -163,7 +150,7 @@ module bp_be_nonsynth_dcache_tracer
       if (final_v_o & decode_dm_r.load_op)
         $fwrite(acc_file, "%12t | final load: %x\n", $time, final_data_o);
       if (wbuf_yumi_li)
-        $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_out_cast);
+        $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_cast_o);
 
       if (cache_req_yumi_i)
         $fwrite(eng_file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);

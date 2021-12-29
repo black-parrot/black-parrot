@@ -10,13 +10,14 @@ module bp_be_dcache_decoder
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    , localparam dcache_pipeline_struct_width_lp = $bits(bp_be_dcache_decode_s)
    )
   (input [dcache_pkt_width_lp-1:0]                      pkt_i
    , output logic [dcache_pipeline_struct_width_lp-1:0] decode_o
    );
 
+  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = pkt_i;
 
@@ -82,15 +83,15 @@ module bp_be_dcache_decoder
 
     // Size decoding
     unique case (dcache_pkt.opcode)
+      e_dcache_op_lb, e_dcache_op_lbu, e_dcache_op_sb: decode_cast_o.byte_op   = 1'b1;
+      e_dcache_op_lh, e_dcache_op_lhu, e_dcache_op_sh: decode_cast_o.half_op   = 1'b1;
       e_dcache_op_amoswapw, e_dcache_op_amoaddw, e_dcache_op_amoxorw
       ,e_dcache_op_amoandw, e_dcache_op_amoorw, e_dcache_op_amominw
       ,e_dcache_op_amomaxw, e_dcache_op_amominuw, e_dcache_op_amomaxuw
       ,e_dcache_op_lw, e_dcache_op_lwu, e_dcache_op_sw
       ,e_dcache_op_flw, e_dcache_op_fsw
       ,e_dcache_op_lrw, e_dcache_op_scw:               decode_cast_o.word_op   = 1'b1;
-      e_dcache_op_lh, e_dcache_op_lhu, e_dcache_op_sh: decode_cast_o.half_op   = 1'b1;
-      e_dcache_op_lb, e_dcache_op_lbu, e_dcache_op_sb: decode_cast_o.byte_op   = 1'b1;
-      default:                                         decode_cast_o.double_op = 1'b1;
+      default: decode_cast_o.double_op = 1'b1;
     endcase
 
     // The destination register of the cache request

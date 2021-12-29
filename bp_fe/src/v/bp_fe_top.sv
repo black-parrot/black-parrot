@@ -219,6 +219,7 @@ module bp_fe_top
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
   wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
+  wire [1:0] r_size_li = 2'b10;
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(itlb_els_4k_p)
@@ -246,6 +247,7 @@ module bp_fe_top
      ,.r_load_i('0)
      ,.r_store_i('0)
      ,.r_eaddr_i(r_eaddr_li)
+     ,.r_size_i(r_size_li)
 
      ,.r_v_o(ptag_v_li)
      ,.r_ptag_o(ptag_li)
