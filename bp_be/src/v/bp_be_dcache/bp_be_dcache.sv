@@ -397,8 +397,8 @@ module bp_be_dcache
 
   wire [dword_width_gp-1:0] st_data_tl = decode_tl_r.float_op ? fp_raw_data : data_tl_r;
 
-  wire cached_op_tl   = ~ptag_uncached_i & ~decode_tl_r.fencei_op & ~decode_tl_r.l2_op;
-  wire uncached_op_tl =  ptag_uncached_i | decode_tl_r.l2_op;
+  wire cached_op_tl   = ~ptag_uncached_i & ~decode_tl_r.fencei_op & ~decode_tl_r.uncached_op;
+  wire uncached_op_tl =  ptag_uncached_i | decode_tl_r.uncached_op;
   wire dram_op_tl     =  ptag_dram_i;
 
   /////////////////////////////////////////////////////////////////////////////
@@ -607,7 +607,7 @@ module bp_be_dcache
   wire lr_miss_tv     = decode_tv_r.lr_op & ~store_hit_tv & ~uncached_op_tv_r;
   wire fencei_miss_tv = decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
 
-  wire any_miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | fencei_miss_tv;
+  wire any_miss_tv = load_miss_tv | store_miss_tv | fencei_miss_tv;
 
   assign early_data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
     ? (sc_success_tv != 1'b1)
@@ -882,21 +882,21 @@ module bp_be_dcache
   `bp_cast_o(bp_dcache_req_s, cache_req);
   `bp_cast_o(bp_dcache_req_metadata_s, cache_req_metadata);
 
-  wire cached_req          = (store_miss_tv | load_miss_tv | lr_miss_tv);
+  wire cached_req          = (store_miss_tv | load_miss_tv);
   wire fencei_req          = fencei_miss_tv;
-  wire l2_amo_req          = decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_hit_tv_r & (decode_tv_r.rd_addr != '0);
-  wire uncached_load_req   = ~decode_tv_r.amo_op & decode_tv_r.load_op & uncached_op_tv_r & ~uncached_hit_tv_r;
+  wire uncached_amo_req    = decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_hit_tv_r & (decode_tv_r.rd_addr != '0);
+  wire uncached_load_req   = decode_tv_r.load_op & uncached_op_tv_r & ~uncached_hit_tv_r;
                              // Regular uncached store
-  wire uncached_store_req  = (~decode_tv_r.amo_op & decode_tv_r.store_op & uncached_op_tv_r)
+  wire uncached_store_req  = (decode_tv_r.store_op & uncached_op_tv_r & ~uncached_hit_tv_r)
                              // L2 amo uncached store
                              || (decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_hit_tv_r & (decode_tv_r.rd_addr == '0));
   wire wt_req              = (decode_tv_r.store_op & ~sc_fail_tv & ~uncached_op_tv_r & (writethrough_p == 1));
 
   // Uncached stores and writethrough requests are non-blocking
-  wire nonblocking_req     = uncached_store_req | wt_req;
+  wire nonblocking_req     = ~uncached_amo_req & (uncached_store_req | wt_req);
 
   assign cache_req_v_o =
-    v_tv_r & (|{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req});
+    v_tv_r & (|{cached_req, fencei_req, uncached_amo_req, uncached_load_req, uncached_store_req, wt_req});
 
   always_comb
     begin
@@ -937,20 +937,18 @@ module bp_be_dcache
         default: cache_req_cast_o.subop = e_req_store;
       endcase
 
-      if (load_miss_tv)
-        cache_req_cast_o.msg_type = e_miss_load;
-      else if (lr_miss_tv)
-        cache_req_cast_o.msg_type = e_miss_store;
+      if (fencei_miss_tv)
+        cache_req_cast_o.msg_type = e_cache_flush;
       else if (store_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
-      else if (fencei_miss_tv)
-        cache_req_cast_o.msg_type = e_cache_flush;
-      else if (l2_amo_req)
+      else if (load_miss_tv)
+        cache_req_cast_o.msg_type = e_miss_load;
+      else if (uncached_amo_req)
         cache_req_cast_o.msg_type = e_uc_amo;
-      else if (uncached_load_req)
-        cache_req_cast_o.msg_type = e_uc_load;
       else if (uncached_store_req)
         cache_req_cast_o.msg_type = e_uc_store;
+      else if (uncached_load_req)
+        cache_req_cast_o.msg_type = e_uc_load;
       else
         cache_req_cast_o.msg_type = e_wt_store;
     end
