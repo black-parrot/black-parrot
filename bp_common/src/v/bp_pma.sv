@@ -23,9 +23,6 @@ module bp_pma
   wire is_io_addr    = (ptag_i[ptag_width_p-1:dtag_width_p] != '0);
   wire is_uc_addr    = (ptag_i[ptag_width_p-1:ctag_width_p] != '0);
 
-  wire [50:0] tmp1 = ptag_i[ptag_width_p-1:dtag_width_p];
-  wire [50:0] tmp2 = ptag_i[ptag_width_p-1:ctag_width_p];
-
   assign uncached_o = ptag_v_i & (is_uc_addr | is_io_addr | is_local_addr | uncached_mode_i);
   // For now, uncached mode also means non-idempotency. Will reevaluate if we need
   //   a high-performance, unsafe, uncached mode

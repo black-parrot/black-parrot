@@ -151,12 +151,14 @@ module bp_mmu
   wire any_access_fault_v   = |{instr_access_fault_v, load_access_fault_v, store_access_fault_v};
 
   // Page faults
-  wire instr_exe_page_fault_v  = ~tlb_entry_lo.x;
-  wire instr_priv_page_fault_v = ((priv_mode_r == `PRIV_MODE_S) & tlb_entry_lo.u)
-                                 | ((priv_mode_r == `PRIV_MODE_U) & ~tlb_entry_lo.u);
-  wire data_priv_page_fault = ((priv_mode_r == `PRIV_MODE_S) & ~sum_r & tlb_entry_lo.u)
-                                | ((priv_mode_r == `PRIV_MODE_U) & ~tlb_entry_lo.u);
-  wire data_write_page_fault = r_store_r & (~tlb_entry_lo.w | ~tlb_entry_lo.d);
+  wire instr_exe_page_fault_v  = tlb_v_lo & ~tlb_entry_lo.x;
+  wire instr_priv_page_fault_v = tlb_v_lo & (((priv_mode_r == `PRIV_MODE_S) & tlb_entry_lo.u)
+                                             | ((priv_mode_r == `PRIV_MODE_U) & ~tlb_entry_lo.u)
+                                            );
+  wire data_priv_page_fault = tlb_v_lo & (((priv_mode_r == `PRIV_MODE_S) & ~sum_r & tlb_entry_lo.u)
+                                           | ((priv_mode_r == `PRIV_MODE_U) & ~tlb_entry_lo.u)
+                                          );
+  wire data_write_page_fault = r_store_r & tlb_v_lo & (~tlb_entry_lo.w | ~tlb_entry_lo.d);
   wire instr_page_fault_v = trans_en_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v);
   wire load_page_fault_v  = trans_en_r & r_load_r & (data_priv_page_fault | eaddr_fault_v);
   wire store_page_fault_v = trans_en_r & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_fault_v);
@@ -164,16 +166,16 @@ module bp_mmu
 
   assign r_v_o                   = r_v_r &  tlb_v_lo & ~any_access_fault_v & ~any_page_fault_v;
   assign r_ptag_o                = ptag_lo;
-  assign r_miss_o                = r_v_r & ~tlb_v_lo;
-  assign r_uncached_o            = r_v_r & tlb_v_lo & ptag_uncached_lo;
-  assign r_nonidem_o             = r_v_r & tlb_v_lo & ptag_nonidem_lo;
-  assign r_dram_o                = r_v_r & tlb_v_lo & ptag_dram_lo;
-  assign r_instr_access_fault_o  = r_v_r & tlb_v_lo & instr_access_fault_v;
-  assign r_load_access_fault_o   = r_v_r & tlb_v_lo & load_access_fault_v;
-  assign r_store_access_fault_o  = r_v_r & tlb_v_lo & store_access_fault_v;
-  assign r_instr_page_fault_o    = r_v_r & tlb_v_lo & instr_page_fault_v;
-  assign r_load_page_fault_o     = r_v_r & tlb_v_lo & load_page_fault_v;
-  assign r_store_page_fault_o    = r_v_r & tlb_v_lo & store_page_fault_v;
+  assign r_miss_o                = r_v_r & ~tlb_v_lo & ~any_access_fault_v & ~any_page_fault_v;;
+  assign r_uncached_o            = r_v_r &  tlb_v_lo & ptag_uncached_lo;
+  assign r_nonidem_o             = r_v_r &  tlb_v_lo & ptag_nonidem_lo;
+  assign r_dram_o                = r_v_r &  tlb_v_lo & ptag_dram_lo;
+  assign r_instr_access_fault_o  = r_v_r & instr_access_fault_v;
+  assign r_load_access_fault_o   = r_v_r & load_access_fault_v;
+  assign r_store_access_fault_o  = r_v_r & store_access_fault_v;
+  assign r_instr_page_fault_o    = r_v_r & instr_page_fault_v;
+  assign r_load_page_fault_o     = r_v_r & load_page_fault_v;
+  assign r_store_page_fault_o    = r_v_r & store_page_fault_v;
 
 endmodule
 

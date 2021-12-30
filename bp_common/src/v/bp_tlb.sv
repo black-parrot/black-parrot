@@ -73,10 +73,13 @@ module bp_tlb
      );
   wire [r_entry_low_bits_lp-1:0] passthrough_low_bits = vtag_r[0+:r_entry_low_bits_lp];
 
+  wire fill_gigapage = w_v_li & entry.gigapage & (els_1g_p > 0);
+  wire fill_kilopage = w_v_li & ~fill_gigapage;
+
   logic [els_4k_p-1:0] tag_r_match_4k_lo;
   logic [els_4k_p-1:0] tag_empty_4k_lo;
   logic [els_4k_p-1:0] repl_way_4k_lo;
-  wire [els_4k_p-1:0] tag_4k_w_v_li = ({els_4k_p{w_v_li & ~entry.gigapage}} & repl_way_4k_lo) | {els_4k_p{flush_4k_li}};
+  wire [els_4k_p-1:0] tag_4k_w_v_li = ({els_4k_p{fill_kilopage}} & repl_way_4k_lo) | {els_4k_p{flush_4k_li}};
   bsg_cam_1r1w_tag_array
    #(.width_p(vtag_width_p), .els_p(els_4k_p))
    tag_array_4k
@@ -102,7 +105,7 @@ module bp_tlb
 
      ,.read_v_i(tag_r_match_4k_lo)
 
-     ,.alloc_v_i(w_v_li & ~entry.gigapage)
+     ,.alloc_v_i(fill_kilopage)
      ,.alloc_empty_i(tag_empty_4k_lo)
      ,.alloc_v_o(repl_way_4k_lo)
      );
@@ -110,7 +113,7 @@ module bp_tlb
   logic [els_1g_lp-1:0] tag_r_match_1g_lo;
   logic [els_1g_lp-1:0] tag_empty_1g_lo;
   logic [els_1g_lp-1:0] repl_way_1g_lo;
-  wire [els_1g_lp-1:0] tag_1g_w_v_li = ({els_1g_lp{w_v_li & entry.gigapage}} & repl_way_1g_lo) | {els_1g_lp{flush_1g_li}};
+  wire [els_1g_lp-1:0] tag_1g_w_v_li = ({els_1g_lp{fill_gigapage}} & repl_way_1g_lo) | {els_1g_lp{flush_1g_li}};
   bsg_cam_1r1w_tag_array
    #(.width_p(vtag_width_p), .els_p(els_1g_p))
    tag_array_1g
@@ -136,14 +139,14 @@ module bp_tlb
 
      ,.read_v_i(tag_r_match_1g_lo)
 
-     ,.alloc_v_i(w_v_li & entry.gigapage)
+     ,.alloc_v_i(fill_gigapage)
      ,.alloc_empty_i(tag_empty_1g_lo)
      ,.alloc_v_o(repl_way_1g_lo)
      );
 
   logic [els_4k_p-1:0][r_entry_high_bits_lp-1:0] data_4k_high_r;
   logic [els_4k_p-1:0][r_entry_low_bits_lp-1:0] data_4k_low_r;
-  wire [els_4k_p-1:0] mem_4k_w_v_li = ({els_4k_p{w_v_li & ~entry.gigapage}} & repl_way_4k_lo);
+  wire [els_4k_p-1:0] mem_4k_w_v_li = ({els_4k_p{fill_kilopage}} & repl_way_4k_lo);
   for (genvar i = 0; i < els_4k_p; i++)
     begin : mem_array_4k
       bsg_dff_en
@@ -157,7 +160,7 @@ module bp_tlb
     end
 
   logic [els_1g_lp-1:0][r_entry_high_bits_lp-1:0] data_1g_high_r;
-  wire [els_1g_lp-1:0] mem_1g_w_v_li = ({els_1g_lp{w_v_li & entry.gigapage}} & repl_way_1g_lo);
+  wire [els_1g_lp-1:0] mem_1g_w_v_li = ({els_1g_lp{fill_gigapage}} & repl_way_1g_lo);
   for (genvar i = 0; i < els_1g_p; i++)
     begin : mem_array_1g
       bsg_dff_en

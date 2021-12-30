@@ -283,13 +283,15 @@ module bp_nonsynth_cosim
     end
 
   always_ff @(posedge cosim_clk_i)
-    if (trace_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
+    if (trace_en_i & commit_fifo_yumi_li & commit_pc_r != '0)
       begin
         $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, instr_cnt);
-        if (commit_fifo_yumi_li & commit_ird_w_v_r)
+        if (instret_v_r & commit_ird_w_v_r)
           $fwrite(file, "%x %x", commit_instr_r.rd_addr, ird_data_r[commit_instr_r.rd_addr]);
-        if (commit_fifo_yumi_li & commit_frd_w_v_r)
+        if (instret_v_r & commit_frd_w_v_r)
           $fwrite(file, "%x %x", commit_instr_r.rd_addr, frd_raw_li[commit_instr_r.rd_addr]);
+        if (trap_v_r)
+          $fwrite(file, "   %x %x <- trap", cause_r, mstatus_r);
         $fwrite(file, "\n");
       end
 

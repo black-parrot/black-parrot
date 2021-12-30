@@ -1,6 +1,38 @@
 
+# These test requires more dromajo emulation
+# domain_fault
+# uncached_mode
+# These test should be run with L1 AMOs
+#  amo_nonblocking
+#  amo_interrupt
+#  These tests are expected to fail
+#  unhandled_trap
 MISC_TESTS := \
-  cache_hammer
+  hello_world           \
+  instr_coherence       \
+  cache_hammer          \
+  jalr_illegal          \
+  satp_nofence          \
+  timer_interrupt       \
+  loop                  \
+  cache_flush           \
+  stream_hammer         \
+  eaddr_fault           \
+  paging                \
+  mapping               \
+  mstatus_fs            \
+  wfi                   \
+  divide_hazard         \
+  aviary_rom            \
+  readonly              \
+  epc                   \
+  virtual               \
+  constructor           \
+  template              \
+  unwinding             \
+  vector                \
+  map                   \
+
 MISC_TESTLIST := $(addprefix bp-tests@, $(MISC_TESTS))
 
 RV64_P_ISA_TESTS := \
