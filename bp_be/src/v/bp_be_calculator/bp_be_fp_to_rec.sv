@@ -9,13 +9,11 @@ module bp_be_fp_to_rec
    `declare_bp_proc_params(bp_params_p)
    )
   (// RAW floating point input
-   input [dword_width_gp-1:0]      raw_i
-   // Precision of the raw input value
-   , input                        raw_sp_not_dp_i
-
-   , output                       rec_sp_not_dp_o
-   , output [dp_rec_width_gp-1:0] rec_o
+   input [dword_width_gp-1:0]     raw_i
+   , output [dpath_width_gp-1:0]  reg_o
    );
+
+  `bp_cast_o(bp_be_fp_reg_s, reg);
 
   // The control bits control tininess, which is fixed in RISC-V
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
@@ -63,10 +61,9 @@ module bp_be_fp_to_rec
                        };
 
   wire nanbox_v_li = &raw_i[word_width_gp+:word_width_gp];
-  wire encode_as_sp = nanbox_v_li | raw_sp_not_dp_i;
+  wire encode_as_sp = nanbox_v_li;
 
-  assign rec_sp_not_dp_o = encode_as_sp;
-  assign rec_o           = encode_as_sp ? sp2dp_rec : in_dp_rec_li;
+  assign reg_cast_o = '{tag: encode_as_sp ? e_fp_rne : e_fp_full, rec: encode_as_sp ? sp2dp_rec : in_dp_rec_li};
 
 endmodule
 
