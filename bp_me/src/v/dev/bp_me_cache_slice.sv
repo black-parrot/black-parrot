@@ -61,7 +61,7 @@ module bp_me_cache_slice
   bsg_cache_pkt_s [l2_banks_p-1:0] cache_pkt_li;
   logic [l2_banks_p-1:0] cache_pkt_v_li, cache_pkt_ready_and_lo;
   logic [l2_banks_p-1:0][l2_data_width_p-1:0] cache_data_lo;
-  logic [l2_banks_p-1:0] cache_data_v_lo, cache_data_yumi_li;
+  logic [l2_banks_p-1:0] cache_data_v_lo, cache_data_ready_and_li;
 
   bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p))

@@ -41,10 +41,16 @@ module bsg_fifo_1r1w_periodic
   // VCS 2016.06 incorrectly orders assignments if these were 'assign' statements, so keep them
   //   in the always_comb...
   always_comb
-    begin
-      b_v_o         = accept_input & a_v_i;
-      a_ready_and_o = accept_input & b_ready_and_i;
-    end
+    if (fast2slow_lp)
+      begin
+        a_ready_and_o = accept_input & b_ready_and_i;
+        b_v_o         = a_v_i;
+      end
+    else
+      begin
+        a_ready_and_o = b_ready_and_i;
+        b_v_o         = accept_input & a_v_i;
+      end
 
   if ((a_period_p != 1) && (b_period_p != 1))
     $error("Only 1:N or N:1 division ratios are currently supported");

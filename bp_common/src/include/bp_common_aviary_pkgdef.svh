@@ -304,8 +304,8 @@
                              | (1 << e_amo_fetch_logic)
                              | (1 << e_amo_fetch_arithmetic)
       ,l2_data_width       : 64
-      ,l2_sets             : 512
-      ,l2_assoc            : 16
+      ,l2_sets             : 128
+      ,l2_assoc            : 8
       ,l2_block_width      : 512
       ,l2_fill_width       : 64
       ,l2_outstanding_reqs : 6
