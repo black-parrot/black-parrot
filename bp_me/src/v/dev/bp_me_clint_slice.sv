@@ -9,20 +9,20 @@ module bp_me_clint_slice
  import bsg_wormhole_router_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (input                                                clk_i
    , input                                              reset_i
 
    , input [core_id_width_p-1:0]                        id_i
 
-   , input [xce_mem_header_width_lp-1:0]                mem_cmd_header_i
+   , input [mem_header_width_lp-1:0]                    mem_cmd_header_i
    , input [dword_width_gp-1:0]                         mem_cmd_data_i
    , input                                              mem_cmd_v_i
    , output logic                                       mem_cmd_ready_and_o
    , input                                              mem_cmd_last_i
 
-   , output logic [xce_mem_header_width_lp-1:0]         mem_resp_header_o
+   , output logic [mem_header_width_lp-1:0]             mem_resp_header_o
    , output logic [dword_width_gp-1:0]                  mem_resp_data_o
    , output logic                                       mem_resp_v_o
    , input                                              mem_resp_ready_and_i
@@ -34,7 +34,7 @@ module bp_me_clint_slice
    , output logic                                       external_irq_o
    );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
   logic [dev_addr_width_gp-1:0] addr_lo;

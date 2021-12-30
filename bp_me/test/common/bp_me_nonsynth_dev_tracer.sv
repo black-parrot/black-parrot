@@ -18,7 +18,7 @@ module bp_me_nonsynth_dev_tracer
 
     , parameter trace_file_p = "dev"
 
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -27,23 +27,23 @@ module bp_me_nonsynth_dev_tracer
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [xce_mem_header_width_lp-1:0]            mem_cmd_header_i
+   , input [mem_header_width_lp-1:0]                mem_cmd_header_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , input                                          mem_cmd_ready_and_i
    , input                                          mem_cmd_last_i
 
-   , input [xce_mem_header_width_lp-1:0]            mem_resp_header_i
+   , input [mem_header_width_lp-1:0]                mem_resp_header_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
    , input                                          mem_resp_v_i
    , input                                          mem_resp_ready_and_i
    , input                                          mem_resp_last_i
   );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
-  `bp_cast_i(bp_bedrock_xce_mem_header_s, mem_cmd_header);
-  `bp_cast_i(bp_bedrock_xce_mem_header_s, mem_resp_header);
+  `bp_cast_i(bp_bedrock_mem_header_s, mem_cmd_header);
+  `bp_cast_i(bp_bedrock_mem_header_s, mem_resp_header);
 
   integer file;
   string file_name;

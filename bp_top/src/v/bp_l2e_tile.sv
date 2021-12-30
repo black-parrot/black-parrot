@@ -21,9 +21,8 @@ module bp_l2e_tile
  import bsg_wormhole_router_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
     , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    // Wormhole parameters
@@ -51,8 +50,8 @@ module bp_l2e_tile
    );
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
 
@@ -227,19 +226,19 @@ module bp_l2e_tile
     );
 
   // CCE-side CCE-Mem network connections
-  bp_bedrock_cce_mem_header_s cce_mem_cmd_header_lo;
-  logic [dword_width_gp-1:0] cce_mem_cmd_data_lo;
-  logic cce_mem_cmd_v_lo, cce_mem_cmd_last_lo, cce_mem_cmd_yumi_li;
-  bp_bedrock_cce_mem_header_s cce_mem_resp_header_li;
-  logic [dword_width_gp-1:0] cce_mem_resp_data_li;
-  logic cce_mem_resp_v_li, cce_mem_resp_ready_and_lo, cce_mem_resp_last_li;
+  bp_bedrock_mem_header_s mem_cmd_header_lo;
+  logic [dword_width_gp-1:0] mem_cmd_data_lo;
+  logic mem_cmd_v_lo, mem_cmd_last_lo, mem_cmd_yumi_li;
+  bp_bedrock_mem_header_s mem_resp_header_li;
+  logic [dword_width_gp-1:0] mem_resp_data_li;
+  logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
 
   // Device-side CCE-Mem network connections
   // dev_cmd[2:0] = {CCE loopback, CFG, memory (cache)}
-  bp_bedrock_cce_mem_header_s [2:0] dev_cmd_header_li;
+  bp_bedrock_mem_header_s [2:0] dev_cmd_header_li;
   logic [2:0][dword_width_gp-1:0] dev_cmd_data_li;
   logic [2:0] dev_cmd_v_li, dev_cmd_ready_and_lo, dev_cmd_last_li;
-  bp_bedrock_cce_mem_header_s [2:0] dev_resp_header_lo;
+  bp_bedrock_mem_header_s [2:0] dev_resp_header_lo;
   logic [2:0][dword_width_gp-1:0] dev_resp_data_lo;
   logic [2:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
 
@@ -300,11 +299,11 @@ module bp_l2e_tile
      );
 
   // Select destination of CCE-Mem command from CCE
-  logic [`BSG_SAFE_CLOG2(3)-1:0] cce_mem_cmd_dst_lo;
+  logic [`BSG_SAFE_CLOG2(3)-1:0] mem_cmd_dst_lo;
   bp_local_addr_s local_addr;
-  assign local_addr = cce_mem_cmd_header_lo.addr;
+  assign local_addr = mem_cmd_header_lo.addr;
   wire [dev_id_width_gp-1:0] device_cmd_li = local_addr.dev;
-  wire local_cmd_li    = (cce_mem_cmd_header_lo.addr < dram_base_addr_gp);
+  wire local_cmd_li    = (mem_cmd_header_lo.addr < dram_base_addr_gp);
 
   wire is_cfg_cmd      = local_cmd_li & (device_cmd_li == cfg_dev_gp);
   wire is_mem_cmd      = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
@@ -314,7 +313,7 @@ module bp_l2e_tile
    #(.width_p(3), .lo_to_hi_p(1))
    cmd_pe
     (.i({is_loopback_cmd, is_cfg_cmd, is_mem_cmd})
-     ,.addr_o(cce_mem_cmd_dst_lo)
+     ,.addr_o(mem_cmd_dst_lo)
      ,.v_o()
      );
 
@@ -324,7 +323,7 @@ module bp_l2e_tile
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(dword_width_gp)
-     ,.payload_width_p(cce_mem_payload_width_lp)
+     ,.payload_width_p(mem_payload_width_lp)
      ,.num_source_p(1)
      ,.num_sink_p(3)
      )
@@ -332,12 +331,12 @@ module bp_l2e_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.msg_header_i(cce_mem_cmd_header_lo)
-     ,.msg_data_i(cce_mem_cmd_data_lo)
-     ,.msg_v_i(cce_mem_cmd_v_lo)
-     ,.msg_yumi_o(cce_mem_cmd_yumi_li)
-     ,.msg_last_i(cce_mem_cmd_last_lo)
-     ,.msg_dst_i(cce_mem_cmd_dst_lo)
+     ,.msg_header_i(mem_cmd_header_lo)
+     ,.msg_data_i(mem_cmd_data_lo)
+     ,.msg_v_i(mem_cmd_v_lo)
+     ,.msg_yumi_o(mem_cmd_yumi_li)
+     ,.msg_last_i(mem_cmd_last_lo)
+     ,.msg_dst_i(mem_cmd_dst_lo)
 
      ,.msg_header_o(dev_cmd_header_li)
      ,.msg_data_o(dev_cmd_data_li)
@@ -349,7 +348,7 @@ module bp_l2e_tile
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(dword_width_gp)
-     ,.payload_width_p(cce_mem_payload_width_lp)
+     ,.payload_width_p(mem_payload_width_lp)
      ,.num_source_p(3)
      ,.num_sink_p(1)
      )
@@ -364,11 +363,11 @@ module bp_l2e_tile
      ,.msg_last_i(dev_resp_last_lo)
      ,.msg_dst_i(dev_resp_dst_lo)
 
-     ,.msg_header_o(cce_mem_resp_header_li)
-     ,.msg_data_o(cce_mem_resp_data_li)
-     ,.msg_v_o(cce_mem_resp_v_li)
-     ,.msg_ready_and_i(cce_mem_resp_ready_and_lo)
-     ,.msg_last_o(cce_mem_resp_last_li)
+     ,.msg_header_o(mem_resp_header_li)
+     ,.msg_data_o(mem_resp_data_li)
+     ,.msg_v_o(mem_resp_v_li)
+     ,.msg_ready_and_i(mem_resp_ready_and_lo)
+     ,.msg_last_o(mem_resp_last_li)
      );
 
   // CCE: Cache Coherence Engine
@@ -417,17 +416,17 @@ module bp_l2e_tile
 
      // CCE-MEM Interface
      // BedRock Burst protocol: ready&valid
-     ,.mem_resp_header_i(cce_mem_resp_header_li)
-     ,.mem_resp_data_i(cce_mem_resp_data_li)
-     ,.mem_resp_v_i(cce_mem_resp_v_li)
-     ,.mem_resp_ready_and_o(cce_mem_resp_ready_and_lo)
-     ,.mem_resp_last_i(cce_mem_resp_last_li)
+     ,.mem_resp_header_i(mem_resp_header_li)
+     ,.mem_resp_data_i(mem_resp_data_li)
+     ,.mem_resp_v_i(mem_resp_v_li)
+     ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
+     ,.mem_resp_last_i(mem_resp_last_li)
 
-     ,.mem_cmd_header_o(cce_mem_cmd_header_lo)
-     ,.mem_cmd_data_o(cce_mem_cmd_data_lo)
-     ,.mem_cmd_v_o(cce_mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(cce_mem_cmd_yumi_li)
-     ,.mem_cmd_last_o(cce_mem_cmd_last_lo)
+     ,.mem_cmd_header_o(mem_cmd_header_lo)
+     ,.mem_cmd_data_o(mem_cmd_data_lo)
+     ,.mem_cmd_v_o(mem_cmd_v_lo)
+     ,.mem_cmd_ready_and_i(mem_cmd_yumi_li)
+     ,.mem_cmd_last_o(mem_cmd_last_lo)
      );
 
   // CCE-Mem network to L2 Cache adapter

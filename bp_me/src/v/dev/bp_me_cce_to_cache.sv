@@ -23,7 +23,7 @@ module bp_me_cce_to_cache
  import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    // L2 organization and interface
    , localparam bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(daddr_width_p, l2_data_width_p)
@@ -32,13 +32,13 @@ module bp_me_cce_to_cache
    , input reset_i
 
    // BedRock Stream interface
-   , input  [cce_mem_header_width_lp-1:0]     mem_cmd_header_i
+   , input  [mem_header_width_lp-1:0]     mem_cmd_header_i
    , input  [l2_data_width_p-1:0]             mem_cmd_data_i
    , input                                    mem_cmd_v_i
    , output logic                             mem_cmd_ready_and_o
    , input                                    mem_cmd_last_i
 
-   , output [cce_mem_header_width_lp-1:0]     mem_resp_header_o
+   , output [mem_header_width_lp-1:0]     mem_resp_header_o
    , output [l2_data_width_p-1:0]             mem_resp_data_o
    , output logic                             mem_resp_v_o
    , input                                    mem_resp_ready_and_i
@@ -67,7 +67,7 @@ module bp_me_cce_to_cache
     $fatal(0, "l2 data width must be 64, 128, 256, or 512");
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bsg_cache_pkt_s cache_pkt;
@@ -85,7 +85,7 @@ module bp_me_cce_to_cache
   logic [lg_l2_sets_lp+lg_l2_ways_lp:0] tagst_sent_r, tagst_sent_n;
   logic [lg_l2_sets_lp+lg_l2_ways_lp:0] tagst_received_r, tagst_received_n;
 
-  bp_bedrock_cce_mem_header_s mem_cmd_header_lo;
+  bp_bedrock_mem_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
   logic mem_cmd_new_lo, mem_cmd_done_lo, mem_cmd_last_lo;
@@ -94,7 +94,7 @@ module bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(l2_data_width_p)
      ,.block_width_p(cce_block_width_p)
-     ,.payload_width_p(cce_mem_payload_width_lp)
+     ,.payload_width_p(mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp)
      ,.header_els_p(2)
@@ -217,11 +217,11 @@ module bp_me_cce_to_cache
     ,.data_o(cache_pkt_data_lo)
     );
 
-  bp_bedrock_cce_mem_header_s mem_resp_header_lo;
+  bp_bedrock_mem_header_s mem_resp_header_lo;
   logic mem_resp_v_lo, mem_resp_ready_and_lo;
   logic mem_resp_new_lo, mem_resp_done_lo;
   bsg_fifo_1r1w_small
-   #(.width_p($bits(bp_bedrock_cce_mem_header_s)), .els_p(4))
+   #(.width_p($bits(bp_bedrock_mem_header_s)), .els_p(4))
    stream_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -240,7 +240,7 @@ module bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(l2_data_width_p)
      ,.block_width_p(cce_block_width_p)
-     ,.payload_width_p(cce_mem_payload_width_lp)
+     ,.payload_width_p(mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp)
      )

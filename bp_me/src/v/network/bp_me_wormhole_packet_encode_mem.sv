@@ -17,7 +17,7 @@ module bp_me_wormhole_packet_encode_mem
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter `BSG_INV_PARAM(flit_width_p)
    , parameter `BSG_INV_PARAM(cord_width_p)
@@ -28,9 +28,9 @@ module bp_me_wormhole_packet_encode_mem
    , parameter payload_mask_p = 0
 
    , localparam mem_wormhole_header_lp =
-       `bp_bedrock_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_header_width_lp)
+       `bp_bedrock_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, mem_header_width_lp)
    )
-  (input [cce_mem_header_width_lp-1:0]   mem_header_i
+  (input [mem_header_width_lp-1:0]       mem_header_i
 
    , input [cord_width_p-1:0]            dst_cord_i
    , input [cid_width_p-1:0]             dst_cid_i
@@ -38,10 +38,10 @@ module bp_me_wormhole_packet_encode_mem
    , output [mem_wormhole_header_lp-1:0] wh_header_o
    );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_bedrock_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_header_s, mem, cce_block_width_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_mem_header_s, mem, cce_block_width_p);
 
-  bp_bedrock_cce_mem_header_s header_cast_i;
+  bp_bedrock_mem_header_s header_cast_i;
   bp_mem_wormhole_header_s header_cast_o;
 
   assign header_cast_i = mem_header_i;

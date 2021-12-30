@@ -15,7 +15,7 @@ module bp_me_cce_to_mem_link_recv
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter `BSG_INV_PARAM(flit_width_p)
    , parameter `BSG_INV_PARAM(cord_width_p)
@@ -32,13 +32,13 @@ module bp_me_cce_to_mem_link_recv
    , input [cord_width_p-1:0]                           dst_cord_i
    , input [cid_width_p-1:0]                            dst_cid_i
 
-   , output logic [cce_mem_header_width_lp-1:0]         mem_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]             mem_cmd_header_o
    , output logic [cce_block_width_p-1:0]               mem_cmd_data_o
    , output logic                                       mem_cmd_v_o
    , input                                              mem_cmd_yumi_i
    , output logic                                       mem_cmd_last_o
 
-   , input [cce_mem_header_width_lp-1:0]                mem_resp_header_i
+   , input [mem_header_width_lp-1:0]                    mem_resp_header_i
    , input [cce_block_width_p-1:0]                      mem_resp_data_i
    , input                                              mem_resp_v_i
    , output logic                                       mem_resp_ready_and_o
@@ -52,9 +52,9 @@ module bp_me_cce_to_mem_link_recv
   wire unused = &{mem_resp_last_i};
   assign mem_cmd_last_o = mem_cmd_v_o;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_bedrock_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_cce_mem_header_s, mem, cce_block_width_p);
-  localparam payload_width_lp = `bp_bedrock_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_cce_mem_header_s), cce_block_width_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_mem_header_s, mem, cce_block_width_p);
+  localparam payload_width_lp = `bp_bedrock_wormhole_payload_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, $bits(bp_bedrock_mem_header_s), cce_block_width_p);
 
   bp_mem_wormhole_packet_s mem_cmd_packet_lo;
   bp_mem_wormhole_packet_s mem_resp_packet_lo;

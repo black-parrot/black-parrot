@@ -42,8 +42,8 @@ module testbench
    , localparam trace_replay_data_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_gp)
    , localparam trace_rom_addr_width_lp = 20
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (output bit reset_i);
 
@@ -59,8 +59,8 @@ module testbench
   endfunction
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_gp);
 
   // Bit to deal with initial X->0 transition detection
@@ -116,7 +116,7 @@ module testbench
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo;
 
   // CCE Memory Interface - BedRock Stream
-  bp_bedrock_cce_mem_header_s mem_resp_header, mem_cmd_header;
+  bp_bedrock_mem_header_s mem_resp_header, mem_cmd_header;
   logic [dword_width_gp-1:0] mem_cmd_data, mem_resp_data;
   logic mem_resp_v, mem_resp_ready_and;
   logic mem_cmd_v, mem_cmd_ready_and;
@@ -607,11 +607,11 @@ module testbench
   );
 
   // Memory Command Buffer
-  bp_bedrock_cce_mem_header_s mem_cmd_lo;
+  bp_bedrock_mem_header_s mem_cmd_lo;
   logic [dword_width_gp-1:0] mem_cmd_data_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_yumi_li, mem_cmd_last_lo;
   bsg_fifo_1r1w_small
-  #(.width_p($bits(bp_bedrock_cce_mem_header_s)+dword_width_gp+1)
+  #(.width_p($bits(bp_bedrock_mem_header_s)+dword_width_gp+1)
     ,.els_p(mem_buffer_els_lp)
     )
   mem_cmd_stream_buffer
@@ -629,11 +629,11 @@ module testbench
   assign mem_cmd_yumi_li = mem_cmd_v_lo & mem_cmd_ready_and_li;
 
   // Memory Response Buffer
-  bp_bedrock_cce_mem_header_s mem_resp_li;
+  bp_bedrock_mem_header_s mem_resp_li;
   logic [dword_width_gp-1:0] mem_resp_data_li;
   logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li, mem_resp_yumi_lo;
   bsg_fifo_1r1w_small
-  #(.width_p($bits(bp_bedrock_cce_mem_header_s)+dword_width_gp+1)
+  #(.width_p($bits(bp_bedrock_mem_header_s)+dword_width_gp+1)
     ,.els_p(mem_buffer_els_lp)
     )
   mem_resp_stream_buffer
@@ -888,7 +888,7 @@ module testbench
 
 
   // Config
-  bp_bedrock_cce_mem_header_s cfg_mem_cmd_lo;
+  bp_bedrock_mem_header_s cfg_mem_cmd_lo;
   logic [dword_width_gp-1:0] cfg_mem_cmd_data_lo;
   logic cfg_mem_cmd_v_lo, cfg_mem_cmd_ready_and_li, cfg_mem_cmd_last_lo;
   logic cfg_mem_resp_v_lo;

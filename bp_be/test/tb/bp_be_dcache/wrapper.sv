@@ -18,8 +18,8 @@ module wrapper
    , parameter assoc_p = dcache_assoc_p
    , parameter block_width_p = dcache_block_width_p
    , parameter fill_width_p = dcache_fill_width_p
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
 
    , parameter debug_p=0
@@ -33,7 +33,7 @@ module wrapper
 
    , localparam dcache_pkt_width_lp=$bits(bp_be_dcache_pkt_s)
 
-   , localparam lce_cce_req_packet_width_lp = `bsg_wormhole_concentrator_packet_width(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_msg_width_lp)
+   , localparam lce_cce_req_packet_width_lp = `bsg_wormhole_concentrator_packet_width(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_header_width_lp+cce_block_width_p)
    , localparam lce_cce_req_packet_hdr_width_lp = (lce_cce_req_packet_width_lp-cce_block_width_p)
    )
    ( input                                             clk_i
@@ -51,21 +51,21 @@ module wrapper
    , output logic [num_caches_p-1:0][dword_width_gp-1:0] data_o
    , output logic [num_caches_p-1:0]                     v_o
 
-   , output logic [cce_mem_header_width_lp-1:0]        mem_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]            mem_cmd_header_o
    , output logic [l2_fill_width_p-1:0]                mem_cmd_data_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_and_i
    , output logic                                      mem_cmd_last_o
 
-   , input [cce_mem_header_width_lp-1:0]               mem_resp_header_i
+   , input [mem_header_width_lp-1:0]                   mem_resp_header_i
    , input [l2_fill_width_p-1:0]                       mem_resp_data_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_ready_and_o
    , input                                             mem_resp_last_i
    );
 
-   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
    // Cache to Rolly FIFO signals
    logic [num_caches_p-1:0] dcache_ready_lo;
@@ -405,7 +405,7 @@ module wrapper
          begin : uce
           bp_uce
            #(.bp_params_p(bp_params_p)
-             ,.uce_mem_data_width_p(l2_fill_width_p)
+             ,.mem_data_width_p(l2_fill_width_p)
              ,.assoc_p(assoc_p)
              ,.sets_p(sets_p)
              ,.block_width_p(block_width_p)

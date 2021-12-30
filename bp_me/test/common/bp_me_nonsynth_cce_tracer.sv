@@ -27,8 +27,8 @@ module bp_me_nonsynth_cce_tracer
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam lg_cce_way_groups_lp      = `BSG_SAFE_CLOG2(cce_way_groups_p)
 
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -58,13 +58,13 @@ module bp_me_nonsynth_cce_tracer
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [cce_mem_header_width_lp-1:0]            mem_resp_header_i
+   , input [mem_header_width_lp-1:0]            mem_resp_header_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
    , input                                          mem_resp_v_i
    , input                                          mem_resp_ready_and_i
    , input                                          mem_resp_last_i
 
-   , input [cce_mem_header_width_lp-1:0]            mem_cmd_header_i
+   , input [mem_header_width_lp-1:0]            mem_cmd_header_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , input                                          mem_cmd_ready_and_i
@@ -74,8 +74,8 @@ module bp_me_nonsynth_cce_tracer
   );
 
   // LCE-CCE and Mem-CCE Interface
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   // LCE-CCE Interface structs
   bp_bedrock_lce_req_header_s  lce_req;
@@ -86,8 +86,8 @@ module bp_me_nonsynth_cce_tracer
   bp_bedrock_lce_resp_payload_s    lce_resp_payload;
 
   // CCE-MEM Interface structs
-  bp_bedrock_cce_mem_header_s  mem_cmd, mem_resp;
-  bp_bedrock_cce_mem_payload_s     mem_cmd_payload, mem_resp_payload;
+  bp_bedrock_mem_header_s  mem_cmd, mem_resp;
+  bp_bedrock_mem_payload_s mem_cmd_payload, mem_resp_payload;
 
   assign lce_req             = lce_req_header_i;
   assign lce_resp            = lce_resp_header_i;

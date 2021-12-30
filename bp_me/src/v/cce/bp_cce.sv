@@ -28,8 +28,8 @@ module bp_cce
 
     // Interface Widths
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -75,13 +75,13 @@ module bp_cce
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [cce_mem_header_width_lp-1:0]            mem_resp_header_i
+   , input [mem_header_width_lp-1:0]                mem_resp_header_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
    , input                                          mem_resp_v_i
    , output logic                                   mem_resp_ready_and_o
    , input                                          mem_resp_last_i
 
-   , output logic [cce_mem_header_width_lp-1:0]     mem_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
    , output logic [dword_width_gp-1:0]              mem_cmd_data_o
    , output logic                                   mem_cmd_v_o
    , input                                          mem_cmd_ready_and_i
@@ -108,8 +108,8 @@ module bp_cce
     $fatal(0, "invalid CCE block width");
 
   // LCE-CCE and Mem-CCE Interface
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   // MSHR
   `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
@@ -237,7 +237,7 @@ module bp_cce
   logic                                      msg_mem_cmd_stall_lo;
 
   // From memory response stream pump to CCE
-  bp_bedrock_cce_mem_header_s mem_resp_base_header_li;
+  bp_bedrock_mem_header_s mem_resp_base_header_li;
   logic mem_resp_v_li, mem_resp_yumi_lo;
   logic mem_resp_stream_new_li, mem_resp_stream_last_li, mem_resp_stream_done_li;
   logic [paddr_width_p-1:0] mem_resp_addr_li;
@@ -246,7 +246,7 @@ module bp_cce
   // From CCE to memory command stream pump
   localparam stream_words_lp = cce_block_width_p / dword_width_gp;
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
-  bp_bedrock_cce_mem_header_s mem_cmd_base_header_lo;
+  bp_bedrock_mem_header_s mem_cmd_base_header_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   logic mem_cmd_stream_new_li, mem_cmd_stream_done_li;
   logic [dword_width_gp-1:0] mem_cmd_data_lo;
@@ -305,7 +305,7 @@ module bp_cce
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(dword_width_gp)
       ,.block_width_p(cce_block_width_p)
-      ,.payload_width_p(cce_mem_payload_width_lp)
+      ,.payload_width_p(mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
       // provide buffer space for two stream messages with data (for coherence protocol)
@@ -336,7 +336,7 @@ module bp_cce
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(dword_width_gp)
       ,.block_width_p(cce_block_width_p)
-      ,.payload_width_p(cce_mem_payload_width_lp)
+      ,.payload_width_p(mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
       )
