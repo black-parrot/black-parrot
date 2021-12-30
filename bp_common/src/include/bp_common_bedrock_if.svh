@@ -54,7 +54,7 @@
    *   and each endpoint will interpret the field as appropriate
    *
    */
-  // placed here for search: this macro defines types like bp_bedrock_cce_mem_header_s
+  // placed here for search: this macro defines types like bp_bedrock_mem_header_s
   `define declare_bp_bedrock_header_s(addr_width_mp, payload_mp, name_mp) \
     typedef struct packed                                                                   \
     {                                                                                       \
@@ -171,22 +171,22 @@
     `declare_bp_bedrock_lce_payload_s(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp);  \
     `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_lce_req_payload_s, lce_req); \
     `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_lce_cmd_payload_s, lce_cmd); \
-    `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_lce_resp_payload_s, lce_resp);
+    `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_lce_resp_payload_s, lce_resp)
 
-  `define declare_bp_bedrock_mem_if_widths(addr_width_mp, did_width_mp, lce_id_width_mp, lce_assoc_mp)       \
-    `declare_bp_bedrock_mem_payload_width(did_width_mp, lce_id_width_mp, lce_assoc_mp)      \
-    `declare_bp_bedrock_header_width(addr_width_mp, mem_payload_width_lp, mem)  \
-
-  `define declare_bp_bedrock_if_widths(addr_width_mp, payload_width_mp, name_mp) \
-    , localparam ``name_mp``_msg_payload_width_lp = payload_width_mp    \
-    `declare_bp_bedrock_header_width(addr_width_mp, ``name_mp``_msg_payload_width_lp, ``name_mp``)                 \
+  `define declare_bp_bedrock_mem_if_widths(addr_width_mp, did_width_mp, lce_id_width_mp, lce_assoc_mp) \
+    `declare_bp_bedrock_mem_payload_width(did_width_mp, lce_id_width_mp, lce_assoc_mp) \
+    `declare_bp_bedrock_header_width(addr_width_mp, mem_payload_width_lp, mem)
 
   `define declare_bp_bedrock_mem_if(addr_width_mp, did_width_mp, lce_id_width_mp, lce_assoc_mp) \
-    `declare_bp_bedrock_mem_payload_s(did_width_mp, lce_id_width_mp, lce_assoc_mp);                            \
-    `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_mem_payload_s, mem);
+    `declare_bp_bedrock_mem_payload_s(did_width_mp, lce_id_width_mp, lce_assoc_mp); \
+    `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_mem_payload_s, mem)
+
+  `define declare_bp_bedrock_if_widths(addr_width_mp, payload_width_mp, name_mp) \
+    , localparam ``name_mp``_msg_payload_width_lp = payload_width_mp \
+    `declare_bp_bedrock_header_width(addr_width_mp, ``name_mp``_msg_payload_width_lp, ``name_mp``)
 
   `define declare_bp_bedrock_if(addr_width_mp, payload_width_mp, lce_id_width_mp, lce_assoc_mp, name_mp) \
-    `declare_bp_bedrock_header_s(addr_width_mp, logic [payload_width_mp-1:0], ``name_mp``);
+    `declare_bp_bedrock_header_s(addr_width_mp, logic [payload_width_mp-1:0], ``name_mp``)
 
 `endif
 
