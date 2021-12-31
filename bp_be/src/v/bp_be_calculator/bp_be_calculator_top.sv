@@ -43,7 +43,8 @@ module bp_be_calculator_top
   // Calculator - Checker interface
   , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
 
-  , output logic                                    long_ready_o
+  , output logic                                    idiv_ready_o
+  , output logic                                    fdiv_ready_o
   , output logic                                    mem_ready_o
   , output logic                                    ptw_busy_o
   , output logic [decode_info_width_lp-1:0]         decode_info_o
@@ -373,7 +374,8 @@ module bp_be_calculator_top
 
      ,.reservation_i(reservation_r)
      ,.flush_i(commit_pkt_cast_o.npc_w_v)
-     ,.ready_o(long_ready_o)
+     ,.iready_o(idiv_ready_o)
+     ,.fready_o(fdiv_ready_o)
      ,.frm_dyn_i(frm_dyn_lo)
 
      ,.iwb_pkt_o(long_iwb_pkt)

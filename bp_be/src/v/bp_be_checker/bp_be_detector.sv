@@ -37,7 +37,8 @@ module bp_be_detector
    , input                             cmd_full_i
    , input                             credits_full_i
    , input                             credits_empty_i
-   , input                             long_ready_i
+   , input                             idiv_ready_i
+   , input                             fdiv_ready_i
    , input                             mem_ready_i
    , input                             ptw_busy_i
    , input                             irq_pending_i
@@ -223,12 +224,14 @@ module bp_be_detector
                            | (isd_status_cast_i.mem_v & credits_full_i);
       cmd_haz_v          = cmd_full_i;
 
-      fflags_haz_v = isd_status_cast_i.csr_w_v
+      // TODO: Pessimistic, could have a separate fflags w_v
+      fflags_haz_v = isd_status_cast_i.csr_v
                      & ((dep_status_r[0].fflags_w_v)
                         | (dep_status_r[1].fflags_w_v)
                         | (dep_status_r[2].fflags_w_v)
                         | (dep_status_r[3].fflags_w_v)
                         | (dep_status_r[4].fflags_w_v)
+                        | ~fdiv_ready_i
                         );
 
       // TODO: This is pessimistic. Could instead flush currently
@@ -241,7 +244,7 @@ module bp_be_detector
                       | (dep_status_r[2].instr_v)
                       );
 
-      csr_haz_v     = isd_status_cast_i.csr_w_v
+      csr_haz_v     = isd_status_cast_i.csr_v
                       & ((dep_status_r[0].instr_v)
                          | (dep_status_r[1].instr_v)
                          | (dep_status_r[2].instr_v)
@@ -263,7 +266,8 @@ module bp_be_detector
       struct_haz_v = cfg_bus_cast_i.freeze
                      | ptw_busy_i
                      | (~mem_ready_i & isd_status_cast_i.mem_v)
-                     | (~long_ready_i & isd_status_cast_i.long_v)
+                     | (~fdiv_ready_i & isd_status_cast_i.long_v)
+                     | (~idiv_ready_i & isd_status_cast_i.long_v)
                      | cmd_haz_v;
     end
 
@@ -276,7 +280,7 @@ module bp_be_detector
     begin
       dep_status_n.instr_v    = dispatch_pkt_cast_i.v;
       dep_status_n.mem_v      = dispatch_pkt_cast_i.decode.mem_v;
-      dep_status_n.csr_w_v    = dispatch_pkt_cast_i.decode.csr_w_v;
+      dep_status_n.csr_v      = (dispatch_pkt_cast_i.decode.csr_w_v | dispatch_pkt_cast_i.decode.csr_r_v);
       dep_status_n.fflags_w_v = dispatch_pkt_cast_i.decode.fflags_w_v;
       dep_status_n.ctl_iwb_v  = dispatch_pkt_cast_i.decode.pipe_ctl_v & dispatch_pkt_cast_i.decode.irf_w_v;
       dep_status_n.int_iwb_v  = dispatch_pkt_cast_i.decode.pipe_int_v & dispatch_pkt_cast_i.decode.irf_w_v;
