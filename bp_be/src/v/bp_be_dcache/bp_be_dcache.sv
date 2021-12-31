@@ -118,7 +118,6 @@ module bp_be_dcache
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    )
-<<<<<<< HEAD
   (input                                             clk_i
    , input                                           reset_i
 
@@ -145,6 +144,7 @@ module bp_be_dcache
    , output logic [dpath_width_gp-1:0]               early_data_o
    , output logic                                    early_miss_v_o
    , output logic                                    early_hit_v_o
+   , output logic                                    early_fencei_o
 
    // Cycle 3: "Data Mux"
    // Data comes out this cycle for operations which require additional
