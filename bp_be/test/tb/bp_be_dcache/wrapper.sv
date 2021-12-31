@@ -238,7 +238,8 @@ module wrapper
        ,.ptag_uncached_i(rolly_uncached_r[i])
        ,.ptag_dram_i(1'b1)
 
-       ,.flush_i('0)
+       ,.poison_req_i('0)
+       ,.poison_tl_i('0)
 
        ,.cache_req_v_o(cache_req_v_lo[i])
        ,.cache_req_o(cache_req_lo[i])

@@ -29,7 +29,7 @@
     logic                         half_op;
     logic                         byte_op;
     logic                         fencei_op;
-    logic                         l2_op;
+    logic                         uncached_op;
     logic                         lr_op;
     logic                         sc_op;
     logic                         ptw_op;

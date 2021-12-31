@@ -7,6 +7,8 @@
 #  amo_interrupt
 #  These tests are expected to fail
 #  unhandled_trap
+#  These tests dont work on all configs
+#  aviary_rom
 MISC_TESTS := \
   hello_world           \
   instr_coherence       \
@@ -23,7 +25,6 @@ MISC_TESTS := \
   mstatus_fs            \
   wfi                   \
   divide_hazard         \
-  aviary_rom            \
   readonly              \
   epc                   \
   virtual               \

@@ -57,7 +57,7 @@ module bp_be_dcache_decoder
 
     decode_cast_o.amo_op = (decode_cast_o.amo_subop != e_dcache_subop_none);
 
-    decode_cast_o.l2_op =
+    decode_cast_o.uncached_op =
       ((lr_sc_p == e_l2) && (decode_cast_o.lr_op || decode_cast_o.sc_op))
       || ((amo_swap_p == e_l2) && decode_cast_o.amo_subop inside {e_dcache_subop_amoswap})
       || ((amo_fetch_arithmetic_p == e_l2) && decode_cast_o.amo_subop inside
