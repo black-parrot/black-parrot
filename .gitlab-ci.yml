@@ -26,6 +26,7 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
+    - be_dev_feature_misaligned
   before_script:
       - git submodule update --init --checkout --recursive external/
   artifacts:
