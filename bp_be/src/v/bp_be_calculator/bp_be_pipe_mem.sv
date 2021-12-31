@@ -167,13 +167,13 @@ module bp_be_pipe_mem
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
   wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
-  wire is_req    = reservation.v & (is_store | is_load);
+  wire is_req    = reservation.v & (is_store | is_load | is_fencei);
 
   // Calculate cache access eaddr
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
 
   // D-TLB connections
-  assign dtlb_r_v        = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & ~is_fencei;
+  assign dtlb_r_v        = reservation.v & (is_store | is_load);
   assign dtlb_w_v        = commit_pkt.dtlb_fill_v;
   assign dtlb_w_vtag     = commit_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign dtlb_w_entry    = commit_pkt.pte_leaf;
@@ -359,10 +359,19 @@ module bp_be_pipe_mem
         dcache_ptag_v          = dtlb_v_lo;
       end
 
-  assign cache_fail_v_o         = early_v_o & ~dcache_early_hit_v  & ~dcache_early_miss_v;
-  assign cache_miss_v_o         = early_v_o & ~dcache_early_fencei &  dcache_early_miss_v;
-  assign fencei_clean_v_o       = early_v_o &  dcache_early_fencei &  dcache_early_hit_v;
-  assign fencei_dirty_v_o       = early_v_o &  dcache_early_fencei & ~dcache_early_hit_v;
+  logic early_v_r;
+  bsg_dff_chain
+   #(.width_p(1), .num_stages_p(2))
+   req_chain
+    (.clk_i(~clk_i)
+     ,.data_i(is_req)
+     ,.data_o(early_v_r)
+     );
+
+  assign cache_fail_v_o         = early_v_r & ~dcache_early_hit_v  & ~dcache_early_miss_v;
+  assign cache_miss_v_o         = early_v_r & ~dcache_early_fencei &  dcache_early_miss_v;
+  assign fencei_clean_v_o       = early_v_r &  dcache_early_fencei &  dcache_early_hit_v;
+  assign fencei_dirty_v_o       = early_v_r &  dcache_early_fencei & ~dcache_early_hit_v;
 
   assign store_page_fault_v_o   = store_page_fault_v;
   assign load_page_fault_v_o    = load_page_fault_v;
