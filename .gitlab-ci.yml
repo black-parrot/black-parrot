@@ -26,7 +26,6 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
-    - be_dev_feature_enablel1
   before_script:
       - git submodule update --init --checkout --recursive external/
   artifacts:
