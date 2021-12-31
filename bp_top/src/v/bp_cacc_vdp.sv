@@ -1,5 +1,7 @@
+
 `include "bp_common_defines.svh"
-`include "bp_top_defines.svh"
+`include "bp_be_defines.svh"
+`include "bp_me_defines.svh"
 
 module bp_cacc_vdp
  import bp_common_pkg::*;
