@@ -32,7 +32,8 @@ progs=(
     "streaming_accelerator_vdp"
     "coherent_accelerator_vdp"
     "accelerator_loopback_multicore_4"
-    "accelerator_vdp_multicore_4"
+    "streaming_accelerator_loopback"
+    "coherent_accelerator_vdp"
     )
 
 # The base command to append the configuration to
