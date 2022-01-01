@@ -53,8 +53,8 @@ module bp_be_pipe_aux
   assign rs2 = reservation.rs2;
   wire rs1_nanbox = &rs1[word_width_gp+:word_width_gp];
   wire rs2_nanbox = &rs2[word_width_gp+:word_width_gp];
-  assign frs1 = frs1_invbox ? {tag: e_fp_full, rec: dp_canonical_rec} : frs1_boxed;
-  assign frs2 = frs2_invbox ? {tag: e_fp_full, rec: dp_canonical_rec} : frs2_boxed;
+  assign frs1 = frs1_invbox ? '{tag: e_fp_full, rec: dp_canonical_rec} : frs1_boxed;
+  assign frs2 = frs2_invbox ? '{tag: e_fp_full, rec: dp_canonical_rec} : frs2_boxed;
 
   //
   // Control bits for the FPU

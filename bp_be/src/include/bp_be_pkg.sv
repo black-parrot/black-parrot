@@ -51,7 +51,7 @@ package bp_be_pkg;
     bp_hardfloat_rec_dp_s rec;
   }  bp_be_fp_reg_s;
 
-  localparam dpath_width_gp = `BSG_MAX($bits(bp_be_fp_reg_s), dword_width_gp);
+  localparam dpath_width_gp = $bits(bp_be_fp_reg_s);
 
   `include "bp_be_ctl_pkgdef.svh"
   `include "bp_be_dcache_pkgdef.svh"
