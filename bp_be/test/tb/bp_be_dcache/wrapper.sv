@@ -227,6 +227,7 @@ module wrapper
        ,.early_hit_v_o(early_v_lo[i])
        ,.early_miss_v_o()
        ,.early_fencei_o()
+       ,.early_fflags_o()
        ,.final_data_o(final_data_lo[i])
        ,.final_v_o(final_v_lo[i])
        ,.late_rd_addr_o()
