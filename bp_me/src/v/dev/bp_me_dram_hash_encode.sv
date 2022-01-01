@@ -18,24 +18,26 @@ module bp_me_dram_hash_encode
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter int offset_widths_p[2:0] = '{-1, -1, -1}
-   , parameter addr_width_p = paddr_width_p
    )
-  (input [addr_width_p-1:0]         addr_i
-   , output logic [addr_width_p-1:0] addr_o
+  (input [daddr_width_p-1:0]          daddr_i
+   , output logic [daddr_width_p-1:0] daddr_o
    );
 
-  localparam offset_width_lp = offset_widths_p[0] + offset_widths_p[1] + offset_widths_p[2];
+  localparam l2_block_offset_width_lp = `BSG_SAFE_CLOG2(l2_block_width_p/8);
+  localparam lg_l2_sets_lp            = `BSG_SAFE_CLOG2(l2_sets_p);
+  localparam lg_num_cce_lp            = `BSG_SAFE_CLOG2(num_cce_p);
+  localparam int hash_offset_widths_lp[2:0] = '{(lg_l2_sets_lp-lg_num_cce_lp), lg_num_cce_lp, l2_block_offset_width_lp};
+  localparam offset_width_lp = hash_offset_widths_lp[0] + hash_offset_widths_lp[1] + hash_offset_widths_lp[2];
 
-  wire [offset_widths_p[2]+offset_widths_p[1]-1:0] encoded_bits =
-    {addr_i[offset_widths_p[0]+:offset_widths_p[1]]
-     ,addr_i[(offset_widths_p[0]+offset_widths_p[1])+:offset_widths_p[2]]
+  wire [hash_offset_widths_lp[2]+hash_offset_widths_lp[1]-1:0] encoded_bits =
+    {daddr_i[hash_offset_widths_lp[0]+:hash_offset_widths_lp[1]]
+     ,daddr_i[(hash_offset_widths_lp[0]+hash_offset_widths_lp[1])+:hash_offset_widths_lp[2]]
      };
 
-  assign addr_o =
-    {addr_i[addr_width_p-1:offset_width_lp]
+  assign daddr_o =
+    {daddr_i[daddr_width_p-1:offset_width_lp]
      ,encoded_bits
-     ,addr_i[0+:offset_widths_p[0]]
+     ,daddr_i[0+:hash_offset_widths_lp[0]]
      };
 
 endmodule

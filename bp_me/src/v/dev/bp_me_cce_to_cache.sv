@@ -308,18 +308,12 @@ module bp_me_cce_to_cache
     );
 
   // Swizzle address bits for L2 cache command
-  // Note: the upper paddr_width_p-daddr_width_p bits of the mem_cmd address are dropped
-  localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
-  localparam int hash_offset_widths_lp[2:0] = '{(lg_l2_sets_lp-lg_num_cce_lp), lg_num_cce_lp, l2_block_offset_width_lp};
   logic [daddr_width_p-1:0] cache_pkt_addr_lo;
   bp_me_dram_hash_encode
-    #(.bp_params_p(bp_params_p)
-      ,.offset_widths_p(hash_offset_widths_lp)
-      ,.addr_width_p(daddr_width_p)
-      )
-    mem_cmd_hash
-    (.addr_i(mem_cmd_stream_addr_lo[0+:daddr_width_p])
-     ,.addr_o(cache_pkt_addr_lo)
+   #(.bp_params_p(bp_params_p))
+   mem_cmd_hash
+    (.daddr_i(mem_cmd_stream_addr_lo[0+:daddr_width_p])
+     ,.daddr_o(cache_pkt_addr_lo)
      );
 
   // FSM
