@@ -116,7 +116,7 @@ module bp_be_pipe_fma
   wire [dp_rec_width_gp-1:0] fma_c_li = is_faddsub_li ? frs2.rec : is_fmul_li ? dp_rec_0_0 : frs3.rec;
 
   // Here, we switch the implementation based on synthesizing for Vivado or not. If this is
-  //   a knob you'd like to turn yourself, consider modifying the define yourself.
+  //   a knob you'd like to turn, consider modifying the define yourself.
   localparam fma_latency_lp  = 5;
   localparam imul_latency_lp = 4;
   `ifdef SYNTHESIS
@@ -174,42 +174,9 @@ module bp_be_pipe_fma
   assign fma_result = '{tag: ops_preround_r ? frm_preround_r : e_fp_full, rec: fma_dp_final};
   assign fma_fflags = fma_dp_fflags;
 
-  logic [sp_rec_width_gp-1:0] dp2sp_rec;
-  recFNToRecFN
-   #(.inExpWidth(dp_exp_width_gp)
-     ,.inSigWidth(dp_sig_width_gp)
-     ,.outExpWidth(sp_exp_width_gp)
-     ,.outSigWidth(sp_sig_width_gp)
-     )
-   round_debug
-    (.control(control_li)
-     ,.in(fma_result.rec)
-     ,.roundingMode(fma_result.tag)
-     ,.out(dp2sp_rec)
-     ,.exceptionFlags()
-     );
-
-  logic [word_width_gp-1:0] sp_raw_lo;
-  recFNToFN
-   #(.expWidth(sp_exp_width_gp)
-     ,.sigWidth(sp_sig_width_gp)
-     )
-   out_sp_rec
-    (.in(dp2sp_rec)
-     ,.out(sp_raw_lo)
-     );
-
-//      logic [dword_width_gp-1:0] debug_raw;
-//      bp_be_rec_to_fp
-//       #(.bp_params_p(bp_params_p), .propagate_nan_p(0))
-//       debug_fp
-//        (.reg_i(fma_result)
-//         ,.raw_o(debug_raw)
-//         );
-  
   // TODO: Can combine the registers here if DC doesn't do it automatically
   bsg_dff_chain
-   #(.width_p(dpath_width_gp), .num_stages_p(imul_latency_lp-1))
+   #(.width_p(dpath_width_gp), .num_stages_p(imul_retime_latency_lp-1))
    imul_retiming_chain
     (.clk_i(clk_i)
 
@@ -218,7 +185,7 @@ module bp_be_pipe_fma
      );
 
   bsg_dff_chain
-   #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(fma_latency_lp-1))
+   #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(fma_retime_latency_lp-1))
    fma_retiming_chain
     (.clk_i(clk_i)
 
