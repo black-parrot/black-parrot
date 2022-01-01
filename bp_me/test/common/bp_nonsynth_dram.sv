@@ -15,7 +15,7 @@ module bp_nonsynth_dram
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , parameter num_dma_p = 1
+   , parameter num_dma_p = 0
    , parameter preload_mem_p = 0
    , parameter mem_els_p = 0
    , parameter dram_type_p = ""
@@ -64,7 +64,7 @@ module bp_nonsynth_dram
   if (dram_type_p == "dmc")
     begin : ddr
       bp_ddr
-       #(.bp_params_p(bp_params_p), .num_dma_p(num_dma_p))
+       #(.bp_params_p(bp_params_p))
        ddr
         (.clk_i(clk_i)
          ,.reset_i(reset_i)

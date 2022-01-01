@@ -11,9 +11,6 @@
  *   Decode reverses this swizzle operation, transforming {A, c...cc, b...bb, D} to
  *   {A, b...bb, c...cc, D}.
  *
- *   The offset_widths_p parameter specifies the bit widths of b, c, and D bitfields as they
- *   are defined in the decoded address (addr_o).
- *
  */
 
 `include "bp_common_defines.svh"
@@ -29,8 +26,8 @@ module bp_me_dram_hash_decode
 
   localparam l2_block_offset_width_lp = `BSG_SAFE_CLOG2(l2_block_width_p/8);
   localparam lg_l2_sets_lp            = `BSG_SAFE_CLOG2(l2_sets_p);
-  localparam lg_num_cce_lp            = `BSG_SAFE_CLOG2(num_cce_p);
-  localparam int hash_offset_widths_lp[2:0] = '{(lg_l2_sets_lp-lg_num_cce_lp), lg_num_cce_lp, l2_block_offset_width_lp};
+  localparam lg_num_dma_lp            = `BSG_SAFE_CLOG2(num_cce_p*l2_banks_p);
+  localparam int hash_offset_widths_lp[2:0] = '{(lg_l2_sets_lp-lg_num_dma_lp), lg_num_dma_lp, l2_block_offset_width_lp};
   localparam offset_width_lp = hash_offset_widths_lp[0] + hash_offset_widths_lp[1] + hash_offset_widths_lp[2];
 
   wire [hash_offset_widths_lp[2]+hash_offset_widths_lp[1]-1:0] decoded_bits =

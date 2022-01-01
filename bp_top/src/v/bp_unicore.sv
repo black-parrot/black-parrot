@@ -71,17 +71,17 @@ module bp_unicore
    , output logic                                      io_resp_last_o
 
    // DRAM interface
-   , output logic [dma_pkt_width_lp-1:0]               dma_pkt_o
-   , output logic                                      dma_pkt_v_o
-   , input                                             dma_pkt_yumi_i
+   , output logic [l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [l2_banks_p-1:0]                       dma_pkt_v_o
+   , input [l2_banks_p-1:0]                              dma_pkt_yumi_i
 
-   , input [l2_fill_width_p-1:0]                       dma_data_i
-   , input                                             dma_data_v_i
-   , output logic                                      dma_data_ready_and_o
+   , input [l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [l2_banks_p-1:0]                              dma_data_v_i
+   , output logic [l2_banks_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [l2_fill_width_p-1:0]                dma_data_o
-   , output logic                                      dma_data_v_o
-   , input                                             dma_data_yumi_i
+   , output logic [l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [l2_banks_p-1:0]                       dma_data_v_o
+   , input [l2_banks_p-1:0]                              dma_data_yumi_i
    );
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -160,8 +160,8 @@ module bp_unicore
      ,.data_width_p(l2_data_width_p)
      ,.dma_data_width_p(l2_fill_width_p)
      ,.block_size_in_words_p(l2_block_size_in_words_p)
-     ,.sets_p(l2_en_p ? l2_sets_p : 2)
-     ,.ways_p(l2_en_p ? l2_assoc_p : 2)
+     ,.sets_p((l2_banks_p > 0) ? l2_sets_p : 2)
+     ,.ways_p((l2_banks_p > 0) ? l2_assoc_p : 2)
      ,.amo_support_p(((l2_amo_support_p[e_amo_swap]) << e_cache_amo_swap)
                      | ((l2_amo_support_p[e_amo_fetch_logic]) << e_cache_amo_xor)
                      | ((l2_amo_support_p[e_amo_fetch_logic]) << e_cache_amo_and)

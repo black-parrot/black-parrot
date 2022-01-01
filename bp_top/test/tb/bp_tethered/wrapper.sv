@@ -56,17 +56,17 @@ module wrapper
    , output logic                                           io_resp_last_o
 
    // DRAM interface
-   , output logic [num_cce_p-1:0][dma_pkt_width_lp-1:0]     dma_pkt_o
-   , output logic [num_cce_p-1:0]                           dma_pkt_v_o
-   , input [num_cce_p-1:0]                                  dma_pkt_yumi_i
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_pkt_v_o
+   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_pkt_yumi_i
 
-   , input [num_cce_p-1:0][l2_fill_width_p-1:0]             dma_data_i
-   , input [num_cce_p-1:0]                                  dma_data_v_i
-   , output logic [num_cce_p-1:0]                           dma_data_ready_and_o
+   , input [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_v_i
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [num_cce_p-1:0][l2_fill_width_p-1:0]      dma_data_o
-   , output logic [num_cce_p-1:0]                           dma_data_v_o
-   , input [num_cce_p-1:0]                                  dma_data_yumi_i
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_data_v_o
+   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_yumi_i
    );
 
   if (multicore_p)
