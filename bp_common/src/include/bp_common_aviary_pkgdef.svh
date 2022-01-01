@@ -290,7 +290,7 @@
       ,cce_ucode            : 0
       ,cce_pc_width         : 8
 
-      ,l2_banks            : 1
+      ,l2_banks            : 2
       ,l2_amo_support      : (1 << e_amo_swap)
                              | (1 << e_amo_fetch_logic)
                              | (1 << e_amo_fetch_arithmetic)
@@ -299,7 +299,7 @@
       ,l2_assoc            : 8
       ,l2_block_width      : 512
       ,l2_fill_width       : 64
-      ,l2_outstanding_reqs : 8
+      ,l2_outstanding_reqs : 6
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
