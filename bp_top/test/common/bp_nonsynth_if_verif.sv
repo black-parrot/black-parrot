@@ -108,11 +108,20 @@ module bp_nonsynth_if_verif
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
     $error("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
 
-  if ((multicore_p == 1) && ((amo_swap_p == e_l2) || (amo_fetch_logic_p == e_l2) || (amo_fetch_arithmetic_p == e_l2)))
+  if ((multicore_p == 1) && ((amo_swap_p[e_l2]) || (amo_fetch_logic_p[e_l2]) || (amo_fetch_arithmetic_p[e_l2])))
     $error("Error: L2 atomics are not currently supported in bp_multicore");
 
-  if (lr_sc_p == e_none)
+  if (~|lr_sc_p)
     $error("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
+
+  if (muldiv_en_p[e_mulh])
+    $error("MULH is not currently supported in hardware");
+
+  if (!muldiv_en_p[e_mul])
+    $error("MUL is not currently support in emulation");
+
+  if (!fpu_en_p)
+    $error("FPU cannot currently be disabled");
 
   if (mem_noc_flit_width_p % l2_fill_width_p != 0)
     $error("Memory NoC flit width must match l2 fill width");

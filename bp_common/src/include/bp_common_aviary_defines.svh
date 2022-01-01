@@ -111,6 +111,8 @@
                                                                                                    \
     , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                             \
     , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                               \
+    , localparam muldiv_en_p         = proc_param_lp.muldiv_en                                     \
+    , localparam fpu_en_p            = proc_param_lp.fpu_en                                        \
                                                                                                    \
     , localparam async_coh_clk_p        = proc_param_lp.async_coh_clk                              \
     , localparam coh_noc_max_credits_p  = proc_param_lp.coh_noc_max_credits                        \
@@ -206,6 +208,8 @@
                                                                                                    \
           ,`bp_aviary_parameter_override(fe_queue_fifo_els, override_cfg_mp, default_cfg_mp)       \
           ,`bp_aviary_parameter_override(fe_cmd_fifo_els, override_cfg_mp, default_cfg_mp)         \
+          ,`bp_aviary_parameter_override(muldiv_en, override_cfg_mp, default_cfg_mp)               \
+          ,`bp_aviary_parameter_override(fpu_en, override_cfg_mp, default_cfg_mp)                  \
                                                                                                    \
           ,`bp_aviary_parameter_override(branch_metadata_fwd_width, override_cfg_mp, default_cfg_mp) \
           ,`bp_aviary_parameter_override(btb_tag_width, override_cfg_mp, default_cfg_mp)           \

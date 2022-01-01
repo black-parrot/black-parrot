@@ -8,12 +8,18 @@
   localparam lg_max_cfgs = $clog2(max_cfgs);
 
   // Configuration enums
+  typedef enum logic
+  {
+    e_l1  = 1'b0
+    ,e_l2 = 1'b1
+  } bp_atomic_support_e;
+
   typedef enum logic [1:0]
   {
-    e_none = 0
-    ,e_l1  = 1
-    ,e_l2  = 2
-  } bp_atomic_op_e;
+    e_div   = 2'b00
+    ,e_mul  = 2'b01
+    ,e_mulh = 2'b10
+  } bp_muldiv_support_e;
 
   typedef enum logic [15:0]
   {
@@ -162,6 +168,14 @@
     integer unsigned fe_queue_fifo_els;
     // Size of the cmd queue
     integer unsigned fe_cmd_fifo_els;
+    // MULDIV support in the system. It is a bitmask with:
+    //   bit 0: div enabled
+    //   bit 1: mul enabled
+    //   bit 2: mulh enabled
+    integer unsigned muldiv_en;
+    // Whether to emulate FPU
+    //   bit 0: fpu enabled
+    integer unsigned fpu_en;
 
     // Whether the coherence network is on the core clock or on its own clock
     integer unsigned async_coh_clk;
@@ -241,10 +255,10 @@
       ,itlb_els_1g : 0
       ,dtlb_els_1g : 0
 
-      ,lr_sc                : e_l1
-      ,amo_swap             : e_l1
-      ,amo_fetch_logic      : e_l1
-      ,amo_fetch_arithmetic : e_l1
+      ,lr_sc                : (1 << e_l1)
+      ,amo_swap             : (1 << e_l1) | (1 << e_l2)
+      ,amo_fetch_logic      : (1 << e_l1) | (1 << e_l2)
+      ,amo_fetch_arithmetic : (1 << e_l1) | (1 << e_l2)
 
       ,l1_writethrough      : 0
       ,l1_coherent          : 0
@@ -274,6 +288,8 @@
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
+      ,muldiv_en         : (1 << e_div) | (1 << e_mul)
+      ,fpu_en            : 1
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 128
@@ -355,10 +371,10 @@
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
 
-      ,lr_sc                : e_l1
-      ,amo_swap             : e_none
-      ,amo_fetch_logic      : e_none
-      ,amo_fetch_arithmetic : e_none
+      ,lr_sc                : (1 << e_l1)
+      ,amo_swap             : 0
+      ,amo_fetch_logic      : 0
+      ,amo_fetch_arithmetic : 0
 
       ,l2_en : 0
 
@@ -465,10 +481,9 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_l2_atomic_override_p =
-    '{lr_sc                 : e_l1
-      ,amo_swap             : e_l2
-      ,amo_fetch_logic      : e_l2
-      ,amo_fetch_arithmetic : e_l2
+    '{amo_swap              : (1 << e_l2)
+      ,amo_fetch_logic      : (1 << e_l2)
+      ,amo_fetch_arithmetic : (1 << e_l2)
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l2_atomic_cfg_p
@@ -486,13 +501,16 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_1_override_p =
-    '{multicore      : 1
-      ,ic_y_dim      : 1
-      ,num_cce       : 1
-      ,num_lce       : 2
-      ,l1_coherent   : 1
-      ,dcache_fill_width : 512
-      ,icache_fill_width : 512
+    '{multicore             : 1
+      ,ic_y_dim             : 1
+      ,num_cce              : 1
+      ,num_lce              : 2
+      ,l1_coherent          : 1
+      ,amo_swap             : (1 << e_l1)
+      ,amo_fetch_logic      : (1 << e_l1)
+      ,amo_fetch_arithmetic : (1 << e_l1)
+      ,dcache_fill_width    : 512
+      ,icache_fill_width    : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
@@ -982,6 +1000,8 @@
 
       ,`bp_aviary_define_override(fe_queue_fifo_els, BP_FE_QUEUE_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(fe_cmd_fifo_els, BP_FE_CMD_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(muldiv_en, BP_MULDIV_EN, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(fpu_en, BP_FPU_EN, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(branch_metadata_fwd_width, BRANCH_METADATA_FWD_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(btb_tag_width, BP_BTB_TAG_WIDTH, `BP_CUSTOM_BASE_CFG)

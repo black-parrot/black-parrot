@@ -95,17 +95,17 @@ module bp_be_dcache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to dcache parameters, but can override if needed
-   , parameter [31:0] amo_support_p  = (((lr_sc_p == e_l1) << e_dcache_subop_lr)
-                                        | ((lr_sc_p == e_l1) << e_dcache_subop_sc)
-                                        | ((amo_swap_p == e_l1) << e_dcache_subop_amoswap)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amoadd)
-                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoxor)
-                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoand)
-                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoor)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomin)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomax)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amominu)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomaxu)
+   , parameter [31:0] amo_support_p  = (((lr_sc_p[e_l1]) << e_dcache_subop_lr)
+                                        | ((lr_sc_p[e_l1]) << e_dcache_subop_sc)
+                                        | ((amo_swap_p[e_l1]) << e_dcache_subop_amoswap)
+                                        | ((amo_fetch_arithmetic_p[e_l1]) << e_dcache_subop_amoadd)
+                                        | ((amo_fetch_logic_p[e_l1]) << e_dcache_subop_amoxor)
+                                        | ((amo_fetch_logic_p[e_l1]) << e_dcache_subop_amoand)
+                                        | ((amo_fetch_logic_p[e_l1]) << e_dcache_subop_amoor)
+                                        | ((amo_fetch_arithmetic_p[e_l1]) << e_dcache_subop_amomin)
+                                        | ((amo_fetch_arithmetic_p[e_l1]) << e_dcache_subop_amomax)
+                                        | ((amo_fetch_arithmetic_p[e_l1]) << e_dcache_subop_amominu)
+                                        | ((amo_fetch_arithmetic_p[e_l1]) << e_dcache_subop_amomaxu)
                                         )
    , parameter coherent_p     = l1_coherent_p
    , parameter writethrough_p = l1_writethrough_p
