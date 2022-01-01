@@ -59,8 +59,9 @@ module bp_be_pipe_aux
   //
   // Control bits for the FPU
   //   The control bits control tininess, which is fixed in RISC-V
+  // VCS / DVE 2016.1 has an issue with the 'assign' variant of the following code
   rv64_frm_e frm_li;
-  assign frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
+  always_comb frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
   //

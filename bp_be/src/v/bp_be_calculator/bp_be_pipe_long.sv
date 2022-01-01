@@ -32,7 +32,7 @@ module bp_be_pipe_long
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_dispatch_pkt_s reservation;
-  rv64_instr_fmatype_s instr;
+  rv64_instr_s instr;
   bp_be_decode_s decode;
   bp_be_wb_pkt_s iwb_pkt;
   bp_be_wb_pkt_s fwb_pkt;
@@ -90,7 +90,8 @@ module bp_be_pipe_long
   // Control bits for the FPU
   //   The control bits control tininess, which is fixed in RISC-V
   rv64_frm_e frm_li;
-  assign frm_li = (instr.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.rm);
+  // VCS / DVE 2016.1 has an issue with the 'assign' variant of the following code
+  always_comb frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
   wire fdiv_v_li  = v_li & (decode.fu_op == e_fma_op_fdiv);
@@ -131,7 +132,7 @@ module bp_be_pipe_long
      ,.reset_i(reset_i)
      ,.en_i(v_li)
 
-     ,.data_i({frm_li, instr.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
+     ,.data_i({frm_li, instr.t.fmatype.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
      ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
      );
   assign fdivsqrt_result.tag = ops_v_r ? frm_r : e_fp_full;

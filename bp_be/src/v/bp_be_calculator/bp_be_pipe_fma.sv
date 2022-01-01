@@ -72,12 +72,12 @@ module bp_be_pipe_fma
   assign rs1 = decode.opw_v ? (frs1 << word_width_gp) : frs1;
   assign rs2 = frs2;
 
-
   //
   // Control bits for the FPU
   //   The control bits control tininess, which is fixed in RISC-V
+  // VCS / DVE 2016.1 has an issue with the 'assign' variant of the following code
   rv64_frm_e frm_li;
-  assign frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
+  always_comb frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
   wire is_fadd_li    = (decode.fu_op == e_fma_op_fadd);
@@ -130,15 +130,17 @@ module bp_be_pipe_fma
   `else
       localparam int muladd_latency_lp [1:0] = '{0,0};
   `endif
+  localparam imul_retime_latency_lp = imul_latency_lp - muladd_latency_lp[1] - muladd_latency_lp[0];
+  localparam fma_retime_latency_lp  = fma_latency_lp - muladd_latency_lp[1] - muladd_latency_lp[0];
 
-  rv64_frm_e frm_preround_r;
-  logic opw_preround_r, ops_preround_r;
+  rv64_frm_e frm_r;
+  logic opw_r, ops_r;
   bsg_dff_chain
-   #(.width_p($bits(rv64_frm_e)+2), .num_stages_p(muladd_latency_lp[0]))
-   preround_chain
+   #(.width_p($bits(rv64_frm_e)+2), .num_stages_p(muladd_latency_lp[0]+muladd_latency_lp[1]))
+   info_chain
     (.clk_i(clk_i)
      ,.data_i({frm_li, decode.opw_v, decode.ops_v})
-     ,.data_o({frm_preround_r, opw_preround_r, ops_preround_r})
+     ,.data_o({frm_r, opw_r, ops_r})
      );
 
   logic invalid_exc, is_nan, is_inf, is_zero, fma_out_sign;
@@ -167,12 +169,39 @@ module bp_be_pipe_fma
      ,.exceptionFlags(fma_dp_fflags)
      );
   wire [dpath_width_gp-1:0] imulw_out    = $signed(imul_out) >>> word_width_gp;
-  wire [dpath_width_gp-1:0] imul_result = opw_preround_r ? imulw_out : imul_out;
+  wire [dpath_width_gp-1:0] imul_result = opw_r ? imulw_out : imul_out;
 
   bp_be_fp_reg_s fma_result;
   rv64_fflags_s fma_fflags;
-  assign fma_result = '{tag: ops_preround_r ? frm_preround_r : e_fp_full, rec: fma_dp_final};
+  assign fma_result = '{tag: ops_r ? frm_r : e_fp_full, rec: fma_dp_final};
   assign fma_fflags = fma_dp_fflags;
+
+  bp_be_fp_reg_s fma_dp_result;
+  assign fma_dp_result = '{tag: e_fp_full, rec: fma_dp_final};
+
+  logic [dword_width_gp-1:0] debug_dp_raw;
+  bp_be_rec_to_fp
+   #(.bp_params_p(bp_params_p))
+   debug_dp_result
+    (.reg_i(fma_dp_result), .raw_o(debug_dp_raw), .fflags_o());
+
+  logic [dword_width_gp-1:0] debug_frs1_raw;
+  bp_be_rec_to_fp
+   #(.bp_params_p(bp_params_p))
+   debug_frs1
+    (.reg_i(frs1), .raw_o(debug_frs1_raw), .fflags_o());
+
+  logic [dword_width_gp-1:0] debug_frs2_raw;
+  bp_be_rec_to_fp
+   #(.bp_params_p(bp_params_p))
+   debug_frs2
+    (.reg_i(frs2), .raw_o(debug_frs2_raw), .fflags_o());
+
+  logic [dword_width_gp-1:0] debug_result_raw;
+  bp_be_rec_to_fp
+   #(.bp_params_p(bp_params_p))
+   debug_result
+    (.reg_i(fma_result), .raw_o(debug_result_raw), .fflags_o());
 
   // TODO: Can combine the registers here if DC doesn't do it automatically
   bsg_dff_chain
