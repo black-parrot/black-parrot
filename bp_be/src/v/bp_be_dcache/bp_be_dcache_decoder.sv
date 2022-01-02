@@ -59,14 +59,14 @@ module bp_be_dcache_decoder
     decode_cast_o.amo_op = (decode_cast_o.amo_subop != e_dcache_subop_none);
 
     decode_cast_o.uncached_op =
-      ((!lr_sc_p[e_l1]) && (decode_cast_o.lr_op || decode_cast_o.sc_op))
-      || ((!amo_swap_p[e_l1]) && decode_cast_o.amo_subop inside {e_dcache_subop_amoswap})
-      || ((!amo_fetch_arithmetic_p[e_l1]) && decode_cast_o.amo_subop inside
+      ((!dcache_amo_support_p[e_lr_sc]) && (decode_cast_o.lr_op || decode_cast_o.sc_op))
+      || ((!dcache_amo_support_p[e_amo_swap]) && decode_cast_o.amo_subop inside {e_dcache_subop_amoswap})
+      || ((!dcache_amo_support_p[e_amo_fetch_arithmetic]) && decode_cast_o.amo_subop inside
             {e_dcache_subop_amoadd
              ,e_dcache_subop_amomin, e_dcache_subop_amomax
              ,e_dcache_subop_amominu, e_dcache_subop_amomaxu
              })
-      || ((!amo_fetch_logic_p[e_l1]) && decode_cast_o.amo_subop inside
+      || ((!dcache_amo_support_p[e_amo_fetch_logic]) && decode_cast_o.amo_subop inside
             {e_dcache_subop_amoxor, e_dcache_subop_amoand, e_dcache_subop_amoor});
 
     decode_cast_o.load_op = (decode_cast_o.amo_op | decode_cast_o.lr_op) || dcache_pkt.opcode inside

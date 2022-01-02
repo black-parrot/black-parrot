@@ -411,7 +411,7 @@ module testbench
      );
 
   // Assertions
-  if (uce_p == 0 && l1_writethrough_p == 1)
+  if (uce_p == 0 && dcache_writethrough_p == 1)
     $fatal("Writethrough cache with CCE not yet supported");
   if (cce_block_width_p != dcache_block_width_p)
     $fatal("Memory fetch block width does not match D$ block width");

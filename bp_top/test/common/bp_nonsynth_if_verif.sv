@@ -71,7 +71,7 @@ module bp_nonsynth_if_verif
     $error("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
   if ((cce_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 128-bit cache block size and 4-way or 8-way cache associativity");
-  if ((l1_writethrough_p == 1) && (l1_coherent_p == 1))
+  if ((dcache_writethrough_p == 1) && (icache_coherent_p == 1))
     $error("Error: Writethrough with coherent_l1 is unsupported");
   if ((icache_fill_width_p > icache_block_width_p) || (dcache_fill_width_p > dcache_block_width_p))
     $error("Error: Cache fill width should be less or equal to L1 cache block width");
@@ -108,19 +108,19 @@ module bp_nonsynth_if_verif
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
     $error("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
 
-  if ((multicore_p == 1) && ((amo_swap_p[e_l2]) || (amo_fetch_logic_p[e_l2]) || (amo_fetch_arithmetic_p[e_l2])))
+  if ((multicore_p == 1) && (|l2_amo_support_p))
     $error("Error: L2 atomics are not currently supported in bp_multicore");
 
-  if (~|lr_sc_p)
+  if (~|{dcache_amo_support_p[e_lr_sc], l2_amo_support_p[e_lr_sc]})
     $error("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
 
-  if (muldiv_en_p[e_mulh])
+  if (muldiv_support_p[e_mulh])
     $error("MULH is not currently supported in hardware");
 
-  if (!muldiv_en_p[e_mul])
+  if (!muldiv_support_p[e_mul])
     $error("MUL is not currently support in emulation");
 
-  if (!fpu_en_p)
+  if (!fpu_support_p)
     $error("FPU cannot currently be disabled");
 
   if (mem_noc_flit_width_p % l2_fill_width_p != 0)
