@@ -145,6 +145,7 @@ module bp_be_dcache
    , output logic                                    early_miss_v_o
    , output logic                                    early_hit_v_o
    , output logic                                    early_fencei_o
+   , output rv64_fflags_s                            early_fflags_o
 
    // Cycle 3: "Data Mux"
    // Data comes out this cycle for operations which require additional
@@ -389,13 +390,13 @@ module bp_be_dcache
   bp_be_fp_reg_s fp_reg;
   assign fp_reg = data_tl_r;
   logic [dword_width_gp-1:0] fp_raw_data;
-  bp_be_rec_to_fp
+  rv64_fflags_s st_fflags_tl;
+  bp_be_reg_to_fp
    #(.bp_params_p(bp_params_p))
-   rec_to_fp
-    (.rec_i(fp_reg.rec)
-
-     ,.raw_sp_not_dp_i(fp_reg.sp_not_dp)
+   reg_to_fp
+    (.reg_i(fp_reg)
      ,.raw_o(fp_raw_data)
+     ,.fflags_o(st_fflags_tl)
      );
 
   wire [dword_width_gp-1:0] st_data_tl = decode_tl_r.float_op ? fp_raw_data : data_tl_r;
@@ -411,6 +412,7 @@ module bp_be_dcache
   logic uncached_op_tv_r, cached_op_tv_r, dram_op_tv_r, uncached_hit_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
   logic [dword_width_gp-1:0] st_data_tv_r;
+  rv64_fflags_s st_fflags_tv_r;
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
   logic [assoc_p-1:0] load_hit_tv_r, store_hit_tv_r, way_v_tv_r, bank_sel_one_hot_tv_r;
   bp_be_dcache_decode_s decode_tv_r;
@@ -482,12 +484,12 @@ module bp_be_dcache
      );
 
   bsg_dff_en
-   #(.width_p(dword_width_gp))
+   #(.width_p($bits(rv64_fflags_s)+dword_width_gp))
    st_data_tv_reg
     (.clk_i(negedge_clk)
      ,.en_i(tv_we & decode_tl_r.store_op)
-     ,.data_i(st_data_tl)
-     ,.data_o(st_data_tv_r)
+     ,.data_i({st_fflags_tl, st_data_tl})
+     ,.data_o({st_fflags_tv_r, st_data_tv_r})
      );
 
   bsg_dff_en
@@ -635,6 +637,8 @@ module bp_be_dcache
 
   assign early_miss_v_o = v_tv_r & cache_req_yumi_i & ~early_hit_v_o;
 
+  assign early_fflags_o = st_fflags_tv_r;
+
   ///////////////////////////
   // Stat Mem Storage
   ///////////////////////////
@@ -727,14 +731,13 @@ module bp_be_dcache
      );
 
   bp_be_fp_reg_s final_float_data;
-  bp_be_fp_to_rec
+  wire [dword_width_gp-1:0] final_float_raw_data =
+    decode_dm_r.word_op ? {{word_width_gp{1'b1}}, final_int_data[0+:word_width_gp]} : final_int_data;
+  bp_be_fp_to_reg
    #(.bp_params_p(bp_params_p))
-   fp_to_rec
-    (.raw_i(final_int_data)
-     ,.raw_sp_not_dp_i(decode_dm_r.word_op)
-
-     ,.rec_sp_not_dp_o(final_float_data.sp_not_dp)
-     ,.rec_o(final_float_data.rec)
+   fp_to_reg
+    (.raw_i(final_float_raw_data)
+     ,.reg_o(final_float_data)
      );
 
   assign final_data_o = decode_dm_r.float_op ? final_float_data : final_int_data;

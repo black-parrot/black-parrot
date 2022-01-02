@@ -56,6 +56,7 @@ module bp_be_pipe_mem
    , output logic                         store_page_fault_v_o
 
    , output logic [dpath_width_gp-1:0]    early_data_o
+   , output rv64_fflags_s                 early_fflags_o
    , output logic                         early_v_o
    , output logic [dpath_width_gp-1:0]    final_data_o
    , output logic                         final_v_o
@@ -149,6 +150,7 @@ module bp_be_pipe_mem
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
   logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data, dcache_late_data;
+  rv64_fflags_s             dcache_early_fflags;
   logic [reg_addr_width_gp-1:0] dcache_late_rd_addr;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_pkt_v;
@@ -303,6 +305,7 @@ module bp_be_pipe_mem
       ,.early_miss_v_o(dcache_early_miss_v)
       ,.early_fencei_o(dcache_early_fencei)
       ,.early_data_o(dcache_early_data)
+      ,.early_fflags_o(dcache_early_fflags)
       ,.final_data_o(dcache_final_data)
       ,.final_v_o(dcache_final_v)
 
@@ -383,6 +386,7 @@ module bp_be_pipe_mem
   assign ready_o                = dcache_ready_lo;
   assign ptw_busy_o             = ptw_busy;
   assign early_data_o           = dcache_early_data;
+  assign early_fflags_o         = dcache_early_fflags;
   assign final_data_o           = dcache_final_data;
 
   assign late_iwb_pkt = '{ird_w_v    : 1'b1

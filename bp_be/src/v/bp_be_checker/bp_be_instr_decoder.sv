@@ -232,6 +232,7 @@ module bp_be_instr_decoder
             decode_cast_o.dcache_w_v = 1'b1;
             decode_cast_o.mem_v      = 1'b1;
             decode_cast_o.ops_v      = instr inside {`RV64_FS_W};
+            decode_cast_o.fflags_w_v = 1'b1;
 
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
 
@@ -324,7 +325,7 @@ module bp_be_instr_decoder
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
                   decode_cast_o.fflags_w_v   = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FCVT_SD};
+                  decode_cast_o.ops_v        = instr inside {`RV64_FCVT_DS};
                   decode_cast_o.fu_op        = e_aux_op_f2f;
                 end
               `RV64_FCVT_WS, `RV64_FCVT_LS:

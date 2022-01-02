@@ -188,13 +188,12 @@ module bp_nonsynth_cosim
       // The control bits control tininess, which is fixed in RISC-V
       wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
-      bp_be_rec_to_fp
+      bp_be_reg_to_fp
        #(.bp_params_p(bp_params_p))
        debug_fp
-        (.rec_i(frd_data_r[i].rec)
-
-         ,.raw_sp_not_dp_i(frd_data_r[i].sp_not_dp)
+        (.reg_i(frd_data_r[i])
          ,.raw_o(frd_raw_li[i])
+         ,.fflags_o()
          );
     end
 

@@ -127,7 +127,7 @@ module bp_be_calculator_top
   logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
   logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
   logic [dpath_width_gp-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
-  rv64_fflags_s pipe_aux_fflags_lo, pipe_fma_fflags_lo;
+  rv64_fflags_s pipe_aux_fflags_lo, pipe_mem_early_fflags_lo, pipe_fma_fflags_lo;
 
   bp_be_wb_pkt_s pipe_mem_late_iwb_pkt;
   logic pipe_mem_late_iwb_pkt_v, pipe_mem_late_iwb_pkt_yumi;
@@ -332,6 +332,7 @@ module bp_be_calculator_top
      ,.store_page_fault_v_o(pipe_mem_store_page_fault_lo)
 
      ,.early_data_o(pipe_mem_early_data_lo)
+     ,.early_fflags_o(pipe_mem_early_fflags_lo)
      ,.early_v_o(pipe_mem_early_data_lo_v)
 
      ,.final_data_o(pipe_mem_final_data_lo)
@@ -405,18 +406,19 @@ module bp_be_calculator_top
             : comp_stage_r[i-1];
         end
       // Injected instructions can carry a payload in rs2
-      comp_stage_n[0].rd_data    |= injection                ? dispatch_pkt_cast_i.rs2 : '0;
-      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo        : '0;
-      comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo        : '0;
-      comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo        : '0;
-      comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo  : '0;
-      comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo        : '0;
-      comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo  : '0;
-      comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo        : '0;
-      comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo        : '0;
+      comp_stage_n[0].rd_data    |= injection                ? dispatch_pkt_cast_i.rs2  : '0;
+      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo         : '0;
+      comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo         : '0;
+      comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo         : '0;
+      comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo   : '0;
+      comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo         : '0;
+      comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo   : '0;
+      comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo         : '0;
+      comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo         : '0;
 
-      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo      : '0;
-      comp_stage_n[5].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo      : '0;
+      comp_stage_n[2].fflags     |= pipe_mem_early_data_lo_v ? pipe_mem_early_fflags_lo : '0;
+      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo       : '0;
+      comp_stage_n[5].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo       : '0;
 
       comp_stage_n[0].ird_w_v    &= exc_stage_n[0].v;
       comp_stage_n[1].ird_w_v    &= exc_stage_n[1].v;
