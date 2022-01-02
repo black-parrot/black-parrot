@@ -36,7 +36,7 @@ module bp_fe_icache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to icache parameters, but can override if needed
-   , parameter coherent_p    = l1_coherent_p
+   , parameter coherent_p    = icache_coherent_p
    , parameter sets_p        = icache_sets_p
    , parameter assoc_p       = icache_assoc_p
    , parameter block_width_p = icache_block_width_p

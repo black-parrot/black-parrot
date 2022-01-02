@@ -95,20 +95,20 @@ module bp_be_dcache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to dcache parameters, but can override if needed
-   , parameter [31:0] amo_support_p  = (((lr_sc_p == e_l1) << e_dcache_subop_lr)
-                                        | ((lr_sc_p == e_l1) << e_dcache_subop_sc)
-                                        | ((amo_swap_p == e_l1) << e_dcache_subop_amoswap)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amoadd)
-                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoxor)
-                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoand)
-                                        | ((amo_fetch_logic_p == e_l1) << e_dcache_subop_amoor)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomin)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomax)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amominu)
-                                        | ((amo_fetch_arithmetic_p == e_l1) << e_dcache_subop_amomaxu)
+   , parameter [31:0] amo_support_p  = (((dcache_amo_support_p[e_lr_sc]) << e_dcache_subop_lr)
+                                        | ((dcache_amo_support_p[e_lr_sc]) << e_dcache_subop_sc)
+                                        | ((dcache_amo_support_p[e_amo_swap]) << e_dcache_subop_amoswap)
+                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amoadd)
+                                        | ((dcache_amo_support_p[e_amo_fetch_logic]) << e_dcache_subop_amoxor)
+                                        | ((dcache_amo_support_p[e_amo_fetch_logic]) << e_dcache_subop_amoand)
+                                        | ((dcache_amo_support_p[e_amo_fetch_logic]) << e_dcache_subop_amoor)
+                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amomin)
+                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amomax)
+                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amominu)
+                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amomaxu)
                                         )
-   , parameter coherent_p     = l1_coherent_p
-   , parameter writethrough_p = l1_writethrough_p
+   , parameter coherent_p     = icache_coherent_p
+   , parameter writethrough_p = dcache_writethrough_p
    , parameter sets_p         = dcache_sets_p
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
@@ -601,9 +601,11 @@ module bp_be_dcache
      );
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
-  wire lr_hit_tv = v_tv_r & decode_tv_r.lr_op & store_hit_tv & (lr_sc_p == e_l1);
+  wire lr_hit_tv =
+    v_tv_r & decode_tv_r.lr_op & store_hit_tv & (amo_support_p[e_dcache_subop_lr]);
   // Succeed if the address matches and we have a store hit
-  wire sc_success_tv  = v_tv_r & decode_tv_r.sc_op & store_hit_tv & load_reservation_match_tv & (lr_sc_p == e_l1);
+  wire sc_success_tv =
+    v_tv_r & decode_tv_r.sc_op & store_hit_tv & load_reservation_match_tv & (amo_support_p[e_dcache_subop_sc]);
   // Fail if we have a store conditional without success
   wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
 
@@ -1299,7 +1301,7 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   // Load Reservation
   /////////////////////////////////////////////////////////////////////////////
-  if (lr_sc_p == e_l1)
+  if (amo_support_p[e_dcache_subop_lr] && amo_support_p[e_dcache_subop_sc])
     begin : l1_lrsc
       logic [sindex_width_lp-1:0] load_reserved_index_r;
       logic [ctag_width_p-1:0] load_reserved_tag_r;
