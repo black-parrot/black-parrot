@@ -391,9 +391,9 @@ module bp_be_dcache
   assign fp_reg = data_tl_r;
   logic [dword_width_gp-1:0] fp_raw_data;
   rv64_fflags_s st_fflags_tl;
-  bp_be_rec_to_fp
+  bp_be_reg_to_fp
    #(.bp_params_p(bp_params_p))
-   rec_to_fp
+   reg_to_fp
     (.reg_i(fp_reg)
      ,.raw_o(fp_raw_data)
      ,.fflags_o(st_fflags_tl)
@@ -733,9 +733,9 @@ module bp_be_dcache
   bp_be_fp_reg_s final_float_data;
   wire [dword_width_gp-1:0] final_float_raw_data =
     decode_dm_r.word_op ? {{word_width_gp{1'b1}}, final_int_data[0+:word_width_gp]} : final_int_data;
-  bp_be_fp_to_rec
+  bp_be_fp_to_reg
    #(.bp_params_p(bp_params_p))
-   fp_to_rec
+   fp_to_reg
     (.raw_i(final_float_raw_data)
      ,.reg_o(final_float_data)
      );

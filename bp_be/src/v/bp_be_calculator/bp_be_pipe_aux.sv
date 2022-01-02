@@ -69,7 +69,7 @@ module bp_be_pipe_aux
   //
   logic [dword_width_gp-1:0] frs1_raw;
   rv64_fflags_s frs1_raw_fflags;
-  bp_be_rec_to_fp
+  bp_be_reg_to_fp
    #(.bp_params_p(bp_params_p))
    frs1_rec2raw
     (.reg_i(frs1)
@@ -79,7 +79,7 @@ module bp_be_pipe_aux
 
   logic [dword_width_gp-1:0] frs2_raw;
   rv64_fflags_s frs2_raw_fflags;
-  bp_be_rec_to_fp
+  bp_be_reg_to_fp
    #(.bp_params_p(bp_params_p))
    frs2_rec2raw
     (.reg_i(frs2)
@@ -106,9 +106,9 @@ module bp_be_pipe_aux
 
   bp_be_fp_reg_s imvf_result;
   rv64_fflags_s imvf_fflags;
-  bp_be_fp_to_rec
+  bp_be_fp_to_reg
    #(.bp_params_p(bp_params_p))
-   fp_to_rec
+   fp_to_reg
     (.raw_i(imvf_src)
      ,.reg_o(imvf_result)
      );
@@ -304,9 +304,9 @@ module bp_be_pipe_aux
       fsgnj_raw[frd_signbit] = sgn_lo;
     end
 
-  bp_be_fp_to_rec
+  bp_be_fp_to_reg
    #(.bp_params_p(bp_params_p))
-   fsgnj_recode
+   fsgnj_fp_to_reg
     (.raw_i(fsgnj_raw)
      ,.reg_o(fsgnj_result)
      );

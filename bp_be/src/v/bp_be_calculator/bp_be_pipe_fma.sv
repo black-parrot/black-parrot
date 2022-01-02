@@ -179,30 +179,6 @@ module bp_be_pipe_fma
   bp_be_fp_reg_s fma_dp_result;
   assign fma_dp_result = '{tag: e_fp_full, rec: fma_dp_final};
 
-  logic [dword_width_gp-1:0] debug_dp_raw;
-  bp_be_rec_to_fp
-   #(.bp_params_p(bp_params_p))
-   debug_dp_result
-    (.reg_i(fma_dp_result), .raw_o(debug_dp_raw), .fflags_o());
-
-  logic [dword_width_gp-1:0] debug_frs1_raw;
-  bp_be_rec_to_fp
-   #(.bp_params_p(bp_params_p))
-   debug_frs1
-    (.reg_i(frs1), .raw_o(debug_frs1_raw), .fflags_o());
-
-  logic [dword_width_gp-1:0] debug_frs2_raw;
-  bp_be_rec_to_fp
-   #(.bp_params_p(bp_params_p))
-   debug_frs2
-    (.reg_i(frs2), .raw_o(debug_frs2_raw), .fflags_o());
-
-  logic [dword_width_gp-1:0] debug_result_raw;
-  bp_be_rec_to_fp
-   #(.bp_params_p(bp_params_p))
-   debug_result
-    (.reg_i(fma_result), .raw_o(debug_result_raw), .fflags_o());
-
   // TODO: Can combine the registers here if DC doesn't do it automatically
   bsg_dff_chain
    #(.width_p(dpath_width_gp), .num_stages_p(imul_retime_latency_lp-1))
