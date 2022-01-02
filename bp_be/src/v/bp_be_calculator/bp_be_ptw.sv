@@ -46,11 +46,10 @@ module bp_be_ptw
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   `bp_cast_o(bp_be_dcache_pkt_s, dcache_pkt);
 
-  enum logic [2:0] {e_idle, e_send_load, e_send_tag, e_wait_load, e_recv_load, e_writeback} state_n, state_r;
+  enum logic [2:0] {e_idle, e_send_load, e_send_tag, e_recv_load, e_writeback} state_n, state_r;
   wire is_idle  = (state_r == e_idle);
   wire is_send  = (state_r == e_send_load);
   wire is_tag   = (state_r == e_send_tag );
-  wire is_wait  = (state_r == e_wait_load);
   wire is_recv  = (state_r == e_recv_load);
   wire is_write = (state_r == e_writeback);
 
@@ -192,12 +191,11 @@ module bp_be_ptw
       e_idle     :  state_n = tlb_miss_v ? e_send_load : e_idle;
       e_send_load:  state_n = (dcache_ready_i & dcache_v_o) ? e_send_tag : e_send_load;
       e_send_tag :  state_n = e_recv_load;
-      e_wait_load:  state_n = e_recv_load;
       e_recv_load:  state_n = dcache_early_hit_v_i
                               ? page_fault_v
                                 ? e_idle
                                 : pte_is_leaf ? e_writeback : e_send_load
-                              : e_recv_load;
+                              : e_send_load;
       default: // e_writeback
                     state_n = e_idle;
     endcase

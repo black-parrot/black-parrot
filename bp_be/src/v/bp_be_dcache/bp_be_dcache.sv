@@ -635,7 +635,7 @@ module bp_be_dcache
   // fence.i
   assign early_fencei_o = decode_tv_r.fencei_op;
 
-  assign early_miss_v_o = v_tv_r & cache_req_yumi_i & ~early_hit_v_o;
+  assign early_miss_v_o = v_tv_r & cache_req_yumi_li & ~early_hit_v_o;
 
   assign early_fflags_o = st_fflags_tv_r;
 
