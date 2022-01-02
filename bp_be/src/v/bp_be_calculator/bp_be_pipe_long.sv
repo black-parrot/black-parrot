@@ -83,8 +83,14 @@ module bp_be_pipe_long
   wire [word_width_gp-1:0] remainder_w_lo = remainder_lo[0+:word_width_gp];
 
   bp_be_fp_reg_s frs1, frs2;
-  assign frs1 = reservation.rs1;
-  assign frs2 = reservation.rs2;
+  bp_be_fp_reg_s frs1_boxed, frs2_boxed;
+  wire frs1_invbox = decode.ops_v & (frs1_boxed.tag == e_fp_full);
+  wire frs2_invbox = decode.ops_v & (frs2_boxed.tag == e_fp_full);
+  assign frs1_boxed = reservation.rs1;
+  assign frs2_boxed = reservation.rs2;
+
+  assign frs1 = frs1_invbox ? '{tag: e_fp_full, rec: dp_canonical_nan} : frs1_boxed;
+  assign frs2 = frs2_invbox ? '{tag: e_fp_full, rec: dp_canonical_nan} : frs2_boxed;
 
   //
   // Control bits for the FPU
