@@ -94,6 +94,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_buf.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_buf_ctrl.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_circular_ptr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_concentrate_static.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counting_leading_zeros.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_down.v
@@ -190,7 +191,7 @@ $BP_BE_DIR/src/v/bp_be_top.sv
 # Calculator
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_csr.sv
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_to_rec.sv
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_to_reg.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_aux.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctl.sv
@@ -199,7 +200,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_sys.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_ptw.sv
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_rec_to_fp.sv
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_reg_to_fp.sv
 # Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.sv

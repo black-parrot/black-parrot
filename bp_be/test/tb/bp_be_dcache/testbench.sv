@@ -33,7 +33,7 @@ module testbench
 
    // Derived parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    , localparam trace_replay_data_width_lp = ptag_width_p + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
    , localparam trace_rom_addr_width_lp = 8
 
@@ -411,7 +411,7 @@ module testbench
      );
 
   // Assertions
-  if (uce_p == 0 && l1_writethrough_p == 1)
+  if (uce_p == 0 && dcache_writethrough_p == 1)
     $fatal("Writethrough cache with CCE not yet supported");
   if (cce_block_width_p != dcache_block_width_p)
     $fatal("Memory fetch block width does not match D$ block width");

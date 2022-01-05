@@ -33,16 +33,22 @@ module bp_mmu
    , input                                            r_load_i
    , input                                            r_store_i
    , input [dword_width_gp-1:0]                       r_eaddr_i
+   , input [1:0]                                      r_size_i
 
    , output logic                                     r_v_o
    , output logic [ptag_width_p-1:0]                  r_ptag_o
-   , output logic                                     r_miss_o
+   , output logic                                     r_instr_miss_o
+   , output logic                                     r_load_miss_o
+   , output logic                                     r_store_miss_o
    , output logic                                     r_uncached_o
    , output logic                                     r_nonidem_o
    , output logic                                     r_dram_o
    , output logic                                     r_instr_access_fault_o
    , output logic                                     r_load_access_fault_o
    , output logic                                     r_store_access_fault_o
+   , output logic                                     r_instr_misaligned_o
+   , output logic                                     r_load_misaligned_o
+   , output logic                                     r_store_misaligned_o
    , output logic                                     r_instr_page_fault_o
    , output logic                                     r_load_page_fault_o
    , output logic                                     r_store_page_fault_o
@@ -164,12 +170,29 @@ module bp_mmu
   wire store_page_fault_v = trans_en_r & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_fault_v);
   wire any_page_fault_v   = |{instr_page_fault_v, load_page_fault_v, store_page_fault_v};
 
+  // This logic only works for 8-byte words max.
+  logic r_misaligned_n, r_misaligned_r;
+  always_comb
+    case (r_size_i)
+      2'b01: r_misaligned_n = |r_eaddr_i[0+:1];
+      2'b10: r_misaligned_n = |r_eaddr_i[0+:2];
+      2'b11: r_misaligned_n = |r_eaddr_i[0+:3];
+      default: r_misaligned_n = '0;
+    endcase
+  always_ff @(posedge clk_i)
+    r_misaligned_r <= r_misaligned_n;
+
   assign r_v_o                   = r_v_r &  tlb_v_lo & ~any_access_fault_v & ~any_page_fault_v;
   assign r_ptag_o                = ptag_lo;
-  assign r_miss_o                = r_v_r & ~tlb_v_lo & ~any_access_fault_v & ~any_page_fault_v;;
+  assign r_instr_miss_o          = r_v_r & ~tlb_v_lo & r_instr_r & ~any_access_fault_v & ~any_page_fault_v;;
+  assign r_load_miss_o           = r_v_r & ~tlb_v_lo & r_load_r  & ~any_access_fault_v & ~any_page_fault_v;;
+  assign r_store_miss_o          = r_v_r & ~tlb_v_lo & r_store_r & ~any_access_fault_v & ~any_page_fault_v;;
   assign r_uncached_o            = r_v_r &  tlb_v_lo & ptag_uncached_lo;
   assign r_nonidem_o             = r_v_r &  tlb_v_lo & ptag_nonidem_lo;
   assign r_dram_o                = r_v_r &  tlb_v_lo & ptag_dram_lo;
+  assign r_instr_misaligned_o    = r_v_r & r_misaligned_r & r_instr_r;
+  assign r_load_misaligned_o     = r_v_r & r_misaligned_r & r_load_r;
+  assign r_store_misaligned_o    = r_v_r & r_misaligned_r & r_store_r;
   assign r_instr_access_fault_o  = r_v_r & instr_access_fault_v;
   assign r_load_access_fault_o   = r_v_r & load_access_fault_v;
   assign r_store_access_fault_o  = r_v_r & store_access_fault_v;

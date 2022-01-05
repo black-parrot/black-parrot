@@ -153,8 +153,7 @@ module bp_be_issue_queue
       issue_pkt_li = '0;
 
       // Pre-decode
-      issue_pkt_li.csr_w_v = (instr inside {`RV64_CSRRW, `RV64_CSRRWI})
-        || (instr.opcode inside {`RV64_SYSTEM_OP} && (instr.rs1_addr != '0));
+      issue_pkt_li.csr_v = instr.opcode inside {`RV64_SYSTEM_OP};
       issue_pkt_li.mem_v = instr.opcode inside {`RV64_FLOAD_OP, `RV64_FSTORE_OP
                                                 ,`RV64_LOAD_OP, `RV64_STORE_OP
                                                 ,`RV64_AMO_OP, `RV64_SYSTEM_OP

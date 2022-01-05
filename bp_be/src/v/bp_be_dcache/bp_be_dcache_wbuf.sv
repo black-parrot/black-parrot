@@ -25,10 +25,10 @@ module bp_be_dcache_wbuf
 
    , input [wbuf_entry_width_lp-1:0]        wbuf_entry_i
    , input                                  v_i
-   , output logic                           ready_and_o
 
    , output logic [wbuf_entry_width_lp-1:0] wbuf_entry_o
    , output logic                           v_o
+   , output logic                           force_o
    , input                                  yumi_i
 
    , input [paddr_width_p-1:0]              load_addr_i
@@ -56,7 +56,7 @@ module bp_be_dcache_wbuf
     if (reset_i)
       num_els_r <= '0;
     else
-      num_els_r <= num_els_r + (ready_and_o & v_i) - yumi_i;
+      num_els_r <= num_els_r + v_i - yumi_i;
 
   logic el0_valid, el1_valid;
   logic el0_enable, el1_enable;
@@ -93,6 +93,8 @@ module bp_be_dcache_wbuf
       end
     endcase
   end
+
+  assign force_o = v_i & (num_els_r == 2'd2);
 
   // wbuf queue
   //
@@ -180,8 +182,6 @@ module bp_be_dcache_wbuf
      ,.sel_i(bypass_mask_r)
      ,.data_o(data_merged_o)
      );
-
-  assign ready_and_o = num_els_r < 2'd2;
 
   //synopsys translate_off
   always_ff @(negedge clk_i) begin

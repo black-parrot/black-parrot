@@ -616,7 +616,7 @@ module bp_uce
                         ? e_flush_read
                         : clear_v_li
                           ? e_clear
-                          : (uc_hit_v_li & (l1_writethrough_p == 0))
+                          : (uc_hit_v_li & (dcache_writethrough_p == 0))
                             ? e_uc_writeback_evict
                             : (uc_store_v_li || wt_store_v_li)
                               ? e_ready
@@ -787,7 +787,7 @@ module bp_uce
   //synopsys translate_off
   always_ff @(negedge clk_i)
     begin
-      assert(reset_i !== '0 || (l1_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
+      assert(reset_i !== '0 || (dcache_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
         else $error("writethrough cache should not be in writeback states");
     end
   //synopsys translate_on
