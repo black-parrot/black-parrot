@@ -430,6 +430,7 @@ module bp_cce
   // Source Select
   bp_cce_src_sel
     #(.bp_params_p(bp_params_p)
+      ,.bedrock_data_width_p(bedrock_data_width_p)
      )
     source_selector
      (.src_a_sel_i(decoded_inst_lo.src_a_sel)
@@ -665,6 +666,7 @@ module bp_cce
   // Message unit
   bp_cce_msg
     #(.bp_params_p(bp_params_p)
+      ,.bedrock_data_width_p(bedrock_data_width_p)
       )
     message
      (.clk_i(clk_i)
