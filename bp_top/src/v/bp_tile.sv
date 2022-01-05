@@ -56,6 +56,7 @@ module bp_tile
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
 
   // Reset
   logic reset_r;
@@ -578,7 +579,7 @@ module bp_tile
      )
    cmd_xbar
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.msg_header_i(cce_mem_cmd_header_lo)
      ,.msg_data_i(cce_mem_cmd_data_lo)
@@ -603,7 +604,7 @@ module bp_tile
      )
    resp_xbar
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.msg_header_i(dev_resp_header_lo)
      ,.msg_data_i(dev_resp_data_lo)
@@ -717,39 +718,64 @@ module bp_tile
      ,.dma_data_ready_and_i(dma_data_yumi_li)
      );
 
-  // L2 Cache to Memory Links adapter
-  bsg_cache_dma_to_wormhole
-   #(.dma_addr_width_p(daddr_width_p)
-     ,.dma_burst_len_p(l2_block_size_in_fill_p)
+  bp_mem_ready_and_link_s [l2_banks_p-1:0] dma_link_lo, dma_link_li;
+  for (genvar i = 0; i < l2_banks_p; i++)
+    begin : dma
+      wire [mem_noc_cord_width_p-1:0] cord_li = my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p];
+      wire [mem_noc_cid_width_p-1:0]   cid_li = i;
 
-     ,.wh_flit_width_p(mem_noc_flit_width_p)
-     ,.wh_cid_width_p(mem_noc_cid_width_p)
-     ,.wh_len_width_p(mem_noc_len_width_p)
-     ,.wh_cord_width_p(mem_noc_cord_width_p)
+      bsg_cache_dma_to_wormhole
+       #(.dma_addr_width_p(daddr_width_p)
+         ,.dma_burst_len_p(l2_block_size_in_fill_p)
+
+         ,.wh_flit_width_p(mem_noc_flit_width_p)
+         ,.wh_cid_width_p(mem_noc_cid_width_p)
+         ,.wh_len_width_p(mem_noc_len_width_p)
+         ,.wh_cord_width_p(mem_noc_cord_width_p)
+         )
+       dma2wh
+        (.clk_i(clk_i)
+         ,.reset_i(reset_r)
+
+         ,.dma_pkt_i(dma_pkt_lo[i])
+         ,.dma_pkt_v_i(dma_pkt_v_lo[i])
+         ,.dma_pkt_yumi_o(dma_pkt_yumi_li[i])
+
+         ,.dma_data_o(dma_data_li[i])
+         ,.dma_data_v_o(dma_data_v_li[i])
+         ,.dma_data_ready_and_i(dma_data_ready_and_lo[i])
+
+         ,.dma_data_i(dma_data_lo[i])
+         ,.dma_data_v_i(dma_data_v_lo[i])
+         ,.dma_data_yumi_o(dma_data_yumi_li[i])
+
+         ,.wh_link_sif_i(dma_link_li[i])
+         ,.wh_link_sif_o(dma_link_lo[i])
+
+         ,.my_wh_cord_i(cord_li)
+         ,.my_wh_cid_i(cid_li)
+         // TODO: Parameterizable?
+         ,.dest_wh_cord_i('1)
+         ,.dest_wh_cid_i('0)
+         );
+    end
+
+  bsg_wormhole_concentrator
+   #(.flit_width_p(mem_noc_flit_width_p)
+     ,.len_width_p(mem_noc_len_width_p)
+     ,.cid_width_p(mem_noc_cid_width_p)
+     ,.cord_width_p(mem_noc_cord_width_p)
+     ,.num_in_p(l2_banks_p)
      )
-   bsg_cache_dma_to_wormhole
+   dma_concentrate
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.dma_pkt_i(dma_pkt_lo)
-     ,.dma_pkt_v_i(dma_pkt_v_lo)
-     ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
+     ,.links_i(dma_link_lo)
+     ,.links_o(dma_link_li)
 
-     ,.dma_data_o(dma_data_li)
-     ,.dma_data_v_o(dma_data_v_li)
-     ,.dma_data_ready_and_i(dma_data_ready_and_lo)
-
-     ,.dma_data_i(dma_data_lo)
-     ,.dma_data_v_i(dma_data_v_lo)
-     ,.dma_data_yumi_o(dma_data_yumi_li)
-
-     ,.wh_link_sif_i(mem_resp_link_i)
-     ,.wh_link_sif_o(mem_cmd_link_o)
-
-     ,.my_wh_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
-     ,.my_wh_cid_i('0)
-     ,.dest_wh_cord_i('1)
-     ,.dest_wh_cid_i('0)
+     ,.concentrated_link_o(mem_cmd_link_o)
+     ,.concentrated_link_i(mem_resp_link_i)
      );
 
 endmodule

@@ -525,7 +525,6 @@
       ,l2_amo_support       : '0
       ,dcache_fill_width    : 512
       ,icache_fill_width    : 512
-      ,l2_banks             : 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p

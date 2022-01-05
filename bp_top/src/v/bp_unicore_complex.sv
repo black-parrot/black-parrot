@@ -45,7 +45,7 @@ module bp_unicore_complex
    , output logic [num_core_p-1:0][uce_mem_header_width_lp-1:0]     io_resp_header_o
    , output logic [num_core_p-1:0][uce_fill_width_p-1:0]            io_resp_data_o
    , output logic [num_core_p-1:0]                                  io_resp_v_o
-   , input        [num_core_p-1:0]                                  io_resp_ready_and_i
+   , input [num_core_p-1:0]                                         io_resp_ready_and_i
    , output logic [num_core_p-1:0]                                  io_resp_last_o
 
    // DRAM interface
