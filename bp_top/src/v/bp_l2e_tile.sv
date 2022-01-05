@@ -228,7 +228,7 @@ module bp_l2e_tile
   // CCE-side CCE-Mem network connections
   bp_bedrock_mem_header_s mem_cmd_header_lo;
   logic [dword_width_gp-1:0] mem_cmd_data_lo;
-  logic mem_cmd_v_lo, mem_cmd_last_lo, mem_cmd_yumi_li;
+  logic mem_cmd_v_lo, mem_cmd_last_lo, mem_cmd_ready_and_li;
   bp_bedrock_mem_header_s mem_resp_header_li;
   logic [dword_width_gp-1:0] mem_resp_data_li;
   logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
@@ -320,7 +320,7 @@ module bp_l2e_tile
   // All CCE-Mem network responses go to the CCE on this tile (id = 0 in xbar)
   wire [2:0] dev_resp_dst_lo = '0;
 
-  bp_me_xbar_stream
+  bp_me_xbar_stream_buffered
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(dword_width_gp)
      ,.payload_width_p(mem_payload_width_lp)
@@ -334,7 +334,7 @@ module bp_l2e_tile
      ,.msg_header_i(mem_cmd_header_lo)
      ,.msg_data_i(mem_cmd_data_lo)
      ,.msg_v_i(mem_cmd_v_lo)
-     ,.msg_yumi_o(mem_cmd_yumi_li)
+     ,.msg_ready_and_o(mem_cmd_ready_and_li)
      ,.msg_last_i(mem_cmd_last_lo)
      ,.msg_dst_i(mem_cmd_dst_lo)
 
@@ -345,7 +345,7 @@ module bp_l2e_tile
      ,.msg_last_o(dev_cmd_last_li)
      );
 
-  bp_me_xbar_stream
+  bp_me_xbar_stream_buffered
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(dword_width_gp)
      ,.payload_width_p(mem_payload_width_lp)
@@ -359,7 +359,7 @@ module bp_l2e_tile
      ,.msg_header_i(dev_resp_header_lo)
      ,.msg_data_i(dev_resp_data_lo)
      ,.msg_v_i(dev_resp_v_lo)
-     ,.msg_yumi_o(dev_resp_ready_and_li)
+     ,.msg_ready_and_o(dev_resp_ready_and_li)
      ,.msg_last_i(dev_resp_last_lo)
      ,.msg_dst_i(dev_resp_dst_lo)
 
@@ -427,7 +427,7 @@ module bp_l2e_tile
      ,.mem_cmd_header_o(mem_cmd_header_lo)
      ,.mem_cmd_data_o(mem_cmd_data_lo)
      ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_yumi_li)
+     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
      ,.mem_cmd_last_o(mem_cmd_last_lo)
      );
 
