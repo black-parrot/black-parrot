@@ -58,7 +58,7 @@ module wrapper
    // DRAM interface
    , output logic [num_cce_p-1:0][l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
    , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_pkt_v_o
-   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_pkt_yumi_i
+   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_pkt_ready_and_i
 
    , input [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
    , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_v_i
@@ -66,7 +66,7 @@ module wrapper
 
    , output logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
    , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_data_v_o
-   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_yumi_i
+   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
   if (multicore_p)
@@ -232,7 +232,7 @@ module wrapper
 
              ,.dma_pkt_o(dma_pkt_o[i*cce_per_col_lp+:cce_per_col_lp])
              ,.dma_pkt_v_o(dma_pkt_v_o[i*cce_per_col_lp+:cce_per_col_lp])
-             ,.dma_pkt_yumi_i(dma_pkt_yumi_i[i*cce_per_col_lp+:cce_per_col_lp])
+             ,.dma_pkt_yumi_i(dma_pkt_ready_and_i[i*cce_per_col_lp+:cce_per_col_lp] & dma_pkt_v_o[i*cce_per_col_lp+:cce_per_col_lp])
 
              ,.dma_data_i(dma_data_i[i*cce_per_col_lp+:cce_per_col_lp])
              ,.dma_data_v_i(dma_data_v_i[i*cce_per_col_lp+:cce_per_col_lp])
@@ -240,7 +240,7 @@ module wrapper
 
              ,.dma_data_o(dma_data_o[i*cce_per_col_lp+:cce_per_col_lp])
              ,.dma_data_v_o(dma_data_v_o[i*cce_per_col_lp+:cce_per_col_lp])
-             ,.dma_data_yumi_i(dma_data_yumi_i[i*cce_per_col_lp+:cce_per_col_lp])
+             ,.dma_data_yumi_i(dma_data_ready_and_i[i*cce_per_col_lp+:cce_per_col_lp] & dma_data_v_o[i*cce_per_col_lp+:cce_per_col_lp])
              );
         end
     end

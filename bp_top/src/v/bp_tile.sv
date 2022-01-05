@@ -472,7 +472,7 @@ module bp_tile
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
   logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
-  bp_me_cfg
+  bp_me_cfg_slice
    #(.bp_params_p(bp_params_p))
    cfg
     (.clk_i(clk_i)

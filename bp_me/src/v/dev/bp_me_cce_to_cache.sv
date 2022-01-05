@@ -47,25 +47,22 @@ module bp_me_cce_to_cache
    // cache-side
    , output logic [l2_banks_p-1:0][cache_pkt_width_lp-1:0] cache_pkt_o
    , output logic [l2_banks_p-1:0]                         cache_pkt_v_o
-   , input [l2_banks_p-1:0]                                cache_pkt_ready_i
+   , input [l2_banks_p-1:0]                                cache_pkt_ready_and_i
 
    , input [l2_banks_p-1:0][l2_data_width_p-1:0]           cache_data_i
    , input [l2_banks_p-1:0]                                cache_v_i
-   , output logic [l2_banks_p-1:0]                         cache_yumi_o
+   , output logic [l2_banks_p-1:0]                         cache_ready_and_o
    );
 
   // L2 derived params
+  localparam l2_blocks_lp              = (l2_banks_p*l2_assoc_p*l2_sets_p);
   localparam lg_l2_banks_lp            = `BSG_SAFE_CLOG2(l2_banks_p);
   localparam lg_l2_sets_lp             = `BSG_SAFE_CLOG2(l2_sets_p);
-  localparam lg_l2_assoc_lp             = `BSG_SAFE_CLOG2(l2_assoc_p);
-  localparam l2_blocks_lp              = (l2_banks_p*l2_assoc_p*l2_sets_p);
+  localparam lg_l2_assoc_lp            = `BSG_SAFE_CLOG2(l2_assoc_p);
+  localparam lg_l2_blocks_lp           = `BSG_SAFE_CLOG2(l2_blocks_lp);
   localparam l2_block_offset_width_lp  = `BSG_SAFE_CLOG2(l2_block_width_p/8);
   localparam data_bytes_lp             = (l2_data_width_p/8);
   localparam data_byte_offset_width_lp = `BSG_SAFE_CLOG2(data_bytes_lp);
-
-  // requirement from BedRock Stream interface
-  if (!(`BSG_IS_POW2(l2_data_width_p) || l2_data_width_p < 64 || l2_data_width_p > 512))
-    $fatal(0, "l2 data width must be 64, 128, 256, or 512");
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
@@ -74,17 +71,13 @@ module bp_me_cce_to_cache
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = {l2_banks_p{cache_pkt}};
 
-  typedef enum logic [1:0] {
-    RESET
-    ,CLEAR_TAG
-    ,READY
-  } cmd_state_e;
+  enum logic [1:0] {e_reset, e_clear_tag, e_ready} state_n, state_r;
+  wire is_reset  = (state_r == e_reset);
+  wire is_clear  = (state_r == e_clear_tag);
+  wire is_ready  = (state_r == e_ready);
 
-  cmd_state_e cmd_state_r, cmd_state_n;
-  wire is_clear  = (cmd_state_r == CLEAR_TAG);
-
-  logic [lg_l2_banks_lp+lg_l2_sets_lp+lg_l2_assoc_lp:0] tagst_sent_r, tagst_sent_n;
-  logic [lg_l2_banks_lp+lg_l2_sets_lp+lg_l2_assoc_lp:0] tagst_received_r, tagst_received_n;
+  logic [lg_l2_blocks_lp:0] tagst_sent_r, tagst_sent_n;
+  logic [lg_l2_blocks_lp:0] tagst_received_r, tagst_received_n;
 
   bp_bedrock_cce_mem_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
@@ -228,7 +221,7 @@ module bp_me_cce_to_cache
   bp_bedrock_cce_mem_header_s mem_resp_header_lo;
   logic [lg_l2_banks_lp-1:0] cache_resp_bank_lo;
   logic mem_header_v_lo, mem_resp_ready_and_lo, mem_resp_v_li;
-  logic mem_resp_new_lo, mem_resp_done_lo;
+  logic mem_resp_done_lo;
   logic stream_fifo_ready_lo;
   bsg_fifo_1r1w_small
    #(.width_p(lg_l2_banks_lp+$bits(bp_bedrock_cce_mem_header_s)), .els_p(l2_outstanding_reqs_p))
@@ -268,7 +261,7 @@ module bp_me_cce_to_cache
      ,.fsm_v_i(mem_resp_v_li)
      ,.fsm_ready_and_o(mem_resp_ready_and_lo)
      ,.fsm_cnt_o(/* unused */)
-     ,.fsm_new_o(mem_resp_new_lo)
+     ,.fsm_new_o(/* unused */)
      ,.fsm_last_o(/* unused */)
      ,.fsm_done_o(mem_resp_done_lo)
      );
@@ -329,7 +322,7 @@ module bp_me_cce_to_cache
     begin
       cache_pkt     = '0;
       cache_pkt_v_o = '0;
-      cache_yumi_o = '0;
+      cache_ready_and_o = '0;
 
       mem_cmd_yumi_li = 1'b0;
 
@@ -338,33 +331,33 @@ module bp_me_cce_to_cache
       tagst_sent_n     = tagst_sent_r;
       tagst_received_n = tagst_received_r;
 
-      cmd_state_n  = cmd_state_r;
+      state_n  = state_r;
 
-      case (cmd_state_r)
-        RESET:
+      case (state_r)
+        e_reset:
           begin
-            cmd_state_n = CLEAR_TAG;
+            state_n = e_clear_tag;
           end
-        CLEAR_TAG: begin
+        e_clear_tag: begin
           cache_pkt_v_o = (tagst_sent_r != l2_blocks_lp) << (tagst_sent_r / (l2_sets_p*l2_assoc_p));
           cache_pkt.opcode = TAGST;
           cache_pkt.data = '0;
           cache_pkt.addr = tagst_sent_r[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
 
-          cache_yumi_o = cache_v_i;
+          cache_ready_and_o = '1;
 
-          tagst_sent_n = |{cache_pkt_v_o & cache_pkt_ready_i}
+          tagst_sent_n = |{cache_pkt_v_o & cache_pkt_ready_and_i}
             ? tagst_sent_r + 1'b1
             : tagst_sent_r;
-          tagst_received_n = |cache_v_i
+          tagst_received_n = |(cache_ready_and_o & cache_v_i)
             ? tagst_received_r + 1'b1
             : tagst_received_r;
 
-          cmd_state_n = (tagst_sent_r == l2_blocks_lp) & (tagst_received_r == l2_blocks_lp)
-            ? READY
-            : CLEAR_TAG;
+          state_n = (tagst_sent_r == l2_blocks_lp) & (tagst_received_r == l2_blocks_lp)
+            ? e_ready
+            : e_clear_tag;
         end
-        READY:
+        e_ready:
           begin
             case (mem_cmd_header_lo.msg_type)
               e_bedrock_mem_rd
@@ -421,10 +414,10 @@ module bp_me_cce_to_cache
                 cache_pkt.mask = cache_pkt_mask_lo;
               end
             cache_pkt_v_o = mem_cmd_v_lo << cache_cmd_bank_lo;
-            mem_cmd_yumi_li = stream_fifo_ready_lo & |{cache_pkt_ready_i & cache_pkt_v_o};
+            mem_cmd_yumi_li = stream_fifo_ready_lo & |{cache_pkt_ready_and_i & cache_pkt_v_o};
 
             mem_resp_v_li = mem_header_v_lo & cache_v_i[cache_resp_bank_lo];
-            cache_yumi_o[cache_resp_bank_lo] = mem_resp_ready_and_lo & mem_resp_v_li;
+            cache_ready_and_o[cache_resp_bank_lo] = mem_resp_ready_and_lo;
           end
         default: begin end
       endcase
@@ -434,22 +427,24 @@ module bp_me_cce_to_cache
   always_ff @(posedge clk_i)
     if (reset_i)
       begin
-        cmd_state_r          <= RESET;
-        tagst_sent_r         <= '0;
-        tagst_received_r     <= '0;
+        state_r          <= e_reset;
+        tagst_sent_r     <= '0;
+        tagst_received_r <= '0;
       end
     else
       begin
-        cmd_state_r          <= cmd_state_n;
-        tagst_sent_r         <= tagst_sent_n;
-        tagst_received_r     <= tagst_received_n;
+        state_r          <= state_n;
+        tagst_sent_r     <= tagst_sent_n;
+        tagst_received_r <= tagst_received_n;
       end
 
   //synopsys translate_off
   always_ff @(negedge clk_i)
     begin
-      if (mem_cmd_v_lo & mem_cmd_header_lo.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr})
-        assert(reset_i !== '0 || ~(mem_cmd_header_lo.subop inside {e_bedrock_amolr, e_bedrock_amosc}))
+      assert(reset_i !== '0
+             || ~(mem_cmd_v_lo & mem_cmd_header_lo.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr})
+             || ~(mem_cmd_header_lo.subop inside {e_bedrock_amolr, e_bedrock_amosc})
+             )
           else $error("LR/SC not supported in bsg_cache");
     end
   //synopsys translate_on

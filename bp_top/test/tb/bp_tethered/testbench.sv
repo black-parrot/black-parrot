@@ -187,7 +187,7 @@ module testbench
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
-     ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
+     ,.dma_pkt_ready_and_i(dma_pkt_yumi_li)
 
      ,.dma_data_i(dma_data_li)
      ,.dma_data_v_i(dma_data_v_li)
@@ -195,7 +195,7 @@ module testbench
 
      ,.dma_data_o(dma_data_lo)
      ,.dma_data_v_o(dma_data_v_lo)
-     ,.dma_data_yumi_i(dma_data_yumi_li)
+     ,.dma_data_ready_and_i(dma_data_yumi_li)
      );
 
   bp_nonsynth_dram

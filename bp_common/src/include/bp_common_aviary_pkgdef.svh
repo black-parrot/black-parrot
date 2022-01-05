@@ -172,6 +172,8 @@
     integer unsigned l2_assoc;
     integer unsigned l2_block_width;
     integer unsigned l2_fill_width;
+    // Number of requests which can be pending in a cache slice
+    // Should be 4 < N < 4*l2_banks_p to prevent stalling
     integer unsigned l2_outstanding_reqs;
 
     // Size of the issue queue
