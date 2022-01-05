@@ -132,5 +132,8 @@ module bp_nonsynth_if_verif
   if (!`BSG_IS_POW2(l2_banks_p))
     $error("L2 banks must be a power of two");
 
+  if (l2_en_p && (l2_banks_p > 1) && multicore_p)
+    $error("Multicore doesn't currently support L2 banking");
+
 endmodule
 

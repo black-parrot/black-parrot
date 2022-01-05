@@ -38,15 +38,15 @@ module bp_l2e_tile
    , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_req_link_i
-   , output [coh_noc_ral_link_width_lp-1:0]                   lce_req_link_o
+   , output logic [coh_noc_ral_link_width_lp-1:0]             lce_req_link_o
 
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_cmd_link_i
-   , output [coh_noc_ral_link_width_lp-1:0]                   lce_cmd_link_o
+   , output logic [coh_noc_ral_link_width_lp-1:0]             lce_cmd_link_o
 
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_resp_link_i
-   , output [coh_noc_ral_link_width_lp-1:0]                   lce_resp_link_o
+   , output logic [coh_noc_ral_link_width_lp-1:0]             lce_resp_link_o
 
-   , output [mem_noc_ral_link_width_lp-1:0]                   mem_cmd_link_o
+   , output logic [mem_noc_ral_link_width_lp-1:0]             mem_cmd_link_o
    , input [mem_noc_ral_link_width_lp-1:0]                    mem_resp_link_i
    );
 
@@ -430,6 +430,44 @@ module bp_l2e_tile
      ,.mem_cmd_last_o(cce_mem_cmd_last_lo)
      );
 
+  // CCE-Mem network to L2 Cache adapter
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
+  logic [l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
+  logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
+  logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
+  bp_me_cache_slice
+   #(.bp_params_p(bp_params_p))
+   l2s
+    (.clk_i(clk_i)
+     ,.reset_i(reset_r)
+
+     ,.mem_cmd_header_i(dev_cmd_header_li[0])
+     ,.mem_cmd_data_i(dev_cmd_data_li[0])
+     ,.mem_cmd_v_i(dev_cmd_v_li[0])
+     ,.mem_cmd_ready_and_o(dev_cmd_ready_and_lo[0])
+     ,.mem_cmd_last_i(dev_cmd_last_li[0])
+
+     ,.mem_resp_header_o(dev_resp_header_lo[0])
+     ,.mem_resp_data_o(dev_resp_data_lo[0])
+     ,.mem_resp_v_o(dev_resp_v_lo[0])
+     ,.mem_resp_ready_and_i(dev_resp_ready_and_li[0])
+     ,.mem_resp_last_o(dev_resp_last_lo[0])
+
+     ,.dma_pkt_o(dma_pkt_lo)
+     ,.dma_pkt_v_o(dma_pkt_v_lo)
+     ,.dma_pkt_ready_and_i(dma_pkt_yumi_li)
+
+     ,.dma_data_i(dma_data_li)
+     ,.dma_data_v_i(dma_data_v_li)
+     ,.dma_data_ready_and_o(dma_data_ready_and_lo)
+
+     ,.dma_data_o(dma_data_lo)
+     ,.dma_data_v_o(dma_data_v_lo)
+     ,.dma_data_ready_and_i(dma_data_yumi_li)
+     );
 
   // L2 Cache to Memory Links adapter
   bsg_cache_dma_to_wormhole
