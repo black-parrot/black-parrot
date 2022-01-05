@@ -124,7 +124,7 @@ module bp_be_dcache
    // Unused except for tracers
    , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
 
-   // Cycle 0: "Decode"
+   // Cycle 0: "Request"
    // New D$ packet comes in
    , input [dcache_pkt_width_lp-1:0]                 dcache_pkt_i
    , input                                           v_i
@@ -225,7 +225,7 @@ module bp_be_dcache
   logic safe_tl_we, safe_tv_we, safe_dm_we;
   logic v_tl_r, v_tv_r, v_dm_r;
   logic gdirty_r, cache_lock;
-  logic tag_write_hazard, wbuf_force_hazard;
+  logic tag_mem_write_hazard, data_mem_write_hazard;
 
   wire posedge_clk =  clk_i;
   wire negedge_clk = ~clk_i;
@@ -259,6 +259,8 @@ module bp_be_dcache
      ,.data_i({stat_mem_pkt_yumi_lo, cache_req_yumi_i})
      ,.data_o({stat_mem_pkt_yumi_o, cache_req_yumi_li})
      );
+
+  wire flush_self = tag_mem_write_hazard | data_mem_write_hazard;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
@@ -345,7 +347,7 @@ module bp_be_dcache
   logic [dpath_width_gp-1:0] data_tl_r;
 
   assign safe_tl_we = ready_o & v_i;
-  assign tl_we = safe_tl_we & ~poison_req_i & ~wbuf_force_hazard;
+  assign tl_we = safe_tl_we & ~poison_req_i & ~flush_self;
   bsg_dff_reset
    #(.width_p(1))
    v_tl_reg
@@ -422,7 +424,7 @@ module bp_be_dcache
 
   // fencei does not require a ptag
   assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
-  assign tv_we = safe_tv_we & ~poison_tl_i & ~tag_write_hazard;
+  assign tv_we = safe_tv_we & ~poison_tl_i & ~flush_self;
   bsg_dff_reset
    #(.width_p(1))
    v_tv_reg
@@ -611,7 +613,6 @@ module bp_be_dcache
 
   wire load_miss_tv   = decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv & ~uncached_op_tv_r;
   wire store_miss_tv  = decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & ~uncached_op_tv_r & (writethrough_p == 0);
-  wire lr_miss_tv     = decode_tv_r.lr_op & ~store_hit_tv & ~uncached_op_tv_r;
   wire fencei_miss_tv = decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
 
   wire any_miss_tv = load_miss_tv | store_miss_tv | fencei_miss_tv;
@@ -883,8 +884,6 @@ module bp_be_dcache
      ,.data_o({wbuf_v_lo})
      );
 
-  assign wbuf_force_hazard = wbuf_force_lo;
-
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
   /////////////////////////////////////////////////////////////////////////////
@@ -1029,18 +1028,18 @@ module bp_be_dcache
   ///////////////////////////
   // Tag Mem Control
   ///////////////////////////
-  wire tag_mem_fast_read = (safe_tl_we & ~decode_lo.fencei_op);
+  wire tag_mem_fast_read = (safe_tl_we & ~decode_lo.fencei_op) & ~tag_mem_write_hazard;
   wire tag_mem_slow_read = tag_mem_pkt_yumi_lo & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read);
   wire tag_mem_slow_write = tag_mem_pkt_yumi_lo & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
   wire tag_mem_fast_write = v_tv_r & (uncached_op_tv_r & dram_op_tv_r & ~uncached_hit_tv_r & load_hit_tv);
-  assign tag_write_hazard = tag_mem_fast_write;
+  assign tag_mem_write_hazard = tag_mem_fast_write;
 
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_fast_write;
   assign tag_mem_w_li = tag_mem_slow_write | tag_mem_fast_write;
-  assign tag_mem_addr_li = tag_mem_fast_read
-    ? vaddr_index
-    : tag_mem_fast_write
-      ? paddr_index_tv
+  assign tag_mem_addr_li = tag_mem_fast_write
+    ? paddr_index_tv
+    : tag_mem_fast_read
+      ? vaddr_index
       : tag_mem_pkt_cast_i.index;
   assign tag_mem_pkt_yumi_lo = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_fast_write;
 
@@ -1140,13 +1139,15 @@ module bp_be_dcache
   wire [data_mem_mask_width_lp-1:0] wbuf_data_mem_mask = wbuf_entry_out.mask << mask_shift;
 
   logic [assoc_p-1:0] data_mem_fast_read, data_mem_fast_write, data_mem_slow_read, data_mem_slow_write;
+  logic [assoc_p-1:0] data_mem_force_write;
   for (genvar i = 0; i < assoc_p; i++)
     begin : data_mem_lines
+      assign data_mem_force_write[i] = wbuf_v_lo & wbuf_force_lo & wbuf_bank_sel_one_hot[i];
       assign data_mem_slow_write[i] = data_mem_pkt_yumi_lo
         & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write) & data_mem_write_bank_mask[i];
       assign data_mem_slow_read[i] = data_mem_pkt_yumi_lo
         & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_read);
-      assign data_mem_fast_read[i] = safe_tl_we & decode_lo.load_op & ~wbuf_force_hazard;
+      assign data_mem_fast_read[i] = safe_tl_we & decode_lo.load_op & ~data_mem_force_write[i];
       assign data_mem_fast_write[i] = wbuf_yumi_li & wbuf_bank_sel_one_hot[i];
 
       assign data_mem_v_li[i] = data_mem_fast_read[i]
@@ -1161,18 +1162,19 @@ module bp_be_dcache
         : {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
 
       wire [bindex_width_lp-1:0] data_mem_pkt_offset = (bindex_width_lp'(i) - data_mem_pkt_cast_i.way_id);
-      assign data_mem_addr_li[i] = data_mem_fast_read[i]
-        ? {vaddr_index, {(assoc_p > 1){vaddr_bank}}}
-        : data_mem_fast_write[i]
-          ? {wbuf_entry_out_index, {(assoc_p > 1){wbuf_entry_out_bank_offset}}}
+      assign data_mem_addr_li[i] = data_mem_fast_write[i]
+        ? {wbuf_entry_out_index, {(assoc_p > 1){wbuf_entry_out_bank_offset}}}
+        : data_mem_fast_read[i]
+          ? {vaddr_index, {(assoc_p > 1){vaddr_bank}}}
           : {data_mem_pkt_cast_i.index, {(assoc_p > 1){data_mem_pkt_offset}}};
 
       assign data_mem_data_li[i] = data_mem_fast_write[i]
         ? {num_dwords_per_bank_lp{wbuf_entry_out.data}}
         : data_mem_pkt_data_li[i];
     end
-  // TODO: Can accept wbuf on non-reading data mems
-  assign wbuf_yumi_li = wbuf_v_lo & ~|data_mem_fast_read;
+  assign wbuf_yumi_li = wbuf_v_lo & |{~data_mem_fast_read & wbuf_bank_sel_one_hot};
+  // If we didn't read all banks, this could be more efficient
+  assign data_mem_write_hazard = (safe_tl_we & decode_lo.load_op) & |data_mem_force_write;
 
   // As an optimization, we could snoop the data_mem_pkt to see if there are any matching entries
   //   in the write buffer, so that the write buffer will only drain if it is full, or if there is
