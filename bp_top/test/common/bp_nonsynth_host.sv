@@ -10,7 +10,7 @@ module bp_nonsynth_host
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    , parameter io_data_width_p = dword_width_gp
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter icache_trace_p         = 0
    , parameter dcache_trace_p         = 0
@@ -28,13 +28,13 @@ module bp_nonsynth_host
   (input                                            clk_i
    , input                                          reset_i
 
-   , input [io_mem_header_width_lp-1:0]             mem_cmd_header_i
+   , input [mem_header_width_lp-1:0]                mem_cmd_header_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
-   , output logic [io_mem_header_width_lp-1:0]      mem_resp_header_o
+   , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
    , output logic [dword_width_gp-1:0]              mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
@@ -114,8 +114,8 @@ module bp_nonsynth_host
   localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
   wire [lg_num_core_lp-1:0] addr_core_enc = addr_lo[byte_offset_width_lp+:lg_num_core_lp];
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
-  bp_bedrock_io_mem_header_s mem_cmd_header_li;
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  bp_bedrock_mem_header_s mem_cmd_header_li;
   assign mem_cmd_header_li = mem_cmd_header_i;
   wire [hio_width_p-1:0] hio_id = mem_cmd_header_li.addr[paddr_width_p-1-:hio_width_p];
   always_comb

@@ -14,8 +14,8 @@ module wrapper
    `declare_bp_proc_params(bp_params_p)
 
    // interface widths
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , parameter cce_trace_p = 0
@@ -62,13 +62,13 @@ module wrapper
 
    // CCE-MEM Interface
    // BedRock Burst protocol: ready&valid
-   , input [cce_mem_header_width_lp-1:0]            mem_resp_header_i
+   , input [mem_header_width_lp-1:0]                mem_resp_header_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
    , input                                          mem_resp_v_i
    , output logic                                   mem_resp_ready_and_o
    , input                                          mem_resp_last_i
 
-   , output logic [cce_mem_header_width_lp-1:0]     mem_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
    , output logic [dword_width_gp-1:0]              mem_cmd_data_o
    , output logic                                   mem_cmd_v_o
    , input                                          mem_cmd_ready_and_i

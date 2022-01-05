@@ -16,8 +16,8 @@ module bp_cacc_tile
  import bsg_wormhole_router_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
@@ -39,8 +39,8 @@ module bp_cacc_tile
 
    );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
 
@@ -52,10 +52,10 @@ module bp_cacc_tile
   logic [cce_block_width_p-1:0] cce_lce_cmd_data_lo;
   logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_and_li;
 
-  bp_bedrock_cce_mem_header_s cce_io_cmd_header_lo;
+  bp_bedrock_mem_header_s cce_io_cmd_header_lo;
   logic [cce_block_width_p-1:0] cce_io_cmd_data_lo;
   logic cce_io_cmd_v_lo, cce_io_cmd_ready_and_li;
-  bp_bedrock_cce_mem_header_s cce_io_resp_header_li;
+  bp_bedrock_mem_header_s cce_io_resp_header_li;
   logic [cce_block_width_p-1:0] cce_io_resp_data_li;
   logic cce_io_resp_v_li, cce_io_resp_ready_and_lo;
 

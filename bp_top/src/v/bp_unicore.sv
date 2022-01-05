@@ -33,7 +33,7 @@ module bp_unicore
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
@@ -45,26 +45,26 @@ module bp_unicore
    , input [coh_noc_cord_width_p-1:0]                  my_cord_i
 
    // Outgoing I/O
-   , output logic [uce_mem_header_width_lp-1:0]        io_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]            io_cmd_header_o
    , output logic [uce_fill_width_p-1:0]               io_cmd_data_o
    , output logic                                      io_cmd_v_o
    , input                                             io_cmd_ready_and_i
    , output logic                                      io_cmd_last_o
 
-   , input [uce_mem_header_width_lp-1:0]               io_resp_header_i
+   , input [mem_header_width_lp-1:0]                   io_resp_header_i
    , input [uce_fill_width_p-1:0]                      io_resp_data_i
    , input                                             io_resp_v_i
    , output logic                                      io_resp_ready_and_o
    , input                                             io_resp_last_i
 
    // Incoming I/O
-   , input [uce_mem_header_width_lp-1:0]               io_cmd_header_i
+   , input [mem_header_width_lp-1:0]                   io_cmd_header_i
    , input [uce_fill_width_p-1:0]                      io_cmd_data_i
    , input                                             io_cmd_v_i
    , output logic                                      io_cmd_ready_and_o
    , input                                             io_cmd_last_i
 
-   , output logic [uce_mem_header_width_lp-1:0]        io_resp_header_o
+   , output logic [mem_header_width_lp-1:0]            io_resp_header_o
    , output logic [uce_fill_width_p-1:0]               io_resp_data_o
    , output logic                                      io_resp_v_o
    , input                                             io_resp_ready_and_i
@@ -85,13 +85,12 @@ module bp_unicore
    );
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
-  bp_bedrock_uce_mem_header_s mem_cmd_header_lo;
+  bp_bedrock_mem_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
-  bp_bedrock_uce_mem_header_s mem_resp_header_li;
+  bp_bedrock_mem_header_s mem_resp_header_li;
   logic [l2_data_width_p-1:0] mem_resp_data_li;
   logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
 

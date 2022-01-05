@@ -32,8 +32,8 @@ module bp_cce_msg
     // Interface Widths
     , localparam mshr_width_lp             = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
     // log2 of dword width bytes
     , localparam lg_dword_width_bytes_lp = `BSG_SAFE_CLOG2(dword_width_gp/8)
@@ -80,7 +80,7 @@ module bp_cce_msg
 
    // CCE-MEM Interface
    // memory response stream pump in
-   , input [cce_mem_header_width_lp-1:0]            mem_resp_header_i
+   , input [mem_header_width_lp-1:0]                mem_resp_header_i
    , input [paddr_width_p-1:0]                      mem_resp_addr_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
    , input                                          mem_resp_v_i
@@ -90,7 +90,7 @@ module bp_cce_msg
    , input                                          mem_resp_stream_done_i
 
    // memory command stream pump out
-   , output logic [cce_mem_header_width_lp-1:0]     mem_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
    , output logic [dword_width_gp-1:0]              mem_cmd_data_o
    , output logic                                   mem_cmd_v_o
    , input                                          mem_cmd_ready_and_i
@@ -145,8 +145,8 @@ module bp_cce_msg
   );
 
   // LCE-CCE and Mem-CCE Interface
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   // MSHR
   `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
@@ -171,13 +171,13 @@ module bp_cce_msg
   assign mshr = mshr_i;
 
   // memory command and response message casting
-  bp_bedrock_cce_mem_header_s mem_cmd_base_header_lo;
+  bp_bedrock_mem_header_s mem_cmd_base_header_lo;
   assign mem_cmd_header_o = mem_cmd_base_header_lo;
-  bp_bedrock_cce_mem_header_s mem_resp_base_header_li;
+  bp_bedrock_mem_header_s mem_resp_base_header_li;
   assign mem_resp_base_header_li = mem_resp_header_i;
 
   // memory command header register used to complete pushq mem_cmd
-  bp_bedrock_cce_mem_header_s mem_cmd_base_header_r, mem_cmd_base_header_n;
+  bp_bedrock_mem_header_s mem_cmd_base_header_r, mem_cmd_base_header_n;
 
   // Cache block aligned address mask
   // TODO: should CCE ever align the address?

@@ -38,7 +38,7 @@ module bp_lce_cmd
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
     // width for counter used during initiliazation and for sync messages
@@ -123,7 +123,7 @@ module bp_lce_cmd
     , input                                          lce_cmd_ready_then_i
   );
 
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
   `bp_cast_o(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
