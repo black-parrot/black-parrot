@@ -149,7 +149,6 @@ RV64_P_ISA_TESTS := \
 
 RV64_P_ISA_TESTLIST := $(addprefix riscv-tests@, $(RV64_P_ISA_TESTS))
 
-  #rv64ua-v-amominu_w
 RV64_V_ISA_TESTS := \
   rv64ui-v-add     \
   rv64ui-v-addi    \
@@ -211,6 +210,7 @@ RV64_V_ISA_TESTS := \
   rv64ua-v-amomin_d  \
   rv64ua-v-amomin_w  \
   rv64ua-v-amominu_d \
+  rv64ua-v-amominu_w \
   rv64ua-v-amoor_d   \
   rv64ua-v-amoor_w   \
   rv64ua-v-amoswap_d \
@@ -406,7 +406,6 @@ BEEBS_TESTS := \
   edn \
   expint \
   fac \
-  fasta \
   fdct \
   fibcall \
   fir \
@@ -428,7 +427,6 @@ BEEBS_TESTS := \
   nettle-des \
   nettle-md5 \
   nettle-sha256 \
-  newlib-exp \
   newlib-log \
   newlib-mod \
   newlib-sqrt \
@@ -437,7 +435,6 @@ BEEBS_TESTS := \
   picojpeg \
   prime \
   qrduino \
-  qurt \
   recursion \
   select \
   sglib-arraybinsearch \
@@ -450,7 +447,6 @@ BEEBS_TESTS := \
   sglib-queue \
   sglib-rbtree \
   slre \
-  sqrt \
   statemate \
   stringsearch1 \
   strstr \
@@ -460,12 +456,16 @@ BEEBS_TESTS := \
   trio-sscanf \
   ud \
   wikisort \
-  qsort
+  qsort \
+  minver \
+  whetstone \
 
-# COSIM fail 0.0->-0.0
-#  minver \
-#  stb_perlin \
-#  whetstone \
+# Spurious COSIM fail
+#  fasta
+#  newlib-exp
+#  qurt
+#  sqrt
+#  stb_perlin
 #
 # COSIM fail LFS init
 #  ludcmp \

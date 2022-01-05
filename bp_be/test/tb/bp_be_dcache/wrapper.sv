@@ -31,7 +31,7 @@ module wrapper
 
    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
 
-   , localparam dcache_pkt_width_lp=$bits(bp_be_dcache_pkt_s)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
 
    , localparam lce_cce_req_packet_width_lp = `bsg_wormhole_concentrator_packet_width(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_req_header_width_lp+cce_block_width_p)
    , localparam lce_cce_req_packet_hdr_width_lp = (lce_cce_req_packet_width_lp-cce_block_width_p)
@@ -66,6 +66,7 @@ module wrapper
 
    `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
    `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
 
    // Cache to Rolly FIFO signals
    logic [num_caches_p-1:0] dcache_ready_lo;
@@ -225,6 +226,8 @@ module wrapper
        ,.early_data_o(early_data_lo[i])
        ,.early_hit_v_o(early_v_lo[i])
        ,.early_miss_v_o()
+       ,.early_fencei_o()
+       ,.early_fflags_o()
        ,.final_data_o(final_data_lo[i])
        ,.final_v_o(final_v_lo[i])
        ,.late_rd_addr_o()
@@ -238,7 +241,8 @@ module wrapper
        ,.ptag_uncached_i(rolly_uncached_r[i])
        ,.ptag_dram_i(1'b1)
 
-       ,.flush_i('0)
+       ,.poison_req_i('0)
+       ,.poison_tl_i('0)
 
        ,.cache_req_v_o(cache_req_v_lo[i])
        ,.cache_req_o(cache_req_lo[i])
