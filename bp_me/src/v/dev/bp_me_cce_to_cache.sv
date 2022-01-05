@@ -81,7 +81,7 @@ module bp_me_cce_to_cache
 
   bp_bedrock_cce_mem_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
-  logic mem_cmd_v_lo, mem_cmd_yumi_li;
+  logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   logic mem_cmd_new_lo, mem_cmd_done_lo, mem_cmd_last_lo;
   logic [paddr_width_p-1:0] mem_cmd_stream_addr_lo;
   bp_me_stream_pump_in
@@ -108,7 +108,7 @@ module bp_me_cce_to_cache
      ,.fsm_addr_o(mem_cmd_stream_addr_lo)
      ,.fsm_data_o(mem_cmd_data_lo)
      ,.fsm_v_o(mem_cmd_v_lo)
-     ,.fsm_ready_and_i(mem_cmd_yumi_li)
+     ,.fsm_ready_and_i(mem_cmd_ready_and_li)
      ,.fsm_new_o(mem_cmd_new_lo)
      ,.fsm_done_o(mem_cmd_done_lo)
      ,.fsm_last_o(mem_cmd_last_lo)
@@ -324,7 +324,7 @@ module bp_me_cce_to_cache
       cache_pkt_v_o = '0;
       cache_ready_and_o = '0;
 
-      mem_cmd_yumi_li = 1'b0;
+      mem_cmd_ready_and_li = 1'b0;
 
       mem_resp_v_li = 1'b0;
 
@@ -413,8 +413,8 @@ module bp_me_cce_to_cache
                 // but it gets set regardless of operation
                 cache_pkt.mask = cache_pkt_mask_lo;
               end
-            cache_pkt_v_o = mem_cmd_v_lo << cache_cmd_bank_lo;
-            mem_cmd_yumi_li = stream_fifo_ready_lo & |{cache_pkt_ready_and_i & cache_pkt_v_o};
+            cache_pkt_v_o[cache_cmd_bank_lo] = mem_cmd_v_lo;
+            mem_cmd_ready_and_li = stream_fifo_ready_lo & cache_pkt_ready_and_i[cache_cmd_bank_lo];
 
             mem_resp_v_li = mem_header_v_lo & cache_v_i[cache_resp_bank_lo];
             cache_ready_and_o[cache_resp_bank_lo] = mem_resp_ready_and_lo;

@@ -597,7 +597,7 @@ module testbench
     ,.mem_resp_data_i(mem_resp_data)
     ,.mem_resp_v_i(mem_resp_v)
     ,.mem_resp_ready_and_o(mem_resp_ready_and)
-    ,.mem_resp_last_i(mem_resp_last)
+    ,.mem_resp_last_i(mem_resp_v & mem_resp_last)
 
     ,.mem_cmd_header_o(mem_cmd_header)
     ,.mem_cmd_data_o(mem_cmd_data)
@@ -664,7 +664,7 @@ module testbench
      ,.mem_cmd_data_i(mem_cmd_data_lo)
      ,.mem_cmd_v_i(mem_cmd_v_lo)
      ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_i(mem_cmd_last_lo)
+     ,.mem_cmd_last_i(mem_cmd_v_lo & mem_cmd_last_lo)
 
      ,.mem_resp_header_o(mem_resp_li)
      ,.mem_resp_data_o(mem_resp_data_li)
@@ -688,7 +688,7 @@ module testbench
      ,.mem_cmd_data_i(mem_cmd_data_lo)
      ,.mem_cmd_v_i(mem_cmd_v_lo)
      ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_i(mem_cmd_last_lo)
+     ,.mem_cmd_last_i(mem_cmd_v_lo & mem_cmd_last_lo)
 
      ,.mem_resp_header_i(mem_resp_li)
      ,.mem_resp_data_i(mem_resp_data_li)

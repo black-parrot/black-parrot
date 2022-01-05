@@ -39,12 +39,12 @@ module bp_nonsynth_mem
    );
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p);
-  bsg_cache_dma_pkt_s dma_pkt_lo;
-  logic dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [l2_fill_width_p-1:0] dma_data_li;
-  logic dma_data_v_li, dma_data_ready_and_lo;
-  logic [l2_fill_width_p-1:0] dma_data_lo;
-  logic dma_data_v_lo, dma_data_yumi_li;
+  bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
+  logic [l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
+  logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
+  logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
   bp_me_cache_slice
    #(.bp_params_p(bp_params_p))
    cce_to_cache
@@ -81,6 +81,7 @@ module bp_nonsynth_mem
      ,.preload_mem_p(preload_mem_p)
      ,.dram_type_p(dram_type_p)
      ,.mem_els_p(mem_els_p)
+     ,.num_dma_p(l2_banks_p)
      )
    dram
     (.clk_i(clk_i)

@@ -198,11 +198,10 @@ module bp_unicore_lite
   wire [1:0][lce_id_width_p-1:0] lce_id_li = {cfg_bus_lo.dcache_id, cfg_bus_lo.icache_id};
   bp_uce
    #(.bp_params_p(bp_params_p)
-     ,.uce_mem_data_width_p(uce_fill_width_p)
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
-     ,.fill_width_p(dcache_fill_width_p)
+     ,.fill_width_p(uce_fill_width_p)
      ,.req_invert_clk_p(1)
      ,.data_mem_invert_clk_p(1)
      ,.tag_mem_invert_clk_p(1)
@@ -256,7 +255,6 @@ module bp_unicore_lite
 
   bp_uce
    #(.bp_params_p(bp_params_p)
-     ,.uce_mem_data_width_p(uce_fill_width_p)
      ,.assoc_p(icache_assoc_p)
      ,.sets_p(icache_sets_p)
      ,.block_width_p(icache_block_width_p)

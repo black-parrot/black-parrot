@@ -418,7 +418,7 @@ module wrapper
        );
 
     bsg_two_fifo
-     #(.width_p(lce_cmd_msg_width_lp))
+     #(.width_p(lce_cmd_header_width_lp+cce_block_width_p))
      cmd_fifo
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -492,7 +492,6 @@ module wrapper
   else begin: UCE
     bp_uce
      #(.bp_params_p(bp_params_p)
-       ,.uce_mem_data_width_p(l2_fill_width_p)
        ,.assoc_p(icache_assoc_p)
        ,.sets_p(icache_sets_p)
        ,.block_width_p(block_width_p)
