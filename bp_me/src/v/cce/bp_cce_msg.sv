@@ -80,7 +80,7 @@ module bp_cce_msg
 
    // CCE-MEM Interface
    // memory response stream pump in
-   , input [mem_header_width_lp-1:0]            mem_resp_header_i
+   , input [mem_header_width_lp-1:0]                mem_resp_header_i
    , input [paddr_width_p-1:0]                      mem_resp_addr_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
    , input                                          mem_resp_v_i
@@ -90,7 +90,7 @@ module bp_cce_msg
    , input                                          mem_resp_stream_done_i
 
    // memory command stream pump out
-   , output logic [mem_header_width_lp-1:0]     mem_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
    , output logic [dword_width_gp-1:0]              mem_cmd_data_o
    , output logic                                   mem_cmd_v_o
    , input                                          mem_cmd_ready_and_i
