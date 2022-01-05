@@ -94,6 +94,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_buf.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_buf_ctrl.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_circular_ptr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_concentrate_static.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counting_leading_zeros.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_down.v

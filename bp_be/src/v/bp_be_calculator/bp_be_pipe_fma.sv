@@ -121,26 +121,35 @@ module bp_be_pipe_fma
   localparam imul_latency_lp = 4;
   `ifdef SYNTHESIS
     `ifdef DC
-      localparam int muladd_latency_lp [1:0] = '{0,0};
+      localparam int fma_pipeline_stages_lp [1:0] = '{0,0};
     `elsif CDS_TOOL_DEFINE
-      localparam int muladd_latency_lp [1:0] = '{0,0};
+      localparam int fma_pipeline_stages_lp [1:0] = '{0,0};
     `else
-      localparam int muladd_latency_lp [1:0] = '{1,3};
+      localparam int fma_pipeline_stages_lp [1:0] = '{1,3};
     `endif
   `else
-      localparam int muladd_latency_lp [1:0] = '{0,0};
+      localparam int fma_pipeline_stages_lp [1:0] = '{0,0};
   `endif
-  localparam imul_retime_latency_lp = imul_latency_lp - muladd_latency_lp[1] - muladd_latency_lp[0];
-  localparam fma_retime_latency_lp  = fma_latency_lp - muladd_latency_lp[1] - muladd_latency_lp[0];
+  localparam imul_retime_latency_lp = imul_latency_lp - fma_pipeline_stages_lp[0];
+  localparam fma_retime_latency_lp  = fma_latency_lp - fma_pipeline_stages_lp[1] - fma_pipeline_stages_lp[0];
 
   rv64_frm_e frm_r;
-  logic opw_r, ops_r;
+  logic ops_r;
   bsg_dff_chain
-   #(.width_p($bits(rv64_frm_e)+2), .num_stages_p(muladd_latency_lp[0]+muladd_latency_lp[1]))
-   info_chain
+   #(.width_p($bits(rv64_frm_e)+1), .num_stages_p(fma_pipeline_stages_lp[0]+fma_pipeline_stages_lp[1]))
+   fma_info_chain
     (.clk_i(clk_i)
-     ,.data_i({frm_li, decode.opw_v, decode.ops_v})
-     ,.data_o({frm_r, opw_r, ops_r})
+     ,.data_i({frm_li, decode.ops_v})
+     ,.data_o({frm_r, ops_r})
+     );
+
+  logic opw_r;
+  bsg_dff_chain
+   #(.width_p(1), .num_stages_p(fma_pipeline_stages_lp[0]))
+   mul_info_chain
+    (.clk_i(clk_i)
+     ,.data_i(decode.opw_v)
+     ,.data_o(opw_r)
      );
 
   logic invalid_exc, is_nan, is_inf, is_zero, fma_out_sign;
@@ -152,7 +161,7 @@ module bp_be_pipe_fma
   mulAddRecFN
    #(.expWidth(dp_exp_width_gp)
      ,.sigWidth(dp_sig_width_gp)
-     ,.pipelineStages(muladd_latency_lp)
+     ,.pipelineStages(fma_pipeline_stages_lp)
      ,.imulEn(1)
      )
    fma
