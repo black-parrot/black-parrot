@@ -564,7 +564,9 @@ module testbench
         begin
           bind bp_cce_wrapper
             bp_me_nonsynth_cce_tracer
-             #(.bp_params_p(bp_params_p))
+             #(.bp_params_p(bp_params_p)
+               ,.bedrock_data_width_p(bedrock_data_width_p)
+               )
              cce_tracer
               (.clk_i(clk_i & testbench.cce_trace_en_lo)
               ,.reset_i(reset_i)
