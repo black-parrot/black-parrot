@@ -26,6 +26,7 @@ module bp_cce_fsm
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
+    , parameter bedrock_data_width_p       = dword_width_gp
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
@@ -43,6 +44,9 @@ module bp_cce_fsm
     , localparam max_tag_sets_lp           = `BSG_CDIV(lce_sets_p, num_cce_p)
     , localparam lg_max_tag_sets_lp        = `BSG_SAFE_CLOG2(max_tag_sets_lp)
 
+    // byte offset bits required per bedrock data channel beat
+    , localparam lg_bedrock_data_bytes_lp = `BSG_SAFE_CLOG2(bedrock_data_width_p/8)
+
     // interface widths
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
@@ -51,9 +55,6 @@ module bp_cce_fsm
     , localparam hash_index_width_lp=$clog2((2**lg_lce_sets_lp+num_cce_p-1)/num_cce_p)
 
     , localparam counter_width_lp = `BSG_SAFE_CLOG2(counter_max_lp+1)
-
-    // log2 of dword width bytes
-    , localparam lg_dword_width_bytes_lp = `BSG_SAFE_CLOG2(dword_width_gp/8)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -67,7 +68,7 @@ module bp_cce_fsm
    , input                                          lce_req_header_v_i
    , output logic                                   lce_req_header_ready_and_o
    , input                                          lce_req_has_data_i
-   , input [dword_width_gp-1:0]                     lce_req_data_i
+   , input [bedrock_data_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_data_v_i
    , output logic                                   lce_req_data_ready_and_o
    , input                                          lce_req_last_i
@@ -76,7 +77,7 @@ module bp_cce_fsm
    , input                                          lce_resp_header_v_i
    , output logic                                   lce_resp_header_ready_and_o
    , input                                          lce_resp_has_data_i
-   , input [dword_width_gp-1:0]                     lce_resp_data_i
+   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
    , input                                          lce_resp_data_v_i
    , output logic                                   lce_resp_data_ready_and_o
    , input                                          lce_resp_last_i
@@ -85,7 +86,7 @@ module bp_cce_fsm
    , output logic                                   lce_cmd_header_v_o
    , input                                          lce_cmd_header_ready_and_i
    , output logic                                   lce_cmd_has_data_o
-   , output logic [dword_width_gp-1:0]              lce_cmd_data_o
+   , output logic [bedrock_data_width_p-1:0]        lce_cmd_data_o
    , output logic                                   lce_cmd_data_v_o
    , input                                          lce_cmd_data_ready_and_i
    , output logic                                   lce_cmd_last_o
@@ -93,28 +94,23 @@ module bp_cce_fsm
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_header_width_lp-1:0]                mem_resp_header_i
-   , input [dword_width_gp-1:0]                     mem_resp_data_i
+   , input [bedrock_data_width_p-1:0]               mem_resp_data_i
    , input                                          mem_resp_v_i
    , output logic                                   mem_resp_ready_and_o
    , input                                          mem_resp_last_i
 
    , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
-   , output logic [dword_width_gp-1:0]              mem_cmd_data_o
+   , output logic [bedrock_data_width_p-1:0]        mem_cmd_data_o
    , output logic                                   mem_cmd_v_o
    , input                                          mem_cmd_ready_and_i
    , output logic                                   mem_cmd_last_o
    );
 
+  wire unused = &{lce_req_has_data_i, lce_req_last_i, lce_resp_has_data_i, lce_resp_last_i};
+
   // parameter checks
-  if (lce_sets_p <= 1) $fatal(0,"Number of LCE sets must be greater than 1");
-  if (counter_max_lp < num_way_groups_lp) $fatal(0,"Counter max value not large enough");
-  if (counter_max_lp < max_tag_sets_lp) $fatal(0,"Counter max value not large enough");
-  if (icache_block_width_p != cce_block_width_p) $fatal(0,"icache block width must match cce block width");
-  if (dcache_block_width_p != cce_block_width_p) $fatal(0,"dcache block width must match cce block width");
-  if ((num_cacc_p) > 0 && (acache_block_width_p != cce_block_width_p)) $fatal(0,"acache block width must match cce block width");
-  if (dword_width_gp != 64) $fatal(0,"FSM CCE requires dword width of 64-bits");
-  if (!(`BSG_IS_POW2(cce_block_width_p) || cce_block_width_p < 64 || cce_block_width_p > 1024))
-    $fatal(0, "invalid CCE block width");
+  if (counter_max_lp < num_way_groups_lp) $fatal(0, "Counter max value not large enough");
+  if (counter_max_lp < max_tag_sets_lp) $fatal(0, "Counter max value not large enough");
 
   // Define structure variables for output queues
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -161,10 +157,10 @@ module bp_cce_fsm
   logic mem_resp_v_li, mem_resp_yumi_lo;
   logic mem_resp_stream_new_li, mem_resp_stream_last_li, mem_resp_stream_done_li;
   logic [paddr_width_p-1:0] mem_resp_addr_li;
-  logic [dword_width_gp-1:0] mem_resp_data_li;
+  logic [bedrock_data_width_p-1:0] mem_resp_data_li;
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)
-      ,.stream_data_width_p(dword_width_gp)
+      ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
       ,.payload_width_p(mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
@@ -193,16 +189,16 @@ module bp_cce_fsm
       );
 
   // Memory Command Stream Pump
-  localparam stream_words_lp = cce_block_width_p / dword_width_gp;
+  localparam stream_words_lp = cce_block_width_p / bedrock_data_width_p;
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
   bp_bedrock_mem_header_s mem_cmd_base_header_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   logic mem_cmd_stream_new_li, mem_cmd_stream_done_li;
-  logic [dword_width_gp-1:0] mem_cmd_data_lo;
+  logic [bedrock_data_width_p-1:0] mem_cmd_data_lo;
   logic [data_len_width_lp-1:0] mem_cmd_stream_cnt_li;
   bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
-      ,.stream_data_width_p(dword_width_gp)
+      ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
       ,.payload_width_p(mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
@@ -408,10 +404,12 @@ module bp_cce_fsm
        ,.cacheable_addr_o(resp_pma_cacheable_addr_lo)
        );
 
-  // aligned address for block-based actions
+  // align request address to bedrock data width to support critical word first behavior
   wire [paddr_width_p-1:0] paddr_aligned =
-    {mshr_r.paddr[paddr_width_p-1:lg_block_size_in_bytes_lp]
-     , lg_block_size_in_bytes_lp'('0)};
+    {mshr_r.paddr[paddr_width_p-1:lg_bedrock_data_bytes_lp]
+     , lg_bedrock_data_bytes_lp'('0)};
+
+  // align lru address to block boundary - used for block replacement
   wire [paddr_width_p-1:0] lru_paddr_aligned =
     {mshr_r.lru_paddr[paddr_width_p-1:lg_block_size_in_bytes_lp]
      , lg_block_size_in_bytes_lp'('0)};
@@ -1063,14 +1061,13 @@ module bp_cce_fsm
         // uncached store
         end else if (lce_req_v & (lce_req.msg_type.req == e_bedrock_req_uc_wr)) begin
           // first beat of memory command must include data
-          // handshake is r&v on both LCE request header and memory command stream, and
-          // valid->yumi on LCE request data
+          // handshake is r&v on both LCE request data and memory command stream, and
+          // valid->yumi on LCE request header
           mem_cmd_v_lo = lce_req_v & lce_req_data_v_i & ~mem_credits_empty;
           lce_req_data_ready_and_o = mem_cmd_ready_and_li;
           // LCE request header is only dequeued if stream pump indicates stream is done
           lce_req_yumi = mem_cmd_v_lo & mem_cmd_ready_and_li & mem_cmd_stream_done_li;
 
-          // form message
           mem_cmd_base_header_lo.addr = lce_req.addr;
           mem_cmd_base_header_lo.size = lce_req.size;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_wr;
@@ -1225,8 +1222,8 @@ module bp_cce_fsm
         // uncached store
         if (mshr_r.flags.write_not_read) begin
           // first beat of memory command must include data
-          // handshake is r&v on both LCE request header and memory command stream, and
-          // valid->yumi on LCE request data
+          // handshake is r&v on both LCE request data and memory command stream, and
+          // valid->yumi on LCE request header
           mem_cmd_v_lo = lce_req_v & lce_req_data_v_i & ~mem_credits_empty;
           lce_req_data_ready_and_o = mem_cmd_ready_and_li;
           // LCE request header is only dequeued if stream pump indicates stream is done
@@ -1335,7 +1332,7 @@ module bp_cce_fsm
           // handshake is r&v
           mem_cmd_v_lo = ~mem_credits_empty;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_rd;
-          mem_cmd_base_header_lo.addr = paddr_aligned;
+          mem_cmd_base_header_lo.addr = mshr_r.paddr;
           mem_cmd_base_header_lo.size = mshr_r.msg_size;
           mem_cmd_base_header_lo.payload.lce_id = mshr_r.lce_id;
           mem_cmd_base_header_lo.payload.way_id = mshr_r.lru_way_id;
@@ -1561,7 +1558,7 @@ module bp_cce_fsm
             lce_resp_yumi = mem_cmd_stream_done_li;
 
             mem_cmd_base_header_lo.msg_type = e_bedrock_mem_wr;
-            mem_cmd_base_header_lo.addr = (lce_resp.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
+            mem_cmd_base_header_lo.addr = lce_resp.addr;
             mem_cmd_base_header_lo.size = lce_resp.size;
             mem_cmd_base_header_lo.payload.lce_id = mshr_r.lce_id;
             mem_cmd_base_header_lo.payload.way_id = '0;
@@ -1819,6 +1816,9 @@ module bp_cce_fsm
           lce_cmd.payload.dst_id = mshr_r.owner_lce_id;
           lce_cmd.payload.way_id = mshr_r.owner_way_id;
 
+          // note: transfer command causes a block-sized transfer from one LCE to another.
+          // the msg_size field is not set to the block size since the transfer command itself
+          // carries no data. The LCE sets the size of the data command it sends to the block size.
           lce_cmd.msg_type.cmd = mshr_r.flags.write_not_read | mshr_r.flags.cached_modified
                                  ? e_bedrock_cmd_st_tr
                                  : mshr_r.flags.cached_owned | mshr_r.flags.cached_forward
@@ -1916,7 +1916,7 @@ module bp_cce_fsm
           lce_cmd_has_data_o = 1'b0;
 
           lce_cmd.msg_type.cmd = e_bedrock_cmd_st_wakeup;
-          lce_cmd.addr = paddr_aligned;
+          lce_cmd.addr = mshr_r.paddr;
           lce_cmd.payload.dst_id = mshr_r.lce_id;
           lce_cmd.payload.way_id = mshr_r.way_id;
           lce_cmd.payload.state = mshr_r.next_coh_state;

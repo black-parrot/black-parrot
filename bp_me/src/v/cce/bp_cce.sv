@@ -16,6 +16,7 @@ module bp_cce
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p      = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
+    , parameter bedrock_data_width_p       = dword_width_gp
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
@@ -50,7 +51,7 @@ module bp_cce
    , input                                          lce_req_header_v_i
    , output logic                                   lce_req_header_ready_and_o
    , input                                          lce_req_has_data_i
-   , input [dword_width_gp-1:0]                     lce_req_data_i
+   , input [bedrock_data_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_data_v_i
    , output logic                                   lce_req_data_ready_and_o
    , input                                          lce_req_last_i
@@ -59,7 +60,7 @@ module bp_cce
    , input                                          lce_resp_header_v_i
    , output logic                                   lce_resp_header_ready_and_o
    , input                                          lce_resp_has_data_i
-   , input [dword_width_gp-1:0]                     lce_resp_data_i
+   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
    , input                                          lce_resp_data_v_i
    , output logic                                   lce_resp_data_ready_and_o
    , input                                          lce_resp_last_i
@@ -68,7 +69,7 @@ module bp_cce
    , output logic                                   lce_cmd_header_v_o
    , input                                          lce_cmd_header_ready_and_i
    , output logic                                   lce_cmd_has_data_o
-   , output logic [dword_width_gp-1:0]              lce_cmd_data_o
+   , output logic [bedrock_data_width_p-1:0]        lce_cmd_data_o
    , output logic                                   lce_cmd_data_v_o
    , input                                          lce_cmd_data_ready_and_i
    , output logic                                   lce_cmd_last_o
@@ -76,36 +77,22 @@ module bp_cce
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_header_width_lp-1:0]                mem_resp_header_i
-   , input [dword_width_gp-1:0]                     mem_resp_data_i
+   , input [bedrock_data_width_p-1:0]               mem_resp_data_i
    , input                                          mem_resp_v_i
    , output logic                                   mem_resp_ready_and_o
    , input                                          mem_resp_last_i
 
    , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
-   , output logic [dword_width_gp-1:0]              mem_cmd_data_o
+   , output logic [bedrock_data_width_p-1:0]        mem_cmd_data_o
    , output logic                                   mem_cmd_v_o
    , input                                          mem_cmd_ready_and_i
    , output logic                                   mem_cmd_last_o
   );
 
   // parameter checks
-  if (!(`BSG_IS_POW2(cce_way_groups_p))) $fatal(0,"Number of way groups must be a power of two");
-  if (!(`BSG_IS_POW2(dcache_assoc_p) && `BSG_IS_POW2(dcache_sets_p)))
-    $fatal(0,"D$ sets and assoc must be power of two");
-  if (!(`BSG_IS_POW2(icache_assoc_p) && `BSG_IS_POW2(icache_sets_p)))
-    $fatal(0,"I$ sets and assoc must be power of two");
-  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_assoc_p) || acache_assoc_p == 0))
-    $fatal(0,"A$ assoc must be power of two or 0");
-  if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0))
-    $fatal(0,"A$ sets must be power of two or 0");
-  if (icache_block_width_p != cce_block_width_p)
-    $fatal(0,"icache block width must match cce block width");
-  if (dcache_block_width_p != cce_block_width_p)
-    $fatal(0,"dcache block width must match cce block width");
-  if ((num_cacc_p > 0) && (acache_block_width_p != cce_block_width_p))
-    $fatal(0,"acache block width must match cce block width");
-  if (!(`BSG_IS_POW2(cce_block_width_p) || cce_block_width_p < 64 || cce_block_width_p > 1024))
-    $fatal(0, "invalid CCE block width");
+  if (cce_block_width_p < `bp_cce_inst_gpr_width)
+    $fatal(0, "CCE block width must be greater than CCE GPR width");
+
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -241,15 +228,15 @@ module bp_cce
   logic mem_resp_v_li, mem_resp_yumi_lo;
   logic mem_resp_stream_new_li, mem_resp_stream_last_li, mem_resp_stream_done_li;
   logic [paddr_width_p-1:0] mem_resp_addr_li;
-  logic [dword_width_gp-1:0] mem_resp_data_li;
+  logic [bedrock_data_width_p-1:0] mem_resp_data_li;
 
   // From CCE to memory command stream pump
-  localparam stream_words_lp = cce_block_width_p / dword_width_gp;
+  localparam stream_words_lp = cce_block_width_p / bedrock_data_width_p;
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
   bp_bedrock_mem_header_s mem_cmd_base_header_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   logic mem_cmd_stream_new_li, mem_cmd_stream_done_li;
-  logic [dword_width_gp-1:0] mem_cmd_data_lo;
+  logic [bedrock_data_width_p-1:0] mem_cmd_data_lo;
   logic [data_len_width_lp-1:0] mem_cmd_stream_cnt_li;
 
   /*
@@ -303,7 +290,7 @@ module bp_cce
   // Memory Response Stream Pump
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)
-      ,.stream_data_width_p(dword_width_gp)
+      ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
       ,.payload_width_p(mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
@@ -334,7 +321,7 @@ module bp_cce
   // Memory Command Stream Pump
   bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
-      ,.stream_data_width_p(dword_width_gp)
+      ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
       ,.payload_width_p(mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
@@ -443,6 +430,7 @@ module bp_cce
   // Source Select
   bp_cce_src_sel
     #(.bp_params_p(bp_params_p)
+      ,.bedrock_data_width_p(bedrock_data_width_p)
      )
     source_selector
      (.src_a_sel_i(decoded_inst_lo.src_a_sel)
@@ -678,6 +666,7 @@ module bp_cce
   // Message unit
   bp_cce_msg
     #(.bp_params_p(bp_params_p)
+      ,.bedrock_data_width_p(bedrock_data_width_p)
       )
     message
      (.clk_i(clk_i)

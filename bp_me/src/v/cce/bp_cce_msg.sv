@@ -16,6 +16,7 @@ module bp_cce_msg
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p      = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
+    , parameter bedrock_data_width_p       = dword_width_gp
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
@@ -29,17 +30,17 @@ module bp_cce_msg
     // counter width for memory command/response data packet counters
     , localparam counter_width_lp          = 8
 
+    // byte offset bits required per bedrock data channel beat
+    , localparam lg_bedrock_data_bytes_lp = `BSG_SAFE_CLOG2(bedrock_data_width_p/8)
+
     // Interface Widths
     , localparam mshr_width_lp             = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
-    // log2 of dword width bytes
-    , localparam lg_dword_width_bytes_lp = `BSG_SAFE_CLOG2(dword_width_gp/8)
-
     // stream pump
-    , localparam stream_words_lp = cce_block_width_p / dword_width_gp
+    , localparam stream_words_lp = cce_block_width_p / bedrock_data_width_p
     , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
   )
   (input                                            clk_i
@@ -55,7 +56,7 @@ module bp_cce_msg
    , input                                          lce_req_header_v_i
    , output logic                                   lce_req_header_yumi_o
    , input                                          lce_req_has_data_i
-   , input [dword_width_gp-1:0]                     lce_req_data_i
+   , input [bedrock_data_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_data_v_i
    , output logic                                   lce_req_data_ready_and_o
    , input                                          lce_req_last_i
@@ -64,7 +65,7 @@ module bp_cce_msg
    , input                                          lce_resp_header_v_i
    , output logic                                   lce_resp_header_yumi_o
    , input                                          lce_resp_has_data_i
-   , input [dword_width_gp-1:0]                     lce_resp_data_i
+   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
    , input                                          lce_resp_data_v_i
    , output logic                                   lce_resp_data_ready_and_o
    , input                                          lce_resp_last_i
@@ -73,7 +74,7 @@ module bp_cce_msg
    , output logic                                   lce_cmd_header_v_o
    , input                                          lce_cmd_header_ready_and_i
    , output logic                                   lce_cmd_has_data_o
-   , output logic [dword_width_gp-1:0]              lce_cmd_data_o
+   , output logic [bedrock_data_width_p-1:0]        lce_cmd_data_o
    , output logic                                   lce_cmd_data_v_o
    , input                                          lce_cmd_data_ready_and_i
    , output logic                                   lce_cmd_last_o
@@ -82,7 +83,7 @@ module bp_cce_msg
    // memory response stream pump in
    , input [mem_header_width_lp-1:0]                mem_resp_header_i
    , input [paddr_width_p-1:0]                      mem_resp_addr_i
-   , input [dword_width_gp-1:0]                     mem_resp_data_i
+   , input [bedrock_data_width_p-1:0]               mem_resp_data_i
    , input                                          mem_resp_v_i
    , output logic                                   mem_resp_yumi_o
    , input                                          mem_resp_stream_new_i
@@ -91,7 +92,7 @@ module bp_cce_msg
 
    // memory command stream pump out
    , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
-   , output logic [dword_width_gp-1:0]              mem_cmd_data_o
+   , output logic [bedrock_data_width_p-1:0]        mem_cmd_data_o
    , output logic                                   mem_cmd_v_o
    , input                                          mem_cmd_ready_and_i
    , input [data_len_width_lp-1:0]                  mem_cmd_stream_cnt_i
@@ -179,9 +180,14 @@ module bp_cce_msg
   // memory command header register used to complete pushq mem_cmd
   bp_bedrock_mem_header_s mem_cmd_base_header_r, mem_cmd_base_header_n;
 
-  // Cache block aligned address mask
-  // TODO: should CCE ever align the address?
-  wire [paddr_width_p-1:0] addr_mask =
+  // address mask for bedrock data width aligned, critical word first operations
+  wire [paddr_width_p-1:0] addr_bedrock_mask =
+    {{(paddr_width_p-lg_bedrock_data_bytes_lp){1'b1}}
+     , {(lg_bedrock_data_bytes_lp){1'b0}}
+    };
+
+  // address mask for block-aligned operations
+  wire [paddr_width_p-1:0] addr_block_mask =
     {{(paddr_width_p-lg_block_size_in_bytes_lp){1'b1}}
      , {(lg_block_size_in_bytes_lp){1'b0}}
     };
@@ -877,8 +883,7 @@ module bp_cce_msg
               // cached read - send single beat, no data
               e_bedrock_mem_rd: begin
                 mem_cmd_v_o = ~mem_credits_empty;
-                // cached access masks the address to align to cache block
-                mem_cmd_base_header_lo.addr = (addr_i & addr_mask);
+                mem_cmd_base_header_lo.addr = addr_i & addr_bedrock_mask;
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
@@ -915,8 +920,7 @@ module bp_cce_msg
                 // patch through data
                 mem_cmd_data_o = lce_resp_data_i;
 
-                // cached access masks the address to align to cache block
-                mem_cmd_base_header_lo.addr = (addr_i & addr_mask);
+                mem_cmd_base_header_lo.addr = addr_i & addr_bedrock_mask;
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
@@ -966,7 +970,7 @@ module bp_cce_msg
             // defaults provided here, but may be overridden below
             lce_cmd.payload.dst_id = lce_i;
             lce_cmd.msg_type.cmd = decoded_inst_i.lce_cmd;
-            lce_cmd.addr = addr_i;
+            lce_cmd.addr = addr_i & addr_bedrock_mask;
 
             if (decoded_inst_i.pushq_custom) begin
               // TODO: implement custom push
@@ -1027,12 +1031,12 @@ module bp_cce_msg
           lce_cmd.payload.dst_id = pe_lce_id;
           lce_cmd.payload.way_id = sharers_ways_r[pe_lce_id];
 
-          lce_cmd.addr = addr_r;
+          lce_cmd.addr = addr_r & addr_block_mask;
 
           // Directory write command
           dir_w_v_o = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
           dir_w_cmd_o = e_wds_op;
-          dir_addr_o = addr_r;
+          dir_addr_o = addr_r & addr_block_mask;
           dir_addr_bypass_o = '0;
           dir_lce_o = {'0, pe_lce_id};
           dir_way_o = sharers_ways_r[pe_lce_id];

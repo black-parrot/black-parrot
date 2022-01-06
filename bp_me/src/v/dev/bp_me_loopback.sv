@@ -29,6 +29,8 @@ module bp_me_loopback
     , output logic                                   mem_resp_last_o
     );
 
+  wire unused = &{mem_cmd_data_i};
+
   // Used to decouple to help prevent deadlock
   logic mem_resp_last_lo;
   bsg_one_fifo

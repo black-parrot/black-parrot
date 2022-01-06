@@ -15,6 +15,7 @@ module bp_me_nonsynth_cce_tracer
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
+    , parameter bedrock_data_width_p = dword_width_gp
 
     , localparam cce_trace_file_p = "cce"
 
@@ -38,34 +39,34 @@ module bp_me_nonsynth_cce_tracer
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
    , input                                          lce_req_header_v_i
    , input                                          lce_req_header_ready_and_i
-   , input [dword_width_gp-1:0]                     lce_req_data_i
+   , input [bedrock_data_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_data_v_i
    , input                                          lce_req_data_ready_and_i
 
    , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
    , input                                          lce_resp_header_v_i
    , input                                          lce_resp_header_ready_and_i
-   , input [dword_width_gp-1:0]                     lce_resp_data_i
+   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
    , input                                          lce_resp_data_v_i
    , input                                          lce_resp_data_ready_and_i
 
    , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
    , input                                          lce_cmd_header_v_i
    , input                                          lce_cmd_header_ready_and_i
-   , input [dword_width_gp-1:0]                     lce_cmd_data_i
+   , input [bedrock_data_width_p-1:0]               lce_cmd_data_i
    , input                                          lce_cmd_data_v_i
    , input                                          lce_cmd_data_ready_and_i
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_header_width_lp-1:0]                mem_resp_header_i
-   , input [dword_width_gp-1:0]                     mem_resp_data_i
+   , input [bedrock_data_width_p-1:0]               mem_resp_data_i
    , input                                          mem_resp_v_i
    , input                                          mem_resp_ready_and_i
    , input                                          mem_resp_last_i
 
    , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [dword_width_gp-1:0]                     mem_cmd_data_i
+   , input [bedrock_data_width_p-1:0]               mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , input                                          mem_cmd_ready_and_i
    , input                                          mem_cmd_last_i
