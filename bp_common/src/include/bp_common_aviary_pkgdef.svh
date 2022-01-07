@@ -392,7 +392,8 @@
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
 
-      ,l2_en : 0
+      ,l2_en          : 0
+      ,l2_amo_support : '0
 
       ,default : "inv"
       };
@@ -497,9 +498,7 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_l2_atomic_override_p =
-    '{l2_amo_support : (1 << e_amo_swap)
-                       | (1 << e_amo_fetch_logic)
-                       | (1 << e_amo_fetch_arithmetic)
+    '{dcache_amo_support : (1 << e_lr_sc)
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l2_atomic_cfg_p
