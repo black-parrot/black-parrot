@@ -48,7 +48,7 @@ module bp_nonsynth_dram
     begin : address_hash
       logic [daddr_width_p-1:0] daddr_lo;
       bp_me_dram_hash_decode
-        #(.bp_params_p(bp_params_p))
+       #(.bp_params_p(bp_params_p))
         dma_addr_hash
         (.daddr_i(dma_pkt_li[i].addr)
          ,.daddr_o(daddr_lo)
@@ -64,7 +64,7 @@ module bp_nonsynth_dram
   if (dram_type_p == "dmc")
     begin : ddr
       bp_ddr
-       #(.bp_params_p(bp_params_p))
+       #(.bp_params_p(bp_params_p), .num_dma_p(num_dma_p))
        ddr
         (.clk_i(clk_i)
          ,.reset_i(reset_i)

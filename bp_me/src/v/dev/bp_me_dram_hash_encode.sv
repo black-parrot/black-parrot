@@ -30,7 +30,8 @@ module bp_me_dram_hash_encode
   localparam lg_l2_sets_lp            = `BSG_SAFE_CLOG2(l2_sets_p);
   localparam lg_num_cce_lp            = `BSG_SAFE_CLOG2(num_cce_p);
   localparam lg_num_dma_lp            = `BSG_SAFE_CLOG2(num_cce_p*l2_banks_p);
-  localparam int hash_offset_widths_lp[2:0] = '{(lg_l2_sets_lp-lg_num_dma_lp), lg_num_dma_lp, l2_block_offset_width_lp};
+  localparam l2_bank_offset_width_lp  = (num_cce_p > 1) ? l2_block_offset_width_lp+lg_num_cce_lp : l2_block_offset_width_lp;
+  localparam int hash_offset_widths_lp[2:0] = '{(lg_l2_sets_lp-lg_num_cce_lp), lg_num_cce_lp, l2_block_offset_width_lp};
   localparam offset_width_lp = hash_offset_widths_lp[0] + hash_offset_widths_lp[1] + hash_offset_widths_lp[2];
 
   wire [hash_offset_widths_lp[2]+hash_offset_widths_lp[1]-1:0] encoded_bits =
@@ -38,13 +39,12 @@ module bp_me_dram_hash_encode
      ,daddr_i[(hash_offset_widths_lp[0]+hash_offset_widths_lp[1])+:hash_offset_widths_lp[2]]
      };
 
-  assign bank_o = (l2_banks_p > 1) ? daddr_i[l2_block_offset_width_lp+lg_num_cce_lp+:lg_l2_banks_lp] : '0;
-
   assign daddr_o =
     {daddr_i[daddr_width_p-1:offset_width_lp]
      ,encoded_bits
      ,daddr_i[0+:hash_offset_widths_lp[0]]
      };
+  assign bank_o = (l2_banks_p > 1) ? daddr_i[l2_bank_offset_width_lp+:lg_l2_banks_lp] : '0;
 
 endmodule
 

@@ -61,7 +61,7 @@ module bp_me_cache_slice
   bsg_cache_pkt_s [l2_banks_p-1:0] cache_pkt_li;
   logic [l2_banks_p-1:0] cache_pkt_v_li, cache_pkt_ready_and_lo;
   logic [l2_banks_p-1:0][l2_data_width_p-1:0] cache_data_lo;
-  logic [l2_banks_p-1:0] cache_data_v_lo, cache_data_ready_and_li;
+  logic [l2_banks_p-1:0] cache_data_v_lo, cache_data_yumi_li;
 
   bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p))
@@ -86,8 +86,8 @@ module bp_me_cache_slice
      ,.cache_pkt_ready_and_i(cache_pkt_ready_and_lo)
 
      ,.cache_data_i(cache_data_lo)
-     ,.cache_v_i(cache_data_v_lo)
-     ,.cache_ready_and_o(cache_data_ready_and_li)
+     ,.cache_data_v_i(cache_data_v_lo)
+     ,.cache_data_yumi_o(cache_data_yumi_li)
      );
 
   for (genvar i = 0; i < l2_banks_p; i++)
@@ -120,7 +120,7 @@ module bp_me_cache_slice
 
          ,.data_o(cache_data_lo[i])
          ,.v_o(cache_data_v_lo[i])
-         ,.yumi_i(cache_data_ready_and_li[i] & cache_data_v_lo[i])
+         ,.yumi_i(cache_data_yumi_li[i])
 
          ,.dma_pkt_o(dma_pkt_o[i])
          ,.dma_pkt_v_o(dma_pkt_v_o[i])

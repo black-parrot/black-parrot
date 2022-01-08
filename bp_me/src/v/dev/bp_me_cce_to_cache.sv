@@ -50,8 +50,8 @@ module bp_me_cce_to_cache
    , input [l2_banks_p-1:0]                                cache_pkt_ready_and_i
 
    , input [l2_banks_p-1:0][l2_data_width_p-1:0]           cache_data_i
-   , input [l2_banks_p-1:0]                                cache_v_i
-   , output logic [l2_banks_p-1:0]                         cache_ready_and_o
+   , input [l2_banks_p-1:0]                                cache_data_v_i
+   , output logic [l2_banks_p-1:0]                         cache_data_yumi_o
    );
 
   // L2 derived params
@@ -81,7 +81,7 @@ module bp_me_cce_to_cache
 
   bp_bedrock_cce_mem_header_s mem_cmd_header_lo;
   logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
-  logic mem_cmd_v_lo, mem_cmd_ready_and_li;
+  logic mem_cmd_v_lo, mem_cmd_yumi_li;
   logic mem_cmd_new_lo, mem_cmd_done_lo, mem_cmd_last_lo;
   logic [paddr_width_p-1:0] mem_cmd_stream_addr_lo;
   bp_me_stream_pump_in
@@ -108,7 +108,7 @@ module bp_me_cce_to_cache
      ,.fsm_addr_o(mem_cmd_stream_addr_lo)
      ,.fsm_data_o(mem_cmd_data_lo)
      ,.fsm_v_o(mem_cmd_v_lo)
-     ,.fsm_ready_and_i(mem_cmd_ready_and_li)
+     ,.fsm_ready_and_i(mem_cmd_yumi_li)
      ,.fsm_new_o(mem_cmd_new_lo)
      ,.fsm_done_o(mem_cmd_done_lo)
      ,.fsm_last_o(mem_cmd_last_lo)
@@ -133,6 +133,8 @@ module bp_me_cce_to_cache
   localparam lg_mux_els_lp = `BSG_SAFE_CLOG2(mux_els_lp);
   logic [mux_els_lp-1:0][data_bytes_lp-1:0] cache_pkt_mask_mux_li;
   logic [mux_els_lp-1:0][l2_data_width_p-1:0] cache_pkt_data_mux_li;
+  logic [daddr_width_p-1:0] cache_pkt_addr_lo;
+  logic [lg_l2_banks_lp-1:0] cache_cmd_bank_lo;
 
   for (genvar i = 0; i < mux_els_lp; i++)
     begin : cache_pkt_sel
@@ -162,7 +164,7 @@ module bp_me_cce_to_cache
           // i = 1, slices are 2B wide
           // i = 2, slices are 4B wide
           // etc.
-          wire [lg_num_slices_lp-1:0] slice_index = mem_cmd_stream_addr_lo[i+:lg_num_slices_lp];
+          wire [lg_num_slices_lp-1:0] slice_index = cache_pkt_addr_lo[i+:lg_num_slices_lp];
           // one-hot decoded slice index - bit n is set when targeting slice n
           wire [num_slices_lp-1:0] decoded_slice_index = (1'b1 << slice_index);
 
@@ -208,8 +210,6 @@ module bp_me_cce_to_cache
     );
 
   // Swizzle address bits for L2 cache command
-  logic [daddr_width_p-1:0] cache_pkt_addr_lo;
-  logic [lg_l2_banks_lp-1:0] cache_cmd_bank_lo;
   bp_me_dram_hash_encode
    #(.bp_params_p(bp_params_p))
    mem_cmd_hash
@@ -322,9 +322,9 @@ module bp_me_cce_to_cache
     begin
       cache_pkt     = '0;
       cache_pkt_v_o = '0;
-      cache_ready_and_o = '0;
+      cache_data_yumi_o = '0;
 
-      mem_cmd_ready_and_li = 1'b0;
+      mem_cmd_yumi_li = 1'b0;
 
       mem_resp_v_li = 1'b0;
 
@@ -344,12 +344,12 @@ module bp_me_cce_to_cache
           cache_pkt.data = '0;
           cache_pkt.addr = tagst_sent_r[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
 
-          cache_ready_and_o = '1;
+          cache_data_yumi_o = cache_data_v_i;
 
           tagst_sent_n = |{cache_pkt_v_o & cache_pkt_ready_and_i}
             ? tagst_sent_r + 1'b1
             : tagst_sent_r;
-          tagst_received_n = |(cache_ready_and_o & cache_v_i)
+          tagst_received_n = |{cache_data_yumi_o}
             ? tagst_received_r + 1'b1
             : tagst_received_r;
 
@@ -413,11 +413,11 @@ module bp_me_cce_to_cache
                 // but it gets set regardless of operation
                 cache_pkt.mask = cache_pkt_mask_lo;
               end
-            cache_pkt_v_o[cache_cmd_bank_lo] = mem_cmd_v_lo;
-            mem_cmd_ready_and_li = stream_fifo_ready_lo & cache_pkt_ready_and_i[cache_cmd_bank_lo];
+            cache_pkt_v_o[cache_cmd_bank_lo] = stream_fifo_ready_lo & mem_cmd_v_lo;
+            mem_cmd_yumi_li = mem_cmd_v_lo & stream_fifo_ready_lo & cache_pkt_ready_and_i[cache_cmd_bank_lo];
 
-            mem_resp_v_li = mem_header_v_lo & cache_v_i[cache_resp_bank_lo];
-            cache_ready_and_o[cache_resp_bank_lo] = mem_resp_ready_and_lo;
+            mem_resp_v_li = mem_header_v_lo & cache_data_v_i[cache_resp_bank_lo];
+            cache_data_yumi_o[cache_resp_bank_lo] = mem_resp_v_li & mem_resp_ready_and_lo;
           end
         default: begin end
       endcase
