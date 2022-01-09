@@ -38,23 +38,28 @@ module bp_be_pipe_aux
   bp_be_decode_s decode;
   rv64_instr_s instr;
   bp_be_fp_reg_s frs1, frs2;
-  logic [dword_width_gp-1:0] rs1, rs2;
-  bp_be_fp_reg_s frs1_boxed, frs2_boxed;
-
-  wire frs1_invbox = decode.ops_v & (frs1_boxed.tag == e_fp_full) & !(decode.fu_op inside {e_aux_op_fmvi});
-  wire frs2_invbox = decode.ops_v & (frs2_boxed.tag == e_fp_full);
-  assign frs1_boxed = reservation.rs1;
-  assign frs2_boxed = reservation.rs2;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
   assign instr = reservation.instr;
-  assign rs1 = reservation.rs1;
-  assign rs2 = reservation.rs2;
-  wire rs1_nanbox = &rs1[word_width_gp+:word_width_gp];
-  wire rs2_nanbox = &rs2[word_width_gp+:word_width_gp];
-  assign frs1 = frs1_invbox ? '{tag: decode.ops_v ? e_fp_rne : e_fp_full, rec: dp_canonical_rec} : frs1_boxed;
-  assign frs2 = frs2_invbox ? '{tag: decode.ops_v ? e_fp_rne : e_fp_full, rec: dp_canonical_rec} : frs2_boxed;
+  wire [dword_width_gp-1:0] rs1 = reservation.rs1;
+  wire [dword_width_gp-1:0] rs2 = reservation.rs2;
+
+  bp_be_nan_unbox
+    #(.bp_params_p(bp_params_p))
+    frs1_unbox
+     (.reg_i(reservation.rs1)
+      ,.ops_i(decode.ops_v)
+      ,.reg_o(frs1)
+      );
+
+  bp_be_nan_unbox
+    #(.bp_params_p(bp_params_p))
+    frs2_unbox
+     (.reg_i(reservation.rs2)
+      ,.ops_i(decode.ops_v)
+      ,.reg_o(frs2)
+      );
 
   //
   // Control bits for the FPU
