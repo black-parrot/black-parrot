@@ -49,7 +49,7 @@ module bp_be_pipe_aux
     #(.bp_params_p(bp_params_p))
     frs1_unbox
      (.reg_i(reservation.rs1)
-      ,.ops_i(decode.ops_v)
+      ,.unbox_i(decode.ops_v & !(decode.fu_op inside {e_aux_op_fmvi}))
       ,.reg_o(frs1)
       );
 
@@ -57,7 +57,7 @@ module bp_be_pipe_aux
     #(.bp_params_p(bp_params_p))
     frs2_unbox
      (.reg_i(reservation.rs2)
-      ,.ops_i(decode.ops_v)
+      ,.unbox_i(decode.ops_v)
       ,.reg_o(frs2)
       );
 

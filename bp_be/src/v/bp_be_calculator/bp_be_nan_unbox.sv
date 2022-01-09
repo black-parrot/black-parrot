@@ -9,15 +9,15 @@ module bp_be_nan_unbox
    `declare_bp_proc_params(bp_params_p)
    )
   (input [dpath_width_gp-1:0]          reg_i
-   , input                             ops_i
+   , input                             unbox_i
    , output logic [dpath_width_gp-1:0] reg_o
    );
 
  `bp_cast_i(bp_be_fp_reg_s, reg);
  `bp_cast_o(bp_be_fp_reg_s, reg);
 
-  wire invbox = ops_i & (reg_cast_i.tag == e_fp_full);
-  assign reg_cast_o = invbox ? '{tag: ops_i ? e_rne : e_fp_full, rec: dp_canonical_rec} : reg_i;
+  wire invbox = unbox_i & (reg_cast_i.tag == e_fp_full);
+  assign reg_cast_o = invbox ? '{tag: unbox_i ? e_rne : e_fp_full, rec: dp_canonical_rec} : reg_i;
 
 endmodule
 

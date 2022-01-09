@@ -63,7 +63,7 @@ module bp_be_pipe_fma
     #(.bp_params_p(bp_params_p))
     frs1_unbox
      (.reg_i(reservation.rs1)
-      ,.ops_i(decode.ops_v)
+      ,.unbox_i(decode.ops_v)
       ,.reg_o(frs1)
       );
 
@@ -71,7 +71,7 @@ module bp_be_pipe_fma
     #(.bp_params_p(bp_params_p))
     frs2_unbox
      (.reg_i(reservation.rs2)
-      ,.ops_i(decode.ops_v)
+      ,.unbox_i(decode.ops_v)
       ,.reg_o(frs2)
       );
 
@@ -79,7 +79,7 @@ module bp_be_pipe_fma
     #(.bp_params_p(bp_params_p))
     frs3_unbox
      (.reg_i(reservation.imm)
-      ,.ops_i(decode.ops_v)
+      ,.unbox_i(decode.ops_v)
       ,.reg_o(frs3)
       );
 
