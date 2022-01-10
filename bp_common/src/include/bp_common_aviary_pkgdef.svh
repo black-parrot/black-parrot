@@ -701,6 +701,7 @@
       ,cc_y_dim: 3
       ,num_cce : 12
       ,num_lce : 24
+      ,l2_banks: 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_12_cfg_p
@@ -713,6 +714,7 @@
       ,cc_y_dim: 4
       ,num_cce : 16
       ,num_lce : 32
+      ,l2_banks: 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_16_cfg_p

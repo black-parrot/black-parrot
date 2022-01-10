@@ -22,11 +22,11 @@ N=${3:-1}
 
 # Bash array to iterate over for configurations
 # Not currently supported by axi mem
-#    "e_bp_multicore_16_cce_ucode_cfg"
-#    "e_bp_multicore_16_cfg"
-#    "e_bp_multicore_12_cce_ucode_cfg"
-#    "e_bp_multicore_12_cfg"
 cfgs=(\
+    "e_bp_multicore_16_cce_ucode_cfg"
+    "e_bp_multicore_16_cfg"
+    "e_bp_multicore_12_cce_ucode_cfg"
+    "e_bp_multicore_12_cfg"
     "e_bp_multicore_8_cce_ucode_cfg"
     "e_bp_multicore_8_cfg"
     "e_bp_multicore_6_cce_ucode_cfg"
