@@ -56,17 +56,17 @@ module wrapper
    , output logic                                           io_resp_last_o
 
    // DRAM interface
-   , output logic [num_cce_p-1:0][dma_pkt_width_lp-1:0]     dma_pkt_o
-   , output logic [num_cce_p-1:0]                           dma_pkt_v_o
-   , input [num_cce_p-1:0]                                  dma_pkt_yumi_i
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_pkt_v_o
+   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_pkt_ready_and_i
 
-   , input [num_cce_p-1:0][l2_fill_width_p-1:0]             dma_data_i
-   , input [num_cce_p-1:0]                                  dma_data_v_i
-   , output logic [num_cce_p-1:0]                           dma_data_ready_and_o
+   , input [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_v_i
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [num_cce_p-1:0][l2_fill_width_p-1:0]      dma_data_o
-   , output logic [num_cce_p-1:0]                           dma_data_v_o
-   , input [num_cce_p-1:0]                                  dma_data_yumi_i
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_data_v_o
+   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
   if (multicore_p)
@@ -206,19 +206,26 @@ module wrapper
          );   
 
       `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
-      localparam cce_per_col_lp = num_cce_p/mc_x_dim_p;
+      localparam dma_per_col_lp = num_cce_p/mc_x_dim_p*l2_banks_p;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0][dma_pkt_width_lp-1:0] dma_pkt_lo;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0][l2_fill_width_p-1:0] dma_data_lo;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0] dma_data_v_lo, dma_data_yumi_li;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0][l2_fill_width_p-1:0] dma_data_li;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0] dma_data_v_li, dma_data_ready_and_lo;
       for (genvar i = 0; i < mc_x_dim_p; i++)
         begin : column
           bsg_cache_wh_header_flit_s header_flit;
           assign header_flit = dram_cmd_link_lo[i].data;
-          wire [`BSG_SAFE_CLOG2(cce_per_col_lp)-1:0] dma_id_li = header_flit.src_cord-1'b1;
+          wire [`BSG_SAFE_CLOG2(dma_per_col_lp)-1:0] dma_id_li =
+            l2_banks_p*(header_flit.src_cord-1)+header_flit.src_cid;
           bsg_wormhole_to_cache_dma_fanout
            #(.wh_flit_width_p(mem_noc_flit_width_p)
              ,.wh_cid_width_p(mem_noc_cid_width_p)
              ,.wh_len_width_p(mem_noc_len_width_p)
              ,.wh_cord_width_p(mem_noc_cord_width_p)
 
-             ,.num_dma_p(cce_per_col_lp)
+             ,.num_dma_p(dma_per_col_lp)
              ,.dma_addr_width_p(daddr_width_p)
              ,.dma_burst_len_p(l2_block_size_in_fill_p)
              )
@@ -230,18 +237,40 @@ module wrapper
              ,.wh_dma_id_i(dma_id_li)
              ,.wh_link_sif_o(dram_resp_link_li[i])
 
-             ,.dma_pkt_o(dma_pkt_o[i*cce_per_col_lp+:cce_per_col_lp])
-             ,.dma_pkt_v_o(dma_pkt_v_o[i*cce_per_col_lp+:cce_per_col_lp])
-             ,.dma_pkt_yumi_i(dma_pkt_yumi_i[i*cce_per_col_lp+:cce_per_col_lp])
+             ,.dma_pkt_o(dma_pkt_lo[i])
+             ,.dma_pkt_v_o(dma_pkt_v_lo[i])
+             ,.dma_pkt_yumi_i(dma_pkt_yumi_li[i])
 
-             ,.dma_data_i(dma_data_i[i*cce_per_col_lp+:cce_per_col_lp])
-             ,.dma_data_v_i(dma_data_v_i[i*cce_per_col_lp+:cce_per_col_lp])
-             ,.dma_data_ready_and_o(dma_data_ready_and_o[i*cce_per_col_lp+:cce_per_col_lp])
+             ,.dma_data_i(dma_data_li[i])
+             ,.dma_data_v_i(dma_data_v_li[i])
+             ,.dma_data_ready_and_o(dma_data_ready_and_lo[i])
 
-             ,.dma_data_o(dma_data_o[i*cce_per_col_lp+:cce_per_col_lp])
-             ,.dma_data_v_o(dma_data_v_o[i*cce_per_col_lp+:cce_per_col_lp])
-             ,.dma_data_yumi_i(dma_data_yumi_i[i*cce_per_col_lp+:cce_per_col_lp])
+             ,.dma_data_o(dma_data_lo[i])
+             ,.dma_data_v_o(dma_data_v_lo[i])
+             ,.dma_data_yumi_i(dma_data_yumi_li[i])
              );
+        end
+
+      // Transpose the DMA IDs
+      for (genvar i = 0; i < num_cce_p; i++)
+        begin : rof1
+          for (genvar j = 0; j < l2_banks_p; j++)
+            begin : rof2
+              localparam col_lp     = i%mc_x_dim_p;
+              localparam col_pos_lp = (i/mc_x_dim_p)*l2_banks_p+j;
+
+              assign dma_pkt_o[i][j] = dma_pkt_lo[col_lp][col_pos_lp];
+              assign dma_pkt_v_o[i][j] = dma_pkt_v_lo[col_lp][col_pos_lp];
+              assign dma_pkt_yumi_li[col_lp][col_pos_lp] = dma_pkt_ready_and_i[i][j] & dma_pkt_v_o[i][j];
+
+              assign dma_data_o[i][j] = dma_data_lo[col_lp][col_pos_lp];
+              assign dma_data_v_o[i][j] = dma_data_v_lo[col_lp][col_pos_lp];
+              assign dma_data_yumi_li[col_lp][col_pos_lp] = dma_data_ready_and_i[i][j] & dma_data_v_o[i][j];
+
+              assign dma_data_li[col_lp][col_pos_lp] = dma_data_i[i][j];
+              assign dma_data_v_li[col_lp][col_pos_lp] = dma_data_v_i[i][j];
+              assign dma_data_ready_and_o[i][j] = dma_data_ready_and_lo[col_lp][col_pos_lp];
+            end
         end
     end
   else

@@ -110,4 +110,4 @@ module bsg_crossbar_control_locking_o_by_i
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bsg_crossbar_control_basic_o_by_i)
+`BSG_ABSTRACT_MODULE(bsg_crossbar_control_locking_o_by_i)

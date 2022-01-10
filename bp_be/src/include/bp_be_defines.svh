@@ -207,7 +207,7 @@
       logic                          ebreaks;                                                      \
       logic                          ebreaku;                                                      \
       logic                          fpu_en;                                                       \
-    }  bp_be_decode_info_s;                                                                        \
+    }  bp_be_decode_info_s
 
 
   /* Declare width macros so that clients can use structs in ports before struct declaration

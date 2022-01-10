@@ -48,12 +48,6 @@ module bp_cce_fsm
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
     , localparam counter_max_lp = 256
-    , localparam hash_index_width_lp=$clog2((2**lg_lce_sets_lp+num_cce_p-1)/num_cce_p)
-
-    , localparam counter_width_lp = `BSG_SAFE_CLOG2(counter_max_lp+1)
-
-    // log2 of dword width bytes
-    , localparam lg_dword_width_bytes_lp = `BSG_SAFE_CLOG2(dword_width_gp/8)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -1041,8 +1035,8 @@ module bp_cce_fsm
           // first beat of memory command must include data
           // handshake is r&v on both LCE request header and memory command stream, and
           // valid->yumi on LCE request data
-          mem_cmd_v_lo = lce_req_v & lce_req_data_v_i & ~mem_credits_empty;
-          lce_req_data_ready_and_o = mem_cmd_ready_and_li;
+          lce_req_data_ready_and_o = mem_cmd_ready_and_li & ~mem_credits_empty;
+          mem_cmd_v_lo = lce_req_data_v_i & ~mem_credits_empty;
           // LCE request header is only dequeued if stream pump indicates stream is done
           lce_req_yumi = mem_cmd_v_lo & mem_cmd_ready_and_li & mem_cmd_stream_done_li;
 
@@ -1081,7 +1075,7 @@ module bp_cce_fsm
         if (lce_req_v) begin
           // send data
           mem_cmd_v_lo = lce_req_v & lce_req_data_v_i & ~mem_credits_empty;
-          lce_req_data_ready_and_o = mem_cmd_ready_and_li;
+          lce_req_data_ready_and_o = mem_cmd_ready_and_li & ~mem_credits_empty;
           // LCE request header is only dequeued if stream pump indicates stream is done
           lce_req_yumi = mem_cmd_v_lo & mem_cmd_ready_and_li & mem_cmd_stream_done_li;
 
@@ -1204,7 +1198,7 @@ module bp_cce_fsm
           // handshake is r&v on both LCE request header and memory command stream, and
           // valid->yumi on LCE request data
           mem_cmd_v_lo = lce_req_v & lce_req_data_v_i & ~mem_credits_empty;
-          lce_req_data_ready_and_o = mem_cmd_ready_and_li;
+          lce_req_data_ready_and_o = mem_cmd_ready_and_li & ~mem_credits_empty;
           // LCE request header is only dequeued if stream pump indicates stream is done
           lce_req_yumi = mem_cmd_v_lo & mem_cmd_ready_and_li & mem_cmd_stream_done_li;
 
@@ -1248,7 +1242,7 @@ module bp_cce_fsm
         // send data
 
          mem_cmd_v_lo = lce_req_v & lce_req_data_v_i & ~mem_credits_empty;
-         lce_req_data_ready_and_o = mem_cmd_ready_and_li;
+         lce_req_data_ready_and_o = mem_cmd_ready_and_li & ~mem_credits_empty;
          // LCE request header is only dequeued if stream pump indicates stream is done
          lce_req_yumi = mem_cmd_v_lo & mem_cmd_ready_and_li & mem_cmd_stream_done_li;
 

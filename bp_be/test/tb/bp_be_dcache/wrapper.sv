@@ -52,13 +52,13 @@ module wrapper
    , output logic [num_caches_p-1:0]                     v_o
 
    , output logic [cce_mem_header_width_lp-1:0]        mem_cmd_header_o
-   , output logic [l2_fill_width_p-1:0]                mem_cmd_data_o
+   , output logic [l2_data_width_p-1:0]                mem_cmd_data_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_and_i
    , output logic                                      mem_cmd_last_o
 
    , input [cce_mem_header_width_lp-1:0]               mem_resp_header_i
-   , input [l2_fill_width_p-1:0]                       mem_resp_data_i
+   , input [l2_data_width_p-1:0]                       mem_resp_data_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_ready_and_o
    , input                                             mem_resp_last_i
@@ -409,7 +409,6 @@ module wrapper
          begin : uce
           bp_uce
            #(.bp_params_p(bp_params_p)
-             ,.uce_mem_data_width_p(l2_fill_width_p)
              ,.assoc_p(assoc_p)
              ,.sets_p(sets_p)
              ,.block_width_p(block_width_p)
