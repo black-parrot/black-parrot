@@ -679,6 +679,9 @@ module testbench
    if_verif
     ();
 
+  if (dram_type_p == "axi" && (num_cce_p*l2_banks_p) > 16)
+    $error("AXI memory does not support >16 caches without increasing bsg_round_robin_arb size");
+
   `ifndef VERILATOR
     initial
       begin
