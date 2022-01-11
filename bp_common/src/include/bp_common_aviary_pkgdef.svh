@@ -522,6 +522,7 @@
       ,num_lce              : 2
       ,icache_coherent      : 1
       ,l2_amo_support       : '0
+      ,l2_banks             : 1
       ,dcache_fill_width    : 512
       ,icache_fill_width    : 512
       ,default : "inv"
@@ -986,8 +987,14 @@
                         ,bp_test_multicore_half_cce_ucode_cfg_p
                         );
 
+  // BP_CUSTOM_DEFINES_PATH can be set to a file which has the custom defines below set
+  // Or, you can override the empty one in bp_common/src/include
+  `ifndef BP_CUSTOM_DEFINES_PATH
+    `define BP_CUSTOM_DEFINES_PATH "bp_common_aviary_custom_defines.svh"
+  `endif
+  `include `BP_CUSTOM_DEFINES_PATH
   `ifndef BP_CUSTOM_BASE_CFG
-  `define BP_CUSTOM_BASE_CFG bp_default_cfg_p
+    `define BP_CUSTOM_BASE_CFG bp_default_cfg_p
   `endif
   // Custom, tick define-based configuration
   localparam bp_proc_param_s bp_custom_cfg_p =
