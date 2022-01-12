@@ -1,11 +1,11 @@
 
-// This module wraps a BP unicore with AXI interfaces. For an example usage
+// This module wraps a BP core with AXI interfaces. For an example usage
 //   see https://github.com/black-parrot-hdk/zynq-parrot
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_unicore_axi
+module bp_axi_top
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  // see bp_common/src/include/bp_common_aviary_pkgdef.svh for a list of configurations that you can try!
