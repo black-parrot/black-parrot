@@ -18,9 +18,9 @@
  *            ...
  *            fma 4 cycles     reservation
  *           /   \                 |
- *        round  imul_out      meta_info
- *          |
- *       fma_out
+ *        round  imul_out      imul meta
+ *          |                      |
+ *       fma_out                fma meta
  *
  */
 `include "bp_common_defines.svh"
@@ -53,24 +53,35 @@ module bp_be_pipe_fma
   bp_be_decode_s decode;
   rv64_instr_s instr;
   bp_be_fp_reg_s frs1, frs2, frs3;
-  logic [dword_width_gp-1:0] rs1, rs2;
-
-  bp_be_fp_reg_s frs1_boxed, frs2_boxed, frs3_boxed;
-  wire frs1_invbox = decode.ops_v & (frs1_boxed.tag == e_fp_full);
-  wire frs2_invbox = decode.ops_v & (frs2_boxed.tag == e_fp_full);
-  wire frs3_invbox = decode.ops_v & (frs3_boxed.tag == e_fp_full);
-  assign frs1_boxed = reservation.rs1;
-  assign frs2_boxed = reservation.rs2;
-  assign frs3_boxed = reservation.imm;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
   assign instr = reservation.instr;
-  assign frs1 = frs1_invbox ? '{tag: e_fp_full, rec: dp_canonical_nan} : frs1_boxed;
-  assign frs2 = frs2_invbox ? '{tag: e_fp_full, rec: dp_canonical_nan} : frs2_boxed;
-  assign frs3 = frs3_invbox ? '{tag: e_fp_full, rec: dp_canonical_nan} : frs3_boxed;
-  assign rs1 = decode.opw_v ? (frs1 << word_width_gp) : frs1;
-  assign rs2 = frs2;
+  wire [dword_width_gp-1:0] rs1 = decode.opw_v ? (reservation.rs1 << word_width_gp) : reservation.rs1;
+  wire [dword_width_gp-1:0] rs2 = reservation.rs2;
+  bp_be_nan_unbox
+    #(.bp_params_p(bp_params_p))
+    frs1_unbox
+     (.reg_i(reservation.rs1)
+      ,.unbox_i(decode.ops_v)
+      ,.reg_o(frs1)
+      );
+
+  bp_be_nan_unbox
+    #(.bp_params_p(bp_params_p))
+    frs2_unbox
+     (.reg_i(reservation.rs2)
+      ,.unbox_i(decode.ops_v)
+      ,.reg_o(frs2)
+      );
+
+  bp_be_nan_unbox
+    #(.bp_params_p(bp_params_p))
+    frs3_unbox
+     (.reg_i(reservation.imm)
+      ,.unbox_i(decode.ops_v)
+      ,.reg_o(frs3)
+      );
 
   //
   // Control bits for the FPU
@@ -184,9 +195,6 @@ module bp_be_pipe_fma
   rv64_fflags_s fma_fflags;
   assign fma_result = '{tag: ops_r ? frm_r : e_fp_full, rec: fma_dp_final};
   assign fma_fflags = fma_dp_fflags;
-
-  bp_be_fp_reg_s fma_dp_result;
-  assign fma_dp_result = '{tag: e_fp_full, rec: fma_dp_final};
 
   // TODO: Can combine the registers here if DC doesn't do it automatically
   bsg_dff_chain

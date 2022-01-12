@@ -33,6 +33,7 @@ MISC_TESTS := \
   unwinding             \
   vector                \
   map                   \
+  nanboxing             \
 
 MISC_TESTLIST := $(addprefix bp-tests@, $(MISC_TESTS))
 
