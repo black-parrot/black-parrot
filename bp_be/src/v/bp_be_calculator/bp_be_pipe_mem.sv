@@ -278,7 +278,6 @@ module bp_be_pipe_mem
      ,.dcache_ready_i(dcache_ready_lo)
 
      ,.dcache_early_hit_v_i(dcache_early_hit_v)
-     ,.dcache_early_miss_v_i(dcache_early_miss_v)
      ,.dcache_early_data_i(dcache_early_data)
      );
 
