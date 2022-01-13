@@ -55,7 +55,7 @@ module bp_io_link_to_lce
 
   // TODO: This implementation only works for burst length == 1, like the
   //   rest of this module
-  bp_bedrock_cce_mem_payload_s io_resp_payload;
+  bp_bedrock_cce_mem_payload_s io_resp_payload, io_resp_size;
   logic payload_ready_lo, payload_v_lo;
   bsg_fifo_1r1w_small
    #(.width_p($bits(bp_bedrock_cce_mem_payload_s)), .els_p(io_noc_max_credits_p))

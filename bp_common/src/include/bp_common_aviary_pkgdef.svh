@@ -159,7 +159,10 @@
     integer unsigned cce_pc_width;
 
     // L2 slice parameters (per core)
+    // Whether an L2 is present in the system
     integer unsigned l2_en;
+    // Number of L2 banks present in the slice
+    integer unsigned l2_banks;
     // Atomic support in L2
     //   bit 0: lr_sc
     //   bit 1: amo_swap
@@ -171,6 +174,8 @@
     integer unsigned l2_assoc;
     integer unsigned l2_block_width;
     integer unsigned l2_fill_width;
+    // Number of requests which can be pending in a cache slice
+    // Should be 4 < N < 4*l2_banks_p to prevent stalling
     integer unsigned l2_outstanding_reqs;
 
     // Size of the issue queue
@@ -290,6 +295,7 @@
       ,cce_pc_width         : 8
 
       ,l2_en               : 1
+      ,l2_banks            : 2
       ,l2_amo_support      : (1 << e_amo_swap)
                              | (1 << e_amo_fetch_logic)
                              | (1 << e_amo_fetch_arithmetic)
@@ -298,7 +304,7 @@
       ,l2_assoc            : 8
       ,l2_block_width      : 512
       ,l2_fill_width       : 64
-      ,l2_outstanding_reqs : 8
+      ,l2_outstanding_reqs : 6
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
@@ -339,7 +345,7 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_no_l2_override_p =
-    '{l2_en   : 0
+    '{l2_en : 0
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_no_l2_cfg_p
@@ -380,15 +386,14 @@
       ,icache_block_width : 64
       ,icache_fill_width  : 64
 
+      ,dcache_amo_support : (1 << e_lr_sc)
       ,dcache_sets        : 512
       ,dcache_assoc       : 1
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
 
-      ,dcache_amo_support : (1 << e_lr_sc)
-
       ,l2_en          : 0
-      ,l2_amo_support : 0
+      ,l2_amo_support : '0
 
       ,default : "inv"
       };
@@ -493,9 +498,7 @@
                         );
 
   localparam bp_proc_param_s bp_unicore_l2_atomic_override_p =
-    '{l2_amo_support : (1 << e_amo_swap)
-                       | (1 << e_amo_fetch_logic)
-                       | (1 << e_amo_fetch_arithmetic)
+    '{dcache_amo_support : (1 << e_lr_sc)
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_l2_atomic_cfg_p
@@ -519,6 +522,7 @@
       ,num_lce              : 2
       ,icache_coherent      : 1
       ,l2_amo_support       : '0
+      ,l2_banks             : 1
       ,dcache_fill_width    : 512
       ,icache_fill_width    : 512
       ,default : "inv"
@@ -567,7 +571,7 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_1_no_l2_override_p =
-    '{l2_en   : 0
+    '{l2_en : 0
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_no_l2_cfg_p
@@ -698,6 +702,7 @@
       ,cc_y_dim: 3
       ,num_cce : 12
       ,num_lce : 24
+      ,l2_banks: 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_12_cfg_p
@@ -710,6 +715,7 @@
       ,cc_y_dim: 4
       ,num_cce : 16
       ,num_lce : 32
+      ,l2_banks: 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_16_cfg_p
@@ -904,7 +910,7 @@
                         );
 
   localparam bp_proc_param_s bp_test_multicore_half_override_p =
-    '{num_lce  : 1
+    '{num_lce : 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_test_multicore_half_cfg_p
@@ -981,8 +987,14 @@
                         ,bp_test_multicore_half_cce_ucode_cfg_p
                         );
 
+  // BP_CUSTOM_DEFINES_PATH can be set to a file which has the custom defines below set
+  // Or, you can override the empty one in bp_common/src/include
+  `ifndef BP_CUSTOM_DEFINES_PATH
+    `define BP_CUSTOM_DEFINES_PATH "bp_common_aviary_custom_defines.svh"
+  `endif
+  `include `BP_CUSTOM_DEFINES_PATH
   `ifndef BP_CUSTOM_BASE_CFG
-  `define BP_CUSTOM_BASE_CFG bp_default_cfg_p
+    `define BP_CUSTOM_BASE_CFG bp_default_cfg_p
   `endif
   // Custom, tick define-based configuration
   localparam bp_proc_param_s bp_custom_cfg_p =
@@ -1048,6 +1060,7 @@
       ,`bp_aviary_define_override(cce_pc_width, BP_CCE_PC_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(l2_en, BP_L2_EN, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_amo_support, BP_L2_AMO_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_data_width, BP_L2_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_sets, BP_L2_SETS, `BP_CUSTOM_BASE_CFG)

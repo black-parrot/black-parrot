@@ -24,16 +24,16 @@ module bp_sacc_tile
    , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
    , parameter accelerator_type_p = e_sacc_vdp
    )
-  (input                                    clk_i
-   , input                                  reset_i
+  (input                                          clk_i
+   , input                                        reset_i
 
-   , input [coh_noc_cord_width_p-1:0]       my_cord_i
+   , input [coh_noc_cord_width_p-1:0]             my_cord_i
 
-   , input [coh_noc_ral_link_width_lp-1:0]  lce_req_link_i
-   , output [coh_noc_ral_link_width_lp-1:0] lce_req_link_o
+   , input [coh_noc_ral_link_width_lp-1:0]        lce_req_link_i
+   , output logic [coh_noc_ral_link_width_lp-1:0] lce_req_link_o
 
-   , input [coh_noc_ral_link_width_lp-1:0]  lce_cmd_link_i
-   , output [coh_noc_ral_link_width_lp-1:0] lce_cmd_link_o
+   , input [coh_noc_ral_link_width_lp-1:0]        lce_cmd_link_i
+   , output logic [coh_noc_ral_link_width_lp-1:0] lce_cmd_link_o
 
    );
 

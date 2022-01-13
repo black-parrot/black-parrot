@@ -720,7 +720,7 @@ module bp_cce_msg
         end else if (lce_req_header_v_i & (lce_req.msg_type.req == e_bedrock_req_uc_wr)) begin
           // first beat of memory command must include data
           mem_cmd_v_o = lce_req_header_v_i & lce_req_data_v_i & ~mem_credits_empty;
-          lce_req_data_ready_and_o = mem_cmd_ready_and_i;
+          lce_req_data_ready_and_o = mem_cmd_ready_and_i & ~mem_credits_empty;
           // LCE request header is only dequeued if stream pump indicates stream is done
           lce_req_header_yumi_o = mem_cmd_v_o & mem_cmd_ready_and_i & mem_cmd_stream_done_i;
 
@@ -890,7 +890,7 @@ module bp_cce_msg
               // uncached store - send one or more beats with data from LCE Request
               e_bedrock_mem_uc_wr: begin
                 mem_cmd_v_o = lce_req_header_v_i & lce_req_data_v_i & ~mem_credits_empty;
-                lce_req_data_ready_and_o = mem_cmd_ready_and_i;
+                lce_req_data_ready_and_o = mem_cmd_ready_and_i & ~mem_credits_empty;
 
                 // patch through data
                 mem_cmd_data_o = lce_req_data_i;
@@ -910,7 +910,7 @@ module bp_cce_msg
               // cached store - send one or more beats with data from LCE response
               e_bedrock_mem_wr: begin
                 mem_cmd_v_o = lce_resp_header_v_i & lce_resp_data_v_i & ~mem_credits_empty;
-                lce_resp_data_ready_and_o = mem_cmd_ready_and_i;
+                lce_resp_data_ready_and_o = mem_cmd_ready_and_i & ~mem_credits_empty;
 
                 // patch through data
                 mem_cmd_data_o = lce_resp_data_i;

@@ -20,6 +20,7 @@ module bp_me_axil_client
 
    //==================== BP-LITE SIGNALS ======================
    , input [lce_id_width_p-1:0]                 lce_id_i
+   , input [did_width_p-1:0]                    did_i
 
    , output logic [cce_mem_header_width_lp-1:0] io_cmd_header_o
    , output logic [axil_data_width_p-1:0]       io_cmd_data_o
@@ -130,6 +131,7 @@ module bp_me_axil_client
                 io_cmd_header_cast_o.addr           = s_axil_araddr_i;
                 io_cmd_header_cast_o.msg_type       = e_bedrock_mem_uc_rd;
                 io_cmd_header_cast_o.payload.lce_id = lce_id_i;
+                io_cmd_header_cast_o.payload.did    = did_i;
                 io_cmd_v_o                          = s_axil_arvalid_i;
 
                 state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_read_resp : e_wait;
@@ -140,6 +142,7 @@ module bp_me_axil_client
                 io_cmd_header_cast_o.addr                = s_axil_awaddr_i;
                 io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
                 io_cmd_header_cast_o.payload.lce_id      = lce_id_i;
+                io_cmd_header_cast_o.payload.did         = did_i;
                 io_cmd_data_o                            = s_axil_wdata_i;
                 io_cmd_v_o                               = (s_axil_awvalid_i & s_axil_wvalid_i);
 

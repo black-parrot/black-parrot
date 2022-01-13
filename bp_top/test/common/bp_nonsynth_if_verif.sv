@@ -129,5 +129,8 @@ module bp_nonsynth_if_verif
   if (multicore_p == 0 && num_core_p != 1)
     $error("Unicore only supports a single core configuration in the tethered testbench");
 
+  if (!`BSG_IS_POW2(l2_banks_p))
+    $error("L2 banks must be a power of two");
+
 endmodule
 

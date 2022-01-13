@@ -15,7 +15,6 @@ module bp_uce
   import bp_common_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    , parameter `BSG_INV_PARAM(uce_mem_data_width_p)
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
     , parameter `BSG_INV_PARAM(assoc_p)
@@ -65,13 +64,13 @@ module bp_uce
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
     , output logic [uce_mem_header_width_lp-1:0]     mem_cmd_header_o
-    , output logic [uce_mem_data_width_p-1:0]        mem_cmd_data_o
+    , output logic [fill_width_p-1:0]                mem_cmd_data_o
     , output logic                                   mem_cmd_v_o
     , input                                          mem_cmd_ready_and_i
     , output logic                                   mem_cmd_last_o
 
     , input [uce_mem_header_width_lp-1:0]            mem_resp_header_i
-    , input [uce_mem_data_width_p-1:0]               mem_resp_data_i
+    , input [fill_width_p-1:0]                       mem_resp_data_i
     , input                                          mem_resp_v_i
     , output logic                                   mem_resp_ready_and_o
     , input                                          mem_resp_last_i

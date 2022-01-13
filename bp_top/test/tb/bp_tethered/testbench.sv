@@ -143,12 +143,12 @@ module testbench
   logic load_resp_v_li, load_resp_ready_and_lo, load_resp_last_li;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p);
-  bsg_cache_dma_pkt_s [num_cce_p-1:0] dma_pkt_lo;
-  logic [num_cce_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [num_cce_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
-  logic [num_cce_p-1:0] dma_data_v_lo, dma_data_yumi_li;
-  logic [num_cce_p-1:0][l2_fill_width_p-1:0] dma_data_li;
-  logic [num_cce_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+  bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_lo;
+  logic [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
+  logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
+  logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
+  logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
   wire [io_noc_did_width_p-1:0] proc_did_li = 1;
   wire [io_noc_did_width_p-1:0] host_did_li = '1;
@@ -187,7 +187,7 @@ module testbench
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
-     ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
+     ,.dma_pkt_ready_and_i(dma_pkt_yumi_li)
 
      ,.dma_data_i(dma_data_li)
      ,.dma_data_v_i(dma_data_v_li)
@@ -195,12 +195,12 @@ module testbench
 
      ,.dma_data_o(dma_data_lo)
      ,.dma_data_v_o(dma_data_v_lo)
-     ,.dma_data_yumi_i(dma_data_yumi_li)
+     ,.dma_data_ready_and_i(dma_data_yumi_li)
      );
 
   bp_nonsynth_dram
    #(.bp_params_p(bp_params_p)
-     ,.num_dma_p(num_cce_p)
+     ,.num_dma_p(num_cce_p*l2_banks_p)
      ,.preload_mem_p(preload_mem_p)
      ,.dram_type_p(dram_type_p)
      ,.mem_els_p(2**28)
@@ -678,6 +678,9 @@ module testbench
    #(.bp_params_p(bp_params_p))
    if_verif
     ();
+
+  if (dram_type_p == "axi" && (num_cce_p*l2_banks_p) > 16)
+    $error("AXI memory does not support >16 caches without increasing bsg_round_robin_arb size");
 
   `ifndef VERILATOR
     initial

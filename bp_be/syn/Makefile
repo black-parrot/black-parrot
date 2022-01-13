@@ -12,7 +12,7 @@ export REPORT_PATH  := $(BP_BE_DIR)/syn/reports
 export TOUCH_PATH   := $(BP_BE_DIR)/syn/touchfiles
 
 export TB    ?= bp_be_dcache
-export CFG   ?= e_bp_test_unicore_half_cfg
+export CFG   ?= e_bp_test_multicore_half_cfg
 export DRAM  ?= dramsim3
 export SUITE ?= none
 export PROG  ?= double_word_test
