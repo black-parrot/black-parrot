@@ -278,7 +278,6 @@ module bp_be_pipe_mem
      ,.dcache_ready_i(dcache_ready_lo)
 
      ,.dcache_early_hit_v_i(dcache_early_hit_v)
-     ,.dcache_early_miss_v_i(dcache_early_miss_v)
      ,.dcache_early_data_i(dcache_early_data)
      );
 
@@ -359,7 +358,8 @@ module bp_be_pipe_mem
         dcache_pkt.vaddr       = eaddr[0+:vaddr_width_p];
         dcache_pkt.data        = rs2;
         dcache_ptag            = dtlb_ptag_lo;
-        dcache_ptag_v          = dtlb_v_lo;
+        // D$ can't handle misaligned accesses
+        dcache_ptag_v          = dtlb_v_lo & ~load_misaligned_v & ~store_misaligned_v;
       end
 
   logic early_v_r;

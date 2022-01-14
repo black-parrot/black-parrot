@@ -202,7 +202,7 @@ module bp_unicore_lite
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
-     ,.fill_width_p(dcache_fill_width_p)
+     ,.fill_width_p(uce_fill_width_p)
      ,.req_invert_clk_p(1)
      ,.data_mem_invert_clk_p(1)
      ,.tag_mem_invert_clk_p(1)
@@ -435,9 +435,9 @@ module bp_unicore_lite
      );
 
   logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
-  bp_me_cfg
+  bp_me_cfg_slice
    #(.bp_params_p(bp_params_p))
-   cfg
+   cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 

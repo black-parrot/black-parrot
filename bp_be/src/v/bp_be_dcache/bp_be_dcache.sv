@@ -611,35 +611,20 @@ module bp_be_dcache
   // Fail if we have a store conditional without success
   wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
 
-  wire load_miss_tv   = decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv & ~uncached_op_tv_r;
-  wire store_miss_tv  = decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & ~uncached_op_tv_r & (writethrough_p == 0);
-  wire fencei_miss_tv = decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
-
-  wire any_miss_tv = load_miss_tv | store_miss_tv | fencei_miss_tv;
+  wire load_miss_tv     = cached_op_tv_r & decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
+  wire store_miss_tv    = cached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & (writethrough_p == 0);
+  wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
+  wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.load_op & ~uncached_hit_tv_r;
+  wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
+  wire any_miss_tv      = load_miss_tv | store_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
 
   assign early_data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
     ? (sc_success_tv != 1'b1)
     : early_data;
 
-  assign early_hit_v_o = v_tv_r
-      // Uncached Load
-    & ((uncached_op_tv_r & (decode_tv_r.load_op & uncached_hit_tv_r))
-      // Uncached Store
-       | (uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.amo_op)
-      // Uncached AMO
-       | (uncached_op_tv_r & decode_tv_r.amo_op & (decode_tv_r.rd_addr == '0))
-      // Fencei
-       | (decode_tv_r.fencei_op & ~fencei_miss_tv)
-      // SC
-       | (decode_tv_r.sc_op)
-      // Cached load / store
-       | (cached_op_tv_r & ~any_miss_tv)
-       );
-  // fence.i
+  assign early_hit_v_o  = v_tv_r & ~any_miss_tv;
   assign early_fencei_o = decode_tv_r.fencei_op;
-
-  assign early_miss_v_o = v_tv_r & cache_req_yumi_li & ~early_hit_v_o;
-
+  assign early_miss_v_o = v_tv_r &  any_miss_tv & cache_req_yumi_li;
   assign early_fflags_o = st_fflags_tv_r;
 
   ///////////////////////////

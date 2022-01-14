@@ -83,5 +83,5 @@ module wrapper
    dut
     (.*);
 
-endmodule : wrapper
+endmodule
 

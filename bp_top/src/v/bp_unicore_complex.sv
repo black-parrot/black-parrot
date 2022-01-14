@@ -45,21 +45,21 @@ module bp_unicore_complex
    , output logic [num_core_p-1:0][mem_header_width_lp-1:0]         io_resp_header_o
    , output logic [num_core_p-1:0][uce_fill_width_p-1:0]            io_resp_data_o
    , output logic [num_core_p-1:0]                                  io_resp_v_o
-   , input        [num_core_p-1:0]                                  io_resp_ready_and_i
+   , input [num_core_p-1:0]                                         io_resp_ready_and_i
    , output logic [num_core_p-1:0]                                  io_resp_last_o
 
    // DRAM interface
-   , output logic [num_core_p-1:0][dma_pkt_width_lp-1:0]            dma_pkt_o
-   , output logic [num_core_p-1:0]                                  dma_pkt_v_o
-   , input [num_core_p-1:0]                                         dma_pkt_yumi_i
+   , output logic [num_core_p-1:0][l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [num_core_p-1:0][l2_banks_p-1:0]                       dma_pkt_v_o
+   , input [num_core_p-1:0][l2_banks_p-1:0]                              dma_pkt_ready_and_i
 
-   , input [num_core_p-1:0][l2_fill_width_p-1:0]                    dma_data_i
-   , input [num_core_p-1:0]                                         dma_data_v_i
-   , output logic [num_core_p-1:0]                                  dma_data_ready_and_o
+   , input [num_core_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [num_core_p-1:0][l2_banks_p-1:0]                              dma_data_v_i
+   , output logic [num_core_p-1:0][l2_banks_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [num_core_p-1:0][l2_fill_width_p-1:0]             dma_data_o
-   , output logic [num_core_p-1:0]                                  dma_data_v_o
-   , input [num_core_p-1:0]                                         dma_data_yumi_i
+   , output logic [num_core_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [num_core_p-1:0][l2_banks_p-1:0]                       dma_data_v_o
+   , input [num_core_p-1:0][l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
   // Currently, this complex is flat, since we end up in a crossbar on top anyway
@@ -106,7 +106,7 @@ module bp_unicore_complex
 
          ,.dma_pkt_o(dma_pkt_o[i])
          ,.dma_pkt_v_o(dma_pkt_v_o[i])
-         ,.dma_pkt_yumi_i(dma_pkt_yumi_i[i])
+         ,.dma_pkt_ready_and_i(dma_pkt_ready_and_i[i])
 
          ,.dma_data_i(dma_data_i[i])
          ,.dma_data_v_i(dma_data_v_i[i])
@@ -114,7 +114,7 @@ module bp_unicore_complex
 
          ,.dma_data_o(dma_data_o[i])
          ,.dma_data_v_o(dma_data_v_o[i])
-         ,.dma_data_yumi_i(dma_data_yumi_i[i])
+         ,.dma_data_ready_and_i(dma_data_ready_and_i[i])
          );
     end
 

@@ -38,7 +38,6 @@ module bp_be_ptw
    , input                                  dcache_ready_i
 
    , input                                  dcache_early_hit_v_i
-   , input                                  dcache_early_miss_v_i
    , input [dpath_width_gp-1:0]             dcache_early_data_i
   );
 
@@ -83,7 +82,7 @@ module bp_be_ptw
    for(genvar i=0; i<page_table_depth_p-1; i++) begin : rof2
       assign partial_ppn[i] = ppn_r[page_idx_width_p*i +: page_idx_width_p];
       assign partial_pte_misaligned[i] = (level_cntr > i)? |dcache_pte.ppn[page_idx_width_p*i +: page_idx_width_p] : 1'b0;
-      assign writeback_ppn[page_idx_width_p*i +: page_idx_width_p] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
+      assign writeback_ppn[page_idx_width_p*i +: page_idx_width_p] = (level_cntr > i) ? partial_vpn[i] : partial_ppn[i];
     end
     assign writeback_ppn[ptag_width_p-1 : (page_table_depth_p-1)*page_idx_width_p] = ppn_r[ptag_width_p-1 : (page_table_depth_p-1)*page_idx_width_p];
 
@@ -109,7 +108,7 @@ module bp_be_ptw
   assign level_cntr_en          = is_recv & dcache_early_hit_v_i & ~pte_is_leaf & ~page_fault_v;
 
   assign ppn_en                 = start | (is_recv & dcache_early_hit_v_i);
-  assign ppn_n                  = (state_r == e_idle)? base_ppn_i : dcache_pte.ppn[0+:ptag_width_p];
+  assign ppn_n                  = (state_r == e_idle) ? base_ppn_i : dcache_pte.ppn[0+:ptag_width_p];
 
   wire pte_invalid              = (~dcache_pte.v) | (~dcache_pte.r & dcache_pte.w);
   wire leaf_not_found           = (level_cntr == '0) & (~pte_is_leaf);
@@ -117,6 +116,14 @@ module bp_be_ptw
   wire misaligned_superpage     = pte_is_leaf & (|partial_pte_misaligned);
   wire ad_fault                 = pte_is_leaf & (~dcache_pte.a | (ptw_miss_pkt_r.store_miss_v & ~dcache_pte.d));
   wire common_faults            = pte_invalid | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
+
+  wire instr_page_fault         = ptw_miss_pkt_r.instr_miss_v & (common_faults | (pte_is_leaf & ~dcache_pte.x));
+  wire load_page_fault          = ptw_miss_pkt_r.load_miss_v  & (common_faults | (pte_is_leaf & ~dcache_pte.r));
+  wire store_page_fault         = ptw_miss_pkt_r.store_miss_v & (common_faults | (pte_is_leaf & ~dcache_pte.w));
+  assign page_fault_v           = (instr_page_fault | load_page_fault | store_page_fault);
+
+  wire itlb_fill_v              = ptw_miss_pkt_r.instr_miss_v & ~page_fault_v;
+  wire dtlb_fill_v              = ~ptw_miss_pkt_r.instr_miss_v & ~page_fault_v;
 
   bp_be_pte_leaf_s tlb_w_entry;
   assign tlb_w_entry.ptag       = writeback_ppn;
@@ -128,27 +135,18 @@ module bp_be_ptw
   assign tlb_w_entry.w          = dcache_pte.w;
   assign tlb_w_entry.r          = dcache_pte.r;
 
-  assign ptw_fill_pkt_cast_o.v                  = (state_r == e_writeback) || page_fault_v;
-  assign ptw_fill_pkt_cast_o.itlb_fill_v        = (state_r == e_writeback) &  ptw_miss_pkt_r.instr_miss_v;
-  assign ptw_fill_pkt_cast_o.dtlb_fill_v        = (state_r == e_writeback) & ~ptw_miss_pkt_r.instr_miss_v;
-  assign ptw_fill_pkt_cast_o.instr_page_fault_v = (state_r == e_recv_load)
-    & dcache_early_hit_v_i & ptw_miss_pkt_r.instr_miss_v
-    & (common_faults | (pte_is_leaf & ~dcache_pte.x));
-  assign ptw_fill_pkt_cast_o.load_page_fault_v  = (state_r == e_recv_load)
-    & dcache_early_hit_v_i & ptw_miss_pkt_r.load_miss_v
-    & (common_faults | (pte_is_leaf & ~(dcache_pte.r | (dcache_pte.x & mstatus_mxr_i))));
-  assign ptw_fill_pkt_cast_o.store_page_fault_v = (state_r == e_recv_load)
-    & dcache_early_hit_v_i & ptw_miss_pkt_r.store_miss_v
-    & (common_faults | (pte_is_leaf & ~dcache_pte.w));
+  assign ptw_fill_pkt_cast_o.v                  = (state_r == e_writeback);
+  assign ptw_fill_pkt_cast_o.itlb_fill_v        = (state_r == e_writeback) & itlb_fill_v;
+  assign ptw_fill_pkt_cast_o.dtlb_fill_v        = (state_r == e_writeback) & dtlb_fill_v;
+  assign ptw_fill_pkt_cast_o.instr_page_fault_v = (state_r == e_writeback) & instr_page_fault;
+  assign ptw_fill_pkt_cast_o.load_page_fault_v  = (state_r == e_writeback) & load_page_fault;
+  assign ptw_fill_pkt_cast_o.store_page_fault_v = (state_r == e_writeback) & store_page_fault;
   assign ptw_fill_pkt_cast_o.vaddr              = ptw_miss_pkt_r.vaddr;
   assign ptw_fill_pkt_cast_o.entry              = tlb_w_entry;
 
   assign tlb_miss_v   = ptw_miss_pkt_cast_i.instr_miss_v
                         | ptw_miss_pkt_cast_i.load_miss_v
                         | ptw_miss_pkt_cast_i.store_miss_v;
-  assign page_fault_v = ptw_fill_pkt_cast_o.instr_page_fault_v
-                        | ptw_fill_pkt_cast_o.load_page_fault_v
-                        | ptw_fill_pkt_cast_o.store_page_fault_v;
 
   wire [lg_page_table_depth_lp-1:0] max_level_li = page_table_depth_p-1'b1;
   bsg_counter_set_down
@@ -191,10 +189,8 @@ module bp_be_ptw
       e_idle     :  state_n = tlb_miss_v ? e_send_load : e_idle;
       e_send_load:  state_n = (dcache_ready_i & dcache_v_o) ? e_send_tag : e_send_load;
       e_send_tag :  state_n = e_recv_load;
-      e_recv_load:  state_n = dcache_early_hit_v_i
-                              ? page_fault_v
-                                ? e_idle
-                                : pte_is_leaf ? e_writeback : e_send_load
+      e_recv_load:  state_n = dcache_early_hit_v_i & (pte_is_leaf | page_fault_v)
+                              ? e_writeback
                               : e_send_load;
       default: // e_writeback
                     state_n = e_idle;

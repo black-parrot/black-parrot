@@ -96,6 +96,7 @@
     , localparam cce_type_p                 = proc_param_lp.cce_type                               \
                                                                                                    \
     , localparam l2_en_p                  = proc_param_lp.l2_en                                    \
+    , localparam l2_banks_p               = proc_param_lp.l2_banks                                 \
     , localparam l2_amo_support_p         = proc_param_lp.l2_amo_support                           \
     , localparam l2_data_width_p          = proc_param_lp.l2_data_width                            \
     , localparam l2_sets_p                = proc_param_lp.l2_sets                                  \
@@ -243,6 +244,7 @@
           ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)            \
                                                                                                    \
           ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                   \
+          ,`bp_aviary_parameter_override(l2_banks, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(l2_amo_support, override_cfg_mp, default_cfg_mp)          \
           ,`bp_aviary_parameter_override(l2_data_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(l2_sets, override_cfg_mp, default_cfg_mp)                 \

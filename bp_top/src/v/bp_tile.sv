@@ -39,15 +39,15 @@ module bp_tile
    , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_req_link_i
-   , output [coh_noc_ral_link_width_lp-1:0]                   lce_req_link_o
+   , output logic [coh_noc_ral_link_width_lp-1:0]             lce_req_link_o
 
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_cmd_link_i
-   , output [coh_noc_ral_link_width_lp-1:0]                   lce_cmd_link_o
+   , output logic [coh_noc_ral_link_width_lp-1:0]             lce_cmd_link_o
 
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_resp_link_i
-   , output [coh_noc_ral_link_width_lp-1:0]                   lce_resp_link_o
+   , output logic [coh_noc_ral_link_width_lp-1:0]             lce_resp_link_o
 
-   , output [mem_noc_ral_link_width_lp-1:0]                   mem_cmd_link_o
+   , output logic [mem_noc_ral_link_width_lp-1:0]             mem_cmd_link_o
    , input [mem_noc_ral_link_width_lp-1:0]                    mem_resp_link_i
    );
 
@@ -56,6 +56,7 @@ module bp_tile
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
 
   // Reset
   logic reset_r;
@@ -472,7 +473,7 @@ module bp_tile
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
   logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
-  bp_me_cfg
+  bp_me_cfg_slice
    #(.bp_params_p(bp_params_p))
    cfg
     (.clk_i(clk_i)
@@ -579,7 +580,7 @@ module bp_tile
      )
    cmd_xbar
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.msg_header_i(mem_cmd_header_lo)
      ,.msg_data_i(mem_cmd_data_lo)
@@ -604,7 +605,7 @@ module bp_tile
      )
    resp_xbar
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.msg_header_i(dev_resp_header_lo)
      ,.msg_data_i(dev_resp_data_lo)
@@ -682,14 +683,16 @@ module bp_tile
      );
 
   // CCE-Mem network to L2 Cache adapter
-  `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
-  bsg_cache_pkt_s cache_pkt_li;
-  logic cache_pkt_v_li, cache_pkt_ready_lo;
-  logic [l2_data_width_p-1:0] cache_data_lo;
-  logic cache_data_v_lo, cache_data_yumi_li;
-  bp_me_cce_to_cache
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
+  logic [l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
+  logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
+  logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
+  bp_me_cache_slice
    #(.bp_params_p(bp_params_p))
-   cce_to_cache
+   l2s
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
@@ -705,101 +708,77 @@ module bp_tile
      ,.mem_resp_ready_and_i(dev_resp_ready_and_li[0])
      ,.mem_resp_last_o(dev_resp_last_lo[0])
 
-     ,.cache_pkt_o(cache_pkt_li)
-     ,.cache_pkt_v_o(cache_pkt_v_li)
-     ,.cache_pkt_ready_i(cache_pkt_ready_lo)
-
-     ,.cache_data_i(cache_data_lo)
-     ,.cache_v_i(cache_data_v_lo)
-     ,.cache_yumi_o(cache_data_yumi_li)
-     );
-
-  // L2 Cache
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
-  bsg_cache_dma_pkt_s dma_pkt_lo;
-  logic dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [l2_fill_width_p-1:0] dma_data_li;
-  logic dma_data_v_li, dma_data_ready_and_lo;
-  logic [l2_fill_width_p-1:0] dma_data_lo;
-  logic dma_data_v_lo, dma_data_yumi_li;
-  bsg_cache
-   #(.addr_width_p(daddr_width_p)
-     ,.data_width_p(l2_data_width_p)
-     ,.dma_data_width_p(l2_fill_width_p)
-     ,.block_size_in_words_p(l2_block_size_in_words_p)
-     ,.sets_p(l2_en_p ? l2_sets_p : 2)
-     ,.ways_p(l2_en_p ? l2_assoc_p : 2)
-     ,.amo_support_p(((l2_amo_support_p[e_amo_swap]) << e_cache_amo_swap)
-                     | ((l2_amo_support_p[e_amo_fetch_logic]) << e_cache_amo_xor)
-                     | ((l2_amo_support_p[e_amo_fetch_logic]) << e_cache_amo_and)
-                     | ((l2_amo_support_p[e_amo_fetch_logic]) << e_cache_amo_or)
-                     | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_add)
-                     | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_min)
-                     | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_max)
-                     | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_minu)
-                     | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_maxu)
-                     )
-    )
-   cache
-    (.clk_i(clk_i)
-     ,.reset_i(reset_r)
-
-     ,.cache_pkt_i(cache_pkt_li)
-     ,.v_i(cache_pkt_v_li)
-     ,.ready_o(cache_pkt_ready_lo)
-
-     ,.data_o(cache_data_lo)
-     ,.v_o(cache_data_v_lo)
-     ,.yumi_i(cache_data_yumi_li)
-
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
-     ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
+     ,.dma_pkt_ready_and_i(dma_pkt_yumi_li)
 
      ,.dma_data_i(dma_data_li)
      ,.dma_data_v_i(dma_data_v_li)
-     ,.dma_data_ready_o(dma_data_ready_and_lo)
+     ,.dma_data_ready_and_o(dma_data_ready_and_lo)
 
      ,.dma_data_o(dma_data_lo)
      ,.dma_data_v_o(dma_data_v_lo)
-     ,.dma_data_yumi_i(dma_data_yumi_li)
-
-     ,.v_we_o()
+     ,.dma_data_ready_and_i(dma_data_yumi_li)
      );
 
-  // L2 Cache to Memory Links adapter
-  bsg_cache_dma_to_wormhole
-   #(.dma_addr_width_p(daddr_width_p)
-     ,.dma_burst_len_p(l2_block_size_in_fill_p)
+  bp_mem_ready_and_link_s [l2_banks_p-1:0] dma_link_lo, dma_link_li;
+  for (genvar i = 0; i < l2_banks_p; i++)
+    begin : dma
+      wire [mem_noc_cord_width_p-1:0] cord_li = my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p];
+      wire [mem_noc_cid_width_p-1:0]   cid_li = i;
 
-     ,.wh_flit_width_p(mem_noc_flit_width_p)
-     ,.wh_cid_width_p(mem_noc_cid_width_p)
-     ,.wh_len_width_p(mem_noc_len_width_p)
-     ,.wh_cord_width_p(mem_noc_cord_width_p)
+      bsg_cache_dma_to_wormhole
+       #(.dma_addr_width_p(daddr_width_p)
+         ,.dma_burst_len_p(l2_block_size_in_fill_p)
+
+         ,.wh_flit_width_p(mem_noc_flit_width_p)
+         ,.wh_cid_width_p(mem_noc_cid_width_p)
+         ,.wh_len_width_p(mem_noc_len_width_p)
+         ,.wh_cord_width_p(mem_noc_cord_width_p)
+         )
+       dma2wh
+        (.clk_i(clk_i)
+         ,.reset_i(reset_r)
+
+         ,.dma_pkt_i(dma_pkt_lo[i])
+         ,.dma_pkt_v_i(dma_pkt_v_lo[i])
+         ,.dma_pkt_yumi_o(dma_pkt_yumi_li[i])
+
+         ,.dma_data_o(dma_data_li[i])
+         ,.dma_data_v_o(dma_data_v_li[i])
+         ,.dma_data_ready_and_i(dma_data_ready_and_lo[i])
+
+         ,.dma_data_i(dma_data_lo[i])
+         ,.dma_data_v_i(dma_data_v_lo[i])
+         ,.dma_data_yumi_o(dma_data_yumi_li[i])
+
+         ,.wh_link_sif_i(dma_link_li[i])
+         ,.wh_link_sif_o(dma_link_lo[i])
+
+         ,.my_wh_cord_i(cord_li)
+         ,.my_wh_cid_i(cid_li)
+         // TODO: Parameterizable?
+         ,.dest_wh_cord_i('1)
+         ,.dest_wh_cid_i('0)
+         );
+    end
+
+  bsg_wormhole_concentrator
+   #(.flit_width_p(mem_noc_flit_width_p)
+     ,.len_width_p(mem_noc_len_width_p)
+     ,.cid_width_p(mem_noc_cid_width_p)
+     ,.cord_width_p(mem_noc_cord_width_p)
+     ,.num_in_p(l2_banks_p)
      )
-   bsg_cache_dma_to_wormhole
+   dma_concentrate
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.dma_pkt_i(dma_pkt_lo)
-     ,.dma_pkt_v_i(dma_pkt_v_lo)
-     ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
+     ,.links_i(dma_link_lo)
+     ,.links_o(dma_link_li)
 
-     ,.dma_data_o(dma_data_li)
-     ,.dma_data_v_o(dma_data_v_li)
-     ,.dma_data_ready_and_i(dma_data_ready_and_lo)
-
-     ,.dma_data_i(dma_data_lo)
-     ,.dma_data_v_i(dma_data_v_lo)
-     ,.dma_data_yumi_o(dma_data_yumi_li)
-
-     ,.wh_link_sif_i(mem_resp_link_i)
-     ,.wh_link_sif_o(mem_cmd_link_o)
-
-     ,.my_wh_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
-     ,.my_wh_cid_i('0)
-     ,.dest_wh_cord_i('1)
-     ,.dest_wh_cid_i('0)
+     ,.concentrated_link_o(mem_cmd_link_o)
+     ,.concentrated_link_i(mem_resp_link_i)
      );
 
 endmodule

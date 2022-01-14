@@ -418,7 +418,7 @@ module wrapper
        );
 
     bsg_two_fifo
-     #(.width_p(cce_block_width_p+lce_cmd_header_width_lp))
+     #(.width_p(lce_cmd_header_width_lp+cce_block_width_p))
      cmd_fifo
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
