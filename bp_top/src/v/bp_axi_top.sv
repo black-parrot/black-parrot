@@ -125,7 +125,7 @@ module bp_axi_top
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce);
   bp_bedrock_uce_mem_header_s io_cmd_header_li, io_resp_header_lo;
   logic [uce_fill_width_p-1:0] io_cmd_data_li, io_resp_data_lo;
-  logic io_cmd_v_li, io_cmd_ready_and_lo, io_resp_v_lo, io_resp_ready_and_li;
+  logic io_cmd_v_li, io_cmd_ready_and_lo, io_resp_v_lo, io_resp_yumi_li;
   bp_bedrock_uce_mem_header_s io_cmd_header_lo, io_resp_header_li;
   logic [uce_fill_width_p-1:0] io_cmd_data_lo, io_resp_data_li;
   logic io_cmd_v_lo, io_cmd_ready_and_li, io_resp_v_li, io_resp_ready_and_lo;
@@ -176,7 +176,7 @@ module bp_axi_top
         ,.io_resp_header_o(io_resp_header_lo)
         ,.io_resp_data_o(io_resp_data_lo)
         ,.io_resp_v_o(io_resp_v_lo)
-        ,.io_resp_ready_and_i(io_resp_ready_and_li)
+        ,.io_resp_ready_and_i(io_resp_yumi_li)
         ,.io_resp_last_o()
 
         ,.dma_pkt_o(dma_pkt_lo)
@@ -281,7 +281,7 @@ module bp_axi_top
          ,.mem_resp_header_o(io_resp_header_lo)
          ,.mem_resp_data_o(io_resp_data_lo)
          ,.mem_resp_v_o(io_resp_v_lo)
-         ,.mem_resp_yumi_i(io_resp_ready_and_li & io_resp_v_lo)
+         ,.mem_resp_yumi_i(io_resp_yumi_li)
          ,.mem_resp_last_o()
 
 
@@ -369,7 +369,7 @@ module bp_axi_top
      ,.io_resp_header_i(io_resp_header_lo)
      ,.io_resp_data_i(io_resp_data_lo)
      ,.io_resp_v_i(io_resp_v_lo)
-     ,.io_resp_ready_and_o(io_resp_ready_and_li)
+     ,.io_resp_yumi_o(io_resp_yumi_li)
 
      ,.lce_id_i(lce_id_width_p'('b10))
      ,.did_i(did_width_p'('1))
