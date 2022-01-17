@@ -460,14 +460,12 @@ module testbench
 
           ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-          ,.fe_state_n_i(fe.state_n)
           ,.fe_queue_ready_i(fe.fe_queue_ready_i)
           ,.fe_icache_ready_i(fe.icache.ready_o)
      
           ,.if2_v_i(fe.v_if2_r)
           ,.br_ovr_i(fe.pc_gen.ovr_taken)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
-          ,.itlb_miss_r_i(fe.itlb_miss_r)
           ,.icache_data_v_i(fe.icache.data_v_o)
 
           ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.attaboy_v) 
@@ -475,6 +473,7 @@ module testbench
           ,.fe_queue_empty_i(~be.scheduler.fe_queue_fifo.fe_queue_v_o)
 
           ,.mispredict_i(be.director.npc_mismatch_v)
+          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_o)
           ,.long_haz_i(be.detector.long_haz_v)
           ,.control_haz_i(be.detector.control_haz_v)
           ,.data_haz_i(be.detector.data_haz_v)
@@ -513,12 +512,8 @@ module testbench
           ,.sb_iwaw_dep_i(be.detector.ird_sb_waw_haz_v & be.detector.data_haz_v)
           ,.sb_fwaw_dep_i(be.detector.frd_sb_waw_haz_v & be.detector.data_haz_v)
           ,.struct_haz_i(be.detector.struct_haz_v)
-          ,.long_busy_i(~be.detector.long_ready_i & be.detector.isd_status_cast_i.long_v)
-          ,.ilong_ready_i(be.calculator.pipe_long.idiv_ready_and_lo)
-          ,.flong_ready_i(be.calculator.pipe_long.fdiv_ready_lo)
-
-          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_o)
-          ,.dcache_fail_i(be.calculator.pipe_sys.csr.retire_pkt_cast_i.exception.dcache_fail)
+          ,.idiv_haz_i(~be.detector.idiv_ready_i & be.detector.isd_status_cast_i.long_v)
+          ,.fdiv_haz_i(~be.detector.fdiv_ready_i & be.detector.isd_status_cast_i.long_v)
 
           ,.commit_pkt_i(be.calculator.commit_pkt_cast_o)
           );
