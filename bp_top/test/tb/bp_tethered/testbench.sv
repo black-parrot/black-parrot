@@ -514,8 +514,10 @@ module testbench
           ,.struct_haz_i(be.detector.struct_haz_v)
           ,.idiv_haz_i(~be.detector.idiv_ready_i & be.detector.isd_status_cast_i.long_v)
           ,.fdiv_haz_i(~be.detector.fdiv_ready_i & be.detector.isd_status_cast_i.long_v)
+          ,.ptw_busy_i(be.detector.ptw_busy_i)
 
-          ,.commit_pkt_i(be.calculator.commit_pkt_cast_o)
+          ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
+          ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt)
           );
 
       bind bp_be_top
