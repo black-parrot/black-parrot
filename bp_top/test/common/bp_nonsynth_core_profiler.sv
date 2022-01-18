@@ -1,8 +1,6 @@
 
   typedef struct packed
   {
-    logic fe_queue_full;
-    logic fe_wait;
     logic icache_miss;
     logic branch_override;
     logic ret_override;
@@ -36,9 +34,7 @@
 
   typedef enum logic [4:0]
   {
-    fe_queue_full        = 5'd30
-    ,fe_wait             = 5'd29
-    ,icache_miss         = 5'd28
+    icache_miss          = 5'd28
     ,branch_override     = 5'd27
     ,ret_override        = 5'd26
     ,fe_cmd              = 5'd25
@@ -175,13 +171,11 @@ module bp_nonsynth_core_profiler
       // IF0
       stall_stage_n[0]                    = '0;
       stall_stage_n[0].fe_cmd            |= fe_cmd_nonattaboy_i;
-      stall_stage_n[0].fe_queue_full     |= ~fe_queue_ready_i;
       stall_stage_n[0].icache_miss       |= (~fe_icache_ready_i | (if2_v_i & ~icache_data_v_i));
 
       // IF1
       stall_stage_n[1]                    = stall_stage_r[0];
       stall_stage_n[1].fe_cmd            |= fe_cmd_nonattaboy_i;
-      stall_stage_n[1].fe_queue_full     |= if2_v_i & ~fe_queue_ready_i;
       stall_stage_n[1].icache_miss       |= if2_v_i & ~icache_data_v_i;
       stall_stage_n[1].branch_override   |= br_ovr_i;
       stall_stage_n[1].ret_override      |= ret_ovr_i;
@@ -189,7 +183,6 @@ module bp_nonsynth_core_profiler
       // IF2
       stall_stage_n[2]                    = stall_stage_r[1];
       stall_stage_n[2].fe_cmd            |= fe_cmd_nonattaboy_i;
-      stall_stage_n[2].fe_queue_full     |= if2_v_i & ~fe_queue_ready_i;
       stall_stage_n[2].icache_miss       |= if2_v_i & ~icache_data_v_i;
 
       // ISD

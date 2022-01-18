@@ -14,13 +14,11 @@
 #   python blood_graph.py --trace {vanilla_operation_trace.csv}
 #                         --stats {vanilla_stats.csv}
 #                         --cycle {start_cycle@end_cycle}
-#                         --abstract {optional}
 #                         --generate-key {optional}
 #
 #
 #
 #   {stats}        used for extracting the timing window for blood graph
-#   {abstract}     used for abstract simplifed bloodgraph
 #   {generate-key} also generates a color key for the blood graph
 #
 #
@@ -52,30 +50,35 @@ class BloodGraph:
 
     # List of types of stalls incurred by the core
     _STALLS_LIST   = [
-                      "fe_queue_stall",
-                      "fe_wait_stall",
-                      "itlb_miss",
-                      "icache_miss",
-                      "icache_rollback",
-                      "icache_fence",
-                      "branch_override",
-                      "ret_override",
-                      "fe_cmd",
-                      "fe_cmd_fence",
-                      "mispredict",
-                      "control_haz",
-                      "data_haz",
-                      "load_dep",
-                      "mul_dep",
-                      "struct_haz",
-                      "dtlb_miss",
-                      "dcache_miss",
-                      "dcache_rollback",
-                      "long_haz",
-                      "eret",
-                      "exception",
-                      "interrupt",
-                      "unknown",
+                        "icache_miss",
+                        "branch_override",
+                        "ret_override",
+                        "fe_cmd",
+                        "fe_cmd_fence",
+                        "mispredict",
+                        "control_haz",
+                        "long_haz",
+                        "data_haz",
+                        "aux_dep",
+                        "load_dep",
+                        "mul_dep",
+                        "fma_dep",
+                        "sb_iraw_dep",
+                        "sb_fraw_dep",
+                        "sb_iwaw_dep",
+                        "sb_fwaw_dep",
+                        "struct_haz",
+                        "idiv_haz",
+                        "fdiv_haz",
+                        "ptw_busy",
+                        "special",
+                        "replay",
+                        "exception",
+                        "_interrupt",
+                        "itlb_miss",
+                        "dtlb_miss",
+                        "dcache_miss",
+                        "unknown",
                       ]
 
 
@@ -83,83 +86,43 @@ class BloodGraph:
     # For detailed mode
     # i_cache miss is treated the same is stall_ifetch_wait
     _DETAILED_STALL_BUBBLE_COLOR = {
-                                   "fe_queue_stall"               : rand_color(),
-                                   "fe_wait_stall"                : rand_color(),
-                                   "itlb_miss"                    : rand_color(),
-                                   "icache_miss"                  : rand_color(),
-                                   "icache_rollback"              : rand_color(),
-                                   "icache_fence"                 : rand_color(),
-                                   "branch_override"              : rand_color(),
-                                   "ret_override"                 : rand_color(),
-                                   "fe_cmd"                       : rand_color(),
-                                   "fe_cmd_fence"                 : rand_color(),
-                                   "mispredict"                   : rand_color(),
-                                   "control_haz"                  : rand_color(),
-                                   "data_haz"                     : rand_color(),
-                                   "load_dep"                     : rand_color(),
-                                   "mul_dep"                      : rand_color(),
-                                   "struct_haz"                   : rand_color(),
-                                   "dtlb_miss"                    : rand_color(),
-                                   "dcache_miss"                  : rand_color(),
-                                   "dcache_rollback"              : rand_color(),
-                                   "long_haz"                     : rand_color(),
-                                   "eret"                         : rand_color(),
-                                   "exception"                    : rand_color(),
-                                   "interrupt"                    : rand_color(),
-                                   "unknown"                      : rand_color(),
+                        "icache_miss" : rand_color(),
+                        "branch_override" : rand_color(),
+                        "ret_override" : rand_color(),
+                        "fe_cmd" : rand_color(),
+                        "fe_cmd_fence" : rand_color(),
+                        "mispredict" : rand_color(),
+                        "control_haz" : rand_color(),
+                        "long_haz" : rand_color(),
+                        "data_haz" : rand_color(),
+                        "aux_dep" : rand_color(),
+                        "load_dep" : rand_color(),
+                        "mul_dep" : rand_color(),
+                        "fma_dep" : rand_color(),
+                        "sb_iraw_dep" : rand_color(),
+                        "sb_fraw_dep" : rand_color(),
+                        "sb_iwaw_dep" : rand_color(),
+                        "sb_fwaw_dep" : rand_color(),
+                        "struct_haz" : rand_color(),
+                        "idiv_haz" : rand_color(),
+                        "fdiv_haz" : rand_color(),
+                        "ptw_busy" : rand_color(),
+                        "special" : rand_color(),
+                        "replay" : rand_color(),
+                        "exception" : rand_color(),
+                        "_interrupt" : rand_color(),
+                        "itlb_miss" : rand_color(),
+                        "dtlb_miss" : rand_color(),
+                        "dcache_miss" : rand_color(),
+                        "unknown" : rand_color(),
                                    }
     _DETAILED_UNIFIED_INSTR_COLOR =                                 (0xff, 0xff, 0xff)  ## white
     _DETAILED_UNIFIED_FP_INSTR_COLOR =                              (0xff, 0xaa, 0xff)  ## light pink
 
 
-    # Coloring scheme for different types of operations
-    # For abstract mode
-    # i_cache miss is treated the same is stall_ifetch_wait
-    _ABSTRACT_STALL_BUBBLE_COLOR = {
-                                   "stall_depend_remote_load_dram"          : (0xff, 0x00, 0x00), ## red
-                                   "stall_depend_local_remote_load_dram"    : (0xff, 0x00, 0x00), ## red
-
-                                   "stall_depend_remote_load_global"        : (0x00, 0xff, 0x00), ## green
-                                   "stall_depend_remote_load_group"         : (0x00, 0xff, 0x00), ## green
-                                   "stall_depend_local_remote_load_global"  : (0x00, 0xff, 0x00), ## green
-                                   "stall_depend_local_remote_load_group"   : (0x00, 0xff, 0x00), ## green
-
-                                   "stall_lr_aq"                            : (0x40, 0x40, 0x40), ## dark gray
-
-                                   "stall_depend"                           : (0x00, 0x00, 0x00), ## black
-                                   "stall_depend_local_load"                : (0x00, 0x00, 0x00), ## black
-                                   "stall_fp_local_load"                    : (0x00, 0x00, 0x00), ## black
-                                   "stall_fp_remote_load"                   : (0x00, 0x00, 0x00), ## black
-                                   "stall_force_wb"                         : (0x00, 0x00, 0x00), ## black
-                                   "stall_icache_store"                     : (0x00, 0x00, 0x00), ## black
-                                   "stall_remote_req"                       : (0x00, 0x00, 0x00), ## black
-                                   "stall_local_flw"                        : (0x00, 0x00, 0x00), ## black
-                                   "stall_amo_aq"                           : (0x00, 0x00, 0x00), ## black
-                                   "stall_amo_rl"                           : (0x00, 0x00, 0x00), ## black
-
-                                   "icache_miss"                            : (0x00, 0x00, 0xff), ## blue
-                                   "stall_ifetch_wait"                      : (0x00, 0x00, 0xff), ## blue
-                                   "bubble_icache"                          : (0x00, 0x00, 0xff), ## blue
-
-                                   "bubble_branch_mispredict"               : (0x00, 0x00, 0x00), ## black
-                                   "bubble_jalr_mispredict"                 : (0x00, 0x00, 0x00), ## black
-                                   "bubble_fp_op"                           : (0x00, 0x00, 0x00), ## black
-                                   "bubble"                                 : (0x00, 0x00, 0x00), ## black
-
-                                   "stall_md"                               : (0xff, 0xff, 0xff), ## white
-                                   }
-    _ABSTRACT_UNIFIED_INSTR_COLOR =                                           (0xff, 0xff, 0xff)  ## white
-    _ABSTRACT_UNIFIED_FP_INSTR_COLOR =                                        (0xff, 0xff, 0xff)  ## white
-
-
-
-
     # default constructor
-    def __init__(self, trace_file, stats_file, cycle, abstract):
+    def __init__(self, trace_file, stats_file, cycle):
 
-        self.abstract = abstract
-
-        # Determine coloring rules based on mode {abstract / detailed}
         self.stall_bubble_color     = self._DETAILED_STALL_BUBBLE_COLOR
         self.unified_instr_color    = self._DETAILED_UNIFIED_INSTR_COLOR
         self.unified_fp_instr_color = self._DETAILED_UNIFIED_INSTR_COLOR
@@ -268,8 +231,7 @@ class BloodGraph:
             self.__mark_trace(trace)
 
         #self.img.show()
-        mode = "abstract" if self.abstract else "detailed"
-        self.img.save(("blood_" + mode + ".png"))
+        self.img.save(("blood_detailed.png"))
         return
 
 
@@ -302,8 +264,7 @@ class BloodGraph:
             yt += font_width
 
         # save the key
-        mode = "abstract" if self.abstract else "detailed"
-        img.save("{}.png".format(key_image_fname + "_" + mode))
+        img.save("{}.png".format(key_image_fname + "_detailed"))
         return
 
 
@@ -353,8 +314,6 @@ def parse_args():
                         help="Vanilla stats log file")
     parser.add_argument("--cycle", default="@", type=str,
                         help="Cycle window of bloodgraph as start_cycle@end_cycle.")
-    parser.add_argument("--abstract", default=False, action='store_true',
-                        help="Type of bloodgraph - abstract / detailed")
     parser.add_argument("--generate-key", default=False, action='store_true',
                         help="Generate a key image")
     parser.add_argument("--no-blood-graph", default=False, action='store_true',
@@ -369,7 +328,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    bg = BloodGraph(args.trace, args.stats, args.cycle, args.abstract)
+    bg = BloodGraph(args.trace, args.stats, args.cycle)
     if not args.no_blood_graph:
         bg.generate()
     if args.generate_key:
