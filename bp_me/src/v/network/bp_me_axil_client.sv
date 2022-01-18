@@ -71,20 +71,32 @@ module bp_me_axil_client
   `bp_cast_i(bp_bedrock_cce_mem_header_s, io_resp_header);
 
   // Declaring all possible states
-  enum {e_ready, e_send_read, e_send_write} state_n, state_r;
+  enum {e_ready, e_send_read_addr, e_send_write_addr, e_send_write_data} state_n, state_r;
   wire is_ready = (state_r == e_ready);
-  wire is_send_read = (state_r == e_send_read);
-  wire is_send_write = (state_r == e_send_write);
+  wire is_send_read_addr = (state_r == e_send_read_addr);
+  wire is_send_write_addr = (state_r == e_send_write_addr);
+  wire is_send_write_data = (state_r == e_send_write_addr);
 
   // AW buffer
   logic [axil_addr_width_p-1:0] s_axil_awaddr_r;
-  bsg_dff_en
+  bsg_dff_en_bypass
    #(.width_p(axil_addr_width_p))
    awaddr_reg
     (.clk_i(clk_i)
      ,.en_i(s_axil_awready_o & s_axil_awvalid_i)
      ,.data_i(s_axil_awaddr_i)
      ,.data_o(s_axil_awaddr_r)
+     );
+
+  // W buffer
+  logic [axil_data_width_p-1:0] s_axil_wdata_r;
+  bsg_dff_en_bypass
+   #(.width_p(axil_data_width_p))
+   wdata_reg
+    (.clk_i(clk_i)
+     ,.en_i(s_axil_wready_o & s_axil_wvalid_i)
+     ,.data_i(s_axil_wdata_i)
+     ,.data_o(s_axil_wdata_r)
      );
 
   // Command Logic
@@ -94,7 +106,7 @@ module bp_me_axil_client
 
       // BP side
       io_cmd_header_cast_o      = '0;
-      io_cmd_data_o             = s_axil_wdata_i;
+      io_cmd_data_o             = s_axil_wdata_r;
       io_cmd_v_o                = '0;
 
       // WRITE ADDRESS CHANNEL SIGNALS
@@ -125,7 +137,7 @@ module bp_me_axil_client
             s_axil_awready_o = io_cmd_ready_and_i;
             s_axil_wready_o = io_cmd_ready_and_i;
 
-            io_cmd_header_cast_o.addr                = s_axil_awaddr_i;
+            io_cmd_header_cast_o.addr                = s_axil_awaddr_r;
             io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
             io_cmd_header_cast_o.payload.lce_id      = lce_id_i;
             io_cmd_header_cast_o.payload.did         = did_i;
@@ -133,13 +145,15 @@ module bp_me_axil_client
 
             // Send          
             state_n = (s_axil_awvalid_i & ~s_axil_wvalid_i)
-                      ? e_send_write
-                      : s_axil_arvalid_i
-                        ? e_send_read
-                        : e_ready;
+                      ? e_send_write_data
+                      : (~s_axil_awvalid_i & s_axil_wvalid_i)
+                        ? e_send_write_addr
+                        : s_axil_arvalid_i
+                          ? e_send_read_addr
+                          : e_ready;
           end
 
-        e_send_read:
+        e_send_read_addr:
           begin
             s_axil_arready_o = io_cmd_ready_and_i;
 
@@ -149,10 +163,10 @@ module bp_me_axil_client
             io_cmd_header_cast_o.payload.did         = did_i;
             io_cmd_v_o                               = s_axil_arvalid_i;
 
-            state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_ready : e_send_read;
+            state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_ready : e_send_read_addr;
           end
 
-        e_send_write:
+        e_send_write_data:
           begin
             s_axil_wready_o = io_cmd_ready_and_i;
            
@@ -162,7 +176,20 @@ module bp_me_axil_client
             io_cmd_header_cast_o.payload.did         = did_i;
             io_cmd_v_o                               = s_axil_wvalid_i;
 
-            state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_ready : e_send_write;
+            state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_ready : e_send_write_data;
+          end
+
+        e_send_write_addr:
+          begin
+            s_axil_awready_o = io_cmd_ready_and_i;
+
+            io_cmd_header_cast_o.addr                = s_axil_awaddr_r;
+            io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
+            io_cmd_header_cast_o.payload.lce_id      = lce_id_i;
+            io_cmd_header_cast_o.payload.did         = did_i;
+            io_cmd_v_o                               = s_axil_awvalid_i;
+
+            state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_ready : e_send_write_addr;
           end
 
         default: state_n = state_r;
