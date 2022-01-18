@@ -20,6 +20,11 @@
 +incdir+$BP_ME_DIR/src/include
 # top includes
 +incdir+$BP_TOP_DIR/src/include
+
++incdir+$BP_TOP/test/tb/bp_tethered
+
+bsg_tag_boot_rom.v
+
 ## Packages
 # BaseJump STL packages
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v

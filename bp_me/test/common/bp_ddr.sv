@@ -1,6 +1,9 @@
-
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
+
+`ifndef TAG_CLK_PERIOD
+  `define TAG_CLK_PERIOD 5000.0
+`endif
 
 module bp_ddr
   import bp_common_pkg::*;
@@ -12,6 +15,12 @@ module bp_ddr
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
 
    , parameter num_dma_p = 1
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
+      // Total number of clients the master will be driving.
+   , localparam tag_num_clients_gp = 23
+     // The number of bits required to represent the max payload width
+   , localparam tag_max_payload_width_gp = 8
+   , localparam tag_lg_max_payload_width_gp = `BSG_SAFE_CLOG2(tag_max_payload_width_gp + 1)
    )
   (input                                                    clk_i
    , input                                                  reset_i
@@ -52,13 +61,14 @@ module bp_ddr
 
   bsg_tag_s [22:0] tag_lines_lo;
   logic [12:0][7:0] dmc_cfg_tag_data_lo;
+  logic [12:0]     	dmc_cfg_tag_new_data_lo;
 
   wire bsg_tag_s        dmc_reset_tag_lines_lo       = tag_lines_lo[0];
   wire bsg_tag_s  [3:0] dmc_dly_tag_lines_lo         = tag_lines_lo[1+:4];
   wire bsg_tag_s  [3:0] dmc_dly_trigger_tag_lines_lo = tag_lines_lo[5+:4];
   wire bsg_tag_s        dmc_ds_tag_lines_lo          = tag_lines_lo[9];
   wire bsg_tag_s [12:0] dmc_cfg_tag_lines_lo         = tag_lines_lo[10+:13];
-  wire sys_reset_li                                  = dmc_cfg_tag_data_lo[12][0];
+  wire sys_reset_li                                  ;
 
   bsg_tag_boot_rom
     #(.width_p(tag_trace_rom_data_width_lp)
@@ -74,15 +84,19 @@ module bp_ddr
     tag_trace_data_r_lo <= tag_trace_data_lo;
   end
 
+  logic tag_clk;
+  bsg_nonsynth_clock_gen #(.cycle_time_p(`TAG_CLK_PERIOD)) tag_clk_gen (.o(tag_clk));
+  logic tag_trace_done_lo;
+
   bsg_tag_trace_replay
     #(.rom_addr_width_p(tag_trace_rom_addr_width_lp)
      ,.rom_data_width_p(tag_trace_rom_data_width_lp)
      ,.num_masters_p(1)
-     ,.num_clients_p(23)
-     ,.max_payload_width_p(9)
+     ,.num_clients_p(tag_num_clients_gp)
+     ,.max_payload_width_p(tag_max_payload_width_gp)
      )
     tag_trace_replay
-      (.clk_i(clk_i)
+      (.clk_i(tag_clk)
       ,.reset_i(reset_i)
       ,.en_i(1'b1)
 
@@ -98,7 +112,7 @@ module bp_ddr
       ,.tag_data_o(tag_trace_data_lo)
       ,.yumi_i(tag_trace_valid_lo)
 
-      ,.done_o()
+      ,.done_o(tag_trace_done_lo)
       ,.error_o()
       );
 
@@ -118,7 +132,7 @@ module bp_ddr
       btc
         (.bsg_tag_i     (dmc_cfg_tag_lines_lo[i])
         ,.recv_clk_i    (clk_i)
-        ,.recv_new_r_o  ()
+        ,.recv_new_r_o  (dmc_cfg_tag_new_data_lo[i])
         ,.recv_data_r_o (dmc_cfg_tag_data_lo[i])
         );
   end
@@ -143,6 +157,7 @@ module bp_ddr
   assign dmc_p.bank_pos     = dmc_cfg_tag_data_lo[9][7:2];
   assign dmc_p.dqs_sel_cal  = dmc_cfg_tag_data_lo[7][6:4];
   assign dmc_p.init_cycles  = {dmc_cfg_tag_data_lo[11], dmc_cfg_tag_data_lo[10]};
+  assign sys_reset_li       = dmc_cfg_tag_data_lo[12][0];
 
   // DRAM Link
   logic app_en_lo, app_rdy_li, app_wdf_wren_lo, app_wdf_end_lo, app_wdf_rdy_li, app_rd_data_valid_li, app_rd_data_end_li;
