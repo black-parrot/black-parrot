@@ -154,11 +154,13 @@ module bp_me_axil_client
 
         e_send_write:
           begin
+            s_axil_wready_o = io_cmd_ready_and_i;
+           
             io_cmd_header_cast_o.addr                = s_axil_awaddr_r;
             io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
             io_cmd_header_cast_o.payload.lce_id      = lce_id_i;
             io_cmd_header_cast_o.payload.did         = did_i;
-            io_cmd_v_o                               = 1'b1;
+            io_cmd_v_o                               = s_axil_wvalid_i;
 
             state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_ready : e_send_write;
           end
