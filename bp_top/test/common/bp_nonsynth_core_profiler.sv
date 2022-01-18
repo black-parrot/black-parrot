@@ -32,7 +32,7 @@
     logic dtlb_miss;
     logic dcache_miss;
     logic unknown;
-  }  stall_reason_s;
+  }  bp_stall_reason_s;
 
   typedef enum logic [4:0]
   {
@@ -67,7 +67,7 @@
     ,dtlb_miss           = 5'd2
     ,dcache_miss         = 5'd1
     ,unknown             = 5'd0
-  } stall_reason_e;
+  } bp_stall_reason_e;
 
 // The BlackParrot core pipeline is a mostly non-stalling pipeline, decoupled between the front-end
 // and back-end.
@@ -141,9 +141,9 @@ module bp_nonsynth_core_profiler
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   localparam num_stages_p = 7;
-  stall_reason_s [num_stages_p-1:0] stall_stage_n, stall_stage_r;
+  bp_stall_reason_s [num_stages_p-1:0] stall_stage_n, stall_stage_r;
   bsg_dff_reset
-   #(.width_p($bits(stall_reason_s)*num_stages_p))
+   #(.width_p($bits(bp_stall_reason_s)*num_stages_p))
    stall_pipe
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -261,19 +261,19 @@ module bp_nonsynth_core_profiler
 
     end
 
-  stall_reason_s stall_reason_dec;
+  bp_stall_reason_s stall_reason_dec;
   assign stall_reason_dec = stall_stage_n[num_stages_p-1];
-  logic [$bits(stall_reason_e)-1:0] stall_reason_lo;
-  stall_reason_e stall_reason_enum;
+  logic [$bits(bp_stall_reason_e)-1:0] stall_reason_lo;
+  bp_stall_reason_e bp_stall_reason_enum;
   logic stall_reason_v;
   bsg_priority_encode
-   #(.width_p($bits(stall_reason_s)), .lo_to_hi_p(1))
+   #(.width_p($bits(bp_stall_reason_s)), .lo_to_hi_p(1))
    stall_encode
     (.i(stall_reason_dec)
      ,.addr_o(stall_reason_lo)
      ,.v_o(stall_reason_v)
      );
-  assign stall_reason_enum = stall_reason_e'(stall_reason_lo);
+  assign bp_stall_reason_enum = bp_stall_reason_e'(stall_reason_lo);
 
   logic freeze_r;
   bsg_dff_chain
@@ -285,10 +285,10 @@ module bp_nonsynth_core_profiler
      );
 
   // synopsys translate_off
-  int stall_hist [stall_reason_e];
+  int stall_hist [bp_stall_reason_e];
   always_ff @(posedge clk_i)
     if (~reset_i & ~freeze_r & ~commit_pkt.instret) begin
-      stall_hist[stall_reason_enum] <= stall_hist[stall_reason_enum] + 1'b1;
+      stall_hist[bp_stall_reason_enum] <= stall_hist[bp_stall_reason_enum] + 1'b1;
     end
 
   integer file;
@@ -309,7 +309,7 @@ module bp_nonsynth_core_profiler
       if (~reset_i & ~freeze_r & commit_pkt.instret)
         $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt.pc, "instr");
       else if (~reset_i & ~freeze_r)
-        $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt.pc, stall_reason_enum.name());
+        $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt.pc, bp_stall_reason_enum.name());
 
       if (~reset_i & ~freeze_r)
         $fwrite(file, "\n");
