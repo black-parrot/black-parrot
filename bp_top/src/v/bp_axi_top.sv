@@ -139,7 +139,7 @@ module bp_axi_top
   logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
   if (multicore_p == 0)
-    begin : w
+    begin : u
       // note: bp_unicore has L2 cache; (bp_unicore_lite does not, but does not have dma_* interface
       // and would need mem_cmd/mem_resp-to-axi converter to be written.)
       bp_unicore
@@ -193,7 +193,7 @@ module bp_axi_top
         );
     end
   else
-    begin : w
+    begin : m
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
       bp_io_noc_ral_link_s proc_cmd_link_li, proc_cmd_link_lo;
