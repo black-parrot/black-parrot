@@ -206,7 +206,7 @@ module bp_ddr
      ,.dram_size_i(3'b100) // 4Gb
 
      ,.dma_pkt_i(dma_pkt_i)
-     ,.dma_pkt_v_i(dma_pkt_v_i & init_calib_complete_lo)
+     ,.dma_pkt_v_i(dma_pkt_v_i & {(num_dma_p){init_calib_complete_lo}})
      ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 
      ,.dma_data_o(dma_data_o)
