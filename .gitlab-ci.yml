@@ -26,6 +26,7 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
+    - profiler
   before_script:
       - git submodule update --init --checkout --recursive external/
   artifacts:
@@ -224,8 +225,11 @@ icache-vcs:
   script:
     - $CI_PROJECT_DIR/ci/icache_regress.sh vcs $CI_CORES
 
+# Manual, because Verilator 4.218 has scheduling issues:
+#   https://github.com/verilator/verilator/issues/3278
 top-mc-verilator:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - verilator
