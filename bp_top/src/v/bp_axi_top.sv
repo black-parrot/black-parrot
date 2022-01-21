@@ -319,14 +319,17 @@ module bp_axi_top
          ,.resp_link_o(recv_resp_link_lo)
          );
 
-      wire dma_id_li = '0;
+      `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
+      bsg_cache_wh_header_flit_s header_flit;
+      assign header_flit = dram_cmd_link_lo.data;
+      wire [`BSG_SAFE_CLOG2(l2_banks_p)-1:0] dma_id_li = header_flit.src_cid;
       bsg_wormhole_to_cache_dma_fanout
        #(.wh_flit_width_p(mem_noc_flit_width_p)
          ,.wh_cid_width_p(mem_noc_cid_width_p)
          ,.wh_len_width_p(mem_noc_len_width_p)
          ,.wh_cord_width_p(mem_noc_cord_width_p)
 
-         ,.num_dma_p(1)
+         ,.num_dma_p(l2_banks_p)
          ,.dma_addr_width_p(daddr_width_p)
          ,.dma_burst_len_p(l2_block_size_in_fill_p)
          )
@@ -398,6 +401,20 @@ module bp_axi_top
      ,.*
      );
 
+  // Unswizzle the dram
+  bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt;
+  for (genvar i = 0; i < l2_banks_p; i++)
+    begin : address_hash
+      logic [daddr_width_p-1:0] daddr_lo;
+      bp_me_dram_hash_decode
+       #(.bp_params_p(bp_params_p))
+        dma_addr_hash
+        (.daddr_i(dma_pkt_lo[i].addr)
+         ,.daddr_o(dma_pkt[i].addr)
+         );
+      assign dma_pkt[i].write_not_read = dma_pkt_lo[i].write_not_read;
+    end
+
    bsg_cache_to_axi
     #(.addr_width_p(daddr_width_p)
       ,.data_width_p(l2_fill_width_p)
@@ -411,7 +428,7 @@ module bp_axi_top
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.dma_pkt_i(dma_pkt_lo)
+      ,.dma_pkt_i(dma_pkt)
       ,.dma_pkt_v_i(dma_pkt_v_lo)
       ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
 
@@ -469,7 +486,7 @@ module bp_axi_top
       );
 
   if (num_core_p > 1)
-    $error("Multiple cores not supported in zynqparrot");
+    $error("Multiple cores are not currently supported in zynqparrot");
 
 endmodule
 
