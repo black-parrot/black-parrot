@@ -200,7 +200,7 @@ module bp_axi_top
       bp_io_noc_ral_link_s proc_resp_link_li, proc_resp_link_lo;
       bp_io_noc_ral_link_s stub_cmd_link_li, stub_resp_link_li;
       bp_io_noc_ral_link_s stub_cmd_link_lo, stub_resp_link_lo;
-      bp_mem_noc_ral_link_s [mc_x_dim_p-1:0] dram_cmd_link_lo, dram_resp_link_li;
+      bp_mem_noc_ral_link_s dram_cmd_link_lo, dram_resp_link_li;
 
       assign stub_cmd_link_li  = '0;
       assign stub_resp_link_li = '0;
