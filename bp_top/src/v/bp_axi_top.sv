@@ -128,7 +128,7 @@ module bp_axi_top
   logic io_cmd_v_li, io_cmd_ready_and_lo, io_resp_v_lo, io_resp_yumi_li;
   bp_bedrock_uce_mem_header_s io_cmd_header_lo, io_resp_header_li;
   logic [uce_fill_width_p-1:0] io_cmd_data_lo, io_resp_data_li;
-  logic io_cmd_v_lo, io_cmd_ready_and_li, io_resp_v_li, io_resp_ready_and_lo;
+  logic io_cmd_v_lo, io_cmd_yumi_li, io_resp_v_li, io_resp_ready_and_lo;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
@@ -157,7 +157,7 @@ module bp_axi_top
         ,.io_cmd_header_o(io_cmd_header_lo)
         ,.io_cmd_data_o(io_cmd_data_lo)
         ,.io_cmd_v_o(io_cmd_v_lo)
-        ,.io_cmd_ready_and_i(io_cmd_ready_and_li)
+        ,.io_cmd_ready_and_i(io_cmd_yumi_li)
         ,.io_cmd_last_o()
 
         ,.io_resp_header_i(io_resp_header_li)
@@ -306,7 +306,7 @@ module bp_axi_top
          ,.mem_cmd_header_o(io_cmd_header_lo)
          ,.mem_cmd_data_o(io_cmd_data_lo)
          ,.mem_cmd_v_o(io_cmd_v_lo)
-         ,.mem_cmd_yumi_i(io_cmd_ready_and_li & io_cmd_v_lo)
+         ,.mem_cmd_yumi_i(io_cmd_yumi_li)
          ,.mem_cmd_last_o()
 
          ,.mem_resp_header_i(io_resp_header_li)
@@ -391,7 +391,7 @@ module bp_axi_top
      ,.io_cmd_header_i(io_cmd_header_lo)
      ,.io_cmd_data_i(io_cmd_data_lo)
      ,.io_cmd_v_i(io_cmd_v_lo)
-     ,.io_cmd_ready_and_o(io_cmd_ready_and_li)
+     ,.io_cmd_yumi_o(io_cmd_yumi_li)
 
      ,.io_resp_header_o(io_resp_header_li)
      ,.io_resp_data_o(io_resp_data_li)
