@@ -144,6 +144,7 @@ module bp_be_director
     begin : fe_cmd_adapter
       fe_cmd_li = 'b0;
       fe_cmd_v_li = 1'b0;
+      fe_cmd_pc_redirect_operands = '0;
 
       // Do not send anything on reset
       if (state_r == e_reset)
@@ -156,7 +157,6 @@ module bp_be_director
           fe_cmd_li.opcode = e_op_state_reset;
           fe_cmd_li.vaddr  = npc_r;
 
-          fe_cmd_pc_redirect_operands = '0;
           fe_cmd_pc_redirect_operands.priv           = commit_pkt_cast_i.priv_n;
           fe_cmd_pc_redirect_operands.translation_en = commit_pkt_cast_i.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands    = fe_cmd_pc_redirect_operands;
@@ -180,8 +180,6 @@ module bp_be_director
         end
       else if (commit_pkt_cast_i.csrw)
         begin
-          fe_cmd_pc_redirect_operands = '0;
-
           fe_cmd_li.opcode                            = e_op_pc_redirection;
           fe_cmd_li.vaddr                             = commit_pkt_cast_i.npc;
           fe_cmd_pc_redirect_operands.subopcode       = e_subop_translation_switch;
@@ -213,8 +211,6 @@ module bp_be_director
         end
       else if (commit_pkt_cast_i.eret)
         begin
-          fe_cmd_pc_redirect_operands = '0;
-
           fe_cmd_li.opcode                                 = e_op_pc_redirection;
           fe_cmd_li.vaddr                                  = commit_pkt_cast_i.npc;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_eret;
@@ -226,8 +222,6 @@ module bp_be_director
         end
       else if (commit_pkt_cast_i.exception | commit_pkt_cast_i._interrupt | (is_wait & irq_waiting_i))
         begin
-          fe_cmd_pc_redirect_operands = '0;
-
           fe_cmd_li.opcode                                 = e_op_pc_redirection;
           fe_cmd_li.vaddr                                  = commit_pkt_cast_i.npc;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_trap;
@@ -239,8 +233,6 @@ module bp_be_director
         end
       else if (isd_status_cast_i.v & npc_mismatch_v)
         begin
-          fe_cmd_pc_redirect_operands = '0;
-
           fe_cmd_li.opcode                                 = e_op_pc_redirection;
           fe_cmd_li.vaddr                                  = expected_npc_o;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_branch_mispredict;

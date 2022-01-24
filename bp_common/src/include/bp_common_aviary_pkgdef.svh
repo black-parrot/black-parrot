@@ -2,6 +2,7 @@
 `define BP_COMMON_AVIARY_PKGDEF_SVH
 
   `include "bp_common_aviary_defines.svh"
+  `include "bp_common_host_pkgdef.svh"
 
   // Suitably high enough to not run out of configs.
   localparam max_cfgs    = 128;
