@@ -2,6 +2,10 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
+// This module is a minimal axi-lite master, supporting a single outgoing request.
+// It could be extended to support pipelined accesses by adding input skid
+//   buffers at the cost of additional area.
+
 module bp_me_axil_master
  import bp_common_pkg::*;
  import bp_me_pkg::*;
@@ -21,7 +25,7 @@ module bp_me_axil_master
   , input [cce_mem_header_width_lp-1:0]        io_cmd_header_i
   , input [axil_data_width_p-1:0]              io_cmd_data_i
   , input                                      io_cmd_v_i
-  , output logic                               io_cmd_ready_and_o
+  , output logic                               io_cmd_yumi_o
 
   , output logic [cce_mem_header_width_lp-1:0] io_resp_header_o
   , output logic [axil_data_width_p-1:0]       io_resp_data_o
@@ -65,27 +69,20 @@ module bp_me_axil_master
   `bp_cast_o(bp_bedrock_cce_mem_header_s, io_resp_header);
 
   // declaring all possible states
-  enum {e_ready, e_read_data_tx, e_write_data_tx, e_write_resp_rx} state_r, state_n;
-
-  // storing io cmd header
-  bp_bedrock_cce_mem_header_s io_cmd_header_r;
-  bsg_dff_reset_en
-   #(.width_p(cce_mem_header_width_lp))
-   mem_header_reg
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-    ,.en_i((io_cmd_ready_and_o & io_cmd_v_i))
-    ,.data_i(io_cmd_header_cast_i)
-    ,.data_o(io_cmd_header_r)
-    );
+  enum {e_ready, e_read_data_rx, e_write_data_tx, e_write_addr_tx, e_write_resp_rx} state_n, state_r;
+  wire is_ready         = (state_r == e_ready);
+  wire is_read_data_rx  = (state_r == e_read_data_rx);
+  wire is_write_data_tx = (state_r == e_write_data_tx);
+  wire is_write_addr_tx = (state_r == e_write_addr_tx);
+  wire is_write_resp_rx = (state_r == e_write_resp_rx);
 
   // combinational Logic
   always_comb
     begin
       state_n = state_r;
 
-      io_cmd_ready_and_o    = 1'b0;
-      io_resp_header_cast_o = io_cmd_header_r;
+      io_cmd_yumi_o         = 1'b0;
+      io_resp_header_cast_o = io_cmd_header_cast_i;
       io_resp_data_o        = m_axil_rdata_i;
       io_resp_v_o           = '0;
 
@@ -113,69 +110,71 @@ module bp_me_axil_master
         e_bedrock_msg_size_1 : m_axil_wstrb_o = (axil_data_width_p>>3)'('h1);
         e_bedrock_msg_size_2 : m_axil_wstrb_o = (axil_data_width_p>>3)'('h3);
         e_bedrock_msg_size_4 : m_axil_wstrb_o = (axil_data_width_p>>3)'('hF);
-        e_bedrock_msg_size_8 : m_axil_wstrb_o = (axil_data_width_p>>3)'('hFF);
-        default              : m_axil_wstrb_o = (axil_data_width_p>>3)'('h0);
+        // e_bedrock_msg_size_8 :
+        default : m_axil_wstrb_o = (axil_data_width_p>>3)'('hFF);
       endcase
 
       case (state_r)
         e_ready:
           begin
             // if the client device is ready to receive, send the data along with the address
-            if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr))
+            if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr}))
               begin
                 m_axil_awvalid_o   = 1'b1;
                 m_axil_wvalid_o    = 1'b1;
-                io_cmd_ready_and_o = m_axil_awready_i;
 
-                state_n = (m_axil_wready_i & m_axil_wvalid_o)
+                state_n = (m_axil_awready_i & m_axil_wready_i)
                   ? e_write_resp_rx
-                  : (m_axil_awready_i & m_axil_awvalid_o)
+                  : m_axil_awready_i
                     ? e_write_data_tx
-                    : e_ready;
+                    : m_axil_wready_i
+                      ? e_write_addr_tx
+                      : e_ready;
               end
 
             // if the io_cmd read is valid and client device read address channel is ready to receive
             // pass the valid read data to io_resp channel if io_resp is ready
-            else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_rd))
+            else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd}))
               begin
-                m_axil_arvalid_o   = 1'b1;
-                io_resp_v_o        = m_axil_rvalid_i;
-                m_axil_rready_o    = io_resp_ready_and_i;
-                io_cmd_ready_and_o = m_axil_arready_i;
+                m_axil_arvalid_o = 1'b1;
 
-                state_n = (m_axil_rready_o & m_axil_rvalid_i)
-                          ? e_ready
-                          : (m_axil_arready_i & m_axil_arvalid_o)
-                            ? e_read_data_tx
-                            : e_ready;
+                state_n = m_axil_arready_i ? e_read_data_rx : e_ready;
               end
           end
 
         e_write_data_tx:
           begin
-            m_axil_wvalid_o    = 1'b1;
-            io_cmd_ready_and_o = m_axil_wready_i;
+            m_axil_wvalid_o = 1'b1;
 
-            state_n = (m_axil_wready_i & m_axil_wvalid_o) ? e_ready : e_write_data_tx;
+            state_n = m_axil_wready_i ? e_write_resp_rx : e_write_data_tx;
+          end
+
+        e_write_addr_tx:
+          begin
+            m_axil_awvalid_o = 1'b1;
+
+            state_n = m_axil_awready_i ? e_write_resp_rx : e_write_data_tx;
           end
 
         e_write_resp_rx:
           begin
             m_axil_bready_o = io_resp_ready_and_i;
             io_resp_v_o     = m_axil_bvalid_i;
+            io_cmd_yumi_o   = (io_resp_ready_and_i & io_resp_v_o);
 
-            state_n     = (io_resp_ready_and_i & io_resp_v_o) ? e_ready : state_r;
+            state_n = io_cmd_yumi_o ? e_ready : e_write_resp_rx;
           end
 
-       e_read_data_tx:
+       e_read_data_rx:
          begin
            m_axil_rready_o = io_resp_ready_and_i;
            io_resp_v_o     = m_axil_rvalid_i;
+           io_cmd_yumi_o   = (io_resp_ready_and_i & io_resp_v_o);
 
-           state_n = (io_resp_ready_and_i & io_resp_v_o) ? e_ready : state_r;
+           state_n = io_cmd_yumi_o ? e_ready : e_read_data_rx;
          end
 
-        default: state_n = state_r;
+        default : begin end
       endcase
     end
 

@@ -125,10 +125,10 @@ module bp_axi_top
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce);
   bp_bedrock_uce_mem_header_s io_cmd_header_li, io_resp_header_lo;
   logic [uce_fill_width_p-1:0] io_cmd_data_li, io_resp_data_lo;
-  logic io_cmd_v_li, io_cmd_ready_and_lo, io_resp_v_lo, io_resp_ready_and_li;
+  logic io_cmd_v_li, io_cmd_ready_and_lo, io_resp_v_lo, io_resp_yumi_li;
   bp_bedrock_uce_mem_header_s io_cmd_header_lo, io_resp_header_li;
   logic [uce_fill_width_p-1:0] io_cmd_data_lo, io_resp_data_li;
-  logic io_cmd_v_lo, io_cmd_ready_and_li, io_resp_v_li, io_resp_ready_and_lo;
+  logic io_cmd_v_lo, io_cmd_yumi_li, io_resp_v_li, io_resp_ready_and_lo;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
@@ -139,7 +139,7 @@ module bp_axi_top
   logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
   if (multicore_p == 0)
-    begin : w
+    begin : u
       // note: bp_unicore has L2 cache; (bp_unicore_lite does not, but does not have dma_* interface
       // and would need mem_cmd/mem_resp-to-axi converter to be written.)
       bp_unicore
@@ -157,7 +157,7 @@ module bp_axi_top
         ,.io_cmd_header_o(io_cmd_header_lo)
         ,.io_cmd_data_o(io_cmd_data_lo)
         ,.io_cmd_v_o(io_cmd_v_lo)
-        ,.io_cmd_ready_and_i(io_cmd_ready_and_li)
+        ,.io_cmd_ready_and_i(io_cmd_yumi_li)
         ,.io_cmd_last_o()
 
         ,.io_resp_header_i(io_resp_header_li)
@@ -176,7 +176,7 @@ module bp_axi_top
         ,.io_resp_header_o(io_resp_header_lo)
         ,.io_resp_data_o(io_resp_data_lo)
         ,.io_resp_v_o(io_resp_v_lo)
-        ,.io_resp_ready_and_i(io_resp_ready_and_li)
+        ,.io_resp_ready_and_i(io_resp_yumi_li)
         ,.io_resp_last_o()
 
         ,.dma_pkt_o(dma_pkt_lo)
@@ -193,14 +193,14 @@ module bp_axi_top
         );
     end
   else
-    begin : w
+    begin : m
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
       bp_io_noc_ral_link_s proc_cmd_link_li, proc_cmd_link_lo;
       bp_io_noc_ral_link_s proc_resp_link_li, proc_resp_link_lo;
       bp_io_noc_ral_link_s stub_cmd_link_li, stub_resp_link_li;
       bp_io_noc_ral_link_s stub_cmd_link_lo, stub_resp_link_lo;
-      bp_mem_noc_ral_link_s [mc_x_dim_p-1:0] dram_cmd_link_lo, dram_resp_link_li;
+      bp_mem_noc_ral_link_s dram_cmd_link_lo, dram_resp_link_li;
 
       assign stub_cmd_link_li  = '0;
       assign stub_resp_link_li = '0;
@@ -281,7 +281,7 @@ module bp_axi_top
          ,.mem_resp_header_o(io_resp_header_lo)
          ,.mem_resp_data_o(io_resp_data_lo)
          ,.mem_resp_v_o(io_resp_v_lo)
-         ,.mem_resp_yumi_i(io_resp_ready_and_li & io_resp_v_lo)
+         ,.mem_resp_yumi_i(io_resp_yumi_li)
          ,.mem_resp_last_o()
 
 
@@ -306,7 +306,7 @@ module bp_axi_top
          ,.mem_cmd_header_o(io_cmd_header_lo)
          ,.mem_cmd_data_o(io_cmd_data_lo)
          ,.mem_cmd_v_o(io_cmd_v_lo)
-         ,.mem_cmd_yumi_i(io_cmd_ready_and_li & io_cmd_v_lo)
+         ,.mem_cmd_yumi_i(io_cmd_yumi_li)
          ,.mem_cmd_last_o()
 
          ,.mem_resp_header_i(io_resp_header_li)
@@ -319,14 +319,17 @@ module bp_axi_top
          ,.resp_link_o(recv_resp_link_lo)
          );
 
-      wire dma_id_li = '0;
+      `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
+      bsg_cache_wh_header_flit_s header_flit;
+      assign header_flit = dram_cmd_link_lo.data;
+      wire [`BSG_SAFE_CLOG2(l2_banks_p)-1:0] dma_id_li = header_flit.src_cid;
       bsg_wormhole_to_cache_dma_fanout
        #(.wh_flit_width_p(mem_noc_flit_width_p)
          ,.wh_cid_width_p(mem_noc_cid_width_p)
          ,.wh_len_width_p(mem_noc_len_width_p)
          ,.wh_cord_width_p(mem_noc_cord_width_p)
 
-         ,.num_dma_p(1)
+         ,.num_dma_p(l2_banks_p)
          ,.dma_addr_width_p(daddr_width_p)
          ,.dma_burst_len_p(l2_block_size_in_fill_p)
          )
@@ -369,7 +372,7 @@ module bp_axi_top
      ,.io_resp_header_i(io_resp_header_lo)
      ,.io_resp_data_i(io_resp_data_lo)
      ,.io_resp_v_i(io_resp_v_lo)
-     ,.io_resp_ready_and_o(io_resp_ready_and_li)
+     ,.io_resp_yumi_o(io_resp_yumi_li)
 
      ,.lce_id_i(lce_id_width_p'('b10))
      ,.did_i(did_width_p'('1))
@@ -388,7 +391,7 @@ module bp_axi_top
      ,.io_cmd_header_i(io_cmd_header_lo)
      ,.io_cmd_data_i(io_cmd_data_lo)
      ,.io_cmd_v_i(io_cmd_v_lo)
-     ,.io_cmd_ready_and_o(io_cmd_ready_and_li)
+     ,.io_cmd_yumi_o(io_cmd_yumi_li)
 
      ,.io_resp_header_o(io_resp_header_li)
      ,.io_resp_data_o(io_resp_data_li)
@@ -397,6 +400,20 @@ module bp_axi_top
 
      ,.*
      );
+
+  // Unswizzle the dram
+  bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt;
+  for (genvar i = 0; i < l2_banks_p; i++)
+    begin : address_hash
+      logic [daddr_width_p-1:0] daddr_lo;
+      bp_me_dram_hash_decode
+       #(.bp_params_p(bp_params_p))
+        dma_addr_hash
+        (.daddr_i(dma_pkt_lo[i].addr)
+         ,.daddr_o(dma_pkt[i].addr)
+         );
+      assign dma_pkt[i].write_not_read = dma_pkt_lo[i].write_not_read;
+    end
 
    bsg_cache_to_axi
     #(.addr_width_p(daddr_width_p)
@@ -411,7 +428,7 @@ module bp_axi_top
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.dma_pkt_i(dma_pkt_lo)
+      ,.dma_pkt_i(dma_pkt)
       ,.dma_pkt_v_i(dma_pkt_v_lo)
       ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
 
@@ -469,7 +486,7 @@ module bp_axi_top
       );
 
   if (num_core_p > 1)
-    $error("Multiple cores not supported in zynqparrot");
+    $error("Multiple cores are not currently supported in zynqparrot");
 
 endmodule
 
