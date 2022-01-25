@@ -8,7 +8,7 @@ module bp_me_axil_master
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
-
+  , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
   // AXI WRITE DATA CHANNEL PARAMS
   , parameter axil_data_width_p = 32
   , parameter axil_addr_width_p  = 32
@@ -24,7 +24,7 @@ module bp_me_axil_master
   , output logic                               io_cmd_ready_and_o
 
   , output logic [cce_mem_header_width_lp-1:0] io_resp_header_o
-  , output logic [axil_data_width_p-1:0]       io_resp_data_o
+  , output logic [io_data_width_p-1:0]         io_resp_data_o
   , output logic                               io_resp_v_o
   , input                                      io_resp_ready_and_i
 
@@ -86,7 +86,6 @@ module bp_me_axil_master
 
       io_cmd_ready_and_o    = 1'b0;
       io_resp_header_cast_o = io_cmd_header_r;
-      io_resp_data_o        = m_axil_rdata_i;
       io_resp_v_o           = '0;
 
       // WRITE ADDRESS CHANNEL SIGNALS
@@ -178,6 +177,16 @@ module bp_me_axil_master
         default: state_n = state_r;
       endcase
     end
+
+  bsg_bus_pack
+   #(.in_width_p(axil_data_width_p)
+     ,.out_width_p(io_data_width_p))
+   bus_pack
+    (.data_i(m_axil_rdata_i)
+     ,.sel_i('b0)
+     ,.size_i(`BSG_SAFE_CLOG2(axil_data_width_p / 8))
+     ,.data_o(io_resp_data_o)
+     );
 
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
