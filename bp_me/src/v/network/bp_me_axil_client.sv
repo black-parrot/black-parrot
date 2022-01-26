@@ -100,7 +100,7 @@ module bp_me_axil_client
      ,.data_o({s_axil_wstrb_r, s_axil_wdata_r})
      );
 
-  logic [(axil_data_width_p>>3)-1:0] wsize;
+  bp_bedrock_msg_size_e wsize, rsize;
   always_comb
     case (s_axil_wstrb_r)
       (axil_data_width_p>>3)'('h1): wsize = e_bedrock_msg_size_1;
@@ -111,17 +111,18 @@ module bp_me_axil_client
     endcase
 
   // AXI4-lite only supports 32b or 64b accesses the size of the bus width
-  wire [(axil_data_width_p>>3)-1:0] rsize = (axil_data_width_p == 64) ? e_bedrock_msg_size_8 : e_bedrock_msg_size_4;
+  assign rsize = (axil_data_width_p == 64) ? e_bedrock_msg_size_8 : e_bedrock_msg_size_4;
 
   always_comb
     begin
       state_n = state_r;
 
       // BP side
-      io_cmd_header_cast_o         = '0;
-      io_cmd_header_cast_o.payload = '{lce_id: lce_id_i, did: did_i};
-      io_cmd_data_o                = s_axil_wdata_r;
-      io_cmd_v_o                   = '0;
+      io_cmd_header_cast_o                = '0;
+      io_cmd_header_cast_o.payload.lce_id = lce_id_i;
+      io_cmd_header_cast_o.payload.did    = did_i;
+      io_cmd_data_o                       = s_axil_wdata_r;
+      io_cmd_v_o                          = '0;
 
       // WRITE ADDRESS CHANNEL SIGNALS
       s_axil_awready_o = '0;
@@ -228,7 +229,7 @@ module bp_me_axil_client
       assert (reset_i !== '0 || s_axil_awprot_i == 3'b000)
         $error("AXI4-LITE access permission mode is not supported.");
 
-      assert (reset_i !=== '0 || ~s_axil_wvalid_i || (s_axil_wstrb_i inside {'h1, 'h3, 'hf, 'hff}))
+      assert (reset_i !== '0 || ~s_axil_wvalid_i || (s_axil_wstrb_i inside {'h1, 'h3, 'hf, 'hff}))
         $error("Invalid write strobe encountered");
     end
   // synopsys translate_on

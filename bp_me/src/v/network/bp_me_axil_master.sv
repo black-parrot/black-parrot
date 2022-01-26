@@ -80,7 +80,7 @@ module bp_me_axil_master
   localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(axil_data_width_p>>3);
   localparam size_width_lp = `BSG_WIDTH(byte_offset_width_lp);
 
-  wire [byte_offset_width_lp-1:0] resp_sel_li = io_cmd_header_cast_i.addr[0:byte_offset_width_lp];
+  wire [byte_offset_width_lp-1:0] resp_sel_li = io_cmd_header_cast_i.addr[0+:byte_offset_width_lp];
   wire [size_width_lp-1:0] resp_size_li = io_cmd_header_cast_i.size;
   bsg_bus_pack
    #(.in_width_p(axil_data_width_p), .out_width_p(io_data_width_p))
@@ -191,16 +191,6 @@ module bp_me_axil_master
         default : begin end
       endcase
     end
-
-  bsg_bus_pack
-   #(.in_width_p(axil_data_width_p)
-     ,.out_width_p(io_data_width_p))
-   bus_pack
-    (.data_i(m_axil_rdata_i)
-     ,.sel_i('b0)
-     ,.size_i(`BSG_SAFE_CLOG2(axil_data_width_p / 8))
-     ,.data_o(io_resp_data_o)
-     );
 
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
