@@ -12,6 +12,7 @@ module bp_me_axil_master
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+
   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
   // AXI WRITE DATA CHANNEL PARAMS
   , parameter axil_data_width_p = 32
@@ -23,7 +24,7 @@ module bp_me_axil_master
 
   //==================== BP-LITE SIGNALS ======================
   , input [cce_mem_header_width_lp-1:0]        io_cmd_header_i
-  , input [axil_data_width_p-1:0]              io_cmd_data_i
+  , input [io_data_width_p-1:0]                io_cmd_data_i
   , input                                      io_cmd_v_i
   , output logic                               io_cmd_yumi_o
 
@@ -75,6 +76,20 @@ module bp_me_axil_master
   wire is_write_data_tx = (state_r == e_write_data_tx);
   wire is_write_addr_tx = (state_r == e_write_addr_tx);
   wire is_write_resp_rx = (state_r == e_write_resp_rx);
+
+  localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(axil_data_width_p>>3);
+  localparam size_width_lp = `BSG_WIDTH(byte_offset_width_lp);
+
+  wire [byte_offset_width_lp-1:0] resp_sel_li = io_cmd_header_cast_i.addr[0:byte_offset_width_lp];
+  wire [size_width_lp-1:0] resp_size_li = io_cmd_header_cast_i.size;
+  bsg_bus_pack
+   #(.in_width_p(axil_data_width_p), .out_width_p(io_data_width_p))
+   resp_data_bus_pack
+    (.data_i(m_axil_rdata_i)
+     ,.sel_i(resp_sel_li)
+     ,.size_i(resp_size_li)
+     ,.data_o(io_resp_data_o)
+     );
 
   // combinational Logic
   always_comb
@@ -197,14 +212,17 @@ module bp_me_axil_master
     end
 
   if (axil_data_width_p != 32 && axil_data_width_p != 64)
-    $error("AXI4-LITE only supports a data width of 32 or 64bits");
+    $error("AXI4-LITE only supports a data width of 32 or 64 bits");
+
+  if (io_data_width_p < axil_data_width_p)
+    $error("I/O data width must be at least AXI4-LITE data width");
 
   //synopsys translate_off
-  initial
+  always_ff @(negedge clk_i)
     begin
       // give a warning if the client device has an error response
-      assert(reset_i !== '0 || ~m_axil_rvalid_i || m_axil_rresp_i == '0) else $warning("Client device has an error response to reads");
-      assert(reset_i !== '0 || ~m_axil_bvalid_i || m_axil_bresp_i == '0) else $warning("Client device has an error response to writes");
+      assert (reset_i !== '0 || ~m_axil_rvalid_i || m_axil_rresp_i == '0) else $error("Client device has an error response to reads");
+      assert (reset_i !== '0 || ~m_axil_bvalid_i || m_axil_bresp_i == '0) else $error("Client device has an error response to writes");
     end
   //synopsys translate_on
 

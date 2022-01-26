@@ -90,24 +90,38 @@ module bp_me_axil_client
 
   // W buffer
   logic [axil_data_width_p-1:0] s_axil_wdata_r;
+  logic [(axil_data_width_p>>3)-1:0] s_axil_wstrb_r;
   bsg_dff_en_bypass
-   #(.width_p(axil_data_width_p))
+   #(.width_p(axil_data_width_p+(axil_data_width_p>>3)))
    wdata_reg
     (.clk_i(clk_i)
      ,.en_i(s_axil_wready_o & s_axil_wvalid_i)
-     ,.data_i(s_axil_wdata_i)
-     ,.data_o(s_axil_wdata_r)
+     ,.data_i({s_axil_wstrb_i, s_axil_wdata_i})
+     ,.data_o({s_axil_wstrb_r, s_axil_wdata_r})
      );
 
-  // Command Logic
+  logic [(axil_data_width_p>>3)-1:0] wsize;
+  always_comb
+    case (s_axil_wstrb_r)
+      (axil_data_width_p>>3)'('h1): wsize = e_bedrock_msg_size_1;
+      (axil_data_width_p>>3)'('h3): wsize = e_bedrock_msg_size_2;
+      (axil_data_width_p>>3)'('hF): wsize = e_bedrock_msg_size_4;
+      // (axil_data_width_p>>3)'('hFF):
+      default: wsize = e_bedrock_msg_size_8;
+    endcase
+
+  // AXI4-lite only supports 32b or 64b accesses the size of the bus width
+  wire [(axil_data_width_p>>3)-1:0] rsize = (axil_data_width_p == 64) ? e_bedrock_msg_size_8 : e_bedrock_msg_size_4;
+
   always_comb
     begin
       state_n = state_r;
 
       // BP side
-      io_cmd_header_cast_o      = '0;
-      io_cmd_data_o             = s_axil_wdata_r;
-      io_cmd_v_o                = '0;
+      io_cmd_header_cast_o         = '0;
+      io_cmd_header_cast_o.payload = '{lce_id: lce_id_i, did: did_i};
+      io_cmd_data_o                = s_axil_wdata_r;
+      io_cmd_v_o                   = '0;
 
       // WRITE ADDRESS CHANNEL SIGNALS
       s_axil_awready_o = '0;
@@ -118,18 +132,6 @@ module bp_me_axil_client
       // READ ADDRESS CHANNEL SIGNALS
       s_axil_arready_o = '0;
 
-      case (s_axil_wstrb_i)
-        (axil_data_width_p>>3)'('h1)  : io_cmd_header_cast_o.size = e_bedrock_msg_size_1;
-        (axil_data_width_p>>3)'('h3)  : io_cmd_header_cast_o.size = e_bedrock_msg_size_2;
-        (axil_data_width_p>>3)'('hF)  : io_cmd_header_cast_o.size = e_bedrock_msg_size_4;
-        (axil_data_width_p>>3)'('hFF) : io_cmd_header_cast_o.size = e_bedrock_msg_size_8;
-        default:
-          // does nothing in verilator 4.202
-          `BSG_HIDE_FROM_VERILATOR(assert final (reset_i !== '0 || s_axil_wvalid_i == 0) else)
-           if (s_axil_wvalid_i)
-              $warning("%m: received unhandled strobe pattern %b\n",s_axil_wstrb_i);
-      endcase
-
       unique casez (state_r)
         // Can send writes immediately if both aw/w are available, else read/write with 1 cycle delay
         e_ready:
@@ -139,8 +141,7 @@ module bp_me_axil_client
 
             io_cmd_header_cast_o.addr                = s_axil_awaddr_r;
             io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
-            io_cmd_header_cast_o.payload.lce_id      = lce_id_i;
-            io_cmd_header_cast_o.payload.did         = did_i;
+            io_cmd_header_cast_o.size                = wsize;
             io_cmd_v_o                               = (s_axil_awvalid_i & s_axil_wvalid_i);
 
             // Send          
@@ -159,8 +160,7 @@ module bp_me_axil_client
 
             io_cmd_header_cast_o.addr                = s_axil_araddr_i;
             io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_rd;
-            io_cmd_header_cast_o.payload.lce_id      = lce_id_i;
-            io_cmd_header_cast_o.payload.did         = did_i;
+            io_cmd_header_cast_o.size                = rsize;
             io_cmd_v_o                               = s_axil_arvalid_i;
 
             state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_ready : e_send_read_addr;
@@ -172,8 +172,7 @@ module bp_me_axil_client
            
             io_cmd_header_cast_o.addr                = s_axil_awaddr_r;
             io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
-            io_cmd_header_cast_o.payload.lce_id      = lce_id_i;
-            io_cmd_header_cast_o.payload.did         = did_i;
+            io_cmd_header_cast_o.size                = wsize;
             io_cmd_v_o                               = s_axil_wvalid_i;
 
             state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_ready : e_send_write_data;
@@ -185,8 +184,7 @@ module bp_me_axil_client
 
             io_cmd_header_cast_o.addr                = s_axil_awaddr_r;
             io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
-            io_cmd_header_cast_o.payload.lce_id      = lce_id_i;
-            io_cmd_header_cast_o.payload.did         = did_i;
+            io_cmd_header_cast_o.size                = wsize;
             io_cmd_v_o                               = s_axil_awvalid_i;
 
             state_n = (io_cmd_ready_and_i & io_cmd_v_o) ? e_ready : e_send_write_addr;
@@ -217,7 +215,7 @@ module bp_me_axil_client
       state_r <= state_n;
 
   if (axil_data_width_p != 64 && axil_data_width_p != 32)
-    $fatal("AXI4-LITE only supports a data width of 32 or 64 bits.");
+    $error("AXI4-LITE only supports a data width of 32 or 64 bits.");
 
   //synopsys translate_off
   initial
@@ -227,8 +225,11 @@ module bp_me_axil_client
 
   always_ff @(negedge clk_i)
     begin
-      if (s_axil_awprot_i != 3'b000)
+      assert (reset_i !== '0 || s_axil_awprot_i == 3'b000)
         $error("AXI4-LITE access permission mode is not supported.");
+
+      assert (reset_i !=== '0 || ~s_axil_wvalid_i || (s_axil_wstrb_i inside {'h1, 'h3, 'hf, 'hff}))
+        $error("Invalid write strobe encountered");
     end
   // synopsys translate_on
 
