@@ -227,10 +227,10 @@ module bp_me_axil_client
   always_ff @(negedge clk_i)
     begin
       assert (reset_i !== '0 || s_axil_awprot_i == 3'b000)
-        $error("AXI4-LITE access permission mode is not supported.");
+        else $error("AXI4-LITE access permission mode is not supported.");
 
       assert (reset_i !== '0 || ~s_axil_wvalid_i || (s_axil_wstrb_i inside {'h1, 'h3, 'hf, 'hff}))
-        $error("Invalid write strobe encountered");
+        else $error("Invalid write strobe encountered");
     end
   // synopsys translate_on
 

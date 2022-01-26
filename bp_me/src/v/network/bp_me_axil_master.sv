@@ -211,8 +211,10 @@ module bp_me_axil_master
   always_ff @(negedge clk_i)
     begin
       // give a warning if the client device has an error response
-      assert (reset_i !== '0 || ~m_axil_rvalid_i || m_axil_rresp_i == '0) else $error("Client device has an error response to reads");
-      assert (reset_i !== '0 || ~m_axil_bvalid_i || m_axil_bresp_i == '0) else $error("Client device has an error response to writes");
+      assert (reset_i !== '0 || ~m_axil_rvalid_i || m_axil_rresp_i == '0)
+        else $error("Client device has an error response to reads");
+      assert (reset_i !== '0 || ~m_axil_bvalid_i || m_axil_bresp_i == '0)
+        else $error("Client device has an error response to writes");
     end
   //synopsys translate_on
 
