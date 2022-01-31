@@ -118,7 +118,6 @@ module bp_ddr
       btc
         (.bsg_tag_i     (dmc_cfg_tag_lines_lo[i])
         ,.recv_clk_i    (clk_i)
-        ,.recv_reset_i  (1'b0)
         ,.recv_new_r_o  ()
         ,.recv_data_r_o (dmc_cfg_tag_data_lo[i])
         );

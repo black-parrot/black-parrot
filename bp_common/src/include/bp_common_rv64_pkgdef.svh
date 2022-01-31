@@ -1,6 +1,15 @@
 `ifndef BP_COMMON_RV64_PKGDEF_SVH
 `define BP_COMMON_RV64_PKGDEF_SVH
 
+  localparam dword_width_gp       = 64;
+  localparam word_width_gp        = 32;
+  localparam half_width_gp        = 16;
+  localparam byte_width_gp        = 8;
+  localparam instr_width_gp       = 32;
+  localparam csr_addr_width_gp    = 12;
+  localparam reg_addr_width_gp    = 5;
+  localparam page_offset_width_gp = 12;
+
   localparam rv64_rf_els_gp         = 32;
   localparam rv64_instr_width_gp    = 32;
   localparam rv64_eaddr_width_gp    = 64;
