@@ -14,6 +14,7 @@ module bp_unicore_lite
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
    )
   (input                                               clk_i
+   , input                                             rt_clk_i
    , input                                             reset_i
 
    , input [io_noc_did_width_p-1:0]                    my_did_i
@@ -470,6 +471,7 @@ module bp_unicore_lite
    #(.bp_params_p(bp_params_p))
    clint
     (.clk_i(clk_i)
+     ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_i)
 
      ,.mem_cmd_header_i(dev_cmd_header_li[1])

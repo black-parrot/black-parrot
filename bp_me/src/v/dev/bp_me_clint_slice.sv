@@ -12,6 +12,7 @@ module bp_me_clint_slice
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce)
    )
   (input                                                clk_i
+   , input                                              rt_clk_i
    , input                                              reset_i
 
    , input [xce_mem_header_width_lp-1:0]                mem_cmd_header_i
@@ -56,18 +57,16 @@ module bp_me_clint_slice
      ,.data_i(data_li)
      );
 
-  // TODO: Should be actual RTC, or at least programmable
-  localparam ds_width_lp = 5;
-  localparam [ds_width_lp-1:0] ds_ratio_li = 8;
   logic mtime_inc_li;
-  bsg_strobe
-   #(.width_p(ds_width_lp))
-   bsg_rtc_strobe
+  bsg_edge_detect
+   bed
     (.clk_i(clk_i)
-     ,.reset_r_i(reset_i)
-     ,.init_val_r_i(ds_ratio_li)
-     ,.strobe_r_o(mtime_inc_li)
+     ,.reset_i(reset_i)
+
+     ,.sig_i(rt_clk_i)
+     ,.detect_o(mtime_inc_li)
      );
+
   logic [dword_width_gp-1:0] mtime_r;
   wire [dword_width_gp-1:0] mtime_n = data_lo;
   bsg_counter_set_en
