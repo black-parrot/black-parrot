@@ -571,7 +571,7 @@ module bp_tile
   // All CCE-Mem network responses go to the CCE on this tile (id = 0 in xbar)
   wire [3:0] dev_resp_dst_lo = '0;
 
-  bp_me_xbar_stream_buffered
+  bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(dword_width_gp)
      ,.payload_width_p(mem_payload_width_lp)
@@ -596,7 +596,7 @@ module bp_tile
      ,.msg_last_o(dev_cmd_last_li)
      );
 
-  bp_me_xbar_stream_buffered
+  bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(dword_width_gp)
      ,.payload_width_p(mem_payload_width_lp)
