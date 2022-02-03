@@ -16,7 +16,6 @@ module bp_cce
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p      = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    , parameter bedrock_data_width_p       = dword_width_gp
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
@@ -429,9 +428,7 @@ module bp_cce
 
   // Source Select
   bp_cce_src_sel
-    #(.bp_params_p(bp_params_p)
-      ,.bedrock_data_width_p(bedrock_data_width_p)
-     )
+   #(.bp_params_p(bp_params_p))
     source_selector
      (.src_a_sel_i(decoded_inst_lo.src_a_sel)
       ,.src_a_i(decoded_inst_lo.src_a)
@@ -665,9 +662,7 @@ module bp_cce
 
   // Message unit
   bp_cce_msg
-    #(.bp_params_p(bp_params_p)
-      ,.bedrock_data_width_p(bedrock_data_width_p)
-      )
+   #(.bp_params_p(bp_params_p))
     message
      (.clk_i(clk_i)
       ,.reset_i(reset_i)

@@ -15,7 +15,6 @@ module bp_me_nonsynth_cce_tracer
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    , parameter bedrock_data_width_p = dword_width_gp
 
     , localparam cce_trace_file_p = "cce"
 

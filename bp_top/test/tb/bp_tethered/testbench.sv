@@ -553,8 +553,6 @@ module testbench
            ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
            );
 
-      // note: the device tracer could be specialized to trace bp_me_bedrock_register, but
-      // requires passing a unique ID to each instance of the module/tracer
       bind bp_me_clint_slice
         bp_me_nonsynth_dev_tracer
          #(.bp_params_p(bp_params_p)
@@ -582,9 +580,7 @@ module testbench
         begin
           bind bp_cce_wrapper
             bp_me_nonsynth_cce_tracer
-             #(.bp_params_p(bp_params_p)
-               ,.bedrock_data_width_p(bedrock_data_width_p)
-               )
+             #(.bp_params_p(bp_params_p))
              cce_tracer
               (.clk_i(clk_i & testbench.cce_trace_en_lo)
               ,.reset_i(reset_i)

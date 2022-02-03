@@ -14,7 +14,6 @@ module testbench
  import bp_me_nonsynth_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter bedrock_data_width_p = dword_width_gp
 
    , parameter cce_trace_p = 0
    , parameter cce_dir_trace_p = 0
@@ -549,7 +548,6 @@ module testbench
   // CCE
   wrapper
   #(.bp_params_p(bp_params_p)
-    ,.bedrock_data_width_p(bedrock_data_width_p)
     ,.cce_trace_p(cce_trace_p)
    )
   wrapper
@@ -750,9 +748,7 @@ module testbench
 
   bind bp_cce_wrapper
     bp_me_nonsynth_cce_tracer
-      #(.bp_params_p(bp_params_p)
-        ,.bedrock_data_width_p(bedrock_data_width_p)
-        )
+      #(.bp_params_p(bp_params_p))
       cce_tracer
        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
         ,.reset_i(reset_i)

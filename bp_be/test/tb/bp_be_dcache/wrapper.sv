@@ -708,9 +708,7 @@ module wrapper
           );
 
        bp_cce_fsm
-        #(.bp_params_p(bp_params_p)
-          ,.bedrock_data_width_p(dword_width_gp)
-          )
+        #(.bp_params_p(bp_params_p))
         cce
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
