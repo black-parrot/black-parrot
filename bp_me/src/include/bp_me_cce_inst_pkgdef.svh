@@ -521,8 +521,6 @@
   `define bp_cce_inst_type_u_width \
     (`bp_cce_inst_data_width-`bp_cce_inst_op_width-`bp_cce_inst_minor_op_width)
 
-  `include "bp_me_cce_inst_defines.svh"
-
   /*
    * 2-Register Encoding
    *

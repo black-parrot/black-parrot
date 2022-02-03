@@ -9,7 +9,7 @@
 module bp_me_nonsynth_lce_tr_tracer
   import bp_common_pkg::*;
   import bp_me_nonsynth_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_test_multicore_half_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
     , parameter `BSG_INV_PARAM(sets_p)
