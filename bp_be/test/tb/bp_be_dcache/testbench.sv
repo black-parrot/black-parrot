@@ -345,9 +345,7 @@ module testbench
 
     bind bp_cce_fsm
       bp_me_nonsynth_cce_tracer
-        #(.bp_params_p(bp_params_p)
-          ,.bedrock_data_width_p(bedrock_data_width_p)
-          )
+        #(.bp_params_p(bp_params_p))
         bp_cce_tracer
          (.clk_i(clk_i & (testbench.cce_trace_p == 1))
           ,.reset_i(reset_i)

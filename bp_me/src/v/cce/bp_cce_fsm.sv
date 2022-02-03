@@ -26,7 +26,6 @@ module bp_cce_fsm
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    , parameter bedrock_data_width_p       = dword_width_gp
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)

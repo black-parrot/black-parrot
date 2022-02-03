@@ -12,7 +12,6 @@ module wrapper
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
-   , parameter bedrock_data_width_p = dword_width_gp
 
    // interface widths
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
@@ -77,9 +76,7 @@ module wrapper
   );
 
   bp_cce_wrapper
-   #(.bp_params_p(bp_params_p)
-     ,.bedrock_data_width_p(bedrock_data_width_p)
-     )
+   #(.bp_params_p(bp_params_p))
    dut
     (.*);
 

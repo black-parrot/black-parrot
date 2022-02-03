@@ -21,7 +21,6 @@ module bp_cce_wrapper
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p      = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    , parameter bedrock_data_width_p       = dword_width_gp
 
     // Interface Widths
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
@@ -94,16 +93,12 @@ module bp_cce_wrapper
 
   if (cce_type_p == e_cce_ucode) begin : ucode
     bp_cce
-    #(.bp_params_p(bp_params_p)
-      ,.bedrock_data_width_p(bedrock_data_width_p)
-      )
+    #(.bp_params_p(bp_params_p))
     cce
      (.*);
   end else if (cce_type_p == e_cce_fsm) begin : fsm
     bp_cce_fsm
-    #(.bp_params_p(bp_params_p)
-      ,.bedrock_data_width_p(bedrock_data_width_p)
-      )
+    #(.bp_params_p(bp_params_p))
     cce
      (.*);
   end

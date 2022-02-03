@@ -623,9 +623,7 @@ module bp_tile
 
   // CCE: Cache Coherence Engine
   bp_cce_wrapper
-   #(.bp_params_p(bp_params_p)
-     ,.bedrock_data_width_p(dword_width_gp)
-     )
+   #(.bp_params_p(bp_params_p))
    cce
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
