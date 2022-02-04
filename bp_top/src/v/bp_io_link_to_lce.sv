@@ -10,8 +10,8 @@ module bp_io_link_to_lce
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
@@ -21,13 +21,13 @@ module bp_io_link_to_lce
 
    , input [lce_id_width_p-1:0]                     lce_id_i
 
-   , input [cce_mem_header_width_lp-1:0]            io_cmd_header_i
+   , input [mem_header_width_lp-1:0]                io_cmd_header_i
    , input [cce_block_width_p-1:0]                  io_cmd_data_i
    , input                                          io_cmd_v_i
    , input                                          io_cmd_last_i
    , output logic                                   io_cmd_yumi_o
 
-   , output logic [cce_mem_header_width_lp-1:0]     io_resp_header_o
+   , output logic [mem_header_width_lp-1:0]         io_resp_header_o
    , output logic [cce_block_width_p-1:0]           io_resp_data_o
    , output logic                                   io_resp_v_o
    , output logic                                   io_resp_last_o
@@ -46,19 +46,19 @@ module bp_io_link_to_lce
    // No lce_resp acknowledgements for I/O (uncached) accesses
    );
 
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `bp_cast_i(bp_bedrock_cce_mem_header_s, io_cmd_header);
-  `bp_cast_o(bp_bedrock_cce_mem_header_s, io_resp_header);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
+  `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
   `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_bedrock_lce_req_header_s, lce_cmd_header);
 
   // TODO: This implementation only works for burst length == 1, like the
   //   rest of this module
-  bp_bedrock_cce_mem_payload_s io_resp_payload, io_resp_size;
+  bp_bedrock_mem_payload_s io_resp_payload;
   logic payload_ready_lo, payload_v_lo;
   bsg_fifo_1r1w_small
-   #(.width_p($bits(bp_bedrock_cce_mem_payload_s)), .els_p(io_noc_max_credits_p))
+   #(.width_p($bits(bp_bedrock_mem_payload_s)), .els_p(io_noc_max_credits_p))
    payload_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

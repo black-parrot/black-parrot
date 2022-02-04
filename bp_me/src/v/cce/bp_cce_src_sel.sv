@@ -30,8 +30,8 @@ module bp_cce_src_sel
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
   )
   (// Select signals for src_a and src_b - from decoded instruction
@@ -62,11 +62,14 @@ module bp_cce_src_sel
    , input                                                          lce_req_header_v_i
    , input [lce_req_header_width_lp-1:0]                            lce_req_header_i
    , input [lce_resp_header_width_lp-1:0]                           lce_resp_header_i
-   , input [cce_mem_header_width_lp-1:0]                            mem_resp_header_i
-   // TODO: data inputs are not guarded by valid
-   , input [dword_width_gp-1:0]                                     lce_req_data_i
-   , input [dword_width_gp-1:0]                                     lce_resp_data_i
-   , input [dword_width_gp-1:0]                                     mem_resp_data_i
+   , input [mem_header_width_lp-1:0]                                mem_resp_header_i
+   // note: data inputs are not guarded by valid
+   // software must ensure data is valid before use
+   // note: if data width > cce gpr width, only least significant cce gpr width bits of
+   // data input are used and sent to src_a|b_o
+   , input [bedrock_data_width_p-1:0]                               lce_req_data_i
+   , input [bedrock_data_width_p-1:0]                               lce_resp_data_i
+   , input [bedrock_data_width_p-1:0]                               mem_resp_data_i
 
    // Source A and B outputs
    , output logic [`bp_cce_inst_gpr_width-1:0]   src_a_o
@@ -81,12 +84,6 @@ module bp_cce_src_sel
    , output bp_coh_states_e                      state_o
   );
 
-  // parameter checks
-  initial begin
-    if (cce_block_width_p < `bp_cce_inst_gpr_width)
-      $fatal(0,"CCE block width must be greater than CCE GPR width");
-  end
-
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast;
   assign cfg_bus_cast = cfg_bus_i;
@@ -96,13 +93,13 @@ module bp_cce_src_sel
   assign mshr = mshr_i;
 
   // LCE-CCE and Mem-CCE Interface
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   // Message casting
   bp_bedrock_lce_req_header_s  lce_req_header_li;
   bp_bedrock_lce_resp_header_s lce_resp_header_li;
-  bp_bedrock_cce_mem_header_s  mem_resp_header_li;
+  bp_bedrock_mem_header_s  mem_resp_header_li;
 
   assign lce_req_header_li   = lce_req_header_i;
   assign lce_resp_header_li  = lce_resp_header_i;
@@ -126,19 +123,22 @@ module bp_cce_src_sel
       end
       e_src_sel_flag: begin
         unique case (src_a_i.flag)
-          e_opd_rqf:  src_a_o[0] = mshr.flags[e_opd_rqf];
-          e_opd_ucf:  src_a_o[0] = mshr.flags[e_opd_ucf];
-          e_opd_nerf: src_a_o[0] = mshr.flags[e_opd_nerf];
-          e_opd_nwbf: src_a_o[0] = mshr.flags[e_opd_nwbf];
-          e_opd_pf:   src_a_o[0] = mshr.flags[e_opd_pf];
-          e_opd_sf:   src_a_o[0] = mshr.flags[e_opd_sf];
-          e_opd_csf:  src_a_o[0] = mshr.flags[e_opd_csf];
-          e_opd_cef:  src_a_o[0] = mshr.flags[e_opd_cef];
-          e_opd_cmf:  src_a_o[0] = mshr.flags[e_opd_cmf];
-          e_opd_cof:  src_a_o[0] = mshr.flags[e_opd_cof];
-          e_opd_cff:  src_a_o[0] = mshr.flags[e_opd_cff];
-          e_opd_rf:   src_a_o[0] = mshr.flags[e_opd_rf];
-          e_opd_uf:   src_a_o[0] = mshr.flags[e_opd_uf];
+          e_opd_rqf:  src_a_o[0] = mshr.flags.write_not_read;
+          e_opd_ucf:  src_a_o[0] = mshr.flags.uncached;
+          e_opd_nerf: src_a_o[0] = mshr.flags.non_exclusive;
+          e_opd_nwbf: src_a_o[0] = mshr.flags.null_writeback;
+          e_opd_pf:   src_a_o[0] = mshr.flags.pending;
+          e_opd_sf:   src_a_o[0] = mshr.flags.speculative;
+          e_opd_csf:  src_a_o[0] = mshr.flags.cached_shared;
+          e_opd_cef:  src_a_o[0] = mshr.flags.cached_exclusive;
+          e_opd_cmf:  src_a_o[0] = mshr.flags.cached_modified;
+          e_opd_cof:  src_a_o[0] = mshr.flags.cached_owned;
+          e_opd_cff:  src_a_o[0] = mshr.flags.cached_forward;
+          e_opd_rf:   src_a_o[0] = mshr.flags.replacement;
+          e_opd_uf:   src_a_o[0] = mshr.flags.upgrade;
+          e_opd_arf:  src_a_o[0] = mshr.flags.atomic;
+          e_opd_anrf: src_a_o[0] = mshr.flags.atomic_no_return;
+          e_opd_rcf:  src_a_o[0] = mshr.flags.cacheable_address;
           default:    src_a_o    = '0;
         endcase
       end
@@ -152,7 +152,7 @@ module bp_cce_src_sel
           e_opd_owner_lce:      src_a_o[0+:lce_id_width_p] = mshr.owner_lce_id;
           e_opd_owner_way:      src_a_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_a_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
-          e_opd_flags:          src_a_o[0+:$bits(bp_cce_inst_flag_onehot_e)] = mshr.flags & imm_i[0+:$bits(bp_cce_inst_flag_onehot_e)];
+          e_opd_flags:          src_a_o[0+:$bits(bp_cce_flags_s)] = mshr.flags & imm_i[0+:$bits(bp_cce_flags_s)];
           e_opd_msg_size:       src_a_o[0+:$bits(bp_bedrock_msg_size_e)] = mshr.msg_size;
           e_opd_lru_coh_state:  src_a_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
           e_opd_owner_coh_state: src_a_o[0+:$bits(bp_coh_states_e)] = mshr.owner_coh_state;
@@ -215,19 +215,22 @@ module bp_cce_src_sel
       end
       e_src_sel_flag: begin
         unique case (src_b_i.flag)
-          e_opd_rqf:  src_b_o[0] = mshr.flags[e_opd_rqf];
-          e_opd_ucf:  src_b_o[0] = mshr.flags[e_opd_ucf];
-          e_opd_nerf: src_b_o[0] = mshr.flags[e_opd_nerf];
-          e_opd_nwbf: src_b_o[0] = mshr.flags[e_opd_nwbf];
-          e_opd_pf:   src_b_o[0] = mshr.flags[e_opd_pf];
-          e_opd_sf:   src_b_o[0] = mshr.flags[e_opd_sf];
-          e_opd_csf:  src_b_o[0] = mshr.flags[e_opd_csf];
-          e_opd_cef:  src_b_o[0] = mshr.flags[e_opd_cef];
-          e_opd_cmf:  src_b_o[0] = mshr.flags[e_opd_cmf];
-          e_opd_cof:  src_b_o[0] = mshr.flags[e_opd_cof];
-          e_opd_cff:  src_b_o[0] = mshr.flags[e_opd_cff];
-          e_opd_rf:   src_b_o[0] = mshr.flags[e_opd_rf];
-          e_opd_uf:   src_b_o[0] = mshr.flags[e_opd_uf];
+          e_opd_rqf:  src_b_o[0] = mshr.flags.write_not_read;
+          e_opd_ucf:  src_b_o[0] = mshr.flags.uncached;
+          e_opd_nerf: src_b_o[0] = mshr.flags.non_exclusive;
+          e_opd_nwbf: src_b_o[0] = mshr.flags.null_writeback;
+          e_opd_pf:   src_b_o[0] = mshr.flags.pending;
+          e_opd_sf:   src_b_o[0] = mshr.flags.speculative;
+          e_opd_csf:  src_b_o[0] = mshr.flags.cached_shared;
+          e_opd_cef:  src_b_o[0] = mshr.flags.cached_exclusive;
+          e_opd_cmf:  src_b_o[0] = mshr.flags.cached_modified;
+          e_opd_cof:  src_b_o[0] = mshr.flags.cached_owned;
+          e_opd_cff:  src_b_o[0] = mshr.flags.cached_forward;
+          e_opd_rf:   src_b_o[0] = mshr.flags.replacement;
+          e_opd_uf:   src_b_o[0] = mshr.flags.upgrade;
+          e_opd_arf:  src_b_o[0] = mshr.flags.atomic;
+          e_opd_anrf: src_b_o[0] = mshr.flags.atomic_no_return;
+          e_opd_rcf:  src_b_o[0] = mshr.flags.cacheable_address;
           default:    src_b_o    = '0;
         endcase
       end
@@ -241,7 +244,7 @@ module bp_cce_src_sel
           e_opd_owner_lce:      src_b_o[0+:lce_id_width_p] = mshr.owner_lce_id;
           e_opd_owner_way:      src_b_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_b_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
-          e_opd_flags:          src_b_o[0+:$bits(bp_cce_inst_flag_onehot_e)] = mshr.flags & imm_i[0+:$bits(bp_cce_inst_flag_onehot_e)];
+          e_opd_flags:          src_b_o[0+:$bits(bp_cce_flags_s)] = mshr.flags & imm_i[0+:$bits(bp_cce_flags_s)];
           e_opd_msg_size:       src_b_o[0+:$bits(bp_bedrock_msg_size_e)] = mshr.msg_size;
           e_opd_lru_coh_state:  src_b_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
           e_opd_owner_coh_state: src_b_o[0+:$bits(bp_coh_states_e)] = mshr.owner_coh_state;

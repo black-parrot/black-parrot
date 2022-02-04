@@ -15,8 +15,8 @@ module bp_io_cce
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (input                                        clk_i
    , input                                      reset_i
@@ -34,23 +34,23 @@ module bp_io_cce
    , output logic                               lce_cmd_v_o
    , input                                      lce_cmd_ready_and_i
 
-   , input [cce_mem_header_width_lp-1:0]        io_resp_header_i
+   , input [mem_header_width_lp-1:0]            io_resp_header_i
    , input [cce_block_width_p-1:0]              io_resp_data_i
    , input                                      io_resp_v_i
    , output logic                               io_resp_ready_and_o
 
-   , output logic [cce_mem_header_width_lp-1:0] io_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]     io_cmd_header_o
    , output logic [cce_block_width_p-1:0]       io_cmd_data_o
    , output logic                               io_cmd_v_o
    , input                                      io_cmd_ready_and_i
    );
 
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `bp_cast_i(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_o(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
-  `bp_cast_o(bp_bedrock_cce_mem_header_s, io_cmd_header);
-  `bp_cast_i(bp_bedrock_cce_mem_header_s, io_resp_header);
+  `bp_cast_o(bp_bedrock_mem_header_s, io_cmd_header);
+  `bp_cast_i(bp_bedrock_mem_header_s, io_resp_header);
 
   assign lce_req_ready_and_o = io_cmd_ready_and_i;
   assign io_cmd_v_o          = lce_req_v_i;

@@ -20,21 +20,20 @@ module bp_me_cache_slice
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                                 clk_i
    , input                                               reset_i
 
-   , input  [cce_mem_header_width_lp-1:0]                mem_cmd_header_i
+   , input  [mem_header_width_lp-1:0]                    mem_cmd_header_i
    , input  [l2_data_width_p-1:0]                        mem_cmd_data_i
    , input                                               mem_cmd_v_i
    , output logic                                        mem_cmd_ready_and_o
    , input                                               mem_cmd_last_i
 
-   , output [cce_mem_header_width_lp-1:0]                mem_resp_header_o
+   , output [mem_header_width_lp-1:0]                    mem_resp_header_o
    , output [l2_data_width_p-1:0]                        mem_resp_data_o
    , output logic                                        mem_resp_v_o
    , input                                               mem_resp_ready_and_i
@@ -55,7 +54,7 @@ module bp_me_cache_slice
    );
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s [l2_banks_p-1:0] cache_pkt_li;

@@ -11,28 +11,30 @@ module bp_me_loopback
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
     )
    (input                                            clk_i
     , input                                          reset_i
 
-    , input [cce_mem_header_width_lp-1:0]            mem_cmd_header_i
+    , input [mem_header_width_lp-1:0]                mem_cmd_header_i
     , input [dword_width_gp-1:0]                     mem_cmd_data_i
     , input                                          mem_cmd_v_i
     , output logic                                   mem_cmd_ready_and_o
     , input logic                                    mem_cmd_last_i
 
-    , output logic [cce_mem_header_width_lp-1:0]     mem_resp_header_o
+    , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
     , output logic [dword_width_gp-1:0]              mem_resp_data_o
     , output logic                                   mem_resp_v_o
     , input                                          mem_resp_ready_and_i
     , output logic                                   mem_resp_last_o
     );
 
+  wire unused = &{mem_cmd_data_i};
+
   // Used to decouple to help prevent deadlock
   logic mem_resp_last_lo;
   bsg_one_fifo
-   #(.width_p(1+cce_mem_header_width_lp))
+   #(.width_p(1+mem_header_width_lp))
    loopback_buffer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

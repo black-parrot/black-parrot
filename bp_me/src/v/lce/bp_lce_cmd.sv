@@ -38,7 +38,7 @@ module bp_lce_cmd
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
     // width for counter used during initiliazation and for sync messages
@@ -123,7 +123,7 @@ module bp_lce_cmd
     , input                                          lce_cmd_ready_then_i
   );
 
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
   `bp_cast_o(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
@@ -565,7 +565,7 @@ module bp_lce_cmd
       // dirty_data_r holds valid data when dirty_data_v_r is high
       e_tr: begin
 
-        lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_data;
+        lce_cmd_header_cast_o.msg_type.cmd = e_bedrock_cmd_data;
         lce_cmd_header_cast_o.addr = lce_cmd_header_cast_i.addr;
         lce_cmd_header_cast_o.size = cmd_block_size_lp;
         // form the outbound message
@@ -618,7 +618,7 @@ module bp_lce_cmd
         // Send a null writeback if not dirty, else move to writeback
         lce_resp_data_o = '0;
         lce_resp_header_cast_o.addr = lce_cmd_header_cast_i.addr;
-        lce_resp_header_cast_o.msg_type = e_bedrock_resp_null_wb;
+        lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_null_wb;
         lce_resp_header_cast_o.payload.src_id = lce_id_i;
         lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;
         lce_resp_v_o = lce_resp_ready_then_i & dirty_stat_v_r & ~dirty_stat_r.dirty[lce_cmd_way_id];
@@ -661,7 +661,7 @@ module bp_lce_cmd
 
         lce_resp_data_o = dirty_data_r;
         lce_resp_header_cast_o.addr = lce_cmd_header_cast_i.addr;
-        lce_resp_header_cast_o.msg_type = e_bedrock_resp_wb;
+        lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_wb;
         lce_resp_header_cast_o.payload.src_id = lce_id_i;
         lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;
         lce_resp_header_cast_o.size = cmd_block_size_lp;

@@ -42,8 +42,8 @@ module testbench
    , localparam trace_replay_data_width_lp=`bp_me_nonsynth_lce_tr_pkt_width(paddr_width_p, dword_width_gp)
    , localparam trace_rom_addr_width_lp = 20
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (output bit reset_i);
 
@@ -59,8 +59,8 @@ module testbench
   endfunction
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_gp);
 
   // Bit to deal with initial X->0 transition detection
@@ -116,8 +116,8 @@ module testbench
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo;
 
   // CCE Memory Interface - BedRock Stream
-  bp_bedrock_cce_mem_header_s mem_resp_header, mem_cmd_header;
-  logic [dword_width_gp-1:0] mem_cmd_data, mem_resp_data;
+  bp_bedrock_mem_header_s mem_resp_header, mem_cmd_header;
+  logic [bedrock_data_width_p-1:0] mem_cmd_data, mem_resp_data;
   logic mem_resp_v, mem_resp_ready_and;
   logic mem_cmd_v, mem_cmd_ready_and;
   logic mem_cmd_last, mem_resp_last;
@@ -141,13 +141,13 @@ module testbench
   // LCE-CCE request interface (from lite-to-burst converter to xbar)
   bp_bedrock_lce_req_header_s [num_lce_p-1:0] lce_req_header;
   logic [num_lce_p-1:0] lce_req_header_v, lce_req_header_ready_and, lce_req_has_data;
-  logic [num_lce_p-1:0][dword_width_gp-1:0] lce_req_data;
+  logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_req_data;
   logic [num_lce_p-1:0] lce_req_data_v, lce_req_data_ready_and, lce_req_last;
   wire [num_lce_p-1:0] lce_req_dst = '0;
   // LCE-CCE request interface (from xbar to CCE)
   bp_bedrock_lce_req_header_s cce_lce_req_header_li;
   logic cce_lce_req_header_v_li, cce_lce_req_header_ready_and_lo, cce_lce_req_has_data_li;
-  logic [dword_width_gp-1:0] cce_lce_req_data_li;
+  logic [bedrock_data_width_p-1:0] cce_lce_req_data_li;
   logic cce_lce_req_data_v_li, cce_lce_req_data_ready_and_lo, cce_lce_req_last_li;
 
   // LCE-CCE response interface (from LCE to buffer) - BedRock Lite
@@ -161,19 +161,19 @@ module testbench
   // LCE-CCE response interface (from lite-to-burst converter to xbar)
   bp_bedrock_lce_resp_header_s [num_lce_p-1:0] lce_resp_header;
   logic [num_lce_p-1:0] lce_resp_header_v, lce_resp_header_ready_and, lce_resp_has_data;
-  logic [num_lce_p-1:0][dword_width_gp-1:0] lce_resp_data;
+  logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_resp_data;
   logic [num_lce_p-1:0] lce_resp_data_v, lce_resp_data_ready_and, lce_resp_last;
   wire [num_lce_p-1:0] lce_resp_dst = '0;
   // LCE-CCE response interface (from xbar to CCE)
   bp_bedrock_lce_resp_header_s cce_lce_resp_header_li;
   logic cce_lce_resp_header_v_li, cce_lce_resp_header_ready_and_lo, cce_lce_resp_has_data_li;
-  logic [dword_width_gp-1:0] cce_lce_resp_data_li;
+  logic [bedrock_data_width_p-1:0] cce_lce_resp_data_li;
   logic cce_lce_resp_data_v_li, cce_lce_resp_data_ready_and_lo, cce_lce_resp_last_li;
 
   // LCE-CCE command interface (from xbar to burst-to-lite)
   bp_bedrock_lce_cmd_header_s [num_lce_p-1:0] lce_cmd_header_li;
   logic [num_lce_p-1:0] lce_cmd_header_v_li, lce_cmd_header_ready_and_lo, lce_cmd_has_data_li;
-  logic [num_lce_p-1:0][dword_width_gp-1:0] lce_cmd_data_li;
+  logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_cmd_data_li;
   logic [num_lce_p-1:0] lce_cmd_data_v_li, lce_cmd_data_ready_and_lo, lce_cmd_last_li;
   // LCE-CCE command interface (from burst-to-lite to LCE) - BedRock Lite
   bp_bedrock_lce_cmd_header_s [num_lce_p-1:0] lce_cmd_in_header_li;
@@ -191,21 +191,21 @@ module testbench
   // LCE-CCE command out interface (from lite-to-burst to xbar)
   bp_bedrock_lce_cmd_header_s [num_lce_p-1:0] lce_cmd_out_header;
   logic [num_lce_p-1:0] lce_cmd_out_header_v, lce_cmd_out_header_ready_and, lce_cmd_out_has_data;
-  logic [num_lce_p-1:0][dword_width_gp-1:0] lce_cmd_out_data;
+  logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_cmd_out_data;
   logic [num_lce_p-1:0] lce_cmd_out_data_v, lce_cmd_out_data_ready_and, lce_cmd_out_last;
   logic [num_lce_p-1:0][lg_num_lce_lp-1:0] lce_cmd_out_dst;
 
   // LCE-CCE command interface (from CCE to xbar)
   bp_bedrock_lce_cmd_header_s cce_lce_cmd_header_lo;
-  logic cce_lce_cmd_header_v_Lo, cce_lce_cmd_header_ready_and_li, cce_lce_cmd_has_data_lo;
-  logic [dword_width_gp-1:0] cce_lce_cmd_data_lo;
+  logic cce_lce_cmd_header_v_lo, cce_lce_cmd_header_ready_and_li, cce_lce_cmd_has_data_lo;
+  logic [bedrock_data_width_p-1:0] cce_lce_cmd_data_lo;
   logic cce_lce_cmd_data_v_lo, cce_lce_cmd_data_ready_and_li, cce_lce_cmd_last_lo;
-  wire [lg_num_lce_lp-1:0] lce_cmd_dst_lo = cce_lce_cmd_header_lo.payload.dst_id;
+  wire [lg_num_lce_lp-1:0] lce_cmd_dst_lo = cce_lce_cmd_header_lo.payload.dst_id[0+:lg_num_lce_lp];
 
   // Req Crossbar
   bp_me_xbar_burst
    #(.bp_params_p(bp_params_p)
-     ,.data_width_p(dword_width_gp)
+     ,.data_width_p(bedrock_data_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
      ,.num_source_p(num_lce_p)
      ,.num_sink_p(num_cce_p)
@@ -237,7 +237,7 @@ module testbench
   // Resp Crossbar
   bp_me_xbar_burst
    #(.bp_params_p(bp_params_p)
-     ,.data_width_p(dword_width_gp)
+     ,.data_width_p(bedrock_data_width_p)
      ,.payload_width_p(lce_resp_payload_width_lp)
      ,.num_source_p(num_lce_p)
      ,.num_sink_p(num_cce_p)
@@ -270,7 +270,7 @@ module testbench
   // from CCE and LCE cmd out to LCE cmd in
   bp_me_xbar_burst
    #(.bp_params_p(bp_params_p)
-     ,.data_width_p(dword_width_gp)
+     ,.data_width_p(bedrock_data_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.num_source_p(num_cce_p+num_lce_p)
      ,.num_sink_p(num_lce_p)
@@ -280,7 +280,7 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.msg_header_i({cce_lce_cmd_header_lo, lce_cmd_out_header})
-     ,.msg_header_v_i({cce_lce_cmd_header_v_Lo, lce_cmd_out_header_v})
+     ,.msg_header_v_i({cce_lce_cmd_header_v_lo, lce_cmd_out_header_v})
      ,.msg_header_yumi_o({cce_lce_cmd_header_ready_and_li, lce_cmd_out_header_ready_and})
      ,.msg_has_data_i({cce_lce_cmd_has_data_lo, lce_cmd_out_has_data})
      ,.msg_data_i({cce_lce_cmd_data_lo, lce_cmd_out_data})
@@ -402,7 +402,7 @@ module testbench
     bp_me_lite_to_burst
      #(.bp_params_p(bp_params_p)
        ,.in_data_width_p(cce_block_width_p)
-       ,.out_data_width_p(dword_width_gp)
+       ,.out_data_width_p(bedrock_data_width_p)
        ,.payload_width_p(lce_req_payload_width_lp)
        ,.payload_mask_p(lce_req_payload_mask_gp)
        )
@@ -446,7 +446,7 @@ module testbench
     bp_me_lite_to_burst
      #(.bp_params_p(bp_params_p)
        ,.in_data_width_p(cce_block_width_p)
-       ,.out_data_width_p(dword_width_gp)
+       ,.out_data_width_p(bedrock_data_width_p)
        ,.payload_width_p(lce_resp_payload_width_lp)
        ,.payload_mask_p(lce_resp_payload_mask_gp)
        )
@@ -473,7 +473,7 @@ module testbench
     // LCE Command In (from xbar to LCE)
     bp_me_burst_to_lite
      #(.bp_params_p(bp_params_p)
-       ,.in_data_width_p(dword_width_gp)
+       ,.in_data_width_p(bedrock_data_width_p)
        ,.out_data_width_p(cce_block_width_p)
        ,.payload_width_p(lce_cmd_payload_width_lp)
        ,.payload_mask_p(lce_cmd_payload_mask_gp)
@@ -518,7 +518,7 @@ module testbench
     bp_me_lite_to_burst
      #(.bp_params_p(bp_params_p)
        ,.in_data_width_p(cce_block_width_p)
-       ,.out_data_width_p(dword_width_gp)
+       ,.out_data_width_p(bedrock_data_width_p)
        ,.payload_width_p(lce_cmd_payload_width_lp)
        ,.payload_mask_p(lce_cmd_payload_mask_gp)
        )
@@ -542,7 +542,7 @@ module testbench
        ,.out_msg_last_o(lce_cmd_out_last[i])
        );
 
-    assign lce_cmd_out_dst[i] = lce_cmd_out_header[i].payload.dst_id;
+    assign lce_cmd_out_dst[i] = lce_cmd_out_header[i].payload.dst_id[0+:lg_num_lce_lp];
   end
 
   // CCE
@@ -583,7 +583,7 @@ module testbench
     ,.lce_resp_last_i(cce_lce_resp_last_li)
 
     ,.lce_cmd_header_o(cce_lce_cmd_header_lo)
-    ,.lce_cmd_header_v_o(cce_lce_cmd_header_v_Lo)
+    ,.lce_cmd_header_v_o(cce_lce_cmd_header_v_lo)
     ,.lce_cmd_header_ready_and_i(cce_lce_cmd_header_ready_and_li)
     ,.lce_cmd_has_data_o(cce_lce_cmd_has_data_lo)
     ,.lce_cmd_data_o(cce_lce_cmd_data_lo)
@@ -607,11 +607,11 @@ module testbench
   );
 
   // Memory Command Buffer
-  bp_bedrock_cce_mem_header_s mem_cmd_lo;
-  logic [dword_width_gp-1:0] mem_cmd_data_lo;
+  bp_bedrock_mem_header_s mem_cmd_lo;
+  logic [bedrock_data_width_p-1:0] mem_cmd_data_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_yumi_li, mem_cmd_last_lo;
   bsg_fifo_1r1w_small
-  #(.width_p($bits(bp_bedrock_cce_mem_header_s)+dword_width_gp+1)
+  #(.width_p($bits(bp_bedrock_mem_header_s)+bedrock_data_width_p+1)
     ,.els_p(mem_buffer_els_lp)
     )
   mem_cmd_stream_buffer
@@ -629,11 +629,11 @@ module testbench
   assign mem_cmd_yumi_li = mem_cmd_v_lo & mem_cmd_ready_and_li;
 
   // Memory Response Buffer
-  bp_bedrock_cce_mem_header_s mem_resp_li;
-  logic [dword_width_gp-1:0] mem_resp_data_li;
+  bp_bedrock_mem_header_s mem_resp_li;
+  logic [bedrock_data_width_p-1:0] mem_resp_data_li;
   logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li, mem_resp_yumi_lo;
   bsg_fifo_1r1w_small
-  #(.width_p($bits(bp_bedrock_cce_mem_header_s)+dword_width_gp+1)
+  #(.width_p($bits(bp_bedrock_mem_header_s)+bedrock_data_width_p+1)
     ,.els_p(mem_buffer_els_lp)
     )
   mem_resp_stream_buffer
@@ -826,7 +826,7 @@ module testbench
 
   // CCE instruction tracer
   // this is connected to the instruction registered in the EX stage
-  if (cce_ucode_p) begin
+  if (cce_type_p == e_cce_ucode) begin
     bind bp_cce
       bp_me_nonsynth_cce_inst_tracer
         #(.bp_params_p(bp_params_p)
@@ -863,7 +863,7 @@ module testbench
          );
 
   end
-  else begin
+  else if (cce_type_p == e_cce_fsm) begin
     bind bp_cce_fsm
       bp_me_nonsynth_cce_perf
         #(.bp_params_p(bp_params_p))
@@ -888,7 +888,7 @@ module testbench
 
 
   // Config
-  bp_bedrock_cce_mem_header_s cfg_mem_cmd_lo;
+  bp_bedrock_mem_header_s cfg_mem_cmd_lo;
   logic [dword_width_gp-1:0] cfg_mem_cmd_data_lo;
   logic cfg_mem_cmd_v_lo, cfg_mem_cmd_ready_and_li, cfg_mem_cmd_last_lo;
   logic cfg_mem_resp_v_lo;

@@ -12,7 +12,7 @@ module bp_unicore_complex
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
@@ -23,26 +23,26 @@ module bp_unicore_complex
    , input [io_noc_did_width_p-1:0]                                 host_did_i
 
    // Outgoing I/O
-   , output logic [num_core_p-1:0][uce_mem_header_width_lp-1:0]     io_cmd_header_o
+   , output logic [num_core_p-1:0][mem_header_width_lp-1:0]         io_cmd_header_o
    , output logic [num_core_p-1:0][uce_fill_width_p-1:0]            io_cmd_data_o
    , output logic [num_core_p-1:0]                                  io_cmd_v_o
    , input [num_core_p-1:0]                                         io_cmd_ready_and_i
    , output logic [num_core_p-1:0]                                  io_cmd_last_o
 
-   , input [num_core_p-1:0][uce_mem_header_width_lp-1:0]            io_resp_header_i
+   , input [num_core_p-1:0][mem_header_width_lp-1:0]                io_resp_header_i
    , input [num_core_p-1:0][uce_fill_width_p-1:0]                   io_resp_data_i
    , input [num_core_p-1:0]                                         io_resp_v_i
    , output logic [num_core_p-1:0]                                  io_resp_ready_and_o
    , input [num_core_p-1:0]                                         io_resp_last_i
 
    // Incoming I/O
-   , input [num_core_p-1:0][uce_mem_header_width_lp-1:0]            io_cmd_header_i
+   , input [num_core_p-1:0][mem_header_width_lp-1:0]                io_cmd_header_i
    , input [num_core_p-1:0][uce_fill_width_p-1:0]                   io_cmd_data_i
    , input [num_core_p-1:0]                                         io_cmd_v_i
    , output logic [num_core_p-1:0]                                  io_cmd_ready_and_o
    , input [num_core_p-1:0]                                         io_cmd_last_i
 
-   , output logic [num_core_p-1:0][uce_mem_header_width_lp-1:0]     io_resp_header_o
+   , output logic [num_core_p-1:0][mem_header_width_lp-1:0]         io_resp_header_o
    , output logic [num_core_p-1:0][uce_fill_width_p-1:0]            io_resp_data_o
    , output logic [num_core_p-1:0]                                  io_resp_v_o
    , input [num_core_p-1:0]                                         io_resp_ready_and_i

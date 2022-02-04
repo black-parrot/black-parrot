@@ -14,7 +14,7 @@ module bp_me_bedrock_register
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    // The width of the registers. Currently, must all be the same.
    , parameter reg_width_p = dword_width_gp
@@ -38,13 +38,13 @@ module bp_me_bedrock_register
    , input                                          reset_i
 
    // Network-side BP-Stream interface
-   , input [xce_mem_header_width_lp-1:0]            mem_cmd_header_i
+   , input [mem_header_width_lp-1:0]                mem_cmd_header_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
-   , output logic [xce_mem_header_width_lp-1:0]     mem_resp_header_o
+   , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
    , output logic [dword_width_gp-1:0]              mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
@@ -66,13 +66,13 @@ module bp_me_bedrock_register
 
   wire unused = &{mem_cmd_last_i};
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
-  bp_bedrock_xce_mem_header_s mem_cmd_header_li;
+  bp_bedrock_mem_header_s mem_cmd_header_li;
   logic [dword_width_gp-1:0] mem_cmd_data_li;
   logic mem_cmd_v_li, mem_cmd_yumi_li;
   bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_xce_mem_header_s)+dword_width_gp))
+   #(.width_p($bits(bp_bedrock_mem_header_s)+dword_width_gp))
    cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -88,7 +88,7 @@ module bp_me_bedrock_register
 
   logic v_r;
   wire wr_not_rd  = (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
-  wire rd_not_wr  = (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
+  wire rd_not_wr  = (mem_cmd_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd});
   wire v_n = mem_cmd_v_li & ~v_r;
   logic [els_p-1:0] r_v_r;
   bsg_dff_reset_set_clear
@@ -117,9 +117,10 @@ module bp_me_bedrock_register
       assign r_v_o[i] = ~v_r & addr_match & ~wr_not_rd;
       assign w_v_o[i] = ~v_r & addr_match &  wr_not_rd;
     end
-      assign addr_o = (mem_cmd_header_li.addr);
-      assign size_o = (mem_cmd_header_li.size);
-      assign data_o = (mem_cmd_data_li);
+
+  assign addr_o = mem_cmd_header_li.addr[0+:reg_addr_width_p];
+  assign size_o = mem_cmd_header_li.size;
+  assign data_o = mem_cmd_data_li;
 
   assign mem_resp_header_o = mem_cmd_header_li;
   assign mem_resp_data_o = rdata_lo;

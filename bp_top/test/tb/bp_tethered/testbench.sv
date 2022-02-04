@@ -31,6 +31,7 @@ module testbench
    , parameter pc_profile_p                = 0
    , parameter br_profile_p                = 0
    , parameter cosim_p                     = 0
+   , parameter dev_trace_p                 = 0
 
    // COSIM parameters
    , parameter checkpoint_p                = 0
@@ -48,7 +49,7 @@ module testbench
    , parameter no_bind_p                   = 0
 
    , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (output bit reset_i);
 
@@ -64,7 +65,7 @@ module testbench
     return (`BP_SIM_CLK_PERIOD);
   endfunction
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
 // Bit to deal with initial X->0 transition detection
   bit clk_i;
@@ -127,18 +128,18 @@ module testbench
      ,.async_reset_o(cosim_reset_i)
      );
 
-  bp_bedrock_io_mem_header_s proc_io_cmd_header_lo;
+  bp_bedrock_mem_header_s proc_io_cmd_header_lo;
   logic [io_data_width_p-1:0] proc_io_cmd_data_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li, proc_io_cmd_last_lo;
-  bp_bedrock_io_mem_header_s proc_io_resp_header_li;
+  bp_bedrock_mem_header_s proc_io_resp_header_li;
   logic [io_data_width_p-1:0] proc_io_resp_data_li;
   logic proc_io_resp_v_li, proc_io_resp_ready_and_lo;
   logic proc_io_resp_last_li;
 
-  bp_bedrock_io_mem_header_s load_cmd_lo;
+  bp_bedrock_mem_header_s load_cmd_lo;
   logic [io_data_width_p-1:0] load_cmd_data_lo;
   logic load_cmd_v_lo, load_cmd_ready_and_li, load_cmd_last_lo;
-  bp_bedrock_io_mem_header_s load_resp_li;
+  bp_bedrock_mem_header_s load_resp_li;
   logic [io_data_width_p-1:0] load_resp_data_li;
   logic load_resp_v_li, load_resp_ready_and_lo, load_resp_last_li;
 
@@ -266,6 +267,7 @@ module testbench
   logic core_profile_en_lo;
   logic pc_profile_en_lo;
   logic branch_profile_en_lo;
+  logic dev_trace_en_lo;
   bp_nonsynth_host
    #(.bp_params_p(bp_params_p)
      ,.icache_trace_p(icache_trace_p)
@@ -279,6 +281,7 @@ module testbench
      ,.pc_profile_p(pc_profile_p)
      ,.br_profile_p(br_profile_p)
      ,.cosim_p(cosim_p)
+     ,.dev_trace_p(dev_trace_p)
      )
    host
     (.clk_i(clk_i)
@@ -308,6 +311,7 @@ module testbench
      ,.branch_profile_en_o(branch_profile_en_lo)
      ,.pc_profile_en_o(pc_profile_en_lo)
      ,.cosim_en_o(cosim_en_lo)
+     ,.dev_trace_en_o(dev_trace_en_lo)
      ,.finish_o(finish_lo)
      );
 
@@ -549,6 +553,29 @@ module testbench
            ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
            );
 
+      bind bp_me_clint_slice
+        bp_me_nonsynth_dev_tracer
+         #(.bp_params_p(bp_params_p)
+           ,.trace_file_p("clint")
+           )
+         clint_tracer
+          (.clk_i(clk_i & testbench.dev_trace_en_lo)
+           ,.reset_i(reset_i)
+           ,.id_i(id_i)
+
+           ,.mem_cmd_header_i(mem_cmd_header_i)
+           ,.mem_cmd_data_i(mem_cmd_data_i)
+           ,.mem_cmd_v_i(mem_cmd_v_i)
+           ,.mem_cmd_ready_and_i(mem_cmd_ready_and_o)
+           ,.mem_cmd_last_i(mem_cmd_last_i)
+
+           ,.mem_resp_header_i(mem_resp_header_o)
+           ,.mem_resp_data_i(mem_resp_data_o)
+           ,.mem_resp_v_i(mem_resp_v_o)
+           ,.mem_resp_ready_and_i(mem_resp_ready_and_i)
+           ,.mem_resp_last_i(mem_resp_last_o)
+           );
+
       if (multicore_p)
         begin
           bind bp_cce_wrapper
@@ -631,7 +658,7 @@ module testbench
 
           // CCE instruction tracer
           // this is connected to the instruction registered in the EX stage
-          if (cce_ucode_p) begin
+          if (cce_type_p == e_cce_ucode) begin
             bind bp_cce
               bp_me_nonsynth_cce_inst_tracer
                 #(.bp_params_p(bp_params_p)
@@ -667,7 +694,7 @@ module testbench
                  ,.mem_cmd_header_i(mem_cmd_base_header_lo)
                  );
 
-          end else begin
+          end else if (cce_type_p == e_cce_fsm) begin
             bind bp_cce_fsm
               bp_me_nonsynth_cce_perf
                 #(.bp_params_p(bp_params_p))

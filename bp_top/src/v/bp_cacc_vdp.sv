@@ -9,8 +9,8 @@ module bp_cacc_vdp
  import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
     `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
@@ -40,12 +40,12 @@ module bp_cacc_vdp
     , output logic                                lce_cmd_v_o
     , input                                       lce_cmd_ready_i
 
-    , input [cce_mem_header_width_lp-1:0]         io_cmd_header_i
+    , input [mem_header_width_lp-1:0]             io_cmd_header_i
     , input [cce_block_width_p-1:0]               io_cmd_data_i
     , input                                       io_cmd_v_i
     , output logic                                io_cmd_ready_o
 
-    , output logic [cce_mem_header_width_lp-1:0]  io_resp_header_o
+    , output logic [mem_header_width_lp-1:0]      io_resp_header_o
     , output logic [cce_block_width_p-1:0]        io_resp_data_o
     , output logic                                io_resp_v_o
     , input                                       io_resp_yumi_i
@@ -236,9 +236,9 @@ module bp_cacc_vdp
      );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `bp_cast_i(bp_bedrock_cce_mem_header_s, io_cmd_header);
-  `bp_cast_o(bp_bedrock_cce_mem_header_s, io_resp_header);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
+  `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
 
   assign io_cmd_ready_o = 1'b1;
 
@@ -256,7 +256,7 @@ module bp_cacc_vdp
   logic [63:0] sum_l2 [0:1];
   logic [63:0] dot_product_temp;
 
-  bp_bedrock_cce_mem_payload_s  resp_payload;
+  bp_bedrock_mem_payload_s      resp_payload;
   bp_bedrock_msg_size_e         resp_size;
   bp_bedrock_mem_type_e         resp_msg;
   bp_local_addr_s               local_addr_li;
@@ -312,15 +312,12 @@ module bp_cacc_vdp
       res_ptr       <= '0;
       res_len       <= '0;
       operation     <= '0;
-      io_resp_v_o   <= '0;
       len_a_cnt     <= '0;
       len_b_cnt     <= '0;
       vector_a      <= '{default:64'd0};
       vector_b      <= '{default:64'd0};
     end
-    if (state_r == DONE)
-      start_cmd  <= '0;
-    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr))
+    if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr))
     begin
       resp_size    <= io_cmd_header_cast_i.size;
       resp_payload <= io_cmd_header_cast_i.payload;

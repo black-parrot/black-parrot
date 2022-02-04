@@ -19,7 +19,7 @@ module wrapper
    `declare_bp_proc_params(bp_params_p)
 
    , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
@@ -30,26 +30,26 @@ module wrapper
    , input [did_width_p-1:0]                                host_did_i
 
    // Outgoing I/O
-   , output logic [io_mem_header_width_lp-1:0]              io_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]                 io_cmd_header_o
    , output logic [io_data_width_p-1:0]                     io_cmd_data_o
    , output logic                                           io_cmd_v_o
    , input                                                  io_cmd_ready_and_i
    , output logic                                           io_cmd_last_o
 
-   , input [io_mem_header_width_lp-1:0]                     io_resp_header_i
+   , input [mem_header_width_lp-1:0]                        io_resp_header_i
    , input [io_data_width_p-1:0]                            io_resp_data_i
    , input                                                  io_resp_v_i
    , output logic                                           io_resp_ready_and_o
    , input                                                  io_resp_last_i
 
    // Incoming I/O
-   , input [io_mem_header_width_lp-1:0]                     io_cmd_header_i
+   , input [mem_header_width_lp-1:0]                        io_cmd_header_i
    , input [io_data_width_p-1:0]                            io_cmd_data_i
    , input                                                  io_cmd_v_i
    , output logic                                           io_cmd_ready_and_o
    , input                                                  io_cmd_last_i
 
-   , output logic [io_mem_header_width_lp-1:0]              io_resp_header_o
+   , output logic [mem_header_width_lp-1:0]                 io_resp_header_o
    , output logic [io_data_width_p-1:0]                     io_resp_data_o
    , output logic                                           io_resp_v_o
    , input                                                  io_resp_ready_and_i
@@ -117,12 +117,12 @@ module wrapper
 
       wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
-      `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, io);
+      `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
-      `bp_cast_i(bp_bedrock_io_mem_header_s, io_cmd_header);
-      `bp_cast_o(bp_bedrock_io_mem_header_s, io_resp_header);
-      `bp_cast_o(bp_bedrock_io_mem_header_s, io_cmd_header);
-      `bp_cast_i(bp_bedrock_io_mem_header_s, io_resp_header);
+      `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
+      `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
+      `bp_cast_o(bp_bedrock_mem_header_s, io_cmd_header);
+      `bp_cast_i(bp_bedrock_mem_header_s, io_resp_header);
 
       bsg_ready_and_link_sif_s send_cmd_link_lo, send_resp_link_li;
       bsg_ready_and_link_sif_s recv_cmd_link_li, recv_resp_link_lo;

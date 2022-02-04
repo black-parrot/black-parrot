@@ -217,17 +217,6 @@
     ,e_spec_rd_spec                        = 4'b1000 // Read spec bit to sf
   } bp_cce_inst_spec_op_e;
 
-  // Struct that defines speculative memory access tracking metadata
-  // This is used in the decoded instruction and the bp_cce_spec module
-  typedef struct packed
-  {
-    logic                          spec;
-    logic                          squash;
-    logic                          fwd_mod;
-    bp_coh_states_e                state;
-  } bp_cce_spec_s;
-
-
   /*
    * Operand Selects
    */

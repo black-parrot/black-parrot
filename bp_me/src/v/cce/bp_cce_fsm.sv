@@ -43,9 +43,12 @@ module bp_cce_fsm
     , localparam max_tag_sets_lp           = `BSG_CDIV(lce_sets_p, num_cce_p)
     , localparam lg_max_tag_sets_lp        = `BSG_SAFE_CLOG2(max_tag_sets_lp)
 
+    // byte offset bits required per bedrock data channel beat
+    , localparam lg_bedrock_data_bytes_lp = `BSG_SAFE_CLOG2(bedrock_data_width_p/8)
+
     // interface widths
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
     , localparam counter_max_lp = 256
   )
@@ -61,7 +64,7 @@ module bp_cce_fsm
    , input                                          lce_req_header_v_i
    , output logic                                   lce_req_header_ready_and_o
    , input                                          lce_req_has_data_i
-   , input [dword_width_gp-1:0]                     lce_req_data_i
+   , input [bedrock_data_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_data_v_i
    , output logic                                   lce_req_data_ready_and_o
    , input                                          lce_req_last_i
@@ -70,7 +73,7 @@ module bp_cce_fsm
    , input                                          lce_resp_header_v_i
    , output logic                                   lce_resp_header_ready_and_o
    , input                                          lce_resp_has_data_i
-   , input [dword_width_gp-1:0]                     lce_resp_data_i
+   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
    , input                                          lce_resp_data_v_i
    , output logic                                   lce_resp_data_ready_and_o
    , input                                          lce_resp_last_i
@@ -79,40 +82,35 @@ module bp_cce_fsm
    , output logic                                   lce_cmd_header_v_o
    , input                                          lce_cmd_header_ready_and_i
    , output logic                                   lce_cmd_has_data_o
-   , output logic [dword_width_gp-1:0]              lce_cmd_data_o
+   , output logic [bedrock_data_width_p-1:0]        lce_cmd_data_o
    , output logic                                   lce_cmd_data_v_o
    , input                                          lce_cmd_data_ready_and_i
    , output logic                                   lce_cmd_last_o
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [cce_mem_header_width_lp-1:0]            mem_resp_header_i
-   , input [dword_width_gp-1:0]                     mem_resp_data_i
+   , input [mem_header_width_lp-1:0]                mem_resp_header_i
+   , input [bedrock_data_width_p-1:0]               mem_resp_data_i
    , input                                          mem_resp_v_i
    , output logic                                   mem_resp_ready_and_o
    , input                                          mem_resp_last_i
 
-   , output logic [cce_mem_header_width_lp-1:0]     mem_cmd_header_o
-   , output logic [dword_width_gp-1:0]              mem_cmd_data_o
+   , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
+   , output logic [bedrock_data_width_p-1:0]        mem_cmd_data_o
    , output logic                                   mem_cmd_v_o
    , input                                          mem_cmd_ready_and_i
    , output logic                                   mem_cmd_last_o
    );
 
+  wire unused = &{lce_req_has_data_i, lce_req_last_i, lce_resp_has_data_i, lce_resp_last_i};
+
   // parameter checks
-  if (lce_sets_p <= 1) $fatal(0,"Number of LCE sets must be greater than 1");
-  if (counter_max_lp < num_way_groups_lp) $fatal(0,"Counter max value not large enough");
-  if (counter_max_lp < max_tag_sets_lp) $fatal(0,"Counter max value not large enough");
-  if (icache_block_width_p != cce_block_width_p) $fatal(0,"icache block width must match cce block width");
-  if (dcache_block_width_p != cce_block_width_p) $fatal(0,"dcache block width must match cce block width");
-  if ((num_cacc_p) > 0 && (acache_block_width_p != cce_block_width_p)) $fatal(0,"acache block width must match cce block width");
-  if (dword_width_gp != 64) $fatal(0,"FSM CCE requires dword width of 64-bits");
-  if (!(`BSG_IS_POW2(cce_block_width_p) || cce_block_width_p < 64 || cce_block_width_p > 1024))
-    $fatal(0, "invalid CCE block width");
+  if (counter_max_lp < num_way_groups_lp) $fatal(0, "Counter max value not large enough");
+  if (counter_max_lp < max_tag_sets_lp) $fatal(0, "Counter max value not large enough");
 
   // Define structure variables for output queues
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   // LCE-CCE Interface structs
   bp_bedrock_lce_req_header_s  lce_req;
@@ -151,16 +149,16 @@ module bp_cce_fsm
       );
 
   // Memory Response Stream Pump
-  bp_bedrock_cce_mem_header_s mem_resp_base_header_li;
+  bp_bedrock_mem_header_s mem_resp_base_header_li;
   logic mem_resp_v_li, mem_resp_yumi_lo;
   logic mem_resp_stream_new_li, mem_resp_stream_last_li, mem_resp_stream_done_li;
   logic [paddr_width_p-1:0] mem_resp_addr_li;
-  logic [dword_width_gp-1:0] mem_resp_data_li;
+  logic [bedrock_data_width_p-1:0] mem_resp_data_li;
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)
-      ,.stream_data_width_p(dword_width_gp)
+      ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
-      ,.payload_width_p(cce_mem_payload_width_lp)
+      ,.payload_width_p(mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
       // provide buffer space for two stream messages with data (for coherence protocol)
@@ -187,18 +185,18 @@ module bp_cce_fsm
       );
 
   // Memory Command Stream Pump
-  localparam stream_words_lp = cce_block_width_p / dword_width_gp;
+  localparam stream_words_lp = cce_block_width_p / bedrock_data_width_p;
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
-  bp_bedrock_cce_mem_header_s mem_cmd_base_header_lo;
+  bp_bedrock_mem_header_s mem_cmd_base_header_lo;
   logic mem_cmd_v_lo, mem_cmd_ready_and_li;
   logic mem_cmd_stream_new_li, mem_cmd_stream_done_li;
-  logic [dword_width_gp-1:0] mem_cmd_data_lo;
+  logic [bedrock_data_width_p-1:0] mem_cmd_data_lo;
   logic [data_len_width_lp-1:0] mem_cmd_stream_cnt_li;
   bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
-      ,.stream_data_width_p(dword_width_gp)
+      ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
-      ,.payload_width_p(cce_mem_payload_width_lp)
+      ,.payload_width_p(mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
       )
@@ -232,7 +230,6 @@ module bp_cce_fsm
   // MSHR
   `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
   bp_cce_mshr_s mshr_r, mshr_n;
-  wire [paddr_width_p-1:0] mshr_r_paddr_aligned = (mshr_r.paddr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
 
   // Pending Bits
   logic pending_li, pending_clear_li, pending_lo;
@@ -291,13 +288,13 @@ module bp_cce_fsm
   logic [lce_id_width_p-1:0] gad_owner_lce_lo;
   logic [lg_lce_assoc_lp-1:0] gad_owner_lce_way_lo;
   bp_coh_states_e gad_owner_coh_state_lo;
-  logic gad_replacement_flag_lo;
-  logic gad_upgrade_flag_lo;
-  logic gad_cached_shared_flag_lo;
-  logic gad_cached_exclusive_flag_lo;
-  logic gad_cached_modified_flag_lo;
-  logic gad_cached_owned_flag_lo;
-  logic gad_cached_forward_flag_lo;
+  logic gad_rf_lo;
+  logic gad_uf_lo;
+  logic gad_csf_lo;
+  logic gad_cef_lo;
+  logic gad_cmf_lo;
+  logic gad_cof_lo;
+  logic gad_cff_lo;
 
   // Directory
   bp_cce_dir
@@ -348,22 +345,22 @@ module bp_cce_fsm
       ,.sharers_coh_states_i(sharers_coh_states_lo)
 
       ,.req_lce_i(mshr_r.lce_id)
-      ,.req_type_flag_i(mshr_r.flags[e_opd_rqf])
+      ,.req_type_flag_i(mshr_r.flags.write_not_read)
       ,.lru_coh_state_i(mshr_r.lru_coh_state)
-      ,.atomic_req_flag_i(mshr_r.flags[e_opd_arf])
-      ,.uncached_req_flag_i(mshr_r.flags[e_opd_ucf])
+      ,.atomic_req_flag_i(mshr_r.flags.atomic)
+      ,.uncached_req_flag_i(mshr_r.flags.uncached)
 
       ,.req_addr_way_o(gad_req_addr_way_lo)
       ,.owner_lce_o(gad_owner_lce_lo)
       ,.owner_way_o(gad_owner_lce_way_lo)
       ,.owner_coh_state_o(gad_owner_coh_state_lo)
-      ,.replacement_flag_o(gad_replacement_flag_lo)
-      ,.upgrade_flag_o(gad_upgrade_flag_lo)
-      ,.cached_shared_flag_o(gad_cached_shared_flag_lo)
-      ,.cached_exclusive_flag_o(gad_cached_exclusive_flag_lo)
-      ,.cached_modified_flag_o(gad_cached_modified_flag_lo)
-      ,.cached_owned_flag_o(gad_cached_owned_flag_lo)
-      ,.cached_forward_flag_o(gad_cached_forward_flag_lo)
+      ,.replacement_flag_o(gad_rf_lo)
+      ,.upgrade_flag_o(gad_uf_lo)
+      ,.cached_shared_flag_o(gad_csf_lo)
+      ,.cached_exclusive_flag_o(gad_cef_lo)
+      ,.cached_modified_flag_o(gad_cmf_lo)
+      ,.cached_owned_flag_o(gad_cof_lo)
+      ,.cached_forward_flag_o(gad_cff_lo)
       );
 
   // CCE PMA - LCE requests
@@ -402,6 +399,16 @@ module bp_cce_fsm
        ,.paddr_v_i(mem_resp_v_li)
        ,.cacheable_addr_o(resp_pma_cacheable_addr_lo)
        );
+
+  // align request address to bedrock data width to support critical word first behavior
+  wire [paddr_width_p-1:0] paddr_aligned =
+    {mshr_r.paddr[paddr_width_p-1:lg_bedrock_data_bytes_lp]
+     , lg_bedrock_data_bytes_lp'('0)};
+
+  // align lru address to block boundary - used for block replacement
+  wire [paddr_width_p-1:0] lru_paddr_aligned =
+    {mshr_r.lru_paddr[paddr_width_p-1:lg_block_size_in_bytes_lp]
+     , lg_block_size_in_bytes_lp'('0)};
 
   typedef enum logic [5:0] {
     e_reset
@@ -609,12 +616,29 @@ module bp_cce_fsm
 
   wire lce_resp_coh_ack_yumi = lce_resp_v & (lce_resp.msg_type.resp == e_bedrock_resp_coh_ack) & ~pending_busy;
 
+  // flags for cacheable requests
   // transfer occurs if any cache has block in E, M, O, or F (ownerhsip states)
-  wire transfer_flag = (mshr_r.flags[e_opd_cef] | mshr_r.flags[e_opd_cmf]
-                        | mshr_r.flags[e_opd_cof] | mshr_r.flags[e_opd_cff]);
-  // invalidations occur if write request and any blcok in S state (shared, not owner)
-  // owner does not need to be invalidated; owner state is changed by the st_tr or st_tr_wb command
-  wire invalidate_flag = (mshr_r.flags[e_opd_rqf] & mshr_r.flags[e_opd_csf]);
+  // and not doing an upgrade and not uncached access.
+  wire transfer_flag = (mshr_r.flags.cached_exclusive | mshr_r.flags.cached_modified
+                        | mshr_r.flags.cached_owned | mshr_r.flags.cached_forward)
+                       & ~mshr_r.flags.upgrade & ~mshr_r.flags.uncached;
+  // Upgrade with block in O or F in other LCE should invalidate owner.
+  // No need to writeback because requestor will get read/write permissions and has up-to-date block
+  // Upgrade flag only set if cacheable request
+  wire upgrade_inv_owner = mshr_r.flags.upgrade
+                           & (mshr_r.flags.cached_owned | mshr_r.flags.cached_forward);
+  // invalidations occur if write request and any block in S state (shared, not owner)
+  // also need to invalidate owner in O or F when doing upgrade
+  wire inv_sharers = (~mshr_r.flags.uncached & mshr_r.flags.write_not_read & mshr_r.flags.cached_shared);
+
+  // flags for uncached requests
+  // all sharers need to be invalidated, regardless of read or write request
+  wire uc_inv_sharers = mshr_r.flags.uncached & mshr_r.flags.cached_shared;
+  wire uc_inv_owner = mshr_r.flags.uncached
+                      & (mshr_r.flags.cached_forward | mshr_r.flags.cached_exclusive
+                         | mshr_r.flags.cached_modified | mshr_r.flags.cached_owned);
+
+  wire invalidate_flag = inv_sharers | uc_inv_sharers | upgrade_inv_owner;
 
   always_comb begin
     state_n = state_r;
@@ -1040,7 +1064,6 @@ module bp_cce_fsm
           // LCE request header is only dequeued if stream pump indicates stream is done
           lce_req_yumi = mem_cmd_v_lo & mem_cmd_ready_and_li & mem_cmd_stream_done_li;
 
-          // form message
           mem_cmd_base_header_lo.addr = lce_req.addr;
           mem_cmd_base_header_lo.size = lce_req.size;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_wr;
@@ -1151,12 +1174,12 @@ module bp_cce_fsm
             mshr_n.paddr = lce_req.addr;
             mshr_n.msg_size = lce_req.size;
             mshr_n.lru_way_id = lce_req.payload.lru_way_id;
-            mshr_n.flags[e_opd_rqf] = (lce_req.msg_type.req == e_bedrock_req_wr_miss);
-            mshr_n.flags[e_opd_nerf] = lce_req.payload.non_exclusive;
+            mshr_n.flags.write_not_read = (lce_req.msg_type.req == e_bedrock_req_wr_miss);
+            mshr_n.flags.non_exclusive = lce_req.payload.non_exclusive;
 
             // query PMA for coherence property - it is a violation for a cached request
             // to be incoherent.
-            mshr_n.flags[e_opd_rcf] = req_pma_cacheable_addr_lo;
+            mshr_n.flags.cacheable_address = req_pma_cacheable_addr_lo;
 
             state_n = ~req_pma_cacheable_addr_lo
                       ? e_error
@@ -1168,12 +1191,12 @@ module bp_cce_fsm
 
             mshr_n.paddr = lce_req.addr;
             mshr_n.msg_size = lce_req.size;
-            mshr_n.flags[e_opd_ucf] = 1'b1;
-            mshr_n.flags[e_opd_rqf] = (lce_req.msg_type.req == e_bedrock_req_uc_wr);
+            mshr_n.flags.uncached = 1'b1;
+            mshr_n.flags.write_not_read = (lce_req.msg_type.req == e_bedrock_req_uc_wr);
 
             // query PMA for coherence property
             // uncached requests can be made to coherent or incoherent memory regions
-            mshr_n.flags[e_opd_rcf] = req_pma_cacheable_addr_lo;
+            mshr_n.flags.cacheable_address = req_pma_cacheable_addr_lo;
 
             // a coherent, but uncached request must serialize with other coherent operations
             // using the pending bits
@@ -1193,10 +1216,10 @@ module bp_cce_fsm
       e_uncached_req: begin
 
         // uncached store
-        if (mshr_r.flags[e_opd_rqf]) begin
+        if (mshr_r.flags.write_not_read) begin
           // first beat of memory command must include data
-          // handshake is r&v on both LCE request header and memory command stream, and
-          // valid->yumi on LCE request data
+          // handshake is r&v on both LCE request data and memory command stream, and
+          // valid->yumi on LCE request header
           mem_cmd_v_lo = lce_req_v & lce_req_data_v_i & ~mem_credits_empty;
           lce_req_data_ready_and_o = mem_cmd_ready_and_li & ~mem_credits_empty;
           // LCE request header is only dequeued if stream pump indicates stream is done
@@ -1279,17 +1302,17 @@ module bp_cce_fsm
         if (lce_req_v & ~pending_busy) begin
           // write the pending bit if not amo or uncached to coherent memory
           // because those ops do not send coh_ack back to CCE after request completes
-          pending_w_v =  ~(mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]);
+          pending_w_v =  ~(mshr_r.flags.atomic | mshr_r.flags.uncached);
           pending_w_addr = lce_req.addr;
           pending_li = 1'b1;
 
           // skip speculative memory access if amo/uncached
-          state_n = (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+          state_n = (mshr_r.flags.atomic | mshr_r.flags.uncached)
                     ? e_read_dir
                     : e_read_mem_spec;
 
           // only dequeue the request now if it is a normal cached request
-          lce_req_yumi = ~(mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]);
+          lce_req_yumi = ~(mshr_r.flags.atomic | mshr_r.flags.uncached);
 
         end else begin
           // pending bit write port is busy, stay in e_ready state and try to consume request
@@ -1305,7 +1328,7 @@ module bp_cce_fsm
           // handshake is r&v
           mem_cmd_v_lo = ~mem_credits_empty;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_rd;
-          mem_cmd_base_header_lo.addr = mshr_r_paddr_aligned;
+          mem_cmd_base_header_lo.addr = mshr_r.paddr;
           mem_cmd_base_header_lo.size = mshr_r.msg_size;
           mem_cmd_base_header_lo.payload.lce_id = mshr_r.lce_id;
           mem_cmd_base_header_lo.payload.way_id = mshr_r.lru_way_id;
@@ -1361,33 +1384,30 @@ module bp_cce_fsm
 
           mshr_n.way_id = gad_req_addr_way_lo;
 
-          mshr_n.flags[e_opd_rf] = gad_replacement_flag_lo;
-          mshr_n.flags[e_opd_uf] = gad_upgrade_flag_lo;
-          mshr_n.flags[e_opd_csf] = gad_cached_shared_flag_lo;
-          mshr_n.flags[e_opd_cef] = gad_cached_exclusive_flag_lo;
-          mshr_n.flags[e_opd_cmf] = gad_cached_modified_flag_lo;
-          mshr_n.flags[e_opd_cof] = gad_cached_owned_flag_lo;
-          mshr_n.flags[e_opd_cff] = gad_cached_forward_flag_lo;
+          mshr_n.flags.replacement = gad_rf_lo;
+          mshr_n.flags.upgrade = gad_uf_lo;
+          mshr_n.flags.cached_shared = gad_csf_lo;
+          mshr_n.flags.cached_exclusive = gad_cef_lo;
+          mshr_n.flags.cached_modified = gad_cmf_lo;
+          mshr_n.flags.cached_owned = gad_cof_lo;
+          mshr_n.flags.cached_forward = gad_cff_lo;
 
           mshr_n.owner_lce_id = gad_owner_lce_lo;
           mshr_n.owner_way_id = gad_owner_lce_way_lo;
           mshr_n.owner_coh_state = gad_owner_coh_state_lo;
 
-          // TODO: MOESIF
-          // determine next state for MESI protocol
+          // determine next state for MOESIF protocol
           // atomic or uncached requests to coherent memory will set block to Invalid if it is
           // present in the requesting LCE
           mshr_n.next_coh_state =
-            (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+            (mshr_r.flags.atomic | mshr_r.flags.uncached)
             ? e_COH_I
-            : (mshr_r.flags[e_opd_rqf])
+            : (mshr_r.flags.write_not_read)
               ? e_COH_M
-              : (mshr_r.flags[e_opd_nerf])
+              : (mshr_r.flags.non_exclusive | gad_csf_lo | gad_cef_lo
+                 | gad_cmf_lo | gad_cof_lo | gad_cff_lo)
                 ? e_COH_S
-                : (gad_cached_shared_flag_lo | gad_cached_exclusive_flag_lo | gad_cached_modified_flag_lo
-                   | gad_cached_owned_flag_lo | gad_cached_forward_flag_lo)
-                  ? e_COH_S
-                  : e_COH_E;
+                : e_COH_E;
 
           state_n = e_write_next_state;
         end
@@ -1404,7 +1424,7 @@ module bp_cce_fsm
         dir_coh_state_li = mshr_r.next_coh_state;
 
         // upgrade detected, only change state
-        if (mshr_r.flags[e_opd_uf]) begin
+        if (mshr_r.flags.upgrade) begin
           dir_w_v = 1'b1;
           dir_cmd = e_wds_op;
           dir_way_li = mshr_r.way_id;
@@ -1412,8 +1432,8 @@ module bp_cce_fsm
         // amo or uncached to coherent memory
         // only write directory if replacement flag is set indicating the requsting LCE has
         // the block cached already
-        end else if (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]) begin
-          dir_w_v = mshr_r.flags[e_opd_rf];
+        end else if (mshr_r.flags.atomic | mshr_r.flags.uncached) begin
+          dir_w_v = mshr_r.flags.replacement;
           dir_cmd = e_wds_op;
           // the block, if cached at the LCE, is in the way indicated by the way_id field of
           // the MSHR as produced by the GAD module
@@ -1433,13 +1453,13 @@ module bp_cce_fsm
         // Invalidations, if needed
         // Upgrade, Transfer, or Memory access (resolve speculative access)
         state_n =
-          (mshr_r.flags[e_opd_rf])
+          (mshr_r.flags.replacement)
           ? e_replacement
           : (invalidate_flag)
             ? e_inv_cmd
-            : (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+            : (mshr_r.flags.atomic | mshr_r.flags.uncached)
               ? e_uc_coherent_cmd
-              : (mshr_r.flags[e_opd_uf])
+              : (mshr_r.flags.upgrade)
                 ? e_upgrade_stw_cmd
                 : (transfer_flag)
                   ? e_transfer
@@ -1447,12 +1467,12 @@ module bp_cce_fsm
 
         // setup required state for sending invalidations
         // only if next state is invalidations (i.e., not doing a replacement)
-        if (~mshr_r.flags[e_opd_rf] & invalidate_flag) begin
+        if (~mshr_r.flags.replacement & invalidate_flag) begin
           // don't invalidate the requesting LCE
           pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
           // if doing a transfer, also remove owner LCE since transfer
           // routine will take care of setting owner into correct new state
-          pe_sharers_n = transfer_flag
+          pe_sharers_n = (transfer_flag | uc_inv_owner)
                          ? pe_sharers_n & ~owner_lce_id_one_hot
                          : pe_sharers_n;
           cnt_rst = 1'b1;
@@ -1470,12 +1490,12 @@ module bp_cce_fsm
           lce_cmd.msg_type.cmd = e_bedrock_cmd_st_wb;
           // for an uc/amo request, the mshr way_id field indicates the way in which the requesting
           // LCE's copy of the cache block is stored at the LCE
-          if (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]) begin
+          if (mshr_r.flags.atomic | mshr_r.flags.uncached) begin
             lce_cmd.payload.way_id = mshr_r.way_id;
-            lce_cmd.addr = mshr_r.paddr;
+            lce_cmd.addr = paddr_aligned;
           end else begin
             lce_cmd.payload.way_id = mshr_r.lru_way_id;
-            lce_cmd.addr = mshr_r.lru_paddr;
+            lce_cmd.addr = lru_paddr_aligned;
           end
           lce_cmd.payload.dst_id = mshr_r.lce_id;
           // Note: this state must be e_COH_I to properly handle amo or uncached access to
@@ -1496,16 +1516,14 @@ module bp_cce_fsm
             // the speculative memory access
             state_n = (invalidate_flag)
                       ? e_inv_cmd
-                      : (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+                      : (mshr_r.flags.atomic | mshr_r.flags.uncached)
                         ? e_uc_coherent_cmd
                         : (transfer_flag)
                           ? e_transfer
                           : e_resolve_speculation;
 
             // clear the replacement flag
-            mshr_n.flags[e_opd_rf] = 1'b0;
-            // set null writeback flag
-            mshr_n.flags[e_opd_nwbf] = 1'b1;
+            mshr_n.flags.replacement = 1'b0;
 
             // setup required state for sending invalidations
             if (invalidate_flag) begin
@@ -1513,7 +1531,7 @@ module bp_cce_fsm
               pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
               // if doing a transfer, also remove owner LCE since transfer
               // routine will take care of setting owner into correct new state
-              pe_sharers_n = transfer_flag
+              pe_sharers_n = (transfer_flag | uc_inv_owner)
                              ? pe_sharers_n & ~owner_lce_id_one_hot
                              : pe_sharers_n;
               cnt_rst = 1'b1;
@@ -1536,7 +1554,7 @@ module bp_cce_fsm
             lce_resp_yumi = mem_cmd_stream_done_li;
 
             mem_cmd_base_header_lo.msg_type = e_bedrock_mem_wr;
-            mem_cmd_base_header_lo.addr = (lce_resp.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
+            mem_cmd_base_header_lo.addr = lce_resp.addr;
             mem_cmd_base_header_lo.size = lce_resp.size;
             mem_cmd_base_header_lo.payload.lce_id = mshr_r.lce_id;
             mem_cmd_base_header_lo.payload.way_id = '0;
@@ -1557,9 +1575,7 @@ module bp_cce_fsm
             pending_w_addr = lce_resp.addr;
 
             // clear the replacement flag
-            mshr_n.flags[e_opd_rf] = 1'b0;
-            // clear null writeback flag
-            mshr_n.flags[e_opd_nwbf] = 1'b0;
+            mshr_n.flags.replacement = 1'b0;
 
             // setup required state for sending invalidations
             if (mem_cmd_stream_done_li & invalidate_flag) begin
@@ -1567,7 +1583,7 @@ module bp_cce_fsm
               pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
               // if doing a transfer, also remove owner LCE since transfer
               // routine will take care of setting owner into correct new state
-              pe_sharers_n = transfer_flag
+              pe_sharers_n = (transfer_flag | uc_inv_owner)
                              ? pe_sharers_n & ~owner_lce_id_one_hot
                              : pe_sharers_n;
               cnt_rst = 1'b1;
@@ -1588,7 +1604,7 @@ module bp_cce_fsm
             lce_cmd_header_v_o = 1'b1;
             lce_cmd_has_data_o = 1'b0;
             lce_cmd.msg_type.cmd = e_bedrock_cmd_inv;
-            lce_cmd.addr = mshr_r.paddr;
+            lce_cmd.addr = paddr_aligned;
 
             // destination and way come from sharers information
             lce_cmd.payload.dst_id[0+:lg_num_lce_lp] = pe_lce_id;
@@ -1598,7 +1614,7 @@ module bp_cce_fsm
             cnt_inc = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
             dir_w_v = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
             dir_cmd = e_wds_op;
-            dir_addr_li = mshr_r.paddr;
+            dir_addr_li = paddr_aligned;
             dir_lce_li = '0;
             dir_lce_li[0+:lg_num_lce_lp] = pe_lce_id;
             dir_way_li = sharers_ways_r[pe_lce_id];
@@ -1631,9 +1647,9 @@ module bp_cce_fsm
 
       e_inv_ack: begin
         if (cnt == '0) begin
-          state_n = (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+          state_n = (mshr_r.flags.atomic | mshr_r.flags.uncached)
                     ? e_uc_coherent_cmd
-                    : (mshr_r.flags[e_opd_uf])
+                    : (mshr_r.flags.upgrade)
                       ? e_upgrade_stw_cmd
                       : (transfer_flag)
                         ? e_transfer
@@ -1645,9 +1661,9 @@ module bp_cce_fsm
             lce_resp_yumi = lce_resp_v;
             cnt_dec = lce_resp_yumi;
             if (cnt == 'd1) begin
-              state_n = (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf])
+              state_n = (mshr_r.flags.atomic | mshr_r.flags.uncached)
                         ? e_uc_coherent_cmd
-                        : (mshr_r.flags[e_opd_uf])
+                        : (mshr_r.flags.upgrade)
                           ? e_upgrade_stw_cmd
                           : (transfer_flag)
                             ? e_transfer
@@ -1664,12 +1680,12 @@ module bp_cce_fsm
         // also invalidated.
 
         // now, if an owner has block it needs to be invalidated and written back (if required)
-        if (transfer_flag) begin
+        if (uc_inv_owner) begin
           if (~lce_cmd_busy) begin
             lce_cmd_header_v_o = 1'b1;
             lce_cmd_has_data_o = 1'b0;
 
-            lce_cmd.addr = mshr_r.paddr;
+            lce_cmd.addr = paddr_aligned;
             lce_cmd.payload.dst_id = mshr_r.owner_lce_id;
             lce_cmd.payload.way_id = mshr_r.owner_way_id;
             lce_cmd.payload.state = e_COH_I;
@@ -1677,14 +1693,14 @@ module bp_cce_fsm
             // either invalidate or set tag and writeback
             // if owner is in F state, block is clean, so only need to invalidate
             // else, block in E, M, or O, need to invalidate and writeback
-            lce_cmd.msg_type.cmd = mshr_r.flags[e_opd_cff]
+            lce_cmd.msg_type.cmd = mshr_r.flags.cached_forward
                                    ? e_bedrock_cmd_inv
                                    : e_bedrock_cmd_st_wb;
 
             // update state of owner in directory
             dir_w_v = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
             dir_cmd = e_wds_op;
-            dir_addr_li = mshr_r.paddr;
+            dir_addr_li = paddr_aligned;
             dir_lce_li = mshr_r.owner_lce_id;
             dir_way_li = mshr_r.owner_way_id;
             dir_coh_state_li = e_COH_I;
@@ -1715,8 +1731,7 @@ module bp_cce_fsm
               lce_resp_yumi = mem_cmd_stream_done_li;
 
               mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_wr;
-              // TODO: should this address be aligned by the CCE?
-              mem_cmd_base_header_lo.addr = (lce_resp.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
+              mem_cmd_base_header_lo.addr = lce_resp.addr;
               mem_cmd_base_header_lo.size = lce_resp.size;
               mem_cmd_base_header_lo.payload.lce_id = mshr_r.lce_id;
               mem_cmd_data_lo = lce_resp_data_i;
@@ -1765,7 +1780,7 @@ module bp_cce_fsm
           mem_cmd_base_header_lo.addr = mshr_r.paddr;
           mem_cmd_base_header_lo.size = mshr_r.msg_size;
           // TODO: uncomment/modify when implementing atomics
-          //mem_cmd_base_header_lo.amo_no_return = mshr_r.flags[e_opd_anrf];
+          //mem_cmd_base_header_lo.amo_no_return = mshr_r.flags.atomic_no_return;
           mem_cmd_base_header_lo.payload.lce_id = mshr_r.lce_id;
           mem_cmd_base_header_lo.payload.way_id = '0;
           // this op is uncached in LCE for both amo or uncached requests
@@ -1786,11 +1801,10 @@ module bp_cce_fsm
       end // e_uc_coherent_mem_cmd
 
       e_transfer: begin
-        // TODO: modify for MOESIF
         // Transfer required, three options:
-        // 1. transfer: not used in MESI
-        // 2. set state and transfer: write request and block in E, M
-        // 3. set state, transfer, writeback: read request, block in E, M
+        // 1. transfer: read request to block in O or F state
+        // 2. set state and transfer: read request to block in O or write request to E, M, O, or F
+        // 3. set state, transfer, writeback: read request, block in E
         if (~lce_cmd_busy) begin
           lce_cmd_header_v_o = 1'b1;
           lce_cmd_has_data_o = 1'b0;
@@ -1798,33 +1812,57 @@ module bp_cce_fsm
           lce_cmd.payload.dst_id = mshr_r.owner_lce_id;
           lce_cmd.payload.way_id = mshr_r.owner_way_id;
 
-          lce_cmd.msg_type.cmd = mshr_r.flags[e_opd_rqf]
-                                        ? e_bedrock_cmd_st_tr
-                                        : e_bedrock_cmd_st_tr_wb;
+          // note: transfer command causes a block-sized transfer from one LCE to another.
+          // the msg_size field is not set to the block size since the transfer command itself
+          // carries no data. The LCE sets the size of the data command it sends to the block size.
+          lce_cmd.msg_type.cmd = mshr_r.flags.write_not_read | mshr_r.flags.cached_modified
+                                 ? e_bedrock_cmd_st_tr
+                                 : mshr_r.flags.cached_owned | mshr_r.flags.cached_forward
+                                   ? e_bedrock_cmd_tr
+                                   // transfer & not cached in M, O, or F -> cached in E
+                                   : e_bedrock_cmd_st_tr_wb;
 
-          lce_cmd.addr = mshr_r.paddr;
+          lce_cmd.addr = paddr_aligned;
 
           // either Invalidate or Downgrade Owner, depending on request type
-          lce_cmd.payload.state = mshr_r.flags[e_opd_rqf] ? e_COH_I : e_COH_S;
+          // write request invalidates owner (can only have 1 writer!)
+          // read request downgrades owner: M->O, E->F
+          // else set state field to I in message, but it will not be used by LCE sending transfer
+          lce_cmd.payload.state = mshr_r.flags.write_not_read
+                                  ? e_COH_I
+                                  : mshr_r.flags.cached_modified
+                                    ? e_COH_O
+                                    : mshr_r.flags.cached_exclusive
+                                      ? e_COH_F
+                                      : e_COH_I;
 
           // transfer information
           lce_cmd.payload.target = mshr_r.lce_id;
           lce_cmd.payload.target_way_id = mshr_r.lru_way_id;
           lce_cmd.payload.target_state = mshr_r.next_coh_state;
 
-          // update state of owner in directory
-          dir_w_v = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
+          // update state of owner in directory if required
+          // transfer from owner in O or F does not require update to owner state
+          dir_w_v = lce_cmd_header_v_o & lce_cmd_header_ready_and_i
+                    & (mshr_r.flags.write_not_read | mshr_r.flags.cached_modified | mshr_r.flags.cached_exclusive);
           dir_cmd = e_wds_op;
-          dir_addr_li = mshr_r.paddr;
+          dir_addr_li = paddr_aligned;
           dir_lce_li = mshr_r.owner_lce_id;
           dir_way_li = mshr_r.owner_way_id;
-          dir_coh_state_li = mshr_r.flags[e_opd_rqf] ? e_COH_I : e_COH_S;
+          dir_coh_state_li = mshr_r.flags.write_not_read
+                             ? e_COH_I
+                             : mshr_r.flags.cached_modified
+                               ? e_COH_O
+                               : mshr_r.flags.cached_exclusive
+                                 ? e_COH_F
+                                 : e_COH_I;
 
+          // only transfer from owner in E for read miss requires a writeback
           state_n = (lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
-                    ? mshr_r.flags[e_opd_rqf]
-                      ? e_resolve_speculation
-                      : e_transfer_wb_resp
-                    : e_transfer;
+                    ? mshr_r.flags.cached_exclusive & ~mshr_r.flags.write_not_read
+                      ? e_transfer_wb_resp
+                      : e_resolve_speculation
+                    : state_r;
         end
 
       end // e_transfer
@@ -1850,8 +1888,7 @@ module bp_cce_fsm
             lce_resp_yumi = mem_cmd_stream_done_li;
 
             mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_wr;
-            // TODO: should CCE align this address?
-            mem_cmd_base_header_lo.addr = (lce_resp.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
+            mem_cmd_base_header_lo.addr = lce_resp.addr;
             mem_cmd_base_header_lo.payload.lce_id = mshr_r.lce_id;
             mem_cmd_base_header_lo.payload.way_id = '0;
             mem_cmd_base_header_lo.size = lce_resp.size;
@@ -1888,7 +1925,7 @@ module bp_cce_fsm
 
       e_resolve_speculation: begin
         // Resolve speculation
-        if (transfer_flag | mshr_r.flags[e_opd_uf]) begin
+        if (transfer_flag | mshr_r.flags.upgrade) begin
           // squash speculative memory request if transfer or upgrade
           spec_w_v = 1'b1;
           // no longer speculative
@@ -1897,7 +1934,7 @@ module bp_cce_fsm
           // squash the response
           squash_v_li = 1'b1;
           spec_bits_li.squash = 1'b1;
-        end else if (mshr_r.flags[e_opd_rqf]) begin
+        end else if (mshr_r.flags.write_not_read) begin
           // forward with M state
           spec_w_v = 1'b1;
           spec_v_li = 1'b1;
@@ -1906,7 +1943,7 @@ module bp_cce_fsm
           spec_bits_li.spec = 1'b0;
           spec_bits_li.state = e_COH_M;
           spec_bits_li.fwd_mod = 1'b1;
-        end else if (mshr_r.flags[e_opd_csf] | mshr_r.flags[e_opd_nerf]) begin
+        end else if (mshr_r.flags.cached_shared | mshr_r.flags.non_exclusive) begin
           // forward with S state
           spec_w_v = 1'b1;
           spec_v_li = 1'b1;

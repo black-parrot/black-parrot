@@ -23,9 +23,7 @@ module bp_cce_dir
 
     // Derived parameters
     , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
-    , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
-    // I$ ID to LCE ID mapping
     // I$ and D$ LCE ID's are [0, (2*num_core_p)-1]
     // A$ LCE ID's start at (2*num_core_p)
     , localparam acc_lce_id_offset_lp = (num_core_p*2)
@@ -70,12 +68,21 @@ module bp_cce_dir
    , input [cce_id_width_p-1:0]                                   cce_id_i
   );
 
+  // cce_id_i is used for debugging / tracing the directory
+  wire unused = &{cce_id_i};
+
   // Number of CCEs must be at least as large as the minimal number of sets in any of the
   // LCE types (dcache, icache, acache). This ensures that every tag set is wholly stored
-  // in a *single* CCE (equivalently, tag sets are not split across LCEs).
+  // in a *single* CCE (equivalently, tag sets are not split across CCEs).
   // LCEs and CCEs use the set index bits from the physical address to map address to CCE.
   if (lce_min_sets_lp < num_cce_p)
-    $fatal(0,"Number of CCEs must be at least as large as the minimal number of LCE sets");
+    $fatal(0, "Number of CCEs must be at least as large as the minimal number of LCE sets");
+
+  // directory does not support caches with only 1 set
+  if (dcache_sets_p <= 1) $fatal(0, "D$ must have more than 1 set");
+  if (icache_sets_p <= 1) $fatal(0, "I$ must have more than 1 set");
+  if ((num_cacc_p > 0) && (acache_sets_p <= 1)) $fatal(0, "A$ must have more than 1 set");
+
 
   wire lce_is_icache = (~lce_i[0] && (lce_i < acc_lce_id_offset_lp));
   wire lce_is_dcache = (lce_i[0] && (lce_i < acc_lce_id_offset_lp));
@@ -87,7 +94,6 @@ module bp_cce_dir
   localparam icache_dir_sets_lp = `BSG_CDIV(icache_sets_p, num_cce_p);
   localparam lg_icache_assoc_lp = `BSG_SAFE_CLOG2(icache_assoc_p);
   localparam icache_lce_id_width_lp = `BSG_SAFE_CLOG2(num_core_p);
-  localparam lg_icache_sets_lp = `BSG_SAFE_CLOG2(icache_sets_p);
 
   wire [icache_lce_id_width_lp-1:0] icache_lce_id = lce_i[1+:icache_lce_id_width_lp];
 
@@ -149,7 +155,6 @@ module bp_cce_dir
   localparam dcache_dir_sets_lp = `BSG_CDIV(dcache_sets_p, num_cce_p);
   localparam lg_dcache_assoc_lp = `BSG_SAFE_CLOG2(dcache_assoc_p);
   localparam dcache_lce_id_width_lp = `BSG_SAFE_CLOG2(num_core_p);
-  localparam lg_dcache_sets_lp = `BSG_SAFE_CLOG2(dcache_sets_p);
 
   // D$ segment signals
   logic                                                 dcache_sharers_v;
@@ -230,7 +235,6 @@ module bp_cce_dir
   localparam acache_dir_sets_lp = `BSG_CDIV(acache_sets_p, num_cce_p);
   localparam lg_acache_assoc_lp = `BSG_SAFE_CLOG2(acache_assoc_p);
   localparam acache_lce_id_width_lp = `BSG_SAFE_CLOG2(num_cacc_p);
-  localparam lg_acache_sets_lp = `BSG_SAFE_CLOG2(acache_sets_p);
   // local param that is set to 1 if there are 0 CACC's, so the acache_sharers vectors
   // are sized properly when there are no accelerators. This is only used to size the vectors
   // as 1 element vectors when there are no accelerators present.

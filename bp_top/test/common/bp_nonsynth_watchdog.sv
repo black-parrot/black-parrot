@@ -49,7 +49,7 @@ module bp_nonsynth_watchdog
    #(.max_val_p(stall_cycles_p), .init_val_p(0))
    stall_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i | wfi_i | is_halt)
+     ,.reset_i(reset_i | freeze_i | wfi_i | is_halt | finish_i[mhartid_i])
 
      ,.clear_i(npc_change)
      ,.up_i(1'b1)
