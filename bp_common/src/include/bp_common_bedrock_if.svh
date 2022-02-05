@@ -23,18 +23,21 @@
    * The following enums and structs define the BedRock Interface within a BlackParrot coherence
    * system.
    *
-   * There are 4 message classes:
+   * There are 5 message classes:
    * 1. Request
-   * 2. Response
-   * 3. Command
-   * 4. Memory (Command and Response)
+   * 2. Command
+   * 3. Fill
+   * 4. Response
+   * 5. Memory (Command and Response)
    *
-   * The three LCE-CCE message types are carried on three physical networks:
-   * 1. Request (low priority)
-   * 2. Command (medium priority)
-   * 3. Response (high priority)
+   * The four LCE-CCE message types are carried on four physical networks:
+   * 1. Request (lowest priority)
+   * 2. Command
+   * 3. Fill
+   * 4. Response (highest priority)
    *
-   * A Request message may cause a Command message, and a Command message may cause a Response.
+   * A Request message may cause a Command or Fill message, and a Command message may cause a
+   * Fill or Response message. A Fill message may cause a Response message.
    * A higher priority message may not cause a lower priority message to be sent, which avoids
    * a circular dependency between message classes, and prevents certain instances of deadlock.
    *
@@ -100,6 +103,14 @@
                                                                                        \
     typedef struct packed                                                              \
     {                                                                                  \
+      bp_coh_states_e                              state;                              \
+      logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;                             \
+      logic [cce_id_width_mp-1:0]                  src_id;                             \
+      logic [lce_id_width_mp-1:0]                  dst_id;                             \
+    } bp_bedrock_lce_fill_payload_s;                                                   \
+                                                                                       \
+    typedef struct packed                                                              \
+    {                                                                                  \
       logic [lce_id_width_mp-1:0]                  src_id;                             \
       logic [cce_id_width_mp-1:0]                  dst_id;                             \
     } bp_bedrock_lce_resp_payload_s;                                                   \
@@ -130,6 +141,9 @@
   `define bp_bedrock_cmd_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
     ((2*lce_id_width_mp)+cce_id_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+(2*$bits(bp_coh_states_e)))
 
+  `define bp_bedrock_fill_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
+    (lce_id_width_mp+cce_id_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp)+$bits(bp_coh_states_e))
+
   `define bp_bedrock_resp_payload_width(lce_id_width_mp, cce_id_width_mp) \
     (cce_id_width_mp+lce_id_width_mp)
 
@@ -139,6 +153,7 @@
   `define declare_bp_bedrock_lce_payload_widths(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
     , localparam lce_req_payload_width_lp = `bp_bedrock_req_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
     , localparam lce_cmd_payload_width_lp = `bp_bedrock_cmd_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
+    , localparam lce_fill_payload_width_lp = `bp_bedrock_fill_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
     , localparam lce_resp_payload_width_lp = `bp_bedrock_resp_payload_width(lce_id_width_mp, cce_id_width_mp)
 
   `define declare_bp_bedrock_mem_payload_width(did_width_mp, lce_id_width_mp, lce_assoc_mp) \
@@ -165,12 +180,14 @@
     `declare_bp_bedrock_lce_payload_widths(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp)         \
     `declare_bp_bedrock_header_width(addr_width_mp, lce_req_payload_width_lp, lce_req)             \
     `declare_bp_bedrock_header_width(addr_width_mp, lce_cmd_payload_width_lp, lce_cmd)             \
+    `declare_bp_bedrock_header_width(addr_width_mp, lce_fill_payload_width_lp, lce_fill)           \
     `declare_bp_bedrock_header_width(addr_width_mp, lce_resp_payload_width_lp, lce_resp)           \
 
   `define declare_bp_bedrock_lce_if(addr_width_mp, lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
     `declare_bp_bedrock_lce_payload_s(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp);  \
     `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_lce_req_payload_s, lce_req); \
     `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_lce_cmd_payload_s, lce_cmd); \
+    `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_lce_fill_payload_s, lce_fill); \
     `declare_bp_bedrock_header_s(addr_width_mp, bp_bedrock_lce_resp_payload_s, lce_resp)
 
   `define declare_bp_bedrock_mem_if_widths(addr_width_mp, did_width_mp, lce_id_width_mp, lce_assoc_mp) \
