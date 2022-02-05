@@ -13,6 +13,7 @@ module bp_nonsynth_mem
  import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+   , parameter `BSG_INV_PARAM(cache_data_width_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter preload_mem_p = 0
@@ -23,13 +24,13 @@ module bp_nonsynth_mem
    , input                                          reset_i
 
    , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [l2_fill_width_p-1:0]                    mem_cmd_data_i
+   , input [cache_data_width_p-1:0]                 mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
    , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
-   , output logic [l2_fill_width_p-1:0]             mem_resp_data_o
+   , output logic [cache_data_width_p-1:0]          mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
    , output logic                                   mem_resp_last_o
@@ -46,7 +47,9 @@ module bp_nonsynth_mem
   logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
   logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
   bp_me_cache_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.cache_data_width_p(cache_data_width_p)
+     )
    cce_to_cache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
