@@ -24,12 +24,13 @@ $BP_ME_DIR/test/common/bp_me_nonsynth_cce_dir_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_inst_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_perf.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
-$BP_ME_DIR/test/common/bp_me_nonsynth_lce_tr_tracer.sv
-$BP_ME_DIR/test/common/bp_me_nonsynth_mock_lce_tag_lookup.sv
-$BP_ME_DIR/test/common/bp_me_nonsynth_mock_lce.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_tr_tracer.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_axe_tracer.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_cache_tag_lookup.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_cache.sv
 $BP_ME_DIR/test/common/bp_nonsynth_mem.sv
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.sv
-$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_cfg_loader.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.sv
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp

@@ -17,8 +17,6 @@ module wrapper
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-
-   , parameter cce_trace_p = 0
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -42,15 +40,6 @@ module wrapper
    , output logic                                   lce_req_data_ready_and_o
    , input                                          lce_req_last_i
 
-   , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
-   , input                                          lce_resp_header_v_i
-   , output logic                                   lce_resp_header_ready_and_o
-   , input                                          lce_resp_has_data_i
-   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
-   , input                                          lce_resp_data_v_i
-   , output logic                                   lce_resp_data_ready_and_o
-   , input                                          lce_resp_last_i
-
    , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
    , output logic                                   lce_cmd_header_v_o
    , input                                          lce_cmd_header_ready_and_i
@@ -59,6 +48,24 @@ module wrapper
    , output logic                                   lce_cmd_data_v_o
    , input                                          lce_cmd_data_ready_and_i
    , output logic                                   lce_cmd_last_o
+
+   , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
+   , output logic                                   lce_fill_header_v_o
+   , input                                          lce_fill_header_ready_and_i
+   , output logic                                   lce_fill_has_data_o
+   , output logic [bedrock_data_width_p-1:0]        lce_fill_data_o
+   , output logic                                   lce_fill_data_v_o
+   , input                                          lce_fill_data_ready_and_i
+   , output logic                                   lce_fill_last_o
+
+   , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
+   , input                                          lce_resp_header_v_i
+   , output logic                                   lce_resp_header_ready_and_o
+   , input                                          lce_resp_has_data_i
+   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
+   , input                                          lce_resp_data_v_i
+   , output logic                                   lce_resp_data_ready_and_o
+   , input                                          lce_resp_last_i
 
    // CCE-MEM Interface
    // BedRock Burst protocol: ready&valid
