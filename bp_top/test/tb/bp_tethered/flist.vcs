@@ -38,6 +38,7 @@ $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_inst_tracer.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_cce_pending_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_perf.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_dev_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv

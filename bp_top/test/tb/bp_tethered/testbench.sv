@@ -48,7 +48,7 @@ module testbench
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
+   , parameter io_data_width_p = multicore_p ? bedrock_data_width_p : uce_fill_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (output bit reset_i);
@@ -154,7 +154,8 @@ module testbench
   wire [io_noc_did_width_p-1:0] proc_did_li = 1;
   wire [io_noc_did_width_p-1:0] host_did_li = '1;
   wrapper
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.io_data_width_p(io_data_width_p))
    wrapper
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -596,19 +597,26 @@ module testbench
               ,.lce_req_data_v_i(lce_req_data_v_i)
               ,.lce_req_data_ready_and_i(lce_req_data_ready_and_o)
 
-              ,.lce_resp_header_i(lce_resp_header_i)
-              ,.lce_resp_header_v_i(lce_resp_header_v_i)
-              ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_o)
-              ,.lce_resp_data_i(lce_resp_data_i)
-              ,.lce_resp_data_v_i(lce_resp_data_v_i)
-              ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_o)
-
               ,.lce_cmd_header_i(lce_cmd_header_o)
               ,.lce_cmd_header_v_i(lce_cmd_header_v_o)
               ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_i)
               ,.lce_cmd_data_i(lce_cmd_data_o)
               ,.lce_cmd_data_v_i(lce_cmd_data_v_o)
               ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_i)
+
+              ,.lce_fill_header_i(lce_fill_header_o)
+              ,.lce_fill_header_v_i(lce_fill_header_v_o)
+              ,.lce_fill_header_ready_and_i(lce_fill_header_ready_and_i)
+              ,.lce_fill_data_i(lce_fill_data_o)
+              ,.lce_fill_data_v_i(lce_fill_data_v_o)
+              ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_i)
+
+              ,.lce_resp_header_i(lce_resp_header_i)
+              ,.lce_resp_header_v_i(lce_resp_header_v_i)
+              ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_o)
+              ,.lce_resp_data_i(lce_resp_data_i)
+              ,.lce_resp_data_v_i(lce_resp_data_v_i)
+              ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_o)
 
               // CCE-MEM Interface
               // BedRock Stream protocol: ready&valid
@@ -631,29 +639,70 @@ module testbench
                 ,.sets_p(sets_p)
                 ,.assoc_p(assoc_p)
                 ,.block_width_p(block_width_p)
+                ,.fill_width_p(fill_width_p)
                 )
               lce_tracer
               (.clk_i(clk_i & testbench.lce_trace_en_lo)
               ,.reset_i(reset_i)
+
               ,.lce_id_i(lce_id_i)
+
               ,.lce_req_header_i(lce_req_header_o)
+              ,.lce_req_header_v_i(lce_req_header_v_o)
+              ,.lce_req_header_ready_and_i(lce_req_header_ready_and_i)
               ,.lce_req_data_i(lce_req_data_o)
-              ,.lce_req_v_i(lce_req_v_o)
-              ,.lce_req_ready_and_i(lce_req_ready_then_i)
-              ,.lce_resp_header_i(lce_resp_header_o)
-              ,.lce_resp_data_i(lce_resp_data_o)
-              ,.lce_resp_v_i(lce_resp_v_o)
-              ,.lce_resp_ready_and_i(lce_resp_ready_then_i)
+              ,.lce_req_data_v_i(lce_req_data_v_o)
+              ,.lce_req_data_ready_and_i(lce_req_data_ready_and_i)
+
               ,.lce_cmd_header_i(lce_cmd_header_i)
+              ,.lce_cmd_header_v_i(lce_cmd_header_v_i)
+              ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_o)
               ,.lce_cmd_data_i(lce_cmd_data_i)
-              ,.lce_cmd_v_i(lce_cmd_v_i)
-              ,.lce_cmd_ready_and_i(lce_cmd_yumi_o)
-              ,.lce_cmd_header_o_i(lce_cmd_header_o)
-              ,.lce_cmd_data_o_i(lce_cmd_data_o)
-              ,.lce_cmd_o_v_i(lce_cmd_v_o)
-              ,.lce_cmd_o_ready_and_i(lce_cmd_ready_then_i)
+              ,.lce_cmd_data_v_i(lce_cmd_data_v_i)
+              ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_o)
+
+              ,.lce_fill_header_i(lce_fill_header_i)
+              ,.lce_fill_header_v_i(lce_fill_header_v_i)
+              ,.lce_fill_header_ready_and_i(lce_fill_header_ready_and_o)
+              ,.lce_fill_data_i(lce_fill_data_i)
+              ,.lce_fill_data_v_i(lce_fill_data_v_i)
+              ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_o)
+
+              ,.lce_fill_o_header_i(lce_fill_header_o)
+              ,.lce_fill_o_header_v_i(lce_fill_header_v_o)
+              ,.lce_fill_o_header_ready_and_i(lce_fill_header_ready_and_i)
+              ,.lce_fill_o_data_i(lce_fill_data_o)
+              ,.lce_fill_o_data_v_i(lce_fill_data_v_o)
+              ,.lce_fill_o_data_ready_and_i(lce_fill_data_ready_and_i)
+
+              ,.lce_resp_header_i(lce_resp_header_o)
+              ,.lce_resp_header_v_i(lce_resp_header_v_o)
+              ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_i)
+              ,.lce_resp_data_i(lce_resp_data_o)
+              ,.lce_resp_data_v_i(lce_resp_data_v_o)
+              ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_i)
+
               ,.cache_req_complete_i(cache_req_complete_o)
               ,.uc_store_req_complete_i(uc_store_req_complete_lo)
+              );
+
+          bind bp_cce_pending_bits
+            bp_me_nonsynth_cce_pending_tracer
+              #(.num_way_groups_p(num_way_groups_p)
+                ,.cce_id_width_p(cce_id_width_p)
+                ,.width_p(width_p)
+                ,.paddr_width_p(paddr_width_p)
+                )
+              cce_pending_tracer
+              (.clk_i(clk_i & testbench.cce_trace_en_lo)
+              ,.reset_i(reset_i)
+              ,.cce_id_i(cce_id_i)
+              ,.pending_bits_i(pending_bits_r)
+              ,.w_v_i(w_v_i)
+              ,.w_wg_i(w_wg)
+              ,.w_addr_i(w_addr_i)
+              ,.pending_i(pending_i)
+              ,.clear_i(clear_i)
               );
 
           // CCE instruction tracer
@@ -681,12 +730,12 @@ module testbench
                  ,.reset_i(reset_i)
                  ,.cce_id_i(cfg_bus_cast_i.cce_id)
                  ,.req_start_i(req_start)
-                 ,.req_end_i('0)
-                 ,.lce_req_header_i(lce_req)
+                 ,.req_end_i(req_end)
+                 ,.lce_req_header_i(lce_req_header_cast_li)
                  ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
-                 ,.lce_cmd_header_i(lce_cmd)
+                 ,.lce_cmd_header_i(lce_cmd_header_cast_o)
                  ,.resp_receive_i(lce_resp_yumi)
-                 ,.lce_resp_header_i(lce_resp)
+                 ,.lce_resp_header_i(lce_resp_header_cast_li)
                  ,.mem_resp_receive_i(mem_resp_stream_done_li)
                  ,.mem_resp_squash_i(mem_resp_yumi_lo & spec_bits_lo.squash & mem_resp_stream_last_li)
                  ,.mem_resp_header_i(mem_resp_base_header_li)
@@ -704,11 +753,11 @@ module testbench
                  ,.cce_id_i(cfg_bus_cast_i.cce_id)
                  ,.req_start_i(lce_req_v & (state_r == e_ready))
                  ,.req_end_i(state_r == e_ready)
-                 ,.lce_req_header_i(lce_req)
+                 ,.lce_req_header_i(lce_req_header_cast_li)
                  ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
-                 ,.lce_cmd_header_i(lce_cmd)
+                 ,.lce_cmd_header_i(lce_cmd_header_cast_o)
                  ,.resp_receive_i(lce_resp_yumi)
-                 ,.lce_resp_header_i(lce_resp)
+                 ,.lce_resp_header_i(lce_resp_header_cast_li)
                  ,.mem_resp_receive_i(mem_resp_stream_done_li)
                  ,.mem_resp_squash_i(mem_resp_yumi_lo & spec_bits_lo.squash & mem_resp_stream_last_li)
                  ,.mem_resp_header_i(mem_resp_base_header_li)
