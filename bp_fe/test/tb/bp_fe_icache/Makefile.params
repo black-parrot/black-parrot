@@ -2,7 +2,7 @@ CCE_TRACE_P    ?= 0
 LCE_TRACE_P    ?= 0
 DRAM_TRACE_P   ?= 0
 ICACHE_TRACE_P ?= 0
-UCE_P          ?= 0
+UCE_P          ?= 1
 
 export BP_SIM_CLK_PERIOD ?= 1000
 

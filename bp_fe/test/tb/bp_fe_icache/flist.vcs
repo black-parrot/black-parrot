@@ -18,7 +18,6 @@ $BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.v
 $BP_FE_DIR/test/common/bp_fe_nonsynth_icache_tracer.sv
 # me files
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
-$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.sv
