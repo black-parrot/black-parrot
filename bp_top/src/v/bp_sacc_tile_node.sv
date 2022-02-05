@@ -27,8 +27,8 @@ module bp_sacc_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_req_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_req_link_o
 
-   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
-   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_fill_link_i
+   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_fill_link_o
    );
 
   // Declare the routing links
@@ -36,7 +36,7 @@ module bp_sacc_tile_node
 
   // Tile-side coherence connections
   bp_coh_ready_and_link_s accel_lce_req_link_li, accel_lce_req_link_lo;
-  bp_coh_ready_and_link_s accel_lce_cmd_link_li, accel_lce_cmd_link_lo;
+  bp_coh_ready_and_link_s accel_lce_fill_link_li, accel_lce_fill_link_lo;
 
 
   bp_sacc_tile
@@ -50,8 +50,8 @@ module bp_sacc_tile_node
      ,.lce_req_link_i(accel_lce_req_link_li)
      ,.lce_req_link_o(accel_lce_req_link_lo)
 
-     ,.lce_cmd_link_i(accel_lce_cmd_link_li)
-     ,.lce_cmd_link_o(accel_lce_cmd_link_lo)
+     ,.lce_fill_link_i(accel_lce_fill_link_li)
+     ,.lce_fill_link_o(accel_lce_fill_link_lo)
      );
 
 
@@ -71,10 +71,10 @@ module bp_sacc_tile_node
      ,.network_clk_i(coh_clk_i)
      ,.network_reset_i(coh_reset_i)
      ,.my_cord_i(my_cord_i)
-     ,.network_link_i({coh_lce_req_link_i, coh_lce_cmd_link_i})
-     ,.network_link_o({coh_lce_req_link_o, coh_lce_cmd_link_o})
-     ,.tile_link_i({accel_lce_req_link_lo, accel_lce_cmd_link_lo})
-     ,.tile_link_o({accel_lce_req_link_li, accel_lce_cmd_link_li})
+     ,.network_link_i({coh_lce_req_link_i, coh_lce_fill_link_i})
+     ,.network_link_o({coh_lce_req_link_o, coh_lce_fill_link_o})
+     ,.tile_link_i({accel_lce_req_link_lo, accel_lce_fill_link_lo})
+     ,.tile_link_o({accel_lce_req_link_li, accel_lce_fill_link_li})
      );
 
 endmodule

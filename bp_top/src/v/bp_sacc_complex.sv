@@ -22,8 +22,8 @@ module bp_sacc_complex
    , input [sac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_req_link_i
    , output [sac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]    coh_req_link_o
 
-   , input [sac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_cmd_link_i
-   , output [sac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]    coh_cmd_link_o
+   , input [sac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_fill_link_i
+   , output [sac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]    coh_fill_link_o
 
    );
 
@@ -33,9 +33,9 @@ module bp_sacc_complex
   bp_coh_ready_and_link_s [E:W][sac_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
   bp_coh_ready_and_link_s [S:N]                  lce_req_ver_link_li, lce_req_ver_link_lo;
 
-  bp_coh_ready_and_link_s [sac_y_dim_p-1:0][S:W] lce_cmd_link_li, lce_cmd_link_lo;
-  bp_coh_ready_and_link_s [E:W][sac_y_dim_p-1:0] lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
-  bp_coh_ready_and_link_s [S:N]                  lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
+  bp_coh_ready_and_link_s [sac_y_dim_p-1:0][S:W] lce_fill_link_li, lce_fill_link_lo;
+  bp_coh_ready_and_link_s [E:W][sac_y_dim_p-1:0] lce_fill_hor_link_li, lce_fill_hor_link_lo;
+  bp_coh_ready_and_link_s [S:N]                  lce_fill_ver_link_li, lce_fill_ver_link_lo;
 
 
   for (genvar j=0; j < sac_y_dim_p; j++)
@@ -56,16 +56,16 @@ module bp_sacc_complex
                ,.my_cord_i(cord_li)
 
                ,.coh_lce_req_link_i(lce_req_link_li[j])
-               ,.coh_lce_cmd_link_i(lce_cmd_link_li[j])
+               ,.coh_lce_fill_link_i(lce_fill_link_li[j])
 
                ,.coh_lce_req_link_o(lce_req_link_lo[j])
-               ,.coh_lce_cmd_link_o(lce_cmd_link_lo[j])
+               ,.coh_lce_fill_link_o(lce_fill_link_lo[j])
                );
         end
       else
         begin : stub
           assign lce_req_link_lo[j] = '0;
-          assign lce_cmd_link_lo[j] = '0;
+          assign lce_fill_link_lo[j] = '0;
         end
   end
 
@@ -92,29 +92,29 @@ module bp_sacc_complex
          );
       assign coh_req_link_o = lce_req_hor_link_lo[E];
 
-      assign lce_cmd_ver_link_li    = '0;
-      assign lce_cmd_hor_link_li[W] = '0;
-      assign lce_cmd_hor_link_li[E] = coh_cmd_link_i;
+      assign lce_fill_ver_link_li    = '0;
+      assign lce_fill_hor_link_li[W] = '0;
+      assign lce_fill_hor_link_li[E] = coh_fill_link_i;
       bsg_mesh_stitch
        #(.width_p(coh_noc_ral_link_width_lp)
          ,.x_max_p(sac_x_dim_p)
          ,.y_max_p(sac_y_dim_p)
          )
-       coh_cmd_mesh
-        (.outs_i(lce_cmd_link_lo)
-         ,.ins_o(lce_cmd_link_li)
+       coh_fill_mesh
+        (.outs_i(lce_fill_link_lo)
+         ,.ins_o(lce_fill_link_li)
 
-         ,.hor_i(lce_cmd_hor_link_li)
-         ,.hor_o(lce_cmd_hor_link_lo)
-         ,.ver_i(lce_cmd_ver_link_li)
-         ,.ver_o(lce_cmd_ver_link_lo)
+         ,.hor_i(lce_fill_hor_link_li)
+         ,.hor_o(lce_fill_hor_link_lo)
+         ,.ver_i(lce_fill_ver_link_li)
+         ,.ver_o(lce_fill_ver_link_lo)
          );
-      assign coh_cmd_link_o = lce_cmd_hor_link_lo[E];
+      assign coh_fill_link_o = lce_fill_hor_link_lo[E];
     end
   else
     begin : stub
       assign coh_req_link_o  = '0;
-      assign coh_cmd_link_o  = '0;
+      assign coh_fill_link_o  = '0;
     end
 
 endmodule
