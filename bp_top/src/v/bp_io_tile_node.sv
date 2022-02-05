@@ -30,8 +30,8 @@ module bp_io_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_req_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_req_link_o
 
-   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
-   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_fill_link_i
+   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_fill_link_o
 
    , input [E:W][io_noc_ral_link_width_lp-1:0]   io_cmd_link_i
    , output [E:W][io_noc_ral_link_width_lp-1:0]  io_cmd_link_o
@@ -45,7 +45,7 @@ module bp_io_tile_node
 
   // Tile-side coherence connections
   bp_coh_ready_and_link_s core_lce_req_link_li, core_lce_req_link_lo;
-  bp_coh_ready_and_link_s core_lce_cmd_link_li, core_lce_cmd_link_lo;
+  bp_coh_ready_and_link_s core_lce_fill_link_li, core_lce_fill_link_lo;
 
   // Tile side IO connections
   bp_io_ready_and_link_s core_io_cmd_link_li, core_io_cmd_link_lo;
@@ -64,8 +64,8 @@ module bp_io_tile_node
      ,.lce_req_link_i(core_lce_req_link_li)
      ,.lce_req_link_o(core_lce_req_link_lo)
 
-     ,.lce_cmd_link_i(core_lce_cmd_link_li)
-     ,.lce_cmd_link_o(core_lce_cmd_link_lo)
+     ,.lce_fill_link_i(core_lce_fill_link_li)
+     ,.lce_fill_link_o(core_lce_fill_link_lo)
 
      ,.io_cmd_link_i(core_io_cmd_link_li)
      ,.io_cmd_link_o(core_io_cmd_link_lo)
@@ -77,7 +77,7 @@ module bp_io_tile_node
 
   // Network-side coherence connections
 //  bp_coh_ready_and_link_s coh_lce_req_link_li, coh_lce_req_link_lo;
- // bp_coh_ready_and_link_s coh_lce_cmd_link_li, coh_lce_cmd_link_lo;
+ // bp_coh_ready_and_link_s coh_lce_fill_link_li, coh_lce_fill_link_lo;
 
   bp_nd_socket
    #(.flit_width_p(coh_noc_flit_width_p)
@@ -95,10 +95,10 @@ module bp_io_tile_node
      ,.network_clk_i(coh_clk_i)
      ,.network_reset_i(coh_reset_i)
      ,.my_cord_i(my_cord_i)
-     ,.network_link_i({coh_lce_req_link_i, coh_lce_cmd_link_i})
-     ,.network_link_o({coh_lce_req_link_o, coh_lce_cmd_link_o})
-     ,.tile_link_i({core_lce_req_link_lo, core_lce_cmd_link_lo})
-     ,.tile_link_o({core_lce_req_link_li, core_lce_cmd_link_li})
+     ,.network_link_i({coh_lce_req_link_i, coh_lce_fill_link_i})
+     ,.network_link_o({coh_lce_req_link_o, coh_lce_fill_link_o})
+     ,.tile_link_i({core_lce_req_link_lo, core_lce_fill_link_lo})
+     ,.tile_link_o({core_lce_req_link_li, core_lce_fill_link_li})
      );
 
  bp_nd_socket
