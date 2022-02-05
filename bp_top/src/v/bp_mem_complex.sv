@@ -31,6 +31,9 @@ module bp_mem_complex
    , input  [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_i
    , output [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_o
 
+   , input  [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_fill_link_i
+   , output [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_fill_link_o
+
    , input  [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_i
    , output [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_o
 
@@ -50,6 +53,9 @@ module bp_mem_complex
   bp_coh_ready_and_link_s [mc_x_dim_p-1:0][S:W] lce_cmd_link_li, lce_cmd_link_lo;
   bp_coh_ready_and_link_s [E:W]                 lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
   bp_coh_ready_and_link_s [S:N][mc_x_dim_p-1:0] lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
+  bp_coh_ready_and_link_s [mc_x_dim_p-1:0][S:W] lce_fill_link_li, lce_fill_link_lo;
+  bp_coh_ready_and_link_s [E:W]                 lce_fill_hor_link_li, lce_fill_hor_link_lo;
+  bp_coh_ready_and_link_s [S:N][mc_x_dim_p-1:0] lce_fill_ver_link_li, lce_fill_ver_link_lo;
   bp_coh_ready_and_link_s [mc_x_dim_p-1:0][S:W] lce_resp_link_li, lce_resp_link_lo;
   bp_coh_ready_and_link_s [E:W]                 lce_resp_hor_link_li, lce_resp_hor_link_lo;
   bp_coh_ready_and_link_s [S:N][mc_x_dim_p-1:0] lce_resp_ver_link_li, lce_resp_ver_link_lo;
@@ -85,6 +91,9 @@ module bp_mem_complex
              ,.coh_lce_cmd_link_i(lce_cmd_link_li[i])
              ,.coh_lce_cmd_link_o(lce_cmd_link_lo[i])
 
+             ,.coh_lce_fill_link_i(lce_fill_link_li[i])
+             ,.coh_lce_fill_link_o(lce_fill_link_lo[i])
+
              ,.coh_lce_resp_link_i(lce_resp_link_li[i])
              ,.coh_lce_resp_link_o(lce_resp_link_lo[i])
 
@@ -99,6 +108,7 @@ module bp_mem_complex
         begin : stub
           assign lce_req_link_lo[i]  = '0;
           assign lce_cmd_link_lo[i]  = '0;
+          assign lce_fill_link_lo[i]  = '0;
           assign lce_resp_link_lo[i] = '0;
 
           assign mem_cmd_link_lo[i]  = '0;
@@ -145,6 +155,25 @@ module bp_mem_complex
          ,.ver_o(lce_cmd_ver_link_lo)
          );
       assign coh_cmd_link_o = lce_cmd_ver_link_lo[N];
+
+      assign lce_fill_ver_link_li[N] = coh_fill_link_i;
+      assign lce_fill_ver_link_li[S] = '0;
+      assign lce_fill_hor_link_li    = '0;
+      bsg_mesh_stitch
+       #(.width_p(coh_noc_ral_link_width_lp)
+         ,.x_max_p(mc_x_dim_p)
+         ,.y_max_p(1)
+         )
+       coh_fill_mesh
+        (.outs_i(lce_fill_link_lo)
+         ,.ins_o(lce_fill_link_li)
+
+         ,.hor_i(lce_fill_hor_link_li)
+         ,.hor_o(lce_fill_hor_link_lo)
+         ,.ver_i(lce_fill_ver_link_li)
+         ,.ver_o(lce_fill_ver_link_lo)
+         );
+      assign coh_fill_link_o = lce_fill_ver_link_lo[N];
 
       assign lce_resp_ver_link_li[N] = coh_resp_link_i;
       assign lce_resp_ver_link_li[S] = '0;
@@ -195,6 +224,7 @@ module bp_mem_complex
     begin : stub
       assign coh_req_link_o = '0;
       assign coh_cmd_link_o = '0;
+      assign coh_fill_link_o = '0;
       assign coh_resp_link_o = '0;
 
       assign mem_ver_link_lo[S] = mem_cmd_link_i;

@@ -33,6 +33,9 @@ module bp_l2e_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
 
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_fill_link_i
+   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_fill_link_o
+
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_resp_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
 
@@ -50,6 +53,7 @@ module bp_l2e_tile_node
   // Tile-side coherence connections
   bp_coh_ready_and_link_s l2e_lce_req_link_li, l2e_lce_req_link_lo;
   bp_coh_ready_and_link_s l2e_lce_cmd_link_li, l2e_lce_cmd_link_lo;
+  bp_coh_ready_and_link_s l2e_lce_fill_link_li, l2e_lce_fill_link_lo;
   bp_coh_ready_and_link_s l2e_lce_resp_link_li, l2e_lce_resp_link_lo;
 
   // Tile side membus connections
@@ -70,6 +74,9 @@ module bp_l2e_tile_node
      ,.lce_cmd_link_i(l2e_lce_cmd_link_li)
      ,.lce_cmd_link_o(l2e_lce_cmd_link_lo)
 
+     ,.lce_fill_link_i(l2e_lce_fill_link_li)
+     ,.lce_fill_link_o(l2e_lce_fill_link_lo)
+
      ,.lce_resp_link_i(l2e_lce_resp_link_li)
      ,.lce_resp_link_o(l2e_lce_resp_link_lo)
 
@@ -85,7 +92,7 @@ module bp_l2e_tile_node
      ,.len_width_p(coh_noc_len_width_p)
      ,.routing_matrix_p(StrictYX)
      ,.async_clk_p(async_coh_clk_p)
-     ,.els_p(3)
+     ,.els_p(4)
      )
    l2e_coh_socket
     (.tile_clk_i(core_clk_i)
@@ -93,10 +100,10 @@ module bp_l2e_tile_node
      ,.network_clk_i(coh_clk_i)
      ,.network_reset_i(coh_reset_i)
      ,.my_cord_i(my_cord_i)
-     ,.network_link_i({coh_lce_req_link_i, coh_lce_cmd_link_i, coh_lce_resp_link_i})
-     ,.network_link_o({coh_lce_req_link_o, coh_lce_cmd_link_o, coh_lce_resp_link_o})
-     ,.tile_link_i({l2e_lce_req_link_lo, l2e_lce_cmd_link_lo, l2e_lce_resp_link_lo})
-     ,.tile_link_o({l2e_lce_req_link_li, l2e_lce_cmd_link_li, l2e_lce_resp_link_li})
+     ,.network_link_i({coh_lce_req_link_i, coh_lce_cmd_link_i, coh_lce_fill_link_i, coh_lce_resp_link_i})
+     ,.network_link_o({coh_lce_req_link_o, coh_lce_cmd_link_o, coh_lce_fill_link_o, coh_lce_resp_link_o})
+     ,.tile_link_i({l2e_lce_req_link_lo, l2e_lce_cmd_link_lo, l2e_lce_fill_link_lo, l2e_lce_resp_link_lo})
+     ,.tile_link_o({l2e_lce_req_link_li, l2e_lce_cmd_link_li, l2e_lce_fill_link_li, l2e_lce_resp_link_li})
      );
 
  bp_nd_socket
