@@ -478,15 +478,17 @@
   } bp_cce_inst_src_q_sel_e;
 
   // Destination queue one hot
-  typedef enum logic [1:0] {
-    e_dst_q_lce_cmd                        = 2'b01
-    ,e_dst_q_mem_cmd                       = 2'b10
+  typedef enum logic [2:0] {
+    e_dst_q_lce_cmd                        = 3'b001
+    ,e_dst_q_mem_cmd                       = 3'b010
+    ,e_dst_q_lce_fill                      = 3'b100
   } bp_cce_inst_dst_q_e;
 
   // Destination queue select
   typedef enum logic [1:0] {
     e_dst_q_sel_lce_cmd                    = 2'b00
     ,e_dst_q_sel_mem_cmd                   = 2'b01
+    ,e_dst_q_sel_lce_fill                  = 2'b10
   } bp_cce_inst_dst_q_sel_e;
 
   /*
@@ -725,6 +727,7 @@
     {
       bp_bedrock_cmd_type_e         lce_cmd;
       bp_bedrock_mem_type_e         mem_cmd;
+      bp_bedrock_fill_type_e        lce_fill;
     }                                      cmd;
     logic                                  spec;
     logic                                  custom;
@@ -846,6 +849,8 @@
     bp_bedrock_cmd_type_e                    lce_cmd;
     logic                                    mem_cmd_v;
     bp_bedrock_mem_type_e                    mem_cmd;
+    logic                                    lce_fill_v;
+    bp_bedrock_fill_type_e                   lce_fill;
     logic                                    inv_cmd_v;
 
     // GPR write mask
