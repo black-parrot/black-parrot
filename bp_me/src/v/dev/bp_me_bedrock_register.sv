@@ -39,13 +39,13 @@ module bp_me_bedrock_register
 
    // Network-side BP-Stream interface
    , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [dword_width_gp-1:0]                     mem_cmd_data_i
+   , input [bedrock_data_width_p-1:0]               mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
    , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
-   , output logic [dword_width_gp-1:0]              mem_resp_data_o
+   , output logic [bedrock_data_width_p-1:0]        mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
    , output logic                                   mem_resp_last_o
@@ -69,10 +69,10 @@ module bp_me_bedrock_register
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   bp_bedrock_mem_header_s mem_cmd_header_li;
-  logic [dword_width_gp-1:0] mem_cmd_data_li;
+  logic [bedrock_data_width_p-1:0] mem_cmd_data_li;
   logic mem_cmd_v_li, mem_cmd_yumi_li;
   bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_mem_header_s)+dword_width_gp))
+   #(.width_p($bits(bp_bedrock_mem_header_s)+bedrock_data_width_p))
    cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -132,10 +132,10 @@ module bp_me_bedrock_register
   always_ff @(negedge clk_i)
     begin
       assert(reset_i !== '0 || ~mem_cmd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
-        else $fatal("Command to non-existent register: %x", addr_o);
+        else $error("Command to non-existent register: %x", addr_o);
 
       assert(reset_i !== '0 || ~(mem_cmd_v_i & mem_cmd_ready_and_o) || mem_cmd_last_i)
-        else $fatal("Multi-beat memory command detected");
+        else $error("Multi-beat memory command detected");
     end
   //synopsys translate_on
 

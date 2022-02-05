@@ -17,13 +17,13 @@ module bp_me_clint_slice
    , input [core_id_width_p-1:0]                        id_i
 
    , input [mem_header_width_lp-1:0]                    mem_cmd_header_i
-   , input [dword_width_gp-1:0]                         mem_cmd_data_i
+   , input [bedrock_data_width_p-1:0]                   mem_cmd_data_i
    , input                                              mem_cmd_v_i
    , output logic                                       mem_cmd_ready_and_o
    , input                                              mem_cmd_last_i
 
    , output logic [mem_header_width_lp-1:0]             mem_resp_header_o
-   , output logic [dword_width_gp-1:0]                  mem_resp_data_o
+   , output logic [bedrock_data_width_p-1:0]            mem_resp_data_o
    , output logic                                       mem_resp_v_o
    , input                                              mem_resp_ready_and_i
    , output logic                                       mem_resp_last_o
