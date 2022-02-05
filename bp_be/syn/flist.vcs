@@ -123,6 +123,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank_reverse.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative_controller.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_locking_arb_fixed.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
@@ -226,6 +227,7 @@ $BP_FE_DIR/src/v/bp_fe_top.sv
 $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
+$BP_ME_DIR/src/v/lce/bp_lce_fill.sv
 # Cache
 $BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
 $BP_ME_DIR/src/v/dev/bp_me_dram_hash_decode.sv
@@ -269,14 +271,13 @@ $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_cmd.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_req.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_resp.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
-$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
