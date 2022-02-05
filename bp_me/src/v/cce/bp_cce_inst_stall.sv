@@ -22,27 +22,29 @@ module bp_cce_inst_stall
 
    // input queue valid signals
    , input                                       lce_req_header_v_i
+   , input                                       lce_req_data_v_i
    , input                                       lce_resp_header_v_i
+   , input                                       lce_resp_data_v_i
    , input                                       mem_resp_v_i
    , input                                       pending_v_i
 
-   // output queue ready signals
+   // output queue valid&ready signals
    , input                                       lce_cmd_header_v_i
    , input                                       lce_cmd_header_ready_and_i
+   , input                                       lce_fill_header_v_i
+   , input                                       lce_fill_header_ready_and_i
+
    , input                                       mem_credits_empty_i
 
    // Messague Unit resource busy signals
-
    // message unit is busy doing something - block all ucode interactions
    , input                                       msg_busy_i
-   // auto-forwarding using a resource
    , input                                       msg_pending_w_busy_i
-   , input                                       msg_lce_cmd_busy_i
+   , input                                       msg_lce_fill_busy_i
    , input                                       msg_lce_resp_busy_i
    , input                                       msg_mem_resp_busy_i
    , input                                       msg_spec_r_busy_i
    , input                                       msg_dir_w_busy_i
-   // memory command send stall
    , input                                       msg_mem_cmd_stall_i
 
    // Directory busy (e.g., processing read)
@@ -64,27 +66,25 @@ module bp_cce_inst_stall
     // Handshake is v->yumi for headers from fifo
     stall_o |= (decoded_inst_i.lce_req_yumi & ~lce_req_header_v_i);
     stall_o |= (decoded_inst_i.lce_resp_yumi & ~lce_resp_header_v_i);
-    stall_o |= (decoded_inst_i.lce_cmd_v & ~lce_cmd_header_ready_and_i);
     stall_o |= (decoded_inst_i.mem_resp_yumi & ~mem_resp_v_i);
     stall_o |= (decoded_inst_i.pending_yumi & ~pending_v_i);
 
     // Pop Header
     stall_o |= (decoded_inst_i.poph & (~lce_req_header_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_req)));
     stall_o |= (decoded_inst_i.poph & (~lce_resp_header_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_resp)));
-    stall_o |= (decoded_inst_i.lce_cmd_v & ~lce_cmd_header_ready_and_i);
     stall_o |= (decoded_inst_i.poph & (~mem_resp_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_mem_resp)));
 
-    // Pop Data
-    stall_o |= (decoded_inst_i.popd & (~lce_req_header_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_req)));
-    stall_o |= (decoded_inst_i.popd & (~lce_resp_header_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_resp)));
-    stall_o |= (decoded_inst_i.lce_cmd_v & ~lce_cmd_header_ready_and_i);
+    // Pop Data - TODO: not fully implemented
+    stall_o |= (decoded_inst_i.popd & (~lce_req_data_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_req)));
+    stall_o |= (decoded_inst_i.popd & (~lce_resp_data_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_resp)));
     stall_o |= (decoded_inst_i.popd & (~mem_resp_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_mem_resp)));
 
     // Message send
     // Handshake is r&v
     stall_o |= (decoded_inst_i.lce_cmd_v & ~(lce_cmd_header_v_i & lce_cmd_header_ready_and_i));
+    stall_o |= (decoded_inst_i.lce_fill_v & ~(lce_fill_header_v_i & lce_fill_header_ready_and_i));
     // memory command stall is indicated directly by a signal from message unit
-    stall_o |= msg_mem_cmd_stall_i;
+    stall_o |= (decoded_inst_i.mem_cmd_v & msg_mem_cmd_stall_i);
     // sending a memory command requires a memory credit
     stall_o |= (decoded_inst_i.mem_cmd_v & mem_credits_empty_i);
 
@@ -102,7 +102,7 @@ module bp_cce_inst_stall
 
     // Message Unit Structural Hazards
     stall_o |= (decoded_inst_i.pending_w_v & msg_pending_w_busy_i);
-    stall_o |= (decoded_inst_i.lce_cmd_v & msg_lce_cmd_busy_i);
+    stall_o |= (decoded_inst_i.lce_fill_v & msg_lce_fill_busy_i);
     stall_o |= (decoded_inst_i.lce_resp_yumi & msg_lce_resp_busy_i);
     stall_o |= (decoded_inst_i.mem_resp_yumi & msg_mem_resp_busy_i);
     stall_o |= (decoded_inst_i.spec_r_v & msg_spec_r_busy_i);

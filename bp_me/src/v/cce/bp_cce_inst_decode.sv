@@ -600,6 +600,10 @@ module bp_cce_inst_decode
                   decoded_inst_o.mem_cmd_v = 1'b1;
                   decoded_inst_o.mem_cmd = op_type_u.pushq.cmd.mem_cmd;
                 end
+                e_dst_q_sel_lce_fill: begin
+                  decoded_inst_o.lce_fill_v = 1'b1;
+                  decoded_inst_o.lce_fill = op_type_u.pushq.cmd.lce_fill;
+                end
                 default: begin
                 end
               endcase
