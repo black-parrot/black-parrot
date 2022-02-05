@@ -92,7 +92,7 @@ module bp_me_burst_to_wormhole
 
   // parameter checks
   if ((pr_data_width_p % flit_width_p != 0) && (flit_width_p % pr_data_width_p != 0))
-    $fatal(0,"Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
+    $error("Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
 
   // wormhole stream control determines if data exists based on input
   // protocol header that is already formatted as a wormhole header

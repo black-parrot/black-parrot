@@ -82,13 +82,12 @@ module bp_me_wormhole_packet_encode_lce_cmd
       ,e_bedrock_cmd_set_clear
       ,e_bedrock_cmd_inv
       ,e_bedrock_cmd_st
-      ,e_bedrock_cmd_st_wakeup
       ,e_bedrock_cmd_wb
       ,e_bedrock_cmd_st_wb
       ,e_bedrock_cmd_tr
       ,e_bedrock_cmd_st_tr
-      ,e_bedrock_cmd_st_tr_wb
-      ,e_bedrock_cmd_uc_st_done: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_cmd_len_lp);
+      ,e_bedrock_cmd_st_tr_wb: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_cmd_len_lp);
+      /*
       // data and uncached data commands have data
       e_bedrock_cmd_data
       ,e_bedrock_cmd_uc_data:
@@ -103,6 +102,7 @@ module bp_me_wormhole_packet_encode_lce_cmd
           e_bedrock_msg_size_128: header_cast_o.rtr_hdr.len = coh_noc_len_width_p'(lce_cmd_data_len_128_lp);
           default: begin end
         endcase
+      */
       default: begin end
     endcase
   end
