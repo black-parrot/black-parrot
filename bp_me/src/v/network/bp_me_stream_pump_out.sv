@@ -19,8 +19,8 @@ module bp_me_stream_pump_out
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter stream_data_width_p = dword_width_gp
-   , parameter block_width_p = cce_block_width_p
+   , parameter `BSG_INV_PARAM(stream_data_width_p)
+   , parameter `BSG_INV_PARAM(block_width_p)
    // width of BedRock message payload
    , parameter `BSG_INV_PARAM(payload_width_p)
 
@@ -177,9 +177,9 @@ module bp_me_stream_pump_out
 
   // parameter checks
   if (block_width_p % stream_data_width_p != 0)
-    $fatal(0,"block_width_p must be evenly divisible by stream_data_width_p");
+    $error("block_width_p must be evenly divisible by stream_data_width_p");
   if (block_width_p < stream_data_width_p)
-    $fatal(0,"block_width_p must be at least as large as stream_data_width_p");
+    $error("block_width_p must be at least as large as stream_data_width_p");
 
 endmodule
 
