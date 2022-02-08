@@ -474,7 +474,9 @@ module bp_tile
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
   logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
+     )
    cfg
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
@@ -505,7 +507,9 @@ module bp_tile
 
   // CLINT
   bp_me_clint_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
+     )
    clint
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
@@ -530,7 +534,9 @@ module bp_tile
 
   // CCE-Mem Loopback
   bp_me_loopback
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
+     )
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
@@ -689,7 +695,9 @@ module bp_tile
   logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
   logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
   bp_me_cache_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.cache_data_width_p(l2_data_width_p)
+     )
    l2s
     (.clk_i(clk_i)
      ,.reset_i(reset_r)

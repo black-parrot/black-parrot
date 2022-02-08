@@ -15,6 +15,7 @@ module bp_me_nonsynth_dev_tracer
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
+    , parameter data_width_p = dword_width_gp
 
     , parameter trace_file_p = "dev"
 
@@ -28,13 +29,13 @@ module bp_me_nonsynth_dev_tracer
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [dword_width_gp-1:0]                     mem_cmd_data_i
+   , input [data_width_p-1:0]                       mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , input                                          mem_cmd_ready_and_i
    , input                                          mem_cmd_last_i
 
    , input [mem_header_width_lp-1:0]                mem_resp_header_i
-   , input [dword_width_gp-1:0]                     mem_resp_data_i
+   , input [data_width_p-1:0]                       mem_resp_data_i
    , input                                          mem_resp_v_i
    , input                                          mem_resp_ready_and_i
    , input                                          mem_resp_last_i

@@ -100,6 +100,7 @@ module bp_nonsynth_host
      ,.els_p(bedrock_reg_els_lp)
      ,.reg_addr_width_p(dev_addr_width_gp)
      ,.base_addr_p({paramrom_match_addr_gp, bootrom_match_addr_gp, finish_match_addr_gp, getchar_match_addr_gp, putchar_match_addr_gp, putch_core_match_addr_gp})
+     ,.data_width_p(dword_width_gp)
      )
    register
     (.*

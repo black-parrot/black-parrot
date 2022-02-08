@@ -14,6 +14,7 @@ module bp_me_bedrock_register
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+   , parameter data_width_p = dword_width_gp
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    // The width of the registers. Currently, must all be the same.
@@ -39,13 +40,13 @@ module bp_me_bedrock_register
 
    // Network-side BP-Stream interface
    , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [dword_width_gp-1:0]                     mem_cmd_data_i
+   , input [data_width_p-1:0]                       mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
    , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
-   , output logic [dword_width_gp-1:0]              mem_resp_data_o
+   , output logic [data_width_p-1:0]                mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
    , output logic                                   mem_resp_last_o
@@ -64,15 +65,18 @@ module bp_me_bedrock_register
    , input [els_p-1:0][reg_width_p-1:0]             data_i
    );
 
+  if (reg_width_p > data_width_p)
+    $error("register data width must be no larger than mem cmd/resp data width");
+
   wire unused = &{mem_cmd_last_i};
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   bp_bedrock_mem_header_s mem_cmd_header_li;
-  logic [dword_width_gp-1:0] mem_cmd_data_li;
+  logic [data_width_p-1:0] mem_cmd_data_li;
   logic mem_cmd_v_li, mem_cmd_yumi_li;
   bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_mem_header_s)+dword_width_gp))
+   #(.width_p($bits(bp_bedrock_mem_header_s)+data_width_p))
    cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -120,7 +124,7 @@ module bp_me_bedrock_register
 
   assign addr_o = mem_cmd_header_li.addr[0+:reg_addr_width_p];
   assign size_o = mem_cmd_header_li.size;
-  assign data_o = mem_cmd_data_li;
+  assign data_o = mem_cmd_data_li[0+:reg_width_p];
 
   assign mem_resp_header_o = mem_cmd_header_li;
   assign mem_resp_data_o = rdata_lo;
@@ -132,10 +136,10 @@ module bp_me_bedrock_register
   always_ff @(negedge clk_i)
     begin
       assert(reset_i !== '0 || ~mem_cmd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
-        else $fatal("Command to non-existent register: %x", addr_o);
+        else $error("Command to non-existent register: %x", addr_o);
 
       assert(reset_i !== '0 || ~(mem_cmd_v_i & mem_cmd_ready_and_o) || mem_cmd_last_i)
-        else $fatal("Multi-beat memory command detected");
+        else $error("Multi-beat memory command detected");
     end
   //synopsys translate_on
 
