@@ -21,7 +21,7 @@ N=${2:-1}
 
 cfgs=(\
     "e_bp_multicore_1_acc_loopback_cfg"
-    "e_bp_multicore_1_acc_vdp_cfg" 
+    "e_bp_multicore_1_acc_vdp_cfg"
     "e_bp_multicore_1_acc_vdp_cfg"
     "e_bp_multicore_4_acc_loopback_cfg"
     "e_bp_multicore_4_acc_vdp_cfg"
@@ -31,7 +31,6 @@ progs=(
     "streaming_accelerator_loopback"
     "streaming_accelerator_vdp"
     "coherent_accelerator_vdp"
-    "accelerator_loopback_multicore_4"
     "streaming_accelerator_loopback"
     "coherent_accelerator_vdp"
     )

@@ -35,8 +35,7 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
-# TODO: re-enable after fixing up interface width issues in testbench
-#parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=0 CFG={}" ::: "${cfgs[@]}"
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=0 CFG={}" ::: e_bp_test_multicore_half_cfg
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=1 CFG={}" ::: "${cfgs[@]}"
 
 # Check for failures in the report directory
