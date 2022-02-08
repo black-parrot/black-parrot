@@ -76,12 +76,12 @@ module bp_cce_dir
   // in a *single* CCE (equivalently, tag sets are not split across CCEs).
   // LCEs and CCEs use the set index bits from the physical address to map address to CCE.
   if (lce_min_sets_lp < num_cce_p)
-    $fatal(0, "Number of CCEs must be at least as large as the minimal number of LCE sets");
+    $error("Number of CCEs must be at least as large as the minimal number of LCE sets");
 
   // directory does not support caches with only 1 set
-  if (dcache_sets_p <= 1) $fatal(0, "D$ must have more than 1 set");
-  if (icache_sets_p <= 1) $fatal(0, "I$ must have more than 1 set");
-  if ((num_cacc_p > 0) && (acache_sets_p <= 1)) $fatal(0, "A$ must have more than 1 set");
+  if (dcache_sets_p <= 1) $error("D$ must have more than 1 set");
+  if (icache_sets_p <= 1) $error("I$ must have more than 1 set");
+  if ((num_cacc_p > 0) && (acache_sets_p <= 1)) $error("A$ must have more than 1 set");
 
 
   wire lce_is_icache = (~lce_i[0] && (lce_i < acc_lce_id_offset_lp));
