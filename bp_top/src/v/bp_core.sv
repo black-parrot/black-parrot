@@ -166,7 +166,8 @@ module bp_core
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
+     ,.m_external_irq_i(external_irq_i)
+     ,.s_external_irq_i(1'b0) // UNUSED
      );
 
   bp_lce

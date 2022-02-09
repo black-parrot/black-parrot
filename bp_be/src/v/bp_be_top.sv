@@ -69,7 +69,8 @@ module bp_be_top
 
    , input                                           timer_irq_i
    , input                                           software_irq_i
-   , input                                           external_irq_i
+   , input                                           m_external_irq_i
+   , input                                           s_external_irq_i
    );
 
   // Declare parameterized structures
@@ -225,7 +226,8 @@ module bp_be_top
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
+     ,.m_external_irq_i(m_external_irq_i)
+     ,.s_external_irq_i(s_external_irq_i)
      ,.irq_pending_o(irq_pending_lo)
      ,.irq_waiting_o(irq_waiting_lo)
      ,.cmd_full_n_i(cmd_full_n_lo)

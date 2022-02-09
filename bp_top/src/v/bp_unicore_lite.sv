@@ -110,7 +110,7 @@ module bp_unicore_lite
   logic dcache_stat_mem_pkt_v_li, dcache_stat_mem_pkt_yumi_lo;
   bp_dcache_stat_info_s dcache_stat_mem_lo;
 
-  logic timer_irq_li, software_irq_li, external_irq_li;
+  logic timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
 
   // proc_cmd[2:0] = {IO cmd, BE UCE, FE UCE}
   bp_bedrock_uce_mem_header_s [2:0] proc_cmd_header_lo;
@@ -192,7 +192,8 @@ module bp_unicore_lite
 
      ,.timer_irq_i(timer_irq_li)
      ,.software_irq_i(software_irq_li)
-     ,.external_irq_i(external_irq_li)
+     ,.m_external_irq_i(m_external_irq_li)
+     ,.s_external_irq_i(s_external_irq_li)
      );
 
   wire [1:0][lce_id_width_p-1:0] lce_id_li = {cfg_bus_lo.dcache_id, cfg_bus_lo.icache_id};
@@ -486,7 +487,8 @@ module bp_unicore_lite
 
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
-     ,.external_irq_o(external_irq_li)
+     ,.m_external_irq_o(m_external_irq_li)
+     ,.s_external_irq_o(s_external_irq_li)
      );
   assign clint_data_li = dev_cmd_data_li[1];
   assign dev_resp_data_lo[1] = clint_data_lo;

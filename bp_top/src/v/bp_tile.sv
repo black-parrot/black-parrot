@@ -524,7 +524,8 @@ module bp_tile
 
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
-     ,.external_irq_o(external_irq_li)
+     ,.m_external_irq_o(external_irq_li)
+     ,.s_external_irq_o(/* UNUSED */)
      );
 
   // CCE-Mem Loopback
