@@ -29,6 +29,7 @@ module bp_cce_pending_bits
     , parameter `BSG_INV_PARAM(num_cce_p)
     , parameter `BSG_INV_PARAM(paddr_width_p)
     , parameter `BSG_INV_PARAM(addr_offset_p)
+    , parameter `BSG_INV_PARAM(cce_id_width_p)
 
     // Default parameters
     , parameter width_p = 3  // pending bit counter width
@@ -53,6 +54,9 @@ module bp_cce_pending_bits
    , input                                                        r_addr_bypass_hash_i
 
    , output logic                                                 pending_o
+
+   // Debug
+   , input [cce_id_width_p-1:0]                                   cce_id_i
   );
 
   // Address to way group hashing

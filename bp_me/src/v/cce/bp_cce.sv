@@ -90,7 +90,7 @@ module bp_cce
 
   // parameter checks
   if (cce_block_width_p < `bp_cce_inst_gpr_width)
-    $fatal(0, "CCE block width must be greater than CCE GPR width");
+    $error("CCE block width must be greater than CCE GPR width");
 
 
   // LCE-CCE and Mem-CCE Interface
@@ -104,14 +104,12 @@ module bp_cce
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   // LCE-CCE Interface structs
-  bp_bedrock_lce_req_header_s  lce_req;
-  bp_bedrock_lce_resp_header_s lce_resp;
-  bp_bedrock_lce_cmd_header_s  lce_cmd;
-  assign lce_cmd_header_o = lce_cmd;
+  bp_bedrock_lce_req_header_s  lce_req_header_cast_li;
+  bp_bedrock_lce_resp_header_s lce_resp_header_cast_li;
+  `bp_cast_o(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
 
   // Config bus
-  bp_cfg_bus_s cfg_bus_cast_i;
-  assign cfg_bus_cast_i = cfg_bus_i;
+  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Inter-module signals
 
@@ -362,7 +360,7 @@ module bp_cce
       ,.data_i({lce_req_has_data_i, lce_req_header_i})
       ,.v_i(lce_req_header_v_i)
       ,.v_o(lce_req_v)
-      ,.data_o({lce_req_has_data, lce_req})
+      ,.data_o({lce_req_has_data, lce_req_header_cast_li})
       ,.yumi_i(lce_req_yumi)
       );
 
@@ -378,7 +376,7 @@ module bp_cce
       ,.data_i({lce_resp_has_data_i, lce_resp_header_i})
       ,.v_i(lce_resp_header_v_i)
       ,.v_o(lce_resp_v)
-      ,.data_o({lce_resp_has_data, lce_resp})
+      ,.data_o({lce_resp_has_data, lce_resp_header_cast_li})
       ,.yumi_i(lce_resp_yumi)
       );
 
@@ -451,8 +449,8 @@ module bp_cce
       ,.mem_resp_v_i(mem_resp_v_li)
       ,.lce_resp_header_v_i(lce_resp_v)
       ,.lce_req_header_v_i(lce_req_v)
-      ,.lce_req_header_i(lce_req)
-      ,.lce_resp_header_i(lce_resp)
+      ,.lce_req_header_i(lce_req_header_cast_li)
+      ,.lce_resp_header_i(lce_resp_header_cast_li)
       ,.mem_resp_header_i(mem_resp_base_header_li)
       ,.lce_req_data_i(lce_req_data_i)
       ,.lce_resp_data_i(lce_resp_data_i)
@@ -558,6 +556,7 @@ module bp_cce
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.addr_offset_p(lg_block_size_in_bytes_lp)
+      ,.cce_id_width_p(cce_id_width_p)
      )
     pending_bits
      (.clk_i(clk_i)
@@ -574,6 +573,8 @@ module bp_cce
       ,.r_addr_bypass_hash_i(addr_bypass_lo)
       // output of read
       ,.pending_o(pending_lo)
+      // Debug
+      ,.cce_id_i(cfg_bus_cast_i.cce_id)
       );
 
   // GAD logic - auxiliary directory information logic
@@ -626,9 +627,9 @@ module bp_cce
       ,.src_a_i(src_a)
       ,.alu_res_i(alu_res_lo)
 
-      ,.lce_req_header_i(lce_req)
+      ,.lce_req_header_i(lce_req_header_cast_li)
       ,.lce_req_v_i(lce_req_v)
-      ,.lce_resp_header_i(lce_resp)
+      ,.lce_resp_header_i(lce_resp_header_cast_li)
       ,.mem_resp_header_i(mem_resp_base_header_li)
 
       ,.pending_i(pending_lo)
@@ -672,7 +673,7 @@ module bp_cce
       // LCE-CCE Interface
       // BedRock Burst protocol: ready&valid
       // inbound headers use valid->yumi
-      ,.lce_req_header_i(lce_req)
+      ,.lce_req_header_i(lce_req_header_cast_li)
       ,.lce_req_header_v_i(lce_req_v)
       ,.lce_req_header_yumi_o(lce_req_yumi)
       ,.lce_req_has_data_i(lce_req_has_data)
@@ -681,7 +682,7 @@ module bp_cce
       ,.lce_req_data_ready_and_o(lce_req_data_ready_and_o)
       ,.lce_req_last_i(lce_req_last_i)
 
-      ,.lce_resp_header_i(lce_resp)
+      ,.lce_resp_header_i(lce_resp_header_cast_li)
       ,.lce_resp_header_v_i(lce_resp_v)
       ,.lce_resp_header_yumi_o(lce_resp_yumi)
       ,.lce_resp_has_data_i(lce_resp_has_data)
@@ -690,7 +691,7 @@ module bp_cce
       ,.lce_resp_data_ready_and_o(lce_resp_data_ready_and_o)
       ,.lce_resp_last_i(lce_resp_last_i)
 
-      ,.lce_cmd_header_o(lce_cmd)
+      ,.lce_cmd_header_o(lce_cmd_header_cast_o)
       ,.lce_cmd_header_v_o(lce_cmd_header_v_o)
       ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_i)
       ,.lce_cmd_has_data_o(lce_cmd_has_data_o)
@@ -805,7 +806,9 @@ module bp_cce
      (.decoded_inst_i(decoded_inst_lo)
 
       ,.lce_req_header_v_i(lce_req_v)
+      ,.lce_req_data_v_i(lce_req_data_v_i)
       ,.lce_resp_header_v_i(lce_resp_v)
+      ,.lce_resp_data_v_i(lce_resp_data_v_i)
       ,.mem_resp_v_i(mem_resp_v_li)
       ,.pending_v_i('0)
 

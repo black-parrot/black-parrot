@@ -79,7 +79,7 @@ module bp_uce
 
   // parameter checks
   if ((metadata_latency_p >= 2))
-    $fatal(0,"metadata needs to arrive within one cycle of the request");
+    $error("metadata needs to arrive within one cycle of the request");
 
   localparam bank_width_lp = block_width_p / assoc_p;
   localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp;

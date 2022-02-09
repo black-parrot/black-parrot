@@ -20,9 +20,9 @@ module bp_me_burst_to_stream
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter data_width_p = dword_width_gp
+   , parameter `BSG_INV_PARAM(data_width_p)
    , parameter `BSG_INV_PARAM(payload_width_p)
-   , parameter block_width_p = cce_block_width_p
+   , parameter `BSG_INV_PARAM(block_width_p)
 
    // Bitmask which determines which message types have a data payload
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
@@ -54,6 +54,9 @@ module bp_me_burst_to_stream
    , input                                          out_msg_ready_and_i
    , output logic                                   out_msg_last_o
    );
+
+  // Stream pump uses payload mask and size from header instead of last signal
+  wire unused = in_msg_last_i;
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, bp);
 

@@ -436,7 +436,9 @@ module bp_unicore_lite
 
   logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
+     )
    cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -469,7 +471,9 @@ module bp_unicore_lite
 
   logic [dword_width_gp-1:0] clint_data_lo, clint_data_li;
   bp_me_clint_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
+     )
    clint
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -496,7 +500,9 @@ module bp_unicore_lite
 
   logic [dword_width_gp-1:0] loopback_data_lo, loopback_data_li;
   bp_me_loopback
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(dword_width_gp)
+     )
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
