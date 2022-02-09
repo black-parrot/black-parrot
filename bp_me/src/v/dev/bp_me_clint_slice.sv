@@ -1,3 +1,11 @@
+/**
+ *
+ * Name:
+ *   bp_me_clint_slice.sv
+ *
+ * Description:
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
@@ -33,6 +41,8 @@ module bp_me_clint_slice
    , output logic                                       timer_irq_o
    , output logic                                       external_irq_o
    );
+
+  if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, caddr_width_p);

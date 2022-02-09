@@ -1,8 +1,14 @@
-
-//
-// This module is an active tie-off. That is, requests to this module will return the header
-//   with a zero payload. This is useful to not stall the network in the case of an erroneous
-//   address, or prevent deadlock at network boundaries
+/**
+ *
+ * Name:
+ *   bp_me_loopback.sv
+ *
+ * Description:
+ *   This module is an active tie-off. That is, requests to this module will return the header
+ *   with a zero payload. This is useful to not stall the network in the case of an erroneous
+ *   address, or prevent deadlock at network boundaries
+ *
+ */
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 

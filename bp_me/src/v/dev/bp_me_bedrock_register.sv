@@ -1,14 +1,21 @@
+/**
+ *
+ * Name:
+ *   bp_me_bedrock_register.sv
+ *
+ * Description:
+ *   This module is used to interface a BP Stream interface to a general-purpose
+ *   register read/write interface. The data is stored externally so that
+ *   control/status registers can be controlled by this interface while
+ *   retaining special semantics. Registers are assumed to be synchronous
+ *   read/write which is compatible (although suboptimal) for asynchronous
+ *   registers.
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-//
-// This module is used to interface a BP Stream interface to a general-purpose
-//   register read/write interface. The data is stored externally so that
-//   control/status registers can be controlled by this interface while
-//   retaining special semantics. Registers are assumed to be synchronous
-//   read/write which is compatible (although suboptimal) for asynchronous
-//   registers.
 module bp_me_bedrock_register
  import bp_common_pkg::*;
  import bp_me_pkg::*;
@@ -63,6 +70,8 @@ module bp_me_bedrock_register
    , output logic [reg_width_p-1:0]                 data_o
    , input [els_p-1:0][reg_width_p-1:0]             data_i
    );
+
+  if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
 
   wire unused = &{mem_cmd_last_i};
 
