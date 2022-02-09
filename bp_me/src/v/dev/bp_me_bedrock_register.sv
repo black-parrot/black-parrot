@@ -132,10 +132,10 @@ module bp_me_bedrock_register
   always_ff @(negedge clk_i)
     begin
       assert(reset_i !== '0 || ~mem_cmd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
-        else $fatal("Command to non-existent register: %x", addr_o);
+        else $error("Command to non-existent register: %x", addr_o);
 
       assert(reset_i !== '0 || ~(mem_cmd_v_i & mem_cmd_ready_and_o) || mem_cmd_last_i)
-        else $fatal("Multi-beat memory command detected");
+        else $error("Multi-beat memory command detected");
     end
   //synopsys translate_on
 
