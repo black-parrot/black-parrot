@@ -1,3 +1,11 @@
+/**
+ *
+ * Name:
+ *   bp_me_clint_slice.sv
+ *
+ * Description:
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
@@ -9,7 +17,6 @@ module bp_me_clint_slice
  import bsg_wormhole_router_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter data_width_p = dword_width_gp
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (input                                                clk_i
@@ -18,13 +25,13 @@ module bp_me_clint_slice
    , input [core_id_width_p-1:0]                        id_i
 
    , input [mem_header_width_lp-1:0]                    mem_cmd_header_i
-   , input [data_width_p-1:0]                           mem_cmd_data_i
+   , input [dword_width_gp-1:0]                         mem_cmd_data_i
    , input                                              mem_cmd_v_i
    , output logic                                       mem_cmd_ready_and_o
    , input                                              mem_cmd_last_i
 
    , output logic [mem_header_width_lp-1:0]             mem_resp_header_o
-   , output logic [data_width_p-1:0]                    mem_resp_data_o
+   , output logic [dword_width_gp-1:0]                  mem_resp_data_o
    , output logic                                       mem_resp_v_o
    , input                                              mem_resp_ready_and_i
    , output logic                                       mem_resp_last_o
@@ -35,6 +42,8 @@ module bp_me_clint_slice
    , output logic                                       external_irq_o
    );
 
+  if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
+
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, caddr_width_p);
 
@@ -44,7 +53,6 @@ module bp_me_clint_slice
   logic plic_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.data_width_p(data_width_p)
      ,.els_p(4)
      ,.reg_addr_width_p(dev_addr_width_gp)
      ,.base_addr_p({plic_reg_addr_gp, mtime_reg_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})

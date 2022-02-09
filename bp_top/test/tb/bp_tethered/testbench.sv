@@ -557,7 +557,6 @@ module testbench
         bp_me_nonsynth_dev_tracer
          #(.bp_params_p(bp_params_p)
            ,.trace_file_p("clint")
-           ,.data_width_p(data_width_p)
            )
          clint_tracer
           (.clk_i(clk_i & testbench.dev_trace_en_lo)

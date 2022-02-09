@@ -250,9 +250,7 @@ module bp_l2e_tile
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
   logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p)
-     ,.data_width_p(dword_width_gp)
-     )
+   #(.bp_params_p(bp_params_p))
    cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
@@ -283,9 +281,7 @@ module bp_l2e_tile
 
   // CCE-Mem Loopback
   bp_me_loopback
-   #(.bp_params_p(bp_params_p)
-     ,.data_width_p(dword_width_gp)
-     )
+   #(.bp_params_p(bp_params_p))
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_r)

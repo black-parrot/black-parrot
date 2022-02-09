@@ -1,3 +1,11 @@
+/**
+ *
+ * Name:
+ *   bp_me_cfg_slice.sv
+ *
+ * Description:
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
@@ -7,7 +15,6 @@ module bp_me_cfg_slice
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter data_width_p = dword_width_gp
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
@@ -16,13 +23,13 @@ module bp_me_cfg_slice
    , input                                          reset_i
 
    , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [data_width_p-1:0]                       mem_cmd_data_i
+   , input [dword_width_gp-1:0]                     mem_cmd_data_i
    , input                                          mem_cmd_v_i
    , output logic                                   mem_cmd_ready_and_o
    , input                                          mem_cmd_last_i
 
    , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
-   , output logic [data_width_p-1:0]                mem_resp_data_o
+   , output logic [dword_width_gp-1:0]              mem_resp_data_o
    , output logic                                   mem_resp_v_o
    , input                                          mem_resp_ready_and_i
    , output logic                                   mem_resp_last_o
@@ -40,6 +47,8 @@ module bp_me_cfg_slice
    , input [cce_instr_width_gp-1:0]                 cce_ucode_data_i
    );
 
+  if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
+
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `bp_cast_o(bp_cfg_bus_s, cfg_bus);
@@ -53,7 +62,6 @@ module bp_me_cfg_slice
   logic [8:0][dword_width_gp-1:0] data_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.data_width_p(data_width_p)
      ,.els_p(9)
      ,.reg_addr_width_p(dev_addr_width_gp)
      ,.base_addr_p({cfg_reg_cord_gp, cfg_reg_did_gp, cfg_reg_host_did_gp, cfg_reg_hio_mask_gp
