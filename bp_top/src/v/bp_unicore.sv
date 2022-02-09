@@ -121,9 +121,7 @@ module bp_unicore
      );
 
   bp_me_cache_slice
-   #(.bp_params_p(bp_params_p)
-     ,.cache_data_width_p(l2_data_width_p)
-     )
+   #(.bp_params_p(bp_params_p))
    l2s
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
