@@ -76,6 +76,9 @@ module bp_me_stream_pump_out
    , output logic                                   fsm_done_o
    );
 
+  if (block_width_p % stream_data_width_p != 0)
+    $error("Stream pump block width must be multiple of stream data width");
+
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, fsm_base_header);
   `bp_cast_o(bp_bedrock_xce_header_s, msg_header);
