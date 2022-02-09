@@ -4,9 +4,4 @@ run_testlist.%:
 	$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=0 TAG=$(COH_PROTO).lce_uncached
 	$(MAKE) build.$* sim.$* LCE_MODE_P=2 CCE_MODE_P=0 TAG=$(COH_PROTO).mixed
 	$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=1 TAG=$(COH_PROTO).uncached
-	$(MAKE) build.$* sim.$* ME_TEST_P=1 TAG=$(COH_PROTO).test_1
-	$(MAKE) build.$* sim.$* ME_TEST_P=2 TAG=$(COH_PROTO).test_2
-	$(MAKE) build.$* sim.$* ME_TEST_P=3 TAG=$(COH_PROTO).test_3
-	$(MAKE) build.$* sim.$* ME_TEST_P=4 TAG=$(COH_PROTO).test_4
-	$(MAKE) build.$* sim.$* ME_TEST_P=5 TAG=$(COH_PROTO).test_5
 

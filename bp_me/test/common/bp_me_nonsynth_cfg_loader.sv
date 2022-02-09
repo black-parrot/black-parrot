@@ -1,16 +1,20 @@
 /**
  *
  * Name:
- *   bp_cce_mmio_cfg_loader.v
+ *   bp_me_nonsynth_cfg_loader.sv
  *
  * Description:
+ *   This is a nonsynth config bus initializer. It issues IO commands to setup the cfg bus.
+ *
+ *   The skip_init_p parameter controls whether or not most of initialization is skipped, and
+ *   leaves the LCEs and CCEs in uncached only mode.
  *
  */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_cce_mmio_cfg_loader
+module bp_me_nonsynth_cfg_loader
   import bp_common_pkg::*;
   import bp_be_pkg::*;
   import bp_me_pkg::*;
@@ -22,7 +26,7 @@ module bp_cce_mmio_cfg_loader
     , parameter `BSG_INV_PARAM(inst_ram_addr_width_p)
     , parameter `BSG_INV_PARAM(inst_ram_els_p)
     , parameter cce_ucode_filename_p  = "cce_ucode.mem"
-    , parameter skip_ram_init_p       = 0
+    , parameter skip_init_p           = 0
     , parameter clear_freeze_p        = 0
     // Change the last 8 bits of the data below to indicate the hios
     // to be enabled.
@@ -216,14 +220,18 @@ module bp_cce_mmio_cfg_loader
 
       case (state_r)
         RESET: begin
-          state_n = skip_ram_init_p ? BP_FREEZE_CLR : BP_FREEZE_SET;
+          state_n = BP_FREEZE_SET;
 
           sync_cnt_clr = 1'b1;
           ucode_cnt_clr = 1'b1;
           core_cnt_clr = 1'b1;
         end
         BP_FREEZE_SET: begin
-          state_n = core_prog_done ? SEND_RAM : BP_FREEZE_SET;
+          state_n = core_prog_done
+                    ? skip_init_p
+                      ? BP_FREEZE_CLR
+                      : SEND_RAM
+                    : BP_FREEZE_SET;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
