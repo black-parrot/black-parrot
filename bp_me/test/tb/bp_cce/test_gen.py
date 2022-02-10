@@ -75,7 +75,10 @@ class TestGenerator(object):
             addr = int(cmd[1], 16)
             size = int(cmd[2])
             uc = int(cmd[3])
-            value = int(cmd[4])
+            if (cmd[4].startswith('0x')):
+              value = int(cmd[4], 16)
+            else:
+              value = int(cmd[4])
             ops[thread].append((op, addr, size, uc, value))
     return ops
 
