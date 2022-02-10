@@ -1,8 +1,5 @@
 
 `include "bp_common_defines.svh"
-`include "bp_common_rv64_csr_defines.svh"
-
-
 `include "bp_be_defines.svh"
 
 module bp_be_csr
@@ -67,7 +64,7 @@ module bp_be_csr
   `bp_cast_o(bp_be_trans_info_s, trans_info);
 
   // The muxed and demuxed CSR outputs
-  logic [dword_width_gp-1:0] csr_data_li, csr_data_lo, effective_csr_data_lo;
+  logic [dword_width_gp-1:0] csr_data_li, csr_data_lo;
   logic exception_v_lo, interrupt_v_lo;
 
   rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
@@ -134,35 +131,16 @@ module bp_be_csr
   `declare_csr(dscratch0);
   `declare_csr(dscratch1);
 
-  logic s_external_irq_r;
-  bsg_dff_reset
-   #(.width_p(1))
-   s_external_irq_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i(s_external_irq_i)
-     ,.data_o(s_external_irq_r)
-     );
-
-  bp_mip_s effective_mip_r;
-  rv64_mip_s effective_mip_lo;
-  always_comb begin
-    effective_mip_r = mip_r;
-    effective_mip_r.seip = (mip_r.seip | s_external_irq_r);
-  end
-  assign effective_mip_lo = `decompress_mip_s(effective_mip_r);
-
-
   wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
   wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
 
-  wire mti_v = mie_r.mtie & effective_mip_r.mtip;
-  wire msi_v = mie_r.msie & effective_mip_r.msip;
-  wire mei_v = mie_r.meie & effective_mip_r.meip;
+  wire mti_v = mie_r.mtie & mip_r.mtip;
+  wire msi_v = mie_r.msie & mip_r.msip;
+  wire mei_v = mie_r.meie & mip_r.meip;
 
-  wire sti_v = mie_r.stie & effective_mip_r.stip;
-  wire ssi_v = mie_r.ssie & effective_mip_r.ssip;
-  wire sei_v = mie_r.seie & effective_mip_r.seip;
+  wire sti_v = mie_r.stie & mip_r.stip;
+  wire ssi_v = mie_r.ssie & mip_r.ssip;
+  wire sei_v = mie_r.seie & (mip_r.seip | s_external_irq_i);
 
   // TODO: interrupt priority is non-compliant with the spec.
   wire [15:0] interrupt_icode_dec_li =
@@ -378,7 +356,6 @@ module bp_be_csr
       csr_illegal_instr_o  = '0;
       csr_csrw_o           = '0;
       csr_data_lo          = '0;
-      effective_csr_data_lo= '0;
 
       if (csr_cmd_v_i)
         begin
@@ -420,11 +397,7 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_SCAUSE       }: csr_data_lo = scause_lo;
                 {1'b1, `CSR_ADDR_STVAL        }: csr_data_lo = stval_lo;
                 // SIP subset of MIP
-                {1'b1, `CSR_ADDR_SIP          }: begin
-                                                 csr_data_lo = mip_lo & sip_rmask_li;
-                                                 effective_csr_data_lo =
-                                                   effective_mip_lo & sip_rmask_li;
-                                                 end
+                {1'b1, `CSR_ADDR_SIP          }: csr_data_lo = mip_lo & sip_rmask_li;
                 {1'b1, `CSR_ADDR_SATP         }: csr_data_lo = satp_lo;
                 // We havr no vendorid currently
                 {1'b1, `CSR_ADDR_MVENDORID    }: csr_data_lo = '0;
@@ -444,10 +417,7 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_MIE          }: csr_data_lo = mie_lo;
                 {1'b1, `CSR_ADDR_MTVEC        }: csr_data_lo = mtvec_lo;
                 {1'b1, `CSR_ADDR_MCOUNTEREN   }: csr_data_lo = mcounteren_lo;
-                {1'b1, `CSR_ADDR_MIP          }: begin
-                                                 csr_data_lo = mip_lo;
-                                                 effective_csr_data_lo = effective_mip_lo;
-                                                 end
+                {1'b1, `CSR_ADDR_MIP          }: csr_data_lo = mip_lo;
                 {1'b1, `CSR_ADDR_MSCRATCH     }: csr_data_lo = mscratch_lo;
                 {1'b1, `CSR_ADDR_MEPC         }: csr_data_lo = mepc_lo;
                 {1'b1, `CSR_ADDR_MCAUSE       }: csr_data_lo = mcause_lo;
@@ -627,12 +597,6 @@ module bp_be_csr
         end
 
 
-      casez ({csr_r_v_li, csr_cmd_cast_i.csr_addr})
-        {1'b1, `CSR_ADDR_SIP}: begin end
-        {1'b1, `CSR_ADDR_MIP}: begin end
-        default: effective_csr_data_lo = csr_data_lo;
-      endcase
-
       // Accumulate interrupts
       mip_li.mtip = timer_irq_i;
       mip_li.msip = software_irq_i;
@@ -649,7 +613,13 @@ module bp_be_csr
   // Debug Mode masks all interrupts
   assign irq_pending_o = ~is_debug_mode & ((m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie));
 
-  assign csr_data_o = dword_width_gp'(effective_csr_data_lo);
+  always_comb begin
+    csr_data_o = csr_data_lo;
+    casez ({csr_r_v_li, csr_cmd_cast_i.csr_addr})
+      {1'b1, `CSR_ADDR_SIP}: csr_data_o[9] = csr_data_lo[9] | (s_external_irq_i & sip_rmask_li);
+      {1'b1, `CSR_ADDR_MIP}: csr_data_o[9] = csr_data_lo[9] | s_external_irq_i;
+    endcase
+  end
 
   assign commit_pkt_cast_o.npc_w_v          = |{retire_pkt_cast_i.special, retire_pkt_cast_i.exception};
   assign commit_pkt_cast_o.queue_v          = retire_pkt_cast_i.queue_v & ~|retire_pkt_cast_i.exception;

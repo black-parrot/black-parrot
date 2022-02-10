@@ -39,20 +39,20 @@ module bp_me_clint_slice
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
   logic [4:0][dword_width_gp-1:0] data_li;
-  logic plic_mext_w_v_li, plic_sext_w_v_li;
+  logic plic_w_v_li;
   logic mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
      ,.els_p(5)
      ,.reg_addr_width_p(dev_addr_width_gp)
-     ,.base_addr_p({plic_sext_reg_addr_gp,  plic_mext_reg_addr_gp, mtime_reg_addr_gp,
+     ,.base_addr_p({plic_reg_match_addr_gp, mtime_reg_addr_gp,
             mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
      )
    register
     (.*
      // We ignore reads because these are all asynchronous registers
      ,.r_v_o()
-     ,.w_v_o({plic_sext_w_v_li, plic_mext_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li})
+     ,.w_v_o({plic_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li})
      ,.addr_o(addr_lo)
      ,.size_o()
      ,.data_o(data_lo)
@@ -116,8 +116,9 @@ module bp_me_clint_slice
      );
   assign software_irq_o = mipi_r;
 
-  logic plic_mext_r;
-  logic plic_sext_r;
+  logic plic_mext_r, plic_sext_r;
+  wire mext_en_li = plic_w_v_li & (addr_lo[2] == 1'b0);
+  wire sext_en_li = plic_w_v_li & (addr_lo[2] == 1'b1);
   wire plic_mext_n = data_lo[0];
   wire plic_sext_n = data_lo[0];
   bsg_dff_reset_en
@@ -125,7 +126,7 @@ module bp_me_clint_slice
    plic_mext_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(plic_mext_w_v_li)
+     ,.en_i(mext_en_li)
 
      ,.data_i(plic_mext_n)
      ,.data_o(plic_mext_r)
@@ -137,7 +138,7 @@ module bp_me_clint_slice
    plic_sext_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(plic_sext_w_v_li)
+     ,.en_i(sext_en_li)
 
      ,.data_i(plic_sext_n)
      ,.data_o(plic_sext_r)
