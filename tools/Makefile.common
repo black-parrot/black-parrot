@@ -8,7 +8,7 @@ BP_TOOLS_INSTALL_DIR := $(BP_TOOLS_DIR)/install
 BP_TOOLS_BIN_DIR     := $(BP_TOOLS_INSTALL_DIR)/bin
 BP_TOOLS_LIB_DIR     := $(BP_TOOLS_INSTALL_DIR)/lib
 BP_TOOLS_INCLUDE_DIR := $(BP_TOOLS_INSTALL_DIR)/include
-BP_TOOLS_TOUCH_DIR   := $(BP_TOOLS_INSTALL_DIR)/touchfiles/tools
+BP_TOOLS_TOUCH_DIR   := $(BP_TOOLS_INSTALL_DIR)/touchfiles
 
 ## Setup CAD tools
 # If the machine you are working on is bsg_cadenv compliant, then you do not
