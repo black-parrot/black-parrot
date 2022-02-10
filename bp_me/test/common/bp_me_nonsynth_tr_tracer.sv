@@ -20,6 +20,7 @@ module bp_me_nonsynth_tr_tracer
     , localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam block_size_in_bytes_lp=(block_width_p / 8)
     , localparam block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_lp)
+    , localparam tag_offset_lp = (sets_p > 1) ? (block_offset_bits_lp+lg_sets_lp) : block_offset_bits_lp
 
     , localparam tr_pkt_width_lp=`bp_me_nonsynth_tr_pkt_width(paddr_width_p, dword_width_gp)
     , localparam max_cnt_p = 2**16
@@ -100,18 +101,20 @@ module bp_me_nonsynth_tr_tracer
 
       // Trace Replay
       if (tr_pkt_v_i & tr_pkt_yumi_i) begin
-        $fdisplay(file, "%12t |: TR[%0d] CMD %s op[%b] uc[%b] addr[%H] tag[%H] set[%0d] %H"
+        $fdisplay(file, "%12t |: TR[%0d] CMD %s op[%b] uc[%b] addr[%H] tag[%H] set[%0d] offset[%0d] %H"
                   , $time, id_i, s, tr_cmd.cmd, tr_cmd.uncached, tr_cmd.paddr
-                  , tr_cmd.paddr[paddr_width_p-1:(block_offset_bits_lp+lg_sets_lp)]
-                  , tr_cmd.paddr[block_offset_bits_lp +: lg_sets_lp], tr_cmd.data
+                  , tr_cmd.paddr[paddr_width_p-1:tag_offset_lp]
+                  , (sets_p > 1) ? tr_cmd.paddr[block_offset_bits_lp +: lg_sets_lp] : 0
+                  , tr_cmd.paddr[0 +: block_offset_bits_lp], tr_cmd.data
                   );
       end
 
       if (tr_pkt_v_o_i & tr_pkt_ready_then_i) begin
-        $fdisplay(file, "%12t |: TR[%0d] RESP op[%b] uc[%b] addr[%H] tag[%H] set[%0d] %H latency[%0d]"
+        $fdisplay(file, "%12t |: TR[%0d] RESP op[%b] uc[%b] addr[%H] tag[%H] set[%0d] offset[%0d] %H latency[%0d]"
                   , $time, id_i, tr_resp.cmd, tr_resp.uncached, tr_resp.paddr
-                  , tr_resp.paddr[paddr_width_p-1:(block_offset_bits_lp+lg_sets_lp)]
-                  , tr_resp.paddr[block_offset_bits_lp +: lg_sets_lp]
+                  , tr_resp.paddr[paddr_width_p-1:tag_offset_lp]
+                  , (sets_p > 1) ? tr_resp.paddr[block_offset_bits_lp +: lg_sets_lp] : 0
+                  , tr_resp.paddr[0 +: block_offset_bits_lp]
                   , tr_resp.data, tr_latency+1
                   );
 
