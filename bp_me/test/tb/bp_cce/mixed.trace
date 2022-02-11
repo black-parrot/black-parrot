@@ -1,0 +1,6 @@
+# thread: store/load address size uncached(1) value
+# thread: wait cycles
+0: store 0x80000000 8 0 1
+0: load 0x80000000 8 0 1
+0: store 0x80000001 1 1 2
+0: load 0x80000000 8 0 0x201
