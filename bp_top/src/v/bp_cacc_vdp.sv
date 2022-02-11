@@ -35,10 +35,15 @@ module bp_cacc_vdp
     , input                                       lce_cmd_v_i
     , output logic                                lce_cmd_yumi_o
 
-    , output logic [lce_cmd_header_width_lp-1:0]  lce_cmd_header_o
-    , output logic [cce_block_width_p-1:0]        lce_cmd_data_o
-    , output logic                                lce_cmd_v_o
-    , input                                       lce_cmd_ready_i
+    , input [lce_fill_header_width_lp-1:0]        lce_fill_header_i
+    , input [cce_block_width_p-1:0]               lce_fill_data_i
+    , input                                       lce_fill_v_i
+    , output logic                                lce_fill_yumi_o
+
+    , output logic [lce_fill_header_width_lp-1:0] lce_fill_header_o
+    , output logic [cce_block_width_p-1:0]        lce_fill_data_o
+    , output logic                                lce_fill_v_o
+    , input                                       lce_fill_ready_i
 
     , input [mem_header_width_lp-1:0]             io_cmd_header_i
     , input [cce_block_width_p-1:0]               io_cmd_data_i
@@ -89,12 +94,12 @@ module bp_cacc_vdp
    pma
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.ptag_v_i(dcache_pkt_v)
      ,.ptag_i(dcache_ptag)
      ,.uncached_mode_i('0)
      ,.nonspec_mode_i('0)
-  
+
      ,.uncached_o(dcache_uncached)
      ,.nonidem_o()
      ,.dram_o(dcache_dram)
@@ -183,10 +188,10 @@ module bp_cacc_vdp
    be_lce
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.lce_id_i(cfg_bus_cast_i.dcache_id)
      ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
-  
+
      ,.cache_req_i(cache_req_cast_o)
      ,.cache_req_v_i(cache_req_v_o)
      ,.cache_req_yumi_o(cache_req_yumi_i)
@@ -198,41 +203,46 @@ module bp_cacc_vdp
      ,.cache_req_complete_o(cache_req_complete_lo)
      ,.cache_req_credits_full_o(cache_req_credits_full_lo)
      ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
-  
+
      ,.data_mem_pkt_o(data_mem_pkt_i)
      ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
      ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_o)
      ,.data_mem_i(data_mem_o)
-  
+
      ,.tag_mem_pkt_o(tag_mem_pkt_i)
      ,.tag_mem_pkt_v_o(tag_mem_pkt_v_i)
      ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_o)
      ,.tag_mem_i(tag_mem_o)
-  
+
      ,.stat_mem_pkt_v_o(stat_mem_pkt_v_i)
      ,.stat_mem_pkt_o(stat_mem_pkt_i)
      ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_o)
      ,.stat_mem_i(stat_mem_o)
-  
+
      ,.lce_req_header_o(lce_req_header_o)
      ,.lce_req_data_o(lce_req_data_o)
      ,.lce_req_v_o(lce_req_v_o)
      ,.lce_req_ready_then_i(lce_req_ready_i)
-  
+
      ,.lce_resp_header_o(lce_resp_header_o)
      ,.lce_resp_data_o(lce_resp_data_o)
      ,.lce_resp_v_o(lce_resp_v_o)
      ,.lce_resp_ready_then_i(lce_resp_ready_i)
-  
+
      ,.lce_cmd_header_i(lce_cmd_header_i)
      ,.lce_cmd_data_i(lce_cmd_data_i)
      ,.lce_cmd_v_i(lce_cmd_v_i)
      ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-  
-     ,.lce_cmd_header_o(lce_cmd_header_o)
-     ,.lce_cmd_data_o(lce_cmd_data_o)
-     ,.lce_cmd_v_o(lce_cmd_v_o)
-     ,.lce_cmd_ready_then_i(lce_cmd_ready_i)
+
+     ,.lce_fill_header_i(lce_fill_header_i)
+     ,.lce_fill_data_i(lce_fill_data_i)
+     ,.lce_fill_v_i(lce_fill_v_i)
+     ,.lce_fill_yumi_o(lce_fill_yumi_o)
+
+     ,.lce_fill_header_o(lce_fill_header_o)
+     ,.lce_fill_data_o(lce_fill_data_o)
+     ,.lce_fill_v_o(lce_fill_v_o)
+     ,.lce_fill_ready_then_i(lce_fill_ready_i)
      );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
@@ -394,7 +404,7 @@ module bp_cacc_vdp
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0; 
+        dcache_pkt.rd_addr = '0;
         res_status = '0;
         dcache_pkt_v = '1;
         done = 0;
@@ -405,7 +415,7 @@ module bp_cacc_vdp
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0; 
+        dcache_pkt.rd_addr = '0;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt_v = '0;
         done = 0;
@@ -419,7 +429,7 @@ module bp_cacc_vdp
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0; 
+        dcache_pkt.rd_addr = '0;
         dcache_pkt_v = '0;
         done = 0;
       end
@@ -430,7 +440,7 @@ module bp_cacc_vdp
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0; 
+        dcache_pkt.rd_addr = '0;
         dcache_pkt_v = '0;
         done = 0;
       end
@@ -441,7 +451,7 @@ module bp_cacc_vdp
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0; 
+        dcache_pkt.rd_addr = '0;
         dcache_pkt_v = '0;
         second_operand= 1;
         done = 0;
@@ -453,7 +463,7 @@ module bp_cacc_vdp
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0; 
+        dcache_pkt.rd_addr = '0;
         dcache_pkt_v = '0;
         second_operand= 1;
         done = 0;
