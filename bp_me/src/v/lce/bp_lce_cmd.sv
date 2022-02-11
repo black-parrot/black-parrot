@@ -117,16 +117,16 @@ module bp_lce_cmd
 
     // LCE-LCE interface
     // Cmd_o: ready->valid
-    , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
-    , output logic [cce_block_width_p-1:0]           lce_cmd_data_o
-    , output logic                                   lce_cmd_v_o
-    , input                                          lce_cmd_ready_then_i
+    , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
+    , output logic [cce_block_width_p-1:0]           lce_fill_data_o
+    , output logic                                   lce_fill_v_o
+    , input                                          lce_fill_ready_then_i
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
-  `bp_cast_o(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
+  `bp_cast_o(bp_bedrock_lce_fill_header_s, lce_fill_header);
   `bp_cast_o(bp_bedrock_lce_resp_header_s, lce_resp_header);
 
   `bp_cast_o(bp_cache_data_mem_pkt_s, data_mem_pkt);
@@ -259,9 +259,9 @@ module bp_lce_cmd
     lce_resp_data_o = '0;
     lce_resp_v_o = 1'b0;
 
-    lce_cmd_header_cast_o = '0;
-    lce_cmd_data_o = '0;
-    lce_cmd_v_o = 1'b0;
+    lce_fill_header_cast_o = '0;
+    lce_fill_data_o = '0;
+    lce_fill_v_o = 1'b0;
 
     // LCE-Cache Interface signals
     data_mem_pkt_cast_o = '0;
@@ -565,33 +565,33 @@ module bp_lce_cmd
       end
 
       // Transfer
-      // send e_bedrock_cmd_data message to target LCE
+      // send e_bedrock_fill_data message to target LCE
       // dirty_data_r holds valid data when dirty_data_v_r is high
       e_tr: begin
 
-        lce_cmd_header_cast_o.msg_type.cmd = e_bedrock_cmd_data;
-        lce_cmd_header_cast_o.addr = lce_cmd_addr_block_aligned;
-        lce_cmd_header_cast_o.size = cmd_block_size_lp;
+        lce_fill_header_cast_o.msg_type.fill = e_bedrock_fill_data;
+        lce_fill_header_cast_o.addr = lce_cmd_addr_block_aligned;
+        lce_fill_header_cast_o.size = cmd_block_size_lp;
         // form the outbound message
-        lce_cmd_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.target;
+        lce_fill_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.target;
         // set src to be the CCE that sent the transfer command so the destination LCE knows
         // which CCE it must send its coherence ack to when the data command arrives
-        lce_cmd_header_cast_o.payload.src_id = lce_cmd_header_cast_i.payload.src_id;
-        lce_cmd_header_cast_o.payload.way_id = lce_cmd_header_cast_i.payload.target_way_id;
-        lce_cmd_header_cast_o.payload.state = lce_cmd_header_cast_i.payload.target_state;
-        lce_cmd_data_o = dirty_data_r;
+        lce_fill_header_cast_o.payload.src_id = lce_cmd_header_cast_i.payload.src_id;
+        lce_fill_header_cast_o.payload.way_id = lce_cmd_header_cast_i.payload.target_way_id;
+        lce_fill_header_cast_o.payload.state = lce_cmd_header_cast_i.payload.target_state;
+        lce_fill_data_o = dirty_data_r;
 
         // handshakes
         // outbound command is ready->valid
         // inbound is valid->yumi, but only dequeue when outbound sends
-        lce_cmd_v_o = lce_cmd_ready_then_i & lce_cmd_v_i & dirty_data_v_r;
+        lce_fill_v_o = lce_fill_ready_then_i & lce_cmd_v_i & dirty_data_v_r;
 
         // dequeue the command if transfer is last action
-        lce_cmd_yumi_o = lce_cmd_v_o & (lce_cmd_header_cast_i.msg_type.cmd != e_bedrock_cmd_st_tr_wb);
+        lce_cmd_yumi_o = lce_fill_v_o & (lce_cmd_header_cast_i.msg_type.cmd != e_bedrock_cmd_st_tr_wb);
 
         // do a writeback if needed, otherwise go to ready after the transfer sends
         // move to next state when LCE command sends
-        state_n = lce_cmd_v_o
+        state_n = lce_fill_v_o
           ? (lce_cmd_header_cast_i.msg_type.cmd == e_bedrock_cmd_st_tr_wb)
             ? e_wb_stat_rd
             : e_ready
