@@ -163,6 +163,7 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 # LCE
 $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
+$BP_ME_DIR/src/v/lce/bp_lce_fill.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce.sv
 # CCE
