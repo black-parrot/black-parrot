@@ -175,16 +175,6 @@ module bp_lce_cmd
      ,.yumi_i(dirty_data_read)
      );
 
-  logic [block_width_p-1:0] rotated_dirty_data_r;
-  wire [`BSG_SAFE_CLOG2(block_width_p)-1:0] rot_li = (lce_cmd_header_cast_i.addr[0+:lg_block_size_in_bytes_lp] << 3);
-  bsg_rotate_right
-   #(.width_p(block_width_p))
-   data_rotate
-    (.data_i(dirty_data_r)
-     ,.rot_i(rot_li)
-     ,.o(rotated_dirty_data_r)
-     );
-
   bp_cache_tag_info_s dirty_tag_r;
   logic dirty_tag_v_r;
   wire dirty_tag_read = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
@@ -585,7 +575,7 @@ module bp_lce_cmd
         lce_cmd_header_cast_o.payload.src_id = lce_cmd_header_cast_i.payload.src_id;
         lce_cmd_header_cast_o.payload.way_id = lce_cmd_header_cast_i.payload.target_way_id;
         lce_cmd_header_cast_o.payload.state = lce_cmd_header_cast_i.payload.target_state;
-        lce_cmd_data_o = rotated_dirty_data_r;
+        lce_cmd_data_o = dirty_data_r;
 
         // handshakes
         // outbound command is ready->valid
@@ -669,7 +659,7 @@ module bp_lce_cmd
       // dirty_data_r holds valid data when dirty_data_v_r is high
       e_wb_dirty_send: begin
 
-        lce_resp_data_o = rotated_dirty_data_r;
+        lce_resp_data_o = dirty_data_r;
         lce_resp_header_cast_o.addr = lce_cmd_header_cast_i.addr;
         lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_wb;
         lce_resp_header_cast_o.payload.src_id = lce_id_i;
