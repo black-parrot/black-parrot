@@ -4,4 +4,6 @@ run_testlist.%:
 	$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=0 TAG=$(COH_PROTO).lce_uncached
 	$(MAKE) build.$* sim.$* LCE_MODE_P=2 CCE_MODE_P=0 TAG=$(COH_PROTO).mixed
 	$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=1 TAG=$(COH_PROTO).uncached
+	$(MAKE) build.$* sim.$* ME_TEST_P=2 TRACE_FILE_P=ld_st.trace TAG=$(COH_PROTO).$(TRACE_FILE_P)
+	$(MAKE) build.$* sim.$* ME_TEST_P=2 TRACE_FILE_P=mixed.trace TAG=$(COH_PROTO).$(TRACE_FILE_P)
 
