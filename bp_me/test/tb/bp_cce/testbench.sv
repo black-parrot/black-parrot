@@ -47,6 +47,9 @@ module testbench
    )
   (output bit reset_i);
 
+  if (l2_data_width_p != bedrock_data_width_p)
+    $error("L2 data width must match bedrock data width");
+
   logic cce_trace_en, cce_dir_trace_en, axe_trace_en, lce_trace_en, tr_trace_en, dram_trace_en;
   assign cce_trace_en = cce_trace_p;
   assign cce_dir_trace_en = cce_dir_trace_p;
@@ -765,7 +768,6 @@ module testbench
      ,.preload_mem_p(0)
      ,.dram_type_p(dram_type_p)
      ,.mem_els_p(2**20)
-     ,.cache_data_width_p(bedrock_data_width_p)
      )
    mem
     (.clk_i(clk_i)

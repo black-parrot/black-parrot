@@ -439,9 +439,7 @@ module bp_l2e_tile
   logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
   logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
   bp_me_cache_slice
-   #(.bp_params_p(bp_params_p)
-     ,.cache_data_width_p(l2_data_width_p)
-     )
+   #(.bp_params_p(bp_params_p))
    l2s
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
