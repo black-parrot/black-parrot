@@ -78,31 +78,13 @@ module bp_me_nonsynth_tr_tracer
       ,.count_o(tr_latency)
       );
 
-  string s;
-  always_comb begin
-    case (tr_cmd.cmd)
-      4'b0000: s = "LB";
-      4'b0001: s = "LH";
-      4'b0010: s = "LW";
-      4'b0011: s = "LD";
-      4'b0100: s = "LBU";
-      4'b0101: s = "LHU";
-      4'b0110: s = "LWU";
-      4'b1000: s = "SB";
-      4'b1001: s = "SH";
-      4'b1010: s = "SW";
-      4'b1011: s = "SD";
-      default: s = "BAD";
-    endcase
-  end
-
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin // ~reset_i
 
       // Trace Replay
       if (tr_pkt_v_i & tr_pkt_yumi_i) begin
         $fdisplay(file, "%12t |: TR[%0d] CMD %s op[%b] uc[%b] addr[%H] tag[%H] set[%0d] offset[%0d] %H"
-                  , $time, id_i, s, tr_cmd.cmd, tr_cmd.uncached, tr_cmd.paddr
+                  , $time, id_i, tr_cmd.cmd.name(), tr_cmd.cmd, tr_cmd.uncached, tr_cmd.paddr
                   , tr_cmd.paddr[paddr_width_p-1:tag_offset_lp]
                   , (sets_p > 1) ? tr_cmd.paddr[block_offset_bits_lp +: lg_sets_lp] : 0
                   , tr_cmd.paddr[0 +: block_offset_bits_lp], tr_cmd.data
