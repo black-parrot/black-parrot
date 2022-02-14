@@ -416,7 +416,7 @@ module bp_tile
      );
 
   // Processor
-  logic timer_irq_li, software_irq_li, external_irq_li;
+  logic timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
   bp_core
    #(.bp_params_p(bp_params_p))
    core
@@ -447,7 +447,8 @@ module bp_tile
 
      ,.timer_irq_i(timer_irq_li)
      ,.software_irq_i(software_irq_li)
-     ,.external_irq_i(external_irq_li)
+     ,.m_external_irq_i(m_external_irq_li)
+     ,.s_external_irq_i(s_external_irq_li)
      );
 
   // CCE-side CCE-Mem network connections
@@ -525,7 +526,8 @@ module bp_tile
 
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
-     ,.external_irq_o(external_irq_li)
+     ,.m_external_irq_o(m_external_irq_li)
+     ,.s_external_irq_o(s_external_irq_li)
      );
 
   // CCE-Mem Loopback

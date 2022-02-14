@@ -77,7 +77,8 @@ module bp_core_minimal
 
    , input                                           timer_irq_i
    , input                                           software_irq_i
-   , input                                           external_irq_i
+   , input                                           m_external_irq_i
+   , input                                           s_external_irq_i
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -179,7 +180,8 @@ module bp_core_minimal
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
+     ,.m_external_irq_i(m_external_irq_i)
+     ,.s_external_irq_i(s_external_irq_i)
      );
 
 endmodule

@@ -50,7 +50,8 @@ module bp_core
 
   , input                                            timer_irq_i
   , input                                            software_irq_i
-  , input                                            external_irq_i
+  , input                                            m_external_irq_i
+  , input                                            s_external_irq_i
   );
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -166,7 +167,8 @@ module bp_core
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
+     ,.m_external_irq_i(m_external_irq_i)
+     ,.s_external_irq_i(s_external_irq_i)
      );
 
   bp_lce
