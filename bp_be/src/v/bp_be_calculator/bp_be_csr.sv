@@ -613,13 +613,14 @@ module bp_be_csr
   // Debug Mode masks all interrupts
   assign irq_pending_o = ~is_debug_mode & ((m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie));
 
-  always_comb begin
-    csr_data_o = csr_data_lo;
-    casez ({csr_r_v_li, csr_cmd_cast_i.csr_addr})
-      {1'b1, `CSR_ADDR_SIP}: csr_data_o[9] = csr_data_lo[9] | (s_external_irq_i & sip_rmask_li);
-      {1'b1, `CSR_ADDR_MIP}: csr_data_o[9] = csr_data_lo[9] | s_external_irq_i;
+  // The supervisor external interrupt line does not impact the supervisor software interrupt bit of MIP.
+  // However, software read operations return as if it does. bit 9 is supervisor software interrupt
+  always_comb
+    unique casez (csr_cmd_cast_i.csr_addr)
+      `CSR_ADDR_SIP: csr_data_o = csr_data_lo | ((s_external_irq_i & sip_rmask_li) << 9));
+      `CSR_ADDR_MIP: csr_data_o = csr_data_lo | (s_external_irq_i << 9);
+      default: csr_data_o = csr_data_lo;
     endcase
-  end
 
   assign commit_pkt_cast_o.npc_w_v          = |{retire_pkt_cast_i.special, retire_pkt_cast_i.exception};
   assign commit_pkt_cast_o.queue_v          = retire_pkt_cast_i.queue_v & ~|retire_pkt_cast_i.exception;
