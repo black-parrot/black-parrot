@@ -20,6 +20,7 @@ module bp_me_clint_slice
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (input                                                clk_i
+   , input                                              rt_clk_i
    , input                                              reset_i
 
    , input [core_id_width_p-1:0]                        id_i
@@ -71,33 +72,27 @@ module bp_me_clint_slice
      ,.data_i(data_li)
      );
 
-  // TODO: Should be actual RTC, or at least programmable
-  localparam ds_width_lp = 5;
-  localparam [ds_width_lp-1:0] ds_ratio_li = 8;
-  logic mtime_inc_li;
-  bsg_strobe
-   #(.width_p(ds_width_lp))
-   bsg_rtc_strobe
-    (.clk_i(clk_i)
-     ,.reset_r_i(reset_i)
-     ,.init_val_r_i(ds_ratio_li)
-     ,.strobe_r_o(mtime_inc_li)
+  logic [dword_width_gp-1:0] mtime_gray_r;
+  bsg_async_ptr_gray
+   #(.lg_size_p(dword_width_gp), .use_async_reset_p(1))
+   mtime_gray
+    (.w_clk_i(rt_clk_i)
+     ,.w_reset_i(reset_i) // async to rtc
+     ,.w_inc_i(1'b1) // TODO: Enable / disable increment?
+     ,.r_clk_i(clk_i)
+     ,.w_ptr_binary_r_o()
+     ,.w_ptr_gray_r_o()
+     ,.w_ptr_gray_r_rsync_o(mtime_gray_r)
      );
-  logic [dword_width_gp-1:0] mtime_r;
-  wire [dword_width_gp-1:0] mtime_n = data_lo;
-  bsg_counter_set_en
-   #(.max_val_p(0) // max_val_p is unused but must be set
-     ,.lg_max_val_lp(dword_width_gp) // Use lg_max_val_lp because of 64-bit parameter restriction
-     ,.reset_val_p(0)
-     )
-   mtime_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  // Cannot write the RTC. If needed, raise an issue
+  wire unused = mtime_w_v_li;
 
-     ,.set_i(mtime_w_v_li)
-     ,.en_i(mtime_inc_li)
-     ,.val_i(mtime_n)
-     ,.count_o(mtime_r)
+  logic [dword_width_gp-1:0] mtime_r;
+  bsg_gray_to_binary
+   #(.width_p(dword_width_gp))
+   g2b
+    (.gray_i(mtime_gray_r)
+     ,.binary_o(mtime_r)
      );
 
   logic [dword_width_gp-1:0] mtimecmp_r;

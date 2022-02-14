@@ -18,6 +18,7 @@ module bp_unicore_complex
    )
   (input                                                            clk_i
    , input                                                          reset_i
+   , input                                                          rt_clk_i
 
    , input [io_noc_did_width_p-1:0]                                 my_did_i
    , input [io_noc_did_width_p-1:0]                                 host_did_i
@@ -74,6 +75,7 @@ module bp_unicore_complex
        #(.bp_params_p(bp_params_p))
        dut
         (.clk_i(clk_i)
+         ,.rt_clk_i(rt_clk_i)
          ,.reset_i(reset_i)
 
          ,.my_did_i(my_did_i)

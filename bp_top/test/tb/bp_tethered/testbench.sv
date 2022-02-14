@@ -151,12 +151,24 @@ module testbench
   logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
   logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
+  logic rt_clk_lo;
+  bsg_counter_clock_downsample
+   #(.width_p(3))
+   ds
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.val_i(3'b111)
+     ,.clk_r_o(rt_clk_lo)
+     );
+
   wire [io_noc_did_width_p-1:0] proc_did_li = 1;
   wire [io_noc_did_width_p-1:0] host_did_li = '1;
   wrapper
    #(.bp_params_p(bp_params_p))
    wrapper
     (.clk_i(clk_i)
+     ,.rt_clk_i(rt_clk_lo)
      ,.reset_i(reset_i)
 
      ,.my_did_i(proc_did_li)

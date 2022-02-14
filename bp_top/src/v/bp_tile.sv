@@ -31,6 +31,7 @@ module bp_tile
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
   (input                                                      clk_i
+   , input                                                    rt_clk_i
    , input                                                    reset_i
 
    // Memory side connection
@@ -509,6 +510,7 @@ module bp_tile
    #(.bp_params_p(bp_params_p))
    clint
     (.clk_i(clk_i)
+     ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_r)
      ,.id_i(cfg_bus_lo.core_id)
 
