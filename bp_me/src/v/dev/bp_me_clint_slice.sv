@@ -38,12 +38,12 @@ module bp_me_clint_slice
 
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
-  logic [4:0][dword_width_gp-1:0] data_li;
+  logic [3:0][dword_width_gp-1:0] data_li;
   logic plic_w_v_li;
   logic mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.els_p(5)
+     ,.els_p(4)
      ,.reg_addr_width_p(dev_addr_width_gp)
      ,.base_addr_p({plic_reg_match_addr_gp, mtime_reg_addr_gp,
             mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
@@ -116,40 +116,39 @@ module bp_me_clint_slice
      );
   assign software_irq_o = mipi_r;
 
-  logic plic_mext_r, plic_sext_r;
-  wire mext_en_li = plic_w_v_li & (addr_lo[2] == 1'b0);
-  wire sext_en_li = plic_w_v_li & (addr_lo[2] == 1'b1);
-  wire plic_mext_n = data_lo[0];
-  wire plic_sext_n = data_lo[0];
-  bsg_dff_reset_en
-   #(.width_p(1))
-   plic_mext_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(mext_en_li)
+  // This scheme can be used for N PLIC bits, which may be required in
+  //   a distributed PLIC scheme. However, for now we only support
+  //   M and S mode external interrupts. This code doesn't work for
+  //   only a single PLIC bit.
+  localparam plic_els_lp = 2;
+  localparam lg_plic_els_lp = `BSG_SAFE_CLOG2(plic_els_lp);
+  logic [plic_els_lp-1:0] plic_n, plic_r;
+  wire [lg_plic_els_lp-1:0] plic_addr_li = addr_lo[2+:lg_plic_els_lp];
 
-     ,.data_i(plic_mext_n)
-     ,.data_o(plic_mext_r)
-     );
-  assign m_external_irq_o = plic_mext_r;
+  always_comb
+    begin
+      plic_n = plic_r;
+      plic_n[plic_addr_li] = data_lo[0];
+    end
 
   bsg_dff_reset_en
-   #(.width_p(1))
-   plic_sext_reg
+   #(.width_p(plic_els_lp))
+   plic_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(sext_en_li)
-
-     ,.data_i(plic_sext_n)
-     ,.data_o(plic_sext_r)
+     ,.en_i(plic_w_v_li)
+     ,.data_i(plic_n)
+     ,.data_o(plic_r)
      );
-  assign s_external_irq_o = plic_sext_r;
+  wire plic_lo = plic_r[plic_addr_li];
+
+  assign m_external_irq_o = plic_r[0];
+  assign s_external_irq_o = plic_r[1];
 
   assign data_li[0] = mipi_r;
   assign data_li[1] = mtimecmp_r;
   assign data_li[2] = mtime_r;
-  assign data_li[3] = plic_mext_r;
-  assign data_li[4] = plic_sext_r;
+  assign data_li[3] = plic_lo;
 
 endmodule
 
