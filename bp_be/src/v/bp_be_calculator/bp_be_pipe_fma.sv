@@ -16,7 +16,7 @@
  *
  *   This module:
  *            ...
- *            fma 4 cycles     reservation
+ *            fma 3 cycles     reservation
  *           /   \                 |
  *        round  imul_out      imul meta
  *          |                      |
@@ -128,15 +128,15 @@ module bp_be_pipe_fma
 
   // Here, we switch the implementation based on synthesizing for Vivado or not. If this is
   //   a knob you'd like to turn, consider modifying the define yourself.
-  localparam fma_latency_lp  = 5;
-  localparam imul_latency_lp = 4;
+  localparam fma_latency_lp  = 4;
+  localparam imul_latency_lp = 3;
   `ifdef SYNTHESIS
     `ifdef DC
       localparam int fma_pipeline_stages_lp [1:0] = '{0,0};
     `elsif CDS_TOOL_DEFINE
       localparam int fma_pipeline_stages_lp [1:0] = '{0,0};
     `else
-      localparam int fma_pipeline_stages_lp [1:0] = '{1,3};
+      localparam int fma_pipeline_stages_lp [1:0] = '{1,imul_latency_lp};
     `endif
   `else
       localparam int fma_pipeline_stages_lp [1:0] = '{0,0};
