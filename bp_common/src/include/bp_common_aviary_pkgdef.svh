@@ -469,7 +469,7 @@
 
 
   localparam bp_proc_param_s bp_multicore_1_cce_ucode_override_p =
-    '{cce_ucode: 1
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_cfg_p
@@ -506,7 +506,7 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_2_cce_ucode_override_p =
-    '{cce_ucode: 1
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_2_cce_ucode_cfg_p
@@ -515,7 +515,7 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_3_cce_ucode_override_p =
-    '{cce_ucode: 1
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_3_cce_ucode_cfg_p
@@ -524,7 +524,7 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_4_cce_ucode_override_p =
-    '{cce_ucode: 1
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_4_cce_ucode_cfg_p
@@ -533,7 +533,7 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_6_cce_ucode_override_p =
-    '{cce_ucode: 1
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_6_cce_ucode_cfg_p
@@ -542,7 +542,7 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_8_cce_ucode_override_p =
-    '{cce_ucode: 1
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_8_cce_ucode_cfg_p
@@ -551,7 +551,7 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_12_cce_ucode_override_p =
-    '{cce_ucode: 1
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_12_cce_ucode_cfg_p
@@ -560,7 +560,7 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_16_cce_ucode_override_p =
-    '{cce_ucode: 1
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_16_cce_ucode_cfg_p

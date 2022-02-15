@@ -35,6 +35,13 @@
     ,e_cacc_vdp = 1
   } bp_cacc_type_e;
 
+  typedef enum logic [1:0]
+  {
+    e_cce_fsm = 0
+    ,e_cce_ucode = 1
+    ,e_cce_hybrid = 2
+  } bp_cce_type_e;
+
   typedef struct packed
   {
     // 0: BP unicore (minimal, single-core configuration)
@@ -150,10 +157,9 @@
     integer unsigned acache_block_width;
     integer unsigned acache_fill_width;
 
-    // Microcoded CCE parameters
-    // 0: CCE is FSM-based
-    // 1: CCE is ucode
-    integer unsigned cce_ucode;
+    // CCE selection and parameters
+    // cce_type defined by bp_cce_type_e
+    integer unsigned cce_type;
     // Determines the size of the CCE instruction RAM
     integer unsigned cce_pc_width;
     // The width of the coherence protocol beats
@@ -292,7 +298,7 @@
       ,acache_block_width   : 512
       ,acache_fill_width    : 64
 
-      ,cce_ucode            : 0
+      ,cce_type             : e_cce_fsm
       ,cce_pc_width         : 8
       ,bedrock_data_width   : 64
 
@@ -402,9 +408,9 @@
       ,`bp_aviary_define_override(acache_block_width, BP_ACACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_fill_width, BP_ACACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
 
-      ,`bp_aviary_define_override(cce_ucode, BP_CCE_UCODE, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(cce_type, BP_CCE_TYPE, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(cce_pc_width, BP_CCE_PC_WIDTH, `BP_CUSTOM_BASE_CFG)
-      .`bp_aviary_define_override(bedrock_data_width, BP_BEDROCK_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(bedrock_data_width, BP_BEDROCK_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(l2_en, BP_L2_EN, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)

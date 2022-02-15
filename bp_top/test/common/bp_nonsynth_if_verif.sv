@@ -132,5 +132,8 @@ module bp_nonsynth_if_verif
   if (!`BSG_IS_POW2(l2_banks_p))
     $error("L2 banks must be a power of two");
 
+  if (num_cce_p/mc_x_dim_p*l2_banks_p > 16)
+    $error("Round robin arbiter currently only supports 16 entries");
+
 endmodule
 
