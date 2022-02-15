@@ -20,7 +20,7 @@
    * BedRock LCE Coherence Network Wormhole Packet Definitions
    */
 
-  `define declare_bp_bedrock_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, struct_name_mp, data_width_mp) \
+  `define declare_bp_bedrock_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, struct_name_mp) \
     `declare_bsg_wormhole_concentrator_header_s(cord_width_mp, len_width_mp, cid_width_mp, bsg_``struct_name_mp``_router_hdr_s); \
     typedef struct packed                     \
     {                                         \
@@ -28,7 +28,10 @@
                                             pad;      \
       msg_hdr_name_mp                       msg_hdr;  \
       bsg_``struct_name_mp``_router_hdr_s   rtr_hdr;  \
-    }  bp_``struct_name_mp``_wormhole_header_s;       \
+    }  bp_``struct_name_mp``_wormhole_header_s;
+
+  `define declare_bp_bedrock_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, struct_name_mp, data_width_mp) \
+    `declare_bp_bedrock_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, struct_name_mp); \
                                                       \
     typedef struct packed                             \
     {                                                 \
@@ -56,11 +59,26 @@
      - len_width_mp - cord_width_mp \
      )
 
+  `define declare_bp_lce_req_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp) \
+    `declare_bp_bedrock_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, lce_req)
+
+  `define declare_bp_lce_cmd_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp) \
+    `declare_bp_bedrock_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, lce_cmd)
+
+  `define declare_bp_lce_fill_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp) \
+    `declare_bp_bedrock_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, lce_fill)
+
+  `define declare_bp_lce_resp_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp) \
+    `declare_bp_bedrock_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, lce_resp)
+
   `define declare_bp_lce_req_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, data_width_mp) \
     `declare_bp_bedrock_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, lce_req, data_width_mp)
 
   `define declare_bp_lce_cmd_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, data_width_mp) \
     `declare_bp_bedrock_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, lce_cmd, data_width_mp)
+
+  `define declare_bp_lce_fill_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, data_width_mp) \
+    `declare_bp_bedrock_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, lce_fill, data_width_mp)
 
   `define declare_bp_lce_resp_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, data_width_mp) \
     `declare_bp_bedrock_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, lce_resp, data_width_mp)

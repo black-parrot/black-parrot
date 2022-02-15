@@ -90,7 +90,7 @@ module bp_me_wormhole_to_burst
 
   // parameter checks
   if ((pr_data_width_p % flit_width_p != 0) && (flit_width_p % pr_data_width_p != 0))
-    $fatal(0,"Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
+    $error("Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
 
   logic is_hdr, is_data, wh_has_data, wh_last_data;
   logic hdr_v_li, hdr_ready_lo;

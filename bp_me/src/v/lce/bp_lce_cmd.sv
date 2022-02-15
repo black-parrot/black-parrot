@@ -215,10 +215,14 @@ module bp_lce_cmd
   logic [lg_sets_lp-1:0] lce_cmd_addr_index;
   logic [ptag_width_p-1:0] lce_cmd_addr_tag;
   logic [lg_assoc_lp-1:0] lce_cmd_way_id;
+  logic [paddr_width_p-1:0] lce_cmd_addr_block_aligned;
 
   assign lce_cmd_addr_index = lce_cmd_header_cast_i.addr[lg_block_size_in_bytes_lp+:lg_sets_lp];
   assign lce_cmd_addr_tag = lce_cmd_header_cast_i.addr[(paddr_width_p-1) -: ptag_width_p];
   assign lce_cmd_way_id = lce_cmd_header_cast_i.payload.way_id[0+:lg_assoc_lp];
+  assign lce_cmd_addr_block_aligned =
+    {lce_cmd_header_cast_i.addr[paddr_width_p-1:lg_block_size_in_bytes_lp]
+     , lg_block_size_in_bytes_lp'('0)};
 
   // LCE Command module is ready after it clears the cache's tag and stat memories
   assign ready_o = (state_r != e_reset) && (state_r != e_clear);
@@ -351,7 +355,7 @@ module bp_lce_cmd
               tag_mem_pkt_v_o = lce_cmd_v_i;
 
               lce_resp_v_o = tag_mem_pkt_yumi_i & lce_resp_ready_then_i;
-              lce_resp_header_cast_o.addr = lce_cmd_header_cast_i.addr;
+              lce_resp_header_cast_o.addr = lce_cmd_addr_block_aligned;
               lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_inv_ack;
               lce_resp_header_cast_o.payload.src_id = lce_id_i;
               lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;
@@ -544,7 +548,7 @@ module bp_lce_cmd
 
       // Send Coherence Ack message and raise request complete for one cycle
       e_coh_ack: begin
-        lce_resp_header_cast_o.addr = lce_cmd_header_cast_i.addr;
+        lce_resp_header_cast_o.addr = lce_cmd_addr_block_aligned;
         lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_coh_ack;
         lce_resp_header_cast_o.payload.src_id = lce_id_i;
         lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;
@@ -566,7 +570,7 @@ module bp_lce_cmd
       e_tr: begin
 
         lce_cmd_header_cast_o.msg_type.cmd = e_bedrock_cmd_data;
-        lce_cmd_header_cast_o.addr = lce_cmd_header_cast_i.addr;
+        lce_cmd_header_cast_o.addr = lce_cmd_addr_block_aligned;
         lce_cmd_header_cast_o.size = cmd_block_size_lp;
         // form the outbound message
         lce_cmd_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.target;
@@ -617,7 +621,7 @@ module bp_lce_cmd
 
         // Send a null writeback if not dirty, else move to writeback
         lce_resp_data_o = '0;
-        lce_resp_header_cast_o.addr = lce_cmd_header_cast_i.addr;
+        lce_resp_header_cast_o.addr = lce_cmd_addr_block_aligned;
         lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_null_wb;
         lce_resp_header_cast_o.payload.src_id = lce_id_i;
         lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;
@@ -660,7 +664,7 @@ module bp_lce_cmd
       e_wb_dirty_send: begin
 
         lce_resp_data_o = dirty_data_r;
-        lce_resp_header_cast_o.addr = lce_cmd_header_cast_i.addr;
+        lce_resp_header_cast_o.addr = lce_cmd_addr_block_aligned;
         lce_resp_header_cast_o.msg_type.resp = e_bedrock_resp_wb;
         lce_resp_header_cast_o.payload.src_id = lce_id_i;
         lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_i.payload.src_id;

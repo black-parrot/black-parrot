@@ -451,7 +451,7 @@ module bp_me_cce_to_cache
 
   // requirement from BedRock Stream interface
   if (!(`BSG_IS_POW2(l2_data_width_p) || l2_data_width_p < 64 || l2_data_width_p > 512))
-    $error("l2 data width must be 64, 128, 256, or 512");
+    $error("L2 data width must be 64, 128, 256, or 512");
 
 endmodule
 

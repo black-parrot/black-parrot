@@ -31,7 +31,7 @@ module bp_cce_inst_predecode
 
   // parameter checks
   if (width_p > `bp_cce_inst_addr_width)
-    $fatal(0, "Desired address width is larger than address width used in instruction encoding");
+    $error("Desired address width is larger than address width used in instruction encoding");
 
   wire [width_p-1:0] pc_plus_one = width_p'(pc_i + 'd1);
   wire [width_p-1:0] branch_target = inst_i.type_u.btype.target[0+:width_p];

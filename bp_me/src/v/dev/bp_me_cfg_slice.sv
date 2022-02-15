@@ -1,3 +1,11 @@
+/**
+ *
+ * Name:
+ *   bp_me_cfg_slice.sv
+ *
+ * Description:
+ *
+ */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
@@ -38,6 +46,8 @@ module bp_me_cfg_slice
    , output logic [cce_instr_width_gp-1:0]          cce_ucode_data_o
    , input [cce_instr_width_gp-1:0]                 cce_ucode_data_i
    );
+
+  if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
