@@ -13,7 +13,6 @@ module wrapper
    , parameter uce_p = 1
    , parameter num_caches_p = 1
    , parameter wt_p = 1
-   // These alternate parameters are untested
    , parameter sets_p = dcache_sets_p
    , parameter assoc_p = dcache_assoc_p
    , parameter block_width_p = dcache_block_width_p
@@ -54,13 +53,13 @@ module wrapper
    , output logic [num_caches_p-1:0]                     v_o
 
    , output logic [mem_header_width_lp-1:0]            mem_cmd_header_o
-   , output logic [l2_fill_width_p-1:0]                mem_cmd_data_o
+   , output logic [l2_data_width_p-1:0]                mem_cmd_data_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_and_i
    , output logic                                      mem_cmd_last_o
 
    , input [mem_header_width_lp-1:0]                   mem_resp_header_i
-   , input [l2_fill_width_p-1:0]                       mem_resp_data_i
+   , input [l2_data_width_p-1:0]                       mem_resp_data_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_ready_and_o
    , input                                             mem_resp_last_i
@@ -368,7 +367,7 @@ module wrapper
         begin : uce
          bp_uce
           #(.bp_params_p(bp_params_p)
-            ,.mem_data_width_p(l2_fill_width_p)
+            ,.mem_data_width_p(l2_data_width_p)
             ,.assoc_p(assoc_p)
             ,.sets_p(sets_p)
             ,.block_width_p(block_width_p)

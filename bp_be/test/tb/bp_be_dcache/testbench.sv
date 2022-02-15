@@ -42,8 +42,10 @@ module testbench
    )
   (output bit reset_i);
 
-  if ((uce_p == 0) && (l2_fill_width_p != dword_width_gp))
-    $fatal(0, "CCE requires L2 fill width same as bedrock data width for memory networks");
+  if ((uce_p == 0) && (l2_data_width_p != bedrock_data_width_p))
+    $fatal(0, "CCE requires L2 fill width same as bedrock data width");
+  if ((uce_p == 0) && (dcache_fill_width_p != bedrock_data_width_p))
+    $fatal(0, "CCE requires $ fill width same as bedrock data width");
   if ((uce_p == 1) && (num_caches_p != 1))
     $fatal(0, "UCE setup supports only 1 cache");
   if ((uce_p == 0) && (wt_p == 1))
@@ -101,7 +103,7 @@ module testbench
   logic mem_cmd_v_lo, mem_resp_v_li;
   logic mem_cmd_ready_and_lo, mem_resp_ready_and_li;
   bp_bedrock_mem_header_s mem_cmd_header_lo, mem_resp_header_li;
-  logic [l2_fill_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
+  logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
 
   logic [num_caches_p-1:0][trace_replay_data_width_lp-1:0] trace_data_lo;
   logic [num_caches_p-1:0] trace_v_lo;
@@ -243,6 +245,10 @@ module testbench
      ,.uce_p(uce_p)
      ,.wt_p(wt_p)
      ,.num_caches_p(num_caches_p)
+     ,.sets_p(dcache_sets_p)
+     ,.assoc_p(dcache_assoc_p)
+     ,.block_width_p(dcache_block_width_p)
+     ,.fill_width_p(dcache_fill_width_p)
      )
    wrapper
     (.clk_i(clk_i)
