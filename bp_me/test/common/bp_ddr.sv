@@ -15,11 +15,10 @@ module bp_ddr
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
 
    , parameter num_dma_p = 1
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
       // Total number of clients the master will be driving.
    , localparam tag_num_clients_gp = 23
      // The number of bits required to represent the max payload width
-   , localparam tag_max_payload_width_gp = 8
+   , localparam tag_max_payload_width_gp = 9
    , localparam tag_lg_max_payload_width_gp = `BSG_SAFE_CLOG2(tag_max_payload_width_gp + 1)
    )
   (input                                                    clk_i

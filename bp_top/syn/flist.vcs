@@ -24,6 +24,8 @@
 
 +incdir+$BP_TOP/test/tb/bp_tethered
 
+$BASEJUMP_STL_DIR/bsg_misc/bsg_defines.v
+
 bsg_tag_boot_rom.v
 
 ## Packages
