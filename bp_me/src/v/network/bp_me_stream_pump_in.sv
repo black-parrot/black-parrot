@@ -86,10 +86,6 @@ module bp_me_stream_pump_in
   `bp_cast_i(bp_bedrock_xce_header_s, msg_header);
   `bp_cast_o(bp_bedrock_xce_header_s, fsm_base_header);
 
-  enum logic {e_ready, e_stream} state_n, state_r;
-  wire is_ready  = (state_r == e_ready);
-  wire is_stream = (state_r == e_stream);
-
   bp_bedrock_xce_header_s msg_base_header_li;
   logic [stream_data_width_p-1:0] msg_data_li;
   logic msg_v_li, msg_ready_and_lo, msg_last_li;
@@ -103,7 +99,7 @@ module bp_me_stream_pump_in
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.msg_header_i(msg_header_i)
+     ,.msg_header_i(msg_header_cast_i)
      ,.msg_data_i(msg_data_i)
      ,.msg_v_i(msg_v_i)
      ,.msg_last_i(msg_last_i)
@@ -121,36 +117,33 @@ module bp_me_stream_pump_in
   wire nz_stream  = stream_size > '0;
   wire fsm_stream = fsm_stream_mask_p[msg_base_header_li.msg_type] & nz_stream;
   wire msg_stream = msg_stream_mask_p[msg_base_header_li.msg_type] & nz_stream;
-  wire any_stream = fsm_stream | msg_stream;
 
-  logic [stream_cnt_width_lp-1:0] stream_cnt, wrap_cnt;
-  logic cnt_up;
-  wire cnt_set = fsm_new_o;
+  logic [paddr_width_p-1:0] wrap_addr;
+  logic [stream_cnt_width_lp-1:0] wrap_cnt, full_cnt;
+  logic cnt_up, first_cnt_lo, last_cnt_lo;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
-  wire [stream_cnt_width_lp-1:0] first_cnt = msg_base_header_li.addr[stream_offset_width_lp+:stream_cnt_width_lp];
   bp_me_stream_wraparound
-   #(.max_val_p(stream_words_lp-1))
+   #(.max_val_p(stream_words_lp-1)
+     ,.addr_width_p(paddr_width_p)
+     ,.offset_width_p(stream_offset_width_lp)
+     )
    wraparound_cnt
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.size_i(size_li)
-     ,.set_i(cnt_set)
-     ,.val_i(first_cnt)
      ,.en_i(cnt_up)
+     ,.size_i(size_li)
+     ,.base_i(msg_base_header_li.addr)
 
-     ,.full_o(stream_cnt)
-     ,.wrap_o(wrap_cnt)
+     ,.addr_o(wrap_addr)
+     ,.cnt_o(full_cnt)
+
+     ,.first_o(first_cnt_lo)
+     ,.last_o(last_cnt_lo)
      );
-
-  wire [stream_cnt_width_lp-1:0] last_cnt  = first_cnt + stream_size;
-  wire is_last_cnt = (is_stream & (stream_cnt == last_cnt)) | (~fsm_stream & ~msg_stream);
-
-  wire [paddr_width_p-1:0] wrap_addr =
-    {msg_base_header_li.addr[paddr_width_p-1:block_offset_width_lp]
-     ,{stream_words_lp>0{wrap_cnt}}
-     ,msg_base_header_li.addr[0+:stream_offset_width_lp]
-     };
+  assign fsm_new_o  = first_cnt_lo & fsm_ready_and_i & fsm_v_o;
+  assign fsm_last_o = last_cnt_lo & fsm_v_o;
+  assign fsm_done_o = last_cnt_lo & fsm_ready_and_i & fsm_v_o;
 
   always_comb
     begin
@@ -164,17 +157,17 @@ module bp_me_stream_pump_in
           // 1:N
           // convert one msg message into stream of N FSM messages
           fsm_v_o = msg_v_li;
-          msg_ready_and_lo = is_last_cnt & fsm_ready_and_i;
-          cnt_up = fsm_v_o & fsm_ready_and_i & ~is_last_cnt;
-          fsm_addr_o = is_stream ? wrap_addr : msg_base_header_li.addr;
+          msg_ready_and_lo = last_cnt_lo & fsm_ready_and_i;
+          cnt_up = fsm_v_o & fsm_ready_and_i;
+          fsm_addr_o = wrap_addr;
         end
       else if (msg_stream & ~fsm_stream)
         begin
           // N:1
           // consume all but last msg input beat silently, then FSM consumes last beat
-          fsm_v_o = msg_v_li & is_last_cnt;
-          msg_ready_and_lo = ~is_last_cnt | fsm_ready_and_i;
-          cnt_up = msg_v_li & msg_ready_and_lo & ~is_last_cnt;
+          fsm_v_o = msg_v_li & last_cnt_lo;
+          msg_ready_and_lo = ~last_cnt_lo | fsm_ready_and_i;
+          cnt_up = msg_v_li & msg_ready_and_lo;
           // Hold address constant at critical address
           fsm_addr_o = msg_base_header_li.addr;
         end
@@ -183,27 +176,10 @@ module bp_me_stream_pump_in
           // 1:1
           fsm_v_o = msg_v_li;
           msg_ready_and_lo = fsm_ready_and_i;
-          cnt_up = fsm_v_o & fsm_ready_and_i & ~is_last_cnt;
-          fsm_addr_o = is_stream ? wrap_addr : msg_base_header_li.addr;
+          cnt_up = fsm_v_o & fsm_ready_and_i;
+          fsm_addr_o = wrap_addr;
         end
-
-      fsm_new_o  = is_ready & fsm_v_o & fsm_ready_and_i;
-      fsm_last_o = is_last_cnt & fsm_v_o;
-      fsm_done_o = fsm_last_o & fsm_ready_and_i;
     end
-
-  always_comb
-    case (state_r)
-      e_stream: state_n = fsm_done_o ? e_ready : e_stream;
-      default : state_n = (fsm_new_o & any_stream) ? e_stream : e_ready;
-    endcase
-
-  //synopsys sync_set_reset "reset_i"
-  always_ff @(posedge clk_i)
-    if (reset_i)
-      state_r <= e_ready;
-    else
-      state_r <= state_n;
 
   // parameter checks
   if (block_width_p % stream_data_width_p != 0)
