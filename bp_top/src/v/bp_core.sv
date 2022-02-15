@@ -43,10 +43,16 @@ module bp_core
   , input [1:0]                                      lce_cmd_v_i
   , output logic [1:0]                               lce_cmd_yumi_o
 
-  , output logic [1:0][lce_cmd_header_width_lp-1:0]  lce_cmd_header_o
-  , output logic [1:0][cce_block_width_p-1:0]        lce_cmd_data_o
-  , output logic [1:0]                               lce_cmd_v_o
-  , input [1:0]                                      lce_cmd_ready_then_i
+  // LCE-LCE interface
+  , input [1:0][lce_fill_header_width_lp-1:0]        lce_fill_header_i
+  , input [1:0][cce_block_width_p-1:0]               lce_fill_data_i
+  , input [1:0]                                      lce_fill_v_i
+  , output logic [1:0]                               lce_fill_yumi_o
+
+  , output logic [1:0][lce_fill_header_width_lp-1:0] lce_fill_header_o
+  , output logic [1:0][cce_block_width_p-1:0]        lce_fill_data_o
+  , output logic [1:0]                               lce_fill_v_o
+  , input [1:0]                                      lce_fill_ready_then_i
 
   , input                                            timer_irq_i
   , input                                            software_irq_i
@@ -229,10 +235,15 @@ module bp_core
      ,.lce_cmd_v_i(lce_cmd_v_i[0])
      ,.lce_cmd_yumi_o(lce_cmd_yumi_o[0])
 
-     ,.lce_cmd_header_o(lce_cmd_header_o[0])
-     ,.lce_cmd_data_o(lce_cmd_data_o[0])
-     ,.lce_cmd_v_o(lce_cmd_v_o[0])
-     ,.lce_cmd_ready_then_i(lce_cmd_ready_then_i[0])
+     ,.lce_fill_header_i(lce_fill_header_i[0])
+     ,.lce_fill_data_i(lce_fill_data_i[0])
+     ,.lce_fill_v_i(lce_fill_v_i[0])
+     ,.lce_fill_yumi_o(lce_fill_yumi_o[0])
+
+     ,.lce_fill_header_o(lce_fill_header_o[0])
+     ,.lce_fill_data_o(lce_fill_data_o[0])
+     ,.lce_fill_v_o(lce_fill_v_o[0])
+     ,.lce_fill_ready_then_i(lce_fill_ready_then_i[0])
      );
 
   bp_lce
@@ -297,10 +308,15 @@ module bp_core
      ,.lce_cmd_v_i(lce_cmd_v_i[1])
      ,.lce_cmd_yumi_o(lce_cmd_yumi_o[1])
 
-     ,.lce_cmd_header_o(lce_cmd_header_o[1])
-     ,.lce_cmd_data_o(lce_cmd_data_o[1])
-     ,.lce_cmd_v_o(lce_cmd_v_o[1])
-     ,.lce_cmd_ready_then_i(lce_cmd_ready_then_i[1])
+     ,.lce_fill_header_i(lce_fill_header_i[1])
+     ,.lce_fill_data_i(lce_fill_data_i[1])
+     ,.lce_fill_v_i(lce_fill_v_i[1])
+     ,.lce_fill_yumi_o(lce_fill_yumi_o[1])
+
+     ,.lce_fill_header_o(lce_fill_header_o[1])
+     ,.lce_fill_data_o(lce_fill_data_o[1])
+     ,.lce_fill_v_o(lce_fill_v_o[1])
+     ,.lce_fill_ready_then_i(lce_fill_ready_then_i[1])
      );
 
 endmodule

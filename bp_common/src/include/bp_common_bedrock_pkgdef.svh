@@ -49,7 +49,6 @@
     ,e_bedrock_mem_uc_wr   = 4'b0011  // Uncached store (uncached in L2/LLC)
     ,e_bedrock_mem_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
     ,e_bedrock_mem_amo     = 4'b0101  // Atomic operation in L2/LLC
-    // 4'b0101 - 4'b1111 reserved // custom
   } bp_bedrock_mem_type_e;
 
   /*
@@ -63,7 +62,6 @@
     ,e_bedrock_req_uc_rd     = 4'b0010 // Uncached Read
     ,e_bedrock_req_uc_wr     = 4'b0011 // Uncached Write
     ,e_bedrock_req_uc_amo    = 4'b0100 // AMO
-    // 4'b0100 - 4'b1111 reserved / custom
   } bp_bedrock_req_type_e;
 
   /*
@@ -90,9 +88,7 @@
 
 
   /*
-   * bp_bedrock_cmd_type_e defines the various commands that an CCE may issue to an LCE
-   * e_bedrock_cmd_sync is used at the end of reset to direct the LCE to inform the CCE it is ready
-   * e_bedrock_cmd_set_clear is sent by the CCE to invalidate an entire cache set in the LCE
+   * bp_bedrock_cmd_type_e defines commands from CCE to LCE
    */
   typedef enum logic [3:0]
   {
@@ -101,36 +97,34 @@
     ,e_bedrock_cmd_inv             = 4'b0010 // invalidate block, respond with inv_ack
     ,e_bedrock_cmd_st              = 4'b0011 // set state
     ,e_bedrock_cmd_data            = 4'b0100 // data, adddress, and state to LCE, i.e., cache block fill
-    ,e_bedrock_cmd_st_wakeup       = 4'b0101 // set state and wakeup
+    ,e_bedrock_cmd_st_wakeup       = 4'b0101 // set state and wakeup (upgrade response, state only)
     ,e_bedrock_cmd_wb              = 4'b0110 // writeback block
     ,e_bedrock_cmd_st_wb           = 4'b0111 // set state and writeback block
     ,e_bedrock_cmd_tr              = 4'b1000 // transfer block
     ,e_bedrock_cmd_st_tr           = 4'b1001 // set state and transfer block
     ,e_bedrock_cmd_st_tr_wb        = 4'b1010 // set state, transfer, and writeback block
-    ,e_bedrock_cmd_uc_data         = 4'b1011 // uncached data to LCE
-    ,e_bedrock_cmd_uc_st_done      = 4'b1100 // uncached store complete
-    // 4'b1101 - 4'b1111 reserved / custom
+    ,e_bedrock_cmd_uc_data         = 4'b1011 // uncached data
+    ,e_bedrock_cmd_uc_st_done      = 4'b1100 // uncached request complete
   } bp_bedrock_cmd_type_e;
 
-  /* bp_bedrock_resp_type_e defines the different LCE-CCE response messages
-   * e_bedrock_resp_sync_ack acknowledges receipt and processing of a Sync command
-   * e_bedrock_resp_inv_ack acknowledges that an LCE has processed an Invalidation command
-   * e_bedrock_resp_coh_ack acknowledges than an LCE has received both a set tag command AND a data
-   *   command, or a set tag and wakeup command from the CCE. The sending LCE considers itself woken
-   *   up after sending this ACK.
-   * e_bedrock_resp_wb indicates the data field (cache block data) is valid, and that the LCE ahd the
-   *   cache block in a dirty state
-   * e_bedrock_resp_null_wb indicates that the LCE never wrote to the cache block and the block is still
-   *   clean. The data field should be 0 and is invalid.
+  /*
+   * bp_bedrock_fill_type_e defines LCE to LCE messages
    */
   typedef enum logic [3:0]
   {
-    e_bedrock_resp_sync_ack    = 4'b0000
-    ,e_bedrock_resp_inv_ack    = 4'b0001
-    ,e_bedrock_resp_coh_ack    = 4'b0010
-    ,e_bedrock_resp_wb         = 4'b0011  // Normal Writeback Response (full data)
-    ,e_bedrock_resp_null_wb    = 4'b0100  // Null Writeback Response (no data)
-    // 4'b0101 - 4'b1111 reserved / custom
+    e_bedrock_fill_data         = 4'b0000 // data, adddress, and state to LCE, i.e., cache block fill
+  } bp_bedrock_fill_type_e;
+
+  /*
+   * bp_bedrock_resp_type_e defines the different LCE-CCE response messages
+   */
+  typedef enum logic [3:0]
+  {
+    e_bedrock_resp_sync_ack    = 4'b0000 // ack to sync command. LCE is ready for cacheable operation
+    ,e_bedrock_resp_inv_ack    = 4'b0001 // ack to invalidate. Block is now invalid at LCE
+    ,e_bedrock_resp_coh_ack    = 4'b0010 // ack that coherence request is complete
+    ,e_bedrock_resp_wb         = 4'b0011 // Normal Writeback Response (full data)
+    ,e_bedrock_resp_null_wb    = 4'b0100 // Null Writeback Response (no data)
   } bp_bedrock_resp_type_e;
 
   /*
@@ -140,6 +134,7 @@
   {
     bp_bedrock_req_type_e    req;
     bp_bedrock_cmd_type_e    cmd;
+    bp_bedrock_fill_type_e   fill;
     bp_bedrock_resp_type_e   resp;
     bp_bedrock_mem_type_e    mem;
   } bp_bedrock_msg_u;
@@ -189,6 +184,7 @@
   localparam mem_resp_payload_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd) | (1 << e_bedrock_mem_amo);
   localparam lce_req_payload_mask_gp = (1 << e_bedrock_req_uc_wr) | (1 << e_bedrock_req_uc_amo);
   localparam lce_cmd_payload_mask_gp = (1 << e_bedrock_cmd_data) | (1 << e_bedrock_cmd_uc_data);
+  localparam lce_fill_payload_mask_gp = (1 << e_bedrock_fill_data);
   localparam lce_resp_payload_mask_gp = (1 << e_bedrock_resp_wb);
 
 `endif

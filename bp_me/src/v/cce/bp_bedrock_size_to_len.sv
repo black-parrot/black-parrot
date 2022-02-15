@@ -39,7 +39,8 @@ module bp_bedrock_size_to_len
 
   // parameter checks
   if (!(len_width_p >= `BSG_SAFE_CLOG2(msg_size_128_beats_lp)))
-    $error("len_width_p must be large enough for max size messages");
+    $error("len_width_p must be large enough for max size messages, !(%d >= %d)"
+           , len_width_p, `BSG_SAFE_CLOG2(msg_size_128_beats_lp));
   if (!(`BSG_IS_POW2(beat_width_p)))
     $error("beat_width_p must be a power of two");
   if (beat_width_p < 8)

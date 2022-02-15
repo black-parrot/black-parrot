@@ -107,24 +107,96 @@ module bp_lce
     , output logic                                   lce_cmd_yumi_o
 
     // LCE-LCE interface
-    // Cmd_o: ready->valid
-    , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
-    , output logic [cce_block_width_p-1:0]           lce_cmd_data_o
-    , output logic                                   lce_cmd_v_o
-    , input                                          lce_cmd_ready_then_i
+    // Fill_i: valid->yumi
+    , input [lce_fill_header_width_lp-1:0]           lce_fill_header_i
+    , input [cce_block_width_p-1:0]                  lce_fill_data_i
+    , input                                          lce_fill_v_i
+    , output logic                                   lce_fill_yumi_o
+
+    // Fill_o: ready->valid
+    , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
+    , output logic [cce_block_width_p-1:0]           lce_fill_data_o
+    , output logic                                   lce_fill_v_o
+    , input                                          lce_fill_ready_then_i
   );
 
   // parameter checks
   if ((sets_p <= 1) || !(`BSG_IS_POW2(sets_p)))
-    $fatal(0,"LCE sets must be greater than 1 and power of two");
+    $error("LCE sets must be greater than 1 and power of two");
   if ((block_width_p % 8 != 0) || !(`BSG_IS_POW2(block_width_p)))
-    $fatal(0,"LCE block width must be a whole number of bytes and power of two");
+    $error("LCE block width must be a whole number of bytes and power of two");
   if (block_width_p > 1024)
-    $fatal(0,"LCE block width must be no greater than 128 bytes");
+    $error("LCE block width must be no greater than 128 bytes");
   if (fill_width_p != block_width_p)
-    $fatal(0,"LCE block width must be equal to fill width. Partial fill is not supported");
+    $error("LCE block width must be equal to fill width. Partial fill is not supported");
   if (!(`BSG_IS_POW2(assoc_p)))
-    $fatal(0,"LCE assoc must be power of two");
+    $error("LCE assoc must be power of two");
+
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+
+  // LCE-Cache Interface Arbitration
+  bp_cache_data_mem_pkt_s fill_data_mem_pkt_lo, cmd_data_mem_pkt_lo;
+  bp_cache_tag_mem_pkt_s fill_tag_mem_pkt_lo, cmd_tag_mem_pkt_lo;
+  logic fill_data_mem_pkt_v_lo, cmd_data_mem_pkt_v_lo;
+  logic fill_data_mem_pkt_yumi_li, cmd_data_mem_pkt_yumi_li;
+  logic fill_tag_mem_pkt_v_lo, cmd_tag_mem_pkt_v_lo;
+  logic fill_tag_mem_pkt_yumi_li, cmd_tag_mem_pkt_yumi_li;
+
+  // muxes for cache pkt interface out
+  // priority to Fill FSM
+  // gate yumi in using Fill FSM signals
+  bsg_mux
+    #(.width_p($bits(bp_cache_data_mem_pkt_s)+1)
+      ,.els_p(2)
+      )
+    data_mem_pkt_mux
+     (.data_i({{fill_data_mem_pkt_v_lo, fill_data_mem_pkt_lo}
+               ,{cmd_data_mem_pkt_v_lo, cmd_data_mem_pkt_lo}})
+      ,.sel_i(fill_data_mem_pkt_v_lo)
+      ,.data_o({data_mem_pkt_v_o, data_mem_pkt_o})
+      );
+
+  bsg_mux
+    #(.width_p($bits(bp_cache_tag_mem_pkt_s)+1)
+      ,.els_p(2)
+      )
+    tag_mem_pkt_mux
+     (.data_i({{fill_tag_mem_pkt_v_lo, fill_tag_mem_pkt_lo}
+               ,{cmd_tag_mem_pkt_v_lo, cmd_tag_mem_pkt_lo}})
+      ,.sel_i(fill_tag_mem_pkt_v_lo)
+      ,.data_o({tag_mem_pkt_v_o, tag_mem_pkt_o})
+      );
+
+  always_comb begin
+    fill_data_mem_pkt_yumi_li = fill_data_mem_pkt_v_lo & data_mem_pkt_yumi_i;
+    cmd_data_mem_pkt_yumi_li = ~fill_data_mem_pkt_v_lo & cmd_data_mem_pkt_v_lo & data_mem_pkt_yumi_i;
+    fill_tag_mem_pkt_yumi_li = fill_tag_mem_pkt_v_lo & tag_mem_pkt_yumi_i;
+    cmd_tag_mem_pkt_yumi_li = ~fill_tag_mem_pkt_v_lo & cmd_tag_mem_pkt_v_lo & tag_mem_pkt_yumi_i;
+  end
+
+  // LCE Response Network Arbitration
+  bp_bedrock_lce_resp_header_s cmd_lce_resp_header_lo, fill_lce_resp_header_lo;
+  logic cmd_lce_resp_v_lo, fill_lce_resp_v_lo;
+  logic cmd_lce_resp_ready_then_li, fill_lce_resp_ready_then_li;
+
+  bsg_mux
+    #(.width_p($bits(bp_bedrock_lce_resp_header_s)+1)
+      ,.els_p(2)
+      )
+    lce_resp_header_mux
+     (.data_i({{fill_lce_resp_v_lo, fill_lce_resp_header_lo}
+               ,{cmd_lce_resp_v_lo, cmd_lce_resp_header_lo}})
+      ,.sel_i(fill_lce_resp_v_lo)
+      ,.data_o({lce_resp_v_o, lce_resp_header_o})
+      );
+
+  // Headers are single beat transactions
+  // Fill module has priority, and sends if able. Otherwise, Command module can send
+  always_comb begin
+    fill_lce_resp_ready_then_li = lce_resp_ready_then_i;
+    cmd_lce_resp_ready_then_li = ~fill_lce_resp_v_lo & lce_resp_ready_then_i;
+  end
 
   // LCE Request Module
   logic req_ready_lo;
@@ -169,7 +241,8 @@ module bp_lce
       );
 
   // LCE Command Module
-  logic cmd_ready_lo, cmd_busy_lo;
+  logic cmd_ready_lo;
+  logic cmd_cache_req_complete_lo, cmd_cache_req_critical_tag_lo, cmd_cache_req_critical_data_lo;
   bp_lce_cmd
     #(.bp_params_p(bp_params_p)
       ,.assoc_p(assoc_p)
@@ -189,19 +262,19 @@ module bp_lce
 
       ,.ready_o(cmd_ready_lo)
       ,.sync_done_o(sync_done_lo)
-      ,.cache_req_complete_o(cache_req_complete_o)
-      ,.cache_req_critical_tag_o(cache_req_critical_tag_o)
-      ,.cache_req_critical_data_o(cache_req_critical_data_o)
+      ,.cache_req_complete_o(cmd_cache_req_complete_lo)
+      ,.cache_req_critical_tag_o(cmd_cache_req_critical_tag_lo)
+      ,.cache_req_critical_data_o(cmd_cache_req_critical_data_lo)
       ,.uc_store_req_complete_o(uc_store_req_complete_lo)
 
-      ,.data_mem_pkt_o(data_mem_pkt_o)
-      ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
-      ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
+      ,.data_mem_pkt_o(cmd_data_mem_pkt_lo)
+      ,.data_mem_pkt_v_o(cmd_data_mem_pkt_v_lo)
+      ,.data_mem_pkt_yumi_i(cmd_data_mem_pkt_yumi_li)
       ,.data_mem_i(data_mem_i)
 
-      ,.tag_mem_pkt_o(tag_mem_pkt_o)
-      ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
-      ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_i)
+      ,.tag_mem_pkt_o(cmd_tag_mem_pkt_lo)
+      ,.tag_mem_pkt_v_o(cmd_tag_mem_pkt_v_lo)
+      ,.tag_mem_pkt_yumi_i(cmd_tag_mem_pkt_yumi_li)
       ,.tag_mem_i(tag_mem_i)
 
       ,.stat_mem_pkt_o(stat_mem_pkt_o)
@@ -209,22 +282,51 @@ module bp_lce
       ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
       ,.stat_mem_i(stat_mem_i)
 
-      ,.lce_cmd_header_i(lce_cmd_header_i)
-      ,.lce_cmd_data_i(lce_cmd_data_i)
-      ,.lce_cmd_v_i(lce_cmd_v_i)
-      ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-
-      ,.lce_resp_header_o(lce_resp_header_o)
+      ,.lce_resp_header_o(cmd_lce_resp_header_lo)
       ,.lce_resp_data_o(lce_resp_data_o)
-      ,.lce_resp_v_o(lce_resp_v_o)
-      ,.lce_resp_ready_then_i(lce_resp_ready_then_i)
+      ,.lce_resp_v_o(cmd_lce_resp_v_lo)
+      ,.lce_resp_ready_then_i(cmd_lce_resp_ready_then_li)
 
-      ,.lce_cmd_header_o(lce_cmd_header_o)
-      ,.lce_cmd_data_o(lce_cmd_data_o)
-      ,.lce_cmd_v_o(lce_cmd_v_o)
-      ,.lce_cmd_ready_then_i(lce_cmd_ready_then_i)
+      ,.*
       );
 
+  // LCE Fill Module
+  logic fill_ready_lo;
+  logic fill_cache_req_complete_lo, fill_cache_req_critical_tag_lo, fill_cache_req_critical_data_lo;
+  bp_lce_fill
+    #(.bp_params_p(bp_params_p)
+      ,.assoc_p(assoc_p)
+      ,.sets_p(sets_p)
+      ,.block_width_p(block_width_p)
+      ,.fill_width_p(fill_width_p)
+      ,.data_mem_invert_clk_p(data_mem_invert_clk_p)
+      ,.tag_mem_invert_clk_p(tag_mem_invert_clk_p)
+      )
+    fill
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.lce_id_i(lce_id_i)
+
+      ,.ready_o(fill_ready_lo)
+      ,.cache_req_complete_o(fill_cache_req_complete_lo)
+      ,.cache_req_critical_tag_o(fill_cache_req_critical_tag_lo)
+      ,.cache_req_critical_data_o(fill_cache_req_critical_data_lo)
+
+      ,.data_mem_pkt_o(fill_data_mem_pkt_lo)
+      ,.data_mem_pkt_v_o(fill_data_mem_pkt_v_lo)
+      ,.data_mem_pkt_yumi_i(fill_data_mem_pkt_yumi_li)
+
+      ,.tag_mem_pkt_o(fill_tag_mem_pkt_lo)
+      ,.tag_mem_pkt_v_o(fill_tag_mem_pkt_v_lo)
+      ,.tag_mem_pkt_yumi_i(fill_tag_mem_pkt_yumi_li)
+
+      ,.lce_resp_header_o(fill_lce_resp_header_lo)
+      ,.lce_resp_v_o(fill_lce_resp_v_lo)
+      ,.lce_resp_ready_then_i(fill_lce_resp_ready_then_li)
+
+      ,.*
+      );
 
   // LCE timeout logic
   //
@@ -258,7 +360,13 @@ module bp_lce
   // - LCE Request module is in ready state and free credits exist
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
   // - LCE Command module is ready to process commands (raised after initialization complete)
-  assign cache_req_busy_o = cache_req_credits_full_o | timeout | ~cmd_ready_lo | ~req_ready_lo;
+  assign cache_req_busy_o = cache_req_credits_full_o | timeout
+                            | ~cmd_ready_lo | ~req_ready_lo | ~fill_ready_lo;
+
+  // cache request completion signals
+  assign cache_req_complete_o = cmd_cache_req_complete_lo | fill_cache_req_complete_lo;
+  assign cache_req_critical_tag_o = cmd_cache_req_critical_tag_lo | fill_cache_req_critical_tag_lo;
+  assign cache_req_critical_data_o = cmd_cache_req_critical_data_lo | fill_cache_req_critical_data_lo;
 
 endmodule
 

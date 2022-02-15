@@ -238,6 +238,7 @@ $BP_FE_DIR/src/v/bp_fe_top.sv
 $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
+$BP_ME_DIR/src/v/lce/bp_lce_fill.sv
 # Cache
 $BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
 $BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
@@ -281,6 +282,7 @@ $BP_ME_DIR/src/v/network/bp_me_cce_to_mem_link_send.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_cmd.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_fill.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_req.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_resp.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem.sv

@@ -58,10 +58,15 @@ module bp_me_nonsynth_lce_tracer
     ,input                                                  lce_cmd_v_i
     ,input                                                  lce_cmd_ready_and_i
 
-    ,input [lce_cmd_header_width_lp-1:0]                    lce_cmd_header_o_i
-    ,input [cce_block_width_p-1:0]                          lce_cmd_data_o_i
-    ,input                                                  lce_cmd_o_v_i
-    ,input                                                  lce_cmd_o_ready_and_i
+    ,input [lce_fill_header_width_lp-1:0]                   lce_fill_header_i
+    ,input [cce_block_width_p-1:0]                          lce_fill_data_i
+    ,input                                                  lce_fill_v_i
+    ,input                                                  lce_fill_ready_and_i
+
+    ,input [lce_fill_header_width_lp-1:0]                   lce_fill_header_o_i
+    ,input [cce_block_width_p-1:0]                          lce_fill_data_o_i
+    ,input                                                  lce_fill_o_v_i
+    ,input                                                  lce_fill_o_ready_and_i
 
     ,input                                                  cache_req_complete_i
     ,input                                                  uc_store_req_complete_i
@@ -72,7 +77,8 @@ module bp_me_nonsynth_lce_tracer
   `bp_cast_i(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
   `bp_cast_i(bp_bedrock_lce_resp_header_s, lce_resp_header);
-  `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header_o);
+  `bp_cast_i(bp_bedrock_lce_fill_header_s, lce_fill_header);
+  `bp_cast_i(bp_bedrock_lce_fill_header_s, lce_fill_header_o);
 
   // Structs for output messages
 
@@ -156,18 +162,33 @@ module bp_me_nonsynth_lce_tracer
         end
       end
 
-      // command from LCE
-      if (lce_cmd_o_v_i & lce_cmd_o_ready_and_i) begin
-        $fdisplay(file, "%12t |: LCE[%0d] CMD OUT dst[%0d] addr[%H] CCE[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b]"
-                  , $time, lce_id_i, lce_cmd_header_o_cast_i.payload.dst_id, lce_cmd_header_o_cast_i.addr, lce_cmd_header_o_cast_i.payload.src_id, lce_cmd_header_o_cast_i.msg_type.cmd
-                  , lce_cmd_header_o_cast_i.addr[block_offset_bits_lp+:lg_sets_lp]
-                  , lce_cmd_header_o_cast_i.payload.way_id, lce_cmd_header_o_cast_i.payload.state, lce_cmd_header_o_cast_i.payload.target, lce_cmd_header_o_cast_i.payload.target_way_id
-                  , lce_cmd_header_o_cast_i.size
+      // fill to LCE
+      if (lce_fill_v_i & lce_fill_ready_and_i) begin
+        $fdisplay(file, "%12t |: LCE[%0d] FILL IN addr[%H] cce[%0d] msg[%b] set[%0d] way[%0d] state[%b] len[%b]"
+                  , $time, lce_fill_header_cast_i.payload.dst_id, lce_fill_header_cast_i.addr, lce_fill_header_cast_i.payload.src_id, lce_fill_header_cast_i.msg_type.fill
+                  , lce_fill_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp]
+                  , lce_fill_header_cast_i.payload.way_id, lce_fill_header_cast_i.payload.state
+                  , lce_fill_header_cast_i.size
                   );
-        if (lce_cmd_header_o_cast_i.msg_type.cmd inside {e_bedrock_cmd_data}) begin
-          $fdisplay(file, "%12t |: LCE[%0d] CMD OUT DATA %H"
+        if (lce_fill_header_cast_i.msg_type.fill inside {e_bedrock_fill_data}) begin
+          $fdisplay(file, "%12t |: LCE[%0d] FILL DATA %H"
+                    , $time, lce_fill_header_cast_i.payload.dst_id
+                    , lce_fill_data_i
+                    );
+        end
+      end
+      // fill from LCE
+      if (lce_fill_o_v_i & lce_fill_o_ready_and_i) begin
+        $fdisplay(file, "%12t |: LCE[%0d] FILL OUT dst[%0d] addr[%H] CCE[%0d] msg[%b] set[%0d] way[%0d] state[%b] len[%b]"
+                  , $time, lce_id_i, lce_fill_header_o_cast_i.payload.dst_id, lce_fill_header_o_cast_i.addr, lce_fill_header_o_cast_i.payload.src_id, lce_fill_header_o_cast_i.msg_type.fill
+                  , lce_fill_header_o_cast_i.addr[block_offset_bits_lp+:lg_sets_lp]
+                  , lce_fill_header_o_cast_i.payload.way_id, lce_fill_header_o_cast_i.payload.state
+                  , lce_fill_header_o_cast_i.size
+                  );
+        if (lce_fill_header_o_cast_i.msg_type.fill inside {e_bedrock_fill_data}) begin
+          $fdisplay(file, "%12t |: LCE[%0d] FILL OUT DATA %H"
                     , $time, lce_id_i
-                    , lce_cmd_data_o_i
+                    , lce_fill_data_o_i
                     );
         end
       end

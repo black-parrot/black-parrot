@@ -112,23 +112,32 @@ module wrapper
    bp_bedrock_lce_req_header_s [num_caches_p-1:0] lce_req_header_lo;
    logic [num_caches_p-1:0][cce_block_width_p-1:0] lce_req_data_lo;
    logic [num_caches_p-1:0] lce_req_ready_and_li, lce_req_v_lo;
+
    bp_bedrock_lce_cmd_header_s [num_caches_p-1:0] lce_cmd_header_li;
    logic [num_caches_p-1:0][cce_block_width_p-1:0] lce_cmd_data_li;
    logic [num_caches_p-1:0] lce_cmd_v_li, lce_cmd_yumi_lo;
+
    bp_bedrock_lce_resp_header_s [num_caches_p-1:0] lce_resp_header_lo;
    logic [num_caches_p-1:0][cce_block_width_p-1:0] lce_resp_data_lo;
    logic [num_caches_p-1:0] lce_resp_v_lo, lce_resp_ready_and_li;
-   bp_bedrock_lce_cmd_header_s [num_caches_p-1:0] lce_cmd_header_lo;
-   logic [num_caches_p-1:0][cce_block_width_p-1:0] lce_cmd_data_lo;
-   logic [num_caches_p-1:0] lce_cmd_v_lo, lce_cmd_ready_and_li;
+
+   bp_bedrock_lce_fill_header_s [num_caches_p-1:0] lce_fill_header_li;
+   logic [num_caches_p-1:0][cce_block_width_p-1:0] lce_fill_data_li;
+   logic [num_caches_p-1:0] lce_fill_v_li, lce_fill_yumi_lo;
+
+   bp_bedrock_lce_fill_header_s [num_caches_p-1:0] lce_fill_header_lo;
+   logic [num_caches_p-1:0][cce_block_width_p-1:0] lce_fill_data_lo;
+   logic [num_caches_p-1:0] lce_fill_v_lo, lce_fill_ready_and_li;
 
    // LCE-CCE connections - BedRock Lite - to/from converters
    bp_bedrock_lce_req_header_s cce_lce_req_header_li;
    logic [cce_block_width_p-1:0] cce_lce_req_data_li;
    logic cce_lce_req_v_li, cce_lce_req_yumi_lo;
+
    bp_bedrock_lce_cmd_header_s cce_lce_cmd_header_lo;
    logic [cce_block_width_p-1:0] cce_lce_cmd_data_lo;
    logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_and_li;
+
    bp_bedrock_lce_resp_header_s cce_lce_resp_header_li;
    logic [cce_block_width_p-1:0] cce_lce_resp_data_li;
    logic cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
@@ -138,13 +147,16 @@ module wrapper
 
    `declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_header_s, cce_block_width_p);
    `declare_bp_lce_cmd_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_header_s, cce_block_width_p);
+   `declare_bp_lce_fill_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_fill_header_s, cce_block_width_p);
    `declare_bp_lce_resp_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_resp_header_s, cce_block_width_p);
    `declare_bsg_ready_and_link_sif_s($bits(bp_lce_req_wormhole_packet_s), coh_req_ready_and_link_s);
    `declare_bsg_ready_and_link_sif_s($bits(bp_lce_cmd_wormhole_packet_s), coh_cmd_ready_and_link_s);
+   `declare_bsg_ready_and_link_sif_s($bits(bp_lce_fill_wormhole_packet_s), coh_fill_ready_and_link_s);
    `declare_bsg_ready_and_link_sif_s($bits(bp_lce_resp_wormhole_packet_s), coh_resp_ready_and_link_s);
 
    coh_req_ready_and_link_s [num_caches_p-1:0]  lce_req_link_li, lce_req_link_lo;
    coh_cmd_ready_and_link_s [num_caches_p-1:0]  lce_cmd_link_li, lce_cmd_link_lo;
+   coh_fill_ready_and_link_s [num_caches_p-1:0]  lce_fill_link_li, lce_fill_link_lo;
    coh_resp_ready_and_link_s [num_caches_p-1:0] lce_resp_link_li, lce_resp_link_lo;
 
    coh_req_ready_and_link_s cce_lce_req_link_li, cce_lce_req_link_lo;
@@ -152,8 +164,10 @@ module wrapper
    coh_resp_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
 
    logic [num_caches_p-1:0] fifo_lce_cmd_ready_lo;
+   logic [num_caches_p-1:0] fifo_lce_fill_ready_lo;
    bp_lce_req_wormhole_packet_s [num_caches_p-1:0] lce_req_packet_lo;
-   bp_lce_cmd_wormhole_packet_s [num_caches_p-1:0] lce_cmd_packet_lo, lce_cmd_packet_li, fifo_lce_cmd_data_lo;
+   bp_lce_cmd_wormhole_packet_s [num_caches_p-1:0] lce_cmd_packet_li, fifo_lce_cmd_data_lo;
+   bp_lce_fill_wormhole_packet_s [num_caches_p-1:0] lce_fill_packet_lo, lce_fill_packet_li, fifo_lce_fill_data_lo;
    bp_lce_resp_wormhole_packet_s [num_caches_p-1:0] lce_resp_packet_lo;
 
    for (genvar i = 0; i < num_caches_p; i++)
@@ -339,10 +353,15 @@ module wrapper
               ,.lce_cmd_v_i(lce_cmd_v_li[i])
               ,.lce_cmd_yumi_o(lce_cmd_yumi_lo[i])
 
-              ,.lce_cmd_header_o(lce_cmd_header_lo[i])
-              ,.lce_cmd_data_o(lce_cmd_data_lo[i])
-              ,.lce_cmd_v_o(lce_cmd_v_lo[i])
-              ,.lce_cmd_ready_then_i(lce_cmd_ready_and_li[i])
+              ,.lce_fill_header_i(lce_fill_header_li[i])
+              ,.lce_fill_data_i(lce_fill_data_li[i])
+              ,.lce_fill_v_i(lce_fill_v_li[i])
+              ,.lce_fill_yumi_o(lce_fill_yumi_lo[i])
+
+              ,.lce_fill_header_o(lce_fill_header_lo[i])
+              ,.lce_fill_data_o(lce_fill_data_lo[i])
+              ,.lce_fill_v_o(lce_fill_v_lo[i])
+              ,.lce_fill_ready_then_i(lce_fill_ready_and_li[i])
               );
 
            // Request out
@@ -358,23 +377,33 @@ module wrapper
            assign lce_req_link_lo[i].ready_and_rev = 1'b0;
            assign lce_req_ready_and_li[i] = lce_req_link_li[i].ready_and_rev;
 
-           // Command out
-           assign lce_cmd_packet_lo[i].header.msg_hdr = lce_cmd_header_lo[i];
-           assign lce_cmd_packet_lo[i].header.rtr_hdr.cid = lce_cmd_header_lo[i].payload.dst_id;
-           assign lce_cmd_packet_lo[i].header.rtr_hdr.cord = '0;
-           assign lce_cmd_packet_lo[i].header.rtr_hdr.len = coh_noc_len_width_p'(0);
-           assign lce_cmd_packet_lo[i].data = lce_cmd_data_lo[i];
-
-           // Conversion from command link to command in
+           // Conversion from cmd link to cmd in
            assign lce_cmd_link_lo[i].ready_and_rev = fifo_lce_cmd_ready_lo[i];
            assign lce_cmd_packet_li[i] = fifo_lce_cmd_data_lo[i];
            assign lce_cmd_header_li[i] = lce_cmd_packet_li[i].header.msg_hdr;
            assign lce_cmd_data_li[i] = lce_cmd_packet_li[i].data;
 
-           // Conversion from command packet to link format
-           assign lce_cmd_link_lo[i].data = lce_cmd_packet_lo[i];
-           assign lce_cmd_link_lo[i].v = lce_cmd_v_lo[i];
-           assign lce_cmd_ready_and_li[i] = lce_cmd_link_li[i].ready_and_rev;
+           // Conversion from cmd packet to link format
+           assign lce_cmd_link_lo[i].data = '0;
+           assign lce_cmd_link_lo[i].v = '0;
+
+           // Fill out
+           assign lce_fill_packet_lo[i].header.msg_hdr = lce_fill_header_lo[i];
+           assign lce_fill_packet_lo[i].header.rtr_hdr.cid = lce_fill_header_lo[i].payload.dst_id;
+           assign lce_fill_packet_lo[i].header.rtr_hdr.cord = '0;
+           assign lce_fill_packet_lo[i].header.rtr_hdr.len = coh_noc_len_width_p'(0);
+           assign lce_fill_packet_lo[i].data = lce_fill_data_lo[i];
+
+           // Conversion from fill link to fill in
+           assign lce_fill_link_lo[i].ready_and_rev = fifo_lce_fill_ready_lo[i];
+           assign lce_fill_packet_li[i] = fifo_lce_fill_data_lo[i];
+           assign lce_fill_header_li[i] = lce_fill_packet_li[i].header.msg_hdr;
+           assign lce_fill_data_li[i] = lce_fill_packet_li[i].data;
+
+           // Conversion from fill packet to link format
+           assign lce_fill_link_lo[i].data = lce_fill_packet_lo[i];
+           assign lce_fill_link_lo[i].v = lce_fill_v_lo[i];
+           assign lce_fill_ready_and_li[i] = lce_fill_link_li[i].ready_and_rev;
 
            // LCE cmd demanding -> demanding conversion
            bsg_two_fifo
@@ -383,13 +412,33 @@ module wrapper
              (.clk_i(clk_i)
               ,.reset_i(reset_i)
 
+              // from link
               ,.data_i(lce_cmd_link_li[i].data)
               ,.v_i(lce_cmd_link_li[i].v)
               ,.ready_o(fifo_lce_cmd_ready_lo[i])
 
+              // to LCE
               ,.data_o(fifo_lce_cmd_data_lo[i])
               ,.v_o(lce_cmd_v_li[i])
               ,.yumi_i(lce_cmd_yumi_lo[i])
+              );
+
+           // LCE fill demanding -> demanding conversion
+           bsg_two_fifo
+            #(.width_p($bits(bp_lce_fill_wormhole_packet_s)))
+            fill_fifo
+             (.clk_i(clk_i)
+              ,.reset_i(reset_i)
+
+              // from link
+              ,.data_i(lce_fill_link_li[i].data)
+              ,.v_i(lce_fill_link_li[i].v)
+              ,.ready_o(fifo_lce_fill_ready_lo[i])
+
+              // to LCE
+              ,.data_o(fifo_lce_fill_data_lo[i])
+              ,.v_o(lce_fill_v_li[i])
+              ,.yumi_i(lce_fill_yumi_lo[i])
               );
 
            // Response out
@@ -469,9 +518,10 @@ module wrapper
 
    if (uce_p == 0)
      begin : concentrator
-       coh_req_ready_and_link_s req_concentrated_link_li, req_concentrated_link_lo, req_concentrated_link_r;
-       coh_cmd_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo, cmd_concentrated_link_r;
-       coh_resp_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo, resp_concentrated_link_r;
+       coh_req_ready_and_link_s req_concentrated_link_li, req_concentrated_link_lo;
+       coh_cmd_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo;
+       coh_fill_ready_and_link_s fill_concentrated_link_li, fill_concentrated_link_lo;
+       coh_resp_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo;
 
        // CCE-LCE connections - BedRock Burst - to/from CCE
        logic cce_lce_req_header_v, cce_lce_req_header_ready_and;
@@ -663,7 +713,6 @@ module wrapper
           ,.concentrated_link_o(req_concentrated_link_lo)
           );
 
-       assign cmd_concentrated_link_li = cmd_concentrated_link_lo;
        // Command concentrator
        bsg_wormhole_concentrator
         #(.flit_width_p($bits(bp_lce_cmd_wormhole_packet_s))
@@ -682,13 +731,31 @@ module wrapper
           ,.concentrated_link_i(cmd_concentrated_link_li)
           ,.concentrated_link_o(cmd_concentrated_link_lo)
           );
+       assign cmd_concentrated_link_li = cmd_concentrated_link_lo;
 
-       assign resp_concentrated_link_li = '{data          : resp_concentrated_link_lo.data
-                                            ,v            : resp_concentrated_link_lo.v
-                                            ,ready_and_rev: cce_lce_resp_link_lo.ready_and_rev
-                                           };
+       // Fill concentrator
+       bsg_wormhole_concentrator
+        #(.flit_width_p($bits(bp_lce_fill_wormhole_packet_s))
+          ,.len_width_p(coh_noc_len_width_p)
+          ,.cid_width_p(coh_noc_cid_width_p)
+          ,.num_in_p(num_caches_p)
+          ,.cord_width_p(coh_noc_cord_width_p)
+          )
+        fill_concentrator
+         (.clk_i(clk_i)
+          ,.reset_i(reset_i)
+
+          ,.links_i(lce_fill_link_lo)
+          ,.links_o(lce_fill_link_li)
+
+          ,.concentrated_link_i(fill_concentrated_link_li)
+          ,.concentrated_link_o(fill_concentrated_link_lo)
+          );
+       assign fill_concentrated_link_li = fill_concentrated_link_lo;
 
        // Response concentrator
+       // Conc Link in 1:N to LCE
+       // Conc Link out to CCE
        bsg_wormhole_concentrator_in
         #(.flit_width_p($bits(bp_lce_resp_wormhole_packet_s))
           ,.len_width_p(coh_noc_len_width_p)
@@ -706,6 +773,10 @@ module wrapper
           ,.concentrated_link_i(resp_concentrated_link_li)
           ,.concentrated_link_o(resp_concentrated_link_lo)
           );
+       assign resp_concentrated_link_li = '{data          : resp_concentrated_link_lo.data
+                                            ,v            : resp_concentrated_link_lo.v
+                                            ,ready_and_rev: cce_lce_resp_link_lo.ready_and_rev
+                                           };
 
        bp_cce_fsm
         #(.bp_params_p(bp_params_p))

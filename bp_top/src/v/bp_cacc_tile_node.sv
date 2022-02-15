@@ -30,6 +30,9 @@ module bp_cacc_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
 
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_fill_link_i
+   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_fill_link_o
+
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_resp_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
    );
@@ -40,6 +43,7 @@ module bp_cacc_tile_node
   // Tile-side coherence connections
   bp_coh_ready_and_link_s accel_lce_req_link_li, accel_lce_req_link_lo;
   bp_coh_ready_and_link_s accel_lce_cmd_link_li, accel_lce_cmd_link_lo;
+  bp_coh_ready_and_link_s accel_lce_fill_link_li, accel_lce_fill_link_lo;
   bp_coh_ready_and_link_s accel_lce_resp_link_li, accel_lce_resp_link_lo;
 
 
@@ -57,6 +61,9 @@ module bp_cacc_tile_node
      ,.lce_cmd_link_i(accel_lce_cmd_link_li)
      ,.lce_cmd_link_o(accel_lce_cmd_link_lo)
 
+     ,.lce_fill_link_i(accel_lce_fill_link_li)
+     ,.lce_fill_link_o(accel_lce_fill_link_lo)
+
      ,.lce_resp_link_i(accel_lce_resp_link_li)
      ,.lce_resp_link_o(accel_lce_resp_link_lo)
 
@@ -71,7 +78,7 @@ module bp_cacc_tile_node
      ,.len_width_p(coh_noc_len_width_p)
      ,.routing_matrix_p(StrictYX | YX_Allow_W)
      ,.async_clk_p(async_coh_clk_p)
-     ,.els_p(3)
+     ,.els_p(4)
      )
    cac_coh_socket
     (.tile_clk_i(core_clk_i)
@@ -79,10 +86,10 @@ module bp_cacc_tile_node
      ,.network_clk_i(coh_clk_i)
      ,.network_reset_i(coh_reset_i)
      ,.my_cord_i(my_cord_i)
-     ,.network_link_i({coh_lce_req_link_i, coh_lce_cmd_link_i, coh_lce_resp_link_i})
-     ,.network_link_o({coh_lce_req_link_o, coh_lce_cmd_link_o, coh_lce_resp_link_o})
-     ,.tile_link_i({accel_lce_req_link_lo, accel_lce_cmd_link_lo, accel_lce_resp_link_lo})
-     ,.tile_link_o({accel_lce_req_link_li, accel_lce_cmd_link_li, accel_lce_resp_link_li})
+     ,.network_link_i({coh_lce_req_link_i, coh_lce_cmd_link_i, coh_lce_fill_link_i, coh_lce_resp_link_i})
+     ,.network_link_o({coh_lce_req_link_o, coh_lce_cmd_link_o, coh_lce_fill_link_o, coh_lce_resp_link_o})
+     ,.tile_link_i({accel_lce_req_link_lo, accel_lce_cmd_link_lo, accel_lce_fill_link_lo, accel_lce_resp_link_lo})
+     ,.tile_link_o({accel_lce_req_link_li, accel_lce_cmd_link_li, accel_lce_fill_link_li, accel_lce_resp_link_li})
      );
 
 

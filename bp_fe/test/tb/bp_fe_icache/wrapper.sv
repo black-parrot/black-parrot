@@ -327,10 +327,15 @@ module wrapper
        ,.lce_cmd_v_i(fifo_lce_cmd_v_lo)
        ,.lce_cmd_yumi_o(fifo_lce_cmd_yumi_li)
 
-       ,.lce_cmd_header_o()
-       ,.lce_cmd_data_o()
-       ,.lce_cmd_v_o()
-       ,.lce_cmd_ready_then_i(1'b1)
+       ,.lce_fill_header_i('0)
+       ,.lce_fill_data_i('0)
+       ,.lce_fill_v_i('0)
+       ,.lce_fill_yumi_o()
+
+       ,.lce_fill_header_o()
+       ,.lce_fill_data_o()
+       ,.lce_fill_v_o()
+       ,.lce_fill_ready_then_i(1'b1)
       );
 
     // LCE Request

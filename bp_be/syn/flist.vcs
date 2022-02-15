@@ -228,6 +228,7 @@ $BP_FE_DIR/src/v/bp_fe_top.sv
 $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
+$BP_ME_DIR/src/v/lce/bp_lce_fill.sv
 # Cache
 $BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
 $BP_ME_DIR/src/v/dev/bp_me_dram_hash_decode.sv
