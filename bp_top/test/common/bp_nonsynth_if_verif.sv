@@ -57,16 +57,31 @@ module bp_nonsynth_if_verif
 
     end
 
-  if (ic_y_dim_p != 1 && multicore_p == 1)
-    $error("Error: Must have exactly 1 row of I/O routers for multicore");
+  // General
   if (mc_y_dim_p > 2)
     $error("Error: Multi-row L2 expansion nodes not yet supported");
   if (sac_x_dim_p > 1)
     $error("Error: Must have <= 1 column of streaming accelerators");
   if (cac_x_dim_p > 1)
     $error("Error: Must have <= 1 column of coherent accelerators");
-  if (multicore_p == 1 && !((dcache_block_width_p == icache_block_width_p) && (dcache_block_width_p ==  acache_block_width_p)))
-    $error("Error: We don't currently support different block widths for multicore configurations");
+
+  // Core or Features
+  if (muldiv_support_p[e_mulh])
+    $error("MULH is not currently supported in hardware");
+  if (!muldiv_support_p[e_mul])
+    $error("MUL is not currently support in emulation");
+  if (!fpu_support_p)
+    $error("FPU cannot currently be disabled");
+  if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
+    $error("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
+  if (~|{dcache_amo_support_p[e_lr_sc], l2_amo_support_p[e_lr_sc]})
+    $error("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
+
+  // NoCs
+  if (mem_noc_flit_width_p % l2_fill_width_p != 0)
+    $error("Memory NoC flit width must match l2 fill width");
+
+  // L1 Caches
   if ((cce_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
   if ((cce_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))
@@ -79,21 +94,8 @@ module bp_nonsynth_if_verif
     $error("Error: Cache fill width should be a multiple of cache bank width");
   if (icache_fill_width_p != dcache_fill_width_p)
     $error("Error: L1-Cache fill width should be the same");
-  if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
-    $error("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
-  if ((multicore_p == 1) && (l2_data_width_p != dword_width_gp))
-    $error("Error: multicore requires L2 data width same as dword width");
-  if ((multicore_p == 1) && (icache_fill_width_p != dcache_fill_width_p))
-    $error("Error: Multicore requires L1-Cache fill widths to be the same");
-  if (l2_data_width_p < l2_fill_width_p)
-    $error("Error: L2 fill width must be at least as large as L2 data width");
 
-  if (l2_block_width_p != 512)
-    $error("L2 block width must be 512");
-
-  //if (bht_entry_width_p/2 < 2 || bht_entry_width_p/2*2 != bht_entry_width_p)
-  //  $warning("BHT fold width must be power of 2 greater than 2");
-
+  // Address Widths
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
   if (paddr_width_p < 33)
@@ -107,32 +109,36 @@ module bp_nonsynth_if_verif
   if (daddr_width_p >= paddr_width_p)
     $error("Error: caddr cannot exceed paddr_width_p-1");
 
-  if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
-    $error("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
+  // L2 Cache
+  if (l2_fill_width_p < l2_data_width_p)
+    $error("Error: L2 fill width must be at least as large as L2 data width");
+  if (l2_block_width_p != 512)
+    $error("Error: L2 block width must be 512");
+  if (!`BSG_IS_POW2((l2_fill_width_p/l2_data_width_p)))
+    $error("Error: L2 fill width must be POW2 multiple of L2 data width");
+  if (!`BSG_IS_POW2(l2_banks_p))
+    $error("Error: L2 banks must be a power of two");
 
-  if ((multicore_p == 1) && (|l2_amo_support_p))
-    $error("Error: L2 atomics are not currently supported in bp_multicore");
-
-  if (~|{dcache_amo_support_p[e_lr_sc], l2_amo_support_p[e_lr_sc]})
-    $error("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
-
-  if (muldiv_support_p[e_mulh])
-    $error("MULH is not currently supported in hardware");
-
-  if (!muldiv_support_p[e_mul])
-    $error("MUL is not currently support in emulation");
-
-  if (!fpu_support_p)
-    $error("FPU cannot currently be disabled");
-
-  if (mem_noc_flit_width_p % l2_fill_width_p != 0)
-    $error("Memory NoC flit width must match l2 fill width");
-
+  // Unicore
+  if ((multicore_p == 0) && (uce_fill_width_p != l2_data_width_p))
+    $error("Error: unicore requires L2-Cache data width same as UCE fill width");
+  if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
+    $error("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
   if (multicore_p == 0 && num_core_p != 1)
     $error("Unicore only supports a single core configuration in the tethered testbench");
 
-  if (!`BSG_IS_POW2(l2_banks_p))
-    $error("L2 banks must be a power of two");
+  // Multicore
+  if (ic_y_dim_p != 1 && multicore_p == 1)
+    $error("Error: Must have exactly 1 row of I/O routers for multicore");
+  if ((multicore_p == 1) && (l2_data_width_p != dword_width_gp))
+    $error("Error: multicore requires L2 data width same as dword width");
+  if ((multicore_p == 1) && (icache_fill_width_p != dcache_fill_width_p))
+    $error("Error: Multicore requires L1-Cache fill widths to be the same");
+  if (multicore_p == 1 && !((dcache_block_width_p == icache_block_width_p) && (dcache_block_width_p ==  acache_block_width_p)))
+    $error("Error: We don't currently support different block widths for multicore configurations");
+  if ((multicore_p == 1) && (|l2_amo_support_p))
+    $error("Error: L2 atomics are not currently supported in bp_multicore");
+
 
 endmodule
 
