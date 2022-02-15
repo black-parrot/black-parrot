@@ -141,15 +141,9 @@ module testbench
   logic [num_lce_p-1:0][trace_rom_addr_width_lp-1:0] trace_rom_addr_lo;
   logic [num_lce_p-1:0][trace_replay_data_width_lp+3:0] trace_rom_data_li;
 
-  // LCE-CCE request interface (from LCE to buffer) - BedRock Lite
-  bp_bedrock_lce_req_header_s [num_lce_p-1:0] lce_req_header_lo;
-  logic [num_lce_p-1:0][cce_block_width_p-1:0] lce_req_data_lo;
-  logic [num_lce_p-1:0] lce_req_v_lo, lce_req_ready_and_li;
-  // LCE-CCE request interface (from buffer to lite-to-burst)
-  bp_bedrock_lce_req_header_s [num_lce_p-1:0] lce_req_l2b_header;
-  logic [num_lce_p-1:0][cce_block_width_p-1:0] lce_req_l2b_data;
-  logic [num_lce_p-1:0] lce_req_l2b_v, lce_req_l2b_ready_and;
-  // LCE-CCE request interface (from lite-to-burst converter to xbar)
+  // Cache-LCE Interface
+
+  // LCE-CCE request interface (from LCE to xbar)
   bp_bedrock_lce_req_header_s [num_lce_p-1:0] lce_req_header;
   logic [num_lce_p-1:0] lce_req_header_v, lce_req_header_ready_and, lce_req_has_data;
   logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_req_data;
@@ -161,15 +155,7 @@ module testbench
   logic [bedrock_data_width_p-1:0] cce_lce_req_data_li;
   logic cce_lce_req_data_v_li, cce_lce_req_data_ready_and_lo, cce_lce_req_last_li;
 
-  // LCE-CCE response interface (from LCE to buffer) - BedRock Lite
-  bp_bedrock_lce_resp_header_s [num_lce_p-1:0] lce_resp_header_lo;
-  logic [num_lce_p-1:0][cce_block_width_p-1:0] lce_resp_data_lo;
-  logic [num_lce_p-1:0] lce_resp_v_lo, lce_resp_ready_and_li;
-  // LCE-CCE response interface (from buffer to lite-to-burst)
-  bp_bedrock_lce_resp_header_s [num_lce_p-1:0] lce_resp_l2b_header;
-  logic [num_lce_p-1:0][cce_block_width_p-1:0] lce_resp_l2b_data;
-  logic [num_lce_p-1:0] lce_resp_l2b_v, lce_resp_l2b_ready_and;
-  // LCE-CCE response interface (from lite-to-burst converter to xbar)
+  // LCE-CCE response interface (from LCE to xbar)
   bp_bedrock_lce_resp_header_s [num_lce_p-1:0] lce_resp_header;
   logic [num_lce_p-1:0] lce_resp_header_v, lce_resp_header_ready_and, lce_resp_has_data;
   logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_resp_data;
@@ -181,15 +167,30 @@ module testbench
   logic [bedrock_data_width_p-1:0] cce_lce_resp_data_li;
   logic cce_lce_resp_data_v_li, cce_lce_resp_data_ready_and_lo, cce_lce_resp_last_li;
 
-  // LCE-CCE command interface (from xbar to burst-to-lite)
+  // LCE-CCE command interface (from xbar to LCE)
   bp_bedrock_lce_cmd_header_s [num_lce_p-1:0] lce_cmd_header_li;
   logic [num_lce_p-1:0] lce_cmd_header_v_li, lce_cmd_header_ready_and_lo, lce_cmd_has_data_li;
   logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_cmd_data_li;
   logic [num_lce_p-1:0] lce_cmd_data_v_li, lce_cmd_data_ready_and_lo, lce_cmd_last_li;
-  // LCE-CCE command interface (from burst-to-lite to LCE) - BedRock Lite
-  bp_bedrock_lce_cmd_header_s [num_lce_p-1:0] lce_cmd_in_header_li;
-  logic [num_lce_p-1:0][cce_block_width_p-1:0] lce_cmd_in_data_li;
-  logic [num_lce_p-1:0] lce_cmd_in_v_li, lce_cmd_in_yumi_lo;
+
+  // LCE-CCE fill interface (from xbar to LCE)
+  bp_bedrock_lce_fill_header_s [num_lce_p-1:0] lce_fill_header_li;
+  logic [num_lce_p-1:0] lce_fill_header_v_li, lce_fill_header_ready_and_lo, lce_fill_has_data_li;
+  logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_fill_data_li;
+  logic [num_lce_p-1:0] lce_fill_data_v_li, lce_fill_data_ready_and_lo, lce_fill_last_li;
+
+  // LCE-CCE fill out interface (from LCE to buffer)
+  bp_bedrock_lce_fill_header_s [num_lce_p-1:0] lce_fill_out_header;
+  logic [num_lce_p-1:0] lce_fill_out_header_v, lce_fill_out_header_ready_and, lce_fill_out_has_data;
+  logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_fill_out_data;
+  logic [num_lce_p-1:0] lce_fill_out_data_v, lce_fill_out_data_ready_and, lce_fill_out_last;
+  // from buffer to xbar
+  bp_bedrock_lce_fill_header_s [num_lce_p-1:0] buf_lce_fill_out_header;
+  logic [num_lce_p-1:0] buf_lce_fill_out_header_v, buf_lce_fill_out_header_ready_and, buf_lce_fill_out_has_data;
+  logic [num_lce_p-1:0][lg_num_lce_lp-1:0] lce_fill_out_dst;
+  logic [num_lce_p-1:0][bedrock_data_width_p-1:0] buf_lce_fill_out_data;
+  logic [num_lce_p-1:0] buf_lce_fill_out_data_v, buf_lce_fill_out_data_ready_and, buf_lce_fill_out_last;
+
   // LCE-CCE command interface (from CCE to xbar)
   bp_bedrock_lce_cmd_header_s cce_lce_cmd_header_lo;
   logic cce_lce_cmd_header_v_lo, cce_lce_cmd_header_ready_and_li, cce_lce_cmd_has_data_lo;
@@ -285,6 +286,40 @@ module testbench
      ,.msg_data_ready_and_i(cce_lce_resp_data_ready_and_lo)
      ,.msg_last_o(cce_lce_resp_last_li)
      );
+
+  // Fill Crossbar
+  // from CCE and LCE fill out to LCE fill in
+  bp_me_xbar_burst
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(bedrock_data_width_p)
+     ,.payload_width_p(lce_fill_payload_width_lp)
+     ,.num_source_p(num_lce_p)
+     ,.num_sink_p(num_lce_p)
+     )
+   fill_xbar
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.msg_header_i(buf_lce_fill_out_header)
+     ,.msg_header_v_i(buf_lce_fill_out_header_v)
+     ,.msg_header_yumi_o(buf_lce_fill_out_header_ready_and)
+     ,.msg_has_data_i(buf_lce_fill_out_has_data)
+     ,.msg_data_i(buf_lce_fill_out_data)
+     ,.msg_data_v_i(buf_lce_fill_out_data_v)
+     ,.msg_data_yumi_o(buf_lce_fill_out_data_ready_and)
+     ,.msg_last_i(buf_lce_fill_out_last)
+     ,.msg_dst_i(lce_fill_out_dst)
+
+     ,.msg_header_o(lce_fill_header_li)
+     ,.msg_header_v_o(lce_fill_header_v_li)
+     ,.msg_header_ready_and_i(lce_fill_header_ready_and_lo)
+     ,.msg_has_data_o(lce_fill_has_data_li)
+     ,.msg_data_o(lce_fill_data_li)
+     ,.msg_data_v_o(lce_fill_data_v_li)
+     ,.msg_data_ready_and_i(lce_fill_data_ready_and_lo)
+     ,.msg_last_o(lce_fill_last_li)
+     );
+
 
   // Cmd Crossbar
   // from CCE to LCE cmd in
@@ -469,12 +504,18 @@ module testbench
        ,.stat_mem_o(stat_mem_lo[i])
        );
 
+    assign tr_pkt_masked[i] = '{cmd: tr_pkt_li[i].cmd
+                                ,paddr: tr_pkt_li[i].paddr
+                                ,uncached: tr_pkt_li[i].uncached
+                                ,data: (axe_trace_en) ? '0 : tr_pkt_li[i].data};
+
+    // LCE
     bp_lce
      #(.bp_params_p(bp_params_p)
        ,.assoc_p(icache_assoc_p)
        ,.sets_p(icache_sets_p)
-       ,.block_width_p(icache_block_width_p)
-       ,.fill_width_p(icache_fill_width_p)
+       ,.block_width_p(cce_block_width_p)
+       ,.fill_width_p(bedrock_data_width_p)
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
        ,.metadata_latency_p(0)
@@ -492,9 +533,9 @@ module testbench
        ,.cache_req_busy_o(cache_req_busy_li[i])
        ,.cache_req_metadata_i(cache_req_metadata_lo[i])
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
-       ,.cache_req_complete_o(cache_req_complete_li[i])
        ,.cache_req_critical_tag_o(cache_req_critical_tag_li[i])
        ,.cache_req_critical_data_o(cache_req_critical_data_li[i])
+       ,.cache_req_complete_o(cache_req_complete_li[i])
        ,.cache_req_credits_full_o(cache_req_credits_full_li[i])
        ,.cache_req_credits_empty_o(cache_req_credits_empty_li[i])
 
@@ -513,226 +554,88 @@ module testbench
        ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo[i])
        ,.stat_mem_i(stat_mem_lo[i])
 
-       ,.lce_req_header_o(lce_req_header_lo[i])
-       ,.lce_req_data_o(lce_req_data_lo[i])
-       ,.lce_req_v_o(lce_req_v_lo[i])
-       ,.lce_req_ready_then_i(lce_req_ready_and_li[i])
+       ,.lce_req_header_o(lce_req_header[i])
+       ,.lce_req_header_v_o(lce_req_header_v[i])
+       ,.lce_req_has_data_o(lce_req_has_data[i])
+       ,.lce_req_header_ready_and_i(lce_req_header_ready_and[i])
+       ,.lce_req_data_o(lce_req_data[i])
+       ,.lce_req_data_v_o(lce_req_data_v[i])
+       ,.lce_req_last_o(lce_req_last[i])
+       ,.lce_req_data_ready_and_i(lce_req_data_ready_and[i])
 
-       ,.lce_resp_header_o(lce_resp_header_lo[i])
-       ,.lce_resp_data_o(lce_resp_data_lo[i])
-       ,.lce_resp_v_o(lce_resp_v_lo[i])
-       ,.lce_resp_ready_then_i(lce_resp_ready_and_li[i])
+       ,.lce_cmd_header_i(lce_cmd_header_li[i])
+       ,.lce_cmd_header_v_i(lce_cmd_header_v_li[i])
+       ,.lce_cmd_has_data_i(lce_cmd_has_data_li[i])
+       ,.lce_cmd_header_ready_and_o(lce_cmd_header_ready_and_lo[i])
+       ,.lce_cmd_data_i(lce_cmd_data_li[i])
+       ,.lce_cmd_data_v_i(lce_cmd_data_v_li[i])
+       ,.lce_cmd_last_i(lce_cmd_last_li[i])
+       ,.lce_cmd_data_ready_and_o(lce_cmd_data_ready_and_lo[i])
 
-       ,.lce_cmd_header_i(lce_cmd_in_header_li[i])
-       ,.lce_cmd_data_i(lce_cmd_in_data_li[i])
-       ,.lce_cmd_v_i(lce_cmd_in_v_li[i])
-       ,.lce_cmd_yumi_o(lce_cmd_in_yumi_lo[i])
+       ,.lce_fill_header_i(lce_fill_header_li[i])
+       ,.lce_fill_header_v_i(lce_fill_header_v_li[i])
+       ,.lce_fill_has_data_i(lce_fill_has_data_li[i])
+       ,.lce_fill_header_ready_and_o(lce_fill_header_ready_and_lo[i])
+       ,.lce_fill_data_i(lce_fill_data_li[i])
+       ,.lce_fill_data_v_i(lce_fill_data_v_li[i])
+       ,.lce_fill_last_i(lce_fill_last_li[i])
+       ,.lce_fill_data_ready_and_o(lce_fill_data_ready_and_lo[i])
 
-       ,.lce_fill_header_i(lce_fill_in_header_li[i])
-       ,.lce_fill_data_i(lce_fill_in_data_li[i])
-       ,.lce_fill_v_i(lce_fill_in_v_li[i])
-       ,.lce_fill_yumi_o(lce_fill_in_yumi_lo[i])
+       ,.lce_fill_header_o(lce_fill_out_header[i])
+       ,.lce_fill_header_v_o(lce_fill_out_header_v[i])
+       ,.lce_fill_has_data_o(lce_fill_out_has_data[i])
+       ,.lce_fill_header_ready_and_i(lce_fill_out_header_ready_and[i])
+       ,.lce_fill_data_o(lce_fill_out_data[i])
+       ,.lce_fill_data_v_o(lce_fill_out_data_v[i])
+       ,.lce_fill_last_o(lce_fill_out_last[i])
+       ,.lce_fill_data_ready_and_i(lce_fill_out_data_ready_and[i])
 
-       ,.lce_fill_header_o(lce_fill_out_header_lo[i])
-       ,.lce_fill_data_o(lce_fill_out_data_lo[i])
-       ,.lce_fill_v_o(lce_fill_out_v_lo[i])
-       ,.lce_fill_ready_then_i(lce_fill_out_ready_and_li[i])
+       ,.lce_resp_header_o(lce_resp_header[i])
+       ,.lce_resp_header_v_o(lce_resp_header_v[i])
+       ,.lce_resp_has_data_o(lce_resp_has_data[i])
+       ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and[i])
+       ,.lce_resp_data_o(lce_resp_data[i])
+       ,.lce_resp_data_v_o(lce_resp_data_v[i])
+       ,.lce_resp_last_o(lce_resp_last[i])
+       ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and[i])
        );
 
-    // LCE Request Buffer
-    bsg_two_fifo
-    #(.width_p($bits(bp_bedrock_lce_req_header_s)+cce_block_width_p))
-    lce_req_buffer
+    // LCE Fill Out Header Buffer
+    bsg_fifo_1r1w_small
+    #(.width_p($bits(bp_bedrock_lce_fill_header_s)+1)
+      ,.els_p(2)
+      )
+    lce_fill_out_header_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       // from LCE
-      ,.v_i(lce_req_v_lo[i])
-      ,.data_i({lce_req_data_lo[i], lce_req_header_lo[i]})
-      ,.ready_o(lce_req_ready_and_li[i])
-      // to lite to burst
-      ,.v_o(lce_req_l2b_v[i])
-      ,.data_o({lce_req_l2b_data[i], lce_req_l2b_header[i]})
-      ,.yumi_i(lce_req_l2b_v[i] & lce_req_l2b_ready_and[i])
+      ,.v_i(lce_fill_out_header_v[i])
+      ,.data_i({lce_fill_out_has_data[i], lce_fill_out_header[i]})
+      ,.ready_o(lce_fill_out_header_ready_and[i])
+      // to xbar
+      ,.v_o(buf_lce_fill_out_header_v[i])
+      ,.data_o({buf_lce_fill_out_has_data[i], buf_lce_fill_out_header[i]})
+      ,.yumi_i(buf_lce_fill_out_header_v[i] & buf_lce_fill_out_header_ready_and[i])
       );
+    assign lce_fill_out_dst[i] = buf_lce_fill_out_header[i].payload.dst_id[0+:lg_num_lce_lp];
 
-    assign tr_pkt_masked[i] = '{cmd: tr_pkt_li[i].cmd
-                                ,paddr: tr_pkt_li[i].paddr
-                                ,uncached: tr_pkt_li[i].uncached
-                                ,data: (axe_trace_en) ? '0 : tr_pkt_li[i].data};
-
-    // LCE Request
-    bp_me_lite_to_burst
-     #(.bp_params_p(bp_params_p)
-       ,.in_data_width_p(cce_block_width_p)
-       ,.out_data_width_p(bedrock_data_width_p)
-       ,.payload_width_p(lce_req_payload_width_lp)
-       ,.payload_mask_p(lce_req_payload_mask_gp)
-       )
-     lce_req_lite2burst
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-
-       ,.in_msg_header_i(lce_req_l2b_header[i])
-       ,.in_msg_data_i(lce_req_l2b_data[i])
-       ,.in_msg_v_i(lce_req_l2b_v[i])
-       ,.in_msg_ready_and_o(lce_req_l2b_ready_and[i])
-
-       ,.out_msg_header_o(lce_req_header[i])
-       ,.out_msg_header_v_o(lce_req_header_v[i])
-       ,.out_msg_header_ready_and_i(lce_req_header_ready_and[i])
-       ,.out_msg_has_data_o(lce_req_has_data[i])
-
-       ,.out_msg_data_o(lce_req_data[i])
-       ,.out_msg_data_v_o(lce_req_data_v[i])
-       ,.out_msg_data_ready_and_i(lce_req_data_ready_and[i])
-       ,.out_msg_last_o(lce_req_last[i])
-       );
-
-    // LCE Response Buffer
-    bsg_two_fifo
-    #(.width_p($bits(bp_bedrock_lce_resp_header_s)+cce_block_width_p))
-    lce_resp_buffer
+    // LCE Fill Out Data Buffer
+    bsg_fifo_1r1w_small
+    #(.width_p(bedrock_data_width_p+1)
+      ,.els_p(16)
+      )
+    lce_fill_out_data_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       // from LCE
-      ,.data_i({lce_resp_data_lo[i], lce_resp_header_lo[i]})
-      ,.v_i(lce_resp_v_lo[i])
-      ,.ready_o(lce_resp_ready_and_li[i])
-      // to lite to burst
-      ,.data_o({lce_resp_l2b_data[i], lce_resp_l2b_header[i]})
-      ,.v_o(lce_resp_l2b_v[i])
-      ,.yumi_i(lce_resp_l2b_v[i] & lce_resp_l2b_ready_and[i])
+      ,.v_i(lce_fill_out_data_v[i])
+      ,.data_i({lce_fill_out_last[i], lce_fill_out_data[i]})
+      ,.ready_o(lce_fill_out_data_ready_and[i])
+      // to xbar
+      ,.v_o(buf_lce_fill_out_data_v[i])
+      ,.data_o({buf_lce_fill_out_last[i], buf_lce_fill_out_data[i]})
+      ,.yumi_i(buf_lce_fill_out_data_v[i] & buf_lce_fill_out_data_ready_and[i])
       );
-
-    // LCE Response
-    bp_me_lite_to_burst
-     #(.bp_params_p(bp_params_p)
-       ,.in_data_width_p(cce_block_width_p)
-       ,.out_data_width_p(bedrock_data_width_p)
-       ,.payload_width_p(lce_resp_payload_width_lp)
-       ,.payload_mask_p(lce_resp_payload_mask_gp)
-       )
-     lce_resp_lite2burst
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-
-       ,.in_msg_header_i(lce_resp_l2b_header[i])
-       ,.in_msg_data_i(lce_resp_l2b_data[i])
-       ,.in_msg_v_i(lce_resp_l2b_v[i])
-       ,.in_msg_ready_and_o(lce_resp_l2b_ready_and[i])
-
-       ,.out_msg_header_o(lce_resp_header[i])
-       ,.out_msg_header_v_o(lce_resp_header_v[i])
-       ,.out_msg_header_ready_and_i(lce_resp_header_ready_and[i])
-       ,.out_msg_has_data_o(lce_resp_has_data[i])
-
-       ,.out_msg_data_o(lce_resp_data[i])
-       ,.out_msg_data_v_o(lce_resp_data_v[i])
-       ,.out_msg_data_ready_and_i(lce_resp_data_ready_and[i])
-       ,.out_msg_last_o(lce_resp_last[i])
-       );
-
-    // LCE Command In (from xbar to LCE)
-    bp_me_burst_to_lite
-     #(.bp_params_p(bp_params_p)
-       ,.in_data_width_p(bedrock_data_width_p)
-       ,.out_data_width_p(cce_block_width_p)
-       ,.payload_width_p(lce_cmd_payload_width_lp)
-       ,.payload_mask_p(lce_cmd_payload_mask_gp)
-       )
-     lce_cmd_burst2lite
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-
-       ,.in_msg_header_i(lce_cmd_header_li[i])
-       ,.in_msg_header_v_i(lce_cmd_header_v_li[i])
-       ,.in_msg_header_ready_and_o(lce_cmd_header_ready_and_lo[i])
-       ,.in_msg_has_data_i(lce_cmd_has_data_li[i])
-
-       ,.in_msg_data_i(lce_cmd_data_li[i])
-       ,.in_msg_data_v_i(lce_cmd_data_v_li[i])
-       ,.in_msg_data_ready_and_o(lce_cmd_data_ready_and_lo[i])
-       ,.in_msg_last_i(lce_cmd_last_li[i])
-
-       ,.out_msg_header_o(lce_cmd_in_header_li[i])
-       ,.out_msg_data_o(lce_cmd_in_data_li[i])
-       ,.out_msg_v_o(lce_cmd_in_v_li[i])
-       ,.out_msg_ready_and_i(lce_cmd_in_yumi_lo[i])
-       );
-
-    // LCE Fill In (from xbar to LCE)
-    bp_me_burst_to_lite
-     #(.bp_params_p(bp_params_p)
-       ,.in_data_width_p(bedrock_data_width_p)
-       ,.out_data_width_p(cce_block_width_p)
-       ,.payload_width_p(lce_fill_payload_width_lp)
-       ,.payload_mask_p(lce_fill_payload_mask_gp)
-       )
-     lce_fill_burst2lite
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-
-       ,.in_msg_header_i(lce_fill_header_li[i])
-       ,.in_msg_header_v_i(lce_fill_header_v_li[i])
-       ,.in_msg_header_ready_and_o(lce_fill_header_ready_and_lo[i])
-       ,.in_msg_has_data_i(lce_fill_has_data_li[i])
-
-       ,.in_msg_data_i(lce_fill_data_li[i])
-       ,.in_msg_data_v_i(lce_fill_data_v_li[i])
-       ,.in_msg_data_ready_and_o(lce_fill_data_ready_and_lo[i])
-       ,.in_msg_last_i(lce_fill_last_li[i])
-
-       ,.out_msg_header_o(lce_fill_in_header_li[i])
-       ,.out_msg_data_o(lce_fill_in_data_li[i])
-       ,.out_msg_v_o(lce_fill_in_v_li[i])
-       ,.out_msg_ready_and_i(lce_fill_in_yumi_lo[i])
-       );
-
-    // LCE Fill Out Buffer
-    bsg_two_fifo
-    #(.width_p($bits(bp_bedrock_lce_fill_header_s)+cce_block_width_p))
-    lce_fill_out_buffer
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-      // from LCE
-      ,.v_i(lce_fill_out_v_lo[i])
-      ,.data_i({lce_fill_out_data_lo[i], lce_fill_out_header_lo[i]})
-      ,.ready_o(lce_fill_out_ready_and_li[i])
-      // to lite to burst
-      ,.v_o(lce_fill_out_l2b_v[i])
-      ,.data_o({lce_fill_out_l2b_data[i], lce_fill_out_l2b_header[i]})
-      ,.yumi_i(lce_fill_out_l2b_v[i] & lce_fill_out_l2b_ready_and[i])
-      );
-
-    // LCE Fill Out
-    bp_me_lite_to_burst
-     #(.bp_params_p(bp_params_p)
-       ,.in_data_width_p(cce_block_width_p)
-       ,.out_data_width_p(bedrock_data_width_p)
-       ,.payload_width_p(lce_fill_payload_width_lp)
-       ,.payload_mask_p(lce_fill_payload_mask_gp)
-       )
-     lce_fill_lite2burst
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-
-       ,.in_msg_header_i(lce_fill_out_l2b_header[i])
-       ,.in_msg_data_i(lce_fill_out_l2b_data[i])
-       ,.in_msg_v_i(lce_fill_out_l2b_v[i])
-       ,.in_msg_ready_and_o(lce_fill_out_l2b_ready_and[i])
-
-       ,.out_msg_header_o(lce_fill_out_header[i])
-       ,.out_msg_header_v_o(lce_fill_out_header_v[i])
-       ,.out_msg_header_ready_and_i(lce_fill_out_header_ready_and[i])
-       ,.out_msg_has_data_o(lce_fill_out_has_data[i])
-
-       ,.out_msg_data_o(lce_fill_out_data[i])
-       ,.out_msg_data_v_o(lce_fill_out_data_v[i])
-       ,.out_msg_data_ready_and_i(lce_fill_out_data_ready_and[i])
-       ,.out_msg_last_o(lce_fill_out_last[i])
-       );
-
-    assign lce_fill_out_dst[i] = lce_fill_out_header[i].payload.dst_id[0+:lg_num_lce_lp];
   end
 
   // CCE
@@ -761,15 +664,6 @@ module testbench
     ,.lce_req_data_ready_and_o(cce_lce_req_data_ready_and_lo)
     ,.lce_req_last_i(cce_lce_req_last_li)
 
-    ,.lce_resp_header_i(cce_lce_resp_header_li)
-    ,.lce_resp_header_v_i(cce_lce_resp_header_v_li)
-    ,.lce_resp_header_ready_and_o(cce_lce_resp_header_ready_and_lo)
-    ,.lce_resp_has_data_i(cce_lce_resp_has_data_li)
-    ,.lce_resp_data_i(cce_lce_resp_data_li)
-    ,.lce_resp_data_v_i(cce_lce_resp_data_v_li)
-    ,.lce_resp_data_ready_and_o(cce_lce_resp_data_ready_and_lo)
-    ,.lce_resp_last_i(cce_lce_resp_last_li)
-
     ,.lce_cmd_header_o(cce_lce_cmd_header_lo)
     ,.lce_cmd_header_v_o(cce_lce_cmd_header_v_lo)
     ,.lce_cmd_header_ready_and_i(cce_lce_cmd_header_ready_and_li)
@@ -778,6 +672,15 @@ module testbench
     ,.lce_cmd_data_v_o(cce_lce_cmd_data_v_lo)
     ,.lce_cmd_data_ready_and_i(cce_lce_cmd_data_ready_and_li)
     ,.lce_cmd_last_o(cce_lce_cmd_last_lo)
+
+    ,.lce_resp_header_i(cce_lce_resp_header_li)
+    ,.lce_resp_header_v_i(cce_lce_resp_header_v_li)
+    ,.lce_resp_header_ready_and_o(cce_lce_resp_header_ready_and_lo)
+    ,.lce_resp_has_data_i(cce_lce_resp_has_data_li)
+    ,.lce_resp_data_i(cce_lce_resp_data_li)
+    ,.lce_resp_data_v_i(cce_lce_resp_data_v_li)
+    ,.lce_resp_data_ready_and_o(cce_lce_resp_data_ready_and_lo)
+    ,.lce_resp_last_i(cce_lce_resp_last_li)
 
     // CCE-MEM Interface
     // BedRock Stream protocol: ready&valid
@@ -891,6 +794,7 @@ module testbench
         ,.sets_p(sets_p)
         ,.assoc_p(assoc_p)
         ,.block_width_p(block_width_p)
+        ,.fill_width_p(fill_width_p)
         )
       lce_tracer
        (.clk_i(clk_i & testbench.lce_trace_en)
@@ -898,29 +802,39 @@ module testbench
         ,.lce_id_i(lce_id_i)
 
         ,.lce_req_header_i(lce_req_header_o)
+        ,.lce_req_header_v_i(lce_req_header_v_o)
+        ,.lce_req_header_ready_and_i(lce_req_header_ready_and_i)
         ,.lce_req_data_i(lce_req_data_o)
-        ,.lce_req_v_i(lce_req_v_o)
-        ,.lce_req_ready_and_i(lce_req_ready_then_i)
-
-        ,.lce_resp_header_i(lce_resp_header_o)
-        ,.lce_resp_data_i(lce_resp_data_o)
-        ,.lce_resp_v_i(lce_resp_v_o)
-        ,.lce_resp_ready_and_i(lce_resp_ready_then_i)
+        ,.lce_req_data_v_i(lce_req_data_v_o)
+        ,.lce_req_data_ready_and_i(lce_req_data_ready_and_i)
 
         ,.lce_cmd_header_i(lce_cmd_header_i)
+        ,.lce_cmd_header_v_i(lce_cmd_header_v_i)
+        ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_o)
         ,.lce_cmd_data_i(lce_cmd_data_i)
-        ,.lce_cmd_v_i(lce_cmd_v_i)
-        ,.lce_cmd_ready_and_i(lce_cmd_yumi_o)
+        ,.lce_cmd_data_v_i(lce_cmd_data_v_i)
+        ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_o)
 
         ,.lce_fill_header_i(lce_fill_header_i)
+        ,.lce_fill_header_v_i(lce_fill_header_v_i)
+        ,.lce_fill_header_ready_and_i(lce_fill_header_ready_and_o)
         ,.lce_fill_data_i(lce_fill_data_i)
-        ,.lce_fill_v_i(lce_fill_v_i)
-        ,.lce_fill_ready_and_i(lce_fill_yumi_o)
+        ,.lce_fill_data_v_i(lce_fill_data_v_i)
+        ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_o)
 
-        ,.lce_fill_header_o_i(lce_fill_header_o)
-        ,.lce_fill_data_o_i(lce_fill_data_o)
-        ,.lce_fill_o_v_i(lce_fill_v_o)
-        ,.lce_fill_o_ready_and_i(lce_fill_ready_then_i)
+        ,.lce_fill_o_header_i(lce_fill_header_o)
+        ,.lce_fill_o_header_v_i(lce_fill_header_v_o)
+        ,.lce_fill_o_header_ready_and_i(lce_fill_header_ready_and_i)
+        ,.lce_fill_o_data_i(lce_fill_data_o)
+        ,.lce_fill_o_data_v_i(lce_fill_data_v_o)
+        ,.lce_fill_o_data_ready_and_i(lce_fill_data_ready_and_i)
+
+        ,.lce_resp_header_i(lce_resp_header_o)
+        ,.lce_resp_header_v_i(lce_resp_header_v_o)
+        ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_i)
+        ,.lce_resp_data_i(lce_resp_data_o)
+        ,.lce_resp_data_v_i(lce_resp_data_v_o)
+        ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_i)
 
         ,.cache_req_complete_i(cache_req_complete_o)
         ,.uc_store_req_complete_i(uc_store_req_complete_lo)
@@ -978,19 +892,19 @@ module testbench
         ,.lce_req_data_v_i(lce_req_data_v_i)
         ,.lce_req_data_ready_and_i(lce_req_data_ready_and_o)
 
-        ,.lce_resp_header_i(lce_resp_header_i)
-        ,.lce_resp_header_v_i(lce_resp_header_v_i)
-        ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_o)
-        ,.lce_resp_data_i(lce_resp_data_i)
-        ,.lce_resp_data_v_i(lce_resp_data_v_i)
-        ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_o)
-
         ,.lce_cmd_header_i(lce_cmd_header_o)
         ,.lce_cmd_header_v_i(lce_cmd_header_v_o)
         ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_i)
         ,.lce_cmd_data_i(lce_cmd_data_o)
         ,.lce_cmd_data_v_i(lce_cmd_data_v_o)
         ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_i)
+
+        ,.lce_resp_header_i(lce_resp_header_i)
+        ,.lce_resp_header_v_i(lce_resp_header_v_i)
+        ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_o)
+        ,.lce_resp_data_i(lce_resp_data_i)
+        ,.lce_resp_data_v_i(lce_resp_data_v_i)
+        ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_o)
 
         // CCE-MEM Interface
         // BedRock Burst protocol: ready&valid
