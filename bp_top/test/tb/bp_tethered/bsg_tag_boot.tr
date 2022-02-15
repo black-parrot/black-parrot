@@ -3,26 +3,31 @@
 ################################################################################
 # DESIGN SPECIFIC TAG INFO
 #
-# Number | Description            | Width
-# -------+------------------------+-------
-#     0  | Clkgen Async Reset     | 1-bit
-#   4-1  | Clkgen Oscillator      | 5-bits
-#   8-5  | Clkgen Osc Trigger     | 1-bit
-#    9   | Clkgen Downsampoler    | 3-bits
-#    10  | DMC trefi 0            | 8-bits
-#    11  | DMC trefi 1            | 8-bits
-#    12  | DMC tmrd trfc          | 8-bits
-#    13  | DMC trc trp            | 8-bits
-#    14  | DMC tras trrd          | 8-bits
-#    15  | DMC trcd twr           | 8-bits
-#    16  | DMC twtr trtp          | 8-bits
-#    17  | DMC tcas dqs_sel_cal   | 7-bits
-#    18  | DMC col \ row width    | 8-bits
-#    19  | DMC bank width \ pos   | 8-bits
-#    20  | DMC init_cycles 0      | 8-bits
-#    21  | DMC init_cycles 1      | 8-bits
-#    22  | DMC System Reset       | 1-bit
-#
+# Number | Description                      | Width
+# -------+----------------------------------+-------
+#     0  | Delay Line Async Reset               | 1-bit
+#   4-1  | Delay Line Oscillator                | 5-bits
+#   8-5  | Delay Line Osc Trigger               | 1-bit
+#    9   | Delay Line Downsampler               | 3-bits
+#    10  | DMC trefi 0                      | 8-bits
+#    11  | DMC trefi 1                      | 8-bits
+#    12  | DMC tmrd trfc                    | 8-bits
+#    13  | DMC trc trp                      | 8-bits
+#    14  | DMC tras trrd                    | 8-bits
+#    15  | DMC trcd twr                     | 8-bits
+#    16  | DMC twtr trtp                    | 8-bits
+#    17  | DMC tcas dqs_sel_cal             | 7-bits
+#    18  | DMC col \ row width              | 8-bits
+#    19  | DMC bank width \ pos             | 8-bits
+#    20  | DMC init_cycles 0                | 8-bits
+#    21  | DMC init_cycles 1                | 8-bits
+#    22  | DMC System Reset                 | 1-bit
+#	 23  | DMC stall_transmission			| 1-bit
+#	 24	 | Clkgen Async Reset				| 1-bit
+#	 25  | Clkgen Oscillator      			| 5-bits
+#    26  | Clkgen Osc Trigger     			| 1-bit
+#    27  | Clkgen Downsampler    			| 7-bits
+#    28  | DMC clock monitor downsampler    | 2-bits
 #
 # Number of masters = 1
 # Number of clients = 23
@@ -94,6 +99,46 @@
 #SEND  en  id=9  r l=3
 0001___1___01001_0_0011___000000111
 
+#SEND  en   id=23  r l=1
+0001___1___10111_0_0001___000000001
+#SEND  en   id=24  r l=1
+0001___1___11000_0_0001___000000001
+#SEND  en   id=25  r l=5
+0001___1___11001_0_0101___000011111
+#SEND  en   id=26  r l=1
+0001___1___11010_0_0001___000000001
+#SEND  en   id=27  r l=7
+0001___1___11011_0_0111___001111111
+#SEND  en   id=28  r l=3
+0001___1___11100_0_0111___000000111
+
+### Async clk-gen reset to get things moving
+
+#SEND  en   id=24   d l=1    {async_reset}
+0001___1___11000_1_0001___000000000
+0001___1___11000_1_0001___000000001
+0001___1___11000_1_0001___000000000
+
+### Set osc triggers low
+
+#SEND  en   id=26   d l=1    {trigger}
+0001___1___11010_1_0001___000000000
+
+### Program the raw oscillators speed
+
+#SEND  en   id=25   d l=5    {adt, cdt, fdt}
+0001___1___11001_1_0101___000011011
+
+### Trigger oscillators
+
+#SEND  en   id=26   d l=1    {trigger}
+0001___1___11010_1_0001___000000001
+0001___1___11010_1_0001___000000000
+
+#SEND  en   id=27   d l=7    {ds_val, reset}
+0001___1___11011_1_0111___000000001
+0001___1___11011_1_0111___000000000
+
 ### Set delay line triggers low
 
 #SEND  en  id=5  d l=1    {trigger}
@@ -108,13 +153,13 @@
 ### Program the delay lines phase shift
 
 #SEND  en  id=1  d l=5    {adt, cdt, fdt}
-0001___1___00001_1_0101___000000000
+0001___1___00001_1_0101___000011111
 #SEND  en  id=2  d l=5    {adt, cdt, fdt}
-0001___1___00010_1_0101___000000000
+0001___1___00010_1_0101___000011111
 #SEND  en  id=3  d l=5    {adt, cdt, fdt}
-0001___1___00011_1_0101___000000000
+0001___1___00011_1_0101___000011111
 #SEND  en  id=4  d l=5    {adt, cdt, fdt}
-0001___1___00100_1_0101___000000000
+0001___1___00100_1_0101___000011111
 
 ### Trigger delay lines
 
@@ -190,7 +235,7 @@
 #SEND  en  id=15 d l=8    {twr, trcd}
 0001___1___01111_1_1000___010110010
 #SEND  en  id=16 d l=8    {trtp, twtr}
-0001___1___10000_1_1000___010000111
+0001___1___10000_1_1000___010001010
 #SEND  en  id=17 d l=8    {dqs_sel_cal, cas}
 0001___1___10001_1_1000___000000011
 #SEND  en  id=18 d l=8    {row_width, col_width}
@@ -205,6 +250,8 @@
 0001___1___10110_1_1000___000000001
 0001___1___10110_1_1000___000000000
 
+# SEND en  id=23 d l=8     {stall_transmission}
+0001___1___10111_1_1000___000000000
 ################################################################################
 #
 # Done!

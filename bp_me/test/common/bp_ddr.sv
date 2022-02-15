@@ -59,16 +59,7 @@ module bp_ddr
 
   logic dfi_clk_1x_lo;
 
-  bsg_tag_s [22:0] tag_lines_lo;
-  logic [12:0][7:0] dmc_cfg_tag_data_lo;
-  logic [12:0]     	dmc_cfg_tag_new_data_lo;
-
-  wire bsg_tag_s        dmc_reset_tag_lines_lo       = tag_lines_lo[0];
-  wire bsg_tag_s  [3:0] dmc_dly_tag_lines_lo         = tag_lines_lo[1+:4];
-  wire bsg_tag_s  [3:0] dmc_dly_trigger_tag_lines_lo = tag_lines_lo[5+:4];
-  wire bsg_tag_s        dmc_ds_tag_lines_lo          = tag_lines_lo[9];
-  wire bsg_tag_s [12:0] dmc_cfg_tag_lines_lo         = tag_lines_lo[10+:13];
-  wire sys_reset_li                                  ;
+  bsg_tag_lines_s tag_lines_lo;
 
   bsg_tag_boot_rom
     #(.width_p(tag_trace_rom_data_width_lp)
@@ -117,7 +108,7 @@ module bp_ddr
       );
 
   bsg_tag_master
-    #(.els_p(23)
+    #(.els_p(29)
      ,.lg_width_p(4)
      )
     btm
@@ -126,38 +117,6 @@ module bp_ddr
       ,.en_i       (1'b1)
       ,.clients_r_o(tag_lines_lo)
       );
-
-  for(genvar i=0; i<13; i++) begin
-    bsg_tag_client #(.width_p(8), .default_p(0))
-      btc
-        (.bsg_tag_i     (dmc_cfg_tag_lines_lo[i])
-        ,.recv_clk_i    (clk_i)
-        ,.recv_new_r_o  (dmc_cfg_tag_new_data_lo[i])
-        ,.recv_data_r_o (dmc_cfg_tag_data_lo[i])
-        );
-  end
-
-  // DRAM Timing Parameters
-  bsg_dmc_s dmc_p;
-  assign dmc_p.trefi        = {dmc_cfg_tag_data_lo[1], dmc_cfg_tag_data_lo[0]};
-  assign dmc_p.tmrd         = dmc_cfg_tag_data_lo[2][3:0];
-  assign dmc_p.trfc         = dmc_cfg_tag_data_lo[2][7:4];
-  assign dmc_p.trc          = dmc_cfg_tag_data_lo[3][3:0];
-  assign dmc_p.trp          = dmc_cfg_tag_data_lo[3][7:4];
-  assign dmc_p.tras         = dmc_cfg_tag_data_lo[4][3:0];
-  assign dmc_p.trrd         = dmc_cfg_tag_data_lo[4][7:4];
-  assign dmc_p.trcd         = dmc_cfg_tag_data_lo[5][3:0];
-  assign dmc_p.twr          = dmc_cfg_tag_data_lo[5][7:4];
-  assign dmc_p.twtr         = dmc_cfg_tag_data_lo[6][3:0];
-  assign dmc_p.trtp         = dmc_cfg_tag_data_lo[6][7:4];
-  assign dmc_p.tcas         = dmc_cfg_tag_data_lo[7][3:0];
-  assign dmc_p.col_width    = dmc_cfg_tag_data_lo[8][3:0];
-  assign dmc_p.row_width    = dmc_cfg_tag_data_lo[8][7:4];
-  assign dmc_p.bank_width   = dmc_cfg_tag_data_lo[9][1:0];
-  assign dmc_p.bank_pos     = dmc_cfg_tag_data_lo[9][7:2];
-  assign dmc_p.dqs_sel_cal  = dmc_cfg_tag_data_lo[7][6:4];
-  assign dmc_p.init_cycles  = {dmc_cfg_tag_data_lo[11], dmc_cfg_tag_data_lo[10]};
-  assign sys_reset_li       = dmc_cfg_tag_data_lo[12][0];
 
   // DRAM Link
   logic app_en_lo, app_rdy_li, app_wdf_wren_lo, app_wdf_end_lo, app_wdf_rdy_li, app_rd_data_valid_li, app_rd_data_end_li;
@@ -244,15 +203,8 @@ module bp_ddr
       ,.cmd_sfifo_depth_p(dmc_cmd_sfifo_depth_lp)
      )
     dmc
-    (.async_reset_tag_i(dmc_reset_tag_lines_lo)
-    ,.bsg_dly_tag_i(dmc_dly_tag_lines_lo)
-    ,.bsg_dly_trigger_tag_i(dmc_dly_trigger_tag_lines_lo)
-    ,.bsg_ds_tag_i(dmc_ds_tag_lines_lo)
-
-    ,.dmc_p_i(dmc_p)
-
-    ,.sys_reset_i(sys_reset_li)
-
+    (.refresh_in_progress_o(refresh_in_progress)
+    ,.tag_lines_i (tag_lines_lo)
     ,.app_addr_i(app_addr_li)
     ,.app_cmd_i(app_cmd_lo)
     ,.app_en_i(app_en_lo)
@@ -304,8 +256,6 @@ module bp_ddr
     ,.ddr_dq_i              (ddr_dq_li)
 
     ,.ui_clk_i              (clk_i)
-    ,.dfi_clk_2x_i          (clk_i)
-    ,.dfi_clk_1x_o          (dfi_clk_1x_lo)
 
     ,.ui_clk_sync_rst_o     (ui_reset_lo)
 

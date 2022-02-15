@@ -2,6 +2,7 @@
 # BASEJUMP_STL includes
 +incdir+$BASEJUMP_STL_DIR/bsg_cache
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
++incdir+$BASEJUMP_STL_DIR/bsg_tag
 +incdir+$BASEJUMP_STL_DIR/bsg_dmc
 +incdir+$BASEJUMP_STL_DIR/bsg_mem
 +incdir+$BASEJUMP_STL_DIR/bsg_misc

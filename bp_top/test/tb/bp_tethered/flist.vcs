@@ -1,7 +1,7 @@
 # bsg_ip_cores files
 +incdir+$BASEJUMP_STL_DIR/bsg_tag
-$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_pkg.v
 $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_pkg.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_pkg.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi_rx.v
@@ -59,6 +59,10 @@ $BP_TOP_DIR/test/common/bp_nonsynth_perf.sv
 # bsg_ip_cores files
 +incdir+$BASEJUMP_STL_DIR/bsg_clk_gen
 +incdir+$BASEJUMP_STL_DIR/testing/bsg_dmc/lpddr_verilog_model
+$BASEJUMP_STL_DIR/bsg_clk_gen/bsg_dly_line.v
+$BASEJUMP_STL_DIR/bsg_clk_gen/bsg_clk_gen.v
+$BASEJUMP_STL_DIR/bsg_clk_gen/bsg_clk_gen_osc.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_tag_clients.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_controller.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_phy.v
