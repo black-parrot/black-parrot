@@ -95,25 +95,22 @@ module bp_l2e_tile
   bp_bedrock_lce_req_header_s cce_lce_req_header;
   bp_bedrock_lce_resp_header_s cce_lce_resp_header;
   bp_bedrock_lce_cmd_header_s cce_lce_cmd_header;
-  logic [dword_width_gp-1:0] cce_lce_req_data, cce_lce_resp_data, cce_lce_cmd_data;
-
-  `declare_bp_lce_req_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_header_s, cce_block_width_p);
-  localparam lce_req_wh_payload_width_lp = `bp_bedrock_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_header_s), cce_block_width_p);
-  bp_lce_req_wormhole_packet_s [1:0] lce_req_packet_lo;
-  bp_lce_req_wormhole_header_s [1:0] lce_req_header_lo;
+  logic [bedrock_data_width_p-1:0] cce_lce_req_data, cce_lce_resp_data, cce_lce_cmd_data;
 
   `declare_bp_lce_cmd_wormhole_packet_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_header_s, cce_block_width_p);
-  localparam lce_cmd_wh_payload_width_lp = `bp_bedrock_wormhole_payload_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_header_s), cce_block_width_p);
   localparam lce_cmd_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_header_s));
-  bp_lce_cmd_wormhole_packet_s [1:0] lce_cmd_packet_lo, lce_cmd_packet_li;
-  bp_lce_cmd_wormhole_header_s [1:0] lce_cmd_header_lo, lce_cmd_header_li;
 
   // LCE to CCE request
-  localparam bedrock_len_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV((1<<e_bedrock_msg_size_128)*8,dword_width_gp));
+  localparam cache_fill_width_lp = `BSG_MIN(icache_fill_width_p
+                                            , `BSG_MIN(dcache_fill_width_p
+                                                       , num_cacc_p ? acache_fill_width_p
+                                                                    : dcache_fill_width_p)
+                                            );
+  localparam bedrock_len_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV((1<<e_bedrock_msg_size_128)*8,cache_fill_width_lp));
   logic [bedrock_len_width_lp-1:0] cce_lce_req_pr_len;
   bp_bedrock_size_to_len
    #(.len_width_p(bedrock_len_width_lp)
-     ,.beat_width_p(dword_width_gp)
+     ,.beat_width_p(bedrock_data_width_p)
      )
    cce_lce_req_size_to_len
    (.size_i(cce_lce_req_header.size)
@@ -126,7 +123,7 @@ module bp_l2e_tile
      ,.len_width_p(coh_noc_len_width_p)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_req_header_width_lp)
-     ,.pr_data_width_p(dword_width_gp)
+     ,.pr_data_width_p(bedrock_data_width_p)
      ,.pr_len_width_p(bedrock_len_width_lp)
      )
    cce_lce_req_wh_to_burst
@@ -165,7 +162,7 @@ module bp_l2e_tile
      ,.len_width_p(coh_noc_len_width_p)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_cmd_header_width_lp)
-     ,.pr_data_width_p(dword_width_gp)
+     ,.pr_data_width_p(bedrock_data_width_p)
      )
    cce_lce_cmd_burst_to_wh
    (.clk_i(clk_i)
@@ -203,7 +200,7 @@ module bp_l2e_tile
      ,.len_width_p(coh_noc_len_width_p)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_resp_header_width_lp)
-     ,.pr_data_width_p(dword_width_gp)
+     ,.pr_data_width_p(bedrock_data_width_p)
      ,.pr_len_width_p(bedrock_len_width_lp)
      )
    cce_lce_resp_wh_to_burst
@@ -228,19 +225,19 @@ module bp_l2e_tile
 
   // CCE-side CCE-Mem network connections
   bp_bedrock_mem_header_s mem_cmd_header_lo;
-  logic [dword_width_gp-1:0] mem_cmd_data_lo;
+  logic [bedrock_data_width_p-1:0] mem_cmd_data_lo;
   logic mem_cmd_v_lo, mem_cmd_last_lo, mem_cmd_ready_and_li;
   bp_bedrock_mem_header_s mem_resp_header_li;
-  logic [dword_width_gp-1:0] mem_resp_data_li;
+  logic [bedrock_data_width_p-1:0] mem_resp_data_li;
   logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
 
   // Device-side CCE-Mem network connections
   // dev_cmd[2:0] = {CCE loopback, CFG, memory (cache)}
   bp_bedrock_mem_header_s [2:0] dev_cmd_header_li;
-  logic [2:0][dword_width_gp-1:0] dev_cmd_data_li;
+  logic [2:0][bedrock_data_width_p-1:0] dev_cmd_data_li;
   logic [2:0] dev_cmd_v_li, dev_cmd_ready_and_lo, dev_cmd_last_li;
   bp_bedrock_mem_header_s [2:0] dev_resp_header_lo;
-  logic [2:0][dword_width_gp-1:0] dev_resp_data_lo;
+  logic [2:0][bedrock_data_width_p-1:0] dev_resp_data_lo;
   logic [2:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
 
   // Config
@@ -248,7 +245,7 @@ module bp_l2e_tile
   logic cce_ucode_w_lo;
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
-  logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
+  logic [bedrock_data_width_p-1:0] cfg_data_lo, cfg_data_li;
   bp_me_cfg_slice
    #(.bp_params_p(bp_params_p))
    cfgs
@@ -323,7 +320,7 @@ module bp_l2e_tile
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.data_width_p(dword_width_gp)
+     ,.data_width_p(bedrock_data_width_p)
      ,.payload_width_p(mem_payload_width_lp)
      ,.num_source_p(1)
      ,.num_sink_p(3)
@@ -348,7 +345,7 @@ module bp_l2e_tile
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.data_width_p(dword_width_gp)
+     ,.data_width_p(bedrock_data_width_p)
      ,.payload_width_p(mem_payload_width_lp)
      ,.num_source_p(3)
      ,.num_sink_p(1)
