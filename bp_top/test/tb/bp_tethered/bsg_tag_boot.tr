@@ -5,10 +5,10 @@
 #
 # Number | Description                      | Width
 # -------+----------------------------------+-------
-#     0  | Delay Line Async Reset               | 1-bit
-#   4-1  | Delay Line Oscillator                | 5-bits
-#   8-5  | Delay Line Osc Trigger               | 1-bit
-#    9   | Delay Line Downsampler               | 3-bits
+#     0  | Delay Line Async Reset           | 1-bit
+#   4-1  | Delay Line Oscillator            | 5-bits
+#   8-5  | Delay Line Osc Trigger           | 1-bit
+#    9   | Delay Line Downsampler           | 3-bits
 #    10  | DMC trefi 0                      | 8-bits
 #    11  | DMC trefi 1                      | 8-bits
 #    12  | DMC tmrd trfc                    | 8-bits
