@@ -42,7 +42,14 @@ module testbench
    )
   (output bit reset_i);
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+  if ((uce_p == 0) && (l2_fill_width_p != dword_width_gp))
+    $fatal(0, "CCE requires L2 fill width same as bedrock data width for memory networks");
+  if ((uce_p == 1) && (num_caches_p != 1))
+    $fatal(0, "UCE setup supports only 1 cache");
+  if ((uce_p == 0) && (wt_p == 1))
+    $fatal(0, "CCE does not support writethrough caches");
+
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   // Bit to deal with initial X->0 transition detection
@@ -317,32 +324,49 @@ module testbench
          ,.sets_p(sets_p)
          ,.assoc_p(assoc_p)
          ,.block_width_p(block_width_p)
+         ,.fill_width_p(fill_width_p)
          )
        bp_lce_tracer
          (.clk_i(clk_i & (testbench.lce_trace_p == 1))
           ,.reset_i(reset_i)
 
           ,.lce_id_i(lce_id_i)
+
           ,.lce_req_header_i(lce_req_header_o)
+          ,.lce_req_header_v_i(lce_req_header_v_o)
+          ,.lce_req_header_ready_and_i(lce_req_header_ready_and_i)
           ,.lce_req_data_i(lce_req_data_o)
-          ,.lce_req_v_i(lce_req_v_o)
-          ,.lce_req_ready_and_i(lce_req_ready_then_i)
+          ,.lce_req_data_v_i(lce_req_data_v_o)
+          ,.lce_req_data_ready_and_i(lce_req_data_ready_and_i)
+
           ,.lce_resp_header_i(lce_resp_header_o)
+          ,.lce_resp_header_v_i(lce_resp_header_v_o)
+          ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_i)
           ,.lce_resp_data_i(lce_resp_data_o)
-          ,.lce_resp_v_i(lce_resp_v_o)
-          ,.lce_resp_ready_and_i(lce_resp_ready_then_i)
+          ,.lce_resp_data_v_i(lce_resp_data_v_o)
+          ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_i)
+
           ,.lce_cmd_header_i(lce_cmd_header_i)
+          ,.lce_cmd_header_v_i(lce_cmd_header_v_i)
+          ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_o)
           ,.lce_cmd_data_i(lce_cmd_data_i)
-          ,.lce_cmd_v_i(lce_cmd_v_i)
-          ,.lce_cmd_ready_and_i(lce_cmd_yumi_o)
+          ,.lce_cmd_data_v_i(lce_cmd_data_v_i)
+          ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_o)
+
           ,.lce_fill_header_i(lce_fill_header_i)
+          ,.lce_fill_header_v_i(lce_fill_header_v_i)
+          ,.lce_fill_header_ready_and_i(lce_fill_header_ready_and_o)
           ,.lce_fill_data_i(lce_fill_data_i)
-          ,.lce_fill_v_i(lce_fill_v_i)
-          ,.lce_fill_ready_and_i(lce_fill_yumi_o)
-          ,.lce_fill_header_o_i(lce_fill_header_o)
-          ,.lce_fill_data_o_i(lce_fill_data_o)
-          ,.lce_fill_o_v_i(lce_fill_v_o)
-          ,.lce_fill_o_ready_and_i(lce_fill_ready_then_i)
+          ,.lce_fill_data_v_i(lce_fill_data_v_i)
+          ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_o)
+
+          ,.lce_fill_o_header_i(lce_fill_header_o)
+          ,.lce_fill_o_header_v_i(lce_fill_header_v_o)
+          ,.lce_fill_o_header_ready_and_i(lce_fill_header_ready_and_i)
+          ,.lce_fill_o_data_i(lce_fill_data_o)
+          ,.lce_fill_o_data_v_i(lce_fill_data_v_o)
+          ,.lce_fill_o_data_ready_and_i(lce_fill_data_ready_and_i)
+
           ,.cache_req_complete_i(cache_req_complete_o)
           ,.uc_store_req_complete_i(uc_store_req_complete_lo)
           );
