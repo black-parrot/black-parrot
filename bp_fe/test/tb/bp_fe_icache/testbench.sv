@@ -37,6 +37,8 @@ module testbench
     $error("CCE requires L2 fill width same as bedrock data width for memory networks");
   if ((uce_p == 1) && (l2_data_width_p != icache_fill_width_p))
     $error("UCE requires L2 data width same as I$ fill width");
+  if (cce_block_width_p != icache_block_width_p)
+    $error("Memory fetch block width does not match icache block width");
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -389,27 +391,25 @@ module testbench
           );
   end
 
-  bp_mem_nonsynth_tracer
-   #(.bp_params_p(bp_params_p))
-   bp_mem_tracer
-    (.clk_i(clk_i & (testbench.dram_trace_p == 1))
-     ,.reset_i(reset_i)
+  bind bp_nonsynth_mem
+    bp_nonsynth_mem_tracer
+     #(.bp_params_p(bp_params_p))
+     bp_mem_tracer
+      (.clk_i(clk_i & (testbench.dram_trace_p == 1))
+       ,.reset_i(reset_i)
 
-     ,.mem_cmd_header_i(mem_cmd_header_lo)
-     ,.mem_cmd_data_i(mem_cmd_data_lo)
-     ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_i(mem_cmd_last_lo)
+       ,.mem_cmd_header_i(mem_cmd_header_i)
+       ,.mem_cmd_data_i(mem_cmd_data_i)
+       ,.mem_cmd_v_i(mem_cmd_v_i)
+       ,.mem_cmd_ready_and_i(mem_cmd_ready_and_o)
+       ,.mem_cmd_last_i(mem_cmd_last_i)
 
-     ,.mem_resp_header_i(mem_resp_header_li)
-     ,.mem_resp_data_i(mem_resp_data_li)
-     ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
-     ,.mem_resp_last_i(mem_resp_last_li)
-     );
-
-  if (cce_block_width_p != icache_block_width_p)
-    $error("Memory fetch block width does not match icache block width");
+       ,.mem_resp_header_i(mem_resp_header_o)
+       ,.mem_resp_data_i(mem_resp_data_o)
+       ,.mem_resp_v_i(mem_resp_v_o)
+       ,.mem_resp_ready_and_i(mem_resp_ready_and_i)
+       ,.mem_resp_last_i(mem_resp_last_o)
+       );
 
   `ifndef VERILATOR
     initial

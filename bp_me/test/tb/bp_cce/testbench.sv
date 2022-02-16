@@ -198,31 +198,6 @@ module testbench
   logic cce_lce_cmd_data_v_lo, cce_lce_cmd_data_ready_and_li, cce_lce_cmd_last_lo;
   wire [lg_num_lce_lp-1:0] lce_cmd_dst_lo = cce_lce_cmd_header_lo.payload.dst_id[0+:lg_num_lce_lp];
 
-  // LCE-LCE fill out interface (from LCE to buffer) - BedRock Lite
-  bp_bedrock_lce_fill_header_s [num_lce_p-1:0] lce_fill_out_header_lo;
-  logic [num_lce_p-1:0][cce_block_width_p-1:0] lce_fill_out_data_lo;
-  logic [num_lce_p-1:0] lce_fill_out_v_lo, lce_fill_out_ready_and_li;
-  // LCE-LCE fill out interface (from buffer to lite-to-burst)
-  bp_bedrock_lce_fill_header_s [num_lce_p-1:0] lce_fill_out_l2b_header;
-  logic [num_lce_p-1:0][cce_block_width_p-1:0] lce_fill_out_l2b_data;
-  logic [num_lce_p-1:0] lce_fill_out_l2b_v, lce_fill_out_l2b_ready_and;
-  // LCE-LCE fill out interface (from lite-to-burst to xbar)
-  bp_bedrock_lce_fill_header_s [num_lce_p-1:0] lce_fill_out_header;
-  logic [num_lce_p-1:0] lce_fill_out_header_v, lce_fill_out_header_ready_and, lce_fill_out_has_data;
-  logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_fill_out_data;
-  logic [num_lce_p-1:0] lce_fill_out_data_v, lce_fill_out_data_ready_and, lce_fill_out_last;
-  logic [num_lce_p-1:0][lg_num_lce_lp-1:0] lce_fill_out_dst;
-
-  // LCE-LCE fill interface (from xbar to burst-to-lite)
-  bp_bedrock_lce_fill_header_s [num_lce_p-1:0] lce_fill_header_li;
-  logic [num_lce_p-1:0] lce_fill_header_v_li, lce_fill_header_ready_and_lo, lce_fill_has_data_li;
-  logic [num_lce_p-1:0][bedrock_data_width_p-1:0] lce_fill_data_li;
-  logic [num_lce_p-1:0] lce_fill_data_v_li, lce_fill_data_ready_and_lo, lce_fill_last_li;
-  // LCE-LCE fill interface (from burst-to-lite to LCE) - BedRock Lite
-  bp_bedrock_lce_fill_header_s [num_lce_p-1:0] lce_fill_in_header_li;
-  logic [num_lce_p-1:0][cce_block_width_p-1:0] lce_fill_in_data_li;
-  logic [num_lce_p-1:0] lce_fill_in_v_li, lce_fill_in_yumi_lo;
-
   // Req Crossbar
   bp_me_xbar_burst
    #(.bp_params_p(bp_params_p)
@@ -288,7 +263,7 @@ module testbench
      );
 
   // Fill Crossbar
-  // from CCE and LCE fill out to LCE fill in
+  // from LCE fill out to LCE fill in
   bp_me_xbar_burst
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(bedrock_data_width_p)
@@ -352,39 +327,6 @@ module testbench
      ,.msg_data_v_o(lce_cmd_data_v_li)
      ,.msg_data_ready_and_i(lce_cmd_data_ready_and_lo)
      ,.msg_last_o(lce_cmd_last_li)
-     );
-
-  // Fill Crossbar
-  // from LCE to LCE
-  bp_me_xbar_burst
-   #(.bp_params_p(bp_params_p)
-     ,.data_width_p(bedrock_data_width_p)
-     ,.payload_width_p(lce_fill_payload_width_lp)
-     ,.num_source_p(num_lce_p)
-     ,.num_sink_p(num_lce_p)
-     )
-   fill_xbar
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.msg_header_i(lce_fill_out_header)
-     ,.msg_header_v_i(lce_fill_out_header_v)
-     ,.msg_header_yumi_o(lce_fill_out_header_ready_and)
-     ,.msg_has_data_i(lce_fill_out_has_data)
-     ,.msg_data_i(lce_fill_out_data)
-     ,.msg_data_v_i(lce_fill_out_data_v)
-     ,.msg_data_yumi_o(lce_fill_out_data_ready_and)
-     ,.msg_last_i(lce_fill_out_last)
-     ,.msg_dst_i(lce_fill_out_dst)
-
-     ,.msg_header_o(lce_fill_header_li)
-     ,.msg_header_v_o(lce_fill_header_v_li)
-     ,.msg_header_ready_and_i(lce_fill_header_ready_and_lo)
-     ,.msg_has_data_o(lce_fill_has_data_li)
-     ,.msg_data_o(lce_fill_data_li)
-     ,.msg_data_v_o(lce_fill_data_v_li)
-     ,.msg_data_ready_and_i(lce_fill_data_ready_and_lo)
-     ,.msg_last_o(lce_fill_last_li)
      );
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache);
@@ -769,24 +711,25 @@ module testbench
 
   // Tracers and binds
 
-  bp_mem_nonsynth_tracer
-   #(.bp_params_p(bp_params_p))
-   bp_mem_tracer
-    (.clk_i(clk_i & testbench.dram_trace_en)
-     ,.reset_i(reset_i)
+  bind bp_nonsynth_mem
+    bp_nonsynth_mem_tracer
+     #(.bp_params_p(bp_params_p))
+     bp_mem_tracer
+      (.clk_i(clk_i & testbench.dram_trace_en)
+       ,.reset_i(reset_i)
 
-     ,.mem_cmd_header_i(mem_cmd_lo)
-     ,.mem_cmd_data_i(mem_cmd_data_lo)
-     ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_i(mem_cmd_v_lo & mem_cmd_last_lo)
+       ,.mem_cmd_header_i(mem_cmd_header_i)
+       ,.mem_cmd_data_i(mem_cmd_data_i)
+       ,.mem_cmd_v_i(mem_cmd_v_i)
+       ,.mem_cmd_ready_and_i(mem_cmd_ready_and_o)
+       ,.mem_cmd_last_i(mem_cmd_last_i)
 
-     ,.mem_resp_header_i(mem_resp_li)
-     ,.mem_resp_data_i(mem_resp_data_li)
-     ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
-     ,.mem_resp_last_i(mem_resp_last_li)
-     );
+       ,.mem_resp_header_i(mem_resp_header_o)
+       ,.mem_resp_data_i(mem_resp_data_o)
+       ,.mem_resp_v_i(mem_resp_v_o)
+       ,.mem_resp_ready_and_i(mem_resp_ready_and_i)
+       ,.mem_resp_last_i(mem_resp_last_o)
+       );
 
   bind bp_lce
     bp_me_nonsynth_lce_tracer

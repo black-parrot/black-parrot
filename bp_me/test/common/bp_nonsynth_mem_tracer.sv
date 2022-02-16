@@ -1,19 +1,19 @@
 
-/**
- * bp_mem_nonsynth_tracer.v
+/*
+ * Name:
+ *   bp_nonsynth_mem_tracer.sv
  */
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_mem_nonsynth_tracer
+module bp_nonsynth_mem_tracer
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
-   , parameter data_width_p = l2_fill_width_p
    , parameter trace_file_p = "dram.trace"
    )
   (input                                        clk_i
@@ -21,13 +21,13 @@ module bp_mem_nonsynth_tracer
 
    // BP side
    , input [mem_header_width_lp-1:0]            mem_cmd_header_i
-   , input [data_width_p-1:0]                   mem_cmd_data_i
+   , input [l2_data_width_p-1:0]                mem_cmd_data_i
    , input                                      mem_cmd_v_i
    , input                                      mem_cmd_ready_and_i
    , input                                      mem_cmd_last_i
 
    , input [mem_header_width_lp-1:0]            mem_resp_header_i
-   , input [data_width_p-1:0]                   mem_resp_data_i
+   , input [l2_data_width_p-1:0]                mem_resp_data_i
    , input                                      mem_resp_v_i
    , input                                      mem_resp_ready_and_i
    , input                                      mem_resp_last_i
@@ -55,7 +55,7 @@ module bp_mem_nonsynth_tracer
         default:
           $fwrite(file, "%12t | CMD  ERROR: unknown cmd_type %x received!", $time, mem_resp_header_cast_i.msg_type.mem);
       endcase
-  
+
     if (mem_resp_v_i & mem_resp_ready_and_i)
       case (mem_resp_header_cast_i.msg_type.mem)
         e_bedrock_mem_rd:

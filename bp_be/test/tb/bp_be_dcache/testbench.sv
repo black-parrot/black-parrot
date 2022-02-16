@@ -431,24 +431,25 @@ module testbench
           );
   end
 
-  bp_mem_nonsynth_tracer
-   #(.bp_params_p(bp_params_p))
-   bp_mem_tracer
-    (.clk_i(clk_i & (testbench.dram_trace_p == 1))
-     ,.reset_i(reset_i)
+  bind bp_nonsynth_mem
+    bp_nonsynth_mem_tracer
+     #(.bp_params_p(bp_params_p))
+     bp_mem_tracer
+      (.clk_i(clk_i & (testbench.dram_trace_p == 1))
+       ,.reset_i(reset_i)
 
-     ,.mem_cmd_header_i(mem_cmd_header_lo)
-     ,.mem_cmd_data_i(mem_cmd_data_lo)
-     ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_i(mem_cmd_last_lo)
+       ,.mem_cmd_header_i(mem_cmd_header_i)
+       ,.mem_cmd_data_i(mem_cmd_data_i)
+       ,.mem_cmd_v_i(mem_cmd_v_i)
+       ,.mem_cmd_ready_and_i(mem_cmd_ready_and_o)
+       ,.mem_cmd_last_i(mem_cmd_last_i)
 
-     ,.mem_resp_header_i(mem_resp_header_li)
-     ,.mem_resp_data_i(mem_resp_data_li)
-     ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_ready_and_i(mem_resp_ready_and_li)
-     ,.mem_resp_last_i(mem_resp_last_li)
-     );
+       ,.mem_resp_header_i(mem_resp_header_o)
+       ,.mem_resp_data_i(mem_resp_data_o)
+       ,.mem_resp_v_i(mem_resp_v_o)
+       ,.mem_resp_ready_and_i(mem_resp_ready_and_i)
+       ,.mem_resp_last_i(mem_resp_last_o)
+       );
 
   `ifndef VERILATOR
     initial
