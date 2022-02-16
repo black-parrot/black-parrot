@@ -169,7 +169,7 @@ module bp_lce_cmd
     assign lce_cmd_data_v_li = lce_cmd_data_v_i;
     assign lce_cmd_last_li = lce_cmd_last_i;
     assign lce_cmd_data_ready_and_o = lce_cmd_data_ready_and_lo;
-    assign lce_cmd_data_yumi_lo = 1'b0;
+    assign lce_cmd_data_yumi_lo = lce_cmd_data_v_li & lce_cmd_data_ready_and_lo;
   end
   else begin : data_buffer
   bsg_fifo_1r1w_small
