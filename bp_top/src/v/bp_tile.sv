@@ -50,9 +50,6 @@ module bp_tile
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_resp_link_i
    , output logic [coh_noc_ral_link_width_lp-1:0]             lce_resp_link_o
 
-   , input [coh_noc_ral_link_width_lp-1:0]                    lce_fill_link_i
-   , output logic [coh_noc_ral_link_width_lp-1:0]             lce_fill_link_o
-
    , output logic [mem_noc_ral_link_width_lp-1:0]             mem_cmd_link_o
    , input [mem_noc_ral_link_width_lp-1:0]                    mem_resp_link_i
    );
