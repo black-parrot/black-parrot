@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # Command line arguments
-TESTLIST=$2
 if [ "$ne" == '1' ]
 then
-  echo "Usage: $0 <verilator, vcs> <testlist> [num_cores]"
+  echo "Usage: $0 <verilator, vcs> [num_cores]"
   exit 1
 elif [ $1 == "vcs" ]
 then
@@ -13,12 +12,12 @@ elif [ $1 == "verilator" ]
 then
     SUFFIX=sc
 else
-  echo "Usage: $0 <verilator, vcs> <testlist> [num_cores]"
+  echo "Usage: $0 <verilator, vcs> [num_cores]"
   exit 1
 fi
 
 # Default to 1 core
-N=${3:-1}
+N=${2:-1}
 
 # Bash array to iterate over for configurations
 cfgs=(\
