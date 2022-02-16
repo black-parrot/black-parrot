@@ -423,7 +423,7 @@ module bp_cacc_vdp
       WAIT_DCACHE_C2: begin
         //if load: load both input vectors
         //if store: go to DONE after store
-        state_n = ~lce_cmd_v_i ? WAIT_DCACHE_C2 : WAIT_FETCH;
+        state_n = ~(lce_cmd_v_i | lce_fill_v_i) ? WAIT_DCACHE_C2 : WAIT_FETCH;
         res_status = '0;
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
