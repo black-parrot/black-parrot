@@ -4,6 +4,10 @@
  *   bp_io_cce.sv
  *
  * Description:
+ *   This module acts as a CCE for uncacheable IO memory accesses.
+ *
+ *   It converts uncached load and store LCE requests to IO requests, and
+ *   converts uncached IO responses to uncached LCE command messages.
  *
  */
 
