@@ -101,12 +101,7 @@ module bp_l2e_tile
   localparam lce_cmd_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_header_s));
 
   // LCE to CCE request
-  localparam cache_fill_width_lp = `BSG_MIN(icache_fill_width_p
-                                            , `BSG_MIN(dcache_fill_width_p
-                                                       , num_cacc_p ? acache_fill_width_p
-                                                                    : dcache_fill_width_p)
-                                            );
-  localparam bedrock_len_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV((1<<e_bedrock_msg_size_128)*8,cache_fill_width_lp));
+  localparam bedrock_len_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV((1<<e_bedrock_msg_size_128)*8,bedrock_data_width_p));
   logic [bedrock_len_width_lp-1:0] cce_lce_req_pr_len;
   bp_bedrock_size_to_len
    #(.len_width_p(bedrock_len_width_lp)
