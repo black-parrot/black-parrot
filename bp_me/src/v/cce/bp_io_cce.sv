@@ -102,7 +102,7 @@ module bp_io_cce
     io_resp_header_ready_and_o           = lce_cmd_header_ready_and_i;
     lce_cmd_header_v_o                   = io_resp_header_v_i;
     lce_cmd_header_cast_o                = '0;
-    lce_cmd_header_cast_o.msg_type.cmd   = io_resp_wr_not_rd ? e_bedrock_cmd_uc_done : e_bedrock_cmd_uc_data;
+    lce_cmd_header_cast_o.msg_type.cmd   = io_resp_wr_not_rd ? e_bedrock_cmd_uc_st_done : e_bedrock_cmd_uc_data;
     lce_cmd_header_cast_o.addr           = io_resp_header_cast_i.addr;
     lce_cmd_header_cast_o.size           = io_resp_header_cast_i.size;
     lce_cmd_header_cast_o.payload.dst_id = io_resp_header_cast_i.payload.lce_id;

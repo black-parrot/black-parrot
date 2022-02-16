@@ -614,7 +614,7 @@ module bp_lce_cmd
           end
 
           // Uncached Store/Req Done
-          e_bedrock_cmd_uc_done: begin
+          e_bedrock_cmd_uc_st_done: begin
             lce_cmd_header_yumi_lo = lce_cmd_header_v_li;
             uc_store_req_complete_o = lce_cmd_header_yumi_lo;
           end
