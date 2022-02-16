@@ -15,17 +15,6 @@ module wrapper
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-   , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
-   , localparam lg_icache_assoc_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
-   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-   , localparam block_size_in_words_lp=icache_assoc_p
-   , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
-   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp
-   , localparam data_mem_mask_width_lp=(bank_width_lp>>3)
-   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp>>3)
-   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-   , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
-   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -47,13 +36,13 @@ module wrapper
    , output                                  data_v_o
 
    , output logic [mem_header_width_lp-1:0]  mem_cmd_header_o
-   , output logic [l2_fill_width_p-1:0]      mem_cmd_data_o
+   , output logic [l2_data_width_p-1:0]      mem_cmd_data_o
    , output logic                            mem_cmd_v_o
    , input                                   mem_cmd_ready_and_i
    , output logic                            mem_cmd_last_o
 
    , input [mem_header_width_lp-1:0]         mem_resp_header_i
-   , input [l2_fill_width_p-1:0]             mem_resp_data_i
+   , input [l2_data_width_p-1:0]             mem_resp_data_i
    , input                                   mem_resp_v_i
    , output logic                            mem_resp_ready_and_o
    , input                                   mem_resp_last_i
@@ -385,7 +374,6 @@ module wrapper
 
        // CCE-MEM Interface
        // BedRock Stream protocol: ready&valid
-       // TODO: match data widths with top-level
        ,.mem_resp_header_i(mem_resp_header_i)
        ,.mem_resp_data_i(mem_resp_data_i)
        ,.mem_resp_v_i(mem_resp_v_i)
@@ -403,7 +391,7 @@ module wrapper
   else begin: UCE
     bp_uce
      #(.bp_params_p(bp_params_p)
-       ,.mem_data_width_p(l2_fill_width_p)
+       ,.mem_data_width_p(l2_data_width_p)
        ,.assoc_p(icache_assoc_p)
        ,.sets_p(icache_sets_p)
        ,.block_width_p(icache_block_width_p)

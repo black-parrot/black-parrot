@@ -31,8 +31,12 @@ module testbench
   )
   (output bit reset_i);
 
-  if ((uce_p == 0) && (l2_fill_width_p != dword_width_gp))
-    $fatal(0, "CCE requires L2 fill width same as bedrock data width for memory networks");
+  if ((uce_p == 0) && (l2_data_width_p != bedrock_data_width_p))
+    $error("CCE requires L2 fill width same as bedrock data width for memory networks");
+  if ((uce_p == 0) && (icache_fill_width_p != bedrock_data_width_p))
+    $error("CCE requires L2 fill width same as bedrock data width for memory networks");
+  if ((uce_p == 1) && (l2_data_width_p != icache_fill_width_p))
+    $error("UCE requires L2 data width same as I$ fill width");
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -86,7 +90,7 @@ module testbench
   logic mem_cmd_v_lo, mem_resp_v_li;
   logic mem_cmd_ready_and_li, mem_resp_ready_and_lo, mem_cmd_last_lo, mem_resp_last_li;
   bp_bedrock_mem_header_s mem_cmd_header_lo, mem_resp_header_li;
-  logic [l2_fill_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
+  logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
 
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
   logic trace_v_lo;
