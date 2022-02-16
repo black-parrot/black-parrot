@@ -4,7 +4,8 @@
  *   bp_me_bedrock_mem_to_link.sv
  *
  * Description:
- *   Converts BedRock Burst Mem In / Cmd to Wormhole Link Out / In
+ *   Converts BedRock Burst Memory Interface to Wormhole Link interface.
+ *   The payload_mask_p parameter indicates which BedRock input messages carry data.
  *
  */
 
