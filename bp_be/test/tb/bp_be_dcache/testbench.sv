@@ -43,13 +43,19 @@ module testbench
   (output bit reset_i);
 
   if ((uce_p == 0) && (l2_data_width_p != bedrock_data_width_p))
-    $fatal(0, "CCE requires L2 fill width same as bedrock data width");
+    $error("CCE requires L2 fill width same as bedrock data width");
   if ((uce_p == 0) && (dcache_fill_width_p != bedrock_data_width_p))
-    $fatal(0, "CCE requires $ fill width same as bedrock data width");
+    $error("CCE requires $ fill width same as bedrock data width");
   if ((uce_p == 1) && (num_caches_p != 1))
-    $fatal(0, "UCE setup supports only 1 cache");
+    $error("UCE setup supports only 1 cache");
   if ((uce_p == 0) && (wt_p == 1))
-    $fatal(0, "CCE does not support writethrough caches");
+    $error("CCE does not support writethrough caches");
+  if (uce_p == 0 && dcache_writethrough_p == 1)
+    $error("Writethrough cache with CCE not yet supported");
+  if (cce_block_width_p != dcache_block_width_p)
+    $error("Memory fetch block width does not match D$ block width");
+  if (num_caches_p == 0)
+    $error("Please provide a valid number of caches");
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -443,16 +449,6 @@ module testbench
      ,.mem_resp_ready_and_i(mem_resp_ready_and_li)
      ,.mem_resp_last_i(mem_resp_last_li)
      );
-
-  // Assertions
-  if (uce_p == 0 && dcache_writethrough_p == 1)
-    $fatal("Writethrough cache with CCE not yet supported");
-  if (cce_block_width_p != dcache_block_width_p)
-    $fatal("Memory fetch block width does not match D$ block width");
-  if (num_caches_p == 0)
-    $fatal("Please provide a valid number of caches");
-  if ((uce_p == 1) && (num_caches_p > 1))
-    $fatal("UCE does not support multi-cache testing");
 
   `ifndef VERILATOR
     initial
