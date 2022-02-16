@@ -1,4 +1,14 @@
 
+/*
+ * Name:
+ *   bp_io_link_to_lce.sv
+ *
+ * Description:
+ *   This module converts IO Command messages to LCE Requests and IO Response
+ *   messages to LCE Commands. This module only supports uncached accesses.
+ *
+ */
+
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 `include "bp_top_defines.svh"
@@ -57,8 +67,6 @@ module bp_io_link_to_lce
    , input                                          lce_cmd_data_v_i
    , output logic                                   lce_cmd_data_ready_and_o
    , input                                          lce_cmd_last_i
-
-   // No LCE response or command for I/O (uncached) accesses
    );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
