@@ -46,13 +46,9 @@ module bsg_bus_pack
      );
 
   if (out_width_p > in_width_p)
-    begin : duplicating
-      assign data_o = {out_width_p/in_width_p{data_lo}};
-    end
+    assign data_o = {out_width_p/in_width_p{data_lo}};
   else
-    begin : slicing
-      assign data_o = data_lo[0+:out_width_p];
-    end
+    assign data_o = data_lo[0+:out_width_p];
 
   //synopsys translate_off
   if (!`BSG_IS_POW2(in_width_p) || !`BSG_IS_POW2(out_width_p))
