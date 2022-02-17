@@ -152,7 +152,6 @@ module bp_unicore_lite
 
   bp_uce
    #(.bp_params_p(bp_params_p)
-     ,.mem_data_width_p(uce_fill_width_p)
      ,.assoc_p(icache_assoc_p)
      ,.sets_p(icache_sets_p)
      ,.block_width_p(icache_block_width_p)

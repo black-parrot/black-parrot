@@ -55,15 +55,14 @@ module bp_nonsynth_host
    , output logic [num_core_p-1:0]                  finish_o
    );
 
-  import "DPI-C" context function void start();
-  import "DPI-C" context function int scan();
-  import "DPI-C" context function void pop();
+  //import "DPI-C" context function void start();
+  //import "DPI-C" context function int scan();
+  //import "DPI-C" context function void pop();
 
   integer tmp;
   integer stdout[num_core_p];
   integer stdout_global;
 
-  initial start();
   always_ff @(negedge reset_i)
     begin
       for (integer j = 0; j < num_core_p; j++)
@@ -73,20 +72,6 @@ module bp_nonsynth_host
         end
       stdout_global = $fopen("stdout_global.txt", "w");
     end
-
-  logic do_scan;
-  bsg_strobe
-   #(.width_p(128))
-   scan_strobe
-    (.clk_i(clk_i)
-     ,.reset_r_i(reset_i)
-     ,.init_val_r_i('0)
-     ,.strobe_r_o(do_scan)
-     );
-  logic [63:0] ch;
-  always_ff @(posedge clk_i)
-    if (do_scan)
-      ch = scan();
 
   localparam bedrock_reg_els_lp = 6;
   logic paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li;
@@ -162,8 +147,8 @@ module bp_nonsynth_host
         $fflush(stdout[addr_core_enc]);
       end
 
-      if (getchar_r_v_li)
-        pop();
+      //if (getchar_r_v_li)
+      //  pop();
 
       if (mem_cmd_ready_and_o & mem_cmd_v_i & (hio_id != '0))
         $error("Warning: Accesing illegal hio %0h. Sending loopback message!", hio_id);
@@ -180,7 +165,7 @@ module bp_nonsynth_host
       if (&finish_r)
         begin
           $display("All cores finished! Terminating...");
-          $finish();
+          $finish(2);
         end
     end
 
@@ -248,7 +233,7 @@ module bp_nonsynth_host
 
   assign data_li[0] = '0;
   assign data_li[1] = '0;
-  assign data_li[2] = ch;
+  assign data_li[2] = '0; //ch;
   assign data_li[3] = finish_r;
   assign data_li[4] = bootrom_final_lo;
   assign data_li[5] = paramrom_final_lo;
