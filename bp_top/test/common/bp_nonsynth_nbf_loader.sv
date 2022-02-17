@@ -124,7 +124,7 @@ module bp_nonsynth_nbf_loader
    #(.in_width_p(nbf_data_width_lp), .out_width_p(io_data_width_p))
    cmd_bus_pack
     (.data_i(curr_nbf.data)
-     ,.sel_i(io_cmd_header_cast_o.addr[0+:sel_width_lp])
+     ,.sel_i('0) // We are aligned
      ,.size_i(io_cmd_header_cast_o.size[0+:size_width_lp])
      ,.data_o(io_cmd_data_o)
      );
