@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_me_wormhole_defines.svh
+ *   bp_common_bedrock_wormhole_defines.svh
  *
  * Note: standard bsg_wormhole messages are {payload, len, cord}
  *       The messages defined here contain extra "header" fields specific
@@ -10,8 +10,8 @@
  *
  */
 
-`ifndef BP_ME_WORMHOLE_DEFINES_SVH
-`define BP_ME_WORMHOLE_DEFINES_SVH
+`ifndef BP_COMMON_BEDROCK_WORMHOLE_DEFINES_SVH
+`define BP_COMMON_BEDROCK_WORMHOLE_DEFINES_SVH
 
 `include "bsg_noc_links.vh"
 `include "bsg_wormhole_router.vh"

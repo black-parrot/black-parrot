@@ -73,28 +73,23 @@ module bp_me_bedrock_mem_to_link
 
   // mem resp burst to wh
   bp_mem_wormhole_header_s mem_header_li;
-  bp_me_wormhole_packet_encode_mem
+  logic [len_width_p-1:0] noc_data_beats_li;
+  bp_me_bedrock_wormhole_header_encode
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
      ,.cord_width_p(cord_width_p)
      ,.cid_width_p(cid_width_p)
      ,.len_width_p(len_width_p)
+     ,.payload_width_p(mem_payload_width_lp)
      ,.payload_mask_p(payload_mask_p)
      )
    mem_encode
-    (.mem_header_i(mem_header_i)
+    (.header_i(mem_header_i)
      ,.dst_cord_i(dst_cord_i)
      ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(mem_header_li)
+     ,.data_len_o(noc_data_beats_li)
      );
-
-  // Number of wormhole link flits per wormhole header
-  localparam wh_hdr_width_lp = cord_width_p + len_width_p + cid_width_p + mem_header_width_lp;
-  localparam [len_width_p-1:0] hdr_len_lp = `BSG_CDIV(wh_hdr_width_lp, flit_width_p);
-
-  wire [len_width_p-1:0] noc_data_beats_li = mem_has_data_i
-                                             ? mem_header_li.rtr_hdr.len - hdr_len_lp
-                                             : '0;
 
   bp_me_burst_to_wormhole
    #(.flit_width_p(flit_width_p)

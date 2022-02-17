@@ -38,10 +38,10 @@ module bp_me_wormhole_to_burst
    // cord_width_p: the width of the {y,x} coordinate of the destination
    // len_width_p : the width of the length field, denoting #flits+1
    // cid_width   : the width of the concentrator id of the destination
-   // Default to 0 for cord and cid, so that this module can be used either
+   // Default to 0 for cid so that this module can be used either
    //   for concentrator or router
    parameter `BSG_INV_PARAM(flit_width_p)
-   , parameter cord_width_p    = 0
+   , parameter `BSG_INV_PARAM(cord_width_p)
    , parameter `BSG_INV_PARAM(len_width_p)
    , parameter cid_width_p     = 0
 
@@ -89,8 +89,10 @@ module bp_me_wormhole_to_burst
    );
 
   // parameter checks
-  if ((pr_data_width_p % flit_width_p != 0) && (flit_width_p % pr_data_width_p != 0))
+  if ((pr_data_width_p > flit_width_p) && (pr_data_width_p % flit_width_p != 0))
     $error("Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
+  if ((pr_data_width_p < flit_width_p) && (flit_width_p % pr_data_width_p != 0))
+    $error("Flit width: %d must be multiple of protocol data width: %d", flit_width_p, pr_data_width_p);
 
   logic is_hdr, is_data, wh_has_data, wh_last_data;
   logic hdr_v_li, hdr_ready_lo;

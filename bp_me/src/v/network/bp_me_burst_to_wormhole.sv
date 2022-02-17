@@ -42,7 +42,7 @@ module bp_me_burst_to_wormhole
    // Default to 0 for cord and cid, so that this module can be used either
    //   for concentrator or router
    parameter `BSG_INV_PARAM(flit_width_p)
-   , parameter cord_width_p    = 0
+   , parameter `BSG_INV_PARAM(cord_width_p)
    , parameter `BSG_INV_PARAM(len_width_p)
    , parameter cid_width_p     = 0
 
@@ -95,8 +95,10 @@ module bp_me_burst_to_wormhole
    );
 
   // parameter checks
-  if ((pr_data_width_p % flit_width_p != 0) || (flit_width_p % pr_data_width_p != 0))
+  if ((pr_data_width_p > flit_width_p) && (pr_data_width_p % flit_width_p != 0))
     $error("Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
+  if ((pr_data_width_p < flit_width_p) && (flit_width_p % pr_data_width_p != 0))
+    $error("Flit width: %d must be multiple of protocol data width: %d", flit_width_p, pr_data_width_p);
 
   // wormhole stream control determines if data exists based on input
   // protocol header that is already formatted as a wormhole header
