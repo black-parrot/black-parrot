@@ -77,6 +77,10 @@ module bp_me_burst_to_wormhole
    , input                           pr_hdr_v_i
    , output logic                    pr_hdr_ready_and_o
    , input                           pr_has_data_i
+   // number of NoC data data beats required for message == (msg size / flit width) - 1
+   // arrives with pr_hdr_v_i
+   // value is zero-based (i.e., message with 4 data beats sets len_i = 3)
+   , input [len_width_p-1:0]         noc_data_beats_i
 
    , input [pr_data_width_p-1:0]     pr_data_i
    , input                           pr_data_v_i
@@ -91,7 +95,7 @@ module bp_me_burst_to_wormhole
    );
 
   // parameter checks
-  if ((pr_data_width_p % flit_width_p != 0) && (flit_width_p % pr_data_width_p != 0))
+  if ((pr_data_width_p % flit_width_p != 0) || (flit_width_p % pr_data_width_p != 0))
     $error("Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
 
   // wormhole stream control determines if data exists based on input
@@ -139,12 +143,48 @@ module bp_me_burst_to_wormhole
 
   // Protocol data is 1 or multiple flit-sized. We accept a large protocol data
   //   and then stream out 1 flit at a time
+  // Every NoC flit sent holds valid data, and it is possible that less than
+  // (pr_data_width_p/flit_width_p) flits are required to send the protocol message data.
+  // This happens when the protocol data message size < protocol data channel width
   if (pr_data_width_p >= flit_width_p)
     begin : wide
-      localparam [len_width_p-1:0] data_len_lp = `BSG_CDIV(pr_data_width_p, flit_width_p);
-      bsg_parallel_in_serial_out_passthrough
+      // number of NoC flits per protocol data flit
+      localparam [len_width_p-1:0] max_els_lp = `BSG_CDIV(pr_data_width_p, flit_width_p);
+      localparam lg_max_els_lp = `BSG_SAFE_CLOG2(max_els_lp);
+      // PISO len_i is zero-based, i.e., input is len-1
+      localparam [lg_max_els_lp-1:0] piso_full_len_lp = max_els_lp - 1;
+
+      // PISO singals
+      logic piso_first_lo, piso_last_lo;
+      logic [lg_max_els_lp-1:0] piso_len_li;
+
+      // count of noc data packets to send after current
+      // set with when pr_hdr_v_i & pr_hdr_ready_and_o
+      // intput value provided by protocol message sender (msg size / flit width) - 1
+      logic [len_width_p-1:0] noc_data_cnt;
+      wire noc_data_sent = (noc_data_cnt == '0);
+      bsg_counter_set_down
+       #(.width_p(len_width_p)
+         ,.init_val_p('0)
+         ,.set_and_down_exclusive_p(0)
+         )
+       pr_data_counter
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+         ,.set_i(pr_hdr_v_i & pr_hdr_ready_and_o)
+         ,.val_i(noc_data_beats_i)
+         ,.down_i(~noc_data_sent & data_v_lo & data_ready_and_li)
+         ,.count_r_o(noc_data_cnt)
+         );
+
+      // set len_i to PISO
+      assign piso_len_li = (noc_data_cnt >= piso_full_len_lp)
+                             ? piso_full_len_lp
+                             : lg_max_els_lp'(noc_data_cnt);
+
+      bsg_parallel_in_serial_out_passthrough_dynamic_last
        #(.width_p(flit_width_p)
-         ,.els_p(data_len_lp)
+         ,.max_els_p(max_els_lp)
          )
        data_piso
         (.clk_i(clk_i)
@@ -157,6 +197,11 @@ module bp_me_burst_to_wormhole
          ,.data_o(data_lo)
          ,.v_o(data_v_lo)
          ,.ready_and_i(data_ready_and_li)
+
+         ,.first_o(piso_first_lo)
+         // must be presented when ready_and_i & first_o
+         ,.len_i(piso_len_li)
+         ,.last_o(piso_last_lo)
          );
     wire unused = pr_last_i;
     end

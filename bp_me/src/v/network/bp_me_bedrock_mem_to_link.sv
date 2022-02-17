@@ -88,6 +88,14 @@ module bp_me_bedrock_mem_to_link
      ,.wh_header_o(mem_header_li)
      );
 
+  // Number of wormhole link flits per wormhole header
+  localparam wh_hdr_width_lp = cord_width_p + len_width_p + cid_width_p + mem_header_width_lp;
+  localparam [len_width_p-1:0] hdr_len_lp = `BSG_CDIV(wh_hdr_width_lp, flit_width_p);
+
+  wire [len_width_p-1:0] noc_data_beats_li = mem_has_data_i
+                                             ? mem_header_li.rtr_hdr.len - hdr_len_lp
+                                             : '0;
+
   bp_me_burst_to_wormhole
    #(.flit_width_p(flit_width_p)
      ,.cord_width_p(cord_width_p)
@@ -104,6 +112,7 @@ module bp_me_bedrock_mem_to_link
     ,.pr_hdr_v_i(mem_header_v_i)
     ,.pr_hdr_ready_and_o(mem_header_ready_and_o)
     ,.pr_has_data_i(mem_has_data_i)
+    ,.noc_data_beats_i(noc_data_beats_li)
 
     ,.pr_data_i(mem_data_i)
     ,.pr_data_v_i(mem_data_v_i)

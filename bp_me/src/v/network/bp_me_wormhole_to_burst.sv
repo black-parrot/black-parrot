@@ -127,11 +127,8 @@ module bp_me_wormhole_to_burst
   if (flit_width_p > pr_data_width_p)
     begin : narrow
       // flit_width_p > pr_data_width_p -> multiple protocol data per link flit
-      // and it is possible that last link flit is not completely filled with valid
-      // protocol data.
-
-      // TODO: this module would be greatly simplified if enforced
-      // flit_width_p <= pr_data_width_p. Would remove need for pr_data_beats_i.
+      // It is possible that less than max_els_p protocol data beats are required for the
+      // input message.
 
       // number of protocol data per full link flit
       localparam [len_width_p-1:0] max_els_lp = `BSG_CDIV(flit_width_p, pr_data_width_p);
@@ -139,7 +136,7 @@ module bp_me_wormhole_to_burst
       // PISO len_i is zero-based, i.e., input is len-1
       localparam [lg_max_els_lp-1:0] piso_full_len_lp = max_els_lp - 1;
 
-      // PISO inputs
+      // PISO signals
       logic piso_first_lo, piso_last_lo;
       logic [lg_max_els_lp-1:0] piso_len_li;
 
@@ -196,12 +193,16 @@ module bp_me_wormhole_to_burst
     end
   else
     // Protocol data is 1 or multiple flit-sized. We aggregate wormhole data
-    // until we have a full protocol data and then let the client process it
+    // until we have a full protocol data and then let the client process it.
+    // The wh_last_data signal is used to indicate when the last wh beat arrives to allow
+    // the SIPO to output a partially filled packet for cases when the number of NoC flits
+    // arriving is less than data_len_lp. This happens if the data size of the arriving
+    // message is smaller than the protocol data channel width.
     begin : wide
       localparam [len_width_p-1:0] data_len_lp = `BSG_CDIV(pr_data_width_p, flit_width_p);
-      bsg_serial_in_parallel_out_passthrough
+      bsg_serial_in_parallel_out_passthrough_dynamic_last
        #(.width_p(flit_width_p)
-         ,.els_p(data_len_lp)
+         ,.max_els_p(data_len_lp)
          )
        data_sipo
         (.clk_i(clk_i)
@@ -210,6 +211,7 @@ module bp_me_wormhole_to_burst
          ,.data_i(link_data_i)
          ,.v_i(data_v_li)
          ,.ready_and_o(data_ready_lo)
+         ,.last_i(wh_last_data)
 
          ,.data_o(pr_data_o)
          ,.v_o(pr_data_v_o)
