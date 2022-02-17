@@ -322,12 +322,13 @@ module bp_sacc_tile
   localparam bedrock_len_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV((1<<e_bedrock_msg_size_128)*8,acache_fill_width_p));
 
   // Burst to WH (lce_lce_req_header_lo)
-  bp_me_wormhole_packet_encode_lce_req
-   #(.bp_params_p(bp_params_p)
-     )
+  logic [coh_noc_len_width_p-1:0] lce_req_noc_data_beats_lo;
+  bp_me_bedrock_wormhole_header_encode_lce_req
+   #(.bp_params_p(bp_params_p))
    req_encode
-    (.lce_req_header_i(lce_lce_req_header_lo)
+    (.header_i(lce_lce_req_header_lo)
      ,.wh_header_o(lce_req_wh_header_lo)
+     ,.data_len_o(lce_req_noc_data_beats_lo)
      );
 
   bp_me_burst_to_wormhole
@@ -346,6 +347,7 @@ module bp_sacc_tile
     ,.pr_hdr_v_i(lce_lce_req_header_v_lo)
     ,.pr_hdr_ready_and_o(lce_lce_req_header_ready_and_li)
     ,.pr_has_data_i(lce_lce_req_has_data_lo)
+    ,.noc_data_beats_i(lce_req_noc_data_beats_lo)
 
     ,.pr_data_i(lce_lce_req_data_lo)
     ,.pr_data_v_i(lce_lce_req_data_v_lo)
@@ -438,11 +440,13 @@ module bp_sacc_tile
     );
 
   // Burst to WH (cce_lce_cmd_header_lo)
-  bp_me_wormhole_packet_encode_lce_cmd
+  logic [coh_noc_len_width_p-1:0] lce_cmd_noc_data_beats_lo;
+  bp_me_bedrock_wormhole_header_encode_lce_cmd
    #(.bp_params_p(bp_params_p))
    cce_cmd_encode
-    (.lce_cmd_header_i(cce_lce_cmd_header_lo)
+    (.header_i(cce_lce_cmd_header_lo)
      ,.wh_header_o(cce_lce_cmd_wh_header_lo)
+     ,.data_len_o(lce_cmd_noc_data_beats_lo)
      );
 
   bp_me_burst_to_wormhole
@@ -461,6 +465,7 @@ module bp_sacc_tile
     ,.pr_hdr_v_i(cce_lce_cmd_header_v_lo)
     ,.pr_hdr_ready_and_o(cce_lce_cmd_header_ready_and_li)
     ,.pr_has_data_i(cce_lce_cmd_has_data_lo)
+    ,.noc_data_beats_i(lce_cmd_noc_data_beats_lo)
 
     ,.pr_data_i(cce_lce_cmd_data_lo)
     ,.pr_data_v_i(cce_lce_cmd_data_v_lo)

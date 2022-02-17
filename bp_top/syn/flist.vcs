@@ -277,11 +277,11 @@ $BP_ME_DIR/src/v/network/bp_me_bedrock_mem_to_link.sv
 $BP_ME_DIR/src/v/network/bp_me_cce_id_to_cord.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_cmd.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_fill.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_req.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_resp.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode_lce_cmd.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode_lce_fill.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode_lce_req.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode_lce_resp.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_wormhole.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv

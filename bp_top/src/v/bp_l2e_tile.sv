@@ -143,12 +143,14 @@ module bp_l2e_tile
 
   // CCE to LCE command
   // encode the header into WH format
+  logic [coh_noc_len_width_p-1:0] cce_lce_cmd_noc_data_beats_lo;
   bp_lce_cmd_wormhole_header_s cce_lce_cmd_wh_header_lo;
-  bp_me_wormhole_packet_encode_lce_cmd
+  bp_me_bedrock_wormhole_header_encode_lce_cmd
    #(.bp_params_p(bp_params_p))
    cmd_encode
-    (.lce_cmd_header_i(cce_lce_cmd_header)
+    (.header_i(cce_lce_cmd_header)
      ,.wh_header_o(cce_lce_cmd_wh_header_lo)
+     ,.data_len_o(cce_lce_cmd_noc_data_beats_lo)
      );
 
   bp_me_burst_to_wormhole
@@ -167,6 +169,7 @@ module bp_l2e_tile
     ,.pr_hdr_v_i(cce_lce_cmd_header_v)
     ,.pr_hdr_ready_and_o(cce_lce_cmd_header_ready_and)
     ,.pr_has_data_i(cce_lce_cmd_has_data)
+    ,.noc_data_beats_i(cce_lce_cmd_noc_data_beats_lo)
 
     ,.pr_data_i(cce_lce_cmd_data)
     ,.pr_data_v_i(cce_lce_cmd_data_v)
