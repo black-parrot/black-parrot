@@ -69,10 +69,10 @@ module bp_be_detector
   // Floating point data hazards
   logic frs1_sb_raw_haz_v, frs2_sb_raw_haz_v, frs3_sb_raw_haz_v;
   logic frd_sb_waw_haz_v;
-  logic [3:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
-  logic [3:0] rs1_match_vector, rs2_match_vector, rs3_match_vector;
+  logic [2:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
+  logic [2:0] rs1_match_vector, rs2_match_vector, rs3_match_vector;
 
-  bp_be_dep_status_s [4:0] dep_status_r;
+  bp_be_dep_status_s [3:0] dep_status_r;
 
   logic fence_haz_v, cmd_haz_v, fflags_haz_v, csr_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
@@ -139,7 +139,7 @@ module bp_be_detector
       // Generate matches for rs1, rs2. rs3
       // 3 stages because we only care about ex1, ex2, and iwb dependencies. fwb dependencies
       //   can be handled through forwarding
-      for (integer i = 0; i < 4; i++)
+      for (integer i = 0; i < 3; i++)
         begin
           rs1_match_vector[i] = (isd_status_cast_i.rs1_addr == dep_status_r[i].rd_addr);
           rs2_match_vector[i] = (isd_status_cast_i.rs2_addr == dep_status_r[i].rd_addr);
@@ -193,13 +193,9 @@ module bp_be_detector
       frs3_data_haz_v[1] = (isd_status_cast_i.frs3_v & rs3_match_vector[1])
                            & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
-      irs1_data_haz_v[2] = (isd_status_cast_i.irs1_v & rs1_match_vector[2])
-                           & (isd_status_cast_i.rs1_addr != '0)
-                           & (dep_status_r[2].mul_iwb_v);
+      irs1_data_haz_v[2] = '0;
 
-      irs2_data_haz_v[2] = (isd_status_cast_i.irs2_v & rs2_match_vector[2])
-                           & (isd_status_cast_i.rs2_addr != '0)
-                           & (dep_status_r[2].mul_iwb_v);
+      irs2_data_haz_v[2] = '0;
 
       frs1_data_haz_v[2] = (isd_status_cast_i.frs1_v & rs1_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
@@ -210,27 +206,17 @@ module bp_be_detector
       frs3_data_haz_v[2] = (isd_status_cast_i.frs3_v & rs3_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      frs1_data_haz_v[3] = (isd_status_cast_i.frs1_v & rs1_match_vector[3])
-                           & (dep_status_r[3].fma_fwb_v);
-
-      frs2_data_haz_v[3] = (isd_status_cast_i.frs2_v & rs2_match_vector[3])
-                           & (dep_status_r[3].fma_fwb_v);
-
-      frs3_data_haz_v[3] = (isd_status_cast_i.frs3_v & rs3_match_vector[3])
-                           & (dep_status_r[3].fma_fwb_v);
-
       mem_in_pipe_v      = dep_status_r[0].mem_v | dep_status_r[1].mem_v | dep_status_r[2].mem_v;
       fence_haz_v        = (isd_status_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v | ~mem_ready_i))
                            | (isd_status_cast_i.mem_v & credits_full_i);
       cmd_haz_v          = cmd_full_i;
 
-      // TODO: Pessimistic, could have a separate fflags w_v
+      // TODO: Pessimistic, could have a separate fflags r/w_v
       fflags_haz_v = isd_status_cast_i.csr_v
                      & ((dep_status_r[0].fflags_w_v)
                         | (dep_status_r[1].fflags_w_v)
                         | (dep_status_r[2].fflags_w_v)
                         | (dep_status_r[3].fflags_w_v)
-                        | (dep_status_r[4].fflags_w_v)
                         | ~fdiv_ready_i
                         );
 
@@ -299,7 +285,7 @@ module bp_be_detector
   always_ff @(posedge clk_i)
     begin
       dep_status_r[0]   <= dispatch_pkt_cast_i.v ? dep_status_n : '0;
-      dep_status_r[4:1] <= dep_status_r[3:0];
+      dep_status_r[3:1] <= dep_status_r[2:0];
     end
 
 endmodule

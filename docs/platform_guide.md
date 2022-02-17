@@ -4,9 +4,9 @@
 
 ## Instruction Latencies
 * RV64I arithmetic instructions have 1-cycle latency
-* RV64IA memory instructions have 3-cycle latency
-* RV64M instructions have a 4-cycle latency, except for division, which is iterative
-* Rv64FD instructions have a 5-cycle latency, exception for fdiv/fsqrt, which are iterative
+* RV64IA memory instructions have 2/3-cycle latency
+* RV64M instructions have a 3-cycle latency, except for division, which is iterative
+* Rv64FD instructions have a 4-cycle latency, exception for fdiv/fsqrt, which are iterative
 * BlackParrot has a load-to-use time of 2 cycles for dwords, 3 cycles for words, halfs, and bytes
 * BlackParrot has a 2-cycle L1 hit latency for integer loads
 * BlackParrot has a 3-cycle L1 hit latency for floating point loads 

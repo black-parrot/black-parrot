@@ -33,7 +33,7 @@ module bp_be_calculator_top
    , localparam decode_info_width_lp    = `bp_be_decode_info_width
 
    // From BP BE specifications
-   , localparam pipe_stage_els_lp = 6
+   , localparam pipe_stage_els_lp = 5
    )
  (input                                             clk_i
   , input                                           reset_i
@@ -140,11 +140,11 @@ module bp_be_calculator_top
   logic [pipe_stage_els_lp-1:0][dpath_width_gp-1:0] forward_data;
   for (genvar i = 0; i < pipe_stage_els_lp; i++)
     begin : forward_match
-      assign match_rs[0][i] = (dispatch_pkt_cast_i.queue_v & ~dispatch_pkt_cast_i.rs1_fp_v & comp_stage_r[i].ird_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr))
-                              || (dispatch_pkt_cast_i.queue_v & dispatch_pkt_cast_i.rs1_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr));
-      assign match_rs[1][i] = (dispatch_pkt_cast_i.queue_v & ~dispatch_pkt_cast_i.rs2_fp_v & comp_stage_r[i].ird_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr))
-                              || (dispatch_pkt_cast_i.queue_v & dispatch_pkt_cast_i.rs2_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr));
-      assign match_rs[2][i] = (dispatch_pkt_cast_i.queue_v & dispatch_pkt_cast_i.rs3_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs3_addr == comp_stage_r[i].rd_addr));
+      assign match_rs[0][i] = ((i < 4) & dispatch_pkt_cast_i.queue_v & ~dispatch_pkt_cast_i.rs1_fp_v & comp_stage_r[i].ird_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr))
+                              || ((i > 0) & dispatch_pkt_cast_i.queue_v & dispatch_pkt_cast_i.rs1_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr));
+      assign match_rs[1][i] = ((i < 4) & dispatch_pkt_cast_i.queue_v & ~dispatch_pkt_cast_i.rs2_fp_v & comp_stage_r[i].ird_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr))
+                              || ((i > 0) & dispatch_pkt_cast_i.queue_v & dispatch_pkt_cast_i.rs2_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr));
+      assign match_rs[2][i] = ((i > 0) & dispatch_pkt_cast_i.queue_v & dispatch_pkt_cast_i.rs3_fp_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs3_addr == comp_stage_r[i].rd_addr));
 
       assign forward_data[i] = comp_stage_n[i+1].rd_data;
     end
@@ -350,7 +350,7 @@ module bp_be_calculator_top
      ,.trans_info_i(trans_info_lo)
      );
 
-  // Floating point pipe: 4/5 cycle latency
+  // Floating point pipe: 3/4 cycle latency
   bp_be_pipe_fma
    #(.bp_params_p(bp_params_p))
    pipe_fma
@@ -415,12 +415,12 @@ module bp_be_calculator_top
       comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo   : '0;
       comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo         : '0;
       comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo   : '0;
-      comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo         : '0;
-      comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo         : '0;
+      comp_stage_n[3].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo         : '0;
+      comp_stage_n[4].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo         : '0;
 
       comp_stage_n[2].fflags     |= pipe_mem_early_data_lo_v ? pipe_mem_early_fflags_lo : '0;
       comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo       : '0;
-      comp_stage_n[5].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo       : '0;
+      comp_stage_n[4].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo       : '0;
 
       comp_stage_n[0].ird_w_v    &= exc_stage_n[0].v;
       comp_stage_n[1].ird_w_v    &= exc_stage_n[1].v;
@@ -501,14 +501,14 @@ module bp_be_calculator_top
      ,.data_o(exc_stage_r)
      );
 
-  assign pipe_mem_late_iwb_pkt_yumi = pipe_mem_late_iwb_pkt_v & ~comp_stage_r[4].ird_w_v;
-  assign pipe_mem_late_fwb_pkt_yumi = pipe_mem_late_fwb_pkt_v & ~comp_stage_r[5].frd_w_v;
+  assign pipe_mem_late_iwb_pkt_yumi = pipe_mem_late_iwb_pkt_v & ~comp_stage_r[3].ird_w_v;
+  assign pipe_mem_late_fwb_pkt_yumi = pipe_mem_late_fwb_pkt_v & ~comp_stage_r[4].frd_w_v;
 
-  assign pipe_long_idata_lo_yumi = pipe_long_idata_lo_v & ~pipe_mem_late_iwb_pkt_v & ~comp_stage_r[4].ird_w_v;
-  assign pipe_long_fdata_lo_yumi = pipe_long_fdata_lo_v & ~pipe_mem_late_fwb_pkt_v & ~comp_stage_r[5].frd_w_v & ~comp_stage_r[5].fflags_w_v;
+  assign pipe_long_idata_lo_yumi = pipe_long_idata_lo_v & ~pipe_mem_late_iwb_pkt_v & ~comp_stage_r[3].ird_w_v;
+  assign pipe_long_fdata_lo_yumi = pipe_long_fdata_lo_v & ~pipe_mem_late_fwb_pkt_v & ~comp_stage_r[4].frd_w_v & ~comp_stage_r[4].fflags_w_v;
 
-  assign iwb_pkt_o = pipe_mem_late_iwb_pkt_yumi ? pipe_mem_late_iwb_pkt : pipe_long_idata_lo_yumi ? long_iwb_pkt : comp_stage_r[4];
-  assign fwb_pkt_o = pipe_mem_late_fwb_pkt_yumi ? pipe_mem_late_fwb_pkt : pipe_long_fdata_lo_yumi ? long_fwb_pkt : comp_stage_r[5];
+  assign iwb_pkt_o = pipe_mem_late_iwb_pkt_yumi ? pipe_mem_late_iwb_pkt : pipe_long_idata_lo_yumi ? long_iwb_pkt : comp_stage_r[3];
+  assign fwb_pkt_o = pipe_mem_late_fwb_pkt_yumi ? pipe_mem_late_fwb_pkt : pipe_long_fdata_lo_yumi ? long_fwb_pkt : comp_stage_r[4];
 
 endmodule
 
