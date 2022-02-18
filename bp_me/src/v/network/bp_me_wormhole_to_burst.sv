@@ -120,6 +120,7 @@ module bp_me_wormhole_to_burst
      );
 
   // BedRock Burst Gearbox
+  logic pr_data_ready_and_li;
   wire pr_data_v_lo = is_data & link_v_i;
   bp_me_burst_gearbox
     #(.bp_params_p(bp_params_p)
