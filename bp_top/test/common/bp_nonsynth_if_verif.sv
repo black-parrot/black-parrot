@@ -124,20 +124,30 @@ module bp_nonsynth_if_verif
     $error("Error: unicore requires L2-Cache data width same as UCE fill width");
   if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
     $error("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
-  if (multicore_p == 0 && num_core_p != 1)
+  if ((multicore_p == 0) && (num_core_p != 1))
     $error("Unicore only supports a single core configuration in the tethered testbench");
 
   // Multicore
-  if (ic_y_dim_p != 1 && multicore_p == 1)
+  if ((multicore_p == 1) && (dword_width_gp != 64))
+    $error("Error: Multicore is only tested with 64-bit dword width");
+  if ((multicore_p == 1) && (ic_y_dim_p != 1))
     $error("Error: Must have exactly 1 row of I/O routers for multicore");
-  if ((multicore_p == 1) && (l2_data_width_p != dword_width_gp))
-    $error("Error: multicore requires L2 data width same as dword width");
+  if ((multicore_p == 1) && (l2_data_width_p != bedrock_data_width_p))
+    $error("Error: Multicore requires L2 data width same as BedRock data width");
   if ((multicore_p == 1) && (icache_fill_width_p != dcache_fill_width_p))
     $error("Error: Multicore requires L1-Cache fill widths to be the same");
-  if (multicore_p == 1 && !((dcache_block_width_p == icache_block_width_p) && (dcache_block_width_p ==  acache_block_width_p)))
-    $error("Error: We don't currently support different block widths for multicore configurations");
+  if ((multicore_p == 1) && (num_cacc_p > 0) && (icache_fill_width_p != acache_fill_width_p))
+    $error("Error: Multicore requires L1-Cache fill widths to be the same");
+  if ((multicore_p == 1) && (dcache_block_width_p != icache_block_width_p))
+    $error("Error: Multicore requires L1-Cache block widths to be the same");
+  if ((multicore_p == 1) && (num_cacc_p > 0) && (icache_block_width_p != acache_block_width_p))
+    $error("Error: Multicore requires L1-Cache block widths to be the same");
+  if ((multicore_p == 1) && (l2_block_width_p < icache_block_width_p))
+    $error("Error: Multicore requires L2-Cache block width to be at least L1-Cache block width");
+  if ((multicore_p == 1) && (bedrock_data_width_p < dword_width_gp))
+    $error("Error: Multicore requires BedRock data width to be at least dword width");
   if ((multicore_p == 1) && (|l2_amo_support_p))
-    $error("Error: L2 atomics are not currently supported in bp_multicore");
+    $error("Error: Multicore does not support L2 atomics");
 
 
 endmodule
