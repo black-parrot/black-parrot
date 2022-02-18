@@ -67,9 +67,6 @@ module bp_me_burst_to_wormhole
    // Number of wormhole link flits per wormhole header
    , localparam [len_width_p-1:0] hdr_len_lp = `BSG_CDIV(wh_hdr_width_p, flit_width_p)
 
-   // offset of protocol header in deserialized wormhole header
-   , localparam pr_header_offset_lp = (cord_width_p + len_width_p + cid_width_p)
-
    // padding in wormhole header
    , localparam wh_hdr_pad_lp = (flit_width_p*hdr_len_lp) - wh_hdr_width_p
    )
