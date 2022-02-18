@@ -150,7 +150,7 @@ module bp_me_burst_gearbox
     // zero-based length of serial outs per full parallel in
     localparam [lg_max_els_lp-1:0] piso_full_len_lp = max_els_lp - 1;
     // PISO signals
-    logic piso_first_lo, piso_last_lo;
+    logic piso_last_lo;
     logic [lg_max_els_lp-1:0] piso_len_li;
     assign piso_len_li = (out_data_cnt >= piso_full_len_lp)
                          ? piso_full_len_lp
@@ -175,7 +175,7 @@ module bp_me_burst_gearbox
        ,.v_o(msg_data_v_o)
        ,.ready_and_i(msg_data_ready_and_i)
 
-       ,.first_o(piso_first_lo)
+       ,.first_o(/* unused */)
        // must be presented when ready_and_i & first_o
        ,.len_i(piso_len_li)
        ,.last_o(piso_last_lo)
