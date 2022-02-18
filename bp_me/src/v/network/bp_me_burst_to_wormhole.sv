@@ -95,7 +95,7 @@ module bp_me_burst_to_wormhole
 
   // parameter checks
   if (!(`BSG_IS_POW2(pr_data_width_p)) || !(`BSG_IS_POW2(flit_width_p)))
-    $error("Protocol and Network data widths must be powers of 3");
+    $error("Protocol and Network data widths must be powers of 2");
 
   // BedRock Burst Gearbox
   // header is only used to determine number of output data beats, and is otherwise passed

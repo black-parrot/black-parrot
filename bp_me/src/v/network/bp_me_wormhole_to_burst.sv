@@ -90,7 +90,7 @@ module bp_me_wormhole_to_burst
 
   // parameter checks
   if (!(`BSG_IS_POW2(pr_data_width_p)) || !(`BSG_IS_POW2(flit_width_p)))
-    $error("Protocol and Network data widths must be powers of 3");
+    $error("Protocol and Network data widths must be powers of 2");
 
   // WH control signals
   logic is_hdr, is_data, wh_has_data, wh_last_data;
