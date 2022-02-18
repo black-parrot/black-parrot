@@ -64,6 +64,8 @@ module bp_nonsynth_if_verif
     $error("Error: Must have <= 1 column of streaming accelerators");
   if (cac_x_dim_p > 1)
     $error("Error: Must have <= 1 column of coherent accelerators");
+  if (dword_width_gp != 64)
+    $error("Error: BlackParrot is only tested with 64-bit dword width");
 
   // Core or Features
   if (muldiv_support_p[e_mulh])
@@ -122,14 +124,14 @@ module bp_nonsynth_if_verif
   // Unicore
   if ((multicore_p == 0) && (uce_fill_width_p != l2_data_width_p))
     $error("Error: unicore requires L2-Cache data width same as UCE fill width");
-  if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
-    $error("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
+  if ((multicore_p == 0) && (icache_fill_width_p != dcache_fill_width_p))
+    $error("Error: unicore requires L1-Cache fill widths to match");
   if ((multicore_p == 0) && (num_core_p != 1))
-    $error("Unicore only supports a single core configuration in the tethered testbench");
+    $error("Error: Unicore only supports a single core configuration in the tethered testbench");
+  if ((multicore_p == 0) && (uce_fill_width_p < dword_width_gp))
+    $error("Error: Unicore requires UCE fill width to be at least dword width");
 
   // Multicore
-  if ((multicore_p == 1) && (dword_width_gp != 64))
-    $error("Error: Multicore is only tested with 64-bit dword width");
   if ((multicore_p == 1) && (ic_y_dim_p != 1))
     $error("Error: Must have exactly 1 row of I/O routers for multicore");
   if ((multicore_p == 1) && (l2_data_width_p != bedrock_data_width_p))
