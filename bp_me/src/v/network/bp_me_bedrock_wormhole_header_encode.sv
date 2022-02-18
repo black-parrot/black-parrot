@@ -59,14 +59,14 @@ module bp_me_bedrock_wormhole_header_encode
   localparam msg_data_len_128_lp = `BSG_CDIV(8*(1 << e_bedrock_msg_size_128), flit_width_p) - 1;
   // Pre-compute full message flits (hdr + data flits)
   // note: need to add back 1 since both hdr and data lengths are zero-based
-  localparam msg_len_1_lp = msg_data_len_1_lp - msg_hdr_len_lp + 1;
-  localparam msg_len_2_lp = msg_data_len_2_lp - msg_hdr_len_lp + 1;
-  localparam msg_len_4_lp = msg_data_len_4_lp - msg_hdr_len_lp + 1;
-  localparam msg_len_8_lp = msg_data_len_8_lp - msg_hdr_len_lp + 1;
-  localparam msg_len_16_lp = msg_data_len_16_lp - msg_hdr_len_lp + 1;
-  localparam msg_len_32_lp = msg_data_len_32_lp - msg_hdr_len_lp + 1;
-  localparam msg_len_64_lp = msg_data_len_64_lp - msg_hdr_len_lp + 1;
-  localparam msg_len_128_lp = msg_data_len_128_lp - msg_hdr_len_lp + 1;
+  localparam msg_len_1_lp = msg_data_len_1_lp + msg_hdr_len_lp + 1;
+  localparam msg_len_2_lp = msg_data_len_2_lp + msg_hdr_len_lp + 1;
+  localparam msg_len_4_lp = msg_data_len_4_lp + msg_hdr_len_lp + 1;
+  localparam msg_len_8_lp = msg_data_len_8_lp + msg_hdr_len_lp + 1;
+  localparam msg_len_16_lp = msg_data_len_16_lp + msg_hdr_len_lp + 1;
+  localparam msg_len_32_lp = msg_data_len_32_lp + msg_hdr_len_lp + 1;
+  localparam msg_len_64_lp = msg_data_len_64_lp + msg_hdr_len_lp + 1;
+  localparam msg_len_128_lp = msg_data_len_128_lp + msg_hdr_len_lp + 1;
 
   logic [len_width_p-1:0] msg_len_li;
   logic [len_width_p-1:0] msg_data_len_li;
