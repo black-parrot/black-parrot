@@ -7,6 +7,9 @@
  *   Converts a wormhole router stream to BedRock Burst protocol without
  *   deserializing the data.
  *
+ *   The data arriving on from the wormhole network is gearboxed to match the
+ *   BedRock protocol data width.
+ *
  * Assumptions:
  *  Usage of this module requires correctly formed wormhole headers. The length
  *    field of the wormhole message determines how many protocol data beats are
@@ -31,26 +34,27 @@
  */
 
 `include "bsg_defines.v"
+`include "bp_common_defines.svh"
 
 module bp_me_wormhole_to_burst
- #(// The wormhole router protocol information
+ import bp_common_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   // The wormhole router protocol information
    // flit_width_p: number of physical data wires between links
    // cord_width_p: the width of the {y,x} coordinate of the destination
    // len_width_p : the width of the length field, denoting #flits+1
    // cid_width   : the width of the concentrator id of the destination
    // Default to 0 for cid so that this module can be used either
    //   for concentrator or router
-   parameter `BSG_INV_PARAM(flit_width_p)
+   , parameter `BSG_INV_PARAM(flit_width_p)
    , parameter `BSG_INV_PARAM(cord_width_p)
    , parameter `BSG_INV_PARAM(len_width_p)
    , parameter cid_width_p     = 0
 
    // Higher level protocol information
    , parameter `BSG_INV_PARAM(pr_hdr_width_p)
+   , parameter `BSG_INV_PARAM(pr_payload_width_p)
    , parameter `BSG_INV_PARAM(pr_data_width_p)
-
-   // width of protocol message length input
-   , parameter `BSG_INV_PARAM(pr_len_width_p)
 
    // Computed wormhole header parameters. These can be overridden directly if desired.
    // Size of the wormhole header + the protocol header
@@ -76,10 +80,6 @@ module bp_me_wormhole_to_burst
    , output logic                       pr_hdr_v_o
    , input                              pr_hdr_ready_and_i
    , output logic                       pr_has_data_o
-   // number of protocol message data in arriving wormhole message
-   // arrives late when pr_hdr_v_o & pr_hdr_ready_and_i
-   // value is zero-based (i.e., message with 4 data beats sets len_i = 3)
-   , input [pr_len_width_p-1:0]         pr_data_beats_i
 
    // The protocol data information
    , output logic [pr_data_width_p-1:0] pr_data_o
@@ -89,18 +89,19 @@ module bp_me_wormhole_to_burst
    );
 
   // parameter checks
-  if ((pr_data_width_p > flit_width_p) && (pr_data_width_p % flit_width_p != 0))
-    $error("Protocol data width: %d must be multiple of flit width: %d", pr_data_width_p, flit_width_p);
-  if ((pr_data_width_p < flit_width_p) && (flit_width_p % pr_data_width_p != 0))
-    $error("Flit width: %d must be multiple of protocol data width: %d", flit_width_p, pr_data_width_p);
+  if (!(`BSG_IS_POW2(pr_data_width_p)) || !(`BSG_IS_POW2(flit_width_p)))
+    $error("Protocol and Network data widths must be powers of 3");
 
+  // WH control signals
   logic is_hdr, is_data, wh_has_data, wh_last_data;
-  logic hdr_v_li, hdr_ready_lo;
 
-  // Aggregate flits until we have a full header-worth of data, then let the
-  // client process it
-  logic [(flit_width_p*hdr_len_lp)-1:0] sipo_pr_hdr_lo;
+  // Header SIPO
+  // Aggregate flits until we have a full header-worth of data
+  logic hdr_v_li, hdr_ready_and_lo;
   assign hdr_v_li = is_hdr & link_v_i;
+  logic [(flit_width_p*hdr_len_lp)-1:0] pr_hdr_lo;
+  logic pr_hdr_v_lo, pr_hdr_ready_and_li;
+
   bsg_serial_in_parallel_out_passthrough
    #(.width_p(flit_width_p)
      ,.els_p(hdr_len_lp)
@@ -111,118 +112,43 @@ module bp_me_wormhole_to_burst
 
      ,.data_i(link_data_i)
      ,.v_i(hdr_v_li)
-     ,.ready_and_o(hdr_ready_lo)
+     ,.ready_and_o(hdr_ready_and_lo)
 
-     ,.data_o(sipo_pr_hdr_lo)
-     ,.v_o(pr_hdr_v_o)
-     ,.ready_and_i(pr_hdr_ready_and_i)
+     ,.data_o(pr_hdr_lo)
+     ,.v_o(pr_hdr_v_lo)
+     ,.ready_and_i(pr_hdr_ready_and_li)
      );
 
-  // extract the protocol header from the sipo output
-  assign pr_hdr_o = sipo_pr_hdr_lo[wh_pr_hdr_offset_p+:pr_hdr_width_p];
-  assign pr_has_data_o = pr_hdr_v_o & wh_has_data;
+  // BedRock Burst Gearbox
+  wire pr_data_v_lo = is_data & link_v_i;
+  bp_me_burst_gearbox
+    #(.bp_params_p(bp_params_p)
+      ,.in_data_width_p(flit_width_p)
+      ,.out_data_width_p(pr_data_width_p)
+      ,.payload_width_p(pr_payload_width_p)
+      )
+    gearbox
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
 
-  logic data_v_li, data_ready_lo;
-  assign data_v_li = is_data & link_v_i;
-  // Protocol data is less than a single flit-sized. We accept a large
-  //   wormhole flit, then let the client process it piecemeal
-  if (flit_width_p > pr_data_width_p)
-    begin : narrow
-      // flit_width_p > pr_data_width_p -> multiple protocol data per link flit
-      // It is possible that less than max_els_p protocol data beats are required for the
-      // input message.
+      ,.msg_header_i(pr_hdr_lo[wh_pr_hdr_offset_p+:pr_hdr_width_p])
+      ,.msg_header_v_i(pr_hdr_v_lo)
+      ,.msg_header_ready_and_o(pr_hdr_ready_and_li)
+      ,.msg_has_data_i(wh_has_data)
+      ,.msg_data_i(link_data_i)
+      ,.msg_data_v_i(pr_data_v_lo)
+      ,.msg_data_ready_and_o(pr_data_ready_and_li)
+      ,.msg_last_i(wh_last_data)
 
-      // number of protocol data per full link flit
-      localparam [len_width_p-1:0] max_els_lp = `BSG_CDIV(flit_width_p, pr_data_width_p);
-      localparam lg_max_els_lp = `BSG_SAFE_CLOG2(max_els_lp);
-      // PISO len_i is zero-based, i.e., input is len-1
-      localparam [lg_max_els_lp-1:0] piso_full_len_lp = max_els_lp - 1;
-
-      // PISO signals
-      logic piso_first_lo, piso_last_lo;
-      logic [lg_max_els_lp-1:0] piso_len_li;
-
-      // count of protocol data packets to consume after current
-      // set late when hdr_v_o & hdr_ready_i
-      // set value is provided by consumer, derived from output header
-      logic [pr_len_width_p-1:0] pr_data_cnt;
-      wire pr_data_consumed = (pr_data_cnt == '0);
-      bsg_counter_set_down
-       #(.width_p(pr_len_width_p)
-         ,.init_val_p('0)
-         ,.set_and_down_exclusive_p(0)
-         )
-       pr_data_counter
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-         ,.set_i(pr_hdr_v_o & pr_hdr_ready_and_i)
-         ,.val_i(pr_data_beats_i)
-         ,.down_i(pr_data_v_o & pr_data_ready_and_i & ~pr_data_consumed)
-         ,.count_r_o(pr_data_cnt)
-         );
-
-      // for each PISO transaction, provide number of protocol data to expect
-      assign piso_len_li = (pr_data_cnt >= piso_full_len_lp)
-                           ? piso_full_len_lp
-                           : lg_max_els_lp'(pr_data_cnt);
-
-      bsg_parallel_in_serial_out_passthrough_dynamic_last
-       #(.width_p(pr_data_width_p)
-         ,.max_els_p(max_els_lp)
-         )
-       data_piso
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-
-         ,.data_i(link_data_i)
-         ,.v_i(data_v_li)
-         ,.ready_and_o(data_ready_lo)
-
-         ,.data_o(pr_data_o)
-         ,.v_o(pr_data_v_o)
-         ,.ready_and_i(pr_data_ready_and_i)
-
-         ,.first_o(piso_first_lo)
-         // must be presented when ready_and_i & first_o
-         ,.len_i(piso_len_li)
-         ,.last_o(piso_last_lo)
-         );
-      // piso raises last_o signal on last data beat of every input flit, and
-      // wormhole stream control raises pr_last_o when last wormhole data flit
-      // is on input. piso is passthrough so last wormhole flit is not buffered
-      // and these signals align on last burst data beat valid output
-      assign pr_last_o = wh_last_data & piso_last_lo;
-    end
-  else
-    // Protocol data is 1 or multiple flit-sized. We aggregate wormhole data
-    // until we have a full protocol data and then let the client process it.
-    // The wh_last_data signal is used to indicate when the last wh beat arrives to allow
-    // the SIPO to output a partially filled packet for cases when the number of NoC flits
-    // arriving is less than data_len_lp. This happens if the data size of the arriving
-    // message is smaller than the protocol data channel width.
-    begin : wide
-      localparam [len_width_p-1:0] data_len_lp = `BSG_CDIV(pr_data_width_p, flit_width_p);
-      bsg_serial_in_parallel_out_passthrough_dynamic_last
-       #(.width_p(flit_width_p)
-         ,.max_els_p(data_len_lp)
-         )
-       data_sipo
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-
-         ,.data_i(link_data_i)
-         ,.v_i(data_v_li)
-         ,.ready_and_o(data_ready_lo)
-         ,.last_i(wh_last_data)
-
-         ,.data_o(pr_data_o)
-         ,.v_o(pr_data_v_o)
-         ,.ready_and_i(pr_data_ready_and_i)
-         );
-      // passthrough sipo does not buffer last data element, so when wormhole stream
-      // control indicates last flit, sipo will be outputting last burst data beat
-      assign pr_last_o = wh_last_data;
-    end
+      ,.msg_header_o(pr_hdr_o)
+      ,.msg_header_v_o(pr_hdr_v_o)
+      ,.msg_header_ready_and_i(pr_hdr_ready_and_i)
+      ,.msg_has_data_o(pr_has_data_o)
+      ,.msg_data_o(pr_data_o)
+      ,.msg_data_v_o(pr_data_v_o)
+      ,.msg_data_ready_and_i(pr_data_ready_and_i)
+      ,.msg_last_o(pr_last_o)
+      );
 
   // Identifies which flits are header vs data flits
   bsg_wormhole_stream_control
@@ -242,7 +168,7 @@ module bp_me_wormhole_to_burst
      ,.last_data_o(wh_last_data)
      );
 
-  assign link_ready_and_o = is_hdr ? hdr_ready_lo : data_ready_lo;
+  assign link_ready_and_o = is_hdr ? hdr_ready_and_lo : pr_data_ready_and_li;
 
 endmodule
 
