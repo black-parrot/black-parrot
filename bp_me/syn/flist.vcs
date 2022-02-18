@@ -34,7 +34,6 @@ $BP_BE_DIR/src/include/bp_be_pkg.sv
 # ME packages
 $BP_ME_DIR/src/include/bp_me_pkg.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
 $BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
 $BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
 $BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
