@@ -20,7 +20,7 @@
 
 `include "bsg_defines.v"
 
-module bsg_serial_in_parallel_out_passthrough_dynamic_last
+module bsg_serial_in_parallel_out_passthrough_last
 
  #(parameter `BSG_INV_PARAM(width_p)
   ,parameter `BSG_INV_PARAM(max_els_p)
@@ -124,5 +124,5 @@ module bsg_serial_in_parallel_out_passthrough_dynamic_last
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bsg_serial_in_parallel_out_passthrough_dynamic_last)
+`BSG_ABSTRACT_MODULE(bsg_serial_in_parallel_out_passthrough_last)
 

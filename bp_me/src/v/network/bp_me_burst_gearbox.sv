@@ -135,7 +135,7 @@ module bp_me_burst_gearbox
        ,.init_val_p('0)
        ,.set_and_down_exclusive_p(0)
        )
-     pr_data_counter
+     data_out_counter
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
        ,.set_i(is_hdr & msg_header_v_i & msg_header_ready_and_o)
@@ -187,9 +187,9 @@ module bp_me_burst_gearbox
     // if input message size < out data width, then SIPO will not completely fill,
     // and the SIPO uses the last signal to send the output early
     localparam max_els_lp = out_data_width_p / in_data_width_p;
-    bsg_serial_in_parallel_out_passthrough_dynamic_last
+    bsg_serial_in_parallel_out_passthrough_last
       #(.width_p(in_data_width_p), .max_els_p(max_els_lp))
-      sipo_pdl
+      data_sipo
        (.clk_i(clk_i)
         ,.reset_i(reset_i)
 
