@@ -185,7 +185,6 @@ $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
 $BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
 $BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough.v
 $BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
 $BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_stream_control.v
