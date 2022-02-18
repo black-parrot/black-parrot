@@ -57,6 +57,10 @@ module bp_me_burst_gearbox
    , output logic                            msg_last_o
    );
 
+  if (!(`BSG_IS_POW2(in_data_width_p)) || (in_data_width_p < 8))
+    $error("In data width must be a power of two and at least 8 bits");
+  if (!(`BSG_IS_POW2(out_data_width_p)) || (out_data_width_p < 8))
+    $error("Out data width must be a power of two and at least 8 bits");
   if ((in_data_width_p > out_data_width_p) && !(`BSG_IS_POW2(in_data_width_p/out_data_width_p)))
     $error("In/Out must be a power of two");
   if ((out_data_width_p > in_data_width_p) && !(`BSG_IS_POW2(out_data_width_p/in_data_width_p)))
