@@ -24,5 +24,3 @@ $BP_ME_DIR/test/common/bp_nonsynth_mem_tracer.sv
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv
 $BP_ME_DIR/test/common/bp_nonsynth_mem.sv
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp
-# common files
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
