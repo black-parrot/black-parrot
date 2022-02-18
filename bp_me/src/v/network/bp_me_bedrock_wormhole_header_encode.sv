@@ -46,6 +46,7 @@ module bp_me_bedrock_wormhole_header_encode
   //bsg_bedrock_router_hdr_s
   `bp_cast_o(bp_bedrock_wormhole_header_s, wh_header);
 
+  // TODO: could leverage bp_bedrock_size_to_len to compute these values
   // Pre-compute flits per header and flits per data (zero-based)
   localparam msg_hdr_len_lp = `BSG_CDIV(wh_header_width_lp, flit_width_p) - 1;
   localparam msg_data_len_1_lp = `BSG_CDIV(8*(1 << e_bedrock_msg_size_1), flit_width_p) - 1;

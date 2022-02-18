@@ -73,7 +73,6 @@ module bp_me_bedrock_mem_to_link
 
   // mem resp burst to wh
   bp_mem_wormhole_header_s mem_header_li;
-  logic [len_width_p-1:0] noc_data_beats_li;
   bp_me_bedrock_wormhole_header_encode
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
@@ -88,15 +87,17 @@ module bp_me_bedrock_mem_to_link
      ,.dst_cord_i(dst_cord_i)
      ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(mem_header_li)
-     ,.data_len_o(noc_data_beats_li)
+     ,.data_len_o(/* unused */)
      );
 
   bp_me_burst_to_wormhole
-   #(.flit_width_p(flit_width_p)
+   #(.bp_params_p(bp_params_p)
+     ,.flit_width_p(flit_width_p)
      ,.cord_width_p(cord_width_p)
      ,.len_width_p(len_width_p)
      ,.cid_width_p(cid_width_p)
      ,.pr_hdr_width_p(mem_header_width_lp)
+     ,.pr_payload_width_p(mem_payload_width_lp)
      ,.pr_data_width_p(bedrock_data_width_p)
      )
    mem_burst_to_wh
@@ -107,7 +108,6 @@ module bp_me_bedrock_mem_to_link
     ,.pr_hdr_v_i(mem_header_v_i)
     ,.pr_hdr_ready_and_o(mem_header_ready_and_o)
     ,.pr_has_data_i(mem_has_data_i)
-    ,.noc_data_beats_i(noc_data_beats_li)
 
     ,.pr_data_i(mem_data_i)
     ,.pr_data_v_i(mem_data_v_i)
@@ -120,25 +120,15 @@ module bp_me_bedrock_mem_to_link
     );
 
   // mem cmd wh to burst
-  localparam bedrock_len_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV((1<<e_bedrock_msg_size_128)*8,bedrock_data_width_p));
-  logic [bedrock_len_width_lp-1:0] mem_pr_len;
-  bp_bedrock_size_to_len
-   #(.len_width_p(bedrock_len_width_lp)
-     ,.beat_width_p(bedrock_data_width_p)
-     )
-   mem_size_to_len
-   (.size_i(mem_header_cast_o.size)
-    ,.len_o(mem_pr_len)
-   );
-
   bp_me_wormhole_to_burst
-   #(.flit_width_p(flit_width_p)
+   #(.bp_params_p(bp_params_p)
+     ,.flit_width_p(flit_width_p)
      ,.cord_width_p(cord_width_p)
      ,.len_width_p(len_width_p)
      ,.cid_width_p(cid_width_p)
      ,.pr_hdr_width_p(mem_header_width_lp)
+     ,.pr_payload_width_p(mem_payload_width_lp)
      ,.pr_data_width_p(bedrock_data_width_p)
-     ,.pr_len_width_p(bedrock_len_width_lp)
      )
    mem_wh_to_burst
    (.clk_i(clk_i)
@@ -152,7 +142,6 @@ module bp_me_bedrock_mem_to_link
     ,.pr_hdr_v_o(mem_header_v_o)
     ,.pr_hdr_ready_and_i(mem_header_ready_and_i)
     ,.pr_has_data_o(mem_has_data_o)
-    ,.pr_data_beats_i(mem_pr_len)
 
     ,.pr_data_o(mem_data_o)
     ,.pr_data_v_o(mem_data_v_o)
