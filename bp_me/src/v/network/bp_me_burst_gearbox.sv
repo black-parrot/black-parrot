@@ -175,8 +175,7 @@ module bp_me_burst_gearbox
        ,.v_o(msg_data_v_o)
        ,.ready_and_i(msg_data_ready_and_i)
 
-       ,.first_o(/* unused */)
-       // must be presented when ready_and_i & first_o
+       // must be presented when (v_o & ready_and_i)
        ,.len_i(piso_len_li)
        ,.last_o(piso_last_lo)
        );
