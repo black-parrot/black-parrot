@@ -92,8 +92,8 @@ module bp_me_nonsynth_tr_tracer
       end
 
       if (tr_pkt_v_o_i & tr_pkt_ready_then_i) begin
-        $fdisplay(file, "%12t |: TR[%0d] RESP op[%b] uc[%b] addr[%H] tag[%H] set[%0d] offset[%0d] %H latency[%0d]"
-                  , $time, id_i, tr_resp.cmd, tr_resp.uncached, tr_resp.paddr
+        $fdisplay(file, "%12t |: TR[%0d] RESP %s op[%b] uc[%b] addr[%H] tag[%H] set[%0d] offset[%0d] %H latency[%0d]"
+                  , $time, id_i, tr_resp.cmd.name(), tr_resp.cmd, tr_resp.uncached, tr_resp.paddr
                   , tr_resp.paddr[paddr_width_p-1:tag_offset_lp]
                   , (sets_p > 1) ? tr_resp.paddr[block_offset_bits_lp +: lg_sets_lp] : 0
                   , tr_resp.paddr[0 +: block_offset_bits_lp]

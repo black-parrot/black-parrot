@@ -137,7 +137,7 @@ class TestGenerator(object):
 
   # Test that accesses a single cache set repeatedly
   def setTest(self, N=16, mem_base=0, block_size=64
-              , cache_sets=64, cache_assoc=8, target_set=None
+              , cache_sets=64, cache_assoc=2, target_set=None
               , seed=0, lce_mode=0, lce=1, axe=False):
 
     cache_blocks = (cache_sets * cache_assoc)
