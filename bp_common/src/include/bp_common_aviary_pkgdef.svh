@@ -189,7 +189,7 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_1_override_p =
-    '{multicore             : 1
+    '{cce_type              : e_cce_fsm
       ,ic_y_dim             : 1
       ,num_cce              : 1
       ,num_lce              : 2

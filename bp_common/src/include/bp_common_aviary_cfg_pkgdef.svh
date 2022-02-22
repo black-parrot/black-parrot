@@ -37,17 +37,14 @@
 
   typedef enum logic [1:0]
   {
-    e_cce_fsm = 0
-    ,e_cce_ucode = 1
-    ,e_cce_hybrid = 2
+    e_cce_uce = 0
+    ,e_cce_fsm = 1
+    ,e_cce_ucode = 2
+    ,e_cce_hybrid = 3
   } bp_cce_type_e;
 
   typedef struct packed
   {
-    // 0: BP unicore (minimal, single-core configuration)
-    // 1: BP multicore (coherent, multi-core configuration)
-    integer unsigned multicore;
-
     // Dimensions of the different complexes
     // Core Complex may be any integer unsigned (though has only been validated up to 4x4)
     // All other Complexes are 1-dimensional
@@ -242,8 +239,7 @@
   }  bp_proc_param_s;
 
   localparam bp_proc_param_s bp_default_cfg_p =
-    '{multicore : 0
-      ,cc_x_dim : 1
+    '{cc_x_dim  : 1
       ,cc_y_dim : 1
       ,ic_y_dim : 0
       ,mc_y_dim : 0
@@ -298,7 +294,7 @@
       ,acache_block_width   : 512
       ,acache_fill_width    : 64
 
-      ,cce_type             : e_cce_fsm
+      ,cce_type             : e_cce_uce
       ,cce_pc_width         : 8
       ,bedrock_data_width   : 64
 
@@ -350,8 +346,7 @@
   `endif
   // Custom, tick define-based configuration
   localparam bp_proc_param_s bp_custom_cfg_p =
-    '{`bp_aviary_define_override(multicore, BP_MULTICORE, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(cc_x_dim, BP_CC_X_DIM, `BP_CUSTOM_BASE_CFG)
+    '{`bp_aviary_define_override(cc_x_dim, BP_CC_X_DIM, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(cc_y_dim, BP_CC_Y_DIM, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(ic_y_dim, BP_IC_Y_DIM, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(mc_y_dim, BP_MC_Y_DIM, `BP_CUSTOM_BASE_CFG)

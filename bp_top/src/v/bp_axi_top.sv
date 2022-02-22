@@ -138,7 +138,7 @@ module bp_axi_top
   logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
   logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
-  if (multicore_p == 0)
+  if (cce_type_p == e_cce_uce)
     begin : u
       // note: bp_unicore has L2 cache; (bp_unicore_lite does not, but does not have dma_* interface
       // and would need mem_cmd/mem_resp-to-axi converter to be written.)

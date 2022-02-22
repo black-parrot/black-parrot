@@ -48,7 +48,7 @@ module testbench
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
+   , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : cce_block_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (output bit reset_i);
@@ -587,7 +587,7 @@ module testbench
            ,.mem_resp_last_i(mem_resp_last_o)
            );
 
-      if (multicore_p)
+      if (cce_type_p != e_cce_uce)
         begin
           bind bp_cce_wrapper
             bp_me_nonsynth_cce_tracer
