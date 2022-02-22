@@ -91,6 +91,7 @@ module bp_sacc_vdp
   state_e state_r, state_n;
 
   assign io_resp_v_o = spm_external_v_lo | resp_v_lo;
+  assign io_resp_last_o = io_resp_v_o;
   always_ff @(posedge clk_i) begin
     spm_internal_v_lo <= spm_internal_read_v_li;
     spm_external_v_lo <= spm_external_read_v_li;

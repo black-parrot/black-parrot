@@ -60,6 +60,7 @@ module bp_sacc_loopback
   assign io_resp_data_o = spm_v_lo ? spm_data_lo : csr_data;
 
   assign io_resp_v_o = spm_v_lo | resp_v_lo;
+  assign io_resp_last_o = io_resp_v_o;
   always_ff @(posedge clk_i) begin
     spm_v_lo <= spm_read_v_li;
 
