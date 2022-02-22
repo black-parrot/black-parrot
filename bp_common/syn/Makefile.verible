@@ -1,0 +1,29 @@
+override TOOL := verible
+
+override LOG_DIR     := $(LOG_PATH)/$(TOOL)
+override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
+
+VERIBLE_FORMAT ?= verible-verilog-format
+VERIBLE_LINT   ?= verible-verilog-lint
+
+FORMAT_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).format
+LINT_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
+$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(FORMAT_DIR) $(LINT_DIR):
+	mkdir -p $@
+
+.PHONY: clean.verible format.verible lint.verible
+
+include $(TB_PATH)/$(TB)/Makefile.verible
+
+format.verible:
+	cd $(@D); $(VERIBLE_FORMAT) --helpfull
+
+lint.verible:
+	cd $(@D); $(VERIBLE_LINT) --helpfull
+
+clean.verible:
+	@rm -rf results/verible
+	@rm -rf reports/verible
+	@rm -rf logs/verible

@@ -38,6 +38,12 @@
     branch = master
     ignore = untracked
     update = checkout
+[submodule "tools/verible"]
+    path = tools/verible
+    url = https://github.com/chipsalliance/verible
+    branch = master
+    ignore = untracked
+    update = checkout
 [submodule "tools/verilator"]
     path = tools/verilator
     url = https://github.com/verilator/verilator

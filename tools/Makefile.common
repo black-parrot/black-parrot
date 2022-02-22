@@ -1,5 +1,6 @@
 ## Set variables needed for building tools
 GCC       ?= gcc
+BAZEL     ?= bazel
 CMAKE     ?= cmake
 PYTHON    ?= python
 
