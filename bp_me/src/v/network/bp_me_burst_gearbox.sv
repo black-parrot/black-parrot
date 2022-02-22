@@ -195,7 +195,7 @@ module bp_me_burst_gearbox
         ,.data_i(msg_data_i)
         ,.v_i(msg_data_v_i)
         ,.ready_and_o(msg_data_ready_and_o)
-        ,.last_i(msg_last_i)
+        ,.last_i(msg_data_v_i & msg_last_i)
 
         ,.data_o(msg_data_o)
         ,.v_o(msg_data_v_o)

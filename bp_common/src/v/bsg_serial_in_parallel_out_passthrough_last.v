@@ -105,7 +105,7 @@ module bsg_serial_in_parallel_out_passthrough_last
     //    in the current cycle
     // 3. last_r is raised, indicating last word of input transaction was
     //    registered in a previous cycle, and waiting for output to consume
-    assign v_o = last_i | last_r | (v_i & data_en_li[max_els_p-1]);
+    assign v_o = (v_i & (last_i | data_en_li[max_els_p-1])) | last_r;
 
     // module is ready to consume data when:
     // 1. if waiting for the final input word to "fill" the SIPO, patch through ready_and_i
