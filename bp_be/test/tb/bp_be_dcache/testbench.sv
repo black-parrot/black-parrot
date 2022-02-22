@@ -451,6 +451,12 @@ module testbench
        ,.mem_resp_last_i(mem_resp_last_o)
        );
 
+  // Parameter Verification
+  bp_nonsynth_if_verif
+   #(.bp_params_p(bp_params_p))
+   if_verif
+    ();
+
   `ifndef VERILATOR
     initial
       begin

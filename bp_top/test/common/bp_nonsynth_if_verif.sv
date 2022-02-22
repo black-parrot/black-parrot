@@ -96,6 +96,10 @@ module bp_nonsynth_if_verif
     $error("Error: Cache fill width should be a multiple of cache bank width");
   if (icache_fill_width_p != dcache_fill_width_p)
     $error("Error: L1-Cache fill width should be the same");
+  if (icache_fill_width_p < (icache_block_width_p / icache_assoc_p))
+    $error("Error: L1 I$ requires fill width greater than bank width (block width / assoc)");
+  if (dcache_fill_width_p < (dcache_block_width_p / dcache_assoc_p))
+    $error("Error: L1 D$ requires fill width greater than bank width (block width / assoc)");
 
   // Address Widths
   if (vaddr_width_p != 39)

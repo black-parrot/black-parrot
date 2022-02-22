@@ -42,14 +42,14 @@ parser.add_argument('-m', dest='paddr_width', type=int, default=40,
                     help='Physical address width in bits')
 parser.add_argument('-b', dest='block_size', type=int, default=64,
                     help='block size in bytes (for cache and memory)')
-parser.add_argument('-e', dest='assoc', type=int, default=2,
+parser.add_argument('-e', dest='assoc', type=int, default=8,
                     help='cache associativity')
 parser.add_argument('-s', dest='sets', type=int, default=64,
                     help='cache sets')
 
 # Test parameters
 # number of cache ways used for testing (0 means use cache_assoc from above)
-parser.add_argument('--test-ways', dest='test_ways', type=int, default=4,
+parser.add_argument('--test-ways', dest='test_ways', type=int, default=16,
                     help='Number of cache ways used for testing')
 # number of cache sets used for testing (0 means use cache_sets from above)
 parser.add_argument('--test-sets', dest='test_sets', type=int, default=0,

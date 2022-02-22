@@ -1027,12 +1027,10 @@ module testbench
      );
 
   // Parameter Verification
-  /*
   bp_nonsynth_if_verif
    #(.bp_params_p(bp_params_p))
    if_verif
     ();
-  */
 
   // Program done info
   localparam max_clock_cnt_lp    = 2**30-1;
