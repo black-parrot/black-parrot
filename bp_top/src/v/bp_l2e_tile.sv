@@ -491,6 +491,7 @@ module bp_l2e_tile
      ,.cid_width_p(mem_noc_cid_width_p)
      ,.cord_width_p(mem_noc_cord_width_p)
      ,.num_in_p(l2_banks_p)
+     ,.hold_on_valid_p(1)
      )
    dma_concentrate
     (.clk_i(clk_i)
