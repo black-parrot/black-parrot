@@ -21,12 +21,13 @@ parser.add_argument('--in-file', dest='infile', type=str, default='test.trace',
 
 # basic test options
 parser.add_argument('--test', dest='test', type=int, default=0,
-                    help="""0 = random, 1 = AXE random, 2 = trace file,
-                    3 = AXE set hammer""")
+                    help="""0 = random, 1 = set hammer, 2 = trace file""")
 parser.add_argument('--seed', dest='seed', type=int, default=1,
                     help='random number generator seed')
 parser.add_argument('-n', '--num-instr', dest='num_instr', type=int, default=8,
                     help='Number of memory operations to execute')
+parser.add_argument('--axe', dest='axe', action='store_true', default=False,
+                    help='Enable AXE testing (required for multi-LCE)')
 
 # coherence system operating modes
 parser.add_argument('--lce-mode', dest='lce_mode', type=int, default=0,
@@ -46,13 +47,18 @@ parser.add_argument('-e', dest='assoc', type=int, default=2,
 parser.add_argument('-s', dest='sets', type=int, default=64,
                     help='cache sets')
 
+# Test parameters
+# number of cache ways used for testing (0 means use cache_assoc from above)
+parser.add_argument('--test-ways', dest='test_ways', type=int, default=4,
+                    help='Number of cache ways used for testing')
+# number of cache sets used for testing (0 means use cache_sets from above)
+parser.add_argument('--test-sets', dest='test_sets', type=int, default=0,
+                    help='Number of cache sets used for testing')
+
 # The basic memory map is only DRAM is cacheable and all other memory uncacheable
 # Uncacheable accesses may be issued to DRAM, and are kept coherent by the CCE.
 parser.add_argument('--mem-base', dest='mem_base', type=int, default=0x80000000,
                     help='base address of memory')
-# number of memory blocks is computed as args.mem_blocks * (cache_assoc*cache_sets)
-parser.add_argument('--mem-blocks', dest='mem_blocks', type=int, default=2,
-                    help='Number of memory blocks, as factor of cache size')
 
 # debug mode
 parser.add_argument('--debug', dest='debug', action='store_true', default=False,
@@ -69,6 +75,7 @@ if __name__ == '__main__':
 
   # verify number of LCEs
   assert (args.num_lce in [1, 2, 4, 8]), '[ME TraceGen]: Invalid number of LCEs'
+  assert ((args.num_lce == 1) or args.axe), '[ME TraceGen]: multi-LCE testing requires AXE tracing enabled'
 
   # LCE and CCE operating modes
   cce_mode = 1 if (args.cce_mode == 1) else 0
@@ -88,12 +95,13 @@ if __name__ == '__main__':
   block_size = args.block_size
   cache_assoc = args.assoc
   cache_sets = args.sets
-  cache_blocks = (cache_assoc * cache_sets)
-  cache_size = (cache_blocks * block_size)
 
-  # Memory parameters
-  mem_blocks = (cache_blocks * 2) if (args.mem_blocks == 0) else (cache_blocks * args.mem_blocks)
-  mem_bytes = (block_size * mem_blocks)
+  # cache params for testing
+  test_ways = cache_assoc if (args.test_ways == 0) else args.test_ways
+  test_sets = cache_sets if (args.test_sets == 0) else args.test_sets
+
+  # Memory size required for testing
+  # memory must cover all cache sets across number of test_ways
   mem_base = args.mem_base
 
   # test generation
@@ -103,20 +111,28 @@ if __name__ == '__main__':
   if test == 0:
     ops = testGen.randomTest(N=args.num_instr
                              , mem_base=mem_base
-                             , mem_bytes=mem_bytes
-                             , block_size=block_size
-                             , seed=args.seed
-                             , lce_mode=args.lce_mode)
-
-  elif test == 1:
-    ops = testGen.randomTest(N=args.num_instr
-                             , mem_base=mem_base
-                             , mem_bytes=mem_bytes
+                             , cache_sets=cache_sets
                              , block_size=block_size
                              , seed=args.seed
                              , lce_mode=args.lce_mode
                              , lce=args.num_lce
-                             , axe=True)
+                             , test_sets=test_sets
+                             , test_ways=test_ways
+                             , axe=args.axe
+                             )
+
+  elif test == 1:
+    ops = testGen.randomTest(N=args.num_instr
+                             , mem_base=mem_base
+                             , cache_sets=cache_sets
+                             , block_size=block_size
+                             , seed=args.seed
+                             , lce_mode=args.lce_mode
+                             , lce=args.num_lce
+                             , test_sets=1
+                             , test_ways=(cache_assoc+1)
+                             , axe=args.axe
+                             )
 
   elif test == 2:
     # read test from trace file
@@ -125,18 +141,6 @@ if __name__ == '__main__':
     assert (os.path.isdir(indir)), '[ME TraceGen]: Invalid input directory'
     assert (os.path.exists(infile)), '[ME TraceGen]: Invalid input file'
     ops = testGen.readTrace(infile)
-
-  elif test == 3:
-    ops = testGen.setTest(N=args.num_instr
-                          , mem_base=mem_base
-                          , block_size=block_size
-                          , cache_sets=cache_sets
-                          , cache_assoc=cache_assoc
-                          , target_set=0
-                          , seed=args.seed
-                          , lce_mode=args.lce_mode
-                          , lce=args.num_lce
-                          , axe=True)
 
   # output test trace
   testGen.generateTrace(ops, outdir, args.outfile)

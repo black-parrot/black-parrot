@@ -85,12 +85,25 @@ class TestGenerator(object):
   # Random Test generator
   # N is number of operations
   # lce_mode = 0, 1, or 2 -> 0 = cached only, 1 = uncached only, 2 = mixed
-  def randomTest(self, N=16, mem_base=0, mem_bytes=1024, block_size=64, seed=0, lce_mode=0, lce=1, axe=False):
-    # test begin
+  # cache_sets is number of sets in the cache
+  # lce is number of LCEs to use (multi-LCE requires axe=True)
+  # test_sets is number of cache sets to use in test
+  # test_ways is number of cache ways per set to use in test
+  def randomTest(self, N=16, mem_base=0, cache_sets=64, block_size=64, seed=0, lce_mode=0, lce=1
+                 ,test_sets=64, test_ways=2, axe=False):
+
     random.seed(seed)
     ops = {i:[] for i in range(lce)}
+
+    # test memory - large enough for full number of cache sets across test_ways number of ways
+    mem_blocks = (cache_sets * test_ways)
+    mem_bytes = (mem_blocks * block_size)
     mem = TestMemory(mem_base, mem_bytes, block_size, self.debug)
-    mem_blocks = mem_bytes / block_size
+
+    # generate collection of block IDs that are used for testing
+    # start with set 0 and use test_sets number of sets across test_ways number of ways
+    test_blocks = [s + w*cache_sets for s in range(test_sets) for w in range(test_ways)]
+
     b = int(math.log(block_size, 2))
     store_val = 1
 
@@ -108,78 +121,11 @@ class TestGenerator(object):
         elif lce_mode == 1:
           uncached_req = 1
 
-        # choose which cache block in memory to target
-        block = random.randint(0, mem_blocks-1)
+        # choose which cache block to access
+        block = random.choice(test_blocks)
         # choose offset in cache block based on size of access ("word" size for this access)
         words = block_size / size
         word = random.randint(0, words-1)
-        # build the address
-        addr = (block << b) + (word << size_shift) + mem_base
-        mem.check_valid_addr(addr)
-
-        val = 0
-        if store:
-          # note: the value being stored will be truncated to size number of bytes
-          store_val_trunc = store_val
-          if (size < 8):
-            store_val_trunc = store_val_trunc & ~(~0 << (size*8))
-          if not axe:
-            mem.write_memory(addr, store_val_trunc, size)
-          val = store_val_trunc
-          store_val += 1
-        elif not axe:
-          val = mem.read_memory(addr, size)
-
-        ops[l].append(('store' if store else 'load', addr, size, uncached_req, val))
-
-    # return the test operations
-    return ops
-
-  # Test that accesses a single cache set repeatedly
-  def setTest(self, N=16, mem_base=0, block_size=64
-              , cache_sets=64, cache_assoc=2, target_set=None
-              , seed=0, lce_mode=0, lce=1, axe=False):
-
-    cache_blocks = (cache_sets * cache_assoc)
-    # set test requires a memory larger than the cache
-    # specifically, memory is cache size plus one cache way
-    mem_blocks = (cache_sets * (cache_assoc+1))
-    mem_bytes = (mem_blocks * block_size)
-
-    # randomly pick a set to target if valid set not provided
-    if (target_set is None) or (target_set < 0) or (target_set >= cache_sets):
-      target_set = random.choice([i for i in range(cache_sets)])
-
-    random.seed(seed)
-    ops = {i:[] for i in range(lce)}
-    mem = TestMemory(mem_base, mem_bytes, block_size, self.debug)
-    # block offset bits
-    b = int(math.log(block_size, 2))
-    store_val = 1
-
-    # generate collection of block IDs that map to target_set
-    set_blocks = list(range(target_set,mem_blocks,cache_sets))
-
-    for i in range(N):
-      for l in range(lce):
-        # pick access parameters
-        store = random.choice([True, False])
-        # all accesses are size 8B for AXE tracing
-        size = 8 if axe else random.choice([1, 2, 4, 8])
-        size_shift = int(math.log(size, 2))
-        # determine type of request (cached or uncached)
-        uncached_req = 0
-        if lce_mode == 2:
-          uncached_req = random.choice([0,1])
-        elif lce_mode == 1:
-          uncached_req = 1
-
-        # choose which cache block in memory to target
-        block = random.choice(set_blocks)
-        # choose offset in cache block based on size of access ("word" size for this access)
-        words = block_size / size
-        #word = random.randint(0, words-1)
-        word = random.choice([0,1])
         # build the address
         addr = (block << b) + (word << size_shift) + mem_base
         mem.check_valid_addr(addr)
