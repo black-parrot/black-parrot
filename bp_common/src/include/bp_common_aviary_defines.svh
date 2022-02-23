@@ -10,8 +10,6 @@
   `define declare_bp_proc_params(bp_params_e_mp) \
     , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]                       \
                                                                                                    \
-    , localparam multicore_p = proc_param_lp.multicore                                             \
-                                                                                                   \
     , localparam cc_x_dim_p  = proc_param_lp.cc_x_dim                                              \
     , localparam cc_y_dim_p  = proc_param_lp.cc_y_dim                                              \
                                                                                                    \
@@ -183,8 +181,7 @@
 
     `define bp_aviary_derive_cfg(cfg_name_mp, override_cfg_mp, default_cfg_mp) \
       localparam bp_proc_param_s cfg_name_mp =                                                     \
-        '{`bp_aviary_parameter_override(multicore, override_cfg_mp, default_cfg_mp)                \
-          ,`bp_aviary_parameter_override(cc_x_dim, override_cfg_mp, default_cfg_mp)                \
+        '{`bp_aviary_parameter_override(cc_x_dim, override_cfg_mp, default_cfg_mp)                 \
           ,`bp_aviary_parameter_override(cc_y_dim, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(ic_y_dim, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(mc_y_dim, override_cfg_mp, default_cfg_mp)                \
