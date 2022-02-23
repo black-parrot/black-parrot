@@ -214,8 +214,9 @@ bits to enable fast branch detection and prediction in the fetch state, which ar
 and predict taken bit.
 
 The microcode instructions and formats are defined in
-[bp\_me\_cce\_inst\_defines.svh](../bp_me/src/include/bp_cce_inst_defines.svh) and
-[bp\_me\_cce\_inst\_pkgdef.svh](../bp_me/src/include/bp_cce_inst_pkgdef.svh).
+[bp\_me\_cce\_inst\_defines.svh](../bp_me/src/include/bp_me_cce_inst_defines.svh) and
+[bp\_me\_cce\_inst\_pkgdef.svh](../bp_me/src/include/bp_me_cce_inst_pkgdef.svh).
+[bp\_me\_cce\_pkgdef.svh](../bp_me/src/include/bp_me_cce_pkgdef.svh).
 
 ### Microcode Instruction Classes
 There are six different classes of instructions in BedRock's ISA.
