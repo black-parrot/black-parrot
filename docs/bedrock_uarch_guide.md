@@ -213,10 +213,10 @@ a single cycle to execute. Microcode instructions are 32-bits wide and tagged wi
 bits to enable fast branch detection and prediction in the fetch state, which are the branch
 and predict taken bit.
 
-The microcode instructions and formats are defined in
-[bp\_me\_cce\_inst\_defines.svh](../bp_me/src/include/bp_me_cce_inst_defines.svh) and
-[bp\_me\_cce\_inst\_pkgdef.svh](../bp_me/src/include/bp_me_cce_inst_pkgdef.svh).
-[bp\_me\_cce\_pkgdef.svh](../bp_me/src/include/bp_me_cce_pkgdef.svh).
+The microcode instructions and formats are defined in:
+- [bp\_me\_cce\_inst\_defines.svh](../bp_me/src/include/bp_me_cce_inst_defines.svh)
+- [bp\_me\_cce\_inst\_pkgdef.svh](../bp_me/src/include/bp_me_cce_inst_pkgdef.svh)
+- [bp\_me\_cce\_pkgdef.svh](../bp_me/src/include/bp_me_cce_pkgdef.svh)
 
 ### Microcode Instruction Classes
 There are six different classes of instructions in BedRock's ISA.
