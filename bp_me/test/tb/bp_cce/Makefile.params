@@ -19,6 +19,7 @@ export ME_TEST_P ?= 0
 
 # number of ways and sets to test with, starting with set 0 and way 0
 # can be used with the random test
+# value of 0 uses default values of cache assoc and sets
 export TEST_WAYS_P ?= 0
 export TEST_SETS_P ?= 0
 
