@@ -61,5 +61,5 @@ The data cache is a VIPT (Virtually-Indexed Physical-Tagged) cache with three pi
 
 ## Memory End
 Refer to the [BedRock Microarchitecture Guide](bedrock_uarch_guide.md) for an overview of the cache
-coherence directory designs employed in BlackParrot.
+controller (LCE) and coherence directory (CCE) microarchitectures as implemented in BlackParrot.
 
