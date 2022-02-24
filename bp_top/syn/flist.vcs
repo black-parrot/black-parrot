@@ -279,6 +279,18 @@ $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
 $BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
+# Hybrid CCE
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_coh_pipe.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_ctrl.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_lce_resp_pipe.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_mem_resp_pipe.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_pending_bits.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_pending_queue.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_pending.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_req.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_uc_pipe.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_prog_pipe.sv
 # BedRock
 $BP_ME_DIR/src/v/cce/bp_bedrock_size_to_len.sv
 # Network

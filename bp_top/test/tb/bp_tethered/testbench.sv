@@ -765,6 +765,21 @@ module testbench
                  ,.mem_fwd_send_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
                  ,.mem_fwd_header_i(fsm_fwd_header_lo)
                  );
+          end else if (cce_type_p == e_cce_hybrid) begin
+            bind bp_cce_hybrid_pending_bits
+              bp_me_nonsynth_cce_pending_tracer
+                #(.num_way_groups_p(num_way_groups_p)
+                  ,.width_p(width_p)
+                  ,.cce_id_width_p(cce_id_width_p)
+                  )
+                pending_bit_tracer
+                (.clk_i(clk_i & testbench.cce_trace_en_lo)
+                 ,.reset_i(reset_i)
+                 ,.cce_id_i(cce_id_i)
+                 ,.w_v_i(w_v_i)
+                 ,.w_wg_i(w_wg)
+                 ,.w_val_i(pending_bits_n[w_wg])
+                 );
           end
         end
     end
