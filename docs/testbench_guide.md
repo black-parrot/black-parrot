@@ -2,8 +2,9 @@
 ## Prerequisites
 ### Centos
 
-    yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo
-patchutils gcc gcc-c++ zlib-devel expat-devel dtc gtkwave vim-common virtualenv
+    yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk \
+                bison flex texinfo patchutils gcc gcc-c++ zlib-devel \
+                expat-devel dtc gtkwave vim-common virtualenv
 
 CentOS 7 requires a more modern gcc to build Linux. If you receive an error such as "These critical
 programs are missing or too old: make" try
@@ -12,9 +13,11 @@ programs are missing or too old: make" try
 
 ### Ubuntu
 
-    sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk
-build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev wget byacc
-device-tree-compiler python gtkwave vim-common virtualenv python-yaml
+    sudo apt-get install autoconf automake autotools-dev curl libmpc-dev \
+                         libmpfr-dev libgmp-dev gawk build-essential bison \
+                         flex texinfo gperf libtool patchutils bc zlib1g-dev \
+                         libexpat-dev wget byacc device-tree-compiler python \
+                         gtkwave vim-common virtualenv python-yaml
 
 BlackParrot has been tested extensively on CentOS 7. We have many users who have used Ubuntu for
 development. If not on a relatively recent version of these OSes, we suggest using a
