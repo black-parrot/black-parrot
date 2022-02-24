@@ -34,10 +34,8 @@ $BP_BE_DIR/src/include/bp_be_pkg.sv
 # ME packages
 $BP_ME_DIR/src/include/bp_me_pkg.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
 $BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_last.v
 # TOP packages
 $BP_TOP_DIR/src/include/bp_top_pkg.sv
 ## BaseJump STL files
@@ -153,9 +151,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_in.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
@@ -198,8 +193,6 @@ $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
-$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
 
 # BSG Staging area

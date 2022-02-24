@@ -62,6 +62,7 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_flow_counter.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_passthrough.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_1_to_n.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
@@ -162,9 +163,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_in.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
@@ -186,14 +184,9 @@ $HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough.v
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_last.v
 $BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
 $BP_COMMON_DIR/src/v/bsg_wormhole_stream_control.v
-$BP_COMMON_DIR/src/v/bsg_wormhole_stream_in.v
-$BP_COMMON_DIR/src/v/bsg_wormhole_stream_out.v
 $BP_COMMON_DIR/src/v/bp_mmu.sv
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
@@ -276,18 +269,16 @@ $BP_ME_DIR/src/v/cce/bp_bedrock_size_to_len.sv
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.sv
 $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_mem_to_link.sv
 $BP_ME_DIR/src/v/network/bp_me_cce_id_to_cord.sv
-$BP_ME_DIR/src/v/network/bp_me_cce_to_mem_link_recv.sv
-$BP_ME_DIR/src/v/network/bp_me_cce_to_mem_link_send.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_cmd.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_fill.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_req.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_resp.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem.sv
-$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode_lce_cmd.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode_lce_fill.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode_lce_req.sv
+$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode_lce_resp.sv
+$BP_ME_DIR/src/v/network/bp_me_burst_gearbox.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_wormhole.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv

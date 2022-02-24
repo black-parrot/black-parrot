@@ -37,7 +37,7 @@ module bp_cce_inst_ram
    , input                                       ucode_w_i
    , input [cce_pc_width_p-1:0]                  ucode_addr_i
    , input [cce_instr_width_gp-1:0]              ucode_data_i
-   , output [cce_instr_width_gp-1:0]             ucode_data_o
+   , output logic [cce_instr_width_gp-1:0]       ucode_data_o
 
    , input [cce_pc_width_p-1:0]                  predicted_fetch_pc_i
    , input [cce_pc_width_p-1:0]                  branch_resolution_pc_i

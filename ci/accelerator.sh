@@ -31,12 +31,13 @@ progs=(
     "streaming_accelerator_loopback"
     "streaming_accelerator_vdp"
     "coherent_accelerator_vdp"
-    "streaming_accelerator_loopback"
-    "coherent_accelerator_vdp"
     )
 
+#    "streaming_accelerator_loopback"
+#    "coherent_accelerator_vdp"
+
 # The base command to append the configuration to
-build_base="make -C bp_top/syn build_dump.v SUITE=bp-tests"
+build_base="make -C bp_top/syn build.v"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
@@ -44,9 +45,9 @@ make -C bp_top/syn clean
 
 # run simulations
 sims=()
-for i in "${!cfgs[@]}"
+for i in "${!progs[@]}"
 do
-    sims+=("make -C bp_top/syn sim_dump.v CFG=${cfgs[$i]} SUITE=bp-tests PROG=${progs[$i]}")
+    sims+=("make -C bp_top/syn sim.v CFG=${cfgs[$i]} SUITE=bp-tests PROG=${progs[$i]}")
 done
 
 # build required configs

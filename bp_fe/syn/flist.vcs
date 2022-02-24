@@ -156,9 +156,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_in.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
@@ -182,7 +179,7 @@ $HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_last.v
 $BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
@@ -223,7 +220,6 @@ $BP_ME_DIR/src/v/cce/bp_cce_pma.sv
 $BP_ME_DIR/src/v/cce/bp_cce_reg.sv
 $BP_ME_DIR/src/v/cce/bp_cce_spec_bits.sv
 $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
-$BP_ME_DIR/src/v/cce/bp_io_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
 # Dev
@@ -238,14 +234,8 @@ $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/network/bp_me_cce_id_to_cord.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_cmd.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_req.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_resp.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
-$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv

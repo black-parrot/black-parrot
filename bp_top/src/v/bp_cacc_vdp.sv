@@ -20,40 +20,66 @@ module bp_cacc_vdp
 
     , input [lce_id_width_p-1:0]                  lce_id_i
 
+    // LCE-CCE Interface
+    // BedRock Burst protocol: ready&valid
     , output logic [lce_req_header_width_lp-1:0]  lce_req_header_o
-    , output logic [cce_block_width_p-1:0]        lce_req_data_o
-    , output                                      lce_req_v_o
-    , input                                       lce_req_ready_i
-
-    , output logic [lce_resp_header_width_lp-1:0] lce_resp_header_o
-    , output logic [cce_block_width_p-1:0]        lce_resp_data_o
-    , output logic                                lce_resp_v_o
-    , input                                       lce_resp_ready_i
+    , output logic                                lce_req_header_v_o
+    , input                                       lce_req_header_ready_and_i
+    , output logic                                lce_req_has_data_o
+    , output logic [acache_fill_width_p-1:0]      lce_req_data_o
+    , output logic                                lce_req_data_v_o
+    , input                                       lce_req_data_ready_and_i
+    , output logic                                lce_req_last_o
 
     , input [lce_cmd_header_width_lp-1:0]         lce_cmd_header_i
-    , input [cce_block_width_p-1:0]               lce_cmd_data_i
-    , input                                       lce_cmd_v_i
-    , output logic                                lce_cmd_yumi_o
+    , input                                       lce_cmd_header_v_i
+    , output logic                                lce_cmd_header_ready_and_o
+    , input                                       lce_cmd_has_data_i
+    , input [acache_fill_width_p-1:0]             lce_cmd_data_i
+    , input                                       lce_cmd_data_v_i
+    , output logic                                lce_cmd_data_ready_and_o
+    , input                                       lce_cmd_last_i
 
     , input [lce_fill_header_width_lp-1:0]        lce_fill_header_i
-    , input [cce_block_width_p-1:0]               lce_fill_data_i
-    , input                                       lce_fill_v_i
-    , output logic                                lce_fill_yumi_o
+    , input                                       lce_fill_header_v_i
+    , output logic                                lce_fill_header_ready_and_o
+    , input                                       lce_fill_has_data_i
+    , input [acache_fill_width_p-1:0]             lce_fill_data_i
+    , input                                       lce_fill_data_v_i
+    , output logic                                lce_fill_data_ready_and_o
+    , input                                       lce_fill_last_i
 
     , output logic [lce_fill_header_width_lp-1:0] lce_fill_header_o
-    , output logic [cce_block_width_p-1:0]        lce_fill_data_o
-    , output logic                                lce_fill_v_o
-    , input                                       lce_fill_ready_i
+    , output logic                                lce_fill_header_v_o
+    , input                                       lce_fill_header_ready_and_i
+    , output logic                                lce_fill_has_data_o
+    , output logic [acache_fill_width_p-1:0]      lce_fill_data_o
+    , output logic                                lce_fill_data_v_o
+    , input                                       lce_fill_data_ready_and_i
+    , output logic                                lce_fill_last_o
 
+    , output logic [lce_resp_header_width_lp-1:0] lce_resp_header_o
+    , output logic                                lce_resp_header_v_o
+    , input                                       lce_resp_header_ready_and_i
+    , output logic                                lce_resp_has_data_o
+    , output logic [acache_fill_width_p-1:0]      lce_resp_data_o
+    , output logic                                lce_resp_data_v_o
+    , input                                       lce_resp_data_ready_and_i
+    , output logic                                lce_resp_last_o
+
+    // BedRock Stream
+    // may only support single beat messages
     , input [mem_header_width_lp-1:0]             io_cmd_header_i
-    , input [cce_block_width_p-1:0]               io_cmd_data_i
+    , input [acache_fill_width_p-1:0]             io_cmd_data_i
     , input                                       io_cmd_v_i
-    , output logic                                io_cmd_ready_o
+    , input                                       io_cmd_last_i
+    , output logic                                io_cmd_ready_and_o
 
     , output logic [mem_header_width_lp-1:0]      io_resp_header_o
-    , output logic [cce_block_width_p-1:0]        io_resp_data_o
+    , output logic [acache_fill_width_p-1:0]      io_resp_data_o
     , output logic                                io_resp_v_o
-    , input                                       io_resp_yumi_i
+    , output logic                                io_resp_last_o
+    , input                                       io_resp_ready_and_i
     );
 
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
@@ -82,7 +108,7 @@ module bp_cacc_vdp
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;
-  logic [cce_block_width_p-1:0] data_mem_o;
+  logic [acache_block_width_p-1:0] data_mem_o;
   bp_cache_tag_mem_pkt_s tag_mem_pkt_i;
   logic [cache_tag_info_width_lp-1:0] tag_mem_o;
   bp_cache_stat_mem_pkt_s stat_mem_pkt_i;
@@ -124,26 +150,27 @@ module bp_cacc_vdp
      ,.dcache_pkt_i(dcache_pkt)
      ,.v_i(dcache_pkt_v)
      ,.ready_o(dcache_ready)
-
-     ,.early_hit_v_o(dcache_v)
-     ,.early_miss_v_o()
-     ,.early_data_o(dcache_data)
-     ,.early_fencei_o()
-     ,.final_v_o()
-     ,.final_data_o()
-     ,.late_rd_addr_o()
-     ,.late_data_o()
-     ,.late_float_o()
-     ,.late_v_o(late_v)
-     ,.late_yumi_i(late_v)
+     ,.poison_req_i(1'b0)
 
      ,.ptag_v_i(1'b1)
      ,.ptag_i(dcache_ptag)
      ,.ptag_uncached_i(dcache_uncached)
      ,.ptag_dram_i(dcache_dram)
-
-     ,.poison_req_i(1'b0)
      ,.poison_tl_i(1'b0)
+
+     ,.early_hit_v_o(dcache_v)
+     ,.early_miss_v_o()
+     ,.early_fencei_o()
+     ,.early_data_o(dcache_data)
+     ,.early_fflags_o()
+     ,.final_data_o()
+     ,.final_v_o()
+
+     ,.late_rd_addr_o()
+     ,.late_float_o()
+     ,.late_data_o()
+     ,.late_v_o(late_v)
+     ,.late_yumi_i(late_v)
 
      // D$-LCE Interface
      ,.cache_req_complete_i(cache_req_complete_lo)
@@ -185,7 +212,7 @@ module bp_cacc_vdp
      ,.data_mem_invert_clk_p(1)
      ,.tag_mem_invert_clk_p(1)
      )
-   be_lce
+   lce
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -219,30 +246,8 @@ module bp_cacc_vdp
      ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_o)
      ,.stat_mem_i(stat_mem_o)
 
-     ,.lce_req_header_o(lce_req_header_o)
-     ,.lce_req_data_o(lce_req_data_o)
-     ,.lce_req_v_o(lce_req_v_o)
-     ,.lce_req_ready_then_i(lce_req_ready_i)
-
-     ,.lce_resp_header_o(lce_resp_header_o)
-     ,.lce_resp_data_o(lce_resp_data_o)
-     ,.lce_resp_v_o(lce_resp_v_o)
-     ,.lce_resp_ready_then_i(lce_resp_ready_i)
-
-     ,.lce_cmd_header_i(lce_cmd_header_i)
-     ,.lce_cmd_data_i(lce_cmd_data_i)
-     ,.lce_cmd_v_i(lce_cmd_v_i)
-     ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-
-     ,.lce_fill_header_i(lce_fill_header_i)
-     ,.lce_fill_data_i(lce_fill_data_i)
-     ,.lce_fill_v_i(lce_fill_v_i)
-     ,.lce_fill_yumi_o(lce_fill_yumi_o)
-
-     ,.lce_fill_header_o(lce_fill_header_o)
-     ,.lce_fill_data_o(lce_fill_data_o)
-     ,.lce_fill_v_o(lce_fill_v_o)
-     ,.lce_fill_ready_then_i(lce_fill_ready_i)
+     // LCE-CCE Interface
+     ,.*
      );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
@@ -250,7 +255,7 @@ module bp_cacc_vdp
   `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
   `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
 
-  assign io_cmd_ready_o = 1'b1;
+  assign io_cmd_ready_and_o = 1'b1;
 
   logic [63:0] csr_data, start_cmd, input_a_ptr, input_b_ptr, input_len,
                res_status, res_ptr, res_len, operation, dot_product_res;
@@ -304,6 +309,7 @@ module bp_cacc_vdp
 
   always_ff @(posedge clk_i) begin
     io_resp_v_o  <= io_cmd_v_i;
+    io_resp_last_o <= io_cmd_last_i;
     vector_a[len_a_cnt] <= (dcache_v & load & ~second_operand) ? dcache_data : vector_a[len_a_cnt];
     len_a_cnt <= (dcache_v & load & ~second_operand) ? len_a_cnt + 1'b1 : len_a_cnt;
     vector_b[len_b_cnt]  <= (dcache_v & load & second_operand) ? dcache_data : vector_b[len_b_cnt];
@@ -423,7 +429,7 @@ module bp_cacc_vdp
       WAIT_DCACHE_C2: begin
         //if load: load both input vectors
         //if store: go to DONE after store
-        state_n = ~(lce_cmd_v_i | lce_fill_v_i) ? WAIT_DCACHE_C2 : WAIT_FETCH;
+        state_n = ~(lce_cmd_header_v_i | lce_fill_header_v_i) ? WAIT_DCACHE_C2 : WAIT_FETCH;
         res_status = '0;
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
         dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
