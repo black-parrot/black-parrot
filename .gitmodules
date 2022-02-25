@@ -34,7 +34,7 @@
     update = checkout
 [submodule "tools/Surelog"]
     path = tools/Surelog
-    url = https://github.com/alainmarcel/Surelog
+    url = https://github.com/chipsalliance/Surelog
     branch = master
     ignore = untracked
     update = checkout
