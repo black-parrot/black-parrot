@@ -1,15 +1,19 @@
 # BlackParrot Testbench Guide
 ## Prerequisites
-### Centos
+### CentOS 7+
 
     yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk \
                 bison flex texinfo patchutils gcc gcc-c++ zlib-devel \
                 expat-devel dtc gtkwave vim-common virtualenv
 
-CentOS 7 requires a more modern gcc to build Linux. If you receive an error such as "These critical
-programs are missing or too old: make" try
+The default GCC package on CentOS 7+ is often too old to build some components. We suggest using
+[devtoolset-9](https://centos.pkgs.org/7/centos-sclo-rh-x86_64/devtoolset-9-9.0-3.el7.x86_64.rpm.html)
+to gain access to a more modern gcc.
 
-    scl enable devtoolset-8 bash
+    yum install centos-release-scl
+    yum install devtoolset-9
+    scl enable devtoolset-9 bash
+    # To automatically enable on new terminals, add "source scl_source enable devtoolset-9" to ~/.bashrc
 
 ### Ubuntu
 
