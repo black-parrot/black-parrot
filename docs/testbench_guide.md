@@ -1,31 +1,4 @@
 # BlackParrot Testbench Guide
-## Prerequisites
-### CentOS 7+
-
-    yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk \
-                bison flex texinfo patchutils gcc gcc-c++ zlib-devel \
-                expat-devel dtc gtkwave vim-common virtualenv
-
-The default GCC package on CentOS 7+ is often too old to build some components. We suggest using
-[devtoolset-9](https://centos.pkgs.org/7/centos-sclo-rh-x86_64/devtoolset-9-9.0-3.el7.x86_64.rpm.html)
-to gain access to a more modern gcc.
-
-    yum install centos-release-scl
-    yum install devtoolset-9
-    scl enable devtoolset-9 bash
-    # To automatically enable on new terminals, add "source scl_source enable devtoolset-9" to ~/.bashrc
-
-### Ubuntu
-
-    sudo apt-get install autoconf automake autotools-dev curl libmpc-dev \
-                         libmpfr-dev libgmp-dev gawk build-essential bison \
-                         flex texinfo gperf libtool patchutils bc zlib1g-dev \
-                         libexpat-dev wget byacc device-tree-compiler python \
-                         gtkwave vim-common virtualenv python-yaml
-
-BlackParrot has been tested extensively on CentOS 7. We have many users who have used Ubuntu for
-development. If not on a relatively recent version of these OSes, we suggest using a
-Docker image.
 
 ## Overview
 This document is intended to provide software and firmware developers with platform level specifications necessary to develop for BlackParrot. It is a work in progress. Following the full Getting Started guide in the main BlackParrot is the best way to prepare for BlackParrot software development.
