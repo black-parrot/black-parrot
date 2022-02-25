@@ -6,7 +6,7 @@
                 bison flex texinfo patchutils gcc gcc-c++ zlib-devel \
                 expat-devel dtc gtkwave vim-common virtualenv
 
-The default GCC package on CentOS is often too old to build some components. We suggest using
+The default GCC package on CentOS 7+ is often too old to build some components. We suggest using
 [devtoolset-9](https://centos.pkgs.org/7/centos-sclo-rh-x86_64/devtoolset-9-9.0-3.el7.x86_64.rpm.html)
 to gain access to a more modern gcc.
 
