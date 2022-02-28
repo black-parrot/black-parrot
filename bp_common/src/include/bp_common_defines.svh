@@ -4,6 +4,7 @@
   `include "bsg_defines.v"
   `include "bp_common_addr_defines.svh"
   `include "bp_common_aviary_defines.svh"
+  `include "bp_common_aviary_custom_defines.svh"
   `include "bp_common_bedrock_if.svh"
   `include "bp_common_cache_engine_if.svh"
   `include "bp_common_core_if.svh"

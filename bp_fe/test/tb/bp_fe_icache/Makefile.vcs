@@ -7,6 +7,7 @@ $(LINT_DIR)/wrapper.sv $(LINT_DIR)/testbench.sv:
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
+	@sed -i "s#.*bp_common_pkg.sv#$(BP_COMMON_DIR)/test/common/bp_common_test_pkg.sv#g" $@
 	@echo wrapper.sv                             >> $@
 	@echo testbench.sv                           >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
@@ -21,6 +22,7 @@ $(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv:
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
+	@sed -i "s#.*bp_common_pkg.sv#$(BP_COMMON_DIR)/test/common/bp_common_test_pkg.sv#g" $@
 	@echo wrapper.sv                             >> $@
 	@echo testbench.sv                           >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@

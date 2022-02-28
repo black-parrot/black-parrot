@@ -20,6 +20,7 @@ module bp_me_clint_slice
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (input                                                clk_i
+   , input                                              rt_clk_i
    , input                                              reset_i
 
    , input [core_id_width_p-1:0]                        id_i
@@ -39,7 +40,8 @@ module bp_me_clint_slice
    // Local interrupts
    , output logic                                       software_irq_o
    , output logic                                       timer_irq_o
-   , output logic                                       external_irq_o
+   , output logic                                       m_external_irq_o
+   , output logic                                       s_external_irq_o
    );
 
   if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
@@ -50,12 +52,14 @@ module bp_me_clint_slice
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
   logic [3:0][dword_width_gp-1:0] data_li;
-  logic plic_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
+  logic plic_w_v_li;
+  logic mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
      ,.els_p(4)
      ,.reg_addr_width_p(dev_addr_width_gp)
-     ,.base_addr_p({plic_reg_addr_gp, mtime_reg_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
+     ,.base_addr_p({plic_reg_match_addr_gp, mtime_reg_addr_gp,
+            mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
      )
    register
     (.*
@@ -68,33 +72,27 @@ module bp_me_clint_slice
      ,.data_i(data_li)
      );
 
-  // TODO: Should be actual RTC, or at least programmable
-  localparam ds_width_lp = 5;
-  localparam [ds_width_lp-1:0] ds_ratio_li = 8;
-  logic mtime_inc_li;
-  bsg_strobe
-   #(.width_p(ds_width_lp))
-   bsg_rtc_strobe
-    (.clk_i(clk_i)
-     ,.reset_r_i(reset_i)
-     ,.init_val_r_i(ds_ratio_li)
-     ,.strobe_r_o(mtime_inc_li)
+  logic [dword_width_gp-1:0] mtime_gray_r;
+  bsg_async_ptr_gray
+   #(.lg_size_p(dword_width_gp), .use_async_reset_p(1))
+   mtime_gray
+    (.w_clk_i(rt_clk_i)
+     ,.w_reset_i(reset_i) // async to rtc
+     ,.w_inc_i(1'b1) // TODO: Enable / disable increment?
+     ,.r_clk_i(clk_i)
+     ,.w_ptr_binary_r_o()
+     ,.w_ptr_gray_r_o()
+     ,.w_ptr_gray_r_rsync_o(mtime_gray_r)
      );
-  logic [dword_width_gp-1:0] mtime_r;
-  wire [dword_width_gp-1:0] mtime_n = data_lo;
-  bsg_counter_set_en
-   #(.max_val_p(0) // max_val_p is unused but must be set
-     ,.lg_max_val_lp(dword_width_gp) // Use lg_max_val_lp because of 64-bit parameter restriction
-     ,.reset_val_p(0)
-     )
-   mtime_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  // Cannot write the RTC. If needed, raise an issue
+  wire unused = mtime_w_v_li;
 
-     ,.set_i(mtime_w_v_li)
-     ,.en_i(mtime_inc_li)
-     ,.val_i(mtime_n)
-     ,.count_o(mtime_r)
+  logic [dword_width_gp-1:0] mtime_r;
+  bsg_gray_to_binary
+   #(.width_p(dword_width_gp))
+   g2b
+    (.gray_i(mtime_gray_r)
+     ,.binary_o(mtime_r)
      );
 
   logic [dword_width_gp-1:0] mtimecmp_r;
@@ -125,24 +123,39 @@ module bp_me_clint_slice
      );
   assign software_irq_o = mipi_r;
 
-  logic plic_r;
-  wire plic_n = data_lo[0];
+  // This scheme can be used for N PLIC bits, which may be required in
+  //   a distributed PLIC scheme. However, for now we only support
+  //   M and S mode external interrupts. This code doesn't work for
+  //   only a single PLIC bit.
+  localparam plic_els_lp = 2;
+  localparam lg_plic_els_lp = `BSG_SAFE_CLOG2(plic_els_lp);
+  logic [plic_els_lp-1:0] plic_n, plic_r;
+  wire [lg_plic_els_lp-1:0] plic_addr_li = addr_lo[2+:lg_plic_els_lp];
+
+  always_comb
+    begin
+      plic_n = plic_r;
+      plic_n[plic_addr_li] = data_lo[0];
+    end
+
   bsg_dff_reset_en
-   #(.width_p(1))
+   #(.width_p(plic_els_lp))
    plic_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(plic_w_v_li)
-
      ,.data_i(plic_n)
      ,.data_o(plic_r)
      );
-  assign external_irq_o = plic_r;
+  wire plic_lo = plic_r[plic_addr_li];
+
+  assign m_external_irq_o = plic_r[0];
+  assign s_external_irq_o = plic_r[1];
 
   assign data_li[0] = mipi_r;
   assign data_li[1] = mtimecmp_r;
   assign data_li[2] = mtime_r;
-  assign data_li[3] = plic_r;
+  assign data_li[3] = plic_lo;
 
 endmodule
 

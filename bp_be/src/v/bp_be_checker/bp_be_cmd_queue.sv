@@ -5,7 +5,7 @@
 module bp_be_cmd_queue
  import bp_common_pkg::*;
  import bp_be_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_multicore_1_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    , localparam ptr_width_lp = `BSG_SAFE_CLOG2(fe_cmd_fifo_els_p)
