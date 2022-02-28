@@ -126,13 +126,13 @@ module bp_nonsynth_if_verif
     $error("Error: L2 banks must be a power of two");
 
   // Unicore
-  if ((multicore_p == 0) && (uce_fill_width_p != l2_data_width_p))
+  if ((cce_type_p == e_cce_uce) && (uce_fill_width_p != l2_data_width_p))
     $error("Error: unicore requires L2-Cache data width same as UCE fill width");
-  if ((multicore_p == 0) && (icache_fill_width_p != dcache_fill_width_p))
+  if ((cce_type_p == e_cce_uce) && (icache_fill_width_p != dcache_fill_width_p))
     $error("Error: unicore requires L1-Cache fill widths to match");
-  if ((multicore_p == 0) && (num_core_p != 1))
+  if ((cce_type_p == e_cce_uce) && (num_core_p != 1))
     $error("Error: Unicore only supports a single core configuration in the tethered testbench");
-  if ((multicore_p == 0) && (uce_fill_width_p < dword_width_gp))
+  if ((cce_type_p == e_cce_uce) && (uce_fill_width_p < dword_width_gp))
     $error("Error: Unicore requires UCE fill width to be at least dword width");
 
   // Multicore

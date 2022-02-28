@@ -13,7 +13,7 @@ module bp_me_axil_master
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-  , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : cce_block_width_p 
+  , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : bedrock_data_width_p
   // AXI WRITE DATA CHANNEL PARAMS
   , parameter axil_data_width_p = 32
   , parameter axil_addr_width_p  = 32
