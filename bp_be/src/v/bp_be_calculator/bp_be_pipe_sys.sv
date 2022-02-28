@@ -53,7 +53,8 @@ module bp_be_pipe_sys
 
    , input                                   timer_irq_i
    , input                                   software_irq_i
-   , input                                   external_irq_i
+   , input                                   m_external_irq_i
+   , input                                   s_external_irq_i
    , output logic                            irq_pending_o
    , output logic                            irq_waiting_o
 
@@ -118,7 +119,8 @@ module bp_be_pipe_sys
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
+     ,.m_external_irq_i(m_external_irq_i)
+     ,.s_external_irq_i(s_external_irq_i)
      ,.irq_pending_o(irq_pending_o)
      ,.irq_waiting_o(irq_waiting_o)
 

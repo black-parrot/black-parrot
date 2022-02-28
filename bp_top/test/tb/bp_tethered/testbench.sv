@@ -48,7 +48,7 @@ module testbench
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
+   , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : cce_block_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (output bit reset_i);
@@ -151,12 +151,24 @@ module testbench
   logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
   logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
+  logic rt_clk_lo;
+  bsg_counter_clock_downsample
+   #(.width_p(3))
+   ds
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.val_i(3'b111)
+     ,.clk_r_o(rt_clk_lo)
+     );
+
   wire [io_noc_did_width_p-1:0] proc_did_li = 1;
   wire [io_noc_did_width_p-1:0] host_did_li = '1;
   wrapper
    #(.bp_params_p(bp_params_p))
    wrapper
     (.clk_i(clk_i)
+     ,.rt_clk_i(rt_clk_lo)
      ,.reset_i(reset_i)
 
      ,.my_did_i(proc_did_li)
@@ -228,8 +240,7 @@ module testbench
 
   wire [lce_id_width_p-1:0] io_lce_id_li = num_core_p*2+num_cacc_p+num_l2e_p+num_sacc_p+num_io_p;
   bp_nonsynth_nbf_loader
-   #(.bp_params_p(bp_params_p)
-     ,.io_data_width_p(io_data_width_p))
+   #(.bp_params_p(bp_params_p), .io_data_width_p(io_data_width_p))
    nbf_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -576,7 +587,7 @@ module testbench
            ,.mem_resp_last_i(mem_resp_last_o)
            );
 
-      if (multicore_p)
+      if (cce_type_p != e_cce_uce)
         begin
           bind bp_cce_wrapper
             bp_me_nonsynth_cce_tracer

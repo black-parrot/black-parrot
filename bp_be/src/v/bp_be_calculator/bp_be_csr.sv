@@ -37,7 +37,8 @@ module bp_be_csr
    // Interrupts
    , input                                   timer_irq_i
    , input                                   software_irq_i
-   , input                                   external_irq_i
+   , input                                   m_external_irq_i
+   , input                                   s_external_irq_i
    , output logic                            irq_pending_o
    , output logic                            irq_waiting_o
 
@@ -139,7 +140,7 @@ module bp_be_csr
 
   wire sti_v = mie_r.stie & mip_r.stip;
   wire ssi_v = mie_r.ssie & mip_r.ssip;
-  wire sei_v = mie_r.seie & mip_r.seip;
+  wire sei_v = mie_r.seie & (mip_r.seip | s_external_irq_i);
 
   // TODO: interrupt priority is non-compliant with the spec.
   wire [15:0] interrupt_icode_dec_li =
@@ -595,10 +596,11 @@ module bp_be_csr
           dcsr_li.prv   = priv_mode_r;
         end
 
+
       // Accumulate interrupts
       mip_li.mtip = timer_irq_i;
       mip_li.msip = software_irq_i;
-      mip_li.meip = external_irq_i;
+      mip_li.meip = m_external_irq_i;
 
       // Accumulate FFLAGS
       fcsr_li.fflags |= fflags_acc_i;
@@ -611,7 +613,14 @@ module bp_be_csr
   // Debug Mode masks all interrupts
   assign irq_pending_o = ~is_debug_mode & ((m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie));
 
-  assign csr_data_o = dword_width_gp'(csr_data_lo);
+  // The supervisor external interrupt line does not impact the supervisor software interrupt bit of MIP.
+  // However, software read operations return as if it does. bit 9 is supervisor software interrupt
+  always_comb
+    unique casez (csr_cmd_cast_i.csr_addr)
+      `CSR_ADDR_SIP: csr_data_o = csr_data_lo | ((s_external_irq_i & sip_rmask_li) << 9);
+      `CSR_ADDR_MIP: csr_data_o = csr_data_lo | (s_external_irq_i << 9);
+      default: csr_data_o = csr_data_lo;
+    endcase
 
   assign commit_pkt_cast_o.npc_w_v          = |{retire_pkt_cast_i.special, retire_pkt_cast_i.exception};
   assign commit_pkt_cast_o.queue_v          = retire_pkt_cast_i.queue_v & ~|retire_pkt_cast_i.exception;

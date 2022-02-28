@@ -38,6 +38,7 @@ module bp_unicore
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                                 clk_i
+   , input                                               rt_clk_i
    , input                                               reset_i
 
    , input [io_noc_did_width_p-1:0]                      my_did_i
@@ -98,6 +99,7 @@ module bp_unicore
    #(.bp_params_p(bp_params_p))
    unicore_lite
     (.clk_i(clk_i)
+     ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_i)
 
      ,.my_did_i(my_did_i)

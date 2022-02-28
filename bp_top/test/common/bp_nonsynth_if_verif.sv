@@ -57,7 +57,7 @@ module bp_nonsynth_if_verif
 
     end
 
-  if (ic_y_dim_p != 1 && multicore_p == 1)
+  if (ic_y_dim_p != 1 && cce_type_p != e_cce_uce)
     $error("Error: Must have exactly 1 row of I/O routers for multicore");
   if (mc_y_dim_p > 2)
     $error("Error: Multi-row L2 expansion nodes not yet supported");
@@ -65,7 +65,7 @@ module bp_nonsynth_if_verif
     $error("Error: Must have <= 1 column of streaming accelerators");
   if (cac_x_dim_p > 1)
     $error("Error: Must have <= 1 column of coherent accelerators");
-  if (multicore_p == 1 && !((dcache_block_width_p == icache_block_width_p) && (dcache_block_width_p ==  acache_block_width_p)))
+  if (cce_type_p != e_cce_uce && !((dcache_block_width_p == icache_block_width_p) && (dcache_block_width_p ==  acache_block_width_p)))
     $error("Error: We don't currently support different block widths for multicore configurations");
   if ((cce_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
@@ -79,9 +79,9 @@ module bp_nonsynth_if_verif
     $error("Error: Cache fill width should be a multiple of cache bank width");
   if (icache_fill_width_p != dcache_fill_width_p)
     $error("Error: L1-Cache fill width should be the same");
-  if ((multicore_p == 0) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
+  if ((cce_type_p == e_cce_uce) && ((icache_fill_width_p != l2_data_width_p) || (dcache_fill_width_p != l2_data_width_p)))
     $error("Error: unicore requires L2-Cache data width same as L1-Cache fill width");
-  if ((multicore_p == 1) && (l2_data_width_p != dword_width_gp))
+  if ((cce_type_p != e_cce_uce) && (l2_data_width_p != dword_width_gp))
     $error("Error: multicore requires L2 data width same as dword width");
   if (l2_data_width_p < l2_fill_width_p)
     $error("Error: L2 fill width must be at least as large as L2 data width");
@@ -108,7 +108,7 @@ module bp_nonsynth_if_verif
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
     $error("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
 
-  if ((multicore_p == 1) && (|l2_amo_support_p))
+  if ((cce_type_p != e_cce_uce) && (|l2_amo_support_p))
     $error("Error: L2 atomics are not currently supported in bp_multicore");
 
   if (~|{dcache_amo_support_p[e_lr_sc], l2_amo_support_p[e_lr_sc]})
@@ -126,11 +126,14 @@ module bp_nonsynth_if_verif
   if (mem_noc_flit_width_p % l2_fill_width_p != 0)
     $error("Memory NoC flit width must match l2 fill width");
 
-  if (multicore_p == 0 && num_core_p != 1)
+  if ((cce_type_p == e_cce_uce) && num_core_p != 1)
     $error("Unicore only supports a single core configuration in the tethered testbench");
 
   if (!`BSG_IS_POW2(l2_banks_p))
     $error("L2 banks must be a power of two");
+
+  if (num_cce_p/mc_x_dim_p*l2_banks_p > 16)
+    $error("Round robin arbiter currently only supports 16 entries");
 
 endmodule
 

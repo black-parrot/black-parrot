@@ -18,12 +18,13 @@ module wrapper
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter io_data_width_p = multicore_p ? cce_block_width_p : uce_fill_width_p
+   , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : cce_block_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
   (input                                                    clk_i
+   , input                                                  rt_clk_i
    , input                                                  reset_i
 
    , input [did_width_p-1:0]                                my_did_i
@@ -69,7 +70,7 @@ module wrapper
    , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
-  if (multicore_p)
+  if (cce_type_p != e_cce_uce)
     begin : multicore
 
       if (io_data_width_p != cce_block_width_p)
@@ -91,6 +92,7 @@ module wrapper
        #(.bp_params_p(bp_params_p))
        dut
         (.core_clk_i(clk_i)
+         ,.core_rt_clk_i(rt_clk_i)
          ,.core_reset_i(reset_i)
 
          ,.coh_clk_i(clk_i)
