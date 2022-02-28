@@ -136,25 +136,27 @@ module bp_nonsynth_if_verif
     $error("Error: Unicore requires UCE fill width to be at least dword width");
 
   // Multicore
-  if ((multicore_p == 1) && (ic_y_dim_p != 1))
+  if ((cce_type_p != e_cce_uce) && (ic_y_dim_p != 1))
     $error("Error: Must have exactly 1 row of I/O routers for multicore");
-  if ((multicore_p == 1) && (l2_data_width_p != bedrock_data_width_p))
+  if ((cce_type_p != e_cce_uce) && (l2_data_width_p != bedrock_data_width_p))
     $error("Error: Multicore requires L2 data width same as BedRock data width");
-  if ((multicore_p == 1) && (icache_fill_width_p != dcache_fill_width_p))
+  if ((cce_type_p != e_cce_uce) && (icache_fill_width_p != dcache_fill_width_p))
     $error("Error: Multicore requires L1-Cache fill widths to be the same");
-  if ((multicore_p == 1) && (num_cacc_p > 0) && (icache_fill_width_p != acache_fill_width_p))
+  if ((cce_type_p != e_cce_uce) && (num_cacc_p > 0) && (icache_fill_width_p != acache_fill_width_p))
     $error("Error: Multicore requires L1-Cache fill widths to be the same");
-  if ((multicore_p == 1) && (dcache_block_width_p != icache_block_width_p))
+  if ((cce_type_p != e_cce_uce) && (dcache_block_width_p != icache_block_width_p))
     $error("Error: Multicore requires L1-Cache block widths to be the same");
-  if ((multicore_p == 1) && (num_cacc_p > 0) && (icache_block_width_p != acache_block_width_p))
+  if ((cce_type_p != e_cce_uce) && (num_cacc_p > 0) && (icache_block_width_p != acache_block_width_p))
     $error("Error: Multicore requires L1-Cache block widths to be the same");
-  if ((multicore_p == 1) && (l2_block_width_p < icache_block_width_p))
+  if ((cce_type_p != e_cce_uce) && (l2_block_width_p < icache_block_width_p))
     $error("Error: Multicore requires L2-Cache block width to be at least L1-Cache block width");
-  if ((multicore_p == 1) && (bedrock_data_width_p < dword_width_gp))
+  if ((cce_type_p != e_cce_uce) && (bedrock_data_width_p < dword_width_gp))
     $error("Error: Multicore requires BedRock data width to be at least dword width");
-  if ((multicore_p == 1) && (|l2_amo_support_p))
+  if ((cce_type_p != e_cce_uce) && (|l2_amo_support_p))
     $error("Error: Multicore does not support L2 atomics");
 
+  if (num_cce_p/mc_x_dim_p*l2_banks_p > 16)
+    $error("Round robin arbiter currently only supports 16 entries");
 
 endmodule
 

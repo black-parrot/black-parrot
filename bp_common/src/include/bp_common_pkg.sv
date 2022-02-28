@@ -8,11 +8,14 @@
  *
  */
 
+  `include "bp_common_defines.svh"
+
 package bp_common_pkg;
 
   `include "bp_common_accelerator_pkgdef.svh"
   `include "bp_common_addr_pkgdef.svh"
   `include "bp_common_aviary_pkgdef.svh"
+  `include "bp_common_aviary_cfg_pkgdef.svh"
   `include "bp_common_bedrock_pkgdef.svh"
   `include "bp_common_cache_pkgdef.svh"
   `include "bp_common_cache_engine_pkgdef.svh"

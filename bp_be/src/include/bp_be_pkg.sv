@@ -1,4 +1,6 @@
 
+  `include "bp_be_defines.svh"
+
 package bp_be_pkg;
 
   import bp_common_pkg::*;
