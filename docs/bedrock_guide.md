@@ -36,7 +36,7 @@ The header includes message type, operation sub-type, address, and size fields, 
 the parameterizable payload. The payload is network-specific and carries metadata required to
 process messages on the selected network. The current implementation defines message formats
 for the four BedRock coherence protocol networks and a memory command/response network
-(discussed in the [interface\_specification](interface_specification.md).
+(discussed in the [interface\_specification](interface_specification.md)).
 
 The files above are the authoritative definitions for the BP-BedRock interface implementation.
 In the event that the code differs from any documentation on or referenced by this page, the code
@@ -101,21 +101,24 @@ The Response network has the following message types and payload fields:
   - Writeback
   - Null Writeback
 - Payload
- - Destination CCE
- - Responding LCE
+  - Destination CCE
+  - Responding LCE
 
-All LCE-CCE network messages use the same address and data alignment constraints. These constraints
-are consistent with the BlackParrot Memory Interface. Uncached accesses are naturally aligned to
-the size of the request, and behavior of a misaligned request is undefined. Cacheable accesses and
-operations are block-based and operate on the data of the single cache block specified by the
-address. Critical word first behavior is supported and cache block data is transferred beginning
-with the byte at the requested address, continuing to the last byte of the block, then wrapping
-around at the cache block boundary and continuing with the first byte of the block up to the byte
-preceding the requested address byte. In other words, the cache block data is rotated left to
-place the requested address at the least significant position of the message data field. This
+#### Address and Data Alignment
+
+All four LCE-CCE networks have the same address and data alignment properties. Uncached accesses are
+naturally aligned to the size of the request, and behavior of a misaligned request is undefined.
+
+Cacheable accesses are block-based and support critical word first behavior. Data is returned
+to the cache beginning with the byte at the LCE Request address, then wrapping around at the natural
+cache block boundary. In other words, data is returned as found in the cache block, from LSB to MSB,
+but left rotated to place the requested byte at the LSB of the message data field. This
 behavior naturally supports networks that serialize the cache block data and send the block in
 multiple data beats, as well as conversion between different serialization widths without requiring
 re-alignment of message data.
+
+The BlackParrot LCEs and CCEs expect that cacheable requests are issued aligned to the BedRock
+network data channel width (which is currently the same as the cache fill width) at the LCE.
 
 ### BP-BedRock Local Cache Engine (LCE) Microarchitecture
 
