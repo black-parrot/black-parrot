@@ -152,6 +152,8 @@ module bp_nonsynth_if_verif
     $error("Error: Multicore requires L2-Cache block width to be at least L1-Cache block width");
   if ((cce_type_p != e_cce_uce) && (bedrock_data_width_p < dword_width_gp))
     $error("Error: Multicore requires BedRock data width to be at least dword width");
+  if ((cce_type_p != e_cce_uce) && (bedrock_data_width_p > icache_fill_width_p))
+    $error("Error: Multicore requires BedRock data width to be no larger than cache fill width");
   if ((cce_type_p != e_cce_uce) && (|l2_amo_support_p))
     $error("Error: Multicore does not support L2 atomics");
 
