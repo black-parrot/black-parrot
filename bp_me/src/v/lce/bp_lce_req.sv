@@ -194,12 +194,13 @@ module bp_lce_req
   assign req_sent = (lce_req_header_v_o & lce_req_header_ready_and_i & ~lce_req_has_data_o)
                     | (lce_req_data_v_o & lce_req_data_ready_and_i & lce_req_last_o);
 
-  // LCE is ready for a new request if not in reset, mode is uncached or cached with sync done
-  // and either no current valid request or a valid request that is sending last beat
-  assign ready_o = ~is_reset & (sync_done_i | (lce_mode_i == e_lce_mode_uncached))
-    & (~cache_req_v_r
-       | (cache_req_v_r & req_sent)
-       );
+  // LCE is ready for a new request if not in reset, mode is uncached or cached with sync done,
+  // either no current valid request or a valid request that is sending last beat, and
+  // there is an available credit
+  assign ready_o = ~is_reset
+                   & (sync_done_i | (lce_mode_i == e_lce_mode_uncached))
+                   & (~cache_req_v_r | (cache_req_v_r & req_sent))
+                   & ~credits_full_o;
 
   // note: this could create a crazy loop if the cache uses ready_o to determine when to send a
   // new cache request to the LCE

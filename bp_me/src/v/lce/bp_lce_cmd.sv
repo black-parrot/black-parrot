@@ -800,7 +800,7 @@ module bp_lce_cmd
         stat_mem_pkt_cast_o.index = lce_cmd_addr_index;
         stat_mem_pkt_cast_o.way_id = lce_cmd_way_id;
         stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_read;
-        stat_mem_pkt_v_o = lce_fill_data_v_o & lce_fill_data_ready_and_i & lce_fill_last_o
+        stat_mem_pkt_v_o = lce_fill_data_v_o & lce_fill_last_o
                            & (lce_cmd_header_cast_li.msg_type.cmd == e_bedrock_cmd_st_tr_wb);
 
         // move to next state when last data beat sends
