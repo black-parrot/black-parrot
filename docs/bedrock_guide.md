@@ -22,8 +22,7 @@ has been influenced by its implementation within BlackParrot.
 BlackParrot implements BedRock to provide cache coherence between the processor cores and
 coherent accelerators in a multicore BlackParrot system. This system is called BlackParrot Bedrock
 (BP-BedRock). BP-BedRock also defines a BedRock compatible memory interface. The text below
-provides a brief overview of BP-Bedrock. A more complete description is available
-[here](blackparrot_bedrock_specification.pdf).
+provides a brief overview of BP-Bedrock.
 
 ### BP-BedRock Network Interface Specifications
 
@@ -36,7 +35,8 @@ BP-BedRock defines a common message format with a unified header and parameteriz
 The header includes message type, operation sub-type, address, and size fields, as well as
 the parameterizable payload. The payload is network-specific and carries metadata required to
 process messages on the selected network. The current implementation defines message formats
-for the four BedRock coherence protocol networks and a memory command/response network.
+for the four BedRock coherence protocol networks and a memory command/response network
+(discussed in the [interface\_specification](interface_specification.md).
 
 The files above are the authoritative definitions for the BP-BedRock interface implementation.
 In the event that the code differs from any documentation on or referenced by this page, the code
@@ -46,22 +46,82 @@ shall be considered as the current and authoritative specification.
 
 The BP-BedRock coherence interface (also called the LCE-CCE interface) carries messages between the
 BlackParrot LCEs (cache controllers) and CCEs (coherence directories). This interface implements
-the four BedRock coherence networks: Request, Command, Fill, and Response.
+the four BedRock coherence networks: Request, Command, Fill, and Response. Each network utilizes
+the BedRock message formats. For brevity, we outline the fields that differ for each network below.
+Fields not listed (e.g., message size, address) have common meanings across all message types.
 
-### BP-BedRock Memory Interface
+The Request network has the following message types and payload fields:
+- Message type
+  - Read miss
+  - Write miss
+  - Uncached read/load (1, 2, 4, or 8 bytes)
+  - Uncached write/store (1, 2, 4, or 8 bytes)
+  - Uncached Atomic
+- Payload
+  - Destination CCE
+  - Requesting LCE
+  - Requesting Way ID
+  - Non-exclusive request hint (request block in read-only state without write permissions)
 
-The BP-BedRock memory interface (also called the CCE-Mem interface) is a simple command and response
-interface used to communicate with memory or I/O devices. The interace can be easily transduced
-to standard protocols such as AXI, AXI-Lite, WishBone, or DMA engines. The interface supports
-cacheable, uncacheable, and atomic operations. Uncached accesses must be naturally aligned with
-the request size. Cached accesses are block-based and return the cache block containing the
-requested address. Cached accesses return the critical data word first (at LSB of data) and wrap
-around the requested block as follows:
+The Command network has the following message types and payload fields:
+- Message type
+  - Sync
+  - Invalidate
+  - Set State
+  - Data (cache block data, tag, and state)
+  - Set State and Wakeup (cache block permission upgrade, no data)
+  - Writeback
+  - Set State and Writeback
+  - Transfer
+  - Set State and Transfer
+  - Set State, Transfer, and Writeback
+  - Uncached Data (uncached load request data from memory)
+  - Uncached Store Done (uncached store request has been completed to memory)
+- Payload
+  - Destination LCE
+  - CCE sending command
+  - Cache Way ID
+  - Coherence State
+  - Target cache, state, and way ID for cache to cache transfer
 
-Request: 0x00, size=32B [D C B A]
-Request: 0x10, size=32B [B A D C]
+The Fill network has the following message types and payload fields:
+- Message type
+  - Data (cache to cache block transfer)
+- Payload
+  - Destination LCE
+  - CCE managing block
+  - Cache Way ID
+  - Coherence State
 
-### BP-BedRock Microarchitecture
+The Response network has the following message types and payload fields:
+- Message type
+  - Sync Ack
+  - Invalidation Ack
+  - Coherence Transaction Ack
+  - Writeback
+  - Null Writeback
+- Payload
+ - Destination CCE
+ - Responding LCE
+
+All LCE-CCE network messages use the same address and data alignment constraints. These constraints
+are consistent with the BlackParrot Memory Interface. Uncached accesses are naturally aligned to
+the size of the request, and behavior of a misaligned request is undefined. Cacheable accesses and
+operations are block-based and operate on the data of the single cache block specified by the
+address. Critical word first behavior is supported and cache block data is transferred beginning
+with the byte at the requested address, continuing to the last byte of the block, then wrapping
+around at the cache block boundary and continuing with the first byte of the block up to the byte
+preceding the requested address byte. In other words, the cache block data is rotated left to
+place the requested address at the least significant position of the message data field. This
+behavior naturally supports networks that serialize the cache block data and send the block in
+multiple data beats, as well as conversion between different serialization widths without requiring
+re-alignment of message data.
+
+### BP-BedRock Local Cache Engine (LCE) Microarchitecture
+
+Coming Soon!
+
+### BP-BedRock Cache Coherence Engine (CCE) Microarchitecture
 
 Refer to the [BedRock Microarchitecture Guide](bedrock_uarch_guide.md) for an overview of the cache
 coherence directory designs employed in BlackParrot.

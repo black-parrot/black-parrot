@@ -2,7 +2,7 @@
 
 This document details the microarchitecture of the BedRock Programmable CCE (ucode CCE). For
 a general overview of the BedRock coherence protocol and system, please see the general
-[BedRock guide](bedrock_guide.md).
+[BedRock Cache Coherence and Memory System Guide](bedrock_guide.md).
 
 ## Ucode CCE
 

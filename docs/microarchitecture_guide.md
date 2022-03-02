@@ -60,6 +60,6 @@ RISC-V instructions:
 The data cache is a VIPT (Virtually-Indexed Physical-Tagged) cache with three pipeline stages: Tag Lookup (TL) and Tag Verify (TV). There are 3 hardened memories in the D$: the data mem, tag mem and stat mem. They are implemented as 1RW synchronous RAMs to be amenable to most commercial SRAM generators. In TL, the data memory and tag memory are accessed. In TV, the data from these caches is selected based on the result of the tag comparison. Additionally, data is written to a 2-entry writebuffer, which is used to prevent data memory structural hazards. Data mux (DM) stage sign extends, recodes floating point loads and selects subword loads.
 
 ## Memory End
-Refer to the [BedRock Microarchitecture Guide](bedrock_uarch_guide.md) for an overview of the cache
-controller (LCE) and coherence directory (CCE) microarchitectures as implemented in BlackParrot.
+Refer to the [BedRock Microarchitecture Guide](bedrock_uarch_guide.md) for an overview of the
+coherence directory (CCE) microarchitectures as implemented in BlackParrot.
 

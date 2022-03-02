@@ -240,16 +240,35 @@ There are additional signals for available credits in the engine, used for fenci
 signify all downstream transactions have completed, whereas full credits signify no more
 transactions may be sent to the network.
 
-## Memory Interface
+## BedRock Interface
+
+The BlackParrot memory and cache coherence networks rely on a common message format that can
+is easily specialized for the specific network interface. A BedRock message includes a
+header and zero or more bytes of data.
+
+The BlackParrot BedRock Interfaces are defined in the following files:
+- [bp\_common\_bedrock\_if.svh](../bp_common/src/include/bp_common_bedrock_if.svh)
+- [bp\_common\_bedrock\_pkgdef.svh](../bp_common/src/include/bp_common_bedrock_pkgdef.svh)
+- [bp\_common\_bedrock\_wormhole_defines.svh](../bp_common/src/include/bp_common_bedrock_wormhole_defines.svh)
+
+A BedRock message header is composed of:
+- Message type (available types depend on the specific network)
+- Subop type (store, amolr, amosc, amoswap, amoadd, amoxor, amoand, amoor, amomin, amomax, amominu, amomaxu)
+- Physical address
+- Message Size (1 to 128 bytes, in powers of two; specifies request size or size of attached data)
+- Payload (a black-box to the command receiver, this is returned as-is along with the memory response)
+
+A BedRock message may also include data. The amount of data is specified by the message size field
+in the message header. Alignment of the message address and data is specific to the network
+implementation.
+
+### Memory and I/O Interface
 
 The BlackParrot Memory Interface is a simple command / response interface used for communicating
 with memory or I/O devices. The goal is to provide a simple and understandable way to access any
 type of memory system, be it a shared bus or a more sophisticated network-on-chip scheme.
 The Memory Interface can easily be transduced to standard protocols such as AXI, AXI-lite or WishBone,
 and is implemented using the BedRock network interfaces.
-A complete description of the BedRock networks and interfaces, including the BP-BedRock Memory
-Interface can be found in the
-[BedRock Cache Coherence and Memory System Guide](bedrock_guide.md).
 
 A memory command or response packet is composed of:
 - Message type
@@ -261,26 +280,27 @@ A memory command or response packet is composed of:
   - Atomic operation
 - Subop type (amoswap, amolr, amosc, amoadd, amoxor, amoand, amoor, amomin, amomax, amominu, amomaxu)
 - Physical address
-- Request Size
+- Message/Request Size
 - Payload (A black-box to the command receiver, this is returned as-is along with the memory response)
   - An example payload for the CCE is:
   - Requesting LCE
   - Requesting way id
   - Coherence state
   - Whether this is a speculative request
-- Data
+- Data (for memory write or uncached write operations)
 
 Uncached accesses must be naturally aligned with the request size. Cached accesses are block-based
 and return the cache block containing the requested address. Cached accesses return the critical
 data word first (at LSB of data) and wrap around the requested block as follows:
 
-Request: 0x00, size=32B [D C B A]
-Request: 0x10, size=32B [B A D C]
+- Request: 0x00, size=32B [D C B A]
+- Request: 0x10, size=32B [B A D C]
 
-## LCE-CCE Interface
+### LCE-CCE Interface
 
 The LCE-CCE Interface comprises the connections between the BlackParrot caches and coherence
-directories in a cache-coherent BlackParrot multicore processor. A full description of the LCE-CCE
-Interface and its implementation can be found in the
-[BedRock Cache Coherence and Memory System Guide](bedrock_guide.md).
+directories in a cache-coherent BlackParrot multicore processor. These networks support the
+BlackParrot BedRock coherence protocol implementation and utilize the common BedRock message
+format described above. A full description of the LCE-CCE Interface and its implementation
+can be found in the [BedRock Cache Coherence and Memory System Guide](bedrock_guide.md).
 
