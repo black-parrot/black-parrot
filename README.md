@@ -69,10 +69,11 @@ BlackParrot heavily leverages the [BaseJump STL](https://github.com/bespoke-sili
 
 BlackParrot is an aggressively modular design: communication between the components is performed over a set of narrow, latency-insensitive interfaces. The interfaces are designed to allow implementations of the various system components to change independently of one another, without worrying about cascading functional or timing effects. Read more about BlackParrot's standardized interfaces here: [Interface Specification](docs/interface_specification.md)
 
-## BedRock Coherence System Guide
-The BedRock coherence system maintains cache coherence between the BlackParrot processor cores and attached
-coherent accelerators in a BlackParrot multicore system. Please see the [BedRock Coherence Protocol](docs/bedrock_coherence_protocol.md)
-page for more details on the coherence protocol and system.
+## BedRock Cache Coherence System Guide
+The BedRock coherence system maintains cache coherence between the BlackParrot processor cores and
+attached coherent accelerators in a BlackParrot multicore system. Please see the
+[BedRock Cache Coherence System Guide](docs/bedrock_guide.md) page for more details on the cache
+coherence protocol and its implementation in BlackParrot.
 
 ## Microarchitecture Guide
 [Microarchitecture Guide](docs/microarchitecture_guide.md)

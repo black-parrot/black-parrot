@@ -1,127 +1,178 @@
-# BedRock - Network Specification
+# BedRock Cache Coherence and Memory System Guide
 
-The BedRock Network Specification defines the on-chip networks used by the cache coherence
-and memory system in the BlackParrot system. The cache coherence system keeps the data and
-instruction caches of core coherent with eachother for shared-memory multicore designs. The protocols
-also support integration of cache coherent accelerators.
+BedRock encompasses both the cache coherence and memory systems used in BlackParrot. The principle
+component of BedRock is the specification of a cache coherence protocol and its required networks,
+which are collectively named BedRock. The BlackParrot implementation of BedRock, called BP-BedRock
+specifies the network message formats and implements the required coherence system components.
+BP-BedRock further defines a memory interface and system that is compatible with and complementary
+to the coherence system and network interfaces.
 
-The BedRock Interface is defined in [bp\_common\_bedrock\_if.svh](../bp_common/src/include/bp_common_bedrock_if.svh)
-and [bp\_common\_bedrock\_pkgdef.svh](../bp_common/src/include/bp_common_bedrock_pkgdef.svh).
-These files are the authoritative definitions for the interface in the event that this
-document and the code are out-of-sync.
+## BedRock Cache Coherence Protocol
 
-BedRock defines a common message format that is specialized to support both the on-chip
-cache coherence system and the memory interface networks from a BlackParrot processor to memory.
-The protocol can be easily transduced to standard protocols such as AXI, AXI-Lite, or WishBone.
-BedRock messages are designed for use as a latency-insensitive interface. Although a particular
-handshake is not required, ready&valid handshaking should be used whenever possible.
+BedRock defines a family of directory-based invalidate cache coherence protocols based on the standard
+MOESIF coherence states. Protocol variants are defined for the MI, MSI, MESI, MOSI, MOESI, MESIF,
+and MOESIF subsets of states. The protocol relies on a duplicate tag, fully inclusive, standalone
+coherence directory to precisely track the coherence state of every block cached within the
+coherence system. A full description of the BedRock cache coherence protocol and system is available
+[here](bedrock_protocol_specification.pdf). This description is system-agnostic, however its design
+has been influenced by its implementation within BlackParrot.
 
-## BedRock Message Format
+## BlackParrot BedRock Cache Coherence and Memory Systems
 
-A BedRock message has the following fields:
+BlackParrot implements BedRock to provide cache coherence between the processor cores and
+coherent accelerators in a multicore BlackParrot system. This system is called BlackParrot Bedrock
+(BP-BedRock). BP-BedRock also defines a BedRock compatible memory interface. The text below
+provides a brief overview of BP-Bedrock.
+
+### BP-BedRock Network Interface Specifications
+
+The BlackParrot BedRock Interfaces are defined in the following files:
+- [bp\_common\_bedrock\_if.svh](../bp_common/src/include/bp_common_bedrock_if.svh)
+- [bp\_common\_bedrock\_pkgdef.svh](../bp_common/src/include/bp_common_bedrock_pkgdef.svh)
+- [bp\_common\_bedrock\_wormhole_defines.svh](../bp_common/src/include/bp_common_bedrock_wormhole_defines.svh)
+
+BP-BedRock defines a common message format with a unified header and parameterizable payload.
+The header includes message type, operation sub-type, address, and size fields, as well as
+the parameterizable payload. The payload is network-specific and carries metadata required to
+process messages on the selected network. The current implementation defines message formats
+for the four BedRock coherence protocol networks and a memory command/response network
+(discussed in the [interface\_specification](interface_specification.md)).
+
+The files above are the authoritative definitions for the BP-BedRock interface implementation.
+In the event that the code differs from any documentation on or referenced by this page, the code
+shall be considered as the current and authoritative specification.
+
+### BP-BedRock Coherence Interface
+
+The BP-BedRock coherence interface (also called the LCE-CCE interface) carries messages between the
+BlackParrot LCEs (cache controllers) and CCEs (coherence directories). This interface implements
+the four BedRock coherence networks: Request, Command, Fill, and Response. Each network utilizes
+the BedRock message formats. For brevity, we outline the fields that differ for each network below.
+Fields not listed (e.g., message size, address) have common meanings across all message types.
+
+The Request network has the following message types and payload fields:
 - Message type
-- Write Subop type (store, amoswap, amolr, amosc, amoadd, amoxor, amoand, amoor, amomin, amomax, amominu, amomaxu)
-- Physical address
-- Message Size
+  - Read miss
+  - Write miss
+  - Uncached read/load (1, 2, 4, or 8 bytes)
+  - Uncached write/store (1, 2, 4, or 8 bytes)
+  - Uncached Atomic
 - Payload
-- Data
+  - Destination CCE
+  - Requesting LCE
+  - Requesting Way ID
+  - Non-exclusive request hint (request block in read-only state without write permissions)
 
-The message type is a network specific message type. The write subop type specifies the type of\
-write or atomic operation, which is required for those operations. The physical address is the
-address of the requested data, aligned according to the message size field.
-The message size field specifies the size of request or accompanying data as log2(size) bytes.
-The payload is a network specific field used to communicate additional information between sender
-and receiver, or used by the sender to attach information to the message that should be returned
-unmodified by the receiver in the response. The data field contains (1 << message size) bytes for
-messages that contain valid data.
+The Command network has the following message types and payload fields:
+- Message type
+  - Sync
+  - Invalidate
+  - Set State
+  - Data (cache block data, tag, and state)
+  - Set State and Wakeup (cache block permission upgrade, no data)
+  - Writeback
+  - Set State and Writeback
+  - Transfer
+  - Set State and Transfer
+  - Set State, Transfer, and Writeback
+  - Uncached Data (uncached load request data from memory)
+  - Uncached Store Done (uncached store request has been completed to memory)
+- Payload
+  - Destination LCE
+  - CCE sending command
+  - Cache Way ID
+  - Coherence State
+  - Target cache, state, and way ID for cache to cache transfer
 
-## BedRock Protocols
+The Fill network has the following message types and payload fields:
+- Message type
+  - Data (cache to cache block transfer)
+- Payload
+  - Destination LCE
+  - CCE managing block
+  - Cache Way ID
+  - Coherence State
 
-BedRock defines three closely related protocols: Stream, Lite, and Burst. Each protocol carries
-the same message information. They differ only in the specific header and data signals used
-for protocol communication.
+The Response network has the following message types and payload fields:
+- Message type
+  - Sync Ack
+  - Invalidation Ack
+  - Coherence Transaction Ack
+  - Writeback
+  - Null Writeback
+- Payload
+  - Destination CCE
+  - Responding LCE
 
-All three protocols support critical word first behavior, where a request for a specific word
-in a cache or memory block is returned in the least-significant bits of the response message.
-The critical data is provided first with the remaining words provided in sequential ordering,
-wrapping around as required. THe following example requests illustrate this behavior:
+#### Address and Data Alignment
 
-Request: 0x0 [d c b a]<br>
-Request: 0x2 [b a d c]
+All four LCE-CCE networks have the same address and data alignment properties. Uncached accesses are
+naturally aligned to the size of the request, and behavior of a misaligned request is undefined.
 
-## BedRock Stream
+Cacheable accesses are block-based and support critical word first behavior. Data is returned
+to the cache beginning with the byte at the LCE Request address, then wrapping around at the natural
+cache block boundary. In other words, data is returned as found in the cache block, from LSB to MSB,
+but left rotated to place the requested byte at the LSB of the message data field. This
+behavior naturally supports networks that serialize the cache block data and send the block in
+multiple data beats, as well as conversion between different serialization widths without requiring
+re-alignment of message data.
 
-The BedRock Stream protocol comprises the following signals:
+The BlackParrot LCEs and CCEs expect that cacheable requests are issued aligned to the BedRock
+network data channel width (which is currently the same as the cache fill width) at the LCE.
 
-* Header
-* Data (64\*-bits)
-* Valid
-* Ready\_and
-* Last
+### BedRock Burst Network Protocol
 
-Each message is sent as one or more header plus data beats using a shared ready&valid handshake.
-The last signal is raised along with valid when the sender is transmitting the last header plus data beat.
-Last must not be raised if there is no valid data available.
-The data field is typically 64-bits, but may be any 512/N-bits wide that is at least 64-bits.
+BP-BedRock defines the BedRock Burst network protocol to exchange BedRock messages between
+modules. BedRock Burst has independent header and data channels with ready-and-valid handshaking
+on each channel. The BedRock Burst protocol comprises the following signals:
 
-When sending multiple beat messages, the sender must increment the address in the header by
-data-width bits for each beat. Critical-word first behavior is easily supported by issuing the
-first beat for the critical word, followed by successive data words in sequential order with wrap
-around (e.g., [1, 0, 3, 2], left to right MSB to LSB, LSB arrives first). If the requested data size
-is smaller than the data channel size,
-the requested data is repeated to fill the channel. For example the data response for a 16-bit
-request using a 64-bit channel for some data value A has a 64-bit data response of [A, A, A, A].
+- header
+- header\_valid
+- has\_data
+- header\_ready\_and
+- data
+- data\_valid
+- last
+- data\_ready\_and
 
-## BedRock Lite (Deprecated)
-
-BedRock Lite is a wide variant of BedRock Stream. BedRock Lite does not use the Last signal as
-every message is a single header plus data beat. The data channel width is equal to the cache or
-memory block width used by the sender and receiver. Critical word first is supported by the sender
-issuing the request with the desired address and the receiver responding with memory block rotated
-so the critical word is placed in the least significant bits.
-
-Requests for data that smaller than the data channel width result in responses where the returned
-data is replicated to fill the data channel width.
-
-BedRock Lite is deprecated and should be replaced by Stream interfaces wherever found.
-
-## BedRock Burst
-
-BedRock Burst is similar to BedRock Stream, but sends only a single header message followed by
-zero or more data beats. The BedRock Burst protocol has the following signals:
-
-* Header
-* Header\_valid
-* Header\_ready\_and
-* Has\_data
-* Data (64\*-bits)
-* Data\_valid
-* Data\_ready\_and
-* Last
-
-In this protocol, the header and data channels have independent ready&valid handshakes. The header
-is accompanied by a has\_data signal that is raised if the message has at least one data beats.
-The data channel is accompanied by a last signal that is raised with data\_valid on the last data
-beat. Last must not be raised if there is no valid data available.
-As with BedRock Stream, the data channel may is typically 64-bits wide, but may be any
-512/N-bits wide that is at least 64-bits.
+The has\_data signal is raised with header\_valid when the message being sent includes at least
+one data beat. The last signal is raised with data\_valid when the last data beat of the message
+is being sent. The width of the data channel must be a power-of-two number of bits, in the inclusive
+range of 64- to 1024-bits. The data channel should not be wider than the size of a cache block.
 
 The sender contract is:
-* Data may be sent before, with, or after header.
-* Minimal implementations may wait to send data until after header sends.
-* Header and data channels must conform to ready&valid handshaking.
+* Header and data channels must conform to ready&valid handshaking
+* Data may be sent before, with, or after header
+* header\_valid must not depend on data\_ready\_and
+* All data beast for the current message must send before any data beats of future messages are sent
 
 The receiver contract is:
-* May consume data before, with, or after header.
-* Minimal implementations may wait to receive data (i.e., wait to raise data\_ready\_and) until
-after the header arrives and is processed.
-* Header and data channels must conform to ready&valid handshaking.
+* Header and data channels must conform to ready&valid handshaking
+* May consume data before, with, or after header
+* header\_ready\_and must not depend on data\_valid
+* has\_data must not be used in the header channel handshake
+* last must not be used in the data channel handshake
 
 Sophisticated implementations of BedRock Burst channels may support overlapping transactions where
 the sender may send a second header prior to sending all data associated with the first header.
 The receiver must also support this behavior. If either send or receiver does not support overlapping
 transactions, then transactions will necessarily be non-overlapping.
 
-As with BedRock Stream, requests for data smaller than the data channel width result in a response
-with data replicated to fill the data channel width.
+#### Minimal BedRock Burst Implementations
+
+Minimal implementations of BedRock Burst producers and consumers may further restrict
+the producer and consumer contracts above. For example, implementations commonly require the header
+handshake to occur prior to any data channel handshake for the current message, or disallow
+an additional header handshake from occurring until the all data beats from the current message
+have been transmitted.
+
+### BP-BedRock Local Cache Engine (LCE) Microarchitecture
+
+Coming Soon!
+
+### BP-BedRock Cache Coherence Engine (CCE) Microarchitecture
+
+Refer to the [BedRock Microarchitecture Guide](bedrock_uarch_guide.md) for an overview of the cache
+coherence directory designs employed in BlackParrot.
+
 
