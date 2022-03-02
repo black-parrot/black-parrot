@@ -120,6 +120,52 @@ re-alignment of message data.
 The BlackParrot LCEs and CCEs expect that cacheable requests are issued aligned to the BedRock
 network data channel width (which is currently the same as the cache fill width) at the LCE.
 
+### BedRock Burst Network Protocol
+
+BP-BedRock defines the BedRock Burst network protocol to exchange BedRock messages between
+modules. BedRock Burst has independent header and data channels with ready-and-valid handshaking
+on each channel. The BedRock Burst protocol comprises the following signals:
+
+- header
+- header\_valid
+- has\_data
+- header\_ready\_and
+- data
+- data\_valid
+- last
+- data\_ready\_and
+
+The has\_data signal is raised with header\_valid when the message being sent includes at least
+one data beat. The last signal is raised with data\_valid when the last data beat of the message
+is being sent. The width of the data channel must be a power-of-two number of bits, in the inclusive
+range of 64- to 1024-bits. The data channel should not be wider than the size of a cache block.
+
+The sender contract is:
+* Header and data channels must conform to ready&valid handshaking
+* Data may be sent before, with, or after header
+* header\_valid must not depend on data\_ready\_and
+* All data beast for the current message must send before any data beats of future messages are sent
+
+The receiver contract is:
+* Header and data channels must conform to ready&valid handshaking
+* May consume data before, with, or after header
+* header\_ready\_and must not depend on data\_valid
+* has\_data must not be used in the header channel handshake
+* last must not be used in the data channel handshake
+
+Sophisticated implementations of BedRock Burst channels may support overlapping transactions where
+the sender may send a second header prior to sending all data associated with the first header.
+The receiver must also support this behavior. If either send or receiver does not support overlapping
+transactions, then transactions will necessarily be non-overlapping.
+
+#### Minimal BedRock Burst Implementations
+
+Minimal implementations of BedRock Burst producers and consumers may further restrict
+the producer and consumer contracts above. For example, implementations commonly require the header
+handshake to occur prior to any data channel handshake for the current message, or disallow
+an additional header handshake from occurring until the all data beats from the current message
+have been transmitted.
+
 ### BP-BedRock Local Cache Engine (LCE) Microarchitecture
 
 Coming Soon!
