@@ -2,7 +2,7 @@
 `include "bp_me_defines.svh"
 
 `ifndef TAG_CLK_PERIOD
-  `define TAG_CLK_PERIOD 5000.0
+  `define TAG_CLK_PERIOD 10000.0
 `endif
 
 module bp_ddr
@@ -16,7 +16,8 @@ module bp_ddr
 
    , parameter num_dma_p = 1
       // Total number of clients the master will be driving.
-   , localparam tag_num_clients_gp = 23
+   , localparam tag_dmc_local_els_lp = tag_dmc_dly_local_els_gp+tag_dmc_cfg_local_els_gp+tag_dmc_sys_local_els_gp+tag_dmc_osc_local_els_gp
+   , localparam tag_num_clients_gp = tag_dmc_local_els_lp      
      // The number of bits required to represent the max payload width
    , localparam tag_max_payload_width_gp = 9
    , localparam tag_lg_max_payload_width_gp = `BSG_SAFE_CLOG2(tag_max_payload_width_gp + 1)
@@ -56,9 +57,11 @@ module bp_ddr
 
   logic tag_trace_en_r_lo, tag_trace_data_lo, tag_trace_data_r_lo, tag_trace_valid_lo, tag_trace_valid_r_lo;
 
-  logic dfi_clk_1x_lo;
+  logic dfi_clk_1x_lo, dfi_clk_2x_lo;
 
-  bsg_tag_lines_s tag_lines_lo;
+  // All tag lines from the btm
+
+  bsg_tag_s [tag_dmc_local_els_lp-1:0] tag_lines_lo;
 
   bsg_tag_boot_rom
     #(.width_p(tag_trace_rom_data_width_lp)
@@ -107,11 +110,11 @@ module bp_ddr
       );
 
   bsg_tag_master
-    #(.els_p(29)
-     ,.lg_width_p(4)
+    #(.els_p(tag_num_clients_gp)
+     ,.lg_width_p(tag_lg_max_payload_width_gp)
      )
     btm
-      (.clk_i      (clk_i)
+      (.clk_i      (tag_clk)
       ,.data_i     (tag_trace_valid_r_lo & tag_trace_en_r_lo & tag_trace_data_r_lo)
       ,.en_i       (1'b1)
       ,.clients_r_o(tag_lines_lo)
@@ -203,7 +206,11 @@ module bp_ddr
      )
     dmc
     (.refresh_in_progress_o(refresh_in_progress)
-    ,.tag_lines_i (tag_lines_lo)
+    //,.tag_lines_i (tag_lines_lo)
+	,.dly_tag_lines_i       (tag_lines_lo[0+:tag_dmc_dly_local_els_gp] )
+	,.cfg_tag_lines_i      (tag_lines_lo[tag_dmc_dly_local_els_gp+:tag_dmc_cfg_local_els_gp] )
+	,.sys_tag_lines_i      (tag_lines_lo[tag_dmc_dly_local_els_gp+tag_dmc_cfg_local_els_gp+:tag_dmc_sys_local_els_gp] )
+	,.osc_tag_lines_i      (tag_lines_lo[tag_dmc_dly_local_els_gp+tag_dmc_cfg_local_els_gp+tag_dmc_sys_local_els_gp+:tag_dmc_osc_local_els_gp] )    
     ,.app_addr_i(app_addr_li)
     ,.app_cmd_i(app_cmd_lo)
     ,.app_en_i(app_en_lo)
@@ -255,6 +262,9 @@ module bp_ddr
     ,.ddr_dq_i              (ddr_dq_li)
 
     ,.ui_clk_i              (clk_i)
+
+    ,.dfi_clk_1x_o           (dfi_clk_1x_lo)
+    ,.dfi_clk_2x_o           (dfi_clk_2x_lo)
 
     ,.ui_clk_sync_rst_o     (ui_reset_lo)
 

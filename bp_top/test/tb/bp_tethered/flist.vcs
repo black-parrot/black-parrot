@@ -62,7 +62,7 @@ $BP_TOP_DIR/test/common/bp_nonsynth_perf.sv
 $BASEJUMP_STL_DIR/bsg_clk_gen/bsg_dly_line.v
 $BASEJUMP_STL_DIR/bsg_clk_gen/bsg_clk_gen.v
 $BASEJUMP_STL_DIR/bsg_clk_gen/bsg_clk_gen_osc.v
-$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_tag_clients.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_sys_cfg_gen.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_controller.v
 $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_phy.v
