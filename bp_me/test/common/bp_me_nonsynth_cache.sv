@@ -484,7 +484,6 @@ module bp_me_nonsynth_cache
 
       // send TR response if hit or cache request to LCE if miss
       e_check_hit: begin
-        lce_if_locked = 1'b1;
         // uncached ops send request to LCE
         if (uc_op) begin
           cache_req_v_o = 1'b1;
@@ -500,6 +499,7 @@ module bp_me_nonsynth_cache
         end
         // cached hit
         else if (tag_lookup_hit_lo) begin
+          lce_if_locked = 1'b1;
           if (store_op) begin
             // commit store, write dirty bit, send TR response, update LRU
             tag_mem_v_li = tr_pkt_ready_then_i;
