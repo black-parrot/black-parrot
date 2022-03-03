@@ -31,10 +31,9 @@ progs=(
     "streaming_accelerator_loopback"
     "streaming_accelerator_vdp"
     "coherent_accelerator_vdp"
+    "streaming_accelerator_loopback"
+    "coherent_accelerator_vdp"
     )
-
-#    "streaming_accelerator_loopback"
-#    "coherent_accelerator_vdp"
 
 # The base command to append the configuration to
 build_base="make -C bp_top/syn build.v"

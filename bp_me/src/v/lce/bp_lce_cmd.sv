@@ -24,8 +24,8 @@ module bp_lce_cmd
    , parameter `BSG_INV_PARAM(fill_width_p)
    // number of LCE command buffer elements
    , parameter cmd_buffer_els_p = 2
-   // command network messages, as currently defined, do not have data
-   , localparam cmd_data_buffer_els_lp = 0 //cmd_buffer_els_p*(block_width_p/fill_width_p)
+   // number of LCE command data buffer elements
+   , parameter cmd_data_buffer_els_p = cmd_buffer_els_p*(block_width_p/fill_width_p)
 
    // clocking options
    , parameter data_mem_invert_clk_p = 0
@@ -164,17 +164,9 @@ module bp_lce_cmd
   // required to prevent deadlock in multicore networks
   logic [fill_width_p-1:0] lce_cmd_data_li;
   logic lce_cmd_data_v_li, lce_cmd_last_li, lce_cmd_data_ready_and_lo, lce_cmd_data_yumi_lo;
-  if (cmd_data_buffer_els_lp == 0) begin : data_passthrough
-    assign lce_cmd_data_li = lce_cmd_data_i;
-    assign lce_cmd_data_v_li = lce_cmd_data_v_i;
-    assign lce_cmd_last_li = lce_cmd_last_i;
-    assign lce_cmd_data_ready_and_o = lce_cmd_data_ready_and_lo;
-    assign lce_cmd_data_yumi_lo = lce_cmd_data_v_li & lce_cmd_data_ready_and_lo;
-  end
-  else begin : data_buffer
   bsg_fifo_1r1w_small
     #(.width_p(fill_width_p+1)
-      ,.els_p(cmd_data_buffer_els_lp)
+      ,.els_p(cmd_data_buffer_els_p)
       )
     lce_cmd_data_buffer
      (.clk_i(clk_i)
@@ -187,7 +179,6 @@ module bp_lce_cmd
       ,.data_o({lce_cmd_last_li, lce_cmd_data_li})
       );
   assign lce_cmd_data_yumi_lo = lce_cmd_data_v_li & lce_cmd_data_ready_and_lo;
-  end
 
   // first fill index of arriving command
   wire [fill_select_width_lp-1:0] first_cnt =
@@ -561,7 +552,7 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_state;
             tag_mem_pkt_v_o = lce_cmd_header_v_li;
 
-            critical_tag_sent = tag_mem_pkt_yumi_i & ~critical_tag_sent_r;
+            critical_tag_sent = tag_mem_pkt_yumi_i;
 
             state_n = tag_mem_pkt_yumi_i
                       ? e_coh_ack
@@ -583,7 +574,7 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.tag = lce_cmd_addr_tag;
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_v_o = lce_cmd_header_v_li;
-            critical_tag_sent = tag_mem_pkt_yumi_i & ~critical_tag_sent_r;
+            critical_tag_sent = tag_mem_pkt_yumi_i;
             wrap_cnt_set = tag_mem_pkt_yumi_i;
 
             // do not consume header since it is needed to compute fill index for cache data writes
@@ -609,8 +600,8 @@ module bp_lce_cmd
 
             // raise request complete signal when data consumed
             cache_req_complete_o = data_mem_pkt_yumi_i;
-            critical_data_sent = data_mem_pkt_yumi_i & ~critical_data_sent_r;
-            critical_tag_sent = data_mem_pkt_yumi_i & ~critical_tag_sent_r;
+            critical_data_sent = data_mem_pkt_yumi_i;
+            critical_tag_sent = data_mem_pkt_yumi_i;
           end
 
           // Uncached Store/Req Done

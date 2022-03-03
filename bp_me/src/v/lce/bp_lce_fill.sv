@@ -30,7 +30,7 @@ module bp_lce_fill
    , parameter `BSG_INV_PARAM(fill_width_p)
    // LCE may have 1 outstanding data fill or uc load, but multiple uc store requests
    , parameter fill_buffer_els_p = 2
-   , localparam fill_data_buffer_els_lp = fill_buffer_els_p*(block_width_p/fill_width_p)
+   , parameter fill_data_buffer_els_p = fill_buffer_els_p*(block_width_p/fill_width_p)
 
    // derived parameters
    , localparam lg_assoc_lp = `BSG_SAFE_CLOG2(assoc_p)
@@ -66,8 +66,6 @@ module bp_lce_fill
 
     // LCE Configuration
     , input [lce_id_width_p-1:0]                     lce_id_i
-
-    , output logic                                   ready_o
 
     // LCE-Cache Interface
     // valid->yumi
@@ -137,17 +135,9 @@ module bp_lce_fill
   // required to prevent deadlock in multicore networks
   logic [fill_width_p-1:0] lce_fill_data_li;
   logic lce_fill_data_v_li, lce_fill_last_li, lce_fill_data_ready_and_lo, lce_fill_data_yumi_lo;
-  if (fill_data_buffer_els_lp == 0) begin : data_passthrough
-    assign lce_fill_data_li = lce_fill_data_i;
-    assign lce_fill_data_v_li = lce_fill_data_v_i;
-    assign lce_fill_last_li = lce_fill_last_i;
-    assign lce_fill_data_ready_and_o = lce_fill_data_ready_and_lo;
-    assign lce_fill_data_yumi_lo = lce_fill_data_v_li & lce_fill_data_ready_and_lo;
-  end
-  else begin : data_buffer
   bsg_fifo_1r1w_small
     #(.width_p(fill_width_p+1)
-      ,.els_p(fill_data_buffer_els_lp)
+      ,.els_p(fill_data_buffer_els_p)
       )
     lce_fill_data_buffer
      (.clk_i(clk_i)
@@ -160,7 +150,6 @@ module bp_lce_fill
       ,.data_o({lce_fill_last_li, lce_fill_data_li})
       );
   assign lce_fill_data_yumi_lo = lce_fill_data_v_li & lce_fill_data_ready_and_lo;
-  end
 
   // tag sent tracking
   // clears when header consumed
@@ -254,9 +243,6 @@ module bp_lce_fill
   assign lce_fill_addr_tag = lce_fill_header_cast_li.addr[tag_offset_lp+:ctag_width_p];
   assign lce_fill_way_id = lce_fill_header_cast_li.payload.way_id[0+:lg_assoc_lp];
 
-  // LCE Command module is ready after reset goes low
-  assign ready_o = (state_r != e_reset);
-
   always_comb begin
 
     state_n = state_r;
@@ -309,7 +295,7 @@ module bp_lce_fill
             tag_mem_pkt_cast_o.tag = lce_fill_addr_tag;
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_v_o = lce_fill_header_v_li;
-            critical_tag_sent = tag_mem_pkt_yumi_i & ~critical_tag_sent_r;
+            critical_tag_sent = tag_mem_pkt_yumi_i;
             wrap_cnt_set = tag_mem_pkt_yumi_i;
 
             // do not consume header since it is needed to compute fill index for cache data writes

@@ -194,18 +194,16 @@ module bp_lce_req
   assign req_sent = (lce_req_header_v_o & lce_req_header_ready_and_i & ~lce_req_has_data_o)
                     | (lce_req_data_v_o & lce_req_data_ready_and_i & lce_req_last_o);
 
-  // LCE is ready for a new request if not in reset, mode is uncached or cached with sync done,
-  // either no current valid request or a valid request that is sending last beat, and
-  // there is an available credit
-  assign ready_o = ~is_reset
-                   & (sync_done_i | (lce_mode_i == e_lce_mode_uncached))
-                   & (~cache_req_v_r | (cache_req_v_r & req_sent))
-                   & ~credits_full_o;
+  // LCE is ready for a new request if not in reset and mode is uncached or cached with sync done
+  // ready_o being raised does not guarantee that this module will accept a valid cache request
+  // packet (refer to cache_req_yumi_o below).
+  assign ready_o = ~is_reset & (sync_done_i | (lce_mode_i == e_lce_mode_uncached));
 
-  // note: this could create a crazy loop if the cache uses ready_o to determine when to send a
-  // new cache request to the LCE
-  // consume cache request if valid request on input and ready to accept a new request
-  assign cache_req_yumi_o = cache_req_v_i & ready_o;
+  // consume cache request if valid request on input, there is an available credit, and
+  // the previous request has been issued or is being issued in the current cycle
+  assign cache_req_yumi_o = cache_req_v_i
+                            & (~cache_req_v_r | (cache_req_v_r & req_sent))
+                            & ~credits_full_o;
 
   // atomic request subop determination
   bp_cache_req_wr_subop_e cache_wr_subop;
@@ -309,7 +307,7 @@ module bp_lce_req
       end
 
       // Uncached Request Data
-      // Requests have a single data beat
+      // TODO: For all supported caches, requests have a single data beat
       e_send_uncached_data: begin
         // valid cache request arrived last cycle (or earlier) and is held in cache_req_r
         lce_req_data_v_o = 1'b1;

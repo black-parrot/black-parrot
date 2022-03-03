@@ -23,8 +23,10 @@ module bp_lce
    , parameter `BSG_INV_PARAM(fill_width_p)
    // number of LCE command buffer elements
    , parameter cmd_buffer_els_p = 2
+   , parameter cmd_data_buffer_els_p = 2
    // number of LCE fill message buffer elements
    , parameter fill_buffer_els_p = 2
+   , parameter fill_data_buffer_els_p = 2
 
    // clocking options
    , parameter req_invert_clk_p = 0
@@ -153,7 +155,9 @@ module bp_lce
   if ((metadata_latency_p < 0) || (metadata_latency_p > 1))
     $error("Cache request metadata latency must be 0 or 1");
   if (cmd_buffer_els_p < 1 || fill_buffer_els_p < 1)
-    $error("LCEs require buffers for at least 1 command");
+    $error("LCEs require buffers for at least 1 command and fill message");
+  if (cmd_data_buffer_els_p < 1 || fill_data_buffer_els_p < 1)
+    $error("LCEs require buffers for at least 1 command and data beat");
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -275,6 +279,7 @@ module bp_lce
       ,.tag_mem_invert_clk_p(tag_mem_invert_clk_p)
       ,.stat_mem_invert_clk_p(stat_mem_invert_clk_p)
       ,.cmd_buffer_els_p(cmd_buffer_els_p)
+      ,.cmd_data_buffer_els_p(cmd_data_buffer_els_p)
       )
     command
       (.clk_i(clk_i)
@@ -319,7 +324,6 @@ module bp_lce
       );
 
   // LCE Fill Module
-  logic fill_ready_lo;
   logic fill_cache_req_complete_lo, fill_cache_req_critical_tag_lo, fill_cache_req_critical_data_lo;
   bp_lce_fill
     #(.bp_params_p(bp_params_p)
@@ -328,6 +332,7 @@ module bp_lce
       ,.block_width_p(block_width_p)
       ,.fill_width_p(fill_width_p)
       ,.fill_buffer_els_p(fill_buffer_els_p)
+      ,.fill_data_buffer_els_p(fill_data_buffer_els_p)
       )
     fill
       (.clk_i(clk_i)
@@ -335,7 +340,6 @@ module bp_lce
 
       ,.lce_id_i(lce_id_i)
 
-      ,.ready_o(fill_ready_lo)
       ,.cache_req_complete_o(fill_cache_req_complete_lo)
       ,.cache_req_critical_tag_o(fill_cache_req_critical_tag_lo)
       ,.cache_req_critical_data_o(fill_cache_req_critical_data_lo)
@@ -386,12 +390,10 @@ module bp_lce
   wire timeout = (timeout_cnt_r == timeout_max_limit_p);
 
   // LCE is ready to accept new cache requests if:
-  // - LCE Request module is in ready state and free credits exist
+  // - LCE Request module is ready to accept a request (does not account for a free credit)
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
-  // - LCE Command module is ready to process commands (raised after initialization complete)
-  // - LCE Fill module is ready to process fill messages
-  assign cache_req_busy_o = cache_req_credits_full_o | timeout
-                            | ~cmd_ready_lo | ~req_ready_lo | ~fill_ready_lo;
+  // - LCE Command module has finished initializing the stat and tag memories
+  assign cache_req_busy_o = timeout | ~cmd_ready_lo | ~req_ready_lo;
 
   // cache request completion signals
   assign cache_req_complete_o = cmd_cache_req_complete_lo | fill_cache_req_complete_lo;

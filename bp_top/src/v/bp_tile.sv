@@ -160,13 +160,6 @@ module bp_tile
   assign cce_lce_resp_link_lo.v = '0;
   assign cce_lce_resp_link_lo.data = '0;
 
-  // minimum cache fill width
-  localparam cache_fill_width_lp = `BSG_MIN(icache_fill_width_p
-                                            ,`BSG_MIN(dcache_fill_width_p
-                                                      , num_cacc_p ? acache_fill_width_p
-                                                                   : dcache_fill_width_p)
-                                           );
-  localparam bedrock_len_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV((1<<e_bedrock_msg_size_128)*8,cache_fill_width_lp));
   for (genvar i = 0; i < 2; i++) begin : lce
 
     // LCE request from LCE
