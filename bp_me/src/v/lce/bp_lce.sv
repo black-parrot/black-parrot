@@ -6,6 +6,7 @@
  *  Description:
  *    Generic Local Cache/Coherence Engine (LCE).
  *
+ *  TODO: resolve comments below regarding cache fill interface arbitration
  */
 
 `include "bp_common_defines.svh"
@@ -169,6 +170,44 @@ module bp_lce
   logic fill_data_mem_pkt_yumi_li, cmd_data_mem_pkt_yumi_li;
   logic fill_tag_mem_pkt_v_lo, cmd_tag_mem_pkt_v_lo;
   logic fill_tag_mem_pkt_yumi_li, cmd_tag_mem_pkt_yumi_li;
+
+  // TODO: Summary of Mark/Dan discussion on fill interface critical path:
+  //
+  // The cache fill interface is arbitrated between the command and fill modules using the muxes
+  // below. Fill has priority over command since the BedRock fill network is higher priority
+  // than the command network. This arbitration may result in a critical path to the cache
+  // memories, particularly the data memory, which is accessed on the negedge of the clock,
+  // leaving only a half-cycle for the modules to output their packets and the arbitration to
+  // occur.
+  //
+  // To avoid coherence protocol deadlock, the fill network must never be stalled by the
+  // command network.
+  //
+  // Possible solution:
+  //                         _____
+  // Fill Rtr --> FIFO? --> |     |
+  //                        | mux | --> cmd_fifo --> bp_lce_cmd --> cache fill interface
+  //             Cmd Rtr -->|_____|
+  //
+  // One possible solution to avoid the critical path from LCE to cache data memory is to
+  // mux and combine the inbound command and fill networks into a single message queue, which is
+  // then processed by the command module (eliminating the fill module). This may be possible,
+  // but to avoid deadlocking the coherence protocol, the LCE may require a fill fifo
+  // to hold an entire fill message (header + N data beats) prior to the command/fill mux.
+  // The current blocking cache, coherence protocol, and LCE/CCE implementations guarantee that
+  // a cache/LCE may only be the target of a single fill message at any given time. Without the
+  // buffer, it may be possible for a cycle to exist in the network channel dependence graph
+  // resulting from command network messages filling the cmd_fifo, with the head command
+  // being a transfer that is attempting to send an outbound fill message. Without the fill fifo
+  // it may be possible for the outbound fill message to interact with other fill messages
+  // passing through the fill router, including an inbound fill message, that would prevent the
+  // LCE from finishing sending the outbound fill message.
+  //
+  // The current implementation requires the command and fill modules to share the cache interface
+  // ports, which is also a potential source of deadlock. This is avoided by statically arbitrating
+  // access to the ports in favor of the fill module, thereby ensuring that the command module
+  // (and command network) can never stall the fill network. The fill network/module is allowed
+  // to stall the command network/module because it has a higher priority in the coherence protocol
 
   // muxes for cache pkt interface out
   // priority to Fill FSM
