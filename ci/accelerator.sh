@@ -31,9 +31,17 @@ progs=(
     "streaming_accelerator_loopback"
     "streaming_accelerator_vdp"
     "coherent_accelerator_vdp"
-    "streaming_accelerator_loopback"
-    "coherent_accelerator_vdp"
     )
+# TODO:
+# This script does not currently run simulation with the quad-core accelerator configs.
+# The accelerator test programs need to be rewritten/revised to match the new configs, which
+# disallow mixing of loopback and vdp accelerators. The loopback configs now only instantiate
+# the streaming accelerator complex, while the vdp configs instantiate both coherent and
+# streaming accelerators. Once fixed, the appropriate test programs can be added to the end of
+# the progs list and run on the quad-core accelerator configs.
+
+#"streaming_accelerator_loopback"
+#"coherent_accelerator_vdp"
 
 # The base command to append the configuration to
 build_base="make -C bp_top/syn build.v"
