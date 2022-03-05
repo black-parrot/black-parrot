@@ -76,7 +76,7 @@ module bp_me_burst_to_wormhole
    // BedRock Burst input channel
    // ready&valid
    // Header is wormhole formatted header
-   , input [wh_hdr_width_p-1:0]      pr_hdr_i
+   , input [wh_hdr_width_p-1:0]      wh_hdr_i
    , input                           pr_hdr_v_i
    , output logic                    pr_hdr_ready_and_o
    , input                           pr_has_data_i
@@ -114,7 +114,7 @@ module bp_me_burst_to_wormhole
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.msg_header_i(pr_hdr_i[wh_pr_hdr_offset_p+:pr_hdr_width_p])
+      ,.msg_header_i(wh_hdr_i[wh_pr_hdr_offset_p+:pr_hdr_width_p])
       ,.msg_header_v_i(pr_hdr_v_i)
       ,.msg_header_ready_and_o(pr_hdr_ready_and_o)
       ,.msg_has_data_i(pr_has_data_i)
@@ -139,9 +139,9 @@ module bp_me_burst_to_wormhole
   // Re-form WH header with required padding
   logic [(flit_width_p*hdr_len_lp)-1:0] wh_hdr_padded_li;
   if (wh_hdr_pad_lp > 0) begin
-    assign wh_hdr_padded_li = {{wh_hdr_pad_lp{1'b0}}, pr_hdr_i};
+    assign wh_hdr_padded_li = {{wh_hdr_pad_lp{1'b0}}, wh_hdr_i};
   end else begin
-    assign wh_hdr_padded_li = pr_hdr_i;
+    assign wh_hdr_padded_li = wh_hdr_i;
   end
 
   // Header PISO

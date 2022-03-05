@@ -358,7 +358,7 @@ module bp_sacc_tile
    (.clk_i(clk_i)
     ,.reset_i(reset_r)
 
-    ,.pr_hdr_i(lce_req_wh_header_lo[0+:($bits(bp_lce_req_wormhole_header_s)-lce_req_wh_pad_width_lp)])
+    ,.wh_hdr_i(lce_req_wh_header_lo[0+:($bits(bp_lce_req_wormhole_header_s)-lce_req_wh_pad_width_lp)])
     ,.pr_hdr_v_i(lce_lce_req_header_v_lo)
     ,.pr_hdr_ready_and_o(lce_lce_req_header_ready_and_li)
     ,.pr_has_data_i(lce_lce_req_has_data_lo)
@@ -456,7 +456,7 @@ module bp_sacc_tile
    (.clk_i(clk_i)
     ,.reset_i(reset_r)
 
-    ,.pr_hdr_i(cce_lce_cmd_wh_header_lo[0+:($bits(bp_lce_cmd_wormhole_header_s)-lce_cmd_wh_pad_width_lp)])
+    ,.wh_hdr_i(cce_lce_cmd_wh_header_lo[0+:($bits(bp_lce_cmd_wormhole_header_s)-lce_cmd_wh_pad_width_lp)])
     ,.pr_hdr_v_i(cce_lce_cmd_header_v_lo)
     ,.pr_hdr_ready_and_o(cce_lce_cmd_header_ready_and_li)
     ,.pr_has_data_i(cce_lce_cmd_has_data_lo)

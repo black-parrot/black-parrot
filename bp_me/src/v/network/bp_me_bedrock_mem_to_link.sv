@@ -104,7 +104,7 @@ module bp_me_bedrock_mem_to_link
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.pr_hdr_i(mem_header_li[0+:($bits(bp_mem_wormhole_header_s)-wh_pad_width_lp)])
+    ,.wh_hdr_i(mem_header_li[0+:($bits(bp_mem_wormhole_header_s)-wh_pad_width_lp)])
     ,.pr_hdr_v_i(mem_header_v_i)
     ,.pr_hdr_ready_and_o(mem_header_ready_and_o)
     ,.pr_has_data_i(mem_has_data_i)
