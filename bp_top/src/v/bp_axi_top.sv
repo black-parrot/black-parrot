@@ -22,7 +22,7 @@ module bp_axi_top
    , parameter axi_len_width_p  = 4
    , parameter axi_size_width_p = 3
 
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (input                                       clk_i
    , input                                     reset_i
@@ -122,11 +122,11 @@ module bp_axi_top
    , input [1:0]                               m_axi_rresp_i
    );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce);
-  bp_bedrock_uce_mem_header_s io_cmd_header_li, io_resp_header_lo;
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  bp_bedrock_mem_header_s io_cmd_header_li, io_resp_header_lo;
   logic [uce_fill_width_p-1:0] io_cmd_data_li, io_resp_data_lo;
   logic io_cmd_v_li, io_cmd_ready_and_lo, io_resp_v_lo, io_resp_yumi_li;
-  bp_bedrock_uce_mem_header_s io_cmd_header_lo, io_resp_header_li;
+  bp_bedrock_mem_header_s io_cmd_header_lo, io_resp_header_li;
   logic [uce_fill_width_p-1:0] io_cmd_data_lo, io_resp_data_li;
   logic io_cmd_v_lo, io_cmd_yumi_li, io_resp_v_li, io_resp_ready_and_lo;
 
@@ -313,7 +313,7 @@ module bp_axi_top
          ,.mem_resp_data_i(io_resp_data_li)
          ,.mem_resp_v_i(io_resp_v_li)
          ,.mem_resp_ready_and_o(io_resp_ready_and_lo)
-         ,.mem_resp_last_i(io_resp_v_i) // stub
+         ,.mem_resp_last_i(io_resp_v_li) // stub
 
          ,.cmd_link_i(recv_cmd_link_li)
          ,.resp_link_o(recv_resp_link_lo)
