@@ -68,7 +68,7 @@ module bp_lce_cmd
     , input [lce_id_width_p-1:0]                     lce_id_i
     , input bp_lce_mode_e                            lce_mode_i
 
-    , output logic                                   ready_o
+    , output logic                                   cache_init_done_o
     , output logic                                   sync_done_o
 
     // LCE-Cache Interface
@@ -353,7 +353,7 @@ module bp_lce_cmd
   assign lce_cmd_way_id = lce_cmd_header_cast_li.payload.way_id[0+:lg_assoc_lp];
 
   // LCE Command module is ready after it clears the cache's tag and stat memories
-  assign ready_o = (state_r != e_reset) && (state_r != e_clear);
+  assign cache_init_done_o = (state_r != e_reset) && (state_r != e_clear);
 
   // counter used by Command FSM to perform sync sequence
   logic cnt_inc, cnt_clear;

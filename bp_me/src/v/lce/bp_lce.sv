@@ -156,9 +156,9 @@ module bp_lce
   if ((metadata_latency_p < 0) || (metadata_latency_p > 1))
     $error("Cache request metadata latency must be 0 or 1");
   if (cmd_buffer_els_p < 1 || fill_buffer_els_p < 1)
-    $error("LCEs require buffers for at least 1 command and fill message");
+    $error("LCEs require buffers for at least 1 command and fill header");
   if (cmd_data_buffer_els_p < 1 || fill_data_buffer_els_p < 1)
-    $error("LCEs require buffers for at least 1 command and data beat");
+    $error("LCEs require buffers for at least 1 command and fill data beat");
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -269,6 +269,7 @@ module bp_lce
   logic req_ready_lo;
   logic uc_store_req_complete_lo;
   logic sync_done_lo;
+  logic cache_init_done_lo;
   bp_lce_req
     #(.bp_params_p(bp_params_p)
       ,.assoc_p(assoc_p)
@@ -286,6 +287,7 @@ module bp_lce
       ,.lce_id_i(lce_id_i)
       ,.lce_mode_i(lce_mode_i)
       ,.sync_done_i(sync_done_lo)
+      ,.cache_init_done_i(cache_init_done_lo)
 
       ,.ready_o(req_ready_lo)
 
@@ -306,7 +308,6 @@ module bp_lce
       );
 
   // LCE Command Module
-  logic cmd_ready_lo;
   logic cmd_cache_req_complete_lo, cmd_cache_req_critical_tag_lo, cmd_cache_req_critical_data_lo;
   bp_lce_cmd
     #(.bp_params_p(bp_params_p)
@@ -327,7 +328,7 @@ module bp_lce
       ,.lce_id_i(lce_id_i)
       ,.lce_mode_i(lce_mode_i)
 
-      ,.ready_o(cmd_ready_lo)
+      ,.cache_init_done_o(cache_init_done_lo)
       ,.sync_done_o(sync_done_lo)
       ,.cache_req_complete_o(cmd_cache_req_complete_lo)
       ,.cache_req_critical_tag_o(cmd_cache_req_critical_tag_lo)
@@ -431,8 +432,9 @@ module bp_lce
   // LCE is ready to accept new cache requests if:
   // - LCE Request module is ready to accept a request (does not account for a free credit)
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
-  // - LCE Command module has finished initializing the stat and tag memories
-  assign cache_req_busy_o = timeout | ~cmd_ready_lo | ~req_ready_lo;
+  // This signal acts as a hint to the cache that the LCE is not ready for a request.
+  // The cache_req_yumi_o signal actually controls whether the LCE accepts a request.
+  assign cache_req_busy_o = timeout | ~req_ready_lo;
 
   // cache request completion signals
   assign cache_req_complete_o = cmd_cache_req_complete_lo | fill_cache_req_complete_lo;
