@@ -11,7 +11,7 @@ module bp_me_axil_master
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
   , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : bedrock_data_width_p
   // AXI WRITE DATA CHANNEL PARAMS
@@ -23,12 +23,12 @@ module bp_me_axil_master
   , input                                      reset_i
 
   //==================== BP-LITE SIGNALS ======================
-  , input [cce_mem_header_width_lp-1:0]        io_cmd_header_i
+  , input [mem_header_width_lp-1:0]            io_cmd_header_i
   , input [io_data_width_p-1:0]                io_cmd_data_i
   , input                                      io_cmd_v_i
   , output logic                               io_cmd_yumi_o
 
-  , output logic [cce_mem_header_width_lp-1:0] io_resp_header_o
+  , output logic [mem_header_width_lp-1:0]     io_resp_header_o
   , output logic [io_data_width_p-1:0]         io_resp_data_o
   , output logic                               io_resp_v_o
   , input                                      io_resp_ready_and_i
@@ -65,9 +65,9 @@ module bp_me_axil_master
   );
 
   // declaring i/o command and response struct type and size
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `bp_cast_i(bp_bedrock_cce_mem_header_s, io_cmd_header);
-  `bp_cast_o(bp_bedrock_cce_mem_header_s, io_resp_header);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
+  `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
 
   // declaring all possible states
   enum {e_ready, e_read_data_rx, e_write_data_tx, e_write_addr_tx, e_write_resp_rx} state_n, state_r;
