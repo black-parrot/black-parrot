@@ -89,7 +89,7 @@ module wrapper
        #(.bp_params_p(bp_params_p))
        dut
         (.core_clk_i(clk_i)
-         ,.core_rt_clk_i(rt_clk_i)
+         ,.rt_clk_i(rt_clk_i)
          ,.core_reset_i(reset_i)
 
          ,.coh_clk_i(clk_i)
