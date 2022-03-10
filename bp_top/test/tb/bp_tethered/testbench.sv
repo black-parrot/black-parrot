@@ -10,6 +10,10 @@
 `define BP_SIM_CLK_PERIOD 10
 `endif
 
+`ifndef BP_RT_CLK_PERIOD
+`define BP_RT_CLK_PERIOD 100
+`endif
+
 module testbench
  import bp_common_pkg::*;
  import bp_be_pkg::*;
@@ -69,7 +73,7 @@ module testbench
 
 // Bit to deal with initial X->0 transition detection
   bit clk_i;
-  bit cosim_clk_i, cosim_reset_i, dram_clk_i, dram_reset_i;
+  bit rt_clk_i, cosim_clk_i, cosim_reset_i, dram_clk_i, dram_reset_i;
 
   `ifdef VERILATOR
     bsg_nonsynth_dpi_clock_gen
@@ -128,6 +132,15 @@ module testbench
      ,.async_reset_o(cosim_reset_i)
      );
 
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
+   #(.cycle_time_p(`BP_RT_CLK_PERIOD))
+   rt_clk_gen
+    (.o(rt_clk_i));
+
   bp_bedrock_mem_header_s proc_io_cmd_header_lo;
   logic [io_data_width_p-1:0] proc_io_cmd_data_lo;
   logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li, proc_io_cmd_last_lo;
@@ -151,24 +164,13 @@ module testbench
   logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
   logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
-  logic rt_clk_lo;
-  bsg_counter_clock_downsample
-   #(.width_p(3))
-   ds
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.val_i(3'b111)
-     ,.clk_r_o(rt_clk_lo)
-     );
-
   wire [io_noc_did_width_p-1:0] proc_did_li = 1;
   wire [io_noc_did_width_p-1:0] host_did_li = '1;
   wrapper
    #(.bp_params_p(bp_params_p))
    wrapper
     (.clk_i(clk_i)
-     ,.rt_clk_i(rt_clk_lo)
+     ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_i)
 
      ,.my_did_i(proc_did_li)
