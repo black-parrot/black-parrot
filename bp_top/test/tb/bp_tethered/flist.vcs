@@ -21,7 +21,6 @@ $BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_unmanaged.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
-$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clock_downsample.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux2_gatestack.v
 $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_trace_replay.v
 $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_master.v
