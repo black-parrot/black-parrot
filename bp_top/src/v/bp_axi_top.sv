@@ -146,6 +146,7 @@ module bp_axi_top
        #(.bp_params_p(bp_params_p))
        unicore
        (.clk_i(clk_i)
+        ,.rt_clk_i('0)
         ,.reset_i(reset_i)
 
         // Irrelevant for current AXI wrapper
@@ -212,6 +213,7 @@ module bp_axi_top
        #(.bp_params_p(bp_params_p))
        multicore
         (.core_clk_i(clk_i)
+         ,.rt_clk_i('0)
          ,.core_reset_i(reset_i)
 
          ,.coh_clk_i(clk_i)

@@ -22,7 +22,7 @@ module bp_core_complex
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    )
   (input                                                         core_clk_i
-   , input                                                       core_rt_clk_i
+   , input                                                       rt_clk_i
    , input                                                       core_reset_i
 
    , input                                                       coh_clk_i
@@ -90,7 +90,7 @@ module bp_core_complex
            #(.bp_params_p(bp_params_p))
            tile_node
             (.core_clk_i(core_clk_i)
-             ,.core_rt_clk_i(core_rt_clk_i)
+             ,.rt_clk_i(rt_clk_i)
              ,.core_reset_i(core_reset_i)
 
              ,.coh_clk_i(coh_clk_i)

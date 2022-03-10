@@ -21,7 +21,7 @@ module bp_tile_node
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
   (input                                         core_clk_i
-   , input                                       core_rt_clk_i
+   , input                                       rt_clk_i
    , input                                       core_reset_i
 
    , input                                       coh_clk_i
@@ -68,7 +68,7 @@ module bp_tile_node
    #(.bp_params_p(bp_params_p))
    tile
     (.clk_i(core_clk_i)
-     ,.rt_clk_i(core_rt_clk_i)
+     ,.rt_clk_i(rt_clk_i)
      ,.reset_i(core_reset_i)
 
      // Memory side connection
