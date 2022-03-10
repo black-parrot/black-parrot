@@ -138,6 +138,17 @@ module bp_axi_top
   logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
   logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
+  logic rt_clk_lo;
+  bsg_counter_clock_downsample
+   #(.width_p(3))
+   ds
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.val_i(3'b111)
+     ,.clk_r_o(rt_clk_lo)
+     );
+
   if (cce_type_p == e_cce_uce)
     begin : u
       // note: bp_unicore has L2 cache; (bp_unicore_lite does not, but does not have dma_* interface
@@ -146,7 +157,7 @@ module bp_axi_top
        #(.bp_params_p(bp_params_p))
        unicore
        (.clk_i(clk_i)
-        ,.rt_clk_i(clk_i)
+        ,.rt_clk_i(rt_clk_lo)
         ,.reset_i(reset_i)
 
         // Irrelevant for current AXI wrapper
@@ -213,7 +224,7 @@ module bp_axi_top
        #(.bp_params_p(bp_params_p))
        multicore
         (.core_clk_i(clk_i)
-         ,.core_rt_clk_i(clk_i)
+         ,.core_rt_clk_i(rt_clk_lo)
          ,.core_reset_i(reset_i)
 
          ,.coh_clk_i(clk_i)
