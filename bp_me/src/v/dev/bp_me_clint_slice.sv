@@ -72,12 +72,22 @@ module bp_me_clint_slice
      ,.data_i(data_li)
      );
 
+  // Synchronize RTC reset
+  logic rt_reset_lo;
+  bsg_sync_sync
+   #(.width_p(1))
+   bss
+    (.oclk_i(rt_clk_i)
+     ,.iclk_data_i(reset_i)
+     ,.oclk_data_o(rt_reset_lo)
+     );
+
   logic [dword_width_gp-1:0] mtime_gray_r;
   bsg_async_ptr_gray
-   #(.lg_size_p(dword_width_gp), .use_async_reset_p(1))
+   #(.lg_size_p(dword_width_gp))
    mtime_gray
     (.w_clk_i(rt_clk_i)
-     ,.w_reset_i(reset_i) // async to rtc
+     ,.w_reset_i(rt_reset_lo)
      ,.w_inc_i(1'b1) // TODO: Enable / disable increment?
      ,.r_clk_i(clk_i)
      ,.w_ptr_binary_r_o()
