@@ -55,6 +55,30 @@ module bp_be_pipe_long
   wire [dword_width_gp-1:0] op_a = decode.opw_v ? (rs1 << word_width_gp) : rs1;
   wire [dword_width_gp-1:0] op_b = decode.opw_v ? (rs2 << word_width_gp) : rs2;
 
+  wire signed_opA_li = decode.fu_op inside {e_mul_op_mulh, e_mul_op_mulhsu};
+  wire signed_opB_li = decode.fu_op inside {e_mul_op_mulh};
+
+  logic [dword_width_gp-1:0] imulh_result_lo;
+  logic imulh_ready_lo;
+  logic imulh_v_lo;
+  wire imulh_v_li = v_li & (decode.fu_op inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu});
+  bsg_imul_iterative
+   #(.width_p(dword_width_gp))
+   imulh
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+    ,.v_i(imulh_v_li)
+    ,.ready_o(imulh_ready_lo)
+    ,.opA_i(op_a)
+	  ,.signed_opA_i(signed_opA_li)
+	  ,.opB_i(op_b)
+    ,.signed_opB_i(signed_opB_li)
+    ,.gets_high_part_i(1'b1)
+    ,.v_o(imulh_v_lo)
+	  ,.result_o(imulh_result_lo)
+    ,.yumi_i(imulh_v_lo & iwb_yumi_i)
+    );
+
   // We actual could exit early here
   logic [dword_width_gp-1:0] quotient_lo, remainder_lo;
   logic idiv_ready_and_lo;
@@ -145,19 +169,20 @@ module bp_be_pipe_long
      ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
      );
 
-  logic idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
+  logic imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
   bsg_dff_reset_set_clear
-   #(.width_p(3))
+   #(.width_p(4))
    wb_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i({idiv_v_lo, fdivsqrt_v_lo, v_li})
-     ,.clear_i({v_li, v_li, (iwb_yumi_i | fwb_yumi_i)})
-     ,.data_o({idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
+     ,.set_i({imulh_v_lo, idiv_v_lo, fdivsqrt_v_lo, v_li})
+     ,.clear_i({v_li, v_li, v_li, (iwb_yumi_i | fwb_yumi_i)})
+     ,.data_o({imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
      );
 
   logic [2:0] hazard_cnt;
+  wire imulh_safe = (hazard_cnt > 2);
   wire idiv_safe = (hazard_cnt > 2);
   wire fdiv_safe = (hazard_cnt > 3);
   bsg_counter_clear_up
@@ -236,7 +261,9 @@ module bp_be_pipe_long
 
   logic [dword_width_gp-1:0] rd_data_lo;
   always_comb
-    if (opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
+    if (~opw_v_r && fu_op_r inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu})
+      rd_data_lo = imulh_result_lo;
+    else if (opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
       rd_data_lo = `BSG_SIGN_EXTEND(quotient_w_lo, dword_width_gp);
     else if (opw_v_r && fu_op_r inside {e_mul_op_rem, e_mul_op_remu})
       rd_data_lo = $signed(remainder_lo) >>> word_width_gp;
@@ -246,7 +273,7 @@ module bp_be_pipe_long
       rd_data_lo = remainder_lo;
 
   // Actually a busy signal
-  assign ready_o = fdiv_ready_lo & idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
+  assign ready_o = fdiv_ready_lo & imulh_ready_lo & idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
 
   assign iwb_pkt.ird_w_v    = rd_w_v_r;
   assign iwb_pkt.frd_w_v    = 1'b0;
@@ -255,7 +282,7 @@ module bp_be_pipe_long
   assign iwb_pkt.rd_data    = rd_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
   assign iwb_pkt.fflags     = '0;
-  assign iwb_v_o = idiv_safe & idiv_done_v_r & rd_w_v_r;
+  assign iwb_v_o = ((imulh_safe & imulh_done_v_r) | (idiv_safe & idiv_done_v_r)) & rd_w_v_r;
 
   assign fwb_pkt.ird_w_v    = 1'b0;
   assign fwb_pkt.frd_w_v    = rd_w_v_r;
