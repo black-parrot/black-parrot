@@ -38,6 +38,7 @@ $BP_TOP_DIR/src/include/bp_top_pkg.sv
 ## BaseJump STL files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
+$BASEJUMP_STL_DIR/bsg_async/bsg_sync_sync.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_ptr_gray.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma.v
