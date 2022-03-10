@@ -51,44 +51,67 @@ module bp_me_clint_slice
 
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
-  logic [3:0][dword_width_gp-1:0] data_li;
+  logic [4:0][dword_width_gp-1:0] data_li;
   logic plic_w_v_li;
-  logic mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
+  logic mtime_w_v_li, mtimesel_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.els_p(4)
+     ,.els_p(5)
      ,.reg_addr_width_p(dev_addr_width_gp)
-     ,.base_addr_p({plic_reg_match_addr_gp, mtime_reg_addr_gp,
-            mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
+     ,.base_addr_p({plic_reg_match_addr_gp, mtime_reg_addr_gp, mtimesel_reg_match_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
      )
    register
     (.*
      // We ignore reads because these are all asynchronous registers
      ,.r_v_o()
-     ,.w_v_o({plic_w_v_li, mtime_w_v_li, mtimecmp_w_v_li, mipi_w_v_li})
+     ,.w_v_o({plic_w_v_li, mtime_w_v_li, mtimesel_w_v_li, mtimecmp_w_v_li, mipi_w_v_li})
      ,.addr_o(addr_lo)
      ,.size_o()
      ,.data_o(data_lo)
      ,.data_i(data_li)
      );
 
-  // Synchronize RTC reset
-  logic rt_reset_lo;
-  bsg_sync_sync
-   #(.width_p(1))
-   bss
-    (.oclk_i(rt_clk_i)
-     ,.iclk_data_i(reset_i)
-     ,.oclk_data_o(rt_reset_lo)
+  logic [1:0] mtimesel_r;
+  wire [1:0] mtimesel_n = data_lo;
+  bsg_dff_reset_en
+   #(.width_p(2))
+   mtimesel_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.en_i(mtimesel_w_v_li)
+     ,.data_i(mtimesel_n)
+     ,.data_o(mtimesel_r)
+     );
+
+  // 8:1 downsample
+  logic clk_ds_lo;
+  bsg_counter_clock_downsample
+   #(.width_p(3))
+   ds
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.val_i(3'b111)
+     ,.clk_r_o(clk_ds_lo)
+     );
+
+  logic rt_clk_lo;
+  bsg_mux
+   #(.width_p(1), .els_p(4), .balanced_p(1), .harden_p(1))
+   rtc_mux
+    (.data_i({1'b0, rt_clk_i, clk_ds_lo, clk_i})
+     ,.sel_i(mtimesel_r)
+     ,.data_o(rt_clk_lo)
      );
 
   logic [dword_width_gp-1:0] mtime_gray_r;
   bsg_async_ptr_gray
    #(.lg_size_p(dword_width_gp))
    mtime_gray
-    (.w_clk_i(rt_clk_i)
-     ,.w_reset_i(rt_reset_lo)
-     ,.w_inc_i(1'b1) // TODO: Enable / disable increment?
+    (.w_clk_i(rt_clk_lo)
+     ,.w_reset_i(reset_i)
+     ,.w_inc_i(1'b1) // Can enable / disable through mtimesel
      ,.r_clk_i(clk_i)
      ,.w_ptr_binary_r_o()
      ,.w_ptr_gray_r_o()
