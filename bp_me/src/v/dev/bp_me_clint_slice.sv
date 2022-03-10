@@ -187,8 +187,9 @@ module bp_me_clint_slice
 
   assign data_li[0] = mipi_r;
   assign data_li[1] = mtimecmp_r;
-  assign data_li[2] = mtime_r;
-  assign data_li[3] = plic_lo;
+  assign data_li[2] = mtimesel_r;
+  assign data_li[3] = mtime_r;
+  assign data_li[4] = plic_lo;
 
 endmodule
 
