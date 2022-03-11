@@ -69,6 +69,9 @@ cfg_reg_cce_id         = 0x0600
 cfg_reg_cce_mode       = 0x0604
 cfg_mem_base_cce_ucode = 0x8000
 
+clint_base_addr       = 0x300000
+clint_reg_mtimesel    = 0x8000
+
 cfg_core_offset = 24
 
 class NBF:
@@ -236,6 +239,9 @@ class NBF:
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
+
+      # Write RTC
+      self.print_nbf_allcores(3, clint_base_addr + clint_reg_mtimesel, 1)
 
       if self.verify:
         # Read back I$, D$ and CCE modes for verification

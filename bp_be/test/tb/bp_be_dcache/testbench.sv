@@ -42,7 +42,22 @@ module testbench
    )
   (output bit reset_i);
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+  if ((uce_p == 0) && (l2_data_width_p != bedrock_data_width_p))
+    $error("CCE requires L2 fill width same as bedrock data width");
+  if ((uce_p == 0) && (dcache_fill_width_p != bedrock_data_width_p))
+    $error("CCE requires $ fill width same as bedrock data width");
+  if ((uce_p == 1) && (num_caches_p != 1))
+    $error("UCE setup supports only 1 cache");
+  if ((uce_p == 0) && (wt_p == 1))
+    $error("CCE does not support writethrough caches");
+  if (uce_p == 0 && dcache_writethrough_p == 1)
+    $error("Writethrough cache with CCE not yet supported");
+  if (cce_block_width_p != dcache_block_width_p)
+    $error("Memory fetch block width does not match D$ block width");
+  if (num_caches_p == 0)
+    $error("Please provide a valid number of caches");
+
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   // Bit to deal with initial X->0 transition detection
@@ -94,7 +109,7 @@ module testbench
   logic mem_cmd_v_lo, mem_resp_v_li;
   logic mem_cmd_ready_and_lo, mem_resp_ready_and_li;
   bp_bedrock_mem_header_s mem_cmd_header_lo, mem_resp_header_li;
-  logic [l2_fill_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
+  logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
 
   logic [num_caches_p-1:0][trace_replay_data_width_lp-1:0] trace_data_lo;
   logic [num_caches_p-1:0] trace_v_lo;
@@ -236,6 +251,10 @@ module testbench
      ,.uce_p(uce_p)
      ,.wt_p(wt_p)
      ,.num_caches_p(num_caches_p)
+     ,.sets_p(dcache_sets_p)
+     ,.assoc_p(dcache_assoc_p)
+     ,.block_width_p(dcache_block_width_p)
+     ,.fill_width_p(dcache_fill_width_p)
      )
    wrapper
     (.clk_i(clk_i)
@@ -317,28 +336,49 @@ module testbench
          ,.sets_p(sets_p)
          ,.assoc_p(assoc_p)
          ,.block_width_p(block_width_p)
+         ,.fill_width_p(fill_width_p)
          )
        bp_lce_tracer
          (.clk_i(clk_i & (testbench.lce_trace_p == 1))
           ,.reset_i(reset_i)
 
           ,.lce_id_i(lce_id_i)
+
           ,.lce_req_header_i(lce_req_header_o)
+          ,.lce_req_header_v_i(lce_req_header_v_o)
+          ,.lce_req_header_ready_and_i(lce_req_header_ready_and_i)
           ,.lce_req_data_i(lce_req_data_o)
-          ,.lce_req_v_i(lce_req_v_o)
-          ,.lce_req_ready_and_i(lce_req_ready_then_i)
+          ,.lce_req_data_v_i(lce_req_data_v_o)
+          ,.lce_req_data_ready_and_i(lce_req_data_ready_and_i)
+
           ,.lce_resp_header_i(lce_resp_header_o)
+          ,.lce_resp_header_v_i(lce_resp_header_v_o)
+          ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_i)
           ,.lce_resp_data_i(lce_resp_data_o)
-          ,.lce_resp_v_i(lce_resp_v_o)
-          ,.lce_resp_ready_and_i(lce_resp_ready_then_i)
+          ,.lce_resp_data_v_i(lce_resp_data_v_o)
+          ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_i)
+
           ,.lce_cmd_header_i(lce_cmd_header_i)
+          ,.lce_cmd_header_v_i(lce_cmd_header_v_i)
+          ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_o)
           ,.lce_cmd_data_i(lce_cmd_data_i)
-          ,.lce_cmd_v_i(lce_cmd_v_i)
-          ,.lce_cmd_ready_and_i(lce_cmd_yumi_o)
-          ,.lce_cmd_header_o_i(lce_cmd_header_o)
-          ,.lce_cmd_data_o_i(lce_cmd_data_o)
-          ,.lce_cmd_o_v_i(lce_cmd_v_o)
-          ,.lce_cmd_o_ready_and_i(lce_cmd_ready_then_i)
+          ,.lce_cmd_data_v_i(lce_cmd_data_v_i)
+          ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_o)
+
+          ,.lce_fill_header_i(lce_fill_header_i)
+          ,.lce_fill_header_v_i(lce_fill_header_v_i)
+          ,.lce_fill_header_ready_and_i(lce_fill_header_ready_and_o)
+          ,.lce_fill_data_i(lce_fill_data_i)
+          ,.lce_fill_data_v_i(lce_fill_data_v_i)
+          ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_o)
+
+          ,.lce_fill_o_header_i(lce_fill_header_o)
+          ,.lce_fill_o_header_v_i(lce_fill_header_v_o)
+          ,.lce_fill_o_header_ready_and_i(lce_fill_header_ready_and_i)
+          ,.lce_fill_o_data_i(lce_fill_data_o)
+          ,.lce_fill_o_data_v_i(lce_fill_data_v_o)
+          ,.lce_fill_o_data_ready_and_i(lce_fill_data_ready_and_i)
+
           ,.cache_req_complete_i(cache_req_complete_o)
           ,.uc_store_req_complete_i(uc_store_req_complete_lo)
           );
@@ -391,34 +431,31 @@ module testbench
           );
   end
 
-  bp_mem_nonsynth_tracer
+  bind bp_nonsynth_mem
+    bp_nonsynth_mem_tracer
+     #(.bp_params_p(bp_params_p))
+     bp_mem_tracer
+      (.clk_i(clk_i & (testbench.dram_trace_p == 1))
+       ,.reset_i(reset_i)
+
+       ,.mem_cmd_header_i(mem_cmd_header_i)
+       ,.mem_cmd_data_i(mem_cmd_data_i)
+       ,.mem_cmd_v_i(mem_cmd_v_i)
+       ,.mem_cmd_ready_and_i(mem_cmd_ready_and_o)
+       ,.mem_cmd_last_i(mem_cmd_last_i)
+
+       ,.mem_resp_header_i(mem_resp_header_o)
+       ,.mem_resp_data_i(mem_resp_data_o)
+       ,.mem_resp_v_i(mem_resp_v_o)
+       ,.mem_resp_ready_and_i(mem_resp_ready_and_i)
+       ,.mem_resp_last_i(mem_resp_last_o)
+       );
+
+  // Parameter Verification
+  bp_nonsynth_if_verif
    #(.bp_params_p(bp_params_p))
-   bp_mem_tracer
-    (.clk_i(clk_i & (testbench.dram_trace_p == 1))
-     ,.reset_i(reset_i)
-
-     ,.mem_cmd_header_i(mem_cmd_header_lo)
-     ,.mem_cmd_data_i(mem_cmd_data_lo)
-     ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_i(mem_cmd_last_lo)
-
-     ,.mem_resp_header_i(mem_resp_header_li)
-     ,.mem_resp_data_i(mem_resp_data_li)
-     ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_ready_and_i(mem_resp_ready_and_li)
-     ,.mem_resp_last_i(mem_resp_last_li)
-     );
-
-  // Assertions
-  if (uce_p == 0 && dcache_writethrough_p == 1)
-    $fatal("Writethrough cache with CCE not yet supported");
-  if (cce_block_width_p != dcache_block_width_p)
-    $fatal("Memory fetch block width does not match D$ block width");
-  if (num_caches_p == 0)
-    $fatal("Please provide a valid number of caches");
-  if ((uce_p == 1) && (num_caches_p > 1))
-    $fatal("UCE does not support multi-cache testing");
+   if_verif
+    ();
 
   `ifndef VERILATOR
     initial

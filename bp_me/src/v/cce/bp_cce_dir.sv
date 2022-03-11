@@ -27,11 +27,6 @@ module bp_cce_dir
     // I$ and D$ LCE ID's are [0, (2*num_core_p)-1]
     // A$ LCE ID's start at (2*num_core_p)
     , localparam acc_lce_id_offset_lp = (num_core_p*2)
-
-    // minimal number of sets across all LCE types
-    , localparam lce_min_sets_lp = `BSG_MIN(dcache_sets_p,
-                                            `BSG_MIN(icache_sets_p, num_cacc_p ? acache_sets_p : icache_sets_p))
-
   )
   (input                                                          clk_i
    , input                                                        reset_i
@@ -75,7 +70,8 @@ module bp_cce_dir
   // LCE types (dcache, icache, acache). This ensures that every tag set is wholly stored
   // in a *single* CCE (equivalently, tag sets are not split across CCEs).
   // LCEs and CCEs use the set index bits from the physical address to map address to CCE.
-  if (lce_min_sets_lp < num_cce_p)
+  // The minimal number of sets is computed in aviary as cce_way_groups_p
+  if (cce_way_groups_p < num_cce_p)
     $error("Number of CCEs must be at least as large as the minimal number of LCE sets");
 
   // directory does not support caches with only 1 set

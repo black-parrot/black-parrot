@@ -16,37 +16,32 @@ module bp_sacc_vdp
    , input [lce_id_width_p-1:0]                 lce_id_i
 
    , input [mem_header_width_lp-1:0]            io_cmd_header_i
-   , input [cce_block_width_p-1:0]              io_cmd_data_i
+   , input [acache_fill_width_p-1:0]            io_cmd_data_i
    , input                                      io_cmd_v_i
-   , output logic                               io_cmd_ready_o
+   , input                                      io_cmd_last_i
+   , output logic                               io_cmd_ready_and_o
 
    , output logic [mem_header_width_lp-1:0]     io_resp_header_o
-   , output logic [cce_block_width_p-1:0]       io_resp_data_o
+   , output logic [acache_fill_width_p-1:0]     io_resp_data_o
    , output logic                               io_resp_v_o
-   , input                                      io_resp_yumi_i
-
-   , output logic [mem_header_width_lp-1:0]     io_cmd_header_o
-   , output logic [cce_block_width_p-1:0]       io_cmd_data_o
-   , output logic                               io_cmd_v_o
-   , input                                      io_cmd_yumi_i
-
-   , input [mem_header_width_lp-1:0]            io_resp_header_i
-   , input [cce_block_width_p-1:0]              io_resp_data_i
-   , input                                      io_resp_v_i
-   , output logic                               io_resp_ready_o
+   , output logic                               io_resp_last_o
+   , input                                      io_resp_ready_and_i
    );
+
+  //synopsys translate_off
+  always_ff @(negedge clk_i) begin
+    assert(~io_cmd_v_i | (io_cmd_v_i & io_cmd_last_i))
+      else $error("sacc_vdp only supports single beat IO commands");
+  end
+  //synopsys translate_on
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_cmd_header);
-  `bp_cast_i(bp_bedrock_mem_header_s, io_resp_header);
   `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
   `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
 
-  assign io_cmd_ready_o = 1'b1;
-  assign io_resp_ready_o = 1'b1;
-  assign io_cmd_v_o = 1'b0;
+  assign io_cmd_ready_and_o = 1'b1;
 
   logic [63:0] csr_data, resp_data, start_cmd, input_a_ptr, input_b_ptr, input_len, res_status,
                res_ptr, res_len, operation, spm_data_lo, spm_data_li, spm_external_data_li;
@@ -103,6 +98,7 @@ module bp_sacc_vdp
   state_e state_r, state_n;
 
   assign io_resp_v_o = spm_external_v_lo | resp_v_lo;
+  assign io_resp_last_o = io_resp_v_o;
   always_ff @(posedge clk_i) begin
     spm_internal_v_lo <= spm_internal_read_v_li;
     spm_external_v_lo <= spm_external_read_v_li;
