@@ -83,7 +83,7 @@ module bp_me_cce_to_mem_link_recv
   assign mem_cmd_header_o = mem_cmd_packet_lo.header.msg_hdr;
   assign mem_cmd_data_o = mem_cmd_packet_lo.data;
 
-  bp_me_wormhole_header_encode
+  bp_me_bedrock_wormhole_header_encode
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
      ,.cord_width_p(cord_width_p)
@@ -93,7 +93,7 @@ module bp_me_cce_to_mem_link_recv
      ,.payload_mask_p(mem_resp_payload_mask_gp)
      )
    mem_encode
-    (.mem_header_i(mem_resp_header_i)
+    (.header_i(mem_resp_header_i)
      ,.dst_cord_i(dst_cord_i)
      ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(mem_resp_header_lo)
