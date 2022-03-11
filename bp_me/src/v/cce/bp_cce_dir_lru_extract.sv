@@ -40,25 +40,20 @@ module bp_cce_dir_lru_extract
 
   );
 
-  // parameter checks
-  if (tag_sets_per_row_p != 2)
-    $fatal(0,"unsupported configuration: number of sets per row must equal 2");
-
   `declare_bp_cce_dir_entry_s(tag_width_p);
-
-  // Directory RAM row cast
   dir_entry_s [tag_sets_per_row_p-1:0][assoc_p-1:0] row;
-  assign row = row_i;
 
-  // LRU output is valid if:
-  // 1. tag set input is valid
-  // 2. target LCE's tag set is stored on the input row
-  assign lru_v_o = (row_v_i[lce_i[0]]) & ((lce_i >> 1) == row_num_i);
+  always_comb begin
+    // cast directory row for easy access to state and tag
+    row = row_i;
 
-  bp_coh_states_e lru_coh_state;
-  assign lru_coh_state = row[lce_i[0]][lru_way_i].state;
-  assign lru_coh_state_o = lru_coh_state;
-  assign lru_tag_o = row[lce_i[0]][lru_way_i].tag;
+    // LRU output is valid if:
+    // 1. tag set input is valid
+    // 2. target LCE's tag set is stored on the input row
+    lru_v_o = (row_v_i[lce_i[0]]) & ((lce_i >> 1) == row_num_i);
+    lru_coh_state_o = row[lce_i[0]][lru_way_i].state;
+    lru_tag_o = row[lce_i[0]][lru_way_i].tag;
+  end
 
 endmodule
 

@@ -42,37 +42,54 @@ module bp_be_pipe_aux
   assign reservation = reservation_i;
   assign decode = reservation.decode;
   assign instr = reservation.instr;
-  assign frs1 = reservation.rs1;
-  assign frs2 = reservation.rs2;
+  wire [dword_width_gp-1:0] rs1 = reservation.rs1;
+  wire [dword_width_gp-1:0] rs2 = reservation.rs2;
+
+  bp_be_nan_unbox
+    #(.bp_params_p(bp_params_p))
+    frs1_unbox
+     (.reg_i(reservation.rs1)
+      ,.unbox_i(decode.ops_v & !(decode.fu_op inside {e_aux_op_fmvi}))
+      ,.reg_o(frs1)
+      );
+
+  bp_be_nan_unbox
+    #(.bp_params_p(bp_params_p))
+    frs2_unbox
+     (.reg_i(reservation.rs2)
+      ,.unbox_i(decode.ops_v)
+      ,.reg_o(frs2)
+      );
 
   //
   // Control bits for the FPU
   //   The control bits control tininess, which is fixed in RISC-V
   rv64_frm_e frm_li;
-  assign frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
+  // VCS / DVE 2016.1 has an issue with the 'assign' variant of the following code
+  always_comb frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
   //
   // Convert recoded registers to raw
   //
   logic [dword_width_gp-1:0] frs1_raw;
-  bp_be_rec_to_fp
+  rv64_fflags_s frs1_raw_fflags;
+  bp_be_reg_to_fp
    #(.bp_params_p(bp_params_p))
    frs1_rec2raw
-    (.rec_i(frs1.rec)
-
-     ,.raw_sp_not_dp_i(frs1.sp_not_dp)
+    (.reg_i(frs1)
      ,.raw_o(frs1_raw)
+     ,.fflags_o(frs1_raw_fflags)
      );
 
   logic [dword_width_gp-1:0] frs2_raw;
-  bp_be_rec_to_fp
+  rv64_fflags_s frs2_raw_fflags;
+  bp_be_reg_to_fp
    #(.bp_params_p(bp_params_p))
    frs2_rec2raw
-    (.rec_i(frs2.rec)
-
-     ,.raw_sp_not_dp_i(frs2.sp_not_dp)
+    (.reg_i(frs2)
      ,.raw_o(frs2_raw)
+     ,.fflags_o(frs2_raw_fflags)
      );
 
   //
@@ -85,33 +102,29 @@ module bp_be_pipe_aux
       decode.opw_v
       ? {{word_width_gp{frs1_raw[word_width_gp-1]}}, frs1_raw[0+:word_width_gp]}
       : frs1_raw;
-  assign fmvi_fflags = '0;
+  assign fmvi_fflags = frs1_raw_fflags;
 
   //
   // FMV Int -> Float
   //
-  wire signed_i2f = (decode.fu_op inside {e_aux_op_i2f, e_aux_op_imvf});
-  wire i2f_sigext = signed_i2f & frs1[word_width_gp-1];
-  wire [dword_width_gp-1:0] imvf_src = decode.opw_v ? ({{word_width_gp{i2f_sigext}}, frs1[0+:word_width_gp]}) : frs1;
+  wire [dword_width_gp-1:0] imvf_src = decode.opw_v ? ({{word_width_gp{1'b1}}, rs1[0+:word_width_gp]}) : rs1;
 
   bp_be_fp_reg_s imvf_result;
   rv64_fflags_s imvf_fflags;
-  bp_be_fp_to_rec
+  bp_be_fp_to_reg
    #(.bp_params_p(bp_params_p))
-   fp_to_rec
+   fp_to_reg
     (.raw_i(imvf_src)
-     ,.raw_sp_not_dp_i(decode.ops_v)
-
-     ,.rec_sp_not_dp_o(imvf_result.sp_not_dp)
-     ,.rec_o(imvf_result.rec)
+     ,.reg_o(imvf_result)
      );
   assign imvf_fflags = '0;
 
   //
   // FCVT Int -> Float
   //
-  wire [dword_width_gp-1:0] i2f_src = decode.opw_v ? ({{word_width_gp{i2f_sigext}}, frs1[0+:word_width_gp]}) : frs1;
-
+  wire signed_i2f = (decode.fu_op inside {e_aux_op_i2f});
+  wire i2f_sigext = signed_i2f & rs1[word_width_gp-1];
+  wire [dword_width_gp-1:0] i2f_src = decode.opw_v ? ({{word_width_gp{i2f_sigext}}, rs1[0+:word_width_gp]}) : rs1;
   bp_be_fp_reg_s i2f_result;
   rv64_fflags_s i2f_fflags;
 
@@ -131,41 +144,8 @@ module bp_be_pipe_aux
      ,.exceptionFlags(i2d_fflags)
      );
 
-  // Some of the edge cases aren't handled well by i2d
-  // There's a lot of redundant logic here, though
-  logic [sp_rec_width_gp-1:0] i2s_out;
-  rv64_fflags_s i2s_fflags;
-  iNToRecFN
-   #(.intWidth(dword_width_gp)
-     ,.expWidth(sp_exp_width_gp)
-     ,.sigWidth(sp_sig_width_gp)
-     )
-    i2s
-    (.control(control_li)
-     ,.signedIn(signed_i2f)
-     ,.in(i2f_src)
-     ,.roundingMode(frm_li)
-     ,.out(i2s_out)
-     ,.exceptionFlags(i2s_fflags)
-     );
-
-  logic [dp_rec_width_gp-1:0] i2s2d_out;
-  recFNToRecFN
-   #(.inExpWidth(sp_exp_width_gp)
-     ,.inSigWidth(sp_sig_width_gp)
-     ,.outExpWidth(dp_exp_width_gp)
-     ,.outSigWidth(dp_sig_width_gp)
-     )
-  i2s2d
-   (.control(control_li)
-    ,.in(i2s_out)
-    ,.roundingMode(frm_li)
-    ,.out(i2s2d_out)
-    ,.exceptionFlags()
-    );
-
-  assign i2f_result = '{sp_not_dp: decode.ops_v, rec: decode.ops_v ? i2s2d_out : i2d_out};
-  assign i2f_fflags = decode.ops_v ? i2s_fflags : i2d_fflags;
+  assign i2f_result = '{tag: decode.ops_v ? frm_li : e_fp_full, rec: i2d_out};
+  assign i2f_fflags = i2d_fflags;
 
   //
   // FCVT Float -> Int
@@ -217,14 +197,6 @@ module bp_be_pipe_aux
   //
   // NaN unboxing
   //
-  wire frs1_raw_v_li = ~decode.ops_v | frs1.sp_not_dp;
-  wire [dp_rec_width_gp-1:0] frs1_rec_li = frs1_raw_v_li ? frs1.rec : dp_canonical_rec;
-  wire [dword_width_gp-1:0] frs1_raw_li = frs1_raw_v_li ? frs1_raw : sp_canonical_nan;
-
-  wire frs2_raw_v_li = ~decode.ops_v | frs2.sp_not_dp;
-  wire [dp_rec_width_gp-1:0] frs2_rec_li = frs2_raw_v_li ? frs2.rec : dp_canonical_rec;
-  wire [dword_width_gp-1:0] frs2_raw_li = frs2_raw_v_li ? frs2_raw : sp_canonical_nan;
-
   logic frs1_is_nan, frs1_is_inf, frs1_is_zero;
   logic frs1_sign;
   logic [dp_exp_width_gp+1:0] frs1_sexp;
@@ -250,7 +222,7 @@ module bp_be_pipe_aux
      ,.sigWidth(dp_sig_width_gp)
      )
    frs1_sig_nan
-    (.in(frs1_rec_li)
+    (.in(frs1.rec)
      ,.isSigNaN(frs1_is_snan)
      );
 
@@ -278,7 +250,7 @@ module bp_be_pipe_aux
      ,.sigWidth(dp_sig_width_gp)
      )
    frs2_sig_nan
-    (.in(frs2_rec_li)
+    (.in(frs2.rec)
      ,.isSigNaN(frs2_is_snan)
      );
 
@@ -296,7 +268,7 @@ module bp_be_pipe_aux
                            ,n_inf :  frs1_sign & frs1_is_inf
                            ,default: '0
                            };
-  assign fclass_fflags = '0;
+  assign fclass_fflags = frs1_raw_fflags;
 
   //
   // Float to Float
@@ -304,46 +276,11 @@ module bp_be_pipe_aux
   bp_be_fp_reg_s f2f_result;
   rv64_fflags_s f2f_fflags;
 
-  bp_hardfloat_rec_sp_s d2s_round;
-  rv64_fflags_s d2s_round_fflags;
-  roundAnyRawFNToRecFN
-   #(.inExpWidth(dp_exp_width_gp)
-     ,.inSigWidth(dp_sig_width_gp)
-     ,.outExpWidth(sp_exp_width_gp)
-     ,.outSigWidth(sp_sig_width_gp)
-     )
-   round_sp
-    (.control(control_li)
-     ,.invalidExc('0)
-     ,.infiniteExc('0)
-     ,.in_isNaN(frs1_is_nan)
-     ,.in_isInf(frs1_is_inf)
-     ,.in_isZero(frs1_is_zero)
-     ,.in_sign(frs1_sign)
-     ,.in_sExp(frs1_sexp)
-     ,.in_sig(frs1_sig)
-     ,.roundingMode(frm_li)
-     ,.out(d2s_round)
-     ,.exceptionFlags(d2s_round_fflags)
-     );
-
-  localparam bias_adj_lp = (1 << dp_exp_width_gp) - (1 << sp_exp_width_gp);
-  bp_hardfloat_rec_dp_s d2s2d_final;
-
-  wire [dp_exp_width_gp:0] adjusted_exp = d2s_round.exp + bias_adj_lp;
-  wire [2:0]                   exp_code = d2s_round.exp[sp_exp_width_gp-:3];
-  wire                          special = (exp_code == '0) || (exp_code >= 3'd6);
-
-  assign d2s2d_final = '{sign  : d2s_round.sign
-                         ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                         ,fract: {d2s_round.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
-                         };
-
   // SP->DP conversion is a NOP, except for canonicalizing NaNs
-  wire [dp_rec_width_gp-1:0] frs1_canon_dp = (&frs1.rec[dp_rec_width_gp-2-:3]) ? dp_canonical_rec : frs1.rec;
+  wire [dp_rec_width_gp-1:0] frs1_canon_dp = frs1_is_nan ? dp_canonical_rec : frs1.rec;
 
-  assign f2f_result = '{sp_not_dp: decode.ops_v, rec: decode.ops_v ? d2s2d_final : frs1_canon_dp};
-  assign f2f_fflags = d2s_round_fflags;
+  assign f2f_result = '{tag: decode.ops_v ? e_fp_full : frm_li, rec: decode.ops_v ? frs1.rec : frs1_canon_dp};
+  assign f2f_fflags = '0;
 
   //
   // FSGNJ
@@ -353,28 +290,30 @@ module bp_be_pipe_aux
 
   logic [dword_width_gp-1:0] fsgnj_raw;
   logic sgn_lo;
-  wire [`BSG_SAFE_CLOG2(dword_width_gp)-1:0] signbit = decode.ops_v ? (word_width_gp-1) : (dword_width_gp-1);
+  wire [`BSG_SAFE_CLOG2(dword_width_gp)-1:0] frs1_signbit =
+    (~decode.ops_v | (frs1.tag == e_fp_full)) ? (dword_width_gp-1) : (word_width_gp-1);
+  wire [`BSG_SAFE_CLOG2(dword_width_gp)-1:0] frs2_signbit =
+    (~decode.ops_v | (frs2.tag == e_fp_full)) ? (dword_width_gp-1) : (word_width_gp-1);
+  wire [`BSG_SAFE_CLOG2(dword_width_gp)-1:0] frd_signbit  =
+    (~decode.ops_v) ? (dword_width_gp-1) : (word_width_gp-1);
   always_comb
     begin
       unique case (decode.fu_op)
-        e_aux_op_fsgnj : sgn_lo = frs2_raw_li[signbit];
-        e_aux_op_fsgnjn: sgn_lo = ~frs2_raw_li[signbit];
-        e_aux_op_fsgnjx: sgn_lo = frs2_raw_li[signbit] ^ frs1_raw_li[signbit];
+        e_aux_op_fsgnj : sgn_lo = frs2_raw[frs2_signbit];
+        e_aux_op_fsgnjn: sgn_lo = ~frs2_raw[frs2_signbit];
+        e_aux_op_fsgnjx: sgn_lo = frs2_raw[frs2_signbit] ^ frs1_raw[frs1_signbit];
         default: sgn_lo = '0;
       endcase
 
-      fsgnj_raw = frs1_raw_li;
-      fsgnj_raw[signbit] = sgn_lo;
+      fsgnj_raw = frs1_raw;
+      fsgnj_raw[frd_signbit] = sgn_lo;
     end
 
-  bp_be_fp_to_rec
+  bp_be_fp_to_reg
    #(.bp_params_p(bp_params_p))
-   fsgnj_recode
+   fsgnj_fp_to_reg
     (.raw_i(fsgnj_raw)
-     ,.raw_sp_not_dp_i(decode.ops_v)
-
-     ,.rec_sp_not_dp_o(fsgnj_result.sp_not_dp)
-     ,.rec_o(fsgnj_result.rec)
+     ,.reg_o(fsgnj_result)
      );
   assign fsgnj_fflags = '0;
 
@@ -394,8 +333,8 @@ module bp_be_pipe_aux
   compareRecFN
    #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
    fcmp
-    (.a(frs1_rec_li)
-     ,.b(frs2_rec_li)
+    (.a(frs1.rec)
+     ,.b(frs2.rec)
      ,.signaling(signaling_li)
      ,.lt(flt_lo)
      ,.eq(feq_lo)
@@ -405,7 +344,7 @@ module bp_be_pipe_aux
      );
   wire fle_lo = ~fgt_lo;
   wire fcmp_out = (is_feq_li & feq_lo) | (is_flt_li & flt_lo) | (is_fle_li & (flt_lo | feq_lo));
-  assign fcmp_result = '{sp_not_dp: decode.ops_v, rec: fcmp_out};
+  assign fcmp_result = '{tag: decode.ops_v ? frm_li : e_fp_full, rec: fcmp_out};
 
   //
   // FMIN-MAX
@@ -418,15 +357,15 @@ module bp_be_pipe_aux
     if (frs1_is_nan & frs2_is_nan)
       fminmax_out = dp_canonical_rec;
     else if (frs1_is_nan & ~frs2_is_nan)
-      fminmax_out = frs2_rec_li;
+      fminmax_out = frs2.rec;
     else if (~frs1_is_nan & frs2_is_nan)
-      fminmax_out = frs1_rec_li;
+      fminmax_out = frs1.rec;
     else if (feq_lo)
-      fminmax_out = (is_fmin_li ^ frs1_sign) ? frs2_rec_li : frs1_rec_li;
+      fminmax_out = (is_fmin_li ^ frs1_sign) ? frs2.rec : frs1.rec;
     else
-      fminmax_out = (is_fmax_li ^ flt_lo) ? frs1_rec_li : frs2_rec_li;
+      fminmax_out = (is_fmax_li ^ flt_lo) ? frs1.rec : frs2.rec;
 
-  assign fminmax_result = '{sp_not_dp: decode.ops_v, rec: fminmax_out};
+  assign fminmax_result = '{tag: decode.ops_v ? frm_li : e_fp_full, rec: fminmax_out};
   assign fminmax_fflags = '{nv: (frs1_is_snan | frs2_is_snan), default: '0};
 
   //

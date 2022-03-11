@@ -16,7 +16,8 @@ const
   ValueCount: 2;               -- number of data values.
   ReqNet: 0;                   -- low priority - LCE Req
   CmdNet: 1;                   -- LCE Cmd
-  RespNet: 2;                  -- LCE Resp
+  FillNet: 2;                  -- LCE Fill
+  RespNet: 3;                  -- LCE Resp
   NumVCs: RespNet - ReqNet + 1;
   NetMax: 2*ProcCount;
 
@@ -37,13 +38,12 @@ type
                       LceWrReq, -- req to dir for write
 
                       InvCmd,  -- cmd to LCE to invalidate block
-                      TrCmd, -- cmd to LCE to send data to another LCE then send writeback
-                             -- in practice, TR and WB are two commmands, but they are always sent together,
-                             -- and current implementation uses in-order networks, so consider them as one cmd here
+                      StTrWbCmd, -- cmd to LCE to set state for block, then send transfer, then writeback
                       WBCmd, -- cmd to LCE to write back data to CCE (does not invalidate the block)
                       SetTagWakeupCmd, -- cmd to LCE to set tag and wakeup on upgrade (state -> M)
+                      TagAndDataCmd, -- data block from CCE to LCE
 
-                      TagAndDataCmd, -- data block to LCE from CCE
+                      TagAndDataFill, -- data block from LCE to LCE
 
                       InvTagAck, -- ack from LCE to CCE for invalidation
                       CohAck, -- ack from LCE to CCE for coherence transaction
@@ -131,14 +131,16 @@ Begin
     put "LceWrReq";
   case InvCmd:
     put "InvCmd";
-  case TrCmd:
-    put "TrCmd";
+  case StTrWbCmd:
+    put "StTrWbCmd";
   case WBCmd:
     put "WBCmd";
   case SetTagWakeupCmd:
     put "SetTagWakeupCmd";
   case TagAndDataCmd:
     put "TagAndDataCmd";
+  case TagAndDataFill:
+    put "TagAndDataFill";
   case InvTagAck:
     put "InvTagAck";
   case CohAck:
@@ -431,7 +433,7 @@ Begin
           elsif (HomeNode.transfer = true)
           then
             --put "sending set tag, tr, and writeback from CCE_IA\n";
-            Send(TrCmd, HomeNode.trLce, HomeType, CmdNet, UNDEFINED, false, HomeNode.reqLce, HomeNode.nextState);
+            Send(StTrWbCmd, HomeNode.trLce, HomeType, CmdNet, UNDEFINED, false, HomeNode.reqLce, HomeNode.nextState);
             HomeNode.state := CCE_TWBA;
           else
             --put "sending set tag and data cmd from CCE_IA\n";
@@ -557,9 +559,9 @@ Begin
     -- invalid, block is clean
     case P_I:
       switch msg.mtype
-        case TrCmd:
+        case StTrWbCmd:
           --put "sending data cmd lce from P_I\n";
-          Send(TagAndDataCmd, msg.target, p, CmdNet, pv, false, UNDEFINED, msg.nextState);
+          Send(TagAndDataFill, msg.target, p, FillNet, pv, false, UNDEFINED, msg.nextState);
           if (Procs[p].dirty)
           then
             Send(LceDataResp, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
@@ -578,11 +580,16 @@ Begin
         case InvCmd:
           --put "sending inv tag ack from P_WAIT\n";
           Send(InvTagAck, msg.src, p, RespNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
-        case TrCmd:
+        case StTrWbCmd:
           --put "sending data cmd lce from P_WAIT\n";
-          Send(TagAndDataCmd, msg.target, p, CmdNet, pv, false, UNDEFINED, msg.nextState);
+          Send(TagAndDataFill, msg.target, p, FillNet, pv, false, UNDEFINED, msg.nextState);
           Send(LceDataRespNull, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
         case TagAndDataCmd:
+          -- record data value received
+          pv := msg.val;
+          ps := msg.nextState;
+          Send(CohAck, HomeType, p, RespNet, UNDEFINED, false, UNDEFINED, msg.nextState);
+        case TagAndDataFill:
           -- record data value received
           pv := msg.val;
           ps := msg.nextState;
@@ -639,7 +646,7 @@ Begin
         Send(InvTagAck, msg.src, p, RespNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
         ps := P_I;
       case WBCmd:
-        --put "sending null WB resp from P_M\n";
+        --put "sending WB resp from P_M\n";
         Send(LceDataResp, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
         -- clear the dirty bit since block is being written back
         Procs[p].dirty := false;

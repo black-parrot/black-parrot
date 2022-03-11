@@ -1,15 +1,9 @@
 
+  `include "bp_be_defines.svh"
+
 package bp_be_pkg;
 
   import bp_common_pkg::*;
-
-  localparam dpath_width_gp = 66;
-
-  typedef struct packed
-  {
-    logic        sp_not_dp;
-    logic [64:0] rec;
-  } bp_be_fp_reg_s;
 
   localparam sp_float_width_gp = 32;
   localparam sp_rec_width_gp   = 33;
@@ -29,6 +23,16 @@ package bp_be_pkg;
 
   localparam [dp_rec_width_gp-1:0] dp_canonical_rec = 65'h0_e0080000_00000000;
 
+  typedef enum logic [2:0]
+  {
+    e_fp_rne     = 3'b000
+    ,e_fp_rtz    = 3'b001
+    ,e_fp_rdn    = 3'b010
+    ,e_fp_rup    = 3'b011
+    ,e_fp_rmm    = 3'b100
+    ,e_fp_full   = 3'b111
+  } bp_be_fp_tag_e;
+
   typedef struct packed
   {
     logic                       sign;
@@ -42,6 +46,14 @@ package bp_be_pkg;
     logic [dp_exp_width_gp:0]   exp;
     logic [dp_sig_width_gp-2:0] fract;
   }  bp_hardfloat_rec_dp_s;
+
+  typedef struct packed
+  {
+    logic [2:0]           tag;
+    bp_hardfloat_rec_dp_s rec;
+  }  bp_be_fp_reg_s;
+
+  localparam dpath_width_gp = $bits(bp_be_fp_reg_s);
 
   `include "bp_be_ctl_pkgdef.svh"
   `include "bp_be_dcache_pkgdef.svh"

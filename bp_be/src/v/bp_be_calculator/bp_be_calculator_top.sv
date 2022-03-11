@@ -43,7 +43,8 @@ module bp_be_calculator_top
   // Calculator - Checker interface
   , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
 
-  , output logic                                    long_ready_o
+  , output logic                                    idiv_ready_o
+  , output logic                                    fdiv_ready_o
   , output logic                                    mem_ready_o
   , output logic                                    ptw_busy_o
   , output logic [decode_info_width_lp-1:0]         decode_info_o
@@ -57,7 +58,8 @@ module bp_be_calculator_top
 
   , input                                           timer_irq_i
   , input                                           software_irq_i
-  , input                                           external_irq_i
+  , input                                           m_external_irq_i
+  , input                                           s_external_irq_i
   , output logic                                    irq_waiting_o
   , output logic                                    irq_pending_o
 
@@ -126,7 +128,7 @@ module bp_be_calculator_top
   logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
   logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
   logic [dpath_width_gp-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
-  rv64_fflags_s pipe_aux_fflags_lo, pipe_fma_fflags_lo;
+  rv64_fflags_s pipe_aux_fflags_lo, pipe_mem_early_fflags_lo, pipe_fma_fflags_lo;
 
   bp_be_wb_pkt_s pipe_mem_late_iwb_pkt;
   logic pipe_mem_late_iwb_pkt_v, pipe_mem_late_iwb_pkt_yumi;
@@ -226,7 +228,8 @@ module bp_be_calculator_top
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
+     ,.m_external_irq_i(m_external_irq_i)
+     ,.s_external_irq_i(s_external_irq_i)
      ,.irq_pending_o(irq_pending_o)
      ,.irq_waiting_o(irq_waiting_o)
 
@@ -331,6 +334,7 @@ module bp_be_calculator_top
      ,.store_page_fault_v_o(pipe_mem_store_page_fault_lo)
 
      ,.early_data_o(pipe_mem_early_data_lo)
+     ,.early_fflags_o(pipe_mem_early_fflags_lo)
      ,.early_v_o(pipe_mem_early_data_lo_v)
 
      ,.final_data_o(pipe_mem_final_data_lo)
@@ -373,7 +377,8 @@ module bp_be_calculator_top
 
      ,.reservation_i(reservation_r)
      ,.flush_i(commit_pkt_cast_o.npc_w_v)
-     ,.ready_o(long_ready_o)
+     ,.iready_o(idiv_ready_o)
+     ,.fready_o(fdiv_ready_o)
      ,.frm_dyn_i(frm_dyn_lo)
 
      ,.iwb_pkt_o(long_iwb_pkt)
@@ -403,18 +408,19 @@ module bp_be_calculator_top
             : comp_stage_r[i-1];
         end
       // Injected instructions can carry a payload in rs2
-      comp_stage_n[0].rd_data    |= injection                ? dispatch_pkt_cast_i.rs2 : '0;
-      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo        : '0;
-      comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo        : '0;
-      comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo        : '0;
-      comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo  : '0;
-      comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo        : '0;
-      comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo  : '0;
-      comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo        : '0;
-      comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo        : '0;
+      comp_stage_n[0].rd_data    |= injection                ? dispatch_pkt_cast_i.rs2  : '0;
+      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo         : '0;
+      comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo         : '0;
+      comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo         : '0;
+      comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo   : '0;
+      comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo         : '0;
+      comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo   : '0;
+      comp_stage_n[4].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo         : '0;
+      comp_stage_n[5].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo         : '0;
 
-      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo      : '0;
-      comp_stage_n[5].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo      : '0;
+      comp_stage_n[2].fflags     |= pipe_mem_early_data_lo_v ? pipe_mem_early_fflags_lo : '0;
+      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo       : '0;
+      comp_stage_n[5].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo       : '0;
 
       comp_stage_n[0].ird_w_v    &= exc_stage_n[0].v;
       comp_stage_n[1].ird_w_v    &= exc_stage_n[1].v;

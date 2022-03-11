@@ -37,7 +37,7 @@ module bp_cce_inst_ram
    , input                                       ucode_w_i
    , input [cce_pc_width_p-1:0]                  ucode_addr_i
    , input [cce_instr_width_gp-1:0]              ucode_data_i
-   , output [cce_instr_width_gp-1:0]             ucode_data_o
+   , output logic [cce_instr_width_gp-1:0]       ucode_data_o
 
    , input [cce_pc_width_p-1:0]                  predicted_fetch_pc_i
    , input [cce_pc_width_p-1:0]                  branch_resolution_pc_i
@@ -52,7 +52,7 @@ module bp_cce_inst_ram
 
   // parameter checks
   if ($bits(bp_cce_inst_s) != cce_instr_width_gp)
-    $fatal(0,"Param cce_instr_width_gp does not match width of bp_cce_inst_s");
+    $error("Param cce_instr_width_gp does not match width of bp_cce_inst_s");
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;

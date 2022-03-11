@@ -130,8 +130,8 @@ module bsg_wormhole_stream_control
 
   always_comb begin
     case (state_r)
-      e_hdr  : state_n = (e_hdr_to_e_data)? e_data : e_hdr;
-      e_data : state_n = (e_data_to_e_hdr)? e_hdr : e_data;
+      e_hdr  : state_n = (e_hdr_to_e_data) ? e_data : e_hdr;
+      e_data : state_n = (e_data_to_e_hdr) ? e_hdr : e_data;
       default: state_n = e_hdr;
     endcase
   end

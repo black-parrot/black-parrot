@@ -32,7 +32,7 @@ module bp_me_xbar_stream
    , input [num_source_p-1:0][xbar_header_width_lp-1:0]               msg_header_i
    , input [num_source_p-1:0][data_width_p-1:0]                       msg_data_i
    , input [num_source_p-1:0]                                         msg_v_i
-   , output logic [num_source_p-1:0]                                  msg_yumi_o
+   , output logic [num_source_p-1:0]                                  msg_ready_and_o
    , input [num_source_p-1:0]                                         msg_last_i
    , input [num_source_p-1:0][lg_num_sink_lp-1:0]                     msg_dst_i
 
@@ -44,51 +44,66 @@ module bp_me_xbar_stream
    );
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xbar);
+   bp_bedrock_xbar_header_s [num_source_p-1:0] msg_header_li;
+   logic [num_source_p-1:0][data_width_p-1:0] msg_data_li;
+   logic [num_source_p-1:0] msg_v_li, msg_yumi_lo, msg_last_li;
+   logic [num_source_p-1:0][lg_num_sink_lp-1:0] msg_dst_li;
 
-  // msg arbitration logic
-  logic [num_source_p-1:0] msg_grants_lo;
-  wire msg_arb_unlock_li = |{msg_yumi_o & msg_last_i} | reset_i;
-  bsg_locking_arb_fixed
-   #(.inputs_p(num_source_p), .lo_to_hi_p(0))
-   msg_arbiter
+  for (genvar i = 0; i < num_source_p; i++)
+    begin : buffer
+      bsg_two_fifo
+       #(.width_p(lg_num_sink_lp+1+data_width_p+xbar_header_width_lp))
+       in_fifo
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.data_i({msg_dst_i[i], msg_last_i[i], msg_data_i[i], msg_header_i[i]})
+         ,.v_i(msg_v_i[i])
+         ,.ready_o(msg_ready_and_o[i])
+
+         ,.data_o({msg_dst_li[i], msg_last_li[i], msg_data_li[i], msg_header_li[i]})
+         ,.v_o(msg_v_li[i])
+         ,.yumi_i(msg_yumi_lo[i])
+         );
+    end
+
+  logic [num_sink_p-1:0] msg_unlock_li;
+  logic [num_sink_p-1:0][num_source_p-1:0] grants_oi_one_hot_lo;
+  bsg_crossbar_control_locking_o_by_i
+   #(.i_els_p(num_source_p), .o_els_p(num_sink_p))
+   cbc
     (.clk_i(clk_i)
-     ,.ready_i(1'b1)
+     ,.reset_i(reset_i)
 
-     ,.unlock_i(msg_arb_unlock_li)
-     ,.reqs_i(msg_v_i)
-     ,.grants_o(msg_grants_lo)
-     );
-  logic [lg_num_source_lp-1:0] msg_grants_sel_li;
-  logic msg_grants_v_li;
-  bsg_encode_one_hot
-   #(.width_p(num_source_p), .lo_to_hi_p(1))
-   msg_sel
-    (.i(msg_grants_lo)
-     ,.addr_o(msg_grants_sel_li)
-     ,.v_o(msg_grants_v_li)
+     ,.valid_i(msg_v_li)
+     ,.sel_io_i(msg_dst_li)
+     ,.yumi_o(msg_yumi_lo)
+
+     ,.ready_and_i(msg_ready_and_i)
+     ,.valid_o(msg_v_o)
+     ,.unlock_i(msg_unlock_li)
+     ,.grants_oi_one_hot_o(grants_oi_one_hot_lo)
      );
 
-  bp_bedrock_xbar_header_s header_selected_lo;
-  bsg_mux_one_hot
-   #(.width_p($bits(bp_bedrock_xbar_header_s)), .els_p(num_source_p))
-   header_select
-    (.data_i(msg_header_i)
-     ,.sel_one_hot_i(msg_grants_lo)
-     ,.data_o(header_selected_lo)
+  logic [num_source_p-1:0][xbar_header_width_lp+data_width_p+1-1:0] source_combine;
+  logic [num_sink_p-1:0][xbar_header_width_lp+data_width_p+1-1:0] sink_combine;
+  for (genvar i = 0; i < num_source_p; i++)
+    begin : source_comb
+      assign source_combine[i] = {msg_last_li[i], msg_header_li[i], msg_data_li[i]};
+    end
+  for (genvar i = 0; i < num_sink_p; i++)
+    begin : sink_comb
+      assign {msg_last_o[i], msg_header_o[i], msg_data_o[i]} = sink_combine[i];
+      assign msg_unlock_li[i] = msg_ready_and_i[i] & msg_v_o[i] & msg_last_o[i];
+    end
+
+  bsg_crossbar_o_by_i
+   #(.i_els_p(num_source_p), .o_els_p(num_sink_p), .width_p(1+xbar_header_width_lp+data_width_p))
+   cb
+    (.i(source_combine)
+     ,.sel_oi_one_hot_i(grants_oi_one_hot_lo)
+     ,.o(sink_combine)
      );
-  logic [data_width_p-1:0] msg_data_selected_lo;
-  bsg_mux_one_hot
-   #(.width_p(data_width_p), .els_p(num_source_p))
-   msg_data_select
-    (.data_i(msg_data_i)
-     ,.sel_one_hot_i(msg_grants_lo)
-     ,.data_o(msg_data_selected_lo)
-     );
-  assign msg_header_o = {num_sink_p{header_selected_lo}};
-  assign msg_data_o   = {num_sink_p{msg_data_selected_lo}};
-  assign msg_v_o      = msg_grants_v_li ? (1'b1 << msg_dst_i[msg_grants_sel_li]) : '0;
-  assign msg_yumi_o   = msg_grants_lo & {num_source_p{|{msg_v_o & msg_ready_and_i}}};
-  assign msg_last_o   = msg_v_o & {num_sink_p{msg_last_i[msg_grants_sel_li]}};
 
 endmodule
 

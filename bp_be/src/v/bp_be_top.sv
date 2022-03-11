@@ -69,7 +69,8 @@ module bp_be_top
 
    , input                                           timer_irq_i
    , input                                           software_irq_i
-   , input                                           external_irq_i
+   , input                                           m_external_irq_i
+   , input                                           s_external_irq_i
    );
 
   // Declare parameterized structures
@@ -94,7 +95,7 @@ module bp_be_top
   logic waiting_for_irq_lo;
 
   logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_lo;
-  logic mem_ready_lo, long_ready_lo, ptw_busy_lo;
+  logic mem_ready_lo, idiv_ready_lo, fdiv_ready_lo, ptw_busy_lo;
 
   bp_be_director
    #(.bp_params_p(bp_params_p))
@@ -135,7 +136,8 @@ module bp_be_top
      ,.credits_full_i(cache_req_credits_full_i)
      ,.credits_empty_i(cache_req_credits_empty_i)
      ,.mem_ready_i(mem_ready_lo)
-     ,.long_ready_i(long_ready_lo)
+     ,.fdiv_ready_i(fdiv_ready_lo)
+     ,.idiv_ready_i(idiv_ready_lo)
      ,.ptw_busy_i(ptw_busy_lo)
      ,.irq_pending_i(irq_pending_lo)
 
@@ -185,7 +187,8 @@ module bp_be_top
 
      ,.decode_info_o(decode_info_lo)
      ,.mem_ready_o(mem_ready_lo)
-     ,.long_ready_o(long_ready_lo)
+     ,.idiv_ready_o(idiv_ready_lo)
+     ,.fdiv_ready_o(fdiv_ready_lo)
      ,.ptw_busy_o(ptw_busy_lo)
 
      ,.br_pkt_o(br_pkt)
@@ -223,7 +226,8 @@ module bp_be_top
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
+     ,.m_external_irq_i(m_external_irq_i)
+     ,.s_external_irq_i(s_external_irq_i)
      ,.irq_pending_o(irq_pending_lo)
      ,.irq_waiting_o(irq_waiting_lo)
      ,.cmd_full_n_i(cmd_full_n_lo)

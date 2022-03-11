@@ -21,7 +21,6 @@ $BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_unmanaged.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
-$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clock_downsample.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux2_gatestack.v
 $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_trace_replay.v
 $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_master.v
@@ -38,7 +37,9 @@ $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_inst_tracer.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_cce_pending_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_perf.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_dev_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
 $BP_BE_DIR/test/common/bp_be_nonsynth_dcache_tracer.sv
 $BP_FE_DIR/test/common/bp_fe_nonsynth_icache_tracer.sv

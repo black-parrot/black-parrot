@@ -1,5 +1,5 @@
 
-.PHONY: verilator bsg_sv2v dromajo
+.PHONY: verilator bsg_sv2v dromajo axe
 
 verilator_dir := $(BP_TOOLS_DIR)/verilator
 dromajo_dir   := $(BP_TOOLS_DIR)/dromajo

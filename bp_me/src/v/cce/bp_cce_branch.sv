@@ -51,11 +51,11 @@ module bp_cce_branch
       default:      branch_res = '0;
     endcase
 
-    // Misprediction happens if:
+    // Misprediction happens if instruction is branch and:
     // a) branch was predicted not taken, but branch should have been taken
     // b) branch was predicted taken, but branch should not have been taken
-    mispredict_o = (((branch_i & branch_res) & !predicted_taken_i)
-                    | (!(branch_i & branch_res) & predicted_taken_i));
+    mispredict_o = branch_i & ((!predicted_taken_i & branch_res)
+                               | (predicted_taken_i & !branch_res));
 
     // Output correct next PC (for all instructions)
     // If the current instruction is a branch and the branch evaluates to taken, the next PC

@@ -15,9 +15,9 @@ module bp_uce
   import bp_common_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    , parameter `BSG_INV_PARAM(uce_mem_data_width_p)
+    , parameter `BSG_INV_PARAM(mem_data_width_p)
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
     , parameter `BSG_INV_PARAM(assoc_p)
     , parameter `BSG_INV_PARAM(sets_p)
     , parameter `BSG_INV_PARAM(block_width_p)
@@ -64,14 +64,14 @@ module bp_uce
     , input                                          stat_mem_pkt_yumi_i
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
-    , output logic [uce_mem_header_width_lp-1:0]     mem_cmd_header_o
-    , output logic [uce_mem_data_width_p-1:0]        mem_cmd_data_o
+    , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
+    , output logic [mem_data_width_p-1:0]            mem_cmd_data_o
     , output logic                                   mem_cmd_v_o
     , input                                          mem_cmd_ready_and_i
     , output logic                                   mem_cmd_last_o
 
-    , input [uce_mem_header_width_lp-1:0]            mem_resp_header_i
-    , input [uce_mem_data_width_p-1:0]               mem_resp_data_i
+    , input [mem_header_width_lp-1:0]                mem_resp_header_i
+    , input [mem_data_width_p-1:0]                   mem_resp_data_i
     , input                                          mem_resp_v_i
     , output logic                                   mem_resp_ready_and_o
     , input                                          mem_resp_last_i
@@ -79,7 +79,7 @@ module bp_uce
 
   // parameter checks
   if ((metadata_latency_p >= 2))
-    $fatal(0,"metadata needs to arrive within one cycle of the request");
+    $error("metadata needs to arrive within one cycle of the request");
 
   localparam bank_width_lp = block_width_p / assoc_p;
   localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_gp;
@@ -106,7 +106,7 @@ module bp_uce
                                                              ? e_bedrock_msg_size_8
                                                              : e_bedrock_msg_size_64;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
@@ -265,7 +265,7 @@ module bp_uce
      ,.yumi_i(dirty_stat_read)
      );
 
-  bp_bedrock_uce_mem_header_s fsm_cmd_header_lo;
+  bp_bedrock_mem_header_s fsm_cmd_header_lo;
   logic [fill_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt;
@@ -274,7 +274,7 @@ module bp_uce
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
-     ,.payload_width_p(uce_mem_payload_width_lp)
+     ,.payload_width_p(mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
      )
@@ -298,7 +298,7 @@ module bp_uce
      ,.fsm_last_o(/* unused */)
      );
 
-  bp_bedrock_uce_mem_header_s fsm_resp_header_li;
+  bp_bedrock_mem_header_s fsm_resp_header_li;
   logic [paddr_width_p-1:0] fsm_resp_addr_li;
   logic [fill_width_p-1:0] fsm_resp_data_li;
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
@@ -307,7 +307,7 @@ module bp_uce
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
-     ,.payload_width_p(uce_mem_payload_width_lp)
+     ,.payload_width_p(mem_payload_width_lp)
      ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
      ,.header_els_p(2)
@@ -397,10 +397,9 @@ module bp_uce
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
   logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
+  // credit consumed when memory command sends
   wire credit_v_li = fsm_cmd_done;
-  // credit is returned when request completes
-  // UC store done for UC Store, UC Data for UC Load, Set Tag Wakeup for
-  // a miss that is actually an upgrade, and data and tag for normal requests.
+  // credit returned when memory response fully consumed
   wire credit_returned_li = fsm_resp_done;
   bsg_flow_counter
    #(.els_p(coh_noc_max_credits_p)
@@ -616,7 +615,7 @@ module bp_uce
                         ? e_flush_read
                         : clear_v_li
                           ? e_clear
-                          : (uc_hit_v_li & (l1_writethrough_p == 0))
+                          : (uc_hit_v_li & (dcache_writethrough_p == 0))
                             ? e_uc_writeback_evict
                             : (uc_store_v_li || wt_store_v_li)
                               ? e_ready
@@ -787,7 +786,7 @@ module bp_uce
   //synopsys translate_off
   always_ff @(negedge clk_i)
     begin
-      assert ((l1_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
+      assert(reset_i !== '0 || (dcache_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
         else $error("writethrough cache should not be in writeback states");
     end
   //synopsys translate_on

@@ -3,10 +3,8 @@
 
   `include "bsg_cache.vh"
 
-  `include "bp_me_cache_defines.svh"
   `include "bp_me_cce_defines.svh"
   `include "bp_me_cce_inst_defines.svh"
-  `include "bp_me_wormhole_defines.svh"
 
 `endif
 

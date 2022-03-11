@@ -10,8 +10,6 @@
   `define declare_bp_proc_params(bp_params_e_mp) \
     , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]                       \
                                                                                                    \
-    , localparam multicore_p = proc_param_lp.multicore                                             \
-                                                                                                   \
     , localparam cc_x_dim_p  = proc_param_lp.cc_x_dim                                              \
     , localparam cc_y_dim_p  = proc_param_lp.cc_y_dim                                              \
                                                                                                    \
@@ -62,17 +60,13 @@
     , localparam dtlb_els_4k_p              = proc_param_lp.dtlb_els_4k                            \
     , localparam dtlb_els_1g_p              = proc_param_lp.dtlb_els_1g                            \
                                                                                                    \
-    , localparam lr_sc_p                    = proc_param_lp.lr_sc                                  \
-    , localparam amo_swap_p                 = proc_param_lp.amo_swap                               \
-    , localparam amo_fetch_logic_p          = proc_param_lp.amo_fetch_logic                        \
-    , localparam amo_fetch_arithmetic_p     = proc_param_lp.amo_fetch_arithmetic                   \
-                                                                                                   \
-    , localparam l1_coherent_p              = proc_param_lp.l1_coherent                            \
-    , localparam l1_writethrough_p          = proc_param_lp.l1_writethrough                        \
+    , localparam dcache_writethrough_p      = proc_param_lp.dcache_writethrough                    \
+    , localparam dcache_amo_support_p       = proc_param_lp.dcache_amo_support                     \
     , localparam dcache_sets_p              = proc_param_lp.dcache_sets                            \
     , localparam dcache_assoc_p             = proc_param_lp.dcache_assoc                           \
     , localparam dcache_block_width_p       = proc_param_lp.dcache_block_width                     \
     , localparam dcache_fill_width_p        = proc_param_lp.dcache_fill_width                      \
+    , localparam icache_coherent_p          = proc_param_lp.icache_coherent                        \
     , localparam icache_sets_p              = proc_param_lp.icache_sets                            \
     , localparam icache_assoc_p             = proc_param_lp.icache_assoc                           \
     , localparam icache_block_width_p       = proc_param_lp.icache_block_width                     \
@@ -93,13 +87,16 @@
     , localparam uce_fill_width_p           =                                                      \
         `BSG_MAX(dcache_fill_width_p, `BSG_MAX(icache_fill_width_p, num_cacc_p ? acache_fill_width_p : '0)) \
                                                                                                    \
+    , localparam cce_type_p                 = proc_param_lp.cce_type                               \
     , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                           \
+    , localparam bedrock_data_width_p       = proc_param_lp.bedrock_data_width                     \
     , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                    \
     , localparam cce_way_groups_p           =                                                      \
-        `BSG_MAX(dcache_sets_p, `BSG_MAX(icache_sets_p, num_cacc_p ? acache_sets_p : '0))          \
-    , localparam cce_ucode_p                = proc_param_lp.cce_ucode                              \
+        `BSG_MIN(dcache_sets_p, `BSG_MIN(icache_sets_p, num_cacc_p ? acache_sets_p : icache_sets_p)) \
                                                                                                    \
     , localparam l2_en_p                  = proc_param_lp.l2_en                                    \
+    , localparam l2_banks_p               = proc_param_lp.l2_banks                                 \
+    , localparam l2_amo_support_p         = proc_param_lp.l2_amo_support                           \
     , localparam l2_data_width_p          = proc_param_lp.l2_data_width                            \
     , localparam l2_sets_p                = proc_param_lp.l2_sets                                  \
     , localparam l2_assoc_p               = proc_param_lp.l2_assoc                                 \
@@ -111,6 +108,8 @@
                                                                                                    \
     , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                             \
     , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                               \
+    , localparam muldiv_support_p    = proc_param_lp.muldiv_support                                \
+    , localparam fpu_support_p       = proc_param_lp.fpu_support                                   \
                                                                                                    \
     , localparam async_coh_clk_p        = proc_param_lp.async_coh_clk                              \
     , localparam coh_noc_max_credits_p  = proc_param_lp.coh_noc_max_credits                        \
@@ -182,8 +181,7 @@
 
     `define bp_aviary_derive_cfg(cfg_name_mp, override_cfg_mp, default_cfg_mp) \
       localparam bp_proc_param_s cfg_name_mp =                                                     \
-        '{`bp_aviary_parameter_override(multicore, override_cfg_mp, default_cfg_mp)                \
-          ,`bp_aviary_parameter_override(cc_x_dim, override_cfg_mp, default_cfg_mp)                \
+        '{`bp_aviary_parameter_override(cc_x_dim, override_cfg_mp, default_cfg_mp)                 \
           ,`bp_aviary_parameter_override(cc_y_dim, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(ic_y_dim, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(mc_y_dim, override_cfg_mp, default_cfg_mp)                \
@@ -206,6 +204,8 @@
                                                                                                    \
           ,`bp_aviary_parameter_override(fe_queue_fifo_els, override_cfg_mp, default_cfg_mp)       \
           ,`bp_aviary_parameter_override(fe_cmd_fifo_els, override_cfg_mp, default_cfg_mp)         \
+          ,`bp_aviary_parameter_override(muldiv_support, override_cfg_mp, default_cfg_mp)          \
+          ,`bp_aviary_parameter_override(fpu_support, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(branch_metadata_fwd_width, override_cfg_mp, default_cfg_mp) \
           ,`bp_aviary_parameter_override(btb_tag_width, override_cfg_mp, default_cfg_mp)           \
@@ -219,32 +219,32 @@
           ,`bp_aviary_parameter_override(dtlb_els_4k, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(dtlb_els_1g, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
-          ,`bp_aviary_parameter_override(lr_sc, override_cfg_mp, default_cfg_mp)                   \
-          ,`bp_aviary_parameter_override(amo_swap, override_cfg_mp, default_cfg_mp)                \
-          ,`bp_aviary_parameter_override(amo_fetch_logic, override_cfg_mp, default_cfg_mp)         \
-          ,`bp_aviary_parameter_override(amo_fetch_arithmetic, override_cfg_mp, default_cfg_mp)    \
-                                                                                                   \
-          ,`bp_aviary_parameter_override(l1_writethrough, override_cfg_mp, default_cfg_mp)         \
-          ,`bp_aviary_parameter_override(l1_coherent, override_cfg_mp, default_cfg_mp)             \
-                                                                                                   \
+          ,`bp_aviary_parameter_override(icache_coherent, override_cfg_mp, default_cfg_mp)         \
           ,`bp_aviary_parameter_override(icache_sets, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(icache_assoc, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(icache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(icache_fill_width, override_cfg_mp, default_cfg_mp)       \
                                                                                                    \
+          ,`bp_aviary_parameter_override(dcache_writethrough, override_cfg_mp, default_cfg_mp)     \
+          ,`bp_aviary_parameter_override(dcache_amo_support, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(dcache_sets, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(dcache_assoc, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(dcache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(dcache_fill_width, override_cfg_mp, default_cfg_mp)       \
+                                                                                                   \
+          ,`bp_aviary_parameter_override(acache_amo_support, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(acache_sets, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(acache_assoc, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(acache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(acache_fill_width, override_cfg_mp, default_cfg_mp)       \
                                                                                                    \
-          ,`bp_aviary_parameter_override(cce_ucode, override_cfg_mp, default_cfg_mp)               \
+          ,`bp_aviary_parameter_override(cce_type, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)            \
+          ,`bp_aviary_parameter_override(bedrock_data_width, override_cfg_mp, default_cfg_mp)      \
                                                                                                    \
           ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                   \
+          ,`bp_aviary_parameter_override(l2_banks, override_cfg_mp, default_cfg_mp)                \
+          ,`bp_aviary_parameter_override(l2_amo_support, override_cfg_mp, default_cfg_mp)          \
           ,`bp_aviary_parameter_override(l2_data_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(l2_sets, override_cfg_mp, default_cfg_mp)                 \
           ,`bp_aviary_parameter_override(l2_assoc, override_cfg_mp, default_cfg_mp)                \

@@ -38,12 +38,13 @@ module bp_bedrock_size_to_len
   localparam msg_size_128_beats_lp = `BSG_CDIV((1 << e_bedrock_msg_size_128)*8, beat_width_p) - 1;
 
   // parameter checks
-  if (len_width_p < `BSG_SAFE_CLOG2(msg_size_128_beats_lp))
-    $fatal(0,"len_width_p must be large enough to ");
+  if (!(len_width_p >= `BSG_SAFE_CLOG2(msg_size_128_beats_lp)))
+    $error("len_width_p must be large enough for max size messages, !(%d >= %d)"
+           , len_width_p, `BSG_SAFE_CLOG2(msg_size_128_beats_lp));
   if (!(`BSG_IS_POW2(beat_width_p)))
-    $fatal(0,"beat_width_p must be a power of two");
+    $error("beat_width_p must be a power of two");
   if (beat_width_p < 8)
-    $fatal(0,"beat_width_p must be at least 8 bits wide");
+    $error("beat_width_p must be at least 8 bits wide");
 
   always_comb begin
     unique case (size_i)

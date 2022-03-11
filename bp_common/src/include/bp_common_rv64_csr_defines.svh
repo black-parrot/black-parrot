@@ -211,8 +211,15 @@
   typedef logic [63:0] rv64_sscratch_s;                                                    \
   typedef logic [63:0] bp_sscratch_s;                                                      \
                                                                                            \
-  typedef logic [63:0] rv64_sepc_s;                                                        \
-  typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_sepc_s;                  \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [63:2] word_addr;                                                                \
+    logic [1:0]  zero;                                                                     \
+  }  rv64_sepc_s;                                                                          \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [(`BSG_MAX(vaddr_width_mp, paddr_width_mp))-3:0] word_addr;                      \
+  }  bp_sepc_s;                                                                            \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
@@ -499,13 +506,20 @@
                                                                                            \
     logic msip;                                                                            \
     logic ssip;                                                                            \
-  }   bp_mip_s;                                                                            \
+  }  bp_mip_s;                                                                             \
                                                                                            \
   typedef logic [63:0] rv64_mtval_s;                                                       \
   typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_mtval_s;                 \
                                                                                            \
-  typedef logic [63:0] rv64_mepc_s;                                                        \
-  typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_mepc_s;                  \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [63:2] word_addr;                                                                \
+    logic [1:0]  zero;                                                                     \
+  }  rv64_mepc_s;                                                                          \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-3:0] word_addr;                        \
+  }  bp_mepc_s;                                                                            \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
@@ -725,10 +739,12 @@
   `define bp_sepc_width ($bits(bp_sepc_s))
 
   `define compress_sepc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    bp_sepc_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
+    bp_sepc_s'(data_cast_mp.word_addr)
 
   `define decompress_sepc_s(data_comp_mp) \
-    `BSG_SIGN_EXTEND(data_comp_mp, 64)
+    '{word_addr: `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 62) \
+      ,zero    : 2'b00                                        \
+      }
 
   `define compress_scause_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{_interrupt: data_cast_mp._interrupt \
@@ -904,10 +920,12 @@
     `BSG_SIGN_EXTEND(data_comp_mp, 64)
 
   `define compress_mepc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    bp_mepc_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
+    bp_mepc_s'(data_cast_mp.word_addr)
 
   `define decompress_mepc_s(data_comp_mp) \
-    `BSG_SIGN_EXTEND(data_comp_mp, 64)
+    '{word_addr: `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 62) \
+      ,zero    : 2'b00                                        \
+      }
 
   `define compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{pmpcfg: data_cast_mp.pmpcfg[0+:4]}
