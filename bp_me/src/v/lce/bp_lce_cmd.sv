@@ -451,7 +451,7 @@ module bp_lce_cmd
         stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
         stat_mem_pkt_v_o = 1'b1;
 
-        state_n = ((cnt_r == cnt_width_lp'(lce_sets_p-1)) & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
+        state_n = ((cnt_r == cnt_width_lp'(sets_p-1)) & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
                   ? e_ready
                   : e_clear;
         cnt_clear = (state_n == e_ready);

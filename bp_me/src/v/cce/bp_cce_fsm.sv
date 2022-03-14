@@ -32,8 +32,6 @@ module bp_cce_fsm
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
-    , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
-    , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
     , localparam num_way_groups_lp         = `BSG_CDIV(cce_way_groups_p, num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
@@ -272,7 +270,7 @@ module bp_cce_fsm
   bp_cce_inst_minor_dir_op_e dir_cmd;
   logic sharers_v_lo;
   logic [num_lce_p-1:0] sharers_hits_lo;
-  logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_lo;
+  logic [num_lce_p-1:0][lce_assoc_width_p-1:0] sharers_ways_lo;
   bp_coh_states_e [num_lce_p-1:0] sharers_coh_states_lo;
   logic dir_lru_v_lo;
   logic [paddr_width_p-1:0] dir_lru_addr_lo, dir_addr_lo;
@@ -282,13 +280,13 @@ module bp_cce_fsm
   logic [paddr_width_p-1:0] dir_addr_li;
   logic dir_addr_bypass_li;
   logic [lce_id_width_p-1:0] dir_lce_li;
-  logic [lg_lce_assoc_lp-1:0] dir_way_li, dir_lru_way_li;
+  logic [lce_assoc_width_p-1:0] dir_way_li, dir_lru_way_li;
   bp_coh_states_e dir_coh_state_li;
 
   // GAD signals
-  logic [lg_lce_assoc_lp-1:0] gad_req_addr_way_lo;
+  logic [lce_assoc_width_p-1:0] gad_req_addr_way_lo;
   logic [lce_id_width_p-1:0] gad_owner_lce_lo;
-  logic [lg_lce_assoc_lp-1:0] gad_owner_lce_way_lo;
+  logic [lce_assoc_width_p-1:0] gad_owner_lce_way_lo;
   bp_coh_states_e gad_owner_coh_state_lo;
   logic gad_rf_lo;
   logic gad_uf_lo;
@@ -604,7 +602,7 @@ module bp_cce_fsm
      ,.v_o(pe_v)
      );
 
-  logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r, sharers_ways_n;
+  logic [num_lce_p-1:0][lce_assoc_width_p-1:0] sharers_ways_r, sharers_ways_n;
   logic [num_lce_p-1:0] sharers_hits_r, sharers_hits_n;
 
   // Convert first index back to one hot
