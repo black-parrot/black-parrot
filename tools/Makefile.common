@@ -1,7 +1,7 @@
 ## Set variables needed for building tools
 GCC       ?= gcc
-CMAKE     ?= cmake
-PYTHON    ?= python
+CMAKE     ?= $(if $(shell which cmake3),cmake3,cmake)
+PYTHON    ?= $(if $(shell which python3),python3,python)
 
 ## Directories to install into
 BP_TOOLS_INSTALL_DIR := $(BP_TOOLS_DIR)/install
