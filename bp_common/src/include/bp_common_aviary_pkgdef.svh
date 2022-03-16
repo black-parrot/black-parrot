@@ -191,13 +191,9 @@
   localparam bp_proc_param_s bp_multicore_1_override_p =
     '{cce_type              : e_cce_fsm
       ,ic_y_dim             : 1
-      ,num_cce              : 1
-      ,num_lce              : 2
       ,icache_coherent      : 1
       ,l2_amo_support       : '0
       ,l2_banks             : 1
-      ,dcache_fill_width    : 512
-      ,icache_fill_width    : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
@@ -397,14 +393,8 @@
                         );
 
   localparam bp_proc_param_s bp_multicore_1_acc_loopback_override_p =
-    '{cac_x_dim : 1
-      ,sac_x_dim: 1
-      ,cacc_type: e_cacc_vdp
+    '{sac_x_dim: 1
       ,sacc_type: e_sacc_loopback
-      ,num_lce  : 3
-      ,dcache_fill_width : 512
-      ,icache_fill_width : 512
-      ,acache_fill_width : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_acc_loopback_cfg_p
@@ -418,9 +408,6 @@
       ,cacc_type: e_cacc_vdp
       ,sacc_type: e_sacc_vdp
       ,num_lce  : 3
-      ,dcache_fill_width : 512
-      ,icache_fill_width : 512
-      ,acache_fill_width : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_acc_vdp_cfg_p
@@ -430,41 +417,26 @@
 
 
  localparam bp_proc_param_s bp_multicore_4_acc_loopback_override_p =
-    '{cc_x_dim : 2
-      ,cc_y_dim: 2
-      ,cac_x_dim : 1
-      ,sac_x_dim: 1
-      ,cacc_type: e_cacc_vdp
+    '{sac_x_dim : 1
       ,sacc_type: e_sacc_loopback
-      ,num_cce : 4
-      ,num_lce  : 10
-      ,dcache_fill_width : 512
-      ,icache_fill_width : 512
-      ,acache_fill_width : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_4_acc_loopback_cfg_p
                         ,bp_multicore_4_acc_loopback_override_p
-                        ,bp_multicore_1_cfg_p
+                        ,bp_multicore_4_cfg_p
                         );
 
   localparam bp_proc_param_s bp_multicore_4_acc_vdp_override_p =
-    '{cc_x_dim : 2
-      ,cc_y_dim: 2
-      ,cac_x_dim : 1
+    '{cac_x_dim : 1
       ,sac_x_dim: 1
       ,cacc_type: e_cacc_vdp
       ,sacc_type: e_sacc_vdp
-      ,num_cce : 4
       ,num_lce  : 10
-      ,dcache_fill_width : 512
-      ,icache_fill_width : 512
-      ,acache_fill_width : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_4_acc_vdp_cfg_p
                         ,bp_multicore_4_acc_vdp_override_p
-                        ,bp_multicore_1_cfg_p
+                        ,bp_multicore_4_cfg_p
                         );
 
 

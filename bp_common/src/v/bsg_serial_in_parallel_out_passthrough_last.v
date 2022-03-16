@@ -5,22 +5,23 @@
  * to multi-word data output. This module is helpful on both sides, both v_o
  * and ready_and_o are early.
  *
+ * This module passes through the last input data word directly to the output
+ * and can handle transactions with fewer than max_els_p input words.
+ *
  * The last_i signal must be raised early with v_i when the last serial word
  * is available on the input and the input will not fill the SIPO (i.e., less
  * than max_els_p are being deserialized to the parallel output).
  *
  * If max_els_p == 1 then this module simply passes through the signals.
- * Otherwise, the output becomes valid in the cycle that the last input
- * arrives.
- *
- * This module passes through the last input data word directly to the output
- * and can handle transactions with fewer than max_els_p input words.
+ * Otherwise, the output becomes valid when either the SIPO is filled (final
+ * word is valid on the input) or the sender indicates the last word of the
+ * transaction is arriving on the input by raising last_i.
  *
  */
 
 `include "bsg_defines.v"
 
-module bsg_serial_in_parallel_out_passthrough_dynamic_last
+module bsg_serial_in_parallel_out_passthrough_last
 
  #(parameter `BSG_INV_PARAM(width_p)
   ,parameter `BSG_INV_PARAM(max_els_p)
@@ -84,7 +85,7 @@ module bsg_serial_in_parallel_out_passthrough_dynamic_last
     assign data_o[max_els_p-1] = data_i;
 
     // data valid register
-    // output data becomes available the cycle following the last input word
+    // holds v_o high after last input word is consumed, until data_o sends
     logic last_r;
     bsg_dff_reset_set_clear
     #(.width_p(1)
@@ -93,29 +94,25 @@ module bsg_serial_in_parallel_out_passthrough_dynamic_last
     last_dff
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.set_i(last_word_received & ~transaction_done)
+      ,.set_i(last_word_received)
       ,.clear_i(transaction_done)
       ,.data_o(last_r)
       );
 
-    // data becomes valid when last_i is raised as last word is simply passed
-    // through directly to output or when the last word has been captured into
-    // the data_dff if the input message has fewer than max_els_p words.
-    // v_o is also raised if last element is valid on input
-    assign v_o = last_i | last_r | (v_i & data_en_li[max_els_p-1]);
+    // data is valid on output when:
+    // 1. current valid input element is the last element required to fill the SIPO
+    // 2. last_i is raised, indicating input transaction last word is arriving
+    //    in the current cycle
+    // 3. last_r is raised, indicating last word of input transaction was
+    //    registered in a previous cycle, and waiting for output to consume
+    assign v_o = (v_i & (last_i | data_en_li[max_els_p-1])) | last_r;
 
-    // For messages with max_els_p input words unit is always ready until
-    // reaching the last input word, indicated by the highest bit of
-    // data_en_li being set, at which point the last word will be passed
-    // directly through to the output channel and the ready signals need to be
-    // connected.
-    // For messages with fewer than max_els_p words, module is ready until the
-    // cycle after the last word is captured. If the last word arrives and
-    // output channel is not ready, that word will be captured into the
-    // data_dff and last_r will be set. The following cycle last_r will be
-    // high, indicating that all the data has arrived for the current
-    // transaction and no more data should be accepted until a new transaction
-    // starts.
+    // module is ready to consume data when:
+    // 1. if waiting for the final input word to "fill" the SIPO, patch through ready_and_i
+    //    from the output side because word is passed through without being registered
+    // 2. otherwise, only consume more words if last_r is not set because the SIPO
+    //    is not full and the input has not indicated that a previous word was the last word
+    //    of the current transaction
     assign ready_and_o = data_en_li[max_els_p-1]
                          ? ready_and_i
                          : ~last_r;
@@ -124,5 +121,5 @@ module bsg_serial_in_parallel_out_passthrough_dynamic_last
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bsg_serial_in_parallel_out_passthrough_dynamic_last)
+`BSG_ABSTRACT_MODULE(bsg_serial_in_parallel_out_passthrough_last)
 

@@ -75,10 +75,6 @@ module bp_io_tile_node
      );
 
 
-  // Network-side coherence connections
-//  bp_coh_ready_and_link_s coh_lce_req_link_li, coh_lce_req_link_lo;
- // bp_coh_ready_and_link_s coh_lce_cmd_link_li, coh_lce_cmd_link_lo;
-
   bp_nd_socket
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)

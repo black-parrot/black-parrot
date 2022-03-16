@@ -30,7 +30,7 @@ $BP_ME_DIR/test/common/bp_me_nonsynth_cache_tag_lookup.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cache.sv
 $BP_ME_DIR/test/common/bp_nonsynth_mem.sv
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv
-$BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.sv
+$BP_ME_DIR/test/common/bp_nonsynth_mem_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cfg_loader.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.sv
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp

@@ -33,8 +33,8 @@ module bp_me_cache_slice
    , output logic                                        mem_cmd_ready_and_o
    , input                                               mem_cmd_last_i
 
-   , output [mem_header_width_lp-1:0]                    mem_resp_header_o
-   , output [l2_data_width_p-1:0]                        mem_resp_data_o
+   , output logic [mem_header_width_lp-1:0]              mem_resp_header_o
+   , output logic [l2_data_width_p-1:0]                  mem_resp_data_o
    , output logic                                        mem_resp_v_o
    , input                                               mem_resp_ready_and_i
    , output logic                                        mem_resp_last_o

@@ -36,8 +36,8 @@ TRACE_TOUCH = test$(ME_TEST_P)_s$(SEED_P)_l$(NUM_LCE_P)_n$(NUM_INSTR_P)_m$(LCE_M
 $(SIM_DIR)/$(TRACE_TOUCH):
 	$(PYTHON) $(TB_PATH)/$(TB)/me_test.py --out-dir $(@D) --out-file test -n $(NUM_INSTR_P) \
 		-l $(NUM_LCE_P) --seed $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) \
-		--test $(ME_TEST_P) --mem-blocks $(MEM_BLOCKS_P) $(ME_DEBUG_FLAG) \
-		--in-dir $(TB_PATH)/$(TB) --in-file $(TRACE_FILE_P)
+		--test $(ME_TEST_P) --test-ways $(TEST_WAYS_P) --test-sets $(TEST_SETS_P) $(ME_DEBUG_FLAG) \
+		--in-dir $(TB_PATH)/$(TB) --in-file $(TRACE_FILE_P) $(AXE_FLAG)
 	touch $@
 
 $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir

@@ -40,22 +40,16 @@ module bsg_parallel_in_serial_out_passthrough_dynamic_last
   ,output                              v_o
   ,output [width_p-1:0]                data_o
   ,input                               ready_and_i
-  //
-  // When first_o is asserted, the upcoming data is the first word of a new
-  // transaction. It can be asserted regardless of value of v_o.
-  ,output                              first_o
-  //
-  // len_i indicates the length (number of data words) of the upcoming new
-  // transaction. User need to guarantee that len_i is valid when first_o and
-  // ready_and_i are both asserted (when dequeueing the first data word of
-  // the new transaction).
-  //
-  // Note that len_i is represented by (length - 1), in order to use minimum
-  // number of bits. For example, when a 4-word transaction is coming, len_i
-  // should be set to 3. Single word transaction should have len_i == 0.
+
+  // len_i is a zero-based count of the number of output words that will be
+  // consumed by the output channel for each new transaction. It must be
+  // provided when the output channel consumes the first output beat (i.e.,
+  // when v_o & ready_and_i are both raised). A valid len_i is required for
+  // every transaction, even if the output will consume all of the serial
+  // output words.
   ,input  [lg_max_els_lp-1:0]          len_i
 
-  // last_o is raised when the last word is valid on the output
+  // last_o is raised when the last serial word is valid on the output
   ,output logic                        last_o
   );
 
@@ -65,7 +59,6 @@ module bsg_parallel_in_serial_out_passthrough_dynamic_last
     assign v_o         = v_i;
     assign data_o      = data_i;
     assign ready_and_o = ready_and_i;
-    assign first_o     = 1'b1;
     assign last_o      = 1'b1;
 
   end
@@ -121,7 +114,6 @@ module bsg_parallel_in_serial_out_passthrough_dynamic_last
     // Dequeue incoming parallel data at the end of each transaction.
     // When incoming data is single-word, dequeue immediately.
     assign ready_and_o = ready_and_i & (is_last_cnt | is_zero_len);
-    assign first_o     = is_zero_cnt;
     // last_o is raised on last data word being output
     assign last_o      = is_zero_len | is_last_cnt;
 

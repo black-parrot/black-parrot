@@ -79,6 +79,7 @@ for (genvar i=0; i < els_p; i++)
      ,.len_width_p(len_width_p)
      ,.reverse_order_p(1)
      ,.routing_matrix_p(routing_matrix_p)
+     ,.hold_on_valid_p(1)
      )
    router
     (.clk_i(network_clk_i)

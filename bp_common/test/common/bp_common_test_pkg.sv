@@ -23,13 +23,9 @@ package bp_common_pkg;
   localparam bp_proc_param_s bp_multicore_1_override_p =
     '{cce_type              : e_cce_fsm
       ,ic_y_dim             : 1
-      ,num_cce              : 1
-      ,num_lce              : 2
       ,icache_coherent      : 1
       ,l2_amo_support       : '0
       ,l2_banks             : 1
-      ,dcache_fill_width    : 512
-      ,icache_fill_width    : 512
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
@@ -48,10 +44,6 @@ package bp_common_pkg;
 
   localparam bp_proc_param_s bp_test_unicore_half_override_p =
     '{num_lce  : 1
-      ,dcache_fill_width    : 64
-      ,icache_fill_width    : 64
-      ,l2_data_width        : 64
-      ,l2_fill_width        : 64
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_test_unicore_half_cfg_p

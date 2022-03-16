@@ -42,7 +42,7 @@ module bp_cce
    , input                                          ucode_w_i
    , input [cce_pc_width_p-1:0]                     ucode_addr_i
    , input [cce_instr_width_gp-1:0]                 ucode_data_i
-   , output [cce_instr_width_gp-1:0]                ucode_data_o
+   , output logic [cce_instr_width_gp-1:0]          ucode_data_o
 
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid

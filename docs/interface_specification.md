@@ -240,14 +240,35 @@ There are additional signals for available credits in the engine, used for fenci
 signify all downstream transactions have completed, whereas full credits signify no more
 transactions may be sent to the network.
 
-## Memory Interface
+## BedRock Interface
+
+The BlackParrot memory and cache coherence networks rely on a common message format that can
+is easily specialized for the specific network interface. A BedRock message includes a
+header and zero or more bytes of data.
+
+The BlackParrot BedRock Interfaces are defined in the following files:
+- [bp\_common\_bedrock\_if.svh](../bp_common/src/include/bp_common_bedrock_if.svh)
+- [bp\_common\_bedrock\_pkgdef.svh](../bp_common/src/include/bp_common_bedrock_pkgdef.svh)
+- [bp\_common\_bedrock\_wormhole_defines.svh](../bp_common/src/include/bp_common_bedrock_wormhole_defines.svh)
+
+A BedRock message header is composed of:
+- Message type (available types depend on the specific network)
+- Subop type (store, amolr, amosc, amoswap, amoadd, amoxor, amoand, amoor, amomin, amomax, amominu, amomaxu)
+- Physical address
+- Message Size (1 to 128 bytes, in powers of two; specifies request size or size of attached data)
+- Payload (a black-box to the command receiver, this is returned as-is along with the memory response)
+
+A BedRock message may also include data. The amount of data is specified by the message size field
+in the message header. Alignment of the message address and data is specific to the network
+implementation.
+
+### Memory and I/O Interface
 
 The BlackParrot Memory Interface is a simple command / response interface used for communicating
 with memory or I/O devices. The goal is to provide a simple and understandable way to access any
 type of memory system, be it a shared bus or a more sophisticated network-on-chip scheme.
-The Memory Interface can easily be transduced to standard protocols such as AXI, AXI-lite or WishBone.
-Components connecting to the Memory Interface should implement one of the
-[BedRock Interfaces](bedrock_guide.md).
+The Memory Interface can easily be transduced to standard protocols such as AXI, AXI-lite or WishBone,
+and is implemented using the BedRock network interfaces.
 
 A memory command or response packet is composed of:
 - Message type
@@ -259,85 +280,27 @@ A memory command or response packet is composed of:
   - Atomic operation
 - Subop type (amoswap, amolr, amosc, amoadd, amoxor, amoand, amoor, amomin, amomax, amominu, amomaxu)
 - Physical address
-- Request Size
+- Message/Request Size
 - Payload (A black-box to the command receiver, this is returned as-is along with the memory response)
   - An example payload for the CCE is:
   - Requesting LCE
   - Requesting way id
   - Coherence state
   - Whether this is a speculative request
-- Data
+- Data (for memory write or uncached write operations)
 
-Misaligned addresses return data wrapped around the request size using the following scheme:
+Uncached accesses must be naturally aligned with the request size. Cached accesses are block-based
+and return the cache block containing the requested address. Cached accesses return the critical
+data word first (at LSB of data) and wrap around the requested block as follows:
 
-Request: 0x0 [d c b a]
-Request: 0x2 [b a d c]
+- Request: 0x00, size=32B [D C B A]
+- Request: 0x10, size=32B [B A D C]
 
-## LCE-CCE Interface
+### LCE-CCE Interface
 
-The LCE-CCE Interface comprises the connections between the BlackParrot caches and the
-memory system in a cache-coherent BlackParrot multicore processor. The interface is implemented with
-three networks: Request, Command, and Response. These networks carry memory access requests and
-cache coherence management traffic between the Local Cache Engines (LCE) and Cache Coherence
-Engines (CCE). All components participating in cache coherence and communicating on the LCE-CCE
-Interface must implement the [BedRock Interface](bedrock_guide.md) cache coherence channels.
-The BedRock Cache Coherence Protocol is described in detail on [this page](bedrock_coherence_protocol.md).
-The remainder of this section provides a high-level overview of the LCE-CCE Interface components.
-
-A Local Cache Engine (LCE) is a coherence controller attached to each entity in the system
-participating in coherence. The most common entities are the instruction and data caches
-in the Front End and Back End, respectively, of a BlackParrot processor. The LCE is responsible
-for initiating coherence requests and responding to coherence commands.
-
-A Cache Coherence Engine (CCE) is a coherence directory that manages the coherence state of blocks
-cached in any of the LCEs. The CCEs have full control over the coherence state of all cache blocks.
-Each CCE manages the coherence state of a subset of the physical address space, and there may be
-many LCEs and CCEs in a multicore BlackParrot processor.
-
-The LCE-CCE Interface comprises three networks: Request, Command, and Response. An
-LCE initiates a coherence request using the Request network. The CCEs issue commands, such as
-invalidations, transfers, or fills to satisfy coherence requests, on the Command network while
-processing a request. The LCEs respond to commands issued by the CCEs by sending messages
-on the Response network. The current implementation of BlackParrot uses point-to-point
-ordered networks for all of the LCE-CCE Interface networks, however, the coherence protocol
-is designed to be correct on unordered networks. A CCE implementation must obey the following
-network priorities from high to low: Response, Command, Request. A lower priority message may
-cause a higher priority message to be sent, but a higher priority message may not cause a lower
-priority message to send. This priority ordering helps guarantee the correctness of the cache
-coherence protocol.
-
-The LCE-CCE Interface is defined in [bp\_common\_bedrock\_if.vh](../bp_common/src/include/bp_common_bedrock_if.svh)
-and [bp\_common\_bedrock\_pkgdef.svh](../bp_common/src/include/bp_common_bedrock_pkgdef.svh). All
-LCE-CCE messages use the BedRock message format and differ only in the contents of the payload field in the
-header. These files are the authoritative definitions for the interface in the event that this
-document and the code are out-of-sync.
-
-### Request Network
-
-The Request network carries coherence requests from the LCEs to the CCEs. Requests are initiated
-when an LCE encounters a cache or coherence miss. Cache misses occur when the LCE does not contain
-the desired cache block. A coherence miss occurs when the LCE contains a valid copy of the desired
-cache block, but has insufficient permissions to perform the desired operation (e.g., trying to write
-a cache block with read-only permissions). Requests may also be issued for uncached loads and stores
-or for atomic operations. Issuing a request initiates a new coherence
-transaction, which is handled by one of the CCEs in the system. Uncached requests may result in
-coherence transactions when targeting cacheable memory to guarantee memory correctness across all
-cores.
-
-### Command Network
-
-The Command network carries commands and data to the LCEs. Most messages on this network originate
-at the CCEs. LCEs may be commanded to send a Command message by a CCE to perform a LCE to LCE
-cache block transfer when required by the coherence protocol, but otherwise may not initiate
-Command messages. Common Commands include cache block invalidation and writeback commands, cache
-block fills, and LCE to LCE transfer commands.
-
-### Response Network
-
-The Response network carries acknowledgement and data writeback messages from the LCEs to the
-CCEs. The CCE must be able to sink any potential response that could be generated in the system
-in order to prevent deadlock in the system. Sinking a message can be accomplished by processing
-the message when it arrives or placing it into a buffer to consume it from the network. The CCE
-must be able to sink or buffer all possible response messages generated by a single coherence
-transaction in-order to avoid blocking the coherence networks.
+The LCE-CCE Interface comprises the connections between the BlackParrot caches and coherence
+directories in a cache-coherent BlackParrot multicore processor. These networks support the
+BlackParrot BedRock coherence protocol implementation and utilize the common BedRock message
+format described above. A full description of the LCE-CCE Interface and its implementation
+can be found in the [BedRock Cache Coherence and Memory System Guide](bedrock_guide.md).
 

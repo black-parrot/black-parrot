@@ -7,7 +7,7 @@ module bp_me_axil_client
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce)
+  `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
   // AXI CHANNEL PARAMS
   , parameter axil_data_width_p = 32
@@ -22,12 +22,12 @@ module bp_me_axil_client
    , input [lce_id_width_p-1:0]                 lce_id_i
    , input [did_width_p-1:0]                    did_i
 
-   , output logic [cce_mem_header_width_lp-1:0] io_cmd_header_o
+   , output logic [mem_header_width_lp-1:0]     io_cmd_header_o
    , output logic [axil_data_width_p-1:0]       io_cmd_data_o
    , output logic                               io_cmd_v_o
    , input                                      io_cmd_ready_and_i
 
-   , input [cce_mem_header_width_lp-1:0]        io_resp_header_i
+   , input [mem_header_width_lp-1:0]            io_resp_header_i
    , input [axil_data_width_p-1:0]              io_resp_data_i
    , input                                      io_resp_v_i
    , output logic                               io_resp_yumi_o
@@ -66,9 +66,9 @@ module bp_me_axil_client
   wire unused = &{s_axil_awprot_i, s_axil_arprot_i};
 
   // declaring i/o command and response struct type and size
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `bp_cast_o(bp_bedrock_cce_mem_header_s, io_cmd_header);
-  `bp_cast_i(bp_bedrock_cce_mem_header_s, io_resp_header);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `bp_cast_o(bp_bedrock_mem_header_s, io_cmd_header);
+  `bp_cast_i(bp_bedrock_mem_header_s, io_resp_header);
 
   // Declaring all possible states
   enum {e_ready, e_send_read_addr, e_send_write_addr, e_send_write_data} state_n, state_r;

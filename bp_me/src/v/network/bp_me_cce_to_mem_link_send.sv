@@ -61,12 +61,13 @@ module bp_me_cce_to_mem_link_send
 
   bp_mem_wormhole_packet_s mem_cmd_packet_li;
   bp_mem_wormhole_header_s mem_cmd_header_li;
-  bp_me_wormhole_packet_encode_mem
+  bp_me_wormhole_header_encode
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
      ,.cord_width_p(cord_width_p)
      ,.cid_width_p(cid_width_p)
      ,.len_width_p(len_width_p)
+     ,.payload_width_p(mem_payload_width_lp)
      ,.payload_mask_p(mem_cmd_payload_mask_gp)
      )
    mem_cmd_encode
@@ -74,6 +75,7 @@ module bp_me_cce_to_mem_link_send
      ,.dst_cord_i(dst_cord_i)
      ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(mem_cmd_header_li)
+     ,.data_len_o(/* unused */)
      );
   assign mem_cmd_packet_li = '{header: mem_cmd_header_li, data: mem_cmd_data_i};
 
