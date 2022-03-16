@@ -260,7 +260,7 @@ module bp_be_pipe_mem
      ,.page_idx_width_p(sv39_page_idx_width_gp)
      )
    ptw
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.base_ppn_i(trans_info.satp_ppn)
      ,.priv_mode_i(trans_info.priv_mode)
