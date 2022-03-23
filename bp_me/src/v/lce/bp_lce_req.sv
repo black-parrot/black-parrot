@@ -24,10 +24,6 @@ module bp_lce_req
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
 
-   // clocking options
-   , parameter req_invert_clk_p = 0
-   , parameter tag_mem_invert_clk_p = 0
-
    // LCE-cache interface timeout in cycles
    , parameter timeout_max_limit_p=4
    // maximum number of outstanding transactions
@@ -117,36 +113,22 @@ module bp_lce_req
      ,.data_o(cache_req_v_r)
      );
 
-  wire req_clk = (req_invert_clk_p ? ~clk_i : clk_i);
   bp_cache_req_s cache_req_r;
   bsg_dff_en
-    #(.width_p($bits(bp_cache_req_s)))
-    req_reg
-     (.clk_i(req_clk)
-      ,.en_i(cache_req_yumi_o)
-      ,.data_i(cache_req_i)
-      ,.data_o(cache_req_r)
-      );
-
-  // cache request metadata valid and register
-  logic cache_req_metadata_v_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(1)
-     ,.clear_over_set_p((metadata_latency_p == 1))
-     )
-   metadata_v_reg
+   #(.width_p($bits(bp_cache_req_s)))
+   req_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.set_i(cache_req_metadata_v_i)
-     ,.clear_i(cache_req_yumi_o)
-     ,.data_o(cache_req_metadata_v_r)
+     ,.en_i(cache_req_yumi_o)
+     ,.data_i(cache_req_i)
+     ,.data_o(cache_req_r)
      );
 
   bp_cache_req_metadata_s cache_req_metadata_r;
-  bsg_dff_en
+  bsg_dff_reset_en_bypass
    #(.width_p($bits(bp_cache_req_metadata_s)))
    metadata_reg
-    (.clk_i(req_clk)
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
      ,.en_i(cache_req_metadata_v_i)
      ,.data_i(cache_req_metadata_i)
      ,.data_o(cache_req_metadata_r)
@@ -286,7 +268,7 @@ module bp_lce_req
                       : state_r;
           end
           e_miss_load: begin
-            lce_req_header_v_o = cache_req_v_with_credit & cache_req_metadata_v_r;
+            lce_req_header_v_o = cache_req_v_with_credit;
             lce_req_header_cast_o.size = req_block_size_lp;
             // align address to data width and send address of critical beat
             lce_req_header_cast_o.addr = critical_req_addr;
@@ -298,7 +280,7 @@ module bp_lce_req
             // no data to send, stay in e_ready
           end
           e_miss_store: begin
-            lce_req_header_v_o = cache_req_v_with_credit & cache_req_metadata_v_r;
+            lce_req_header_v_o = cache_req_v_with_credit;
             lce_req_header_cast_o.size = req_block_size_lp;
             // align address to data width and send address of critical beat
             lce_req_header_cast_o.addr = critical_req_addr;

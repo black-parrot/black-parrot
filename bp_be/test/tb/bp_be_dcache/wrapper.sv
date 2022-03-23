@@ -269,9 +269,7 @@ module wrapper
              ,.fill_width_p(fill_width_p)
              ,.timeout_max_limit_p(4)
              ,.credits_p(coh_noc_max_credits_p)
-             ,.req_invert_clk_p(1)
-             ,.data_mem_invert_clk_p(1)
-             ,.tag_mem_invert_clk_p(1)
+             ,.metadata_latency_p(1)
              )
            dcache_lce
             (.clk_i(clk_i)
@@ -365,10 +363,7 @@ module wrapper
             ,.sets_p(sets_p)
             ,.block_width_p(block_width_p)
             ,.fill_width_p(fill_width_p)
-            ,.req_invert_clk_p(1)
-            ,.data_mem_invert_clk_p(1)
-            ,.tag_mem_invert_clk_p(1)
-            ,.stat_mem_invert_clk_p(1)
+            ,.metadata_latency_p(1)
             )
           dcache_uce
            (.clk_i(clk_i)

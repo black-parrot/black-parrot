@@ -134,7 +134,7 @@ module bp_lce_fill
   // LCE fill data buffer
   // required to prevent deadlock in multicore networks
   logic [fill_width_p-1:0] lce_fill_data_li;
-  logic lce_fill_data_v_li, lce_fill_last_li, lce_fill_data_ready_and_lo, lce_fill_data_yumi_lo;
+  logic lce_fill_data_v_li, lce_fill_last_li, lce_fill_data_yumi_lo;
   bsg_fifo_1r1w_small
     #(.width_p(fill_width_p+1)
       ,.els_p(fill_data_buffer_els_p)
@@ -149,7 +149,6 @@ module bp_lce_fill
       ,.yumi_i(lce_fill_data_yumi_lo)
       ,.data_o({lce_fill_last_li, lce_fill_data_li})
       );
-  assign lce_fill_data_yumi_lo = lce_fill_data_v_li & lce_fill_data_ready_and_lo;
 
   // tag sent tracking
   // clears when header consumed
@@ -178,7 +177,7 @@ module bp_lce_fill
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.set_i(critical_data_sent)
-      ,.clear_i(lce_fill_data_v_li & lce_fill_data_ready_and_lo & lce_fill_last_li)
+      ,.clear_i(lce_fill_data_yumi_lo & lce_fill_last_li)
       ,.data_o(critical_data_sent_r)
       );
   assign cache_req_critical_data_o = ~critical_data_sent_r & critical_data_sent;
@@ -189,7 +188,9 @@ module bp_lce_fill
     `BSG_MAX((1'b1 << lce_fill_header_cast_li.size)/fill_bytes_lp, 1'b1) - 'd1;
   // first fill index of arriving command
   wire [fill_select_width_lp-1:0] first_cnt =
-    lce_fill_header_cast_li.addr[fill_byte_offset_lp+:fill_select_width_lp];
+    (block_size_in_fill_lp > 1)
+    ? lce_fill_header_cast_li.addr[fill_byte_offset_lp+:fill_select_width_lp]
+    : '0;
 
   logic wrap_cnt_set, wrap_cnt_up;
   logic [fill_select_width_lp-1:0] wrap_cnt_size, full_cnt, wrap_cnt;
@@ -262,7 +263,7 @@ module bp_lce_fill
 
     // LCE-CCE Interface signals
     lce_fill_header_yumi_lo = 1'b0;
-    lce_fill_data_ready_and_lo = 1'b0;
+    lce_fill_data_yumi_lo = 1'b0;
 
     lce_resp_header_cast_o = '0;
     lce_resp_header_v_o = 1'b0;
@@ -299,7 +300,7 @@ module bp_lce_fill
             wrap_cnt_set = tag_mem_pkt_yumi_i;
 
             // do not consume header since it is needed to compute fill index for cache data writes
-            state_n = (tag_mem_pkt_yumi_i)
+            state_n = tag_mem_pkt_yumi_i
                       ? e_data_to_cache
                       : state_r;
           end
@@ -320,15 +321,15 @@ module bp_lce_fill
         data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
         data_mem_pkt_v_o = lce_fill_data_v_li;
         // consume data beat when write to cache occurs
-        lce_fill_data_ready_and_lo = data_mem_pkt_yumi_i;
+        lce_fill_data_yumi_lo = data_mem_pkt_yumi_i;
         // increment wrap around count as each data beat sends
-        wrap_cnt_up = lce_fill_data_v_li & lce_fill_data_ready_and_lo;
+        wrap_cnt_up = lce_fill_data_yumi_lo;
         // critical beat is first data beat
         critical_data_sent = data_mem_pkt_yumi_i & ~critical_data_sent_r;
 
         // do not consume header yet, will be consumed by sending coherence ack
 
-        state_n = (lce_fill_data_v_li & lce_fill_data_ready_and_lo & lce_fill_last_li)
+        state_n = (lce_fill_data_yumi_lo & lce_fill_last_li)
                   ? e_coh_ack
                   : state_r;
 
