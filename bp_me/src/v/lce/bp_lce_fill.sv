@@ -189,7 +189,9 @@ module bp_lce_fill
     `BSG_MAX((1'b1 << lce_fill_header_cast_li.size)/fill_bytes_lp, 1'b1) - 'd1;
   // first fill index of arriving command
   wire [fill_select_width_lp-1:0] first_cnt =
-    lce_fill_header_cast_li.addr[fill_byte_offset_lp+:fill_select_width_lp];
+    (block_size_in_fill_lp > 1)
+    ? lce_fill_header_cast_li.addr[fill_byte_offset_lp+:fill_select_width_lp]
+    : '0;
 
   logic wrap_cnt_set, wrap_cnt_up;
   logic [fill_select_width_lp-1:0] wrap_cnt_size, full_cnt, wrap_cnt;
