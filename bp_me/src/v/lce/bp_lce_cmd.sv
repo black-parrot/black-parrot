@@ -182,7 +182,9 @@ module bp_lce_cmd
 
   // first fill index of arriving command
   wire [fill_select_width_lp-1:0] first_cnt =
-    lce_cmd_header_cast_li.addr[fill_byte_offset_lp+:fill_select_width_lp];
+    (block_size_in_fill_lp > 1)
+    ? lce_cmd_header_cast_li.addr[fill_byte_offset_lp+:fill_select_width_lp]
+    : '0;
 
   // tag sent tracking
   // clears when header consumed
