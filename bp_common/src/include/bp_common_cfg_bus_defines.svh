@@ -6,7 +6,7 @@
     {                                                 \
       logic                        freeze;            \
       /* TODO: vaddr */                               \
-      logic [38:0]                 debug_pc;          \
+      logic [38:0]                 npc;               \
       logic [core_id_width_mp-1:0] core_id;           \
       logic [lce_id_width_mp-1:0]  icache_id;         \
       bp_lce_mode_e                icache_mode;       \
@@ -19,6 +19,7 @@
 
   `define bp_cfg_bus_width(hio_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp) \
     (1                                \
+      /* TODO: vaddr */               \
      + 39                             \
      + core_id_width_mp               \
      + lce_id_width_mp                \

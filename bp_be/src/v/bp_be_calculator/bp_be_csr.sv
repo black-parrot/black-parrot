@@ -35,11 +35,12 @@ module bp_be_csr
    , input                                   frf_w_v_i
 
    // Interrupts
+   , input                                   unfreeze_irq_i
+   , input                                   debug_irq_i
    , input                                   timer_irq_i
    , input                                   software_irq_i
    , input                                   m_external_irq_i
    , input                                   s_external_irq_i
-   , input                                   debug_irq_i
    , output logic                            irq_pending_o
    , output logic                            irq_waiting_o
 
@@ -238,6 +239,7 @@ module bp_be_csr
       endcase
     end
 
+  wire unfreeze = unfreeze_irq_i;
   logic enter_debug, exit_debug;
   bsg_dff_reset_set_clear
    #(.width_p(1))
@@ -252,7 +254,7 @@ module bp_be_csr
 
   logic [vaddr_width_p-1:0] apc_n, apc_r;
   bsg_dff_reset
-   #(.width_p(vaddr_width_p), .reset_val_p(boot_base_addr_gp))
+   #(.width_p(vaddr_width_p))
    apc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -263,8 +265,8 @@ module bp_be_csr
   assign apc_n = retire_pkt_cast_i.special.sret ? sepc_lo : retire_pkt_cast_i.special.mret ? mepc_lo : retire_pkt_cast_i.special.dret ? dpc_lo
                  : (exception_v_lo | interrupt_v_lo)
                    ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
-                   : enter_debug
-                     ? cfg_bus_cast_i.debug_pc
+                   : (unfreeze | enter_debug)
+                     ? cfg_bus_cast_i.npc
                      : retire_pkt_cast_i.instret
                        ? retire_pkt_cast_i.npc
                        : apc_r;
@@ -623,7 +625,7 @@ module bp_be_csr
     end
 
   // Debug Mode masks all interrupts
-  assign irq_pending_o = d_interrupt_icode_v_li | (m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie);
+  assign irq_pending_o = (d_interrupt_icode_v_li & dgie) | (m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie);
 
   // The supervisor external interrupt line does not impact the supervisor software interrupt bit of MIP.
   // However, software read operations return as if it does. bit 9 is supervisor software interrupt
@@ -645,7 +647,8 @@ module bp_be_csr
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;
-  assign commit_pkt_cast_o._interrupt       = interrupt_v_lo | enter_debug; // Debug mode acts as a pseudo-interrupt
+  // Unfreezing and debug mode act as a pseudo-interrupt
+  assign commit_pkt_cast_o._interrupt       = interrupt_v_lo | unfreeze | enter_debug;
   assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;
   assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi              = retire_pkt_cast_i.special.wfi;
