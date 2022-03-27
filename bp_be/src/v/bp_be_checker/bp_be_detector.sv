@@ -248,6 +248,7 @@ module bp_be_detector
                       & ((dep_status_r[0].instr_v)
                          | (dep_status_r[1].instr_v)
                          | (dep_status_r[2].instr_v)
+                         | (dep_status_r[3].instr_v)
                          );
 
       control_haz_v = fence_haz_v | csr_haz_v | fflags_haz_v | long_haz_v;
@@ -273,7 +274,7 @@ module bp_be_detector
 
   // Generate calculator control signals
   assign dispatch_v_o  = ~(control_haz_v | data_haz_v | struct_haz_v);
-  assign interrupt_v_o = irq_pending_i & ~ptw_busy_i & ~cfg_bus_cast_i.freeze;
+  assign interrupt_v_o = irq_pending_i & ~ptw_busy_i;
 
   bp_be_dep_status_s dep_status_n;
   always_comb

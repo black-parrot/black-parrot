@@ -161,7 +161,7 @@ module bp_be_scheduler
 
   wire fe_exc_not_instr_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_exception);
   wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
-  wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i | cfg_bus_cast_i.debug;
+  wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i;
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
 
@@ -225,7 +225,6 @@ module bp_be_scheduler
       dispatch_pkt.exception.itlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.itlb_fill_v;
       dispatch_pkt.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.dtlb_fill_v;
       dispatch_pkt.exception._interrupt       |= be_exc_not_instr_li & interrupt_v_i;
-      dispatch_pkt.exception.dentry           |= be_exc_not_instr_li & cfg_bus_cast_i.debug;
 
       dispatch_pkt.exception.illegal_instr |= fe_instr_not_exc_li & illegal_instr_lo;
       dispatch_pkt.exception.ecall_m       |= fe_instr_not_exc_li & ecall_m_lo;

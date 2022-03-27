@@ -39,6 +39,7 @@ module bp_be_csr
    , input                                   software_irq_i
    , input                                   m_external_irq_i
    , input                                   s_external_irq_i
+   , input                                   debug_irq_i
    , output logic                            irq_pending_o
    , output logic                            irq_waiting_o
 
@@ -131,8 +132,9 @@ module bp_be_csr
   `declare_csr(dscratch0);
   `declare_csr(dscratch1);
 
-  wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
-  wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
+  wire dgie = ~is_debug_mode;
+  wire mgie = ~is_debug_mode & (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
+  wire sgie = ~is_debug_mode & (mstatus_r.sie & is_s_mode) | is_u_mode;
 
   wire mti_v = mie_r.mtie & mip_r.mtip;
   wire msi_v = mie_r.msie & mip_r.msip;
@@ -194,6 +196,8 @@ module bp_be_csr
      ,.v_o(exception_ecode_v_li)
      );
 
+  wire d_interrupt_icode_v_li = debug_irq_i;
+
   logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
   logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
   bsg_priority_encode
@@ -248,7 +252,7 @@ module bp_be_csr
 
   logic [vaddr_width_p-1:0] apc_n, apc_r;
   bsg_dff_reset
-   #(.width_p(vaddr_width_p))
+   #(.width_p(vaddr_width_p), .reset_val_p(boot_base_addr_gp))
    apc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -484,7 +488,14 @@ module bp_be_csr
 
       if (retire_pkt_cast_i.exception._interrupt)
         begin
-          if (m_interrupt_icode_v_li & mgie)
+          if (d_interrupt_icode_v_li & dgie)
+            begin
+              enter_debug    = 1'b1;
+              dpc_li         = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              dcsr_li.cause  = 3; // Debugger
+              dcsr_li.prv    = priv_mode_r;
+            end
+          else if (m_interrupt_icode_v_li & mgie)
             begin
               priv_mode_n          = `PRIV_MODE_M;
 
@@ -563,14 +574,6 @@ module bp_be_csr
           dcsr_li.prv    = priv_mode_r;
         end
 
-      if (retire_pkt_cast_i.exception.dentry)
-        begin
-          enter_debug    = 1'b1;
-          dpc_li         = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
-          dcsr_li.cause  = 3; // Debugger
-          dcsr_li.prv    = priv_mode_r;
-        end
-
       if (retire_pkt_cast_i.special.dret)
         begin
           exit_debug       = 1'b1;
@@ -606,7 +609,6 @@ module bp_be_csr
           dcsr_li.prv   = priv_mode_r;
         end
 
-
       // Accumulate interrupts
       mip_li.mtip = timer_irq_i;
       mip_li.msip = software_irq_i;
@@ -621,7 +623,7 @@ module bp_be_csr
     end
 
   // Debug Mode masks all interrupts
-  assign irq_pending_o = ~is_debug_mode & ((m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie));
+  assign irq_pending_o = d_interrupt_icode_v_li | (m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie);
 
   // The supervisor external interrupt line does not impact the supervisor software interrupt bit of MIP.
   // However, software read operations return as if it does. bit 9 is supervisor software interrupt
@@ -643,7 +645,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;
-  assign commit_pkt_cast_o._interrupt       = interrupt_v_lo;
+  assign commit_pkt_cast_o._interrupt       = interrupt_v_lo | enter_debug; // Debug mode acts as a pseudo-interrupt
   assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;
   assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi              = retire_pkt_cast_i.special.wfi;

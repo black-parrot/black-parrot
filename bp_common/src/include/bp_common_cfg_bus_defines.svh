@@ -5,7 +5,6 @@
     typedef struct packed                             \
     {                                                 \
       logic                        freeze;            \
-      logic                        debug;             \
       /* TODO: vaddr */                               \
       logic [38:0]                 debug_pc;          \
       logic [core_id_width_mp-1:0] core_id;           \
@@ -19,7 +18,7 @@
     }  bp_cfg_bus_s
 
   `define bp_cfg_bus_width(hio_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp) \
-    (2                                \
+    (1                                \
      + 39                             \
      + core_id_width_mp               \
      + lce_id_width_mp                \

@@ -17,8 +17,12 @@
 
   localparam mtime_reg_addr_gp          = dev_addr_width_gp'('h0_bff8);
   localparam mtime_reg_match_addr_gp    = dev_addr_width_gp'('h0_bff?);
+
+  localparam plic_reg_base_addr_gp      = dev_addr_width_gp'('h0_b000);
   localparam plic_reg_match_addr_gp     = dev_addr_width_gp'('h0_b00?);
 
+  localparam debug_reg_base_addr_gp     = dev_addr_width_gp'('h0_c000);
+  localparam debug_reg_match_addr_gp    = dev_addr_width_gp'('h0_c???);
 
 `endif
 

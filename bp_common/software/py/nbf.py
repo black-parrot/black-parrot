@@ -45,8 +45,7 @@ import subprocess
 ##  localparam cfg_reg_host_did_gp        = (dev_addr_width_gp)'('h0_0018);
 ##  // Used until PMP are setup properly
 ##  localparam cfg_reg_hio_mask_gp        = (dev_addr_width_gp)'('h0_001c);
-##  localparam cfg_reg_debug_gp           = (dev_addr_width_gp)'('h0_0020);
-##  localparam cfg_reg_debug_pc_gp        = (dev_addr_width_gp)'('h0_0024);
+##  localparam cfg_reg_debug_pc_gp        = (dev_addr_width_gp)'('h0_0020);
 ##  localparam cfg_reg_icache_id_gp       = (dev_addr_width_gp)'('h0_0200);
 ##  localparam cfg_reg_icache_mode_gp     = (dev_addr_width_gp)'('h0_0204);
 ##  localparam cfg_reg_dcache_id_gp       = (dev_addr_width_gp)'('h0_0400);
@@ -64,8 +63,7 @@ cfg_reg_did            = 0x0010
 cfg_reg_cord           = 0x0014
 cfg_reg_host_did       = 0x0018
 cfg_reg_hio_mask       = 0x001c
-cfg_reg_debug          = 0x0020
-cfg_reg_debug_pc       = 0x0024
+cfg_reg_debug_pc       = 0x0020
 cfg_reg_icache_id      = 0x0200
 cfg_reg_icache_mode    = 0x0204
 cfg_reg_dcache_id      = 0x0400
@@ -76,6 +74,7 @@ cfg_mem_base_cce_ucode = 0x8000
 
 clint_base_addr       = 0x300000
 clint_reg_mtimesel    = 0x8000
+clint_reg_debug       = 0xc000
 
 cfg_core_offset = 24
 
@@ -230,9 +229,10 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
     # Debug set
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_debug_pc, 0x00110000)
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_debug, 1)
+    self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 1)
 
     self.print_fence()
+    self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 0)
 
     # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
     if self.config:

@@ -41,8 +41,7 @@
   localparam cfg_reg_host_did_gp        = (dev_addr_width_gp)'('h0_0018);
   // Used until PMP are setup properly
   localparam cfg_reg_hio_mask_gp        = (dev_addr_width_gp)'('h0_001c);
-  localparam cfg_reg_debug_gp           = (dev_addr_width_gp)'('h0_0020);
-  localparam cfg_reg_debug_pc_gp        = (dev_addr_width_gp)'('h0_0024);
+  localparam cfg_reg_debug_pc_gp        = (dev_addr_width_gp)'('h0_0020);
   localparam cfg_reg_icache_id_gp       = (dev_addr_width_gp)'('h0_0200);
   localparam cfg_reg_icache_mode_gp     = (dev_addr_width_gp)'('h0_0204);
   localparam cfg_reg_dcache_id_gp       = (dev_addr_width_gp)'('h0_0400);

@@ -37,6 +37,7 @@ module bp_unicore_lite
    , input                                             software_irq_i
    , input                                             m_external_irq_i
    , input                                             s_external_irq_i
+   , input                                             debug_irq_i
    );
 
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -143,6 +144,7 @@ module bp_unicore_lite
      ,.software_irq_i(software_irq_i)
      ,.m_external_irq_i(m_external_irq_i)
      ,.s_external_irq_i(s_external_irq_i)
+     ,.debug_irq_i(debug_irq_i)
      );
 
   bp_uce
