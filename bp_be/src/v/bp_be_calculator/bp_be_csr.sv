@@ -167,7 +167,6 @@ module bp_be_csr
 
   assign irq_waiting_o = |interrupt_icode_dec_li;
 
-  wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
   rv64_exception_dec_s exception_dec_li;
   assign exception_dec_li =
       '{instr_misaligned    : retire_pkt_cast_i.exception.instr_misaligned

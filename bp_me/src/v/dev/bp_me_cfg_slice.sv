@@ -102,7 +102,7 @@ module bp_me_cfg_slice
     if (reset_i)
       begin
         freeze_r            <= 1'b1;
-        npc_r               <= dram_base_addr_gp;
+        npc_r               <= boot_base_addr_gp;
         icache_mode_r       <= e_lce_mode_uncached;
         dcache_mode_r       <= e_lce_mode_uncached;
         cce_mode_r          <= e_cce_mode_uncached;
