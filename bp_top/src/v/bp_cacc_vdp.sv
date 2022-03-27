@@ -208,9 +208,6 @@ module bp_cacc_vdp
      ,.fill_width_p(acache_fill_width_p)
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)
-     ,.req_invert_clk_p(1)
-     ,.data_mem_invert_clk_p(1)
-     ,.tag_mem_invert_clk_p(1)
      )
    lce
     (.clk_i(clk_i)
