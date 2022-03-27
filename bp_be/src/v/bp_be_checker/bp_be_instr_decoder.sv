@@ -291,7 +291,7 @@ module bp_be_instr_decoder
               `RV64_WFI:
                 begin
                   illegal_instr_o = decode_info_cast_i.tw;
-                  wfi_o = ~illegal_instr_o;
+                  wfi_o = ~illegal_instr_o & ~decode_info_cast_i.debug_mode;
                 end
               `RV64_SFENCE_VMA:
                 begin

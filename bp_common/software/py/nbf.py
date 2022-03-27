@@ -26,32 +26,35 @@ import math
 import os
 import subprocess
 
-#  // The overall memory map of the config link is:
-#  //   16'h0000 - 16'h01ff: chip level config
-#  //   16'h0200 - 16'h03ff: fe config
-#  //   16'h0400 - 16'h05ff: be config
-#  //   16'h0600 - 16'h06ff: me config
-#  //   16'h0800 - 16'h7fff: reserved
-#  //   16'h8000 - 16'h8fff: cce ucode
-#
-#  localparam cfg_addr_width_gp = 20;
-#  localparam cfg_data_width_gp = 64;
-#
-#  localparam cfg_base_addr_gp          = 'h0200_0000;
-#  localparam cfg_reg_unused_gp         = 'h0004;
-#  localparam cfg_reg_freeze_gp         = 'h0008;
-#  localparam cfg_reg_core_id_gp        = 'h000c;
-#  localparam cfg_reg_did_gp            = 'h0010;
-#  localparam cfg_reg_cord_gp           = 'h0014;
-#  localparam cfg_reg_host_did_gp       = 'h0018;
-#  localparam cfg_reg_hio_mask_gp       = 'h001c;
-#  localparam cfg_reg_icache_id_gp      = 'h0200;
-#  localparam cfg_reg_icache_mode_gp    = 'h0204;
-#  localparam cfg_reg_dcache_id_gp      = 'h0400;
-#  localparam cfg_reg_dcache_mode_gp    = 'h0404;
-#  localparam cfg_reg_cce_id_gp         = 'h0600;
-#  localparam cfg_reg_cce_mode_gp       = 'h0604;
-#  localparam cfg_mem_base_cce_ucode_gp = 'h8000;
+##  // The overall memory map of the config link is:
+##  //   16'h0000 - 16'h01ff: chip level config
+##  //   16'h0200 - 16'h03ff: fe config
+##  //   16'h0400 - 16'h05ff: be config
+##  //   16'h0600 - 16'h07ff: me config
+##  //   16'h0800 - 16'h7fff: reserved
+##  //   16'h8000 - 16'h8fff: cce ucode
+##
+##  localparam cfg_base_addr_gp           = (dev_id_width_gp+dev_addr_width_gp)'('h0020_0000);
+##  localparam cfg_match_addr_gp          = (dev_id_width_gp+dev_addr_width_gp)'('h002?_????);
+##
+##  localparam cfg_reg_unused_gp          = (dev_addr_width_gp)'('h0_0004);
+##  localparam cfg_reg_freeze_gp          = (dev_addr_width_gp)'('h0_0008);
+##  localparam cfg_reg_core_id_gp         = (dev_addr_width_gp)'('h0_000c);
+##  localparam cfg_reg_did_gp             = (dev_addr_width_gp)'('h0_0010);
+##  localparam cfg_reg_cord_gp            = (dev_addr_width_gp)'('h0_0014);
+##  localparam cfg_reg_host_did_gp        = (dev_addr_width_gp)'('h0_0018);
+##  // Used until PMP are setup properly
+##  localparam cfg_reg_hio_mask_gp        = (dev_addr_width_gp)'('h0_001c);
+##  localparam cfg_reg_debug_gp           = (dev_addr_width_gp)'('h0_0020);
+##  localparam cfg_reg_debug_pc_gp        = (dev_addr_width_gp)'('h0_0024);
+##  localparam cfg_reg_icache_id_gp       = (dev_addr_width_gp)'('h0_0200);
+##  localparam cfg_reg_icache_mode_gp     = (dev_addr_width_gp)'('h0_0204);
+##  localparam cfg_reg_dcache_id_gp       = (dev_addr_width_gp)'('h0_0400);
+##  localparam cfg_reg_dcache_mode_gp     = (dev_addr_width_gp)'('h0_0404);
+##  localparam cfg_reg_cce_id_gp          = (dev_addr_width_gp)'('h0_0600);
+##  localparam cfg_reg_cce_mode_gp        = (dev_addr_width_gp)'('h0_0604);
+##  localparam cfg_mem_cce_ucode_base_gp  = (dev_addr_width_gp)'('h0_8000);
+##  localparam cfg_mem_cce_ucode_match_gp = (dev_addr_width_gp)'('h0_8???);
 
 cfg_base_addr          = 0x200000
 cfg_reg_unused         = 0x0004
@@ -61,6 +64,8 @@ cfg_reg_did            = 0x0010
 cfg_reg_cord           = 0x0014
 cfg_reg_host_did       = 0x0018
 cfg_reg_hio_mask       = 0x001c
+cfg_reg_debug          = 0x0020
+cfg_reg_debug_pc       = 0x0024
 cfg_reg_icache_id      = 0x0200
 cfg_reg_icache_mode    = 0x0204
 cfg_reg_dcache_id      = 0x0400
@@ -223,6 +228,9 @@ class NBF:
 
     # Freeze set
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
+    # Debug set
+    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_debug_pc, 0x00110000)
+    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_debug, 1)
 
     self.print_fence()
 

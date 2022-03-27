@@ -154,6 +154,7 @@ module bp_be_top
    scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_i)
 
      ,.isd_status_o(isd_status)
      ,.expected_npc_i(expected_npc_lo)

@@ -82,7 +82,7 @@ module bp_be_director
   wire npc_w_v = commit_pkt_cast_i.npc_w_v | br_pkt_cast_i.v;
   assign npc_n = commit_pkt_cast_i.npc_w_v ? commit_pkt_cast_i.npc : br_pkt_cast_i.npc;
   bsg_dff_reset_en
-   #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
+   #(.width_p(vaddr_width_p))
    npc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

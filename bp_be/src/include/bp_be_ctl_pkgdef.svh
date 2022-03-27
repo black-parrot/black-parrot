@@ -249,6 +249,7 @@
     logic dtlb_fill;
     logic _interrupt;
     logic cmd_full;
+    logic dentry;
   }  bp_be_exception_s;
 
   typedef struct packed

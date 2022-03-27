@@ -53,21 +53,25 @@ module bp_me_cfg_slice
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `bp_cast_o(bp_cfg_bus_s, cfg_bus);
 
+  localparam reg_els_lp = 11;
+
   logic cord_r_v_li, did_r_v_li, host_did_r_v_li, hio_mask_r_v_li;
   logic cord_w_v_li, did_w_v_li, host_did_w_v_li, hio_mask_w_v_li;
-  logic cce_ucode_r_v_li, cce_mode_r_v_li, dcache_mode_r_v_li, icache_mode_r_v_li, freeze_r_v_li;
-  logic cce_ucode_w_v_li, cce_mode_w_v_li, dcache_mode_w_v_li, icache_mode_w_v_li, freeze_w_v_li;
+  logic cce_ucode_r_v_li, cce_mode_r_v_li, dcache_mode_r_v_li, icache_mode_r_v_li;
+  logic debug_pc_r_v_li, debug_r_v_li, freeze_r_v_li;
+  logic cce_ucode_w_v_li, cce_mode_w_v_li, dcache_mode_w_v_li, icache_mode_w_v_li;
+  logic debug_pc_w_v_li, debug_w_v_li, freeze_w_v_li;
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
-  logic [8:0][dword_width_gp-1:0] data_li;
+  logic [reg_els_lp-1:0][dword_width_gp-1:0] data_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.els_p(9)
+     ,.els_p(reg_els_lp)
      ,.reg_addr_width_p(dev_addr_width_gp)
      ,.base_addr_p({cfg_reg_cord_gp, cfg_reg_did_gp, cfg_reg_host_did_gp, cfg_reg_hio_mask_gp
                     ,cfg_reg_cce_mode_gp, cfg_reg_dcache_mode_gp, cfg_reg_icache_mode_gp
                     ,cfg_mem_cce_ucode_match_gp
-                    ,cfg_reg_freeze_gp
+                    ,cfg_reg_debug_pc_gp, cfg_reg_debug_gp, cfg_reg_freeze_gp
                     })
      )
    register
@@ -75,12 +79,12 @@ module bp_me_cfg_slice
      ,.r_v_o({cord_r_v_li, did_r_v_li, host_did_r_v_li, hio_mask_r_v_li
               ,cce_mode_r_v_li, dcache_mode_r_v_li, icache_mode_r_v_li
               ,cce_ucode_r_v_li
-              ,freeze_r_v_li
+              ,debug_pc_r_v_li, debug_r_v_li, freeze_r_v_li
               })
      ,.w_v_o({cord_w_v_li, did_w_v_li, host_did_w_v_li, hio_mask_w_v_li
               ,cce_mode_w_v_li, dcache_mode_w_v_li, icache_mode_w_v_li
               ,cce_ucode_w_v_li
-              ,freeze_w_v_li
+              ,debug_pc_w_v_li, debug_w_v_li, freeze_w_v_li
               })
      ,.addr_o(addr_lo)
      ,.size_o()
@@ -89,6 +93,7 @@ module bp_me_cfg_slice
      );
 
   logic         freeze_r;
+  logic [vaddr_width_p-1:0] debug_pc_r;
   bp_lce_mode_e icache_mode_r;
   bp_lce_mode_e dcache_mode_r;
   bp_cce_mode_e cce_mode_r;
@@ -101,15 +106,28 @@ module bp_me_cfg_slice
         dcache_mode_r       <= e_lce_mode_uncached;
         cce_mode_r          <= e_cce_mode_uncached;
         hio_mask_r          <= '0;
+        debug_pc_r          <= bootrom_base_addr_gp;
       end
     else
       begin
-        freeze_r <= freeze_w_v_li ? data_lo : freeze_r;
+        freeze_r      <= freeze_w_v_li      ? data_lo                 : freeze_r;
         icache_mode_r <= icache_mode_w_v_li ? bp_lce_mode_e'(data_lo) : icache_mode_r;
         dcache_mode_r <= dcache_mode_w_v_li ? bp_lce_mode_e'(data_lo) : dcache_mode_r;
-        cce_mode_r <= cce_mode_w_v_li ? bp_cce_mode_e'(data_lo) : cce_mode_r;
-        hio_mask_r <= hio_mask_w_v_li ? data_lo : hio_mask_r;
+        cce_mode_r    <= cce_mode_w_v_li    ? bp_cce_mode_e'(data_lo) : cce_mode_r;
+        hio_mask_r    <= hio_mask_w_v_li    ? data_lo                 : hio_mask_r;
+        debug_pc_r    <= debug_pc_w_v_li    ? data_lo                 : debug_pc_r;
       end
+
+  // Debug register is a trigger, not a true register
+  logic debug_r;
+  bsg_dff_reset
+   #(.width_p(1))
+   debug_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i(debug_w_v_li)
+     ,.data_o(debug_r)
+     );
 
   // Access to CCE ucode memory must be aligned
   localparam cce_pc_offset_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV(cce_instr_width_gp,8));
@@ -134,6 +152,8 @@ module bp_me_cfg_slice
      );
 
   assign cfg_bus_cast_o = '{freeze: freeze_r
+                            ,debug: debug_r
+                            ,debug_pc: debug_pc_r
                             ,core_id: core_id_li
                             ,icache_id: icache_id_li
                             ,icache_mode: icache_mode_r
@@ -145,14 +165,16 @@ module bp_me_cfg_slice
                             };
 
   assign data_li[0] = freeze_r;
-  assign data_li[1] = cce_ucode_data_i;
-  assign data_li[2] = icache_mode_r;
-  assign data_li[3] = dcache_mode_r;
-  assign data_li[4] = cce_mode_r;
-  assign data_li[5] = hio_mask_r;
-  assign data_li[6] = host_did_i;
-  assign data_li[7] = did_i;
-  assign data_li[8] = cord_i;
+  assign data_li[1] = debug_r;
+  assign data_li[2] = debug_pc_r;
+  assign data_li[3] = cce_ucode_data_i;
+  assign data_li[4] = icache_mode_r;
+  assign data_li[5] = dcache_mode_r;
+  assign data_li[6] = cce_mode_r;
+  assign data_li[7] = hio_mask_r;
+  assign data_li[8] = host_did_i;
+  assign data_li[9] = did_i;
+  assign data_li[10] = cord_i;
 
 endmodule
 

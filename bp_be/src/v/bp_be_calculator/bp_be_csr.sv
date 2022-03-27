@@ -234,9 +234,21 @@ module bp_be_csr
       endcase
     end
 
+  logic enter_debug, exit_debug;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   debug_mode_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(enter_debug)
+     ,.clear_i(exit_debug)
+
+     ,.data_o(debug_mode_r)
+     );
+
   logic [vaddr_width_p-1:0] apc_n, apc_r;
   bsg_dff_reset
-   #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
+   #(.width_p(vaddr_width_p))
    apc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -247,22 +259,12 @@ module bp_be_csr
   assign apc_n = retire_pkt_cast_i.special.sret ? sepc_lo : retire_pkt_cast_i.special.mret ? mepc_lo : retire_pkt_cast_i.special.dret ? dpc_lo
                  : (exception_v_lo | interrupt_v_lo)
                    ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
-                   : retire_pkt_cast_i.instret
-                     ? retire_pkt_cast_i.npc
-                     : apc_r;
+                   : enter_debug
+                     ? cfg_bus_cast_i.debug_pc
+                     : retire_pkt_cast_i.instret
+                       ? retire_pkt_cast_i.npc
+                       : apc_r;
 
-
-  logic enter_debug, exit_debug;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   debug_mode_reg
-    (.clk_i(clk_i)
-     ,.reset_i('0)
-     ,.set_i(enter_debug)
-     ,.clear_i(exit_debug)
-
-     ,.data_o(debug_mode_r)
-     );
 
   assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
   bsg_dff_reset
@@ -343,8 +345,8 @@ module bp_be_csr
       minstret_li      = ~mcountinhibit_lo.ir ? minstret_lo + dword_width_gp'(retire_pkt_cast_i.instret) : minstret_lo;
       mcountinhibit_li = mcountinhibit_lo;
 
-      enter_debug = reset_i & (boot_in_debug_p == 1'b1);
-      exit_debug  = reset_i & (boot_in_debug_p == 1'b0);
+      enter_debug = '0;
+      exit_debug  = '0;
       dcsr_li     = dcsr_lo;
       dpc_li      = dpc_lo;
       dscratch0_li = dscratch0_lo;
@@ -558,6 +560,14 @@ module bp_be_csr
           enter_debug    = 1'b1;
           dpc_li         = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
           dcsr_li.cause  = 1; // Ebreak
+          dcsr_li.prv    = priv_mode_r;
+        end
+
+      if (retire_pkt_cast_i.exception.dentry)
+        begin
+          enter_debug    = 1'b1;
+          dpc_li         = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+          dcsr_li.cause  = 3; // Debugger
           dcsr_li.prv    = priv_mode_r;
         end
 
