@@ -43,18 +43,16 @@ module bp_me_addr_to_cce_id
 
   localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
   localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
-  // index output of hash bank is unused, but need 1 bit for it
-  localparam hash_addr_width_lp = (lg_num_cce_lp+1);
 
   // convert miss address (excluding block offset bits) into CCE ID
   // For now, assume all CCE's have ID [0,num_core_p-1] and addresses are striped
   // at the cache block granularity
-  logic [hash_addr_width_lp-1:0] hash_addr_li;
+  logic [lce_sets_width_p-1:0] hash_addr_li;
   logic [lg_num_cce_lp-1:0] cce_dst_id_lo;
-  assign hash_addr_li = {<< {paddr_i[block_offset_lp+:hash_addr_width_lp]}};
+  assign hash_addr_li = {<< {paddr_i[block_offset_lp+:lce_sets_width_p]}};
   bsg_hash_bank
     #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
-      ,.width_p(hash_addr_width_lp) // width of address input
+      ,.width_p(lce_sets_width_p) // width of address input
       )
     addr_to_cce_id
      (.i(hash_addr_li)
