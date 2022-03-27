@@ -113,8 +113,10 @@ module bp_me_cfg_slice
 
   // Access to CCE ucode memory must be aligned
   localparam cce_pc_offset_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV(cce_instr_width_gp,8));
-  assign cce_ucode_v_o    = cce_ucode_r_v_li | cce_ucode_w_v_li;
-  assign cce_ucode_w_o    = cce_ucode_w_v_li;
+  // Prevent writing CCE ucode if we're already out of cached mode.
+  //   We could also handle this by software, but seems dangerous to allow in hardware
+  assign cce_ucode_v_o    = (cce_mode_r == e_cce_mode_uncached) & (cce_ucode_r_v_li | cce_ucode_w_v_li);
+  assign cce_ucode_w_o    = (cce_mode_r == e_cce_mode_uncached) & cce_ucode_w_v_li;
   assign cce_ucode_addr_o = addr_lo[cce_pc_offset_width_lp+:cce_pc_width_p];
   assign cce_ucode_data_o = data_lo[0+:cce_instr_width_gp];
 
