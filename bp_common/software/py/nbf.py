@@ -228,10 +228,10 @@ class NBF:
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
     # Debug set
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x00110000)
-    #self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 1)
+    self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 1)
 
     self.print_fence()
-    #self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 0)
+    self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 0)
 
     # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
     if self.config:

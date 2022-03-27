@@ -18,12 +18,14 @@ module bp_me_clint_slice
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                                clk_i
    , input                                              rt_clk_i
    , input                                              reset_i
 
-   , input [core_id_width_p-1:0]                        id_i
+   , input [cfg_bus_width_lp-1:0]                       cfg_bus_i
 
    , input [mem_header_width_lp-1:0]                    mem_cmd_header_i
    , input [dword_width_gp-1:0]                         mem_cmd_data_i
@@ -38,17 +40,20 @@ module bp_me_clint_slice
    , output logic                                       mem_resp_last_o
 
    // Local interrupts
+   , output logic                                       unfreeze_irq_o
+   , output logic                                       debug_irq_o
    , output logic                                       software_irq_o
    , output logic                                       timer_irq_o
    , output logic                                       m_external_irq_o
    , output logic                                       s_external_irq_o
-   , output logic                                       debug_irq_o
    );
 
   if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
 
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   localparam reg_els_lp = 6;
 
@@ -185,6 +190,19 @@ module bp_me_clint_slice
      ,.data_o(plic_r)
      );
   wire plic_lo = plic_r[plic_addr_li];
+  assign m_external_irq_o = plic_r[0];
+  assign s_external_irq_o = plic_r[1];
+
+  logic unfreeze;
+  bsg_edge_detect
+   #(.falling_not_rising_p(1))
+   unfreeze_detect
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.sig_i(cfg_bus_cast_i.freeze)
+     ,.detect_o(unfreeze)
+     );
+  assign unfreeze_irq_o = unfreeze;
 
   logic debug_r;
   wire debug_n = data_lo[0];
@@ -198,9 +216,6 @@ module bp_me_clint_slice
      ,.data_o(debug_r)
      );
   assign debug_irq_o = debug_r;
-
-  assign m_external_irq_o = plic_r[0];
-  assign s_external_irq_o = plic_r[1];
 
   assign data_li[0] = mipi_r;
   assign data_li[1] = mtimecmp_r;

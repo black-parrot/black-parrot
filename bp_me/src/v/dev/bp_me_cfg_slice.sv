@@ -35,7 +35,6 @@ module bp_me_cfg_slice
    , output logic                                   mem_resp_last_o
 
    , output logic [cfg_bus_width_lp-1:0]            cfg_bus_o
-   , output logic                                   unfreeze_irq_o
    , input [did_width_p-1:0]                        did_i
    , input [did_width_p-1:0]                        host_did_i
    , input [coh_noc_cord_width_p-1:0]               cord_i
@@ -118,9 +117,6 @@ module bp_me_cfg_slice
         cce_mode_r    <= cce_mode_w_v_li    ? bp_cce_mode_e'(data_lo) : cce_mode_r;
         hio_mask_r    <= hio_mask_w_v_li    ? data_lo                 : hio_mask_r;
       end
-
-  // IRQ on falling edge of freeze
-  assign unfreeze_irq_o = freeze_r & freeze_w_v_li & ~data_lo[0];
 
   // Access to CCE ucode memory must be aligned
   localparam cce_pc_offset_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV(cce_instr_width_gp,8));

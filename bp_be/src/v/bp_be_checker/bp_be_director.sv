@@ -71,9 +71,9 @@ module bp_be_director
   logic [vaddr_width_p-1:0]               npc_n, npc_r, pc_r;
   logic                                   npc_mismatch_v;
 
-  enum logic [2:0] {e_reset, e_boot, e_run, e_fence, e_wait} state_n, state_r;
+  enum logic [2:0] {e_reset, e_run, e_fence, e_wait} state_n, state_r;
   wire is_reset = (state_r == e_reset);
-  wire is_boot  = (state_r == e_boot);
+  wire is_run   = (state_r == e_run);
   wire is_fence = (state_r == e_fence);
   wire is_wait  = (state_r == e_wait);
 
@@ -82,7 +82,7 @@ module bp_be_director
   wire npc_w_v = commit_pkt_cast_i.npc_w_v | br_pkt_cast_i.v;
   assign npc_n = commit_pkt_cast_i.npc_w_v ? commit_pkt_cast_i.npc : br_pkt_cast_i.npc;
   bsg_dff_reset_en
-   #(.width_p(vaddr_width_p))
+   #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
    npc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -110,22 +110,17 @@ module bp_be_director
   wire last_instr_was_branch = attaboy_pending | br_pkt_cast_i.branch;
   wire last_instr_was_btaken = btaken_pending  | br_pkt_cast_i.btaken;
 
-  // Generate control signals
-  // On a cache miss, this is actually the generated pc in ex1. We could use this to redirect during
-  //   mispredict-under-cache-miss. However, there's a critical path vs extra speculation argument.
-  //   Currently, we just don't send pc redirects under a cache miss.
   wire fe_cmd_nonattaboy_v = fe_cmd_v_li & (fe_cmd_li.opcode != e_op_attaboy);
 
   // Boot logic
   always_comb
     begin
       unique casez (state_r)
-        e_reset : state_n = cfg_bus_cast_i.freeze ? e_reset : e_boot;
-        e_boot  : state_n = fe_cmd_v_li ? e_run : e_boot;
+        e_wait  : state_n = fe_cmd_nonattaboy_v ? e_fence : e_wait;
         e_run   : state_n = commit_pkt_cast_i.wfi ? e_wait : fe_cmd_nonattaboy_v ? e_fence : e_run;
         e_fence : state_n = suppress_iss_o ? e_fence : e_run;
-        e_wait  : state_n = fe_cmd_nonattaboy_v ? e_fence : e_wait;
-        default : state_n = e_reset;
+        // e_reset:
+        default : state_n = e_wait;
       endcase
     end
 
@@ -151,8 +146,8 @@ module bp_be_director
         begin
           fe_cmd_v_li = 1'b0;
         end
-      // Send one reset cmd on boot
-      else if (state_r == e_boot)
+      // Send a reset cmd when unfreezing
+      else if (commit_pkt_cast_i.unfreeze)
         begin
           fe_cmd_li.opcode = e_op_state_reset;
           fe_cmd_li.vaddr  = npc_r;

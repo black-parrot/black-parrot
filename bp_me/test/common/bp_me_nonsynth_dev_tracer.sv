@@ -22,6 +22,7 @@ module bp_me_nonsynth_dev_tracer
   )
   (input                                            clk_i
    , input                                          reset_i
+   , input                                          freeze_i
 
    , input [core_id_width_p-1:0]                    id_i
 
@@ -48,10 +49,12 @@ module bp_me_nonsynth_dev_tracer
   integer file;
   string file_name;
 
-  always_ff @(negedge reset_i) begin
-    file_name = $sformatf("%s_%x.trace", trace_file_p, id_i);
-    file      = $fopen(file_name, "w");
-  end
+  wire delay_li = reset_i | freeze_i;
+  always_ff @(negedge delay_li)
+    begin
+      file_name = $sformatf("%s_%x.trace", trace_file_p, id_i);
+      file      = $fopen(file_name, "w");
+    end
 
   // Tracer
   always_ff @(negedge clk_i) begin

@@ -254,7 +254,7 @@ module bp_be_csr
 
   logic [vaddr_width_p-1:0] apc_n, apc_r;
   bsg_dff_reset
-   #(.width_p(vaddr_width_p))
+   #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
    apc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -649,6 +649,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.exception        = exception_v_lo;
   // Unfreezing and debug mode act as a pseudo-interrupt
   assign commit_pkt_cast_o._interrupt       = interrupt_v_lo | unfreeze | enter_debug;
+  assign commit_pkt_cast_o.unfreeze         = unfreeze;
   assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;
   assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi              = retire_pkt_cast_i.special.wfi;

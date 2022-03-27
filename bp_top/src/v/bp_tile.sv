@@ -543,7 +543,7 @@ module bp_tile
      );
 
   // Processor
-  logic timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
+  logic unfreeze_irq_li, debug_irq_li, timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
   bp_core
    #(.bp_params_p(bp_params_p))
    core
@@ -597,6 +597,8 @@ module bp_tile
      ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_li)
      ,.lce_fill_last_o(lce_fill_last_lo)
 
+     ,.unfreeze_irq_i(unfreeze_irq_li)
+     ,.debug_irq_i(debug_irq_li)
      ,.timer_irq_i(timer_irq_li)
      ,.software_irq_i(software_irq_li)
      ,.m_external_irq_i(m_external_irq_li)
@@ -662,7 +664,7 @@ module bp_tile
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_r)
-     ,.id_i(cfg_bus_lo.core_id)
+     ,.cfg_bus_i(cfg_bus_lo)
 
      ,.mem_cmd_header_i(dev_cmd_header_li[2])
      ,.mem_cmd_data_i(dev_cmd_data_li[2])
@@ -676,6 +678,8 @@ module bp_tile
      ,.mem_resp_ready_and_i(dev_resp_ready_and_li[2])
      ,.mem_resp_last_o(dev_resp_last_lo[2])
 
+     ,.unfreeze_irq_o(unfreeze_irq_li)
+     ,.debug_irq_o(debug_irq_li)
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
      ,.m_external_irq_o(m_external_irq_li)

@@ -257,7 +257,6 @@ module bp_unicore
      ,.mem_resp_last_o(dev_resp_last_lo[0])
 
      ,.cfg_bus_o(cfg_bus_lo)
-     ,.unfreeze_irq_o(unfreeze_irq_li)
      ,.did_i(my_did_i)
      ,.host_did_i(host_did_i)
      ,.cord_i(my_cord_i)
@@ -278,7 +277,7 @@ module bp_unicore
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_i)
-     ,.id_i(cfg_bus_lo.core_id)
+     ,.cfg_bus_i(cfg_bus_lo)
 
      ,.mem_cmd_header_i(dev_cmd_header_li[1])
      ,.mem_cmd_data_i(clint_data_li)
@@ -292,6 +291,7 @@ module bp_unicore
      ,.mem_resp_ready_and_i(dev_resp_ready_and_li[1])
      ,.mem_resp_last_o(dev_resp_last_lo[1])
 
+     ,.unfreeze_irq_o(unfreeze_irq_li)
      ,.debug_irq_o(debug_irq_li)
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
