@@ -212,7 +212,6 @@ module bp_unicore_lite
   logic [1:1] _mem_resp_v_i, _mem_resp_ready_and_o, _mem_resp_last_i;
   bp_uce
    #(.bp_params_p(bp_params_p)
-     ,.mem_data_width_p(uce_fill_width_p)
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
