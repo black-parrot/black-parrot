@@ -260,13 +260,13 @@ module bp_be_csr
      ,.data_o(apc_r)
      );
   assign apc_n = retire_pkt_cast_i.special.sret ? sepc_lo : retire_pkt_cast_i.special.mret ? mepc_lo : retire_pkt_cast_i.special.dret ? dpc_lo
-                 : (exception_v_lo | interrupt_v_lo)
-                   ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
-                   : (commit_pkt_cast_o.unfreeze | enter_debug)
-                     ? cfg_bus_cast_i.npc
-                     : retire_pkt_cast_i.instret
-                       ? retire_pkt_cast_i.npc
-                       : apc_r;
+                 : (commit_pkt_cast_o.unfreeze | enter_debug)
+                   ? cfg_bus_cast_i.npc
+                   : (exception_v_lo | interrupt_v_lo)
+                     ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
+                       : retire_pkt_cast_i.instret
+                         ? retire_pkt_cast_i.npc
+                         : apc_r;
 
 
   assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
