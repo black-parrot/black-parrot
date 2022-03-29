@@ -225,7 +225,7 @@ module bp_be_scheduler
       dispatch_pkt.exception.store_page_fault |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.store_page_fault_v;
       dispatch_pkt.exception.itlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.itlb_fill_v;
       dispatch_pkt.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.dtlb_fill_v;
-      dispatch_pkt.exception._interrupt       |= be_exc_not_instr_li & interrupt_v_i;
+      dispatch_pkt.exception._interrupt       |= be_exc_not_instr_li & interrupt_v_i & ~unfreeze_i;
       dispatch_pkt.exception.unfreeze         |= be_exc_not_instr_li & unfreeze_i;
 
       dispatch_pkt.exception.illegal_instr |= fe_instr_not_exc_li & illegal_instr_lo;
