@@ -24,7 +24,7 @@ module wrapper
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
 
-   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
 
@@ -136,7 +136,7 @@ module wrapper
   logic [num_caches_p-1:0] lce_fill_has_data_lo, lce_fill_last_lo;
   logic [num_caches_p-1:0][lg_num_lce_lp-1:0] lce_fill_dst;
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   for (genvar i = 0; i < num_caches_p; i++)

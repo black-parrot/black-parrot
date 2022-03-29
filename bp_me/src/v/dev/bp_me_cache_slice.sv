@@ -53,7 +53,7 @@ module bp_me_cache_slice
    , input [l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
