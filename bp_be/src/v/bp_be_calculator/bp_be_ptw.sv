@@ -13,17 +13,13 @@ module bp_be_ptw
    , parameter `BSG_INV_PARAM(page_idx_width_p)
 
    , localparam dcache_pkt_width_lp   = `bp_be_dcache_pkt_width(vaddr_width_p)
-   , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
+   , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p, ptag_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                                    clk_i
    , input                                  reset_i
 
    // Slow control signals
-   , input [ptag_width_p-1:0]               base_ppn_i
-   , input [rv64_priv_width_gp-1:0]         priv_mode_i
-   , input                                  mstatus_sum_i
-   , input                                  mstatus_mxr_i
    , output                                 busy_o
 
    // TLB miss and fill interfaces
@@ -112,17 +108,17 @@ module bp_be_ptw
   assign level_cntr_en          = is_check & ~pte_is_leaf & ~page_fault_v;
 
   assign ppn_en                 = start | is_check;
-  assign ppn_n                  = is_idle ? base_ppn_i : dcache_pte_r.ppn[0+:ptag_width_p];
+  assign ppn_n                  = is_idle ? ptw_miss_pkt_cast_i.base_ppn : dcache_pte_r.ppn[0+:ptag_width_p];
 
   wire pte_invalid              = (~dcache_pte_r.v) | (~dcache_pte_r.r & dcache_pte_r.w);
   wire leaf_not_found           = (level_cntr == '0) & (~pte_is_leaf);
-  wire priv_fault               = pte_is_leaf & ((dcache_pte_r.u & (priv_mode_i == `PRIV_MODE_S) & (ptw_miss_pkt_r.instr_miss_v | ~mstatus_sum_i)) | (~dcache_pte_r.u & (priv_mode_i == `PRIV_MODE_U)));
+  wire priv_fault               = pte_is_leaf & ((dcache_pte_r.u & (ptw_miss_pkt_r.priv_mode == `PRIV_MODE_S) & (ptw_miss_pkt_r.instr_miss_v | ~ptw_miss_pkt_r.mstatus_sum)) | (~dcache_pte_r.u & (ptw_miss_pkt_r.priv_mode == `PRIV_MODE_U)));
   wire misaligned_superpage     = pte_is_leaf & (|partial_pte_misaligned);
   wire ad_fault                 = pte_is_leaf & (~dcache_pte_r.a | (ptw_miss_pkt_r.store_miss_v & ~dcache_pte_r.d));
   wire common_faults            = pte_invalid | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
 
   wire instr_page_fault         = ptw_miss_pkt_r.instr_miss_v & (common_faults | (pte_is_leaf & ~dcache_pte_r.x));
-  wire load_page_fault          = ptw_miss_pkt_r.load_miss_v  & (common_faults | (pte_is_leaf & ~dcache_pte_r.r));
+  wire load_page_fault          = ptw_miss_pkt_r.load_miss_v  & (common_faults | (pte_is_leaf & ~(dcache_pte_r.r | (dcache_pte_r.x & ptw_miss_pkt_r.mstatus_mxr))));
   wire store_page_fault         = ptw_miss_pkt_r.store_miss_v & (common_faults | (pte_is_leaf & ~dcache_pte_r.w));
   assign page_fault_v           = (instr_page_fault | load_page_fault | store_page_fault);
 

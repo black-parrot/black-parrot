@@ -209,6 +209,7 @@ module bp_be_pipe_mem
      ,.flush_i(sfence_i)
      ,.priv_mode_i(trans_info.priv_mode)
      ,.sum_i(trans_info.mstatus_sum)
+     ,.mxr_i(trans_info.mstatus_mxr)
      ,.trans_en_i(trans_info.translation_en)
      ,.uncached_mode_i((cfg_bus.dcache_mode == e_lce_mode_uncached))
      ,.nonspec_mode_i((cfg_bus.dcache_mode == e_lce_mode_nonspec))
@@ -250,6 +251,10 @@ module bp_be_pipe_mem
       ,store_miss_v : commit_pkt.dtlb_store_miss
       ,load_miss_v  : commit_pkt.dtlb_load_miss
       ,vaddr        : commit_pkt.itlb_miss ? commit_pkt.pc : commit_pkt.vaddr
+      ,mstatus_mxr  : trans_info.mstatus_mxr
+      ,mstatus_sum  : trans_info.mstatus_sum
+      ,base_ppn     : trans_info.base_ppn
+      ,priv_mode    : trans_info.priv_mode
       };
 
   bp_be_ptw
@@ -262,10 +267,6 @@ module bp_be_pipe_mem
    ptw
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.base_ppn_i(trans_info.satp_ppn)
-     ,.priv_mode_i(trans_info.priv_mode)
-     ,.mstatus_sum_i(trans_info.mstatus_sum)
-     ,.mstatus_mxr_i(trans_info.mstatus_mxr)
 
      ,.busy_o(ptw_busy)
      ,.ptw_miss_pkt_i(ptw_miss_pkt)

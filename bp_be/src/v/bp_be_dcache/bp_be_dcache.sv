@@ -1278,7 +1278,7 @@ module bp_be_dcache
       // Invalidates from other harts which match the reservation address clear the reservation
       // Also invalidate on trap
       wire clear_reservation = (v_tv_r & decode_tv_r.sc_op)
-        || (tag_mem_pkt_yumi_lo
+        || (tag_mem_pkt_yumi_o
             & load_reserved_v_r
             & (tag_mem_pkt_cast_i.index == load_reserved_index_r)
             & (tag_mem_pkt_cast_i.tag == load_reserved_tag_r)
