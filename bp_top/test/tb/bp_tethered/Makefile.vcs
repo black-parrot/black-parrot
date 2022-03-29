@@ -61,19 +61,19 @@ $(SIM_DIR)/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/prog.elf: $(SIM_DIR)/prog.riscv
 	cp $^ $@
 
-ifeq ($(UCODE_CFG), 1)
+ifeq ($(UCODE), 1)
 CCE_UCODE_FILE ?= $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
 else
 CCE_UCODE_FILE ?=
 endif
 
 $(SIM_DIR)/cce_ucode.mem: $(CCE_UCODE_FILE)
-ifeq ($(UCODE_CFG), 1)
+ifeq ($(UCODE), 1)
 	cp $< $@
 endif
 
 NBF_INPUTS ?= --ncpus=$(NCPUS)
-ifeq ($(UCODE_CFG), 1)
+ifeq ($(UCODE), 1)
 NBF_INPUTS += --ucode=cce_ucode.mem
 endif
 ifeq ($(PRELOAD_MEM_P), 0)
@@ -92,6 +92,7 @@ $(SIM_DIR)/bootrom.riscv: $(BP_SDK_PROG_DIR)/bootrom/bootrom.riscv
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
 	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 $< $@
+	$(SED) -i "s/@0011/@0000/g" $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)

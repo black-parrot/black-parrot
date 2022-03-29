@@ -236,9 +236,9 @@ class NBF:
             self.print_nbf(3, full_addr, self.ucode[i])
 
       # Write I$, D$, and CCE modes
+      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
-      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
 
       # Write RTC
       self.print_nbf_allcores(3, clint_base_addr + clint_reg_mtimesel, 1)
