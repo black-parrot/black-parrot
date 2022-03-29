@@ -18,12 +18,14 @@ module bp_me_clint_slice
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                                clk_i
    , input                                              rt_clk_i
    , input                                              reset_i
 
-   , input [core_id_width_p-1:0]                        id_i
+   , input [cfg_bus_width_lp-1:0]                       cfg_bus_i
 
    , input [mem_header_width_lp-1:0]                    mem_cmd_header_i
    , input [dword_width_gp-1:0]                         mem_cmd_data_i
@@ -38,6 +40,7 @@ module bp_me_clint_slice
    , output logic                                       mem_resp_last_o
 
    // Local interrupts
+   , output logic                                       debug_irq_o
    , output logic                                       software_irq_o
    , output logic                                       timer_irq_o
    , output logic                                       m_external_irq_o
@@ -46,25 +49,30 @@ module bp_me_clint_slice
 
   if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
 
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, caddr_width_p);
+  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
+
+  localparam reg_els_lp = 6;
 
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
-  logic [4:0][dword_width_gp-1:0] data_li;
+  logic [reg_els_lp-1:0][dword_width_gp-1:0] data_li;
+  logic debug_w_v_li;
   logic plic_w_v_li;
   logic mtime_w_v_li, mtimesel_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.els_p(5)
+     ,.els_p(reg_els_lp)
      ,.reg_addr_width_p(dev_addr_width_gp)
-     ,.base_addr_p({plic_reg_match_addr_gp, mtime_reg_addr_gp, mtimesel_reg_match_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
+     ,.base_addr_p({debug_reg_match_addr_gp, plic_reg_match_addr_gp, mtime_reg_addr_gp, mtimesel_reg_match_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
      )
    register
     (.*
      // We ignore reads because these are all asynchronous registers
      ,.r_v_o()
-     ,.w_v_o({plic_w_v_li, mtime_w_v_li, mtimesel_w_v_li, mtimecmp_w_v_li, mipi_w_v_li})
+     ,.w_v_o({debug_w_v_li, plic_w_v_li, mtime_w_v_li, mtimesel_w_v_li, mtimecmp_w_v_li, mipi_w_v_li})
      ,.addr_o(addr_lo)
      ,.size_o()
      ,.data_o(data_lo)
@@ -181,15 +189,28 @@ module bp_me_clint_slice
      ,.data_o(plic_r)
      );
   wire plic_lo = plic_r[plic_addr_li];
-
   assign m_external_irq_o = plic_r[0];
   assign s_external_irq_o = plic_r[1];
+
+  logic debug_r;
+  wire debug_n = data_lo[0];
+  bsg_dff_reset_en
+   #(.width_p(1))
+   debug_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(debug_w_v_li)
+     ,.data_i(debug_n)
+     ,.data_o(debug_r)
+     );
+  assign debug_irq_o = debug_r;
 
   assign data_li[0] = mipi_r;
   assign data_li[1] = mtimecmp_r;
   assign data_li[2] = mtimesel_r;
   assign data_li[3] = mtime_r;
   assign data_li[4] = plic_lo;
+  assign data_li[5] = debug_r;
 
 endmodule
 

@@ -139,12 +139,14 @@ These addresses are per-tile. To access them on a tile N, prepend N to the addre
 
 | Device   | Name        | Address         | Description                                                                                                                       |
 |----------|-------------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| Bootrom* | Bootrom     | 01_0000-01_ffff | The bootrom which bootstraps BlackParrot in bootrom configurations                                                                |
 | Host*    | getchar     | 10_0000         | A polling implementation to get a single char from a tethered host                                                                |
 |          | putchar     | 10_1000         | Puts a character onto the terminal of a tethered host                                                                             |
 |          | finish      | 10_2000-10_2fff | Terminates a multicore BlackParrot simulation, when finish[x] is received for each core x in the system                           |
 |          | putch       | 10_3000-10_3fff | putch[x] puts a character into a private terminal for core x. This is useful for debugging multicore simulations                  |
-| CFG      | freeze      | 20_0008         | Freezes the core, preventing all fetch operations. Will drain the pipeline if set during runtime.                                 |
+| Bootrom* | bootrom     | 11_0000-11_ffff | The bootrom which bootstraps BlackParrot in bootrom configurations                                                                |
+| CFG      | unused      | 20_0000         | Unused.                                                                                                                           |
+|          | freeze      | 20_0004         | Freezes the core, preventing all fetch operations. Will drain the pipeline if set during runtime. Defaults to frozen.             |
+|          | npc         | 20_0008         | When freeze is lowered or a debug interrupt is raised,this becomes the architectural NPC. Defaults to bootrom address.            |
 |          | core_id     | 20_000c         | Read-only. This tile's core id. This is a local id within the chip                                                                |
 |          | did         | 20_0010         | Read-only. This tile's domain id. This is an chip-wide identifier                                                                 |
 |          | cord        | 20_0014         | Read-only. This tile's coordinate. In {y,x} format                                                                                |
@@ -159,8 +161,9 @@ These addresses are per-tile. To access them on a tile N, prepend N to the addre
 |          | cce_ucode   | 20_8000-20_8fff | The CCE instruction RAM. Must be written before enabling cached mode in a microcoded CCE                                          |
 | CLINT    | mipi        | 30_0000         | mip (software interrupt) bit                                                                                                      |
 |          | mtimecmp    | 30_4000         | Timer compare register. When mtime > mtimecmp, a timer irq is raised in the core                                                  |
-|          | mtimesel    | 30_8000         | Timer select register. 0=core_clk, 1=core_clk/8, 2=external RTC, 3=disable
+|          | mtimesel    | 30_8000         | Timer select register. 0=core_clk, 1=core_clk/8, 2=external RTC, 3=disable                                                        |
 |          | mtime       | 30_bff8         | A real-time counter. Currently implemented as mcycle/8                                                                            |
 |          | plic        | 30_b000         | A fake PLIC implementation. Effectively a redundant implementation of mipi                                                        |
+|          | debug       | 30_c000         | A request to take a debug interrupt to cfg.npc, and switch into debug mode                                                        |
 
 * This lives outside of the unicore/tile, residing in the tethered host. Implementations must map this correctly for full software support

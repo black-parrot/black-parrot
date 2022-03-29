@@ -85,7 +85,7 @@ module bp_unicore
    , input [l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
   `bp_cast_o(bp_bedrock_mem_header_s, io_cmd_header);
@@ -110,7 +110,7 @@ module bp_unicore
   logic [4:0][uce_fill_width_p-1:0] dev_resp_data_lo;
   logic [4:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
 
-  logic timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
+  logic debug_irq_li, timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
   bp_unicore_lite
    #(.bp_params_p(bp_params_p))
    unicore_lite
@@ -130,6 +130,7 @@ module bp_unicore
      ,.mem_resp_ready_and_o(proc_resp_ready_and_lo[0+:2])
      ,.mem_resp_last_i(proc_resp_last_li[0+:2])
 
+     ,.debug_irq_i(debug_irq_li)
      ,.timer_irq_i(timer_irq_li)
      ,.software_irq_i(software_irq_li)
      ,.m_external_irq_i(m_external_irq_li)
@@ -275,7 +276,7 @@ module bp_unicore
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_i)
-     ,.id_i(cfg_bus_lo.core_id)
+     ,.cfg_bus_i(cfg_bus_lo)
 
      ,.mem_cmd_header_i(dev_cmd_header_li[1])
      ,.mem_cmd_data_i(clint_data_li)
@@ -289,6 +290,7 @@ module bp_unicore
      ,.mem_resp_ready_and_i(dev_resp_ready_and_li[1])
      ,.mem_resp_last_o(dev_resp_last_lo[1])
 
+     ,.debug_irq_o(debug_irq_li)
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)
      ,.m_external_irq_o(m_external_irq_li)

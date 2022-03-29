@@ -44,9 +44,6 @@
     , localparam asid_width_p    = proc_param_lp.asid_width                                        \
     , localparam hio_width_p     = paddr_width_p - daddr_width_p                                   \
                                                                                                    \
-    , localparam boot_pc_p       = proc_param_lp.boot_pc                                           \
-    , localparam boot_in_debug_p = proc_param_lp.boot_in_debug                                     \
-                                                                                                   \
     , localparam branch_metadata_fwd_width_p = proc_param_lp.branch_metadata_fwd_width             \
     , localparam btb_tag_width_p             = proc_param_lp.btb_tag_width                         \
     , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                         \
@@ -198,9 +195,6 @@
           ,`bp_aviary_parameter_override(daddr_width, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(caddr_width, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(asid_width, override_cfg_mp, default_cfg_mp)              \
-                                                                                                   \
-          ,`bp_aviary_parameter_override(boot_pc, override_cfg_mp, default_cfg_mp)                 \
-          ,`bp_aviary_parameter_override(boot_in_debug, override_cfg_mp, default_cfg_mp)           \
                                                                                                    \
           ,`bp_aviary_parameter_override(fe_queue_fifo_els, override_cfg_mp, default_cfg_mp)       \
           ,`bp_aviary_parameter_override(fe_cmd_fifo_els, override_cfg_mp, default_cfg_mp)         \
