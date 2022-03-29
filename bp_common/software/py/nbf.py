@@ -81,7 +81,7 @@ class NBF:
 
   # constructor
   def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file, config, skip_zeros, addr_width,
-          data_width, verify):
+          data_width, boot_pc, debug, verify):
 
     # input parameters
     self.ncpus = ncpus
@@ -92,6 +92,8 @@ class NBF:
     self.skip_zeros = skip_zeros
     self.addr_width = (addr_width+3)/4*4
     self.data_width = data_width
+    self.boot_pc = boot_pc
+    self.debug = debug
     self.verify = verify
 
     # Grab various files
@@ -226,12 +228,13 @@ class NBF:
 
     # Freeze set
     self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
-    # Debug set
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, 0x00110000)
-    self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 1)
-
-    self.print_fence()
-    self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 0)
+    # Boot PC set
+    if self.boot_pc:
+      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, int(self.boot_pc, 16))
+    if self.debug:
+      self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 1)
+      self.print_fence()
+      self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 0)
 
     # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
     if self.config:
@@ -291,10 +294,12 @@ if __name__ == "__main__":
   parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
   parser.add_argument('--addr_width', type=int, default=40, help='Physical address width')
   parser.add_argument('--data_width', type=int, default=64, help='Data width')
+  parser.add_argument('--boot_pc', dest='boot_pc', help='The first PC to be fetched')
+  parser.add_argument('--debug', dest='debug', action='store_true', help='Whether to start in debug mode')
   parser.add_argument("--verify", dest='verify', action='store_true', help='Read back mode registers')
 
   args = parser.parse_args()
 
   converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file, args.config,
-          args.skip_zeros, args.addr_width, args.data_width, args.verify)
+          args.skip_zeros, args.addr_width, args.data_width, args.boot_pc, args.debug, args.verify)
   converter.dump()

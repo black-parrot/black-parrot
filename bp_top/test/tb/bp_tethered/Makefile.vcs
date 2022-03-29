@@ -80,6 +80,7 @@ ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem --skip_zeros
 endif
 NBF_INPUTS += --addr_width=$(PADDR_WIDTH)
+NBF_INPUTS += --debug
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
