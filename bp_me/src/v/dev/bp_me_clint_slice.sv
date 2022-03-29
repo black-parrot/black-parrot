@@ -40,7 +40,6 @@ module bp_me_clint_slice
    , output logic                                       mem_resp_last_o
 
    // Local interrupts
-   , output logic                                       unfreeze_irq_o
    , output logic                                       debug_irq_o
    , output logic                                       software_irq_o
    , output logic                                       timer_irq_o
@@ -192,17 +191,6 @@ module bp_me_clint_slice
   wire plic_lo = plic_r[plic_addr_li];
   assign m_external_irq_o = plic_r[0];
   assign s_external_irq_o = plic_r[1];
-
-  logic unfreeze;
-  bsg_edge_detect
-   #(.falling_not_rising_p(1))
-   unfreeze_detect
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.sig_i(cfg_bus_cast_i.freeze)
-     ,.detect_o(unfreeze)
-     );
-  assign unfreeze_irq_o = unfreeze;
 
   logic debug_r;
   wire debug_n = data_lo[0];

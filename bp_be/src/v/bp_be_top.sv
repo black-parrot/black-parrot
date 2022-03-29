@@ -67,12 +67,11 @@ module bp_be_top
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    , output logic                                    stat_mem_pkt_yumi_o
 
+   , input                                           debug_irq_i
    , input                                           timer_irq_i
    , input                                           software_irq_i
    , input                                           m_external_irq_i
    , input                                           s_external_irq_i
-   , input                                           unfreeze_irq_i
-   , input                                           debug_irq_i
    );
 
   // Declare parameterized structures
@@ -93,7 +92,7 @@ module bp_be_top
 
   bp_be_isd_status_s isd_status;
   logic [vaddr_width_p-1:0] expected_npc_lo;
-  logic poison_isd_lo, suppress_iss_lo;
+  logic poison_isd_lo, suppress_iss_lo, unfreeze_lo;
   logic waiting_for_irq_lo;
 
   logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_lo;
@@ -114,6 +113,7 @@ module bp_be_top
      ,.fe_cmd_v_o(fe_cmd_v_o)
      ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
 
+     ,.unfreeze_o(unfreeze_lo)
      ,.suppress_iss_o(suppress_iss_lo)
      ,.poison_isd_o(poison_isd_lo)
      ,.irq_waiting_i(irq_waiting_lo)
@@ -163,6 +163,7 @@ module bp_be_top
      ,.poison_isd_i(poison_isd_lo)
      ,.dispatch_v_i(dispatch_v)
      ,.interrupt_v_i(interrupt_v)
+     ,.unfreeze_i(unfreeze_lo)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.decode_info_i(decode_info_lo)
 
@@ -227,7 +228,6 @@ module bp_be_top
      ,.stat_mem_o(stat_mem_o)
      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
 
-     ,.unfreeze_irq_i(unfreeze_irq_i)
      ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)

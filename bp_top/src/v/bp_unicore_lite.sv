@@ -33,7 +33,6 @@ module bp_unicore_lite
    , output logic [1:0]                                mem_resp_ready_and_o
    , input [1:0]                                       mem_resp_last_i
 
-   , input                                             unfreeze_irq_i
    , input                                             debug_irq_i
    , input                                             timer_irq_i
    , input                                             software_irq_i
@@ -141,7 +140,6 @@ module bp_unicore_lite
      ,.dcache_stat_mem_pkt_yumi_o(dcache_stat_mem_pkt_yumi_lo)
      ,.dcache_stat_mem_o(dcache_stat_mem_lo)
 
-     ,.unfreeze_irq_i(unfreeze_irq_i)
      ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)

@@ -110,7 +110,7 @@ module bp_unicore
   logic [4:0][uce_fill_width_p-1:0] dev_resp_data_lo;
   logic [4:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
 
-  logic unfreeze_irq_li, debug_irq_li, timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
+  logic debug_irq_li, timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
   bp_unicore_lite
    #(.bp_params_p(bp_params_p))
    unicore_lite
@@ -130,7 +130,6 @@ module bp_unicore
      ,.mem_resp_ready_and_o(proc_resp_ready_and_lo[0+:2])
      ,.mem_resp_last_i(proc_resp_last_li[0+:2])
 
-     ,.unfreeze_irq_i(unfreeze_irq_li)
      ,.debug_irq_i(debug_irq_li)
      ,.timer_irq_i(timer_irq_li)
      ,.software_irq_i(software_irq_li)
@@ -291,7 +290,6 @@ module bp_unicore
      ,.mem_resp_ready_and_i(dev_resp_ready_and_li[1])
      ,.mem_resp_last_o(dev_resp_last_lo[1])
 
-     ,.unfreeze_irq_o(unfreeze_irq_li)
      ,.debug_irq_o(debug_irq_li)
      ,.timer_irq_o(timer_irq_li)
      ,.software_irq_o(software_irq_li)

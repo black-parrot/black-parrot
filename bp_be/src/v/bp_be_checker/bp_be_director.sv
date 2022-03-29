@@ -37,6 +37,7 @@ module bp_be_director
    , output logic [vaddr_width_p-1:0]   expected_npc_o
    , output logic                       poison_isd_o
    , output logic                       suppress_iss_o
+   , output logic                       unfreeze_o
    , input                              irq_waiting_i
    , output logic                       cmd_empty_o
    , output logic                       cmd_full_n_o
@@ -71,11 +72,11 @@ module bp_be_director
   logic [vaddr_width_p-1:0]               npc_n, npc_r, pc_r;
   logic                                   npc_mismatch_v;
 
-  enum logic [2:0] {e_reset, e_run, e_fence, e_wait} state_n, state_r;
-  wire is_reset = (state_r == e_reset);
-  wire is_run   = (state_r == e_run);
-  wire is_fence = (state_r == e_fence);
-  wire is_wait  = (state_r == e_wait);
+  enum logic [2:0] {e_freeze, e_run, e_fence, e_wait} state_n, state_r;
+  wire is_freeze = (state_r == e_freeze);
+  wire is_run    = (state_r == e_run);
+  wire is_fence  = (state_r == e_fence);
+  wire is_wait   = (state_r == e_wait);
 
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or upon commit
@@ -118,36 +119,31 @@ module bp_be_director
       unique casez (state_r)
         e_wait  : state_n = fe_cmd_nonattaboy_v ? e_fence : e_wait;
         e_run   : state_n = commit_pkt_cast_i.wfi ? e_wait : fe_cmd_nonattaboy_v ? e_fence : e_run;
-        e_fence : state_n = suppress_iss_o ? e_fence : e_run;
-        // e_reset:
-        default : state_n = e_wait;
+        e_fence : state_n = fe_cmd_v_o ? e_fence : e_run;
+        // e_freeze:
+        default : state_n = cfg_bus_cast_i.freeze ? e_freeze : e_wait;
       endcase
     end
 
   //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
-        state_r <= e_reset;
+        state_r <= e_freeze;
     else
       begin
         state_r <= state_n;
       end
 
-  assign suppress_iss_o  = ((state_r == e_fence) & fe_cmd_v_o) || (state_r == e_wait);
+  assign suppress_iss_o  = (state_r != e_run);
+  assign unfreeze_o      = ~cfg_bus_cast_i.freeze & (state_r == e_freeze);
 
   always_comb
-    begin : fe_cmd_adapter
+    begin
       fe_cmd_li = 'b0;
       fe_cmd_v_li = 1'b0;
       fe_cmd_pc_redirect_operands = '0;
 
-      // Do not send anything on reset
-      if (state_r == e_reset)
-        begin
-          fe_cmd_v_li = 1'b0;
-        end
-      // Send a reset cmd when unfreezing
-      else if (commit_pkt_cast_i.unfreeze)
+      if (commit_pkt_cast_i.unfreeze)
         begin
           fe_cmd_li.opcode = e_op_state_reset;
           fe_cmd_li.vaddr  = npc_r;

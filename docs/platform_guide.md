@@ -146,7 +146,6 @@ These addresses are per-tile. To access them on a tile N, prepend N to the addre
 |          | putch       | 10_3000-10_3fff | putch[x] puts a character into a private terminal for core x. This is useful for debugging multicore simulations                  |
 | CFG      | freeze      | 20_0004         | Freezes the core, preventing all fetch operations. Will drain the pipeline if set during runtime.                                 |
 |          | npc         | 20_0008         | When freeze is lowered or a debug interrupt is raised,this becomes the architectural NPC.                                         |
-|          |             |                 | Note: Freeze must go high->low to use NPC. If freeze is constantly low, fetch will start at the default bootrom address           |
 |          | core_id     | 20_000c         | Read-only. This tile's core id. This is a local id within the chip                                                                |
 |          | did         | 20_0010         | Read-only. This tile's domain id. This is an chip-wide identifier                                                                 |
 |          | cord        | 20_0014         | Read-only. This tile's coordinate. In {y,x} format                                                                                |

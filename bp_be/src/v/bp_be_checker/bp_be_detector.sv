@@ -264,12 +264,11 @@ module bp_be_detector
                    | (frs1_sb_raw_haz_v | frs2_sb_raw_haz_v | frs3_sb_raw_haz_v | frd_sb_waw_haz_v);
 
       // Combine all structural hazard information
-      struct_haz_v = cfg_bus_cast_i.freeze
-                     | ptw_busy_i
+      struct_haz_v = ptw_busy_i
+                     | cmd_haz_v
                      | (~mem_ready_i & isd_status_cast_i.mem_v)
                      | (~fdiv_ready_i & isd_status_cast_i.long_v)
-                     | (~idiv_ready_i & isd_status_cast_i.long_v)
-                     | cmd_haz_v;
+                     | (~idiv_ready_i & isd_status_cast_i.long_v);
     end
 
   // Generate calculator control signals

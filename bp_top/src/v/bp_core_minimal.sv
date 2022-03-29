@@ -75,7 +75,6 @@ module bp_core_minimal
    , output logic                                    dcache_stat_mem_pkt_yumi_o
    , output logic [dcache_stat_info_width_lp-1:0]    dcache_stat_mem_o
 
-   , input                                           unfreeze_irq_i
    , input                                           debug_irq_i
    , input                                           timer_irq_i
    , input                                           software_irq_i
@@ -180,7 +179,6 @@ module bp_core_minimal
      ,.stat_mem_pkt_yumi_o(dcache_stat_mem_pkt_yumi_o)
      ,.stat_mem_o(dcache_stat_mem_o)
 
-     ,.unfreeze_irq_i(unfreeze_irq_i)
      ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)

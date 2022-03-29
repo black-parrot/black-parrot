@@ -51,7 +51,6 @@ module bp_be_pipe_sys
    , input [wb_pkt_width_lp-1:0]             fwb_pkt_i
    , output logic [commit_pkt_width_lp-1:0]  commit_pkt_o
 
-   , input                                   unfreeze_irq_i
    , input                                   debug_irq_i
    , input                                   timer_irq_i
    , input                                   software_irq_i
@@ -119,7 +118,6 @@ module bp_be_pipe_sys
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
      ,.frf_w_v_i(fwb_pkt.frd_w_v)
 
-     ,.unfreeze_irq_i(unfreeze_irq_i)
      ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)

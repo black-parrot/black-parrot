@@ -35,7 +35,6 @@ module bp_be_csr
    , input                                   frf_w_v_i
 
    // Interrupts
-   , input                                   unfreeze_irq_i
    , input                                   debug_irq_i
    , input                                   timer_irq_i
    , input                                   software_irq_i
@@ -238,7 +237,6 @@ module bp_be_csr
       endcase
     end
 
-  wire unfreeze = unfreeze_irq_i;
   logic enter_debug, exit_debug;
   bsg_dff_reset_set_clear
    #(.width_p(1))
@@ -264,7 +262,7 @@ module bp_be_csr
   assign apc_n = retire_pkt_cast_i.special.sret ? sepc_lo : retire_pkt_cast_i.special.mret ? mepc_lo : retire_pkt_cast_i.special.dret ? dpc_lo
                  : (exception_v_lo | interrupt_v_lo)
                    ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
-                   : (unfreeze | enter_debug)
+                   : (commit_pkt_cast_o.unfreeze | enter_debug)
                      ? cfg_bus_cast_i.npc
                      : retire_pkt_cast_i.instret
                        ? retire_pkt_cast_i.npc
@@ -646,14 +644,14 @@ module bp_be_csr
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;
-  // Unfreezing and debug mode act as a pseudo-interrupt
-  assign commit_pkt_cast_o._interrupt       = interrupt_v_lo | unfreeze | enter_debug;
-  assign commit_pkt_cast_o.unfreeze         = unfreeze;
+  // Debug mode acts as a pseudo-interrupt
+  assign commit_pkt_cast_o._interrupt       = interrupt_v_lo | enter_debug;
   assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;
   assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi              = retire_pkt_cast_i.special.wfi;
   assign commit_pkt_cast_o.eret             = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};
   assign commit_pkt_cast_o.csrw             = retire_pkt_cast_i.special.csrw;
+  assign commit_pkt_cast_o.unfreeze         = retire_pkt_cast_i.exception.unfreeze;
   assign commit_pkt_cast_o.itlb_miss        = retire_pkt_cast_i.exception.itlb_miss;
   assign commit_pkt_cast_o.icache_miss      = retire_pkt_cast_i.exception.icache_miss;
   assign commit_pkt_cast_o.dtlb_store_miss  = retire_pkt_cast_i.exception.dtlb_store_miss;
