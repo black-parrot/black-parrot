@@ -80,5 +80,5 @@ test_bp.tb.wrapper.unicore.dut.cache):
 The second method of boot involves BlackParrot bootstrapping itself using an external bootrom. This version of BlackParrot will go through exactly the same steps as Method 1. However, the process is not driven through an NBF loader. Instead, BlackParrot will start fetching from the bootrom, which contains the configuration registers and cce microcode for a core. This self-bootstrapping bootrom can be found here: https://github.com/black-parrot-sdk/bootrom/blob/master/bootrom.S.
 
 In the tethered testbench, this bootrom lives in the host
-https://github.com/black-parrot/black-parrot/blob/master/bp_top/test/common/bp_nonsynth_host.sv#L228. Any environment constructed without a tether will need the runrom mapped onto the I/O bus, beginning at the address found here: https://github.com/black-parrot/black-parrot/blob/master/bp_common/src/include/bp_common_addr_pkgdef.svh#L31.
+https://github.com/black-parrot/black-parrot/blob/master/bp_top/test/common/bp_nonsynth_host.sv#L228. Any environment constructed without a tether will need the bootrom mapped onto the I/O bus, beginning at the address found here: https://github.com/black-parrot/black-parrot/blob/master/bp_common/src/include/bp_common_addr_pkgdef.svh#L31.
 
