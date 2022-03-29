@@ -259,19 +259,32 @@ module bp_be_csr
      ,.data_i(apc_n)
      ,.data_o(apc_r)
      );
-  assign apc_n = retire_pkt_cast_i.special.sret ? sepc_lo : retire_pkt_cast_i.special.mret ? mepc_lo : retire_pkt_cast_i.special.dret ? dpc_lo
-                 : (commit_pkt_cast_o.unfreeze | enter_debug)
-                   ? cfg_bus_cast_i.npc
-                   : (exception_v_lo | interrupt_v_lo)
-                     ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
-                       : retire_pkt_cast_i.instret
-                         ? retire_pkt_cast_i.npc
-                         : apc_r;
 
+  wire [vaddr_width_p-1:0] ret_pc =
+    retire_pkt_cast_i.special.sret
+    ? sepc_lo
+    : retire_pkt_cast_i.special.mret
+      ? mepc_lo
+      : dpc_lo;
+  wire [vaddr_width_p-1:0] tvec_pc =
+    (priv_mode_n == `PRIV_MODE_S)
+    ? {stvec_lo.base, 2'b00}
+    : {mtvec_lo.base, 2'b00};
+
+  wire [vaddr_width_p-1:0] core_npc =
+    (exception_v_lo | interrupt_v_lo)
+    ? tvec_pc
+    : commit_pkt_cast_o.eret
+      ? ret_pc
+      : retire_pkt_cast_i.instret
+        ? retire_pkt_cast_i.npc
+        : apc_r;
+
+  assign apc_n = (commit_pkt_cast_o.unfreeze | enter_debug) ? cfg_bus_cast_i.npc : core_npc;
 
   assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
   bsg_dff_reset
-   #(.width_p(3), .reset_val_p({1'b1, `PRIV_MODE_M}))
+   #(.width_p(3), .reset_val_p({1'b0, `PRIV_MODE_M}))
    priv_mode_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -603,7 +616,7 @@ module bp_be_csr
       if (~is_debug_mode & retire_pkt_cast_i.queue_v & dcsr_lo.step)
         begin
           enter_debug   = 1'b1;
-          dpc_li        = `BSG_SIGN_EXTEND(retire_pkt_cast_i.npc, paddr_width_p);
+          dpc_li        = `BSG_SIGN_EXTEND(core_npc, paddr_width_p);
           dcsr_li.cause = 4;
           dcsr_li.prv   = priv_mode_r;
         end
@@ -621,8 +634,8 @@ module bp_be_csr
       mstatus_li.fs |= {2{(retire_pkt_cast_i.instret & instr_fany_li)}};
     end
 
-  // Debug Mode masks all interrupts
-  assign irq_pending_o = (d_interrupt_icode_v_li & dgie) | (m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie);
+  assign irq_pending_o = (~dcsr_lo.step | dcsr_lo.stepie)
+    & ((d_interrupt_icode_v_li & dgie) | (m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie));
 
   // The supervisor external interrupt line does not impact the supervisor software interrupt bit of MIP.
   // However, software read operations return as if it does. bit 9 is supervisor software interrupt
