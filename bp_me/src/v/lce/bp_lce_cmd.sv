@@ -572,7 +572,8 @@ module bp_lce_cmd
           // note: supports uncached accesses up to fill_width_p in size
           e_bedrock_cmd_uc_data: begin
             data_mem_pkt_cast_o.index = lce_cmd_addr_index;
-            data_mem_pkt_cast_o.data = lce_cmd_data_li;
+            // This replication only works for up to 64b uncached requests
+            data_mem_pkt_cast_o.data = {(block_width_p/dword_width_gp){lce_cmd_data_li[0+:dword_width_gp]}};
             data_mem_pkt_cast_o.fill_index = block_size_in_fill_lp'(1'b1);
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_v_o = lce_cmd_header_v_li & lce_cmd_data_v_li;
