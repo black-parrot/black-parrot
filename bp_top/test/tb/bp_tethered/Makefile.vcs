@@ -74,7 +74,7 @@ endif
 
 NBF_INPUTS ?= --ncpus=$(NCPUS)
 ifeq ($(UCODE), 1)
-NBF_INPUTS += --ucode=cce_ucode.mem
+NBF_INPUTS += --config --ucode=cce_ucode.mem
 endif
 ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem --skip_zeros
@@ -94,11 +94,9 @@ $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.mem bootrom.dump)
 
 SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
-SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 
 sim_sample.v: build.v
 sim_sample.v: $(SIM_DIR)/run_samplev

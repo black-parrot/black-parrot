@@ -94,21 +94,26 @@ module bp_unicore
   `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
   bp_cfg_bus_s cfg_bus_lo;
 
+  localparam num_proc_lp = 3;
+  localparam num_dev_lp  = 5;
+  localparam lg_num_proc_lp = `BSG_SAFE_CLOG2(num_proc_lp);
+  localparam lg_num_dev_lp = `BSG_SAFE_CLOG2(num_dev_lp);
+
   // {IO CMD, BE UCE, FE UCE}
-  bp_bedrock_mem_header_s [2:0] proc_cmd_header_lo;
-  logic [2:0][uce_fill_width_p-1:0] proc_cmd_data_lo;
-  logic [2:0] proc_cmd_v_lo, proc_cmd_ready_and_li, proc_cmd_last_lo;
-  bp_bedrock_mem_header_s [2:0] proc_resp_header_li;
-  logic [2:0][uce_fill_width_p-1:0] proc_resp_data_li;
-  logic [2:0] proc_resp_v_li, proc_resp_ready_and_lo, proc_resp_last_li;
+  bp_bedrock_mem_header_s [num_proc_lp-1:0] proc_cmd_header_lo;
+  logic [num_proc_lp-1:0][uce_fill_width_p-1:0] proc_cmd_data_lo;
+  logic [num_proc_lp-1:0] proc_cmd_v_lo, proc_cmd_ready_and_li, proc_cmd_last_lo;
+  bp_bedrock_mem_header_s [num_proc_lp-1:0] proc_resp_header_li;
+  logic [num_proc_lp-1:0][uce_fill_width_p-1:0] proc_resp_data_li;
+  logic [num_proc_lp-1:0] proc_resp_v_li, proc_resp_ready_and_lo, proc_resp_last_li;
 
   // {CCE loopback, IO CMD, L2 CMD, CLINT, CFG}
-  bp_bedrock_mem_header_s [4:0] dev_cmd_header_li;
-  logic [4:0][uce_fill_width_p-1:0] dev_cmd_data_li;
-  logic [4:0] dev_cmd_v_li, dev_cmd_ready_and_lo, dev_cmd_last_li;
-  bp_bedrock_mem_header_s [4:0] dev_resp_header_lo;
-  logic [4:0][uce_fill_width_p-1:0] dev_resp_data_lo;
-  logic [4:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
+  bp_bedrock_mem_header_s [num_dev_lp-1:0] dev_cmd_header_li;
+  logic [num_dev_lp-1:0][uce_fill_width_p-1:0] dev_cmd_data_li;
+  logic [num_dev_lp-1:0] dev_cmd_v_li, dev_cmd_ready_and_lo, dev_cmd_last_li;
+  bp_bedrock_mem_header_s [num_dev_lp-1:0] dev_resp_header_lo;
+  logic [num_dev_lp-1:0][uce_fill_width_p-1:0] dev_resp_data_lo;
+  logic [num_dev_lp-1:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
 
   logic debug_irq_li, timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
   bp_unicore_lite
@@ -151,25 +156,28 @@ module bp_unicore
   assign io_resp_last_o = proc_resp_last_li[2];
 
   // Select destination of commands
-  localparam lg_num_dev_lp = `BSG_SAFE_CLOG2(5);
-  logic [2:0][lg_num_dev_lp-1:0] proc_cmd_dst_lo;
-  for (genvar i = 0; i < 3; i++)
+  logic [num_proc_lp-1:0][lg_num_dev_lp-1:0] proc_cmd_dst_lo;
+  for (genvar i = 0; i < num_proc_lp; i++)
     begin : cmd_dest
       bp_local_addr_s local_addr;
       assign local_addr = proc_cmd_header_lo[i].addr;
       wire [dev_id_width_gp-1:0] device_cmd_li = local_addr.dev;
-      wire local_cmd_li    = (proc_cmd_header_lo[i].addr < dram_base_addr_gp);
-      wire is_other_core   = local_cmd_li & (local_addr.tile != cfg_bus_lo.core_id);
+      wire is_local        = (proc_cmd_header_lo[i].addr < dram_base_addr_gp);
+      wire is_my_core      = is_local & (local_addr.tile == cfg_bus_lo.core_id);
+      wire is_other_core   = is_local & (local_addr.tile != cfg_bus_lo.core_id);
       wire is_other_hio    = (proc_cmd_header_lo[i].addr[paddr_width_p-1-:hio_width_p] != 0);
-      wire is_cfg_cmd      = local_cmd_li & (device_cmd_li == cfg_dev_gp);
-      wire is_clint_cmd    = local_cmd_li & (device_cmd_li == clint_dev_gp);
-      wire is_io_cmd       = (local_cmd_li & (device_cmd_li == host_dev_gp))
-                             | is_other_hio | is_other_core;
-      wire is_mem_cmd      = (~local_cmd_li & ~is_other_hio) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
-      wire is_loopback_cmd = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_mem_cmd;
+
+      wire is_cfg_cmd      = is_my_core & is_local & (device_cmd_li == cfg_dev_gp);
+      wire is_clint_cmd    = is_my_core & is_local & (device_cmd_li == clint_dev_gp);
+      wire is_cache_cmd    = is_my_core & is_local & (device_cmd_li == cache_dev_gp);
+      wire is_host_cmd     = is_my_core & is_local & (device_cmd_li == host_dev_gp);
+
+      wire is_io_cmd       = is_host_cmd | is_other_hio | is_other_core;
+      wire is_mem_cmd      = is_cache_cmd | (~is_local & ~is_io_cmd);
+      wire is_loopback_cmd = ~is_cfg_cmd & ~is_clint_cmd & ~is_mem_cmd & ~is_io_cmd;
 
       bsg_encode_one_hot
-       #(.width_p(5), .lo_to_hi_p(1))
+       #(.width_p(num_dev_lp), .lo_to_hi_p(1))
        cmd_pe
         (.i({is_loopback_cmd, is_io_cmd, is_mem_cmd, is_clint_cmd, is_cfg_cmd})
          ,.addr_o(proc_cmd_dst_lo[i])
@@ -178,8 +186,7 @@ module bp_unicore
     end
 
   // Select destination of responses. Were there a way to transpose structs...
-  localparam lg_num_proc_lp = `BSG_SAFE_CLOG2(3);
-  logic [4:0][lg_num_proc_lp-1:0] dev_resp_dst_lo;
+  logic [num_dev_lp-1:0][lg_num_proc_lp-1:0] dev_resp_dst_lo;
   assign dev_resp_dst_lo[4] = dev_resp_header_lo[4].payload.lce_id[0+:lg_num_proc_lp];
   assign dev_resp_dst_lo[3] = dev_resp_header_lo[3].payload.lce_id[0+:lg_num_proc_lp];
   assign dev_resp_dst_lo[2] = dev_resp_header_lo[2].payload.lce_id[0+:lg_num_proc_lp];
@@ -190,8 +197,8 @@ module bp_unicore
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(uce_fill_width_p)
      ,.payload_width_p(mem_payload_width_lp)
-     ,.num_source_p(3)
-     ,.num_sink_p(5)
+     ,.num_source_p(num_proc_lp)
+     ,.num_sink_p(num_dev_lp)
      )
    cmd_xbar
     (.clk_i(clk_i)
@@ -215,8 +222,8 @@ module bp_unicore
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(uce_fill_width_p)
      ,.payload_width_p(mem_payload_width_lp)
-     ,.num_source_p(5)
-     ,.num_sink_p(3)
+     ,.num_source_p(num_dev_lp)
+     ,.num_sink_p(num_proc_lp)
      )
    resp_xbar
     (.clk_i(clk_i)
