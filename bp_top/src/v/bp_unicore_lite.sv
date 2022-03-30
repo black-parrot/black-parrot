@@ -77,11 +77,14 @@ module bp_unicore_lite
   logic dcache_stat_mem_pkt_v_li, dcache_stat_mem_pkt_yumi_lo;
   bp_dcache_stat_info_s dcache_stat_mem_lo;
 
+  wire posedge_clk = clk_i;
+  wire negedge_clk = ~clk_i;
+
   wire [1:0][lce_id_width_p-1:0] lce_id_li = {cfg_bus_cast_i.dcache_id, cfg_bus_cast_i.icache_id};
   bp_core_minimal
    #(.bp_params_p(bp_params_p))
    core_minimal
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
      ,.cfg_bus_i(cfg_bus_cast_i)
 
@@ -155,7 +158,7 @@ module bp_unicore_lite
      ,.metadata_latency_p(1)
      )
    icache_uce
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
 
      ,.lce_id_i(lce_id_li[0])
@@ -200,6 +203,12 @@ module bp_unicore_lite
      ,.mem_resp_last_i(mem_resp_last_i[0])
      );
 
+  bp_bedrock_mem_header_s [1:1] _mem_cmd_header_o;
+  logic [1:1][uce_fill_width_p-1:0] _mem_cmd_data_o;
+  logic [1:1] _mem_cmd_v_o, _mem_cmd_ready_and_i, _mem_cmd_last_o;
+  bp_bedrock_mem_header_s [1:1] _mem_resp_header_i;
+  logic [1:1][uce_fill_width_p-1:0] _mem_resp_data_i;
+  logic [1:1] _mem_resp_v_i, _mem_resp_ready_and_o, _mem_resp_last_i;
   bp_uce
    #(.bp_params_p(bp_params_p)
      ,.mem_data_width_p(uce_fill_width_p)
@@ -207,13 +216,10 @@ module bp_unicore_lite
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
      ,.fill_width_p(uce_fill_width_p)
-     ,.req_invert_clk_p(1)
-     ,.data_mem_invert_clk_p(1)
-     ,.tag_mem_invert_clk_p(1)
      ,.metadata_latency_p(1)
      )
    dcache_uce
-    (.clk_i(clk_i)
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
 
      ,.lce_id_i(lce_id_li[1])
@@ -245,16 +251,62 @@ module bp_unicore_lite
      ,.stat_mem_pkt_yumi_i(dcache_stat_mem_pkt_yumi_lo)
      ,.stat_mem_i(dcache_stat_mem_lo)
 
-     ,.mem_cmd_header_o(mem_cmd_header_o[1])
-     ,.mem_cmd_data_o(mem_cmd_data_o[1])
-     ,.mem_cmd_v_o(mem_cmd_v_o[1])
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i[1])
-     ,.mem_cmd_last_o(mem_cmd_last_o[1])
-     ,.mem_resp_header_i(mem_resp_header_i[1])
-     ,.mem_resp_data_i(mem_resp_data_i[1])
-     ,.mem_resp_v_i(mem_resp_v_i[1])
-     ,.mem_resp_ready_and_o(mem_resp_ready_and_o[1])
-     ,.mem_resp_last_i(mem_resp_last_i[1])
+     ,.mem_cmd_header_o(_mem_cmd_header_o[1])
+     ,.mem_cmd_data_o(_mem_cmd_data_o[1])
+     ,.mem_cmd_v_o(_mem_cmd_v_o[1])
+     ,.mem_cmd_ready_and_i(_mem_cmd_ready_and_i[1])
+     ,.mem_cmd_last_o(_mem_cmd_last_o[1])
+
+     ,.mem_resp_header_i(_mem_resp_header_i[1])
+     ,.mem_resp_data_i(_mem_resp_data_i[1])
+     ,.mem_resp_v_i(_mem_resp_v_i[1])
+     ,.mem_resp_ready_and_o(_mem_resp_ready_and_o[1])
+     ,.mem_resp_last_i(_mem_resp_last_i[1])
+     );
+
+  // These latches are optimized out in Verilator 4.220...
+  //   but bsg_deff_reset is more heavy_weight. It's possible that FPGAs would prefer
+  //   the alternate implementation as well. But ASICs will appreciate the time-borrowing
+  // Synchronize back to posedge clk
+`ifdef VERILATOR
+  bsg_deff_reset
+   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3))
+   posedge_latch
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+`else
+  bsg_dlatch
+   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
+   posedge_latch
+    (.clk_i(clk_i)
+`endif
+     ,.data_i({_mem_cmd_header_o[1], _mem_cmd_data_o[1], _mem_cmd_v_o[1], _mem_cmd_last_o[1]
+               ,mem_cmd_ready_and_i[1]
+               })
+     ,.data_o({mem_cmd_header_o[1], mem_cmd_data_o[1], mem_cmd_v_o[1], mem_cmd_last_o[1]
+               ,_mem_cmd_ready_and_i[1]
+               })
+     );
+
+  // Synchronize back to negedge clk
+`ifdef VERILATOR
+  bsg_deff_reset
+   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3))
+   negedge_latch
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+`else
+  bsg_dlatch
+   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
+   negedge_latch
+    (.clk_i(clk_i)
+`endif
+     ,.data_i({mem_resp_header_i[1], mem_resp_data_i[1], mem_resp_v_i[1], mem_resp_last_i[1]
+               ,_mem_resp_ready_and_o[1]
+               })
+     ,.data_o({_mem_resp_header_i[1], _mem_resp_data_i[1], _mem_resp_v_i[1], _mem_resp_last_i[1]
+               ,mem_resp_ready_and_o[1]
+               })
      );
 
 endmodule

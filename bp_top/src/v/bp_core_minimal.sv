@@ -48,6 +48,8 @@ module bp_core_minimal
    , output logic                                    icache_stat_mem_pkt_yumi_o
    , output logic [icache_stat_info_width_lp-1:0]    icache_stat_mem_o
 
+   // D$ Engine Interface is clocked on the negedge of the clock. Must be attached to
+   //   a negative-edge cache engine and synchronized before getting to the memory system
    , output logic [dcache_req_width_lp-1:0]          dcache_req_o
    , output logic                                    dcache_req_v_o
    , input                                           dcache_req_yumi_i

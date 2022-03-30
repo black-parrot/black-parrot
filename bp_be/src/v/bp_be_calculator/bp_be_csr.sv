@@ -377,9 +377,9 @@ module bp_be_csr
           else
             begin
               unique casez ({csr_r_v_li, csr_cmd_cast_i.csr_addr})
-                {1'b1, `CSR_ADDR_FFLAGS       }: csr_data_lo = fcsr_lo.fflags;
+                {1'b1, `CSR_ADDR_FFLAGS       }: csr_data_lo = fcsr_lo.fflags | fflags_acc_i;
                 {1'b1, `CSR_ADDR_FRM          }: csr_data_lo = fcsr_lo.frm;
-                {1'b1, `CSR_ADDR_FCSR         }: csr_data_lo = fcsr_lo;
+                {1'b1, `CSR_ADDR_FCSR         }: csr_data_lo = fcsr_lo | fflags_acc_i;
                 {1'b1, `CSR_ADDR_CYCLE        }: csr_data_lo = mcycle_lo;
                 // Time must be done by trapping, since we can't stall at this point
                 {1'b1, `CSR_ADDR_INSTRET      }: csr_data_lo = minstret_lo;
@@ -602,8 +602,9 @@ module bp_be_csr
       mip_li.msip = software_irq_i;
       mip_li.meip = m_external_irq_i;
 
-      // Accumulate FFLAGS
-      fcsr_li.fflags |= fflags_acc_i;
+      // Accumulate FFLAGS if we're not writing them this cycle
+      if (~(csr_w_v_li & csr_cmd_cast_i.csr_addr inside {`CSR_ADDR_FFLAGS, `CSR_ADDR_FCSR}))
+        fcsr_li.fflags |= fflags_acc_i;
 
       // Set FS to dirty if: fflags set, frf written, fcsr written
       mstatus_li.fs |= {2{(csr_w_v_li & csr_fany_li & ~csr_illegal_instr_o)}};
@@ -648,8 +649,8 @@ module bp_be_csr
   assign commit_pkt_cast_o.itlb_fill_v      = retire_pkt_cast_i.exception.itlb_fill;
   assign commit_pkt_cast_o.dtlb_fill_v      = retire_pkt_cast_i.exception.dtlb_fill;
 
-  assign trans_info_cast_o.priv_mode = priv_mode_r;
-  assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
+  assign trans_info_cast_o.priv_mode      = priv_mode_r;
+  assign trans_info_cast_o.base_ppn       = satp_lo.ppn;
   assign trans_info_cast_o.translation_en = translation_en_r
     | ((~is_debug_mode | dcsr_lo.mprven) & mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
   assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
