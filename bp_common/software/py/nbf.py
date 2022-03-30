@@ -250,14 +250,14 @@ class NBF:
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
       self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
 
-      # Write RTC
-      self.print_nbf_allcores(3, clint_base_addr + clint_reg_mtimesel, 1)
-
       if self.verify:
         # Read back I$, D$ and CCE modes for verification
         self.print_nbf(0x12, cfg_base_addr + cfg_reg_icache_mode, 1)
         self.print_nbf(0x12, cfg_base_addr + cfg_reg_dcache_mode, 1)
         self.print_nbf(0x12, cfg_base_addr + cfg_reg_cce_mode, 1)
+
+    # Write RTC
+    self.print_nbf_allcores(3, clint_base_addr + clint_reg_mtimesel, 1)
 
     self.print_fence()
 
