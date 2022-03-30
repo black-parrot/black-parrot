@@ -569,11 +569,11 @@ module bp_lce_cmd
           // Uncached Data - uncached load returning from memory
           // sends data to cache and raises request complete signal for one cycle
           // requires valid header (buffered) and data
-          // note: supports uncached accesses up to fill_width_p in size
+          // note: supports uncached accesses up to dword_width_gp size
           e_bedrock_cmd_uc_data: begin
             data_mem_pkt_cast_o.index = lce_cmd_addr_index;
             // This replication only works for up to 64b uncached requests
-            data_mem_pkt_cast_o.data = {(block_width_p/dword_width_gp){lce_cmd_data_li[0+:dword_width_gp]}};
+            data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_gp){lce_cmd_data_li[0+:dword_width_gp]}};
             data_mem_pkt_cast_o.fill_index = block_size_in_fill_lp'(1'b1);
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_v_o = lce_cmd_header_v_li & lce_cmd_data_v_li;
