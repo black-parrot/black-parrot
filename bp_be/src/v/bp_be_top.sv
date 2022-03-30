@@ -95,7 +95,7 @@ module bp_be_top
   logic poison_isd_lo, suppress_iss_lo, unfreeze_lo;
   logic waiting_for_irq_lo;
 
-  logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_lo;
+  logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
   logic mem_ready_lo, idiv_ready_lo, fdiv_ready_lo, ptw_busy_lo;
 
   bp_be_director
@@ -117,7 +117,8 @@ module bp_be_top
      ,.suppress_iss_o(suppress_iss_lo)
      ,.poison_isd_o(poison_isd_lo)
      ,.irq_waiting_i(irq_waiting_lo)
-     ,.cmd_empty_o()
+     ,.cmd_empty_n_o()
+     ,.cmd_empty_r_o()
      ,.cmd_full_n_o(cmd_full_n_lo)
      ,.cmd_full_r_o(cmd_full_r_lo)
 

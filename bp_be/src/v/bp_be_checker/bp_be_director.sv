@@ -39,7 +39,8 @@ module bp_be_director
    , output logic                       suppress_iss_o
    , output logic                       unfreeze_o
    , input                              irq_waiting_i
-   , output logic                       cmd_empty_o
+   , output logic                       cmd_empty_n_o
+   , output logic                       cmd_empty_r_o
    , output logic                       cmd_full_n_o
    , output logic                       cmd_full_r_o
 
@@ -119,7 +120,7 @@ module bp_be_director
       unique casez (state_r)
         e_wait  : state_n = fe_cmd_nonattaboy_v ? e_fence : e_wait;
         e_run   : state_n = commit_pkt_cast_i.wfi ? e_wait : fe_cmd_nonattaboy_v ? e_fence : e_run;
-        e_fence : state_n = fe_cmd_v_o ? e_fence : e_run;
+        e_fence : state_n = cmd_empty_n_o ? e_run : e_fence;
         // e_freeze:
         default : state_n = cfg_bus_cast_i.freeze ? e_freeze : e_wait;
       endcase
@@ -263,7 +264,8 @@ module bp_be_director
      ,.fe_cmd_v_o(fe_cmd_v_o)
      ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
 
-     ,.empty_o(cmd_empty_o)
+     ,.empty_n_o(cmd_empty_n_o)
+     ,.empty_r_o(cmd_empty_r_o)
      ,.full_n_o(cmd_full_n_o)
      ,.full_r_o(cmd_full_r_o)
      );
