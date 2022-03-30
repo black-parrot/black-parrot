@@ -260,6 +260,24 @@ module bp_be_csr
      ,.data_o(apc_r)
      );
 
+  logic [vaddr_width_p-1:0] cfg_npc_r;
+  wire [vaddr_width_p-1:0] cfg_npc_n = cfg_bus_cast_i.npc;
+  bsg_dff
+   #(.width_p(vaddr_width_p))
+   cfg_npc_reg
+    (.clk_i(clk_i)
+     ,.data_i(cfg_npc_n)
+     ,.data_o(cfg_npc_r)
+     );
+  // This currently depends on specific offsets in the debug module which are
+  //   compatible with the pulp-platform debug rom:
+  // https://github.com/pulp-platform/riscv-dbg/blob/64f48cd8ef3ed4269ab3dfcc32e8a137a871e3e1/src/dm_pkg.sv#L28
+  // For now, assume that unfreeze_pc is 16 byte aligned to avoid another mux
+  wire [vaddr_width_p-1:0] unfreeze_pc        = {cfg_npc_r[vaddr_width_p-1:4], 4'b0000};
+  wire [vaddr_width_p-1:0] debug_halt_pc      = {cfg_npc_r[vaddr_width_p-1:4], 4'b0000};
+  wire [vaddr_width_p-1:0] debug_resume_pc    = {cfg_npc_r[vaddr_width_p-1:4], 4'b0100};
+  wire [vaddr_width_p-1:0] debug_exception_pc = {cfg_npc_r[vaddr_width_p-1:4], 4'b1000};
+
   wire [vaddr_width_p-1:0] ret_pc =
     retire_pkt_cast_i.special.sret
     ? sepc_lo
@@ -267,9 +285,10 @@ module bp_be_csr
       ? mepc_lo
       : dpc_lo;
   wire [vaddr_width_p-1:0] tvec_pc =
-    (priv_mode_n == `PRIV_MODE_S)
-    ? {stvec_lo.base, 2'b00}
-    : {mtvec_lo.base, 2'b00};
+    is_debug_mode ? debug_exception_pc
+    : (priv_mode_n == `PRIV_MODE_S)
+      ? {stvec_lo.base, 2'b00}
+      : {mtvec_lo.base, 2'b00};
 
   wire [vaddr_width_p-1:0] core_npc =
     (exception_v_lo | interrupt_v_lo)
@@ -280,7 +299,7 @@ module bp_be_csr
         ? retire_pkt_cast_i.npc
         : apc_r;
 
-  assign apc_n = (commit_pkt_cast_o.unfreeze | enter_debug) ? cfg_bus_cast_i.npc : core_npc;
+  assign apc_n = (enter_debug | commit_pkt_cast_o.unfreeze) ? debug_halt_pc : core_npc;
 
   assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
   bsg_dff_reset
@@ -538,9 +557,14 @@ module bp_be_csr
               interrupt_v_lo        = 1'b1;
             end
         end
-      else if (~is_debug_mode & exception_ecode_v_li)
+      else if (exception_ecode_v_li)
         begin
-          if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
+          if (is_debug_mode)
+            begin
+              // Trap back into debug mode, don't set any CSRs
+              exception_v_lo       = 1'b1;
+            end
+          else if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
             begin
               priv_mode_n          = `PRIV_MODE_S;
 

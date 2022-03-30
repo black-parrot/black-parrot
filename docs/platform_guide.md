@@ -146,7 +146,7 @@ These addresses are per-tile. To access them on a tile N, prepend N to the addre
 | Bootrom* | bootrom     | 11_0000-11_ffff | The bootrom which bootstraps BlackParrot in bootrom configurations                                                                |
 | CFG      | unused      | 20_0000         | Unused.                                                                                                                           |
 |          | freeze      | 20_0004         | Freezes the core, preventing all fetch operations. Will drain the pipeline if set during runtime. Defaults to frozen.             |
-|          | npc         | 20_0008         | When freeze is lowered or a debug interrupt is raised,this becomes the architectural NPC. Defaults to bootrom address.            |
+|          | npc         | 20_0008         | When freeze is lowered or a debug irq is raised,this becomes the architectural NPC. Defaults to bootrom address. 16B aligned.     |
 |          | core_id     | 20_000c         | Read-only. This tile's core id. This is a local id within the chip                                                                |
 |          | did         | 20_0010         | Read-only. This tile's domain id. This is an chip-wide identifier                                                                 |
 |          | cord        | 20_0014         | Read-only. This tile's coordinate. In {y,x} format                                                                                |
