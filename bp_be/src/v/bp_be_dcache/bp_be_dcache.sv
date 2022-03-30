@@ -611,12 +611,13 @@ module bp_be_dcache
   // Fail if we have a store conditional without success
   wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
 
-  wire load_miss_tv     = cached_op_tv_r & decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
   wire store_miss_tv    = cached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & (writethrough_p == 0);
+  wire lr_miss_tv       = cached_op_tv_r & decode_tv_r.lr_op & ~lr_hit_tv;
+  wire load_miss_tv     = cached_op_tv_r & decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
   wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.load_op & ~uncached_hit_tv_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
-  wire any_miss_tv      = load_miss_tv | store_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
+  wire any_miss_tv      = store_miss_tv | lr_miss_tv | load_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
 
   assign early_data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
     ? (sc_success_tv != 1'b1)
@@ -876,7 +877,7 @@ module bp_be_dcache
   `bp_cast_o(bp_dcache_req_s, cache_req);
   `bp_cast_o(bp_dcache_req_metadata_s, cache_req_metadata);
 
-  wire cached_req          = (store_miss_tv | load_miss_tv);
+  wire cached_req          = (store_miss_tv | lr_miss_tv | load_miss_tv);
   wire fencei_req          = fencei_miss_tv;
   wire uncached_amo_req    = decode_tv_r.amo_op & uncached_op_tv_r & ~uncached_hit_tv_r & (decode_tv_r.rd_addr != '0);
   wire uncached_load_req   = decode_tv_r.load_op & uncached_op_tv_r & ~uncached_hit_tv_r;
@@ -934,6 +935,8 @@ module bp_be_dcache
       if (fencei_miss_tv)
         cache_req_cast_o.msg_type = e_cache_flush;
       else if (store_miss_tv)
+        cache_req_cast_o.msg_type = e_miss_store;
+      else if (lr_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
       else if (load_miss_tv)
         cache_req_cast_o.msg_type = e_miss_load;
@@ -1299,7 +1302,7 @@ module bp_be_dcache
       // All SCs clear the reservation (regardless of success)
       // Invalidates from other harts which match the reservation address clear the reservation
       // Also invalidate on trap
-      wire clear_reservation = decode_tv_r.sc_op
+      wire clear_reservation = (v_tv_r & decode_tv_r.sc_op)
         || (tag_mem_pkt_yumi_lo
             & load_reserved_v_r
             & (tag_mem_pkt_cast_i.index == load_reserved_index_r)

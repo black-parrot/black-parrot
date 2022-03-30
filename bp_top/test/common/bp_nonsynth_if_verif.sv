@@ -79,10 +79,6 @@ module bp_nonsynth_if_verif
   if (~|{dcache_amo_support_p[e_lr_sc], l2_amo_support_p[e_lr_sc]})
     $error("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
 
-  // NoCs
-  if (mem_noc_flit_width_p % l2_fill_width_p != 0)
-    $error("Memory NoC flit width must match l2 fill width");
-
   // L1 Caches
   if ((cce_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
