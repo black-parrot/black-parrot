@@ -52,7 +52,7 @@ endif
 
 NBF_INPUTS ?= --ncpus=$(NCPUS)
 ifeq ($(UCODE), 1)
-NBF_INPUTS += --ucode=cce_ucode.mem
+NBF_INPUTS += --config --ucode=cce_ucode.mem
 endif
 NBF_INPUTS += --mem=prog.mem --skip_zeros
 NBF_INPUTS += --addr_width=$(PADDR_WIDTH)
