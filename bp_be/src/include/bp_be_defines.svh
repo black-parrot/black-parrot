@@ -142,6 +142,7 @@
       logic                           translation_en_n;                                            \
       logic                           exception;                                                   \
       logic                           _interrupt;                                                  \
+      logic                           unfreeze;                                                    \
       logic                           eret;                                                        \
       logic                           fencei;                                                      \
       logic                           sfence;                                                      \
@@ -251,7 +252,7 @@
     (paddr_width_mp - page_offset_width_gp + 7)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 16)
+    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 17)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \

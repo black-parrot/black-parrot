@@ -350,7 +350,7 @@ module bp_io_tile
   assign global_addr_lo = cce_io_cmd_header_lo.addr;
   assign local_addr_lo  = cce_io_cmd_header_lo.addr;
 
-  wire is_host_addr  = (~local_addr_lo.nonlocal && (local_addr_lo.dev inside {boot_dev_gp, host_dev_gp}));
+  wire is_host_addr  = (~local_addr_lo.nonlocal && (local_addr_lo.dev inside {host_dev_gp}));
   assign dst_did_lo  = is_host_addr ? host_did_i : global_addr_lo.hio;
   assign dst_cord_lo = dst_did_lo;
 

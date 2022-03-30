@@ -33,12 +33,13 @@
   localparam cfg_base_addr_gp           = (dev_id_width_gp+dev_addr_width_gp)'('h0020_0000);
   localparam cfg_match_addr_gp          = (dev_id_width_gp+dev_addr_width_gp)'('h002?_????);
 
-  localparam cfg_reg_unused_gp          = (dev_addr_width_gp)'('h0_0004);
-  localparam cfg_reg_freeze_gp          = (dev_addr_width_gp)'('h0_0008);
+  localparam cfg_reg_freeze_gp          = (dev_addr_width_gp)'('h0_0004);
+  localparam cfg_reg_npc_gp             = (dev_addr_width_gp)'('h0_0008);
   localparam cfg_reg_core_id_gp         = (dev_addr_width_gp)'('h0_000c);
   localparam cfg_reg_did_gp             = (dev_addr_width_gp)'('h0_0010);
   localparam cfg_reg_cord_gp            = (dev_addr_width_gp)'('h0_0014);
   localparam cfg_reg_host_did_gp        = (dev_addr_width_gp)'('h0_0018);
+  // Used until PMP are setup properly
   localparam cfg_reg_hio_mask_gp        = (dev_addr_width_gp)'('h0_001c);
   localparam cfg_reg_icache_id_gp       = (dev_addr_width_gp)'('h0_0200);
   localparam cfg_reg_icache_mode_gp     = (dev_addr_width_gp)'('h0_0204);

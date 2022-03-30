@@ -239,6 +239,7 @@
     logic instr_misaligned;
 
     // BP "exceptions"
+    logic unfreeze;
     logic itlb_miss;
     logic icache_miss;
     logic dcache_fail;
