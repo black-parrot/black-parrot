@@ -122,26 +122,30 @@ module bp_axi_top
    , input [1:0]                               m_axi_rresp_i
    );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  bp_bedrock_mem_header_s io_cmd_header_li, io_resp_header_lo;
-  logic [uce_fill_width_p-1:0] io_cmd_data_li, io_resp_data_lo;
-  logic io_cmd_v_li, io_cmd_ready_and_lo, io_resp_v_lo, io_resp_yumi_li;
-  logic io_cmd_last_li, io_resp_last_lo;
-  bp_bedrock_mem_header_s io_cmd_header_lo, io_resp_header_li;
-  logic [uce_fill_width_p-1:0] io_cmd_data_lo, io_resp_data_li;
-  logic io_cmd_v_lo, io_cmd_yumi_li, io_resp_v_li, io_resp_ready_and_lo;
-  logic io_cmd_last_lo, io_resp_last_li;
+  localparam io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : bedrock_data_width_p;
 
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+
+  // DMA interface from BP to cache2axi
   `declare_bsg_cache_dma_pkt_s(daddr_width_p);
-  bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
-  logic [l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
-  logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
-  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
-  logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+  bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_banks_p-1:0] axi_dma_pkt_lo;
+  logic [num_cce_p-1:0][l2_banks_p-1:0] axi_dma_pkt_v_lo, axi_dma_pkt_ready_and_li;
+  logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] axi_dma_data_lo;
+  logic [num_cce_p-1:0][l2_banks_p-1:0] axi_dma_data_v_lo, axi_dma_data_ready_and_li;
+  logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] axi_dma_data_li;
+  logic [num_cce_p-1:0][l2_banks_p-1:0] axi_dma_data_v_li, axi_dma_data_ready_and_lo;
 
   if (cce_type_p == e_cce_uce)
     begin : u
+      bp_bedrock_mem_header_s io_cmd_header_li, io_resp_header_lo;
+      logic [io_data_width_p-1:0] io_cmd_data_li, io_resp_data_lo;
+      logic io_cmd_v_li, io_cmd_ready_and_lo, io_resp_v_lo, io_resp_yumi_li;
+      logic io_cmd_last_li, io_resp_last_lo;
+      bp_bedrock_mem_header_s io_cmd_header_lo, io_resp_header_li;
+      logic [io_data_width_p-1:0] io_cmd_data_lo, io_resp_data_li;
+      logic io_cmd_v_lo, io_cmd_yumi_li, io_resp_v_li, io_resp_ready_and_lo;
+      logic io_cmd_last_lo, io_resp_last_li;
+
       // note: bp_unicore has L2 cache; (bp_unicore_lite does not, but does not have dma_* interface
       // and would need mem_cmd/mem_resp-to-axi converter to be written.)
       bp_unicore
@@ -182,19 +186,70 @@ module bp_axi_top
         ,.io_resp_ready_and_i(io_resp_yumi_li)
         ,.io_resp_last_o(io_resp_last_lo)
 
-        ,.dma_pkt_o(dma_pkt_lo)
-        ,.dma_pkt_v_o(dma_pkt_v_lo)
-        ,.dma_pkt_ready_and_i(dma_pkt_yumi_li)
+        // DMA (memory) to cache2axi
+        ,.dma_pkt_o(axi_dma_pkt_lo)
+        ,.dma_pkt_v_o(axi_dma_pkt_v_lo)
+        ,.dma_pkt_ready_and_i(axi_dma_pkt_ready_and_li)
 
-        ,.dma_data_i(dma_data_li)
-        ,.dma_data_v_i(dma_data_v_li)
-        ,.dma_data_ready_and_o(dma_data_ready_and_lo)
+        ,.dma_data_i(axi_dma_data_li)
+        ,.dma_data_v_i(axi_dma_data_v_li)
+        ,.dma_data_ready_and_o(axi_dma_data_ready_and_lo)
 
-        ,.dma_data_o(dma_data_lo)
-        ,.dma_data_v_o(dma_data_v_lo)
-        ,.dma_data_ready_and_i(dma_data_yumi_li)
+        ,.dma_data_o(axi_dma_data_lo)
+        ,.dma_data_v_o(axi_dma_data_v_lo)
+        ,.dma_data_ready_and_i(axi_dma_data_ready_and_li)
         );
-    end
+
+      bp_me_axil_client
+       #(.bp_params_p(bp_params_p)
+         ,.axil_data_width_p(axil_data_width_p)
+         ,.axil_addr_width_p(axil_addr_width_p)
+         )
+       axil2io
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.io_cmd_header_o(io_cmd_header_li)
+         ,.io_cmd_data_o(io_cmd_data_li)
+         ,.io_cmd_v_o(io_cmd_v_li)
+         ,.io_cmd_last_o(io_cmd_last_li)
+         ,.io_cmd_ready_and_i(io_cmd_ready_and_lo)
+
+         ,.io_resp_header_i(io_resp_header_lo)
+         ,.io_resp_data_i(io_resp_data_lo)
+         ,.io_resp_v_i(io_resp_v_lo)
+         ,.io_resp_last_i(io_resp_last_lo)
+         ,.io_resp_yumi_o(io_resp_yumi_li)
+
+         ,.lce_id_i(lce_id_width_p'('b10))
+         ,.did_i(did_width_p'('1))
+         ,.*
+         );
+
+      bp_me_axil_master
+       #(.bp_params_p(bp_params_p)
+         ,.axil_data_width_p(axil_data_width_p)
+         ,.axil_addr_width_p(axil_addr_width_p)
+         )
+       io2axil
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.io_cmd_header_i(io_cmd_header_lo)
+         ,.io_cmd_data_i(io_cmd_data_lo)
+         ,.io_cmd_v_i(io_cmd_v_lo)
+         ,.io_cmd_last_i(io_cmd_last_lo)
+         ,.io_cmd_yumi_o(io_cmd_yumi_li)
+
+         ,.io_resp_header_o(io_resp_header_li)
+         ,.io_resp_data_o(io_resp_data_li)
+         ,.io_resp_v_o(io_resp_v_li)
+         ,.io_resp_last_o(io_resp_last_li)
+         ,.io_resp_ready_and_i(io_resp_ready_and_lo)
+
+         ,.*
+         );
+    end // unicore
   else
     begin : m
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
@@ -203,7 +258,7 @@ module bp_axi_top
       bp_io_noc_ral_link_s proc_resp_link_li, proc_resp_link_lo;
       bp_io_noc_ral_link_s stub_cmd_link_li, stub_resp_link_li;
       bp_io_noc_ral_link_s stub_cmd_link_lo, stub_resp_link_lo;
-      bp_mem_noc_ral_link_s dram_cmd_link_lo, dram_resp_link_li;
+      bp_mem_noc_ral_link_s [mc_x_dim_p-1:0] dram_cmd_link_lo, dram_resp_link_li;
 
       assign stub_cmd_link_li  = '0;
       assign stub_resp_link_li = '0;
@@ -262,12 +317,37 @@ module bp_axi_top
                                     ,ready_and_rev: send_cmd_link_lo.ready_and_rev
                                     };
 
-      bp_me_cce_to_mem_link_send
+      bp_bedrock_mem_header_s io_cmd_header_li;
+      logic [io_data_width_p-1:0] io_cmd_data_li;
+      logic io_cmd_header_v_li, io_cmd_header_ready_and_lo;
+      logic io_cmd_data_v_li, io_cmd_data_ready_and_lo;
+      logic io_cmd_last_li, io_cmd_has_data_li;
+
+      bp_bedrock_mem_header_s io_resp_header_lo;
+      logic [io_data_width_p-1:0] io_resp_data_lo;
+      logic io_resp_header_v_lo, io_resp_header_ready_and_li;
+      logic io_resp_data_v_lo, io_resp_data_ready_and_li;
+      logic io_resp_last_lo, io_resp_has_data_lo;
+
+      bp_bedrock_mem_header_s io_cmd_header_lo;
+      logic [io_data_width_p-1:0] io_cmd_data_lo;
+      logic io_cmd_header_v_lo, io_cmd_header_ready_and_li;
+      logic io_cmd_data_v_lo, io_cmd_data_ready_and_li;
+      logic io_cmd_last_lo, io_cmd_has_data_lo;
+
+      bp_bedrock_mem_header_s io_resp_header_li;
+      logic [io_data_width_p-1:0] io_resp_data_li;
+      logic io_resp_header_v_li, io_resp_header_ready_and_lo;
+      logic io_resp_data_v_li, io_resp_data_ready_and_lo;
+      logic io_resp_last_li, io_resp_has_data_li;
+
+      bp_me_bedrock_mem_to_link
        #(.bp_params_p(bp_params_p)
          ,.flit_width_p(io_noc_flit_width_p)
          ,.cord_width_p(io_noc_cord_width_p)
          ,.cid_width_p(io_noc_cid_width_p)
          ,.len_width_p(io_noc_len_width_p)
+         ,.payload_mask_p(mem_cmd_payload_mask_gp)
          )
        send_link
         (.clk_i(clk_i)
@@ -276,29 +356,35 @@ module bp_axi_top
          ,.dst_cord_i(dst_cord_lo)
          ,.dst_cid_i('0)
 
-         ,.mem_cmd_header_i(io_cmd_header_li)
-         ,.mem_cmd_data_i(io_cmd_data_li)
-         ,.mem_cmd_v_i(io_cmd_v_li)
-         ,.mem_cmd_ready_and_o(io_cmd_ready_and_lo)
-         ,.mem_cmd_last_i(io_cmd_last_li)
+         ,.mem_header_i(io_cmd_header_li)
+         ,.mem_header_v_i(io_cmd_header_v_li)
+         ,.mem_header_ready_and_o(io_cmd_header_ready_and_lo)
+         ,.mem_has_data_i(io_cmd_has_data_li)
+         ,.mem_data_i(io_cmd_data_li)
+         ,.mem_data_v_i(io_cmd_data_v_li)
+         ,.mem_data_ready_and_o(io_cmd_data_ready_and_lo)
+         ,.mem_last_i(io_cmd_last_li)
 
-         ,.mem_resp_header_o(io_resp_header_lo)
-         ,.mem_resp_data_o(io_resp_data_lo)
-         ,.mem_resp_v_o(io_resp_v_lo)
-         ,.mem_resp_yumi_i(io_resp_yumi_li)
-         ,.mem_resp_last_o(io_resp_last_lo)
+         ,.mem_header_o(io_resp_header_lo)
+         ,.mem_header_v_o(io_resp_header_v_lo)
+         ,.mem_header_ready_and_i(io_resp_header_ready_and_li)
+         ,.mem_has_data_o(io_resp_has_data_lo)
+         ,.mem_data_o(io_resp_data_lo)
+         ,.mem_data_v_o(io_resp_data_v_lo)
+         ,.mem_data_ready_and_i(io_resp_data_ready_and_li)
+         ,.mem_last_o(io_resp_last_lo)
 
-
-         ,.cmd_link_o(send_cmd_link_lo)
-         ,.resp_link_i(send_resp_link_li)
+         ,.link_o(send_cmd_link_lo)
+         ,.link_i(send_resp_link_li)
          );
 
-      bp_me_cce_to_mem_link_recv
+      bp_me_bedrock_mem_to_link
        #(.bp_params_p(bp_params_p)
          ,.flit_width_p(io_noc_flit_width_p)
          ,.cord_width_p(io_noc_cord_width_p)
          ,.cid_width_p(io_noc_cid_width_p)
          ,.len_width_p(io_noc_len_width_p)
+         ,.payload_mask_p(mem_resp_payload_mask_gp)
          )
        recv_link
         (.clk_i(clk_i)
@@ -307,127 +393,180 @@ module bp_axi_top
          ,.dst_cord_i(io_resp_header_li.payload.did)
          ,.dst_cid_i('0)
 
-         ,.mem_cmd_header_o(io_cmd_header_lo)
-         ,.mem_cmd_data_o(io_cmd_data_lo)
-         ,.mem_cmd_v_o(io_cmd_v_lo)
-         ,.mem_cmd_yumi_i(io_cmd_yumi_li)
-         ,.mem_cmd_last_o(io_cmd_last_lo)
+         ,.mem_header_o(io_cmd_header_lo)
+         ,.mem_header_v_o(io_cmd_header_v_lo)
+         ,.mem_header_ready_and_i(io_cmd_header_ready_and_li)
+         ,.mem_has_data_o(io_cmd_has_data_lo)
+         ,.mem_data_o(io_cmd_data_lo)
+         ,.mem_data_v_o(io_cmd_data_v_lo)
+         ,.mem_data_ready_and_i(io_cmd_data_ready_and_li)
+         ,.mem_last_o(io_cmd_last_lo)
 
-         ,.mem_resp_header_i(io_resp_header_li)
-         ,.mem_resp_data_i(io_resp_data_li)
-         ,.mem_resp_v_i(io_resp_v_li)
-         ,.mem_resp_ready_and_o(io_resp_ready_and_lo)
-         ,.mem_resp_last_i(io_resp_last_li)
+         ,.mem_header_i(io_resp_header_li)
+         ,.mem_header_v_i(io_resp_header_v_li)
+         ,.mem_header_ready_and_o(io_resp_header_ready_and_lo)
+         ,.mem_has_data_i(io_resp_has_data_li)
+         ,.mem_data_i(io_resp_data_li)
+         ,.mem_data_v_i(io_resp_data_v_li)
+         ,.mem_data_ready_and_o(io_resp_data_ready_and_lo)
+         ,.mem_last_i(io_resp_last_li)
 
-         ,.cmd_link_i(recv_cmd_link_li)
-         ,.resp_link_o(recv_resp_link_lo)
+         ,.link_i(recv_cmd_link_li)
+         ,.link_o(recv_resp_link_lo)
          );
 
-      `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
-      bsg_cache_wh_header_flit_s header_flit;
-      assign header_flit = dram_cmd_link_lo.data;
-      wire [`BSG_SAFE_CLOG2(l2_banks_p)-1:0] dma_id_li = header_flit.src_cid;
-      bsg_wormhole_to_cache_dma_fanout
-       #(.wh_flit_width_p(mem_noc_flit_width_p)
-         ,.wh_cid_width_p(mem_noc_cid_width_p)
-         ,.wh_len_width_p(mem_noc_len_width_p)
-         ,.wh_cord_width_p(mem_noc_cord_width_p)
-
-         ,.num_dma_p(l2_banks_p)
-         ,.dma_addr_width_p(daddr_width_p)
-         ,.dma_burst_len_p(l2_block_size_in_fill_p)
+      bp_me_axil_to_burst
+       #(.bp_params_p(bp_params_p)
+         ,.axil_data_width_p(axil_data_width_p)
+         ,.axil_addr_width_p(axil_addr_width_p)
          )
-       wh_to_cache_dma
+       axil2io
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.wh_link_sif_i(dram_cmd_link_lo)
-         ,.wh_dma_id_i(dma_id_li)
-         ,.wh_link_sif_o(dram_resp_link_li)
+         ,.io_cmd_header_o(io_cmd_header_li)
+         ,.io_cmd_header_v_o(io_cmd_header_v_li)
+         ,.io_cmd_has_data_o(io_cmd_has_data_li)
+         ,.io_cmd_header_ready_and_i(io_cmd_header_ready_and_lo)
+         ,.io_cmd_data_o(io_cmd_data_li)
+         ,.io_cmd_data_v_o(io_cmd_data_v_li)
+         ,.io_cmd_last_o(io_cmd_last_li)
+         ,.io_cmd_data_ready_and_i(io_cmd_data_ready_and_lo)
 
-         ,.dma_pkt_o(dma_pkt_lo)
-         ,.dma_pkt_v_o(dma_pkt_v_lo)
-         ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
+         ,.io_resp_header_i(io_resp_header_lo)
+         ,.io_resp_header_v_i(io_resp_header_v_lo)
+         ,.io_resp_has_data_i(io_resp_has_data_lo)
+         ,.io_resp_header_ready_and_o(io_resp_header_ready_and_li)
+         ,.io_resp_data_i(io_resp_data_lo)
+         ,.io_resp_data_v_i(io_resp_data_v_lo)
+         ,.io_resp_last_i(io_resp_last_lo)
+         ,.io_resp_data_ready_and_o(io_resp_data_ready_and_li)
 
-         ,.dma_data_o(dma_data_lo)
-         ,.dma_data_v_o(dma_data_v_lo)
-         ,.dma_data_yumi_i(dma_data_yumi_li)
-
-         ,.dma_data_i(dma_data_li)
-         ,.dma_data_v_i(dma_data_v_li)
-         ,.dma_data_ready_and_o(dma_data_ready_and_lo)
+         ,.lce_id_i(lce_id_width_p'('b10))
+         ,.did_i(did_width_p'('1))
+         ,.*
          );
-    end
 
-  bp_me_axil_client
-   #(.bp_params_p(bp_params_p)
-     ,.axil_data_width_p(axil_data_width_p)
-     ,.axil_addr_width_p(axil_addr_width_p)
-     )
-   axil2io
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+      bp_me_burst_to_axil
+       #(.bp_params_p(bp_params_p)
+         ,.axil_data_width_p(axil_data_width_p)
+         ,.axil_addr_width_p(axil_addr_width_p)
+         )
+       io2axil
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
 
-     ,.io_cmd_header_o(io_cmd_header_li)
-     ,.io_cmd_data_o(io_cmd_data_li)
-     ,.io_cmd_v_o(io_cmd_v_li)
-     ,.io_cmd_ready_and_i(io_cmd_ready_and_lo)
-     ,.io_cmd_last_o(io_cmd_last_li)
+         ,.io_cmd_header_i(io_cmd_header_lo)
+         ,.io_cmd_header_v_i(io_cmd_header_v_lo)
+         ,.io_cmd_has_data_i(io_cmd_has_data_lo)
+         ,.io_cmd_header_ready_and_o(io_cmd_header_ready_and_li)
+         ,.io_cmd_data_i(io_cmd_data_lo)
+         ,.io_cmd_data_v_i(io_cmd_data_v_lo)
+         ,.io_cmd_last_i(io_cmd_last_lo)
+         ,.io_cmd_data_ready_and_o(io_cmd_data_ready_and_li)
 
-     ,.io_resp_header_i(io_resp_header_lo)
-     ,.io_resp_data_i(io_resp_data_lo)
-     ,.io_resp_v_i(io_resp_v_lo)
-     ,.io_resp_yumi_o(io_resp_yumi_li)
-     ,.io_resp_last_i(io_resp_last_lo)
+         ,.io_resp_header_o(io_resp_header_li)
+         ,.io_resp_header_v_o(io_resp_header_v_li)
+         ,.io_resp_has_data_o(io_resp_has_data_li)
+         ,.io_resp_header_ready_and_i(io_resp_header_ready_and_lo)
+         ,.io_resp_data_o(io_resp_data_li)
+         ,.io_resp_data_v_o(io_resp_data_v_li)
+         ,.io_resp_last_o(io_resp_last_li)
+         ,.io_resp_data_ready_and_i(io_resp_data_ready_and_lo)
 
-     ,.lce_id_i(lce_id_width_p'('b10))
-     ,.did_i(did_width_p'('1))
-     ,.*
-     );
+         ,.*
+         );
 
-  bp_me_axil_master
-   #(.bp_params_p(bp_params_p)
-     ,.axil_data_width_p(axil_data_width_p)
-     ,.axil_addr_width_p(axil_addr_width_p)
-     )
-   io2axil
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+      `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
+      localparam dma_per_col_lp = num_cce_p/mc_x_dim_p*l2_banks_p;
+      bsg_cache_dma_pkt_s [mc_x_dim_p-1:0][dma_per_col_lp-1:0] dma_pkt_lo;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0][l2_fill_width_p-1:0] dma_data_lo;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0] dma_data_v_lo, dma_data_yumi_li;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0][l2_fill_width_p-1:0] dma_data_li;
+      logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0] dma_data_v_li, dma_data_ready_and_lo;
+      for (genvar i = 0; i < mc_x_dim_p; i++)
+        begin : column
+          bsg_cache_wh_header_flit_s header_flit;
+          assign header_flit = dram_cmd_link_lo[i].data;
+          wire [`BSG_SAFE_CLOG2(dma_per_col_lp)-1:0] dma_id_li =
+            l2_banks_p*(header_flit.src_cord-1)+header_flit.src_cid;
+          bsg_wormhole_to_cache_dma_fanout
+           #(.wh_flit_width_p(mem_noc_flit_width_p)
+             ,.wh_cid_width_p(mem_noc_cid_width_p)
+             ,.wh_len_width_p(mem_noc_len_width_p)
+             ,.wh_cord_width_p(mem_noc_cord_width_p)
 
-     ,.io_cmd_header_i(io_cmd_header_lo)
-     ,.io_cmd_data_i(io_cmd_data_lo)
-     ,.io_cmd_v_i(io_cmd_v_lo)
-     ,.io_cmd_yumi_o(io_cmd_yumi_li)
-     ,.io_cmd_last_i(io_cmd_last_lo)
+             ,.num_dma_p(dma_per_col_lp)
+             ,.dma_addr_width_p(daddr_width_p)
+             ,.dma_burst_len_p(l2_block_size_in_fill_p)
+             )
+           wh_to_cache_dma
+            (.clk_i(clk_i)
+             ,.reset_i(reset_i)
 
-     ,.io_resp_header_o(io_resp_header_li)
-     ,.io_resp_data_o(io_resp_data_li)
-     ,.io_resp_v_o(io_resp_v_li)
-     ,.io_resp_ready_and_i(io_resp_ready_and_lo)
-     ,.io_resp_last_o(io_resp_last_li)
+             ,.wh_link_sif_i(dram_cmd_link_lo[i])
+             ,.wh_dma_id_i(dma_id_li)
+             ,.wh_link_sif_o(dram_resp_link_li[i])
 
-     ,.*
-     );
+             ,.dma_pkt_o(dma_pkt_lo[i])
+             ,.dma_pkt_v_o(dma_pkt_v_lo[i])
+             ,.dma_pkt_yumi_i(dma_pkt_yumi_li[i])
+
+             ,.dma_data_i(dma_data_li[i])
+             ,.dma_data_v_i(dma_data_v_li[i])
+             ,.dma_data_ready_and_o(dma_data_ready_and_lo[i])
+
+             ,.dma_data_o(dma_data_lo[i])
+             ,.dma_data_v_o(dma_data_v_lo[i])
+             ,.dma_data_yumi_i(dma_data_yumi_li[i])
+             );
+        end
+      // Transpose the DMA IDs
+      for (genvar i = 0; i < num_cce_p; i++)
+        begin : rof1
+          for (genvar j = 0; j < l2_banks_p; j++)
+            begin : rof2
+              localparam col_lp     = i%mc_x_dim_p;
+              localparam col_pos_lp = (i/mc_x_dim_p)*l2_banks_p+j;
+
+              assign axi_dma_pkt_lo[i][j] = dma_pkt_lo[col_lp][col_pos_lp];
+              assign axi_dma_pkt_v_lo[i][j] = dma_pkt_v_lo[col_lp][col_pos_lp];
+              assign dma_pkt_yumi_li[col_lp][col_pos_lp] = axi_dma_pkt_ready_and_li[i][j] & axi_dma_pkt_v_lo[i][j];
+
+              assign axi_dma_data_lo[i][j] = dma_data_lo[col_lp][col_pos_lp];
+              assign axi_dma_data_v_lo[i][j] = dma_data_v_lo[col_lp][col_pos_lp];
+              assign dma_data_yumi_li[col_lp][col_pos_lp] = axi_dma_data_ready_and_li[i][j] & axi_dma_data_v_lo[i][j];
+
+              assign dma_data_li[col_lp][col_pos_lp] = axi_dma_data_li[i][j];
+              assign dma_data_v_li[col_lp][col_pos_lp] = axi_dma_data_v_li[i][j];
+              assign axi_dma_data_ready_and_lo[i][j] = dma_data_ready_and_lo[col_lp][col_pos_lp];
+            end
+        end
+    end // multicore
 
   // Unswizzle the dram
-  bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt;
-  for (genvar i = 0; i < l2_banks_p; i++)
-    begin : address_hash
-      logic [daddr_width_p-1:0] daddr_lo;
-      bp_me_dram_hash_decode
-       #(.bp_params_p(bp_params_p))
-        dma_addr_hash
-        (.daddr_i(dma_pkt_lo[i].addr)
-         ,.daddr_o(dma_pkt[i].addr)
-         );
-      assign dma_pkt[i].write_not_read = dma_pkt_lo[i].write_not_read;
+  bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_banks_p-1:0] axi_dma_pkt;
+  for (genvar i = 0; i < num_cce_p; i++)
+    begin : rof3
+      for (genvar j = 0; j < l2_banks_p; j++)
+        begin : address_hash
+          logic [daddr_width_p-1:0] daddr_lo;
+          bp_me_dram_hash_decode
+           #(.bp_params_p(bp_params_p))
+            dma_addr_hash
+            (.daddr_i(axi_dma_pkt_lo[i][j].addr)
+             ,.daddr_o(axi_dma_pkt[i][j].addr)
+             );
+          assign axi_dma_pkt[i][j].write_not_read = axi_dma_pkt_lo[i][j].write_not_read;
+        end
     end
 
    bsg_cache_to_axi
     #(.addr_width_p(daddr_width_p)
       ,.data_width_p(l2_fill_width_p)
       ,.block_size_in_words_p(l2_block_size_in_fill_p)
-      ,.num_cache_p(l2_banks_p)
+      ,.num_cache_p(num_cce_p*l2_banks_p)
       ,.axi_data_width_p(axi_data_width_p)
       ,.axi_id_width_p(axi_id_width_p)
       ,.axi_burst_len_p(l2_block_width_p/axi_data_width_p)
@@ -436,17 +575,17 @@ module bp_axi_top
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.dma_pkt_i(dma_pkt)
-      ,.dma_pkt_v_i(dma_pkt_v_lo)
-      ,.dma_pkt_yumi_o(dma_pkt_yumi_li)
+      ,.dma_pkt_i(axi_dma_pkt)
+      ,.dma_pkt_v_i(axi_dma_pkt_v_lo)
+      ,.dma_pkt_yumi_o(axi_dma_pkt_ready_and_li)
 
-      ,.dma_data_o(dma_data_li)
-      ,.dma_data_v_o(dma_data_v_li)
-      ,.dma_data_ready_i(dma_data_ready_and_lo)
+      ,.dma_data_o(axi_dma_data_li)
+      ,.dma_data_v_o(axi_dma_data_v_li)
+      ,.dma_data_ready_i(axi_dma_data_ready_and_lo)
 
-      ,.dma_data_i(dma_data_lo)
-      ,.dma_data_v_i(dma_data_v_lo)
-      ,.dma_data_yumi_o(dma_data_yumi_li)
+      ,.dma_data_i(axi_dma_data_lo)
+      ,.dma_data_v_i(axi_dma_data_v_lo)
+      ,.dma_data_yumi_o(axi_dma_data_ready_and_li)
 
       ,.axi_awid_o(m_axi_awid_o)
       ,.axi_awaddr_addr_o(m_axi_awaddr_o)
@@ -492,9 +631,6 @@ module bp_axi_top
       ,.axi_awaddr_cache_id_o()
       ,.axi_araddr_cache_id_o()
       );
-
-  if (num_core_p > 1)
-    $error("Multiple cores are not currently supported in zynqparrot");
 
 endmodule
 
