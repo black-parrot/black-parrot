@@ -75,6 +75,8 @@ endif
 NBF_INPUTS ?= --ncpus=$(NCPUS)
 ifeq ($(UCODE), 1)
 NBF_INPUTS += --config --ucode=cce_ucode.mem
+else ifeq ($(NBF_CONFIG_P), 1)
+NBF_INPUTS += --config
 endif
 ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem --skip_zeros

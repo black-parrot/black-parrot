@@ -93,7 +93,6 @@ module bp_be_top
   bp_be_isd_status_s isd_status;
   logic [vaddr_width_p-1:0] expected_npc_lo;
   logic poison_isd_lo, suppress_iss_lo, unfreeze_lo;
-  logic waiting_for_irq_lo;
 
   logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
   logic mem_ready_lo, idiv_ready_lo, fdiv_ready_lo, ptw_busy_lo;
