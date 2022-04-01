@@ -21,7 +21,7 @@ module bp_be_detector
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
@@ -52,7 +52,7 @@ module bp_be_detector
    , input [wb_pkt_width_lp-1:0]       fwb_pkt_i
    );
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
@@ -249,17 +249,16 @@ module bp_be_detector
                    | (frs1_sb_raw_haz_v | frs2_sb_raw_haz_v | frs3_sb_raw_haz_v | frd_sb_waw_haz_v);
 
       // Combine all structural hazard information
-      struct_haz_v = cfg_bus_cast_i.freeze
-                     | ptw_busy_i
+      struct_haz_v = ptw_busy_i
+                     | cmd_haz_v
                      | (~mem_ready_i & isd_status_cast_i.mem_v)
                      | (~fdiv_ready_i & isd_status_cast_i.long_v)
-                     | (~idiv_ready_i & isd_status_cast_i.long_v)
-                     | cmd_haz_v;
+                     | (~idiv_ready_i & isd_status_cast_i.long_v);
     end
 
   // Generate calculator control signals
   assign dispatch_v_o  = ~(control_haz_v | data_haz_v | struct_haz_v);
-  assign interrupt_v_o = irq_pending_i & ~ptw_busy_i & ~cfg_bus_cast_i.freeze;
+  assign interrupt_v_o = irq_pending_i & ~ptw_busy_i;
 
   bp_be_dep_status_s dep_status_n;
   always_comb

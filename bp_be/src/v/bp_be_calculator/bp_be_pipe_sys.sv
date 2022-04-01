@@ -17,7 +17,7 @@ module bp_be_pipe_sys
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam csr_cmd_width_lp       = $bits(bp_be_csr_cmd_s)
    // Generated parameters
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
@@ -51,6 +51,7 @@ module bp_be_pipe_sys
    , input [wb_pkt_width_lp-1:0]             fwb_pkt_i
    , output logic [commit_pkt_width_lp-1:0]  commit_pkt_o
 
+   , input                                   debug_irq_i
    , input                                   timer_irq_i
    , input                                   software_irq_i
    , input                                   m_external_irq_i
@@ -117,6 +118,7 @@ module bp_be_pipe_sys
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
      ,.frf_w_v_i(fwb_pkt.frd_w_v)
 
+     ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.m_external_irq_i(m_external_irq_i)

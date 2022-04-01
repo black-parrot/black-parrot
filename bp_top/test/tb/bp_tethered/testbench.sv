@@ -487,7 +487,7 @@ module testbench
           ,.icache_data_v_i(fe.icache.data_v_o)
 
           ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.attaboy_v) 
-          ,.fe_cmd_fence_i(be.director.suppress_iss_o)
+          ,.fe_cmd_fence_i(be.director.is_fence)
           ,.fe_queue_empty_i(~be.scheduler.fe_queue_fifo.fe_queue_v_o)
 
           ,.mispredict_i(be.director.npc_mismatch_v)
@@ -575,7 +575,8 @@ module testbench
          clint_tracer
           (.clk_i(clk_i & testbench.dev_trace_en_lo)
            ,.reset_i(reset_i)
-           ,.id_i(id_i)
+           ,.id_i(cfg_bus_cast_i.core_id)
+           ,.freeze_i(cfg_bus_cast_i.freeze)
 
            ,.mem_cmd_header_i(mem_cmd_header_i)
            ,.mem_cmd_data_i(mem_cmd_data_i)

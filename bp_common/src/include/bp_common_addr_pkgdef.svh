@@ -8,14 +8,12 @@
   localparam dev_id_width_gp   = 4;
   localparam dev_addr_width_gp = 20;
 
-  localparam boot_dev_gp  = 0;
   localparam host_dev_gp  = 1;
   localparam cfg_dev_gp   = 2;
   localparam clint_dev_gp = 3;
   localparam cache_dev_gp = 4;
 
                              // 0x00_0(nnnN)(D)(A_AAAA)
-  localparam boot_dev_base_addr_gp     = 32'h0000_0000;
   localparam host_dev_base_addr_gp     = 32'h0010_0000;
   localparam cfg_dev_base_addr_gp      = 32'h0020_0000;
   localparam clint_dev_base_addr_gp    = 32'h0030_0000;
@@ -23,6 +21,7 @@
 
   // TODO: This is hardcoded for a 32-bit DRAM address, will need to be adjusted
   //   for a different address space
+  localparam boot_base_addr_gp         = 40'h00_0011_0000;
   localparam dram_base_addr_gp         = 40'h00_8000_0000;
   localparam dram_uc_base_addr_gp      = 40'h01_0000_0000;
   localparam coproc_base_addr_gp       = 40'h02_0000_0000;
