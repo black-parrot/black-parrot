@@ -22,15 +22,17 @@ module bp_me_axil_master
   input                                        clk_i
   , input                                      reset_i
 
-  //==================== BP-LITE SIGNALS ======================
+  //==================== BP-STREAM SIGNALS ====================
   , input [mem_header_width_lp-1:0]            io_cmd_header_i
   , input [io_data_width_p-1:0]                io_cmd_data_i
   , input                                      io_cmd_v_i
+  , input                                      io_cmd_last_i
   , output logic                               io_cmd_yumi_o
 
   , output logic [mem_header_width_lp-1:0]     io_resp_header_o
   , output logic [io_data_width_p-1:0]         io_resp_data_o
   , output logic                               io_resp_v_o
+  , output logic                               io_resp_last_o
   , input                                      io_resp_ready_and_i
 
   //====================== AXI-4 LITE =========================
@@ -63,6 +65,9 @@ module bp_me_axil_master
   , input                                      m_axil_rvalid_i
   , output logic                               m_axil_rready_o
   );
+
+  wire unused = &{io_cmd_last_i};
+  assign io_resp_last_o = io_resp_v_o;
 
   // declaring i/o command and response struct type and size
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);

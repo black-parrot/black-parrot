@@ -18,18 +18,20 @@ module bp_me_axil_client
    input                                        clk_i
    , input                                      reset_i
 
-   //==================== BP-LITE SIGNALS ======================
+   //==================== BP-STREAM SIGNALS ====================
    , input [lce_id_width_p-1:0]                 lce_id_i
    , input [did_width_p-1:0]                    did_i
 
    , output logic [mem_header_width_lp-1:0]     io_cmd_header_o
    , output logic [axil_data_width_p-1:0]       io_cmd_data_o
    , output logic                               io_cmd_v_o
+   , output logic                               io_cmd_last_o
    , input                                      io_cmd_ready_and_i
 
    , input [mem_header_width_lp-1:0]            io_resp_header_i
    , input [axil_data_width_p-1:0]              io_resp_data_i
    , input                                      io_resp_v_i
+   , input                                      io_resp_last_i
    , output logic                               io_resp_yumi_o
 
    //====================== AXI-4 LITE =========================
@@ -63,7 +65,8 @@ module bp_me_axil_client
    , input                                      s_axil_rready_i
   );
 
-  wire unused = &{s_axil_awprot_i, s_axil_arprot_i};
+  wire unused = &{s_axil_awprot_i, s_axil_arprot_i, io_resp_last_i};
+  assign io_cmd_last_o = io_cmd_v_o;
 
   // declaring i/o command and response struct type and size
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
@@ -139,13 +142,12 @@ module bp_me_axil_client
           begin
             s_axil_awready_o = io_cmd_ready_and_i;
             s_axil_wready_o = io_cmd_ready_and_i;
-
             io_cmd_header_cast_o.addr                = s_axil_awaddr_r;
             io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
             io_cmd_header_cast_o.size                = wsize;
             io_cmd_v_o                               = (s_axil_awvalid_i & s_axil_wvalid_i);
 
-            // Send          
+            // Send
             state_n = (s_axil_awvalid_i & ~s_axil_wvalid_i)
                       ? e_send_write_data
                       : (~s_axil_awvalid_i & s_axil_wvalid_i)
@@ -170,7 +172,7 @@ module bp_me_axil_client
         e_send_write_data:
           begin
             s_axil_wready_o = io_cmd_ready_and_i;
-           
+
             io_cmd_header_cast_o.addr                = s_axil_awaddr_r;
             io_cmd_header_cast_o.msg_type            = e_bedrock_mem_uc_wr;
             io_cmd_header_cast_o.size                = wsize;
