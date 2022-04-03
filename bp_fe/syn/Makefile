@@ -12,7 +12,11 @@ export RESULTS_PATH := $(BP_FE_DIR)/syn/results
 export REPORT_PATH  := $(BP_FE_DIR)/syn/reports
 export TOUCH_PATH   := $(BP_FE_DIR)/syn/touchfiles
 
-export TB    ?= bp_fe_icache
+ifdef UVM
+	export TB    ?= uvm
+else
+	export TB    ?= bp_fe_icache
+endif
 export CFG   ?= e_bp_test_unicore_half_cfg
 export DRAM  ?= dramsim3
 export SUITE ?= none

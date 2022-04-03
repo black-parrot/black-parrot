@@ -19,7 +19,7 @@ package icache_uvm_cfg_pkg;
 
     //Config parameteres
     virtual icache_if icache_if_h;
-    virtual vif_type chosen_if;
+    vif_type chosen_if;
     
     function new (string name = "");
       super.new(name);
