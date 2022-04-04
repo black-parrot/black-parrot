@@ -49,7 +49,7 @@ module bp_ddr
   localparam dmc_cmd_sfifo_depth_lp = 4;
 
   localparam tag_trace_rom_addr_width_lp = 32;
-  localparam tag_trace_rom_data_width_lp = 24;
+  localparam tag_trace_rom_data_width_lp = 25;
 
   // BSG Tag
   logic [tag_trace_rom_addr_width_lp-1:0] rom_addr_li;

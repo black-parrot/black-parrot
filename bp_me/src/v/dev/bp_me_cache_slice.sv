@@ -108,6 +108,7 @@ module bp_me_cache_slice
                          | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_minu)
                          | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_maxu)
                          )
+        //,.debug_p(1)
         )
        cache
         (.clk_i(clk_i)
