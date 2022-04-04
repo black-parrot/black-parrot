@@ -19,14 +19,15 @@ import icache_uvm_subs_pkg::*;
 `include "bp_fe_icache_defines.svh"
 `include "bp_fe_icache_pkgdef.svh"
 `include "bp_top_defines.svh"
-//`include "bp_common_pkg.sv"
+`include "bp_common_pkg.sv"
 `include "bp_common_aviary_defines.svh"
 `include "bp_common_aviary_pkgdef.svh"
 `include "bp_common_cache_engine_if.svh"
+`include "bp_common_bedrock_if.svh"
 import bp_common_pkg::*;
 import bp_fe_pkg::*;
 import bp_me_pkg::*;
-import icache_uvm_tests_pkg::*;
+import bsg_dramsim3_pkg::*;
 
 `ifndef BP_SIM_CLK_PERIOD
 `define BP_SIM_CLK_PERIOD 10
@@ -39,7 +40,9 @@ import icache_uvm_tests_pkg::*;
 interface icache_if #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     , parameter vif_type chosen_if = INPUT
     //local parameters
-    `declare_bp_proc_params(bp_params_p))
+    `declare_bp_proc_params(bp_params_p)
+    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache))
     (input logic clk,
      input logic reset_i);
   localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p);
@@ -92,8 +95,11 @@ interface icache_if #(parameter bp_params_e bp_params_p = e_bp_default_cfg
 endinterface: icache_if
 
 // Used for communication between UCE and RAM
-interface ram_if;
-  
+interface ram_if#(parameter bp_params_e bp_params_p = e_bp_default_cfg
+    `declare_bp_proc_params(bp_params_p)
+    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce));
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+
   logic mem_cmd_v_lo, mem_resp_v_li;
   logic mem_cmd_ready_and_li, mem_resp_ready_and_lo, mem_cmd_last_lo, mem_resp_last_li;
   bp_bedrock_cce_mem_header_s mem_cmd_header_lo, mem_resp_header_li;
@@ -115,40 +121,25 @@ endinterface: ram_if
 // Top
 //.......................................................
 module top #(parameter bp_params_e bp_params_p = e_bp_default_cfg //BP_CFG_FLOWVAR instead?
-   , parameter assoc_p = 8
-   , parameter sets_p = 64
-   , parameter block_width_p = 512
-   , parameter fill_width_p = 512
-    `declare_bp_proc_params(bp_params_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
-
+    `declare_bp_proc_params(bp_params_p) 
+    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   , parameter dram_type_p                 = BP_DRAM_FLOWVAR
+  
    // Calculated parameters
-   , localparam bank_width_lp = block_width_p / assoc_p
+   , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    );
 
   import uvm_pkg::*;
-  
+ 
   // PARAMETERS
-
-  // Defined in bp_params_p
-  //  , parameter dword_width_gp = 
-  //  , parameter vaddr_width_p  = 
-  //  , parameter ctag_width_p = 
-  //  , parameter paddr_width_p = 
-  //  , parameter icache_data_mem_pkt_width_lp = 
-  //  , parameter icache_tag_mem_pkt_width_lp = 
-  //  , parameter icache_stat_mem_pkt_width_lp =
-  //  , parameter icache_tag_info_width_lp =
-  //  , parameter icache_stat_info_width_lp =
-  //    localparam l2_fill_width_p = 
-  //  , parameter dram_type_p = 
 
   // localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   // `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   // for uce
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache);
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
 
   // Fill Interfaces
@@ -157,7 +148,7 @@ module top #(parameter bp_params_e bp_params_p = e_bp_default_cfg //BP_CFG_FLOWV
   logic [icache_data_mem_pkt_width_lp-1:0] data_mem_pkt_li;
   logic [icache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_li;
   logic [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
-  logic [block_width_p-1:0] data_mem_lo;
+  logic [icache_block_width_p-1:0] data_mem_lo;
   logic [icache_tag_info_width_lp-1:0] tag_mem_lo;
   logic [icache_stat_info_width_lp-1:0] stat_mem_lo;
 
@@ -165,19 +156,20 @@ module top #(parameter bp_params_e bp_params_p = e_bp_default_cfg //BP_CFG_FLOWV
   bit clk_i, reset_i;
 
   // Interface definitions
-  icache_if #(INPUT) cache_input_if_h(clk_i, reset_i);
-  icache_if #(TLB) cache_tlb_if_h(clk_i, reset_i);
-  icache_if #(OUTPUT) cache_output_if_h(clk_i, reset_i);
-  icache_if #(CE) cache_ce_if_h(clk_i, reset_i);
-  ram_if ram_if_h;
+  icache_if #(.bp_params_p(bp_params_p), .chosen_if(INPUT)) cache_input_if_h(clk_i, reset_i);
+  icache_if #(.bp_params_p(bp_params_p), .chosen_if(TLB)) cache_tlb_if_h(clk_i, reset_i);
+  icache_if #(.bp_params_p(bp_params_p), .chosen_if(OUTPUT)) cache_output_if_h(clk_i, reset_i);
+  icache_if #(.bp_params_p(bp_params_p), .chosen_if(CE)) cache_ce_if_h(clk_i, reset_i);
+  ram_if    #(.bp_params_p(bp_params_p)) ram_if_h ();
 
   //I CACHE
   bp_fe_icache
    #(.bp_params_p(bp_params_p)
-     ,.sets_p(sets_p)
-     ,.assoc_p(assoc_p)
-     ,.block_width_p(block_width_p)
-     ,.fill_width_p(fill_width_p)
+     ,.coherent_p(1'b0)
+     ,.sets_p(icache_sets_p)
+     ,.assoc_p(icache_assoc_p)
+     ,.block_width_p(icache_block_width_p)
+     ,.fill_width_p(icache_fill_width_p)
      )
    bp_fe_icache_dut
     (.clk_i(clk_i)
@@ -237,10 +229,10 @@ module top #(parameter bp_params_e bp_params_p = e_bp_default_cfg //BP_CFG_FLOWV
   bp_uce
      #(.bp_params_p(bp_params_p)
        ,.uce_mem_data_width_p(l2_fill_width_p)
-       ,.assoc_p(assoc_p)
-       ,.sets_p(sets_p)
-       ,.block_width_p(block_width_p)
-       ,.fill_width_p(fill_width_p)
+       ,.assoc_p(icache_assoc_p)
+       ,.sets_p(icache_sets_p)
+       ,.block_width_p(icache_block_width_p)
+       ,.fill_width_p(icache_fill_width_p)
        )
      icache_uce
       (.clk_i(clk_i)

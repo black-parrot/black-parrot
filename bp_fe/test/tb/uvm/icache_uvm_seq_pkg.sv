@@ -7,16 +7,32 @@ package icache_uvm_seq_pkg;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
+  
+  `include "bp_common_aviary_pkgdef.svh"
+  `include "bp_common_aviary_defines.svh"
+  `include "bp_common_defines.svh"
+  `include "bp_fe_defines.svh"
+  `include "bp_fe_icache_defines.svh"
+  `include "bp_fe_icache_pkgdef.svh"
+  `include "bp_top_defines.svh"
+  `include "bp_common_aviary_defines.svh"
+  `include "bp_common_aviary_pkgdef.svh"
+  `include "bp_common_cache_engine_if.svh"
+  import bp_common_pkg::*;
+  import bp_fe_pkg::*;
 
   //.......................................................
   // Transactions
   //.......................................................
-  class input_transaction extends uvm_sequence_item;
+  class input_transaction #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+                           `declare_bp_proc_params(bp_params_p)
+                           `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache))
+    extends uvm_sequence_item;
   
     `uvm_object_utils(input_transaction)
    
     // transaction bits
-    rand logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
+    //rand logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
     rand logic [icache_pkt_width_lp-1:0]  icache_pkt_i;
     rand bit                              v_i;
     bit                                   ready_o;
@@ -33,7 +49,7 @@ package icache_uvm_seq_pkg;
         return;
       end
       super.do_copy(rhs);
-        cfg_bus_i     = rhs_.cfg_bus_i;
+        //cfg_bus_i     = rhs_.cfg_bus_i;
         icache_pkt_i  = rhs_.icache_pkt_i;
         v_i           = rhs_.v_i;
         ready_o       = rhs_.ready_o;
@@ -43,8 +59,8 @@ package icache_uvm_seq_pkg;
      string s;
      s = super.convert2string();
      $sformat(s, 
-       "cfg_bus_i %d\t icache_pkt_i %d\t v_i %d\t ready_o %d\t flush_i %d\n",
-        cfg_bus_i, icache_pkt_i, v_i, ready_o, flush_i);
+       "icache_pkt_i %d\t v_i %d\t ready_o %d\t flush_i %d\n",
+        icache_pkt_i, v_i, ready_o, flush_i);
      return s;
     endfunction: convert2string
     
@@ -60,7 +76,7 @@ package icache_uvm_seq_pkg;
     rand bit                            ptag_uncached_i;
     rand bit                            ptag_dram_i;
     rand bit                            ptag_nonidem_i;
-    rand bit                            poison_tl_i;
+    //rand bit                            poison_tl_i;
 
     function new (string name = "");
       super.new(name);
@@ -79,14 +95,14 @@ package icache_uvm_seq_pkg;
         ptag_uncached_i = rhs_.ptag_uncached_i;
         ptag_dram_i     = rhs_.ptag_dram_i;
         ptag_nonidem_i  = rhs_.ptag_nonidem_i;
-        poison_tl_i     = rhs_.poison_tl_i;
+        //poison_tl_i     = rhs_.poison_tl_i;
      endfunction: do_copy
 
     function string convert2string();
      string s;
      s = super.convert2string();
-     $sformat(s, "ptag_i %d\t ptag_v_i %d\t ptag_uncached_i %d\t ptag_dram_i %d\t ptag_nonidem_i %d\t poison_tl_i %d\n", 
-              ptag_i, ptag_v_i, ptag_uncached_i, ptag_dram_i, ptag_nonidem_i, poison_tl_i);
+     $sformat(s, "ptag_i %d\t ptag_v_i %d\t ptag_uncached_i %d\t ptag_dram_i %d\t ptag_nonidem_i %d\t", 
+              ptag_i, ptag_v_i, ptag_uncached_i, ptag_dram_i, ptag_nonidem_i);
      return s;
     endfunction: convert2string
     

@@ -33,10 +33,10 @@ package icache_uvm_cfg_pkg;
     `uvm_object_utils(env_config)
 
     //Config parameteres
-    virtual icache_if #(INPUT)  icache_input_if_h;
-    virtual icache_if #(TLB)    icache_tlb_if_h;
-    virtual icache_if #(OUTPUT) icache_output_if_h;
-    virtual icache_if #(CE)     icache_ce_if_h;
+    virtual icache_if #(.chosen_if(INPUT))  icache_input_if_h;
+    virtual icache_if #(.chosen_if(TLB))    icache_tlb_if_h;
+    virtual icache_if #(.chosen_if(OUTPUT)) icache_output_if_h;
+    virtual icache_if #(.chosen_if(CE))     icache_ce_if_h;
     int              input_is_active;
     int              tlb_is_active;
     int              output_is_active;

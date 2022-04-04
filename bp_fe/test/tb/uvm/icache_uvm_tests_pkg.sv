@@ -24,10 +24,10 @@ package icache_uvm_tests_pkg;
   
     `uvm_component_utils(base_test)
     
-    virtual icache_if #(INPUT)  icache_input_if_h;
-    virtual icache_if #(TLB)    icache_tlb_if_h;
-    virtual icache_if #(OUTPUT) icache_output_if_h;
-    virtual icache_if #(CE)     icache_ce_if_h;
+    virtual icache_if #(.chosen_if(INPUT))  icache_input_if_h;
+    virtual icache_if #(.chosen_if(TLB))    icache_tlb_if_h;
+    virtual icache_if #(.chosen_if(OUTPUT)) icache_output_if_h;
+    virtual icache_if #(.chosen_if(CE))     icache_ce_if_h;
     
     base_env   base_env_h;
     env_config env_cfg;

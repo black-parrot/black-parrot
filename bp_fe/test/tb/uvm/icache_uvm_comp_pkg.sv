@@ -32,7 +32,7 @@ package icache_uvm_comp_pkg;
 
     `uvm_component_utils(input_driver)
 
-    virtual icache_if #(INPUT) dut_vi;
+    virtual icache_if #(.chosen_if(INPUT)) dut_vi;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -50,7 +50,7 @@ package icache_uvm_comp_pkg;
         @(posedge dut_vi.clk_i);
         seq_item_port.get(tx);
 
-        dut_vi.cfg_bus_i    = tx.cfg_bus_i;
+        //dut_vi.cfg_bus_i    = tx.cfg_bus_i;
         dut_vi.icache_pkt_i = tx.icache_pkt_i;
         dut_vi.v_i          = tx.v_i;
         dut_vi.ready_o      = tx.ready_o;
@@ -63,7 +63,7 @@ package icache_uvm_comp_pkg;
 
     `uvm_component_utils(tlb_driver)
 
-    virtual icache_if #(TLB) dut_vi;
+    virtual icache_if #(.chosen_if(TLB)) dut_vi;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -86,7 +86,7 @@ package icache_uvm_comp_pkg;
         dut_vi.ptag_uncached_i  = tx.ptag_uncached_i;
         dut_vi.ptag_dram_i      = tx.ptag_dram_i;
         dut_vi.ptag_nonidem_i   = tx.ptag_nonidem_i;
-        dut_vi.poison_tl_i      = tx.poison_tl_i;
+        //dut_vi.poison_tl_i      = tx.poison_tl_i;
       end
     endtask: run_phase
 
@@ -96,7 +96,7 @@ package icache_uvm_comp_pkg;
 
     `uvm_component_utils(output_driver)
 
-    virtual icache_if #(OUTPUT) dut_vi;
+    virtual icache_if #(.chosen_if(OUTPUT)) dut_vi;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -126,7 +126,7 @@ package icache_uvm_comp_pkg;
 
     `uvm_component_utils(ce_driver)
     
-    virtual icache_if #(CE) dut_vi;
+    virtual icache_if #(.chosen_if(CE)) dut_vi;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -168,7 +168,7 @@ package icache_uvm_comp_pkg;
 
     uvm_analysis_port #(input_transaction) aport;
 
-    virtual icache_if #(INPUT) dut_vi;
+    virtual icache_if #(.chosen_if(INPUT)) dut_vi;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -187,7 +187,7 @@ package icache_uvm_comp_pkg;
         @(posedge dut_vi.clk);
         tx = input_transaction::type_id::create("tx");
 
-        tx.cfg_bus_i        = dut_vi.cfg_bus_i;
+        //tx.cfg_bus_i        = dut_vi.cfg_bus_i;
         tx.icache_pkt_i     = dut_vi.icache_pkt_i;
         tx.v_i              = dut_vi.v_i;
         tx.ready_o          = dut_vi.ready_o;
@@ -205,7 +205,7 @@ package icache_uvm_comp_pkg;
 
     uvm_analysis_port #(tlb_transaction) aport;
 
-    virtual icache_if #(TLB) dut_vi;
+    virtual icache_if #(.chosen_if(TLB)) dut_vi;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -229,7 +229,7 @@ package icache_uvm_comp_pkg;
         tx.ptag_uncached_i  = dut_vi.ptag_uncached_i;
         tx.ptag_dram_i      = dut_vi.ptag_dram_i;
         tx.ptag_nonidem_i   = dut_vi.ptag_nonidem_i;
-        tx.poison_tl_i      = dut_vi.poison_tl_i;
+        //tx.poison_tl_i      = dut_vi.poison_tl_i;
 
         `uvm_info("monitor", $psprintf("monitor sending tx %s", tx.convert2string()), UVM_FULL);
 
@@ -245,7 +245,7 @@ package icache_uvm_comp_pkg;
 
     uvm_analysis_port #(output_transaction) aport;
 
-    virtual icache_if #(OUTPUT) dut_vi;
+    virtual icache_if #(.chosen_if(OUTPUT)) dut_vi;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -282,7 +282,7 @@ package icache_uvm_comp_pkg;
 
     uvm_analysis_port #(ce_transaction) aport;
 
-    virtual icache_if #(CE) dut_vi;
+    virtual icache_if #(.chosen_if(CE)) dut_vi;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -477,10 +477,10 @@ package icache_uvm_comp_pkg;
       uvm_config_db #(int) :: set (this, "output_agent_h", "is_active", (env_cfg.output_is_active == 1'b0) ? UVM_ACTIVE : UVM_PASSIVE);
       uvm_config_db #(int) :: set (this, "ce_agent_h", "is_active", (env_cfg.ce_is_active == 1'b0) ? UVM_ACTIVE : UVM_PASSIVE);
 
-      uvm_config_db#(input_agt_cfg)::set(this, "input_agent_h", "input_agt_cfg", input_agt_cfg);
-      uvm_config_db#(tlb_agt_cfg)::set(this, "tlb_agent_h", "tlb_agt_cfg", tlb_agt_cfg);
-      uvm_config_db#(output_agt_cfg)::set(this, "output_agent_h", "output_agt_cfg", output_agt_cfg);
-      uvm_config_db#(ce_agt_cfg)::set(this, "ce_agent_h", "ce_agt_cfg", ce_agt_cfg);
+      uvm_config_db#(agt_config)::set(this, "input_agent_h", "input_agt_cfg", input_agt_cfg);
+      uvm_config_db#(agt_config)::set(this, "tlb_agent_h", "tlb_agt_cfg", tlb_agt_cfg);
+      uvm_config_db#(agt_config)::set(this, "output_agent_h", "output_agt_cfg", output_agt_cfg);
+      uvm_config_db#(agt_config)::set(this, "ce_agent_h", "ce_agt_cfg", ce_agt_cfg);
     endfunction: build_phase
 
     virtual function void connect_phase(uvm_phase phase);

@@ -20,7 +20,7 @@
 # top includes
 +incdir+$BP_TOP_DIR/src/include
 # uvm includes
-+incdir+$(BP_FE_DIR)/test/tb/uvm
++incdir+$BP_FE_DIR/test/tb/uvm
 
 
 ## Packages
@@ -38,12 +38,6 @@ $BP_BE_DIR/src/include/bp_be_pkg.sv
 $BP_ME_DIR/src/include/bp_me_pkg.sv
 # TOP packages
 $BP_TOP_DIR/src/include/bp_top_pkg.sv
-# uvm files
-$BP_FE_DIR/test/tb/uvm/icache_uvm_cfg_pkg.sv
-$BP_FE_DIR/test/tb/uvm/icache_uvm_comp_pkg.sv
-$BP_FE_DIR/test/tb/uvm/icache_uvm_seq_pkg.sv
-$BP_FE_DIR/test/tb/uvm/icache_uvm_subs_pkg.sv
-$BP_FE_DIR/test/tb/uvm/icache_uvm_tests_pkg.sv
 
 
 ## Files
@@ -196,6 +190,13 @@ $BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
 $BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
+# uvm files
+$BP_FE_DIR/test/tb/uvm/icache_uvm_cfg_pkg.sv
+$BP_FE_DIR/test/tb/uvm/icache_uvm_comp_pkg.sv
+$BP_FE_DIR/test/tb/uvm/icache_uvm_seq_pkg.sv
+$BP_FE_DIR/test/tb/uvm/icache_uvm_subs_pkg.sv
+$BP_FE_DIR/test/tb/uvm/icache_uvm_tests_pkg.sv
+$BP_FE_DIR/test/tb/uvm/icache_uvm_top.sv
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.sv
 $BP_FE_DIR/src/v/bp_fe_btb.sv
@@ -250,14 +251,14 @@ $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_cmd.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_req.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_resp.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
-$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
+#$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
+#$BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
+#$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
@@ -284,9 +285,9 @@ $BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.v
 $BP_FE_DIR/test/common/bp_fe_nonsynth_icache_tracer.sv
 # me files
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
-$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
-$BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv
-$BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
+#$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
+#$BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv
+#$BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.sv
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv
 $BP_ME_DIR/test/common/bp_nonsynth_mem.sv
