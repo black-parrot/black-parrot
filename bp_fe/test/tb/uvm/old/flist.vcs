@@ -1,0 +1,298 @@
+## Includes
+# BASEJUMP_STL includes
++incdir+$BASEJUMP_STL_DIR/bsg_cache
++incdir+$BASEJUMP_STL_DIR/bsg_dataflow
++incdir+$BASEJUMP_STL_DIR/bsg_mem
++incdir+$BASEJUMP_STL_DIR/bsg_misc
++incdir+$BASEJUMP_STL_DIR/bsg_test
++incdir+$BASEJUMP_STL_DIR/bsg_noc
+# HardFloat includes
++incdir+$HARDFLOAT_DIR/source
++incdir+$HARDFLOAT_DIR/source/RISCV
+# common includes
++incdir+$BP_COMMON_DIR/src/include
+# fe includes
++incdir+$BP_FE_DIR/src/include
+# be includes
++incdir+$BP_BE_DIR/src/include
+# me includes
++incdir+$BP_ME_DIR/src/include
+# top includes
++incdir+$BP_TOP_DIR/src/include
+# uvm includes
++incdir+$BP_FE_DIR/test/tb/uvm
+
+
+## Packages
+# BaseJump STL packages
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
+# Interface packages
+$BP_COMMON_DIR/src/include/bp_common_pkg.sv
+# FE packages
+$BP_FE_DIR/src/include/bp_fe_pkg.sv
+# BE packages
+$BP_BE_DIR/src/include/bp_be_pkg.sv
+# ME packages
+$BP_ME_DIR/src/include/bp_me_pkg.sv
+# TOP packages
+$BP_TOP_DIR/src/include/bp_top_pkg.sv
+# UVM TB packages
+$BP_FE_DIR/test/tb/uvm/icache_uvm_cfg_pkg.sv
+$BP_FE_DIR/test/tb/uvm/icache_uvm_comp_pkg.sv
+$BP_FE_DIR/test/tb/uvm/icache_uvm_seq_pkg.sv
+$BP_FE_DIR/test/tb/uvm/icache_uvm_subs_pkg.sv
+$BP_FE_DIR/test/tb/uvm/icache_uvm_tests_pkg.sv
+
+
+## Files
+## BaseJump STL files
+$BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
+$BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
+$BASEJUMP_STL_DIR/bsg_async/bsg_async_ptr_gray.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_miss.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_decode.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf_queue.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel_in.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel_out.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_1_to_n_tagged_fifo.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_1_to_n_tagged.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_large.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_pseudo_large.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_small_unhardened.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1rw_large.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_tracker.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_flow_counter.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_1_to_n.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_dynamic.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_full.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_replacement.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_sync.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_tag_array.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_one_hot.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_synth.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_synth.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_2r1w_sync.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_2r1w_sync_synth.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_3r1w_sync.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_3r1w_sync_synth.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_adder_cin.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_adder_one_hot.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_adder_ripple_carry.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_arb_fixed.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_array_concentrate_static.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_buf.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_buf_ctrl.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_circular_ptr.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_concentrate_static.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up_one_hot.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_down.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_en.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down_variable.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_crossbar_o_by_i.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_cycle_counter.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_decode.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_decode_with_v.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_en_bypass.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en_bypass.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_chain.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_en.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_set_clear.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dlatch.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_edge_detect.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_encode_one_hot.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank_reverse.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative_controller.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_backup.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_mux.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_mux_bitwise.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_mux_butterfly.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_mux_one_hot.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_mux_segmented.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_muxi2_gatestack.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_nor2.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_nor3.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_nand.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_reduce.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_reduce_segmented.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_rotate_left.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_rotate_right.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_round_robin_arb.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_scan.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_strobe.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_swap.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_thermometer_count.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_transpose.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_unconcentrate_static.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_xnor.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_stitch.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_noc_repeater_node.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_in.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_out.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
+# HardFloat files
+$HARDFLOAT_DIR/source/addRecFN.v
+$HARDFLOAT_DIR/source/compareRecFN.v
+$HARDFLOAT_DIR/source/divSqrtRecFN_small.v
+$HARDFLOAT_DIR/source/fNToRecFN.v
+$HARDFLOAT_DIR/source/HardFloat_primitives.v
+$HARDFLOAT_DIR/source/HardFloat_rawFN.v
+$HARDFLOAT_DIR/source/iNToRecFN.v
+$HARDFLOAT_DIR/source/isSigNaNRecFN.v
+$HARDFLOAT_DIR/source/mulAddRecFN.v
+$HARDFLOAT_DIR/source/mulRecFN.v
+$HARDFLOAT_DIR/source/recFNToFN.v
+$HARDFLOAT_DIR/source/recFNToIN.v
+$HARDFLOAT_DIR/source/recFNToRecFN.v
+$HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
+# Common files
+$BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.sv
+$BP_COMMON_DIR/src/v/bsg_bus_pack.sv
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
+$BP_COMMON_DIR/src/v/bp_pma.sv
+$BP_COMMON_DIR/src/v/bp_tlb.sv
+## FE files
+$BP_FE_DIR/src/v/bp_fe_bht.sv
+$BP_FE_DIR/src/v/bp_fe_btb.sv
+$BP_FE_DIR/src/v/bp_fe_icache.sv
+$BP_FE_DIR/src/v/bp_fe_instr_scan.sv
+$BP_FE_DIR/src/v/bp_fe_pc_gen.sv
+$BP_FE_DIR/src/v/bp_fe_top.sv
+## ME files
+# LCE
+$BP_ME_DIR/src/v/lce/bp_lce.sv
+$BP_ME_DIR/src/v/lce/bp_lce_req.sv
+$BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
+# Cache
+$BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_dram_hash_decode.sv
+$BP_ME_DIR/src/v/dev/bp_me_dram_hash_encode.sv
+# CCE
+$BP_ME_DIR/src/v/cce/bp_cce.sv
+$BP_ME_DIR/src/v/cce/bp_cce_alu.sv
+$BP_ME_DIR/src/v/cce/bp_cce_arbitrate.sv
+$BP_ME_DIR/src/v/cce/bp_cce_branch.sv
+$BP_ME_DIR/src/v/cce/bp_cce_dir.sv
+$BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.sv
+$BP_ME_DIR/src/v/cce/bp_cce_dir_segment.sv
+$BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.sv
+$BP_ME_DIR/src/v/cce/bp_cce_gad.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_decode.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_predecode.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_ram.sv
+$BP_ME_DIR/src/v/cce/bp_cce_inst_stall.sv
+$BP_ME_DIR/src/v/cce/bp_cce_msg.sv
+$BP_ME_DIR/src/v/cce/bp_cce_pending_bits.sv
+$BP_ME_DIR/src/v/cce/bp_cce_pma.sv
+$BP_ME_DIR/src/v/cce/bp_cce_reg.sv
+$BP_ME_DIR/src/v/cce/bp_cce_spec_bits.sv
+$BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
+$BP_ME_DIR/src/v/cce/bp_io_cce.sv
+$BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
+$BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
+# Dev
+$BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
+$BP_ME_DIR/src/v/dev/bp_me_clint_slice.sv
+$BP_ME_DIR/src/v/dev/bp_me_cfg.sv
+$BP_ME_DIR/src/v/dev/bp_me_loopback.sv
+# Network
+$BP_ME_DIR/src/v/cce/bp_uce.sv
+$BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
+$BP_ME_DIR/src/v/network/bp_me_cce_id_to_cord.sv
+$BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
+$BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_cmd.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_req.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_lce_resp.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_packet_encode_mem.sv
+#$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
+#$BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
+#$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
+#$BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
+# BSG Staging area
+$BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
+$BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
+$BP_COMMON_DIR/src/v/bsg_deff_reset.v
+$BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
+$BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
+# bsg_ip_cores files
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_test_dram_tx.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_reorder.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_arb_round_robin.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_trace_replay.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_map.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.v
+$BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.v
+# top files
+$BP_FE_DIR/test/common/bp_fe_nonsynth_icache_tracer.sv
+# me files
+$BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
+#$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.sv
+#$BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv
+#$BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
+$BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.sv
+$BP_ME_DIR/test/common/bp_nonsynth_dram.sv
+$BP_ME_DIR/test/common/bp_nonsynth_mem.sv
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp
+# common files
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
+# uvm files
+$BP_FE_DIR/test/tb/uvm/icache_uvm_top.sv

@@ -40,6 +40,9 @@ VCS_BUILD_OPTS += +plusarg_save
 VCS_BUILD_OPTS += $(BP_TOOLS_DIR)/install/lib/libdromajo_cosim.a
 VCS_BUILD_OPTS += -top testbench
 VCS_BUILD_OPTS += -f flist.vcs
+ifdef UVM
+VCS_BUILD_OPTS += -ntb_opts uvm-1.2 +incdir+$(BP_UVM_DIR)
+endif
 
 VCS_PLUSARGS  =
 

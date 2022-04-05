@@ -30,7 +30,7 @@ comp:
   
 	#@grep -v -e "`include bp_common_cache_engine_if.svh" > $(BP_FE_DIR)/src/v/bp_fe_icache.sv
 
-	vcs -full64 -notice -V +v2k -debug_access+all -sverilog -assert svaext +noportcoerce -timescale=1ns/10ps -diag timescale -ntb_opts uvm-1.2 -CFLAGS "-I $(BP_TOOLS_DIR)/install/include -std=c++14 -I $(BASEJUMP_STL_DIR)/bsg_test" -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib" +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE -f flist.vcs $(BP_UVM_DIR)/icache_uvm_top.sv -l comp.log +vcs+lic+wait +libext+.v+.vlib+.vh+.svh +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) +define+den2048Mb+sg5+x16+FULL_MEM +vcs+vcdpluson
+	vcs -full64 -notice -V +v2k -debug_access+all -sverilog -assert svaext +noportcoerce -timescale=1ns/10ps -diag timescale -ntb_opts uvm-1.2 -CFLAGS "-I $(BP_TOOLS_DIR)/install/include -std=c++14 -I $(BASEJUMP_STL_DIR)/bsg_test" -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib" +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE -f flist.vcs -top icache_uvm_top -l comp.log +vcs+lic+wait +libext+.v+.vlib+.vh+.svh +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) +define+den2048Mb+sg5+x16+FULL_MEM +vcs+vcdpluson
 
 run:
 	simv +UVM_NO_RELNOTES +UVM_VERBOSITY=UVM_LOW -l run.log

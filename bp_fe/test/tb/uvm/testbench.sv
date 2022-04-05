@@ -14,20 +14,20 @@ import icache_uvm_tests_pkg::*;
 import icache_uvm_comp_pkg::*;
 import icache_uvm_subs_pkg::*;
 
+/*
 `include "bp_common_defines.svh"
 `include "bp_fe_defines.svh"
 `include "bp_fe_icache_defines.svh"
 `include "bp_fe_icache_pkgdef.svh"
 `include "bp_top_defines.svh"
-`include "bp_common_pkg.sv"
 `include "bp_common_aviary_defines.svh"
 `include "bp_common_aviary_pkgdef.svh"
 `include "bp_common_cache_engine_if.svh"
 `include "bp_common_bedrock_if.svh"
-import bp_common_pkg::*;
 import bp_fe_pkg::*;
 import bp_me_pkg::*;
 import bsg_dramsim3_pkg::*;
+*/
 
 `ifndef BP_SIM_CLK_PERIOD
 `define BP_SIM_CLK_PERIOD 10
@@ -37,7 +37,11 @@ import bsg_dramsim3_pkg::*;
 // DUT Interfaces
 //.......................................................
 // Used for communication between the cache and the UVM testbench
-interface icache_if #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+interface icache_if 
+  import bp_common_pkg::*;
+  import bp_fe_pkg::*;
+  import bp_me_pkg::*;
+    #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     , parameter vif_type chosen_if = INPUT
     //local parameters
     `declare_bp_proc_params(bp_params_p)
@@ -95,7 +99,12 @@ interface icache_if #(parameter bp_params_e bp_params_p = e_bp_default_cfg
 endinterface: icache_if
 
 // Used for communication between UCE and RAM
-interface ram_if#(parameter bp_params_e bp_params_p = e_bp_default_cfg
+interface ram_if 
+  import bp_common_pkg::*;
+  import bp_fe_pkg::*;
+  import bp_me_pkg::*;
+
+  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce));
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
@@ -120,11 +129,15 @@ endinterface: ram_if
 //.......................................................
 // Top
 //.......................................................
-module top #(parameter bp_params_e bp_params_p = e_bp_default_cfg //BP_CFG_FLOWVAR instead?
+module top 
+    import bp_common_pkg::*;
+    import bp_fe_pkg::*;
+    import bp_me_pkg::*;
+    #(parameter bp_params_e bp_params_p = e_bp_default_cfg //BP_CFG_FLOWVAR instead?
     `declare_bp_proc_params(bp_params_p) 
     `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
-   , parameter dram_type_p                 = BP_DRAM_FLOWVAR
+   , parameter dram_type_p                 = "dramsim3"
   
    // Calculated parameters
    , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
