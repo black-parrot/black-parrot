@@ -30,6 +30,7 @@ class input_driver extends uvm_driver #(input_transaction);
   `uvm_component_utils(input_driver)
 
   virtual icache_if #(.chosen_if(INPUT)) dut_vi;
+  agt_config input_agt_cfg;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -37,6 +38,11 @@ class input_driver extends uvm_driver #(input_transaction);
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
+
+    input_agt_cfg = agt_config::type_id::create("input_agt_cfg");
+    if(!uvm_config_db#(agt_config)::get(this, "", "agt_config", input_agt_cfg))
+      `uvm_fatal("NO_CFG", "No agent config set in ce_monitor")
+    dut_vi = input_agt_cfg.icache_if_h;
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
@@ -61,6 +67,7 @@ class tlb_driver extends uvm_driver #(tlb_transaction);
   `uvm_component_utils(tlb_driver)
 
   virtual icache_if #(.chosen_if(TLB)) dut_vi;
+  agt_config tlb_agt_cfg;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -68,6 +75,11 @@ class tlb_driver extends uvm_driver #(tlb_transaction);
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
+
+    tlb_agt_cfg = agt_config::type_id::create("tlb_agt_cfg");
+    if(!uvm_config_db#(agt_config)::get(this, "", "agt_config", tlb_agt_cfg))
+      `uvm_fatal("NO_CFG", "No agent config set in ce_monitor")
+    dut_vi = tlb_agt_cfg.icache_if_h;
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
@@ -94,6 +106,7 @@ class output_driver extends uvm_driver #(output_transaction);
   `uvm_component_utils(output_driver)
 
   virtual icache_if #(.chosen_if(OUTPUT)) dut_vi;
+  agt_config output_agt_cfg;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -101,6 +114,11 @@ class output_driver extends uvm_driver #(output_transaction);
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
+
+    output_agt_cfg = agt_config::type_id::create("output_agt_cfg");
+    if(!uvm_config_db#(agt_config)::get(this, "", "agt_config", output_agt_cfg))
+      `uvm_fatal("NO_CFG", "No agent config set in ce_monitor")
+    dut_vi = output_agt_cfg.icache_if_h;
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
@@ -124,6 +142,7 @@ class ce_driver extends uvm_driver #(ce_transaction);
   `uvm_component_utils(ce_driver)
   
   virtual icache_if #(.chosen_if(CE)) dut_vi;
+  agt_config ce_agt_cfg;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -131,6 +150,11 @@ class ce_driver extends uvm_driver #(ce_transaction);
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
+
+    ce_agt_cfg = agt_config::type_id::create("ce_agt_cfg");
+    if(!uvm_config_db#(agt_config)::get(this, "", "ce_agt_config", ce_agt_cfg))
+      `uvm_fatal("NO_CFG", "No agent config set in ce_monitor")
+    dut_vi = ce_agt_cfg.icache_if_h;
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
@@ -166,6 +190,7 @@ class input_monitor extends uvm_monitor;
   uvm_analysis_port #(input_transaction) aport;
 
   virtual icache_if #(.chosen_if(INPUT)) dut_vi;
+  agt_config input_agt_cfg;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -174,6 +199,11 @@ class input_monitor extends uvm_monitor;
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     aport = new("aport", this);
+
+    input_agt_cfg = agt_config::type_id::create("input_agt_cfg");
+    if(!uvm_config_db#(agt_config)::get(this, "", "agt_config", input_agt_cfg))
+      `uvm_fatal("NO_CFG", "No agent config set in ce_monitor")
+    dut_vi = input_agt_cfg.icache_if_h;
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
@@ -203,6 +233,7 @@ class tlb_monitor extends uvm_monitor;
   uvm_analysis_port #(tlb_transaction) aport;
 
   virtual icache_if #(.chosen_if(TLB)) dut_vi;
+  agt_config tlb_agt_cfg;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -211,6 +242,11 @@ class tlb_monitor extends uvm_monitor;
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     aport = new("aport", this);
+
+    tlb_agt_cfg = agt_config::type_id::create("tlb_agt_cfg");
+    if(!uvm_config_db#(agt_config)::get(this, "", "agt_config", tlb_agt_cfg))
+      `uvm_fatal("NO_CFG", "No agent config set in ce_monitor")
+    dut_vi = tlb_agt_cfg.icache_if_h;
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
@@ -243,6 +279,7 @@ class output_monitor extends uvm_monitor;
   uvm_analysis_port #(output_transaction) aport;
 
   virtual icache_if #(.chosen_if(OUTPUT)) dut_vi;
+  agt_config output_agt_cfg;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -251,6 +288,11 @@ class output_monitor extends uvm_monitor;
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     aport = new("aport", this);
+
+    output_agt_cfg = agt_config::type_id::create("output_agt_cfg");
+    if(!uvm_config_db#(agt_config)::get(this, "", "agt_config", output_agt_cfg))
+      `uvm_fatal("NO_CFG", "No agent config set in ce_monitor")
+    dut_vi = output_agt_cfg.icache_if_h;
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
@@ -280,6 +322,7 @@ class ce_monitor extends uvm_monitor;
   uvm_analysis_port #(ce_transaction) aport;
 
   virtual icache_if #(.chosen_if(CE)) dut_vi;
+  agt_config ce_agt_cfg;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -288,6 +331,11 @@ class ce_monitor extends uvm_monitor;
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     aport = new("aport", this);
+
+    ce_agt_cfg = agt_config::type_id::create("ce_agt_cfg");
+    if(!uvm_config_db#(agt_config)::get(this, "", "ce_agt_config", ce_agt_cfg))
+      `uvm_fatal("NO_CFG", "No agent config set in ce_monitor")
+    dut_vi = ce_agt_cfg.icache_if_h;
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
@@ -343,6 +391,7 @@ class base_agent extends uvm_agent;
   // ce_monitor        ce_monitor_h;
   
   agt_config   agt_cfg;
+  vif_type     chosen_if;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -351,59 +400,67 @@ class base_agent extends uvm_agent;
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
 
-    // Get and pass configuration information from test to the agent
-    agt_cfg = agt_config::type_id::create("agt_cfg");
-    if(!uvm_config_db#(agt_config)::get(this, "", "agt_config", agt_cfg))
-      `uvm_fatal("NO_CFG", "No agent config set")
-
-    case (agt_cfg.dut_vi.chosen_if)
+    case (chosen_if)
       INPUT : begin
+        // Get and pass configuration information from test to the agent
+        agt_cfg = agt_config::type_id::create("agt_cfg");
+        if(!uvm_config_db#(agt_config)::get(this, "", "input_agt_config", agt_cfg))
+          `uvm_fatal("NO_CFG", "No agent config set")
         // If Agent is Active, create Driver and Sequencer, else skip
         if (get_is_active()) begin
           my_sequencer_h  = input_sequencer::type_id::create("input_sequencer_h", this);
           my_driver_h     = input_driver::type_id::create("input_driver_h", this);
-          my_driver_h.vif = agt_cfg.icache_if_h;
         end
 
         aport = new("aport", this);
-        my_monitor_h = input_monitor::type_id::create("input_monitor_h", this);
-        my_monitor_h.dut_vi = agt_cfg.icache_if_h;
+        my_monitor_h = input_monitor::type_id::create("input_monitor_h", this); 
+        uvm_config_db#(agt_config)::set(this, "*", "input_agt_config", agt_cfg);
       end
       TLB : begin
+        // Get and pass configuration information from test to the agent
+        agt_cfg = agt_config::type_id::create("agt_cfg");
+        if(!uvm_config_db#(agt_config)::get(this, "", "tlb_agt_config", agt_cfg))
+          `uvm_fatal("NO_CFG", "No agent config set")
         // If Agent is Active, create Driver and Sequencer, else skip
         if (get_is_active()) begin
           my_sequencer_h  = tlb_sequencer::type_id::create("tlb_sequencer_h", this);
           my_driver_h     = tlb_driver::type_id::create("tlb_driver_h", this);
-          my_driver_h.vif = agt_cfg.icache_if_h;
         end
 
         aport = new("aport", this);
         my_monitor_h = tlb_monitor::type_id::create("tlb_monitor_h", this);
-        my_monitor_h.dut_vi = agt_cfg.icache_if_h;
+        uvm_config_db#(agt_config)::set(this, "*", "tlb_agt_config", agt_cfg);
       end
       OUTPUT : begin
+        // Get and pass configuration information from test to the agent
+        agt_cfg = agt_config::type_id::create("agt_cfg");
+        if(!uvm_config_db#(agt_config)::get(this, "", "output_agt_config", agt_cfg))
+          `uvm_fatal("NO_CFG", "No agent config set")
         // If Agent is Active, create Driver and Sequencer, else skip
         if (get_is_active()) begin
           my_sequencer_h  = output_sequencer::type_id::create("output_sequencer_h", this);
           my_driver_h     = output_driver::type_id::create("output_driver_h", this);
-          my_driver_h.vif = agt_cfg.icache_if_h;
         end
 
         aport = new("aport", this);
         my_monitor_h = output_monitor::type_id::create("output_monitor_h", this);
-        my_monitor_h.dut_vi = agt_cfg.icache_if_h;
+        uvm_config_db#(agt_config)::set(this, "*", "output_agt_config", agt_cfg);
       end
       CE : begin
+        // Get config info for agent
+        agt_cfg = agt_config::type_id::create("agt_cfg");
+        if(!uvm_config_db#(agt_config)::get(this, "", "ce_agt_config", agt_cfg))
+          `uvm_fatal("NO_CFG", "No agent config set")
+        
         // If Agent is Active, create Driver and Sequencer, else skip
         if (get_is_active()) begin
           my_sequencer_h  = ce_sequencer::type_id::create("ce_sequencer_h", this);
           my_driver_h     = ce_driver::type_id::create("ce_driver_h", this);
-          my_driver_h.vif = agt_cfg.icache_if_h;
         end
 
         aport = new("aport", this);
         my_monitor_h = ce_monitor::type_id::create("ce_monitor_h", this);
-        my_monitor_h.dut_vi = agt_cfg.icache_if_h;
+        uvm_config_db#(agt_config)::set(this, "*", "ce_agt_config", agt_cfg);
       end
     endcase
   endfunction: build_phase
@@ -468,6 +525,15 @@ class base_env extends uvm_env;
     tlb_agt_cfg.dut_vi    = env_cfg.icache_tlb_if_h;
     output_agt_cfg.dut_vi = env_cfg.icache_output_if_h;
     ce_agt_cfg.dut_vi     = env_cfg.icache_ce_if_h;
+
+    input_agt_cfg.chosen_if = INPUT;
+    tlb_agt_cfg.chosen_if = TLB;
+    output_agt_cfg.chosen_if = OUTPUT;
+    ce_agt_cfg.chosen_if = CE;
+    input_agent_h.chosen_if = INPUT;
+    tlb_agent_h.chosen_if = TLB;
+    output_agent_h.chosen_if = OUTPUT;
+    ce_agent_h.chosen_if = CE;
 
     uvm_config_db #(int) :: set (this, "input_agent_h", "is_active", (env_cfg.input_is_active == 1'b0) ? UVM_ACTIVE : UVM_PASSIVE);
     uvm_config_db #(int) :: set (this, "tlb_agent_h", "is_active", (env_cfg.tlb_is_active == 1'b0) ? UVM_ACTIVE : UVM_PASSIVE);
