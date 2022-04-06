@@ -29,7 +29,7 @@ ifndef UVM
 	include $(BP_COMMON_DIR)/syn/Makefile.verilator
 	include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
-else
+else #UVM=1
 	export SYN_PATH     := $(BP_FE_DIR)/syn
 	export TB_PATH      := $(BP_FE_DIR)/test/tb
 	export MEM_PATH     := $(BP_FE_DIR)/test/tb

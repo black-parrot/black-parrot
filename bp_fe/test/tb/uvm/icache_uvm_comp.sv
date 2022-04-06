@@ -4,13 +4,13 @@
 `ifndef ICACHE_COMP_PKG
 `define ICACHE_COMP_PKG
 
-`include "icache_uvm_seq_pkg.sv"
+`include "icache_uvm_seq.sv"
 `include "icache_uvm_cfg_pkg.sv"
-`include "icache_uvm_subs_pkg.sv"
+`include "icache_uvm_subs.sv"
 
 
 `include "uvm_macros.svh"
-import uvm_pkg::*;
+//import uvm_pkg::*;
 
 import icache_uvm_cfg_pkg::*;
 
@@ -344,7 +344,7 @@ class ce_monitor extends uvm_monitor;
       ce_transaction#() tx;
 
       @(posedge dut_vi.clk);
-      tx = ce_transaction::type_id::create("tx");
+      tx = ce_transaction#()::type_id::create("tx");
 
       tx.cache_req_o              = dut_vi.cache_req_o;
       tx.cache_req_v_o            = dut_vi.cache_req_v_o;
@@ -391,6 +391,7 @@ class input_agent extends uvm_agent;
     agt_cfg = input_agt_config::type_id::create("agt_cfg");
     if(!uvm_config_db#(input_agt_config)::get(this, "", "input_agt_config", agt_cfg))
       `uvm_fatal("NO_CFG", "No agent config set")
+
     // If Agent is Active, create Driver and Sequencer, else skip
     if (get_is_active()) begin
       my_sequencer_h  = input_sequencer::type_id::create("input_sequencer_h", this);
@@ -433,6 +434,7 @@ class tlb_agent extends uvm_agent;
     agt_cfg = tlb_agt_config::type_id::create("agt_cfg");
     if(!uvm_config_db#(tlb_agt_config)::get(this, "", "tlb_agt_config", agt_cfg))
       `uvm_fatal("NO_CFG", "No agent config set")
+
     // If Agent is Active, create Driver and Sequencer, else skip
     if (get_is_active()) begin
       my_sequencer_h  = tlb_sequencer::type_id::create("tlb_sequencer_h", this);
@@ -475,6 +477,7 @@ class output_agent extends uvm_agent;
     agt_cfg = output_agt_config::type_id::create("agt_cfg");
     if(!uvm_config_db#(output_agt_config)::get(this, "", "output_agt_config", agt_cfg))
       `uvm_fatal("NO_CFG", "No agent config set")
+
     // If Agent is Active, create Driver and Sequencer, else skip
     if (get_is_active()) begin
       my_sequencer_h  = output_sequencer::type_id::create("output_sequencer_h", this);
@@ -517,6 +520,7 @@ class ce_agent extends uvm_agent;
     agt_cfg = ce_agt_config::type_id::create("agt_cfg");
     if(!uvm_config_db#(ce_agt_config)::get(this, "", "ce_agt_config", agt_cfg))
       `uvm_fatal("NO_CFG", "No agent config set")
+
     // If Agent is Active, create Driver and Sequencer, else skip
     if (get_is_active()) begin
       my_sequencer_h  = ce_sequencer::type_id::create("ce_sequencer_h", this);
@@ -568,7 +572,7 @@ class base_env extends uvm_env;
     tlb_agent_h     = tlb_agent::type_id::create("tlb_agent_h",   this);
     output_agent_h  = output_agent::type_id::create("output_agent_h",   this);
     ce_agent_h      = ce_agent::type_id::create("ce_agent_h",   this);
-    icache_cov_col_h    = icache_cov_col::type_id::create("icache_cov_col_h", this);
+    icache_cov_col_h    = icache_cov_col#()::type_id::create("icache_cov_col_h", this);
     //my_scoreboard_h = my_scoreboard::type_id::create("my_scoreboard_h", this);
     //my_predictor_h  = my_predictor::type_id::create("my_predictor_h", this);
     //my_comparator_h = my_comparator::type_id::create("my_comparator_h", this);

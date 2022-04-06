@@ -6,7 +6,7 @@
 
 import uvm_pkg::*;
 `include "uvm_macros.svh"
-
+/*
 `include "bp_common_aviary_pkgdef.svh"
 `include "bp_common_aviary_defines.svh"
 `include "bp_common_defines.svh"
@@ -17,6 +17,7 @@ import uvm_pkg::*;
 `include "bp_common_aviary_defines.svh"
 `include "bp_common_aviary_pkgdef.svh"
 `include "bp_common_cache_engine_if.svh"
+*/
 import bp_common_pkg::*;
 import bp_fe_pkg::*;
 

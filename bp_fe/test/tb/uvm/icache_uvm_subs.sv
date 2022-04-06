@@ -4,11 +4,11 @@
 `ifndef ICACHE_SUBS_PKG
 `define ICACHE_SUBS_PKG
 
-`include "icache_uvm_seq_pkg.sv"
+`include "icache_uvm_seq.sv"
 
 
 `include "uvm_macros.svh"
-import uvm_pkg::*;
+//import uvm_pkg::*;
 
 //.......................................................
 // Coverage Collector

@@ -4,12 +4,12 @@
 `include "uvm_macros.svh"
 
 `include "icache_uvm_cfg_pkg.sv"
-`include "icache_uvm_seq_pkg.sv"
-`include "icache_uvm_tests_pkg.sv"
-`include "icache_uvm_comp_pkg.sv"
-`include "icache_uvm_subs_pkg.sv"
+`include "icache_uvm_seq.sv"
+`include "icache_uvm_tests.sv"
+`include "icache_uvm_comp.sv"
+`include "icache_uvm_subs.sv"
 `include "icache_uvm_if.sv"
-import icache_uvm_cfg_pkg::*;
+//import icache_uvm_cfg_pkg::*;
 
 `ifndef BP_SIM_CLK_PERIOD
 `define BP_SIM_CLK_PERIOD 10

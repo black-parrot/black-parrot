@@ -5,12 +5,12 @@
 `define ICACHE_TESTS_PKG
 
 `include "icache_uvm_cfg_pkg.sv"
-`include "icache_uvm_comp_pkg.sv"
-`include "icache_uvm_seq_pkg.sv"
-import icache_uvm_cfg_pkg::*;
+`include "icache_uvm_comp.sv"
+`include "icache_uvm_seq.sv"
+//import icache_uvm_cfg_pkg::*;
 
 `include "uvm_macros.svh"
-import uvm_pkg::*;
+//import uvm_pkg::*;
 
 //.......................................................
 // Base Test
