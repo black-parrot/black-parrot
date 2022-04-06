@@ -3,7 +3,6 @@
 
 `ifndef ICACHE_SEQ_PKG
 `define ICACHE_SEQ_PKG
-//package icache_uvm_seq_pkg;
 
 import uvm_pkg::*;
 `include "uvm_macros.svh"
@@ -29,14 +28,17 @@ class input_transaction #(parameter bp_params_e bp_params_p = e_bp_default_cfg
                          `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache))
   extends uvm_sequence_item;
   localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p);
+  localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   `uvm_object_utils(input_transaction)
  
   // transaction bits
-  //rand logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
+  rand logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
   rand logic [icache_pkt_width_lp-1:0]  icache_pkt_i;
   rand bit                              v_i;
   bit                                   ready_o;
+  bit                                   reset_i;
 
   function new (string name = "");
     super.new(name);
@@ -50,24 +52,27 @@ class input_transaction #(parameter bp_params_e bp_params_p = e_bp_default_cfg
       return;
     end
     super.do_copy(rhs);
-      //cfg_bus_i     = rhs_.cfg_bus_i;
+      cfg_bus_i     = rhs_.cfg_bus_i;
       icache_pkt_i  = rhs_.icache_pkt_i;
       v_i           = rhs_.v_i;
       ready_o       = rhs_.ready_o;
+      reset_i       = rhs_.reset_i;
    endfunction: do_copy
 
   function string convert2string();
    string s;
    s = super.convert2string();
    $sformat(s, 
-     "icache_pkt_i %d\t v_i %d\t ready_o %d\t flush_i %d\n",
-      icache_pkt_i, v_i, ready_o);
+     "icache_pkt_i %d\t v_i %d\t ready_o %d\t reset_i %d\n",
+      icache_pkt_i, v_i, ready_o, reset_i);
    return s;
   endfunction: convert2string
   
 endclass: input_transaction
 
-class tlb_transaction extends uvm_sequence_item;
+class tlb_transaction #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+                      `declare_bp_proc_params(bp_params_p)) 
+                      extends uvm_sequence_item;
 
   `uvm_object_utils(tlb_transaction)
   
@@ -77,7 +82,7 @@ class tlb_transaction extends uvm_sequence_item;
   rand bit                            ptag_uncached_i;
   rand bit                            ptag_dram_i;
   rand bit                            ptag_nonidem_i;
-  //rand bit                            poison_tl_i;
+  rand bit                            poison_tl_i;
 
   function new (string name = "");
     super.new(name);
@@ -96,7 +101,7 @@ class tlb_transaction extends uvm_sequence_item;
       ptag_uncached_i = rhs_.ptag_uncached_i;
       ptag_dram_i     = rhs_.ptag_dram_i;
       ptag_nonidem_i  = rhs_.ptag_nonidem_i;
-      //poison_tl_i     = rhs_.poison_tl_i;
+      poison_tl_i     = rhs_.poison_tl_i;
    endfunction: do_copy
 
   function string convert2string();
@@ -139,7 +144,7 @@ class output_transaction extends uvm_sequence_item;
    string s;
    s = super.convert2string();
    $sformat(s, "data_o %d\t data_v_o %d\t miss_v_o %d\n",
-            data_o, data_v_o, miss_v_o,);
+            data_o, data_v_o, miss_v_o);
    return s;
   endfunction: convert2string
 
@@ -250,7 +255,7 @@ class zero_sequence extends uvm_sequence #(input_transaction);
     input_transaction tx;
     tx = input_transaction#()::type_id::create("tx");
     start_item(tx);
-    //tx.cfg_bus_i    = '0;
+    tx.cfg_bus_i    = '0;
     tx.icache_pkt_i = '0;
     tx.v_i          = '0;
     tx.ready_o      = '0;

@@ -8,14 +8,38 @@
 //.......................................................
 // DUT Interfaces
 //.......................................................
-// Used for communication between the cache and the UVM testbench
-interface icache_if 
+// Used for communicating the inputs between the cache and the UVM testbench
+interface input_icache_if 
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
   import bp_me_pkg::*;
-  import icache_uvm_cfg_pkg::*;
     #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    , parameter vif_type chosen_if = INPUT
+    //local parameters
+    `declare_bp_proc_params(bp_params_p)
+    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p))
+    (input logic clk_i,
+     input logic reset_i);
+  
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  
+  bit clk = clk_i;
+  bit reset = reset_i;
+      
+  logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
+  logic [icache_pkt_width_lp-1:0]  icache_pkt_i;
+  bit                              v_i;
+  bit                              ready_o;
+endinterface: input_icache_if
+
+// Used for communication between the cache and the TLB
+interface tlb_icache_if 
+  import bp_common_pkg::*;
+  import bp_fe_pkg::*;
+  import bp_me_pkg::*;
+    #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     //local parameters
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
@@ -23,45 +47,67 @@ interface icache_if
     (input logic clk_i,
      input logic reset_i);
   
-  localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p);
+  bit clk = clk_i;
+  bit reset = reset_i;
+  
+  logic [ptag_width_p-1:0]       ptag_i;
+  bit                            ptag_v_i;
+  bit                            ptag_uncached_i;
+  bit                            ptag_dram_i;
+  bit                            ptag_nonidem_i;
+  bit                            poison_tl_i;
+endinterface: tlb_icache_if
+
+// Used for communicating outputs between the cache and the UVM testbench
+interface output_icache_if 
+  import bp_common_pkg::*;
+  import bp_fe_pkg::*;
+  import bp_me_pkg::*;
+    #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+    //local parameters
+    `declare_bp_proc_params(bp_params_p)
+    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache))
+    (input logic clk_i,
+     input logic reset_i);
 
   bit clk = clk_i;
   bit reset = reset_i;
-  case (chosen_if)
-    INPUT : begin
-      //logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
-      logic [icache_pkt_width_lp-1:0]  icache_pkt_i;
-      bit                              v_i;
-      bit                              ready_o;
-    end
-    TLB : begin
-      logic [ptag_width_p-1:0]       ptag_i;
-      bit                            ptag_v_i;
-      bit                            ptag_uncached_i;
-      bit                            ptag_dram_i;
-      bit                            ptag_nonidem_i;
-      //bit                            poison_tl_i;
-    end
-    OUTPUT : begin
-      logic [instr_width_gp-1:0]                data_o;
-      logic                                     data_v_o;
-      logic                                     miss_v_o;
-    end
-    CE : begin
-      logic [icache_req_width_lp-1:0]           cache_req_o;
-      bit                                       cache_req_v_o;
-      bit                                       cache_req_yumi_i;
-      bit                                       cache_req_busy_i;
-      logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o;
-      bit                                       cache_req_metadata_v_o;
-      bit                                       cache_req_critical_tag_i;
-      bit                                       cache_req_critical_data_i;
-      bit                                       cache_req_complete_i;
-      bit                                       cache_req_credits_full_i;
-      bit                                       cache_req_credits_empty_i;
-    end
-  endcase
-endinterface: icache_if
+  
+  logic [instr_width_gp-1:0]                data_o;
+  logic                                     data_v_o;
+  logic                                     miss_v_o;
+  
+endinterface: output_icache_if
+
+// Used for communicatio between the cache and the coherence engine (e.g. UCE)
+interface ce_icache_if 
+  import bp_common_pkg::*;
+  import bp_fe_pkg::*;
+  import bp_me_pkg::*;
+    #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+    //local parameters
+    `declare_bp_proc_params(bp_params_p)
+    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache))
+    (input logic clk_i,
+     input logic reset_i);
+
+  bit clk = clk_i;
+  bit reset = reset_i;
+  
+  logic [icache_req_width_lp-1:0]           cache_req_o;
+  bit                                       cache_req_v_o;
+  bit                                       cache_req_yumi_i;
+  bit                                       cache_req_busy_i;
+  logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o;
+  bit                                       cache_req_metadata_v_o;
+  bit                                       cache_req_critical_tag_i;
+  bit                                       cache_req_critical_data_i;
+  bit                                       cache_req_complete_i;
+  bit                                       cache_req_credits_full_i;
+  bit                                       cache_req_credits_empty_i;
+endinterface: ce_icache_if
 
 // Used for communication between UCE and RAM
 interface ram_if 

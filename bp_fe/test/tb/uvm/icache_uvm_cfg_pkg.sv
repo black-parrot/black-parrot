@@ -8,23 +8,52 @@ package icache_uvm_cfg_pkg;
   `include "uvm_macros.svh"
   import uvm_pkg::*;
   
-  // Lists all of the interfaces
-  typedef enum {INPUT, TLB, OUTPUT, CE} vif_type;
-  
   //.......................................................
   // Agent
   //.......................................................
-  class agt_config extends uvm_object;
-    `uvm_object_utils(agt_config)
+  class input_agt_config extends uvm_object;
+    `uvm_object_utils(input_agt_config)
 
     //Config parameteres
-    virtual icache_if icache_if_h;
-    vif_type chosen_if;
+    virtual input_icache_if icache_if_h;
     
     function new (string name = "");
       super.new(name);
     endfunction
-  endclass : agt_config
+  endclass : input_agt_config
+
+  class tlb_agt_config extends uvm_object;
+    `uvm_object_utils(tlb_agt_config)
+
+    //Config parameteres
+    virtual tlb_icache_if icache_if_h;
+    
+    function new (string name = "");
+      super.new(name);
+    endfunction
+  endclass : tlb_agt_config
+
+  class output_agt_config extends uvm_object;
+    `uvm_object_utils(output_agt_config)
+
+    //Config parameteres
+    virtual output_icache_if icache_if_h;
+    
+    function new (string name = "");
+      super.new(name);
+    endfunction
+  endclass : output_agt_config
+  
+  class ce_agt_config extends uvm_object;
+    `uvm_object_utils(ce_agt_config)
+
+    //Config parameteres
+    virtual ce_icache_if icache_if_h;
+    
+    function new (string name = "");
+      super.new(name);
+    endfunction
+  endclass : ce_agt_config
   
   //.......................................................
   // Environment
@@ -33,10 +62,10 @@ package icache_uvm_cfg_pkg;
     `uvm_object_utils(env_config)
 
     //Config parameteres
-    virtual icache_if #(.chosen_if(INPUT))  icache_input_if_h;
-    virtual icache_if #(.chosen_if(TLB))    icache_tlb_if_h;
-    virtual icache_if #(.chosen_if(OUTPUT)) icache_output_if_h;
-    virtual icache_if #(.chosen_if(CE))     icache_ce_if_h;
+    virtual input_icache_if  #() icache_input_if_h;
+    virtual tlb_icache_if    #() icache_tlb_if_h;
+    virtual output_icache_if #() icache_output_if_h;
+    virtual ce_icache_if     #() icache_ce_if_h;
     int              input_is_active;
     int              tlb_is_active;
     int              output_is_active;

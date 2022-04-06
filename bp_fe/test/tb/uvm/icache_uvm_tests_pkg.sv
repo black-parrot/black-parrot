@@ -19,10 +19,10 @@ class base_test extends uvm_test;
 
   `uvm_component_utils(base_test)
   
-  virtual icache_if #(.chosen_if(INPUT))  icache_input_if_h;
-  virtual icache_if #(.chosen_if(TLB))    icache_tlb_if_h;
-  virtual icache_if #(.chosen_if(OUTPUT)) icache_output_if_h;
-  virtual icache_if #(.chosen_if(CE))     icache_ce_if_h;
+  virtual input_icache_if icache_input_if_h;
+  virtual tlb_icache_if icache_tlb_if_h;
+  virtual output_icache_if icache_output_if_h;
+  virtual ce_icache_if icache_ce_if_h;
   
   base_env   base_env_h;
   env_config env_cfg;
@@ -37,17 +37,17 @@ class base_test extends uvm_test;
     
     // Get interface virtual handles from top
     env_cfg = env_config::type_id::create("env_cfg");
-    if(!(uvm_config_db#(virtual icache_if)::get(this, "", "dut_input_vi", env_cfg.icache_input_if_h) &&
-         uvm_config_db#(virtual icache_if)::get(this, "", "dut_tlb_vi", env_cfg.icache_tlb_if_h) &&
-         uvm_config_db#(virtual icache_if)::get(this, "", "dut_output_vi", env_cfg.icache_output_if_h) &&
-         uvm_config_db#(virtual icache_if)::get(this, "", "dut_ce_vi", env_cfg.icache_ce_if_h)))
+    if(!(uvm_config_db#(virtual input_icache_if)::get(this, "", "dut_input_vi", env_cfg.icache_input_if_h) &&
+         uvm_config_db#(virtual tlb_icache_if)::get(this, "", "dut_tlb_vi", env_cfg.icache_tlb_if_h) &&
+         uvm_config_db#(virtual output_icache_if)::get(this, "", "dut_output_vi", env_cfg.icache_output_if_h) &&
+         uvm_config_db#(virtual ce_icache_if)::get(this, "", "dut_ce_vi", env_cfg.icache_ce_if_h)))
      `uvm_fatal("NO_CFG", "No virtual interface set")
 
     //Define agent activity for each interface
     env_cfg.input_is_active  = 1'b1;
     env_cfg.tlb_is_active    = 1'b0;
     env_cfg.output_is_active = 1'b0;
-    env_cfg.ce_is_active    = 1'b0;
+    env_cfg.ce_is_active     = 1'b0;
     
     // Pass configuration information to the enviornment
     uvm_config_db#(env_config)::set(this, "*", "env_config", env_cfg);

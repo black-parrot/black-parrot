@@ -10,25 +10,6 @@
 `include "icache_uvm_subs_pkg.sv"
 `include "icache_uvm_if.sv"
 import icache_uvm_cfg_pkg::*;
-//import icache_uvm_seq_pkg::*;
-//import icache_uvm_tests_pkg::*;
-//import icache_uvm_comp_pkg::*;
-//import icache_uvm_subs_pkg::*;
-
-/*
-`include "bp_common_defines.svh"
-`include "bp_fe_defines.svh"
-`include "bp_fe_icache_defines.svh"
-`include "bp_fe_icache_pkgdef.svh"
-`include "bp_top_defines.svh"
-`include "bp_common_aviary_defines.svh"
-`include "bp_common_aviary_pkgdef.svh"
-`include "bp_common_cache_engine_if.svh"
-`include "bp_common_bedrock_if.svh"
-import bp_fe_pkg::*;
-import bp_me_pkg::*;
-import bsg_dramsim3_pkg::*;
-*/
 
 `ifndef BP_SIM_CLK_PERIOD
 `define BP_SIM_CLK_PERIOD 10
@@ -50,16 +31,13 @@ module testbench
    // Calculated parameters
    , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    );
 
   import uvm_pkg::*;
  
-  // PARAMETERS
-
-  // localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  // `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-
-  // for uce
+  // Typedef Macros
+  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache);
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
 
@@ -75,13 +53,14 @@ module testbench
 
   //bits for clk and rst
   bit clk_i, reset_i;
+  bit dram_clk_i, dram_reset_i;
 
   // Interface definitions
-  icache_if #(.bp_params_p(bp_params_p), .chosen_if(INPUT)) cache_input_if_h(clk_i, reset_i);
-  icache_if #(.bp_params_p(bp_params_p), .chosen_if(TLB)) cache_tlb_if_h(clk_i, reset_i);
-  icache_if #(.bp_params_p(bp_params_p), .chosen_if(OUTPUT)) cache_output_if_h(clk_i, reset_i);
-  icache_if #(.bp_params_p(bp_params_p), .chosen_if(CE)) cache_ce_if_h(clk_i, reset_i);
-  ram_if    #(.bp_params_p(bp_params_p)) ram_if_h ();
+  input_icache_if  #(.bp_params_p(bp_params_p)) cache_input_if_h(clk_i, reset_i);
+  tlb_icache_if    #(.bp_params_p(bp_params_p)) cache_tlb_if_h(clk_i, reset_i);
+  output_icache_if #(.bp_params_p(bp_params_p)) cache_output_if_h(clk_i, reset_i);
+  ce_icache_if     #(.bp_params_p(bp_params_p)) cache_ce_if_h(clk_i, reset_i);
+  ram_if           #(.bp_params_p(bp_params_p)) ram_if_h ();
 
   //I CACHE
   bp_fe_icache
@@ -170,7 +149,7 @@ module testbench
        ,.cache_req_critical_tag_o(cache_ce_if_h.cache_req_critical_tag_i)
        ,.cache_req_critical_data_o(cache_ce_if_h.cache_req_critical_data_i)
        ,.cache_req_complete_o(cache_ce_if_h.cache_req_complete_i)
-       ,.cache_req_credits_full_o(cache_ce_if_h.cache_req_credits_full_is)
+       ,.cache_req_credits_full_o(cache_ce_if_h.cache_req_credits_full_i)
        ,.cache_req_credits_empty_o(cache_ce_if_h.cache_req_credits_empty_i)
 
        ,.tag_mem_pkt_o(tag_mem_pkt_li)
@@ -227,44 +206,51 @@ module testbench
      ,.dram_clk_i(dram_clk_i)
      ,.dram_reset_i(dram_reset_i)
      );
-  // Clock and reset generator
-  // initial
-  // begin
-  //   cache_input_if_h.clk = 0;
-  //   forever #25 cache_input_if_h.clk = ~cache_input_if_h.clk;
-  // end
-
-  bsg_nonsynth_clock_gen
-    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
-    clock_gen
+  
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
+   #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
+   clock_gen
     (.o(clk_i));
 
   bsg_nonsynth_reset_gen
-    #(.num_clocks_p(1)
-    ,.reset_cycles_lo_p(0)
-    ,.reset_cycles_hi_p(20)
-    )
-  reset_gen
+   #(.num_clocks_p(1)
+     ,.reset_cycles_lo_p(0)
+     ,.reset_cycles_hi_p(20)
+     )
+   reset_gen
     (.clk_i(clk_i)
-    ,.async_reset_o(reset_i)
-    );
+     ,.async_reset_o(reset_i)
+     );
 
-  // Assign clk and reset to the interfaces
-  // assign cache_input_if_h.clk_i = clk_i;
-  // assign cache_tlb_if_h.clk_i = clk_i;
-  // assign cache_output_if_h.clk_i = clk_i;
-  // assign cache_ce_if_h.clk_i = clk_i;
-  // assign cache_input_if_h.reset_i = reset_i;
-  // assign cache_tlb_if_h.reset_i = reset_i;
-  // assign cache_output_if_h.reset_i = reset_i;
-  // assign cache_ce_if_h.reset_i = reset_i;
+  `ifdef VERILATOR
+    bsg_nonsynth_dpi_clock_gen
+  `else
+    bsg_nonsynth_clock_gen
+  `endif
+   #(.cycle_time_p(`dram_pkg::tck_ps))
+   dram_clock_gen
+    (.o(dram_clk_i));
+
+  bsg_nonsynth_reset_gen
+   #(.num_clocks_p(1)
+     ,.reset_cycles_lo_p(0)
+     ,.reset_cycles_hi_p(10)
+     )
+   dram_reset_gen
+    (.clk_i(dram_clk_i)
+     ,.async_reset_o(dram_reset_i)
+     );
 
   initial
   begin: blk
-    uvm_config_db #(virtual icache_if)::set(null, "uvm_test_top", "dut_input_vi", cache_input_if_h);
-    uvm_config_db #(virtual icache_if)::set(null, "uvm_test_top", "dut_tlb_vi", cache_tlb_if_h);
-    uvm_config_db #(virtual icache_if)::set(null, "uvm_test_top", "dut_output_vi", cache_output_if_h);
-    uvm_config_db #(virtual icache_if)::set(null, "uvm_test_top", "dut_ce_vi", cache_ce_if_h);
+    uvm_config_db #(virtual input_icache_if)::set(null, "uvm_test_top", "dut_input_vi", cache_input_if_h);
+    uvm_config_db #(virtual tlb_icache_if)::set(null, "uvm_test_top", "dut_tlb_vi", cache_tlb_if_h);
+    uvm_config_db #(virtual output_icache_if)::set(null, "uvm_test_top", "dut_output_vi", cache_output_if_h);
+    uvm_config_db #(virtual ce_icache_if)::set(null, "uvm_test_top", "dut_ce_vi", cache_ce_if_h);
     
     uvm_top.finish_on_completion  = 1;
     

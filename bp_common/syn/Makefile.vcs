@@ -28,6 +28,7 @@ VCS_BUILD_OPTS  = -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -notice
 VCS_BUILD_OPTS += -V
 VCS_BUILD_OPTS += +v2k
+VCS_BUILD_OPTS += -v2k_generate
 VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
 VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += +noportcoerce
