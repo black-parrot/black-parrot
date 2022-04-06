@@ -1,7 +1,7 @@
 # bsg_ip_cores files
 +incdir+$BASEJUMP_STL_DIR/bsg_tag
-$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_pkg.v
 $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_pkg.v
+$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_pkg.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi_rx.v
