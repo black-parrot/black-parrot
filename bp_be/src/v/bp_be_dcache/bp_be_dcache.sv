@@ -213,7 +213,8 @@ module bp_be_dcache
     : byte_offset_width_lp;
 
   // State machine declaration
-  enum logic [2:0] {e_ready, e_miss, e_resume, e_late} state_n, state_r;
+  enum logic [2:0] {e_wait, e_ready, e_miss, e_resume, e_late} state_n, state_r;
+  wire is_wait   = (state_r == e_wait);
   wire is_ready  = (state_r == e_ready);
   wire is_miss   = (state_r == e_miss);
   wire is_resume = (state_r == e_resume);
@@ -964,7 +965,8 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_ready : state_n = (cache_req_yumi_i & ~nonblocking_req) ? e_miss : e_ready;
+      e_wait  : state_n = cache_req_busy_i ? e_wait : e_ready;
+      e_ready : state_n = (cache_req_yumi_i & ~nonblocking_req) ? e_miss : cache_req_busy_i ? e_wait : e_ready;
       e_miss  : state_n = cache_req_complete_i
                           ? (decode_tv_r.ptw_op | decode_tv_r.fencei_op)
                             ? e_ready
@@ -978,11 +980,11 @@ module bp_be_dcache
   //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
-      state_r <= e_ready;
+      state_r <= e_wait;
     else
       state_r <= state_n;
 
-  assign ready_o = ~cache_req_busy_i & is_ready;
+  assign ready_o = is_ready;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control

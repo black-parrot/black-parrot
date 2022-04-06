@@ -134,6 +134,19 @@ module bp_be_detector
      ,.rd_match_o(frd_match_lo)
      );
 
+  logic fence_r;
+  wire fence_set = dispatch_v_o & isd_status_cast_i.fence_v;
+  wire fence_clear = credits_empty_i;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   fence_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(fence_set)
+     ,.clear_i(fence_clear)
+     ,.data_o(fence_r)
+     );
+
   always_comb
     begin
       // Generate matches for rs1, rs2. rs3
@@ -207,8 +220,14 @@ module bp_be_detector
                            & (dep_status_r[2].fma_fwb_v);
 
       mem_in_pipe_v      = dep_status_r[0].mem_v | dep_status_r[1].mem_v | dep_status_r[2].mem_v;
-      fence_haz_v        = (isd_status_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v | ~mem_ready_i))
-                           | (isd_status_cast_i.mem_v & credits_full_i);
+      fence_haz_v        = (isd_status_cast_i.fence_v
+                            & (dep_status_r[0].mem_v
+                               | dep_status_r[1].mem_v
+                               | dep_status_r[2].mem_v
+                               | dep_status_r[3].mem_v
+                               )
+                            ) || (isd_status_cast_i.mem_v & fence_r);
+
       cmd_haz_v          = cmd_full_i;
 
       // TODO: Pessimistic, could have a separate fflags r/w_v

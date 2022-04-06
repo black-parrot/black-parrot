@@ -114,7 +114,6 @@ module bp_uce
     , e_flush_read
     , e_flush_scan
     , e_flush_write
-    , e_flush_fence
     , e_ready
     , e_uc_writeback_evict
     , e_uc_writeback_write_req
@@ -132,7 +131,6 @@ module bp_uce
   wire is_flush_read      = (state_r == e_flush_read);
   wire is_flush_scan      = (state_r == e_flush_scan);
   wire is_flush_write     = (state_r == e_flush_write);
-  wire is_flush_fence     = (state_r == e_flush_fence);
   wire is_ready           = (state_r == e_ready);
   wire is_send_critical   = (state_r == e_send_critical);
   wire is_writeback_evict = (state_r == e_writeback_evict); // read dirty data from cache to UCE
@@ -372,7 +370,7 @@ module bp_uce
      ,.count_o(credit_count_lo)
      );
   assign cache_req_credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
-  assign cache_req_credits_empty_o = (credit_count_lo == 0);
+  assign cache_req_credits_empty_o = ~cache_req_v_r & (credit_count_lo == 0);
 
   logic [fill_width_p-1:0] writeback_data;
   bsg_mux
@@ -510,8 +508,10 @@ module bp_uce
                 way_up   = 1'b1;
                 index_up = way_done;
 
-                state_n = (index_done & way_done)
-                          ? e_flush_fence
+                cache_req_done = index_done & way_done;
+
+                state_n = cache_req_done
+                          ? e_ready
                           : way_done
                             ? e_flush_read
                             : e_flush_scan;
@@ -529,19 +529,15 @@ module bp_uce
             way_up = fsm_cmd_done;
             index_up = way_done & way_up;
 
-            state_n = (fsm_cmd_done & index_done & way_done)
-                      ? e_flush_fence
+            cache_req_done = fsm_cmd_done & index_done & way_done;
+
+            state_n = cache_req_done
+                      ? e_ready
                       : index_up
                         ? e_flush_read
                         : way_up
                           ? e_flush_scan
                           : e_flush_write;
-          end
-        e_flush_fence:
-          begin
-            cache_req_done = cache_req_credits_empty_o;
-
-            state_n = cache_req_done ? e_ready : e_flush_fence;
           end
         e_ready:
           begin
