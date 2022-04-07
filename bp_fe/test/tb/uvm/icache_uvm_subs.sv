@@ -109,6 +109,10 @@ class icache_cov_col #(parameter bp_params_e bp_params_p = e_bp_default_cfg
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
+    input_export = new("input_export", this);
+    tlb_export = new("tlb_export", this);
+    output_export = new("output_export", this);
+    ce_export = new("ce_export", this);
   endfunction: build_phase
 
   function void write_INPUT(input_transaction t);

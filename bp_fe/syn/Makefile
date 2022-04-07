@@ -44,7 +44,7 @@ else #UVM=1
 	export CFG   ?= e_bp_test_unicore_half_cfg
 	export DRAM  ?= dramsim3
 	export SUITE ?= none
-	export PROG  ?= test_load
+	export PROG  ?= uvm_base_test
 	export TAG   ?= none
 
 	include $(TB_PATH)/$(TB)/Makefile.cfgs

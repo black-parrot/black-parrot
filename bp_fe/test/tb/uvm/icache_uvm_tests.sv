@@ -57,6 +57,7 @@ class base_test extends uvm_test;
     seq_of_commands seq1;
     phase.raise_objection(this, "Starting Sequences");
     `uvm_info("test", "Starting seq of commands", UVM_HIGH);
+    seq1 = seq_of_commands::type_id::create("seq1");
     assert( seq1.randomize() );
     seq1.start( base_env_h.input_agent_h.my_sequencer_h);
     phase.drop_objection(this, "Finished sequences");

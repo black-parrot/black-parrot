@@ -45,7 +45,15 @@ VCS_BUILD_OPTS += -ntb_opts uvm-1.2 +incdir+$(BP_UVM_DIR)
 VCS_BUILD_OPTS += -v2k_generate
 endif
 
-VCS_PLUSARGS  =
+ifdef UVM
+ifdef UVM_VERBOSITY
+VCS_PLUSARGS  = +UVM_VERBOSITY=$(UVM_VERBOSITY) +UVM_NO_RELNOTES
+else
+VCS_PLUSARGS  = +UVM_VERBOSITY=UVM_NONE +UVM_NO_RELNOTES
+endif
+else
+VCS_PLUSARGS  = 
+endif
 
 URG_OPTIONS = -full64
 URG_OPTIONS += -show tests

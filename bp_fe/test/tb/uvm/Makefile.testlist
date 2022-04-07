@@ -1,7 +1,10 @@
 
-ICACHE_TESTLIST := \
+#ICACHE_TESTLIST := \
 	test_load \
 	test_uncached_load
+
+ICACHE_TESTLIST := \
+  uvm_base_test
 
 ifeq ($(UCE_P),1)
 CE := UCE

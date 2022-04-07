@@ -29,11 +29,11 @@ BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs testbench.sv)
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
 	@ln -nsf $(<D)/$(@F) $@
 
-$(TB_PATH)/$(TB)/$(PROG).tr:
-	$(PYTHON) $(TB_PATH)/$(TB)/trace_script.py $(TB_PATH)/$(TB)/
+#$(TB_PATH)/$(TB)/$(PROG).tr:
+#	$(PYTHON) $(TB_PATH)/$(TB)/trace_script.py $(TB_PATH)/$(TB)/
 
-$(SIM_DIR)/test.tr: $(TB_PATH)/$(TB)/$(PROG).tr
-	@cp $< $@
+#$(SIM_DIR)/test.tr: $(TB_PATH)/$(TB)/$(PROG).tr
+#	@cp $< $@
 
 $(SIM_DIR)/prog.mem:
 	@echo "00 00 00 00 04 00 00 00 08 00 00 00 0C 00 00 00"  > $@
@@ -42,5 +42,5 @@ $(SIM_DIR)/prog.mem:
 	@echo "30 00 00 00 34 00 00 00 38 00 00 00 3C 00 00 00" >> $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, test.tr)
+#SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, test.tr)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.mem)
