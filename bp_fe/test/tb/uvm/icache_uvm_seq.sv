@@ -18,6 +18,7 @@ import uvm_pkg::*;
 `include "bp_common_aviary_pkgdef.svh"
 `include "bp_common_cache_engine_if.svh"
 */
+
 import bp_common_pkg::*;
 import bp_fe_pkg::*;
 
@@ -319,15 +320,20 @@ endclass: seq_of_inputs
 
   `uvm_object_utils(seq_of_commands)
 
+  `uvm_declare_p_sequencer(uvm_sequencer #(input_transaction#())
+
   rand int n;
   constraint how_many_commands { n inside {[2:4]}; }
 
 
   function new (string name = "");
     super.new(name);
+    //set_automatic_phase_objection(1);
   endfunction: new
 
   task body;
+    uvm_phase p = get_starting_phase();
+    if(p) p.get_objection().display_objections(this, 1);
     `uvm_info("seq_of_commands", $psprintf("N is %d", n), UVM_NONE);
     repeat(n)
     begin

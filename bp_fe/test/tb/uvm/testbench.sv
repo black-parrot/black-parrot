@@ -254,7 +254,7 @@ module testbench
     
     uvm_top.finish_on_completion  = 1;
     
-    run_test("base_test");
+    run_test();
   end
 
 endmodule: testbench

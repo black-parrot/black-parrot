@@ -382,9 +382,9 @@ class input_agent extends uvm_agent;
 
   uvm_analysis_port #(input_transaction#()) aport;
 
-  input_sequencer my_sequencer_h;
-  input_driver    my_driver_h;
-  input_monitor   my_monitor_h;
+  input_sequencer input_sequencer_h;
+  input_driver    input_driver_h;
+  input_monitor   input_monitor_h;
   
   input_agt_config   agt_cfg;
 
@@ -403,20 +403,20 @@ class input_agent extends uvm_agent;
     // If Agent is Active, create Driver and Sequencer, else skip
     `uvm_info("agent", (get_is_active()) ? "input agent is active" : "input agent is not active", UVM_HIGH);
     if (get_is_active()) begin
-      my_sequencer_h  = input_sequencer::type_id::create("input_sequencer_h", this);
-      my_driver_h     = input_driver::type_id::create("input_driver_h", this);
+      input_sequencer_h  = input_sequencer::type_id::create("input_sequencer_h", this);
+      input_driver_h     = input_driver::type_id::create("input_driver_h", this);
     end
 
     aport = new("aport", this);
-    my_monitor_h = input_monitor::type_id::create("input_monitor_h", this); 
+    input_monitor_h = input_monitor::type_id::create("input_monitor_h", this); 
     uvm_config_db#(input_agt_config)::set(this, "*", "input_agt_config", agt_cfg);
   endfunction: build_phase
 
   virtual function void connect_phase(uvm_phase phase);
     if (get_is_active()) begin
-      my_driver_h.seq_item_port.connect( my_sequencer_h.seq_item_export );
+      input_driver_h.seq_item_port.connect( input_sequencer_h.seq_item_export );
     end
-    my_monitor_h.aport.connect( this.aport );
+    input_monitor_h.aport.connect( this.aport );
   endfunction: connect_phase
 endclass: input_agent
 
@@ -426,9 +426,9 @@ class tlb_agent extends uvm_agent;
 
   uvm_analysis_port #(tlb_transaction#()) aport;
 
-  tlb_sequencer my_sequencer_h;
-  tlb_driver    my_driver_h;
-  tlb_monitor   my_monitor_h;
+  tlb_sequencer tlb_sequencer_h;
+  tlb_driver    tlb_driver_h;
+  tlb_monitor   tlb_monitor_h;
   
   tlb_agt_config   agt_cfg;
 
@@ -447,20 +447,20 @@ class tlb_agent extends uvm_agent;
     // If Agent is Active, create Driver and Sequencer, else skip
     `uvm_info("agent", (get_is_active()) ? "tlb agent is active" : "tlb agent is not active", UVM_HIGH);
     if (get_is_active()) begin
-      my_sequencer_h  = tlb_sequencer::type_id::create("tlb_sequencer_h", this);
-      my_driver_h     = tlb_driver::type_id::create("tlb_driver_h", this);
+      tlb_sequencer_h  = tlb_sequencer::type_id::create("tlb_sequencer_h", this);
+      tlb_driver_h     = tlb_driver::type_id::create("tlb_driver_h", this);
     end
 
     aport = new("aport", this);
-    my_monitor_h = tlb_monitor::type_id::create("tlb_monitor_h", this); 
+    tlb_monitor_h = tlb_monitor::type_id::create("tlb_monitor_h", this); 
     uvm_config_db#(tlb_agt_config)::set(this, "*", "tlb_agt_config", agt_cfg);
   endfunction: build_phase
 
   virtual function void connect_phase(uvm_phase phase);
     if (get_is_active()) begin
-      my_driver_h.seq_item_port.connect( my_sequencer_h.seq_item_export );
+      tlb_driver_h.seq_item_port.connect( tlb_sequencer_h.seq_item_export );
     end
-    my_monitor_h.aport.connect( this.aport );
+    tlb_monitor_h.aport.connect( this.aport );
   endfunction: connect_phase
 endclass: tlb_agent
 
@@ -470,9 +470,9 @@ class output_agent extends uvm_agent;
 
   uvm_analysis_port #(output_transaction) aport;
 
-  output_sequencer my_sequencer_h;
-  output_driver    my_driver_h;
-  output_monitor   my_monitor_h;
+  output_sequencer output_sequencer_h;
+  output_driver    output_driver_h;
+  output_monitor   output_monitor_h;
   
   output_agt_config   agt_cfg;
 
@@ -491,20 +491,20 @@ class output_agent extends uvm_agent;
     // If Agent is Active, create Driver and Sequencer, else skip
     `uvm_info("agent", (get_is_active()) ? "output agent is active" : "output agent is not active", UVM_HIGH);
     if (get_is_active()) begin
-      my_sequencer_h  = output_sequencer::type_id::create("output_sequencer_h", this);
-      my_driver_h     = output_driver::type_id::create("output_driver_h", this);
+      output_sequencer_h  = output_sequencer::type_id::create("output_sequencer_h", this);
+      output_driver_h     = output_driver::type_id::create("output_driver_h", this);
     end
 
     aport = new("aport", this);
-    my_monitor_h = output_monitor::type_id::create("output_monitor_h", this); 
+    output_monitor_h = output_monitor::type_id::create("output_monitor_h", this); 
     uvm_config_db#(output_agt_config)::set(this, "*", "output_agt_config", agt_cfg);
   endfunction: build_phase
 
   virtual function void connect_phase(uvm_phase phase);
     if (get_is_active()) begin
-      my_driver_h.seq_item_port.connect( my_sequencer_h.seq_item_export );
+      output_driver_h.seq_item_port.connect( output_sequencer_h.seq_item_export );
     end
-    my_monitor_h.aport.connect( this.aport );
+    output_monitor_h.aport.connect( this.aport );
   endfunction: connect_phase
 endclass: output_agent
 
@@ -514,9 +514,9 @@ class ce_agent extends uvm_agent;
 
   uvm_analysis_port #(ce_transaction#()) aport;
 
-  ce_sequencer my_sequencer_h;
-  ce_driver    my_driver_h;
-  ce_monitor   my_monitor_h;
+  ce_sequencer ce_sequencer_h;
+  ce_driver    ce_driver_h;
+  ce_monitor   ce_monitor_h;
   
   ce_agt_config   agt_cfg;
 
@@ -535,20 +535,20 @@ class ce_agent extends uvm_agent;
     // If Agent is Active, create Driver and Sequencer, else skip
     `uvm_info("agent", (get_is_active()) ? "ce agent is active" : "ce agent is not active", UVM_HIGH);
     if (get_is_active()) begin
-      my_sequencer_h  = ce_sequencer::type_id::create("ce_sequencer_h", this);
-      my_driver_h     = ce_driver::type_id::create("ce_driver_h", this);
+      ce_sequencer_h  = ce_sequencer::type_id::create("ce_sequencer_h", this);
+      ce_driver_h     = ce_driver::type_id::create("ce_driver_h", this);
     end
 
     aport = new("aport", this);
-    my_monitor_h = ce_monitor::type_id::create("ce_monitor_h", this); 
+    ce_monitor_h = ce_monitor::type_id::create("ce_monitor_h", this); 
     uvm_config_db#(ce_agt_config)::set(this, "*", "ce_agt_config", agt_cfg);
   endfunction: build_phase
 
   virtual function void connect_phase(uvm_phase phase);
     if (get_is_active()) begin
-      my_driver_h.seq_item_port.connect( my_sequencer_h.seq_item_export );
+      ce_driver_h.seq_item_port.connect( ce_sequencer_h.seq_item_export );
     end
-    my_monitor_h.aport.connect( this.aport );
+    ce_monitor_h.aport.connect( this.aport );
   endfunction: connect_phase
 endclass: ce_agent
 

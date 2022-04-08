@@ -6,7 +6,6 @@
 
 `include "icache_uvm_seq.sv"
 
-
 `include "uvm_macros.svh"
 //import uvm_pkg::*;
 

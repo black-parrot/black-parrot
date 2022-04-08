@@ -52,14 +52,36 @@ class base_test extends uvm_test;
     // Pass configuration information to the enviornment
     uvm_config_db#(env_config)::set(this, "*", "env_config", env_cfg);
   endfunction: build_phase
+
+  virtual function void end_of_elaboration_phase (uvm_phase phase);
+      uvm_top.print_topology ();
+  endfunction
   
-  task run_phase(uvm_phase phase);
+  // function void start_of_simulation_phase (uvm_phase phase);
+  //   super.start_of_simulation_phase (phase);
+    
+  //   // [Optional] Assign a default sequence to be executed by the sequencer or look at the run_phase ...
+  //   uvm_config_db#(uvm_object_wrapper)::set(this,"uvm_test_top.base_env_h.input_agent_h.input_sequencer_h.main_phase",
+  //                                   "default_sequence", seq_of_commands::type_id::get());
+  // endfunction
+
+  virtual task run_phase(uvm_phase phase);
     seq_of_commands seq1;
+
+    //super.run_phase(phase);
+    //phase.get_objection().set_propagate_mode(1);
     phase.raise_objection(this, "Starting Sequences");
-    `uvm_info("test", "Starting seq of commands", UVM_HIGH);
+
+    `uvm_info("PHASE OBJECTION COUNT",
+      $sformatf("%0d", phase.get_objection_count(this)), UVM_LOW);
+    `uvm_info("my_component objections", "", UVM_LOW);
+    phase.get_objection().display_objections(this, 1);
+
     seq1 = seq_of_commands::type_id::create("seq1");
     assert( seq1.randomize() );
-    seq1.start( base_env_h.input_agent_h.my_sequencer_h);
+    `uvm_info("test", "Starting seq of commands", UVM_HIGH);
+    seq1.start(.sequencer(base_env_h.input_agent_h.input_sequencer_h));
+
     phase.drop_objection(this, "Finished sequences");
   endtask: run_phase
   
