@@ -4,12 +4,12 @@
 `include "uvm_macros.svh"
 
 `include "icache_uvm_cfg_pkg.sv"
-`include "icache_uvm_seq.sv"
-`include "icache_uvm_tests.sv"
-`include "icache_uvm_comp.sv"
-`include "icache_uvm_subs.sv"
+`include "icache_uvm_params_pkg.sv"
+`include "icache_uvm_seq_pkg.sv"
+`include "icache_uvm_tests_pkg.sv"
+`include "icache_uvm_comp_pkg.sv"
+`include "icache_uvm_subs_pkg.sv"
 `include "icache_uvm_if.sv"
-//import icache_uvm_cfg_pkg::*;
 
 `ifndef BP_SIM_CLK_PERIOD
 `define BP_SIM_CLK_PERIOD 10
@@ -18,28 +18,13 @@
 //.......................................................
 // UVM Top Testbench
 //.......................................................
-module testbench 
-    import bp_common_pkg::*;
-    import bp_fe_pkg::*;
-    import bp_me_pkg::*;
-    #(parameter bp_params_e bp_params_p = e_bp_default_cfg //BP_CFG_FLOWVAR instead?
-    `declare_bp_proc_params(bp_params_p) 
-    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
-   , parameter dram_type_p                 = "dramsim3"
-  
-   // Calculated parameters
-   , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
-   , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-   );
-
+module testbench;
+  import bp_common_pkg::*;
+  import bp_fe_pkg::*;
+  import bp_me_pkg::*;
   import uvm_pkg::*;
- 
-  // Typedef Macros
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache);
-  `declare_bp_fe_icache_pkt_s(vaddr_width_p);
+  import icache_uvm_params_pkg::*;
+  import icache_uvm_tests_pkg::*;
 
   // Fill Interfaces
   logic data_mem_pkt_v_li, tag_mem_pkt_v_li, stat_mem_pkt_v_li;
@@ -56,11 +41,11 @@ module testbench
   bit dram_clk_i, dram_reset_i;
 
   // Interface definitions
-  input_icache_if  #(.bp_params_p(bp_params_p)) cache_input_if_h(clk_i, reset_i);
-  tlb_icache_if    #(.bp_params_p(bp_params_p)) cache_tlb_if_h(clk_i, reset_i);
-  output_icache_if #(.bp_params_p(bp_params_p)) cache_output_if_h(clk_i, reset_i);
-  ce_icache_if     #(.bp_params_p(bp_params_p)) cache_ce_if_h(clk_i, reset_i);
-  ram_if           #(.bp_params_p(bp_params_p)) ram_if_h ();
+  input_icache_if   cache_input_if_h(clk_i, reset_i);
+  tlb_icache_if     cache_tlb_if_h(clk_i, reset_i);
+  output_icache_if  cache_output_if_h(clk_i, reset_i);
+  ce_icache_if      cache_ce_if_h(clk_i, reset_i);
+  ram_if            ram_if_h ();
 
   //I CACHE
   bp_fe_icache

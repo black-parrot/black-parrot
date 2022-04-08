@@ -3,9 +3,11 @@
 
 `ifndef ICACHE_CFG_PKG
 `define ICACHE_CFG_PKG
+
+`include "uvm_macros.svh"
+
 package icache_uvm_cfg_pkg;
 
-  `include "uvm_macros.svh"
   import uvm_pkg::*;
   
   //.......................................................

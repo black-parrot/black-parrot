@@ -5,6 +5,8 @@
 `define ICACHE_UVM_IF_PKG
 
 `include "icache_uvm_cfg_pkg.sv"
+`include "icache_uvm_params_pkg.sv"
+
 //.......................................................
 // DUT Interfaces
 //.......................................................
@@ -13,17 +15,9 @@ interface input_icache_if
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
   import bp_me_pkg::*;
-    #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    //local parameters
-    `declare_bp_proc_params(bp_params_p)
-    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
-    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p))
+  import icache_uvm_params_pkg::*;
     (input logic clk_i,
      input logic reset_i);
-  
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   
   bit clk = clk_i;
   bit reset = reset_i;
@@ -39,11 +33,7 @@ interface tlb_icache_if
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
   import bp_me_pkg::*;
-    #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    //local parameters
-    `declare_bp_proc_params(bp_params_p)
-    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache))
+  import icache_uvm_params_pkg::*;
     (input logic clk_i,
      input logic reset_i);
   
@@ -63,11 +53,7 @@ interface output_icache_if
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
   import bp_me_pkg::*;
-    #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    //local parameters
-    `declare_bp_proc_params(bp_params_p)
-    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache))
+  import icache_uvm_params_pkg::*;
     (input logic clk_i,
      input logic reset_i);
 
@@ -85,11 +71,7 @@ interface ce_icache_if
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
   import bp_me_pkg::*;
-    #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    //local parameters
-    `declare_bp_proc_params(bp_params_p)
-    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache))
+  import icache_uvm_params_pkg::*;
     (input logic clk_i,
      input logic reset_i);
 
@@ -110,15 +92,11 @@ interface ce_icache_if
 endinterface: ce_icache_if
 
 // Used for communication between UCE and RAM
-interface ram_if 
+interface ram_if;
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
   import bp_me_pkg::*;
-
-  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce));
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  import icache_uvm_params_pkg::*;
 
   logic mem_cmd_v_lo, mem_resp_v_li;
   logic mem_cmd_ready_and_li, mem_resp_ready_and_lo, mem_cmd_last_lo, mem_resp_last_li;

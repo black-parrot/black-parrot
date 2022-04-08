@@ -17,6 +17,10 @@ $(BUILD_DIR)/testbench.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
+$(TB_PATH)/$(TB)/icache_uvm_params_pkg.sv:
+	@sed -i "s/BP_CFG_FLOWVAR/$(CFG)/g" $@
+	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
+
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
