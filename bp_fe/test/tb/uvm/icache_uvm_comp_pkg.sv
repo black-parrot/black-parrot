@@ -17,14 +17,6 @@ package icache_uvm_comp_pkg;
   import icache_uvm_subs_pkg::*;
 
   //.......................................................
-  // Sequencer
-  //.......................................................
-  typedef uvm_sequencer #(input_transaction)  input_sequencer;
-  typedef uvm_sequencer #(tlb_transaction)    tlb_sequencer;
-  typedef uvm_sequencer #(output_transaction) output_sequencer;
-  typedef uvm_sequencer #(ce_transaction)    ce_sequencer;
-
-  //.......................................................
   // Driver
   //.......................................................
   class input_driver extends uvm_driver #(input_transaction);
@@ -47,22 +39,42 @@ package icache_uvm_comp_pkg;
       dut_vi = input_agt_cfg.icache_if_h;
     endfunction : build_phase
 
-    task run_phase(uvm_phase phase);
-      forever
-      begin
-        input_transaction tx;
+    // Reset Phase Task, reset is Active HIGH
+    task reset_phase(uvm_phase phase);
+      phase.raise_objection(this);
+      
+      // Wait for reset
+      #10
+      wait(dut_vi.reset_i == 1'b0);
+      
+      phase.drop_objection(this);
+    endtask: reset_phase 
+    
+    // Main Phase, takes sequences and drives them
+    task main_phase(uvm_phase phase);
+      input_transaction tx;
+      super.run_phase(phase);
 
-        @(posedge dut_vi.clk);
-        seq_item_port.get(tx);
+      forever begin
+        seq_item_port.get_next_item(tx);
 
-        dut_vi.cfg_bus_i    = tx.cfg_bus_i;
+        @(posedge dut_vi.clk_i);
+        
+        // Set valid bit to true
+        dut_vi.v_i          = 1'b1;
+
+        // Wait for consumer(cache) to be ready
+        wait(dut_vi.ready_o == 1'b1);
+
+        // Send packet
+        //seq_item_port.get(tx);
         dut_vi.icache_pkt_i = tx.icache_pkt_i;
-        dut_vi.v_i          = tx.v_i;
-        dut_vi.ready_o      = tx.ready_o;
-
         `uvm_info("driver", $psprintf("input driver sending tx %s", tx.convert2string()), UVM_HIGH);
+
+        // Indicate we have finished packet to sequencer
+        seq_item_port.item_done();
       end
-    endtask: run_phase
+    endtask: main_phase
 
   endclass: input_driver
 
@@ -91,7 +103,7 @@ package icache_uvm_comp_pkg;
       begin
         tlb_transaction tx;
 
-        @(posedge dut_vi.clk);
+        @(posedge dut_vi.clk_i);
         seq_item_port.get(tx);
 
         dut_vi.ptag_i           = tx.ptag_i;
@@ -102,6 +114,7 @@ package icache_uvm_comp_pkg;
         dut_vi.poison_tl_i      = tx.poison_tl_i;
 
         `uvm_info("driver", $psprintf("tlb driver sending tx %s", tx.convert2string()), UVM_HIGH);
+        seq_item_port.item_done();
       end
     endtask: run_phase
 
@@ -132,7 +145,7 @@ package icache_uvm_comp_pkg;
       begin
         output_transaction tx;
 
-        @(posedge dut_vi.clk);
+        @(posedge dut_vi.clk_i);
         seq_item_port.get(tx);
 
         dut_vi.data_o   = tx.data_o;
@@ -140,6 +153,7 @@ package icache_uvm_comp_pkg;
         dut_vi.miss_v_o  = tx.miss_v_o;
 
         `uvm_info("driver", $psprintf("output driver sending tx %s", tx.convert2string()), UVM_HIGH);
+        seq_item_port.item_done();
       end
     endtask: run_phase
 
@@ -170,7 +184,7 @@ package icache_uvm_comp_pkg;
       begin
         ce_transaction tx;
 
-        @(posedge dut_vi.clk);
+        @(posedge dut_vi.clk_i);
         seq_item_port.get(tx);
 
         dut_vi.cache_req_o              = tx.cache_req_o;
@@ -185,6 +199,7 @@ package icache_uvm_comp_pkg;
         dut_vi.cache_req_credits_empty_i= tx.cache_req_credits_empty_i;
 
         `uvm_info("driver", $psprintf("ce driver sending tx %s", tx.convert2string()), UVM_HIGH);
+        seq_item_port.item_done();
       end
     endtask: run_phase
 
@@ -221,7 +236,7 @@ package icache_uvm_comp_pkg;
       begin
         input_transaction tx;
 
-        @(posedge dut_vi.clk);
+        @(posedge dut_vi.clk_i);
         tx = input_transaction::type_id::create("tx");
 
         tx.cfg_bus_i        = dut_vi.cfg_bus_i;
@@ -264,7 +279,7 @@ package icache_uvm_comp_pkg;
       begin
         tlb_transaction tx;
 
-        @(posedge dut_vi.clk);
+        @(posedge dut_vi.clk_i);
         tx = tlb_transaction::type_id::create("tx");
 
         tx.ptag_i           = dut_vi.ptag_i;
@@ -310,7 +325,7 @@ package icache_uvm_comp_pkg;
       begin
         output_transaction tx;
 
-        @(posedge dut_vi.clk);
+        @(posedge dut_vi.clk_i);
         tx = output_transaction::type_id::create("tx");
 
         tx.data_o   = dut_vi.data_o;
@@ -353,7 +368,7 @@ package icache_uvm_comp_pkg;
       begin
         ce_transaction tx;
 
-        @(posedge dut_vi.clk);
+        @(posedge dut_vi.clk_i);
         tx = ce_transaction::type_id::create("tx");
 
         tx.cache_req_o              = dut_vi.cache_req_o;
@@ -632,10 +647,6 @@ package icache_uvm_comp_pkg;
       //my_scoreboard_h.comp_in_ap.connect(my_comparator_h.dut_export);
       //my_predictor_h.results_ap.connect(my_comparator_h.pred_export);
     endfunction: connect_phase
-
-    //function void start_of_simulation_phase(uvm_phase phase);
-    //  uvm_top.set_report_verbosity_level_hier(UVM_HIGH);
-    //endfunction: start_of_simulation_phase
 
   endclass: base_env
 endpackage: icache_uvm_comp_pkg

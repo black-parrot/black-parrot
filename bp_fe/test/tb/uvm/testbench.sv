@@ -37,8 +37,8 @@ module testbench;
   logic [icache_stat_info_width_lp-1:0] stat_mem_lo;
 
   //bits for clk and rst
-  bit clk_i, reset_i;
-  bit dram_clk_i, dram_reset_i;
+  logic clk_i, reset_i;
+  logic dram_clk_i, dram_reset_i;
 
   // Interface definitions
   input_icache_if   cache_input_if_h(clk_i, reset_i);
@@ -239,6 +239,8 @@ module testbench;
     
     uvm_top.finish_on_completion  = 1;
     
+    // run test specified on command line
+    //@(posedge(input_icache_if.clk));
     run_test();
   end
 

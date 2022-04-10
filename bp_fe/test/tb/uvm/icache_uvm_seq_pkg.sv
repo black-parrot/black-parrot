@@ -23,11 +23,11 @@ package icache_uvm_seq_pkg;
     // transaction bits
     rand logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
     rand logic [icache_pkt_width_lp-1:0]  icache_pkt_i;
-    rand bit                              v_i;
-    bit                                   ready_o;
-    bit                                   reset_i;
+    rand logic                            v_i;
+    logic                                 ready_o;
+    logic                                 reset_i;
 
-    function new (string name = "");
+    function new (string name = "input_transaction");
       super.new(name);
     endfunction: new
     
@@ -62,14 +62,14 @@ package icache_uvm_seq_pkg;
     `uvm_object_utils(tlb_transaction)
     
     // transaction bits
-    rand logic [ptag_width_p-1:0]       ptag_i;
-    rand bit                            ptag_v_i;
-    rand bit                            ptag_uncached_i;
-    rand bit                            ptag_dram_i;
-    rand bit                            ptag_nonidem_i;
-    rand bit                            poison_tl_i;
+    rand logic [ptag_width_p-1:0] ptag_i;
+    rand logic                    ptag_v_i;
+    rand logic                    ptag_uncached_i;
+    rand logic                    ptag_dram_i;
+    rand logic                    ptag_nonidem_i;
+    rand logic                    poison_tl_i;
 
-    function new (string name = "");
+    function new (string name = "tlb_transaction");
       super.new(name);
     endfunction: new
 
@@ -103,11 +103,11 @@ package icache_uvm_seq_pkg;
     `uvm_object_utils(output_transaction)
     
     // transaction bits
-    logic [instr_width_gp-1:0]     data_o;
-    bit                            miss_v_o;
-    bit                            data_v_o;
+    logic [instr_width_gp-1:0] data_o;
+    logic                      miss_v_o;
+    logic                      data_v_o;
 
-    function new (string name = "");
+    function new (string name = "output_transaction");
       super.new(name);
     endfunction: new
 
@@ -149,18 +149,18 @@ package icache_uvm_seq_pkg;
     
     // transaction bits
     logic [icache_req_width_lp-1:0]           cache_req_o;
-    bit                                       cache_req_v_o;
-    rand bit                                  cache_req_yumi_i;
-    rand bit                                  cache_req_busy_i;
+    logic                                     cache_req_v_o;
+    rand logic                                cache_req_yumi_i;
+    rand logic                                cache_req_busy_i;
     logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o;
-    bit                                       cache_req_metadata_v_o;
-    rand bit                                  cache_req_critical_tag_i;
-    rand bit                                  cache_req_critical_data_i;
-    rand bit                                  cache_req_complete_i;
-    rand bit                                  cache_req_credits_empty_i;
-    rand bit                                  cache_req_credits_full_i;
+    logic                                     cache_req_metadata_v_o;
+    rand logic                                cache_req_critical_tag_i;
+    rand logic                                cache_req_critical_data_i;
+    rand logic                                cache_req_complete_i;
+    rand logic                                cache_req_credits_empty_i;
+    rand logic                                cache_req_credits_full_i;
 
-    function new (string name = "");
+    function new (string name = "ce_transaction");
       super.new(name);
     endfunction: new
 
@@ -199,23 +199,69 @@ package icache_uvm_seq_pkg;
   endclass: ce_transaction
 
   //.......................................................
-  // Sequence
+  // Sequencer
+  //.......................................................
+  // typedef uvm_sequencer #(input_transaction)  input_sequencer;
+  // typedef uvm_sequencer #(tlb_transaction)    tlb_sequencer;
+  // typedef uvm_sequencer #(output_transaction) output_sequencer;
+  // typedef uvm_sequencer #(ce_transaction)    ce_sequencer;
+
+  // Better to use class method to have sequencer show up in the componenet hierarchy
+  class input_sequencer extends uvm_sequencer #(input_transaction);
+    `uvm_component_utils(input_sequencer)
+
+    function new (string name="input_m_sequencer", uvm_component parent);
+      super.new(name, parent);
+    endfunction: new
+  endclass: input_sequencer
+
+  class tlb_sequencer extends uvm_sequencer #(tlb_transaction);
+    `uvm_component_utils(tlb_sequencer)
+
+    function new (string name="tlb_m_sequencer", uvm_component parent);
+      super.new(name, parent);
+    endfunction: new
+  endclass: tlb_sequencer
+
+  class output_sequencer extends uvm_sequencer #(output_transaction);
+    `uvm_component_utils(output_sequencer)
+
+    function new (string name="output_m_sequencer", uvm_component parent);
+      super.new(name, parent);
+    endfunction: new
+  endclass: output_sequencer
+
+  class ce_sequencer extends uvm_sequencer #(ce_transaction);
+    `uvm_component_utils(ce_sequencer)
+
+    function new (string name="ce_m_sequencer", uvm_component parent);
+      super.new(name, parent);
+    endfunction: new
+  endclass: ce_sequencer
+
+  //.......................................................
+  // Sequences
   //.......................................................
   // Basic randomized input sequence stimulus
   class input_sequence extends uvm_sequence #(input_transaction);
     `uvm_object_utils(input_sequence)
+    input_transaction tx;
     
-    function new (string name = "");
+    function new (string name = "input_sequence");
       super.new(name);
     endfunction: new
 
     task body;
-      input_transaction tx;
       tx = input_transaction::type_id::create("tx");
       start_item(tx);
-      assert (tx.randomize() with {v_i==1'b1;});
+      if (!tx.randomize() with {v_i==1'b1;}) begin
+        `uvm_error("input_sequence", "rand failure")
+      end
+      //assert (tx.randomize() with {v_i==1'b1;});
       finish_item(tx);
-
+      
+      // Wait for packet to actually be sent
+      wait_for_item_done();
     endtask: body
   
   endclass: input_sequence
@@ -224,7 +270,7 @@ package icache_uvm_seq_pkg;
   class zero_sequence extends uvm_sequence #(input_transaction);
     `uvm_object_utils(zero_sequence)
     
-    function new (string name = "");
+    function new (string name = "zero_sequence");
       super.new(name);
     endfunction: new
 
@@ -235,12 +281,42 @@ package icache_uvm_seq_pkg;
       tx.cfg_bus_i    = '0;
       tx.icache_pkt_i = '0;
       tx.v_i          = '0;
-      tx.ready_o      = '0;
       tx.reset_i      = '0;
       finish_item(tx);
+
+      // Wait for packet to actually be sent
+      wait_for_item_done();
     endtask: body
   
   endclass: zero_sequence
+
+  class load_sequence extends uvm_sequence #(input_transaction);
+    `uvm_object_utils(load_sequence)
+    input_transaction tx;
+    bp_fe_icache_pkt_s temp_pkt;
+    
+    function new (string name = "input_sequence");
+      super.new(name);
+      `uvm_info("load_sequence", "creating sequence", UVM_HIGH);
+    endfunction: new
+
+    task body;
+      tx = input_transaction::type_id::create("tx");
+      for(int i = 0; i < 64; i+=4) begin
+       `uvm_info("load_sequence", "starting sequence", UVM_HIGH); 
+        start_item(tx);        
+        temp_pkt.op = e_icache_fetch;
+        temp_pkt.vaddr = (1'b1 << 31) | i;
+        tx.icache_pkt_i = temp_pkt;
+        `uvm_info("load_sequence", $psprintf("Generated fetch request with op %d\t vaddr %d\n", temp_pkt.op, temp_pkt.vaddr), UVM_MEDIUM);
+        finish_item(tx);
+
+        // Wait for packet to actually be sent
+        wait_for_item_done();
+      end
+
+    endtask: body
+  endclass: load_sequence
 
   // //.......................................................
   // // Hierarchical Sequences
@@ -253,7 +329,7 @@ package icache_uvm_seq_pkg;
     // constraint how_many_inputs { n inside {[4:6]}; }
     int n = 4;
 
-    function new (string name = "");
+    function new (string name = "seq_of_inputs");
       super.new(name);
     endfunction: new
 
@@ -272,7 +348,7 @@ package icache_uvm_seq_pkg;
   class seq_of_zeros#(cycles = 10) extends uvm_sequence #(input_transaction);
     `uvm_object_utils(seq_of_zeros#(cycles))
 
-    function new (string name = "");
+    function new (string name = "seq_of_zeros");
       super.new(name);
     endfunction: new
 
@@ -291,16 +367,16 @@ package icache_uvm_seq_pkg;
   class seq_of_commands extends uvm_sequence #(input_transaction);
     `uvm_object_utils(seq_of_commands)
 
-    `uvm_declare_p_sequencer(uvm_sequencer #(input_transaction))
-
     localparam zero_space = 4;
     rand int n;
     constraint how_many_commands { n inside {[2:4]}; }
 
+    seq_of_inputs seqOI;
+    seq_of_zeros#(zero_space) seqOZ;
 
-    function new (string name = "");
+
+    function new (string name = "seq_of_commands");
       super.new(name);
-      //set_automatic_phase_objection(1);
     endfunction: new
 
     task body;
@@ -309,8 +385,6 @@ package icache_uvm_seq_pkg;
       `uvm_info("seq_of_commands", $psprintf("N is %d", n), UVM_NONE);
       repeat(n)
       begin
-        seq_of_inputs seqOI;
-        seq_of_zeros#(zero_space) seqOZ;
         seqOI = seq_of_inputs::type_id::create("seqOI");
         seqOZ = seq_of_zeros#(zero_space)::type_id::create("seqOZ");
         seqOI.start(m_sequencer, this);
@@ -318,5 +392,38 @@ package icache_uvm_seq_pkg;
       end
     endtask: body
   endclass: seq_of_commands
+
+// //.......................................................
+// // Virtual Sequences
+// //......................................................
+class myvseq_base extends uvm_sequence#(uvm_sequence_item);
+  `uvm_object_utils(myvseq_base);
+  
+  input_sequencer   input_sequencer_h;
+  tlb_sequencer     tlb_sequencer_h;
+  output_sequencer  output_sequencer_h;
+  ce_sequencer      ce_sequencer_h;
+
+  function new (string name = "myvseq_base");
+    super.new(name);
+  endfunction: new
+
+endclass: myvseq_base
+
+class test_load_vseq extends myvseq_base;
+  `uvm_object_utils(test_load_vseq);
+
+  function new (string name = "test_vseq");
+    super.new(name);
+  endfunction: new
+
+  task body();
+    load_sequence test_seq = load_sequence::type_id::create("test_seq");
+    `uvm_info("test_load_vseq", "starting sequence", UVM_HIGH);
+    test_seq.start(input_sequencer_h, this);
+    `uvm_info("test_load_vseq", "sequence finished", UVM_HIGH);
+  endtask: body
+endclass: test_load_vseq
+
 endpackage: icache_uvm_seq_pkg
 `endif

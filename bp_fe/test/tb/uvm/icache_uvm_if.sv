@@ -19,13 +19,10 @@ interface input_icache_if
     (input logic clk_i,
      input logic reset_i);
   
-  bit clk = clk_i;
-  bit reset = reset_i;
-      
   logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
   logic [icache_pkt_width_lp-1:0]  icache_pkt_i;
-  bit                              v_i;
-  bit                              ready_o;
+  logic                            v_i;
+  logic                            ready_o;
 endinterface: input_icache_if
 
 // Used for communication between the cache and the TLB
@@ -37,15 +34,12 @@ interface tlb_icache_if
     (input logic clk_i,
      input logic reset_i);
   
-  bit clk = clk_i;
-  bit reset = reset_i;
-  
-  logic [ptag_width_p-1:0]       ptag_i;
-  bit                            ptag_v_i;
-  bit                            ptag_uncached_i;
-  bit                            ptag_dram_i;
-  bit                            ptag_nonidem_i;
-  bit                            poison_tl_i;
+  logic [ptag_width_p-1:0] ptag_i;
+  logic                    ptag_v_i;
+  logic                    ptag_uncached_i;
+  logic                    ptag_dram_i;
+  logic                    ptag_nonidem_i;
+  logic                    poison_tl_i;
 endinterface: tlb_icache_if
 
 // Used for communicating outputs between the cache and the UVM testbench
@@ -56,9 +50,6 @@ interface output_icache_if
   import icache_uvm_params_pkg::*;
     (input logic clk_i,
      input logic reset_i);
-
-  bit clk = clk_i;
-  bit reset = reset_i;
   
   logic [instr_width_gp-1:0]                data_o;
   logic                                     data_v_o;
@@ -75,20 +66,17 @@ interface ce_icache_if
     (input logic clk_i,
      input logic reset_i);
 
-  bit clk = clk_i;
-  bit reset = reset_i;
-  
   logic [icache_req_width_lp-1:0]           cache_req_o;
-  bit                                       cache_req_v_o;
-  bit                                       cache_req_yumi_i;
-  bit                                       cache_req_busy_i;
+  logic                                     cache_req_v_o;
+  logic                                     cache_req_yumi_i;
+  logic                                     cache_req_busy_i;
   logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o;
-  bit                                       cache_req_metadata_v_o;
-  bit                                       cache_req_critical_tag_i;
-  bit                                       cache_req_critical_data_i;
-  bit                                       cache_req_complete_i;
-  bit                                       cache_req_credits_full_i;
-  bit                                       cache_req_credits_empty_i;
+  logic                                     cache_req_metadata_v_o;
+  logic                                     cache_req_critical_tag_i;
+  logic                                     cache_req_critical_data_i;
+  logic                                     cache_req_complete_i;
+  logic                                     cache_req_credits_full_i;
+  logic                                     cache_req_credits_empty_i;
 endinterface: ce_icache_if
 
 // Used for communication between UCE and RAM

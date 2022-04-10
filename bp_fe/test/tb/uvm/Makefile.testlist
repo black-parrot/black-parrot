@@ -1,5 +1,5 @@
 ICACHE_TESTLIST := \
-  base_test
+  test_load
 
 ifeq ($(UCE_P),1)
 CE := UCE
