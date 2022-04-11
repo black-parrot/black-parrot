@@ -41,17 +41,17 @@ module bp_nonsynth_dram
    );
 
 
-  //always_comb begin
-  //  if(dma_pkt_v_i) begin
-  //      $display("aks debug: dma_pkt_i %p", dma_pkt_i);
-  //  end
-  //  if(dma_data_v_o) begin
-  //      $display("aks debug : dma_data_o %p", dma_data_o);
-  //  end
-  //  if(dma_data_v_i) begin
-  //      $display("aks_debug: dma_data_i %p", dma_data_i);
-  //  end
-  //end
+  always_comb begin
+    if(dma_pkt_v_i) begin
+        $display("aks debug: dma_pkt_i %p", dma_pkt_li);
+    end
+    if(dma_data_v_o) begin
+        $display("aks debug : dma_data_o %p", dma_data_o);
+    end
+    if(dma_data_v_i) begin
+        $display("aks_debug: dma_data_i %p", dma_data_i);
+    end
+  end
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s [num_dma_p-1:0] dma_pkt_li, dma_pkt;
