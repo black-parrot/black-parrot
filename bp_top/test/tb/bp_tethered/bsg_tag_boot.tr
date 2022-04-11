@@ -3,32 +3,33 @@
 ################################################################################
 # DESIGN SPECIFIC TAG INFO
 #
-# Number | Description                      | Width
-# -------+----------------------------------+-------
-#     0  | Delay Line Async Reset           | 1-bit
-#   4-1  | Delay Line Oscillator            | 5-bits
-#   8-5  | Delay Line Osc Trigger           | 1-bit
-#    9   | Delay Line Downsampler           | 3-bits
-#    10  | DMC trefi 0                      | 8-bits
-#    11  | DMC trefi 1                      | 8-bits
-#    12  | DMC tmrd trfc                    | 8-bits
-#    13  | DMC trc trp                      | 8-bits
-#    14  | DMC tras trrd                    | 8-bits
-#    15  | DMC trcd twr                     | 8-bits
-#    16  | DMC twtr trtp                    | 8-bits
-#    17  | DMC tcas dqs_sel_cal             | 7-bits
-#    18  | DMC col \ row width              | 8-bits
-#    19  | DMC bank width \ pos             | 8-bits
-#    20  | DMC init_cycles 0                | 8-bits
-#    21  | DMC init_cycles 1                | 8-bits
-#    22  | DMC System Reset                 | 1-bit
-#	 23  | DMC stall_transmission			| 1-bit
-#    24  | DMC test_mode                    | 1-bit
-#	 25	 | Clkgen Async Reset				| 1-bit
-#	 26  | Clkgen Oscillator      			| 5-bits
-#    27  | Clkgen Osc Trigger     			| 1-bit
-#    28  | Clkgen Downsampler    			| 2-bits
-#    29  | Clkgen Select                    | 2-bits
+# Number | Description                       | Width
+# -------+-----------------------------------+-------
+#     0  | Delay Line Async Reset            | 1-bit
+#   4-1  | Delay Line Ctrl Bits              | 8-bits
+#   8-5  | Delay Line Trigger                | 1-bit
+#   9    | 2x-to-1x Clock Downsampler Reset  | 3-bit
+# 11-10  | DMC trefi                         | 8-bits
+#    12  | DMC tmrd trfc                     | 8-bits
+#    13  | DMC trc trp                       | 8-bits
+#    14  | DMC tras trrd                     | 8-bits
+#    15  | DMC trcd twr                      | 8-bits
+#    16  | DMC twtr trtp                     | 8-bits
+#    17  | DMC dqs_sel_cal tcas              | 8-bits
+#    18  | DMC row col width                 | 8-bits
+#    19  | DMC bank position width           | 8-bits
+# 21-20  | DMC initialization cycles         | 8-bits
+# 23-22  | DMC read calibration cycles       | 8-bits
+# 24-25  | DMC init read count               | 8-bits
+#    26  | DMC periodic read count           | 8-bits
+#    27  | DMC Async Reset                   | 1-bit
+#    28  | DMC stall_transactions            | 1-bit
+#    29  | DMC test_mode                     | 1-bit
+#    30  | Clkgen Async Reset                | 1-bit
+#    31  | Clkgen Oscillator                 | 5-bits
+#    32  | Clkgen Osc Trigger                | 1-bit
+#    33  | Clkgen Downsampler                | 2-bits
+#    34  | Clkgen Select                     | 2 bits
 #
 # Number of masters = 1
 # Number of clients = 23
@@ -138,23 +139,25 @@
 0001___1___011000_0_1000___011111111
 #SEND  en   id=25  r l=8
 0001___1___011001_0_1000___011111111
+#SEND  en   id=26  r l=8
+0001___1___011010_0_1000___011111111
 
-#SEND  en   id=26  r l=1
-0001___1___011010_0_0001___000000001
 #SEND  en   id=27  r l=1
 0001___1___011011_0_0001___000000001
 #SEND  en   id=28  r l=1
 0001___1___011100_0_0001___000000001
 #SEND  en   id=29  r l=1
 0001___1___011101_0_0001___000000001
-#SEND  en   id=30  r l=5
-0001___1___011110_0_0101___000011111
-#SEND  en   id=31  r l=1
-0001___1___011111_0_0001___000000001
-#SEND  en   id=32  r l=2
-0001___1___100000_0_0010___000000011
+#SEND  en   id=30  r l=1
+0001___1___011110_0_0001___000000001
+#SEND  en   id=31  r l=5
+0001___1___011111_0_0101___000011111
+#SEND  en   id=32  r l=1
+0001___1___100000_0_0001___000000001
 #SEND  en   id=33  r l=2
 0001___1___100001_0_0010___000000011
+#SEND  en   id=34  r l=2
+0001___1___100010_0_0010___000000011
 ################################################################################
 #
 # START CONFIGURATION
@@ -167,33 +170,33 @@
 #    29  | Clkgen Select                      | 2-bits
 ### Async clk-gen reset to get things moving
 
-#SEND  en   id=29   d l=1    {async_reset}
-0001___1___011101_1_0001___000000000
-0001___1___011101_1_0001___000000001
-0001___1___011101_1_0001___000000000
+#SEND  en   id=30   d l=1    {async_reset}
+0001___1___011110_1_0001___000000000
+0001___1___011110_1_0001___000000001
+0001___1___011110_1_0001___000000000
 
 ### Set osc triggers low
 
-#SEND  en   id=31   d l=1    {trigger}
-0001___1___011111_1_0001___000000000
+#SEND  en   id=32   d l=1    {trigger}
+0001___1___100000_1_0001___000000000
 
 ### Program the raw oscillators speed
 
-#SEND  en   id=30   d l=5    {adt, cdt, fdt}
-0001___1___011110_1_0101___000011011
+#SEND  en   id=31   d l=5    {adt, cdt, fdt}
+0001___1___011111_1_0101___000011011
 
 ### Trigger oscillators
 
-#SEND  en   id=31   d l=1    {trigger}
-0001___1___011111_1_0001___000000001
-0001___1___011111_1_0001___000000000
+#SEND  en   id=32   d l=1    {trigger}
+0001___1___100000_1_0001___000000001
+0001___1___100000_1_0001___000000000
 
-#SEND  en   id=32   d l=3    {ds_val, reset}
-0001___1___100000_1_0011___000000001
-0001___1___100000_1_0011___000000000
+#SEND  en   id=33   d l=3    {ds_val, reset}
+0001___1___100001_1_0011___000000001
+0001___1___100001_1_0011___000000000
 
-#SEND  en   id=33   d l=2    {sel}
-0001___1___100001_1_0010___000000000
+#SEND  en   id=34   d l=2    {sel}
+0001___1___100010_1_0010___000000000
 
 ### Set delay line triggers low
 
@@ -280,15 +283,17 @@
 0001___1___011000_1_1000___001100100
 #SEND  en   id=25  d l=8    {init_read_count[15:8]}
 0001___1___011001_1_1000___000000000
+#SEND  en   id=26  d l=8    {periodic_calib_num_reads_todo[7:0]}
+0001___1___011010_1_1000___000000010
 
-#SEND  en   id=26  d l=1    {reset}
-0001___1___011010_1_0001___000000001
-0001___1___011010_1_0001___000000000
-
-# SEND en  id=27 d l=1     {stall_transactions}
+#SEND  en   id=27  d l=1    {reset}
+0001___1___011011_1_0001___000000001
 0001___1___011011_1_0001___000000000
-# SEND en  id=28 d l=1     {test_mode}
+
+# SEND en  id=28 d l=1     {stall_transactions}
 0001___1___011100_1_0001___000000000
+# SEND en  id=29 d l=1     {test_mode}
+0001___1___011101_1_0001___000000000
 ################################################################################
 #
 # Done!
