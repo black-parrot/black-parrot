@@ -240,7 +240,6 @@ module testbench;
     uvm_top.finish_on_completion  = 1;
     
     // run test specified on command line
-    //@(posedge(input_icache_if.clk));
     run_test();
   end
 

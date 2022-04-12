@@ -79,12 +79,26 @@ package icache_uvm_tests_pkg;
 
       phase.get_objection().display_objections(null, 1);
 
-      `uvm_info("base_test", "Starting test sequence", UVM_HIGH);
+      `uvm_info("base_test", "Starting virtual test sequence", UVM_HIGH);
       myvseq_h.start(null);
       `uvm_info("base_test", "Stopping test sequence", UVM_HIGH);
-
+      
+      phase.phase_done.set_drain_time(this, 20ns);
       phase.drop_objection(this, "Finished sequences");
     endtask: run_phase
+
+   // function void phase_ready_to_end(uvm_phase phase);
+   //   `uvm_info("base_test", {"phase ", phase.get_name, " ready to end"}, UVM_HIGH);
+   //   if(phase.get_name == "main") begin
+   //     phase.raise_objection(this, "delaying end");
+   //     fork begin 
+   //       #2000
+   //       `uvm_info("base_test", "waiting for output", UVM_HIGH);
+   //     end 
+   //     join_none
+   //     phase.drop_objection(this, "ending for real");
+   //   end
+   // endfunction: phase_ready_to_end
     
   endclass: base_test
 
@@ -107,6 +121,24 @@ package icache_uvm_tests_pkg;
 
   endclass: test_load
 
+  class test_uncached_load extends base_test;
+    `uvm_component_utils(test_uncached_load)
+
+    function new(string name, uvm_component parent);
+      super.new(name, parent);
+    endfunction: new
+
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      myvseq_base::type_id::set_type_override(test_uncached_load_vseq::get_type());
+    endfunction: build_phase
+
+    function void end_of_elaboration_phase(uvm_phase phase);
+      super.end_of_elaboration_phase(phase);
+      init_vseq(myvseq_h);
+    endfunction: end_of_elaboration_phase
+
+  endclass: test_uncached_load
 
   // class base_test extends uvm_test;
   //   `uvm_component_utils(base_test)

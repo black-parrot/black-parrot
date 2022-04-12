@@ -26,6 +26,7 @@ package icache_uvm_seq_pkg;
     rand logic                            v_i;
     logic                                 ready_o;
     logic                                 reset_i;
+    logic                                 clk_i;
 
     function new (string name = "input_transaction");
       super.new(name);
@@ -44,14 +45,15 @@ package icache_uvm_seq_pkg;
         v_i           = rhs_.v_i;
         ready_o       = rhs_.ready_o;
         reset_i       = rhs_.reset_i;
+        clk_i         = rhs_.clk_i;
     endfunction: do_copy
 
     function string convert2string();
     string s;
     s = super.convert2string();
     $sformat(s, 
-      "icache_pkt_i %d\t v_i %d\t ready_o %d\t reset_i %d\n",
-        icache_pkt_i, v_i, ready_o, reset_i);
+      "vaddr %d\t op_code %d\t v_i %d\t ready_o %d\t reset_i %d clk_i %d\n",
+        icache_pkt_i[icache_pkt_width_lp-1:icache_pkt_width_lp-vaddr_width_p] , icache_pkt_i[icache_pkt_width_lp-vaddr_width_p-1:0], v_i, ready_o, reset_i, clk_i);
     return s;
     endfunction: convert2string
     
@@ -283,40 +285,32 @@ package icache_uvm_seq_pkg;
       tx.v_i          = '0;
       tx.reset_i      = '0;
       finish_item(tx);
-
-      // Wait for packet to actually be sent
-      wait_for_item_done();
     endtask: body
   
   endclass: zero_sequence
 
-  class load_sequence extends uvm_sequence #(input_transaction);
-    `uvm_object_utils(load_sequence)
+  // Calls fetch instruction at given vaddr
+  class fetch_sequence extends uvm_sequence #(input_transaction);
+    `uvm_object_utils(fetch_sequence)
     input_transaction tx;
-    bp_fe_icache_pkt_s temp_pkt;
+    bp_fe_icache_pkt_s seq_pkt;
     
-    function new (string name = "input_sequence");
+    function new (string name = "fetch_sequence");
       super.new(name);
-      `uvm_info("load_sequence", "creating sequence", UVM_HIGH);
     endfunction: new
 
     task body;
       tx = input_transaction::type_id::create("tx");
-      for(int i = 0; i < 64; i+=4) begin
-       `uvm_info("load_sequence", "starting sequence", UVM_HIGH); 
-        start_item(tx);        
-        temp_pkt.op = e_icache_fetch;
-        temp_pkt.vaddr = (1'b1 << 31) | i;
-        tx.icache_pkt_i = temp_pkt;
-        `uvm_info("load_sequence", $psprintf("Generated fetch request with op %d\t vaddr %d\n", temp_pkt.op, temp_pkt.vaddr), UVM_MEDIUM);
-        finish_item(tx);
+      start_item(tx);        
+      seq_pkt.op = e_icache_fetch;
+      tx.icache_pkt_i = seq_pkt;
+      `uvm_info("fetch_sequence", $psprintf("Generated fetch request with op %d\t vaddr %d\n", seq_pkt.op, seq_pkt.vaddr), UVM_LOW);
+      finish_item(tx);
 
-        // Wait for packet to actually be sent
-        wait_for_item_done();
-      end
-
+      `uvm_info("fetch_sequence", "done", UVM_HIGH);
     endtask: body
-  endclass: load_sequence
+    
+  endclass: fetch_sequence
 
   // //.......................................................
   // // Hierarchical Sequences
@@ -412,18 +406,40 @@ endclass: myvseq_base
 
 class test_load_vseq extends myvseq_base;
   `uvm_object_utils(test_load_vseq);
-
-  function new (string name = "test_vseq");
+  
+  function new (string name = "test_load_vseq");
     super.new(name);
   endfunction: new
 
   task body();
-    load_sequence test_seq = load_sequence::type_id::create("test_seq");
     `uvm_info("test_load_vseq", "starting sequence", UVM_HIGH);
-    test_seq.start(input_sequencer_h, this);
+    for(int i = 0; i < 64; i+=4) begin 
+      fetch_sequence test_seq = fetch_sequence::type_id::create("test_seq");
+      test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
+      test_seq.start(input_sequencer_h, this);
+    end
     `uvm_info("test_load_vseq", "sequence finished", UVM_HIGH);
   endtask: body
 endclass: test_load_vseq
+
+class test_uncached_load_vseq extends myvseq_base;
+  `uvm_object_utils(test_uncached_load_vseq);
+  
+  function new (string name = "test_uncached_load_vseq");
+    super.new(name);
+  endfunction: new
+
+  task body();
+    //`uvm_info("test_uncached_load_vseq", "starting sequence", UVM_HIGH);
+
+    fetch_sequence test_seq = fetch_sequence::type_id::create("test_seq");
+    test_seq.seq_pkt.vaddr = 'h24;
+    test_seq.start(input_sequencer_h, this);
+    
+    `uvm_info("test_uncached_load_vseq", "sequence finished", UVM_HIGH);
+  endtask: body
+
+endclass: test_uncached_load_vseq
 
 endpackage: icache_uvm_seq_pkg
 `endif

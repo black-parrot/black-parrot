@@ -35,46 +35,42 @@ package icache_uvm_comp_pkg;
 
       input_agt_cfg = input_agt_config::type_id::create("input_agt_cfg");
       if(!uvm_config_db#(input_agt_config)::get(this, "", "input_agt_config", input_agt_cfg))
-        `uvm_fatal("NO_CFG", "No agent config set in input_monitor")
+        `uvm_fatal("NO_CFG", "No agent config set in input_driver")
       dut_vi = input_agt_cfg.icache_if_h;
     endfunction : build_phase
 
-    // Reset Phase Task, reset is Active HIGH
-    task reset_phase(uvm_phase phase);
-      phase.raise_objection(this);
+    // Main Phase, takes sequences and drives them
+    task run_phase(uvm_phase phase);
+      input_transaction tx;
       
-      // Wait for reset
       #10
       wait(dut_vi.reset_i == 1'b0);
-      
-      phase.drop_objection(this);
-    endtask: reset_phase 
-    
-    // Main Phase, takes sequences and drives them
-    task main_phase(uvm_phase phase);
-      input_transaction tx;
-      super.run_phase(phase);
 
       forever begin
         seq_item_port.get_next_item(tx);
 
-        @(posedge dut_vi.clk_i);
-        
+         @(posedge dut_vi.clk_i);
+
         // Set valid bit to true
         dut_vi.v_i          = 1'b1;
 
         // Wait for consumer(cache) to be ready
-        wait(dut_vi.ready_o == 1'b1);
+        // wait(dut_vi.ready_o == 1'b1);
 
         // Send packet
-        //seq_item_port.get(tx);
         dut_vi.icache_pkt_i = tx.icache_pkt_i;
-        `uvm_info("driver", $psprintf("input driver sending tx %s", tx.convert2string()), UVM_HIGH);
+
+        // Copy for printing and print
+        tx.clk_i = dut_vi.clk_i;
+        tx.reset_i = dut_vi.reset_i;
+        tx.v_i = dut_vi.v_i;
+        tx.ready_o = dut_vi.ready_o;
+        `uvm_info(get_type_name(), $psprintf("input driver sending tx %s", tx.convert2string()), UVM_HIGH);
 
         // Indicate we have finished packet to sequencer
         seq_item_port.item_done();
       end
-    endtask: main_phase
+    endtask: run_phase
 
   endclass: input_driver
 
@@ -99,6 +95,10 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
+      
+      #10
+      wait(dut_vi.reset_i == 1'b0);
+      
       forever
       begin
         tlb_transaction tx;
@@ -141,6 +141,10 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
+      
+      #10
+      wait(dut_vi.reset_i == 1'b0);
+      
       forever
       begin
         output_transaction tx;
@@ -152,7 +156,7 @@ package icache_uvm_comp_pkg;
         dut_vi.data_v_o = tx.data_v_o;
         dut_vi.miss_v_o  = tx.miss_v_o;
 
-        `uvm_info("driver", $psprintf("output driver sending tx %s", tx.convert2string()), UVM_HIGH);
+        `uvm_info(get_type_name(), $psprintf("output driver sending tx %s", tx.convert2string()), UVM_HIGH);
         seq_item_port.item_done();
       end
     endtask: run_phase
@@ -180,6 +184,10 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
+      
+      #10
+      wait(dut_vi.reset_i == 1'b0);
+      
       forever
       begin
         ce_transaction tx;
@@ -198,7 +206,7 @@ package icache_uvm_comp_pkg;
         dut_vi.cache_req_credits_full_i = tx.cache_req_credits_full_i;
         dut_vi.cache_req_credits_empty_i= tx.cache_req_credits_empty_i;
 
-        `uvm_info("driver", $psprintf("ce driver sending tx %s", tx.convert2string()), UVM_HIGH);
+        `uvm_info(get_type_name(), $psprintf("ce driver sending tx %s", tx.convert2string()), UVM_HIGH);
         seq_item_port.item_done();
       end
     endtask: run_phase
@@ -232,21 +240,28 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
-      forever
-      begin
+      
+      #10
+      wait(dut_vi.reset_i == 1'b0);
+      
+      forever begin
         input_transaction tx;
 
         @(posedge dut_vi.clk_i);
-        tx = input_transaction::type_id::create("tx");
+        if (dut_vi.v_i === 1'b1) begin
+          tx = input_transaction::type_id::create("tx");
 
-        tx.cfg_bus_i        = dut_vi.cfg_bus_i;
-        tx.icache_pkt_i     = dut_vi.icache_pkt_i;
-        tx.v_i              = dut_vi.v_i;
-        tx.ready_o          = dut_vi.ready_o;
+          tx.cfg_bus_i        = dut_vi.cfg_bus_i;
+          tx.icache_pkt_i     = dut_vi.icache_pkt_i;
+          tx.v_i              = dut_vi.v_i;
+          tx.ready_o          = dut_vi.ready_o;
+          tx.reset_i          = dut_vi.reset_i;
+          tx.clk_i            = dut_vi.clk_i;
 
-        `uvm_info("monitor", $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
+          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
 
-        aport.write(tx);
+          aport.write(tx);
+        end
       end
     endtask: run_phase
   endclass: input_monitor
@@ -275,23 +290,29 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
+      
+      #10
+      wait(dut_vi.reset_i == 1'b0);
+      
       forever
       begin
         tlb_transaction tx;
 
         @(posedge dut_vi.clk_i);
-        tx = tlb_transaction::type_id::create("tx");
+        if (dut_vi.ptag_v_i === 1'b1) begin
+          tx = tlb_transaction::type_id::create("tx");
 
-        tx.ptag_i           = dut_vi.ptag_i;
-        tx.ptag_v_i 	      = dut_vi.ptag_v_i;
-        tx.ptag_uncached_i  = dut_vi.ptag_uncached_i;
-        tx.ptag_dram_i      = dut_vi.ptag_dram_i;
-        tx.ptag_nonidem_i   = dut_vi.ptag_nonidem_i;
-        tx.poison_tl_i      = dut_vi.poison_tl_i;
+          tx.ptag_i           = dut_vi.ptag_i;
+          tx.ptag_v_i 	      = dut_vi.ptag_v_i;
+          tx.ptag_uncached_i  = dut_vi.ptag_uncached_i;
+          tx.ptag_dram_i      = dut_vi.ptag_dram_i;
+          tx.ptag_nonidem_i   = dut_vi.ptag_nonidem_i;
+          tx.poison_tl_i      = dut_vi.poison_tl_i;
 
-        `uvm_info("monitor", $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
+          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
 
-        aport.write(tx);
+          aport.write(tx);
+        end
       end
     endtask: run_phase
 
@@ -321,20 +342,26 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
+      
+      #10
+      wait(dut_vi.reset_i == 1'b0);
+      
       forever
       begin
         output_transaction tx;
 
         @(posedge dut_vi.clk_i);
-        tx = output_transaction::type_id::create("tx");
+        //if (dut_vi.reset_i === 1'b0) begin
+          tx = output_transaction::type_id::create("tx");
 
-        tx.data_o   = dut_vi.data_o;
-        tx.data_v_o = dut_vi.data_v_o;
-        tx.miss_v_o  = dut_vi.miss_v_o;
+          tx.data_o   = dut_vi.data_o;
+          tx.data_v_o = dut_vi.data_v_o;
+          tx.miss_v_o  = dut_vi.miss_v_o;
 
-        `uvm_info("monitor", $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
+          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), UVM_MEDIUM);
 
-        aport.write(tx);
+          aport.write(tx);
+        //end
       end
     endtask: run_phase
 
@@ -364,27 +391,33 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
+      
+      #10
+      wait(dut_vi.reset_i == 1'b0);
+      
       forever
       begin
         ce_transaction tx;
 
         @(posedge dut_vi.clk_i);
-        tx = ce_transaction::type_id::create("tx");
+        if (dut_vi.cache_req_v_o === 1'b1) begin
+          tx = ce_transaction::type_id::create("tx");
 
-        tx.cache_req_o              = dut_vi.cache_req_o;
-        tx.cache_req_v_o            = dut_vi.cache_req_v_o;
-        tx.cache_req_yumi_i         = dut_vi.cache_req_yumi_i;
-        tx.cache_req_busy_i         = dut_vi.cache_req_busy_i;
-        tx.cache_req_metadata_o     = dut_vi.cache_req_metadata_o;
-        tx.cache_req_metadata_v_o   = dut_vi.cache_req_metadata_v_o;
-        tx.cache_req_critical_tag_i = dut_vi.cache_req_critical_tag_i;
-        tx.cache_req_complete_i     = dut_vi.cache_req_complete_i;
-        tx.cache_req_credits_full_i = dut_vi.cache_req_credits_full_i;
-        tx.cache_req_credits_empty_i= dut_vi.cache_req_credits_empty_i;
+          tx.cache_req_o              = dut_vi.cache_req_o;
+          tx.cache_req_v_o            = dut_vi.cache_req_v_o;
+          tx.cache_req_yumi_i         = dut_vi.cache_req_yumi_i;
+          tx.cache_req_busy_i         = dut_vi.cache_req_busy_i;
+          tx.cache_req_metadata_o     = dut_vi.cache_req_metadata_o;
+          tx.cache_req_metadata_v_o   = dut_vi.cache_req_metadata_v_o;
+          tx.cache_req_critical_tag_i = dut_vi.cache_req_critical_tag_i;
+          tx.cache_req_complete_i     = dut_vi.cache_req_complete_i;
+          tx.cache_req_credits_full_i = dut_vi.cache_req_credits_full_i;
+          tx.cache_req_credits_empty_i= dut_vi.cache_req_credits_empty_i;
 
-        `uvm_info("monitor", $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
+          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
 
-        aport.write(tx);
+          aport.write(tx);
+        end
       end
     endtask: run_phase
 

@@ -101,7 +101,10 @@ package icache_uvm_subs_pkg;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
-      cover_input = new;  
+      cover_input = new;
+      cover_tlb = new;
+      cover_output = new;
+      cover_ce = new;
     endfunction: new
 
     function void build_phase(uvm_phase phase);
@@ -155,7 +158,7 @@ package icache_uvm_subs_pkg;
       data_o            = t.data_o;
       data_v_o 	        = t.data_v_o;
       miss_v_o          = t.miss_v_o;
-      cover_tlb.sample();
+      cover_output.sample();
 
     endfunction : write_OUTPUT
 
@@ -177,7 +180,7 @@ package icache_uvm_subs_pkg;
       cache_req_complete_i       = t.cache_req_complete_i;
       cache_req_credits_full_i   = t.cache_req_credits_full_i;
       cache_req_credits_empty_i  = t.cache_req_credits_empty_i;
-      cover_tlb.sample();
+      cover_ce.sample();
 
     endfunction : write_CE
 
