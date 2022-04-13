@@ -97,7 +97,7 @@ module bp_fe_bht
   assign rw_same_addr = r_v_i & w_v_i & (r_idx_li == w_idx_li);
 
   bsg_mem_1r1w_sync
-   #(.width_p(bht_row_width_p), .els_p(bht_els_lp))
+   #(.width_p(bht_row_width_p), .els_p(bht_els_lp), .latch_last_read_p(1))
    bht_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -130,25 +130,7 @@ module bp_fe_bht
      assign pred_idx_r = 1'b1;
    end
 
-  logic r_v_r;
-  bsg_dff_reset
-   #(.width_p(1))
-   r_v_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i(r_v_li)
-     ,.data_o(r_v_r)
-     );
-
-  bsg_dff_reset_en_bypass
-   #(.width_p(bht_row_width_p))
-   bypass_reg
-   (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-    ,.en_i(r_v_r)
-    ,.data_i(r_data_lo)
-    ,.data_o(val_o)
-    );
+  assign val_o = r_data_lo;
   assign pred_o = val_o[pred_idx_r];
 
 endmodule

@@ -1,6 +1,9 @@
-
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
+
+`ifndef TAG_CLK_PERIOD
+  `define TAG_CLK_PERIOD 10000.0
+`endif
 
 module bp_ddr
   import bp_common_pkg::*;
@@ -12,6 +15,12 @@ module bp_ddr
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
 
    , parameter num_dma_p = 1
+      // Total number of clients the master will be driving.
+   , localparam tag_dmc_local_els_lp = tag_dmc_dly_local_els_gp+tag_dmc_cfg_local_els_gp+tag_dmc_sys_local_els_gp+tag_dmc_osc_local_els_gp
+   , localparam tag_num_clients_gp = tag_dmc_local_els_lp      
+     // The number of bits required to represent the max payload width
+   , localparam tag_max_payload_width_gp = 9
+   , localparam tag_lg_max_payload_width_gp = `BSG_SAFE_CLOG2(tag_max_payload_width_gp + 1)
    )
   (input                                                    clk_i
    , input                                                  reset_i
@@ -40,7 +49,7 @@ module bp_ddr
   localparam dmc_cmd_sfifo_depth_lp = 4;
 
   localparam tag_trace_rom_addr_width_lp = 32;
-  localparam tag_trace_rom_data_width_lp = 24;
+  localparam tag_trace_rom_data_width_lp = 25;
 
   // BSG Tag
   logic [tag_trace_rom_addr_width_lp-1:0] rom_addr_li;
@@ -48,17 +57,11 @@ module bp_ddr
 
   logic tag_trace_en_r_lo, tag_trace_data_lo, tag_trace_data_r_lo, tag_trace_valid_lo, tag_trace_valid_r_lo;
 
-  logic dfi_clk_1x_lo;
+  logic dfi_clk_1x_lo, dfi_clk_2x_lo;
 
-  bsg_tag_s [22:0] tag_lines_lo;
-  logic [12:0][7:0] dmc_cfg_tag_data_lo;
+  // All tag lines from the btm
 
-  wire bsg_tag_s        dmc_reset_tag_lines_lo       = tag_lines_lo[0];
-  wire bsg_tag_s  [3:0] dmc_dly_tag_lines_lo         = tag_lines_lo[1+:4];
-  wire bsg_tag_s  [3:0] dmc_dly_trigger_tag_lines_lo = tag_lines_lo[5+:4];
-  wire bsg_tag_s        dmc_ds_tag_lines_lo          = tag_lines_lo[9];
-  wire bsg_tag_s [12:0] dmc_cfg_tag_lines_lo         = tag_lines_lo[10+:13];
-  wire sys_reset_li                                  = dmc_cfg_tag_data_lo[12][0];
+  bsg_tag_s [tag_dmc_local_els_lp-1:0] tag_lines_lo;
 
   bsg_tag_boot_rom
     #(.width_p(tag_trace_rom_data_width_lp)
@@ -74,15 +77,19 @@ module bp_ddr
     tag_trace_data_r_lo <= tag_trace_data_lo;
   end
 
+  logic tag_clk;
+  bsg_nonsynth_clock_gen #(.cycle_time_p(`TAG_CLK_PERIOD)) tag_clk_gen (.o(tag_clk));
+  logic tag_trace_done_lo;
+
   bsg_tag_trace_replay
     #(.rom_addr_width_p(tag_trace_rom_addr_width_lp)
      ,.rom_data_width_p(tag_trace_rom_data_width_lp)
      ,.num_masters_p(1)
-     ,.num_clients_p(23)
-     ,.max_payload_width_p(9)
+     ,.num_clients_p(tag_num_clients_gp)
+     ,.max_payload_width_p(tag_max_payload_width_gp)
      )
     tag_trace_replay
-      (.clk_i(clk_i)
+      (.clk_i(tag_clk)
       ,.reset_i(reset_i)
       ,.en_i(1'b1)
 
@@ -98,51 +105,20 @@ module bp_ddr
       ,.tag_data_o(tag_trace_data_lo)
       ,.yumi_i(tag_trace_valid_lo)
 
-      ,.done_o()
+      ,.done_o(tag_trace_done_lo)
       ,.error_o()
       );
 
   bsg_tag_master
-    #(.els_p(23)
-     ,.lg_width_p(4)
+    #(.els_p(tag_num_clients_gp)
+     ,.lg_width_p(tag_lg_max_payload_width_gp)
      )
     btm
-      (.clk_i      (clk_i)
+      (.clk_i      (tag_clk)
       ,.data_i     (tag_trace_valid_r_lo & tag_trace_en_r_lo & tag_trace_data_r_lo)
       ,.en_i       (1'b1)
       ,.clients_r_o(tag_lines_lo)
       );
-
-  for(genvar i=0; i<13; i++) begin
-    bsg_tag_client #(.width_p(8), .default_p(0))
-      btc
-        (.bsg_tag_i     (dmc_cfg_tag_lines_lo[i])
-        ,.recv_clk_i    (clk_i)
-        ,.recv_new_r_o  ()
-        ,.recv_data_r_o (dmc_cfg_tag_data_lo[i])
-        );
-  end
-
-  // DRAM Timing Parameters
-  bsg_dmc_s dmc_p;
-  assign dmc_p.trefi        = {dmc_cfg_tag_data_lo[1], dmc_cfg_tag_data_lo[0]};
-  assign dmc_p.tmrd         = dmc_cfg_tag_data_lo[2][3:0];
-  assign dmc_p.trfc         = dmc_cfg_tag_data_lo[2][7:4];
-  assign dmc_p.trc          = dmc_cfg_tag_data_lo[3][3:0];
-  assign dmc_p.trp          = dmc_cfg_tag_data_lo[3][7:4];
-  assign dmc_p.tras         = dmc_cfg_tag_data_lo[4][3:0];
-  assign dmc_p.trrd         = dmc_cfg_tag_data_lo[4][7:4];
-  assign dmc_p.trcd         = dmc_cfg_tag_data_lo[5][3:0];
-  assign dmc_p.twr          = dmc_cfg_tag_data_lo[5][7:4];
-  assign dmc_p.twtr         = dmc_cfg_tag_data_lo[6][3:0];
-  assign dmc_p.trtp         = dmc_cfg_tag_data_lo[6][7:4];
-  assign dmc_p.tcas         = dmc_cfg_tag_data_lo[7][3:0];
-  assign dmc_p.col_width    = dmc_cfg_tag_data_lo[8][3:0];
-  assign dmc_p.row_width    = dmc_cfg_tag_data_lo[8][7:4];
-  assign dmc_p.bank_width   = dmc_cfg_tag_data_lo[9][1:0];
-  assign dmc_p.bank_pos     = dmc_cfg_tag_data_lo[9][7:2];
-  assign dmc_p.dqs_sel_cal  = dmc_cfg_tag_data_lo[7][6:4];
-  assign dmc_p.init_cycles  = {dmc_cfg_tag_data_lo[11], dmc_cfg_tag_data_lo[10]};
 
   // DRAM Link
   logic app_en_lo, app_rdy_li, app_wdf_wren_lo, app_wdf_end_lo, app_wdf_rdy_li, app_rd_data_valid_li, app_rd_data_end_li;
@@ -191,7 +167,7 @@ module bp_ddr
      ,.dram_size_i(3'b100) // 4Gb
 
      ,.dma_pkt_i(dma_pkt_i)
-     ,.dma_pkt_v_i(dma_pkt_v_i & init_calib_complete_lo)
+     ,.dma_pkt_v_i(dma_pkt_v_i & {(num_dma_p){init_calib_complete_lo}})
      ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 
      ,.dma_data_o(dma_data_o)
@@ -229,15 +205,12 @@ module bp_ddr
       ,.cmd_sfifo_depth_p(dmc_cmd_sfifo_depth_lp)
      )
     dmc
-    (.async_reset_tag_i(dmc_reset_tag_lines_lo)
-    ,.bsg_dly_tag_i(dmc_dly_tag_lines_lo)
-    ,.bsg_dly_trigger_tag_i(dmc_dly_trigger_tag_lines_lo)
-    ,.bsg_ds_tag_i(dmc_ds_tag_lines_lo)
-
-    ,.dmc_p_i(dmc_p)
-
-    ,.sys_reset_i(sys_reset_li)
-
+    (.refresh_in_progress_o(refresh_in_progress)
+    //,.tag_lines_i (tag_lines_lo)
+	,.dly_tag_lines_i       (tag_lines_lo[0+:tag_dmc_dly_local_els_gp] )
+	,.cfg_tag_lines_i      (tag_lines_lo[tag_dmc_dly_local_els_gp+:tag_dmc_cfg_local_els_gp] )
+	,.sys_tag_lines_i      (tag_lines_lo[tag_dmc_dly_local_els_gp+tag_dmc_cfg_local_els_gp+:tag_dmc_sys_local_els_gp] )
+	,.osc_tag_lines_i      (tag_lines_lo[tag_dmc_dly_local_els_gp+tag_dmc_cfg_local_els_gp+tag_dmc_sys_local_els_gp+:tag_dmc_osc_local_els_gp] )    
     ,.app_addr_i(app_addr_li)
     ,.app_cmd_i(app_cmd_lo)
     ,.app_en_i(app_en_lo)
@@ -289,8 +262,9 @@ module bp_ddr
     ,.ddr_dq_i              (ddr_dq_li)
 
     ,.ui_clk_i              (clk_i)
-    ,.dfi_clk_2x_i          (clk_i)
-    ,.dfi_clk_1x_o          (dfi_clk_1x_lo)
+
+    ,.dfi_clk_1x_o           (dfi_clk_1x_lo)
+    ,.dfi_clk_2x_o           (dfi_clk_2x_lo)
 
     ,.ui_clk_sync_rst_o     (ui_reset_lo)
 

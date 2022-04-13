@@ -7,7 +7,7 @@
 `include "bsg_noc_links.vh"
 
 `ifndef BP_SIM_CLK_PERIOD
-`define BP_SIM_CLK_PERIOD 10
+`define BP_SIM_CLK_PERIOD 2.5
 `endif
 
 `ifndef BP_RT_CLK_PERIOD
