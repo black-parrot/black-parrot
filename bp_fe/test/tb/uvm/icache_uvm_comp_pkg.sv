@@ -59,7 +59,7 @@ package icache_uvm_comp_pkg;
         dut_vi.v_i          = tx.v_i;
 
         // Copy for printing and print
-        tx.clk_i = dut_vi.clk_i;
+        tx.clk_i   = dut_vi.clk_i;
         tx.reset_i = dut_vi.reset_i;
         tx.ready_o = dut_vi.ready_o;
         `uvm_info(get_type_name(), $psprintf("input driver sending tx %s", tx.convert2string()), UVM_HIGH);

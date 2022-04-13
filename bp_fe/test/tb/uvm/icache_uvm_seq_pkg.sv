@@ -360,6 +360,7 @@ package icache_uvm_seq_pkg;
     `uvm_object_utils(ptag_sequence)
     tlb_transaction tx;
     logic [ptag_width_p-1:0] ptag_i;
+    bit is_cached = 1'b1;
     
     function new (string name = "ptag_sequence");
       super.new(name);
@@ -373,7 +374,7 @@ package icache_uvm_seq_pkg;
       start_item(tx);        
       tx.ptag_i = ptag_i;
       tx.ptag_v_i = 1'b1;
-      tx.ptag_uncached_i = 1'b1;
+      tx.ptag_uncached_i = ~is_cached;
       tx.ptag_dram_i = 1'b0;
       tx.ptag_nonidem_i = 1'b0;
       `uvm_info(get_type_name(), $psprintf("Generated ptag sequence with ptag %d", ptag_i), UVM_LOW);
@@ -410,21 +411,49 @@ class test_load_vseq extends myvseq_base;
 
   task body();
     fill_sequence test_seq = fill_sequence::type_id::create("test_seq");
-    
+    zero_sequence z_seq = zero_sequence::type_id::create("z_seq"); 
+    ptag_sequence ptag_seq = ptag_sequence::type_id::create("ptag_seq");
+    tlb_zero_sequence tz_seq = tlb_zero_sequence::type_id::create("tz_seq");
+
     `uvm_info("test_load_vseq", "starting sequence", UVM_HIGH);
     
-   // Ask for fill from 0, 4, and 8
-    //test_seq.v_i = 1'b1;
-   // for(int i = 0; i <= 8; i+=4) begin 
-   //   test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
-   //   test_seq.start(input_sequencer_h, this);
-   // end
+    // Do 64 cycles of nothing
+    fork
+        repeat(64) z_seq.start(input_sequencer_h, this);
+        repeat(64) tz_seq.start(tlb_sequencer_h, this);
+    join
 
+    // Ask for fill from 0, 4, and 8
+    ptag_seq.ptag_i = 28'h0080000; 
+    fork
+      for(int i = 0; i <= 8; i+=4) begin 
+        test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
+        test_seq.start(input_sequencer_h, this);
+      end
+      repeat(3) ptag_seq.start(tlb_sequencer_h, this);
+    join
 
-    for(int i = 0; i < 64; i+=4) begin 
-      test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
-      test_seq.start(input_sequencer_h, this);
-    end
+    // Do 1027 cycles of nothing
+    fork
+        repeat(1027) z_seq.start(input_sequencer_h, this);
+        ptag_seq.start(tlb_sequencer_h, this);
+        //repeat(1027) tz_seq.start(tlb_sequencer_h, this); //hold tlb values
+    join
+    
+    // Ask for fill from addresses 0,4,8,12,...,60
+    fork
+      for(int i = 0; i < 64; i+=4) begin 
+        test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
+        test_seq.start(input_sequencer_h, this);
+      end
+      repeat(16) ptag_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Do 24 cycles of nothing
+    fork
+        repeat(24) z_seq.start(input_sequencer_h, this);
+        repeat(25) tz_seq.start(tlb_sequencer_h, this);
+    join
 
     `uvm_info("test_load_vseq", "sequence finished", UVM_HIGH);
   endtask: body
@@ -444,7 +473,8 @@ class test_uncached_load_vseq extends myvseq_base;
     tlb_zero_sequence tz_seq = tlb_zero_sequence::type_id::create("tz_seq");
  
     test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | 'h24;
-    ptag_seq.ptag_i = 28'h0080000; 
+    ptag_seq.ptag_i = 28'h0080000;
+    ptag_seq.is_cached = 1'b0;
     
     `uvm_info("test_uncached_load_vseq", "starting sequence", UVM_HIGH);
 
@@ -463,7 +493,8 @@ class test_uncached_load_vseq extends myvseq_base;
     // Do 1027 cycles of nothing
     fork
         repeat(1027) z_seq.start(input_sequencer_h, this);
-        repeat(1027) tz_seq.start(tlb_sequencer_h, this);
+        ptag_seq.start(tlb_sequencer_h, this);
+        //repeat(1027) tz_seq.start(tlb_sequencer_h, this);  //hold tlb values
     join
 
     // Ask for fill from 0x24
