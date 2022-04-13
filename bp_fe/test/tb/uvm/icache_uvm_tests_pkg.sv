@@ -50,7 +50,7 @@ package icache_uvm_tests_pkg;
 
       //Define agent activity for each interface
       env_cfg.input_is_active  = 1'b1;
-      env_cfg.tlb_is_active    = 1'b0;
+      env_cfg.tlb_is_active    = 1'b1;
       env_cfg.output_is_active = 1'b0;
       env_cfg.ce_is_active     = 1'b0;
       

@@ -21,7 +21,6 @@ package icache_uvm_seq_pkg;
     `uvm_object_utils(input_transaction)
   
     // transaction bits
-    rand logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
     rand logic [icache_pkt_width_lp-1:0]  icache_pkt_i;
     rand logic                            v_i;
     logic                                 ready_o;
@@ -40,7 +39,6 @@ package icache_uvm_seq_pkg;
         return;
       end
       super.do_copy(rhs);
-        cfg_bus_i     = rhs_.cfg_bus_i;
         icache_pkt_i  = rhs_.icache_pkt_i;
         v_i           = rhs_.v_i;
         ready_o       = rhs_.ready_o;
@@ -69,7 +67,6 @@ package icache_uvm_seq_pkg;
     rand logic                    ptag_uncached_i;
     rand logic                    ptag_dram_i;
     rand logic                    ptag_nonidem_i;
-    rand logic                    poison_tl_i;
 
     function new (string name = "tlb_transaction");
       super.new(name);
@@ -88,7 +85,6 @@ package icache_uvm_seq_pkg;
         ptag_uncached_i = rhs_.ptag_uncached_i;
         ptag_dram_i     = rhs_.ptag_dram_i;
         ptag_nonidem_i  = rhs_.ptag_nonidem_i;
-        poison_tl_i     = rhs_.poison_tl_i;
     endfunction: do_copy
 
     function string convert2string();
@@ -203,11 +199,6 @@ package icache_uvm_seq_pkg;
   //.......................................................
   // Sequencer
   //.......................................................
-  // typedef uvm_sequencer #(input_transaction)  input_sequencer;
-  // typedef uvm_sequencer #(tlb_transaction)    tlb_sequencer;
-  // typedef uvm_sequencer #(output_transaction) output_sequencer;
-  // typedef uvm_sequencer #(ce_transaction)    ce_sequencer;
-
   // Better to use class method to have sequencer show up in the componenet hierarchy
   class input_sequencer extends uvm_sequencer #(input_transaction);
     `uvm_component_utils(input_sequencer)
@@ -280,10 +271,8 @@ package icache_uvm_seq_pkg;
       input_transaction tx;
       tx = input_transaction::type_id::create("tx");
       start_item(tx);
-      tx.cfg_bus_i    = '0;
       tx.icache_pkt_i = '0;
       tx.v_i          = '0;
-      tx.reset_i      = '0;
       finish_item(tx);
     endtask: body
   
@@ -304,6 +293,7 @@ package icache_uvm_seq_pkg;
       start_item(tx);        
       seq_pkt.op = e_icache_fetch;
       tx.icache_pkt_i = seq_pkt;
+      tx.v_i = 1'b1;
       `uvm_info("fetch_sequence", $psprintf("Generated fetch request with op %d\t vaddr %d\n", seq_pkt.op, seq_pkt.vaddr), UVM_LOW);
       finish_item(tx);
 
@@ -311,82 +301,89 @@ package icache_uvm_seq_pkg;
     endtask: body
     
   endclass: fetch_sequence
-
-  // //.......................................................
-  // // Hierarchical Sequences
-  // //......................................................
-  // Sequences a random number of randomized input sequences.
-  class seq_of_inputs extends uvm_sequence #(input_transaction);
-    `uvm_object_utils(seq_of_inputs)
-
-    // rand int n;
-    // constraint how_many_inputs { n inside {[4:6]}; }
-    int n = 4;
-
-    function new (string name = "seq_of_inputs");
+  
+  // Calls fill instruction at given vaddr
+  class fill_sequence extends uvm_sequence #(input_transaction);
+    `uvm_object_utils(fill_sequence)
+    input_transaction tx;
+    bp_fe_icache_pkt_s seq_pkt;
+    
+    function new (string name = "fill_sequence");
       super.new(name);
     endfunction: new
 
     task body;
-      `uvm_info("seq_of_inputs", $psprintf("N is %d", n), UVM_NONE);
-      repeat(n)
-      begin
-        input_sequence seq;
-        seq = input_sequence::type_id::create("seq");
-        seq.start(m_sequencer, this);
-      end
+      tx = input_transaction::type_id::create("tx");
+
+      `uvm_info("fill_sequence", "started", UVM_HIGH);
+
+      start_item(tx);        
+      seq_pkt.op = e_icache_fill;
+      tx.icache_pkt_i = seq_pkt;
+      tx.v_i = 1'b1;
+      `uvm_info("fill_sequence", $psprintf("Generated fill request with op %d\t vaddr %d\n", seq_pkt.op, seq_pkt.vaddr), UVM_LOW);
+      finish_item(tx);
+
+      `uvm_info("fill_sequence", "done", UVM_HIGH);
     endtask: body
-  endclass: seq_of_inputs
-
-  // Sequences a fixed number of zero inputs
-  class seq_of_zeros#(cycles = 10) extends uvm_sequence #(input_transaction);
-    `uvm_object_utils(seq_of_zeros#(cycles))
-
-    function new (string name = "seq_of_zeros");
+    
+  endclass: fill_sequence
+  
+  // Sends a given ptag to the cache
+  class tlb_zero_sequence extends uvm_sequence #(tlb_transaction);
+    `uvm_object_utils(tlb_zero_sequence)
+    tlb_transaction tx;
+    
+    function new (string name = "tlb_zero_sequence");
       super.new(name);
     endfunction: new
 
     task body;
-      `uvm_info("seq_of_zeros", $psprintf("cycles is %d", cycles), UVM_HIGH);
-      repeat(cycles)
-      begin
-        zero_sequence zseq;
-        zseq = zero_sequence::type_id::create("zseq");
-        zseq.start(m_sequencer, this);
-      end
+      tx = tlb_transaction::type_id::create("tx");
+
+      `uvm_info(get_type_name(), "started", UVM_HIGH);
+
+      start_item(tx);        
+      tx.ptag_i = '0;
+      tx.ptag_v_i = 1'b0;
+      tx.ptag_uncached_i = 1'b0;
+      tx.ptag_dram_i = 1'b0;
+      tx.ptag_nonidem_i = 1'b0;
+      finish_item(tx);
+
+      `uvm_info(get_type_name(), "done", UVM_HIGH);
     endtask: body
-  endclass: seq_of_zeros
+  endclass: tlb_zero_sequence
 
-  // Sequences a random number of randomized input sequences.
-  class seq_of_commands extends uvm_sequence #(input_transaction);
-    `uvm_object_utils(seq_of_commands)
-
-    localparam zero_space = 4;
-    rand int n;
-    constraint how_many_commands { n inside {[2:4]}; }
-
-    seq_of_inputs seqOI;
-    seq_of_zeros#(zero_space) seqOZ;
-
-
-    function new (string name = "seq_of_commands");
+  // Sends a given ptag to the cache
+  class ptag_sequence extends uvm_sequence #(tlb_transaction);
+    `uvm_object_utils(ptag_sequence)
+    tlb_transaction tx;
+    logic [ptag_width_p-1:0] ptag_i;
+    
+    function new (string name = "ptag_sequence");
       super.new(name);
     endfunction: new
 
     task body;
-      uvm_phase p = get_starting_phase();
-      if(p) p.get_objection().display_objections(this, 1);
-      `uvm_info("seq_of_commands", $psprintf("N is %d", n), UVM_NONE);
-      repeat(n)
-      begin
-        seqOI = seq_of_inputs::type_id::create("seqOI");
-        seqOZ = seq_of_zeros#(zero_space)::type_id::create("seqOZ");
-        seqOI.start(m_sequencer, this);
-        seqOZ.start(.sequencer(m_sequencer), .parent_sequence(this));
-      end
-    endtask: body
-  endclass: seq_of_commands
+      tx = tlb_transaction::type_id::create("tx");
 
+      `uvm_info(get_type_name(), "started", UVM_HIGH);
+
+      start_item(tx);        
+      tx.ptag_i = ptag_i;
+      tx.ptag_v_i = 1'b1;
+      tx.ptag_uncached_i = 1'b1;
+      tx.ptag_dram_i = 1'b0;
+      tx.ptag_nonidem_i = 1'b0;
+      `uvm_info(get_type_name(), $psprintf("Generated ptag sequence with ptag %d", ptag_i), UVM_LOW);
+      finish_item(tx);
+
+      `uvm_info(get_type_name(), "done", UVM_HIGH);
+    endtask: body
+    
+  endclass: ptag_sequence
+  
 // //.......................................................
 // // Virtual Sequences
 // //......................................................
@@ -412,12 +409,23 @@ class test_load_vseq extends myvseq_base;
   endfunction: new
 
   task body();
+    fill_sequence test_seq = fill_sequence::type_id::create("test_seq");
+    
     `uvm_info("test_load_vseq", "starting sequence", UVM_HIGH);
+    
+   // Ask for fill from 0, 4, and 8
+    //test_seq.v_i = 1'b1;
+   // for(int i = 0; i <= 8; i+=4) begin 
+   //   test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
+   //   test_seq.start(input_sequencer_h, this);
+   // end
+
+
     for(int i = 0; i < 64; i+=4) begin 
-      fetch_sequence test_seq = fetch_sequence::type_id::create("test_seq");
       test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
       test_seq.start(input_sequencer_h, this);
     end
+
     `uvm_info("test_load_vseq", "sequence finished", UVM_HIGH);
   endtask: body
 endclass: test_load_vseq
@@ -430,12 +438,46 @@ class test_uncached_load_vseq extends myvseq_base;
   endfunction: new
 
   task body();
-    //`uvm_info("test_uncached_load_vseq", "starting sequence", UVM_HIGH);
-
-    fetch_sequence test_seq = fetch_sequence::type_id::create("test_seq");
-    test_seq.seq_pkt.vaddr = 'h24;
-    test_seq.start(input_sequencer_h, this);
+    fill_sequence test_seq = fill_sequence::type_id::create("test_seq");
+    zero_sequence z_seq = zero_sequence::type_id::create("z_seq");
+    ptag_sequence ptag_seq = ptag_sequence::type_id::create("ptag_seq");
+    tlb_zero_sequence tz_seq = tlb_zero_sequence::type_id::create("tz_seq");
+ 
+    test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | 'h24;
+    ptag_seq.ptag_i = 28'h0080000; 
     
+    `uvm_info("test_uncached_load_vseq", "starting sequence", UVM_HIGH);
+
+    // Do 64 cycles of nothing
+    fork
+        repeat(64) z_seq.start(input_sequencer_h, this);
+        repeat(64) tz_seq.start(tlb_sequencer_h, this);
+    join
+    
+    // Ask for fill from 0x24
+    fork
+        test_seq.start(input_sequencer_h, this);
+        ptag_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Do 1027 cycles of nothing
+    fork
+        repeat(1027) z_seq.start(input_sequencer_h, this);
+        repeat(1027) tz_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Ask for fill from 0x24
+    fork
+        test_seq.start(input_sequencer_h, this);
+        ptag_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Do 24 cycles of nothing
+    fork
+        repeat(24) z_seq.start(input_sequencer_h, this);
+        repeat(25) tz_seq.start(tlb_sequencer_h, this);
+    join
+
     `uvm_info("test_uncached_load_vseq", "sequence finished", UVM_HIGH);
   endtask: body
 

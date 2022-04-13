@@ -19,7 +19,7 @@ interface input_icache_if
     (input logic clk_i,
      input logic reset_i);
   
-  logic [cfg_bus_width_lp-1:0]     cfg_bus_i;
+  bit   [cfg_bus_width_lp-1:0]     cfg_bus_i;
   logic [icache_pkt_width_lp-1:0]  icache_pkt_i;
   logic                            v_i;
   logic                            ready_o;
@@ -39,7 +39,7 @@ interface tlb_icache_if
   logic                    ptag_uncached_i;
   logic                    ptag_dram_i;
   logic                    ptag_nonidem_i;
-  logic                    poison_tl_i;
+  bit                      poison_tl_i;
 endinterface: tlb_icache_if
 
 // Used for communicating outputs between the cache and the UVM testbench

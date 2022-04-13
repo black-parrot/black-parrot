@@ -123,7 +123,6 @@ package icache_uvm_subs_pkg;
       
       //Sample coverage info
       reset_i       = t.reset_i;
-      cfg_bus_i 	  = t.cfg_bus_i;
       icache_pkt_i  = t.icache_pkt_i;
       v_i           = t.v_i;
       ready_o       = t.ready_o;
@@ -143,7 +142,6 @@ package icache_uvm_subs_pkg;
       ptag_uncached_i   = t.ptag_uncached_i;
       ptag_dram_i       = t.ptag_dram_i;
       ptag_nonidem_i    = t.ptag_nonidem_i;
-      poison_tl_i       = t.poison_tl_i;
       cover_tlb.sample();
 
     endfunction : write_TLB
