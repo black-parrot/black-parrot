@@ -51,9 +51,6 @@ package icache_uvm_comp_pkg;
 
          @(posedge dut_vi.clk_i);
 
-        // Wait for consumer(cache) to be ready
-        // wait(dut_vi.ready_o == 1'b1);
-
         // Send packet
         dut_vi.icache_pkt_i = tx.icache_pkt_i;
         dut_vi.v_i          = tx.v_i;
@@ -64,6 +61,11 @@ package icache_uvm_comp_pkg;
         tx.ready_o = dut_vi.ready_o;
         `uvm_info(get_type_name(), $psprintf("input driver sending tx %s", tx.convert2string()), UVM_HIGH);
 
+        // Wait for consumer(cache) to be ready
+        if(dut_vi.v_i) begin
+          wait(dut_vi.ready_o == 1'b1);
+        end
+        
         // Indicate we have finished packet to sequencer
         seq_item_port.item_done();
       end

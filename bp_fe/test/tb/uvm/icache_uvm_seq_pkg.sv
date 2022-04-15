@@ -307,6 +307,7 @@ package icache_uvm_seq_pkg;
     `uvm_object_utils(fill_sequence)
     input_transaction tx;
     bp_fe_icache_pkt_s seq_pkt;
+    logic v_i = 1'b1;
     
     function new (string name = "fill_sequence");
       super.new(name);
@@ -320,7 +321,7 @@ package icache_uvm_seq_pkg;
       start_item(tx);        
       seq_pkt.op = e_icache_fill;
       tx.icache_pkt_i = seq_pkt;
-      tx.v_i = 1'b1;
+      tx.v_i = v_i;
       `uvm_info("fill_sequence", $psprintf("Generated fill request with op %d\t vaddr %d\n", seq_pkt.op, seq_pkt.vaddr), UVM_LOW);
       finish_item(tx);
 
@@ -375,7 +376,7 @@ package icache_uvm_seq_pkg;
       tx.ptag_i = ptag_i;
       tx.ptag_v_i = 1'b1;
       tx.ptag_uncached_i = ~is_cached;
-      tx.ptag_dram_i = 1'b0;
+      tx.ptag_dram_i = 1'b1;
       tx.ptag_nonidem_i = 1'b0;
       `uvm_info(get_type_name(), $psprintf("Generated ptag sequence with ptag %d", ptag_i), UVM_LOW);
       finish_item(tx);
@@ -425,9 +426,11 @@ class test_load_vseq extends myvseq_base;
 
     // Ask for fill from 0, 4, and 8
     ptag_seq.ptag_i = 28'h0080000; 
+    //test_seq.v_i = 1'b1;
     fork
       for(int i = 0; i <= 8; i+=4) begin 
         test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
+        //if(i == 8) test_seq.v_i = 1'b0;
         test_seq.start(input_sequencer_h, this);
       end
       repeat(3) ptag_seq.start(tlb_sequencer_h, this);
@@ -441,9 +444,11 @@ class test_load_vseq extends myvseq_base;
     join
     
     // Ask for fill from addresses 0,4,8,12,...,60
+    //test_seq.v_i = 1'b1;
     fork
-      for(int i = 0; i < 64; i+=4) begin 
+      for(int i = 0; i < 64; i+=4) begin
         test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
+        //if (i == 60) test_seq.v_i = 1'b0;
         test_seq.start(input_sequencer_h, this);
       end
       repeat(16) ptag_seq.start(tlb_sequencer_h, this);
