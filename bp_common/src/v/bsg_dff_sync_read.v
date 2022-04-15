@@ -5,23 +5,18 @@
 //   things like an synchronous SRAM read
 module bsg_dff_sync_read
  #(parameter `BSG_INV_PARAM(width_p)
-
-   // Whether to bypass the read data so that it doesn't create a bubble
+   // Whether data is available synchronously or asynchronously
    , parameter bypass_p = 0
    )
   (input clk_i
    , input reset_i
 
    // v_n_i is high the cycle before the data comes in
-   // The stored data will always be overwritten and valid always set, regardless
-   //   of the current valid state or incoming yumi
+   // The stored data will always be overwritten
    , input                      v_n_i
    , input [width_p-1:0]        data_i
 
    , output logic [width_p-1:0] data_o
-   , output logic               v_o
-   // yumi_i clears the valid signal
-   , input                      yumi_i
    );
 
   logic v_r;
@@ -34,18 +29,7 @@ module bsg_dff_sync_read
      ,.data_o(v_r)
      );
 
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   v_o_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.set_i(v_r)
-     ,.clear_i(yumi_i)
-     ,.data_o(v_o)
-     );
-
-  if (bypass_p)
+  if (bypass_p == 1)
     begin : bypass
       bsg_dff_en_bypass
        #(.width_p(width_p))

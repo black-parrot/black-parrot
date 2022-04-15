@@ -33,172 +33,343 @@ module bp_unicore
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
-  (input                                               clk_i
-   , input                                             reset_i
+  (input                                                 clk_i
+   , input                                               rt_clk_i
+   , input                                               reset_i
 
-   , input [io_noc_did_width_p-1:0]                    my_did_i
-   , input [io_noc_did_width_p-1:0]                    host_did_i
-   , input [coh_noc_cord_width_p-1:0]                  my_cord_i
+   , input [io_noc_did_width_p-1:0]                      my_did_i
+   , input [io_noc_did_width_p-1:0]                      host_did_i
+   , input [coh_noc_cord_width_p-1:0]                    my_cord_i
 
    // Outgoing I/O
-   , output logic [uce_mem_header_width_lp-1:0]        io_cmd_header_o
-   , output logic [uce_fill_width_p-1:0]               io_cmd_data_o
-   , output logic                                      io_cmd_v_o
-   , input                                             io_cmd_ready_and_i
-   , output logic                                      io_cmd_last_o
+   , output logic [mem_header_width_lp-1:0]              io_cmd_header_o
+   , output logic [uce_fill_width_p-1:0]                 io_cmd_data_o
+   , output logic                                        io_cmd_v_o
+   , input                                               io_cmd_ready_and_i
+   , output logic                                        io_cmd_last_o
 
-   , input [uce_mem_header_width_lp-1:0]               io_resp_header_i
-   , input [uce_fill_width_p-1:0]                      io_resp_data_i
-   , input                                             io_resp_v_i
-   , output logic                                      io_resp_ready_and_o
-   , input                                             io_resp_last_i
+   , input [mem_header_width_lp-1:0]                     io_resp_header_i
+   , input [uce_fill_width_p-1:0]                        io_resp_data_i
+   , input                                               io_resp_v_i
+   , output logic                                        io_resp_ready_and_o
+   , input                                               io_resp_last_i
 
    // Incoming I/O
-   , input [uce_mem_header_width_lp-1:0]               io_cmd_header_i
-   , input [uce_fill_width_p-1:0]                      io_cmd_data_i
-   , input                                             io_cmd_v_i
-   , output logic                                      io_cmd_ready_and_o
-   , input                                             io_cmd_last_i
+   , input [mem_header_width_lp-1:0]                     io_cmd_header_i
+   , input [uce_fill_width_p-1:0]                        io_cmd_data_i
+   , input                                               io_cmd_v_i
+   , output logic                                        io_cmd_ready_and_o
+   , input                                               io_cmd_last_i
 
-   , output logic [uce_mem_header_width_lp-1:0]        io_resp_header_o
-   , output logic [uce_fill_width_p-1:0]               io_resp_data_o
-   , output logic                                      io_resp_v_o
-   , input                                             io_resp_ready_and_i
-   , output logic                                      io_resp_last_o
+   , output logic [mem_header_width_lp-1:0]              io_resp_header_o
+   , output logic [uce_fill_width_p-1:0]                 io_resp_data_o
+   , output logic                                        io_resp_v_o
+   , input                                               io_resp_ready_and_i
+   , output logic                                        io_resp_last_o
 
    // DRAM interface
-   , output logic [dma_pkt_width_lp-1:0]               dma_pkt_o
-   , output logic                                      dma_pkt_v_o
-   , input                                             dma_pkt_yumi_i
+   , output logic [l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [l2_banks_p-1:0]                       dma_pkt_v_o
+   , input [l2_banks_p-1:0]                              dma_pkt_ready_and_i
 
-   , input [l2_fill_width_p-1:0]                       dma_data_i
-   , input                                             dma_data_v_i
-   , output logic                                      dma_data_ready_and_o
+   , input [l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [l2_banks_p-1:0]                              dma_data_v_i
+   , output logic [l2_banks_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [l2_fill_width_p-1:0]                dma_data_o
-   , output logic                                      dma_data_v_o
-   , input                                             dma_data_yumi_i
+   , output logic [l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [l2_banks_p-1:0]                       dma_data_v_o
+   , input [l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, uce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
+  `bp_cast_o(bp_bedrock_mem_header_s, io_cmd_header);
+  `bp_cast_i(bp_bedrock_mem_header_s, io_resp_header);
+  `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
+  `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
+  bp_cfg_bus_s cfg_bus_lo;
 
-  bp_bedrock_uce_mem_header_s mem_cmd_header_lo;
-  logic [l2_data_width_p-1:0] mem_cmd_data_lo;
-  logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
-  bp_bedrock_uce_mem_header_s mem_resp_header_li;
-  logic [l2_data_width_p-1:0] mem_resp_data_li;
-  logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
+  localparam num_proc_lp = 3;
+  localparam num_dev_lp  = 5;
+  localparam lg_num_proc_lp = `BSG_SAFE_CLOG2(num_proc_lp);
+  localparam lg_num_dev_lp = `BSG_SAFE_CLOG2(num_dev_lp);
 
+  // {IO CMD, BE UCE, FE UCE}
+  bp_bedrock_mem_header_s [num_proc_lp-1:0] proc_cmd_header_lo;
+  logic [num_proc_lp-1:0][uce_fill_width_p-1:0] proc_cmd_data_lo;
+  logic [num_proc_lp-1:0] proc_cmd_v_lo, proc_cmd_ready_and_li, proc_cmd_last_lo;
+  bp_bedrock_mem_header_s [num_proc_lp-1:0] proc_resp_header_li;
+  logic [num_proc_lp-1:0][uce_fill_width_p-1:0] proc_resp_data_li;
+  logic [num_proc_lp-1:0] proc_resp_v_li, proc_resp_ready_and_lo, proc_resp_last_li;
+
+  // {CCE loopback, IO CMD, L2 CMD, CLINT, CFG}
+  bp_bedrock_mem_header_s [num_dev_lp-1:0] dev_cmd_header_li;
+  logic [num_dev_lp-1:0][uce_fill_width_p-1:0] dev_cmd_data_li;
+  logic [num_dev_lp-1:0] dev_cmd_v_li, dev_cmd_ready_and_lo, dev_cmd_last_li;
+  bp_bedrock_mem_header_s [num_dev_lp-1:0] dev_resp_header_lo;
+  logic [num_dev_lp-1:0][uce_fill_width_p-1:0] dev_resp_data_lo;
+  logic [num_dev_lp-1:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
+
+  logic debug_irq_li, timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
   bp_unicore_lite
    #(.bp_params_p(bp_params_p))
    unicore_lite
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_lo)
 
-     ,.my_did_i(my_did_i)
-     ,.host_did_i(host_did_i)
-     ,.my_cord_i(my_cord_i)
+     ,.mem_cmd_header_o(proc_cmd_header_lo[0+:2])
+     ,.mem_cmd_data_o(proc_cmd_data_lo[0+:2])
+     ,.mem_cmd_v_o(proc_cmd_v_lo[0+:2])
+     ,.mem_cmd_ready_and_i(proc_cmd_ready_and_li[0+:2])
+     ,.mem_cmd_last_o(proc_cmd_last_lo[0+:2])
 
-     ,.mem_cmd_header_o(mem_cmd_header_lo)
-     ,.mem_cmd_data_o(mem_cmd_data_lo)
-     ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_o(mem_cmd_last_lo)
+     ,.mem_resp_header_i(proc_resp_header_li[0+:2])
+     ,.mem_resp_data_i(proc_resp_data_li[0+:2])
+     ,.mem_resp_v_i(proc_resp_v_li[0+:2])
+     ,.mem_resp_ready_and_o(proc_resp_ready_and_lo[0+:2])
+     ,.mem_resp_last_i(proc_resp_last_li[0+:2])
 
-     ,.mem_resp_header_i(mem_resp_header_li)
-     ,.mem_resp_data_i(mem_resp_data_li)
-     ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
-     ,.mem_resp_last_i(mem_resp_last_li)
-
-     // I/O
-     ,.*
+     ,.debug_irq_i(debug_irq_li)
+     ,.timer_irq_i(timer_irq_li)
+     ,.software_irq_i(software_irq_li)
+     ,.m_external_irq_i(m_external_irq_li)
+     ,.s_external_irq_i(s_external_irq_li)
      );
 
-  `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
-  bsg_cache_pkt_s cache_pkt_li;
-  logic cache_pkt_v_li, cache_pkt_ready_lo;
-  logic [l2_data_width_p-1:0] cache_data_lo;
-  logic cache_data_v_lo, cache_data_yumi_li;
+  // Assign incoming I/O as basically another UCE interface
+  assign proc_cmd_header_lo[2] = io_cmd_header_cast_i;
+  assign proc_cmd_data_lo[2] = io_cmd_data_i;
+  assign proc_cmd_v_lo[2] = io_cmd_v_i;
+  assign io_cmd_ready_and_o = proc_cmd_ready_and_li[2];
+  assign proc_cmd_last_lo[2] = io_cmd_last_i;
 
-  bp_me_cce_to_cache
+  assign io_resp_header_cast_o = proc_resp_header_li[2];
+  assign io_resp_data_o = proc_resp_data_li[2];
+  assign io_resp_v_o = proc_resp_v_li[2];
+  assign proc_resp_ready_and_lo[2] = io_resp_ready_and_i;
+  assign io_resp_last_o = proc_resp_last_li[2];
+
+  // Select destination of commands
+  logic [num_proc_lp-1:0][lg_num_dev_lp-1:0] proc_cmd_dst_lo;
+  for (genvar i = 0; i < num_proc_lp; i++)
+    begin : cmd_dest
+      bp_local_addr_s local_addr;
+      assign local_addr = proc_cmd_header_lo[i].addr;
+      wire [dev_id_width_gp-1:0] device_cmd_li = local_addr.dev;
+      wire is_local        = (proc_cmd_header_lo[i].addr < dram_base_addr_gp);
+      wire is_my_core      = is_local & (local_addr.tile == cfg_bus_lo.core_id);
+      wire is_other_core   = is_local & (local_addr.tile != cfg_bus_lo.core_id);
+      wire is_other_hio    = (proc_cmd_header_lo[i].addr[paddr_width_p-1-:hio_width_p] != 0);
+
+      wire is_cfg_cmd      = is_my_core & is_local & (device_cmd_li == cfg_dev_gp);
+      wire is_clint_cmd    = is_my_core & is_local & (device_cmd_li == clint_dev_gp);
+      wire is_cache_cmd    = is_my_core & is_local & (device_cmd_li == cache_dev_gp);
+      wire is_host_cmd     = is_my_core & is_local & (device_cmd_li == host_dev_gp);
+
+      wire is_io_cmd       = is_host_cmd | is_other_hio | is_other_core;
+      wire is_mem_cmd      = is_cache_cmd | (~is_local & ~is_io_cmd);
+      wire is_loopback_cmd = ~is_cfg_cmd & ~is_clint_cmd & ~is_mem_cmd & ~is_io_cmd;
+
+      bsg_encode_one_hot
+       #(.width_p(num_dev_lp), .lo_to_hi_p(1))
+       cmd_pe
+        (.i({is_loopback_cmd, is_io_cmd, is_mem_cmd, is_clint_cmd, is_cfg_cmd})
+         ,.addr_o(proc_cmd_dst_lo[i])
+         ,.v_o()
+         );
+    end
+
+  // Select destination of responses. Were there a way to transpose structs...
+  logic [num_dev_lp-1:0][lg_num_proc_lp-1:0] dev_resp_dst_lo;
+  assign dev_resp_dst_lo[4] = dev_resp_header_lo[4].payload.lce_id[0+:lg_num_proc_lp];
+  assign dev_resp_dst_lo[3] = dev_resp_header_lo[3].payload.lce_id[0+:lg_num_proc_lp];
+  assign dev_resp_dst_lo[2] = dev_resp_header_lo[2].payload.lce_id[0+:lg_num_proc_lp];
+  assign dev_resp_dst_lo[1] = dev_resp_header_lo[1].payload.lce_id[0+:lg_num_proc_lp];
+  assign dev_resp_dst_lo[0] = dev_resp_header_lo[0].payload.lce_id[0+:lg_num_proc_lp];
+
+  bp_me_xbar_stream
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(uce_fill_width_p)
+     ,.payload_width_p(mem_payload_width_lp)
+     ,.num_source_p(num_proc_lp)
+     ,.num_sink_p(num_dev_lp)
+     )
+   cmd_xbar
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.msg_header_i(proc_cmd_header_lo)
+     ,.msg_data_i(proc_cmd_data_lo)
+     ,.msg_v_i(proc_cmd_v_lo)
+     ,.msg_ready_and_o(proc_cmd_ready_and_li)
+     ,.msg_last_i(proc_cmd_last_lo)
+     ,.msg_dst_i(proc_cmd_dst_lo)
+
+     ,.msg_header_o(dev_cmd_header_li)
+     ,.msg_data_o(dev_cmd_data_li)
+     ,.msg_v_o(dev_cmd_v_li)
+     ,.msg_ready_and_i(dev_cmd_ready_and_lo)
+     ,.msg_last_o(dev_cmd_last_li)
+     );
+
+  bp_me_xbar_stream
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(uce_fill_width_p)
+     ,.payload_width_p(mem_payload_width_lp)
+     ,.num_source_p(num_dev_lp)
+     ,.num_sink_p(num_proc_lp)
+     )
+   resp_xbar
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.msg_header_i(dev_resp_header_lo)
+     ,.msg_data_i(dev_resp_data_lo)
+     ,.msg_v_i(dev_resp_v_lo)
+     ,.msg_ready_and_o(dev_resp_ready_and_li)
+     ,.msg_last_i(dev_resp_last_lo)
+     ,.msg_dst_i(dev_resp_dst_lo)
+
+     ,.msg_header_o(proc_resp_header_li)
+     ,.msg_data_o(proc_resp_data_li)
+     ,.msg_v_o(proc_resp_v_li)
+     ,.msg_ready_and_i(proc_resp_ready_and_lo)
+     ,.msg_last_o(proc_resp_last_li)
+     );
+
+  logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
+  bp_me_cfg_slice
    #(.bp_params_p(bp_params_p))
-   cce_to_cache
+   cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_header_i(mem_cmd_header_lo)
-     ,.mem_cmd_data_i(mem_cmd_data_lo)
-     ,.mem_cmd_last_i(mem_cmd_last_lo)
-     ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
+     ,.mem_cmd_header_i(dev_cmd_header_li[0])
+     ,.mem_cmd_data_i(cfg_data_li)
+     ,.mem_cmd_v_i(dev_cmd_v_li[0])
+     ,.mem_cmd_ready_and_o(dev_cmd_ready_and_lo[0])
+     ,.mem_cmd_last_i(dev_cmd_last_li[0])
 
-     ,.mem_resp_header_o(mem_resp_header_li)
-     ,.mem_resp_data_o(mem_resp_data_li)
-     ,.mem_resp_last_o(mem_resp_last_li)
-     ,.mem_resp_v_o(mem_resp_v_li)
-     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
+     ,.mem_resp_header_o(dev_resp_header_lo[0])
+     ,.mem_resp_data_o(cfg_data_lo)
+     ,.mem_resp_v_o(dev_resp_v_lo[0])
+     ,.mem_resp_ready_and_i(dev_resp_ready_and_li[0])
+     ,.mem_resp_last_o(dev_resp_last_lo[0])
 
-     ,.cache_pkt_o(cache_pkt_li)
-     ,.cache_pkt_v_o(cache_pkt_v_li)
-     ,.cache_pkt_ready_i(cache_pkt_ready_lo)
+     ,.cfg_bus_o(cfg_bus_lo)
+     ,.did_i(my_did_i)
+     ,.host_did_i(host_did_i)
+     ,.cord_i(my_cord_i)
 
-     ,.cache_data_i(cache_data_lo)
-     ,.cache_v_i(cache_data_v_lo)
-     ,.cache_yumi_o(cache_data_yumi_li)
+     ,.cce_ucode_v_o()
+     ,.cce_ucode_w_o()
+     ,.cce_ucode_addr_o()
+     ,.cce_ucode_data_o()
+     ,.cce_ucode_data_i('0)
      );
+  assign cfg_data_li = dev_cmd_data_li[0];
+  assign dev_resp_data_lo[0] = cfg_data_lo;
 
+  logic [dword_width_gp-1:0] clint_data_lo, clint_data_li;
+  bp_me_clint_slice
+   #(.bp_params_p(bp_params_p))
+   clint
+    (.clk_i(clk_i)
+     ,.rt_clk_i(rt_clk_i)
+     ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_lo)
 
-  bsg_cache
-   #(.addr_width_p(daddr_width_p)
-     ,.data_width_p(l2_data_width_p)
-     ,.dma_data_width_p(l2_fill_width_p)
-     ,.block_size_in_words_p(l2_block_size_in_words_p)
-     ,.sets_p(l2_en_p ? l2_sets_p : 2)
-     ,.ways_p(l2_en_p ? l2_assoc_p : 2)
-     ,.amo_support_p(((amo_swap_p == e_l2) << e_cache_amo_swap)
-                     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_xor)
-                     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_and)
-                     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_or)
-                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_add)
-                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_min)
-                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_max)
-                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_minu)
-                     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_maxu)
-                     )
-    )
-   cache
+     ,.mem_cmd_header_i(dev_cmd_header_li[1])
+     ,.mem_cmd_data_i(clint_data_li)
+     ,.mem_cmd_v_i(dev_cmd_v_li[1])
+     ,.mem_cmd_ready_and_o(dev_cmd_ready_and_lo[1])
+     ,.mem_cmd_last_i(dev_cmd_last_li[1])
+
+     ,.mem_resp_header_o(dev_resp_header_lo[1])
+     ,.mem_resp_data_o(clint_data_lo)
+     ,.mem_resp_v_o(dev_resp_v_lo[1])
+     ,.mem_resp_ready_and_i(dev_resp_ready_and_li[1])
+     ,.mem_resp_last_o(dev_resp_last_lo[1])
+
+     ,.debug_irq_o(debug_irq_li)
+     ,.timer_irq_o(timer_irq_li)
+     ,.software_irq_o(software_irq_li)
+     ,.m_external_irq_o(m_external_irq_li)
+     ,.s_external_irq_o(s_external_irq_li)
+     );
+  assign clint_data_li = dev_cmd_data_li[1];
+  assign dev_resp_data_lo[1] = clint_data_lo;
+
+  bp_me_cache_slice
+   #(.bp_params_p(bp_params_p))
+   l2s
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.cache_pkt_i(cache_pkt_li)
-     ,.v_i(cache_pkt_v_li)
-     ,.ready_o(cache_pkt_ready_lo)
+     ,.mem_cmd_header_i(dev_cmd_header_li[2])
+     ,.mem_cmd_data_i(dev_cmd_data_li[2])
+     ,.mem_cmd_last_i(dev_cmd_last_li[2])
+     ,.mem_cmd_v_i(dev_cmd_v_li[2])
+     ,.mem_cmd_ready_and_o(dev_cmd_ready_and_lo[2])
 
-     ,.data_o(cache_data_lo)
-     ,.v_o(cache_data_v_lo)
-     ,.yumi_i(cache_data_yumi_li)
+     ,.mem_resp_header_o(dev_resp_header_lo[2])
+     ,.mem_resp_data_o(dev_resp_data_lo[2])
+     ,.mem_resp_last_o(dev_resp_last_lo[2])
+     ,.mem_resp_v_o(dev_resp_v_lo[2])
+     ,.mem_resp_ready_and_i(dev_resp_ready_and_li[2])
 
      ,.dma_pkt_o(dma_pkt_o)
      ,.dma_pkt_v_o(dma_pkt_v_o)
-     ,.dma_pkt_yumi_i(dma_pkt_yumi_i)
+     ,.dma_pkt_ready_and_i(dma_pkt_ready_and_i)
 
      ,.dma_data_i(dma_data_i)
      ,.dma_data_v_i(dma_data_v_i)
-     ,.dma_data_ready_o(dma_data_ready_and_o)
+     ,.dma_data_ready_and_o(dma_data_ready_and_o)
 
      ,.dma_data_o(dma_data_o)
      ,.dma_data_v_o(dma_data_v_o)
-     ,.dma_data_yumi_i(dma_data_yumi_i)
-
-     ,.v_we_o()
+     ,.dma_data_ready_and_i(dma_data_ready_and_i)
      );
+
+  // Assign I/O as another device
+  assign io_cmd_header_cast_o = dev_cmd_header_li[3];
+  assign io_cmd_data_o = dev_cmd_data_li[3];
+  assign io_cmd_v_o = dev_cmd_v_li[3];
+  assign dev_cmd_ready_and_lo[3] = io_cmd_ready_and_i;
+  assign io_cmd_last_o = dev_cmd_last_li[3];
+
+  assign dev_resp_header_lo[3] = io_resp_header_cast_i;
+  assign dev_resp_data_lo[3] = io_resp_data_i;
+  assign dev_resp_v_lo[3] = io_resp_v_i;
+  assign io_resp_ready_and_o = dev_resp_ready_and_li[3];
+  assign dev_resp_last_lo[3] = io_resp_last_i;
+
+  logic [dword_width_gp-1:0] loopback_data_lo, loopback_data_li;
+  bp_me_loopback
+   #(.bp_params_p(bp_params_p))
+   loopback
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_header_i(dev_cmd_header_li[4])
+     ,.mem_cmd_data_i(loopback_data_li)
+     ,.mem_cmd_v_i(dev_cmd_v_li[4])
+     ,.mem_cmd_ready_and_o(dev_cmd_ready_and_lo[4])
+     ,.mem_cmd_last_i(dev_cmd_last_li[4])
+     ,.mem_resp_header_o(dev_resp_header_lo[4])
+     ,.mem_resp_data_o(loopback_data_lo)
+     ,.mem_resp_v_o(dev_resp_v_lo[4])
+     ,.mem_resp_ready_and_i(dev_resp_ready_and_li[4])
+     ,.mem_resp_last_o(dev_resp_last_lo[4])
+     );
+  assign loopback_data_li = dev_cmd_data_li[4];
+  assign dev_resp_data_lo[4] = loopback_data_lo;
 
 endmodule
 

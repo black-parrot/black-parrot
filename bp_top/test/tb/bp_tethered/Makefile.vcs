@@ -61,28 +61,28 @@ $(SIM_DIR)/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
 $(SIM_DIR)/prog.elf: $(SIM_DIR)/prog.riscv
 	cp $^ $@
 
-ifeq ($(UCODE_CFG), 1)
+ifeq ($(UCODE), 1)
 CCE_UCODE_FILE ?= $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
 else
 CCE_UCODE_FILE ?=
 endif
 
 $(SIM_DIR)/cce_ucode.mem: $(CCE_UCODE_FILE)
-ifeq ($(UCODE_CFG), 1)
+ifeq ($(UCODE), 1)
 	cp $< $@
 endif
 
 NBF_INPUTS ?= --ncpus=$(NCPUS)
-ifeq ($(UCODE_CFG), 1)
-NBF_INPUTS += --ucode=cce_ucode.mem
+ifeq ($(UCODE), 1)
+NBF_INPUTS += --config --ucode=cce_ucode.mem
+else ifeq ($(NBF_CONFIG_P), 1)
+NBF_INPUTS += --config
 endif
 ifeq ($(PRELOAD_MEM_P), 0)
 NBF_INPUTS += --mem=prog.mem --skip_zeros
 endif
-ifeq ($(NBF_CONFIG_P), 1)
-NBF_INPUTS += --config
-endif
 NBF_INPUTS += --addr_width=$(PADDR_WIDTH)
+NBF_INPUTS += --debug
 
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
@@ -92,14 +92,13 @@ $(SIM_DIR)/bootrom.riscv: $(BP_SDK_PROG_DIR)/bootrom/bootrom.riscv
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
 	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 $< $@
+	$(SED) -i "s/@0011/@0000/g" $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.mem bootrom.dump)
 
 SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
-SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 
 sim_sample.v: build.v
 sim_sample.v: $(SIM_DIR)/run_samplev

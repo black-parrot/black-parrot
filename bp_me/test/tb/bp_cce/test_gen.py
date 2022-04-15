@@ -7,186 +7,112 @@ from trace_gen import TraceGen
 from test_memory import TestMemory
 
 # Test Generator class
-# a test is defined as a sequence of load and store operation tuples
-# Each operation tuple is: (store, address, size in bytes, uncached, value)
-# If store=True, op is a store, else op is a load
-# size is in bytes, and must be 1, 2, 4, or 8
-# If uncached=1, op is an uncached access, else it is a cached access
-# value is the store value or expected load value
+# a test is defined as a sequence of command operation tuples
+# Each operation tuple is: (command, address/cycles, size in bytes, uncached, value)
+# Command is one of 'store', 'load', 'wait'
+# address/cycles is either the address for the load/store or the number of cycles for wait
+# size is in bytes, and must be 1, 2, 4, or 8 (ignored for wait)
+# If uncached=1, op is an uncached access, else it is a cached access (ignored for wait)
+# value is the store value or expected load value (ignored for wait)
+
 class TestGenerator(object):
-  def __init__(self, paddr_width=40, data_width=64, num_lce=1, out_dir='.', trace_file='test', debug=False):
+  def __init__(self, paddr_width=40, data_width=64, debug=False):
     self.paddr_width = paddr_width
     self.data_width = data_width
     self.tg = TraceGen(addr_width_p=self.paddr_width, data_width_p=self.data_width)
-    self.num_lce = num_lce
-    self.out_dir = out_dir
-    self.trace_file = trace_file
     self.debug = debug
 
   def eprint(self, *args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-  def generateTrace(self, ops):
+  # Write ops to file
+  # ops is a dictionary, indexed by thread ID (integer) as key
+  # the values are lists of command tuples
+  def generateTrace(self, ops, out_dir, out_file_base):
     for lce in ops:
-      file_name = '{0}_{1}.tr'.format(self.trace_file, lce)
-      with open(os.path.join(self.out_dir, file_name), 'w') as lce_trace_file:
+      file_name = '{0}_{1}.tr'.format(out_file_base, lce)
+      with open(os.path.join(out_dir, file_name), 'w') as lce_trace_file:
         # preamble
         lce_trace_file.write(self.tg.print_header())
         lce_trace_file.write(self.tg.wait(100))
-        for (st,addr,size,uc,val) in ops[lce]:
-          if st:
+        # commands
+        for (cmd,addr,size,uc,val) in ops[lce]:
+          if cmd == 'store':
             lce_trace_file.write(self.tg.send_store(size=size, addr=addr, data=val, uc=uc))
             lce_trace_file.write(self.tg.recv_data(addr=addr, data=0, uc=uc))
-          else:
-            # TODO: signed operations
+          elif cmd == 'load':
             lce_trace_file.write(self.tg.send_load(signed=0, size=size, addr=addr, uc=uc))
             lce_trace_file.write(self.tg.recv_data(addr=addr, data=val, uc=uc))
+          elif cmd == 'wait':
+            # addr is used as number of cycles
+            lce_trace_file.write(self.tg.wait(addr))
         # test end
         lce_trace_file.write(self.tg.test_done())
 
-  # single cached store
-  def storeTest(self, mem_base=0):
-    addr = mem_base
-    return [(True, addr, 8, 0, 1)]
+  # read trace from file
+  def readTrace(self, infile):
+    ops = {}
+    with open(infile, 'r') as trace_file:
+      for raw_line in trace_file:
+        trim_line = raw_line.strip()
+        if not trim_line.startswith('#') and trim_line:
+          # cmd = thread: load/store addr size uc value
+          # cmd = thread: wait cycles
+          line = [x.strip() for x in trim_line.split(':')]
+          thread = int(line[0])
+          cmd = [x.strip() for x in line[1].split(' ')]
+          if not thread in ops:
+            ops[thread] = []
 
-  # cached store/load pair
-  def loadTest(self, mem_base=0):
-    addr = mem_base
-    return [(True, addr, 8, 0, 1), (False, addr, 8, 0, 1)]
-
-  # fill a cache set with stores
-  # evict an entry
-  # load back the entry
-  def setTest(self, mem_base=0, assoc=8, sets=64, block_size=64):
-    ops = []
-    addr = mem_base
-    # blocks in same set are separated by (sets*block_size) in byte-addressable memory
-    stride = sets*block_size
-    store_val = 1
-    for i in range(assoc+1):
-      ops.append((True, addr, 8, 0, store_val))
-      addr += stride
-      store_val += 1
-    ops.append((False, mem_base, 8, 0, 1))
+          if cmd[0] == 'wait':
+            cycles = int(cmd[1])
+            ops[thread].append(('wait', cycles, 0, 0, 0))
+          else:
+            op = cmd[0]
+            if not (op == 'store' or op == 'load'):
+              self.eprint('[ME TraceGen]: unrecognized op in trace file: {0}'.format(op))
+              return {}
+            addr = int(cmd[1], 16)
+            size = int(cmd[2])
+            uc = int(cmd[3])
+            if (cmd[4].startswith('0x')):
+              value = int(cmd[4], 16)
+            else:
+              value = int(cmd[4])
+            ops[thread].append((op, addr, size, uc, value))
     return ops
-
-  # Random loads and stores to a single set (set 0)
-  def setHammerTest(self, N=16, mem_base=0, mem_bytes=1024, mem_block_size=64, mem_size=2, assoc=8, sets=64, seed=0, lce_mode=0):
-    # test begin
-    random.seed(seed)
-    ops = []
-    mem = TestMemory(mem_base, mem_bytes, mem_block_size, self.debug)
-    # compute block addresses for all blocks mapping to set 0
-    blocks = [i*sets*mem_block_size for i in range(assoc*mem_size)]
-
-    store_val = 1
-    for i in range(N):
-      # pick access parameters
-      store = random.choice([True, False])
-      size = random.choice([1, 2, 4, 8])
-      size_shift = int(math.log(size, 2))
-      # determine type of request (cached or uncached)
-      uncached_req = 0
-      if lce_mode == 2:
-        uncached_req = random.choice([0,1])
-      elif lce_mode == 1:
-        uncached_req = 1
-
-      # choose which cache block in memory to target
-      block = random.choice(blocks)
-      # choose offset in cache block based on size of access ("word" size for this access)
-      words = mem_block_size / size
-      word = random.randint(0, words-1)
-      # build the address
-      addr = block + (word << size_shift) + mem_base
-      mem.check_valid_addr(addr)
-
-      val = 0
-      if store:
-        # NOTE: the value being stored will be truncated to size number of bytes
-        store_val_trunc = store_val
-        if (size < 8):
-          store_val_trunc = store_val_trunc & ~(~0 << (size*8))
-        mem.write_memory(addr, store_val_trunc, size)
-        val = store_val_trunc
-        store_val += 1
-      else:
-        val = mem.read_memory(addr, size)
-
-      ops.append((store, addr, size, uncached_req, val))
-
-    return ops
-
-  # Random loads and stores to a single cache block
-  def blockTest(self, N=16, mem_base=0, block_size=64, seed=0):
-    return self.randomTest(N, mem_base, block_size, block_size, seed, 0)
 
   # Random Test generator
   # N is number of operations
   # lce_mode = 0, 1, or 2 -> 0 = cached only, 1 = uncached only, 2 = mixed
-  def randomTest(self, N=16, mem_base=0, mem_bytes=1024, mem_block_size=64, seed=0, lce_mode=0):
-    # test begin
-    random.seed(seed)
-    ops = []
-    mem = TestMemory(mem_base, mem_bytes, mem_block_size, self.debug)
-    mem_blocks = mem_bytes / mem_block_size
-    b = int(math.log(mem_block_size, 2))
-    store_val = 1
-    for i in range(N):
-      # pick access parameters
-      store = random.choice([True, False])
-      size = random.choice([1, 2, 4, 8])
-      size_shift = int(math.log(size, 2))
-      # determine type of request (cached or uncached)
-      uncached_req = 0
-      if lce_mode == 2:
-        uncached_req = random.choice([0,1])
-      elif lce_mode == 1:
-        uncached_req = 1
+  # cache_sets is number of sets in the cache
+  # lce is number of LCEs to use (multi-LCE requires axe=True)
+  # test_sets is number of cache sets to use in test
+  # test_ways is number of cache ways per set to use in test
+  def randomTest(self, N=16, mem_base=0, cache_sets=64, block_size=64, seed=0, lce_mode=0, lce=1
+                 ,test_sets=64, test_ways=2, axe=False):
 
-      # choose which cache block in memory to target
-      block = random.randint(0, mem_blocks-1)
-      # choose offset in cache block based on size of access ("word" size for this access)
-      words = mem_block_size / size
-      word = random.randint(0, words-1)
-      # build the address
-      addr = (block << b) + (word << size_shift) + mem_base
-      mem.check_valid_addr(addr)
-
-      val = 0
-      if store:
-        # NOTE: the value being stored will be truncated to size number of bytes
-        store_val_trunc = store_val
-        if (size < 8):
-          store_val_trunc = store_val_trunc & ~(~0 << (size*8))
-        mem.write_memory(addr, store_val_trunc, size)
-        val = store_val_trunc
-        store_val += 1
-      else:
-        val = mem.read_memory(addr, size)
-
-      ops.append((store, addr, size, uncached_req, val))
-
-    # return the test operations
-    return ops
-
-  # AXE Test generator
-  # N is number of operations per LCE
-  # lce_mode = 0, 1, or 2 -> 0 = cached only, 1 = uncached only, 2 = mixed
-  def axeTest(self, lce=1, N=16, mem_base=0, mem_bytes=1024, mem_block_size=64, seed=0, lce_mode=0):
-    # test begin
     random.seed(seed)
     ops = {i:[] for i in range(lce)}
-    mem = TestMemory(mem_base, mem_bytes, mem_block_size, self.debug)
-    mem_blocks = mem_bytes / mem_block_size
-    b = int(math.log(mem_block_size, 2))
+
+    # test memory - large enough for full number of cache sets across test_ways number of ways
+    mem_blocks = (cache_sets * test_ways)
+    mem_bytes = (mem_blocks * block_size)
+    mem = TestMemory(mem_base, mem_bytes, block_size, self.debug)
+
+    # generate collection of block IDs that are used for testing
+    # start with set 0 and use test_sets number of sets across test_ways number of ways
+    test_blocks = [s + w*cache_sets for s in range(test_sets) for w in range(test_ways)]
+
+    b = int(math.log(block_size, 2))
     store_val = 1
+
     for i in range(N):
       for l in range(lce):
         # pick access parameters
         store = random.choice([True, False])
         # all accesses are size 8B for AXE tracing
-        size = 8
+        size = 8 if axe else random.choice([1, 2, 4, 8])
         size_shift = int(math.log(size, 2))
         # determine type of request (cached or uncached)
         uncached_req = 0
@@ -195,10 +121,10 @@ class TestGenerator(object):
         elif lce_mode == 1:
           uncached_req = 1
 
-        # choose which cache block in memory to target
-        block = random.randint(0, mem_blocks-1)
+        # choose which cache block to access
+        block = random.choice(test_blocks)
         # choose offset in cache block based on size of access ("word" size for this access)
-        words = mem_block_size / size
+        words = block_size / size
         word = random.randint(0, words-1)
         # build the address
         addr = (block << b) + (word << size_shift) + mem_base
@@ -206,17 +132,18 @@ class TestGenerator(object):
 
         val = 0
         if store:
-          # NOTE: the value being stored will be truncated to size number of bytes
+          # note: the value being stored will be truncated to size number of bytes
           store_val_trunc = store_val
           if (size < 8):
             store_val_trunc = store_val_trunc & ~(~0 << (size*8))
+          if not axe:
+            mem.write_memory(addr, store_val_trunc, size)
           val = store_val_trunc
           store_val += 1
-        else:
-          # loads return 0 for AXE tracing
-          val = 0
+        elif not axe:
+          val = mem.read_memory(addr, size)
 
-        ops[l].append((store, addr, size, uncached_req, val))
+        ops[l].append(('store' if store else 'load', addr, size, uncached_req, val))
 
     # return the test operations
     return ops

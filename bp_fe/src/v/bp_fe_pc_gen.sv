@@ -113,7 +113,7 @@ module bp_fe_pc_gen
   wire is_ret  = fetch_instr_v_i & scan_instr.ret;
 
   // BTB
-  wire btb_r_v_li = next_pc_yumi_i & ~ovr_taken & ~ovr_ret;
+  wire btb_r_v_li = next_pc_yumi_i;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb)
     | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
@@ -151,7 +151,7 @@ module bp_fe_pc_gen
      );
 
   // BHT
-  wire bht_r_v_li = next_pc_yumi_i & ~ovr_taken & ~ovr_ret;
+  wire bht_r_v_li = next_pc_yumi_i;
   wire [vaddr_width_p-1:0] bht_r_addr_li = next_pc_o;
   wire [ghist_width_p-1:0] bht_r_ghist_li = pred_if1_n.ghist;
   wire bht_w_v_li =

@@ -21,7 +21,7 @@ N=${2:-1}
 
 cfgs=(\
     "e_bp_multicore_1_acc_loopback_cfg"
-    "e_bp_multicore_1_acc_vdp_cfg" 
+    "e_bp_multicore_1_acc_vdp_cfg"
     "e_bp_multicore_1_acc_vdp_cfg"
     "e_bp_multicore_4_acc_loopback_cfg"
     "e_bp_multicore_4_acc_vdp_cfg"
@@ -31,12 +31,20 @@ progs=(
     "streaming_accelerator_loopback"
     "streaming_accelerator_vdp"
     "coherent_accelerator_vdp"
-    "accelerator_loopback_multicore_4"
-    "accelerator_vdp_multicore_4"
     )
+# TODO:
+# This script does not currently run simulation with the quad-core accelerator configs.
+# The accelerator test programs need to be rewritten/revised to match the new configs, which
+# disallow mixing of loopback and vdp accelerators. The loopback configs now only instantiate
+# the streaming accelerator complex, while the vdp configs instantiate both coherent and
+# streaming accelerators. Once fixed, the appropriate test programs can be added to the end of
+# the progs list and run on the quad-core accelerator configs.
+
+#"streaming_accelerator_loopback"
+#"coherent_accelerator_vdp"
 
 # The base command to append the configuration to
-build_base="make -C bp_top/syn build_dump.v SUITE=bp-tests"
+build_base="make -C bp_top/syn build.v NBF_CONFIG_P=1"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
@@ -44,9 +52,9 @@ make -C bp_top/syn clean
 
 # run simulations
 sims=()
-for i in "${!cfgs[@]}"
+for i in "${!progs[@]}"
 do
-    sims+=("make -C bp_top/syn sim_dump.v CFG=${cfgs[$i]} SUITE=bp-tests PROG=${progs[$i]}")
+    sims+=("make -C bp_top/syn sim.v NBF_CONFIG_P=1 CFG=${cfgs[$i]} SUITE=bp-tests PROG=${progs[$i]}")
 done
 
 # build required configs

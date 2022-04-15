@@ -39,21 +39,19 @@ module bp_me_addr_to_cce_id
   wire external_io_v_li = (global_addr_li.hio > 2'd1);
   wire local_addr_v_li = (paddr_i < dram_base_addr_gp);
   wire dram_addr_v_li = (paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp);
-  wire core_local_addr_v_li = local_addr_v_li && (local_addr_li.tile < num_core_p);
 
   localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
-  localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(lce_sets_p);
   localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
 
   // convert miss address (excluding block offset bits) into CCE ID
   // For now, assume all CCE's have ID [0,num_core_p-1] and addresses are striped
   // at the cache block granularity
-  logic [lg_lce_sets_lp-1:0] hash_addr_li;
+  logic [lce_sets_width_p-1:0] hash_addr_li;
   logic [lg_num_cce_lp-1:0] cce_dst_id_lo;
-  assign hash_addr_li = {<< {paddr_i[block_offset_lp+:lg_lce_sets_lp]}};
+  assign hash_addr_li = {<< {paddr_i[block_offset_lp+:lce_sets_width_p]}};
   bsg_hash_bank
     #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
-      ,.width_p(lg_lce_sets_lp) // width of address input
+      ,.width_p(lce_sets_width_p) // width of address input
       )
     addr_to_cce_id
      (.i(hash_addr_li)
@@ -64,7 +62,7 @@ module bp_me_addr_to_cce_id
   always_comb
     begin
       cce_id_o = '0;
-      if (external_io_v_li || (core_local_addr_v_li && (local_addr_li.dev inside {boot_dev_gp, host_dev_gp})))
+      if (external_io_v_li || (local_addr_v_li && (local_addr_li.dev inside {host_dev_gp})))
         // Stripe by 4kiB page, start at io CCE id
         cce_id_o = (num_io_p > 1)
                    ? max_sac_cce_lp + paddr_i[page_offset_width_gp+:`BSG_SAFE_CLOG2(num_io_p)]

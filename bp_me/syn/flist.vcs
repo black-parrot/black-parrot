@@ -2,6 +2,7 @@
 # BASEJUMP_STL includes
 +incdir+$BASEJUMP_STL_DIR/bsg_cache
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
++incdir+$BASEJUMP_STL_DIR/bsg_dmc
 +incdir+$BASEJUMP_STL_DIR/bsg_mem
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
 +incdir+$BASEJUMP_STL_DIR/bsg_test
@@ -33,10 +34,8 @@ $BP_BE_DIR/src/include/bp_be_pkg.sv
 # ME packages
 $BP_ME_DIR/src/include/bp_me_pkg.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
 $BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic_last.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_last.v
 # TOP packages
 $BP_TOP_DIR/src/include/bp_top_pkg.sv
 ## BaseJump STL files
@@ -45,10 +44,12 @@ $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_ptr_gray.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma_to_wormhole.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_miss.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_decode.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf_queue.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_wormhole_to_cache_dma_fanout.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel_in.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel_out.v
@@ -77,8 +78,6 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_tag_array.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_one_hot.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync.v
-$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v
@@ -150,13 +149,16 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_in.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 ## ME files
+# LCE
+$BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
+$BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
+$BP_ME_DIR/src/v/lce/bp_lce_fill.sv
+$BP_ME_DIR/src/v/lce/bp_lce_req.sv
+$BP_ME_DIR/src/v/lce/bp_lce.sv
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce_alu.sv
 $BP_ME_DIR/src/v/cce/bp_cce_arbitrate.sv
@@ -179,22 +181,21 @@ $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
 $BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
-$BP_ME_DIR/src/v/cce/bp_io_cce.sv
 # CACHE
 $BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
-$BP_ME_DIR/src/v/dev/bp_me_cfg.sv
+$BP_ME_DIR/src/v/dev/bp_me_cache_slice.sv
+$BP_ME_DIR/src/v/dev/bp_me_cfg_slice.sv
 # NETWORK
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_to_lite.sv
-$BP_ME_DIR/src/v/network/bp_me_lite_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
-$BP_COMMON_DIR/src/v/bsg_cache_dma_to_wormhole.v
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
-$BP_COMMON_DIR/src/v/bsg_wormhole_to_cache_dma_fanout.v
+$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync.v
+$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_synth.v
+

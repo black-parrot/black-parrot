@@ -1,11 +1,11 @@
 
-.PHONY: verilator bsg_sv2v dromajo
+.PHONY: axe bsg_sv2v dromajo surelog verilator
 
-verilator_dir := $(BP_TOOLS_DIR)/verilator
-dromajo_dir   := $(BP_TOOLS_DIR)/dromajo
-bsg_sv2v_dir  := $(BP_TOOLS_DIR)/bsg_sv2v
-surelog_dir   := $(BP_TOOLS_DIR)/Surelog
 axe_dir       := $(BP_TOOLS_DIR)/axe
+bsg_sv2v_dir  := $(BP_TOOLS_DIR)/bsg_sv2v
+dromajo_dir   := $(BP_TOOLS_DIR)/dromajo
+surelog_dir   := $(BP_TOOLS_DIR)/Surelog
+verilator_dir := $(BP_TOOLS_DIR)/verilator
 
 define submodule_tool_template
 $(1)_tag ?= $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
@@ -19,12 +19,12 @@ $(1)_manual:
 	+$(MAKE) $(1)_build
 endef
 
-verilator_build:
-	cd $(verilator_dir); \
-		autoconf; \
-		./configure --prefix=$(BP_TOOLS_INSTALL_DIR)
-	$(MAKE) -C $(verilator_dir)
-	$(MAKE) -C $(verilator_dir) install
+axe_build:
+	cd $(axe_dir)/src; ./make.sh
+	cp $(axe_dir)/src/axe $(BP_TOOLS_BIN_DIR)
+
+bsg_sv2v_build:
+	$(MAKE) -j1 -C $(bsg_sv2v_dir) tools
 
 dromajo_build:
 	mkdir -p $(dromajo_dir)/build
@@ -34,20 +34,22 @@ dromajo_build:
 	cp $(dromajo_dir)/build/libdromajo_cosim.a $(BP_TOOLS_LIB_DIR)
 	cp $(dromajo_dir)/include/dromajo_cosim.h $(BP_TOOLS_INCLUDE_DIR)
 
-bsg_sv2v_build:
-	$(MAKE) -j1 -C $(bsg_sv2v_dir) tools
-
 surelog_build:
-	$(MAKE) -C $(surelog_dir)
-	$(MAKE) -C $(surelog_dir) PREFIX=$(BP_TOOLS_INSTALL_DIR) install
+	mkdir -p $(surelog_dir)/build
+	$(CMAKE) -S $(surelog_dir) -B $(surelog_dir)/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(BP_TOOLS_INSTALL_DIR)
+	$(MAKE) -C $(surelog_dir)/build
+	$(MAKE) -C $(surelog_dir)/build install
 
-axe_build:
-	cd $(axe_dir)/src; ./make.sh
-	cp $(axe_dir)/src/axe $(BP_TOOLS_BIN_DIR)
+verilator_build:
+	cd $(verilator_dir); \
+		autoconf; \
+		./configure --prefix=$(BP_TOOLS_INSTALL_DIR)
+	$(MAKE) -C $(verilator_dir)
+	$(MAKE) -C $(verilator_dir) install
 
-$(eval $(call submodule_tool_template,verilator,$(verilator_dir)))
+$(eval $(call submodule_tool_template,axe,$(axe_dir)))
 $(eval $(call submodule_tool_template,bsg_sv2v,$(bsg_sv2v_dir)))
 $(eval $(call submodule_tool_template,dromajo,$(dromajo_dir)))
 $(eval $(call submodule_tool_template,surelog,$(surelog_dir)))
-$(eval $(call submodule_tool_template,axe,$(axe_dir)))
+$(eval $(call submodule_tool_template,verilator,$(verilator_dir)))
 

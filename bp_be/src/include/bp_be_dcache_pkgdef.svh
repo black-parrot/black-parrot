@@ -29,7 +29,7 @@
     logic                         half_op;
     logic                         byte_op;
     logic                         fencei_op;
-    logic                         l2_op;
+    logic                         uncached_op;
     logic                         lr_op;
     logic                         sc_op;
     logic                         ptw_op;
@@ -37,14 +37,6 @@
     bp_be_amo_subop_e             amo_subop;
     logic [reg_addr_width_gp-1:0] rd_addr;
   }  bp_be_dcache_decode_s;
-
-  typedef struct packed
-  {
-    logic [reg_addr_width_gp-1:0]    rd_addr;
-    bp_be_dcache_fu_op_e             opcode;
-    logic [page_offset_width_gp-1:0] page_offset;
-    logic [dpath_width_gp-1:0]       data;
-  }  bp_be_dcache_pkt_s;
 
 `endif
 

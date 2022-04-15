@@ -27,14 +27,11 @@ else
 	export NCPUS ?= $(_NCPUS)
 endif
 
-e_bp_unicore_l2_atomic_cfg_amoen       := 1
-e_bp_unicore_l1_atomic_cfg_amoen       := 1
-
-e_bp_default_cfg_amoen                 := 0
+e_bp_unicore_tinyparrot_cfg_amoen := 0
 
 _AMOEN :=$($(CFG)_amoen)
 ifeq ($(_AMOEN),)
-	export AMOEN ?= 0
+	export AMOEN ?= 1
 else
 	export AMOEN ?= $(_AMOEN)
 endif
@@ -60,9 +57,10 @@ endif
 e_bp_custom_cfg_ucode := 1
 $(CFG)_ucode ?= $(findstring cce_ucode,$(CFG))
 
-_UCODE_CFG ?= $($(CFG)_ucode)
-ifeq ($(_UCODE_CFG),)
-	export UCODE_CFG ?= 0
+_UCODE ?= $($(CFG)_ucode)
+ifeq ($(_UCODE),)
+	export UCODE ?= 0
 else
-	export UCODE_CFG ?= 1
+	export UCODE ?= 1
 endif
+

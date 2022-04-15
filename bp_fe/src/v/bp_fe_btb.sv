@@ -102,7 +102,7 @@ module bp_fe_btb
   wire                           tag_mem_r_v_li = r_v_i;
   wire [btb_idx_width_p-1:0]  tag_mem_r_addr_li = r_idx_li;
   bsg_mem_1r1w_sync
-   #(.width_p($bits(bp_btb_entry_s)), .els_p(btb_els_lp))
+   #(.width_p($bits(bp_btb_entry_s)), .els_p(btb_els_lp), .latch_last_read_p(1))
    tag_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -129,32 +129,9 @@ module bp_fe_btb
      ,.data_o(r_tag_r)
      );
 
-  logic r_v_r;
-  bsg_dff_reset
-   #(.width_p(1))
-   r_v_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i(tag_mem_r_v_li)
-     ,.data_o(r_v_r)
-     );
-
-  bp_btb_entry_s tag_mem_data_bypass_lo;
-  bsg_dff_reset_en_bypass
-   #(.width_p($bits(bp_btb_entry_s)))
-   btb_bypass_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(r_v_r)
-
-     ,.data_i(tag_mem_data_lo)
-     ,.data_o(tag_mem_data_bypass_lo)
-     );
-
-  assign br_tgt_v_o   = r_v_r & tag_mem_data_bypass_lo.v & (tag_mem_data_bypass_lo.tag == r_tag_r);
-  assign br_tgt_jmp_o = r_v_r & tag_mem_data_bypass_lo.v & tag_mem_data_bypass_lo.jmp;
-  assign br_tgt_o     = tag_mem_data_bypass_lo.tgt;
+  assign br_tgt_v_o   = tag_mem_data_lo.v & (tag_mem_data_lo.tag == r_tag_r);
+  assign br_tgt_jmp_o = tag_mem_data_lo.v & tag_mem_data_lo.jmp;
+  assign br_tgt_o     = tag_mem_data_lo.tgt;
 
 
 endmodule

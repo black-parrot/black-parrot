@@ -49,7 +49,7 @@ module bp_nonsynth_watchdog
    #(.max_val_p(stall_cycles_p), .init_val_p(0))
    stall_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i | wfi_i | is_halt)
+     ,.reset_i(reset_i | freeze_i | wfi_i | is_halt | finish_i[mhartid_i])
 
      ,.clear_i(npc_change)
      ,.up_i(1'b1)
@@ -98,12 +98,12 @@ module bp_nonsynth_watchdog
         begin
           $display("Core %x halt detected!", mhartid_i);
         end
-      assert (reset_i !== '0 || (stall_cnt < stall_cycles_p)) else
+      assert(reset_i !== '0 || (stall_cnt < stall_cycles_p)) else
         begin
           $display("FAIL! Core %x stalled for %d cycles!", mhartid_i, stall_cnt);
           $finish();
         end
-      assert (reset_i !== '0 || (npc_r !== 'X)) else
+      assert(reset_i !== '0 || (npc_r !== 'X)) else
         begin
           $display("FAIL! Core %x PC has become X!", mhartid_i);
           $finish();

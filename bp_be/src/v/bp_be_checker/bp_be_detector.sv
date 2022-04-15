@@ -21,7 +21,7 @@ module bp_be_detector
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
@@ -37,7 +37,8 @@ module bp_be_detector
    , input                             cmd_full_i
    , input                             credits_full_i
    , input                             credits_empty_i
-   , input                             long_ready_i
+   , input                             idiv_ready_i
+   , input                             fdiv_ready_i
    , input                             mem_ready_i
    , input                             ptw_busy_i
    , input                             irq_pending_i
@@ -51,7 +52,7 @@ module bp_be_detector
    , input [wb_pkt_width_lp-1:0]       fwb_pkt_i
    );
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
@@ -68,8 +69,8 @@ module bp_be_detector
   // Floating point data hazards
   logic frs1_sb_raw_haz_v, frs2_sb_raw_haz_v, frs3_sb_raw_haz_v;
   logic frd_sb_waw_haz_v;
-  logic [3:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
-  logic [3:0] rs1_match_vector, rs2_match_vector, rs3_match_vector;
+  logic [2:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
+  logic [2:0] rs1_match_vector, rs2_match_vector, rs3_match_vector;
 
   bp_be_dep_status_s [3:0] dep_status_r;
 
@@ -138,7 +139,7 @@ module bp_be_detector
       // Generate matches for rs1, rs2. rs3
       // 3 stages because we only care about ex1, ex2, and iwb dependencies. fwb dependencies
       //   can be handled through forwarding
-      for (integer i = 0; i < 4; i++)
+      for (integer i = 0; i < 3; i++)
         begin
           rs1_match_vector[i] = (isd_status_cast_i.rs1_addr == dep_status_r[i].rd_addr);
           rs2_match_vector[i] = (isd_status_cast_i.rs2_addr == dep_status_r[i].rd_addr);
@@ -192,13 +193,9 @@ module bp_be_detector
       frs3_data_haz_v[1] = (isd_status_cast_i.frs3_v & rs3_match_vector[1])
                            & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
-      irs1_data_haz_v[2] = (isd_status_cast_i.irs1_v & rs1_match_vector[2])
-                           & (isd_status_cast_i.rs1_addr != '0)
-                           & (dep_status_r[2].mul_iwb_v);
+      irs1_data_haz_v[2] = '0;
 
-      irs2_data_haz_v[2] = (isd_status_cast_i.irs2_v & rs2_match_vector[2])
-                           & (isd_status_cast_i.rs2_addr != '0)
-                           & (dep_status_r[2].mul_iwb_v);
+      irs2_data_haz_v[2] = '0;
 
       frs1_data_haz_v[2] = (isd_status_cast_i.frs1_v & rs1_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
@@ -209,25 +206,18 @@ module bp_be_detector
       frs3_data_haz_v[2] = (isd_status_cast_i.frs3_v & rs3_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      frs1_data_haz_v[3] = (isd_status_cast_i.frs1_v & rs1_match_vector[3])
-                           & (dep_status_r[3].fma_fwb_v);
-
-      frs2_data_haz_v[3] = (isd_status_cast_i.frs2_v & rs2_match_vector[3])
-                           & (dep_status_r[3].fma_fwb_v);
-
-      frs3_data_haz_v[3] = (isd_status_cast_i.frs3_v & rs3_match_vector[3])
-                           & (dep_status_r[3].fma_fwb_v);
-
       mem_in_pipe_v      = dep_status_r[0].mem_v | dep_status_r[1].mem_v | dep_status_r[2].mem_v;
       fence_haz_v        = (isd_status_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v | ~mem_ready_i))
                            | (isd_status_cast_i.mem_v & credits_full_i);
       cmd_haz_v          = cmd_full_i;
 
-      fflags_haz_v = isd_status_cast_i.csr_w_v
+      // TODO: Pessimistic, could have a separate fflags r/w_v
+      fflags_haz_v = isd_status_cast_i.csr_v
                      & ((dep_status_r[0].fflags_w_v)
                         | (dep_status_r[1].fflags_w_v)
                         | (dep_status_r[2].fflags_w_v)
                         | (dep_status_r[3].fflags_w_v)
+                        | ~fdiv_ready_i
                         );
 
       // TODO: This is pessimistic. Could instead flush currently
@@ -240,7 +230,7 @@ module bp_be_detector
                       | (dep_status_r[2].instr_v)
                       );
 
-      csr_haz_v     = isd_status_cast_i.csr_w_v
+      csr_haz_v     = isd_status_cast_i.csr_v
                       & ((dep_status_r[0].instr_v)
                          | (dep_status_r[1].instr_v)
                          | (dep_status_r[2].instr_v)
@@ -259,23 +249,23 @@ module bp_be_detector
                    | (frs1_sb_raw_haz_v | frs2_sb_raw_haz_v | frs3_sb_raw_haz_v | frd_sb_waw_haz_v);
 
       // Combine all structural hazard information
-      struct_haz_v = cfg_bus_cast_i.freeze
-                     | ptw_busy_i
+      struct_haz_v = ptw_busy_i
+                     | cmd_haz_v
                      | (~mem_ready_i & isd_status_cast_i.mem_v)
-                     | (~long_ready_i & isd_status_cast_i.long_v)
-                     | cmd_haz_v;
+                     | (~fdiv_ready_i & isd_status_cast_i.long_v)
+                     | (~idiv_ready_i & isd_status_cast_i.long_v);
     end
 
   // Generate calculator control signals
   assign dispatch_v_o  = ~(control_haz_v | data_haz_v | struct_haz_v);
-  assign interrupt_v_o = irq_pending_i & ~ptw_busy_i & ~cfg_bus_cast_i.freeze;
+  assign interrupt_v_o = irq_pending_i & ~ptw_busy_i;
 
   bp_be_dep_status_s dep_status_n;
   always_comb
     begin
       dep_status_n.instr_v    = dispatch_pkt_cast_i.v;
       dep_status_n.mem_v      = dispatch_pkt_cast_i.decode.mem_v;
-      dep_status_n.csr_w_v    = dispatch_pkt_cast_i.decode.csr_w_v;
+      dep_status_n.csr_v      = (dispatch_pkt_cast_i.decode.csr_w_v | dispatch_pkt_cast_i.decode.csr_r_v);
       dep_status_n.fflags_w_v = dispatch_pkt_cast_i.decode.fflags_w_v;
       dep_status_n.ctl_iwb_v  = dispatch_pkt_cast_i.decode.pipe_ctl_v & dispatch_pkt_cast_i.decode.irf_w_v;
       dep_status_n.int_iwb_v  = dispatch_pkt_cast_i.decode.pipe_int_v & dispatch_pkt_cast_i.decode.irf_w_v;

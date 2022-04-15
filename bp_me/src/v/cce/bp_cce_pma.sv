@@ -34,7 +34,7 @@ module bp_cce_pma
   always_comb begin
 
     cacheable_addr_o = paddr_v_i
-                       ? (paddr_i >= dram_base_addr_gp) && (paddr_i < (coproc_base_addr_gp))
+                       ? (paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp)
                        : 1'b0;
 
   end

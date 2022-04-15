@@ -1,4 +1,5 @@
 from __future__ import print_function
+import sys
 
 class TestMemory(object):
   def __init__(self, base, size, block_size, debug=False):
@@ -27,8 +28,17 @@ class TestMemory(object):
     val = 0
     for i in range(size):
       if self.debug:
-        self.eprint('[TestMemory]: mem[{0}] -> {1:x}'.format(addr+i, data[size-1-i]))
+        self.eprint('[TestMemory]: mem[{0:016x}]  = {1:x}'.format(addr+i, data[size-1-i]))
       val = (val << 8) + data[i]
+    if self.debug:
+      if size == 1:
+       self.eprint('[TestMemory]: LOAD  mem[{0:016x}]  = {1:02x}'.format(addr, val))
+      elif size == 2:
+       self.eprint('[TestMemory]: LOAD  mem[{0:016x}]  = {1:04x}'.format(addr, val))
+      elif size == 4:
+       self.eprint('[TestMemory]: LOAD  mem[{0:016x}]  = {1:08x}'.format(addr, val))
+      elif size == 8:
+       self.eprint('[TestMemory]: LOAD  mem[{0:016x}]  = {1:016x}'.format(addr, val))
     return val
 
   def write_memory(self, addr, value, size):
@@ -37,6 +47,15 @@ class TestMemory(object):
     for i in range(size):
       v = (value >> (i*8)) & 0xff
       if self.debug:
-        self.eprint('[TestMemory]: mem[{0}] <- {1:x}'.format(addr+i, v))
+        self.eprint('[TestMemory]: mem[{0:016x}] := {1:x}'.format(addr+i, v))
       self.mem[addr+i] = v
+    if self.debug:
+      if size == 1:
+        self.eprint('[TestMemory]: STORE mem[{0:016x}] := {1:02x}'.format(addr, value))
+      elif size == 2:
+        self.eprint('[TestMemory]: STORE mem[{0:016x}] := {1:04x}'.format(addr, value))
+      elif size == 4:
+        self.eprint('[TestMemory]: STORE mem[{0:016x}] := {1:08x}'.format(addr, value))
+      elif size == 8:
+        self.eprint('[TestMemory]: STORE mem[{0:016x}] := {1:016x}'.format(addr, value))
 

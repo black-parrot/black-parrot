@@ -22,7 +22,7 @@ module bp_be_director
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
@@ -37,8 +37,10 @@ module bp_be_director
    , output logic [vaddr_width_p-1:0]   expected_npc_o
    , output logic                       poison_isd_o
    , output logic                       suppress_iss_o
+   , output logic                       unfreeze_o
    , input                              irq_waiting_i
-   , output logic                       cmd_empty_o
+   , output logic                       cmd_empty_n_o
+   , output logic                       cmd_empty_r_o
    , output logic                       cmd_full_n_o
    , output logic                       cmd_full_r_o
 
@@ -52,7 +54,7 @@ module bp_be_director
    );
 
   // Declare parameterized structures
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -71,19 +73,19 @@ module bp_be_director
   logic [vaddr_width_p-1:0]               npc_n, npc_r, pc_r;
   logic                                   npc_mismatch_v;
 
-  enum logic [2:0] {e_reset, e_boot, e_run, e_fence, e_wait} state_n, state_r;
-  wire is_reset = (state_r == e_reset);
-  wire is_boot  = (state_r == e_boot);
-  wire is_fence = (state_r == e_fence);
-  wire is_wait  = (state_r == e_wait);
+  enum logic [2:0] {e_freeze, e_run, e_fence, e_wait} state_n, state_r;
+  wire is_freeze = (state_r == e_freeze);
+  wire is_run    = (state_r == e_run);
+  wire is_fence  = (state_r == e_fence);
+  wire is_wait   = (state_r == e_wait);
 
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or upon commit
   wire npc_w_v = commit_pkt_cast_i.npc_w_v | br_pkt_cast_i.v;
   assign npc_n = commit_pkt_cast_i.npc_w_v ? commit_pkt_cast_i.npc : br_pkt_cast_i.npc;
   bsg_dff_reset_en
-   #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
-   npc
+   #(.width_p(vaddr_width_p))
+   npc_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(npc_w_v)
@@ -110,53 +112,43 @@ module bp_be_director
   wire last_instr_was_branch = attaboy_pending | br_pkt_cast_i.branch;
   wire last_instr_was_btaken = btaken_pending  | br_pkt_cast_i.btaken;
 
-  // Generate control signals
-  // On a cache miss, this is actually the generated pc in ex1. We could use this to redirect during
-  //   mispredict-under-cache-miss. However, there's a critical path vs extra speculation argument.
-  //   Currently, we just don't send pc redirects under a cache miss.
   wire fe_cmd_nonattaboy_v = fe_cmd_v_li & (fe_cmd_li.opcode != e_op_attaboy);
 
   // Boot logic
   always_comb
     begin
       unique casez (state_r)
-        e_reset : state_n = cfg_bus_cast_i.freeze ? e_reset : e_boot;
-        e_boot  : state_n = fe_cmd_v_li ? e_run : e_boot;
-        e_run   : state_n = commit_pkt_cast_i.wfi ? e_wait : fe_cmd_nonattaboy_v ? e_fence : e_run;
-        e_fence : state_n = suppress_iss_o ? e_fence : e_run;
         e_wait  : state_n = fe_cmd_nonattaboy_v ? e_fence : e_wait;
-        default : state_n = e_reset;
+        e_run   : state_n = commit_pkt_cast_i.wfi ? e_wait : fe_cmd_nonattaboy_v ? e_fence : e_run;
+        e_fence : state_n = cmd_empty_n_o ? e_run : e_fence;
+        // e_freeze:
+        default : state_n = cfg_bus_cast_i.freeze ? e_freeze : e_wait;
       endcase
     end
 
   //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
-        state_r <= e_reset;
+        state_r <= e_freeze;
     else
       begin
         state_r <= state_n;
       end
 
-  assign suppress_iss_o  = ((state_r == e_fence) & fe_cmd_v_o) || (state_r == e_wait);
+  assign suppress_iss_o  = (state_r != e_run);
+  assign unfreeze_o      = ~cfg_bus_cast_i.freeze & (state_r == e_freeze);
 
   always_comb
-    begin : fe_cmd_adapter
+    begin
       fe_cmd_li = 'b0;
       fe_cmd_v_li = 1'b0;
+      fe_cmd_pc_redirect_operands = '0;
 
-      // Do not send anything on reset
-      if (state_r == e_reset)
-        begin
-          fe_cmd_v_li = 1'b0;
-        end
-      // Send one reset cmd on boot
-      else if (state_r == e_boot)
+      if (commit_pkt_cast_i.unfreeze)
         begin
           fe_cmd_li.opcode = e_op_state_reset;
           fe_cmd_li.vaddr  = npc_r;
 
-          fe_cmd_pc_redirect_operands = '0;
           fe_cmd_pc_redirect_operands.priv           = commit_pkt_cast_i.priv_n;
           fe_cmd_pc_redirect_operands.translation_en = commit_pkt_cast_i.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands    = fe_cmd_pc_redirect_operands;
@@ -180,8 +172,6 @@ module bp_be_director
         end
       else if (commit_pkt_cast_i.csrw)
         begin
-          fe_cmd_pc_redirect_operands = '0;
-
           fe_cmd_li.opcode                            = e_op_pc_redirection;
           fe_cmd_li.vaddr                             = commit_pkt_cast_i.npc;
           fe_cmd_pc_redirect_operands.subopcode       = e_subop_translation_switch;
@@ -213,8 +203,6 @@ module bp_be_director
         end
       else if (commit_pkt_cast_i.eret)
         begin
-          fe_cmd_pc_redirect_operands = '0;
-
           fe_cmd_li.opcode                                 = e_op_pc_redirection;
           fe_cmd_li.vaddr                                  = commit_pkt_cast_i.npc;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_eret;
@@ -226,8 +214,6 @@ module bp_be_director
         end
       else if (commit_pkt_cast_i.exception | commit_pkt_cast_i._interrupt | (is_wait & irq_waiting_i))
         begin
-          fe_cmd_pc_redirect_operands = '0;
-
           fe_cmd_li.opcode                                 = e_op_pc_redirection;
           fe_cmd_li.vaddr                                  = commit_pkt_cast_i.npc;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_trap;
@@ -239,8 +225,6 @@ module bp_be_director
         end
       else if (isd_status_cast_i.v & npc_mismatch_v)
         begin
-          fe_cmd_pc_redirect_operands = '0;
-
           fe_cmd_li.opcode                                 = e_op_pc_redirection;
           fe_cmd_li.vaddr                                  = expected_npc_o;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_branch_mispredict;
@@ -280,7 +264,8 @@ module bp_be_director
      ,.fe_cmd_v_o(fe_cmd_v_o)
      ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
 
-     ,.empty_o(cmd_empty_o)
+     ,.empty_n_o(cmd_empty_n_o)
+     ,.empty_r_o(cmd_empty_r_o)
      ,.full_n_o(cmd_full_n_o)
      ,.full_r_o(cmd_full_r_o)
      );

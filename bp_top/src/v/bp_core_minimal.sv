@@ -14,7 +14,7 @@ module bp_core_minimal
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -48,6 +48,8 @@ module bp_core_minimal
    , output logic                                    icache_stat_mem_pkt_yumi_o
    , output logic [icache_stat_info_width_lp-1:0]    icache_stat_mem_o
 
+   // D$ Engine Interface is clocked on the negedge of the clock. Must be attached to
+   //   a negative-edge cache engine and synchronized before getting to the memory system
    , output logic [dcache_req_width_lp-1:0]          dcache_req_o
    , output logic                                    dcache_req_v_o
    , input                                           dcache_req_yumi_i
@@ -75,13 +77,15 @@ module bp_core_minimal
    , output logic                                    dcache_stat_mem_pkt_yumi_o
    , output logic [dcache_stat_info_width_lp-1:0]    dcache_stat_mem_o
 
+   , input                                           debug_irq_i
    , input                                           timer_irq_i
    , input                                           software_irq_i
-   , input                                           external_irq_i
+   , input                                           m_external_irq_i
+   , input                                           s_external_irq_i
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
@@ -177,9 +181,11 @@ module bp_core_minimal
      ,.stat_mem_pkt_yumi_o(dcache_stat_mem_pkt_yumi_o)
      ,.stat_mem_o(dcache_stat_mem_o)
 
+     ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
+     ,.m_external_irq_i(m_external_irq_i)
+     ,.s_external_irq_i(s_external_irq_i)
      );
 
 endmodule

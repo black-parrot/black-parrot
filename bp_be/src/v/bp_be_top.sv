@@ -17,7 +17,7 @@ module bp_be_top
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    // Default parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   )
   (input                                             clk_i
    , input                                           reset_i
@@ -67,9 +67,11 @@ module bp_be_top
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    , output logic                                    stat_mem_pkt_yumi_o
 
+   , input                                           debug_irq_i
    , input                                           timer_irq_i
    , input                                           software_irq_i
-   , input                                           external_irq_i
+   , input                                           m_external_irq_i
+   , input                                           s_external_irq_i
    );
 
   // Declare parameterized structures
@@ -90,11 +92,10 @@ module bp_be_top
 
   bp_be_isd_status_s isd_status;
   logic [vaddr_width_p-1:0] expected_npc_lo;
-  logic poison_isd_lo, suppress_iss_lo;
-  logic waiting_for_irq_lo;
+  logic poison_isd_lo, suppress_iss_lo, unfreeze_lo;
 
-  logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_lo;
-  logic mem_ready_lo, long_ready_lo, ptw_busy_lo;
+  logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
+  logic mem_ready_lo, idiv_ready_lo, fdiv_ready_lo, ptw_busy_lo;
 
   bp_be_director
    #(.bp_params_p(bp_params_p))
@@ -111,10 +112,12 @@ module bp_be_top
      ,.fe_cmd_v_o(fe_cmd_v_o)
      ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
 
+     ,.unfreeze_o(unfreeze_lo)
      ,.suppress_iss_o(suppress_iss_lo)
      ,.poison_isd_o(poison_isd_lo)
      ,.irq_waiting_i(irq_waiting_lo)
-     ,.cmd_empty_o()
+     ,.cmd_empty_n_o()
+     ,.cmd_empty_r_o()
      ,.cmd_full_n_o(cmd_full_n_lo)
      ,.cmd_full_r_o(cmd_full_r_lo)
 
@@ -135,7 +138,8 @@ module bp_be_top
      ,.credits_full_i(cache_req_credits_full_i)
      ,.credits_empty_i(cache_req_credits_empty_i)
      ,.mem_ready_i(mem_ready_lo)
-     ,.long_ready_i(long_ready_lo)
+     ,.fdiv_ready_i(fdiv_ready_lo)
+     ,.idiv_ready_i(idiv_ready_lo)
      ,.ptw_busy_i(ptw_busy_lo)
      ,.irq_pending_i(irq_pending_lo)
 
@@ -152,12 +156,14 @@ module bp_be_top
    scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_i)
 
      ,.isd_status_o(isd_status)
      ,.expected_npc_i(expected_npc_lo)
      ,.poison_isd_i(poison_isd_lo)
      ,.dispatch_v_i(dispatch_v)
      ,.interrupt_v_i(interrupt_v)
+     ,.unfreeze_i(unfreeze_lo)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.decode_info_i(decode_info_lo)
 
@@ -185,7 +191,8 @@ module bp_be_top
 
      ,.decode_info_o(decode_info_lo)
      ,.mem_ready_o(mem_ready_lo)
-     ,.long_ready_o(long_ready_lo)
+     ,.idiv_ready_o(idiv_ready_lo)
+     ,.fdiv_ready_o(fdiv_ready_lo)
      ,.ptw_busy_o(ptw_busy_lo)
 
      ,.br_pkt_o(br_pkt)
@@ -221,9 +228,11 @@ module bp_be_top
      ,.stat_mem_o(stat_mem_o)
      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
 
+     ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
+     ,.m_external_irq_i(m_external_irq_i)
+     ,.s_external_irq_i(s_external_irq_i)
      ,.irq_pending_o(irq_pending_lo)
      ,.irq_waiting_o(irq_waiting_lo)
      ,.cmd_full_n_i(cmd_full_n_lo)

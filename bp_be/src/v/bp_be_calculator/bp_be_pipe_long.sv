@@ -15,7 +15,8 @@ module bp_be_pipe_long
    , input                              reset_i
 
    , input [dispatch_pkt_width_lp-1:0]  reservation_i
-   , output logic                       ready_o
+   , output logic                       iready_o
+   , output logic                       fready_o
    , input rv64_frm_e                   frm_dyn_i
 
    , input                              flush_i
@@ -31,7 +32,7 @@ module bp_be_pipe_long
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_dispatch_pkt_s reservation;
-  rv64_instr_fmatype_s instr;
+  rv64_instr_s instr;
   bp_be_decode_s decode;
   bp_be_wb_pkt_s iwb_pkt;
   bp_be_wb_pkt_s fwb_pkt;
@@ -82,28 +83,38 @@ module bp_be_pipe_long
   wire [word_width_gp-1:0] remainder_w_lo = remainder_lo[0+:word_width_gp];
 
   bp_be_fp_reg_s frs1, frs2;
-  assign frs1 = reservation.rs1;
-  assign frs2 = reservation.rs2;
+  bp_be_nan_unbox
+    #(.bp_params_p(bp_params_p))
+    frs1_unbox
+     (.reg_i(reservation.rs1)
+      ,.unbox_i(decode.ops_v)
+      ,.reg_o(frs1)
+      );
+
+  bp_be_nan_unbox
+    #(.bp_params_p(bp_params_p))
+    frs2_unbox
+     (.reg_i(reservation.rs2)
+      ,.unbox_i(decode.ops_v)
+      ,.reg_o(frs2)
+      );
 
   //
   // Control bits for the FPU
   //   The control bits control tininess, which is fixed in RISC-V
   rv64_frm_e frm_li;
-  assign frm_li = (instr.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.rm);
+  // VCS / DVE 2016.1 has an issue with the 'assign' variant of the following code
+  always_comb frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
   wire fdiv_v_li  = v_li & (decode.fu_op == e_fma_op_fdiv);
   wire fsqrt_v_li = v_li & (decode.fu_op == e_fma_op_fsqrt);
 
+  bp_be_fp_reg_s fdivsqrt_result;
+  rv64_fflags_s fdivsqrt_fflags;
   logic fdiv_ready_lo, fdivsqrt_v_lo;
   logic sqrt_lo;
-  logic [2:0] frm_lo;
-  logic invalid_exc, infinite_exc;
-  logic is_nan, is_inf, is_zero;
-  logic fdivsqrt_out_sign;
-  logic [dp_exp_width_gp+1:0] fdivsqrt_out_sexp;
-  logic [dp_sig_width_gp+2:0] fdivsqrt_out_sig;
-  divSqrtRecFNToRaw_small
+  divSqrtRecFN_small
    #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
    fdiv
     (.clock(clk_i)
@@ -119,15 +130,8 @@ module bp_be_pipe_long
 
      ,.outValid(fdivsqrt_v_lo)
      ,.sqrtOpOut(sqrt_lo)
-     ,.roundingModeOut(frm_lo)
-     ,.invalidExc(invalid_exc)
-     ,.infiniteExc(infinite_exc)
-     ,.out_isNaN(is_nan)
-     ,.out_isInf(is_inf)
-     ,.out_isZero(is_zero)
-     ,.out_sign(fdivsqrt_out_sign)
-     ,.out_sExp(fdivsqrt_out_sexp)
-     ,.out_sig(fdivsqrt_out_sig)
+     ,.out(fdivsqrt_result.rec)
+     ,.exceptionFlags(fdivsqrt_fflags)
      );
 
   logic opw_v_r, ops_v_r;
@@ -141,9 +145,10 @@ module bp_be_pipe_long
      ,.reset_i(reset_i)
      ,.en_i(v_li)
 
-     ,.data_i({frm_li, instr.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
+     ,.data_i({frm_li, instr.t.fmatype.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
      ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
      );
+  assign fdivsqrt_result.tag = ops_v_r ? frm_r : e_fp_full;
 
   logic idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
   bsg_dff_reset_set_clear
@@ -171,69 +176,6 @@ module bp_be_pipe_long
      ,.count_o(hazard_cnt)
      );
 
-  logic [dp_rec_width_gp-1:0] fdivsqrt_dp_final;
-  rv64_fflags_s fdivsqrt_dp_fflags;
-  roundAnyRawFNToRecFN
-   #(.inExpWidth(dp_exp_width_gp)
-     ,.inSigWidth(dp_sig_width_gp+2)
-     ,.outExpWidth(dp_exp_width_gp)
-     ,.outSigWidth(dp_sig_width_gp)
-     )
-   round_dp
-    (.control(control_li)
-     ,.invalidExc(invalid_exc)
-     ,.infiniteExc('0)
-     ,.in_isNaN(is_nan)
-     ,.in_isInf(is_inf)
-     ,.in_isZero(is_zero)
-     ,.in_sign(fdivsqrt_out_sign)
-     ,.in_sExp(fdivsqrt_out_sexp)
-     ,.in_sig(fdivsqrt_out_sig)
-     ,.roundingMode(frm_r)
-     ,.out(fdivsqrt_dp_final)
-     ,.exceptionFlags(fdivsqrt_dp_fflags)
-     );
-
-  bp_hardfloat_rec_sp_s fdivsqrt_sp_final;
-  rv64_fflags_s fdivsqrt_sp_fflags;
-  roundAnyRawFNToRecFN
-   #(.inExpWidth(dp_exp_width_gp)
-     ,.inSigWidth(dp_sig_width_gp+2)
-     ,.outExpWidth(sp_exp_width_gp)
-     ,.outSigWidth(sp_sig_width_gp)
-     )
-   round_sp
-    (.control(control_li)
-     ,.invalidExc(invalid_exc)
-     ,.infiniteExc('0)
-     ,.in_isNaN(is_nan)
-     ,.in_isInf(is_inf)
-     ,.in_isZero(is_zero)
-     ,.in_sign(fdivsqrt_out_sign)
-     ,.in_sExp(fdivsqrt_out_sexp)
-     ,.in_sig(fdivsqrt_out_sig)
-     ,.roundingMode(frm_r)
-     ,.out(fdivsqrt_sp_final)
-     ,.exceptionFlags(fdivsqrt_sp_fflags)
-     );
-
-  localparam bias_adj_lp = (1 << dp_exp_width_gp) - (1 << sp_exp_width_gp);
-  bp_hardfloat_rec_dp_s fdivsqrt_sp2dp_final;
-
-  bp_be_fp_reg_s fdivsqrt_result;
-  rv64_fflags_s fdivsqrt_fflags;
-  assign fdivsqrt_result = '{sp_not_dp: ops_v_r, rec: ops_v_r ? fdivsqrt_sp2dp_final : fdivsqrt_dp_final};
-  assign fdivsqrt_fflags = ops_v_r ? fdivsqrt_sp_fflags : fdivsqrt_dp_fflags;
-
-  wire [dp_exp_width_gp:0] adjusted_exp = fdivsqrt_sp_final.exp + bias_adj_lp;
-  wire [2:0]                   exp_code = fdivsqrt_sp_final.exp[sp_exp_width_gp-:3];
-  wire                          special = (exp_code == '0) || (exp_code >= 3'd6);
-
-  assign fdivsqrt_sp2dp_final = '{sign  : fdivsqrt_sp_final.sign
-                                  ,exp  : special ? {exp_code, adjusted_exp[0+:dp_exp_width_gp-2]} : adjusted_exp
-                                  ,fract: {fdivsqrt_sp_final.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
-                                  };
-
   logic [dword_width_gp-1:0] rd_data_lo;
   always_comb
     if (opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
@@ -246,7 +188,8 @@ module bp_be_pipe_long
       rd_data_lo = remainder_lo;
 
   // Actually a busy signal
-  assign ready_o = fdiv_ready_lo & idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
+  assign iready_o = idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
+  assign fready_o = fdiv_ready_lo & ~rd_w_v_r & ~v_li;
 
   assign iwb_pkt.ird_w_v    = rd_w_v_r;
   assign iwb_pkt.frd_w_v    = 1'b0;

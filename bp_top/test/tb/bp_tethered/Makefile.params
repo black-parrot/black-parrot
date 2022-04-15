@@ -1,4 +1,4 @@
-export COH_PROTO   ?= mesi
+export COH_PROTO   ?= moesif
 export CCE_MEM      = $(COH_PROTO).mem
 
 export CCE_TRACE_P    ?= 0
@@ -14,6 +14,7 @@ export BR_PROFILE_P   ?= 0
 export CHECKPOINT_P   ?= 0
 export COSIM_P        ?= 0
 export NBF_CONFIG_P   ?= 1
+export DEV_TRACE_P    ?= 0
 
 export PRELOAD_MEM_P  ?= 0
 
@@ -24,7 +25,8 @@ export SAMPLE_START_P   ?= 0
 export SAMPLE_WARMUP_P  ?= 0
 export SAMPLE_INSTR_P   ?= 0
 
-export BP_SIM_CLK_PERIOD  ?= 5000
+export BP_SIM_CLK_PERIOD ?= 1000
+export BP_RT_CLK_PERIOD  ?= 1000000
 
 export DUT_PARAMS =
 export TB_PARAMS  = \
@@ -44,11 +46,13 @@ export TB_PARAMS  = \
                     -pvalue+cosim_instr_p=$(SAMPLE_INSTR_P) \
                     -pvalue+warmup_instr_p=$(SAMPLE_WARMUP_P) \
                     -pvalue+amo_en_p=$(AMOEN) \
+                    -pvalue+dev_trace_p=$(DEV_TRACE_P) \
 					-pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
                     -pvalue+no_bind_p=$(NO_BIND_P)
 
 export DUT_DEFINES = $(foreach def,$(DEFINES),+define+$(def))
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
+					 +define+BP_RT_CLK_PERIOD=$(BP_RT_CLK_PERIOD) \
                      +define+den2048Mb+sg5+x16+FULL_MEM
 
 export HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)

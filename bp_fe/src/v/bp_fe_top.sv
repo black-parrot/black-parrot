@@ -14,7 +14,7 @@ module bp_fe_top
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -58,7 +58,7 @@ module bp_fe_top
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
   bp_fe_cmd_s fe_cmd_cast_i;
   assign fe_cmd_cast_i = fe_cmd_i;
@@ -210,7 +210,7 @@ module bp_fe_top
   assign attaboy_v_li               = attaboy_v;
   assign attaboy_pc_li              = fe_cmd_cast_i.vaddr;
 
-  logic instr_access_fault_v, instr_page_fault_v;
+  logic instr_misaligned_v, instr_access_fault_v, instr_page_fault_v;
   logic ptag_v_li, ptag_uncached_li, ptag_nonidem_li, ptag_dram_li, ptag_miss_li;
   logic [ptag_width_p-1:0] ptag_li;
 
@@ -219,6 +219,7 @@ module bp_fe_top
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
   wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
+  wire [1:0] r_size_li = 2'b10;
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(itlb_els_4k_p)
@@ -233,6 +234,8 @@ module bp_fe_top
      ,.trans_en_i(shadow_translation_en_r)
      // Supervisor use of user memory is always disabled for immu
      ,.sum_i('0)
+     // Immu does not handle dcache loads
+     ,.mxr_i('0)
      ,.uncached_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_uncached))
      ,.nonspec_mode_i((cfg_bus_cast_i.icache_mode == e_lce_mode_nonspec))
      ,.hio_mask_i(cfg_bus_cast_i.hio_mask)
@@ -246,13 +249,19 @@ module bp_fe_top
      ,.r_load_i('0)
      ,.r_store_i('0)
      ,.r_eaddr_i(r_eaddr_li)
+     ,.r_size_i(r_size_li)
 
      ,.r_v_o(ptag_v_li)
      ,.r_ptag_o(ptag_li)
-     ,.r_miss_o(ptag_miss_li)
+     ,.r_instr_miss_o(ptag_miss_li)
+     ,.r_load_miss_o()
+     ,.r_store_miss_o()
      ,.r_uncached_o(ptag_uncached_li)
      ,.r_nonidem_o(ptag_nonidem_li)
      ,.r_dram_o(ptag_dram_li)
+     ,.r_instr_misaligned_o(instr_misaligned_v)
+     ,.r_load_misaligned_o()
+     ,.r_store_misaligned_o()
      ,.r_instr_access_fault_o(instr_access_fault_v)
      ,.r_load_access_fault_o()
      ,.r_store_access_fault_o()
@@ -322,15 +331,15 @@ module bp_fe_top
      ,.stat_mem_o(stat_mem_o)
      );
 
-  logic itlb_miss_r, instr_access_fault_r, instr_page_fault_r;
+  logic itlb_miss_r, instr_misaligned_r, instr_access_fault_r, instr_page_fault_r;
   bsg_dff_reset
-   #(.width_p(3))
+   #(.width_p(4))
    fault_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({ptag_miss_li, instr_access_fault_v, instr_page_fault_v})
-     ,.data_o({itlb_miss_r, instr_access_fault_r, instr_page_fault_r})
+     ,.data_i({ptag_miss_li, instr_misaligned_v, instr_access_fault_v, instr_page_fault_v})
+     ,.data_o({itlb_miss_r, instr_misaligned_r, instr_access_fault_r, instr_page_fault_r})
      );
 
   logic v_if1_r, v_if2_r;
@@ -348,7 +357,7 @@ module bp_fe_top
 
   wire icache_miss    = v_if2_r & ~icache_data_v_lo;
   wire queue_miss     = v_if2_r & ~fe_queue_ready_i;
-  wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
+  wire fe_exception_v = v_if2_r & (instr_misaligned_r | instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
   wire fe_instr_v     = v_if2_r & icache_data_v_lo;
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
 
@@ -372,11 +381,13 @@ module bp_fe_top
         fe_queue_cast_o.msg.exception.vaddr          = fetch_pc_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss
-                                                       : instr_page_fault_r
-                                                         ? e_instr_page_fault
-                                                         : instr_access_fault_r
-                                                           ? e_instr_access_fault
-                                                           : e_icache_miss;
+                                                       : instr_misaligned_r
+                                                         ? e_instr_misaligned
+                                                           : instr_page_fault_r
+                                                             ? e_instr_page_fault
+                                                             : instr_access_fault_r
+                                                               ? e_instr_access_fault
+                                                                 : e_icache_miss;
       end
     else
       begin

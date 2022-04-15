@@ -32,13 +32,12 @@ module bp_cce_dir_segment
 
     , parameter `BSG_INV_PARAM(num_cce_p)             // number of CCEs that blocks are banked across
 
-    // Default parameters
-
     // This is set as a constant based on prior physical design work showing 2 tag sets
     // per row gives good PPA, assuming 64-set, 8-way associative LCEs.
     // For even numbers of LCEs, all rows are fully utilized
     // For odd numbers of LCEs, last row for a way group will only have 1 tag set in use
-    , parameter tag_sets_per_row_lp       = 2
+    // Warning: changing this to another value will likely break the directory implementation
+    , localparam tag_sets_per_row_lp       = 2
 
     // Derived parameters
     , localparam lg_tag_sets_per_row_lp    = `BSG_SAFE_CLOG2(tag_sets_per_row_lp)
@@ -117,11 +116,11 @@ module bp_cce_dir_segment
   // If value of tag_sets_per_row_lp changes (is no longer 2) the directory logic
   // needs to be re-written.
   if (tag_sets_per_row_lp != 2)
-    $fatal(0,"Unsupported configuration: number of sets per row must equal 2");
+    $error("Unsupported configuration: number of sets per row must equal 2");
   if (sets_p <= 1)
-    $fatal(0,"Number of cache sets must be greater than 1; direct-mapped caches not supported");
+    $error("Number of cache sets must be greater than 1; direct-mapped caches not supported");
   if (tag_sets_p < 1)
-    $fatal(0,"Number of tag sets must be at least 1");
+    $error("Number of tag sets must be at least 1");
 
   // input address hashing
   logic [lg_num_cce_lp-1:0] cce_id_lo;

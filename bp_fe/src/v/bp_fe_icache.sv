@@ -36,14 +36,14 @@ module bp_fe_icache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to icache parameters, but can override if needed
-   , parameter coherent_p    = l1_coherent_p
+   , parameter coherent_p    = icache_coherent_p
    , parameter sets_p        = icache_sets_p
    , parameter assoc_p       = icache_assoc_p
    , parameter block_width_p = icache_block_width_p
    , parameter fill_width_p  = icache_fill_width_p
 
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
-   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
   (input                                              clk_i
@@ -106,7 +106,7 @@ module bp_fe_icache
    );
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Various localparameters

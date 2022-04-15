@@ -23,12 +23,19 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
+cmd_base="make -C bp_top/syn build.v sim.v blood.v CORE_PROFILE_P=1 COSIM_P=1 SUITE=riscv-tests PROG=rv64ui-v-add"
+
+# Run the regression in parallel on each configuration
+echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
+
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
+grep -cr "unknown" */syn/results/*/*/stall_0.trace && echo "[CI CHECK] $0: FAILED" && exit 1
 
 num_graphs=$(find -name "*blood_detailed.png" | wc -l)
 
-if [[ $num_graphs -eq 1 ]]
+if [[ $num_graphs -eq 2 ]]
 then
   echo "[CI CHECK] $0: PASSED" && exit 0
 else

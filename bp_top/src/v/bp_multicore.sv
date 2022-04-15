@@ -23,6 +23,7 @@ module bp_multicore
    , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
    )
   (input                                                    core_clk_i
+   , input                                                  rt_clk_i
    , input                                                  core_reset_i
 
    , input                                                  coh_clk_i
@@ -47,29 +48,38 @@ module bp_multicore
    , input [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  dram_resp_link_i
    );
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
   `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
   `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
 
   bp_coh_ready_and_link_s [E:W][cc_y_dim_p-1:0] coh_req_hor_link_li, coh_req_hor_link_lo;
   bp_coh_ready_and_link_s [E:W][cc_y_dim_p-1:0] coh_cmd_hor_link_li, coh_cmd_hor_link_lo;
+  bp_coh_ready_and_link_s [E:W][cc_y_dim_p-1:0] coh_fill_hor_link_li, coh_fill_hor_link_lo;
   bp_coh_ready_and_link_s [E:W][cc_y_dim_p-1:0] coh_resp_hor_link_li, coh_resp_hor_link_lo;
 
   bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_req_ver_link_li, coh_req_ver_link_lo;
   bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_cmd_ver_link_li, coh_cmd_ver_link_lo;
+  bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_fill_ver_link_li, coh_fill_ver_link_lo;
   bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_resp_ver_link_li, coh_resp_ver_link_lo;
 
   bp_mem_ready_and_link_s [N:N][cc_x_dim_p-1:0] mem_cmd_ver_link_li, mem_resp_ver_link_lo;
   bp_mem_ready_and_link_s [S:S][cc_x_dim_p-1:0] mem_resp_ver_link_li, mem_cmd_ver_link_lo;
 
+  // IO and SACC complexes only use Req/Cmd networks
   assign coh_resp_ver_link_li[N] = '0;
   assign coh_resp_hor_link_li[W] = '0;
+  assign coh_fill_ver_link_li[N] = '0;
+  assign coh_fill_hor_link_li[W] = '0;
+  // Memory complex does not use Fill network
+  assign coh_fill_ver_link_li[S] = '0;
+
   assign mem_cmd_ver_link_li[N] = '0;
   bp_core_complex
    #(.bp_params_p(bp_params_p))
    cc
     (.core_clk_i(core_clk_i)
+     ,.rt_clk_i(rt_clk_i)
      ,.core_reset_i(core_reset_i)
 
      ,.coh_clk_i(coh_clk_i)
@@ -87,6 +97,9 @@ module bp_multicore
      ,.coh_cmd_hor_link_i(coh_cmd_hor_link_li)
      ,.coh_cmd_hor_link_o(coh_cmd_hor_link_lo)
 
+     ,.coh_fill_hor_link_i(coh_fill_hor_link_li)
+     ,.coh_fill_hor_link_o(coh_fill_hor_link_lo)
+
      ,.coh_resp_hor_link_i(coh_resp_hor_link_li)
      ,.coh_resp_hor_link_o(coh_resp_hor_link_lo)
 
@@ -95,6 +108,9 @@ module bp_multicore
 
      ,.coh_cmd_ver_link_i(coh_cmd_ver_link_li)
      ,.coh_cmd_ver_link_o(coh_cmd_ver_link_lo)
+
+     ,.coh_fill_ver_link_i(coh_fill_ver_link_li)
+     ,.coh_fill_ver_link_o(coh_fill_ver_link_lo)
 
      ,.coh_resp_ver_link_i(coh_resp_ver_link_li)
      ,.coh_resp_ver_link_o(coh_resp_ver_link_lo)
@@ -178,6 +194,9 @@ module bp_multicore
 
      ,.coh_cmd_link_i(coh_cmd_hor_link_lo[E])
      ,.coh_cmd_link_o(coh_cmd_hor_link_li[E])
+
+     ,.coh_fill_link_i(coh_fill_hor_link_lo[E])
+     ,.coh_fill_link_o(coh_fill_hor_link_li[E])
 
      ,.coh_resp_link_i(coh_resp_hor_link_lo[E])
      ,.coh_resp_link_o(coh_resp_hor_link_li[E])

@@ -232,6 +232,7 @@ module bp_be_instr_decoder
             decode_cast_o.dcache_w_v = 1'b1;
             decode_cast_o.mem_v      = 1'b1;
             decode_cast_o.ops_v      = instr inside {`RV64_FS_W};
+            decode_cast_o.fflags_w_v = 1'b1;
 
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
 
@@ -289,8 +290,9 @@ module bp_be_instr_decoder
                 end
               `RV64_WFI:
                 begin
+                  // WFI operates as NOP in debug mode
                   illegal_instr_o = decode_info_cast_i.tw;
-                  wfi_o = ~illegal_instr_o;
+                  wfi_o = ~illegal_instr_o & ~decode_info_cast_i.debug_mode;
                 end
               `RV64_SFENCE_VMA:
                 begin
@@ -324,7 +326,7 @@ module bp_be_instr_decoder
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
                   decode_cast_o.fflags_w_v   = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FCVT_SD};
+                  decode_cast_o.ops_v        = instr inside {`RV64_FCVT_DS};
                   decode_cast_o.fu_op        = e_aux_op_f2f;
                 end
               `RV64_FCVT_WS, `RV64_FCVT_LS:
@@ -584,17 +586,21 @@ module bp_be_instr_decoder
             // Detect AMO support level
             unique casez (instr)
               `RV64_LRD, `RV64_LRW, `RV64_SCD, `RV64_SCW:
-                illegal_instr_o = (lr_sc_p == e_none);
+                illegal_instr_o =
+                  ~|{dcache_amo_support_p[e_lr_sc], l2_amo_support_p[e_lr_sc]};
               `RV64_AMOSWAPD, `RV64_AMOSWAPW:
-                illegal_instr_o = (amo_swap_p == e_none);
+                illegal_instr_o =
+                  ~|{dcache_amo_support_p[e_amo_swap], l2_amo_support_p[e_amo_swap]};
               `RV64_AMOANDD, `RV64_AMOANDW
               ,`RV64_AMOORD, `RV64_AMOORW
               ,`RV64_AMOXORD, `RV64_AMOXORW:
-                illegal_instr_o = (amo_fetch_logic_p == e_none);
+                illegal_instr_o =
+                  ~|{dcache_amo_support_p[e_amo_fetch_logic], l2_amo_support_p[e_amo_fetch_logic]};
               `RV64_AMOADDD, `RV64_AMOADDW
               ,`RV64_AMOMIND, `RV64_AMOMINW, `RV64_AMOMAXD, `RV64_AMOMAXW
               ,`RV64_AMOMINUD, `RV64_AMOMINUW, `RV64_AMOMAXUD, `RV64_AMOMAXUW:
-                illegal_instr_o = (amo_fetch_arithmetic_p == e_none);
+                illegal_instr_o =
+                  ~|{dcache_amo_support_p[e_amo_fetch_arithmetic], l2_amo_support_p[e_amo_fetch_arithmetic]};
               default: begin end
             endcase
           end

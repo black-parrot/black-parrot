@@ -23,7 +23,7 @@ N=${2:-1}
 # Bash array to iterate over for configurations
 cfgs=(\
     "e_bp_unicore_cfg"
-    "e_bp_unicore_l1_atomic_cfg"
+    "e_bp_unicore_tinyparrot_cfg"
     "e_bp_unicore_l2_atomic_cfg"
     )
 
