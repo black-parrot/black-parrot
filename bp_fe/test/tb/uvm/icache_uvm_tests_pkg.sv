@@ -89,7 +89,7 @@ package icache_uvm_tests_pkg;
       myvseq_h.start(null);
       `uvm_info("base_test", "Stopping test sequence", UVM_HIGH);
       
-      phase.phase_done.set_drain_time(this, 20ns);
+      phase.phase_done.set_drain_time(this, 24ns);
       phase.drop_objection(this, "Finished sequences");
     endtask: run_phase
   endclass: base_test
