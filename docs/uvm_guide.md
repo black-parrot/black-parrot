@@ -58,6 +58,8 @@ At 'every' clock edge the driver takes transactions from the sequencer and drive
 
 ### I-Cache Analysis Components
 #### Coverage Collector
+The coverage collector is used to collect functional coverage information so that one can better know what they need to write tests for, or conversely, what they have already tested.  This coverage collector needs to asynchronously handle coverage information for all four interfaces of the DUT.  Therefore, we use a UVM construct called analysis imps to define a analysis port for each interface's monitor to broadcast to.  Then, every time that the coverage collector sees a transaction on its analysis port, it will sample coverage information for that interface with the given transaction.  The coverage information is defined in coverage groups in the coverage collector, with specific bins defined where neccessary.  Coverage groups, coverage points, and binsa are all part of the system verilog standard, so look to the IEEE specification for more information.
+
 #### Scoreboard
 
 ### I-Cache Tests and Sequences
