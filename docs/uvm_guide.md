@@ -40,9 +40,8 @@ The monitor is intended at every clock edge to make a transaction from the value
 * The run phase consists of the following steps:
   * Waits for reset to go low intially
   * At each positive clock edge:
-  1. Depending on the interface, check if valid bit is set
-  2. Package interface pins as a transaction.
-  3. Send transaction over analysis port to subscribers (described below).
+  1. Package interface pins as a transaction.
+  2. Send transaction over analysis port to subscribers (described below).
 
 #### Drivers
 
