@@ -260,7 +260,7 @@ package icache_uvm_comp_pkg;
         input_transaction tx;
 
         @(posedge dut_vi.clk_i);
-        if (dut_vi.v_i === 1'b1) begin
+        //if (dut_vi.v_i === 1'b1) begin
           tx = input_transaction::type_id::create("tx");
 
           tx.icache_pkt_i     = dut_vi.icache_pkt_i;
@@ -272,7 +272,7 @@ package icache_uvm_comp_pkg;
           `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
 
           aport.write(tx);
-        end
+        //end
       end
     endtask: run_phase
   endclass: input_monitor
@@ -310,7 +310,7 @@ package icache_uvm_comp_pkg;
         tlb_transaction tx;
 
         @(posedge dut_vi.clk_i);
-        if (dut_vi.ptag_v_i === 1'b1) begin
+        //if (dut_vi.ptag_v_i === 1'b1) begin
           tx = tlb_transaction::type_id::create("tx");
 
           tx.ptag_i           = dut_vi.ptag_i;
@@ -322,7 +322,7 @@ package icache_uvm_comp_pkg;
           `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
 
           aport.write(tx);
-        end
+        //end
       end
     endtask: run_phase
 
@@ -617,14 +617,14 @@ package icache_uvm_comp_pkg;
 
     `uvm_component_utils(base_env)
 
-    input_agent     input_agent_h;
-    tlb_agent       tlb_agent_h;
-    output_agent    output_agent_h;
-    ce_agent        ce_agent_h;
-    icache_cov_col  icache_cov_col_h;
-    //my_scoreboard my_scoreboard_h;
-    //my_predictor  my_predictor_h;
-    //my_comparator my_comparator_h;
+    input_agent       input_agent_h;
+    tlb_agent         tlb_agent_h;
+    output_agent      output_agent_h;
+    ce_agent          ce_agent_h;
+    icache_cov_col    icache_cov_col_h;
+    icache_scoreboard icache_scoreboard_h;
+    icache_predictor  icache_predictor_h;
+    icache_comparator icache_comparator_h;
 
     env_config    env_cfg;
     input_agt_config  input_agt_cfg;
@@ -643,9 +643,9 @@ package icache_uvm_comp_pkg;
       output_agent_h  = output_agent::type_id::create("output_agent_h",   this);
       ce_agent_h      = ce_agent::type_id::create("ce_agent_h",   this);
       icache_cov_col_h    = icache_cov_col#()::type_id::create("icache_cov_col_h", this);
-      //my_scoreboard_h = my_scoreboard::type_id::create("my_scoreboard_h", this);
-      //my_predictor_h  = my_predictor::type_id::create("my_predictor_h", this);
-      //my_comparator_h = my_comparator::type_id::create("my_comparator_h", this);
+      icache_scoreboard_h = icache_scoreboard::type_id::create("icache_scoreboard_h", this);
+      icache_predictor_h  = icache_predictor::type_id::create("icache_predictor_h", this);
+      icache_comparator_h = icache_comparator::type_id::create("icache_comparator_h", this);
 
       // Get configuration information for environment
       env_cfg = env_config::type_id::create("env_cfg");
@@ -676,17 +676,17 @@ package icache_uvm_comp_pkg;
 
     virtual function void connect_phase(uvm_phase phase);
       input_agent_h.aport.connect(icache_cov_col_h.input_export);
-      // input_agent_h.aport.connect(my_scoreboard_h.analysis_export);
+      input_agent_h.aport.connect(icache_scoreboard_h.input_export);
       tlb_agent_h.aport.connect(icache_cov_col_h.tlb_export);
-      // tlb_agent_h.aport.connect(my_scoreboard_h.analysis_export);
+      tlb_agent_h.aport.connect(icache_scoreboard_h.tlb_export);
       output_agent_h.aport.connect(icache_cov_col_h.output_export);
-      // output_agent_h.aport.connect(my_scoreboard_h.analysis_export);
+      output_agent_h.aport.connect(icache_scoreboard_h.output_export);
       ce_agent_h.aport.connect(icache_cov_col_h.ce_export);
-      // ce_agent_h.aport.connect(my_scoreboard_h.analysis_export);
 
-      //my_scoreboard_h.pred_in_ap.connect(my_predictor_h.analysis_export);
-      //my_scoreboard_h.comp_in_ap.connect(my_comparator_h.dut_export);
-      //my_predictor_h.results_ap.connect(my_comparator_h.pred_export);
+      icache_scoreboard_h.input_aport.connect(icache_predictor_h.input_export);
+      icache_scoreboard_h.tlb_aport.connect(icache_predictor_h.tlb_export);
+      icache_scoreboard_h.output_aport.connect(icache_comparator_h.dut_export);
+      icache_predictor_h.results_aport.connect(icache_comparator_h.pred_export);
     endfunction: connect_phase
 
   endclass: base_env
