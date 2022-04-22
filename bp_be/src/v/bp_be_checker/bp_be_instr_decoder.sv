@@ -303,20 +303,16 @@ module bp_be_instr_decoder
               default:
                 begin
                   // Cadence bug
-                  // decode_cast_o.csr_w_v = instr inside {`RV64_CSRRW, `RV64_CSRRWI} || (instr.rs1_addr != '0);
-                  // decode_cast_o.csr_r_v = ~(instr inside {`RV64_CSRRW, `RV64_CSRRWI}) || (instr.rd_addr != '0);
-                  decode_cast_o.csr_w_v |= instr inside {`RV64_CSRRW, `RV64_CSRRWI};
-                  decode_cast_o.csr_w_v |= (instr.rs1_addr != '0);
-                  decode_cast_o.csr_r_v |= ~(instr inside {`RV64_CSRRW, `RV64_CSRRWI});
-                  decode_cast_o.csr_r_v |= (instr.rd_addr != '0);
+                  decode_cast_o.csr_w_v = instr inside {`RV64_CSRRW, `RV64_CSRRWI} || (instr.rs1_addr != '0);
+                  decode_cast_o.csr_r_v = ~(instr inside {`RV64_CSRRW, `RV64_CSRRWI}) || (instr.rd_addr != '0);
                   decode_cast_o.irf_w_v = (instr.rd_addr != '0);
                   unique casez (instr)
-                    `RV64_CSRRW : decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrw  : e_csrr;
-                    `RV64_CSRRWI: decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrwi : e_csrr;
-                    `RV64_CSRRS : decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrs  : e_csrr;
-                    `RV64_CSRRSI: decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrsi : e_csrr;
-                    `RV64_CSRRC : decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrc  : e_csrr;
-                    `RV64_CSRRCI: decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrci : e_csrr;
+                    `RV64_CSRRW : if (decode_cast_o.csr_w_v) decode_cast_o.fu_op = e_csrrw;  else decode_cast_o.fu_op = e_csrr;
+                    `RV64_CSRRWI: if (decode_cast_o.csr_w_v) decode_cast_o.fu_op = e_csrrwi; else decode_cast_o.fu_op = e_csrr;
+                    `RV64_CSRRS : if (decode_cast_o.csr_w_v) decode_cast_o.fu_op = e_csrrs;  else decode_cast_o.fu_op = e_csrr;
+                    `RV64_CSRRSI: if (decode_cast_o.csr_w_v) decode_cast_o.fu_op = e_csrrsi; else decode_cast_o.fu_op = e_csrr;
+                    `RV64_CSRRC : if (decode_cast_o.csr_w_v) decode_cast_o.fu_op = e_csrrc;  else decode_cast_o.fu_op = e_csrr;
+                    `RV64_CSRRCI: if (decode_cast_o.csr_w_v) decode_cast_o.fu_op = e_csrrci; else decode_cast_o.fu_op = e_csrr;
                     default : illegal_instr_o = 1'b1;
                   endcase
                 end
