@@ -9,7 +9,7 @@
 package icache_uvm_cfg_pkg;
 
   import uvm_pkg::*;
-  
+
   //.......................................................
   // Agent
   //.......................................................
@@ -18,7 +18,7 @@ package icache_uvm_cfg_pkg;
 
     //Config parameteres
     virtual input_icache_if icache_if_h;
-    
+
     function new (string name = "");
       super.new(name);
     endfunction
@@ -29,7 +29,7 @@ package icache_uvm_cfg_pkg;
 
     //Config parameteres
     virtual tlb_icache_if icache_if_h;
-    
+
     function new (string name = "");
       super.new(name);
     endfunction
@@ -40,23 +40,23 @@ package icache_uvm_cfg_pkg;
 
     //Config parameteres
     virtual output_icache_if icache_if_h;
-    
+
     function new (string name = "");
       super.new(name);
     endfunction
   endclass : output_agt_config
-  
+
   class ce_agt_config extends uvm_object;
     `uvm_object_utils(ce_agt_config)
 
     //Config parameteres
     virtual ce_icache_if icache_if_h;
-    
+
     function new (string name = "");
       super.new(name);
     endfunction
   endclass : ce_agt_config
-  
+
   //.......................................................
   // Environment
   //.......................................................
@@ -72,12 +72,12 @@ package icache_uvm_cfg_pkg;
     int              tlb_is_active;
     int              output_is_active;
     int              ce_is_active;
-    
+
     function new (string name = "");
       super.new(name);
     endfunction
 
   endclass : env_config
-  
+
 endpackage : icache_uvm_cfg_pkg
 `endif

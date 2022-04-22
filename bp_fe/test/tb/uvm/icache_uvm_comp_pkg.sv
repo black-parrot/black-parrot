@@ -42,33 +42,36 @@ package icache_uvm_comp_pkg;
     // Main Phase, takes sequences and drives them
     task run_phase(uvm_phase phase);
       input_transaction tx;
-      
+
       #10
       wait(dut_vi.reset_i == 1'b0);
 
-      forever begin
-        seq_item_port.get_next_item(tx);
+      forever 
+        begin
+          seq_item_port.get_next_item(tx);
 
-         @(posedge dut_vi.clk_i);
+          @(posedge dut_vi.clk_i);
 
-        // Send packet
-        dut_vi.icache_pkt_i = tx.icache_pkt_i;
-        dut_vi.v_i          = tx.v_i;
+          // Send packet
+          dut_vi.icache_pkt_i = tx.icache_pkt_i;
+          dut_vi.v_i          = tx.v_i;
 
-        // Copy for printing and print
-        tx.clk_i   = dut_vi.clk_i;
-        tx.reset_i = dut_vi.reset_i;
-        tx.ready_o = dut_vi.ready_o;
-        `uvm_info(get_type_name(), $psprintf("input driver sending tx %s", tx.convert2string()), UVM_HIGH);
+          // Copy for printing and print
+          tx.clk_i   = dut_vi.clk_i;
+          tx.reset_i = dut_vi.reset_i;
+          tx.ready_o = dut_vi.ready_o;
+          `uvm_info(get_type_name(), $psprintf("input driver sending tx %s", tx.convert2string()), 
+                    UVM_HIGH);
 
-        // Wait for consumer(cache) to be ready
-        if(dut_vi.v_i) begin
-          wait(dut_vi.ready_o == 1'b1);
+          // Wait for consumer(cache) to be ready
+          if(dut_vi.v_i) 
+            begin
+              wait(dut_vi.ready_o == 1'b1);
+            end
+
+          // Indicate we have finished packet to sequencer
+          seq_item_port.item_done();
         end
-        
-        // Indicate we have finished packet to sequencer
-        seq_item_port.item_done();
-      end
     endtask: run_phase
 
   endclass: input_driver
@@ -105,29 +108,29 @@ package icache_uvm_comp_pkg;
       tx.ptag_dram_i = 1'b0;
       tx.ptag_nonidem_i = 1'b0;
       tx_prev.push_back(tx);
-      
+
       //Wait for reset signal to go low
       #10
       wait(dut_vi.reset_i == 1'b0);
-      
+
       //Drive
       forever
-      begin
-        seq_item_port.get_next_item(tx);
-        tx_prev.push_back(tx);
-        tx = tx_prev.pop_front();
+        begin
+          seq_item_port.get_next_item(tx);
+          tx_prev.push_back(tx);
+          tx = tx_prev.pop_front();
 
-        @(posedge dut_vi.clk_i);
+          @(posedge dut_vi.clk_i);
 
-        dut_vi.ptag_i           = tx.ptag_i;
-        dut_vi.ptag_v_i 	      = tx.ptag_v_i;
-        dut_vi.ptag_uncached_i  = tx.ptag_uncached_i;
-        dut_vi.ptag_dram_i      = tx.ptag_dram_i;
-        dut_vi.ptag_nonidem_i   = tx.ptag_nonidem_i;
+          dut_vi.ptag_i           = tx.ptag_i;
+          dut_vi.ptag_v_i 	      = tx.ptag_v_i;
+          dut_vi.ptag_uncached_i  = tx.ptag_uncached_i;
+          dut_vi.ptag_dram_i      = tx.ptag_dram_i;
+          dut_vi.ptag_nonidem_i   = tx.ptag_nonidem_i;
 
-        `uvm_info("driver", $psprintf("tlb driver sending tx %s", tx.convert2string()), UVM_HIGH);
-        seq_item_port.item_done();
-      end
+          `uvm_info("driver", $psprintf("tlb driver sending tx %s", tx.convert2string()), UVM_HIGH);
+          seq_item_port.item_done();
+        end
     endtask: run_phase
 
   endclass: tlb_driver
@@ -153,24 +156,25 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
-      
+
       #10
       wait(dut_vi.reset_i == 1'b0);
-      
+
       forever
-      begin
-        output_transaction tx;
+        begin
+          output_transaction tx;
 
-        @(posedge dut_vi.clk_i);
-        seq_item_port.get(tx);
+          @(posedge dut_vi.clk_i);
+          seq_item_port.get(tx);
 
-        dut_vi.data_o   = tx.data_o;
-        dut_vi.data_v_o = tx.data_v_o;
-        dut_vi.miss_v_o  = tx.miss_v_o;
+          dut_vi.data_o   = tx.data_o;
+          dut_vi.data_v_o = tx.data_v_o;
+          dut_vi.miss_v_o  = tx.miss_v_o;
 
-        `uvm_info(get_type_name(), $psprintf("output driver sending tx %s", tx.convert2string()), UVM_HIGH);
-        seq_item_port.item_done();
-      end
+          `uvm_info(get_type_name(), $psprintf("output driver sending tx %s", tx.convert2string()),
+                    UVM_HIGH);
+          seq_item_port.item_done();
+        end
     endtask: run_phase
 
   endclass: output_driver
@@ -178,7 +182,7 @@ package icache_uvm_comp_pkg;
   class ce_driver extends uvm_driver #(ce_transaction);
 
     `uvm_component_utils(ce_driver)
-    
+
     virtual ce_icache_if dut_vi;
     ce_agt_config ce_agt_cfg;
 
@@ -196,31 +200,32 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
-      
+
       #10
       wait(dut_vi.reset_i == 1'b0);
-      
+
       forever
-      begin
-        ce_transaction tx;
+        begin
+          ce_transaction tx;
 
-        @(posedge dut_vi.clk_i);
-        seq_item_port.get(tx);
+          @(posedge dut_vi.clk_i);
+          seq_item_port.get(tx);
 
-        dut_vi.cache_req_o              = tx.cache_req_o;
-        dut_vi.cache_req_v_o            = tx.cache_req_v_o;
-        dut_vi.cache_req_yumi_i         = tx.cache_req_yumi_i;
-        dut_vi.cache_req_busy_i         = tx.cache_req_busy_i;
-        dut_vi.cache_req_metadata_o     = tx.cache_req_metadata_o;
-        dut_vi.cache_req_metadata_v_o   = tx.cache_req_metadata_v_o;
-        dut_vi.cache_req_critical_tag_i = tx.cache_req_critical_tag_i;
-        dut_vi.cache_req_complete_i     = tx.cache_req_complete_i;
-        dut_vi.cache_req_credits_full_i = tx.cache_req_credits_full_i;
-        dut_vi.cache_req_credits_empty_i= tx.cache_req_credits_empty_i;
+          dut_vi.cache_req_o              = tx.cache_req_o;
+          dut_vi.cache_req_v_o            = tx.cache_req_v_o;
+          dut_vi.cache_req_yumi_i         = tx.cache_req_yumi_i;
+          dut_vi.cache_req_busy_i         = tx.cache_req_busy_i;
+          dut_vi.cache_req_metadata_o     = tx.cache_req_metadata_o;
+          dut_vi.cache_req_metadata_v_o   = tx.cache_req_metadata_v_o;
+          dut_vi.cache_req_critical_tag_i = tx.cache_req_critical_tag_i;
+          dut_vi.cache_req_complete_i     = tx.cache_req_complete_i;
+          dut_vi.cache_req_credits_full_i = tx.cache_req_credits_full_i;
+          dut_vi.cache_req_credits_empty_i= tx.cache_req_credits_empty_i;
 
-        `uvm_info(get_type_name(), $psprintf("ce driver sending tx %s", tx.convert2string()), UVM_HIGH);
-        seq_item_port.item_done();
-      end
+          `uvm_info(get_type_name(), $psprintf("ce driver sending tx %s", tx.convert2string()),
+                    UVM_HIGH);
+          seq_item_port.item_done();
+        end
     endtask: run_phase
 
   endclass: ce_driver
@@ -252,15 +257,15 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
-      
+
       #10
       wait(dut_vi.reset_i == 1'b0);
-      
-      forever begin
-        input_transaction tx;
 
-        @(posedge dut_vi.clk_i);
-        //if (dut_vi.v_i === 1'b1) begin
+      forever 
+        begin
+          input_transaction tx;
+
+          @(posedge dut_vi.clk_i);
           tx = input_transaction::type_id::create("tx");
 
           tx.icache_pkt_i     = dut_vi.icache_pkt_i;
@@ -269,11 +274,11 @@ package icache_uvm_comp_pkg;
           tx.reset_i          = dut_vi.reset_i;
           tx.clk_i            = dut_vi.clk_i;
 
-          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
+          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()),
+                    UVM_HIGH);
 
           aport.write(tx);
-        //end
-      end
+        end
     endtask: run_phase
   endclass: input_monitor
 
@@ -301,16 +306,15 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
-      
+
       #10
       wait(dut_vi.reset_i == 1'b0);
-      
-      forever
-      begin
-        tlb_transaction tx;
 
-        @(posedge dut_vi.clk_i);
-        //if (dut_vi.ptag_v_i === 1'b1) begin
+      forever
+        begin
+          tlb_transaction tx;
+
+          @(posedge dut_vi.clk_i);
           tx = tlb_transaction::type_id::create("tx");
 
           tx.ptag_i           = dut_vi.ptag_i;
@@ -319,11 +323,11 @@ package icache_uvm_comp_pkg;
           tx.ptag_dram_i      = dut_vi.ptag_dram_i;
           tx.ptag_nonidem_i   = dut_vi.ptag_nonidem_i;
 
-          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
+          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), 
+                    UVM_HIGH);
 
           aport.write(tx);
-        //end
-      end
+        end
     endtask: run_phase
 
   endclass: tlb_monitor
@@ -352,25 +356,26 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
-      
+
       #10
       wait(dut_vi.reset_i == 1'b0);
-      
+
       forever
-      begin
-        output_transaction tx;
+        begin
+          output_transaction tx;
 
-        @(posedge dut_vi.clk_i);
-        tx = output_transaction::type_id::create("tx");
+          @(posedge dut_vi.clk_i);
+          tx = output_transaction::type_id::create("tx");
 
-        tx.data_o   = dut_vi.data_o;
-        tx.data_v_o = dut_vi.data_v_o;
-        tx.miss_v_o  = dut_vi.miss_v_o;
+          tx.data_o   = dut_vi.data_o;
+          tx.data_v_o = dut_vi.data_v_o;
+          tx.miss_v_o  = dut_vi.miss_v_o;
 
-        `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), (dut_vi.data_v_o) ? UVM_LOW : UVM_MEDIUM);
+          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), 
+                    (dut_vi.data_v_o) ? UVM_LOW : UVM_MEDIUM);
 
-        aport.write(tx);
-      end
+          aport.write(tx);
+        end
     endtask: run_phase
 
   endclass: output_monitor
@@ -399,34 +404,36 @@ package icache_uvm_comp_pkg;
     endfunction : build_phase
 
     task run_phase(uvm_phase phase);
-      
+
       #10
       wait(dut_vi.reset_i == 1'b0);
-      
+
       forever
-      begin
-        ce_transaction tx;
+        begin
+          ce_transaction tx;
 
-        @(posedge dut_vi.clk_i);
-        if (dut_vi.cache_req_v_o === 1'b1) begin
-          tx = ce_transaction::type_id::create("tx");
+          @(posedge dut_vi.clk_i);
+          if (dut_vi.cache_req_v_o === 1'b1) 
+            begin
+              tx = ce_transaction::type_id::create("tx");
 
-          tx.cache_req_o              = dut_vi.cache_req_o;
-          tx.cache_req_v_o            = dut_vi.cache_req_v_o;
-          tx.cache_req_yumi_i         = dut_vi.cache_req_yumi_i;
-          tx.cache_req_busy_i         = dut_vi.cache_req_busy_i;
-          tx.cache_req_metadata_o     = dut_vi.cache_req_metadata_o;
-          tx.cache_req_metadata_v_o   = dut_vi.cache_req_metadata_v_o;
-          tx.cache_req_critical_tag_i = dut_vi.cache_req_critical_tag_i;
-          tx.cache_req_complete_i     = dut_vi.cache_req_complete_i;
-          tx.cache_req_credits_full_i = dut_vi.cache_req_credits_full_i;
-          tx.cache_req_credits_empty_i= dut_vi.cache_req_credits_empty_i;
+              tx.cache_req_o              = dut_vi.cache_req_o;
+              tx.cache_req_v_o            = dut_vi.cache_req_v_o;
+              tx.cache_req_yumi_i         = dut_vi.cache_req_yumi_i;
+              tx.cache_req_busy_i         = dut_vi.cache_req_busy_i;
+              tx.cache_req_metadata_o     = dut_vi.cache_req_metadata_o;
+              tx.cache_req_metadata_v_o   = dut_vi.cache_req_metadata_v_o;
+              tx.cache_req_critical_tag_i = dut_vi.cache_req_critical_tag_i;
+              tx.cache_req_complete_i     = dut_vi.cache_req_complete_i;
+              tx.cache_req_credits_full_i = dut_vi.cache_req_credits_full_i;
+              tx.cache_req_credits_empty_i= dut_vi.cache_req_credits_empty_i;
 
-          `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), UVM_HIGH);
+              `uvm_info(get_type_name(), $psprintf("monitor sending tx %s", tx.convert2string()), 
+                        UVM_HIGH);
 
-          aport.write(tx);
+              aport.write(tx);
+            end
         end
-      end
     endtask: run_phase
 
   endclass: ce_monitor
@@ -443,7 +450,7 @@ package icache_uvm_comp_pkg;
     input_sequencer input_sequencer_h;
     input_driver    input_driver_h;
     input_monitor   input_monitor_h;
-    
+
     input_agt_config   agt_cfg;
 
     function new(string name, uvm_component parent);
@@ -459,21 +466,24 @@ package icache_uvm_comp_pkg;
         `uvm_fatal("NO_CFG", "No agent config set")
 
       // If Agent is Active, create Driver and Sequencer, else skip
-      `uvm_info("agent", (get_is_active()) ? "input agent is active" : "input agent is not active", UVM_HIGH);
-      if (get_is_active()) begin
-        input_sequencer_h  = input_sequencer::type_id::create("input_sequencer_h", this);
-        input_driver_h     = input_driver::type_id::create("input_driver_h", this);
-      end
+      `uvm_info("agent", (get_is_active()) ? "input agent is active" : "input agent is not active", 
+                UVM_HIGH);
+      if (get_is_active()) 
+        begin
+          input_sequencer_h  = input_sequencer::type_id::create("input_sequencer_h", this);
+          input_driver_h     = input_driver::type_id::create("input_driver_h", this);
+        end
 
       aport = new("aport", this);
-      input_monitor_h = input_monitor::type_id::create("input_monitor_h", this); 
+      input_monitor_h = input_monitor::type_id::create("input_monitor_h", this);
       uvm_config_db#(input_agt_config)::set(this, "*", "input_agt_config", agt_cfg);
     endfunction: build_phase
 
     virtual function void connect_phase(uvm_phase phase);
-      if (get_is_active()) begin
-        input_driver_h.seq_item_port.connect( input_sequencer_h.seq_item_export );
-      end
+      if (get_is_active()) 
+        begin
+          input_driver_h.seq_item_port.connect( input_sequencer_h.seq_item_export );
+        end
       input_monitor_h.aport.connect( this.aport );
     endfunction: connect_phase
   endclass: input_agent
@@ -487,7 +497,7 @@ package icache_uvm_comp_pkg;
     tlb_sequencer tlb_sequencer_h;
     tlb_driver    tlb_driver_h;
     tlb_monitor   tlb_monitor_h;
-    
+
     tlb_agt_config   agt_cfg;
 
     function new(string name, uvm_component parent);
@@ -503,21 +513,24 @@ package icache_uvm_comp_pkg;
         `uvm_fatal("NO_CFG", "No agent config set")
 
       // If Agent is Active, create Driver and Sequencer, else skip
-      `uvm_info("agent", (get_is_active()) ? "tlb agent is active" : "tlb agent is not active", UVM_HIGH);
-      if (get_is_active()) begin
-        tlb_sequencer_h  = tlb_sequencer::type_id::create("tlb_sequencer_h", this);
-        tlb_driver_h     = tlb_driver::type_id::create("tlb_driver_h", this);
-      end
+      `uvm_info("agent", (get_is_active()) ? "tlb agent is active" : "tlb agent is not active",
+                UVM_HIGH);
+      if (get_is_active()) 
+        begin
+          tlb_sequencer_h  = tlb_sequencer::type_id::create("tlb_sequencer_h", this);
+          tlb_driver_h     = tlb_driver::type_id::create("tlb_driver_h", this);
+        end
 
       aport = new("aport", this);
-      tlb_monitor_h = tlb_monitor::type_id::create("tlb_monitor_h", this); 
+      tlb_monitor_h = tlb_monitor::type_id::create("tlb_monitor_h", this);
       uvm_config_db#(tlb_agt_config)::set(this, "*", "tlb_agt_config", agt_cfg);
     endfunction: build_phase
 
     virtual function void connect_phase(uvm_phase phase);
-      if (get_is_active()) begin
-        tlb_driver_h.seq_item_port.connect( tlb_sequencer_h.seq_item_export );
-      end
+      if (get_is_active()) 
+        begin
+          tlb_driver_h.seq_item_port.connect( tlb_sequencer_h.seq_item_export );
+        end
       tlb_monitor_h.aport.connect( this.aport );
     endfunction: connect_phase
   endclass: tlb_agent
@@ -531,7 +544,7 @@ package icache_uvm_comp_pkg;
     output_sequencer output_sequencer_h;
     output_driver    output_driver_h;
     output_monitor   output_monitor_h;
-    
+
     output_agt_config   agt_cfg;
 
     function new(string name, uvm_component parent);
@@ -547,21 +560,24 @@ package icache_uvm_comp_pkg;
         `uvm_fatal("NO_CFG", "No agent config set")
 
       // If Agent is Active, create Driver and Sequencer, else skip
-      `uvm_info("agent", (get_is_active()) ? "output agent is active" : "output agent is not active", UVM_HIGH);
-      if (get_is_active()) begin
-        output_sequencer_h  = output_sequencer::type_id::create("output_sequencer_h", this);
-        output_driver_h     = output_driver::type_id::create("output_driver_h", this);
-      end
+      `uvm_info("agent", (get_is_active()) ? "output agent is active" : "output agent is not active",
+                UVM_HIGH);
+      if (get_is_active()) 
+        begin
+          output_sequencer_h  = output_sequencer::type_id::create("output_sequencer_h", this);
+          output_driver_h     = output_driver::type_id::create("output_driver_h", this);
+        end
 
       aport = new("aport", this);
-      output_monitor_h = output_monitor::type_id::create("output_monitor_h", this); 
+      output_monitor_h = output_monitor::type_id::create("output_monitor_h", this);
       uvm_config_db#(output_agt_config)::set(this, "*", "output_agt_config", agt_cfg);
     endfunction: build_phase
 
     virtual function void connect_phase(uvm_phase phase);
-      if (get_is_active()) begin
-        output_driver_h.seq_item_port.connect( output_sequencer_h.seq_item_export );
-      end
+      if (get_is_active()) 
+        begin
+          output_driver_h.seq_item_port.connect( output_sequencer_h.seq_item_export );
+        end
       output_monitor_h.aport.connect( this.aport );
     endfunction: connect_phase
   endclass: output_agent
@@ -575,7 +591,7 @@ package icache_uvm_comp_pkg;
     ce_sequencer ce_sequencer_h;
     ce_driver    ce_driver_h;
     ce_monitor   ce_monitor_h;
-    
+
     ce_agt_config   agt_cfg;
 
     function new(string name, uvm_component parent);
@@ -591,21 +607,24 @@ package icache_uvm_comp_pkg;
         `uvm_fatal("NO_CFG", "No agent config set")
 
       // If Agent is Active, create Driver and Sequencer, else skip
-      `uvm_info("agent", (get_is_active()) ? "ce agent is active" : "ce agent is not active", UVM_HIGH);
-      if (get_is_active()) begin
-        ce_sequencer_h  = ce_sequencer::type_id::create("ce_sequencer_h", this);
-        ce_driver_h     = ce_driver::type_id::create("ce_driver_h", this);
-      end
+      `uvm_info("agent", (get_is_active()) ? "ce agent is active" : "ce agent is not active",
+                UVM_HIGH);
+      if (get_is_active()) 
+        begin
+          ce_sequencer_h  = ce_sequencer::type_id::create("ce_sequencer_h", this);
+          ce_driver_h     = ce_driver::type_id::create("ce_driver_h", this);
+        end
 
       aport = new("aport", this);
-      ce_monitor_h = ce_monitor::type_id::create("ce_monitor_h", this); 
+      ce_monitor_h = ce_monitor::type_id::create("ce_monitor_h", this);
       uvm_config_db#(ce_agt_config)::set(this, "*", "ce_agt_config", agt_cfg);
     endfunction: build_phase
 
     virtual function void connect_phase(uvm_phase phase);
-      if (get_is_active()) begin
-        ce_driver_h.seq_item_port.connect( ce_sequencer_h.seq_item_export );
-      end
+      if (get_is_active()) 
+        begin
+          ce_driver_h.seq_item_port.connect( ce_sequencer_h.seq_item_export );
+        end
       ce_monitor_h.aport.connect( this.aport );
     endfunction: connect_phase
   endclass: ce_agent
@@ -663,10 +682,14 @@ package icache_uvm_comp_pkg;
       output_agt_cfg.icache_if_h = env_cfg.icache_output_if_h;
       ce_agt_cfg.icache_if_h     = env_cfg.icache_ce_if_h;
 
-      uvm_config_db #(int) :: set (this, "input_agent_h", "is_active", (env_cfg.input_is_active == 1'b1) ? UVM_ACTIVE : UVM_PASSIVE);
-      uvm_config_db #(int) :: set (this, "tlb_agent_h", "is_active", (env_cfg.tlb_is_active == 1'b1) ? UVM_ACTIVE : UVM_PASSIVE);
-      uvm_config_db #(int) :: set (this, "output_agent_h", "is_active", (env_cfg.output_is_active == 1'b1) ? UVM_ACTIVE : UVM_PASSIVE);
-      uvm_config_db #(int) :: set (this, "ce_agent_h", "is_active", (env_cfg.ce_is_active == 1'b1) ? UVM_ACTIVE : UVM_PASSIVE);
+      uvm_config_db #(int) :: set (this, "input_agent_h", "is_active", 
+        (env_cfg.input_is_active == 1'b1) ? UVM_ACTIVE : UVM_PASSIVE);
+      uvm_config_db #(int) :: set (this, "tlb_agent_h", "is_active", 
+        (env_cfg.tlb_is_active == 1'b1) ? UVM_ACTIVE : UVM_PASSIVE);
+      uvm_config_db #(int) :: set (this, "output_agent_h", "is_active",
+        (env_cfg.output_is_active == 1'b1) ? UVM_ACTIVE : UVM_PASSIVE);
+      uvm_config_db #(int) :: set (this, "ce_agent_h", "is_active",
+        (env_cfg.ce_is_active == 1'b1) ? UVM_ACTIVE : UVM_PASSIVE);
 
       uvm_config_db#(input_agt_config)::set(this, "input_agent_h", "input_agt_config", input_agt_cfg);
       uvm_config_db#(tlb_agt_config)::set(this, "tlb_agent_h", "tlb_agt_config", tlb_agt_cfg);
