@@ -29,6 +29,13 @@ package icache_uvm_seq_pkg;
 
     function new (string name = "input_transaction");
       super.new(name);
+
+      //Default transaction values
+      icache_pkt_i = '0;
+      v_i = 1'b0;
+      ready_o = 1'b0;
+      reset_i = 1'b0;
+      clk_i = 1'b0;
     endfunction : new
 
     function void do_copy(uvm_object rhs);
@@ -72,6 +79,13 @@ package icache_uvm_seq_pkg;
 
     function new (string name = "tlb_transaction");
       super.new(name);
+
+      //Default transaction values
+      ptag_i = '0;
+      ptag_v_i = 1'b0;
+      ptag_uncached_i = 1'b0;
+      ptag_dram_i = 1'b0;
+      ptag_nonidem_i = 1'b0;
     endfunction : new
 
     function void do_copy(uvm_object rhs);
@@ -107,10 +121,16 @@ package icache_uvm_seq_pkg;
     logic [instr_width_gp-1:0] data_o;
     logic                      miss_v_o;
     logic                      data_v_o;
-    int                        tx_id;
+    longint                    tx_id;
 
     function new (string name = "output_transaction");
       super.new(name);
+
+      //Default transaction values
+      data_o   = '0;
+      miss_v_o = 1'b0;
+      data_v_o = 1'b0;
+      tx_id    = '0;
     endfunction : new
 
     function void do_copy(uvm_object rhs);
@@ -193,9 +213,9 @@ package icache_uvm_seq_pkg;
     function string convert2string();
     string s;
     s = super.convert2string();
-    $sformat(s, "cache_req_o %d\t cache_req_v_o %d\t cache_req_yumi_i %d\t cache_req_busy_i %d\n
-                cache_req_metadata_o %d\t cache_req_metadata_v_o %d\t cache_req_critical_tag_i %d\n 
-                cache_req_critical_data_i %d\t cache_req_complete_i %d\n cache_req_credits_full_i 
+    $sformat(s, "cache_req_o %d\t cache_req_v_o %d\t cache_req_yumi_i %d\t cache_req_busy_i %d\n \
+                cache_req_metadata_o %d\t cache_req_metadata_v_o %d\t cache_req_critical_tag_i %d\n \
+                cache_req_critical_data_i %d\t cache_req_complete_i %d\n cache_req_credits_full_i \
                 %d\t cache_req_credits_empty_i %d\n",
               cache_req_o, cache_req_v_o,
               cache_req_yumi_i, cache_req_busy_i, cache_req_metadata_o, cache_req_metadata_v_o,

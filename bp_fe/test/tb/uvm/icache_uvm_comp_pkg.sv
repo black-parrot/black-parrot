@@ -102,11 +102,6 @@ package icache_uvm_comp_pkg;
 
       //Init empty queue item
       tx = tlb_transaction::type_id::create("tx");
-      tx.ptag_i = '0;
-      tx.ptag_v_i = 1'b0;
-      tx.ptag_uncached_i = 1'b0;
-      tx.ptag_dram_i = 1'b0;
-      tx.ptag_nonidem_i = 1'b0;
       tx_prev.push_back(tx);
 
       //Wait for reset signal to go low
@@ -643,7 +638,8 @@ package icache_uvm_comp_pkg;
     icache_cov_col    icache_cov_col_h;
     icache_scoreboard icache_scoreboard_h;
     icache_predictor  icache_predictor_h;
-    icache_comparator icache_comparator_h;
+    //icache_comparator icache_comparator_h;
+    ooo_comparator    icache_comparator_h;
 
     env_config    env_cfg;
     input_agt_config  input_agt_cfg;
@@ -664,7 +660,8 @@ package icache_uvm_comp_pkg;
       icache_cov_col_h    = icache_cov_col#()::type_id::create("icache_cov_col_h", this);
       icache_scoreboard_h = icache_scoreboard::type_id::create("icache_scoreboard_h", this);
       icache_predictor_h  = icache_predictor::type_id::create("icache_predictor_h", this);
-      icache_comparator_h = icache_comparator::type_id::create("icache_comparator_h", this);
+      // icache_comparator_h = icache_comparator::type_id::create("icache_comparator_h", this);
+      icache_comparator_h = ooo_comparator::type_id::create("icache_comparator_h", this);
 
       // Get configuration information for environment
       env_cfg = env_config::type_id::create("env_cfg");

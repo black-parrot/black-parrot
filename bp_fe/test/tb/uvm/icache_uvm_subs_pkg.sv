@@ -200,7 +200,6 @@ package icache_uvm_subs_pkg;
     uvm_tlm_analysis_fifo #(tlb_transaction)    tlb_fifo;
 
     output_transaction result;
-    int ip_tx_id_cntr = 0;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -228,7 +227,7 @@ package icache_uvm_subs_pkg;
         begin
           input_fifo.get(ip_tx);
           tlb_fifo.get(tlb_tx);
-          if (ip_tx .v_i == 1'b1 || tlb_tx.ptag_v_i == 1'b1) 
+          if (ip_tx.v_i == 1'b1 || tlb_tx.ptag_v_i == 1'b1) 
             begin
               //Print the received transacton
               `uvm_info("predictor",
@@ -239,7 +238,8 @@ package icache_uvm_subs_pkg;
               result.data_v_o = 1'b1;
               result.data_o   = '1;
               result.miss_v_o = 1'b0;
-              result.tx_id    = ip_tx_id_cntr++;
+              result.tx_id[0 +: vaddr_width_p] = ip_tx.icache_pkt_i[icache_pkt_width_lp-1:
+                                                icache_pkt_width_lp-vaddr_width_p];
 
               results_aport.write(result);
             end
@@ -250,38 +250,220 @@ package icache_uvm_subs_pkg;
   //.......................................................
   // Comparator
   //.......................................................
-  `uvm_analysis_imp_decl(_PRED)
-  `uvm_analysis_imp_decl(_DUT)
-  class icache_comparator extends uvm_component;
-    `uvm_component_utils(icache_comparator)
+  // `uvm_analysis_imp_decl(_PRED)
+  // `uvm_analysis_imp_decl(_DUT)
+  // class icache_comparator extends uvm_component;
+  //   `uvm_component_utils(icache_comparator)
 
-    uvm_analysis_imp_PRED #(output_transaction,icache_comparator) pred_export;
-    uvm_analysis_imp_DUT  #(output_transaction,icache_comparator) dut_export;
+  //   uvm_analysis_imp_PRED #(output_transaction,icache_comparator) pred_export;
+  //   uvm_analysis_imp_DUT  #(output_transaction,icache_comparator) dut_export;
 
+  //   function new(string name, uvm_component parent);
+  //     super.new(name, parent);
+  //   endfunction : new
+
+  //   function void build_phase(uvm_phase phase);
+  //     super.build_phase(phase);
+  //     pred_export = new("input_export", this);
+  //     dut_export  = new("tlb_export", this);
+  //   endfunction : build_phase
+
+  //   function void write_PRED(output_transaction t);
+  //     //Print the received transacton
+  //     `uvm_info("comparator_pred",
+  //               $psprintf("received output tx %s with id %x",
+  //               t.convert2string(), t.tx_id), UVM_HIGH);
+  //   endfunction : write_PRED
+
+  //   function void write_DUT(output_transaction t);
+  //     //Print the received transacton
+  //     `uvm_info("comparator_dut",
+  //               $psprintf("received output tx %s with id %x",
+  //               t.convert2string(), t.tx_id), UVM_HIGH);
+  //   endfunction : write_DUT
+  // endclass : icache_comparator
+
+  // Out of order comparator adapted from https://verificationacademy.com/cookbook/scoreboards
+  // and then modified to suit our needs herein.
+  class ooo_comparator
+    #(type T = output_transaction,
+      type IDX = longint)
+    extends uvm_component;
+  
+    typedef ooo_comparator #(T, IDX) this_type;
+    `uvm_component_param_utils(this_type)
+  
+    typedef T q_of_T[$];
+    typedef IDX q_of_IDX[$];
+  
+    uvm_analysis_export #(T) dut_export, pred_export;
+  
+    protected uvm_tlm_analysis_fifo #(T) dut_fifo, pred_fifo;
+    bit before_queued = 0;
+    bit after_queued = 0;
+  
+    protected int m_matches, m_mismatches;
+  
+    protected q_of_T received_data[IDX];
+    protected int rcv_count[IDX];
+  
+    protected process before_proc = null;
+    protected process after_proc  = null;
+
+    protected int total_missing;
+    protected q_of_IDX missing_idxs;
+    protected IDX missing_idx;
+  
     function new(string name, uvm_component parent);
       super.new(name, parent);
-    endfunction : new
-
-    function void build_phase(uvm_phase phase);
-      super.build_phase(phase);
-      pred_export = new("input_export", this);
-      dut_export  = new("tlb_export", this);
+    endfunction
+  
+    function void build_phase( uvm_phase phase );
+      dut_export = new("dut_export", this);
+      pred_export = new("pred_export", this);
+      dut_fifo = new("dut_fifo", this);
+      pred_fifo = new("pred_fifo", this);
     endfunction : build_phase
+  
+    function void connect_phase( uvm_phase phase );
+      dut_export.connect(dut_fifo.analysis_export);
+      pred_export.connect(pred_fifo.analysis_export);
+    endfunction : connect_phase
+  
+    // The component forks two concurrent instantiations of this task
+    // Each instantiation monitors an input analysis fifo
+    protected task get_data(ref uvm_tlm_analysis_fifo #(T) txn_fifo, input bit is_before);
+      T txn_data, txn_existing;
+      IDX idx;
+      string rs;
+      q_of_T tmpq;
+      bit need_to_compare;
+     
+      forever 
+        begin
+          // Get the transaction object, block if no transaction available
+          txn_fifo.get(txn_data);
+          idx = txn_data.tx_id;
+    
+          // Check to see if there is an existing object to compare
+          need_to_compare = (rcv_count.exists(idx) &&
+                            ((is_before && rcv_count[idx] > 0) ||
+                            (!is_before && rcv_count[idx] < 0)));
+          if (need_to_compare) 
+            begin
+              // Compare objects using compare() method of transaction
+              tmpq = received_data[idx];
+              txn_existing = tmpq.pop_front();
+              received_data[idx] = tmpq;
+              if (txn_data.compare(txn_existing))
+                m_matches++;
+              else
+                m_mismatches++;
+            end
+          else 
+            begin
+            // If no compare happened, add the new entry
+              if (received_data.exists(idx))
+                tmpq = received_data[idx];
+              else
+                tmpq = {};
+              tmpq.push_back(txn_data);
+              received_data[idx] = tmpq;
+            end
+    
+          // Update the index count
+          if (is_before)
+            if (rcv_count.exists(idx)) 
+              begin
+                rcv_count[idx]--;
+              end
+            else
+              begin
+                rcv_count[idx] = -1;
+              end
+          else
+            if (rcv_count.exists(idx)) 
+              begin
+                rcv_count[idx]++;
+              end
+            else
+              begin
+                rcv_count[idx] = 1;
+              end
+          // If index count is balanced, remove entry from the arrays
+          if (rcv_count[idx] == 0) 
+            begin
+              received_data.delete(idx);
+              rcv_count.delete(idx);
+            end
+        end // forever
+    endtask
+  
+    virtual function int get_matches();
+      return m_matches;
+    endfunction : get_matches
+  
+    virtual function int get_mismatches();
+      return m_mismatches;
+    endfunction : get_mismatches
+  
+    virtual function int get_total_missing();
+      int num_missing;
+      foreach (rcv_count[i]) 
+        begin
+          num_missing += (rcv_count[i] < 0 ? -rcv_count[i] : rcv_count[i]);
+        end
+      return num_missing;
+    endfunction : get_total_missing
+  
+    virtual function int get_total_missing_unique();
+      int num_missing;
+      foreach (rcv_count[i]) 
+        begin
+          if (rcv_count[i] != 0)
+            begin
+              num_missing++;
+            end
+        end
+      return num_missing;
+    endfunction : get_total_missing_unique
+    
+    virtual function q_of_IDX get_missing_indexes();
+      q_of_IDX rv = rcv_count.find_index() with (item != 0);
+      return rv;
+    endfunction : get_missing_indexes;
+  
+    virtual function int get_missing_index_count(IDX i);
+    // If count is < 0, more "before" txns were received
+    // If count is > 0, more "after" txns were received
+      if (rcv_count.exists(i))
+        return rcv_count[i];
+      else
+        return 0;
+    endfunction : get_missing_index_count;
+  
+    task run_phase( uvm_phase phase );
+      fork
+        get_data(dut_fifo, 1);
+        get_data(pred_fifo, 0);
+      join
+    endtask : run_phase
 
-    function void write_PRED(output_transaction t);
-      //Print the received transacton
-      `uvm_info("comparator_pred",
-                $psprintf("received output tx %s with id %d",
-                t.convert2string(), t.tx_id), UVM_HIGH);
-    endfunction : write_PRED
-
-    function void write_DUT(output_transaction t);
-      //Print the received transacton
-      `uvm_info("comparator_dut",
-                $psprintf("received output tx %s with id %d",
-                t.convert2string(), t.tx_id), UVM_HIGH);
-    endfunction : write_DUT
-  endclass : icache_comparator
+    function void report_phase( uvm_phase phase);
+      `uvm_info("Comparator", $sformatf("Matches:    %0d", get_matches()), UVM_LOW);
+      `uvm_info("Comparator", $sformatf("Mismatches: %0d", get_mismatches()), UVM_LOW);
+      total_missing = get_total_missing_unique();
+      `uvm_info("Comparator", $sformatf("Total Missing:    %0d", total_missing), UVM_LOW);
+      missing_idxs = get_missing_indexes();
+      for (int i = 0; i < total_missing; i++)
+        begin
+          missing_idx = missing_idxs.pop_front();
+          `uvm_info("Comparator", $sformatf("Miss Idx: %0x with count %0d", missing_idx, 
+                    get_missing_index_count(missing_idx)), UVM_MEDIUM);
+        end
+    endfunction : report_phase
+  
+  endclass : ooo_comparator
 
   //.......................................................
   // Scoreboard
@@ -301,7 +483,8 @@ package icache_uvm_subs_pkg;
     input_transaction  t_cpy_ip;
     tlb_transaction    t_cpy_tlb;
     output_transaction t_cpy_op;
-    int op_tx_id_cntr = 0;
+    input_transaction inp_tx_q[$];
+    input_transaction temp_tx, temp_tx_2;
 
     function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -315,6 +498,12 @@ package icache_uvm_subs_pkg;
       input_aport   = new("input_aport", this);
       tlb_aport     = new("tlb_aport", this);
       output_aport  = new("output_aport", this);
+
+      // Create queue to delay by two cycles
+      temp_tx = input_transaction::type_id::create("temp_tx");
+      temp_tx_2 = input_transaction::type_id::create("temp_tx_2");
+      inp_tx_q.push_back(temp_tx);
+      inp_tx_q.push_back(temp_tx);
     endfunction : build_phase
 
     function void write_INPUT(input_transaction t);
@@ -327,6 +516,9 @@ package icache_uvm_subs_pkg;
       t_cpy_ip = input_transaction::type_id::create("t_cpy_ip");
       t_cpy_ip.copy(t);
       input_aport.write(t_cpy_ip);
+
+      //Add to queue to delay inputs transactions for the output
+      inp_tx_q.push_back(t_cpy_ip);
     endfunction : write_INPUT
 
     function void write_TLB(tlb_transaction t);
@@ -346,13 +538,17 @@ package icache_uvm_subs_pkg;
       `uvm_info("scoreboard_op",
                 $psprintf("received output tx %s",
                 t.convert2string()), UVM_HIGH);
+      
+      //Pop from input transaction queue
+      temp_tx_2 = inp_tx_q.pop_front();
 
       //Drive output to OOO comparator
       if (t.data_v_o == 1'b1 | t.miss_v_o == 1'b1) 
         begin
           t_cpy_op = output_transaction::type_id::create("t_cpy_op");
           t_cpy_op.copy(t);
-          t_cpy_op.tx_id = op_tx_id_cntr++;
+          t_cpy_op.tx_id[0 +: vaddr_width_p] = temp_tx_2.icache_pkt_i[icache_pkt_width_lp-1:
+                                               icache_pkt_width_lp-vaddr_width_p];
           output_aport.write(t_cpy_op);
         end
     endfunction : write_OUTPUT
