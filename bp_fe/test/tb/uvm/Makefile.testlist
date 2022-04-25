@@ -9,7 +9,7 @@ CE := CCE
 endif
 
 run_testlist.%:
-	$(MAKE) build_dump.$* TAG=$(CE)
+	$(MAKE) build.$* TAG=$(CE)
 	$(MAKE) $(addsuffix .$*, $(addprefix run_test.$(CE).,$(ICACHE_TESTLIST)))
 
 # We can trim this up a bit when we have custom configs

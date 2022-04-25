@@ -215,7 +215,7 @@ package icache_uvm_params_pkg;
 
 
   // Calculated parameters
-  parameter dram_type_p         = "dramsim3";//BP_DRAM_FLOWVAR
+  parameter dram_type_p         = "dramsim3"; //BP_DRAM_FLOWVAR;
   parameter bank_width_lp       = icache_block_width_p / icache_assoc_p;
   parameter icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p);
   parameter cfg_bus_width_lp    = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
