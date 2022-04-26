@@ -227,7 +227,7 @@ package icache_uvm_subs_pkg;
         begin
           input_fifo.get(ip_tx);
           tlb_fifo.get(tlb_tx);
-          if (ip_tx.v_i == 1'b1 || tlb_tx.ptag_v_i == 1'b1) 
+          if ((ip_tx.v_i == 1'b1 || tlb_tx.ptag_v_i == 1'b1) & ip_tx.ready_o == 1'b1) 
             begin
               //Print the received transacton
               `uvm_info("predictor",
@@ -236,11 +236,10 @@ package icache_uvm_subs_pkg;
 
               //Insert functional model here instead of fixed values
               result.data_v_o = 1'b1;
-              result.data_o   = '1;
+              result.data_o   = ip_tx.icache_pkt_i[icache_pkt_width_lp-vaddr_width_p +: 8];
               result.miss_v_o = 1'b0;
               result.tx_id[0 +: vaddr_width_p] = ip_tx.icache_pkt_i[icache_pkt_width_lp-1:
                                                 icache_pkt_width_lp-vaddr_width_p];
-
               results_aport.write(result);
             end
         end
@@ -250,47 +249,14 @@ package icache_uvm_subs_pkg;
   //.......................................................
   // Comparator
   //.......................................................
-  // `uvm_analysis_imp_decl(_PRED)
-  // `uvm_analysis_imp_decl(_DUT)
-  // class icache_comparator extends uvm_component;
-  //   `uvm_component_utils(icache_comparator)
-
-  //   uvm_analysis_imp_PRED #(output_transaction,icache_comparator) pred_export;
-  //   uvm_analysis_imp_DUT  #(output_transaction,icache_comparator) dut_export;
-
-  //   function new(string name, uvm_component parent);
-  //     super.new(name, parent);
-  //   endfunction : new
-
-  //   function void build_phase(uvm_phase phase);
-  //     super.build_phase(phase);
-  //     pred_export = new("input_export", this);
-  //     dut_export  = new("tlb_export", this);
-  //   endfunction : build_phase
-
-  //   function void write_PRED(output_transaction t);
-  //     //Print the received transacton
-  //     `uvm_info("comparator_pred",
-  //               $psprintf("received output tx %s with id %x",
-  //               t.convert2string(), t.tx_id), UVM_HIGH);
-  //   endfunction : write_PRED
-
-  //   function void write_DUT(output_transaction t);
-  //     //Print the received transacton
-  //     `uvm_info("comparator_dut",
-  //               $psprintf("received output tx %s with id %x",
-  //               t.convert2string(), t.tx_id), UVM_HIGH);
-  //   endfunction : write_DUT
-  // endclass : icache_comparator
-
   // Out of order comparator adapted from https://verificationacademy.com/cookbook/scoreboards
   // and then modified to suit our needs herein.
-  class ooo_comparator
+  class icache_comparator
     #(type T = output_transaction,
       type IDX = longint)
     extends uvm_component;
   
-    typedef ooo_comparator #(T, IDX) this_type;
+    typedef icache_comparator #(T, IDX) this_type;
     `uvm_component_param_utils(this_type)
   
     typedef T q_of_T[$];
@@ -333,69 +299,76 @@ package icache_uvm_subs_pkg;
     // The component forks two concurrent instantiations of this task
     // Each instantiation monitors an input analysis fifo
     protected task get_data(ref uvm_tlm_analysis_fifo #(T) txn_fifo, input bit is_before);
-      T txn_data, txn_existing;
+      T txn_in, txn_data, txn_existing;
       IDX idx;
       string rs;
       q_of_T tmpq;
       bit need_to_compare;
-     
+      
       forever 
         begin
           // Get the transaction object, block if no transaction available
-          txn_fifo.get(txn_data);
-          idx = txn_data.tx_id;
-    
-          // Check to see if there is an existing object to compare
-          need_to_compare = (rcv_count.exists(idx) &&
-                            ((is_before && rcv_count[idx] > 0) ||
-                            (!is_before && rcv_count[idx] < 0)));
-          if (need_to_compare) 
+          txn_data = T::type_id::create("txn_data");
+          txn_fifo.get(txn_in); 
+          txn_data.copy(txn_in);
+          if ((txn_data.data_v_o == 1'b1 | txn_data.miss_v_o == 1'b1) & (txn_data.tx_id != '0))
             begin
-              // Compare objects using compare() method of transaction
-              tmpq = received_data[idx];
-              txn_existing = tmpq.pop_front();
-              received_data[idx] = tmpq;
-              if (txn_data.compare(txn_existing))
-                m_matches++;
+              idx = txn_data.tx_id;
+        
+              // Check to see if there is an existing object to compare
+              need_to_compare = (rcv_count.exists(idx) &&
+                                ((is_before && rcv_count[idx] > 0) ||
+                                (!is_before && rcv_count[idx] < 0)));
+              if (need_to_compare) 
+                begin
+                  // Compare objects using compare() method of transaction
+                  tmpq = received_data[idx];
+                  txn_existing = tmpq.pop_front();
+                  received_data[idx] = tmpq;
+                  `uvm_info("comparator is comparing", $psprintf("Comparing %s to %s", txn_data.convert2string(), txn_existing.convert2string()), UVM_MEDIUM);
+                  if (txn_data.compare(txn_existing))
+                    m_matches++;
+                  else
+                    m_mismatches++;
+                end
+              else 
+                begin
+                  // If no compare happened, add the new entry
+                  if (received_data.exists(idx))
+                    tmpq = received_data[idx];
+                  else
+                    tmpq = {};
+
+                  tmpq.push_back(txn_data);
+                  received_data[idx] = tmpq;
+                end
+        
+              // Update the index count
+              if (is_before)
+                if (rcv_count.exists(idx)) 
+                  begin
+                    rcv_count[idx]--;
+                  end
+                else
+                  begin
+                    rcv_count[idx] = -1;
+                  end
               else
-                m_mismatches++;
-            end
-          else 
-            begin
-            // If no compare happened, add the new entry
-              if (received_data.exists(idx))
-                tmpq = received_data[idx];
-              else
-                tmpq = {};
-              tmpq.push_back(txn_data);
-              received_data[idx] = tmpq;
-            end
-    
-          // Update the index count
-          if (is_before)
-            if (rcv_count.exists(idx)) 
-              begin
-                rcv_count[idx]--;
+                if (rcv_count.exists(idx)) 
+                  begin
+                    rcv_count[idx]++;
+                  end
+                else
+                  begin
+                    rcv_count[idx] = 1;
+                  end
+              // If index count is balanced, remove entry from the arrays
+              if (rcv_count[idx] == 0) 
+                begin
+                  received_data.delete(idx);
+                  rcv_count.delete(idx);
+                end
               end
-            else
-              begin
-                rcv_count[idx] = -1;
-              end
-          else
-            if (rcv_count.exists(idx)) 
-              begin
-                rcv_count[idx]++;
-              end
-            else
-              begin
-                rcv_count[idx] = 1;
-              end
-          // If index count is balanced, remove entry from the arrays
-          if (rcv_count[idx] == 0) 
-            begin
-              received_data.delete(idx);
-              rcv_count.delete(idx);
-            end
         end // forever
     endtask
   
@@ -463,7 +436,7 @@ package icache_uvm_subs_pkg;
         end
     endfunction : report_phase
   
-  endclass : ooo_comparator
+  endclass : icache_comparator
 
   //.......................................................
   // Scoreboard
@@ -517,7 +490,7 @@ package icache_uvm_subs_pkg;
       t_cpy_ip.copy(t);
       input_aport.write(t_cpy_ip);
 
-      //Add to queue to delay inputs transactions for the output
+      //Add to queue to delay inputs transactions for the output by 2 cycles
       inp_tx_q.push_back(t_cpy_ip);
     endfunction : write_INPUT
 
@@ -549,6 +522,7 @@ package icache_uvm_subs_pkg;
           t_cpy_op.copy(t);
           t_cpy_op.tx_id[0 +: vaddr_width_p] = temp_tx_2.icache_pkt_i[icache_pkt_width_lp-1:
                                                icache_pkt_width_lp-vaddr_width_p];
+          `uvm_info("scoreboard_op_vaddr", $psprintf("%0x\n", t_cpy_op.tx_id), UVM_MEDIUM);
           output_aport.write(t_cpy_op);
         end
     endfunction : write_OUTPUT

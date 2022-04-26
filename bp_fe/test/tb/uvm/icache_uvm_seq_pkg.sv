@@ -145,13 +145,14 @@ package icache_uvm_seq_pkg;
         data_o    = rhs_.data_o;
         miss_v_o  = rhs_.miss_v_o;
         data_v_o  = rhs_.data_v_o;
+        tx_id     = rhs_.tx_id;
     endfunction : do_copy
 
     function string convert2string();
     string s;
     s = super.convert2string();
-    $sformat(s, "data_o %d\t data_v_o %d\t miss_v_o %d\n",
-              data_o, data_v_o, miss_v_o);
+    $sformat(s, "data_o %d\t data_v_o %d\t miss_v_o %d\t tx_id %0x\n",
+              data_o, data_v_o, miss_v_o, tx_id);
     return s;
     endfunction : convert2string
 
