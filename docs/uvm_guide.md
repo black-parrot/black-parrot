@@ -91,3 +91,12 @@ A virtual sequence in UVM is used to drive two or more interfaces simultaneously
 The test_uncached_load virtual sequence sends an uncached fill request for address 0x24, then sends a couple of blank cycles on both the input and TLB interface, then sends another uncached fill request of address 0x24.  The first fill request will cause the cache to fill in the correct data.  Then the second fill request will only actually occur once the I$ signals that it is ready at which point it will have filled the data and can output it.
 
 The test_load virtual sequence sends a cached fill request first for addresses 0x00, 0x04, and 0x08.  The it sends a couple of blank cycles on both the input and TLB interface before sending a fill request for addresses 0x00-0x3c.  It will receive the data for all of these addresses after the second series of fill requests.
+
+## Work that needs to be done to extend UVM Testbenches:
+
+As discussed above currently only the I-cache has UVM support, and other modules could use UVM testbenches of their own.  The simplest to implement on top of the existing is the D-Cache, but there are more possible choices.
+
+### I-Cache
+- A functional model of the cache used by the predictor could be created (whether in System Verilog or with another language through the System Verilog DPI).
+- Coverage groups could be greatly improved to better reflect the cache behavoir and testing goals.
+- Many more tests could be added to verify all aspects of the cache's functionality.
