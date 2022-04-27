@@ -82,10 +82,8 @@ In the UVM the comparator compares and reports on the comparison between the pre
 * In the run phase the get_data function is forked for both the DUT and the predictor
   * This function implements two arrays, the first is an array where each index is a queue containing a transaction that has been received for a given index, and the second is an array which counts the predictor and dut transactions with an int.  Both arrays are indexed by the transaction id's set in both the scoreboard and the predictor for the given transaction.
   * When a transaction is received, it checks to see if a transaction has been received previously for this virtual address from the other analysis port
-    * If so the two transactions which matched are compared and whether there is a match or mismatch is recorded.
-    * If not, the transaction is added to the queue corresponding to its index in the array of queues.
-  * Then the count is updated for a given index, incrementing if the transaction came in on the predictor fifo and decrementing if the transaction came in on the DUT fifo.
-  * Then there is a final check to see if the count is zero, at which point we can deallocate the queue from the array of queues, and the count from the array of counts.
+    * If so the two transactions which matched are compared and whether there is a match or mismatch is recorded.  At this point we can deallocate the queue from the array of queues, and the count from the array of counts.
+    * If not, the transaction is added to the queue corresponding to its index in the array of queues.  Then the count is updated for a given index, incrementing if the transaction came in on the predictor fifo and decrementing if the transaction came in on the DUT fifo.
 * The report phase then prints how many Matches, Mismatches, and Missing transactions were recorded in the comparator.
 
 ### Tests and Sequences
