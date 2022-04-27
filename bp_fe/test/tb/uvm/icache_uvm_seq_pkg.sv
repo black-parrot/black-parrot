@@ -41,7 +41,7 @@ package icache_uvm_seq_pkg;
     function void do_copy(uvm_object rhs);
       input_transaction rhs_;
 
-      if(!$cast(rhs_, rhs)) 
+      if(!$cast(rhs_, rhs))
         begin
           uvm_report_error("do_copy:", "Cast failed");
           return;
@@ -59,7 +59,7 @@ package icache_uvm_seq_pkg;
       s = super.convert2string();
       $sformat(s,
         "vaddr %d\t op_code %d\t v_i %d\t ready_o %d\t reset_i %d clk_i %d\n",
-          icache_pkt_i[icache_pkt_width_lp-1:icache_pkt_width_lp-vaddr_width_p], 
+          icache_pkt_i[icache_pkt_width_lp-1:icache_pkt_width_lp-vaddr_width_p],
           icache_pkt_i[icache_pkt_width_lp-vaddr_width_p-1:0], v_i, ready_o, reset_i, clk_i);
       return s;
     endfunction : convert2string
@@ -91,7 +91,7 @@ package icache_uvm_seq_pkg;
     function void do_copy(uvm_object rhs);
       tlb_transaction rhs_;
 
-      if(!$cast(rhs_, rhs)) 
+      if(!$cast(rhs_, rhs))
         begin
           uvm_report_error("do_copy:", "Cast failed");
           return;
@@ -136,7 +136,7 @@ package icache_uvm_seq_pkg;
     function void do_copy(uvm_object rhs);
       output_transaction rhs_;
 
-      if(!$cast(rhs_, rhs)) 
+      if(!$cast(rhs_, rhs))
         begin
           uvm_report_error("do_copy:", "Cast failed");
           return;
@@ -159,7 +159,7 @@ package icache_uvm_seq_pkg;
     function bit do_compare(uvm_object rhs, uvm_comparer comparer);
       output_transaction rhs_;
 
-      if(!$cast(rhs_, rhs)) 
+      if(!$cast(rhs_, rhs))
         begin
           return 0;
         end
@@ -192,7 +192,7 @@ package icache_uvm_seq_pkg;
     function void do_copy(uvm_object rhs);
       ce_transaction rhs_;
 
-      if(!$cast(rhs_, rhs)) 
+      if(!$cast(rhs_, rhs))
         begin
           uvm_report_error("do_copy:", "Cast failed");
           return;
@@ -278,7 +278,7 @@ package icache_uvm_seq_pkg;
     task body;
       tx = input_transaction::type_id::create("tx");
       start_item(tx);
-      if (!tx.randomize() with {v_i==1'b1;}) 
+      if (!tx.randomize() with {v_i==1'b1;})
         begin
           `uvm_error("input_sequence", "rand failure")
         end
@@ -326,7 +326,7 @@ package icache_uvm_seq_pkg;
       seq_pkt.op = e_icache_fetch;
       tx.icache_pkt_i = seq_pkt;
       tx.v_i = 1'b1;
-      `uvm_info("fetch_sequence", $psprintf("Generated fetch request with op %d\t vaddr %d\n", 
+      `uvm_info("fetch_sequence", $psprintf("Generated fetch request with op %d\t vaddr %d\n",
                 seq_pkt.op, seq_pkt.vaddr), UVM_LOW);
       finish_item(tx);
 
@@ -355,7 +355,7 @@ package icache_uvm_seq_pkg;
       seq_pkt.op = e_icache_fill;
       tx.icache_pkt_i = seq_pkt;
       tx.v_i = v_i;
-      `uvm_info("fill_sequence", $psprintf("Generated fill request with op %d\t vaddr %d\n", 
+      `uvm_info("fill_sequence", $psprintf("Generated fill request with op %d\t vaddr %d\n",
                 seq_pkt.op, seq_pkt.vaddr), UVM_LOW);
       finish_item(tx);
 
@@ -455,7 +455,7 @@ class test_load_vseq extends myvseq_base;
     // Ask for fill from 0, 4, and 8
     ptag_seq.ptag_i = 28'h0080000;
     fork
-      for(int i = 0; i <= 8; i+=4) 
+      for(int i = 0; i <= 8; i+=4)
         begin
           test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
           test_seq.start(input_sequencer_h, this);
@@ -472,7 +472,7 @@ class test_load_vseq extends myvseq_base;
     // Ask for fill from addresses 0,4,8,12,...,60
     fork
       begin
-        for(int i = 0; i < 64; i+=4) 
+        for(int i = 0; i < 64; i+=4)
           begin
             test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | i;
             test_seq.start(input_sequencer_h, this);
@@ -542,3 +542,4 @@ endclass : test_uncached_load_vseq
 
 endpackage : icache_uvm_seq_pkg
 `endif
+

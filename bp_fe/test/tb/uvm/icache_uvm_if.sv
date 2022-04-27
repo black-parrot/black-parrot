@@ -93,3 +93,4 @@ interface ram_if;
 
 endinterface : ram_if
 `endif
+
