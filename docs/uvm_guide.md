@@ -73,10 +73,10 @@ The coverage collector is used to collect functional coverage information so tha
 #### Scoreboard
 In the UVM the scoreboard is used to compare the output of the DUT against some emulated/functional model of the DUT to verify that the output is what is expected.  Herein, our scoreboard has three analysis ports that receive transactions from the input monitor, the tlb monitor, and the output monitor.  These three ports are implemented as analysis imps so that when each receives a transaction, it handles it accordingly.  The input and tlb transactions are sent to the predictor as they are received.  In addition, the input transaction is queued in a 2 item long queue, such that the cache request lines up with the cache response from the output monitor.  When a transaction comes in on the output port, we first pop an item from the input queue so that it remains 2 items long.  Then check if the transaction is valid and if it is we assign an id to the transaction (used by the comparator) which is the virtual address of the input transaction.  Then we send that output transaction to the comparator.
 
-### Predictor
+#### Predictor
 In the UVM the predictor is a functional model of the cache which should give the same output as the actual cache for the sake of comparison.  In its current state, the predictor written here is not a complex functional model, but instead is hardcoded to be accurate for the test_load and test_uncached_load tests.  This is a place for future work, which we greatly encourage someone to come along and complete.  Currently, the predictor takes the input and tlb transaction from its input and if they are valid, gives an output that is valid and indexed according to the input transaction virtual address.  This output is broadcast to the comparator to be compared to the output from the scoreboard (and inherently, the DUT).
 
-### Comparator
+#### Comparator
 In the UVM the comparator compares and reports on the comparison between the predicted and actual output.  Since we are using a ready valid protocol here, there is not a guaranteed time that the predicted output should arrive such that it coincides with the time that the actual output arrives.  Therefore, we need to build a comparator that is out of order using an associative array.  A nice guide for this is found in the UVM Cookbook linked above.  The comparator works as follows:
 * The comparator implements an analysis fifo for both the DUT and predicted transactions.
 * In the run phase the get_data function is forked for both the DUT and the predictor
