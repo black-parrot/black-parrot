@@ -26,10 +26,10 @@ As discussed above currently only the I-cache has UVM support, and other modules
 
 ### UVM Background:
 If you are new to the Universal Verification Methodology(UVM), then you should first spend some time learning the general concepts.  A few recommended resources are listed below:
-https://verificationacademy.com/cookbook/uvm
-https://verificationacademy.com/courses/uvm-basics
-https://verificationacademy.com/courses/advanced-uvm
-https://ieeexplore-ieee-org.ezproxy.bu.edu/document/9195920
+* https://verificationacademy.com/cookbook/uvm
+* https://verificationacademy.com/courses/uvm-basics
+* https://verificationacademy.com/courses/advanced-uvm
+* https://ieeexplore.ieee.org/document/9195920
 
 ### Testbench Overview:
 ![uvm_arch.svg](uvm_arch.svg)
