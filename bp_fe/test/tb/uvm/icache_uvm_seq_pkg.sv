@@ -538,6 +538,53 @@ class test_uncached_load_vseq extends myvseq_base;
 
 endclass : test_uncached_load_vseq
 
+class test_tlb_miss_vseq extends myvseq_base;
+  `uvm_object_utils(test_tlb_miss_vseq);
+
+  function new (string name = "test_tlb_miss_vseq");
+    super.new(name);
+  endfunction: new
+
+  task body();
+    fill_sequence test_seq = fill_sequence::type_id::create("test_seq");
+    zero_sequence z_seq = zero_sequence::type_id::create("z_seq");
+    ptag_sequence ptag_seq = ptag_sequence::type_id::create("ptag_seq");
+    tlb_zero_sequence tz_seq = tlb_zero_sequence::type_id::create("tz_seq");
+
+    test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | 'h24;
+    ptag_seq.ptag_i = 28'h0080000;
+
+    `uvm_info("test_tlb_miss_vseq", "starting sequence", UVM_HIGH);
+
+    // Ask for fill from 0x24 with TLB miss
+    fork
+      repeat(2) test_seq.start(input_sequencer_h, this);
+      repeat(2) tz_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Do nothing for 2 cycles
+    fork
+      z_seq.start(input_sequencer_h, this);
+      tz_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Ask for fill from 0x24 again, TLB hit
+    fork
+      repeat(2) test_seq.start(input_sequencer_h, this);
+      repeat(2) ptag_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Do nothing after that
+    fork
+      z_seq.start(input_sequencer_h, this);
+      tz_seq.start(tlb_sequencer_h, this);
+    join
+
+    `uvm_info("test_uncached_load_vseq", "sequence finished", UVM_HIGH);
+  endtask : body
+
+endclass : test_tlb_miss_vseq
+
 endpackage : icache_uvm_seq_pkg
 `endif
 

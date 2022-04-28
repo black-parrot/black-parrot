@@ -24,7 +24,7 @@ package icache_uvm_tests_pkg;
     virtual ce_icache_if icache_ce_if_h;
 
     bit input_is_active  = 1'b1;
-    bit tlb_is_active    = 1'b0;
+    bit tlb_is_active    = 1'b1;
     bit output_is_active = 1'b0;
     bit ce_is_active     = 1'b0;
 
@@ -98,7 +98,6 @@ package icache_uvm_tests_pkg;
     endfunction : new
 
     function void build_phase(uvm_phase phase);
-      tlb_is_active = 1'b1;
       super.build_phase(phase);
       myvseq_base::type_id::set_type_override(test_load_vseq::get_type());
     endfunction : build_phase
@@ -112,11 +111,23 @@ package icache_uvm_tests_pkg;
     endfunction : new
 
     function void build_phase(uvm_phase phase);
-      tlb_is_active = 1'b1;
       super.build_phase(phase);
       myvseq_base::type_id::set_type_override(test_uncached_load_vseq::get_type());
     endfunction : build_phase
   endclass : test_uncached_load
+
+  class test_tlb_miss extends base_test;
+    `uvm_component_utils(test_tlb_miss)
+
+    function new(string name, uvm_component parent);
+      super.new(name, parent);
+    endfunction : new
+
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      myvseq_base::type_id::set_type_override(test_tlb_miss_vseq::get_type());
+    endfunction : build_phase
+  endclass : test_tlb_miss
 endpackage : icache_uvm_tests_pkg
 `endif
 
