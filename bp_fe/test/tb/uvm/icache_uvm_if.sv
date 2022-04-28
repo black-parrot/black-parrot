@@ -1,11 +1,7 @@
-// Devin Bidstrup 2022
 // UVM Interfaces for BP L1 ICache Testbench
 
-`ifndef ICACHE_UVM_IF_PKG
-`define ICACHE_UVM_IF_PKG
-
-`include "icache_uvm_cfg_pkg.sv"
-`include "icache_uvm_params_pkg.sv"
+`ifndef ICACHE_UVM_IF
+`define ICACHE_UVM_IF
 
 //.......................................................
 // DUT Interfaces

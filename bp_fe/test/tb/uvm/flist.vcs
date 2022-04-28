@@ -28,3 +28,12 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp
 # common files
 $BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
 $BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
+# uvm files
+# VCS_BUILD_OPTS += +incdir+$(BP_UVM_DIR)
++incdir+$BP_UVM_DIR
+$BP_UVM_DIR/icache_uvm_params_pkg.sv
+$BP_UVM_DIR/icache_uvm_cfg_pkg.sv
+$BP_UVM_DIR/icache_uvm_seq_pkg.sv
+$BP_UVM_DIR/icache_uvm_subs_pkg.sv
+$BP_UVM_DIR/icache_uvm_comp_pkg.sv
+$BP_UVM_DIR/icache_uvm_tests_pkg.sv

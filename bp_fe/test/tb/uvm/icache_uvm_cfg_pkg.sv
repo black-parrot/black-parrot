@@ -1,4 +1,3 @@
-// Devin Bidstrup 2022
 // UVM Config Objects for BP L1 ICache Testbench
 
 `ifndef ICACHE_CFG_PKG

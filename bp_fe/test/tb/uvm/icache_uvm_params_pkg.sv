@@ -1,4 +1,3 @@
-// Devin Bidstrup 2022
 // BP Parameters as a package for BP L1 ICache Testbench
 
 // This is needed as the UVM sequencer cannot handle parameterized transactions,

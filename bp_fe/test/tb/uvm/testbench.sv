@@ -1,14 +1,7 @@
-// Devin Bidstrup 2022
-// UVM Top-Level Testbench for BP L1 ICache Testbench
+// UVM Top-Level Testbench for BP L1 ICache
 
 `include "uvm_macros.svh"
 
-`include "icache_uvm_cfg_pkg.sv"
-`include "icache_uvm_params_pkg.sv"
-`include "icache_uvm_seq_pkg.sv"
-`include "icache_uvm_tests_pkg.sv"
-`include "icache_uvm_comp_pkg.sv"
-`include "icache_uvm_subs_pkg.sv"
 `include "icache_uvm_if.sv"
 
 `ifndef BP_SIM_CLK_PERIOD
@@ -231,7 +224,7 @@ module testbench;
      );
 
   initial
-  begin: blk
+  begin
     uvm_config_db #(virtual input_icache_if)::set(null, "uvm_test_top", "dut_input_vi", cache_input_if_h);
     uvm_config_db #(virtual tlb_icache_if)::set(null, "uvm_test_top", "dut_tlb_vi", cache_tlb_if_h);
     uvm_config_db #(virtual output_icache_if)::set(null, "uvm_test_top", "dut_output_vi", cache_output_if_h);
@@ -243,4 +236,4 @@ module testbench;
     run_test();
   end
 
-endmodule: testbench
+endmodule

@@ -1,11 +1,9 @@
-// Devin Bidstrup 2022
 // UVM Sequences for BP L1 ICache Testbench
 
 `ifndef ICACHE_SEQ_PKG
 `define ICACHE_SEQ_PKG
 
 `include "uvm_macros.svh"
-`include "icache_uvm_params_pkg.sv"
 
 package icache_uvm_seq_pkg;
 

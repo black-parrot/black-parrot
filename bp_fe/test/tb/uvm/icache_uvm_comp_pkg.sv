@@ -1,12 +1,8 @@
-// Devin Bidstrup 2022
 // UVM Environment Components for BP L1 ICache Testbench
 
 `ifndef ICACHE_COMP_PKG
 `define ICACHE_COMP_PKG
 
-`include "icache_uvm_seq_pkg.sv"
-`include "icache_uvm_cfg_pkg.sv"
-`include "icache_uvm_subs_pkg.sv"
 `include "uvm_macros.svh"
 
 package icache_uvm_comp_pkg;
