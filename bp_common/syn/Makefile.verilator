@@ -27,13 +27,11 @@ VV_OPTS += -Wno-timescalemod
 
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module testbench -f flist.vcs config.vlt
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++14
-BUILD_OPTS += -I$(BP_TOOLS_DIR)/install/include
-BUILD_OPTS += -I$(BP_TOOLS_DIR)/install/share/verilator/include/vltstd/
+BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_DIR)/dromajo/include"
+BUILD_OPTS += -CFLAGS "-I$(BP_RTL_INSTALL_DIR)/include -I$(BASEJUMP_STL_DIR)/bsg_test/"
 BUILD_OPTS += -LDFLAGS "-lpthread"
-BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldramsim3 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib"
-BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib-linux64 -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib-linux64"
-BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_DIR)/install/lib -ldromajo_cosim -Wl,-rpath=$(BP_TOOLS_DIR)/install/lib"
-BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_DIR)/install/include -I$(BP_EXTERNAL_DIR)/basejump_stl/bsg_test/"
+BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
+BUILD_OPTS += -LDFLAGS "-L$(BP_RTL_INSTALL_DIR)/lib -ldromajo_cosim -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
 
 VERILATOR_OPTIONS =
 
