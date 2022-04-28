@@ -4,11 +4,16 @@
 
 ## How to Simulate Existing Testbenches:
 * Navigate to /bp_fe/syn/
-* Base command: make run_testlist.v UCE_P=1 UVM=1
+* Base command: `make run_testlist.v UCE_P=1 TB=uvm`
   * Note: At this time the UVM testbench only supports VCS.
 * Options:
-  * UVM_VERBOSITY = UVM_NONE - UVM_FULL
+  * UVM_VERBOSITY = UVM_NONE to UVM_FULL
     * Sets the verbosity of UVM messages for the simulation using the plusarg of the same name.
+  * Waveform dumping
+    * To dump waves for a specific test replace `run_testlist.v` with `build_dump.v sim.v PROG=test_load TAG=UCE` where test_load is the name of the test.
+    * Otherwise, you can replace build in Makefile.testlist with build_dump temporarily to dump waves for all tests.
+  * Coverage information
+    * To get coverage using URG, add the `cov.v` keyword after `run_testlist.v`
 
 ## Work that needs to be done to extend UVM Testbenches:
 
@@ -97,3 +102,77 @@ A virtual sequence in UVM is used to drive two or more interfaces simultaneously
 The test_uncached_load virtual sequence sends an uncached fill request for address 0x24, then sends a couple of blank cycles on both the input and TLB interface, then sends another uncached fill request of address 0x24.  The first fill request will cause the cache to fill in the correct data.  Then the second fill request will only actually occur once the I$ signals that it is ready at which point it will have filled the data and can output it.
 
 The test_load virtual sequence sends a cached fill request first for addresses 0x00, 0x04, and 0x08.  Then sends a couple of blank cycles on both the input and TLB interface before sending a fill request for addresses 0x00-0x3c.  It will receive the data for all of these addresses after the second series of fill requests.
+
+##### Creating a New Test:
+For this example we will create a new test called test_tlb_miss, where we simulate the cache output if we send a fill request, but it misses in the TLB.
+1. Edit Makefile.testlist to include the new testname
+```
+  ICACHE_TESTLIST := \
+     test_uncached_load \
+     test_load \
+     test_tlb_miss  # new test
+```
+2. In icache_uvm_tests_pkg add a new test extended from the base_test which calls the test_tlb_miss_vseq that we will define in the next step.  In addition, if you wished to change whether the input, tlb, output, or ce is active then in the build_phase one could add the line `tlb_is_active = 1'b0` to simulate without the tlb sequencer and driver which by default are enabled.
+```
+  class test_tlb_miss extends base_test;
+    `uvm_component_utils(test_tlb_miss)
+
+    function new(string name, uvm_component parent);
+      super.new(name, parent);
+    endfunction : new
+
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      myvseq_base::type_id::set_type_override(test_tlb_miss_vseq::get_type());
+    endfunction : build_phase
+  endclass : test_tlb_miss
+```
+3. In icache_uvm_seq_pkg add a new virtual sequence for your test.  Here you have some flexibility as to whether to extend this from the base virtual sequence or one of the existing tests or otherwise.  In addition, you may be required to add a new sequence, or create hierarchical sequences to randomize.  If you do choose to add a new sequence, double check that the same functonality could not be achive using an existing sequence so as to keep the file from being unneccessarily large.  In our case we choose to add a new sequence extended from the base which requests a single adddress of data, but provides
+```
+class test_tlb_miss_vseq extends myvseq_base;
+  `uvm_object_utils(test_tlb_miss_vseq);
+
+  function new (string name = "test_tlb_miss_vseq");
+    super.new(name);
+  endfunction: new
+
+  task body();
+    fill_sequence test_seq = fill_sequence::type_id::create("test_seq");
+    zero_sequence z_seq = zero_sequence::type_id::create("z_seq");
+    ptag_sequence ptag_seq = ptag_sequence::type_id::create("ptag_seq");
+    tlb_zero_sequence tz_seq = tlb_zero_sequence::type_id::create("tz_seq");
+
+    test_seq.seq_pkt.vaddr = (1'b1 << 'd31) | 'h24;
+    ptag_seq.ptag_i = 28'h0080000;
+
+    `uvm_info("test_tlb_miss_vseq", "starting sequence", UVM_HIGH);
+
+    // Ask for fill from 0x24 with TLB miss
+    fork
+      repeat(2) test_seq.start(input_sequencer_h, this);
+      repeat(2) tz_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Do nothing for 2 cycles
+    fork
+      z_seq.start(input_sequencer_h, this);
+      tz_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Ask for fill from 0x24 again, TLB hit
+    fork
+      repeat(2) test_seq.start(input_sequencer_h, this);
+      repeat(2) ptag_seq.start(tlb_sequencer_h, this);
+    join
+
+    // Do nothing after that
+    fork
+      z_seq.start(input_sequencer_h, this);
+      tz_seq.start(tlb_sequencer_h, this);
+    join
+
+    `uvm_info("test_uncached_load_vseq", "sequence finished", UVM_HIGH);
+  endtask : body
+
+endclass : test_tlb_miss_vseq
+```
