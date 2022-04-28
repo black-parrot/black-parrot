@@ -9,8 +9,6 @@
 * Options:
   * UVM_VERBOSITY = UVM_NONE - UVM_FULL
     * Sets the verbosity of UVM messages for the simulation using the plusarg of the same name.
-  * DEBUG = 1
-    * Launches DVE/Verdi in interactive mode depending on whether the $VERDI_HOME environment variable has been set.
 
 ## Work that needs to be done to extend UVM Testbenches:
 
