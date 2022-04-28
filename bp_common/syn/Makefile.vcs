@@ -44,9 +44,6 @@ ifdef UVM
 VCS_BUILD_OPTS += -ntb_opts uvm-1.2 +incdir+$(BP_UVM_DIR)
 VCS_BUILD_OPTS += -v2k_generate
 endif
-ifdef DEBUG
-VCS_BUILD_OPTS += -R -gui -debug_access+all
-endif
 
 ifdef UVM
 ifdef UVM_VERBOSITY
