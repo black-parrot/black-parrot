@@ -13,7 +13,7 @@
     * To dump waves for a specific test replace `run_testlist.v` with `build_dump.v sim.v PROG=test_load TAG=UCE` where test_load is the name of the test.
     * Otherwise, you can replace build in Makefile.testlist with build_dump temporarily to dump waves for all tests.
   * Coverage information
-    * To get coverage using URG, add the `cov.v` keyword after `run_testlist.v`
+    * To get coverage using URG, add the `cov.v` keyword and replace `build.v` with `build_cov.v` such that the command is `make build_cov.v sim.v PROG=test_load TAG=UCE cov.v TB=uvm UCE_P=1`
 
 ## Work that needs to be done to extend UVM Testbenches:
 
