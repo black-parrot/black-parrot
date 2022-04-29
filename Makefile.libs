@@ -1,0 +1,26 @@
+
+dramsim3_dir :=$(BP_RTL_DIR)/external/basejump_stl/
+
+define submodule_lib_template
+$(1)_tag ?= $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
+$(BP_RTL_TOUCH_DIR)/$$($(1)_tag):
+	rm -rf $(BP_RTL_TOUCH_DIR)/$(1).*
+	cd $(BP_RTL_DIR); git submodule update --init --recursive $(GIT_SUBMODULE_DEPTH) $(2)
+	+$(MAKE) $(1)_build
+	touch $(BP_RTL_TOUCH_DIR)/$$($(1)_tag)
+$(1): | $(BP_RTL_TOUCH_DIR)/$$($(1)_tag)
+$(1)_manual:
+	+$(MAKE) $(1)_build
+endef
+
+dramsim3_build:
+	$(MAKE) -C $(dramsim3_dir)/bsg_test -f libdramsim3.mk
+	mv $(dramsim3_dir)/bsg_test/libdramsim3.so $(BP_RTL_LIB_DIR)/
+
+.PHONY: dramsim3
+$(eval $(call submodule_lib_template,dramsim3,$(dramsim3_dir)))
+
+.PHONY: libs_clean
+libs_clean:
+	rm -rf $(BP_RTL_BIN_DIR) $(BP_RTL_LIB_DIR) $(BP_RTL_INCLUDE_DIR) $(BP_RTL_TOUCH_DIR)
+
