@@ -79,7 +79,10 @@ else ifeq ($(NBF_CONFIG_P), 1)
 NBF_INPUTS += --config
 endif
 ifeq ($(PRELOAD_MEM_P), 0)
-NBF_INPUTS += --mem=prog.mem --skip_zeros
+NBF_INPUTS += --mem=prog.mem --mem_size=$(NBF_MEM_SIZE)
+ifeq ($(NBF_SKIP_ZEROS), 1)
+NBF_INPUTS += --skip_zeros
+endif
 endif
 NBF_INPUTS += --addr_width=$(PADDR_WIDTH)
 NBF_INPUTS += --debug
