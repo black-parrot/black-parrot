@@ -206,6 +206,7 @@ module bp_me_nonsynth_cache
     (.tag_set_i(tag_mem_data_lo)
      ,.tag_i(tr_tag)
      ,.w_i(store_op)
+     ,.uc_i(uc_op)
      ,.hit_o(tag_lookup_hit_lo)
      ,.dirty_o(tag_lookup_dirty_lo)
      ,.way_o(tag_lookup_hit_way_lo)
