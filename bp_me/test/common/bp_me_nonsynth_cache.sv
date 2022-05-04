@@ -414,7 +414,6 @@ module bp_me_nonsynth_cache
     state_n = state_r;
     // Trace Replay Interface
     tr_pkt_cast_o = tr_pkt_r;
-    tr_pkt_cast_o.cmd = bp_me_nonsynth_opcode_e'(0);
     tr_pkt_cast_o.data = '0;
     tr_pkt_v_o = 1'b0;
     // signal to lock LCE-Cache interface (data, stat, mem pkt from LCE)
