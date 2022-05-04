@@ -22,10 +22,9 @@ protos=(
     "mesi"
     "mesi-nonspec"
     "moesif"
+    "msi"
+    "msi-nonspec"
     )
-# TODO: Reenable
-#    "msi"
-#    "msi-nonspec"
 
 # The base command to append the configuration to
 cmd_base="make -C bp_me/syn run_testlist.${SUFFIX}"
