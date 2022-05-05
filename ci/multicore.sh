@@ -47,6 +47,7 @@ progs=(
     "mc_sanity"
     "mc_rand_walk"
     "mc_work_share_sort"
+    "mc_lrsc_add"
     )
 
 # The base command to append the configuration to
