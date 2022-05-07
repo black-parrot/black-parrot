@@ -62,6 +62,7 @@ module bsg_crossbar_control_locking_o_by_i
   for (genvar i = 0 ; i < o_els_p; i++) begin: rr
 
     logic [i_els_p-1:0] not_req_mask_r, req_mask_r;
+    logic [i_els_p-1:0] reqs_li;
 
     bsg_dff_reset_en #( .width_p(i_els_p) )
       req_words_reg
@@ -74,7 +75,9 @@ module bsg_crossbar_control_locking_o_by_i
 
     assign req_mask_r = ~not_req_mask_r;
 
-    assign valid_o[i] = |o_select_t[i];
+    assign reqs_li[i] = o_select_t[i] & req_mask_r;
+    // Every port should have a valid request and a valid grant to progress
+    assign valid_o[i] = |reqs_li;
     assign rr_yumi_li[i] = valid_o[i] & ready_and_i[i];
 
     bsg_arb_round_robin #(
@@ -83,7 +86,7 @@ module bsg_crossbar_control_locking_o_by_i
       .clk_i(clk_i)
       ,.reset_i(reset_i)
     
-      ,.reqs_i(o_select_t[i] & req_mask_r)
+      ,.reqs_i(reqs_li)
       ,.grants_o(grants_oi_one_hot_o[i])
       ,.yumi_i(rr_yumi_li[i])
     );
