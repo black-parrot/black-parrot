@@ -75,7 +75,7 @@ module bsg_crossbar_control_locking_o_by_i
 
     assign req_mask_r = ~not_req_mask_r;
 
-    assign reqs_li[i] = o_select_t[i] & req_mask_r;
+    assign reqs_li = o_select_t[i] & req_mask_r;
     // Every port should have a valid request and a valid grant to progress
     assign valid_o[i] = |reqs_li;
     assign rr_yumi_li[i] = valid_o[i] & ready_and_i[i];
