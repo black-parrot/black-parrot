@@ -76,16 +76,24 @@ interface ce_icache_if
 endinterface : ce_icache_if
 
 // Used for communication between UCE and RAM
-interface ram_if;
+interface ram_if
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
   import bp_me_pkg::*;
   import icache_uvm_params_pkg::*;
-
-  logic mem_cmd_v_lo, mem_resp_v_li;
-  logic mem_cmd_ready_and_li, mem_resp_ready_and_lo, mem_cmd_last_lo, mem_resp_last_li;
-  bp_bedrock_cce_mem_header_s mem_cmd_header_lo, mem_resp_header_li;
-  logic [l2_fill_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
+    (input logic clk_i,
+     input logic reset_i);
+  
+  logic                         mem_cmd_v_lo;
+  logic                         mem_resp_v_li;
+  logic                         mem_cmd_ready_and_li;
+  logic                         mem_resp_ready_and_lo;
+  logic                         mem_cmd_last_lo;
+  logic                         mem_resp_last_li;
+  bp_bedrock_cce_mem_header_s   mem_cmd_header_lo;
+  bp_bedrock_cce_mem_header_s   mem_resp_header_li;
+  logic [l2_fill_width_p-1:0]   mem_cmd_data_lo;
+  logic [l2_fill_width_p-1:0]   mem_resp_data_li;
 
 endinterface : ram_if
 `endif

@@ -19,6 +19,7 @@ package icache_uvm_subs_pkg;
   `uvm_analysis_imp_decl(_tlb)
   `uvm_analysis_imp_decl(_output)
   `uvm_analysis_imp_decl(_ce)
+  `uvm_analysis_imp_decl(_ram)
   class icache_cov_col extends uvm_component;
     `uvm_component_utils(icache_cov_col)
 
@@ -26,21 +27,25 @@ package icache_uvm_subs_pkg;
     uvm_analysis_imp_tlb    #(tlb_transaction, icache_cov_col)    tlb_export;
     uvm_analysis_imp_output #(output_transaction, icache_cov_col) output_export;
     uvm_analysis_imp_ce     #(ce_transaction, icache_cov_col)     ce_export;
+    uvm_analysis_imp_ram    #(ram_transaction, icache_cov_col)    ram_export;
 
     logic                                     reset_i;
     logic [cfg_bus_width_lp-1:0]              cfg_bus_i;
     logic [icache_pkt_width_lp-1:0]           icache_pkt_i;
     logic                                     v_i;
     logic                                     ready_o;
+    
     logic [ptag_width_p-1:0]                  ptag_i;
     logic                                     ptag_v_i;
     logic                                     ptag_uncached_i;
     logic                                     ptag_dram_i;
     logic                                     ptag_nonidem_i;
     logic                                     poison_tl_i;
+    
     logic [instr_width_gp-1:0]                data_o;
     logic                                     data_v_o;
     logic                                     miss_v_o;
+    
     logic [icache_req_width_lp-1:0]           cache_req_o;
     logic                                     cache_req_v_o;
     logic                                     cache_req_yumi_i;
@@ -53,6 +58,16 @@ package icache_uvm_subs_pkg;
     logic                                     cache_req_credits_full_i;
     logic                                     cache_req_credits_empty_i;
 
+    logic                                     mem_cmd_v_lo;
+    logic                                     mem_resp_v_li;
+    logic                                     mem_cmd_ready_and_li;
+    logic                                     mem_resp_ready_and_lo;
+    logic                                     mem_cmd_last_lo;
+    logic                                     mem_resp_last_li;
+    bp_bedrock_cce_mem_header_s               mem_cmd_header_lo;
+    bp_bedrock_cce_mem_header_s               mem_resp_header_li;
+    logic [l2_fill_width_p-1:0]               mem_cmd_data_lo;
+    logic [l2_fill_width_p-1:0]               mem_resp_data_li; 
 
     covergroup cover_input;
       coverpoint icache_pkt_i
@@ -97,20 +112,35 @@ package icache_uvm_subs_pkg;
       coverpoint cache_req_credits_empty_i;
     endgroup : cover_ce
 
+    covergroup cover_ram;
+      coverpoint mem_cmd_v_lo;
+      coverpoint mem_resp_v_li;
+      coverpoint mem_cmd_ready_and_li;
+      coverpoint mem_resp_ready_and_lo;
+      coverpoint mem_cmd_last_lo;
+      coverpoint mem_resp_last_li;
+      coverpoint mem_cmd_header_lo;
+      coverpoint mem_resp_header_li;
+      coverpoint mem_cmd_data_lo;
+      coverpoint mem_resp_data_li;    
+    endgroup : cover_ram
+
     function new(string name, uvm_component parent);
       super.new(name, parent);
       cover_input  = new;
       cover_tlb    = new;
       cover_output = new;
       cover_ce     = new;
+      cover_ram    = new;
     endfunction : new
 
     function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-      input_export  = new("input_export", this);
-      tlb_export    = new("tlb_export", this);
+      input_export  = new("input_export",  this);
+      tlb_export    = new("tlb_export",    this);
       output_export = new("output_export", this);
-      ce_export     = new("ce_export", this);
+      ce_export     = new("ce_export",     this);
+      ram_export    = new("ran_export",    this);
     endfunction : build_phase
 
     function void write_input(input_transaction t);
@@ -180,6 +210,26 @@ package icache_uvm_subs_pkg;
 
     endfunction : write_ce
 
+    function void write_ram(ram_transaction t);
+      //Print the reramived transacton
+      `uvm_info("coverage_collector",
+                $psprintf("Coverage collector reramived ram tx %s",
+                t.convert2string()), UVM_HIGH);
+
+      //Sample coverage info
+      mem_cmd_v_lo          = t.mem_cmd_v_lo;
+      mem_resp_v_li         = t.mem_resp_v_li;
+      mem_cmd_ready_and_li  = t.mem_cmd_ready_and_li;
+      mem_resp_ready_and_lo = t.mem_resp_ready_and_lo;
+      mem_cmd_last_lo       = t.mem_cmd_last_lo;
+      mem_resp_last_li      = t.mem_resp_last_li;
+      mem_cmd_header_lo     = t.mem_cmd_header_lo;
+      mem_resp_header_li    = t.mem_resp_header_li;
+      mem_cmd_data_lo       = t.mem_cmd_data_lo;
+      mem_resp_data_li      = t.mem_resp_data_li;
+      cover_ram.sample();
+
+    endfunction : write_ram
   endclass : icache_cov_col
 
   // //.......................................................

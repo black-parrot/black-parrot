@@ -27,6 +27,7 @@ package icache_uvm_tests_pkg;
     bit tlb_is_active    = 1'b1;
     bit output_is_active = 1'b0;
     bit ce_is_active     = 1'b0;
+    bit ram_is_active    = 1'b0;
 
     base_env   base_env_h;
     env_config env_cfg;
@@ -46,7 +47,8 @@ package icache_uvm_tests_pkg;
       if(!(uvm_config_db#(virtual input_icache_if) ::get(this, "", "dut_input_vi", env_cfg.icache_input_if_h) &&
            uvm_config_db#(virtual tlb_icache_if)   ::get(this, "", "dut_tlb_vi", env_cfg.icache_tlb_if_h) &&
            uvm_config_db#(virtual output_icache_if)::get(this, "", "dut_output_vi", env_cfg.icache_output_if_h) &&
-           uvm_config_db#(virtual ce_icache_if)    ::get(this, "", "dut_ce_vi", env_cfg.icache_ce_if_h)))
+           uvm_config_db#(virtual ce_icache_if)    ::get(this, "", "dut_ce_vi", env_cfg.icache_ce_if_h) &&
+           uvm_config_db#(virtual ram_if)   ::get(this, "", "dut_ram_vi", env_cfg.icache_ram_if_h)))
       `uvm_fatal("NO_CFG", "No virtual interface set")
 
       //Define agent activity for each interface
@@ -54,6 +56,7 @@ package icache_uvm_tests_pkg;
       env_cfg.tlb_is_active    = tlb_is_active;
       env_cfg.output_is_active = output_is_active;
       env_cfg.ce_is_active     = ce_is_active;
+      env_cfg.ram_is_active    = ram_is_active;
 
       // Pass configuration information to the enviornment
       uvm_config_db#(env_config)::set(this, "*", "env_config", env_cfg);
@@ -65,6 +68,7 @@ package icache_uvm_tests_pkg;
       myvseq_h.tlb_sequencer_h    = base_env_h.tlb_agent_h.tlb_sequencer_h;
       myvseq_h.output_sequencer_h = base_env_h.output_agent_h.output_sequencer_h;
       myvseq_h.ce_sequencer_h     = base_env_h.ce_agent_h.ce_sequencer_h;
+      myvseq_h.ram_sequencer_h    = base_env_h.ram_agent_h.ram_sequencer_h;
     endfunction : init_vseq
 
     virtual function void end_of_elaboration_phase (uvm_phase phase);

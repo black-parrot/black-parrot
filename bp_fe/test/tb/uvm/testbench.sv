@@ -34,11 +34,11 @@ module testbench;
   logic dram_clk_i, dram_reset_i;
 
   // Interface definitions
-  input_icache_if   cache_input_if_h(clk_i, reset_i);
-  tlb_icache_if     cache_tlb_if_h(clk_i, reset_i);
+  input_icache_if   cache_input_if_h (clk_i, reset_i);
+  tlb_icache_if     cache_tlb_if_h   (clk_i, reset_i);
   output_icache_if  cache_output_if_h(clk_i, reset_i);
-  ce_icache_if      cache_ce_if_h(clk_i, reset_i);
-  ram_if            ram_if_h ();
+  ce_icache_if      cache_ce_if_h    (clk_i, reset_i);
+  ram_if            ram_if_h         (clk_i, reset_i);
 
   //I CACHE
   bp_fe_icache
@@ -229,7 +229,7 @@ module testbench;
     uvm_config_db #(virtual tlb_icache_if)::set(null, "uvm_test_top", "dut_tlb_vi", cache_tlb_if_h);
     uvm_config_db #(virtual output_icache_if)::set(null, "uvm_test_top", "dut_output_vi", cache_output_if_h);
     uvm_config_db #(virtual ce_icache_if)::set(null, "uvm_test_top", "dut_ce_vi", cache_ce_if_h);
-    
+    uvm_config_db #(virtual ram_if)::set(null, "uvm_test_top", "dut_ram_vi", ram_if_h); 
     uvm_top.finish_on_completion  = 1;
     
     // run test specified on command line
