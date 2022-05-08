@@ -110,7 +110,7 @@ module bp_fe_icache
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Various localparameters
-  localparam lg_icache_assoc_lp     =`BSG_SAFE_CLOG2(assoc_p);
+  localparam lg_assoc_lp            =`BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp          = block_width_p / assoc_p;
   localparam num_words_per_bank_lp  = bank_width_lp / word_width_gp;
   localparam data_mem_mask_width_lp = (bank_width_lp >> 3);
@@ -255,31 +255,6 @@ module bp_fe_icache
      ,.o(bank_sel_one_hot_tl)
      );
 
-  ///////////////////////////
-  // Stat Mem Storage
-  ///////////////////////////
-  `bp_cast_i(bp_icache_stat_mem_pkt_s, stat_mem_pkt);
-  logic                       stat_mem_v_li;
-  logic                       stat_mem_w_li;
-  logic [sindex_width_lp-1:0] stat_mem_addr_li;
-  bp_icache_stat_info_s       stat_mem_data_li;
-  bp_icache_stat_info_s       stat_mem_mask_li;
-  bp_icache_stat_info_s       stat_mem_data_lo;
-
-  bsg_mem_1rw_sync_mask_write_bit
-   #(.width_p(assoc_p-1), .els_p(sets_p), .latch_last_read_p(1))
-   stat_mem
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i(stat_mem_data_li.lru)
-     ,.addr_i(stat_mem_addr_li)
-     ,.v_i(stat_mem_v_li)
-     ,.w_mask_i(stat_mem_mask_li.lru)
-     ,.w_i(stat_mem_w_li)
-     ,.data_o(stat_mem_data_lo.lru)
-     );
-  assign stat_mem_data_lo.dirty = '0;
-
   /////////////////////////////////////////////////////////////////////////////
   // TV stage
   /////////////////////////////////////////////////////////////////////////////
@@ -329,8 +304,21 @@ module bp_fe_icache
                })
      );
 
+  logic [lg_assoc_lp-1:0] invalid_way_tv;
+  logic invalid_exist_tv;
+  bsg_priority_encode
+   #(.width_p(assoc_p), .lo_to_hi_p(1))
+   pe_invalid
+    (.i(~way_v_tv_r)
+     ,.v_o(invalid_exist_tv)
+     ,.addr_o(invalid_way_tv)
+     );
 
-  logic [lg_icache_assoc_lp-1:0] hit_index_tv;
+  // If there is invalid way, then it take priority over LRU way.
+  logic [lg_assoc_lp-1:0] lru_encode;
+  wire [lg_assoc_lp-1:0] lru_way_li = invalid_exist_tv ? invalid_way_tv : lru_encode;
+
+  logic [lg_assoc_lp-1:0] hit_index_tv;
   bsg_encode_one_hot
    #(.width_p(assoc_p), .lo_to_hi_p(1))
    hit_index_encoder
@@ -373,6 +361,38 @@ module bp_fe_icache
                               );
   assign miss_v_o = v_tv_r & ~fill_tv_r & ~data_v_o;
 
+  ///////////////////////////
+  // Stat Mem Storage
+  ///////////////////////////
+  `bp_cast_i(bp_icache_stat_mem_pkt_s, stat_mem_pkt);
+  logic                       stat_mem_v_li;
+  logic                       stat_mem_w_li;
+  logic [sindex_width_lp-1:0] stat_mem_addr_li;
+  bp_icache_stat_info_s       stat_mem_data_li;
+  bp_icache_stat_info_s       stat_mem_mask_li;
+  bp_icache_stat_info_s       stat_mem_data_lo;
+
+  bsg_mem_1rw_sync_mask_write_bit
+   #(.width_p(assoc_p-1), .els_p(sets_p), .latch_last_read_p(1))
+   stat_mem
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i(stat_mem_data_li.lru)
+     ,.addr_i(stat_mem_addr_li)
+     ,.v_i(stat_mem_v_li)
+     ,.w_mask_i(stat_mem_mask_li.lru)
+     ,.w_i(stat_mem_w_li)
+     ,.data_o(stat_mem_data_lo.lru)
+     );
+  assign stat_mem_data_lo.dirty = '0;
+
+  bsg_lru_pseudo_tree_encode
+   #(.ways_p(assoc_p))
+   lru_encoder
+    (.lru_i(stat_mem_data_lo.lru)
+     ,.way_id_o(lru_encode)
+     );
+
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
   /////////////////////////////////////////////////////////////////////////////
@@ -407,35 +427,17 @@ module bp_fe_icache
      ,.data_o(cache_req_metadata_v_o)
      );
 
-  logic [lg_icache_assoc_lp-1:0] lru_encode;
-  bsg_lru_pseudo_tree_encode
-   #(.ways_p(assoc_p))
-   lru_encoder
-    (.lru_i(stat_mem_data_lo.lru)
-     ,.way_id_o(lru_encode)
-     );
-
-  logic [lg_icache_assoc_lp-1:0] way_invalid_index;
-  logic invalid_exist;
-  bsg_priority_encode
-   #(.width_p(assoc_p), .lo_to_hi_p(1))
-   pe_invalid
-    (.i(~way_v_tv_r)
-     ,.v_o(invalid_exist)
-     ,.addr_o(way_invalid_index)
-     );
-
   logic metadata_hit_r;
-  logic [lg_icache_assoc_lp-1:0] metadata_hit_index_r;
+  logic [lg_assoc_lp-1:0] metadata_hit_index_r;
   bsg_dff
-   #(.width_p(1+lg_icache_assoc_lp))
+   #(.width_p(1+lg_assoc_lp))
    cached_hit_reg
     (.clk_i(clk_i)
      ,.data_i({cached_hit_tv_r, hit_index_tv})
      ,.data_o({metadata_hit_r, metadata_hit_index_r})
      );
 
-  wire [assoc_p-1:0] hit_or_repl_way = metadata_hit_r ? metadata_hit_index_r : lru_encode;
+  wire [assoc_p-1:0] hit_or_repl_way = metadata_hit_r ? metadata_hit_index_r : lru_way_li;
   assign cache_req_metadata_cast_o.hit_or_repl_way = hit_or_repl_way;
   assign cache_req_metadata_cast_o.dirty = '0;
 
@@ -518,9 +520,9 @@ module bp_fe_icache
           end
       endcase
 
-  logic [lg_icache_assoc_lp-1:0] tag_mem_pkt_way_r;
+  logic [lg_assoc_lp-1:0] tag_mem_pkt_way_r;
   bsg_dff
-   #(.width_p(lg_icache_assoc_lp))
+   #(.width_p(lg_assoc_lp))
    tag_mem_pkt_way_reg
     (.clk_i(clk_i)
      ,.data_i(tag_mem_pkt_cast_i.way_id)
@@ -532,16 +534,6 @@ module bp_fe_icache
   ///////////////////////////
   // Data Mem Control
   ///////////////////////////
-  logic data_mem_last_read_r;
-  bsg_dff_reset
-   #(.width_p(1))
-   data_mem_last_read_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i(tl_we)
-     ,.data_o(data_mem_last_read_r)
-     );
-
   logic [assoc_p-1:0] vaddr_bank_dec;
   bsg_decode
    #(.num_out_p(assoc_p))
@@ -550,7 +542,6 @@ module bp_fe_icache
      ,.o(vaddr_bank_dec)
      );
 
-  wire data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & data_mem_last_read_r;
   // During a data mem bypass, only the necessary bank of data memory is read
   logic [assoc_p-1:0] data_mem_bypass_select;
   bsg_adder_one_hot
@@ -590,27 +581,31 @@ module bp_fe_icache
      ,.o(data_mem_write_bank_mask)
      );
 
-  wire data_mem_slow_uncached = data_mem_pkt_v_i & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached);
-  wire data_mem_slow_read     = data_mem_pkt_v_i & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_read);
-  logic [assoc_p-1:0] data_mem_fast_read;
+  wire data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & v_tl_r;
+
+  logic [assoc_p-1:0] data_mem_fast_read, data_mem_fast_write, data_mem_slow_read, data_mem_slow_write;
   for (genvar i = 0; i < assoc_p; i++)
     begin : data_mem_lines
-      wire data_mem_slow_write     = data_mem_pkt_v_i & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write) & data_mem_write_bank_mask[i];
-      assign data_mem_fast_read[i] = tl_we & (~data_mem_bypass | data_mem_bypass_select[i]);
+      assign data_mem_slow_read[i] = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_read);
+      assign data_mem_slow_write[i] = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write) & data_mem_write_bank_mask[i];
 
-      assign data_mem_v_li[i] = data_mem_fast_read[i] | (data_mem_pkt_yumi_o & (data_mem_slow_read | data_mem_slow_write));
-      assign data_mem_w_li[i] = data_mem_pkt_yumi_o & data_mem_slow_write;
+      assign data_mem_fast_read[i] = tl_we & is_fetch & (~data_mem_bypass | data_mem_bypass_select[i]);
+
+      assign data_mem_v_li[i] = data_mem_fast_read[i] | data_mem_slow_read[i] | data_mem_slow_write[i];
+      assign data_mem_w_li[i] = data_mem_slow_write[i];
       wire [bindex_width_lp-1:0] data_mem_pkt_offset = (bindex_width_lp'(i) - data_mem_pkt_cast_i.way_id);
       assign data_mem_addr_li[i] = data_mem_fast_read[i]
         ? {vaddr_index, {(assoc_p > 1){vaddr_bank}}}
         : {data_mem_pkt_cast_i.index, {(assoc_p > 1){data_mem_pkt_offset}}};
       assign data_mem_data_li[i] = data_mem_pkt_data_li[i];
     end
-  assign data_mem_pkt_yumi_o = data_mem_pkt_v_i & (~|data_mem_fast_read | data_mem_slow_uncached);
+  assign data_mem_pkt_yumi_o = (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached)
+    ? data_mem_pkt_v_i
+    : data_mem_pkt_v_i & ~|data_mem_fast_read;
 
-  logic [lg_icache_assoc_lp-1:0] data_mem_pkt_way_r;
+  logic [lg_assoc_lp-1:0] data_mem_pkt_way_r;
   bsg_dff
-   #(.width_p(lg_icache_assoc_lp))
+   #(.width_p(lg_assoc_lp))
    data_mem_pkt_way_reg
     (.clk_i(clk_i)
      ,.data_i(data_mem_pkt_cast_i.way_id)

@@ -132,7 +132,6 @@ module bp_me_cce_to_cache
   localparam mux_els_lp = data_byte_offset_width_lp+1;
   localparam lg_mux_els_lp = `BSG_SAFE_CLOG2(mux_els_lp);
   logic [mux_els_lp-1:0][data_bytes_lp-1:0] cache_pkt_mask_mux_li;
-  logic [mux_els_lp-1:0][l2_data_width_p-1:0] cache_pkt_data_mux_li;
   logic [daddr_width_p-1:0] cache_pkt_addr_lo;
   logic [lg_l2_banks_lp-1:0] cache_cmd_bank_lo;
 
@@ -145,11 +144,6 @@ module bp_me_cce_to_cache
       // number of slice_width_lp parts that comprise in/out data
       localparam num_slices_lp = (l2_data_width_p/slice_width_lp);
       localparam lg_num_slices_lp = `BSG_SAFE_CLOG2(num_slices_lp);
-
-      // Data
-      logic [slice_width_lp-1:0] slice_data;
-      assign slice_data = mem_cmd_data_lo[0+:slice_width_lp];
-      assign cache_pkt_data_mux_li[i] = {(l2_data_width_p/slice_width_lp){slice_data}};
 
       // Mask
       if (i == mux_els_lp-1)
@@ -181,7 +175,6 @@ module bp_me_cce_to_cache
 
   // cache mask has one entry per byte in l2_data_width_p
   logic [data_bytes_lp-1:0] cache_pkt_mask_lo;
-  logic [l2_data_width_p-1:0] cache_pkt_data_lo;
 
   // mem_cmd size field is 3-bits
   // There will always be between 4 and 8 muxes, since l2_data_width_p must be between 64 and
@@ -198,15 +191,6 @@ module bp_me_cce_to_cache
     (.data_i(cache_pkt_mask_mux_li)
     ,.sel_i(cache_pkt_sel_li)
     ,.data_o(cache_pkt_mask_lo)
-    );
-
-  bsg_mux
-   #(.width_p(l2_data_width_p)
-   ,.els_p(mux_els_lp))
-   cache_pkt_data_mux
-    (.data_i(cache_pkt_data_mux_li)
-    ,.sel_i(cache_pkt_sel_li)
-    ,.data_o(cache_pkt_data_lo)
     );
 
   // Swizzle address bits for L2 cache command
@@ -408,7 +392,7 @@ module bp_me_cce_to_cache
             else
               begin
                 cache_pkt.addr = cache_pkt_addr_lo;
-                cache_pkt.data = cache_pkt_data_lo;
+                cache_pkt.data = mem_cmd_data_lo;
                 // This mask is only used for the LM/SM operations for >64 bit mask operations,
                 // but it gets set regardless of operation
                 cache_pkt.mask = cache_pkt_mask_lo;
