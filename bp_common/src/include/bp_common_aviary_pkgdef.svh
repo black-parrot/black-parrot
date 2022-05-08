@@ -195,7 +195,6 @@
       ,ic_y_dim             : 1
       ,icache_coherent      : 1
       ,l2_amo_support       : '0
-      ,l2_banks             : 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
