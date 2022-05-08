@@ -225,6 +225,61 @@ package icache_uvm_seq_pkg;
 
   endclass : ce_transaction
 
+  class ram_transaction extends uvm_sequence_item;
+    `uvm_object_utils(ram_transaction)
+
+    // transaction bits
+    logic                         mem_cmd_v_lo;
+    logic                         mem_resp_v_li;
+    logic                         mem_cmd_ready_and_li;
+    logic                         mem_resp_ready_and_lo;
+    logic                         mem_cmd_last_lo;
+    logic                         mem_resp_last_li;
+    bp_bedrock_cce_mem_header_s   mem_cmd_header_lo;
+    bp_bedrock_cce_mem_header_s   mem_resp_header_li;
+    logic [l2_fill_width_p-1:0]   mem_cmd_data_lo;
+    logic [l2_fill_width_p-1:0]   mem_resp_data_li;
+
+    function new (string name = "ram_transaction");
+      super.new(name);
+    endfunction : new
+
+    function void do_copy(uvm_object rhs);
+      ram_transaction rhs_;
+
+      if(!$cast(rhs_, rhs))
+        begin
+          uvm_report_error("do_copy:", "Cast failed");
+          return;
+        end
+      super.do_copy(rhs);
+        mem_cmd_v_lo          = rhs_.mem_cmd_v_lo;
+        mem_resp_v_li         = rhs_.mem_resp_v_li;
+        mem_cmd_ready_and_li  = rhs_.mem_cmd_ready_and_li;
+        mem_resp_ready_and_lo = rhs_.mem_resp_ready_and_lo;
+        mem_cmd_last_lo       = rhs_.mem_cmd_last_lo;
+        mem_resp_last_li      = rhs_.mem_resp_last_li;
+        mem_cmd_header_lo     = rhs_.mem_cmd_header_lo;
+        mem_resp_header_li    = rhs_.mem_resp_header_li;
+        mem_cmd_data_lo       = rhs_.mem_cmd_data_lo;
+        mem_resp_data_li      = rhs_.mem_resp_data_li;
+    endfunction: do_copy
+
+    function string convert2string();
+      string s;
+      s = super.convert2string();
+      $sformat(s, "mem_cmd_v_lo %d\t, mem_resp_v_li %d\t, mem_cmd_ready_and_li %d\t, \
+                  mem_resp_ready_and_lo %d\t, mem_cmd_last_lo %d\t, mem_resp_last_li %d\t, \
+                  mem_cmd_header_lo %d\t, mem_resp_header_li %d\t, mem_cmd_data_lo %d\t, \
+                  mem_resp_data_li %d\n",
+                  mem_cmd_v_lo, mem_resp_v_li, mem_cmd_ready_and_li,
+                  mem_resp_ready_and_lo, mem_cmd_last_lo, mem_resp_last_li,
+                  mem_cmd_header_lo, mem_resp_header_li, mem_cmd_data_lo,
+                  mem_resp_data_li);
+      return s;
+    endfunction : convert2string
+  endclass : ram_transaction
+
   //.......................................................
   // Sequencer
   //.......................................................
@@ -261,6 +316,14 @@ package icache_uvm_seq_pkg;
     endfunction : new
   endclass : ce_sequencer
 
+  class ram_sequencer extends uvm_sequencer #(ram_transaction);
+    `uvm_component_utils(ram_sequencer)
+
+    function new (string name="ram_m_sequencer", uvm_component parent);
+      super.new(name, parent);
+    endfunction : new
+  endclass : ram_sequencer
+  
   //.......................................................
   // Sequences
   //.......................................................
@@ -428,6 +491,7 @@ class myvseq_base extends uvm_sequence#(uvm_sequence_item);
   tlb_sequencer     tlb_sequencer_h;
   output_sequencer  output_sequencer_h;
   ce_sequencer      ce_sequencer_h;
+  ram_sequencer     ram_sequencer_h;
 
   function new (string name = "myvseq_base");
     super.new(name);
