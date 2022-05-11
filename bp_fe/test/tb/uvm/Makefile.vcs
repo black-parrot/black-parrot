@@ -25,9 +25,15 @@ $(BUILD_DIR)/flist.vcs:
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
 $(BUILD_DIR)/icache_uvm_params_pkg.sv:
-	@cat $@
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
+
+VCS_BUILD_OPTS += -ntb_opts uvm-1.2 -v2k_generate
+
+UVM_VERBOSITY ?= UVM_NONE
+ifdef UVM_VERBOSITY
+VCS_PLUSARGS  = +UVM_VERBOSITY=$(UVM_VERBOSITY) +UVM_NO_RELNOTES +UVM_TESTNAME=$(PROG)
+endif
 
 BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs testbench.sv)
 

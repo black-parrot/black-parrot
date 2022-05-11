@@ -24,7 +24,7 @@ VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
 #VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
 
-VCS_BUILD_OPTS  = -full64             # Compile a 64-bit executable
+VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -notice
 VCS_BUILD_OPTS += -V
 VCS_BUILD_OPTS += +v2k
@@ -40,20 +40,9 @@ VCS_BUILD_OPTS += +plusarg_save
 VCS_BUILD_OPTS += $(BP_TOOLS_DIR)/install/lib/libdromajo_cosim.a
 VCS_BUILD_OPTS += -top testbench
 VCS_BUILD_OPTS += -f flist.vcs
-ifdef UVM
-VCS_BUILD_OPTS += -ntb_opts uvm-1.2 +incdir+$(BP_UVM_DIR)
-VCS_BUILD_OPTS += -v2k_generate
-endif
 
-ifdef UVM
-ifdef UVM_VERBOSITY
-VCS_PLUSARGS  = +UVM_VERBOSITY=$(UVM_VERBOSITY) +UVM_NO_RELNOTES +UVM_TESTNAME=$(PROG)
-else
-VCS_PLUSARGS  = +UVM_VERBOSITY=UVM_NONE +UVM_NO_RELNOTES +UVM_TESTNAME=$(PROG)
-endif
-else
-VCS_PLUSARGS  = 
-endif
+VCS_PLUSARGS  +=
+
 
 URG_OPTIONS = -full64
 URG_OPTIONS += -show tests
