@@ -247,12 +247,11 @@ module bp_cacc_vdp
      ,.*
      );
 
+
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
   `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
-
-  assign io_cmd_ready_and_o = 1'b1;
 
   logic [63:0] csr_data, start_cmd, input_a_ptr, input_b_ptr, input_len,
                res_status, res_ptr, res_len, operation, dot_product_res;
@@ -261,6 +260,7 @@ module bp_cacc_vdp
   logic [2:0] len_a_cnt, len_b_cnt;
   logic load, second_operand, done;
   logic [paddr_width_p-1:0]  resp_addr;
+  logic io_response_waiting, io_response_data_ready;
 
   //chnage the names
   logic [63:0] product_res [0:7];
@@ -282,7 +282,6 @@ module bp_cacc_vdp
                                    };
   assign io_resp_data_o = csr_data;
 
-
   logic [vaddr_width_p-1:0] v_addr;
   assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8)
                                          : (input_a_ptr+len_a_cnt*8))
@@ -292,6 +291,9 @@ module bp_cacc_vdp
   typedef enum logic [3:0]{
     RESET
     , WAIT_START
+    , PROCESS_IO_TRANSFER
+    , WAIT_FOR_RESPONSE
+    , IO_TRANSFER_DONE
     , WAIT_FETCH
     , FETCH
     , WAIT_DCACHE_C1
@@ -305,8 +307,6 @@ module bp_cacc_vdp
   state_e state_r, state_n;
 
   always_ff @(posedge clk_i) begin
-    io_resp_v_o  <= io_cmd_v_i;
-    io_resp_last_o <= io_cmd_last_i;
     vector_a[len_a_cnt] <= (dcache_v & load & ~second_operand) ? dcache_data : vector_a[len_a_cnt];
     len_a_cnt <= (dcache_v & load & ~second_operand) ? len_a_cnt + 1'b1 : len_a_cnt;
     vector_b[len_b_cnt]  <= (dcache_v & load & second_operand) ? dcache_data : vector_b[len_b_cnt];
@@ -329,9 +329,11 @@ module bp_cacc_vdp
       len_b_cnt     <= '0;
       vector_a      <= '{default:64'd0};
       vector_b      <= '{default:64'd0};
+      io_response_data_ready <= 0;
     end
-    if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr))
+    if (io_cmd_v_i & ~io_response_waiting & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr))
     begin
+      io_response_data_ready  <= 1;
       resp_size    <= io_cmd_header_cast_i.size;
       resp_payload <= io_cmd_header_cast_i.payload;
       resp_addr    <= io_cmd_header_cast_i.addr;
@@ -348,8 +350,9 @@ module bp_cacc_vdp
         default : begin end
       endcase
     end
-    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_rd))
+    else if (io_cmd_v_i & ~io_response_waiting & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_rd))
     begin
+      io_response_data_ready  <= 1;
       resp_size    <= io_cmd_header_cast_i.size;
       resp_payload <= io_cmd_header_cast_i.payload;
       resp_addr    <= io_cmd_header_cast_i.addr;
@@ -367,8 +370,13 @@ module bp_cacc_vdp
         default : begin end
       endcase
     end
+    else 
+    begin
+      io_response_data_ready  <= 0;
+    end
   end
 
+  assign io_response_waiting = (io_resp_v_o == 1 & io_resp_ready_and_i == 0) ? 1 : 0;
 
   always_comb begin
     state_n = state_r;
@@ -381,24 +389,54 @@ module bp_cacc_vdp
         dcache_pkt_v = '0;
         load = 0;
         second_operand = 0;
-        done = 0;
+        io_cmd_ready_and_o = 0;
+        io_resp_v_o  = 0;
+        io_resp_last_o = 0;         
+        done = 0;       
       end
       WAIT_START: begin
-        state_n = start_cmd ? WAIT_FETCH : WAIT_START;
+        state_n = (io_cmd_v_i & io_response_data_ready) ? PROCESS_IO_TRANSFER : (start_cmd ? WAIT_FETCH : WAIT_START);
         res_status = '1;
         dcache_ptag = '0;
         dcache_pkt = '0;
         dcache_pkt_v = '0;
         load = 1;
         second_operand= 0;
+        io_cmd_ready_and_o = 0;
+        io_resp_v_o  = 0;
+        io_resp_last_o = 0;    
+        done = 0;
+      end
+      PROCESS_IO_TRANSFER: begin
+        state_n = io_response_waiting ? WAIT_FOR_RESPONSE : IO_TRANSFER_DONE;
+        io_cmd_ready_and_o = 1;
+        io_resp_v_o  = 1;
+        io_resp_last_o = 1;
+        done = 0;
+      end
+      WAIT_FOR_RESPONSE: begin
+        state_n = io_response_waiting ? WAIT_FOR_RESPONSE : IO_TRANSFER_DONE;
+        io_cmd_ready_and_o = 0;
+        io_resp_v_o  = 1;
+        io_resp_last_o = 1;
+        done = 0;
+      end
+      IO_TRANSFER_DONE: begin
+        state_n = res_status ? WAIT_START : WAIT_FETCH;
+        io_cmd_ready_and_o = 0;
+        io_resp_v_o  = 0;
+        io_resp_last_o = 0;    
         done = 0;
       end
       WAIT_FETCH: begin
-        state_n = dcache_ready ? FETCH : WAIT_FETCH;
+        state_n = dcache_ready ? FETCH : (io_cmd_v_i ? PROCESS_IO_TRANSFER : WAIT_FETCH);
         res_status = '0;
         dcache_ptag = '0;
         dcache_pkt = '0;
         dcache_pkt_v = '0;
+        io_cmd_ready_and_o = 0;
+        io_resp_v_o  = 0;
+        io_resp_last_o = 0;   
         done = 0;
       end
       FETCH: begin
@@ -494,7 +532,6 @@ module bp_cacc_vdp
       end
     endcase
    end // always_comb
-
 
   //dot_product unit
   for (genvar i=0; i<8; i++)
