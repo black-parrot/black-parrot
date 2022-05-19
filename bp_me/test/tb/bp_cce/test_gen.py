@@ -39,10 +39,10 @@ class TestGenerator(object):
         for (cmd,addr,size,uc,val) in ops[lce]:
           if cmd == 'store':
             lce_trace_file.write(self.tg.send_store(size=size, addr=addr, data=val, uc=uc))
-            lce_trace_file.write(self.tg.recv_data(addr=addr, data=0, uc=uc))
+            lce_trace_file.write(self.tg.recv_store(size=size, addr=addr, uc=uc))
           elif cmd == 'load':
             lce_trace_file.write(self.tg.send_load(signed=0, size=size, addr=addr, uc=uc))
-            lce_trace_file.write(self.tg.recv_data(addr=addr, data=val, uc=uc))
+            lce_trace_file.write(self.tg.recv_load(signed=0, size=size, addr=addr, data=val, uc=uc))
           elif cmd == 'wait':
             # addr is used as number of cycles
             lce_trace_file.write(self.tg.wait(addr))
