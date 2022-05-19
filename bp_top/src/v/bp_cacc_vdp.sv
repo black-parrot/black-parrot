@@ -429,7 +429,7 @@ module bp_cacc_vdp
         done = 0;
       end
       WAIT_FETCH: begin
-        state_n = dcache_ready ? FETCH : (io_cmd_v_i ? PROCESS_IO_TRANSFER : WAIT_FETCH);
+        state_n = dcache_ready ? FETCH : (io_cmd_v_i & io_response_data_ready ? PROCESS_IO_TRANSFER : WAIT_FETCH);
         res_status = '0;
         dcache_ptag = '0;
         dcache_pkt = '0;
