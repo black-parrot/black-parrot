@@ -198,7 +198,7 @@ module bp_be_dcache
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache);
 
-  localparam lg_dcache_assoc_lp       = `BSG_SAFE_CLOG2(assoc_p);
+  localparam lg_assoc_lp              = `BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp            = block_width_p / assoc_p;
   localparam num_dwords_per_bank_lp   = bank_width_lp / dword_width_gp;
   localparam wbuf_data_mask_width_lp  = (dword_width_gp >> 3);
@@ -481,7 +481,7 @@ module bp_be_dcache
      );
 
   logic invalid_exist_tv;
-  logic [lg_dcache_assoc_lp-1:0] invalid_way_tv;
+  logic [lg_assoc_lp-1:0] invalid_way_tv;
   bsg_priority_encode
    #(.width_p(assoc_p), .lo_to_hi_p(1))
     pe_invalid
@@ -491,10 +491,10 @@ module bp_be_dcache
      );
 
   // If there is invalid way, then it take priority over LRU way.
-  logic [lg_dcache_assoc_lp-1:0] lru_encode;
-  wire [lg_dcache_assoc_lp-1:0] lru_way_li = invalid_exist_tv ? invalid_way_tv : lru_encode;
+  logic [lg_assoc_lp-1:0] lru_encode;
+  wire [lg_assoc_lp-1:0] lru_way_li = invalid_exist_tv ? invalid_way_tv : lru_encode;
 
-  logic [lg_dcache_assoc_lp-1:0] store_hit_way_tv;
+  logic [lg_assoc_lp-1:0] store_hit_way_tv;
   logic store_hit_tv;
   bsg_encode_one_hot
    #(.width_p(assoc_p) ,.lo_to_hi_p(1))
@@ -504,7 +504,7 @@ module bp_be_dcache
      ,.v_o(store_hit_tv)
      );
 
-  logic [lg_dcache_assoc_lp-1:0] load_hit_way_tv;
+  logic [lg_assoc_lp-1:0] load_hit_way_tv;
   logic load_hit_tv;
   bsg_encode_one_hot
    #(.width_p(assoc_p) ,.lo_to_hi_p(1))
@@ -941,9 +941,9 @@ module bp_be_dcache
      );
 
   logic metadata_hit_r;
-  logic [lg_dcache_assoc_lp-1:0] metadata_hit_index_r;
+  logic [lg_assoc_lp-1:0] metadata_hit_index_r;
   bsg_dff
-   #(.width_p(1+lg_dcache_assoc_lp))
+   #(.width_p(1+lg_assoc_lp))
    cached_hit_reg
     (.clk_i(negedge_clk)
      ,.data_i({load_hit_tv, load_hit_way_tv})
@@ -1043,9 +1043,9 @@ module bp_be_dcache
           end
       endcase
 
-  logic [lg_dcache_assoc_lp-1:0] tag_mem_pkt_way_r;
+  logic [lg_assoc_lp-1:0] tag_mem_pkt_way_r;
   bsg_dff
-   #(.width_p(lg_dcache_assoc_lp))
+   #(.width_p(lg_assoc_lp))
    tag_mem_pkt_way_reg
     (.clk_i(negedge_clk)
      ,.data_i(tag_mem_pkt_cast_i.way_id)
@@ -1148,9 +1148,9 @@ module bp_be_dcache
     ? ~cache_lock & data_mem_pkt_v_i
     : ~cache_lock & data_mem_pkt_v_i & ~|data_mem_fast_read & ~wbuf_v_lo & ~(v_tl_r & decode_tl_r.store_op) & ~(v_tv_r & decode_tv_r.store_op);
 
-  logic [lg_dcache_assoc_lp-1:0] data_mem_pkt_way_r;
+  logic [lg_assoc_lp-1:0] data_mem_pkt_way_r;
   bsg_dff
-   #(.width_p(lg_dcache_assoc_lp))
+   #(.width_p(lg_assoc_lp))
    data_mem_pkt_way_reg
     (.clk_i(negedge_clk)
      ,.data_i(data_mem_pkt_cast_i.way_id)
@@ -1183,7 +1183,7 @@ module bp_be_dcache
 
   logic [`BSG_SAFE_MINUS(assoc_p, 2):0] lru_decode_data_lo;
   logic [`BSG_SAFE_MINUS(assoc_p, 2):0] lru_decode_mask_lo;
-  wire [lg_dcache_assoc_lp-1:0] lru_decode_way_li =
+  wire [lg_assoc_lp-1:0] lru_decode_way_li =
     v_tv_r ? decode_tv_r.store_op ? store_hit_way_tv : load_hit_way_tv : stat_mem_pkt_cast_i.way_id;
   bsg_lru_pseudo_tree_decode
    #(.ways_p(assoc_p))
@@ -1197,7 +1197,7 @@ module bp_be_dcache
   if (writethrough_p == 0)
     begin : td
       wire dirty_mask_v_li = stat_mem_slow_write || (v_tv_r & decode_tv_r.store_op);
-      wire [lg_dcache_assoc_lp-1:0] dirty_mask_way_li = v_tv_r ? store_hit_way_tv : stat_mem_pkt_cast_i.way_id;
+      wire [lg_assoc_lp-1:0] dirty_mask_way_li = v_tv_r ? store_hit_way_tv : stat_mem_pkt_cast_i.way_id;
       bsg_decode_with_v
        #(.num_out_p(assoc_p))
        dirty_mask_decode
@@ -1252,9 +1252,9 @@ module bp_be_dcache
         end
     endcase
 
-  logic [lg_dcache_assoc_lp-1:0] stat_mem_pkt_way_r;
+  logic [lg_assoc_lp-1:0] stat_mem_pkt_way_r;
   bsg_dff
-   #(.width_p(lg_dcache_assoc_lp))
+   #(.width_p(lg_assoc_lp))
    stat_mem_pkt_way_reg
     (.clk_i(negedge_clk)
      ,.data_i(stat_mem_pkt_cast_i.way_id)
