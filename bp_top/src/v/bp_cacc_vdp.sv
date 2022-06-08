@@ -411,8 +411,6 @@ module bp_cacc_vdp
     end
   end
 
-  // assign io_resp_data_pending = (io_resp_v_o & ~io_resp_ready_and_i) ? 1 : 0;
-
   always_comb begin
     state_n = state_r;
     case (state_r)
