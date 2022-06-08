@@ -421,11 +421,11 @@ module bp_cacc_vdp
         dcache_pkt = '0;
         dcache_pkt_v = '0;
         load = 0;
-        second_operand = 0;    
-        done = 0;       
+        second_operand = 0;
+        done = 0;
       end
       WAIT_START: begin
-        state_n = (start_cmd ? WAIT_FETCH : WAIT_START);
+        state_n = start_cmd ? WAIT_FETCH : WAIT_START;
         res_status = '1;
         dcache_ptag = '0;
         dcache_pkt = '0;
