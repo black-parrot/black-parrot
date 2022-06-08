@@ -20,6 +20,10 @@ module bp_me_nonsynth_cache_tag_lookup
    , input [tag_width_p-1:0]                         tag_i
    // write not read operation
    , input                                           w_i
+   // uncached operation
+   , input                                           uc_i
+   // hit_o == 1 if cached and permissions correct based on w_i
+   // or uncached and block is valid
    , output logic                                    hit_o
    , output logic                                    dirty_o
    , output logic [lg_assoc_lp-1:0]                  way_o
@@ -35,25 +39,21 @@ module bp_me_nonsynth_cache_tag_lookup
   genvar i;
   generate
   for (i = 0; i < assoc_p; i=i+1) begin
-    assign rd_hits[i] = (tags[i].state != e_COH_I) & ~w_i;
+    assign rd_hits[i] = (tags[i].state != e_COH_I) & (~w_i | uc_i);
     assign wr_hits[i] = (tags[i].state inside {e_COH_E, e_COH_M}) & w_i;
     assign hits[i] = ((tags[i].tag == tag_i) & (rd_hits[i] | wr_hits[i]));
     assign invalid_ways_o[i] = (tags[i].state == e_COH_I);
   end
   endgenerate
 
-  logic way_v_lo;
   logic [lg_assoc_lp-1:0] way_lo;
   bsg_encode_one_hot
     #(.width_p(assoc_p))
   hits_to_way_id
     (.i(hits)
      ,.addr_o(way_lo)
-     ,.v_o(way_v_lo)
+     ,.v_o(/* unused */)
     );
-
-  // suppress unused warning
-  wire unused0 = way_v_lo;
 
   // hit_o is set if tag matched and read or write hit
   assign hit_o = |hits;
