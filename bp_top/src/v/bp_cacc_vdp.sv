@@ -336,9 +336,6 @@ module bp_cacc_vdp
   typedef enum logic [3:0]{
     RESET
     , WAIT_START
-    , PROCESS_IO_TRANSFER
-    , WAIT_FOR_RESPONSE
-    , IO_TRANSFER_DONE
     , WAIT_FETCH
     , FETCH
     , WAIT_DCACHE_C1
