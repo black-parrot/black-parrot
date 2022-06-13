@@ -85,9 +85,10 @@ module bp_fe_top
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
   logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
-  logic [instr_width_gp-1:0] fetch_li;
+  logic [instr_width_gp-1:0] fetch_li, fetch_instr_lo;
   logic [vaddr_width_p-1:0] fetch_pc_lo;
-  logic fetch_instr_v_li, fetch_exception_v_li, fetch_fail_v_li;
+  logic fetch_v_li, fetch_exception_v_li, fetch_fail_v_li;
+  logic fetch_instr_v_lo;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
   logic [vaddr_width_p-1:0] next_fetch_lo;
   logic next_fetch_yumi_li;
@@ -114,9 +115,9 @@ module bp_fe_top
      ,.ovr_o(ovr_lo)
 
      ,.fetch_i(fetch_li)
-     ,.fetch_instr_v_i(fetch_instr_v_li)
-     ,.fetch_i(fetch_li)
-     ,.fetch_instr_v_i(fetch_instr_v_li)
+     ,.fetch_v_i(fetch_v_li)
+     ,.fetch_instr_o(fetch_instr_lo)
+     ,.fetch_instr_v_o(fetch_instr_v_lo)
      ,.fetch_exception_v_i(fetch_exception_v_li)
      ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
      ,.fetch_pc_o(fetch_pc_lo)
@@ -358,7 +359,7 @@ module bp_fe_top
   wire icache_miss    = v_if2_r & ~icache_data_v_lo;
   wire queue_miss     = v_if2_r & ~fe_queue_ready_i;
   wire fe_exception_v = v_if2_r & (instr_misaligned_r | instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
-  wire fe_instr_v     = v_if2_r & icache_data_v_lo;
+  wire fe_instr_v     = v_if2_r & fetch_instr_v_lo;
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
 
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
@@ -366,9 +367,8 @@ module bp_fe_top
   assign fe_cmd_yumi_o = pc_gen_init_done_lo & (cmd_nonattaboy_v | attaboy_yumi_lo);
   assign next_fetch_yumi_li = (state_n == e_run);
 
-  assign fetch_instr_v_li     = fe_queue_v_o & fe_instr_v;
   assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;
-  assign fetch_fail_v_li      = v_if2_r & ~fe_queue_v_o;
+  assign fetch_fail_v_li      = v_if2_r & (queue_miss | icache_miss | fe_exception_v | cmd_nonattaboy_v);
   assign fetch_li             = icache_data_lo;
 
   wire stall   = fetch_fail_v_li | cmd_nonattaboy_v;
@@ -394,7 +394,7 @@ module bp_fe_top
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type                      = e_fe_fetch;
         fe_queue_cast_o.msg.fetch.pc                  = fetch_pc_lo;
-        fe_queue_cast_o.msg.fetch.instr               = fetch_li;
+        fe_queue_cast_o.msg.fetch.instr               = fetch_instr_lo;
         fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fetch_br_metadata_fwd_lo;
       end
 

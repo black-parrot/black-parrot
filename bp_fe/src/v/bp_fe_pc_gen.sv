@@ -62,7 +62,9 @@ module bp_fe_pc_gen
   logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
 
   logic [vaddr_width_p-1:0] pc_if1_n, pc_if1_r;
+  logic fetch_linear_if1_n, fetch_linear_if1_r;
   logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
+  logic fetch_linear_if2_n, fetch_linear_if2_r;
 
   /////////////////
   // IF1
@@ -96,8 +98,9 @@ module bp_fe_pc_gen
       end
   end
   assign pc_if1_n = next_pc;
+  assign fetch_linear_if1_n = next_pc_linear;
 
-  assign next_fetch_o = (IS_MISALIGNED(next_pc) & (incomplete_fetch_if1_r | next_pc_linear)) ? ROUND_DOWN(next_pc + 4) : ROUND_DOWN(next_pc);
+  assign next_fetch_o = (IS_MISALIGNED(next_pc) & next_pc_linear) ? ROUND_DOWN(next_pc + 4) : ROUND_DOWN(next_pc);
   assign incomplete_fetch_if1_n = !next_pc_linear & IS_MISALIGNED(next_pc);
 
   always_comb
@@ -115,8 +118,8 @@ module bp_fe_pc_gen
    pred_if1_reg
     (.clk_i(clk_i)
 
-     ,.data_i({pred_if1_n, pc_if1_n, incomplete_fetch_if1_n})
-     ,.data_o({pred_if1_r, pc_if1_r, incomplete_fetch_if1_r})
+     ,.data_i({pred_if1_n, pc_if1_n, incomplete_fetch_if1_n, fetch_linear_if1_n})
+     ,.data_o({pred_if1_r, pc_if1_r, incomplete_fetch_if1_r, fetch_linear_if1_r})
      );
 
   `declare_bp_fe_instr_scan_s(vaddr_width_p)
@@ -237,14 +240,15 @@ module bp_fe_pc_gen
         pred_if2_n = pred_if1_r;
       end
   assign pc_if2_n = pc_if1_r;
+  assign fetch_linear_if2_n = fetch_linear_if1_r;
 
   bsg_dff
    #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p))
    pred_if2_reg
     (.clk_i(clk_i)
 
-     ,.data_i({pred_if2_n, pc_if2_n})
-     ,.data_o({pred_if2_r, pc_if2_r})
+     ,.data_i({pred_if2_n, pc_if2_n, fetch_linear_if2_n})
+     ,.data_o({pred_if2_r, pc_if2_r, fetch_linear_if2_r})
      );
   assign return_addr_n = pc_if2_r + vaddr_width_p'(4);
 
@@ -292,17 +296,10 @@ module bp_fe_pc_gen
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-  //  , input [vaddr_width_p-1:0]   fetch_addr_i
-  //  , input                       fetch_linear_i // is this fetch address exactly 4 bytes greater than the previous one?
-  //  , input [instr_width_gp-1:0]  fetch_data_i
-  //  , input                       fetch_data_v_i
-
-  //  , output [instr_width_gp-1:0] fetch_instr_o
-  //  , output                      fetch_instr_v_o
     ,.fetch_pc_i     (pc_if2_r)
-    ,.fetch_linear_i (/*TODO: figure out what to propagate*/)
-    ,.fetch_data_i(fetch_i)
-    ,.fetch_data_v_i(fetch_v_i)
+    ,.fetch_linear_i (fetch_linear_if2_r)
+    ,.fetch_data_i   (fetch_i)
+    ,.fetch_data_v_i (fetch_v_i)
 
     ,.fetch_instr_o  (fetch_instr_o)
     ,.fetch_instr_v_o(fetch_instr_v_o)
