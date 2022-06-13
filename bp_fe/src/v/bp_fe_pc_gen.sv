@@ -29,13 +29,15 @@ module bp_fe_pc_gen
    , input                                           redirect_br_ntaken_i
    , input                                           redirect_br_nonbr_i
 
-   , output logic [vaddr_width_p-1:0]                next_pc_o
-   , input                                           next_pc_yumi_i
+   , output logic [vaddr_width_p-1:0]                next_fetch_o
+   , input                                           next_fetch_yumi_i
 
    , output logic                                    ovr_o
 
    , input [instr_width_gp-1:0]                      fetch_i
-   , input                                           fetch_instr_v_i
+   , input                                           fetch_v_i
+   , output [instr_width_gp-1:0]                     fetch_instr_o
+   , output                                          fetch_instr_v_o
    , input                                           fetch_exception_v_i
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
    , output logic [vaddr_width_p-1:0]                fetch_pc_o
@@ -65,30 +67,43 @@ module bp_fe_pc_gen
   /////////////////
   // IF1
   /////////////////
+  logic incomplete_fetch_if1_r, incomplete_fetch_if1_n;
   bp_fe_pred_s pred_if1_n, pred_if1_r;
+  logic [vaddr_width_p-1:0] next_pc;
+  logic next_pc_linear;
   logic ovr_ret, ovr_taken, btb_taken;
   logic [vaddr_width_p-1:0] btb_br_tgt_lo;
   logic [vaddr_width_p-1:0] ras_tgt_lo;
   logic [vaddr_width_p-1:0] br_tgt_lo;
   wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_r + vaddr_width_p'(4);
-  always_comb
+  always_comb begin
+    next_pc_linear = 1'b0;
     if (redirect_v_i)
-        next_pc_o = redirect_pc_i;
+        next_pc = redirect_pc_i;
     else if (ovr_ret)
-        next_pc_o = ras_tgt_lo;
+        next_pc = ras_tgt_lo;
     else if (ovr_taken)
-        next_pc_o = br_tgt_lo;
+        next_pc = br_tgt_lo;
+    else if (incomplete_fetch_if1_r)
+        // TODO: verify nonlinear works
+        next_pc = pc_if1_r;
     else if (btb_taken)
-        next_pc_o = btb_br_tgt_lo;
+        next_pc = btb_br_tgt_lo;
     else
       begin
-        next_pc_o = pc_plus4;
+        next_pc = pc_plus4;
+        next_pc_linear = 1'b1;
       end
-  assign pc_if1_n = next_pc_o;
+  end
+  assign pc_if1_n = next_pc;
+
+  assign next_fetch_o = (IS_MISALIGNED(next_pc) & (incomplete_fetch_if1_r | next_pc_linear)) ? ROUND_DOWN(next_pc + 4) : ROUND_DOWN(next_pc);
+  assign incomplete_fetch_if1_n = !next_pc_linear & IS_MISALIGNED(next_pc);
 
   always_comb
     begin
       pred_if1_n = '0;
+      // TODO: verify pred data
       pred_if1_n.ghist = ghistory_n;
       pred_if1_n.redir = redirect_br_v_i;
       pred_if1_n.taken = (redirect_br_v_i & redirect_br_taken_i) | ovr_ret | ovr_taken;
@@ -96,21 +111,22 @@ module bp_fe_pc_gen
     end
 
   bsg_dff
-   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p))
+   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p+1))
    pred_if1_reg
     (.clk_i(clk_i)
 
-     ,.data_i({pred_if1_n, pc_if1_n})
-     ,.data_o({pred_if1_r, pc_if1_r})
+     ,.data_i({pred_if1_n, pc_if1_n, incomplete_fetch_if1_n})
+     ,.data_o({pred_if1_r, pc_if1_r, incomplete_fetch_if1_r})
      );
 
   `declare_bp_fe_instr_scan_s(vaddr_width_p)
   bp_fe_instr_scan_s scan_instr;
-  wire is_br   = fetch_instr_v_i & scan_instr.branch;
-  wire is_jal  = fetch_instr_v_i & scan_instr.jal;
-  wire is_jalr = fetch_instr_v_i & scan_instr.jalr;
-  wire is_call = fetch_instr_v_i & scan_instr.call;
-  wire is_ret  = fetch_instr_v_i & scan_instr.ret;
+  // TODO: does validity of scan_instr matter?
+  wire is_br   = fetch_instr_v_o & scan_instr.branch;
+  wire is_jal  = fetch_instr_v_o & scan_instr.jal;
+  wire is_jalr = fetch_instr_v_o & scan_instr.jalr;
+  wire is_call = fetch_instr_v_o & scan_instr.call;
+  wire is_ret  = fetch_instr_v_o & scan_instr.ret;
 
   // BTB
   wire btb_r_v_li = next_pc_yumi_i;
@@ -240,18 +256,20 @@ module bp_fe_pc_gen
   assign br_tgt_lo  = pc_if2_r + scan_instr.imm;
   assign fetch_pc_o = pc_if2_r;
 
+  logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = IS_MISALIGNED(pc_if2_r) ? ROUND_UP(pc_if2_r) : pc_if2_r;
+
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
   always_ff @(posedge clk_i)
-    if (fetch_instr_v_i)
+    if (fetch_instr_v_o) // note: needs to include whether we've finished a complete double-fetch
       br_metadata_site <=
         '{src_btb  : pred_if2_r.btb
           ,src_ret : pred_if2_r.ret
           ,ghist   : pred_if2_r.ghist
           ,bht_row : pred_if2_r.bht_row
-          ,btb_tag : pc_if2_r[2+btb_idx_width_p+:btb_tag_width_p]
-          ,btb_idx : pc_if2_r[2+:btb_idx_width_p]
-          ,bht_idx : pc_if2_r[2+:bht_idx_width_p]
+          ,btb_tag : branch_prediction_source_addr_if2[2+btb_idx_width_p+:btb_tag_width_p]
+          ,btb_idx : branch_prediction_source_addr_if2[2+:btb_idx_width_p]
+          ,bht_idx : branch_prediction_source_addr_if2[2+:bht_idx_width_p]
           ,is_br   : is_br
           ,is_jal  : is_jal
           ,is_jalr : is_jalr
@@ -263,10 +281,32 @@ module bp_fe_pc_gen
   bp_fe_instr_scan
    #(.bp_params_p(bp_params_p))
    instr_scan
-    (.instr_i(fetch_i)
+    (.instr_i(fetch_instr_o)
 
      ,.scan_o(scan_instr)
      );
+
+  bp_fe_realigner
+    #(.bp_params_p(bp_params_p))
+    realigner
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+  //  , input [vaddr_width_p-1:0]   fetch_addr_i
+  //  , input                       fetch_linear_i // is this fetch address exactly 4 bytes greater than the previous one?
+  //  , input [instr_width_gp-1:0]  fetch_data_i
+  //  , input                       fetch_data_v_i
+
+  //  , output [instr_width_gp-1:0] fetch_instr_o
+  //  , output                      fetch_instr_v_o
+    ,.fetch_pc_i     (pc_if2_r)
+    ,.fetch_linear_i (/*TODO: figure out what to propagate*/)
+    ,.fetch_data_i(fetch_i)
+    ,.fetch_data_v_i(fetch_v_i)
+
+    ,.fetch_instr_o  (fetch_instr_o)
+    ,.fetch_instr_v_o(fetch_instr_v_o)
+    );
 
   // Global history
   //

@@ -89,8 +89,8 @@ module bp_fe_top
   logic [vaddr_width_p-1:0] fetch_pc_lo;
   logic fetch_instr_v_li, fetch_exception_v_li, fetch_fail_v_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
-  logic [vaddr_width_p-1:0] next_pc_lo;
-  logic next_pc_yumi_li;
+  logic [vaddr_width_p-1:0] next_fetch_lo;
+  logic next_fetch_yumi_li;
   logic ovr_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
@@ -108,11 +108,13 @@ module bp_fe_top
      ,.redirect_br_ntaken_i(redirect_br_ntaken_li)
      ,.redirect_br_nonbr_i(redirect_br_nonbr_li)
 
-     ,.next_pc_o(next_pc_lo)
-     ,.next_pc_yumi_i(next_pc_yumi_li)
+     ,.next_fetch_o(next_fetch_lo)
+     ,.next_fetch_yumi_i(next_fetch_yumi_li)
 
      ,.ovr_o(ovr_lo)
 
+     ,.fetch_i(fetch_li)
+     ,.fetch_instr_v_i(fetch_instr_v_li)
      ,.fetch_i(fetch_li)
      ,.fetch_instr_v_i(fetch_instr_v_li)
      ,.fetch_exception_v_i(fetch_exception_v_li)
@@ -196,7 +198,7 @@ module bp_fe_top
      ,.data_i({br_miss_v, br_miss_nonbr, br_miss_taken, br_miss_ntaken, br_metadata_fwd_resume_n, pc_resume_n})
      ,.data_o({br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r, br_metadata_fwd_resume_r, pc_resume_r})
      );
-  assign redirect_v_li               = (is_stall & next_pc_yumi_li) | cmd_immediate_v;
+  assign redirect_v_li               = (is_stall & next_fetch_yumi_li) | cmd_immediate_v;
   assign redirect_pc_li              = pc_resume_r;
   assign redirect_br_v_li            = redirect_v_li & br_miss_r;
   assign redirect_br_metadata_fwd_li = br_metadata_fwd_resume_r;
@@ -218,7 +220,7 @@ module bp_fe_top
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
-  wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
+  wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_fetch_lo, dword_width_gp);
   wire [1:0] r_size_li = 2'b10;
   bp_mmu
    #(.bp_params_p(bp_params_p)
@@ -242,7 +244,7 @@ module bp_fe_top
      ,.w_vtag_i(w_vtag_li)
      ,.w_entry_i(w_tlb_entry_li)
 
-     ,.r_v_i(next_pc_yumi_li)
+     ,.r_v_i(next_fetch_yumi_li)
      ,.r_instr_i(1'b1)
      ,.r_load_i('0)
      ,.r_store_i('0)
@@ -270,11 +272,11 @@ module bp_fe_top
 
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
-  assign icache_pkt = '{vaddr: next_pc_lo
+  assign icache_pkt = '{vaddr: next_fetch_lo
                         ,op  : icache_fence_v ? e_icache_fencei : icache_fill_response_v ? e_icache_fill : e_icache_fetch
                         };
   // TODO: Should only ack icache fence when icache_ready
-  wire icache_v_li = next_pc_yumi_li | icache_fence_v;
+  wire icache_v_li = next_fetch_yumi_li | icache_fence_v;
   logic [instr_width_gp-1:0] icache_data_lo;
   logic icache_ready_lo, icache_data_v_lo, icache_miss_v_lo;
   logic icache_poison_tl;
@@ -341,7 +343,7 @@ module bp_fe_top
      );
 
   logic v_if1_r, v_if2_r;
-  wire v_if1_n = next_pc_yumi_li;
+  wire v_if1_n = next_fetch_yumi_li;
   wire v_if2_n = v_if1_r & ~icache_poison_tl & ~fetch_fail_v_li;
   bsg_dff_reset
    #(.width_p(2))
@@ -362,7 +364,7 @@ module bp_fe_top
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
 
   assign fe_cmd_yumi_o = pc_gen_init_done_lo & (cmd_nonattaboy_v | attaboy_yumi_lo);
-  assign next_pc_yumi_li = (state_n == e_run);
+  assign next_fetch_yumi_li = (state_n == e_run);
 
   assign fetch_instr_v_li     = fe_queue_v_o & fe_instr_v;
   assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;
