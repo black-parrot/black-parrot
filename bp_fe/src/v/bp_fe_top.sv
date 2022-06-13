@@ -370,6 +370,7 @@ module bp_fe_top
   assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;
   assign fetch_fail_v_li      = v_if2_r & (queue_miss | icache_miss | fe_exception_v | cmd_nonattaboy_v);
   assign fetch_li             = icache_data_lo;
+  assign fetch_v_li           = icache_data_v_lo;
 
   wire stall   = fetch_fail_v_li | cmd_nonattaboy_v;
   wire unstall = icache_ready_lo & fe_queue_ready_i & ~cmd_nonattaboy_v;
