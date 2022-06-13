@@ -270,7 +270,8 @@ module bp_fe_pc_gen
   // wire pc_if2_misaligned =  !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
   // logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = pc_if2_misaligned ? `bp_align_addr_up(pc_if2_r, rv64_instr_width_bytes_gp) : pc_if2_r;
 
-  logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_up(pc_if2_r, rv64_instr_width_bytes_gp);
+  // wire foo = `bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
+  wire [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_up(pc_if2_r, rv64_instr_width_bytes_gp);
 
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
