@@ -86,9 +86,11 @@ module bp_fe_pc_gen
         next_pc = ras_tgt_lo;
     else if (ovr_taken)
         next_pc = br_tgt_lo;
-    else if (incomplete_fetch_if1_r)
-        // TODO: verify nonlinear works
+    else if (incomplete_fetch_if1_r) begin
+        // TODO: rename next_pc_linear to be about fetching? or compute it later?
+        next_pc_linear = 1'b1;
         next_pc = pc_if1_r;
+    end
     else if (btb_taken)
         next_pc = btb_br_tgt_lo;
     else
