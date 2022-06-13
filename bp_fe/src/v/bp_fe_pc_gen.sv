@@ -100,8 +100,15 @@ module bp_fe_pc_gen
   assign pc_if1_n = next_pc;
   assign fetch_linear_if1_n = next_pc_linear;
 
-  assign next_fetch_o = (IS_MISALIGNED(next_pc) & next_pc_linear) ? ROUND_DOWN(next_pc + 4) : ROUND_DOWN(next_pc);
-  assign incomplete_fetch_if1_n = !next_pc_linear & IS_MISALIGNED(next_pc);
+  // wire [vaddr_width_p-1:0] next_pc_plus4 = next_pc + vaddr_width_p'(4);
+  // wire next_pc_rounded_up = `bp_align_addr(next_pc_plus4, rv64_instr_width_gp);
+  // wire next_pc_rounded_down = `bp_align_addr(next_pc, rv64_instr_width_gp);
+
+  wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_gp);
+  assign next_fetch_o = (next_pc_misaligned & next_pc_linear)
+    ? `bp_align_addr_up(next_pc, rv64_instr_width_gp)
+    : `bp_align_addr_down(next_pc, rv64_instr_width_gp);
+  assign incomplete_fetch_if1_n = !next_pc_linear & next_pc_misaligned;
 
   always_comb
     begin
@@ -114,7 +121,7 @@ module bp_fe_pc_gen
     end
 
   bsg_dff
-   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p+1))
+   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p+2))
    pred_if1_reg
     (.clk_i(clk_i)
 
@@ -132,7 +139,7 @@ module bp_fe_pc_gen
   wire is_ret  = fetch_instr_v_o & scan_instr.ret;
 
   // BTB
-  wire btb_r_v_li = next_pc_yumi_i;
+  wire btb_r_v_li = next_fetch_yumi_i;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb)
     | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
@@ -154,8 +161,8 @@ module bp_fe_pc_gen
 
      ,.init_done_o(btb_init_done_lo)
 
-     ,.r_addr_i(next_pc_o)
-     ,.r_v_i(btb_r_v_li)
+     ,.r_addr_i(next_fetch_o)
+     ,.r_v_i(btb_r_v_li) // TODO: technically could disable read for incomplete first half
      ,.br_tgt_o(btb_br_tgt_lo)
      ,.br_tgt_v_o(btb_br_tgt_v_lo)
      ,.br_tgt_jmp_o(btb_br_tgt_jmp_lo)
@@ -170,8 +177,8 @@ module bp_fe_pc_gen
      );
 
   // BHT
-  wire bht_r_v_li = next_pc_yumi_i;
-  wire [vaddr_width_p-1:0] bht_r_addr_li = next_pc_o;
+  wire bht_r_v_li = next_fetch_yumi_i;
+  wire [vaddr_width_p-1:0] bht_r_addr_li = next_fetch_o;
   wire [ghist_width_p-1:0] bht_r_ghist_li = pred_if1_n.ghist;
   wire bht_w_v_li =
     (redirect_br_v_i & redirect_br_metadata_fwd.is_br) | (attaboy_v_i & attaboy_br_metadata_fwd.is_br);
@@ -243,7 +250,7 @@ module bp_fe_pc_gen
   assign fetch_linear_if2_n = fetch_linear_if1_r;
 
   bsg_dff
-   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p))
+   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p+1))
    pred_if2_reg
     (.clk_i(clk_i)
 
@@ -260,7 +267,10 @@ module bp_fe_pc_gen
   assign br_tgt_lo  = pc_if2_r + scan_instr.imm;
   assign fetch_pc_o = pc_if2_r;
 
-  logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = IS_MISALIGNED(pc_if2_r) ? ROUND_UP(pc_if2_r) : pc_if2_r;
+  // wire pc_if2_misaligned =  !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_gp);
+  // logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = pc_if2_misaligned ? `bp_align_addr_up(pc_if2_r, rv64_instr_width_gp) : pc_if2_r;
+
+  logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_up(pc_if2_r, rv64_instr_width_gp);
 
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;

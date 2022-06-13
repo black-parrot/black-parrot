@@ -6,12 +6,14 @@
   localparam half_width_gp        = 16;
   localparam byte_width_gp        = 8;
   localparam instr_width_gp       = 32;
+  localparam instr_half_width_gp  = 16;
   localparam csr_addr_width_gp    = 12;
   localparam reg_addr_width_gp    = 5;
   localparam page_offset_width_gp = 12;
 
   localparam rv64_rf_els_gp         = 32;
   localparam rv64_instr_width_gp    = 32;
+  localparam rv64_instr_width_bytes_gp = instr_width_gp / 8;
   localparam rv64_eaddr_width_gp    = 64;
   localparam rv64_byte_width_gp     = 8;
   localparam rv64_hword_width_gp    = 16;
