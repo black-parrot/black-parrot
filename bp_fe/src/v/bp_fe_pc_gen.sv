@@ -104,10 +104,10 @@ module bp_fe_pc_gen
   // wire next_pc_rounded_up = `bp_align_addr(next_pc_plus4, rv64_instr_width_gp);
   // wire next_pc_rounded_down = `bp_align_addr(next_pc, rv64_instr_width_gp);
 
-  wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_gp);
+  wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_bytes_gp);
   assign next_fetch_o = (next_pc_misaligned & next_pc_linear)
-    ? `bp_align_addr_up(next_pc, rv64_instr_width_gp)
-    : `bp_align_addr_down(next_pc, rv64_instr_width_gp);
+    ? `bp_align_addr_up(next_pc, rv64_instr_width_bytes_gp)
+    : `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp);
   assign incomplete_fetch_if1_n = !next_pc_linear & next_pc_misaligned;
 
   always_comb
@@ -267,10 +267,10 @@ module bp_fe_pc_gen
   assign br_tgt_lo  = pc_if2_r + scan_instr.imm;
   assign fetch_pc_o = pc_if2_r;
 
-  // wire pc_if2_misaligned =  !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_gp);
-  // logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = pc_if2_misaligned ? `bp_align_addr_up(pc_if2_r, rv64_instr_width_gp) : pc_if2_r;
+  // wire pc_if2_misaligned =  !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
+  // logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = pc_if2_misaligned ? `bp_align_addr_up(pc_if2_r, rv64_instr_width_bytes_gp) : pc_if2_r;
 
-  logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_up(pc_if2_r, rv64_instr_width_gp);
+  logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_up(pc_if2_r, rv64_instr_width_bytes_gp);
 
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
