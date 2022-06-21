@@ -102,10 +102,6 @@ module bp_fe_pc_gen
   assign pc_if1_n = next_pc;
   assign fetch_linear_if1_n = next_pc_linear;
 
-  // wire [vaddr_width_p-1:0] next_pc_plus4 = next_pc + vaddr_width_p'(4);
-  // wire next_pc_rounded_up = `bp_align_addr(next_pc_plus4, rv64_instr_width_gp);
-  // wire next_pc_rounded_down = `bp_align_addr(next_pc, rv64_instr_width_gp);
-
   wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_bytes_gp);
   assign next_fetch_o = (next_pc_misaligned & next_pc_linear)
     ? `bp_align_addr_up(next_pc, rv64_instr_width_bytes_gp)
