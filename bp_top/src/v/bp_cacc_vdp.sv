@@ -288,7 +288,7 @@ module bp_cacc_vdp
   // Fifo signals
   bp_bedrock_mem_header_s fifo_header_li;
   logic [acache_fill_width_p-1:0] fifo_data_li;  
-  logic fifo_v_li, fifo_yumi_i;
+  logic fifo_v_li, fifo_yumi_li;
   // Fifo routing
   assign fifo_yumi_li = io_resp_ready_and_i & io_resp_v_o;  // Yumi when handshake occured
   // Fifo
