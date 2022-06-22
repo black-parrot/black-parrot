@@ -362,6 +362,8 @@ module bp_fe_top
   wire fe_exception_v = v_if2_r & (instr_misaligned_r | instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
   wire fe_instr_v     = v_if2_r & fetch_instr_v_lo;
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
+  // TODO: better way to represent this fe_progress thing?
+  wire fe_progress    = fe_queue_ready_i & (~icache_miss | fe_exception_v) & ~cmd_nonattaboy_v;
 
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
 
@@ -369,7 +371,7 @@ module bp_fe_top
   assign next_fetch_yumi_li = (state_n == e_run);
 
   assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;
-  assign fetch_fail_v_li      = v_if2_r & (queue_miss | icache_miss | fe_exception_v | cmd_nonattaboy_v);
+  assign fetch_fail_v_li      = v_if2_r & ~fe_progress;
   assign fetch_li             = icache_data_lo;
   assign fetch_v_li           = icache_data_v_lo;
 
