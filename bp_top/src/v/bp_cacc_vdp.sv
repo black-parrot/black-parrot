@@ -252,8 +252,6 @@ module bp_cacc_vdp
   `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
   `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
 
-  assign io_cmd_ready_and_o = 1'b1;
-
   logic [63:0] csr_data, start_cmd, input_a_ptr, input_b_ptr, input_len,
                res_status, res_ptr, res_len, operation, dot_product_res;
   logic [63:0] vector_a [0:7];
@@ -273,21 +271,61 @@ module bp_cacc_vdp
   bp_bedrock_mem_type_e         resp_msg;
   bp_local_addr_s               local_addr_li;
 
-  assign local_addr_li = io_cmd_header_cast_i.addr;
+  assign local_addr_li = fifo_header_li.addr;
   assign io_resp_header_cast_o = '{msg_type       : resp_msg
                                    ,subop         : e_bedrock_store
                                    ,addr          : resp_addr
                                    ,payload       : resp_payload
                                    ,size          : resp_size
                                    };
-  assign io_resp_data_o = csr_data;
-
+  assign io_resp_data_o = csr_data;                                   
 
   logic [vaddr_width_p-1:0] v_addr;
   assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8)
                                          : (input_a_ptr+len_a_cnt*8))
                        : res_ptr;
 
+  // Fifo signals
+  bp_bedrock_mem_header_s fifo_header_li;
+  logic [acache_fill_width_p-1:0] fifo_data_li;  
+  logic fifo_v_li, fifo_yumi_i;
+  // Fifo routing
+  assign fifo_yumi_li = io_resp_ready_and_i & io_resp_v_o;  // Yumi when handshake occured
+  // Fifo
+  bsg_two_fifo
+   #(.width_p($bits(bp_bedrock_mem_header_s)+acache_fill_width_p))
+   resp_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i({io_cmd_data_i, io_cmd_header_i})
+     ,.v_i(io_cmd_v_i)
+     ,.ready_o(io_cmd_ready_and_o)
+
+     ,.data_o({fifo_data_li, fifo_header_li})
+     ,.v_o(fifo_v_li)
+     ,.yumi_i(fifo_yumi_li)
+     );     
+
+  // D-FF signals
+  logic v_r; // Q
+  wire wr_not_rd, rd_not_wr; // Signals if Command is read or write
+  // D-FF routing
+  assign io_resp_v_o = v_r; 
+  assign io_resp_last_o = v_r;
+  assign wr_not_rd  = (fifo_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
+  assign rd_not_wr  = (fifo_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd});
+  // D-FF
+  bsg_dff_reset_set_clear
+   #(.width_p(1), .clear_over_set_p(1))
+   v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     // We also track reads which don't match to prevent deadlock
+     ,.set_i(fifo_v_li)
+     ,.clear_i(fifo_yumi_li)
+     ,.data_o(v_r)
+     );
 
   typedef enum logic [3:0]{
     RESET
@@ -305,8 +343,6 @@ module bp_cacc_vdp
   state_e state_r, state_n;
 
   always_ff @(posedge clk_i) begin
-    io_resp_v_o  <= io_cmd_v_i;
-    io_resp_last_o <= io_cmd_last_i;
     vector_a[len_a_cnt] <= (dcache_v & load & ~second_operand) ? dcache_data : vector_a[len_a_cnt];
     len_a_cnt <= (dcache_v & load & ~second_operand) ? len_a_cnt + 1'b1 : len_a_cnt;
     vector_b[len_b_cnt]  <= (dcache_v & load & second_operand) ? dcache_data : vector_b[len_b_cnt];
@@ -330,30 +366,30 @@ module bp_cacc_vdp
       vector_a      <= '{default:64'd0};
       vector_b      <= '{default:64'd0};
     end
-    if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr))
+    if (fifo_v_li & wr_not_rd)
     begin
-      resp_size    <= io_cmd_header_cast_i.size;
-      resp_payload <= io_cmd_header_cast_i.payload;
-      resp_addr    <= io_cmd_header_cast_i.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_header_cast_i.msg_type);
+      resp_size    <= fifo_header_li.size;
+      resp_payload <= fifo_header_li.payload;
+      resp_addr    <= fifo_header_li.addr;
+      resp_msg     <= bp_bedrock_mem_type_e'(fifo_header_li.msg_type);
       unique
       case (local_addr_li.addr)
-        inputa_ptr_csr_idx_gp : input_a_ptr <= io_cmd_data_i;
-        inputb_ptr_csr_idx_gp : input_b_ptr <= io_cmd_data_i;
-        input_len_csr_idx_gp  : input_len  <= io_cmd_data_i;
-        start_cmd_csr_idx_gp  : start_cmd  <= io_cmd_data_i;
-        res_ptr_csr_idx_gp    : res_ptr    <= io_cmd_data_i;
-        res_len_csr_idx_gp    : res_len    <= io_cmd_data_i;
-        operation_csr_idx_gp  : operation  <= io_cmd_data_i;
+        inputa_ptr_csr_idx_gp : input_a_ptr <= fifo_data_li;
+        inputb_ptr_csr_idx_gp : input_b_ptr <= fifo_data_li;
+        input_len_csr_idx_gp  : input_len  <= fifo_data_li;
+        start_cmd_csr_idx_gp  : start_cmd  <= fifo_data_li;
+        res_ptr_csr_idx_gp    : res_ptr    <= fifo_data_li;
+        res_len_csr_idx_gp    : res_len    <= fifo_data_li;
+        operation_csr_idx_gp  : operation  <= fifo_data_li;
         default : begin end
       endcase
     end
-    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_rd))
+    else if (fifo_v_li & rd_not_wr)
     begin
-      resp_size    <= io_cmd_header_cast_i.size;
-      resp_payload <= io_cmd_header_cast_i.payload;
-      resp_addr    <= io_cmd_header_cast_i.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_header_cast_i.msg_type);
+      resp_size    <= fifo_header_li.size;
+      resp_payload <= fifo_header_li.payload;
+      resp_addr    <= fifo_header_li.addr;
+      resp_msg     <= bp_bedrock_mem_type_e'(fifo_header_li.msg_type);
       unique
       case (local_addr_li.addr)
         inputa_ptr_csr_idx_gp : csr_data <= input_a_ptr;
@@ -368,7 +404,6 @@ module bp_cacc_vdp
       endcase
     end
   end
-
 
   always_comb begin
     state_n = state_r;
@@ -494,7 +529,6 @@ module bp_cacc_vdp
       end
     endcase
    end // always_comb
-
 
   //dot_product unit
   for (genvar i=0; i<8; i++)
