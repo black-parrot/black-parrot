@@ -115,9 +115,6 @@ module bp_cacc_vdp
   logic [cache_stat_info_width_lp-1:0] stat_mem_o;
   bp_cache_req_metadata_s cache_req_metadata_o;
 
-  // Output data into two element fifo
-  logic [mem_header_width_lp-1:0]      io_resp_header_fifo_i;
-
   bp_pma
    #(.bp_params_p(bp_params_p))
    pma
@@ -253,7 +250,6 @@ module bp_cacc_vdp
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_cmd_header_fifo);
   `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
 
   logic [63:0] csr_data, start_cmd, input_a_ptr, input_b_ptr, input_len,
@@ -312,7 +308,6 @@ module bp_cacc_vdp
      );     
 
   // D-FF signals
-  logic v_n; // D
   logic v_r; // Q
   wire wr_not_rd, rd_not_wr; // Signals if Command is read or write
   // D-FF routing
@@ -320,7 +315,6 @@ module bp_cacc_vdp
   assign io_resp_last_o = v_r;
   assign wr_not_rd  = (fifo_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
   assign rd_not_wr  = (fifo_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd});
-  assign v_n = fifo_v_li & ~v_r;
   // D-FF
   bsg_dff_reset_set_clear
    #(.width_p(1), .clear_over_set_p(1))
@@ -328,7 +322,7 @@ module bp_cacc_vdp
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      // We also track reads which don't match to prevent deadlock
-     ,.set_i(v_n)
+     ,.set_i(fifo_v_li)
      ,.clear_i(fifo_yumi_li)
      ,.data_o(v_r)
      );
@@ -372,7 +366,7 @@ module bp_cacc_vdp
       vector_a      <= '{default:64'd0};
       vector_b      <= '{default:64'd0};
     end
-    if (v_n & wr_not_rd)
+    if (fifo_v_li & wr_not_rd)
     begin
       resp_size    <= fifo_header_li.size;
       resp_payload <= fifo_header_li.payload;
@@ -390,7 +384,7 @@ module bp_cacc_vdp
         default : begin end
       endcase
     end
-    else if (v_n & rd_not_wr)
+    else if (fifo_v_li & rd_not_wr)
     begin
       resp_size    <= fifo_header_li.size;
       resp_payload <= fifo_header_li.payload;
