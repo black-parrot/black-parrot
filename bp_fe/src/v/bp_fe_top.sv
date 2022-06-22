@@ -382,6 +382,7 @@ module bp_fe_top
       begin
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type                     = e_fe_exception;
+        // TODO: TLB misses (and probably I$ misses?) need to use the same address as the read to the memory
         fe_queue_cast_o.msg.exception.vaddr          = fetch_pc_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss
