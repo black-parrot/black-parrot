@@ -358,7 +358,6 @@ module wrapper
         begin : uce
          bp_uce
           #(.bp_params_p(bp_params_p)
-            ,.mem_data_width_p(l2_data_width_p)
             ,.assoc_p(assoc_p)
             ,.sets_p(sets_p)
             ,.block_width_p(block_width_p)

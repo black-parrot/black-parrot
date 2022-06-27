@@ -152,7 +152,6 @@ module bp_unicore_lite
 
   bp_uce
    #(.bp_params_p(bp_params_p)
-     ,.mem_data_width_p(uce_fill_width_p)
      ,.assoc_p(icache_assoc_p)
      ,.sets_p(icache_sets_p)
      ,.block_width_p(icache_block_width_p)
@@ -213,7 +212,6 @@ module bp_unicore_lite
   logic [1:1] _mem_resp_v_i, _mem_resp_ready_and_o, _mem_resp_last_i;
   bp_uce
    #(.bp_params_p(bp_params_p)
-     ,.mem_data_width_p(uce_fill_width_p)
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
@@ -274,13 +272,13 @@ module bp_unicore_lite
   bsg_deff_reset
    #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3))
    posedge_latch
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
 `else
   bsg_dlatch
    #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
    posedge_latch
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
 `endif
      ,.data_i({_mem_cmd_header_o[1], _mem_cmd_data_o[1], _mem_cmd_v_o[1], _mem_cmd_last_o[1]
                ,mem_cmd_ready_and_i[1]
@@ -295,13 +293,13 @@ module bp_unicore_lite
   bsg_deff_reset
    #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3))
    negedge_latch
-    (.clk_i(clk_i)
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
 `else
   bsg_dlatch
    #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
    negedge_latch
-    (.clk_i(clk_i)
+    (.clk_i(negedge_clk)
 `endif
      ,.data_i({mem_resp_header_i[1], mem_resp_data_i[1], mem_resp_v_i[1], mem_resp_last_i[1]
                ,_mem_resp_ready_and_o[1]

@@ -28,6 +28,7 @@ stages:
     - sw_dev
   before_script:
       - git submodule update --init --checkout --recursive external/
+      - cp -r $CI_RTL_INSTALL_DIR install/
   artifacts:
     when: always
     paths:
@@ -97,6 +98,9 @@ tire_kick:
   stage: check
   tags:
     - verilator
+  before_script:
+    # This should persist for other jobs
+    - make libs
   script:
     - $CI_PROJECT_DIR/ci/tire_kick.sh $CI_CORES
 

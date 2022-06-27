@@ -115,6 +115,7 @@ module bp_be_director
   wire fe_cmd_nonattaboy_v = fe_cmd_v_li & (fe_cmd_li.opcode != e_op_attaboy);
 
   // Boot logic
+  wire freeze_li = cfg_bus_cast_i.freeze | reset_i;
   always_comb
     begin
       unique casez (state_r)
@@ -122,7 +123,7 @@ module bp_be_director
         e_run   : state_n = commit_pkt_cast_i.wfi ? e_wait : fe_cmd_nonattaboy_v ? e_fence : e_run;
         e_fence : state_n = cmd_empty_n_o ? e_run : e_fence;
         // e_freeze:
-        default : state_n = cfg_bus_cast_i.freeze ? e_freeze : e_wait;
+        default : state_n = freeze_li ? e_freeze : e_wait;
       endcase
     end
 
@@ -136,7 +137,7 @@ module bp_be_director
       end
 
   assign suppress_iss_o  = (state_r != e_run);
-  assign unfreeze_o      = ~cfg_bus_cast_i.freeze & (state_r == e_freeze);
+  assign unfreeze_o      = (state_r == e_freeze) & ~freeze_li;
 
   always_comb
     begin

@@ -19,11 +19,11 @@ fi
 # Bash array to iterate over for coherence protocols for ucode CCE tests
 protos=(
     "ei"
-    "msi"
     "mesi"
-    "msi-nonspec"
     "mesi-nonspec"
     "moesif"
+    "msi"
+    "msi-nonspec"
     )
 
 # The base command to append the configuration to

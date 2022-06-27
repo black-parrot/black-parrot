@@ -22,72 +22,91 @@ class TraceGen:
     s += "// packet_len = " + str(self.packet_len) + "\n"
     return s
 
+  # create packet
+  # tr_op: trace replay operation
+  # opcode: cache opcode
+  # addr: cache address
+  # data: expected load data or data to store
+  # uc: uncached operation
+  def create_packet(self, tr_op, opcode, addr, data, uc=0):
+    packet  = tr_op + "_"
+    packet += opcode + "_"
+    packet += format(addr, "0"+str(self.addr_width_p)+"b") + "_"
+    packet += format(uc, "01b") + "_"
+    packet += format(data, "0"+str(self.data_width_p)+"b")
+    packet += "\n"
+    return packet
+
+  def get_store(self, size):
+    if (size == 1):
+      return "1000"
+    elif (size == 2):
+      return "1001"
+    elif (size == 4):
+      return "1010"
+    elif (size == 8):
+      return "1011"
+    else:
+      raise ValueError("unexpected size for store.")
+
+  def get_load(self, signed, size):
+    if (size == 8):
+      return "0011"
+    else:
+      if (signed):
+        if (size == 1):
+          return "0000"
+        elif (size == 2):
+          return "0001"
+        elif (size == 4):
+          return "0010"
+        else:
+          raise ValueError("unexpected size for signed load.")
+      else:
+        if (size == 1):
+          return "0100"
+        elif (size == 2):
+          return "0101"
+        elif (size == 4):
+          return "0110"
+        else:
+          raise ValueError("unexpected size for unsigned load.")
+
   # send load
   # signed: sign extend or not
   # size: load size in bytes
   # addr: load address
   def send_load(self, signed, size, addr, uc=0):
-    packet = "0001_"
-    if (size == 8):
-      packet += "0011_"
-    else:
-      if (signed):
-        if (size == 1):
-          packet += "0000_"
-        elif (size == 2):
-          packet += "0001_"
-        elif (size == 4):
-          packet += "0010_"
-        else:
-          raise ValueError("unexpected size for signed load.")
-      else:
-        if (size == 1):
-          packet += "0100_"
-        elif (size == 2):
-          packet += "0101_"
-        elif (size == 4):
-          packet += "0110_"
-        else:
-          raise ValueError("unexpected size for unsigned load.")
+    tr_op = "0001"
+    opcode = self.get_load(signed, size)
+    return self.create_packet(tr_op, opcode, addr, 0, uc)
 
-    packet += format(addr, "0"+str(self.addr_width_p)+"b") + "_"
-    packet += format(uc, "01b") + "_"
-    packet += format(0, "064b")
-    packet += "\n"
-    return packet
-
+  # receive load
+  # signed: sign extend or not
+  # size: load size in bytes
+  # addr: load address
+  def recv_load(self, signed, size, addr, data, uc=0):
+    tr_op = "0010"
+    opcode = self.get_load(signed, size)
+    return self.create_packet(tr_op, opcode, addr, data, uc)
 
   # send store
   # signed: sign extend or not
   # size: store size in bytes
   # addr: store address
   def send_store(self, size, addr, data, uc=0):
-    packet = "0001_"
-    if (size == 1):
-      packet += "1000_"
-    elif (size == 2):
-      packet += "1001_"
-    elif (size == 4):
-      packet += "1010_"
-    elif (size == 8):
-      packet += "1011_"
-    else:
-      raise ValueError("unexpected size for store.")
-    packet += format(addr, "0" + str(self.addr_width_p) + "b") + "_"
-    packet += format(uc, "01b") + "_"
-    packet += format(data, "064b")
-    packet += "\n"
-    return packet
+    tr_op = "0001"
+    opcode = self.get_store(size)
+    return self.create_packet(tr_op, opcode, addr, data, uc)
 
-  # receive data
-  # data: expected data
-  def recv_data(self, addr, data, uc=0):
-    packet = "0010_0000_"
-    packet += format(addr, "0" + str(self.addr_width_p) + "b") + "_"
-    packet += format(uc, "01b") + "_"
-    packet += format(data, "064b")
-    packet += "\n"
-    return packet
+  # receive store
+  # signed: sign extend or not
+  # size: store size in bytes
+  # addr: store address
+  def recv_store(self, size, addr, uc=0):
+    tr_op = "0010"
+    opcode = self.get_store(size)
+    return self.create_packet(tr_op, opcode, addr, 0, uc)
 
   # wait for a number of cycles
   # num_cycles: number of cycles to wait.

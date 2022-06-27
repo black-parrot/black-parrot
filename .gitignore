@@ -5,7 +5,7 @@ DVEfiles/
 *.tr
 *.pyc
 external/
-tools/install/
+install/
 regress_logs/
 stack.info.*
 *.swp
