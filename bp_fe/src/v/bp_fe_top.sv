@@ -88,7 +88,7 @@ module bp_fe_top
   logic [instr_width_gp-1:0] fetch_li, fetch_instr_lo;
   logic [vaddr_width_p-1:0] fetch_pc_lo;
   logic fetch_v_li, fetch_exception_v_li, fetch_fail_v_li;
-  logic fetch_instr_v_lo;
+  logic fetch_instr_v_lo, fetch_is_second_half_lo;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
   logic [vaddr_width_p-1:0] next_fetch_lo;
   logic next_fetch_yumi_li;
@@ -121,6 +121,7 @@ module bp_fe_top
      ,.fetch_exception_v_i(fetch_exception_v_li)
      ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
      ,.fetch_pc_o(fetch_pc_lo)
+     ,.fetch_is_second_half_o(fetch_is_second_half_lo)
 
      ,.attaboy_pc_i(attaboy_pc_li)
      ,.attaboy_br_metadata_fwd_i(attaboy_br_metadata_fwd_li)
@@ -383,7 +384,8 @@ module bp_fe_top
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type                     = e_fe_exception;
         // TODO: TLB misses (and probably I$ misses?) need to use the same address as the read to the memory
-        fe_queue_cast_o.msg.exception.vaddr          = fetch_pc_lo;
+        fe_queue_cast_o.msg.exception.pc             = fetch_pc_lo;
+        fe_queue_cast_o.msg.upper_not_lower_half     = fetch_is_second_half_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss
                                                        : instr_misaligned_r

@@ -23,6 +23,7 @@ module bp_fe_realigner
 
    , output [instr_width_gp-1:0] fetch_instr_o
    , output                      fetch_instr_v_o
+   , output                      fetch_is_second_half_o
 //    , output                      fetch_instr_progress_o // is the current input aiding resolution of a coherent instruction fetch?
    );
 
@@ -47,7 +48,8 @@ module bp_fe_realigner
   wire icache_fetch_is_aligned    = `bp_addr_is_aligned(fetch_pc_i, rv64_instr_width_bytes_gp);
   wire has_coherent_buffered_insn = !icache_fetch_is_aligned && fetch_data_v_i && fetch_linear_i && upper_half_buffer_v_r;
 
-//   assign fetch_instr_progress_o = fetch_data_v_i; 
+  assign fetch_is_second_half_o = !icache_fetch_is_aligned && has_coherent_buffered_insn;
+
   assign fetch_instr_v_o = icache_fetch_is_aligned ? fetch_data_v_i : has_coherent_buffered_insn;
   assign fetch_instr_o   = icache_fetch_is_aligned ? fetch_data_i   : { icache_data_lower_half_li, upper_half_buffer_r };
 endmodule

@@ -38,9 +38,10 @@ module bp_fe_pc_gen
    , input                                           fetch_v_i
    , output [instr_width_gp-1:0]                     fetch_instr_o
    , output                                          fetch_instr_v_o
-   , input                                           fetch_exception_v_i
+   , input                                           fetch_exception_v_i // TODO: remove
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
    , output logic [vaddr_width_p-1:0]                fetch_pc_o
+   , output                                          fetch_is_second_half_o
 
    , input [vaddr_width_p-1:0]                       attaboy_pc_i
    , input [branch_metadata_fwd_width_p-1:0]         attaboy_br_metadata_fwd_i
@@ -305,13 +306,14 @@ module bp_fe_pc_gen
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.fetch_pc_i     (pc_if2_r)
-    ,.fetch_linear_i (fetch_linear_if2_r)
-    ,.fetch_data_i   (fetch_i)
-    ,.fetch_data_v_i (fetch_v_i)
+    ,.fetch_pc_i    (pc_if2_r)
+    ,.fetch_linear_i(fetch_linear_if2_r)
+    ,.fetch_data_i  (fetch_i)
+    ,.fetch_data_v_i(fetch_v_i)
 
-    ,.fetch_instr_o  (fetch_instr_o)
-    ,.fetch_instr_v_o(fetch_instr_v_o)
+    ,.fetch_instr_o         (fetch_instr_o)
+    ,.fetch_instr_v_o       (fetch_instr_v_o)
+    ,.fetch_is_second_half_o(fetch_is_second_half_o)
     );
 
   // Global history

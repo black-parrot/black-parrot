@@ -56,8 +56,9 @@
      */                                                                                            \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic [vaddr_width_mp-1:0] vaddr;                                                            \
+      logic [vaddr_width_mp-1:0] pc;                                                               \
       bp_fe_exception_code_e     exception_code;                                                   \
+      logic                      upper_not_lower_half;                                             \
       logic [`bp_fe_exception_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)-1:0]     \
                                  padding;                                                          \
     }  bp_fe_exception_s;                                                                          \

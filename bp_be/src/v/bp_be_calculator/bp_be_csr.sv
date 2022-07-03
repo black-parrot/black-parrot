@@ -633,6 +633,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;
+  assign commit_pkt_cast_o.exception_instr_upper_not_lower_half = retire_pkt_cast_i.exception.instr_upper_not_lower_half;
   assign commit_pkt_cast_o._interrupt       = interrupt_v_lo;
   assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;
   assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
