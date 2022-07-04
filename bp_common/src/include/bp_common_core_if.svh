@@ -139,6 +139,17 @@
       logic [`bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_itlb_map_s;                                                                       \
+    /*                                                                                             \
+     * bp_fe_cmd_icache_fill_s indicates the alignment offset of the original                      \
+     * miss which triggered this fill request. It carries no actual cache data;                    \
+     * the frontend will issue the memory request upon receipt.                                    \
+    */                                                                                             \
+    typedef struct packed                                                                          \
+    {                                                                                              \
+      logic instr_upper_not_lower_half;                                                            \
+      logic [`bp_fe_cmd_icache_fill_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+                                 padding;                                                          \
+    }  bp_fe_cmd_icache_fill_s;                                                                    \
                                                                                                    \
     /*                                                                                             \
      * bp_fe_cmd_itlb_fence_s consists of virtual address, asid, and flags for whether to flush    \
@@ -170,6 +181,7 @@
         bp_fe_cmd_attaboy_s                 attaboy;                                               \
         bp_fe_cmd_itlb_map_s                itlb_fill_response;                                    \
         bp_fe_cmd_itlb_fence_s              itlb_fence;                                            \
+        bp_fe_cmd_icache_fill_s             icache_fill_response;                                  \
       }  operands;                                                                                 \
     }  bp_fe_cmd_s;                                                                                \
 
@@ -250,6 +262,9 @@
   `define bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp) \
     (`bp_pte_leaf_width(paddr_width_mp)+1)
 
+  `define bp_fe_cmd_icache_fill_width_no_padding(paddr_width_mp) \
+    (1)
+
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
     (asid_width_mp + 2)
 
@@ -276,6 +291,11 @@
   `define bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)      \
      - `bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp)                                        \
+     )
+
+  `define bp_fe_cmd_icache_fill_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+    (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)      \
+     - `bp_fe_cmd_icache_fill_width_no_padding()                                     \
      )
 
   `define bp_fe_cmd_itlb_fence_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \

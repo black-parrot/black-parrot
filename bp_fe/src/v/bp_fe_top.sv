@@ -156,6 +156,20 @@ module bp_fe_top
   wire eret_v        = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_eret);
   wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 
+  // Conditionally delay I$ fill by one cycle when fill only applies to upper half of instruction
+  // (i.e., the instruction requires two aligned reads and it's the second one that needs a fill)
+  logic icache_next_fetch_fill_v;
+  bsg_dff_reset_en_bypass
+   #(.width_p(1))
+   icache_fill_delay_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(icache_fill_response_v & ~fe_cmd_cast_i.operands.icache_fill_response.instr_upper_not_lower_half)
+
+     ,.data_i(icache_fill_response_v)
+     ,.data_o(icache_next_fetch_fill_v)
+     );
+
   logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
   wire shadow_priv_w = state_reset_v | trap_v | eret_v;
   assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
@@ -224,7 +238,7 @@ module bp_fe_top
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
   wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_fetch_lo, dword_width_gp);
-  wire [1:0] r_size_li = 2'b10; // TODO: is this wrong?
+  wire [1:0] r_size_li = 2'b10; // TODO: is this wrong? // update: no, we're performing aligned reads
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(itlb_els_4k_p)
@@ -277,7 +291,7 @@ module bp_fe_top
   bp_fe_icache_pkt_s icache_pkt;
   // TODO: fill command might need to be delayed by a cycle for upper-half fills
   assign icache_pkt = '{vaddr: next_fetch_lo
-                        ,op  : icache_fence_v ? e_icache_fencei : icache_fill_response_v ? e_icache_fill : e_icache_fetch
+                        ,op  : icache_fence_v ? e_icache_fencei : icache_next_fetch_fill_v ? e_icache_fill : e_icache_fetch
                         };
   // TODO: Should only ack icache fence when icache_ready
   wire icache_v_li = next_fetch_yumi_li | icache_fence_v;
