@@ -219,7 +219,8 @@ module bp_fe_top
   logic [ptag_width_p-1:0] ptag_li;
 
   bp_pte_leaf_s w_tlb_entry_li;
-  wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
+  wire [vaddr_width_p-1:0] w_tlb_vaddr = fe_cmd_cast_i.vaddr + (fe_cmd_cast_i.operands.itlb_fill_response.instr_upper_not_lower_half ? 2 : 0);
+  wire [vtag_width_p-1:0] w_vtag_li = w_tlb_vaddr[vaddr_width_p-1-:vtag_width_p];
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
   wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_fetch_lo, dword_width_gp);
@@ -274,6 +275,7 @@ module bp_fe_top
 
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
+  // TODO: fill command might need to be delayed by a cycle for upper-half fills
   assign icache_pkt = '{vaddr: next_fetch_lo
                         ,op  : icache_fence_v ? e_icache_fencei : icache_fill_response_v ? e_icache_fill : e_icache_fetch
                         };
@@ -385,7 +387,7 @@ module bp_fe_top
         fe_queue_cast_o.msg_type                     = e_fe_exception;
         // TODO: TLB misses (and probably I$ misses?) need to use the same address as the read to the memory
         fe_queue_cast_o.msg.exception.pc             = fetch_pc_lo;
-        fe_queue_cast_o.msg.upper_not_lower_half     = fetch_is_second_half_lo;
+        fe_queue_cast_o.msg.exception.upper_not_lower_half = fetch_is_second_half_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss
                                                        : instr_misaligned_r

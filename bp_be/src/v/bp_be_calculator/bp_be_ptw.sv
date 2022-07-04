@@ -141,6 +141,7 @@ module bp_be_ptw
   assign ptw_fill_pkt_cast_o.instr_page_fault_v = (state_r == e_writeback) & instr_page_fault;
   assign ptw_fill_pkt_cast_o.load_page_fault_v  = (state_r == e_writeback) & load_page_fault;
   assign ptw_fill_pkt_cast_o.store_page_fault_v = (state_r == e_writeback) & store_page_fault;
+  assign ptw_fill_pkt_cast_o.instr_upper_not_lower_half = (state_r == e_writeback) & ptw_miss_pkt_r.instr_upper_not_lower_half;
   assign ptw_fill_pkt_cast_o.vaddr              = ptw_miss_pkt_r.vaddr;
   assign ptw_fill_pkt_cast_o.entry              = tlb_w_entry;
 

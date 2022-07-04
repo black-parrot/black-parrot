@@ -192,7 +192,6 @@ module bp_be_scheduler
 
       // Form dispatch packet
       dispatch_pkt = '0;
-      // TODO: add upper/lower bit to dispatch packet?
       dispatch_pkt.v        = (fe_queue_yumi_li & ~poison_isd_i) || be_exc_not_instr_li;
       dispatch_pkt.queue_v  = fe_queue_yumi_li;
       dispatch_pkt.pc       = expected_npc_i;
@@ -216,6 +215,8 @@ module bp_be_scheduler
         fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_itlb_miss};
       dispatch_pkt.exception.icache_miss        |=
         fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_icache_miss};
+      dispatch_pkt.exception.instr_upper_not_lower_half |=
+        fe_exc_not_instr_li & fe_queue_lo.msg.exception.upper_not_lower_half;
 
       dispatch_pkt.exception.instr_page_fault |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_page_fault_v;
       dispatch_pkt.exception.load_page_fault  |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.load_page_fault_v;
@@ -223,7 +224,7 @@ module bp_be_scheduler
       dispatch_pkt.exception.itlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.itlb_fill_v;
       dispatch_pkt.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.dtlb_fill_v;
       dispatch_pkt.exception._interrupt       |= be_exc_not_instr_li & interrupt_v_i;
-      dispatch_pkt.exception.instr_upper_not_lower_half |= fe_queue_lo.msg.exception.upper_not_lower_half;
+      dispatch_pkt.exception.instr_upper_not_lower_half |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_upper_not_lower_half;
 
       dispatch_pkt.exception.illegal_instr |= fe_instr_not_exc_li & illegal_instr_lo;
       dispatch_pkt.exception.ecall_m       |= fe_instr_not_exc_li & ecall_m_lo;

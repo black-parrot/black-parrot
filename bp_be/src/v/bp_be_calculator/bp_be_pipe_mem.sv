@@ -249,6 +249,8 @@ module bp_be_pipe_mem
     '{instr_miss_v  : commit_pkt.itlb_miss
       ,store_miss_v : commit_pkt.dtlb_store_miss
       ,load_miss_v  : commit_pkt.dtlb_load_miss
+      ,instr_upper_not_lower_half: commit_pkt.exception_instr_upper_not_lower_half
+      // TODO: somewhat duplicative upper/lower info
       ,vaddr        : commit_pkt.itlb_miss ? (commit_pkt.pc + (commit_pkt.exception_instr_upper_not_lower_half ? 2 : 0)) : commit_pkt.vaddr
       };
 

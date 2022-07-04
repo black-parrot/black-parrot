@@ -472,7 +472,6 @@ module bp_be_calculator_top
 
           exc_stage_n[0].spec                   |= reservation_n.special;
           exc_stage_n[0].exc                    |= reservation_n.exception;
-          exc_stage_n[0].exc_instr_upper_not_lower_half |= ;
 
           exc_stage_n[1].exc.illegal_instr      |= pipe_sys_illegal_instr_lo;
           exc_stage_n[1].spec.csrw              |= pipe_sys_csrw_lo;

@@ -174,6 +174,7 @@
       logic instr_miss_v;                                                                          \
       logic load_miss_v;                                                                           \
       logic store_miss_v;                                                                          \
+      logic instr_upper_not_lower_half;                                                            \
       logic [vaddr_width_mp-1:0] vaddr;                                                            \
     }  bp_be_ptw_miss_pkt_s;                                                                       \
                                                                                                    \
@@ -185,6 +186,7 @@
       logic instr_page_fault_v;                                                                    \
       logic load_page_fault_v;                                                                     \
       logic store_page_fault_v;                                                                    \
+      logic instr_upper_not_lower_half;                                                            \
       logic [vaddr_width_mp-1:0] vaddr;                                                            \
       bp_be_pte_leaf_s entry;                                                                      \
     }  bp_be_ptw_fill_pkt_s;                                                                       \
@@ -247,7 +249,7 @@
     (paddr_width_mp - page_offset_width_gp + 7)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 16)
+    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 17)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \
@@ -258,10 +260,10 @@
      )
 
   `define bp_be_ptw_miss_pkt_width(vaddr_width_mp) \
-    (3 + vaddr_width_mp)
+    (4 + vaddr_width_mp)
 
   `define bp_be_ptw_fill_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (6                                                                                             \
+    (7                                                                                             \
      + vaddr_width_mp                                                                              \
      + `bp_be_pte_leaf_width(paddr_width_mp)                                                       \
      )

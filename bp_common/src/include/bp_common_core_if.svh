@@ -135,6 +135,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       bp_pte_leaf_s              pte_leaf;                                                         \
+      logic instr_upper_not_lower_half;                                                            \
       logic [`bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_itlb_map_s;                                                                       \
@@ -223,7 +224,7 @@
     (vaddr_width_mp + instr_width_gp + branch_metadata_fwd_width_mp)
 
   `define bp_fe_exception_width_no_padding(vaddr_width_mp) \
-    (vaddr_width_mp + $bits(bp_fe_exception_code_e))
+    (vaddr_width_mp + $bits(bp_fe_exception_code_e) + 1)
 
   `define bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
     (1 + `BSG_MAX(`bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp)       \
@@ -247,7 +248,7 @@
     (1+branch_metadata_fwd_width_mp)
 
   `define bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp) \
-    (`bp_pte_leaf_width(paddr_width_mp))
+    (`bp_pte_leaf_width(paddr_width_mp)+1)
 
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
     (asid_width_mp + 2)
