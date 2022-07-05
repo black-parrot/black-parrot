@@ -161,7 +161,7 @@ module bp_be_scheduler
      );
 
   wire fe_exc_not_instr_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_exception);
-  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
+  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.pc;
   wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i | unfreeze_i;
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
