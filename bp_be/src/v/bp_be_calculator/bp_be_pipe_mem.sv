@@ -251,7 +251,7 @@ module bp_be_pipe_mem
       ,store_miss_v : commit_pkt.dtlb_store_miss
       ,load_miss_v  : commit_pkt.dtlb_load_miss
       ,instr_upper_not_lower_half: commit_pkt.exception_instr_upper_not_lower_half
-      ,vaddr        : commit_pkt.itlb_miss ? (commit_pkt.pc + (commit_pkt.exception_instr_upper_not_lower_half ? 2 : 0)) : commit_pkt.vaddr
+      ,vaddr        : commit_pkt.itlb_miss ? `bp_be_instr_half_address(commit_pkt.pc, commit_pkt.exception_instr_upper_not_lower_half) : commit_pkt.vaddr
       ,mstatus_mxr  : trans_info.mstatus_mxr
       ,mstatus_sum  : trans_info.mstatus_sum
       ,base_ppn     : trans_info.base_ppn

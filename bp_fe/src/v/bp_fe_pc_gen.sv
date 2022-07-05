@@ -38,7 +38,6 @@ module bp_fe_pc_gen
    , input                                           fetch_v_i
    , output [instr_width_gp-1:0]                     fetch_instr_o
    , output                                          fetch_instr_v_o
-   , input                                           fetch_exception_v_i // TODO: remove
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
    , output logic [vaddr_width_p-1:0]                fetch_pc_o
    , output                                          fetch_is_second_half_o
@@ -133,7 +132,7 @@ module bp_fe_pc_gen
   wire is_ret  = fetch_instr_v_o & scan_instr.ret;
 
   // BTB
-  wire btb_r_v_li = next_fetch_yumi_i;
+  wire btb_r_v_li = next_fetch_yumi_i & !incomplete_fetch_if1_n;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb)
     | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
@@ -156,7 +155,7 @@ module bp_fe_pc_gen
      ,.init_done_o(btb_init_done_lo)
 
      ,.r_addr_i(next_fetch_o)
-     ,.r_v_i(btb_r_v_li) // TODO: technically could disable read for incomplete first half
+     ,.r_v_i(btb_r_v_li)
      ,.br_tgt_o(btb_br_tgt_lo)
      ,.br_tgt_v_o(btb_br_tgt_v_lo)
      ,.br_tgt_jmp_o(btb_br_tgt_jmp_lo)
@@ -171,7 +170,7 @@ module bp_fe_pc_gen
      );
 
   // BHT
-  wire bht_r_v_li = next_fetch_yumi_i;
+  wire bht_r_v_li = next_fetch_yumi_i & !incomplete_fetch_if1_n;
   wire [vaddr_width_p-1:0] bht_r_addr_li = next_fetch_o;
   wire [ghist_width_p-1:0] bht_r_ghist_li = pred_if1_n.ghist;
   wire bht_w_v_li =

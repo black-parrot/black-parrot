@@ -118,7 +118,6 @@ module bp_fe_top
      ,.fetch_v_i(fetch_v_li)
      ,.fetch_instr_o(fetch_instr_lo)
      ,.fetch_instr_v_o(fetch_instr_v_lo)
-     ,.fetch_exception_v_i(fetch_exception_v_li)
      ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
      ,.fetch_pc_o(fetch_pc_lo)
      ,.fetch_is_second_half_o(fetch_is_second_half_lo)

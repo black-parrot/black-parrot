@@ -255,7 +255,7 @@
     (paddr_width_mp - page_offset_width_gp + 7)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (3 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 17)
+    (4 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 17)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \
@@ -279,6 +279,9 @@
 
   `define bp_be_decode_info_width \
     (rv64_priv_width_gp+8)
+
+  `define bp_be_instr_half_address(base_pc_mp, upper_not_lower_half_mp) \
+    (base_pc_mp + (upper_not_lower_half_mp ? 2 : 0))
 
 `endif
 

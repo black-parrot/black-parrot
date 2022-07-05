@@ -176,7 +176,7 @@ module bp_be_scheduler
       // Calculator status ISD stage
       isd_status_cast_o = '0;
       isd_status_cast_o.v        = fe_queue_yumi_li;
-      isd_status_cast_o.pc       = fe_queue_lo.msg.fetch.pc; // TODO: this is non-obviously correct, fetch pc and exception vaddr alias
+      isd_status_cast_o.pc       = fe_instr_not_exc_li ? fe_queue_lo.msg.fetch.pc : fe_queue_lo.msg.exception.pc;
       isd_status_cast_o.branch_metadata_fwd = fe_queue_lo.msg.fetch.branch_metadata_fwd;
       isd_status_cast_o.fence_v  = fe_queue_v_lo & issue_pkt.fence_v;
       isd_status_cast_o.csr_v    = fe_queue_v_lo & issue_pkt.csr_v;
