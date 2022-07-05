@@ -143,6 +143,7 @@
       logic                           exception;                                                   \
       logic                           exception_instr_upper_not_lower_half;                        \
       logic                           _interrupt;                                                  \
+      logic                           unfreeze;                                                    \
       logic                           eret;                                                        \
       logic                           fencei;                                                      \
       logic                           sfence;                                                      \
@@ -171,11 +172,16 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic instr_miss_v;                                                                          \
-      logic load_miss_v;                                                                           \
-      logic store_miss_v;                                                                          \
-      logic instr_upper_not_lower_half;                                                            \
-      logic [vaddr_width_mp-1:0] vaddr;                                                            \
+      /* Trans info */                                                                             \
+      logic [ptag_width_p-1:0]       base_ppn;                                                     \
+      logic [rv64_priv_width_gp-1:0] priv_mode;                                                    \
+      logic                          mstatus_sum;                                                  \
+      logic                          mstatus_mxr;                                                  \
+      logic                          instr_miss_v;                                                 \
+      logic                          load_miss_v;                                                  \
+      logic                          store_miss_v;                                                 \
+      logic                          instr_upper_not_lower_half;                                   \
+      logic [vaddr_width_mp-1:0]     vaddr;                                                        \
     }  bp_be_ptw_miss_pkt_s;                                                                       \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -194,7 +200,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [rv64_priv_width_gp-1:0] priv_mode;                                                    \
-      logic [ptag_width_p-1:0]       satp_ppn;                                                     \
+      logic [ptag_width_p-1:0]       base_ppn;                                                     \
       logic                          translation_en;                                               \
       logic                          mstatus_sum;                                                  \
       logic                          mstatus_mxr;                                                  \
@@ -259,8 +265,8 @@
      + $bits(rv64_fflags_s)                                                                        \
      )
 
-  `define bp_be_ptw_miss_pkt_width(vaddr_width_mp) \
-    (4 + vaddr_width_mp)
+  `define bp_be_ptw_miss_pkt_width(vaddr_width_mp, ptag_width_mp) \
+    (ptag_width_mp + rv64_priv_width_gp + 6 + vaddr_width_mp)
 
   `define bp_be_ptw_fill_pkt_width(vaddr_width_mp, paddr_width_mp) \
     (7                                                                                             \

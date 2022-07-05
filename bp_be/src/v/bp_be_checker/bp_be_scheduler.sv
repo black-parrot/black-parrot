@@ -21,7 +21,7 @@ module bp_be_scheduler
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
@@ -33,6 +33,7 @@ module bp_be_scheduler
    )
   (input                               clk_i
    , input                             reset_i
+   , input [cfg_bus_width_lp-1:0]      cfg_bus_i
 
   , output [isd_status_width_lp-1:0]   isd_status_o
   , input [vaddr_width_p-1:0]          expected_npc_i
@@ -40,6 +41,7 @@ module bp_be_scheduler
   , input                              dispatch_v_i
   , input                              interrupt_v_i
   , input                              suppress_iss_i
+  , input                              unfreeze_i
   , input [decode_info_width_lp-1:0]   decode_info_i
 
   // Fetch interface
@@ -57,7 +59,7 @@ module bp_be_scheduler
   );
 
   // Declare parameterizable structures
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -66,6 +68,7 @@ module bp_be_scheduler
   `bp_cast_i(bp_be_commit_pkt_s, commit_pkt);
   `bp_cast_i(bp_be_wb_pkt_s, iwb_pkt);
   `bp_cast_i(bp_be_wb_pkt_s, fwb_pkt);
+  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   bp_fe_queue_s fe_queue_lo;
   logic fe_queue_v_lo, fe_queue_yumi_li;
@@ -158,7 +161,8 @@ module bp_be_scheduler
      );
 
   wire fe_exc_not_instr_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_exception);
-  wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i;
+  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
+  wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i | unfreeze_i;
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
 
@@ -223,8 +227,9 @@ module bp_be_scheduler
       dispatch_pkt.exception.store_page_fault |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.store_page_fault_v;
       dispatch_pkt.exception.itlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.itlb_fill_v;
       dispatch_pkt.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.dtlb_fill_v;
-      dispatch_pkt.exception._interrupt       |= be_exc_not_instr_li & interrupt_v_i;
       dispatch_pkt.exception.instr_upper_not_lower_half |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_upper_not_lower_half;
+      dispatch_pkt.exception._interrupt       |= be_exc_not_instr_li & interrupt_v_i & ~unfreeze_i;
+      dispatch_pkt.exception.unfreeze         |= be_exc_not_instr_li & unfreeze_i;
 
       dispatch_pkt.exception.illegal_instr |= fe_instr_not_exc_li & illegal_instr_lo;
       dispatch_pkt.exception.ecall_m       |= fe_instr_not_exc_li & ecall_m_lo;

@@ -10,7 +10,7 @@ module bp_be_csr
 
    , localparam csr_cmd_width_lp = $bits(bp_be_csr_cmd_s)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam decode_info_width_lp = `bp_be_decode_info_width
@@ -35,6 +35,7 @@ module bp_be_csr
    , input                                   frf_w_v_i
 
    // Interrupts
+   , input                                   debug_irq_i
    , input                                   timer_irq_i
    , input                                   software_irq_i
    , input                                   m_external_irq_i
@@ -52,7 +53,7 @@ module bp_be_csr
    );
 
   // Declare parameterizable structs
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `declare_csr_structs(vaddr_width_p, paddr_width_p);
@@ -131,8 +132,9 @@ module bp_be_csr
   `declare_csr(dscratch0);
   `declare_csr(dscratch1);
 
-  wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
-  wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
+  wire dgie = ~is_debug_mode;
+  wire mgie = ~is_debug_mode & (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
+  wire sgie = ~is_debug_mode & (mstatus_r.sie & is_s_mode) | is_u_mode;
 
   wire mti_v = mie_r.mtie & mip_r.mtip;
   wire msi_v = mie_r.msie & mip_r.msip;
@@ -164,7 +166,6 @@ module bp_be_csr
 
   assign irq_waiting_o = |interrupt_icode_dec_li;
 
-  wire ebreak_v_li = ~is_debug_mode | (is_m_mode & ~dcsr_lo.ebreakm) | (is_s_mode & ~dcsr_lo.ebreaks) | (is_u_mode & ~dcsr_lo.ebreaku);
   rv64_exception_dec_s exception_dec_li;
   assign exception_dec_li =
       '{instr_misaligned    : retire_pkt_cast_i.exception.instr_misaligned
@@ -193,6 +194,8 @@ module bp_be_csr
      ,.addr_o(exception_ecode_li)
      ,.v_o(exception_ecode_v_li)
      );
+
+  wire d_interrupt_icode_v_li = debug_irq_i;
 
   logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
   logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
@@ -234,39 +237,73 @@ module bp_be_csr
       endcase
     end
 
-  logic [vaddr_width_p-1:0] apc_n, apc_r;
-  bsg_dff_reset
-   #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
-   apc
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i(apc_n)
-     ,.data_o(apc_r)
-     );
-  assign apc_n = retire_pkt_cast_i.special.sret ? sepc_lo : retire_pkt_cast_i.special.mret ? mepc_lo : retire_pkt_cast_i.special.dret ? dpc_lo
-                 : (exception_v_lo | interrupt_v_lo)
-                   ? ((priv_mode_n == `PRIV_MODE_S) ? {stvec_lo.base, 2'b00} : {mtvec_lo.base, 2'b00})
-                   : retire_pkt_cast_i.instret
-                     ? retire_pkt_cast_i.npc
-                     : apc_r;
-
-
   logic enter_debug, exit_debug;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    debug_mode_reg
     (.clk_i(clk_i)
-     ,.reset_i('0)
+     ,.reset_i(reset_i)
      ,.set_i(enter_debug)
      ,.clear_i(exit_debug)
 
      ,.data_o(debug_mode_r)
      );
 
+  logic [vaddr_width_p-1:0] apc_n, apc_r;
+  bsg_dff_reset
+   #(.width_p(vaddr_width_p))
+   apc_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(apc_n)
+     ,.data_o(apc_r)
+     );
+
+  logic [vaddr_width_p-1:0] cfg_npc_r;
+  wire [vaddr_width_p-1:0] cfg_npc_n = cfg_bus_cast_i.npc;
+  bsg_dff
+   #(.width_p(vaddr_width_p))
+   cfg_npc_reg
+    (.clk_i(clk_i)
+     ,.data_i(cfg_npc_n)
+     ,.data_o(cfg_npc_r)
+     );
+  // This currently depends on specific offsets in the debug module which are
+  //   compatible with the pulp-platform debug rom:
+  // https://github.com/pulp-platform/riscv-dbg/blob/64f48cd8ef3ed4269ab3dfcc32e8a137a871e3e1/src/dm_pkg.sv#L28
+  // For now, assume that unfreeze_pc is 16 byte aligned to avoid another mux
+  wire [vaddr_width_p-1:0] unfreeze_pc        = {cfg_npc_r[vaddr_width_p-1:4], 4'b0000};
+  wire [vaddr_width_p-1:0] debug_halt_pc      = {cfg_npc_r[vaddr_width_p-1:4], 4'b0000};
+  wire [vaddr_width_p-1:0] debug_resume_pc    = {cfg_npc_r[vaddr_width_p-1:4], 4'b0100};
+  wire [vaddr_width_p-1:0] debug_exception_pc = {cfg_npc_r[vaddr_width_p-1:4], 4'b1000};
+
+  wire [vaddr_width_p-1:0] ret_pc =
+    retire_pkt_cast_i.special.sret
+    ? sepc_lo
+    : retire_pkt_cast_i.special.mret
+      ? mepc_lo
+      : dpc_lo;
+  wire [vaddr_width_p-1:0] tvec_pc =
+    is_debug_mode ? debug_exception_pc
+    : (priv_mode_n == `PRIV_MODE_S)
+      ? {stvec_lo.base, 2'b00}
+      : {mtvec_lo.base, 2'b00};
+
+  wire [vaddr_width_p-1:0] core_npc =
+    (exception_v_lo | interrupt_v_lo)
+    ? tvec_pc
+    : commit_pkt_cast_o.eret
+      ? ret_pc
+      : retire_pkt_cast_i.instret
+        ? retire_pkt_cast_i.npc
+        : apc_r;
+
+  assign apc_n = (enter_debug | commit_pkt_cast_o.unfreeze) ? debug_halt_pc : core_npc;
+
   assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
   bsg_dff_reset
-   #(.width_p(3), .reset_val_p({1'b1, `PRIV_MODE_M}))
+   #(.width_p(3), .reset_val_p({1'b0, `PRIV_MODE_M}))
    priv_mode_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -343,8 +380,8 @@ module bp_be_csr
       minstret_li      = ~mcountinhibit_lo.ir ? minstret_lo + dword_width_gp'(retire_pkt_cast_i.instret) : minstret_lo;
       mcountinhibit_li = mcountinhibit_lo;
 
-      enter_debug = reset_i & (boot_in_debug_p == 1'b1);
-      exit_debug  = reset_i & (boot_in_debug_p == 1'b0);
+      enter_debug = '0;
+      exit_debug  = '0;
       dcsr_li     = dcsr_lo;
       dpc_li      = dpc_lo;
       dscratch0_li = dscratch0_lo;
@@ -377,9 +414,9 @@ module bp_be_csr
           else
             begin
               unique casez ({csr_r_v_li, csr_cmd_cast_i.csr_addr})
-                {1'b1, `CSR_ADDR_FFLAGS       }: csr_data_lo = fcsr_lo.fflags;
+                {1'b1, `CSR_ADDR_FFLAGS       }: csr_data_lo = fcsr_lo.fflags | fflags_acc_i;
                 {1'b1, `CSR_ADDR_FRM          }: csr_data_lo = fcsr_lo.frm;
-                {1'b1, `CSR_ADDR_FCSR         }: csr_data_lo = fcsr_lo;
+                {1'b1, `CSR_ADDR_FCSR         }: csr_data_lo = fcsr_lo | fflags_acc_i;
                 {1'b1, `CSR_ADDR_CYCLE        }: csr_data_lo = mcycle_lo;
                 // Time must be done by trapping, since we can't stall at this point
                 {1'b1, `CSR_ADDR_INSTRET      }: csr_data_lo = minstret_lo;
@@ -482,7 +519,14 @@ module bp_be_csr
 
       if (retire_pkt_cast_i.exception._interrupt)
         begin
-          if (m_interrupt_icode_v_li & mgie)
+          if (d_interrupt_icode_v_li & dgie)
+            begin
+              enter_debug    = 1'b1;
+              dpc_li         = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              dcsr_li.cause  = 3; // Debugger
+              dcsr_li.prv    = priv_mode_r;
+            end
+          else if (m_interrupt_icode_v_li & mgie)
             begin
               priv_mode_n          = `PRIV_MODE_M;
 
@@ -513,9 +557,14 @@ module bp_be_csr
               interrupt_v_lo        = 1'b1;
             end
         end
-      else if (~is_debug_mode & exception_ecode_v_li)
+      else if (exception_ecode_v_li)
         begin
-          if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
+          if (is_debug_mode)
+            begin
+              // Trap back into debug mode, don't set any CSRs
+              exception_v_lo       = 1'b1;
+            end
+          else if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
             begin
               priv_mode_n          = `PRIV_MODE_S;
 
@@ -591,27 +640,27 @@ module bp_be_csr
       if (~is_debug_mode & retire_pkt_cast_i.queue_v & dcsr_lo.step)
         begin
           enter_debug   = 1'b1;
-          dpc_li        = `BSG_SIGN_EXTEND(retire_pkt_cast_i.npc, paddr_width_p);
+          dpc_li        = `BSG_SIGN_EXTEND(core_npc, paddr_width_p);
           dcsr_li.cause = 4;
           dcsr_li.prv   = priv_mode_r;
         end
-
 
       // Accumulate interrupts
       mip_li.mtip = timer_irq_i;
       mip_li.msip = software_irq_i;
       mip_li.meip = m_external_irq_i;
 
-      // Accumulate FFLAGS
-      fcsr_li.fflags |= fflags_acc_i;
+      // Accumulate FFLAGS if we're not writing them this cycle
+      if (~(csr_w_v_li & csr_cmd_cast_i.csr_addr inside {`CSR_ADDR_FFLAGS, `CSR_ADDR_FCSR}))
+        fcsr_li.fflags |= fflags_acc_i;
 
       // Set FS to dirty if: fflags set, frf written, fcsr written
       mstatus_li.fs |= {2{(csr_w_v_li & csr_fany_li & ~csr_illegal_instr_o)}};
       mstatus_li.fs |= {2{(retire_pkt_cast_i.instret & instr_fany_li)}};
     end
 
-  // Debug Mode masks all interrupts
-  assign irq_pending_o = ~is_debug_mode & ((m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie));
+  assign irq_pending_o = (~dcsr_lo.step | dcsr_lo.stepie)
+    & ((d_interrupt_icode_v_li & dgie) | (m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie));
 
   // The supervisor external interrupt line does not impact the supervisor software interrupt bit of MIP.
   // However, software read operations return as if it does. bit 9 is supervisor software interrupt
@@ -634,12 +683,14 @@ module bp_be_csr
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;
   assign commit_pkt_cast_o.exception_instr_upper_not_lower_half = retire_pkt_cast_i.exception.instr_upper_not_lower_half;
-  assign commit_pkt_cast_o._interrupt       = interrupt_v_lo;
+  // Debug mode acts as a pseudo-interrupt
+  assign commit_pkt_cast_o._interrupt       = interrupt_v_lo | enter_debug;
   assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;
   assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi              = retire_pkt_cast_i.special.wfi;
   assign commit_pkt_cast_o.eret             = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};
   assign commit_pkt_cast_o.csrw             = retire_pkt_cast_i.special.csrw;
+  assign commit_pkt_cast_o.unfreeze         = retire_pkt_cast_i.exception.unfreeze;
   assign commit_pkt_cast_o.itlb_miss        = retire_pkt_cast_i.exception.itlb_miss;
   assign commit_pkt_cast_o.icache_miss      = retire_pkt_cast_i.exception.icache_miss;
   assign commit_pkt_cast_o.dtlb_store_miss  = retire_pkt_cast_i.exception.dtlb_store_miss;
@@ -649,8 +700,8 @@ module bp_be_csr
   assign commit_pkt_cast_o.itlb_fill_v      = retire_pkt_cast_i.exception.itlb_fill;
   assign commit_pkt_cast_o.dtlb_fill_v      = retire_pkt_cast_i.exception.dtlb_fill;
 
-  assign trans_info_cast_o.priv_mode = priv_mode_r;
-  assign trans_info_cast_o.satp_ppn  = satp_lo.ppn;
+  assign trans_info_cast_o.priv_mode      = priv_mode_r;
+  assign trans_info_cast_o.base_ppn       = satp_lo.ppn;
   assign trans_info_cast_o.translation_en = translation_en_r
     | ((~is_debug_mode | dcsr_lo.mprven) & mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
   assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;

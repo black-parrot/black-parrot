@@ -24,7 +24,7 @@ module wrapper
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
 
-   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
 
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
 
@@ -136,7 +136,7 @@ module wrapper
   logic [num_caches_p-1:0] lce_fill_has_data_lo, lce_fill_last_lo;
   logic [num_caches_p-1:0][lg_num_lce_lp-1:0] lce_fill_dst;
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   for (genvar i = 0; i < num_caches_p; i++)
@@ -269,9 +269,7 @@ module wrapper
              ,.fill_width_p(fill_width_p)
              ,.timeout_max_limit_p(4)
              ,.credits_p(coh_noc_max_credits_p)
-             ,.req_invert_clk_p(1)
-             ,.data_mem_invert_clk_p(1)
-             ,.tag_mem_invert_clk_p(1)
+             ,.metadata_latency_p(1)
              )
            dcache_lce
             (.clk_i(clk_i)
@@ -360,15 +358,11 @@ module wrapper
         begin : uce
          bp_uce
           #(.bp_params_p(bp_params_p)
-            ,.mem_data_width_p(l2_data_width_p)
             ,.assoc_p(assoc_p)
             ,.sets_p(sets_p)
             ,.block_width_p(block_width_p)
             ,.fill_width_p(fill_width_p)
-            ,.req_invert_clk_p(1)
-            ,.data_mem_invert_clk_p(1)
-            ,.tag_mem_invert_clk_p(1)
-            ,.stat_mem_invert_clk_p(1)
+            ,.metadata_latency_p(1)
             )
           dcache_uce
            (.clk_i(clk_i)

@@ -17,7 +17,7 @@ module bp_be_top
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    // Default parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
   )
   (input                                             clk_i
    , input                                           reset_i
@@ -67,6 +67,7 @@ module bp_be_top
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    , output logic                                    stat_mem_pkt_yumi_o
 
+   , input                                           debug_irq_i
    , input                                           timer_irq_i
    , input                                           software_irq_i
    , input                                           m_external_irq_i
@@ -91,10 +92,9 @@ module bp_be_top
 
   bp_be_isd_status_s isd_status;
   logic [vaddr_width_p-1:0] expected_npc_lo;
-  logic poison_isd_lo, suppress_iss_lo;
-  logic waiting_for_irq_lo;
+  logic poison_isd_lo, suppress_iss_lo, unfreeze_lo;
 
-  logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_lo;
+  logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
   logic mem_ready_lo, idiv_ready_lo, fdiv_ready_lo, ptw_busy_lo;
 
   bp_be_director
@@ -112,10 +112,12 @@ module bp_be_top
      ,.fe_cmd_v_o(fe_cmd_v_o)
      ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
 
+     ,.unfreeze_o(unfreeze_lo)
      ,.suppress_iss_o(suppress_iss_lo)
      ,.poison_isd_o(poison_isd_lo)
      ,.irq_waiting_i(irq_waiting_lo)
-     ,.cmd_empty_o()
+     ,.cmd_empty_n_o()
+     ,.cmd_empty_r_o()
      ,.cmd_full_n_o(cmd_full_n_lo)
      ,.cmd_full_r_o(cmd_full_r_lo)
 
@@ -154,12 +156,14 @@ module bp_be_top
    scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_i)
 
      ,.isd_status_o(isd_status)
      ,.expected_npc_i(expected_npc_lo)
      ,.poison_isd_i(poison_isd_lo)
      ,.dispatch_v_i(dispatch_v)
      ,.interrupt_v_i(interrupt_v)
+     ,.unfreeze_i(unfreeze_lo)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.decode_info_i(decode_info_lo)
 
@@ -224,6 +228,7 @@ module bp_be_top
      ,.stat_mem_o(stat_mem_o)
      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
 
+     ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
      ,.m_external_irq_i(m_external_irq_i)

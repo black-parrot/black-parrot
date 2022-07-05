@@ -21,7 +21,8 @@ module bp_be_cmd_queue
    , output logic                       fe_cmd_v_o
    , input                              fe_cmd_yumi_i
 
-   , output logic                       empty_o
+   , output logic                       empty_n_o
+   , output logic                       empty_r_o
    , output logic                       full_n_o
    , output logic                       full_r_o
    );
@@ -64,11 +65,13 @@ module bp_be_cmd_queue
   assign fe_cmd_ready_o = ~full_lo;
   assign fe_cmd_v_o     = ~empty_lo;
 
-  wire almost_full = (rptr_r == wptr_r-1'b1);
+  wire almost_full = (rptr_r == wptr_r+1'b1);
+  wire almost_empty = (rptr_r == wptr_r-1'b1);
 
-  assign empty_o  = empty_lo;
-  assign full_r_o = full_lo;
-  assign full_n_o = almost_full & enq & ~deq;
+  assign empty_r_o = empty_lo;
+  assign empty_n_o = almost_empty & deq & ~enq;
+  assign full_r_o  = full_lo;
+  assign full_n_o  = almost_full & enq & ~deq;
 
 endmodule
 

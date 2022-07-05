@@ -20,7 +20,7 @@ module bp_be_pipe_mem
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
    // Generated parameters
-   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dispatch_pkt_width_lp  = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
@@ -103,7 +103,7 @@ module bp_be_pipe_mem
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
 
@@ -209,6 +209,7 @@ module bp_be_pipe_mem
      ,.flush_i(sfence_i)
      ,.priv_mode_i(trans_info.priv_mode)
      ,.sum_i(trans_info.mstatus_sum)
+     ,.mxr_i(trans_info.mstatus_mxr)
      ,.trans_en_i(trans_info.translation_en)
      ,.uncached_mode_i((cfg_bus.dcache_mode == e_lce_mode_uncached))
      ,.nonspec_mode_i((cfg_bus.dcache_mode == e_lce_mode_nonspec))
@@ -250,8 +251,11 @@ module bp_be_pipe_mem
       ,store_miss_v : commit_pkt.dtlb_store_miss
       ,load_miss_v  : commit_pkt.dtlb_load_miss
       ,instr_upper_not_lower_half: commit_pkt.exception_instr_upper_not_lower_half
-      // TODO: somewhat duplicative upper/lower info
       ,vaddr        : commit_pkt.itlb_miss ? (commit_pkt.pc + (commit_pkt.exception_instr_upper_not_lower_half ? 2 : 0)) : commit_pkt.vaddr
+      ,mstatus_mxr  : trans_info.mstatus_mxr
+      ,mstatus_sum  : trans_info.mstatus_sum
+      ,base_ppn     : trans_info.base_ppn
+      ,priv_mode    : trans_info.priv_mode
       };
 
   bp_be_ptw
@@ -262,12 +266,8 @@ module bp_be_pipe_mem
      ,.page_idx_width_p(sv39_page_idx_width_gp)
      )
    ptw
-    (.clk_i(~clk_i)
+    (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.base_ppn_i(trans_info.satp_ppn)
-     ,.priv_mode_i(trans_info.priv_mode)
-     ,.mstatus_sum_i(trans_info.mstatus_sum)
-     ,.mstatus_mxr_i(trans_info.mstatus_mxr)
 
      ,.busy_o(ptw_busy)
      ,.ptw_miss_pkt_i(ptw_miss_pkt)

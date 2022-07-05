@@ -695,6 +695,7 @@
     logic       stepie;                                                                    \
     logic [3:0] cause;                                                                     \
     logic [1:0] prv;                                                                       \
+    logic       mprven;                                                                    \
     logic       step;                                                                      \
   }  bp_dcsr_s;                                                                            \
                                                                                            \
@@ -1008,6 +1009,7 @@
       ,cause  : data_cast_mp.cause   \
       ,prv    : data_cast_mp.prv     \
       ,step   : data_cast_mp.step    \
+      ,mprven : data_cast_mp.mprven  \
       }
 
   `define decompress_dcsr_s(data_comp_mp) \
@@ -1019,7 +1021,7 @@
       ,stopcount: 1'b0                  \
       ,stoptime : 1'b0                  \
       ,cause    : data_comp_mp.cause    \
-      ,mprven   : 1'b0                  \
+      ,mprven   : data_comp_mp.mprven   \
       ,nmip     : 1'b0                  \
       ,step     : data_comp_mp.step     \
       ,prv      : data_comp_mp.prv      \

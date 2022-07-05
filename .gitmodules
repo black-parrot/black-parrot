@@ -1,28 +1,3 @@
-
-[submodule "tools/verilator"]
-    path = tools/verilator
-    url = https://github.com/verilator/verilator
-    branch = master
-    ignore = untracked
-    update = checkout
-[submodule "tools/bsg_sv2v"]
-    path = tools/bsg_sv2v
-    url = https://github.com/bespoke-silicon-group/bsg_sv2v
-    branch = master
-    ignore = untracked
-    update = checkout
-[submodule "tools/dromajo"]
-	path = tools/dromajo
-	url = https://github.com/bsg-external/dromajo
-    branch = blackparrot_mods
-    update = checkout
-[submodule "tools/Surelog"]
-    path = tools/Surelog
-    url = https://github.com/alainmarcel/Surelog
-    branch = master
-    ignore = untracked
-    update = checkout
-
 [submodule "external/basejump_stl"]
     path = external/basejump_stl
     url = https://github.com/bespoke-silicon-group/basejump_stl.git
@@ -32,15 +7,4 @@
     path = external/HardFloat
     url = https://github.com/bsg-external/HardFloat.git
     branch = master
-    update = checkout
-[submodule "external/bsg_cadenv"]
-    path = external/bsg_cadenv
-    url = https://github.com/bespoke-silicon-group/bsg_cadenv
-    branch = master
-    update = none
-
-[submodule "tools/axe"]
-    path = tools/axe
-    url = https://github.com/black-parrot/axe.git
-    branch = blackparrot_mods
     update = checkout

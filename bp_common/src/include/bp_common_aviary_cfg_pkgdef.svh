@@ -93,12 +93,6 @@
     //   Currently unused, so set to 1 bit
     integer unsigned asid_width;
 
-    // The virtual address of the PC coming out of reset
-    integer unsigned boot_pc;
-    // 0: boots in M-mode, not debug-mode
-    // 1: boots in M-mode, debug-mode
-    integer unsigned boot_in_debug;
-
     // Branch metadata information for the Front End
     // Must be kept consistent with FE
     integer unsigned branch_metadata_fwd_width;
@@ -257,9 +251,6 @@
       ,caddr_width: 32
       ,asid_width : 1
 
-      ,boot_pc       : dram_base_addr_gp
-      ,boot_in_debug : 0
-
       ,branch_metadata_fwd_width: 39
       ,btb_tag_width            : 9
       ,btb_idx_width            : 6
@@ -363,9 +354,6 @@
       ,`bp_aviary_define_override(daddr_width, BP_DADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(caddr_width, BP_CADDR_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(asid_width, BP_ASID_WIDTH, `BP_CUSTOM_BASE_CFG)
-
-      ,`bp_aviary_define_override(boot_pc, BP_BOOT_PC, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(boot_in_debug, BP_BOOT_IN_DEBUG, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(fe_queue_fifo_els, BP_FE_QUEUE_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(fe_cmd_fifo_els, BP_FE_CMD_WIDTH, `BP_CUSTOM_BASE_CFG)

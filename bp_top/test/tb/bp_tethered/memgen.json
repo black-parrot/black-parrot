@@ -1,0 +1,21 @@
+{ "memories": [
+    {"ports": "1rw" , "width":  64, "depth":  512, "mux": 1, "mask": 0, "type": "1rf" },
+    {"ports": "1rw" , "width":  64, "depth":  512, "mux": 1, "mask": 0, "type": "1rf" },
+    {"ports": "1rw" , "width": 512, "depth": 1024, "mux": 1, "mask": 0, "type": "1rf" },
+
+    {"ports": "1rw" , "width": 184, "depth":   64, "mux": 1, "mask": 0, "type": "1rf" },
+    {"ports": "1rw" , "width":   7, "depth":   64, "mux": 1, "mask": 0, "type": "1rf" },
+    {"ports": "1rw" , "width":  15, "depth":   64, "mux": 1, "mask": 0, "type": "1rf" },
+
+    {"ports": "2r1w", "width":  64, "depth":   32, "mux": 1, "mask": 0, "type": "2rf" },
+    {"ports": "3r1w", "width":  66, "depth":   32, "mux": 1, "mask": 0, "type": "2rf" },
+    {"ports": "3r1w", "width":  68, "depth":   32, "mux": 1, "mask": 0, "type": "2rf" },
+    {"ports": "1r1w", "width":  50, "depth":   64, "mux": 1, "mask": 0, "type": "2rf" },
+    {"ports": "1r1w", "width":   8, "depth":  512, "mux": 1, "mask": 0, "type": "2rf" },
+
+    {"ports": "1rw" , "width": 176, "depth":  128, "mux": 1, "mask": 0, "type": "1rf" },
+    {"ports": "1rw" , "width": 15 , "depth":  128, "mux": 1, "mask": 0, "type": "1rf" }
+  ],
+  "dont_compile": [
+  ]
+}

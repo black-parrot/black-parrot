@@ -78,6 +78,8 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_tag_array.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_one_hot.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync_synth.v
+$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v
@@ -328,6 +330,4 @@ $BP_COMMON_DIR/src/v/bsg_deff_reset.v
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
 $BP_COMMON_DIR/src/v/bsg_rom_param.v
 $BP_COMMON_DIR/src/v/bsg_crossbar_control_locking_o_by_i.v
-$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync.v
-$BP_COMMON_DIR/src/v/bsg_mem_1r1w_sync_synth.v
 

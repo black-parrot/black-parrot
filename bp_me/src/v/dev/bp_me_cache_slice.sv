@@ -53,7 +53,7 @@ module bp_me_cache_slice
    , input [l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
-  `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
@@ -96,8 +96,8 @@ module bp_me_cache_slice
          ,.data_width_p(l2_data_width_p)
          ,.dma_data_width_p(l2_fill_width_p)
          ,.block_size_in_words_p(l2_block_size_in_words_p)
-         ,.sets_p((l2_banks_p > 0) ? l2_sets_p : 2)
-         ,.ways_p((l2_banks_p > 0) ? l2_assoc_p : 2)
+         ,.sets_p(l2_en_p ? l2_sets_p : 2)
+         ,.ways_p(l2_en_p ? l2_assoc_p : 2)
          ,.amo_support_p(((l2_amo_support_p[e_amo_swap]) << e_cache_amo_swap)
                          | ((l2_amo_support_p[e_amo_fetch_logic]) << e_cache_amo_xor)
                          | ((l2_amo_support_p[e_amo_fetch_logic]) << e_cache_amo_and)
