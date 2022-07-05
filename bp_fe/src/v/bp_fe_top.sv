@@ -240,7 +240,7 @@ module bp_fe_top
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
   wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_fetch_lo, dword_width_gp);
-  wire [1:0] r_size_li = 2'b10; // TODO: is this wrong? // update: no, we're performing aligned reads
+  wire [1:0] r_size_li = 2'b10;
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(itlb_els_4k_p)
@@ -380,7 +380,6 @@ module bp_fe_top
   wire fe_exception_v = v_if2_r & (instr_misaligned_r | instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
   wire fe_instr_v     = v_if2_r & fetch_instr_v_lo;
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
-  // TODO: better way to represent this fe_progress thing?
   wire fe_progress    = fe_queue_ready_i & (~icache_miss | fe_exception_v) & ~cmd_nonattaboy_v;
 
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
@@ -400,7 +399,6 @@ module bp_fe_top
       begin
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type                     = e_fe_exception;
-        // TODO: TLB misses (and probably I$ misses?) need to use the same address as the read to the memory
         fe_queue_cast_o.msg.exception.pc             = fetch_pc_lo;
         fe_queue_cast_o.msg.exception.upper_not_lower_half = fetch_is_second_half_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r

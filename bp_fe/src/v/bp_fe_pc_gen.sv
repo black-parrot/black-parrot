@@ -73,14 +73,14 @@ module bp_fe_pc_gen
   logic incomplete_fetch_if1_r, incomplete_fetch_if1_n;
   bp_fe_pred_s pred_if1_n, pred_if1_r;
   logic [vaddr_width_p-1:0] next_pc;
-  logic next_pc_linear;
+  logic next_fetch_linear;
   logic ovr_ret, ovr_taken, btb_taken;
   logic [vaddr_width_p-1:0] btb_br_tgt_lo;
   logic [vaddr_width_p-1:0] ras_tgt_lo;
   logic [vaddr_width_p-1:0] br_tgt_lo;
   wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_r + vaddr_width_p'(4);
   always_comb begin
-    next_pc_linear = 1'b0;
+    next_fetch_linear = 1'b0;
     if (redirect_v_i)
         next_pc = redirect_pc_i;
     else if (ovr_ret)
@@ -88,31 +88,27 @@ module bp_fe_pc_gen
     else if (ovr_taken)
         next_pc = br_tgt_lo;
     else if (incomplete_fetch_if1_r) begin
-        // TODO: rename next_pc_linear to be about fetching? or compute it later?
-        next_pc_linear = 1'b1;
+        next_fetch_linear = 1'b1;
         next_pc = pc_if1_r;
-    end
-    else if (btb_taken)
+    end else if (btb_taken)
         next_pc = btb_br_tgt_lo;
-    else
-      begin
+    else begin
         next_pc = pc_plus4;
-        next_pc_linear = 1'b1;
-      end
+        next_fetch_linear = 1'b1;
+    end
   end
   assign pc_if1_n = next_pc;
-  assign fetch_linear_if1_n = next_pc_linear;
+  assign fetch_linear_if1_n = next_fetch_linear;
 
   wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_bytes_gp);
-  assign next_fetch_o = (next_pc_misaligned & next_pc_linear)
+  assign next_fetch_o = (next_pc_misaligned & next_fetch_linear)
     ? `bp_align_addr_up(next_pc, rv64_instr_width_bytes_gp)
     : `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp);
-  assign incomplete_fetch_if1_n = !next_pc_linear & next_pc_misaligned;
+  assign incomplete_fetch_if1_n = !next_fetch_linear & next_pc_misaligned;
 
   always_comb
     begin
       pred_if1_n = '0;
-      // TODO: verify pred data
       pred_if1_n.ghist = ghistory_n;
       pred_if1_n.redir = redirect_br_v_i;
       pred_if1_n.taken = (redirect_br_v_i & redirect_br_taken_i) | ovr_ret | ovr_taken;
@@ -130,7 +126,6 @@ module bp_fe_pc_gen
 
   `declare_bp_fe_instr_scan_s(vaddr_width_p)
   bp_fe_instr_scan_s scan_instr;
-  // TODO: does validity of scan_instr matter?
   wire is_br   = fetch_instr_v_o & scan_instr.branch;
   wire is_jal  = fetch_instr_v_o & scan_instr.jal;
   wire is_jalr = fetch_instr_v_o & scan_instr.jalr;
@@ -266,16 +261,12 @@ module bp_fe_pc_gen
   assign br_tgt_lo  = pc_if2_r + scan_instr.imm;
   assign fetch_pc_o = pc_if2_r;
 
-  // wire pc_if2_misaligned =  !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
-  // logic [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = pc_if2_misaligned ? `bp_align_addr_up(pc_if2_r, rv64_instr_width_bytes_gp) : pc_if2_r;
-
-  // wire foo = `bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
   wire [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_up(pc_if2_r, rv64_instr_width_bytes_gp);
 
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
   always_ff @(posedge clk_i)
-    if (fetch_instr_v_o) // note: needs to include whether we've finished a complete double-fetch
+    if (fetch_instr_v_o)
       br_metadata_site <=
         '{src_btb  : pred_if2_r.btb
           ,src_ret : pred_if2_r.ret
@@ -336,4 +327,3 @@ module bp_fe_pc_gen
   assign init_done_o = bht_init_done_lo & btb_init_done_lo;
 
 endmodule
-
