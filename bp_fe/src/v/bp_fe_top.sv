@@ -155,6 +155,7 @@ module bp_fe_top
   wire eret_v        = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_eret);
   wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 
+  // TODO: replace this with partial resume mechanism
   // Conditionally delay I$ fill by one cycle when fill only applies to upper half of instruction
   // (i.e., the instruction requires two aligned reads and it's the second one that needs a fill)
   wire icache_fill_response_upper_not_lower_half = fe_cmd_cast_i.operands.icache_fill_response.instr_upper_not_lower_half;
@@ -400,6 +401,8 @@ module bp_fe_top
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type                     = e_fe_exception;
         fe_queue_cast_o.msg.exception.pc             = fetch_pc_lo;
+        // TODO
+        fe_queue_cast_o.msg.exception.partial_instr  = '0;
         fe_queue_cast_o.msg.exception.upper_not_lower_half = fetch_is_second_half_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss

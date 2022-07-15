@@ -52,15 +52,19 @@
      * bp_fe_exception_s contains FE exception information.  Exceptions should be                  \
      * serviced inline with instructions. Otherwise we have no way of knowing if this              \
      * exception is eclipsed by a preceding branch mispredict.  FE does not receive                \
-     * interrupts, but may raise exceptions.                                                       \
+     * interrupts, but may raise exceptions. We also pass along the partially fetched instruction  \
+     * to avoid refetching this in the FE when resuming (or having to maintain state). We allocate \
+     * a full instruction worth of space to support future superscalar fetch work where we would   \
+     * fetch with a mask                                                                           \
      */                                                                                            \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic [vaddr_width_mp-1:0] pc;                                                               \
-      bp_fe_exception_code_e     exception_code;                                                   \
-      logic                      upper_not_lower_half;                                             \
+      logic [vaddr_width_mp-1:0]   pc;                                                             \
+      logic [instr_width_gp-1:0]   partial_instr;                                                  \
+      bp_fe_exception_code_e       exception_code;                                                 \
+      logic                        upper_not_lower_half;                                           \
       logic [`bp_fe_exception_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)-1:0]     \
-                                 padding;                                                          \
+                                   padding;                                                        \
     }  bp_fe_exception_s;                                                                          \
                                                                                                    \
     /*                                                                                             \
@@ -236,7 +240,7 @@
     (vaddr_width_mp + instr_width_gp + branch_metadata_fwd_width_mp)
 
   `define bp_fe_exception_width_no_padding(vaddr_width_mp) \
-    (vaddr_width_mp + $bits(bp_fe_exception_code_e) + 1)
+    (vaddr_width_mp + instr_width_gp + $bits(bp_fe_exception_code_e) + 1)
 
   `define bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
     (1 + `BSG_MAX(`bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp)       \
