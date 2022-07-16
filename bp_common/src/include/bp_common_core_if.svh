@@ -135,7 +135,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       bp_pte_leaf_s              pte_leaf;                                                         \
-      logic instr_upper_not_lower_half;                                                            \
+      logic                      instr_upper_not_lower_half;                                       \
       logic [`bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_itlb_map_s;                                                                       \
@@ -146,7 +146,7 @@
     */                                                                                             \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic instr_upper_not_lower_half;                                                            \
+      logic                      instr_upper_not_lower_half;                                       \
       logic [`bp_fe_cmd_icache_fill_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_icache_fill_s;                                                                    \
