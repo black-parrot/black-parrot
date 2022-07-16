@@ -229,7 +229,7 @@ module bp_fe_top
   assign attaboy_v_li               = attaboy_v;
   assign attaboy_pc_li              = fe_cmd_cast_i.vaddr;
 
-  logic instr_misaligned_v, instr_access_fault_v, instr_page_fault_v;
+  logic instr_access_fault_v, instr_page_fault_v;
   logic ptag_v_li, ptag_uncached_li, ptag_nonidem_li, ptag_dram_li, ptag_miss_li;
   logic [ptag_width_p-1:0] ptag_li;
 

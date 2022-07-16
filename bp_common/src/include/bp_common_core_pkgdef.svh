@@ -61,19 +61,18 @@
   } bp_fe_misprediction_reason_e;
 
   /*
-   * The exception code types. e_itlb_miss is when the instruction has a miss in
-   * the iTLB. ITLB misses can cause the instruction misaligned. Thus the frontend
-   * detects the instruction miss first and then detect whether there is an ITLB
-   * miss. e_instruction_access_fault is when the access control is violated.
-   * e_instr_page_fault is when the instruction page is accessed with insufficent privilege
+   * The exception code types.
+   * e_itlb_miss is for an ITLB miss
+   * e_instr_page_fault is for an access page fault
+   * e_instr_access_fault is when the physical address is not allowed for the access type
+   * e_icache_miss is for a nonspeculative I$ miss which needs to be confirmed by the backend
    */
   typedef enum logic [2:0]
   {
     e_itlb_miss           = 0
-    ,e_icache_miss        = 1
-    ,e_instr_misaligned   = 2
-    ,e_instr_access_fault = 3
-    ,e_instr_page_fault   = 4
+    ,e_instr_page_fault   = 1
+    ,e_instr_access_fault = 2
+    ,e_icache_miss        = 3
   } bp_fe_exception_code_e;
 
   /*

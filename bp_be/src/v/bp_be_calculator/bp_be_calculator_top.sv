@@ -31,9 +31,6 @@ module bp_be_calculator_top
    , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam decode_info_width_lp    = `bp_be_decode_info_width
-
-   // From BP BE specifications
-   , localparam pipe_stage_els_lp = 5
    )
  (input                                             clk_i
   , input                                           reset_i
@@ -101,8 +98,9 @@ module bp_be_calculator_top
 
 
   // Pipeline stage registers
-  bp_be_exc_stage_s      [pipe_stage_els_lp  :0] exc_stage_n;
-  bp_be_exc_stage_s      [pipe_stage_els_lp-1:0] exc_stage_r;
+  localparam pipe_stage_els_lp = 5;
+  bp_be_exc_stage_s [pipe_stage_els_lp  :0] exc_stage_n;
+  bp_be_exc_stage_s [pipe_stage_els_lp-1:0] exc_stage_r;
 
   bp_be_wb_pkt_s [pipe_stage_els_lp  :0] comp_stage_n;
   bp_be_wb_pkt_s [pipe_stage_els_lp-1:0] comp_stage_r;
@@ -112,6 +110,8 @@ module bp_be_calculator_top
   rv64_frm_e           frm_dyn_lo;
 
   bp_be_wb_pkt_s long_iwb_pkt, long_fwb_pkt;
+
+  logic pipe_ctl_instr_misaligned_lo;
 
   logic pipe_mem_dtlb_store_miss_lo;
   logic pipe_mem_dtlb_load_miss_lo;
@@ -204,6 +204,7 @@ module bp_be_calculator_top
      ,.data_o(pipe_ctl_data_lo)
      ,.br_pkt_o(br_pkt_o)
      ,.v_o(pipe_ctl_data_lo_v)
+     ,.instr_misaligned_v_o(pipe_ctl_instr_misaligned_lo)
      );
 
   // Computation pipelines
@@ -477,6 +478,8 @@ module bp_be_calculator_top
 
           exc_stage_n[1].exc.illegal_instr      |= pipe_sys_illegal_instr_lo;
           exc_stage_n[1].spec.csrw              |= pipe_sys_csrw_lo;
+
+          exc_stage_n[1].exc.instr_misaligned   |= pipe_ctl_instr_misaligned_lo;
 
           exc_stage_n[1].exc.dtlb_store_miss    |= pipe_mem_dtlb_store_miss_lo;
           exc_stage_n[1].exc.dtlb_load_miss     |= pipe_mem_dtlb_load_miss_lo;
