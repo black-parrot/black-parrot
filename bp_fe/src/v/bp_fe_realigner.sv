@@ -17,9 +17,10 @@ module bp_fe_realigner
    , input reset_i
 
    , input [vaddr_width_p-1:0]   fetch_pc_i
-   , input                       fetch_linear_i // is this fetch address exactly 4 bytes greater than the previous one?
    , input [instr_width_gp-1:0]  fetch_data_i
    , input                       fetch_data_v_i
+
+   , input                       poison_i // poison overrides fetch_data_v_i
 
    , output [instr_width_gp-1:0] fetch_instr_o
    , output                      fetch_instr_v_o
@@ -30,24 +31,35 @@ module bp_fe_realigner
   wire [instr_half_width_gp-1:0] icache_data_upper_half_li = fetch_data_i[instr_width_gp-1     :instr_half_width_gp];
 
   logic [instr_half_width_gp-1:0] upper_half_buffer_n, upper_half_buffer_r;
-  logic upper_half_buffer_v_n, upper_half_buffer_v_r;
   assign upper_half_buffer_n   = icache_data_upper_half_li;
-  assign upper_half_buffer_v_n = fetch_data_v_i;
-  bsg_dff_reset
-   #(.width_p(instr_half_width_gp+1))
+  bsg_dff_reset_en
+   #(.width_p(instr_half_width_gp))
    upper_half_buffer_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({upper_half_buffer_n, upper_half_buffer_v_n})
-     ,.data_o({upper_half_buffer_r, upper_half_buffer_v_r})
+     ,.en_i  (fetch_data_v_i)
+     ,.data_i(upper_half_buffer_n)
+     ,.data_o(upper_half_buffer_r)
      );
 
-  wire icache_fetch_is_aligned    = `bp_addr_is_aligned(fetch_pc_i, rv64_instr_width_bytes_gp);
-  wire has_coherent_buffered_insn = !icache_fetch_is_aligned && fetch_data_v_i && fetch_linear_i && upper_half_buffer_v_r;
+  logic upper_half_buffer_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(instr_half_width_gp+1))
+   upper_half_buffer_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-  assign fetch_is_second_half_o = !icache_fetch_is_aligned && fetch_linear_i && upper_half_buffer_v_r;
+     ,.set_i  (fetch_data_v_i & ~poison_i /* | upper_half_resume_v_i */)
+     ,.clear_i(fetch_instr_v_o | poison_i) // set overrides clear
+     ,.data_o (upper_half_buffer_v_r)
+     );
 
-  assign fetch_instr_v_o = icache_fetch_is_aligned ? fetch_data_v_i : has_coherent_buffered_insn;
+  wire icache_fetch_is_aligned = `bp_addr_is_aligned(fetch_pc_i, rv64_instr_width_bytes_gp);
+  wire buffered_insn_v         = !icache_fetch_is_aligned && fetch_data_v_i && upper_half_buffer_v_r;
+
+  assign fetch_is_second_half_o = !icache_fetch_is_aligned && upper_half_buffer_v_r;
+
+  assign fetch_instr_v_o = icache_fetch_is_aligned ? fetch_data_v_i : buffered_insn_v;
   assign fetch_instr_o   = icache_fetch_is_aligned ? fetch_data_i   : { icache_data_lower_half_li, upper_half_buffer_r };
 endmodule

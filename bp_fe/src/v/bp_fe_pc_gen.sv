@@ -62,9 +62,9 @@ module bp_fe_pc_gen
   logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
 
   logic [vaddr_width_p-1:0] pc_if1_n, pc_if1_r;
-  logic fetch_linear_if1_n, fetch_linear_if1_r;
+  logic realigner_poison_if1_n, realigner_poison_if1_r;
   logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
-  logic fetch_linear_if2_n, fetch_linear_if2_r;
+  logic realigner_poison_if2_n, realigner_poison_if2_r;
 
   /////////////////
   // IF1
@@ -97,7 +97,7 @@ module bp_fe_pc_gen
     end
   end
   assign pc_if1_n = next_pc;
-  assign fetch_linear_if1_n = next_fetch_linear;
+  assign realigner_poison_if1_n = !next_fetch_linear;
 
   wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_bytes_gp);
   assign next_fetch_o = (next_pc_misaligned & next_fetch_linear)
@@ -119,8 +119,8 @@ module bp_fe_pc_gen
    pred_if1_reg
     (.clk_i(clk_i)
 
-     ,.data_i({pred_if1_n, pc_if1_n, incomplete_fetch_if1_n, fetch_linear_if1_n})
-     ,.data_o({pred_if1_r, pc_if1_r, incomplete_fetch_if1_r, fetch_linear_if1_r})
+     ,.data_i({pred_if1_n, pc_if1_n, incomplete_fetch_if1_n, realigner_poison_if1_n})
+     ,.data_o({pred_if1_r, pc_if1_r, incomplete_fetch_if1_r, realigner_poison_if1_r})
      );
 
   `declare_bp_fe_instr_scan_s(vaddr_width_p)
@@ -240,15 +240,15 @@ module bp_fe_pc_gen
         pred_if2_n = pred_if1_r;
       end
   assign pc_if2_n = pc_if1_r;
-  assign fetch_linear_if2_n = fetch_linear_if1_r;
+  assign realigner_poison_if2_n = realigner_poison_if1_r;
 
   bsg_dff
    #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p+1))
    pred_if2_reg
     (.clk_i(clk_i)
 
-     ,.data_i({pred_if2_n, pc_if2_n, fetch_linear_if2_n})
-     ,.data_o({pred_if2_r, pc_if2_r, fetch_linear_if2_r})
+     ,.data_i({pred_if2_n, pc_if2_n, realigner_poison_if2_n})
+     ,.data_o({pred_if2_r, pc_if2_r, realigner_poison_if2_r})
      );
   assign return_addr_n = pc_if2_r + vaddr_width_p'(4);
 
@@ -297,9 +297,10 @@ module bp_fe_pc_gen
     ,.reset_i(reset_i)
 
     ,.fetch_pc_i    (pc_if2_r)
-    ,.fetch_linear_i(fetch_linear_if2_r)
     ,.fetch_data_i  (fetch_i)
     ,.fetch_data_v_i(fetch_v_i)
+
+    ,.poison_i(realigner_poison_if1_r) // TODO: timing is wonky
 
     ,.fetch_instr_o         (fetch_instr_o)
     ,.fetch_instr_v_o       (fetch_instr_v_o)
