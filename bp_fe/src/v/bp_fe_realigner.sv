@@ -45,7 +45,7 @@ module bp_fe_realigner
 
   logic upper_half_buffer_v_r;
   bsg_dff_reset_set_clear
-   #(.width_p(instr_half_width_gp+1))
+   #(.width_p(1))
    upper_half_buffer_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
