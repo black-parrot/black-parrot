@@ -24,6 +24,10 @@ with:
 Although "stall" entries are generally uninteresting, a change in behavior while stalled may
 indicate a logic bug. This has been useful in the past.
 
+This tracer can be used to inspect the branch prediction flow for specific points in execution, or to
+textually diff the output before and after a change to identify its effects. This can be extremely
+valuable for tracking down regressions.
+
 Exmple trace ("cuts" introduced for brevity):
 
         time |   cycle,       IF2 PC,           IF2 PC src, state, events
