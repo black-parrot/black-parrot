@@ -28,6 +28,9 @@ module bp_fe_pc_gen
    , input                                           redirect_br_taken_i
    , input                                           redirect_br_ntaken_i
    , input                                           redirect_br_nonbr_i
+   , input                                           redirect_restore_insn_upper_half_v_i
+   , input [instr_half_width_gp-1:0]                 redirect_restore_insn_upper_half_i
+
 
    , output logic [vaddr_width_p-1:0]                next_fetch_o
    , input                                           next_fetch_yumi_i
@@ -301,6 +304,8 @@ module bp_fe_pc_gen
     ,.fetch_data_v_i(fetch_v_i)
 
     ,.poison_i(realigner_poison_if1_r) // TODO: timing is wonky
+    ,.restore_upper_half_v_i(redirect_restore_insn_upper_half_v_i)
+    ,.restore_upper_half_i(redirect_restore_insn_upper_half_i)
 
     ,.fetch_instr_o         (fetch_instr_o)
     ,.fetch_instr_v_o       (fetch_instr_v_o)

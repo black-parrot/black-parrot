@@ -81,6 +81,8 @@ module bp_fe_top
   logic redirect_v_li;
   logic [vaddr_width_p-1:0] redirect_pc_li;
   logic redirect_br_v_li, redirect_br_taken_li, redirect_br_ntaken_li, redirect_br_nonbr_li;
+  logic redirect_restore_insn_upper_half_v_li;
+  logic [instr_half_width_gp-1:0] redirect_restore_insn_upper_half_li;
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd_li;
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
   logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
@@ -108,6 +110,8 @@ module bp_fe_top
      ,.redirect_br_taken_i(redirect_br_taken_li)
      ,.redirect_br_ntaken_i(redirect_br_ntaken_li)
      ,.redirect_br_nonbr_i(redirect_br_nonbr_li)
+     ,.redirect_restore_insn_upper_half_v_i(redirect_restore_insn_upper_half_v_li)
+     ,.redirect_restore_insn_upper_half_i(redirect_restore_insn_upper_half_li)
 
      ,.next_fetch_o(next_fetch_lo)
      ,.next_fetch_yumi_i(next_fetch_yumi_li)
@@ -204,8 +208,10 @@ module bp_fe_top
   logic [vaddr_width_p-1:0] pc_resume_n, pc_resume_r;
   bp_fe_branch_metadata_fwd_s br_metadata_fwd_resume_n, br_metadata_fwd_resume_r;
   logic br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r;
+  logic [instr_half_width_gp-1:0] insn_upper_half_resume_n, insn_upper_half_resume_r;
   assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.vaddr : fetch_pc_lo;
   assign br_metadata_fwd_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fetch_br_metadata_fwd_lo;
+  assign insn_upper_half_resume_n = fe_cmd_cast_i.
   bsg_dff_reset_en_bypass
    #(.width_p(4+$bits(bp_fe_branch_metadata_fwd_s)+vaddr_width_p))
    pc_resume_reg
@@ -213,8 +219,8 @@ module bp_fe_top
      ,.reset_i(reset_i)
      ,.en_i(cmd_nonattaboy_v | is_run)
 
-     ,.data_i({br_miss_v, br_miss_nonbr, br_miss_taken, br_miss_ntaken, br_metadata_fwd_resume_n, pc_resume_n})
-     ,.data_o({br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r, br_metadata_fwd_resume_r, pc_resume_r})
+     ,.data_i({br_miss_v, br_miss_nonbr, br_miss_taken, br_miss_ntaken, br_metadata_fwd_resume_n, pc_resume_n, insn_upper_half_resume_n})
+     ,.data_o({br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r, br_metadata_fwd_resume_r, pc_resume_r, insn_upper_half_resume_r})
      );
   assign redirect_v_li               = (is_stall & next_fetch_yumi_li) | cmd_immediate_v;
   assign redirect_pc_li              = pc_resume_r;
@@ -223,6 +229,8 @@ module bp_fe_top
   assign redirect_br_taken_li        = br_miss_taken_r;
   assign redirect_br_ntaken_li       = br_miss_ntaken_r;
   assign redirect_br_nonbr_li        = br_miss_nonbr_r;
+  assign redirect_restore_insn_upper_half_v_li = redirect_v_li;
+  assign redirect_restore_insn_upper_half_li   = insn_upper_half_resume_r;
 
   assign attaboy_br_metadata_fwd_li = fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
   assign attaboy_taken_li           = attaboy_v &  fe_cmd_cast_i.operands.attaboy.taken;
@@ -235,6 +243,7 @@ module bp_fe_top
   logic [ptag_width_p-1:0] ptag_li;
 
   bp_pte_leaf_s w_tlb_entry_li;
+  // TODO: where should this vaddr come from?
   wire [vaddr_width_p-1:0] w_tlb_vaddr = fe_cmd_cast_i.vaddr + (fe_cmd_cast_i.operands.itlb_fill_response.instr_upper_not_lower_half ? 2 : 0);
   wire [vtag_width_p-1:0] w_vtag_li = w_tlb_vaddr[vaddr_width_p-1-:vtag_width_p];
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
@@ -401,8 +410,7 @@ module bp_fe_top
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type                     = e_fe_exception;
         fe_queue_cast_o.msg.exception.pc             = fetch_pc_lo;
-        // TODO
-        fe_queue_cast_o.msg.exception.partial_instr  = '0;
+        fe_queue_cast_o.msg.exception.partial_instr  = { (instr_half_width_gp)'(0), fetch_instr_lo[instr_half_width_gp-1:0] };
         fe_queue_cast_o.msg.exception.upper_not_lower_half = fetch_is_second_half_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss

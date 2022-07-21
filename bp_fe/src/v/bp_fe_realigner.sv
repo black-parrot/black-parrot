@@ -20,7 +20,11 @@ module bp_fe_realigner
    , input [instr_width_gp-1:0]  fetch_data_i
    , input                       fetch_data_v_i
 
-   , input                       poison_i // poison overrides fetch_data_v_i
+    // poison_i takes precedence over fetch_data_v_i
+    // restore_upper_half_v_i takes precedence over poison_i
+   , input                           poison_i
+   , input                           restore_upper_half_v_i
+   , input [instr_half_width_gp-1:0] restore_upper_half_i
 
    , output [instr_width_gp-1:0] fetch_instr_o
    , output                      fetch_instr_v_o
@@ -31,14 +35,14 @@ module bp_fe_realigner
   wire [instr_half_width_gp-1:0] icache_data_upper_half_li = fetch_data_i[instr_width_gp-1     :instr_half_width_gp];
 
   logic [instr_half_width_gp-1:0] upper_half_buffer_n, upper_half_buffer_r;
-  assign upper_half_buffer_n   = icache_data_upper_half_li;
+  assign upper_half_buffer_n   = restore_upper_half_v_i ? restore_upper_half_i : icache_data_upper_half_li;
   bsg_dff_reset_en
    #(.width_p(instr_half_width_gp))
    upper_half_buffer_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.en_i  (fetch_data_v_i)
+     ,.en_i  (fetch_data_v_i | restore_upper_half_v_i)
      ,.data_i(upper_half_buffer_n)
      ,.data_o(upper_half_buffer_r)
      );
@@ -50,7 +54,7 @@ module bp_fe_realigner
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i  (fetch_data_v_i & ~poison_i /* | upper_half_resume_v_i */)
+     ,.set_i  ((fetch_data_v_i & ~poison_i) | restore_upper_half_v_i)
      ,.clear_i(fetch_instr_v_o | poison_i) // set overrides clear
      ,.data_o (upper_half_buffer_v_r)
      );
