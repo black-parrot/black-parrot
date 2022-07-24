@@ -147,7 +147,7 @@ module bp_fe_icache
   wire is_fill   = (icache_pkt_cast_i.op inside {e_icache_fill});
 
   wire [vaddr_width_p-1:0]   vaddr       = icache_pkt_cast_i.vaddr;
-  wire [vtag_width_p-1:0]    vaddr_vtag  = vaddr[block_offset_width_lp+sindex_width_lp+:vtag_width_p];
+  wire [vtag_width_p-1:0]    vaddr_vtag  = vaddr[(vaddr_width_p-1)-:vtag_width_p];
   wire [sindex_width_lp-1:0] vaddr_index = vaddr[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0] vaddr_bank  = vaddr[byte_offset_width_lp+:bindex_width_lp];
 
@@ -232,7 +232,7 @@ module bp_fe_icache
      );
 
   wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_gp]};
-  wire [vtag_width_p-1:0]     vaddr_vtag_tl = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:vtag_width_p];
+  wire [vtag_width_p-1:0]     vaddr_vtag_tl = vaddr_tl_r[(vaddr_width_p-1)-:vtag_width_p];
   wire [sindex_width_lp-1:0] vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0]  vaddr_bank_tl = vaddr_tl_r[byte_offset_width_lp+:bindex_width_lp];
 
