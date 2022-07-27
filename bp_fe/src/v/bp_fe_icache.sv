@@ -677,7 +677,7 @@ module bp_fe_icache
      );
 
   //synopsys translate_off
-  if (`BSG_SAFE_CLOG2(block_width_p*sets_p/8) != page_offset_width_gp) begin
+  if (`BSG_SAFE_CLOG2(block_width_p*sets_p/8) > page_offset_width_gp) begin
     $error("Total cache size must be equal to 4kB * associativity");
   end
   //synopsys translate_on
