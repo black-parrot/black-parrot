@@ -682,4 +682,7 @@ module bp_fe_icache
   end
   //synopsys translate_on
 
+  if (!(`BSG_IS_POW2(assoc_p)))
+    $fatal("Associativity must be power of two");
+
 endmodule
