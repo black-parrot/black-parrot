@@ -96,7 +96,10 @@ module bp_fe_btb
   wire rw_same_addr = r_v_i & w_v_i & (r_idx_li == w_idx_i);
   wire                          tag_mem_w_v_li = is_clear | (w_v_i & ~rw_same_addr);
   wire [btb_idx_width_p-1:0] tag_mem_w_addr_li = is_clear ? init_cnt : w_idx_i;
-  assign tag_mem_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: br_tgt_i};
+  // Bug in XSIM 2019.2 causes SEGV when assigning to structs with a mux
+  bp_btb_entry_s new_btb;
+  assign new_btb = '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: br_tgt_i};
+  assign tag_mem_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : new_btb;
 
   bp_btb_entry_s tag_mem_data_lo;
   wire                           tag_mem_r_v_li = r_v_i;

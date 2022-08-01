@@ -45,7 +45,6 @@ import subprocess
 ##  localparam cfg_reg_host_did_gp        = (dev_addr_width_gp)'('h0_0018);
 ##  // Used until PMP are setup properly
 ##  localparam cfg_reg_hio_mask_gp        = (dev_addr_width_gp)'('h0_001c);
-##  localparam cfg_reg_npc_gp        = (dev_addr_width_gp)'('h0_0020);
 ##  localparam cfg_reg_icache_id_gp       = (dev_addr_width_gp)'('h0_0200);
 ##  localparam cfg_reg_icache_mode_gp     = (dev_addr_width_gp)'('h0_0204);
 ##  localparam cfg_reg_dcache_id_gp       = (dev_addr_width_gp)'('h0_0400);
@@ -227,14 +226,14 @@ class NBF:
   def dump(self):
 
     # Freeze set
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
+    self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_freeze, 1)
     # Boot PC set
     if self.boot_pc:
-      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, int(self.boot_pc, 16))
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_npc, int(self.boot_pc, 16))
     if self.debug:
-      self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 1)
+      self.print_nbf_allcores(2, clint_base_addr + clint_reg_debug, 1)
       self.print_fence()
-      self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 0)
+      self.print_nbf_allcores(2, clint_base_addr + clint_reg_debug, 0)
 
     # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
     if self.config:
@@ -246,9 +245,9 @@ class NBF:
             self.print_nbf(3, full_addr, self.ucode[i])
 
       # Write I$, D$, and CCE modes
-      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
-      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
-      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_cce_mode, 1)
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_icache_mode, 1)
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_dcache_mode, 1)
 
       if self.verify:
         # Read back I$, D$ and CCE modes for verification
@@ -257,7 +256,7 @@ class NBF:
         self.print_nbf(0x12, cfg_base_addr + cfg_reg_cce_mode, 1)
 
     # Write RTC
-    self.print_nbf_allcores(3, clint_base_addr + clint_reg_mtimesel, 1)
+    self.print_nbf_allcores(2, clint_base_addr + clint_reg_mtimesel, 1)
 
     self.print_fence()
 
@@ -275,7 +274,7 @@ class NBF:
     self.print_fence()
 
     # Freeze clear
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 0)
+    self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_freeze, 0)
     # EOF
     self.print_fence()
     self.print_finish()
