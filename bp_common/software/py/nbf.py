@@ -79,13 +79,14 @@ cfg_core_offset = 24
 class NBF:
 
   # constructor
-  def __init__(self, ncpus, ucode_file, mem_file, checkpoint_file, config, skip_zeros, addr_width,
+  def __init__(self, ncpus, ucode_file, mem_file, mem_size, checkpoint_file, config, skip_zeros, addr_width,
           data_width, boot_pc, debug, verify):
 
     # input parameters
     self.ncpus = ncpus
     self.ucode_file = ucode_file
     self.mem_file = mem_file
+    self.mem_size = mem_size
     self.config = config
     self.checkpoint_file = checkpoint_file
     self.skip_zeros = skip_zeros
@@ -204,6 +205,9 @@ class NBF:
 
   # initialize dram
   def init_dram(self):
+    if not(self.skip_zeros):
+      for k in xrange(self.mem_size*1024*1024/8):
+        self.print_nbf(3, 0x80000000 + k*8, 0)
     for k in sorted(self.dram_data.keys()):
       addr = k
       opcode = self.get_size(addr)
@@ -226,14 +230,14 @@ class NBF:
   def dump(self):
 
     # Freeze set
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 1)
+    self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_freeze, 1)
     # Boot PC set
     if self.boot_pc:
-      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_npc, int(self.boot_pc, 16))
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_npc, int(self.boot_pc, 16))
     if self.debug:
-      self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 1)
+      self.print_nbf_allcores(2, clint_base_addr + clint_reg_debug, 1)
       self.print_fence()
-      self.print_nbf_allcores(3, clint_base_addr + clint_reg_debug, 0)
+      self.print_nbf_allcores(2, clint_base_addr + clint_reg_debug, 0)
 
     # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
     if self.config:
@@ -245,9 +249,9 @@ class NBF:
             self.print_nbf(3, full_addr, self.ucode[i])
 
       # Write I$, D$, and CCE modes
-      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_cce_mode, 1)
-      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_icache_mode, 1)
-      self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_dcache_mode, 1)
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_cce_mode, 1)
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_icache_mode, 1)
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_dcache_mode, 1)
 
       if self.verify:
         # Read back I$, D$ and CCE modes for verification
@@ -256,7 +260,7 @@ class NBF:
         self.print_nbf(0x12, cfg_base_addr + cfg_reg_cce_mode, 1)
 
     # Write RTC
-    self.print_nbf_allcores(3, clint_base_addr + clint_reg_mtimesel, 1)
+    self.print_nbf_allcores(2, clint_base_addr + clint_reg_mtimesel, 1)
 
     self.print_fence()
 
@@ -274,7 +278,7 @@ class NBF:
     self.print_fence()
 
     # Freeze clear
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 0)
+    self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_freeze, 0)
     # EOF
     self.print_fence()
     self.print_finish()
@@ -288,6 +292,7 @@ if __name__ == "__main__":
   parser.add_argument('--ncpus', type=int, default=1, help='number of BlackParrot cores')
   parser.add_argument('--ucode', dest='ucode_file', metavar='ucode.mem', help='CCE ucode file')
   parser.add_argument("--mem", dest='mem_file', metavar='prog.mem', help='DRAM verilog file')
+  parser.add_argument("--mem_size", type=int, default=16, help='DRAM size in MiB')
   parser.add_argument("--config", dest='config', action='store_true', help='Do config over nbf')
   parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help='checkpoint nbf file')
   parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
@@ -299,6 +304,6 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
 
-  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.checkpoint_file, args.config,
+  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.mem_size, args.checkpoint_file, args.config,
           args.skip_zeros, args.addr_width, args.data_width, args.boot_pc, args.debug, args.verify)
   converter.dump()

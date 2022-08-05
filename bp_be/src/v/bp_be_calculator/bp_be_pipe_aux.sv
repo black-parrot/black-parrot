@@ -186,9 +186,16 @@ module bp_be_pipe_aux
   assign f2i_result = decode.opw_v
                       ? {{word_width_gp{f2w_out[word_width_gp-1]}}, f2w_out}
                       : f2dw_out;
-  assign f2i_fflags = decode.opw_v
-                      ? '{nv: f2w_iflags.nv | f2w_iflags.of, nx: f2w_iflags.nx, default: '0}
-                      : '{nv: f2dw_iflags.nv | f2dw_iflags.of, nx: f2dw_iflags.nx, default: '0};
+
+  // Bug in XSIM 2019.2 causes SEGV when assigning to structs with a mux
+  // assign f2i_fflags = decode.opw_v
+  //                     ? '{nv: f2w_iflags.nv | f2w_iflags.of, nx: f2w_iflags.nx, default: '0}
+  //                     : '{nv: f2dw_iflags.nv | f2dw_iflags.of, nx: f2dw_iflags.nx, default: '0};
+  rv64_fflags_s word_fflags;
+  rv64_fflags_s dword_fflags;
+  assign word_fflags = '{nv: f2w_iflags.nv | f2w_iflags.of, nx: f2w_iflags.nx, default: '0};
+  assign dword_fflags = '{nv: f2dw_iflags.nv | f2dw_iflags.of, nx: f2dw_iflags.nx, default: '0};
+  assign f2i_fflags = decode.opw_v ? word_fflags : dword_fflags;
 
   //
   // FCLASS
