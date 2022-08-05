@@ -26,7 +26,6 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
-    - dev_hotfix_xsim_fixes
   before_script:
       - git submodule update --init --checkout --recursive external/
       - cp -r $CI_RTL_INSTALL_DIR install/
