@@ -151,7 +151,6 @@
     */                                                                                             \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic [vaddr_width_mp-1:0] fill_vaddr;                                                       \
       logic [instr_width_gp-1:0] partial_instr;                                                    \
       logic [`bp_fe_cmd_icache_fill_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
@@ -269,7 +268,7 @@
     (`bp_pte_leaf_width(paddr_width_mp)+vaddr_width+instr_width_gp+1)
 
   `define bp_fe_cmd_icache_fill_width_no_padding(vaddr_width_mp) \
-    (vaddr_width_mp+instr_width_gp)
+    (instr_width_gp)
 
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
     (asid_width_mp + 2)

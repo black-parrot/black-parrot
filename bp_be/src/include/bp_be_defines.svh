@@ -179,7 +179,6 @@
       logic                          instr_miss_v;                                                 \
       logic                          load_miss_v;                                                  \
       logic                          store_miss_v;                                                 \
-      logic                          instr_upper_not_lower_half;                                   \
       logic [vaddr_width_mp-1:0]     vaddr;                                                        \
     }  bp_be_ptw_miss_pkt_s;                                                                       \
                                                                                                    \
@@ -191,7 +190,6 @@
       logic instr_page_fault_v;                                                                    \
       logic load_page_fault_v;                                                                     \
       logic store_page_fault_v;                                                                    \
-      logic instr_upper_not_lower_half;                                                            \
       logic [vaddr_width_mp-1:0] vaddr;                                                            \
       bp_be_pte_leaf_s entry;                                                                      \
     }  bp_be_ptw_fill_pkt_s;                                                                       \

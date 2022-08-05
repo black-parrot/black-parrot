@@ -243,8 +243,7 @@ module bp_fe_top
   logic [ptag_width_p-1:0] ptag_li;
 
   bp_pte_leaf_s w_tlb_entry_li;
-  // TODO: where should this vaddr come from?
-  wire [vaddr_width_p-1:0] w_tlb_vaddr = fe_cmd_cast_i.vaddr + (fe_cmd_cast_i.operands.itlb_fill_response.instr_upper_not_lower_half ? 2 : 0);
+  wire [vaddr_width_p-1:0] w_tlb_vaddr = fe_cmd_cast_i.operands.itlb_fill_response.fill_vaddr;
   wire [vtag_width_p-1:0] w_vtag_li = w_tlb_vaddr[vaddr_width_p-1-:vtag_width_p];
   assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
 
