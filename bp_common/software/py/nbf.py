@@ -37,37 +37,37 @@ import subprocess
 ##  localparam cfg_base_addr_gp           = (dev_id_width_gp+dev_addr_width_gp)'('h0020_0000);
 ##  localparam cfg_match_addr_gp          = (dev_id_width_gp+dev_addr_width_gp)'('h002?_????);
 ##
-##  localparam cfg_reg_freeze_gp          = (dev_addr_width_gp)'('h0_0004);
-##  localparam cfg_reg_npc_gp             = (dev_addr_width_gp)'('h0_0008);
-##  localparam cfg_reg_core_id_gp         = (dev_addr_width_gp)'('h0_000c);
-##  localparam cfg_reg_did_gp             = (dev_addr_width_gp)'('h0_0010);
-##  localparam cfg_reg_cord_gp            = (dev_addr_width_gp)'('h0_0014);
-##  localparam cfg_reg_host_did_gp        = (dev_addr_width_gp)'('h0_0018);
+##  localparam cfg_reg_freeze_gp          = (dev_addr_width_gp)'('h0_0008);
+##  localparam cfg_reg_npc_gp             = (dev_addr_width_gp)'('h0_0010);
+##  localparam cfg_reg_core_id_gp         = (dev_addr_width_gp)'('h0_0018);
+##  localparam cfg_reg_did_gp             = (dev_addr_width_gp)'('h0_0020);
+##  localparam cfg_reg_cord_gp            = (dev_addr_width_gp)'('h0_0028);
+##  localparam cfg_reg_host_did_gp        = (dev_addr_width_gp)'('h0_0030);
 ##  // Used until PMP are setup properly
-##  localparam cfg_reg_hio_mask_gp        = (dev_addr_width_gp)'('h0_001c);
+##  localparam cfg_reg_hio_mask_gp        = (dev_addr_width_gp)'('h0_0038);
 ##  localparam cfg_reg_icache_id_gp       = (dev_addr_width_gp)'('h0_0200);
-##  localparam cfg_reg_icache_mode_gp     = (dev_addr_width_gp)'('h0_0204);
+##  localparam cfg_reg_icache_mode_gp     = (dev_addr_width_gp)'('h0_0208);
 ##  localparam cfg_reg_dcache_id_gp       = (dev_addr_width_gp)'('h0_0400);
-##  localparam cfg_reg_dcache_mode_gp     = (dev_addr_width_gp)'('h0_0404);
+##  localparam cfg_reg_dcache_mode_gp     = (dev_addr_width_gp)'('h0_0408);
 ##  localparam cfg_reg_cce_id_gp          = (dev_addr_width_gp)'('h0_0600);
-##  localparam cfg_reg_cce_mode_gp        = (dev_addr_width_gp)'('h0_0604);
+##  localparam cfg_reg_cce_mode_gp        = (dev_addr_width_gp)'('h0_0608);
 ##  localparam cfg_mem_cce_ucode_base_gp  = (dev_addr_width_gp)'('h0_8000);
 ##  localparam cfg_mem_cce_ucode_match_gp = (dev_addr_width_gp)'('h0_8???);
 
 cfg_base_addr          = 0x200000
-cfg_reg_freeze         = 0x0004
-cfg_reg_npc            = 0x0008
-cfg_reg_core_id        = 0x000c
-cfg_reg_did            = 0x0010
-cfg_reg_cord           = 0x0014
-cfg_reg_host_did       = 0x0018
-cfg_reg_hio_mask       = 0x001c
+cfg_reg_freeze         = 0x0008
+cfg_reg_npc            = 0x0010
+cfg_reg_core_id        = 0x0018
+cfg_reg_did            = 0x0020
+cfg_reg_cord           = 0x0028
+cfg_reg_host_did       = 0x0030
+cfg_reg_hio_mask       = 0x0038
 cfg_reg_icache_id      = 0x0200
-cfg_reg_icache_mode    = 0x0204
+cfg_reg_icache_mode    = 0x0208
 cfg_reg_dcache_id      = 0x0400
-cfg_reg_dcache_mode    = 0x0404
+cfg_reg_dcache_mode    = 0x0408
 cfg_reg_cce_id         = 0x0600
-cfg_reg_cce_mode       = 0x0604
+cfg_reg_cce_mode       = 0x0608
 cfg_mem_base_cce_ucode = 0x8000
 
 clint_base_addr       = 0x300000
