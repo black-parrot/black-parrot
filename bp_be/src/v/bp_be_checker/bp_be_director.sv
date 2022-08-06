@@ -161,8 +161,9 @@ module bp_be_director
           fe_cmd_li.opcode                               = e_op_itlb_fill_response;
           fe_cmd_li.pc                                   = commit_pkt_cast_i.npc;
           fe_cmd_li.operands.itlb_fill_response.pte_leaf = commit_pkt_cast_i.pte_leaf;
-          fe_cmd_li.operands.itlb_fill_response.partial_instr = commit_pkt_cast_i.instr;
-          fe_cmd_li.operands.itlb_fill_response.fill_vaddr    = commit_pkt_cast_i.vaddr;
+          fe_cmd_li.operands.itlb_fill_response.partial_instr   = commit_pkt_cast_i.instr;
+          fe_cmd_li.operands.itlb_fill_response.partial_instr_v = commit_pkt_cast_i.exception_instr_upper_not_lower_half;
+          fe_cmd_li.operands.itlb_fill_response.fill_vaddr      = commit_pkt_cast_i.vaddr;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end
@@ -201,8 +202,9 @@ module bp_be_director
         begin
           fe_cmd_li.opcode = e_op_icache_fill_response;
           fe_cmd_li.pc     = commit_pkt_cast_i.npc;
-          fe_cmd_li.operands.icache_fill_response.partial_instr = commit_pkt_cast_i.instr;
-          fe_cmd_li.operands.icache_fill_response.fill_vaddr    = commit_pkt_cast_i.vaddr;
+          fe_cmd_li.operands.icache_fill_response.partial_instr   = commit_pkt_cast_i.instr;
+          fe_cmd_li.operands.icache_fill_response.partial_instr_v = commit_pkt_cast_i.exception_instr_upper_not_lower_half;
+          fe_cmd_li.operands.icache_fill_response.fill_vaddr      = commit_pkt_cast_i.vaddr;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end

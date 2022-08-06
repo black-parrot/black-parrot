@@ -159,23 +159,6 @@ module bp_fe_top
   wire eret_v        = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_eret);
   wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
 
-  // TODO: replace this with partial resume mechanism
-  // Conditionally delay I$ fill by one cycle when fill only applies to upper half of instruction
-  // (i.e., the instruction requires two aligned reads and it's the second one that needs a fill)
-  wire icache_fill_response_upper_not_lower_half = fe_cmd_cast_i.operands.icache_fill_response.instr_upper_not_lower_half;
-  logic icache_next_fetch_fill_upper_half_v;
-  bsg_dff_reset
-   #(.width_p(1))
-   icache_fill_delay_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i(icache_fill_response_v & icache_fill_response_upper_not_lower_half)
-     ,.data_o(icache_next_fetch_fill_upper_half_v)
-     );
-  wire icache_next_fetch_fill_lower_half_v = icache_fill_response_v & ~icache_fill_response_upper_not_lower_half;
-  wire icache_next_fetch_fill_v = icache_next_fetch_fill_lower_half_v | icache_next_fetch_fill_upper_half_v;
-
   logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
   wire shadow_priv_w = state_reset_v | trap_v | eret_v;
   assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
@@ -302,7 +285,7 @@ module bp_fe_top
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt = '{vaddr: next_fetch_lo
-                        ,op  : icache_fence_v ? e_icache_fencei : icache_next_fetch_fill_v ? e_icache_fill : e_icache_fetch
+                        ,op  : icache_fence_v ? e_icache_fencei : icache_fill_response_v ? e_icache_fill : e_icache_fetch
                         };
   // TODO: Should only ack icache fence when icache_ready
   wire icache_v_li = next_fetch_yumi_li | icache_fence_v;
