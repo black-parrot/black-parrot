@@ -202,14 +202,14 @@ module bp_fe_top
                                                     ? fe_cmd_cast_i.operands.icache_fill_response.partial_instr
                                                     : 'X; // TODO
   bsg_dff_reset_en_bypass
-   #(.width_p(4+$bits(bp_fe_branch_metadata_fwd_s)+vaddr_width_p))
+   #(.width_p(4+$bits(bp_fe_branch_metadata_fwd_s)+vaddr_width_p+1+instr_half_width_gp))
    pc_resume_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(cmd_nonattaboy_v | is_run)
 
      ,.data_i({br_miss_v, br_miss_nonbr, br_miss_taken, br_miss_ntaken, br_metadata_fwd_resume_n, pc_resume_n, insn_upper_half_v_resume_n, insn_upper_half_resume_n})
-     ,.data_o({br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r, br_metadata_fwd_resume_r, pc_resume_r, insn_upper_half_v_resume_r, insn_upper_half_resume_n})
+     ,.data_o({br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r, br_metadata_fwd_resume_r, pc_resume_r, insn_upper_half_v_resume_r, insn_upper_half_resume_r})
      );
   assign redirect_v_li               = (is_stall & next_fetch_yumi_li) | cmd_immediate_v;
   assign redirect_pc_li              = pc_resume_r;
