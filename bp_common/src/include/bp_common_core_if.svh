@@ -269,7 +269,7 @@
   `define bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp) \
     (`bp_pte_leaf_width(paddr_width_mp)+vaddr_width_mp+instr_width_gp+1)
 
-  `define bp_fe_cmd_icache_fill_width_no_padding(vaddr_width_mp) \
+  `define bp_fe_cmd_icache_fill_width_no_padding() \
     (1+instr_width_gp)
 
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
@@ -280,7 +280,7 @@
                 ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)        \
                           ,`BSG_MAX(`bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp)           \
                                     ,`BSG_MAX(`bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp)\
-                                             ,`bp_fe_cmd_icache_fill_width_no_padding(vaddr_width_mp) \
+                                             ,`bp_fe_cmd_icache_fill_width_no_padding() \
                                              )                                                     \
                                     )                                                              \
                           )                                                                        \
@@ -304,7 +304,7 @@
 
   `define bp_fe_cmd_icache_fill_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-     - `bp_fe_cmd_icache_fill_width_no_padding(vaddr_width_mp)                                                \
+     - `bp_fe_cmd_icache_fill_width_no_padding()                                                              \
      )
 
   `define bp_fe_cmd_itlb_fence_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
