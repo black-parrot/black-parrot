@@ -96,7 +96,7 @@
       logic                                    translation_en;                                     \
       logic [1:0]                              priv;                                               \
                                                                                                    \
-      logic [`bp_fe_cmd_pc_redirect_operands_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+      logic [`bp_fe_cmd_pc_redirect_operands_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                                padding;                                            \
     }  bp_fe_cmd_pc_redirect_operands_s;                                                           \
                                                                                                    \
@@ -109,7 +109,7 @@
       logic                                    taken;                                              \
       logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                \
                                                                                                    \
-      logic [`bp_fe_cmd_attaboy_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+      logic [`bp_fe_cmd_attaboy_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                                padding;                                            \
     }  bp_fe_cmd_attaboy_s;                                                                        \
                                                                                                    \
@@ -142,7 +142,7 @@
       logic [vaddr_width_mp-1:0] fill_vaddr;                                                       \
       logic [instr_width_gp-1:0] partial_instr;                                                    \
       logic                      partial_instr_v;                                                  \
-      logic [`bp_fe_cmd_itlb_map_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+      logic [`bp_fe_cmd_itlb_map_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_itlb_map_s;                                                                       \
     /*                                                                                             \
@@ -154,7 +154,7 @@
     {                                                                                              \
       logic [instr_width_gp-1:0] partial_instr;                                                    \
       logic                      partial_instr_v;                                                  \
-      logic [`bp_fe_cmd_icache_fill_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+      logic [`bp_fe_cmd_icache_fill_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_icache_fill_s;                                                                    \
                                                                                                    \
@@ -168,7 +168,7 @@
       logic [asid_width_mp-1:0]  asid;                                                             \
       logic                      flush_all_addresses;                                              \
       logic                      flush_all_asid;                                                   \
-      logic [`bp_fe_cmd_itlb_fence_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+      logic [`bp_fe_cmd_itlb_fence_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_itlb_fence_s;                                                                     \
                                                                                                    \
@@ -266,8 +266,8 @@
   `define bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp) \
     (1+branch_metadata_fwd_width_mp)
 
-  `define bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp) \
-    (`bp_pte_leaf_width(paddr_width_mp)+vaddr_width+instr_width_gp+1)
+  `define bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp) \
+    (`bp_pte_leaf_width(paddr_width_mp)+vaddr_width_mp+instr_width_gp+1)
 
   `define bp_fe_cmd_icache_fill_width_no_padding(vaddr_width_mp) \
     (1+instr_width_gp)
@@ -299,7 +299,7 @@
 
   `define bp_fe_cmd_itlb_map_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-     - `bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp)                                                   \
+     - `bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp)                                   \
      )
 
   `define bp_fe_cmd_icache_fill_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
