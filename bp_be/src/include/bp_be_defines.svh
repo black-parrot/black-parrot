@@ -141,6 +141,7 @@
       logic [rv64_priv_width_gp-1:0]  priv_n;                                                      \
       logic                           translation_en_n;                                            \
       logic                           exception;                                                   \
+      logic                           exception_instr_upper_not_lower_half;                        \
       logic                           _interrupt;                                                  \
       logic                           unfreeze;                                                    \
       logic                           eret;                                                        \
