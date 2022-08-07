@@ -342,9 +342,14 @@ module bp_be_dcache
   wire [sindex_width_lp-1:0] vaddr_index_tl = page_offset_tl_r[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0]  vaddr_bank_tl = page_offset_tl_r[byte_offset_width_lp+:bindex_width_lp];
 
+  // Concatenate unused bits from vaddr if any when cache size is not 4kb
+  wire unused_bits = ((block_offset_width_lp+sindex_width_lp) < page_offset_width_gp) ? 1'b1 : 1'b0; 
+  wire [ctag_width_p-1:0] ctag_li = (unused_bits)? {ptag_i,page_offset_tl_r[(page_offset_width_gp-1):block_offset_width_lp+sindex_width_lp]} : 
+                                     ptag_i;
+
   logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
-    wire tag_match_tl      = (ptag_i == tag_mem_data_lo[i].tag);
+    wire tag_match_tl      = (ctag_li == tag_mem_data_lo[i].tag);
     assign way_v_tl[i]     = (tag_mem_data_lo[i].state != e_COH_I);
     assign load_hit_tl[i]  = tag_match_tl & (tag_mem_data_lo[i].state != e_COH_I);
     assign store_hit_tl[i] = tag_match_tl & (tag_mem_data_lo[i].state inside {e_COH_M, e_COH_E});
