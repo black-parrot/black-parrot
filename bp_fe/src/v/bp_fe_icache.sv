@@ -236,10 +236,15 @@ module bp_fe_icache
   wire [sindex_width_lp-1:0] vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0]  vaddr_bank_tl = vaddr_tl_r[byte_offset_width_lp+:bindex_width_lp];
 
+  // Concatenate unused bits from vaddr if any when cache size is not 4kb
+  wire unused_bits = ((block_offset_width_lp+sindex_width_lp) < page_offset_width_gp) ? 1'b1 : 1'b0; 
+  wire [ctag_width_p-1:0] ctag_li = (unused_bits)? {ptag_i,vaddr_tl_r[(page_offset_width_gp-1):block_offset_width_lp+sindex_width_lp]} : 
+                                     ptag_i;
+
   logic [assoc_p-1:0] way_v_tl, hit_v_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
     assign way_v_tl[i] = (tag_mem_data_lo[i].state != e_COH_I);
-    assign hit_v_tl[i] = (tag_mem_data_lo[i].tag == {ptag_i,vaddr_tl_r[page_offset_width_gp-1:block_offset_width_lp+sindex_width_lp]}) && way_v_tl[i];
+    assign hit_v_tl[i] = (tag_mem_data_lo[i].tag == ctag_li && way_v_tl[i]);
   end
   wire cached_hit_tl     = |hit_v_tl;
   wire fetch_uncached_tl = (fetch_op_tl_r &  ptag_uncached_i);
