@@ -107,7 +107,7 @@ module bp_fe_pc_gen
   assign next_fetch_o = (next_pc_misaligned & next_fetch_linear)
     ? `bp_align_addr_up(next_pc, rv64_instr_width_bytes_gp)
     : `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp);
-  assign incomplete_fetch_if1_n = !next_fetch_linear & next_pc_misaligned;
+  assign incomplete_fetch_if1_n = !next_fetch_linear & next_pc_misaligned;// & !redirect_restore_insn_upper_half_v_i;
 
   always_comb
     begin
