@@ -152,72 +152,74 @@ module bp_be_issue_queue
     begin
       issue_pkt_li = '0;
 
-      // Pre-decode
-      issue_pkt_li.csr_v = instr.opcode inside {`RV64_SYSTEM_OP};
-      issue_pkt_li.mem_v = instr.opcode inside {`RV64_FLOAD_OP, `RV64_FSTORE_OP
-                                                ,`RV64_LOAD_OP, `RV64_STORE_OP
-                                                ,`RV64_AMO_OP, `RV64_SYSTEM_OP
-                                                };
-      issue_pkt_li.fence_v = instr inside {`RV64_FENCE, `RV64_FENCE_I, `RV64_SFENCE_VMA};
-      issue_pkt_li.long_v = instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
-                                          ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
-                                          ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D
-                                          };
+      if (fe_queue_cast_i.msg_type == e_fe_fetch) begin
+        // Pre-decode
+        issue_pkt_li.csr_v = instr.opcode inside {`RV64_SYSTEM_OP};
+        issue_pkt_li.mem_v = instr.opcode inside {`RV64_FLOAD_OP, `RV64_FSTORE_OP
+                                                  ,`RV64_LOAD_OP, `RV64_STORE_OP
+                                                  ,`RV64_AMO_OP, `RV64_SYSTEM_OP
+                                                  };
+        issue_pkt_li.fence_v = instr inside {`RV64_FENCE, `RV64_FENCE_I, `RV64_SFENCE_VMA};
+        issue_pkt_li.long_v = instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
+                                            ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
+                                            ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D
+                                            };
 
-      // Decide whether to read from integer regfile (saves power)
-      casez (instr.opcode)
-        `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
-          begin
-            issue_pkt_li.irs1_v = '1;
-          end
-        `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP:
-          begin
-            issue_pkt_li.irs1_v = '1;
-            issue_pkt_li.irs2_v = '1;
-          end
-        `RV64_FLOAD_OP:
-          begin
-            issue_pkt_li.irs1_v = 1'b1;
-          end
-        `RV64_FSTORE_OP:
-          begin
-            issue_pkt_li.irs1_v = 1'b1;
-            issue_pkt_li.frs2_v = 1'b1;
-          end
-        `RV64_FP_OP:
-          casez (instr)
-            `RV64_FCVT_WS, `RV64_FCVT_WUS, `RV64_FCVT_LS, `RV64_FCVT_LUS
-            ,`RV64_FCVT_WD, `RV64_FCVT_WUD, `RV64_FCVT_LD, `RV64_FCVT_LUD
-            ,`RV64_FCVT_SD, `RV64_FCVT_DS
-            ,`RV64_FMV_XW, `RV64_FMV_XD
-            ,`RV64_FCLASS_S, `RV64_FCLASS_D:
-              begin
-                issue_pkt_li.frs1_v = 1'b1;
-              end
-            `RV64_FCVT_SW, `RV64_FCVT_SWU, `RV64_FCVT_SL, `RV64_FCVT_SLU
-            ,`RV64_FCVT_DW, `RV64_FCVT_DWU, `RV64_FCVT_DL, `RV64_FCVT_DLU
-            ,`RV64_FMV_WX, `RV64_FMV_DX:
-              begin
-                issue_pkt_li.irs1_v = 1'b1;
-              end
-            default:
-              begin
-                issue_pkt_li.frs1_v = 1'b1;
-                issue_pkt_li.frs2_v = 1'b1;
-              end
-          endcase
-        `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FNMADD_OP:
-          begin
-            issue_pkt_li.frs1_v = 1'b1;
-            issue_pkt_li.frs2_v = 1'b1;
-            issue_pkt_li.frs3_v = 1'b1;
-          end
-        default: begin end
-      endcase
+        // Decide whether to read from integer regfile (saves power)
+        casez (instr.opcode)
+          `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
+            begin
+              issue_pkt_li.irs1_v = '1;
+            end
+          `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP:
+            begin
+              issue_pkt_li.irs1_v = '1;
+              issue_pkt_li.irs2_v = '1;
+            end
+          `RV64_FLOAD_OP:
+            begin
+              issue_pkt_li.irs1_v = 1'b1;
+            end
+          `RV64_FSTORE_OP:
+            begin
+              issue_pkt_li.irs1_v = 1'b1;
+              issue_pkt_li.frs2_v = 1'b1;
+            end
+          `RV64_FP_OP:
+            casez (instr)
+              `RV64_FCVT_WS, `RV64_FCVT_WUS, `RV64_FCVT_LS, `RV64_FCVT_LUS
+              ,`RV64_FCVT_WD, `RV64_FCVT_WUD, `RV64_FCVT_LD, `RV64_FCVT_LUD
+              ,`RV64_FCVT_SD, `RV64_FCVT_DS
+              ,`RV64_FMV_XW, `RV64_FMV_XD
+              ,`RV64_FCLASS_S, `RV64_FCLASS_D:
+                begin
+                  issue_pkt_li.frs1_v = 1'b1;
+                end
+              `RV64_FCVT_SW, `RV64_FCVT_SWU, `RV64_FCVT_SL, `RV64_FCVT_SLU
+              ,`RV64_FCVT_DW, `RV64_FCVT_DWU, `RV64_FCVT_DL, `RV64_FCVT_DLU
+              ,`RV64_FMV_WX, `RV64_FMV_DX:
+                begin
+                  issue_pkt_li.irs1_v = 1'b1;
+                end
+              default:
+                begin
+                  issue_pkt_li.frs1_v = 1'b1;
+                  issue_pkt_li.frs2_v = 1'b1;
+                end
+            endcase
+          `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FNMADD_OP:
+            begin
+              issue_pkt_li.frs1_v = 1'b1;
+              issue_pkt_li.frs2_v = 1'b1;
+              issue_pkt_li.frs3_v = 1'b1;
+            end
+          default: begin end
+        endcase
 
-      issue_pkt_li.rs1_addr = instr.rs1_addr;
-      issue_pkt_li.rs2_addr = instr.rs2_addr;
-      issue_pkt_li.rs3_addr = instr.rs3_addr;
+        issue_pkt_li.rs1_addr = instr.rs1_addr;
+        issue_pkt_li.rs2_addr = instr.rs2_addr;
+        issue_pkt_li.rs3_addr = instr.rs3_addr;
+      end
     end
 endmodule
 
