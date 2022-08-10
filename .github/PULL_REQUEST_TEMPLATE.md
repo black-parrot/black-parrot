@@ -1,28 +1,28 @@
 Thanks for contributing to BlackParrot! Check out the CONTRIBUTING guide, if this is your first
-time. A few details to check:
+time. Please provide a few details:
 
-## Summary
+### Summary
 Brief description of the change.
 
-## Issue Fixed
+### Issue Fixed
 Does this PR address a BlackParrot GitHub issue? Link it here:
 
-## Area
+### Area
 Module/tool/makefile/script in question.
 
-## Reasoning (outdated, confusing, verbose, etc.)
+### Reasoning (new feature, inefficient, verbose, etc.)
 Why is this change required?
 
-## Additional Changes Required (if any)
+### Additional Changes Required (if any)
 Next steps, downstream modules affected, etc.
 
-## Analysis
+### Analysis
 Potential impact of the change.
 
-## Verification
+### Verification
 Steps to taken to verify the change.
 
-## Additional Context
+### Additional Context
 Add any other context about the problem here.
 Logs, screenshots or videos that show the issue are very helpful.
 
