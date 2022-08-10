@@ -193,8 +193,8 @@ module bp_be_scheduler
       isd_status_cast_o.frs3_v   = fe_queue_v_lo & issue_pkt.frs3_v;
       isd_status_cast_o.rs3_addr = fe_queue_lo.msg.fetch.instr.t.fmatype.rs3_addr;
       isd_status_cast_o.rd_addr  = fe_queue_lo.msg.fetch.instr.t.fmatype.rd_addr;
-      isd_status_cast_o.iwb_v    = instr_decoded.irf_w_v;
-      isd_status_cast_o.fwb_v    = instr_decoded.frf_w_v;
+      isd_status_cast_o.iwb_v    = fe_instr_not_exc_li & instr_decoded.irf_w_v;
+      isd_status_cast_o.fwb_v    = fe_instr_not_exc_li & instr_decoded.frf_w_v;
 
       // Form dispatch packet
       dispatch_pkt = '0;
