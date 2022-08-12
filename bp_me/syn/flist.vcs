@@ -158,7 +158,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 # LCE
 $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
-$BP_ME_DIR/src/v/lce/bp_lce_fill.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce.sv
 # CCE
@@ -198,4 +197,5 @@ $BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
+$BP_COMMON_DIR/src/v/bsg_crossbar_control_locking_o_by_i.v
 
