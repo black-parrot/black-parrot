@@ -237,9 +237,9 @@ module bp_fe_icache
   wire [bindex_width_lp-1:0]  vaddr_bank_tl = vaddr_tl_r[byte_offset_width_lp+:bindex_width_lp];
 
   // Concatenate unused bits from vaddr if any when cache size is not 4kb
-  wire unused_bits = ((block_offset_width_lp+sindex_width_lp) < page_offset_width_gp) ? 1'b1 : 1'b0; 
-  wire [ctag_width_p-1:0] ctag_li = (unused_bits)? {ptag_i,vaddr_tl_r[(page_offset_width_gp-1):block_offset_width_lp+sindex_width_lp]} : 
-                                     ptag_i;
+  localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
+  wire [ctag_vbits_lp-1:0] ctag_vbits = vaddr_tl_r[page_offset_width_gp-1:block_offset_width_lp+sindex_width_lp];
+  wire [icache_ctag_width_lp-1:0] ctag_li = {ptag_i, {ctag_vbits_lp>0{ctag_vbits}}};
 
   logic [assoc_p-1:0] way_v_tl, hit_v_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
