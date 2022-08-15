@@ -164,8 +164,13 @@
     , localparam ptag_width_p  = paddr_width_p - page_offset_width_gp                              \
     , localparam dtag_width_p  = daddr_width_p - page_offset_width_gp                              \
     , localparam ctag_width_p  = caddr_width_p - page_offset_width_gp															 \
-																 + (page_offset_width_gp-`BSG_SAFE_CLOG2(icache_sets_p*icache_block_width_p/8))
-
+    , localparam icache_ctag_width_p = caddr_width_p -  											                     \
+			  (`BSG_SAFE_CLOG2(icache_sets_p*icache_block_width_p/8))                                    \
+    , localparam dcache_ctag_width_p = caddr_width_p -  											                     \
+			  (`BSG_SAFE_CLOG2(dcache_sets_p*dcache_block_width_p/8))                                    \
+    , localparam acache_ctag_width_p = caddr_width_p -  											                     \
+			  (`BSG_SAFE_CLOG2(acache_sets_p*acache_block_width_p/8))                                    \
+        
     `define bp_aviary_parameter_override(parameter_mp, override_cfg_mp, default_cfg_mp) \
       parameter_mp: (override_cfg_mp.``parameter_mp`` == "inv") \
                     ? default_cfg_mp.``parameter_mp``           \
