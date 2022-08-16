@@ -629,7 +629,8 @@ module bp_be_instr_decoder
           default: imm_o = '0;
         endcase
       end
+
+      if (~instr_v_i | illegal_instr_o)
+        decode_cast_o = '0;
     end
-
 endmodule
-
