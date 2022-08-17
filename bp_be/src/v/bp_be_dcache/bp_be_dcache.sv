@@ -211,6 +211,7 @@ module bp_be_dcache
   localparam block_offset_width_lp    = (assoc_p > 1)
     ? (bindex_width_lp+byte_offset_width_lp)
     : byte_offset_width_lp;
+  localparam dcache_ctag_width_lp     = caddr_width_p - (block_offset_width_lp + sindex_width_lp);
 
   // State machine declaration
   enum logic [2:0] {e_ready, e_miss, e_resume, e_late} state_n, state_r;
