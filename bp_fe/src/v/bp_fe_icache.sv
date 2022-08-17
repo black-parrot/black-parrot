@@ -587,7 +587,7 @@ module bp_fe_icache
      ,.o(data_mem_write_bank_mask)
      );
 
-  wire data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & v_tl_r;
+  wire data_mem_bypass = (vaddr[vaddr_width_p-1:block_offset_width_lp] == vaddr_tl_r[vaddr_width_p-1:block_offset_width_lp]) & v_tl_r;
 
   logic [assoc_p-1:0] data_mem_fast_read, data_mem_fast_write, data_mem_slow_read, data_mem_slow_write;
   for (genvar i = 0; i < assoc_p; i++)
