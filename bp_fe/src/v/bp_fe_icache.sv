@@ -122,6 +122,7 @@ module bp_fe_icache
     : byte_offset_width_lp;
   localparam block_size_in_fill_lp  = block_width_p / fill_width_p;
   localparam fill_size_in_bank_lp   = fill_width_p / bank_width_lp;
+  localparam icache_ctag_width_lp   = caddr_width_p - (block_offset_width_lp + sindex_width_lp);
 
   // State machine declaration
   enum logic [1:0] {e_ready, e_miss} state_n, state_r;
