@@ -273,10 +273,7 @@ $BP_ME_DIR/src/v/cce/bp_bedrock_size_to_len.sv
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.sv
 $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
-$BP_ME_DIR/src/v/network/bp_me_bedrock_mem_to_link.sv
 $BP_ME_DIR/src/v/network/bp_me_cce_id_to_cord.sv
-$BP_ME_DIR/src/v/network/bp_me_cce_to_mem_link_recv.sv
-$BP_ME_DIR/src/v/network/bp_me_cce_to_mem_link_send.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
 $BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode.sv
