@@ -276,7 +276,7 @@ $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/network/bp_me_cce_id_to_cord.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
-$BP_ME_DIR/src/v/network/bp_me_bedrock_wormhole_header_encode.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_header_encode.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_gearbox.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_wormhole.sv
