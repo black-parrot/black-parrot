@@ -198,10 +198,6 @@ module bp_sacc_tile
   logic [acache_fill_width_p-1:0] s2b_io_resp_data_li;
   logic s2b_io_resp_v_li, s2b_io_resp_ready_and_lo, s2b_io_resp_last_li;
 
-  bp_bedrock_mem_header_s s2b_io_resp_header_li;
-  logic [acache_fill_width_p-1:0] s2b_io_resp_data_li;
-  logic s2b_io_resp_v_li, s2b_io_resp_ready_and_lo, s2b_io_resp_last_li;
-
   bp_me_burst_to_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(acache_fill_width_p)
