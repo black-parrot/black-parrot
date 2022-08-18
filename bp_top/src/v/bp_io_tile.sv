@@ -59,6 +59,8 @@ module bp_io_tile
   logic [bedrock_data_width_p-1:0] lce_req_data_lo;
   logic lce_req_header_v_lo, lce_req_has_data_lo, lce_req_header_ready_and_li;
   logic lce_req_data_v_lo, lce_req_last_lo, lce_req_data_ready_and_li;
+  logic [coh_noc_cord_width_p-1:0] lce_req_dst_cord_lo;
+  logic [coh_noc_cid_width_p-1:0] lce_req_dst_cid_lo;
 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_li;
   logic [bedrock_data_width_p-1:0] lce_cmd_data_li;
@@ -70,6 +72,8 @@ module bp_io_tile
   logic [bedrock_data_width_p-1:0] lce_cmd_data_lo;
   logic lce_cmd_header_v_lo, lce_cmd_has_data_lo, lce_cmd_header_ready_and_li;
   logic lce_cmd_data_v_lo, lce_cmd_last_lo, lce_cmd_data_ready_and_li;
+  logic [coh_noc_cord_width_p-1:0] lce_cmd_dst_cord_lo;
+  logic [coh_noc_cid_width_p-1:0] lce_cmd_dst_cid_lo;
 
   bp_bedrock_lce_req_header_s lce_req_header_li;
   logic [bedrock_data_width_p-1:0] lce_req_data_li;
@@ -195,16 +199,12 @@ module bp_io_tile
 
 
   // LCE Req Link WH-Burst conversion
-  `declare_bp_bedrock_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_header_s, lce_req);
-  bp_lce_req_wormhole_header_s lce_req_wh_header_lo;
-  localparam lce_req_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_header_s));
-
-  // Burst to WH (lce_req_header_lo)
-  bp_me_bedrock_wormhole_header_encode_lce_req
+  bp_me_cce_id_to_cord
    #(.bp_params_p(bp_params_p))
-   lce_req_encode
-    (.header_i(lce_req_header_lo)
-     ,.wh_header_o(lce_req_wh_header_lo)
+   req_router_cord
+    (.cce_id_i(lce_req_header_lo.payload.dst_id)
+     ,.cce_cord_o(lce_req_dst_cord_lo)
+     ,.cce_cid_o(lce_req_dst_cid_lo)
      );
 
   bp_me_burst_to_wormhole
@@ -215,16 +215,19 @@ module bp_io_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_req_header_width_lp)
      ,.pr_payload_width_p(lce_req_payload_width_lp)
+     ,.pr_payload_mask_p(lce_req_payload_mask_gp)
      ,.pr_data_width_p(bedrock_data_width_p)
      )
    lce_req_burst_to_wh
    (.clk_i(clk_i)
     ,.reset_i(reset_r)
 
-    ,.wh_hdr_i(lce_req_wh_header_lo[0+:($bits(bp_lce_req_wormhole_header_s)-lce_req_wh_pad_width_lp)])
+    ,.pr_hdr_i(lce_req_header_lo)
     ,.pr_hdr_v_i(lce_req_header_v_lo)
     ,.pr_hdr_ready_and_o(lce_req_header_ready_and_li)
     ,.pr_has_data_i(lce_req_has_data_lo)
+    ,.dst_cord_i(lce_req_dst_cord_lo)
+    ,.dst_cid_i(lce_req_dst_cid_lo)
 
     ,.pr_data_i(lce_req_data_lo)
     ,.pr_data_v_i(lce_req_data_v_lo)
@@ -267,16 +270,12 @@ module bp_io_tile
     );
 
   // LCE cmd Link WH-Burst conversion
-  `declare_bp_bedrock_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_header_s, lce_cmd);
-  bp_lce_cmd_wormhole_header_s lce_cmd_wh_header_lo;
-  localparam lce_cmd_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_header_s));
-
-  // Burst to WH (lce_cmd_header_lo)
-  bp_me_bedrock_wormhole_header_encode_lce_cmd
+  bp_me_lce_id_to_cord
    #(.bp_params_p(bp_params_p))
-   lce_cmd_encode
-    (.header_i(lce_cmd_header_lo)
-     ,.wh_header_o(lce_cmd_wh_header_lo)
+   cmd_router_cord
+    (.lce_id_i(lce_cmd_header_lo.payload.dst_id)
+     ,.lce_cord_o(lce_cmd_dst_cord_lo)
+     ,.lce_cid_o(lce_cmd_dst_cid_lo)
      );
 
   bp_me_burst_to_wormhole
@@ -287,16 +286,19 @@ module bp_io_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_cmd_header_width_lp)
      ,.pr_payload_width_p(lce_cmd_payload_width_lp)
+     ,.pr_payload_mask_p(lce_cmd_payload_mask_gp)
      ,.pr_data_width_p(bedrock_data_width_p)
      )
    lce_cmd_burst_to_wh
    (.clk_i(clk_i)
     ,.reset_i(reset_r)
 
-    ,.wh_hdr_i(lce_cmd_wh_header_lo[0+:($bits(bp_lce_cmd_wormhole_header_s)-lce_cmd_wh_pad_width_lp)])
+    ,.pr_hdr_i(lce_cmd_header_lo)
     ,.pr_hdr_v_i(lce_cmd_header_v_lo)
     ,.pr_hdr_ready_and_o(lce_cmd_header_ready_and_li)
     ,.pr_has_data_i(lce_cmd_has_data_lo)
+    ,.dst_cord_i(lce_cmd_dst_cord_lo)
+    ,.dst_cid_i(lce_cmd_dst_cid_lo)
 
     ,.pr_data_i(lce_cmd_data_lo)
     ,.pr_data_v_i(lce_cmd_data_v_lo)

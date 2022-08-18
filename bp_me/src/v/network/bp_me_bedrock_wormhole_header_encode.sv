@@ -42,7 +42,6 @@ module bp_me_bedrock_wormhole_header_encode
   `bp_cast_i(bp_bedrock_msg_header_s, header);
 
   `declare_bp_bedrock_wormhole_header_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_msg_header_s, bedrock);
-  //bsg_bedrock_router_hdr_s
   `bp_cast_o(bp_bedrock_wormhole_header_s, wh_header);
 
   // TODO: could leverage bp_bedrock_size_to_len to compute these values
@@ -68,61 +67,32 @@ module bp_me_bedrock_wormhole_header_encode
   localparam msg_len_128_lp = msg_data_len_128_lp + msg_hdr_len_lp + 1;
 
   logic [len_width_p-1:0] msg_len_li;
-  logic [len_width_p-1:0] msg_data_len_li;
 
-  always_comb begin
-    wh_header_cast_o = '0;
+  always_comb
+    begin
+      wh_header_cast_o = '0;
 
-    wh_header_cast_o.msg_hdr         = header_cast_i;
-    wh_header_cast_o.rtr_hdr.cord    = dst_cord_i;
-    wh_header_cast_o.rtr_hdr.cid     = dst_cid_i;
+      wh_header_cast_o.msg_hdr      = header_cast_i;
+      wh_header_cast_o.rtr_hdr.cord = dst_cord_i;
+      wh_header_cast_o.rtr_hdr.cid  = dst_cid_i;
 
-    case (header_cast_i.size)
-      e_bedrock_msg_size_1: begin
-        msg_len_li = len_width_p'(msg_len_1_lp);
-        msg_data_len_li = len_width_p'(msg_data_len_1_lp);
-      end
-      e_bedrock_msg_size_2: begin
-        msg_len_li = len_width_p'(msg_len_2_lp);
-        msg_data_len_li = len_width_p'(msg_data_len_2_lp);
-      end
-      e_bedrock_msg_size_4: begin
-        msg_len_li = len_width_p'(msg_len_4_lp);
-        msg_data_len_li = len_width_p'(msg_data_len_4_lp);
-      end
-      e_bedrock_msg_size_8: begin
-        msg_len_li = len_width_p'(msg_len_8_lp);
-        msg_data_len_li = len_width_p'(msg_data_len_8_lp);
-      end
-      e_bedrock_msg_size_16: begin
-        msg_len_li = len_width_p'(msg_len_16_lp);
-        msg_data_len_li = len_width_p'(msg_data_len_16_lp);
-      end
-      e_bedrock_msg_size_32: begin
-        msg_len_li = len_width_p'(msg_len_32_lp);
-        msg_data_len_li = len_width_p'(msg_data_len_32_lp);
-      end
-      e_bedrock_msg_size_64: begin
-        msg_len_li = len_width_p'(msg_len_64_lp);
-        msg_data_len_li = len_width_p'(msg_data_len_64_lp);
-      end
-      e_bedrock_msg_size_128: begin
-        msg_len_li = len_width_p'(msg_len_128_lp);
-        msg_data_len_li = len_width_p'(msg_data_len_128_lp);
-      end
-      default: begin
-        msg_len_li = '0;
-        msg_data_len_li = '0;
-      end
-    endcase
+      unique case (header_cast_i.size)
+        e_bedrock_msg_size_1  : msg_len_li = len_width_p'(msg_len_1_lp);
+        e_bedrock_msg_size_2  : msg_len_li = len_width_p'(msg_len_2_lp);
+        e_bedrock_msg_size_4  : msg_len_li = len_width_p'(msg_len_4_lp);
+        e_bedrock_msg_size_8  : msg_len_li = len_width_p'(msg_len_8_lp);
+        e_bedrock_msg_size_16 : msg_len_li = len_width_p'(msg_len_16_lp);
+        e_bedrock_msg_size_32 : msg_len_li = len_width_p'(msg_len_32_lp);
+        e_bedrock_msg_size_64 : msg_len_li = len_width_p'(msg_len_64_lp);
+        e_bedrock_msg_size_128: msg_len_li = len_width_p'(msg_len_128_lp);
+        default: msg_len_li = '0;
+      endcase
 
-    if (payload_mask_p[header_cast_i.msg_type]) begin
-      wh_header_cast_o.rtr_hdr.len = len_width_p'(msg_len_li);
+      if (payload_mask_p[header_cast_i.msg_type])
+        wh_header_cast_o.rtr_hdr.len = len_width_p'(msg_len_li);
+      else
+        wh_header_cast_o.rtr_hdr.len = len_width_p'(msg_hdr_len_lp);
     end
-    else begin
-      wh_header_cast_o.rtr_hdr.len = len_width_p'(msg_hdr_len_lp);
-    end
-  end
 
 endmodule
 
