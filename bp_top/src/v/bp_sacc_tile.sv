@@ -299,10 +299,10 @@ module bp_sacc_tile
   end
   else begin : none
     assign b2s_io_cmd_ready_and_li = 1'b0;
-    assign io_resp_header_li = '0;
-    assign io_resp_data_li = '0;
-    assign io_resp_v_li = 1'b0;
-    assign io_resp_last_li = 1'b0;
+    assign s2b_io_resp_header_li = '0;
+    assign s2b_io_resp_data_li = '0;
+    assign s2b_io_resp_v_li = 1'b0;
+    assign s2b_io_resp_last_li = 1'b0;
   end
 
   // Burst to WH (lce_req_header_lo)
