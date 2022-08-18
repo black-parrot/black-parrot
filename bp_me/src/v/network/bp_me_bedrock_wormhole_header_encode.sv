@@ -36,7 +36,6 @@ module bp_me_bedrock_wormhole_header_encode
    , input [cid_width_p-1:0]                dst_cid_i
 
    , output logic [wh_header_width_lp-1:0]  wh_header_o
-   , output logic [len_width_p-1:0]         data_len_o
    );
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, msg);
@@ -73,7 +72,6 @@ module bp_me_bedrock_wormhole_header_encode
 
   always_comb begin
     wh_header_cast_o = '0;
-    data_len_o = '0;
 
     wh_header_cast_o.msg_hdr         = header_cast_i;
     wh_header_cast_o.rtr_hdr.cord    = dst_cord_i;
@@ -120,7 +118,6 @@ module bp_me_bedrock_wormhole_header_encode
 
     if (payload_mask_p[header_cast_i.msg_type]) begin
       wh_header_cast_o.rtr_hdr.len = len_width_p'(msg_len_li);
-      data_len_o = len_width_p'(msg_data_len_li);
     end
     else begin
       wh_header_cast_o.rtr_hdr.len = len_width_p'(msg_hdr_len_lp);

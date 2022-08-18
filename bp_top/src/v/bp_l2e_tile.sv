@@ -138,7 +138,6 @@ module bp_l2e_tile
    cmd_encode
     (.header_i(cce_lce_cmd_header)
      ,.wh_header_o(cce_lce_cmd_wh_header_lo)
-     ,.data_len_o(/* unused */)
      );
 
   bp_me_burst_to_wormhole

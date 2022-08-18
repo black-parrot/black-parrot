@@ -75,7 +75,6 @@ module bp_me_cce_to_mem_link_send
      ,.dst_cord_i(dst_cord_i)
      ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(mem_cmd_header_li)
-     ,.data_len_o(/* unused */)
      );
   assign mem_cmd_packet_li = '{header: mem_cmd_header_li, data: mem_cmd_data_i};
 

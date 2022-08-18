@@ -87,7 +87,6 @@ module bp_me_bedrock_mem_to_link
      ,.dst_cord_i(dst_cord_i)
      ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(mem_header_li)
-     ,.data_len_o(/* unused */)
      );
 
   bp_me_burst_to_wormhole

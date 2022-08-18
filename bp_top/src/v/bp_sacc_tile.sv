@@ -341,7 +341,6 @@ module bp_sacc_tile
    req_encode
     (.header_i(lce_lce_req_header_lo)
      ,.wh_header_o(lce_req_wh_header_lo)
-     ,.data_len_o(/* unused */)
      );
 
   bp_me_burst_to_wormhole
@@ -439,7 +438,6 @@ module bp_sacc_tile
    cce_cmd_encode
     (.header_i(cce_lce_cmd_header_lo)
      ,.wh_header_o(cce_lce_cmd_wh_header_lo)
-     ,.data_len_o(/* unused */)
      );
 
   bp_me_burst_to_wormhole

@@ -20,7 +20,6 @@ module bp_me_bedrock_wormhole_header_encode_lce_cmd
     )
    (input [lce_cmd_header_width_lp-1:0]       header_i
     , output logic [wh_header_width_lp-1:0]   wh_header_o
-    , output logic [coh_noc_len_width_p-1:0]  data_len_o
     );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -50,7 +49,6 @@ module bp_me_bedrock_wormhole_header_encode_lce_cmd
       ,.dst_cord_i(lce_cord_li)
       ,.dst_cid_i(lce_cid_li)
       ,.wh_header_o(wh_header_o)
-      ,.data_len_o(data_len_o)
       );
 
 endmodule

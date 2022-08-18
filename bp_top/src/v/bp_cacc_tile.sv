@@ -361,7 +361,6 @@ module bp_cacc_tile
    req_encode
     (.header_i(lce_req_header_lo)
      ,.wh_header_o(lce_req_wh_header_lo)
-     ,.data_len_o(/* unused */)
      );
 
   bp_me_burst_to_wormhole
