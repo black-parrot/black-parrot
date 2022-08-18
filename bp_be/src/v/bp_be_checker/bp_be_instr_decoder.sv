@@ -630,7 +630,7 @@ module bp_be_instr_decoder
         endcase
       end
 
-      if (~instr_v_i | illegal_instr_o)
+      if (illegal_instr_o)
         decode_cast_o = '0;
     end
 endmodule
