@@ -52,8 +52,11 @@ module bp_lce_cmd
    // coherence request size for cached requests
    , localparam bp_bedrock_msg_size_e cmd_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8))
 
+   // Cache tag width
+   , localparam ctag_width_lp = caddr_width_p - (block_byte_offset_lp + lg_sets_lp)
+
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, lce_ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
   (
     input                                            clk_i
@@ -127,7 +130,7 @@ module bp_lce_cmd
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_if(paddr_width_p, lce_ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
   `bp_cast_o(bp_bedrock_lce_fill_header_s, lce_fill_header);
   `bp_cast_o(bp_bedrock_lce_resp_header_s, lce_resp_header);
@@ -135,9 +138,6 @@ module bp_lce_cmd
   `bp_cast_o(bp_cache_data_mem_pkt_s, data_mem_pkt);
   `bp_cast_o(bp_cache_tag_mem_pkt_s, tag_mem_pkt);
   `bp_cast_o(bp_cache_stat_mem_pkt_s, stat_mem_pkt);
-
-  //Derived lce_ctag_width_lp 
-  localparam lce_ctag_width_lp   = caddr_width_p - (block_byte_offset_lp + lg_sets_lp);
 
   // LCE command header buffer
   // Required for handshake conversion for cache interface packets
@@ -327,13 +327,13 @@ module bp_lce_cmd
 
   // common fields from LCE Command used in many states for responses or pkt fields
   logic [lg_sets_lp-1:0] lce_cmd_addr_index;
-  logic [lce_ctag_width_lp-1:0] lce_cmd_addr_tag;
+  logic [ctag_width_lp-1:0] lce_cmd_addr_tag;
   logic [lg_assoc_lp-1:0] lce_cmd_way_id;
 
   assign lce_cmd_addr_index = (sets_p > 1)
                               ? lce_cmd_header_cast_li.addr[block_byte_offset_lp+:lg_sets_lp]
                               : '0;
-  assign lce_cmd_addr_tag = lce_cmd_header_cast_li.addr[tag_offset_lp+:lce_ctag_width_lp];
+  assign lce_cmd_addr_tag = lce_cmd_header_cast_li.addr[tag_offset_lp+:ctag_width_lp];
   assign lce_cmd_way_id = lce_cmd_header_cast_li.payload.way_id[0+:lg_assoc_lp];
 
   // LCE Command module is ready after it clears the cache's tag and stat memories
