@@ -38,9 +38,12 @@ module bp_lce
    // latency of request metadata in cycles, must be 0 or 1
    // BP caches' metadata arrives cycle after request, by default
    , parameter metadata_latency_p = 1
+  
+	 // Cache tag width
+   , localparam ctag_width_lp = caddr_width_p - (`BSG_SAFE_CLOG2(block_width_p*sets_p/8))
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, lce_ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
   (
     input                                            clk_i
@@ -153,7 +156,7 @@ module bp_lce
   if (cmd_data_buffer_els_p < 1 || fill_data_buffer_els_p < 1)
     $error("LCEs require buffers for at least 1 command and fill data beat");
 
-  `declare_bp_cache_engine_if(paddr_width_p, lce_ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
 
   // LCE Request Module
