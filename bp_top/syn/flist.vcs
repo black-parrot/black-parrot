@@ -300,6 +300,7 @@ $BP_TOP_DIR/src/v/bp_sacc_tile.sv
 $BP_TOP_DIR/src/v/bp_sacc_tile_node.sv
 $BP_TOP_DIR/src/v/bp_sacc_complex.sv
 $BP_TOP_DIR/src/v/bp_core.sv
+$BP_TOP_DIR/src/v/bp_core_lite.sv
 $BP_TOP_DIR/src/v/bp_core_minimal.sv
 $BP_TOP_DIR/src/v/bp_core_complex.sv
 $BP_TOP_DIR/src/v/bp_l2e_tile.sv
@@ -311,7 +312,6 @@ $BP_TOP_DIR/src/v/bp_io_tile_node.sv
 $BP_TOP_DIR/src/v/bp_mem_complex.sv
 $BP_TOP_DIR/src/v/bp_multicore.sv
 $BP_TOP_DIR/src/v/bp_unicore.sv
-$BP_TOP_DIR/src/v/bp_unicore_complex.sv
 $BP_TOP_DIR/src/v/bp_unicore_lite.sv
 $BP_TOP_DIR/src/v/bp_tile.sv
 $BP_TOP_DIR/src/v/bp_tile_node.sv
