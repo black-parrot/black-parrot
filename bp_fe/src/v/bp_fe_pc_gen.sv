@@ -218,7 +218,7 @@ module bp_fe_pc_gen
    ras
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(is_call)
+     ,.en_i(is_call & fetch_instr_yumi_i)
 
      ,.data_i(return_addr_n)
      ,.data_o(return_addr_r)
