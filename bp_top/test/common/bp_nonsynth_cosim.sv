@@ -245,7 +245,7 @@ module bp_nonsynth_cosim
 
   always_ff @(negedge reset_i)
     if (cosim_en_i)
-      dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
+      dromajo_init(string'(config_file_i), mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
 
   always_ff @(posedge cosim_clk_i)
     if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)
