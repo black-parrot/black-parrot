@@ -78,7 +78,7 @@ module bp_sacc_scratchpad
   bp_global_addr_s global_addr_lo;
   assign global_addr_lo = addr_lo;
   assign local_addr_lo = addr_lo;
-
+ 
   wire csr_w_v_li = w_v_li && (addr_lo inside {accel_wr_cnt_csr_idx_gp});
   wire csr_r_v_li = r_v_li && (addr_lo inside {accel_wr_cnt_csr_idx_gp});
   wire [dword_width_gp-1:0] csr_data_li = data_lo;
@@ -100,7 +100,7 @@ module bp_sacc_scratchpad
      ,.up_i(spm_w_v_li)
      ,.count_o(spm_write_cnt)
      );
-  assign csr_data_lo = spm_write_cnt;
+  wire [dword_width_gp-1:0] csr_data_lo = spm_write_cnt;
 
   assign spm_addr_li = addr_lo >> 3;
   bsg_mem_1rw_sync

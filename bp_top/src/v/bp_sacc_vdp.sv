@@ -41,6 +41,7 @@ module bp_sacc_vdp
   `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
   `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
 
+  logic r_v_li, w_v_li;
   logic [paddr_width_p-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_li, data_lo;
   bp_me_bedrock_register
