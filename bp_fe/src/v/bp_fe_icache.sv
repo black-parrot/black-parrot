@@ -42,7 +42,7 @@ module bp_fe_icache
    , parameter block_width_p = icache_block_width_p
    , parameter fill_width_p  = icache_fill_width_p
 
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
@@ -105,7 +105,7 @@ module bp_fe_icache
    , output logic [icache_stat_info_width_lp-1:0]     stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
@@ -122,7 +122,7 @@ module bp_fe_icache
     : byte_offset_width_lp;
   localparam block_size_in_fill_lp  = block_width_p / fill_width_p;
   localparam fill_size_in_bank_lp   = fill_width_p / bank_width_lp;
-  localparam icache_ctag_width_lp   = caddr_width_p - (block_offset_width_lp + sindex_width_lp);
+  localparam ctag_width_lp   = caddr_width_p - (block_offset_width_lp + sindex_width_lp);
 
   // State machine declaration
   enum logic [1:0] {e_ready, e_miss} state_n, state_r;
@@ -240,7 +240,7 @@ module bp_fe_icache
   // Concatenate unused bits from vaddr if any when cache size is not 4kb
   localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
   wire [ctag_vbits_lp-1:0] ctag_vbits = vaddr_tl_r[page_offset_width_gp-1:block_offset_width_lp+sindex_width_lp];
-  wire [icache_ctag_width_lp-1:0] ctag_li = {ptag_i, {ctag_vbits_lp>0{ctag_vbits}}};
+  wire [ctag_width_lp-1:0] ctag_li = {ptag_i, {ctag_vbits_lp>0{ctag_vbits}}};
 
   logic [assoc_p-1:0] way_v_tl, hit_v_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
@@ -511,7 +511,7 @@ module bp_fe_icache
           begin
             tag_mem_data_li[i]   = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
             tag_mem_w_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
-                                     ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
+                                     ,tag : {ctag_width_lp{tag_mem_way_one_hot[i]}}
                                      };
           end
         e_cache_tag_mem_set_state:
