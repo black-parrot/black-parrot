@@ -132,6 +132,7 @@ module bp_be_scheduler
 
   // Decode the dispatched instruction
   bp_be_decode_s instr_decoded;
+  logic instr_v_li;
   logic [dword_width_gp-1:0] decoded_imm_lo;
   logic illegal_instr_lo;
   logic ecall_m_lo, ecall_s_lo, ecall_u_lo;
@@ -141,7 +142,8 @@ module bp_be_scheduler
   bp_be_instr_decoder
    #(.bp_params_p(bp_params_p))
    instr_decoder
-    (.instr_i(fe_queue_lo.msg.fetch.instr)
+    (.instr_i       (fe_queue_lo.msg.fetch.instr)
+     ,.instr_v_i    (instr_v_li)
      ,.decode_info_i(decode_info_i)
 
      ,.decode_o(instr_decoded)
@@ -169,6 +171,8 @@ module bp_be_scheduler
   wire fe_instr_not_exc_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_fetch);
 
   assign fe_queue_yumi_li = ~suppress_iss_i & fe_queue_v_lo & dispatch_v_i & ~be_exc_not_instr_li;
+
+  assign instr_v_li = fe_queue_v_lo & ~fe_exc_not_instr_li & ~be_exc_not_instr_li;
 
   bp_be_dispatch_pkt_s dispatch_pkt;
   always_comb
@@ -207,7 +211,7 @@ module bp_be_scheduler
       dispatch_pkt.rs2      = be_exc_not_instr_li ? be_exc_data_li  : issue_pkt.frs2_v ? frf_rs2 : irf_rs2;
       dispatch_pkt.rs3_fp_v = issue_pkt.frs3_v;
       dispatch_pkt.imm      = be_exc_not_instr_li ? '0              : issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
-      dispatch_pkt.decode   = (fe_exc_not_instr_li || be_exc_not_instr_li || illegal_instr_lo) ? '0 : instr_decoded;
+      dispatch_pkt.decode   = instr_decoded;
 
       dispatch_pkt.exception.instr_access_fault |=
         fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_instr_access_fault};
