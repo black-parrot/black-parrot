@@ -407,12 +407,12 @@ module bp_sacc_tile
     );
 
   // Burst to WH (lce_cmd_header_lo)
-  bp_me_cce_id_to_cord
+  bp_me_lce_id_to_cord
    #(.bp_params_p(bp_params_p))
    cmd_router_cord
-    (.cce_id_i(lce_cmd_header_lo.payload.dst_id)
-     ,.cce_cord_o(lce_cmd_dst_cord_lo)
-     ,.cce_cid_o(lce_cmd_dst_cid_lo)
+    (.lce_id_i(lce_cmd_header_lo.payload.dst_id)
+     ,.lce_cord_o(lce_cmd_dst_cord_lo)
+     ,.lce_cid_o(lce_cmd_dst_cid_lo)
      );
 
   bp_me_burst_to_wormhole

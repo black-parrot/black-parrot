@@ -41,93 +41,68 @@ module bp_sacc_loopback
   `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
   `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
 
-  assign io_cmd_ready_and_o = 1'b1;
+  logic r_v_li, w_v_li;
+  logic [paddr_width_p-1:0] addr_lo;
+  logic [dword_width_gp-1:0] data_li, data_lo;
+  bp_me_bedrock_register
+   #(.bp_params_p(bp_params_p)
+     ,.els_p(1)
+     ,.reg_addr_width_p(paddr_width_p)
+     ,.base_addr_p({64'b????????????????})
+     )
+   register
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-  logic [63:0] spm_data_lo, spm_data_li, csr_data, spm_write_cnt;
-  logic [paddr_width_p-1:0]  resp_addr;
+     ,.mem_cmd_header_i(io_cmd_header_cast_i)
+     ,.mem_cmd_data_i(io_cmd_data_i)
+     ,.mem_cmd_v_i(io_cmd_v_i)
+     ,.mem_cmd_ready_and_o(io_cmd_ready_and_o)
+     ,.mem_cmd_last_i(io_cmd_last_i)
 
-  logic [vaddr_width_p-1:0] spm_addr;
-  logic spm_read_v_li, spm_write_v_li, spm_v_lo, resp_v_lo;
+     ,.mem_resp_header_o(io_resp_header_cast_o)
+     ,.mem_resp_data_o(io_resp_data_o)
+     ,.mem_resp_v_o(io_resp_v_o)
+     ,.mem_resp_ready_and_i(io_resp_ready_and_i)
+     ,.mem_resp_last_o(io_resp_last_o)
 
-  bp_bedrock_mem_payload_s  resp_payload;
-  bp_bedrock_msg_size_e         resp_size;
-  bp_bedrock_mem_type_e         resp_msg;
-  bp_local_addr_s           local_addr_li;
-  bp_global_addr_s          global_addr_li;
+     ,.r_v_o(r_v_li)
+     ,.w_v_o(w_v_li)
+     ,.addr_o(addr_lo)
+     ,.size_o()
+     ,.data_o(data_lo)
+     ,.data_i(data_li)
+     );
 
+  bp_local_addr_s local_addr_li;
+  bp_global_addr_s global_addr_li;
   assign global_addr_li = io_cmd_header_cast_i.addr;
   assign local_addr_li = io_cmd_header_cast_i.addr;
 
-  assign io_resp_header_cast_o = '{msg_type       : resp_msg
-                                   ,addr          : resp_addr
-                                   ,payload       : resp_payload
-                                   ,subop         : e_bedrock_store
-                                   ,size          : resp_size
-                                   };
-  assign io_resp_data_o = spm_v_lo ? spm_data_lo : csr_data;
+  wire csr_w_v_li = w_v_li && (addr_lo inside {accel_wr_cnt_csr_idx_gp});
+  wire csr_r_v_li = r_v_li && (addr_lo inside {accel_wr_cnt_csr_idx_gp});
+  wire [dword_width_gp-1:0] csr_data_li = data_lo;
 
-  assign io_resp_v_o = spm_v_lo | resp_v_lo;
-  assign io_resp_last_o = io_resp_v_o;
-  always_ff @(posedge clk_i) begin
-    spm_v_lo <= spm_read_v_li;
+  wire spm_w_v_li = w_v_li && (global_addr_li.hio == 1);
+  wire spm_r_v_li = r_v_li && (global_addr_li.hio == 1);
+  wire [dword_width_gp-1:0] spm_data_li = data_lo;
 
-    if (reset_i) begin
-      spm_v_lo <= '0;
-      resp_v_lo <= 0;
-      spm_read_v_li  <= '0;
-      spm_write_v_li <= '0;
-      spm_write_cnt  <= '0;
-    end
-    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == '0))
-    begin
-      resp_size    <= io_cmd_header_cast_i.size;
-      resp_payload <= io_cmd_header_cast_i.payload;
-      resp_addr    <= io_cmd_header_cast_i.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_header_cast_i.msg_type);
-      spm_read_v_li  <= '0;
-      spm_write_v_li <= '0;
-      resp_v_lo <= 1;
-      unique
-      case (local_addr_li.addr)
-        accel_wr_cnt_csr_idx_gp : csr_data <= spm_write_cnt;
-        default : begin end
-      endcase
-    end
-    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_wr) & (global_addr_li.hio == 1))
-    begin
-      resp_size    <= io_cmd_header_cast_i.size;
-      resp_payload <= io_cmd_header_cast_i.payload;
-      resp_addr    <= io_cmd_header_cast_i.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_header_cast_i.msg_type);
-      spm_write_v_li <= '1;
-      spm_write_cnt  <= spm_write_cnt + 1;
-      spm_read_v_li  <= '0;
-      resp_v_lo <= 1;
-      spm_data_li  <= io_cmd_data_i;
-      spm_addr <= io_cmd_header_cast_i.addr;
-    end
-    else if (io_cmd_v_i & (io_cmd_header_cast_i.msg_type == e_bedrock_mem_uc_rd) & (global_addr_li.hio == 1))
-    begin
-      resp_size    <= io_cmd_header_cast_i.size;
-      resp_payload <= io_cmd_header_cast_i.payload;
-      resp_addr    <= io_cmd_header_cast_i.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(io_cmd_header_cast_i.msg_type);
-      spm_read_v_li  <= '1;
-      spm_write_v_li <= '0;
-      resp_v_lo <= 0;
-      spm_addr <= io_cmd_header_cast_i.addr;
-    end
-    else
-    begin
-      spm_write_v_li <= '0;
-      spm_read_v_li  <= '0;
-      resp_v_lo <= 0;
-      end
-  end
+  logic [dword_width_gp-1:0] spm_data_lo;
+  logic [`BSG_SAFE_CLOG2(20)-1:0] spm_addr_li;
+  logic [9:0] spm_write_cnt;
+  bsg_counter_clear_up
+   #(.max_val_p(2**10-1), .init_val_p(0))
+   write_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
+     ,.clear_i(1'b0)
+     ,.up_i(spm_w_v_li)
+     ,.count_o(spm_write_cnt)
+     );
+  assign csr_data_lo = spm_write_cnt;
 
-  //SPM
-  wire [`BSG_SAFE_CLOG2(20)-1:0] spm_addr_li = spm_addr >> 3;
+  assign spm_addr_li = addr_lo >> 3;
   bsg_mem_1rw_sync
     #(.width_p(64), .els_p(20))
     accel_spm
@@ -135,10 +110,16 @@ module bp_sacc_loopback
       ,.reset_i(reset_i)
       ,.data_i(spm_data_li)
       ,.addr_i(spm_addr_li)
-      ,.v_i(spm_read_v_li | spm_write_v_li)
-      ,.w_i(spm_write_v_li)
+      ,.v_i(spm_r_v_li | spm_w_v_li)
+      ,.w_i(spm_w_v_li)
       ,.data_o(spm_data_lo)
       );
+
+  logic spm_r_v_r;
+  always_ff @(posedge clk_i)
+    spm_r_v_r <= spm_r_v_li;
+
+  assign data_li = spm_r_v_r ? spm_data_lo : csr_data_lo;
 
 endmodule
 
