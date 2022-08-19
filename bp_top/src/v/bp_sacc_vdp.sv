@@ -106,8 +106,8 @@ module bp_sacc_vdp
     begin
       if (reset_i || done)
         begin
-          len_a_cnt     <= '0;
-          len_b_cnt     <= '0;
+          len_a_cnt <= '0;
+          len_b_cnt <= '0;
         end
       else if (spm_internal_r_v_r & load & ~second_operand)
         begin

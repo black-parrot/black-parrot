@@ -117,20 +117,6 @@ module bp_tile
   logic [1:0][coh_noc_cord_width_p-1:0] lce_resp_dst_cord_lo;
   logic [1:0][coh_noc_cid_width_p-1:0] lce_resp_dst_cid_lo;
 
-  // LCE-CCE Bedrock to WH
-  `declare_bp_lce_req_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_header_s);
-  localparam lce_req_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_header_s));
-
-  `declare_bp_lce_resp_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_resp_header_s);
-  localparam lce_resp_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_resp_header_s));
-
-  `declare_bp_lce_fill_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_fill_header_s);
-  localparam lce_fill_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_fill_header_s));
-
-  // LCE-CCE WH to BedRock
-  `declare_bp_lce_cmd_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_header_s);
-  localparam lce_cmd_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_header_s));
-
   // CCE-side LCE-CCE BedRock network
   bp_bedrock_lce_req_header_s lce_req_header_li;
   logic lce_req_header_v_li, lce_req_header_ready_and_lo;
