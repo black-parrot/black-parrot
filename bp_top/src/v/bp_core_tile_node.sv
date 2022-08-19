@@ -1,6 +1,6 @@
 /**
  *
- * bp_tile_node.v
+ * bp_core_tile_node.v
  *
  */
 
@@ -8,7 +8,7 @@
 `include "bp_top_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_tile_node
+module bp_core_tile_node
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bsg_noc_pkg::*;
@@ -68,7 +68,7 @@ module bp_tile_node
   // Tile side membus connections
   bp_mem_ready_and_link_s core_mem_cmd_link_lo, core_mem_resp_link_li;
 
-  bp_tile
+  bp_core_tile
    #(.bp_params_p(bp_params_p))
    tile
     (.clk_i(core_clk_i)

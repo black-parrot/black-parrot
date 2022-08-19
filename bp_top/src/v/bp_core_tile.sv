@@ -1,6 +1,6 @@
 /**
  *
- * bp_tile.v
+ * bp_core_tile.v
  *
  */
 
@@ -11,7 +11,7 @@
 `include "bsg_cache.vh"
 `include "bsg_noc_links.vh"
 
-module bp_tile
+module bp_core_tile
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;

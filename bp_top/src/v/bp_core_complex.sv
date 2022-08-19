@@ -95,7 +95,7 @@ module bp_core_complex
           wire [coh_noc_cord_width_p-1:0] cord_li = {coh_noc_y_cord_width_p'(ic_y_dim_p+j)
                                                      ,coh_noc_x_cord_width_p'(sac_x_dim_p+i)
                                                      };
-          bp_tile_node
+          bp_core_tile_node
            #(.bp_params_p(bp_params_p))
            tile_node
             (.core_clk_i(core_clk_i)
