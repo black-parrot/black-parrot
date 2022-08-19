@@ -130,11 +130,11 @@ module bp_fe_pc_gen
 
   `declare_bp_fe_instr_scan_s(vaddr_width_p)
   bp_fe_instr_scan_s scan_instr;
-  wire is_br   = fetch_instr_v_o & scan_instr.branch;
-  wire is_jal  = fetch_instr_v_o & scan_instr.jal;
-  wire is_jalr = fetch_instr_v_o & scan_instr.jalr;
-  wire is_call = fetch_instr_v_o & scan_instr.call;
-  wire is_ret  = fetch_instr_v_o & scan_instr.ret;
+  wire is_br   = fetch_instr_yumi_i & scan_instr.branch;
+  wire is_jal  = fetch_instr_yumi_i & scan_instr.jal;
+  wire is_jalr = fetch_instr_yumi_i & scan_instr.jalr;
+  wire is_call = fetch_instr_yumi_i & scan_instr.call;
+  wire is_ret  = fetch_instr_yumi_i & scan_instr.ret;
 
   // BTB
   wire btb_r_v_li = next_fetch_yumi_i & !incomplete_fetch_if1_n;
@@ -218,7 +218,7 @@ module bp_fe_pc_gen
    ras
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(is_call & fetch_instr_yumi_i)
+     ,.en_i(is_call)
 
      ,.data_i(return_addr_n)
      ,.data_o(return_addr_r)
