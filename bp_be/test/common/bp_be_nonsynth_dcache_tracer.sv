@@ -12,13 +12,14 @@ module bp_be_nonsynth_dcache_tracer
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
    , localparam bank_width_lp = block_width_p / assoc_p
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    , localparam wbuf_entry_width_lp = `bp_be_dcache_wbuf_entry_width(paddr_width_p, assoc_p)
+   , localparam ctag_width_lp = caddr_width_p - (`BSG_SAFE_CLOG2(block_width_p*sets_p/8))
    )
   (  input                                                clk_i
    , input                                                reset_i
@@ -89,7 +90,7 @@ module bp_be_nonsynth_dcache_tracer
    , input                                                stat_mem_fast_write
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   bp_be_dcache_pkt_s dcache_pkt_cast_i;
   assign dcache_pkt_cast_i = dcache_pkt_i;
