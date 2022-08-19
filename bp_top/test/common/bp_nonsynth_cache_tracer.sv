@@ -26,6 +26,7 @@ module bp_nonsynth_cache_tracer
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
+   , localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp+index_width_lp)
 
    )
   (  input                                                 clk_i
@@ -81,8 +82,6 @@ module bp_nonsynth_cache_tracer
    );
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
-
-  localparam ctag_width_lp = caddr_width_p - (`BSG_SAFE_CLOG2(block_width_p*sets_p/8));
 
   // Input Casting
   bp_cache_req_s cache_req_cast_o;
