@@ -90,7 +90,7 @@ module bp_fe_top
   logic [instr_width_gp-1:0] fetch_li, fetch_instr_lo;
   logic [vaddr_width_p-1:0] fetch_pc_lo;
   logic fetch_v_li, fetch_exception_v_li, fetch_fail_v_li;
-  logic fetch_instr_v_lo, fetch_is_second_half_lo;
+  logic fetch_instr_v_lo, fetch_is_second_half_lo, fetch_instr_yumi_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
   logic [vaddr_width_p-1:0] next_fetch_lo;
   logic next_fetch_yumi_li;
@@ -122,6 +122,7 @@ module bp_fe_top
      ,.fetch_v_i(fetch_v_li)
      ,.fetch_instr_o(fetch_instr_lo)
      ,.fetch_instr_v_o(fetch_instr_v_lo)
+     ,.fetch_instr_yumi_i(fetch_instr_yumi_li)
      ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
      ,.fetch_pc_o(fetch_pc_lo)
      ,.fetch_is_second_half_o(fetch_is_second_half_lo)
@@ -377,8 +378,14 @@ module bp_fe_top
   wire queue_miss     = v_if2_r & ~fe_queue_ready_i;
   wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
   wire fe_instr_v     = v_if2_r & fetch_instr_v_lo;
-  assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v) & ~cmd_nonattaboy_v;
-  wire fe_progress    = fe_queue_ready_i & (~icache_miss | fe_exception_v) & ~cmd_nonattaboy_v;
+  wire fe_queue_exception_v = (fe_queue_ready_i & ~cmd_nonattaboy_v) & fe_exception_v;
+  wire fe_queue_instr_v     = (fe_queue_ready_i & ~cmd_nonattaboy_v) & fe_instr_v     & ~fe_queue_exception_v;
+  wire fe_instr_progress    = (fe_queue_ready_i & ~cmd_nonattaboy_v) & icache_data_v_lo;
+
+  assign fe_queue_v_o = fe_queue_exception_v | fe_queue_instr_v;
+  wire fe_progress    = fe_queue_exception_v | fe_instr_progress;
+
+  assign fetch_instr_yumi_li  = fe_queue_instr_v;
 
   assign icache_poison_tl = ovr_lo | fe_exception_v | queue_miss | cmd_nonattaboy_v;
 

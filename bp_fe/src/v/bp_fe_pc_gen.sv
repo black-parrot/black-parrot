@@ -41,6 +41,7 @@ module bp_fe_pc_gen
    , input                                           fetch_v_i
    , output [instr_width_gp-1:0]                     fetch_instr_o
    , output                                          fetch_instr_v_o
+   , input                                           fetch_instr_yumi_i
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
    , output logic [vaddr_width_p-1:0]                fetch_pc_o
    , output                                          fetch_is_second_half_o
@@ -269,7 +270,7 @@ module bp_fe_pc_gen
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
   always_ff @(posedge clk_i)
-    if (fetch_instr_v_o)
+    if (fetch_instr_yumi_i)
       br_metadata_site <=
         '{src_btb  : pred_if2_r.btb
           ,src_ret : pred_if2_r.ret
