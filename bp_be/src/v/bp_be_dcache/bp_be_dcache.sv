@@ -113,7 +113,7 @@ module bp_be_dcache
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
    , parameter fill_width_p   = dcache_fill_width_p
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
 
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
@@ -196,7 +196,7 @@ module bp_be_dcache
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache);
 
   localparam lg_assoc_lp              = `BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp            = block_width_p / assoc_p;
@@ -211,7 +211,7 @@ module bp_be_dcache
   localparam block_offset_width_lp    = (assoc_p > 1)
     ? (bindex_width_lp+byte_offset_width_lp)
     : byte_offset_width_lp;
-  localparam dcache_ctag_width_lp     = caddr_width_p - (block_offset_width_lp + sindex_width_lp);
+  localparam ctag_width_lp     = caddr_width_p - (block_offset_width_lp + sindex_width_lp);
 
   // State machine declaration
   enum logic [2:0] {e_ready, e_miss, e_resume, e_late} state_n, state_r;
@@ -346,7 +346,7 @@ module bp_be_dcache
   // Concatenate unused bits from vaddr if any when cache size is not 4kb
   localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
   wire [ctag_vbits_lp-1:0] ctag_vbits = page_offset_tl_r[page_offset_width_gp-1:block_offset_width_lp+sindex_width_lp];
-  wire [dcache_ctag_width_lp-1:0] ctag_li = {ptag_i, {ctag_vbits_lp>0{ctag_vbits}}};
+  wire [ctag_width_lp-1:0] ctag_li = {ptag_i, {ctag_vbits_lp>0{ctag_vbits}}};
 
   logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
@@ -395,7 +395,7 @@ module bp_be_dcache
   bp_be_dcache_decode_s decode_tv_r;
   logic load_reservation_match_tv;
   wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
-  wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
+  wire [ctag_width_lp-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_lp];
 
   // fencei does not require a ptag
   assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
@@ -645,7 +645,7 @@ module bp_be_dcache
   bp_be_dcache_decode_s decode_dm_r;
   logic fill_dm_r;
   wire [sindex_width_lp-1:0] paddr_index_dm = paddr_dm_r[block_offset_width_lp+:sindex_width_lp];
-  wire [ctag_width_p-1:0]    paddr_tag_dm   = paddr_dm_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
+  wire [ctag_width_lp-1:0]    paddr_tag_dm   = paddr_dm_r[block_offset_width_lp+sindex_width_lp+:ctag_width_lp];
 
   assign safe_dm_we = v_tv_r;
   assign dm_we = safe_dm_we;
@@ -1034,7 +1034,7 @@ module bp_be_dcache
           begin
             tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
             tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
-                                   ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
+                                   ,tag : {ctag_width_lp{tag_mem_way_one_hot[i]}}
                                    };
           end
         {1'b0, e_cache_tag_mem_set_state}:
@@ -1275,7 +1275,7 @@ module bp_be_dcache
   if (amo_support_p[e_dcache_subop_lr] && amo_support_p[e_dcache_subop_sc])
     begin : l1_lrsc
       logic [sindex_width_lp-1:0] load_reserved_index_r;
-      logic [ctag_width_p-1:0] load_reserved_tag_r;
+      logic [ctag_width_lp-1:0] load_reserved_tag_r;
       logic load_reserved_v_r;
 
       // Set reservation on successful LR, without a cache miss or upgrade request
@@ -1301,7 +1301,7 @@ module bp_be_dcache
          );
 
       bsg_dff_en
-       #(.width_p(ctag_width_p+sindex_width_lp))
+       #(.width_p(ctag_width_lp+sindex_width_lp))
        load_reserved_addr
         (.clk_i(negedge_clk)
          ,.en_i(set_reservation)
