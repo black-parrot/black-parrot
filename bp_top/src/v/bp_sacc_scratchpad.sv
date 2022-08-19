@@ -1,7 +1,7 @@
 `include "bp_common_defines.svh"
 `include "bp_top_defines.svh"
 
-module bp_sacc_loopback
+module bp_sacc_scratchpad
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bp_me_pkg::*;
@@ -74,17 +74,17 @@ module bp_sacc_loopback
      ,.data_i(data_li)
      );
 
-  bp_local_addr_s local_addr_li;
-  bp_global_addr_s global_addr_li;
-  assign global_addr_li = io_cmd_header_cast_i.addr;
-  assign local_addr_li = io_cmd_header_cast_i.addr;
+  bp_local_addr_s local_addr_lo;
+  bp_global_addr_s global_addr_lo;
+  assign global_addr_lo = addr_lo;
+  assign local_addr_lo = addr_lo;
 
   wire csr_w_v_li = w_v_li && (addr_lo inside {accel_wr_cnt_csr_idx_gp});
   wire csr_r_v_li = r_v_li && (addr_lo inside {accel_wr_cnt_csr_idx_gp});
   wire [dword_width_gp-1:0] csr_data_li = data_lo;
 
-  wire spm_w_v_li = w_v_li && (global_addr_li.hio == 1);
-  wire spm_r_v_li = r_v_li && (global_addr_li.hio == 1);
+  wire spm_w_v_li = w_v_li && (global_addr_lo.hio == 1);
+  wire spm_r_v_li = r_v_li && (global_addr_lo.hio == 1);
   wire [dword_width_gp-1:0] spm_data_li = data_lo;
 
   logic [dword_width_gp-1:0] spm_data_lo;
@@ -122,4 +122,6 @@ module bp_sacc_loopback
   assign data_li = spm_r_v_r ? spm_data_lo : csr_data_lo;
 
 endmodule
+
+`BSG_ABSTRACT_MODULE(bp_sacc_scratchpad)
 

@@ -275,8 +275,8 @@ module bp_sacc_tile
        ,.io_resp_ready_and_i(s2b_io_resp_ready_and_lo)
        );
   end
-  else if (sacc_type_p == e_sacc_loopback) begin: sacc_loopback
-    bp_sacc_loopback
+  else if (sacc_type_p == e_sacc_scratchpad) begin : sacc_scratchpad
+    bp_sacc_scratchpad
      #(.bp_params_p(bp_params_p))
      accelerator
       (.clk_i(clk_i)

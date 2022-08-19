@@ -348,21 +348,6 @@ module bp_cacc_tile
     assign lce_resp_last_lo = '0;
   end
 
-  `declare_bp_lce_req_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_req_header_s);
-  localparam lce_req_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_req_header_s));
-  bp_lce_req_wormhole_header_s lce_req_wh_header_lo;
-
-  `declare_bp_lce_resp_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_resp_header_s);
-  localparam lce_resp_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_resp_header_s));
-  bp_lce_resp_wormhole_header_s lce_resp_wh_header_lo;
-
-  `declare_bp_lce_fill_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_fill_header_s);
-  localparam lce_fill_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_fill_header_s));
-  bp_lce_fill_wormhole_header_s lce_fill_wh_header_lo, lce_cmd_wh_header_lo;
-
-  `declare_bp_lce_cmd_wormhole_header_s(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, bp_bedrock_lce_cmd_header_s);
-  localparam lce_cmd_wh_pad_width_lp = `bp_bedrock_wormhole_packet_pad_width(coh_noc_flit_width_p, coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, $bits(bp_bedrock_lce_cmd_header_s));
-
   // Burst to WH (lce_req_header_lo)
   bp_me_cce_id_to_cord
    #(.bp_params_p(bp_params_p))
@@ -601,7 +586,7 @@ module bp_cacc_tile
    (.clk_i(clk_i)
     ,.reset_i(reset_r)
 
-    ,.pr_hdr_i(lce_cmd_wh_header_lo)
+    ,.pr_hdr_i(lce_cmd_header_lo)
     ,.pr_hdr_v_i(lce_cmd_header_v_lo)
     ,.pr_hdr_ready_and_o(lce_cmd_header_ready_and_li)
     ,.pr_has_data_i(lce_cmd_has_data_lo)
