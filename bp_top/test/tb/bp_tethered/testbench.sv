@@ -564,6 +564,7 @@ module testbench
            ,.src_redirect_i        (pc_gen.redirect_v_i)
            ,.src_override_ras_i    (pc_gen.ovr_ret)
            ,.src_override_branch_i (pc_gen.ovr_taken)
+           ,.src_incomplete_partial_fetch_i(pc_gen.incomplete_fetch_if1_r)
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
 
            ,.if1_top_v_i           (v_if1_r)
