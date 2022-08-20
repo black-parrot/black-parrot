@@ -180,7 +180,7 @@
      */                                                                                            \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic [vaddr_width_mp-1:0]          vaddr;         /* TODO: rename to pc */                  \
+      logic [vaddr_width_mp-1:0]          pc;                                                      \
       bp_fe_command_queue_opcodes_e       opcode;                                                  \
       union packed                                                                                 \
       {                                                                                            \

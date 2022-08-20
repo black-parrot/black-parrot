@@ -195,7 +195,7 @@ module bp_fe_top
   logic [instr_half_width_gp-1:0] insn_upper_half_resume_n, insn_upper_half_resume_r;
   logic insn_upper_half_v_resume_n, insn_upper_half_v_resume_r;
   wire unstall_fetch_v = is_stall & next_fetch_yumi_li;
-  assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.vaddr : fetch_pc_lo;
+  assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.pc : fetch_pc_lo;
   assign br_metadata_fwd_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fetch_br_metadata_fwd_lo;
   assign insn_upper_half_v_resume_n = (itlb_fill_v            & fe_cmd_cast_i.operands.itlb_fill_response.partial_instr_v)
                                     | (icache_fill_response_v & fe_cmd_cast_i.operands.icache_fill_response.partial_instr_v)
@@ -228,7 +228,7 @@ module bp_fe_top
   assign attaboy_taken_li           = attaboy_v &  fe_cmd_cast_i.operands.attaboy.taken;
   assign attaboy_ntaken_li          = attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken;
   assign attaboy_v_li               = attaboy_v;
-  assign attaboy_pc_li              = fe_cmd_cast_i.vaddr;
+  assign attaboy_pc_li              = fe_cmd_cast_i.pc;
 
   logic instr_access_fault_v, instr_page_fault_v;
   logic ptag_v_li, ptag_uncached_li, ptag_nonidem_li, ptag_dram_li, ptag_miss_li;
