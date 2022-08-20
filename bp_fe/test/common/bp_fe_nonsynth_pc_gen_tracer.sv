@@ -14,6 +14,7 @@ with:
     - redirect: either a BE->FE command or resuming after a stall
     - override_ras: the RAS was used to predict a JALR (IF2)
     - override_branch: a jump instruction was discovered late (IF2) and caused a bubble
+    - incomplete_partial_fetch: a misaligned instruction required a second fetch for the same PC
     - btb_taken_branch: the BTB and BHT predict a taken jump (IF1)
     - last_fetch_plus_four: no special control flow, defaulted to a linear fetch
   - Frontend state: either "run" or "stall". Note that, even when stalled, log entries are
@@ -64,6 +65,7 @@ typedef enum logic [2:0]
   ,e_pc_src_redirect
   ,e_pc_src_override_ras
   ,e_pc_src_override_branch
+  ,e_pc_src_incomplete_partial_fetch
   ,e_pc_src_btb_taken_branch
   ,e_pc_src_last_fetch_plus_four
 } bp_fe_pc_gen_src_e;
@@ -100,6 +102,7 @@ module bp_fe_nonsynth_pc_gen_tracer
    , input src_redirect_i
    , input src_override_ras_i
    , input src_override_branch_i
+   , input src_incomplete_partial_fetch_i
    , input src_btb_taken_branch_i
 
    // IF1
@@ -148,6 +151,8 @@ module bp_fe_nonsynth_pc_gen_tracer
         pc_src_if1_n = e_pc_src_override_ras;
       else if (src_override_branch_i)
         pc_src_if1_n = e_pc_src_override_branch;
+      else if (src_incomplete_partial_fetch_i)
+        pc_src_if1_n = e_pc_src_incomplete_partial_fetch;
       else if (src_btb_taken_branch_i)
         pc_src_if1_n = e_pc_src_btb_taken_branch;
       else

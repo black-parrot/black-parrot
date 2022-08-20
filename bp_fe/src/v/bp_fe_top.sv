@@ -194,14 +194,18 @@ module bp_fe_top
   logic br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r;
   logic [instr_half_width_gp-1:0] insn_upper_half_resume_n, insn_upper_half_resume_r;
   logic insn_upper_half_v_resume_n, insn_upper_half_v_resume_r;
+  wire unstall_fetch_v = is_stall & next_fetch_yumi_li;
   assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.vaddr : fetch_pc_lo;
   assign br_metadata_fwd_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fetch_br_metadata_fwd_lo;
   assign insn_upper_half_v_resume_n = (itlb_fill_v            & fe_cmd_cast_i.operands.itlb_fill_response.partial_instr_v)
-                                    | (icache_fill_response_v & fe_cmd_cast_i.operands.icache_fill_response.partial_instr_v);
+                                    | (icache_fill_response_v & fe_cmd_cast_i.operands.icache_fill_response.partial_instr_v)
+                                    | (~cmd_nonattaboy_v      & fetch_is_second_half_lo);
   assign insn_upper_half_resume_n   = itlb_fill_v ? fe_cmd_cast_i.operands.itlb_fill_response.partial_instr
                                                   : icache_fill_response_v
                                                     ? fe_cmd_cast_i.operands.icache_fill_response.partial_instr
-                                                    : 'X; // TODO
+                                                    : (~cmd_nonattaboy_v      & fetch_is_second_half_lo)
+                                                      ? fetch_instr_lo[instr_half_width_gp-1:0]
+                                                      : 'X; // TODO: remove X, can also remove condition
   bsg_dff_reset_en_bypass
    #(.width_p(4+$bits(bp_fe_branch_metadata_fwd_s)+vaddr_width_p+1+instr_half_width_gp))
    pc_resume_reg
@@ -212,15 +216,15 @@ module bp_fe_top
      ,.data_i({br_miss_v, br_miss_nonbr, br_miss_taken, br_miss_ntaken, br_metadata_fwd_resume_n, pc_resume_n, insn_upper_half_v_resume_n, insn_upper_half_resume_n})
      ,.data_o({br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r, br_metadata_fwd_resume_r, pc_resume_r, insn_upper_half_v_resume_r, insn_upper_half_resume_r})
      );
-  assign redirect_v_li               = (is_stall & next_fetch_yumi_li) | cmd_immediate_v;
+  assign redirect_v_li               = unstall_fetch_v | cmd_immediate_v;
   assign redirect_pc_li              = pc_resume_r;
   assign redirect_br_v_li            = redirect_v_li & br_miss_r;
   assign redirect_br_metadata_fwd_li = br_metadata_fwd_resume_r;
   assign redirect_br_taken_li        = br_miss_taken_r;
   assign redirect_br_ntaken_li       = br_miss_ntaken_r;
   assign redirect_br_nonbr_li        = br_miss_nonbr_r;
-  assign redirect_restore_insn_upper_half_v_li = redirect_v_li;
-  assign redirect_restore_insn_upper_half_li   = insn_upper_half_v_resume_r;
+  assign redirect_restore_insn_upper_half_v_li = insn_upper_half_v_resume_r;
+  assign redirect_restore_insn_upper_half_li   = insn_upper_half_resume_r;
 
   assign attaboy_br_metadata_fwd_li = fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
   assign attaboy_taken_li           = attaboy_v &  fe_cmd_cast_i.operands.attaboy.taken;
@@ -395,7 +399,7 @@ module bp_fe_top
   assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;
   assign fetch_fail_v_li      = v_if2_r & ~fe_progress;
   assign fetch_li             = icache_data_lo;
-  assign fetch_v_li           = icache_data_v_lo;
+  assign fetch_v_li           = v_if2_r & icache_data_v_lo;
 
   wire stall   = fetch_fail_v_li | cmd_nonattaboy_v;
   wire unstall = icache_ready_lo & fe_queue_ready_i & ~cmd_nonattaboy_v;
