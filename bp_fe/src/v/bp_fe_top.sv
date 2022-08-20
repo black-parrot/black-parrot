@@ -135,6 +135,8 @@ module bp_fe_top
      ,.attaboy_yumi_o(attaboy_yumi_lo)
      );
 
+  wire [instr_half_width_gp-1:0] realigner_instr_stored_half_lo = fetch_instr_lo[instr_half_width_gp-1:0];
+
   wire state_reset_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
   wire pc_redirect_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
   wire itlb_fill_v            = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
@@ -202,7 +204,7 @@ module bp_fe_top
   assign insn_upper_half_resume_n   = itlb_fill_v ? fe_cmd_cast_i.operands.itlb_fill_response.partial_instr
                                                   : icache_fill_response_v
                                                     ? fe_cmd_cast_i.operands.icache_fill_response.partial_instr
-                                                    : fetch_instr_lo[instr_half_width_gp-1:0];
+                                                    : realigner_instr_stored_half_lo;
   bsg_dff_reset_en_bypass
    #(.width_p(4+$bits(bp_fe_branch_metadata_fwd_s)+vaddr_width_p+1+instr_half_width_gp))
    pc_resume_reg
@@ -406,7 +408,9 @@ module bp_fe_top
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type                     = e_fe_exception;
         fe_queue_cast_o.msg.exception.pc             = fetch_pc_lo;
-        fe_queue_cast_o.msg.exception.partial_instr  = { (instr_half_width_gp)'(0), fetch_instr_lo[instr_half_width_gp-1:0] };
+        // For now, we leave the upper half of the instr forward field zeroed. Once "C" support is
+        // finished this would contain the full realigner buffer.
+        fe_queue_cast_o.msg.exception.partial_instr  = { (instr_half_width_gp)'(0), realigner_instr_stored_half_lo };
         fe_queue_cast_o.msg.exception.upper_not_lower_half = fetch_is_second_half_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss
