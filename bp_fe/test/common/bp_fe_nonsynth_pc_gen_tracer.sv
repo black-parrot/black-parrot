@@ -92,6 +92,7 @@ module bp_fe_nonsynth_pc_gen_tracer
    // FE state causes
    , input queue_miss_i
    , input icache_miss_i
+   , input icache_req_i
    , input access_fault_i
    , input page_fault_i
    , input itlb_miss_i
@@ -195,6 +196,8 @@ module bp_fe_nonsynth_pc_gen_tracer
         $fwrite(file, "queue miss; ");
       if (icache_miss_i)
         $fwrite(file, "i$ miss; ");
+      if (icache_req_i)
+        $fwrite(file, "outgoing i$ req; ");
       if (access_fault_i)
         $fwrite(file, "access fault; ");
       if (page_fault_i)

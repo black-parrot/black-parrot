@@ -378,7 +378,7 @@ module bp_fe_top
      ,.data_o({v_if2_r, v_if1_r})
      );
 
-  wire icache_miss    = v_if2_r & ~icache_data_v_lo;
+  wire icache_miss    = v_if2_r & icache_miss_v_lo;
   wire queue_miss     = v_if2_r & ~fe_queue_ready_i;
   wire fe_exception_v = v_if2_r & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss_v_lo);
   wire fe_instr_v     = v_if2_r & fetch_instr_v_lo;

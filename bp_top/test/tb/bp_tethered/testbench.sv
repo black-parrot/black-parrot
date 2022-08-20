@@ -557,6 +557,7 @@ module testbench
 
            ,.queue_miss_i          (queue_miss)
            ,.icache_miss_i         (icache_miss)
+           ,.icache_req_i          (cache_req_v_o)
            ,.access_fault_i        (v_if2_r & instr_access_fault_r)
            ,.page_fault_i          (v_if2_r & instr_page_fault_r)
            ,.itlb_miss_i           (v_if2_r & itlb_miss_r)
