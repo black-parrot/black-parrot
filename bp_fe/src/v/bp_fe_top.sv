@@ -223,8 +223,8 @@ module bp_fe_top
   assign redirect_br_taken_li        = br_miss_taken_r;
   assign redirect_br_ntaken_li       = br_miss_ntaken_r;
   assign redirect_br_nonbr_li        = br_miss_nonbr_r;
-  assign redirect_restore_insn_upper_half_v_li = insn_upper_half_v_resume_r;
-  assign redirect_restore_insn_upper_half_li   = insn_upper_half_resume_r;
+  assign redirect_restore_insn_upper_half_v_li = redirect_v_li & insn_upper_half_v_resume_r;
+  assign redirect_restore_insn_upper_half_li   =                 insn_upper_half_resume_r;
 
   assign attaboy_br_metadata_fwd_li = fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
   assign attaboy_taken_li           = attaboy_v &  fe_cmd_cast_i.operands.attaboy.taken;
