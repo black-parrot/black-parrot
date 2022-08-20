@@ -278,9 +278,9 @@
   `define bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)     \
                 ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)        \
-                          ,`BSG_MAX(`bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp)           \
+                          ,`BSG_MAX(`bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp) \
                                     ,`BSG_MAX(`bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp)\
-                                             ,`bp_fe_cmd_icache_fill_width_no_padding \
+                                             ,`bp_fe_cmd_icache_fill_width_no_padding              \
                                              )                                                     \
                                     )                                                              \
                           )                                                                        \
