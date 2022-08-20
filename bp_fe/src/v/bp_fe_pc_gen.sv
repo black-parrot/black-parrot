@@ -105,10 +105,10 @@ module bp_fe_pc_gen
   assign realigner_poison_if1_n = !next_fetch_linear & !redirect_restore_insn_upper_half_v_i;
 
   wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_bytes_gp);
-  assign next_fetch_o = (next_pc_misaligned & !realigner_poison_if1_n)
-    ? `bp_align_addr_up(next_pc, rv64_instr_width_bytes_gp)
-    : `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp);
   assign incomplete_fetch_if1_n = next_pc_misaligned & realigner_poison_if1_n;
+  assign next_fetch_o = incomplete_fetch_if1_n
+    ? `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp)
+    : `bp_align_addr_up(next_pc, rv64_instr_width_bytes_gp);
 
   always_comb
     begin
