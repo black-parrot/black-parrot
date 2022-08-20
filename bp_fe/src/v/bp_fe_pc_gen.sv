@@ -68,7 +68,7 @@ module bp_fe_pc_gen
   logic [vaddr_width_p-1:0] pc_if1_n, pc_if1_r;
   logic realigner_poison_if1_n, realigner_poison_if1_r;
   logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
-  logic realigner_poison_if2_n, realigner_poison_if2_r;
+  logic realigner_poison_if2_n;
 
   /////////////////
   // IF1
@@ -248,12 +248,12 @@ module bp_fe_pc_gen
   assign realigner_poison_if2_n = realigner_poison_if1_r;
 
   bsg_dff
-   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p+1))
+   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p))
    pred_if2_reg
     (.clk_i(clk_i)
 
-     ,.data_i({pred_if2_n, pc_if2_n, realigner_poison_if2_n})
-     ,.data_o({pred_if2_r, pc_if2_r, realigner_poison_if2_r})
+     ,.data_i({pred_if2_n, pc_if2_n})
+     ,.data_o({pred_if2_r, pc_if2_r})
      );
   assign return_addr_n = pc_if2_r + vaddr_width_p'(4);
 
@@ -305,9 +305,9 @@ module bp_fe_pc_gen
     ,.fetch_data_i  (fetch_i)
     ,.fetch_data_v_i(fetch_v_i)
 
-    ,.poison_i(realigner_poison_if1_r) // TODO: timing is wonky
+    ,.poison_i              (realigner_poison_if2_n)
     ,.restore_upper_half_v_i(redirect_restore_insn_upper_half_v_i)
-    ,.restore_upper_half_i(redirect_restore_insn_upper_half_i)
+    ,.restore_upper_half_i  (redirect_restore_insn_upper_half_i)
 
     ,.fetch_instr_o         (fetch_instr_o)
     ,.fetch_instr_v_o       (fetch_instr_v_o)

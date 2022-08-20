@@ -203,9 +203,7 @@ module bp_fe_top
   assign insn_upper_half_resume_n   = itlb_fill_v ? fe_cmd_cast_i.operands.itlb_fill_response.partial_instr
                                                   : icache_fill_response_v
                                                     ? fe_cmd_cast_i.operands.icache_fill_response.partial_instr
-                                                    : (~cmd_nonattaboy_v      & fetch_is_second_half_lo)
-                                                      ? fetch_instr_lo[instr_half_width_gp-1:0]
-                                                      : 'X; // TODO: remove X, can also remove condition
+                                                    : fetch_instr_lo[instr_half_width_gp-1:0];
   bsg_dff_reset_en_bypass
    #(.width_p(4+$bits(bp_fe_branch_metadata_fwd_s)+vaddr_width_p+1+instr_half_width_gp))
    pc_resume_reg
