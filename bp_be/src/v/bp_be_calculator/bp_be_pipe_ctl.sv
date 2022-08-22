@@ -76,7 +76,7 @@ module bp_be_pipe_ctl
 
   assign data_o   = vaddr_width_p'($signed(ntaken_tgt));
   assign v_o      = reservation.v & reservation.decode.pipe_ctl_v;
-  assign instr_misaligned_v_o = btaken & (taken_tgt[1:0] != 2'b00) & !compressed_support_p;
+  assign instr_misaligned_v_o = btaken & (taken_tgt[1:0] != 2'b00);
 
   assign br_pkt.v         = reservation.v & reservation.queue_v & ~flush_i;
   assign br_pkt.branch    = br_pkt.v & reservation.decode.pipe_ctl_v;
