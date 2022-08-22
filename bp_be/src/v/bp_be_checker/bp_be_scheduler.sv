@@ -133,6 +133,7 @@ module bp_be_scheduler
      );
 
   // Decode the dispatched instruction
+  logic instr_v_li;
   bp_be_decode_s instr_decoded;
   logic [dword_width_gp-1:0] decoded_imm_lo;
   logic illegal_instr_lo;
@@ -144,7 +145,7 @@ module bp_be_scheduler
    #(.bp_params_p(bp_params_p))
    instr_decoder
     (.instr_i(fe_queue_lo.msg.fetch.instr)
-     ,.instr_v_i(fe_instr_v_li)
+     ,.instr_v_i(instr_v_li)
      ,.decode_info_i(decode_info_i)
 
      ,.decode_o(instr_decoded)
@@ -163,15 +164,16 @@ module bp_be_scheduler
      ,.sfence_vma_o(sfence_vma_lo)
      );
 
+  wire fe_instr_not_exc_li = fe_queue_yumi_li & fe_instr_v_li;
   wire fe_exc_not_instr_li = fe_queue_yumi_li & fe_exc_v_li;
   wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
   wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i | unfreeze_i;
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
 
-  wire fe_instr_not_exc_li = fe_queue_yumi_li & fe_instr_v_li;
-
   assign fe_queue_yumi_li = ~suppress_iss_i & fe_queue_v_lo & dispatch_v_i & ~be_exc_not_instr_li;
+
+  assign instr_v_li = fe_instr_v_li & ~be_exc_not_instr_li;
 
   bp_be_dispatch_pkt_s dispatch_pkt;
   always_comb
@@ -194,6 +196,7 @@ module bp_be_scheduler
       isd_status_cast_o.frs3_v   = fe_queue_v_lo & issue_pkt.frs3_v;
       isd_status_cast_o.rs3_addr = fe_queue_lo.msg.fetch.instr.t.fmatype.rs3_addr;
       isd_status_cast_o.rd_addr  = fe_queue_lo.msg.fetch.instr.t.fmatype.rd_addr;
+      // TODO: Pre-decode these bits as well
       isd_status_cast_o.iwb_v    = instr_decoded.irf_w_v;
       isd_status_cast_o.fwb_v    = instr_decoded.frf_w_v;
 
@@ -205,7 +208,7 @@ module bp_be_scheduler
       dispatch_pkt.instr    = fe_queue_lo.msg.fetch.instr;
       // If register injection is critical, can be done after bypass
       dispatch_pkt.rs1_fp_v = issue_pkt.frs1_v;
-      dispatch_pkt.rs1      = fe_exc_not_instr_li ? fe_exc_vaddr_li : be_exc_not_instr_li ? be_exc_vaddr_li : issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
+      dispatch_pkt.rs1      = be_exc_not_instr_li ? be_exc_vaddr_li : fe_exc_not_instr_li ? fe_exc_vaddr_li : issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
       dispatch_pkt.rs2_fp_v = issue_pkt.frs2_v;
       dispatch_pkt.rs2      = be_exc_not_instr_li ? be_exc_data_li  : issue_pkt.frs2_v ? frf_rs2 : irf_rs2;
       dispatch_pkt.rs3_fp_v = issue_pkt.frs3_v;
