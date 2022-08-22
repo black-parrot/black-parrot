@@ -119,7 +119,7 @@ module bp_be_issue_queue
   assign fe_queue_ready_o = ~clr & ~full;
 
   rv64_instr_fmatype_s instr;
-  assign instr = fe_queue_cast_i.msg.fetch.instr;
+  assign instr = fe_queue_cast_i.instr;
 
   bp_be_issue_pkt_s issue_pkt_li, issue_pkt_lo;
   wire issue_v = (fe_queue_yumi_i & ~empty_n) | roll_v_i | (fe_queue_v_i & empty);
@@ -152,7 +152,7 @@ module bp_be_issue_queue
     begin
       issue_pkt_li = '0;
 
-      if (fe_queue_cast_i.msg_type == e_fe_fetch) begin
+      if (fe_queue_cast_i.msg_type == e_instr_fetch) begin
         // Pre-decode
         issue_pkt_li.csr_v = instr.opcode inside {`RV64_SYSTEM_OP};
         issue_pkt_li.mem_v = instr.opcode inside {`RV64_FLOAD_OP, `RV64_FSTORE_OP
