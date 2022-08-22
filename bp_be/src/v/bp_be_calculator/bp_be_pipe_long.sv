@@ -60,8 +60,7 @@ module bp_be_pipe_long
   wire signed_opB_li = decode.fu_op inside {e_mul_op_mulh};
 
   logic [dword_width_gp-1:0] imulh_result_lo;
-  logic imulh_ready_lo;
-  logic imulh_v_lo;
+  logic imulh_ready_lo, imulh_v_lo;
   wire imulh_v_li = v_li & (decode.fu_op inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu});
   bsg_imul_iterative
    #(.width_p(dword_width_gp))
@@ -186,10 +185,10 @@ module bp_be_pipe_long
      ,.data_o({imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
      );
 
+  // Prevents out of order writebacks before commits
+  // Possibly unnecessary
   logic [2:0] hazard_cnt;
-  wire imulh_safe = (hazard_cnt > 2);
-  wire idiv_safe = (hazard_cnt > 2);
-  wire fdiv_safe = (hazard_cnt > 3);
+  wire wb_safe = (hazard_cnt > 3);
   bsg_counter_clear_up
    #(.max_val_p(4), .init_val_p(0))
    hazard_counter
@@ -197,7 +196,7 @@ module bp_be_pipe_long
      ,.reset_i(reset_i)
 
      ,.clear_i(v_li)
-     ,.up_i(rd_w_v_r & ~fdiv_safe)
+     ,.up_i(rd_w_v_r & ~wb_safe)
      ,.count_o(hazard_cnt)
      );
 
@@ -225,7 +224,7 @@ module bp_be_pipe_long
   assign iwb_pkt.rd_data    = rd_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
   assign iwb_pkt.fflags     = '0;
-  assign iwb_v_o = ((imulh_safe & imulh_done_v_r) | (idiv_safe & idiv_done_v_r)) & rd_w_v_r;
+  assign iwb_v_o = (imulh_done_v_r | idiv_done_v_r) & rd_w_v_r & wb_safe;
 
   assign fwb_pkt.ird_w_v    = 1'b0;
   assign fwb_pkt.frd_w_v    = rd_w_v_r;
@@ -234,7 +233,7 @@ module bp_be_pipe_long
   assign fwb_pkt.rd_data    = fdivsqrt_result;
   assign fwb_pkt.fflags_w_v = 1'b1;
   assign fwb_pkt.fflags     = fdivsqrt_fflags;
-  assign fwb_v_o = fdiv_safe & fdiv_done_v_r & rd_w_v_r;
+  assign fwb_v_o = fdiv_done_v_r & rd_w_v_r & wb_safe;
 
 endmodule
 
