@@ -5,7 +5,8 @@
   /*
    * bp_fe_command_queue_opcodes_e defines the opcodes from backend to frontend in
    * the cases of an exception. bp_fe_command_queue_opcodes_e explains the reason
-   * of why pc is redirected.
+   * of why pc is redirected. Only e_op_pc_redirection contains possible at-fault
+   * redirections
    * e_op_state_reset is used after the reset, which flushes all the states.
    * e_op_pc_redirection defines the changes of PC, which happens during the branches.
    * e_op_attaboy informs the frontend that the prediction is correct.
@@ -69,7 +70,7 @@
    * e_subop_trap is at-fault PC redirection. It will changes the permission bits.
    * e_subop_context_switch is no-fault PC redirection. It redirect pc to a new address space.
    * e_subop_translation_switch is no-fault PC redirection resulting from translation mode changes
-  */
+   */
   typedef enum logic [2:0]
   {
     e_subop_eret
