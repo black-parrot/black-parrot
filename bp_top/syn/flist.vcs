@@ -128,6 +128,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_gray_to_binary.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank_reverse.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_imul_iterative.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative_controller.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
