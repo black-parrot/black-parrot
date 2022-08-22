@@ -97,6 +97,8 @@ module bp_be_scheduler
      ,.preissue_pkt_o(preissue_pkt)
      ,.issue_pkt_o(issue_pkt)
      );
+  wire fe_instr_v_li = fe_queue_v_lo & (fe_queue_lo.msg_type == e_fe_fetch);
+  wire fe_exc_v_li = fe_queue_v_lo & (fe_queue_lo.msg_type == e_fe_exception);
 
   logic [dword_width_gp-1:0] irf_rs1, irf_rs2;
   bp_be_regfile
@@ -132,7 +134,6 @@ module bp_be_scheduler
 
   // Decode the dispatched instruction
   bp_be_decode_s instr_decoded;
-  logic instr_v_li;
   logic [dword_width_gp-1:0] decoded_imm_lo;
   logic illegal_instr_lo;
   logic ecall_m_lo, ecall_s_lo, ecall_u_lo;
@@ -142,8 +143,8 @@ module bp_be_scheduler
   bp_be_instr_decoder
    #(.bp_params_p(bp_params_p))
    instr_decoder
-    (.instr_i       (fe_queue_lo.msg.fetch.instr)
-     ,.instr_v_i    (instr_v_li)
+    (.instr_i(fe_queue_lo.msg.fetch.instr)
+     ,.instr_v_i(fe_instr_v_li)
      ,.decode_info_i(decode_info_i)
 
      ,.decode_o(instr_decoded)
@@ -162,17 +163,15 @@ module bp_be_scheduler
      ,.sfence_vma_o(sfence_vma_lo)
      );
 
-  wire fe_exc_not_instr_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_exception);
+  wire fe_exc_not_instr_li = fe_queue_yumi_li & fe_exc_v_li;
   wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
   wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i | unfreeze_i;
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
 
-  wire fe_instr_not_exc_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_fetch);
+  wire fe_instr_not_exc_li = fe_queue_yumi_li & fe_instr_v_li;
 
   assign fe_queue_yumi_li = ~suppress_iss_i & fe_queue_v_lo & dispatch_v_i & ~be_exc_not_instr_li;
-
-  assign instr_v_li = fe_queue_v_lo & ~fe_exc_not_instr_li & ~be_exc_not_instr_li;
 
   bp_be_dispatch_pkt_s dispatch_pkt;
   always_comb
@@ -206,11 +205,11 @@ module bp_be_scheduler
       dispatch_pkt.instr    = fe_queue_lo.msg.fetch.instr;
       // If register injection is critical, can be done after bypass
       dispatch_pkt.rs1_fp_v = issue_pkt.frs1_v;
-      dispatch_pkt.rs1      = be_exc_not_instr_li ? be_exc_vaddr_li : issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
+      dispatch_pkt.rs1      = fe_exc_not_instr_li ? fe_exc_vaddr_li : be_exc_not_instr_li ? be_exc_vaddr_li : issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
       dispatch_pkt.rs2_fp_v = issue_pkt.frs2_v;
       dispatch_pkt.rs2      = be_exc_not_instr_li ? be_exc_data_li  : issue_pkt.frs2_v ? frf_rs2 : irf_rs2;
       dispatch_pkt.rs3_fp_v = issue_pkt.frs3_v;
-      dispatch_pkt.imm      = be_exc_not_instr_li ? '0              : issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
+      dispatch_pkt.imm      = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
       dispatch_pkt.decode   = instr_decoded;
 
       dispatch_pkt.exception.instr_access_fault |=

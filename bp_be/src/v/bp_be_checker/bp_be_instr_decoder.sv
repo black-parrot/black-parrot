@@ -610,26 +610,28 @@ module bp_be_instr_decoder
             end
           default : illegal_instr_o = 1'b1;
         endcase
-
-        // Immediate extraction
-        unique casez (instr.opcode)
-          `RV64_LUI_OP, `RV64_AUIPC_OP:
-            imm_o = `rv64_signext_u_imm(instr);
-          `RV64_JAL_OP:
-            imm_o = `rv64_signext_j_imm(instr);
-          `RV64_BRANCH_OP:
-            imm_o = `rv64_signext_b_imm(instr);
-          `RV64_STORE_OP, `RV64_FSTORE_OP:
-            imm_o = `rv64_signext_s_imm(instr);
-          `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_FLOAD_OP:
-            imm_o = `rv64_signext_i_imm(instr);
-          `RV64_SYSTEM_OP:
-            imm_o = `rv64_signext_c_imm(instr);
-          //`RV64_AMO_OP:
-          default: imm_o = '0;
-        endcase
       end
 
+      // Immediate extraction
+      // This may be overwritten by exception injection
+      unique casez (instr.opcode)
+        `RV64_LUI_OP, `RV64_AUIPC_OP:
+          imm_o = `rv64_signext_u_imm(instr);
+        `RV64_JAL_OP:
+          imm_o = `rv64_signext_j_imm(instr);
+        `RV64_BRANCH_OP:
+          imm_o = `rv64_signext_b_imm(instr);
+        `RV64_STORE_OP, `RV64_FSTORE_OP:
+          imm_o = `rv64_signext_s_imm(instr);
+        `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_FLOAD_OP:
+          imm_o = `rv64_signext_i_imm(instr);
+        `RV64_SYSTEM_OP:
+          imm_o = `rv64_signext_c_imm(instr);
+        //`RV64_AMO_OP:
+        default: imm_o = '0;
+      endcase
+
+      // Zero decode on illegal instruction to prevent unnecessary toggling
       if (illegal_instr_o)
         decode_cast_o = '0;
     end
