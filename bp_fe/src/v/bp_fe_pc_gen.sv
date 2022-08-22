@@ -105,10 +105,12 @@ module bp_fe_pc_gen
   assign realigner_poison_if1_n = !next_fetch_linear & !redirect_restore_insn_lower_half_v_i;
 
   wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_bytes_gp);
-  assign incomplete_fetch_if1_n = next_pc_misaligned & realigner_poison_if1_n;
-  assign next_fetch_o = incomplete_fetch_if1_n
-    ? `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp)
-    : `bp_align_addr_up(next_pc, rv64_instr_width_bytes_gp);
+  assign incomplete_fetch_if1_n = compressed_support_p & next_pc_misaligned & realigner_poison_if1_n;
+  assign next_fetch_o = !compressed_support_p
+                      ? next_pc
+                      : incomplete_fetch_if1_n
+                        ? `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp)
+                        : `bp_align_addr_up(next_pc, rv64_instr_width_bytes_gp);
 
   always_comb
     begin
@@ -295,24 +297,32 @@ module bp_fe_pc_gen
      ,.scan_o(scan_instr)
      );
 
-  bp_fe_realigner
-    #(.bp_params_p(bp_params_p))
-    realigner
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+  generate
+    if (compressed_support_p)
+      bp_fe_realigner
+        #(.bp_params_p(bp_params_p))
+        realigner
+        (.clk_i(clk_i)
+        ,.reset_i(reset_i)
 
-    ,.fetch_pc_i    (pc_if2_r)
-    ,.fetch_data_i  (fetch_i)
-    ,.fetch_data_v_i(fetch_v_i)
+        ,.fetch_pc_i    (pc_if2_r)
+        ,.fetch_data_i  (fetch_i)
+        ,.fetch_data_v_i(fetch_v_i)
 
-    ,.poison_i              (realigner_poison_if2_n)
-    ,.restore_lower_half_v_i(redirect_restore_insn_lower_half_v_i)
-    ,.restore_lower_half_i  (redirect_restore_insn_lower_half_i)
+        ,.poison_i              (realigner_poison_if2_n)
+        ,.restore_lower_half_v_i(redirect_restore_insn_lower_half_v_i)
+        ,.restore_lower_half_i  (redirect_restore_insn_lower_half_i)
 
-    ,.fetch_instr_o         (fetch_instr_o)
-    ,.fetch_instr_v_o       (fetch_instr_v_o)
-    ,.fetch_is_second_half_o(fetch_is_second_half_o)
-    );
+        ,.fetch_instr_o         (fetch_instr_o)
+        ,.fetch_instr_v_o       (fetch_instr_v_o)
+        ,.fetch_is_second_half_o(fetch_is_second_half_o)
+        );
+    else begin
+      assign fetch_instr_o   = fetch_i;
+      assign fetch_instr_v_o = fetch_v_i;
+      assign fetch_is_second_half_o = 0;
+    end
+  endgenerate
 
   // Global history
   //

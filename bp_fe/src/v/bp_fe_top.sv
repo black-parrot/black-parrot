@@ -198,12 +198,14 @@ module bp_fe_top
   logic insn_lower_half_v_resume_n, insn_lower_half_v_resume_r;
   assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.pc : fetch_pc_lo;
   assign br_metadata_fwd_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fetch_br_metadata_fwd_lo;
-  assign insn_lower_half_v_resume_n = (itlb_fill_v            & fe_cmd_cast_i.operands.itlb_fill_response.partial_instr_v)
-                                    | (icache_fill_response_v & fe_cmd_cast_i.operands.icache_fill_response.partial_instr_v)
-                                    | (~cmd_nonattaboy_v      & fetch_is_second_half_lo);
-  assign insn_lower_half_resume_n   = itlb_fill_v            ? fe_cmd_cast_i.operands.itlb_fill_response.partial_instr
-                                    : icache_fill_response_v ? fe_cmd_cast_i.operands.icache_fill_response.partial_instr
+  assign insn_lower_half_v_resume_n = (compressed_support_p & itlb_fill_v            & fe_cmd_cast_i.operands.itlb_fill_response.partial_instr_v)
+                                    | (compressed_support_p & icache_fill_response_v & fe_cmd_cast_i.operands.icache_fill_response.partial_instr_v)
+                                    | (compressed_support_p & ~cmd_nonattaboy_v      & fetch_is_second_half_lo);
+  assign insn_lower_half_resume_n   = !compressed_support_p   ? '0
+                                    : itlb_fill_v             ? fe_cmd_cast_i.operands.itlb_fill_response.partial_instr
+                                    : icache_fill_response_v  ? fe_cmd_cast_i.operands.icache_fill_response.partial_instr
                                     : realigner_instr_stored_half_lo;
+
   bsg_dff_reset_en_bypass
    #(.width_p(4+$bits(bp_fe_branch_metadata_fwd_s)+vaddr_width_p+1+instr_half_width_gp))
    pc_resume_reg
@@ -409,8 +411,8 @@ module bp_fe_top
         fe_queue_cast_o.msg.exception.pc             = fetch_pc_lo;
         // For now, we leave the upper half of the instr forward field zeroed. Once "C" support is
         // finished this would contain the full realigner buffer.
-        fe_queue_cast_o.msg.exception.partial_instr  = { (instr_half_width_gp)'(0), realigner_instr_stored_half_lo };
-        fe_queue_cast_o.msg.exception.upper_not_lower_half = fetch_is_second_half_lo;
+        fe_queue_cast_o.msg.exception.partial_instr        = compressed_support_p ? { (instr_half_width_gp)'(0), realigner_instr_stored_half_lo } : '0;
+        fe_queue_cast_o.msg.exception.upper_not_lower_half = compressed_support_p & fetch_is_second_half_lo;
         fe_queue_cast_o.msg.exception.exception_code = itlb_miss_r
                                                        ? e_itlb_miss
                                                        : instr_page_fault_r

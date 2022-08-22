@@ -740,7 +740,7 @@
   `define bp_sepc_width ($bits(bp_sepc_s))
 
   `define compress_sepc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    bp_sepc_s'(data_cast_mp.word_addr)
+    bp_sepc_s'(data_cast_mp.word_addr & ({ {62{1'b1}}, compressed_support_p != 0 }))
 
   `define decompress_sepc_s(data_comp_mp) \
     '{word_addr: `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 63) \
