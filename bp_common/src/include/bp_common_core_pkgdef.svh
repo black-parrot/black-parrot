@@ -54,11 +54,7 @@
     ,e_instr_page_fault    = 1
     ,e_instr_access_fault  = 2
     ,e_icache_miss         = 3
-    // This doesn't particularly scale to superscalar, but we can break this out to a mask
-    //   when that time comes.
-    ,e_instr_partial_lower = 4
-    ,e_instr_partial_upper = 5
-    ,e_instr_fetch         = 6
+    ,e_instr_fetch         = 4
   } bp_fe_queue_type_e;
 
   /*

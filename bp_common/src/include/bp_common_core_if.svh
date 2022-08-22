@@ -44,6 +44,7 @@
       logic [vaddr_width_mp-1:0]                pc;                                                \
       rv64_instr_s                              instr;                                             \
       logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                               \
+      logic                                     partial_v;                                         \
       bp_fe_queue_type_e                        msg_type;                                          \
     }  bp_fe_queue_s;                                                                              \
                                                                                                    \
@@ -167,7 +168,7 @@
 
   /* Declare width macros so that clients can use structs in ports before struct declaration */
   `define bp_fe_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                          \
-    ($bits(bp_fe_queue_type_e)+branch_metadata_fwd_width_mp+rv64_instr_width_gp+vaddr_width_mp)
+    ($bits(bp_fe_queue_type_e)+branch_metadata_fwd_width_mp+rv64_instr_width_gp+1+vaddr_width_mp)
 
   `define bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (vaddr_width_mp                                                                                \

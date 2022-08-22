@@ -386,6 +386,8 @@ module bp_fe_top
                                          ? e_instr_access_fault
                                            : e_icache_miss;
         fe_queue_cast_o.branch_metadata_fwd = fetch_br_metadata_fwd_lo;
+        // TODO: Partially fetched exceptions
+        fe_queue_cast_o.partial = 1'b0;
       end
     else
       begin
@@ -394,6 +396,8 @@ module bp_fe_top
         fe_queue_cast_o.pc                  = fetch_pc_lo;
         fe_queue_cast_o.instr               = fetch_li;
         fe_queue_cast_o.branch_metadata_fwd = fetch_br_metadata_fwd_lo;
+        // TODO: Partially fetched exceptions
+        fe_queue_cast_o.partial = 1'b0;
       end
 
   // Controlling state machine
