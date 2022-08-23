@@ -86,15 +86,15 @@ module bp_nonsynth_branch_profiler
             ras_hit_cnt <= ras_hit_cnt + branch_metadata.src_ret;
             bht_hit_cnt <= bht_hit_cnt + branch_metadata.is_br;
 
-            if (branch_histo.exists(fe_cmd.pc))
+            if (branch_histo.exists(fe_cmd.npc))
               begin
-                branch_histo[fe_cmd.pc] <= branch_histo[fe_cmd.pc] + 1;
-                miss_histo[fe_cmd.pc] <= miss_histo[fe_cmd.pc] + 0;
+                branch_histo[fe_cmd.npc] <= branch_histo[fe_cmd.npc] + 1;
+                miss_histo[fe_cmd.npc] <= miss_histo[fe_cmd.npc] + 0;
               end
             else
               begin
-                branch_histo[fe_cmd.pc] <= 1;
-                miss_histo[fe_cmd.pc] <= 0;
+                branch_histo[fe_cmd.npc] <= 1;
+                miss_histo[fe_cmd.npc] <= 0;
               end
           end
         else if (pc_redirect_v)
@@ -103,15 +103,15 @@ module bp_nonsynth_branch_profiler
             jal_cnt  <= jal_cnt + branch_metadata.is_jal;
             jalr_cnt <= jalr_cnt + branch_metadata.is_jalr;
 
-            if (branch_histo.exists(fe_cmd.pc))
+            if (branch_histo.exists(fe_cmd.npc))
               begin
-                branch_histo[fe_cmd.pc] <= branch_histo[fe_cmd.pc] + 1;
-                miss_histo[fe_cmd.pc]   <= miss_histo[fe_cmd.pc] + 1;
+                branch_histo[fe_cmd.npc] <= branch_histo[fe_cmd.npc] + 1;
+                miss_histo[fe_cmd.npc]   <= miss_histo[fe_cmd.npc] + 1;
               end
             else
               begin
-                branch_histo[fe_cmd.pc] <= 1;
-                miss_histo[fe_cmd.pc]   <= 1;
+                branch_histo[fe_cmd.npc] <= 1;
+                miss_histo[fe_cmd.npc]   <= 1;
               end
           end
       end

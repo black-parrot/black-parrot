@@ -18,17 +18,22 @@ If a queue is full, the unit wishing to send data should stall until a new entry
 
 ### FE->BE (fe\_queue)
 Description: Front End Queue (FIFO) passes bp\_fe\_queue\_s comprising a message type and the message data:
-- `bp_fe_fetch_s`
-- `bp_fe_exception_s`
+ - e_itlb_miss
+ - e_instr_page_fault
+ - e_instr_access_fault
+ - e_icache_miss
+ - e_instr_partial_lower
+ - e_instr_partial_upper
+ - e_instr_fetch
 
 Interface:
 - BaseJump STL valid->ready on consumer and ready->valid on producer
 - The FE Queue must support a "clear" operation (to support mispredicts)
 
 Structures:
-- `bp_fe_fetch_s`
+- `bp_fe_queue_s`
   - 39-bit PC (virtual address) of the instruction to fetch
-  - 32-bit instruction data
+  - 32-bit instruction data (or partial fetch data in the case of an incomplete misaligned fetch)
 
     Invariant. Although the PC may be speculative, the value of _instruction_ is correct for that PC. We make similar assertions for the itlb -- the itlb mappings made by the FE are not speculative, and are required to be correct at all times.
   - Branch prediction metadata (`bp_fe_branch_metadata_fwd_s`)
@@ -51,7 +56,6 @@ Structures:
     - K-bit HART ID for multithreading. For now, we hold off on this, as we generally don’t want to add interfaces we don’t support. 
     - Process ID, Address Space ID, or thread ID (is this needed?) 
     - If any of these things are actually ISA concepts, seems like the best thing is to just say that the fetch unit must be flushed to prevent co-existence of these items, eliminating the need to disambiguate between them.
-- `bp_fe_exception_s`
 
   Exceptions should be serviced inline with instructions. Otherwise we have no way of knowing if this exception is eclipsed by a preceding branch mispredict. Every instruction has a PC so that field can be reused. We can carry a bit-vector along inside `bp_fe_fetch_s` to indicate these exceptions and/or other status information. FE does not receive interrupts, but may raise exceptions.
 
@@ -65,7 +69,7 @@ Structures:
       - Page table walking can not occur in front end, because it writes the A bit in the page table entries; which means the instruction cache would have to support writes. Moreover, this bit is an architectural side effect, and is not allowed to be set speculatively. Only the backend can precisely commit architectural side-effects. For these reasons, itlb misses are handled by the backend.
     - This may also occur if translation is disabled. In this case, a itlb means that the physical page is not in the itlb and we don’t have the PMP/PMA information cached. The BE will not perform a page walk in this case; it will just return the PMP/PMA information.
     - Instruction access faults (i.e. permissions) must be checked by the FE because the interpretation of the L and X bits are determined by whether the system is in M mode or S and U mode. These bits will be stored in the itlb.
-Illegal Instruction
+    - Illegal Instruction
   - Future possible extensions (or non-features for this version.)
     - Support for multiple fetch entries in a single packet. Only useful for multiple-issue BE implementations.
 
@@ -113,6 +117,8 @@ Available commands and their payloads:
 
   An attaboy signals a _correct_ prediction to the frontend, and thus there is no PC redirection expected. The provided PC is the address of the instruction following a correctly-predicted jump. The message contains branch prediction feedback information (`bp_fe_branch_metadata_fwd_s`) which was provided by the frontend when it originally made this prediction.
 
+- Icache fill response
+  - Determines when an I$ miss becomes non-speculative
 - Icache fence
   - If icache is coherent with dcache, flush the icache pipeline.
   - Else, flush the icache pipeline and the icache as well.
