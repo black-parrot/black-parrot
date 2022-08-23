@@ -297,8 +297,8 @@ module bp_fe_pc_gen
      ,.scan_o(scan_instr)
      );
 
-  generate
-    if (compressed_support_p)
+  if (compressed_support_p)
+    begin : fetch_instr_generation
       bp_fe_realigner
         #(.bp_params_p(bp_params_p))
         realigner
@@ -317,12 +317,13 @@ module bp_fe_pc_gen
         ,.fetch_instr_v_o       (fetch_instr_v_o)
         ,.fetch_is_second_half_o(fetch_is_second_half_o)
         );
-    else begin
+    end
+  else
+    begin : fetch_instr_generation
       assign fetch_instr_o   = fetch_i;
       assign fetch_instr_v_o = fetch_v_i;
       assign fetch_is_second_half_o = 0;
     end
-  endgenerate
 
   // Global history
   //
