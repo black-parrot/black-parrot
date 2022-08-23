@@ -69,6 +69,8 @@ module bp_fe_icache
 
    // Cycle 2: "Tag Verify"
    // Data (or miss result) comes out of the cache
+   // vaddr is aligned to the word actually fetched
+   , output logic [vaddr_width_p-1:0]                 vaddr_o
    , output logic [instr_width_gp-1:0]                data_o
    , output logic                                     data_v_o
    , output logic                                     miss_v_o
@@ -146,7 +148,8 @@ module bp_fe_icache
   wire is_fencei = (icache_pkt_cast_i.op inside {e_icache_fencei});
   wire is_fill   = (icache_pkt_cast_i.op inside {e_icache_fill});
 
-  wire [vaddr_width_p-1:0]   vaddr       = icache_pkt_cast_i.vaddr;
+  // Align the address to word size; unaligned accesses are not supported by the cache
+  wire [vaddr_width_p-1:0]   vaddr       = ~(~icache_pkt_cast_i.vaddr | 2'b11);
   wire [vtag_width_p-1:0]    vaddr_vtag  = vaddr[block_offset_width_lp+sindex_width_lp+:vtag_width_p];
   wire [sindex_width_lp-1:0] vaddr_index = vaddr[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0] vaddr_bank  = vaddr[byte_offset_width_lp+:bindex_width_lp];
@@ -290,15 +293,15 @@ module bp_fe_icache
      );
 
   bsg_dff_en
-   #(.width_p(paddr_width_p+3*assoc_p+6))
+   #(.width_p(paddr_width_p+vaddr_width_p+3*assoc_p+6))
    tv_stage_reg
     (.clk_i(clk_i)
      ,.en_i(tv_we)
-     ,.data_i({paddr_tl
+     ,.data_i({paddr_tl, vaddr_tl_r
                ,bank_sel_one_hot_tl, way_v_tl, hit_v_tl, cached_hit_tl
                ,fill_tl, dram_tl, fencei_op_tl_r, fetch_uncached_tl, fetch_cached_tl
                })
-     ,.data_o({paddr_tv_r
+     ,.data_o({paddr_tv_r, vaddr_tv_r
                ,bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r, cached_hit_tv_r
                ,fill_tv_r, dram_tv_r, fencei_op_tv_r, uncached_op_tv_r, cached_op_tv_r
                })
@@ -355,6 +358,7 @@ module bp_fe_icache
      ,.data_o(final_data)
      );
 
+  assign vaddr_o = vaddr_tv_r;
   assign data_o = uncached_op_tv_r ? uncached_data_r : final_data;
   assign data_v_o = v_tv_r & ((uncached_op_tv_r & uncached_pending_r)
                               | (cached_op_tv_r & cached_hit_tv_r)

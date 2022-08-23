@@ -179,6 +179,7 @@ module wrapper
      ,.ptag_dram_i(dram_r)
      ,.poison_tl_i(1'b0)
 
+     ,.vaddr_o()
      ,.data_o(data_o)
      ,.data_v_o(data_v_o)
      ,.miss_v_o()

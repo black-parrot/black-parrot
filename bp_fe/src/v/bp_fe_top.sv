@@ -85,7 +85,8 @@ module bp_fe_top
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
   logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
-  logic [instr_width_gp-1:0] fetch_li;
+  logic [instr_width_gp-1:0] fetch_instr_li;
+  logic [vaddr_width_p-1:0] fetch_vaddr_li;
   logic [vaddr_width_p-1:0] fetch_pc_lo;
   logic fetch_instr_v_li, fetch_exception_v_li, fetch_fail_v_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
@@ -113,7 +114,8 @@ module bp_fe_top
 
      ,.ovr_o(ovr_lo)
 
-     ,.fetch_i(fetch_li)
+     ,.fetch_instr_i(fetch_instr_li)
+     ,.fetch_vaddr_i(fetch_vaddr_li)
      ,.fetch_instr_v_i(fetch_instr_v_li)
      ,.fetch_exception_v_i(fetch_exception_v_li)
      ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
@@ -278,6 +280,7 @@ module bp_fe_top
   // TODO: Should only ack icache fence when icache_ready
   wire icache_v_li = next_pc_yumi_li | icache_fence_v;
   logic [instr_width_gp-1:0] icache_data_lo;
+  logic [vaddr_width_p-1:0] icache_vaddr_lo;
   logic icache_ready_lo, icache_data_v_lo, icache_miss_v_lo;
   logic icache_poison_tl;
   bp_fe_icache
@@ -299,6 +302,7 @@ module bp_fe_top
      ,.ptag_dram_i(ptag_dram_li)
      ,.poison_tl_i(icache_poison_tl)
 
+     ,.vaddr_o(icache_vaddr_lo)
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
      ,.miss_v_o(icache_miss_v_lo)
@@ -369,7 +373,8 @@ module bp_fe_top
   assign fetch_instr_v_li     = fe_queue_v_o & fe_instr_v;
   assign fetch_exception_v_li = fe_queue_v_o & fe_exception_v;
   assign fetch_fail_v_li      = v_if2_r & ~fe_queue_v_o;
-  assign fetch_li             = icache_data_lo;
+  assign fetch_instr_li       = icache_data_lo;
+  assign fetch_vaddr_li       = icache_vaddr_lo;
 
   wire stall   = fetch_fail_v_li | cmd_nonattaboy_v;
   wire unstall = icache_ready_lo & fe_queue_ready_i & ~cmd_nonattaboy_v;
@@ -394,7 +399,7 @@ module bp_fe_top
         fe_queue_cast_o = '0;
         fe_queue_cast_o.msg_type            = e_instr_fetch;
         fe_queue_cast_o.pc                  = fetch_pc_lo;
-        fe_queue_cast_o.instr               = fetch_li;
+        fe_queue_cast_o.instr               = fetch_instr_li;
         fe_queue_cast_o.branch_metadata_fwd = fetch_br_metadata_fwd_lo;
         // TODO: Partially fetched exceptions
         fe_queue_cast_o.partial_v = 1'b0;
