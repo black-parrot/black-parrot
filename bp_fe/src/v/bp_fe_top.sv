@@ -135,7 +135,7 @@ module bp_fe_top
      ,.attaboy_yumi_o(attaboy_yumi_lo)
      );
 
-  wire [instr_half_width_gp-1:0] realigner_instr_stored_half_lo = fetch_instr_lo[instr_half_width_gp-1:0];
+  wire [instr_half_width_gp-1:0] realigner_instr_stored_half_lo = fetch_instr_lo[0+:instr_half_width_gp];
 
   wire state_reset_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
   wire pc_redirect_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);

@@ -68,7 +68,6 @@ module bp_fe_pc_gen
   logic [vaddr_width_p-1:0] pc_if1_n, pc_if1_r;
   logic realigner_poison_if1_n, realigner_poison_if1_r;
   logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
-  logic realigner_poison_if2_n;
 
   /////////////////
   // IF1
@@ -247,7 +246,6 @@ module bp_fe_pc_gen
         pred_if2_n = pred_if1_r;
       end
   assign pc_if2_n = pc_if1_r;
-  assign realigner_poison_if2_n = realigner_poison_if1_r;
 
   bsg_dff
    #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p))
@@ -309,7 +307,7 @@ module bp_fe_pc_gen
         ,.fetch_data_i  (fetch_i)
         ,.fetch_data_v_i(fetch_v_i)
 
-        ,.poison_i              (realigner_poison_if2_n)
+        ,.poison_i              (realigner_poison_if1_r)
         ,.restore_lower_half_v_i(redirect_restore_insn_lower_half_v_i)
         ,.restore_lower_half_i  (redirect_restore_insn_lower_half_i)
 
