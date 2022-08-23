@@ -130,6 +130,8 @@ module bp_nonsynth_if_verif
     $error("Error: Unicore only supports a single core configuration in the tethered testbench");
   if ((cce_type_p == e_cce_uce) && (uce_fill_width_p < dword_width_gp))
     $error("Error: Unicore requires UCE fill width to be at least dword width");
+  if ((cce_type_p == e_cce_uce) && (page_offset_width_gp > 12))
+    $error("Error: Unicore requires page offset to be within 12-bits");
 
   // Multicore
   if ((cce_type_p != e_cce_uce) && (ic_y_dim_p != 1))
@@ -152,6 +154,8 @@ module bp_nonsynth_if_verif
     $error("Error: Multicore requires BedRock data width to be no larger than cache fill width");
   if ((cce_type_p != e_cce_uce) && (|l2_amo_support_p))
     $error("Error: Multicore does not support L2 atomics");
+  if ((cce_type_p != e_cce_uce) && (page_offset_width_gp != 12))
+    $error("Error: Multicore requires page offset to be 12-bits");
 
   if (num_cce_p/mc_x_dim_p*l2_banks_p > 16)
     $error("Round robin arbiter currently only supports 16 entries");
