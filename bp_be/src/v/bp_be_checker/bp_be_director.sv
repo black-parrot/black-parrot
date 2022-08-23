@@ -162,7 +162,7 @@ module bp_be_director
           fe_cmd_li.npc                                  = commit_pkt_cast_i.npc;
           fe_cmd_li.operands.itlb_fill_response.pte_leaf = commit_pkt_cast_i.pte_leaf;
           fe_cmd_li.operands.itlb_fill_response.instr    = compressed_support_p ? commit_pkt_cast_i.instr : '0;
-          fe_cmd_li.operands.vtag                        = commit_pkt_cast_i.vaddr;
+          fe_cmd_li.operands.itlb_fill_response.vtag     = commit_pkt_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end

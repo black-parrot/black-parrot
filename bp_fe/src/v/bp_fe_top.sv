@@ -198,12 +198,12 @@ module bp_fe_top
   logic insn_lower_half_v_resume_n, insn_lower_half_v_resume_r;
   assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.npc : fetch_pc_lo;
   assign br_metadata_fwd_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fetch_br_metadata_fwd_lo;
-  assign insn_lower_half_v_resume_n = (compressed_support_p & itlb_fill_v            & fe_cmd_cast_i.operands.itlb_fill_response.partial_instr_v)
-                                    | (compressed_support_p & icache_fill_response_v & fe_cmd_cast_i.operands.icache_fill_response.partial_instr_v)
+  assign insn_lower_half_v_resume_n = (compressed_support_p & itlb_fill_v            & (fe_cmd_cast_i.opcode == e_op_itlb_fill_resume))
+                                    | (compressed_support_p & icache_fill_response_v & (fe_cmd_cast_i.opcode == e_op_icache_fill_resume))
                                     | (compressed_support_p & ~cmd_nonattaboy_v      & fetch_is_second_half_lo);
   assign insn_lower_half_resume_n   = !compressed_support_p   ? '0
-                                    : itlb_fill_v             ? fe_cmd_cast_i.operands.itlb_fill_response.partial_instr
-                                    : icache_fill_response_v  ? fe_cmd_cast_i.operands.icache_fill_response.partial_instr
+                                    : itlb_fill_v             ? fe_cmd_cast_i.operands.itlb_fill_response.instr
+                                    : icache_fill_response_v  ? fe_cmd_cast_i.operands.icache_fill_response.instr
                                     : realigner_instr_stored_half_lo;
 
   bsg_dff_reset_en_bypass
@@ -406,19 +406,19 @@ module bp_fe_top
     if (fe_exception_v)
       begin
         fe_queue_cast_o = '0;
-        fe_queue_cast_o.pc       = fetch_pc_lo;
-        fe_queue_cast_o.msg_type = itlb_miss_r
-                                   ? e_itlb_miss
-                                     : instr_page_fault_r
-                                       ? e_instr_page_fault
-                                       : instr_access_fault_r
-                                         ? e_instr_access_fault
-                                           : e_icache_miss;
+        fe_queue_cast_o.pc        = fetch_pc_lo;
+        fe_queue_cast_o.msg_type  = itlb_miss_r
+                                    ? e_itlb_miss
+                                      : instr_page_fault_r
+                                        ? e_instr_page_fault
+                                        : instr_access_fault_r
+                                          ? e_instr_access_fault
+                                            : e_icache_miss;
         fe_queue_cast_o.branch_metadata_fwd = fetch_br_metadata_fwd_lo;
         // For now, we leave the upper half of the instr forward field zeroed. Once "C" support is
         // finished this would contain the full realigner buffer.
-        fe_queue_cast_o.msg.exception.partial_instr = compressed_support_p ? { (instr_half_width_gp)'(0), realigner_instr_stored_half_lo } : '0;
-        fe_queue_cast_o.partial_v                   = compressed_support_p & fetch_is_second_half_lo;
+        fe_queue_cast_o.instr     = compressed_support_p ? { (instr_half_width_gp)'(0), realigner_instr_stored_half_lo } : '0;
+        fe_queue_cast_o.partial_v = compressed_support_p & fetch_is_second_half_lo;
       end
     else
       begin
