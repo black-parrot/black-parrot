@@ -192,10 +192,6 @@ module bp_core
   logic [3:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
 
   // Config
-  logic cce_ucode_v_lo;
-  logic cce_ucode_w_lo;
-  logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
-  logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
   bp_me_cfg_slice
    #(.bp_params_p(bp_params_p))
    cfg
@@ -219,11 +215,11 @@ module bp_core
      ,.host_did_i(host_did_i)
      ,.cord_i(my_cord_i)
 
-     ,.cce_ucode_v_o(cce_ucode_v_lo)
-     ,.cce_ucode_w_o(cce_ucode_w_lo)
-     ,.cce_ucode_addr_o(cce_ucode_addr_lo)
-     ,.cce_ucode_data_o(cce_ucode_data_lo)
-     ,.cce_ucode_data_i(cce_ucode_data_li)
+     ,.cce_ucode_v_o(cce_ucode_v_o)
+     ,.cce_ucode_w_o(cce_ucode_w_o)
+     ,.cce_ucode_addr_o(cce_ucode_addr_o)
+     ,.cce_ucode_data_o(cce_ucode_data_o)
+     ,.cce_ucode_data_i(cce_ucode_data_i)
      );
   assign cfg_bus_o = cfg_bus_lo;
 
