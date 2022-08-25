@@ -295,15 +295,6 @@ module bp_core
   // All CCE-Mem network responses go to the CCE on this tile (id = 0 in xbar)
   wire [3:0] dev_resp_dst_lo = '0;
 
-  // Device-side CCE-Mem network connections
-  // dev_cmd[3:0] = {CCE loopback, CLINT, CFG, memory (cache)}
-  bp_bedrock_mem_header_s [3:0] dev_cmd_header_li;
-  logic [3:0][bedrock_data_width_p-1:0] dev_cmd_data_li;
-  logic [3:0] dev_cmd_v_li, dev_cmd_ready_and_lo, dev_cmd_last_li;
-  bp_bedrock_mem_header_s [3:0] dev_resp_header_lo;
-  logic [3:0][bedrock_data_width_p-1:0] dev_resp_data_lo;
-  logic [3:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
-
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(bedrock_data_width_p)
