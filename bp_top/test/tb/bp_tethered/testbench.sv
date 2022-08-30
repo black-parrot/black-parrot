@@ -142,13 +142,13 @@ module testbench
    rt_clk_gen
     (.o(rt_clk_i));
 
-  bp_bedrock_mem_header_s proc_io_cmd_header_lo;
-  logic [io_data_width_p-1:0] proc_io_cmd_data_lo;
-  logic proc_io_cmd_v_lo, proc_io_cmd_ready_and_li, proc_io_cmd_last_lo;
-  bp_bedrock_mem_header_s proc_io_resp_header_li;
-  logic [io_data_width_p-1:0] proc_io_resp_data_li;
-  logic proc_io_resp_v_li, proc_io_resp_ready_and_lo;
-  logic proc_io_resp_last_li;
+  bp_bedrock_mem_header_s proc_mem_cmd_header_lo;
+  logic [io_data_width_p-1:0] proc_mem_cmd_data_lo;
+  logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_and_li, proc_mem_cmd_last_lo;
+  bp_bedrock_mem_header_s proc_mem_resp_header_li;
+  logic [io_data_width_p-1:0] proc_mem_resp_data_li;
+  logic proc_mem_resp_v_li, proc_mem_resp_ready_and_lo;
+  logic proc_mem_resp_last_li;
 
   bp_bedrock_mem_header_s load_cmd_lo;
   logic [io_data_width_p-1:0] load_cmd_data_lo;
@@ -178,29 +178,29 @@ module testbench
      ,.my_did_i(proc_did_li)
      ,.host_did_i(host_did_li)
 
-     ,.io_cmd_header_o(proc_io_cmd_header_lo)
-     ,.io_cmd_data_o(proc_io_cmd_data_lo)
-     ,.io_cmd_v_o(proc_io_cmd_v_lo)
-     ,.io_cmd_ready_and_i(proc_io_cmd_ready_and_li)
-     ,.io_cmd_last_o(proc_io_cmd_last_lo)
+     ,.mem_cmd_header_o(proc_mem_cmd_header_lo)
+     ,.mem_cmd_data_o(proc_mem_cmd_data_lo)
+     ,.mem_cmd_v_o(proc_mem_cmd_v_lo)
+     ,.mem_cmd_ready_and_i(proc_mem_cmd_ready_and_li)
+     ,.mem_cmd_last_o(proc_mem_cmd_last_lo)
 
-     ,.io_resp_header_i(proc_io_resp_header_li)
-     ,.io_resp_data_i(proc_io_resp_data_li)
-     ,.io_resp_v_i(proc_io_resp_v_li)
-     ,.io_resp_ready_and_o(proc_io_resp_ready_and_lo)
-     ,.io_resp_last_i(proc_io_resp_last_li)
+     ,.mem_resp_header_i(proc_mem_resp_header_li)
+     ,.mem_resp_data_i(proc_mem_resp_data_li)
+     ,.mem_resp_v_i(proc_mem_resp_v_li)
+     ,.mem_resp_ready_and_o(proc_mem_resp_ready_and_lo)
+     ,.mem_resp_last_i(proc_mem_resp_last_li)
 
-     ,.io_cmd_header_i(load_cmd_lo)
-     ,.io_cmd_data_i(load_cmd_data_lo)
-     ,.io_cmd_v_i(load_cmd_v_lo)
-     ,.io_cmd_ready_and_o(load_cmd_ready_and_li)
-     ,.io_cmd_last_i(load_cmd_last_lo)
+     ,.mem_cmd_header_i(load_cmd_lo)
+     ,.mem_cmd_data_i(load_cmd_data_lo)
+     ,.mem_cmd_v_i(load_cmd_v_lo)
+     ,.mem_cmd_ready_and_o(load_cmd_ready_and_li)
+     ,.mem_cmd_last_i(load_cmd_last_lo)
 
-     ,.io_resp_header_o(load_resp_li)
-     ,.io_resp_data_o(load_resp_data_li)
-     ,.io_resp_v_o(load_resp_v_li)
-     ,.io_resp_ready_and_i(load_resp_ready_and_lo)
-     ,.io_resp_last_o(load_resp_last_li)
+     ,.mem_resp_header_o(load_resp_li)
+     ,.mem_resp_data_o(load_resp_data_li)
+     ,.mem_resp_v_o(load_resp_v_li)
+     ,.mem_resp_ready_and_i(load_resp_ready_and_lo)
+     ,.mem_resp_last_o(load_resp_last_li)
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
@@ -254,18 +254,18 @@ module testbench
      ,.lce_id_i(io_lce_id_li)
      ,.did_i(host_did_li)
 
-     ,.io_cmd_header_o(load_cmd_lo)
-     ,.io_cmd_data_o(load_cmd_data_lo)
-     ,.io_cmd_v_o(load_cmd_v_lo)
-     ,.io_cmd_yumi_i(load_cmd_ready_and_li & load_cmd_v_lo)
-     ,.io_cmd_last_o(load_cmd_last_lo)
+     ,.mem_cmd_header_o(load_cmd_lo)
+     ,.mem_cmd_data_o(load_cmd_data_lo)
+     ,.mem_cmd_v_o(load_cmd_v_lo)
+     ,.mem_cmd_yumi_i(load_cmd_ready_and_li & load_cmd_v_lo)
+     ,.mem_cmd_last_o(load_cmd_last_lo)
 
      // NOTE: IO response ready_o is always high - acts as sink
-     ,.io_resp_header_i(load_resp_li)
-     ,.io_resp_data_i(load_resp_data_li)
-     ,.io_resp_v_i(load_resp_v_li)
-     ,.io_resp_ready_and_o(load_resp_ready_and_lo)
-     ,.io_resp_last_i(load_resp_last_li)
+     ,.mem_resp_header_i(load_resp_li)
+     ,.mem_resp_data_i(load_resp_data_li)
+     ,.mem_resp_v_i(load_resp_v_li)
+     ,.mem_resp_ready_and_o(load_resp_ready_and_lo)
+     ,.mem_resp_last_i(load_resp_last_li)
 
      ,.done_o()
      );
@@ -305,17 +305,17 @@ module testbench
      ,.reset_i(reset_i)
 
      // data width = dword_width_gp on mem_cmd/resp ports
-     ,.mem_cmd_header_i(proc_io_cmd_header_lo)
-     ,.mem_cmd_data_i(proc_io_cmd_data_lo[0+:dword_width_gp])
-     ,.mem_cmd_v_i(proc_io_cmd_v_lo)
-     ,.mem_cmd_ready_and_o(proc_io_cmd_ready_and_li)
-     ,.mem_cmd_last_i(proc_io_cmd_last_lo)
+     ,.mem_cmd_header_i(proc_mem_cmd_header_lo)
+     ,.mem_cmd_data_i(proc_mem_cmd_data_lo[0+:dword_width_gp])
+     ,.mem_cmd_v_i(proc_mem_cmd_v_lo)
+     ,.mem_cmd_ready_and_o(proc_mem_cmd_ready_and_li)
+     ,.mem_cmd_last_i(proc_mem_cmd_last_lo)
 
-     ,.mem_resp_header_o(proc_io_resp_header_li)
-     ,.mem_resp_data_o(proc_io_resp_data_li[0+:dword_width_gp])
-     ,.mem_resp_v_o(proc_io_resp_v_li)
-     ,.mem_resp_ready_and_i(proc_io_resp_ready_and_lo)
-     ,.mem_resp_last_o(proc_io_resp_last_li)
+     ,.mem_resp_header_o(proc_mem_resp_header_li)
+     ,.mem_resp_data_o(proc_mem_resp_data_li[0+:dword_width_gp])
+     ,.mem_resp_v_o(proc_mem_resp_v_li)
+     ,.mem_resp_ready_and_i(proc_mem_resp_ready_and_lo)
+     ,.mem_resp_last_o(proc_mem_resp_last_li)
 
      ,.icache_trace_en_o(icache_trace_en_lo)
      ,.dcache_trace_en_o(dcache_trace_en_lo)

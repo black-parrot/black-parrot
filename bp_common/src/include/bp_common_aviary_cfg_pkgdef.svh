@@ -26,7 +26,7 @@
   {
     e_sacc_none = 0
     ,e_sacc_vdp = 1
-    ,e_sacc_loopback = 2
+    ,e_sacc_scratchpad = 2
   } bp_sacc_type_e;
 
   typedef enum logic [15:0]
