@@ -224,7 +224,6 @@ $BP_FE_DIR/src/v/bp_fe_top.sv
 $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
-$BP_ME_DIR/src/v/lce/bp_lce_fill.sv
 # Cache
 $BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
 $BP_ME_DIR/src/v/dev/bp_me_dram_hash_decode.sv
@@ -275,4 +274,5 @@ $BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_deff_reset.v
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
+$BP_COMMON_DIR/src/v/bsg_crossbar_control_locking_o_by_i.v
 
