@@ -305,7 +305,7 @@
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
-      ,muldiv_support    : (1 << e_div) | (1 << e_mul)
+      ,muldiv_support    : (1 << e_div) | (1 << e_mul) | (1 << e_mulh)
       ,fpu_support       : 1
       ,compressed_support: 1
 
