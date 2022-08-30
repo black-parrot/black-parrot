@@ -20,10 +20,10 @@ fi
 N=${2:-1}
 
 cfgs=(\
-    "e_bp_multicore_1_acc_loopback_cfg"
+    "e_bp_multicore_1_acc_scratchpad_cfg"
     "e_bp_multicore_1_acc_vdp_cfg"
     "e_bp_multicore_1_acc_vdp_cfg"
-    "e_bp_multicore_4_acc_loopback_cfg"
+    "e_bp_multicore_4_acc_scratchpad_cfg"
     "e_bp_multicore_4_acc_vdp_cfg"
     )
 

@@ -348,6 +348,7 @@ top-linux-vcs:
 top-accelerator-vcs:
   <<: *job_definition
   stage: test-medium
+  allow_failure: true
   tags:
     - vcs
   script:
