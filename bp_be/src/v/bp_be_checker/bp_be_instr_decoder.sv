@@ -76,7 +76,8 @@ module bp_be_instr_decoder
           begin
             if (instr inside {`RV64_MUL, `RV64_MULW})
               decode_cast_o.pipe_mul_v = 1'b1;
-            else if (instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
+            else if (instr inside {`RV64_MULH, `RV64_MULHSU, `RV64_MULHU,
+                                   `RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
                                    ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
                                    })
               begin
@@ -102,6 +103,9 @@ module bp_be_instr_decoder
               `RV64_AND             : decode_cast_o.fu_op = e_int_op_and;
 
               `RV64_MUL, `RV64_MULW   : decode_cast_o.fu_op = e_fma_op_imul;
+              `RV64_MULH              : decode_cast_o.fu_op = e_mul_op_mulh;
+              `RV64_MULHSU            : decode_cast_o.fu_op = e_mul_op_mulhsu;
+              `RV64_MULHU             : decode_cast_o.fu_op = e_mul_op_mulhu;
               `RV64_DIV, `RV64_DIVW   : decode_cast_o.fu_op = e_mul_op_div;
               `RV64_DIVU, `RV64_DIVUW : decode_cast_o.fu_op = e_mul_op_divu;
               `RV64_REM, `RV64_REMW   : decode_cast_o.fu_op = e_mul_op_rem;
