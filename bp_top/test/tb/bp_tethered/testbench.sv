@@ -32,6 +32,7 @@ module testbench
    , parameter vm_trace_p                  = 0
    , parameter cmt_trace_p                 = 0
    , parameter core_profile_p              = 0
+   , parameter pc_gen_trace_p              = 0
    , parameter pc_profile_p                = 0
    , parameter br_profile_p                = 0
    , parameter cosim_p                     = 0
@@ -279,6 +280,7 @@ module testbench
   logic vm_trace_en_lo;
   logic cmt_trace_en_lo;
   logic core_profile_en_lo;
+  logic pc_gen_trace_en_lo;
   logic pc_profile_en_lo;
   logic branch_profile_en_lo;
   logic dev_trace_en_lo;
@@ -292,6 +294,7 @@ module testbench
      ,.vm_trace_p(vm_trace_p)
      ,.cmt_trace_p(cmt_trace_p)
      ,.core_profile_p(core_profile_p)
+     ,.pc_gen_trace_p(pc_gen_trace_p)
      ,.pc_profile_p(pc_profile_p)
      ,.br_profile_p(br_profile_p)
      ,.cosim_p(cosim_p)
@@ -322,6 +325,7 @@ module testbench
      ,.vm_trace_en_o(vm_trace_en_lo)
      ,.cmt_trace_en_o(cmt_trace_en_lo)
      ,.core_profile_en_o(core_profile_en_lo)
+     ,.pc_gen_trace_en_o(pc_gen_trace_en_lo)
      ,.branch_profile_en_o(branch_profile_en_lo)
      ,.pc_profile_en_o(pc_profile_en_lo)
      ,.cosim_en_o(cosim_en_lo)
@@ -537,6 +541,37 @@ module testbench
           ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
           ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt)
           );
+
+      bind bp_fe_top
+        bp_fe_nonsynth_pc_gen_tracer
+         #(.bp_params_p(bp_params_p))
+         pc_gen_tracer
+          (.clk_i                  (clk_i & testbench.pc_gen_trace_en_lo)
+           ,.reset_i               (reset_i)
+           ,.freeze_i              (cfg_bus_cast_i.freeze)
+
+           ,.mhartid_i             (cfg_bus_cast_i.core_id)
+
+           ,.state_stall_i         (is_stall)
+           ,.state_wait_i          (is_wait)
+
+           ,.queue_miss_i          (queue_miss)
+           ,.icache_miss_i         (icache_miss)
+           ,.access_fault_i        (v_if2_r & instr_access_fault_r)
+           ,.page_fault_i          (v_if2_r & instr_page_fault_r)
+           ,.itlb_miss_i           (v_if2_r & itlb_miss_r)
+
+           ,.src_redirect_i        (pc_gen.redirect_v_i)
+           ,.src_override_ras_i    (pc_gen.ovr_ret)
+           ,.src_override_branch_i (pc_gen.ovr_taken)
+           ,.src_btb_taken_branch_i(pc_gen.btb_taken)
+
+           ,.if1_top_v_i           (v_if1_r)
+           ,.if1_pc_i              (pc_gen.pc_if1_r)
+
+           ,.if2_top_v_i           (v_if2_r)
+           ,.if2_pc_i              (pc_gen.pc_if2_r)
+           );
 
       bind bp_be_top
         bp_nonsynth_pc_profiler

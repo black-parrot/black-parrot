@@ -21,15 +21,16 @@ module bp_be_pipe_ctl
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
    )
-  (input                               clk_i
-   , input                             reset_i
+  (input                                    clk_i
+   , input                                  reset_i
 
-   , input [dispatch_pkt_width_lp-1:0] reservation_i
-   , input                             flush_i
+   , input [dispatch_pkt_width_lp-1:0]      reservation_i
+   , input                                  flush_i
 
-   , output [dpath_width_gp-1:0]        data_o
-   , output [branch_pkt_width_lp-1:0]  br_pkt_o
-   , output                            v_o
+   , output logic [dpath_width_gp-1:0]      data_o
+   , output logic [branch_pkt_width_lp-1:0] br_pkt_o
+   , output logic                           v_o
+   , output logic                           instr_misaligned_v_o
    );
 
   // Suppress unused signal warning
@@ -69,16 +70,18 @@ module bp_be_pipe_ctl
       end
 
   wire [vaddr_width_p-1:0] baddr = decode.baddr_sel ? rs1 : pc;
-  wire [vaddr_width_p-1:0] taken_tgt = baddr + imm;
+  wire [vaddr_width_p-1:0] taken_raw = baddr + imm;
+  wire [vaddr_width_p-1:0] taken_tgt = {taken_raw[vaddr_width_p-1:1], 1'b0};
   wire [vaddr_width_p-1:0] ntaken_tgt = pc + 4'd4;
 
   assign data_o   = vaddr_width_p'($signed(ntaken_tgt));
   assign v_o      = reservation.v & reservation.decode.pipe_ctl_v;
+  assign instr_misaligned_v_o = btaken & (taken_tgt[1:0] != 2'b00);
 
   assign br_pkt.v         = reservation.v & reservation.queue_v & ~flush_i;
   assign br_pkt.branch    = br_pkt.v & reservation.decode.pipe_ctl_v;
   assign br_pkt.btaken    = br_pkt.v & reservation.decode.pipe_ctl_v & btaken;
-  assign br_pkt.npc       = btaken ? {taken_tgt[vaddr_width_p-1:1], 1'b0} : ntaken_tgt;
+  assign br_pkt.npc       = btaken ? taken_tgt : ntaken_tgt;
 
 endmodule
 
