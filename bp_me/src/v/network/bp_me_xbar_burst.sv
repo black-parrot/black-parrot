@@ -5,7 +5,8 @@
  *
  * Description:
  *   This xbar arbitrates BedRock Burst messages between N sources and M sinks.
- *
+ *   Messages are input buffered to prevent critical paths, not for any 
+ *     deadlock considerations
  */
 
 `include "bp_common_defines.svh"
