@@ -596,9 +596,9 @@ module bp_cce_inst_decode
                   decoded_inst_o.lce_cmd_v = 1'b1;
                   decoded_inst_o.lce_cmd = op_type_u.pushq.cmd.lce_cmd;
                 end
-                e_dst_q_sel_mem_cmd: begin
-                  decoded_inst_o.mem_cmd_v = 1'b1;
-                  decoded_inst_o.mem_cmd = op_type_u.pushq.cmd.mem_cmd;
+                e_dst_q_sel_mem_fwd: begin
+                  decoded_inst_o.mem_fwd_v = 1'b1;
+                  decoded_inst_o.mem_fwd = op_type_u.pushq.cmd.mem_fwd;
                 end
                 default: begin
                 end
@@ -610,7 +610,7 @@ module bp_cce_inst_decode
               decoded_inst_o.src_a.gpr = op_type_u.pushq.src_a;
 
               // set spec bit to 1, clear rest of bits
-              // Note: spec bit should only be set for mem_cmd
+              // Note: spec bit should only be set for mem_fwd
               // It is a microcode/program error if it is set when pusing to lce_cmd,
               // and there is a check in the assembler to help guard against this
               if (op_type_u.pushq.spec) begin
@@ -652,9 +652,9 @@ module bp_cce_inst_decode
                   decoded_inst_o.lce_resp_yumi = 1'b1;
                   decoded_inst_o.addr_sel = e_mux_sel_addr_lce_resp;
                 end
-                e_src_q_sel_mem_resp: begin
-                  decoded_inst_o.mem_resp_yumi = 1'b1;
-                  decoded_inst_o.addr_sel = e_mux_sel_addr_mem_resp;
+                e_src_q_sel_mem_rev: begin
+                  decoded_inst_o.mem_rev_yumi = 1'b1;
+                  decoded_inst_o.addr_sel = e_mux_sel_addr_mem_rev;
                 end
                 e_src_q_sel_pending: begin
                   decoded_inst_o.pending_yumi = 1'b0;
@@ -694,8 +694,8 @@ module bp_cce_inst_decode
                   // fields in the MSHR.
                   decoded_inst_o.flag_w_v = e_flag_nwbf;
                 end
-                e_src_q_sel_mem_resp: begin
-                  decoded_inst_o.src_a.q = e_opd_mem_resp_type;
+                e_src_q_sel_mem_rev: begin
+                  decoded_inst_o.src_a.q = e_opd_mem_rev_type;
                   decoded_inst_o.dst_sel = e_dst_sel_gpr;
                   decoded_inst_o.dst.gpr = op_type_u.popq.dst;
                   decoded_inst_o.gpr_w_v[op_type_u.popq.dst[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
@@ -728,8 +728,8 @@ module bp_cce_inst_decode
                 e_src_q_sel_lce_resp: begin
                   decoded_inst_o.src_a.q = e_opd_lce_resp_data;
                 end
-                e_src_q_sel_mem_resp: begin
-                  decoded_inst_o.src_a.q = e_opd_mem_resp_data;
+                e_src_q_sel_mem_rev: begin
+                  decoded_inst_o.src_a.q = e_opd_mem_rev_data;
                 end
                 e_src_q_sel_lce_req: begin
                   decoded_inst_o.src_a.q = e_opd_lce_req_data;

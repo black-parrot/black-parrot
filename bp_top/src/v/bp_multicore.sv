@@ -38,14 +38,14 @@ module bp_multicore
    , input [io_noc_did_width_p-1:0]                         my_did_i
    , input [io_noc_did_width_p-1:0]                         host_did_i
 
-   , input  [E:W][io_noc_ral_link_width_lp-1:0]             io_cmd_link_i
-   , output [E:W][io_noc_ral_link_width_lp-1:0]             io_cmd_link_o
+   , input  [E:W][io_noc_ral_link_width_lp-1:0]             io_fwd_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]             io_fwd_link_o
 
-   , input  [E:W][io_noc_ral_link_width_lp-1:0]             io_resp_link_i
-   , output [E:W][io_noc_ral_link_width_lp-1:0]             io_resp_link_o
+   , input  [E:W][io_noc_ral_link_width_lp-1:0]             io_rev_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]             io_rev_link_o
 
-   , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] dram_cmd_link_o
-   , input [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  dram_resp_link_i
+   , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_dma_link_o
+   , input [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_dma_link_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -63,8 +63,8 @@ module bp_multicore
   bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_fill_ver_link_li, coh_fill_ver_link_lo;
   bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_resp_ver_link_li, coh_resp_ver_link_lo;
 
-  bp_mem_ready_and_link_s [N:N][cc_x_dim_p-1:0] mem_cmd_ver_link_li, mem_resp_ver_link_lo;
-  bp_mem_ready_and_link_s [S:S][cc_x_dim_p-1:0] mem_resp_ver_link_li, mem_cmd_ver_link_lo;
+  bp_mem_ready_and_link_s [N:N][cc_x_dim_p-1:0] mem_fwd_ver_link_li, mem_rev_ver_link_lo;
+  bp_mem_ready_and_link_s [S:S][cc_x_dim_p-1:0] mem_rev_ver_link_li, mem_fwd_ver_link_lo;
 
   // IO and SACC complexes only use Req/Cmd networks
   assign coh_resp_ver_link_li[N] = '0;
@@ -74,7 +74,7 @@ module bp_multicore
   // Memory complex does not use Fill network
   assign coh_fill_ver_link_li[S] = '0;
 
-  assign mem_cmd_ver_link_li[N] = '0;
+  assign mem_fwd_ver_link_li[N] = '0;
   bp_core_complex
    #(.bp_params_p(bp_params_p))
    cc
@@ -115,11 +115,11 @@ module bp_multicore
      ,.coh_resp_ver_link_i(coh_resp_ver_link_li)
      ,.coh_resp_ver_link_o(coh_resp_ver_link_lo)
 
-     ,.mem_cmd_ver_link_i(mem_cmd_ver_link_li)
-     ,.mem_cmd_ver_link_o(mem_cmd_ver_link_lo)
+     ,.mem_fwd_ver_link_i(mem_fwd_ver_link_li)
+     ,.mem_fwd_ver_link_o(mem_fwd_ver_link_lo)
 
-     ,.mem_resp_ver_link_i(mem_resp_ver_link_li)
-     ,.mem_resp_ver_link_o(mem_resp_ver_link_lo)
+     ,.mem_rev_ver_link_i(mem_rev_ver_link_li)
+     ,.mem_rev_ver_link_o(mem_rev_ver_link_lo)
      );
 
   bp_io_complex
@@ -143,11 +143,11 @@ module bp_multicore
      ,.coh_cmd_link_i(coh_cmd_ver_link_lo[N])
      ,.coh_cmd_link_o(coh_cmd_ver_link_li[N])
 
-     ,.io_cmd_link_i(io_cmd_link_i)
-     ,.io_cmd_link_o(io_cmd_link_o)
+     ,.io_fwd_link_i(io_fwd_link_i)
+     ,.io_fwd_link_o(io_fwd_link_o)
 
-     ,.io_resp_link_i(io_resp_link_i)
-     ,.io_resp_link_o(io_resp_link_o)
+     ,.io_rev_link_i(io_rev_link_i)
+     ,.io_rev_link_o(io_rev_link_o)
      );
 
   bp_mem_complex
@@ -173,11 +173,11 @@ module bp_multicore
      ,.coh_resp_link_i(coh_resp_ver_link_lo[S])
      ,.coh_resp_link_o(coh_resp_ver_link_li[S])
 
-     ,.mem_cmd_link_i(mem_cmd_ver_link_lo)
-     ,.mem_resp_link_o(mem_resp_ver_link_li)
+     ,.mem_fwd_link_i(mem_fwd_ver_link_lo)
+     ,.mem_rev_link_o(mem_rev_ver_link_li)
 
-     ,.dram_cmd_link_o(dram_cmd_link_o)
-     ,.dram_resp_link_i(dram_resp_link_i)
+     ,.mem_dma_link_o(mem_dma_link_o)
+     ,.mem_dma_link_i(mem_dma_link_i)
      );
 
   bp_cacc_complex
