@@ -751,48 +751,50 @@ module testbench
                  ,.stall_i(stall_lo)
                  );
 
-            bind bp_cce
-              bp_me_nonsynth_cce_perf
-                #(.bp_params_p(bp_params_p))
-                cce_perf
-                (.clk_i(clk_i & testbench.cce_trace_en_lo)
-                 ,.reset_i(reset_i)
-                 ,.cce_id_i(cfg_bus_cast_i.cce_id)
-                 ,.req_start_i(req_start)
-                 ,.req_end_i(req_end)
-                 ,.lce_req_header_i(lce_req_header_cast_i)
-                 ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
-                 ,.lce_cmd_header_i(lce_cmd_header_cast_o)
-                 ,.resp_receive_i(lce_resp_yumi)
-                 ,.lce_resp_header_i(lce_resp_header_cast_i)
-                 ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
-                 ,.mem_rev_squash_i(fsm_rev_yumi_lo & fsm_rev_last_li & spec_bits_lo.squash)
-                 ,.mem_rev_header_i(fsm_rev_header_li)
-                 ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
-                 ,.mem_fwd_header_i(fsm_fwd_header_lo)
-                 );
+            // TODO: Should perf track stream pump or port?
+            //bind bp_cce
+            //  bp_me_nonsynth_cce_perf
+            //    #(.bp_params_p(bp_params_p))
+            //    cce_perf
+            //    (.clk_i(clk_i & testbench.cce_trace_en_lo)
+            //     ,.reset_i(reset_i)
+            //     ,.cce_id_i(cfg_bus_cast_i.cce_id)
+            //     ,.req_start_i(req_start)
+            //     ,.req_end_i(req_end)
+            //     ,.lce_req_header_i(lce_req_header_cast_i)
+            //     ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
+            //     ,.lce_cmd_header_i(lce_cmd_header_cast_o)
+            //     ,.resp_receive_i(lce_resp_yumi)
+            //     ,.lce_resp_header_i(lce_resp_header_cast_i)
+            //     ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
+            //     ,.mem_rev_squash_i(fsm_rev_yumi_lo & fsm_rev_last_li & spec_bits_lo.squash)
+            //     ,.mem_rev_header_i(fsm_rev_header_li)
+            //     ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
+            //     ,.mem_fwd_header_i(fsm_fwd_header_lo)
+            //     );
 
           end else if (cce_type_p == e_cce_fsm) begin
-            bind bp_cce_fsm
-              bp_me_nonsynth_cce_perf
-                #(.bp_params_p(bp_params_p))
-                cce_perf
-                (.clk_i(clk_i & testbench.cce_trace_en_lo)
-                 ,.reset_i(reset_i)
-                 ,.cce_id_i(cfg_bus_cast_i.cce_id)
-                 ,.req_start_i(lce_req_v & (state_r == e_ready))
-                 ,.req_end_i(state_r == e_ready)
-                 ,.lce_req_header_i(lce_req_header_cast_li)
-                 ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
-                 ,.lce_cmd_header_i(lce_cmd_header_cast_o)
-                 ,.resp_receive_i(lce_resp_yumi)
-                 ,.lce_resp_header_i(lce_resp_header_cast_li)
-                 ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
-                 ,.mem_rev_squash_i(fsm_rev_yumi_lo & spec_bits_lo.squash & fsm_rev_last_li)
-                 ,.mem_rev_header_i(fsm_rev_header_li)
-                 ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
-                 ,.mem_fwd_header_i(fsm_fwd_header_lo)
-                 );
+            // TODO: Should perf track stream pump or port?
+            //bind bp_cce_fsm
+            //  bp_me_nonsynth_cce_perf
+            //    #(.bp_params_p(bp_params_p))
+            //    cce_perf
+            //    (.clk_i(clk_i & testbench.cce_trace_en_lo)
+            //     ,.reset_i(reset_i)
+            //     ,.cce_id_i(cfg_bus_cast_i.cce_id)
+            //     ,.req_start_i(lce_req_header_v_i & (state_r == e_ready))
+            //     ,.req_end_i(state_r == e_ready)
+            //     ,.lce_req_header_i(lce_req_header_cast_i)
+            //     ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
+            //     ,.lce_cmd_header_i(lce_cmd_header_cast_o)
+            //     ,.resp_receive_i(lce_resp_header_v_i & lce_resp_header_ready_and_o)
+            //     ,.lce_resp_header_i(lce_resp_header_cast_i)
+            //     ,.mem_rev_receive_i(mem_rev_ready_and_o & mem_rev_v_i & mem_rev_last_i)
+            //     ,.mem_rev_squash_i( fsm_rev_yumi_lo & spec_bits_lo.squash & fsm_rev_last_li)
+            //     ,.mem_rev_header_i(mem_rev_header_i)
+            //     ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
+            //     ,.mem_fwd_header_i(fsm_fwd_header_lo)
+            //     );
           end
         end
     end

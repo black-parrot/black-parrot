@@ -268,8 +268,7 @@ module bp_cce_msg
   // CCE PMA - Mem responses
   logic resp_pma_cacheable_addr_lo;
   bp_cce_pma
-    #(.bp_params_p(bp_params_p)
-      )
+    #(.bp_params_p(bp_params_p))
     resp_pma
       (.paddr_i(mem_rev_header_cast_i.addr)
        ,.paddr_v_i(mem_rev_v_i)
