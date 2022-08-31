@@ -104,8 +104,8 @@ module bp_cce
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
 
   // LCE-CCE Interface structs
-  bp_bedrock_lce_req_header_s  lce_req_header_cast_li;
-  bp_bedrock_lce_resp_header_s lce_resp_header_cast_li;
+  bp_bedrock_lce_req_header_s  lce_req_header_cast_i;
+  bp_bedrock_lce_resp_header_s lce_resp_header_cast_i;
   `bp_cast_o(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
 
   // Config bus
@@ -352,7 +352,7 @@ module bp_cce
       ,.data_i({lce_req_has_data_i, lce_req_header_i})
       ,.v_i(lce_req_header_v_i)
       ,.v_o(lce_req_v)
-      ,.data_o({lce_req_has_data, lce_req_header_cast_li})
+      ,.data_o({lce_req_has_data, lce_req_header_cast_i})
       ,.yumi_i(lce_req_yumi)
       );
 
@@ -368,7 +368,7 @@ module bp_cce
       ,.data_i({lce_resp_has_data_i, lce_resp_header_i})
       ,.v_i(lce_resp_header_v_i)
       ,.v_o(lce_resp_v)
-      ,.data_o({lce_resp_has_data, lce_resp_header_cast_li})
+      ,.data_o({lce_resp_has_data, lce_resp_header_cast_i})
       ,.yumi_i(lce_resp_yumi)
       );
 
@@ -441,8 +441,8 @@ module bp_cce
       ,.mem_rev_v_i(fsm_rev_v_li)
       ,.lce_resp_header_v_i(lce_resp_v)
       ,.lce_req_header_v_i(lce_req_v)
-      ,.lce_req_header_i(lce_req_header_cast_li)
-      ,.lce_resp_header_i(lce_resp_header_cast_li)
+      ,.lce_req_header_i(lce_req_header_cast_i)
+      ,.lce_resp_header_i(lce_resp_header_cast_i)
       ,.mem_rev_header_i(fsm_rev_header_li)
       ,.lce_req_data_i(lce_req_data_i)
       ,.lce_resp_data_i(lce_resp_data_i)
@@ -619,9 +619,9 @@ module bp_cce
       ,.src_a_i(src_a)
       ,.alu_res_i(alu_res_lo)
 
-      ,.lce_req_header_i(lce_req_header_cast_li)
+      ,.lce_req_header_i(lce_req_header_cast_i)
       ,.lce_req_v_i(lce_req_v)
-      ,.lce_resp_header_i(lce_resp_header_cast_li)
+      ,.lce_resp_header_i(lce_resp_header_cast_i)
       ,.mem_rev_header_i(fsm_rev_header_li)
 
       ,.pending_i(pending_lo)
@@ -665,7 +665,7 @@ module bp_cce
       // LCE-CCE Interface
       // BedRock Burst protocol: ready&valid
       // inbound headers use valid->yumi
-      ,.lce_req_header_i(lce_req_header_cast_li)
+      ,.lce_req_header_i(lce_req_header_cast_i)
       ,.lce_req_header_v_i(lce_req_v)
       ,.lce_req_header_yumi_o(lce_req_yumi)
       ,.lce_req_has_data_i(lce_req_has_data)
@@ -674,7 +674,7 @@ module bp_cce
       ,.lce_req_data_ready_and_o(lce_req_data_ready_and_o)
       ,.lce_req_last_i(lce_req_last_i)
 
-      ,.lce_resp_header_i(lce_resp_header_cast_li)
+      ,.lce_resp_header_i(lce_resp_header_cast_i)
       ,.lce_resp_header_v_i(lce_resp_v)
       ,.lce_resp_header_yumi_o(lce_resp_yumi)
       ,.lce_resp_has_data_i(lce_resp_has_data)

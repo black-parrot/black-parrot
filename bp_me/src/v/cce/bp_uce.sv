@@ -227,7 +227,7 @@ module bp_uce
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
   logic [fill_width_p-1:0] fsm_fwd_data_lo;
   logic fsm_fwd_v_lo, fsm_fwd_ready_and_li;
-  logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt;
+  logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt_lo;
   logic fsm_fwd_new_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -252,7 +252,7 @@ module bp_uce
      ,.fsm_addr_o()
      ,.fsm_v_i(fsm_fwd_v_lo)
      ,.fsm_ready_and_o(fsm_fwd_ready_and_li)
-     ,.fsm_cnt_o(fsm_fwd_cnt)
+     ,.fsm_cnt_o(fsm_fwd_cnt_lo)
      ,.fsm_new_o(fsm_fwd_new_lo)
      ,.fsm_last_o(fsm_fwd_last_lo)
      );
@@ -378,7 +378,7 @@ module bp_uce
    #(.width_p(fill_width_p), .els_p(block_size_in_fill_lp))
    writeback_mux
     (.data_i(dirty_data_r)
-     ,.sel_i(fsm_fwd_cnt)
+     ,.sel_i(fsm_fwd_cnt_lo)
      ,.data_o(writeback_data)
      );
 
@@ -525,10 +525,10 @@ module bp_uce
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-            way_up = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo);
+            // TODO: This actually does an extra increment
+            way_up = fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo;
             index_up = way_done & way_up;
 
-            // TODO: This actually does an extra increment
             state_n = (index_done & way_done & way_up)
                       ? e_flush_fence
                       : index_up

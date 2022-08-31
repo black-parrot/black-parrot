@@ -95,6 +95,9 @@ module bp_lce_req
   `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_cache_req_s, cache_req);
 
+  localparam block_size_in_fill_lp = block_width_p / fill_width_p;
+  localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
+
   // cache request valid and register
   // set over clear because new request can be captured same cycle existing request sends
   // cache_req_v_r indicates if a valid request is in the buffer
@@ -131,11 +134,46 @@ module bp_lce_req
      ,.data_o(cache_req_metadata_r)
      );
 
+  bp_bedrock_lce_req_header_s fsm_req_header_lo;
+  logic [fill_width_p-1:0] fsm_req_data_lo;
+  logic fsm_req_v_lo, fsm_req_ready_and_li;
+  logic [fill_cnt_width_lp-1:0] fsm_req_cnt_lo;
+  logic fsm_req_new_lo, fsm_req_last_lo;
+  bp_me_burst_pump_out
+   #(.bp_params_p(bp_params_p)
+     ,.stream_data_width_p(fill_width_p)
+     ,.block_width_p(block_width_p)
+     ,.payload_width_p(lce_req_payload_width_lp)
+     ,.msg_stream_mask_p(lce_req_payload_mask_gp)
+     ,.fsm_stream_mask_p(lce_req_payload_mask_gp)
+     )
+   lce_req_pump_out
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.msg_header_o(lce_req_header_cast_o)
+     ,.msg_header_v_o(lce_req_header_v_o)
+     ,.msg_header_ready_and_i(lce_req_header_ready_and_i)
+     ,.msg_has_data_o(lce_req_has_data_o)
+     ,.msg_data_o(lce_req_data_o)
+     ,.msg_data_v_o(lce_req_data_v_o)
+     ,.msg_data_ready_and_i(lce_req_data_ready_and_i)
+     ,.msg_last_o(lce_req_last_o)
+
+     ,.fsm_header_i(fsm_req_header_lo)
+     ,.fsm_data_i(fsm_req_data_lo)
+     ,.fsm_v_i(fsm_req_v_lo)
+     ,.fsm_ready_and_o(fsm_req_ready_and_li)
+     ,.fsm_cnt_o(fsm_req_cnt_lo)
+     ,.fsm_new_o(fsm_req_new_lo)
+     ,.fsm_last_o(fsm_req_last_lo)
+     );
+
   // Outstanding request credit counter
   // one credit used per LCE request sent
   logic [`BSG_WIDTH(credits_p)-1:0] credit_count_lo;
-  wire credit_v_li = lce_req_header_v_o;
-  wire credit_ready_li = lce_req_header_ready_and_i;
+  wire credit_v_li = fsm_req_v_lo & fsm_req_new_lo;
+  wire credit_ready_li = fsm_req_ready_and_li;
   wire credit_returned_li = cache_req_complete_i | uc_store_req_complete_i;
   bsg_flow_counter
     #(.els_p(credits_p))
@@ -167,15 +205,14 @@ module bp_lce_req
   typedef enum logic [1:0] {
     e_reset
     ,e_ready
-    ,e_send_uncached_data
   } lce_req_state_e;
   lce_req_state_e state_n, state_r;
 
   wire is_reset = (state_r == e_reset);
+  wire is_ready = (state_r == e_ready);
 
   // request finishes sending when header sends for no data message or last data sends
-  assign req_sent = (lce_req_header_v_o & lce_req_header_ready_and_i & ~lce_req_has_data_o)
-                    | (lce_req_data_v_o & lce_req_data_ready_and_i & lce_req_last_o);
+  assign req_sent = (fsm_req_v_lo & fsm_req_ready_and_li & fsm_req_last_lo);
 
   // LCE should suppress messages if in reset or we are not synchronized with the CCE
   // busy being lower does not guarantee that this module will accept a valid cache request
@@ -206,16 +243,13 @@ module bp_lce_req
   always_comb begin
     state_n = state_r;
 
-    lce_req_header_v_o = 1'b0;
-    lce_req_has_data_o = 1'b0;
-    lce_req_data_v_o = 1'b0;
-    lce_req_last_o = 1'b0;
+    fsm_req_v_lo = 1'b0;
 
     // Request message defaults
-    lce_req_header_cast_o = '0;
-    lce_req_header_cast_o.payload.dst_id = req_cce_id_lo;
-    lce_req_header_cast_o.payload.src_id = lce_id_i;
-    lce_req_data_o = '0;
+    fsm_req_header_lo = '0;
+    fsm_req_header_lo.payload.dst_id = req_cce_id_lo;
+    fsm_req_header_lo.payload.src_id = lce_id_i;
+    fsm_req_data_lo = cache_req_r.data;
 
     unique case (state_r)
 
@@ -228,72 +262,53 @@ module bp_lce_req
       // requires valid cache request and possibly valid metadata (cached requests only)
       e_ready: begin
         unique case (cache_req_r.msg_type)
+          // TODO: For all supported caches, uncached requests have a single data beat
           e_uc_store: begin
-            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
-            lce_req_header_cast_o.msg_type.req = e_bedrock_req_uc_wr;
-            lce_req_header_cast_o.subop = e_bedrock_store;
-            lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
-            lce_req_header_cast_o.addr = cache_req_r.addr;
-            lce_req_has_data_o = 1'b1;
-            state_n = (lce_req_header_v_o & lce_req_header_ready_and_i)
-                      ? e_send_uncached_data
-                      : state_r;
+            fsm_req_v_lo =  cache_req_v_r & (credit_count_lo < credits_p);
+            fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
+            fsm_req_header_lo.subop = e_bedrock_store;
+            fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
+            fsm_req_header_lo.addr = cache_req_r.addr;
           end
           e_uc_load: begin
-            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
-            lce_req_header_cast_o.msg_type.req = e_bedrock_req_uc_rd;
-            lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
-            lce_req_header_cast_o.addr = cache_req_r.addr;
+            fsm_req_v_lo = cache_req_v_r & (credit_count_lo < credits_p);
+            fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_rd;
+            fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
+            fsm_req_header_lo.addr = cache_req_r.addr;
             // no data to send, stay in e_ready
           end
           e_uc_amo: begin
-            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
-            lce_req_header_cast_o.msg_type.req = e_bedrock_req_uc_amo;
-            lce_req_header_cast_o.subop = req_subop;
-            lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
-            lce_req_header_cast_o.addr = cache_req_r.addr;
-            lce_req_has_data_o = 1'b1;
-            state_n = (lce_req_header_v_o & lce_req_header_ready_and_i)
-                      ? e_send_uncached_data
-                      : state_r;
+            fsm_req_v_lo = cache_req_v_r & (credit_count_lo < credits_p);
+            fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_amo;
+            fsm_req_header_lo.subop = req_subop;
+            fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
+            fsm_req_header_lo.addr = cache_req_r.addr;
           end
           e_miss_load: begin
-            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
-            lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
+            fsm_req_v_lo = cache_req_v_r & (credit_count_lo < credits_p);
+            fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
             // align address to data width and send address of critical beat
-            lce_req_header_cast_o.addr = critical_req_addr;
-            lce_req_header_cast_o.msg_type.req = e_bedrock_req_rd_miss;
-            lce_req_header_cast_o.payload.lru_way_id = lce_assoc_width_p'(cache_req_metadata_r.hit_or_repl_way);
-            lce_req_header_cast_o.payload.non_exclusive = (non_excl_reads_p == 1)
+            fsm_req_header_lo.addr = critical_req_addr;
+            fsm_req_header_lo.msg_type.req = e_bedrock_req_rd_miss;
+            fsm_req_header_lo.payload.lru_way_id = lce_assoc_width_p'(cache_req_metadata_r.hit_or_repl_way);
+            fsm_req_header_lo.payload.non_exclusive = (non_excl_reads_p == 1)
                                                           ? e_bedrock_req_non_excl
                                                           : e_bedrock_req_excl;
             // no data to send, stay in e_ready
           end
           e_miss_store: begin
-            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
-            lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
+            fsm_req_v_lo = cache_req_v_r & (credit_count_lo < credits_p);
+            fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
             // align address to data width and send address of critical beat
-            lce_req_header_cast_o.addr = critical_req_addr;
-            lce_req_header_cast_o.msg_type.req = e_bedrock_req_wr_miss;
-            lce_req_header_cast_o.payload.lru_way_id = lce_assoc_width_p'(cache_req_metadata_r.hit_or_repl_way);
-            lce_req_header_cast_o.payload.non_exclusive = e_bedrock_req_excl;
+            fsm_req_header_lo.addr = critical_req_addr;
+            fsm_req_header_lo.msg_type.req = e_bedrock_req_wr_miss;
+            fsm_req_header_lo.payload.lru_way_id = lce_assoc_width_p'(cache_req_metadata_r.hit_or_repl_way);
+            fsm_req_header_lo.payload.non_exclusive = e_bedrock_req_excl;
             // no data to send, stay in e_ready
           end
           default: begin
           end
         endcase
-      end
-
-      // Uncached Request Data
-      // TODO: For all supported caches, requests have a single data beat
-      e_send_uncached_data: begin
-        // valid cache request arrived last cycle (or earlier) and is held in cache_req_r
-        lce_req_data_v_o = 1'b1;
-        lce_req_data_o[0+:dword_width_gp] = cache_req_r.data;
-        lce_req_last_o = 1'b1;
-        state_n = lce_req_data_ready_and_i
-                  ? e_ready
-                  : state_r;
       end
 
       default: begin

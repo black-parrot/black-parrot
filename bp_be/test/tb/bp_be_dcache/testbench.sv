@@ -92,9 +92,7 @@ module testbench
      ,.async_reset_o(dram_reset_i)
      );
 
-  bp_cfg_bus_s cfg_bus_cast_li;
-  logic [cfg_bus_width_lp-1:0] cfg_bus_li;
-  assign cfg_bus_li = cfg_bus_cast_li;
+  bp_cfg_bus_s cfg_bus_li;
 
   logic mem_fwd_v_lo, mem_rev_v_li;
   logic mem_fwd_ready_and_lo, mem_rev_ready_and_li;
@@ -125,12 +123,12 @@ module testbench
   // Setting up the config bus
   // logic switch_cce_mode;
   always_comb begin
-    cfg_bus_cast_li = '0;
-    cfg_bus_cast_li.freeze = '0;
-    cfg_bus_cast_li.core_id = '0;
-    cfg_bus_cast_li.dcache_id = '0;
-    cfg_bus_cast_li.dcache_mode = e_lce_mode_normal;
-    cfg_bus_cast_li.cce_mode = e_cce_mode_normal;
+    cfg_bus_lo = '0;
+    cfg_bus_lo.freeze = '0;
+    cfg_bus_lo.core_id = '0;
+    cfg_bus_lo.dcache_id = '0;
+    cfg_bus_lo.dcache_mode = e_lce_mode_normal;
+    cfg_bus_lo.cce_mode = e_cce_mode_normal;
   end
 
   logic [15:0] counter;

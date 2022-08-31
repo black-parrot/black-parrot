@@ -1558,15 +1558,6 @@ module bp_cce_fsm
             fsm_fwd_header_lo.payload.way_id = '0;
             fsm_fwd_data_lo = lce_resp_data_i;
 
-            // send remaining beats
-            state_n = (lce_resp_yumi)
-                      ? (invalidate_flag)
-                        ? e_inv_cmd
-                        : (transfer_flag)
-                          ? e_transfer
-                          : e_resolve_speculation
-                      : e_replacement_wb_resp;
-
             // set the pending bit on last beat
             pending_w_v = lce_resp_yumi;
             pending_li = 1'b1;
@@ -1586,6 +1577,15 @@ module bp_cce_fsm
                              : pe_sharers_n;
               cnt_rst = 1'b1;
             end
+
+            // send remaining beats
+            state_n = (lce_resp_yumi)
+                      ? (invalidate_flag)
+                        ? e_inv_cmd
+                        : (transfer_flag)
+                          ? e_transfer
+                          : e_resolve_speculation
+                      : e_replacement_wb_resp;
           end // wb & pending bit available
         end // lce_resp_v
       end // e_replacement_wb_resp
