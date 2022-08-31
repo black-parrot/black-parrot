@@ -110,7 +110,6 @@ module bp_me_cce_to_cache
      ,.fsm_v_o(fsm_fwd_v_li)
      ,.fsm_yumi_i(fsm_fwd_yumi_lo)
      ,.fsm_new_o(fsm_fwd_new_li)
-     ,.fsm_done_o()
      ,.fsm_last_o(fsm_fwd_last_li)
      );
 
@@ -250,7 +249,6 @@ module bp_me_cce_to_cache
      ,.fsm_cnt_o(/* unused */)
      ,.fsm_new_o(/* unused */)
      ,.fsm_last_o(fsm_rev_last_lo)
-     ,.fsm_done_o(fsm_rev_done_lo)
      );
 
   // mem_rev data selection

@@ -224,7 +224,7 @@ module bp_uce
   logic [fill_width_p-1:0] fsm_fwd_data_lo;
   logic fsm_fwd_v_lo, fsm_fwd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt;
-  logic fsm_fwd_new_lo, fsm_fwd_last_lo, fsm_fwd_done_lo;
+  logic fsm_fwd_new_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
@@ -249,7 +249,6 @@ module bp_uce
      ,.fsm_ready_and_o(fsm_fwd_ready_and_li)
      ,.fsm_cnt_o(fsm_fwd_cnt)
      ,.fsm_new_o(fsm_fwd_new_lo)
-     ,.fsm_done_o(fsm_fwd_done_lo)
      ,.fsm_last_o(fsm_fwd_last_lo)
      );
 
@@ -257,7 +256,7 @@ module bp_uce
   logic [paddr_width_p-1:0] fsm_rev_addr_li;
   logic [fill_width_p-1:0] fsm_rev_data_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo;
-  logic fsm_rev_new_li, fsm_rev_last_li, fsm_rev_done_li;
+  logic fsm_rev_new_li, fsm_rev_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
@@ -285,7 +284,6 @@ module bp_uce
      ,.fsm_yumi_i(fsm_rev_yumi_lo)
      ,.fsm_new_o(fsm_rev_new_li)
      ,.fsm_last_o(fsm_rev_last_li)
-     ,.fsm_done_o(fsm_rev_done_li)
      );
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready

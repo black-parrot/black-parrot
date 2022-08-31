@@ -75,8 +75,6 @@ module bp_me_stream_pump_in
    , output logic                                   fsm_new_o
    // fsm_last is raised on last beat of every message
    , output logic                                   fsm_last_o
-   // fsm_done is raised when last beat of every message is acked
-   , output logic                                   fsm_done_o
    );
 
   if (block_width_p % stream_data_width_p != 0)
@@ -189,7 +187,6 @@ module bp_me_stream_pump_in
 
       fsm_new_o  = is_ready;
       fsm_last_o = is_last_cnt;
-      fsm_done_o = fsm_last_o & fsm_yumi_i;
     end
 
   always_comb

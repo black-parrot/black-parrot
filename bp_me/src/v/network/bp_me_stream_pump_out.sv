@@ -59,7 +59,7 @@ module bp_me_stream_pump_out
 
    // FSM producer side
    // FSM must hold fsm_header_i constant throughout the transaction
-   // (i.e., through cycle fsm_done_o is raised)
+   // (i.e., through cycle fsm_last_o is raised)
    , input        [xce_header_width_lp-1:0]         fsm_header_i
    , input        [stream_data_width_p-1:0]         fsm_data_i
    , input                                          fsm_v_i
@@ -72,8 +72,6 @@ module bp_me_stream_pump_out
    , output logic                                   fsm_new_o
    // fsm_last is raised on last beat of every message
    , output logic                                   fsm_last_o
-   // fsm_done is raised when last beat of every message sends
-   , output logic                                   fsm_done_o
    );
 
   if (block_width_p % stream_data_width_p != 0)
@@ -119,7 +117,6 @@ module bp_me_stream_pump_out
 
   assign fsm_new_o = is_ready;
   assign fsm_last_o = is_last_cnt;
-  assign fsm_done_o = fsm_ready_and_o & fsm_v_i & is_last_cnt;
   assign fsm_cnt_o = is_stream ? stream_cnt : first_cnt;
 
   wire [paddr_width_p-1:0] wrap_addr =
