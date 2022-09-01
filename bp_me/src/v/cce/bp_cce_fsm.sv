@@ -175,7 +175,7 @@ module bp_cce_fsm
       ,.fsm_addr_o(mem_rev_addr_li)
       ,.fsm_data_o(mem_rev_data_li)
       ,.fsm_v_o(mem_rev_v_li)
-      ,.fsm_ready_and_i(mem_rev_yumi_lo)
+      ,.fsm_yumi_i(mem_rev_yumi_lo)
       ,.fsm_new_o(mem_rev_stream_new_li)
       ,.fsm_last_o(mem_rev_stream_last_li)
       ,.fsm_done_o(mem_rev_stream_done_li)

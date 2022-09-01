@@ -108,7 +108,7 @@ module bp_me_cce_to_cache
      ,.fsm_addr_o(fsm_fwd_stream_addr_lo)
      ,.fsm_data_o(fsm_fwd_data_lo)
      ,.fsm_v_o(fsm_fwd_v_lo)
-     ,.fsm_ready_and_i(fsm_fwd_yumi_li)
+     ,.fsm_yumi_i(fsm_fwd_yumi_li)
      ,.fsm_new_o(fsm_fwd_new_lo)
      ,.fsm_done_o(fsm_fwd_done_lo)
      ,.fsm_last_o(fsm_fwd_last_lo)
