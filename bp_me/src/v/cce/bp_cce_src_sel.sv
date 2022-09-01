@@ -58,8 +58,8 @@ module bp_cce_src_sel
    , input [num_lce_p-1:0][lce_assoc_width_p-1:0]                   sharers_ways_i
    , input bp_coh_states_e [num_lce_p-1:0]                          sharers_coh_states_i
    , input                                                          mem_rev_v_i
-   , input                                                          lce_resp_header_v_i
-   , input                                                          lce_req_header_v_i
+   , input                                                          lce_resp_v_i
+   , input                                                          lce_req_v_i
    , input [lce_req_header_width_lp-1:0]                            lce_req_header_i
    , input [lce_resp_header_width_lp-1:0]                           lce_resp_header_i
    , input [mem_rev_header_width_lp-1:0]                            mem_rev_header_i
@@ -176,9 +176,9 @@ module bp_cce_src_sel
       e_src_sel_queue: begin
         unique case (src_a_i.q)
           e_opd_mem_rev_v:     src_a_o[0] = mem_rev_v_i;
-          e_opd_lce_resp_v:    src_a_o[0] = lce_resp_header_v_i;
+          e_opd_lce_resp_v:    src_a_o[0] = lce_resp_v_i;
           e_opd_pending_v:     src_a_o = '0;
-          e_opd_lce_req_v:     src_a_o[0] = lce_req_header_v_i;
+          e_opd_lce_req_v:     src_a_o[0] = lce_req_v_i;
           e_opd_lce_resp_type: src_a_o[0+:$bits(bp_bedrock_resp_type_e)] = lce_resp_header_li.msg_type.resp;
           e_opd_mem_rev_type:  src_a_o[0+:$bits(bp_bedrock_rev_type_e)] = mem_rev_header_li.msg_type.rev;
           e_opd_lce_resp_data: src_a_o = lce_resp_data_i[0+:`bp_cce_inst_gpr_width];
@@ -269,9 +269,9 @@ module bp_cce_src_sel
       e_src_sel_queue: begin
         unique case (src_b_i.q)
           e_opd_mem_rev_v:     src_b_o[0] = mem_rev_v_i;
-          e_opd_lce_resp_v:    src_b_o[0] = lce_resp_header_v_i;
+          e_opd_lce_resp_v:    src_b_o[0] = lce_resp_v_i;
           e_opd_pending_v:     src_b_o = '0;
-          e_opd_lce_req_v:     src_b_o[0] = lce_req_header_v_i;
+          e_opd_lce_req_v:     src_b_o[0] = lce_req_v_i;
           e_opd_lce_resp_type: src_b_o[0+:$bits(bp_bedrock_resp_type_e)] = lce_resp_header_li.msg_type.resp;
           e_opd_mem_rev_type:  src_b_o[0+:$bits(bp_bedrock_rev_type_e)] = mem_rev_header_li.msg_type.rev;
           e_opd_lce_resp_data: src_b_o = lce_resp_data_i[0+:`bp_cce_inst_gpr_width];

@@ -21,16 +21,14 @@ module bp_cce_inst_stall
   (input bp_cce_inst_decoded_s                   decoded_inst_i
 
    // input queue valid signals
-   , input                                       lce_req_header_v_i
-   , input                                       lce_req_data_v_i
-   , input                                       lce_resp_header_v_i
-   , input                                       lce_resp_data_v_i
+   , input                                       lce_req_v_i
+   , input                                       lce_resp_v_i
    , input                                       mem_rev_v_i
    , input                                       pending_v_i
 
    // output queue valid&ready signals
-   , input                                       lce_cmd_header_v_i
-   , input                                       lce_cmd_header_ready_and_i
+   , input                                       lce_cmd_v_i
+   , input                                       lce_cmd_ready_and_i
 
    , input                                       mem_credits_empty_i
 
@@ -52,7 +50,7 @@ module bp_cce_inst_stall
    , output logic                                stall_o
   );
 
-  wire [$bits(bp_cce_inst_src_q_e)-1:0] wfq_v_vec = {lce_req_header_v_i, lce_resp_header_v_i, mem_rev_v_i, pending_v_i};
+  wire [$bits(bp_cce_inst_src_q_e)-1:0] wfq_v_vec = {lce_req_v_i, lce_resp_v_i, mem_rev_v_i, pending_v_i};
   wire [$bits(bp_cce_inst_src_q_e)-1:0] wfq_mask = decoded_inst_i.imm[0+:$bits(bp_cce_inst_src_q_e)];
 
   always_comb begin
@@ -62,24 +60,24 @@ module bp_cce_inst_stall
 
     // Message receive
     // Handshake is v->yumi for headers from fifo
-    stall_o |= (decoded_inst_i.lce_req_yumi & ~lce_req_header_v_i);
-    stall_o |= (decoded_inst_i.lce_resp_yumi & ~lce_resp_header_v_i);
+    stall_o |= (decoded_inst_i.lce_req_yumi & ~lce_req_v_i);
+    stall_o |= (decoded_inst_i.lce_resp_yumi & ~lce_resp_v_i);
     stall_o |= (decoded_inst_i.mem_rev_yumi & ~mem_rev_v_i);
     stall_o |= (decoded_inst_i.pending_yumi & ~pending_v_i);
 
     // Pop Header
-    stall_o |= (decoded_inst_i.poph & (~lce_req_header_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_req)));
-    stall_o |= (decoded_inst_i.poph & (~lce_resp_header_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_resp)));
+    stall_o |= (decoded_inst_i.poph & (~lce_req_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_req)));
+    stall_o |= (decoded_inst_i.poph & (~lce_resp_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_resp)));
     stall_o |= (decoded_inst_i.poph & (~mem_rev_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_mem_rev)));
 
     // Pop Data - TODO: not fully implemented
-    stall_o |= (decoded_inst_i.popd & (~lce_req_data_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_req)));
-    stall_o |= (decoded_inst_i.popd & (~lce_resp_data_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_resp)));
+    stall_o |= (decoded_inst_i.popd & (~lce_req_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_req)));
+    stall_o |= (decoded_inst_i.popd & (~lce_resp_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_lce_resp)));
     stall_o |= (decoded_inst_i.popd & (~mem_rev_v_i & (decoded_inst_i.popq_qsel == e_src_q_sel_mem_rev)));
 
     // Message send
     // Handshake is r&v
-    stall_o |= (decoded_inst_i.lce_cmd_v & ~(lce_cmd_header_v_i & lce_cmd_header_ready_and_i));
+    stall_o |= (decoded_inst_i.lce_cmd_v & ~(lce_cmd_v_i & lce_cmd_ready_and_i));
     // memory command stall is indicated directly by a signal from message unit
     stall_o |= (decoded_inst_i.mem_fwd_v & msg_mem_fwd_stall_i);
     // sending a memory command requires a memory credit
