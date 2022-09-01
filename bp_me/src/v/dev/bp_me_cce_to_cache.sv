@@ -104,7 +104,7 @@ module bp_me_cce_to_cache
      ,.msg_last_i(mem_fwd_last_i)
      ,.msg_ready_and_o(mem_fwd_ready_and_o)
 
-     ,.fsm_base_header_o(fsm_fwd_header_lo)
+     ,.fsm_header_o(fsm_fwd_header_lo)
      ,.fsm_addr_o(fsm_fwd_stream_addr_lo)
      ,.fsm_data_o(fsm_fwd_data_lo)
      ,.fsm_v_o(fsm_fwd_v_lo)
@@ -240,7 +240,7 @@ module bp_me_cce_to_cache
      ,.msg_last_o(mem_rev_last_o)
      ,.msg_ready_and_i(mem_rev_ready_and_i)
 
-     ,.fsm_base_header_i(fsm_rev_header_lo)
+     ,.fsm_header_i(fsm_rev_header_lo)
      ,.fsm_data_i(fsm_rev_data_lo)
      ,.fsm_v_i(fsm_rev_v_li)
      ,.fsm_ready_and_o(fsm_rev_ready_and_lo)

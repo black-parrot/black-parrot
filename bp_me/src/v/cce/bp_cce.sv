@@ -221,7 +221,7 @@ module bp_cce
   logic                                      msg_mem_fwd_stall_lo;
 
   // From memory response stream pump to CCE
-  bp_bedrock_mem_rev_header_s mem_rev_base_header_li;
+  bp_bedrock_mem_rev_header_s mem_rev_header_li;
   logic mem_rev_v_li, mem_rev_yumi_lo;
   logic mem_rev_stream_new_li, mem_rev_stream_last_li, mem_rev_stream_done_li;
   logic [paddr_width_p-1:0] mem_rev_addr_li;
@@ -230,7 +230,7 @@ module bp_cce
   // From CCE to memory command stream pump
   localparam stream_words_lp = cce_block_width_p / bedrock_data_width_p;
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
-  bp_bedrock_mem_fwd_header_s mem_fwd_base_header_lo;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
   logic mem_fwd_v_lo, mem_fwd_ready_and_li;
   logic mem_fwd_stream_new_li, mem_fwd_stream_done_li;
   logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
@@ -305,7 +305,7 @@ module bp_cce
       ,.msg_last_i(mem_rev_last_i)
       ,.msg_ready_and_o(mem_rev_ready_and_o)
       // to FSM CCE
-      ,.fsm_base_header_o(mem_rev_base_header_li)
+      ,.fsm_header_o(mem_rev_header_li)
       ,.fsm_addr_o(mem_rev_addr_li)
       ,.fsm_data_o(mem_rev_data_li)
       ,.fsm_v_o(mem_rev_v_li)
@@ -334,7 +334,7 @@ module bp_cce
       ,.msg_last_o(mem_fwd_last_o)
       ,.msg_ready_and_i(mem_fwd_ready_and_i)
       // from FSM CCE
-      ,.fsm_base_header_i(mem_fwd_base_header_lo)
+      ,.fsm_header_i(mem_fwd_header_lo)
       ,.fsm_data_i(mem_fwd_data_lo)
       ,.fsm_v_i(mem_fwd_v_lo)
       ,.fsm_ready_and_o(mem_fwd_ready_and_li)
@@ -451,7 +451,7 @@ module bp_cce
       ,.lce_req_header_v_i(lce_req_v)
       ,.lce_req_header_i(lce_req_header_cast_li)
       ,.lce_resp_header_i(lce_resp_header_cast_li)
-      ,.mem_rev_header_i(mem_rev_base_header_li)
+      ,.mem_rev_header_i(mem_rev_header_li)
       ,.lce_req_data_i(lce_req_data_i)
       ,.lce_resp_data_i(lce_resp_data_i)
       ,.mem_rev_data_i(mem_rev_data_li)
@@ -630,7 +630,7 @@ module bp_cce
       ,.lce_req_header_i(lce_req_header_cast_li)
       ,.lce_req_v_i(lce_req_v)
       ,.lce_resp_header_i(lce_resp_header_cast_li)
-      ,.mem_rev_header_i(mem_rev_base_header_li)
+      ,.mem_rev_header_i(mem_rev_header_li)
 
       ,.pending_i(pending_lo)
 
@@ -703,7 +703,7 @@ module bp_cce
       // CCE-MEM Interface
       // BedRock Burst protocol: ready&valid
       // inbound headers use valid->yumi
-      ,.mem_rev_header_i(mem_rev_base_header_li)
+      ,.mem_rev_header_i(mem_rev_header_li)
       ,.mem_rev_addr_i(mem_rev_addr_li)
       ,.mem_rev_data_i(mem_rev_data_li)
       ,.mem_rev_v_i(mem_rev_v_li)
@@ -712,7 +712,7 @@ module bp_cce
       ,.mem_rev_stream_last_i(mem_rev_stream_last_li)
       ,.mem_rev_stream_done_i(mem_rev_stream_done_li)
 
-      ,.mem_fwd_header_o(mem_fwd_base_header_lo)
+      ,.mem_fwd_header_o(mem_fwd_header_lo)
       ,.mem_fwd_data_o(mem_fwd_data_lo)
       ,.mem_fwd_v_o(mem_fwd_v_lo)
       ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)

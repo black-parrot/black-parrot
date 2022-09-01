@@ -243,7 +243,7 @@ module bp_uce
      ,.msg_last_o(mem_fwd_last_o)
      ,.msg_ready_and_i(mem_fwd_ready_and_i)
 
-     ,.fsm_base_header_i(fsm_fwd_header_lo)
+     ,.fsm_header_i(fsm_fwd_header_lo)
      ,.fsm_data_i(fsm_fwd_data_lo)
      ,.fsm_v_i(fsm_fwd_v_lo)
      ,.fsm_ready_and_o(fsm_fwd_ready_and_li)
@@ -278,7 +278,7 @@ module bp_uce
      ,.msg_last_i(mem_rev_last_i)
      ,.msg_ready_and_o(mem_rev_ready_and_o)
 
-     ,.fsm_base_header_o(fsm_rev_header_li)
+     ,.fsm_header_o(fsm_rev_header_li)
      ,.fsm_addr_o(fsm_rev_addr_li)
      ,.fsm_data_o(fsm_rev_data_li)
      ,.fsm_v_o(fsm_rev_v_li)

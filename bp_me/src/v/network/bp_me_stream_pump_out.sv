@@ -58,9 +58,9 @@ module bp_me_stream_pump_out
    , input                                          msg_ready_and_i
 
    // FSM producer side
-   // FSM must hold fsm_base_header_i constant throughout the transaction
+   // FSM must hold fsm_header_i constant throughout the transaction
    // (i.e., through cycle fsm_done_o is raised)
-   , input        [xce_header_width_lp-1:0]         fsm_base_header_i
+   , input        [xce_header_width_lp-1:0]         fsm_header_i
    , input        [stream_data_width_p-1:0]         fsm_data_i
    , input                                          fsm_v_i
    , output logic                                   fsm_ready_and_o
@@ -80,7 +80,7 @@ module bp_me_stream_pump_out
     $error("Stream pump block width must be multiple of stream data width");
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
-  `bp_cast_i(bp_bedrock_xce_header_s, fsm_base_header);
+  `bp_cast_i(bp_bedrock_xce_header_s, fsm_header);
   `bp_cast_o(bp_bedrock_xce_header_s, msg_header);
 
   enum logic {e_ready, e_stream} state_n, state_r;
@@ -88,17 +88,17 @@ module bp_me_stream_pump_out
   wire is_stream = (state_r == e_stream);
 
   wire [stream_cnt_width_lp-1:0] stream_size =
-    `BSG_MAX((1'b1 << fsm_base_header_cast_i.size) / stream_bytes_lp, 1'b1) - 1'b1;
+    `BSG_MAX((1'b1 << fsm_header_cast_i.size) / stream_bytes_lp, 1'b1) - 1'b1;
   wire nz_stream  = stream_size > '0;
-  wire fsm_stream = fsm_stream_mask_p[fsm_base_header_cast_i.msg_type] & nz_stream;
-  wire msg_stream = msg_stream_mask_p[fsm_base_header_cast_i.msg_type] & nz_stream;
+  wire fsm_stream = fsm_stream_mask_p[fsm_header_cast_i.msg_type] & nz_stream;
+  wire msg_stream = msg_stream_mask_p[fsm_header_cast_i.msg_type] & nz_stream;
   wire any_stream = fsm_stream | msg_stream;
 
   logic [stream_cnt_width_lp-1:0] stream_cnt, wrap_cnt;
   logic cnt_up;
   wire cnt_set = fsm_new_o;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
-  wire [stream_cnt_width_lp-1:0] first_cnt = fsm_base_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
+  wire [stream_cnt_width_lp-1:0] first_cnt = fsm_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
   bp_me_stream_wraparound
    #(.max_val_p(stream_words_lp-1))
    wraparound_cnt
@@ -123,14 +123,14 @@ module bp_me_stream_pump_out
   assign fsm_cnt_o = is_stream ? stream_cnt : first_cnt;
 
   wire [paddr_width_p-1:0] wrap_addr =
-    {fsm_base_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp+stream_cnt_width_lp]
+    {fsm_header_cast_i.addr[paddr_width_p-1:stream_offset_width_lp+stream_cnt_width_lp]
      ,{stream_words_lp>0{wrap_cnt}}
-     ,fsm_base_header_cast_i.addr[0+:stream_offset_width_lp]
+     ,fsm_header_cast_i.addr[0+:stream_offset_width_lp]
      };
 
   always_comb
     begin
-      msg_header_cast_o = fsm_base_header_cast_i;
+      msg_header_cast_o = fsm_header_cast_i;
       msg_data_o = fsm_data_i;
 
       if (~fsm_stream & msg_stream)
@@ -140,7 +140,7 @@ module bp_me_stream_pump_out
           msg_v_o = fsm_v_i;
           fsm_ready_and_o = is_last_cnt & msg_ready_and_i;
           cnt_up = msg_v_o & msg_ready_and_i & ~is_last_cnt;
-          msg_header_cast_o.addr = is_stream ? wrap_addr : fsm_base_header_cast_i.addr;
+          msg_header_cast_o.addr = is_stream ? wrap_addr : fsm_header_cast_i.addr;
         end
       else if (fsm_stream & ~msg_stream)
         begin
@@ -151,7 +151,7 @@ module bp_me_stream_pump_out
           fsm_ready_and_o = ~is_last_cnt | msg_ready_and_i;
           cnt_up = fsm_ready_and_o & fsm_v_i & ~is_last_cnt;
           // hold address constant at critical address
-          msg_header_cast_o.addr = fsm_base_header_cast_i.addr;
+          msg_header_cast_o.addr = fsm_header_cast_i.addr;
         end
       else
         begin
@@ -159,7 +159,7 @@ module bp_me_stream_pump_out
           msg_v_o = fsm_v_i;
           fsm_ready_and_o = msg_ready_and_i;
           cnt_up  = fsm_ready_and_o & fsm_v_i & ~is_last_cnt;
-          msg_header_cast_o.addr = is_stream ? wrap_addr : fsm_base_header_cast_i.addr;
+          msg_header_cast_o.addr = is_stream ? wrap_addr : fsm_header_cast_i.addr;
         end
 
       msg_last_o = is_last_cnt & msg_v_o;

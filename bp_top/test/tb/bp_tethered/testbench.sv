@@ -745,9 +745,9 @@ module testbench
                  ,.lce_resp_header_i(lce_resp_header_cast_li)
                  ,.mem_rev_receive_i(mem_rev_stream_done_li)
                  ,.mem_rev_squash_i(mem_rev_yumi_lo & spec_bits_lo.squash & mem_rev_stream_last_li)
-                 ,.mem_rev_header_i(mem_rev_base_header_li)
+                 ,.mem_rev_header_i(mem_rev_header_li)
                  ,.mem_fwd_send_i(mem_fwd_stream_new_li)
-                 ,.mem_fwd_header_i(mem_fwd_base_header_lo)
+                 ,.mem_fwd_header_i(mem_fwd_header_lo)
                  );
 
           end else if (cce_type_p == e_cce_fsm) begin
@@ -767,9 +767,9 @@ module testbench
                  ,.lce_resp_header_i(lce_resp_header_cast_li)
                  ,.mem_rev_receive_i(mem_rev_stream_done_li)
                  ,.mem_rev_squash_i(mem_rev_yumi_lo & spec_bits_lo.squash & mem_rev_stream_last_li)
-                 ,.mem_rev_header_i(mem_rev_base_header_li)
+                 ,.mem_rev_header_i(mem_rev_header_li)
                  ,.mem_fwd_send_i(mem_fwd_stream_new_li)
-                 ,.mem_fwd_header_i(mem_fwd_base_header_lo)
+                 ,.mem_fwd_header_i(mem_fwd_header_lo)
                  );
           end
         end
