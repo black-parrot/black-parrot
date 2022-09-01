@@ -27,13 +27,13 @@ module bp_me_cache_slice
   (input                                                 clk_i
    , input                                               reset_i
 
-   , input  [mem_header_width_lp-1:0]                    mem_fwd_header_i
+   , input  [mem_fwd_header_width_lp-1:0]                mem_fwd_header_i
    , input  [l2_data_width_p-1:0]                        mem_fwd_data_i
    , input                                               mem_fwd_v_i
    , output logic                                        mem_fwd_ready_and_o
    , input                                               mem_fwd_last_i
 
-   , output logic [mem_header_width_lp-1:0]              mem_rev_header_o
+   , output logic [mem_rev_header_width_lp-1:0]          mem_rev_header_o
    , output logic [l2_data_width_p-1:0]                  mem_rev_data_o
    , output logic                                        mem_rev_v_o
    , input                                               mem_rev_ready_and_i

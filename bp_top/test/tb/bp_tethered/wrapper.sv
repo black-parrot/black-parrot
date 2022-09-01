@@ -31,26 +31,26 @@ module wrapper
    , input [did_width_p-1:0]                                            host_did_i
 
    // Outgoing I/O
-   , output logic [mem_header_width_lp-1:0]                             mem_fwd_header_o
+   , output logic [mem_fwd_header_width_lp-1:0]                         mem_fwd_header_o
    , output logic [io_data_width_p-1:0]                                 mem_fwd_data_o
    , output logic                                                       mem_fwd_v_o
    , input                                                              mem_fwd_ready_and_i
    , output logic                                                       mem_fwd_last_o
 
-   , input [mem_header_width_lp-1:0]                                    mem_rev_header_i
+   , input [mem_rev_header_width_lp-1:0]                                mem_rev_header_i
    , input [io_data_width_p-1:0]                                        mem_rev_data_i
    , input                                                              mem_rev_v_i
    , output logic                                                       mem_rev_ready_and_o
    , input                                                              mem_rev_last_i
 
    // Incoming I/O
-   , input [mem_header_width_lp-1:0]                                    mem_fwd_header_i
+   , input [mem_fwd_header_width_lp-1:0]                                mem_fwd_header_i
    , input [io_data_width_p-1:0]                                        mem_fwd_data_i
    , input                                                              mem_fwd_v_i
    , output logic                                                       mem_fwd_ready_and_o
    , input                                                              mem_fwd_last_i
 
-   , output logic [mem_header_width_lp-1:0]                             mem_rev_header_o
+   , output logic [mem_rev_header_width_lp-1:0]                         mem_rev_header_o
    , output logic [io_data_width_p-1:0]                                 mem_rev_data_o
    , output logic                                                       mem_rev_v_o
    , input                                                              mem_rev_ready_and_i
@@ -116,17 +116,17 @@ module wrapper
 
       `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
       `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
-      `bp_cast_i(bp_bedrock_mem_header_s, mem_fwd_header);
-      `bp_cast_o(bp_bedrock_mem_header_s, mem_rev_header);
-      `bp_cast_o(bp_bedrock_mem_header_s, mem_fwd_header);
-      `bp_cast_i(bp_bedrock_mem_header_s, mem_rev_header);
+      `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
+      `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
+      `bp_cast_o(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
+      `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
-      bp_bedrock_mem_header_s mem_fwd_header_li;
+      bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
       logic [io_data_width_p-1:0] mem_fwd_data_li;
       logic mem_fwd_header_v_li, mem_fwd_has_data_li, mem_fwd_header_ready_and_lo;
       logic mem_fwd_data_v_li, mem_fwd_last_li, mem_fwd_data_ready_and_lo;
 
-      bp_bedrock_mem_header_s mem_rev_header_lo;
+      bp_bedrock_mem_rev_header_s mem_rev_header_lo;
       logic [io_data_width_p-1:0] mem_rev_data_lo;
       logic mem_rev_header_v_lo, mem_rev_has_data_lo, mem_rev_header_ready_and_li;
       logic mem_rev_data_v_lo, mem_rev_last_lo, mem_rev_data_ready_and_li;
@@ -134,7 +134,7 @@ module wrapper
       bp_me_stream_to_burst
        #(.bp_params_p(bp_params_p)
          ,.data_width_p(io_data_width_p)
-         ,.payload_width_p(mem_payload_width_lp)
+         ,.payload_width_p(mem_fwd_payload_width_lp)
          ,.payload_mask_p(mem_fwd_payload_mask_gp)
          )
        mem_fwd_s2b
@@ -160,7 +160,7 @@ module wrapper
       bp_me_burst_to_stream
        #(.bp_params_p(bp_params_p)
          ,.data_width_p(io_data_width_p)
-         ,.payload_width_p(mem_payload_width_lp)
+         ,.payload_width_p(mem_rev_payload_width_lp)
          ,.block_width_p(cce_block_width_p)
          ,.payload_mask_p(mem_rev_payload_mask_gp)
          )
@@ -184,12 +184,12 @@ module wrapper
          ,.out_msg_last_o(mem_rev_last_o)
          );
 
-      bp_bedrock_mem_header_s mem_fwd_header_lo;
+      bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
       logic [io_data_width_p-1:0] mem_fwd_data_lo;
       logic mem_fwd_header_v_lo, mem_fwd_has_data_lo, mem_fwd_header_ready_and_li;
       logic mem_fwd_data_v_lo, mem_fwd_last_lo, mem_fwd_data_ready_and_li;
 
-      bp_bedrock_mem_header_s mem_rev_header_li;
+      bp_bedrock_mem_rev_header_s mem_rev_header_li;
       logic [io_data_width_p-1:0] mem_rev_data_li;
       logic mem_rev_header_v_li, mem_rev_has_data_li, mem_rev_header_ready_and_lo;
       logic mem_rev_data_v_li, mem_rev_last_li, mem_rev_data_ready_and_lo;
@@ -197,7 +197,7 @@ module wrapper
       bp_me_stream_to_burst
        #(.bp_params_p(bp_params_p)
          ,.data_width_p(io_data_width_p)
-         ,.payload_width_p(mem_payload_width_lp)
+         ,.payload_width_p(mem_rev_payload_width_lp)
          ,.payload_mask_p(mem_rev_payload_mask_gp)
          )
        mem_rev_s2b
@@ -223,7 +223,7 @@ module wrapper
       bp_me_burst_to_stream
        #(.bp_params_p(bp_params_p)
          ,.data_width_p(io_data_width_p)
-         ,.payload_width_p(mem_payload_width_lp)
+         ,.payload_width_p(mem_fwd_payload_width_lp)
          ,.block_width_p(cce_block_width_p)
          ,.payload_mask_p(mem_fwd_payload_mask_gp)
          )
@@ -256,8 +256,8 @@ module wrapper
          ,.cord_width_p(io_noc_cord_width_p)
          ,.len_width_p(io_noc_len_width_p)
          ,.cid_width_p(io_noc_cid_width_p)
-         ,.pr_hdr_width_p(mem_header_width_lp)
-         ,.pr_payload_width_p(mem_payload_width_lp)
+         ,.pr_hdr_width_p(mem_fwd_header_width_lp)
+         ,.pr_payload_width_p(mem_fwd_payload_width_lp)
          ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
          ,.pr_data_width_p(bedrock_data_width_p)
          )
@@ -291,8 +291,8 @@ module wrapper
          ,.cord_width_p(io_noc_cord_width_p)
          ,.len_width_p(io_noc_len_width_p)
          ,.cid_width_p(io_noc_cid_width_p)
-         ,.pr_hdr_width_p(mem_header_width_lp)
-         ,.pr_payload_width_p(mem_payload_width_lp)
+         ,.pr_hdr_width_p(mem_rev_header_width_lp)
+         ,.pr_payload_width_p(mem_rev_payload_width_lp)
          ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
          ,.pr_data_width_p(bedrock_data_width_p)
          )
@@ -323,8 +323,8 @@ module wrapper
          ,.cord_width_p(io_noc_cord_width_p)
          ,.len_width_p(io_noc_len_width_p)
          ,.cid_width_p(io_noc_cid_width_p)
-         ,.pr_hdr_width_p(mem_header_width_lp)
-         ,.pr_payload_width_p(mem_payload_width_lp)
+         ,.pr_hdr_width_p(mem_fwd_header_width_lp)
+         ,.pr_payload_width_p(mem_fwd_payload_width_lp)
          ,.pr_data_width_p(bedrock_data_width_p)
          )
        mem_fwd_wormhole_to_burst
@@ -352,8 +352,8 @@ module wrapper
          ,.cord_width_p(io_noc_cord_width_p)
          ,.len_width_p(io_noc_len_width_p)
          ,.cid_width_p(io_noc_cid_width_p)
-         ,.pr_hdr_width_p(mem_header_width_lp)
-         ,.pr_payload_width_p(mem_payload_width_lp)
+         ,.pr_hdr_width_p(mem_rev_header_width_lp)
+         ,.pr_payload_width_p(mem_rev_payload_width_lp)
          ,.pr_data_width_p(bedrock_data_width_p)
          )
        mem_rev_wormhole_to_burst

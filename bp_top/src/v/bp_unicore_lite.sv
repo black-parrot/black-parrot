@@ -21,13 +21,13 @@ module bp_unicore_lite
    , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
 
    // Outgoing BP Stream Mem Buses from I$ and D$
-   , output logic [1:0][mem_header_width_lp-1:0]       mem_fwd_header_o
+   , output logic [1:0][mem_fwd_header_width_lp-1:0]   mem_fwd_header_o
    , output logic [1:0][uce_fill_width_p-1:0]          mem_fwd_data_o
    , output logic [1:0]                                mem_fwd_v_o
    , input [1:0]                                       mem_fwd_ready_and_i
    , output logic [1:0]                                mem_fwd_last_o
 
-   , input [1:0][mem_header_width_lp-1:0]              mem_rev_header_i
+   , input [1:0][mem_rev_header_width_lp-1:0]          mem_rev_header_i
    , input [1:0][uce_fill_width_p-1:0]                 mem_rev_data_i
    , input [1:0]                                       mem_rev_v_i
    , output logic [1:0]                                mem_rev_ready_and_o
@@ -204,10 +204,10 @@ module bp_unicore_lite
      ,.mem_rev_last_i(mem_rev_last_i[0])
      );
 
-  bp_bedrock_mem_header_s [1:1] _mem_fwd_header_o;
+  bp_bedrock_mem_fwd_header_s [1:1] _mem_fwd_header_o;
   logic [1:1][uce_fill_width_p-1:0] _mem_fwd_data_o;
   logic [1:1] _mem_fwd_v_o, _mem_fwd_ready_and_i, _mem_fwd_last_o;
-  bp_bedrock_mem_header_s [1:1] _mem_rev_header_i;
+  bp_bedrock_mem_rev_header_s [1:1] _mem_rev_header_i;
   logic [1:1][uce_fill_width_p-1:0] _mem_rev_data_i;
   logic [1:1] _mem_rev_v_i, _mem_rev_ready_and_o, _mem_rev_last_i;
   bp_uce
@@ -270,13 +270,13 @@ module bp_unicore_lite
   // Synchronize back to posedge clk
 `ifdef VERILATOR
   bsg_deff_reset
-   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
    posedge_latch
     (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
 `else
   bsg_dlatch
-   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
    posedge_latch
     (.clk_i(posedge_clk)
 `endif
@@ -291,13 +291,13 @@ module bp_unicore_lite
   // Synchronize back to negedge clk
 `ifdef VERILATOR
   bsg_deff_reset
-   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
    negedge_latch
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
 `else
   bsg_dlatch
-   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
    negedge_latch
     (.clk_i(negedge_clk)
 `endif

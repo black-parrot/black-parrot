@@ -141,18 +141,18 @@ module testbench
    rt_clk_gen
     (.o(rt_clk_i));
 
-  bp_bedrock_mem_header_s proc_fwd_header_lo;
+  bp_bedrock_mem_fwd_header_s proc_fwd_header_lo;
   logic [io_data_width_p-1:0] proc_fwd_data_lo;
   logic proc_fwd_v_lo, proc_fwd_ready_and_li, proc_fwd_last_lo;
-  bp_bedrock_mem_header_s proc_rev_header_li;
+  bp_bedrock_mem_rev_header_s proc_rev_header_li;
   logic [io_data_width_p-1:0] proc_rev_data_li;
   logic proc_rev_v_li, proc_rev_ready_and_lo;
   logic proc_rev_last_li;
 
-  bp_bedrock_mem_header_s proc_fwd_header_li;
+  bp_bedrock_mem_fwd_header_s proc_fwd_header_li;
   logic [io_data_width_p-1:0] proc_fwd_data_li;
   logic proc_fwd_v_li, proc_fwd_ready_and_lo, proc_fwd_last_li;
-  bp_bedrock_mem_header_s proc_rev_header_lo;
+  bp_bedrock_mem_rev_header_s proc_rev_header_lo;
   logic [io_data_width_p-1:0] proc_rev_data_lo;
   logic proc_rev_v_lo, proc_rev_ready_and_li, proc_rev_last_lo;
 

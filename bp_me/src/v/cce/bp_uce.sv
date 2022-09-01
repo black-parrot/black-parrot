@@ -57,13 +57,13 @@ module bp_uce
     , input                                          stat_mem_pkt_yumi_i
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
-    , output logic [mem_header_width_lp-1:0]         mem_fwd_header_o
+    , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
     , output logic [fill_width_p-1:0]                mem_fwd_data_o
     , output logic                                   mem_fwd_v_o
     , input                                          mem_fwd_ready_and_i
     , output logic                                   mem_fwd_last_o
 
-    , input [mem_header_width_lp-1:0]                mem_rev_header_i
+    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
     , input [fill_width_p-1:0]                       mem_rev_data_i
     , input                                          mem_rev_v_i
     , output logic                                   mem_rev_ready_and_o
@@ -220,7 +220,7 @@ module bp_uce
      ,.data_o(dirty_stat_r)
      );
 
-  bp_bedrock_mem_header_s fsm_fwd_header_lo;
+  bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
   logic [fill_width_p-1:0] fsm_fwd_data_lo;
   logic fsm_fwd_v_lo, fsm_fwd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt;
@@ -229,7 +229,7 @@ module bp_uce
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
+     ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp)
      )
@@ -253,7 +253,7 @@ module bp_uce
      ,.fsm_last_o(/* unused */)
      );
 
-  bp_bedrock_mem_header_s fsm_rev_header_li;
+  bp_bedrock_mem_rev_header_s fsm_rev_header_li;
   logic [paddr_width_p-1:0] fsm_rev_addr_li;
   logic [fill_width_p-1:0] fsm_rev_data_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo;
@@ -262,7 +262,7 @@ module bp_uce
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
+     ,.payload_width_p(mem_rev_payload_width_lp)
      ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_rev_payload_mask_gp)
      ,.header_els_p(2)

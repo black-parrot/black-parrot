@@ -41,14 +41,14 @@ module bp_me_nonsynth_cfg_loader
 
    // BedRock Stream
    // TODO: convert yumi_i to ready_and_i
-   , output logic [mem_header_width_lp-1:0]          io_fwd_header_o
+   , output logic [mem_fwd_header_width_lp-1:0]      io_fwd_header_o
    , output logic [dword_width_gp-1:0]               io_fwd_data_o
    , output logic                                    io_fwd_v_o
    , input                                           io_fwd_yumi_i
    , output logic                                    io_fwd_last_o
 
    // BedRock Stream
-   , input [mem_header_width_lp-1:0]                 io_rev_header_i
+   , input [mem_rev_header_width_lp-1:0]             io_rev_header_i
    , input [dword_width_gp-1:0]                      io_rev_data_i
    , input                                           io_rev_v_i
    , output logic                                    io_rev_ready_and_o
@@ -63,9 +63,9 @@ module bp_me_nonsynth_cfg_loader
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
-  bp_bedrock_mem_header_s io_fwd_cast_o;
-  bp_bedrock_mem_header_s io_rev_cast_i;
-  bp_bedrock_mem_payload_s io_fwd_payload;
+  bp_bedrock_mem_fwd_header_s io_fwd_cast_o;
+  bp_bedrock_mem_rev_header_s io_rev_cast_i;
+  bp_bedrock_mem_fwd_payload_s io_fwd_payload;
 
   assign io_fwd_header_o = io_fwd_cast_o;
   assign io_rev_cast_i = io_rev_header_i;

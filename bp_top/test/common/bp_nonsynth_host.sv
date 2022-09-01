@@ -28,13 +28,13 @@ module bp_nonsynth_host
   (input                                            clk_i
    , input                                          reset_i
 
-   , input [mem_header_width_lp-1:0]                mem_fwd_header_i
+   , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
    , input [dword_width_gp-1:0]                     mem_fwd_data_i
    , input                                          mem_fwd_v_i
    , output logic                                   mem_fwd_ready_and_o
    , input                                          mem_fwd_last_i
 
-   , output logic [mem_header_width_lp-1:0]         mem_rev_header_o
+   , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
    , output logic [dword_width_gp-1:0]              mem_rev_data_o
    , output logic                                   mem_rev_v_o
    , input                                          mem_rev_ready_and_i
@@ -115,7 +115,7 @@ module bp_nonsynth_host
   wire [lg_num_core_lp-1:0] addr_core_enc = addr_lo[byte_offset_width_lp+:lg_num_core_lp];
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  bp_bedrock_mem_header_s mem_fwd_header_li;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
   assign mem_fwd_header_li = mem_fwd_header_i;
   wire [hio_width_p-1:0] hio_id = mem_fwd_header_li.addr[paddr_width_p-1-:hio_width_p];
   always_comb

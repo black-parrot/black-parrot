@@ -35,17 +35,17 @@ module wrapper
    , output [instr_width_gp-1:0]             data_o
    , output                                  data_v_o
 
-   , output logic [mem_header_width_lp-1:0]  mem_fwd_header_o
-   , output logic [l2_data_width_p-1:0]      mem_fwd_data_o
-   , output logic                            mem_fwd_v_o
-   , input                                   mem_fwd_ready_and_i
-   , output logic                            mem_fwd_last_o
+   , output logic [mem_fwd_header_width_lp-1:0]  mem_fwd_header_o
+   , output logic [l2_data_width_p-1:0]          mem_fwd_data_o
+   , output logic                                mem_fwd_v_o
+   , input                                       mem_fwd_ready_and_i
+   , output logic                                mem_fwd_last_o
 
-   , input [mem_header_width_lp-1:0]         mem_rev_header_i
-   , input [l2_data_width_p-1:0]             mem_rev_data_i
-   , input                                   mem_rev_v_i
-   , output logic                            mem_rev_ready_and_o
-   , input                                   mem_rev_last_i
+   , input [mem_rev_header_width_lp-1:0]         mem_rev_header_i
+   , input [l2_data_width_p-1:0]                 mem_rev_data_i
+   , input                                       mem_rev_v_i
+   , output logic                                mem_rev_ready_and_o
+   , input                                       mem_rev_last_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);

@@ -44,7 +44,7 @@ module bp_cce_reg
    , input [lce_req_header_width_lp-1:0]                                   lce_req_header_i
    , input                                                                 lce_req_v_i
    , input [lce_resp_header_width_lp-1:0]                                  lce_resp_header_i
-   , input [mem_header_width_lp-1:0]                                       mem_rev_header_i
+   , input [mem_rev_header_width_lp-1:0]                                   mem_rev_header_i
 
    // For RDP, output state of pending bits from read operation
    , input                                                                 pending_i
@@ -86,7 +86,7 @@ module bp_cce_reg
 
   bp_bedrock_lce_req_header_s  lce_req_hdr;
   bp_bedrock_lce_resp_header_s lce_resp_hdr;
-  bp_bedrock_mem_header_s      mem_rev_hdr;
+  bp_bedrock_mem_rev_header_s      mem_rev_hdr;
 
   assign lce_req_hdr  = lce_req_header_i;
   assign lce_resp_hdr = lce_resp_header_i;

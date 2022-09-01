@@ -28,13 +28,13 @@ module bp_me_nonsynth_dev_tracer
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [mem_header_width_lp-1:0]                mem_fwd_header_i
+   , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
    , input [dword_width_gp-1:0]                     mem_fwd_data_i
    , input                                          mem_fwd_v_i
    , input                                          mem_fwd_ready_and_i
    , input                                          mem_fwd_last_i
 
-   , input [mem_header_width_lp-1:0]                mem_rev_header_i
+   , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
    , input [dword_width_gp-1:0]                     mem_rev_data_i
    , input                                          mem_rev_v_i
    , input                                          mem_rev_ready_and_i
@@ -43,8 +43,8 @@ module bp_me_nonsynth_dev_tracer
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
-  `bp_cast_i(bp_bedrock_mem_header_s, mem_fwd_header);
-  `bp_cast_i(bp_bedrock_mem_header_s, mem_rev_header);
+  `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
+  `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
   integer file;
   string file_name;

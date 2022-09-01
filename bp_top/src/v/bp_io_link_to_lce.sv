@@ -32,7 +32,7 @@ module bp_io_link_to_lce
    , input [lce_id_width_p-1:0]                     lce_id_i
 
    // Bedrock Burst: ready&valid
-   , input [mem_header_width_lp-1:0]                io_fwd_header_i
+   , input [mem_fwd_header_width_lp-1:0]            io_fwd_header_i
    , input                                          io_fwd_header_v_i
    , output logic                                   io_fwd_header_ready_and_o
    , input                                          io_fwd_has_data_i
@@ -41,7 +41,7 @@ module bp_io_link_to_lce
    , output logic                                   io_fwd_data_ready_and_o
    , input                                          io_fwd_last_i
 
-   , output logic [mem_header_width_lp-1:0]         io_rev_header_o
+   , output logic [mem_rev_header_width_lp-1:0]     io_rev_header_o
    , output logic                                   io_rev_header_v_o
    , input                                          io_rev_header_ready_and_i
    , output logic                                   io_rev_has_data_o
@@ -71,18 +71,18 @@ module bp_io_link_to_lce
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  `bp_cast_i(bp_bedrock_mem_header_s, io_fwd_header);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_rev_header);
+  `bp_cast_i(bp_bedrock_mem_fwd_header_s, io_fwd_header);
+  `bp_cast_o(bp_bedrock_mem_rev_header_s, io_rev_header);
   `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
 
   // Payload buffer
   // consumed with header handshake
   // ready THEN valid on input
-  bp_bedrock_mem_payload_s io_rev_payload;
+  bp_bedrock_mem_rev_payload_s io_rev_payload;
   logic payload_v_li, payload_ready_lo, payload_v_lo, payload_yumi_li;
   bsg_fifo_1r1w_small
-   #(.width_p($bits(bp_bedrock_mem_payload_s))
+   #(.width_p($bits(io_fwd_header_cast_i.payload))
      ,.els_p(io_noc_max_credits_p)
      ,.ready_THEN_valid_p(1)
      )

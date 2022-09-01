@@ -200,19 +200,19 @@ module bp_l2e_tile
     );
 
   // CCE-side CCE-Mem network connections
-  bp_bedrock_mem_header_s mem_fwd_header_lo;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
   logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
   logic mem_fwd_v_lo, mem_fwd_last_lo, mem_fwd_ready_and_li;
-  bp_bedrock_mem_header_s mem_rev_header_li;
+  bp_bedrock_mem_rev_header_s mem_rev_header_li;
   logic [bedrock_data_width_p-1:0] mem_rev_data_li;
   logic mem_rev_v_li, mem_rev_ready_and_lo, mem_rev_last_li;
 
   // Device-side CCE-Mem network connections
   // dev_fwd[2:0] = {CCE loopback, CFG, memory (cache)}
-  bp_bedrock_mem_header_s [2:0] dev_fwd_header_li;
+  bp_bedrock_mem_fwd_header_s [2:0] dev_fwd_header_li;
   logic [2:0][bedrock_data_width_p-1:0] dev_fwd_data_li;
   logic [2:0] dev_fwd_v_li, dev_fwd_ready_and_lo, dev_fwd_last_li;
-  bp_bedrock_mem_header_s [2:0] dev_rev_header_lo;
+  bp_bedrock_mem_rev_header_s [2:0] dev_rev_header_lo;
   logic [2:0][bedrock_data_width_p-1:0] dev_rev_data_lo;
   logic [2:0] dev_rev_v_lo, dev_rev_ready_and_li, dev_rev_last_lo;
 
@@ -297,7 +297,7 @@ module bp_l2e_tile
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(bedrock_data_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
+     ,.payload_width_p($bits(mem_fwd_header_lo.payload))
      ,.num_source_p(1)
      ,.num_sink_p(3)
      )
@@ -322,7 +322,7 @@ module bp_l2e_tile
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(bedrock_data_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
+     ,.payload_width_p($bits(mem_rev_header_lo.payload))
      ,.num_source_p(3)
      ,.num_sink_p(1)
      )

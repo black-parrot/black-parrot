@@ -550,10 +550,10 @@ module bp_core_tile
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
 
-  bp_bedrock_mem_header_s mem_fwd_header_lo;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
   logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
   logic mem_fwd_v_lo, mem_fwd_last_lo, mem_fwd_ready_and_li;
-  bp_bedrock_mem_header_s mem_rev_header_li;
+  bp_bedrock_mem_rev_header_s mem_rev_header_li;
   logic [bedrock_data_width_p-1:0] mem_rev_data_li;
   logic mem_rev_v_li, mem_rev_ready_and_lo, mem_rev_last_li;
 

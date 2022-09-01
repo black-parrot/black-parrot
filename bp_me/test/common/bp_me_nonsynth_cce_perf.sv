@@ -35,9 +35,9 @@ module bp_me_nonsynth_cce_perf
    , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
    , input                                          mem_rev_receive_i
    , input                                          mem_rev_squash_i
-   , input [mem_header_width_lp-1:0]                mem_rev_header_i
+   , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
    , input                                          mem_fwd_send_i
-   , input [mem_header_width_lp-1:0]                mem_fwd_header_i
+   , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);

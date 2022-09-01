@@ -91,7 +91,8 @@ module testbench
 
   logic mem_fwd_v_lo, mem_rev_v_li;
   logic mem_fwd_ready_and_li, mem_rev_ready_and_lo, mem_fwd_last_lo, mem_rev_last_li;
-  bp_bedrock_mem_header_s mem_fwd_header_lo, mem_rev_header_li;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
+  bp_bedrock_mem_rev_header_s mem_rev_header_li;
   logic [l2_data_width_p-1:0] mem_fwd_data_lo, mem_rev_data_li;
 
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;

@@ -127,7 +127,8 @@ module testbench
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo;
 
   // CCE Memory Interface - BedRock Stream
-  bp_bedrock_mem_header_s mem_rev_header, mem_fwd_header;
+  bp_bedrock_mem_rev_header_s mem_rev_header;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header;
   logic [bedrock_data_width_p-1:0] mem_fwd_data, mem_rev_data;
   logic mem_rev_v, mem_rev_ready_and;
   logic mem_fwd_v, mem_fwd_ready_and;
@@ -639,12 +640,12 @@ module testbench
     ,.mem_fwd_last_o(mem_fwd_last)
   );
 
-  // Memory Command Buffer
-  bp_bedrock_mem_header_s mem_fwd_lo;
+  // Memory Fwd Buffer
+  bp_bedrock_mem_fwd_header_s mem_fwd_lo;
   logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
   logic mem_fwd_v_lo, mem_fwd_ready_and_li, mem_fwd_yumi_li, mem_fwd_last_lo;
   bsg_fifo_1r1w_small
-  #(.width_p($bits(bp_bedrock_mem_header_s)+bedrock_data_width_p+1)
+  #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_data_width_p+1)
     ,.els_p(mem_buffer_els_lp)
     )
   mem_fwd_stream_buffer
@@ -661,12 +662,12 @@ module testbench
     );
   assign mem_fwd_yumi_li = mem_fwd_v_lo & mem_fwd_ready_and_li;
 
-  // Memory Response Buffer
-  bp_bedrock_mem_header_s mem_rev_li;
+  // Memory Rev Buffer
+  bp_bedrock_mem_rev_header_s mem_rev_li;
   logic [bedrock_data_width_p-1:0] mem_rev_data_li;
   logic mem_rev_v_li, mem_rev_ready_and_lo, mem_rev_last_li, mem_rev_yumi_lo;
   bsg_fifo_1r1w_small
-  #(.width_p($bits(bp_bedrock_mem_header_s)+bedrock_data_width_p+1)
+  #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_data_width_p+1)
     ,.els_p(mem_buffer_els_lp)
     )
   mem_rev_stream_buffer
@@ -959,7 +960,7 @@ module testbench
 
 
   // Config
-  bp_bedrock_mem_header_s cfg_mem_fwd_lo;
+  bp_bedrock_mem_fwd_header_s cfg_mem_fwd_lo;
   logic [dword_width_gp-1:0] cfg_mem_fwd_data_lo;
   logic cfg_mem_fwd_v_lo, cfg_mem_fwd_ready_and_li, cfg_mem_fwd_last_lo;
   logic cfg_mem_rev_v_lo;

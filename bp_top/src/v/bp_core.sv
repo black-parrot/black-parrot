@@ -89,13 +89,13 @@ module bp_core
    , input [1:0]                                         lce_resp_data_ready_and_i
    , output logic [1:0]                                  lce_resp_last_o
 
-   , input [mem_header_width_lp-1:0]                     mem_fwd_header_i
+   , input [mem_fwd_header_width_lp-1:0]                 mem_fwd_header_i
    , input [acache_fill_width_p-1:0]                     mem_fwd_data_i
    , input                                               mem_fwd_v_i
    , output logic                                        mem_fwd_ready_and_o
    , input                                               mem_fwd_last_i
 
-   , output logic [mem_header_width_lp-1:0]              mem_rev_header_o
+   , output logic [mem_rev_header_width_lp-1:0]          mem_rev_header_o
    , output logic [acache_fill_width_p-1:0]              mem_rev_data_o
    , output logic                                        mem_rev_v_o
    , input                                               mem_rev_ready_and_i
@@ -117,8 +117,8 @@ module bp_core
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
-  `bp_cast_i(bp_bedrock_mem_header_s, mem_fwd_header);
-  `bp_cast_o(bp_bedrock_mem_header_s, mem_rev_header);
+  `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
+  `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
   bp_cfg_bus_s cfg_bus_lo;
 
   logic debug_irq_li, timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
@@ -184,10 +184,10 @@ module bp_core
 
   // Device-side CCE-Mem network connections
   // dev_fwd[3:0] = {CCE loopback, CLINT, CFG, memory (cache)}
-  bp_bedrock_mem_header_s [3:0] dev_fwd_header_li;
+  bp_bedrock_mem_fwd_header_s [3:0] dev_fwd_header_li;
   logic [3:0][bedrock_data_width_p-1:0] dev_fwd_data_li;
   logic [3:0] dev_fwd_v_li, dev_fwd_ready_and_lo, dev_fwd_last_li;
-  bp_bedrock_mem_header_s [3:0] dev_rev_header_lo;
+  bp_bedrock_mem_rev_header_s [3:0] dev_rev_header_lo;
   logic [3:0][bedrock_data_width_p-1:0] dev_rev_data_lo;
   logic [3:0] dev_rev_v_lo, dev_rev_ready_and_li, dev_rev_last_lo;
 
@@ -298,7 +298,7 @@ module bp_core
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(bedrock_data_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
+     ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.num_source_p(1)
      ,.num_sink_p(4)
      )
@@ -323,7 +323,7 @@ module bp_core
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(bedrock_data_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
+     ,.payload_width_p(mem_rev_payload_width_lp)
      ,.num_source_p(4)
      ,.num_sink_p(1)
      )

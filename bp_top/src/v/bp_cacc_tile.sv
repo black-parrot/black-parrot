@@ -70,12 +70,12 @@ module bp_cacc_tile
   logic lce_req_header_v_li, lce_req_has_data_li, lce_req_header_ready_and_lo;
   logic lce_req_data_v_li, lce_req_last_li, lce_req_data_ready_and_lo;
 
-  bp_bedrock_mem_header_s io_fwd_header_lo;
+  bp_bedrock_mem_fwd_header_s io_fwd_header_lo;
   logic [acache_fill_width_p-1:0] io_fwd_data_lo;
   logic io_fwd_header_v_lo, io_fwd_has_data_lo, io_fwd_header_ready_and_li;
   logic io_fwd_data_v_lo, io_fwd_last_lo, io_fwd_data_ready_and_li;
 
-  bp_bedrock_mem_header_s io_rev_header_li;
+  bp_bedrock_mem_rev_header_s io_rev_header_li;
   logic [acache_fill_width_p-1:0] io_rev_data_li;
   logic io_rev_header_v_li, io_rev_has_data_li, io_rev_header_ready_and_lo;
   logic io_rev_data_v_li, io_rev_last_li, io_rev_data_ready_and_lo;
@@ -180,18 +180,18 @@ module bp_cacc_tile
      );
 
   if (cacc_type_p == e_cacc_vdp) begin : cacc_vdp
-    bp_bedrock_mem_header_s b2s_io_fwd_header_lo;
+    bp_bedrock_mem_fwd_header_s b2s_io_fwd_header_lo;
     logic [acache_fill_width_p-1:0] b2s_io_fwd_data_lo;
     logic b2s_io_fwd_v_lo, b2s_io_fwd_ready_and_li, b2s_io_fwd_last_lo;
 
-    bp_bedrock_mem_header_s s2b_io_rev_header_li;
+    bp_bedrock_mem_rev_header_s s2b_io_rev_header_li;
     logic [acache_fill_width_p-1:0] s2b_io_rev_data_li;
     logic s2b_io_rev_v_li, s2b_io_rev_ready_and_lo, s2b_io_rev_last_li;
 
     bp_me_burst_to_stream
      #(.bp_params_p(bp_params_p)
        ,.data_width_p(acache_fill_width_p)
-       ,.payload_width_p(mem_payload_width_lp)
+       ,.payload_width_p(mem_fwd_payload_width_lp)
        ,.block_width_p(acache_block_width_p)
        ,.payload_mask_p(mem_fwd_payload_mask_gp)
        )
@@ -219,7 +219,7 @@ module bp_cacc_tile
     bp_me_stream_to_burst
      #(.bp_params_p(bp_params_p)
        ,.data_width_p(acache_fill_width_p)
-       ,.payload_width_p(mem_payload_width_lp)
+       ,.payload_width_p(mem_rev_payload_width_lp)
        ,.payload_mask_p(mem_rev_payload_mask_gp)
        )
       io_rev_s2b

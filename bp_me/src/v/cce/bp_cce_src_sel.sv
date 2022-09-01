@@ -62,7 +62,7 @@ module bp_cce_src_sel
    , input                                                          lce_req_header_v_i
    , input [lce_req_header_width_lp-1:0]                            lce_req_header_i
    , input [lce_resp_header_width_lp-1:0]                           lce_resp_header_i
-   , input [mem_header_width_lp-1:0]                                mem_rev_header_i
+   , input [mem_rev_header_width_lp-1:0]                            mem_rev_header_i
    // note: data inputs are not guarded by valid
    // software must ensure data is valid before use
    // note: if data width > cce gpr width, only least significant cce gpr width bits of
@@ -99,7 +99,7 @@ module bp_cce_src_sel
   // Message casting
   bp_bedrock_lce_req_header_s  lce_req_header_li;
   bp_bedrock_lce_resp_header_s lce_resp_header_li;
-  bp_bedrock_mem_header_s  mem_rev_header_li;
+  bp_bedrock_mem_rev_header_s  mem_rev_header_li;
 
   assign lce_req_header_li   = lce_req_header_i;
   assign lce_resp_header_li  = lce_resp_header_i;

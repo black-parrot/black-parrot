@@ -80,7 +80,7 @@ module bp_cce_msg
 
    // CCE-MEM Interface
    // memory response stream pump in
-   , input [mem_header_width_lp-1:0]                mem_rev_header_i
+   , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
    , input [paddr_width_p-1:0]                      mem_rev_addr_i
    , input [bedrock_data_width_p-1:0]               mem_rev_data_i
    , input                                          mem_rev_v_i
@@ -90,7 +90,7 @@ module bp_cce_msg
    , input                                          mem_rev_stream_done_i
 
    // memory command stream pump out
-   , output logic [mem_header_width_lp-1:0]         mem_fwd_header_o
+   , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
    , output logic [bedrock_data_width_p-1:0]        mem_fwd_data_o
    , output logic                                   mem_fwd_v_o
    , input                                          mem_fwd_ready_and_i
@@ -168,13 +168,13 @@ module bp_cce_msg
   assign mshr = mshr_i;
 
   // memory command and response message casting
-  bp_bedrock_mem_header_s mem_fwd_base_header_lo;
+  bp_bedrock_mem_fwd_header_s mem_fwd_base_header_lo;
   assign mem_fwd_header_o = mem_fwd_base_header_lo;
-  bp_bedrock_mem_header_s mem_rev_base_header_li;
+  bp_bedrock_mem_rev_header_s mem_rev_base_header_li;
   assign mem_rev_base_header_li = mem_rev_header_i;
 
   // memory command header register used to complete pushq mem_fwd
-  bp_bedrock_mem_header_s mem_fwd_base_header_r, mem_fwd_base_header_n;
+  bp_bedrock_mem_fwd_header_s mem_fwd_base_header_r, mem_fwd_base_header_n;
 
   // address mask for bedrock data width aligned, critical word first operations
   wire [paddr_width_p-1:0] addr_bedrock_mask =
@@ -846,7 +846,7 @@ module bp_cce_msg
 
         // Outbound messages - pushq
 
-        // Memory Command
+        // Memory Fwd
         else if (decoded_inst_i.mem_fwd_v) begin
 
           // Can only send Mem command if:
@@ -944,7 +944,7 @@ module bp_cce_msg
           // capture the mem_fwd header in case command will send data in following cycle
           mem_fwd_base_header_n = mem_fwd_base_header_lo;
 
-        end // Memory Command
+        end // Memory Fwd
 
         // LCE Command
         else if (decoded_inst_i.lce_cmd_v) begin

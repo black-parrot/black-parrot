@@ -48,7 +48,7 @@ module bp_io_cce
    , input                                        lce_cmd_data_ready_and_i
    , output logic                                 lce_cmd_last_o
 
-   , input [mem_header_width_lp-1:0]              io_rev_header_i
+   , input [mem_rev_header_width_lp-1:0]          io_rev_header_i
    , input                                        io_rev_header_v_i
    , output logic                                 io_rev_header_ready_and_o
    , input                                        io_rev_has_data_i
@@ -57,7 +57,7 @@ module bp_io_cce
    , output logic                                 io_rev_data_ready_and_o
    , input                                        io_rev_last_i
 
-   , output logic [mem_header_width_lp-1:0]       io_fwd_header_o
+   , output logic [mem_fwd_header_width_lp-1:0]   io_fwd_header_o
    , output logic                                 io_fwd_header_v_o
    , input                                        io_fwd_header_ready_and_i
    , output logic                                 io_fwd_has_data_o
@@ -71,8 +71,8 @@ module bp_io_cce
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `bp_cast_i(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_o(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_fwd_header);
-  `bp_cast_i(bp_bedrock_mem_header_s, io_rev_header);
+  `bp_cast_o(bp_bedrock_mem_fwd_header_s, io_fwd_header);
+  `bp_cast_i(bp_bedrock_mem_rev_header_s, io_rev_header);
 
   // LCE Request to IO Command
   wire lce_req_wr_not_rd = (lce_req_header_cast_i.msg_type.req == e_bedrock_req_uc_wr);

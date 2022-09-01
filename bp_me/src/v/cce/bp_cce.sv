@@ -75,13 +75,13 @@ module bp_cce
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [mem_header_width_lp-1:0]                mem_rev_header_i
+   , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
    , input [bedrock_data_width_p-1:0]               mem_rev_data_i
    , input                                          mem_rev_v_i
    , output logic                                   mem_rev_ready_and_o
    , input                                          mem_rev_last_i
 
-   , output logic [mem_header_width_lp-1:0]         mem_fwd_header_o
+   , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
    , output logic [bedrock_data_width_p-1:0]        mem_fwd_data_o
    , output logic                                   mem_fwd_v_o
    , input                                          mem_fwd_ready_and_i
@@ -221,7 +221,7 @@ module bp_cce
   logic                                      msg_mem_fwd_stall_lo;
 
   // From memory response stream pump to CCE
-  bp_bedrock_mem_header_s mem_rev_base_header_li;
+  bp_bedrock_mem_rev_header_s mem_rev_base_header_li;
   logic mem_rev_v_li, mem_rev_yumi_lo;
   logic mem_rev_stream_new_li, mem_rev_stream_last_li, mem_rev_stream_done_li;
   logic [paddr_width_p-1:0] mem_rev_addr_li;
@@ -230,7 +230,7 @@ module bp_cce
   // From CCE to memory command stream pump
   localparam stream_words_lp = cce_block_width_p / bedrock_data_width_p;
   localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
-  bp_bedrock_mem_header_s mem_fwd_base_header_lo;
+  bp_bedrock_mem_fwd_header_s mem_fwd_base_header_lo;
   logic mem_fwd_v_lo, mem_fwd_ready_and_li;
   logic mem_fwd_stream_new_li, mem_fwd_stream_done_li;
   logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
@@ -284,12 +284,12 @@ module bp_cce
    * The FSM side of the stream pumps is considered part of the CCE's execute stage.
    */
 
-  // Memory Response Stream Pump
+  // Memory Rev Stream Pump
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
-      ,.payload_width_p(mem_payload_width_lp)
+      ,.payload_width_p(mem_rev_payload_width_lp)
       ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_rev_payload_mask_gp)
       // provide buffer space for two stream messages with data (for coherence protocol)
@@ -315,12 +315,12 @@ module bp_cce
       ,.fsm_done_o(mem_rev_stream_done_li)
       );
 
-  // Memory Command Stream Pump
+  // Memory Fwd Stream Pump
   bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
-      ,.payload_width_p(mem_payload_width_lp)
+      ,.payload_width_p(mem_fwd_payload_width_lp)
       ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp)
       )

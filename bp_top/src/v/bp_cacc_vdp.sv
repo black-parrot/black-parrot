@@ -69,13 +69,13 @@ module bp_cacc_vdp
 
     // BedRock Stream
     // may only support single beat messages
-    , input [mem_header_width_lp-1:0]             io_fwd_header_i
+    , input [mem_fwd_header_width_lp-1:0]         io_fwd_header_i
     , input [acache_fill_width_p-1:0]             io_fwd_data_i
     , input                                       io_fwd_v_i
     , input                                       io_fwd_last_i
     , output logic                                io_fwd_ready_and_o
 
-    , output logic [mem_header_width_lp-1:0]      io_rev_header_o
+    , output logic [mem_rev_header_width_lp-1:0]  io_rev_header_o
     , output logic [acache_fill_width_p-1:0]      io_rev_data_o
     , output logic                                io_rev_v_o
     , output logic                                io_rev_last_o
@@ -85,8 +85,8 @@ module bp_cacc_vdp
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
-  `bp_cast_i(bp_bedrock_mem_header_s, io_fwd_header);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_rev_header);
+  `bp_cast_i(bp_bedrock_mem_fwd_header_s, io_fwd_header);
+  `bp_cast_o(bp_bedrock_mem_rev_header_s, io_rev_header);
 
   localparam reg_els_lp = 1;
 
