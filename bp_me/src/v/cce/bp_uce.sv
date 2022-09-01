@@ -224,7 +224,7 @@ module bp_uce
   logic [fill_width_p-1:0] fsm_fwd_data_lo;
   logic fsm_fwd_v_lo, fsm_fwd_ready_and_li;
   logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt;
-  logic fsm_fwd_new, fsm_fwd_done;
+  logic fsm_fwd_new_lo, fsm_fwd_last_lo, fsm_fwd_done_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
@@ -248,16 +248,16 @@ module bp_uce
      ,.fsm_v_i(fsm_fwd_v_lo)
      ,.fsm_ready_and_o(fsm_fwd_ready_and_li)
      ,.fsm_cnt_o(fsm_fwd_cnt)
-     ,.fsm_new_o(fsm_fwd_new)
-     ,.fsm_done_o(fsm_fwd_done)
-     ,.fsm_last_o(/* unused */)
+     ,.fsm_new_o(fsm_fwd_new_lo)
+     ,.fsm_done_o(fsm_fwd_done_lo)
+     ,.fsm_last_o(fsm_fwd_last_lo)
      );
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_li;
   logic [paddr_width_p-1:0] fsm_rev_addr_li;
   logic [fill_width_p-1:0] fsm_rev_data_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo;
-  logic fsm_rev_new, fsm_rev_done;
+  logic fsm_rev_new_li, fsm_rev_last_li, fsm_rev_done_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
@@ -282,10 +282,10 @@ module bp_uce
      ,.fsm_addr_o(fsm_rev_addr_li)
      ,.fsm_data_o(fsm_rev_data_li)
      ,.fsm_v_o(fsm_rev_v_li)
-     ,.fsm_ready_and_i(fsm_rev_yumi_lo)
-     ,.fsm_new_o(fsm_rev_new)
-     ,.fsm_done_o(fsm_rev_done)
-     ,.fsm_last_o(/* unused */)
+     ,.fsm_yumi_i(fsm_rev_yumi_lo)
+     ,.fsm_new_o(fsm_rev_new_li)
+     ,.fsm_last_o(fsm_rev_last_li)
+     ,.fsm_done_o(fsm_rev_done_li)
      );
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
@@ -352,23 +352,18 @@ module bp_uce
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
   logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
-  // credit consumed when memory command sends
-  wire credit_v_li = fsm_fwd_done;
-  // credit returned when memory response fully consumed
-  wire credit_returned_li = fsm_rev_done;
   bsg_flow_counter
-   #(.els_p(coh_noc_max_credits_p)
-      // memory command increments on done singal from stream pump
-      ,.ready_THEN_valid_p(1)
-      )
+   #(.els_p(coh_noc_max_credits_p))
    credit_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.v_i(credit_v_li)
-     ,.ready_i(1'b0) // unused due to ready_then_valid param
+     // credit consumed when memory command sends
+     ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_lo)
+     ,.ready_i(fsm_fwd_ready_and_li)
 
-     ,.yumi_i(credit_returned_li)
+     // credit returned when memory response fully consumed
+     ,.yumi_i(fsm_rev_yumi_lo & fsm_rev_last_li)
      ,.count_o(credit_count_lo)
      );
   assign cache_req_credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
@@ -526,10 +521,11 @@ module bp_uce
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = ~cache_req_credits_full_o;
 
-            way_up = fsm_fwd_done;
+            way_up = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo);
             index_up = way_done & way_up;
 
-            state_n = (fsm_fwd_done & index_done & way_done)
+            // TODO: This actually does an extra increment
+            state_n = (index_done & way_done & way_up)
                       ? e_flush_fence
                       : index_up
                         ? e_flush_read
@@ -604,7 +600,7 @@ module bp_uce
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = ~cache_req_credits_full_o;
 
-            state_n = fsm_fwd_done ? uc_store_v_r ? e_ready : e_send_critical : e_uc_writeback_write_req;
+            state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo) ? uc_store_v_r ? e_ready : e_send_critical : e_uc_writeback_write_req;
           end
 
         e_send_critical:
@@ -677,7 +673,7 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             load_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
-            cache_req_done = fsm_rev_done & load_resp_yumi_lo;
+            cache_req_done = fsm_rev_last_li & load_resp_yumi_lo;
             state_n = cache_req_done ? e_writeback_write_req : e_writeback_read_req;
           end
         e_writeback_write_req:
@@ -689,7 +685,7 @@ module bp_uce
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = ~cache_req_credits_full_o;
 
-            state_n = fsm_fwd_done ? e_ready : e_writeback_write_req;
+            state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo) ? e_ready : e_writeback_write_req;
           end
         e_read_wait:
           begin
@@ -710,7 +706,7 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             load_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
-            cache_req_done = fsm_rev_done & load_resp_yumi_lo;
+            cache_req_done = fsm_rev_last_li & load_resp_yumi_lo;
             state_n = cache_req_done ? e_ready : e_read_wait;
           end
         e_uc_read_wait:

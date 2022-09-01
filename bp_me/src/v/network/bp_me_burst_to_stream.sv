@@ -89,7 +89,7 @@ module bp_me_burst_to_stream
 
   // Stream pump to handle all the details of properly forming the output BedRock stream message
   logic fsm_ready_and_lo, fsm_v_li;
-  logic stream_new_lo, stream_done_lo;
+  logic stream_new_lo;
   bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(data_width_p)
@@ -112,7 +112,7 @@ module bp_me_burst_to_stream
        ,.fsm_new_o(stream_new_lo)
        ,.fsm_cnt_o()
        ,.fsm_last_o()
-       ,.fsm_done_o(stream_done_lo)
+       ,.fsm_done_o()
        );
 
   // Stream pump needs valid header and, if required, data in same cycle

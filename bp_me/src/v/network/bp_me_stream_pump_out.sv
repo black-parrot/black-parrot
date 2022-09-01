@@ -96,7 +96,7 @@ module bp_me_stream_pump_out
 
   logic [stream_cnt_width_lp-1:0] stream_cnt, wrap_cnt;
   logic cnt_up;
-  wire cnt_set = fsm_new_o;
+  wire cnt_set = fsm_ready_and_o & fsm_v_i & fsm_new_o;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
   wire [stream_cnt_width_lp-1:0] first_cnt = fsm_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
   bp_me_stream_wraparound
@@ -117,8 +117,8 @@ module bp_me_stream_pump_out
   wire [stream_cnt_width_lp-1:0] last_cnt  = first_cnt + stream_size;
   wire is_last_cnt = (is_stream & (stream_cnt == last_cnt)) | (~fsm_stream & ~msg_stream);
 
-  assign fsm_new_o = fsm_ready_and_o & fsm_v_i & is_ready;
-  assign fsm_last_o = fsm_v_i & is_last_cnt;
+  assign fsm_new_o = is_ready;
+  assign fsm_last_o = is_last_cnt;
   assign fsm_done_o = fsm_ready_and_o & fsm_v_i & is_last_cnt;
   assign fsm_cnt_o = is_stream ? stream_cnt : first_cnt;
 
@@ -162,13 +162,13 @@ module bp_me_stream_pump_out
           msg_header_cast_o.addr = is_stream ? wrap_addr : fsm_header_cast_i.addr;
         end
 
-      msg_last_o = is_last_cnt & msg_v_o;
+      msg_last_o = is_last_cnt;
     end
 
   always_comb
     case (state_r)
-      e_stream: state_n = fsm_done_o ? e_ready : e_stream;
-      default : state_n = (fsm_new_o & any_stream) ? e_stream : e_ready;
+      e_stream: state_n = (fsm_ready_and_o & fsm_v_i & fsm_last_o) ? e_ready : e_stream;
+      default : state_n = (fsm_ready_and_o & fsm_v_i & fsm_new_o & any_stream) ? e_stream : e_ready;
     endcase
 
   //synopsys sync_set_reset "reset_i"

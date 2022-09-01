@@ -125,7 +125,7 @@ module bp_me_stream_pump_in
 
   logic [stream_cnt_width_lp-1:0] stream_cnt, wrap_cnt;
   logic cnt_up;
-  wire cnt_set = fsm_new_o;
+  wire cnt_set = fsm_yumi_i & fsm_new_o;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
   wire [stream_cnt_width_lp-1:0] first_cnt = msg_header_li.addr[stream_offset_width_lp+:stream_cnt_width_lp];
   bp_me_stream_wraparound
@@ -187,15 +187,15 @@ module bp_me_stream_pump_in
           fsm_addr_o = is_stream ? wrap_addr : msg_header_li.addr;
         end
 
-      fsm_new_o  = is_ready & fsm_yumi_i;
-      fsm_last_o = is_last_cnt & fsm_v_o;
+      fsm_new_o  = is_ready;
+      fsm_last_o = is_last_cnt;
       fsm_done_o = fsm_last_o & fsm_yumi_i;
     end
 
   always_comb
     case (state_r)
-      e_stream: state_n = fsm_done_o ? e_ready : e_stream;
-      default : state_n = (fsm_new_o & any_stream) ? e_stream : e_ready;
+      e_stream: state_n = (fsm_yumi_i & fsm_last_o) ? e_ready : e_stream;
+      default : state_n = (fsm_yumi_i & fsm_new_o & any_stream) ? e_stream : e_ready;
     endcase
 
   //synopsys sync_set_reset "reset_i"
