@@ -28,7 +28,7 @@
   } bp_bedrock_msg_size_e;
 
   /*
-   * bp_bedrock_mem_type_e specifies the memory command from the UCE/CCE
+   * bp_bedrock_fwd_type_e specifies the memory command from the UCE/CCE
    *
    * There are three types of commands:
    * 1. Access to memory that should be cached in L2/LLC (rd/wr)
@@ -49,7 +49,10 @@
     ,e_bedrock_mem_uc_wr   = 4'b0011  // Uncached store (uncached in L2/LLC)
     ,e_bedrock_mem_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
     ,e_bedrock_mem_amo     = 4'b0101  // Atomic operation in L2/LLC
-  } bp_bedrock_mem_type_e;
+  } bp_bedrock_fwd_type_e;
+
+  // rev messages are identical to fwd messages and can be safely casted between
+  typedef bp_bedrock_fwd_type_e bp_bedrock_rev_type_e;
 
   /*
    * bp_bedrock_req_type_e specifies whether the containing message is related to a read or write
@@ -136,7 +139,8 @@
     bp_bedrock_cmd_type_e    cmd;
     bp_bedrock_fill_type_e   fill;
     bp_bedrock_resp_type_e   resp;
-    bp_bedrock_mem_type_e    mem;
+    bp_bedrock_fwd_type_e    fwd;
+    bp_bedrock_rev_type_e    rev;
   } bp_bedrock_msg_u;
 
   /*

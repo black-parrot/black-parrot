@@ -722,7 +722,7 @@
     union packed
     {
       bp_bedrock_cmd_type_e         lce_cmd;
-      bp_bedrock_mem_type_e         mem_fwd;
+      bp_bedrock_fwd_type_e         mem_fwd;
     }                                      cmd;
     logic                                  spec;
     logic                                  custom;
@@ -843,7 +843,7 @@
     logic                                    lce_cmd_v;
     bp_bedrock_cmd_type_e                    lce_cmd;
     logic                                    mem_fwd_v;
-    bp_bedrock_mem_type_e                    mem_fwd;
+    bp_bedrock_fwd_type_e                    mem_fwd;
     logic                                    inv_cmd_v;
 
     // GPR write mask

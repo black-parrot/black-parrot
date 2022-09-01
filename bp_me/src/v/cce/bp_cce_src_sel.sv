@@ -180,7 +180,7 @@ module bp_cce_src_sel
           e_opd_pending_v:     src_a_o = '0;
           e_opd_lce_req_v:     src_a_o[0] = lce_req_header_v_i;
           e_opd_lce_resp_type: src_a_o[0+:$bits(bp_bedrock_resp_type_e)] = lce_resp_header_li.msg_type.resp;
-          e_opd_mem_rev_type:  src_a_o[0+:$bits(bp_bedrock_mem_type_e)] = mem_rev_header_li.msg_type.mem;
+          e_opd_mem_rev_type:  src_a_o[0+:$bits(bp_bedrock_rev_type_e)] = mem_rev_header_li.msg_type.rev;
           e_opd_lce_resp_data: src_a_o = lce_resp_data_i[0+:`bp_cce_inst_gpr_width];
           e_opd_mem_rev_data:  src_a_o = mem_rev_data_i[0+:`bp_cce_inst_gpr_width];
           e_opd_lce_req_data:  src_a_o = lce_req_data_i[0+:`bp_cce_inst_gpr_width];
@@ -273,7 +273,7 @@ module bp_cce_src_sel
           e_opd_pending_v:     src_b_o = '0;
           e_opd_lce_req_v:     src_b_o[0] = lce_req_header_v_i;
           e_opd_lce_resp_type: src_b_o[0+:$bits(bp_bedrock_resp_type_e)] = lce_resp_header_li.msg_type.resp;
-          e_opd_mem_rev_type:  src_b_o[0+:$bits(bp_bedrock_mem_type_e)] = mem_rev_header_li.msg_type.mem;
+          e_opd_mem_rev_type:  src_b_o[0+:$bits(bp_bedrock_rev_type_e)] = mem_rev_header_li.msg_type.rev;
           e_opd_lce_resp_data: src_b_o = lce_resp_data_i[0+:`bp_cce_inst_gpr_width];
           e_opd_mem_rev_data:  src_b_o = mem_rev_data_i[0+:`bp_cce_inst_gpr_width];
           e_opd_lce_req_data:  src_b_o = lce_req_data_i[0+:`bp_cce_inst_gpr_width];

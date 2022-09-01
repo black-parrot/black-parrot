@@ -81,7 +81,7 @@ module bp_io_cce
     lce_req_header_ready_and_o            = io_fwd_header_ready_and_i;
     io_fwd_header_v_o                     = lce_req_header_v_i;
     io_fwd_header_cast_o                  = '0;
-    io_fwd_header_cast_o.msg_type.mem     = lce_req_wr_not_rd ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+    io_fwd_header_cast_o.msg_type.fwd     = lce_req_wr_not_rd ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
     io_fwd_header_cast_o.addr             = lce_req_header_cast_i.addr;
     io_fwd_header_cast_o.size             = lce_req_header_cast_i.size;
     io_fwd_header_cast_o.payload.lce_id   = lce_req_header_cast_i.payload.src_id;
@@ -96,7 +96,7 @@ module bp_io_cce
   end
 
   // IO Response to LCE Cmd
-  wire io_rev_wr_not_rd = (io_rev_header_cast_i.msg_type.mem == e_bedrock_mem_uc_wr);
+  wire io_rev_wr_not_rd = (io_rev_header_cast_i.msg_type.rev == e_bedrock_mem_uc_wr);
   always_comb begin
     // header
     io_rev_header_ready_and_o            = lce_cmd_header_ready_and_i;

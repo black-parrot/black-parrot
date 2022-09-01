@@ -729,7 +729,7 @@ module bp_cce_msg
           // form message
           mem_fwd_base_header_lo.addr = lce_req_header_cast_i.addr;
           mem_fwd_base_header_lo.size = lce_req_header_cast_i.size;
-          mem_fwd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_wr;
+          mem_fwd_base_header_lo.msg_type.fwd = e_bedrock_mem_uc_wr;
           mem_fwd_base_header_lo.payload.lce_id = lce_req_header_cast_i.payload.src_id;
           mem_fwd_base_header_lo.payload.uncached = 1'b1;
           mem_fwd_data_o = lce_req_data_i;
@@ -751,7 +751,7 @@ module bp_cce_msg
           mem_fwd_base_header_lo.size = lce_req_header_cast_i.size;
           mem_fwd_base_header_lo.payload.lce_id = lce_req_header_cast_i.payload.src_id;
           mem_fwd_base_header_lo.payload.uncached = 1'b1;
-          mem_fwd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_rd;
+          mem_fwd_base_header_lo.msg_type.fwd = e_bedrock_mem_uc_rd;
 
           mem_fwd_stall_o = ~(mem_fwd_v_o & mem_fwd_ready_and_i);
 
@@ -772,7 +772,7 @@ module bp_cce_msg
           // form message
           mem_fwd_base_header_lo.addr = lce_req_header_cast_i.addr;
           mem_fwd_base_header_lo.size = lce_req_header_cast_i.size;
-          mem_fwd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_wr;
+          mem_fwd_base_header_lo.msg_type.fwd = e_bedrock_mem_uc_wr;
           mem_fwd_base_header_lo.payload.lce_id = lce_req_header_cast_i.payload.src_id;
           mem_fwd_base_header_lo.payload.uncached = 1'b1;
           mem_fwd_data_o = lce_req_data_i;
@@ -855,7 +855,7 @@ module bp_cce_msg
               | ~decoded_inst_i.pending_w_v) begin
 
             // defaults
-            mem_fwd_base_header_lo.msg_type.mem = decoded_inst_i.mem_fwd;
+            mem_fwd_base_header_lo.msg_type.fwd = decoded_inst_i.mem_fwd;
             mem_fwd_base_header_lo.addr = addr_i;
             mem_fwd_base_header_lo.size = mshr.msg_size;
             mem_fwd_base_header_lo.payload.lce_id = lce_i;

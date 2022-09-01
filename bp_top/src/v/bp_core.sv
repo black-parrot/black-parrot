@@ -251,7 +251,7 @@ module bp_core
      ,.s_external_irq_o(s_external_irq_li)
      );
 
-  // CCE-Mem Loopback
+  // Loopback
   bp_me_loopback
    #(.bp_params_p(bp_params_p))
    loopback

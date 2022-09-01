@@ -60,14 +60,14 @@ module bp_me_nonsynth_dev_tracer
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       if (mem_fwd_v_i & mem_fwd_ready_and_i) begin
-        $fdisplay(file, "%12t |: MEM CMD addr[%H] msg[%b] size[%b]"
+        $fdisplay(file, "%12t |: MEM FWD addr[%H] msg[%b] size[%b]"
                  , $time
                  , mem_fwd_header_cast_i.addr
-                 , mem_fwd_header_cast_i.msg_type.mem
+                 , mem_fwd_header_cast_i.msg_type.fwd
                  , mem_fwd_header_cast_i.size
                  );
-        if (mem_fwd_header_cast_i.msg_type.mem inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr}) begin
-          $fdisplay(file, "%12t |: MEM CMD DATA last[%0b] %H"
+        if (mem_fwd_header_cast_i.msg_type.fwd inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr}) begin
+          $fdisplay(file, "%12t |: MEM FWD DATA last[%0b] %H"
                    , $time
                    , mem_fwd_last_i
                    , mem_fwd_data_i
@@ -75,14 +75,14 @@ module bp_me_nonsynth_dev_tracer
         end
       end
       if (mem_rev_v_i & mem_rev_ready_and_i) begin
-        $fdisplay(file, "%12t |: MEM RESP addr[%H] msg[%b] size[%b]"
+        $fdisplay(file, "%12t |: MEM REV addr[%H] msg[%b] size[%b]"
                  , $time
                  , mem_rev_header_cast_i.addr
-                 , mem_rev_header_cast_i.msg_type.mem
+                 , mem_rev_header_cast_i.msg_type.rev
                  , mem_rev_header_cast_i.size
                  );
-        if (mem_rev_header_cast_i.msg_type.mem inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd}) begin
-          $fdisplay(file, "%12t |: MEM RESP DATA last[%0b] %H"
+        if (mem_rev_header_cast_i.msg_type.rev inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd}) begin
+          $fdisplay(file, "%12t |: MEM REV DATA last[%0b] %H"
                    , $time
                    , mem_rev_last_i
                    , mem_rev_data_i

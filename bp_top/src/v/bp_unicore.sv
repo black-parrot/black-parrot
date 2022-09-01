@@ -99,7 +99,7 @@ module bp_unicore
   localparam lg_num_proc_lp = `BSG_SAFE_CLOG2(num_proc_lp);
   localparam lg_num_dev_lp = `BSG_SAFE_CLOG2(num_dev_lp);
 
-  // {IO CMD, BE UCE, FE UCE}
+  // {IO, BE UCE, FE UCE}
   bp_bedrock_mem_fwd_header_s [num_proc_lp-1:0] proc_fwd_header_lo;
   logic [num_proc_lp-1:0][uce_fill_width_p-1:0] proc_fwd_data_lo;
   logic [num_proc_lp-1:0] proc_fwd_v_lo, proc_fwd_ready_and_li, proc_fwd_last_lo;
@@ -107,7 +107,7 @@ module bp_unicore
   logic [num_proc_lp-1:0][uce_fill_width_p-1:0] proc_rev_data_li;
   logic [num_proc_lp-1:0] proc_rev_v_li, proc_rev_ready_and_lo, proc_rev_last_li;
 
-  // {CCE loopback, IO CMD, L2 CMD, CLINT, CFG}
+  // {LOOPBACK, IO, L2, CLINT, CFG}
   bp_bedrock_mem_fwd_header_s [num_dev_lp-1:0] dev_fwd_header_li;
   logic [num_dev_lp-1:0][uce_fill_width_p-1:0] dev_fwd_data_li;
   logic [num_dev_lp-1:0] dev_fwd_v_li, dev_fwd_ready_and_lo, dev_fwd_last_li;
