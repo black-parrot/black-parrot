@@ -90,10 +90,7 @@ module bp_fe_pc_gen
         next_pc = ras_tgt_lo;
     else if (ovr_taken)
         next_pc = br_tgt_lo;
-    else if (incomplete_fetch_if1_r) begin
-        next_fetch_linear = 1'b1;
-        next_pc = pc_if1_r;
-    end else if (btb_taken)
+    else if (btb_taken)
         next_pc = btb_br_tgt_lo;
     else begin
         next_pc = pc_plus4;
@@ -102,14 +99,10 @@ module bp_fe_pc_gen
   end
   assign pc_if1_n = next_pc;
   assign realigner_poison_if1_n = !next_fetch_linear & !redirect_restore_insn_lower_half_v_i;
+  assign next_fetch_o = `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp);
 
   wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_bytes_gp);
   assign incomplete_fetch_if1_n = compressed_support_p & next_pc_misaligned & realigner_poison_if1_n;
-  assign next_fetch_o = !compressed_support_p
-                      ? next_pc
-                      : incomplete_fetch_if1_n
-                        ? `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp)
-                        : `bp_align_addr_up(next_pc, rv64_instr_width_bytes_gp);
 
   always_comb
     begin
@@ -210,7 +203,8 @@ module bp_fe_pc_gen
      ,.val_i(bht_row_li)
      ,.w_yumi_o(bht_w_yumi_lo)
      );
-  assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
+
+  assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo) & !incomplete_fetch_if1_r;
 
   // RAS
   logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
@@ -238,7 +232,7 @@ module bp_fe_pc_gen
         pred_if2_n = pred_if1_r;
         pred_if2_n.pred    = bht_pred_lo;
         pred_if2_n.taken   = btb_taken;
-        pred_if2_n.btb     = btb_br_tgt_v_lo;
+        pred_if2_n.btb     = btb_br_tgt_v_lo; // TODO: mask this? does it matter?
         pred_if2_n.bht_row = bht_row_lo;
       end
     else
@@ -255,17 +249,17 @@ module bp_fe_pc_gen
      ,.data_i({pred_if2_n, pc_if2_n})
      ,.data_o({pred_if2_r, pc_if2_r})
      );
-  assign return_addr_n = pc_if2_r + vaddr_width_p'(4);
+  assign return_addr_n = fetch_pc_o + vaddr_width_p'(4);
 
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
   assign ovr_ret    = btb_miss_ras & is_ret;
   assign ovr_taken  = btb_miss_br & ((is_br & pred_if2_r.pred) | is_jal);
   assign ovr_o      = ovr_taken | ovr_ret;
-  assign br_tgt_lo  = pc_if2_r + scan_instr.imm;
-  assign fetch_pc_o = pc_if2_r;
+  assign br_tgt_lo  = fetch_pc_o + scan_instr.imm;
+  // assign fetch_pc_o = pc_if2_r;
 
-  wire [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_up(pc_if2_r, rv64_instr_width_bytes_gp);
+  wire [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_down(fetch_pc_o, rv64_instr_width_bytes_gp);
 
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
@@ -311,6 +305,7 @@ module bp_fe_pc_gen
         ,.restore_lower_half_v_i(redirect_restore_insn_lower_half_v_i)
         ,.restore_lower_half_i  (redirect_restore_insn_lower_half_i)
 
+        ,.fetch_instr_pc_o      (fetch_pc_o)
         ,.fetch_instr_o         (fetch_instr_o)
         ,.fetch_instr_v_o       (fetch_instr_v_o)
         ,.fetch_is_second_half_o(fetch_is_second_half_o)
@@ -318,6 +313,7 @@ module bp_fe_pc_gen
     end
   else
     begin : fetch_instr_generation
+      assign fetch_pc_o      = fetch_pc_i;
       assign fetch_instr_o   = fetch_i;
       assign fetch_instr_v_o = fetch_v_i;
       assign fetch_is_second_half_o = 0;

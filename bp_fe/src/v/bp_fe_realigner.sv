@@ -26,6 +26,7 @@ module bp_fe_realigner
    , input                           restore_lower_half_v_i
    , input [instr_half_width_gp-1:0] restore_lower_half_i
 
+   , output [vaddr_width_p-1:0]  fetch_instr_pc_o
    , output [instr_width_gp-1:0] fetch_instr_o
    , output                      fetch_instr_v_o
    , output                      fetch_is_second_half_o
@@ -34,17 +35,19 @@ module bp_fe_realigner
   wire [instr_half_width_gp-1:0] icache_data_lower_half_li = fetch_data_i[0                  +:instr_half_width_gp];
   wire [instr_half_width_gp-1:0] icache_data_upper_half_li = fetch_data_i[instr_half_width_gp+:instr_half_width_gp];
 
+  logic [vaddr_width_p-1:0] fetch_instr_pc_n, fetch_instr_pc_r;
   logic [instr_half_width_gp-1:0] half_buffer_n, half_buffer_r;
-  assign half_buffer_n   = restore_lower_half_v_i ? restore_lower_half_i : icache_data_upper_half_li;
+  assign fetch_instr_pc_n = fetch_pc_i;
+  assign half_buffer_n    = restore_lower_half_v_i ? restore_lower_half_i : icache_data_upper_half_li;
   bsg_dff_reset_en
-   #(.width_p(instr_half_width_gp))
+   #(.width_p(vaddr_width_p+instr_half_width_gp))
    half_buffer_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.en_i  (fetch_data_v_i | restore_lower_half_v_i)
-     ,.data_i(half_buffer_n)
-     ,.data_o(half_buffer_r)
+     ,.data_i({fetch_instr_pc_n, half_buffer_n})
+     ,.data_o({fetch_instr_pc_r, half_buffer_r})
      );
 
   logic half_buffer_v_r;
@@ -55,6 +58,7 @@ module bp_fe_realigner
      ,.reset_i(reset_i)
 
      ,.set_i  ((fetch_data_v_i & ~poison_i) | restore_lower_half_v_i)
+     // TODO: invalidate when PC is aligned?
      ,.clear_i(fetch_instr_v_o | poison_i) // set overrides clear
      ,.data_o (half_buffer_v_r)
      );
@@ -64,6 +68,7 @@ module bp_fe_realigner
 
   assign fetch_is_second_half_o = !icache_fetch_is_aligned && half_buffer_v_r;
 
-  assign fetch_instr_v_o = icache_fetch_is_aligned ? fetch_data_v_i : buffered_insn_v;
-  assign fetch_instr_o   = icache_fetch_is_aligned ? fetch_data_i   : { icache_data_lower_half_li, half_buffer_r };
+  assign fetch_instr_pc_o = icache_fetch_is_aligned ? fetch_pc_i       : fetch_instr_pc_r;
+  assign fetch_instr_v_o  = icache_fetch_is_aligned ? fetch_data_v_i   : buffered_insn_v;
+  assign fetch_instr_o    = icache_fetch_is_aligned ? fetch_data_i     : { icache_data_lower_half_li, half_buffer_r };
 endmodule
