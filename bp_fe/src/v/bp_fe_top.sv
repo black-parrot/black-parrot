@@ -88,7 +88,7 @@ module bp_fe_top
   logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
   logic [instr_width_gp-1:0] fetch_li, fetch_instr_lo;
-  logic [vaddr_width_p-1:0] fetch_pc_lo;
+  logic [vaddr_width_p-1:0] fetch_pc_lo, fetch_resume_pc_lo;
   logic fetch_v_li, fetch_exception_v_li, fetch_fail_v_li;
   logic fetch_instr_v_lo, fetch_is_second_half_lo, fetch_instr_yumi_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
@@ -126,6 +126,7 @@ module bp_fe_top
      ,.fetch_br_metadata_fwd_o(fetch_br_metadata_fwd_lo)
      ,.fetch_pc_o(fetch_pc_lo)
      ,.fetch_is_second_half_o(fetch_is_second_half_lo)
+     ,.fetch_resume_pc_o(fetch_resume_pc_lo)
 
      ,.attaboy_pc_i(attaboy_pc_li)
      ,.attaboy_br_metadata_fwd_i(attaboy_br_metadata_fwd_li)
@@ -196,7 +197,7 @@ module bp_fe_top
   logic br_miss_r, br_miss_nonbr_r, br_miss_taken_r, br_miss_ntaken_r;
   logic [instr_half_width_gp-1:0] insn_lower_half_resume_n, insn_lower_half_resume_r;
   logic insn_lower_half_v_resume_n, insn_lower_half_v_resume_r;
-  assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.npc : fetch_pc_lo;
+  assign pc_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.npc : fetch_resume_pc_lo;
   assign br_metadata_fwd_resume_n = cmd_nonattaboy_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fetch_br_metadata_fwd_lo;
   assign insn_lower_half_v_resume_n = (compressed_support_p & itlb_fill_v            & (fe_cmd_cast_i.opcode == e_op_itlb_fill_resume))
                                     | (compressed_support_p & icache_fill_response_v & (fe_cmd_cast_i.opcode == e_op_icache_fill_resume))

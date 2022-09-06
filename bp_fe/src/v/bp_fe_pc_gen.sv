@@ -45,6 +45,7 @@ module bp_fe_pc_gen
    , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
    , output logic [vaddr_width_p-1:0]                fetch_pc_o
    , output                                          fetch_is_second_half_o
+   , output logic[vaddr_width_p-1:0]                 fetch_resume_pc_o
 
    , input [vaddr_width_p-1:0]                       attaboy_pc_i
    , input [branch_metadata_fwd_width_p-1:0]         attaboy_br_metadata_fwd_i
@@ -257,7 +258,7 @@ module bp_fe_pc_gen
   assign ovr_taken  = btb_miss_br & ((is_br & pred_if2_r.pred) | is_jal);
   assign ovr_o      = ovr_taken | ovr_ret;
   assign br_tgt_lo  = fetch_pc_o + scan_instr.imm;
-  // assign fetch_pc_o = pc_if2_r;
+  assign fetch_resume_pc_o = pc_if2_r;
 
   wire [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_down(fetch_pc_o, rv64_instr_width_bytes_gp);
 
@@ -313,7 +314,7 @@ module bp_fe_pc_gen
     end
   else
     begin : fetch_instr_generation
-      assign fetch_pc_o      = fetch_pc_i;
+      assign fetch_pc_o      = pc_if2_r;
       assign fetch_instr_o   = fetch_i;
       assign fetch_instr_v_o = fetch_v_i;
       assign fetch_is_second_half_o = 0;
