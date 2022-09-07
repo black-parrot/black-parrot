@@ -45,17 +45,17 @@ module wrapper
    , output logic [num_caches_p-1:0][dword_width_gp-1:0] data_o
    , output logic [num_caches_p-1:0]                     v_o
 
-   , output logic [mem_header_width_lp-1:0]            mem_cmd_header_o
-   , output logic [l2_data_width_p-1:0]                mem_cmd_data_o
-   , output logic                                      mem_cmd_v_o
-   , input                                             mem_cmd_ready_and_i
-   , output logic                                      mem_cmd_last_o
+   , output logic [mem_fwd_header_width_lp-1:0]        mem_fwd_header_o
+   , output logic [l2_data_width_p-1:0]                mem_fwd_data_o
+   , output logic                                      mem_fwd_v_o
+   , input                                             mem_fwd_ready_and_i
+   , output logic                                      mem_fwd_last_o
 
-   , input [mem_header_width_lp-1:0]                   mem_resp_header_i
-   , input [l2_data_width_p-1:0]                       mem_resp_data_i
-   , input                                             mem_resp_v_i
-   , output logic                                      mem_resp_ready_and_o
-   , input                                             mem_resp_last_i
+   , input [mem_rev_header_width_lp-1:0]               mem_rev_header_i
+   , input [l2_data_width_p-1:0]                       mem_rev_data_i
+   , input                                             mem_rev_v_i
+   , output logic                                      mem_rev_ready_and_o
+   , input                                             mem_rev_last_i
    );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -397,17 +397,17 @@ module wrapper
             ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo)
             ,.stat_mem_i(stat_mem_lo)
 
-            ,.mem_cmd_header_o(mem_cmd_header_o)
-            ,.mem_cmd_data_o(mem_cmd_data_o)
-            ,.mem_cmd_v_o(mem_cmd_v_o)
-            ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i)
-            ,.mem_cmd_last_o(mem_cmd_last_o)
+            ,.mem_fwd_header_o(mem_fwd_header_o)
+            ,.mem_fwd_data_o(mem_fwd_data_o)
+            ,.mem_fwd_v_o(mem_fwd_v_o)
+            ,.mem_fwd_ready_and_i(mem_fwd_ready_and_i)
+            ,.mem_fwd_last_o(mem_fwd_last_o)
 
-            ,.mem_resp_header_i(mem_resp_header_i)
-            ,.mem_resp_data_i(mem_resp_data_i)
-            ,.mem_resp_v_i(mem_resp_v_i)
-            ,.mem_resp_ready_and_o(mem_resp_ready_and_o)
-            ,.mem_resp_last_i(mem_resp_last_i)
+            ,.mem_rev_header_i(mem_rev_header_i)
+            ,.mem_rev_data_i(mem_rev_data_i)
+            ,.mem_rev_v_i(mem_rev_v_i)
+            ,.mem_rev_ready_and_o(mem_rev_ready_and_o)
+            ,.mem_rev_last_i(mem_rev_last_i)
             );
        end
     end
@@ -474,7 +474,7 @@ module wrapper
          ,.num_source_p(num_lce_p)
          ,.num_sink_p(num_cce_p)
          )
-       resp_xbar
+       rev_xbar
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
@@ -540,7 +540,7 @@ module wrapper
          ,.num_source_p(num_cce_p)
          ,.num_sink_p(num_lce_p)
          )
-       cmd_xbar
+       fwd_xbar
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
@@ -603,17 +603,17 @@ module wrapper
 
           // CCE-MEM Interface
           // BedRock Stream protocol: ready&valid
-          ,.mem_resp_header_i(mem_resp_header_i)
-          ,.mem_resp_data_i(mem_resp_data_i)
-          ,.mem_resp_v_i(mem_resp_v_i)
-          ,.mem_resp_ready_and_o(mem_resp_ready_and_o)
-          ,.mem_resp_last_i(mem_resp_last_i)
+          ,.mem_rev_header_i(mem_rev_header_i)
+          ,.mem_rev_data_i(mem_rev_data_i)
+          ,.mem_rev_v_i(mem_rev_v_i)
+          ,.mem_rev_ready_and_o(mem_rev_ready_and_o)
+          ,.mem_rev_last_i(mem_rev_last_i)
 
-          ,.mem_cmd_header_o(mem_cmd_header_o)
-          ,.mem_cmd_data_o(mem_cmd_data_o)
-          ,.mem_cmd_v_o(mem_cmd_v_o)
-          ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i)
-          ,.mem_cmd_last_o(mem_cmd_last_o)
+          ,.mem_fwd_header_o(mem_fwd_header_o)
+          ,.mem_fwd_data_o(mem_fwd_data_o)
+          ,.mem_fwd_v_o(mem_fwd_v_o)
+          ,.mem_fwd_ready_and_i(mem_fwd_ready_and_i)
+          ,.mem_fwd_last_o(mem_fwd_last_o)
           );
      end
 

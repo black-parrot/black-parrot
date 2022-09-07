@@ -46,10 +46,12 @@ module bp_nonsynth_if_verif
       $display("########### LCE-CCE IF ##############");
       $display("bp_bedrock_lce_req_header_s       bits: struct %d width %d", $bits(bp_bedrock_lce_req_header_s), lce_req_header_width_lp);
       $display("bp_bedrock_lce_cmd_header_s       bits: struct %d width %d", $bits(bp_bedrock_lce_cmd_header_s), lce_cmd_header_width_lp);
+      $display("bp_bedrock_lce_fill_header_s      bits: struct %d width %d", $bits(bp_bedrock_lce_fill_header_s), lce_fill_header_width_lp);
       $display("bp_bedrock_lce_resp_header_s      bits: struct %d width %d", $bits(bp_bedrock_lce_resp_header_s), lce_resp_header_width_lp);
 
       $display("########### CCE-MEM IF ##############");
-      $display("bp_bedrock_mem_header_s           bits: struct %d width %d", $bits(bp_bedrock_mem_header_s), mem_header_width_lp);
+      $display("bp_bedrock_mem_fwd_header_s           bits: struct %d width %d", $bits(bp_bedrock_mem_fwd_header_s), mem_fwd_header_width_lp);
+      $display("bp_bedrock_mem_rev_header_s           bits: struct %d width %d", $bits(bp_bedrock_mem_rev_header_s), mem_rev_header_width_lp);
 
       if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
         $error("Error: unsupported number of CCE's");

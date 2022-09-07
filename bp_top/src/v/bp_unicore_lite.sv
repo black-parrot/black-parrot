@@ -21,17 +21,17 @@ module bp_unicore_lite
    , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
 
    // Outgoing BP Stream Mem Buses from I$ and D$
-   , output logic [1:0][mem_header_width_lp-1:0]       mem_cmd_header_o
-   , output logic [1:0][uce_fill_width_p-1:0]          mem_cmd_data_o
-   , output logic [1:0]                                mem_cmd_v_o
-   , input [1:0]                                       mem_cmd_ready_and_i
-   , output logic [1:0]                                mem_cmd_last_o
+   , output logic [1:0][mem_fwd_header_width_lp-1:0]   mem_fwd_header_o
+   , output logic [1:0][uce_fill_width_p-1:0]          mem_fwd_data_o
+   , output logic [1:0]                                mem_fwd_v_o
+   , input [1:0]                                       mem_fwd_ready_and_i
+   , output logic [1:0]                                mem_fwd_last_o
 
-   , input [1:0][mem_header_width_lp-1:0]              mem_resp_header_i
-   , input [1:0][uce_fill_width_p-1:0]                 mem_resp_data_i
-   , input [1:0]                                       mem_resp_v_i
-   , output logic [1:0]                                mem_resp_ready_and_o
-   , input [1:0]                                       mem_resp_last_i
+   , input [1:0][mem_rev_header_width_lp-1:0]          mem_rev_header_i
+   , input [1:0][uce_fill_width_p-1:0]                 mem_rev_data_i
+   , input [1:0]                                       mem_rev_v_i
+   , output logic [1:0]                                mem_rev_ready_and_o
+   , input [1:0]                                       mem_rev_last_i
 
    , input                                             debug_irq_i
    , input                                             timer_irq_i
@@ -191,25 +191,25 @@ module bp_unicore_lite
      ,.stat_mem_pkt_yumi_i(icache_stat_mem_pkt_yumi_lo)
      ,.stat_mem_i(icache_stat_mem_lo)
 
-     ,.mem_cmd_header_o(mem_cmd_header_o[0])
-     ,.mem_cmd_data_o(mem_cmd_data_o[0])
-     ,.mem_cmd_v_o(mem_cmd_v_o[0])
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i[0])
-     ,.mem_cmd_last_o(mem_cmd_last_o[0])
+     ,.mem_fwd_header_o(mem_fwd_header_o[0])
+     ,.mem_fwd_data_o(mem_fwd_data_o[0])
+     ,.mem_fwd_v_o(mem_fwd_v_o[0])
+     ,.mem_fwd_ready_and_i(mem_fwd_ready_and_i[0])
+     ,.mem_fwd_last_o(mem_fwd_last_o[0])
 
-     ,.mem_resp_header_i(mem_resp_header_i[0])
-     ,.mem_resp_data_i(mem_resp_data_i[0])
-     ,.mem_resp_v_i(mem_resp_v_i[0])
-     ,.mem_resp_ready_and_o(mem_resp_ready_and_o[0])
-     ,.mem_resp_last_i(mem_resp_last_i[0])
+     ,.mem_rev_header_i(mem_rev_header_i[0])
+     ,.mem_rev_data_i(mem_rev_data_i[0])
+     ,.mem_rev_v_i(mem_rev_v_i[0])
+     ,.mem_rev_ready_and_o(mem_rev_ready_and_o[0])
+     ,.mem_rev_last_i(mem_rev_last_i[0])
      );
 
-  bp_bedrock_mem_header_s [1:1] _mem_cmd_header_o;
-  logic [1:1][uce_fill_width_p-1:0] _mem_cmd_data_o;
-  logic [1:1] _mem_cmd_v_o, _mem_cmd_ready_and_i, _mem_cmd_last_o;
-  bp_bedrock_mem_header_s [1:1] _mem_resp_header_i;
-  logic [1:1][uce_fill_width_p-1:0] _mem_resp_data_i;
-  logic [1:1] _mem_resp_v_i, _mem_resp_ready_and_o, _mem_resp_last_i;
+  bp_bedrock_mem_fwd_header_s [1:1] _mem_fwd_header_o;
+  logic [1:1][uce_fill_width_p-1:0] _mem_fwd_data_o;
+  logic [1:1] _mem_fwd_v_o, _mem_fwd_ready_and_i, _mem_fwd_last_o;
+  bp_bedrock_mem_rev_header_s [1:1] _mem_rev_header_i;
+  logic [1:1][uce_fill_width_p-1:0] _mem_rev_data_i;
+  logic [1:1] _mem_rev_v_i, _mem_rev_ready_and_o, _mem_rev_last_i;
   bp_uce
    #(.bp_params_p(bp_params_p)
      ,.assoc_p(dcache_assoc_p)
@@ -251,17 +251,17 @@ module bp_unicore_lite
      ,.stat_mem_pkt_yumi_i(dcache_stat_mem_pkt_yumi_lo)
      ,.stat_mem_i(dcache_stat_mem_lo)
 
-     ,.mem_cmd_header_o(_mem_cmd_header_o[1])
-     ,.mem_cmd_data_o(_mem_cmd_data_o[1])
-     ,.mem_cmd_v_o(_mem_cmd_v_o[1])
-     ,.mem_cmd_ready_and_i(_mem_cmd_ready_and_i[1])
-     ,.mem_cmd_last_o(_mem_cmd_last_o[1])
+     ,.mem_fwd_header_o(_mem_fwd_header_o[1])
+     ,.mem_fwd_data_o(_mem_fwd_data_o[1])
+     ,.mem_fwd_v_o(_mem_fwd_v_o[1])
+     ,.mem_fwd_ready_and_i(_mem_fwd_ready_and_i[1])
+     ,.mem_fwd_last_o(_mem_fwd_last_o[1])
 
-     ,.mem_resp_header_i(_mem_resp_header_i[1])
-     ,.mem_resp_data_i(_mem_resp_data_i[1])
-     ,.mem_resp_v_i(_mem_resp_v_i[1])
-     ,.mem_resp_ready_and_o(_mem_resp_ready_and_o[1])
-     ,.mem_resp_last_i(_mem_resp_last_i[1])
+     ,.mem_rev_header_i(_mem_rev_header_i[1])
+     ,.mem_rev_data_i(_mem_rev_data_i[1])
+     ,.mem_rev_v_i(_mem_rev_v_i[1])
+     ,.mem_rev_ready_and_o(_mem_rev_ready_and_o[1])
+     ,.mem_rev_last_i(_mem_rev_last_i[1])
      );
 
   // These latches are optimized out in Verilator 4.220...
@@ -270,42 +270,42 @@ module bp_unicore_lite
   // Synchronize back to posedge clk
 `ifdef VERILATOR
   bsg_deff_reset
-   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
    posedge_latch
     (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
 `else
   bsg_dlatch
-   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
    posedge_latch
     (.clk_i(posedge_clk)
 `endif
-     ,.data_i({_mem_cmd_header_o[1], _mem_cmd_data_o[1], _mem_cmd_v_o[1], _mem_cmd_last_o[1]
-               ,mem_cmd_ready_and_i[1]
+     ,.data_i({_mem_fwd_header_o[1], _mem_fwd_data_o[1], _mem_fwd_v_o[1], _mem_fwd_last_o[1]
+               ,mem_fwd_ready_and_i[1]
                })
-     ,.data_o({mem_cmd_header_o[1], mem_cmd_data_o[1], mem_cmd_v_o[1], mem_cmd_last_o[1]
-               ,_mem_cmd_ready_and_i[1]
+     ,.data_o({mem_fwd_header_o[1], mem_fwd_data_o[1], mem_fwd_v_o[1], mem_fwd_last_o[1]
+               ,_mem_fwd_ready_and_i[1]
                })
      );
 
   // Synchronize back to negedge clk
 `ifdef VERILATOR
   bsg_deff_reset
-   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
    negedge_latch
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
 `else
   bsg_dlatch
-   #(.width_p($bits(bp_bedrock_mem_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
    negedge_latch
     (.clk_i(negedge_clk)
 `endif
-     ,.data_i({mem_resp_header_i[1], mem_resp_data_i[1], mem_resp_v_i[1], mem_resp_last_i[1]
-               ,_mem_resp_ready_and_o[1]
+     ,.data_i({mem_rev_header_i[1], mem_rev_data_i[1], mem_rev_v_i[1], mem_rev_last_i[1]
+               ,_mem_rev_ready_and_o[1]
                })
-     ,.data_o({_mem_resp_header_i[1], _mem_resp_data_i[1], _mem_resp_v_i[1], _mem_resp_last_i[1]
-               ,mem_resp_ready_and_o[1]
+     ,.data_o({_mem_rev_header_i[1], _mem_rev_data_i[1], _mem_rev_v_i[1], _mem_rev_last_i[1]
+               ,mem_rev_ready_and_o[1]
                })
      );
 
