@@ -322,7 +322,7 @@ module bp_l2e_tile
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(bedrock_data_width_p)
-     ,.payload_width_p($bits(mem_rev_header_lo.payload))
+     ,.payload_width_p($bits(mem_rev_header_li.payload))
      ,.num_source_p(3)
      ,.num_sink_p(1)
      )
