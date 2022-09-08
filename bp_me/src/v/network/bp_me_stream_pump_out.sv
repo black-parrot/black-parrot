@@ -93,9 +93,9 @@ module bp_me_stream_pump_out
   wire cnt_set = fsm_ready_and_o & fsm_v_i & fsm_new_o;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
   wire [stream_cnt_width_lp-1:0] first_cnt = fsm_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
-  bp_me_stream_wraparound
+  bp_me_stream_pump_control
    #(.max_val_p(stream_words_lp-1))
-   wraparound_cnt
+   pump_control
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 

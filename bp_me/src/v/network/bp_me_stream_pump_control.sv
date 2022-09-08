@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_me_stream_wraparound.sv
+ *   bp_me_stream_pump_control.sv
  *
  * Description:
  *   Generates the stream word/cnt portion of a BedRock Stream protocol message address given
@@ -24,14 +24,14 @@
 
 `include "bsg_defines.v"
 
-module bp_me_stream_wraparound
+module bp_me_stream_pump_control
  #(parameter `BSG_INV_PARAM(max_val_p)
    , localparam width_lp = `BSG_WIDTH(max_val_p)
    )
   (input                                          clk_i
    , input                                        reset_i
 
-   // A new wraparound sequence has started, transparent write
+   // A new pump_control sequence has started, transparent write
    , input                                        set_i
    , input [`BSG_SAFE_MINUS(width_lp,1):0]        size_i
    , input [`BSG_SAFE_MINUS(width_lp,1):0]        val_i
@@ -153,4 +153,4 @@ module bp_me_stream_wraparound
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bp_me_stream_wraparound)
+`BSG_ABSTRACT_MODULE(bp_me_stream_pump_control)
