@@ -106,6 +106,7 @@ module bp_me_burst_to_stream
        ,.msg_last_o(out_msg_last_o)
        ,.msg_ready_and_i(out_msg_ready_and_i)
        ,.fsm_header_i(msg_header_li)
+       ,.fsm_addr_o()
        ,.fsm_data_i(in_msg_data_i)
        ,.fsm_v_i(fsm_v_li)
        ,.fsm_ready_and_o(fsm_ready_and_lo)

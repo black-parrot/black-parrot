@@ -184,7 +184,7 @@ module bp_nonsynth_nbf_loader
 
       if (mem_rev_v_i & mem_rev_ready_and_o)
         assert(reset_i !== '0 || ~(mem_rev_v_i & mem_rev_ready_and_o & ~mem_rev_last_i))
-          else $error("Multi-beat IO revonse detected");
+          else $error("Multi-beat IO response detected");
     end
   //synopsys translate_on
 

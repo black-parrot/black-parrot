@@ -71,6 +71,8 @@ module bp_me_stream_pump_in
    , output logic                                   fsm_v_o
    , input                                          fsm_yumi_i
    // FSM control signals
+   // fsm_cnt is the current stream word being sent
+   , output logic [stream_cnt_width_lp-1:0]         fsm_cnt_o
    // fsm_new is raised when first beat of every message is acked
    , output logic                                   fsm_new_o
    // fsm_last is raised on last beat of every message
@@ -83,10 +85,6 @@ module bp_me_stream_pump_in
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, msg_header);
   `bp_cast_o(bp_bedrock_xce_header_s, fsm_header);
-
-  enum logic {e_ready, e_stream} state_n, state_r;
-  wire is_ready  = (state_r == e_ready);
-  wire is_stream = (state_r == e_stream);
 
   bp_bedrock_xce_header_s msg_header_li;
   logic [stream_data_width_p-1:0] msg_data_li;
@@ -121,7 +119,6 @@ module bp_me_stream_pump_in
   wire msg_stream = msg_stream_mask_p[msg_header_li.msg_type] & nz_stream;
   wire any_stream = fsm_stream | msg_stream;
 
-  logic [stream_cnt_width_lp-1:0] stream_cnt, wrap_cnt;
   logic cnt_up;
   wire cnt_set = fsm_yumi_i & fsm_new_o;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
@@ -137,16 +134,14 @@ module bp_me_stream_pump_in
      ,.val_i(first_cnt)
      ,.en_i(cnt_up)
 
-     ,.full_o(stream_cnt)
-     ,.wrap_o(wrap_cnt)
+     ,.wrap_o(fsm_cnt_o)
+     ,.first_o(fsm_new_o)
+     ,.last_o(fsm_last_o)
      );
-
-  wire [stream_cnt_width_lp-1:0] last_cnt  = first_cnt + stream_size;
-  wire is_last_cnt = (is_stream & (stream_cnt == last_cnt)) | (~fsm_stream & ~msg_stream);
 
   wire [paddr_width_p-1:0] wrap_addr =
     {msg_header_li.addr[paddr_width_p-1:block_offset_width_lp]
-     ,{stream_words_lp>0{wrap_cnt}}
+     ,{stream_words_lp>0{fsm_cnt_o}}
      ,msg_header_li.addr[0+:stream_offset_width_lp]
      };
 
@@ -162,17 +157,17 @@ module bp_me_stream_pump_in
           // 1:N
           // convert one msg message into stream of N FSM messages
           fsm_v_o = msg_v_li;
-          msg_yumi_lo = is_last_cnt & fsm_yumi_i;
-          cnt_up = fsm_yumi_i & ~is_last_cnt;
-          fsm_addr_o = is_stream ? wrap_addr : msg_header_li.addr;
+          msg_yumi_lo = fsm_last_o & fsm_yumi_i;
+          cnt_up = fsm_yumi_i;
+          fsm_addr_o = wrap_addr;
         end
       else if (msg_stream & ~fsm_stream)
         begin
           // N:1
           // consume all but last msg input beat silently, then FSM consumes last beat
-          fsm_v_o = msg_v_li & is_last_cnt;
-          msg_yumi_lo = ~is_last_cnt | fsm_yumi_i;
-          cnt_up = msg_v_li & msg_yumi_lo & ~is_last_cnt;
+          fsm_v_o = msg_v_li & fsm_last_o;
+          msg_yumi_lo = ~fsm_last_o | fsm_yumi_i;
+          cnt_up = msg_v_li & msg_yumi_lo;
           // Hold address constant at critical address
           fsm_addr_o = msg_header_li.addr;
         end
@@ -181,26 +176,11 @@ module bp_me_stream_pump_in
           // 1:1
           fsm_v_o = msg_v_li;
           msg_yumi_lo = fsm_yumi_i;
-          cnt_up = fsm_yumi_i & ~is_last_cnt;
-          fsm_addr_o = is_stream ? wrap_addr : msg_header_li.addr;
+          cnt_up = fsm_yumi_i;
+          fsm_addr_o = wrap_addr;
         end
 
-      fsm_new_o  = is_ready;
-      fsm_last_o = is_last_cnt;
     end
-
-  always_comb
-    case (state_r)
-      e_stream: state_n = (fsm_yumi_i & fsm_last_o) ? e_ready : e_stream;
-      default : state_n = (fsm_yumi_i & fsm_new_o & any_stream) ? e_stream : e_ready;
-    endcase
-
-  //synopsys sync_set_reset "reset_i"
-  always_ff @(posedge clk_i)
-    if (reset_i)
-      state_r <= e_ready;
-    else
-      state_r <= state_n;
 
   // parameter checks
   if (block_width_p % stream_data_width_p != 0)

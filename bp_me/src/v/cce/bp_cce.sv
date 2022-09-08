@@ -327,6 +327,7 @@ module bp_cce
       // from FSM CCE
       ,.fsm_header_i(fsm_fwd_header_lo)
       ,.fsm_data_i(fsm_fwd_data_lo)
+      ,.fsm_addr_o()
       ,.fsm_v_i(fsm_fwd_v_lo)
       ,.fsm_ready_and_o(fsm_fwd_ready_and_li)
       ,.fsm_cnt_o()

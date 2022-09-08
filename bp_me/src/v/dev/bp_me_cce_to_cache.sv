@@ -109,6 +109,7 @@ module bp_me_cce_to_cache
      ,.fsm_data_o(fsm_fwd_data_li)
      ,.fsm_v_o(fsm_fwd_v_li)
      ,.fsm_yumi_i(fsm_fwd_yumi_lo)
+     ,.fsm_cnt_o()
      ,.fsm_new_o(fsm_fwd_new_li)
      ,.fsm_last_o(fsm_fwd_last_li)
      );
@@ -244,6 +245,7 @@ module bp_me_cce_to_cache
 
      ,.fsm_header_i(fsm_rev_header_lo)
      ,.fsm_data_i(fsm_rev_data_lo)
+     ,.fsm_addr_o()
      ,.fsm_v_i(fsm_rev_v_lo)
      ,.fsm_ready_and_o(fsm_rev_ready_and_li)
      ,.fsm_cnt_o(/* unused */)
