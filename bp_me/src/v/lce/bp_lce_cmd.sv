@@ -217,7 +217,7 @@ module bp_lce_cmd
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.size_i('1)
+     ,.size_i(wrap_size)
      ,.val_i(first_cnt)
      ,.en_i(wrap_cnt_up)
 
