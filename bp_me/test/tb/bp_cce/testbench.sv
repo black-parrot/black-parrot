@@ -927,13 +927,12 @@ module testbench
          ,.lce_cmd_header_i(lce_cmd_header_cast_o)
          ,.resp_receive_i(lce_resp_yumi)
          ,.lce_resp_header_i(lce_resp_header_cast_li)
-         ,.mem_rev_receive_i(mem_rev_stream_done_li)
-         ,.mem_rev_squash_i(mem_rev_yumi_lo & spec_bits_lo.squash & mem_rev_stream_last_li)
-         ,.mem_rev_header_i(mem_rev_header_li)
-         ,.mem_fwd_send_i(mem_fwd_stream_new_li)
-         ,.mem_fwd_header_i(mem_fwd_header_lo)
+         ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
+         ,.mem_rev_squash_i(fsm_rev_yumi_lo & fsm_rev_last_li & spec_bits_lo.squash)
+         ,.mem_rev_header_i(fsm_rev_header_li)
+         ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
+         ,.mem_fwd_header_i(fsm_fwd_header_lo)
          );
-
   end
   else if (cce_type_p == e_cce_fsm) begin
     bind bp_cce_fsm
@@ -950,11 +949,11 @@ module testbench
          ,.lce_cmd_header_i(lce_cmd_header_cast_o)
          ,.resp_receive_i(lce_resp_yumi)
          ,.lce_resp_header_i(lce_resp_header_cast_li)
-         ,.mem_rev_receive_i(mem_rev_stream_done_li)
-         ,.mem_rev_squash_i(mem_rev_yumi_lo & spec_bits_lo.squash & mem_rev_stream_last_li)
-         ,.mem_rev_header_i(mem_rev_header_li)
-         ,.mem_fwd_send_i(mem_fwd_stream_new_li)
-         ,.mem_fwd_header_i(mem_fwd_header_lo)
+         ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
+         ,.mem_rev_squash_i(fsm_rev_yumi_lo & spec_bits_lo.squash & fsm_rev_last_li)
+         ,.mem_rev_header_i(fsm_rev_header_li)
+         ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
+         ,.mem_fwd_header_i(fsm_fwd_header_lo)
          );
   end
 

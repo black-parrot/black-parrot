@@ -298,6 +298,7 @@ module bp_cce
       ,.fsm_data_o(fsm_rev_data_li)
       ,.fsm_v_o(fsm_rev_v_li)
       ,.fsm_yumi_i(fsm_rev_yumi_lo)
+      ,.fsm_cnt_o()
       ,.fsm_new_o(fsm_rev_new_li)
       ,.fsm_last_o(fsm_rev_last_li)
       );
