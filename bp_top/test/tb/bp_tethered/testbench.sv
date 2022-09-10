@@ -220,7 +220,7 @@ module testbench
      ,.num_dma_p(num_cce_p*l2_banks_p)
      ,.preload_mem_p(preload_mem_p)
      ,.dram_type_p(dram_type_p)
-     ,.mem_els_p(2**28)
+     ,.mem_bytes_p(2**29)
      )
    dram
     (.clk_i(clk_i)

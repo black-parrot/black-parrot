@@ -110,6 +110,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down_variable.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_crossbar_o_by_i.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_crossbar_control_locking_o_by_i.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_cycle_counter.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_decode_with_v.v
@@ -322,5 +323,4 @@ $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_deff_reset.v
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
 $BP_COMMON_DIR/src/v/bsg_rom_param.v
-$BP_COMMON_DIR/src/v/bsg_crossbar_control_locking_o_by_i.v
 

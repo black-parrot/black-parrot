@@ -16,7 +16,7 @@ module bp_nonsynth_mem
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter preload_mem_p = 0
-   , parameter mem_els_p = 0
+   , parameter mem_bytes_p = 0
    , parameter dram_type_p = ""
    )
   (input                                            clk_i
@@ -80,7 +80,7 @@ module bp_nonsynth_mem
    #(.bp_params_p(bp_params_p)
      ,.preload_mem_p(preload_mem_p)
      ,.dram_type_p(dram_type_p)
-     ,.mem_els_p(mem_els_p)
+     ,.mem_bytes_p(mem_bytes_p)
      ,.num_dma_p(l2_banks_p)
      )
    dram
