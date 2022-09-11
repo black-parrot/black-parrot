@@ -87,9 +87,11 @@ module bp_fe_pc_gen
     next_fetch_linear = 1'b0;
   if (redirect_v_i)
         next_pc = redirect_pc_i;
-    else if (ovr_half)
+    else if (ovr_half) begin
         next_pc = if2_second_half_addr;
-    else if (ovr_ret)
+        // TODO: clean up linear logic
+        next_fetch_linear = 1'b1;
+    end else if (ovr_ret)
         next_pc = ras_tgt_lo;
     else if (ovr_taken)
         next_pc = br_tgt_lo;
