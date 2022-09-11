@@ -68,7 +68,8 @@ module bp_fe_realigner
 
   assign fetch_is_second_half_o = !icache_fetch_is_aligned && half_buffer_v_r;
 
-  assign fetch_instr_pc_o = icache_fetch_is_aligned ? fetch_pc_i       : fetch_instr_pc_r;
+  assign fetch_instr_pc_o = !fetch_is_second_half_o ? fetch_pc_i       : fetch_instr_pc_r;
+
   assign fetch_instr_v_o  = icache_fetch_is_aligned ? fetch_data_v_i   : buffered_insn_v;
   assign fetch_instr_o    = icache_fetch_is_aligned ? fetch_data_i     : { icache_data_lower_half_li, half_buffer_r };
 endmodule
