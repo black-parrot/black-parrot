@@ -73,20 +73,22 @@ module bp_fe_pc_gen
   /////////////////
   // IF1
   /////////////////
-  logic incomplete_fetch_if1_r, incomplete_fetch_if1_n;
   bp_fe_pred_s pred_if1_n, pred_if1_r;
   logic [vaddr_width_p-1:0] next_pc;
   logic next_fetch_linear;
-  logic ovr_ret, ovr_taken, btb_taken;
+  logic ovr_ret, ovr_taken, ovr_half, btb_taken;
   logic [vaddr_width_p-1:0] btb_br_tgt_lo;
   logic [vaddr_width_p-1:0] ras_tgt_lo;
   logic [vaddr_width_p-1:0] br_tgt_lo;
+  logic [vaddr_width_p-1:0] if2_second_half_addr;
   wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_r + vaddr_width_p'(4);
   // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb begin
     next_fetch_linear = 1'b0;
-    if (redirect_v_i)
+  if (redirect_v_i)
         next_pc = redirect_pc_i;
+    else if (ovr_half)
+        next_pc = if2_second_half_addr;
     else if (ovr_ret)
         next_pc = ras_tgt_lo;
     else if (ovr_taken)
@@ -102,9 +104,6 @@ module bp_fe_pc_gen
   assign realigner_poison_if1_n = !next_fetch_linear & !redirect_restore_insn_lower_half_v_i;
   assign next_fetch_o = `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp);
 
-  wire next_pc_misaligned = !`bp_addr_is_aligned(next_pc, rv64_instr_width_bytes_gp);
-  assign incomplete_fetch_if1_n = compressed_support_p & next_pc_misaligned & realigner_poison_if1_n;
-
   always_comb
     begin
       pred_if1_n = '0;
@@ -115,12 +114,12 @@ module bp_fe_pc_gen
     end
 
   bsg_dff
-   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p+2))
+   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p+1))
    pred_if1_reg
     (.clk_i(clk_i)
 
-     ,.data_i({pred_if1_n, pc_if1_n, incomplete_fetch_if1_n, realigner_poison_if1_n})
-     ,.data_o({pred_if1_r, pc_if1_r, incomplete_fetch_if1_r, realigner_poison_if1_r})
+     ,.data_i({pred_if1_n, pc_if1_n, realigner_poison_if1_n})
+     ,.data_o({pred_if1_r, pc_if1_r, realigner_poison_if1_r})
      );
 
   `declare_bp_fe_instr_scan_s(vaddr_width_p)
@@ -132,7 +131,7 @@ module bp_fe_pc_gen
   wire is_ret  = fetch_instr_yumi_i & scan_instr.ret;
 
   // BTB
-  wire btb_r_v_li = next_fetch_yumi_i & !incomplete_fetch_if1_n;
+  wire btb_r_v_li = next_fetch_yumi_i;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb)
     | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
@@ -170,7 +169,7 @@ module bp_fe_pc_gen
      );
 
   // BHT
-  wire bht_r_v_li = next_fetch_yumi_i & !incomplete_fetch_if1_n;
+  wire bht_r_v_li = next_fetch_yumi_i;
   wire [vaddr_width_p-1:0] bht_r_addr_li = next_fetch_o;
   wire [ghist_width_p-1:0] bht_r_ghist_li = pred_if1_n.ghist;
   wire bht_w_v_li =
@@ -205,7 +204,7 @@ module bp_fe_pc_gen
      ,.w_yumi_o(bht_w_yumi_lo)
      );
 
-  assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo) & !incomplete_fetch_if1_r;
+  assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
 
   // RAS
   logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
@@ -250,13 +249,19 @@ module bp_fe_pc_gen
      ,.data_i({pred_if2_n, pc_if2_n})
      ,.data_o({pred_if2_r, pc_if2_r})
      );
-  assign return_addr_n = fetch_pc_o + vaddr_width_p'(4);
+  assign return_addr_n        = fetch_pc_o + vaddr_width_p'(4);
+  assign if2_second_half_addr = pc_if2_r + vaddr_width_p'(4);
+
+  wire pc_if2_misaligned = !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
 
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
+  wire misaligned_fetch_nonbr = pc_if1_r != if2_second_half_addr;
   assign ovr_ret    = btb_miss_ras & is_ret;
   assign ovr_taken  = btb_miss_br & ((is_br & pred_if2_r.pred) | is_jal);
-  assign ovr_o      = ovr_taken | ovr_ret;
+  assign ovr_half   = misaligned_fetch_nonbr & pc_if2_misaligned & fetch_v_i & !fetch_instr_v_o;
+  // TODO: counter
+  assign ovr_o      = ovr_taken | ovr_ret | ovr_half;
   assign br_tgt_lo  = fetch_pc_o + scan_instr.imm;
   assign fetch_resume_pc_o = pc_if2_r;
 
