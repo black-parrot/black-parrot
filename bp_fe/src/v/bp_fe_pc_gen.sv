@@ -71,6 +71,7 @@ module bp_fe_pc_gen
   logic [vaddr_width_p-1:0] ras_tgt_lo;
   logic [vaddr_width_p-1:0] br_tgt_lo;
   wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_r + vaddr_width_p'(4);
+  // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb
     if (redirect_v_i)
         next_pc_o = redirect_pc_i;

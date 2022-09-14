@@ -46,30 +46,30 @@ module bp_unicore
    , input [coh_noc_cord_width_p-1:0]                    my_cord_i
 
    // Outgoing I/O
-   , output logic [mem_header_width_lp-1:0]              io_cmd_header_o
-   , output logic [uce_fill_width_p-1:0]                 io_cmd_data_o
-   , output logic                                        io_cmd_v_o
-   , input                                               io_cmd_ready_and_i
-   , output logic                                        io_cmd_last_o
+   , output logic [mem_header_width_lp-1:0]              mem_cmd_header_o
+   , output logic [uce_fill_width_p-1:0]                 mem_cmd_data_o
+   , output logic                                        mem_cmd_v_o
+   , input                                               mem_cmd_ready_and_i
+   , output logic                                        mem_cmd_last_o
 
-   , input [mem_header_width_lp-1:0]                     io_resp_header_i
-   , input [uce_fill_width_p-1:0]                        io_resp_data_i
-   , input                                               io_resp_v_i
-   , output logic                                        io_resp_ready_and_o
-   , input                                               io_resp_last_i
+   , input [mem_header_width_lp-1:0]                     mem_resp_header_i
+   , input [uce_fill_width_p-1:0]                        mem_resp_data_i
+   , input                                               mem_resp_v_i
+   , output logic                                        mem_resp_ready_and_o
+   , input                                               mem_resp_last_i
 
    // Incoming I/O
-   , input [mem_header_width_lp-1:0]                     io_cmd_header_i
-   , input [uce_fill_width_p-1:0]                        io_cmd_data_i
-   , input                                               io_cmd_v_i
-   , output logic                                        io_cmd_ready_and_o
-   , input                                               io_cmd_last_i
+   , input [mem_header_width_lp-1:0]                     mem_cmd_header_i
+   , input [uce_fill_width_p-1:0]                        mem_cmd_data_i
+   , input                                               mem_cmd_v_i
+   , output logic                                        mem_cmd_ready_and_o
+   , input                                               mem_cmd_last_i
 
-   , output logic [mem_header_width_lp-1:0]              io_resp_header_o
-   , output logic [uce_fill_width_p-1:0]                 io_resp_data_o
-   , output logic                                        io_resp_v_o
-   , input                                               io_resp_ready_and_i
-   , output logic                                        io_resp_last_o
+   , output logic [mem_header_width_lp-1:0]              mem_resp_header_o
+   , output logic [uce_fill_width_p-1:0]                 mem_resp_data_o
+   , output logic                                        mem_resp_v_o
+   , input                                               mem_resp_ready_and_i
+   , output logic                                        mem_resp_last_o
 
    // DRAM interface
    , output logic [l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
@@ -88,10 +88,10 @@ module bp_unicore
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_cmd_header);
-  `bp_cast_i(bp_bedrock_mem_header_s, io_resp_header);
-  `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
+  `bp_cast_o(bp_bedrock_mem_header_s, mem_cmd_header);
+  `bp_cast_i(bp_bedrock_mem_header_s, mem_resp_header);
+  `bp_cast_i(bp_bedrock_mem_header_s, mem_cmd_header);
+  `bp_cast_o(bp_bedrock_mem_header_s, mem_resp_header);
   bp_cfg_bus_s cfg_bus_lo;
 
   localparam num_proc_lp = 3;
@@ -143,17 +143,17 @@ module bp_unicore
      );
 
   // Assign incoming I/O as basically another UCE interface
-  assign proc_cmd_header_lo[2] = io_cmd_header_cast_i;
-  assign proc_cmd_data_lo[2] = io_cmd_data_i;
-  assign proc_cmd_v_lo[2] = io_cmd_v_i;
-  assign io_cmd_ready_and_o = proc_cmd_ready_and_li[2];
-  assign proc_cmd_last_lo[2] = io_cmd_last_i;
+  assign proc_cmd_header_lo[2] = mem_cmd_header_cast_i;
+  assign proc_cmd_data_lo[2] = mem_cmd_data_i;
+  assign proc_cmd_v_lo[2] = mem_cmd_v_i;
+  assign mem_cmd_ready_and_o = proc_cmd_ready_and_li[2];
+  assign proc_cmd_last_lo[2] = mem_cmd_last_i;
 
-  assign io_resp_header_cast_o = proc_resp_header_li[2];
-  assign io_resp_data_o = proc_resp_data_li[2];
-  assign io_resp_v_o = proc_resp_v_li[2];
-  assign proc_resp_ready_and_lo[2] = io_resp_ready_and_i;
-  assign io_resp_last_o = proc_resp_last_li[2];
+  assign mem_resp_header_cast_o = proc_resp_header_li[2];
+  assign mem_resp_data_o = proc_resp_data_li[2];
+  assign mem_resp_v_o = proc_resp_v_li[2];
+  assign proc_resp_ready_and_lo[2] = mem_resp_ready_and_i;
+  assign mem_resp_last_o = proc_resp_last_li[2];
 
   // Select destination of commands
   logic [num_proc_lp-1:0][lg_num_dev_lp-1:0] proc_cmd_dst_lo;
@@ -338,17 +338,17 @@ module bp_unicore
      );
 
   // Assign I/O as another device
-  assign io_cmd_header_cast_o = dev_cmd_header_li[3];
-  assign io_cmd_data_o = dev_cmd_data_li[3];
-  assign io_cmd_v_o = dev_cmd_v_li[3];
-  assign dev_cmd_ready_and_lo[3] = io_cmd_ready_and_i;
-  assign io_cmd_last_o = dev_cmd_last_li[3];
+  assign mem_cmd_header_cast_o = dev_cmd_header_li[3];
+  assign mem_cmd_data_o = dev_cmd_data_li[3];
+  assign mem_cmd_v_o = dev_cmd_v_li[3];
+  assign dev_cmd_ready_and_lo[3] = mem_cmd_ready_and_i;
+  assign mem_cmd_last_o = dev_cmd_last_li[3];
 
-  assign dev_resp_header_lo[3] = io_resp_header_cast_i;
-  assign dev_resp_data_lo[3] = io_resp_data_i;
-  assign dev_resp_v_lo[3] = io_resp_v_i;
-  assign io_resp_ready_and_o = dev_resp_ready_and_li[3];
-  assign dev_resp_last_lo[3] = io_resp_last_i;
+  assign dev_resp_header_lo[3] = mem_resp_header_cast_i;
+  assign dev_resp_data_lo[3] = mem_resp_data_i;
+  assign dev_resp_v_lo[3] = mem_resp_v_i;
+  assign mem_resp_ready_and_o = dev_resp_ready_and_li[3];
+  assign dev_resp_last_lo[3] = mem_resp_last_i;
 
   logic [dword_width_gp-1:0] loopback_data_lo, loopback_data_li;
   bp_me_loopback

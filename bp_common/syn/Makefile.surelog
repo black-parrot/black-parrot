@@ -36,7 +36,7 @@ parse.surelog: PARSE_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).parse.rpt
 parse.surelog: PARSE_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).parse.err
 $(PARSE_DIR)/surelog: $(PARSE_COLLATERAL)
 	cd $(@D); \
-		$(SURELOG) $(SURELOG_OPTS) $(HDL_DEFINES) $(HDL_PARAMS) -o out | tee $(PARSE_LOG)
+		$(SURELOG) $(SURELOG_OPTS) $(DUT_DEFINES) $(DUT_PARAMS) -o out | tee $(PARSE_LOG)
 		-@grep --color "\[  FATAL\] : [^0]" $(PARSE_LOG) 2>&1 | tee $(PARSE_ERROR)
 		-@grep --color "\[ SYNTAX\] : [^0]" $(PARSE_LOG) 2>&1 | tee -a $(PARSE_ERROR)
 		-@grep --color "\[  ERROR\] : [^0]" $(PARSE_LOG) 2>&1 | tee -a $(PARSE_ERROR)

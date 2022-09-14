@@ -97,6 +97,8 @@ module bp_be_scheduler
      ,.preissue_pkt_o(preissue_pkt)
      ,.issue_pkt_o(issue_pkt)
      );
+  wire fe_instr_v_li = fe_queue_v_lo & (fe_queue_lo.msg_type == e_instr_fetch);
+  wire fe_exc_v_li = fe_queue_v_lo & (fe_queue_lo.msg_type != e_instr_fetch);
 
   logic [dword_width_gp-1:0] irf_rs1, irf_rs2;
   bp_be_regfile
@@ -131,6 +133,7 @@ module bp_be_scheduler
      );
 
   // Decode the dispatched instruction
+  logic instr_v_li;
   bp_be_decode_s instr_decoded;
   logic [dword_width_gp-1:0] decoded_imm_lo;
   logic illegal_instr_lo;
@@ -141,7 +144,8 @@ module bp_be_scheduler
   bp_be_instr_decoder
    #(.bp_params_p(bp_params_p))
    instr_decoder
-    (.instr_i(fe_queue_lo.msg.fetch.instr)
+    (.instr_i(fe_queue_lo.instr)
+     ,.instr_v_i(instr_v_li)
      ,.decode_info_i(decode_info_i)
 
      ,.decode_o(instr_decoded)
@@ -160,15 +164,16 @@ module bp_be_scheduler
      ,.sfence_vma_o(sfence_vma_lo)
      );
 
-  wire fe_exc_not_instr_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_exception);
-  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.msg.exception.vaddr;
+  wire fe_instr_not_exc_li = fe_queue_yumi_li & fe_instr_v_li;
+  wire fe_exc_not_instr_li = fe_queue_yumi_li & fe_exc_v_li;
+  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.pc;
   wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i | unfreeze_i;
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
 
-  wire fe_instr_not_exc_li = fe_queue_yumi_li & (fe_queue_lo.msg_type == e_fe_fetch);
-
   assign fe_queue_yumi_li = ~suppress_iss_i & fe_queue_v_lo & dispatch_v_i & ~be_exc_not_instr_li;
+
+  assign instr_v_li = fe_instr_v_li & ~be_exc_not_instr_li;
 
   bp_be_dispatch_pkt_s dispatch_pkt;
   always_comb
@@ -176,21 +181,22 @@ module bp_be_scheduler
       // Calculator status ISD stage
       isd_status_cast_o = '0;
       isd_status_cast_o.v        = fe_queue_yumi_li;
-      isd_status_cast_o.pc       = fe_queue_lo.msg.fetch.pc;
-      isd_status_cast_o.branch_metadata_fwd = fe_queue_lo.msg.fetch.branch_metadata_fwd;
+      isd_status_cast_o.pc       = fe_queue_lo.pc;
+      isd_status_cast_o.branch_metadata_fwd = fe_queue_lo.branch_metadata_fwd;
       isd_status_cast_o.fence_v  = fe_queue_v_lo & issue_pkt.fence_v;
       isd_status_cast_o.csr_v    = fe_queue_v_lo & issue_pkt.csr_v;
       isd_status_cast_o.mem_v    = fe_queue_v_lo & issue_pkt.mem_v;
       isd_status_cast_o.long_v   = fe_queue_v_lo & issue_pkt.long_v;
       isd_status_cast_o.irs1_v   = fe_queue_v_lo & issue_pkt.irs1_v;
       isd_status_cast_o.frs1_v   = fe_queue_v_lo & issue_pkt.frs1_v;
-      isd_status_cast_o.rs1_addr = fe_queue_lo.msg.fetch.instr.t.fmatype.rs1_addr;
+      isd_status_cast_o.rs1_addr = fe_queue_lo.instr.t.fmatype.rs1_addr;
       isd_status_cast_o.irs2_v   = fe_queue_v_lo & issue_pkt.irs2_v;
       isd_status_cast_o.frs2_v   = fe_queue_v_lo & issue_pkt.frs2_v;
-      isd_status_cast_o.rs2_addr = fe_queue_lo.msg.fetch.instr.t.fmatype.rs2_addr;
+      isd_status_cast_o.rs2_addr = fe_queue_lo.instr.t.fmatype.rs2_addr;
       isd_status_cast_o.frs3_v   = fe_queue_v_lo & issue_pkt.frs3_v;
-      isd_status_cast_o.rs3_addr = fe_queue_lo.msg.fetch.instr.t.fmatype.rs3_addr;
-      isd_status_cast_o.rd_addr  = fe_queue_lo.msg.fetch.instr.t.fmatype.rd_addr;
+      // TODO: Pre-decode these bits as well
+      isd_status_cast_o.rs3_addr = fe_queue_lo.instr.t.fmatype.rs3_addr;
+      isd_status_cast_o.rd_addr  = fe_queue_lo.instr.t.fmatype.rd_addr;
       isd_status_cast_o.iwb_v    = instr_decoded.irf_w_v;
       isd_status_cast_o.fwb_v    = instr_decoded.frf_w_v;
 
@@ -199,26 +205,24 @@ module bp_be_scheduler
       dispatch_pkt.v        = (fe_queue_yumi_li & ~poison_isd_i) || be_exc_not_instr_li;
       dispatch_pkt.queue_v  = fe_queue_yumi_li;
       dispatch_pkt.pc       = expected_npc_i;
-      dispatch_pkt.instr    = fe_queue_lo.msg.fetch.instr;
+      dispatch_pkt.instr    = fe_queue_lo.instr;
       // If register injection is critical, can be done after bypass
       dispatch_pkt.rs1_fp_v = issue_pkt.frs1_v;
-      dispatch_pkt.rs1      = be_exc_not_instr_li ? be_exc_vaddr_li : issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
+      dispatch_pkt.rs1      = be_exc_not_instr_li ? be_exc_vaddr_li : fe_exc_not_instr_li ? fe_exc_vaddr_li : issue_pkt.frs1_v ? frf_rs1 : irf_rs1;
       dispatch_pkt.rs2_fp_v = issue_pkt.frs2_v;
       dispatch_pkt.rs2      = be_exc_not_instr_li ? be_exc_data_li  : issue_pkt.frs2_v ? frf_rs2 : irf_rs2;
       dispatch_pkt.rs3_fp_v = issue_pkt.frs3_v;
-      dispatch_pkt.imm      = be_exc_not_instr_li ? '0              : issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
-      dispatch_pkt.decode   = (fe_exc_not_instr_li || be_exc_not_instr_li || illegal_instr_lo) ? '0 : instr_decoded;
+      dispatch_pkt.imm      = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
+      dispatch_pkt.decode   = instr_decoded;
 
       dispatch_pkt.exception.instr_access_fault |=
-        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_instr_access_fault};
-      dispatch_pkt.exception.instr_misaligned   |=
-        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_instr_misaligned};
+        fe_exc_not_instr_li & fe_queue_lo.msg_type inside {e_instr_access_fault};
       dispatch_pkt.exception.instr_page_fault   |=
-        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_instr_page_fault};
+        fe_exc_not_instr_li & fe_queue_lo.msg_type inside {e_instr_page_fault};
       dispatch_pkt.exception.itlb_miss          |=
-        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_itlb_miss};
+        fe_exc_not_instr_li & fe_queue_lo.msg_type inside {e_itlb_miss};
       dispatch_pkt.exception.icache_miss        |=
-        fe_exc_not_instr_li & fe_queue_lo.msg.exception.exception_code inside {e_icache_miss};
+        fe_exc_not_instr_li & fe_queue_lo.msg_type inside {e_icache_miss};
 
       dispatch_pkt.exception.instr_page_fault |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_page_fault_v;
       dispatch_pkt.exception.load_page_fault  |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.load_page_fault_v;

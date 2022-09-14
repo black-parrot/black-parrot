@@ -26,7 +26,7 @@
   {
     e_sacc_none = 0
     ,e_sacc_vdp = 1
-    ,e_sacc_loopback = 2
+    ,e_sacc_scratchpad = 2
   } bp_sacc_type_e;
 
   typedef enum logic [15:0]
@@ -188,6 +188,8 @@
     // Whether to emulate FPU
     //   bit 0: fpu enabled
     integer unsigned fpu_support;
+    // Whether to enable the "c" extension.
+    integer unsigned compressed_support;
 
     // Whether the coherence network is on the core clock or on its own clock
     integer unsigned async_coh_clk;
@@ -303,8 +305,9 @@
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
-      ,muldiv_support    : (1 << e_div) | (1 << e_mul)
+      ,muldiv_support    : (1 << e_div) | (1 << e_mul) | (1 << e_mulh)
       ,fpu_support       : 1
+      ,compressed_support: 1
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 128
@@ -359,6 +362,7 @@
       ,`bp_aviary_define_override(fe_cmd_fifo_els, BP_FE_CMD_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(muldiv_support, BP_MULDIV_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(fpu_support, BP_FPU_SUPPORT, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(compressed_support, BP_COMPRESSED_SUPPORT, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(branch_metadata_fwd_width, BRANCH_METADATA_FWD_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(btb_tag_width, BP_BTB_TAG_WIDTH, `BP_CUSTOM_BASE_CFG)

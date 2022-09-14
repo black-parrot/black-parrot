@@ -140,6 +140,9 @@
     ,e_mul_op_divu      = 6'b000010
     ,e_mul_op_rem       = 6'b000011
     ,e_mul_op_remu      = 6'b000100
+    ,e_mul_op_mulh      = 6'b000101
+    ,e_mul_op_mulhsu    = 6'b000110
+    ,e_mul_op_mulhu     = 6'b000111
   } bp_be_mul_fu_op_e;
 
   typedef struct packed
@@ -188,8 +191,6 @@
 
   typedef struct packed
   {
-    logic                             v;
-
     logic                             pipe_ctl_v;
     logic                             pipe_int_v;
     logic                             pipe_mem_early_v;

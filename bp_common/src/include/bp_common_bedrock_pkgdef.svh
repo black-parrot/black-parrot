@@ -112,7 +112,7 @@
    */
   typedef enum logic [3:0]
   {
-    e_bedrock_fill_data         = 4'b0000 // data, adddress, and state to LCE, i.e., cache block fill
+    e_bedrock_fill_data            = e_bedrock_cmd_data // data, adddress, and state to LCE, i.e., cache block fill
   } bp_bedrock_fill_type_e;
 
   /*

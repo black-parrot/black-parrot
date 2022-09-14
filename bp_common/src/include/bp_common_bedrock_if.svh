@@ -101,13 +101,7 @@
       logic [lce_id_width_mp-1:0]                  dst_id;                             \
     } bp_bedrock_lce_cmd_payload_s;                                                    \
                                                                                        \
-    typedef struct packed                                                              \
-    {                                                                                  \
-      bp_coh_states_e                              state;                              \
-      logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;                             \
-      logic [cce_id_width_mp-1:0]                  src_id;                             \
-      logic [lce_id_width_mp-1:0]                  dst_id;                             \
-    } bp_bedrock_lce_fill_payload_s;                                                   \
+    typedef bp_bedrock_lce_cmd_payload_s bp_bedrock_lce_fill_payload_s;                \
                                                                                        \
     typedef struct packed                                                              \
     {                                                                                  \
@@ -142,7 +136,7 @@
     ((2*lce_id_width_mp)+cce_id_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+(2*$bits(bp_coh_states_e)))
 
   `define bp_bedrock_fill_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp) \
-    (lce_id_width_mp+cce_id_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp)+$bits(bp_coh_states_e))
+     `bp_bedrock_cmd_payload_width(lce_id_width_mp, cce_id_width_mp, lce_assoc_mp)
 
   `define bp_bedrock_resp_payload_width(lce_id_width_mp, cce_id_width_mp) \
     (cce_id_width_mp+lce_id_width_mp)

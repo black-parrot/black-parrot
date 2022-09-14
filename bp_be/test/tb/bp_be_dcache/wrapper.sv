@@ -448,11 +448,11 @@ module wrapper
 
          ,.msg_header_i(lce_req_header_lo)
          ,.msg_header_v_i(lce_req_header_v_lo)
-         ,.msg_header_yumi_o(lce_req_header_ready_and_li)
+         ,.msg_header_ready_and_o(lce_req_header_ready_and_li)
          ,.msg_has_data_i(lce_req_has_data_lo)
          ,.msg_data_i(lce_req_data_lo)
          ,.msg_data_v_i(lce_req_data_v_lo)
-         ,.msg_data_yumi_o(lce_req_data_ready_and_li)
+         ,.msg_data_ready_and_o(lce_req_data_ready_and_li)
          ,.msg_last_i(lce_req_last_lo)
          ,.msg_dst_i(lce_req_dst)
 
@@ -480,11 +480,11 @@ module wrapper
 
          ,.msg_header_i(lce_resp_header_lo)
          ,.msg_header_v_i(lce_resp_header_v_lo)
-         ,.msg_header_yumi_o(lce_resp_header_ready_and_li)
+         ,.msg_header_ready_and_o(lce_resp_header_ready_and_li)
          ,.msg_has_data_i(lce_resp_has_data_lo)
          ,.msg_data_i(lce_resp_data_lo)
          ,.msg_data_v_i(lce_resp_data_v_lo)
-         ,.msg_data_yumi_o(lce_resp_data_ready_and_li)
+         ,.msg_data_ready_and_o(lce_resp_data_ready_and_li)
          ,.msg_last_i(lce_resp_last_lo)
          ,.msg_dst_i(lce_resp_dst)
 
@@ -513,11 +513,11 @@ module wrapper
 
          ,.msg_header_i(lce_fill_header_lo)
          ,.msg_header_v_i(lce_fill_header_v_lo)
-         ,.msg_header_yumi_o(lce_fill_header_ready_and_li)
+         ,.msg_header_ready_and_o(lce_fill_header_ready_and_li)
          ,.msg_has_data_i(lce_fill_has_data_lo)
          ,.msg_data_i(lce_fill_data_lo)
          ,.msg_data_v_i(lce_fill_data_v_lo)
-         ,.msg_data_yumi_o(lce_fill_data_ready_and_li)
+         ,.msg_data_ready_and_o(lce_fill_data_ready_and_li)
          ,.msg_last_i(lce_fill_last_lo)
          ,.msg_dst_i(lce_fill_dst)
 
@@ -546,11 +546,11 @@ module wrapper
 
          ,.msg_header_i(cce_lce_cmd_header_lo)
          ,.msg_header_v_i(cce_lce_cmd_header_v_lo)
-         ,.msg_header_yumi_o(cce_lce_cmd_header_ready_and_li)
+         ,.msg_header_ready_and_o(cce_lce_cmd_header_ready_and_li)
          ,.msg_has_data_i(cce_lce_cmd_has_data_lo)
          ,.msg_data_i(cce_lce_cmd_data_lo)
          ,.msg_data_v_i(cce_lce_cmd_data_v_lo)
-         ,.msg_data_yumi_o(cce_lce_cmd_data_ready_and_li)
+         ,.msg_data_ready_and_o(cce_lce_cmd_data_ready_and_li)
          ,.msg_last_i(cce_lce_cmd_last_lo)
          ,.msg_dst_i(cce_lce_cmd_dst)
 

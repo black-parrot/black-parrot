@@ -39,6 +39,7 @@
 module bp_me_burst_to_wormhole
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
    // The wormhole router protocol information
    // flit_width_p: number of physical data wires between links
    // cord_width_p: the width of the {y,x} coordinate of the destination
@@ -54,6 +55,7 @@ module bp_me_burst_to_wormhole
    // Higher level protocol information
    , parameter `BSG_INV_PARAM(pr_hdr_width_p)
    , parameter `BSG_INV_PARAM(pr_payload_width_p)
+   , parameter `BSG_INV_PARAM(pr_payload_mask_p)
    , parameter `BSG_INV_PARAM(pr_data_width_p)
 
    // Computed wormhole header parameters. These can be overridden directly if desired.
@@ -75,11 +77,12 @@ module bp_me_burst_to_wormhole
 
    // BedRock Burst input channel
    // ready&valid
-   // Header is wormhole formatted header
-   , input [wh_hdr_width_p-1:0]      wh_hdr_i
+   , input [pr_hdr_width_p-1:0]      pr_hdr_i
    , input                           pr_hdr_v_i
    , output logic                    pr_hdr_ready_and_o
    , input                           pr_has_data_i
+   , input [cord_width_p-1:0]        dst_cord_i
+   , input [cid_width_p-1:0]         dst_cid_i
 
    , input [pr_data_width_p-1:0]     pr_data_i
    , input                           pr_data_v_i
@@ -96,6 +99,27 @@ module bp_me_burst_to_wormhole
   // parameter checks
   if (!(`BSG_IS_POW2(pr_data_width_p)) || !(`BSG_IS_POW2(flit_width_p)))
     $error("Protocol and Network data widths must be powers of 2");
+
+  `declare_bp_bedrock_if(paddr_width_p, pr_payload_width_p, lce_id_width_p, lce_assoc_p, msg);
+  `bp_cast_i(bp_bedrock_msg_header_s, pr_hdr);
+
+  `declare_bp_bedrock_wormhole_header_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_msg_header_s, bedrock);
+  bp_bedrock_wormhole_header_s wh_hdr_lo;
+  bp_me_wormhole_header_encode
+   #(.bp_params_p(bp_params_p)
+     ,.flit_width_p(flit_width_p)
+     ,.cord_width_p(cord_width_p)
+     ,.cid_width_p(cid_width_p)
+     ,.len_width_p(len_width_p)
+     ,.payload_width_p(pr_payload_width_p)
+     ,.payload_mask_p(pr_payload_mask_p)
+     )
+   encode
+    (.header_i(pr_hdr_cast_i)
+     ,.dst_cord_i(dst_cord_i)
+     ,.dst_cid_i(dst_cid_i)
+     ,.wh_header_o(wh_hdr_lo)
+     );
 
   // BedRock Burst Gearbox
   // header is only used to determine number of output data beats, and is otherwise passed
@@ -114,7 +138,7 @@ module bp_me_burst_to_wormhole
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.msg_header_i(wh_hdr_i[wh_pr_hdr_offset_p+:pr_hdr_width_p])
+      ,.msg_header_i(pr_hdr_i)
       ,.msg_header_v_i(pr_hdr_v_i)
       ,.msg_header_ready_and_o(pr_hdr_ready_and_o)
       ,.msg_has_data_i(pr_has_data_i)
@@ -136,14 +160,6 @@ module bp_me_burst_to_wormhole
   // WH control signals
   logic is_hdr, is_data;
 
-  // Re-form WH header with required padding
-  logic [(flit_width_p*hdr_len_lp)-1:0] wh_hdr_padded_li;
-  if (wh_hdr_pad_lp > 0) begin
-    assign wh_hdr_padded_li = {{wh_hdr_pad_lp{1'b0}}, wh_hdr_i};
-  end else begin
-    assign wh_hdr_padded_li = wh_hdr_i;
-  end
-
   // Header PISO
   // Header is input all at once and streamed out 1 flit at a time
   logic hdr_v_li, hdr_ready_and_lo;
@@ -153,6 +169,7 @@ module bp_me_burst_to_wormhole
   assign hdr_ready_and_li = is_hdr & link_ready_and_i;
   assign pr_hdr_ready_and_lo = is_hdr & hdr_ready_and_lo;
 
+  wire [(flit_width_p*hdr_len_lp)-1:0] wh_hdr_padded_li = wh_hdr_lo;
   bsg_parallel_in_serial_out_passthrough
    #(.width_p(flit_width_p)
      ,.els_p(hdr_len_lp)

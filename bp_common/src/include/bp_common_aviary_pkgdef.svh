@@ -393,13 +393,13 @@
                         ,bp_multicore_1_cfg_p
                         );
 
-  localparam bp_proc_param_s bp_multicore_1_acc_loopback_override_p =
+  localparam bp_proc_param_s bp_multicore_1_acc_scratchpad_override_p =
     '{sac_x_dim: 1
-      ,sacc_type: e_sacc_loopback
+      ,sacc_type: e_sacc_scratchpad
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_1_acc_loopback_cfg_p
-                        ,bp_multicore_1_acc_loopback_override_p
+  `bp_aviary_derive_cfg(bp_multicore_1_acc_scratchpad_cfg_p
+                        ,bp_multicore_1_acc_scratchpad_override_p
                         ,bp_multicore_1_cfg_p
                         );
 
@@ -417,13 +417,13 @@
                         );
 
 
- localparam bp_proc_param_s bp_multicore_4_acc_loopback_override_p =
+ localparam bp_proc_param_s bp_multicore_4_acc_scratchpad_override_p =
     '{sac_x_dim : 1
-      ,sacc_type: e_sacc_loopback
+      ,sacc_type: e_sacc_scratchpad
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_4_acc_loopback_cfg_p
-                        ,bp_multicore_4_acc_loopback_override_p
+  `bp_aviary_derive_cfg(bp_multicore_4_acc_scratchpad_cfg_p
+                        ,bp_multicore_4_acc_scratchpad_override_p
                         ,bp_multicore_4_cfg_p
                         );
 
@@ -541,9 +541,9 @@
 
     // Accelerator configurations
     ,bp_multicore_4_acc_vdp_cfg_p
-    ,bp_multicore_4_acc_loopback_cfg_p
+    ,bp_multicore_4_acc_scratchpad_cfg_p
     ,bp_multicore_1_acc_vdp_cfg_p
-    ,bp_multicore_1_acc_loopback_cfg_p
+    ,bp_multicore_1_acc_scratchpad_cfg_p
 
     // Ucode configurations
     ,bp_multicore_16_cce_ucode_cfg_p
@@ -605,9 +605,9 @@
 
     // Accelerator configurations
     ,e_bp_multicore_4_acc_vdp_cfg                   = 42
-    ,e_bp_multicore_4_acc_loopback_cfg              = 41
+    ,e_bp_multicore_4_acc_scratchpad_cfg            = 41
     ,e_bp_multicore_1_acc_vdp_cfg                   = 40
-    ,e_bp_multicore_1_acc_loopback_cfg              = 39
+    ,e_bp_multicore_1_acc_scratchpad_cfg            = 39
 
     // Ucode configurations
     ,e_bp_multicore_16_cce_ucode_cfg                = 38

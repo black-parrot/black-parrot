@@ -82,13 +82,57 @@ module bp_cacc_vdp
     , input                                       io_resp_ready_and_i
     );
 
+  // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
+  `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
+  `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
+
+  localparam reg_els_lp = 1;
+
+  logic r_v_li, w_v_li;
+  logic [paddr_width_p-1:0] addr_lo;
+  logic [reg_els_lp-1:0][dword_width_gp-1:0] data_li;
+  logic [dword_width_gp-1:0] data_lo;
+  bp_me_bedrock_register
+   #(.bp_params_p(bp_params_p)
+     ,.els_p(reg_els_lp)
+     ,.reg_addr_width_p(paddr_width_p)
+     ,.base_addr_p({64'b????????????????})
+     )
+   register
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_header_i(io_cmd_header_cast_i)
+     ,.mem_cmd_data_i(io_cmd_data_i)
+     ,.mem_cmd_v_i(io_cmd_v_i)
+     ,.mem_cmd_ready_and_o(io_cmd_ready_and_o)
+     ,.mem_cmd_last_i(io_cmd_last_i)
+
+     ,.mem_resp_header_o(io_resp_header_cast_o)
+     ,.mem_resp_data_o(io_resp_data_o)
+     ,.mem_resp_v_o(io_resp_v_o)
+     ,.mem_resp_ready_and_i(io_resp_ready_and_i)
+     ,.mem_resp_last_o(io_resp_last_o)
+
+     ,.r_v_o(r_v_li)
+     ,.w_v_o(w_v_li)
+     ,.addr_o(addr_lo)
+     ,.size_o()
+     ,.data_o(data_lo)
+     ,.data_i(data_li)
+     );
+
+  bp_local_addr_s local_addr_lo;
+  bp_global_addr_s global_addr_lo;
+  assign global_addr_lo = addr_lo;
+  assign local_addr_lo = addr_lo;
+
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   bp_be_dcache_pkt_s        dcache_pkt;
   logic                     dcache_ready, dcache_v;
   logic [dpath_width_gp-1:0] dcache_data;
-  logic [ptag_width_p-1:0]  dcache_ptag;
-  logic                     dcache_uncached;
-  logic                     dcache_dram;
   logic                     dcache_pkt_v;
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -104,7 +148,6 @@ module bp_cacc_vdp
   cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
-  `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;
@@ -115,21 +158,9 @@ module bp_cacc_vdp
   logic [cache_stat_info_width_lp-1:0] stat_mem_o;
   bp_cache_req_metadata_s cache_req_metadata_o;
 
-  bp_pma
-   #(.bp_params_p(bp_params_p))
-   pma
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.ptag_v_i(dcache_pkt_v)
-     ,.ptag_i(dcache_ptag)
-     ,.uncached_mode_i('0)
-     ,.nonspec_mode_i('0)
-
-     ,.uncached_o(dcache_uncached)
-     ,.nonidem_o()
-     ,.dram_o(dcache_dram)
-     );
+  logic [ptag_width_p-1:0] dcache_ptag;
+  always_ff @(posedge clk_i)
+    dcache_ptag <= dcache_pkt.vaddr[vaddr_width_p-1:page_offset_width_gp];
 
   // TODO: Actually use the late signal, but we don't really care about performance
   //   for the purposes of this demo
@@ -154,8 +185,8 @@ module bp_cacc_vdp
 
      ,.ptag_v_i(1'b1)
      ,.ptag_i(dcache_ptag)
-     ,.ptag_uncached_i(dcache_uncached)
-     ,.ptag_dram_i(dcache_dram)
+     ,.ptag_uncached_i(1'b0)
+     ,.ptag_dram_i(1'b1)
      ,.poison_tl_i(1'b0)
 
      ,.early_hit_v_o(dcache_v)
@@ -247,305 +278,186 @@ module bp_cacc_vdp
      ,.*
      );
 
-  // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
-
-  logic [63:0] csr_data, start_cmd, input_a_ptr, input_b_ptr, input_len,
-               res_status, res_ptr, res_len, operation, dot_product_res;
+  logic [63:0] start_cmd, input_a_ptr, input_b_ptr, input_len,
+               res_ptr, res_len, operation, dot_product_res;
   logic [63:0] vector_a [0:7];
   logic [63:0] vector_b [0:7];
+  logic [63:0] vdp_result;
   logic [2:0] len_a_cnt, len_b_cnt;
-  logic load, second_operand, done;
-  logic [paddr_width_p-1:0]  resp_addr;
+  logic load, second_operand;
 
-  //chnage the names
+  enum logic [3:0]
+  {
+    e_reset
+    ,e_wait_start
+    ,e_wait_fetch
+    ,e_fetch_vec1
+    ,e_wait_dcache_c1
+    ,e_wait_dcache_c2
+    ,e_check_vec1_len
+    ,e_fetch_vec2
+    ,e_check_vec2_len
+    ,e_wb_result
+    ,e_done
+  } state_n, state_r;
+
+  wire done = (state_r inside {e_done});
+  wire res_status = (state_r inside {e_wait_start});
+
+  always_ff @(posedge clk_i)
+    begin
+      if (reset_i || done)
+        begin
+          len_a_cnt     <= '0;
+          len_b_cnt     <= '0;
+        end
+      else if (dcache_v & load & ~second_operand)
+        begin
+          vector_a[len_a_cnt] <= dcache_data;
+          len_a_cnt <= len_a_cnt + 1'b1;
+        end
+      else if (dcache_v & load & second_operand)
+        begin
+          vector_b[len_b_cnt] <= dcache_data;
+          len_b_cnt <= len_b_cnt + 1'b1;
+        end
+    end
+
+  wire csr_w_v_li = w_v_li && (global_addr_lo.hio == 0);
+  wire csr_r_v_li = r_v_li && (global_addr_lo.hio == 0);
+
+  always_ff @(posedge clk_i)
+    begin
+      if (reset_i)
+        begin
+          input_a_ptr <= '0;
+          input_b_ptr <= '0;
+          input_len   <= '0;
+          start_cmd   <= '0;
+          res_ptr     <= '0;
+          res_len     <= '0;
+          operation   <= '0;
+        end
+      else if (csr_w_v_li)
+        unique casez (local_addr_lo.addr)
+          inputa_ptr_csr_idx_gp : input_a_ptr <= data_lo;
+          inputb_ptr_csr_idx_gp : input_b_ptr <= data_lo;
+          input_len_csr_idx_gp  : input_len   <= data_lo;
+          start_cmd_csr_idx_gp  : start_cmd   <= data_lo;
+          res_ptr_csr_idx_gp    : res_ptr     <= data_lo;
+          res_len_csr_idx_gp    : res_len     <= data_lo;
+          operation_csr_idx_gp  : operation   <= data_lo;
+          default : begin end
+        endcase
+
+      if (state_r == e_done)
+        start_cmd <= '0;
+    end
+
+  logic input_a_ptr_r_v_r, input_b_ptr_r_v_r, input_len_r_v_r, operation_r_v_r;
+  logic start_cmd_r_v_r, res_status_r_v_r, res_ptr_r_v_r, res_len_r_v_r;
+  always_ff @(posedge clk_i)
+    begin
+      input_a_ptr_r_v_r <= csr_r_v_li && (local_addr_lo.addr == inputa_ptr_csr_idx_gp);
+      input_b_ptr_r_v_r <= csr_r_v_li && (local_addr_lo.addr == inputb_ptr_csr_idx_gp);
+      input_len_r_v_r   <= csr_r_v_li && (local_addr_lo.addr == input_len_csr_idx_gp);
+      start_cmd_r_v_r   <= csr_r_v_li && (local_addr_lo.addr == start_cmd_csr_idx_gp);
+      res_status_r_v_r  <= csr_r_v_li && (local_addr_lo.addr == res_status_csr_idx_gp);
+      res_ptr_r_v_r     <= csr_r_v_li && (local_addr_lo.addr == res_ptr_csr_idx_gp);
+      res_len_r_v_r     <= csr_r_v_li && (local_addr_lo.addr == res_len_csr_idx_gp);
+      operation_r_v_r   <= csr_r_v_li && (local_addr_lo.addr == operation_csr_idx_gp);
+    end
+
+  logic [dword_width_gp-1:0] csr_data_lo;
+  always_comb
+    unique casez (local_addr_lo.addr)
+      inputa_ptr_csr_idx_gp : csr_data_lo = input_a_ptr;
+      inputb_ptr_csr_idx_gp : csr_data_lo = input_b_ptr;
+      input_len_csr_idx_gp  : csr_data_lo = input_len;
+      start_cmd_csr_idx_gp  : csr_data_lo = start_cmd;
+      res_status_csr_idx_gp : csr_data_lo = res_status;
+      res_ptr_csr_idx_gp    : csr_data_lo = res_ptr;
+      res_len_csr_idx_gp    : csr_data_lo = res_len;
+      //operation_csr_idx_gp  : csr_data_lo = operation;
+      default: csr_data_lo = operation;
+    endcase
+
+  assign data_li = csr_data_lo;
+
+  assign dcache_pkt = '{opcode: load ? e_dcache_op_ld : e_dcache_op_sd
+                        ,data: load ? '0 : dot_product_res
+                        ,vaddr: load ? second_operand
+                                       ? (input_b_ptr+len_b_cnt*8)
+                                       : (input_a_ptr+len_a_cnt*8)
+                                     : res_ptr
+                        ,default: '0
+                        };
+
+  always_comb
+    begin
+      load = 0;
+      second_operand = 0;
+      dcache_pkt_v = 0;
+
+      state_n = state_r;
+      case (state_r)
+        e_reset: begin
+          state_n = reset_i ? e_reset : e_wait_start;
+        end
+        e_wait_start: begin
+          load = 1;
+          state_n = start_cmd ? e_wait_fetch : e_wait_start;
+        end
+        e_wait_fetch: begin
+          state_n = dcache_ready ? e_fetch_vec1 : e_wait_fetch;
+        end
+        e_fetch_vec1: begin
+          dcache_pkt_v = '1;
+          state_n = e_wait_dcache_c1;
+        end
+        e_wait_dcache_c1: begin
+          state_n = dcache_v ? (load ? (second_operand ? e_check_vec2_len : e_check_vec1_len) : e_done) : e_wait_dcache_c2;
+        end
+        e_wait_dcache_c2: begin
+          //if load: load both input vectors
+          //if store: go to e_done after store
+          state_n = ~(lce_cmd_header_v_i | lce_fill_header_v_i) ? e_wait_dcache_c2 : e_wait_fetch;
+        end
+        e_check_vec1_len: begin
+          state_n = (len_a_cnt == input_len) ? e_fetch_vec2 : e_wait_fetch;
+        end
+        e_fetch_vec2: begin
+          second_operand = 1;
+          state_n = e_wait_fetch;
+        end
+        e_check_vec2_len: begin
+          second_operand = 1;
+          dot_product_res = vdp_result;
+          state_n = (len_b_cnt == input_len) ? e_wb_result : e_wait_fetch;
+        end
+        e_wb_result: begin
+          state_n = e_wait_fetch;
+        end
+        e_done: begin
+          state_n = cache_req_credits_empty_lo ? e_reset : e_done;
+        end
+      endcase
+    end
+
+  // dot_product unit
   logic [63:0] product_res [0:7];
   logic [63:0] sum_l1 [0:3];
   logic [63:0] sum_l2 [0:1];
-  logic [63:0] dot_product_temp;
+  for (genvar i = 0; i < 8; i++) assign product_res[i] = vector_a[i] * vector_b[i];
+  for (genvar i = 0; i < 4; i++) assign sum_l1[i] = product_res[2*i] + product_res[2*i+1];
+  for (genvar i = 0; i < 2; i++) assign sum_l2[i] = sum_l1[2*i] + sum_l1[2*i+1];
+  assign vdp_result = (sum_l2[0] + sum_l2[1]);
 
-  bp_bedrock_mem_payload_s      resp_payload;
-  bp_bedrock_msg_size_e         resp_size;
-  bp_bedrock_mem_type_e         resp_msg;
-  bp_local_addr_s               local_addr_li;
-
-  assign local_addr_li = fifo_header_li.addr;
-  assign io_resp_header_cast_o = '{msg_type       : resp_msg
-                                   ,subop         : e_bedrock_store
-                                   ,addr          : resp_addr
-                                   ,payload       : resp_payload
-                                   ,size          : resp_size
-                                   };
-  assign io_resp_data_o = csr_data;                                   
-
-  logic [vaddr_width_p-1:0] v_addr;
-  assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8)
-                                         : (input_a_ptr+len_a_cnt*8))
-                       : res_ptr;
-
-  // Fifo signals
-  bp_bedrock_mem_header_s fifo_header_li;
-  logic [acache_fill_width_p-1:0] fifo_data_li;  
-  logic fifo_v_li, fifo_yumi_li;
-  // Fifo routing
-  assign fifo_yumi_li = io_resp_ready_and_i & io_resp_v_o;  // Yumi when handshake occured
-  // Fifo
-  bsg_two_fifo
-   #(.width_p($bits(bp_bedrock_mem_header_s)+acache_fill_width_p))
-   resp_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i({io_cmd_data_i, io_cmd_header_i})
-     ,.v_i(io_cmd_v_i)
-     ,.ready_o(io_cmd_ready_and_o)
-
-     ,.data_o({fifo_data_li, fifo_header_li})
-     ,.v_o(fifo_v_li)
-     ,.yumi_i(fifo_yumi_li)
-     );     
-
-  // D-FF signals
-  logic v_r; // Q
-  wire wr_not_rd, rd_not_wr; // Signals if Command is read or write
-  // D-FF routing
-  assign io_resp_v_o = v_r; 
-  assign io_resp_last_o = v_r;
-  assign wr_not_rd  = (fifo_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
-  assign rd_not_wr  = (fifo_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd});
-  // D-FF
-  bsg_dff_reset_set_clear
-   #(.width_p(1), .clear_over_set_p(1))
-   v_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     // We also track reads which don't match to prevent deadlock
-     ,.set_i(fifo_v_li)
-     ,.clear_i(fifo_yumi_li)
-     ,.data_o(v_r)
-     );
-
-  typedef enum logic [3:0]{
-    RESET
-    , WAIT_START
-    , WAIT_FETCH
-    , FETCH
-    , WAIT_DCACHE_C1
-    , WAIT_DCACHE_C2
-    , CHECK_VEC1_LEN
-    , FETCH_VEC2
-    , CHECK_VEC2_LEN
-    , WB_RESULT
-    , DONE
-  } state_e;
-  state_e state_r, state_n;
-
-  always_ff @(posedge clk_i) begin
-    vector_a[len_a_cnt] <= (dcache_v & load & ~second_operand) ? dcache_data : vector_a[len_a_cnt];
-    len_a_cnt <= (dcache_v & load & ~second_operand) ? len_a_cnt + 1'b1 : len_a_cnt;
-    vector_b[len_b_cnt]  <= (dcache_v & load & second_operand) ? dcache_data : vector_b[len_b_cnt];
-    len_b_cnt <= (dcache_v & load & second_operand) ? len_b_cnt + 1'b1 : len_b_cnt;
-
+  // synopsys sync_set_reset "reset_i"
+  always_ff @(posedge clk_i)
     if(reset_i)
-      state_r <= RESET;
+      state_r <= e_reset;
     else
       state_r <= state_n;
-
-    if (reset_i || done) begin
-      start_cmd     <= '0;
-      input_a_ptr   <= '0;
-      input_b_ptr   <= '0;
-      input_len     <= '0;
-      res_ptr       <= '0;
-      res_len       <= '0;
-      operation     <= '0;
-      len_a_cnt     <= '0;
-      len_b_cnt     <= '0;
-      vector_a      <= '{default:64'd0};
-      vector_b      <= '{default:64'd0};
-    end
-    if (fifo_v_li & wr_not_rd)
-    begin
-      resp_size    <= fifo_header_li.size;
-      resp_payload <= fifo_header_li.payload;
-      resp_addr    <= fifo_header_li.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(fifo_header_li.msg_type);
-      unique
-      case (local_addr_li.addr)
-        inputa_ptr_csr_idx_gp : input_a_ptr <= fifo_data_li;
-        inputb_ptr_csr_idx_gp : input_b_ptr <= fifo_data_li;
-        input_len_csr_idx_gp  : input_len  <= fifo_data_li;
-        start_cmd_csr_idx_gp  : start_cmd  <= fifo_data_li;
-        res_ptr_csr_idx_gp    : res_ptr    <= fifo_data_li;
-        res_len_csr_idx_gp    : res_len    <= fifo_data_li;
-        operation_csr_idx_gp  : operation  <= fifo_data_li;
-        default : begin end
-      endcase
-    end
-    else if (fifo_v_li & rd_not_wr)
-    begin
-      resp_size    <= fifo_header_li.size;
-      resp_payload <= fifo_header_li.payload;
-      resp_addr    <= fifo_header_li.addr;
-      resp_msg     <= bp_bedrock_mem_type_e'(fifo_header_li.msg_type);
-      unique
-      case (local_addr_li.addr)
-        inputa_ptr_csr_idx_gp : csr_data <= input_a_ptr;
-        inputb_ptr_csr_idx_gp : csr_data <= input_b_ptr;
-        input_len_csr_idx_gp  : csr_data <= input_len;
-        start_cmd_csr_idx_gp  : csr_data <= start_cmd;
-        res_status_csr_idx_gp : csr_data <= res_status;
-        res_ptr_csr_idx_gp    : csr_data <= res_ptr;
-        res_len_csr_idx_gp    : csr_data <= res_len;
-        operation_csr_idx_gp  : csr_data <= operation;
-        default : begin end
-      endcase
-    end
-  end
-
-  always_comb begin
-    state_n = state_r;
-    case (state_r)
-      RESET: begin
-        state_n = reset_i ? RESET : WAIT_START;
-        res_status = '0;
-        dcache_ptag = '0;
-        dcache_pkt = '0;
-        dcache_pkt_v = '0;
-        load = 0;
-        second_operand = 0;
-        done = 0;
-      end
-      WAIT_START: begin
-        state_n = start_cmd ? WAIT_FETCH : WAIT_START;
-        res_status = '1;
-        dcache_ptag = '0;
-        dcache_pkt = '0;
-        dcache_pkt_v = '0;
-        load = 1;
-        second_operand= 0;
-        done = 0;
-      end
-      WAIT_FETCH: begin
-        state_n = dcache_ready ? FETCH : WAIT_FETCH;
-        res_status = '0;
-        dcache_ptag = '0;
-        dcache_pkt = '0;
-        dcache_pkt_v = '0;
-        done = 0;
-      end
-      FETCH: begin
-        state_n = WAIT_DCACHE_C1;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
-        dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
-        dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0;
-        res_status = '0;
-        dcache_pkt_v = '1;
-        done = 0;
-      end
-      WAIT_DCACHE_C1: begin
-        state_n = dcache_v ? (load ? (second_operand ? CHECK_VEC2_LEN : CHECK_VEC1_LEN) : DONE) : WAIT_DCACHE_C2;
-        res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
-        dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
-        dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0;
-        dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt_v = '0;
-        done = 0;
-      end
-      WAIT_DCACHE_C2: begin
-        //if load: load both input vectors
-        //if store: go to DONE after store
-        state_n = ~(lce_cmd_header_v_i | lce_fill_header_v_i) ? WAIT_DCACHE_C2 : WAIT_FETCH;
-        res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
-        dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
-        dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0;
-        dcache_pkt_v = '0;
-        done = 0;
-      end
-      CHECK_VEC1_LEN: begin
-        state_n = (len_a_cnt == input_len) ? FETCH_VEC2 : WAIT_FETCH;
-        res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
-        dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
-        dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0;
-        dcache_pkt_v = '0;
-        done = 0;
-      end
-      FETCH_VEC2: begin
-        state_n = WAIT_FETCH;
-        res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
-        dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
-        dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0;
-        dcache_pkt_v = '0;
-        second_operand= 1;
-        done = 0;
-      end
-      CHECK_VEC2_LEN: begin
-        state_n= (len_b_cnt == input_len) ? WB_RESULT : WAIT_FETCH;
-        res_status = '0;
-        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr[vaddr_width_p-1-:vtag_width_p]};
-        dcache_pkt.opcode = load ? e_dcache_op_ld : e_dcache_op_sd;
-        dcache_pkt.data = load ? '0 : dot_product_res;
-        dcache_pkt.vaddr = v_addr;
-        dcache_pkt.rd_addr = '0;
-        dcache_pkt_v = '0;
-        second_operand= 1;
-        done = 0;
-        dot_product_res = dot_product_temp;
-      end
-      WB_RESULT: begin
-        state_n = WAIT_FETCH;
-        load = 0;
-        dcache_ptag = '0;
-        dcache_pkt = '0;
-        dcache_pkt_v = '0;
-        res_status = 0;
-        second_operand= 0;
-        done = 0;
-      end
-      DONE: begin
-        state_n = cache_req_credits_empty_lo ? RESET : DONE;
-        res_status = cache_req_credits_empty_lo ? 1 : 0;
-        dcache_ptag = '0;
-        dcache_pkt = '0;
-        dcache_pkt_v = '0;
-        load = 0;
-        second_operand= 0;
-        done = 1;
-      end
-    endcase
-   end // always_comb
-
-  //dot_product unit
-  for (genvar i=0; i<8; i++)
-  begin : product
-    assign product_res[i]= vector_a[i] * vector_b[i];
-  end
-
-  for (genvar i=0; i<4; i++)
-  begin : sum_level_1
-    assign sum_l1[i]= product_res[2*i] + product_res[2*i+1];
-  end
-
-  for (genvar i=0; i<2; i++)
-  begin : sum_level_2
-    assign sum_l2[i]= sum_l1[2*i] + sum_l1[2*i+1];
-  end
-
-   assign dot_product_temp = sum_l2[0] + sum_l2[1];
 
 endmodule

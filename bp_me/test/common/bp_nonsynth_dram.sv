@@ -17,7 +17,7 @@ module bp_nonsynth_dram
 
    , parameter num_dma_p = 0
    , parameter preload_mem_p = 0
-   , parameter mem_els_p = 0
+   , parameter mem_bytes_p = 0
    , parameter dram_type_p = ""
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
    )
@@ -225,6 +225,8 @@ module bp_nonsynth_dram
       localparam axi_strb_width_p = axi_data_width_p >> 3;
       localparam axi_burst_len_p = 1;
 
+      localparam mem_els_lp = mem_bytes_p/(axi_data_width_p/8);
+
       logic [axi_id_width_p-1:0] axi_awid;
       logic [caddr_width_p-1:0] axi_awaddr_addr;
       logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_awaddr_cache_id;
@@ -333,7 +335,7 @@ module bp_nonsynth_dram
          ,.axi_addr_width_p(axi_addr_width_p)
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_burst_len_p(axi_burst_len_p)
-         ,.mem_els_p(mem_els_p)
+         ,.mem_els_p(mem_els_lp)
          ,.init_data_p('0)
          )
        axi_mem
