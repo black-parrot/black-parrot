@@ -69,24 +69,24 @@ module bp_cacc_vdp
 
     // BedRock Stream
     // may only support single beat messages
-    , input [mem_header_width_lp-1:0]             io_cmd_header_i
-    , input [acache_fill_width_p-1:0]             io_cmd_data_i
-    , input                                       io_cmd_v_i
-    , input                                       io_cmd_last_i
-    , output logic                                io_cmd_ready_and_o
+    , input [mem_fwd_header_width_lp-1:0]         io_fwd_header_i
+    , input [acache_fill_width_p-1:0]             io_fwd_data_i
+    , input                                       io_fwd_v_i
+    , input                                       io_fwd_last_i
+    , output logic                                io_fwd_ready_and_o
 
-    , output logic [mem_header_width_lp-1:0]      io_resp_header_o
-    , output logic [acache_fill_width_p-1:0]      io_resp_data_o
-    , output logic                                io_resp_v_o
-    , output logic                                io_resp_last_o
-    , input                                       io_resp_ready_and_i
+    , output logic [mem_rev_header_width_lp-1:0]  io_rev_header_o
+    , output logic [acache_fill_width_p-1:0]      io_rev_data_o
+    , output logic                                io_rev_v_o
+    , output logic                                io_rev_last_o
+    , input                                       io_rev_ready_and_i
     );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
-  `bp_cast_i(bp_bedrock_mem_header_s, io_cmd_header);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_resp_header);
+  `bp_cast_i(bp_bedrock_mem_fwd_header_s, io_fwd_header);
+  `bp_cast_o(bp_bedrock_mem_rev_header_s, io_rev_header);
 
   localparam reg_els_lp = 1;
 
@@ -104,17 +104,17 @@ module bp_cacc_vdp
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_header_i(io_cmd_header_cast_i)
-     ,.mem_cmd_data_i(io_cmd_data_i)
-     ,.mem_cmd_v_i(io_cmd_v_i)
-     ,.mem_cmd_ready_and_o(io_cmd_ready_and_o)
-     ,.mem_cmd_last_i(io_cmd_last_i)
+     ,.mem_fwd_header_i(io_fwd_header_cast_i)
+     ,.mem_fwd_data_i(io_fwd_data_i)
+     ,.mem_fwd_v_i(io_fwd_v_i)
+     ,.mem_fwd_ready_and_o(io_fwd_ready_and_o)
+     ,.mem_fwd_last_i(io_fwd_last_i)
 
-     ,.mem_resp_header_o(io_resp_header_cast_o)
-     ,.mem_resp_data_o(io_resp_data_o)
-     ,.mem_resp_v_o(io_resp_v_o)
-     ,.mem_resp_ready_and_i(io_resp_ready_and_i)
-     ,.mem_resp_last_o(io_resp_last_o)
+     ,.mem_rev_header_o(io_rev_header_cast_o)
+     ,.mem_rev_data_o(io_rev_data_o)
+     ,.mem_rev_v_o(io_rev_v_o)
+     ,.mem_rev_ready_and_i(io_rev_ready_and_i)
+     ,.mem_rev_last_o(io_rev_last_o)
 
      ,.r_v_o(r_v_li)
      ,.w_v_o(w_v_li)

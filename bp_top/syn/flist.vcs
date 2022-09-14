@@ -289,7 +289,7 @@ $BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv

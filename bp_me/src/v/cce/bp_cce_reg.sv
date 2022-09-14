@@ -44,7 +44,7 @@ module bp_cce_reg
    , input [lce_req_header_width_lp-1:0]                                   lce_req_header_i
    , input                                                                 lce_req_v_i
    , input [lce_resp_header_width_lp-1:0]                                  lce_resp_header_i
-   , input [mem_header_width_lp-1:0]                                       mem_resp_header_i
+   , input [mem_rev_header_width_lp-1:0]                                   mem_rev_header_i
 
    // For RDP, output state of pending bits from read operation
    , input                                                                 pending_i
@@ -86,11 +86,11 @@ module bp_cce_reg
 
   bp_bedrock_lce_req_header_s  lce_req_hdr;
   bp_bedrock_lce_resp_header_s lce_resp_hdr;
-  bp_bedrock_mem_header_s      mem_resp_hdr;
+  bp_bedrock_mem_rev_header_s      mem_rev_hdr;
 
   assign lce_req_hdr  = lce_req_header_i;
   assign lce_resp_hdr = lce_resp_header_i;
-  assign mem_resp_hdr = mem_resp_header_i;
+  assign mem_rev_hdr = mem_rev_header_i;
 
   // Registers
   `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
@@ -200,12 +200,12 @@ module bp_cce_reg
       // default to catch any unset fields
       mshr_n = mshr_r;
 
-      // LCE ID - from lce_req, lce_resp, mem_resp.payload, or move
-      // paddr - from lce_req, lce_resp, mem_resp, or move
+      // LCE ID - from lce_req, lce_resp, mem_rev.payload, or move
+      // paddr - from lce_req, lce_resp, mem_rev, or move
       // LRU Way ID - from lce_req or move
-      // Next Coh State - from move or mem_resp.payload
+      // Next Coh State - from move or mem_rev.payload
       // Message Size - from lce_req or move
-      // Way ID - from move, GAD, or mem_resp
+      // Way ID - from move, GAD, or mem_rev
       // Owner LCE ID - from GAD or move
       // Owner Way ID - from GAD or move
       // LRU paddr - from Directory or move
@@ -246,13 +246,13 @@ module bp_cce_reg
             //mshr_n.msg_size = lce_resp_hdr.size;
             mshr_n.flags.null_writeback = lce_resp_nwbf;
           end
-          e_src_q_sel_mem_resp: begin
-            //mshr_n.lce_id = mem_resp_hdr.payload.lce_id;
-            //mshr_n.way_id = mem_resp_hdr.payload.way_id;
-            //mshr_n.paddr = mem_resp_hdr.addr;
-            //mshr_n.next_coh_state = mem_resp_hdr.payload.state;
-            //mshr_n.msg_size = mem_resp_hdr.size;
-            mshr_n.flags.speculative = mem_resp_hdr.payload.speculative;
+          e_src_q_sel_mem_rev: begin
+            //mshr_n.lce_id = mem_rev_hdr.payload.lce_id;
+            //mshr_n.way_id = mem_rev_hdr.payload.way_id;
+            //mshr_n.paddr = mem_rev_hdr.addr;
+            //mshr_n.next_coh_state = mem_rev_hdr.payload.state;
+            //mshr_n.msg_size = mem_rev_hdr.size;
+            mshr_n.flags.speculative = mem_rev_hdr.payload.speculative;
           end
           default: begin
           end

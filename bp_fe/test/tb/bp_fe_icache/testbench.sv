@@ -89,10 +89,11 @@ module testbench
   logic [cfg_bus_width_lp-1:0] cfg_bus_li;
   assign cfg_bus_li = cfg_bus_cast_li;
 
-  logic mem_cmd_v_lo, mem_resp_v_li;
-  logic mem_cmd_ready_and_li, mem_resp_ready_and_lo, mem_cmd_last_lo, mem_resp_last_li;
-  bp_bedrock_mem_header_s mem_cmd_header_lo, mem_resp_header_li;
-  logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_li;
+  logic mem_fwd_v_lo, mem_rev_v_li;
+  logic mem_fwd_ready_and_li, mem_rev_ready_and_lo, mem_fwd_last_lo, mem_rev_last_li;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
+  bp_bedrock_mem_rev_header_s mem_rev_header_li;
+  logic [l2_data_width_p-1:0] mem_fwd_data_lo, mem_rev_data_li;
 
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
   logic trace_v_lo;
@@ -232,17 +233,17 @@ module testbench
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
 
-     ,.mem_cmd_header_o(mem_cmd_header_lo)
-     ,.mem_cmd_data_o(mem_cmd_data_lo)
-     ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_o(mem_cmd_last_lo)
+     ,.mem_fwd_header_o(mem_fwd_header_lo)
+     ,.mem_fwd_data_o(mem_fwd_data_lo)
+     ,.mem_fwd_v_o(mem_fwd_v_lo)
+     ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
+     ,.mem_fwd_last_o(mem_fwd_last_lo)
 
-     ,.mem_resp_header_i(mem_resp_header_li)
-     ,.mem_resp_data_i(mem_resp_data_li)
-     ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
-     ,.mem_resp_last_i(mem_resp_last_li)
+     ,.mem_rev_header_i(mem_rev_header_li)
+     ,.mem_rev_data_i(mem_rev_data_li)
+     ,.mem_rev_v_i(mem_rev_v_li)
+     ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
+     ,.mem_rev_last_i(mem_rev_last_li)
      );
 
   // Memory
@@ -256,17 +257,17 @@ module testbench
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_header_i(mem_cmd_header_lo)
-     ,.mem_cmd_data_i(mem_cmd_data_lo)
-     ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_i(mem_cmd_last_lo)
+     ,.mem_fwd_header_i(mem_fwd_header_lo)
+     ,.mem_fwd_data_i(mem_fwd_data_lo)
+     ,.mem_fwd_v_i(mem_fwd_v_lo)
+     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
+     ,.mem_fwd_last_i(mem_fwd_last_lo)
 
-     ,.mem_resp_header_o(mem_resp_header_li)
-     ,.mem_resp_data_o(mem_resp_data_li)
-     ,.mem_resp_v_o(mem_resp_v_li)
-     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
-     ,.mem_resp_last_o(mem_resp_last_li)
+     ,.mem_rev_header_o(mem_rev_header_li)
+     ,.mem_rev_data_o(mem_rev_data_li)
+     ,.mem_rev_v_o(mem_rev_v_li)
+     ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
+     ,.mem_rev_last_o(mem_rev_last_li)
 
      ,.dram_clk_i(dram_clk_i)
      ,.dram_reset_i(dram_reset_i)
@@ -377,17 +378,17 @@ module testbench
 
           // CCE-MEM Interface
           // BedRock Stream protocol: ready&valid
-          ,.mem_resp_header_i(mem_resp_header_i)
-          ,.mem_resp_data_i(mem_resp_data_i)
-          ,.mem_resp_v_i(mem_resp_v_i)
-          ,.mem_resp_ready_and_i(mem_resp_ready_and_o)
-          ,.mem_resp_last_i(mem_resp_last_i)
+          ,.mem_rev_header_i(mem_rev_header_i)
+          ,.mem_rev_data_i(mem_rev_data_i)
+          ,.mem_rev_v_i(mem_rev_v_i)
+          ,.mem_rev_ready_and_i(mem_rev_ready_and_o)
+          ,.mem_rev_last_i(mem_rev_last_i)
 
-          ,.mem_cmd_header_i(mem_cmd_header_o)
-          ,.mem_cmd_data_i(mem_cmd_data_o)
-          ,.mem_cmd_v_i(mem_cmd_v_o)
-          ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i)
-          ,.mem_cmd_last_i(mem_cmd_last_o)
+          ,.mem_fwd_header_i(mem_fwd_header_o)
+          ,.mem_fwd_data_i(mem_fwd_data_o)
+          ,.mem_fwd_v_i(mem_fwd_v_o)
+          ,.mem_fwd_ready_and_i(mem_fwd_ready_and_i)
+          ,.mem_fwd_last_i(mem_fwd_last_o)
           );
   end
 
@@ -398,17 +399,17 @@ module testbench
       (.clk_i(clk_i & (testbench.dram_trace_p == 1))
        ,.reset_i(reset_i)
 
-       ,.mem_cmd_header_i(mem_cmd_header_i)
-       ,.mem_cmd_data_i(mem_cmd_data_i)
-       ,.mem_cmd_v_i(mem_cmd_v_i)
-       ,.mem_cmd_ready_and_i(mem_cmd_ready_and_o)
-       ,.mem_cmd_last_i(mem_cmd_last_i)
+       ,.mem_fwd_header_i(mem_fwd_header_i)
+       ,.mem_fwd_data_i(mem_fwd_data_i)
+       ,.mem_fwd_v_i(mem_fwd_v_i)
+       ,.mem_fwd_ready_and_i(mem_fwd_ready_and_o)
+       ,.mem_fwd_last_i(mem_fwd_last_i)
 
-       ,.mem_resp_header_i(mem_resp_header_o)
-       ,.mem_resp_data_i(mem_resp_data_o)
-       ,.mem_resp_v_i(mem_resp_v_o)
-       ,.mem_resp_ready_and_i(mem_resp_ready_and_i)
-       ,.mem_resp_last_i(mem_resp_last_o)
+       ,.mem_rev_header_i(mem_rev_header_o)
+       ,.mem_rev_data_i(mem_rev_data_o)
+       ,.mem_rev_v_i(mem_rev_v_o)
+       ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
+       ,.mem_rev_last_i(mem_rev_last_o)
        );
 
   // Parameter Verification

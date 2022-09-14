@@ -190,7 +190,7 @@ $BP_ME_DIR/src/v/dev/bp_me_cfg_slice.sv
 # NETWORK
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_wraparound.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv

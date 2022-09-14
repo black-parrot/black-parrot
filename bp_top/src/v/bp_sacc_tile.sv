@@ -73,15 +73,15 @@ module bp_sacc_tile
   logic lce_req_header_v_li, lce_req_has_data_li, lce_req_header_ready_and_lo;
   logic lce_req_data_v_li, lce_req_last_li, lce_req_data_ready_and_lo;
 
-  bp_bedrock_mem_header_s io_cmd_header_lo;
-  logic [acache_fill_width_p-1:0] io_cmd_data_lo;
-  logic io_cmd_header_v_lo, io_cmd_has_data_lo, io_cmd_header_ready_and_li;
-  logic io_cmd_data_v_lo, io_cmd_last_lo, io_cmd_data_ready_and_li;
+  bp_bedrock_mem_fwd_header_s io_fwd_header_lo;
+  logic [acache_fill_width_p-1:0] io_fwd_data_lo;
+  logic io_fwd_header_v_lo, io_fwd_has_data_lo, io_fwd_header_ready_and_li;
+  logic io_fwd_data_v_lo, io_fwd_last_lo, io_fwd_data_ready_and_li;
 
-  bp_bedrock_mem_header_s io_resp_header_li;
-  logic [acache_fill_width_p-1:0] io_resp_data_li;
-  logic io_resp_header_v_li, io_resp_has_data_li, io_resp_header_ready_and_lo;
-  logic io_resp_data_v_li, io_resp_last_li, io_resp_data_ready_and_lo;
+  bp_bedrock_mem_rev_header_s io_rev_header_li;
+  logic [acache_fill_width_p-1:0] io_rev_data_li;
+  logic io_rev_header_v_li, io_rev_has_data_li, io_rev_header_ready_and_lo;
+  logic io_rev_data_v_li, io_rev_last_li, io_rev_data_ready_and_lo;
 
   logic reset_r;
   always_ff @(posedge clk_i)
@@ -107,23 +107,23 @@ module bp_sacc_tile
 
      ,.lce_id_i(lce_id_li)
 
-     ,.io_cmd_header_i('0)
-     ,.io_cmd_header_v_i(1'b0)
-     ,.io_cmd_header_ready_and_o()
-     ,.io_cmd_has_data_i(1'b0)
-     ,.io_cmd_data_i('0)
-     ,.io_cmd_data_v_i(1'b0)
-     ,.io_cmd_data_ready_and_o()
-     ,.io_cmd_last_i(1'b0)
+     ,.io_fwd_header_i('0)
+     ,.io_fwd_header_v_i(1'b0)
+     ,.io_fwd_header_ready_and_o()
+     ,.io_fwd_has_data_i(1'b0)
+     ,.io_fwd_data_i('0)
+     ,.io_fwd_data_v_i(1'b0)
+     ,.io_fwd_data_ready_and_o()
+     ,.io_fwd_last_i(1'b0)
 
-     ,.io_resp_header_o()
-     ,.io_resp_header_v_o()
-     ,.io_resp_header_ready_and_i(1'b0)
-     ,.io_resp_has_data_o()
-     ,.io_resp_data_o()
-     ,.io_resp_data_v_o()
-     ,.io_resp_data_ready_and_i(1'b0)
-     ,.io_resp_last_o()
+     ,.io_rev_header_o()
+     ,.io_rev_header_v_o()
+     ,.io_rev_header_ready_and_i(1'b0)
+     ,.io_rev_has_data_o()
+     ,.io_rev_data_o()
+     ,.io_rev_data_v_o()
+     ,.io_rev_data_ready_and_i(1'b0)
+     ,.io_rev_last_o()
 
      ,.lce_req_header_o(lce_req_header_lo)
      ,.lce_req_header_v_o(lce_req_header_v_lo)
@@ -171,86 +171,86 @@ module bp_sacc_tile
      ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_li)
      ,.lce_cmd_last_o(lce_cmd_last_lo)
 
-     ,.io_cmd_header_o(io_cmd_header_lo)
-     ,.io_cmd_header_v_o(io_cmd_header_v_lo)
-     ,.io_cmd_header_ready_and_i(io_cmd_header_ready_and_li)
-     ,.io_cmd_has_data_o(io_cmd_has_data_lo)
-     ,.io_cmd_data_o(io_cmd_data_lo)
-     ,.io_cmd_data_v_o(io_cmd_data_v_lo)
-     ,.io_cmd_data_ready_and_i(io_cmd_data_ready_and_li)
-     ,.io_cmd_last_o(io_cmd_last_lo)
+     ,.io_fwd_header_o(io_fwd_header_lo)
+     ,.io_fwd_header_v_o(io_fwd_header_v_lo)
+     ,.io_fwd_header_ready_and_i(io_fwd_header_ready_and_li)
+     ,.io_fwd_has_data_o(io_fwd_has_data_lo)
+     ,.io_fwd_data_o(io_fwd_data_lo)
+     ,.io_fwd_data_v_o(io_fwd_data_v_lo)
+     ,.io_fwd_data_ready_and_i(io_fwd_data_ready_and_li)
+     ,.io_fwd_last_o(io_fwd_last_lo)
 
-     ,.io_resp_header_i(io_resp_header_li)
-     ,.io_resp_header_v_i(io_resp_header_v_li)
-     ,.io_resp_header_ready_and_o(io_resp_header_ready_and_lo)
-     ,.io_resp_has_data_i(io_resp_has_data_li)
-     ,.io_resp_data_i(io_resp_data_li)
-     ,.io_resp_data_v_i(io_resp_data_v_li)
-     ,.io_resp_data_ready_and_o(io_resp_data_ready_and_lo)
-     ,.io_resp_last_i(io_resp_last_li)
+     ,.io_rev_header_i(io_rev_header_li)
+     ,.io_rev_header_v_i(io_rev_header_v_li)
+     ,.io_rev_header_ready_and_o(io_rev_header_ready_and_lo)
+     ,.io_rev_has_data_i(io_rev_has_data_li)
+     ,.io_rev_data_i(io_rev_data_li)
+     ,.io_rev_data_v_i(io_rev_data_v_li)
+     ,.io_rev_data_ready_and_o(io_rev_data_ready_and_lo)
+     ,.io_rev_last_i(io_rev_last_li)
      );
 
-  bp_bedrock_mem_header_s b2s_io_cmd_header_lo;
-  logic [acache_fill_width_p-1:0] b2s_io_cmd_data_lo;
-  logic b2s_io_cmd_v_lo, b2s_io_cmd_ready_and_li, b2s_io_cmd_last_lo;
+  bp_bedrock_mem_fwd_header_s b2s_io_fwd_header_lo;
+  logic [acache_fill_width_p-1:0] b2s_io_fwd_data_lo;
+  logic b2s_io_fwd_v_lo, b2s_io_fwd_ready_and_li, b2s_io_fwd_last_lo;
 
-  bp_bedrock_mem_header_s s2b_io_resp_header_li;
-  logic [acache_fill_width_p-1:0] s2b_io_resp_data_li;
-  logic s2b_io_resp_v_li, s2b_io_resp_ready_and_lo, s2b_io_resp_last_li;
+  bp_bedrock_mem_rev_header_s s2b_io_rev_header_li;
+  logic [acache_fill_width_p-1:0] s2b_io_rev_data_li;
+  logic s2b_io_rev_v_li, s2b_io_rev_ready_and_lo, s2b_io_rev_last_li;
 
   bp_me_burst_to_stream
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(acache_fill_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
+     ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.block_width_p(acache_block_width_p)
-     ,.payload_mask_p(mem_cmd_payload_mask_gp)
+     ,.payload_mask_p(mem_fwd_payload_mask_gp)
      )
-    io_cmd_b2s
+    io_fwd_b2s
      (.clk_i(clk_i)
       ,.reset_i(reset_r)
 
-      ,.in_msg_header_i(io_cmd_header_lo)
-      ,.in_msg_header_v_i(io_cmd_header_v_lo)
-      ,.in_msg_header_ready_and_o(io_cmd_header_ready_and_li)
-      ,.in_msg_has_data_i(io_cmd_has_data_lo)
+      ,.in_msg_header_i(io_fwd_header_lo)
+      ,.in_msg_header_v_i(io_fwd_header_v_lo)
+      ,.in_msg_header_ready_and_o(io_fwd_header_ready_and_li)
+      ,.in_msg_has_data_i(io_fwd_has_data_lo)
 
-      ,.in_msg_data_i(io_cmd_data_lo)
-      ,.in_msg_data_v_i(io_cmd_data_v_lo)
-      ,.in_msg_data_ready_and_o(io_cmd_data_ready_and_li)
-      ,.in_msg_last_i(io_cmd_last_lo)
+      ,.in_msg_data_i(io_fwd_data_lo)
+      ,.in_msg_data_v_i(io_fwd_data_v_lo)
+      ,.in_msg_data_ready_and_o(io_fwd_data_ready_and_li)
+      ,.in_msg_last_i(io_fwd_last_lo)
 
-      ,.out_msg_header_o(b2s_io_cmd_header_lo)
-      ,.out_msg_data_o(b2s_io_cmd_data_lo)
-      ,.out_msg_v_o(b2s_io_cmd_v_lo)
-      ,.out_msg_ready_and_i(b2s_io_cmd_ready_and_li)
-      ,.out_msg_last_o(b2s_io_cmd_last_lo)
+      ,.out_msg_header_o(b2s_io_fwd_header_lo)
+      ,.out_msg_data_o(b2s_io_fwd_data_lo)
+      ,.out_msg_v_o(b2s_io_fwd_v_lo)
+      ,.out_msg_ready_and_i(b2s_io_fwd_ready_and_li)
+      ,.out_msg_last_o(b2s_io_fwd_last_lo)
       );
 
   bp_me_stream_to_burst
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(acache_fill_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
-     ,.payload_mask_p(mem_resp_payload_mask_gp)
+     ,.payload_width_p(mem_rev_payload_width_lp)
+     ,.payload_mask_p(mem_rev_payload_mask_gp)
      )
-    io_resp_s2b
+    io_rev_s2b
      (.clk_i(clk_i)
       ,.reset_i(reset_r)
 
-      ,.in_msg_header_i(s2b_io_resp_header_li)
-      ,.in_msg_data_i(s2b_io_resp_data_li)
-      ,.in_msg_v_i(s2b_io_resp_v_li)
-      ,.in_msg_ready_and_o(s2b_io_resp_ready_and_lo)
-      ,.in_msg_last_i(s2b_io_resp_last_li)
+      ,.in_msg_header_i(s2b_io_rev_header_li)
+      ,.in_msg_data_i(s2b_io_rev_data_li)
+      ,.in_msg_v_i(s2b_io_rev_v_li)
+      ,.in_msg_ready_and_o(s2b_io_rev_ready_and_lo)
+      ,.in_msg_last_i(s2b_io_rev_last_li)
 
-      ,.out_msg_header_o(io_resp_header_li)
-      ,.out_msg_header_v_o(io_resp_header_v_li)
-      ,.out_msg_header_ready_and_i(io_resp_header_ready_and_lo)
-      ,.out_msg_has_data_o(io_resp_has_data_li)
+      ,.out_msg_header_o(io_rev_header_li)
+      ,.out_msg_header_v_o(io_rev_header_v_li)
+      ,.out_msg_header_ready_and_i(io_rev_header_ready_and_lo)
+      ,.out_msg_has_data_o(io_rev_has_data_li)
 
-      ,.out_msg_data_o(io_resp_data_li)
-      ,.out_msg_data_v_o(io_resp_data_v_li)
-      ,.out_msg_data_ready_and_i(io_resp_data_ready_and_lo)
-      ,.out_msg_last_o(io_resp_last_li)
+      ,.out_msg_data_o(io_rev_data_li)
+      ,.out_msg_data_v_o(io_rev_data_v_li)
+      ,.out_msg_data_ready_and_i(io_rev_data_ready_and_lo)
+      ,.out_msg_last_o(io_rev_last_li)
       );
 
   if (sacc_type_p == e_sacc_vdp) begin : sacc_vdp
@@ -262,17 +262,17 @@ module bp_sacc_tile
 
        ,.lce_id_i(lce_id_li)
 
-       ,.io_cmd_header_i(b2s_io_cmd_header_lo)
-       ,.io_cmd_data_i(b2s_io_cmd_data_lo)
-       ,.io_cmd_v_i(b2s_io_cmd_v_lo)
-       ,.io_cmd_last_i(b2s_io_cmd_last_lo)
-       ,.io_cmd_ready_and_o(b2s_io_cmd_ready_and_li)
+       ,.io_fwd_header_i(b2s_io_fwd_header_lo)
+       ,.io_fwd_data_i(b2s_io_fwd_data_lo)
+       ,.io_fwd_v_i(b2s_io_fwd_v_lo)
+       ,.io_fwd_last_i(b2s_io_fwd_last_lo)
+       ,.io_fwd_ready_and_o(b2s_io_fwd_ready_and_li)
 
-       ,.io_resp_header_o(s2b_io_resp_header_li)
-       ,.io_resp_data_o(s2b_io_resp_data_li)
-       ,.io_resp_v_o(s2b_io_resp_v_li)
-       ,.io_resp_last_o(s2b_io_resp_last_li)
-       ,.io_resp_ready_and_i(s2b_io_resp_ready_and_lo)
+       ,.io_rev_header_o(s2b_io_rev_header_li)
+       ,.io_rev_data_o(s2b_io_rev_data_li)
+       ,.io_rev_v_o(s2b_io_rev_v_li)
+       ,.io_rev_last_o(s2b_io_rev_last_li)
+       ,.io_rev_ready_and_i(s2b_io_rev_ready_and_lo)
        );
   end
   else if (sacc_type_p == e_sacc_scratchpad) begin : sacc_scratchpad
@@ -284,25 +284,25 @@ module bp_sacc_tile
 
        ,.lce_id_i(lce_id_li)
 
-       ,.io_cmd_header_i(b2s_io_cmd_header_lo)
-       ,.io_cmd_data_i(b2s_io_cmd_data_lo)
-       ,.io_cmd_v_i(b2s_io_cmd_v_lo)
-       ,.io_cmd_last_i(b2s_io_cmd_last_lo)
-       ,.io_cmd_ready_and_o(b2s_io_cmd_ready_and_li)
+       ,.io_fwd_header_i(b2s_io_fwd_header_lo)
+       ,.io_fwd_data_i(b2s_io_fwd_data_lo)
+       ,.io_fwd_v_i(b2s_io_fwd_v_lo)
+       ,.io_fwd_last_i(b2s_io_fwd_last_lo)
+       ,.io_fwd_ready_and_o(b2s_io_fwd_ready_and_li)
 
-       ,.io_resp_header_o(s2b_io_resp_header_li)
-       ,.io_resp_data_o(s2b_io_resp_data_li)
-       ,.io_resp_v_o(s2b_io_resp_v_li)
-       ,.io_resp_last_o(s2b_io_resp_last_li)
-       ,.io_resp_ready_and_i(s2b_io_resp_ready_and_lo)
+       ,.io_rev_header_o(s2b_io_rev_header_li)
+       ,.io_rev_data_o(s2b_io_rev_data_li)
+       ,.io_rev_v_o(s2b_io_rev_v_li)
+       ,.io_rev_last_o(s2b_io_rev_last_li)
+       ,.io_rev_ready_and_i(s2b_io_rev_ready_and_lo)
        );
   end
   else begin : none
-    assign b2s_io_cmd_ready_and_li = 1'b0;
-    assign s2b_io_resp_header_li = '0;
-    assign s2b_io_resp_data_li = '0;
-    assign s2b_io_resp_v_li = 1'b0;
-    assign s2b_io_resp_last_li = 1'b0;
+    assign b2s_io_fwd_ready_and_li = 1'b0;
+    assign s2b_io_rev_header_li = '0;
+    assign s2b_io_rev_data_li = '0;
+    assign s2b_io_rev_v_li = 1'b0;
+    assign s2b_io_rev_last_li = 1'b0;
   end
 
   // Burst to WH (lce_req_header_lo)

@@ -48,11 +48,11 @@ module bp_core_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_resp_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
 
-   , input [mem_noc_ral_link_width_lp-1:0]       mem_cmd_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]      mem_cmd_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]       mem_fwd_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]      mem_fwd_link_o
 
-   , input [mem_noc_ral_link_width_lp-1:0]       mem_resp_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]      mem_resp_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]       mem_rev_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]      mem_rev_link_o
    );
 
   // Declare the routing links
@@ -66,7 +66,7 @@ module bp_core_tile_node
   bp_coh_ready_and_link_s core_lce_resp_link_li, core_lce_resp_link_lo;
 
   // Tile side membus connections
-  bp_mem_ready_and_link_s core_mem_cmd_link_lo, core_mem_resp_link_li;
+  bp_mem_ready_and_link_s core_mem_fwd_link_lo, core_mem_rev_link_li;
 
   bp_core_tile
    #(.bp_params_p(bp_params_p))
@@ -92,8 +92,8 @@ module bp_core_tile_node
      ,.lce_resp_link_i(core_lce_resp_link_li)
      ,.lce_resp_link_o(core_lce_resp_link_lo)
 
-     ,.mem_cmd_link_o(core_mem_cmd_link_lo)
-     ,.mem_resp_link_i(core_mem_resp_link_li)
+     ,.mem_fwd_link_o(core_mem_fwd_link_lo)
+     ,.mem_rev_link_i(core_mem_rev_link_li)
      );
 
   bp_nd_socket
@@ -135,10 +135,10 @@ module bp_core_tile_node
      ,.network_clk_i(mem_clk_i)
      ,.network_reset_i(mem_reset_i)
      ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
-     ,.network_link_i({mem_resp_link_i, mem_cmd_link_i})
-     ,.network_link_o({mem_cmd_link_o, mem_resp_link_o})
-     ,.tile_link_i(core_mem_cmd_link_lo)
-     ,.tile_link_o(core_mem_resp_link_li)
+     ,.network_link_i({mem_rev_link_i, mem_fwd_link_i})
+     ,.network_link_o({mem_fwd_link_o, mem_rev_link_o})
+     ,.tile_link_i(core_mem_fwd_link_lo)
+     ,.tile_link_o(core_mem_rev_link_li)
      );
 
 endmodule
