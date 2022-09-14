@@ -22,39 +22,39 @@ module bp_me_loopback
    (input                                            clk_i
     , input                                          reset_i
 
-    , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-    , input [dword_width_gp-1:0]                     mem_cmd_data_i
-    , input                                          mem_cmd_v_i
-    , output logic                                   mem_cmd_ready_and_o
-    , input logic                                    mem_cmd_last_i
+    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
+    , input [dword_width_gp-1:0]                     mem_fwd_data_i
+    , input                                          mem_fwd_v_i
+    , output logic                                   mem_fwd_ready_and_o
+    , input logic                                    mem_fwd_last_i
 
-    , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
-    , output logic [dword_width_gp-1:0]              mem_resp_data_o
-    , output logic                                   mem_resp_v_o
-    , input                                          mem_resp_ready_and_i
-    , output logic                                   mem_resp_last_o
+    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
+    , output logic [dword_width_gp-1:0]              mem_rev_data_o
+    , output logic                                   mem_rev_v_o
+    , input                                          mem_rev_ready_and_i
+    , output logic                                   mem_rev_last_o
     );
 
-  wire unused = &{mem_cmd_data_i};
+  wire unused = &{mem_fwd_data_i};
 
   // Used to decouple to help prevent deadlock
-  logic mem_resp_last_lo;
+  logic mem_rev_last_lo;
   bsg_one_fifo
-   #(.width_p(1+mem_header_width_lp))
+   #(.width_p(1+mem_fwd_header_width_lp))
    loopback_buffer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({mem_cmd_last_i, mem_cmd_header_i})
-     ,.v_i(mem_cmd_v_i)
-     ,.ready_o(mem_cmd_ready_and_o)
+     ,.data_i({mem_fwd_last_i, mem_fwd_header_i})
+     ,.v_i(mem_fwd_v_i)
+     ,.ready_o(mem_fwd_ready_and_o)
 
-     ,.data_o({mem_resp_last_lo, mem_resp_header_o})
-     ,.v_o(mem_resp_v_o)
-     ,.yumi_i(mem_resp_ready_and_i & mem_resp_v_o)
+     ,.data_o({mem_rev_last_lo, mem_rev_header_o})
+     ,.v_o(mem_rev_v_o)
+     ,.yumi_i(mem_rev_ready_and_i & mem_rev_v_o)
      );
-  assign mem_resp_data_o = '0;
-  assign mem_resp_last_o = mem_resp_v_o & mem_resp_last_lo;
+  assign mem_rev_data_o = '0;
+  assign mem_rev_last_o = mem_rev_v_o & mem_rev_last_lo;
 
 endmodule
 

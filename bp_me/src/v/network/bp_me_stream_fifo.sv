@@ -25,11 +25,11 @@ module bp_me_stream_fifo
    , output logic                            msg_ready_and_o
 
 
-   , output logic [header_width_p-1:0]       msg_base_header_o
+   , output logic [header_width_p-1:0]       msg_header_o
    , output logic [data_width_p-1:0]         msg_data_o
    , output logic                            msg_v_o
    , output logic                            msg_last_o
-   , input                                   msg_ready_and_i
+   , input                                   msg_yumi_i
    );
 
   enum logic {e_ready, e_stream} state_n, state_r;
@@ -41,7 +41,7 @@ module bp_me_stream_fifo
   if (header_els_p == 0 && data_els_p == 0)
     begin : passthrough
       // This could just be the address, but should synthesize the same
-      logic [header_width_p-1:0] msg_base_header_r;
+      logic [header_width_p-1:0] msg_header_r;
       bsg_dff_reset_en_bypass
        #(.width_p(header_width_p))
        header_reg
@@ -49,15 +49,15 @@ module bp_me_stream_fifo
          ,.reset_i(reset_i)
          ,.en_i(is_ready & msg_v_i)
          ,.data_i(msg_header_i)
-         ,.data_o(msg_base_header_r)
+         ,.data_o(msg_header_r)
          );
 
-      assign msg_base_header_o       = msg_base_header_r;
+      assign msg_header_o       = msg_header_r;
       assign msg_data_o              = msg_data_i;
       assign msg_v_o                 = msg_v_i;
       assign msg_last_o              = msg_last_i;
-      assign msg_header_ready_and_lo = msg_ready_and_i;
-      assign msg_data_ready_and_lo   = msg_ready_and_i;
+      assign msg_header_ready_and_lo = msg_yumi_i;
+      assign msg_data_ready_and_lo   = msg_yumi_i;
     end
   else if (header_els_p != 0 && data_els_p != 0 && header_els_p <= data_els_p)
     begin : buffered
@@ -72,9 +72,9 @@ module bp_me_stream_fifo
          ,.v_i(msg_header_v_li)
          ,.ready_o(msg_header_ready_and_lo)
 
-         ,.data_o(msg_base_header_o)
+         ,.data_o(msg_header_o)
          ,.v_o()
-         ,.yumi_i(msg_ready_and_i & msg_v_o & msg_last_o)
+         ,.yumi_i(msg_yumi_i & msg_last_o)
          );
 
       // Every arriving beat's data is buffered (regardless of whether data is valid)
@@ -90,7 +90,7 @@ module bp_me_stream_fifo
 
           ,.data_o({msg_last_o, msg_data_o})
           ,.v_o(msg_v_o)
-          ,.yumi_i(msg_ready_and_i & msg_v_o)
+          ,.yumi_i(msg_yumi_i)
           );
     end
   else

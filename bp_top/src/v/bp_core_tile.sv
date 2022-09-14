@@ -51,8 +51,8 @@ module bp_core_tile
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_resp_link_i
    , output logic [coh_noc_ral_link_width_lp-1:0]             lce_resp_link_o
 
-   , output logic [mem_noc_ral_link_width_lp-1:0]             mem_cmd_link_o
-   , input [mem_noc_ral_link_width_lp-1:0]                    mem_resp_link_i
+   , output logic [mem_noc_ral_link_width_lp-1:0]             mem_fwd_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]                    mem_rev_link_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -550,12 +550,12 @@ module bp_core_tile
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
 
-  bp_bedrock_mem_header_s mem_cmd_header_lo;
-  logic [bedrock_data_width_p-1:0] mem_cmd_data_lo;
-  logic mem_cmd_v_lo, mem_cmd_last_lo, mem_cmd_ready_and_li;
-  bp_bedrock_mem_header_s mem_resp_header_li;
-  logic [bedrock_data_width_p-1:0] mem_resp_data_li;
-  logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
+  logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
+  logic mem_fwd_v_lo, mem_fwd_last_lo, mem_fwd_ready_and_li;
+  bp_bedrock_mem_rev_header_s mem_rev_header_li;
+  logic [bedrock_data_width_p-1:0] mem_rev_data_li;
+  logic mem_rev_v_li, mem_rev_ready_and_lo, mem_rev_last_li;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p);
   bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
@@ -627,17 +627,17 @@ module bp_core_tile
      ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_li)
      ,.lce_fill_last_o(lce_fill_last_lo)
 
-     ,.mem_cmd_header_i(mem_cmd_header_lo)
-     ,.mem_cmd_data_i(mem_cmd_data_lo)
-     ,.mem_cmd_v_i(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_o(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_i(mem_cmd_last_lo)
+     ,.mem_fwd_header_i(mem_fwd_header_lo)
+     ,.mem_fwd_data_i(mem_fwd_data_lo)
+     ,.mem_fwd_v_i(mem_fwd_v_lo)
+     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
+     ,.mem_fwd_last_i(mem_fwd_last_lo)
 
-     ,.mem_resp_header_o(mem_resp_header_li)
-     ,.mem_resp_data_o(mem_resp_data_li)
-     ,.mem_resp_v_o(mem_resp_v_li)
-     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
-     ,.mem_resp_last_o(mem_resp_last_li)
+     ,.mem_rev_header_o(mem_rev_header_li)
+     ,.mem_rev_data_o(mem_rev_data_li)
+     ,.mem_rev_v_o(mem_rev_v_li)
+     ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
+     ,.mem_rev_last_o(mem_rev_last_li)
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
@@ -698,20 +698,20 @@ module bp_core_tile
 
      // CCE-MEM Interface
      // BedRock Burst protocol: ready&valid
-     ,.mem_resp_header_i(mem_resp_header_li)
-     ,.mem_resp_data_i(mem_resp_data_li)
-     ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
-     ,.mem_resp_last_i(mem_resp_last_li)
+     ,.mem_rev_header_i(mem_rev_header_li)
+     ,.mem_rev_data_i(mem_rev_data_li)
+     ,.mem_rev_v_i(mem_rev_v_li)
+     ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
+     ,.mem_rev_last_i(mem_rev_last_li)
 
-     ,.mem_cmd_header_o(mem_cmd_header_lo)
-     ,.mem_cmd_data_o(mem_cmd_data_lo)
-     ,.mem_cmd_v_o(mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
-     ,.mem_cmd_last_o(mem_cmd_last_lo)
+     ,.mem_fwd_header_o(mem_fwd_header_lo)
+     ,.mem_fwd_data_o(mem_fwd_data_lo)
+     ,.mem_fwd_v_o(mem_fwd_v_lo)
+     ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
+     ,.mem_fwd_last_o(mem_fwd_last_lo)
      );
 
-  bp_mem_ready_and_link_s [l2_banks_p-1:0] dma_link_lo, dma_link_li;
+  bp_mem_ready_and_link_s [l2_banks_p-1:0] mem_dma_link_lo, mem_dma_link_li;
   for (genvar i = 0; i < l2_banks_p; i++)
     begin : dma
       wire [mem_noc_cord_width_p-1:0] cord_li = my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p];
@@ -742,8 +742,8 @@ module bp_core_tile
          ,.dma_data_v_i(dma_data_v_lo[i])
          ,.dma_data_yumi_o(dma_data_yumi_li[i])
 
-         ,.wh_link_sif_i(dma_link_li[i])
-         ,.wh_link_sif_o(dma_link_lo[i])
+         ,.wh_link_sif_i(mem_dma_link_li[i])
+         ,.wh_link_sif_o(mem_dma_link_lo[i])
 
          ,.my_wh_cord_i(cord_li)
          ,.my_wh_cid_i(cid_li)
@@ -765,11 +765,11 @@ module bp_core_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.links_i(dma_link_lo)
-     ,.links_o(dma_link_li)
+     ,.links_i(mem_dma_link_lo)
+     ,.links_o(mem_dma_link_li)
 
-     ,.concentrated_link_o(mem_cmd_link_o)
-     ,.concentrated_link_i(mem_resp_link_i)
+     ,.concentrated_link_o(mem_fwd_link_o)
+     ,.concentrated_link_i(mem_rev_link_i)
      );
 
 endmodule
