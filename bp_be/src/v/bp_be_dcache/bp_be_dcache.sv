@@ -113,6 +113,8 @@ module bp_be_dcache
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
    , parameter fill_width_p   = dcache_fill_width_p
+   , localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp + sindex_width_lp);
+
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
 
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
@@ -211,7 +213,6 @@ module bp_be_dcache
   localparam block_offset_width_lp    = (assoc_p > 1)
     ? (bindex_width_lp+byte_offset_width_lp)
     : byte_offset_width_lp;
-  localparam ctag_width_lp     = caddr_width_p - (block_offset_width_lp + sindex_width_lp);
 
   // State machine declaration
   enum logic [2:0] {e_ready, e_miss, e_resume, e_late} state_n, state_r;
