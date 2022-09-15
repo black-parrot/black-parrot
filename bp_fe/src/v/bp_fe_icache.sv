@@ -41,7 +41,7 @@ module bp_fe_icache
    , parameter assoc_p        = icache_assoc_p
    , parameter block_width_p  = icache_block_width_p
    , parameter fill_width_p   = icache_fill_width_p
-   , localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp + sindex_width_lp);
+   , localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp + sindex_width_lp)
 
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
