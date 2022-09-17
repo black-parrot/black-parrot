@@ -25,6 +25,7 @@ module bp_fe_realigner
    , input                           poison_i
    , input                           restore_lower_half_v_i
    , input [instr_half_width_gp-1:0] restore_lower_half_i
+   , input [vaddr_width_p-1:0]       restore_lower_half_pc_i
 
    , output [vaddr_width_p-1:0]  fetch_instr_pc_o
    , output [instr_width_gp-1:0] fetch_instr_o
@@ -37,8 +38,8 @@ module bp_fe_realigner
 
   logic [vaddr_width_p-1:0] fetch_instr_pc_n, fetch_instr_pc_r;
   logic [instr_half_width_gp-1:0] half_buffer_n, half_buffer_r;
-  assign fetch_instr_pc_n = fetch_pc_i;
-  assign half_buffer_n    = restore_lower_half_v_i ? restore_lower_half_i : icache_data_upper_half_li;
+  assign fetch_instr_pc_n = restore_lower_half_v_i ? restore_lower_half_pc_i : fetch_pc_i;
+  assign half_buffer_n    = restore_lower_half_v_i ? restore_lower_half_i    : icache_data_upper_half_li;
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p+instr_half_width_gp))
    half_buffer_reg

@@ -82,11 +82,12 @@ module bp_fe_pc_gen
   logic [vaddr_width_p-1:0] br_tgt_lo;
   logic [vaddr_width_p-1:0] if2_second_half_addr;
   wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_r + vaddr_width_p'(4);
+  wire [vaddr_width_p-1:0] redirect_pc_restore = redirect_pc_i + (redirect_restore_insn_lower_half_v_i ? vaddr_width_p'(4) : '0);
   // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb begin
     next_fetch_linear = 1'b0;
-  if (redirect_v_i)
-        next_pc = redirect_pc_i;
+    if (redirect_v_i)
+        next_pc = redirect_pc_restore;
     else if (ovr_half) begin
         next_pc = if2_second_half_addr;
         // TODO: clean up linear logic
@@ -309,14 +310,15 @@ module bp_fe_pc_gen
         ,.fetch_data_i  (fetch_i)
         ,.fetch_data_v_i(fetch_v_i)
 
-        ,.poison_i              (realigner_poison_if1_r & !ovr_half)
-        ,.restore_lower_half_v_i(redirect_restore_insn_lower_half_v_i)
-        ,.restore_lower_half_i  (redirect_restore_insn_lower_half_i)
+        ,.poison_i               (realigner_poison_if1_r & !ovr_half)
+        ,.restore_lower_half_v_i (redirect_restore_insn_lower_half_v_i)
+        ,.restore_lower_half_i   (redirect_restore_insn_lower_half_i)
+        ,.restore_lower_half_pc_i(redirect_pc_restore)
 
-        ,.fetch_instr_pc_o      (fetch_pc_o)
-        ,.fetch_instr_o         (fetch_instr_o)
-        ,.fetch_instr_v_o       (fetch_instr_v_o)
-        ,.fetch_is_second_half_o(fetch_is_second_half_o)
+        ,.fetch_instr_pc_o       (fetch_pc_o)
+        ,.fetch_instr_o          (fetch_instr_o)
+        ,.fetch_instr_v_o        (fetch_instr_v_o)
+        ,.fetch_is_second_half_o (fetch_is_second_half_o)
         );
     end
   else
