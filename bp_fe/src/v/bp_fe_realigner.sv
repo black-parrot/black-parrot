@@ -43,7 +43,7 @@ module bp_fe_realigner
   wire icache_fetch_is_aligned  = `bp_addr_is_aligned(fetch_pc_i, rv64_instr_width_bytes_gp);
   wire buffered_pc_is_aligned   = `bp_addr_is_aligned(fetch_instr_pc_r, rv64_instr_width_bytes_gp);
 
-  assign fetch_instr_pc_n = restore_lower_half_v_i ? restore_lower_half_pc_i : half_buffer_v_r ? fetch_pc_i + vaddr_width_p'(2) : fetch_pc_i;
+  assign fetch_instr_pc_n = restore_lower_half_v_i ? restore_lower_half_pc_i : ((half_buffer_v_r & icache_fetch_is_aligned) ? (fetch_pc_i + vaddr_width_p'(2)) : fetch_pc_i);
   assign half_buffer_n    = restore_lower_half_v_i ? restore_lower_half_i    : icache_data_upper_half_li;
 
   bsg_dff_reset_en
