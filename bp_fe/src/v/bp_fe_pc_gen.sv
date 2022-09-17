@@ -82,6 +82,7 @@ module bp_fe_pc_gen
   logic [vaddr_width_p-1:0] br_tgt_lo;
   logic [vaddr_width_p-1:0] if2_second_half_addr;
   wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_r + vaddr_width_p'(4);
+  // TODO: clarify name redirect_pc_restore
   wire [vaddr_width_p-1:0] redirect_pc_restore = redirect_pc_i + (redirect_restore_insn_lower_half_v_i ? vaddr_width_p'(4) : '0);
   // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb begin
@@ -313,7 +314,7 @@ module bp_fe_pc_gen
         ,.poison_i               (realigner_poison_if1_r & !ovr_half)
         ,.restore_lower_half_v_i (redirect_restore_insn_lower_half_v_i)
         ,.restore_lower_half_i   (redirect_restore_insn_lower_half_i)
-        ,.restore_lower_half_pc_i(redirect_pc_restore)
+        ,.restore_lower_half_pc_i(redirect_pc_i)
 
         ,.fetch_instr_pc_o       (fetch_pc_o)
         ,.fetch_instr_o          (fetch_instr_o)
