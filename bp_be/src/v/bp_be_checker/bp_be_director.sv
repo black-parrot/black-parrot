@@ -159,10 +159,10 @@ module bp_be_director
       else if (commit_pkt_cast_i.itlb_fill_v)
         begin
           fe_cmd_li.opcode                               = (compressed_support_p & commit_pkt_cast_i.exception_instr_upper_not_lower_half) ? e_op_itlb_fill_resume : e_op_itlb_fill_restart;
-          fe_cmd_li.npc                                  = commit_pkt_cast_i.npc;
+          fe_cmd_li.npc                                  = commit_pkt_cast_i.vaddr;
           fe_cmd_li.operands.itlb_fill_response.pte_leaf = commit_pkt_cast_i.pte_leaf;
           fe_cmd_li.operands.itlb_fill_response.instr    = compressed_support_p ? commit_pkt_cast_i.instr : '0;
-          fe_cmd_li.operands.itlb_fill_response.vtag     = commit_pkt_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
+          fe_cmd_li.operands.itlb_fill_response.vtag     = commit_pkt_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p]; // TODO: dedupe?
 
           fe_cmd_v_li = fe_cmd_ready_lo;
         end
@@ -200,7 +200,7 @@ module bp_be_director
       else if (commit_pkt_cast_i.icache_miss)
         begin
           fe_cmd_li.opcode = (compressed_support_p & commit_pkt_cast_i.exception_instr_upper_not_lower_half) ? e_op_icache_fill_resume : e_op_icache_fill_restart;
-          fe_cmd_li.npc = commit_pkt_cast_i.npc;
+          fe_cmd_li.npc    = commit_pkt_cast_i.vaddr;
           fe_cmd_li.operands.icache_fill_response.instr = compressed_support_p ? commit_pkt_cast_i.instr : '0;
 
           fe_cmd_v_li = fe_cmd_ready_lo;

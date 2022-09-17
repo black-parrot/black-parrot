@@ -38,8 +38,14 @@ module bp_fe_realigner
 
   logic [vaddr_width_p-1:0] fetch_instr_pc_n, fetch_instr_pc_r;
   logic [instr_half_width_gp-1:0] half_buffer_n, half_buffer_r;
-  assign fetch_instr_pc_n = restore_lower_half_v_i ? restore_lower_half_pc_i : fetch_pc_i;
+  logic half_buffer_v_r;
+
+  wire icache_fetch_is_aligned  = `bp_addr_is_aligned(fetch_pc_i, rv64_instr_width_bytes_gp);
+  wire buffered_pc_is_aligned   = `bp_addr_is_aligned(fetch_instr_pc_r, rv64_instr_width_bytes_gp);
+
+  assign fetch_instr_pc_n = restore_lower_half_v_i ? restore_lower_half_pc_i : half_buffer_v_r ? fetch_pc_i + vaddr_width_p'(2) : fetch_pc_i;
   assign half_buffer_n    = restore_lower_half_v_i ? restore_lower_half_i    : icache_data_upper_half_li;
+
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p+instr_half_width_gp))
    half_buffer_reg
@@ -51,26 +57,27 @@ module bp_fe_realigner
      ,.data_o({fetch_instr_pc_r, half_buffer_r})
      );
 
-  logic half_buffer_v_r;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    half_buffer_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i  ((fetch_data_v_i & ~poison_i) | restore_lower_half_v_i)
-     // TODO: invalidate when PC is aligned?
+     ,.set_i  ((fetch_data_v_i & ~poison_i & (half_buffer_v_r | !icache_fetch_is_aligned)) | restore_lower_half_v_i)
+     // TODO: invalidate when PC is aligned? (outside the realigner)
      ,.clear_i(fetch_instr_v_o | poison_i) // set overrides clear
      ,.data_o (half_buffer_v_r)
      );
 
-  wire icache_fetch_is_aligned  = `bp_addr_is_aligned(fetch_pc_i, rv64_instr_width_bytes_gp);
-  wire buffered_insn_v          = !icache_fetch_is_aligned && fetch_data_v_i && half_buffer_v_r;
+  // wire buffered_insn_v          = fetch_data_v_i && half_buffer_v_r;
 
-  assign fetch_is_second_half_o = !icache_fetch_is_aligned && half_buffer_v_r;
+  assign fetch_is_second_half_o = half_buffer_v_r;
 
-  assign fetch_instr_pc_o = !fetch_is_second_half_o ? fetch_pc_i       : fetch_instr_pc_r;
+  assign fetch_instr_v_o  = (half_buffer_v_r | icache_fetch_is_aligned) & fetch_data_v_i;
+  assign fetch_instr_pc_o = half_buffer_v_r ? fetch_instr_pc_r                             : fetch_pc_i;
+  assign fetch_instr_o    = half_buffer_v_r ? { icache_data_lower_half_li, half_buffer_r } : fetch_data_i;
 
-  assign fetch_instr_v_o  = icache_fetch_is_aligned ? fetch_data_v_i   : buffered_insn_v;
-  assign fetch_instr_o    = icache_fetch_is_aligned ? fetch_data_i     : { icache_data_lower_half_li, half_buffer_r };
+  always @(negedge clk_i)
+    if(buffered_pc_is_aligned && half_buffer_v_r)
+      $error("bad");
 endmodule
