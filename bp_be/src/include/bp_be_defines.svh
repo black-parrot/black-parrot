@@ -39,6 +39,7 @@
       logic                                    v;                                                  \
       logic                                    queue_v;                                            \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
+      logic                                    instr_v;                                            \
       rv64_instr_s                             instr;                                              \
       bp_be_decode_s                           decode;                                             \
                                                                                                    \
@@ -232,7 +233,7 @@
     (2                                                                                             \
      + vaddr_width_mp                                                                              \
      + rv64_instr_width_gp                                                                         \
-     + 3                                                                                           \
+     + 4                                                                                           \
      + 3 * dpath_width_gp                                                                          \
      + $bits(bp_be_decode_s)                                                                       \
      + $bits(bp_be_exception_s)                                                                    \

@@ -205,6 +205,7 @@ module bp_be_scheduler
       dispatch_pkt = '0;
       dispatch_pkt.v        = (fe_queue_yumi_li & ~poison_isd_i) || be_exc_not_instr_li;
       dispatch_pkt.queue_v  = fe_queue_yumi_li;
+      dispatch_pkt.instr_v  = instr_v_li;
       dispatch_pkt.pc       = expected_npc_i;
       dispatch_pkt.instr    = fe_queue_lo.instr;
       // If register injection is critical, can be done after bypass

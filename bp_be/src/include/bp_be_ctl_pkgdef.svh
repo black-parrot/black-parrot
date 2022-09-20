@@ -188,8 +188,6 @@
 
   typedef struct packed
   {
-    logic                             v;
-
     logic                             pipe_ctl_v;
     logic                             pipe_int_v;
     logic                             pipe_mem_early_v;
