@@ -76,7 +76,7 @@ module bp_fe_pc_gen
   /////////////////
   bp_fe_pred_s pred_if1_n, pred_if1_r;
   logic [vaddr_width_p-1:0] next_pc;
-  logic next_fetch_linear;
+  logic next_pc_nonlinear;
   logic ovr_ret, ovr_taken, ovr_half, btb_taken;
   logic [vaddr_width_p-1:0] btb_br_tgt_lo;
   logic [vaddr_width_p-1:0] ras_tgt_lo;
@@ -86,29 +86,29 @@ module bp_fe_pc_gen
 
   // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb begin
-    next_fetch_linear = 1'b0;
-    if (redirect_v_i)
-        next_pc = redirect_pc_i;
-    else if (ovr_half) begin
-        next_pc = if2_second_half_addr;
-        // TODO: clean up linear logic
-        next_fetch_linear = 1'b1;
+    next_pc_nonlinear = 1'b1;
+    if (redirect_v_i) begin
+        next_pc           = redirect_pc_i;
+        next_pc_nonlinear = !redirect_restore_insn_lower_half_v_i;
+    end else if (ovr_half) begin
+        next_pc           = if2_second_half_addr;
+        next_pc_nonlinear = 1'b0;
     end else if (ovr_ret)
-        next_pc = ras_tgt_lo;
+        next_pc           = ras_tgt_lo;
     else if (ovr_taken)
-        next_pc = br_tgt_lo;
+        next_pc           = br_tgt_lo;
     else if (btb_taken)
-        next_pc = btb_br_tgt_lo;
+        next_pc           = btb_br_tgt_lo;
     else begin
-        next_pc = pc_plus4;
-        next_fetch_linear = 1'b1;
+        next_pc           = pc_plus4;
+        next_pc_nonlinear = 1'b0;
     end
   end
 
   assign pc_if1_n = next_pc;
   assign next_fetch_o = `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp);
 
-  assign realigner_poison_if1_n = !next_fetch_linear & !redirect_restore_insn_lower_half_v_i;
+  assign realigner_poison_if1_n = next_pc_nonlinear;
 
   always_comb
     begin
