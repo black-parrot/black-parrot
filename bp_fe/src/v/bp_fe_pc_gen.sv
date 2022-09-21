@@ -15,6 +15,7 @@ module bp_fe_pc_gen
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+   , localparam max_ovr_half_count_nonsynth_lp = (2**30)-1
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -263,10 +264,23 @@ module bp_fe_pc_gen
   assign ovr_ret    = btb_miss_ras & is_ret;
   assign ovr_taken  = btb_miss_br & ((is_br & pred_if2_r.pred) | is_jal);
   assign ovr_half   = misaligned_fetch_nonbr & pc_if2_misaligned & fetch_v_i & !fetch_instr_v_o;
-  // TODO: counter
   assign ovr_o      = ovr_taken | ovr_ret | ovr_half;
   assign br_tgt_lo  = fetch_pc_o + scan_instr.imm;
   assign fetch_resume_pc_o = pc_if2_r;
+
+`ifndef SYNTHESIS
+  logic [`BSG_SAFE_CLOG2(max_ovr_half_count_nonsynth_lp+1)-1:0] ovr_half_count;
+  bsg_counter_clear_up
+    #(.max_val_p(max_ovr_half_count_nonsynth_lp), .init_val_p(max_ovr_half_count_nonsynth_lp'(0)))
+    ovr_half_counter
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.clear_i(reset_i)
+      ,.up_i(ovr_half & !redirect_v_i)
+      ,.count_o(ovr_half_count)
+      );
+`endif
 
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
