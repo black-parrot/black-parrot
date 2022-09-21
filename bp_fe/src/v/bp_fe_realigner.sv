@@ -76,7 +76,4 @@ module bp_fe_realigner
   assign fetch_instr_pc_o = half_buffer_v_r ? fetch_instr_pc_r                             : fetch_pc_i;
   assign fetch_instr_o    = half_buffer_v_r ? { icache_data_lower_half_li, half_buffer_r } : fetch_data_i;
 
-  always @(negedge clk_i)
-    if(buffered_pc_is_aligned && half_buffer_v_r)
-      $error("bad");
 endmodule
