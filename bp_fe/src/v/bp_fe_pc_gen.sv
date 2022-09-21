@@ -273,7 +273,7 @@ module bp_fe_pc_gen
 `ifndef SYNTHESIS
   logic [`BSG_SAFE_CLOG2(max_ovr_half_count_nonsynth_lp+1)-1:0] ovr_half_count;
   bsg_counter_clear_up
-    #(.max_val_p(max_ovr_half_count_nonsynth_lp), .init_val_p(max_ovr_half_count_nonsynth_lp'(0)))
+    #(.max_val_p(max_ovr_half_count_nonsynth_lp), .init_val_p(0))
     ovr_half_counter
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
