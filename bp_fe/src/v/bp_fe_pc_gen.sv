@@ -104,9 +104,11 @@ module bp_fe_pc_gen
         next_fetch_linear = 1'b1;
     end
   end
+
   assign pc_if1_n = next_pc;
-  assign realigner_poison_if1_n = !next_fetch_linear & !redirect_restore_insn_lower_half_v_i;
   assign next_fetch_o = `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp);
+
+  assign realigner_poison_if1_n = !next_fetch_linear & !redirect_restore_insn_lower_half_v_i;
 
   always_comb
     begin
