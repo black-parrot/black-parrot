@@ -155,7 +155,7 @@ module bp_fe_pc_gen
 
      ,.init_done_o(btb_init_done_lo)
 
-     ,.r_addr_i(next_fetch_o)
+     ,.r_addr_i(next_pc)
      ,.r_v_i(btb_r_v_li)
      ,.br_tgt_o(btb_br_tgt_lo)
      ,.br_tgt_v_o(btb_br_tgt_v_lo)
@@ -172,7 +172,7 @@ module bp_fe_pc_gen
 
   // BHT
   wire bht_r_v_li = next_fetch_yumi_i;
-  wire [vaddr_width_p-1:0] bht_r_addr_li = next_fetch_o;
+  wire [vaddr_width_p-1:0] bht_r_addr_li = next_pc;
   wire [ghist_width_p-1:0] bht_r_ghist_li = pred_if1_n.ghist;
   wire bht_w_v_li =
     (redirect_br_v_i & redirect_br_metadata_fwd.is_br) | (attaboy_v_i & attaboy_br_metadata_fwd.is_br);
@@ -267,8 +267,6 @@ module bp_fe_pc_gen
   assign br_tgt_lo  = fetch_pc_o + scan_instr.imm;
   assign fetch_resume_pc_o = pc_if2_r;
 
-  wire [vaddr_width_p-1:0] branch_prediction_source_addr_if2 = `bp_align_addr_down(pc_if2_r, rv64_instr_width_bytes_gp);
-
   bp_fe_branch_metadata_fwd_s br_metadata_site;
   assign fetch_br_metadata_fwd_o = br_metadata_site;
   always_ff @(posedge clk_i)
@@ -278,9 +276,9 @@ module bp_fe_pc_gen
           ,src_ret : pred_if2_r.ret
           ,ghist   : pred_if2_r.ghist
           ,bht_row : pred_if2_r.bht_row
-          ,btb_tag : branch_prediction_source_addr_if2[2+btb_idx_width_p+:btb_tag_width_p]
-          ,btb_idx : branch_prediction_source_addr_if2[2+:btb_idx_width_p]
-          ,bht_idx : branch_prediction_source_addr_if2[2+:bht_idx_width_p]
+          ,btb_tag : pc_if2_r[2+btb_idx_width_p+:btb_tag_width_p]
+          ,btb_idx : pc_if2_r[2+:btb_idx_width_p]
+          ,bht_idx : pc_if2_r[2+:bht_idx_width_p]
           ,is_br   : is_br
           ,is_jal  : is_jal
           ,is_jalr : is_jalr
