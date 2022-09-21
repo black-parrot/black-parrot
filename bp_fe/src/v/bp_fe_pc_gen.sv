@@ -82,6 +82,7 @@ module bp_fe_pc_gen
   logic [vaddr_width_p-1:0] br_tgt_lo;
   logic [vaddr_width_p-1:0] if2_second_half_addr;
   wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_r + vaddr_width_p'(4);
+
   // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb begin
     next_fetch_linear = 1'b0;
@@ -234,7 +235,7 @@ module bp_fe_pc_gen
         pred_if2_n = pred_if1_r;
         pred_if2_n.pred    = bht_pred_lo;
         pred_if2_n.taken   = btb_taken;
-        pred_if2_n.btb     = btb_br_tgt_v_lo; // TODO: mask this? does it matter?
+        pred_if2_n.btb     = btb_br_tgt_v_lo;
         pred_if2_n.bht_row = bht_row_lo;
       end
     else
@@ -307,15 +308,15 @@ module bp_fe_pc_gen
         ,.fetch_data_i  (fetch_i)
         ,.fetch_data_v_i(fetch_v_i)
 
-        ,.poison_i               (realigner_poison_if1_r & !ovr_half)
-        ,.restore_lower_half_v_i (redirect_restore_insn_lower_half_v_i)
-        ,.restore_lower_half_i   (redirect_restore_insn_lower_half_i)
-        ,.restore_lower_half_pc_i(redirect_pc_i - vaddr_width_p'(2)) // TODO: reorg
+        ,.poison_i                       (realigner_poison_if1_r & !ovr_half)
+        ,.restore_lower_half_v_i         (redirect_restore_insn_lower_half_v_i)
+        ,.restore_lower_half_i           (redirect_restore_insn_lower_half_i)
+        ,.restore_lower_half_next_vaddr_i(redirect_pc_i)
 
-        ,.fetch_instr_pc_o       (fetch_pc_o)
-        ,.fetch_instr_o          (fetch_instr_o)
-        ,.fetch_instr_v_o        (fetch_instr_v_o)
-        ,.fetch_is_second_half_o (fetch_is_second_half_o)
+        ,.fetch_instr_pc_o      (fetch_pc_o)
+        ,.fetch_instr_o         (fetch_instr_o)
+        ,.fetch_instr_v_o       (fetch_instr_v_o)
+        ,.fetch_is_second_half_o(fetch_is_second_half_o)
         );
     end
   else
