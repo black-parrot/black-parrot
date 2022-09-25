@@ -324,7 +324,7 @@ module bp_fe_pc_gen
         ,.fetch_data_i  (fetch_i)
         ,.fetch_data_v_i(fetch_v_i)
 
-        ,.poison_i                       (realigner_poison_if1_r & !ovr_half)
+        ,.poison_i                       ((redirect_v_i & ~redirect_restore_insn_lower_half_v_i) | !ovr_half & (ovr_ret | ovr_taken | (misaligned_fetch_nonbr & fetch_v_i)))
         ,.restore_lower_half_v_i         (redirect_restore_insn_lower_half_v_i)
         ,.restore_lower_half_i           (redirect_restore_insn_lower_half_i)
         ,.restore_lower_half_next_vaddr_i(redirect_pc_i)
