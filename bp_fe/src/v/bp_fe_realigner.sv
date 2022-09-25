@@ -46,7 +46,7 @@ module bp_fe_realigner
   assign fetch_instr_pc_n = restore_lower_half_v_i                      ? (restore_lower_half_next_vaddr_i - vaddr_width_p'(2))
                           : (half_buffer_v_r & icache_fetch_is_aligned) ? (fetch_pc_i                      + vaddr_width_p'(2))
                           :                                                fetch_pc_i;
-  assign half_buffer_n    = restore_lower_half_v_i ? restore_lower_half_i    : icache_data_upper_half_li;
+  assign half_buffer_n    = restore_lower_half_v_i ? restore_lower_half_i : icache_data_upper_half_li;
 
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p+instr_half_width_gp))
