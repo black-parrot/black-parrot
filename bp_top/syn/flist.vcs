@@ -226,6 +226,7 @@ $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache.sv
 $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache_decoder.sv
 $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache_wbuf.sv
 ## FE files
+$BP_FE_DIR/src/v/bp_fe_ras.sv
 $BP_FE_DIR/src/v/bp_fe_bht.sv
 $BP_FE_DIR/src/v/bp_fe_btb.sv
 $BP_FE_DIR/src/v/bp_fe_icache.sv

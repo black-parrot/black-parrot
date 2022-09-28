@@ -486,7 +486,7 @@ module testbench
           ,.fe_icache_ready_i(fe.icache.ready_o)
      
           ,.if2_v_i(fe.v_if2_r)
-          ,.br_ovr_i(fe.pc_gen.ovr_taken)
+          ,.br_ovr_i(fe.pc_gen.ovr_btaken | fe.pc_gen.ovr_jmp)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
           ,.icache_data_v_i(fe.icache.data_v_o)
 
@@ -563,7 +563,7 @@ module testbench
 
            ,.src_redirect_i        (pc_gen.redirect_v_i)
            ,.src_override_ras_i    (pc_gen.ovr_ret)
-           ,.src_override_branch_i (pc_gen.ovr_taken)
+           ,.src_override_branch_i (pc_gen.ovr_btaken | pc_gen.ovr_jmp)
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
 
            ,.if1_top_v_i           (v_if1_r)
