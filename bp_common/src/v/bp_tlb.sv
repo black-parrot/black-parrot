@@ -62,14 +62,14 @@ module bp_tlb
      );
 
   logic [vtag_width_p-1:0] vtag_r;
-  logic r_v_r;
-  bsg_dff_reset
-   #(.width_p(vtag_width_p+1))
-   r_v_reg
+  bsg_dff_reset_en
+   #(.width_p(vtag_width_p))
+   vtag_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i({vtag_i, r_v_li})
-     ,.data_o({vtag_r, r_v_r})
+     ,.en_i(v_i)
+     ,.data_i(vtag_i)
+     ,.data_o(vtag_r)
      );
   wire [r_entry_low_bits_lp-1:0] passthrough_low_bits = vtag_r[0+:r_entry_low_bits_lp];
 
@@ -91,7 +91,7 @@ module bp_tlb
      ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_4k_lo)
 
-     ,.r_v_i(r_v_r)
+     ,.r_v_i(~|tag_4k_w_v_li)
      ,.r_tag_i(vtag_r)
      ,.r_match_o(tag_r_match_4k_lo)
      );
@@ -125,7 +125,7 @@ module bp_tlb
      ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_1g_lo)
 
-     ,.r_v_i(r_v_r)
+     ,.r_v_i(~|tag_1g_w_v_li)
      ,.r_tag_i(vtag_r)
      ,.r_match_o(tag_r_match_1g_lo)
      );
@@ -205,8 +205,8 @@ module bp_tlb
      ,.o(entry_unshifted)
      );
 
-  assign entry_o    = entry_unshifted;
-  assign v_o        = r_v_r & r_v_lo;
+  assign entry_o = entry_unshifted;
+  assign v_o     = r_v_lo;
 
 endmodule
 

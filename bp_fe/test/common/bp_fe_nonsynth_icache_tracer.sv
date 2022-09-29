@@ -26,11 +26,12 @@ module bp_fe_nonsynth_icache_tracer
 
    , input [icache_pkt_width_lp-1:0]                      icache_pkt_i
    , input                                                v_i
-   , input                                                ready_o
+   , input                                                force_i
+   , input                                                yumi_o
 
    , input [instr_width_gp-1:0]                           data_o
    , input                                                data_v_o
-   , input                                                miss_v_o
+   , input                                                spec_v_o
 
    , input [cache_req_width_lp-1:0]                       cache_req_o
    , input                                                cache_req_v_o
@@ -114,7 +115,7 @@ module bp_fe_nonsynth_icache_tracer
 
   always_ff @(posedge clk_i)
     begin
-      if (ready_o & v_i)
+      if (yumi_o)
         $fwrite(file, "%12t | access: %p\n", $time, icache_pkt_cast_i);
 
       if (data_mem_pkt_yumi_o)
@@ -134,7 +135,7 @@ module bp_fe_nonsynth_icache_tracer
 
       if (data_v_o)
         $fwrite(file, "%12t | fetch: [%x]->%x\n", $time, paddr_tv_r, data_o);
-      if (miss_v_o)
+      if (spec_v_o)
         $fwrite(file, "%12t | spec miss: [%x]\n", $time, paddr_tv_r);
 
       if (cache_req_ready_and_i & cache_req_v_o)

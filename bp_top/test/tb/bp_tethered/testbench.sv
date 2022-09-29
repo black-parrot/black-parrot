@@ -249,8 +249,6 @@ module testbench
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     // TODO: Set appropriately for multicore
-
      ,.lce_id_i(io_lce_id_li)
      ,.did_i(host_did_li)
 
@@ -484,14 +482,14 @@ module testbench
           ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
           ,.fe_queue_ready_i(fe.fe_queue_ready_i)
-          ,.fe_icache_ready_i(fe.icache.ready_o)
      
-          ,.if2_v_i(fe.v_if2_r)
           ,.br_ovr_i(fe.pc_gen.ovr_btaken | fe.pc_gen.ovr_jmp)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
           ,.icache_data_v_i(fe.icache.data_v_o)
+          ,.icache_v_i(fe.icache.v_i)
+          ,.icache_yumi_i(fe.icache.yumi_o)
 
-          ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.attaboy_v) 
+          ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.controller.attaboy_v)
           ,.fe_cmd_fence_i(be.director.is_fence)
           ,.fe_queue_empty_i(~be.scheduler.fe_queue_fifo.fe_queue_v_o)
 
@@ -543,41 +541,53 @@ module testbench
           ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt)
           );
 
-      bind bp_fe_top
-        bp_fe_nonsynth_pc_gen_tracer
-         #(.bp_params_p(bp_params_p))
-         pc_gen_tracer
-          (.clk_i                  (clk_i & testbench.pc_gen_trace_en_lo)
-           ,.reset_i               (reset_i)
-           ,.freeze_i              (cfg_bus_cast_i.freeze)
-
-           ,.mhartid_i             (cfg_bus_cast_i.core_id)
-
-           ,.state_stall_i         (is_stall)
-           ,.state_wait_i          (is_wait)
-
-           ,.queue_miss_i          (queue_miss)
-           ,.icache_miss_i         (icache_miss)
-           ,.icache_req_i          (cache_req_v_o)
-           ,.access_fault_i        (v_if2_r & instr_access_fault_r)
-           ,.page_fault_i          (v_if2_r & instr_page_fault_r)
-           ,.itlb_miss_i           (v_if2_r & itlb_miss_r)
-
-           ,.src_redirect_i        (pc_gen.redirect_v_i)
-           ,.src_override_ntaken_i (pc_gen.ovr_ntaken)
-           ,.src_override_ras_i    (pc_gen.ovr_ret)
-           ,.src_override_branch_i (pc_gen.ovr_btaken | pc_gen.ovr_jmp)
-           ,.src_btb_taken_branch_i(pc_gen.btb_taken)
-
-           ,.if1_top_v_i           (v_if1_r)
-           ,.if1_pc_i              (pc_gen.pc_if1_r)
-
-           ,.if2_top_v_i           (v_if2_r)
-           ,.if2_pc_i              (pc_gen.pc_if2_r)
-           ,.realigner_v_i         (pc_gen.fetch_instr_generation.half_buffer_v_r)
-           ,.realigner_pc_i        (pc_gen.fetch_instr_generation.fetch_instr_pc_r)
-           ,.realigner_instr_i     (pc_gen.fetch_instr_generation.half_buffer_r)
-           );
+//      bind bp_fe_top
+//        bp_fe_nonsynth_pc_gen_tracer
+//         #(.bp_params_p(bp_params_p))
+//         pc_gen_tracer
+//          (.clk_i                  (clk_i & testbench.pc_gen_trace_en_lo)
+//           ,.reset_i               (reset_i)
+//           ,.freeze_i              (cfg_bus_cast_i.freeze)
+//
+//           ,.mhartid_i             (cfg_bus_cast_i.core_id)
+//
+//           ,.state_resume_i        (controller.is_resume)
+//           ,.state_wait_i          (controller.is_wait)
+//
+//<<<<<<< HEAD
+//           ,.queue_miss_i          (queue_miss)
+//           ,.icache_miss_i         (icache_miss)
+//           ,.icache_req_i          (cache_req_v_o)
+//           ,.access_fault_i        (v_if2_r & instr_access_fault_r)
+//           ,.page_fault_i          (v_if2_r & instr_page_fault_r)
+//           ,.itlb_miss_i           (v_if2_r & itlb_miss_r)
+//=======
+//           ,.icache_spec_i         (icache_spec_v_lo)
+//           ,.access_fault_i        (instr_access_fault_r)
+//           ,.page_fault_i          (instr_page_fault_r)
+//           ,.itlb_miss_i           (itlb_miss_r)
+//>>>>>>> Changes made, should break up and clean
+//
+//           ,.src_redirect_i        (pc_gen.redirect_v_i)
+//           ,.src_override_ntaken_i (pc_gen.ovr_ntaken)
+//           ,.src_override_ras_i    (pc_gen.ovr_ret)
+//           ,.src_override_branch_i (pc_gen.ovr_btaken | pc_gen.ovr_jmp)
+//           ,.src_btb_taken_branch_i(pc_gen.btb_taken)
+//
+//<<<<<<< HEAD
+//           ,.if1_top_v_i           (v_if1_r)
+//           ,.if1_pc_i              (pc_gen.pc_if1_r)
+//
+//           ,.if2_top_v_i           (v_if2_r)
+//           ,.if2_pc_i              (pc_gen.pc_if2_r)
+//           ,.realigner_v_i         (pc_gen.fetch_instr_generation.half_buffer_v_r)
+//           ,.realigner_pc_i        (pc_gen.fetch_instr_generation.fetch_instr_pc_r)
+//           ,.realigner_instr_i     (pc_gen.fetch_instr_generation.half_buffer_r)
+//=======
+//           ,.fetch_pc_i            (pc_gen.pc_if2_r)
+//           ,.fetch_v_i             (fe_queue_ready_i & fe_queue_v_o)
+//>>>>>>> Changes made, should break up and clean
+//           );
 
       bind bp_be_top
         bp_nonsynth_pc_profiler
