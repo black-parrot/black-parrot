@@ -79,7 +79,7 @@ module bp_fe_icache
    //   configurations which support that behavior
    , output logic [icache_req_width_lp-1:0]           cache_req_o
    , output logic                                     cache_req_v_o
-   , input                                            cache_req_yumi_i
+   , input                                            cache_req_ready_and_i
    , input                                            cache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
@@ -214,7 +214,7 @@ module bp_fe_icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(tl_we & ~cache_req_yumi_i)
+     ,.set_i(tl_we & ~cache_req_v_o)
      // We always advance in the non-stalling I$
      ,.clear_i(1'b1)
      ,.data_o(v_tl_r)
@@ -272,7 +272,7 @@ module bp_fe_icache
    v_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(tv_we & ~poison_tl_i & ~cache_req_yumi_i)
+     ,.set_i(tv_we & ~poison_tl_i & ~cache_req_v_o)
      // We always advance in the non-stalling I$
      ,.clear_i(1'b1)
      ,.data_o(v_tv_r)
@@ -423,7 +423,7 @@ module bp_fe_icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(cache_req_yumi_i)
+     ,.data_i(cache_req_v_o)
      ,.data_o(cache_req_metadata_v_o)
      );
 
@@ -448,7 +448,7 @@ module bp_fe_icache
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_ready  : state_n = cache_req_yumi_i ? e_miss : e_ready;
+      e_ready  : state_n = (cache_req_ready_and_i & cache_req_v_o) ? e_miss : e_ready;
       e_miss   : state_n = cache_req_complete_i ? e_ready : e_miss;
       default: state_n = e_ready;
     endcase
@@ -651,7 +651,7 @@ module bp_fe_icache
   ///////////////////////////
   // Uncached Load Storage
   ///////////////////////////
-  wire uncached_pending_set = cache_req_yumi_i & uncached_req;
+  wire uncached_pending_set = cache_req_ready_and_i & cache_req_v_o & uncached_req;
   // Invalidate uncached data if the cache when we successfully complete the request
   wire uncached_pending_clear = poison_tl_i | data_v_o;
   bsg_dff_reset_set_clear

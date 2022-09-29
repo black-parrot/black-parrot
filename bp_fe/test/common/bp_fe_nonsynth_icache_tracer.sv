@@ -34,7 +34,7 @@ module bp_fe_nonsynth_icache_tracer
 
    , input [cache_req_width_lp-1:0]                       cache_req_o
    , input                                                cache_req_v_o
-   , input                                                cache_req_yumi_i
+   , input                                                cache_req_ready_and_i
    , input                                                cache_req_busy_i
    , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
@@ -137,7 +137,7 @@ module bp_fe_nonsynth_icache_tracer
       if (miss_v_o)
         $fwrite(file, "%12t | spec miss: [%x]\n", $time, paddr_tv_r);
 
-      if (cache_req_yumi_i)
+      if (cache_req_ready_and_i & cache_req_v_o)
         $fwrite(file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);
 
       if (cache_req_metadata_v_o)
