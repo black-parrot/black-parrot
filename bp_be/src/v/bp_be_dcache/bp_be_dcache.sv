@@ -169,7 +169,7 @@ module bp_be_dcache
    //   configurations which support that behavior
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
    , output logic                                    cache_req_v_o
-   , input                                           cache_req_yumi_i
+   , input                                           cache_req_ready_and_i
    , input                                           cache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
@@ -585,7 +585,7 @@ module bp_be_dcache
   wire load_miss_tv     = cached_op_tv_r & decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
   wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.load_op & ~fill_tv_r;
-  wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
+  wire engine_miss_tv   = cache_req_v_o & ~cache_req_ready_and_i;
   wire any_miss_tv      = store_miss_tv | lr_miss_tv | load_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
 
   assign early_data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
@@ -594,7 +594,7 @@ module bp_be_dcache
 
   assign early_hit_v_o  = v_tv_r & ~any_miss_tv & ~fill_tv_r;
   assign early_fencei_o = decode_tv_r.fencei_op;
-  assign early_miss_v_o = v_tv_r &  any_miss_tv & cache_req_yumi_i;
+  assign early_miss_v_o = v_tv_r &  any_miss_tv & cache_req_ready_and_i & cache_req_v_o;
   assign early_fflags_o = st_fflags_tv_r;
 
   ///////////////////////////
@@ -929,7 +929,7 @@ module bp_be_dcache
         cache_req_cast_o.msg_type = e_wt_store;
     end
 
-  wire cache_req_metadata_v = cache_req_yumi_i;
+  wire cache_req_metadata_v = cache_req_v_o;
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
@@ -964,7 +964,7 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_ready : state_n = (cache_req_yumi_i & ~nonblocking_req) ? e_miss : e_ready;
+      e_ready : state_n = (cache_req_ready_and_i & cache_req_v_o & ~nonblocking_req) ? e_miss : e_ready;
       e_miss  : state_n = cache_req_complete_i
                           ? (decode_tv_r.ptw_op | decode_tv_r.fencei_op)
                             ? e_ready
