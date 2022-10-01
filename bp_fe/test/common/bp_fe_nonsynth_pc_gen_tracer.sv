@@ -113,6 +113,9 @@ module bp_fe_nonsynth_pc_gen_tracer
     // IF2
    , input                     if2_top_v_i
    , input [vaddr_width_p-1:0] if2_pc_i
+   , input                     realigner_v_i
+   , input [vaddr_width_p-1:0] realigner_pc_i
+   , input [instr_half_width_gp-1:0] realigner_instr_i
 
    // TODO: indicate output to FE queue
     );
@@ -167,6 +170,13 @@ module bp_fe_nonsynth_pc_gen_tracer
       return $sformatf("(%x)", addr);
   endfunction
 
+  function string render_half_instr_with_validity(logic [instr_half_width_gp-1:0] instr, logic valid);
+    if (valid)
+      return $sformatf("     %x ", instr);
+    else
+      return $sformatf("    (%x)", instr);
+  endfunction
+
   integer file;
   string file_name;
   wire reset_li = reset_i | freeze_i;
@@ -174,7 +184,7 @@ module bp_fe_nonsynth_pc_gen_tracer
     begin
       file_name = $sformatf("%s_%x.trace", fe_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
-      $fwrite(file, "%12s | %7s, %12s, %20s, %5s, %s\n", "time", "cycle", "IF2 PC", "IF2 PC src", "state", "events");
+      $fwrite(file, "%12s | %7s, %12s, %20s, %12s, %12s, %5s, %s\n", "time", "cycle", "IF2 PC", "IF2 PC src", "partial PC", "partial insn", "state", "events");
     end
 
   string trimmed_pc_src_if2_name;
@@ -185,11 +195,13 @@ module bp_fe_nonsynth_pc_gen_tracer
 
       $fwrite
         (file
-        ,"%12t | %07d, %12s, %20s, %5s, "
+        ,"%12t | %07d, %12s, %20s, %12s, %12s, %5s, "
         ,$time
         ,cycle_cnt
         ,render_addr_with_validity(if2_pc_i, if2_top_v_i)
         ,trimmed_pc_src_if2_name
+        ,render_addr_with_validity(realigner_pc_i, realigner_v_i)
+        ,render_half_instr_with_validity(realigner_instr_i, realigner_v_i)
         ,state_stall_i ? "stall" : (state_wait_i ? "wait" : "run"));
 
       if (queue_miss_i)
