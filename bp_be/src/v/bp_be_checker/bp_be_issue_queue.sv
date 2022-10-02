@@ -163,6 +163,7 @@ module bp_be_issue_queue
         issue_pkt_li.long_v = instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
                                             ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
                                             ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D
+                                            ,`RV64_MULH, `RV64_MULHU, `RV64_MULHSU
                                             };
 
         // Decide whether to read from integer regfile (saves power)

@@ -58,13 +58,19 @@ module bp_fe_pc_gen
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
-  `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p, bht_row_width_p);
 
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd;
   assign redirect_br_metadata_fwd = redirect_br_metadata_fwd_i;
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd;
   assign attaboy_br_metadata_fwd = attaboy_br_metadata_fwd_i;
 
+  // Global signals
+  logic fetch_instr_br_v_li, fetch_instr_jal_v_li, fetch_instr_jalr_v_li;
+  logic fetch_instr_call_v_li, fetch_instr_return_v_li;
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  // IF0
+  /////////////////////////////////////////////////////////////////////////////////////
   logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
 
   logic [vaddr_width_p-1:0] pc_if1_n, pc_if1_r;
@@ -79,85 +85,90 @@ module bp_fe_pc_gen
   logic next_pc_nonlinear;
   logic ovr_ret, ovr_taken, ovr_half, btb_taken;
   logic [vaddr_width_p-1:0] btb_br_tgt_lo;
+  logic btb_br_tgt_v_lo, btb_br_tgt_jmp_lo;
+
+  ///////////////////////////
+  // Next PC calculation
+  ///////////////////////////
+  bp_fe_branch_metadata_fwd_s next_metadata, ovr_metadata;
+  logic next_pred, next_taken;
+  logic ovr_ret, ovr_btaken, ovr_jmp, btb_taken;
+  logic [vaddr_width_p-1:0] pc_plus4;
   logic [vaddr_width_p-1:0] ras_tgt_lo;
   logic [vaddr_width_p-1:0] br_tgt_lo;
   logic [vaddr_width_p-1:0] if2_second_half_addr;
-  wire [vaddr_width_p-1:0] pc_plus4  = pc_if1_r + vaddr_width_p'(4);
+  logic [btb_tag_width_p-1:0] btb_tag_if1;
+  logic [btb_idx_width_p-1:0] btb_idx_if1;
+  logic [bht_idx_width_p-1:0] bht_idx_if1;
+
 
   // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb begin
     next_pc_nonlinear = 1'b1;
-    if (redirect_v_i) begin
-        next_pc           = redirect_pc_i;
+    if (redirect_v_i)
+      begin
+        next_pred  = redirect_br_taken_i;
+        next_taken = redirect_br_taken_i;
+        next_pc    = redirect_pc_i;
         next_pc_nonlinear = !redirect_restore_insn_lower_half_v_i;
-    end else if (ovr_half) begin
+
+        next_metadata = redirect_br_metadata_fwd;
+      end
+    else if (ovr_half) begin
+        next_pred  = '0;
         next_pc           = if2_second_half_addr;
+        next_taken = '0;
         next_pc_nonlinear = 1'b0;
-    end else if (ovr_ret)
-        next_pc           = ras_tgt_lo;
-    else if (ovr_taken)
-        next_pc           = br_tgt_lo;
-    else if (btb_taken)
-        next_pc           = btb_br_tgt_lo;
-    else begin
-        next_pc           = pc_plus4;
-        next_pc_nonlinear = 1'b0;
-    end
-  end
+    end else if (ovr_o)
+      begin
+        next_pred  = ovr_btaken;
+        next_taken = ovr_ret | ovr_btaken | ovr_jmp;
+        next_pc    = ovr_ret ? ras_tgt_lo : br_tgt_lo;
 
-  assign pc_if1_n = next_pc;
-  assign next_fetch_o = `bp_align_addr_down(next_pc, rv64_instr_width_bytes_gp);
+        next_metadata = ovr_metadata;
+        next_metadata.site_br     = fetch_instr_br_v_li;
+        next_metadata.site_jal    = fetch_instr_jal_v_li;
+        next_metadata.site_jalr   = fetch_instr_jalr_v_li;
+        next_metadata.site_call   = fetch_instr_call_v_li;
+        next_metadata.site_return = fetch_instr_return_v_li;
+      end
+    else
+      begin
+        next_pred  = bht_pred_lo;
+        next_taken = btb_taken;
+        next_pc    = btb_taken ? btb_br_tgt_lo : pc_plus4;
+        next_pc_nonlinear = btb_taken;
 
-  assign realigner_poison_if1_n = next_pc_nonlinear;
+        next_metadata = '0;
+        next_metadata.src_btb = btb_br_tgt_v_lo;
+        next_metadata.src_ras = ovr_ret;
+        next_metadata.bht_row = bht_row_lo;
+        next_metadata.ghist   = ghistory_r;
+        next_metadata.btb_tag = btb_tag_if1;
+        next_metadata.btb_idx = btb_idx_if1;
+        next_metadata.bht_idx = bht_idx_if1;
+      end
+  assign next_pc_o = next_pc;
 
-  always_comb
-    begin
-      pred_if1_n = '0;
-      pred_if1_n.ghist = ghistory_n;
-      pred_if1_n.redir = redirect_br_v_i;
-      pred_if1_n.taken = (redirect_br_v_i & redirect_br_taken_i) | ovr_ret | ovr_taken;
-      pred_if1_n.ret   = ovr_ret & ~redirect_v_i;
-    end
-
-  bsg_dff
-   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p+1))
-   pred_if1_reg
-    (.clk_i(clk_i)
-
-     ,.data_i({pred_if1_n, pc_if1_n, realigner_poison_if1_n})
-     ,.data_o({pred_if1_r, pc_if1_r, realigner_poison_if1_r})
-     );
-
-  `declare_bp_fe_instr_scan_s(vaddr_width_p)
-  bp_fe_instr_scan_s scan_instr;
-  wire is_br   = fetch_instr_yumi_i & scan_instr.branch;
-  wire is_jal  = fetch_instr_yumi_i & scan_instr.jal;
-  wire is_jalr = fetch_instr_yumi_i & scan_instr.jalr;
-  wire is_call = fetch_instr_yumi_i & scan_instr.call;
-  wire is_ret  = fetch_instr_yumi_i & scan_instr.ret;
-
+  ///////////////////////////
   // BTB
+  ///////////////////////////
+  logic btb_w_yumi_lo, btb_init_done_lo; 
   wire btb_r_v_li = next_fetch_yumi_i;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb)
-    | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd.src_btb);
+    | (attaboy_v_i & attaboy_taken_i & (~attaboy_br_metadata_fwd.src_btb | attaboy_br_metadata_fwd.src_ras));
   wire btb_clr_li = redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd.src_btb;
-  wire btb_jmp_li = redirect_br_v_i ? (redirect_br_metadata_fwd.is_jal | redirect_br_metadata_fwd.is_jalr) : (attaboy_br_metadata_fwd.is_jal | attaboy_br_metadata_fwd.is_jalr);
+  wire btb_jmp_li = redirect_br_v_i ? (redirect_br_metadata_fwd.site_jal | redirect_br_metadata_fwd.site_jalr) : (attaboy_br_metadata_fwd.site_jal | attaboy_br_metadata_fwd.site_jalr);
   wire [btb_tag_width_p-1:0] btb_tag_li = redirect_br_v_i ? redirect_br_metadata_fwd.btb_tag : attaboy_br_metadata_fwd.btb_tag;
   wire [btb_idx_width_p-1:0] btb_idx_li = redirect_br_v_i ? redirect_br_metadata_fwd.btb_idx : attaboy_br_metadata_fwd.btb_idx;
   wire [vaddr_width_p-1:0]   btb_tgt_li = redirect_br_v_i ? redirect_pc_i : attaboy_pc_i;
 
-  logic btb_init_done_lo;
-  logic btb_br_tgt_v_lo;
-  logic btb_br_tgt_jmp_lo;
-  logic btb_w_yumi_lo;
   bp_fe_btb
    #(.bp_params_p(bp_params_p))
    btb
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
-     ,.init_done_o(btb_init_done_lo)
 
      ,.r_addr_i(next_pc)
      ,.r_v_i(btb_r_v_li)
@@ -172,29 +183,30 @@ module bp_fe_pc_gen
      ,.w_idx_i(btb_idx_li)
      ,.br_tgt_i(btb_tgt_li)
      ,.w_yumi_o(btb_w_yumi_lo)
+
+     ,.init_done_o(btb_init_done_lo)
      );
 
+  ///////////////////////////
   // BHT
+  ///////////////////////////
   wire bht_r_v_li = next_fetch_yumi_i;
   wire [vaddr_width_p-1:0] bht_r_addr_li = next_pc;
-  wire [ghist_width_p-1:0] bht_r_ghist_li = pred_if1_n.ghist;
+  wire [ghist_width_p-1:0] bht_r_ghist_li = ghistory_n;
   wire bht_w_v_li =
-    (redirect_br_v_i & redirect_br_metadata_fwd.is_br) | (attaboy_v_i & attaboy_br_metadata_fwd.is_br);
+    (redirect_br_v_i & redirect_br_metadata_fwd.site_br) | (attaboy_v_i & attaboy_br_metadata_fwd.site_br);
   wire [bht_idx_width_p-1:0] bht_w_idx_li =
     redirect_br_v_i ? redirect_br_metadata_fwd.bht_idx : attaboy_br_metadata_fwd.bht_idx;
   wire [ghist_width_p-1:0] bht_w_ghist_li =
     redirect_br_v_i ? redirect_br_metadata_fwd.ghist : attaboy_br_metadata_fwd.ghist;
   wire [bht_row_width_p-1:0] bht_row_li =
     redirect_br_v_i ? redirect_br_metadata_fwd.bht_row : attaboy_br_metadata_fwd.bht_row;
-  logic [bht_row_width_p-1:0] bht_row_lo;
-  logic bht_pred_lo, bht_w_yumi_lo, bht_init_done_lo;
+  logic bht_w_yumi_lo, bht_init_done_lo;
   bp_fe_bht
    #(.bp_params_p(bp_params_p))
    bht
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
-     ,.init_done_o(bht_init_done_lo)
 
      ,.r_v_i(bht_r_v_li)
      ,.r_addr_i(bht_r_addr_li)
@@ -208,110 +220,121 @@ module bp_fe_pc_gen
      ,.correct_i(attaboy_yumi_o)
      ,.val_i(bht_row_li)
      ,.w_yumi_o(bht_w_yumi_lo)
+
+     ,.init_done_o(bht_init_done_lo)
      );
-
-  assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
-
-  // RAS
-  logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
-  bsg_dff_reset_en
-   #(.width_p(vaddr_width_p))
-   ras
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(is_call)
-
-     ,.data_i(return_addr_n)
-     ,.data_o(return_addr_r)
-     );
-  assign ras_tgt_lo = return_addr_r;
 
   assign attaboy_yumi_o = attaboy_v_i & ~(bht_w_v_li & ~bht_w_yumi_lo) & ~(btb_w_v_li & ~btb_w_yumi_lo);
+  assign init_done_o = bht_init_done_lo & btb_init_done_lo;
 
-  /////////////////
-  // IF2
-  /////////////////
-  bp_fe_pred_s pred_if2_n, pred_if2_r;
-  always_comb
-    if (~pred_if1_r.redir)
-      begin
-        pred_if2_n = pred_if1_r;
-        pred_if2_n.pred    = bht_pred_lo;
-        pred_if2_n.taken   = btb_taken;
-        pred_if2_n.btb     = btb_br_tgt_v_lo;
-        pred_if2_n.bht_row = bht_row_lo;
-      end
-    else
-      begin
-        pred_if2_n = pred_if1_r;
-      end
-  assign pc_if2_n = pc_if1_r;
-
+  /////////////////////////////////////////////////////////////////////////////////////
+  // IF1
+  /////////////////////////////////////////////////////////////////////////////////////
+  logic [vaddr_width_p-1:0] pc_if1_r;
+  bp_fe_branch_metadata_fwd_s metadata_if1_r;
+  logic pred_if1_r, taken_if1_r;
   bsg_dff
-   #(.width_p($bits(bp_fe_pred_s)+vaddr_width_p))
-   pred_if2_reg
+   #(.width_p(2+branch_metadata_fwd_width_p+vaddr_width_p))
+   if1_stage_reg
     (.clk_i(clk_i)
 
-     ,.data_i({pred_if2_n, pc_if2_n})
-     ,.data_o({pred_if2_r, pc_if2_r})
+     ,.data_i({next_pred, next_taken, next_metadata, next_pc})
+     ,.data_o({pred_if1_r, taken_if1_r, metadata_if1_r, pc_if1_r})
      );
-  assign return_addr_n        = fetch_pc_o + vaddr_width_p'(4);
-  assign if2_second_half_addr = pc_if2_r + vaddr_width_p'(4);
+  assign ovr_metadata = metadata_if1_r;
 
-  wire pc_if2_misaligned = !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
+  // Set the site type as it arrives in IF2
+  // We can OR because sites will only be set earlier during an override
+  //   and if we have overridden then we will not have incoming I$ data
+  //   that cycle
+  bp_fe_branch_metadata_fwd_s metadata_if1;
+  always_comb
+    begin
+      metadata_if1 = metadata_if1_r;
+      metadata_if1.site_br     |= fetch_instr_br_v_li;
+      metadata_if1.site_jal    |= fetch_instr_jal_v_li;
+      metadata_if1.site_jalr   |= fetch_instr_jalr_v_li;
+      metadata_if1.site_call   |= fetch_instr_call_v_li;
+      metadata_if1.site_return |= fetch_instr_return_v_li;
+    end
 
-  wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
-  wire btb_miss_br  = pc_if1_r != br_tgt_lo;
-  wire misaligned_fetch_nonbr = pc_if1_r != if2_second_half_addr;
-  assign ovr_ret    = btb_miss_ras & is_ret;
-  assign ovr_taken  = btb_miss_br & ((is_br & pred_if2_r.pred) | is_jal);
-  assign ovr_half   = misaligned_fetch_nonbr & pc_if2_misaligned & fetch_v_i & !fetch_instr_v_o;
-  assign ovr_o      = ovr_taken | ovr_ret | ovr_half;
-  assign br_tgt_lo  = fetch_pc_o + scan_instr.imm;
-  assign fetch_resume_pc_o = pc_if2_r;
+  assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
+  assign pc_plus4 = pc_if1_r + vaddr_width_p'(4);
 
-`ifndef SYNTHESIS
-  logic [`BSG_SAFE_CLOG2(max_ovr_half_count_nonsynth_lp+1)-1:0] ovr_half_count;
-  bsg_counter_clear_up
-    #(.max_val_p(max_ovr_half_count_nonsynth_lp), .init_val_p(0))
-    ovr_half_counter
-      (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+  assign btb_tag_if1 = pc_if1_r[2+btb_idx_width_p+:btb_tag_width_p];
+  assign btb_idx_if1 = pc_if1_r[2+:btb_idx_width_p];
+  assign bht_idx_if1 = pc_if1_r[2+:bht_idx_width_p];
 
-      ,.clear_i(reset_i)
-      ,.up_i(ovr_half & !redirect_v_i)
-      ,.count_o(ovr_half_count)
-      );
-`endif
+  /////////////////////////////////////////////////////////////////////////////////////
+  // IF2
+  /////////////////////////////////////////////////////////////////////////////////////
+  logic [vaddr_width_p-1:0] pc_if2_r;
+  logic pred_if2_r, taken_if2_r;
+  bp_fe_branch_metadata_fwd_s metadata_if2_r;
+  bsg_dff
+   #(.width_p(2+branch_metadata_fwd_width_p+vaddr_width_p))
+   if2_stage_reg
+    (.clk_i(clk_i)
 
-  bp_fe_branch_metadata_fwd_s br_metadata_site;
-  assign fetch_br_metadata_fwd_o = br_metadata_site;
-  always_ff @(posedge clk_i)
-    if (fetch_instr_yumi_i)
-      br_metadata_site <=
-        '{src_btb  : pred_if2_r.btb
-          ,src_ret : pred_if2_r.ret
-          ,ghist   : pred_if2_r.ghist
-          ,bht_row : pred_if2_r.bht_row
-          ,btb_tag : pc_if2_r[2+btb_idx_width_p+:btb_tag_width_p]
-          ,btb_idx : pc_if2_r[2+:btb_idx_width_p]
-          ,bht_idx : pc_if2_r[2+:bht_idx_width_p]
-          ,is_br   : is_br
-          ,is_jal  : is_jal
-          ,is_jalr : is_jalr
-          ,is_call : is_call
-          ,is_ret  : is_ret
-          };
+     ,.data_i({pred_if1_r, taken_if1_r, metadata_if1, pc_if1_r})
+     ,.data_o({pred_if2_r, taken_if2_r, metadata_if2_r, pc_if2_r})
+     );
 
   // Scan fetched instruction
+  bp_fe_instr_scan_s scan_instr;
+  logic [vaddr_width_p-1:0] scan_imm;
   bp_fe_instr_scan
    #(.bp_params_p(bp_params_p))
    instr_scan
-    (.instr_i(fetch_instr_o)
-
+    (.instr_i(fetch_i)
      ,.scan_o(scan_instr)
+     ,.imm_o(scan_imm)
      );
 
+  assign fetch_instr_br_v_li   = fetch_instr_yumi_i & scan_instr.branch;
+  assign fetch_instr_jal_v_li  = fetch_instr_yumi_i & scan_instr.jal;
+  assign fetch_instr_jalr_v_li = fetch_instr_yumi_i & scan_instr.jalr;
+  assign fetch_instr_call_v_li = fetch_instr_yumi_i & scan_instr.call;
+  assign fetch_instr_return_v_li = fetch_instr_yumi_i & scan_instr._return;
+
+  ///////////////////////////
+  // RAS
+  ///////////////////////////
+  logic ras_valid_lo;
+  wire [vaddr_width_p-1:0] return_addr_if2 = pc_if2_r + vaddr_width_p'(4);
+  bp_fe_ras
+   #(.bp_params_p(bp_params_p))
+   ras
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.call_i(fetch_instr_call_v_li)
+     ,.return_i(fetch_instr_return_v_li)
+
+     ,.addr_i(return_addr_if2)
+     ,.tgt_o(ras_tgt_lo)
+     ,.v_o(ras_valid_lo)
+     );
+
+  // Override calculations
+  assign if2_second_half_addr = pc_if2_r + vaddr_width_p'(4);
+
+  wire pc_if2_misaligned = !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
+  wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
+  wire btb_miss_br  = pc_if1_r != br_tgt_lo;
+  wire misaligned_fetch_nonbr = pc_if1_r != if2_second_half_addr;
+  assign ovr_ret    = btb_miss_ras & fetch_instr_return_v_li & ras_valid_lo;
+  assign ovr_btaken = btb_miss_br & fetch_instr_br_v_li & pred_if1_r;
+  assign ovr_jmp    = btb_miss_br & fetch_instr_jal_v_li;
+  assign ovr_half   = misaligned_fetch_nonbr & pc_if2_misaligned & fetch_v_i & !fetch_instr_v_o;
+  assign ovr_o      = ovr_btaken | ovr_jmp | ovr_ret | ovr_half;
+  assign br_tgt_lo  = fetch_pc_o + scan_imm;
+
+  // The actual fetch PC/metadata pair
+  assign fetch_pc_o = pc_if2_r;
+  assign fetch_br_metadata_fwd_o = metadata_if2_r;
+
+  ///////////////////////////
   if (compressed_support_p)
     begin : fetch_instr_generation
       bp_fe_realigner
@@ -343,23 +366,36 @@ module bp_fe_pc_gen
       assign fetch_is_second_half_o = 0;
     end
 
+
+`ifndef SYNTHESIS
+  logic [`BSG_SAFE_CLOG2(max_ovr_half_count_nonsynth_lp+1)-1:0] ovr_half_count;
+  bsg_counter_clear_up
+    #(.max_val_p(max_ovr_half_count_nonsynth_lp), .init_val_p(0))
+    ovr_half_counter
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.clear_i(reset_i)
+      ,.up_i(ovr_half & !redirect_v_i)
+      ,.count_o(ovr_half_count)
+      );
+`endif
+
   // Global history
-  //
-  wire ghistory_w_v_li = is_br | redirect_br_v_i;
+  ///////////////////////////
   assign ghistory_n = redirect_br_v_i
     ? redirect_br_metadata_fwd.ghist
-    : {ghistory_r[0+:ghist_width_p-1], pred_if2_r.taken};
-  bsg_dff_reset_en
+    : metadata_if2_r.site_br
+      ? {ghistory_r[0+:ghist_width_p-1], taken_if2_r}
+      : ghistory_r;
+  bsg_dff_reset
    #(.width_p(ghist_width_p))
    ghist_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(ghistory_w_v_li)
 
      ,.data_i(ghistory_n)
      ,.data_o(ghistory_r)
      );
-
-  assign init_done_o = bht_init_done_lo & btb_init_done_lo;
 
 endmodule

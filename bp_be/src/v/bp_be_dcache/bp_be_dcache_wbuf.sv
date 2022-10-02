@@ -64,11 +64,11 @@ module bp_be_dcache_wbuf
   always_comb begin
     unique case (num_els_r)
       2'd0: begin
-        v_o = 1'b0;
+        v_o = v_i;
         el0_valid = 1'b0;
         el1_valid = 1'b0;
         el0_enable = 1'b0;
-        el1_enable = v_i;
+        el1_enable = v_i & ~yumi_i;
         mux0_sel = 1'b0;
         mux1_sel = 1'b0;
       end

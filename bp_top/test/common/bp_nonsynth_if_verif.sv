@@ -68,8 +68,6 @@ module bp_nonsynth_if_verif
     $error("Error: BlackParrot is only tested with 64-bit dword width");
 
   // Core or Features
-  if (muldiv_support_p[e_mulh])
-    $error("MULH is not currently supported in hardware");
   if (!muldiv_support_p[e_mul])
     $error("MUL is not currently support in emulation");
   if (!fpu_support_p)

@@ -128,6 +128,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_gray_to_binary.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank_reverse.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_imul_iterative.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative_controller.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
@@ -225,6 +226,7 @@ $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache.sv
 $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache_decoder.sv
 $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache_wbuf.sv
 ## FE files
+$BP_FE_DIR/src/v/bp_fe_ras.sv
 $BP_FE_DIR/src/v/bp_fe_bht.sv
 $BP_FE_DIR/src/v/bp_fe_btb.sv
 $BP_FE_DIR/src/v/bp_fe_icache.sv
