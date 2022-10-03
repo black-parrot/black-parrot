@@ -409,7 +409,8 @@ module testbench
            ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
 
-           ,.cache_req_yumi_i(calculator.pipe_mem.dcache.cache_req_yumi_i)
+           ,.cache_req_ready_and_i(calculator.pipe_mem.dcache.cache_req_ready_and_i)
+           ,.cache_req_v_i(calculator.pipe_mem.dcache.cache_req_v_o)
            ,.cache_req_complete_i(calculator.pipe_mem.dcache.cache_req_complete_i)
            ,.cache_req_nonblocking_i(calculator.pipe_mem.dcache.nonblocking_req)
 

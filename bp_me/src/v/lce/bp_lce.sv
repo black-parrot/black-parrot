@@ -56,7 +56,7 @@ module bp_lce
     // can arrive, as indicated by the metadata_v_i signal
     , input [cache_req_width_lp-1:0]                 cache_req_i
     , input                                          cache_req_v_i
-    , output logic                                   cache_req_yumi_o
+    , output logic                                   cache_req_ready_and_o
     , output logic                                   cache_req_busy_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
@@ -157,7 +157,7 @@ module bp_lce
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
 
   // LCE Request Module
-  logic req_ready_lo;
+  logic req_busy_lo;
   logic uc_store_req_complete_lo;
   logic sync_done_lo;
   logic cache_init_done_lo;
@@ -180,11 +180,11 @@ module bp_lce
      ,.sync_done_i(sync_done_lo)
      ,.cache_init_done_i(cache_init_done_lo)
 
-     ,.ready_o(req_ready_lo)
+     ,.busy_o(req_busy_lo)
 
      ,.cache_req_i(cache_req_i)
      ,.cache_req_v_i(cache_req_v_i)
-     ,.cache_req_yumi_o(cache_req_yumi_o)
+     ,.cache_req_ready_and_o(cache_req_ready_and_o)
      ,.cache_req_metadata_i(cache_req_metadata_i)
      ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
      ,.cache_req_complete_i(cache_req_complete_o)
@@ -380,8 +380,8 @@ module bp_lce
   // - LCE Request module is ready to accept a request (does not account for a free credit)
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
   // This signal acts as a hint to the cache that the LCE is not ready for a request.
-  // The cache_req_yumi_o signal actually controls whether the LCE accepts a request.
-  assign cache_req_busy_o = timeout | ~req_ready_lo;
+  // The cache_req_ready_and_o signal actually controls whether the LCE accepts a request.
+  assign cache_req_busy_o = timeout | req_busy_lo;
 
 endmodule
 
