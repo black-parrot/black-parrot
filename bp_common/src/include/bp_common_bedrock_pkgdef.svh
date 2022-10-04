@@ -28,7 +28,7 @@
   } bp_bedrock_msg_size_e;
 
   /*
-   * bp_bedrock_mem_type_e specifies the memory command from the UCE/CCE
+   * bp_bedrock_fwd_type_e specifies the memory command from the UCE/CCE
    *
    * There are three types of commands:
    * 1. Access to memory that should be cached in L2/LLC (rd/wr)
@@ -49,7 +49,10 @@
     ,e_bedrock_mem_uc_wr   = 4'b0011  // Uncached store (uncached in L2/LLC)
     ,e_bedrock_mem_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
     ,e_bedrock_mem_amo     = 4'b0101  // Atomic operation in L2/LLC
-  } bp_bedrock_mem_type_e;
+  } bp_bedrock_fwd_type_e;
+
+  // rev messages are identical to fwd messages and can be safely casted between
+  typedef bp_bedrock_fwd_type_e bp_bedrock_rev_type_e;
 
   /*
    * bp_bedrock_req_type_e specifies whether the containing message is related to a read or write
@@ -68,7 +71,7 @@
    * bp_bedrock_wr_subop_e specifies the type of store
    * Valid only for
    * req: e_bedrock_req_uc_wr, e_bedrock_req_uc_amo
-   * mem_cmd: e_bedrock_mem_uc_wr, e_bedrock_mem_amo
+   * mem_fwd: e_bedrock_mem_uc_wr, e_bedrock_mem_amo
    */
   typedef enum logic [3:0]
   {
@@ -112,7 +115,7 @@
    */
   typedef enum logic [3:0]
   {
-    e_bedrock_fill_data         = 4'b0000 // data, adddress, and state to LCE, i.e., cache block fill
+    e_bedrock_fill_data            = e_bedrock_cmd_data // data, adddress, and state to LCE, i.e., cache block fill
   } bp_bedrock_fill_type_e;
 
   /*
@@ -136,7 +139,8 @@
     bp_bedrock_cmd_type_e    cmd;
     bp_bedrock_fill_type_e   fill;
     bp_bedrock_resp_type_e   resp;
-    bp_bedrock_mem_type_e    mem;
+    bp_bedrock_fwd_type_e    fwd;
+    bp_bedrock_rev_type_e    rev;
   } bp_bedrock_msg_u;
 
   /*
@@ -180,8 +184,8 @@
    * These masks define the BedRock message types that carry data.
    *
    */
-  localparam mem_cmd_payload_mask_gp  = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr) | (1 << e_bedrock_mem_amo);
-  localparam mem_resp_payload_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd) | (1 << e_bedrock_mem_amo);
+  localparam mem_fwd_payload_mask_gp  = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr) | (1 << e_bedrock_mem_amo);
+  localparam mem_rev_payload_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd) | (1 << e_bedrock_mem_amo);
   localparam lce_req_payload_mask_gp = (1 << e_bedrock_req_uc_wr) | (1 << e_bedrock_req_uc_amo);
   localparam lce_cmd_payload_mask_gp = (1 << e_bedrock_cmd_data) | (1 << e_bedrock_cmd_uc_data);
   localparam lce_fill_payload_mask_gp = (1 << e_bedrock_fill_data);

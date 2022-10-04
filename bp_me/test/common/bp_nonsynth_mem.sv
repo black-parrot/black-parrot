@@ -16,23 +16,23 @@ module bp_nonsynth_mem
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter preload_mem_p = 0
-   , parameter mem_els_p = 0
+   , parameter mem_bytes_p = 0
    , parameter dram_type_p = ""
    )
   (input                                            clk_i
    , input                                          reset_i
 
-   , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [l2_data_width_p-1:0]                    mem_cmd_data_i
-   , input                                          mem_cmd_v_i
-   , output logic                                   mem_cmd_ready_and_o
-   , input                                          mem_cmd_last_i
+   , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
+   , input [l2_data_width_p-1:0]                    mem_fwd_data_i
+   , input                                          mem_fwd_v_i
+   , output logic                                   mem_fwd_ready_and_o
+   , input                                          mem_fwd_last_i
 
-   , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
-   , output logic [l2_data_width_p-1:0]             mem_resp_data_o
-   , output logic                                   mem_resp_v_o
-   , input                                          mem_resp_ready_and_i
-   , output logic                                   mem_resp_last_o
+   , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
+   , output logic [l2_data_width_p-1:0]             mem_rev_data_o
+   , output logic                                   mem_rev_v_o
+   , input                                          mem_rev_ready_and_i
+   , output logic                                   mem_rev_last_o
 
    , input                                          dram_clk_i
    , input                                          dram_reset_i
@@ -51,17 +51,17 @@ module bp_nonsynth_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_header_i(mem_cmd_header_i)
-     ,.mem_cmd_data_i(mem_cmd_data_i)
-     ,.mem_cmd_v_i(mem_cmd_v_i)
-     ,.mem_cmd_ready_and_o(mem_cmd_ready_and_o)
-     ,.mem_cmd_last_i(mem_cmd_last_i)
+     ,.mem_fwd_header_i(mem_fwd_header_i)
+     ,.mem_fwd_data_i(mem_fwd_data_i)
+     ,.mem_fwd_v_i(mem_fwd_v_i)
+     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_o)
+     ,.mem_fwd_last_i(mem_fwd_last_i)
 
-     ,.mem_resp_header_o(mem_resp_header_o)
-     ,.mem_resp_data_o(mem_resp_data_o)
-     ,.mem_resp_v_o(mem_resp_v_o)
-     ,.mem_resp_ready_and_i(mem_resp_ready_and_i)
-     ,.mem_resp_last_o(mem_resp_last_o)
+     ,.mem_rev_header_o(mem_rev_header_o)
+     ,.mem_rev_data_o(mem_rev_data_o)
+     ,.mem_rev_v_o(mem_rev_v_o)
+     ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
+     ,.mem_rev_last_o(mem_rev_last_o)
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
@@ -80,7 +80,7 @@ module bp_nonsynth_mem
    #(.bp_params_p(bp_params_p)
      ,.preload_mem_p(preload_mem_p)
      ,.dram_type_p(dram_type_p)
-     ,.mem_els_p(mem_els_p)
+     ,.mem_bytes_p(mem_bytes_p)
      ,.num_dma_p(l2_banks_p)
      )
    dram

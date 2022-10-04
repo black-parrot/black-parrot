@@ -58,17 +58,17 @@ module bp_me_nonsynth_cce_tracer
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [mem_header_width_lp-1:0]                mem_resp_header_i
-   , input [bedrock_data_width_p-1:0]               mem_resp_data_i
-   , input                                          mem_resp_v_i
-   , input                                          mem_resp_ready_and_i
-   , input                                          mem_resp_last_i
+   , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
+   , input [bedrock_data_width_p-1:0]               mem_rev_data_i
+   , input                                          mem_rev_v_i
+   , input                                          mem_rev_ready_and_i
+   , input                                          mem_rev_last_i
 
-   , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [bedrock_data_width_p-1:0]               mem_cmd_data_i
-   , input                                          mem_cmd_v_i
-   , input                                          mem_cmd_ready_and_i
-   , input                                          mem_cmd_last_i
+   , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
+   , input [bedrock_data_width_p-1:0]               mem_fwd_data_i
+   , input                                          mem_fwd_v_i
+   , input                                          mem_fwd_ready_and_i
+   , input                                          mem_fwd_last_i
 
    , input [cce_id_width_p-1:0]                     cce_id_i
   );
@@ -83,8 +83,8 @@ module bp_me_nonsynth_cce_tracer
   `bp_cast_i(bp_bedrock_lce_resp_header_s, lce_resp_header);
 
   // CCE-MEM Interface structs
-  `bp_cast_i(bp_bedrock_mem_header_s, mem_cmd_header);
-  `bp_cast_i(bp_bedrock_mem_header_s, mem_resp_header);
+  `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
+  `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
   integer file;
   string file_name;
@@ -161,28 +161,28 @@ module bp_me_nonsynth_cce_tracer
                   , $time, lce_resp_data_i
                   );
       end
-      if (mem_resp_v_i & mem_resp_ready_and_i) begin
-        if (mem_resp_header_cast_i.msg_type.mem == e_bedrock_mem_wr
-            | mem_resp_header_cast_i.msg_type.mem == e_bedrock_mem_uc_wr) begin
-        $fdisplay(file, "%12t |: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d]"
-                 , $time, cce_id_i, (mem_resp_header_cast_i.msg_type.mem == e_bedrock_mem_wr)
-                 , (mem_resp_header_cast_i.msg_type.mem == e_bedrock_mem_uc_wr)
-                 , mem_resp_header_cast_i.addr
-                 , mem_resp_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
-                 , mem_resp_header_cast_i.payload.lce_id, mem_resp_header_cast_i.payload.way_id
+      if (mem_rev_v_i & mem_rev_ready_and_i) begin
+        if (mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_wr
+            | mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_uc_wr) begin
+        $fdisplay(file, "%12t |: CCE[%0d] MEM REV wb[%0b] uc[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d]"
+                 , $time, cce_id_i, (mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_wr)
+                 , (mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_uc_wr)
+                 , mem_rev_header_cast_i.addr
+                 , mem_rev_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , mem_rev_header_cast_i.payload.lce_id, mem_rev_header_cast_i.payload.way_id
                  );
         end
-        if (mem_resp_header_cast_i.msg_type.mem == e_bedrock_mem_rd
-            | mem_resp_header_cast_i.msg_type.mem == e_bedrock_mem_uc_rd) begin
+        if (mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_rd
+            | mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_uc_rd) begin
         $fdisplay(file, "%12t |: CCE[%0d] MEM DATA RESP addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b] last[%0b] %H"
-                 , $time, cce_id_i, mem_resp_header_cast_i.addr
-                 , mem_resp_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
-                 , mem_resp_header_cast_i.payload.lce_id, mem_resp_header_cast_i.payload.way_id
-                 , mem_resp_header_cast_i.payload.state
-                 , mem_resp_header_cast_i.payload.speculative
-                 , (mem_resp_header_cast_i.msg_type.mem == e_bedrock_mem_uc_rd)
-                 , mem_resp_last_i
-                 , mem_resp_data_i
+                 , $time, cce_id_i, mem_rev_header_cast_i.addr
+                 , mem_rev_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , mem_rev_header_cast_i.payload.lce_id, mem_rev_header_cast_i.payload.way_id
+                 , mem_rev_header_cast_i.payload.state
+                 , mem_rev_header_cast_i.payload.speculative
+                 , (mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_uc_rd)
+                 , mem_rev_last_i
+                 , mem_rev_data_i
                  );
         end
       end
@@ -203,28 +203,28 @@ module bp_me_nonsynth_cce_tracer
                   , $time, lce_cmd_data_i
                   );
       end
-      if (mem_cmd_v_i & mem_cmd_ready_and_i) begin
-        if (mem_cmd_header_cast_i.msg_type.mem == e_bedrock_mem_rd
-            | mem_cmd_header_cast_i.msg_type.mem == e_bedrock_mem_uc_rd) begin
-        $fdisplay(file, "%12t |: CCE[%0d] MEM CMD addr[%H] wg[%0d] lce[%0d] way[%0d] spec[%0b] uc[%0b]"
-                 , $time, cce_id_i, mem_cmd_header_cast_i.addr
-                 , mem_cmd_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
-                 , mem_cmd_header_cast_i.payload.lce_id
-                 , mem_cmd_header_cast_i.payload.way_id, mem_cmd_header_cast_i.payload.speculative
-                 , (mem_cmd_header_cast_i.msg_type.mem == e_bedrock_mem_uc_rd)
+      if (mem_fwd_v_i & mem_fwd_ready_and_i) begin
+        if (mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_rd
+            | mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_uc_rd) begin
+        $fdisplay(file, "%12t |: CCE[%0d] MEM FWD addr[%H] wg[%0d] lce[%0d] way[%0d] spec[%0b] uc[%0b]"
+                 , $time, cce_id_i, mem_fwd_header_cast_i.addr
+                 , mem_fwd_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , mem_fwd_header_cast_i.payload.lce_id
+                 , mem_fwd_header_cast_i.payload.way_id, mem_fwd_header_cast_i.payload.speculative
+                 , (mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_uc_rd)
                  );
         end
-        if (mem_cmd_header_cast_i.msg_type.mem == e_bedrock_mem_uc_wr
-            | mem_cmd_header_cast_i.msg_type.mem == e_bedrock_mem_wr) begin
-        $fdisplay(file, "%12t |: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b] last[%0b] %H"
-                 , $time, cce_id_i, (mem_cmd_header_cast_i.msg_type.mem == e_bedrock_mem_wr)
-                 , mem_cmd_header_cast_i.addr
-                 , mem_cmd_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
-                 , mem_cmd_header_cast_i.payload.lce_id, mem_cmd_header_cast_i.payload.way_id
-                 , mem_cmd_header_cast_i.payload.state
-                 , (mem_cmd_header_cast_i.msg_type.mem == e_bedrock_mem_uc_wr)
-                 , mem_cmd_last_i
-                 , mem_cmd_data_i
+        if (mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_uc_wr
+            | mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_wr) begin
+        $fdisplay(file, "%12t |: CCE[%0d] MEM DATA FWD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b] last[%0b] %H"
+                 , $time, cce_id_i, (mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_wr)
+                 , mem_fwd_header_cast_i.addr
+                 , mem_fwd_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
+                 , mem_fwd_header_cast_i.payload.lce_id, mem_fwd_header_cast_i.payload.way_id
+                 , mem_fwd_header_cast_i.payload.state
+                 , (mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_uc_wr)
+                 , mem_fwd_last_i
+                 , mem_fwd_data_i
                  );
         end
       end

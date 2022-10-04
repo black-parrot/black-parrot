@@ -45,17 +45,17 @@ module bp_me_bedrock_register
    , input                                          reset_i
 
    // Network-side BP-Stream interface
-   , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [dword_width_gp-1:0]                     mem_cmd_data_i
-   , input                                          mem_cmd_v_i
-   , output logic                                   mem_cmd_ready_and_o
-   , input                                          mem_cmd_last_i
+   , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
+   , input [dword_width_gp-1:0]                     mem_fwd_data_i
+   , input                                          mem_fwd_v_i
+   , output logic                                   mem_fwd_ready_and_o
+   , input                                          mem_fwd_last_i
 
-   , output logic [mem_header_width_lp-1:0]         mem_resp_header_o
-   , output logic [dword_width_gp-1:0]              mem_resp_data_o
-   , output logic                                   mem_resp_v_o
-   , input                                          mem_resp_ready_and_i
-   , output logic                                   mem_resp_last_o
+   , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
+   , output logic [dword_width_gp-1:0]              mem_rev_data_o
+   , output logic                                   mem_rev_v_o
+   , input                                          mem_rev_ready_and_i
+   , output logic                                   mem_rev_last_o
 
 
    // Synchronous register read/write interface.
@@ -73,32 +73,32 @@ module bp_me_bedrock_register
 
   if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
 
-  wire unused = &{mem_cmd_last_i};
+  wire unused = &{mem_fwd_last_i};
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
-  bp_bedrock_mem_header_s mem_cmd_header_li;
-  logic [dword_width_gp-1:0] mem_cmd_data_li;
-  logic mem_cmd_v_li, mem_cmd_yumi_li;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
+  logic [dword_width_gp-1:0] mem_fwd_data_li;
+  logic mem_fwd_v_li, mem_fwd_yumi_li;
   bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_mem_header_s)+dword_width_gp))
-   cmd_fifo
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+dword_width_gp))
+   fwd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({mem_cmd_data_i, mem_cmd_header_i})
-     ,.v_i(mem_cmd_v_i)
-     ,.ready_o(mem_cmd_ready_and_o)
+     ,.data_i({mem_fwd_data_i, mem_fwd_header_i})
+     ,.v_i(mem_fwd_v_i)
+     ,.ready_o(mem_fwd_ready_and_o)
 
-     ,.data_o({mem_cmd_data_li, mem_cmd_header_li})
-     ,.v_o(mem_cmd_v_li)
-     ,.yumi_i(mem_cmd_yumi_li)
+     ,.data_o({mem_fwd_data_li, mem_fwd_header_li})
+     ,.v_o(mem_fwd_v_li)
+     ,.yumi_i(mem_fwd_yumi_li)
      );
 
   logic v_r;
-  wire wr_not_rd  = (mem_cmd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
-  wire rd_not_wr  = (mem_cmd_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd});
-  wire v_n = mem_cmd_v_li & ~v_r;
+  wire wr_not_rd  = (mem_fwd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
+  wire rd_not_wr  = (mem_fwd_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd});
+  wire v_n = mem_fwd_v_li & ~v_r;
   logic [els_p-1:0] r_v_r;
   bsg_dff_reset_set_clear
    #(.width_p(1+els_p), .clear_over_set_p(1))
@@ -107,7 +107,7 @@ module bp_me_bedrock_register
      ,.reset_i(reset_i)
      // We also track reads which don't match to prevent deadlock
      ,.set_i({v_n, r_v_o})
-     ,.clear_i({(els_p+1){mem_cmd_yumi_li}})
+     ,.clear_i({(els_p+1){mem_fwd_yumi_li}})
      ,.data_o({v_r, r_v_r})
      );
 
@@ -122,28 +122,28 @@ module bp_me_bedrock_register
 
   for (genvar i = 0; i < els_p; i++)
     begin : dec
-      wire addr_match = mem_cmd_v_li & (mem_cmd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
+      wire addr_match = mem_fwd_v_li & (mem_fwd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
       assign r_v_o[i] = ~v_r & addr_match & ~wr_not_rd;
       assign w_v_o[i] = ~v_r & addr_match &  wr_not_rd;
     end
 
-  assign addr_o = mem_cmd_header_li.addr[0+:reg_addr_width_p];
-  assign size_o = mem_cmd_header_li.size;
-  assign data_o = mem_cmd_data_li;
+  assign addr_o = mem_fwd_header_li.addr[0+:reg_addr_width_p];
+  assign size_o = mem_fwd_header_li.size;
+  assign data_o = mem_fwd_data_li;
 
-  assign mem_resp_header_o = mem_cmd_header_li;
-  assign mem_resp_data_o = rdata_lo;
-  assign mem_resp_v_o = v_r;
-  assign mem_resp_last_o = mem_resp_v_o;
-  assign mem_cmd_yumi_li = mem_resp_ready_and_i & mem_resp_v_o;
+  assign mem_rev_header_o = mem_fwd_header_li;
+  assign mem_rev_data_o = rdata_lo;
+  assign mem_rev_v_o = v_r;
+  assign mem_rev_last_o = mem_rev_v_o;
+  assign mem_fwd_yumi_li = mem_rev_ready_and_i & mem_rev_v_o;
 
   //synopsys translate_off
   always_ff @(negedge clk_i)
     begin
-      assert(reset_i !== '0 || ~mem_cmd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
+      assert(reset_i !== '0 || ~mem_fwd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
         else $error("Command to non-existent register: %x", addr_o);
 
-      assert(reset_i !== '0 || ~(mem_cmd_v_i & mem_cmd_ready_and_o) || mem_cmd_last_i)
+      assert(reset_i !== '0 || ~(mem_fwd_v_i & mem_fwd_ready_and_o) || mem_fwd_last_i)
         else $error("Multi-beat memory command detected");
     end
   //synopsys translate_on

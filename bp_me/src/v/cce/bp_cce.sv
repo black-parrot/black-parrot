@@ -75,17 +75,17 @@ module bp_cce
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [mem_header_width_lp-1:0]                mem_resp_header_i
-   , input [bedrock_data_width_p-1:0]               mem_resp_data_i
-   , input                                          mem_resp_v_i
-   , output logic                                   mem_resp_ready_and_o
-   , input                                          mem_resp_last_i
+   , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
+   , input [bedrock_data_width_p-1:0]               mem_rev_data_i
+   , input                                          mem_rev_v_i
+   , output logic                                   mem_rev_ready_and_o
+   , input                                          mem_rev_last_i
 
-   , output logic [mem_header_width_lp-1:0]         mem_cmd_header_o
-   , output logic [bedrock_data_width_p-1:0]        mem_cmd_data_o
-   , output logic                                   mem_cmd_v_o
-   , input                                          mem_cmd_ready_and_i
-   , output logic                                   mem_cmd_last_o
+   , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
+   , output logic [bedrock_data_width_p-1:0]        mem_fwd_data_o
+   , output logic                                   mem_fwd_v_o
+   , input                                          mem_fwd_ready_and_i
+   , output logic                                   mem_fwd_last_o
   );
 
   // parameter checks
@@ -215,26 +215,10 @@ module bp_cce
   // From Message Unit to Stall
   logic                                      msg_lce_cmd_busy_lo;
   logic                                      msg_lce_resp_busy_lo;
-  logic                                      msg_mem_resp_busy_lo;
+  logic                                      msg_mem_rev_busy_lo;
   logic                                      msg_busy_lo;
   logic                                      msg_mem_credits_empty_lo;
-  logic                                      msg_mem_cmd_stall_lo;
-
-  // From memory response stream pump to CCE
-  bp_bedrock_mem_header_s mem_resp_base_header_li;
-  logic mem_resp_v_li, mem_resp_yumi_lo;
-  logic mem_resp_stream_new_li, mem_resp_stream_last_li, mem_resp_stream_done_li;
-  logic [paddr_width_p-1:0] mem_resp_addr_li;
-  logic [bedrock_data_width_p-1:0] mem_resp_data_li;
-
-  // From CCE to memory command stream pump
-  localparam stream_words_lp = cce_block_width_p / bedrock_data_width_p;
-  localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp);
-  bp_bedrock_mem_header_s mem_cmd_base_header_lo;
-  logic mem_cmd_v_lo, mem_cmd_ready_and_li;
-  logic mem_cmd_stream_new_li, mem_cmd_stream_done_li;
-  logic [bedrock_data_width_p-1:0] mem_cmd_data_lo;
-  logic [data_len_width_lp-1:0] mem_cmd_stream_cnt_li;
+  logic                                      msg_mem_fwd_stall_lo;
 
   /*
    * Fetch Stage
@@ -284,64 +268,72 @@ module bp_cce
    * The FSM side of the stream pumps is considered part of the CCE's execute stage.
    */
 
-  // Memory Response Stream Pump
+  // Memory Rev Stream Pump
+  // From memory response stream pump to CCE
+  bp_bedrock_mem_rev_header_s fsm_rev_header_li;
+  logic fsm_rev_v_li, fsm_rev_yumi_lo, fsm_rev_new_li, fsm_rev_last_li;
+  logic [bedrock_data_width_p-1:0] fsm_rev_data_li;
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
-      ,.payload_width_p(mem_payload_width_lp)
-      ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
-      ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
+      ,.payload_width_p(mem_rev_payload_width_lp)
+      ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
+      ,.fsm_stream_mask_p(mem_rev_payload_mask_gp)
       // provide buffer space for two stream messages with data (for coherence protocol)
       ,.header_els_p(2)
       )
-    mem_resp_stream_pump
+    mem_rev_stream_pump
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       // from memory response input
-      ,.msg_header_i(mem_resp_header_i)
-      ,.msg_data_i(mem_resp_data_i)
-      ,.msg_v_i(mem_resp_v_i)
-      ,.msg_last_i(mem_resp_last_i)
-      ,.msg_ready_and_o(mem_resp_ready_and_o)
+      ,.msg_header_i(mem_rev_header_i)
+      ,.msg_data_i(mem_rev_data_i)
+      ,.msg_v_i(mem_rev_v_i)
+      ,.msg_last_i(mem_rev_last_i)
+      ,.msg_ready_and_o(mem_rev_ready_and_o)
       // to FSM CCE
-      ,.fsm_base_header_o(mem_resp_base_header_li)
-      ,.fsm_addr_o(mem_resp_addr_li)
-      ,.fsm_data_o(mem_resp_data_li)
-      ,.fsm_v_o(mem_resp_v_li)
-      ,.fsm_ready_and_i(mem_resp_yumi_lo)
-      ,.fsm_new_o(mem_resp_stream_new_li)
-      ,.fsm_last_o(mem_resp_stream_last_li)
-      ,.fsm_done_o(mem_resp_stream_done_li)
+      ,.fsm_header_o(fsm_rev_header_li)
+      ,.fsm_addr_o()
+      ,.fsm_data_o(fsm_rev_data_li)
+      ,.fsm_v_o(fsm_rev_v_li)
+      ,.fsm_yumi_i(fsm_rev_yumi_lo)
+      ,.fsm_cnt_o()
+      ,.fsm_new_o(fsm_rev_new_li)
+      ,.fsm_last_o(fsm_rev_last_li)
       );
 
-  // Memory Command Stream Pump
+  // Memory Fwd Stream Pump
+  // From CCE to memory command stream pump
+  bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
+  logic fsm_fwd_v_lo, fsm_fwd_ready_and_li, fsm_fwd_new_lo, fsm_fwd_last_lo;
+  logic [bedrock_data_width_p-1:0] fsm_fwd_data_lo;
   bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
-      ,.payload_width_p(mem_payload_width_lp)
-      ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
-      ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
+      ,.payload_width_p(mem_fwd_payload_width_lp)
+      ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
+      ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp)
       )
-    mem_cmd_stream_pump
+    mem_fwd_stream_pump
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       // to memory command output
-      ,.msg_header_o(mem_cmd_header_o)
-      ,.msg_data_o(mem_cmd_data_o)
-      ,.msg_v_o(mem_cmd_v_o)
-      ,.msg_last_o(mem_cmd_last_o)
-      ,.msg_ready_and_i(mem_cmd_ready_and_i)
+      ,.msg_header_o(mem_fwd_header_o)
+      ,.msg_data_o(mem_fwd_data_o)
+      ,.msg_v_o(mem_fwd_v_o)
+      ,.msg_last_o(mem_fwd_last_o)
+      ,.msg_ready_and_i(mem_fwd_ready_and_i)
       // from FSM CCE
-      ,.fsm_base_header_i(mem_cmd_base_header_lo)
-      ,.fsm_data_i(mem_cmd_data_lo)
-      ,.fsm_v_i(mem_cmd_v_lo)
-      ,.fsm_ready_and_o(mem_cmd_ready_and_li)
-      ,.fsm_cnt_o(mem_cmd_stream_cnt_li)
-      ,.fsm_new_o(mem_cmd_stream_new_li)
-      ,.fsm_last_o()
-      ,.fsm_done_o(mem_cmd_stream_done_li)
+      ,.fsm_header_i(fsm_fwd_header_lo)
+      ,.fsm_data_i(fsm_fwd_data_lo)
+      ,.fsm_addr_o()
+      ,.fsm_v_i(fsm_fwd_v_lo)
+      ,.fsm_ready_and_o(fsm_fwd_ready_and_li)
+      ,.fsm_cnt_o()
+      ,.fsm_new_o(fsm_fwd_new_lo)
+      ,.fsm_last_o(fsm_fwd_last_lo)
       );
 
   /*
@@ -446,15 +438,15 @@ module bp_cce
       ,.sharers_hits_i(sharers_hits_lo)
       ,.sharers_ways_i(sharers_ways_lo)
       ,.sharers_coh_states_i(sharers_coh_states_lo)
-      ,.mem_resp_v_i(mem_resp_v_li)
+      ,.mem_rev_v_i(fsm_rev_v_li)
       ,.lce_resp_header_v_i(lce_resp_v)
       ,.lce_req_header_v_i(lce_req_v)
       ,.lce_req_header_i(lce_req_header_cast_li)
       ,.lce_resp_header_i(lce_resp_header_cast_li)
-      ,.mem_resp_header_i(mem_resp_base_header_li)
+      ,.mem_rev_header_i(fsm_rev_header_li)
       ,.lce_req_data_i(lce_req_data_i)
       ,.lce_resp_data_i(lce_resp_data_i)
-      ,.mem_resp_data_i(mem_resp_data_li)
+      ,.mem_rev_data_i(fsm_rev_data_li)
       ,.src_a_o(src_a)
       ,.src_b_o(src_b)
       ,.addr_o(addr_lo)
@@ -630,7 +622,7 @@ module bp_cce
       ,.lce_req_header_i(lce_req_header_cast_li)
       ,.lce_req_v_i(lce_req_v)
       ,.lce_resp_header_i(lce_resp_header_cast_li)
-      ,.mem_resp_header_i(mem_resp_base_header_li)
+      ,.mem_rev_header_i(fsm_rev_header_li)
 
       ,.pending_i(pending_lo)
 
@@ -703,22 +695,19 @@ module bp_cce
       // CCE-MEM Interface
       // BedRock Burst protocol: ready&valid
       // inbound headers use valid->yumi
-      ,.mem_resp_header_i(mem_resp_base_header_li)
-      ,.mem_resp_addr_i(mem_resp_addr_li)
-      ,.mem_resp_data_i(mem_resp_data_li)
-      ,.mem_resp_v_i(mem_resp_v_li)
-      ,.mem_resp_yumi_o(mem_resp_yumi_lo)
-      ,.mem_resp_stream_new_i(mem_resp_stream_new_li)
-      ,.mem_resp_stream_last_i(mem_resp_stream_last_li)
-      ,.mem_resp_stream_done_i(mem_resp_stream_done_li)
+      ,.mem_rev_header_i(fsm_rev_header_li)
+      ,.mem_rev_data_i(fsm_rev_data_li)
+      ,.mem_rev_v_i(fsm_rev_v_li)
+      ,.mem_rev_yumi_o(fsm_rev_yumi_lo)
+      ,.mem_rev_new_i(fsm_rev_new_li)
+      ,.mem_rev_last_i(fsm_rev_last_li)
 
-      ,.mem_cmd_header_o(mem_cmd_base_header_lo)
-      ,.mem_cmd_data_o(mem_cmd_data_lo)
-      ,.mem_cmd_v_o(mem_cmd_v_lo)
-      ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
-      ,.mem_cmd_stream_cnt_i(mem_cmd_stream_cnt_li)
-      ,.mem_cmd_stream_new_i(mem_cmd_stream_new_li)
-      ,.mem_cmd_stream_done_i(mem_cmd_stream_done_li)
+      ,.mem_fwd_header_o(fsm_fwd_header_lo)
+      ,.mem_fwd_data_o(fsm_fwd_data_lo)
+      ,.mem_fwd_v_o(fsm_fwd_v_lo)
+      ,.mem_fwd_ready_and_i(fsm_fwd_ready_and_li)
+      ,.mem_fwd_new_i(fsm_fwd_new_lo)
+      ,.mem_fwd_last_i(fsm_fwd_last_lo)
 
       // Inputs
       ,.lce_i(lce_lo)
@@ -761,13 +750,13 @@ module bp_cce
       // LCE Response used by auto-forward
       ,.lce_resp_busy_o(msg_lce_resp_busy_lo)
       // Mem Response used by auto-forward
-      ,.mem_resp_busy_o(msg_mem_resp_busy_lo)
+      ,.mem_rev_busy_o(msg_mem_rev_busy_lo)
       // Stall ucode (as in inv command being processed)
       ,.busy_o(msg_busy_lo)
       // memory credits empty
       ,.mem_credits_empty_o(msg_mem_credits_empty_lo)
       // memory command send stall
-      ,.mem_cmd_stall_o(msg_mem_cmd_stall_lo)
+      ,.mem_fwd_stall_o(msg_mem_fwd_stall_lo)
       );
 
   // Speculative Access Bits
@@ -809,7 +798,7 @@ module bp_cce
       ,.lce_req_data_v_i(lce_req_data_v_i)
       ,.lce_resp_header_v_i(lce_resp_v)
       ,.lce_resp_data_v_i(lce_resp_data_v_i)
-      ,.mem_resp_v_i(mem_resp_v_li)
+      ,.mem_rev_v_i(fsm_rev_v_li)
       ,.pending_v_i('0)
 
       ,.lce_cmd_header_v_i(lce_cmd_header_v_o)
@@ -821,10 +810,10 @@ module bp_cce
       ,.msg_pending_w_busy_i(msg_pending_w_v_lo)
       ,.msg_lce_cmd_busy_i(msg_lce_cmd_busy_lo)
       ,.msg_lce_resp_busy_i(msg_lce_resp_busy_lo)
-      ,.msg_mem_resp_busy_i(msg_mem_resp_busy_lo)
+      ,.msg_mem_rev_busy_i(msg_mem_rev_busy_lo)
       ,.msg_spec_r_busy_i(msg_spec_r_v_lo)
       ,.msg_dir_w_busy_i(msg_dir_w_v_lo)
-      ,.msg_mem_cmd_stall_i(msg_mem_cmd_stall_lo)
+      ,.msg_mem_fwd_stall_i(msg_mem_fwd_stall_lo)
 
       // From Directory
       ,.dir_busy_i(dir_busy_lo)

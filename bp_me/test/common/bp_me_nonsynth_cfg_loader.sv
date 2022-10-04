@@ -41,34 +41,34 @@ module bp_me_nonsynth_cfg_loader
 
    // BedRock Stream
    // TODO: convert yumi_i to ready_and_i
-   , output logic [mem_header_width_lp-1:0]          io_cmd_header_o
-   , output logic [dword_width_gp-1:0]               io_cmd_data_o
-   , output logic                                    io_cmd_v_o
-   , input                                           io_cmd_yumi_i
-   , output logic                                    io_cmd_last_o
+   , output logic [mem_fwd_header_width_lp-1:0]      io_fwd_header_o
+   , output logic [dword_width_gp-1:0]               io_fwd_data_o
+   , output logic                                    io_fwd_v_o
+   , input                                           io_fwd_yumi_i
+   , output logic                                    io_fwd_last_o
 
    // BedRock Stream
-   , input [mem_header_width_lp-1:0]                 io_resp_header_i
-   , input [dword_width_gp-1:0]                      io_resp_data_i
-   , input                                           io_resp_v_i
-   , output logic                                    io_resp_ready_and_o
-   , input                                           io_resp_last_i
+   , input [mem_rev_header_width_lp-1:0]             io_rev_header_i
+   , input [dword_width_gp-1:0]                      io_rev_data_i
+   , input                                           io_rev_v_i
+   , output logic                                    io_rev_ready_and_o
+   , input                                           io_rev_last_i
 
    , output logic                                    done_o
    );
 
-  wire unused0 = &{io_resp_header_i, io_resp_data_i, io_resp_last_i};
-  assign io_resp_ready_and_o = 1'b1;
+  wire unused0 = &{io_rev_header_i, io_rev_data_i, io_rev_last_i};
+  assign io_rev_ready_and_o = 1'b1;
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
-  bp_bedrock_mem_header_s io_cmd_cast_o;
-  bp_bedrock_mem_header_s io_resp_cast_i;
-  bp_bedrock_mem_payload_s io_cmd_payload;
+  bp_bedrock_mem_fwd_header_s io_fwd_cast_o;
+  bp_bedrock_mem_rev_header_s io_rev_cast_i;
+  bp_bedrock_mem_fwd_payload_s io_fwd_payload;
 
-  assign io_cmd_header_o = io_cmd_cast_o;
-  assign io_resp_cast_i = io_resp_header_i;
+  assign io_fwd_header_o = io_fwd_cast_o;
+  assign io_rev_cast_i = io_rev_header_i;
 
   logic [dword_width_gp-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
   logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
@@ -107,10 +107,10 @@ module bp_me_nonsynth_cfg_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.v_i(io_cmd_yumi_i)
+     ,.v_i(io_fwd_yumi_i)
      ,.ready_i(1'b1)
 
-     ,.yumi_i(io_resp_v_i)
+     ,.yumi_i(io_rev_v_i)
      ,.count_o(credit_count_lo)
      );
   wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
@@ -142,8 +142,8 @@ module bp_me_nonsynth_cfg_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.clear_i(ucode_cnt_clr & io_cmd_yumi_i)
-     ,.up_i(ucode_cnt_inc & io_cmd_yumi_i)
+     ,.clear_i(ucode_cnt_clr & io_fwd_yumi_i)
+     ,.up_i(ucode_cnt_inc & io_fwd_yumi_i)
 
      ,.count_o(ucode_cnt_r)
      );
@@ -158,8 +158,8 @@ module bp_me_nonsynth_cfg_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.clear_i(core_cnt_clr & io_cmd_yumi_i)
-     ,.up_i(core_cnt_inc & io_cmd_yumi_i)
+     ,.clear_i(core_cnt_clr & io_fwd_yumi_i)
+     ,.up_i(core_cnt_inc & io_fwd_yumi_i)
 
      ,.count_o(core_cnt_r)
      );
@@ -174,24 +174,24 @@ module bp_me_nonsynth_cfg_loader
     begin
       if (reset_i)
         state_r <= RESET;
-      else if (io_cmd_yumi_i || (state_r == RESET) || (state_r == WAIT_FOR_SYNC) || (state_r == WAIT_FOR_CREDITS))
+      else if (io_fwd_yumi_i || (state_r == RESET) || (state_r == WAIT_FOR_SYNC) || (state_r == WAIT_FOR_CREDITS))
         state_r <= state_n;
     end
 
   always_comb
     begin
-      io_cmd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
+      io_fwd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
-      io_cmd_cast_o.msg_type             = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
-      io_cmd_cast_o.subop                = e_bedrock_store;
-      io_cmd_cast_o.addr                 = local_addr_lo;
-      io_cmd_payload                     = '0;
-      io_cmd_payload.lce_id              = lce_id_i;
-      io_cmd_cast_o.size                 = e_bedrock_msg_size_8;
-      io_cmd_data_o                      = cfg_data_lo;
-      io_cmd_last_o                      = 1'b1;
-      io_cmd_cast_o.payload              = io_cmd_payload;
+      io_fwd_cast_o.msg_type             = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+      io_fwd_cast_o.subop                = e_bedrock_store;
+      io_fwd_cast_o.addr                 = local_addr_lo;
+      io_fwd_payload                     = '0;
+      io_fwd_payload.lce_id              = lce_id_i;
+      io_fwd_cast_o.size                 = e_bedrock_msg_size_8;
+      io_fwd_data_o                      = cfg_data_lo;
+      io_fwd_last_o                      = 1'b1;
+      io_fwd_cast_o.payload              = io_fwd_payload;
     end
 
   always_comb

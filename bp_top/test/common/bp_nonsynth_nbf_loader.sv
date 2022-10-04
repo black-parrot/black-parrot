@@ -23,23 +23,23 @@ module bp_nonsynth_nbf_loader
    , input [lce_id_width_p-1:0]                     lce_id_i
    , input [did_width_p-1:0]                        did_i
 
-   , output logic [mem_header_width_lp-1:0]         io_cmd_header_o
-   , output logic [io_data_width_p-1:0]             io_cmd_data_o
-   , output logic                                   io_cmd_v_o
-   , input                                          io_cmd_yumi_i
-   , output logic                                   io_cmd_last_o
+   , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
+   , output logic [io_data_width_p-1:0]             mem_fwd_data_o
+   , output logic                                   mem_fwd_v_o
+   , input                                          mem_fwd_ready_and_i
+   , output logic                                   mem_fwd_last_o
 
-   , input  [mem_header_width_lp-1:0]               io_resp_header_i
-   , input  [io_data_width_p-1:0]                   io_resp_data_i
-   , input                                          io_resp_v_i
-   , output logic                                   io_resp_ready_and_o
-   , input                                          io_resp_last_i
+   , input  [mem_rev_header_width_lp-1:0]           mem_rev_header_i
+   , input  [io_data_width_p-1:0]                   mem_rev_data_i
+   , input                                          mem_rev_v_i
+   , output logic                                   mem_rev_ready_and_o
+   , input                                          mem_rev_last_i
 
    , output logic                                   done_o
    );
 
   // all messages are single beat
-  wire unused = &{io_resp_data_i, io_resp_last_i};
+  wire unused = &{mem_rev_data_i, mem_rev_last_i};
 
   enum logic [2:0] { e_reset, e_send, e_fence, e_read, e_done} state_n, state_r;
   wire is_reset    = (state_r == e_reset);
@@ -73,7 +73,7 @@ module bp_nonsynth_nbf_loader
   wire is_read_packet   = (curr_nbf.opcode[5] == 1'b1) & ~is_fence_packet & ~is_finish_packet;
   wire is_store_packet  = (curr_nbf.opcode[5] == 1'b0) & ~is_fence_packet & ~is_finish_packet;
 
-  wire next_nbf = (is_send_nbf && (io_cmd_yumi_i || is_fence_packet || is_finish_packet));
+  wire next_nbf = (is_send_nbf && ((mem_fwd_ready_and_i & mem_fwd_v_o) || is_fence_packet || is_finish_packet));
   bsg_counter_clear_up
    #(.max_val_p(max_nbf_index_lp-1), .init_val_p(0))
    nbf_counter
@@ -97,8 +97,8 @@ module bp_nonsynth_nbf_loader
      );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  `bp_cast_o(bp_bedrock_mem_header_s, io_cmd_header);
-  `bp_cast_i(bp_bedrock_mem_header_s, io_resp_header);
+  `bp_cast_o(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
+  `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
   logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
   bsg_flow_counter
@@ -107,49 +107,49 @@ module bp_nonsynth_nbf_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.v_i(io_cmd_yumi_i)
-     ,.ready_i(1'b1)
+     ,.v_i(mem_fwd_v_o)
+     ,.ready_i(mem_fwd_ready_and_i)
 
-     ,.yumi_i(io_resp_v_i)
+     ,.yumi_i(mem_rev_v_i)
      ,.count_o(credit_count_lo)
      );
   wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
   wire credits_empty_lo = (credit_count_lo == '0);
-  assign io_resp_ready_and_o = 1'b1;
+  assign mem_rev_ready_and_o = 1'b1;
 
   localparam sel_width_lp = `BSG_SAFE_CLOG2(nbf_data_width_lp>>3);
   localparam size_width_lp = `BSG_SAFE_CLOG2(sel_width_lp);
   logic [io_data_width_p-1:0] test;
   bsg_bus_pack
    #(.in_width_p(nbf_data_width_lp), .out_width_p(io_data_width_p))
-   cmd_bus_pack
+   fwd_bus_pack
     (.data_i(curr_nbf.data)
      ,.sel_i('0) // We are aligned
-     ,.size_i(io_cmd_header_cast_o.size[0+:size_width_lp])
-     ,.data_o(io_cmd_data_o)
+     ,.size_i(mem_fwd_header_cast_o.size[0+:size_width_lp])
+     ,.data_o(mem_fwd_data_o)
      );
 
   always_comb
     begin
-      io_cmd_header_cast_o = '0;
-      io_cmd_header_cast_o.payload.lce_id = lce_id_i;
-      io_cmd_header_cast_o.payload.did = did_i;
-      io_cmd_header_cast_o.addr = curr_nbf.addr;
-      io_cmd_header_cast_o.msg_type.mem = curr_nbf.opcode[5] ? e_bedrock_mem_uc_rd : e_bedrock_mem_uc_wr;
-      io_cmd_header_cast_o.subop = e_bedrock_store;
+      mem_fwd_header_cast_o = '0;
+      mem_fwd_header_cast_o.payload.lce_id = lce_id_i;
+      mem_fwd_header_cast_o.payload.did = did_i;
+      mem_fwd_header_cast_o.addr = curr_nbf.addr;
+      mem_fwd_header_cast_o.msg_type.fwd = curr_nbf.opcode[5] ? e_bedrock_mem_uc_rd : e_bedrock_mem_uc_wr;
+      mem_fwd_header_cast_o.subop = e_bedrock_store;
       case (curr_nbf.opcode[1:0])
-        2'b00: io_cmd_header_cast_o.size = e_bedrock_msg_size_1;
-        2'b01: io_cmd_header_cast_o.size = e_bedrock_msg_size_2;
-        2'b10: io_cmd_header_cast_o.size = e_bedrock_msg_size_4;
-        2'b11: io_cmd_header_cast_o.size = e_bedrock_msg_size_8;
-        default: io_cmd_header_cast_o.size = e_bedrock_msg_size_4;
+        2'b00: mem_fwd_header_cast_o.size = e_bedrock_msg_size_1;
+        2'b01: mem_fwd_header_cast_o.size = e_bedrock_msg_size_2;
+        2'b10: mem_fwd_header_cast_o.size = e_bedrock_msg_size_4;
+        2'b11: mem_fwd_header_cast_o.size = e_bedrock_msg_size_8;
+        default: mem_fwd_header_cast_o.size = e_bedrock_msg_size_4;
       endcase
     end
 
-  assign io_cmd_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
-  assign io_cmd_last_o = io_cmd_v_o;
+  assign mem_fwd_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
+  assign mem_fwd_last_o = mem_fwd_v_o;
 
-  wire read_return = is_read & io_resp_v_i & (io_resp_header_cast_i.msg_type == e_bedrock_mem_uc_rd);
+  wire read_return = is_read & mem_rev_v_i & (mem_rev_header_cast_i.msg_type == e_bedrock_mem_uc_rd);
   always_comb
     unique casez (state_r)
       e_reset       : state_n = reset_i ? e_reset : e_send;
@@ -157,7 +157,7 @@ module bp_nonsynth_nbf_loader
                                 ? e_fence
                                 : is_finish_packet
                                   ? e_done
-                                  : (is_read_packet & io_cmd_yumi_i)
+                                  : (is_read_packet & mem_fwd_ready_and_i & mem_fwd_v_o)
                                     ? e_read
                                     : e_send;
       e_read        : state_n = read_return ? e_send : e_read;
@@ -179,11 +179,11 @@ module bp_nonsynth_nbf_loader
     begin
       if (state_r != e_done && state_n == e_done)
         $display("NBF loader done!");
-      assert(reset_i !== '0 || ~read_return || read_data_r == io_resp_data_i[0+:dword_width_gp])
-        else $error("Validation mismatch: addr: %d %d %d", io_resp_header_cast_i.addr, io_resp_data_i, read_data_r);
+      assert(reset_i !== '0 || ~read_return || read_data_r == mem_rev_data_i[0+:dword_width_gp])
+        else $error("Validation mismatch: addr: %d %d %d", mem_rev_header_cast_i.addr, mem_rev_data_i, read_data_r);
 
-      if (io_resp_v_i & io_resp_ready_and_o)
-        assert(reset_i !== '0 || ~(io_resp_v_i & io_resp_ready_and_o & ~io_resp_last_i))
+      if (mem_rev_v_i & mem_rev_ready_and_o)
+        assert(reset_i !== '0 || ~(mem_rev_v_i & mem_rev_ready_and_o & ~mem_rev_last_i))
           else $error("Multi-beat IO response detected");
     end
   //synopsys translate_on
