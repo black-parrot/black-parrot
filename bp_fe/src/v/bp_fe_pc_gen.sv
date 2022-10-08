@@ -280,7 +280,7 @@ module bp_fe_pc_gen
   bp_fe_instr_scan
    #(.bp_params_p(bp_params_p))
    instr_scan
-    (.instr_i(fetch_i)
+    (.instr_i(fetch_instr_o)
      ,.scan_o(scan_instr)
      ,.imm_o(scan_imm)
      );
@@ -311,18 +311,18 @@ module bp_fe_pc_gen
      );
 
   // Override calculations
-  assign if2_second_half_addr = pc_if2_r + vaddr_width_p'(4);
+  // assign if2_second_half_addr = pc_if2_r + vaddr_width_p'(4);
 
-  wire is_br = pred_if1_r || ovr_btaken || ovr_ret;
+  wire is_br = pred_if1_r || ovr_btaken || ovr_jmp || ovr_ret;
 
   wire pc_if2_misaligned = !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
-  wire misaligned_fetch_nonbr = pc_if1_r != if2_second_half_addr;
+  // wire misaligned_fetch_nonbr = pc_if1_r != if2_second_half_addr;
   assign ovr_ret    = btb_miss_ras & fetch_instr_return_v_li & ras_valid_lo;
   assign ovr_btaken = btb_miss_br & fetch_instr_br_v_li & pred_if1_r;
   assign ovr_jmp    = btb_miss_br & fetch_instr_jal_v_li;
-  assign ovr_half   = compressed_support_p & taken_if1_r & ( ((!fetch_is_second_half_o && pc_if2_misaligned) || (fetch_is_second_half_o && !is_br) || (fetch_is_second_half_o && !fetch_instr_v_o))); //misaligned_fetch_nonbr & pc_if2_misaligned & fetch_v_i & !fetch_instr_v_o;
+  assign ovr_half   = compressed_support_p & fetch_v_i & taken_if1_r & ( ((!fetch_is_second_half_o && pc_if2_misaligned) || (fetch_is_second_half_o && !is_br) || (fetch_is_second_half_o && !fetch_instr_v_o))); //misaligned_fetch_nonbr & pc_if2_misaligned & fetch_v_i & !fetch_instr_v_o;
   assign ovr_o      = ovr_btaken | ovr_jmp | ovr_ret | ovr_half;
   assign br_tgt_lo  = fetch_pc_o + scan_imm;
 
