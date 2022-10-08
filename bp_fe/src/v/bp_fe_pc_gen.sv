@@ -295,7 +295,7 @@ module bp_fe_pc_gen
   // RAS
   ///////////////////////////
   logic ras_valid_lo;
-  wire [vaddr_width_p-1:0] return_addr_if2 = pc_if2_r + vaddr_width_p'(4);
+  wire [vaddr_width_p-1:0] return_addr_if2 = fetch_pc_o + vaddr_width_p'(4);
   bp_fe_ras
    #(.bp_params_p(bp_params_p))
    ras
@@ -311,12 +311,13 @@ module bp_fe_pc_gen
      );
 
   // Override calculations
-  // assign if2_second_half_addr = pc_if2_r + vaddr_width_p'(4);
+  assign if2_second_half_addr = pc_if2_r + vaddr_width_p'(4);
 
   wire is_br = pred_if1_r || ovr_btaken || ovr_jmp || ovr_ret;
 
   wire pc_if2_misaligned = !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
+  // TODO: a jump that skips only one instruction within misaligned code can erroneously pass this check
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
   // wire misaligned_fetch_nonbr = pc_if1_r != if2_second_half_addr;
   assign ovr_ret    = btb_miss_ras & fetch_instr_return_v_li & ras_valid_lo;

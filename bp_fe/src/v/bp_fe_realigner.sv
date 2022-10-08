@@ -67,7 +67,7 @@ module bp_fe_realigner
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i  (fetch_data_v_i & store_v_i)
+     ,.set_i  (~poison_i & fetch_data_v_i & store_v_i)
      ,.clear_i(poison_i | fetch_instr_yumi_i) // set overrides clear
      ,.data_o (half_buffer_v_r)
      );
