@@ -73,17 +73,10 @@ module bp_fe_pc_gen
   /////////////////////////////////////////////////////////////////////////////////////
   logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
 
-  logic [vaddr_width_p-1:0] pc_if1_n, pc_if1_r;
-  logic realigner_poison_if1_n, realigner_poison_if1_r;
-  logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
-
-  /////////////////
-  // IF1
-  /////////////////
-  bp_fe_pred_s pred_if1_n, pred_if1_r;
   logic [vaddr_width_p-1:0] next_pc;
   logic next_pc_nonlinear;
-  logic ovr_ret, ovr_taken, ovr_half, btb_taken;
+  logic [bht_row_width_p-1:0] bht_row_lo;
+  logic bht_pred_lo;
   logic [vaddr_width_p-1:0] btb_br_tgt_lo;
   logic btb_br_tgt_v_lo, btb_br_tgt_jmp_lo;
 
@@ -92,7 +85,7 @@ module bp_fe_pc_gen
   ///////////////////////////
   bp_fe_branch_metadata_fwd_s next_metadata, ovr_metadata;
   logic next_pred, next_taken;
-  logic ovr_ret, ovr_btaken, ovr_jmp, btb_taken;
+  logic ovr_ret, ovr_btaken, ovr_jmp, ovr_half, btb_taken;
   logic [vaddr_width_p-1:0] pc_plus4;
   logic [vaddr_width_p-1:0] ras_tgt_lo;
   logic [vaddr_width_p-1:0] br_tgt_lo;
@@ -148,7 +141,8 @@ module bp_fe_pc_gen
         next_metadata.btb_idx = btb_idx_if1;
         next_metadata.bht_idx = bht_idx_if1;
       end
-  assign next_pc_o = next_pc;
+  end
+  assign next_fetch_o = next_pc;
 
   ///////////////////////////
   // BTB
@@ -319,6 +313,8 @@ module bp_fe_pc_gen
   // Override calculations
   assign if2_second_half_addr = pc_if2_r + vaddr_width_p'(4);
 
+  wire is_br = pred_if1_r || ovr_btaken || ovr_ret;
+
   wire pc_if2_misaligned = !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
@@ -326,15 +322,13 @@ module bp_fe_pc_gen
   assign ovr_ret    = btb_miss_ras & fetch_instr_return_v_li & ras_valid_lo;
   assign ovr_btaken = btb_miss_br & fetch_instr_br_v_li & pred_if1_r;
   assign ovr_jmp    = btb_miss_br & fetch_instr_jal_v_li;
-  assign ovr_half   = misaligned_fetch_nonbr & pc_if2_misaligned & fetch_v_i & !fetch_instr_v_o;
+  assign ovr_half   = compressed_support_p & taken_if1_r & ( ((!fetch_is_second_half_o && pc_if2_misaligned) || (fetch_is_second_half_o && !is_br) || (fetch_is_second_half_o && !fetch_instr_v_o))); //misaligned_fetch_nonbr & pc_if2_misaligned & fetch_v_i & !fetch_instr_v_o;
   assign ovr_o      = ovr_btaken | ovr_jmp | ovr_ret | ovr_half;
   assign br_tgt_lo  = fetch_pc_o + scan_imm;
 
-  // The actual fetch PC/metadata pair
-  assign fetch_pc_o = pc_if2_r;
+  assign fetch_resume_pc_o = pc_if2_r;
   assign fetch_br_metadata_fwd_o = metadata_if2_r;
 
-  ///////////////////////////
   if (compressed_support_p)
     begin : fetch_instr_generation
       bp_fe_realigner
@@ -347,7 +341,8 @@ module bp_fe_pc_gen
         ,.fetch_data_i  (fetch_i)
         ,.fetch_data_v_i(fetch_v_i)
 
-        ,.poison_i                       ((redirect_v_i & ~redirect_restore_insn_lower_half_v_i) | !ovr_half & (ovr_ret | ovr_taken | (misaligned_fetch_nonbr & fetch_v_i)))
+        ,.store_v_i((!fetch_is_second_half_o && pc_if2_misaligned) || (fetch_is_second_half_o && !is_br))
+        ,.poison_i                       (redirect_v_i & ~redirect_restore_insn_lower_half_v_i)
         ,.restore_lower_half_v_i         (redirect_restore_insn_lower_half_v_i)
         ,.restore_lower_half_i           (redirect_restore_insn_lower_half_i)
         ,.restore_lower_half_next_vaddr_i(redirect_pc_i)
@@ -356,6 +351,7 @@ module bp_fe_pc_gen
         ,.fetch_instr_o         (fetch_instr_o)
         ,.fetch_instr_v_o       (fetch_instr_v_o)
         ,.fetch_is_second_half_o(fetch_is_second_half_o)
+        ,.fetch_instr_yumi_i    (fetch_instr_yumi_i)
         );
     end
   else
@@ -365,7 +361,6 @@ module bp_fe_pc_gen
       assign fetch_instr_v_o = fetch_v_i;
       assign fetch_is_second_half_o = 0;
     end
-
 
 `ifndef SYNTHESIS
   logic [`BSG_SAFE_CLOG2(max_ovr_half_count_nonsynth_lp+1)-1:0] ovr_half_count;

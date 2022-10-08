@@ -20,6 +20,7 @@ module bp_fe_realigner
    , input [instr_width_gp-1:0]  fetch_data_i
    , input                       fetch_data_v_i
 
+   , input store_v_i
     // poison_i takes precedence over fetch_data_v_i
     // restore_lower_half_v_i takes precedence over poison_i
    , input                           poison_i
@@ -31,6 +32,7 @@ module bp_fe_realigner
    , output [instr_width_gp-1:0] fetch_instr_o
    , output                      fetch_instr_v_o
    , output                      fetch_is_second_half_o
+   , input                       fetch_instr_yumi_i
    );
 
   wire [instr_half_width_gp-1:0] icache_data_lower_half_li = fetch_data_i[0                  +:instr_half_width_gp];
@@ -65,8 +67,8 @@ module bp_fe_realigner
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i  ((fetch_data_v_i & ~poison_i & (half_buffer_v_r | !icache_fetch_is_aligned)) | restore_lower_half_v_i)
-     ,.clear_i(fetch_instr_v_o | poison_i) // set overrides clear
+     ,.set_i  (fetch_data_v_i & store_v_i)
+     ,.clear_i(poison_i | fetch_instr_yumi_i) // set overrides clear
      ,.data_o (half_buffer_v_r)
      );
 
