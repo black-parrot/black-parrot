@@ -22,6 +22,8 @@ module bp_uce
     , parameter `BSG_INV_PARAM(block_width_p)
     , parameter `BSG_INV_PARAM(fill_width_p)
     , parameter `BSG_INV_PARAM(metadata_latency_p)
+    	// Cache tag width
+	  ,localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp + index_width_lp)
 
     `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
     )
@@ -87,9 +89,6 @@ module bp_uce
   localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
   localparam fill_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p>>3);
   localparam bank_sub_offset_width_lp = $clog2(fill_size_in_bank_lp);
-
-	// Cache tag width
-	localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp + index_width_lp);
 
   // Block size parameterisations
   localparam bp_bedrock_msg_size_e block_msg_size_lp = (block_width_p == 512)
@@ -665,7 +664,7 @@ module bp_uce
             // We fill in M because we don't want to trigger additional coherence traffic
             tag_mem_pkt_cast_o.way_id = fsm_rev_header_li.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
-            tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:ctag_width_p];
+            tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:ctag_width_lp];
             tag_mem_pkt_v_o = load_resp_v_li;
 
             data_mem_pkt_cast_o.opcode     = e_cache_data_mem_write;
@@ -698,7 +697,7 @@ module bp_uce
             // We fill in M because we don't want to trigger additional coherence traffic
             tag_mem_pkt_cast_o.way_id = fsm_rev_header_li.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
-            tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:ctag_width_p];
+            tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:ctag_width_lp];
             tag_mem_pkt_v_o = load_resp_v_li;
 
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;

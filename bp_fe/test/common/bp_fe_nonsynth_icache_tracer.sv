@@ -11,6 +11,7 @@ module bp_fe_nonsynth_icache_tracer
    , parameter block_width_p = 512
    , parameter fill_width_p = 512
    , parameter trace_file_p = "icache"
+   , localparam ctag_width_lp = caddr_width_p - (`BSG_SAFE_CLOG2(block_width_p*sets_p/8))
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
@@ -18,7 +19,6 @@ module bp_fe_nonsynth_icache_tracer
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
    , localparam bank_width_lp = block_width_p / assoc_p
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
-   , localparam ctag_width_lp = caddr_width_p - (`BSG_SAFE_CLOG2(block_width_p*sets_p/8))
    )
   (input                                                  clk_i
    , input                                                reset_i

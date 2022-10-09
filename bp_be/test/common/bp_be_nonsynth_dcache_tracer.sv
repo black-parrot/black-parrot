@@ -11,6 +11,7 @@ module bp_be_nonsynth_dcache_tracer
   , parameter block_width_p = 512
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
+  , localparam ctag_width_lp = caddr_width_p - (`BSG_SAFE_CLOG2(block_width_p*sets_p/8))
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
@@ -19,7 +20,6 @@ module bp_be_nonsynth_dcache_tracer
    , localparam bank_width_lp = block_width_p / assoc_p
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    , localparam wbuf_entry_width_lp = `bp_be_dcache_wbuf_entry_width(paddr_width_p, assoc_p)
-   , localparam ctag_width_lp = caddr_width_p - (`BSG_SAFE_CLOG2(block_width_p*sets_p/8))
    )
   (  input                                                clk_i
    , input                                                reset_i

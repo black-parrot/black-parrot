@@ -147,7 +147,7 @@ module bp_cacc_vdp
   cache_req_complete_lo, cache_req_critical_tag_lo, cache_req_critical_data_lo,
   cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;
