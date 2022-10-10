@@ -43,7 +43,7 @@ module testbench
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache)
    )
   (output bit reset_i);
 
@@ -330,7 +330,7 @@ module testbench
      ,.msg_last_o(lce_cmd_last_li)
      );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache);
 
   bp_cache_req_s [num_lce_p-1:0] cache_req_lo;
   logic [num_lce_p-1:0] cache_req_v_lo, cache_req_yumi_li, cache_req_busy_li;

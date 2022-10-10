@@ -56,13 +56,13 @@
       ,bht_row_els              : 2
       ,ghist_width              : 2
 
-      ,icache_sets        : 512
+      ,icache_sets        : 128
       ,icache_assoc       : 1
       ,icache_block_width : 64
       ,icache_fill_width  : 64
 
       ,dcache_amo_support : (1 << e_lr_sc)
-      ,dcache_sets        : 512
+      ,dcache_sets        : 128
       ,dcache_assoc       : 1
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64

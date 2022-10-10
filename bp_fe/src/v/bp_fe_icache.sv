@@ -36,13 +36,14 @@ module bp_fe_icache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to icache parameters, but can override if needed
-   , parameter coherent_p    = icache_coherent_p
-   , parameter sets_p        = icache_sets_p
-   , parameter assoc_p       = icache_assoc_p
-   , parameter block_width_p = icache_block_width_p
-   , parameter fill_width_p  = icache_fill_width_p
+   , parameter coherent_p     = icache_coherent_p
+   , parameter sets_p         = icache_sets_p
+   , parameter assoc_p        = icache_assoc_p
+   , parameter block_width_p  = icache_block_width_p
+   , parameter fill_width_p   = icache_fill_width_p
+   , localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp + sindex_width_lp)
 
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
@@ -105,7 +106,7 @@ module bp_fe_icache
    , output logic [icache_stat_info_width_lp-1:0]     stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
@@ -147,7 +148,7 @@ module bp_fe_icache
   wire is_fill   = (icache_pkt_cast_i.op inside {e_icache_fill});
 
   wire [vaddr_width_p-1:0]   vaddr       = icache_pkt_cast_i.vaddr;
-  wire [vtag_width_p-1:0]    vaddr_vtag  = vaddr[block_offset_width_lp+sindex_width_lp+:vtag_width_p];
+  wire [vtag_width_p-1:0]    vaddr_vtag  = vaddr[(vaddr_width_p-1)-:vtag_width_p];
   wire [sindex_width_lp-1:0] vaddr_index = vaddr[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0] vaddr_bank  = vaddr[byte_offset_width_lp+:bindex_width_lp];
 
@@ -232,14 +233,19 @@ module bp_fe_icache
      );
 
   wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_gp]};
-  wire [vtag_width_p-1:0]     vaddr_vtag_tl = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:vtag_width_p];
+  wire [vtag_width_p-1:0]     vaddr_vtag_tl = vaddr_tl_r[(vaddr_width_p-1)-:vtag_width_p];
   wire [sindex_width_lp-1:0] vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0]  vaddr_bank_tl = vaddr_tl_r[byte_offset_width_lp+:bindex_width_lp];
+
+  // Concatenate unused bits from vaddr if any when cache size is not 4kb
+  localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
+  wire [ctag_vbits_lp-1:0] ctag_vbits = vaddr_tl_r[page_offset_width_gp-1:block_offset_width_lp+sindex_width_lp];
+  wire [ctag_width_lp-1:0] ctag_li = {ptag_i, {ctag_vbits_lp>0{ctag_vbits}}};
 
   logic [assoc_p-1:0] way_v_tl, hit_v_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
     assign way_v_tl[i] = (tag_mem_data_lo[i].state != e_COH_I);
-    assign hit_v_tl[i] = (tag_mem_data_lo[i].tag == ptag_i) && way_v_tl[i];
+    assign hit_v_tl[i] = (tag_mem_data_lo[i].tag == ctag_li && way_v_tl[i]);
   end
   wire cached_hit_tl     = |hit_v_tl;
   wire fetch_uncached_tl = (fetch_op_tl_r &  ptag_uncached_i);
@@ -505,7 +511,7 @@ module bp_fe_icache
           begin
             tag_mem_data_li[i]   = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
             tag_mem_w_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
-                                     ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
+                                     ,tag : {ctag_width_lp{tag_mem_way_one_hot[i]}}
                                      };
           end
         e_cache_tag_mem_set_state:
@@ -581,7 +587,7 @@ module bp_fe_icache
      ,.o(data_mem_write_bank_mask)
      );
 
-  wire data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & v_tl_r;
+  wire data_mem_bypass = (vaddr[vaddr_width_p-1:block_offset_width_lp] == vaddr_tl_r[vaddr_width_p-1:block_offset_width_lp]) & v_tl_r;
 
   logic [assoc_p-1:0] data_mem_fast_read, data_mem_fast_write, data_mem_slow_read, data_mem_slow_write;
   for (genvar i = 0; i < assoc_p; i++)
@@ -677,9 +683,12 @@ module bp_fe_icache
      );
 
   //synopsys translate_off
-  if (`BSG_SAFE_CLOG2(block_width_p*sets_p/8) != page_offset_width_gp) begin
+  if (`BSG_SAFE_CLOG2(block_width_p*sets_p/8) > page_offset_width_gp) begin
     $error("Total cache size must be equal to 4kB * associativity");
   end
   //synopsys translate_on
+
+  if (!(`BSG_IS_POW2(assoc_p)))
+    $fatal("Associativity must be power of two");
 
 endmodule

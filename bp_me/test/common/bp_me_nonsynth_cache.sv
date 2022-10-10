@@ -44,7 +44,9 @@ module bp_me_nonsynth_cache
     , localparam counter_max_p = 512
     , localparam counter_width_p=`BSG_WIDTH(counter_max_p+1)
 
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+    , localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp+lg_sets_lp)
+
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
    )
    (
     input                                                   clk_i
@@ -92,7 +94,7 @@ module bp_me_nonsynth_cache
     , output logic [cache_stat_info_width_lp-1:0]           stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   // Trace Replay Interface
   `declare_bp_me_nonsynth_tr_pkt_s(paddr_width_p, dword_width_gp);
@@ -126,7 +128,7 @@ module bp_me_nonsynth_cache
   wire [2:0] byte_offset = tr_pkt_r.paddr[2:0];
   wire [2:0] dword_offset = tr_pkt_r.paddr[5:3];
   wire uc_op = tr_pkt_r.uncached;
-  wire [ctag_width_p-1:0] tr_tag = tr_pkt_r.paddr[tag_offset_lp+:ctag_width_p];
+  wire [ctag_width_lp-1:0] tr_tag = tr_pkt_r.paddr[tag_offset_lp+:ctag_width_lp];
 
   // cache locked signal to block LCE x_mem_pkt operations
   // need to lock once cache accepts TR pkt until send to LCE
@@ -200,7 +202,7 @@ module bp_me_nonsynth_cache
 
   bp_me_nonsynth_cache_tag_lookup
     #(.assoc_p(assoc_p)
-      ,.tag_width_p(ctag_width_p)
+      ,.tag_width_p(ctag_width_lp)
       )
     tag_lookup
     (.tag_set_i(tag_mem_data_lo)
