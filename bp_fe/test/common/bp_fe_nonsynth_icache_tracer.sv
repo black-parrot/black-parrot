@@ -11,9 +11,9 @@ module bp_fe_nonsynth_icache_tracer
    , parameter block_width_p = 512
    , parameter fill_width_p = 512
    , parameter trace_file_p = "icache"
-   , localparam ctag_width_lp = caddr_width_p - (`BSG_SAFE_CLOG2(block_width_p*sets_p/8))
+   , parameter ctag_width_p = 27
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
@@ -64,7 +64,7 @@ module bp_fe_nonsynth_icache_tracer
    , input [paddr_width_p-1:0]                            paddr_tv_r
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt_cast_i;
   assign icache_pkt_cast_i = icache_pkt_i;

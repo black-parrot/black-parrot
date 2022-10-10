@@ -22,12 +22,6 @@ module bp_lce
    , parameter `BSG_INV_PARAM(sets_p)
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
-   // number of LCE command buffer elements
-   , parameter cmd_buffer_els_p = 2
-   , parameter cmd_data_buffer_els_p = 2
-   // number of LCE fill message buffer elements
-   , parameter fill_buffer_els_p = 2
-   , parameter fill_data_buffer_els_p = 2
 
    // LCE-cache interface timeout in cycles
    , parameter timeout_max_limit_p=4
@@ -37,13 +31,11 @@ module bp_lce
    , parameter non_excl_reads_p = 0
    // latency of request metadata in cycles, must be 0 or 1
    // BP caches' metadata arrives cycle after request, by default
-   , parameter metadata_latency_p = 1
+   , parameter `BSG_INV_PARAM(metadata_latency_p)
+   , parameter `BSG_INV_PARAM(ctag_width_p)
   
-	 // Cache tag width
-   , localparam ctag_width_lp = caddr_width_p - (`BSG_SAFE_CLOG2(block_width_p*sets_p/8))
-
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
   (
     input                                            clk_i
@@ -151,12 +143,8 @@ module bp_lce
     $error("fill width must be greater or equal than cache request data width");
   if ((metadata_latency_p > 1))
     $error("metadata needs to arrive <2 cycles after the request");
-  if (cmd_buffer_els_p < 1 || fill_buffer_els_p < 1)
-    $error("LCEs require buffers for at least 1 command and fill header");
-  if (cmd_data_buffer_els_p < 1 || fill_data_buffer_els_p < 1)
-    $error("LCEs require buffers for at least 1 command and fill data beat");
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
 
   // LCE Request Module
@@ -170,6 +158,7 @@ module bp_lce
      ,.sets_p(sets_p)
      ,.block_width_p(block_width_p)
      ,.fill_width_p(fill_width_p)
+     ,.ctag_width_p(ctag_width_p)
      ,.credits_p(credits_p)
      ,.non_excl_reads_p(non_excl_reads_p)
      ,.metadata_latency_p(metadata_latency_p)
@@ -291,8 +280,7 @@ module bp_lce
      ,.sets_p(sets_p)
      ,.block_width_p(block_width_p)
      ,.fill_width_p(fill_width_p)
-     ,.cmd_buffer_els_p(cmd_buffer_els_p)
-     ,.cmd_data_buffer_els_p(cmd_data_buffer_els_p)
+     ,.ctag_width_p(ctag_width_p)
      )
    command
     (.clk_i(clk_i)

@@ -237,6 +237,8 @@ module bp_cacc_vdp
      ,.sets_p(acache_sets_p)
      ,.block_width_p(acache_block_width_p)
      ,.fill_width_p(acache_fill_width_p)
+     ,.ctag_width_p(acache_ctag_width_p)
+     ,.metadata_latency_p(1)
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)
      )

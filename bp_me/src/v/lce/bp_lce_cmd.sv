@@ -22,10 +22,7 @@ module bp_lce_cmd
    , parameter `BSG_INV_PARAM(sets_p)
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
-   // number of LCE command buffer elements
-   , parameter cmd_buffer_els_p = 2
-   // number of LCE command data buffer elements
-   , parameter cmd_data_buffer_els_p = cmd_buffer_els_p*(block_width_p/fill_width_p)
+   , parameter `BSG_INV_PARAM(ctag_width_p)
 
    // derived parameters
    , localparam lg_assoc_lp = `BSG_SAFE_CLOG2(assoc_p)
@@ -52,11 +49,8 @@ module bp_lce_cmd
    // coherence request size for cached requests
    , localparam bp_bedrock_msg_size_e cmd_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8))
 
-   // Cache tag width
-   , localparam ctag_width_lp = caddr_width_p - (block_byte_offset_lp + lg_sets_lp)
-
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
   (
     input                                            clk_i
@@ -130,7 +124,7 @@ module bp_lce_cmd
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
   `bp_cast_o(bp_bedrock_lce_fill_header_s, lce_fill_header);
   `bp_cast_o(bp_bedrock_lce_resp_header_s, lce_resp_header);
@@ -143,10 +137,8 @@ module bp_lce_cmd
   // Required for handshake conversion for cache interface packets
   bp_bedrock_lce_cmd_header_s lce_cmd_header_cast_li;
   logic lce_cmd_header_v_li, lce_cmd_header_yumi_lo, lce_cmd_has_data;
-  bsg_fifo_1r1w_small
-    #(.width_p(lce_cmd_header_width_lp+1)
-      ,.els_p(cmd_buffer_els_p)
-      )
+  bsg_two_fifo
+    #(.width_p(lce_cmd_header_width_lp+1))
     lce_cmd_header_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -162,10 +154,8 @@ module bp_lce_cmd
   // required to prevent deadlock in multicore networks
   logic [fill_width_p-1:0] lce_cmd_data_li;
   logic lce_cmd_data_v_li, lce_cmd_last_li, lce_cmd_data_yumi_lo;
-  bsg_fifo_1r1w_small
-    #(.width_p(fill_width_p+1)
-      ,.els_p(cmd_data_buffer_els_p)
-      )
+  bsg_two_fifo
+   #(.width_p(fill_width_p+1))
     lce_cmd_data_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -327,13 +317,13 @@ module bp_lce_cmd
 
   // common fields from LCE Command used in many states for responses or pkt fields
   logic [lg_sets_lp-1:0] lce_cmd_addr_index;
-  logic [ctag_width_lp-1:0] lce_cmd_addr_tag;
+  logic [ctag_width_p-1:0] lce_cmd_addr_tag;
   logic [lg_assoc_lp-1:0] lce_cmd_way_id;
 
   assign lce_cmd_addr_index = (sets_p > 1)
                               ? lce_cmd_header_cast_li.addr[block_byte_offset_lp+:lg_sets_lp]
                               : '0;
-  assign lce_cmd_addr_tag = lce_cmd_header_cast_li.addr[tag_offset_lp+:ctag_width_lp];
+  assign lce_cmd_addr_tag = lce_cmd_header_cast_li.addr[tag_offset_lp+:ctag_width_p];
   assign lce_cmd_way_id = lce_cmd_header_cast_li.payload.way_id[0+:lg_assoc_lp];
 
   // LCE Command module is ready after it clears the cache's tag and stat memories
