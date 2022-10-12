@@ -65,7 +65,7 @@ module bp_me_addr_to_cce_id
       if (external_io_v_li || (local_addr_v_li && (local_addr_li.dev inside {host_dev_gp})))
         // Stripe by 4kiB page, start at io CCE id
         cce_id_o = (num_io_p > 1)
-                   ? max_sac_cce_lp + paddr_i[page_offset_width_gp+:`BSG_SAFE_CLOG2(num_io_p)]
+                   ? max_sac_cce_lp + paddr_i[page_offset_width_gp+: (num_io_p > 1 ? `BSG_SAFE_CLOG2(num_io_p) : 1)]
                    : max_sac_cce_lp;
       else if (local_addr_v_li)
         // Split uncached I/O region by max 128 cores
