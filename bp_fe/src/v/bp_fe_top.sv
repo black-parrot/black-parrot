@@ -94,7 +94,7 @@ module bp_fe_top
   bp_fe_icache_pkt_s icache_pkt_li;
   logic [instr_width_gp-1:0] icache_data_lo;
   logic icache_v_li, icache_force_li, icache_yumi_lo;
-  logic icache_tv_we, icache_data_v_lo, icache_spec_v_lo, icache_fence_v_lo;
+  logic icache_tv_we, icache_data_v_lo, icache_spec_v_lo, icache_fence_v_lo, icache_yumi_li;
 
   logic redirect_v_li;
   logic [vaddr_width_p-1:0] redirect_pc_li;
