@@ -122,6 +122,7 @@ module wrapper
      ,.data_o(data_o)
      ,.data_v_o(data_v_o)
      ,.spec_v_o()
+     ,.fence_v_o()
      ,.yumi_i(ready_i & data_v_o)
 
      ,.cache_req_o(cache_req_lo)

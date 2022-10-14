@@ -292,7 +292,7 @@ module bp_fe_icache
    #(.width_p(2*assoc_p), .els_p(2))
    hit_mux
     (.data_i({{2{tag_mem_pseudo_hit}}, {way_v_tl, hit_v_tl}})
-     ,.sel_i(cache_req_critical_tag_i)
+     ,.sel_i(cache_req_critical_tag_i | cache_req_complete_i)
      ,.data_o({way_v_tv_n, hit_v_tv_n})
      );
 
