@@ -161,17 +161,19 @@ module bp_tlb
 
   logic [els_1g_lp-1:0][r_entry_high_bits_lp-1:0] data_1g_high_r;
   wire [els_1g_lp-1:0] mem_1g_w_v_li = ({els_1g_lp{fill_gigapage}} & repl_way_1g_lo);
-  for (genvar i = 0; i < els_1g_p; i++)
-    begin : mem_array_1g
-      bsg_dff_en
-        #(.width_p(r_entry_high_bits_lp))
-        mem_reg
-         (.clk_i(clk_i)
-          ,.en_i(mem_1g_w_v_li[i])
-          ,.data_i(entry_shifted[r_entry_low_bits_lp+:r_entry_high_bits_lp])
-          ,.data_o(data_1g_high_r[i])
-          );
-    end
+  if (els_1g_p == 0) assign data_1g_high_r = '0;
+  else
+    for (genvar i = 0; i < els_1g_p; i++)
+      begin : mem_array_1g
+        bsg_dff_en
+          #(.width_p(r_entry_high_bits_lp))
+          mem_reg
+          (.clk_i(clk_i)
+            ,.en_i(mem_1g_w_v_li[i])
+            ,.data_i(entry_shifted[r_entry_low_bits_lp+:r_entry_high_bits_lp])
+            ,.data_o(data_1g_high_r[i])
+            );
+      end
 
   bp_pte_leaf_s r_entry;
   bsg_mux_one_hot
