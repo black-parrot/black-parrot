@@ -110,7 +110,7 @@ module bp_fe_controller
   wire attaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
 
   wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
-  wire cmd_immediate_v  = fe_cmd_v_i & (pc_redirect_v | icache_fill_response_v);
+  wire cmd_immediate_v  = fe_cmd_v_i & (pc_redirect_v | icache_fill_response_v | wait_v);
   wire cmd_complex_v    = fe_cmd_v_i & ~cmd_immediate_v & cmd_nonattaboy_v;
 
   assign redirect_v_o               = ~attaboy_v & fe_cmd_yumi_o;
