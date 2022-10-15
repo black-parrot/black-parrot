@@ -292,19 +292,29 @@ module bp_fe_icache
    #(.width_p(2*assoc_p), .els_p(2))
    hit_mux
     (.data_i({{2{tag_mem_pseudo_hit}}, {way_v_tl, hit_v_tl}})
-     ,.sel_i(cache_req_critical_tag_i | cache_req_complete_i)
+     ,.sel_i(cache_req_critical_tag_i)
      ,.data_o({way_v_tv_n, hit_v_tv_n})
      );
 
-  wire fill_tv_n = cache_req_critical_tag_i || cache_req_complete_i || spec_tl || (fencei_op_tl_r & coherent_p);
   bsg_dff_reset_en
-   #(.width_p(1+2*assoc_p))
+   #(.width_p(2*assoc_p))
    hit_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(tv_we | cache_req_critical_tag_i | cache_req_complete_i)
-     ,.data_i({fill_tv_n, way_v_tv_n, hit_v_tv_n})
-     ,.data_o({fill_tv_r, way_v_tv_r, hit_v_tv_r})
+     ,.en_i(tv_we | cache_req_critical_tag_i)
+     ,.data_i({way_v_tv_n, hit_v_tv_n})
+     ,.data_o({way_v_tv_r, hit_v_tv_r})
+     );
+
+  wire fill_tv_n = cache_req_complete_i || spec_tl || (fencei_op_tl_r & coherent_p);
+  bsg_dff_reset_en
+   #(.width_p(1))
+   fill_tv_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(tv_we | cache_req_complete_i)
+     ,.data_i(fill_tv_n)
+     ,.data_o(fill_tv_r)
      );
 
   // Snoop logic
@@ -512,7 +522,7 @@ module bp_fe_icache
 
   // Accept requests when we're in ready state and there's no blocked request in TL
   // Also accept request when 'forced'
-  assign yumi_o = v_i & (~v_tl_r | tv_we | force_i) & ~cache_req_busy_i;
+  assign yumi_o = ~is_recover & v_i & (~v_tl_r | tv_we | force_i) & ~cache_req_busy_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control
