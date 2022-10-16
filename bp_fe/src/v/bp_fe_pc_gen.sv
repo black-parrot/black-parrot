@@ -313,7 +313,7 @@ module bp_fe_pc_gen
      );
 
   // Override calculations
-  wire nonlinear_fetch = pred_if1_r || ovr_btaken || ovr_jmp || ovr_ret;
+  wire nonlinear_fetch = taken_if1_r || ovr_btaken || ovr_jmp || ovr_ret;
   wire pc_if2_misaligned = !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   // TODO: a jump that skips only one instruction within misaligned code can erroneously pass this check
