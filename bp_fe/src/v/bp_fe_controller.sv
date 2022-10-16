@@ -172,7 +172,7 @@ module bp_fe_controller
           end
         e_wait, e_run:
           begin
-            icache_v_o = (is_run & ~cmd_complex_v) || (is_wait && cmd_immediate_v);
+            icache_v_o = (is_run & ~cmd_complex_v) || (is_wait && cmd_nonattaboy_v);
             if1_we_o = icache_yumi_i & ~cmd_complex_v;
             itlb_r_v_o = icache_yumi_i;
             itlb_w_v_o = itlb_fill_response_v;
