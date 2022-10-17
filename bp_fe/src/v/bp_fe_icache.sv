@@ -6,8 +6,8 @@
  * Description:
  *   L1 Instruction Cache. Features:
  *   - Virtually-indexed, physically-tagged
- *   - 2-8 way set-associative
- *   - 128-512 bit block size (minimum 64-bit data mem bank size)
+ *   - 1-8 way set-associative
+ *   - 64-512 bit block size (minimum 64-bit data mem bank size)
  *   - Separate speculative and non-speculative fetch commands
  *
  *   An address is broken down as follows:
@@ -18,6 +18,8 @@
  *   - Data Mem: Cache data blocks. 1 bank per way, with data
  *       interleaved between the banks as bank_id = word_offset + way_id
  *   - Stat Mem: Contains the LRU and information for the cache line
+ *
+ * See interface for usage notes
  *
  * Notes:
  *    Supports multi-cycle fill/eviction with the UCE in unicore configuration
@@ -53,7 +55,14 @@ module bp_fe_icache
    , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
 
    // Cycle 0: "Decode"
-   // New I$ packet comes in for a fetch, fence or fill request.
+   // New I$ packet comes in for a fetch, fence or fill request
+   // v_i is raised when there is a new request
+   // yumi_o is raised when that request is accepted
+   // poison_tl_i negates the yumi_o without putting pressure on SRAM paths
+   // Normally, yumi_o waits for TL to be empty so as to not lose
+   //   requests. However, when we're redirecting the I$ we may want
+   //   to override the TL message right away. force_i says to accept
+   //   regardless of v_tl_r status
    , input [icache_pkt_width_lp-1:0]                  icache_pkt_i
    , input                                            v_i
    , input                                            force_i
@@ -62,6 +71,8 @@ module bp_fe_icache
 
    // Cycle 1: "Tag Lookup"
    // TLB and PMA information comes in this cycle
+   // poison_tv_i eliminates the request in this stage, used for redirections
+   // We output tv_we as a signal to move parallel pipelines forward
    , input [ptag_width_p-1:0]                         ptag_i
    , input                                            ptag_v_i
    , input                                            ptag_uncached_i
@@ -72,6 +83,13 @@ module bp_fe_icache
 
    // Cycle 2: "Tag Verify"
    // Data (or miss result) comes out of the cache
+   // Cache engine requests cannot be cancelled once they come here, but poison_tv_i
+   //   will prevent them from escaping the I$.
+   // data_o is the outgoing data, with data_v_o being valid
+   // fence_v_o is if a fence instruction has completed
+   // spec_v_o is if there is a cache miss, but we have decided not to send it out
+   //   because we need backend confirmation of its validity
+   // yumi_i is required to dequeue any of these outputs
    , output logic [instr_width_gp-1:0]                data_o
    , output logic                                     data_v_o
    , output logic                                     fence_v_o

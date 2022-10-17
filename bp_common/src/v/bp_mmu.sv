@@ -57,26 +57,36 @@ module bp_mmu
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
+  logic trans_en_r, sum_r, mxr_r;
+  logic [1:0] priv_mode_r;
+  bsg_dff_reset
+   #(.width_p(5))
+   base_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i({mxr_i, sum_i, priv_mode_i, trans_en_i})
+     ,.data_o({mxr_r, sum_r, priv_mode_r, trans_en_r})
+     );
+
   // This logic only works for 8-byte words max.
-  logic misaligned;
+  logic r_misaligned;
   always_comb
     case (r_size_i)
-      2'b01: misaligned = |r_eaddr_i[0+:1];
-      2'b10: misaligned = |r_eaddr_i[0+:2];
-      2'b11: misaligned = |r_eaddr_i[0+:3];
-      default: misaligned = '0;
+      2'b01: r_misaligned = |r_eaddr_i[0+:1];
+      2'b10: r_misaligned = |r_eaddr_i[0+:2];
+      2'b11: r_misaligned = |r_eaddr_i[0+:3];
+      default: r_misaligned = '0;
     endcase
 
-  logic trans_en_r, r_instr_r, r_load_r, r_store_r, sum_r, mxr_r, misaligned_r;
-  logic [1:0] priv_mode_r;
+  logic r_instr_r, r_load_r, r_store_r, r_misaligned_r;
   bsg_dff_reset_en
-   #(.width_p(9))
+   #(.width_p(4))
    read_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(r_v_i)
-     ,.data_i({misaligned, mxr_i, sum_i, priv_mode_i, trans_en_i, r_instr_i, r_load_i, r_store_i})
-     ,.data_o({misaligned_r, mxr_r, sum_r, priv_mode_r, trans_en_r, r_instr_r, r_load_r, r_store_r})
+     ,.data_i({r_misaligned, r_instr_i, r_load_i, r_store_i})
+     ,.data_o({r_misaligned_r, r_instr_r, r_load_r, r_store_r})
      );
 
   logic [etag_width_p-1:0] r_etag_r;
@@ -192,9 +202,9 @@ module bp_mmu
   assign r_uncached_o            =  tlb_v_lo & ptag_uncached_lo;
   assign r_nonidem_o             =  tlb_v_lo & ptag_nonidem_lo;
   assign r_dram_o                =  tlb_v_lo & ptag_dram_lo;
-  assign r_instr_misaligned_o    = misaligned_r & r_instr_r;
-  assign r_load_misaligned_o     = misaligned_r & r_load_r;
-  assign r_store_misaligned_o    = misaligned_r & r_store_r;
+  assign r_instr_misaligned_o    = r_misaligned_r & r_instr_r;
+  assign r_load_misaligned_o     = r_misaligned_r & r_load_r;
+  assign r_store_misaligned_o    = r_misaligned_r & r_store_r;
   assign r_instr_access_fault_o  = instr_access_fault_v;
   assign r_load_access_fault_o   = load_access_fault_v;
   assign r_store_access_fault_o  = store_access_fault_v;
