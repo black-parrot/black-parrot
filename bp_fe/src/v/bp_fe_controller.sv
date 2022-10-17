@@ -109,6 +109,7 @@ module bp_fe_controller
 
   wire attaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
 
+  wire cmd_nonreset_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_state_reset);
   wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
   wire cmd_immediate_v  = fe_cmd_v_i & (pc_redirect_v | icache_fill_response_v | wait_v);
   wire cmd_complex_v    = fe_cmd_v_i & ~cmd_immediate_v & cmd_nonattaboy_v;
@@ -127,7 +128,7 @@ module bp_fe_controller
   assign attaboy_ntaken_o          = attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken;
   assign attaboy_br_metadata_fwd_o = fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
 
-  assign fe_cmd_yumi_o = (cmd_nonattaboy_v & if1_we_o) || attaboy_yumi_i;
+  assign fe_cmd_yumi_o = (cmd_nonattaboy_v & if1_we_o) || attaboy_yumi_i || (is_reset && cmd_nonreset_v);
 
   assign shadow_priv_w_o = state_reset_v | trap_v | interrupt_v | eret_v;
   assign shadow_priv_o = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
