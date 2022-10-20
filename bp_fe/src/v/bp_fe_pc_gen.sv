@@ -252,6 +252,7 @@ module bp_fe_pc_gen
       metadata_if1.site_return |= fetch_instr_return_v_li;
     end
 
+  // TODO: mask all usages of BTB and BHT outputs if read was not performed last cycle
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
   assign pc_plus4             = pc_if1_r + vaddr_width_p'(4);
 
