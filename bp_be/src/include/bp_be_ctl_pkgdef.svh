@@ -253,7 +253,7 @@
     logic cmd_full;
 
     // Metadata for instruction exceptions (instr_page_fault,instr_access_fault, itlb_miss, icache_miss)
-    logic upper_not_lower_half;
+    logic instr_partial_v;
   }  bp_be_exception_s;
 
   typedef struct packed

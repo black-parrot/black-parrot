@@ -29,8 +29,8 @@ module bp_fe_pc_gen
    , input                                           redirect_br_taken_i
    , input                                           redirect_br_ntaken_i
    , input                                           redirect_br_nonbr_i
-   , input                                           redirect_restore_insn_lower_half_v_i
-   , input [instr_half_width_gp-1:0]                 redirect_restore_insn_lower_half_i
+   , input                                           redirect_resume_v_i
+   , input [instr_half_width_gp-1:0]                 redirect_resume_instr_i
 
 
    , output logic [vaddr_width_p-1:0]                next_fetch_o
@@ -103,7 +103,7 @@ module bp_fe_pc_gen
         next_pred  = redirect_br_taken_i;
         next_taken = redirect_br_taken_i;
         next_pc    = redirect_pc_i;
-        next_pc_nonlinear = !redirect_restore_insn_lower_half_v_i;
+        next_pc_nonlinear = !redirect_resume_v_i;
 
         next_metadata = redirect_br_metadata_fwd;
       end
@@ -348,10 +348,10 @@ module bp_fe_pc_gen
         ,.fetch_data_v_i(fetch_v_i)
 
         ,.store_v_i  (fetch_half_v)
-        ,.poison_v_i (redirect_v_i & ~redirect_restore_insn_lower_half_v_i)
+        ,.poison_v_i (redirect_v_i & ~redirect_resume_v_i)
 
-        ,.restore_lower_half_v_i         (redirect_restore_insn_lower_half_v_i)
-        ,.restore_lower_half_i           (redirect_restore_insn_lower_half_i)
+        ,.restore_lower_half_v_i         (redirect_resume_v_i)
+        ,.restore_lower_half_i           (redirect_resume_instr_i)
         ,.restore_lower_half_next_vaddr_i(redirect_pc_i)
 
         ,.fetch_instr_pc_o      (fetch_pc_o)

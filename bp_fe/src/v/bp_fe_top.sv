@@ -110,8 +110,8 @@ module bp_fe_top
      ,.redirect_br_taken_i(redirect_br_taken_li)
      ,.redirect_br_ntaken_i(redirect_br_ntaken_li)
      ,.redirect_br_nonbr_i(redirect_br_nonbr_li)
-     ,.redirect_restore_insn_lower_half_v_i(redirect_restore_insn_lower_half_v_li)
-     ,.redirect_restore_insn_lower_half_i(redirect_restore_insn_lower_half_li)
+     ,.redirect_resume_v_i(redirect_restore_insn_lower_half_v_li)
+     ,.redirect_resume_instr_i(redirect_restore_insn_lower_half_li)
 
      ,.next_fetch_o(next_fetch_lo)
      ,.next_fetch_yumi_i(next_fetch_yumi_li)
