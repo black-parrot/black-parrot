@@ -106,8 +106,6 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       bp_pte_leaf_s              pte_leaf;                                                         \
-      logic [vaddr_width_mp-page_offset_width_gp-1:0]                                              \
-                                 vtag;                                                             \
       logic [instr_width_gp-1:0] instr;                                                            \
       logic [`bp_fe_cmd_itlb_map_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
@@ -211,7 +209,7 @@
     (        1+branch_metadata_fwd_width_mp)
 
   `define bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp) \
-    (`bp_pte_leaf_width(paddr_width_mp)+vaddr_width_mp-page_offset_width_gp+instr_width_gp)
+    (`bp_pte_leaf_width(paddr_width_mp)+instr_width_gp)
 
   `define bp_fe_cmd_icache_fill_width_no_padding \
     (instr_width_gp)
