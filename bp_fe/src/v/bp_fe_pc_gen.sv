@@ -15,7 +15,7 @@ module bp_fe_pc_gen
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   , localparam max_ovr_half_count_nonsynth_lp = (2**30)-1
+   , localparam max_ovr_ntaken_count_nonsynth_lp = (2**30)-1
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -85,11 +85,11 @@ module bp_fe_pc_gen
   ///////////////////////////
   bp_fe_branch_metadata_fwd_s next_metadata, ovr_metadata;
   logic next_pred, next_taken;
-  logic ovr_ret, ovr_btaken, ovr_jmp, ovr_half, btb_taken;
+  logic ovr_ret, ovr_btaken, ovr_jmp, ovr_ntaken, btb_taken;
   logic [vaddr_width_p-1:0] pc_plus4;
   logic [vaddr_width_p-1:0] ras_tgt_lo;
   logic [vaddr_width_p-1:0] br_tgt_lo;
-  logic [vaddr_width_p-1:0] if2_second_half_addr;
+  logic [vaddr_width_p-1:0] pc_plus4_if2;
   logic [btb_tag_width_p-1:0] btb_tag_if1;
   logic [btb_idx_width_p-1:0] btb_idx_if1;
   logic [bht_idx_width_p-1:0] bht_idx_if1;
@@ -107,9 +107,9 @@ module bp_fe_pc_gen
 
         next_metadata = redirect_br_metadata_fwd;
       end
-    else if (ovr_half) begin
+    else if (ovr_ntaken) begin
         next_pred  = '0;
-        next_pc           = if2_second_half_addr;
+        next_pc           = pc_plus4_if2;
         next_taken = '0;
         next_pc_nonlinear = 1'b0;
     end else if (ovr_o)
@@ -275,7 +275,7 @@ module bp_fe_pc_gen
      ,.data_o({pred_if2_r, taken_if2_r, metadata_if2_r, pc_if2_r})
      );
 
-  assign if2_second_half_addr = pc_if2_r + vaddr_width_p'(4);
+  assign pc_plus4_if2 = pc_if2_r + vaddr_width_p'(4);
 
   // Scan fetched instruction
   bp_fe_instr_scan_s scan_instr;
@@ -322,7 +322,7 @@ module bp_fe_pc_gen
   assign ovr_ret    = btb_miss_ras & fetch_instr_return_v_li & ras_valid_lo;
   assign ovr_btaken = btb_miss_br & fetch_instr_br_v_li & pred_if1_r;
   assign ovr_jmp    = btb_miss_br & fetch_instr_jal_v_li;
-  assign ovr_half   = compressed_support_p
+  assign ovr_ntaken   = compressed_support_p
                     & fetch_v_i
                     & taken_if1_r
                     & (  (!fetch_is_second_half_o && pc_if2_misaligned)
@@ -330,7 +330,7 @@ module bp_fe_pc_gen
                       || ( fetch_is_second_half_o && !fetch_instr_v_o ));
   wire fetch_half_v =    (!fetch_is_second_half_o && pc_if2_misaligned)
                       || ( fetch_is_second_half_o && !taken_jump_site_if2 );
-  assign ovr_o      = ovr_btaken | ovr_jmp | ovr_ret | ovr_half;
+  assign ovr_o      = ovr_btaken | ovr_jmp | ovr_ret | ovr_ntaken;
   assign br_tgt_lo  = fetch_pc_o + scan_imm;
 
   assign fetch_resume_pc_o = pc_if2_r;
@@ -371,16 +371,16 @@ module bp_fe_pc_gen
     end
 
 `ifndef SYNTHESIS
-  logic [`BSG_SAFE_CLOG2(max_ovr_half_count_nonsynth_lp+1)-1:0] ovr_half_count;
+  logic [`BSG_SAFE_CLOG2(max_ovr_ntaken_count_nonsynth_lp+1)-1:0] ovr_ntaken_count;
   bsg_counter_clear_up
-    #(.max_val_p(max_ovr_half_count_nonsynth_lp), .init_val_p(0))
-    ovr_half_counter
+    #(.max_val_p(max_ovr_ntaken_count_nonsynth_lp), .init_val_p(0))
+    ovr_ntaken_counter
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
       ,.clear_i(reset_i)
-      ,.up_i(ovr_half & !redirect_v_i)
-      ,.count_o(ovr_half_count)
+      ,.up_i(ovr_ntaken & !redirect_v_i)
+      ,.count_o(ovr_ntaken_count)
       );
 `endif
 
