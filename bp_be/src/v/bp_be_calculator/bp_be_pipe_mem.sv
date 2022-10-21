@@ -151,13 +151,14 @@ module bp_be_pipe_mem
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data, dcache_late_data;
+  logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data;
+  logic                     dcache_final_late, dcache_final_load;
   rv64_fflags_s             dcache_early_fflags;
-  logic [reg_addr_width_gp-1:0] dcache_late_rd_addr;
+  logic [reg_addr_width_gp-1:0] dcache_final_rd_addr;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_pkt_v;
-  logic                     dcache_early_miss_v, dcache_early_fencei, dcache_early_hit_v, dcache_final_v;
-  logic                     dcache_late_float, dcache_late_v, dcache_late_yumi;
+  logic                     dcache_early_miss_v, dcache_early_fencei, dcache_early_hit_v;
+  logic                     dcache_final_float, dcache_final_v, dcache_final_yumi;
   logic                     dcache_ptag_v;
   logic                     dcache_ptag_uncached;
   logic                     dcache_ptag_dram;
@@ -309,14 +310,14 @@ module bp_be_pipe_mem
       ,.early_fencei_o(dcache_early_fencei)
       ,.early_data_o(dcache_early_data)
       ,.early_fflags_o(dcache_early_fflags)
-      ,.final_data_o(dcache_final_data)
-      ,.final_v_o(dcache_final_v)
 
-      ,.late_rd_addr_o(dcache_late_rd_addr)
-      ,.late_float_o(dcache_late_float)
-      ,.late_data_o(dcache_late_data)
-      ,.late_v_o(dcache_late_v)
-      ,.late_yumi_i(dcache_late_yumi)
+      ,.final_v_o(dcache_final_v)
+      ,.final_rd_addr_o(dcache_final_rd_addr)
+      ,.final_float_o(dcache_final_float)
+      ,.final_late_o(dcache_final_late)
+      ,.final_load_o(dcache_final_load)
+      ,.final_data_o(dcache_final_data)
+      ,.final_yumi_i(dcache_final_yumi)
 
       // D$-LCE Interface
       ,.cache_req_o(cache_req_cast_o)
@@ -411,19 +412,23 @@ module bp_be_pipe_mem
 
   assign late_iwb_pkt = '{ird_w_v    : 1'b1
                           ,late      : 1'b1
-                          ,rd_addr   : dcache_late_rd_addr
-                          ,rd_data   : dcache_late_data
+                          ,rd_addr   : dcache_final_rd_addr
+                          ,rd_data   : dcache_final_data
                           ,default: '0
                           };
   assign late_fwb_pkt = '{frd_w_v    : 1'b1
                           ,late      : 1'b1
-                          ,rd_addr   : dcache_late_rd_addr
-                          ,rd_data   : dcache_late_data
+                          ,rd_addr   : dcache_final_rd_addr
+                          ,rd_data   : dcache_final_data
                           ,default: '0
                           };
-  assign late_iwb_pkt_v_o = dcache_late_v & ~dcache_late_float;
-  assign late_fwb_pkt_v_o = dcache_late_v &  dcache_late_float;
-  assign dcache_late_yumi = late_fwb_pkt_yumi_i | late_iwb_pkt_yumi_i;
+  assign late_iwb_pkt_v_o = dcache_final_v & dcache_final_late & ~dcache_final_float & dcache_final_load;
+  assign late_fwb_pkt_v_o = dcache_final_v & dcache_final_late &  dcache_final_float & dcache_final_load;
+  assign dcache_final_yumi =
+    late_fwb_pkt_yumi_i
+    | late_iwb_pkt_yumi_i
+    | (dcache_final_v & ~dcache_final_late & final_v_o)
+    | (dcache_final_v &  dcache_final_late & ~dcache_final_load);
 
   wire early_v_li = reservation.v & reservation.decode.pipe_mem_early_v;
   bsg_dff_chain

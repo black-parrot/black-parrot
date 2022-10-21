@@ -147,21 +147,19 @@ module bp_be_dcache
    , output logic                                    early_fencei_o
    , output rv64_fflags_s                            early_fflags_o
 
-   // Cycle 3: "Data Mux"
+   // Cycle 3-N: "Data Mux"
    // Data comes out this cycle for operations which require additional
    //   processing (half, byte and FP loads)
-   , output logic [dpath_width_gp-1:0]               final_data_o
-   , output logic                                    final_v_o
-
-   // Cycle N: "Late Data"
    // Data comes out-of-band to the pipeline here. Currently, there is
    //   only 1 outstanding miss allowed, but in the future this could
    //   be out of order as well.
-   , output logic [reg_addr_width_gp-1:0]            late_rd_addr_o
-   , output logic                                    late_float_o
-   , output logic [dpath_width_gp-1:0]               late_data_o
-   , output logic                                    late_v_o
-   , input                                           late_yumi_i
+   , output logic [reg_addr_width_gp-1:0]            final_rd_addr_o
+   , output logic                                    final_load_o
+   , output logic                                    final_late_o
+   , output logic                                    final_float_o
+   , output logic [dpath_width_gp-1:0]               final_data_o
+   , output logic                                    final_v_o
+   , input                                           final_yumi_i
 
    // Cache Engine Interface
    // This is considered the "slow path", handling uncached requests
@@ -372,7 +370,6 @@ module bp_be_dcache
 
   wire [dword_width_gp-1:0] st_data_tl = decode_tl_r.float_op ? fp_raw_data : data_tl_r;
 
-  wire cached_op_tl   = ~ptag_uncached_i & ~decode_tl_r.fencei_op & ~decode_tl_r.uncached_op;
   wire uncached_op_tl =  ptag_uncached_i | decode_tl_r.uncached_op;
   wire dram_op_tl     =  ptag_dram_i;
 
@@ -641,7 +638,7 @@ module bp_be_dcache
   wire [sindex_width_lp-1:0] paddr_index_dm = paddr_dm_r[block_offset_width_lp+:sindex_width_lp];
   wire [ctag_width_p-1:0]    paddr_tag_dm   = paddr_dm_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
 
-  assign safe_dm_we = v_tv_r;
+  assign safe_dm_we = v_tv_r & ~any_miss_tv;
   assign dm_we = safe_dm_we;
   bsg_dff_reset_set_clear
    #(.width_p(1))
@@ -649,7 +646,7 @@ module bp_be_dcache
     (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
      ,.set_i(dm_we)
-     ,.clear_i(is_ready | late_yumi_i)
+     ,.clear_i(is_ready | final_yumi_i)
      ,.data_o(v_dm_r)
      );
 
@@ -698,9 +695,6 @@ module bp_be_dcache
     (.raw_i(final_float_raw_data)
      ,.reg_o(final_float_data)
      );
-
-  assign final_data_o = decode_dm_r.float_op ? final_float_data : final_int_data;
-  assign final_v_o = v_dm_r & ~fill_dm_r;
 
   ///////////////////////////
   // Write buffer
@@ -965,13 +959,9 @@ module bp_be_dcache
   always_comb
     case (state_r)
       e_ready : state_n = (cache_req_ready_and_i & cache_req_v_o & ~nonblocking_req) ? e_miss : e_ready;
-      e_miss  : state_n = cache_req_complete_i
-                          ? (decode_tv_r.ptw_op | decode_tv_r.fencei_op)
-                            ? e_ready
-                            : e_resume
-                          : e_miss;
-      e_resume: state_n = decode_tv_r.load_op ? e_late : e_ready;
-      e_late  : state_n = late_yumi_i ? e_ready : e_late;
+      e_miss  : state_n = cache_req_complete_i ? e_resume : e_miss;
+      e_resume: state_n = decode_tv_r.ret_op ? e_late : e_ready;
+      e_late  : state_n = final_yumi_i ? e_ready : e_late;
       default: state_n = e_ready;
     endcase
 
@@ -1169,7 +1159,7 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read  = (early_miss_v_o | (v_tv_r & load_hit_tv & uncached_op_tv_r));
+  wire stat_mem_fast_read  = (v_tv_r & any_miss_tv) | (v_tv_r & load_hit_tv & uncached_op_tv_r);
   wire stat_mem_fast_write = (v_tv_r & ~any_miss_tv & ~uncached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
@@ -1330,10 +1320,12 @@ module bp_be_dcache
         assign cache_lock                = '0;
     end
 
-  assign late_rd_addr_o = decode_dm_r.rd_addr;
-  assign late_float_o   = decode_dm_r.float_op;
-  assign late_data_o    = final_data_o;
-  assign late_v_o       = is_late & v_dm_r;
+  assign final_rd_addr_o = decode_dm_r.rd_addr;
+  assign final_float_o   = decode_dm_r.float_op;
+  assign final_load_o    = decode_dm_r.load_op;
+  assign final_late_o    = fill_dm_r;
+  assign final_data_o    = decode_dm_r.float_op ? final_float_data : final_int_data;
+  assign final_v_o       = v_dm_r;
 
   // synopsys translate_off
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);

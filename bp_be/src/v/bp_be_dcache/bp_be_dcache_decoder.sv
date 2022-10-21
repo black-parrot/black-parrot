@@ -79,8 +79,6 @@ module bp_be_dcache_decoder
     decode_cast_o.store_op = (decode_cast_o.amo_op & ~decode_cast_o.lr_op) || dcache_pkt.opcode inside
       {e_dcache_op_sd, e_dcache_op_sw, e_dcache_op_sh, e_dcache_op_sb, e_dcache_op_fsw, e_dcache_op_fsd};
 
-    decode_cast_o.ptw_op = dcache_pkt.opcode inside {e_dcache_op_ptw_ld};
-
     // Size decoding
     unique case (dcache_pkt.opcode)
       e_dcache_op_lb, e_dcache_op_lbu, e_dcache_op_sb: decode_cast_o.byte_op   = 1'b1;
@@ -96,6 +94,9 @@ module bp_be_dcache_decoder
 
     // The destination register of the cache request
     decode_cast_o.rd_addr = dcache_pkt.rd_addr;
+
+    // Return
+    decode_cast_o.ret_op = decode_cast_o.load_op & (decode_cast_o.float_op | (decode_cast_o.rd_addr != '0));
   end
 
 endmodule

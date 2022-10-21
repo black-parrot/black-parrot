@@ -92,7 +92,7 @@ module bp_be_ptw
   // PMA attributes
   localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_p);
   assign dcache_v_o                    = is_send;
-  assign dcache_pkt_cast_o.opcode      = e_dcache_op_ptw_ld;
+  assign dcache_pkt_cast_o.opcode      = e_dcache_op_ld;
   assign dcache_pkt_cast_o.vaddr       = partial_vpn[level_cntr] << lg_pte_size_in_bytes_lp;
   assign dcache_pkt_cast_o.data        = '0;
   assign dcache_pkt_cast_o.rd_addr     = '0;

@@ -164,7 +164,7 @@ module bp_cacc_vdp
 
   // TODO: Actually use the late signal, but we don't really care about performance
   //   for the purposes of this demo
-  logic late_v;
+  logic final_v;
   bp_be_dcache
    #(.bp_params_p(bp_params_p)
      ,.sets_p(acache_sets_p)
@@ -194,14 +194,13 @@ module bp_cacc_vdp
      ,.early_fencei_o()
      ,.early_data_o(dcache_data)
      ,.early_fflags_o()
-     ,.final_data_o()
-     ,.final_v_o()
 
-     ,.late_rd_addr_o()
-     ,.late_float_o()
-     ,.late_data_o()
-     ,.late_v_o(late_v)
-     ,.late_yumi_i(late_v)
+     ,.final_v_o(final_v)
+     ,.final_data_o()
+     ,.final_rd_addr_o()
+     ,.final_float_o()
+     ,.final_load_o()
+     ,.final_yumi_i(final_v)
 
      // D$-LCE Interface
      ,.cache_req_complete_i(cache_req_complete_lo)
