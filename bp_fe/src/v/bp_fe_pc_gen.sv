@@ -74,7 +74,6 @@ module bp_fe_pc_gen
   logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
 
   logic [vaddr_width_p-1:0] next_pc;
-  logic next_pc_nonlinear;
   logic [bht_row_width_p-1:0] bht_row_lo;
   logic bht_pred_lo;
   logic [vaddr_width_p-1:0] btb_br_tgt_lo;
@@ -97,13 +96,11 @@ module bp_fe_pc_gen
 
   // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb begin
-    next_pc_nonlinear = 1'b1;
     if (redirect_v_i)
       begin
         next_pred  = redirect_br_taken_i;
         next_taken = redirect_br_taken_i;
         next_pc    = redirect_pc_i;
-        next_pc_nonlinear = !redirect_resume_v_i;
 
         next_metadata = redirect_br_metadata_fwd;
       end
@@ -111,7 +108,6 @@ module bp_fe_pc_gen
         next_pred  = '0;
         next_pc           = pc_plus4_if2;
         next_taken = '0;
-        next_pc_nonlinear = 1'b0;
     end else if (ovr_o)
       begin
         next_pred  = ovr_btaken;
@@ -130,7 +126,6 @@ module bp_fe_pc_gen
         next_pred  = bht_pred_lo;
         next_taken = btb_taken;
         next_pc    = btb_taken ? btb_br_tgt_lo : pc_plus4;
-        next_pc_nonlinear = btb_taken;
 
         next_metadata = '0;
         next_metadata.src_btb = btb_br_tgt_v_lo;

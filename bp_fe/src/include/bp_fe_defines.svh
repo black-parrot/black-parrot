@@ -32,15 +32,5 @@
   `define bp_addr_is_aligned(addr_mp, num_bytes_mp) \
     (!(|{ addr_mp[$clog2(num_bytes_mp)-1:0] }))
 
-  `define bp_align_addr_down(addr_mp, num_bytes_mp) \
-    ({addr_mp[$bits(addr_mp)-1:$clog2(num_bytes_mp)], {$clog2(num_bytes_mp){1'b0}}}) 
-
-  `define bp_align_addr_up(addr_mp, num_bytes_mp)                                            \
-    (                                                                                        \
-      `bp_addr_is_aligned(addr_mp, num_bytes_mp)                                             \
-      ? addr_mp                                                                              \
-      : ({addr_mp[$bits(addr_mp)-1:$clog2(num_bytes_mp)] + 1, {$clog2(num_bytes_mp){1'b0}}}) \
-    )
-
 `endif
 
