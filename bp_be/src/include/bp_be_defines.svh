@@ -49,6 +49,7 @@
       logic [dpath_width_gp-1:0]               rs2;                                                \
       logic                                    rs3_fp_v;                                           \
       logic [dpath_width_gp-1:0]               imm;                                                \
+      logic                                    instr_partial_v;                                    \
       bp_be_exception_s                        exception;                                          \
       bp_be_special_s                          special;                                            \
      } bp_be_dispatch_pkt_s;                                                                       \
@@ -113,6 +114,7 @@
       logic [vaddr_width_p-1:0]  vaddr;                                                            \
       logic [dpath_width_gp-1:0] data;                                                             \
       rv64_instr_s               instr;                                                            \
+      logic                      instr_partial_v;                                                  \
       bp_be_exception_s          exception;                                                        \
       bp_be_special_s            special;                                                          \
     }  bp_be_retire_pkt_s;                                                                         \
@@ -236,6 +238,7 @@
      + 4                                                                                           \
      + 3 * dpath_width_gp                                                                          \
      + $bits(bp_be_decode_s)                                                                       \
+     + 1                                                                                           \
      + $bits(bp_be_exception_s)                                                                    \
      + $bits(bp_be_special_s)                                                                      \
      )
@@ -250,7 +253,7 @@
     (3 + vaddr_width_mp)
 
   `define bp_be_retire_pkt_width(vaddr_width_mp) \
-    (3 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
+    (3 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + 1 + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
 
   `define bp_be_pte_leaf_width(paddr_width_mp) \
     (paddr_width_mp - page_offset_width_gp + 7)

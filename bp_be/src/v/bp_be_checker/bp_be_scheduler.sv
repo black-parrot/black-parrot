@@ -218,6 +218,9 @@ module bp_be_scheduler
       dispatch_pkt.imm      = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
       dispatch_pkt.decode   = instr_decoded;
 
+      dispatch_pkt.instr_partial_v = (be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_partial_v)
+                                   | (fe_exc_not_instr_li & fe_queue_lo.partial_v);
+
       dispatch_pkt.exception.instr_access_fault |=
         fe_exc_not_instr_li & fe_queue_lo.msg_type inside {e_instr_access_fault};
       dispatch_pkt.exception.instr_page_fault   |=
@@ -226,15 +229,12 @@ module bp_be_scheduler
         fe_exc_not_instr_li & fe_queue_lo.msg_type inside {e_itlb_miss};
       dispatch_pkt.exception.icache_miss        |=
         fe_exc_not_instr_li & fe_queue_lo.msg_type inside {e_icache_miss};
-      dispatch_pkt.exception.instr_partial_v |=
-        fe_exc_not_instr_li & fe_queue_lo.partial_v;
 
       dispatch_pkt.exception.instr_page_fault |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_page_fault_v;
       dispatch_pkt.exception.load_page_fault  |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.load_page_fault_v;
       dispatch_pkt.exception.store_page_fault |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.store_page_fault_v;
       dispatch_pkt.exception.itlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.itlb_fill_v;
       dispatch_pkt.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.dtlb_fill_v;
-      dispatch_pkt.exception.instr_partial_v  |= be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_partial_v;
       dispatch_pkt.exception._interrupt       |= be_exc_not_instr_li & interrupt_v_i & ~unfreeze_i;
       dispatch_pkt.exception.unfreeze         |= be_exc_not_instr_li & unfreeze_i;
 
