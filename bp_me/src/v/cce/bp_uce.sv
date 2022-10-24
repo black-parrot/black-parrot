@@ -108,27 +108,29 @@ module bp_uce
   `bp_cast_o(bp_cache_data_mem_pkt_s, data_mem_pkt);
   `bp_cast_o(bp_cache_stat_mem_pkt_s, stat_mem_pkt);
 
-  enum logic [3:0] {
+  enum logic [4:0] {
     e_reset
-    , e_clear
-    , e_flush_read
-    , e_flush_scan
-    , e_flush_write
-    , e_flush_fence
-    , e_ready
-    , e_uc_writeback_evict
-    , e_uc_writeback_write_req
-    , e_send_critical
-    , e_writeback_evict
-    , e_writeback_read_req
-    , e_writeback_write_req
-    , e_write_wait
-    , e_read_wait
-    , e_uc_read_wait
+    ,e_init
+    ,e_clear
+    ,e_flush_read
+    ,e_flush_scan
+    ,e_flush_write
+    ,e_flush_fence
+    ,e_ready
+    ,e_uc_writeback_evict
+    ,e_uc_writeback_write_req
+    ,e_send_critical
+    ,e_writeback_evict
+    ,e_writeback_read_req
+    ,e_writeback_write_req
+    ,e_write_wait
+    ,e_read_wait
+    ,e_uc_read_wait
   } state_n, state_r;
 
   wire is_reset           = (state_r == e_reset);
   wire is_clear           = (state_r == e_clear);
+  wire is_init            = (state_r == e_init);
   wire is_flush_read      = (state_r == e_flush_read);
   wire is_flush_scan      = (state_r == e_flush_scan);
   wire is_flush_write     = (state_r == e_flush_write);
@@ -451,9 +453,9 @@ module bp_uce
       unique case (state_r)
         e_reset:
           begin
-            state_n = e_clear;
+            state_n = e_init;
           end
-        e_clear:
+        e_init, e_clear:
           begin
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
             tag_mem_pkt_cast_o.index  = index_cnt;
@@ -465,9 +467,9 @@ module bp_uce
 
             index_up = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
-            cache_req_done = (index_done & index_up);
+            cache_req_done = is_clear & (index_done & index_up);
 
-            state_n = (index_done & index_up) ? e_ready : e_clear;
+            state_n = (index_done & index_up) ? e_ready : state_r;
           end
         e_flush_read:
           begin

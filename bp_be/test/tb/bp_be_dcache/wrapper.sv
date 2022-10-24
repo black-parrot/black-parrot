@@ -206,7 +206,6 @@ module wrapper
 
       ,.early_data_o(early_data_lo[i])
       ,.early_hit_v_o(early_v_lo[i])
-      ,.early_miss_v_o()
       ,.early_fencei_o()
       ,.early_fflags_o()
 
@@ -223,8 +222,8 @@ module wrapper
       ,.ptag_uncached_i(rolly_uncached_r[i])
       ,.ptag_dram_i(1'b1)
 
-      ,.poison_req_i('0)
-      ,.poison_tl_i('0)
+      ,.flush_i('0)
+      ,.tv_we_o()
 
       ,.cache_req_v_o(cache_req_v_lo[i])
       ,.cache_req_o(cache_req_lo[i])

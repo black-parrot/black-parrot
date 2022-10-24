@@ -31,7 +31,6 @@ module bp_be_nonsynth_dcache_tracer
 
    , input [dpath_width_gp-1:0]                           early_data_o
    , input                                                early_hit_v_o
-   , input                                                early_miss_v_o
    , input [dpath_width_gp-1:0]                           final_data_o
    , input                                                final_v_o
 
@@ -159,8 +158,6 @@ module bp_be_nonsynth_dcache_tracer
         $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, early_data_o);
       if (early_hit_v_o & decode_tv_r.store_op)
         $fwrite(acc_file, "%12t | early store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
-      if (early_miss_v_o)
-        $fwrite(acc_file, "%12t | early miss: %x\n", $time, paddr_tv_r);
       if (final_v_o & decode_dm_r.load_op)
         $fwrite(acc_file, "%12t | final load: %x\n", $time, final_data_o);
       if (wbuf_yumi_li)
