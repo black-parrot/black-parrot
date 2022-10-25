@@ -251,9 +251,9 @@ module bp_fe_pc_gen
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
   assign pc_plus4             = pc_if1_r + vaddr_width_p'(4);
 
-  assign btb_tag_if1 = pc_if1_r[2+btb_idx_width_p+:btb_tag_width_p];
-  assign btb_idx_if1 = pc_if1_r[2+:btb_idx_width_p];
-  assign bht_idx_if1 = pc_if1_r[2+:bht_idx_width_p];
+  assign btb_tag_if1 = pc_if1_r[btb_ignored_bits_p+btb_idx_width_p+:btb_tag_width_p];
+  assign btb_idx_if1 = pc_if1_r[btb_ignored_bits_p+:btb_idx_width_p];
+  assign bht_idx_if1 = pc_if1_r[bht_ignored_bits_p+:bht_idx_width_p];
 
   /////////////////////////////////////////////////////////////////////////////////////
   // IF2
