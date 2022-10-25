@@ -56,7 +56,7 @@ module bp_fe_realigner
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.en_i  (fetch_data_v_i | restore_lower_half_v_i)
+     ,.en_i  ((fetch_data_v_i & store_v_i) | restore_lower_half_v_i)
      ,.data_i({fetch_instr_pc_n, half_buffer_n})
      ,.data_o({fetch_instr_pc_r, half_buffer_r})
      );
