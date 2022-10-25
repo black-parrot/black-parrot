@@ -15,7 +15,6 @@ module bp_fe_pc_gen
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   , localparam max_ovr_ntaken_count_nonsynth_lp = (2**30)-1
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -364,20 +363,6 @@ module bp_fe_pc_gen
       assign fetch_instr_v_o = fetch_v_i;
       assign fetch_is_second_half_o = 0;
     end
-
-`ifndef SYNTHESIS
-  logic [`BSG_SAFE_CLOG2(max_ovr_ntaken_count_nonsynth_lp+1)-1:0] ovr_ntaken_count;
-  bsg_counter_clear_up
-    #(.max_val_p(max_ovr_ntaken_count_nonsynth_lp), .init_val_p(0))
-    ovr_ntaken_counter
-      (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.clear_i(reset_i)
-      ,.up_i(ovr_ntaken & !redirect_v_i)
-      ,.count_o(ovr_ntaken_count)
-      );
-`endif
 
   // Global history
   ///////////////////////////

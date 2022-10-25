@@ -17,6 +17,8 @@ with:
     - override_branch: a jump instruction was discovered late (IF2) and caused a bubble
     - btb_taken_branch: the BTB and BHT predict a taken jump (IF1)
     - last_fetch_plus_four: no special control flow, defaulted to a linear fetch
+  - The PC and partial instruction stored in the realigner (for misaligned and compressed instructions)
+  - The running count of "ntaken" overrides, i.e. predicted-taken jumps which were overridden to be not-taken
   - Frontend state: either "run" or "stall". Note that, even when stalled, log entries are
     emitted and PCs progress through the frontend. They will not be issued.
   - Events: external status which may impact the next fetch. Faults, I$ and ITLB misses, and "queue"
@@ -78,6 +80,7 @@ module bp_fe_nonsynth_pc_gen_tracer
     , parameter fe_trace_file_p = "pc_gen_trace"
 
     , localparam pc_src_enum_name_prefix_length_lp = 9 // length of "e_pc_src_"
+    , localparam max_ovr_ntaken_count_nonsynth_lp = (2**30)-1
     )
    (input clk_i
     , input reset_i
@@ -146,6 +149,18 @@ module bp_fe_nonsynth_pc_gen_tracer
     );
   assign pc_src_if2_n = pc_src_if1_r;
 
+  logic [`BSG_SAFE_CLOG2(max_ovr_ntaken_count_nonsynth_lp+1)-1:0] ovr_ntaken_count;
+  bsg_counter_clear_up
+    #(.max_val_p(max_ovr_ntaken_count_nonsynth_lp), .init_val_p(0))
+    ovr_ntaken_counter
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.clear_i(reset_i)
+      ,.up_i(pc_src_if2_n == e_pc_src_override_ntaken)
+      ,.count_o(ovr_ntaken_count)
+      );
+
   always_comb
     begin
       // TODO: deduplicate "if" chain from bp_fe_pc_gen.sv
@@ -184,7 +199,11 @@ module bp_fe_nonsynth_pc_gen_tracer
     begin
       file_name = $sformatf("%s_%x.trace", fe_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
-      $fwrite(file, "%12s | %7s, %12s, %20s, %12s, %12s, %5s, %s\n", "time", "cycle", "IF2 PC", "IF2 PC src", "partial PC", "partial insn", "state", "events");
+      $fwrite(
+        file,
+        "%12s | %7s, %12s, %20s, %12s, %12s, %8s, %5s, %s\n",
+        "time", "cycle", "IF2 PC", "IF2 PC src", "partial PC", "partial insn", "# ntaken", "state", "events"
+      );
     end
 
   string trimmed_pc_src_if2_name;
@@ -195,13 +214,14 @@ module bp_fe_nonsynth_pc_gen_tracer
 
       $fwrite
         (file
-        ,"%12t | %07d, %12s, %20s, %12s, %12s, %5s, "
+        ,"%12t | %07d, %12s, %20s, %12s, %12s, %8d, %5s, "
         ,$time
         ,cycle_cnt
         ,render_addr_with_validity(if2_pc_i, if2_top_v_i)
         ,trimmed_pc_src_if2_name
         ,render_addr_with_validity(realigner_pc_i, realigner_v_i)
         ,render_half_instr_with_validity(realigner_instr_i, realigner_v_i)
+        ,ovr_ntaken_count
         ,state_stall_i ? "stall" : (state_wait_i ? "wait" : "run"));
 
       if (queue_miss_i)
