@@ -12,7 +12,7 @@ with:
   - The reason the above PC was fetched:
     - undefined: the simulation just started and nothing has propagated to IF2 yet 
     - redirect: either a BE->FE command or resuming after a stall
-    - override_half: a misaligned instruction required a second fetch for the same PC
+    - override_ntaken: a misaligned instruction required a second fetch for the same PC
     - override_ras: the RAS was used to predict a JALR (IF2)
     - override_branch: a jump instruction was discovered late (IF2) and caused a bubble
     - btb_taken_branch: the BTB and BHT predict a taken jump (IF1)
@@ -63,7 +63,7 @@ typedef enum logic [2:0]
 {
   e_pc_src_undefined = 3'd0
   ,e_pc_src_redirect
-  ,e_pc_src_override_half
+  ,e_pc_src_override_ntaken
   ,e_pc_src_override_ras
   ,e_pc_src_override_branch
   ,e_pc_src_btb_taken_branch
@@ -101,7 +101,7 @@ module bp_fe_nonsynth_pc_gen_tracer
 
    // IF0
    , input src_redirect_i
-   , input src_override_half_i
+   , input src_override_ntaken_i
    , input src_override_ras_i
    , input src_override_branch_i
    , input src_btb_taken_branch_i
@@ -151,8 +151,8 @@ module bp_fe_nonsynth_pc_gen_tracer
       // TODO: deduplicate "if" chain from bp_fe_pc_gen.sv
       if (src_redirect_i)
         pc_src_if1_n = e_pc_src_redirect;
-      else if (src_override_half_i)
-        pc_src_if1_n = e_pc_src_override_half;
+      else if (src_override_ntaken_i)
+        pc_src_if1_n = e_pc_src_override_ntaken;
       else if (src_override_ras_i)
         pc_src_if1_n = e_pc_src_override_ras;
       else if (src_override_branch_i)

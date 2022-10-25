@@ -563,7 +563,7 @@ module testbench
            ,.itlb_miss_i           (v_if2_r & itlb_miss_r)
 
            ,.src_redirect_i        (pc_gen.redirect_v_i)
-           ,.src_override_half_i   (pc_gen.ovr_half)
+           ,.src_override_ntaken_i (pc_gen.ovr_ntaken)
            ,.src_override_ras_i    (pc_gen.ovr_ret)
            ,.src_override_branch_i (pc_gen.ovr_btaken | pc_gen.ovr_jmp)
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
