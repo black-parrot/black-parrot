@@ -573,9 +573,9 @@ module testbench
 
            ,.if2_top_v_i           (v_if2_r)
            ,.if2_pc_i              (pc_gen.pc_if2_r)
-           ,.realigner_v_i         (pc_gen.fetch_instr_generation.realigner.half_buffer_v_r)
-           ,.realigner_pc_i        (pc_gen.fetch_instr_generation.realigner.fetch_instr_pc_r)
-           ,.realigner_instr_i     (pc_gen.fetch_instr_generation.realigner.half_buffer_r)
+           ,.realigner_v_i         (pc_gen.fetch_instr_generation.half_buffer_v_r)
+           ,.realigner_pc_i        (pc_gen.fetch_instr_generation.fetch_instr_pc_r)
+           ,.realigner_instr_i     (pc_gen.fetch_instr_generation.half_buffer_r)
            );
 
       bind bp_be_top

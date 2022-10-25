@@ -355,6 +355,11 @@ module bp_fe_pc_gen
         ,.fetch_is_second_half_o(fetch_is_second_half_o)
         ,.fetch_instr_yumi_i    (fetch_instr_yumi_i)
         );
+
+      // Debug signals for pc_gen_tracer
+      wire                           half_buffer_v_r  = realigner.half_buffer_v_r;
+      wire [vaddr_width_p-1:0]       fetch_instr_pc_r = realigner.fetch_instr_pc_r;
+      wire [instr_half_width_gp-1:0] half_buffer_r    = realigner.half_buffer_r;
     end
   else
     begin : fetch_instr_generation
@@ -362,6 +367,11 @@ module bp_fe_pc_gen
       assign fetch_instr_o   = fetch_i;
       assign fetch_instr_v_o = fetch_v_i;
       assign fetch_is_second_half_o = 0;
+
+      // Debug signals for pc_gen_tracer
+      wire                           half_buffer_v_r  = '0;
+      wire [vaddr_width_p-1:0]       fetch_instr_pc_r = '0;
+      wire [instr_half_width_gp-1:0] half_buffer_r    = '0;
     end
 
   // Global history
