@@ -461,6 +461,7 @@ module testbench
        ,.fill_width_p(bedrock_data_width_p)
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
+       ,.ctag_width_p(icache_ctag_width_p)
        ,.metadata_latency_p(0)
        )
      lce
@@ -688,7 +689,6 @@ module testbench
    #(.bp_params_p(bp_params_p)
      ,.preload_mem_p(0)
      ,.dram_type_p(dram_type_p)
-     ,.mem_els_p(2**20)
      )
    mem
     (.clk_i(clk_i)

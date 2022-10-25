@@ -253,6 +253,8 @@ module wrapper
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
        ,.non_excl_reads_p(1)
+       ,.ctag_width_p(icache_ctag_width_p)
+       ,.metadata_latency_p(1)
        )
      icache_lce
       (.clk_i(clk_i)
@@ -396,6 +398,7 @@ module wrapper
        ,.block_width_p(icache_block_width_p)
        ,.fill_width_p(icache_fill_width_p)
        ,.metadata_latency_p(1)
+       ,.ctag_width_p(icache_ctag_width_p)
        )
      icache_uce
       (.clk_i(clk_i)

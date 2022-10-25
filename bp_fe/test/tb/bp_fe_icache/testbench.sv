@@ -251,7 +251,6 @@ module testbench
    #(.bp_params_p(bp_params_p)
      ,.preload_mem_p(1)
      ,.dram_type_p(dram_type_p)
-     ,.mem_els_p(2**20)
      )
     mem
     (.clk_i(clk_i)
@@ -299,7 +298,6 @@ module testbench
          ,.sets_p(sets_p)
          ,.assoc_p(assoc_p)
          ,.block_width_p(block_width_p)
-         ,.ctag_width_p(ctag_width_p)
          )
        bp_lce_tracer
          (.clk_i(clk_i & (testbench.lce_trace_p == 1))
