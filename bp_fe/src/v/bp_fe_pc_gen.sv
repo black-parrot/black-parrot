@@ -308,13 +308,17 @@ module bp_fe_pc_gen
      );
 
   // Override calculations
-  wire taken_jump_site_if2 = taken_if1_r || ovr_btaken || ovr_jmp || ovr_ret;
-  wire pc_if2_misaligned = !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
-  // TODO: a jump that skips only one instruction within misaligned code can erroneously pass this check
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
-  assign ovr_ret    = btb_miss_ras & fetch_instr_return_v_li & ras_valid_lo;
-  assign ovr_btaken = btb_miss_br & fetch_instr_br_v_li & pred_if1_r;
+
+  wire taken_ret_if2 = fetch_instr_return_v_li & ras_valid_lo;
+  wire taken_br_if2 = fetch_instr_br_v_li & pred_if1_r;
+
+  wire taken_jump_site_if2 = taken_if1_r || taken_ret_if2 || taken_br_if2 || ovr_jmp;
+  wire pc_if2_misaligned = !`bp_addr_is_aligned(pc_if2_r, rv64_instr_width_bytes_gp);
+
+  assign ovr_ret    = btb_miss_ras & taken_ret_if2;
+  assign ovr_btaken = btb_miss_br & taken_br_if2;
   assign ovr_jmp    = btb_miss_br & fetch_instr_jal_v_li;
   assign ovr_ntaken   = compressed_support_p
                     & fetch_v_i
