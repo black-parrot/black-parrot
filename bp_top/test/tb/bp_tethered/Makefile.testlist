@@ -37,6 +37,13 @@ MISC_TESTS := \
 
 MISC_TESTLIST := $(addprefix bp-tests@, $(MISC_TESTS))
 
+MISALIGNED_TESTS := \
+  misaligned_instructions_basic_jumps \
+  misaligned_instructions_advanced_jumps \
+  misaligned_instructions_virtual_memory \
+
+MISALIGNED_TESTLIST := $(addprefix bp-tests@, $(MISALIGNED_TESTS))
+
 RV64_P_ISA_TESTS := \
   rv64ui-p-add     \
   rv64ui-p-addi    \
