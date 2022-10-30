@@ -16,18 +16,18 @@ module bp_fe_realigner
   (input   clk_i
    , input reset_i
 
+   // Fetch PC and I$ data
+   , input                       fetch_v_i
+   , input                       fetch_store_v_i
    , input [vaddr_width_p-1:0]   fetch_pc_i
    , input [instr_width_gp-1:0]  fetch_data_i
-   , input                       fetch_data_v_i
 
-    // poison_v_i takes precedence over store_v_i
-    // restore_lower_half_v_i takes precedence over poison_i
-   , input store_v_i
-   , input poison_v_i
-
-   , input                           restore_lower_half_v_i
-   , input [instr_half_width_gp-1:0] restore_lower_half_i
-   , input [vaddr_width_p-1:0]       restore_lower_half_next_vaddr_i
+   // Redirection from backend
+   , input                           redirect_v_i
+   // Whether to restore the instruction data
+   , input                           redirect_resume_i
+   , input [instr_half_width_gp-1:0] redirect_partial_i
+   , input [vaddr_width_p-1:0]       redirect_vaddr_i
 
    , output [vaddr_width_p-1:0]  fetch_instr_pc_o
    , output [instr_width_gp-1:0] fetch_instr_o
@@ -45,10 +45,12 @@ module bp_fe_realigner
 
   wire fetch_pc_is_aligned  = `bp_addr_is_aligned(fetch_pc_i, rv64_instr_width_bytes_gp);
 
-  assign fetch_instr_pc_n = restore_lower_half_v_i                  ? (restore_lower_half_next_vaddr_i - vaddr_width_p'(2))
-                          : (half_buffer_v_r & fetch_pc_is_aligned) ? (fetch_pc_i                      + vaddr_width_p'(2))
-                          :                                                fetch_pc_i;
-  assign half_buffer_n    = restore_lower_half_v_i ? restore_lower_half_i : icache_data_upper_half_li;
+  assign fetch_instr_pc_n = redirect_resume_i                       ? (redirect_vaddr_i - vaddr_width_p'(2))
+                          : (half_buffer_v_r & fetch_pc_is_aligned) ? (fetch_pc_i       + vaddr_width_p'(2))
+                          :                                            fetch_pc_i;
+  assign half_buffer_n    = redirect_resume_i ? redirect_partial_i : icache_data_upper_half_li;
+
+  wire poison_li = redirect_v_i & ~redirect_resume_i;
 
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p+instr_half_width_gp))
@@ -56,7 +58,7 @@ module bp_fe_realigner
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.en_i  ((fetch_data_v_i & store_v_i) | restore_lower_half_v_i)
+     ,.en_i  ((fetch_v_i & fetch_store_v_i) | redirect_resume_i)
      ,.data_i({fetch_instr_pc_n, half_buffer_n})
      ,.data_o({fetch_instr_pc_r, half_buffer_r})
      );
@@ -67,14 +69,14 @@ module bp_fe_realigner
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i  (~poison_v_i & fetch_data_v_i & store_v_i)
-     ,.clear_i(poison_v_i | fetch_instr_yumi_i) // set overrides clear
+     ,.set_i  (~poison_li & (fetch_v_i & fetch_store_v_i) )
+     ,.clear_i(poison_li | fetch_instr_yumi_i) // set overrides clear
      ,.data_o (half_buffer_v_r)
      );
 
   assign fetch_is_second_half_o = half_buffer_v_r;
 
-  assign fetch_instr_v_o  = (half_buffer_v_r | fetch_pc_is_aligned) & fetch_data_v_i;
+  assign fetch_instr_v_o  = (half_buffer_v_r | fetch_pc_is_aligned) & fetch_v_i;
   assign fetch_instr_pc_o = half_buffer_v_r ? fetch_instr_pc_r                             : fetch_pc_i;
   assign fetch_instr_o    = half_buffer_v_r ? { icache_data_lower_half_li, half_buffer_r } : fetch_data_i;
 

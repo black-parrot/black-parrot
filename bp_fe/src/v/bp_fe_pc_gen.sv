@@ -320,7 +320,7 @@ module bp_fe_pc_gen
   assign ovr_ret    = btb_miss_ras & taken_ret_if2;
   assign ovr_btaken = btb_miss_br & taken_br_if2;
   assign ovr_jmp    = btb_miss_br & fetch_instr_jal_v_li;
-  assign ovr_ntaken   = compressed_support_p
+  assign ovr_ntaken = compressed_support_p
                     & fetch_v_i
                     & taken_if1_r
                     & (  (!fetch_is_second_half_o && pc_if2_misaligned)
@@ -342,16 +342,15 @@ module bp_fe_pc_gen
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
 
-        ,.fetch_pc_i    (pc_if2_r)
-        ,.fetch_data_i  (fetch_i)
-        ,.fetch_data_v_i(fetch_v_i)
+        ,.fetch_v_i      (fetch_v_i)
+        ,.fetch_store_v_i(fetch_half_v)
+        ,.fetch_pc_i     (pc_if2_r)
+        ,.fetch_data_i   (fetch_i)
 
-        ,.store_v_i  (fetch_half_v)
-        ,.poison_v_i (redirect_v_i & ~redirect_resume_v_i)
-
-        ,.restore_lower_half_v_i         (redirect_resume_v_i)
-        ,.restore_lower_half_i           (redirect_resume_instr_i)
-        ,.restore_lower_half_next_vaddr_i(redirect_pc_i)
+        ,.redirect_v_i      (redirect_v_i)
+        ,.redirect_resume_i (redirect_resume_v_i)
+        ,.redirect_partial_i(redirect_resume_instr_i)
+        ,.redirect_vaddr_i  (redirect_pc_i)
 
         ,.fetch_instr_pc_o      (fetch_pc_o)
         ,.fetch_instr_o         (fetch_instr_o)
