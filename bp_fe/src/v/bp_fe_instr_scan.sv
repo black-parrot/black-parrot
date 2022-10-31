@@ -16,10 +16,10 @@ module bp_fe_instr_scan
 
    , localparam instr_scan_width_lp = $bits(bp_fe_instr_scan_s)
    )
-  (input [instr_width_gp-1:0]               instr_i
+  (input                                    instr_v_i
+   , input [instr_width_gp-1:0]             instr_i
 
    , output logic [instr_scan_width_lp-1:0] scan_o
-   , output logic [vaddr_width_p-1:0]       imm_o
    );
 
   `bp_cast_i(rv64_instr_rtype_s, instr);
@@ -32,18 +32,21 @@ module bp_fe_instr_scan
   always_comb
     begin
       scan_cast_o = '0;
+
+      if (instr_v_i)
+        begin
+          scan_cast_o.branch  = (instr_cast_i.opcode == `RV64_BRANCH_OP);
+          scan_cast_o.jal     = (instr_cast_i.opcode == `RV64_JAL_OP);
+          scan_cast_o.jalr    = (instr_cast_i.opcode == `RV64_JALR_OP);
+          scan_cast_o.call    = (instr_cast_i.opcode inside {`RV64_JAL_OP, `RV64_JALR_OP}) && dest_link;
+          scan_cast_o._return = (instr_cast_i.opcode == `RV64_JALR_OP) && src_link && !dest_src_eq;
   
-      scan_cast_o.branch = (instr_cast_i.opcode == `RV64_BRANCH_OP);
-      scan_cast_o.jal    = (instr_cast_i.opcode == `RV64_JAL_OP);
-      scan_cast_o.jalr   = (instr_cast_i.opcode == `RV64_JALR_OP);
-      scan_cast_o.call   = (instr_cast_i.opcode inside {`RV64_JAL_OP, `RV64_JALR_OP}) && dest_link;
-      scan_cast_o._return = (instr_cast_i.opcode == `RV64_JALR_OP) && src_link && !dest_src_eq;
-  
-      unique casez (instr_cast_i.opcode)
-        `RV64_BRANCH_OP: imm_o = `rv64_signext_b_imm(instr_i);
-        `RV64_JAL_OP   : imm_o = `rv64_signext_j_imm(instr_i);
-        default        : imm_o = '0;
-      endcase
+          unique casez (instr_cast_i.opcode)
+            `RV64_BRANCH_OP: scan_cast_o.imm20 = `rv64_signext_b_imm(instr_i);
+            `RV64_JAL_OP   : scan_cast_o.imm20 = `rv64_signext_j_imm(instr_i);
+            default : begin end
+          endcase
+        end
     end
 
 endmodule

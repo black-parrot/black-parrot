@@ -308,7 +308,7 @@
       ,fe_cmd_fifo_els   : 4
       ,muldiv_support    : (1 << e_div) | (1 << e_mul) | (1 << e_mulh)
       ,fpu_support       : 1
-      ,compressed_support: 1
+      ,compressed_support: 0
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 128

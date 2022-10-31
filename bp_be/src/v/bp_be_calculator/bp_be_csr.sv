@@ -682,7 +682,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.priv_n           = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n = translation_en_n;
   assign commit_pkt_cast_o.exception        = exception_v_lo;
-  assign commit_pkt_cast_o.exception_instr_partial_v = retire_pkt_cast_i.instr_partial_v;
+  assign commit_pkt_cast_o.partial          = retire_pkt_cast_i.partial;
   // Debug mode acts as a pseudo-interrupt
   assign commit_pkt_cast_o._interrupt       = interrupt_v_lo | enter_debug;
   assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;

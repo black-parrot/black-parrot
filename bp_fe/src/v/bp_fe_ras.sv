@@ -18,8 +18,8 @@ module bp_fe_ras
 
    , input                            call_i
    , input                            return_i
-
    , input [vaddr_width_p-1:0]        addr_i
+
    , output logic [vaddr_width_p-1:0] tgt_o
    , output logic                     v_o
    );

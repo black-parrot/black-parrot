@@ -49,7 +49,7 @@
       logic [dpath_width_gp-1:0]               rs2;                                                \
       logic                                    rs3_fp_v;                                           \
       logic [dpath_width_gp-1:0]               imm;                                                \
-      logic                                    instr_partial_v;                                    \
+      logic                                    partial;                                            \
       bp_be_exception_s                        exception;                                          \
       bp_be_special_s                          special;                                            \
      } bp_be_dispatch_pkt_s;                                                                       \
@@ -114,7 +114,7 @@
       logic [vaddr_width_p-1:0]  vaddr;                                                            \
       logic [dpath_width_gp-1:0] data;                                                             \
       rv64_instr_s               instr;                                                            \
-      logic                      instr_partial_v;                                                  \
+      logic                      partial;                                                          \
       bp_be_exception_s          exception;                                                        \
       bp_be_special_s            special;                                                          \
     }  bp_be_retire_pkt_s;                                                                         \
@@ -144,7 +144,7 @@
       logic [rv64_priv_width_gp-1:0]  priv_n;                                                      \
       logic                           translation_en_n;                                            \
       logic                           exception;                                                   \
-      logic                           exception_instr_partial_v;                                   \
+      logic                           partial;                                                     \
       logic                           _interrupt;                                                  \
       logic                           unfreeze;                                                    \
       logic                           eret;                                                        \
@@ -183,7 +183,7 @@
       logic                          instr_miss_v;                                                 \
       logic                          load_miss_v;                                                  \
       logic                          store_miss_v;                                                 \
-      logic                          instr_partial_v;                                              \
+      logic                          partial;                                                      \
       logic [vaddr_width_mp-1:0]     vaddr;                                                        \
     }  bp_be_ptw_miss_pkt_s;                                                                       \
                                                                                                    \
@@ -195,7 +195,7 @@
       logic instr_page_fault_v;                                                                    \
       logic load_page_fault_v;                                                                     \
       logic store_page_fault_v;                                                                    \
-      logic instr_partial_v;                                                                       \
+      logic partial;                                                                               \
       logic [vaddr_width_mp-1:0] vaddr;                                                            \
       bp_be_pte_leaf_s entry;                                                                      \
     }  bp_be_ptw_fill_pkt_s;                                                                       \
@@ -284,8 +284,8 @@
   `define bp_be_decode_info_width \
     (rv64_priv_width_gp+8)
 
-  `define bp_be_instr_half_address(base_pc_mp, instr_partial_v_mp) \
-    (base_pc_mp + (instr_partial_v_mp ? 2 : 0))
+  `define bp_be_instr_half_address(base_pc_mp, partial_mp) \
+    (base_pc_mp + (partial_mp ? 2 : 0))
 
 `endif
 

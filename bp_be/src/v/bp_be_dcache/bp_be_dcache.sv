@@ -1058,10 +1058,10 @@ module bp_be_dcache
   // Data Mem Control
   ///////////////////////////
   logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
-  for (genvar i = 0; i < block_size_in_fill_lp; i++)
-    begin : fill_mask
-      assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt_cast_i.fill_index[i]}};
-    end
+  bsg_expand_bitmask
+   #(.in_width_p(block_size_in_fill_lp), .expand_p(fill_size_in_bank_lp))
+   fill_mask_expand
+    (.i(data_mem_pkt_cast_i.fill_index), .o(data_mem_pkt_fill_mask_expanded));
 
   logic [assoc_p-1:0] data_mem_write_bank_mask;
   wire [`BSG_SAFE_CLOG2(assoc_p)-1:0] write_mask_rot_li = data_mem_pkt_cast_i.way_id;

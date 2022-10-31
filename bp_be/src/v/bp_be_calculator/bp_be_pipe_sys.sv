@@ -151,7 +151,7 @@ module bp_be_pipe_sys
       retire_ninstr_r <= reservation.instr;
       retire_instr_r  <= retire_ninstr_r;
 
-      retire_npartial_r <= reservation.instr_partial_v;
+      retire_npartial_r <= reservation.partial;
       retire_partial_r  <= retire_npartial_r;
     end
 
@@ -164,7 +164,7 @@ module bp_be_pipe_sys
       ,vaddr     : retire_vaddr_r
       ,data      : retire_data_i
       ,instr     : retire_instr_r
-      ,instr_partial_v : retire_v_i & retire_partial_r
+      ,partial   : retire_v_i & retire_partial_r
       // Could do a preemptive onehot decode here
       ,exception : retire_v_i ? retire_exception_i : '0
       ,special   : instret_li ? retire_special_i   : '0
