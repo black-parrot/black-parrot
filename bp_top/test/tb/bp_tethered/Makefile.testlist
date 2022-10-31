@@ -9,6 +9,7 @@
 #  unhandled_trap
 #  These tests dont work on all configs
 #  aviary_rom
+#  epc
 MISC_TESTS := \
   hello_world           \
   instr_coherence       \
@@ -26,7 +27,6 @@ MISC_TESTS := \
   wfi                   \
   divide_hazard         \
   readonly              \
-  epc                   \
   virtual               \
   constructor           \
   template              \
