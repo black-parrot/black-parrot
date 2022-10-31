@@ -29,5 +29,8 @@
       logic [ghist_width_mp-1:0]      ghist;                                                      \
     }  bp_fe_branch_metadata_fwd_s;
 
+  `define bp_addr_is_aligned(addr_mp, num_bytes_mp) \
+    (!(|{ addr_mp[$clog2(num_bytes_mp)-1:0] }))
+
 `endif
 

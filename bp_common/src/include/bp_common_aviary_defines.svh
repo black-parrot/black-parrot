@@ -45,8 +45,10 @@
     , localparam hio_width_p     = paddr_width_p - daddr_width_p                                   \
                                                                                                    \
     , localparam branch_metadata_fwd_width_p = proc_param_lp.branch_metadata_fwd_width             \
+    , localparam btb_ignored_bits_p          = proc_param_lp.compressed_support ? 1 : 2            \
     , localparam btb_tag_width_p             = proc_param_lp.btb_tag_width                         \
     , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                         \
+    , localparam bht_ignored_bits_p          = proc_param_lp.compressed_support ? 1 : 2            \
     , localparam bht_idx_width_p             = proc_param_lp.bht_idx_width                         \
     , localparam bht_row_els_p               = proc_param_lp.bht_row_els                           \
     , localparam ghist_width_p               = proc_param_lp.ghist_width                           \

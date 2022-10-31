@@ -166,7 +166,8 @@ module bp_be_scheduler
 
   wire fe_instr_not_exc_li = fe_queue_yumi_li & fe_instr_v_li;
   wire fe_exc_not_instr_li = fe_queue_yumi_li & fe_exc_v_li;
-  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_queue_lo.pc;
+  wire [vaddr_width_p-1:0] fe_exc_pc_li = fe_queue_lo.pc;
+  wire [vaddr_width_p-1:0] fe_exc_vaddr_li =  `bp_be_instr_half_address(fe_exc_pc_li, fe_queue_lo.partial_v);
   wire be_exc_not_instr_li = ptw_fill_pkt_cast_i.v | interrupt_v_i | unfreeze_i;
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
@@ -204,6 +205,8 @@ module bp_be_scheduler
       dispatch_pkt = '0;
       dispatch_pkt.v        = (fe_queue_yumi_li & ~poison_isd_i) || be_exc_not_instr_li;
       dispatch_pkt.queue_v  = fe_queue_yumi_li;
+      // TODO: instr_v could be restricted so that we don't need queue_v & instr_v in calculator_top
+      dispatch_pkt.instr_v  = instr_v_li;
       dispatch_pkt.pc       = expected_npc_i;
       dispatch_pkt.instr    = fe_queue_lo.instr;
       // If register injection is critical, can be done after bypass
@@ -214,6 +217,9 @@ module bp_be_scheduler
       dispatch_pkt.rs3_fp_v = issue_pkt.frs3_v;
       dispatch_pkt.imm      = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
       dispatch_pkt.decode   = instr_decoded;
+
+      dispatch_pkt.instr_partial_v = (be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_partial_v)
+                                   | (fe_exc_not_instr_li & fe_queue_lo.partial_v);
 
       dispatch_pkt.exception.instr_access_fault |=
         fe_exc_not_instr_li & fe_queue_lo.msg_type inside {e_instr_access_fault};

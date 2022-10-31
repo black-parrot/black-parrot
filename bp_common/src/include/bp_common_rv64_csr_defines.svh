@@ -213,12 +213,12 @@
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
-    logic [63:2] word_addr;                                                                \
-    logic [1:0]  zero;                                                                     \
+    logic [63:1] word_addr;                                                                \
+    logic [0:0]  zero;                                                                     \
   }  rv64_sepc_s;                                                                          \
   typedef struct packed                                                                    \
   {                                                                                        \
-    logic [(`BSG_MAX(vaddr_width_mp, paddr_width_mp))-3:0] word_addr;                      \
+    logic [(`BSG_MAX(vaddr_width_mp, paddr_width_mp))-2:0] word_addr;                      \
   }  bp_sepc_s;                                                                            \
                                                                                            \
   typedef struct packed                                                                    \
@@ -513,12 +513,12 @@
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
-    logic [63:2] word_addr;                                                                \
-    logic [1:0]  zero;                                                                     \
+    logic [63:1] word_addr;                                                                \
+    logic [0:0]  zero;                                                                     \
   }  rv64_mepc_s;                                                                          \
   typedef struct packed                                                                    \
   {                                                                                        \
-    logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-3:0] word_addr;                        \
+    logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2:0] word_addr;                        \
   }  bp_mepc_s;                                                                            \
                                                                                            \
   typedef struct packed                                                                    \
@@ -740,11 +740,11 @@
   `define bp_sepc_width ($bits(bp_sepc_s))
 
   `define compress_sepc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    bp_sepc_s'(data_cast_mp.word_addr)
+    bp_sepc_s'(data_cast_mp.word_addr & ({ {62{1'b1}}, compressed_support_p != 0 }))
 
   `define decompress_sepc_s(data_comp_mp) \
-    '{word_addr: `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 62) \
-      ,zero    : 2'b00                                        \
+    '{word_addr: `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 63) \
+      ,zero    : 1'b0                                         \
       }
 
   `define compress_scause_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
@@ -924,8 +924,8 @@
     bp_mepc_s'(data_cast_mp.word_addr)
 
   `define decompress_mepc_s(data_comp_mp) \
-    '{word_addr: `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 62) \
-      ,zero    : 2'b00                                        \
+    '{word_addr: `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 63) \
+      ,zero    : 1'b0                                        \
       }
 
   `define compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \

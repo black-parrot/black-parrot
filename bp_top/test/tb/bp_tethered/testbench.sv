@@ -558,11 +558,13 @@ module testbench
 
            ,.queue_miss_i          (queue_miss)
            ,.icache_miss_i         (icache_miss)
+           ,.icache_req_i          (cache_req_v_o)
            ,.access_fault_i        (v_if2_r & instr_access_fault_r)
            ,.page_fault_i          (v_if2_r & instr_page_fault_r)
            ,.itlb_miss_i           (v_if2_r & itlb_miss_r)
 
            ,.src_redirect_i        (pc_gen.redirect_v_i)
+           ,.src_override_ntaken_i (pc_gen.ovr_ntaken)
            ,.src_override_ras_i    (pc_gen.ovr_ret)
            ,.src_override_branch_i (pc_gen.ovr_btaken | pc_gen.ovr_jmp)
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
@@ -572,6 +574,9 @@ module testbench
 
            ,.if2_top_v_i           (v_if2_r)
            ,.if2_pc_i              (pc_gen.pc_if2_r)
+           ,.realigner_v_i         (pc_gen.fetch_instr_generation.half_buffer_v_r)
+           ,.realigner_pc_i        (pc_gen.fetch_instr_generation.fetch_instr_pc_r)
+           ,.realigner_instr_i     (pc_gen.fetch_instr_generation.half_buffer_r)
            );
 
       bind bp_be_top
