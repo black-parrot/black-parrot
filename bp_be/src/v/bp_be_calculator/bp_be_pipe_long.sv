@@ -15,8 +15,8 @@ module bp_be_pipe_long
    , input                              reset_i
 
    , input [dispatch_pkt_width_lp-1:0]  reservation_i
-   , output logic                       iready_o
-   , output logic                       fready_o
+   , output logic                       ibusy_o
+   , output logic                       fbusy_o
    , input rv64_frm_e                   frm_dyn_i
 
    , input                              flush_i
@@ -48,7 +48,7 @@ module bp_be_pipe_long
   wire [dword_width_gp-1:0] rs2 = reservation.rs2[0+:dword_width_gp];
   wire [dword_width_gp-1:0] imm = reservation.imm[0+:dword_width_gp];
 
-  wire v_li = reservation.v & reservation.decode.pipe_long_v & (reservation.decode.late_iwb_v | reservation.decode.late_fwb_v);
+  wire v_li  = reservation.v & reservation.decode.pipe_long_v & (reservation.decode.late_iwb_v | reservation.decode.late_fwb_v);
 
   wire signed_div_li = decode.fu_op inside {e_mul_op_div, e_mul_op_rem};
   wire rem_not_div_li = decode.fu_op inside {e_mul_op_rem, e_mul_op_remu};
@@ -187,9 +187,9 @@ module bp_be_pipe_long
     else
       rd_data_lo = remainder_lo;
 
-  // Actually a busy signal
-  assign iready_o = idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
-  assign fready_o = fdiv_ready_lo & ~rd_w_v_r & ~v_li;
+  // Actually a busy signal, asserted when respective modules are not ready
+  assign ibusy_o = ~idiv_ready_and_lo | rd_w_v_r | v_li;
+  assign fbusy_o = ~fdiv_ready_lo | rd_w_v_r | v_li;
 
   assign iwb_pkt.ird_w_v    = rd_w_v_r;
   assign iwb_pkt.frd_w_v    = 1'b0;

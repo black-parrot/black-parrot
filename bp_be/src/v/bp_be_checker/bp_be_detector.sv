@@ -37,8 +37,8 @@ module bp_be_detector
    , input                             cmd_full_i
    , input                             credits_full_i
    , input                             credits_empty_i
-   , input                             idiv_ready_i
-   , input                             fdiv_ready_i
+   , input                             idiv_busy_i
+   , input                             fdiv_busy_i
    , input                             mem_ready_i
    , input                             ptw_busy_i
    , input                             irq_pending_i
@@ -217,7 +217,7 @@ module bp_be_detector
                         | (dep_status_r[1].fflags_w_v)
                         | (dep_status_r[2].fflags_w_v)
                         | (dep_status_r[3].fflags_w_v)
-                        | ~fdiv_ready_i
+                        | fdiv_busy_i
                         );
 
       // TODO: This is pessimistic. Could instead flush currently
@@ -252,8 +252,8 @@ module bp_be_detector
       struct_haz_v = ptw_busy_i
                      | cmd_haz_v
                      | (~mem_ready_i & isd_status_cast_i.mem_v)
-                     | (~fdiv_ready_i & isd_status_cast_i.long_v)
-                     | (~idiv_ready_i & isd_status_cast_i.long_v);
+                     | (fdiv_busy_i & isd_status_cast_i.long_v)
+                     | (idiv_busy_i & isd_status_cast_i.long_v);
     end
 
   // Generate calculator control signals
