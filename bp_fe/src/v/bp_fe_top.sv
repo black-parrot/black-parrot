@@ -91,7 +91,7 @@ module bp_fe_top
   logic redirect_v_li, redirect_resume_v_li;
   logic [vaddr_width_p-1:0] redirect_pc_li;
   logic redirect_br_v_li, redirect_br_taken_li, redirect_br_ntaken_li, redirect_br_nonbr_li;
-  logic [instr_half_width_gp-1:0] redirect_resume_instr_li;
+  logic [instr_half_width_gp-1:0] redirect_instr_li;
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd_li, attaboy_br_metadata_fwd_li;
   logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
@@ -298,19 +298,18 @@ module bp_fe_top
          ,.reset_i(reset_i)
 
          ,.if2_v_i(icache_data_v_lo)
-         ,.if2_yumi_i(icache_data_yumi_li)
-         ,.if2_taken_branch_site_i(if2_taken_branch_site_lo)
          ,.if2_pc_i(if2_pc)
          ,.if2_data_i(icache_data_lo)
+         ,.if2_taken_branch_site_i(if2_taken_branch_site_lo)
 
          ,.redirect_v_i(redirect_v_li)
-         ,.redirect_resume_i(redirect_resume_v_li)
-         ,.redirect_partial_i(redirect_resume_instr_li)
-         ,.redirect_vaddr_i(redirect_pc_li)
+         ,.redirect_resume_v_i(redirect_resume_v_li)
+         ,.redirect_pc_i(redirect_pc_li)
+         ,.redirect_instr_i(redirect_instr_li)
 
-         ,.fetch_instr_pc_o(fetch_pc_lo)
-         ,.fetch_instr_o(fetch_instr_lo)
          ,.fetch_instr_v_o(fetch_instr_v_lo)
+         ,.fetch_pc_o(fetch_pc_lo)
+         ,.fetch_instr_o(fetch_instr_lo)
          ,.fetch_partial_o(fetch_partial_lo)
          ,.fetch_linear_o(fetch_linear_lo)
          ,.fetch_instr_yumi_i(fetch_instr_yumi_li)
@@ -380,7 +379,7 @@ module bp_fe_top
      ,.redirect_br_nonbr_o(redirect_br_nonbr_li)
      ,.redirect_br_metadata_fwd_o(redirect_br_metadata_fwd_li)
      ,.redirect_resume_v_o(redirect_resume_v_li)
-     ,.redirect_resume_instr_o(redirect_resume_instr_li)
+     ,.redirect_instr_o(redirect_instr_li)
 
      ,.attaboy_pc_o(attaboy_pc_li)
      ,.attaboy_taken_o(attaboy_taken_li)

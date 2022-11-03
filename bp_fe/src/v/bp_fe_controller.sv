@@ -25,13 +25,13 @@ module bp_fe_controller
 
    , output logic                                     redirect_v_o
    , output logic [vaddr_width_p-1:0]                 redirect_pc_o
+   , output logic [instr_half_width_gp-1:0]           redirect_instr_o
+   , output logic                                     redirect_resume_v_o
    , output logic                                     redirect_br_v_o
    , output logic                                     redirect_br_taken_o
    , output logic                                     redirect_br_ntaken_o
    , output logic                                     redirect_br_nonbr_o
    , output logic [branch_metadata_fwd_width_p-1:0]   redirect_br_metadata_fwd_o
-   , output logic                                     redirect_resume_v_o
-   , output logic [instr_half_width_gp-1:0]           redirect_resume_instr_o
 
    , output logic [vaddr_width_p-1:0]                 attaboy_pc_o
    , output logic                                     attaboy_taken_o
@@ -148,7 +148,7 @@ module bp_fe_controller
     | (~is_resume & cmd_complex_v);
 
   assign redirect_resume_v_o = itlb_fill_resume_v | icache_fill_resume_v;
-  assign redirect_resume_instr_o = itlb_fill_response_v ? fe_cmd_cast_i.operands.itlb_fill_response.instr : fe_cmd_cast_i.operands.icache_fill_response.instr;
+  assign redirect_instr_o = itlb_fill_response_v ? fe_cmd_cast_i.operands.itlb_fill_response.instr : fe_cmd_cast_i.operands.icache_fill_response.instr;
 
   always_comb
     begin

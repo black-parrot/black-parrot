@@ -18,75 +18,92 @@ module bp_fe_realigner
 
    // Fetch PC and I$ data
    , input                       if2_v_i
-   , input                       if2_yumi_i
-   , input                       if2_taken_branch_site_i
    , input [vaddr_width_p-1:0]   if2_pc_i
    , input [instr_width_gp-1:0]  if2_data_i
+   , input                       if2_taken_branch_site_i
 
    // Redirection from backend
+   //   and whether to restore the instruction data
+   //   and PC to resume a fetch
    , input                           redirect_v_i
-   // Whether to restore the instruction data
-   , input                           redirect_resume_i
-   , input [instr_half_width_gp-1:0] redirect_partial_i
-   , input [vaddr_width_p-1:0]       redirect_vaddr_i
+   , input                           redirect_resume_v_i
+   , input [instr_half_width_gp-1:0] redirect_instr_i
+   , input [vaddr_width_p-1:0]       redirect_pc_i
 
-   , output [vaddr_width_p-1:0]  fetch_instr_pc_o
-   , output [instr_width_gp-1:0] fetch_instr_o
-   , output                      fetch_instr_v_o
-   , output                      fetch_partial_o
-   , output                      fetch_linear_o
-   , input                       fetch_instr_yumi_i
+   , output [vaddr_width_p-1:0]      fetch_pc_o
+   , output [instr_width_gp-1:0]     fetch_instr_o
+   , output                          fetch_instr_v_o
+   , output                          fetch_partial_o
+   , output                          fetch_linear_o
+   , input                           fetch_instr_yumi_i
    );
 
   wire [instr_half_width_gp-1:0] icache_data_lower_half_li = if2_data_i[0                  +:instr_half_width_gp];
   wire [instr_half_width_gp-1:0] icache_data_upper_half_li = if2_data_i[instr_half_width_gp+:instr_half_width_gp];
 
-  logic [vaddr_width_p-1:0] fetch_instr_pc_n, fetch_instr_pc_r;
-  logic [instr_half_width_gp-1:0] partial_n, partial_r;
+  logic [vaddr_width_p-1:0] partial_pc_n, partial_pc_r;
+  logic [instr_half_width_gp-1:0] partial_instr_n, partial_instr_r;
   logic partial_v_r;
 
   wire if2_pc_is_aligned  = `bp_addr_is_aligned(if2_pc_i, rv64_instr_width_bytes_gp);
-
-  wire fetch_store_v = if2_v_i &
-    ((!fetch_partial_o && !if2_pc_is_aligned) || (fetch_partial_o && !if2_taken_branch_site_i));
-
-  assign fetch_instr_pc_n = (redirect_v_i & redirect_resume_i)
-                            ? (redirect_vaddr_i - vaddr_width_p'(2))
-                            : (partial_v_r & if2_pc_is_aligned)
-                              ? (if2_pc_i + vaddr_width_p'(2))
-                              : if2_pc_i;
-  assign partial_n = redirect_resume_i ? redirect_partial_i : icache_data_upper_half_li;
-
-  wire poison_li = redirect_v_i & ~redirect_resume_i;
-
-  bsg_dff_reset_en
-   #(.width_p(vaddr_width_p+instr_half_width_gp))
-   partial_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.en_i  ((if2_yumi_i & fetch_store_v) | (redirect_v_i & redirect_resume_i))
-     ,.data_i({fetch_instr_pc_n, partial_n})
-     ,.data_o({fetch_instr_pc_r, partial_r})
+  wire if2_store_v = if2_v_i &
+    // Transition from aligned to misaligned
+    ((~partial_v_r & ~if2_pc_is_aligned)
+     // Continue misaligned to aligned/misaligned
+     || (partial_v_r & ~if2_taken_branch_site_i)
      );
 
-  bsg_dff_reset_set_clear
+  wire [vaddr_width_p-1:0] redirect_pc_adjusted = redirect_pc_i - 2'b10;
+  wire [vaddr_width_p-1:0] if2_pc_adjusted = (partial_v_r & if2_pc_is_aligned) ? (if2_pc_i + 2'b10) : if2_pc_i;
+  wire [instr_half_width_gp-1:0] if2_data_lower = if2_data_i[0+:instr_half_width_gp];
+  wire [instr_half_width_gp-1:0] if2_data_upper = if2_data_i[instr_half_width_gp+:instr_half_width_gp];
+  bsg_mux
+   #(.width_p(instr_half_width_gp+vaddr_width_p), .els_p(2))
+   partial_mux
+    (.data_i({{redirect_instr_i, redirect_pc_adjusted}, {if2_data_upper, if2_pc_adjusted}})
+     ,.sel_i(redirect_v_i)
+     ,.data_o({partial_instr_n, partial_pc_n})
+     );
+
+  wire partial_w_v = if2_store_v | redirect_v_i | fetch_instr_yumi_i;
+  wire partial_v_n = (if2_store_v & ~redirect_v_i) | (redirect_v_i & redirect_resume_v_i);
+  bsg_dff_reset_en
    #(.width_p(1))
    partial_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i(~poison_li & (if2_yumi_i & fetch_store_v))
-     ,.clear_i((redirect_v_i & ~redirect_resume_i) | fetch_instr_yumi_i) // set overrides clear
-     ,.data_o (partial_v_r)
+     ,.en_i(partial_w_v)
+     ,.data_i(partial_v_n)
+     ,.data_o(partial_v_r)
      );
 
-  assign fetch_partial_o = partial_v_r;
+  bsg_dff_reset_en
+   #(.width_p(instr_half_width_gp+vaddr_width_p))
+   partial_instr_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-  assign fetch_instr_v_o  = if2_v_i & (partial_v_r | if2_pc_is_aligned);
-  assign fetch_instr_pc_o = partial_v_r ? fetch_instr_pc_r : if2_pc_i;
-  assign fetch_instr_o    = partial_v_r ? { icache_data_lower_half_li, partial_r } : if2_data_i;
-  assign fetch_linear_o   = fetch_store_v;
+     ,.en_i(partial_w_v)
+     ,.data_i({partial_pc_n, partial_instr_n})
+     ,.data_o({partial_pc_r, partial_instr_r})
+     );
+
+  wire [instr_width_gp-1:0] instr_assembled = {if2_data_lower, partial_instr_r};
+  bsg_mux
+   #(.width_p(instr_width_gp+vaddr_width_p), .els_p(2))
+   fetch_mux
+    (.data_i({{instr_assembled, partial_pc_r}, {if2_data_i, if2_pc_i}})
+     ,.sel_i(partial_v_r)
+     ,.data_o({fetch_instr_o, fetch_pc_o})
+     );
+
+  // Either completing a partial instruction or fetching aligned instruction
+  assign fetch_instr_v_o = if2_v_i & (partial_v_r | if2_pc_is_aligned);
+  // Force a linear fetch if we're storing in the realigner (need to complete instruction)
+  //   or if we need to complete an instruction and are not currently completing an instruction
+  assign fetch_linear_o  = if2_store_v;
+  assign fetch_partial_o = partial_v_r;
 
 endmodule
 
