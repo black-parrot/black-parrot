@@ -70,12 +70,12 @@ module bp_be_pipe_long
     ,.v_i(imulh_v_li)
     ,.ready_o(imulh_ready_lo)
     ,.opA_i(op_a)
-	  ,.signed_opA_i(signed_opA_li)
-	  ,.opB_i(op_b)
+    ,.signed_opA_i(signed_opA_li)
+    ,.opB_i(op_b)
     ,.signed_opB_i(signed_opB_li)
     ,.gets_high_part_i(1'b1)
     ,.v_o(imulh_v_lo)
-	  ,.result_o(imulh_result_lo)
+    ,.result_o(imulh_result_lo)
     ,.yumi_i(imulh_v_lo & iwb_yumi_i)
     );
 
@@ -185,21 +185,6 @@ module bp_be_pipe_long
      ,.data_o({imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
      );
 
-  // Prevents out of order writebacks before commits
-  // Possibly unnecessary
-  logic [2:0] hazard_cnt;
-  wire wb_safe = (hazard_cnt > 3);
-  bsg_counter_clear_up
-   #(.max_val_p(4), .init_val_p(0))
-   hazard_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(v_li)
-     ,.up_i(rd_w_v_r & ~wb_safe)
-     ,.count_o(hazard_cnt)
-     );
-
   logic [dword_width_gp-1:0] rd_data_lo;
   always_comb
     if (~opw_v_r && fu_op_r inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu})
@@ -224,7 +209,7 @@ module bp_be_pipe_long
   assign iwb_pkt.rd_data    = rd_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
   assign iwb_pkt.fflags     = '0;
-  assign iwb_v_o = (imulh_done_v_r | idiv_done_v_r) & rd_w_v_r & wb_safe;
+  assign iwb_v_o = (imulh_done_v_r | idiv_done_v_r) & rd_w_v_r;
 
   assign fwb_pkt.ird_w_v    = 1'b0;
   assign fwb_pkt.frd_w_v    = rd_w_v_r;
@@ -233,7 +218,7 @@ module bp_be_pipe_long
   assign fwb_pkt.rd_data    = fdivsqrt_result;
   assign fwb_pkt.fflags_w_v = 1'b1;
   assign fwb_pkt.fflags     = fdivsqrt_fflags;
-  assign fwb_v_o = fdiv_done_v_r & rd_w_v_r & wb_safe;
+  assign fwb_v_o = fdiv_done_v_r & rd_w_v_r;
 
   // synopsys translate_off
 

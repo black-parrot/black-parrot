@@ -447,8 +447,8 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_MHARTID      }: csr_data_lo = cfg_bus_cast_i.core_id;
                 {1'b1, `CSR_ADDR_MSTATUS      }: csr_data_lo = mstatus_lo;
                 // MISA is optionally read-write, but all fields are read-only in BlackParrot
-                //   64 bit MXLEN, IMAFDSU extensions
-                {1'b1, `CSR_ADDR_MISA         }: csr_data_lo = {2'b10, 36'b0, 26'h141129};
+                //   64 bit MXLEN, IMACFDSU extensions
+                {1'b1, `CSR_ADDR_MISA         }: csr_data_lo = {2'b10, 36'b0, 26'h14112d};
                 {1'b1, `CSR_ADDR_MEDELEG      }: csr_data_lo = medeleg_lo;
                 {1'b1, `CSR_ADDR_MIDELEG      }: csr_data_lo = mideleg_lo;
                 {1'b1, `CSR_ADDR_MIE          }: csr_data_lo = mie_lo;
@@ -522,7 +522,7 @@ module bp_be_csr
           if (d_interrupt_icode_v_li & dgie)
             begin
               enter_debug    = 1'b1;
-              dpc_li         = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               dcsr_li.cause  = 3; // Debugger
               dcsr_li.prv    = priv_mode_r;
             end
@@ -534,7 +534,7 @@ module bp_be_csr
               mstatus_li.mpie      = mstatus_lo.mie;
               mstatus_li.mie       = 1'b0;
 
-              mepc_li              = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              mepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               mtval_li             = '0;
               mcause_li._interrupt = 1'b1;
               mcause_li.ecode      = m_interrupt_icode_li;
@@ -549,7 +549,7 @@ module bp_be_csr
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
 
-              sepc_li              = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               stval_li             = '0;
               scause_li._interrupt = 1'b1;
               scause_li.ecode      = s_interrupt_icode_li;
@@ -572,10 +572,10 @@ module bp_be_csr
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
 
-              sepc_li              = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               stval_li             = (exception_ecode_li == 2)
                                     ? retire_pkt_cast_i.instr
-                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, paddr_width_p);
+                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
 
               scause_li._interrupt = 1'b0;
               scause_li.ecode      = exception_ecode_li;
@@ -590,10 +590,10 @@ module bp_be_csr
               mstatus_li.mpie      = mstatus_lo.mie;
               mstatus_li.mie       = 1'b0;
 
-              mepc_li              = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              mepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               mtval_li             = (exception_ecode_li == 2)
                                     ? retire_pkt_cast_i.instr
-                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, paddr_width_p);
+                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
 
               mcause_li._interrupt = 1'b0;
               mcause_li.ecode      = exception_ecode_li;
@@ -605,7 +605,7 @@ module bp_be_csr
       if (retire_pkt_cast_i.special.dbreak)
         begin
           enter_debug    = 1'b1;
-          dpc_li         = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+          dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
           dcsr_li.cause  = 1; // Ebreak
           dcsr_li.prv    = priv_mode_r;
         end
@@ -640,7 +640,7 @@ module bp_be_csr
       if (~is_debug_mode & retire_pkt_cast_i.queue_v & dcsr_lo.step)
         begin
           enter_debug   = 1'b1;
-          dpc_li        = `BSG_SIGN_EXTEND(core_npc, paddr_width_p);
+          dpc_li        = `BSG_SIGN_EXTEND(core_npc, dword_width_gp);
           dcsr_li.cause = 4;
           dcsr_li.prv   = priv_mode_r;
         end
