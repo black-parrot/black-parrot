@@ -298,10 +298,10 @@ module bp_fe_pc_gen
   wire taken_br_if2 = fetch_scan.branch & pred_if1_r;
   wire taken_jmp_if2 = fetch_scan.jal;
 
-  assign ovr_ret    = btb_miss_ras & taken_ret_if2;
-  assign ovr_btaken = btb_miss_br & taken_br_if2;
-  assign ovr_jmp    = btb_miss_br & taken_jmp_if2;
-  assign ovr_ntaken = taken_if1_r & fetch_linear_i;
+  assign ovr_ret    = ~fetch_linear_i & btb_miss_ras & taken_ret_if2;
+  assign ovr_btaken = ~fetch_linear_i & btb_miss_br & taken_br_if2;
+  assign ovr_jmp    = ~fetch_linear_i & btb_miss_br & taken_jmp_if2;
+  assign ovr_ntaken =  fetch_linear_i & taken_if1_r;
   assign ovr_o      = ovr_btaken | ovr_jmp | ovr_ret | ovr_ntaken;
 
   assign br_tgt_lo     = fetch_pc_i + `BSG_SIGN_EXTEND(fetch_scan.imm20, vaddr_width_p);
