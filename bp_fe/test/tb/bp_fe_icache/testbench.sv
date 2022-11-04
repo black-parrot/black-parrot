@@ -124,7 +124,6 @@ module testbench
   assign vaddr_li      = trace_data_lo[ptag_width_p+:vaddr_width_p];
   wire uncached_li     = trace_data_lo[(ptag_width_p+vaddr_width_p)+:1];
   wire nonidem_li      = '0;
-  wire trace_yumi_li   = trace_v_lo & dut_ready_lo;
 
   // Trace replay
   logic test_done_lo;
@@ -222,16 +221,16 @@ module testbench
      ,.cfg_bus_i(cfg_bus_li)
 
      ,.vaddr_i(vaddr_li)
-     ,.vaddr_v_i(trace_v_lo)
-     ,.vaddr_ready_o(dut_ready_lo)
-
      ,.ptag_i(ptag_li)
-     ,.ptag_v_i(trace_v_lo)
      ,.ptag_uncached_i(uncached_li)
      ,.ptag_nonidem_i(nonidem_li)
      ,.ptag_dram_i(~uncached_li)
+     ,.v_i(trace_v_lo)
+     ,.yumi_o(trace_yumi_li)
+
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
+     ,.ready_i(icache_ready_li)
 
      ,.mem_fwd_header_o(mem_fwd_header_lo)
      ,.mem_fwd_data_o(mem_fwd_data_lo)
@@ -251,7 +250,6 @@ module testbench
    #(.bp_params_p(bp_params_p)
      ,.preload_mem_p(1)
      ,.dram_type_p(dram_type_p)
-     ,.mem_els_p(2**20)
      )
     mem
     (.clk_i(clk_i)

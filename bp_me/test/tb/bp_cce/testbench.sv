@@ -688,7 +688,6 @@ module testbench
    #(.bp_params_p(bp_params_p)
      ,.preload_mem_p(0)
      ,.dram_type_p(dram_type_p)
-     ,.mem_els_p(2**20)
      )
    mem
     (.clk_i(clk_i)

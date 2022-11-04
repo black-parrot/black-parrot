@@ -91,7 +91,7 @@ module bp_fe_bht
 
   // GSELECT
   wire                            r_v_li = r_v_i;
-  wire [idx_width_lp-1:0]       r_idx_li = {r_addr_i[bht_ignored_bits_p+:bht_idx_width_p], r_ghist_i};
+  wire [idx_width_lp-1:0]       r_idx_li = {r_addr_i[2+:bht_idx_width_p], r_ghist_i};
   logic [bht_row_width_p-1:0] r_data_lo;
 
   assign rw_same_addr = r_v_i & w_v_i & (r_idx_li == w_idx_li);
@@ -116,14 +116,14 @@ module bp_fe_bht
   if (bht_row_els_p > 1)
     begin : fold
       wire [`BSG_SAFE_CLOG2(bht_row_width_p)-1:0] pred_idx_n =
-        1'b1 + (r_addr_i[bht_ignored_bits_p+bht_idx_width_p+:`BSG_SAFE_CLOG2(bht_row_els_p)] << 1'b1);
+        1'b1 + (r_addr_i[2+bht_idx_width_p+:`BSG_SAFE_CLOG2(bht_row_els_p)] << 1'b1);
       bsg_dff
        #(.width_p(`BSG_SAFE_CLOG2(bht_row_width_p)))
        pred_idx_reg
         (.clk_i(clk_i)
          ,.data_i(pred_idx_n)
-        ,.data_o(pred_idx_r)
-        );
+         ,.data_o(pred_idx_r)
+         );
    end
  else
    begin : no_fold

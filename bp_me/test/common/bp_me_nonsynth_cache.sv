@@ -94,6 +94,8 @@ module bp_me_nonsynth_cache
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
+    localparam bp_cache_req_size_e block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
+
   // Trace Replay Interface
   `declare_bp_me_nonsynth_tr_pkt_s(paddr_width_p, dword_width_gp);
   `bp_cast_i(bp_me_nonsynth_tr_pkt_s, tr_pkt);
@@ -422,13 +424,15 @@ module bp_me_nonsynth_cache
     cache_req_cast_o = '0;
     cache_req_cast_o.hit = 1'b0; // unused by LCE
     cache_req_cast_o.data = tr_pkt_r.data;
-    cache_req_cast_o.size = double_op
-                            ? e_size_8B
-                            : word_op
-                              ? e_size_4B
-                              : half_op
-                                ? e_size_2B
-                                : e_size_1B;
+    cache_req_cast_o.size = uc_op
+                            ? double_op
+                              ? e_size_8B
+                              : word_op
+                                ? e_size_4B
+                                : half_op
+                                  ? e_size_2B
+                                  : e_size_1B
+                            : block_req_size;
     cache_req_cast_o.addr = tr_pkt_r.paddr;
     // AMO, flush, clear, and wt_store not supported
     cache_req_cast_o.msg_type = uc_op ? store_op ? e_uc_store : e_uc_load

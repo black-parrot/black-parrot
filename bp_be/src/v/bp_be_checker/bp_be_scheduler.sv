@@ -218,7 +218,7 @@ module bp_be_scheduler
       dispatch_pkt.imm      = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt.frs3_v ? frf_rs3 : decoded_imm_lo;
       dispatch_pkt.decode   = instr_decoded;
 
-      dispatch_pkt.instr_partial_v = (be_exc_not_instr_li & ptw_fill_pkt_cast_i.instr_partial_v)
+      dispatch_pkt.partial = (be_exc_not_instr_li & ptw_fill_pkt_cast_i.partial)
                                    | (fe_exc_not_instr_li & fe_queue_lo.partial_v);
 
       dispatch_pkt.exception.instr_access_fault |=

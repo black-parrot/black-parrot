@@ -62,7 +62,7 @@ module bp_be_issue_queue
                     : enq
                        ? ((ptr_width_lp+1)'(1))
                        : ((ptr_width_lp+1)'(0));
-  assign cptr_jmp = deq_v_i;
+  assign cptr_jmp = deq;
 
   wire empty = (rptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp])
                & (rptr_r[ptr_width_lp] == wptr_r[ptr_width_lp]);

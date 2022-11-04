@@ -380,7 +380,7 @@ module bp_be_dcache
   // TV Stage
   /////////////////////////////////////////////////////////////////////////////
   localparam snoop_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p/dword_width_gp);
-  logic uncached_op_tv_r, cached_op_tv_r, dram_op_tv_r, fill_tv_r;
+  logic uncached_op_tv_r, dram_op_tv_r, fill_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
   logic [dword_width_gp-1:0] st_data_tv_r;
   rv64_fflags_s st_fflags_tv_r;
@@ -464,18 +464,18 @@ module bp_be_dcache
      );
 
   bsg_dff_en
-   #(.width_p(paddr_width_p+assoc_p+3+$bits(bp_be_dcache_decode_s)))
+   #(.width_p(paddr_width_p+assoc_p+2+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
     (.clk_i(negedge_clk)
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
                ,bank_sel_one_hot_tl
-               ,uncached_op_tl, cached_op_tl, dram_op_tl
+               ,uncached_op_tl, dram_op_tl
                ,decode_tl_r
                })
      ,.data_o({paddr_tv_r
                ,bank_sel_one_hot_tv_r
-               ,uncached_op_tv_r, cached_op_tv_r, dram_op_tv_r
+               ,uncached_op_tv_r, dram_op_tv_r
                ,decode_tv_r
                })
      );
@@ -580,9 +580,9 @@ module bp_be_dcache
   // Fail if we have a store conditional without success
   wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
 
-  wire store_miss_tv    = cached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & (writethrough_p == 0);
-  wire lr_miss_tv       = cached_op_tv_r & decode_tv_r.lr_op & ~lr_hit_tv;
-  wire load_miss_tv     = cached_op_tv_r & decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
+  wire store_miss_tv    = ~uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & (writethrough_p == 0);
+  wire lr_miss_tv       = ~uncached_op_tv_r & decode_tv_r.lr_op & ~lr_hit_tv;
+  wire load_miss_tv     = ~uncached_op_tv_r & decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r & (coherent_p == 0);
   wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.load_op & ~fill_tv_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_ready_and_i;
@@ -1058,10 +1058,10 @@ module bp_be_dcache
   // Data Mem Control
   ///////////////////////////
   logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
-  for (genvar i = 0; i < block_size_in_fill_lp; i++)
-    begin : fill_mask
-      assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt_cast_i.fill_index[i]}};
-    end
+  bsg_expand_bitmask
+   #(.in_width_p(block_size_in_fill_lp), .expand_p(fill_size_in_bank_lp))
+   fill_mask_expand
+    (.i(data_mem_pkt_cast_i.fill_index), .o(data_mem_pkt_fill_mask_expanded));
 
   logic [assoc_p-1:0] data_mem_write_bank_mask;
   wire [`BSG_SAFE_CLOG2(assoc_p)-1:0] write_mask_rot_li = data_mem_pkt_cast_i.way_id;
@@ -1170,7 +1170,7 @@ module bp_be_dcache
   // Stat Mem Control
   ///////////////////////////
   wire stat_mem_fast_read  = (early_miss_v_o | (v_tv_r & load_hit_tv & uncached_op_tv_r));
-  wire stat_mem_fast_write = (v_tv_r & ~any_miss_tv & cached_op_tv_r);
+  wire stat_mem_fast_write = (v_tv_r & ~any_miss_tv & ~uncached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
   assign stat_mem_v_li = stat_mem_fast_read | stat_mem_fast_write

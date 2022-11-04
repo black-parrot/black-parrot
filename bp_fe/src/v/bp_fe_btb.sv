@@ -89,8 +89,8 @@ module bp_fe_btb
     logic [vaddr_width_p-1:0]   tgt;
   }  bp_btb_entry_s;
 
-  wire [btb_idx_width_p-1:0] r_idx_li = r_addr_i[btb_ignored_bits_p+:btb_idx_width_p];
-  wire [btb_tag_width_p-1:0] r_tag_li = r_addr_i[btb_ignored_bits_p+btb_idx_width_p+:btb_tag_width_p];
+  wire [btb_idx_width_p-1:0] r_idx_li = r_addr_i[2+:btb_idx_width_p];
+  wire [btb_tag_width_p-1:0] r_tag_li = r_addr_i[2+btb_idx_width_p+:btb_tag_width_p];
 
   bp_btb_entry_s tag_mem_data_li;
   wire rw_same_addr = r_v_i & w_v_i & (r_idx_li == w_idx_i);

@@ -9,6 +9,7 @@
 #  unhandled_trap
 #  These tests dont work on all configs
 #  aviary_rom
+#  This test fails spuriously because it assumes IALIGN=32
 #  epc
 MISC_TESTS := \
   hello_world           \
