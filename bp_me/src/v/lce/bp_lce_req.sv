@@ -37,8 +37,6 @@ module bp_lce_req
    // byte offset bits required per bedrock data channel beat
    , localparam bedrock_byte_offset_lp = `BSG_SAFE_CLOG2(fill_width_p/8)
    , localparam bit [paddr_width_p-1:0] req_addr_mask = {paddr_width_p{1'b1}} << bedrock_byte_offset_lp
-   // coherence request size for cached requests
-   , localparam bp_bedrock_msg_size_e req_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8))
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
@@ -262,7 +260,7 @@ module bp_lce_req
           end
           e_miss_load: begin
             lce_req_header_v_o = cache_req_v_with_credit;
-            lce_req_header_cast_o.size = req_block_size_lp;
+            lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
             // align address to data width and send address of critical beat
             lce_req_header_cast_o.addr = critical_req_addr;
             lce_req_header_cast_o.msg_type.req = e_bedrock_req_rd_miss;
@@ -274,7 +272,7 @@ module bp_lce_req
           end
           e_miss_store: begin
             lce_req_header_v_o = cache_req_v_with_credit;
-            lce_req_header_cast_o.size = req_block_size_lp;
+            lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
             // align address to data width and send address of critical beat
             lce_req_header_cast_o.addr = critical_req_addr;
             lce_req_header_cast_o.msg_type.req = e_bedrock_req_wr_miss;

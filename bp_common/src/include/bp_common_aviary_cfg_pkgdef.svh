@@ -189,6 +189,7 @@
     //   bit 0: fpu enabled
     integer unsigned fpu_support;
     // Whether to enable the "c" extension.
+    // Currently, this only enables support for misaligned 32-bit instructions; full "C" support is not yet implemented.
     integer unsigned compressed_support;
 
     // Whether the coherence network is on the core clock or on its own clock

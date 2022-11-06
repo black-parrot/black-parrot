@@ -138,6 +138,8 @@ module bp_be_pipe_mem
   /* Internal connections */
   /* TLB ports */
   logic                    dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_v_lo;
+  logic                    tlb_store_miss_v, tlb_load_miss_v;
+  logic                    tlb_ptag_uncached, tlb_ptag_dram;
   logic [vtag_width_p-1:0] dtlb_w_vtag;
   bp_pte_leaf_s            dtlb_w_entry;
 
@@ -229,11 +231,11 @@ module bp_be_pipe_mem
      ,.r_v_o(dtlb_v_lo)
      ,.r_ptag_o(dtlb_ptag_lo)
      ,.r_instr_miss_o()
-     ,.r_load_miss_o(tlb_load_miss_v_o)
-     ,.r_store_miss_o(tlb_store_miss_v_o)
-     ,.r_uncached_o(dcache_ptag_uncached)
+     ,.r_load_miss_o(tlb_load_miss_v)
+     ,.r_store_miss_o(tlb_store_miss_v)
+     ,.r_uncached_o(tlb_ptag_uncached)
      ,.r_nonidem_o(/* All D$ misses are non-speculative */)
-     ,.r_dram_o(dcache_ptag_dram)
+     ,.r_dram_o(tlb_ptag_dram)
      ,.r_instr_access_fault_o()
      ,.r_load_access_fault_o(load_access_fault_v)
      ,.r_store_access_fault_o(store_access_fault_v)
@@ -250,6 +252,7 @@ module bp_be_pipe_mem
     '{instr_miss_v  : commit_pkt.itlb_miss
       ,store_miss_v : commit_pkt.dtlb_store_miss
       ,load_miss_v  : commit_pkt.dtlb_load_miss
+      ,partial      : commit_pkt.partial
       ,vaddr        : commit_pkt.vaddr
       ,mstatus_mxr  : trans_info.mstatus_mxr
       ,mstatus_sum  : trans_info.mstatus_sum
@@ -350,6 +353,8 @@ module bp_be_pipe_mem
         dcache_pkt      = ptw_dcache_pkt;
         dcache_ptag     = ptw_dcache_ptag;
         dcache_ptag_v   = ptw_dcache_ptag_v;
+        dcache_ptag_uncached = 1'b0;
+        dcache_ptag_dram     = 1'b1;
       end
     else
       begin
@@ -361,7 +366,18 @@ module bp_be_pipe_mem
         dcache_ptag            = dtlb_ptag_lo;
         // D$ can't handle misaligned accesses
         dcache_ptag_v          = dtlb_v_lo & ~load_misaligned_v & ~store_misaligned_v;
+        dcache_ptag_uncached   = tlb_ptag_uncached;
+        dcache_ptag_dram       = tlb_ptag_dram;
       end
+
+  logic dtlb_r_v_r;
+  bsg_dff
+   #(.width_p(1))
+   tlb_v_reg
+    (.clk_i(~clk_i)
+     ,.data_i(dtlb_r_v)
+     ,.data_o(dtlb_r_v_r)
+     );
 
   logic early_v_r;
   bsg_dff_chain
@@ -372,17 +388,20 @@ module bp_be_pipe_mem
      ,.data_o(early_v_r)
      );
 
+  assign tlb_load_miss_v_o      = dtlb_r_v_r & tlb_load_miss_v;
+  assign tlb_store_miss_v_o     = dtlb_r_v_r & tlb_store_miss_v;
+
+  assign store_page_fault_v_o   = dtlb_r_v_r & store_page_fault_v;
+  assign load_page_fault_v_o    = dtlb_r_v_r & load_page_fault_v;
+  assign store_access_fault_v_o = dtlb_r_v_r & store_access_fault_v;
+  assign load_access_fault_v_o  = dtlb_r_v_r & load_access_fault_v;
+  assign store_misaligned_v_o   = dtlb_r_v_r & store_misaligned_v;
+  assign load_misaligned_v_o    = dtlb_r_v_r & load_misaligned_v;
+
   assign cache_fail_v_o         = early_v_r & ~dcache_early_hit_v  & ~dcache_early_miss_v;
   assign cache_miss_v_o         = early_v_r & ~dcache_early_fencei &  dcache_early_miss_v;
   assign fencei_clean_v_o       = early_v_r &  dcache_early_fencei &  dcache_early_hit_v;
   assign fencei_dirty_v_o       = early_v_r &  dcache_early_fencei & ~dcache_early_hit_v;
-
-  assign store_page_fault_v_o   = store_page_fault_v;
-  assign load_page_fault_v_o    = load_page_fault_v;
-  assign store_access_fault_v_o = store_access_fault_v;
-  assign load_access_fault_v_o  = load_access_fault_v;
-  assign store_misaligned_v_o   = store_misaligned_v;
-  assign load_misaligned_v_o    = load_misaligned_v;
 
   assign ready_o                = dcache_ready_lo;
   assign ptw_busy_o             = ptw_busy;
