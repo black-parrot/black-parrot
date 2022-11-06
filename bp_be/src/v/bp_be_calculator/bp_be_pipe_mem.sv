@@ -159,7 +159,7 @@ module bp_be_pipe_mem
   logic                     dcache_ptag_v;
   logic                     dcache_ptag_uncached;
   logic                     dcache_ptag_dram;
-  logic                     dcache_ready_lo;
+  logic                     dcache_ready_and_lo;
 
   logic load_access_fault_v, store_access_fault_v;
   logic load_page_fault_v, store_page_fault_v;
@@ -276,7 +276,7 @@ module bp_be_pipe_mem
      ,.dcache_pkt_o(ptw_dcache_pkt)
      ,.dcache_ptag_o(ptw_dcache_ptag)
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
-     ,.dcache_ready_i(dcache_ready_lo)
+     ,.dcache_ready_i(dcache_ready_and_lo)
 
      ,.dcache_early_hit_v_i(dcache_early_hit_v)
      ,.dcache_early_data_i(dcache_early_data)
@@ -292,7 +292,7 @@ module bp_be_pipe_mem
 
       ,.dcache_pkt_i(dcache_pkt)
       ,.v_i(dcache_pkt_v)
-      ,.ready_o(dcache_ready_lo)
+      ,.ready_and_o(dcache_ready_and_lo)
       ,.poison_req_i(flush_i)
 
       ,.ptag_i(dcache_ptag)
@@ -384,7 +384,7 @@ module bp_be_pipe_mem
   assign store_misaligned_v_o   = store_misaligned_v;
   assign load_misaligned_v_o    = load_misaligned_v;
 
-  assign ready_o                = dcache_ready_lo;
+  assign ready_o                = dcache_ready_and_lo;
   assign ptw_busy_o             = ptw_busy;
   assign early_data_o           = dcache_early_data;
   assign early_fflags_o         = dcache_early_fflags;

@@ -84,7 +84,7 @@ module bp_cacc_vdp
 
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic                     dcache_ready, dcache_v;
+  logic                     dcache_ready_and, dcache_v;
   logic [dpath_width_gp-1:0] dcache_data;
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_uncached;
@@ -149,7 +149,7 @@ module bp_cacc_vdp
 
      ,.dcache_pkt_i(dcache_pkt)
      ,.v_i(dcache_pkt_v)
-     ,.ready_o(dcache_ready)
+     ,.ready_and_o(dcache_ready_and)
      ,.poison_req_i(1'b0)
 
      ,.ptag_v_i(1'b1)
@@ -394,7 +394,7 @@ module bp_cacc_vdp
         done = 0;
       end
       WAIT_FETCH: begin
-        state_n = dcache_ready ? FETCH : WAIT_FETCH;
+        state_n = dcache_ready_and ? FETCH : WAIT_FETCH;
         res_status = '0;
         dcache_ptag = '0;
         dcache_pkt = '0;

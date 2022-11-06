@@ -128,7 +128,7 @@ module bp_be_dcache
    // New D$ packet comes in
    , input [dcache_pkt_width_lp-1:0]                 dcache_pkt_i
    , input                                           v_i
-   , output logic                                    ready_o
+   , output logic                                    ready_and_o
    , input                                           poison_req_i
 
    // Cycle 1: "Tag Lookup"
@@ -315,7 +315,7 @@ module bp_be_dcache
   logic [page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dpath_width_gp-1:0] data_tl_r;
 
-  assign safe_tl_we = ready_o & v_i;
+  assign safe_tl_we = ready_and_o & v_i;
   assign tl_we = safe_tl_we & ~poison_req_i & ~flush_self;
   bsg_dff_reset
    #(.width_p(1))
@@ -982,7 +982,7 @@ module bp_be_dcache
     else
       state_r <= state_n;
 
-  assign ready_o = ~cache_req_busy_i & is_ready;
+  assign ready_and_o = ~cache_req_busy_i & is_ready;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control
