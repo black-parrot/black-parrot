@@ -174,12 +174,6 @@ module bp_lce_cmd
       ,.data_o({lce_cmd_last_li, lce_cmd_data_li})
       );
 
-  // first fill index of arriving command
-  wire [fill_select_width_lp-1:0] first_cnt =
-    (block_size_in_fill_lp > 1)
-    ? lce_cmd_header_cast_li.addr[fill_byte_offset_lp+:fill_select_width_lp]
-    : '0;
-
   // tag sent tracking
   // clears when header consumed
   logic critical_tag_sent_r, critical_tag_sent;
@@ -212,28 +206,32 @@ module bp_lce_cmd
       );
   assign cache_req_critical_data_o = ~critical_data_sent_r & critical_data_sent;
 
-  logic wrap_cnt_set, wrap_cnt_up;
-  logic [fill_select_width_lp-1:0] wrap_cnt_size, full_cnt, wrap_cnt;
+  // first fill index of arriving command
+  wire [fill_select_width_lp-1:0] first_cnt =
+    (block_size_in_fill_lp > 1)
+    ? lce_cmd_header_cast_li.addr[fill_byte_offset_lp+:fill_select_width_lp]
+    : '0;
 
-  // fill width and bedrock data width have same width
   // initial count set by FSM
   // size and first_cnt held constant by not dequeueing command header until all data consumed
   // increment count as each data beat is forwarded to cache
-  // wrap count provides fill select as long as set_i and en_i not raised same cycle
-  bp_me_stream_wraparound
-    #(.max_val_p(block_size_in_fill_lp-1))
-    cmd_wraparound_cnt
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.size_i(wrap_cnt_size)
-      ,.set_i(wrap_cnt_set)
-      ,.val_i(first_cnt)
-      ,.en_i(wrap_cnt_up)
-      ,.full_o(full_cnt)
-      ,.wrap_o(wrap_cnt)
-      );
-  wire [fill_select_width_lp-1:0] last_cnt = first_cnt + wrap_cnt_size;
-  wire is_last_cnt = (full_cnt == last_cnt);
+  logic [fill_select_width_lp-1:0] wrap_cnt;
+  logic wrap_cnt_up, wrap_cnt_last;
+  wire [fill_select_width_lp-1:0] wrap_size = '1;
+  bp_me_stream_pump_control
+   #(.max_val_p(block_size_in_fill_lp-1))
+   wrap_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.size_i('1)
+     ,.val_i(first_cnt)
+     ,.en_i(wrap_cnt_up)
+
+     ,.wrap_o(wrap_cnt)
+     ,.first_o()
+     ,.last_o(wrap_cnt_last)
+     );
 
   // decode wrap around count into one-hot fill index for data mem packet
   logic [block_size_in_fill_lp-1:0] fill_index, fill_index_li;
@@ -363,12 +361,8 @@ module bp_lce_cmd
     // raised request is fully resolved
     cache_req_complete_o = 1'b0;
 
-    // wrap around count set / start transaction
-    wrap_cnt_set = 1'b0;
     // wrap around count increment
     wrap_cnt_up = 1'b0;
-    // default size input comes from inbound command
-    wrap_cnt_size = fill_select_width_lp'(block_size_in_fill_lp-1);
 
     // LCE-CCE Interface signals
     lce_cmd_header_yumi_lo = 1'b0;
@@ -558,7 +552,6 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_v_o = lce_cmd_header_v_li;
             critical_tag_sent = tag_mem_pkt_yumi_i;
-            wrap_cnt_set = tag_mem_pkt_yumi_i;
 
             // do not consume header since it is needed to compute fill index for cache data writes
             state_n = tag_mem_pkt_yumi_i
@@ -641,10 +634,6 @@ module bp_lce_cmd
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
             data_mem_pkt_v_o = lce_cmd_header_v_li;
 
-            // setup wraparound counter
-            wrap_cnt_set = data_mem_pkt_yumi_i;
-            wrap_cnt_size = fill_select_width_lp'(block_size_in_fill_lp-1);
-
             state_n = data_mem_pkt_yumi_i
                       ? e_tr
                       : state_r;
@@ -679,11 +668,6 @@ module bp_lce_cmd
             stat_mem_pkt_v_o = lce_cmd_header_v_li
                                & (lce_cmd_header_cast_li.msg_type.cmd == e_bedrock_cmd_st_tr)
                                & (lce_cmd_header_cast_li.payload.state == e_COH_I);
-
-            // setup wraparound counter
-            wrap_cnt_set = data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i
-                           & (~stat_mem_pkt_v_o | stat_mem_pkt_yumi_i);
-            wrap_cnt_size = fill_select_width_lp'(block_size_in_fill_lp-1);
 
             // for both of these commands, do the transfer next
             state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & (~stat_mem_pkt_v_o | stat_mem_pkt_yumi_i))
@@ -743,9 +727,6 @@ module bp_lce_cmd
         lce_fill_header_v_o = lce_cmd_header_v_li;
         lce_fill_has_data_o = 1'b1;
 
-        // hold wraparound counter size input constant
-        wrap_cnt_size = fill_select_width_lp'(block_size_in_fill_lp-1);
-
         // send transfer data in next state
         state_n = (lce_fill_header_v_o & lce_fill_header_ready_and_i)
                   ? e_tr_data
@@ -758,11 +739,9 @@ module bp_lce_cmd
       e_tr_data: begin
 
         lce_fill_data_o = dirty_data_selected;
-        lce_fill_last_o = is_last_cnt;
+        lce_fill_last_o = wrap_cnt_last;
         lce_fill_data_v_o = 1'b1;
 
-        // hold wraparound counter size input constant
-        wrap_cnt_size = fill_select_width_lp'(block_size_in_fill_lp-1);
         // increment counter on each data beat
         wrap_cnt_up = lce_fill_data_v_o & lce_fill_data_ready_and_i;
 
@@ -850,10 +829,6 @@ module bp_lce_cmd
         stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
         stat_mem_pkt_v_o = 1'b1;
 
-        // setup wraparound counter
-        wrap_cnt_set = stat_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
-        wrap_cnt_size = fill_select_width_lp'(block_size_in_fill_lp-1);
-
         // move to next state once both data and stat mem commands have sent
         state_n = (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
                   ? e_wb_dirty_send_data
@@ -864,11 +839,9 @@ module bp_lce_cmd
       e_wb_dirty_send_data: begin
 
         lce_resp_data_o = dirty_data_selected;
-        lce_resp_last_o = is_last_cnt;
+        lce_resp_last_o = wrap_cnt_last;
         lce_resp_data_v_o = 1'b1;
 
-        // hold wraparound counter size input constant
-        wrap_cnt_size = fill_select_width_lp'(block_size_in_fill_lp-1);
         // increment counter on each data beat
         wrap_cnt_up = lce_resp_data_v_o & lce_resp_data_ready_and_i;
 

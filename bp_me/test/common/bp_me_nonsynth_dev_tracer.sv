@@ -28,23 +28,23 @@ module bp_me_nonsynth_dev_tracer
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
-   , input [mem_header_width_lp-1:0]                mem_cmd_header_i
-   , input [dword_width_gp-1:0]                     mem_cmd_data_i
-   , input                                          mem_cmd_v_i
-   , input                                          mem_cmd_ready_and_i
-   , input                                          mem_cmd_last_i
+   , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
+   , input [dword_width_gp-1:0]                     mem_fwd_data_i
+   , input                                          mem_fwd_v_i
+   , input                                          mem_fwd_ready_and_i
+   , input                                          mem_fwd_last_i
 
-   , input [mem_header_width_lp-1:0]                mem_resp_header_i
-   , input [dword_width_gp-1:0]                     mem_resp_data_i
-   , input                                          mem_resp_v_i
-   , input                                          mem_resp_ready_and_i
-   , input                                          mem_resp_last_i
+   , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
+   , input [dword_width_gp-1:0]                     mem_rev_data_i
+   , input                                          mem_rev_v_i
+   , input                                          mem_rev_ready_and_i
+   , input                                          mem_rev_last_i
   );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
-  `bp_cast_i(bp_bedrock_mem_header_s, mem_cmd_header);
-  `bp_cast_i(bp_bedrock_mem_header_s, mem_resp_header);
+  `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
+  `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
   integer file;
   string file_name;
@@ -59,33 +59,33 @@ module bp_me_nonsynth_dev_tracer
   // Tracer
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
-      if (mem_cmd_v_i & mem_cmd_ready_and_i) begin
-        $fdisplay(file, "%12t |: MEM CMD addr[%H] msg[%b] size[%b]"
+      if (mem_fwd_v_i & mem_fwd_ready_and_i) begin
+        $fdisplay(file, "%12t |: MEM FWD addr[%H] msg[%b] size[%b]"
                  , $time
-                 , mem_cmd_header_cast_i.addr
-                 , mem_cmd_header_cast_i.msg_type.mem
-                 , mem_cmd_header_cast_i.size
+                 , mem_fwd_header_cast_i.addr
+                 , mem_fwd_header_cast_i.msg_type.fwd
+                 , mem_fwd_header_cast_i.size
                  );
-        if (mem_cmd_header_cast_i.msg_type.mem inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr}) begin
-          $fdisplay(file, "%12t |: MEM CMD DATA last[%0b] %H"
+        if (mem_fwd_header_cast_i.msg_type.fwd inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr}) begin
+          $fdisplay(file, "%12t |: MEM FWD DATA last[%0b] %H"
                    , $time
-                   , mem_cmd_last_i
-                   , mem_cmd_data_i
+                   , mem_fwd_last_i
+                   , mem_fwd_data_i
                    );
         end
       end
-      if (mem_resp_v_i & mem_resp_ready_and_i) begin
-        $fdisplay(file, "%12t |: MEM RESP addr[%H] msg[%b] size[%b]"
+      if (mem_rev_v_i & mem_rev_ready_and_i) begin
+        $fdisplay(file, "%12t |: MEM REV addr[%H] msg[%b] size[%b]"
                  , $time
-                 , mem_resp_header_cast_i.addr
-                 , mem_resp_header_cast_i.msg_type.mem
-                 , mem_resp_header_cast_i.size
+                 , mem_rev_header_cast_i.addr
+                 , mem_rev_header_cast_i.msg_type.rev
+                 , mem_rev_header_cast_i.size
                  );
-        if (mem_resp_header_cast_i.msg_type.mem inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd}) begin
-          $fdisplay(file, "%12t |: MEM RESP DATA last[%0b] %H"
+        if (mem_rev_header_cast_i.msg_type.rev inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd}) begin
+          $fdisplay(file, "%12t |: MEM REV DATA last[%0b] %H"
                    , $time
-                   , mem_resp_last_i
-                   , mem_resp_data_i
+                   , mem_rev_last_i
+                   , mem_rev_data_i
                    );
         end
       end

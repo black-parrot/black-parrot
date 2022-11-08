@@ -32,17 +32,17 @@ module bp_me_cce_to_cache
    , input                                                 reset_i
 
    // BedRock Stream interface
-   , input [mem_header_width_lp-1:0]                       mem_cmd_header_i
-   , input [l2_data_width_p-1:0]                           mem_cmd_data_i
-   , input                                                 mem_cmd_v_i
-   , output logic                                          mem_cmd_ready_and_o
-   , input                                                 mem_cmd_last_i
+   , input [mem_fwd_header_width_lp-1:0]                   mem_fwd_header_i
+   , input [l2_data_width_p-1:0]                           mem_fwd_data_i
+   , input                                                 mem_fwd_v_i
+   , output logic                                          mem_fwd_ready_and_o
+   , input                                                 mem_fwd_last_i
 
-   , output logic [mem_header_width_lp-1:0]                mem_resp_header_o
-   , output logic [l2_data_width_p-1:0]                    mem_resp_data_o
-   , output logic                                          mem_resp_v_o
-   , input                                                 mem_resp_ready_and_i
-   , output logic                                          mem_resp_last_o
+   , output logic [mem_rev_header_width_lp-1:0]            mem_rev_header_o
+   , output logic [l2_data_width_p-1:0]                    mem_rev_data_o
+   , output logic                                          mem_rev_v_o
+   , input                                                 mem_rev_ready_and_i
+   , output logic                                          mem_rev_last_o
 
    // cache-side
    , output logic [l2_banks_p-1:0][cache_pkt_width_lp-1:0] cache_pkt_o
@@ -79,48 +79,48 @@ module bp_me_cce_to_cache
   logic [lg_l2_blocks_lp:0] tagst_sent_r, tagst_sent_n;
   logic [lg_l2_blocks_lp:0] tagst_received_r, tagst_received_n;
 
-  bp_bedrock_mem_header_s mem_cmd_header_lo;
-  logic [l2_data_width_p-1:0] mem_cmd_data_lo, mem_resp_data_lo;
-  logic mem_cmd_v_lo, mem_cmd_yumi_li;
-  logic mem_cmd_new_lo, mem_cmd_done_lo, mem_cmd_last_lo;
-  logic [paddr_width_p-1:0] mem_cmd_stream_addr_lo;
+  bp_bedrock_mem_fwd_header_s fsm_fwd_header_li;
+  logic [l2_data_width_p-1:0] fsm_fwd_data_li;
+  logic fsm_fwd_v_li, fsm_fwd_yumi_lo;
+  logic fsm_fwd_new_li, fsm_fwd_last_li;
+  logic [paddr_width_p-1:0] fsm_fwd_stream_addr_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(l2_data_width_p)
      ,.block_width_p(cce_block_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
-     ,.msg_stream_mask_p(mem_cmd_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp)
+     ,.payload_width_p(mem_fwd_payload_width_lp)
+     ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
      ,.header_els_p(2)
      ,.data_els_p(`BSG_MAX(2, cce_block_width_p/l2_data_width_p))
      )
-   cce_to_cache_pump_in
+   fwd_pump_in
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.msg_header_i(mem_cmd_header_i)
-     ,.msg_data_i(mem_cmd_data_i)
-     ,.msg_v_i(mem_cmd_v_i)
-     ,.msg_last_i(mem_cmd_last_i)
-     ,.msg_ready_and_o(mem_cmd_ready_and_o)
+     ,.msg_header_i(mem_fwd_header_i)
+     ,.msg_data_i(mem_fwd_data_i)
+     ,.msg_v_i(mem_fwd_v_i)
+     ,.msg_last_i(mem_fwd_last_i)
+     ,.msg_ready_and_o(mem_fwd_ready_and_o)
 
-     ,.fsm_base_header_o(mem_cmd_header_lo)
-     ,.fsm_addr_o(mem_cmd_stream_addr_lo)
-     ,.fsm_data_o(mem_cmd_data_lo)
-     ,.fsm_v_o(mem_cmd_v_lo)
-     ,.fsm_ready_and_i(mem_cmd_yumi_li)
-     ,.fsm_new_o(mem_cmd_new_lo)
-     ,.fsm_done_o(mem_cmd_done_lo)
-     ,.fsm_last_o(mem_cmd_last_lo)
+     ,.fsm_header_o(fsm_fwd_header_li)
+     ,.fsm_addr_o(fsm_fwd_stream_addr_li)
+     ,.fsm_data_o(fsm_fwd_data_li)
+     ,.fsm_v_o(fsm_fwd_v_li)
+     ,.fsm_yumi_i(fsm_fwd_yumi_lo)
+     ,.fsm_cnt_o()
+     ,.fsm_new_o(fsm_fwd_new_li)
+     ,.fsm_last_o(fsm_fwd_last_li)
      );
 
   bp_local_addr_s local_addr_cast;
-  assign local_addr_cast = mem_cmd_header_lo.addr;
+  assign local_addr_cast = fsm_fwd_header_li.addr;
 
-  wire is_word_op = (mem_cmd_header_lo.size == e_bedrock_msg_size_4);
-  wire is_csr     = (mem_cmd_header_lo.addr < dram_base_addr_gp);
+  wire is_word_op = (fsm_fwd_header_li.size == e_bedrock_msg_size_4);
+  wire is_csr     = (fsm_fwd_header_li.addr < dram_base_addr_gp);
   wire is_tagfl   = is_csr && (local_addr_cast.addr == cache_tagfl_addr_gp);
-  wire [daddr_width_p-1:0] tagfl_addr = mem_cmd_data_lo[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
+  wire [daddr_width_p-1:0] tagfl_addr = fsm_fwd_data_li[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
 
   // cache packet data and mask mux elements
   // each mux has one element per power of 2 in [1, N] where N is log2(L2 data width bytes)
@@ -133,7 +133,7 @@ module bp_me_cce_to_cache
   localparam lg_mux_els_lp = `BSG_SAFE_CLOG2(mux_els_lp);
   logic [mux_els_lp-1:0][data_bytes_lp-1:0] cache_pkt_mask_mux_li;
   logic [daddr_width_p-1:0] cache_pkt_addr_lo;
-  logic [lg_l2_banks_lp-1:0] cache_cmd_bank_lo;
+  logic [lg_l2_banks_lp-1:0] cache_fwd_bank_lo;
 
   for (genvar i = 0; i < mux_els_lp; i++)
     begin : cache_pkt_sel
@@ -153,7 +153,7 @@ module bp_me_cce_to_cache
       else
         begin: non_max_size
 
-          // determine which slice being used based on the mem_cmd address
+          // determine which slice being used based on the mem_fwd address
           // i = 0, slices are 1B wide
           // i = 1, slices are 2B wide
           // i = 2, slices are 4B wide
@@ -176,81 +176,84 @@ module bp_me_cce_to_cache
   // cache mask has one entry per byte in l2_data_width_p
   logic [data_bytes_lp-1:0] cache_pkt_mask_lo;
 
-  // mem_cmd size field is 3-bits
+  // mem_fwd size field is 3-bits
   // There will always be between 4 and 8 muxes, since l2_data_width_p must be between 64 and
   // 512 bits, thus mux select bits will always be 2 or 3.
-  // If mem_cmd size is larger than data channel width, select the full mask and data, else
+  // If mem_fwd size is larger than data channel width, select the full mask and data, else
   // use the size field to pick correct slice of data and its mask.
-  wire [lg_mux_els_lp-1:0] cache_pkt_sel_li = (1'b1 << mem_cmd_header_lo.size) > data_bytes_lp
+  wire [lg_mux_els_lp-1:0] cache_pkt_sel_li = (1'b1 << fsm_fwd_header_li.size) > data_bytes_lp
                                               ? lg_mux_els_lp'(mux_els_lp-1)
-                                              : mem_cmd_header_lo.size[0+:lg_mux_els_lp];
+                                              : fsm_fwd_header_li.size[0+:lg_mux_els_lp];
   bsg_mux
-   #(.width_p(data_bytes_lp)
-   ,.els_p(mux_els_lp))
+   #(.width_p(data_bytes_lp), .els_p(mux_els_lp)) 
    cache_pkt_mask_mux
     (.data_i(cache_pkt_mask_mux_li)
-    ,.sel_i(cache_pkt_sel_li)
-    ,.data_o(cache_pkt_mask_lo)
-    );
+     ,.sel_i(cache_pkt_sel_li)
+     ,.data_o(cache_pkt_mask_lo)
+     );
 
   // Swizzle address bits for L2 cache command
   bp_me_dram_hash_encode
    #(.bp_params_p(bp_params_p))
-   mem_cmd_hash
-    (.daddr_i(mem_cmd_stream_addr_lo[0+:daddr_width_p])
+   fsm_fwd_hash
+    (.daddr_i(fsm_fwd_stream_addr_li[0+:daddr_width_p])
      ,.daddr_o(cache_pkt_addr_lo)
-     ,.bank_o(cache_cmd_bank_lo)
+     ,.bank_o(cache_fwd_bank_lo)
      );
 
-  bp_bedrock_mem_header_s mem_resp_header_lo;
-  logic [lg_l2_banks_lp-1:0] cache_resp_bank_lo;
-  logic mem_header_v_lo, mem_resp_ready_and_lo, mem_resp_v_li;
-  logic mem_resp_done_lo;
+  bp_bedrock_mem_rev_header_s fsm_rev_header_lo;
+  logic [l2_data_width_p-1:0] fsm_rev_data_lo;
+  logic [lg_l2_banks_lp-1:0] cache_rev_bank_lo;
+  logic stream_header_v_lo, fsm_rev_ready_and_li, fsm_rev_v_lo;
+  logic fsm_rev_last_lo;
   logic stream_fifo_ready_lo;
   bsg_fifo_1r1w_small
-   #(.width_p(lg_l2_banks_lp+$bits(bp_bedrock_mem_header_s)), .els_p(l2_outstanding_reqs_p))
+   #(.width_p(lg_l2_banks_lp+$bits(bp_bedrock_mem_fwd_header_s))
+     ,.els_p(l2_outstanding_reqs_p)
+     ,.ready_THEN_valid_p(1)
+     )
    stream_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({cache_cmd_bank_lo, mem_cmd_header_lo})
-     ,.v_i(mem_cmd_new_lo)
+     ,.data_i({cache_fwd_bank_lo, fsm_fwd_header_li})
+     ,.v_i(fsm_fwd_yumi_lo & fsm_fwd_new_li)
      ,.ready_o(stream_fifo_ready_lo)
 
-     ,.data_o({cache_resp_bank_lo, mem_resp_header_lo})
-     ,.v_o(mem_header_v_lo)
-     ,.yumi_i(mem_resp_done_lo)
+     ,.data_o({cache_rev_bank_lo, fsm_rev_header_lo})
+     ,.v_o(stream_header_v_lo)
+     ,.yumi_i(fsm_rev_ready_and_li & fsm_rev_v_lo & fsm_rev_last_lo)
      );
 
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(l2_data_width_p)
      ,.block_width_p(cce_block_width_p)
-     ,.payload_width_p(mem_payload_width_lp)
-     ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp | mem_resp_payload_mask_gp)
+     ,.payload_width_p(mem_rev_payload_width_lp)
+     ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
      )
-   cce_to_cache_pump_out
+   rev_pump_out
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.msg_header_o(mem_resp_header_o)
-     ,.msg_data_o(mem_resp_data_o)
-     ,.msg_v_o(mem_resp_v_o)
-     ,.msg_last_o(mem_resp_last_o)
-     ,.msg_ready_and_i(mem_resp_ready_and_i)
+     ,.msg_header_o(mem_rev_header_o)
+     ,.msg_data_o(mem_rev_data_o)
+     ,.msg_v_o(mem_rev_v_o)
+     ,.msg_last_o(mem_rev_last_o)
+     ,.msg_ready_and_i(mem_rev_ready_and_i)
 
-     ,.fsm_base_header_i(mem_resp_header_lo)
-     ,.fsm_data_i(mem_resp_data_lo)
-     ,.fsm_v_i(mem_resp_v_li)
-     ,.fsm_ready_and_o(mem_resp_ready_and_lo)
+     ,.fsm_header_i(fsm_rev_header_lo)
+     ,.fsm_data_i(fsm_rev_data_lo)
+     ,.fsm_addr_o()
+     ,.fsm_v_i(fsm_rev_v_lo)
+     ,.fsm_ready_and_o(fsm_rev_ready_and_li)
      ,.fsm_cnt_o(/* unused */)
      ,.fsm_new_o(/* unused */)
-     ,.fsm_last_o(/* unused */)
-     ,.fsm_done_o(mem_resp_done_lo)
+     ,.fsm_last_o(fsm_rev_last_lo)
      );
 
-  // mem_resp data selection
+  // mem_rev data selection
   // For B/H/W/D ops, data returned from cache is at the LSB, but it may not for M ops
   // on bsg_bus_pack:
   // sel_i = which unit (byte) to start selection at from cache_data_i
@@ -258,28 +261,28 @@ module bp_me_cce_to_cache
   // bus pack has log2(l2_data_width_p/8) = log2(l2 data width bytes) mux elements
   //   == data_byte_offset_width_lp
   localparam bus_pack_size_width_lp = `BSG_WIDTH(data_byte_offset_width_lp);
-  logic [bus_pack_size_width_lp-1:0] mem_resp_size_li;
-  wire [bus_pack_size_width_lp-1:0] mem_resp_max_size_li = bus_pack_size_width_lp'(data_byte_offset_width_lp);
-  logic [data_byte_offset_width_lp-1:0] mem_resp_data_sel_li;
+  logic [bus_pack_size_width_lp-1:0] fsm_rev_size_li;
+  wire [bus_pack_size_width_lp-1:0] fsm_rev_max_size_li = bus_pack_size_width_lp'(data_byte_offset_width_lp);
+  logic [data_byte_offset_width_lp-1:0] fsm_rev_data_sel_li;
 
   always_comb begin
     // size to use is set to max size if response is larger than data width (indicating a multi-beat
     // message will be sent and therefore each data beat will be full and valid),
     // otherwise extract size from memory response header
-    mem_resp_size_li = (1'b1 << mem_resp_header_lo.size) > data_bytes_lp
-                       ? mem_resp_max_size_li
-                       : mem_resp_header_lo.size[0+:bus_pack_size_width_lp];
+    fsm_rev_size_li = (1'b1 << fsm_rev_header_lo.size) > data_bytes_lp
+                       ? fsm_rev_max_size_li
+                       : fsm_rev_header_lo.size[0+:bus_pack_size_width_lp];
     // B/H/W/D response data is at LSB, but larger responses should use byte offset bits of
     // address to pick correct data
-    mem_resp_data_sel_li = '0;
-    case (mem_resp_header_lo.size)
+    fsm_rev_data_sel_li = '0;
+    case (fsm_rev_header_lo.size)
       e_bedrock_msg_size_1
       ,e_bedrock_msg_size_2
       ,e_bedrock_msg_size_4
       ,e_bedrock_msg_size_8:
-        mem_resp_data_sel_li = '0;
+        fsm_rev_data_sel_li = '0;
       default:
-        mem_resp_data_sel_li = mem_resp_header_lo.addr[0+:data_byte_offset_width_lp];
+        fsm_rev_data_sel_li = fsm_rev_header_lo.addr[0+:data_byte_offset_width_lp];
     endcase
   end
 
@@ -288,17 +291,17 @@ module bp_me_cce_to_cache
    #(.width_p(l2_data_width_p), .els_p(l2_banks_p))
    resp_bank_sel
     (.data_i(cache_data_i)
-     ,.sel_i(cache_resp_bank_lo)
+     ,.sel_i(cache_rev_bank_lo)
      ,.data_o(cache_data_li)
      );
 
   bsg_bus_pack
    #(.in_width_p(l2_data_width_p))
-   mem_resp_data_bus_pack
+   mem_rev_data_bus_pack
     (.data_i(cache_data_li)
-    ,.sel_i(mem_resp_data_sel_li)
-    ,.size_i(mem_resp_size_li)
-    ,.data_o(mem_resp_data_lo)
+    ,.sel_i(fsm_rev_data_sel_li)
+    ,.size_i(fsm_rev_size_li)
+    ,.data_o(fsm_rev_data_lo)
     );
 
   // FSM
@@ -308,9 +311,9 @@ module bp_me_cce_to_cache
       cache_pkt_v_o = '0;
       cache_data_yumi_o = '0;
 
-      mem_cmd_yumi_li = 1'b0;
+      fsm_fwd_yumi_lo = 1'b0;
 
-      mem_resp_v_li = 1'b0;
+      fsm_rev_v_lo = 1'b0;
 
       tagst_sent_n     = tagst_sent_r;
       tagst_received_n = tagst_received_r;
@@ -343,10 +346,10 @@ module bp_me_cce_to_cache
         end
         e_ready:
           begin
-            case (mem_cmd_header_lo.msg_type)
+            case (fsm_fwd_header_li.msg_type)
               e_bedrock_mem_rd
               ,e_bedrock_mem_uc_rd:
-                case (mem_cmd_header_lo.size)
+                case (fsm_fwd_header_li.size)
                   e_bedrock_msg_size_1: cache_pkt.opcode = LB;
                   e_bedrock_msg_size_2: cache_pkt.opcode = LH;
                   e_bedrock_msg_size_4: cache_pkt.opcode = LW;
@@ -359,11 +362,11 @@ module bp_me_cce_to_cache
               e_bedrock_mem_uc_wr
               ,e_bedrock_mem_wr
               ,e_bedrock_mem_amo:
-                case (mem_cmd_header_lo.size)
+                case (fsm_fwd_header_li.size)
                   e_bedrock_msg_size_1: cache_pkt.opcode = SB;
                   e_bedrock_msg_size_2: cache_pkt.opcode = SH;
                   e_bedrock_msg_size_4, e_bedrock_msg_size_8:
-                    case (mem_cmd_header_lo.subop)
+                    case (fsm_fwd_header_li.subop)
                       e_bedrock_store  : cache_pkt.opcode = is_word_op ? SW : SD;
                       e_bedrock_amoswap: cache_pkt.opcode = is_word_op ? AMOSWAP_W : AMOSWAP_D;
                       e_bedrock_amoadd : cache_pkt.opcode = is_word_op ? AMOADD_W : AMOADD_D;
@@ -392,16 +395,16 @@ module bp_me_cce_to_cache
             else
               begin
                 cache_pkt.addr = cache_pkt_addr_lo;
-                cache_pkt.data = mem_cmd_data_lo;
+                cache_pkt.data = fsm_fwd_data_li;
                 // This mask is only used for the LM/SM operations for >64 bit mask operations,
                 // but it gets set regardless of operation
                 cache_pkt.mask = cache_pkt_mask_lo;
               end
-            cache_pkt_v_o[cache_cmd_bank_lo] = stream_fifo_ready_lo & mem_cmd_v_lo;
-            mem_cmd_yumi_li = mem_cmd_v_lo & stream_fifo_ready_lo & cache_pkt_ready_and_i[cache_cmd_bank_lo];
+            cache_pkt_v_o[cache_fwd_bank_lo] = stream_fifo_ready_lo & fsm_fwd_v_li;
+            fsm_fwd_yumi_lo = fsm_fwd_v_li & stream_fifo_ready_lo & cache_pkt_ready_and_i[cache_fwd_bank_lo];
 
-            mem_resp_v_li = mem_header_v_lo & cache_data_v_i[cache_resp_bank_lo];
-            cache_data_yumi_o[cache_resp_bank_lo] = mem_resp_v_li & mem_resp_ready_and_lo;
+            fsm_rev_v_lo = stream_header_v_lo & cache_data_v_i[cache_rev_bank_lo];
+            cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_v_lo & fsm_rev_ready_and_li;
           end
         default: begin end
       endcase
@@ -426,8 +429,8 @@ module bp_me_cce_to_cache
   always_ff @(negedge clk_i)
     begin
       assert(reset_i !== '0
-             || ~(mem_cmd_v_lo & mem_cmd_header_lo.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr})
-             || ~(mem_cmd_header_lo.subop inside {e_bedrock_amolr, e_bedrock_amosc})
+             || ~(fsm_fwd_v_li & fsm_fwd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr})
+             || ~(fsm_fwd_header_li.subop inside {e_bedrock_amolr, e_bedrock_amosc})
              )
           else $error("LR/SC not supported in bsg_cache");
     end

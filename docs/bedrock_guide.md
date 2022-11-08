@@ -84,14 +84,16 @@ The Command network has the following message types and payload fields:
   - Coherence State
   - Target cache, state, and way ID for cache to cache transfer
 
-The Fill network has the following message types and payload fields:
+The Fill network is a special network which comprises a subset of the Command network messages.
+Fills can be casted safely to Cmds. 
 - Message type
   - Data (cache to cache block transfer)
-- Payload
+- Payload 
   - Destination LCE
-  - CCE managing block
+  - CCE sending command
   - Cache Way ID
   - Coherence State
+  - Target cache, state, and way ID for cache to cache transfer
 
 The Response network has the following message types and payload fields:
 - Message type

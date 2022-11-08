@@ -65,7 +65,7 @@ module bp_me_nonsynth_cache
      // Cache-LCE interface
     , output logic [cache_req_width_lp-1:0]                 cache_req_o
     , output logic                                          cache_req_v_o
-    , input                                                 cache_req_yumi_i
+    , input                                                 cache_req_ready_and_i
     , input                                                 cache_req_busy_i
     , output logic [cache_req_metadata_width_lp-1:0]        cache_req_metadata_o
     , output logic                                          cache_req_metadata_v_o
@@ -93,6 +93,8 @@ module bp_me_nonsynth_cache
    );
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+
+    localparam bp_cache_req_size_e block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
 
   // Trace Replay Interface
   `declare_bp_me_nonsynth_tr_pkt_s(paddr_width_p, dword_width_gp);
@@ -422,13 +424,15 @@ module bp_me_nonsynth_cache
     cache_req_cast_o = '0;
     cache_req_cast_o.hit = 1'b0; // unused by LCE
     cache_req_cast_o.data = tr_pkt_r.data;
-    cache_req_cast_o.size = double_op
-                            ? e_size_8B
-                            : word_op
-                              ? e_size_4B
-                              : half_op
-                                ? e_size_2B
-                                : e_size_1B;
+    cache_req_cast_o.size = uc_op
+                            ? double_op
+                              ? e_size_8B
+                              : word_op
+                                ? e_size_4B
+                                : half_op
+                                  ? e_size_2B
+                                  : e_size_1B
+                            : block_req_size;
     cache_req_cast_o.addr = tr_pkt_r.paddr;
     // AMO, flush, clear, and wt_store not supported
     cache_req_cast_o.msg_type = uc_op ? store_op ? e_uc_store : e_uc_load
@@ -489,7 +493,7 @@ module bp_me_nonsynth_cache
           cache_req_v_o = 1'b1;
           // metadata not used by LCE for uncached ops, but send it anyway
           cache_req_metadata_v_o = 1'b1;
-          state_n = cache_req_yumi_i
+          state_n = (cache_req_ready_and_i & cache_req_v_o)
                     ? tag_lookup_hit_lo
                       ? e_uc_hit_inv
                       : load_op
@@ -562,7 +566,7 @@ module bp_me_nonsynth_cache
         else begin
           cache_req_v_o = 1'b1;
           cache_req_metadata_v_o = 1'b1;
-          state_n = cache_req_yumi_i ? e_wait : state_r;
+          state_n = (cache_req_ready_and_i & cache_req_v_o) ? e_wait : state_r;
         end
       end // e_check_hit
 

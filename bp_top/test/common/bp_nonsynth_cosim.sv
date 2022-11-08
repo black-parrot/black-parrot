@@ -46,7 +46,8 @@ module bp_nonsynth_cosim
     , input [rv64_reg_addr_width_gp-1:0]      frd_addr_i
     , input [dpath_width_gp-1:0]              frd_data_i
 
-    , input                                   cache_req_yumi_i
+    , input                                   cache_req_v_i
+    , input                                   cache_req_ready_and_i
     , input                                   cache_req_complete_i
     , input                                   cache_req_nonblocking_i
 
@@ -91,7 +92,7 @@ module bp_nonsynth_cosim
 
   logic cache_req_complete_r, cache_req_v_r;
   // We filter out for ready so that the request only tracks once
-  wire cache_req_v_li = cache_req_yumi_i & ~cache_req_nonblocking_i;
+  wire cache_req_v_li = cache_req_ready_and_i & cache_req_v_i & ~cache_req_nonblocking_i;
   bsg_dff_chain
    #(.width_p(2), .num_stages_p(2))
    cache_req_reg
@@ -245,7 +246,7 @@ module bp_nonsynth_cosim
 
   always_ff @(negedge reset_i)
     if (cosim_en_i)
-      dromajo_init(config_file_i, mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
+      dromajo_init(string'(config_file_i), mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
 
   always_ff @(posedge cosim_clk_i)
     if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)

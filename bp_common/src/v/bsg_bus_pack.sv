@@ -52,10 +52,10 @@ module bsg_bus_pack
 
   //synopsys translate_off
   if (!`BSG_IS_POW2(in_width_p) || !`BSG_IS_POW2(out_width_p))
-    $fatal("Bus width must be a power of 2");
+    $fatal(1, "Bus width must be a power of 2");
 
   if (unit_width_p < 2)
-    $fatal("Bit width replication unsupported");
+    $fatal(1, "Bit width replication unsupported");
   //synopsys translate_on
 
 endmodule

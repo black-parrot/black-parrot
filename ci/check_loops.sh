@@ -26,11 +26,11 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
+#parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
 echo "Running check_loops on bp_me"
-make -C bp_me/syn CFG=e_bp_test_multicore_half_cfg &
-make -C bp_me/syn CFG=e_bp_test_multicore_half_cce_ucode_cfg &
+make -C bp_me/syn check_loops.syn CFG=e_bp_test_multicore_half_cfg &
+make -C bp_me/syn check_loops.syn CFG=e_bp_test_multicore_half_cce_ucode_cfg &
 wait
 
 # Check for failures in the report directory
