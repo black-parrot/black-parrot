@@ -47,7 +47,7 @@ module bp_be_scheduler
   // Fetch interface
   , input [fe_queue_width_lp-1:0]      fe_queue_i
   , input                              fe_queue_v_i
-  , output                             fe_queue_ready_o
+  , output                             fe_queue_ready_and_o
 
   // Dispatch interface
   , output [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
@@ -88,7 +88,7 @@ module bp_be_scheduler
 
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)
-     ,.fe_queue_ready_o(fe_queue_ready_o)
+     ,.fe_queue_ready_and_o(fe_queue_ready_and_o)
 
      ,.fe_queue_o(fe_queue_lo)
      ,.fe_queue_v_o(fe_queue_v_lo)

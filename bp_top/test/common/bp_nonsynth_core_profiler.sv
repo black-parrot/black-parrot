@@ -90,7 +90,7 @@ module bp_nonsynth_core_profiler
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
     // FE events
-    , input fe_queue_ready_i
+    , input fe_queue_ready_and_i
 
     , input br_ovr_i
     , input ret_ovr_i

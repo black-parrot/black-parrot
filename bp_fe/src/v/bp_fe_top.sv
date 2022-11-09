@@ -27,7 +27,7 @@ module bp_fe_top
 
    , output [fe_queue_width_lp-1:0]                   fe_queue_o
    , output                                           fe_queue_v_o
-   , input                                            fe_queue_ready_i
+   , input                                            fe_queue_ready_and_i
 
    , output logic [icache_req_width_lp-1:0]           cache_req_o
    , output logic                                     cache_req_v_o
@@ -271,9 +271,9 @@ module bp_fe_top
      ,.stat_mem_o(stat_mem_o)
      );
   wire icache_v_lo = icache_data_v_lo | icache_spec_v_lo | icache_fence_v_lo;
-  wire icache_data_yumi_li = fe_queue_ready_i & icache_data_v_lo;
-  wire icache_spec_yumi_li = fe_queue_ready_i & icache_spec_v_lo;
-  wire icache_fence_yumi_li = fe_queue_ready_i & icache_fence_v_lo;
+  wire icache_data_yumi_li = fe_queue_ready_and_i & icache_data_v_lo;
+  wire icache_spec_yumi_li = fe_queue_ready_and_i & icache_spec_v_lo;
+  wire icache_fence_yumi_li = fe_queue_ready_and_i & icache_fence_v_lo;
   assign icache_yumi_li = icache_data_yumi_li | icache_spec_yumi_li | icache_fence_yumi_li;
 
   // This tracks the I$ valid. Could move inside entirely, but we're trying to separate
@@ -335,8 +335,8 @@ module bp_fe_top
   wire fe_exception_v = (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_spec_v_lo);
   wire fe_instr_v     = fetch_instr_v_lo;
 
-  assign fetch_instr_yumi_li     = fe_queue_ready_i & fe_queue_v_o & fe_instr_v;
-  assign fetch_exception_yumi_li = fe_queue_ready_i & fe_queue_v_o & fe_exception_v;
+  assign fetch_instr_yumi_li     = fe_queue_ready_and_i & fe_queue_v_o & fe_instr_v;
+  assign fetch_exception_yumi_li = fe_queue_ready_and_i & fe_queue_v_o & fe_exception_v;
 
   assign fe_queue_v_o = (fe_instr_v | fe_exception_v);
   always_comb

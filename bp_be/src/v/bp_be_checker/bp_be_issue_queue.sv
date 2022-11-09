@@ -21,7 +21,7 @@ module bp_be_issue_queue
 
    , input [fe_queue_width_lp-1:0]          fe_queue_i
    , input                                  fe_queue_v_i
-   , output logic                           fe_queue_ready_o
+   , output logic                           fe_queue_ready_and_o
 
    , output logic [fe_queue_width_lp-1:0]   fe_queue_o
    , output logic                           fe_queue_v_o
@@ -46,7 +46,7 @@ module bp_be_issue_queue
   logic cptr_jmp;
 
   // Operations
-  wire enq  = fe_queue_ready_o & fe_queue_v_i;
+  wire enq  = fe_queue_ready_and_o & fe_queue_v_i;
   wire deq  = deq_v_i;
   wire read = fe_queue_yumi_i;
   wire clr  = clr_v_i;
@@ -116,7 +116,7 @@ module bp_be_issue_queue
     ,.r_data_o(fe_queue_cast_o)
     );
   assign fe_queue_v_o     = ~roll & ~empty;
-  assign fe_queue_ready_o = ~clr & ~full;
+  assign fe_queue_ready_and_o = ~clr & ~full;
 
   rv64_instr_fmatype_s instr;
   assign instr = fe_queue_cast_i.instr;
