@@ -42,7 +42,7 @@ module bp_be_calculator_top
 
   , output logic                                    idiv_busy_o
   , output logic                                    fdiv_busy_o
-  , output logic                                    mem_ready_o
+  , output logic                                    mem_busy_o
   , output logic                                    ptw_busy_o
   , output logic [decode_info_width_lp-1:0]         decode_info_o
   , input                                           cmd_full_n_i
@@ -290,7 +290,7 @@ module bp_be_calculator_top
      ,.sfence_i(commit_pkt_cast_o.sfence)
 
      ,.reservation_i(reservation_r)
-     ,.ready_o(mem_ready_o)
+     ,.busy_o(mem_busy_o)
 
      ,.commit_pkt_i(commit_pkt_cast_o)
      ,.ptw_fill_pkt_o(ptw_fill_pkt_o)

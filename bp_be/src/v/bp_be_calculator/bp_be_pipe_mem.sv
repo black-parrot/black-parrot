@@ -34,7 +34,7 @@ module bp_be_pipe_mem
    , input                                flush_i
    , input                                sfence_i
 
-   , output logic                         ready_o
+   , output logic                         busy_o
 
    , input [dispatch_pkt_width_lp-1:0]    reservation_i
 
@@ -403,7 +403,7 @@ module bp_be_pipe_mem
   assign fencei_clean_v_o       = early_v_r &  dcache_early_fencei &  dcache_early_hit_v;
   assign fencei_dirty_v_o       = early_v_r &  dcache_early_fencei & ~dcache_early_hit_v;
 
-  assign ready_o                = dcache_ready_lo;
+  assign busy_o                = ~dcache_ready_lo;
   assign ptw_busy_o             = ptw_busy;
   assign early_data_o           = dcache_early_data;
   assign early_fflags_o         = dcache_early_fflags;
