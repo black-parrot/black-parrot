@@ -214,8 +214,8 @@ module bp_be_pipe_long
       rd_data_lo = remainder_lo;
 
   // Actually a busy signal
-  assign ibusy_o = ~imulh_ready_lo | ~idiv_ready_and_lo | rd_w_v_r | v_li;
-  assign fbusy_o = ~fdiv_ready_and_lo | rd_w_v_r | v_li;
+  assign ibusy_o = ~imulh_ready_lo | ~idiv_ready_and_lo | rd_w_v_r;
+  assign fbusy_o = ~fdiv_ready_and_lo | rd_w_v_r;
 
   assign iwb_pkt.ird_w_v    = rd_w_v_r;
   assign iwb_pkt.frd_w_v    = 1'b0;
@@ -234,6 +234,15 @@ module bp_be_pipe_long
   assign fwb_pkt.fflags_w_v = 1'b1;
   assign fwb_pkt.fflags     = fdivsqrt_fflags;
   assign fwb_v_o = fdiv_done_v_r & rd_w_v_r & wb_safe;
+
+  // synopsys translate_off
+
+  always @(negedge clk_i)
+    begin
+      assert (reset_i !== 0 || ~v_li || ~rd_w_v_r) else $error("Long pipe structural hazard");
+    end
+
+  // synopsys translate_on
 
 endmodule
 
