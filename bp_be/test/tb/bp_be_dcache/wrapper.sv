@@ -63,7 +63,7 @@ module wrapper
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
 
   // Cache to Rolly FIFO signals
-  logic [num_caches_p-1:0] dcache_ready_lo;
+  logic [num_caches_p-1:0] dcache_ready_and_lo;
   logic [num_caches_p-1:0] rollback_li;
   logic [num_caches_p-1:0] rolly_uncached_lo;
   logic [num_caches_p-1:0] rolly_v_lo, rolly_yumi_li;
@@ -160,7 +160,7 @@ module wrapper
        ,.v_o(rolly_v_lo[i])
        ,.yumi_i(rolly_yumi_li[i])
        );
-      assign rolly_yumi_li[i] = rolly_v_lo[i] & dcache_ready_lo[i];
+      assign rolly_yumi_li[i] = rolly_v_lo[i] & dcache_ready_and_lo[i];
 
       bsg_dff_reset
        #(.width_p(1+ptag_width_p)
@@ -204,7 +204,7 @@ module wrapper
 
       ,.dcache_pkt_i(rolly_dcache_pkt_lo[i])
       ,.v_i(rolly_yumi_li[i])
-      ,.ready_o(dcache_ready_lo[i])
+      ,.ready_and_o(dcache_ready_and_lo[i])
 
       ,.early_data_o(early_data_lo[i])
       ,.early_hit_v_o(early_v_lo[i])

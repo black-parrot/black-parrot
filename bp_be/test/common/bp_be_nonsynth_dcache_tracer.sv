@@ -27,7 +27,7 @@ module bp_be_nonsynth_dcache_tracer
 
    , input [dcache_pkt_width_lp-1:0]                      dcache_pkt_i
    , input                                                v_i
-   , input                                                ready_o
+   , input                                                ready_and_o
 
    , input [dpath_width_gp-1:0]                           early_data_o
    , input                                                early_hit_v_o
@@ -153,7 +153,7 @@ module bp_be_nonsynth_dcache_tracer
 
   always_ff @(posedge clk_i)
     begin
-      if (ready_o & v_i)
+      if (ready_and_o & v_i)
         $fwrite(acc_file, "%12t | access: %p\n", $time, dcache_pkt_cast_i);
       if (early_hit_v_o & decode_tv_r.load_op)
         $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, early_data_o);
