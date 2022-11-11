@@ -23,10 +23,13 @@ cfgs=(\
     "e_bp_unicore_cfg"
     "e_bp_multicore_1_cfg"
     "e_bp_multicore_1_cce_ucode_cfg"
+    "e_bp_multicore_1_cce_hybrid_cfg"
     "e_bp_multicore_2_cfg"
     "e_bp_multicore_2_cce_ucode_cfg"
+    "e_bp_multicore_2_cce_hybrid_cfg"
     "e_bp_multicore_4_cfg"
     "e_bp_multicore_4_cce_ucode_cfg"
+    "e_bp_multicore_4_cce_hybrid_cfg"
     )
 
 if [ $1 == "vcs" ]
@@ -34,12 +37,16 @@ then
 cfgs+=(
     "e_bp_multicore_6_cfg"
     "e_bp_multicore_6_cce_ucode_cfg"
+    "e_bp_multicore_6_cce_hybrid_cfg"
     "e_bp_multicore_8_cfg"
     "e_bp_multicore_8_cce_ucode_cfg"
+    "e_bp_multicore_8_cce_hybrid_cfg"
     "e_bp_multicore_12_cfg"
     "e_bp_multicore_12_cce_ucode_cfg"
+    "e_bp_multicore_12_cce_hybrid_cfg"
     "e_bp_multicore_16_cfg"
     "e_bp_multicore_16_cce_ucode_cfg"
+    "e_bp_multicore_16_cce_hybrid_cfg"
     )
 fi
 

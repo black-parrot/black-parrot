@@ -114,6 +114,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dlatch.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en_bypass.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_edge_detect.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_encode_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
@@ -182,6 +183,19 @@ $BP_ME_DIR/src/v/cce/bp_cce_src_sel.sv
 $BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.sv
 $BP_ME_DIR/src/v/cce/bp_cce_wrapper.sv
+$BP_ME_DIR/src/v/cce/bp_io_cce.sv
+# Hybrid CCE
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_coh_pipe.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_ctrl.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_lce_resp_pipe.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_mem_resp_pipe.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_pending_bits.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_pending_queue.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_pending.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_req.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_uc_pipe.sv
+$BP_ME_DIR/src/v/hybrid/bp_cce_hybrid_prog_pipe.sv
 # CACHE
 $BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
 $BP_ME_DIR/src/v/dev/bp_me_cache_slice.sv
@@ -193,6 +207,8 @@ $BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
+$BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_xbar_stream_buffered.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv

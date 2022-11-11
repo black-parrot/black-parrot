@@ -25,6 +25,7 @@ cfgs=(\
     "e_bp_unicore_cfg"
     "e_bp_multicore_1_cfg"
     "e_bp_multicore_1_cce_ucode_cfg"
+    "e_bp_multicore_1_cce_hybrid_cfg"
     )
 
 let JOBS=${#cfgs[@]}

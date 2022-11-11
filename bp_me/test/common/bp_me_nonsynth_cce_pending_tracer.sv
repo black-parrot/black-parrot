@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_me_nonsynth_cce_pending_tracer
+ *   bp_me_nonsynth_cce_pending_tracer.sv
  *
  * Description:
  *   CCE pending bit tracer

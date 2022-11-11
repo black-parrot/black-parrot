@@ -91,13 +91,20 @@ module bp_cce_wrapper
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  if (cce_type_p == e_cce_ucode) begin : ucode
+  if (cce_type_p == e_cce_fsm) begin : fsm
+    bp_cce_fsm
+    #(.bp_params_p(bp_params_p))
+    cce
+     (.*);
+  end
+  else if (cce_type_p == e_cce_ucode) begin : ucode
     bp_cce
     #(.bp_params_p(bp_params_p))
     cce
      (.*);
-  end else if (cce_type_p == e_cce_fsm) begin : fsm
-    bp_cce_fsm
+  end
+  else if (cce_type_p == e_cce_hybrid) begin : hybrid
+    bp_cce_hybrid
     #(.bp_params_p(bp_params_p))
     cce
      (.*);
