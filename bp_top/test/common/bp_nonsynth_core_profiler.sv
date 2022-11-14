@@ -91,12 +91,12 @@ module bp_nonsynth_core_profiler
 
     // FE events
     , input fe_queue_ready_i
-    , input fe_icache_ready_i
 
-    , input if2_v_i
     , input br_ovr_i
     , input ret_ovr_i
     , input icache_data_v_i
+    , input icache_v_i
+    , input icache_yumi_i
 
     // Backwards ISS events
     // TODO: Differentiate between different FE cmds
@@ -171,19 +171,18 @@ module bp_nonsynth_core_profiler
       // IF0
       stall_stage_n[0]                    = '0;
       stall_stage_n[0].fe_cmd            |= fe_cmd_nonattaboy_i;
-      stall_stage_n[0].icache_miss       |= (~fe_icache_ready_i | (if2_v_i & ~icache_data_v_i));
+      stall_stage_n[0].icache_miss       |= icache_v_i & ~icache_yumi_i;
 
       // IF1
       stall_stage_n[1]                    = stall_stage_r[0];
       stall_stage_n[1].fe_cmd            |= fe_cmd_nonattaboy_i;
-      stall_stage_n[1].icache_miss       |= if2_v_i & ~icache_data_v_i;
       stall_stage_n[1].branch_override   |= br_ovr_i;
       stall_stage_n[1].ret_override      |= ret_ovr_i;
 
       // IF2
       stall_stage_n[2]                    = stall_stage_r[1];
       stall_stage_n[2].fe_cmd            |= fe_cmd_nonattaboy_i;
-      stall_stage_n[2].icache_miss       |= if2_v_i & ~icache_data_v_i;
+      stall_stage_n[2].icache_miss       |= ~icache_data_v_i;
 
       // ISD
       // Dispatch stalls

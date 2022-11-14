@@ -30,7 +30,7 @@ module bp_ddr
    );
 
 `ifdef VERILATOR
-  $fatal("DDR memory model is not currently supported in Verilator.");
+  $fatal(1, "DDR memory model is not currently supported in Verilator.");
 `endif
 
   localparam dmc_addr_width_lp = 28;

@@ -78,13 +78,13 @@ module bp_nonsynth_branch_profiler
         redirect_cnt <= redirect_cnt + pc_redirect_v;
         if (attaboy_v)
           begin
-            br_cnt      <= br_cnt + branch_metadata.is_br;
-            jal_cnt     <= jal_cnt + branch_metadata.is_jal;
-            jalr_cnt    <= jalr_cnt + branch_metadata.is_jalr;
+            br_cnt      <= br_cnt + branch_metadata.site_br;
+            jal_cnt     <= jal_cnt + branch_metadata.site_jal;
+            jalr_cnt    <= jalr_cnt + branch_metadata.site_jalr;
 
             btb_hit_cnt <= btb_hit_cnt + branch_metadata.src_btb;
-            ras_hit_cnt <= ras_hit_cnt + branch_metadata.src_ret;
-            bht_hit_cnt <= bht_hit_cnt + branch_metadata.is_br;
+            ras_hit_cnt <= ras_hit_cnt + branch_metadata.src_ras;
+            bht_hit_cnt <= bht_hit_cnt + branch_metadata.site_br;
 
             if (branch_histo.exists(fe_cmd.npc))
               begin
@@ -99,9 +99,9 @@ module bp_nonsynth_branch_profiler
           end
         else if (pc_redirect_v)
           begin
-            br_cnt   <= br_cnt + branch_metadata.is_br;
-            jal_cnt  <= jal_cnt + branch_metadata.is_jal;
-            jalr_cnt <= jalr_cnt + branch_metadata.is_jalr;
+            br_cnt   <= br_cnt + branch_metadata.site_br;
+            jal_cnt  <= jal_cnt + branch_metadata.site_jal;
+            jalr_cnt <= jalr_cnt + branch_metadata.site_jalr;
 
             if (branch_histo.exists(fe_cmd.npc))
               begin

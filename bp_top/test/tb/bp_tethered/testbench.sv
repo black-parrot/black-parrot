@@ -249,8 +249,6 @@ module testbench
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     // TODO: Set appropriately for multicore
-
      ,.lce_id_i(io_lce_id_li)
      ,.did_i(host_did_li)
 
@@ -409,7 +407,8 @@ module testbench
            ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
 
-           ,.cache_req_yumi_i(calculator.pipe_mem.dcache.cache_req_yumi_i)
+           ,.cache_req_ready_and_i(calculator.pipe_mem.dcache.cache_req_ready_and_i)
+           ,.cache_req_v_i(calculator.pipe_mem.dcache.cache_req_v_o)
            ,.cache_req_complete_i(calculator.pipe_mem.dcache.cache_req_complete_i)
            ,.cache_req_nonblocking_i(calculator.pipe_mem.dcache.nonblocking_req)
 
@@ -485,14 +484,14 @@ module testbench
           ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
           ,.fe_queue_ready_i(fe.fe_queue_ready_i)
-          ,.fe_icache_ready_i(fe.icache.ready_o)
      
-          ,.if2_v_i(fe.v_if2_r)
-          ,.br_ovr_i(fe.pc_gen.ovr_taken)
+          ,.br_ovr_i(fe.pc_gen.ovr_btaken | fe.pc_gen.ovr_jmp)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
           ,.icache_data_v_i(fe.icache.data_v_o)
+          ,.icache_v_i(fe.icache.v_i)
+          ,.icache_yumi_i(fe.icache.yumi_o)
 
-          ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.attaboy_v) 
+          ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.controller.attaboy_v)
           ,.fe_cmd_fence_i(be.director.is_fence)
           ,.fe_queue_empty_i(~be.scheduler.fe_queue_fifo.fe_queue_v_o)
 
@@ -548,31 +547,33 @@ module testbench
         bp_fe_nonsynth_pc_gen_tracer
          #(.bp_params_p(bp_params_p))
          pc_gen_tracer
-          (.clk_i                  (clk_i & testbench.pc_gen_trace_en_lo)
-           ,.reset_i               (reset_i)
-           ,.freeze_i              (cfg_bus_cast_i.freeze)
+          (.clk_i(clk_i & testbench.pc_gen_trace_en_lo)
+           ,.reset_i(reset_i)
+           ,.freeze_i(cfg_bus_cast_i.freeze)
 
-           ,.mhartid_i             (cfg_bus_cast_i.core_id)
+           ,.mhartid_i(cfg_bus_cast_i.core_id)
 
-           ,.state_stall_i         (is_stall)
-           ,.state_wait_i          (is_wait)
+           ,.state_resume_i(controller.is_resume)
+           ,.state_wait_i(controller.is_wait)
 
-           ,.queue_miss_i          (queue_miss)
-           ,.icache_miss_i         (icache_miss)
-           ,.access_fault_i        (v_if2_r & instr_access_fault_r)
-           ,.page_fault_i          (v_if2_r & instr_page_fault_r)
-           ,.itlb_miss_i           (v_if2_r & itlb_miss_r)
+           ,.icache_spec_i(icache_spec_v_lo)
+           ,.access_fault_i(instr_access_fault_r)
+           ,.page_fault_i(instr_page_fault_r)
+           ,.itlb_miss_i(itlb_miss_r)
 
-           ,.src_redirect_i        (pc_gen.redirect_v_i)
-           ,.src_override_ras_i    (pc_gen.ovr_ret)
-           ,.src_override_branch_i (pc_gen.ovr_taken)
+           ,.src_redirect_i(pc_gen.redirect_v_i)
+           ,.src_override_ntaken_i(pc_gen.ovr_ntaken)
+           ,.src_override_ras_i(pc_gen.ovr_ret)
+           ,.src_override_branch_i(pc_gen.ovr_btaken | pc_gen.ovr_jmp)
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
 
-           ,.if1_top_v_i           (v_if1_r)
-           ,.if1_pc_i              (pc_gen.pc_if1_r)
+           ,.if2_pc_i(pc_gen.pc_if2_r)
+           ,.if2_v_i(icache_v_lo)
 
-           ,.if2_top_v_i           (v_if2_r)
-           ,.if2_pc_i              (pc_gen.pc_if2_r)
+           ,.fetch_v_i(fe_queue_ready_i & fe_queue_v_o)
+           ,.fetch_pc_i(fetch_pc_lo)
+           ,.fetch_instr_i(fetch_instr_lo)
+           ,.fetch_partial_i(fetch_partial_lo)
            );
 
       bind bp_be_top

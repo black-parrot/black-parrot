@@ -122,8 +122,8 @@ module bp_fe_bht
        pred_idx_reg
         (.clk_i(clk_i)
          ,.data_i(pred_idx_n)
-        ,.data_o(pred_idx_r)
-        );
+         ,.data_o(pred_idx_r)
+         );
    end
  else
    begin : no_fold

@@ -70,6 +70,7 @@ surelog:
 # Some licensing issue as of 02/10/21
 synth-vivado:
   <<: *job_definition
+  when: manual
   stage: check
   allow_failure: true
   tags:

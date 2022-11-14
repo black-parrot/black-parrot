@@ -38,7 +38,7 @@ module bp_be_nonsynth_dcache_tracer
 
    , input [cache_req_width_lp-1:0]                       cache_req_o
    , input                                                cache_req_v_o
-   , input                                                cache_req_yumi_i
+   , input                                                cache_req_ready_and_i
    , input                                                cache_req_busy_i
    , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
@@ -167,7 +167,7 @@ module bp_be_nonsynth_dcache_tracer
       if (wbuf_yumi_li)
         $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_out_cast);
 
-      if (cache_req_yumi_i)
+      if (cache_req_ready_and_i & cache_req_v_o)
         $fwrite(eng_file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);
       if (cache_req_metadata_v_o)
         $fwrite(eng_file, "%12t | cache_req_metadata: %p\n", $time, cache_req_metadata_cast_o);
