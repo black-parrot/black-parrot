@@ -481,7 +481,7 @@ module testbench
 
           ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-          ,.fe_queue_ready_i(fe.fe_queue_ready_i)
+          ,.fe_queue_ready_and_i(fe.fe_queue_ready_and_i)
      
           ,.br_ovr_i(fe.pc_gen.ovr_btaken | fe.pc_gen.ovr_jmp)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
@@ -494,7 +494,7 @@ module testbench
           ,.fe_queue_empty_i(~be.scheduler.fe_queue_fifo.fe_queue_v_o)
 
           ,.mispredict_i(be.director.npc_mismatch_v)
-          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_o)
+          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_and_o)
           ,.long_haz_i(be.detector.long_haz_v)
           ,.control_haz_i(be.detector.control_haz_v)
           ,.data_haz_i(be.detector.data_haz_v)
@@ -568,7 +568,7 @@ module testbench
            ,.if2_pc_i(pc_gen.pc_if2_r)
            ,.if2_v_i(icache_v_lo)
 
-           ,.fetch_v_i(fe_queue_ready_i & fe_queue_v_o)
+           ,.fetch_v_i(fe_queue_ready_and_i & fe_queue_v_o)
            ,.fetch_pc_i(fetch_pc_lo)
            ,.fetch_instr_i(fetch_instr_lo)
            ,.fetch_partial_i(fetch_partial_lo)

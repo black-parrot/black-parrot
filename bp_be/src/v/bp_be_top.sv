@@ -28,7 +28,7 @@ module bp_be_top
    // FE queue interface
    , input [fe_queue_width_lp-1:0]                   fe_queue_i
    , input                                           fe_queue_v_i
-   , output                                          fe_queue_ready_o
+   , output                                          fe_queue_ready_and_o
 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]                    fe_cmd_o
@@ -169,7 +169,7 @@ module bp_be_top
 
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)
-     ,.fe_queue_ready_o(fe_queue_ready_o)
+     ,.fe_queue_ready_and_o(fe_queue_ready_and_o)
 
      ,.dispatch_pkt_o(dispatch_pkt)
 
