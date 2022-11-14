@@ -15,8 +15,8 @@ module bp_be_pipe_long
    , input                              reset_i
 
    , input [dispatch_pkt_width_lp-1:0]  reservation_i
-   , output logic                       iready_o
-   , output logic                       fready_o
+   , output logic                       ibusy_o
+   , output logic                       fbusy_o
    , input rv64_frm_e                   frm_dyn_i
 
    , input                              flush_i
@@ -135,7 +135,7 @@ module bp_be_pipe_long
 
   bp_be_fp_reg_s fdivsqrt_result;
   rv64_fflags_s fdivsqrt_fflags;
-  logic fdiv_ready_lo, fdivsqrt_v_lo;
+  logic fdiv_ready_and_lo, fdivsqrt_v_lo;
   logic sqrt_lo;
   divSqrtRecFN_small
    #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
@@ -144,7 +144,7 @@ module bp_be_pipe_long
      ,.nReset(~reset_i)
      ,.control(control_li)
 
-     ,.inReady(fdiv_ready_lo)
+     ,.inReady(fdiv_ready_and_lo)
      ,.inValid(fdiv_v_li | fsqrt_v_li)
      ,.sqrtOp(fsqrt_v_li)
      ,.a(frs1.rec)
@@ -214,8 +214,8 @@ module bp_be_pipe_long
       rd_data_lo = remainder_lo;
 
   // Actually a busy signal
-  assign iready_o = imulh_ready_lo & idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
-  assign fready_o = fdiv_ready_lo & ~rd_w_v_r & ~v_li;
+  assign ibusy_o = ~imulh_ready_lo | ~idiv_ready_and_lo | rd_w_v_r;
+  assign fbusy_o = ~fdiv_ready_and_lo | rd_w_v_r;
 
   assign iwb_pkt.ird_w_v    = rd_w_v_r;
   assign iwb_pkt.frd_w_v    = 1'b0;
@@ -234,6 +234,15 @@ module bp_be_pipe_long
   assign fwb_pkt.fflags_w_v = 1'b1;
   assign fwb_pkt.fflags     = fdivsqrt_fflags;
   assign fwb_v_o = fdiv_done_v_r & rd_w_v_r & wb_safe;
+
+  // synopsys translate_off
+
+  always @(negedge clk_i)
+    begin
+      assert (reset_i !== 0 || ~v_li || ~rd_w_v_r) else $error("Long pipe structural hazard");
+    end
+
+  // synopsys translate_on
 
 endmodule
 

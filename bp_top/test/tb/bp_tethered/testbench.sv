@@ -533,8 +533,8 @@ module testbench
           ,.sb_iwaw_dep_i(be.detector.ird_sb_waw_haz_v & be.detector.data_haz_v)
           ,.sb_fwaw_dep_i(be.detector.frd_sb_waw_haz_v & be.detector.data_haz_v)
           ,.struct_haz_i(be.detector.struct_haz_v)
-          ,.idiv_haz_i(~be.detector.idiv_ready_i & be.detector.isd_status_cast_i.long_v)
-          ,.fdiv_haz_i(~be.detector.fdiv_ready_i & be.detector.isd_status_cast_i.long_v)
+          ,.idiv_haz_i(be.detector.idiv_busy_i & be.detector.isd_status_cast_i.long_v)
+          ,.fdiv_haz_i(be.detector.fdiv_busy_i & be.detector.isd_status_cast_i.long_v)
           ,.ptw_busy_i(be.detector.ptw_busy_i)
 
           ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
