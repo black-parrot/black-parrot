@@ -113,6 +113,8 @@ module bp_be_dcache
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
    , parameter fill_width_p   = dcache_fill_width_p
+   , parameter ctag_width_p   = dcache_ctag_width_p
+
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
 
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
@@ -245,10 +247,10 @@ module bp_be_dcache
      ,.decode_o(decode_lo)
      );
 
-  wire [page_offset_width_gp-1:0]  page_offset = dcache_pkt_cast_i.vaddr[0+:page_offset_width_gp];
-  wire [sindex_width_lp-1:0]       vaddr_index = page_offset[block_offset_width_lp+:sindex_width_lp];
-  wire [bindex_width_lp-1:0]       vaddr_bank  = page_offset[byte_offset_width_lp+:bindex_width_lp];
-  wire [vtag_width_p-1:0]          vaddr_tag   = dcache_pkt_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
+  wire [vaddr_width_p-1:0]         vaddr       = dcache_pkt_cast_i.vaddr;
+  wire [sindex_width_lp-1:0]       vaddr_index = vaddr[block_offset_width_lp+:sindex_width_lp];
+  wire [bindex_width_lp-1:0]       vaddr_bank  = vaddr[byte_offset_width_lp+:bindex_width_lp];
+  wire [vtag_width_p-1:0]          vaddr_tag   = vaddr[vaddr_width_p-1-:vtag_width_p];
 
   ///////////////////////////
   // Tag Mem Storage
@@ -312,7 +314,7 @@ module bp_be_dcache
   // TL Stage
   /////////////////////////////////////////////////////////////////////////////
   bp_be_dcache_decode_s decode_tl_r;
-  logic [page_offset_width_gp-1:0] page_offset_tl_r;
+  logic [vaddr_width_p-1:0] vaddr_tl_r;
   logic [dpath_width_gp-1:0] data_tl_r;
 
   assign safe_tl_we = ready_o & v_i;
@@ -329,22 +331,29 @@ module bp_be_dcache
 
   // Save stage information
   bsg_dff_reset_en
-   #(.width_p(dpath_width_gp+page_offset_width_gp+$bits(bp_be_dcache_decode_s)))
+   #(.width_p(dpath_width_gp+vaddr_width_p+$bits(bp_be_dcache_decode_s)))
    tl_stage_reg
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
      ,.en_i(tl_we)
-     ,.data_i({dcache_pkt_cast_i.data, page_offset, decode_lo})
-     ,.data_o({data_tl_r, page_offset_tl_r, decode_tl_r})
+     ,.data_i({dcache_pkt_cast_i.data, vaddr, decode_lo})
+     ,.data_o({data_tl_r, vaddr_tl_r, decode_tl_r})
      );
 
-  wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, page_offset_tl_r};
-  wire [sindex_width_lp-1:0] vaddr_index_tl = page_offset_tl_r[block_offset_width_lp+:sindex_width_lp];
-  wire [bindex_width_lp-1:0]  vaddr_bank_tl = page_offset_tl_r[byte_offset_width_lp+:bindex_width_lp];
+  wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_gp]};
+  wire [sindex_width_lp-1:0] vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:sindex_width_lp];
+  wire [bindex_width_lp-1:0]  vaddr_bank_tl = vaddr_tl_r[byte_offset_width_lp+:bindex_width_lp];
+
+  // Concatenate unused bits from vaddr if any cache way size is not 4kb
+  localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
+  wire [ctag_vbits_lp-1:0] ctag_vbits = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:`BSG_MAX(ctag_vbits_lp,1)];
+  // Causes segfault in Synopsys DC O-2018.06-SP4 
+  // wire [ctag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
+  wire [ctag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
 
   logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
-    wire tag_match_tl      = (ptag_i == tag_mem_data_lo[i].tag);
+    wire tag_match_tl      = (ctag_li == tag_mem_data_lo[i].tag);
     assign way_v_tl[i]     = (tag_mem_data_lo[i].state != e_COH_I);
     assign load_hit_tl[i]  = tag_match_tl & (tag_mem_data_lo[i].state != e_COH_I);
     assign store_hit_tl[i] = tag_match_tl & (tag_mem_data_lo[i].state inside {e_COH_M, e_COH_E});
@@ -705,7 +714,7 @@ module bp_be_dcache
   ///////////////////////////
   // Write buffer
   ///////////////////////////
-  `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, assoc_p);
+  `declare_bp_be_dcache_wbuf_entry_s(caddr_width_p, assoc_p);
   bp_be_dcache_wbuf_entry_s wbuf_entry_in, wbuf_entry_out;
   logic wbuf_v_li, wbuf_v_lo, wbuf_force_lo, wbuf_yumi_li;
 
@@ -805,10 +814,10 @@ module bp_be_dcache
      ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op, decode_tv_r.half_op, decode_tv_r.byte_op})
      ,.data_o(wbuf_entry_in.mask)
      );
-  assign wbuf_entry_in.paddr = paddr_tv_r;
+  assign wbuf_entry_in.caddr = paddr_tv_r;
   assign wbuf_entry_in.way_id = store_hit_way_tv;
 
-  wire [paddr_width_p-1:0] ld_addr_tl = {ptag_i, page_offset_tl_r};
+  wire [caddr_width_p-1:0] ld_addr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_gp]};
   logic _wbuf_v_lo;
   bp_be_dcache_wbuf
    #(.bp_params_p(bp_params_p))
@@ -828,8 +837,8 @@ module bp_be_dcache
      ,.load_data_i(ld_data_dword_raw)
      ,.data_merged_o(ld_data_dword_merged)
      );
-  wire [bindex_width_lp-1:0] wbuf_entry_out_bank_offset = wbuf_entry_out.paddr[byte_offset_width_lp+:bindex_width_lp];
-  wire [sindex_width_lp-1:0] wbuf_entry_out_index = wbuf_entry_out.paddr[block_offset_width_lp+:sindex_width_lp];
+  wire [bindex_width_lp-1:0] wbuf_entry_out_bank_offset = wbuf_entry_out.caddr[byte_offset_width_lp+:bindex_width_lp];
+  wire [sindex_width_lp-1:0] wbuf_entry_out_index = wbuf_entry_out.caddr[block_offset_width_lp+:sindex_width_lp];
   
   //          ____     ____      ____
   //              |___|    |____|    |____
@@ -1095,7 +1104,7 @@ module bp_be_dcache
      );
 
   localparam dword_mask_width_lp = `BSG_SAFE_CLOG2(num_dwords_per_bank_lp);
-  wire [dword_mask_width_lp-1:0] wbuf_dword_sel = wbuf_entry_out.paddr[3+:dword_mask_width_lp];
+  wire [dword_mask_width_lp-1:0] wbuf_dword_sel = wbuf_entry_out.caddr[3+:dword_mask_width_lp];
   wire [byte_offset_width_lp-1:0] mask_shift = (num_dwords_per_bank_lp > 1)
     ? (wbuf_dword_sel << 3)
     : '0;

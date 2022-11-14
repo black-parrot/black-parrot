@@ -23,6 +23,7 @@ module bp_lce_req
    , parameter `BSG_INV_PARAM(sets_p)
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
+   , parameter `BSG_INV_PARAM(ctag_width_p)
 
    // LCE-cache interface timeout in cycles
    , parameter timeout_max_limit_p=4
