@@ -16,6 +16,7 @@ module bp_nonsynth_nbf_loader
    , parameter io_data_width_p = dword_width_gp
 
    , parameter nbf_filename_p = "prog.nbf"
+   , parameter verbose_p = 1
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -84,6 +85,17 @@ module bp_nonsynth_nbf_loader
      ,.up_i(next_nbf)
      ,.count_o(nbf_index_r)
      );
+
+  localparam heartbeat_lp = 1000;
+  always_ff @(negedge clk_i)
+    begin
+      if (verbose_p && next_nbf && is_fence_packet)
+        $display("NBF fence packet  : %d [%x] (%p)", nbf_index_r, curr_nbf, curr_nbf);
+      if (verbose_p && next_nbf && is_finish_packet)
+        $display("NBF finish packet : %d [%x] (%p)", nbf_index_r, curr_nbf, curr_nbf);
+      if (verbose_p && next_nbf && (nbf_index_r % heartbeat_lp == 0))
+        $display("NBF heartbeat     : %d [%x] (%p)", nbf_index_r, curr_nbf, curr_nbf);
+    end
 
   logic [dword_width_gp-1:0] read_data_r;
   bsg_dff_reset_en
