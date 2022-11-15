@@ -41,9 +41,11 @@ module bp_be_detector
    , input                             fdiv_busy_i
    , input                             mem_busy_i
    , input                             ptw_busy_i
+   , input                             irq_pending_i
 
    // Pipeline control signals from the checker to the calculator
    , output logic                      dispatch_v_o
+   , output logic                      interrupt_v_o
    , input [dispatch_pkt_width_lp-1:0] dispatch_pkt_i
    , input [commit_pkt_width_lp-1:0]   commit_pkt_i
    , input [wb_pkt_width_lp-1:0]       iwb_pkt_i
@@ -252,6 +254,9 @@ module bp_be_detector
 
   // Dispatch if we have a valid issue. Don't stall on data hazards for exceptions 
   assign dispatch_v_o = issue_pkt_cast_i.v & ~data_haz_v & ~control_haz_v & ~struct_haz_v;
+  // Don't interrupt PTW. This could be made okay if we save the current privilege mode as well
+  //   as the PTE mode
+  assign interrupt_v_o = ~ptw_busy_i & ~cmd_full_i & irq_pending_i;
 
   bp_be_dep_status_s dep_status_n;
   always_comb

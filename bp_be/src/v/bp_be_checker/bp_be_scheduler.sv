@@ -37,11 +37,11 @@ module bp_be_scheduler
   , output [issue_pkt_width_lp-1:0]    issue_pkt_o
   , input [vaddr_width_p-1:0]          expected_npc_i
   , input                              poison_isd_i
-  , input                              dispatch_v_i
   , input                              suppress_iss_i
   , input                              unfreeze_i
   , input [decode_info_width_lp-1:0]   decode_info_i
-  , input                              irq_pending_i
+  , input                              dispatch_v_i
+  , input                              interrupt_v_i
 
   // Fetch interface
   , input [fe_queue_width_lp-1:0]      fe_queue_i
@@ -74,7 +74,7 @@ module bp_be_scheduler
   wire fe_queue_deq_li  = commit_pkt_cast_i.queue_v;
   wire fe_queue_roll_li = commit_pkt_cast_i.npc_w_v;
   wire fe_queue_read_li = dispatch_v_i;
-  wire fe_queue_inject_li = ptw_fill_pkt_cast_i.v | irq_pending_i | unfreeze_i;
+  wire fe_queue_inject_li = ptw_fill_pkt_cast_i.v | unfreeze_i | interrupt_v_i;
 
   bp_be_preissue_pkt_s preissue_pkt;
   bp_be_issue_queue
@@ -161,8 +161,8 @@ module bp_be_scheduler
 
   // Prioritization is:
   //   1) ptw_fill_pkt, since there is no backpressure
-  //   2) interrupt request
   //   3) unfreeze request
+  //   2) interrupt request
   //   4) finally, fe queue
   wire fe_instr_not_exc_li = dispatch_v_i &  issue_pkt_cast_o.instr_v;
   wire fe_exc_not_instr_li = dispatch_v_i & !issue_pkt_cast_o.instr_v;
@@ -177,8 +177,8 @@ module bp_be_scheduler
   wire be_partial = ptw_fill_pkt_cast_i.v & ptw_fill_pkt_cast_i.partial;
 
   wire ptw_fill_v  =  ptw_fill_pkt_cast_i.v;
-  wire interrupt_v = ~ptw_fill_pkt_cast_i.v &  irq_pending_i;
-  wire unfreeze_v  = ~ptw_fill_pkt_cast_i.v & ~irq_pending_i & unfreeze_i;
+  wire unfreeze_v  = ~ptw_fill_pkt_cast_i.v &  unfreeze_i;
+  wire interrupt_v = ~ptw_fill_pkt_cast_i.v & ~unfreeze_i & interrupt_v_i;
 
   wire ptw_instr_page_fault_v = ptw_fill_v & ptw_fill_pkt_cast_i.instr_page_fault_v;
   wire ptw_load_page_fault_v  = ptw_fill_v & ptw_fill_pkt_cast_i.load_page_fault_v;

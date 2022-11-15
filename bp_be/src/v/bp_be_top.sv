@@ -82,7 +82,7 @@ module bp_be_top
   bp_be_dispatch_pkt_s dispatch_pkt;
   bp_be_branch_pkt_s   br_pkt;
 
-  logic dispatch_v;
+  logic dispatch_v, interrupt_v;
   logic irq_pending_lo, irq_waiting_lo;
 
   bp_be_commit_pkt_s commit_pkt;
@@ -142,8 +142,10 @@ module bp_be_top
      ,.fdiv_busy_i(fdiv_busy_lo)
      ,.idiv_busy_i(idiv_busy_lo)
      ,.ptw_busy_i(ptw_busy_lo)
+     ,.irq_pending_i(irq_pending_lo)
 
      ,.dispatch_v_o(dispatch_v)
+     ,.interrupt_v_o(interrupt_v)
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.commit_pkt_i(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt)
@@ -161,9 +163,9 @@ module bp_be_top
      ,.expected_npc_i(expected_npc_lo)
      ,.poison_isd_i(poison_isd_lo)
      ,.dispatch_v_i(dispatch_v)
+     ,.interrupt_v_i(interrupt_v)
      ,.unfreeze_i(unfreeze_lo)
      ,.suppress_iss_i(suppress_iss_lo)
-     ,.irq_pending_i(irq_pending_lo)
      ,.decode_info_i(decode_info_lo)
 
      ,.fe_queue_i(fe_queue_i)

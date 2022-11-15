@@ -33,7 +33,7 @@ module bp_be_director
    , input [cfg_bus_width_lp-1:0]       cfg_bus_i
 
    // Dependency information
-   , input [issue_pkt_width_lp-1:0]    issue_pkt_i
+   , input [issue_pkt_width_lp-1:0]     issue_pkt_i
    , output logic [vaddr_width_p-1:0]   expected_npc_o
    , output logic                       poison_isd_o
    , output logic                       suppress_iss_o
@@ -117,7 +117,7 @@ module bp_be_director
   always_comb
     begin
       unique casez (state_r)
-        e_wait  : state_n = fe_cmd_nonattaboy_v ? e_fence : e_wait;
+        e_wait  : state_n = (fe_cmd_nonattaboy_v | irq_waiting_i) ? e_fence : e_wait;
         e_run   : state_n = commit_pkt_cast_i.wfi
                             ? e_wait
                             : fe_cmd_nonattaboy_v
@@ -219,7 +219,7 @@ module bp_be_director
 
           fe_cmd_v_li = 1'b1;
         end
-      else if (commit_pkt_cast_i.exception | commit_pkt_cast_i._interrupt | (is_wait & irq_waiting_i))
+      else if (commit_pkt_cast_i.exception | commit_pkt_cast_i._interrupt)
         begin
           fe_cmd_li.opcode                                 = e_op_pc_redirection;
           fe_cmd_li.npc                                    = commit_pkt_cast_i.npc;
