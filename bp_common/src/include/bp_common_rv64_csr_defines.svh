@@ -742,8 +742,8 @@
     64'(data_comp_mp)
 
   `define compress_sepc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    '{word_addr: `BSG_SIGN_EXTEND(data_cast_mp.word_addr, `BSG_MAX(vaddr_width_mp, paddr_width_mp)) \
-      ,align   : data_cast_mp.align                                                                 \
+    '{word_addr: `BSG_SIGN_EXTEND(data_cast_mp.word_addr, 62) \
+      ,align   : data_cast_mp.align                           \
       }
 
   `define decompress_sepc_s(data_comp_mp) \
@@ -926,8 +926,8 @@
     `BSG_SIGN_EXTEND(data_comp_mp, 64)
 
   `define compress_mepc_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    '{word_addr: `BSG_SIGN_EXTEND(data_cast_mp.word_addr, `BSG_MAX(vaddr_width_mp, paddr_width_mp)) \
-      ,align   : data_cast_mp.align                                                                 \
+    '{word_addr: `BSG_SIGN_EXTEND(data_cast_mp.word_addr, 62) \
+      ,align   : data_cast_mp.align                           \
       }
 
   `define decompress_mepc_s(data_comp_mp) \
