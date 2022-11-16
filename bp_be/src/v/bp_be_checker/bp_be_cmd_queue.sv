@@ -67,9 +67,9 @@ module bp_be_cmd_queue
   wire almost_empty = (rptr_r == wptr_r-1'b1);
 
   assign empty_r_o = empty_lo;
-  assign empty_n_o = almost_empty & deq & ~enq;
+  assign empty_n_o = (empty_lo | (almost_empty & deq)) & ~enq;
   assign full_r_o  = full_lo;
-  assign full_n_o  = almost_full & enq & ~deq;
+  assign full_n_o  = (full_lo | (almost_full & enq)) & ~deq;
 
 endmodule
 
