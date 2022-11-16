@@ -205,7 +205,7 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.frs3_v   = issue_pkt_cast_o.frs3_v;
       dispatch_pkt_cast_o.irs3_v   = 1'b0;
       dispatch_pkt_cast_o.imm      = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt_cast_o.frs3_v ? frf_rs3 : decoded_imm_lo;
-      dispatch_pkt_cast_o.decode   = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : decoded_instr_lo;
+      dispatch_pkt_cast_o.decode   = (fe_exc_not_instr_li | be_exc_not_instr_li | illegal_instr_lo) ? '0 : decoded_instr_lo;
 
       dispatch_pkt_cast_o.partial  = be_exc_not_instr_li ? be_partial : fe_partial;
 
