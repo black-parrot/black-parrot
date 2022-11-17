@@ -50,8 +50,6 @@ module testbench
     $error("UCE setup supports only 1 cache");
   if ((uce_p == 0) && (wt_p == 1))
     $error("CCE does not support writethrough caches");
-  if (uce_p == 0 && dcache_writethrough_p == 1)
-    $error("Writethrough cache with CCE not yet supported");
   if (cce_block_width_p != dcache_block_width_p)
     $error("Memory fetch block width does not match D$ block width");
   if (num_caches_p == 0)

@@ -48,7 +48,7 @@ module bp_cce_fsm
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
-    , localparam counter_max_lp = 256
+    , localparam counter_max_lp = 512
   )
   (input                                            clk_i
    , input                                          reset_i

@@ -57,17 +57,17 @@
     , localparam dtlb_els_4k_p              = proc_param_lp.dtlb_els_4k                            \
     , localparam dtlb_els_1g_p              = proc_param_lp.dtlb_els_1g                            \
                                                                                                    \
-    , localparam dcache_writethrough_p      = proc_param_lp.dcache_writethrough                    \
-    , localparam dcache_amo_support_p       = proc_param_lp.dcache_amo_support                     \
+    , localparam dcache_features_p          = proc_param_lp.dcache_features                        \
     , localparam dcache_sets_p              = proc_param_lp.dcache_sets                            \
     , localparam dcache_assoc_p             = proc_param_lp.dcache_assoc                           \
     , localparam dcache_block_width_p       = proc_param_lp.dcache_block_width                     \
     , localparam dcache_fill_width_p        = proc_param_lp.dcache_fill_width                      \
-    , localparam icache_coherent_p          = proc_param_lp.icache_coherent                        \
+    , localparam icache_features_p          = proc_param_lp.icache_features                        \
     , localparam icache_sets_p              = proc_param_lp.icache_sets                            \
     , localparam icache_assoc_p             = proc_param_lp.icache_assoc                           \
     , localparam icache_block_width_p       = proc_param_lp.icache_block_width                     \
     , localparam icache_fill_width_p        = proc_param_lp.icache_fill_width                      \
+    , localparam acache_features_p          = proc_param_lp.acache_features                        \
     , localparam acache_sets_p              = proc_param_lp.acache_sets                            \
     , localparam acache_assoc_p             = proc_param_lp.acache_assoc                           \
     , localparam acache_block_width_p       = proc_param_lp.acache_block_width                     \
@@ -92,15 +92,15 @@
         `BSG_MIN(dcache_sets_p, `BSG_MIN(icache_sets_p, num_cacc_p ? acache_sets_p : icache_sets_p)) \
                                                                                                    \
     /* L2 enable turns the L2 into a small write buffer, which is minimal size                  */ \
-    , localparam l2_en_p                  = proc_param_lp.l2_en                                    \
-    , localparam l2_amo_support_p         = proc_param_lp.l2_amo_support                           \
-    , localparam l2_banks_p               = l2_en_p ? proc_param_lp.l2_banks       :  1            \
-    , localparam l2_sets_p                = l2_en_p ? proc_param_lp.l2_sets        :  4            \
-    , localparam l2_assoc_p               = l2_en_p ? proc_param_lp.l2_assoc       :  2            \
-    , localparam l2_block_width_p         = proc_param_lp.l2_block_width                           \
-    , localparam l2_fill_width_p          = proc_param_lp.l2_fill_width                            \
-    , localparam l2_data_width_p          = proc_param_lp.l2_data_width                            \
-    , localparam l2_outstanding_reqs_p    = proc_param_lp.l2_outstanding_reqs                      \
+    , localparam l2_features_p         = proc_param_lp.l2_features                                 \
+    , localparam l2_banks_p            = l2_features_p[e_cfg_enabled] ? proc_param_lp.l2_banks : 1 \
+    , localparam l2_sets_p             = l2_features_p[e_cfg_enabled] ? proc_param_lp.l2_sets  : 4 \
+    , localparam l2_assoc_p            = l2_features_p[e_cfg_enabled] ? proc_param_lp.l2_assoc : 2 \
+    , localparam l2_block_width_p      = proc_param_lp.l2_block_width                              \
+    , localparam l2_fill_width_p       = proc_param_lp.l2_fill_width                               \
+    , localparam l2_data_width_p       = proc_param_lp.l2_data_width                               \
+    , localparam l2_outstanding_reqs_p = proc_param_lp.l2_outstanding_reqs                         \
+                                                                                                   \
     , localparam l2_block_size_in_words_p = l2_block_width_p / l2_data_width_p                     \
     , localparam l2_block_size_in_fill_p  = l2_block_width_p / l2_fill_width_p                     \
                                                                                                    \
@@ -221,20 +221,19 @@
           ,`bp_aviary_parameter_override(dtlb_els_4k, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(dtlb_els_1g, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
-          ,`bp_aviary_parameter_override(icache_coherent, override_cfg_mp, default_cfg_mp)         \
+          ,`bp_aviary_parameter_override(icache_features, override_cfg_mp, default_cfg_mp)         \
           ,`bp_aviary_parameter_override(icache_sets, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(icache_assoc, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(icache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(icache_fill_width, override_cfg_mp, default_cfg_mp)       \
                                                                                                    \
-          ,`bp_aviary_parameter_override(dcache_writethrough, override_cfg_mp, default_cfg_mp)     \
-          ,`bp_aviary_parameter_override(dcache_amo_support, override_cfg_mp, default_cfg_mp)      \
+          ,`bp_aviary_parameter_override(dcache_features, override_cfg_mp, default_cfg_mp)         \
           ,`bp_aviary_parameter_override(dcache_sets, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(dcache_assoc, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(dcache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(dcache_fill_width, override_cfg_mp, default_cfg_mp)       \
                                                                                                    \
-          ,`bp_aviary_parameter_override(acache_amo_support, override_cfg_mp, default_cfg_mp)      \
+          ,`bp_aviary_parameter_override(acache_features, override_cfg_mp, default_cfg_mp)         \
           ,`bp_aviary_parameter_override(acache_sets, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(acache_assoc, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(acache_block_width, override_cfg_mp, default_cfg_mp)      \
@@ -244,9 +243,8 @@
           ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(bedrock_data_width, override_cfg_mp, default_cfg_mp)      \
                                                                                                    \
-          ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                   \
+          ,`bp_aviary_parameter_override(l2_features, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(l2_banks, override_cfg_mp, default_cfg_mp)                \
-          ,`bp_aviary_parameter_override(l2_amo_support, override_cfg_mp, default_cfg_mp)          \
           ,`bp_aviary_parameter_override(l2_data_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(l2_sets, override_cfg_mp, default_cfg_mp)                 \
           ,`bp_aviary_parameter_override(l2_assoc, override_cfg_mp, default_cfg_mp)                \

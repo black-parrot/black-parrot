@@ -231,6 +231,7 @@ module bp_nonsynth_dram
 
       logic [axi_id_width_p-1:0] axi_awid;
       logic [caddr_width_p-1:0] axi_awaddr_addr;
+      logic axi_awaddr_addr_unused;
       logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_awaddr_cache_id;
       logic [7:0] axi_awlen;
       logic [2:0] axi_awsize;
@@ -249,6 +250,7 @@ module bp_nonsynth_dram
 
       logic [axi_id_width_p-1:0] axi_arid;
       logic [caddr_width_p-1:0] axi_araddr_addr;
+      logic axi_araddr_addr_unused;
       logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_araddr_cache_id;
       logic [7:0] axi_arlen;
       logic [2:0] axi_arsize;
@@ -290,7 +292,7 @@ module bp_nonsynth_dram
          ,.dma_data_yumi_o(dma_data_yumi_o)
 
          ,.axi_awid_o(axi_awid)
-         ,.axi_awaddr_addr_o(axi_awaddr_addr)
+         ,.axi_awaddr_addr_o({axi_awaddr_addr_unused, axi_awaddr_addr})
          ,.axi_awaddr_cache_id_o(axi_awaddr_cache_id)
          ,.axi_awlen_o(axi_awlen)
          ,.axi_awsize_o(axi_awsize)
@@ -312,7 +314,7 @@ module bp_nonsynth_dram
          ,.axi_bvalid_i(axi_bvalid)
          ,.axi_bready_o(axi_bready)
          ,.axi_arid_o(axi_arid)
-         ,.axi_araddr_addr_o(axi_araddr_addr)
+         ,.axi_araddr_addr_o({axi_araddr_addr_unused, axi_araddr_addr})
          ,.axi_araddr_cache_id_o(axi_araddr_cache_id)
          ,.axi_arlen_o(axi_arlen)
          ,.axi_arsize_o(axi_arsize)

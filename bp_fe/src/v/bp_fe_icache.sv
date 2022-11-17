@@ -38,11 +38,11 @@ module bp_fe_icache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to icache parameters, but can override if needed
-   , parameter coherent_p     = icache_coherent_p
-   , parameter sets_p         = icache_sets_p
-   , parameter assoc_p        = icache_assoc_p
-   , parameter block_width_p  = icache_block_width_p
-   , parameter fill_width_p   = icache_fill_width_p
+   , parameter coherent_p    = icache_features_p[e_cfg_coherent]
+   , parameter sets_p        = icache_sets_p
+   , parameter assoc_p       = icache_assoc_p
+   , parameter block_width_p = icache_block_width_p
+   , parameter fill_width_p  = icache_fill_width_p
    , parameter ctag_width_p   = icache_ctag_width_p
 
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)

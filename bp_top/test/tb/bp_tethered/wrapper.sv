@@ -16,6 +16,7 @@ module wrapper
  import bp_me_pkg::*;
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
+   //, localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]
    `declare_bp_proc_params(bp_params_p)
 
    , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : bedrock_data_width_p
