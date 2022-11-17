@@ -95,7 +95,7 @@ module bp_fe_nonsynth_icache_tracer
    begin
      file_name = $sformatf("%s_%x.trace", trace_file_p, mhartid_i);
      file      = $fopen(file_name, "w");
-     $fwrite(file, "Coherent L1: %x\n", icache_coherent_p);
+     $fwrite(file, "Coherent L1: %x\n", icache_features_p[e_cfg_coherent]);
    end
 
   logic data_mem_read_r, tag_mem_read_r, stat_mem_read_r;

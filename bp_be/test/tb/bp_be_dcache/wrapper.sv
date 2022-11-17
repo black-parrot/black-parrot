@@ -188,7 +188,7 @@ module wrapper
 
       bp_be_dcache
       #(.bp_params_p(bp_params_p)
-        ,.writethrough_p(wt_p)
+        ,.writeback_p(!wt_p)
         ,.sets_p(sets_p)
         ,.assoc_p(assoc_p)
         ,.block_width_p(block_width_p)
@@ -361,6 +361,7 @@ module wrapper
             ,.block_width_p(block_width_p)
             ,.fill_width_p(fill_width_p)
             ,.metadata_latency_p(1)
+            ,.writeback_p(!wt_p)
             )
           dcache_uce
            (.clk_i(clk_i)

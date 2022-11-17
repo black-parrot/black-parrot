@@ -338,6 +338,7 @@ module wrapper
        ,.block_width_p(icache_block_width_p)
        ,.fill_width_p(icache_fill_width_p)
        ,.metadata_latency_p(1)
+       ,.writeback_p(0)
        )
      icache_uce
       (.clk_i(clk_i)

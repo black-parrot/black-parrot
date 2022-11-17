@@ -23,8 +23,15 @@ package bp_common_pkg;
   localparam bp_proc_param_s bp_multicore_1_override_p =
     '{cce_type              : e_cce_fsm
       ,ic_y_dim             : 1
-      ,icache_coherent      : 1
-      ,l2_amo_support       : '0
+      ,icache_features      : (1 << e_cfg_enabled) | (1 << e_cfg_coherent)
+      ,dcache_features      : (1 << e_cfg_enabled)
+                              | (1 << e_cfg_coherent)
+                              | (1 << e_cfg_writeback)
+                              | (1 << e_cfg_lr_sc)
+                              | (1 << e_cfg_amo_swap)
+                              | (1 << e_cfg_amo_fetch_logic)
+                              | (1 << e_cfg_amo_fetch_arithmetic)
+      ,l2_features          : '0
       ,l2_banks             : 1
       ,default : "inv"
       };

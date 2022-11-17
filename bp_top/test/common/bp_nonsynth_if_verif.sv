@@ -76,15 +76,15 @@ module bp_nonsynth_if_verif
     $error("FPU cannot currently be disabled");
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
     $error("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
-  if (~|{dcache_amo_support_p[e_lr_sc], l2_amo_support_p[e_lr_sc]})
-    $error("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
+  if (~|{dcache_features_p[e_cfg_lr_sc], l2_features_p[e_cfg_lr_sc]})
+    $warning("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
 
   // L1 Caches
   if ((cce_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
   if ((cce_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 128-bit cache block size and 4-way or 8-way cache associativity");
-  if ((dcache_writethrough_p == 1) && (icache_coherent_p == 1))
+  if ((dcache_features_p[e_cfg_writeback] == 0) && (dcache_features_p[e_cfg_coherent] == 1))
     $error("Error: Writethrough with coherent_l1 is unsupported");
   if ((icache_fill_width_p > icache_block_width_p) || (dcache_fill_width_p > dcache_block_width_p))
     $error("Error: Cache fill width should be less or equal to L1 cache block width");
@@ -150,7 +150,7 @@ module bp_nonsynth_if_verif
     $error("Error: Multicore requires BedRock data width to be at least dword width");
   if ((cce_type_p != e_cce_uce) && (bedrock_data_width_p > icache_fill_width_p))
     $error("Error: Multicore requires BedRock data width to be no larger than cache fill width");
-  if ((cce_type_p != e_cce_uce) && (|l2_amo_support_p) && l2_en_p)
+  if ((cce_type_p != e_cce_uce) && l2_features_p[e_cfg_enabled] && (|{l2_features_p[e_cfg_lr_sc], l2_features_p[e_cfg_amo_swap], l2_features_p[e_cfg_amo_fetch_logic], l2_features_p[e_cfg_amo_fetch_arithmetic]}))
     $error("Error: Multicore does not support L2 atomics");
 
   if (num_cce_p/mc_x_dim_p*l2_banks_p > 16)

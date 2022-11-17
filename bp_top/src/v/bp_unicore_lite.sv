@@ -156,6 +156,7 @@ module bp_unicore_lite
      ,.sets_p(icache_sets_p)
      ,.block_width_p(icache_block_width_p)
      ,.fill_width_p(icache_fill_width_p)
+     ,.writeback_p(icache_features_p[e_cfg_writeback])
      ,.metadata_latency_p(1)
      )
    icache_uce
@@ -216,6 +217,7 @@ module bp_unicore_lite
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
      ,.fill_width_p(uce_fill_width_p)
+     ,.writeback_p(dcache_features_p[e_cfg_writeback])
      ,.metadata_latency_p(1)
      )
    dcache_uce

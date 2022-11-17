@@ -24,7 +24,7 @@ N=${2:-1}
 cfgs=(\
     "e_bp_unicore_cfg"
     "e_bp_unicore_tinyparrot_cfg"
-    "e_bp_unicore_l2_atomic_cfg"
+    "e_bp_unicore_miniparrot_cfg"
     )
 
 let JOBS=${#cfgs[@]}

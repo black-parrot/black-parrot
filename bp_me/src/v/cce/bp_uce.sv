@@ -17,6 +17,7 @@ module bp_uce
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    , parameter `BSG_INV_PARAM(writeback_p)
     , parameter `BSG_INV_PARAM(assoc_p)
     , parameter `BSG_INV_PARAM(sets_p)
     , parameter `BSG_INV_PARAM(block_width_p)
@@ -565,7 +566,7 @@ module bp_uce
                         ? e_flush_read
                         : clear_v_li
                           ? e_clear
-                          : (uc_hit_v_li & (dcache_writethrough_p == 0))
+                          : (uc_hit_v_li & (writeback_p == 1))
                             ? e_uc_writeback_evict
                             : (uc_store_v_li || wt_store_v_li)
                               ? e_ready
@@ -736,7 +737,7 @@ module bp_uce
   // synopsys translate_off
   always_ff @(negedge clk_i)
     begin
-      assert(reset_i !== '0 || (dcache_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
+      assert(reset_i !== '0 || (writeback_p == 1) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
         else $error("writethrough cache should not be in writeback states");
     end
   // synopsys translate_on

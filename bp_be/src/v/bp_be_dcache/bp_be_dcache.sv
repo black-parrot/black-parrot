@@ -95,20 +95,20 @@ module bp_be_dcache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to dcache parameters, but can override if needed
-   , parameter [31:0] amo_support_p  = (((dcache_amo_support_p[e_lr_sc]) << e_dcache_subop_lr)
-                                        | ((dcache_amo_support_p[e_lr_sc]) << e_dcache_subop_sc)
-                                        | ((dcache_amo_support_p[e_amo_swap]) << e_dcache_subop_amoswap)
-                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amoadd)
-                                        | ((dcache_amo_support_p[e_amo_fetch_logic]) << e_dcache_subop_amoxor)
-                                        | ((dcache_amo_support_p[e_amo_fetch_logic]) << e_dcache_subop_amoand)
-                                        | ((dcache_amo_support_p[e_amo_fetch_logic]) << e_dcache_subop_amoor)
-                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amomin)
-                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amomax)
-                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amominu)
-                                        | ((dcache_amo_support_p[e_amo_fetch_arithmetic]) << e_dcache_subop_amomaxu)
+   , parameter coherent_p            = dcache_features_p[e_cfg_coherent]
+   , parameter writeback_p           = dcache_features_p[e_cfg_writeback]
+   , parameter [31:0] amo_support_p  = (((dcache_features_p[e_cfg_lr_sc]) << e_dcache_subop_lr)
+                                        | ((dcache_features_p[e_cfg_lr_sc]) << e_dcache_subop_sc)
+                                        | ((dcache_features_p[e_cfg_amo_swap]) << e_dcache_subop_amoswap)
+                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amoadd)
+                                        | ((dcache_features_p[e_cfg_amo_fetch_logic]) << e_dcache_subop_amoxor)
+                                        | ((dcache_features_p[e_cfg_amo_fetch_logic]) << e_dcache_subop_amoand)
+                                        | ((dcache_features_p[e_cfg_amo_fetch_logic]) << e_dcache_subop_amoor)
+                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomin)
+                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomax)
+                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amominu)
+                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomaxu)
                                         )
-   , parameter coherent_p     = icache_coherent_p
-   , parameter writethrough_p = dcache_writethrough_p
    , parameter sets_p         = dcache_sets_p
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
@@ -231,7 +231,7 @@ module bp_be_dcache
 
   bp_be_dcache_decode_s decode_lo;
   bp_be_dcache_decoder
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .amo_support_p(amo_support_p))
    pkt_decoder
     (.pkt_i(dcache_pkt_i)
      ,.decode_o(decode_lo)
@@ -576,7 +576,7 @@ module bp_be_dcache
   wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
 
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
-  wire store_miss_tv    = ~uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & (writethrough_p == 0);
+  wire store_miss_tv    = ~uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & (writeback_p == 1);
   wire lr_miss_tv       = ~uncached_op_tv_r & decode_tv_r.lr_op & ~lr_hit_tv;
   wire load_miss_tv     = ~uncached_op_tv_r & decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
@@ -829,7 +829,7 @@ module bp_be_dcache
   `bp_cast_o(bp_dcache_req_metadata_s, cache_req_metadata);
 
   wire cached_req          = ~uncached_op_tv_r & (store_miss_tv | lr_miss_tv | load_miss_tv);
-  wire wt_req              = ~uncached_op_tv_r & (decode_tv_r.store_op & ~sc_fail_tv & (writethrough_p == 1));
+  wire wt_req              = ~uncached_op_tv_r & (decode_tv_r.store_op & ~sc_fail_tv & (writeback_p == 0));
   wire uncached_amo_req    =  uncached_op_tv_r & decode_tv_r.amo_op & decode_tv_r.ret_op & ~fill_tv_r;
   wire uncached_load_req   =  uncached_op_tv_r & ~decode_tv_r.amo_op & decode_tv_r.load_op & ~fill_tv_r;
   wire uncached_store_req  =  uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.ret_op & ~fill_tv_r;
@@ -1155,7 +1155,7 @@ module bp_be_dcache
      );
 
   logic [assoc_p-1:0] dirty_mask_lo;
-  if (writethrough_p == 0)
+  if (writeback_p == 1)
     begin : tdm
       wire dirty_mask_v_li = stat_mem_slow_write || (v_tv_r & decode_tv_r.store_op);
       wire [lg_assoc_lp-1:0] dirty_mask_way_li = v_tv_r ? store_hit_way_tv : stat_mem_pkt_cast_i.way_id;
@@ -1181,8 +1181,11 @@ module bp_be_dcache
       // The way this works with fence.i is:
       //   1) If dirty bit is set, we force a miss and send off a flush request to the CE
       //   2) If dirty bit is not set, we do not send a request and simply return valid flush.
-      //        The CSR unit is now responsible for sending the clear request to the I$.
-      wire set_dirty = wbuf_v_li;
+      //        A clear request is now sent to I$ through the FE exception mechanism
+      // For a non-coherent writeback cache, we set the dirty when we have a store hit
+      // For a non-coherent writethrough write-no-allocate cache, we set the dirty regardless of hit
+      // For a coherent cache, we never set the dirty bit as the coherence system should handle it
+      wire set_dirty = v_tv_r & decode_tv_r.store_op & (store_hit_tv | writeback_p == 0);
       wire clear_dirty = (cache_req_complete_i & decode_tv_r.fencei_op);
       bsg_dff_reset_set_clear
        #(.width_p(1))
