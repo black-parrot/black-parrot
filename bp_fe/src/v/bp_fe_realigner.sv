@@ -13,21 +13,21 @@ module bp_fe_realigner
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
  )
-  (input   clk_i
-   , input reset_i
+  (input                             clk_i
+   , input                           reset_i
 
    // Fetch PC and I$ data
-   , input                       if2_v_i
-   , input [vaddr_width_p-1:0]   if2_pc_i
-   , input [instr_width_gp-1:0]  if2_data_i
-   , input                       if2_taken_branch_site_i
+   , input                           if2_v_i
+   , input [vaddr_width_p-1:0]       if2_pc_i
+   , input [instr_width_gp-1:0]      if2_data_i
+   , input                           if2_taken_branch_site_i
 
    // Redirection from backend
    //   and whether to restore the instruction data
    //   and PC to resume a fetch
    , input                           redirect_v_i
    , input                           redirect_resume_v_i
-   , input [instr_half_width_gp-1:0] redirect_instr_i
+   , input [hinstr_width_gp-1:0]     redirect_instr_i
    , input [vaddr_width_p-1:0]       redirect_pc_i
 
    , output [vaddr_width_p-1:0]      fetch_pc_o
@@ -38,14 +38,14 @@ module bp_fe_realigner
    , input                           fetch_instr_yumi_i
    );
 
-  wire [instr_half_width_gp-1:0] icache_data_lower_half_li = if2_data_i[0                  +:instr_half_width_gp];
-  wire [instr_half_width_gp-1:0] icache_data_upper_half_li = if2_data_i[instr_half_width_gp+:instr_half_width_gp];
+  wire [hinstr_width_gp-1:0] icache_data_lower_half_li = if2_data_i[0                  +:hinstr_width_gp];
+  wire [hinstr_width_gp-1:0] icache_data_upper_half_li = if2_data_i[hinstr_width_gp+:hinstr_width_gp];
 
   logic [vaddr_width_p-1:0] partial_pc_n, partial_pc_r;
-  logic [instr_half_width_gp-1:0] partial_instr_n, partial_instr_r;
+  logic [hinstr_width_gp-1:0] partial_instr_n, partial_instr_r;
   logic partial_v_r;
 
-  wire if2_pc_is_aligned  = `bp_addr_is_aligned(if2_pc_i, rv64_instr_width_bytes_gp);
+  wire if2_pc_is_aligned  = `bp_addr_is_aligned(if2_pc_i, (instr_width_gp>>3));
   wire if2_store_v = if2_v_i &
     // Transition from aligned to misaligned
     ((~partial_v_r & ~if2_pc_is_aligned)
@@ -55,10 +55,10 @@ module bp_fe_realigner
 
   wire [vaddr_width_p-1:0] redirect_pc_adjusted = redirect_pc_i - 2'b10;
   wire [vaddr_width_p-1:0] if2_pc_adjusted = (partial_v_r & if2_pc_is_aligned) ? (if2_pc_i + 2'b10) : if2_pc_i;
-  wire [instr_half_width_gp-1:0] if2_data_lower = if2_data_i[0+:instr_half_width_gp];
-  wire [instr_half_width_gp-1:0] if2_data_upper = if2_data_i[instr_half_width_gp+:instr_half_width_gp];
+  wire [hinstr_width_gp-1:0] if2_data_lower = if2_data_i[0+:hinstr_width_gp];
+  wire [hinstr_width_gp-1:0] if2_data_upper = if2_data_i[hinstr_width_gp+:hinstr_width_gp];
   bsg_mux
-   #(.width_p(instr_half_width_gp+vaddr_width_p), .els_p(2))
+   #(.width_p(hinstr_width_gp+vaddr_width_p), .els_p(2))
    partial_mux
     (.data_i({{redirect_instr_i, redirect_pc_adjusted}, {if2_data_upper, if2_pc_adjusted}})
      ,.sel_i(redirect_v_i)
@@ -79,7 +79,7 @@ module bp_fe_realigner
      );
 
   bsg_dff_reset_en
-   #(.width_p(instr_half_width_gp+vaddr_width_p))
+   #(.width_p(hinstr_width_gp+vaddr_width_p))
    partial_instr_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

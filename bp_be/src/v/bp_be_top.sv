@@ -90,7 +90,7 @@ module bp_be_top
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_decode_info_s decode_info_lo;
 
-  bp_be_isd_status_s isd_status;
+  bp_be_issue_pkt_s issue_pkt;
   logic [vaddr_width_p-1:0] expected_npc_lo;
   logic poison_isd_lo, suppress_iss_lo, unfreeze_lo;
 
@@ -105,7 +105,7 @@ module bp_be_top
 
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.isd_status_i(isd_status)
+     ,.issue_pkt_i(issue_pkt)
      ,.expected_npc_o(expected_npc_lo)
 
      ,.fe_cmd_o(fe_cmd_o)
@@ -121,6 +121,7 @@ module bp_be_top
      ,.cmd_full_n_o(cmd_full_n_lo)
      ,.cmd_full_r_o(cmd_full_r_lo)
 
+     ,.dispatch_v_i(dispatch_v)
      ,.br_pkt_i(br_pkt)
      ,.commit_pkt_i(commit_pkt)
      );
@@ -133,7 +134,7 @@ module bp_be_top
 
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.isd_status_i(isd_status)
+     ,.issue_pkt_i(issue_pkt)
      ,.cmd_full_i(cmd_full_r_lo)
      ,.credits_full_i(cache_req_credits_full_i)
      ,.credits_empty_i(cache_req_credits_empty_i)
@@ -158,7 +159,7 @@ module bp_be_top
      ,.reset_i(reset_i)
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.isd_status_o(isd_status)
+     ,.issue_pkt_o(issue_pkt)
      ,.expected_npc_i(expected_npc_lo)
      ,.poison_isd_i(poison_isd_lo)
      ,.dispatch_v_i(dispatch_v)

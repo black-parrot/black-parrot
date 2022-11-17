@@ -43,7 +43,6 @@ module bp_fe_pc_gen
 
    , input [instr_scan_width_lp-1:0]                 fetch_scan_i
    , input [vaddr_width_p-1:0]                       fetch_pc_i
-   , input                                           fetch_partial_i
    , input                                           fetch_linear_i
 
    , input [vaddr_width_p-1:0]                       attaboy_pc_i

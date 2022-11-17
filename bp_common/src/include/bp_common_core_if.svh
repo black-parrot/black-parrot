@@ -44,7 +44,7 @@
       logic [vaddr_width_mp-1:0]                pc;                                                \
       rv64_instr_s                              instr;                                             \
       logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                               \
-      logic                                     partial_v;                                         \
+      logic                                     partial;                                           \
       bp_fe_queue_type_e                        msg_type;                                          \
     }  bp_fe_queue_s;                                                                              \
                                                                                                    \

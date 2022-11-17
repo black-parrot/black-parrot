@@ -353,7 +353,7 @@ module testbench
          #(.bp_params_p(bp_params_p)
            ,.stall_cycles_p(100000)
            ,.halt_cycles_p(10000)
-           ,.heartbeat_instr_p(100000)
+           ,.heartbeat_instr_p(10000)
            )
          watchdog
           (.clk_i(clk_i)
@@ -491,9 +491,9 @@ module testbench
 
           ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.controller.attaboy_v)
           ,.fe_cmd_fence_i(be.director.is_fence)
-          ,.fe_queue_empty_i(~be.scheduler.fe_queue_fifo.fe_queue_v_o)
+          ,.fe_queue_empty_i(be.scheduler.fe_queue_fifo.empty)
 
-          ,.mispredict_i(be.director.npc_mismatch_v)
+          ,.mispredict_i(be.director.poison_isd_o)
           ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_and_o)
           ,.long_haz_i(be.detector.long_haz_v)
           ,.control_haz_i(be.detector.control_haz_v)
@@ -533,8 +533,8 @@ module testbench
           ,.sb_iwaw_dep_i(be.detector.ird_sb_waw_haz_v & be.detector.data_haz_v)
           ,.sb_fwaw_dep_i(be.detector.frd_sb_waw_haz_v & be.detector.data_haz_v)
           ,.struct_haz_i(be.detector.struct_haz_v)
-          ,.idiv_haz_i(be.detector.idiv_busy_i & be.detector.isd_status_cast_i.long_v)
-          ,.fdiv_haz_i(be.detector.fdiv_busy_i & be.detector.isd_status_cast_i.long_v)
+          ,.idiv_haz_i(be.detector.idiv_busy_i & be.detector.issue_pkt_cast_i.long_v)
+          ,.fdiv_haz_i(be.detector.fdiv_busy_i & be.detector.issue_pkt_cast_i.long_v)
           ,.ptw_busy_i(be.detector.ptw_busy_i)
 
           ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)

@@ -171,7 +171,6 @@ module bp_nonsynth_core_profiler
       // IF0
       stall_stage_n[0]                    = '0;
       stall_stage_n[0].fe_cmd            |= fe_cmd_nonattaboy_i;
-      stall_stage_n[0].icache_miss       |= icache_v_i & ~icache_yumi_i;
 
       // IF1
       stall_stage_n[1]                    = stall_stage_r[0];
