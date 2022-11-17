@@ -181,25 +181,24 @@ module bp_cacc_vdp
      ,.dcache_pkt_i(dcache_pkt)
      ,.v_i(dcache_pkt_v)
      ,.ready_and_o(dcache_ready_and)
-     ,.poison_req_i(1'b0)
+     ,.flush_i(1'b0)
 
      ,.ptag_v_i(1'b1)
      ,.ptag_i(dcache_ptag)
      ,.ptag_uncached_i(1'b0)
      ,.ptag_dram_i(1'b1)
-     ,.poison_tl_i(1'b0)
 
      ,.early_hit_v_o(dcache_v)
-     ,.early_miss_v_o()
      ,.early_fencei_o()
      ,.early_data_o(dcache_data)
      ,.early_fflags_o()
+     ,.early_ret_o()
 
      ,.final_v_o(final_v)
      ,.final_data_o()
      ,.final_rd_addr_o()
      ,.final_float_o()
-     ,.final_load_o()
+     ,.final_ret_o()
      ,.final_yumi_i(final_v)
 
      // D$-LCE Interface

@@ -156,7 +156,7 @@ module bp_be_pipe_mem
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
   logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data;
-  logic                     dcache_final_late, dcache_final_load;
+  logic                     dcache_final_ret, dcache_final_late, dcache_final_load;
   rv64_fflags_s             dcache_early_fflags;
   logic [reg_addr_width_gp-1:0] dcache_final_rd_addr;
   logic [ptag_width_p-1:0]  dcache_ptag;
@@ -394,6 +394,7 @@ module bp_be_pipe_mem
      ,.data_o(dtlb_r_v_r)
      );
 
+  logic dcache_tv_r;
   bsg_dff
    #(.width_p(1))
    dcache_v_r

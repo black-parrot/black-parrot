@@ -214,7 +214,7 @@ module wrapper
       ,.final_v_o(final_v_lo[i])
       ,.final_rd_addr_o()
       ,.final_float_o()
-      ,.final_load_o()
+      ,.final_ret_o()
       ,.final_late_o()
       ,.final_yumi_i(final_v_lo[i])
 
