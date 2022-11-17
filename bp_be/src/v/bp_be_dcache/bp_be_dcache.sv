@@ -1179,7 +1179,7 @@ module bp_be_dcache
 
   logic [assoc_p-1:0] dirty_mask_lo;
   if (writethrough_p == 0)
-    begin : td
+    begin : tdm
       wire dirty_mask_v_li = stat_mem_slow_write || (v_tv_r & decode_tv_r.store_op);
       wire [lg_assoc_lp-1:0] dirty_mask_way_li = v_tv_r ? store_hit_way_tv : stat_mem_pkt_cast_i.way_id;
       bsg_decode_with_v
@@ -1189,7 +1189,16 @@ module bp_be_dcache
          ,.v_i(dirty_mask_v_li)
          ,.o(dirty_mask_lo)
          );
+    end
+  else
+    begin : ntdm
+      // We don't track dirty
+      // Note: This will synthesize out of stat_mem...unless hardened
+      assign dirty_mask_lo = '0;
+    end
 
+  if (coherent_p == 0)
+    begin : tgd
       // Maintain a global dirty bit for the cache. When data is written to the write buffer, we set
       //   it. When we send a flush request to the CE, we clear it.
       // The way this works with fence.i is:
@@ -1210,11 +1219,8 @@ module bp_be_dcache
         );
     end
   else
-    begin : ntd
-      // We don't track dirty
-      // Note: This will synthesize out of stat_mem...unless hardened
-      assign dirty_mask_lo = '0;
-      assign gdirty_r     = '0;
+    begin : ntgd
+      assign gdirty_r = '0;
     end
 
   always_comb
