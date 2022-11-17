@@ -823,13 +823,13 @@ module bp_cce
 
 
   // Debug and tracing signals
-  //synopsys translate_off
+  // synopsys translate_off
   wire req_start = lce_req_v & decoded_inst_lo.v & decoded_inst_lo.poph
                    & (decoded_inst_lo.popq_qsel == e_src_q_sel_lce_req);
   // current microcode has clm instruction at ready label
   wire req_end = decoded_inst_lo.v
                  & (decoded_inst_lo.op == e_op_reg_data)
                  & (decoded_inst_lo.minor_op_u.reg_data_minor_op == e_clm_op);
-  //synopsys translate_on
+  // synopsys translate_on
 
 endmodule

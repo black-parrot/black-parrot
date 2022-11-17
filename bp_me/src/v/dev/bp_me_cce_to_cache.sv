@@ -425,7 +425,7 @@ module bp_me_cce_to_cache
         tagst_received_r <= tagst_received_n;
       end
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i)
     begin
       assert(reset_i !== '0
@@ -434,7 +434,7 @@ module bp_me_cce_to_cache
              )
           else $error("LR/SC not supported in bsg_cache");
     end
-  //synopsys translate_on
+  // synopsys translate_on
 
   // requirement from BedRock Stream interface
   if (!(`BSG_IS_POW2(l2_data_width_p) || l2_data_width_p < 64 || l2_data_width_p > 512))

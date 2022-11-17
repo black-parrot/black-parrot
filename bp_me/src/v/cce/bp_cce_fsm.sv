@@ -374,7 +374,7 @@ module bp_cce_fsm
        ,.cacheable_addr_o(req_pma_cacheable_addr_lo)
        );
 
-  //synopsys translate_off
+  // synopsys translate_off
   always @(negedge clk_i) begin
     if (~reset_i) begin
       // Cacheable requests must target cacheable memory
@@ -387,7 +387,7 @@ module bp_cce_fsm
       $error("CCE PMA violation - cacheable requests must target cacheable memory");
     end
   end
-  //synopsys translate_on
+  // synopsys translate_on
 
   // CCE PMA - Mem responses
   logic resp_pma_cacheable_addr_lo;

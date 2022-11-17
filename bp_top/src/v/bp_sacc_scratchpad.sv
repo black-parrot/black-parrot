@@ -28,12 +28,12 @@ module bp_sacc_scratchpad
    , input                                      io_rev_ready_and_i
    );
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i) begin
     assert(~io_fwd_v_i | (io_fwd_v_i & io_fwd_last_i))
       else $error("sacc_vdp only supports single beat IO commands");
   end
-  //synopsys translate_on
+  // synopsys translate_on
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);

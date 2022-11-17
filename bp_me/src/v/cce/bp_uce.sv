@@ -733,13 +733,13 @@ module bp_uce
     else
       state_r <= state_n;
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i)
     begin
       assert(reset_i !== '0 || (dcache_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
         else $error("writethrough cache should not be in writeback states");
     end
-  //synopsys translate_on
+  // synopsys translate_on
 
 endmodule
 

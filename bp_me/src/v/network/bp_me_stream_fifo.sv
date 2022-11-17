@@ -119,7 +119,7 @@ module bp_me_stream_fifo
         end
     endcase
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
       state_r <= e_ready;

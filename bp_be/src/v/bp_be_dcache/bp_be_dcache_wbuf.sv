@@ -183,11 +183,11 @@ module bp_be_dcache_wbuf
      ,.data_o(data_merged_o)
      );
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i) begin
     assert(reset_i !== '0 || num_els_r < 2'd3) else $error("Write buffer overflow\n");
   end
-  //synopsys translate_on
+  // synopsys translate_on
 
 endmodule
 

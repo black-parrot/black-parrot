@@ -882,7 +882,7 @@ module bp_lce_cmd
     endcase // state
   end
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       state_r <= e_reset;

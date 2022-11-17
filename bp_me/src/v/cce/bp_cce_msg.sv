@@ -1111,7 +1111,7 @@ module bp_cce_msg
 
   end // always_comb
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       if (state_r == e_inv_cmd & ~pe_v) begin
@@ -1122,6 +1122,6 @@ module bp_cce_msg
       end
     end // ~reset
   end // always_ff
-  //synopsys translate_on
+  // synopsys translate_on
 
 endmodule

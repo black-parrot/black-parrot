@@ -94,7 +94,7 @@ module bp_cce_inst_ram
 
   fetch_state_e fetch_state_r, fetch_state_n;
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       fetch_state_r <= RESET;

@@ -137,7 +137,7 @@ module bp_me_bedrock_register
   assign mem_rev_last_o = mem_rev_v_o;
   assign mem_fwd_yumi_li = mem_rev_ready_and_i & mem_rev_v_o;
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i)
     begin
       assert(reset_i !== '0 || ~mem_fwd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
@@ -146,7 +146,7 @@ module bp_me_bedrock_register
       assert(reset_i !== '0 || ~(mem_fwd_v_i & mem_fwd_ready_and_o) || mem_fwd_last_i)
         else $error("Multi-beat memory command detected");
     end
-  //synopsys translate_on
+  // synopsys translate_on
 
 endmodule
 

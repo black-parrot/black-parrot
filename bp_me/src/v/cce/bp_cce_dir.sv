@@ -365,7 +365,7 @@ module bp_cce_dir
                               ? acache_addr_dst_gpr_lo
                               : e_opd_r0;
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       assert(reset_i !== '0 || $countones({icache_lru_v, dcache_lru_v, acache_lru_v}) <= 1)
@@ -374,6 +374,6 @@ module bp_cce_dir
         else $error("Multiple directory segments attempting to output addr information in same cycle");
     end
   end
-  //synopsys translate_on
+  // synopsys translate_on
 
 endmodule
