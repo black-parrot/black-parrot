@@ -144,6 +144,7 @@ module bp_be_dcache
    , output logic [dpath_width_gp-1:0]               early_data_o
    , output logic                                    early_hit_v_o
    , output logic                                    early_fencei_o
+   , output logic                                    early_ret_o
    , output rv64_fflags_s                            early_fflags_o
 
    // Cycle 3-N: "Data Mux"
@@ -153,7 +154,7 @@ module bp_be_dcache
    //   only 1 outstanding miss allowed, but in the future this could
    //   be out of order as well.
    , output logic [reg_addr_width_gp-1:0]            final_rd_addr_o
-   , output logic                                    final_load_o
+   , output logic                                    final_ret_o
    , output logic                                    final_late_o
    , output logic                                    final_float_o
    , output logic [dpath_width_gp-1:0]               final_data_o
@@ -587,6 +588,7 @@ module bp_be_dcache
 
   assign early_hit_v_o  = v_tv_r & ~any_miss_tv & ~fill_tv_r;
   assign early_fencei_o = decode_tv_r.fencei_op;
+  assign early_ret_o    = decode_tv_r.ret_op;
   assign early_fflags_o = st_fflags_tv_r;
 
   ///////////////////////////
@@ -1314,7 +1316,7 @@ module bp_be_dcache
 
   assign final_rd_addr_o = decode_dm_r.rd_addr;
   assign final_float_o   = decode_dm_r.float_op;
-  assign final_load_o    = decode_dm_r.load_op;
+  assign final_ret_o     = decode_dm_r.ret_op;
   assign final_late_o    = fill_dm_r;
   assign final_data_o    = decode_dm_r.float_op ? final_float_data : final_int_data;
   assign final_v_o       = v_dm_r;
