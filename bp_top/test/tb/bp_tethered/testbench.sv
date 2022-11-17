@@ -593,9 +593,9 @@ module testbench
          branch_profiler
           (.clk_i(clk_i & testbench.branch_profile_en_lo)
            ,.reset_i(reset_i)
-           ,.freeze_i(detector.cfg_bus_cast_i.freeze)
+           ,.freeze_i(director.cfg_bus_cast_i.freeze)
 
-           ,.mhartid_i(detector.cfg_bus_cast_i.core_id)
+           ,.mhartid_i(director.cfg_bus_cast_i.core_id)
 
            ,.fe_cmd_o(director.fe_cmd_o)
            ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)

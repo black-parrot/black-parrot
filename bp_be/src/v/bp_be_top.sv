@@ -102,7 +102,6 @@ module bp_be_top
    director
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.issue_pkt_i(issue_pkt)
@@ -132,8 +131,6 @@ module bp_be_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.cfg_bus_i(cfg_bus_i)
-
      ,.issue_pkt_i(issue_pkt)
      ,.cmd_full_i(cmd_full_r_lo)
      ,.credits_full_i(cache_req_credits_full_i)
@@ -157,7 +154,6 @@ module bp_be_top
    scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.cfg_bus_i(cfg_bus_i)
 
      ,.issue_pkt_o(issue_pkt)
      ,.expected_npc_i(expected_npc_lo)
@@ -185,7 +181,6 @@ module bp_be_top
    calculator
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.dispatch_pkt_i(dispatch_pkt)
