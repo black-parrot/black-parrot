@@ -182,9 +182,7 @@ module bp_be_ptw
      ,.data_o(ppn_r)
      );
 
-  // If flushing is a possibility, then we need to manually replay. However, this should
-  //   not be the case, because the pipeline should not flush after TLB miss, since they
-  //   are non-speculative
+  // Because internal dcache flushing is a possibility, we need to manually replay
   always_comb begin
     case(state_r)
       e_idle      :  state_n = tlb_miss_v ? e_send_load : e_idle;

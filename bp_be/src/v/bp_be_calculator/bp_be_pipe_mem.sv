@@ -155,19 +155,24 @@ module bp_be_pipe_mem
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data;
-  logic                     dcache_final_ret, dcache_final_late, dcache_final_load;
-  rv64_fflags_s             dcache_early_fflags;
-  logic [reg_addr_width_gp-1:0] dcache_final_rd_addr;
+  logic                     dcache_pkt_v, dcache_ready_and_lo;
+
   logic [ptag_width_p-1:0]  dcache_ptag;
-  logic                     dcache_pkt_v;
+  logic                     dcache_ptag_uncached, dcache_ptag_dram, dcache_ptag_v;
+
+  logic [dpath_width_gp-1:0] dcache_early_data;
+  rv64_fflags_s             dcache_early_fflags;
   logic                     dcache_early_ret, dcache_early_fencei, dcache_early_hit_v;
-  logic                     dcache_final_float, dcache_final_v, dcache_final_yumi;
-  logic                     dcache_ptag_v;
-  logic                     dcache_ptag_uncached;
-  logic                     dcache_ptag_dram;
   logic                     dcache_tv_we;
-  logic                     dcache_ready_and_lo;
+
+  logic                     _dcache_final_float, _dcache_final_v, _dcache_final_yumi;
+  logic                     _dcache_final_ret, _dcache_final_late, _dcache_final_load;
+  logic [reg_addr_width_gp-1:0] _dcache_final_rd_addr;
+  logic [dpath_width_gp-1:0] _dcache_final_data;
+  logic                     dcache_final_float, dcache_final_v, dcache_final_yumi;
+  logic                     dcache_final_ret, dcache_final_late, dcache_final_load;
+  logic [reg_addr_width_gp-1:0] dcache_final_rd_addr;
+  logic [dpath_width_gp-1:0] dcache_final_data;
 
   logic load_access_fault_v, store_access_fault_v;
   logic load_page_fault_v, store_page_fault_v;
@@ -316,13 +321,13 @@ module bp_be_pipe_mem
       ,.early_data_o(dcache_early_data)
       ,.early_fflags_o(dcache_early_fflags)
 
-      ,.final_v_o(dcache_final_v)
-      ,.final_rd_addr_o(dcache_final_rd_addr)
-      ,.final_float_o(dcache_final_float)
-      ,.final_late_o(dcache_final_late)
-      ,.final_ret_o(dcache_final_ret)
-      ,.final_data_o(dcache_final_data)
-      ,.final_yumi_i(dcache_final_yumi)
+      ,.final_v_o(_dcache_final_v)
+      ,.final_data_o(_dcache_final_data)
+      ,.final_rd_addr_o(_dcache_final_rd_addr)
+      ,.final_float_o(_dcache_final_float)
+      ,.final_late_o(_dcache_final_late)
+      ,.final_ret_o(_dcache_final_ret)
+      ,.final_yumi_i(_dcache_final_yumi)
 
       // D$-LCE Interface
       ,.cache_req_o(cache_req_cast_o)
@@ -444,6 +449,26 @@ module bp_be_pipe_mem
     | late_iwb_pkt_yumi_i
     | (dcache_final_v & ~dcache_final_late & final_v_o)
     | (dcache_final_v &  dcache_final_late & ~dcache_final_ret);
+
+`ifdef VERILATOR
+  bsg_deff_reset
+   #(.width_p(4+reg_addr_width_gp+dpath_width_gp+1))
+   negedge_latch
+    (.clk_i(negedge_clk)
+     ,.reset_i(reset_i)
+`else
+  bsg_dlatch
+   #(.width_p(4+reg_addr_width_gp+dpath_width_gp+1), .i_know_this_is_a_bad_idea_p(1))
+   negedge_latch
+    (.clk_i(negedge_clk)
+`endif
+     ,.data_i({_dcache_final_v, _dcache_final_float, _dcache_final_late, _dcache_final_ret
+               ,_dcache_final_rd_addr, _dcache_final_data
+               ,dcache_final_yumi})
+     ,.data_o({dcache_final_v, dcache_final_float, dcache_final_late, dcache_final_ret
+               ,dcache_final_rd_addr, dcache_final_data
+               ,_dcache_final_yumi})
+     );
 
   wire early_v_li = reservation.v & reservation.decode.pipe_mem_early_v;
   bsg_dff_chain
