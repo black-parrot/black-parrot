@@ -425,7 +425,7 @@ module bp_uce
   // We ack mem_revs for uncached stores no matter what, so load_resp_yumi_lo is for other responses
   logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_busy_o = is_reset | is_clear | cache_req_credits_full_o;
+  assign cache_req_busy_o = is_reset | is_init | cache_req_credits_full_o;
   always_comb
     begin
       cache_req_ready_and_o = '0;
