@@ -196,19 +196,16 @@ module bp_fe_nonsynth_pc_gen_tracer
       );
     end
 
-  string trimmed_pc_src_fetch_name;
   always_ff @(negedge clk_i)
     if (!reset_i && !freeze_i)
     begin
-      trimmed_pc_src_fetch_name = pc_src_fetch.name().substr(pc_src_enum_name_prefix_length_lp, pc_src_fetch.name().len()-1);
-
       $fwrite
         (file
         ,"%12t | %07d, %12s, %20s, %12s, %12s, %8d, %5s, "
         ,$time
         ,cycle_cnt
         ,render_addr_with_validity(if2_pc_i, if2_v_i)
-        ,trimmed_pc_src_fetch_name
+        ,pc_src_fetch.name()
         ,render_addr_with_validity(fetch_pc_i, fetch_partial_i)
         ,render_half_instr_with_validity(fetch_instr_i, fetch_partial_i)
         ,ovr_ntaken_count

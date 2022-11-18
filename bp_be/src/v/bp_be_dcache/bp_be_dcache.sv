@@ -843,7 +843,7 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
   /////////////////////////////////////////////////////////////////////////////
-  localparam bp_cache_req_size_e block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
+  localparam block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
   `bp_cast_o(bp_dcache_req_s, cache_req);
   `bp_cast_o(bp_dcache_req_metadata_s, cache_req_metadata);
 
@@ -873,7 +873,7 @@ module bp_be_dcache
       // Assigning sizes to cache miss packet
       if (cached_req)
         begin
-            cache_req_cast_o.size = block_req_size;
+            cache_req_cast_o.size = bp_cache_req_size_e'(block_req_size);
         end
       else
         begin
