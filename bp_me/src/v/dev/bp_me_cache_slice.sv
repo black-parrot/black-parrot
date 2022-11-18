@@ -22,7 +22,7 @@ module bp_me_cache_slice
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
    )
   (input                                                 clk_i
    , input                                               reset_i
@@ -108,6 +108,8 @@ module bp_me_cache_slice
                          | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_minu)
                          | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_maxu)
                          )
+        // TODO: Enable as parameter
+        ,.word_tracking_p(0)
         )
        cache
         (.clk_i(clk_i)

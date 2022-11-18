@@ -21,7 +21,7 @@ module wrapper
    , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : bedrock_data_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
    )
   (input                                                                clk_i
    , input                                                              rt_clk_i
@@ -375,6 +375,7 @@ module wrapper
         ,.pr_last_o(mem_rev_last_lo)
         );
 
+      import bsg_cache_pkg::*;
       `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
       localparam dma_per_col_lp = num_cce_p/mc_x_dim_p*l2_banks_p;
       logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0][dma_pkt_width_lp-1:0] dma_pkt_lo;

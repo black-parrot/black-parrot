@@ -141,7 +141,7 @@ module testbench
   logic [io_data_width_p-1:0] proc_rev_data_lo;
   logic proc_rev_v_lo, proc_rev_ready_and_li, proc_rev_last_lo;
 
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_lo;
   logic [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;

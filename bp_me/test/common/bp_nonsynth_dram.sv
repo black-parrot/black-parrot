@@ -19,7 +19,7 @@ module bp_nonsynth_dram
    , parameter preload_mem_p = 0
    , parameter mem_bytes_p = 0
    , parameter dram_type_p = ""
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
    )
   (input                                                    clk_i
    , input                                                  reset_i
@@ -40,7 +40,7 @@ module bp_nonsynth_dram
    , input                                                  dram_reset_i
    );
 
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [num_dma_p-1:0] dma_pkt_li, dma_pkt;
   assign dma_pkt_li = dma_pkt_i;
   // Unswizzle the dram
@@ -141,6 +141,7 @@ module bp_nonsynth_dram
          ,.dram_req_yumi_i(dram_yumi_lo)
          ,.dram_data_v_o(dram_data_v_li)
          ,.dram_data_o(dram_data_li)
+         ,.dram_mask_o()
          ,.dram_data_yumi_i(dram_data_yumi_lo)
 
          ,.dram_data_v_i(dram_data_v_lo)

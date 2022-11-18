@@ -404,7 +404,7 @@ module bp_l2e_tile
      );
 
   // CCE-Mem network to L2 Cache adapter
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
   logic [l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
