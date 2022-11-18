@@ -427,21 +427,10 @@ module bp_core_lite
      ,.lce_resp_data_ready_and_i(_lce_resp_data_ready_and_i[1])
      );
 
-  // These latches are optimized out in Verilator 4.220...
-  //   but bsg_deff_reset is more heavy_weight. It's possible that FPGAs would prefer
-  //   the alternate implementation as well. But ASICs will appreciate the time-borrowing
-`ifdef VERILATOR
-  bsg_deff_reset
-   #(.width_p($bits(bp_bedrock_lce_req_header_s)+$bits(bp_bedrock_lce_fill_header_s)+$bits(bp_bedrock_lce_resp_header_s)+3*icache_fill_width_p+3*4+6))
-   posedge_latch
-    (.clk_i(posedge_clk)
-     ,.reset_i(reset_i)
-`else
   bsg_dlatch
    #(.width_p($bits(bp_bedrock_lce_req_header_s)+$bits(bp_bedrock_lce_fill_header_s)+$bits(bp_bedrock_lce_resp_header_s)+3*icache_fill_width_p+3*4+6), .i_know_this_is_a_bad_idea_p(1))
    posedge_latch
     (.clk_i(posedge_clk)
-`endif
      ,.data_i({_lce_req_header_o[1], _lce_req_header_v_o[1], _lce_req_has_data_o[1], _lce_req_data_o[1], _lce_req_data_v_o[1], _lce_req_last_o[1]
               ,_lce_fill_header_o[1], _lce_fill_header_v_o[1], _lce_fill_has_data_o[1], _lce_fill_data_o[1], _lce_fill_data_v_o[1], _lce_fill_last_o[1]
               ,_lce_resp_header_o[1], _lce_resp_header_v_o[1], _lce_resp_has_data_o[1], _lce_resp_data_o[1], _lce_resp_data_v_o[1], _lce_resp_last_o[1]
@@ -454,18 +443,10 @@ module bp_core_lite
               })
      );
 
-`ifdef VERILATOR
-  bsg_deff_reset
-   #(.width_p($bits(bp_bedrock_lce_cmd_header_s)+$bits(bp_bedrock_lce_fill_header_s)+2*icache_fill_width_p+2*4+4))
-   negedge_latch
-    (.clk_i(negedge_clk)
-     ,.reset_i(reset_i)
-`else
   bsg_dlatch
    #(.width_p($bits(bp_bedrock_lce_cmd_header_s)+$bits(bp_bedrock_lce_fill_header_s)+2*icache_fill_width_p+2*4+4), .i_know_this_is_a_bad_idea_p(1))
    negedge_latch
     (.clk_i(negedge_clk)
-`endif
      ,.data_i({lce_cmd_header_i[1], lce_cmd_header_v_i[1], lce_cmd_has_data_i[1], lce_cmd_data_i[1], lce_cmd_data_v_i[1], lce_cmd_last_i[1]
                ,lce_fill_header_i[1], lce_fill_header_v_i[1], lce_fill_has_data_i[1], lce_fill_data_i[1], lce_fill_data_v_i[1], lce_fill_last_i[1]
                ,_lce_cmd_header_ready_and_o[1], _lce_cmd_data_ready_and_o[1], _lce_fill_header_ready_and_o[1], _lce_fill_data_ready_and_o[1]
