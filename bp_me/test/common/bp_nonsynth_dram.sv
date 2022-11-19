@@ -264,6 +264,7 @@ module bp_nonsynth_dram
       bsg_cache_to_axi
        #(.addr_width_p(daddr_width_p)
          ,.data_width_p(l2_fill_width_p)
+         ,.mask_width_p(l2_block_size_in_words_p)
          ,.block_size_in_words_p(l2_block_size_in_fill_p)
          ,.num_cache_p(num_dma_p)
          ,.axi_id_width_p(axi_id_width_p)

@@ -399,6 +399,7 @@ module wrapper
              ,.num_dma_p(dma_per_col_lp)
              ,.dma_addr_width_p(daddr_width_p)
              ,.dma_burst_len_p(l2_block_size_in_fill_p)
+             ,.dma_mask_width_p(l2_block_size_in_words_p)
              )
            wh_to_cache_dma
             (.clk_i(clk_i)
