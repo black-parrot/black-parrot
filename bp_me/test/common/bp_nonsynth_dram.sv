@@ -11,6 +11,7 @@
 module bp_nonsynth_dram
  import bp_common_pkg::*;
  import bp_me_pkg::*;
+ import bsg_axi_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
@@ -270,6 +271,7 @@ module bp_nonsynth_dram
          ,.axi_id_width_p(axi_id_width_p)
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_burst_len_p(axi_burst_len_p)
+         ,.axi_burst_type_p(e_axi_burst_wrap)
          )
       cache2axi
         (.clk_i(clk_i)
@@ -348,6 +350,7 @@ module bp_nonsynth_dram
          ,.axi_awaddr_i(axi_awaddr)
          ,.axi_awvalid_i(axi_awvalid)
          ,.axi_awready_o(axi_awready)
+         ,.axi_awburst_i(axi_awburst)
 
          ,.axi_wdata_i(axi_wdata)
          ,.axi_wstrb_i(axi_wstrb)
@@ -364,6 +367,7 @@ module bp_nonsynth_dram
          ,.axi_araddr_i(axi_araddr)
          ,.axi_arvalid_i(axi_arvalid)
          ,.axi_arready_o(axi_arready)
+         ,.axi_arburst_i(axi_arburst)
 
          ,.axi_rid_o(axi_rid)
          ,.axi_rdata_o(axi_rdata)

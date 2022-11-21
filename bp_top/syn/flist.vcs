@@ -22,6 +22,7 @@
 +incdir+$BP_TOP_DIR/src/include
 ## Packages
 # BaseJump STL packages
+$BASEJUMP_STL_DIR/bsg_axi/bsg_axi_pkg.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
