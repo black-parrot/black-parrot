@@ -328,4 +328,5 @@ $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_deff_reset.v
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
 $BP_COMMON_DIR/src/v/bsg_rom_param.v
+$BP_COMMON_DIR/src/v/bsg_edge_extend.v
 
