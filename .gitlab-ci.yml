@@ -100,9 +100,6 @@ tire_kick:
   stage: check
   tags:
     - verilator
-  before_script:
-    # This should persist for other jobs
-    - make libs
   script:
     - $CI_PROJECT_DIR/ci/tire_kick.sh $CI_CORES
 
