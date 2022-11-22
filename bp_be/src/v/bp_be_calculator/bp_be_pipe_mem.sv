@@ -450,18 +450,10 @@ module bp_be_pipe_mem
     | (dcache_final_v & ~dcache_final_late & final_v_o)
     | (dcache_final_v &  dcache_final_late & ~dcache_final_ret);
 
-`ifdef FFFVERILATOR
-  bsg_deff_reset
-   #(.width_p(4+reg_addr_width_gp+dpath_width_gp+1))
-   negedge_latch
-    (.clk_i(negedge_clk)
-     ,.reset_i(reset_i)
-`else
   bsg_dlatch
    #(.width_p(4+reg_addr_width_gp+dpath_width_gp+1), .i_know_this_is_a_bad_idea_p(1))
    negedge_latch
     (.clk_i(negedge_clk)
-`endif
      ,.data_i({_dcache_final_v, _dcache_final_float, _dcache_final_late, _dcache_final_ret
                ,_dcache_final_rd_addr, _dcache_final_data
                ,dcache_final_yumi})
