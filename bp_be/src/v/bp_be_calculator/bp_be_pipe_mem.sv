@@ -452,8 +452,8 @@ module bp_be_pipe_mem
 
   bsg_dlatch
    #(.width_p(4+reg_addr_width_gp+dpath_width_gp+1), .i_know_this_is_a_bad_idea_p(1))
-   posedge_latch
-    (.clk_i(posedge_clk)
+   negedge_latch
+    (.clk_i(negedge_clk)
      ,.data_i({_dcache_final_v, _dcache_final_float, _dcache_final_late, _dcache_final_ret
                ,_dcache_final_rd_addr, _dcache_final_data
                ,dcache_final_yumi})
