@@ -267,8 +267,8 @@ module bp_unicore_lite
   // Synchronize back to posedge clk
   bsg_edge_extend
    #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
-   negedge_latch
-    (.clk_i(negedge_clk)
+   posedge_latch
+    (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
      ,.data_i({_mem_fwd_header_o[1], _mem_fwd_data_o[1], _mem_fwd_v_o[1], _mem_fwd_last_o[1]
                ,mem_fwd_ready_and_i[1]
@@ -281,8 +281,8 @@ module bp_unicore_lite
   // Synchronize back to negedge clk
   bsg_edge_extend
    #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
-   posedge_latch
-    (.clk_i(posedge_clk)
+   negedge_latch
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
      ,.data_i({mem_rev_header_i[1], mem_rev_data_i[1], mem_rev_v_i[1], mem_rev_last_i[1]
                ,_mem_rev_ready_and_o[1]

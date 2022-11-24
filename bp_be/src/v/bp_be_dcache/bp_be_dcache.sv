@@ -159,7 +159,6 @@ module bp_be_dcache
    , output logic                                    final_float_o
    , output logic [dpath_width_gp-1:0]               final_data_o
    , output logic                                    final_v_o
-   , input                                           final_yumi_i
 
    // Cache Engine Interface
    // This is considered the "slow path", handling uncached requests
@@ -214,16 +213,15 @@ module bp_be_dcache
   enum logic [1:0] {e_ready, e_miss, e_late} state_n, state_r;
   wire is_ready  = (state_r == e_ready);
   wire is_miss   = (state_r == e_miss);
-  wire is_late   = (state_r == e_late);
 
   // Global signals
   logic tl_we, tv_we, dm_we;
   logic safe_tl_we, safe_tv_we, safe_dm_we;
   logic v_tl_r, v_tv_r, v_dm_r;
   logic gdirty_r, cache_lock;
-  logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard;
+  logic tag_mem_write_hazard, data_mem_write_hazard;
 
-  wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | blocking_hazard;
+  wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
@@ -392,7 +390,8 @@ module bp_be_dcache
    v_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i(tv_we | cache_req_complete_i | (cache_req_v_o & ~cache_req_ready_and_i))
+     // TODO: For hit under miss, need to make sure we're not clobbering
+     ,.data_i(tv_we | cache_req_complete_i)
      ,.data_o(v_tv_r)
      );
   assign tv_we_o = tv_we;
@@ -637,13 +636,12 @@ module bp_be_dcache
 
   assign safe_dm_we = v_tv_r & ~any_miss_tv;
   assign dm_we = safe_dm_we;
-  bsg_dff_reset_set_clear
+  bsg_dff_reset
    #(.width_p(1))
    v_dm_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(dm_we)
-     ,.clear_i(is_ready | final_yumi_i)
+     ,.data_i(dm_we)
      ,.data_o(v_dm_r)
      );
 
@@ -800,7 +798,6 @@ module bp_be_dcache
   assign wbuf_entry_in.way_id = store_hit_way_tv;
 
   wire [paddr_width_p-1:0] ld_addr_tl = {ptag_i, page_offset_tl_r};
-  logic _wbuf_v_lo;
   bp_be_dcache_wbuf
    #(.bp_params_p(bp_params_p))
    wbuf
@@ -810,7 +807,7 @@ module bp_be_dcache
      ,.v_i(wbuf_v_li)
      ,.wbuf_entry_i(wbuf_entry_in)
 
-     ,.v_o(_wbuf_v_lo)
+     ,.v_o(wbuf_v_lo)
      ,.force_o(wbuf_force_lo)
      ,.yumi_i(wbuf_yumi_li)
      ,.wbuf_entry_o(wbuf_entry_out)
@@ -822,24 +819,6 @@ module bp_be_dcache
   wire [bindex_width_lp-1:0] wbuf_entry_out_bank_offset = wbuf_entry_out.paddr[byte_offset_width_lp+:bindex_width_lp];
   wire [sindex_width_lp-1:0] wbuf_entry_out_index = wbuf_entry_out.paddr[block_offset_width_lp+:sindex_width_lp];
   
-  //          ____     ____      ____
-  //              |___|    |____|    |____
-  //               ________
-  // _wbuf_v_lo:  |        |_________
-  //
-  //                   ____
-  //  wbuf_v_lo:  |___|    |_________
-  //                       ^
-  //                       | data mem write happens on negedge
-  bsg_deff_reset
-   #(.width_p(1))
-   wbuf_v_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i({_wbuf_v_lo & ~wbuf_v_lo})
-     ,.data_o({wbuf_v_lo})
-     );
-
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
   /////////////////////////////////////////////////////////////////////////////
@@ -860,8 +839,6 @@ module bp_be_dcache
 
   assign cache_req_v_o = v_tv_r
     & (|{cached_req, fencei_req, uncached_amo_req, uncached_load_req, uncached_store_req, wt_req});
-
-  assign blocking_hazard = cache_req_v_o & blocking_req;
 
   always_comb
     begin
@@ -949,13 +926,11 @@ module bp_be_dcache
   // State machine
   //   e_ready  : Cache is ready to accept requests
   //   e_miss   : Cache is waiting for a miss to be serviced
-  //   e_late   : Cache is waiting for a late acknowledgement
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
       e_ready : state_n = (cache_req_ready_and_i & cache_req_v_o & ~nonblocking_req) ? e_miss : e_ready;
-      e_miss  : state_n = cache_req_complete_i ? decode_tv_r.ret_op ? e_late : e_ready : e_miss;
-      e_late  : state_n = final_yumi_i ? e_ready : e_late;
+      e_miss  : state_n = cache_req_complete_i ? e_ready : e_miss;
       default: state_n = e_ready;
     endcase
 
