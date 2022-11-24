@@ -216,7 +216,6 @@ module wrapper
       ,.final_float_o()
       ,.final_ret_o()
       ,.final_late_o()
-      ,.final_yumi_i(final_v_lo[i])
 
       ,.ptag_v_i(1'b1)
       ,.ptag_i(rolly_ptag_r[i])
