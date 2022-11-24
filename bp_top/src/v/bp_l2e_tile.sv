@@ -451,6 +451,7 @@ module bp_l2e_tile
       bsg_cache_dma_to_wormhole
        #(.dma_addr_width_p(daddr_width_p)
          ,.dma_burst_len_p(l2_block_size_in_fill_p)
+         ,.dma_mask_width_p(l2_block_size_in_words_p)
 
          ,.wh_flit_width_p(mem_noc_flit_width_p)
          ,.wh_cid_width_p(mem_noc_cid_width_p)
