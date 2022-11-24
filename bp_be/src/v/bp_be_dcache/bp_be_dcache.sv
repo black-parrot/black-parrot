@@ -383,7 +383,9 @@ module bp_be_dcache
   wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
 
   // fencei does not require a ptag
-  assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
+  // This is vaguely pessimistic, but cache engine not ready will not often happen during
+  //   regular usage.
+  assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op) & cache_req_ready_and_i;
   assign tv_we = safe_tv_we & ~flush_self;
   bsg_dff_reset
    #(.width_p(1))
