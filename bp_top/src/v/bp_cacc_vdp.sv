@@ -199,7 +199,6 @@ module bp_cacc_vdp
      ,.final_rd_addr_o()
      ,.final_float_o()
      ,.final_ret_o()
-     ,.final_yumi_i(final_v)
 
      // D$-LCE Interface
      ,.cache_req_complete_i(cache_req_complete_lo)
