@@ -21,7 +21,6 @@ module bp_be_scheduler
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
@@ -30,35 +29,33 @@ module bp_be_scheduler
    , localparam decode_info_width_lp = `bp_be_decode_info_width
    , localparam wb_pkt_width_lp     = `bp_be_wb_pkt_width(vaddr_width_p)
    )
-  (input                               clk_i
-   , input                             reset_i
-   , input [cfg_bus_width_lp-1:0]      cfg_bus_i
+  (input                                      clk_i
+   , input                                    reset_i
 
-  , output [issue_pkt_width_lp-1:0]    issue_pkt_o
-  , input [vaddr_width_p-1:0]          expected_npc_i
-  , input                              poison_isd_i
-  , input                              suppress_iss_i
-  , input                              unfreeze_i
-  , input [decode_info_width_lp-1:0]   decode_info_i
-  , input                              dispatch_v_i
-  , input                              interrupt_v_i
-
-  // Fetch interface
-  , input [fe_queue_width_lp-1:0]      fe_queue_i
-  , input                              fe_queue_v_i
-  , output                             fe_queue_ready_and_o
-
-  // Dispatch interface
-  , output [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
-
-  , input [commit_pkt_width_lp-1:0]    commit_pkt_i
-  , input [wb_pkt_width_lp-1:0]        iwb_pkt_i
-  , input [wb_pkt_width_lp-1:0]        fwb_pkt_i
-  , input [ptw_fill_pkt_width_lp-1:0]  ptw_fill_pkt_i
-  );
+   , output logic [issue_pkt_width_lp-1:0]    issue_pkt_o
+   , input [vaddr_width_p-1:0]                expected_npc_i
+   , input                                    poison_isd_i
+   , input                                    suppress_iss_i
+   , input                                    unfreeze_i
+   , input [decode_info_width_lp-1:0]         decode_info_i
+   , input                                    dispatch_v_i
+   , input                                    interrupt_v_i
+ 
+   // Fetch interface
+   , input [fe_queue_width_lp-1:0]            fe_queue_i
+   , input                                    fe_queue_v_i
+   , output logic                             fe_queue_ready_and_o
+ 
+   // Dispatch interface
+   , output logic [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
+ 
+   , input [commit_pkt_width_lp-1:0]          commit_pkt_i
+   , input [wb_pkt_width_lp-1:0]              iwb_pkt_i
+   , input [wb_pkt_width_lp-1:0]              fwb_pkt_i
+   , input [ptw_fill_pkt_width_lp-1:0]        ptw_fill_pkt_i
+   );
 
   // Declare parameterizable structures
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -68,7 +65,6 @@ module bp_be_scheduler
   `bp_cast_i(bp_be_commit_pkt_s, commit_pkt);
   `bp_cast_i(bp_be_wb_pkt_s, iwb_pkt);
   `bp_cast_i(bp_be_wb_pkt_s, fwb_pkt);
-  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   wire fe_queue_clr_li  = suppress_iss_i;
   wire fe_queue_deq_li  = commit_pkt_cast_i.queue_v;

@@ -44,7 +44,8 @@ module bp_be_pipe_mem
 
    , output logic                         tlb_load_miss_v_o
    , output logic                         tlb_store_miss_v_o
-   , output logic                         cache_miss_v_o
+   , output logic                         cache_load_miss_v_o
+   , output logic                         cache_store_miss_v_o
    , output logic                         cache_fail_v_o
    , output logic                         fencei_clean_v_o
    , output logic                         fencei_dirty_v_o
@@ -107,6 +108,9 @@ module bp_be_pipe_mem
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
 
+  wire negedge_clk = ~clk_i;
+  wire posedge_clk =  clk_i;
+
   // Cast input and output ports
   bp_be_dispatch_pkt_s   reservation;
   bp_be_decode_s         decode;
@@ -136,6 +140,7 @@ module bp_be_pipe_mem
   wire [dpath_width_gp-1:0] imm = reservation.imm[0+:dpath_width_gp];
 
   /* Internal connections */
+  logic late_ready_lo, late_v_li, late_v_lo, late_yumi_li;
   /* TLB ports */
   logic                    dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_v_lo;
   logic                    tlb_store_miss_v, tlb_load_miss_v;
@@ -151,17 +156,20 @@ module bp_be_pipe_mem
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic [dpath_width_gp-1:0] dcache_early_data, dcache_final_data, dcache_late_data;
-  rv64_fflags_s             dcache_early_fflags;
-  logic [reg_addr_width_gp-1:0] dcache_late_rd_addr;
+  logic                     dcache_pkt_v, dcache_ready_and_lo;
+
   logic [ptag_width_p-1:0]  dcache_ptag;
-  logic                     dcache_pkt_v;
-  logic                     dcache_early_miss_v, dcache_early_fencei, dcache_early_hit_v, dcache_final_v;
-  logic                     dcache_late_float, dcache_late_v, dcache_late_yumi;
-  logic                     dcache_ptag_v;
-  logic                     dcache_ptag_uncached;
-  logic                     dcache_ptag_dram;
-  logic                     dcache_ready_and_lo;
+  logic                     dcache_ptag_uncached, dcache_ptag_dram, dcache_ptag_v;
+
+  logic [dpath_width_gp-1:0] dcache_early_data;
+  rv64_fflags_s             dcache_early_fflags;
+  logic                     dcache_early_ret, dcache_early_fencei, dcache_early_hit_v;
+  logic                     dcache_tv_we;
+
+  logic                     dcache_final_float, dcache_final_v, dcache_final_yumi;
+  logic                     dcache_final_ret, dcache_final_late, dcache_final_load;
+  logic [reg_addr_width_gp-1:0] dcache_final_rd_addr;
+  logic [dpath_width_gp-1:0] dcache_final_data;
 
   logic load_access_fault_v, store_access_fault_v;
   logic load_page_fault_v, store_page_fault_v;
@@ -205,7 +213,7 @@ module bp_be_pipe_mem
      ,.tlb_els_1g_p(dtlb_els_1g_p)
      )
    dmmu
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
 
      ,.flush_i(sfence_i)
@@ -288,7 +296,7 @@ module bp_be_pipe_mem
   bp_be_dcache
     #(.bp_params_p(bp_params_p))
     dcache
-     (.clk_i(clk_i)
+     (.clk_i(negedge_clk)
       ,.reset_i(reset_i)
 
       ,.cfg_bus_i(cfg_bus_i)
@@ -296,27 +304,26 @@ module bp_be_pipe_mem
       ,.dcache_pkt_i(dcache_pkt)
       ,.v_i(dcache_pkt_v)
       ,.ready_and_o(dcache_ready_and_lo)
-      ,.poison_req_i(flush_i)
 
       ,.ptag_i(dcache_ptag)
       ,.ptag_v_i(dcache_ptag_v)
       ,.ptag_uncached_i(dcache_ptag_uncached)
       ,.ptag_dram_i(dcache_ptag_dram)
-      ,.poison_tl_i(flush_i)
+      ,.tv_we_o(dcache_tv_we)
+      ,.flush_i(flush_i)
 
       ,.early_hit_v_o(dcache_early_hit_v)
-      ,.early_miss_v_o(dcache_early_miss_v)
       ,.early_fencei_o(dcache_early_fencei)
+      ,.early_ret_o(dcache_early_ret)
       ,.early_data_o(dcache_early_data)
       ,.early_fflags_o(dcache_early_fflags)
-      ,.final_data_o(dcache_final_data)
-      ,.final_v_o(dcache_final_v)
 
-      ,.late_rd_addr_o(dcache_late_rd_addr)
-      ,.late_float_o(dcache_late_float)
-      ,.late_data_o(dcache_late_data)
-      ,.late_v_o(dcache_late_v)
-      ,.late_yumi_i(dcache_late_yumi)
+      ,.final_v_o(dcache_final_v)
+      ,.final_data_o(dcache_final_data)
+      ,.final_rd_addr_o(dcache_final_rd_addr)
+      ,.final_float_o(dcache_final_float)
+      ,.final_late_o(dcache_final_late)
+      ,.final_ret_o(dcache_final_ret)
 
       // D$-LCE Interface
       ,.cache_req_o(cache_req_cast_o)
@@ -370,22 +377,31 @@ module bp_be_pipe_mem
         dcache_ptag_dram       = tlb_ptag_dram;
       end
 
-  logic dtlb_r_v_r;
-  bsg_dff
-   #(.width_p(1))
-   tlb_v_reg
-    (.clk_i(~clk_i)
-     ,.data_i(dtlb_r_v)
-     ,.data_o(dtlb_r_v_r)
-     );
-
   logic early_v_r;
   bsg_dff_chain
    #(.width_p(1), .num_stages_p(2))
    req_chain
-    (.clk_i(~clk_i)
+    (.clk_i(negedge_clk)
      ,.data_i(is_req)
      ,.data_o(early_v_r)
+     );
+
+  logic dtlb_r_v_r;
+  bsg_dff
+   #(.width_p(1))
+   tlb_v_reg
+    (.clk_i(negedge_clk)
+     ,.data_i(dtlb_r_v)
+     ,.data_o(dtlb_r_v_r)
+     );
+
+  logic dcache_tv_r;
+  bsg_dff
+   #(.width_p(1))
+   dcache_v_r
+    (.clk_i(negedge_clk)
+     ,.data_i(dcache_tv_we)
+     ,.data_o(dcache_tv_r)
      );
 
   assign tlb_load_miss_v_o      = dtlb_r_v_r & tlb_load_miss_v;
@@ -398,32 +414,53 @@ module bp_be_pipe_mem
   assign store_misaligned_v_o   = dtlb_r_v_r & store_misaligned_v;
   assign load_misaligned_v_o    = dtlb_r_v_r & load_misaligned_v;
 
-  assign cache_fail_v_o         = early_v_r & ~dcache_early_hit_v  & ~dcache_early_miss_v;
-  assign cache_miss_v_o         = early_v_r & ~dcache_early_fencei &  dcache_early_miss_v;
-  assign fencei_clean_v_o       = early_v_r &  dcache_early_fencei &  dcache_early_hit_v;
-  assign fencei_dirty_v_o       = early_v_r &  dcache_early_fencei & ~dcache_early_hit_v;
+  assign cache_fail_v_o         = early_v_r & ~dcache_tv_r;
+  assign cache_load_miss_v_o    = early_v_r &  dcache_tv_r & ~dcache_early_hit_v &  dcache_early_ret;
+  assign cache_store_miss_v_o   = early_v_r &  dcache_tv_r & ~dcache_early_hit_v & ~dcache_early_ret;
+  assign fencei_dirty_v_o       = early_v_r &  dcache_tv_r & ~dcache_early_hit_v &  dcache_early_fencei;
+  assign fencei_clean_v_o       = early_v_r &  dcache_tv_r &  dcache_early_hit_v &  dcache_early_fencei;
 
-  assign busy_o                 = ~dcache_ready_and_lo;
+  assign busy_o                 = ~dcache_ready_and_lo | ~late_ready_lo;
   assign ptw_busy_o             = ptw_busy;
   assign early_data_o           = dcache_early_data;
   assign early_fflags_o         = dcache_early_fflags;
   assign final_data_o           = dcache_final_data;
 
+  logic late_float;
+  logic [reg_addr_width_gp-1:0] late_rd_addr;
+  logic [dpath_width_gp-1:0] late_data;
+  assign late_v_li = dcache_final_v & dcache_final_late & dcache_final_ret;
+  bsg_one_fifo
+   #(.width_p(1+reg_addr_width_gp+dpath_width_gp))
+   late_fifo
+    (.clk_i(posedge_clk)
+     ,.reset_i(reset_i)
+
+     ,.v_i(late_v_li)
+     ,.data_i({dcache_final_float, dcache_final_rd_addr, dcache_final_data})
+     ,.ready_o(late_ready_lo)
+
+     ,.v_o(late_v_lo)
+     ,.data_o({late_float, late_rd_addr, late_data})
+     ,.yumi_i(late_yumi_li)
+     );
+  assign late_yumi_li = late_iwb_pkt_yumi_i | late_fwb_pkt_yumi_i;
+
+  assign late_iwb_pkt_v_o = late_v_lo & ~late_float;
   assign late_iwb_pkt = '{ird_w_v    : 1'b1
                           ,late      : 1'b1
-                          ,rd_addr   : dcache_late_rd_addr
-                          ,rd_data   : dcache_late_data
+                          ,rd_addr   : late_rd_addr
+                          ,rd_data   : late_data
                           ,default: '0
                           };
+
+  assign late_fwb_pkt_v_o = late_v_lo &  late_float;
   assign late_fwb_pkt = '{frd_w_v    : 1'b1
                           ,late      : 1'b1
-                          ,rd_addr   : dcache_late_rd_addr
-                          ,rd_data   : dcache_late_data
+                          ,rd_addr   : late_rd_addr
+                          ,rd_data   : late_data
                           ,default: '0
                           };
-  assign late_iwb_pkt_v_o = dcache_late_v & ~dcache_late_float;
-  assign late_fwb_pkt_v_o = dcache_late_v &  dcache_late_float;
-  assign dcache_late_yumi = late_fwb_pkt_yumi_i | late_iwb_pkt_yumi_i;
 
   wire early_v_li = reservation.v & reservation.decode.pipe_mem_early_v;
   bsg_dff_chain

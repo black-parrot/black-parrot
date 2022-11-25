@@ -152,7 +152,7 @@ module bp_me_stream_pump_control
           default : state_n = (en_i & ~last_o) ? e_stream : e_ready;
         endcase
     
-      //synopsys sync_set_reset "reset_i"
+      // synopsys sync_set_reset "reset_i"
       always_ff @(posedge clk_i)
         if (reset_i)
           state_r <= e_ready;

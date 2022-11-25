@@ -91,14 +91,15 @@
     , localparam cce_way_groups_p           =                                                      \
         `BSG_MIN(dcache_sets_p, `BSG_MIN(icache_sets_p, num_cacc_p ? acache_sets_p : icache_sets_p)) \
                                                                                                    \
+    /* L2 enable turns the L2 into a small write buffer, which is minimal size                  */ \
     , localparam l2_en_p                  = proc_param_lp.l2_en                                    \
-    , localparam l2_banks_p               = proc_param_lp.l2_banks                                 \
     , localparam l2_amo_support_p         = proc_param_lp.l2_amo_support                           \
-    , localparam l2_data_width_p          = proc_param_lp.l2_data_width                            \
-    , localparam l2_sets_p                = proc_param_lp.l2_sets                                  \
-    , localparam l2_assoc_p               = proc_param_lp.l2_assoc                                 \
+    , localparam l2_banks_p               = l2_en_p ? proc_param_lp.l2_banks       :  1            \
+    , localparam l2_sets_p                = l2_en_p ? proc_param_lp.l2_sets        :  4            \
+    , localparam l2_assoc_p               = l2_en_p ? proc_param_lp.l2_assoc       :  2            \
     , localparam l2_block_width_p         = proc_param_lp.l2_block_width                           \
     , localparam l2_fill_width_p          = proc_param_lp.l2_fill_width                            \
+    , localparam l2_data_width_p          = proc_param_lp.l2_data_width                            \
     , localparam l2_outstanding_reqs_p    = proc_param_lp.l2_outstanding_reqs                      \
     , localparam l2_block_size_in_words_p = l2_block_width_p / l2_data_width_p                     \
     , localparam l2_block_size_in_fill_p  = l2_block_width_p / l2_fill_width_p                     \

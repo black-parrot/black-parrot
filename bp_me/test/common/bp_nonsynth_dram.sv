@@ -11,6 +11,7 @@
 module bp_nonsynth_dram
  import bp_common_pkg::*;
  import bp_me_pkg::*;
+ import bsg_axi_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
@@ -19,7 +20,7 @@ module bp_nonsynth_dram
    , parameter preload_mem_p = 0
    , parameter mem_bytes_p = 0
    , parameter dram_type_p = ""
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
    )
   (input                                                    clk_i
    , input                                                  reset_i
@@ -40,7 +41,7 @@ module bp_nonsynth_dram
    , input                                                  dram_reset_i
    );
 
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [num_dma_p-1:0] dma_pkt_li, dma_pkt;
   assign dma_pkt_li = dma_pkt_i;
   // Unswizzle the dram
@@ -141,6 +142,7 @@ module bp_nonsynth_dram
          ,.dram_req_yumi_i(dram_yumi_lo)
          ,.dram_data_v_o(dram_data_v_li)
          ,.dram_data_o(dram_data_li)
+         ,.dram_mask_o()
          ,.dram_data_yumi_i(dram_data_yumi_lo)
 
          ,.dram_data_v_i(dram_data_v_lo)
@@ -263,11 +265,13 @@ module bp_nonsynth_dram
       bsg_cache_to_axi
        #(.addr_width_p(daddr_width_p)
          ,.data_width_p(l2_fill_width_p)
+         ,.mask_width_p(l2_block_size_in_words_p)
          ,.block_size_in_words_p(l2_block_size_in_fill_p)
          ,.num_cache_p(num_dma_p)
          ,.axi_id_width_p(axi_id_width_p)
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_burst_len_p(axi_burst_len_p)
+         ,.axi_burst_type_p(e_axi_burst_wrap)
          )
       cache2axi
         (.clk_i(clk_i)
@@ -346,6 +350,7 @@ module bp_nonsynth_dram
          ,.axi_awaddr_i(axi_awaddr)
          ,.axi_awvalid_i(axi_awvalid)
          ,.axi_awready_o(axi_awready)
+         ,.axi_awburst_i(axi_awburst)
 
          ,.axi_wdata_i(axi_wdata)
          ,.axi_wstrb_i(axi_wstrb)
@@ -362,6 +367,7 @@ module bp_nonsynth_dram
          ,.axi_araddr_i(axi_araddr)
          ,.axi_arvalid_i(axi_arvalid)
          ,.axi_arready_o(axi_arready)
+         ,.axi_arburst_i(axi_arburst)
 
          ,.axi_rid_o(axi_rid)
          ,.axi_rdata_o(axi_rdata)

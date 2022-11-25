@@ -162,7 +162,8 @@
       logic                           icache_miss;                                                 \
       logic                           dtlb_store_miss;                                             \
       logic                           dtlb_load_miss;                                              \
-      logic                           dcache_miss;                                                 \
+      logic                           dcache_store_miss;                                           \
+      logic                           dcache_load_miss;                                            \
       logic                           dcache_fail;                                                 \
       logic                           itlb_fill_v;                                                 \
       logic                           dtlb_fill_v;                                                 \
@@ -265,7 +266,7 @@
     (paddr_width_mp - page_offset_width_gp + 7)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (4 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 17)
+    (4 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 18)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \

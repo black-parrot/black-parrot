@@ -179,14 +179,14 @@ module bp_nonsynth_nbf_loader
     endcase
   assign done_o = is_done;
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
       state_r <= e_reset;
     else
       state_r <= state_n;
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i)
     begin
       if (state_r != e_done && state_n == e_done)
@@ -198,7 +198,7 @@ module bp_nonsynth_nbf_loader
         assert(reset_i !== '0 || ~(mem_rev_v_i & mem_rev_ready_and_o & ~mem_rev_last_i))
           else $error("Multi-beat IO response detected");
     end
-  //synopsys translate_on
+  // synopsys translate_on
 
 
   if (nbf_data_width_lp != dword_width_gp)

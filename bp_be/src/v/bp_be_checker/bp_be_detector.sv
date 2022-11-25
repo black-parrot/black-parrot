@@ -21,7 +21,6 @@ module bp_be_detector
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
@@ -29,8 +28,6 @@ module bp_be_detector
    )
   (input                               clk_i
    , input                             reset_i
-
-   , input [cfg_bus_width_lp-1:0]      cfg_bus_i
 
    // Dependency information
    , input [issue_pkt_width_lp-1:0]    issue_pkt_i
@@ -52,10 +49,8 @@ module bp_be_detector
    , input [wb_pkt_width_lp-1:0]       fwb_pkt_i
    );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
   `bp_cast_i(bp_be_issue_pkt_s, issue_pkt);
   `bp_cast_i(bp_be_dispatch_pkt_s, dispatch_pkt);
   `bp_cast_i(bp_be_commit_pkt_s, commit_pkt);
@@ -79,7 +74,7 @@ module bp_be_detector
   logic long_haz_v;
   logic mem_in_pipe_v;
 
-  wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.dcache_miss
+  wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.dcache_load_miss
     ? commit_pkt_cast_i.instr.t.fmatype.rd_addr
     : dispatch_pkt_cast_i.instr.t.fmatype.rd_addr;
   wire [reg_addr_width_gp-1:0] score_rs1_li = dispatch_pkt_cast_i.instr.t.fmatype.rs1_addr;
@@ -91,8 +86,7 @@ module bp_be_detector
   logic [1:0] irs_match_lo;
   logic       ird_match_lo;
   wire score_int_v_li = (dispatch_pkt_cast_i.v & dispatch_pkt_cast_i.decode.late_iwb_v)
-    // TODO: Prevent scoring on zero integer RD addr, we can handle this in decode
-    || (commit_pkt_cast_i.dcache_miss & commit_pkt_cast_i.instr.t.fmatype.opcode inside {`RV64_LOAD_OP, `RV64_AMO_OP} & commit_pkt_cast_i.instr.t.fmatype.rd_addr != '0);
+    || (commit_pkt_cast_i.dcache_load_miss & commit_pkt_cast_i.instr.t.fmatype.opcode inside {`RV64_LOAD_OP, `RV64_AMO_OP});
   wire clear_int_v_li = iwb_pkt_cast_i.ird_w_v & iwb_pkt_cast_i.late;
   bp_be_scoreboard
    #(.bp_params_p(bp_params_p), .num_rs_p(2))
@@ -115,7 +109,7 @@ module bp_be_detector
   logic [2:0] frs_match_lo;
   logic       frd_match_lo;
   wire score_fp_v_li = (dispatch_pkt_cast_i.v & dispatch_pkt_cast_i.decode.late_fwb_v)
-    || (commit_pkt_cast_i.dcache_miss & commit_pkt_cast_i.instr.t.fmatype.opcode == `RV64_FLOAD_OP);
+    || (commit_pkt_cast_i.dcache_load_miss & commit_pkt_cast_i.instr.t.fmatype.opcode == `RV64_FLOAD_OP);
   wire clear_fp_v_li = fwb_pkt_cast_i.frd_w_v & fwb_pkt_cast_i.late;
   bp_be_scoreboard
    #(.bp_params_p(bp_params_p), .num_rs_p(3))

@@ -76,11 +76,7 @@ module testbench
   bit clk_i;
   bit rt_clk_i, cosim_clk_i, cosim_reset_i, dram_clk_i, dram_reset_i;
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
    clock_gen
     (.o(clk_i));
@@ -95,11 +91,7 @@ module testbench
      ,.async_reset_o(reset_i)
      );
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`dram_pkg::tck_ps))
    dram_clock_gen
     (.o(dram_clk_i));
@@ -114,11 +106,7 @@ module testbench
      ,.async_reset_o(dram_reset_i)
      );
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD/5))
    cosim_clk_gen
     (.o(cosim_clk_i));
@@ -133,11 +121,7 @@ module testbench
      ,.async_reset_o(cosim_reset_i)
      );
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`BP_RT_CLK_PERIOD))
    rt_clk_gen
     (.o(rt_clk_i));
@@ -157,7 +141,7 @@ module testbench
   logic [io_data_width_p-1:0] proc_rev_data_lo;
   logic proc_rev_v_lo, proc_rev_ready_and_li, proc_rev_last_lo;
 
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_lo;
   logic [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
@@ -593,9 +577,9 @@ module testbench
          branch_profiler
           (.clk_i(clk_i & testbench.branch_profile_en_lo)
            ,.reset_i(reset_i)
-           ,.freeze_i(detector.cfg_bus_cast_i.freeze)
+           ,.freeze_i(director.cfg_bus_cast_i.freeze)
 
-           ,.mhartid_i(detector.cfg_bus_cast_i.core_id)
+           ,.mhartid_i(director.cfg_bus_cast_i.core_id)
 
            ,.fe_cmd_o(director.fe_cmd_o)
            ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)

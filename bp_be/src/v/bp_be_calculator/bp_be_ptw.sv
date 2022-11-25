@@ -92,7 +92,7 @@ module bp_be_ptw
   // PMA attributes
   localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_p);
   assign dcache_v_o                    = is_send;
-  assign dcache_pkt_cast_o.opcode      = e_dcache_op_ptw_ld;
+  assign dcache_pkt_cast_o.opcode      = e_dcache_op_ld;
   assign dcache_pkt_cast_o.vaddr       = partial_vpn[level_cntr] << lg_pte_size_in_bytes_lp;
   assign dcache_pkt_cast_o.data        = '0;
   assign dcache_pkt_cast_o.rd_addr     = '0;
@@ -182,9 +182,7 @@ module bp_be_ptw
      ,.data_o(ppn_r)
      );
 
-  // If flushing is a possibility, then we need to manually replay. However, this should
-  //   not be the case, because the pipeline should not flush after TLB miss, since they
-  //   are non-speculative
+  // Because internal dcache flushing is a possibility, we need to manually replay
   always_comb begin
     case(state_r)
       e_idle      :  state_n = tlb_miss_v ? e_send_load : e_idle;
@@ -196,7 +194,7 @@ module bp_be_ptw
     endcase
   end
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if(reset_i) begin
       state_r <= e_idle;

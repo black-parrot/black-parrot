@@ -22,7 +22,7 @@ module bp_me_cache_slice
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
    )
   (input                                                 clk_i
    , input                                               reset_i
@@ -96,8 +96,8 @@ module bp_me_cache_slice
          ,.data_width_p(l2_data_width_p)
          ,.dma_data_width_p(l2_fill_width_p)
          ,.block_size_in_words_p(l2_block_size_in_words_p)
-         ,.sets_p(l2_en_p ? l2_sets_p : 2)
-         ,.ways_p(l2_en_p ? l2_assoc_p : 2)
+         ,.sets_p(l2_sets_p)
+         ,.ways_p(l2_assoc_p)
          ,.amo_support_p(((l2_amo_support_p[e_amo_swap]) << e_cache_amo_swap)
                          | ((l2_amo_support_p[e_amo_fetch_logic]) << e_cache_amo_xor)
                          | ((l2_amo_support_p[e_amo_fetch_logic]) << e_cache_amo_and)
@@ -108,6 +108,8 @@ module bp_me_cache_slice
                          | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_minu)
                          | ((l2_amo_support_p[e_amo_fetch_arithmetic]) << e_cache_amo_maxu)
                          )
+        // TODO: Enable as parameter
+        ,.word_tracking_p(0)
         )
        cache
         (.clk_i(clk_i)

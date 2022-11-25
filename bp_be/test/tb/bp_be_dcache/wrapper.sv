@@ -99,8 +99,6 @@ module wrapper
   logic [num_caches_p-1:0] early_v_lo;
   logic [num_caches_p-1:0][dpath_width_gp-1:0] final_data_lo;
   logic [num_caches_p-1:0] final_v_lo;
-  logic [num_caches_p-1:0][dpath_width_gp-1:0] late_data_lo;
-  logic [num_caches_p-1:0] late_v_lo;
 
   // LCE-CCE connections - to/from LCE and xbars
   bp_bedrock_lce_req_header_s [num_caches_p-1:0] lce_req_header_lo;
@@ -208,24 +206,24 @@ module wrapper
 
       ,.early_data_o(early_data_lo[i])
       ,.early_hit_v_o(early_v_lo[i])
-      ,.early_miss_v_o()
       ,.early_fencei_o()
       ,.early_fflags_o()
+      ,.early_ret_o()
+
       ,.final_data_o(final_data_lo[i])
       ,.final_v_o(final_v_lo[i])
-      ,.late_rd_addr_o()
-      ,.late_float_o()
-      ,.late_data_o(late_data_lo[i])
-      ,.late_v_o(late_v_lo[i])
-      ,.late_yumi_i(late_v_lo[i])
+      ,.final_rd_addr_o()
+      ,.final_float_o()
+      ,.final_ret_o()
+      ,.final_late_o()
 
       ,.ptag_v_i(1'b1)
       ,.ptag_i(rolly_ptag_r[i])
       ,.ptag_uncached_i(rolly_uncached_r[i])
       ,.ptag_dram_i(1'b1)
 
-      ,.poison_req_i('0)
-      ,.poison_tl_i('0)
+      ,.flush_i('0)
+      ,.tv_we_o()
 
       ,.cache_req_v_o(cache_req_v_lo[i])
       ,.cache_req_o(cache_req_lo[i])
@@ -256,8 +254,8 @@ module wrapper
       );
 
       // Stores "return" 0 to the trace replay module
-      assign data_o[i] = late_v_lo[i] ? late_data_lo : is_store_rr[i] ? '0 : final_data_lo[i];
-      assign v_o[i] = late_v_lo[i] | final_v_lo[i];
+      assign data_o[i] = is_store_rr[i] ? '0 : final_data_lo[i];
+      assign v_o[i] = final_v_lo[i];
 
       if (uce_p == 0)
         begin : lce

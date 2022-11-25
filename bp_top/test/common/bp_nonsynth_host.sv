@@ -243,7 +243,7 @@ module bp_nonsynth_host
   assign vm_trace_en_o       = vm_trace_p;
   assign cmt_trace_en_o      = cmt_trace_p;
   assign core_profile_en_o   = core_profile_p;
-  assign pc_gen_trace_en_lo  = pc_gen_trace_p;
+  assign pc_gen_trace_en_o   = pc_gen_trace_p;
   assign pc_profile_en_o     = pc_profile_p;
   assign branch_profile_en_o = br_profile_p;
   assign cosim_en_o          = cosim_p;

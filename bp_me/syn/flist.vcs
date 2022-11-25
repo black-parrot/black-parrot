@@ -22,6 +22,7 @@
 +incdir+$BP_TOP_DIR/src/include
 ## Packages
 # BaseJump STL packages
+$BASEJUMP_STL_DIR/bsg_axi/bsg_axi_pkg.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
@@ -48,7 +49,8 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma_to_wormhole.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_miss.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_decode.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
-$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf_queue.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_tbuf.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_buffer_queue.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_wormhole_to_cache_dma_fanout.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel_in.v
