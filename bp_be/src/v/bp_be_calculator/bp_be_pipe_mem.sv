@@ -449,16 +449,16 @@ module bp_be_pipe_mem
   assign late_iwb_pkt_v_o = late_v_lo & ~late_float;
   assign late_iwb_pkt = '{ird_w_v    : 1'b1
                           ,late      : 1'b1
-                          ,rd_addr   : dcache_final_rd_addr
-                          ,rd_data   : dcache_final_data
+                          ,rd_addr   : late_rd_addr
+                          ,rd_data   : late_data
                           ,default: '0
                           };
 
   assign late_fwb_pkt_v_o = late_v_lo &  late_float;
   assign late_fwb_pkt = '{frd_w_v    : 1'b1
                           ,late      : 1'b1
-                          ,rd_addr   : dcache_final_rd_addr
-                          ,rd_data   : dcache_final_data
+                          ,rd_addr   : late_rd_addr
+                          ,rd_data   : late_data
                           ,default: '0
                           };
 
