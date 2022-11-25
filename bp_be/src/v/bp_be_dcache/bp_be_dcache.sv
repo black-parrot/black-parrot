@@ -147,7 +147,7 @@ module bp_be_dcache
    , output logic                                    early_ret_o
    , output rv64_fflags_s                            early_fflags_o
 
-   // Cycle 3-N: "Data Mux"
+   // Cycle 3: "Data Mux"
    // Data comes out this cycle for operations which require additional
    //   processing (half, byte and FP loads)
    // Data comes out-of-band to the pipeline here. Currently, there is
@@ -210,7 +210,7 @@ module bp_be_dcache
     : byte_offset_width_lp;
 
   // State machine declaration
-  enum logic [1:0] {e_ready, e_miss, e_late} state_n, state_r;
+  enum logic {e_ready, e_miss} state_n, state_r;
   wire is_ready  = (state_r == e_ready);
   wire is_miss   = (state_r == e_miss);
 
@@ -931,7 +931,7 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_ready : state_n = (cache_req_ready_and_i & cache_req_v_o & ~nonblocking_req) ? e_miss : e_ready;
+      e_ready : state_n = (cache_req_ready_and_i & cache_req_v_o & blocking_req) ? e_miss : e_ready;
       e_miss  : state_n = cache_req_complete_i ? e_ready : e_miss;
       default: state_n = e_ready;
     endcase

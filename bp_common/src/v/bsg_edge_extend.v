@@ -33,3 +33,5 @@ module bsg_edge_extend #(parameter `BSG_INV_PARAM(width_p))
 
 endmodule
 
+`BSG_ABSTRACT_MODULE(bsg_edge_extend)
+
