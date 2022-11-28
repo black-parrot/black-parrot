@@ -22,10 +22,7 @@ module bp_lce_cmd
    , parameter `BSG_INV_PARAM(sets_p)
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
-   // number of LCE command buffer elements
-   , parameter cmd_buffer_els_p = 2
-   // number of LCE command data buffer elements
-   , parameter cmd_data_buffer_els_p = cmd_buffer_els_p*(block_width_p/fill_width_p)
+   , parameter `BSG_INV_PARAM(ctag_width_p)
 
    // derived parameters
    , localparam lg_assoc_lp = `BSG_SAFE_CLOG2(assoc_p)
@@ -140,10 +137,8 @@ module bp_lce_cmd
   // Required for handshake conversion for cache interface packets
   bp_bedrock_lce_cmd_header_s lce_cmd_header_cast_li;
   logic lce_cmd_header_v_li, lce_cmd_header_yumi_lo, lce_cmd_has_data;
-  bsg_fifo_1r1w_small
-    #(.width_p(lce_cmd_header_width_lp+1)
-      ,.els_p(cmd_buffer_els_p)
-      )
+  bsg_two_fifo
+    #(.width_p(lce_cmd_header_width_lp+1))
     lce_cmd_header_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -159,10 +154,8 @@ module bp_lce_cmd
   // required to prevent deadlock in multicore networks
   logic [fill_width_p-1:0] lce_cmd_data_li;
   logic lce_cmd_data_v_li, lce_cmd_last_li, lce_cmd_data_yumi_lo;
-  bsg_fifo_1r1w_small
-    #(.width_p(fill_width_p+1)
-      ,.els_p(cmd_data_buffer_els_p)
-      )
+  bsg_two_fifo
+   #(.width_p(fill_width_p+1))
     lce_cmd_data_buffer
      (.clk_i(clk_i)
       ,.reset_i(reset_i)

@@ -22,6 +22,7 @@ module bp_uce
     , parameter `BSG_INV_PARAM(block_width_p)
     , parameter `BSG_INV_PARAM(fill_width_p)
     , parameter `BSG_INV_PARAM(metadata_latency_p)
+    , parameter `BSG_INV_PARAM(ctag_width_p)
 
     `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
     )

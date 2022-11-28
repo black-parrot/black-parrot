@@ -11,6 +11,7 @@ module bp_nonsynth_cache_tracer
   , parameter block_width_p = 512
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
+  , parameter ctag_width_p = 27
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 

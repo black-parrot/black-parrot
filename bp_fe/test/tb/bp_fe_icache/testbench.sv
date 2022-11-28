@@ -271,6 +271,7 @@ module testbench
        ,.sets_p(sets_p)
        ,.block_width_p(block_width_p)
        ,.fill_width_p(fill_width_p)
+       ,.ctag_width_p(ctag_width_p)
        )
      icache_tracer
       (.clk_i(clk_i & (testbench.icache_trace_p == 1))

@@ -18,7 +18,7 @@ module bp_be_dcache_wbuf
    , localparam data_mask_width_lp   = (dword_width_gp>>3)
    , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(dword_width_gp>>3)
 
-   , localparam wbuf_entry_width_lp=`bp_be_dcache_wbuf_entry_width(paddr_width_p,dcache_assoc_p)
+   , localparam wbuf_entry_width_lp=`bp_be_dcache_wbuf_entry_width(caddr_width_p,dcache_assoc_p)
    )
   (input                                    clk_i
    , input                                  reset_i
@@ -31,12 +31,12 @@ module bp_be_dcache_wbuf
    , output logic                           force_o
    , input                                  yumi_i
 
-   , input [paddr_width_p-1:0]              load_addr_i
+   , input [caddr_width_p-1:0]              load_addr_i
    , input [dword_width_gp-1:0]             load_data_i
    , output logic [dword_width_gp-1:0]      data_merged_o
    );
 
-  `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, dcache_assoc_p);
+  `declare_bp_be_dcache_wbuf_entry_s(caddr_width_p, dcache_assoc_p);
   bp_be_dcache_wbuf_entry_s wbuf_entry_in;
   assign wbuf_entry_in = wbuf_entry_i;
 
@@ -124,11 +124,11 @@ module bp_be_dcache_wbuf
 
   // bypassing
   //
-  localparam word_addr_width_lp = paddr_width_p-byte_offset_width_lp;
+  localparam word_addr_width_lp = caddr_width_p-byte_offset_width_lp;
   wire [word_addr_width_lp-1:0] bypass_word_addr = load_addr_i[byte_offset_width_lp+:word_addr_width_lp];
-  wire tag_hit0_n = bypass_word_addr == wbuf_entry_el0_r.paddr[byte_offset_width_lp+:word_addr_width_lp];
-  wire tag_hit1_n = bypass_word_addr == wbuf_entry_el1_r.paddr[byte_offset_width_lp+:word_addr_width_lp];
-  wire tag_hit2_n = bypass_word_addr == wbuf_entry_in.paddr[byte_offset_width_lp+:word_addr_width_lp];
+  wire tag_hit0_n = bypass_word_addr == wbuf_entry_el0_r.caddr[byte_offset_width_lp+:word_addr_width_lp];
+  wire tag_hit1_n = bypass_word_addr == wbuf_entry_el1_r.caddr[byte_offset_width_lp+:word_addr_width_lp];
+  wire tag_hit2_n = bypass_word_addr == wbuf_entry_in.caddr[byte_offset_width_lp+:word_addr_width_lp];
 
   wire tag_hit0 = tag_hit0_n & el0_valid;
   wire tag_hit1 = tag_hit1_n & el1_valid;
