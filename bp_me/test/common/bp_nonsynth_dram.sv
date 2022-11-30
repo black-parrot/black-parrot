@@ -95,6 +95,8 @@ module bp_nonsynth_dram
        logic [`dram_pkg::channel_addr_width_p-1:0] dram_ch_addr_li;
        logic dram_write_not_read_li, dram_v_li, dram_yumi_lo;
        logic [`dram_pkg::data_width_p-1:0] dram_data_li;
+       logic [`dram_pkg::data_width_p>>3-1:0] dram_mask_li;
+
        logic dram_data_v_li, dram_data_yumi_lo;
        logic [`dram_pkg::data_width_p-1:0] dram_data_lo;
        logic dram_data_v_lo;
@@ -142,7 +144,7 @@ module bp_nonsynth_dram
          ,.dram_req_yumi_i(dram_yumi_lo)
          ,.dram_data_v_o(dram_data_v_li)
          ,.dram_data_o(dram_data_li)
-         ,.dram_mask_o()
+         ,.dram_mask_o(dram_mask_li)
          ,.dram_data_yumi_i(dram_data_yumi_lo)
 
          ,.dram_data_v_i(dram_data_v_lo)
@@ -162,6 +164,7 @@ module bp_nonsynth_dram
           ,.address_mapping_p(`dram_pkg::address_mapping_p)
           ,.size_in_bits_p(`dram_pkg::size_in_bits_p)
           ,.config_p(`dram_pkg::config_p)
+          ,.masked_p(l2_features_p[e_cfg_word_tracking])
           ,.init_mem_p(1)
           ,.base_id_p(0)
           )
@@ -172,7 +175,7 @@ module bp_nonsynth_dram
           ,.v_i(dram_v_li)
           ,.write_not_read_i(dram_write_not_read_li)
           ,.ch_addr_i(dram_ch_addr_li)
-          ,.mask_i('1)
+          ,.mask_i(dram_mask_li)
           ,.yumi_o(dram_yumi_lo)
 
           ,.data_v_i(dram_data_v_li)
