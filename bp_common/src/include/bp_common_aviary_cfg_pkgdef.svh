@@ -12,10 +12,11 @@
     e_cfg_enabled               = 3'b000
     ,e_cfg_coherent             = 3'b001
     ,e_cfg_writeback            = 3'b010
-    ,e_cfg_lr_sc                = 3'b011
-    ,e_cfg_amo_swap             = 3'b100
-    ,e_cfg_amo_fetch_logic      = 3'b101
-    ,e_cfg_amo_fetch_arithmetic = 3'b110
+    ,e_cfg_word_tracking        = 3'b011
+    ,e_cfg_lr_sc                = 3'b100
+    ,e_cfg_amo_swap             = 3'b101
+    ,e_cfg_amo_fetch_logic      = 3'b110
+    ,e_cfg_amo_fetch_arithmetic = 3'b111
   } bp_cache_features_e;
 
   typedef enum logic [1:0]
@@ -283,6 +284,7 @@
 
       ,l2_features          : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
+                              | (1 << e_cfg_word_tracking)
                               | (1 << e_cfg_amo_swap)
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)

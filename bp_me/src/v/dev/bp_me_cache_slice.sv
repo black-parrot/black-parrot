@@ -108,8 +108,7 @@ module bp_me_cache_slice
                          | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_minu)
                          | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_maxu)
                          )
-        // TODO: Enable as parameter
-        ,.word_tracking_p(0)
+        ,.word_tracking_p(l2_features_p[e_cfg_word_tracking])
         )
        cache
         (.clk_i(clk_i)
