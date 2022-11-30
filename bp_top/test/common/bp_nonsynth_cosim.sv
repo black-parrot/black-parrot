@@ -66,6 +66,9 @@ module bp_nonsynth_cosim
   import "DPI-C" context function void set_finish(int hartid);
   import "DPI-C" context function bit check_terminate();
 
+  wire posedge_clk =  clk_i;
+  wire negedge_clk = ~clk_i;
+
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_commit_pkt_s commit_pkt;
   assign commit_pkt = commit_pkt_i;
@@ -74,7 +77,7 @@ module bp_nonsynth_cosim
   bsg_dff_chain
    #(.width_p($bits(bp_be_decode_s)), .num_stages_p(4))
    reservation_pipe
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.data_i(decode_i)
      ,.data_o(decode_r)
      );
@@ -84,7 +87,7 @@ module bp_nonsynth_cosim
   bsg_dff_chain
    #(.width_p(1+$bits(commit_pkt)), .num_stages_p(1))
    commit_pkt_reg
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
 
      ,.data_i({is_debug_mode_i, commit_pkt})
      ,.data_o({is_debug_mode_r, commit_pkt_r})
@@ -96,7 +99,7 @@ module bp_nonsynth_cosim
   bsg_dff_chain
    #(.width_p(2), .num_stages_p(2))
    cache_req_reg
-    (.clk_i(clk_i)
+    (.clk_i(negedge_clk)
 
      ,.data_i({cache_req_complete_i, cache_req_v_li})
      ,.data_o({cache_req_complete_r, cache_req_v_r})
@@ -126,7 +129,7 @@ module bp_nonsynth_cosim
   bsg_async_fifo
    #(.width_p(3+vaddr_width_p+instr_width_gp+3+2*dword_width_gp), .lg_size_p(10))
    commit_fifo
-    (.w_clk_i(clk_i)
+    (.w_clk_i(posedge_clk)
      ,.w_reset_i(reset_i)
      ,.w_enq_i(commit_fifo_v_li & ~commit_fifo_full_lo)
      ,.w_data_i({is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, commit_req_v_li, cause_li, mstatus_li})
@@ -152,7 +155,7 @@ module bp_nonsynth_cosim
       bsg_async_fifo
        #(.width_p(dword_width_gp), .lg_size_p(10))
        ird_fifo
-        (.w_clk_i(clk_i)
+        (.w_clk_i(posedge_clk)
          ,.w_reset_i(reset_i)
          ,.w_enq_i(fill)
          ,.w_data_i(ird_data_i[0+:dword_width_gp])
@@ -173,7 +176,7 @@ module bp_nonsynth_cosim
       bsg_async_fifo
        #(.width_p(dpath_width_gp), .lg_size_p(10))
        ird_fifo
-        (.w_clk_i(clk_i)
+        (.w_clk_i(posedge_clk)
          ,.w_reset_i(reset_i)
          ,.w_enq_i(fill)
          ,.w_data_i(frd_data_i)
@@ -204,7 +207,7 @@ module bp_nonsynth_cosim
   bsg_counter_up_down
    #(.max_val_p(128), .init_val_p(0), .max_step_p(1))
    req_counter
-    (.clk_i(clk_i)
+    (.clk_i(negedge_clk)
      ,.reset_i(reset_i | freeze_i)
 
      ,.up_i(cache_req_v_r)

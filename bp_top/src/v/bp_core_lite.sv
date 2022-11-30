@@ -344,7 +344,7 @@ module bp_core_lite
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
      ,.fill_width_p(dcache_fill_width_p)
-     ,.ctag_width_p(icache_ctag_width_p)
+     ,.ctag_width_p(dcache_ctag_width_p)
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)
      ,.metadata_latency_p(1)

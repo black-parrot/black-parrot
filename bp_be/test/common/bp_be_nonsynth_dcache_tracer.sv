@@ -124,7 +124,7 @@ module bp_be_nonsynth_dcache_tracer
    begin
      info_file_name = $sformatf("%s_%x.info.trace", trace_file_p, mhartid_i);
      info_file      = $fopen(info_file_name, "w");
-     $fwrite(info_file, "Coherent L1: %x\n", icache_coherent_p);
+     $fwrite(info_file, "Coherent L1: %x\n", dcache_features_p[e_cfg_coherent]);
 
      eng_file_name = $sformatf("%s_%x.eng.trace", trace_file_p, mhartid_i);
      eng_file      = $fopen(eng_file_name, "w");
