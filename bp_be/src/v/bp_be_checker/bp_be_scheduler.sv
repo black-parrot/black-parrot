@@ -92,6 +92,8 @@ module bp_be_scheduler
      ,.preissue_pkt_o(preissue_pkt)
      ,.issue_pkt_o(issue_pkt_cast_o)
      );
+  rv64_instr_fmatype_s preissue_instr;
+  assign preissue_instr = preissue_pkt.instr;
 
   logic [dword_width_gp-1:0] irf_rs1, irf_rs2;
   bp_be_regfile
@@ -105,7 +107,7 @@ module bp_be_scheduler
      ,.rd_data_i(iwb_pkt_cast_i.rd_data[0+:dword_width_gp])
 
      ,.rs_r_v_i({preissue_pkt.irs2_v, preissue_pkt.irs1_v})
-     ,.rs_addr_i({preissue_pkt.rs2_addr, preissue_pkt.rs1_addr})
+     ,.rs_addr_i({preissue_instr.rs2_addr, preissue_instr.rs1_addr})
      ,.rs_data_o({irf_rs2, irf_rs1})
      );
 
@@ -121,7 +123,7 @@ module bp_be_scheduler
      ,.rd_data_i(fwb_pkt_cast_i.rd_data)
 
      ,.rs_r_v_i({preissue_pkt.frs3_v, preissue_pkt.frs2_v, preissue_pkt.frs1_v})
-     ,.rs_addr_i({preissue_pkt.rs3_addr, preissue_pkt.rs2_addr, preissue_pkt.rs1_addr})
+     ,.rs_addr_i({preissue_instr.rs3_addr, preissue_instr.rs2_addr, preissue_instr.rs1_addr})
      ,.rs_data_o({frf_rs3, frf_rs2, frf_rs1})
      );
 

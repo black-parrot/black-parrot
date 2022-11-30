@@ -20,18 +20,12 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic                                    csr_v;                                              \
-      logic                                    mem_v;                                              \
-      logic                                    fence_v;                                            \
-      logic                                    long_v;                                             \
       logic                                    irs1_v;                                             \
       logic                                    irs2_v;                                             \
       logic                                    frs1_v;                                             \
       logic                                    frs2_v;                                             \
       logic                                    frs3_v;                                             \
-      logic [reg_addr_width_gp-1:0]            rs1_addr;                                           \
-      logic [reg_addr_width_gp-1:0]            rs2_addr;                                           \
-      logic [reg_addr_width_gp-1:0]            rs3_addr;                                           \
+      rv64_instr_s                             instr;                                              \
     }  bp_be_preissue_pkt_s;                                                                       \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -235,8 +229,8 @@
    *   comes from literally counting bits in the struct definition, which is ugly, error-prone,
    *   and an unfortunate, necessary consequence of parameterized structs.
    */
-  `define bp_be_preissue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-    (9+3*reg_addr_width_gp)
+  `define bp_be_preissue_pkt_width \
+    (5+rv64_instr_width_gp)
 
   `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
     (6+vaddr_width_mp+instr_width_gp+branch_metadata_fwd_width_mp+12)
