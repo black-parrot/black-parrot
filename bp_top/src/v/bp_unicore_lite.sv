@@ -157,6 +157,7 @@ module bp_unicore_lite
      ,.block_width_p(icache_block_width_p)
      ,.fill_width_p(icache_fill_width_p)
      ,.ctag_width_p(icache_ctag_width_p)
+     ,.writeback_p(icache_features_p[e_cfg_writeback])
      ,.metadata_latency_p(1)
      )
    icache_uce
@@ -218,6 +219,7 @@ module bp_unicore_lite
      ,.block_width_p(dcache_block_width_p)
      ,.fill_width_p(uce_fill_width_p)
      ,.ctag_width_p(dcache_ctag_width_p)
+     ,.writeback_p(dcache_features_p[e_cfg_writeback])
      ,.metadata_latency_p(1)
      )
    dcache_uce
@@ -266,22 +268,12 @@ module bp_unicore_lite
      ,.mem_rev_last_i(_mem_rev_last_i[1])
      );
 
-  // These latches are optimized out in Verilator 4.220...
-  //   but bsg_deff_reset is more heavy_weight. It's possible that FPGAs would prefer
-  //   the alternate implementation as well. But ASICs will appreciate the time-borrowing
   // Synchronize back to posedge clk
-`ifdef VERILATOR
-  bsg_deff_reset
+  bsg_edge_extend
    #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
    posedge_latch
     (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
-`else
-  bsg_dlatch
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
-   posedge_latch
-    (.clk_i(posedge_clk)
-`endif
      ,.data_i({_mem_fwd_header_o[1], _mem_fwd_data_o[1], _mem_fwd_v_o[1], _mem_fwd_last_o[1]
                ,mem_fwd_ready_and_i[1]
                })
@@ -291,18 +283,11 @@ module bp_unicore_lite
      );
 
   // Synchronize back to negedge clk
-`ifdef VERILATOR
-  bsg_deff_reset
+  bsg_edge_extend
    #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
    negedge_latch
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
-`else
-  bsg_dlatch
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3), .i_know_this_is_a_bad_idea_p(1))
-   negedge_latch
-    (.clk_i(negedge_clk)
-`endif
      ,.data_i({mem_rev_header_i[1], mem_rev_data_i[1], mem_rev_v_i[1], mem_rev_last_i[1]
                ,_mem_rev_ready_and_o[1]
                })

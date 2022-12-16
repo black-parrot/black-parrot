@@ -28,7 +28,7 @@ module bp_be_top
    // FE queue interface
    , input [fe_queue_width_lp-1:0]                   fe_queue_i
    , input                                           fe_queue_v_i
-   , output                                          fe_queue_ready_o
+   , output                                          fe_queue_ready_and_o
 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]                    fe_cmd_o
@@ -90,22 +90,21 @@ module bp_be_top
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_decode_info_s decode_info_lo;
 
-  bp_be_isd_status_s isd_status;
+  bp_be_issue_pkt_s issue_pkt;
   logic [vaddr_width_p-1:0] expected_npc_lo;
   logic poison_isd_lo, suppress_iss_lo, unfreeze_lo;
 
   logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
-  logic mem_ready_lo, idiv_ready_lo, fdiv_ready_lo, ptw_busy_lo;
+  logic mem_busy_lo, idiv_busy_lo, fdiv_busy_lo, ptw_busy_lo;
 
   bp_be_director
    #(.bp_params_p(bp_params_p))
    director
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.isd_status_i(isd_status)
+     ,.issue_pkt_i(issue_pkt)
      ,.expected_npc_o(expected_npc_lo)
 
      ,.fe_cmd_o(fe_cmd_o)
@@ -121,6 +120,7 @@ module bp_be_top
      ,.cmd_full_n_o(cmd_full_n_lo)
      ,.cmd_full_r_o(cmd_full_r_lo)
 
+     ,.dispatch_v_i(dispatch_v)
      ,.br_pkt_i(br_pkt)
      ,.commit_pkt_i(commit_pkt)
      );
@@ -131,15 +131,13 @@ module bp_be_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.cfg_bus_i(cfg_bus_i)
-
-     ,.isd_status_i(isd_status)
+     ,.issue_pkt_i(issue_pkt)
      ,.cmd_full_i(cmd_full_r_lo)
      ,.credits_full_i(cache_req_credits_full_i)
      ,.credits_empty_i(cache_req_credits_empty_i)
-     ,.mem_ready_i(mem_ready_lo)
-     ,.fdiv_ready_i(fdiv_ready_lo)
-     ,.idiv_ready_i(idiv_ready_lo)
+     ,.mem_busy_i(mem_busy_lo)
+     ,.fdiv_busy_i(fdiv_busy_lo)
+     ,.idiv_busy_i(idiv_busy_lo)
      ,.ptw_busy_i(ptw_busy_lo)
      ,.irq_pending_i(irq_pending_lo)
 
@@ -156,9 +154,8 @@ module bp_be_top
    scheduler
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.cfg_bus_i(cfg_bus_i)
 
-     ,.isd_status_o(isd_status)
+     ,.issue_pkt_o(issue_pkt)
      ,.expected_npc_i(expected_npc_lo)
      ,.poison_isd_i(poison_isd_lo)
      ,.dispatch_v_i(dispatch_v)
@@ -169,7 +166,7 @@ module bp_be_top
 
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)
-     ,.fe_queue_ready_o(fe_queue_ready_o)
+     ,.fe_queue_ready_and_o(fe_queue_ready_and_o)
 
      ,.dispatch_pkt_o(dispatch_pkt)
 
@@ -184,15 +181,14 @@ module bp_be_top
    calculator
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.dispatch_pkt_i(dispatch_pkt)
 
      ,.decode_info_o(decode_info_lo)
-     ,.mem_ready_o(mem_ready_lo)
-     ,.idiv_ready_o(idiv_ready_lo)
-     ,.fdiv_ready_o(fdiv_ready_lo)
+     ,.mem_busy_o(mem_busy_lo)
+     ,.idiv_busy_o(idiv_busy_lo)
+     ,.fdiv_busy_o(fdiv_busy_lo)
      ,.ptw_busy_o(ptw_busy_lo)
 
      ,.br_pkt_o(br_pkt)

@@ -47,7 +47,7 @@ module bp_lce_cmd
    , localparam cnt_max_val_lp = ((2**cnt_width_lp)-1)
 
    // coherence request size for cached requests
-   , localparam bp_bedrock_msg_size_e cmd_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8))
+   , localparam cmd_block_size_lp = `BSG_SAFE_CLOG2(block_width_p/8)
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
@@ -708,7 +708,7 @@ module bp_lce_cmd
 
         lce_fill_header_cast_o.msg_type.fill = e_bedrock_fill_data;
         lce_fill_header_cast_o.addr = lce_cmd_header_cast_li.addr;
-        lce_fill_header_cast_o.size = cmd_block_size_lp;
+        lce_fill_header_cast_o.size = bp_bedrock_msg_size_e'(cmd_block_size_lp);
         lce_fill_header_cast_o.payload.dst_id = lce_cmd_header_cast_li.payload.target;
         // set src to be the CCE that sent the transfer command so the destination LCE knows
         // which CCE it must send its coherence ack to when the data command arrives
@@ -789,14 +789,11 @@ module bp_lce_cmd
                                                : e_bedrock_resp_null_wb;
         lce_resp_header_cast_o.payload.src_id = lce_id_i;
         lce_resp_header_cast_o.payload.dst_id = lce_cmd_header_cast_li.payload.src_id;
-        lce_resp_header_cast_o.size = (lce_resp_has_data_o)
-                                      ? cmd_block_size_lp
-                                      : e_bedrock_msg_size_1;
+        lce_resp_header_cast_o.size = bp_bedrock_msg_size_e'(lce_resp_has_data_o ? cmd_block_size_lp : e_bedrock_msg_size_1);
         lce_resp_header_v_o = 1'b1;
 
         // dequeue command only if sending null writeback
-        lce_cmd_header_yumi_lo = lce_resp_header_v_o & lce_resp_header_ready_and_i
-                                 & ~lce_resp_has_data_o;
+        lce_cmd_header_yumi_lo = lce_resp_header_v_o & lce_resp_header_ready_and_i & ~lce_resp_has_data_o;
 
         state_n = (lce_resp_header_v_o & lce_resp_header_ready_and_i)
                   ? (lce_resp_has_data_o)
@@ -875,7 +872,7 @@ module bp_lce_cmd
     endcase // state
   end
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       state_r <= e_reset;

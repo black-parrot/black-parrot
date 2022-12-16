@@ -71,7 +71,7 @@ module bp_fe_bht
       default: state_n = e_clear;
     endcase
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
       state_r <= e_reset;

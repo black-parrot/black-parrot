@@ -447,8 +447,8 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_MHARTID      }: csr_data_lo = cfg_bus_cast_i.core_id;
                 {1'b1, `CSR_ADDR_MSTATUS      }: csr_data_lo = mstatus_lo;
                 // MISA is optionally read-write, but all fields are read-only in BlackParrot
-                //   64 bit MXLEN, IMAFDSU extensions
-                {1'b1, `CSR_ADDR_MISA         }: csr_data_lo = {2'b10, 36'b0, 26'h141129};
+                //   64 bit MXLEN, IMACFDSU extensions
+                {1'b1, `CSR_ADDR_MISA         }: csr_data_lo = {2'b10, 36'b0, 26'h14112d};
                 {1'b1, `CSR_ADDR_MEDELEG      }: csr_data_lo = medeleg_lo;
                 {1'b1, `CSR_ADDR_MIDELEG      }: csr_data_lo = mideleg_lo;
                 {1'b1, `CSR_ADDR_MIE          }: csr_data_lo = mie_lo;
@@ -522,7 +522,7 @@ module bp_be_csr
           if (d_interrupt_icode_v_li & dgie)
             begin
               enter_debug    = 1'b1;
-              dpc_li         = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               dcsr_li.cause  = 3; // Debugger
               dcsr_li.prv    = priv_mode_r;
             end
@@ -534,7 +534,7 @@ module bp_be_csr
               mstatus_li.mpie      = mstatus_lo.mie;
               mstatus_li.mie       = 1'b0;
 
-              mepc_li              = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              mepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               mtval_li             = '0;
               mcause_li._interrupt = 1'b1;
               mcause_li.ecode      = m_interrupt_icode_li;
@@ -549,7 +549,7 @@ module bp_be_csr
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
 
-              sepc_li              = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               stval_li             = '0;
               scause_li._interrupt = 1'b1;
               scause_li.ecode      = s_interrupt_icode_li;
@@ -572,10 +572,10 @@ module bp_be_csr
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
 
-              sepc_li              = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               stval_li             = (exception_ecode_li == 2)
                                     ? retire_pkt_cast_i.instr
-                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, paddr_width_p);
+                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
 
               scause_li._interrupt = 1'b0;
               scause_li.ecode      = exception_ecode_li;
@@ -590,10 +590,10 @@ module bp_be_csr
               mstatus_li.mpie      = mstatus_lo.mie;
               mstatus_li.mie       = 1'b0;
 
-              mepc_li              = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+              mepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               mtval_li             = (exception_ecode_li == 2)
                                     ? retire_pkt_cast_i.instr
-                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, paddr_width_p);
+                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
 
               mcause_li._interrupt = 1'b0;
               mcause_li.ecode      = exception_ecode_li;
@@ -605,7 +605,7 @@ module bp_be_csr
       if (retire_pkt_cast_i.special.dbreak)
         begin
           enter_debug    = 1'b1;
-          dpc_li         = `BSG_SIGN_EXTEND(apc_r, paddr_width_p);
+          dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
           dcsr_li.cause  = 1; // Ebreak
           dcsr_li.prv    = priv_mode_r;
         end
@@ -640,7 +640,7 @@ module bp_be_csr
       if (~is_debug_mode & retire_pkt_cast_i.queue_v & dcsr_lo.step)
         begin
           enter_debug   = 1'b1;
-          dpc_li        = `BSG_SIGN_EXTEND(core_npc, paddr_width_p);
+          dpc_li        = `BSG_SIGN_EXTEND(core_npc, dword_width_gp);
           dcsr_li.cause = 4;
           dcsr_li.prv   = priv_mode_r;
         end
@@ -671,34 +671,35 @@ module bp_be_csr
       default: csr_data_o = csr_data_lo;
     endcase
 
-  assign commit_pkt_cast_o.npc_w_v          = |{retire_pkt_cast_i.special, retire_pkt_cast_i.exception};
-  assign commit_pkt_cast_o.queue_v          = retire_pkt_cast_i.queue_v & ~|retire_pkt_cast_i.exception;
-  assign commit_pkt_cast_o.instret          = retire_pkt_cast_i.instret;
-  assign commit_pkt_cast_o.pc               = apc_r;
-  assign commit_pkt_cast_o.npc              = apc_n;
-  assign commit_pkt_cast_o.vaddr            = retire_pkt_cast_i.vaddr;
-  assign commit_pkt_cast_o.instr            = retire_pkt_cast_i.instr;
-  assign commit_pkt_cast_o.pte_leaf         = retire_pkt_cast_i.data;
-  assign commit_pkt_cast_o.priv_n           = priv_mode_n;
-  assign commit_pkt_cast_o.translation_en_n = translation_en_n;
-  assign commit_pkt_cast_o.exception        = exception_v_lo;
-  assign commit_pkt_cast_o.partial          = retire_pkt_cast_i.partial;
+  assign commit_pkt_cast_o.npc_w_v           = |{retire_pkt_cast_i.special, retire_pkt_cast_i.exception};
+  assign commit_pkt_cast_o.queue_v           = retire_pkt_cast_i.queue_v & ~|retire_pkt_cast_i.exception;
+  assign commit_pkt_cast_o.instret           = retire_pkt_cast_i.instret;
+  assign commit_pkt_cast_o.pc                = apc_r;
+  assign commit_pkt_cast_o.npc               = apc_n;
+  assign commit_pkt_cast_o.vaddr             = retire_pkt_cast_i.vaddr;
+  assign commit_pkt_cast_o.instr             = retire_pkt_cast_i.instr;
+  assign commit_pkt_cast_o.pte_leaf          = retire_pkt_cast_i.data;
+  assign commit_pkt_cast_o.priv_n            = priv_mode_n;
+  assign commit_pkt_cast_o.translation_en_n  = translation_en_n;
+  assign commit_pkt_cast_o.exception         = exception_v_lo;
+  assign commit_pkt_cast_o.partial           = retire_pkt_cast_i.partial;
   // Debug mode acts as a pseudo-interrupt
-  assign commit_pkt_cast_o._interrupt       = interrupt_v_lo | enter_debug;
-  assign commit_pkt_cast_o.fencei           = retire_pkt_cast_i.special.fencei_clean;
-  assign commit_pkt_cast_o.sfence           = retire_pkt_cast_i.special.sfence_vma;
-  assign commit_pkt_cast_o.wfi              = retire_pkt_cast_i.special.wfi;
-  assign commit_pkt_cast_o.eret             = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};
-  assign commit_pkt_cast_o.csrw             = retire_pkt_cast_i.special.csrw;
-  assign commit_pkt_cast_o.unfreeze         = retire_pkt_cast_i.exception.unfreeze;
-  assign commit_pkt_cast_o.itlb_miss        = retire_pkt_cast_i.exception.itlb_miss;
-  assign commit_pkt_cast_o.icache_miss      = retire_pkt_cast_i.exception.icache_miss;
-  assign commit_pkt_cast_o.dtlb_store_miss  = retire_pkt_cast_i.exception.dtlb_store_miss;
-  assign commit_pkt_cast_o.dtlb_load_miss   = retire_pkt_cast_i.exception.dtlb_load_miss;
-  assign commit_pkt_cast_o.dcache_fail      = retire_pkt_cast_i.exception.dcache_fail;
-  assign commit_pkt_cast_o.dcache_miss      = retire_pkt_cast_i.special.dcache_miss;
-  assign commit_pkt_cast_o.itlb_fill_v      = retire_pkt_cast_i.exception.itlb_fill;
-  assign commit_pkt_cast_o.dtlb_fill_v      = retire_pkt_cast_i.exception.dtlb_fill;
+  assign commit_pkt_cast_o._interrupt        = interrupt_v_lo | enter_debug;
+  assign commit_pkt_cast_o.fencei            = retire_pkt_cast_i.special.fencei_clean;
+  assign commit_pkt_cast_o.sfence            = retire_pkt_cast_i.special.sfence_vma;
+  assign commit_pkt_cast_o.wfi               = retire_pkt_cast_i.special.wfi;
+  assign commit_pkt_cast_o.eret              = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};
+  assign commit_pkt_cast_o.csrw              = retire_pkt_cast_i.special.csrw;
+  assign commit_pkt_cast_o.unfreeze          = retire_pkt_cast_i.exception.unfreeze;
+  assign commit_pkt_cast_o.itlb_miss         = retire_pkt_cast_i.exception.itlb_miss;
+  assign commit_pkt_cast_o.icache_miss       = retire_pkt_cast_i.exception.icache_miss;
+  assign commit_pkt_cast_o.dtlb_store_miss   = retire_pkt_cast_i.exception.dtlb_store_miss;
+  assign commit_pkt_cast_o.dtlb_load_miss    = retire_pkt_cast_i.exception.dtlb_load_miss;
+  assign commit_pkt_cast_o.dcache_fail       = retire_pkt_cast_i.exception.dcache_fail;
+  assign commit_pkt_cast_o.dcache_store_miss = retire_pkt_cast_i.special.dcache_store_miss;
+  assign commit_pkt_cast_o.dcache_load_miss  = retire_pkt_cast_i.special.dcache_load_miss;
+  assign commit_pkt_cast_o.itlb_fill_v       = retire_pkt_cast_i.exception.itlb_fill;
+  assign commit_pkt_cast_o.dtlb_fill_v       = retire_pkt_cast_i.exception.dtlb_fill;
 
   assign trans_info_cast_o.priv_mode      = priv_mode_r;
   assign trans_info_cast_o.base_ppn       = satp_lo.ppn;

@@ -76,15 +76,15 @@ module bp_nonsynth_if_verif
     $error("FPU cannot currently be disabled");
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
     $error("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));
-  if (~|{dcache_amo_support_p[e_lr_sc], l2_amo_support_p[e_lr_sc]})
-    $error("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
+  if (~|{dcache_features_p[e_cfg_lr_sc], l2_features_p[e_cfg_lr_sc]})
+    $warning("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
 
   // L1 Caches
   if ((cce_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
   if ((cce_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 128-bit cache block size and 4-way or 8-way cache associativity");
-  if ((dcache_writethrough_p == 1) && (icache_coherent_p == 1))
+  if ((dcache_features_p[e_cfg_writeback] == 0) && (dcache_features_p[e_cfg_coherent] == 1))
     $error("Error: Writethrough with coherent_l1 is unsupported");
   if ((icache_fill_width_p > icache_block_width_p) || (dcache_fill_width_p > dcache_block_width_p))
     $error("Error: Cache fill width should be less or equal to L1 cache block width");
@@ -96,10 +96,14 @@ module bp_nonsynth_if_verif
     $error("Error: L1 I$ requires fill width greater than bank width (block width / assoc)");
   if (dcache_fill_width_p < (dcache_block_width_p / dcache_assoc_p))
     $error("Error: L1 D$ requires fill width greater than bank width (block width / assoc)");
+  if (dcache_block_width_p > 512 || icache_block_width_p > 512 || acache_block_width_p > 512)
+    $error("Error: L1 caches can only support <=64B cache line size");
 
   // Address Widths
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
+  if (paddr_width_p > 56)
+    $warning("Warning: paddr > 56 has not been tested");
   if (paddr_width_p < 33)
     $warning("Warning: paddr < 33 has not been tested");
   if (daddr_width_p < 32)
@@ -114,8 +118,8 @@ module bp_nonsynth_if_verif
   // L2 Cache
   if (l2_fill_width_p < l2_data_width_p)
     $error("Error: L2 fill width must be at least as large as L2 data width");
-  if (l2_block_width_p != 512)
-    $error("Error: L2 block width must be 512");
+  if (l2_block_width_p > 1024)
+    $error("Error: L2 block width must be less than 1024");
   if (!`BSG_IS_POW2((l2_fill_width_p/l2_data_width_p)))
     $error("Error: L2 fill width must be POW2 multiple of L2 data width");
   if (!`BSG_IS_POW2(l2_banks_p))
@@ -150,7 +154,7 @@ module bp_nonsynth_if_verif
     $error("Error: Multicore requires BedRock data width to be at least dword width");
   if ((cce_type_p != e_cce_uce) && (bedrock_data_width_p > icache_fill_width_p))
     $error("Error: Multicore requires BedRock data width to be no larger than cache fill width");
-  if ((cce_type_p != e_cce_uce) && (|l2_amo_support_p))
+  if ((cce_type_p != e_cce_uce) && l2_features_p[e_cfg_enabled] && (|{l2_features_p[e_cfg_lr_sc], l2_features_p[e_cfg_amo_swap], l2_features_p[e_cfg_amo_fetch_logic], l2_features_p[e_cfg_amo_fetch_arithmetic]}))
     $error("Error: Multicore does not support L2 atomics");
   if ((cce_type_p != e_cce_uce) && (`BSG_SAFE_CLOG2(icache_block_width_p*icache_sets_p/8) > page_offset_width_gp) && (`BSG_SAFE_CLOG2(dcache_block_width_p*dcache_sets_p/8) > page_offset_width_gp))
     $error("Error: Multicore requires total cache size to be equal to 4kB * associativity");

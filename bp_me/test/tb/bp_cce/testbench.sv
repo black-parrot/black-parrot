@@ -78,13 +78,9 @@ module testbench
   bit clk_i;
   bit dram_clk_i, dram_reset_i;
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
-    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
-    clock_gen
+  bsg_nonsynth_clock_gen
+   #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
+   clock_gen
     (.o(clk_i));
 
   bsg_nonsynth_reset_gen
@@ -97,12 +93,8 @@ module testbench
       ,.async_reset_o(reset_i)
       );
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
-    #(.cycle_time_p(`dram_pkg::tck_ps))
+  bsg_nonsynth_clock_gen
+   #(.cycle_time_p(`dram_pkg::tck_ps))
     dram_clock_gen
     (.o(dram_clk_i));
 

@@ -16,6 +16,7 @@ module bp_nonsynth_nbf_loader
    , parameter io_data_width_p = dword_width_gp
 
    , parameter nbf_filename_p = "prog.nbf"
+   , parameter verbose_p = 1
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -48,7 +49,7 @@ module bp_nonsynth_nbf_loader
   wire is_read     = (state_r == e_read);
   wire is_done     = (state_r == e_done);
 
-  localparam max_nbf_index_lp = 2**26;
+  localparam max_nbf_index_lp = 2**25;
   localparam nbf_index_width_lp = `BSG_SAFE_CLOG2(max_nbf_index_lp);
   localparam nbf_data_width_lp = 64;
   localparam nbf_addr_width_lp = (paddr_width_p+3)/4*4;
@@ -84,6 +85,17 @@ module bp_nonsynth_nbf_loader
      ,.up_i(next_nbf)
      ,.count_o(nbf_index_r)
      );
+
+  localparam heartbeat_lp = 1000;
+  always_ff @(negedge clk_i)
+    begin
+      if (verbose_p && next_nbf && is_fence_packet)
+        $display("NBF fence packet  : %d [%x] (%p)", nbf_index_r, curr_nbf, curr_nbf);
+      if (verbose_p && next_nbf && is_finish_packet)
+        $display("NBF finish packet : %d [%x] (%p)", nbf_index_r, curr_nbf, curr_nbf);
+      if (verbose_p && next_nbf && (nbf_index_r % heartbeat_lp == 0))
+        $display("NBF heartbeat     : %d [%x] (%p)", nbf_index_r, curr_nbf, curr_nbf);
+    end
 
   logic [dword_width_gp-1:0] read_data_r;
   bsg_dff_reset_en
@@ -167,14 +179,14 @@ module bp_nonsynth_nbf_loader
     endcase
   assign done_o = is_done;
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
       state_r <= e_reset;
     else
       state_r <= state_n;
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i)
     begin
       if (state_r != e_done && state_n == e_done)
@@ -186,7 +198,7 @@ module bp_nonsynth_nbf_loader
         assert(reset_i !== '0 || ~(mem_rev_v_i & mem_rev_ready_and_o & ~mem_rev_last_i))
           else $error("Multi-beat IO response detected");
     end
-  //synopsys translate_on
+  // synopsys translate_on
 
 
   if (nbf_data_width_lp != dword_width_gp)

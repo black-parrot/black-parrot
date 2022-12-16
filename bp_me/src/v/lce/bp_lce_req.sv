@@ -314,13 +314,13 @@ module bp_lce_req
     end
   end
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (cache_req_v_r & cache_req_r.msg_type inside {e_uc_load, e_uc_store, e_uc_amo}
         & cache_req_r.size > e_size_8B)
       $error("Uncached/atomic requests must be no larger than 64-bits");
   end
-  //synopsys translate_on
+  // synopsys translate_on
 
 endmodule
 

@@ -17,6 +17,7 @@ module bp_uce
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    , parameter `BSG_INV_PARAM(writeback_p)
     , parameter `BSG_INV_PARAM(assoc_p)
     , parameter `BSG_INV_PARAM(sets_p)
     , parameter `BSG_INV_PARAM(block_width_p)
@@ -109,27 +110,29 @@ module bp_uce
   `bp_cast_o(bp_cache_data_mem_pkt_s, data_mem_pkt);
   `bp_cast_o(bp_cache_stat_mem_pkt_s, stat_mem_pkt);
 
-  enum logic [3:0] {
+  enum logic [4:0] {
     e_reset
-    , e_clear
-    , e_flush_read
-    , e_flush_scan
-    , e_flush_write
-    , e_flush_fence
-    , e_ready
-    , e_uc_writeback_evict
-    , e_uc_writeback_write_req
-    , e_send_critical
-    , e_writeback_evict
-    , e_writeback_read_req
-    , e_writeback_write_req
-    , e_write_wait
-    , e_read_wait
-    , e_uc_read_wait
+    ,e_init
+    ,e_clear
+    ,e_flush_read
+    ,e_flush_scan
+    ,e_flush_write
+    ,e_flush_fence
+    ,e_ready
+    ,e_uc_writeback_evict
+    ,e_uc_writeback_write_req
+    ,e_send_critical
+    ,e_writeback_evict
+    ,e_writeback_read_req
+    ,e_writeback_write_req
+    ,e_write_wait
+    ,e_read_wait
+    ,e_uc_read_wait
   } state_n, state_r;
 
   wire is_reset           = (state_r == e_reset);
   wire is_clear           = (state_r == e_clear);
+  wire is_init            = (state_r == e_init);
   wire is_flush_read      = (state_r == e_flush_read);
   wire is_flush_scan      = (state_r == e_flush_scan);
   wire is_flush_write     = (state_r == e_flush_write);
@@ -424,7 +427,7 @@ module bp_uce
   // We ack mem_revs for uncached stores no matter what, so load_resp_yumi_lo is for other responses
   logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_busy_o = is_reset | is_clear | cache_req_credits_full_o;
+  assign cache_req_busy_o = is_reset | is_init | cache_req_credits_full_o;
   always_comb
     begin
       cache_req_ready_and_o = '0;
@@ -452,9 +455,9 @@ module bp_uce
       unique case (state_r)
         e_reset:
           begin
-            state_n = e_clear;
+            state_n = e_init;
           end
-        e_clear:
+        e_init, e_clear:
           begin
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
             tag_mem_pkt_cast_o.index  = index_cnt;
@@ -466,9 +469,9 @@ module bp_uce
 
             index_up = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
-            cache_req_done = (index_done & index_up);
+            cache_req_done = is_clear & (index_done & index_up);
 
-            state_n = (index_done & index_up) ? e_ready : e_clear;
+            state_n = (index_done & index_up) ? e_ready : state_r;
           end
         e_flush_read:
           begin
@@ -564,7 +567,7 @@ module bp_uce
                         ? e_flush_read
                         : clear_v_li
                           ? e_clear
-                          : (uc_hit_v_li & (dcache_writethrough_p == 0))
+                          : (uc_hit_v_li & (writeback_p == 1))
                             ? e_uc_writeback_evict
                             : (uc_store_v_li || wt_store_v_li)
                               ? e_ready
@@ -732,13 +735,13 @@ module bp_uce
     else
       state_r <= state_n;
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i)
     begin
-      assert(reset_i !== '0 || (dcache_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
+      assert(reset_i !== '0 || (writeback_p == 1) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
         else $error("writethrough cache should not be in writeback states");
     end
-  //synopsys translate_on
+  // synopsys translate_on
 
 endmodule
 

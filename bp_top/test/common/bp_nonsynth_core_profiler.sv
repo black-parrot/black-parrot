@@ -90,7 +90,7 @@ module bp_nonsynth_core_profiler
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
     // FE events
-    , input fe_queue_ready_i
+    , input fe_queue_ready_and_i
 
     , input br_ovr_i
     , input ret_ovr_i
@@ -171,7 +171,6 @@ module bp_nonsynth_core_profiler
       // IF0
       stall_stage_n[0]                    = '0;
       stall_stage_n[0].fe_cmd            |= fe_cmd_nonattaboy_i;
-      stall_stage_n[0].icache_miss       |= icache_v_i & ~icache_yumi_i;
 
       // IF1
       stall_stage_n[1]                    = stall_stage_r[0];
@@ -189,7 +188,6 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3]                    = fe_queue_empty_i ? stall_stage_r[2] : '0;
       stall_stage_n[3].fe_cmd_fence      |= fe_cmd_fence_i;
       stall_stage_n[3].mispredict        |= mispredict_i;
-      stall_stage_n[3].dcache_miss       |= (dcache_miss_i | commit_pkt.dcache_miss | commit_pkt.dcache_fail);
       stall_stage_n[3].data_haz          |= data_haz_i;
       stall_stage_n[3].aux_dep           |= aux_dep_i;
       stall_stage_n[3].load_dep          |= load_dep_i;
@@ -213,7 +211,8 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3].itlb_miss         |= commit_pkt.itlb_miss | commit_pkt.itlb_fill_v;
       stall_stage_n[3].icache_miss       |= commit_pkt.icache_miss;
       stall_stage_n[3].dtlb_miss         |= commit_pkt.dtlb_load_miss | commit_pkt.dtlb_store_miss | commit_pkt.dtlb_fill_v;
-      stall_stage_n[3].dcache_miss       |= commit_pkt.dcache_miss | commit_pkt.dcache_fail;
+      stall_stage_n[3].dcache_miss       |= commit_pkt.dcache_store_miss | commit_pkt.dcache_load_miss | commit_pkt.dcache_fail;
+      stall_stage_n[3].dcache_miss       |= dcache_miss_i;
 
       // EX1
       // BE exception stalls
@@ -225,7 +224,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[4].itlb_miss         |= commit_pkt.itlb_miss | commit_pkt.itlb_fill_v;
       stall_stage_n[4].icache_miss       |= commit_pkt.icache_miss;
       stall_stage_n[4].dtlb_miss         |= commit_pkt.dtlb_load_miss | commit_pkt.dtlb_store_miss | commit_pkt.dtlb_fill_v;
-      stall_stage_n[4].dcache_miss       |= commit_pkt.dcache_miss | commit_pkt.dcache_fail;
+      stall_stage_n[4].dcache_miss       |= commit_pkt.dcache_store_miss | commit_pkt.dcache_load_miss | commit_pkt.dcache_fail;
 
       // EX2
       // BE exception stalls
@@ -237,7 +236,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[5].itlb_miss         |= commit_pkt.itlb_miss | commit_pkt.itlb_fill_v;
       stall_stage_n[5].icache_miss       |= commit_pkt.icache_miss;
       stall_stage_n[5].dtlb_miss         |= commit_pkt.dtlb_load_miss | commit_pkt.dtlb_store_miss | commit_pkt.dtlb_fill_v;
-      stall_stage_n[5].dcache_miss       |= commit_pkt.dcache_miss | commit_pkt.dcache_fail;
+      stall_stage_n[5].dcache_miss       |= commit_pkt.dcache_store_miss | commit_pkt.dcache_load_miss | commit_pkt.dcache_fail;
 
       // EX3
       // BE exception stalls
@@ -249,7 +248,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[6].itlb_miss         |= commit_pkt.itlb_miss | commit_pkt.itlb_fill_v;
       stall_stage_n[6].icache_miss       |= commit_pkt.icache_miss;
       stall_stage_n[6].dtlb_miss         |= commit_pkt.dtlb_load_miss | commit_pkt.dtlb_store_miss | commit_pkt.dtlb_fill_v;
-      stall_stage_n[6].dcache_miss       |= commit_pkt.dcache_miss | commit_pkt.dcache_fail;
+      stall_stage_n[6].dcache_miss       |= commit_pkt.dcache_store_miss | commit_pkt.dcache_load_miss | commit_pkt.dcache_fail;
 
     end
 

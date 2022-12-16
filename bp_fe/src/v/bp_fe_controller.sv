@@ -24,7 +24,7 @@ module bp_fe_controller
 
    , output logic                                     redirect_v_o
    , output logic [vaddr_width_p-1:0]                 redirect_pc_o
-   , output logic [instr_half_width_gp-1:0]           redirect_instr_o
+   , output logic [hinstr_width_gp-1:0]               redirect_instr_o
    , output logic                                     redirect_resume_v_o
    , output logic                                     redirect_br_v_o
    , output logic                                     redirect_br_taken_o
@@ -177,11 +177,13 @@ module bp_fe_controller
                         ? e_fence
                         : cmd_complex_v
                           ? e_resume
-                          : fetch_exception_yumi_i
-                            ? e_wait
-                            : if1_we_o
-                              ? e_run
-                              : state_r;
+                          : cmd_immediate_v
+                            ? e_run
+                            : fetch_exception_yumi_i
+                              ? e_wait
+                              : if1_we_o
+                                ? e_run
+                                : state_r;
           end
         e_resume:
           begin

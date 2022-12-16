@@ -76,11 +76,7 @@ module testbench
   bit clk_i;
   bit rt_clk_i, cosim_clk_i, cosim_reset_i, dram_clk_i, dram_reset_i;
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
    clock_gen
     (.o(clk_i));
@@ -95,11 +91,7 @@ module testbench
      ,.async_reset_o(reset_i)
      );
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`dram_pkg::tck_ps))
    dram_clock_gen
     (.o(dram_clk_i));
@@ -114,11 +106,7 @@ module testbench
      ,.async_reset_o(dram_reset_i)
      );
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD/5))
    cosim_clk_gen
     (.o(cosim_clk_i));
@@ -133,11 +121,7 @@ module testbench
      ,.async_reset_o(cosim_reset_i)
      );
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`BP_RT_CLK_PERIOD))
    rt_clk_gen
     (.o(rt_clk_i));
@@ -157,7 +141,7 @@ module testbench
   logic [io_data_width_p-1:0] proc_rev_data_lo;
   logic proc_rev_v_lo, proc_rev_ready_and_li, proc_rev_last_lo;
 
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_lo;
   logic [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
   logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
@@ -353,7 +337,7 @@ module testbench
          #(.bp_params_p(bp_params_p)
            ,.stall_cycles_p(100000)
            ,.halt_cycles_p(10000)
-           ,.heartbeat_instr_p(100000)
+           ,.heartbeat_instr_p(10000)
            )
          watchdog
           (.clk_i(clk_i)
@@ -483,7 +467,7 @@ module testbench
 
           ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-          ,.fe_queue_ready_i(fe.fe_queue_ready_i)
+          ,.fe_queue_ready_and_i(fe.fe_queue_ready_and_i)
      
           ,.br_ovr_i(fe.pc_gen.ovr_btaken | fe.pc_gen.ovr_jmp)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
@@ -493,10 +477,10 @@ module testbench
 
           ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.controller.attaboy_v)
           ,.fe_cmd_fence_i(be.director.is_fence)
-          ,.fe_queue_empty_i(~be.scheduler.fe_queue_fifo.fe_queue_v_o)
+          ,.fe_queue_empty_i(be.scheduler.fe_queue_fifo.empty)
 
-          ,.mispredict_i(be.director.npc_mismatch_v)
-          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_o)
+          ,.mispredict_i(be.director.poison_isd_o)
+          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_and_o)
           ,.long_haz_i(be.detector.long_haz_v)
           ,.control_haz_i(be.detector.control_haz_v)
           ,.data_haz_i(be.detector.data_haz_v)
@@ -535,8 +519,8 @@ module testbench
           ,.sb_iwaw_dep_i(be.detector.ird_sb_waw_haz_v & be.detector.data_haz_v)
           ,.sb_fwaw_dep_i(be.detector.frd_sb_waw_haz_v & be.detector.data_haz_v)
           ,.struct_haz_i(be.detector.struct_haz_v)
-          ,.idiv_haz_i(~be.detector.idiv_ready_i & be.detector.isd_status_cast_i.long_v)
-          ,.fdiv_haz_i(~be.detector.fdiv_ready_i & be.detector.isd_status_cast_i.long_v)
+          ,.idiv_haz_i(be.detector.idiv_busy_i & be.detector.issue_pkt_cast_i.long_v)
+          ,.fdiv_haz_i(be.detector.fdiv_busy_i & be.detector.issue_pkt_cast_i.long_v)
           ,.ptw_busy_i(be.detector.ptw_busy_i)
 
           ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
@@ -570,7 +554,7 @@ module testbench
            ,.if2_pc_i(pc_gen.pc_if2_r)
            ,.if2_v_i(icache_v_lo)
 
-           ,.fetch_v_i(fe_queue_ready_i & fe_queue_v_o)
+           ,.fetch_v_i(fe_queue_ready_and_i & fe_queue_v_o)
            ,.fetch_pc_i(fetch_pc_lo)
            ,.fetch_instr_i(fetch_instr_lo)
            ,.fetch_partial_i(fetch_partial_lo)
@@ -595,9 +579,9 @@ module testbench
          branch_profiler
           (.clk_i(clk_i & testbench.branch_profile_en_lo)
            ,.reset_i(reset_i)
-           ,.freeze_i(detector.cfg_bus_cast_i.freeze)
+           ,.freeze_i(director.cfg_bus_cast_i.freeze)
 
-           ,.mhartid_i(detector.cfg_bus_cast_i.core_id)
+           ,.mhartid_i(director.cfg_bus_cast_i.core_id)
 
            ,.fe_cmd_o(director.fe_cmd_o)
            ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)

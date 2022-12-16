@@ -22,8 +22,6 @@ Description: Front End Queue (FIFO) passes bp\_fe\_queue\_s comprising a message
  - e_instr_page_fault
  - e_instr_access_fault
  - e_icache_miss
- - e_instr_partial_lower
- - e_instr_partial_upper
  - e_instr_fetch
 
 Interface:

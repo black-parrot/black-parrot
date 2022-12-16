@@ -131,7 +131,7 @@ module bp_cacc_vdp
 
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic                     dcache_ready, dcache_v;
+  logic                     dcache_ready_and, dcache_v;
   logic [dpath_width_gp-1:0] dcache_data;
   logic                     dcache_pkt_v;
 
@@ -164,7 +164,7 @@ module bp_cacc_vdp
 
   // TODO: Actually use the late signal, but we don't really care about performance
   //   for the purposes of this demo
-  logic late_v;
+  logic final_v;
   bp_be_dcache
    #(.bp_params_p(bp_params_p)
      ,.sets_p(acache_sets_p)
@@ -180,28 +180,25 @@ module bp_cacc_vdp
 
      ,.dcache_pkt_i(dcache_pkt)
      ,.v_i(dcache_pkt_v)
-     ,.ready_o(dcache_ready)
-     ,.poison_req_i(1'b0)
+     ,.ready_and_o(dcache_ready_and)
+     ,.flush_i(1'b0)
 
      ,.ptag_v_i(1'b1)
      ,.ptag_i(dcache_ptag)
      ,.ptag_uncached_i(1'b0)
      ,.ptag_dram_i(1'b1)
-     ,.poison_tl_i(1'b0)
 
      ,.early_hit_v_o(dcache_v)
-     ,.early_miss_v_o()
      ,.early_fencei_o()
      ,.early_data_o(dcache_data)
      ,.early_fflags_o()
-     ,.final_data_o()
-     ,.final_v_o()
+     ,.early_ret_o()
 
-     ,.late_rd_addr_o()
-     ,.late_float_o()
-     ,.late_data_o()
-     ,.late_v_o(late_v)
-     ,.late_yumi_i(late_v)
+     ,.final_v_o(final_v)
+     ,.final_data_o()
+     ,.final_rd_addr_o()
+     ,.final_float_o()
+     ,.final_ret_o()
 
      // D$-LCE Interface
      ,.cache_req_complete_i(cache_req_complete_lo)
@@ -401,7 +398,7 @@ module bp_cacc_vdp
       second_operand = 0;
       dcache_pkt_v = 0;
 
-      state_n = state_r;
+  state_n = state_r;
       case (state_r)
         e_reset: begin
           state_n = reset_i ? e_reset : e_wait_start;
@@ -411,7 +408,7 @@ module bp_cacc_vdp
           state_n = start_cmd ? e_wait_fetch : e_wait_start;
         end
         e_wait_fetch: begin
-          state_n = dcache_ready ? e_fetch_vec1 : e_wait_fetch;
+          state_n = dcache_ready_and ? e_fetch_vec1 : e_wait_fetch;
         end
         e_fetch_vec1: begin
           dcache_pkt_v = '1;

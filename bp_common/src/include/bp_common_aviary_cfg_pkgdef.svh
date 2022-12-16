@@ -7,13 +7,17 @@
   localparam lg_max_cfgs = $clog2(max_cfgs);
 
   // Configuration enums
-  typedef enum logic [1:0]
+  typedef enum logic [2:0]
   {
-    e_lr_sc                 = 2'b00
-    ,e_amo_swap             = 2'b01
-    ,e_amo_fetch_logic      = 2'b10
-    ,e_amo_fetch_arithmetic = 2'b11
-  } bp_atomic_support_e;
+    e_cfg_enabled               = 3'b000
+    ,e_cfg_coherent             = 3'b001
+    ,e_cfg_writeback            = 3'b010
+    ,e_cfg_word_tracking        = 3'b011
+    ,e_cfg_lr_sc                = 3'b100
+    ,e_cfg_amo_swap             = 3'b101
+    ,e_cfg_amo_fetch_logic      = 3'b110
+    ,e_cfg_amo_fetch_arithmetic = 3'b111
+  } bp_cache_features_e;
 
   typedef enum logic [1:0]
   {
@@ -115,34 +119,25 @@
     integer unsigned dtlb_els_4k;
     integer unsigned dtlb_els_1g;
 
+    // I$ cache features
+    integer unsigned icache_features;
     // I$ parameterizations
-    integer unsigned icache_coherent;
     integer unsigned icache_sets;
     integer unsigned icache_assoc;
     integer unsigned icache_block_width;
     integer unsigned icache_fill_width;
 
+    // D$ cache features
+    integer unsigned dcache_features;
     // D$ parameterizations
-    // Whether the D$ is writethrough or writeback
-    integer unsigned dcache_writethrough;
-    // Atomic support in D$
-    //   bit 0: e_lr_sc 
-    //   bit 1: e_amo_swap
-    //   bit 2: e_amo_fetch_logic
-    //   bit 3: e_amo_fetch_arithmetic
-    integer unsigned dcache_amo_support;
     integer unsigned dcache_sets;
     integer unsigned dcache_assoc;
     integer unsigned dcache_block_width;
     integer unsigned dcache_fill_width;
 
+    // A$ cache features
+    integer unsigned acache_features;
     // A$ parameterizations
-    // Atomic support in A$
-    //   bit 0: e_lr_sc 
-    //   bit 1: e_amo_swap
-    //   bit 2: e_amo_fetch_logic
-    //   bit 3: e_amo_fetch_arithmetic
-    integer unsigned acache_amo_support;
     integer unsigned acache_sets;
     integer unsigned acache_assoc;
     integer unsigned acache_block_width;
@@ -157,16 +152,10 @@
     integer unsigned bedrock_data_width;
 
     // L2 slice parameters (per core)
-    // Whether an L2 is present in the system
-    integer unsigned l2_en;
+    // L2 cache features
+    integer unsigned l2_features;
     // Number of L2 banks present in the slice
     integer unsigned l2_banks;
-    // Atomic support in L2
-    //   bit 0: lr_sc
-    //   bit 1: amo_swap
-    //   bit 2: amo_fetch_logic
-    //   bit 3: amo_fetch_arithmetic
-    integer unsigned l2_amo_support;
     integer unsigned l2_data_width;
     integer unsigned l2_sets;
     integer unsigned l2_assoc;
@@ -266,23 +255,24 @@
       ,itlb_els_1g : 0
       ,dtlb_els_1g : 0
 
-      ,dcache_writethrough  : 0
-      ,dcache_amo_support   : (1 << e_lr_sc)
-                              | (1 << e_amo_swap)
-                              | (1 << e_amo_fetch_logic)
-                              | (1 << e_amo_fetch_arithmetic)
+      ,dcache_features      : (1 << e_cfg_enabled)
+                              | (1 << e_cfg_writeback)
+                              | (1 << e_cfg_lr_sc)
+                              | (1 << e_cfg_amo_swap)
+                              | (1 << e_cfg_amo_fetch_logic)
+                              | (1 << e_cfg_amo_fetch_arithmetic)
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
       ,dcache_fill_width    : 64
 
-      ,icache_coherent      : 0
+      ,icache_features      : (1 << e_cfg_enabled)
       ,icache_sets          : 64
       ,icache_assoc         : 8
       ,icache_block_width   : 512
       ,icache_fill_width    : 64
 
-      ,acache_amo_support   : 0
+      ,acache_features      : (1 << e_cfg_enabled)
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
@@ -292,11 +282,13 @@
       ,cce_pc_width         : 8
       ,bedrock_data_width   : 64
 
-      ,l2_en               : 1
+      ,l2_features          : (1 << e_cfg_enabled)
+                              | (1 << e_cfg_writeback)
+                              | (1 << e_cfg_word_tracking)
+                              | (1 << e_cfg_amo_swap)
+                              | (1 << e_cfg_amo_fetch_logic)
+                              | (1 << e_cfg_amo_fetch_arithmetic)
       ,l2_banks            : 2
-      ,l2_amo_support      : (1 << e_amo_swap)
-                             | (1 << e_amo_fetch_logic)
-                             | (1 << e_amo_fetch_arithmetic)
       ,l2_data_width       : 64
       ,l2_sets             : 128
       ,l2_assoc            : 8
@@ -377,20 +369,19 @@
       ,`bp_aviary_define_override(dtlb_els_4k, BP_DTLB_ELS_4K, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dtlb_els_1g, BP_DTLB_ELS_1G, `BP_CUSTOM_BASE_CFG)
 
-      ,`bp_aviary_define_override(icache_coherent, BP_ICACHE_COHERENT, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(icache_features, BP_ICACHE_FEATURES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_sets, BP_ICACHE_SETS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_assoc, BP_ICACHE_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_block_width, BP_ICACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_fill_width, BP_ICACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
 
-      ,`bp_aviary_define_override(dcache_writethrough, BP_DCACHE_WRITETHROUGH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(dcache_amo_support, BP_DCACHE_AMO_SUPPORT, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dcache_features, BP_DCACHE_FEATURES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_sets, BP_DCACHE_SETS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_assoc, BP_DCACHE_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_block_width, BP_DCACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_fill_width, BP_DCACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
 
-      ,`bp_aviary_define_override(acache_amo_support, BP_ACACHE_AMO_SUPPORT, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(acache_features, BP_ACACHE_FEATURES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_sets, BP_ACACHE_SETS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_assoc, BP_ACACHE_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_block_width, BP_ACACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
@@ -400,9 +391,8 @@
       ,`bp_aviary_define_override(cce_pc_width, BP_CCE_PC_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(bedrock_data_width, BP_BEDROCK_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
 
-      ,`bp_aviary_define_override(l2_en, BP_L2_EN, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(l2_features, BP_L2_FEATURES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(l2_amo_support, BP_L2_AMO_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_data_width, BP_L2_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_sets, BP_L2_SETS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_assoc, BP_L2_ASSOC, `BP_CUSTOM_BASE_CFG)

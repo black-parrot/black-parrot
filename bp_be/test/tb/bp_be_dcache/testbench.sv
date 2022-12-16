@@ -50,8 +50,6 @@ module testbench
     $error("UCE setup supports only 1 cache");
   if ((uce_p == 0) && (wt_p == 1))
     $error("CCE does not support writethrough caches");
-  if (uce_p == 0 && dcache_writethrough_p == 1)
-    $error("Writethrough cache with CCE not yet supported");
   if (cce_block_width_p != dcache_block_width_p)
     $error("Memory fetch block width does not match D$ block width");
   if (num_caches_p == 0)
@@ -64,11 +62,7 @@ module testbench
   bit clk_i;
   bit dram_clk_i, dram_reset_i;
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
    clock_gen
     (.o(clk_i));
@@ -83,11 +77,7 @@ module testbench
      ,.async_reset_o(reset_i)
      );
 
-  `ifdef VERILATOR
-    bsg_nonsynth_dpi_clock_gen
-  `else
-    bsg_nonsynth_clock_gen
-  `endif
+  bsg_nonsynth_clock_gen
    #(.cycle_time_p(`dram_pkg::tck_ps))
    dram_clock_gen
     (.o(dram_clk_i));

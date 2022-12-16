@@ -27,7 +27,7 @@ module bp_fe_top
 
    , output [fe_queue_width_lp-1:0]                   fe_queue_o
    , output                                           fe_queue_v_o
-   , input                                            fe_queue_ready_i
+   , input                                            fe_queue_ready_and_i
 
    , output logic [icache_req_width_lp-1:0]           cache_req_o
    , output logic                                     cache_req_v_o
@@ -91,7 +91,7 @@ module bp_fe_top
   logic redirect_v_li, redirect_resume_v_li;
   logic [vaddr_width_p-1:0] redirect_pc_li;
   logic redirect_br_v_li, redirect_br_taken_li, redirect_br_ntaken_li, redirect_br_nonbr_li;
-  logic [instr_half_width_gp-1:0] redirect_instr_li;
+  logic [hinstr_width_gp-1:0] redirect_instr_li;
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd_li, attaboy_br_metadata_fwd_li;
   logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
@@ -133,7 +133,6 @@ module bp_fe_top
 
      ,.fetch_pc_i(fetch_pc_lo)
      ,.fetch_scan_i(fetch_scan)
-     ,.fetch_partial_i(fetch_partial_lo)
      ,.fetch_linear_i(fetch_linear_lo)
 
      ,.attaboy_pc_i(attaboy_pc_li)
@@ -271,9 +270,9 @@ module bp_fe_top
      ,.stat_mem_o(stat_mem_o)
      );
   wire icache_v_lo = icache_data_v_lo | icache_spec_v_lo | icache_fence_v_lo;
-  wire icache_data_yumi_li = fe_queue_ready_i & icache_data_v_lo;
-  wire icache_spec_yumi_li = fe_queue_ready_i & icache_spec_v_lo;
-  wire icache_fence_yumi_li = fe_queue_ready_i & icache_fence_v_lo;
+  wire icache_data_yumi_li = fe_queue_ready_and_i & icache_data_v_lo;
+  wire icache_spec_yumi_li = fe_queue_ready_and_i & icache_spec_v_lo;
+  wire icache_fence_yumi_li = fe_queue_ready_and_i & icache_fence_v_lo;
   assign icache_yumi_li = icache_data_yumi_li | icache_spec_yumi_li | icache_fence_yumi_li;
 
   // This tracks the I$ valid. Could move inside entirely, but we're trying to separate
@@ -335,8 +334,8 @@ module bp_fe_top
   wire fe_exception_v = (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_spec_v_lo);
   wire fe_instr_v     = fetch_instr_v_lo;
 
-  assign fetch_instr_yumi_li     = fe_queue_ready_i & fe_queue_v_o & fe_instr_v;
-  assign fetch_exception_yumi_li = fe_queue_ready_i & fe_queue_v_o & fe_exception_v;
+  assign fetch_instr_yumi_li     = fe_queue_ready_and_i & fe_queue_v_o & fe_instr_v;
+  assign fetch_exception_yumi_li = fe_queue_ready_and_i & fe_queue_v_o & fe_exception_v;
 
   assign fe_queue_v_o = (fe_instr_v | fe_exception_v);
   always_comb
@@ -356,7 +355,9 @@ module bp_fe_top
                                            : e_instr_fetch;
       fe_queue_cast_o.instr = fetch_instr_lo;
       fe_queue_cast_o.branch_metadata_fwd = if2_br_metadata_fwd_lo;
-      fe_queue_cast_o.partial_v = compressed_support_p & fetch_partial_lo & fe_exception_v;
+      // TODO: Partial should actually mean that the data to the BE is partially valid,
+      //   not that the realigner is partially full, which could imply a full instruction
+      fe_queue_cast_o.partial = compressed_support_p & fetch_partial_lo & fe_exception_v;
     end
 
   bp_fe_controller

@@ -341,6 +341,7 @@ module wrapper
        ,.fill_width_p(icache_fill_width_p)
        ,.metadata_latency_p(1)
        ,.ctag_width_p(icache_ctag_width_p)
+       ,.writeback_p(icache_features_p[e_cfg_writeback])
        )
      icache_uce
       (.clk_i(clk_i)

@@ -38,11 +38,11 @@ module bp_fe_icache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to icache parameters, but can override if needed
-   , parameter coherent_p     = icache_coherent_p
-   , parameter sets_p         = icache_sets_p
-   , parameter assoc_p        = icache_assoc_p
-   , parameter block_width_p  = icache_block_width_p
-   , parameter fill_width_p   = icache_fill_width_p
+   , parameter coherent_p    = icache_features_p[e_cfg_coherent]
+   , parameter sets_p        = icache_sets_p
+   , parameter assoc_p       = icache_assoc_p
+   , parameter block_width_p = icache_block_width_p
+   , parameter fill_width_p  = icache_fill_width_p
    , parameter ctag_width_p   = icache_ctag_width_p
 
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
@@ -489,8 +489,8 @@ module bp_fe_icache
   `bp_cast_o(bp_icache_req_s, cache_req);
   `bp_cast_o(bp_icache_req_metadata_s, cache_req_metadata);
 
-  localparam bp_cache_req_size_e block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
-  localparam bp_cache_req_size_e uncached_req_size = e_size_4B;
+  localparam block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
+  localparam uncached_req_size = e_size_4B;
 
   wire cached_req   = fetch_op_tv_r & ~uncached_op_tv_r & ~fill_tv_r & ~hit_v_tv;
   wire uncached_req = fetch_op_tv_r &  uncached_op_tv_r & ~fill_tv_r & ~hit_v_tv;
@@ -499,7 +499,7 @@ module bp_fe_icache
   assign cache_req_v_o = v_tv & ~fill_tv_r & |{uncached_req, cached_req, fencei_req};
   assign cache_req_cast_o =
    '{addr     : paddr_tv_r
-     ,size    : cached_req ? block_req_size : uncached_req_size
+     ,size    : bp_cache_req_size_e'(cached_req ? block_req_size : uncached_req_size)
      ,msg_type: cached_req ? e_miss_load : uncached_req ? e_uc_load : e_cache_clear
      ,subop   : e_req_amoswap
      ,data    : '0
@@ -547,7 +547,7 @@ module bp_fe_icache
       default  : state_n = e_ready;
     endcase
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
       state_r <= e_busy;

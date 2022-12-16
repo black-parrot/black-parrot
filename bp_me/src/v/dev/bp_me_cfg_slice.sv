@@ -110,12 +110,12 @@ module bp_me_cfg_slice
       end
     else
       begin
-        freeze_r      <= freeze_w_v_li      ? data_lo                 : freeze_r;
-        npc_r         <= npc_w_v_li         ? data_lo                 : npc_r;
-        icache_mode_r <= icache_mode_w_v_li ? bp_lce_mode_e'(data_lo) : icache_mode_r;
-        dcache_mode_r <= dcache_mode_w_v_li ? bp_lce_mode_e'(data_lo) : dcache_mode_r;
-        cce_mode_r    <= cce_mode_w_v_li    ? bp_cce_mode_e'(data_lo) : cce_mode_r;
-        hio_mask_r    <= hio_mask_w_v_li    ? data_lo                 : hio_mask_r;
+        freeze_r      <= freeze_w_v_li                     ? data_lo : freeze_r;
+        npc_r         <= npc_w_v_li                        ? data_lo : npc_r;
+        icache_mode_r <= bp_lce_mode_e'(icache_mode_w_v_li ? data_lo : icache_mode_r);
+        dcache_mode_r <= bp_lce_mode_e'(dcache_mode_w_v_li ? data_lo : dcache_mode_r);
+        cce_mode_r    <= bp_cce_mode_e'(cce_mode_w_v_li    ? data_lo : cce_mode_r);
+        hio_mask_r    <= hio_mask_w_v_li                   ? data_lo : hio_mask_r;
       end
 
   // Access to CCE ucode memory must be aligned
