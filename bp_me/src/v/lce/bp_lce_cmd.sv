@@ -153,8 +153,8 @@ module bp_lce_cmd
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.msg_stream_mask_p(lce_cmd_payload_mask_gp)
      ,.fsm_stream_mask_p(lce_cmd_payload_mask_gp)
-     ,.header_els_p(cmd_buffer_els_p)
-     ,.data_els_p(cmd_data_buffer_els_p)
+     ,.header_els_p(2)
+     ,.data_els_p(2)
      )
    cmd_pump_in
     (.clk_i(clk_i)
