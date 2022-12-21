@@ -95,7 +95,7 @@ module bp_nonsynth_dram
        logic [`dram_pkg::channel_addr_width_p-1:0] dram_ch_addr_li;
        logic dram_write_not_read_li, dram_v_li, dram_yumi_lo;
        logic [`dram_pkg::data_width_p-1:0] dram_data_li;
-       logic [`dram_pkg::data_width_p>>3-1:0] dram_mask_li;
+       logic [(`dram_pkg::data_width_p>>3)-1:0] dram_mask_li;
 
        logic dram_data_v_li, dram_data_yumi_lo;
        logic [`dram_pkg::data_width_p-1:0] dram_data_lo;

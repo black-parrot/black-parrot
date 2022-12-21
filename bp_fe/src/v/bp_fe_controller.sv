@@ -112,7 +112,7 @@ module bp_fe_controller
   wire cmd_immediate_v  = fe_cmd_v_i & (pc_redirect_v | icache_fill_response_v | wait_v);
   wire cmd_complex_v    = fe_cmd_v_i & ~cmd_immediate_v & cmd_nonattaboy_v;
 
-  assign redirect_v_o               = ~attaboy_v & fe_cmd_yumi_o;
+  assign redirect_v_o               = cmd_nonattaboy_v;
   assign redirect_pc_o              = fe_cmd_cast_i.npc;
   assign redirect_br_v_o            = br_miss_v;
   assign redirect_br_taken_o        = br_miss_taken;
