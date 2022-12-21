@@ -91,7 +91,7 @@ module bp_tlb
      ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_4k_lo)
 
-     ,.r_v_i(~|tag_4k_w_v_li)
+     ,.r_v_i(~w_v_li)
      ,.r_tag_i(vtag_r)
      ,.r_match_o(tag_r_match_4k_lo)
      );
@@ -125,7 +125,7 @@ module bp_tlb
      ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_1g_lo)
 
-     ,.r_v_i(~|tag_1g_w_v_li)
+     ,.r_v_i(~w_v_li)
      ,.r_tag_i(vtag_r)
      ,.r_match_o(tag_r_match_1g_lo)
      );
