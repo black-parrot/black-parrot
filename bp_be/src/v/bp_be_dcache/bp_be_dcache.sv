@@ -545,7 +545,6 @@ module bp_be_dcache
      );
 
   logic [dword_width_gp-1:0] ld_data_dword_merged;
-  wire [dword_width_gp-1:0] result_data = ld_data_dword_merged;
 
   logic [3:2][dword_width_gp-1:0] sigext_word;
   for (genvar i = 2; i < 4; i++)
@@ -556,12 +555,15 @@ module bp_be_dcache
       bsg_mux
        #(.width_p(slice_width_lp), .els_p(dword_width_gp/slice_width_lp))
        align_mux
-        (.data_i(result_data)
+        (.data_i(ld_data_dword_merged)
          ,.sel_i(paddr_tv_r[i+:`BSG_MAX(1, 3-i)])
          ,.data_o(slice_data)
          );
 
-      wire sigext = decode_tv_r.signed_op & slice_data[slice_width_lp-1];
+      wire sigext = // Integer sigext
+                    (decode_tv_r.signed_op & slice_data[slice_width_lp-1])
+                    // FP nanbox
+                    || ((i==2) & decode_tv_r.float_op & decode_tv_r.word_op);
       assign sigext_word[i] = {{(dword_width_gp-slice_width_lp){sigext}}, slice_data};
     end
 
@@ -572,6 +574,15 @@ module bp_be_dcache
     (.data_i(sigext_word)
      ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op})
      ,.data_o(early_data)
+     );
+
+  logic [dword_width_gp-1:0] result_data;
+  bsg_mux_one_hot
+   #(.width_p(dword_width_gp), .els_p(2))
+   result_mux
+    (.data_i({early_data, ld_data_dword_merged})
+     ,.sel_one_hot_i({(decode_tv_r.double_op | decode_tv_r.word_op), (decode_tv_r.half_op | decode_tv_r.byte_op)})
+     ,.data_o(result_data)
      );
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
@@ -668,8 +679,8 @@ module bp_be_dcache
      ,.data_o({fill_dm_r, ld_data_dm_r, paddr_dm_r, decode_dm_r})
      );
 
-  logic [3:0][dword_width_gp-1:0] sigext_byte;
-  for (genvar i = 0; i < 4; i++)
+  logic [1:0][dword_width_gp-1:0] sigext_byte;
+  for (genvar i = 0; i < 2; i++)
     begin : byte_alignment
       localparam slice_width_lp = 8*(2**i);
 
@@ -688,20 +699,18 @@ module bp_be_dcache
 
   logic [dword_width_gp-1:0] final_int_data;
   bsg_mux_one_hot
-   #(.width_p(dword_width_gp), .els_p(4))
+   #(.width_p(dword_width_gp), .els_p(3))
    byte_mux
-    (.data_i(sigext_byte)
-     ,.sel_one_hot_i({decode_dm_r.double_op, decode_dm_r.word_op, decode_dm_r.half_op, decode_dm_r.byte_op})
+    (.data_i({ld_data_dm_r, sigext_byte})
+     ,.sel_one_hot_i({(decode_dm_r.double_op | decode_dm_r.word_op), decode_dm_r.half_op, decode_dm_r.byte_op})
      ,.data_o(final_int_data)
      );
 
   bp_be_fp_reg_s final_float_data;
-  wire [dword_width_gp-1:0] final_float_raw_data =
-    decode_dm_r.word_op ? {{word_width_gp{1'b1}}, final_int_data[0+:word_width_gp]} : final_int_data;
   bp_be_fp_to_reg
    #(.bp_params_p(bp_params_p))
    fp_to_reg
-    (.raw_i(final_float_raw_data)
+    (.raw_i(ld_data_dm_r)
      ,.reg_o(final_float_data)
      );
 
