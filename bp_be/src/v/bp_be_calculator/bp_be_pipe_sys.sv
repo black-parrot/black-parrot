@@ -159,7 +159,7 @@ module bp_be_pipe_sys
   assign retire_pkt =
     '{v          : retire_v_i
       ,queue_v   : retire_queue_v_i
-      ,instret   : retire_v_i & ~|retire_exception_i
+      ,instret   : instret_li
       ,npc       : retire_npc_r
       ,vaddr     : retire_vaddr_r
       ,data      : retire_data_i

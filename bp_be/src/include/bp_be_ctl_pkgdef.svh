@@ -83,8 +83,6 @@
     ,e_dcache_op_fsw      = 6'b100100
     ,e_dcache_op_fsd      = 6'b100101
 
-    ,e_dcache_op_ptw_ld   = 6'b100110
-
     ,e_dcache_op_amoswapw = 6'b010000
     ,e_dcache_op_amoaddw  = 6'b010001
     ,e_dcache_op_amoxorw  = 6'b010010

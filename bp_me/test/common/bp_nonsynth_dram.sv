@@ -343,7 +343,7 @@ module bp_nonsynth_dram
        #(.axi_id_width_p(axi_id_width_p)
          ,.axi_addr_width_p(axi_addr_width_p)
          ,.axi_data_width_p(axi_data_width_p)
-         ,.axi_burst_len_p(axi_burst_len_p)
+         ,.axi_len_width_p(8)
          ,.mem_els_p(mem_els_lp)
          ,.init_data_p('0)
          )
@@ -356,6 +356,7 @@ module bp_nonsynth_dram
          ,.axi_awvalid_i(axi_awvalid)
          ,.axi_awready_o(axi_awready)
          ,.axi_awburst_i(axi_awburst)
+         ,.axi_awlen_i(axi_awlen)
 
          ,.axi_wdata_i(axi_wdata)
          ,.axi_wstrb_i(axi_wstrb)
@@ -373,6 +374,7 @@ module bp_nonsynth_dram
          ,.axi_arvalid_i(axi_arvalid)
          ,.axi_arready_o(axi_arready)
          ,.axi_arburst_i(axi_arburst)
+         ,.axi_arlen_i(axi_arlen)
 
          ,.axi_rid_o(axi_rid)
          ,.axi_rdata_o(axi_rdata)
