@@ -46,9 +46,8 @@ module bp_be_pipe_mem
    , output logic                         tlb_store_miss_v_o
    , output logic                         cache_load_miss_v_o
    , output logic                         cache_store_miss_v_o
-   , output logic                         cache_fail_v_o
+   , output logic                         cache_replay_v_o
    , output logic                         fencei_clean_v_o
-   , output logic                         fencei_dirty_v_o
    , output logic                         load_misaligned_v_o
    , output logic                         load_access_fault_v_o
    , output logic                         load_page_fault_v_o
@@ -163,7 +162,7 @@ module bp_be_pipe_mem
 
   logic [dpath_width_gp-1:0] dcache_early_data;
   rv64_fflags_s             dcache_early_fflags;
-  logic                     dcache_early_ret, dcache_early_fencei, dcache_early_hit_v;
+  logic                     dcache_early_ret, dcache_early_store, dcache_early_fencei, dcache_early_hit_v;
   logic                     dcache_tv_we;
 
   logic                     dcache_final_float, dcache_final_v, dcache_final_yumi;
@@ -315,6 +314,7 @@ module bp_be_pipe_mem
       ,.early_hit_v_o(dcache_early_hit_v)
       ,.early_fencei_o(dcache_early_fencei)
       ,.early_ret_o(dcache_early_ret)
+      ,.early_store_o(dcache_early_store)
       ,.early_data_o(dcache_early_data)
       ,.early_fflags_o(dcache_early_fflags)
 
@@ -414,11 +414,10 @@ module bp_be_pipe_mem
   assign store_misaligned_v_o   = dtlb_r_v_r & store_misaligned_v;
   assign load_misaligned_v_o    = dtlb_r_v_r & load_misaligned_v;
 
-  assign cache_fail_v_o         = early_v_r & ~dcache_tv_r;
-  assign cache_load_miss_v_o    = early_v_r &  dcache_tv_r & ~dcache_early_hit_v &  dcache_early_ret;
-  assign cache_store_miss_v_o   = early_v_r &  dcache_tv_r & ~dcache_early_hit_v & ~dcache_early_ret;
-  assign fencei_dirty_v_o       = early_v_r &  dcache_tv_r & ~dcache_early_hit_v &  dcache_early_fencei;
-  assign fencei_clean_v_o       = early_v_r &  dcache_tv_r &  dcache_early_hit_v &  dcache_early_fencei;
+  assign fencei_clean_v_o       = early_v_r & dcache_tv_r &  dcache_early_hit_v & dcache_early_fencei;
+  assign cache_store_miss_v_o   = early_v_r & dcache_tv_r & ~dcache_early_hit_v & dcache_early_store;
+  assign cache_load_miss_v_o    = early_v_r & dcache_tv_r & ~dcache_early_hit_v & dcache_early_ret;
+  assign cache_replay_v_o       = early_v_r &               ~dcache_early_hit_v & ~cache_load_miss_v_o & ~cache_store_miss_v_o;
 
   assign busy_o                 = ~dcache_ready_and_lo | ~late_ready_lo;
   assign ptw_busy_o             = ptw_busy;

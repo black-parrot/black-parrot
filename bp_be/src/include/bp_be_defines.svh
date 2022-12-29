@@ -158,7 +158,7 @@
       logic                           dtlb_load_miss;                                              \
       logic                           dcache_store_miss;                                           \
       logic                           dcache_load_miss;                                            \
-      logic                           dcache_fail;                                                 \
+      logic                           dcache_replay;                                               \
       logic                           itlb_fill_v;                                                 \
       logic                           dtlb_fill_v;                                                 \
     }  bp_be_commit_pkt_s;                                                                         \

@@ -695,7 +695,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.icache_miss       = retire_pkt_cast_i.exception.icache_miss;
   assign commit_pkt_cast_o.dtlb_store_miss   = retire_pkt_cast_i.exception.dtlb_store_miss;
   assign commit_pkt_cast_o.dtlb_load_miss    = retire_pkt_cast_i.exception.dtlb_load_miss;
-  assign commit_pkt_cast_o.dcache_fail       = retire_pkt_cast_i.exception.dcache_fail;
+  assign commit_pkt_cast_o.dcache_replay     = retire_pkt_cast_i.exception.dcache_replay;
   assign commit_pkt_cast_o.dcache_store_miss = retire_pkt_cast_i.special.dcache_store_miss;
   assign commit_pkt_cast_o.dcache_load_miss  = retire_pkt_cast_i.special.dcache_load_miss;
   assign commit_pkt_cast_o.itlb_fill_v       = retire_pkt_cast_i.exception.itlb_fill;

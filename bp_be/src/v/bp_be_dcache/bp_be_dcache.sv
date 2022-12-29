@@ -147,6 +147,7 @@ module bp_be_dcache
    , output logic                                    early_hit_v_o
    , output logic                                    early_fencei_o
    , output logic                                    early_ret_o
+   , output logic                                    early_store_o
    , output rv64_fflags_s                            early_fflags_o
 
    // Cycle 3: "Data Mux"
@@ -600,6 +601,7 @@ module bp_be_dcache
   assign early_hit_v_o  = v_tv_r & ~any_miss_tv & ~fill_tv_r;
   assign early_fencei_o = decode_tv_r.fencei_op;
   assign early_ret_o    = decode_tv_r.ret_op;
+  assign early_store_o  = decode_tv_r.store_op;
   assign early_fflags_o = st_fflags_tv_r;
 
   ///////////////////////////
