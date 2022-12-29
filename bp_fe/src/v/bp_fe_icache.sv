@@ -148,8 +148,7 @@ module bp_fe_icache
   localparam fill_size_in_bank_lp   = fill_width_p / bank_width_lp;
 
   // State machine declaration
-  enum logic [1:0] {e_busy, e_ready, e_miss, e_recover} state_n, state_r;
-  wire is_busy    = (state_r == e_busy);
+  enum logic [1:0] {e_ready, e_miss, e_recover} state_n, state_r;
   wire is_ready   = (state_r == e_ready);
   wire is_miss    = (state_r == e_miss);
   wire is_recover = (state_r == e_recover);
@@ -233,7 +232,7 @@ module bp_fe_icache
 
   // Accept requests when we're in ready state and there's no blocked request in TL
   // Also accept request when 'forced'
-  assign safe_tl_we = is_ready & v_i & (~v_tl_r | tv_we | force_i);
+  assign safe_tl_we = is_ready & v_i & (~v_tl_r | tv_we | force_i) & ~cache_req_busy_i;
   assign tl_we = safe_tl_we | poison_tl_i;
   assign v_tl_n = yumi_o & ~poison_tl_i;
   bsg_dff_reset_en
@@ -289,12 +288,22 @@ module bp_fe_icache
      ,.o(bank_sel_one_hot_tl)
      );
 
+  // One-hot data muxing
+  logic [assoc_p-1:0] ld_data_way_select_tl;
+  bsg_adder_one_hot
+   #(.width_p(assoc_p))
+   select_adder
+    (.a_i(hit_v_tl)
+     ,.b_i(bank_sel_one_hot_tl)
+     ,.o(ld_data_way_select_tl)
+     );
+
   /////////////////////////////////////////////////////////////////////////////
   // TV Stage
   /////////////////////////////////////////////////////////////////////////////
   localparam snoop_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p/word_width_gp);
   logic [paddr_width_p-1:0]              paddr_tv_r;
-  logic [assoc_p-1:0]                    bank_sel_one_hot_tv_r;
+  logic [assoc_p-1:0]                    ld_data_way_select_tv_r;
   logic [assoc_p-1:0]                    way_v_tv_r, hit_v_tv_r;
   logic                                  fetch_op_tv_r, fencei_op_tv_r, uncached_op_tv_r;
   logic                                  fill_tv_r;
@@ -318,24 +327,24 @@ module bp_fe_icache
   // Mask valid signal when we are recovering from a cache miss
   wire v_tv = is_ready & v_tv_r;
 
-  logic [assoc_p-1:0] way_v_tv_n, hit_v_tv_n;
+  logic [assoc_p-1:0] ld_data_way_select_tv_n, way_v_tv_n, hit_v_tv_n;
   wire [assoc_p-1:0] tag_mem_pseudo_hit = 1'b1 << tag_mem_pkt_cast_i.way_id;
   bsg_mux
-   #(.width_p(2*assoc_p), .els_p(2))
+   #(.width_p(3*assoc_p), .els_p(2))
    hit_mux
-    (.data_i({{2{tag_mem_pseudo_hit}}, {way_v_tl, hit_v_tl}})
+    (.data_i({{3{tag_mem_pseudo_hit}}, {ld_data_way_select_tl, way_v_tl, hit_v_tl}})
      ,.sel_i(cache_req_critical_tag_i)
-     ,.data_o({way_v_tv_n, hit_v_tv_n})
+     ,.data_o({ld_data_way_select_tv_n, way_v_tv_n, hit_v_tv_n})
      );
 
   bsg_dff_reset_en
-   #(.width_p(2*assoc_p))
+   #(.width_p(3*assoc_p))
    hit_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tv_we | cache_req_critical_tag_i)
-     ,.data_i({way_v_tv_n, hit_v_tv_n})
-     ,.data_o({way_v_tv_r, hit_v_tv_r})
+     ,.data_i({ld_data_way_select_tv_n, way_v_tv_n, hit_v_tv_n})
+     ,.data_o({ld_data_way_select_tv_r, way_v_tv_r, hit_v_tv_r})
      );
 
   wire fill_tv_n = cache_req_complete_i || fill_tl || (fencei_op_tl_r & coherent_p);
@@ -380,16 +389,14 @@ module bp_fe_icache
      );
 
   bsg_dff_en
-   #(.width_p(paddr_width_p+assoc_p+3))
+   #(.width_p(paddr_width_p+3))
    tv_stage_reg
     (.clk_i(clk_i)
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
-               ,bank_sel_one_hot_tl
                ,fetch_op_tl_r, fencei_op_tl_r, fetch_uncached_tl
                })
      ,.data_o({paddr_tv_r
-               ,bank_sel_one_hot_tv_r
                ,fetch_op_tv_r, fencei_op_tv_r, uncached_op_tv_r
                })
      );
@@ -418,22 +425,12 @@ module bp_fe_icache
      ,.v_o(hit_v_tv)
      );
 
-  // One-hot data muxing
-  logic [assoc_p-1:0] ld_data_way_select;
-  bsg_adder_one_hot
-   #(.width_p(assoc_p))
-   select_adder
-    (.a_i(hit_v_tv_r)
-     ,.b_i(bank_sel_one_hot_tv_r)
-     ,.o(ld_data_way_select)
-     );
-
   logic [bank_width_lp-1:0] ld_data_way_picked;
   bsg_mux_one_hot
    #(.width_p(bank_width_lp), .els_p(assoc_p))
    data_set_select_mux
     (.data_i(ld_data_tv_r)
-     ,.sel_one_hot_i(ld_data_way_select)
+     ,.sel_one_hot_i(ld_data_way_select_tv_r)
      ,.data_o(ld_data_way_picked)
      );
 
@@ -533,15 +530,13 @@ module bp_fe_icache
 
   /////////////////////////////////////////////////////////////////////////////
   // State machine
-  //   e_busy   : Cache engine needs to interact with the memories quickly
   //   e_ready  : Cache is ready to accept requests
   //   e_miss   : Cache is waiting for a cache request to be serviced
   //   e_recover: Reread the SRAMs to recover the updated TL state
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_busy   : state_n = ~cache_req_busy_i ? e_ready : e_busy;
-      e_ready  : state_n = (cache_req_ready_and_i & cache_req_v_o) ? e_miss : cache_req_busy_i ? e_busy : e_ready;
+      e_ready  : state_n = (cache_req_ready_and_i & cache_req_v_o) ? e_miss : e_ready;
       e_miss   : state_n = cache_req_complete_i ? e_recover: e_miss;
       // e_recover:
       default  : state_n = e_ready;
@@ -550,7 +545,7 @@ module bp_fe_icache
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
-      state_r <= e_busy;
+      state_r <= e_ready;
     else
       state_r <= state_n;
 
