@@ -37,6 +37,7 @@ module bp_be_detector
    , input                             idiv_busy_i
    , input                             fdiv_busy_i
    , input                             mem_busy_i
+   , input                             mem_ordered_i
    , input                             ptw_busy_i
    , input                             irq_pending_i
 
@@ -72,7 +73,6 @@ module bp_be_detector
   logic fence_haz_v, cmd_haz_v, fflags_haz_v, csr_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
   logic long_haz_v;
-  logic mem_in_pipe_v;
 
   wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.dcache_load_miss
     ? commit_pkt_cast_i.instr.t.fmatype.rd_addr
@@ -197,9 +197,7 @@ module bp_be_detector
       frs3_data_haz_v[2] = (issue_pkt_cast_i.frs3_v & rs3_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      mem_in_pipe_v      = dep_status_r[0].mem_v | dep_status_r[1].mem_v | dep_status_r[2].mem_v;
-      fence_haz_v        = (issue_pkt_cast_i.fence_v & (~credits_empty_i | mem_in_pipe_v | mem_busy_i))
-                           | (issue_pkt_cast_i.mem_v & credits_full_i);
+      fence_haz_v        = issue_pkt_cast_i.fence_v & ~mem_ordered_i;
       cmd_haz_v          = cmd_full_i;
 
       // TODO: Pessimistic, could have a separate fflags r/w_v
@@ -257,8 +255,6 @@ module bp_be_detector
   always_comb
     begin
       dep_status_n.v          = dispatch_pkt_cast_i.v;
-      dep_status_n.mem_v      = dispatch_pkt_cast_i.decode.mem_v;
-      dep_status_n.csr_v      = (dispatch_pkt_cast_i.decode.csr_w_v | dispatch_pkt_cast_i.decode.csr_r_v);
       dep_status_n.fflags_w_v = dispatch_pkt_cast_i.decode.fflags_w_v;
       dep_status_n.ctl_iwb_v  = dispatch_pkt_cast_i.decode.pipe_ctl_v & dispatch_pkt_cast_i.decode.irf_w_v;
       dep_status_n.int_iwb_v  = dispatch_pkt_cast_i.decode.pipe_int_v & dispatch_pkt_cast_i.decode.irf_w_v;

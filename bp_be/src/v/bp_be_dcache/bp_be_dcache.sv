@@ -131,6 +131,7 @@ module bp_be_dcache
    , input [dcache_pkt_width_lp-1:0]                 dcache_pkt_i
    , input                                           v_i
    , output logic                                    ready_and_o
+   , output logic                                    ordered_o
 
    // Cycle 1: "Tag Lookup"
    // TLB and PMA information comes in this cycle
@@ -968,6 +969,7 @@ module bp_be_dcache
       state_r <= state_n;
 
   assign ready_and_o = is_ready & ~cache_req_busy_i;
+  assign ordered_o = is_ready & ~v_tl_r & ~v_tv_r & cache_req_credits_empty_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control

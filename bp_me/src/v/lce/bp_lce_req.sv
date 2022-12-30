@@ -149,7 +149,7 @@ module bp_lce_req
       ,.count_o(credit_count_lo)
       );
   assign credits_full_o = (credit_count_lo == credits_p);
-  assign credits_empty_o = ~cache_req_v_r & (credit_count_lo == '0);
+  assign credits_empty_o = (credit_count_lo == '0);
   assign cache_req_v_with_credit = cache_req_v_r & ~credits_full_o;
 
   // align request address to BedRock data channel width for sending critical beat address

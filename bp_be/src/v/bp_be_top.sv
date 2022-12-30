@@ -95,7 +95,7 @@ module bp_be_top
   logic poison_isd_lo, suppress_iss_lo, unfreeze_lo;
 
   logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
-  logic mem_busy_lo, idiv_busy_lo, fdiv_busy_lo, ptw_busy_lo;
+  logic mem_ordered_lo, mem_busy_lo, idiv_busy_lo, fdiv_busy_lo, ptw_busy_lo;
 
   bp_be_director
    #(.bp_params_p(bp_params_p))
@@ -136,6 +136,7 @@ module bp_be_top
      ,.credits_full_i(cache_req_credits_full_i)
      ,.credits_empty_i(cache_req_credits_empty_i)
      ,.mem_busy_i(mem_busy_lo)
+     ,.mem_ordered_i(mem_ordered_lo)
      ,.fdiv_busy_i(fdiv_busy_lo)
      ,.idiv_busy_i(idiv_busy_lo)
      ,.ptw_busy_i(ptw_busy_lo)
@@ -187,6 +188,7 @@ module bp_be_top
 
      ,.decode_info_o(decode_info_lo)
      ,.mem_busy_o(mem_busy_lo)
+     ,.mem_ordered_o(mem_ordered_lo)
      ,.idiv_busy_o(idiv_busy_lo)
      ,.fdiv_busy_o(fdiv_busy_lo)
      ,.ptw_busy_o(ptw_busy_lo)

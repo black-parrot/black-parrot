@@ -79,8 +79,6 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic                              v;                                                        \
-      logic                              mem_v;                                                    \
-      logic                              csr_v;                                                    \
       logic                              fflags_w_v;                                               \
       logic                              ctl_iwb_v;                                                \
       logic                              aux_iwb_v;                                                \
@@ -248,7 +246,7 @@
      )
 
   `define bp_be_dep_status_width \
-    (15 + rv64_reg_addr_width_gp)
+    (13 + rv64_reg_addr_width_gp)
 
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
     (3 + vaddr_width_mp)

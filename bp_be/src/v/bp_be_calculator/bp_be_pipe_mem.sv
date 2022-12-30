@@ -35,6 +35,7 @@ module bp_be_pipe_mem
    , input                                sfence_i
 
    , output logic                         busy_o
+   , output logic                         ordered_o
 
    , input [dispatch_pkt_width_lp-1:0]    reservation_i
 
@@ -155,7 +156,7 @@ module bp_be_pipe_mem
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
-  logic                     dcache_pkt_v, dcache_ready_and_lo;
+  logic                     dcache_pkt_v, dcache_ready_and_lo, dcache_ordered_lo;
 
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_ptag_uncached, dcache_ptag_dram, dcache_ptag_v;
@@ -303,6 +304,7 @@ module bp_be_pipe_mem
       ,.dcache_pkt_i(dcache_pkt)
       ,.v_i(dcache_pkt_v)
       ,.ready_and_o(dcache_ready_and_lo)
+      ,.ordered_o(dcache_ordered_lo)
 
       ,.ptag_i(dcache_ptag)
       ,.ptag_v_i(dcache_ptag_v)
@@ -419,6 +421,7 @@ module bp_be_pipe_mem
   assign cache_load_miss_v_o    = early_v_r & dcache_tv_r & ~dcache_early_hit_v & dcache_early_ret;
   assign cache_replay_v_o       = early_v_r &               ~dcache_early_hit_v & ~cache_load_miss_v_o & ~cache_store_miss_v_o;
 
+  assign ordered_o              = dcache_ordered_lo;
   assign busy_o                 = ~dcache_ready_and_lo | ~late_ready_lo;
   assign ptw_busy_o             = ptw_busy;
   assign early_data_o           = dcache_early_data;
