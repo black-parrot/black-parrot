@@ -223,9 +223,9 @@ module bp_be_dcache
   logic safe_tl_we, safe_tv_we, safe_dm_we;
   logic v_tl_r, v_tv_r, v_dm_r;
   logic gdirty_r, cache_lock;
-  logic tag_mem_write_hazard, data_mem_write_hazard, engine_hazard;
+  logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, nonblocking_hazard;
 
-  wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | engine_hazard;
+  wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | blocking_hazard | nonblocking_hazard;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
@@ -408,7 +408,6 @@ module bp_be_dcache
   assign tv_we_o = tv_we;
 
   logic [assoc_p-1:0] way_v_tv_n, store_hit_tv_n, load_hit_tv_n;
-  wire fill_tv_n = cache_req_critical_tag_i;
   wire [assoc_p-1:0] tag_mem_pseudo_hit = 1'b1 << tag_mem_pkt_cast_i.way_id;
   bsg_mux
    #(.width_p(3*assoc_p), .els_p(2))
@@ -419,13 +418,25 @@ module bp_be_dcache
      );
 
   bsg_dff_reset_en
-   #(.width_p(1+3*assoc_p))
+   #(.width_p(3*assoc_p))
    hit_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tv_we | cache_req_critical_tag_i)
-     ,.data_i({fill_tv_n, way_v_tv_n, store_hit_tv_n, load_hit_tv_n})
-     ,.data_o({fill_tv_r, way_v_tv_r, store_hit_tv_r, load_hit_tv_r})
+     ,.data_i({way_v_tv_n, store_hit_tv_n, load_hit_tv_n})
+     ,.data_o({way_v_tv_r, store_hit_tv_r, load_hit_tv_r})
+     );
+
+  // Fill if we're actually returning, or if there's a non-blocking req hit
+  wire fill_tv_n = cache_req_complete_i | nonblocking_hazard;
+  bsg_dff_reset_en
+   #(.width_p(1))
+   fill_tv_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(tv_we | cache_req_complete_i | nonblocking_hazard)
+     ,.data_i(fill_tv_n)
+     ,.data_o(fill_tv_r)
      );
 
   // Snoop logic
@@ -865,7 +876,8 @@ module bp_be_dcache
   assign cache_req_v_o = v_tv_r
     & (|{cached_req, fencei_req, uncached_amo_req, uncached_load_req, uncached_store_req, wt_req});
 
-  assign engine_hazard = cache_req_v_o & (blocking_req | ~cache_req_ready_and_i);
+  assign blocking_hazard = cache_req_v_o & blocking_req;
+  assign nonblocking_hazard = cache_req_v_o & nonblocking_req & ~cache_req_ready_and_i;
 
   always_comb
     begin
