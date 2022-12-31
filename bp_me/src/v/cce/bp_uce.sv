@@ -370,8 +370,8 @@ module bp_uce
      ,.yumi_i(fsm_rev_yumi_lo & fsm_rev_last_li)
      ,.count_o(credit_count_lo)
      );
-  assign cache_req_credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
-  assign cache_req_credits_empty_o = (credit_count_lo == 0);
+  assign cache_req_credits_full_o = cache_req_v_r && (credit_count_lo == coh_noc_max_credits_p);
+  assign cache_req_credits_empty_o = ~cache_req_v_r && (credit_count_lo == 0);
 
   logic [fill_width_p-1:0] writeback_data;
   bsg_mux
@@ -427,7 +427,7 @@ module bp_uce
   // We ack mem_revs for uncached stores no matter what, so load_resp_yumi_lo is for other responses
   logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_busy_o = is_reset | is_init | cache_req_credits_full_o;
+  assign cache_req_busy_o = is_reset | is_init;
   always_comb
     begin
       cache_req_ready_and_o = '0;
@@ -523,7 +523,7 @@ module bp_uce
             fsm_fwd_header_lo.size           = block_msg_size_lp;
             fsm_fwd_header_lo.payload.lce_id = lce_id_i;
             fsm_fwd_data_lo                  = writeback_data;
-            fsm_fwd_v_lo = ~cache_req_credits_full_o;
+            fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
             way_up = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo);
             index_up = way_done & way_up;
@@ -539,7 +539,7 @@ module bp_uce
           end
         e_flush_fence:
           begin
-            cache_req_done = cache_req_credits_empty_o;
+            cache_req_done = (credit_count_lo == 0);
 
             state_n = cache_req_done ? e_ready : e_flush_fence;
           end
@@ -553,8 +553,8 @@ module bp_uce
                 fsm_fwd_header_lo.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
                 fsm_fwd_header_lo.payload.lce_id = lce_id_i;
                 fsm_fwd_header_lo.subop          = mem_wr_subop;
-                fsm_fwd_data_lo                  = cache_req_r.data;
-                fsm_fwd_v_lo = ~cache_req_credits_full_o;
+                fsm_fwd_data_lo                  = {fill_width_p/dword_width_gp{cache_req_r.data}};
+                fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
                 cache_req_done = fsm_fwd_ready_and_li & fsm_fwd_v_lo;
               end
@@ -602,7 +602,7 @@ module bp_uce
             fsm_fwd_header_lo.size           = block_msg_size_lp;
             fsm_fwd_header_lo.payload.lce_id = lce_id_i;
             fsm_fwd_data_lo                  = writeback_data;
-            fsm_fwd_v_lo = ~cache_req_credits_full_o;
+            fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
             state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo) ? uc_store_v_r ? e_ready : e_send_critical : e_uc_writeback_write_req;
           end
@@ -615,7 +615,7 @@ module bp_uce
               fsm_fwd_header_lo.size     = block_msg_size_lp;
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
-              fsm_fwd_v_lo = ~cache_req_credits_full_o;
+              fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
               state_n = (fsm_fwd_v_lo & fsm_fwd_ready_and_li)
                         ? cache_req_metadata_r.dirty
@@ -630,8 +630,8 @@ module bp_uce
               fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
               fsm_fwd_header_lo.subop    = mem_wr_subop;
-              fsm_fwd_data_lo            = cache_req_r.data;
-              fsm_fwd_v_lo = ~cache_req_credits_full_o;
+              fsm_fwd_data_lo            = {fill_width_p/dword_width_gp{cache_req_r.data}};
+              fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
               state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo)
                         ? e_uc_read_wait
@@ -687,7 +687,7 @@ module bp_uce
             fsm_fwd_header_lo.size           = block_msg_size_lp;
             fsm_fwd_header_lo.payload.lce_id = lce_id_i;
             fsm_fwd_data_lo                  = writeback_data;
-            fsm_fwd_v_lo = ~cache_req_credits_full_o;
+            fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
             state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo) ? e_ready : e_writeback_write_req;
           end

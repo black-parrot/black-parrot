@@ -79,8 +79,6 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic                              v;                                                        \
-      logic                              mem_v;                                                    \
-      logic                              csr_v;                                                    \
       logic                              fflags_w_v;                                               \
       logic                              ctl_iwb_v;                                                \
       logic                              aux_iwb_v;                                                \
@@ -158,7 +156,7 @@
       logic                           dtlb_load_miss;                                              \
       logic                           dcache_store_miss;                                           \
       logic                           dcache_load_miss;                                            \
-      logic                           dcache_fail;                                                 \
+      logic                           dcache_replay;                                               \
       logic                           itlb_fill_v;                                                 \
       logic                           dtlb_fill_v;                                                 \
     }  bp_be_commit_pkt_s;                                                                         \
@@ -248,7 +246,7 @@
      )
 
   `define bp_be_dep_status_width \
-    (15 + rv64_reg_addr_width_gp)
+    (13 + rv64_reg_addr_width_gp)
 
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
     (3 + vaddr_width_mp)

@@ -473,7 +473,6 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_FFLAGS       }: fcsr_li = '{frm: fcsr_lo.frm, fflags: csr_data_li, default: '0};
                 {1'b1, `CSR_ADDR_FRM          }: fcsr_li = '{frm: csr_data_li, fflags: fcsr_lo.fflags, default: '0};
                 {1'b1, `CSR_ADDR_FCSR         }: fcsr_li = csr_data_li;
-                {1'b1, `CSR_ADDR_CYCLE        }: mcycle_li = csr_data_li;
                 // Time must be done by trapping, since we can't stall at this point
                 {1'b1, `CSR_ADDR_INSTRET      }: minstret_li = csr_data_li;
                 // SSTATUS subset of MSTATUS
@@ -695,7 +694,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.icache_miss       = retire_pkt_cast_i.exception.icache_miss;
   assign commit_pkt_cast_o.dtlb_store_miss   = retire_pkt_cast_i.exception.dtlb_store_miss;
   assign commit_pkt_cast_o.dtlb_load_miss    = retire_pkt_cast_i.exception.dtlb_load_miss;
-  assign commit_pkt_cast_o.dcache_fail       = retire_pkt_cast_i.exception.dcache_fail;
+  assign commit_pkt_cast_o.dcache_replay     = retire_pkt_cast_i.exception.dcache_replay;
   assign commit_pkt_cast_o.dcache_store_miss = retire_pkt_cast_i.special.dcache_store_miss;
   assign commit_pkt_cast_o.dcache_load_miss  = retire_pkt_cast_i.special.dcache_load_miss;
   assign commit_pkt_cast_o.itlb_fill_v       = retire_pkt_cast_i.exception.itlb_fill;

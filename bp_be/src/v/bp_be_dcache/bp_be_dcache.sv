@@ -131,6 +131,7 @@ module bp_be_dcache
    , input [dcache_pkt_width_lp-1:0]                 dcache_pkt_i
    , input                                           v_i
    , output logic                                    ready_and_o
+   , output logic                                    ordered_o
 
    // Cycle 1: "Tag Lookup"
    // TLB and PMA information comes in this cycle
@@ -147,6 +148,7 @@ module bp_be_dcache
    , output logic                                    early_hit_v_o
    , output logic                                    early_fencei_o
    , output logic                                    early_ret_o
+   , output logic                                    early_store_o
    , output rv64_fflags_s                            early_fflags_o
 
    // Cycle 3: "Data Mux"
@@ -221,9 +223,9 @@ module bp_be_dcache
   logic safe_tl_we, safe_tv_we, safe_dm_we;
   logic v_tl_r, v_tv_r, v_dm_r;
   logic gdirty_r, cache_lock;
-  logic tag_mem_write_hazard, data_mem_write_hazard, engine_hazard;
+  logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, nonblocking_hazard;
 
-  wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | engine_hazard;
+  wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | blocking_hazard | nonblocking_hazard;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
@@ -406,7 +408,6 @@ module bp_be_dcache
   assign tv_we_o = tv_we;
 
   logic [assoc_p-1:0] way_v_tv_n, store_hit_tv_n, load_hit_tv_n;
-  wire fill_tv_n = cache_req_critical_tag_i;
   wire [assoc_p-1:0] tag_mem_pseudo_hit = 1'b1 << tag_mem_pkt_cast_i.way_id;
   bsg_mux
    #(.width_p(3*assoc_p), .els_p(2))
@@ -417,13 +418,25 @@ module bp_be_dcache
      );
 
   bsg_dff_reset_en
-   #(.width_p(1+3*assoc_p))
+   #(.width_p(3*assoc_p))
    hit_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tv_we | cache_req_critical_tag_i)
-     ,.data_i({fill_tv_n, way_v_tv_n, store_hit_tv_n, load_hit_tv_n})
-     ,.data_o({fill_tv_r, way_v_tv_r, store_hit_tv_r, load_hit_tv_r})
+     ,.data_i({way_v_tv_n, store_hit_tv_n, load_hit_tv_n})
+     ,.data_o({way_v_tv_r, store_hit_tv_r, load_hit_tv_r})
+     );
+
+  // Fill if we're actually returning, or if there's a non-blocking req hit
+  wire fill_tv_n = cache_req_complete_i | nonblocking_hazard;
+  bsg_dff_reset_en
+   #(.width_p(1))
+   fill_tv_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(tv_we | cache_req_complete_i | nonblocking_hazard)
+     ,.data_i(fill_tv_n)
+     ,.data_o(fill_tv_r)
      );
 
   // Snoop logic
@@ -544,7 +557,6 @@ module bp_be_dcache
      );
 
   logic [dword_width_gp-1:0] ld_data_dword_merged;
-  wire [dword_width_gp-1:0] result_data = ld_data_dword_merged;
 
   logic [3:2][dword_width_gp-1:0] sigext_word;
   for (genvar i = 2; i < 4; i++)
@@ -555,12 +567,15 @@ module bp_be_dcache
       bsg_mux
        #(.width_p(slice_width_lp), .els_p(dword_width_gp/slice_width_lp))
        align_mux
-        (.data_i(result_data)
+        (.data_i(ld_data_dword_merged)
          ,.sel_i(paddr_tv_r[i+:`BSG_MAX(1, 3-i)])
          ,.data_o(slice_data)
          );
 
-      wire sigext = decode_tv_r.signed_op & slice_data[slice_width_lp-1];
+      wire sigext = // Integer sigext
+                    (decode_tv_r.signed_op & slice_data[slice_width_lp-1])
+                    // FP nanbox
+                    || ((i==2) & decode_tv_r.float_op & decode_tv_r.word_op);
       assign sigext_word[i] = {{(dword_width_gp-slice_width_lp){sigext}}, slice_data};
     end
 
@@ -571,6 +586,15 @@ module bp_be_dcache
     (.data_i(sigext_word)
      ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op})
      ,.data_o(early_data)
+     );
+
+  logic [dword_width_gp-1:0] result_data;
+  bsg_mux_one_hot
+   #(.width_p(dword_width_gp), .els_p(2))
+   result_mux
+    (.data_i({early_data, ld_data_dword_merged})
+     ,.sel_one_hot_i({(decode_tv_r.double_op | decode_tv_r.word_op), (decode_tv_r.half_op | decode_tv_r.byte_op)})
+     ,.data_o(result_data)
      );
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
@@ -600,6 +624,7 @@ module bp_be_dcache
   assign early_hit_v_o  = v_tv_r & ~any_miss_tv & ~fill_tv_r;
   assign early_fencei_o = decode_tv_r.fencei_op;
   assign early_ret_o    = decode_tv_r.ret_op;
+  assign early_store_o  = decode_tv_r.store_op;
   assign early_fflags_o = st_fflags_tv_r;
 
   ///////////////////////////
@@ -666,8 +691,8 @@ module bp_be_dcache
      ,.data_o({fill_dm_r, ld_data_dm_r, paddr_dm_r, decode_dm_r})
      );
 
-  logic [3:0][dword_width_gp-1:0] sigext_byte;
-  for (genvar i = 0; i < 4; i++)
+  logic [1:0][dword_width_gp-1:0] sigext_byte;
+  for (genvar i = 0; i < 2; i++)
     begin : byte_alignment
       localparam slice_width_lp = 8*(2**i);
 
@@ -686,20 +711,18 @@ module bp_be_dcache
 
   logic [dword_width_gp-1:0] final_int_data;
   bsg_mux_one_hot
-   #(.width_p(dword_width_gp), .els_p(4))
+   #(.width_p(dword_width_gp), .els_p(3))
    byte_mux
-    (.data_i(sigext_byte)
-     ,.sel_one_hot_i({decode_dm_r.double_op, decode_dm_r.word_op, decode_dm_r.half_op, decode_dm_r.byte_op})
+    (.data_i({ld_data_dm_r, sigext_byte})
+     ,.sel_one_hot_i({(decode_dm_r.double_op | decode_dm_r.word_op), decode_dm_r.half_op, decode_dm_r.byte_op})
      ,.data_o(final_int_data)
      );
 
   bp_be_fp_reg_s final_float_data;
-  wire [dword_width_gp-1:0] final_float_raw_data =
-    decode_dm_r.word_op ? {{word_width_gp{1'b1}}, final_int_data[0+:word_width_gp]} : final_int_data;
   bp_be_fp_to_reg
    #(.bp_params_p(bp_params_p))
    fp_to_reg
-    (.raw_i(final_float_raw_data)
+    (.raw_i(ld_data_dm_r)
      ,.reg_o(final_float_data)
      );
 
@@ -853,7 +876,8 @@ module bp_be_dcache
   assign cache_req_v_o = v_tv_r
     & (|{cached_req, fencei_req, uncached_amo_req, uncached_load_req, uncached_store_req, wt_req});
 
-  assign engine_hazard = cache_req_v_o & (blocking_req | ~cache_req_ready_and_i);
+  assign blocking_hazard = cache_req_v_o & blocking_req;
+  assign nonblocking_hazard = cache_req_v_o & nonblocking_req & ~cache_req_ready_and_i;
 
   always_comb
     begin
@@ -957,6 +981,7 @@ module bp_be_dcache
       state_r <= state_n;
 
   assign ready_and_o = is_ready & ~cache_req_busy_i;
+  assign ordered_o = is_ready & ~v_tl_r & ~v_tv_r & cache_req_credits_empty_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control

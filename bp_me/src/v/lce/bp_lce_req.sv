@@ -98,8 +98,7 @@ module bp_lce_req
   // cache request valid and register
   // set over clear because new request can be captured same cycle existing request sends
   // cache_req_v_r indicates if a valid request is in the buffer
-  // cache_req_v_with_credit indicates if there is also an available credit
-  logic cache_req_v_r, cache_req_v_with_credit;
+  logic cache_req_v_r;
   logic req_sent;
   bsg_dff_reset_set_clear
    #(.width_p(1))
@@ -148,9 +147,8 @@ module bp_lce_req
       ,.yumi_i(credit_returned_li)
       ,.count_o(credit_count_lo)
       );
-  assign credits_full_o = (credit_count_lo == credits_p);
-  assign credits_empty_o = (credit_count_lo == '0);
-  assign cache_req_v_with_credit = cache_req_v_r & ~credits_full_o;
+  assign credits_full_o  =  cache_req_v_r && (credit_count_lo == credits_p);
+  assign credits_empty_o = ~cache_req_v_r && (credit_count_lo == '0);
 
   // align request address to BedRock data channel width for sending critical beat address
   // note: if fill width != bedrock data width, this may be incorrect
@@ -231,7 +229,7 @@ module bp_lce_req
       e_ready: begin
         unique case (cache_req_r.msg_type)
           e_uc_store: begin
-            lce_req_header_v_o = cache_req_v_with_credit;
+            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
             lce_req_header_cast_o.msg_type.req = e_bedrock_req_uc_wr;
             lce_req_header_cast_o.subop = e_bedrock_store;
             lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
@@ -242,14 +240,14 @@ module bp_lce_req
                       : state_r;
           end
           e_uc_load: begin
-            lce_req_header_v_o = cache_req_v_with_credit;
+            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
             lce_req_header_cast_o.msg_type.req = e_bedrock_req_uc_rd;
             lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
             lce_req_header_cast_o.addr = cache_req_r.addr;
             // no data to send, stay in e_ready
           end
           e_uc_amo: begin
-            lce_req_header_v_o = cache_req_v_with_credit;
+            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
             lce_req_header_cast_o.msg_type.req = e_bedrock_req_uc_amo;
             lce_req_header_cast_o.subop = req_subop;
             lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
@@ -260,7 +258,7 @@ module bp_lce_req
                       : state_r;
           end
           e_miss_load: begin
-            lce_req_header_v_o = cache_req_v_with_credit;
+            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
             lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
             // align address to data width and send address of critical beat
             lce_req_header_cast_o.addr = critical_req_addr;
@@ -272,7 +270,7 @@ module bp_lce_req
             // no data to send, stay in e_ready
           end
           e_miss_store: begin
-            lce_req_header_v_o = cache_req_v_with_credit;
+            lce_req_header_v_o = cache_req_v_r & (credit_count_lo < credits_p);
             lce_req_header_cast_o.size = bp_bedrock_msg_size_e'(cache_req_r.size);
             // align address to data width and send address of critical beat
             lce_req_header_cast_o.addr = critical_req_addr;

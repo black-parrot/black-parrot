@@ -92,7 +92,11 @@ module bp_unicore
   `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
   `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
   `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
-  bp_cfg_bus_s cfg_bus_lo;
+
+  // Reset
+  logic reset_r;
+  always_ff @(posedge clk_i)
+    reset_r <= reset_i;
 
   localparam num_proc_lp = 3;
   localparam num_dev_lp  = 5;
@@ -115,12 +119,13 @@ module bp_unicore
   logic [num_dev_lp-1:0][uce_fill_width_p-1:0] dev_rev_data_lo;
   logic [num_dev_lp-1:0] dev_rev_v_lo, dev_rev_ready_and_li, dev_rev_last_lo;
 
+  bp_cfg_bus_s cfg_bus_lo;
   logic debug_irq_li, timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
   bp_unicore_lite
    #(.bp_params_p(bp_params_p))
    unicore_lite
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
      ,.cfg_bus_i(cfg_bus_lo)
 
      ,.mem_fwd_header_o(proc_fwd_header_lo[0+:2])
@@ -202,7 +207,7 @@ module bp_unicore
      )
    fwd_xbar
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.msg_header_i(proc_fwd_header_lo)
      ,.msg_data_i(proc_fwd_data_lo)
@@ -227,7 +232,7 @@ module bp_unicore
      )
    rev_xbar
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.msg_header_i(dev_rev_header_lo)
      ,.msg_data_i(dev_rev_data_lo)
@@ -248,7 +253,7 @@ module bp_unicore
    #(.bp_params_p(bp_params_p))
    cfgs
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.mem_fwd_header_i(dev_fwd_header_li[0])
      ,.mem_fwd_data_i(cfg_data_li)
@@ -282,7 +287,7 @@ module bp_unicore
    clint
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
      ,.cfg_bus_i(cfg_bus_lo)
 
      ,.mem_fwd_header_i(dev_fwd_header_li[1])
@@ -310,7 +315,7 @@ module bp_unicore
    #(.bp_params_p(bp_params_p))
    l2s
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.mem_fwd_header_i(dev_fwd_header_li[2])
      ,.mem_fwd_data_i(dev_fwd_data_li[2])
@@ -355,7 +360,7 @@ module bp_unicore
    #(.bp_params_p(bp_params_p))
    loopback
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.mem_fwd_header_i(dev_fwd_header_li[4])
      ,.mem_fwd_data_i(loopback_data_li)

@@ -43,6 +43,7 @@ module bp_be_calculator_top
   , output logic                                    idiv_busy_o
   , output logic                                    fdiv_busy_o
   , output logic                                    mem_busy_o
+  , output logic                                    mem_ordered_o
   , output logic                                    ptw_busy_o
   , output logic [decode_info_width_lp-1:0]         decode_info_o
   , input                                           cmd_full_n_i
@@ -114,8 +115,8 @@ module bp_be_calculator_top
   logic pipe_ctl_instr_misaligned_lo;
 
   logic pipe_mem_dtlb_load_miss_lo, pipe_mem_dtlb_store_miss_lo;
-  logic pipe_mem_dcache_load_miss_lo, pipe_mem_dcache_store_miss_lo, pipe_mem_dcache_fail_lo;
-  logic pipe_mem_fencei_clean_lo, pipe_mem_fencei_dirty_lo;
+  logic pipe_mem_dcache_load_miss_lo, pipe_mem_dcache_store_miss_lo, pipe_mem_dcache_replay_lo;
+  logic pipe_mem_fencei_clean_lo;
   logic pipe_mem_load_misaligned_lo, pipe_mem_load_access_fault_lo, pipe_mem_load_page_fault_lo;
   logic pipe_mem_store_misaligned_lo, pipe_mem_store_access_fault_lo, pipe_mem_store_page_fault_lo;
 
@@ -286,6 +287,7 @@ module bp_be_calculator_top
 
      ,.reservation_i(reservation_r)
      ,.busy_o(mem_busy_o)
+     ,.ordered_o(mem_ordered_o)
 
      ,.commit_pkt_i(commit_pkt_cast_o)
      ,.ptw_fill_pkt_o(ptw_fill_pkt_o)
@@ -320,11 +322,10 @@ module bp_be_calculator_top
 
      ,.tlb_store_miss_v_o(pipe_mem_dtlb_store_miss_lo)
      ,.tlb_load_miss_v_o(pipe_mem_dtlb_load_miss_lo)
-     ,.cache_fail_v_o(pipe_mem_dcache_fail_lo)
+     ,.cache_replay_v_o(pipe_mem_dcache_replay_lo)
      ,.cache_load_miss_v_o(pipe_mem_dcache_load_miss_lo)
      ,.cache_store_miss_v_o(pipe_mem_dcache_store_miss_lo)
      ,.fencei_clean_v_o(pipe_mem_fencei_clean_lo)
-     ,.fencei_dirty_v_o(pipe_mem_fencei_dirty_lo)
      ,.load_misaligned_v_o(pipe_mem_load_misaligned_lo)
      ,.load_access_fault_v_o(pipe_mem_load_access_fault_lo)
      ,.load_page_fault_v_o(pipe_mem_load_page_fault_lo)
@@ -486,11 +487,10 @@ module bp_be_calculator_top
           exc_stage_n[1].exc.store_access_fault |= pipe_mem_store_access_fault_lo;
           exc_stage_n[1].exc.store_page_fault   |= pipe_mem_store_page_fault_lo;
 
-          exc_stage_n[2].exc.dcache_fail        |= pipe_mem_dcache_fail_lo;
+          exc_stage_n[2].exc.dcache_replay      |= pipe_mem_dcache_replay_lo;
           exc_stage_n[2].spec.dcache_load_miss  |= pipe_mem_dcache_load_miss_lo;
           exc_stage_n[2].spec.dcache_store_miss |= pipe_mem_dcache_store_miss_lo;
           exc_stage_n[2].spec.fencei_clean      |= pipe_mem_fencei_clean_lo;
-          exc_stage_n[2].exc.fencei_dirty       |= pipe_mem_fencei_dirty_lo;
           exc_stage_n[2].exc.cmd_full           |= |{exc_stage_r[2].exc, exc_stage_r[2].spec} & cmd_full_n_i;
     end
 
