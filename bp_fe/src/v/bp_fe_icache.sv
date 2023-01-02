@@ -232,7 +232,7 @@ module bp_fe_icache
 
   // Accept requests when we're in ready state and there's no blocked request in TL
   // Also accept request when 'forced'
-  assign safe_tl_we = is_ready & v_i & (~v_tl_r | tv_we | force_i) & ~cache_req_busy_i;
+  assign safe_tl_we = is_ready & v_i & (~v_tl_r | safe_tv_we | force_i) & ~cache_req_busy_i;
   assign tl_we = safe_tl_we | poison_tl_i;
   assign v_tl_n = yumi_o & ~poison_tl_i;
   bsg_dff_reset_en
