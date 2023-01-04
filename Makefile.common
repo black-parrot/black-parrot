@@ -19,9 +19,9 @@ export BP_RTL_LIB_DIR     := $(BP_RTL_INSTALL_DIR)/lib
 export BP_RTL_INCLUDE_DIR := $(BP_RTL_INSTALL_DIR)/include
 export BP_RTL_TOUCH_DIR   := $(BP_RTL_INSTALL_DIR)/touch
 
-export BP_TOOLS_DIR ?= $(TOP)/../tools
+export BP_TOOLS_DIR ?= $(TOP)/../black-parrot-tools
 include $(BP_TOOLS_DIR)/Makefile.common
 
-export BP_SDK_DIR ?= $(TOP)/../sdk
+export BP_SDK_DIR ?= $(TOP)/../black-parrot-sdk
 include $(BP_SDK_DIR)/Makefile.common
 
