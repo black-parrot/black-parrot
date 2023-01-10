@@ -15,7 +15,6 @@ module bp_be_cmd_queue
 
    , input [fe_cmd_width_lp-1:0]        fe_cmd_i
    , input                              fe_cmd_v_i
-   , output logic                       fe_cmd_ready_o
 
    , output logic [fe_cmd_width_lp-1:0] fe_cmd_o
    , output logic                       fe_cmd_v_o
@@ -29,7 +28,7 @@ module bp_be_cmd_queue
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  wire enq = fe_cmd_ready_o & fe_cmd_v_i;
+  wire enq = fe_cmd_v_i;
   wire deq = fe_cmd_yumi_i;
 
   logic [ptr_width_lp-1:0] wptr_r, rptr_n, rptr_r;
@@ -62,16 +61,15 @@ module bp_be_cmd_queue
      ,.r_data_o(fe_cmd_o)
      );
 
-  assign fe_cmd_ready_o = ~full_lo;
   assign fe_cmd_v_o     = ~empty_lo;
 
   wire almost_full = (rptr_r == wptr_r+1'b1);
   wire almost_empty = (rptr_r == wptr_r-1'b1);
 
   assign empty_r_o = empty_lo;
-  assign empty_n_o = almost_empty & deq & ~enq;
+  assign empty_n_o = (empty_lo | (almost_empty & deq)) & ~enq;
   assign full_r_o  = full_lo;
-  assign full_n_o  = almost_full & enq & ~deq;
+  assign full_n_o  = (full_lo | (almost_full & enq)) & ~deq;
 
 endmodule
 

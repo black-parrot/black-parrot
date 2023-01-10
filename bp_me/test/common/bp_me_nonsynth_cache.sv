@@ -44,7 +44,9 @@ module bp_me_nonsynth_cache
     , localparam counter_max_p = 512
     , localparam counter_width_p=`BSG_WIDTH(counter_max_p+1)
 
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+    , localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp+lg_sets_lp)
+
+    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
    )
    (
     input                                                   clk_i
@@ -65,7 +67,7 @@ module bp_me_nonsynth_cache
      // Cache-LCE interface
     , output logic [cache_req_width_lp-1:0]                 cache_req_o
     , output logic                                          cache_req_v_o
-    , input                                                 cache_req_yumi_i
+    , input                                                 cache_req_ready_and_i
     , input                                                 cache_req_busy_i
     , output logic [cache_req_metadata_width_lp-1:0]        cache_req_metadata_o
     , output logic                                          cache_req_metadata_v_o
@@ -92,7 +94,9 @@ module bp_me_nonsynth_cache
     , output logic [cache_stat_info_width_lp-1:0]           stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+
+    localparam bp_cache_req_size_e block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
 
   // Trace Replay Interface
   `declare_bp_me_nonsynth_tr_pkt_s(paddr_width_p, dword_width_gp);
@@ -126,7 +130,7 @@ module bp_me_nonsynth_cache
   wire [2:0] byte_offset = tr_pkt_r.paddr[2:0];
   wire [2:0] dword_offset = tr_pkt_r.paddr[5:3];
   wire uc_op = tr_pkt_r.uncached;
-  wire [ctag_width_p-1:0] tr_tag = tr_pkt_r.paddr[tag_offset_lp+:ctag_width_p];
+  wire [ctag_width_lp-1:0] tr_tag = tr_pkt_r.paddr[tag_offset_lp+:ctag_width_lp];
 
   // cache locked signal to block LCE x_mem_pkt operations
   // need to lock once cache accepts TR pkt until send to LCE
@@ -200,7 +204,7 @@ module bp_me_nonsynth_cache
 
   bp_me_nonsynth_cache_tag_lookup
     #(.assoc_p(assoc_p)
-      ,.tag_width_p(ctag_width_p)
+      ,.tag_width_p(ctag_width_lp)
       )
     tag_lookup
     (.tag_set_i(tag_mem_data_lo)
@@ -422,13 +426,15 @@ module bp_me_nonsynth_cache
     cache_req_cast_o = '0;
     cache_req_cast_o.hit = 1'b0; // unused by LCE
     cache_req_cast_o.data = tr_pkt_r.data;
-    cache_req_cast_o.size = double_op
-                            ? e_size_8B
-                            : word_op
-                              ? e_size_4B
-                              : half_op
-                                ? e_size_2B
-                                : e_size_1B;
+    cache_req_cast_o.size = uc_op
+                            ? double_op
+                              ? e_size_8B
+                              : word_op
+                                ? e_size_4B
+                                : half_op
+                                  ? e_size_2B
+                                  : e_size_1B
+                            : block_req_size;
     cache_req_cast_o.addr = tr_pkt_r.paddr;
     // AMO, flush, clear, and wt_store not supported
     cache_req_cast_o.msg_type = uc_op ? store_op ? e_uc_store : e_uc_load
@@ -489,7 +495,7 @@ module bp_me_nonsynth_cache
           cache_req_v_o = 1'b1;
           // metadata not used by LCE for uncached ops, but send it anyway
           cache_req_metadata_v_o = 1'b1;
-          state_n = cache_req_yumi_i
+          state_n = (cache_req_ready_and_i & cache_req_v_o)
                     ? tag_lookup_hit_lo
                       ? e_uc_hit_inv
                       : load_op
@@ -562,7 +568,7 @@ module bp_me_nonsynth_cache
         else begin
           cache_req_v_o = 1'b1;
           cache_req_metadata_v_o = 1'b1;
-          state_n = cache_req_yumi_i ? e_wait : state_r;
+          state_n = (cache_req_ready_and_i & cache_req_v_o) ? e_wait : state_r;
         end
       end // e_check_hit
 

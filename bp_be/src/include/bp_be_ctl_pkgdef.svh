@@ -83,8 +83,6 @@
     ,e_dcache_op_fsw      = 6'b100100
     ,e_dcache_op_fsd      = 6'b100101
 
-    ,e_dcache_op_ptw_ld   = 6'b100110
-
     ,e_dcache_op_amoswapw = 6'b010000
     ,e_dcache_op_amoaddw  = 6'b010001
     ,e_dcache_op_amoxorw  = 6'b010010
@@ -140,6 +138,9 @@
     ,e_mul_op_divu      = 6'b000010
     ,e_mul_op_rem       = 6'b000011
     ,e_mul_op_remu      = 6'b000100
+    ,e_mul_op_mulh      = 6'b000101
+    ,e_mul_op_mulhsu    = 6'b000110
+    ,e_mul_op_mulhu     = 6'b000111
   } bp_be_mul_fu_op_e;
 
   typedef struct packed
@@ -188,8 +189,6 @@
 
   typedef struct packed
   {
-    logic                             v;
-
     logic                             pipe_ctl_v;
     logic                             pipe_int_v;
     logic                             pipe_mem_early_v;
@@ -242,10 +241,9 @@
     logic unfreeze;
     logic itlb_miss;
     logic icache_miss;
-    logic dcache_fail;
+    logic dcache_replay;
     logic dtlb_load_miss;
     logic dtlb_store_miss;
-    logic fencei_dirty;
     logic itlb_fill;
     logic dtlb_fill;
     logic _interrupt;
@@ -254,7 +252,8 @@
 
   typedef struct packed
   {
-    logic dcache_miss;
+    logic dcache_store_miss;
+    logic dcache_load_miss;
     logic fencei_clean;
     logic sfence_vma;
     logic dbreak;

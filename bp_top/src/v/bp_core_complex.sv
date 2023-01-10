@@ -58,11 +58,11 @@ module bp_core_complex
    , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_ver_link_i
    , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_ver_link_o
 
-   , input [N:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_ver_link_i
-   , output [S:S][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_cmd_ver_link_o
+   , input [N:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_fwd_ver_link_i
+   , output [S:S][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_fwd_ver_link_o
 
-   , input [S:S][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_ver_link_i
-   , output [N:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_resp_ver_link_o
+   , input [S:S][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_rev_ver_link_i
+   , output [N:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_rev_ver_link_o
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -74,8 +74,8 @@ module bp_core_complex
   coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_fill_link_lo, lce_fill_link_li;
   coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_resp_link_lo, lce_resp_link_li;
 
-  mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:S] mem_cmd_link_lo, mem_resp_link_li;
-  mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][N:N] mem_resp_link_lo, mem_cmd_link_li;
+  mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:S] mem_fwd_link_lo, mem_rev_link_li;
+  mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][N:N] mem_rev_link_lo, mem_fwd_link_li;
 
   coh_noc_ral_link_s [E:W][cc_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
   coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo;
@@ -95,7 +95,7 @@ module bp_core_complex
           wire [coh_noc_cord_width_p-1:0] cord_li = {coh_noc_y_cord_width_p'(ic_y_dim_p+j)
                                                      ,coh_noc_x_cord_width_p'(sac_x_dim_p+i)
                                                      };
-          bp_tile_node
+          bp_core_tile_node
            #(.bp_params_p(bp_params_p))
            tile_node
             (.core_clk_i(core_clk_i)
@@ -122,11 +122,11 @@ module bp_core_complex
              ,.coh_lce_cmd_link_o(lce_cmd_link_lo[j][i])
              ,.coh_lce_fill_link_o(lce_fill_link_lo[j][i])
 
-             ,.mem_cmd_link_i(mem_cmd_link_li[j][i])
-             ,.mem_cmd_link_o(mem_cmd_link_lo[j][i])
+             ,.mem_fwd_link_i(mem_fwd_link_li[j][i])
+             ,.mem_fwd_link_o(mem_fwd_link_lo[j][i])
 
-             ,.mem_resp_link_i(mem_resp_link_li[j][i])
-             ,.mem_resp_link_o(mem_resp_link_lo[j][i])
+             ,.mem_rev_link_i(mem_rev_link_li[j][i])
+             ,.mem_rev_link_o(mem_rev_link_lo[j][i])
              );
         end
     end
@@ -211,13 +211,13 @@ module bp_core_complex
     for (genvar i = 0; i < cc_y_dim_p; i++)
       for (genvar j = 0; j < cc_x_dim_p; j++)
         begin : link
-          assign mem_mesh_lo[i][j][S] = mem_cmd_link_lo[i][j];
-          assign mem_mesh_lo[i][j][N] = mem_resp_link_lo[i][j];
+          assign mem_mesh_lo[i][j][S] = mem_fwd_link_lo[i][j];
+          assign mem_mesh_lo[i][j][N] = mem_rev_link_lo[i][j];
 
-          assign mem_cmd_link_li[i][j] = mem_mesh_li[i][j][N];
-          assign mem_resp_link_li[i][j] = mem_mesh_li[i][j][S];
+          assign mem_fwd_link_li[i][j] = mem_mesh_li[i][j][N];
+          assign mem_rev_link_li[i][j] = mem_mesh_li[i][j][S];
         end
-    assign mem_ver_link_li = {mem_resp_ver_link_i, mem_cmd_ver_link_i};
+    assign mem_ver_link_li = {mem_rev_ver_link_i, mem_fwd_ver_link_i};
     bsg_mesh_stitch
      #(.width_p($bits(mem_noc_ral_link_s))
        ,.x_max_p(cc_x_dim_p)
@@ -232,7 +232,7 @@ module bp_core_complex
        ,.ver_i(mem_ver_link_li)
        ,.ver_o(mem_ver_link_lo)
        );
-    assign {mem_cmd_ver_link_o, mem_resp_ver_link_o} = mem_ver_link_lo;
+    assign {mem_fwd_ver_link_o, mem_rev_ver_link_o} = mem_ver_link_lo;
 
 endmodule
 

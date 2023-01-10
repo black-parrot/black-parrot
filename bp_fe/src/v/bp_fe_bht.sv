@@ -71,7 +71,7 @@ module bp_fe_bht
       default: state_n = e_clear;
     endcase
 
-  //synopsys sync_set_reset "reset_i"
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
       state_r <= e_reset;
@@ -122,8 +122,8 @@ module bp_fe_bht
        pred_idx_reg
         (.clk_i(clk_i)
          ,.data_i(pred_idx_n)
-        ,.data_o(pred_idx_r)
-        );
+         ,.data_o(pred_idx_r)
+         );
    end
  else
    begin : no_fold

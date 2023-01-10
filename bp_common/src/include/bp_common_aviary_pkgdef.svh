@@ -7,46 +7,75 @@
   // Default configuration is unicore
   localparam bp_proc_param_s bp_unicore_cfg_p = bp_default_cfg_p;
 
-  localparam bp_proc_param_s bp_unicore_no_l2_override_p =
-    '{l2_en : 0
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_no_l2_cfg_p
-                        ,bp_unicore_no_l2_override_p
-                        ,bp_unicore_cfg_p
-                        );
+  localparam bp_proc_param_s bp_unicore_megaparrot_override_p =
+    '{paddr_width : 56
+      ,daddr_width: 55
+      ,caddr_width: 54
 
-  localparam bp_proc_param_s bp_unicore_paddr_large_override_p =
-    '{paddr_width : 44
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_paddr_large_cfg_p
-                        ,bp_unicore_paddr_large_override_p
-                        ,bp_unicore_cfg_p
-                        );
+      ,branch_metadata_fwd_width: 42
+      ,btb_tag_width            : 9
+      ,btb_idx_width            : 8
+      ,bht_idx_width            : 8
+      ,bht_row_els              : 4
+      ,ghist_width              : 2
 
-  localparam bp_proc_param_s bp_unicore_paddr_small_override_p =
-    '{paddr_width : 33
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_paddr_small_cfg_p
-                        ,bp_unicore_paddr_small_override_p
-                        ,bp_unicore_cfg_p
-                        );
+      ,icache_sets        : 64
+      ,icache_assoc       : 8
+      ,icache_block_width : 512
+      ,icache_fill_width  : 512
 
-  localparam bp_proc_param_s bp_unicore_l1_wide_fill_override_p =
-    '{icache_fill_width  : 512
-      ,dcache_fill_width : 512
-      ,l2_data_width     : 512
-      ,l2_fill_width     : 512
+      ,dcache_sets        : 64
+      ,dcache_assoc       : 8
+      ,dcache_block_width : 512
+      ,dcache_fill_width  : 512
+
+      ,l2_banks            : 8
+      ,l2_data_width       : 512
+      ,l2_sets             : 128
+      ,l2_assoc            : 8
+      ,l2_block_width      : 512
+      ,l2_fill_width       : 512
+      ,l2_outstanding_reqs : 32
+
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_unicore_l1_wide_fill_cfg_p
-                        ,bp_unicore_l1_wide_fill_override_p
+  `bp_aviary_derive_cfg(bp_unicore_megaparrot_cfg_p
+                        ,bp_unicore_megaparrot_override_p
                         ,bp_unicore_cfg_p
                         );
 
   localparam bp_proc_param_s bp_unicore_tinyparrot_override_p =
+    '{paddr_width         : 34
+
+      ,branch_metadata_fwd_width: 28
+      ,btb_tag_width            : 6
+      ,btb_idx_width            : 4
+      ,bht_idx_width            : 5
+      ,bht_row_els              : 2
+      ,ghist_width              : 2
+
+      ,icache_sets        : 128
+      ,icache_assoc       : 1
+      ,icache_block_width : 64
+      ,icache_fill_width  : 64
+
+      ,dcache_features    : (1 << e_cfg_enabled) | (1 << e_cfg_lr_sc)
+      ,dcache_sets        : 128
+      ,dcache_assoc       : 1
+      ,dcache_block_width : 64
+      ,dcache_fill_width  : 64
+
+      // We use L2 for the write buffer support, but not AMO
+      ,l2_features : (1 << e_cfg_writeback) | (1 << e_cfg_word_tracking)
+
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_unicore_tinyparrot_cfg_p
+                        ,bp_unicore_tinyparrot_override_p
+                        ,bp_unicore_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_unicore_miniparrot_override_p =
     '{paddr_width         : 34
 
       ,branch_metadata_fwd_width: 28
@@ -61,162 +90,128 @@
       ,icache_block_width : 64
       ,icache_fill_width  : 64
 
-      ,dcache_amo_support : (1 << e_lr_sc)
+      ,dcache_features    : (1 << e_cfg_enabled) | (1 << e_cfg_lr_sc)
       ,dcache_sets        : 512
       ,dcache_assoc       : 1
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
 
-      ,l2_en          : 0
-      ,l2_amo_support : '0
+      // We use L2 for the write buffer support
+      ,l2_features : (1 << e_cfg_enabled)
+                     | (1 << e_cfg_writeback)
+                     | (1 << e_cfg_word_tracking)
+                     | (1 << e_cfg_amo_swap)
+                     | (1 << e_cfg_amo_fetch_logic)
+                     | (1 << e_cfg_amo_fetch_arithmetic)
 
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_unicore_tinyparrot_cfg_p
-                        ,bp_unicore_tinyparrot_override_p
-                        ,bp_unicore_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_unicore_l1_medium_override_p =
-    '{icache_sets         : 128
-      ,icache_assoc       : 4
-      ,icache_block_width : 256
-      ,icache_fill_width  : 256
-      ,dcache_sets        : 128
-      ,dcache_assoc       : 4
-      ,dcache_block_width : 256
-      ,dcache_fill_width  : 256
-      ,l2_data_width      : 256
-      ,l2_fill_width      : 256
-      ,mem_noc_flit_width : 256
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_l1_medium_cfg_p
-                        ,bp_unicore_l1_medium_override_p
-                        ,bp_unicore_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_unicore_l1_small_override_p =
-    '{icache_sets         : 256
-      ,icache_assoc       : 2
-      ,icache_block_width : 128
-      ,icache_fill_width  : 128
-      ,dcache_sets        : 256
-      ,dcache_assoc       : 2
-      ,dcache_block_width : 128
-      ,dcache_fill_width  : 128
-      ,l2_data_width      : 128
-      ,l2_fill_width      : 128
-      ,mem_noc_flit_width : 128
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_l1_small_cfg_p
-                        ,bp_unicore_l1_small_override_p
-                        ,bp_unicore_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_unicore_l1_tiny_override_p =
-    '{icache_sets         : 512
-      ,icache_assoc       : 1
-      ,icache_block_width : 64
-      ,icache_fill_width  : 64
-      ,dcache_sets        : 512
-      ,dcache_assoc       : 1
-      ,dcache_block_width : 64
-      ,dcache_fill_width  : 64
-      ,l2_data_width      : 64
-      ,l2_fill_width      : 64
-      ,mem_noc_flit_width : 64
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_l1_tiny_cfg_p
-                        ,bp_unicore_l1_tiny_override_p
-                        ,bp_unicore_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_unicore_l1_hetero_override_p =
-    '{icache_sets         : 256
-      ,icache_assoc       : 2
-      ,icache_block_width : 128
-      ,icache_fill_width  : 128
-      ,dcache_sets        : 128
-      ,dcache_assoc       : 4
-      ,dcache_block_width : 256
-      ,dcache_fill_width  : 128
-      ,l2_data_width      : 128
-      ,l2_fill_width      : 128
-      ,mem_noc_flit_width : 128
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_l1_hetero_cfg_p
-                        ,bp_unicore_l1_hetero_override_p
-                        ,bp_unicore_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_unicore_l1_wide_override_p =
-    '{icache_sets         : 64
-      ,icache_assoc       : 4
-      ,icache_block_width : 512
-      ,icache_fill_width  : 512
-      ,dcache_sets        : 64
-      ,dcache_assoc       : 4
-      ,dcache_block_width : 512
-      ,dcache_fill_width  : 512
-      ,l2_data_width      : 512
-      ,l2_fill_width      : 512
-      ,mem_noc_flit_width : 512
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_l1_wide_cfg_p
-                        ,bp_unicore_l1_wide_override_p
-                        ,bp_unicore_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_unicore_l2_atomic_override_p =
-    '{dcache_amo_support : (1 << e_lr_sc)
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_l2_atomic_cfg_p
-                        ,bp_unicore_l2_atomic_override_p
-                        ,bp_unicore_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_unicore_writethrough_override_p =
-    '{dcache_writethrough: 1
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_unicore_writethrough_cfg_p
-                        ,bp_unicore_writethrough_override_p
+  `bp_aviary_derive_cfg(bp_unicore_miniparrot_cfg_p
+                        ,bp_unicore_miniparrot_override_p
                         ,bp_unicore_cfg_p
                         );
 
   localparam bp_proc_param_s bp_multicore_1_override_p =
     '{cce_type              : e_cce_fsm
       ,ic_y_dim             : 1
-      ,icache_coherent      : 1
-      ,l2_amo_support       : '0
+      ,icache_features      : (1 << e_cfg_enabled) | (1 << e_cfg_coherent)
+      ,dcache_features      : (1 << e_cfg_enabled)
+                              | (1 << e_cfg_coherent)
+                              | (1 << e_cfg_writeback)
+                              | (1 << e_cfg_lr_sc)
+                              | (1 << e_cfg_amo_swap)
+                              | (1 << e_cfg_amo_fetch_logic)
+                              | (1 << e_cfg_amo_fetch_arithmetic)
+      ,l2_features          : (1 << e_cfg_enabled) | (1 << e_cfg_writeback)
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p
                         ,bp_multicore_1_override_p
-                        ,bp_unicore_cfg_p
+                        ,bp_default_cfg_p
                         );
 
-  localparam bp_proc_param_s bp_multicore_1_paddr_large_override_p =
-    '{paddr_width : 44
+  localparam bp_proc_param_s bp_multicore_1_megaparrot_override_p =
+    '{paddr_width : 56
+      ,daddr_width: 55
+      ,caddr_width: 54
+
+      ,branch_metadata_fwd_width: 42
+      ,btb_tag_width            : 9
+      ,btb_idx_width            : 8
+      ,bht_idx_width            : 8
+      ,bht_row_els              : 4
+      ,ghist_width              : 2
+
+      ,icache_sets        : 64
+      ,icache_assoc       : 8
+      ,icache_block_width : 512
+      ,icache_fill_width  : 512
+
+      ,dcache_sets        : 64
+      ,dcache_assoc       : 8
+      ,dcache_block_width : 512
+      ,dcache_fill_width  : 512
+
+      ,acache_sets        : 64
+      ,acache_assoc       : 8
+      ,acache_block_width : 512
+      ,acache_fill_width  : 512
+
+      ,bedrock_data_width : 512
+
+      ,l2_banks            : 8
+      ,l2_data_width       : 512
+      ,l2_sets             : 128
+      ,l2_assoc            : 8
+      ,l2_block_width      : 512
+      ,l2_fill_width       : 512
+      ,l2_outstanding_reqs : 32
+
+      ,mem_noc_flit_width  : 512
+      ,mem_noc_cid_width   : 3
+
+      ,coh_noc_flit_width  : 512
+
+      ,io_noc_flit_width   : 512
+
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_1_paddr_large_cfg_p
-                        ,bp_multicore_1_paddr_large_override_p
+  `bp_aviary_derive_cfg(bp_multicore_1_megaparrot_cfg_p
+                        ,bp_multicore_1_megaparrot_override_p
                         ,bp_multicore_1_cfg_p
                         );
 
-  localparam bp_proc_param_s bp_multicore_1_paddr_small_override_p =
-    '{paddr_width : 33
+  localparam bp_proc_param_s bp_multicore_1_miniparrot_override_p =
+    '{paddr_width : 34
+      ,daddr_width: 33
+      ,caddr_width: 32
+
+      ,branch_metadata_fwd_width: 28
+      ,btb_tag_width            : 6
+      ,btb_idx_width            : 4
+      ,bht_idx_width            : 5
+      ,bht_row_els              : 2
+      ,ghist_width              : 2
+
+      ,icache_sets        : 512
+      ,icache_assoc       : 1
+      ,icache_block_width : 64
+      ,icache_fill_width  : 64
+
+      ,dcache_sets        : 512
+      ,dcache_assoc       : 1
+      ,dcache_block_width : 64
+      ,dcache_fill_width  : 64
+
+      ,acache_sets        : 512
+      ,acache_assoc       : 1
+      ,acache_block_width : 64
+      ,acache_fill_width  : 64
+
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_1_paddr_small_cfg_p
-                        ,bp_multicore_1_paddr_small_override_p
+  `bp_aviary_derive_cfg(bp_multicore_1_miniparrot_cfg_p
+                        ,bp_multicore_1_miniparrot_override_p
                         ,bp_multicore_1_cfg_p
                         );
 
@@ -227,65 +222,6 @@
       };
   `bp_aviary_derive_cfg(bp_multicore_1_l2e_cfg_p
                         ,bp_multicore_1_l2e_override_p
-                        ,bp_multicore_1_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_multicore_1_no_l2_override_p =
-    '{l2_en : 0
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_multicore_1_no_l2_cfg_p
-                        ,bp_multicore_1_no_l2_override_p
-                        ,bp_multicore_1_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_multicore_1_l1_medium_override_p =
-    '{icache_sets         : 128
-      ,icache_assoc       : 4
-      ,icache_block_width : 256
-      ,icache_fill_width  : 256
-      ,dcache_sets        : 128
-      ,dcache_assoc       : 4
-      ,dcache_block_width : 256
-      ,dcache_fill_width  : 256
-      ,acache_sets        : 128
-      ,acache_assoc       : 4
-      ,acache_block_width : 256
-      ,acache_fill_width  : 256
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_multicore_1_l1_medium_cfg_p
-                        ,bp_multicore_1_l1_medium_override_p
-                        ,bp_multicore_1_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_multicore_1_l1_small_override_p =
-    '{icache_sets         : 256
-      ,icache_assoc       : 2
-      ,icache_block_width : 128
-      ,icache_fill_width  : 128
-      ,dcache_sets        : 256
-      ,dcache_assoc       : 2
-      ,dcache_block_width : 128
-      ,dcache_fill_width  : 128
-      ,acache_sets        : 256
-      ,acache_assoc       : 2
-      ,acache_block_width : 128
-      ,acache_fill_width  : 128
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_multicore_1_l1_small_cfg_p
-                        ,bp_multicore_1_l1_small_override_p
-                        ,bp_multicore_1_cfg_p
-                        );
-
-  localparam bp_proc_param_s bp_multicore_1_l1_wide_fill_override_p =
-    '{icache_fill_width   : 512
-      ,dcache_fill_width  : 512
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_multicore_1_l1_wide_fill_cfg_p
-                        ,bp_multicore_1_l1_wide_fill_override_p
                         ,bp_multicore_1_cfg_p
                         );
 
@@ -393,13 +329,13 @@
                         ,bp_multicore_1_cfg_p
                         );
 
-  localparam bp_proc_param_s bp_multicore_1_acc_loopback_override_p =
+  localparam bp_proc_param_s bp_multicore_1_acc_scratchpad_override_p =
     '{sac_x_dim: 1
-      ,sacc_type: e_sacc_loopback
+      ,sacc_type: e_sacc_scratchpad
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_1_acc_loopback_cfg_p
-                        ,bp_multicore_1_acc_loopback_override_p
+  `bp_aviary_derive_cfg(bp_multicore_1_acc_scratchpad_cfg_p
+                        ,bp_multicore_1_acc_scratchpad_override_p
                         ,bp_multicore_1_cfg_p
                         );
 
@@ -417,13 +353,13 @@
                         );
 
 
- localparam bp_proc_param_s bp_multicore_4_acc_loopback_override_p =
+ localparam bp_proc_param_s bp_multicore_4_acc_scratchpad_override_p =
     '{sac_x_dim : 1
-      ,sacc_type: e_sacc_loopback
+      ,sacc_type: e_sacc_scratchpad
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_4_acc_loopback_cfg_p
-                        ,bp_multicore_4_acc_loopback_override_p
+  `bp_aviary_derive_cfg(bp_multicore_4_acc_scratchpad_cfg_p
+                        ,bp_multicore_4_acc_scratchpad_override_p
                         ,bp_multicore_4_cfg_p
                         );
 
@@ -450,22 +386,22 @@
                         ,bp_multicore_1_cfg_p
                         );
 
-  localparam bp_proc_param_s bp_multicore_1_cce_ucode_paddr_large_override_p =
-    '{paddr_width : 44
+  localparam bp_proc_param_s bp_multicore_1_cce_ucode_megaparrot_override_p =
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_paddr_large_cfg_p
-                        ,bp_multicore_1_cce_ucode_paddr_large_override_p
-                        ,bp_multicore_1_cce_ucode_cfg_p
+  `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_megaparrot_cfg_p
+                        ,bp_multicore_1_cce_ucode_megaparrot_override_p
+                        ,bp_multicore_1_megaparrot_cfg_p
                         );
 
-  localparam bp_proc_param_s bp_multicore_1_cce_ucode_paddr_small_override_p =
-    '{paddr_width : 33
+  localparam bp_proc_param_s bp_multicore_1_cce_ucode_miniparrot_override_p =
+    '{cce_type : e_cce_ucode
       ,default : "inv"
       };
-  `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_paddr_small_cfg_p
-                        ,bp_multicore_1_cce_ucode_paddr_small_override_p
-                        ,bp_multicore_1_cce_ucode_cfg_p
+  `bp_aviary_derive_cfg(bp_multicore_1_cce_ucode_miniparrot_cfg_p
+                        ,bp_multicore_1_cce_ucode_miniparrot_override_p
+                        ,bp_multicore_1_miniparrot_cfg_p
                         );
 
   localparam bp_proc_param_s bp_multicore_2_cce_ucode_override_p =
@@ -541,9 +477,9 @@
 
     // Accelerator configurations
     ,bp_multicore_4_acc_vdp_cfg_p
-    ,bp_multicore_4_acc_loopback_cfg_p
+    ,bp_multicore_4_acc_scratchpad_cfg_p
     ,bp_multicore_1_acc_vdp_cfg_p
-    ,bp_multicore_1_acc_loopback_cfg_p
+    ,bp_multicore_1_acc_scratchpad_cfg_p
 
     // Ucode configurations
     ,bp_multicore_16_cce_ucode_cfg_p
@@ -553,8 +489,8 @@
     ,bp_multicore_4_cce_ucode_cfg_p
     ,bp_multicore_3_cce_ucode_cfg_p
     ,bp_multicore_2_cce_ucode_cfg_p
-    ,bp_multicore_1_cce_ucode_paddr_small_cfg_p
-    ,bp_multicore_1_cce_ucode_paddr_large_cfg_p
+    ,bp_multicore_1_cce_ucode_megaparrot_cfg_p
+    ,bp_multicore_1_cce_ucode_miniparrot_cfg_p
     ,bp_multicore_1_cce_ucode_cfg_p
 
     // Multicore configurations
@@ -565,27 +501,14 @@
     ,bp_multicore_4_cfg_p
     ,bp_multicore_3_cfg_p
     ,bp_multicore_2_cfg_p
-    ,bp_multicore_1_paddr_small_cfg_p
-    ,bp_multicore_1_paddr_large_cfg_p
-    ,bp_multicore_1_l1_wide_fill_cfg_p
-    ,bp_multicore_1_l1_small_cfg_p
-    ,bp_multicore_1_l1_medium_cfg_p
-    ,bp_multicore_1_no_l2_cfg_p
+    ,bp_multicore_1_megaparrot_cfg_p
+    ,bp_multicore_1_miniparrot_cfg_p
     ,bp_multicore_1_cfg_p
 
     // Unicore configurations
+    ,bp_unicore_megaparrot_cfg_p
+    ,bp_unicore_miniparrot_cfg_p
     ,bp_unicore_tinyparrot_cfg_p
-    ,bp_unicore_paddr_small_cfg_p
-    ,bp_unicore_paddr_large_cfg_p
-    ,bp_unicore_writethrough_cfg_p
-    ,bp_unicore_l2_atomic_cfg_p
-    ,bp_unicore_l1_wide_fill_cfg_p
-    ,bp_unicore_l1_wide_cfg_p
-    ,bp_unicore_l1_hetero_cfg_p
-    ,bp_unicore_l1_tiny_cfg_p
-    ,bp_unicore_l1_small_cfg_p
-    ,bp_unicore_l1_medium_cfg_p
-    ,bp_unicore_no_l2_cfg_p
     ,bp_unicore_cfg_p
 
     // A custom BP configuration generated from Makefile
@@ -599,57 +522,44 @@
   typedef enum bit [lg_max_cfgs-1:0]
   {
     // L2 extension configurations
-    e_bp_multicore_4_l2e_cfg                        = 45
-    ,e_bp_multicore_2_l2e_cfg                       = 44
-    ,e_bp_multicore_1_l2e_cfg                       = 43
+    e_bp_multicore_4_l2e_cfg                        = 32
+    ,e_bp_multicore_2_l2e_cfg                       = 31
+    ,e_bp_multicore_1_l2e_cfg                       = 30
 
     // Accelerator configurations
-    ,e_bp_multicore_4_acc_vdp_cfg                   = 42
-    ,e_bp_multicore_4_acc_loopback_cfg              = 41
-    ,e_bp_multicore_1_acc_vdp_cfg                   = 40
-    ,e_bp_multicore_1_acc_loopback_cfg              = 39
+    ,e_bp_multicore_4_acc_vdp_cfg                   = 29
+    ,e_bp_multicore_4_acc_scratchpad_cfg            = 28
+    ,e_bp_multicore_1_acc_vdp_cfg                   = 27
+    ,e_bp_multicore_1_acc_scratchpad_cfg            = 26
 
     // Ucode configurations
-    ,e_bp_multicore_16_cce_ucode_cfg                = 38
-    ,e_bp_multicore_12_cce_ucode_cfg                = 37
-    ,e_bp_multicore_8_cce_ucode_cfg                 = 36
-    ,e_bp_multicore_6_cce_ucode_cfg                 = 35
-    ,e_bp_multicore_4_cce_ucode_cfg                 = 34
-    ,e_bp_multicore_3_cce_ucode_cfg                 = 33
-    ,e_bp_multicore_2_cce_ucode_cfg                 = 32
-    ,e_bp_multicore_1_cce_ucode_paddr_small_cfg     = 31
-    ,e_bp_multicore_1_cce_ucode_paddr_large_cfg     = 30
-    ,e_bp_multicore_1_cce_ucode_cfg                 = 29
+    ,e_bp_multicore_16_cce_ucode_cfg                = 25
+    ,e_bp_multicore_12_cce_ucode_cfg                = 24
+    ,e_bp_multicore_8_cce_ucode_cfg                 = 23
+    ,e_bp_multicore_6_cce_ucode_cfg                 = 22
+    ,e_bp_multicore_4_cce_ucode_cfg                 = 21
+    ,e_bp_multicore_3_cce_ucode_cfg                 = 20
+    ,e_bp_multicore_2_cce_ucode_cfg                 = 19
+    ,e_bp_multicore_1_cce_ucode_megaparrot_cfg      = 18
+    ,e_bp_multicore_1_cce_ucode_miniparrot_cfg      = 17
+    ,e_bp_multicore_1_cce_ucode_cfg                 = 16
 
     // Multicore configurations
-    ,e_bp_multicore_16_cfg                          = 28
-    ,e_bp_multicore_12_cfg                          = 27
-    ,e_bp_multicore_8_cfg                           = 26
-    ,e_bp_multicore_6_cfg                           = 25
-    ,e_bp_multicore_4_cfg                           = 24
-    ,e_bp_multicore_3_cfg                           = 23
-    ,e_bp_multicore_2_cfg                           = 22
-    ,e_bp_multicore_1_paddr_small_cfg               = 21
-    ,e_bp_multicore_1_paddr_large_cfg               = 20
-    ,e_bp_multicore_1_l1_wide_fill_cfg              = 19
-    ,e_bp_multicore_1_l1_small_cfg                  = 18
-    ,e_bp_multicore_1_l1_medium_cfg                 = 17
-    ,e_bp_multicore_1_no_l2_cfg                     = 16
-    ,e_bp_multicore_1_cfg                           = 15
+    ,e_bp_multicore_16_cfg                          = 15
+    ,e_bp_multicore_12_cfg                          = 14
+    ,e_bp_multicore_8_cfg                           = 13
+    ,e_bp_multicore_6_cfg                           = 12
+    ,e_bp_multicore_4_cfg                           = 11
+    ,e_bp_multicore_3_cfg                           = 10
+    ,e_bp_multicore_2_cfg                           = 9
+    ,e_bp_multicore_1_megaparrot_cfg                = 8
+    ,e_bp_multicore_1_miniparrot_cfg                = 7
+    ,e_bp_multicore_1_cfg                           = 6
 
     // Unicore configurations
-    ,e_bp_unicore_tinyparrot_cfg                    = 14
-    ,e_bp_unicore_paddr_small_cfg                   = 13
-    ,e_bp_unicore_paddr_large_cfg                   = 12
-    ,e_bp_unicore_writethrough_cfg                  = 11
-    ,e_bp_unicore_l2_atomic_cfg                     = 10
-    ,e_bp_unicore_l1_wide_fill_cfg                  = 9
-    ,e_bp_unicore_l1_wide_cfg                       = 8
-    ,e_bp_unicore_l1_hetero_cfg                     = 7
-    ,e_bp_unicore_l1_tiny_cfg                       = 6
-    ,e_bp_unicore_l1_small_cfg                      = 5
-    ,e_bp_unicore_l1_medium_cfg                     = 4
-    ,e_bp_unicore_no_l2_cfg                         = 3
+    ,e_bp_unicore_megaparrot_cfg                    = 5
+    ,e_bp_unicore_miniparrot_cfg                    = 4
+    ,e_bp_unicore_tinyparrot_cfg                    = 3
     ,e_bp_unicore_cfg                               = 2
 
     // A custom BP configuration generated from `defines

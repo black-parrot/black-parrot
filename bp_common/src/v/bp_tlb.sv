@@ -62,14 +62,14 @@ module bp_tlb
      );
 
   logic [vtag_width_p-1:0] vtag_r;
-  logic r_v_r;
-  bsg_dff_reset
-   #(.width_p(vtag_width_p+1))
-   r_v_reg
+  bsg_dff_reset_en
+   #(.width_p(vtag_width_p))
+   vtag_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i({vtag_i, r_v_li})
-     ,.data_o({vtag_r, r_v_r})
+     ,.en_i(v_i)
+     ,.data_i(vtag_i)
+     ,.data_o(vtag_r)
      );
   wire [r_entry_low_bits_lp-1:0] passthrough_low_bits = vtag_r[0+:r_entry_low_bits_lp];
 
@@ -91,7 +91,7 @@ module bp_tlb
      ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_4k_lo)
 
-     ,.r_v_i(r_v_r)
+     ,.r_v_i(~w_v_li)
      ,.r_tag_i(vtag_r)
      ,.r_match_o(tag_r_match_4k_lo)
      );
@@ -125,7 +125,7 @@ module bp_tlb
      ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_1g_lo)
 
-     ,.r_v_i(r_v_r)
+     ,.r_v_i(~w_v_li)
      ,.r_tag_i(vtag_r)
      ,.r_match_o(tag_r_match_1g_lo)
      );
@@ -161,17 +161,19 @@ module bp_tlb
 
   logic [els_1g_lp-1:0][r_entry_high_bits_lp-1:0] data_1g_high_r;
   wire [els_1g_lp-1:0] mem_1g_w_v_li = ({els_1g_lp{fill_gigapage}} & repl_way_1g_lo);
-  for (genvar i = 0; i < els_1g_p; i++)
-    begin : mem_array_1g
-      bsg_dff_en
-        #(.width_p(r_entry_high_bits_lp))
-        mem_reg
-         (.clk_i(clk_i)
-          ,.en_i(mem_1g_w_v_li[i])
-          ,.data_i(entry_shifted[r_entry_low_bits_lp+:r_entry_high_bits_lp])
-          ,.data_o(data_1g_high_r[i])
-          );
-    end
+  if (els_1g_p == 0) assign data_1g_high_r = '0;
+  else
+    for (genvar i = 0; i < els_1g_p; i++)
+      begin : mem_array_1g
+        bsg_dff_en
+          #(.width_p(r_entry_high_bits_lp))
+          mem_reg
+          (.clk_i(clk_i)
+            ,.en_i(mem_1g_w_v_li[i])
+            ,.data_i(entry_shifted[r_entry_low_bits_lp+:r_entry_high_bits_lp])
+            ,.data_o(data_1g_high_r[i])
+            );
+      end
 
   bp_pte_leaf_s r_entry;
   bsg_mux_one_hot
@@ -205,8 +207,8 @@ module bp_tlb
      ,.o(entry_unshifted)
      );
 
-  assign entry_o    = entry_unshifted;
-  assign v_o        = r_v_r & r_v_lo;
+  assign entry_o = entry_unshifted;
+  assign v_o     = r_v_lo;
 
 endmodule
 

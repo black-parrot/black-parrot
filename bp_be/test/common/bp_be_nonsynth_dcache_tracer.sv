@@ -11,6 +11,7 @@ module bp_be_nonsynth_dcache_tracer
   , parameter block_width_p = 512
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
+  , parameter ctag_width_p = 27
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
@@ -18,7 +19,7 @@ module bp_be_nonsynth_dcache_tracer
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
    , localparam bank_width_lp = block_width_p / assoc_p
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
-   , localparam wbuf_entry_width_lp = `bp_be_dcache_wbuf_entry_width(paddr_width_p, assoc_p)
+   , localparam wbuf_entry_width_lp = `bp_be_dcache_wbuf_entry_width(caddr_width_p, assoc_p)
    )
   (  input                                                clk_i
    , input                                                reset_i
@@ -27,17 +28,16 @@ module bp_be_nonsynth_dcache_tracer
 
    , input [dcache_pkt_width_lp-1:0]                      dcache_pkt_i
    , input                                                v_i
-   , input                                                ready_o
+   , input                                                ready_and_o
 
    , input [dpath_width_gp-1:0]                           early_data_o
    , input                                                early_hit_v_o
-   , input                                                early_miss_v_o
    , input [dpath_width_gp-1:0]                           final_data_o
    , input                                                final_v_o
 
    , input [cache_req_width_lp-1:0]                       cache_req_o
    , input                                                cache_req_v_o
-   , input                                                cache_req_yumi_i
+   , input                                                cache_req_ready_and_i
    , input                                                cache_req_busy_i
    , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
@@ -124,7 +124,7 @@ module bp_be_nonsynth_dcache_tracer
    begin
      info_file_name = $sformatf("%s_%x.info.trace", trace_file_p, mhartid_i);
      info_file      = $fopen(info_file_name, "w");
-     $fwrite(info_file, "Coherent L1: %x\n", icache_coherent_p);
+     $fwrite(info_file, "Coherent L1: %x\n", dcache_features_p[e_cfg_coherent]);
 
      eng_file_name = $sformatf("%s_%x.eng.trace", trace_file_p, mhartid_i);
      eng_file      = $fopen(eng_file_name, "w");
@@ -153,20 +153,18 @@ module bp_be_nonsynth_dcache_tracer
 
   always_ff @(posedge clk_i)
     begin
-      if (ready_o & v_i)
+      if (ready_and_o & v_i)
         $fwrite(acc_file, "%12t | access: %p\n", $time, dcache_pkt_cast_i);
       if (early_hit_v_o & decode_tv_r.load_op)
         $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, early_data_o);
       if (early_hit_v_o & decode_tv_r.store_op)
         $fwrite(acc_file, "%12t | early store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
-      if (early_miss_v_o)
-        $fwrite(acc_file, "%12t | early miss: %x\n", $time, paddr_tv_r);
       if (final_v_o & decode_dm_r.load_op)
         $fwrite(acc_file, "%12t | final load: %x\n", $time, final_data_o);
       if (wbuf_yumi_li)
         $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_out_cast);
 
-      if (cache_req_yumi_i)
+      if (cache_req_ready_and_i & cache_req_v_o)
         $fwrite(eng_file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);
       if (cache_req_metadata_v_o)
         $fwrite(eng_file, "%12t | cache_req_metadata: %p\n", $time, cache_req_metadata_cast_o);

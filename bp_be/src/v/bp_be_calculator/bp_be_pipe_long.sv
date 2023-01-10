@@ -15,8 +15,8 @@ module bp_be_pipe_long
    , input                              reset_i
 
    , input [dispatch_pkt_width_lp-1:0]  reservation_i
-   , output logic                       iready_o
-   , output logic                       fready_o
+   , output logic                       ibusy_o
+   , output logic                       fbusy_o
    , input rv64_frm_e                   frm_dyn_i
 
    , input                              flush_i
@@ -55,6 +55,29 @@ module bp_be_pipe_long
 
   wire [dword_width_gp-1:0] op_a = decode.opw_v ? (rs1 << word_width_gp) : rs1;
   wire [dword_width_gp-1:0] op_b = decode.opw_v ? (rs2 << word_width_gp) : rs2;
+
+  wire signed_opA_li = decode.fu_op inside {e_mul_op_mulh, e_mul_op_mulhsu};
+  wire signed_opB_li = decode.fu_op inside {e_mul_op_mulh};
+
+  logic [dword_width_gp-1:0] imulh_result_lo;
+  logic imulh_ready_lo, imulh_v_lo;
+  wire imulh_v_li = v_li & (decode.fu_op inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu});
+  bsg_imul_iterative
+   #(.width_p(dword_width_gp))
+   imulh
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+    ,.v_i(imulh_v_li)
+    ,.ready_o(imulh_ready_lo)
+    ,.opA_i(op_a)
+    ,.signed_opA_i(signed_opA_li)
+    ,.opB_i(op_b)
+    ,.signed_opB_i(signed_opB_li)
+    ,.gets_high_part_i(1'b1)
+    ,.v_o(imulh_v_lo)
+    ,.result_o(imulh_result_lo)
+    ,.yumi_i(imulh_v_lo & iwb_yumi_i)
+    );
 
   // We actual could exit early here
   logic [dword_width_gp-1:0] quotient_lo, remainder_lo;
@@ -104,7 +127,7 @@ module bp_be_pipe_long
   //   The control bits control tininess, which is fixed in RISC-V
   rv64_frm_e frm_li;
   // VCS / DVE 2016.1 has an issue with the 'assign' variant of the following code
-  always_comb frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
+  always_comb frm_li = rv64_frm_e'((instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : instr.t.fmatype.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
   wire fdiv_v_li  = v_li & (decode.fu_op == e_fma_op_fdiv);
@@ -112,7 +135,7 @@ module bp_be_pipe_long
 
   bp_be_fp_reg_s fdivsqrt_result;
   rv64_fflags_s fdivsqrt_fflags;
-  logic fdiv_ready_lo, fdivsqrt_v_lo;
+  logic fdiv_ready_and_lo, fdivsqrt_v_lo;
   logic sqrt_lo;
   divSqrtRecFN_small
    #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
@@ -121,7 +144,7 @@ module bp_be_pipe_long
      ,.nReset(~reset_i)
      ,.control(control_li)
 
-     ,.inReady(fdiv_ready_lo)
+     ,.inReady(fdiv_ready_and_lo)
      ,.inValid(fdiv_v_li | fsqrt_v_li)
      ,.sqrtOp(fsqrt_v_li)
      ,.a(frs1.rec)
@@ -150,35 +173,23 @@ module bp_be_pipe_long
      );
   assign fdivsqrt_result.tag = ops_v_r ? frm_r : e_fp_full;
 
-  logic idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
+  logic imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
   bsg_dff_reset_set_clear
-   #(.width_p(3))
+   #(.width_p(4))
    wb_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.set_i({idiv_v_lo, fdivsqrt_v_lo, v_li})
-     ,.clear_i({v_li, v_li, (iwb_yumi_i | fwb_yumi_i)})
-     ,.data_o({idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
-     );
-
-  logic [2:0] hazard_cnt;
-  wire idiv_safe = (hazard_cnt > 2);
-  wire fdiv_safe = (hazard_cnt > 3);
-  bsg_counter_clear_up
-   #(.max_val_p(4), .init_val_p(0))
-   hazard_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(v_li)
-     ,.up_i(rd_w_v_r & ~fdiv_safe)
-     ,.count_o(hazard_cnt)
+     ,.set_i({imulh_v_lo, idiv_v_lo, fdivsqrt_v_lo, v_li})
+     ,.clear_i({v_li, v_li, v_li, (iwb_yumi_i | fwb_yumi_i)})
+     ,.data_o({imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
      );
 
   logic [dword_width_gp-1:0] rd_data_lo;
   always_comb
-    if (opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
+    if (~opw_v_r && fu_op_r inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu})
+      rd_data_lo = imulh_result_lo;
+    else if (opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
       rd_data_lo = `BSG_SIGN_EXTEND(quotient_w_lo, dword_width_gp);
     else if (opw_v_r && fu_op_r inside {e_mul_op_rem, e_mul_op_remu})
       rd_data_lo = $signed(remainder_lo) >>> word_width_gp;
@@ -188,8 +199,8 @@ module bp_be_pipe_long
       rd_data_lo = remainder_lo;
 
   // Actually a busy signal
-  assign iready_o = idiv_ready_and_lo & ~rd_w_v_r & ~v_li;
-  assign fready_o = fdiv_ready_lo & ~rd_w_v_r & ~v_li;
+  assign ibusy_o = ~imulh_ready_lo | ~idiv_ready_and_lo | rd_w_v_r;
+  assign fbusy_o = ~fdiv_ready_and_lo | rd_w_v_r;
 
   assign iwb_pkt.ird_w_v    = rd_w_v_r;
   assign iwb_pkt.frd_w_v    = 1'b0;
@@ -198,7 +209,7 @@ module bp_be_pipe_long
   assign iwb_pkt.rd_data    = rd_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
   assign iwb_pkt.fflags     = '0;
-  assign iwb_v_o = idiv_safe & idiv_done_v_r & rd_w_v_r;
+  assign iwb_v_o = (imulh_done_v_r | idiv_done_v_r) & rd_w_v_r;
 
   assign fwb_pkt.ird_w_v    = 1'b0;
   assign fwb_pkt.frd_w_v    = rd_w_v_r;
@@ -207,7 +218,16 @@ module bp_be_pipe_long
   assign fwb_pkt.rd_data    = fdivsqrt_result;
   assign fwb_pkt.fflags_w_v = 1'b1;
   assign fwb_pkt.fflags     = fdivsqrt_fflags;
-  assign fwb_v_o = fdiv_safe & fdiv_done_v_r & rd_w_v_r;
+  assign fwb_v_o = fdiv_done_v_r & rd_w_v_r;
+
+  // synopsys translate_off
+
+  always @(negedge clk_i)
+    begin
+      assert (reset_i !== 0 || ~v_li || ~rd_w_v_r) else $error("Long pipe structural hazard");
+    end
+
+  // synopsys translate_on
 
 endmodule
 

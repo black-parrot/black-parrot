@@ -71,12 +71,15 @@ module bp_be_instr_decoder
       wfi_o           = '0;
       sfence_vma_o    = '0;
 
+      imm_o           = '0;
+
       unique casez (instr.opcode)
         `RV64_OP_OP, `RV64_OP_32_OP:
           begin
             if (instr inside {`RV64_MUL, `RV64_MULW})
               decode_cast_o.pipe_mul_v = 1'b1;
-            else if (instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
+            else if (instr inside {`RV64_MULH, `RV64_MULHSU, `RV64_MULHU
+                                   ,`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
                                    ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
                                    })
               begin
@@ -102,6 +105,9 @@ module bp_be_instr_decoder
               `RV64_AND             : decode_cast_o.fu_op = e_int_op_and;
 
               `RV64_MUL, `RV64_MULW   : decode_cast_o.fu_op = e_fma_op_imul;
+              `RV64_MULH              : decode_cast_o.fu_op = e_mul_op_mulh;
+              `RV64_MULHSU            : decode_cast_o.fu_op = e_mul_op_mulhsu;
+              `RV64_MULHU             : decode_cast_o.fu_op = e_mul_op_mulhu;
               `RV64_DIV, `RV64_DIVW   : decode_cast_o.fu_op = e_mul_op_div;
               `RV64_DIVU, `RV64_DIVUW : decode_cast_o.fu_op = e_mul_op_divu;
               `RV64_REM, `RV64_REMW   : decode_cast_o.fu_op = e_mul_op_rem;
@@ -267,9 +273,9 @@ module bp_be_instr_decoder
               `RV64_EBREAK:
                 begin
                   dbreak_o = decode_info_cast_i.debug_mode
-                             | (decode_info_cast_i.ebreakm & (decode_info_cast_i.priv_mode == `PRIV_MODE_M))
-                             | (decode_info_cast_i.ebreaks & (decode_info_cast_i.priv_mode == `PRIV_MODE_S))
-                             | (decode_info_cast_i.ebreaku & (decode_info_cast_i.priv_mode == `PRIV_MODE_U));
+                            | (decode_info_cast_i.ebreakm & (decode_info_cast_i.priv_mode == `PRIV_MODE_M))
+                            | (decode_info_cast_i.ebreaks & (decode_info_cast_i.priv_mode == `PRIV_MODE_S))
+                            | (decode_info_cast_i.ebreaku & (decode_info_cast_i.priv_mode == `PRIV_MODE_U));
                   ebreak_o = ~dbreak_o;
                 end
               `RV64_DRET:
@@ -587,20 +593,20 @@ module bp_be_instr_decoder
             unique casez (instr)
               `RV64_LRD, `RV64_LRW, `RV64_SCD, `RV64_SCW:
                 illegal_instr_o =
-                  ~|{dcache_amo_support_p[e_lr_sc], l2_amo_support_p[e_lr_sc]};
+                  ~|{dcache_features_p[e_cfg_lr_sc], l2_features_p[e_cfg_lr_sc]};
               `RV64_AMOSWAPD, `RV64_AMOSWAPW:
                 illegal_instr_o =
-                  ~|{dcache_amo_support_p[e_amo_swap], l2_amo_support_p[e_amo_swap]};
+                  ~|{dcache_features_p[e_cfg_amo_swap], l2_features_p[e_cfg_amo_swap]};
               `RV64_AMOANDD, `RV64_AMOANDW
               ,`RV64_AMOORD, `RV64_AMOORW
               ,`RV64_AMOXORD, `RV64_AMOXORW:
                 illegal_instr_o =
-                  ~|{dcache_amo_support_p[e_amo_fetch_logic], l2_amo_support_p[e_amo_fetch_logic]};
+                  ~|{dcache_features_p[e_cfg_amo_fetch_logic], l2_features_p[e_cfg_amo_fetch_logic]};
               `RV64_AMOADDD, `RV64_AMOADDW
               ,`RV64_AMOMIND, `RV64_AMOMINW, `RV64_AMOMAXD, `RV64_AMOMAXW
               ,`RV64_AMOMINUD, `RV64_AMOMINUW, `RV64_AMOMAXUD, `RV64_AMOMAXUW:
                 illegal_instr_o =
-                  ~|{dcache_amo_support_p[e_amo_fetch_arithmetic], l2_amo_support_p[e_amo_fetch_arithmetic]};
+                  ~|{dcache_features_p[e_cfg_amo_fetch_arithmetic], l2_features_p[e_cfg_amo_fetch_arithmetic]};
               default: begin end
             endcase
           end
@@ -608,6 +614,7 @@ module bp_be_instr_decoder
       endcase
 
       // Immediate extraction
+      // This may be overwritten by exception injection
       unique casez (instr.opcode)
         `RV64_LUI_OP, `RV64_AUIPC_OP:
           imm_o = `rv64_signext_u_imm(instr);

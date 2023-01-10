@@ -66,7 +66,7 @@ module bp_be_pipe_aux
   //   The control bits control tininess, which is fixed in RISC-V
   rv64_frm_e frm_li;
   // VCS / DVE 2016.1 has an issue with the 'assign' variant of the following code
-  always_comb frm_li = (instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : rv64_frm_e'(instr.t.fmatype.rm);
+  always_comb frm_li = rv64_frm_e'((instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : instr.t.fmatype.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
   //
@@ -186,9 +186,16 @@ module bp_be_pipe_aux
   assign f2i_result = decode.opw_v
                       ? {{word_width_gp{f2w_out[word_width_gp-1]}}, f2w_out}
                       : f2dw_out;
-  assign f2i_fflags = decode.opw_v
-                      ? '{nv: f2w_iflags.nv | f2w_iflags.of, nx: f2w_iflags.nx, default: '0}
-                      : '{nv: f2dw_iflags.nv | f2dw_iflags.of, nx: f2dw_iflags.nx, default: '0};
+
+  // Bug in XSIM 2019.2 causes SEGV when assigning to structs with a mux
+  // assign f2i_fflags = decode.opw_v
+  //                     ? '{nv: f2w_iflags.nv | f2w_iflags.of, nx: f2w_iflags.nx, default: '0}
+  //                     : '{nv: f2dw_iflags.nv | f2dw_iflags.of, nx: f2dw_iflags.nx, default: '0};
+  rv64_fflags_s word_fflags;
+  rv64_fflags_s dword_fflags;
+  assign word_fflags = '{nv: f2w_iflags.nv | f2w_iflags.of, nx: f2w_iflags.nx, default: '0};
+  assign dword_fflags = '{nv: f2dw_iflags.nv | f2dw_iflags.of, nx: f2dw_iflags.nx, default: '0};
+  assign f2i_fflags = decode.opw_v ? word_fflags : dword_fflags;
 
   //
   // FCLASS

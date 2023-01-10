@@ -11,15 +11,16 @@
 module bp_nonsynth_dram
  import bp_common_pkg::*;
  import bp_me_pkg::*;
+ import bsg_axi_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter num_dma_p = 0
    , parameter preload_mem_p = 0
-   , parameter mem_els_p = 0
+   , parameter mem_bytes_p = 0
    , parameter dram_type_p = ""
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
    )
   (input                                                    clk_i
    , input                                                  reset_i
@@ -40,7 +41,7 @@ module bp_nonsynth_dram
    , input                                                  dram_reset_i
    );
 
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [num_dma_p-1:0] dma_pkt_li, dma_pkt;
   assign dma_pkt_li = dma_pkt_i;
   // Unswizzle the dram
@@ -94,6 +95,8 @@ module bp_nonsynth_dram
        logic [`dram_pkg::channel_addr_width_p-1:0] dram_ch_addr_li;
        logic dram_write_not_read_li, dram_v_li, dram_yumi_lo;
        logic [`dram_pkg::data_width_p-1:0] dram_data_li;
+       logic [(`dram_pkg::data_width_p>>3)-1:0] dram_mask_li;
+
        logic dram_data_v_li, dram_data_yumi_lo;
        logic [`dram_pkg::data_width_p-1:0] dram_data_lo;
        logic dram_data_v_lo;
@@ -141,6 +144,7 @@ module bp_nonsynth_dram
          ,.dram_req_yumi_i(dram_yumi_lo)
          ,.dram_data_v_o(dram_data_v_li)
          ,.dram_data_o(dram_data_li)
+         ,.dram_mask_o(dram_mask_li)
          ,.dram_data_yumi_i(dram_data_yumi_lo)
 
          ,.dram_data_v_i(dram_data_v_lo)
@@ -160,6 +164,7 @@ module bp_nonsynth_dram
           ,.address_mapping_p(`dram_pkg::address_mapping_p)
           ,.size_in_bits_p(`dram_pkg::size_in_bits_p)
           ,.config_p(`dram_pkg::config_p)
+          ,.masked_p(l2_features_p[e_cfg_word_tracking])
           ,.init_mem_p(1)
           ,.base_id_p(0)
           )
@@ -170,7 +175,7 @@ module bp_nonsynth_dram
           ,.v_i(dram_v_li)
           ,.write_not_read_i(dram_write_not_read_li)
           ,.ch_addr_i(dram_ch_addr_li)
-          ,.mask_i('1)
+          ,.mask_i(dram_mask_li)
           ,.yumi_o(dram_yumi_lo)
 
           ,.data_v_i(dram_data_v_li)
@@ -225,8 +230,11 @@ module bp_nonsynth_dram
       localparam axi_strb_width_p = axi_data_width_p >> 3;
       localparam axi_burst_len_p = 1;
 
+      localparam mem_els_lp = mem_bytes_p/(axi_data_width_p/8);
+
       logic [axi_id_width_p-1:0] axi_awid;
       logic [caddr_width_p-1:0] axi_awaddr_addr;
+      logic axi_awaddr_addr_unused;
       logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_awaddr_cache_id;
       logic [7:0] axi_awlen;
       logic [2:0] axi_awsize;
@@ -245,6 +253,7 @@ module bp_nonsynth_dram
 
       logic [axi_id_width_p-1:0] axi_arid;
       logic [caddr_width_p-1:0] axi_araddr_addr;
+      logic axi_araddr_addr_unused;
       logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_araddr_cache_id;
       logic [7:0] axi_arlen;
       logic [2:0] axi_arsize;
@@ -261,11 +270,13 @@ module bp_nonsynth_dram
       bsg_cache_to_axi
        #(.addr_width_p(daddr_width_p)
          ,.data_width_p(l2_fill_width_p)
+         ,.mask_width_p(l2_block_size_in_words_p)
          ,.block_size_in_words_p(l2_block_size_in_fill_p)
          ,.num_cache_p(num_dma_p)
          ,.axi_id_width_p(axi_id_width_p)
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_burst_len_p(axi_burst_len_p)
+         ,.axi_burst_type_p(e_axi_burst_wrap)
          )
       cache2axi
         (.clk_i(clk_i)
@@ -284,7 +295,7 @@ module bp_nonsynth_dram
          ,.dma_data_yumi_o(dma_data_yumi_o)
 
          ,.axi_awid_o(axi_awid)
-         ,.axi_awaddr_addr_o(axi_awaddr_addr)
+         ,.axi_awaddr_addr_o({axi_awaddr_addr_unused, axi_awaddr_addr})
          ,.axi_awaddr_cache_id_o(axi_awaddr_cache_id)
          ,.axi_awlen_o(axi_awlen)
          ,.axi_awsize_o(axi_awsize)
@@ -306,7 +317,7 @@ module bp_nonsynth_dram
          ,.axi_bvalid_i(axi_bvalid)
          ,.axi_bready_o(axi_bready)
          ,.axi_arid_o(axi_arid)
-         ,.axi_araddr_addr_o(axi_araddr_addr)
+         ,.axi_araddr_addr_o({axi_araddr_addr_unused, axi_araddr_addr})
          ,.axi_araddr_cache_id_o(axi_araddr_cache_id)
          ,.axi_arlen_o(axi_arlen)
          ,.axi_arsize_o(axi_arsize)
@@ -332,8 +343,8 @@ module bp_nonsynth_dram
        #(.axi_id_width_p(axi_id_width_p)
          ,.axi_addr_width_p(axi_addr_width_p)
          ,.axi_data_width_p(axi_data_width_p)
-         ,.axi_burst_len_p(axi_burst_len_p)
-         ,.mem_els_p(mem_els_p)
+         ,.axi_len_width_p(8)
+         ,.mem_els_p(mem_els_lp)
          ,.init_data_p('0)
          )
        axi_mem
@@ -344,6 +355,8 @@ module bp_nonsynth_dram
          ,.axi_awaddr_i(axi_awaddr)
          ,.axi_awvalid_i(axi_awvalid)
          ,.axi_awready_o(axi_awready)
+         ,.axi_awburst_i(axi_awburst)
+         ,.axi_awlen_i(axi_awlen)
 
          ,.axi_wdata_i(axi_wdata)
          ,.axi_wstrb_i(axi_wstrb)
@@ -360,6 +373,8 @@ module bp_nonsynth_dram
          ,.axi_araddr_i(axi_araddr)
          ,.axi_arvalid_i(axi_arvalid)
          ,.axi_arready_o(axi_arready)
+         ,.axi_arburst_i(axi_arburst)
+         ,.axi_arlen_i(axi_arlen)
 
          ,.axi_rid_o(axi_rid)
          ,.axi_rdata_o(axi_rdata)

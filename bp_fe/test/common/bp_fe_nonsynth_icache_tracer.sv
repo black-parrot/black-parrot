@@ -11,6 +11,7 @@ module bp_fe_nonsynth_icache_tracer
    , parameter block_width_p = 512
    , parameter fill_width_p = 512
    , parameter trace_file_p = "icache"
+   , parameter ctag_width_p = 27
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
 
@@ -26,15 +27,16 @@ module bp_fe_nonsynth_icache_tracer
 
    , input [icache_pkt_width_lp-1:0]                      icache_pkt_i
    , input                                                v_i
-   , input                                                ready_o
+   , input                                                force_i
+   , input                                                yumi_o
 
    , input [instr_width_gp-1:0]                           data_o
    , input                                                data_v_o
-   , input                                                miss_v_o
+   , input                                                spec_v_o
 
    , input [cache_req_width_lp-1:0]                       cache_req_o
    , input                                                cache_req_v_o
-   , input                                                cache_req_yumi_i
+   , input                                                cache_req_ready_and_i
    , input                                                cache_req_busy_i
    , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
@@ -94,7 +96,7 @@ module bp_fe_nonsynth_icache_tracer
    begin
      file_name = $sformatf("%s_%x.trace", trace_file_p, mhartid_i);
      file      = $fopen(file_name, "w");
-     $fwrite(file, "Coherent L1: %x\n", icache_coherent_p);
+     $fwrite(file, "Coherent L1: %x\n", icache_features_p[e_cfg_coherent]);
    end
 
   logic data_mem_read_r, tag_mem_read_r, stat_mem_read_r;
@@ -114,7 +116,7 @@ module bp_fe_nonsynth_icache_tracer
 
   always_ff @(posedge clk_i)
     begin
-      if (ready_o & v_i)
+      if (yumi_o)
         $fwrite(file, "%12t | access: %p\n", $time, icache_pkt_cast_i);
 
       if (data_mem_pkt_yumi_o)
@@ -134,10 +136,10 @@ module bp_fe_nonsynth_icache_tracer
 
       if (data_v_o)
         $fwrite(file, "%12t | fetch: [%x]->%x\n", $time, paddr_tv_r, data_o);
-      if (miss_v_o)
+      if (spec_v_o)
         $fwrite(file, "%12t | spec miss: [%x]\n", $time, paddr_tv_r);
 
-      if (cache_req_yumi_i)
+      if (cache_req_ready_and_i & cache_req_v_o)
         $fwrite(file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);
 
       if (cache_req_metadata_v_o)

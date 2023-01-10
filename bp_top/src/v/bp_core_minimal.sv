@@ -12,8 +12,8 @@ module bp_core_minimal
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_cache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                             clk_i
@@ -23,7 +23,7 @@ module bp_core_minimal
 
    , output logic [icache_req_width_lp-1:0]          icache_req_o
    , output logic                                    icache_req_v_o
-   , input                                           icache_req_yumi_i
+   , input                                           icache_req_ready_and_i
    , input                                           icache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0] icache_req_metadata_o
    , output logic                                    icache_req_metadata_v_o
@@ -52,7 +52,7 @@ module bp_core_minimal
    //   a negative-edge cache engine and synchronized before getting to the memory system
    , output logic [dcache_req_width_lp-1:0]          dcache_req_o
    , output logic                                    dcache_req_v_o
-   , input                                           dcache_req_yumi_i
+   , input                                           dcache_req_ready_and_i
    , input                                           dcache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] dcache_req_metadata_o
    , output logic                                    dcache_req_metadata_v_o
@@ -90,7 +90,7 @@ module bp_core_minimal
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   bp_fe_queue_s fe_queue_li, fe_queue_lo;
-  logic fe_queue_v_li, fe_queue_ready_lo;
+  logic fe_queue_v_li, fe_queue_ready_and_lo;
   bp_fe_cmd_s fe_cmd_lo;
   logic fe_cmd_v_lo, fe_cmd_yumi_li;
 
@@ -104,7 +104,7 @@ module bp_core_minimal
 
      ,.fe_queue_o(fe_queue_li)
      ,.fe_queue_v_o(fe_queue_v_li)
-     ,.fe_queue_ready_i(fe_queue_ready_lo)
+     ,.fe_queue_ready_and_i(fe_queue_ready_and_lo)
 
      ,.fe_cmd_i(fe_cmd_lo)
      ,.fe_cmd_v_i(fe_cmd_v_lo)
@@ -112,7 +112,7 @@ module bp_core_minimal
 
      ,.cache_req_o(icache_req_o)
      ,.cache_req_v_o(icache_req_v_o)
-     ,.cache_req_yumi_i(icache_req_yumi_i)
+     ,.cache_req_ready_and_i(icache_req_ready_and_i)
      ,.cache_req_busy_i(icache_req_busy_i)
      ,.cache_req_metadata_o(icache_req_metadata_o)
      ,.cache_req_metadata_v_o(icache_req_metadata_v_o)
@@ -148,7 +148,7 @@ module bp_core_minimal
 
      ,.fe_queue_i(fe_queue_li)
      ,.fe_queue_v_i(fe_queue_v_li)
-     ,.fe_queue_ready_o(fe_queue_ready_lo)
+     ,.fe_queue_ready_and_o(fe_queue_ready_and_lo)
 
      ,.fe_cmd_o(fe_cmd_lo)
      ,.fe_cmd_v_o(fe_cmd_v_lo)
@@ -156,7 +156,7 @@ module bp_core_minimal
 
      ,.cache_req_o(dcache_req_o)
      ,.cache_req_v_o(dcache_req_v_o)
-     ,.cache_req_yumi_i(dcache_req_yumi_i)
+     ,.cache_req_ready_and_i(dcache_req_ready_and_i)
      ,.cache_req_busy_i(dcache_req_busy_i)
      ,.cache_req_metadata_o(dcache_req_metadata_o)
      ,.cache_req_metadata_v_o(dcache_req_metadata_v_o)

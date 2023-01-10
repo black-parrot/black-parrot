@@ -114,7 +114,7 @@ module bp_cce_dir
       ,.sets_p(icache_sets_p)
       ,.assoc_p(icache_assoc_p)
       ,.paddr_width_p(paddr_width_p)
-      ,.tag_width_p(ctag_width_p)
+      ,.tag_width_p(icache_ctag_width_p)
       ,.num_cce_p(num_cce_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_lp)
       )
@@ -177,7 +177,7 @@ module bp_cce_dir
         ,.sets_p(dcache_sets_p)
         ,.assoc_p(dcache_assoc_p)
         ,.paddr_width_p(paddr_width_p)
-        ,.tag_width_p(ctag_width_p)
+        ,.tag_width_p(dcache_ctag_width_p)
         ,.num_cce_p(num_cce_p)
         ,.block_size_in_bytes_p(block_size_in_bytes_lp)
         )
@@ -262,7 +262,7 @@ module bp_cce_dir
         ,.sets_p(acache_sets_p)
         ,.assoc_p(acache_assoc_p)
         ,.paddr_width_p(paddr_width_p)
-        ,.tag_width_p(ctag_width_p)
+        ,.tag_width_p(acache_ctag_width_p)
         ,.num_cce_p(num_cce_p)
         ,.block_size_in_bytes_p(block_size_in_bytes_lp)
         )
@@ -365,7 +365,7 @@ module bp_cce_dir
                               ? acache_addr_dst_gpr_lo
                               : e_opd_r0;
 
-  //synopsys translate_off
+  // synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       assert(reset_i !== '0 || $countones({icache_lru_v, dcache_lru_v, acache_lru_v}) <= 1)
@@ -374,6 +374,6 @@ module bp_cce_dir
         else $error("Multiple directory segments attempting to output addr information in same cycle");
     end
   end
-  //synopsys translate_on
+  // synopsys translate_on
 
 endmodule

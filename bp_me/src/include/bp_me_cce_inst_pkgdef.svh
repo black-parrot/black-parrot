@@ -323,14 +323,14 @@
   // Queue valid signals and message types
   // These can only be used as sources
   typedef enum logic [3:0] {
-    e_opd_mem_resp_v                       = 4'b0000
+    e_opd_mem_rev_v                        = 4'b0000
     ,e_opd_lce_resp_v                      = 4'b0001
     ,e_opd_pending_v                       = 4'b0010
     ,e_opd_lce_req_v                       = 4'b0011
     ,e_opd_lce_resp_type                   = 4'b0100
-    ,e_opd_mem_resp_type                   = 4'b0101
+    ,e_opd_mem_rev_type                    = 4'b0101
     ,e_opd_lce_resp_data                   = 4'b0110
-    ,e_opd_mem_resp_data                   = 4'b0111
+    ,e_opd_mem_rev_data                    = 4'b0111
     ,e_opd_lce_req_data                    = 4'b1000
   } bp_cce_inst_opd_queue_e;
 
@@ -397,7 +397,7 @@
     ,e_mux_sel_addr_mshr_lru               = 4'b1001
     ,e_mux_sel_addr_lce_req                = 4'b1010
     ,e_mux_sel_addr_lce_resp               = 4'b1011
-    ,e_mux_sel_addr_mem_resp               = 4'b1100
+    ,e_mux_sel_addr_mem_rev                = 4'b1100
     ,e_mux_sel_addr_pending                = 4'b1101
     ,e_mux_sel_addr_0                      = 4'b1111 // constant 0
   } bp_cce_inst_mux_sel_addr_e;
@@ -416,7 +416,7 @@
     ,e_mux_sel_lce_mshr_owner              = 4'b1001
     ,e_mux_sel_lce_lce_req                 = 4'b1010
     ,e_mux_sel_lce_lce_resp                = 4'b1011
-    ,e_mux_sel_lce_mem_resp                = 4'b1100
+    ,e_mux_sel_lce_mem_rev                 = 4'b1100
     ,e_mux_sel_lce_pending                 = 4'b1101
     ,e_mux_sel_lce_0                       = 4'b1111 // constant 0
   } bp_cce_inst_mux_sel_lce_e;
@@ -464,7 +464,7 @@
   // order: {lceReq, lceResp, memResp, pending}
   typedef enum logic [3:0] {
     e_src_q_pending                        = 4'b0001
-    ,e_src_q_mem_resp                      = 4'b0010
+    ,e_src_q_mem_rev                       = 4'b0010
     ,e_src_q_lce_resp                      = 4'b0100
     ,e_src_q_lce_req                       = 4'b1000
   } bp_cce_inst_src_q_e;
@@ -472,7 +472,7 @@
   // Source queue select
   typedef enum logic [1:0] {
     e_src_q_sel_lce_req                    = 2'b00
-    ,e_src_q_sel_mem_resp                  = 2'b01
+    ,e_src_q_sel_mem_rev                   = 2'b01
     ,e_src_q_sel_pending                   = 2'b10
     ,e_src_q_sel_lce_resp                  = 2'b11
   } bp_cce_inst_src_q_sel_e;
@@ -480,13 +480,13 @@
   // Destination queue one hot
   typedef enum logic [1:0] {
     e_dst_q_lce_cmd                        = 2'b01
-    ,e_dst_q_mem_cmd                       = 2'b10
+    ,e_dst_q_mem_fwd                       = 2'b10
   } bp_cce_inst_dst_q_e;
 
   // Destination queue select
   typedef enum logic [1:0] {
     e_dst_q_sel_lce_cmd                    = 2'b00
-    ,e_dst_q_sel_mem_cmd                   = 2'b01
+    ,e_dst_q_sel_mem_fwd                   = 2'b01
   } bp_cce_inst_dst_q_sel_e;
 
   /*
@@ -722,7 +722,7 @@
     union packed
     {
       bp_bedrock_cmd_type_e         lce_cmd;
-      bp_bedrock_mem_type_e         mem_cmd;
+      bp_bedrock_fwd_type_e         mem_fwd;
     }                                      cmd;
     logic                                  spec;
     logic                                  custom;
@@ -838,12 +838,12 @@
     bp_cce_inst_src_q_sel_e                  popq_qsel;
     logic                                    lce_req_yumi;
     logic                                    lce_resp_yumi;
-    logic                                    mem_resp_yumi;
+    logic                                    mem_rev_yumi;
     logic                                    pending_yumi;
     logic                                    lce_cmd_v;
     bp_bedrock_cmd_type_e                    lce_cmd;
-    logic                                    mem_cmd_v;
-    bp_bedrock_mem_type_e                    mem_cmd;
+    logic                                    mem_fwd_v;
+    bp_bedrock_fwd_type_e                    mem_fwd;
     logic                                    inv_cmd_v;
 
     // GPR write mask

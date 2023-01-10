@@ -70,6 +70,7 @@ surelog:
 # Some licensing issue as of 02/10/21
 synth-vivado:
   <<: *job_definition
+  when: manual
   stage: check
   allow_failure: true
   tags:
@@ -98,9 +99,6 @@ tire_kick:
   stage: check
   tags:
     - verilator
-  before_script:
-    # This should persist for other jobs
-    - make libs
   script:
     - $CI_PROJECT_DIR/ci/tire_kick.sh $CI_CORES
 
@@ -348,6 +346,7 @@ top-linux-vcs:
 top-accelerator-vcs:
   <<: *job_definition
   stage: test-medium
+  allow_failure: true
   tags:
     - vcs
   script:

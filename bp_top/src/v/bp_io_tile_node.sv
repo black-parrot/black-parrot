@@ -33,11 +33,11 @@ module bp_io_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
 
-   , input [E:W][io_noc_ral_link_width_lp-1:0]   io_cmd_link_i
-   , output [E:W][io_noc_ral_link_width_lp-1:0]  io_cmd_link_o
+   , input [E:W][io_noc_ral_link_width_lp-1:0]   io_fwd_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]  io_fwd_link_o
 
-   , input [E:W][io_noc_ral_link_width_lp-1:0]   io_resp_link_i
-   , output [E:W][io_noc_ral_link_width_lp-1:0]  io_resp_link_o
+   , input [E:W][io_noc_ral_link_width_lp-1:0]   io_rev_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]  io_rev_link_o
    );
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -48,8 +48,8 @@ module bp_io_tile_node
   bp_coh_ready_and_link_s core_lce_cmd_link_li, core_lce_cmd_link_lo;
 
   // Tile side IO connections
-  bp_io_ready_and_link_s core_io_cmd_link_li, core_io_cmd_link_lo;
-  bp_io_ready_and_link_s core_io_resp_link_li, core_io_resp_link_lo;
+  bp_io_ready_and_link_s core_io_fwd_link_li, core_io_fwd_link_lo;
+  bp_io_ready_and_link_s core_io_rev_link_li, core_io_rev_link_lo;
 
   bp_io_tile
    #(.bp_params_p(bp_params_p))
@@ -67,11 +67,11 @@ module bp_io_tile_node
      ,.lce_cmd_link_i(core_lce_cmd_link_li)
      ,.lce_cmd_link_o(core_lce_cmd_link_lo)
 
-     ,.io_cmd_link_i(core_io_cmd_link_li)
-     ,.io_cmd_link_o(core_io_cmd_link_lo)
+     ,.io_fwd_link_i(core_io_fwd_link_li)
+     ,.io_fwd_link_o(core_io_fwd_link_lo)
 
-     ,.io_resp_link_i(core_io_resp_link_li)
-     ,.io_resp_link_o(core_io_resp_link_lo)
+     ,.io_rev_link_i(core_io_rev_link_li)
+     ,.io_rev_link_o(core_io_rev_link_lo)
      );
 
 
@@ -113,10 +113,10 @@ module bp_io_tile_node
      ,.network_clk_i(io_clk_i)
      ,.network_reset_i(io_reset_i)
      ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
-     ,.network_link_i({io_cmd_link_i, io_resp_link_i})
-     ,.network_link_o({io_cmd_link_o, io_resp_link_o})
-     ,.tile_link_i({core_io_cmd_link_lo, core_io_resp_link_lo})
-     ,.tile_link_o({core_io_cmd_link_li, core_io_resp_link_li})
+     ,.network_link_i({io_fwd_link_i, io_rev_link_i})
+     ,.network_link_o({io_fwd_link_o, io_rev_link_o})
+     ,.tile_link_i({core_io_fwd_link_lo, core_io_rev_link_lo})
+     ,.tile_link_o({core_io_fwd_link_li, core_io_rev_link_li})
      );
 
 endmodule
