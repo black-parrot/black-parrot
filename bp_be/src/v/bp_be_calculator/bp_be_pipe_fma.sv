@@ -167,7 +167,7 @@ module bp_be_pipe_fma
   logic [dp_exp_width_gp+1:0] fma_out_sexp;
   logic [dp_sig_width_gp+2:0] fma_out_sig;
   logic [dword_width_gp-1:0] imul_out;
-  logic [dp_rec_width_gp-1:0] fma_dp_final;
+  logic [dp_rec_width_gp-1:0] fma_dp_result;
   rv64_fflags_s fma_dp_fflags;
   mulAddRecFN
    #(.expWidth(dp_exp_width_gp)
@@ -184,17 +184,40 @@ module bp_be_pipe_fma
      ,.c(fma_c_li)
      ,.roundingMode(frm_li)
 
-     ,.out(fma_dp_final)
+     ,.out(fma_dp_result)
      ,.out_imul(imul_out)
      ,.exceptionFlags(fma_dp_fflags)
      );
   wire [dpath_width_gp-1:0] imulw_out    = $signed(imul_out) >>> word_width_gp;
   wire [dpath_width_gp-1:0] imul_result = opw_r ? imulw_out : imul_out;
 
-  bp_be_fp_reg_s fma_result;
+  logic [dp_rec_width_gp-1:0] fma_sp_result;
+  rv64_fflags_s fma_sp_fflags;
+  roundRecFNtoRecFN
+   #(.inExpWidth(dp_exp_width_gp)
+     ,.inSigWidth(dp_sig_width_gp)
+     ,.roundExpWidth(sp_exp_width_gp)
+     ,.roundSigWidth(sp_sig_width_gp)
+     ,.outExpWidth(dp_exp_width_gp)
+     ,.outSigWidth(dp_sig_width_gp)
+     )
+   round
+    (.control(control_li)
+     ,.in(fma_dp_result)
+     ,.roundingMode(frm_r)
+     ,.out(fma_sp_result)
+     ,.exceptionFlags(fma_sp_fflags)
+     );
+
+  bp_be_fp_reg_s fma_sp_reg_lo, fma_dp_reg_lo, fma_result;
   rv64_fflags_s fma_fflags;
-  assign fma_result = '{tag: ops_r ? frm_r : e_fp_full, rec: fma_dp_final};
-  assign fma_fflags = fma_dp_fflags;
+  assign fma_dp_reg_lo = '{tag: e_fp_full, rec: fma_dp_result};
+  assign fma_sp_reg_lo = '{tag: e_fp_rne, rec: fma_sp_result};
+  always_comb
+    if (ops_r)
+      {fma_fflags, fma_result} = {fma_dp_fflags | fma_sp_fflags, fma_sp_reg_lo};
+    else
+      {fma_fflags, fma_result} = {fma_dp_fflags, fma_dp_reg_lo};
 
   // TODO: Can combine the registers here if DC doesn't do it automatically
   bsg_dff_chain
