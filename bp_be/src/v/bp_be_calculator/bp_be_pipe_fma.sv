@@ -212,7 +212,7 @@ module bp_be_pipe_fma
   bp_be_fp_reg_s fma_sp_reg_lo, fma_dp_reg_lo, fma_result;
   rv64_fflags_s fma_fflags;
   assign fma_dp_reg_lo = '{tag: e_fp_full, rec: fma_dp_result};
-  assign fma_sp_reg_lo = '{tag: e_fp_rne, rec: fma_sp_result};
+  assign fma_sp_reg_lo = '{tag: e_fp_sp, rec: fma_sp_result};
   always_comb
     if (ops_r)
       {fma_fflags, fma_result} = {fma_dp_fflags | fma_sp_fflags, fma_sp_reg_lo};

@@ -144,7 +144,7 @@ module bp_be_pipe_aux
      ,.exceptionFlags(i2d_fflags)
      );
 
-  assign i2f_result = '{tag: decode.ops_v ? frm_li : e_fp_full, rec: i2d_out};
+  assign i2f_result = '{tag: decode.ops_v ? e_fp_sp : e_fp_full, rec: i2d_out};
   assign i2f_fflags = i2d_fflags;
 
   //
@@ -286,7 +286,7 @@ module bp_be_pipe_aux
   // SP->DP conversion is a NOP, except for canonicalizing NaNs
   wire [dp_rec_width_gp-1:0] frs1_canon_dp = frs1_is_nan ? dp_canonical_rec : frs1.rec;
 
-  assign f2f_result = '{tag: decode.ops_v ? e_fp_full : frm_li, rec: decode.ops_v ? frs1.rec : frs1_canon_dp};
+  assign f2f_result = '{tag: decode.ops_v ? e_fp_full : e_fp_sp, rec: decode.ops_v ? frs1.rec : frs1_canon_dp};
   assign f2f_fflags = '0;
 
   //
@@ -351,7 +351,7 @@ module bp_be_pipe_aux
      );
   wire fle_lo = ~fgt_lo;
   wire fcmp_out = (is_feq_li & feq_lo) | (is_flt_li & flt_lo) | (is_fle_li & (flt_lo | feq_lo));
-  assign fcmp_result = '{tag: decode.ops_v ? frm_li : e_fp_full, rec: fcmp_out};
+  assign fcmp_result = '{tag: decode.ops_v ? e_fp_sp : e_fp_full, rec: fcmp_out};
 
   //
   // FMIN-MAX
@@ -372,7 +372,7 @@ module bp_be_pipe_aux
     else
       fminmax_out = (is_fmax_li ^ flt_lo) ? frs1.rec : frs2.rec;
 
-  assign fminmax_result = '{tag: decode.ops_v ? frm_li : e_fp_full, rec: fminmax_out};
+  assign fminmax_result = '{tag: decode.ops_v ? e_fp_sp : e_fp_full, rec: fminmax_out};
   assign fminmax_fflags = '{nv: (frs1_is_snan | frs2_is_snan), default: '0};
 
   //

@@ -42,7 +42,7 @@ module bp_be_reg_to_fp
    round
     (.control(control_li)
      ,.in(reg_cast_i.rec)
-     ,.roundingMode(reg_cast_i.tag)
+     ,.roundingMode('0)
      ,.out(dp2sp_rec_round)
      ,.exceptionFlags(dp2sp_fflags)
      );

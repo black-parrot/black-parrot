@@ -205,7 +205,7 @@ module bp_be_pipe_long
   bp_be_fp_reg_s fdivsqrt_sp_reg_lo, fdivsqrt_dp_reg_lo, frd_data_lo;
   rv64_fflags_s fflags_lo;
   assign fdivsqrt_dp_reg_lo = '{tag: e_fp_full, rec: fdivsqrt_dp_result};
-  assign fdivsqrt_sp_reg_lo = '{tag: e_fp_rne, rec: fdivsqrt_sp_result};
+  assign fdivsqrt_sp_reg_lo = '{tag: e_fp_sp, rec: fdivsqrt_sp_result};
   always_comb
     if (ops_v_r)
       {fflags_lo, frd_data_lo} = {fdivsqrt_dp_fflags | fdivsqrt_sp_fflags, fdivsqrt_sp_reg_lo};
