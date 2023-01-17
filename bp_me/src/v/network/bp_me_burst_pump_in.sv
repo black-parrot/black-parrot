@@ -122,11 +122,14 @@ module bp_me_burst_pump_in
      ,.yumi_i(msg_data_yumi_lo)
      );
 
-  wire [stream_cnt_width_lp-1:0] stream_size =
-    `BSG_MAX((1'b1 << msg_header_li.size) / stream_bytes_lp, 1'b1) - 1'b1;
-  wire nz_stream = stream_size > '0;
   wire fsm_stream = fsm_stream_mask_p[msg_header_li.msg_type];
   wire msg_stream = msg_stream_mask_p[msg_header_li.msg_type];
+  wire do_single = ~fsm_stream & ~msg_stream;
+
+  wire [stream_cnt_width_lp-1:0] stream_size = do_single
+    ? '0
+    : `BSG_MAX((1'b1 << msg_header_li.size) / stream_bytes_lp, 1'b1) - 1'b1;
+  wire nz_stream = stream_size > '0;
   wire do_burst = fsm_stream &  msg_stream & nz_stream;
   wire do_spray = fsm_stream & ~msg_stream & nz_stream;
 
@@ -180,7 +183,7 @@ module bp_me_burst_pump_in
                       ? do_burst
                         ? e_burst
                         : do_spray
-                          ? e_spray 
+                          ? e_spray
                           : e_ready
                       : e_ready;
           end
