@@ -164,7 +164,7 @@ module bp_me_stream_pump_in
           // N:1
           // consume all but last msg input beat silently, then FSM consumes last beat
           fsm_v_o = msg_v_li & fsm_last_o;
-          msg_yumi_lo = (msg_v_li & ~fsm_last_o) | fsm_yumi_i;
+          msg_yumi_lo = msg_v_li & (~fsm_last_o | fsm_yumi_i);
           cnt_up = msg_v_li & msg_yumi_lo;
           // Hold address constant at critical address
           fsm_addr_o = msg_header_li.addr;
