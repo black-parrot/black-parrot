@@ -161,9 +161,12 @@ module bp_be_pipe_mem
 
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_ptag_uncached, dcache_ptag_dram, dcache_ptag_v;
+  logic [dword_width_gp-1:0] dcache_st_data;
+  rv64_fflags_s             dcache_st_fflags;
 
   logic [dpath_width_gp-1:0] dcache_early_data;
   logic                     dcache_early_ret, dcache_early_store, dcache_early_fencei, dcache_early_hit_v;
+  logic                     dcache_early_float;
   logic                     dcache_tv_we;
 
   logic                     dcache_final_float, dcache_final_v, dcache_final_yumi;
@@ -310,11 +313,14 @@ module bp_be_pipe_mem
       ,.ptag_v_i(dcache_ptag_v)
       ,.ptag_uncached_i(dcache_ptag_uncached)
       ,.ptag_dram_i(dcache_ptag_dram)
+      ,.st_data_i(dcache_st_data)
+      ,.st_fflags_i(dcache_st_fflags)
       ,.tv_we_o(dcache_tv_we)
       ,.flush_i(flush_i)
 
       ,.early_hit_v_o(dcache_early_hit_v)
       ,.early_fencei_o(dcache_early_fencei)
+      ,.early_float_o(dcache_early_float)
       ,.early_ret_o(dcache_early_ret)
       ,.early_store_o(dcache_early_store)
       ,.early_data_o(dcache_early_data)
@@ -395,6 +401,27 @@ module bp_be_pipe_mem
      ,.data_i(is_req)
      ,.data_o(early_v_r)
      );
+
+  logic [dpath_width_gp-1:0] rs2_r;
+  bsg_dff
+   #(.width_p(dpath_width_gp))
+   st_data_reg
+    (.clk_i(negedge_clk)
+     ,.data_i(rs2)
+     ,.data_o(rs2_r)
+     );
+
+  logic [dword_width_gp-1:0] dcache_st_fdata, dcache_st_idata;
+  rv64_fflags_s st_fflags_tl;
+  bp_be_reg_to_fp
+   #(.bp_params_p(bp_params_p))
+   reg_to_fp
+    (.reg_i(rs2_r)
+     ,.raw_o(dcache_st_fdata)
+     ,.fflags_o(dcache_st_fflags)
+     );
+  assign dcache_st_idata = rs2_r;
+  assign dcache_st_data = dcache_early_float ? dcache_st_fdata : dcache_st_idata;
 
   logic dtlb_r_v_r;
   bsg_dff

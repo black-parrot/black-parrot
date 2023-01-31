@@ -139,6 +139,8 @@ module bp_be_dcache
    , input                                           ptag_v_i
    , input                                           ptag_uncached_i
    , input                                           ptag_dram_i
+   , input [dword_width_gp-1:0]                      st_data_i
+   , input rv64_fflags_s                             st_fflags_i
    , output logic                                    tv_we_o
    , input                                           flush_i
 
@@ -147,6 +149,7 @@ module bp_be_dcache
    , output logic [dpath_width_gp-1:0]               early_data_o
    , output logic                                    early_hit_v_o
    , output logic                                    early_fencei_o
+   , output logic                                    early_float_o
    , output logic                                    early_ret_o
    , output logic                                    early_store_o
 
@@ -360,18 +363,6 @@ module bp_be_dcache
      ,.o(bank_sel_one_hot_tl)
      );
 
-  bp_be_fp_reg_s fp_reg;
-  assign fp_reg = data_tl_r;
-  logic [dword_width_gp-1:0] fp_raw_data;
-  bp_be_reg_to_fp
-   #(.bp_params_p(bp_params_p))
-   reg_to_fp
-    (.reg_i(fp_reg)
-     ,.raw_o(fp_raw_data)
-     );
-
-  wire [dword_width_gp-1:0] st_data_tl = decode_tl_r.float_op ? fp_raw_data : data_tl_r;
-
   wire uncached_op_tl =  ptag_uncached_i | decode_tl_r.uncached_op;
   wire dram_op_tl     =  ptag_dram_i;
 
@@ -463,15 +454,6 @@ module bp_be_dcache
      ,.en_i(tv_we | cache_req_critical_data_i)
      ,.data_i(ld_data_tv_n)
      ,.data_o(ld_data_tv_r)
-     );
-
-  bsg_dff_en
-   #(.width_p(dword_width_gp))
-   st_data_tv_reg
-    (.clk_i(clk_i)
-     ,.en_i(tv_we & decode_tl_r.store_op)
-     ,.data_i(st_data_tl)
-     ,.data_o(st_data_tv_r)
      );
 
   bsg_dff_en
@@ -618,6 +600,7 @@ module bp_be_dcache
     : early_data;
 
   assign early_hit_v_o  = v_tv_r & ~any_miss_tv & ~fill_tv_r;
+  assign early_float_o  = decode_tv_r.float_op;
   assign early_fencei_o = decode_tv_r.fencei_op;
   assign early_ret_o    = decode_tv_r.ret_op;
   assign early_store_o  = decode_tv_r.store_op;
