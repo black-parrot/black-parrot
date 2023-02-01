@@ -279,7 +279,7 @@ module bp_be_pipe_mem
      ,.page_idx_width_p(sv39_page_idx_width_gp)
      )
    ptw
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
 
      ,.busy_o(ptw_busy)
@@ -458,7 +458,7 @@ module bp_be_pipe_mem
   bsg_dff
    #(.width_p(2+reg_addr_width_gp+dword_width_gp))
    early_data_reg
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
      ,.data_i({dcache_late_v, dcache_float, dcache_rd_addr, dcache_data})
      ,.data_o({dcache_late_v_r, dcache_float_r, dcache_rd_addr_r, dcache_data_r})
      );
@@ -513,7 +513,7 @@ module bp_be_pipe_mem
   bsg_dff_chain
    #(.width_p(1), .num_stages_p(1))
    early_chain
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
 
      ,.data_i(early_v_li)
      ,.data_o(early_v_o)
@@ -523,7 +523,7 @@ module bp_be_pipe_mem
   bsg_dff_chain
    #(.width_p(1), .num_stages_p(2))
    final_chain
-    (.clk_i(clk_i)
+    (.clk_i(posedge_clk)
 
      ,.data_i(final_v_li)
      ,.data_o(final_v_o)
