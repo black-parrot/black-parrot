@@ -536,8 +536,8 @@ module bp_be_dcache
 
   logic [dword_width_gp-1:0] ld_data_dword_merged;
 
-  logic [3:2][dword_width_gp-1:0] sigext_word;
-  for (genvar i = 2; i < 4; i++)
+  logic [3:0][dword_width_gp-1:0] sigext_word;
+  for (genvar i = 0; i < 4; i++)
     begin : word_alignment
       localparam slice_width_lp = 8*(2**i);
 
@@ -559,20 +559,11 @@ module bp_be_dcache
 
   logic [dword_width_gp-1:0] early_data;
   bsg_mux_one_hot
-   #(.width_p(dword_width_gp), .els_p(2))
+   #(.width_p(dword_width_gp), .els_p(4))
    word_mux
     (.data_i(sigext_word)
-     ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op})
+     ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op, decode_tv_r.half_op, decode_tv_r.byte_op})
      ,.data_o(early_data)
-     );
-
-  logic [dword_width_gp-1:0] result_data;
-  bsg_mux_one_hot
-   #(.width_p(dword_width_gp), .els_p(2))
-   result_mux
-    (.data_i({early_data, ld_data_dword_merged})
-     ,.sel_one_hot_i({(decode_tv_r.double_op | decode_tv_r.word_op), (decode_tv_r.half_op | decode_tv_r.byte_op)})
-     ,.data_o(result_data)
      );
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
@@ -665,7 +656,7 @@ module bp_be_dcache
    dm_stage_reg
     (.clk_i(clk_i)
      ,.en_i(dm_we)
-     ,.data_i({fill_tv_r, result_data, paddr_tv_r, decode_tv_r})
+     ,.data_i({fill_tv_r, early_data, paddr_tv_r, decode_tv_r})
      ,.data_o({fill_dm_r, ld_data_dm_r, paddr_dm_r, decode_dm_r})
      );
 
