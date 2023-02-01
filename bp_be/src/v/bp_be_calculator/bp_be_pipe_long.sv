@@ -133,11 +133,11 @@ module bp_be_pipe_long
   wire fdiv_v_li  = v_li & (decode.fu_op == e_fma_op_fdiv);
   wire fsqrt_v_li = v_li & (decode.fu_op == e_fma_op_fsqrt);
 
-  logic [dp_rec_width_gp-1:0] fdivsqrt_dp_result;
-  rv64_fflags_s fdivsqrt_dp_fflags;
   logic fdiv_ready_and_lo, fdivsqrt_v_lo;
-  logic sqrt_lo;
-  divSqrtRecFN_small
+  logic sqrt_lo, invalid_exc, infinite_exc;
+  logic [2:0] frm_lo;
+  bp_hardfloat_raw_dp_s fdivsqrt_raw_lo;
+  divSqrtRecFNToRaw_small
    #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
    fdiv
     (.clock(clk_i)
@@ -153,8 +153,16 @@ module bp_be_pipe_long
 
      ,.outValid(fdivsqrt_v_lo)
      ,.sqrtOpOut(sqrt_lo)
-     ,.out(fdivsqrt_dp_result)
-     ,.exceptionFlags(fdivsqrt_dp_fflags)
+     ,.roundingModeOut(frm_lo)
+     ,.invalidExc(invalid_exc)
+     ,.infiniteExc(infinite_exc)
+
+     ,.out_isNaN(fdivsqrt_raw_lo.is_nan)
+     ,.out_isInf(fdivsqrt_raw_lo.is_inf)
+     ,.out_isZero(fdivsqrt_raw_lo.is_zero)
+     ,.out_sign(fdivsqrt_raw_lo.sign)
+     ,.out_sExp(fdivsqrt_raw_lo.sexp)
+     ,.out_sig(fdivsqrt_raw_lo.sig)
      );
 
   logic opw_v_r, ops_v_r;
@@ -172,6 +180,33 @@ module bp_be_pipe_long
      ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
      );
 
+  logic [dp_rec_width_gp-1:0] fdivsqrt_result_dp, fdivsqrt_result_sp;
+  rv64_fflags_s fdivsqrt_fflags_dp, fdivsqrt_fflags_sp;
+  roundRawFNtoRecFN_mixed
+   #(.fullExpWidth(dp_exp_width_gp)
+     ,.fullSigWidth(dp_sig_width_gp)
+     ,.midExpWidth(sp_exp_width_gp)
+     ,.midSigWidth(sp_sig_width_gp)
+     ,.outExpWidth(dp_exp_width_gp)
+     ,.outSigWidth(dp_sig_width_gp)
+     )
+   round_mixed
+    (.control(control_li)
+     ,.invalidExc(invalid_exc)
+     ,.infiniteExc(infinite_exc)
+     ,.in_isNaN(fdivsqrt_raw_lo.is_nan)
+     ,.in_isInf(fdivsqrt_raw_lo.is_inf)
+     ,.in_isZero(fdivsqrt_raw_lo.is_zero)
+     ,.in_sign(fdivsqrt_raw_lo.sign)
+     ,.in_sExp(fdivsqrt_raw_lo.sexp)
+     ,.in_sig(fdivsqrt_raw_lo.sig)
+     ,.roundingMode(frm_r)
+     ,.fullOut(fdivsqrt_result_dp)
+     ,.fullExceptionFlags(fdivsqrt_fflags_dp)
+     ,.midOut(fdivsqrt_result_sp)
+     ,.midExceptionFlags(fdivsqrt_fflags_sp)
+     );
+
   logic imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
   bsg_dff_reset_set_clear
    #(.width_p(4))
@@ -184,33 +219,15 @@ module bp_be_pipe_long
      ,.data_o({imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
      );
 
-  logic [dp_rec_width_gp-1:0] fdivsqrt_sp_result;
-  rv64_fflags_s fdivsqrt_sp_fflags;
-  roundRecFNtoRecFN
-   #(.inExpWidth(dp_exp_width_gp)
-     ,.inSigWidth(dp_sig_width_gp)
-     ,.roundExpWidth(sp_exp_width_gp)
-     ,.roundSigWidth(sp_sig_width_gp)
-     ,.outExpWidth(dp_exp_width_gp)
-     ,.outSigWidth(dp_sig_width_gp)
-     )
-   round
-    (.control(control_li)
-     ,.in(fdivsqrt_dp_result)
-     ,.roundingMode(frm_r)
-     ,.out(fdivsqrt_sp_result)
-     ,.exceptionFlags(fdivsqrt_sp_fflags)
-     );
-
   bp_be_fp_reg_s fdivsqrt_sp_reg_lo, fdivsqrt_dp_reg_lo, frd_data_lo;
   rv64_fflags_s fflags_lo;
-  assign fdivsqrt_dp_reg_lo = '{tag: e_fp_full, rec: fdivsqrt_dp_result};
-  assign fdivsqrt_sp_reg_lo = '{tag: e_fp_sp, rec: fdivsqrt_sp_result};
+  assign fdivsqrt_sp_reg_lo = '{tag: e_fp_sp, rec: fdivsqrt_result_sp};
+  assign fdivsqrt_dp_reg_lo = '{tag: e_fp_full, rec: fdivsqrt_result_dp};
   always_comb
     if (ops_v_r)
-      {fflags_lo, frd_data_lo} = {fdivsqrt_dp_fflags | fdivsqrt_sp_fflags, fdivsqrt_sp_reg_lo};
+      {fflags_lo, frd_data_lo} = {fdivsqrt_fflags_sp, fdivsqrt_sp_reg_lo};
     else
-      {fflags_lo, frd_data_lo} = {fdivsqrt_dp_fflags, fdivsqrt_dp_reg_lo};
+      {fflags_lo, frd_data_lo} = {fdivsqrt_fflags_dp, fdivsqrt_dp_reg_lo};
 
   logic [dword_width_gp-1:0] ird_data_lo;
   always_comb

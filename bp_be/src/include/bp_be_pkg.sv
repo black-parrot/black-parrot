@@ -45,6 +45,26 @@ package bp_be_pkg;
 
   typedef struct packed
   {
+    logic                       is_nan;
+    logic                       is_inf;
+    logic                       is_zero;
+    logic                       sign;
+    logic [dp_exp_width_gp+1:0] sexp;
+    logic [dp_sig_width_gp+2:0] sig;
+  }  bp_hardfloat_raw_dp_s;
+
+  typedef struct packed
+  {
+    logic                       is_nan;
+    logic                       is_inf;
+    logic                       is_zero;
+    logic                       sign;
+    logic [sp_exp_width_gp+1:0] sexp;
+    logic [sp_sig_width_gp+2:0] sig;
+  }  bp_hardfloat_raw_sp_s;
+
+  typedef struct packed
+  {
     bp_be_fp_tag_e        tag;
     bp_hardfloat_rec_dp_s rec;
   }  bp_be_fp_reg_s;
