@@ -194,8 +194,9 @@ module bp_be_pipe_fma
   wire [dpath_width_gp-1:0] imul_result = opw_v_r ? imulw_out : imul_out;
 
   bp_hardfloat_raw_dp_s fma_raw_r;
+  logic invalid_exc_r;
   bsg_dff_chain
-   #(.width_p($bits(bp_hardfloat_raw_dp_s)+1), .num_stages_p(fma_pipeline_stages_lp[1]))
+   #(.width_p(1+$bits(bp_hardfloat_raw_dp_s)), .num_stages_p(fma_pipeline_stages_lp[1]))
    round_info_chain
     (.clk_i(clk_i)
      ,.data_i({invalid_exc, fma_raw_lo})
