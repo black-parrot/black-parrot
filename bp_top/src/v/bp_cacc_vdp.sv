@@ -191,7 +191,6 @@ module bp_cacc_vdp
      ,.early_hit_v_o(dcache_v)
      ,.early_fencei_o()
      ,.early_data_o(dcache_data)
-     ,.early_fflags_o()
      ,.early_ret_o()
 
      ,.final_v_o(final_v)
