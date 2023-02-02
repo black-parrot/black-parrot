@@ -184,7 +184,7 @@ module bp_be_pipe_long
   rv64_fflags_s fdivsqrt_fflags_dp, fdivsqrt_fflags_sp;
   roundRawFNtoRecFN_mixed
    #(.fullExpWidth(dp_exp_width_gp)
-     ,.fullSigWidth(dp_sig_width_gp+2)
+     ,.fullSigWidth(dp_sig_width_gp)
      ,.midExpWidth(sp_exp_width_gp)
      ,.midSigWidth(sp_sig_width_gp)
      ,.outExpWidth(dp_exp_width_gp)

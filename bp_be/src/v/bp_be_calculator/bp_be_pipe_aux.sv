@@ -314,7 +314,7 @@ module bp_be_pipe_aux
   logic [dp_rec_width_gp-1:0] sp2dp_result;
   roundRawFNtoRecFN_mixed
    #(.fullExpWidth(dp_exp_width_gp)
-     ,.fullSigWidth(dp_sig_width_gp)
+     ,.fullSigWidth(dp_sig_width_gp-2)
      ,.midExpWidth(sp_exp_width_gp)
      ,.midSigWidth(sp_sig_width_gp)
      ,.outExpWidth(dp_exp_width_gp)
