@@ -194,10 +194,9 @@ module bp_nonsynth_cosim
 
       bp_be_reg_to_fp
        #(.bp_params_p(bp_params_p))
-       debug_fp
+       unrecode
         (.reg_i(frd_data_r[i])
          ,.raw_o(frd_raw_li[i])
-         ,.fflags_o()
          );
     end
 

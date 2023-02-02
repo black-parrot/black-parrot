@@ -57,7 +57,6 @@ module bp_be_pipe_mem
    , output logic                         store_page_fault_v_o
 
    , output logic [dpath_width_gp-1:0]    early_data_o
-   , output rv64_fflags_s                 early_fflags_o
    , output logic                         early_v_o
    , output logic [dpath_width_gp-1:0]    final_data_o
    , output logic                         final_v_o
@@ -164,7 +163,6 @@ module bp_be_pipe_mem
   logic                     dcache_ptag_uncached, dcache_ptag_dram, dcache_ptag_v;
 
   logic [dpath_width_gp-1:0] dcache_early_data;
-  rv64_fflags_s             dcache_early_fflags;
   logic                     dcache_early_ret, dcache_early_store, dcache_early_fencei, dcache_early_hit_v;
   logic                     dcache_tv_we;
 
@@ -320,7 +318,6 @@ module bp_be_pipe_mem
       ,.early_ret_o(dcache_early_ret)
       ,.early_store_o(dcache_early_store)
       ,.early_data_o(dcache_early_data)
-      ,.early_fflags_o(dcache_early_fflags)
 
       ,.final_v_o(dcache_final_v)
       ,.final_data_o(dcache_final_data)
@@ -436,7 +433,6 @@ module bp_be_pipe_mem
   assign busy_o                 = ~dcache_ready_and_lo | ~late_ready_lo;
   assign ptw_busy_o             = ptw_busy;
   assign early_data_o           = dcache_early_data;
-  assign early_fflags_o         = dcache_early_fflags;
   assign final_data_o           = dcache_final_data;
 
   logic late_float;

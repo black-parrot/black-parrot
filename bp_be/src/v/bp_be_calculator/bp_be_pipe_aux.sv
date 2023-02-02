@@ -73,23 +73,19 @@ module bp_be_pipe_aux
   // Convert recoded registers to raw
   //
   logic [dword_width_gp-1:0] frs1_raw;
-  rv64_fflags_s frs1_raw_fflags;
   bp_be_reg_to_fp
    #(.bp_params_p(bp_params_p))
    frs1_rec2raw
     (.reg_i(frs1)
      ,.raw_o(frs1_raw)
-     ,.fflags_o(frs1_raw_fflags)
      );
 
   logic [dword_width_gp-1:0] frs2_raw;
-  rv64_fflags_s frs2_raw_fflags;
   bp_be_reg_to_fp
    #(.bp_params_p(bp_params_p))
    frs2_rec2raw
     (.reg_i(frs2)
      ,.raw_o(frs2_raw)
-     ,.fflags_o(frs2_raw_fflags)
      );
 
   //
@@ -102,7 +98,7 @@ module bp_be_pipe_aux
       decode.opw_v
       ? {{word_width_gp{frs1_raw[word_width_gp-1]}}, frs1_raw[0+:word_width_gp]}
       : frs1_raw;
-  assign fmvi_fflags = frs1_raw_fflags;
+  assign fmvi_fflags = '0;
 
   //
   // FMV Int -> Float
@@ -275,7 +271,7 @@ module bp_be_pipe_aux
                            ,n_inf :  frs1_sign & frs1_is_inf
                            ,default: '0
                            };
-  assign fclass_fflags = frs1_raw_fflags;
+  assign fclass_fflags = '0;
 
   //
   // Float to Float
