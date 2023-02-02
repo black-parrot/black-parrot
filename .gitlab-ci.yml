@@ -26,7 +26,7 @@ stages:
     - me_dev
     - top_dev
     - sw_dev
-    - be_dev_fix_fmaprecision
+    - be_dev_fix_extractdcachefloat
   before_script:
       - git submodule update --init --checkout --recursive external/
       - cp -r $CI_RTL_INSTALL_DIR install/
