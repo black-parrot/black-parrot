@@ -140,8 +140,36 @@ module bp_be_pipe_aux
      ,.exceptionFlags(i2d_fflags)
      );
 
-  assign i2f_result = '{tag: decode.ops_v ? e_fp_sp : e_fp_full, rec: i2d_out};
-  assign i2f_fflags = i2d_fflags;
+  logic [sp_rec_width_gp-1:0] i2s_out;
+  rv64_fflags_s i2s_fflags;
+  iNToRecFN
+   #(.intWidth(dword_width_gp)
+     ,.expWidth(sp_exp_width_gp)
+     ,.sigWidth(sp_sig_width_gp)
+     )
+   i2s
+    (.control(control_li)
+     ,.signedIn(signed_i2f)
+     ,.in(i2f_src)
+     ,.roundingMode(frm_li)
+     ,.out(i2s_out)
+     ,.exceptionFlags(i2s_fflags)
+     );
+
+  logic [dp_rec_width_gp-1:0] i2s2d_out;
+  recFNToRecFN_unsafe
+   #(.inExpWidth(sp_exp_width_gp)
+     ,.inSigWidth(sp_sig_width_gp)
+     ,.outExpWidth(dp_exp_width_gp)
+     ,.outSigWidth(dp_sig_width_gp)
+     )
+   i2s2d
+    (.in(i2s_out)
+     ,.out(i2s2d_out)
+     );
+
+  assign i2f_result = '{tag: decode.ops_v ? e_fp_sp : e_fp_full, rec: decode.ops_v ? i2s2d_out : i2d_out};
+  assign i2f_fflags = decode.ops_v ? i2s_fflags : i2d_fflags;
 
   //
   // FCVT Float -> Int
@@ -203,9 +231,9 @@ module bp_be_pipe_aux
   logic frs1_is_nan, frs1_is_inf, frs1_is_zero;
   logic frs1_sign;
   logic [dp_exp_width_gp+1:0] frs1_sexp;
-  logic [dp_sig_width_gp+2:0] frs1_sig;
+  logic [dp_sig_width_gp:0] frs1_sig;
   recFNToRawFN
-   #(.expWidth(dp_exp_width_gp) ,.sigWidth(dp_sig_width_gp+2))
+   #(.expWidth(dp_exp_width_gp) ,.sigWidth(dp_sig_width_gp))
    frs1_class
     (.in(frs1.rec)
      ,.isNaN(frs1_is_nan)
@@ -282,20 +310,6 @@ module bp_be_pipe_aux
   // DP->SP conversion is a rounding operation
   rv64_fflags_s dp2sp_fflags;
   logic [dp_rec_width_gp-1:0] dp2sp_result;
-  //recFNToRecFN
-  // #(.inExpWidth(dp_exp_width_gp)
-  //   ,.inSigWidth(dp_sig_width_gp)
-  //   ,.outExpWidth(sp_exp_width_gp)
-  //   ,.outSigWidth(sp_sig_width_gp)
-  //   )
-  // dp2sp
-  //  (.control(control_li)
-  //   ,.in(frs1)
-  //   ,.roundingMode(frm_li)
-  //   ,.out(dp2sp_result)
-  //   ,.exceptionFlags(dp2sp_fflags)
-  //   );
-
   rv64_fflags_s sp2dp_fflags;
   logic [dp_rec_width_gp-1:0] sp2dp_result;
   roundRawFNtoRecFN_mixed
@@ -306,10 +320,10 @@ module bp_be_pipe_aux
      ,.outExpWidth(dp_exp_width_gp)
      ,.outSigWidth(dp_sig_width_gp)
      )
-   round_mixed
+   f2f_round
     (.control(control_li)
-     ,.invalidExc(invalid_exc)
-     ,.infiniteExc(infinite_exc)
+     ,.invalidExc('0)
+     ,.infiniteExc('0)
      ,.in_isNaN(frs1_is_nan)
      ,.in_isInf(frs1_is_inf)
      ,.in_isZero(frs1_is_zero)
@@ -322,13 +336,13 @@ module bp_be_pipe_aux
      ,.midOut(dp2sp_result)
      ,.midExceptionFlags(dp2sp_fflags)
      );
-  
+
   // SP->DP conversion is a NOP, except for canonicalizing NaNs
   // assign sp2dp_result = frs1_is_nan ? dp_canonical_rec : frs1.rec;
   // assign sp2dp_fflags = '0;
 
-  assign f2f_result = '{tag: decode.ops_v ? e_fp_full : e_fp_sp, rec: decode.ops_v ? dp2sp_result : sp2dp_result};
-  assign f2f_fflags = decode.ops_v ? dp2sp_fflags : sp2dp_fflags;
+  assign f2f_result = '{tag: decode.ops_v ? e_fp_full : e_fp_sp, rec: decode.ops_v ? sp2dp_result : dp2sp_result};
+  assign f2f_fflags = decode.ops_v ? sp2dp_fflags : dp2sp_fflags;
 
   //
   // FSGNJ
