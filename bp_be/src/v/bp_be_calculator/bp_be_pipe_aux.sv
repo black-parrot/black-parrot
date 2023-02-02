@@ -203,9 +203,9 @@ module bp_be_pipe_aux
   logic frs1_is_nan, frs1_is_inf, frs1_is_zero;
   logic frs1_sign;
   logic [dp_exp_width_gp+1:0] frs1_sexp;
-  logic [dp_sig_width_gp:0] frs1_sig;
+  logic [dp_sig_width_gp+2:0] frs1_sig;
   recFNToRawFN
-   #(.expWidth(dp_exp_width_gp) ,.sigWidth(dp_sig_width_gp))
+   #(.expWidth(dp_exp_width_gp) ,.sigWidth(dp_sig_width_gp+2))
    frs1_class
     (.in(frs1.rec)
      ,.isNaN(frs1_is_nan)
@@ -279,11 +279,56 @@ module bp_be_pipe_aux
   bp_be_fp_reg_s f2f_result;
   rv64_fflags_s f2f_fflags;
 
-  // SP->DP conversion is a NOP, except for canonicalizing NaNs
-  wire [dp_rec_width_gp-1:0] frs1_canon_dp = frs1_is_nan ? dp_canonical_rec : frs1.rec;
+  // DP->SP conversion is a rounding operation
+  rv64_fflags_s dp2sp_fflags;
+  logic [dp_rec_width_gp-1:0] dp2sp_result;
+  //recFNToRecFN
+  // #(.inExpWidth(dp_exp_width_gp)
+  //   ,.inSigWidth(dp_sig_width_gp)
+  //   ,.outExpWidth(sp_exp_width_gp)
+  //   ,.outSigWidth(sp_sig_width_gp)
+  //   )
+  // dp2sp
+  //  (.control(control_li)
+  //   ,.in(frs1)
+  //   ,.roundingMode(frm_li)
+  //   ,.out(dp2sp_result)
+  //   ,.exceptionFlags(dp2sp_fflags)
+  //   );
 
-  assign f2f_result = '{tag: decode.ops_v ? e_fp_full : e_fp_sp, rec: decode.ops_v ? frs1.rec : frs1_canon_dp};
-  assign f2f_fflags = '0;
+  rv64_fflags_s sp2dp_fflags;
+  logic [dp_rec_width_gp-1:0] sp2dp_result;
+  roundRawFNtoRecFN_mixed
+   #(.fullExpWidth(dp_exp_width_gp)
+     ,.fullSigWidth(dp_sig_width_gp)
+     ,.midExpWidth(sp_exp_width_gp)
+     ,.midSigWidth(sp_sig_width_gp)
+     ,.outExpWidth(dp_exp_width_gp)
+     ,.outSigWidth(dp_sig_width_gp)
+     )
+   round_mixed
+    (.control(control_li)
+     ,.invalidExc(invalid_exc)
+     ,.infiniteExc(infinite_exc)
+     ,.in_isNaN(frs1_is_nan)
+     ,.in_isInf(frs1_is_inf)
+     ,.in_isZero(frs1_is_zero)
+     ,.in_sign(frs1_sign)
+     ,.in_sExp(frs1_sexp)
+     ,.in_sig(frs1_sig)
+     ,.roundingMode(frm_li)
+     ,.fullOut(sp2dp_result)
+     ,.fullExceptionFlags(sp2dp_fflags)
+     ,.midOut(dp2sp_result)
+     ,.midExceptionFlags(dp2sp_fflags)
+     );
+  
+  // SP->DP conversion is a NOP, except for canonicalizing NaNs
+  // assign sp2dp_result = frs1_is_nan ? dp_canonical_rec : frs1.rec;
+  // assign sp2dp_fflags = '0;
+
+  assign f2f_result = '{tag: decode.ops_v ? e_fp_full : e_fp_sp, rec: decode.ops_v ? dp2sp_result : sp2dp_result};
+  assign f2f_fflags = decode.ops_v ? dp2sp_fflags : sp2dp_fflags;
 
   //
   // FSGNJ
