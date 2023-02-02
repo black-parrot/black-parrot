@@ -308,38 +308,39 @@ module bp_be_pipe_aux
   rv64_fflags_s f2f_fflags;
 
   // DP->SP conversion is a rounding operation
+  logic [sp_rec_width_gp-1:0] dp2sp_round;
   rv64_fflags_s dp2sp_fflags;
-  logic [dp_rec_width_gp-1:0] dp2sp_result;
-  rv64_fflags_s sp2dp_fflags;
-  logic [dp_rec_width_gp-1:0] sp2dp_result;
-  roundRawFNtoRecFN_mixed
-   #(.fullExpWidth(dp_exp_width_gp)
-     ,.fullSigWidth(dp_sig_width_gp-2)
-     ,.midExpWidth(sp_exp_width_gp)
-     ,.midSigWidth(sp_sig_width_gp)
-     ,.outExpWidth(dp_exp_width_gp)
-     ,.outSigWidth(dp_sig_width_gp)
+  recFNToRecFN
+   #(.inExpWidth(dp_exp_width_gp)
+     ,.inSigWidth(dp_sig_width_gp)
+     ,.outExpWidth(sp_exp_width_gp)
+     ,.outSigWidth(sp_sig_width_gp)
      )
    f2f_round
     (.control(control_li)
-     ,.invalidExc('0)
-     ,.infiniteExc('0)
-     ,.in_isNaN(frs1_is_nan)
-     ,.in_isInf(frs1_is_inf)
-     ,.in_isZero(frs1_is_zero)
-     ,.in_sign(frs1_sign)
-     ,.in_sExp(frs1_sexp)
-     ,.in_sig(frs1_sig)
+     ,.in(frs1.rec)
      ,.roundingMode(frm_li)
-     ,.fullOut(sp2dp_result)
-     ,.fullExceptionFlags(sp2dp_fflags)
-     ,.midOut(dp2sp_result)
-     ,.midExceptionFlags(dp2sp_fflags)
+     ,.out(dp2sp_round)
+     ,.exceptionFlags(dp2sp_fflags)
+     );
+
+  logic [dp_rec_width_gp-1:0] dp2sp_result;
+  recFNToRecFN_unsafe
+   #(.inExpWidth(sp_exp_width_gp)
+     ,.inSigWidth(sp_sig_width_gp)
+     ,.outExpWidth(dp_exp_width_gp)
+     ,.outSigWidth(dp_sig_width_gp)
+     )
+   f2f_recover
+    (.in(dp2sp_round)
+     ,.out(dp2sp_result)
      );
 
   // SP->DP conversion is a NOP, except for canonicalizing NaNs
-  // assign sp2dp_result = frs1_is_nan ? dp_canonical_rec : frs1.rec;
-  // assign sp2dp_fflags = '0;
+  logic [dp_rec_width_gp-1:0] sp2dp_result;
+  rv64_fflags_s sp2dp_fflags;
+  assign sp2dp_result = frs1_is_nan ? dp_canonical_rec : frs1.rec;
+  assign sp2dp_fflags = '0;
 
   assign f2f_result = '{tag: decode.ops_v ? e_fp_full : e_fp_sp, rec: decode.ops_v ? sp2dp_result : dp2sp_result};
   assign f2f_fflags = decode.ops_v ? sp2dp_fflags : dp2sp_fflags;
