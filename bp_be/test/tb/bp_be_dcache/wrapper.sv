@@ -42,7 +42,6 @@ module wrapper
    , input [num_caches_p-1:0][ptag_width_p-1:0]        ptag_i
    , input [num_caches_p-1:0]                          uncached_i
    , input [num_caches_p-1:0][dword_width_gp-1:0]      st_data_i
-   , input rv64_fflags_s [num_caches_p-1:0]            st_fflags_i
 
    , output logic [num_caches_p-1:0][dword_width_gp-1:0] data_o
    , output logic [num_caches_p-1:0]                     v_o
@@ -216,7 +215,6 @@ module wrapper
       ,.ptag_uncached_i(rolly_uncached_r[i])
       ,.ptag_dram_i(1'b1)
       ,.st_data_i(st_data_i)
-      ,.st_fflags_i(st_fflags_i)
 
       ,.flush_i('0)
       ,.tv_we_o()

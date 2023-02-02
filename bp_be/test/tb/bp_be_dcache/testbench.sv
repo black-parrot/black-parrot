@@ -273,7 +273,6 @@ module testbench
      ,.ptag_i(ptag_li)
      ,.uncached_i(uncached_li)
      ,.st_data_i(st_data_r)
-     ,.st_fflags_i('0)
 
      ,.mem_fwd_header_o(mem_fwd_header_lo)
      ,.mem_fwd_data_o(mem_fwd_data_lo)

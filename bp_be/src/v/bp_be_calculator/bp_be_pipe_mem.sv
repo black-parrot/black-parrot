@@ -162,7 +162,6 @@ module bp_be_pipe_mem
   logic [ptag_width_p-1:0]  dcache_ptag;
   logic                     dcache_ptag_uncached, dcache_ptag_dram, dcache_ptag_v;
   logic [dword_width_gp-1:0] dcache_st_data;
-  rv64_fflags_s             dcache_st_fflags;
 
   logic [dword_width_gp-1:0] dcache_data;
   logic [reg_addr_width_gp-1:0] dcache_rd_addr;
@@ -314,7 +313,6 @@ module bp_be_pipe_mem
       ,.ptag_uncached_i(dcache_ptag_uncached)
       ,.ptag_dram_i(dcache_ptag_dram)
       ,.st_data_i(dcache_st_data)
-      ,.st_fflags_i(dcache_st_fflags)
       ,.tv_we_o(dcache_tv_we)
       ,.flush_i(flush_i)
 
@@ -406,13 +404,11 @@ module bp_be_pipe_mem
      );
 
   logic [dword_width_gp-1:0] dcache_st_fdata, dcache_st_idata;
-  rv64_fflags_s st_fflags_tl;
   bp_be_reg_to_fp
    #(.bp_params_p(bp_params_p))
    reg_to_fp
     (.reg_i(rs2_r)
      ,.raw_o(dcache_st_fdata)
-     ,.fflags_o(dcache_st_fflags)
      );
   assign dcache_st_idata = rs2_r;
   assign dcache_st_data = dcache_float ? dcache_st_fdata : dcache_st_idata;

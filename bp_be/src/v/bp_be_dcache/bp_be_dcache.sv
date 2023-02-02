@@ -126,7 +126,6 @@ module bp_be_dcache
    , input                                           ptag_uncached_i
    , input                                           ptag_dram_i
    , input [dword_width_gp-1:0]                      st_data_i
-   , input rv64_fflags_s                             st_fflags_i
    , output logic                                    tv_we_o
    , input                                           flush_i
 
@@ -338,7 +337,8 @@ module bp_be_dcache
      );
 
   wire uncached_op_tl =  ptag_uncached_i | decode_tl_r.uncached_op;
-  wire dram_op_tl     =  ptag_dram_i;
+  wire dram_op_tl =  ptag_dram_i;
+  wire [dword_width_gp-1:0] st_data_tl = st_data_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // TV Stage
@@ -431,16 +431,18 @@ module bp_be_dcache
      );
 
   bsg_dff_en
-   #(.width_p(paddr_width_p+assoc_p+2+$bits(bp_be_dcache_decode_s)))
+   #(.width_p(paddr_width_p+dword_width_gp+assoc_p+2+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
     (.clk_i(clk_i)
      ,.en_i(tv_we)
      ,.data_i({paddr_tl
+               ,st_data_tl
                ,bank_sel_one_hot_tl
                ,uncached_op_tl, dram_op_tl
                ,decode_tl_r
                })
      ,.data_o({paddr_tv_r
+               ,st_data_tv_r
                ,bank_sel_one_hot_tv_r
                ,uncached_op_tv_r, dram_op_tv_r
                ,decode_tv_r
