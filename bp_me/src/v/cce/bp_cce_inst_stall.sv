@@ -28,7 +28,7 @@ module bp_cce_inst_stall
 
    // output queue valid&ready signals
    , input                                       lce_cmd_v_i
-   , input                                       lce_cmd_ready_and_i
+   , input                                       lce_cmd_yumi_i
 
    , input                                       mem_credits_empty_i
 
@@ -77,7 +77,7 @@ module bp_cce_inst_stall
 
     // Message send
     // Handshake is r&v
-    stall_o |= (decoded_inst_i.lce_cmd_v & ~(lce_cmd_v_i & lce_cmd_ready_and_i));
+    stall_o |= (decoded_inst_i.lce_cmd_v & ~lce_cmd_yumi_i);
     // memory command stall is indicated directly by a signal from message unit
     stall_o |= (decoded_inst_i.mem_fwd_v & msg_mem_fwd_stall_i);
     // sending a memory command requires a memory credit

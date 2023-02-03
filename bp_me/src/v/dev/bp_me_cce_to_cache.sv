@@ -204,7 +204,7 @@ module bp_me_cce_to_cache
   bp_bedrock_mem_rev_header_s fsm_rev_header_lo;
   logic [l2_data_width_p-1:0] fsm_rev_data_lo;
   logic [lg_l2_banks_lp-1:0] cache_rev_bank_lo;
-  logic stream_header_v_lo, fsm_rev_ready_and_li, fsm_rev_v_lo;
+  logic stream_header_v_lo, fsm_rev_yumi_li, fsm_rev_v_lo;
   logic fsm_rev_last_lo, stream_fifo_ready_lo;
   bsg_fifo_1r1w_small
    #(.width_p(lg_l2_banks_lp+$bits(bp_bedrock_mem_fwd_header_s))
@@ -221,7 +221,7 @@ module bp_me_cce_to_cache
 
      ,.data_o({cache_rev_bank_lo, fsm_rev_header_lo})
      ,.v_o(stream_header_v_lo)
-     ,.yumi_i(fsm_rev_ready_and_li & fsm_rev_v_lo & fsm_rev_last_lo)
+     ,.yumi_i(fsm_rev_yumi_li & fsm_rev_last_lo)
      );
 
   bp_me_stream_pump_out
@@ -246,7 +246,7 @@ module bp_me_cce_to_cache
      ,.fsm_data_i(fsm_rev_data_lo)
      ,.fsm_addr_o()
      ,.fsm_v_i(fsm_rev_v_lo)
-     ,.fsm_ready_and_o(fsm_rev_ready_and_li)
+     ,.fsm_yumi_o(fsm_rev_yumi_li)
      ,.fsm_cnt_o(/* unused */)
      ,.fsm_new_o(/* unused */)
      ,.fsm_last_o(fsm_rev_last_lo)
@@ -403,7 +403,7 @@ module bp_me_cce_to_cache
             fsm_fwd_yumi_lo = fsm_fwd_v_li & stream_fifo_ready_lo & cache_pkt_ready_and_i[cache_fwd_bank_lo];
 
             fsm_rev_v_lo = stream_header_v_lo & cache_data_v_i[cache_rev_bank_lo];
-            cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_v_lo & fsm_rev_ready_and_li;
+            cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_yumi_li;
           end
         default: begin end
       endcase

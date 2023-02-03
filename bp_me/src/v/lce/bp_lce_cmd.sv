@@ -192,7 +192,7 @@ module bp_lce_cmd
 
   bp_bedrock_lce_fill_header_s fsm_fill_header_lo;
   logic [fill_width_p-1:0] fsm_fill_data_lo;
-  logic fsm_fill_v_lo, fsm_fill_ready_and_li;
+  logic fsm_fill_v_lo, fsm_fill_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_fill_cnt_lo;
   logic fsm_fill_new_lo, fsm_fill_last_lo;
   bp_me_burst_pump_out
@@ -217,9 +217,10 @@ module bp_lce_cmd
      ,.msg_last_o(lce_fill_last_o)
 
      ,.fsm_header_i(fsm_fill_header_lo)
+     ,.fsm_addr_o()
      ,.fsm_data_i(fsm_fill_data_lo)
      ,.fsm_v_i(fsm_fill_v_lo)
-     ,.fsm_ready_and_o(fsm_fill_ready_and_li)
+     ,.fsm_yumi_o(fsm_fill_yumi_li)
      ,.fsm_cnt_o(fsm_fill_cnt_lo)
      ,.fsm_new_o(fsm_fill_new_lo)
      ,.fsm_last_o(fsm_fill_last_lo)
@@ -227,7 +228,7 @@ module bp_lce_cmd
 
   bp_bedrock_lce_resp_header_s fsm_resp_header_lo;
   logic [fill_width_p-1:0] fsm_resp_data_lo;
-  logic fsm_resp_v_lo, fsm_resp_ready_and_li;
+  logic fsm_resp_v_lo, fsm_resp_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_resp_cnt_lo;
   logic fsm_resp_new_lo, fsm_resp_last_lo;
   bp_me_burst_pump_out
@@ -252,9 +253,10 @@ module bp_lce_cmd
      ,.msg_last_o(lce_resp_last_o)
 
      ,.fsm_header_i(fsm_resp_header_lo)
+     ,.fsm_addr_o()
      ,.fsm_data_i(fsm_resp_data_lo)
      ,.fsm_v_i(fsm_resp_v_lo)
-     ,.fsm_ready_and_o(fsm_resp_ready_and_li)
+     ,.fsm_yumi_o(fsm_resp_yumi_li)
      ,.fsm_cnt_o(fsm_resp_cnt_lo)
      ,.fsm_new_o(fsm_resp_new_lo)
      ,.fsm_last_o(fsm_resp_last_lo)
@@ -434,13 +436,12 @@ module bp_lce_cmd
             // response (r&v) can send when header is valid
             fsm_resp_v_lo = fsm_cmd_v_li;
             // header (v->y) consumed when response sends
-            fsm_cmd_yumi_lo = fsm_resp_ready_and_li & fsm_resp_v_lo;
+            fsm_cmd_yumi_lo = fsm_resp_yumi_li;
 
             // reset the counter when last sync is received and ack is sent
-            cnt_clear = ((cnt_r == cnt_width_lp'(num_cce_p-1))
-                         & (fsm_resp_v_lo & fsm_resp_ready_and_li));
+            cnt_clear = (cnt_r == cnt_width_lp'(num_cce_p-1)) & fsm_resp_yumi_li;
             // increment as long as not resetting counter
-            cnt_inc = ~cnt_clear & (fsm_resp_v_lo & fsm_resp_ready_and_li);
+            cnt_inc = ~cnt_clear & fsm_resp_yumi_li;
           end
 
           // Set Clear - invalidate entire set specified by command
@@ -476,7 +477,7 @@ module bp_lce_cmd
             fsm_resp_header_lo.payload.dst_id = fsm_cmd_header_li.payload.src_id;
 
             // consume command header when response sends
-            fsm_cmd_yumi_lo = fsm_resp_v_lo & fsm_resp_ready_and_li;
+            fsm_cmd_yumi_lo = fsm_resp_yumi_li;
 
           end
 
@@ -668,7 +669,7 @@ module bp_lce_cmd
 
         // handshake - r&v
         fsm_fill_v_lo = fsm_cmd_v_li;
-        fsm_cmd_yumi_lo = fsm_fill_v_lo & fsm_fill_ready_and_li & fsm_fill_last_lo;
+        fsm_cmd_yumi_lo = fsm_fill_yumi_li & fsm_fill_last_lo;
 
         // send transfer data in next state
         state_n = fsm_cmd_yumi_lo
@@ -718,7 +719,7 @@ module bp_lce_cmd
         fsm_resp_data_lo = dirty_data_selected;
         fsm_resp_v_lo = 1'b1;
 
-        state_n = (fsm_resp_ready_and_li & fsm_resp_v_lo)
+        state_n = fsm_resp_yumi_li
                   ? dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
                     ? e_stat_clear
                     : e_ready
@@ -735,7 +736,7 @@ module bp_lce_cmd
         fsm_resp_v_lo = 1'b1;
 
         // cache request is complete when coherence ack sends
-        cache_req_complete_o = fsm_resp_v_lo & fsm_resp_ready_and_li;
+        cache_req_complete_o = fsm_resp_yumi_li;
 
         state_n = cache_req_complete_o 
                   ? e_ready

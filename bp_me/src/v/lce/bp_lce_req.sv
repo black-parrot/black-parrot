@@ -137,7 +137,7 @@ module bp_lce_req
 
   bp_bedrock_lce_req_header_s fsm_req_header_lo;
   logic [fill_width_p-1:0] fsm_req_data_lo;
-  logic fsm_req_v_lo, fsm_req_ready_and_li;
+  logic fsm_req_v_lo, fsm_req_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_req_cnt_lo;
   logic fsm_req_new_lo, fsm_req_last_lo;
   bp_me_burst_pump_out
@@ -162,9 +162,10 @@ module bp_lce_req
      ,.msg_last_o(lce_req_last_o)
 
      ,.fsm_header_i(fsm_req_header_lo)
+     ,.fsm_addr_o()
      ,.fsm_data_i(fsm_req_data_lo)
      ,.fsm_v_i(fsm_req_v_lo)
-     ,.fsm_ready_and_o(fsm_req_ready_and_li)
+     ,.fsm_yumi_o(fsm_req_yumi_li)
      ,.fsm_cnt_o(fsm_req_cnt_lo)
      ,.fsm_new_o(fsm_req_new_lo)
      ,.fsm_last_o(fsm_req_last_lo)
@@ -174,7 +175,7 @@ module bp_lce_req
   // one credit used per LCE request sent
   logic [`BSG_WIDTH(credits_p)-1:0] credit_count_lo;
   wire credit_v_li = fsm_req_v_lo & fsm_req_new_lo;
-  wire credit_ready_li = fsm_req_ready_and_li;
+  wire credit_ready_li = fsm_req_yumi_li;
   wire credit_returned_li = cache_req_complete_i | uc_store_req_complete_i;
   bsg_flow_counter
     #(.els_p(credits_p))
@@ -213,7 +214,7 @@ module bp_lce_req
   wire is_ready = (state_r == e_ready);
 
   // request finishes sending when header sends for no data message or last data sends
-  assign req_sent = (fsm_req_v_lo & fsm_req_ready_and_li & fsm_req_last_lo);
+  assign req_sent = fsm_req_yumi_li & fsm_req_last_lo;
 
   // LCE should suppress messages if in reset or we are not synchronized with the CCE
   // busy being lower does not guarantee that this module will accept a valid cache request

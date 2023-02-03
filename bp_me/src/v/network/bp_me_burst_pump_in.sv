@@ -120,8 +120,8 @@ module bp_me_burst_pump_in
   wire [stream_cnt_width_lp-1:0] stream_size =
     `BSG_MAX((1'b1 << msg_header_li.size) / stream_bytes_lp, 1'b1) - 1'b1;
   wire nz_stream = stream_size > '0;
-  wire fsm_stream = fsm_stream_mask_p[msg_header_li.msg_type] & nz_stream;
-  wire msg_stream = msg_stream_mask_p[msg_header_li.msg_type] & nz_stream;
+  wire fsm_stream = fsm_stream_mask_p[msg_header_li.msg_type];
+  wire msg_stream = msg_stream_mask_p[msg_header_li.msg_type];
 
   logic cnt_up;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
@@ -154,7 +154,7 @@ module bp_me_burst_pump_in
       fsm_header_cast_o.addr[0+:block_offset_width_lp] = msg_header_li.addr;
       fsm_data_o = msg_data_li;
 
-      if (~msg_stream & fsm_stream)
+      if (~msg_stream & fsm_stream & nz_stream)
         begin
           // 1:N
           // convert one msg message into stream of N FSM messages
@@ -165,7 +165,7 @@ module bp_me_burst_pump_in
           cnt_up = fsm_yumi_i;
           fsm_addr_o = wrap_addr;
         end
-      else if (msg_stream & ~fsm_stream)
+      else if (msg_stream & ~fsm_stream & nz_stream)
         begin
           // N:1
           // consume all but last msg input beat silently, then FSM consumes last beat

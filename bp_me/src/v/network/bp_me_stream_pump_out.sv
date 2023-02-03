@@ -64,7 +64,7 @@ module bp_me_stream_pump_out
    , output logic [paddr_width_p-1:0]               fsm_addr_o
    , input [stream_data_width_p-1:0]                fsm_data_i
    , input                                          fsm_v_i
-   , output logic                                   fsm_ready_and_o
+   , output logic                                   fsm_yumi_o
 
    // FSM control signals
    // fsm_cnt is the current stream word being sent
@@ -85,9 +85,8 @@ module bp_me_stream_pump_out
   wire [stream_cnt_width_lp-1:0] stream_size =
     `BSG_MAX((1'b1 << fsm_header_cast_i.size) / stream_bytes_lp, 1'b1) - 1'b1;
   wire nz_stream  = stream_size > '0;
-  wire fsm_stream = fsm_stream_mask_p[fsm_header_cast_i.msg_type] & nz_stream;
-  wire msg_stream = msg_stream_mask_p[fsm_header_cast_i.msg_type] & nz_stream;
-  wire any_stream = fsm_stream | msg_stream;
+  wire fsm_stream = fsm_stream_mask_p[fsm_header_cast_i.msg_type];
+  wire msg_stream = msg_stream_mask_p[fsm_header_cast_i.msg_type];
 
   logic cnt_up;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
@@ -119,23 +118,23 @@ module bp_me_stream_pump_out
       msg_header_cast_o = fsm_header_cast_i;
       msg_data_o = fsm_data_i;
 
-      if (~fsm_stream & msg_stream)
+      if (~fsm_stream & msg_stream & nz_stream)
         begin
           // 1:N
           // send N msg beats, and ack single FSM beat on last msg beat
           msg_v_o = fsm_v_i;
-          fsm_ready_and_o = fsm_last_o & msg_ready_and_i;
+          fsm_yumi_o = fsm_v_i & fsm_last_o & msg_ready_and_i;
           cnt_up = msg_v_o & msg_ready_and_i;
           msg_header_cast_o.addr = wrap_addr;
         end
-      else if (fsm_stream & ~msg_stream)
+      else if (fsm_stream & ~msg_stream & nz_stream)
         begin
           // N:1
           // only send msg on last FSM beat
           msg_v_o = fsm_v_i & fsm_last_o;
           // ack all but last FSM beat silently, then ack last FSM beat when msg beat sends
-          fsm_ready_and_o = (fsm_v_i & ~fsm_last_o) | msg_ready_and_i;
-          cnt_up = fsm_ready_and_o & fsm_v_i;
+          fsm_yumi_o = fsm_v_i & (~fsm_last_o | msg_ready_and_i);
+          cnt_up = fsm_yumi_o;
           // hold address constant at critical address
           msg_header_cast_o.addr = fsm_header_cast_i.addr;
         end
@@ -143,8 +142,8 @@ module bp_me_stream_pump_out
         begin
           // 1:1
           msg_v_o = fsm_v_i;
-          fsm_ready_and_o = msg_ready_and_i;
-          cnt_up  = fsm_ready_and_o & fsm_v_i;
+          fsm_yumi_o = msg_ready_and_i & msg_v_o;
+          cnt_up  = fsm_yumi_o;
           msg_header_cast_o.addr = wrap_addr;
         end
 

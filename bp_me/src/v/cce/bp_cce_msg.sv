@@ -68,7 +68,7 @@ module bp_cce_msg
    , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
    , output logic [bedrock_data_width_p-1:0]        lce_cmd_data_o
    , output logic                                   lce_cmd_v_o
-   , input                                          lce_cmd_ready_and_i
+   , input                                          lce_cmd_yumi_i
    , input                                          lce_cmd_new_i
    , input                                          lce_cmd_last_i
 
@@ -85,7 +85,7 @@ module bp_cce_msg
    , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
    , output logic [bedrock_data_width_p-1:0]        mem_fwd_data_o
    , output logic                                   mem_fwd_v_o
-   , input                                          mem_fwd_ready_and_i
+   , input                                          mem_fwd_yumi_i
    , input                                          mem_fwd_new_i
    , input                                          mem_fwd_last_i
 
@@ -199,7 +199,7 @@ module bp_cce_msg
      ,.reset_i(reset_i)
      // memory commands consume credits
      ,.v_i(mem_fwd_v_o & mem_fwd_last_i)
-     ,.ready_i(mem_fwd_ready_and_i)
+     ,.ready_i(mem_fwd_yumi_i)
      // memory responses return credits
      ,.yumi_i(mem_rev_yumi_o & mem_rev_last_i)
      ,.count_o(mem_credit_count_lo)
@@ -407,7 +407,7 @@ module bp_cce_msg
             // send LCE command header, but don't ack the mem response beat since its data
             // will send after the header sends.
             lce_cmd_v_o = mem_rev_v_i;
-            mem_rev_yumi_o = lce_cmd_v_o & lce_cmd_ready_and_i;
+            mem_rev_yumi_o = lce_cmd_yumi_i;
 
             // command header
             lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_data;
@@ -441,7 +441,7 @@ module bp_cce_msg
             // send LCE command header, but don't ack the mem response beat since its data
             // will send after the header sends.
             lce_cmd_v_o = mem_rev_v_i;
-            mem_rev_yumi_o = lce_cmd_v_o & lce_cmd_ready_and_i;
+            mem_rev_yumi_o = lce_cmd_yumi_i;
 
             // command header
             lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_data;
@@ -477,7 +477,7 @@ module bp_cce_msg
           // send LCE command header, but don't ack the mem response beat since its data
           // will send after the header sends.
           lce_cmd_v_o = mem_rev_v_i;
-          mem_rev_yumi_o = lce_cmd_ready_and_i & lce_cmd_v_o;
+          mem_rev_yumi_o = lce_cmd_yumi_i;
 
           // command header
           lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_data;
@@ -511,7 +511,7 @@ module bp_cce_msg
           // send LCE command header, but don't ack the mem response beat since its data
           // will send after the header sends.
           lce_cmd_v_o = mem_rev_v_i;
-          mem_rev_yumi_o = lce_cmd_v_o & lce_cmd_ready_and_i;
+          mem_rev_yumi_o = lce_cmd_yumi_i;
 
           // command header
           lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_uc_data;
@@ -545,7 +545,7 @@ module bp_cce_msg
           // r&v for LCE command header
           // valid->yumi for mem response header
           lce_cmd_v_o = mem_rev_v_i;
-          mem_rev_yumi_o = lce_cmd_v_o & lce_cmd_ready_and_i;
+          mem_rev_yumi_o = lce_cmd_yumi_i;
 
           // command header
           lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_uc_st_done;
@@ -631,7 +631,7 @@ module bp_cce_msg
         end else if (lce_req_v_i & (lce_req_header_cast_i.msg_type.req == e_bedrock_req_uc_wr)) begin
           // first beat of memory command must include data
           mem_fwd_v_o = ~mem_credits_empty;
-          lce_req_yumi_o = mem_fwd_ready_and_i & mem_fwd_v_o;
+          lce_req_yumi_o = mem_fwd_yumi_i;
 
           // form message
           mem_fwd_header_cast_o.addr = lce_req_header_cast_i.addr;
@@ -649,7 +649,7 @@ module bp_cce_msg
         else if (lce_req_v_i & (lce_req_header_cast_i.msg_type.req == e_bedrock_req_uc_rd)) begin
           // uncached load has no data
           mem_fwd_v_o = ~mem_credits_empty;
-          lce_req_yumi_o = mem_fwd_v_o & mem_fwd_ready_and_i;
+          lce_req_yumi_o = mem_fwd_yumi_i;
 
           mem_fwd_header_cast_o.addr = lce_req_header_cast_i.addr;
           mem_fwd_header_cast_o.size = lce_req_header_cast_i.size;
@@ -753,7 +753,7 @@ module bp_cce_msg
                 // set uncached bit
                 mem_fwd_header_cast_o.payload.uncached = 1'b1;
                 // stall if single beat doesn't send
-                mem_fwd_stall_o = ~(mem_fwd_v_o & mem_fwd_ready_and_i);
+                mem_fwd_stall_o = ~mem_fwd_yumi_i;
               end
 
               // cached read - send single beat, no data
@@ -765,13 +765,13 @@ module bp_cce_msg
                 // when it returns from memory
                 mem_fwd_header_cast_o.payload.uncached = mshr.flags.uncached;
                 // stall if single beat doesn't send
-                mem_fwd_stall_o = ~(mem_fwd_v_o & mem_fwd_ready_and_i);
+                mem_fwd_stall_o = ~mem_fwd_yumi_i;
               end
 
               // uncached store - send one or more beats with data from LCE Request
               e_bedrock_mem_uc_wr: begin
                 mem_fwd_v_o = lce_req_v_i & ~mem_credits_empty;
-                lce_req_yumi_o = mem_fwd_ready_and_i & mem_fwd_v_o;
+                lce_req_yumi_o = mem_fwd_yumi_i;
 
                 // patch through data
                 mem_fwd_data_o = lce_req_data_i;
@@ -779,14 +779,14 @@ module bp_cce_msg
                 // set uncached bit
                 mem_fwd_header_cast_o.payload.uncached = 1'b1;
 
-                mem_fwd_stall_o = ~(mem_fwd_v_o & mem_fwd_ready_and_i);
+                mem_fwd_stall_o = ~mem_fwd_yumi_i;
 
               end
 
               // cached store - send one or more beats with data from LCE response
               e_bedrock_mem_wr: begin
                 mem_fwd_v_o = lce_resp_v_i & ~mem_credits_empty;
-                lce_req_yumi_o = mem_fwd_ready_and_i & mem_fwd_v_o;
+                lce_req_yumi_o = mem_fwd_yumi_i;
 
                 // patch through data
                 mem_fwd_data_o = lce_resp_data_i;
@@ -797,7 +797,7 @@ module bp_cce_msg
                 // when it returns from memory
                 mem_fwd_header_cast_o.payload.uncached = mshr.flags.uncached;
 
-                mem_fwd_stall_o = ~(mem_fwd_v_o & mem_fwd_ready_and_i);
+                mem_fwd_stall_o = ~mem_fwd_yumi_i;
 
               end
 
@@ -895,7 +895,7 @@ module bp_cce_msg
           lce_cmd_header_cast_o.addr = addr_r & addr_block_mask;
 
           // Directory write command
-          dir_w_v_o = lce_cmd_v_o & lce_cmd_ready_and_i;
+          dir_w_v_o = lce_cmd_yumi_i;
           dir_w_cmd_o = e_wds_op;
           dir_addr_o = addr_r & addr_block_mask;
           dir_addr_bypass_o = '0;
@@ -904,15 +904,15 @@ module bp_cce_msg
           dir_coh_state_o = e_COH_I;
 
           // message sent, increment count
-          cnt_inc = lce_cmd_v_o & lce_cmd_ready_and_i;
+          cnt_inc = lce_cmd_yumi_i;
           // only remove current LCE from sharers if command sends
-          pe_sharers_n = lce_cmd_v_o & lce_cmd_ready_and_i
+          pe_sharers_n = lce_cmd_yumi_i 
                          ? (pe_sharers_r & ~pe_lce_id_one_hot)
                          : pe_sharers_r;
 
           // move to response state if none of the new sharer bits are set
           // and the last command is sending this cycle
-          state_n = (lce_cmd_v_o & lce_cmd_ready_and_i & (pe_sharers_n == '0))
+          state_n = (lce_cmd_yumi_i & (pe_sharers_n == '0))
                     ? e_inv_resp
                     : e_inv_cmd;
         end // lce_cmd_busy

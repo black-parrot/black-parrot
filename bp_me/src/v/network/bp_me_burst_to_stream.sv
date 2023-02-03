@@ -88,7 +88,7 @@ module bp_me_burst_to_stream
   assign in_msg_header_ready_and_o = ~header_v_r;
 
   // Stream pump to handle all the details of properly forming the output BedRock stream message
-  logic fsm_ready_and_lo, fsm_v_li;
+  logic fsm_yumi_lo, fsm_v_li;
   bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(data_width_p)
@@ -108,7 +108,7 @@ module bp_me_burst_to_stream
        ,.fsm_addr_o()
        ,.fsm_data_i(in_msg_data_i)
        ,.fsm_v_i(fsm_v_li)
-       ,.fsm_ready_and_o(fsm_ready_and_lo)
+       ,.fsm_yumi_o(fsm_yumi_lo)
        ,.fsm_new_o()
        ,.fsm_cnt_o()
        ,.fsm_last_o()
@@ -119,7 +119,7 @@ module bp_me_burst_to_stream
   // Accept data cycle after header arrives, but only if current message has data.
   // This module does not support concurrent burst messages, so data must only be accepted
   // if the buffered header indicates that data exists for the message.
-  assign in_msg_data_ready_and_o = header_v_r & msg_has_data_li & fsm_ready_and_lo;
+  assign in_msg_data_ready_and_o = header_v_r & msg_has_data_li & fsm_yumi_lo;
 
 endmodule
 
