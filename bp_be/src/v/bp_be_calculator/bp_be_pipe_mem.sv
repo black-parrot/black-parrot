@@ -181,6 +181,7 @@ module bp_be_pipe_mem
   wire is_store  = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_w_v;
   wire is_load   = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.dcache_r_v;
   wire is_fencei = (decode.pipe_mem_early_v | decode.pipe_mem_final_v) & decode.fu_op inside {e_dcache_op_fencei};
+  wire is_fstore = decode.fu_op inside {e_dcache_op_fsd, e_dcache_op_fsw};
   wire is_req    = reservation.v & (is_store | is_load | is_fencei);
 
   // Calculate cache access eaddr
@@ -395,12 +396,13 @@ module bp_be_pipe_mem
      );
 
   logic [dpath_width_gp-1:0] rs2_r;
+  logic float_r;
   bsg_dff
-   #(.width_p(dpath_width_gp))
+   #(.width_p(1+dpath_width_gp))
    st_data_reg
     (.clk_i(negedge_clk)
-     ,.data_i(rs2)
-     ,.data_o(rs2_r)
+     ,.data_i({is_fstore, rs2})
+     ,.data_o({float_r, rs2_r})
      );
 
   logic [dword_width_gp-1:0] dcache_st_fdata, dcache_st_idata;
@@ -411,7 +413,7 @@ module bp_be_pipe_mem
      ,.raw_o(dcache_st_fdata)
      );
   assign dcache_st_idata = rs2_r;
-  assign dcache_st_data = dcache_float ? dcache_st_fdata : dcache_st_idata;
+  assign dcache_st_data = float_r ? dcache_st_fdata : dcache_st_idata;
 
   logic dtlb_r_v_r;
   bsg_dff
