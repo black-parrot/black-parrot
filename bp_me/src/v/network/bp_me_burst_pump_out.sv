@@ -129,7 +129,6 @@ module bp_me_burst_pump_out
      ,.data_o(header_sent_r)
      );
 
-  logic data_sent_r;
   bsg_dff_reset_set_clear
    #(.width_p(1), .clear_over_set_p(1))
    data_sent_reg
