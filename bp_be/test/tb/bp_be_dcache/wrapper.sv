@@ -204,10 +204,12 @@ module wrapper
       ,.v_i(rolly_yumi_li[i])
       ,.ready_and_o(dcache_ready_and_lo[i])
 
+      ,.ordered_o()
       ,.early_data_o(early_data_lo[i])
       ,.early_hit_v_o(early_v_lo[i])
       ,.early_fencei_o()
       ,.early_fflags_o()
+      ,.early_store_o()
       ,.early_ret_o()
 
       ,.final_data_o(final_data_lo[i])

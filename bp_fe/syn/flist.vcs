@@ -238,6 +238,8 @@ $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
+$BP_ME_DIR/src/v/network/bp_me_burst_pump_in.sv
+$BP_ME_DIR/src/v/network/bp_me_burst_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv
