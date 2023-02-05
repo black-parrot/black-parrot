@@ -340,6 +340,7 @@ module wrapper
         ,.pr_hdr_v_o(mem_fwd_header_v_lo)
         ,.pr_hdr_ready_and_i(mem_fwd_header_ready_and_li)
         ,.pr_has_data_o(mem_fwd_has_data_lo)
+        ,.pr_hdr_size_i(mem_fwd_header_lo.size)
 
         ,.pr_data_o(mem_fwd_data_lo)
         ,.pr_data_v_o(mem_fwd_data_v_lo)
@@ -369,6 +370,7 @@ module wrapper
         ,.pr_hdr_v_o(mem_rev_header_v_lo)
         ,.pr_hdr_ready_and_i(mem_rev_header_ready_and_li)
         ,.pr_has_data_o(mem_rev_has_data_lo)
+        ,.pr_hdr_size_i(mem_rev_header_lo.size)
 
         ,.pr_data_o(mem_rev_data_lo)
         ,.pr_data_v_o(mem_rev_data_v_lo)

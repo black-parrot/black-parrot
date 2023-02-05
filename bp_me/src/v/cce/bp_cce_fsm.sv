@@ -908,6 +908,9 @@ module bp_cce_fsm
         // command payload
         fsm_cmd_header_lo.payload.dst_id = fsm_rev_header_li.payload.lce_id;
 
+        // data payload
+        fsm_cmd_data_lo = fsm_rev_data_li;
+
         // decrement pending bits if operating in normal mode and request was made
         // to coherent memory space
         pending_busy = fsm_rev_yumi_lo & fsm_rev_new_li & cce_normal_mode_r & resp_pma_cacheable_addr_lo;

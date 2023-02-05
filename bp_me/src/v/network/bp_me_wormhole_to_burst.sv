@@ -80,6 +80,8 @@ module bp_me_wormhole_to_burst
    , output logic                       pr_hdr_v_o
    , input                              pr_hdr_ready_and_i
    , output logic                       pr_has_data_o
+   // Comes from external interpretation of pr_hdr_o, late
+   , input bp_bedrock_msg_size_e        pr_hdr_size_i
 
    // The protocol data information
    , output logic [pr_data_width_p-1:0] pr_data_o
@@ -97,59 +99,102 @@ module bp_me_wormhole_to_burst
 
   // Header SIPO
   // Aggregate flits until we have a full header-worth of data
-  logic hdr_v_li, hdr_ready_and_lo;
-  assign hdr_v_li = is_hdr & link_v_i;
+  logic hdr_ready_and_lo;
   logic [(flit_width_p*hdr_len_lp)-1:0] pr_hdr_lo;
-  logic pr_hdr_v_lo, pr_hdr_ready_and_li;
-
+  logic [hdr_len_lp-1:0] sipo_v_lo;
   bsg_serial_in_parallel_out_passthrough
-   #(.width_p(flit_width_p)
-     ,.els_p(hdr_len_lp)
-     )
+   #(.width_p(flit_width_p), .els_p(hdr_len_lp))
    hdr_sipo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.data_i(link_data_i)
-     ,.v_i(hdr_v_li)
+     ,.v_i(is_hdr & link_v_i)
      ,.ready_and_o(hdr_ready_and_lo)
 
      ,.data_o(pr_hdr_lo)
-     ,.v_o(pr_hdr_v_lo)
-     ,.ready_and_i(pr_hdr_ready_and_li)
+     ,.v_o(sipo_v_lo)
+     ,.ready_and_i(is_hdr & pr_hdr_ready_and_i)
      );
+  assign pr_hdr_o = pr_hdr_lo[wh_pr_hdr_offset_p+:pr_hdr_width_p];
+  assign pr_hdr_v_o = sipo_v_lo[hdr_len_lp-1];
+  assign pr_has_data_o = wh_has_data;
 
-  // BedRock Burst Gearbox
-  logic pr_data_ready_and_li;
-  wire pr_data_v_lo = is_data & link_v_i;
-  bp_me_burst_gearbox
-    #(.bp_params_p(bp_params_p)
-      ,.in_data_width_p(flit_width_p)
-      ,.out_data_width_p(pr_data_width_p)
-      ,.payload_width_p(pr_payload_width_p)
-      )
-    gearbox
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+  logic data_ready_and_lo;
+  if (flit_width_p > pr_data_width_p)
+    begin : narrow
+      logic [flit_width_p/pr_data_width_p-1:0] piso_v_lo;
+      logic piso_ready_and_lo;
+      wire early_ack = pr_data_ready_and_i & pr_data_v_o & pr_last_o;
+      bsg_parallel_in_serial_out_passthrough
+       #(.width_p(pr_data_width_p), .els_p(flit_width_p/pr_data_width_p))
+       pisop
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i | early_ack)
+         ,.data_i(link_data_i)
+         ,.v_i(is_data & link_v_i)
+         ,.ready_and_o(piso_ready_and_lo)
 
-      ,.msg_header_i(pr_hdr_lo[wh_pr_hdr_offset_p+:pr_hdr_width_p])
-      ,.msg_header_v_i(pr_hdr_v_lo)
-      ,.msg_header_ready_and_o(pr_hdr_ready_and_li)
-      ,.msg_has_data_i(wh_has_data)
-      ,.msg_data_i(link_data_i)
-      ,.msg_data_v_i(pr_data_v_lo)
-      ,.msg_data_ready_and_o(pr_data_ready_and_li)
-      ,.msg_last_i(wh_last_data)
+         ,.data_o(pr_data_o)
+         ,.v_o(piso_v_lo)
+         ,.ready_and_i(pr_data_ready_and_i)
+         );
+      assign data_ready_and_lo = piso_ready_and_lo | early_ack;
 
-      ,.msg_header_o(pr_hdr_o)
-      ,.msg_header_v_o(pr_hdr_v_o)
-      ,.msg_header_ready_and_i(pr_hdr_ready_and_i)
-      ,.msg_has_data_o(pr_has_data_o)
-      ,.msg_data_o(pr_data_o)
-      ,.msg_data_v_o(pr_data_v_o)
-      ,.msg_data_ready_and_i(pr_data_ready_and_i)
-      ,.msg_last_o(pr_last_o)
-      );
+      localparam max_len_lp = flit_width_p/pr_data_width_p;
+      localparam flit_data_size_lp = `BSG_SAFE_CLOG2(flit_width_p>>3);
+      localparam pr_data_size_lp = `BSG_SAFE_CLOG2(pr_data_width_p>>3);
+      logic [max_len_lp-1:0] count_n, count_r;
+      logic [10:0] test0, test1, test2, test3;
+      assign test0 = (1'b1 << pr_hdr_size_i) << 3;
+      assign test1 = (((1'b1 << pr_hdr_size_i) << 3) / pr_data_width_p);
+      assign test2 = (1'b1 << max_len_lp-1);
+      assign test3 =
+        (pr_hdr_size_i >= flit_data_size_lp)
+        ? (1'b1 << max_len_lp-1)
+        : (pr_hdr_size_i <= pr_data_size_lp)
+          ? (1'b1 << 1'b0)
+          : (1'b1 << ((((1'b1 << pr_hdr_size_i) << 3) / pr_data_width_p) - 1'b1));
+      //assign count_n = (1'b1 << ((((1'b1 << pr_hdr_size_i) << 3) / pr_data_width_p) - 1'b1));
+      assign count_n = test3;
+      //assign count_n = (pr_hdr_size_i < flit_data_size_lp) ? (1'b1 << (((1'b1 << pr_hdr_size_i) << 3) / pr_data_width_p) - 1'b1) : (1'b1 << max_len_lp-1);
+      bsg_dff_en
+       #(.width_p(max_len_lp))
+       drain_match
+        (.clk_i(clk_i)
+         ,.en_i(pr_hdr_v_o)
+         ,.data_i(count_n)
+         ,.data_o(count_r)
+         );
+      //wire test_last = is_data & wh_last_data & (piso_ready_and_lo || |{count_r & piso_v_lo});
+      //assign pr_last_o = is_data & wh_last_data & (piso_ready_and_lo || |{count_r & piso_v_lo});
+      //assign pr_last_o = is_data & wh_last_data & (~|count_r || |{count_r & piso_v_lo});
+      assign pr_last_o = is_data & wh_last_data & |{count_r & piso_v_lo};
+      assign pr_data_v_o = |piso_v_lo;
+    end
+  else
+    begin : wide
+      localparam flit_beats_lp = flit_width_p/pr_data_width_p;
+      logic [(flit_width_p/pr_data_width_p)-1:0] sipo_v_lo;
+      wire early_ack = pr_data_ready_and_i & pr_data_v_o & pr_last_o;
+      bsg_serial_in_parallel_out_passthrough
+       #(.width_p(flit_width_p), .els_p(pr_data_width_p/flit_width_p))
+       sipop
+        (.clk_i(clk_i)
+         // Reset for less than flit size packets
+         ,.reset_i(reset_i | early_ack)
+         ,.data_i(link_data_i)
+         ,.v_i(is_data & link_v_i)
+         ,.ready_and_o(data_ready_and_lo)
+
+         ,.data_o(pr_data_o)
+         ,.v_o(sipo_v_lo)
+         ,.ready_and_i(pr_data_ready_and_i)
+         );
+      // WH data is valid if we've filled the SIPO or if it's the last beat
+      assign pr_data_v_o = (|sipo_v_lo & wh_last_data) || sipo_v_lo[flit_beats_lp-1];
+      assign pr_last_o = is_data & wh_last_data;
+    end
 
   // Identifies which flits are header vs data flits
   bsg_wormhole_stream_control
@@ -169,7 +214,7 @@ module bp_me_wormhole_to_burst
      ,.last_data_o(wh_last_data)
      );
 
-  assign link_ready_and_o = is_hdr ? hdr_ready_and_lo : pr_data_ready_and_li;
+  assign link_ready_and_o = is_hdr ? hdr_ready_and_lo : data_ready_and_lo;
 
 endmodule
 

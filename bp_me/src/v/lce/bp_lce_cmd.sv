@@ -354,7 +354,7 @@ module bp_lce_cmd
   localparam bank_offset_width_lp  = `BSG_SAFE_CLOG2(assoc_p);
   localparam fill_size_in_bank_lp = fill_width_p / bank_width_lp;
   localparam bank_sub_offset_width_lp = $clog2(fill_size_in_bank_lp);
-  wire [block_size_in_fill_lp-1:0] fill_index_shift = fsm_cmd_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp;
+  wire [block_size_in_fill_lp-1:0] fill_index_shift = {{(assoc_p != 1){fsm_cmd_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp}}, {(assoc_p == 1){'0}}};
 
   always_comb begin
 
