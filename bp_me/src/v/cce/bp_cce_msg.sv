@@ -786,7 +786,7 @@ module bp_cce_msg
               // cached store - send one or more beats with data from LCE response
               e_bedrock_mem_wr: begin
                 mem_fwd_v_o = lce_resp_v_i & ~mem_credits_empty;
-                lce_req_yumi_o = mem_fwd_yumi_i;
+                lce_resp_yumi_o = mem_fwd_yumi_i;
 
                 // patch through data
                 mem_fwd_data_o = lce_resp_data_i;
