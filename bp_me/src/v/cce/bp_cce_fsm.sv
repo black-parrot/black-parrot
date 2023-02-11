@@ -1520,6 +1520,7 @@ module bp_cce_fsm
                              ? pe_sharers_n & ~owner_lce_id_one_hot
                              : pe_sharers_n;
               cnt_rst = 1'b1;
+            end
 
             // send remaining beats
             state_n = (pending_w_v)
@@ -1529,7 +1530,6 @@ module bp_cce_fsm
                           ? e_transfer
                           : e_resolve_speculation
                       : e_replacement_wb_resp;
-            end
           end // wb & pending bit available
         end // fsm_resp_v_li
       end // e_replacement_wb_resp

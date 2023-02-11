@@ -719,7 +719,7 @@ module bp_lce_cmd
         fsm_resp_data_lo = dirty_data_selected;
         fsm_resp_v_lo = 1'b1;
 
-        state_n = fsm_resp_yumi_li
+        state_n = (fsm_resp_yumi_li & fsm_resp_last_lo)
                   ? dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
                     ? e_stat_clear
                     : e_ready
@@ -736,7 +736,7 @@ module bp_lce_cmd
         fsm_resp_v_lo = 1'b1;
 
         // cache request is complete when coherence ack sends
-        cache_req_complete_o = fsm_resp_yumi_li;
+        cache_req_complete_o = (fsm_resp_yumi_li & fsm_resp_last_lo);
 
         state_n = cache_req_complete_o 
                   ? e_ready
