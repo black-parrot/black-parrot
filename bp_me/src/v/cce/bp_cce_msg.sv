@@ -389,8 +389,9 @@ module bp_cce_msg
             // into header and data, and do nothing with it
             mem_rev_yumi_o = mem_rev_v_i;
 
-            // decrement pending bit on mem response dequeue
-            pending_w_v_o = mem_rev_yumi_o & mem_rev_new_i;
+            // decrement pending bit on last beat
+            // must be on last beat to prevent speculative bit read-write race
+            pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i;
             pending_w_addr_o = mem_rev_header_cast_i.addr;
             pending_o = 1'b0;
 
@@ -423,8 +424,9 @@ module bp_cce_msg
             // command data
             lce_cmd_data_o = mem_rev_data_i;
 
-            // decrement pending bit on lce cmd header send
-            pending_w_v_o = mem_rev_yumi_o & mem_rev_new_i;
+            // decrement pending bit on last beat
+            // must be on last beat to prevent speculative bit read-write race
+            pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i;
             pending_w_addr_o = mem_rev_header_cast_i.addr;
             pending_o = 1'b0;
 
@@ -456,8 +458,9 @@ module bp_cce_msg
             // command data
             lce_cmd_data_o = mem_rev_data_i;
 
-            // decrement pending bit on lce cmd header send
-            pending_w_v_o = mem_rev_yumi_o & mem_rev_new_i;
+            // decrement pending bit on last beat
+            // must be on last beat to prevent speculative bit read-write race
+            pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i;
             pending_w_addr_o = mem_rev_header_cast_i.addr;
             pending_o = 1'b0;
 
@@ -492,8 +495,9 @@ module bp_cce_msg
           // command data
           lce_cmd_data_o = mem_rev_data_i;
 
-          // decrement pending bit on mem response dequeue (same as lce cmd send)
-          pending_w_v_o = mem_rev_yumi_o & mem_rev_new_i;
+          // decrement pending bit on last beat
+          // must be on last beat to prevent speculative bit read-write race
+          pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i;
           pending_w_addr_o = mem_rev_header_cast_i.addr;
           pending_o = 1'b0;
 
@@ -526,7 +530,8 @@ module bp_cce_msg
 
           // decrement pending bits if operating in normal mode and request was made
           // to coherent memory space
-          pending_w_v_o = (mem_rev_yumi_o & mem_rev_new_i) & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
+          // must be on last beat to prevent speculative bit read-write race
+          pending_w_v_o = (mem_rev_yumi_o & mem_rev_last_i) & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
           pending_w_addr_o = mem_rev_header_cast_i.addr;
           pending_o = 1'b0;
 
@@ -557,7 +562,8 @@ module bp_cce_msg
 
           // decrement pending bits if operating in normal mode and request was made
           // to coherent memory space
-          pending_w_v_o = mem_rev_yumi_o & mem_rev_new_i & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
+          // must be on last beat to prevent speculative bit read-write race
+          pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
           pending_w_addr_o = mem_rev_header_cast_i.addr;
           pending_o = 1'b0;
 
