@@ -781,8 +781,8 @@ module bp_cce_fsm
           fsm_rev_yumi_lo = fsm_rev_v_li;
 
           // decrement pending bit on mem response dequeue
-          pending_busy = fsm_rev_yumi_lo & fsm_rev_new_li;
-          pending_w_v = fsm_rev_yumi_lo & fsm_rev_new_li;
+          pending_busy = fsm_rev_yumi_lo & fsm_rev_last_li;
+          pending_w_v = pending_busy;
           pending_w_addr = fsm_rev_header_li.addr;
           pending_li = 1'b0;
 
@@ -813,7 +813,7 @@ module bp_cce_fsm
           fsm_cmd_data_lo = fsm_rev_data_li;
 
           // decrement pending bit on lce cmd header send
-          pending_busy = fsm_rev_yumi_lo & fsm_rev_new_li;
+          pending_busy = fsm_rev_yumi_lo & fsm_rev_last_li;
           pending_w_v = pending_busy;
           pending_w_addr = fsm_cmd_header_lo.addr;
           pending_li = 1'b0;
@@ -846,7 +846,7 @@ module bp_cce_fsm
           fsm_cmd_data_lo = fsm_rev_data_li;
 
           // decrement pending bit on lce cmd header send
-          pending_busy = fsm_rev_yumi_lo & fsm_rev_new_li;
+          pending_busy = fsm_rev_yumi_lo & fsm_rev_last_li;
           pending_w_v = pending_busy;
           pending_w_addr = fsm_rev_header_li.addr;
           pending_li = 1'b0;
@@ -881,7 +881,7 @@ module bp_cce_fsm
         fsm_cmd_data_lo = fsm_rev_data_li;
 
         // decrement pending bit on mem response dequeue (same as lce cmd send)
-        pending_busy = fsm_rev_yumi_lo & fsm_rev_new_li;
+        pending_busy = fsm_rev_yumi_lo & fsm_rev_last_li;
         pending_w_v = pending_busy;
         pending_w_addr = fsm_rev_header_li.addr;
         pending_li = 1'b0;
@@ -913,7 +913,7 @@ module bp_cce_fsm
 
         // decrement pending bits if operating in normal mode and request was made
         // to coherent memory space
-        pending_busy = fsm_rev_yumi_lo & fsm_rev_new_li & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
+        pending_busy = fsm_rev_yumi_lo & fsm_rev_last_li & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
         pending_w_v = pending_busy;
         pending_w_addr = fsm_rev_header_li.addr;
         pending_li = 1'b0;
@@ -943,7 +943,7 @@ module bp_cce_fsm
 
         // decrement pending bits if operating in normal mode and request was made
         // to coherent memory space
-        pending_busy = fsm_rev_yumi_lo & fsm_rev_new_li & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
+        pending_busy = fsm_rev_yumi_lo & fsm_rev_last_li & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
         pending_w_v = pending_busy;
         pending_w_addr = fsm_rev_header_li.addr;
         pending_li = 1'b0;
@@ -957,7 +957,7 @@ module bp_cce_fsm
 
         fsm_rev_yumi_lo = fsm_rev_v_li;
         pending_busy = fsm_rev_yumi_lo;
-        pending_w_v = fsm_rev_yumi_lo;
+        pending_w_v = fsm_rev_yumi_lo & fsm_rev_last_li;
         pending_w_addr = fsm_rev_header_li.addr;
         pending_li = 1'b0;
 
@@ -972,7 +972,7 @@ module bp_cce_fsm
         fsm_resp_yumi_lo = fsm_resp_v_li;
         // inform FSM that pending bit is being used
         pending_busy = fsm_resp_yumi_lo;
-        pending_w_v = fsm_resp_yumi_lo;
+        pending_w_v = fsm_resp_yumi_lo & fsm_resp_last_li;
         pending_w_addr = fsm_resp_header_li.addr;
         pending_li = 1'b0;
     end
@@ -1291,7 +1291,7 @@ module bp_cce_fsm
           spec_bits_li.fwd_mod = 1'b0;
           spec_bits_li.state = e_COH_I;
 
-          pending_w_v = fsm_fwd_yumi_li;
+          pending_w_v = fsm_fwd_yumi_li & fsm_fwd_new_lo;
           pending_li = 1'b1;
           pending_w_addr = mshr_r.paddr;
 
@@ -1721,7 +1721,7 @@ module bp_cce_fsm
           fsm_fwd_data_lo = fsm_req_data_li;
 
           // set the pending bit
-          pending_w_v = fsm_req_yumi_lo;
+          pending_w_v = fsm_req_yumi_lo & fsm_req_new_li;
           pending_li = 1'b1;
           pending_w_addr = mshr_r.paddr;
 
@@ -1825,7 +1825,7 @@ module bp_cce_fsm
             fsm_fwd_data_lo = fsm_resp_data_li;
 
             // set the pending bit
-            pending_w_v = (fsm_resp_yumi_lo & fsm_resp_last_li);
+            pending_w_v = fsm_resp_yumi_lo & fsm_resp_new_li;
             pending_li = 1'b1;
             pending_w_addr = fsm_resp_header_li.addr;
 

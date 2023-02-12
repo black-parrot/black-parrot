@@ -574,7 +574,7 @@ module bp_cce_msg
         else if (mem_rev_header_cast_i.msg_type == e_bedrock_mem_wr) begin
 
           mem_rev_yumi_o = mem_rev_v_i;
-          pending_w_v_o = mem_rev_yumi_o;
+          pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i;
           pending_w_addr_o = mem_rev_header_cast_i.addr;
           pending_o = 1'b0;
 
@@ -590,7 +590,7 @@ module bp_cce_msg
         lce_resp_yumi_o = lce_resp_v_i;
         lce_resp_busy_o = 1'b1;
         // inform FSM that pending bit is being used
-        pending_w_v_o = lce_resp_yumi_o;
+        pending_w_v_o = lce_resp_yumi_o & lce_resp_last_i;
         pending_w_addr_o = lce_resp_header_cast_i.addr;
         pending_o = 1'b0;
     end
