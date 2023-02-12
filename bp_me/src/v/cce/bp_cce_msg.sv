@@ -779,7 +779,8 @@ module bp_cce_msg
                 // set uncached bit
                 mem_fwd_header_cast_o.payload.uncached = 1'b1;
 
-                mem_fwd_stall_o = ~mem_fwd_yumi_i;
+                // stall until the message send completes
+                mem_fwd_stall_o = ~(mem_fwd_yumi_i & mem_fwd_last_i);
 
               end
 
@@ -797,7 +798,8 @@ module bp_cce_msg
                 // when it returns from memory
                 mem_fwd_header_cast_o.payload.uncached = mshr.flags.uncached;
 
-                mem_fwd_stall_o = ~mem_fwd_yumi_i;
+                // stall until the message send completes
+                mem_fwd_stall_o = ~(mem_fwd_yumi_i & mem_fwd_last_i);
 
               end
 
@@ -906,7 +908,7 @@ module bp_cce_msg
           // message sent, increment count
           cnt_inc = lce_cmd_yumi_i;
           // only remove current LCE from sharers if command sends
-          pe_sharers_n = lce_cmd_yumi_i 
+          pe_sharers_n = lce_cmd_yumi_i
                          ? (pe_sharers_r & ~pe_lce_id_one_hot)
                          : pe_sharers_r;
 
