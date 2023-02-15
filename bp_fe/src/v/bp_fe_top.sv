@@ -213,7 +213,7 @@ module bp_fe_top
   logic icache_v_li, icache_force_li, icache_yumi_lo;
   logic icache_tv_we;
   logic icache_data_v_lo, icache_spec_v_lo, icache_fence_v_lo, icache_yumi_li;
-  logic poison_if1_lo, poison_if2_lo;
+  logic poison_if1_lo, poison_if2_lo, poison_isd_lo;
   bp_fe_icache
    #(.bp_params_p(bp_params_p))
    icache
@@ -331,8 +331,8 @@ module bp_fe_top
      ,.scan_o(fetch_scan)
      );
 
-  wire fe_exception_v = (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_spec_v_lo);
-  wire fe_instr_v     = fetch_instr_v_lo;
+  wire fe_exception_v = ~poison_isd_lo & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_spec_v_lo);
+  wire fe_instr_v     = ~poison_isd_lo & fetch_instr_v_lo;
 
   assign fetch_instr_yumi_li     = fe_queue_ready_and_i & fe_queue_v_o & fe_instr_v;
   assign fetch_exception_yumi_li = fe_queue_ready_and_i & fe_queue_v_o & fe_exception_v;
@@ -399,6 +399,8 @@ module bp_fe_top
      ,.poison_if2_o(poison_if2_lo)
      ,.fetch_exception_yumi_i(fetch_exception_yumi_li)
      ,.if2_we_o(if2_we)
+
+     ,.poison_isd_o(poison_isd_lo)
 
      ,.itlb_r_v_o(itlb_r_v_li)
      ,.itlb_w_v_o(itlb_w_v_li)
