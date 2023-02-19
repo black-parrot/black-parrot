@@ -110,6 +110,11 @@ build_vivado.v: SIM_SYNTH_VIVADO_P := 1
 build_vivado.v: NO_BIND_P          := 1
 build_vivado.v: build.v
 
+build_vivado_dump.v: VCS_BUILD_OPTS += -debug_pp
+build_vivado_dump.v: VCS_BUILD_OPTS += +vcs+vcdpluson
+build_vivado_dump.v: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
+build_vivado_dump.v: build_vivado.v
+
 sim_vivado.v: SIM_SYNTH_VIVADO_P := 1
 sim_vivado.v: NO_BIND_P          := 1
 sim_vivado.v: sim.v
@@ -119,6 +124,34 @@ sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdpluson
 sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon
 sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusautoflushon
 sim_vivado_dump.v: sim_vivado.v
+
+build_yosys.v: SIM_SYNTH_YOSYS_P := 1
+build_yosys.v: NO_BIND_P         := 1
+build_yosys.v: VCS_BUILD_OPTS += -top testbench
+build_yosys.v: VCS_BUILD_OPTS += +define+FUNCTIONAL
+build_yosys.v: VCS_BUILD_OPTS += +define+UNIT_DELAY
+build_yosys.v: VCS_BUILD_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/primitives.v
+build_yosys.v: VCS_BUILD_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/sky130_fd_sc_hd.v
+build_yosys.v: VCS_BUILD_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simcells.v
+build_yosys.v: VCS_BUILD_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simlib.v
+build_yosys.v: VCS_BUILD_OPTS += +vcs+initreg+zero
+build_yosys.v: build.v
+
+sim_yosys.v: SIM_SYNTH_VIVADO_P := 1
+sim_yosys.v: NO_BIND_P          := 1
+sim_yosys.v: VCS_OPTIONS += +nospecify +notimingchecks
+sim_yosys.v: sim.v
+
+build_yosys_dump.v: VCS_BUILD_OPTS += -debug_pp
+build_yosys_dump.v: VCS_BUILD_OPTS += +vcs+vcdpluson
+build_yosys_dump.v: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
+build_yosys_dump.v: build_yosys.v
+
+sim_yosys_dump.v: VCS_OPTIONS += +memcbk
+sim_yosys_dump.v: VCS_OPTIONS += +vcs+vcdpluson
+sim_yosys_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon
+sim_yosys_dump.v: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_yosys_dump.v: sim_yosys.v
 
 sim_dump.v: VCS_OPTIONS += +memcbk
 sim_dump.v: VCS_OPTIONS += +vcs+vcdpluson
