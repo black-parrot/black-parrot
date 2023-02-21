@@ -357,13 +357,13 @@ module bp_be_dcache
   // fencei does not require a ptag
   assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
   assign tv_we = safe_tv_we & ~flush_self;
-  bsg_dff_reset_set_clear
+  bsg_dff_reset
    #(.width_p(1))
    v_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(tv_we | cache_req_complete_i)
-     ,.clear_i(v_o | (cache_req_ready_and_i & cache_req_v_o))
+     // Inject in-line for non-blocking cache
+     ,.data_i(tv_we | cache_req_complete_i | (cache_req_v_o & ~cache_req_ready_and_i))
      ,.data_o(v_tv_r)
      );
   assign tv_we_o = tv_we;

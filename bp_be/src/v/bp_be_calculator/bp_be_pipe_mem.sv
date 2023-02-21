@@ -169,10 +169,6 @@ module bp_be_pipe_mem
   logic                     dcache_float;
   logic                     dcache_tv_we;
 
-  logic                     dcache_final_float, dcache_final_v, dcache_final_yumi;
-  logic                     dcache_final_ret, dcache_final_late, dcache_final_load;
-  logic [reg_addr_width_gp-1:0] dcache_final_rd_addr;
-
   logic load_access_fault_v, store_access_fault_v;
   logic load_page_fault_v, store_page_fault_v;
   logic load_misaligned_v, store_misaligned_v;
