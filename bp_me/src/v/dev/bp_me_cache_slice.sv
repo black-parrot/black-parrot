@@ -58,7 +58,7 @@ module bp_me_cache_slice
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
   bsg_cache_pkt_s [l2_banks_p-1:0] cache_pkt_li;
-  logic [l2_banks_p-1:0] cache_pkt_v_li, cache_pkt_ready_and_lo;
+  logic [l2_banks_p-1:0] cache_pkt_v_li, cache_pkt_yumi_lo;
   logic [l2_banks_p-1:0][l2_data_width_p-1:0] cache_data_lo;
   logic [l2_banks_p-1:0] cache_data_v_lo, cache_data_yumi_li;
 
@@ -82,7 +82,7 @@ module bp_me_cache_slice
 
      ,.cache_pkt_o(cache_pkt_li)
      ,.cache_pkt_v_o(cache_pkt_v_li)
-     ,.cache_pkt_ready_and_i(cache_pkt_ready_and_lo)
+     ,.cache_pkt_yumi_i(cache_pkt_yumi_lo)
 
      ,.cache_data_i(cache_data_lo)
      ,.cache_data_v_i(cache_data_v_lo)
@@ -116,7 +116,7 @@ module bp_me_cache_slice
 
          ,.cache_pkt_i(cache_pkt_li[i])
          ,.v_i(cache_pkt_v_li[i])
-         ,.ready_o(cache_pkt_ready_and_lo[i])
+         ,.yumi_o(cache_pkt_yumi_lo[i])
 
          ,.data_o(cache_data_lo[i])
          ,.v_o(cache_data_v_lo[i])

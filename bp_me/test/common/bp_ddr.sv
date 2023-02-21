@@ -176,47 +176,50 @@ module bp_ddr
     assign ddr_dqs_n_li[i] = (ddr_dqs_n_oen_lo[i] ? ddr_dqs_n_io[i] : 1'bz) & ~ddr_dqs_n_ien_lo[i];
   end
 
-  bsg_cache_to_dram_ctrl
-   #(.num_cache_p(num_dma_p)
-     ,.addr_width_p(daddr_width_p)
-     ,.data_width_p(l2_fill_width_p)
-     ,.block_size_in_words_p(l2_block_size_in_fill_p)
-     ,.dram_ctrl_burst_len_p(l2_block_size_in_fill_p)
-     ,.dram_ctrl_addr_width_p(dmc_addr_width_lp)
-     )
-   cache2dmc
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i | ui_reset_lo)
+  if (1)
+    $error("BSG DMC is currently unsupported as a backend; raise an issue if this impacts your workflow!");
 
-     ,.dram_size_i(3'b100) // 4Gb
+  //bsg_cache_to_dram_ctrl
+  // #(.num_cache_p(num_dma_p)
+  //   ,.addr_width_p(daddr_width_p)
+  //   ,.data_width_p(l2_fill_width_p)
+  //   ,.block_size_in_words_p(l2_block_size_in_fill_p)
+  //   ,.dram_ctrl_burst_len_p(l2_block_size_in_fill_p)
+  //   ,.dram_ctrl_addr_width_p(dmc_addr_width_lp)
+  //   )
+  // cache2dmc
+  //  (.clk_i(clk_i)
+  //   ,.reset_i(reset_i | ui_reset_lo)
 
-     ,.dma_pkt_i(dma_pkt_i)
-     ,.dma_pkt_v_i(dma_pkt_v_i & init_calib_complete_lo)
-     ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
+  //   ,.dram_size_i(3'b100) // 4Gb
 
-     ,.dma_data_o(dma_data_o)
-     ,.dma_data_v_o(dma_data_v_o)
-     ,.dma_data_ready_i(dma_data_ready_i)
+  //   ,.dma_pkt_i(dma_pkt_i)
+  //   ,.dma_pkt_v_i(dma_pkt_v_i & init_calib_complete_lo)
+  //   ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
 
-     ,.dma_data_i(dma_data_i)
-     ,.dma_data_v_i(dma_data_v_i)
-     ,.dma_data_yumi_o(dma_data_yumi_o)
+  //   ,.dma_data_o(dma_data_o)
+  //   ,.dma_data_v_o(dma_data_v_o)
+  //   ,.dma_data_ready_i(dma_data_ready_i)
 
-     ,.app_en_o(app_en_lo)
-     ,.app_rdy_i(app_rdy_li)
-     ,.app_cmd_o(app_cmd_lo)
-     ,.app_addr_o(app_addr_lo)
+  //   ,.dma_data_i(dma_data_i)
+  //   ,.dma_data_v_i(dma_data_v_i)
+  //   ,.dma_data_yumi_o(dma_data_yumi_o)
 
-     ,.app_wdf_wren_o(app_wdf_wren_lo)
-     ,.app_wdf_rdy_i(app_wdf_rdy_li)
-     ,.app_wdf_data_o(app_wdf_data_lo)
-     ,.app_wdf_mask_o(app_wdf_mask_lo)
-     ,.app_wdf_end_o(app_wdf_end_lo)
+  //   ,.app_en_o(app_en_lo)
+  //   ,.app_rdy_i(app_rdy_li)
+  //   ,.app_cmd_o(app_cmd_lo)
+  //   ,.app_addr_o(app_addr_lo)
 
-     ,.app_rd_data_valid_i(app_rd_data_valid_li)
-     ,.app_rd_data_i(app_rd_data_li)
-     ,.app_rd_data_end_i(app_rd_data_end_li)
-     );
+  //   ,.app_wdf_wren_o(app_wdf_wren_lo)
+  //   ,.app_wdf_rdy_i(app_wdf_rdy_li)
+  //   ,.app_wdf_data_o(app_wdf_data_lo)
+  //   ,.app_wdf_mask_o(app_wdf_mask_lo)
+  //   ,.app_wdf_end_o(app_wdf_end_lo)
+
+  //   ,.app_rd_data_valid_i(app_rd_data_valid_li)
+  //   ,.app_rd_data_i(app_rd_data_li)
+  //   ,.app_rd_data_end_i(app_rd_data_end_li)
+  //   );
 
   wire [dmc_addr_width_lp-1:0] app_addr_li = (app_addr_lo >> 2);
   bsg_dmc

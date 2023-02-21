@@ -63,7 +63,7 @@ module bp_be_fp_to_reg
   wire nanbox_v_li = &raw_i[word_width_gp+:word_width_gp];
   wire encode_as_sp = nanbox_v_li;
 
-  assign reg_cast_o = '{tag: encode_as_sp ? e_fp_rne : e_fp_full, rec: encode_as_sp ? sp2dp_rec : in_dp_rec_li};
+  assign reg_cast_o = '{tag: encode_as_sp ? e_fp_sp : e_fp_full, rec: encode_as_sp ? sp2dp_rec : in_dp_rec_li};
 
 endmodule
 

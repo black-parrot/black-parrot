@@ -10,7 +10,6 @@ module bp_be_reg_to_fp
    )
   (input [dpath_width_gp-1:0]          reg_i
    , output logic [dword_width_gp-1:0] raw_o
-   , output rv64_fflags_s              fflags_o
    );
 
  `bp_cast_i(bp_be_fp_reg_s, reg);
@@ -20,7 +19,7 @@ module bp_be_reg_to_fp
 
   localparam bias_adj_lp = (1 << sp_exp_width_gp) - (1 << dp_exp_width_gp);
   bp_hardfloat_rec_dp_s dp_rec;
-  bp_hardfloat_rec_sp_s dp2sp_rec_round, dp2sp_rec_unsafe, dp2sp_rec;
+  bp_hardfloat_rec_sp_s dp2sp_rec_round, dp2sp_rec_unsafe;
   assign dp_rec = reg_i;
 
   wire [sp_exp_width_gp:0] adjusted_exp = dp_rec.exp + bias_adj_lp;
@@ -32,33 +31,13 @@ module bp_be_reg_to_fp
                               ,fract: dp_rec.fract[dp_sig_width_gp-2:dp_sig_width_gp-sp_sig_width_gp]
                               };
 
-  rv64_fflags_s dp2sp_fflags;
-  recFNToRecFN
-   #(.inExpWidth(dp_exp_width_gp)
-     ,.inSigWidth(dp_sig_width_gp)
-     ,.outExpWidth(sp_exp_width_gp)
-     ,.outSigWidth(sp_sig_width_gp)
-     )
-   round
-    (.control(control_li)
-     ,.in(reg_cast_i.rec)
-     ,.roundingMode(reg_cast_i.tag)
-     ,.out(dp2sp_rec_round)
-     ,.exceptionFlags(dp2sp_fflags)
-     );
-
-  wire is_nan = &reg_cast_i.rec[dp_rec_width_gp-2-:3];
-
-  assign dp2sp_rec = is_nan ? dp2sp_rec_unsafe : dp2sp_rec_round;
-  assign fflags_o  = (reg_cast_i.tag == e_fp_full || is_nan) ? '0 : dp2sp_fflags;
-
   logic [word_width_gp-1:0] sp_raw_lo;
   recFNToFN
    #(.expWidth(sp_exp_width_gp)
      ,.sigWidth(sp_sig_width_gp)
      )
    out_sp_rec
-    (.in(dp2sp_rec)
+    (.in(dp2sp_rec_unsafe)
      ,.out(sp_raw_lo)
      );
 
