@@ -47,7 +47,7 @@ module bp_be_issue_queue
   logic [1:0] cptr_jmp;
 
   // Operations
-  wire enq    = fe_queue_ready_and_o & fe_queue_v_i & ~clr_v_i;
+  wire enq    = fe_queue_ready_and_o & fe_queue_v_i;
   wire deq    = deq_v_i;
   wire clr    = clr_v_i;
   wire roll   = roll_v_i;
