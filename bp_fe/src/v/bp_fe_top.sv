@@ -278,13 +278,13 @@ module bp_fe_top
   // This tracks the I$ valid. Could move inside entirely, but we're trying to separate
   //   those responsibilities
   logic itlb_miss_r, instr_access_fault_r, instr_page_fault_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(3), .clear_over_set_p(1))
+  bsg_dff_reset_en
+   #(.width_p(3))
    fault_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.set_i({3{if2_we}} & {ptag_miss_li, instr_access_fault_v, instr_page_fault_v})
-     ,.clear_i({3{poison_if2_lo}})
+     ,.reset_i(reset_i || poison_if2_lo)
+     ,.en_i(if2_we)
+     ,.data_i({ptag_miss_li, instr_access_fault_v, instr_page_fault_v})
      ,.data_o({itlb_miss_r, instr_access_fault_r, instr_page_fault_r})
      );
 
@@ -332,27 +332,24 @@ module bp_fe_top
      );
 
   wire fe_exception_v = ~poison_isd_lo & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_spec_v_lo);
-  wire fe_instr_v     = ~poison_isd_lo & fetch_instr_v_lo;
+  wire fe_instr_v     = ~poison_isd_lo & ~fe_exception_v & fetch_instr_v_lo;
+  assign fe_queue_v_o = ~poison_isd_lo & (fe_instr_v | fe_exception_v);
 
   assign fetch_instr_yumi_li     = fe_queue_ready_and_i & fe_queue_v_o & fe_instr_v;
   assign fetch_exception_yumi_li = fe_queue_ready_and_i & fe_queue_v_o & fe_exception_v;
-
-  assign fe_queue_v_o = (fe_instr_v | fe_exception_v);
   always_comb
     begin
       fe_queue_cast_o = '0;
       fe_queue_cast_o.pc = fetch_pc_lo;
-      fe_queue_cast_o.msg_type = fe_instr_v
-                                 ? e_instr_fetch
-                                 : itlb_miss_r
-                                   ? e_itlb_miss
-                                     : instr_page_fault_r
-                                       ? e_instr_page_fault
-                                       : instr_access_fault_r
-                                         ? e_instr_access_fault
-                                         : icache_spec_v_lo
-                                           ? e_icache_miss
-                                           : e_instr_fetch;
+      fe_queue_cast_o.msg_type = itlb_miss_r
+                                 ? e_itlb_miss
+                                   : instr_page_fault_r
+                                     ? e_instr_page_fault
+                                     : instr_access_fault_r
+                                       ? e_instr_access_fault
+                                       : icache_spec_v_lo
+                                         ? e_icache_miss
+                                         : e_instr_fetch;
       fe_queue_cast_o.instr = fetch_instr_lo;
       fe_queue_cast_o.branch_metadata_fwd = if2_br_metadata_fwd_lo;
       // TODO: Partial should actually mean that the data to the BE is partially valid,

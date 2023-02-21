@@ -199,9 +199,9 @@ module bp_be_dcache
   logic safe_tl_we, safe_tv_we, safe_dm_we;
   logic v_tl_r, v_tv_r;
   logic gdirty_r, cache_lock;
-  logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, nonblocking_hazard;
+  logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, engine_hazard;
 
-  wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | blocking_hazard | nonblocking_hazard;
+  wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | blocking_hazard | engine_hazard;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
@@ -388,14 +388,14 @@ module bp_be_dcache
      ,.data_o({way_v_tv_r, store_hit_tv_r, load_hit_tv_r})
      );
 
-  // Fill if we're actually returning, or if there's a non-blocking req hit
-  wire fill_tv_n = cache_req_complete_i | nonblocking_hazard;
+  // Fill if we're actually returning
+  wire fill_tv_n = cache_req_complete_i;
   bsg_dff_reset_en
    #(.width_p(1))
    fill_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(tv_we | cache_req_complete_i | nonblocking_hazard)
+     ,.en_i(tv_we | cache_req_complete_i)
      ,.data_i(fill_tv_n)
      ,.data_o(fill_tv_r)
      );
@@ -759,7 +759,7 @@ module bp_be_dcache
     & (|{cached_req, fencei_req, uncached_amo_req, uncached_load_req, uncached_store_req, wt_req});
 
   assign blocking_hazard = cache_req_v_o & blocking_req;
-  assign nonblocking_hazard = cache_req_v_o & nonblocking_req & ~cache_req_ready_and_i;
+  assign engine_hazard   = cache_req_v_o & ~cache_req_ready_and_i;
 
   always_comb
     begin
