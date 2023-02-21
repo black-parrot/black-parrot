@@ -194,10 +194,9 @@ module bp_nonsynth_cosim
 
       bp_be_reg_to_fp
        #(.bp_params_p(bp_params_p))
-       debug_fp
+       unrecode
         (.reg_i(frd_data_r[i])
          ,.raw_o(frd_raw_li[i])
-         ,.fflags_o()
          );
     end
 
@@ -220,8 +219,8 @@ module bp_nonsynth_cosim
                                                    & (~commit_frd_w_v_r | frd_fifo_v_lo[commit_instr_r.rd_addr])
                                                    & (~commit_req_v_r | req_v_lo)
                                                    );
-  wire commit_ird_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
-  wire commit_frd_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);
+  wire commit_iwb_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
+  wire commit_fwb_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);
 
   logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
   bsg_counter_clear_up
@@ -251,22 +250,33 @@ module bp_nonsynth_cosim
     if (cosim_en_i)
       dromajo_init(string'(config_file_i), mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
 
+  wire [dword_width_gp-1:0] cosim_pc_li     = `BSG_SIGN_EXTEND(commit_pc_r, dword_width_gp);
+  wire [instr_width_gp-1:0] cosim_instr_li  = commit_instr_r;
+  wire [dword_width_gp-1:0] cosim_cause_li  = cause_r;
+  wire [dword_width_gp-1:0] cosim_ird_li    = ird_data_r[commit_instr_r.rd_addr];
+  wire [dword_width_gp-1:0] cosim_frd_li    = frd_raw_li[commit_instr_r.rd_addr];
+  wire [dword_width_gp-1:0] cosim_rd_li     = commit_fwb_li ? cosim_frd_li : cosim_ird_li;
+  wire [dword_width_gp-1:0] cosim_status_li = mstatus_r;
+  integer ret_code = '0;
   always_ff @(posedge cosim_clk_i)
     if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)
-      begin
-        dromajo_trap(mhartid_i, cause_r);
-      end
+      dromajo_trap(mhartid_i, cosim_cause_li);
     else if (~commit_debug_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
-      if (dromajo_step(mhartid_i, `BSG_SIGN_EXTEND(commit_pc_r, dword_width_gp), commit_instr_r, commit_frd_li ? frd_raw_li[commit_instr_r.rd_addr] : ird_data_r[commit_instr_r.rd_addr], mstatus_r))
-        begin
-          $display("COSIM_FAIL: instruction mismatch");
-          $finish();
-        end
-    else if (terminate)
-        begin
+      ret_code <= dromajo_step(mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li);
+
+   // ret_code: {exit_code, terminate}
+   always_ff @(posedge cosim_clk_i)
+     if (ret_code >> 1)
+       begin
+         // Successful termination
+         $display("COSIM_FAIL: exit code: %d", (ret_code >> 1));
+         $finish();
+       end
+     else if (ret_code)
+       begin
           $display("COSIM_PASS");
           $finish();
-        end
+       end
 
   always_ff @(posedge cosim_clk_i)
     if (finish_r)

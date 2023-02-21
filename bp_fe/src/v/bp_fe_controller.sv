@@ -47,6 +47,7 @@ module bp_fe_controller
    , output logic                                     if2_we_o
    , output logic                                     poison_if1_o
    , output logic                                     poison_if2_o
+   , output logic                                     poison_isd_o
    , input                                            fetch_exception_yumi_i
 
    , output logic                                     itlb_r_v_o
@@ -145,6 +146,7 @@ module bp_fe_controller
     | ovr_i
     | cmd_immediate_v
     | (~is_resume & cmd_complex_v);
+  assign poison_isd_o = cmd_immediate_v | (~is_resume & cmd_complex_v);
 
   assign redirect_resume_v_o = itlb_fill_resume_v | icache_fill_resume_v;
   assign redirect_instr_o = itlb_fill_response_v ? fe_cmd_cast_i.operands.itlb_fill_response.instr : fe_cmd_cast_i.operands.icache_fill_response.instr;

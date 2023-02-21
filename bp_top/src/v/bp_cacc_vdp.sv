@@ -158,13 +158,10 @@ module bp_cacc_vdp
   logic [cache_stat_info_width_lp-1:0] stat_mem_o;
   bp_cache_req_metadata_s cache_req_metadata_o;
 
-  logic [ptag_width_p-1:0] dcache_ptag;
-  always_ff @(posedge clk_i)
-    dcache_ptag <= dcache_pkt.vaddr[vaddr_width_p-1:page_offset_width_gp];
+  logic [ptag_width_p-1:0] dcache_ptag, st_data_r;
 
   // TODO: Actually use the late signal, but we don't really care about performance
   //   for the purposes of this demo
-  logic final_v;
   bp_be_dcache
    #(.bp_params_p(bp_params_p)
      ,.sets_p(acache_sets_p)
@@ -187,18 +184,18 @@ module bp_cacc_vdp
      ,.ptag_i(dcache_ptag)
      ,.ptag_uncached_i(1'b0)
      ,.ptag_dram_i(1'b1)
+     ,.st_data_i(st_data_r)
 
-     ,.early_hit_v_o(dcache_v)
-     ,.early_fencei_o()
-     ,.early_data_o(dcache_data)
-     ,.early_fflags_o()
-     ,.early_ret_o()
-
-     ,.final_v_o(final_v)
-     ,.final_data_o()
-     ,.final_rd_addr_o()
-     ,.final_float_o()
-     ,.final_ret_o()
+     ,.v_o(dcache_v)
+     ,.fencei_o()
+     ,.data_o(dcache_data)
+     ,.ret_o()
+     ,.store_o()
+     ,.float_o()
+     ,.ordered_o()
+     ,.late_o()
+     ,.rd_addr_o()
+     ,.tv_we_o()
 
      // D$-LCE Interface
      ,.cache_req_complete_i(cache_req_complete_lo)
@@ -384,7 +381,6 @@ module bp_cacc_vdp
   assign data_li = csr_data_lo;
 
   assign dcache_pkt = '{opcode: load ? e_dcache_op_ld : e_dcache_op_sd
-                        ,data: load ? '0 : dot_product_res
                         ,vaddr: load ? second_operand
                                        ? (input_b_ptr+len_b_cnt*8)
                                        : (input_a_ptr+len_a_cnt*8)
@@ -392,11 +388,17 @@ module bp_cacc_vdp
                         ,default: '0
                         };
 
+  always_ff @(posedge clk_i) begin
+    dcache_ptag <= dcache_pkt.vaddr[vaddr_width_p-1:page_offset_width_gp];
+    st_data_r <= dot_product_res;
+  end
+
   always_comb
     begin
       load = 0;
       second_operand = 0;
       dcache_pkt_v = 0;
+      dot_product_res = '0;
 
   state_n = state_r;
       case (state_r)

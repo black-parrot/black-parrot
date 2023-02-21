@@ -33,8 +33,8 @@ module bp_be_ptw
    , output logic                           dcache_ptag_v_o
    , input                                  dcache_ready_i
 
-   , input                                  dcache_early_hit_v_i
-   , input [dpath_width_gp-1:0]             dcache_early_data_i
+   , input                                  dcache_v_i
+   , input [dword_width_gp-1:0]             dcache_data_i
   );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -66,7 +66,7 @@ module bp_be_ptw
   logic tlb_miss_v, page_fault_v;
 
   sv39_pte_s dcache_pte_n, dcache_pte_r;
-  assign dcache_pte_n = dcache_early_data_i[0+:dword_width_gp];
+  assign dcache_pte_n = dcache_data_i[0+:dword_width_gp];
   bsg_dff_en
    #(.width_p($bits(sv39_pte_s)))
    dcache_pte_reg
@@ -94,7 +94,6 @@ module bp_be_ptw
   assign dcache_v_o                    = is_send;
   assign dcache_pkt_cast_o.opcode      = e_dcache_op_ld;
   assign dcache_pkt_cast_o.vaddr       = partial_vpn[level_cntr] << lg_pte_size_in_bytes_lp;
-  assign dcache_pkt_cast_o.data        = '0;
   assign dcache_pkt_cast_o.rd_addr     = '0;
 
   assign busy_o                 = ~is_idle;
@@ -187,7 +186,7 @@ module bp_be_ptw
     case(state_r)
       e_idle      :  state_n = tlb_miss_v ? e_send_load : e_idle;
       e_send_load :  state_n = (dcache_ready_i & dcache_v_o) ? e_recv_load : e_send_load;
-      e_recv_load :  state_n = dcache_early_hit_v_i ? e_check_load : e_send_load;
+      e_recv_load :  state_n = dcache_v_i ? e_check_load : e_send_load;
       e_check_load:  state_n = (pte_is_leaf | page_fault_v) ? e_writeback : e_send_load;
       default: // e_writeback
                     state_n = e_idle;

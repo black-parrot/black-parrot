@@ -41,6 +41,7 @@ module wrapper
 
    , input [num_caches_p-1:0][ptag_width_p-1:0]        ptag_i
    , input [num_caches_p-1:0]                          uncached_i
+   , input [num_caches_p-1:0][dword_width_gp-1:0]      st_data_i
 
    , output logic [num_caches_p-1:0][dword_width_gp-1:0] data_o
    , output logic [num_caches_p-1:0]                     v_o
@@ -94,11 +95,6 @@ module wrapper
   logic [num_caches_p-1:0][ptag_width_p-1:0] rolly_ptag_r;
   logic [num_caches_p-1:0] rolly_uncached_r;
   logic [num_caches_p-1:0] is_store, is_store_rr, dcache_v_rr;
-
-  logic [num_caches_p-1:0][dpath_width_gp-1:0] early_data_lo;
-  logic [num_caches_p-1:0] early_v_lo;
-  logic [num_caches_p-1:0][dpath_width_gp-1:0] final_data_lo;
-  logic [num_caches_p-1:0] final_v_lo;
 
   // LCE-CCE connections - to/from LCE and xbars
   bp_bedrock_lce_req_header_s [num_caches_p-1:0] lce_req_header_lo;
@@ -204,23 +200,21 @@ module wrapper
       ,.v_i(rolly_yumi_li[i])
       ,.ready_and_o(dcache_ready_and_lo[i])
 
-      ,.early_data_o(early_data_lo[i])
-      ,.early_hit_v_o(early_v_lo[i])
-      ,.early_fencei_o()
-      ,.early_fflags_o()
-      ,.early_ret_o()
-
-      ,.final_data_o(final_data_lo[i])
-      ,.final_v_o(final_v_lo[i])
-      ,.final_rd_addr_o()
-      ,.final_float_o()
-      ,.final_ret_o()
-      ,.final_late_o()
+      ,.data_o(data_o[i])
+      ,.v_o(v_o[i])
+      ,.fencei_o()
+      ,.ret_o()
+      ,.late_o()
+      ,.rd_addr_o()
+      ,.ordered_o()
+      ,.float_o()
+      ,.store_o()
 
       ,.ptag_v_i(1'b1)
       ,.ptag_i(rolly_ptag_r[i])
       ,.ptag_uncached_i(rolly_uncached_r[i])
       ,.ptag_dram_i(1'b1)
+      ,.st_data_i(st_data_i)
 
       ,.flush_i('0)
       ,.tv_we_o()
@@ -252,10 +246,6 @@ module wrapper
       ,.stat_mem_o(stat_mem_lo[i])
       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_lo[i])
       );
-
-      // Stores "return" 0 to the trace replay module
-      assign data_o[i] = is_store_rr[i] ? '0 : final_data_lo[i];
-      assign v_o[i] = final_v_lo[i];
 
       if (uce_p == 0)
         begin : lce

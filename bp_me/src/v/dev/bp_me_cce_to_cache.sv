@@ -47,7 +47,7 @@ module bp_me_cce_to_cache
    // cache-side
    , output logic [l2_banks_p-1:0][cache_pkt_width_lp-1:0] cache_pkt_o
    , output logic [l2_banks_p-1:0]                         cache_pkt_v_o
-   , input [l2_banks_p-1:0]                                cache_pkt_ready_and_i
+   , input [l2_banks_p-1:0]                                cache_pkt_yumi_i
 
    , input [l2_banks_p-1:0][l2_data_width_p-1:0]           cache_data_i
    , input [l2_banks_p-1:0]                                cache_data_v_i
@@ -333,7 +333,7 @@ module bp_me_cce_to_cache
 
           cache_data_yumi_o = cache_data_v_i;
 
-          tagst_sent_n = |{cache_pkt_v_o & cache_pkt_ready_and_i}
+          tagst_sent_n = |cache_pkt_yumi_i
             ? tagst_sent_r + 1'b1
             : tagst_sent_r;
           tagst_received_n = |{cache_data_yumi_o}
@@ -401,7 +401,9 @@ module bp_me_cce_to_cache
                 cache_pkt.mask = cache_pkt_mask_lo;
               end
             cache_pkt_v_o[cache_fwd_bank_lo] = stream_fifo_ready_lo & fsm_fwd_v_li;
-            fsm_fwd_yumi_lo = fsm_fwd_v_li & stream_fifo_ready_lo & cache_pkt_ready_and_i[cache_fwd_bank_lo];
+            // fsm_fwd_v_li is not strictly necessary, but avoids x-prop caused by
+            //   cache_fwd_bank_lo
+            fsm_fwd_yumi_lo = fsm_fwd_v_li & cache_pkt_yumi_i[cache_fwd_bank_lo];
 
             fsm_rev_v_lo = stream_header_v_lo & cache_data_v_i[cache_rev_bank_lo];
             cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_v_lo & fsm_rev_ready_and_li;
