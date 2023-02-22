@@ -34,7 +34,7 @@ module testbench
    // Derived parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
-   , localparam trace_replay_data_width_lp = ptag_width_p + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
+   , localparam trace_replay_data_width_lp = ptag_width_p + dcache_pkt_width_lp + 1 + dword_width_gp // The 1 extra bit is for uncached accesses
    , localparam trace_rom_addr_width_lp = 8
 
    , localparam yumi_min_delay_lp = 0
@@ -117,6 +117,7 @@ module testbench
   logic [num_caches_p-1:0][dcache_pkt_width_lp-1:0] dcache_pkt_li;
   logic [num_caches_p-1:0][ptag_width_p-1:0] ptag_li;
   logic [num_caches_p-1:0] uncached_li;
+  logic [num_caches_p-1:0][dword_width_gp-1:0] st_data_li, st_data_r;
   logic [num_caches_p-1:0] dcache_ready_li;
 
   logic [num_caches_p-1:0] fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
@@ -193,10 +194,19 @@ module testbench
          ,.data_o(trace_rom_data_li[i])
          );
 
-      assign dcache_pkt_li[i] = trace_data_lo[i][0+:dcache_pkt_width_lp];
+      assign st_data_li[i] = trace_data_lo[i][0+:dword_width_gp];
+      assign dcache_pkt_li[i] = trace_data_lo[i][dword_width_gp+:dcache_pkt_width_lp];
       // Slight hack, but makes all address "cacheable"
-      assign ptag_li[i] = (32'h8000_0000 >> 12) | trace_data_lo[i][dcache_pkt_width_lp+:ptag_width_p];
-      assign uncached_li[i] = trace_data_lo[i][(dcache_pkt_width_lp+ptag_width_p)+:1];
+      assign ptag_li[i] = (32'h8000_0000 >> 12) | trace_data_lo[i][dword_width_gp+dcache_pkt_width_lp+:ptag_width_p];
+      assign uncached_li[i] = trace_data_lo[i][(dword_width_gp+dcache_pkt_width_lp+ptag_width_p)+:1];
+
+      bsg_dff
+       #(.width_p(dword_width_gp))
+       st_data_reg
+        (.clk_i(clk_i)
+         ,.data_i(st_data_li[i])
+         ,.data_o(st_data_r[i])
+         );
 
       // Output FIFO
       assign fifo_yumi_li[i] = (random_yumi_p == 1) ? (fifo_random_yumi_lo[i] & trace_ready_lo[i]) : (fifo_v_lo[i] & trace_ready_lo[i]);
@@ -261,8 +271,8 @@ module testbench
      ,.v_o(v_lo)
 
      ,.ptag_i(ptag_li)
-
      ,.uncached_i(uncached_li)
+     ,.st_data_i(st_data_r)
 
      ,.mem_fwd_header_o(mem_fwd_header_lo)
      ,.mem_fwd_data_o(mem_fwd_data_lo)

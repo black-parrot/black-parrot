@@ -133,11 +133,11 @@ module bp_be_pipe_long
   wire fdiv_v_li  = v_li & (decode.fu_op == e_fma_op_fdiv);
   wire fsqrt_v_li = v_li & (decode.fu_op == e_fma_op_fsqrt);
 
-  bp_be_fp_reg_s fdivsqrt_result;
-  rv64_fflags_s fdivsqrt_fflags;
   logic fdiv_ready_and_lo, fdivsqrt_v_lo;
-  logic sqrt_lo;
-  divSqrtRecFN_small
+  logic sqrt_lo, invalid_exc, infinite_exc;
+  logic [2:0] frm_lo;
+  bp_hardfloat_raw_dp_s fdivsqrt_raw_lo;
+  divSqrtRecFNToRaw_small
    #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
    fdiv
     (.clock(clk_i)
@@ -153,8 +153,16 @@ module bp_be_pipe_long
 
      ,.outValid(fdivsqrt_v_lo)
      ,.sqrtOpOut(sqrt_lo)
-     ,.out(fdivsqrt_result.rec)
-     ,.exceptionFlags(fdivsqrt_fflags)
+     ,.roundingModeOut(frm_lo)
+     ,.invalidExc(invalid_exc)
+     ,.infiniteExc(infinite_exc)
+
+     ,.out_isNaN(fdivsqrt_raw_lo.is_nan)
+     ,.out_isInf(fdivsqrt_raw_lo.is_inf)
+     ,.out_isZero(fdivsqrt_raw_lo.is_zero)
+     ,.out_sign(fdivsqrt_raw_lo.sign)
+     ,.out_sExp(fdivsqrt_raw_lo.sexp)
+     ,.out_sig(fdivsqrt_raw_lo.sig)
      );
 
   logic opw_v_r, ops_v_r;
@@ -171,7 +179,33 @@ module bp_be_pipe_long
      ,.data_i({frm_li, instr.t.fmatype.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
      ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
      );
-  assign fdivsqrt_result.tag = ops_v_r ? frm_r : e_fp_full;
+
+  logic [dp_rec_width_gp-1:0] fdivsqrt_result_dp, fdivsqrt_result_sp;
+  rv64_fflags_s fdivsqrt_fflags_dp, fdivsqrt_fflags_sp;
+  roundRawFNtoRecFN_mixed
+   #(.fullExpWidth(dp_exp_width_gp)
+     ,.fullSigWidth(dp_sig_width_gp)
+     ,.midExpWidth(sp_exp_width_gp)
+     ,.midSigWidth(sp_sig_width_gp)
+     ,.outExpWidth(dp_exp_width_gp)
+     ,.outSigWidth(dp_sig_width_gp)
+     )
+   round_mixed
+    (.control(control_li)
+     ,.invalidExc(invalid_exc)
+     ,.infiniteExc(infinite_exc)
+     ,.in_isNaN(fdivsqrt_raw_lo.is_nan)
+     ,.in_isInf(fdivsqrt_raw_lo.is_inf)
+     ,.in_isZero(fdivsqrt_raw_lo.is_zero)
+     ,.in_sign(fdivsqrt_raw_lo.sign)
+     ,.in_sExp(fdivsqrt_raw_lo.sexp)
+     ,.in_sig(fdivsqrt_raw_lo.sig)
+     ,.roundingMode(frm_r)
+     ,.fullOut(fdivsqrt_result_dp)
+     ,.fullExceptionFlags(fdivsqrt_fflags_dp)
+     ,.midOut(fdivsqrt_result_sp)
+     ,.midExceptionFlags(fdivsqrt_fflags_sp)
+     );
 
   logic imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
   bsg_dff_reset_set_clear
@@ -185,18 +219,28 @@ module bp_be_pipe_long
      ,.data_o({imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
      );
 
-  logic [dword_width_gp-1:0] rd_data_lo;
+  bp_be_fp_reg_s fdivsqrt_sp_reg_lo, fdivsqrt_dp_reg_lo, frd_data_lo;
+  rv64_fflags_s fflags_lo;
+  assign fdivsqrt_sp_reg_lo = '{tag: e_fp_sp, rec: fdivsqrt_result_sp};
+  assign fdivsqrt_dp_reg_lo = '{tag: e_fp_full, rec: fdivsqrt_result_dp};
+  always_comb
+    if (ops_v_r)
+      {fflags_lo, frd_data_lo} = {fdivsqrt_fflags_sp, fdivsqrt_sp_reg_lo};
+    else
+      {fflags_lo, frd_data_lo} = {fdivsqrt_fflags_dp, fdivsqrt_dp_reg_lo};
+
+  logic [dword_width_gp-1:0] ird_data_lo;
   always_comb
     if (~opw_v_r && fu_op_r inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu})
-      rd_data_lo = imulh_result_lo;
+      ird_data_lo = imulh_result_lo;
     else if (opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
-      rd_data_lo = `BSG_SIGN_EXTEND(quotient_w_lo, dword_width_gp);
+      ird_data_lo = `BSG_SIGN_EXTEND(quotient_w_lo, dword_width_gp);
     else if (opw_v_r && fu_op_r inside {e_mul_op_rem, e_mul_op_remu})
-      rd_data_lo = $signed(remainder_lo) >>> word_width_gp;
+      ird_data_lo = $signed(remainder_lo) >>> word_width_gp;
     else if (~opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
-      rd_data_lo = quotient_lo;
+      ird_data_lo = quotient_lo;
     else
-      rd_data_lo = remainder_lo;
+      ird_data_lo = remainder_lo;
 
   // Actually a busy signal
   assign ibusy_o = ~imulh_ready_lo | ~idiv_ready_and_lo | rd_w_v_r;
@@ -206,7 +250,7 @@ module bp_be_pipe_long
   assign iwb_pkt.frd_w_v    = 1'b0;
   assign iwb_pkt.late       = 1'b1;
   assign iwb_pkt.rd_addr    = rd_addr_r;
-  assign iwb_pkt.rd_data    = rd_data_lo;
+  assign iwb_pkt.rd_data    = ird_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
   assign iwb_pkt.fflags     = '0;
   assign iwb_v_o = (imulh_done_v_r | idiv_done_v_r) & rd_w_v_r;
@@ -215,9 +259,9 @@ module bp_be_pipe_long
   assign fwb_pkt.frd_w_v    = rd_w_v_r;
   assign fwb_pkt.late       = 1'b1;
   assign fwb_pkt.rd_addr    = rd_addr_r;
-  assign fwb_pkt.rd_data    = fdivsqrt_result;
+  assign fwb_pkt.rd_data    = frd_data_lo;
   assign fwb_pkt.fflags_w_v = 1'b1;
-  assign fwb_pkt.fflags     = fdivsqrt_fflags;
+  assign fwb_pkt.fflags     = fflags_lo;
   assign fwb_v_o = fdiv_done_v_r & rd_w_v_r;
 
   // synopsys translate_off

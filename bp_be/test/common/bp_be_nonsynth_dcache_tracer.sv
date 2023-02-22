@@ -30,10 +30,8 @@ module bp_be_nonsynth_dcache_tracer
    , input                                                v_i
    , input                                                ready_and_o
 
-   , input [dpath_width_gp-1:0]                           early_data_o
-   , input                                                early_hit_v_o
-   , input [dpath_width_gp-1:0]                           final_data_o
-   , input                                                final_v_o
+   , input [dword_width_gp-1:0]                           data_o
+   , input                                                v_o
 
    , input [cache_req_width_lp-1:0]                       cache_req_o
    , input                                                cache_req_v_o
@@ -71,7 +69,6 @@ module bp_be_nonsynth_dcache_tracer
    , input bp_be_dcache_decode_s                          decode_tv_r
    , input [paddr_width_p-1:0]                            paddr_tv_r
    , input [dword_width_gp-1:0]                           st_data_tv_r
-   , input bp_be_dcache_decode_s                          decode_dm_r
 
    , input [assoc_p-1:0]                                  data_mem_slow_read
    , input [assoc_p-1:0]                                  data_mem_slow_write
@@ -155,12 +152,10 @@ module bp_be_nonsynth_dcache_tracer
     begin
       if (ready_and_o & v_i)
         $fwrite(acc_file, "%12t | access: %p\n", $time, dcache_pkt_cast_i);
-      if (early_hit_v_o & decode_tv_r.load_op)
-        $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, early_data_o);
-      if (early_hit_v_o & decode_tv_r.store_op)
+      if (v_o & decode_tv_r.load_op)
+        $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, data_o);
+      if (v_o & decode_tv_r.store_op)
         $fwrite(acc_file, "%12t | early store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
-      if (final_v_o & decode_dm_r.load_op)
-        $fwrite(acc_file, "%12t | final load: %x\n", $time, final_data_o);
       if (wbuf_yumi_li)
         $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_out_cast);
 

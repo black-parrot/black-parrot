@@ -187,8 +187,7 @@ module bp_be_instr_decoder
           end
         `RV64_LOAD_OP:
           begin
-            decode_cast_o.pipe_mem_early_v = instr inside {`RV64_LD, `RV64_LW, `RV64_LWU};
-            decode_cast_o.pipe_mem_final_v = ~decode_cast_o.pipe_mem_early_v;
+            decode_cast_o.pipe_mem_early_v = 1'b1;
             decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
             decode_cast_o.dcache_r_v = 1'b1;
             decode_cast_o.mem_v      = 1'b1;
