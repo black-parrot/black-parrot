@@ -16,9 +16,13 @@ $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SYNTH_DIR):
 include $(TB_PATH)/$(TB)/Makefile.yosys
 
 ## Tool specific options
-export WRAPPER_SV2V  ?= $(CONVERT_DIR)/wrapper.sv2v.v
-export WRAPPER_SYNTH ?= $(SYNTH_DIR)/wrapper.synth.v
-export TECHMAP_DIR   ?= $(PDK_ROOT)/$(PDK)/libs.tech/openlane/$(STD_CELL_LIBRARY)
+export WRAPPER_SV2V    ?= $(CONVERT_DIR)/wrapper.sv2v.v
+export WRAPPER_VERILOG ?= $(SYNTH_DIR)/wrapper.verilog.v
+export WRAPPER_ELAB    ?= $(SYNTH_DIR)/wrapper.elab.v
+export WRAPPER_OPT     ?= $(SYNTH_DIR)/wrapper.opt.v
+export WRAPPER_MAP     ?= $(SYNTH_DIR)/wrapper.mapped.v
+export WRAPPER_SYNTH   ?= $(SYNTH_DIR)/wrapper.synth.v
+export TECHMAP_DIR     ?= $(PDK_ROOT)/$(PDK)/libs.tech/openlane/$(STD_CELL_LIBRARY)
 export PDK_ROOT
 export PDK
 export STD_CELL_LIBRARY

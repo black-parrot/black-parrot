@@ -7,7 +7,11 @@ source ${techmap_dir}/config.tcl
 set design           wrapper
 set lib_file         $::env(LIB_SYNTH)
 set in_v_file        $::env(WRAPPER_SV2V)
-set out_v_file       $::env(WRAPPER_SYNTH)
+set verilog_v_file   $::env(WRAPPER_VERILOG)
+set elab_v_file      $::env(WRAPPER_ELAB)
+set opt_v_file       $::env(WRAPPER_OPT)
+set map_v_file       $::env(WRAPPER_MAP)
+set synth_v_file     $::env(WRAPPER_SYNTH)
 set stat_file        stats.json
 set check_file       checks.txt
 
@@ -25,11 +29,20 @@ set buf_opin         X
 # read design
 read_verilog $in_v_file
 
+# write verilog design
+write_verilog -nostr -noattr -noexpr -nohex -nodec ${verilog_v_file}
+
 # elaborate design hierarchy
 hierarchy -check -top ${design}
 
+# write elab design
+write_verilog -nostr -noattr -noexpr -nohex -nodec ${elab_v_file}
+
 # the high-level stuff
 yosys proc; opt; fsm; opt; yosys memory; opt
+
+# write opt design
+write_verilog -nostr -noattr -noexpr -nohex -nodec ${opt_v_file}
 
 # mapping to internal cell library
 techmap; opt
@@ -43,6 +56,9 @@ techmap -map ${techmap_dir}/tribuff_map.v
 
 # mapping to cell lib
 dfflibmap -liberty ${lib_file}
+
+# write mapped design
+write_verilog -nostr -noattr -noexpr -nohex -nodec ${map_v_file}
 
 # mapping logic to cell lib
 abc -liberty ${lib_file}
@@ -66,5 +82,5 @@ tee -o ${check_file} check -mapped -noinit
 tee -o ${stat_file} stat -top ${design} -liberty ${lib_file} -tech cmos -width -json
 
 # write synthesized design
-write_verilog -nostr -noattr -noexpr -nohex -nodec ${out_v_file}
+write_verilog -nostr -noattr -noexpr -nohex -nodec ${synth_v_file}
 
