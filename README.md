@@ -94,7 +94,8 @@ Upon commit to the listed branch, a functional regression consisting of full-sys
 
 Our goal with BlackParrot is to bootstrap a community-maintained RISC-V core, and we would love for you to get involved. Here are a few starter projects you could do to get your feet wet! Contact us more for details.
 
-- Our integer divider could be parameterized to do 2 or more cycles per iteration, or to skip zeros. (Note: Currently somebody is working on this.)
+- Our integer divider could be parameterized to iterate faster on smaller numbers. (Note: Currently somebody is working on this.)
+- Our floating point divider could be parameterized to do two iterates per cycle.
 - We would like to configure BlackParrot for ultra-tiny caches (e.g. 8-way set associative, 4 sets, 2 word = 16 byte cache lines)
 - We could use a stream buffer (prefetcher) implementation for our L2 cache.
 - Add a parameter to enable / disable FPU logic (including register file, bypass paths, FP divider and FMAC, etc.)
