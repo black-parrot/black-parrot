@@ -47,7 +47,7 @@ stages:
 #    policy: pull
   dependencies: []
   retry:
-    max: 2
+    max: 1
     when:
       - script_failure
 
@@ -66,6 +66,14 @@ surelog:
     - bsg
   script:
     - $CI_PROJECT_DIR/ci/surelog.sh $CI_CORES
+
+yosys:
+  <<: *job_definition
+  stage: check
+  tags:
+    - bsg
+  script:
+    - $CI_PROJECT_DIR/ci/yosys.sh $CI_CORES
 
 # Some licensing issue as of 02/10/21
 synth-vivado:
