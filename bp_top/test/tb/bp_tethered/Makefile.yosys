@@ -1,0 +1,6 @@
+
+$(SYNTH_DIR)/wrapper.sv2v.v: $(CONVERT_DIR)/wrapper.sv2v.v
+	cp $< $@
+
+SYNTH_COLLATERAL = $(addprefix $(SYNTH_DIR)/, wrapper.sv2v.v)
+

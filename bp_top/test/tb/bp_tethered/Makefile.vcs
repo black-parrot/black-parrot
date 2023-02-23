@@ -29,6 +29,8 @@ $(BUILD_DIR)/testbench.sv:
 $(BUILD_DIR)/wrapper.sv:
 	if [ "$(SIM_SYNTH_VIVADO_P)" = "1" ]; then \
 		cp $(SYN_PATH)/results/vivado/bp_tethered.$(CFG).$(TAG).build/wrapper_synth.sv $@; \
+	elif [ "$(SIM_SYNTH_YOSYS_P)" = "1" ]; then \
+		cp $(SYN_PATH)/results/yosys/bp_tethered.$(CFG).$(TAG).synth/wrapper.synth.v $@; \
 	else \
 		sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@; \
 		sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@; \
