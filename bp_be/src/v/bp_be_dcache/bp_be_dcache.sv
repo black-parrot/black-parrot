@@ -200,6 +200,7 @@ module bp_be_dcache
   logic v_tl_r, v_tv_r;
   logic gdirty_r, cache_lock;
   logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, engine_hazard;
+  logic blocking_sent, nonblocking_sent;
 
   wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | blocking_hazard | engine_hazard;
 
@@ -363,7 +364,7 @@ module bp_be_dcache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      // Inject in-line for non-blocking cache
-     ,.data_i(tv_we | cache_req_complete_i | (cache_req_v_o & ~cache_req_ready_and_i))
+     ,.data_i(tv_we | cache_req_complete_i | engine_hazard)
      ,.data_o(v_tv_r)
      );
   assign tv_we_o = tv_we;
@@ -395,7 +396,7 @@ module bp_be_dcache
    fill_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(tv_we | cache_req_complete_i)
+     ,.en_i(tv_we | cache_req_complete_i | nonblocking_sent)
      ,.data_i(fill_tv_n)
      ,.data_o(fill_tv_r)
      );
@@ -560,7 +561,7 @@ module bp_be_dcache
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
   wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.load_op & ~fill_tv_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_ready_and_i;
-  wire any_miss_tv      = cached_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
+  wire any_miss_tv      = is_miss | cached_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
 
   assign data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
     ? (sc_success_tv != 1'b1)
@@ -754,12 +755,14 @@ module bp_be_dcache
   // Uncached stores and writethrough requests are non-blocking
   wire nonblocking_req     = (uncached_store_req | wt_req);
   wire blocking_req        = (fencei_req | cached_req | uncached_amo_req | uncached_load_req);
+  assign nonblocking_sent  = nonblocking_req & cache_req_ready_and_i & cache_req_v_o;
+  assign blocking_sent     = blocking_req & cache_req_ready_and_i & cache_req_v_o;
 
   assign cache_req_v_o = v_tv_r
     & (|{cached_req, fencei_req, uncached_amo_req, uncached_load_req, uncached_store_req, wt_req});
 
-  assign blocking_hazard = cache_req_v_o & blocking_req;
-  assign engine_hazard   = cache_req_v_o & ~cache_req_ready_and_i;
+  assign blocking_hazard =  cache_req_v_o & blocking_req;
+  assign engine_hazard   = ~cache_req_ready_and_i & cache_req_v_o;
 
   always_comb
     begin
@@ -850,8 +853,8 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_ready : state_n = (cache_req_ready_and_i & cache_req_v_o & blocking_req) ? e_miss : e_ready;
-      e_miss  : state_n = cache_req_complete_i ? e_ready : e_miss;
+      e_ready : state_n = (engine_hazard    | blocking_sent       ) ? e_miss : e_ready;
+      e_miss  : state_n = (nonblocking_sent | cache_req_complete_i) ? e_ready : e_miss;
       default: state_n = e_ready;
     endcase
 
