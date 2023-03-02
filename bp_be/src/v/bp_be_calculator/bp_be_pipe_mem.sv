@@ -141,7 +141,7 @@ module bp_be_pipe_mem
   /* Internal connections */
   logic late_ready_lo, late_v_li, late_v_lo, late_yumi_li;
   /* TLB ports */
-  logic                    dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_v_lo;
+  logic                    dtlb_w_v, dtlb_r_v, dtlb_v_lo;
   logic                    tlb_store_miss_v, tlb_load_miss_v;
   logic                    tlb_ptag_uncached, tlb_ptag_dram;
   logic [vtag_width_p-1:0] dtlb_w_vtag;
