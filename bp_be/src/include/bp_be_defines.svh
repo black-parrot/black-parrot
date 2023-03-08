@@ -26,6 +26,7 @@
       logic                                    frs2_v;                                             \
       logic                                    frs3_v;                                             \
       rv64_instr_s                             instr;                                              \
+      logic                                    compressed;                                         \
     }  bp_be_preissue_pkt_s;                                                                       \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -38,8 +39,9 @@
       logic                                    icache_miss_v;                                      \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
+      logic                                    partial;                                            \
+      logic                                    compressed;                                         \
       logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                \
-      logic                                    partial_v;                                          \
       logic                                    csr_v;                                              \
       logic                                    mem_v;                                              \
       logic                                    fence_v;                                            \
@@ -57,8 +59,10 @@
     {                                                                                              \
       logic                                    v;                                                  \
       logic                                    queue_v;                                            \
-      logic [vaddr_width_mp-1:0]               pc;                                                 \
       logic                                    instr_v;                                            \
+      logic                                    compressed;                                         \
+      logic                                    partial;                                            \
+      logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
       bp_be_decode_s                           decode;                                             \
                                                                                                    \
@@ -71,7 +75,6 @@
       logic [dpath_width_gp-1:0]               rs1;                                                \
       logic [dpath_width_gp-1:0]               rs2;                                                \
       logic [dpath_width_gp-1:0]               imm;                                                \
-      logic                                    partial;                                            \
       bp_be_exception_s                        exception;                                          \
       bp_be_special_s                          special;                                            \
     }  bp_be_dispatch_pkt_s;                                                                       \
@@ -113,6 +116,7 @@
       logic [dpath_width_gp-1:0] data;                                                             \
       rv64_instr_s               instr;                                                            \
       logic                      partial;                                                          \
+      logic                      compressed;                                                       \
       bp_be_exception_s          exception;                                                        \
       bp_be_special_s            special;                                                          \
     }  bp_be_retire_pkt_s;                                                                         \
@@ -134,6 +138,8 @@
       logic                           npc_w_v;                                                     \
       logic                           queue_v;                                                     \
       logic                           instret;                                                     \
+      logic                           partial;                                                     \
+      logic                           compressed;                                                  \
       logic [vaddr_width_p-1:0]       pc;                                                          \
       logic [vaddr_width_p-1:0]       npc;                                                         \
       logic [vaddr_width_p-1:0]       vaddr;                                                       \
@@ -142,7 +148,6 @@
       logic [rv64_priv_width_gp-1:0]  priv_n;                                                      \
       logic                           translation_en_n;                                            \
       logic                           exception;                                                   \
-      logic                           partial;                                                     \
       logic                           _interrupt;                                                  \
       logic                           unfreeze;                                                    \
       logic                           eret;                                                        \
@@ -228,13 +233,13 @@
    *   and an unfortunate, necessary consequence of parameterized structs.
    */
   `define bp_be_preissue_pkt_width \
-    (5+rv64_instr_width_gp)
+    (6+rv64_instr_width_gp)
 
   `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-    (6+vaddr_width_mp+instr_width_gp+branch_metadata_fwd_width_mp+12)
+    (7+vaddr_width_mp+instr_width_gp+branch_metadata_fwd_width_mp+12)
 
   `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
-    (2                                                                                             \
+    (3                                                                                             \
      + vaddr_width_mp                                                                              \
      + rv64_instr_width_gp                                                                         \
      + 7                                                                                           \
@@ -252,13 +257,13 @@
     (3 + vaddr_width_mp)
 
   `define bp_be_retire_pkt_width(vaddr_width_mp) \
-    (3 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + 1 + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
+    (4 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + 1 + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
 
   `define bp_be_pte_leaf_width(paddr_width_mp) \
     (paddr_width_mp - page_offset_width_gp + 7)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (4 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 18)
+    (5 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 18)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \

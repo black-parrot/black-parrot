@@ -22,9 +22,16 @@ module bp_fe_pc_gen
    , input                                           reset_i
 
    , output logic                                    init_done_o
+   , input [vaddr_width_p-1:0]                       attaboy_pc_i
+   , input [branch_metadata_fwd_width_p-1:0]         attaboy_br_metadata_fwd_i
+   , input                                           attaboy_taken_i
+   , input                                           attaboy_ntaken_i
+   , input                                           attaboy_v_i
+   , output logic                                    attaboy_yumi_o
 
    , input                                           redirect_v_i
    , input [vaddr_width_p-1:0]                       redirect_pc_i
+   , input                                           redirect_resume_i
    , input                                           redirect_br_v_i
    , input [branch_metadata_fwd_width_p-1:0]         redirect_br_metadata_fwd_i
    , input                                           redirect_br_taken_i
@@ -37,24 +44,18 @@ module bp_fe_pc_gen
    , output logic                                    ovr_o
    , input                                           if2_we_i
 
+   , output logic [vaddr_width_p-1:0]                if2_pc_o
    , output logic [branch_metadata_fwd_width_p-1:0]  if2_br_metadata_fwd_o
    , output logic                                    if2_taken_branch_site_o
-   , output logic [vaddr_width_p-1:0]                if2_pc_o
 
-   , input [instr_scan_width_lp-1:0]                 fetch_scan_i
+   , input                                           fetch_instr_v_i
+   , input [instr_scan_width_lp-1:0]                 fetch_instr_scan_i
    , input [vaddr_width_p-1:0]                       fetch_pc_i
    , input                                           fetch_linear_i
-
-   , input [vaddr_width_p-1:0]                       attaboy_pc_i
-   , input [branch_metadata_fwd_width_p-1:0]         attaboy_br_metadata_fwd_i
-   , input                                           attaboy_taken_i
-   , input                                           attaboy_ntaken_i
-   , input                                           attaboy_v_i
-   , output logic                                    attaboy_yumi_o
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
   `bp_cast_i(bp_fe_branch_metadata_fwd_s, redirect_br_metadata_fwd);
   `bp_cast_i(bp_fe_branch_metadata_fwd_s, attaboy_br_metadata_fwd);
 
@@ -76,12 +77,12 @@ module bp_fe_pc_gen
   logic next_pred, next_taken;
   logic ovr_ret, ovr_btaken, ovr_jmp, ovr_ntaken, btb_taken;
   logic [vaddr_width_p-1:0] pc_plus4;
-  logic [vaddr_width_p-1:0] ras_tgt_lo;
-  logic [vaddr_width_p-1:0] br_tgt_lo;
-  logic [vaddr_width_p-1:0] linear_tgt_lo;
+  logic [vaddr_width_p-1:0] ras_tgt_lo, br_tgt_lo, linear_tgt_lo;
+  logic [ras_idx_width_p-1:0] ras_idx;
   logic [btb_tag_width_p-1:0] btb_tag;
   logic [btb_idx_width_p-1:0] btb_idx;
   logic [bht_idx_width_p-1:0] bht_idx;
+  logic [bht_offset_width_p-1:0] bht_offset;
 
   // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb begin
@@ -97,14 +98,9 @@ module bp_fe_pc_gen
       begin
         next_pred  = ovr_btaken;
         next_taken = ovr_ret | ovr_btaken | ovr_jmp;
-        next_pc    = ovr_ntaken ? linear_tgt_lo : ovr_ret ? ras_tgt_lo : br_tgt_lo;
+        next_pc    = ovr_ret ? ras_tgt_lo : (ovr_btaken | ovr_jmp) ? br_tgt_lo : linear_tgt_lo;
 
         next_metadata = ovr_metadata;
-        next_metadata.site_br     = fetch_scan.branch;
-        next_metadata.site_jal    = fetch_scan.jal;
-        next_metadata.site_jalr   = fetch_scan.jalr;
-        next_metadata.site_call   = fetch_scan.call;
-        next_metadata.site_return = fetch_scan._return;
       end
     else
       begin
@@ -114,12 +110,12 @@ module bp_fe_pc_gen
 
         next_metadata = '0;
         next_metadata.src_btb = btb_br_tgt_v_lo;
-        next_metadata.src_ras = ovr_ret;
         next_metadata.bht_row = bht_row_lo;
         next_metadata.ghist   = ghistory_r;
         next_metadata.btb_tag = btb_tag;
         next_metadata.btb_idx = btb_idx;
         next_metadata.bht_idx = bht_idx;
+        next_metadata.bht_offset = bht_offset;
       end
   end
   assign next_pc_o = next_pc;
@@ -131,12 +127,13 @@ module bp_fe_pc_gen
   wire btb_r_v_li = if1_we_i;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd_cast_i.src_btb)
-    | (attaboy_v_i & attaboy_taken_i & (~attaboy_br_metadata_fwd_cast_i.src_btb | attaboy_br_metadata_fwd_cast_i.src_ras));
+    | (attaboy_v_i & attaboy_taken_i & ~(attaboy_br_metadata_fwd_cast_i.src_btb | attaboy_br_metadata_fwd_cast_i.src_ras));
   wire btb_clr_li = redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd_cast_i.src_btb;
   wire btb_jmp_li = redirect_br_v_i ? (redirect_br_metadata_fwd_cast_i.site_jal | redirect_br_metadata_fwd_cast_i.site_jalr) : (attaboy_br_metadata_fwd_cast_i.site_jal | attaboy_br_metadata_fwd_cast_i.site_jalr);
-  wire [btb_tag_width_p-1:0] btb_tag_li = redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.btb_tag : attaboy_br_metadata_fwd_cast_i.btb_tag;
-  wire [btb_idx_width_p-1:0] btb_idx_li = redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.btb_idx : attaboy_br_metadata_fwd_cast_i.btb_idx;
-  wire [vaddr_width_p-1:0]   btb_tgt_li = redirect_br_v_i ? redirect_pc_i : attaboy_pc_i;
+  wire [btb_tag_width_p-1:0]  btb_tag_li = redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.btb_tag : attaboy_br_metadata_fwd_cast_i.btb_tag;
+  wire [btb_idx_width_p-1:0]  btb_idx_li = redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.btb_idx : attaboy_br_metadata_fwd_cast_i.btb_idx;
+  wire [vaddr_width_p-1:0]    btb_tgt_li = redirect_br_v_i ? (redirect_pc_i - (redirect_resume_i ? 2'b10 : 2'b00)) : attaboy_pc_i;
+  wire [vaddr_width_p-1:0] btb_r_addr_li = next_pc;
 
   bp_fe_btb
    #(.bp_params_p(bp_params_p))
@@ -144,7 +141,7 @@ module bp_fe_pc_gen
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.r_addr_i(next_pc)
+     ,.r_addr_i(btb_r_addr_li)
      ,.r_v_i(btb_r_v_li)
      ,.br_tgt_o(btb_br_tgt_lo)
      ,.br_tgt_v_o(btb_br_tgt_v_lo)
@@ -171,6 +168,8 @@ module bp_fe_pc_gen
     (redirect_br_v_i & redirect_br_metadata_fwd_cast_i.site_br) | (attaboy_v_i & attaboy_br_metadata_fwd_cast_i.site_br);
   wire [bht_idx_width_p-1:0] bht_w_idx_li =
     redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.bht_idx : attaboy_br_metadata_fwd_cast_i.bht_idx;
+  wire [bht_offset_width_p-1:0] bht_w_offset_li =
+    redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.bht_offset : attaboy_br_metadata_fwd_cast_i.bht_offset;
   wire [ghist_width_p-1:0] bht_w_ghist_li =
     redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.ghist : attaboy_br_metadata_fwd_cast_i.ghist;
   wire [bht_row_width_p-1:0] bht_row_li =
@@ -190,6 +189,7 @@ module bp_fe_pc_gen
 
      ,.w_v_i(bht_w_v_li)
      ,.w_idx_i(bht_w_idx_li)
+     ,.w_offset_i(bht_w_offset_li)
      ,.w_ghist_i(bht_w_ghist_li)
      ,.correct_i(attaboy_yumi_o)
      ,.val_i(bht_row_li)
@@ -217,45 +217,59 @@ module bp_fe_pc_gen
      ,.data_i({next_pred, next_taken, next_metadata, next_pc})
      ,.data_o({pred_if1_r, taken_if1_r, metadata_if1_r, pc_if1_r})
      );
-  assign ovr_metadata = metadata_if1_r;
 
   // Set the site type as it arrives in IF2
-  // We can OR because sites will only be set earlier during an override
-  //   and if we have overridden then we will not have incoming I$ data
-  //   that cycle
   bp_fe_branch_metadata_fwd_s metadata_if1;
   always_comb
     begin
       metadata_if1 = metadata_if1_r;
-      metadata_if1.site_br     |= fetch_scan.branch;
-      metadata_if1.site_jal    |= fetch_scan.jal;
-      metadata_if1.site_jalr   |= fetch_scan.jalr;
-      metadata_if1.site_call   |= fetch_scan.call;
-      metadata_if1.site_return |= fetch_scan._return;
+      if (fetch_instr_v_i)
+        begin
+          metadata_if1.src_ras     = ovr_ret;
+          metadata_if1.ras_idx     = ras_idx;
+          metadata_if1.site_br     = fetch_instr_scan.branch;
+          metadata_if1.site_jal    = fetch_instr_scan.jal;
+          metadata_if1.site_jalr   = fetch_instr_scan.jalr;
+          metadata_if1.site_call   = fetch_instr_scan.call;
+          metadata_if1.site_return = fetch_instr_scan._return;
+        end
     end
+  assign ovr_metadata = metadata_if1;
 
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
   assign pc_plus4  = pc_if1_r + vaddr_width_p'(4);
 
   assign btb_tag = pc_if1_r[2+btb_idx_width_p+:btb_tag_width_p];
-  assign btb_idx = pc_if1_r[2+:btb_idx_width_p];
-  assign bht_idx = pc_if1_r[2+:bht_idx_width_p];
+  assign btb_idx = pc_if1_r[2+:btb_idx_width_p] ^ pc_if1_r[1];
+  assign bht_idx = pc_if1_r[2+:bht_idx_width_p] ^ pc_if1_r[1];
+  assign bht_offset = pc_if1_r[2+bht_idx_width_p+:bht_offset_width_p];
 
   /////////////////////////////////////////////////////////////////////////////////////
   // IF2
   /////////////////////////////////////////////////////////////////////////////////////
-  logic [vaddr_width_p-1:0] pc_if2_r;
-  logic pred_if2_r, taken_if2_r;
-  bp_fe_branch_metadata_fwd_s metadata_if2_r;
+  bp_fe_branch_metadata_fwd_s metadata_if2_n, metadata_if2_r;
+  assign metadata_if2_n = metadata_if1;
   bsg_dff_reset_en
-   #(.width_p(2+branch_metadata_fwd_width_p+vaddr_width_p))
+   #(.width_p(branch_metadata_fwd_width_p))
    if2_stage_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(if2_we_i)
 
-     ,.data_i({pred_if1_r, taken_if1_r, metadata_if1, pc_if1_r})
-     ,.data_o({pred_if2_r, taken_if2_r, metadata_if2_r, pc_if2_r})
+     ,.data_i(metadata_if2_n)
+     ,.data_o(metadata_if2_r)
+     );
+
+  logic [vaddr_width_p-1:0] pc_if2_r;
+  bsg_dff_reset_en
+   #(.width_p(vaddr_width_p))
+   pc_if2_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(if2_we_i)
+
+     ,.data_i(pc_if1_r)
+     ,.data_o(pc_if2_r)
      );
 
   ///////////////////////////
@@ -272,39 +286,36 @@ module bp_fe_pc_gen
      ,.call_i(ras_call_li)
      ,.addr_i(ras_addr_li)
 
-     ,.tgt_o(ras_tgt_lo)
      ,.v_o(ras_valid_lo)
+     ,.tgt_o(ras_tgt_lo)
+     ,.idx_o(ras_idx)
      ,.return_i(ras_return_li)
      );
 
   // Scan fetched instruction
-  bp_fe_instr_scan_s fetch_scan;
-  assign fetch_scan = fetch_scan_i;
+  bp_fe_instr_scan_s fetch_instr_scan;
+  assign fetch_instr_scan = fetch_instr_scan_i;
 
-  assign ras_call_li = fetch_scan.call;
-  assign ras_return_li = fetch_scan._return;
-  assign ras_addr_li = fetch_pc_i + vaddr_width_p'(4);
+  assign ras_call_li = fetch_instr_v_i & fetch_instr_scan.call;
+  assign ras_return_li = fetch_instr_v_i & fetch_instr_scan._return;
+  assign ras_addr_li = fetch_pc_i + 3'd4;
 
   // Override calculations
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
 
-  // TODO: ras_valid_lo can degrade performance in some edge cases. However,
-  //   the fix for this (recovering the ras stack on misprediction) is the
-  //   same amount of work as creating a multiple element ras. So, let's
-  //   punt this for now
-  wire taken_ret_if2 = fetch_scan._return & ras_valid_lo;
-  wire taken_br_if2 = fetch_scan.branch & pred_if1_r;
-  wire taken_jmp_if2 = fetch_scan.jal;
+  wire taken_ret_if2 = fetch_instr_v_i & btb_miss_ras & fetch_instr_scan._return & ras_valid_lo;
+  wire taken_br_if2  = fetch_instr_v_i & btb_miss_br  & fetch_instr_scan.branch & pred_if1_r;
+  wire taken_jmp_if2 = fetch_instr_v_i & btb_miss_br  & fetch_instr_scan.jal;
 
-  assign ovr_ret    = ~fetch_linear_i & btb_miss_ras & taken_ret_if2;
-  assign ovr_btaken = ~fetch_linear_i & btb_miss_br & taken_br_if2;
-  assign ovr_jmp    = ~fetch_linear_i & btb_miss_br & taken_jmp_if2;
-  assign ovr_ntaken =  fetch_linear_i & taken_if1_r;
+  assign ovr_ret    = taken_ret_if2;
+  assign ovr_btaken = taken_br_if2;
+  assign ovr_jmp    = taken_jmp_if2;
+  assign ovr_ntaken = fetch_linear_i & taken_if1_r;
   assign ovr_o      = ovr_btaken | ovr_jmp | ovr_ret | ovr_ntaken;
 
-  assign br_tgt_lo     = fetch_pc_i + `BSG_SIGN_EXTEND(fetch_scan.imm20, vaddr_width_p);
-  assign linear_tgt_lo = fetch_pc_i + vaddr_width_p'(4);
+  assign br_tgt_lo     = fetch_pc_i + `BSG_SIGN_EXTEND(fetch_instr_scan.imm20, vaddr_width_p);
+  assign linear_tgt_lo = pc_if2_r + 3'd2;
 
   assign if2_br_metadata_fwd_o = metadata_if2_r;
   assign if2_pc_o = pc_if2_r;
@@ -315,14 +326,16 @@ module bp_fe_pc_gen
   ///////////////////////////
   assign ghistory_n = redirect_br_v_i
     ? redirect_br_metadata_fwd_cast_i.ghist
-    : metadata_if2_r.site_br
-      ? {ghistory_r[0+:ghist_width_p-1], taken_if2_r}
+    : metadata_if1.site_br & ~ovr_o
+      ? {ghistory_r[0+:ghist_width_p-1], taken_if1_r}
       : ghistory_r;
-  bsg_dff_reset
+  wire ghistory_w_v = redirect_br_v_i | if2_we_i;
+  bsg_dff_reset_en
    #(.width_p(ghist_width_p))
    ghist_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.en_i(ghistory_w_v)
 
      ,.data_i(ghistory_n)
      ,.data_o(ghistory_r)

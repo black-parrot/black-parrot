@@ -100,6 +100,7 @@
     // Branch metadata information for the Front End
     // Must be kept consistent with FE
     integer unsigned branch_metadata_fwd_width;
+    integer unsigned ras_idx_width;
     integer unsigned btb_tag_width;
     integer unsigned btb_idx_width;
     // bht_row_els is a physically-derived parameter. It describes the number
@@ -243,7 +244,8 @@
       ,caddr_width: 32
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 39
+      ,branch_metadata_fwd_width: 42
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 9
       ,btb_idx_width            : 6
       ,bht_idx_width            : 7
@@ -358,6 +360,7 @@
       ,`bp_aviary_define_override(compressed_support, BP_COMPRESSED_SUPPORT, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(branch_metadata_fwd_width, BRANCH_METADATA_FWD_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(ras_idx_width, BP_RAS_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(btb_tag_width, BP_BTB_TAG_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(btb_idx_width, BP_BTB_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(bht_idx_width, BP_BHT_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)

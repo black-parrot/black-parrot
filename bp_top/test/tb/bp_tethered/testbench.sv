@@ -477,9 +477,9 @@ module testbench
 
           ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.controller.attaboy_v)
           ,.fe_cmd_fence_i(be.director.is_fence)
-          ,.fe_queue_empty_i(be.scheduler.fe_queue_fifo.empty)
+          ,.fe_queue_empty_i(be.scheduler.issue_queue.empty)
 
-          ,.mispredict_i(be.director.poison_isd_o)
+          ,.mispredict_i(be.director.npc_mismatch_v)
           ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_and_o)
           ,.long_haz_i(be.detector.long_haz_v)
           ,.control_haz_i(be.detector.control_haz_v)
@@ -552,7 +552,7 @@ module testbench
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
 
            ,.if2_pc_i(pc_gen.pc_if2_r)
-           ,.if2_v_i(icache_v_lo)
+           ,.if2_v_i(if2_instr_v)
 
            ,.fetch_v_i(fe_queue_ready_and_i & fe_queue_v_o)
            ,.fetch_pc_i(fetch_pc_lo)
