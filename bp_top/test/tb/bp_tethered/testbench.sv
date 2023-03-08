@@ -557,7 +557,7 @@ module testbench
            ,.fetch_v_i(fe_queue_ready_and_i & fe_queue_v_o)
            ,.fetch_pc_i(fetch_pc_lo)
            ,.fetch_instr_i(fetch_instr_lo)
-           ,.fetch_partial_i(fetch_partial_lo)
+           ,.fetch_eager_i(fetch_eager_lo)
            );
 
       bind bp_be_top

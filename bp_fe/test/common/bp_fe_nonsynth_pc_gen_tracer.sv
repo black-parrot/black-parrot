@@ -109,7 +109,7 @@ module bp_fe_nonsynth_pc_gen_tracer
    , input [vaddr_width_p-1:0] if2_pc_i
    , input                     if2_v_i
    , input                     fetch_v_i
-   , input                     fetch_partial_i
+   , input                     fetch_eager_i
    , input [vaddr_width_p-1:0] fetch_pc_i
    , input [instr_width_gp-1:0] fetch_instr_i
    );
@@ -206,8 +206,8 @@ module bp_fe_nonsynth_pc_gen_tracer
         ,cycle_cnt
         ,render_addr_with_validity(if2_pc_i, if2_v_i)
         ,pc_src_fetch.name()
-        ,render_addr_with_validity(fetch_pc_i, fetch_partial_i)
-        ,render_half_instr_with_validity(fetch_instr_i, fetch_partial_i)
+        ,render_addr_with_validity(fetch_pc_i, fetch_eager_i)
+        ,render_half_instr_with_validity(fetch_instr_i, fetch_eager_i)
         ,ovr_ntaken_count
         ,state_resume_i ? "resume" : (state_wait_i ? "wait" : "run"));
 

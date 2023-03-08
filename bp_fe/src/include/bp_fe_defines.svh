@@ -15,11 +15,11 @@
   `define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp, bht_row_width_mp) \
     typedef struct packed                                                                         \
     {                                                                                             \
-      logic                           site_br;                                                     \
-      logic                           site_jal;                                                    \
-      logic                           site_jalr;                                                   \
-      logic                           site_call;                                                   \
-      logic                           site_return;                                                    \
+      logic                           site_br;                                                    \
+      logic                           site_jal;                                                   \
+      logic                           site_jalr;                                                  \
+      logic                           site_call;                                                  \
+      logic                           site_return;                                                \
       logic                           src_ras;                                                    \
       logic                           src_btb;                                                    \
       logic [btb_tag_width_mp-1:0]    btb_tag;                                                    \
@@ -31,6 +31,9 @@
 
   `define bp_addr_is_aligned(addr_mp, num_bytes_mp) \
     (!(|{ addr_mp[$clog2(num_bytes_mp)-1:0] }))
+
+  `define bp_addr_align(addr_mp, num_bytes_mp) \
+    ((addr_mp >> $clog2(num_bytes_mp)) << $clog2(num_bytes_mp))
 
 `endif
 
