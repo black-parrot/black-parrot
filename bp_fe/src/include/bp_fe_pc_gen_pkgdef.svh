@@ -8,15 +8,18 @@
    * bp_fe_instr_scan_s specifies metadata about the instruction, including FE-special opcodes
    *   and the calculated branch target
    */
-    typedef struct packed
-    {
-      logic branch;
-      logic jal;
-      logic jalr;
-      logic call;
-      logic _return;
-      logic [19:0] imm20;
-    }  bp_fe_instr_scan_s;
+  typedef struct packed
+  {
+    logic branch;
+    logic jal;
+    logic jalr;
+    logic call;
+    logic _return;
+    logic full;
+    logic clow;
+    logic chigh;
+    logic [19:0] imm20;
+  }  bp_fe_instr_scan_s;
 
 `endif
 

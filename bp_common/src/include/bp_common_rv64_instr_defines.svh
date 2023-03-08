@@ -52,6 +52,9 @@
   `define RV64_C2_OP  2'b10
   `define RV64_32B_OP 2'b11
 
+  `define rv64_signext_cj_imm(instr) {{53{``instr``[12]}},``instr``[8],``instr``[10:9],``instr``[6],``instr``[7],``instr``[2],``instr``[11],``instr``[5:3],1'b0}
+  `define rv64_signext_cb_imm(instr) {{53{``instr``[12]}},``instr``[6:5],``instr``[2],``instr``[11:10],``instr``[4:3],1'b0}
+
   `define RV64_C0_INSTR   {14'b????_????_????_??,`RV64_C0_OP}
   `define RV64_C1_INSTR   {14'b????_????_????_??,`RV64_C1_OP}
   `define RV64_C2_INSTR   {14'b????_????_????_??,`RV64_C2_OP}
@@ -62,6 +65,7 @@
   `define RV64_AUIPC      `rv64_u_type(`RV64_AUIPC_OP)
   `define RV64_JAL        `rv64_u_type(`RV64_JAL_OP)
   `define RV64_JALR       `rv64_i_type(`RV64_JALR_OP,3'b000)
+  `define RV64_BRANCH     `rv64_s_type(`RV64_BRANCH_OP,3'b???)
   `define RV64_BEQ        `rv64_s_type(`RV64_BRANCH_OP,3'b000)
   `define RV64_BNE        `rv64_s_type(`RV64_BRANCH_OP,3'b001)
   `define RV64_BLT        `rv64_s_type(`RV64_BRANCH_OP,3'b100)
