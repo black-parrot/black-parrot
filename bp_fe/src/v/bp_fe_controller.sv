@@ -24,7 +24,7 @@ module bp_fe_controller
 
    , output logic                                     redirect_v_o
    , output logic [vaddr_width_p-1:0]                 redirect_pc_o
-   , output logic [hinstr_width_gp-1:0]               redirect_instr_o
+   , output logic [cinstr_width_gp-1:0]               redirect_instr_o
    , output logic                                     redirect_resume_v_o
    , output logic                                     redirect_br_v_o
    , output logic                                     redirect_br_taken_o

@@ -41,7 +41,7 @@ module bp_fe_pc_gen
    , output logic                                    if2_taken_branch_site_o
    , output logic [vaddr_width_p-1:0]                if2_pc_o
 
-   , input [instr_scan_width_lp-1:0]                 fetch_scan_i
+   , input [instr_scan_width_lp-1:0]                 fetch_instr_scan_i
    , input [vaddr_width_p-1:0]                       fetch_pc_i
    , input                                           fetch_linear_i
 
@@ -76,9 +76,7 @@ module bp_fe_pc_gen
   logic next_pred, next_taken;
   logic ovr_ret, ovr_btaken, ovr_jmp, ovr_ntaken, btb_taken;
   logic [vaddr_width_p-1:0] pc_plus4;
-  logic [vaddr_width_p-1:0] ras_tgt_lo;
-  logic [vaddr_width_p-1:0] br_tgt_lo;
-  logic [vaddr_width_p-1:0] linear_tgt_lo;
+  logic [vaddr_width_p-1:0] ras_tgt_lo, br_tgt_lo, linear_tgt_lo;
   logic [btb_tag_width_p-1:0] btb_tag;
   logic [btb_idx_width_p-1:0] btb_idx;
   logic [bht_idx_width_p-1:0] bht_idx;
@@ -100,11 +98,11 @@ module bp_fe_pc_gen
         next_pc    = ovr_ntaken ? linear_tgt_lo : ovr_ret ? ras_tgt_lo : br_tgt_lo;
 
         next_metadata = ovr_metadata;
-        next_metadata.site_br     = fetch_scan.branch;
-        next_metadata.site_jal    = fetch_scan.jal;
-        next_metadata.site_jalr   = fetch_scan.jalr;
-        next_metadata.site_call   = fetch_scan.call;
-        next_metadata.site_return = fetch_scan._return;
+        next_metadata.site_br     = fetch_instr_scan.branch;
+        next_metadata.site_jal    = fetch_instr_scan.jal;
+        next_metadata.site_jalr   = fetch_instr_scan.jalr;
+        next_metadata.site_call   = fetch_instr_scan.call;
+        next_metadata.site_return = fetch_instr_scan._return;
       end
     else
       begin
@@ -227,19 +225,19 @@ module bp_fe_pc_gen
   always_comb
     begin
       metadata_if1 = metadata_if1_r;
-      metadata_if1.site_br     |= fetch_scan.branch;
-      metadata_if1.site_jal    |= fetch_scan.jal;
-      metadata_if1.site_jalr   |= fetch_scan.jalr;
-      metadata_if1.site_call   |= fetch_scan.call;
-      metadata_if1.site_return |= fetch_scan._return;
+      metadata_if1.site_br     |= fetch_instr_scan.branch;
+      metadata_if1.site_jal    |= fetch_instr_scan.jal;
+      metadata_if1.site_jalr   |= fetch_instr_scan.jalr;
+      metadata_if1.site_call   |= fetch_instr_scan.call;
+      metadata_if1.site_return |= fetch_instr_scan._return;
     end
 
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
   assign pc_plus4  = pc_if1_r + vaddr_width_p'(4);
 
-  assign btb_tag = pc_if1_r[2+btb_idx_width_p+:btb_tag_width_p];
-  assign btb_idx = pc_if1_r[2+:btb_idx_width_p];
-  assign bht_idx = pc_if1_r[2+:bht_idx_width_p];
+  assign btb_tag = pc_if1_r[btb_start_bit_p+btb_idx_width_p+:btb_tag_width_p];
+  assign btb_idx = pc_if1_r[btb_start_bit_p+:btb_idx_width_p];
+  assign bht_idx = pc_if1_r[bht_start_bit_p+:bht_idx_width_p];
 
   /////////////////////////////////////////////////////////////////////////////////////
   // IF2
@@ -278,11 +276,11 @@ module bp_fe_pc_gen
      );
 
   // Scan fetched instruction
-  bp_fe_instr_scan_s fetch_scan;
-  assign fetch_scan = fetch_scan_i;
+  bp_fe_instr_scan_s fetch_instr_scan;
+  assign fetch_instr_scan = fetch_instr_scan_i;
 
-  assign ras_call_li = fetch_scan.call;
-  assign ras_return_li = fetch_scan._return;
+  assign ras_call_li = fetch_instr_scan.call;
+  assign ras_return_li = fetch_instr_scan._return;
   assign ras_addr_li = fetch_pc_i + vaddr_width_p'(4);
 
   // Override calculations
@@ -293,9 +291,9 @@ module bp_fe_pc_gen
   //   the fix for this (recovering the ras stack on misprediction) is the
   //   same amount of work as creating a multiple element ras. So, let's
   //   punt this for now
-  wire taken_ret_if2 = fetch_scan._return & ras_valid_lo;
-  wire taken_br_if2 = fetch_scan.branch & pred_if1_r;
-  wire taken_jmp_if2 = fetch_scan.jal;
+  wire taken_ret_if2 = fetch_instr_scan._return & ras_valid_lo;
+  wire taken_br_if2 = fetch_instr_scan.branch & pred_if1_r;
+  wire taken_jmp_if2 = fetch_instr_scan.jal;
 
   assign ovr_ret    = ~fetch_linear_i & btb_miss_ras & taken_ret_if2;
   assign ovr_btaken = ~fetch_linear_i & btb_miss_br & taken_br_if2;
@@ -303,7 +301,7 @@ module bp_fe_pc_gen
   assign ovr_ntaken =  fetch_linear_i & taken_if1_r;
   assign ovr_o      = ovr_btaken | ovr_jmp | ovr_ret | ovr_ntaken;
 
-  assign br_tgt_lo     = fetch_pc_i + `BSG_SIGN_EXTEND(fetch_scan.imm20, vaddr_width_p);
+  assign br_tgt_lo     = fetch_pc_i + `BSG_SIGN_EXTEND(fetch_instr_scan.imm20, vaddr_width_p);
   assign linear_tgt_lo = fetch_pc_i + vaddr_width_p'(4);
 
   assign if2_br_metadata_fwd_o = metadata_if2_r;

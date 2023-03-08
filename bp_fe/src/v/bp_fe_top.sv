@@ -91,19 +91,20 @@ module bp_fe_top
   logic redirect_v_li, redirect_resume_v_li;
   logic [vaddr_width_p-1:0] redirect_pc_li;
   logic redirect_br_v_li, redirect_br_taken_li, redirect_br_ntaken_li, redirect_br_nonbr_li;
-  logic [hinstr_width_gp-1:0] redirect_instr_li;
+  logic [cinstr_width_gp-1:0] redirect_instr_li;
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd_li, attaboy_br_metadata_fwd_li;
   logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
   logic [instr_width_gp-1:0] fetch_instr_li, fetch_instr_lo;
   logic [vaddr_width_p-1:0] fetch_pc_lo;
-  bp_fe_instr_scan_s fetch_scan;
+  bp_fe_instr_scan_s fetch_instr_scan;
   logic fetch_v_li, fetch_instr_yumi_li, fetch_exception_yumi_li;
   logic fetch_instr_v_lo, fetch_partial_lo, fetch_linear_lo;
   bp_fe_branch_metadata_fwd_s if2_br_metadata_fwd_lo;
   logic [vaddr_width_p-1:0] next_pc_lo;
   logic ovr_lo, if1_we, if2_we;
-  logic [vaddr_width_p-1:0] if2_pc;
+  logic [vaddr_width_p-1:0] if2_pc_lo;
+  logic if2_yumi_lo;
   logic pc_gen_init_done_lo, if2_taken_branch_site_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
@@ -127,12 +128,12 @@ module bp_fe_top
      ,.ovr_o(ovr_lo)
      ,.if2_we_i(if2_we)
 
-     ,.if2_pc_o(if2_pc)
+     ,.if2_pc_o(if2_pc_lo)
      ,.if2_br_metadata_fwd_o(if2_br_metadata_fwd_lo)
      ,.if2_taken_branch_site_o(if2_taken_branch_site_lo)
 
      ,.fetch_pc_i(fetch_pc_lo)
-     ,.fetch_scan_i(fetch_scan)
+     ,.fetch_instr_scan_i(fetch_instr_scan)
      ,.fetch_linear_i(fetch_linear_lo)
 
      ,.attaboy_pc_i(attaboy_pc_li)
@@ -270,9 +271,9 @@ module bp_fe_top
      ,.stat_mem_o(stat_mem_o)
      );
   wire icache_v_lo = icache_data_v_lo | icache_spec_v_lo | icache_fence_v_lo;
-  wire icache_data_yumi_li = fe_queue_ready_and_i & icache_data_v_lo;
-  wire icache_spec_yumi_li = fe_queue_ready_and_i & icache_spec_v_lo;
-  wire icache_fence_yumi_li = fe_queue_ready_and_i & icache_fence_v_lo;
+  wire icache_data_yumi_li = if2_yumi_lo & icache_data_v_lo;
+  wire icache_spec_yumi_li = if2_yumi_lo & icache_spec_v_lo;
+  wire icache_fence_yumi_li = icache_fence_v_lo;
   assign icache_yumi_li = icache_data_yumi_li | icache_spec_yumi_li | icache_fence_yumi_li;
 
   // This tracks the I$ valid. Could move inside entirely, but we're trying to separate
@@ -296,10 +297,11 @@ module bp_fe_top
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         ,.if2_v_i(icache_data_v_lo)
-         ,.if2_pc_i(if2_pc)
+         ,.if2_instr_v_i(icache_data_v_lo)
+         ,.if2_pc_i(if2_pc_lo)
          ,.if2_data_i(icache_data_lo)
          ,.if2_taken_branch_site_i(if2_taken_branch_site_lo)
+         ,.if2_yumi_o(if2_yumi_lo)
 
          ,.redirect_v_i(redirect_v_li)
          ,.redirect_resume_v_i(redirect_resume_v_li)
@@ -316,7 +318,8 @@ module bp_fe_top
     end
   else
     begin : realigner
-      assign fetch_pc_lo = if2_pc;
+      assign if2_yumi_lo = fe_queue_ready_and_i & fe_queue_v_o;
+      assign fetch_pc_lo = if2_pc_lo;
       assign fetch_instr_lo = icache_data_lo;
       assign fetch_instr_v_lo = icache_data_v_lo;
       assign fetch_partial_lo = '0;
@@ -328,7 +331,7 @@ module bp_fe_top
    instr_scan
     (.instr_i(fetch_instr_lo)
      ,.instr_v_i(fetch_instr_yumi_li)
-     ,.scan_o(fetch_scan)
+     ,.scan_o(fetch_instr_scan)
      );
 
   wire fe_exception_v = ~poison_isd_lo & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_spec_v_lo);

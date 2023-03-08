@@ -477,7 +477,7 @@ module testbench
 
           ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.controller.attaboy_v)
           ,.fe_cmd_fence_i(be.director.is_fence)
-          ,.fe_queue_empty_i(be.scheduler.fe_queue_fifo.empty)
+          ,.fe_queue_empty_i(be.scheduler.issue_queue.empty)
 
           ,.mispredict_i(be.director.poison_isd_o)
           ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_and_o)

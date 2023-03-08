@@ -75,7 +75,7 @@ module bp_be_scheduler
   bp_be_preissue_pkt_s preissue_pkt;
   bp_be_issue_queue
    #(.bp_params_p(bp_params_p))
-   fe_queue_fifo
+   issue_queue
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -167,11 +167,11 @@ module bp_be_scheduler
   wire be_exc_not_instr_li = fe_queue_inject_li;
 
   wire [vaddr_width_p-1:0] fe_exc_pc_li = issue_pkt_cast_o.pc;
-  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_exc_pc_li + (issue_pkt_cast_o.partial_v ? 2'b10 : 2'b00);
+  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_exc_pc_li + (issue_pkt_cast_o.partial ? 2'b10 : 2'b00);
   wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
 
-  wire fe_partial = issue_pkt_cast_o.partial_v;
+  wire fe_partial = issue_pkt_cast_o.partial;
   wire be_partial = ptw_fill_pkt_cast_i.v & ptw_fill_pkt_cast_i.partial;
 
   wire ptw_fill_v  =  ptw_fill_pkt_cast_i.v;

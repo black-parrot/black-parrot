@@ -51,6 +51,8 @@
     , localparam bht_row_els_p               = proc_param_lp.bht_row_els                           \
     , localparam ghist_width_p               = proc_param_lp.ghist_width                           \
     , localparam bht_row_width_p             = 2*bht_row_els_p                                     \
+    , localparam bht_start_bit_p             = proc_param_lp.compressed_support ? 1 : 2            \
+    , localparam btb_start_bit_p             = proc_param_lp.compressed_support ? 1 : 2            \
                                                                                                    \
     , localparam itlb_els_4k_p              = proc_param_lp.itlb_els_4k                            \
     , localparam itlb_els_1g_p              = proc_param_lp.itlb_els_1g                            \

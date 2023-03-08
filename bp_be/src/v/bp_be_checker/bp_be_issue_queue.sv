@@ -118,22 +118,22 @@ module bp_be_issue_queue
      );
   assign fe_queue_ready_and_o = ~full;
 
-  wire issue_v = (read_v_i & ~empty_n) | roll | (enq & empty);
-  rv64_instr_fmatype_s preissue_instr_n, preissue_instr;
+  wire preissue_v = (|read & ~empty_n) | roll | (|enq & empty);
+  rv64_instr_fmatype_s queue_instr_n, preissue_instr;
   wire bypass_preissue = (wptr_r == rptr_n);
   bsg_mem_1r1w
-   #(.width_p(instr_width_gp), .els_p(fe_queue_fifo_els_p), .read_write_same_addr_p(1))
+   #(.width_p(instr_width_gp), .els_p(fe_queue_fifo_els_p))
    instr_fifo_mem
     (.w_clk_i(clk_i)
      ,.w_reset_i(reset_i)
      ,.w_v_i(enq)
      ,.w_addr_i(wptr_r[0+:ptr_width_lp])
      ,.w_data_i(queue_instr)
-     ,.r_v_i(issue_v)
+     ,.r_v_i(preissue_v & ~bypass_preissue)
      ,.r_addr_i(rptr_n[0+:ptr_width_lp])
-     ,.r_data_o(preissue_instr_n)
+     ,.r_data_o(queue_instr_n)
      );
-  assign preissue_instr = bypass_preissue ? queue_instr : issue_v ? preissue_instr_n : '0;
+  assign preissue_instr = bypass_preissue ? queue_instr : queue_instr_n;
 
   bp_be_preissue_pkt_s preissue_pkt_r;
   bsg_dff_reset_en
@@ -141,7 +141,7 @@ module bp_be_issue_queue
    issue_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(issue_v)
+     ,.en_i(preissue_v)
      ,.data_i(preissue_pkt_o)
      ,.data_o(preissue_pkt_r)
      );
@@ -155,21 +155,21 @@ module bp_be_issue_queue
       casez (preissue_instr.opcode)
         `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
           begin
-            preissue_pkt_cast_o.irs1_v = 1'b1;
+            preissue_pkt_cast_o.irs1_v = preissue_v;
           end
         `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP:
           begin
-            preissue_pkt_cast_o.irs1_v = 1'b1;
-            preissue_pkt_cast_o.irs2_v = 1'b1;
+            preissue_pkt_cast_o.irs1_v = preissue_v;
+            preissue_pkt_cast_o.irs2_v = preissue_v;
           end
         `RV64_FLOAD_OP:
           begin
-            preissue_pkt_cast_o.irs1_v = 1'b1;
+            preissue_pkt_cast_o.irs1_v = preissue_v;
           end
         `RV64_FSTORE_OP:
           begin
-            preissue_pkt_cast_o.irs1_v = 1'b1;
-            preissue_pkt_cast_o.frs2_v = 1'b1;
+            preissue_pkt_cast_o.irs1_v = preissue_v;
+            preissue_pkt_cast_o.frs2_v = preissue_v;
           end
         `RV64_FP_OP:
           casez (preissue_instr)
@@ -179,25 +179,25 @@ module bp_be_issue_queue
             ,`RV64_FMV_XW, `RV64_FMV_XD
             ,`RV64_FCLASS_S, `RV64_FCLASS_D:
               begin
-                preissue_pkt_cast_o.frs1_v = 1'b1;
+                preissue_pkt_cast_o.frs1_v = preissue_v;
               end
             `RV64_FCVT_SW, `RV64_FCVT_SWU, `RV64_FCVT_SL, `RV64_FCVT_SLU
             ,`RV64_FCVT_DW, `RV64_FCVT_DWU, `RV64_FCVT_DL, `RV64_FCVT_DLU
             ,`RV64_FMV_WX, `RV64_FMV_DX:
               begin
-                preissue_pkt_cast_o.irs1_v = 1'b1;
+                preissue_pkt_cast_o.irs1_v = preissue_v;
               end
             default:
               begin
-                preissue_pkt_cast_o.frs1_v = 1'b1;
-                preissue_pkt_cast_o.frs2_v = 1'b1;
+                preissue_pkt_cast_o.frs1_v = preissue_v;
+                preissue_pkt_cast_o.frs2_v = preissue_v;
               end
           endcase
         `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FNMADD_OP:
           begin
-            preissue_pkt_cast_o.frs1_v = 1'b1;
-            preissue_pkt_cast_o.frs2_v = 1'b1;
-            preissue_pkt_cast_o.frs3_v = 1'b1;
+            preissue_pkt_cast_o.frs1_v = preissue_v;
+            preissue_pkt_cast_o.frs2_v = preissue_v;
+            preissue_pkt_cast_o.frs3_v = preissue_v;
           end
         default: begin end
       endcase
@@ -221,7 +221,7 @@ module bp_be_issue_queue
       issue_pkt_cast_o.instr                = fe_queue_lo.instr;
       issue_pkt_cast_o.branch_metadata_fwd  = fe_queue_lo.branch_metadata_fwd;
       // Needs to be adjusted for 2x compressed vs 1x compressed
-      issue_pkt_cast_o.partial_v            = fe_queue_lo.partial;
+      issue_pkt_cast_o.partial              = fe_queue_lo.partial;
 
       issue_pkt_cast_o.irs1_v               = issue_pkt_cast_o.instr_v & preissue_pkt_r.irs1_v;
       issue_pkt_cast_o.irs2_v               = issue_pkt_cast_o.instr_v & preissue_pkt_r.irs2_v;
@@ -251,12 +251,12 @@ module bp_be_issue_queue
         ,`RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_OP, `RV64_SYSTEM_OP
         ,`RV64_OP_IMM_32_OP, `RV64_OP_32_OP, `RV64_AMO_OP:
           begin
-            issue_pkt_cast_o.iwb_v = (issue_instr.rd_addr != '0);
+            issue_pkt_cast_o.iwb_v = issue_pkt_v & (issue_instr.rd_addr != '0);
           end
 
         `RV64_FLOAD_OP, `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FNMADD_OP:
           begin
-            issue_pkt_cast_o.fwb_v = 1'b1;
+            issue_pkt_cast_o.fwb_v = issue_pkt_v;
           end
 
         `RV64_FP_OP:
@@ -266,9 +266,9 @@ module bp_be_issue_queue
             `RV64_FMV_XW, `RV64_FMV_XD, `RV64_FLT_S, `RV64_FLT_D,
             `RV64_FLE_S, `RV64_FLE_D, `RV64_FCLASS_S, `RV64_FCLASS_D:
               begin
-                issue_pkt_cast_o.iwb_v = (issue_instr.rd_addr != '0);
+                issue_pkt_cast_o.iwb_v = issue_pkt_v & (issue_instr.rd_addr != '0);
               end
-            default: issue_pkt_cast_o.fwb_v = 1'b1;
+            default: issue_pkt_cast_o.fwb_v = issue_pkt_v;
           endcase
         default: begin end
       endcase
