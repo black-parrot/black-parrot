@@ -1,0 +1,5 @@
+exit_dc_job:
+	@echo "Check design is not supported by the UVM"
+	exit 1
+
+CHK_COLLATERAL = exit_dc_job
