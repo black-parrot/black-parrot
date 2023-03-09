@@ -36,19 +36,15 @@ module bp_tlb
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `bp_cast_i(bp_pte_leaf_s, entry);
   // Signals must be 1 width
   localparam els_1g_lp = `BSG_MAX(els_1g_p, 1);
 
   localparam r_entry_low_bits_lp  = (sv39_levels_gp-1)*sv39_page_idx_width_gp;
   localparam r_entry_high_bits_lp = $bits(bp_pte_leaf_s) - r_entry_low_bits_lp;
 
-  bp_pte_leaf_s entry;
-  assign entry = entry_i;
-
   wire r_v_li = v_i & ~w_i;
   wire w_v_li = v_i &  w_i;
-
-  logic flush_4k_li, flush_1g_li;
 
   // We shift so that ppn bits are LSB
   bp_pte_leaf_s entry_shifted;
@@ -56,26 +52,26 @@ module bp_tlb
   bsg_rotate_left
    #(.width_p($bits(bp_pte_leaf_s)))
    entry_shift
-    (.data_i(entry)
+    (.data_i(entry_cast_i)
      ,.rot_i(entry_shamt_lp)
      ,.o(entry_shifted)
      );
 
   logic [vtag_width_p-1:0] vtag_r;
-  bsg_dff_reset_en
+  bsg_dff_en
    #(.width_p(vtag_width_p))
    vtag_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
      ,.en_i(v_i)
      ,.data_i(vtag_i)
      ,.data_o(vtag_r)
      );
   wire [r_entry_low_bits_lp-1:0] passthrough_low_bits = vtag_r[0+:r_entry_low_bits_lp];
 
-  wire fill_gigapage = w_v_li & entry.gigapage & (els_1g_p > 0);
+  wire fill_gigapage = w_v_li & entry_cast_i.gigapage & (els_1g_p > 0);
   wire fill_kilopage = w_v_li & ~fill_gigapage;
 
+  logic flush_4k_li;
   logic [els_4k_p-1:0] tag_r_match_4k_lo;
   logic [els_4k_p-1:0] tag_empty_4k_lo;
   logic [els_4k_p-1:0] repl_way_4k_lo;
@@ -91,7 +87,7 @@ module bp_tlb
      ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_4k_lo)
 
-     ,.r_v_i(~w_v_li)
+     ,.r_v_i(1'b1)
      ,.r_tag_i(vtag_r)
      ,.r_match_o(tag_r_match_4k_lo)
      );
@@ -110,6 +106,7 @@ module bp_tlb
      ,.alloc_v_o(repl_way_4k_lo)
      );
 
+  logic flush_1g_li;
   logic [els_1g_lp-1:0] tag_r_match_1g_lo;
   logic [els_1g_lp-1:0] tag_empty_1g_lo;
   logic [els_1g_lp-1:0] repl_way_1g_lo;
@@ -125,7 +122,7 @@ module bp_tlb
      ,.w_tag_i(vtag_i)
      ,.w_empty_o(tag_empty_1g_lo)
 
-     ,.r_v_i(~w_v_li)
+     ,.r_v_i(1'b1)
      ,.r_tag_i(vtag_r)
      ,.r_match_o(tag_r_match_1g_lo)
      );

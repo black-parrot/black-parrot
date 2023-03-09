@@ -23,14 +23,10 @@ package bp_be_pkg;
 
   localparam [dp_rec_width_gp-1:0] dp_canonical_rec = 65'h0_e0080000_00000000;
 
-  typedef enum logic [2:0]
+  typedef enum logic
   {
-    e_fp_rne     = 3'b000
-    ,e_fp_rtz    = 3'b001
-    ,e_fp_rdn    = 3'b010
-    ,e_fp_rup    = 3'b011
-    ,e_fp_rmm    = 3'b100
-    ,e_fp_full   = 3'b111
+    e_fp_sp    = 1'b0
+    ,e_fp_full = 1'b1
   } bp_be_fp_tag_e;
 
   typedef struct packed
@@ -49,7 +45,27 @@ package bp_be_pkg;
 
   typedef struct packed
   {
-    logic [2:0]           tag;
+    logic                       is_nan;
+    logic                       is_inf;
+    logic                       is_zero;
+    logic                       sign;
+    logic [dp_exp_width_gp+1:0] sexp;
+    logic [dp_sig_width_gp+2:0] sig;
+  }  bp_hardfloat_raw_dp_s;
+
+  typedef struct packed
+  {
+    logic                       is_nan;
+    logic                       is_inf;
+    logic                       is_zero;
+    logic                       sign;
+    logic [sp_exp_width_gp+1:0] sexp;
+    logic [sp_sig_width_gp+2:0] sig;
+  }  bp_hardfloat_raw_sp_s;
+
+  typedef struct packed
+  {
+    bp_be_fp_tag_e        tag;
     bp_hardfloat_rec_dp_s rec;
   }  bp_be_fp_reg_s;
 

@@ -145,34 +145,31 @@ module bp_be_pipe_fma
   localparam fma_retime_latency_lp  = fma_latency_lp - fma_pipeline_stages_lp[1] - fma_pipeline_stages_lp[0];
 
   rv64_frm_e frm_r;
-  logic ops_r;
+  logic ops_v_r;
   bsg_dff_chain
    #(.width_p($bits(rv64_frm_e)+1), .num_stages_p(fma_pipeline_stages_lp[0]+fma_pipeline_stages_lp[1]))
    fma_info_chain
     (.clk_i(clk_i)
      ,.data_i({frm_li, decode.ops_v})
-     ,.data_o({frm_r, ops_r})
+     ,.data_o({frm_r, ops_v_r})
      );
 
-  logic opw_r;
+  logic opw_v_r;
   bsg_dff_chain
    #(.width_p(1), .num_stages_p(fma_pipeline_stages_lp[0]))
    mul_info_chain
     (.clk_i(clk_i)
      ,.data_i(decode.opw_v)
-     ,.data_o(opw_r)
+     ,.data_o(opw_v_r)
      );
 
   logic invalid_exc, is_nan, is_inf, is_zero, fma_out_sign;
-  logic [dp_exp_width_gp+1:0] fma_out_sexp;
-  logic [dp_sig_width_gp+2:0] fma_out_sig;
   logic [dword_width_gp-1:0] imul_out;
-  logic [dp_rec_width_gp-1:0] fma_dp_final;
-  rv64_fflags_s fma_dp_fflags;
-  mulAddRecFN
+  bp_hardfloat_raw_dp_s fma_raw_lo;
+  mulAddRecFNToRaw
    #(.expWidth(dp_exp_width_gp)
      ,.sigWidth(dp_sig_width_gp)
-     ,.pipelineStages(fma_pipeline_stages_lp)
+     ,.pipelineStages(fma_pipeline_stages_lp[0])
      ,.imulEn(1)
      )
    fma
@@ -184,17 +181,64 @@ module bp_be_pipe_fma
      ,.c(fma_c_li)
      ,.roundingMode(frm_li)
 
-     ,.out(fma_dp_final)
+     ,.invalidExc(invalid_exc)
+     ,.out_isNaN(fma_raw_lo.is_nan)
+     ,.out_isInf(fma_raw_lo.is_inf)
+     ,.out_isZero(fma_raw_lo.is_zero)
+     ,.out_sign(fma_raw_lo.sign)
+     ,.out_sExp(fma_raw_lo.sexp)
+     ,.out_sig(fma_raw_lo.sig)
      ,.out_imul(imul_out)
-     ,.exceptionFlags(fma_dp_fflags)
      );
   wire [dpath_width_gp-1:0] imulw_out    = $signed(imul_out) >>> word_width_gp;
-  wire [dpath_width_gp-1:0] imul_result = opw_r ? imulw_out : imul_out;
+  wire [dpath_width_gp-1:0] imul_result = opw_v_r ? imulw_out : imul_out;
 
-  bp_be_fp_reg_s fma_result;
-  rv64_fflags_s fma_fflags;
-  assign fma_result = '{tag: ops_r ? frm_r : e_fp_full, rec: fma_dp_final};
-  assign fma_fflags = fma_dp_fflags;
+  bp_hardfloat_raw_dp_s fma_raw_r;
+  logic invalid_exc_r;
+  bsg_dff_chain
+   #(.width_p(1+$bits(bp_hardfloat_raw_dp_s)), .num_stages_p(fma_pipeline_stages_lp[1]))
+   round_info_chain
+    (.clk_i(clk_i)
+     ,.data_i({invalid_exc, fma_raw_lo})
+     ,.data_o({invalid_exc_r, fma_raw_r})
+     );
+
+  logic [dp_rec_width_gp-1:0] fma_result_dp, fma_result_sp;
+  rv64_fflags_s fma_fflags_dp, fma_fflags_sp;
+  roundRawFNtoRecFN_mixed
+   #(.fullExpWidth(dp_exp_width_gp)
+     ,.fullSigWidth(dp_sig_width_gp)
+     ,.midExpWidth(sp_exp_width_gp)
+     ,.midSigWidth(sp_sig_width_gp)
+     ,.outExpWidth(dp_exp_width_gp)
+     ,.outSigWidth(dp_sig_width_gp)
+     )
+   round_mixed
+    (.control(control_li)
+     ,.invalidExc(invalid_exc_r)
+     ,.infiniteExc('0)
+     ,.in_isNaN(fma_raw_r.is_nan)
+     ,.in_isInf(fma_raw_r.is_inf)
+     ,.in_isZero(fma_raw_r.is_zero)
+     ,.in_sign(fma_raw_r.sign)
+     ,.in_sExp(fma_raw_r.sexp)
+     ,.in_sig(fma_raw_r.sig)
+     ,.roundingMode(frm_r)
+     ,.fullOut(fma_result_dp)
+     ,.fullExceptionFlags(fma_fflags_dp)
+     ,.midOut(fma_result_sp)
+     ,.midExceptionFlags(fma_fflags_sp)
+     );
+
+  bp_be_fp_reg_s fma_sp_reg_lo, fma_dp_reg_lo, frd_data_lo;
+  rv64_fflags_s fflags_lo;
+  assign fma_sp_reg_lo = '{tag: e_fp_sp, rec: fma_result_sp};
+  assign fma_dp_reg_lo = '{tag: e_fp_full, rec: fma_result_dp};
+  always_comb
+    if (ops_v_r)
+      {fflags_lo, frd_data_lo} = {fma_fflags_sp, fma_sp_reg_lo};
+    else
+      {fflags_lo, frd_data_lo} = {fma_fflags_dp, fma_dp_reg_lo};
 
   // TODO: Can combine the registers here if DC doesn't do it automatically
   bsg_dff_chain
@@ -211,7 +255,7 @@ module bp_be_pipe_fma
    fma_retiming_chain
     (.clk_i(clk_i)
 
-     ,.data_i({fma_fflags, fma_result})
+     ,.data_i({fflags_lo, frd_data_lo})
      ,.data_o({fma_fflags_o, fma_data_o})
      );
 
