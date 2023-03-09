@@ -956,8 +956,8 @@ module bp_cce_fsm
       else if (fsm_rev_header_li.msg_type == e_bedrock_mem_wr) begin
 
         fsm_rev_yumi_lo = fsm_rev_v_li;
-        pending_busy = fsm_rev_yumi_lo;
-        pending_w_v = fsm_rev_yumi_lo & fsm_rev_last_li;
+        pending_busy = fsm_rev_yumi_lo & fsm_rev_last_li;
+        pending_w_v = pending_busy;
         pending_w_addr = fsm_rev_header_li.addr;
         pending_li = 1'b0;
 
@@ -971,8 +971,8 @@ module bp_cce_fsm
     if (fsm_resp_v_li & (fsm_resp_header_li.msg_type.resp == e_bedrock_resp_coh_ack) & ~pending_busy) begin
         fsm_resp_yumi_lo = fsm_resp_v_li;
         // inform FSM that pending bit is being used
-        pending_busy = fsm_resp_yumi_lo;
-        pending_w_v = fsm_resp_yumi_lo & fsm_resp_last_li;
+        pending_busy = fsm_resp_yumi_lo & fsm_resp_last_li;
+        pending_w_v = pending_busy;
         pending_w_addr = fsm_resp_header_li.addr;
         pending_li = 1'b0;
     end
@@ -1291,6 +1291,7 @@ module bp_cce_fsm
           spec_bits_li.fwd_mod = 1'b0;
           spec_bits_li.state = e_COH_I;
 
+          // write spec bit on first beat
           pending_w_v = fsm_fwd_yumi_li & fsm_fwd_new_lo;
           pending_li = 1'b1;
           pending_w_addr = mshr_r.paddr;
@@ -1502,8 +1503,8 @@ module bp_cce_fsm
             fsm_fwd_header_lo.payload.way_id = '0;
             fsm_fwd_data_lo = fsm_resp_data_li;
 
-            // set the pending bit on last beat
-            pending_w_v = fsm_fwd_yumi_li & fsm_fwd_last_lo;
+            // set the pending bit on first beat
+            pending_w_v = fsm_fwd_yumi_li & fsm_fwd_new_lo;
             pending_li = 1'b1;
             pending_w_addr = fsm_resp_header_li.addr;
 
@@ -1511,7 +1512,7 @@ module bp_cce_fsm
             mshr_n.flags.replacement = 1'b0;
 
             // setup required state for sending invalidations
-            if (pending_w_v & invalidate_flag) begin
+            if (fsm_fwd_yumi_li & fsm_fwd_last_lo & invalidate_flag) begin
               // don't invalidate the requesting LCE
               pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
               // if doing a transfer, also remove owner LCE since transfer
@@ -1523,7 +1524,7 @@ module bp_cce_fsm
             end
 
             // send remaining beats
-            state_n = (pending_w_v)
+            state_n = (fsm_fwd_yumi_li & fsm_fwd_last_lo)
                       ? (invalidate_flag)
                         ? e_inv_cmd
                         : (transfer_flag)
@@ -1670,12 +1671,12 @@ module bp_cce_fsm
               fsm_fwd_header_lo.payload.lce_id = mshr_r.lce_id;
               fsm_fwd_data_lo = fsm_resp_data_li;
 
-              // set the pending bit
-              pending_w_v = fsm_resp_yumi_lo & fsm_resp_last_li;
+              // set the pending bit on first beat
+              pending_w_v = fsm_fwd_yumi_li & fsm_fwd_new_lo;
               pending_li = 1'b1;
               pending_w_addr = fsm_resp_header_li.addr;
 
-              state_n = pending_w_v
+              state_n = (fsm_resp_yumi_lo & fsm_resp_last_li)
                         ? e_uc_coherent_mem_fwd
                         : e_uc_coherent_resp;
 
@@ -1720,12 +1721,12 @@ module bp_cce_fsm
           fsm_fwd_header_lo.payload.uncached = 1'b1;
           fsm_fwd_data_lo = fsm_req_data_li;
 
-          // set the pending bit
-          pending_w_v = fsm_req_yumi_lo & fsm_req_new_li;
+          // set the pending bit on first beat
+          pending_w_v = fsm_fwd_yumi_li & fsm_fwd_new_lo;
           pending_li = 1'b1;
           pending_w_addr = mshr_r.paddr;
 
-          state_n = pending_w_v
+          state_n = (fsm_req_yumi_lo & fsm_req_last_li)
                     ? e_ready
                     : e_uc_coherent_mem_fwd;
 
@@ -1825,11 +1826,13 @@ module bp_cce_fsm
             fsm_fwd_data_lo = fsm_resp_data_li;
 
             // set the pending bit
-            pending_w_v = fsm_resp_yumi_lo & fsm_resp_new_li;
+            pending_w_v = fsm_fwd_yumi_li & fsm_fwd_new_lo;
             pending_li = 1'b1;
             pending_w_addr = fsm_resp_header_li.addr;
 
-            state_n = pending_w_v ? e_resolve_speculation : e_transfer_wb_resp;
+            state_n = (fsm_resp_yumi_lo & fsm_resp_last_li)
+                      ? e_resolve_speculation
+                      : e_transfer_wb_resp;
           end
         end
       end // e_transfer_wb_resp
