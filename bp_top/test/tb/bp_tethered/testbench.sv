@@ -742,7 +742,7 @@ module testbench
                 #(.bp_params_p(bp_params_p)
                   )
                 cce_inst_tracer
-                (.clk_i(clk_i & testbench.cce_trace_p)
+                (.clk_i(clk_i & testbench.cce_trace_en_lo)
                  ,.reset_i(reset_i)
                  ,.cce_id_i(cfg_bus_cast_i.cce_id)
                  ,.pc_i(inst_decode.ex_pc_r)
@@ -755,7 +755,7 @@ module testbench
               bp_me_nonsynth_cce_perf
                 #(.bp_params_p(bp_params_p))
                 cce_perf
-                (.clk_i(clk_i & testbench.cce_trace_p)
+                (.clk_i(clk_i & testbench.cce_trace_en_lo)
                  ,.reset_i(reset_i)
                  ,.cce_id_i(cfg_bus_cast_i.cce_id)
                  ,.req_start_i(req_start)
@@ -776,7 +776,7 @@ module testbench
               bp_me_nonsynth_cce_perf
                 #(.bp_params_p(bp_params_p))
                 cce_perf
-                (.clk_i(clk_i & testbench.cce_trace_p)
+                (.clk_i(clk_i & testbench.cce_trace_en_lo)
                  ,.reset_i(reset_i)
                  ,.cce_id_i(cfg_bus_cast_i.cce_id)
                  ,.req_start_i(lce_req_header_v_i & (state_r == e_ready))
