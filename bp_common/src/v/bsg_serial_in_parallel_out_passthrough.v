@@ -41,7 +41,7 @@ module bsg_serial_in_parallel_out_passthrough
   else
     begin : multi_word
       bsg_counter_clear_up_one_hot
-       #(.max_val_p(els_p-1), .disable_overflow_warning_p(1))
+       #(.max_val_p(els_p-1))
        bcoh
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
