@@ -82,7 +82,7 @@ module bp_me_burst_pump_out
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, fsm_header);
   `bp_cast_o(bp_bedrock_xce_header_s, msg_header);
-  
+
   wire [stream_cnt_width_lp-1:0] stream_size =
     `BSG_MAX((1'b1 << fsm_header_cast_i.size) / stream_bytes_lp, 1'b1) - 1'b1;
   wire nz_stream  = stream_size > '0;
@@ -163,7 +163,7 @@ module bp_me_burst_pump_out
           msg_header_v_o = ~header_sent_r & fsm_v_i & fsm_last_o;
           msg_data_v_o = ~data_sent_r & msg_has_data_o & fsm_v_i & fsm_last_o;
           // ack all but last FSM beat silently, then ack last FSM beat when msg beat sends
-          fsm_yumi_o = fsm_v_i 
+          fsm_yumi_o = fsm_v_i
             && (~fsm_last_o
                 || (header_sent_r | msg_header_ready_and_i)
                 || (data_sent_r | ~msg_has_data_o | msg_data_ready_and_i)

@@ -61,7 +61,7 @@ module bp_me_stream_pump_control
       wire is_ready = (state_r == e_ready);
       wire is_stream = (state_r == e_stream);
       assign first_o = is_ready;
-    
+
       logic [width_lp-1:0] cnt_r;
       wire [width_lp-1:0] cnt_val_li = val_i + en_i;
       bsg_counter_set_en
@@ -69,13 +69,13 @@ module bp_me_stream_pump_control
        counter
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
-    
+
          ,.set_i(is_ready)
          ,.en_i(en_i)
          ,.val_i(cnt_val_li)
          ,.count_o(cnt_r)
          );
-    
+
       logic [width_lp-1:0] last_cnt_r;
       wire [width_lp-1:0] last_cnt_n = val_i + size_i;
       bsg_dff_en
@@ -87,7 +87,7 @@ module bp_me_stream_pump_control
          ,.data_o(last_cnt_r)
          );
       assign last_o = is_ready ? (size_i == '0) : (last_cnt_r == cnt_r);
-    
+
       // Dynamically generate sub-block wrapped stream count
       // The count is wrapped within the size_i aligned portion of the block containing val_i
       //
@@ -115,24 +115,24 @@ module bp_me_stream_pump_control
       // An exampe system like this could have 512 bit blocks with a stream data width of 64 bits.
       // 3 bits = log2(512/64) are required for the stream count. The transaction size (size_i)
       // determines how many bits are used from val_i and cnt_r to produce wrap_o.
-    
+
       // E.g., max_val_p = 7 for a system with 512-bit blocks and 64-bit stream data width
       // A 512-bit transaction sets size_i = 7 and a 256-bit transactions sets size_i = 3
       // 512-bit, size_i = 7, val_i = 2: wrap_o = 2, 3, 4, 5, 6, 7, 0, 1
       // 256-bit, size_i = 3, val_i = 2: wrap_o = 2, 3, 0, 1
       // 512-bit, size_i = 7, val_i = 6: wrap_o = 6, 7, 0, 1, 2, 3, 4, 5
       // 256-bit, size_i = 3, val_i = 6: wrap_o = 6, 7, 4, 5
-    
+
       // if size_i+1 is not a power of two, the transaction wraps as if size_i+1 is the next
       // power of two (e.g., max_val_p = 3, then size_i = 2 wraps same as size_i = 3)
-    
+
       // selection input used to pick bits from block-wrapped and sub-block wrapped counts
       logic [width_lp-1:0] wrap_sel_li;
       for (genvar i = 0; i < width_lp; i++)
         begin : cnt_sel
           assign wrap_sel_li[i] = size_i >= 2**i;
         end
-    
+
       // sub-block wrapped and aligned count (stream word)
       logic [width_lp-1:0] wrap_lo;
       bsg_mux_bitwise
@@ -143,15 +143,15 @@ module bp_me_stream_pump_control
          ,.sel_i(wrap_sel_li)
          ,.data_o(wrap_lo)
          );
-    
+
       assign wrap_o = is_ready ? val_i : wrap_lo;
-    
+
       always_comb
         case (state_r)
           e_stream: state_n = (en_i &  last_o) ? e_ready : e_stream;
           default : state_n = (en_i & ~last_o) ? e_stream : e_ready;
         endcase
-    
+
       // synopsys sync_set_reset "reset_i"
       always_ff @(posedge clk_i)
         if (reset_i)
