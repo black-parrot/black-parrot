@@ -380,7 +380,7 @@ module bp_lce_cmd
     // Counter
     cnt_inc = 1'b0;
     cnt_clear = reset_i;
-    dirty_data_select = '0; 
+    dirty_data_select = '0;
 
     // LCE-Cache Interface signals
     data_mem_pkt_cast_o = '0;
@@ -497,6 +497,9 @@ module bp_lce_cmd
             // consume header when tag write consumed by cache
             fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i;
 
+            // inform cache that tag is returning to resolve miss
+            cache_req_critical_tag_o = tag_mem_pkt_yumi_i & (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup});
+
             state_n = (tag_mem_pkt_yumi_i && (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup}))
                       ? e_coh_ack
                       : state_r;
@@ -569,7 +572,7 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_state;
             tag_mem_pkt_v_o = fsm_cmd_v_li
-                              & (fsm_cmd_header_li.msg_type.cmd inside {e_bedrock_cmd_st_wb}); 
+                              & (fsm_cmd_header_li.msg_type.cmd inside {e_bedrock_cmd_st_wb});
 
             // read stat mem to determine if line is dirty
             stat_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
@@ -605,13 +608,13 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_state;
             tag_mem_pkt_v_o = fsm_cmd_v_li
-                              & (fsm_cmd_header_li.msg_type.cmd inside {e_bedrock_cmd_st_tr, e_bedrock_cmd_st_tr_wb}); 
+                              & (fsm_cmd_header_li.msg_type.cmd inside {e_bedrock_cmd_st_tr, e_bedrock_cmd_st_tr_wb});
 
-            // try to speculatively read stat memory for writeback 
+            // try to speculatively read stat memory for writeback
             stat_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             stat_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_read;
-            stat_mem_pkt_v_o = fsm_cmd_v_li 
+            stat_mem_pkt_v_o = fsm_cmd_v_li
                            & (fsm_cmd_header_li.msg_type.cmd == e_bedrock_cmd_st_tr_wb);
 
             // for both of these commands, do the transfer next
@@ -635,7 +638,7 @@ module bp_lce_cmd
         data_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
         data_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
         data_mem_pkt_cast_o.data = fsm_cmd_data_li;
-        data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift; 
+        data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
         data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
         data_mem_pkt_v_o = fsm_cmd_v_li;
         // consume data beat when write to cache occurs
@@ -664,7 +667,7 @@ module bp_lce_cmd
         fsm_fill_header_lo.payload.way_id = fsm_cmd_header_li.payload.target_way_id;
         fsm_fill_header_lo.payload.state = fsm_cmd_header_li.payload.target_state;
 
-        dirty_data_select = fsm_fill_cnt_lo; 
+        dirty_data_select = fsm_fill_cnt_lo;
         fsm_fill_data_lo = dirty_data_selected;
 
         // handshake - r&v
@@ -695,7 +698,7 @@ module bp_lce_cmd
 
         // move to next state when last data beat sends
         // do a writeback if needed, otherwise go to ready
-        state_n = stat_mem_pkt_yumi_i 
+        state_n = stat_mem_pkt_yumi_i
                   ? e_ready
                   : state_r;
 
@@ -707,7 +710,7 @@ module bp_lce_cmd
       e_wb: begin
 
         fsm_resp_header_lo.addr = fsm_cmd_header_r.addr;
-        fsm_resp_header_lo.msg_type.resp = dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]] 
+        fsm_resp_header_lo.msg_type.resp = dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
                                                ? e_bedrock_resp_wb
                                                : e_bedrock_resp_null_wb;
         fsm_resp_header_lo.payload.src_id = lce_id_i;
@@ -715,7 +718,7 @@ module bp_lce_cmd
         fsm_resp_header_lo.size = dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
                                       ? bp_bedrock_msg_size_e'(cmd_block_size_lp)
                                       : e_bedrock_msg_size_1;
-        dirty_data_select = fsm_resp_cnt_lo; 
+        dirty_data_select = fsm_resp_cnt_lo;
         fsm_resp_data_lo = dirty_data_selected;
         fsm_resp_v_lo = 1'b1;
 
@@ -738,7 +741,7 @@ module bp_lce_cmd
         // cache request is complete when coherence ack sends
         cache_req_complete_o = (fsm_resp_yumi_li & fsm_resp_last_lo);
 
-        state_n = cache_req_complete_o 
+        state_n = cache_req_complete_o
                   ? e_ready
                   : state_r;
 

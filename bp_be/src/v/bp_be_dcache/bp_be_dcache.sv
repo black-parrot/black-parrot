@@ -196,7 +196,7 @@ module bp_be_dcache
 
   // Global signals
   logic tl_we, tv_we;
-  logic safe_tl_we, safe_tv_we, safe_dm_we;
+  logic safe_tl_we, safe_tv_we;
   logic v_tl_r, v_tv_r;
   logic gdirty_r, cache_lock;
   logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, engine_hazard;
