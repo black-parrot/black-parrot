@@ -20,13 +20,20 @@ cmd_base="make -C bp_top/syn check_loops.syn"
 # Any setup needed for the job
 echo "Cleaning bp_top"
 make -C bp_top/syn clean
+echo "Cleaning bp_me"
+make -C bp_me/syn clean
 
 let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Run the regression in parallel on each configuration
-echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
+#echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 #parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
+
+echo "Running check_loops on bp_top"
+make -C bp_top/syn check_loops.syn CFG=e_bp_unicore_cfg &
+make -C bp_top/syn check_loops.syn CFG=e_bp_multicore_1_cfg &
+wait
 
 echo "Running check_loops on bp_me"
 make -C bp_me/syn check_loops.syn CFG=e_bp_test_multicore_half_cfg &
