@@ -573,6 +573,8 @@ module bp_cce_msg
         // decrement pending bit
         else if (mem_rev_header_cast_i.msg_type == e_bedrock_mem_wr) begin
 
+          mem_rev_busy_o = 1'b1;
+
           mem_rev_yumi_o = mem_rev_v_i;
           pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i;
           pending_w_addr_o = mem_rev_header_cast_i.addr;
@@ -822,15 +824,17 @@ module bp_cce_msg
         end // Memory Fwd
 
         // LCE Command
+        // TODO: ucode may only send single-beat LCE command messages and may not write the
+        // pending bits. An instruction that attempts to write the pending bits may see its write
+        // get lost if the auto-fwd mechanism performs a write at the same time. This race is not
+        // handled by the design currently. Multi-beat messages may result in an interleaving
+        // of LCE command messages between the ucode and auto-fwd mechanism, which has undefined
+        // behavior.
         else if (decoded_inst_i.lce_cmd_v) begin
 
           // Can only send LCE command if:
           // Auto-forward isn't using LCE Command port
-          // write port for pending bits isn't in use if pushq will write pending bit
-          if (~lce_cmd_busy_o
-              & ((decoded_inst_i.pending_w_v & ~pending_w_v_o)
-                 | ~decoded_inst_i.pending_w_v)) begin
-
+          if (~lce_cmd_busy_o) begin
             // handshake
             // lce cmd header is r&v
             lce_cmd_v_o = 1'b1;
