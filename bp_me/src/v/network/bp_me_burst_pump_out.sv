@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_me_stream_pump_out.sv
+ *   bp_me_burst_pump_out.sv
  *
  * Description:
  *   Generates a BedRock Stream protocol output message from an FSM that provides
@@ -13,7 +13,7 @@
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
-module bp_me_stream_pump_out
+module bp_me_burst_pump_out
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
@@ -52,10 +52,14 @@ module bp_me_stream_pump_out
 
    // Output BedRock Stream
    , output logic [xce_header_width_lp-1:0]         msg_header_o
+   , output logic                                   msg_header_v_o
+   , input                                          msg_header_ready_and_i
+   , output logic                                   msg_has_data_o
+
    , output logic [stream_data_width_p-1:0]         msg_data_o
-   , output logic                                   msg_v_o
+   , output logic                                   msg_data_v_o
+   , input                                          msg_data_ready_and_i
    , output logic                                   msg_last_o
-   , input                                          msg_ready_and_i
 
    // FSM producer side
    // FSM must hold fsm_header_i constant throughout the transaction
@@ -75,9 +79,6 @@ module bp_me_stream_pump_out
    , output logic                                   fsm_last_o
    );
 
-  if (block_width_p % stream_data_width_p != 0)
-    $error("Stream pump block width must be multiple of stream data width");
-
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, fsm_header);
   `bp_cast_o(bp_bedrock_xce_header_s, msg_header);
@@ -87,6 +88,7 @@ module bp_me_stream_pump_out
   wire nz_stream  = stream_size > '0;
   wire fsm_stream = fsm_stream_mask_p[fsm_header_cast_i.msg_type];
   wire msg_stream = msg_stream_mask_p[fsm_header_cast_i.msg_type];
+  assign msg_has_data_o = msg_stream;
 
   logic cnt_up;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
@@ -113,6 +115,30 @@ module bp_me_stream_pump_out
      };
   assign fsm_addr_o = wrap_addr;
 
+  // This logic is needed to prevent sending headers twice
+  // This could eventually be integrated into the stream pump control,
+  //   which would make more logical sense
+  logic header_sent_r, data_sent_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1), .clear_over_set_p(1))
+   header_sent_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(msg_header_ready_and_i & msg_header_v_o & msg_has_data_o)
+     ,.clear_i(data_sent_r | (msg_data_ready_and_i & msg_data_v_o & msg_last_o))
+     ,.data_o(header_sent_r)
+     );
+
+  bsg_dff_reset_set_clear
+   #(.width_p(1), .clear_over_set_p(1))
+   data_sent_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(msg_data_ready_and_i & msg_data_v_o & msg_last_o)
+     ,.clear_i(header_sent_r | (msg_header_ready_and_i & msg_header_v_o & msg_has_data_o))
+     ,.data_o(data_sent_r)
+     );
+
   always_comb
     begin
       msg_header_cast_o = fsm_header_cast_i;
@@ -122,18 +148,26 @@ module bp_me_stream_pump_out
         begin
           // 1:N
           // send N msg beats, and ack single FSM beat on last msg beat
-          msg_v_o = fsm_v_i;
-          fsm_yumi_o = fsm_v_i & fsm_last_o & msg_ready_and_i;
-          cnt_up = msg_v_o & msg_ready_and_i;
+          msg_header_v_o = ~header_sent_r & fsm_v_i;
+          msg_data_v_o = ~data_sent_r & msg_has_data_o & fsm_v_i;
+          fsm_yumi_o = fsm_v_i & fsm_last_o
+            & (header_sent_r | msg_header_ready_and_i)
+            & (data_sent_r   | ~msg_has_data_o | msg_data_ready_and_i);
+          cnt_up = msg_data_v_o & msg_data_ready_and_i;
           msg_header_cast_o.addr = wrap_addr;
         end
       else if (fsm_stream & ~msg_stream & nz_stream)
         begin
           // N:1
           // only send msg on last FSM beat
-          msg_v_o = fsm_v_i & fsm_last_o;
+          msg_header_v_o = ~header_sent_r & fsm_v_i & fsm_last_o;
+          msg_data_v_o = ~data_sent_r & msg_has_data_o & fsm_v_i & fsm_last_o;
           // ack all but last FSM beat silently, then ack last FSM beat when msg beat sends
-          fsm_yumi_o = fsm_v_i & (~fsm_last_o | msg_ready_and_i);
+          fsm_yumi_o = fsm_v_i
+            && (~fsm_last_o
+                || (header_sent_r | msg_header_ready_and_i)
+                || (data_sent_r | ~msg_has_data_o | msg_data_ready_and_i)
+                );
           cnt_up = fsm_yumi_o;
           // hold address constant at critical address
           msg_header_cast_o.addr = fsm_header_cast_i.addr;
@@ -141,8 +175,11 @@ module bp_me_stream_pump_out
       else
         begin
           // 1:1
-          msg_v_o = fsm_v_i;
-          fsm_yumi_o = msg_ready_and_i & msg_v_o;
+          msg_header_v_o = ~header_sent_r & fsm_v_i;
+          msg_data_v_o = ~data_sent_r & msg_has_data_o & fsm_v_i;
+          fsm_yumi_o = fsm_v_i
+            & (header_sent_r | msg_header_ready_and_i)
+            & (data_sent_r | ~msg_has_data_o | msg_data_ready_and_i);
           cnt_up  = fsm_yumi_o;
           msg_header_cast_o.addr = wrap_addr;
         end
@@ -158,5 +195,5 @@ module bp_me_stream_pump_out
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bp_me_stream_pump_out)
+`BSG_ABSTRACT_MODULE(bp_me_burst_pump_out)
 

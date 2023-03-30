@@ -120,6 +120,7 @@ module bp_l2e_tile
     ,.pr_hdr_v_o(lce_req_header_v_li)
     ,.pr_hdr_ready_and_i(lce_req_header_ready_and_lo)
     ,.pr_has_data_o(lce_req_has_data_li)
+    ,.pr_hdr_size_i(lce_req_header_li.size)
 
     ,.pr_data_o(lce_req_data_li)
     ,.pr_data_v_o(lce_req_data_v_li)
@@ -192,6 +193,7 @@ module bp_l2e_tile
     ,.pr_hdr_v_o(lce_resp_header_v_li)
     ,.pr_hdr_ready_and_i(lce_resp_header_ready_and_lo)
     ,.pr_has_data_o(lce_resp_has_data_li)
+    ,.pr_hdr_size_i(lce_resp_header_li.size)
 
     ,.pr_data_o(lce_resp_data_li)
     ,.pr_data_v_o(lce_resp_data_v_li)

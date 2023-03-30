@@ -262,6 +262,7 @@ module bp_io_tile
      ,.pr_hdr_v_o(lce_req_header_v_li)
      ,.pr_hdr_ready_and_i(lce_req_header_ready_and_lo)
      ,.pr_has_data_o(lce_req_has_data_li)
+     ,.pr_hdr_size_i(lce_req_header_li.size)
 
      ,.pr_data_o(lce_req_data_li)
      ,.pr_data_v_o(lce_req_data_v_li)
@@ -333,6 +334,7 @@ module bp_io_tile
      ,.pr_hdr_v_o(lce_cmd_header_v_li)
      ,.pr_hdr_ready_and_i(lce_cmd_header_ready_and_lo)
      ,.pr_has_data_o(lce_cmd_has_data_li)
+     ,.pr_hdr_size_i(lce_cmd_header_li.size)
 
      ,.pr_data_o(lce_cmd_data_li)
      ,.pr_data_v_o(lce_cmd_data_v_li)
@@ -446,6 +448,7 @@ module bp_io_tile
     ,.pr_hdr_v_o(io_fwd_header_v_li)
     ,.pr_hdr_ready_and_i(io_fwd_header_ready_and_lo)
     ,.pr_has_data_o(io_fwd_has_data_li)
+    ,.pr_hdr_size_i(io_fwd_header_li.size)
 
     ,.pr_data_o(io_fwd_data_li)
     ,.pr_data_v_o(io_fwd_data_v_li)
@@ -475,6 +478,7 @@ module bp_io_tile
     ,.pr_hdr_v_o(io_rev_header_v_li)
     ,.pr_hdr_ready_and_i(io_rev_header_ready_and_lo)
     ,.pr_has_data_o(io_rev_has_data_li)
+    ,.pr_hdr_size_i(io_rev_header_li.size)
 
     ,.pr_data_o(io_rev_data_li)
     ,.pr_data_v_o(io_rev_data_v_li)

@@ -103,8 +103,12 @@ module bp_me_burst_to_wormhole
   `declare_bp_bedrock_if(paddr_width_p, pr_payload_width_p, lce_id_width_p, lce_assoc_p, msg);
   `bp_cast_i(bp_bedrock_msg_header_s, pr_hdr);
 
+  // WH control signals
+  logic is_hdr, is_data;
+
   `declare_bp_bedrock_wormhole_header_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_msg_header_s, bedrock);
-  bp_bedrock_wormhole_header_s wh_hdr_lo;
+  bp_bedrock_wormhole_header_s pr_wh_hdr_lo;
+  logic wh_has_data;
   bp_me_wormhole_header_encode
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
@@ -118,58 +122,15 @@ module bp_me_burst_to_wormhole
     (.header_i(pr_hdr_cast_i)
      ,.dst_cord_i(dst_cord_i)
      ,.dst_cid_i(dst_cid_i)
-     ,.wh_header_o(wh_hdr_lo)
+     ,.wh_header_o(pr_wh_hdr_lo)
      );
-
-  // BedRock Burst Gearbox
-  // header is only used to determine number of output data beats, and is otherwise passed
-  // through the gearbox without modification
-  logic pr_hdr_v_li, pr_hdr_ready_and_lo;
-  logic [flit_width_p-1:0] pr_data_li;
-  logic pr_data_v_li, pr_data_ready_and_lo;
-
-  bp_me_burst_gearbox
-    #(.bp_params_p(bp_params_p)
-      ,.in_data_width_p(pr_data_width_p)
-      ,.out_data_width_p(flit_width_p)
-      ,.payload_width_p(pr_payload_width_p)
-      )
-    gearbox
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.msg_header_i(pr_hdr_i)
-      ,.msg_header_v_i(pr_hdr_v_i)
-      ,.msg_header_ready_and_o(pr_hdr_ready_and_o)
-      ,.msg_has_data_i(pr_has_data_i)
-      ,.msg_data_i(pr_data_i)
-      ,.msg_data_v_i(pr_data_v_i)
-      ,.msg_data_ready_and_o(pr_data_ready_and_o)
-      ,.msg_last_i(pr_last_i)
-
-      ,.msg_header_o(/* unused */)
-      ,.msg_header_v_o(pr_hdr_v_li)
-      ,.msg_header_ready_and_i(pr_hdr_ready_and_lo)
-      ,.msg_has_data_o(/* unused */)
-      ,.msg_data_o(pr_data_li)
-      ,.msg_data_v_o(pr_data_v_li)
-      ,.msg_data_ready_and_i(pr_data_ready_and_lo)
-      ,.msg_last_o(/* unused */)
-      );
-
-  // WH control signals
-  logic is_hdr, is_data;
 
   // Header PISO
   // Header is input all at once and streamed out 1 flit at a time
-  logic hdr_v_li, hdr_ready_and_lo;
-  assign hdr_v_li = is_hdr & pr_hdr_v_li;
-  logic [flit_width_p-1:0] hdr_lo;
-  logic hdr_v_lo, hdr_ready_and_li;
-  assign hdr_ready_and_li = is_hdr & link_ready_and_i;
-  assign pr_hdr_ready_and_lo = is_hdr & hdr_ready_and_lo;
-
-  wire [(flit_width_p*hdr_len_lp)-1:0] wh_hdr_padded_li = wh_hdr_lo;
+  logic [flit_width_p-1:0] wh_hdr_lo;
+  logic wh_hdr_v_lo;
+  logic [hdr_len_lp-1:0] piso_v_lo;
+  wire [(flit_width_p*hdr_len_lp)-1:0] pr_wh_hdr_padded_li = pr_wh_hdr_lo;
   bsg_parallel_in_serial_out_passthrough
    #(.width_p(flit_width_p)
      ,.els_p(hdr_len_lp)
@@ -177,17 +138,62 @@ module bp_me_burst_to_wormhole
    hdr_piso
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i(wh_hdr_padded_li)
-     ,.v_i(hdr_v_li)
-     ,.ready_and_o(hdr_ready_and_lo)
+     ,.data_i(pr_wh_hdr_padded_li)
+     ,.v_i(is_hdr & pr_hdr_v_i)
+     ,.ready_and_o(pr_hdr_ready_and_o)
 
-     ,.data_o(hdr_lo)
-     ,.v_o(hdr_v_lo)
-     ,.ready_and_i(hdr_ready_and_li)
+     ,.data_o(wh_hdr_lo)
+     ,.v_o(piso_v_lo)
+     ,.ready_and_i(is_hdr & link_ready_and_i)
      );
+  assign wh_hdr_v_lo = |piso_v_lo;
 
-  // Data is streamed 1:1 from output of gearbox directly to link
-  assign pr_data_ready_and_lo = is_data & link_ready_and_i;
+  logic [flit_width_p-1:0] wh_data_lo;
+  logic wh_data_v_lo, wh_last_data;
+  wire wh_data_ready_and_li = is_data & link_ready_and_i;
+  if (pr_data_width_p > flit_width_p)
+    begin : narrow
+      logic [flit_width_p/pr_data_width_p-1:0] piso_v_lo;
+      logic piso_ready_and_lo;
+      wire early_ack = is_data & link_ready_and_i & link_v_o & wh_last_data;
+      bsg_parallel_in_serial_out_passthrough
+       #(.width_p(flit_width_p), .els_p(pr_data_width_p/flit_width_p))
+       pisop
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i | early_ack)
+         ,.data_i(pr_data_i)
+         ,.v_i(pr_data_v_i)
+         ,.ready_and_o(piso_ready_and_lo)
+
+         ,.data_o(wh_data_lo)
+         ,.v_o(piso_v_lo)
+         ,.ready_and_i(wh_data_ready_and_li)
+         );
+      assign pr_data_ready_and_o = piso_ready_and_lo | early_ack;
+      assign wh_data_v_lo = |piso_v_lo;
+    end
+  else
+    begin : wide
+      localparam flit_beats_lp = flit_width_p/pr_data_width_p;
+      logic [(flit_width_p/pr_data_width_p)-1:0] sipo_v_lo;
+      wire early_ack = is_data & link_ready_and_i & link_v_o;
+      bsg_serial_in_parallel_out_passthrough
+       #(.width_p(pr_data_width_p), .els_p(flit_width_p/pr_data_width_p))
+       sipop
+        (.clk_i(clk_i)
+         // Reset for less than flit size packets
+         ,.reset_i(reset_i | early_ack)
+         ,.data_i(pr_data_i)
+         ,.v_i(pr_data_v_i)
+         ,.ready_and_o(pr_data_ready_and_o)
+
+         ,.data_o(wh_data_lo)
+         ,.v_o(sipo_v_lo)
+         ,.ready_and_i(wh_data_ready_and_li)
+         );
+      // WH data is valid if we've filled the SIPO or if it's the last beat
+      assign wh_data_v_lo = (pr_data_v_i & pr_last_i) || sipo_v_lo[flit_beats_lp-1];
+    end
 
   // Identifies which flits are header vs data flits
   bsg_wormhole_stream_control
@@ -198,18 +204,18 @@ module bp_me_burst_to_wormhole
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.len_i(hdr_lo[wh_len_offset_p+:len_width_p])
+     ,.len_i(wh_hdr_lo[wh_len_offset_p+:len_width_p])
      ,.link_accept_i(link_ready_and_i & link_v_o)
 
      ,.is_hdr_o(is_hdr)
-     ,.has_data_o(/* unused */)
+     ,.has_data_o(wh_has_data)
      ,.is_data_o(is_data)
-     ,.last_data_o(/* unused */)
+     ,.last_data_o(wh_last_data)
      );
 
   // patch header or data flits to link
-  assign link_data_o = is_hdr ? hdr_lo   : pr_data_li;
-  assign link_v_o    = is_hdr ? hdr_v_lo : pr_data_v_li;
+  assign link_data_o = is_hdr ? wh_hdr_lo   : wh_data_lo;
+  assign link_v_o    = is_hdr ? wh_hdr_v_lo : wh_data_v_lo;
 
 endmodule
 

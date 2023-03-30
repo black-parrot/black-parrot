@@ -226,8 +226,8 @@ module bp_uce
 
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
   logic [fill_width_p-1:0] fsm_fwd_data_lo;
-  logic fsm_fwd_v_lo, fsm_fwd_ready_and_li;
-  logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt;
+  logic fsm_fwd_v_lo, fsm_fwd_yumi_li;
+  logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt_lo;
   logic fsm_fwd_new_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -251,8 +251,8 @@ module bp_uce
      ,.fsm_data_i(fsm_fwd_data_lo)
      ,.fsm_addr_o()
      ,.fsm_v_i(fsm_fwd_v_lo)
-     ,.fsm_ready_and_o(fsm_fwd_ready_and_li)
-     ,.fsm_cnt_o(fsm_fwd_cnt)
+     ,.fsm_yumi_o(fsm_fwd_yumi_li)
+     ,.fsm_cnt_o(fsm_fwd_cnt_lo)
      ,.fsm_new_o(fsm_fwd_new_lo)
      ,.fsm_last_o(fsm_fwd_last_lo)
      );
@@ -364,7 +364,7 @@ module bp_uce
 
      // credit consumed when memory command sends
      ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_lo)
-     ,.ready_i(fsm_fwd_ready_and_li)
+     ,.ready_i(fsm_fwd_yumi_li)
 
      // credit returned when memory response fully consumed
      ,.yumi_i(fsm_rev_yumi_lo & fsm_rev_last_li)
@@ -378,7 +378,7 @@ module bp_uce
    #(.width_p(fill_width_p), .els_p(block_size_in_fill_lp))
    writeback_mux
     (.data_i(dirty_data_r)
-     ,.sel_i(fsm_fwd_cnt)
+     ,.sel_i(fsm_fwd_cnt_lo)
      ,.data_o(writeback_data)
      );
 
@@ -386,7 +386,7 @@ module bp_uce
   //   start waiting when we enter the sending state, and then we'll
   //   know the next non-write response will be critical
   logic critical_pending;
-  wire critical_sent = is_send_critical & fsm_fwd_ready_and_li & fsm_fwd_v_lo;
+  wire critical_sent = is_send_critical & fsm_fwd_yumi_li;
   wire critical_recv = load_resp_v_li & fsm_rev_yumi_lo;
   bsg_dff_reset_set_clear
    #(.width_p(1))
@@ -525,10 +525,10 @@ module bp_uce
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-            way_up = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo);
+            // TODO: This actually does an extra increment
+            way_up = fsm_fwd_yumi_li & fsm_fwd_last_lo;
             index_up = way_done & way_up;
 
-            // TODO: This actually does an extra increment
             state_n = (index_done & way_done & way_up)
                       ? e_flush_fence
                       : index_up
@@ -556,7 +556,7 @@ module bp_uce
                 fsm_fwd_data_lo                  = {fill_width_p/dword_width_gp{cache_req_r.data}};
                 fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-                cache_req_done = fsm_fwd_ready_and_li & fsm_fwd_v_lo;
+                cache_req_done = fsm_fwd_yumi_li;
               end
 
             // We can accept a new request as long as we send out an old one this cycle
@@ -604,7 +604,7 @@ module bp_uce
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-            state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo) ? uc_store_v_r ? e_ready : e_send_critical : e_uc_writeback_write_req;
+            state_n = (fsm_fwd_yumi_li & fsm_fwd_last_lo) ? uc_store_v_r ? e_ready : e_send_critical : e_uc_writeback_write_req;
           end
 
         e_send_critical:
@@ -617,7 +617,7 @@ module bp_uce
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-              state_n = (fsm_fwd_v_lo & fsm_fwd_ready_and_li)
+              state_n = fsm_fwd_yumi_li
                         ? cache_req_metadata_r.dirty
                           ? e_writeback_evict
                           : e_read_wait
@@ -633,7 +633,7 @@ module bp_uce
               fsm_fwd_data_lo            = {fill_width_p/dword_width_gp{cache_req_r.data}};
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-              state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo)
+              state_n = fsm_fwd_yumi_li
                         ? e_uc_read_wait
                         : e_send_critical;
             end
@@ -689,7 +689,7 @@ module bp_uce
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-            state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo) ? e_ready : e_writeback_write_req;
+            state_n = (fsm_fwd_yumi_li & fsm_fwd_last_lo) ? e_ready : e_writeback_write_req;
           end
         e_read_wait:
           begin
