@@ -6,28 +6,26 @@
  *  This module buffers a BP BedRock Burst interface, and converts the handshake
  *  from ready&valid to valid->yumi for demanding consumers.
  *
- *  2 or more elements per FIFO is required to avoid bubbles.
+ *  Two common configurations would be 2&2, which provides timing isolation
+ *  without impacting throughput, and 2&16 which provides two full messages
+ *  worth of buffering (for a 512-bit block system).
+ *
  */
 
-`include "bp_common_defines.svh"
-`include "bp_me_defines.svh"
+`include "bsg_defines.h"
 
 module bp_me_burst_fifo
- import bp_common_pkg::*;
- import bp_me_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-  `declare_bp_proc_params(bp_params_p)
-  , parameter `BSG_INV_PARAM(payload_width_p)
-  , parameter `BSG_INV_PARAM(data_width_p)
-  , parameter header_els_p = 2
-  , parameter data_els_p = 2
-  `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, msg)
-  )
+ #(// Size of fifos
+   parameter `BSG_INV_PARAM(header_els_p)
+   , parameter `BSG_INV_PARAM(header_width_p)
+   , parameter `BSG_INV_PARAM(data_els_p)
+   , parameter `BSG_INV_PARAM(data_width_p)
+   )
  (
   input                                        clk_i
   , input                                      reset_i
 
-  , input [msg_header_width_lp-1:0]            msg_header_i
+  , input [header_width_p-1:0]                 msg_header_i
   , input                                      msg_header_v_i
   , input                                      msg_has_data_i
   , output logic                               msg_header_ready_and_o
@@ -36,7 +34,7 @@ module bp_me_burst_fifo
   , input                                      msg_last_i
   , output logic                               msg_data_ready_and_o
 
-  , output logic [msg_header_width_lp-1:0]     msg_header_o
+  , output logic [header_width_p-1:0]          msg_header_o
   , output logic                               msg_header_v_o
   , output logic                               msg_has_data_o
   , input                                      msg_header_yumi_i
@@ -53,10 +51,8 @@ module bp_me_burst_fifo
   if (payload_width_p < 1)
     $error("Payload width must be non-zero");
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, msg);
-
   bsg_fifo_1r1w_small
-   #(.width_p(msg_header_width_lp+1)
+   #(.width_p(header_width_p+1)
      ,.els_p(header_els_p)
      )
     header_fifo
@@ -87,4 +83,4 @@ module bp_me_burst_fifo
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bp_me_burst_to_axil)
+`BSG_ABSTRACT_MODULE(bp_me_burst_fifo)
