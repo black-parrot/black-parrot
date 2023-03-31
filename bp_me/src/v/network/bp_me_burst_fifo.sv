@@ -12,7 +12,7 @@
  *
  */
 
-`include "bsg_defines.h"
+`include "bsg_defines.v"
 
 module bp_me_burst_fifo
  #(// Size of fifos
@@ -48,8 +48,8 @@ module bp_me_burst_fifo
     $error("Header and Data buffer size must be non-zero");
   if (data_width_p < 1)
     $error("Data width must be non-zero");
-  if (payload_width_p < 1)
-    $error("Payload width must be non-zero");
+  if (header_width_p < 1)
+    $error("Header width must be non-zero");
 
   bsg_fifo_1r1w_small
    #(.width_p(header_width_p+1)

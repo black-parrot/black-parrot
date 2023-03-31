@@ -74,17 +74,23 @@ module bp_cce
    , output logic                                   lce_cmd_last_o
 
    // CCE-MEM Interface
-   // BedRock Stream protocol: ready&valid
+   // BedRock Burst protocol: ready&valid
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
+   , input                                          mem_rev_header_v_i
+   , output logic                                   mem_rev_header_ready_and_o
+   , input                                          mem_rev_has_data_i
    , input [bedrock_data_width_p-1:0]               mem_rev_data_i
-   , input                                          mem_rev_v_i
-   , output logic                                   mem_rev_ready_and_o
+   , input                                          mem_rev_data_v_i
+   , output logic                                   mem_rev_data_ready_and_o
    , input                                          mem_rev_last_i
 
    , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
+   , output logic                                   mem_fwd_header_v_o
+   , input                                          mem_fwd_header_ready_and_i
+   , output logic                                   mem_fwd_has_data_o
    , output logic [bedrock_data_width_p-1:0]        mem_fwd_data_o
-   , output logic                                   mem_fwd_v_o
-   , input                                          mem_fwd_ready_and_i
+   , output logic                                   mem_fwd_data_v_o
+   , input                                          mem_fwd_data_ready_and_i
    , output logic                                   mem_fwd_last_o
   );
 
@@ -383,7 +389,7 @@ module bp_cce
   bp_bedrock_mem_rev_header_s fsm_rev_header_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo, fsm_rev_new_li, fsm_rev_last_li;
   logic [bedrock_data_width_p-1:0] fsm_rev_data_li;
-  bp_me_stream_pump_in
+  bp_me_burst_pump_in
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
@@ -393,15 +399,18 @@ module bp_cce
       // provide buffer space for two stream messages with data (for coherence protocol)
       ,.header_els_p(2)
       )
-    mem_rev_stream_pump
+    mem_rev_burst_pump
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       // from memory response input
       ,.msg_header_i(mem_rev_header_i)
+      ,.msg_header_v_i(mem_rev_header_v_i)
+      ,.msg_header_ready_and_o(mem_rev_header_ready_and_o)
+      ,.msg_has_data_i(mem_rev_has_data_i)
       ,.msg_data_i(mem_rev_data_i)
-      ,.msg_v_i(mem_rev_v_i)
+      ,.msg_data_v_i(mem_rev_data_v_i)
+      ,.msg_data_ready_and_o(mem_rev_data_ready_and_o)
       ,.msg_last_i(mem_rev_last_i)
-      ,.msg_ready_and_o(mem_rev_ready_and_o)
       // to FSM CCE
       ,.fsm_header_o(fsm_rev_header_li)
       ,.fsm_addr_o()
@@ -418,7 +427,7 @@ module bp_cce
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
   logic fsm_fwd_v_lo, fsm_fwd_yumi_li, fsm_fwd_new_lo, fsm_fwd_last_lo;
   logic [bedrock_data_width_p-1:0] fsm_fwd_data_lo;
-  bp_me_stream_pump_out
+  bp_me_burst_pump_out
     #(.bp_params_p(bp_params_p)
       ,.stream_data_width_p(bedrock_data_width_p)
       ,.block_width_p(cce_block_width_p)
@@ -426,15 +435,18 @@ module bp_cce
       ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp)
       )
-    mem_fwd_stream_pump
+    mem_fwd_burst_pump
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       // to memory command output
       ,.msg_header_o(mem_fwd_header_o)
+      ,.msg_header_v_o(mem_fwd_header_v_o)
+      ,.msg_header_ready_and_i(mem_fwd_header_ready_and_i)
+      ,.msg_has_data_o(mem_fwd_has_data_o)
       ,.msg_data_o(mem_fwd_data_o)
-      ,.msg_v_o(mem_fwd_v_o)
+      ,.msg_data_v_o(mem_fwd_data_v_o)
+      ,.msg_data_ready_and_i(mem_fwd_data_ready_and_i)
       ,.msg_last_o(mem_fwd_last_o)
-      ,.msg_ready_and_i(mem_fwd_ready_and_i)
       // from FSM CCE
       ,.fsm_header_i(fsm_fwd_header_lo)
       ,.fsm_data_i(fsm_fwd_data_lo)

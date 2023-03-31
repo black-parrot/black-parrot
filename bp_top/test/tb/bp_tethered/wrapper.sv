@@ -65,8 +65,8 @@ module wrapper
    , input                                                              mem_rev_header_ready_and_i
    , output logic                                                       mem_rev_has_data_o
    , output logic [io_data_width_p-1:0]                                 mem_rev_data_o
-   , output logic                                                       mem_rev_v_o
-   , input                                                              mem_rev_ready_and_i
+   , output logic                                                       mem_rev_data_v_o
+   , input                                                              mem_rev_data_ready_and_i
    , output logic                                                       mem_rev_last_o
 
    // DRAM interface
