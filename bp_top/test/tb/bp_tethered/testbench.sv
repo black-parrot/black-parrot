@@ -468,7 +468,7 @@ module testbench
           ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
           ,.fe_queue_ready_and_i(fe.fe_queue_ready_and_i)
-     
+
           ,.br_ovr_i(fe.pc_gen.ovr_btaken | fe.pc_gen.ovr_jmp)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
           ,.icache_data_v_i(fe.icache.data_v_o)
