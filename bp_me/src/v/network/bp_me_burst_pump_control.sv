@@ -1,10 +1,10 @@
 /**
  *
  * Name:
- *   bp_me_stream_pump_control.sv
+ *   bp_me_burst_pump_control.sv
  *
  * Description:
- *   Generates the stream word/cnt portion of a BedRock Stream protocol message address given
+ *   Generates the stream word/cnt portion of a protocol message address given
  *   an initial stream word and transaction size in stream words (both zero-based).
  *
  *   max_val_p is equal to (block width / stream width) - 1 (i.e., zero-based).
@@ -24,7 +24,7 @@
 
 `include "bsg_defines.v"
 
-module bp_me_stream_pump_control
+module bp_me_burst_pump_control
  #(parameter `BSG_INV_PARAM(max_val_p)
    , localparam width_lp = `BSG_WIDTH(max_val_p)
    )
@@ -162,5 +162,5 @@ module bp_me_stream_pump_control
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bp_me_stream_pump_control)
+`BSG_ABSTRACT_MODULE(bp_me_burst_pump_control)
 

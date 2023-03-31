@@ -93,7 +93,7 @@ module bp_me_burst_pump_out
   logic cnt_up;
   wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
   wire [stream_cnt_width_lp-1:0] first_cnt = fsm_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
-  bp_me_stream_pump_control
+  bp_me_burst_pump_control
    #(.max_val_p(stream_words_lp-1))
    pump_control
     (.clk_i(clk_i)
