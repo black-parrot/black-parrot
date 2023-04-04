@@ -50,7 +50,7 @@ module bp_me_burst_pump_out
   (input                                            clk_i
    , input                                          reset_i
 
-   // Output BedRock Stream
+   // Output BedRock Burst
    , output logic [xce_header_width_lp-1:0]         msg_header_o
    , output logic                                   msg_header_v_o
    , input                                          msg_header_ready_and_i

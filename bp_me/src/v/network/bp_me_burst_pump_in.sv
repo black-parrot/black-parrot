@@ -4,8 +4,8 @@
  *   bp_me_burst_pump_in.sv
  *
  * Description:
- *   Provides an FSM with control signals for an inbound BedRock Stream interface.
- *   This module buffers the inbound BedRock Stream channel and exposes it to the FSM.
+ *   Provides an FSM with control signals for an inbound BedRock Burst interface.
+ *   This module buffers the inbound BedRock Burst channel and exposes it to the FSM.
  *
  */
 
@@ -54,7 +54,7 @@ module bp_me_burst_pump_in
   (input                                            clk_i
    , input                                          reset_i
 
-   // Input BedRock Stream
+   // Input BedRock Burst
    , input [xce_header_width_lp-1:0]                msg_header_i
    , input                                          msg_header_v_i
    , output logic                                   msg_header_ready_and_o
