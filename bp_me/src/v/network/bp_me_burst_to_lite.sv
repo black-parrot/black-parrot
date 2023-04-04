@@ -4,15 +4,9 @@
  *   bp_me_burst_to_lite.sv
  *
  * Description:
- *   Converts BedRock Burst to Lite.
- *
- *   This "cracks" the BedRock Burst message into multiple BedRock Lite beats.
- *   The current implementation should only receive Burst messages that generate
- *   a single Lite message.
- *
- *   BedRock Burst input implementation is minimal and accepts header before accepting data.
- *   Data is not accepted in same cycle as header to avoid a dependence between in_msg_header_v_i
- *   and in_msg_data_ready_and_o.
+ *   Converts BedRock Burst to Lite using bp_me_burst_pump_in. Multi-beat input messages, i.e.,
+ *   those with message size greater than data_width_p are transmitted as multiple independent
+ *   beats on the Lite output interface.
  *
  */
 
@@ -50,7 +44,7 @@ module bp_me_burst_to_lite
    , output logic                                   in_msg_data_ready_and_o
    , input                                          in_msg_last_i
 
-   // Output BedRock Stream
+   // Output BedRock Lite
    // ready-valid-and
    , output logic [bp_header_width_lp-1:0]          out_msg_header_o
    , output logic [data_width_p-1:0]                out_msg_data_o
@@ -58,9 +52,59 @@ module bp_me_burst_to_lite
    , input                                          out_msg_ready_and_i
    );
 
-  // TODO:
-  // buffer header
-  // burst pump in to compute header for each output beat and align with data
+  if (data_width_p != 64) $error("Burst-to-Lite data width must be 64-bits");
+
+  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `bp_cast_o(out_msg_header, bp_bedrock_mem_fwd_header_s);
+
+  bp_bedrock_mem_fwd_header_s fsm_header_li;
+  logic [l2_data_width_p-1:0] fsm_data_li;
+  logic fsm_v_li, fsm_yumi_lo;
+  logic [paddr_width_p-1:0] fsm_addr_li;
+
+  bp_me_burst_pump_in
+   #(.bp_params_p(bp_params_p)
+     ,.stream_data_width_p(data_width_p)
+     ,.block_width_p(cce_block_width_p)
+     ,.payload_width_p(mem_fwd_payload_width_lp)
+     ,.msg_stream_mask_p(payload_mask_p)
+     ,.header_els_p(2)
+     )
+    burst_pump_in
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.msg_header_i(in_msg_header_i)
+     ,.msg_header_v_i(in_msg_header_v_i)
+     ,.msg_header_ready_and_o(in_msg_header_ready_and_o)
+     ,.msg_has_data_i(in_msg_has_data_i)
+     ,.msg_data_i(in_msg_data_i)
+     ,.msg_data_v_i(in_msg_data_v_i)
+     ,.msg_data_ready_and_o(in_msg_data_ready_and_o)
+     ,.msg_last_i(in_msg_last_i)
+
+     ,.fsm_header_o(fsm_header_li)
+     ,.fsm_addr_o(fsm_addr_li)
+     ,.fsm_data_o(fsm_data_li)
+     ,.fsm_v_o(fsm_v_li)
+     ,.fsm_yumi_i(fsm_yumi_lo)
+     ,.fsm_cnt_o()
+     ,.fsm_new_o()
+     ,.fsm_last_o()
+     );
+
+  localparam logic [2:0] data_width_size_lp = `BSG_SAFE_CLOG2(data_width_p/8);
+
+  always_comb begin
+    out_msg_header_cast_o = fsm_header_li;
+    // use the wrapping address for each beat
+    out_msg_header_cast_o.addr = fsm_addr_li;
+    // clamp size at number of bytes in data_width_p
+    out_msg_header_cast_o.size = `BSG_MIN(out_msg_header_cast_o.size, data_width_size_lp);
+    out_msg_data_o = fsm_data_li;
+    out_msg_v_o = fsm_v_li;
+    fsm_yumi_lo = out_msg_v_o & out_msg_ready_and_i;
+  end
 
 endmodule
 

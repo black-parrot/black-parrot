@@ -151,7 +151,7 @@ module bp_me_burst_pump_in
     begin
       fsm_header_cast_o = msg_header_li;
       // keep the address to be the critical word address
-      fsm_header_cast_o.addr[0+:block_offset_width_lp] = msg_header_li.addr;
+      fsm_header_cast_o.addr[0+:block_offset_width_lp] = msg_header_li.addr[0+:block_offset_width_lp];
       fsm_data_o = msg_data_li;
 
       if (~msg_stream & fsm_stream & nz_stream)
