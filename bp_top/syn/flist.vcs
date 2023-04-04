@@ -249,7 +249,8 @@ $BP_ME_DIR/src/v/dev/bp_me_dram_hash_encode.sv
 $BP_ME_DIR/src/v/dev/bp_me_cache_slice.sv
 $BP_ME_DIR/src/v/dev/bp_me_cfg_slice.sv
 $BP_ME_DIR/src/v/dev/bp_me_clint_slice.sv
-$BP_ME_DIR/src/v/dev/bp_me_loopback.sv
+$BP_ME_DIR/src/v/dev/bp_me_burst_loopback.sv
+$BP_ME_DIR/src/v/dev/bp_me_lite_loopback.sv
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_alu.sv
