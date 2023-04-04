@@ -60,15 +60,21 @@ module bp_uce
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
     , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
+    , output logic                                   mem_fwd_header_v_o
+    , input                                          mem_fwd_header_ready_and_i
+    , output logic                                   mem_fwd_has_data_o
     , output logic [fill_width_p-1:0]                mem_fwd_data_o
-    , output logic                                   mem_fwd_v_o
-    , input                                          mem_fwd_ready_and_i
+    , output logic                                   mem_fwd_data_v_o
+    , input                                          mem_fwd_data_ready_and_i
     , output logic                                   mem_fwd_last_o
 
     , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
+    , input                                          mem_rev_header_v_i
+    , output logic                                   mem_rev_header_ready_and_o
+    , input                                          mem_rev_has_data_i
     , input [fill_width_p-1:0]                       mem_rev_data_i
-    , input                                          mem_rev_v_i
-    , output logic                                   mem_rev_ready_and_o
+    , input                                          mem_rev_data_v_i
+    , output logic                                   mem_rev_data_ready_and_o
     , input                                          mem_rev_last_i
     );
 
@@ -229,7 +235,7 @@ module bp_uce
   logic fsm_fwd_v_lo, fsm_fwd_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt_lo;
   logic fsm_fwd_new_lo, fsm_fwd_last_lo;
-  bp_me_stream_pump_out
+  bp_me_burst_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
@@ -242,10 +248,13 @@ module bp_uce
      ,.reset_i(reset_i)
 
      ,.msg_header_o(mem_fwd_header_o)
+     ,.msg_header_v_o(mem_fwd_header_v_o)
+     ,.msg_header_ready_and_i(mem_fwd_header_ready_and_i)
+     ,.msg_has_data_o(mem_fwd_has_data_o)
      ,.msg_data_o(mem_fwd_data_o)
-     ,.msg_v_o(mem_fwd_v_o)
+     ,.msg_data_v_o(mem_fwd_data_v_o)
+     ,.msg_data_ready_and_i(mem_fwd_data_ready_and_i)
      ,.msg_last_o(mem_fwd_last_o)
-     ,.msg_ready_and_i(mem_fwd_ready_and_i)
 
      ,.fsm_header_i(fsm_fwd_header_lo)
      ,.fsm_data_i(fsm_fwd_data_lo)
@@ -262,7 +271,7 @@ module bp_uce
   logic [fill_width_p-1:0] fsm_rev_data_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo;
   logic fsm_rev_new_li, fsm_rev_last_li;
-  bp_me_stream_pump_in
+  bp_me_burst_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
@@ -277,10 +286,13 @@ module bp_uce
      ,.reset_i(reset_i)
 
      ,.msg_header_i(mem_rev_header_i)
+     ,.msg_header_v_i(mem_rev_header_v_i)
+     ,.msg_header_ready_and_o(mem_rev_header_ready_and_o)
+     ,.msg_has_data_i(mem_rev_has_data_i)
      ,.msg_data_i(mem_rev_data_i)
-     ,.msg_v_i(mem_rev_v_i)
+     ,.msg_data_v_i(mem_rev_data_v_i)
+     ,.msg_data_ready_and_o(mem_rev_data_ready_and_o)
      ,.msg_last_i(mem_rev_last_i)
-     ,.msg_ready_and_o(mem_rev_ready_and_o)
 
      ,.fsm_header_o(fsm_rev_header_li)
      ,.fsm_addr_o(fsm_rev_addr_li)
