@@ -6,7 +6,10 @@
  * Description:
  *   Converts BedRock Burst to Lite using bp_me_burst_pump_in. Multi-beat input messages, i.e.,
  *   those with message size greater than data_width_p are transmitted as multiple independent
- *   beats on the Lite output interface.
+ *   beats on the Lite output interface. The Lite client will respond to each Lite beat
+ *   individually. This may lead to more responses than expected for the Burst client, and
+ *   this module may need to be wrapped with additional logic to reassemble appropriate Burst
+ *   protocol responses.
  *
  */
 
