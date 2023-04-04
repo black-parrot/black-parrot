@@ -28,15 +28,21 @@ module bp_me_cache_slice
    , input                                               reset_i
 
    , input  [mem_fwd_header_width_lp-1:0]                mem_fwd_header_i
+   , input                                               mem_fwd_header_v_i
+   , output logic                                        mem_fwd_header_ready_and_o
+   , input                                               mem_fwd_has_data_i
    , input  [l2_data_width_p-1:0]                        mem_fwd_data_i
-   , input                                               mem_fwd_v_i
-   , output logic                                        mem_fwd_ready_and_o
+   , input                                               mem_fwd_data_v_i
+   , output logic                                        mem_fwd_data_ready_and_o
    , input                                               mem_fwd_last_i
 
    , output logic [mem_rev_header_width_lp-1:0]          mem_rev_header_o
+   , output logic                                        mem_rev_header_v_o
+   , input                                               mem_rev_header_ready_and_i
+   , output logic                                        mem_rev_has_data_o
    , output logic [l2_data_width_p-1:0]                  mem_rev_data_o
-   , output logic                                        mem_rev_v_o
-   , input                                               mem_rev_ready_and_i
+   , output logic                                        mem_rev_data_v_o
+   , input                                               mem_rev_data_ready_and_i
    , output logic                                        mem_rev_last_o
 
    // DRAM interface
@@ -69,15 +75,21 @@ module bp_me_cache_slice
      ,.reset_i(reset_i)
 
      ,.mem_fwd_header_i(mem_fwd_header_i)
+     ,.mem_fwd_header_v_i(mem_fwd_header_v_i)
+     ,.mem_fwd_header_ready_and_o(mem_fwd_header_ready_and_o)
+     ,.mem_fwd_has_data_i(mem_fwd_has_data_i)
      ,.mem_fwd_data_i(mem_fwd_data_i)
-     ,.mem_fwd_v_i(mem_fwd_v_i)
-     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_o)
+     ,.mem_fwd_data_v_i(mem_fwd_data_v_i)
+     ,.mem_fwd_data_ready_and_o(mem_fwd_data_ready_and_o)
      ,.mem_fwd_last_i(mem_fwd_last_i)
 
      ,.mem_rev_header_o(mem_rev_header_o)
+     ,.mem_rev_header_v_o(mem_rev_header_v_o)
+     ,.mem_rev_header_ready_and_i(mem_rev_header_ready_and_i)
+     ,.mem_rev_has_data_o(mem_rev_has_data_o)
      ,.mem_rev_data_o(mem_rev_data_o)
-     ,.mem_rev_v_o(mem_rev_v_o)
-     ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
+     ,.mem_rev_data_v_o(mem_rev_data_v_o)
+     ,.mem_rev_data_ready_and_i(mem_rev_data_ready_and_i)
      ,.mem_rev_last_o(mem_rev_last_o)
 
      ,.cache_pkt_o(cache_pkt_li)
