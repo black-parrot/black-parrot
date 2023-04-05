@@ -57,10 +57,10 @@ module bp_me_burst_to_lite
 
   if (data_width_p != 64) $error("Burst-to-Lite data width must be 64-bits");
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  `bp_cast_o(out_msg_header, bp_bedrock_mem_fwd_header_s);
+  `declare_bp_bedrock_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, msg);
+  `bp_cast_o(bp_bedrock_msg_header_s, out_msg_header);
 
-  bp_bedrock_mem_fwd_header_s fsm_header_li;
+  bp_bedrock_msg_header_s fsm_header_li;
   logic [l2_data_width_p-1:0] fsm_data_li;
   logic fsm_v_li, fsm_yumi_lo;
   logic [paddr_width_p-1:0] fsm_addr_li;
@@ -68,8 +68,8 @@ module bp_me_burst_to_lite
   bp_me_burst_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(data_width_p)
-     ,.block_width_p(cce_block_width_p)
-     ,.payload_width_p(mem_fwd_payload_width_lp)
+     ,.block_width_p(block_width_p)
+     ,.payload_width_p(payload_width_p)
      ,.msg_stream_mask_p(payload_mask_p)
      ,.header_els_p(2)
      )
