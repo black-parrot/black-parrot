@@ -128,18 +128,21 @@ module testbench
 
   bp_bedrock_mem_fwd_header_s proc_fwd_header_lo;
   logic [io_data_width_p-1:0] proc_fwd_data_lo;
-  logic proc_fwd_v_lo, proc_fwd_ready_and_li, proc_fwd_last_lo;
+  logic proc_fwd_header_v_lo, proc_fwd_header_ready_and_li, proc_fwd_has_data_lo;
+  logic proc_fwd_data_v_lo, proc_fwd_data_ready_and_li, proc_fwd_last_lo;
   bp_bedrock_mem_rev_header_s proc_rev_header_li;
   logic [io_data_width_p-1:0] proc_rev_data_li;
-  logic proc_rev_v_li, proc_rev_ready_and_lo;
-  logic proc_rev_last_li;
+  logic proc_rev_header_v_li, proc_rev_header_ready_and_lo, proc_rev_has_data_li;
+  logic proc_rev_data_v_li, proc_rev_data_ready_and_lo, proc_rev_last_li;
 
   bp_bedrock_mem_fwd_header_s proc_fwd_header_li;
   logic [io_data_width_p-1:0] proc_fwd_data_li;
-  logic proc_fwd_v_li, proc_fwd_ready_and_lo, proc_fwd_last_li;
+  logic proc_fwd_header_v_li, proc_fwd_header_ready_and_lo, proc_fwd_has_data_li;
+  logic proc_fwd_data_v_li, proc_fwd_data_ready_and_lo, proc_fwd_last_li;
   bp_bedrock_mem_rev_header_s proc_rev_header_lo;
   logic [io_data_width_p-1:0] proc_rev_data_lo;
-  logic proc_rev_v_lo, proc_rev_ready_and_li, proc_rev_last_lo;
+  logic proc_rev_header_v_lo, proc_rev_header_ready_and_li, proc_rev_has_data_lo;
+  logic proc_rev_data_v_lo, proc_rev_data_ready_and_li, proc_rev_last_lo;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_lo;
@@ -163,27 +166,39 @@ module testbench
      ,.host_did_i(host_did_li)
 
      ,.mem_fwd_header_o(proc_fwd_header_lo)
+     ,.mem_fwd_header_v_o(proc_fwd_header_v_lo)
+     ,.mem_fwd_header_ready_and_i(proc_fwd_header_ready_and_li)
+     ,.mem_fwd_has_data_o(proc_fwd_has_data_lo)
      ,.mem_fwd_data_o(proc_fwd_data_lo)
-     ,.mem_fwd_v_o(proc_fwd_v_lo)
-     ,.mem_fwd_ready_and_i(proc_fwd_ready_and_li)
+     ,.mem_fwd_data_v_o(proc_fwd_data_v_lo)
+     ,.mem_fwd_data_ready_and_i(proc_fwd_data_ready_and_li)
      ,.mem_fwd_last_o(proc_fwd_last_lo)
 
      ,.mem_rev_header_i(proc_rev_header_li)
+     ,.mem_rev_header_v_i(proc_rev_header_v_li)
+     ,.mem_rev_header_ready_and_o(proc_rev_header_ready_and_lo)
+     ,.mem_rev_has_data_i(proc_rev_has_data_li)
      ,.mem_rev_data_i(proc_rev_data_li)
-     ,.mem_rev_v_i(proc_rev_v_li)
-     ,.mem_rev_ready_and_o(proc_rev_ready_and_lo)
+     ,.mem_rev_data_v_i(proc_rev_data_v_li)
+     ,.mem_rev_data_ready_and_o(proc_rev_data_ready_and_lo)
      ,.mem_rev_last_i(proc_rev_last_li)
 
      ,.mem_fwd_header_i(proc_fwd_header_li)
+     ,.mem_fwd_header_v_i(proc_fwd_header_v_li)
+     ,.mem_fwd_header_ready_and_o(proc_fwd_header_ready_and_lo)
+     ,.mem_fwd_has_data_i(proc_fwd_has_data_li)
      ,.mem_fwd_data_i(proc_fwd_data_li)
-     ,.mem_fwd_v_i(proc_fwd_v_li)
-     ,.mem_fwd_ready_and_o(proc_fwd_ready_and_lo)
+     ,.mem_fwd_data_v_i(proc_fwd_data_v_li)
+     ,.mem_fwd_data_ready_and_o(proc_fwd_data_ready_and_lo)
      ,.mem_fwd_last_i(proc_fwd_last_li)
 
      ,.mem_rev_header_o(proc_rev_header_lo)
+     ,.mem_rev_header_v_o(proc_rev_header_v_lo)
+     ,.mem_rev_header_ready_and_i(proc_rev_header_ready_and_li)
+     ,.mem_rev_has_data_o(proc_rev_has_data_lo)
      ,.mem_rev_data_o(proc_rev_data_lo)
-     ,.mem_rev_v_o(proc_rev_v_lo)
-     ,.mem_rev_ready_and_i(proc_rev_ready_and_li)
+     ,.mem_rev_data_v_o(proc_rev_data_v_lo)
+     ,.mem_rev_data_ready_and_i(proc_rev_data_ready_and_li)
      ,.mem_rev_last_o(proc_rev_last_lo)
 
      ,.dma_pkt_o(dma_pkt_lo)
@@ -226,6 +241,54 @@ module testbench
      ,.dram_reset_i(dram_reset_i)
      );
 
+  bp_bedrock_mem_fwd_header_s nbf_fwd_header_li;
+  logic [io_data_width_p-1:0] nbf_fwd_data_li;
+  logic nbf_fwd_v_li, nbf_fwd_ready_and_lo;
+  bp_bedrock_mem_rev_header_s nbf_rev_header_lo;
+  logic [io_data_width_p-1:0] nbf_rev_data_lo;
+  logic nbf_rev_v_lo, nbf_rev_ready_and_li;
+
+  bp_me_burst_bidi_lite
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(io_data_width_p)
+     ,.payload_width_p(mem_fwd_payload_width_lp)
+     ,.block_width_p(cce_block_width_p)
+     ,.burst_payload_mask_p(mem_fwd_payload_mask_gp)
+     ,.lite_payload_mask_p(mem_rev_payload_mask_gp)
+     )
+    nbf_burst_converter
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.burst_header_i(proc_rev_header_lo)
+      ,.burst_header_v_i(proc_rev_header_v_lo)
+      ,.burst_header_ready_and_o(proc_rev_header_ready_and_li)
+      ,.burst_has_data_i(proc_rev_has_data_lo)
+      ,.burst_data_i(proc_rev_data_lo)
+      ,.burst_data_v_i(proc_rev_data_v_lo)
+      ,.burst_data_ready_and_o(proc_rev_data_ready_and_li)
+      ,.burst_last_i(proc_rev_last_lo)
+
+      ,.burst_header_o(proc_fwd_header_li)
+      ,.burst_header_v_o(proc_fwd_header_v_li)
+      ,.burst_header_ready_and_i(proc_fwd_header_ready_and_lo)
+      ,.burst_has_data_o(proc_fwd_has_data_li)
+      ,.burst_data_o(proc_fwd_data_li)
+      ,.burst_data_v_o(proc_fwd_data_v_li)
+      ,.burst_data_ready_and_i(proc_fwd_data_ready_and_lo)
+      ,.burst_last_o(proc_fwd_last_li)
+
+      ,.lite_header_i(nbf_fwd_header_li)
+      ,.lite_data_i(nbf_fwd_data_li)
+      ,.lite_v_i(nbf_fwd_v_li)
+      ,.lite_ready_and_o(nbf_fwd_ready_and_lo)
+
+      ,.lite_header_o(nbf_rev_header_lo)
+      ,.lite_data_o(nbf_rev_data_lo)
+      ,.lite_v_o(nbf_rev_v_lo)
+      ,.lite_ready_and_i(nbf_rev_ready_and_li)
+      );
+
   wire [lce_id_width_p-1:0] io_lce_id_li = num_core_p*2+num_cacc_p+num_l2e_p+num_sacc_p+num_io_p;
   bp_nonsynth_nbf_loader
    #(.bp_params_p(bp_params_p), .io_data_width_p(io_data_width_p))
@@ -236,21 +299,68 @@ module testbench
      ,.lce_id_i(io_lce_id_li)
      ,.did_i(host_did_li)
 
-     ,.mem_fwd_header_o(proc_fwd_header_li)
-     ,.mem_fwd_data_o(proc_fwd_data_li)
-     ,.mem_fwd_v_o(proc_fwd_v_li)
-     ,.mem_fwd_ready_and_i(proc_fwd_ready_and_lo)
-     ,.mem_fwd_last_o(proc_fwd_last_li)
+     ,.mem_fwd_header_o(nbf_fwd_header_li)
+     ,.mem_fwd_data_o(nbf_fwd_data_li)
+     ,.mem_fwd_v_o(nbf_fwd_v_li)
+     ,.mem_fwd_ready_and_i(nbf_fwd_ready_and_lo)
 
      // NOTE: IO response ready_o is always high - acts as sink
-     ,.mem_rev_header_i(proc_rev_header_lo)
-     ,.mem_rev_data_i(proc_rev_data_lo)
-     ,.mem_rev_v_i(proc_rev_v_lo)
-     ,.mem_rev_ready_and_o(proc_rev_ready_and_li)
-     ,.mem_rev_last_i(proc_rev_last_lo)
+     ,.mem_rev_header_i(nbf_rev_header_lo)
+     ,.mem_rev_data_i(nbf_rev_data_lo)
+     ,.mem_rev_v_i(nbf_rev_v_lo)
+     ,.mem_rev_ready_and_o(nbf_rev_ready_and_li)
 
      ,.done_o()
      );
+
+
+  bp_bedrock_mem_fwd_header_s host_fwd_header_lo;
+  logic [io_data_width_p-1:0] host_fwd_data_lo;
+  logic host_fwd_v_lo, host_fwd_ready_and_li;
+  bp_bedrock_mem_rev_header_s host_rev_header_li;
+  logic [io_data_width_p-1:0] host_rev_data_li;
+  logic host_rev_v_li, host_rev_ready_and_lo;
+
+  bp_me_burst_bidi_lite
+   #(.bp_params_p(bp_params_p)
+     ,.data_width_p(io_data_width_p)
+     ,.payload_width_p(mem_fwd_payload_width_lp)
+     ,.block_width_p(cce_block_width_p)
+     ,.burst_payload_mask_p(mem_fwd_payload_mask_gp)
+     ,.lite_payload_mask_p(mem_rev_payload_mask_gp)
+     )
+    host_burst_converter
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.burst_header_i(proc_fwd_header_lo)
+      ,.burst_header_v_i(proc_fwd_header_v_lo)
+      ,.burst_header_ready_and_o(proc_fwd_header_ready_and_li)
+      ,.burst_has_data_i(proc_fwd_has_data_lo)
+      ,.burst_data_i(proc_fwd_data_lo)
+      ,.burst_data_v_i(proc_fwd_data_v_lo)
+      ,.burst_data_ready_and_o(proc_fwd_data_ready_and_li)
+      ,.burst_last_i(proc_fwd_last_lo)
+
+      ,.burst_header_o(proc_rev_header_li)
+      ,.burst_header_v_o(proc_rev_header_v_li)
+      ,.burst_header_ready_and_i(proc_rev_header_ready_and_lo)
+      ,.burst_has_data_o(proc_rev_has_data_li)
+      ,.burst_data_o(proc_rev_data_li)
+      ,.burst_data_v_o(proc_rev_data_v_li)
+      ,.burst_data_ready_and_i(proc_rev_data_ready_and_lo)
+      ,.burst_last_o(proc_rev_last_li)
+
+      ,.lite_header_i(host_rev_header_li)
+      ,.lite_data_i(host_rev_data_li)
+      ,.lite_v_i(host_rev_v_li)
+      ,.lite_ready_and_o(host_rev_ready_and_lo)
+
+      ,.lite_header_o(host_fwd_header_lo)
+      ,.lite_data_o(host_fwd_data_lo)
+      ,.lite_v_o(host_fwd_v_lo)
+      ,.lite_ready_and_i(host_fwd_ready_and_li)
+      );
 
   logic [num_core_p-1:0] finish_lo;
   logic cosim_en_lo;
@@ -287,17 +397,15 @@ module testbench
      ,.reset_i(reset_i)
 
      // data width = dword_width_gp on mem_fwd/rev ports
-     ,.mem_fwd_header_i(proc_fwd_header_lo)
-     ,.mem_fwd_data_i(proc_fwd_data_lo[0+:dword_width_gp])
-     ,.mem_fwd_v_i(proc_fwd_v_lo)
-     ,.mem_fwd_ready_and_o(proc_fwd_ready_and_li)
-     ,.mem_fwd_last_i(proc_fwd_last_lo)
+     ,.mem_fwd_header_i(host_fwd_header_lo)
+     ,.mem_fwd_data_i(host_fwd_data_lo[0+:dword_width_gp])
+     ,.mem_fwd_v_i(host_fwd_v_lo)
+     ,.mem_fwd_ready_and_o(host_fwd_ready_and_li)
 
-     ,.mem_rev_header_o(proc_rev_header_li)
-     ,.mem_rev_data_o(proc_rev_data_li[0+:dword_width_gp])
-     ,.mem_rev_v_o(proc_rev_v_li)
-     ,.mem_rev_ready_and_i(proc_rev_ready_and_lo)
-     ,.mem_rev_last_o(proc_rev_last_li)
+     ,.mem_rev_header_o(host_rev_header_li)
+     ,.mem_rev_data_o(host_rev_data_li[0+:dword_width_gp])
+     ,.mem_rev_v_o(host_rev_v_li)
+     ,.mem_rev_ready_and_i(host_rev_ready_and_lo)
 
      ,.icache_trace_en_o(icache_trace_en_lo)
      ,.dcache_trace_en_o(dcache_trace_en_lo)
@@ -604,13 +712,11 @@ module testbench
            ,.mem_fwd_data_i(mem_fwd_data_i)
            ,.mem_fwd_v_i(mem_fwd_v_i)
            ,.mem_fwd_ready_and_i(mem_fwd_ready_and_o)
-           ,.mem_fwd_last_i(mem_fwd_last_i)
 
            ,.mem_rev_header_i(mem_rev_header_o)
            ,.mem_rev_data_i(mem_rev_data_o)
            ,.mem_rev_v_i(mem_rev_v_o)
            ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
-           ,.mem_rev_last_i(mem_rev_last_o)
            );
 
       if (cce_type_p != e_cce_uce)
