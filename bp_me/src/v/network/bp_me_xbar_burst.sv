@@ -5,7 +5,7 @@
  *
  * Description:
  *   This xbar arbitrates BedRock Burst messages between N sources and M sinks.
- *   Messages are input buffered to prevent critical paths, not for any 
+ *   Messages are input buffered to prevent critical paths, not for any
  *     deadlock considerations
  */
 
@@ -69,11 +69,11 @@ module bp_me_xbar_burst
        header_fifo
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
- 
+
          ,.data_i({msg_dst_i[i], msg_has_data_i[i], msg_header_i[i]})
          ,.v_i(msg_header_v_i[i])
          ,.ready_o(msg_header_ready_and_o[i])
- 
+
          ,.data_o({msg_dst_li[i], msg_has_data_li[i], msg_header_li[i]})
          ,.v_o(msg_header_v_li[i])
          ,.yumi_i(msg_header_yumi_lo[i])
