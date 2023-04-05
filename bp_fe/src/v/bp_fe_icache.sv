@@ -129,6 +129,8 @@ module bp_fe_icache
    , output logic [icache_stat_info_width_lp-1:0]     stat_mem_o
    );
 
+  wire unused = &{ptag_dram_i};
+
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);

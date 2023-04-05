@@ -57,7 +57,7 @@ module bp_me_burst_to_lite
 
   if (data_width_p != 64) $error("Burst-to-Lite data width must be 64-bits");
 
-  `declare_bp_bedrock_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p, msg);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, msg);
   `bp_cast_o(bp_bedrock_msg_header_s, out_msg_header);
 
   bp_bedrock_msg_header_s fsm_header_li;
@@ -85,7 +85,6 @@ module bp_me_burst_to_lite
      ,.msg_data_v_i(in_msg_data_v_i)
      ,.msg_data_ready_and_o(in_msg_data_ready_and_o)
      ,.msg_last_i(in_msg_last_i)
-
      ,.fsm_header_o(fsm_header_li)
      ,.fsm_addr_o(fsm_addr_li)
      ,.fsm_data_o(fsm_data_li)
@@ -103,7 +102,7 @@ module bp_me_burst_to_lite
     // use the wrapping address for each beat
     out_msg_header_cast_o.addr = fsm_addr_li;
     // clamp size at number of bytes in data_width_p
-    out_msg_header_cast_o.size = `BSG_MIN(out_msg_header_cast_o.size, data_width_size_lp);
+    out_msg_header_cast_o.size = `BSG_MIN(out_msg_header_cast_o.size, bp_bedrock_msg_size_e'(data_width_size_lp));
     out_msg_data_o = fsm_data_li;
     out_msg_v_o = fsm_v_li;
     fsm_yumi_lo = out_msg_v_o & out_msg_ready_and_i;
