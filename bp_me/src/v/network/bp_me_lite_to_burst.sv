@@ -31,21 +31,21 @@ module bp_me_lite_to_burst
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, bp)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, msg)
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Input BedRock Lite
    // ready-valid-and
-   , input [bp_header_width_lp-1:0]                 in_msg_header_i
+   , input [msg_header_width_lp-1:0]                in_msg_header_i
    , input [data_width_p-1:0]                       in_msg_data_i
    , input                                          in_msg_v_i
    , output logic                                   in_msg_ready_and_o
 
    // Output BedRock Burst
    // ready-valid-and
-   , output logic [bp_header_width_lp-1:0]          out_msg_header_o
+   , output logic [msg_header_width_lp-1:0]         out_msg_header_o
    , output logic                                   out_msg_header_v_o
    , input                                          out_msg_header_ready_and_i
    , output logic                                   out_msg_has_data_o
@@ -59,9 +59,9 @@ module bp_me_lite_to_burst
 
   if (data_width_p != 64) $error("Lite-to-Burst data width must be 64-bits");
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, bp);
+  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, msg);
 
-  bp_bedrock_bp_header_s out_msg_header_lo;
+  bp_bedrock_msg_header_s out_msg_header_lo;
   logic in_msg_v_li;
   logic in_msg_header_ready_and_lo, in_msg_data_ready_and_lo;
 
@@ -70,7 +70,7 @@ module bp_me_lite_to_burst
   assign in_msg_v_li = in_msg_v_i & in_msg_ready_and_o;
 
   bsg_two_fifo
-    #(.width_p(bp_header_width_lp)
+    #(.width_p(msg_header_width_lp)
       ,.ready_THEN_valid_p(1)
       )
     header_fifo

@@ -19,17 +19,17 @@ module bp_me_lite_loopback
     `declare_bp_proc_params(bp_params_p)
     , parameter `BSG_INV_PARAM(payload_width_p)
     , parameter `BSG_INV_PARAM(data_width_p)
-    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, bp)
+    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, msg)
     )
    (input                                            clk_i
     , input                                          reset_i
 
-    , input [bp_header_width_lp-1:0]                 in_msg_header_i
+    , input [msg_header_width_lp-1:0]                in_msg_header_i
     , input [data_width_p-1:0]                       in_msg_data_i
     , input                                          in_msg_v_i
     , output logic                                   in_msg_ready_and_o
 
-    , output logic [bp_header_width_lp-1:0]          out_msg_header_o
+    , output logic [msg_header_width_lp-1:0]         out_msg_header_o
     , output logic [data_width_p-1:0]                out_msg_data_o
     , output logic                                   out_msg_v_o
     , input                                          out_msg_ready_and_i
@@ -39,7 +39,7 @@ module bp_me_lite_loopback
   assign out_msg_data_o = '0;
 
   bsg_one_fifo
-   #(.width_p(bp_header_width_lp))
+   #(.width_p(msg_header_width_lp))
    loopback_buffer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

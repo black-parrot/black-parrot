@@ -29,14 +29,14 @@ module bp_me_burst_to_lite
    // Constructed as (1 << e_payload_msg1 | 1 << e_payload_msg2)
    , parameter payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, bp)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, msg)
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Input BedRock Burst
    // ready-valid-and
-   , input [bp_header_width_lp-1:0]                 in_msg_header_i
+   , input [msg_header_width_lp-1:0]                in_msg_header_i
    , input                                          in_msg_header_v_i
    , output logic                                   in_msg_header_ready_and_o
    , input                                          in_msg_has_data_i
@@ -49,7 +49,7 @@ module bp_me_burst_to_lite
 
    // Output BedRock Lite
    // ready-valid-and
-   , output logic [bp_header_width_lp-1:0]          out_msg_header_o
+   , output logic [msg_header_width_lp-1:0]         out_msg_header_o
    , output logic [data_width_p-1:0]                out_msg_data_o
    , output logic                                   out_msg_v_o
    , input                                          out_msg_ready_and_i

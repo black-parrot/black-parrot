@@ -26,13 +26,12 @@ module bp_me_burst_pump_in
    // Bitmasks that specify which message types may have multiple beats on either
    // the msg input side or FSM output side.
    // Each mask is constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
-   // There are two cases:
-   // 1. Message types that are set as part of fsm_stream_mask_p but not set in
+   // There are three cases:
+   // 1. Message types that are set in msg_stream_mask_p but not in
+   //    fsm_stream_mask_p will result in N:1 conversion from msg->FSM ports.
+   // 2. Message types that are set as part of fsm_stream_mask_p but not set in
    //    msg_stream_mask_p result in a 1:N conversion from msg->FSM ports.
-   //    For example, in BlackParrot a read command for 64B to the
-   //    cache arriving on the BedRock Stream input can be decomposed into a stream of
-   //    8B reads on the FSM output port.
-   // 2. Message types set in both will have N:N beats. Every beat on the input
+   // 3. Message types set in both will have N:N beats. Every beat on the input
    //    will produce a beat on the output. This is commonly used for all messages
    //    with data payloads.
    // Constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
@@ -151,6 +150,7 @@ module bp_me_burst_pump_in
     begin
       fsm_header_cast_o = msg_header_li;
       // keep the address to be the critical word address
+      // TODO: line not needed since fsm_header_cast_o already driven by msg_header_li?
       fsm_header_cast_o.addr[0+:block_offset_width_lp] = msg_header_li.addr[0+:block_offset_width_lp];
       fsm_data_o = msg_data_li;
 

@@ -27,14 +27,14 @@ module bp_me_burst_bidi_lite
    , parameter burst_payload_mask_p = 0
    , parameter lite_payload_mask_p = 0
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, bp)
+   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, msg)
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Input BedRock Burst
    // ready-valid-and
-   , input [bp_header_width_lp-1:0]                 burst_header_i
+   , input [msg_header_width_lp-1:0]                burst_header_i
    , input                                          burst_header_v_i
    , output logic                                   burst_header_ready_and_o
    , input                                          burst_has_data_i
@@ -47,14 +47,14 @@ module bp_me_burst_bidi_lite
 
    // Input BedRock Lite
    // ready-valid-and
-   , input [bp_header_width_lp-1:0]                 lite_header_i
+   , input [msg_header_width_lp-1:0]                lite_header_i
    , input [data_width_p-1:0]                       lite_data_i
    , input                                          lite_v_i
    , output logic                                   lite_ready_and_o
 
    // Output BedRock Burst
    // ready-valid-and
-   , output logic [bp_header_width_lp-1:0]          burst_header_o
+   , output logic [msg_header_width_lp-1:0]         burst_header_o
    , output logic                                   burst_header_v_o
    , input                                          burst_header_ready_and_i
    , output logic                                   burst_has_data_o
@@ -67,7 +67,7 @@ module bp_me_burst_bidi_lite
 
    // Output BedRock Lite
    // ready-valid-and
-   , output logic [bp_header_width_lp-1:0]          lite_header_o
+   , output logic [msg_header_width_lp-1:0]         lite_header_o
    , output logic [data_width_p-1:0]                lite_data_o
    , output logic                                   lite_v_o
    , input                                          lite_ready_and_i
